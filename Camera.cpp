@@ -34,25 +34,62 @@ namespace C
 	C_Camera::C_Camera()
 	{
 		mPos = glm::vec3(0, 0, 5);
+		mRot = glm::vec3(0, 0, 0);
 		mTarget = glm::vec3(0, 0, 0);
 		mCameraDirection = glm::vec3(0, 0, -1);
 		mCameraRight = glm::vec3(1, 0, 0);
 		mCameraUp = glm::vec3(0, 1, 0);
 	}
 
+	void C_Camera::setPos(C_Vector3 aPos)
+	{
+		mPos = aPos.toGLM();
+	}
+
+	void C_Camera::setRot(C_Vector3 aRot)
+	{
+		mRot = aRot.toGLM();
+	}
+
+
+	void C_Camera::addPos(C_Vector3 aPos)
+	{
+		mPos += aPos.toGLM();
+	}
+
+	void C_Camera::addRot(C_Vector3 aRot)
+	{
+		mRot += aRot.toGLM();
+		C_Vector3 tmp;
+		tmp.fromGLM(mRot);
+		setRot(tmp);
+	}
+
+	void C_Camera::setTarget(C_Vector3 aTarget)
+	{
+		mTarget = aTarget.toGLM();
+	}
+
 	void C_Camera::update()
 	{
+		glm::vec3 y = glm::vec3(0, 0, -1);
+		C_Vector3 rot;
+		rot.x = C_DegToRads(mRot.x);
+		rot.y = C_DegToRads(mRot.y);
+		rot.z = C_DegToRads(mRot.z);
+		y = glm::rotateY(y, rot.y);
+		y = glm::rotateX(y, rot.x);
+		y = glm::rotateZ(y, rot.z);
+		mTarget = y + mPos;
+
 		mCameraDirection = glm::normalize(mPos - mTarget);
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 		mCameraRight = glm::normalize(glm::cross(up, mCameraDirection));
 		mCameraUp = glm::cross(mCameraDirection, mCameraRight);
 
-		C_Vector3 tmpPos;
-		tmpPos.fromGLM(mPos);
-		C_Vector3 tmpTar;
-		tmpTar.fromGLM(mTarget);
+		VIEW_MATRIX = glm::lookAt(mPos, mTarget, mCameraUp);
 
-		C_SetCamera(tmpPos, tmpTar);
+		preTargeted = false;
 	}
 
 	C_Camera::~C_Camera()

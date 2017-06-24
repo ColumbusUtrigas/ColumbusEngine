@@ -38,16 +38,34 @@ int main(int argc, char** argv)
 		window.clear(1, 1, 1, 1);
 
 		C_SetPerspective(60, window.aspect(), 0.00001, 100000);
+		if (window.getKey(SDL_SCANCODE_W))
+			camera.addRot(C_Vector3(2, 0, 0));
+		if (window.getKey(SDL_SCANCODE_S))
+			camera.addRot(C_Vector3(-2, 0, 0));
+		if (window.getKey(SDL_SCANCODE_A))
+			camera.addRot(C_Vector3(0, 2, 0));
+		if (window.getKey(SDL_SCANCODE_D))
+			camera.addRot(C_Vector3(0, -2, 0));
+
+		if (window.getKey(SDL_SCANCODE_UP))
+			camera.addPos(C_Vector3(0, 0, -0.05));
+		if (window.getKey(SDL_SCANCODE_DOWN))
+			camera.addPos(C_Vector3(0, 0, 0.05));
+		if (window.getKey(SDL_SCANCODE_LEFT))
+			camera.addPos(C_Vector3(0, -0.05, 0));
+		if (window.getKey(SDL_SCANCODE_RIGHT))
+			camera.addPos(C_Vector3(0, 0.05, 0));
 		camera.update();
 
-		if(window.getKeyDown(SDL_SCANCODE_A))
+		if(window.getKeyDown(SDL_SCANCODE_V))
 			printf("Key down\n");
-		if (window.getKeyUp(SDL_SCANCODE_A))
+		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
 		mesh.draw(shader);
 
 		window.display();
+
 		SDL_Delay(16);
 	}
 
