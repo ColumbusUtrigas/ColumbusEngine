@@ -50,6 +50,11 @@ namespace C
 		v.clear();
 	}
 
+    C_Mesh::C_Mesh()
+	{
+
+	}
+
 	void C_Mesh::draw(C_Shader aShader)
 	{
 		aShader.bind();
@@ -89,12 +94,18 @@ namespace C
 
 		aShader.setUniform1i("uMaterial.diffuseTex", 0);
 		aShader.setUniform4f("uMaterial.color", mMat.getColor());
+		aShader.setUniform3f("uMaterial.ambient", mMat.getAmbient());
+		aShader.setUniform3f("uMaterial.diffuse", mMat.getDiffuse());
+		aShader.setUniform3f("uMaterial.specular", mMat.getSpecular());
+
 		aShader.setUniformMatrix("uModel", glm::value_ptr(mMatrix));
 		aShader.setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 		aShader.setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 		aShader.setUniformMatrix("uNormal", glm::value_ptr(normalMat));
 
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
+
+		//printf("%f\n", mVert.size());
 
 		buf->unbind();
 
@@ -105,6 +116,11 @@ namespace C
 		glDisableVertexAttribArray(2);
 
 		aShader.unbind();
+	}
+
+	void C_Mesh::loadOBJ(const char* aFile)
+	{
+		
 	}
 
 	C_Mesh::~C_Mesh()

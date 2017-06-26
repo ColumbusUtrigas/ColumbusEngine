@@ -53,6 +53,12 @@ namespace C
 
 		void setTarget(C_Vector3 aTarget);
 
+		C_Vector3 direction();
+
+		C_Vector3 right();
+
+		C_Vector3 up();
+
 		~C_Camera();
 	};
 

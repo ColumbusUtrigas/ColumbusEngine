@@ -35,9 +35,12 @@ namespace C
 		std::vector<C_Vertex> mVert;
 		C_Material mMat;
 
+		C_Mesh();
 		C_Mesh(std::vector<C_Vertex> aVert);
 
 		void draw(C_Shader aShader);
+
+		void loadOBJ(const char* aFile);
 
 		~C_Mesh();
 	};

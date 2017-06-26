@@ -35,7 +35,7 @@ namespace C
 	{
 		mPos = glm::vec3(0, 0, 5);
 		mRot = glm::vec3(0, 0, 0);
-		mTarget = glm::vec3(0, 0, 0);
+		mTarget = glm::vec3(0, 0, 4);
 		mCameraDirection = glm::vec3(0, 0, -1);
 		mCameraRight = glm::vec3(1, 0, 0);
 		mCameraUp = glm::vec3(0, 1, 0);
@@ -70,9 +70,30 @@ namespace C
 		mTarget = aTarget.toGLM();
 	}
 
+	C_Vector3 C_Camera::direction()
+	{
+		C_Vector3 tmp;
+		tmp.fromGLM(mCameraDirection);
+		return tmp;
+	}
+
+	C_Vector3 C_Camera::right()
+	{
+		C_Vector3 tmp;
+		tmp.fromGLM(-mCameraRight);
+		return tmp;
+	}
+
+	C_Vector3 C_Camera::up()
+	{
+		C_Vector3 tmp;
+		tmp.fromGLM(mCameraUp);
+		return tmp;
+	}
+
 	void C_Camera::update()
 	{
-		glm::vec3 y = glm::vec3(0, 0, -1);
+		/*glm::vec3 y = glm::vec3(0, 0, -1);
 		C_Vector3 rot;
 		rot.x = C_DegToRads(mRot.x);
 		rot.y = C_DegToRads(mRot.y);
@@ -80,14 +101,21 @@ namespace C
 		y = glm::rotateY(y, rot.y);
 		y = glm::rotateX(y, rot.x);
 		y = glm::rotateZ(y, rot.z);
-		mTarget = y + mPos;
+		mTarget = y + mPos;*/
 
-		mCameraDirection = glm::normalize(mPos - mTarget);
+
+		glm::vec3 front;
+		front.z = cos(glm::radians(mRot.x)) * cos(glm::radians(mRot.y));
+		front.y = sin(glm::radians(mRot.x));
+		front.x = cos(glm::radians(mRot.x)) * sin(glm::radians(mRot.y));
+		mCameraDirection = glm::normalize(-front);
+
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 		mCameraRight = glm::normalize(glm::cross(up, mCameraDirection));
+
 		mCameraUp = glm::cross(mCameraDirection, mCameraRight);
 
-		VIEW_MATRIX = glm::lookAt(mPos, mTarget, mCameraUp);
+		VIEW_MATRIX = glm::lookAt(mPos, mCameraDirection + mPos, mCameraUp);
 
 		preTargeted = false;
 	}

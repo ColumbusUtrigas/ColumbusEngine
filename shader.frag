@@ -20,6 +20,7 @@ vec4 texMap;
 void main()
 {
 	texMap = texture(uMaterial.diffuseTex, texCoord);
+
 	if(texMap != vec4(0, 0, 0, 0))
 		gl_FragColor = uMaterial.color * texMap;
 	else
