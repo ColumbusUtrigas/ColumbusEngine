@@ -59,6 +59,8 @@ namespace C
 
 		C_Vector3 up();
 
+		C_Vector3 pos();
+
 		~C_Camera();
 	};
 

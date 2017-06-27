@@ -27,6 +27,7 @@ namespace C
 
 		C_Mesh* mParent;
 
+		C_Camera mCamera;
 	public:
 		C_Buffer* buf = NULL;
 		C_Buffer* tbuf = NULL;
@@ -38,7 +39,9 @@ namespace C
 		C_Mesh();
 		C_Mesh(std::vector<C_Vertex> aVert);
 
-		void draw(C_Shader aShader);
+		void draw();
+
+		void setCamera(C_Camera camera);
 
 		void loadOBJ(const char* aFile);
 

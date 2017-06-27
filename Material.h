@@ -1,10 +1,10 @@
 #pragma once
-#include "Vector2.h"
-#include "Vector3.h"
-#include "Vector4.h"
-#include "Texture.h"
-#include "Shader.h"
-#include "System.h"
+#include <Vector2.h>
+#include <Vector3.h>
+#include <Vector4.h>
+#include <Texture.h>
+#include <Shader.h>
+#include <System.h>
 
 namespace C
 {
@@ -18,6 +18,7 @@ namespace C
 		C_Vector3 specular;
 		C_Texture* texture = NULL;
 		C_Texture* specmap = NULL;
+		C_Shader* shader = NULL;
 		float shininess = 32;
 	public:
 		C_Material();
@@ -37,6 +38,8 @@ namespace C
 
 		void setSpecMap(const C_Texture* aSpecMap);
 
+		void setShader(const C_Shader* aShader);
+
 		C_Vector4 getColor();
 
 		C_Vector3 getDiffuse();
@@ -50,6 +53,8 @@ namespace C
 		C_Texture* getSpecMap();
 
 		float getShininess();
+
+		C_Shader* getShader();
 
 		void saveToFile(const char* aFile);
 

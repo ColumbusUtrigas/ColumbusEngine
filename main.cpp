@@ -13,9 +13,9 @@ int main(int argc, char** argv)
 	C_Texture tex("Textures/wall.jpg");
 
 	std::vector<C_Vertex> verts;
-	C_Vertex v[36];
+	C_Vertex v[6];
 
-	v[0].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
+	/*v[0].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
 	v[0].UV = C_Vector2(0, 0);
 	v[1].pos = C_Vector3(-1.0f, -1.0f, 1.0f);
 	v[1].UV = C_Vector2(0, 1);
@@ -86,15 +86,38 @@ int main(int argc, char** argv)
 	v[34].pos = C_Vector3(-1.0f, 1.0f, 1.0f);
 	v[34].UV = C_Vector2(0, 1);
 	v[35].pos = C_Vector3(1.0f, -1.0f, 1.0f);
-	v[35].UV = C_Vector2(1, 0);
+	v[35].UV = C_Vector2(1, 0);*/
 
-	for(int i = 0; i < 36; i++)
+	v[0].pos = C_Vector3(1, 1, 0);
+	v[0].UV = C_Vector2(1, 1);
+	v[0].normal = C_Vector3(0, 0, 1);
+	v[1].pos = C_Vector3(-1, 1, 0);
+	v[1].UV = C_Vector2(0, 1);
+	v[1].normal = C_Vector3(0, 0, 1);
+	v[2].pos = C_Vector3(-1, -1, 0);
+	v[2].UV = C_Vector2(0, 0);
+	v[2].normal = C_Vector3(0, 0, 1);
+	v[3].pos = C_Vector3(1, 1, 0);
+	v[3].UV = C_Vector2(1, 1);
+	v[3].normal = C_Vector3(0, 0, 1);
+	v[4].pos = C_Vector3(-1, -1, 0);
+	v[4].UV = C_Vector2(0, 0);
+	v[4].normal = C_Vector3(0, 0, 1);
+	v[5].pos = C_Vector3(1, -1, 0);
+	v[5].UV = C_Vector2(1, 0);
+	v[5].normal = C_Vector3(0, 0, 1);
+
+	for(int i = 0; i < 6; i++)
 		verts.push_back(v[i]);
 	C_Mesh mesh(verts);
-	mesh.mMat.setTexture(&tex);
-	//mesh.mMat.setColor(C_Vector4(1, 1, 0, 1));
+	//mesh.mMat.setTexture(&tex);
+	mesh.mMat.setColor(C_Vector4(1, 0.5, 0, 1));
+	mesh.mMat.setShader(&shader);
 
 	C_Camera camera;
+	C_Render render;
+	render.setMainCamera(&camera);
+	render.add(&mesh);
 
 	while (window.isOpen())
 	{
@@ -137,7 +160,8 @@ int main(int argc, char** argv)
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
-		mesh.draw(shader);
+		//mesh.draw();
+		render.render();
 
 		window.display();
 

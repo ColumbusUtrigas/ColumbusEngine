@@ -91,6 +91,13 @@ namespace C
 		return tmp;
 	}
 
+	C_Vector3 C_Camera::pos()
+	{
+		C_Vector3 tmp;
+		tmp.fromGLM(mPos);
+		return tmp;
+	}
+
 	void C_Camera::update()
 	{
 		/*glm::vec3 y = glm::vec3(0, 0, -1);

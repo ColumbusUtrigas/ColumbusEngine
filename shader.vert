@@ -6,6 +6,7 @@ attribute vec3 aNorm;
 
 varying vec2 texCoord;
 varying vec3 varNormal;
+varying vec3 varFragPos;
 
 uniform mat4 uModel;
 uniform mat4 uView;
@@ -17,6 +18,7 @@ void main()
 	gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
 	texCoord = aUV;
 	varNormal = (uNormal * vec4(aNorm, 0.0)).xyz;
+	varFragPos = vec3(uModel * vec4(aPos, 1.0));
 }
 
 

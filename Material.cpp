@@ -52,6 +52,11 @@ namespace C
 		specmap = (C_Texture*)aSpecMap;
 	}
 
+	void C_Material::setShader(const C_Shader* aShader)
+	{
+		shader = (C_Shader*)aShader;
+	}
+
 	C_Vector4 C_Material::getColor()
 	{
 		return color;
@@ -85,6 +90,11 @@ namespace C
 	C_Texture* C_Material::getSpecMap()
 	{
 		return specmap;
+	}
+
+	C_Shader* C_Material::getShader()
+	{
+		return shader;
 	}
 
 	void C_Material::saveToFile(const char* aFile)

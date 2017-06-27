@@ -55,10 +55,8 @@ namespace C
 
 	}
 
-	void C_Mesh::draw(C_Shader aShader)
+	void C_Mesh::draw()
 	{
-		aShader.bind();
-
 		if (buf == NULL && buf == nullptr)
 			return;
 		buf->bind();
@@ -78,36 +76,42 @@ namespace C
 			glEnableVertexAttribArray(2);
 		}
 
-		if (mMat.getTexture() != NULL && tbuf != nullptr)
+		if (mMat.getShader() != nullptr)
 		{
-			mMat.getTexture()->bind();
-			mMat.getTexture()->sampler2D(0);
+			mMat.getShader()->bind();
+
+			if (mMat.getTexture() != nullptr && tbuf != nullptr)
+			{
+				mMat.getTexture()->bind();
+				mMat.getTexture()->sampler2D(0);
+			}
+
+			mMatrix = glm::translate(glm::mat4(1.0f), mPos.toGLM());
+			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.z), glm::vec3(0, 0, 1));
+			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.x), glm::vec3(1, 0, 0));
+			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.y), glm::vec3(0, 1, 0));
+			mMatrix = glm::scale(mMatrix, mScale.toGLM());
+
+			glm::mat4 normalMat = glm::inverse(glm::transpose(mMatrix));
+
+			if (mMat.getTexture() != nullptr && tbuf != nullptr)
+				mMat.getShader()->setUniform1i("uMaterial.diffuseTex", 0);
+			mMat.getShader()->setUniform4f("uMaterial.color", mMat.getColor());
+			mMat.getShader()->setUniform3f("uMaterial.ambient", mMat.getAmbient());
+			mMat.getShader()->setUniform3f("uMaterial.diffuse", mMat.getDiffuse());
+			mMat.getShader()->setUniform3f("uMaterial.specular", mMat.getSpecular());
+			mMat.getShader()->setUniform3f("uLight.color", C_Vector3(1, 1, 1));
+			mMat.getShader()->setUniform3f("uLight.pos", mCamera.pos());
+
+			mMat.getShader()->setUniformMatrix("uModel", glm::value_ptr(mMatrix));
+			mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
+			mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
+			mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(normalMat));
 		}
-
-		mMatrix = glm::translate(glm::mat4(1.0f), mPos.toGLM());
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.z), glm::vec3(0, 0, 1));
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.x), glm::vec3(1, 0, 0));
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.y), glm::vec3(0, 1, 0));
-		mMatrix = glm::scale(mMatrix, mScale.toGLM());
-
-		glm::mat4 normalMat = glm::inverse(glm::transpose(mMatrix));
-
-		aShader.setUniform1i("uMaterial.diffuseTex", 0);
-		aShader.setUniform4f("uMaterial.color", mMat.getColor());
-		aShader.setUniform3f("uMaterial.ambient", mMat.getAmbient());
-		aShader.setUniform3f("uMaterial.diffuse", mMat.getDiffuse());
-		aShader.setUniform3f("uMaterial.specular", mMat.getSpecular());
-
-		aShader.setUniformMatrix("uModel", glm::value_ptr(mMatrix));
-		aShader.setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
-		aShader.setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
-		aShader.setUniformMatrix("uNormal", glm::value_ptr(normalMat));
 
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
 
-		//printf("%f\n", mVert.size());
-
-		buf->unbind();
+		C_Buffer::unbind();
 
 		C_Texture::unbind();
 
@@ -115,7 +119,12 @@ namespace C
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 
-		aShader.unbind();
+		C_Shader::unbind();
+	}
+
+	void C_Mesh::setCamera(C_Camera aCamera)
+	{
+		mCamera = aCamera;
 	}
 
 	void C_Mesh::loadOBJ(const char* aFile)
