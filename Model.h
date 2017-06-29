@@ -25,9 +25,11 @@ namespace C
 		C_Vector3 mScale;
 		glm::mat4 mMatrix;
 
-		C_Mesh* mParent;
+		C_Mesh* mParent = NULL;
 
 		C_Camera mCamera;
+
+		std::vector<C_Mesh*> mChilds;
 	public:
 		C_Buffer* buf = NULL;
 		C_Buffer* tbuf = NULL;
@@ -41,9 +43,23 @@ namespace C
 
 		void draw();
 
+		void setPos(C_Vector3 aPos);
+
+		void setRot(C_Vector3 aRot);
+
+		void setScale(C_Vector3 aScale);
+
+		void addPos(C_Vector3 aPos);
+
+		void addRot(C_Vector3 aRot);
+
+		void addScale(C_Vector3 aScale);
+
 		void setCamera(C_Camera camera);
 
-		void loadOBJ(const char* aFile);
+		bool load(const char* aFile);
+
+		void clear();
 
 		~C_Mesh();
 	};

@@ -80,11 +80,7 @@ namespace C
 		{
 			mMat.getShader()->bind();
 
-			if (mMat.getTexture() != nullptr && tbuf != nullptr)
-			{
-				mMat.getTexture()->bind();
-				mMat.getTexture()->sampler2D(0);
-			}
+			C_Texture::unbind();
 
 			mMatrix = glm::translate(glm::mat4(1.0f), mPos.toGLM());
 			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.z), glm::vec3(0, 0, 1));
@@ -93,9 +89,7 @@ namespace C
 			mMatrix = glm::scale(mMatrix, mScale.toGLM());
 
 			glm::mat4 normalMat = glm::inverse(glm::transpose(mMatrix));
-
-			if (mMat.getTexture() != nullptr && tbuf != nullptr)
-				mMat.getShader()->setUniform1i("uMaterial.diffuseTex", 0);
+				
 			mMat.getShader()->setUniform4f("uMaterial.color", mMat.getColor());
 			mMat.getShader()->setUniform3f("uMaterial.ambient", mMat.getAmbient());
 			mMat.getShader()->setUniform3f("uMaterial.diffuse", mMat.getDiffuse());
@@ -107,6 +101,18 @@ namespace C
 			mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 			mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 			mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(normalMat));
+
+			if (mMat.getTexture() != nullptr)
+			{
+				mMat.getTexture()->sampler2D(0);
+				mMat.getShader()->setUniform1i("uMaterial.diffuseTex", 0);
+			}
+
+			if (mMat.getSpecMap() != nullptr)
+			{
+				mMat.getSpecMap()->sampler2D(1);
+				mMat.getShader()->setUniform1f("uMaterual.specularTex", 1);
+			}
 		}
 
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
@@ -127,9 +133,39 @@ namespace C
 		mCamera = aCamera;
 	}
 
-	void C_Mesh::loadOBJ(const char* aFile)
+	void C_Mesh::setPos(C_Vector3 aPos)
 	{
-		
+		mPos = aPos;
+	}
+
+	void C_Mesh::setRot(C_Vector3 aRot)
+	{
+		mRot = aRot;
+	}
+
+	void C_Mesh::setScale(C_Vector3 aScale)
+	{
+		mScale = aScale;
+	}
+
+	void C_Mesh::addPos(C_Vector3 aPos)
+	{
+		mPos += aPos;
+	}
+
+	void C_Mesh::addRot(C_Vector3 aRot)
+	{
+		mRot += aRot;
+	}
+
+	void C_Mesh::addScale(C_Vector3 aScale)
+	{
+		mScale += aScale;
+	}
+
+	bool C_Mesh::load(const char* aFile)
+	{
+		return false;
 	}
 
 	C_Mesh::~C_Mesh()

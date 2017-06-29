@@ -6,106 +6,20 @@
 namespace C
 {
 
-	struct C_Vector2
+	class C_Vector2
 	{
-		float x;
-		float y;
+	public:
+		float x = 0;
+		float y = 0;
 
-		C_Vector2()
-		{
-			x = 0;
-			y = 0;
-		}
+		inline C_Vector2() {}
+		inline C_Vector2(const float aX, const float aY) : x((float)aX), y((float)aY) {}
+		inline C_Vector2(const glm::vec2 aVec) : x(aVec.x), y(aVec.y) {}
 
-		inline C_Vector2(const float aX, const float aY)
+		inline void fromGLM(const glm::vec2 aVec)
 		{
-			x = (float)aX;
-			y = (float)aY;
-		}
-
-		inline C_Vector2 operator=(C_Vector2 other)
-		{
-			x = other.x;
-			y = other.y;
-			return *this;
-		}
-
-		inline friend C_Vector2& operator+(C_Vector2& left, const C_Vector2& right)
-		{
-			left.x += right.x;
-			left.y += right.y;
-			return left;
-		}
-
-		inline friend C_Vector2& operator-(C_Vector2& left, const C_Vector2& right)
-		{
-			left.x -= right.x;
-			left.y -= right.y;
-			return left;
-		}
-
-		inline friend C_Vector2& operator*(C_Vector2& left, const C_Vector2& right)
-		{
-			left.x *= right.x;
-			left.y *= right.y;
-			return left;
-		}
-
-		inline friend C_Vector2& operator*(C_Vector2& left, const float right)
-		{
-			left.x *= right;
-			left.y *= right;
-			return left;
-		}
-
-		inline friend C_Vector2& operator/(C_Vector2& left, const C_Vector2& right)
-		{
-			left.x /= right.x;
-			left.y /= right.y;
-			return left;
-		}
-
-		inline bool operator==(const C_Vector2& other)
-		{
-			return x == other.x && y == other.y;
-		}
-
-		inline bool operator!=(const C_Vector2& other)
-		{
-			return x != other.x && y != other.y;
-		}
-
-		inline C_Vector2 operator+=(const C_Vector2& other)
-		{
-			x += other.x;
-			y += other.y;
-		}
-
-		inline C_Vector2 operator-=(const C_Vector2& other)
-		{
-			x -= other.x;
-			y -= other.y;
-		}
-
-		inline C_Vector2 operator*=(const C_Vector2& other)
-		{
-			x *= other.x;
-			y *= other.y;
-		}
-
-		inline C_Vector2 operator/=(const C_Vector2& other)
-		{
-			x /= other.x;
-			y /= other.y;
-		}
-
-		inline void normalize()
-		{
-			float norm = sqrt(x * x + y * y);
-			if(x != 0)
-				x = x / norm;
-			if(y != 0)
-				y = y / norm;
+			x = aVec.x;
+			y = aVec.y;
 		}
 
 		inline glm::vec2 toGLM()
@@ -113,11 +27,84 @@ namespace C
 			return glm::vec2(x, y);
 		}
 
-		inline void fromGLM(glm::vec2 aVec)
+		inline C_Vector2& operator=(C_Vector2 aOther)
 		{
-			x = aVec.x;
-			y = aVec.y;
+			x = aOther.x;
+			y = aOther.y;
+			return *this;
 		}
+
+		inline C_Vector2 operator+(const C_Vector2 aOther)
+		{
+			x += aOther.x;
+			y += aOther.y;
+			return *this;
+		}
+
+		inline C_Vector2 operator-(const C_Vector2 aOther)
+		{
+			x -= aOther.x;
+			y -= aOther.y;
+			return *this;
+		}
+
+		inline C_Vector2 operator*(const C_Vector2 aOther)
+		{
+			x *= aOther.x;
+			y *= aOther.y;
+			return *this;
+		}
+
+
+		inline C_Vector2 operator*(const float aOther)
+		{
+			x *= aOther;
+			y *= aOther;
+			return *this;
+		}
+
+		inline C_Vector2 operator/(const C_Vector2 aOther)
+		{
+			x /= aOther.x;
+			y /= aOther.y;
+			return *this;
+		}
+
+		inline bool operator==(C_Vector2 aOther)
+		{
+			return (x == aOther.x && y == aOther.y);
+		}
+
+		inline bool operator!=(C_Vector2 aOther)
+		{
+			return (x != aOther.x && y != aOther.y);
+		}
+
+		inline C_Vector2 operator+=(C_Vector2 aOther)
+		{
+			x += aOther.x;
+			y += aOther.y;
+		}
+
+		inline C_Vector2 operator-=(C_Vector2 aOther)
+		{
+			x -= aOther.x;
+			y -= aOther.y;
+		}
+
+		inline C_Vector2 operator*=(C_Vector2 aOther)
+		{
+			x *= aOther.x;
+			y *= aOther.y;
+		}
+
+		inline C_Vector2 operator/=(C_Vector2 aOther)
+		{
+			x /= aOther.x;
+			y /= aOther.y;
+		}
+
+		inline ~C_Vector2() {}
 	};
 
 	typedef C_Vector2 vec2;

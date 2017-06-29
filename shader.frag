@@ -12,6 +12,7 @@ struct Material
 	vec3 specular;
 
 	sampler2D diffuseTex;
+	sampler2D specularTex;
 };
 
 struct Light
@@ -24,6 +25,7 @@ uniform Material uMaterial;
 uniform Light uLight;
 
 vec4 texMap;
+vec3 specMap;
 vec3 ambient;
 vec3 diffuse;
 vec3 specular;
@@ -31,7 +33,8 @@ vec4 color;
 
 void Init()
 {
-	
+	texMap = texture(uMaterial.diffuseTex, texCoord);
+	specMap = vec3(texture(uMaterial.specularTex, texCoord));
 }
 
 vec3 Ambient()
@@ -41,19 +44,21 @@ vec3 Ambient()
 
 void main()
 {
-	texMap = texture(uMaterial.diffuseTex, texCoord);
+	Init();
 
 	vec3 lightDir = normalize(uLight.pos - varFragPos);  
 	float diff = max(dot(varNormal, lightDir), 0.0);
 	vec3 diffuse = diff * uLight.color;
 
-	float specularStrength = 0.5;
 	vec3 viewDir = normalize(uLight.pos - varFragPos);
 	vec3 reflectDir = reflect(-lightDir, varNormal);  
 
 	
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specularStrength * spec * uLight.color;  
+	vec3 specular = uMaterial.specular * spec * uLight.color;
+
+	if(specMap.xyz != vec3(0))
+		specular *= specMap;
 
 	if(texMap.xyz != vec3(0))
 		color = uMaterial.color * texMap * vec4(Ambient() + diffuse + specular, 1.0);
