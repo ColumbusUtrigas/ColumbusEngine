@@ -96,30 +96,24 @@ namespace C
 			mMat.getShader()->setUniform3f("uMaterial.specular", mMat.getSpecular());
 			mMat.getShader()->setUniform3f("uLight.color", C_Vector3(1, 1, 1));
 			mMat.getShader()->setUniform3f("uLight.pos", mCamera.pos());
+			mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
 
 			mMat.getShader()->setUniformMatrix("uModel", glm::value_ptr(mMatrix));
 			mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 			mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 			mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(normalMat));
-
-			if (mMat.getTexture() != nullptr)
-			{
-				mMat.getTexture()->sampler2D(0);
-				mMat.getShader()->setUniform1i("uMaterial.diffuseTex", 0);
-			}
-
-			if (mMat.getSpecMap() != nullptr)
-			{
-				mMat.getSpecMap()->sampler2D(1);
-				mMat.getShader()->setUniform1f("uMaterual.specularTex", 1);
-			}
 		}
+
+
+
+		mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
+		mMat.getTexture()->sampler2D(0);
+		mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
+		mMat.getSpecMap()->sampler2D(1);
 
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
 
 		C_Buffer::unbind();
-
-		C_Texture::unbind();
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);

@@ -4,68 +4,89 @@ varying vec2 texCoord;
 varying vec3 varNormal;
 varying vec3 varFragPos;
 
+uniform sampler2D diffTex;
+uniform sampler2D specTex;
+
 struct Material
 {
+	sampler2D diffuseMap;
+	sampler2D specularMap;
+
 	vec4 color;
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
-
-	sampler2D diffuseTex;
-	sampler2D specularTex;
 };
 
 struct Light
 {
+	vec3 pos;
 	vec3 color;
+};
+
+struct Camera
+{
 	vec3 pos;
 };
 
 uniform Material uMaterial;
 uniform Light uLight;
+uniform Camera uCamera;
 
-vec4 texMap;
-vec3 specMap;
-vec3 ambient;
-vec3 diffuse;
-vec3 specular;
-vec4 color;
+vec4 DiffuseMap;
+vec3 SpecularMap;
+
+vec4 Color;
+vec3 Ambient;
+vec3 Diffuse;
+vec3 Specular;
 
 void Init()
 {
-	texMap = texture(uMaterial.diffuseTex, texCoord);
-	specMap = vec3(texture(uMaterial.specularTex, texCoord));
+	DiffuseMap = texture(uMaterial.diffuseMap, texCoord);
+	SpecularMap = vec3(texture(uMaterial.specularMap, texCoord));
 }
 
-vec3 Ambient()
+vec3 GetAmbient()
 {
 	return uMaterial.color.xyz * uMaterial.ambient * uLight.color;
+}
+
+vec3 GetDiffuse()
+{
+	vec3 lightDir = normalize(uLight.pos - varFragPos);
+	float diff = max(dot(varNormal, lightDir), 0.0);
+	vec3 diffuse = diff * uLight.color;
+	return diffuse;
+}
+
+vec3 GetSpecular()
+{
+	vec3 lightDir = normalize(uLight.pos - varFragPos);
+	vec3 viewDir = normalize(uCamera.pos - varFragPos);
+	vec3 reflectDir = reflect(-lightDir, varNormal);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+	vec3 specular = 0.5 * spec * uLight.color;
+	return specular;
 }
 
 void main()
 {
 	Init();
 
-	vec3 lightDir = normalize(uLight.pos - varFragPos);  
-	float diff = max(dot(varNormal, lightDir), 0.0);
-	vec3 diffuse = diff * uLight.color;
+	Ambient = GetAmbient();
+	Diffuse = GetDiffuse();
+	Specular = GetSpecular();
 
-	vec3 viewDir = normalize(uLight.pos - varFragPos);
-	vec3 reflectDir = reflect(-lightDir, varNormal);  
+	if (SpecularMap != vec3(0))
+		Specular *= SpecularMap;
 
-	
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = uMaterial.specular * spec * uLight.color;
+	Color = vec4(Ambient + Diffuse + Specular, 1.0);
 
-	if(specMap.xyz != vec3(0))
-		specular *= specMap;
+	if (DiffuseMap.xyz != vec3(0))
+		Color *= DiffuseMap;
 
-	if(texMap.xyz != vec3(0))
-		color = uMaterial.color * texMap * vec4(Ambient() + diffuse + specular, 1.0);
-	else
-		color = uMaterial.color * vec4(Ambient() + diffuse + specular, 1.0);
-
-	gl_FragColor = color;
+	gl_FragColor = Color;
 }
 
 

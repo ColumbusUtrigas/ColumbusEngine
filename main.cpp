@@ -4,14 +4,14 @@ using namespace C;
 
 int main(int argc, char** argv)
 {
-	C_SDLWindow window(640, 480, "Columbus Engine");
+	C_SDLWindow window(1920, 1080, "Columbus Engine");
 	C_EventSystem event;
 	event.addWindow(&window);
 
 	C_Shader shader("shader.vert", "shader.frag");
 
 	C_Texture tex("Textures/metal.jpg");
-	C_Texture spec("Textures/metal-spec.jpg");
+	C_Texture spec("Textures/metal.jpg");
 
 	std::vector<C_Vertex> verts;
 	C_Vertex v[36];
@@ -39,10 +39,10 @@ int main(int argc, char** argv)
 	/*for(int i = 0; i < 6; i++)
 		verts.push_back(v[i]);*/
 
-	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Suzanne.obj"));
+	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Texture.obj"));
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
-	//mesh.mMat.setColor(C_Vector4(1, 0.5, 0, 1));
+	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
 
 	C_Camera camera;
