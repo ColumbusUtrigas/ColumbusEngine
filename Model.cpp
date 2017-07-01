@@ -45,9 +45,9 @@ namespace C
 			n.push_back(mVert[i].normal.z);
 		}
 
-		if (v.size() > 0)
-			nbuf = new C_Buffer(v.data(), v.size() * sizeof(float));
-		v.clear();
+		if (n.size() > 0)
+			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float));
+		n.clear();
 	}
 
     C_Mesh::C_Mesh()

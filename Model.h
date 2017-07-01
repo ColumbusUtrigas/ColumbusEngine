@@ -5,17 +5,11 @@
 #include <Texture.h>
 #include <Buffer.h>
 #include <Material.h>
+#include <Importer.h>
 #include <vector>
 
 namespace C
 {
-
-	struct C_Vertex
-	{
-		C_Vector3 pos;
-		C_Vector2 UV;
-		C_Vector3 normal;
-	};
 
 	class C_Mesh
 	{

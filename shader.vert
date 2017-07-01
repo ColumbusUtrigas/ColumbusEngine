@@ -17,8 +17,8 @@ void main()
 {
 	gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
 	texCoord = aUV;
-	varNormal = (uNormal * vec4(aNorm, 0.0)).xyz;
-	varFragPos = vec3(uModel * vec4(aPos, 1.0));
+	varNormal = normalize(vec3(uNormal * vec4(aNorm, 1.0)));
+	varFragPos = vec3(vec4(aPos, 1.0));
 }
 
 

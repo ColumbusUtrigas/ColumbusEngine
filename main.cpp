@@ -14,9 +14,9 @@ int main(int argc, char** argv)
 	C_Texture spec("Textures/metal-spec.jpg");
 
 	std::vector<C_Vertex> verts;
-	C_Vertex v[6];
+	C_Vertex v[36];
 
-	v[0].pos = C_Vector3(1, 1, 0);
+	/*v[0].pos = C_Vector3(1, 1, 0);
 	v[0].UV = C_Vector2(1, 1);
 	v[0].normal = C_Vector3(0, 0, 1);
 	v[1].pos = C_Vector3(-1, 1, 0);
@@ -34,11 +34,12 @@ int main(int argc, char** argv)
 	v[4].normal = C_Vector3(0, 0, 1);
 	v[5].pos = C_Vector3(1, -1, 0);
 	v[5].UV = C_Vector2(1, 0);
-	v[5].normal = C_Vector3(0, 0, 1);
+	v[5].normal = C_Vector3(0, 0, 1);*/
 
-	for(int i = 0; i < 6; i++)
-		verts.push_back(v[i]);
-	C_Mesh mesh(verts);
+	/*for(int i = 0; i < 6; i++)
+		verts.push_back(v[i]);*/
+
+	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Suzanne.obj"));
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
 	//mesh.mMat.setColor(C_Vector4(1, 0.5, 0, 1));
@@ -92,7 +93,7 @@ int main(int argc, char** argv)
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
-		//mesh.addRot(C_Vector3(1, 1, 1));
+		//mesh.addRot(C_Vector3(1, 1, 0));
 
 		//mesh.draw();
 		render.render();
