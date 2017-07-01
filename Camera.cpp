@@ -110,7 +110,6 @@ namespace C
 		y = glm::rotateZ(y, rot.z);
 		mTarget = y + mPos;*/
 
-
 		glm::vec3 front;
 		front.z = cos(glm::radians(mRot.x)) * cos(glm::radians(mRot.y));
 		front.y = sin(glm::radians(mRot.x));

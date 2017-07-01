@@ -329,41 +329,8 @@ namespace C
 	
 	void C_Texture::sampler2D(int a)
 	{
-		switch(a)
-		{
-		case 0:
-			glActiveTexture(GL_TEXTURE0);
-			bind();
-			break;
-		case 1:
-			glActiveTexture(GL_TEXTURE1);
-			bind();
-			break;
-		case 2:
-			glActiveTexture(GL_TEXTURE2);
-			bind();
-			break;
-		case 3:
-			glActiveTexture(GL_TEXTURE3);
-			bind();
-			break;
-		case 4:
-			glActiveTexture(GL_TEXTURE4);
-			bind();
-			break;
-		case 5:
-			glActiveTexture(GL_TEXTURE5);
-			bind();
-			break;
-		case 6:
-			glActiveTexture(GL_TEXTURE6);
-			bind();
-			break;
-		case 7:
-			glActiveTexture(GL_TEXTURE7);
-			bind();
-			break;
-		}
+		glActiveTexture(GL_TEXTURE0 + a);
+		bind();
 	}
 	
 	C_Texture::~C_Texture()

@@ -4,120 +4,27 @@ using namespace C;
 
 int main(int argc, char** argv)
 {
-	C_SDLWindow window(640, 480, "Columbus Engine");
+	C_SDLWindow window(1920, 1080, "Columbus Engine");
 	C_EventSystem event;
 	event.addWindow(&window);
 
-	C_Shader shader("shader.vert", "shader.frag");
+	C_Shader shader("Shaders/shader.vert", "Shaders/shader.frag");
 
-	C_Texture tex("Textures/wall.jpg");
+	C_Texture tex("Textures/metal.jpg");
+	C_Texture spec("Textures/metal.jpg");
 
-	std::vector<C_Vertex> verts;
-	C_Vertex v[6];
-
-	/*v[0].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
-	v[0].UV = C_Vector2(0, 0);
-	v[1].pos = C_Vector3(-1.0f, -1.0f, 1.0f);
-	v[1].UV = C_Vector2(0, 1);
-	v[2].pos = C_Vector3(-1.0f, 1.0f, 1.0f);
-	v[2].UV = C_Vector2(1, 1);
-	v[3].pos = C_Vector3(1.0f, 1.0f, -1.0f);
-	v[3].UV = C_Vector2(1, 1);
-	v[4].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
-	v[4].UV = C_Vector2(0, 0);
-	v[5].pos = C_Vector3(-1.0f, 1.0f, -1.0f);
-	v[5].UV = C_Vector2(0, 1);
-	v[6].pos = C_Vector3(1.0f, -1.0f, 1.0f);
-	v[6].UV = C_Vector2(1, 1);
-	v[7].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
-	v[7].UV = C_Vector2(0, 0);
-	v[8].pos = C_Vector3(1.0f, -1.0f, -1.0f);
-	v[8].UV = C_Vector2(1, 0);
-	v[9].pos = C_Vector3(1.0f, 1.0f, -1.0f);
-	v[9].UV = C_Vector2(1, 1);
-	v[10].pos = C_Vector3(1.0f, -1.0f, -1.0f);
-	v[10].UV = C_Vector2(1, 0);
-	v[11].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
-	v[11].UV = C_Vector2(0, 0);
-	v[12].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
-	v[12].UV = C_Vector2(0,0);
-	v[13].pos = C_Vector3(-1.0f, 1.0f, 1.0f);
-	v[13].UV = C_Vector2(1, 1);
-	v[14].pos = C_Vector3(-1.0f, 1.0f, -1.0f);
-	v[14].UV = C_Vector2(1, 0);
-	v[15].pos = C_Vector3(1.0f, -1.0f, 1.0f);
-	v[15].UV = C_Vector2(1, 1);
-	v[16].pos = C_Vector3(-1.0f, -1.0f, 1.0f);
-	v[16].UV = C_Vector2(0, 1);
-	v[17].pos = C_Vector3(-1.0f, -1.0f, -1.0f);
-	v[17].UV = C_Vector2(0, 0);
-	v[18].pos = C_Vector3(-1.0f, 1.0f, 1.0f);
-	v[18].UV = C_Vector2(0, 1);
-	v[19].pos = C_Vector3(-1.0f, -1.0f, 1.0f);
-	v[19].UV = C_Vector2(0, 0);
-	v[20].pos = C_Vector3(1.0f, -1.0f, 1.0f);
-	v[20].UV = C_Vector2(1, 0);
-	v[21].pos = C_Vector3(1.0f, 1.0f, 1.0f);
-	v[21].UV = C_Vector2(1, 1);
-	v[22].pos = C_Vector3(1.0f, -1.0f, -1.0f);
-	v[22].UV = C_Vector2(0, 0);
-	v[23].pos = C_Vector3(1.0f, 1.0f, -1.0f);
-	v[23].UV = C_Vector2(1, 0);
-	v[24].pos = C_Vector3(1.0f, -1.0f, -1.0f);
-	v[24].UV = C_Vector2(0, 0);
-	v[25].pos = C_Vector3(1.0f, 1.0f, 1.0f);
-	v[25].UV = C_Vector2(1, 1);
-	v[26].pos = C_Vector3(1.0f, -1.0f, 1.0f);
-	v[26].UV = C_Vector2(0, 1);
-	v[27].pos = C_Vector3(1.0f, 1.0f, 1.0f);
-	v[27].UV = C_Vector2(1, 1);
-	v[28].pos = C_Vector3(1.0f, 1.0f, -1.0f);
-	v[28].UV = C_Vector2(1, 0);
-	v[29].pos = C_Vector3(-1.0f, 1.0f, -1.0f);
-	v[29].UV = C_Vector2(0, 0);
-	v[30].pos = C_Vector3(1.0f, 1.0f, 1.0f);
-	v[30].UV = C_Vector2(1, 1);
-	v[31].pos = C_Vector3(-1.0f, 1.0f, -1.0f);
-	v[31].UV = C_Vector2(0, 0);
-	v[32].pos = C_Vector3(-1.0f, 1.0f, 1.0f);
-	v[32].UV = C_Vector2(0, 1);
-	v[33].pos = C_Vector3(1.0f, 1.0f, 1.0f);
-	v[33].UV = C_Vector2(1, 1);
-	v[34].pos = C_Vector3(-1.0f, 1.0f, 1.0f);
-	v[34].UV = C_Vector2(0, 1);
-	v[35].pos = C_Vector3(1.0f, -1.0f, 1.0f);
-	v[35].UV = C_Vector2(1, 0);*/
-
-	v[0].pos = C_Vector3(1, 1, 0);
-	v[0].UV = C_Vector2(1, 1);
-	v[0].normal = C_Vector3(0, 0, 1);
-	v[1].pos = C_Vector3(-1, 1, 0);
-	v[1].UV = C_Vector2(0, 1);
-	v[1].normal = C_Vector3(0, 0, 1);
-	v[2].pos = C_Vector3(-1, -1, 0);
-	v[2].UV = C_Vector2(0, 0);
-	v[2].normal = C_Vector3(0, 0, 1);
-	v[3].pos = C_Vector3(1, 1, 0);
-	v[3].UV = C_Vector2(1, 1);
-	v[3].normal = C_Vector3(0, 0, 1);
-	v[4].pos = C_Vector3(-1, -1, 0);
-	v[4].UV = C_Vector2(0, 0);
-	v[4].normal = C_Vector3(0, 0, 1);
-	v[5].pos = C_Vector3(1, -1, 0);
-	v[5].UV = C_Vector2(1, 0);
-	v[5].normal = C_Vector3(0, 0, 1);
-
-	for(int i = 0; i < 6; i++)
-		verts.push_back(v[i]);
-	C_Mesh mesh(verts);
-	//mesh.mMat.setTexture(&tex);
-	mesh.mMat.setColor(C_Vector4(1, 0.5, 0, 1));
+	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Texture.obj"));
+	mesh.mMat.setTexture(&tex);
+	mesh.mMat.setSpecMap(&spec);
+	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
 
 	C_Camera camera;
 	C_Render render;
 	render.setMainCamera(&camera);
 	render.add(&mesh);
+
+	float i = 0;
 
 	while (window.isOpen())
 	{
@@ -159,6 +66,8 @@ int main(int argc, char** argv)
 			printf("Key down\n");
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
+
+		//mesh.addRot(C_Vector3(1, 1, 0));
 
 		//mesh.draw();
 		render.render();
