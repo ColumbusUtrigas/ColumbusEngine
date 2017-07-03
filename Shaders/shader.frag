@@ -21,7 +21,14 @@ struct Material
 struct Light
 {
 	vec3 pos;
+	vec3 direction;
 	vec3 color;
+
+	int type; //0 = DIRECTIONAL; 1 = POINT; 2 = SPOT
+
+	float constant;
+    float linear;
+    float quadratic;
 };
 
 struct Camera
@@ -41,10 +48,19 @@ vec3 Ambient;
 vec3 Diffuse;
 vec3 Specular;
 
+float Attenuation;
+
 void Init()
 {
 	DiffuseMap = texture(uMaterial.diffuseMap, texCoord);
 	SpecularMap = vec3(texture(uMaterial.specularMap, texCoord));
+
+
+	if(uLight.type == 1)
+	{
+		float distance = length(uLight.pos - varFragPos);
+		Attenuation = 1.0 / (uLight.constant + uLight.linear * distance + uLight.quadratic * (distance * distance)); 
+	}
 }
 
 vec3 GetAmbient()
@@ -54,20 +70,44 @@ vec3 GetAmbient()
 
 vec3 GetDiffuse()
 {
-	vec3 lightDir = normalize(uLight.pos - varFragPos);
-	float diff = max(dot(varNormal, lightDir), 0.0);
-	vec3 diffuse = diff * uLight.color;
-	return diffuse;
+	if(uLight.type == 0)
+	{
+		vec3 lightDir = normalize(-uLight.direction);
+		float diff = max(dot(varNormal, lightDir), 0.0);
+		vec3 diffuse = diff * uLight.color;
+		return diffuse;
+	}
+
+	if(uLight.type == 1)
+	{
+		vec3 lightDir = normalize(uLight.pos - varFragPos);
+		float diff = max(dot(varNormal, lightDir), 0.0);
+		vec3 diffuse = diff * uLight.color;
+		return diffuse;
+	}
 }
 
 vec3 GetSpecular()
 {
-	vec3 lightDir = normalize(uLight.pos - varFragPos);
-	vec3 viewDir = normalize(uCamera.pos - varFragPos);
-	vec3 reflectDir = reflect(-lightDir, varNormal);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = 0.5 * spec * uLight.color;
-	return specular;
+	if(uLight.type == 0)
+	{
+		vec3 lightDir = normalize(-uLight.direction);
+		vec3 viewDir = normalize(uCamera.pos - varFragPos);
+		vec3 reflectDir = reflect(-lightDir, varNormal);
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+		vec3 specular = 0.5 * spec * uLight.color;
+		return specular;
+	}
+
+	if(uLight.type == 1)
+	{
+		vec3 lightDir = normalize(uLight.pos - varFragPos);
+		vec3 viewDir = normalize(uCamera.pos - varFragPos);
+		vec3 reflectDir = reflect(-lightDir, varNormal);
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+		vec3 specular = 0.5 * spec * uLight.color;
+		return specular;
+	}
 }
 
 void main()
@@ -77,6 +117,10 @@ void main()
 	Ambient = GetAmbient();
 	Diffuse = GetDiffuse();
 	Specular = GetSpecular();
+
+	Ambient *= Attenuation;
+	Diffuse *= Attenuation;
+	Specular *= Attenuation;
 
 	if (SpecularMap != vec3(0))
 		Specular *= SpecularMap;

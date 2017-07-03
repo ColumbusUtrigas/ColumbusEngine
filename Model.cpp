@@ -96,6 +96,10 @@ namespace C
 			mMat.getShader()->setUniform3f("uMaterial.specular", mMat.getSpecular());
 			mMat.getShader()->setUniform3f("uLight.color", C_Vector3(1, 1, 1));
 			mMat.getShader()->setUniform3f("uLight.pos", mCamera.pos());
+			mMat.getShader()->setUniform1i("uLight.type", 1);
+			mMat.getShader()->setUniform1f("uLight.constant", 1);
+			mMat.getShader()->setUniform1f("uLight.linear", 0.09f);
+			mMat.getShader()->setUniform1f("uLight.quadratic", 0.032f);
 			mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
 
 			mMat.getShader()->setUniformMatrix("uModel", glm::value_ptr(mMatrix));
