@@ -106,16 +106,31 @@ namespace C
 			mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 			mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 			mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(normalMat));
+
+			if (mMat.getTexture() != nullptr)
+			{
+				mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
+				mMat.getTexture()->sampler2D(0);
+			}
+
+			if (mMat.getSpecMap() != nullptr)
+			{
+				mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
+				mMat.getSpecMap()->sampler2D(1);
+			}
+
+			if (mMat.getReflection() != nullptr)
+			{
+				glActiveTexture(GL_TEXTURE2);
+				mMat.getShader()->setUniform1i("uReflectionMap", 2);
+				mMat.getReflection()->bind();
+			}
 		}
 
 
-
-		mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
-		mMat.getTexture()->sampler2D(0);
-		mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
-		mMat.getSpecMap()->sampler2D(1);
-
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
+
+		C_Cubemap::unbind();
 
 		C_Buffer::unbind();
 

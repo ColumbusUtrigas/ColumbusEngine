@@ -2,6 +2,26 @@
 
 namespace C
 {
+
+	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight)
+	{
+		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath, 0);
+		if (formato == FIF_UNKNOWN) { printf("Error: Can't get type of File: %s\n", aPath); return NULL; }
+		FIBITMAP* imagen = FreeImage_Load(formato, aPath);
+		if (!imagen) { printf("Error: Can't load Image File: %s\n", aPath); return NULL; }
+		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
+		if (!imagen) { printf("Error: Can't convert image to 32 Bits: %s\n", aPath); return NULL; }
+		FreeImage_Unload(imagen);
+		imagen = temp;
+
+		char* bits = (char*)FreeImage_GetBits(imagen);
+		*aWidth = FreeImage_GetWidth(imagen);
+		*aHeight = FreeImage_GetHeight(imagen);
+
+		printf("Image successfuly loaded: %s\n", aPath);
+
+		return bits;
+	}
 	
 	C_Texture::C_Texture()
 	{

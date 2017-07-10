@@ -1,8 +1,12 @@
 #version 130
 
+varying vec3 varPos;
 varying vec2 texCoord;
 varying vec3 varNormal;
 varying vec3 varFragPos;
+
+uniform samplerCube uReflectionMap;
+
 
 uniform sampler2D diffTex;
 uniform sampler2D specTex;
@@ -130,7 +134,13 @@ void main()
 	if (DiffuseMap.xyz != vec3(0))
 		Color *= DiffuseMap;
 
-	gl_FragColor = Color;
+	vec3 I = normalize(-varFragPos + uCamera.pos);
+    //vec3 R = reflect(I, normalize(varFragPos));
+   	vec3 R = reflect(I, varNormal);
+
+    gl_FragColor = Color + (vec4(texture(uReflectionMap, R).rgb, 1.0) * 0.8 * vec4(SpecularMap, 1.0));
+
+	//gl_FragColor = vec4(textureCube(uReflectionMap, R).rgb, 1.0) * 1;
 }
 
 

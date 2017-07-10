@@ -3,6 +3,7 @@
 #include <Vector3.h>
 #include <Vector4.h>
 #include <Texture.h>
+#include <Cubemap.h>
 #include <Shader.h>
 #include <System.h>
 
@@ -19,6 +20,9 @@ namespace C
 		C_Texture* texture = NULL;
 		C_Texture* specmap = NULL;
 		C_Shader* shader = NULL;
+
+		C_Cubemap* envRefl = NULL;
+
 		float shininess = 32;
 	public:
 		C_Material();
@@ -40,6 +44,8 @@ namespace C
 
 		void setShader(const C_Shader* aShader);
 
+		void setReflection(const C_Cubemap* aReflection);
+
 		C_Vector4 getColor();
 
 		C_Vector3 getDiffuse();
@@ -55,6 +61,8 @@ namespace C
 		float getShininess();
 
 		C_Shader* getShader();
+
+		C_Cubemap* getReflection();
 
 		void saveToFile(const char* aFile);
 

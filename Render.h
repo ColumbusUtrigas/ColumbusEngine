@@ -2,6 +2,7 @@
 
 #include <Model.h>
 #include <Camera.h>
+#include <Skybox.h>
 
 namespace C
 {
@@ -11,12 +12,15 @@ namespace C
 	private:
 		std::vector<C_Mesh*> mMeshes;
 		C_Camera* mCamera = nullptr;
+		C_Skybox* mSkybox = nullptr;
 	public:
 		C_Render();
 
 		void add(C_Mesh* aMesh);
 
 		void setMainCamera(C_Camera* aCamera);
+
+		void setSkybox(C_Skybox* aSkybox);
 
 		void render();
 

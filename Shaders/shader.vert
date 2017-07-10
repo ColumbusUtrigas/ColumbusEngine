@@ -4,6 +4,7 @@ attribute vec3 aPos;
 attribute vec2 aUV;
 attribute vec3 aNorm;
 
+varying vec3 varPos;
 varying vec2 texCoord;
 varying vec3 varNormal;
 varying vec3 varFragPos;

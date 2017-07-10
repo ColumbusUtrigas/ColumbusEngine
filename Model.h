@@ -6,6 +6,7 @@
 #include <Buffer.h>
 #include <Material.h>
 #include <Importer.h>
+#include <Skybox.h>
 #include <vector>
 
 namespace C

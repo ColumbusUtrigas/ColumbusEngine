@@ -83,6 +83,89 @@ namespace C
 		}
 	}
 
+	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig)
+	{
+		if (C_SDL_INITED == false)
+		{
+			if (SDL_Init(SDL_INIT_EVERYTHING))
+			{
+				printf("Fatal Error: Can't initialize SDL\n");
+				exit(1);
+			}
+			else
+			{
+				printf("SDL2 successfuly initialized\n");
+			}
+		}
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
+		int flags = SDL_WINDOW_OPENGL;
+		if (aConfig.Resizable == true)
+			flags |= SDL_WINDOW_RESIZABLE;
+		if (aConfig.Fullscreen == true)
+			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+
+		mWindow = SDL_CreateWindow(aConfig.Title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, aConfig.Width, aConfig.Height, flags);
+		mGLC = SDL_GL_CreateContext(mWindow);
+		glewExperimental = GL_TRUE;
+
+		if (C_SDL_INITED == false)
+		{
+			SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+			SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+			SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+
+			SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+
+			SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+			SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+			glEnable(GL_TEXTURE_2D);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LEQUAL);
+
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+
+			glEnable(GL_TEXTURE_CUBE_MAP_ARB);
+
+			glEnable(GL_MULTISAMPLE);
+
+			if (glewInit() != GLEW_OK)
+			{
+				printf("Fatal Error: Can't initialize GLEW\n");
+				exit(1);
+			}
+			else
+			{
+				printf("GLEW successfuly initialized\n");
+			}
+
+			SDL_version cVer;
+			SDL_version lVer;
+
+			SDL_VERSION(&cVer);
+			SDL_GetVersion(&lVer);
+
+			printf("SDL version: %d.%d.%d\n", cVer.major, cVer.minor, cVer.patch);
+			printf("SDL linked version:%d.%d.%d\n", lVer.major, lVer.minor, lVer.patch);
+			printf("OpenGL version: %s\n", glGetString(GL_VERSION));
+			printf("OpenGL vendor: %s\n", glGetString(GL_VENDOR));
+			printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
+			printf("GLSL version: %s\n\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+			C_SDL_INITED = true;
+
+		}
+	}
+
 	void C_SDLWindow::SYS_CLEAR_INPUT()
 	{
 		for (size_t i = 0; i < 256; i++)
