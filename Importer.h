@@ -57,21 +57,21 @@ namespace C
 				if (strcmp(line, "v") == 0)
 				{
 					C_Vector3 ver;
-					fscanf_s(fp, "%f %f %f\n", &ver.x, &ver.y, &ver.z);
+					fscanf(fp, "%f %f %f\n", &ver.x, &ver.y, &ver.z);
 					tv.push_back(ver);
 				}
 
 				if (strcmp(line, "vt") == 0)
 				{
 					C_Vector2 uv;
-					fscanf_s(fp, "%f %f\n", &uv.x, &uv.y);
+					fscanf(fp, "%f %f\n", &uv.x, &uv.y);
 					tu.push_back(uv);
 				}
 
 				if (strcmp(line, "vn") == 0)
 				{
 					C_Vector3 norm;
-					fscanf_s(fp, "%f %f %f\n", &norm.x, &norm.y, &norm.z);
+					fscanf(fp, "%f %f %f\n", &norm.x, &norm.y, &norm.z);
 					tn.push_back(norm);
 				}
 
@@ -80,7 +80,7 @@ namespace C
 					if (tv.size() != 0 && tu.size() != 0 && tn.size() != 0)
 					{
 						int v1, v2, v3, t1, t2, t3, n1, n2, n3;
-						fscanf_s(fp, "%i/%i/%i %i/%i/%i %i/%i/%i\n", &v1, &t1, &n1, &v2, &t2, &n2, &v3, &t3, &n3);
+						fscanf(fp, "%i/%i/%i %i/%i/%i %i/%i/%i\n", &v1, &t1, &n1, &v2, &t2, &n2, &v3, &t3, &n3);
 
 						C_Vertex ver1, ver2, ver3;
 
