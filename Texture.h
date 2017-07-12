@@ -9,6 +9,8 @@
 namespace C
 {
 
+	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight);
+
 	class C_Texture
 	{
 	private:

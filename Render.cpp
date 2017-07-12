@@ -18,11 +18,19 @@ namespace C
 		mCamera = aCamera;
 	}
 
+	void C_Render::setSkybox(C_Skybox* aSkybox)
+	{
+		mSkybox = aSkybox;
+	}
+
 	void C_Render::render()
 	{
+		//if (mSkybox != nullptr)
+			//mSkybox->draw();
+
 		for (size_t i = 0; i < mMeshes.size(); i++)
 		{
-			if(mCamera != nullptr)
+			if (mCamera != nullptr)
 				mMeshes[i]->setCamera(*mCamera);
 
 			mMeshes[i]->draw();

@@ -4,7 +4,10 @@ using namespace C;
 
 int main(int argc, char** argv)
 {
-	C_SDLWindow window(1920, 1080, "Columbus Engine");
+	C_SDLWindowConfig config;;
+	config.Resizable = true;
+
+	C_SDLWindow window(config);
 	C_EventSystem event;
 	event.addWindow(&window);
 
@@ -18,6 +21,7 @@ int main(int argc, char** argv)
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
+	mesh.setPos(C_Vector3(2, 0, 0));
 
 	C_Camera camera;
 	C_Render render;
@@ -25,6 +29,24 @@ int main(int argc, char** argv)
 	render.add(&mesh);
 
 	float i = 0;
+
+	C_CubemapPath cpath = 
+	{
+		"Skyboxes/4/r.tga",
+		"Skyboxes/4/l.tga",
+		"Skyboxes/4/u.tga",
+		"Skyboxes/4/d.tga",
+		"Skyboxes/4/b.tga",
+		"Skyboxes/4/f.tga",
+	};
+
+
+	C_Cubemap cubemap(cpath);
+	C_Skybox skybox(&cubemap);
+
+	mesh.mMat.setReflection(&cubemap);
+
+	render.setSkybox(&skybox);
 
 	while (window.isOpen())
 	{
@@ -70,6 +92,8 @@ int main(int argc, char** argv)
 		//mesh.addRot(C_Vector3(1, 1, 0));
 
 		//mesh.draw();
+		skybox.draw();
+
 		render.render();
 
 		window.display();

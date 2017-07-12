@@ -57,6 +57,11 @@ namespace C
 		shader = (C_Shader*)aShader;
 	}
 
+	void C_Material::setReflection(const C_Cubemap* aReflecction)
+	{
+		envRefl = (C_Cubemap*)aReflecction;
+	}
+
 	C_Vector4 C_Material::getColor()
 	{
 		return color;
@@ -95,6 +100,11 @@ namespace C
 	C_Shader* C_Material::getShader()
 	{
 		return shader;
+	}
+	
+	C_Cubemap* C_Material::getReflection()
+	{
+		return envRefl;
 	}
 
 	void C_Material::saveToFile(const char* aFile)

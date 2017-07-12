@@ -11,6 +11,15 @@
 namespace C
 {
 
+	struct C_SDLWindowConfig
+	{
+		bool Resizable = false;
+		bool Fullscreen = false;
+		int Width = 640;
+		int Height = 480;
+		char* Title = (char*)"Columbus Engine";
+	};
+
 	class C_SDLWindow
 	{
 	private:
@@ -32,6 +41,7 @@ namespace C
 		SDL_Event mTmpEvent;
 	public:
 		C_SDLWindow(int aW, int aH, const char* aTitle);
+		C_SDLWindow(C_SDLWindowConfig aConfig);
 
 		void SYS_CLEAR_INPUT();
 

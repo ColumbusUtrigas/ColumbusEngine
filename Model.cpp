@@ -96,22 +96,41 @@ namespace C
 			mMat.getShader()->setUniform3f("uMaterial.specular", mMat.getSpecular());
 			mMat.getShader()->setUniform3f("uLight.color", C_Vector3(1, 1, 1));
 			mMat.getShader()->setUniform3f("uLight.pos", mCamera.pos());
+			mMat.getShader()->setUniform1i("uLight.type", 1);
+			mMat.getShader()->setUniform1f("uLight.constant", 1);
+			mMat.getShader()->setUniform1f("uLight.linear", 0.09f);
+			mMat.getShader()->setUniform1f("uLight.quadratic", 0.032f);
 			mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
 
 			mMat.getShader()->setUniformMatrix("uModel", glm::value_ptr(mMatrix));
 			mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 			mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 			mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(normalMat));
+
+			if (mMat.getTexture() != nullptr)
+			{
+				mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
+				mMat.getTexture()->sampler2D(0);
+			}
+
+			if (mMat.getSpecMap() != nullptr)
+			{
+				mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
+				mMat.getSpecMap()->sampler2D(1);
+			}
+
+			if (mMat.getReflection() != nullptr)
+			{
+				glActiveTexture(GL_TEXTURE2);
+				mMat.getShader()->setUniform1i("uReflectionMap", 2);
+				mMat.getReflection()->bind();
+			}
 		}
 
 
-
-		mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
-		mMat.getTexture()->sampler2D(0);
-		mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
-		mMat.getSpecMap()->sampler2D(1);
-
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
+
+		C_Cubemap::unbind();
 
 		C_Buffer::unbind();
 
