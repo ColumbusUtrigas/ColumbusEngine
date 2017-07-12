@@ -17,7 +17,7 @@ namespace C
 		bool Fullscreen = false;
 		int Width = 640;
 		int Height = 480;
-		char* Title = "Columbus Engine";
+		char* Title = (char*)"Columbus Engine";
 	};
 
 	class C_SDLWindow

@@ -51,6 +51,7 @@ vec4 Color;
 vec3 Ambient;
 vec3 Diffuse;
 vec3 Specular;
+vec3 Reflection;
 
 float Attenuation;
 
@@ -114,6 +115,15 @@ vec3 GetSpecular()
 	}
 }
 
+vec3 GetReflection()
+{
+	vec3 I = normalize(uCamera.pos - varFragPos);
+    //vec3 R = reflect(I, normalize(varFragPos));
+   	vec3 R = reflect(I, varNormal);
+   	
+   	return textureCube(uReflectionMap, vec3(R.x, R.y, -R.z)).rgb;
+}
+
 void main()
 {
 	Init();
@@ -121,26 +131,32 @@ void main()
 	Ambient = GetAmbient();
 	Diffuse = GetDiffuse();
 	Specular = GetSpecular();
+	Reflection = GetReflection();
 
 	Ambient *= Attenuation;
 	Diffuse *= Attenuation;
 	Specular *= Attenuation;
 
 	if (SpecularMap != vec3(0))
+	{
 		Specular *= SpecularMap;
+		Reflection *= SpecularMap;
+	}
 
 	Color = vec4(Ambient + Diffuse + Specular, 1.0);
 
 	if (DiffuseMap.xyz != vec3(0))
 		Color *= DiffuseMap;
 
-	vec3 I = normalize(-varFragPos + uCamera.pos);
+	vec3 I = normalize(uCamera.pos - varFragPos);
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = reflect(I, varNormal);
-
-    gl_FragColor = Color + (vec4(texture(uReflectionMap, R).rgb, 1.0) * 0.8 * vec4(SpecularMap, 1.0));
-
-	//gl_FragColor = vec4(textureCube(uReflectionMap, R).rgb, 1.0) * 1;
+   	
+    gl_FragColor = Color + (vec4(Reflection, 1.0) * 0.9);
+    
+    //gl_FragColor = Color;
+    
+	//gl_FragColor = vec4(textureCube(uReflectionMap, vec3(R.x, R.y, -R.z)).rgb, 1.0) * 0.4;
 }
 
 

@@ -16,11 +16,12 @@ int main(int argc, char** argv)
 	C_Texture tex("Textures/metal.jpg");
 	C_Texture spec("Textures/metal.jpg");
 
-	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Suzanne.obj"));
+	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Texture.obj"));
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
+	mesh.setPos(C_Vector3(2, 0, 0));
 
 	C_Camera camera;
 	C_Render render;
