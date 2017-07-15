@@ -47,6 +47,10 @@ int main(int argc, char** argv)
 	mesh.mMat.setReflection(&cubemap);
 
 	render.setSkybox(&skybox);
+	
+	C_ParticleEmitter particles;
+	
+	C_Timer time;
 
 	while (window.isOpen())
 	{
@@ -93,10 +97,14 @@ int main(int argc, char** argv)
 
 		//mesh.draw();
 		skybox.draw();
+		
+		particles.draw();
 
 		render.render();
 
 		window.display();
+		
+		printf("%f\n", time.elapsed());
 
 		SDL_Delay(16);
 	}
