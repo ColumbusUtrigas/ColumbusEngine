@@ -1,19 +1,19 @@
 #pragma once
 
-#include <Buffer.h>
-#include <Camera.h>
-#include <Cubemap.h>
-#include <EventSystem.h>
+#include <Graphics/Buffer.h>
+#include <Graphics/Camera.h>
+#include <Graphics/Cubemap.h>
+#include <Impl/EventSystem.h>
 #include <Impl/ImplSDL.h>
-#include <Model.h>
-#include <Render.h>
-#include <Shader.h>
-#include <Skybox.h>
-#include <System.h>
-#include <Texture.h>
-#include <Vector2.h>
-#include <Vector3.h>
-#include <Vector4.h>
+#include <Graphics/Model.h>
+#include <Graphics/Render.h>
+#include <Graphics/Shader.h>
+#include <Graphics/Skybox.h>
+#include <System/System.h>
+#include <Graphics/Texture.h>
+#include <Math/Vector2.h>
+#include <Math/Vector3.h>
+#include <Math/Vector4.h>
 
 
 
