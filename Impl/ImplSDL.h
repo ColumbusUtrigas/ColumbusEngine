@@ -4,9 +4,10 @@
 #define IMPLSDL_H
 
 #include <cstdio>
-#include <Vector2.h>
 #include <SDL.h>
 #include <GL/glew.h>
+
+#include <Math/Vector2.h>
 
 namespace C
 {

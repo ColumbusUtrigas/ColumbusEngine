@@ -11,12 +11,12 @@ int main(int argc, char** argv)
 	C_EventSystem event;
 	event.addWindow(&window);
 
-	C_Shader shader("Shaders/shader.vert", "Shaders/shader.frag");
+	C_Shader shader("Data/Shaders/shader.vert", "Data/Shaders/shader.frag");
 
-	C_Texture tex("Textures/metal.jpg");
-	C_Texture spec("Textures/metal.jpg");
+	C_Texture tex("Data/Textures/metal.jpg");
+	C_Texture spec("Data/Textures/metal.jpg");
 
-	C_Mesh mesh(Importer::C_LoadOBJVertices("Models/Texture.obj"));
+	C_Mesh mesh(Importer::C_LoadOBJVertices("Data/Models/Texture.obj"));
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
@@ -32,12 +32,12 @@ int main(int argc, char** argv)
 
 	C_CubemapPath cpath = 
 	{
-		"Skyboxes/4/r.tga",
-		"Skyboxes/4/l.tga",
-		"Skyboxes/4/u.tga",
-		"Skyboxes/4/d.tga",
-		"Skyboxes/4/b.tga",
-		"Skyboxes/4/f.tga",
+		"Data/Skyboxes/4/r.tga",
+		"Data/Skyboxes/4/l.tga",
+		"Data/Skyboxes/4/u.tga",
+		"Data/Skyboxes/4/d.tga",
+		"Data/Skyboxes/4/b.tga",
+		"Data/Skyboxes/4/f.tga",
 	};
 
 
