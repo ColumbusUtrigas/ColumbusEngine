@@ -46,7 +46,7 @@ namespace C
 		for (size_t i = 0; i < mSize; i++)
 		{
 			if (mParticles[i].age < mParticles[i].lifetime)
-				mParticles[i].age++;
+				mParticles[i].age = mParticles[i].tm.elapsed() / 1000000;
 			else
 				mParticles[i].reset();
 				
@@ -76,7 +76,7 @@ namespace C
 			mShader->setUniform3f("uVel", mParticles[i].speed);
 			mShader->setUniform3f("uAcc", mParticles[i].vel);
 			mShader->setUniform1f("uTTL", mParticles[i].lifetime);
-			mShader->setUniform1i("uTime", mParticles[i].age);
+			mShader->setUniform1f("uTime", mParticles[i].age);
 			mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 			mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 			

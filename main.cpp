@@ -49,8 +49,6 @@ int main(int argc, char** argv)
 	render.setSkybox(&skybox);
 	
 	C_ParticleEmitter particles;
-	
-	C_Timer time;
 
 	while (window.isOpen())
 	{
@@ -103,8 +101,6 @@ int main(int argc, char** argv)
 		render.render();
 
 		window.display();
-		
-		printf("%f\n", time.elapsed());
 
 		SDL_Delay(16);
 	}

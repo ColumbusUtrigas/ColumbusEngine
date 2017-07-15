@@ -12,7 +12,7 @@ uniform vec3 uPos;
 uniform vec3 uVel;
 uniform vec3 uAcc;
 uniform float uTTL;
-uniform int uTime;
+uniform float uTime;
 
 void main(void)
 {
