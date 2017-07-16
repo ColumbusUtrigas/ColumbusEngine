@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include <ctime>
 
 #include <System/System.h>
 #include <System/Timer.h>
@@ -14,27 +15,46 @@
 namespace C
 {
 
-	typedef struct
+	struct C_Particle
 	{
-		C_Vector3 pos = C_Vector3(0, 2, 0);
-		C_Vector3 vel = C_Vector3(0, 0, 0);
-		C_Vector3 speed = C_Vector3(0, 1.0, 0);		
+		C_Vector3 random;
+	
+		C_Vector3 pos = C_Vector3(0, 0, 0);
+		float vel = 0.0;
+		float speed = 1.0;
 		C_Timer tm;
 		
 		float lifetime = 1.0;
 		float age = 0;
 		
-		inline void reset()
+		bool active = false;
+		
+		inline C_Particle(C_Vector3 aPos, float aVel, float aSpd, float aTTL)
 		{
-			pos = C_Vector3(0, 2, 0);
-			vel = C_Vector3(0, 0, 0);
-			speed = C_Vector3(0, 1.0, 0);
+			pos = aPos;
+			vel = aVel;
+			speed = aSpd;
+			lifetime = aTTL;
+			
+			random = C_Vector3::random(C_Vector3(-1, -1, -1), C_Vector3(1, 1, 1));
+		}
+		
+		inline void reset(C_Vector3 aPos, float aVel, float aSpd, float aTTL)
+		{
+			pos = aPos;
+			vel = aVel;
+			speed = aSpd;
+			lifetime = aTTL;
 			
 			age = 0;
 			
 			tm.reset();
+			
+			active = false;
 		}
-	} C_Particle;
+		
+		inline ~C_Particle() {}
+	};
 	
 	class C_ParticleEmitter
 	{
@@ -47,8 +67,15 @@ namespace C
 		
 		C_Buffer* mBuf = NULL;
 		C_Buffer* mTBuf = NULL;
+		
+		C_Timer tm;
+		
+		C_Vector3 mPos = C_Vector3(0, 0, 0);
+		float mAcc = 0.0;
+		float mSpeed = 1.0;
+		float mLifetime = 1.0;
 	public:
-		C_ParticleEmitter(size_t aSize = 1);
+		C_ParticleEmitter(size_t aSize = 100, C_Vector3 aPos = C_Vector3(0, 0, 0), float aAcc = 0.0, float aSpd = 1.0, float aTTL = 1.0);
 		
 		void draw();
 		

@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 
 	render.setSkybox(&skybox);
 	
-	C_ParticleEmitter particles;
+	C_ParticleEmitter particles(1000);
 
 	while (window.isOpen())
 	{
