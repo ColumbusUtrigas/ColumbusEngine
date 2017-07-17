@@ -14,6 +14,8 @@ uniform float uVel;
 uniform float uAcc;
 uniform float uTTL;
 uniform float uTime;
+uniform float uSize;
+uniform int uRenderMode;
 
 float rand(vec2 co)
 {
@@ -24,10 +26,13 @@ void main(void)
 {
 	float t = uTime;
 	vec3 a = uPos + uRandom * uVel * t + uPos * uAcc * t * t / 2.0;
-	
-	gl_Position = uProjection * uView * vec4(aPos + a, 1.0);
-	
+	a = aPos * uSize + a;
+
+	if (uRenderMode == 0)
+		gl_Position = uProjection * (uView * vec4(a.x,  a.y, a.z, 1.0));
+
+	if (uRenderMode == 1)
+		gl_Position = uProjection * uView * vec4(a, 1.0);
+
 	varTexCoord = aUV;
 }
-
-

@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
 	float i = 0;
 
-	C_CubemapPath cpath = 
+	C_CubemapPath cpath =
 	{
 		"Data/Skyboxes/4/r.tga",
 		"Data/Skyboxes/4/l.tga",
@@ -47,8 +47,14 @@ int main(int argc, char** argv)
 	mesh.mMat.setReflection(&cubemap);
 
 	render.setSkybox(&skybox);
-	
-	C_ParticleEmitter particles(1000);
+
+	C_ParticleEmitter particles(100);
+	particles.setSize(3.0);
+	particles.setRandom(C_Vector3(-0.5, -1, -0.5), C_Vector3(0.5, -0.5, 0.5));
+	particles.setSpeed(3.0);
+
+	C_Texture partex("Data/Textures/smoke.png");
+	particles.setTexture(&partex);
 
 	while (window.isOpen())
 	{
@@ -83,7 +89,7 @@ int main(int argc, char** argv)
 			camera.addRot(C_Vector3(0, 0, 2.5));
 		if (window.getKey(SDL_SCANCODE_E))
 			camera.addRot(C_Vector3(0, 0, -2.5));
-		
+
 		camera.update();
 
 		if(window.getKeyDown(SDL_SCANCODE_V))
@@ -94,11 +100,12 @@ int main(int argc, char** argv)
 		//mesh.addRot(C_Vector3(1, 1, 0));
 
 		//mesh.draw();
+
 		skybox.draw();
-		
-		particles.draw();
 
 		render.render();
+
+		particles.draw();
 
 		window.display();
 
@@ -109,4 +116,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-

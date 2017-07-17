@@ -3,10 +3,10 @@
 namespace C
 {
 
-	C_ParticleEmitter::C_ParticleEmitter(size_t aSize, C_Vector3 aPos, float aAcc, float aSpd, float aTTL)
-	: mSize(aSize), mPos(aPos), mAcc(aAcc), mSpeed(aSpd), mLifetime(aTTL)
+	C_ParticleEmitter::C_ParticleEmitter(size_t aCount, C_Vector3 aPos, float aAcc, float aSpd, float aTTL)
+	: mCount(aCount), mPos(aPos), mAcc(aAcc), mSpeed(aSpd), mLifetime(aTTL)
 	{
-		for (size_t i = 0; i < aSize; i++)
+		for (size_t i = 0; i < aCount; i++)
 		{
 			C_Particle p(aPos, aAcc, aSpd, aTTL);
 			mParticles.push_back(p);
@@ -14,27 +14,7 @@ namespace C
 		
 		mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
 		
-		float vrts[] = 
-		{
-			0.1, 0.1, 0.0,
-			-0.1, 0.1, 0.0,
-			-0.1, -0.1, 0.0,
-			-0.1, -0.1, 0.0,
-			0.1, -0.1, 0.0,
-			0.1, 0.1, 0.0
-		};
-		
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float));
-		
-		float uvs[] = 
-		{
-			1, 1,
-			0, 1,
-			0, 0,
-			0, 0,
-			1, 0,
-			1, 1
-		};
 		
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float));
 	}
@@ -45,8 +25,8 @@ namespace C
 		
 		float e = 0;
 		
-		if (mSize != 0)
-			e = (float)mParticles[0].lifetime / (float)mSize;
+		if (mCount != 0)
+			e = (float)mParticles[0].lifetime / (float)mCount;
 		else
 		{
 			glEnable(GL_CULL_FACE);
@@ -79,18 +59,31 @@ namespace C
 			glEnable(GL_CULL_FACE);
 			return;
 		}
+		
+		C_Texture::unbind();
 
 		mShader->bind();
 		
+		//Vertex Shader Uniforms
 		mShader->setUniform3f("uPos", mPos);
 		mShader->setUniform1f("uVel", mSpeed);
 		mShader->setUniform1f("uAcc", mAcc);
 		mShader->setUniform1f("uTTL", mLifetime);
+		mShader->setUniform1f("uSize", mSize);
+		mShader->setUniform1i("uRenderMode", mRenderMode);
 		
 		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 		
-		for (size_t i = 0; i < mSize; i++)
+		//Fragment Shader Uniforms
+		mShader->setUniform4f("uColor", mColor);
+		if (mTexture != nullptr)
+		{
+			mShader->setUniform1i("uTex", 0);
+			mTexture->sampler2D(0);
+		}
+		
+		for (size_t i = 0; i < mCount; i++)
 		{
 			if (a >= (e * i))
 				mParticles[i].active = true;
@@ -118,6 +111,21 @@ namespace C
 		glDisableVertexAttribArray(1);
 		
 		glEnable(GL_CULL_FACE);
+	}
+	
+	void C_ParticleEmitter::setRandom(const C_Vector3 aRandom)
+	{
+		mRandom2 = (C_Vector3)aRandom;
+		for (size_t i = 0; i < mParticles.size(); i++)
+			mParticles[i].reset(mPos, mAcc, mSpeed, mLifetime, mRandom2);
+	}
+	
+	void C_ParticleEmitter::setRandom(const C_Vector3 aRandom1, const C_Vector3 aRandom2)
+	{
+		mRandom1 = (C_Vector3)aRandom1;
+		mRandom2 = (C_Vector3)aRandom2;
+		for (size_t i = 0; i < mParticles.size(); i++)
+			mParticles[i].reset(mPos, mAcc, mSpeed, mLifetime, mRandom1, mRandom2);
 	}
 	
 	C_ParticleEmitter::~C_ParticleEmitter()
