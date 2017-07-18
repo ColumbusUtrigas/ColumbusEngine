@@ -16,7 +16,8 @@ int main(int argc, char** argv)
 	C_Texture tex("Data/Textures/metal.jpg");
 	C_Texture spec("Data/Textures/metal.jpg");
 
-	C_Mesh mesh(Importer::C_LoadOBJVertices("Data/Models/Texture.obj"));
+	//C_Mesh mesh(Importer::C_LoadOBJVertices("Data/Models/Texture.obj"));
+	C_Mesh mesh(C_PrimitiveBox(C_Vector3(1.0, 2.0, 0.5)));
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));

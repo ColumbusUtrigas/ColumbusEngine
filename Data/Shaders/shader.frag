@@ -64,7 +64,7 @@ void Init()
 	if(uLight.type == 1)
 	{
 		float distance = length(uLight.pos - varFragPos);
-		Attenuation = 1.0 / (uLight.constant + uLight.linear * distance + uLight.quadratic * (distance * distance)); 
+		Attenuation = 1.0 / (uLight.constant + uLight.linear * distance + uLight.quadratic * (distance * distance));
 	}
 }
 
@@ -120,7 +120,7 @@ vec3 GetReflection()
 	vec3 I = normalize(uCamera.pos - varFragPos);
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = reflect(I, varNormal);
-   	
+
    	return textureCube(uReflectionMap, vec3(R.x, R.y, -R.z)).rgb;
 }
 
@@ -151,19 +151,10 @@ void main()
 	vec3 I = normalize(uCamera.pos - varFragPos);
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = reflect(I, varNormal);
-   	
+
     gl_FragColor = Color + (vec4(Reflection, 1.0) * 0.2);
-    
+
     //gl_FragColor = Color;
-    
+
 	//gl_FragColor = vec4(textureCube(uReflectionMap, vec3(R.x, R.y, -R.z)).rgb, 1.0) * 0.4;
 }
-
-
-
-
-
-
-
-
-

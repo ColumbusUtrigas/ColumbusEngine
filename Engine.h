@@ -7,6 +7,7 @@
 #include <Impl/ImplSDL.h>
 #include <Graphics/Model.h>
 #include <Graphics/ParticleEmitter.h>
+#include <Graphics/Primitives.h>
 #include <Graphics/Render.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Skybox.h>
@@ -16,6 +17,3 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-
-
-
