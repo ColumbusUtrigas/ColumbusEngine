@@ -10,4 +10,6 @@ namespace C
 
   std::vector<C_Vertex> C_PrimitiveBox(C_Vector3 aSize = C_Vector3(1.0, 1.0, 1.0));
 
+  std::vector<C_Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors, C_Vector3 aSize = C_Vector3(1.0, 1.0, 1.0));
+
 }

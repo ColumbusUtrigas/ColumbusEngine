@@ -108,4 +108,11 @@ namespace C
     return ret;
   }
 
+  std::vector<C_Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors, C_Vector3 aSize)
+  {
+    std::vector<C_Vertex> v;
+
+    return v;
+  }
+
 }
