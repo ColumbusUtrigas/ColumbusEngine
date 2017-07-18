@@ -118,6 +118,23 @@ namespace C
 			z /= aOther.z;
 			return *this;
 		}
+		
+		inline static C_Vector3 random(C_Vector3 aMin, C_Vector3 aMax)
+		{
+			C_Vector3 ret;
+			ret.x = aMin.x + (float)(rand()) / ((float)(RAND_MAX / (aMax.x - aMin.x)));
+			ret.y = aMin.y + (float)(rand()) / ((float)(RAND_MAX / (aMax.y - aMin.y)));
+			ret.z = aMin.z + (float)(rand()) / ((float)(RAND_MAX / (aMax.z - aMin.z)));
+			return ret;
+		}
+		
+		inline C_Vector3 normalize()
+		{
+			float l = sqrt((x * x) + (y * y) + (z * z));
+			x /= l;
+			y /= l;
+			z /= l;
+		}
 
 		inline ~C_Vector3() {}
 	};

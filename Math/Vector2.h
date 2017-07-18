@@ -104,6 +104,21 @@ namespace C
 			y /= aOther.y;
 		}
 
+		inline static C_Vector2 random(C_Vector2 aMin, C_Vector2 aMax)
+		{
+			C_Vector2 ret;
+			ret.x = aMin.x + (float)(rand()) / ((float)(RAND_MAX / (aMax.x - aMin.x)));
+			ret.y = aMin.y + (float)(rand()) / ((float)(RAND_MAX / (aMax.y - aMin.y)));
+			return ret;
+		}
+
+		inline C_Vector2 normalize()
+		{
+			float l = sqrt((x * x) + (y * y));
+			x /= l;
+			y /= l;
+		}
+
 		inline ~C_Vector2() {}
 	};
 

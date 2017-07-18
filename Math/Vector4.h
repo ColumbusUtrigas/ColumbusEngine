@@ -13,7 +13,7 @@ namespace C
 		float y = 0;
 		float z = 0;
 		float w = 0;
-		
+
 		inline C_Vector4() {}
 		inline C_Vector4(float aX, float aY, float aZ, float aW) : x(aX), y(aY), z(aZ), w(aW) {}
 		inline C_Vector4(glm::vec4 aVec) : x(aVec.x), y(aVec.y), z(aVec.z), w(aVec.w) {}
@@ -129,6 +129,25 @@ namespace C
 			z /= aOther.z;
 			w /= aOther.w;
 			return *this;
+		}
+
+		inline static C_Vector4 random(C_Vector4 aMin, C_Vector4 aMax)
+		{
+			C_Vector4 ret;
+			ret.x = aMin.x + (float)(rand()) / ((float)(RAND_MAX / (aMax.x - aMin.x)));
+			ret.y = aMin.y + (float)(rand()) / ((float)(RAND_MAX / (aMax.y - aMin.y)));
+			ret.z = aMin.z + (float)(rand()) / ((float)(RAND_MAX / (aMax.z - aMin.z)));
+			ret.w = aMin.w + (float)(rand()) / ((float)(RAND_MAX / (aMax.w - aMin.w)));
+			return ret;
+		}
+
+		inline C_Vector4 normalize()
+		{
+			float l = sqrt((x * x) + (y * y) + (z * z) + (w * w));
+			x /= l;
+			y /= l;
+			z /= l;
+			w /= l;
 		}
 
 		inline ~C_Vector4() {}

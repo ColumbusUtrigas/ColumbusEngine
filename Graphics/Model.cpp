@@ -133,6 +133,8 @@ namespace C
 		C_Cubemap::unbind();
 
 		C_Buffer::unbind();
+		
+		C_Texture::unbind();
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);

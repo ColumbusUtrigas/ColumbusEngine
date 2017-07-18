@@ -35,7 +35,7 @@ namespace C
 		FILE* file = fopen(aPath, "rt");
 		if (file == NULL)
 			return NULL;
-			
+
 		fseek(file, 0, SEEK_END);
 		unsigned long lenght = ftell(file);
 		char* data = new char[lenght + 1];
@@ -58,6 +58,26 @@ namespace C
 		unsigned long int l = ftell(fp);
 		fclose(fp);
 		return l;
+	}
+
+	bool C_WriteFile(const char* aFile, const char* aText)
+	{
+			FILE* fp = fopen(aFile, "wt");
+		  if (fp == NULL)
+			{
+  			return false;
+			}
+
+			size_t size = strlen(aText);
+
+			for (size_t i = 0; i < size; i++)
+			{
+				fputc(aText[i], fp);
+			}
+
+			fclose(fp);
+
+			return true;
 	}
 
 	bool C_CreateFile(const char* aPath)
@@ -115,6 +135,3 @@ namespace C
 
 
 }
-
-
-

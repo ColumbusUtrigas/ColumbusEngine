@@ -31,6 +31,8 @@ namespace C
 
 	unsigned long int C_FileSize(const char* aFile);
 
+	bool C_WriteFile(const char* aFile, const char* aText);
+
 	bool C_CreateFile(const char* aPath);
 
 	bool C_DeleteFile(const char* aPath);
