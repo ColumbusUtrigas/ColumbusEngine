@@ -13,8 +13,13 @@ int main(int argc, char** argv)
 
 	C_Shader shader("Data/Shaders/shader.vert", "Data/Shaders/shader.frag");
 
+	C_TextureManager textureManager;
+
 	C_Texture tex("Data/Textures/metal.jpg");
 	C_Texture spec("Data/Textures/metal.jpg");
+
+	textureManager.add(&tex);
+	textureManager.add(&spec);
 
 	//C_Mesh mesh(Importer::C_LoadOBJVertices("Data/Models/Texture.obj"));
 	C_Mesh mesh(C_PrimitiveBox());
@@ -23,6 +28,7 @@ int main(int argc, char** argv)
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
 	mesh.setPos(C_Vector3(2, 0, 0));
+	mesh.setScale(C_Vector3(2, 0.5, 0.5));
 
 	C_Camera camera;
 	C_Render render;
@@ -56,6 +62,8 @@ int main(int argc, char** argv)
 
 	C_Texture partex("Data/Textures/smoke.png");
 	particles.setTexture(&partex);
+
+	textureManager.add(&partex);
 
 	while (window.isOpen())
 	{

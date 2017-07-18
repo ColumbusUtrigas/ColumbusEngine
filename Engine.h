@@ -14,6 +14,7 @@
 #include <System/System.h>
 #include <System/Timer.h>
 #include <Graphics/Texture.h>
+#include <Graphics/TextureManager.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
