@@ -33,6 +33,12 @@ int main(int argc, char** argv)
 	mesh.mMat.setShader(&shader);
 	mesh.setPos(C_Vector3(2, 0, 0));
 
+	mesh2.mMat.setTexture(&tex);
+	mesh2.mMat.setSpecMap(&spec);
+	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
+	mesh2.mMat.setShader(&shader);
+	mesh2.setPos(C_Vector3(2, 0, 0));
+
 	mesh.addChild(&mesh2);
 
 
@@ -40,6 +46,7 @@ int main(int argc, char** argv)
 	C_Render render;
 	render.setMainCamera(&camera);
 	render.add(&mesh);
+	render.add(&mesh2);
 
 	float i = 0;
 
@@ -76,7 +83,7 @@ int main(int argc, char** argv)
 
 		window.clear(0, 0, 0.75, 1);
 
-		C_SetPerspective(60, window.aspect(), 0.00001, 100000);
+		C_SetPerspective(60, window.aspect(), 0.001, 1000);
 
 		if (window.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * 0.1);
