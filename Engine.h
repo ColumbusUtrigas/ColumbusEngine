@@ -5,6 +5,7 @@
 #include <Graphics/Cubemap.h>
 #include <Impl/EventSystem.h>
 #include <Impl/ImplSDL.h>
+#include <Graphics/Importer.h>
 #include <Graphics/Model.h>
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Primitives.h>

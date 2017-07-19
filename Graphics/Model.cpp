@@ -40,7 +40,7 @@ namespace C
 
 		for (size_t i = 0; i < mVert.size(); i++)
 		{
-			n.push_back(mVert[i].normal.x);			
+			n.push_back(mVert[i].normal.x);
 			n.push_back(mVert[i].normal.y);
 			n.push_back(mVert[i].normal.z);
 		}
@@ -50,7 +50,16 @@ namespace C
 		n.clear();
 	}
 
-    C_Mesh::C_Mesh()
+	C_Mesh::C_Mesh(std::string aFile)
+	{
+		Importer::C_Importer importer;
+		if(importer.load(aFile))
+		{
+
+		}
+	}
+
+  C_Mesh::C_Mesh()
 	{
 
 	}
@@ -89,7 +98,7 @@ namespace C
 			mMatrix = glm::scale(mMatrix, mScale.toGLM());
 
 			glm::mat4 normalMat = glm::inverse(glm::transpose(mMatrix));
-				
+
 			mMat.getShader()->setUniform4f("uMaterial.color", mMat.getColor());
 			mMat.getShader()->setUniform3f("uMaterial.ambient", mMat.getAmbient());
 			mMat.getShader()->setUniform3f("uMaterial.diffuse", mMat.getDiffuse());
@@ -133,7 +142,7 @@ namespace C
 		C_Cubemap::unbind();
 
 		C_Buffer::unbind();
-		
+
 		C_Texture::unbind();
 
 		glDisableVertexAttribArray(0);
@@ -178,9 +187,18 @@ namespace C
 		mScale += aScale;
 	}
 
-	bool C_Mesh::load(const char* aFile)
+	void C_Mesh::setParent(C_Mesh* aParent)
 	{
-		return false;
+		mParent = aParent;
+	}
+
+	void C_Mesh::addChild(C_Mesh* aChild)
+	{
+		if (aChild == nullptr)
+			return;
+
+		mChilds.push_back(aChild);
+		aChild->setParent(this);
 	}
 
 	C_Mesh::~C_Mesh()
@@ -189,7 +207,3 @@ namespace C
 	}
 
 }
-
-
-
-

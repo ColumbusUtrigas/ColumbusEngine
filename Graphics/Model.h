@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <string>
+#include <list>
 
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
@@ -25,7 +27,7 @@ namespace C
 
 		C_Camera mCamera;
 
-		std::vector<C_Mesh*> mChilds;
+		std::list<C_Mesh*> mChilds;
 	public:
 		C_Buffer* buf = NULL;
 		C_Buffer* tbuf = NULL;
@@ -35,6 +37,7 @@ namespace C
 		C_Material mMat;
 
 		C_Mesh();
+		C_Mesh(std::string aFile);
 		C_Mesh(std::vector<C_Vertex> aVert);
 
 		void draw();
@@ -53,7 +56,9 @@ namespace C
 
 		void setCamera(C_Camera camera);
 
-		bool load(const char* aFile);
+		void setParent(C_Mesh* aParent);
+
+		void addChild(C_Mesh* aChild);
 
 		void clear();
 
@@ -61,8 +66,3 @@ namespace C
 	};
 
 }
-
-
-
-
-

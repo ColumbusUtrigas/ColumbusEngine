@@ -25,8 +25,8 @@ namespace C
 
 	void C_Render::render()
 	{
-		//if (mSkybox != nullptr)
-			//mSkybox->draw();
+		if (mSkybox != nullptr)
+			mSkybox->draw();
 
 		for (size_t i = 0; i < mMeshes.size(); i++)
 		{
@@ -43,15 +43,3 @@ namespace C
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
