@@ -1,3 +1,13 @@
+/************************************************
+*              		Importer.h                    *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   20.07.2017                  *
+*************************************************/
+
 #pragma once
 
 #include <cstdio>
@@ -29,6 +39,8 @@ namespace C
 		class C_Importer
 		{
 		private:
+			////////////////////////////////////////////////////////////////////////////
+			//Load OBJ file
 			inline bool loadOBJ(std::string aFile)
 			{
 				if (aFile.empty())
@@ -148,8 +160,11 @@ namespace C
 			std::vector<std::string> mNames;
 			std::vector<std::vector<C_Vertex>> mVertices;
 
+			////////////////////////////////////////////////////////////////////////////
+			//Constructor
 			inline C_Importer() {}
-
+			////////////////////////////////////////////////////////////////////////////
+			//Load file
 			inline bool load(std::string aFile)
 			{
 				if (aFile.empty())
@@ -158,10 +173,12 @@ namespace C
 				if (aFile.substr(aFile.size() - 4) == ".obj")
 					return loadOBJ(aFile);
 			}
-
+			////////////////////////////////////////////////////////////////////////////
+			//Destructor
 			inline ~C_Importer() {}
 		};
-
+		////////////////////////////////////////////////////////////////////////////
+		//Load vertices from OBJ file
 		inline std::vector<C_Vertex> C_LoadOBJVertices(const char* aFile)
 		{
 			FILE* fp = fopen(aFile, "rt");
