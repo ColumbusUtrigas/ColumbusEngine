@@ -1,13 +1,3 @@
-/************************************************
-*                  Camera.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -27,15 +17,14 @@
 namespace C
 {
 
-	//Return projection matrix
 	glm::mat4 C_GetProjectionMatrix();
-	//Return view matrix
+
 	glm::mat4 C_GetViewMatrix();
-	//Set perspective matrix
+
 	void C_SetPerspective(float aFOV, float aAspect, float aN, float aF);
-	//Set orthographic matrix
+
 	void C_SetOrtho(float aL, float aR, float aB, float aT, float aN, float aF);
-	//Set view matrix
+
 	void C_SetCamera(C_Vector3 aEye, C_Vector3 aRef);
 
 	class C_Camera
@@ -51,30 +40,34 @@ namespace C
 		bool rotMode = false;
 		bool preTargeted = false;
 	public:
-		//Constructor
 		C_Camera();
-		//Update camera
+
 		void update();
-		//Set camera pos
+
 		void setPos(C_Vector3 aPos);
-		//Set camera rotation
+
 		void setRot(C_Vector3 aRot);
-		//Add position to current
+
 		void addPos(C_Vector3 aPos);
-		//Add rotation to current
+
 		void addRot(C_Vector3 aRot);
-		//Set camera target
+
 		void setTarget(C_Vector3 aTarget);
-		//Return camera direction
+
 		C_Vector3 direction();
-		//Return camera right direction
+
 		C_Vector3 right();
-		//Return camera up direction
+
 		C_Vector3 up();
-		//Return camera position
+
 		C_Vector3 pos();
-		//Destructor
+
 		~C_Camera();
 	};
 
 }
+
+
+
+
+

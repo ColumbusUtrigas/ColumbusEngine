@@ -1,19 +1,8 @@
-/************************************************
-*                Primitives.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Primitives.h>
 
 namespace C
 {
-  //////////////////////////////////////////////////////////////////////////////
-  //Generate plane
+
   std::vector<C_Vertex> C_PrimitivePlane(C_Vector2 aSize)
   {
     float verts[18] =
@@ -62,8 +51,7 @@ namespace C
 
     return v;
   }
-  //////////////////////////////////////////////////////////////////////////////
-  //Generate box
+
   std::vector<C_Vertex> C_PrimitiveBox(C_Vector3 aSize)
   {
     const char* f =
@@ -119,8 +107,7 @@ namespace C
     C_DeleteFile("tmp_primitive_box.obj");
     return ret;
   }
-  //////////////////////////////////////////////////////////////////////////////
-  //Generate sphere
+
   std::vector<C_Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors, C_Vector3 aSize)
   {
     std::vector<C_Vertex> v;

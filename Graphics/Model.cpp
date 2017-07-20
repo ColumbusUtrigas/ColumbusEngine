@@ -1,20 +1,8 @@
-/************************************************
-*              		 Model.cpp                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Model.h>
 
 namespace C
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
 	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert)
 	{
 		mPos = C_Vector3(0, 0, 0);
@@ -61,8 +49,7 @@ namespace C
 			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float));
 		n.clear();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 2
+
 	C_Mesh::C_Mesh(std::string aFile)
 	{
 		Importer::C_Importer importer;
@@ -71,14 +58,12 @@ namespace C
 
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 3
+
   C_Mesh::C_Mesh()
 	{
 
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Draw mesh
+
 	void C_Mesh::draw()
 	{
 		if (buf == NULL && buf == nullptr)
@@ -166,56 +151,47 @@ namespace C
 
 		C_Shader::unbind();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set camera
+
 	void C_Mesh::setCamera(C_Camera aCamera)
 	{
 		mCamera = aCamera;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set mesh position
+
 	void C_Mesh::setPos(C_Vector3 aPos)
 	{
 		mPos = aPos;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set mesh rotation
+
 	void C_Mesh::setRot(C_Vector3 aRot)
 	{
 		mRot = aRot;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set mesh scale
+
 	void C_Mesh::setScale(C_Vector3 aScale)
 	{
 		mScale = aScale;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add position to current
+
 	void C_Mesh::addPos(C_Vector3 aPos)
 	{
 		mPos += aPos;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add rotation to current
+
 	void C_Mesh::addRot(C_Vector3 aRot)
 	{
 		mRot += aRot;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add scale to current
+
 	void C_Mesh::addScale(C_Vector3 aScale)
 	{
 		mScale += aScale;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set parent mesh
+
 	void C_Mesh::setParent(C_Mesh* aParent)
 	{
 		mParent = aParent;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add child mesh
+
 	void C_Mesh::addChild(C_Mesh* aChild)
 	{
 		if (aChild == nullptr)
@@ -224,8 +200,7 @@ namespace C
 		mChilds.push_back(aChild);
 		aChild->setParent(this);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+
 	C_Mesh::~C_Mesh()
 	{
 

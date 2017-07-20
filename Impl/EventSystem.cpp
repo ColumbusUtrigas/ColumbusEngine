@@ -1,28 +1,18 @@
-/************************************************
-*              	 EventSystem.cpp                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Impl/EventSystem.h>
 
 namespace C
 {
-
+	
 	/*#ifdef C_SDL
 		C_EventSystem::C_EventSystem()
 		{
 			update();
 		}
-
+	
 		void C_EventSystem::update()
 		{
 			text = NULL;
-
+		
 			while(SDL_PollEvent(&mEvent))
 			{
 				mouseWheelLeft = false;
@@ -33,22 +23,22 @@ namespace C
 				{
 					key = mEvent.key.keysym.sym;
 				}
-
+			
 				if(mEvent.type == SDL_KEYUP)
 				{
 					SDL_Scancode asd;
 					key = asd;
 				}
-
+			
 				if(mEvent.type == SDL_TEXTINPUT)
 				{
 					text = mEvent.text.text;
 				}
-
+			
 				if(mEvent.type == SDL_TEXTEDITING)
 				{
 				}
-
+			
 				if(mEvent.type == SDL_MOUSEBUTTONDOWN)
 				{
 					if(mEvent.button.button == SDL_BUTTON_LEFT)
@@ -58,7 +48,7 @@ namespace C
 					if(mEvent.button.button == SDL_BUTTON_MIDDLE)
 						mouseMiddle = true;
 				}
-
+			
 				if(mEvent.type == SDL_MOUSEBUTTONUP)
 				{
 					if(mEvent.button.button == SDL_BUTTON_LEFT)
@@ -83,38 +73,38 @@ namespace C
 				}
 			}
 		}
-
+	
 		void C_EventSystem::mouseCoords(int *aX, int* aY)
 		{
 			SDL_GetMouseState(aX, aY);
 		}
-
+	
 		void C_EventSystem::globalMouseCoords(int *aX, int* aY)
 		{
 			SDL_GetGlobalMouseState(aX, aY);
 		}
-
+	
 		void C_EventSystem::mouseRel(int *aX, int* aY)
 		{
 			SDL_GetRelativeMouseState(aX, aY);
 		}
-
+	
 		bool C_EventSystem::isKey(int aKey)
 		{
 			keys = (Uint8*)SDL_GetKeyboardState(NULL);
 			return keys[aKey];
 		}
-
+	
 		bool C_EventSystem::isKeyDown(int aKey)
 		{
-
+		
 		}
-
+	
 		bool C_EventSystem::isKeyUp(int aKey)
 		{
-
+		
 		}
-
+	
 		bool C_EventSystem::isText(char aText)
 		{
 			if(text != NULL)
@@ -124,7 +114,7 @@ namespace C
 				}
 			return false;
 		}
-
+	
 		bool C_EventSystem::isMouseButton(int aButton)
 		{
 			if(aButton == SDL_BUTTON_LEFT || aButton == C_BUTTON_LEFT)
@@ -134,7 +124,7 @@ namespace C
 			if(aButton == SDL_BUTTON_MIDDLE || aButton == C_BUTTON_MIDDLE)
 				return mouseMiddle;
 		}
-
+	
 		bool C_EventSystem::isMouseButtonClick(int aButton, int aClicks, int *aX, int* aY)
 		{
 			SDL_PollEvent(&mEvent);
@@ -148,12 +138,12 @@ namespace C
 					}
 			return false;
 		}
-
+	
 		bool C_EventSystem::isExit()
 		{
 			return (mEvent.type == SDL_QUIT);
 		}
-
+	
 		char C_EventSystem::getText()
 		{
 			if(text != NULL)
@@ -177,21 +167,18 @@ namespace C
 				return 1;
 			return 0;
 		}
-
+	
 		C_EventSystem::~C_EventSystem()
 		{
-
+	
 		}
 	#endif*/
-
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
+	
 	C_EventSystem::C_EventSystem()
 	{
-
+	
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Poll all events
+	
 	void C_EventSystem::pollEvents()
 	{
 		for (size_t i = 0; i < mWindows.size(); i++)
@@ -201,28 +188,37 @@ namespace C
 		{
 			if(mEvent.type == SDL_QUIT)
 				mQuit = true;
-
+			
 			for(int i = 0; i < mWindows.size(); i++)
 				mWindows[i]->pollEvent(mEvent);
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add window
+	
 	void C_EventSystem::addWindow(C_SDLWindow* aWindow)
 	{
 		mWindows.push_back(aWindow);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return running
+	
 	bool C_EventSystem::isRun()
 	{
 		return !mQuit;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+	
 	C_EventSystem::~C_EventSystem()
 	{
-
+	
 	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+

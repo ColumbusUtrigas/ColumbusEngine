@@ -1,13 +1,3 @@
-/************************************************
-*              			Model.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <vector>
@@ -45,35 +35,33 @@ namespace C
 
 		std::vector<C_Vertex> mVert;
 		C_Material mMat;
-		//Constructor
+
 		C_Mesh();
-		//Constructor 2
 		C_Mesh(std::string aFile);
-		//Constructor 3
 		C_Mesh(std::vector<C_Vertex> aVert);
-		//Draw mesh
+
 		void draw();
-		//Set mesh position
+
 		void setPos(C_Vector3 aPos);
-		//Set mesh rotation
+
 		void setRot(C_Vector3 aRot);
-		//Set mesh scale
+
 		void setScale(C_Vector3 aScale);
-		//Add position to current
+
 		void addPos(C_Vector3 aPos);
-		//Add rotation to current
+
 		void addRot(C_Vector3 aRot);
-		//Add scale to current
+
 		void addScale(C_Vector3 aScale);
-		//Set camera
+
 		void setCamera(C_Camera camera);
-		//Set parent mesh
+
 		void setParent(C_Mesh* aParent);
-		//Add child mesh
+
 		void addChild(C_Mesh* aChild);
-		//Clear all
+
 		void clear();
-		//Destructor
+
 		~C_Mesh();
 	};
 

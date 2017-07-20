@@ -1,20 +1,8 @@
-/************************************************
-*              		 Cubemap.cpp                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Cubemap.h>
 
 namespace C
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
 	C_Cubemap::C_Cubemap(C_CubemapPath aPath)
 	{
 		glGenTextures(1, &mID);
@@ -52,30 +40,29 @@ namespace C
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Bind cubemap
+
 	void C_Cubemap::bind()
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, mID);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Create sampler and bind cubemap
+
 	void C_Cubemap::samplerCube(int i)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
 		bind();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Unbind cubemap
+
 	void C_Cubemap::unbind()
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+
 	C_Cubemap::~C_Cubemap()
 	{
 
 	}
 
 }
+
+
+

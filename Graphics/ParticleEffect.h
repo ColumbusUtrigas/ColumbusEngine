@@ -7,7 +7,6 @@
 *             Nikolay(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #pragma once
 
 #include <Graphics/Material.h>

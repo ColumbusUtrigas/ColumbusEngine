@@ -1,20 +1,8 @@
-/************************************************
-*              		 Skybox.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Skybox.h>
 
 namespace C
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
 	C_Skybox::C_Skybox(C_Cubemap* aCubemap)
 	{
 		mCubemap = aCubemap;
@@ -30,8 +18,7 @@ namespace C
 
 		mShader = new C_Shader("Data/Shaders/skybox.vert", "Data/Shaders/skybox.frag");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Draw skybox
+
 	void C_Skybox::draw()
 	{
 		if (mShader != nullptr && mCubemap != nullptr)
@@ -64,8 +51,7 @@ namespace C
 			glDepthMask(GL_TRUE);
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+
 	C_Skybox::~C_Skybox()
 	{
 

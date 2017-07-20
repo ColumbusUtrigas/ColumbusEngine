@@ -1,13 +1,3 @@
-/************************************************
-*              		 ImplSDL.cpp                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Impl/ImplSDL.h>
 
 namespace C
@@ -20,8 +10,7 @@ namespace C
 	#define C_BUTTON_RIGHT SDL_BUTTON_RIGHT
 	#define C_BUTTON_X1 SDL_BUTTON_X1
 	#define C_BUTTON_X2 SDL_BUTTON_X2
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
+
 	C_SDLWindow::C_SDLWindow(int aW, int aH, const char* aTitle)
 	{
 		if(C_SDL_INITED == false)
@@ -93,8 +82,7 @@ namespace C
 
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 2
+
 	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig)
 	{
 		if (C_SDL_INITED == false)
@@ -177,8 +165,7 @@ namespace C
 
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Clear input
+
 	void C_SDLWindow::SYS_CLEAR_INPUT()
 	{
 		for (size_t i = 0; i < 256; i++)
@@ -187,8 +174,7 @@ namespace C
 			keydown[i] = false;
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Poll window events
+
 	void C_SDLWindow::pollEvent(SDL_Event& aEvent)
 	{
 		mTmpEvent = aEvent;
@@ -255,8 +241,7 @@ namespace C
 			}
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Clear window
+
 	void C_SDLWindow::clear(float r, float g, float b, float a)
 	{
 		SDL_GL_MakeCurrent(mWindow, mGLC);
@@ -264,69 +249,59 @@ namespace C
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, getSize().x, getSize().y);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Display window
+
 	void C_SDLWindow::display()
 	{
 		SDL_GL_SwapWindow(mWindow);
 		//C_TimeUpdate();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return window open
+
 	bool C_SDLWindow::isOpen()
 	{
 		return !mClosed;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return window size
+
 	void C_SDLWindow::getSize(int* aX, int* aY)
 	{
 		SDL_GetWindowSize(mWindow, aX, aY);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return windpow size
+
 	C_Vector2 C_SDLWindow::getSize()
 	{
 		int x, y;
 		SDL_GetWindowSize(mWindow, &x, &y);
 		return C_Vector2(x, y);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse position
+
 	void C_SDLWindow::getMousePos(int* aX, int* aY)
 	{
 		SDL_GetMouseState(aX, aY);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse position
+
 	C_Vector2 C_SDLWindow::getMousePos()
 	{
 		int x, y;
 		SDL_GetMouseState(&x, &y);
 		return C_Vector2(x, y);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return global mouse position
+
 	void C_SDLWindow::getMousePosGlobal(int* aX, int* aY)
 	{
 		SDL_GetGlobalMouseState(aX, aY);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return global mouse position
+
 	C_Vector2 C_SDLWindow::getMousePosGlobal()
 	{
 		int x, y;
 		SDL_GetGlobalMouseState(&x, &y);
 		return C_Vector2(x, y);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//return window aspect
+
 	float C_SDLWindow::aspect()
 	{
 		return (float)getSize().x / (float)getSize().y;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return key-press in window
+
 	bool C_SDLWindow::getKey(int aKey)
 	{
 		if(keyFocus)
@@ -336,8 +311,7 @@ namespace C
 		}
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return key-down in window
+
 	bool C_SDLWindow::getKeyDown(int aKey)
 	{
 		if (keyFocus)
@@ -347,8 +321,7 @@ namespace C
 
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return key-up in window
+
 	bool C_SDLWindow::getKeyUp(int aKey)
 	{
 		if (keyFocus)
@@ -358,8 +331,7 @@ namespace C
 
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse-button-press in window
+
 	bool C_SDLWindow::getMouseButton(int aButton)
 	{
 		//if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(aButton))
@@ -368,8 +340,7 @@ namespace C
 		else
 			return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+
 	C_SDLWindow::~C_SDLWindow()
 	{
 

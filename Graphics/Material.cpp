@@ -1,20 +1,8 @@
-/************************************************
-*              		Material.cpp                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Material.h>
 
 namespace C
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
 	C_Material::C_Material()
 	{
 		color = C_Vector4(1, 1, 1, 1);
@@ -23,122 +11,102 @@ namespace C
 		specular = C_Vector3(1, 1, 1);
 		shininess = 32;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 2
+
 	C_Material::C_Material(const char* aFile)
 	{
 		loadFromFile(aFile);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set color
+
 	void C_Material::setColor(const C_Vector4 aColor)
 	{
 		color = (C_Vector4)aColor;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set light ambient color
-	void C_Material::setAmbient(const C_Vector3 aAmbient)
-	{
-		ambient = (C_Vector3)aAmbient;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set light diffuse color
+
 	void C_Material::setDiffuse(const C_Vector3 aDiffuse)
 	{
 		diffuse = (C_Vector3)aDiffuse;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set light specular color
+
+	void C_Material::setAmbient(const C_Vector3 aAmbient)
+	{
+		ambient = (C_Vector3)aAmbient;
+	}
+
 	void C_Material::setSpecular(const C_Vector3 aSpecular)
 	{
 		specular = (C_Vector3)aSpecular;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set specular shininess
+
 	void C_Material::setShininess(const float aShininess)
 	{
 		shininess = (float)aShininess;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set diffuse texture
+
 	void C_Material::setTexture(const C_Texture* aTexture)
 	{
 		texture = (C_Texture*)aTexture;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set specular texture
+
 	void C_Material::setSpecMap(const C_Texture* aSpecMap)
 	{
 		specmap = (C_Texture*)aSpecMap;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set shader
+
 	void C_Material::setShader(const C_Shader* aShader)
 	{
 		shader = (C_Shader*)aShader;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set cubemap reflection
+
 	void C_Material::setReflection(const C_Cubemap* aReflecction)
 	{
 		envRefl = (C_Cubemap*)aReflecction;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return color
+
 	C_Vector4 C_Material::getColor()
 	{
 		return color;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return light ambient color
-	C_Vector3 C_Material::getAmbient()
-	{
-		return ambient;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return light diffuer color
+
 	C_Vector3 C_Material::getDiffuse()
 	{
 		return diffuse;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return light specular color
+
+	C_Vector3 C_Material::getAmbient()
+	{
+		return ambient;
+	}
+
 	C_Vector3 C_Material::getSpecular()
 	{
 		return specular;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return specular shininess
+
 	float C_Material::getShininess()
 	{
 		return shininess;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return diffuse texture
+
 	C_Texture* C_Material::getTexture()
 	{
 		return texture;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return specular texture
+
 	C_Texture* C_Material::getSpecMap()
 	{
 		return specmap;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return shader
+
 	C_Shader* C_Material::getShader()
 	{
 		return shader;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return cubemap reflection
+	
 	C_Cubemap* C_Material::getReflection()
 	{
 		return envRefl;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Serialize to XML file
+
 	void C_Material::saveToFile(const char* aFile)
 	{
 		C_XMLDoc doc;
@@ -215,8 +183,7 @@ namespace C
 
 		printf("Material successfuly saved: %s\n", aFile);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Deserialize from XML file
+
 	void C_Material::loadFromFile(const char* aFile)
 	{
 		C_XMLDoc doc;
@@ -299,8 +266,7 @@ namespace C
 
 		printf("Material successfuly loaded: %s\n", aFile);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+
 	C_Material::~C_Material()
 	{
 
