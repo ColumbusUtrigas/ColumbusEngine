@@ -68,12 +68,11 @@ int main(int argc, char** argv)
 
 	render.setSkybox(&skybox);
 
-	C_ParticleEmitter particles(100);
-	particles.setSize(9.0);
-	particles.setSpeed(3.0);
+	C_ParticleEffect particleEffect;
+	C_ParticleEmitter particles(&particleEffect);
 
 	C_Texture partex("Data/Textures/smoke.png");
-	particles.setTexture(&partex);
+	//particles.setTexture(&partex);
 
 	textureManager.add(&partex);
 

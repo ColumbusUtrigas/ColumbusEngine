@@ -7,6 +7,7 @@
 #include <Impl/ImplSDL.h>
 #include <Graphics/Importer.h>
 #include <Graphics/Model.h>
+#include <Graphics/ParticleEffect.h>
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/Render.h>

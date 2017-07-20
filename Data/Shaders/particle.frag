@@ -16,4 +16,6 @@ void main()
 		gl_FragColor = uColor * tex;
 	else
 		gl_FragColor = uColor;
+
+	gl_FragColor = vec4(1);
 }
