@@ -1,8 +1,20 @@
+/************************************************
+*              		 Texture.cpp                  *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   20.07.2017                  *
+*************************************************/
+
 #include <Graphics/Texture.h>
 
 namespace C
 {
 
+	//////////////////////////////////////////////////////////////////////////////
+	//Load image from file
 	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight)
 	{
 		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath, 0);
@@ -22,22 +34,26 @@ namespace C
 
 		return bits;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor
 	C_Texture::C_Texture()
 	{
 
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 2
 	C_Texture::C_Texture(const char* aPath, bool aSmooth)
 	{
 		load(aPath, aSmooth);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 3
 	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
 		load(aData, aW, aH, aSmooth);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Load texture from file
 	void C_Texture::load(const char* aPath, bool aSmooth)
 	{
 		if (mBuffer != NULL)
@@ -157,6 +173,8 @@ namespace C
       FreeImage_Unload(bitmap);
 	}*/
 
+	//////////////////////////////////////////////////////////////////////////////
+	//Load texture from raw data
 	void C_Texture::load(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -179,7 +197,8 @@ namespace C
 		glBindTexture(GL_TEXTURE_2D, 0);
 		//printf("\x1b[32;1mTexture successfuly loaded from buffer\x1b[0m\n");
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Load texture from memory
 	void C_Texture::loadFromMemory(const char* aData, size_t aSize, bool aSmooth)
 	{
 		glGenTextures(1, &mID);
@@ -224,7 +243,8 @@ namespace C
 
 		free((void*)aData);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Reload texture
 	void C_Texture::reload()
 	{
 		if (mBuffer == nullptr)
@@ -265,7 +285,8 @@ namespace C
 
 		printf("Texture successfuly reloaded");
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set texture config
 	void C_Texture::setConfig(C_TextureConfig aConfig)
 	{
 		mSmooth = aConfig.smooth;
@@ -274,7 +295,8 @@ namespace C
 		mWrapX = aConfig.wrapX;
 		mWrapY = aConfig.wrapY;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return texture config
 	C_TextureConfig C_Texture::getConfig()
 	{
 		C_TextureConfig c;
@@ -285,7 +307,8 @@ namespace C
 		c.wrapY = mWrapY;
 		return c;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return texture size
 	size_t C_Texture::getSize()
 	{
 		if (mBuffer == nullptr)
@@ -293,7 +316,8 @@ namespace C
 
 		return mWidth * mHeight * (mBPP / 8);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Save image to file
 	void C_Texture::save(const char* aFile)
 	{
 		if(aFile[strlen(aFile) - 4] == '.')
@@ -443,24 +467,28 @@ namespace C
 						FreeImage_Save(FIF_BMP, mBuffer, aFile, 0);
 					}
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Bind texture
 	void C_Texture::bind()
 	{
 		if(mID != 0)
 			glBindTexture(GL_TEXTURE_2D, mID);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Unbind texture
 	void C_Texture::unbind()
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Create sampler and bind texture
 	void C_Texture::sampler2D(int a)
 	{
 		glActiveTexture(GL_TEXTURE0 + a);
 		bind();
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Destructor
 	C_Texture::~C_Texture()
 	{
 		glDeleteTextures(1, &mID);

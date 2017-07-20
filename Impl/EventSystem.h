@@ -1,4 +1,15 @@
+/************************************************
+*              	  EventSystem.h                 *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   20.07.2017                  *
+*************************************************/
+
 #pragma once
+
 #include <SDL.h>
 #include <vector>
 #include <cstring>
@@ -179,14 +190,15 @@ namespace C
 
 		bool mQuit = false;
 	public:
+		//Constructor
 		C_EventSystem();
-
+		//Poll all events
 		void pollEvents();
-
+		//Add window
 		void addWindow(C_SDLWindow* aWindow);
-
+		//Return running
 		bool isRun();
-
+		//Destructor
 		~C_EventSystem();
 	};
 

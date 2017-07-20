@@ -1,8 +1,20 @@
+/************************************************
+*              		 System.cpp                   *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   20.07.2017                  *
+*************************************************/
+
 #include <System/System.h>
 
 namespace C
 {
 
+	//////////////////////////////////////////////////////////////////////////////
+	//Return current Operating System
 	char* C_GetSystem()
 	{
 		#ifdef _WIN32
@@ -29,7 +41,8 @@ namespace C
 				return (char*)"Apple";
 		#endif
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Read file
 	char* C_ReadFile(const char* aPath)
 	{
 		FILE* file = fopen(aPath, "rt");
@@ -45,7 +58,8 @@ namespace C
 		fclose(file);
 		return data;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return file size
 	unsigned long int C_FileSize(const char* aFile)
 	{
 		FILE* fp = fopen(aFile, "rb");
@@ -59,7 +73,8 @@ namespace C
 		fclose(fp);
 		return l;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Write buffer to file
 	bool C_WriteFile(const char* aFile, const char* aText)
 	{
 			FILE* fp = fopen(aFile, "wt");
@@ -79,7 +94,8 @@ namespace C
 
 			return true;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Create file
 	bool C_CreateFile(const char* aPath)
 	{
 		FILE* fp = fopen(aPath, "w");
@@ -88,7 +104,8 @@ namespace C
 		fclose(fp);
 		return true;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Delete file
 	bool C_DeleteFile(const char* aPath)
 	{
 		int r; //Result var
@@ -98,7 +115,7 @@ namespace C
 		else
 			return false;
 	}
-
+	//Create folder
 	bool C_CreateFolder(const char* aPath)
 	{
 		int r; //Result var
@@ -122,12 +139,14 @@ namespace C
 		else
 			return false;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Conversion from degrees to radians
 	float C_DegToRads(float aDeg)
 	{
 		return aDeg * 3.141592659 / 180.0f;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Conversion from radians to degrees
 	float C_RadsToDeg(float aRads)
 	{
 		return aRads * 180.0f / 3.141592659;
