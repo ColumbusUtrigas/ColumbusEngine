@@ -79,10 +79,10 @@ namespace C
 					case 'f':
 					{
 						float f = va_arg(arglist, double);
-            if (!win)
+       			if (!win)
 						  printf("\x1b[37;1m%f\x1b[0m", f);
-            else
-              printf("%f", f);
+   			    else
+       			  printf("%f", f);
 						break;
 					}
 
@@ -98,19 +98,19 @@ namespace C
 
 					default:
 					{
-            if (!win)
-						  printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
-            else
-              printf("%c", fmt[i]);
+      			if (!win)
+			 			  printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
+      			else
+        		  printf("%c", fmt[i]);
 						break;
 					}
 				}
 			} else
 			{
-        if (!win)
-          printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
-        else
-          printf("%c", fmt[i]);
+			  if (!win)
+		  		printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
+		    else
+		        printf("%c", fmt[i]);
 			}
 		}
 		printf("\n");
@@ -469,57 +469,57 @@ namespace C
 					{
 						char c = va_arg(arglist, int);
             if (!win)
-						  printf("\x1b[37;1m%c\x1b[0m", c);
+							printf("\x1b[37;1m%c\x1b[0m", c);
             else
-              printf("%c", c);
+            	printf("%c", c);
 						break;
 					}
 
 					case 'p':
 					{
 						void* p = va_arg(arglist, void*);
-            if (!win)
-						  printf("\x1b[37;1m%p\x1b[0m", p);
-            else
-              printf("%p", p);
+       			if (!win)
+							printf("\x1b[37;1m%p\x1b[0m", p);
+       			else
+       				printf("%p", p);
 						break;
 					}
 
 					case 'f':
 					{
 						float f = va_arg(arglist, double);
-            if (!win)
-						  printf("\x1b[37;1m%f\x1b[0m", f);
-            else
-              printf("%f", f);
+      			if (!win)
+							printf("\x1b[37;1m%f\x1b[0m", f);
+	          else
+       				printf("%f", f);
 						break;
 					}
 
 					case 's':
 					{
 						char* s = va_arg(arglist, char*);
-            if (!win)
-						  printf("\x1b[37;1m%s\x1b[0m", s);
-            else
-              printf("%s", s);
+       			if (!win)
+							printf("\x1b[37;1m%s\x1b[0m", s);
+	          else
+       				printf("%s", s);
 						break;
 					}
 
 					default:
 					{
-            if (!win)
-						  printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
-            else
-              printf("%c", fmt[i]);
+       			if (!win)
+							printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
+       			else
+       				printf("%c", fmt[i]);
 						break;
 					}
 				}
 			} else
 			{
-        if (!win)
-          printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
-        else
-          printf("%c", fmt[i]);
+     		if (!win)
+     			printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
+  	 		else
+  				printf("%c", fmt[i]);
 			}
 		}
 		printf("\n");
@@ -550,50 +550,50 @@ namespace C
 					case 'i':
 					{
 						int i = va_arg(arglist, int);
-            if (!win)
-					    printf("\x1b[37;1m%i\x1b[0m", i);
-            else
-              printf("%i", i);
+       			if (!win)
+				    	printf("\x1b[37;1m%i\x1b[0m", i);
+       			else
+         			printf("%i", i);
 						break;
 					}
 
 					case 'd':
 					{
 						int i = va_arg(arglist, int);
-            if (!win)
-					    printf("\x1b[37;1m%i\x1b[0m", i);
-            else
-              printf("%i", i);
+       			if (!win)
+				    	printf("\x1b[37;1m%i\x1b[0m", i);
+       			else
+       				printf("%i", i);
 						break;
 					}
 
 					case 'c':
 					{
 						char c = va_arg(arglist, int);
-            if (!win)
-						  printf("\x1b[37;1m%c\x1b[0m", c);
-            else
-              printf("%c", c);
+       			if (!win)
+							printf("\x1b[37;1m%c\x1b[0m", c);
+       			else
+       				printf("%c", c);
 						break;
 					}
 
 					case 'p':
 					{
 						void* p = va_arg(arglist, void*);
-            if (!win)
-						  printf("\x1b[37;1m%p\x1b[0m", p);
+       			if (!win)
+							printf("\x1b[37;1m%p\x1b[0m", p);
             else
-              printf("%p", p);
+	     				printf("%p", p);
 						break;
 					}
 
 					case 'f':
 					{
 						float f = va_arg(arglist, double);
-            if (!win)
-						  printf("\x1b[37;1m%f\x1b[0m", f);
-            else
-              printf("%f", f);
+			      if (!win)
+						printf("\x1b[37;1m%f\x1b[0m", f);
+            	else
+            printf("%f", f);
 						break;
 					}
 
@@ -601,27 +601,27 @@ namespace C
 					{
 						char* s = va_arg(arglist, char*);
             if (!win)
-						  printf("\x1b[37;1m%s\x1b[0m", s);
+							printf("\x1b[37;1m%s\x1b[0m", s);
             else
-              printf("%s", s);
+            	printf("%s", s);
 						break;
 					}
 
 					default:
 					{
-            if (!win)
-						  printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
-            else
-              printf("%c", fmt[i]);
+          	if (!win)
+							printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
+			      else
+          		printf("%c", fmt[i]);
 						break;
 					}
 				}
 			} else
 			{
-        if (!win)
-          printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
-        else
-          printf("%c", fmt[i]);
+      	if (!win)
+      		printf("\x1b[37;1m%c\x1b[0m", fmt[i]);
+      	else
+      		printf("%c", fmt[i]);
 			}
 		}
 		printf("\n");
