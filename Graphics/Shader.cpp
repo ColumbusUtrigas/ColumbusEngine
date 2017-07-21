@@ -31,13 +31,13 @@ namespace C
 
 		if(vertSource == nullptr)
 		{
-			printf("Error: Shader not loaded: %s\n", aVert);
+			C_Error("Shader not loaded %s", aVert);
 			return;
 		}
 
 		if(fragSource == nullptr)
 		{
-			printf("Error: Shader not loaded: %s\n", aFrag);
+			C_Error("Shader not loaded %s", aFrag);
 			return;
 		}
 
@@ -90,8 +90,8 @@ namespace C
 		glDeleteShader(fragment);
 		mID = program;
 
-		printf("Shader successfuly loaded: %s\n", aVert);
-		printf("Shader successfuly loaded: %s\n", aFrag);
+		C_Success("Shader loaded %s", aVert);
+		C_Success("Shader loaded %s", aFrag);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Load shader from one file

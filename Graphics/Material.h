@@ -17,6 +17,7 @@
 #include <Graphics/Cubemap.h>
 #include <Graphics/Shader.h>
 #include <System/System.h>
+#include <System/Console.h>
 
 namespace C
 {

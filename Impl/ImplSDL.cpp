@@ -28,11 +28,10 @@ namespace C
 		{
 			if(SDL_Init(SDL_INIT_EVERYTHING))
 			{
-				printf("Fatal Error: Can't initialize SDL\n");
-				exit(1);
+				C_FatalError("Can't initialize SDL2");
 			} else
 			{
-				printf("SDL2 successfuly initialized\n");
+				C_Initialization("SDL2 initialized");
 			}
 		}
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -69,11 +68,10 @@ namespace C
 
 		if(glewInit() != GLEW_OK)
 		{
-			printf("Fatal Error: Can't initialize GLEW\n");
-			exit(1);
+			C_FatalError("Can't initialize GLEW");
 		} else
 		{
-			printf("GLEW successfuly initialized\n");
+			C_Initialization("GLEW initialized");
 		}
 
 		SDL_version cVer;
@@ -82,12 +80,12 @@ namespace C
 		SDL_VERSION(&cVer);
 		SDL_GetVersion(&lVer);
 
-		printf("SDL version: %d.%d.%d\n", cVer.major, cVer.minor, cVer.patch);
-		printf("SDL linked version:%d.%d.%d\n", lVer.major, lVer.minor, lVer.patch);
-		printf("OpenGL version: %s\n", glGetString(GL_VERSION));
-		printf("OpenGL vendor: %s\n", glGetString(GL_VENDOR));
-		printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
-		printf("GLSL version: %s\n\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+		C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
+		C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+		C_Initialization("OpenGL version: %s", glGetString(GL_VERSION));
+		C_Initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
+		C_Initialization("OpenGL renderer: %s", glGetString(GL_RENDERER));
+		C_Initialization("GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		C_SDL_INITED = true;
 
@@ -101,12 +99,11 @@ namespace C
 		{
 			if (SDL_Init(SDL_INIT_EVERYTHING))
 			{
-				printf("Fatal Error: Can't initialize SDL\n");
-				exit(1);
+				C_FatalError("Can't initialize SDL2");
 			}
 			else
 			{
-				printf("SDL2 successfuly initialized\n");
+				C_Initialization("SDL2 initialized");
 			}
 		}
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -152,12 +149,11 @@ namespace C
 
 			if (glewInit() != GLEW_OK)
 			{
-				printf("Fatal Error: Can't initialize GLEW\n");
-				exit(1);
+				C_FatalError("Can't initialize GLEW");
 			}
 			else
 			{
-				printf("GLEW successfuly initialized\n");
+				C_Initialization("SDL2 initialized");
 			}
 
 			SDL_version cVer;
@@ -166,12 +162,12 @@ namespace C
 			SDL_VERSION(&cVer);
 			SDL_GetVersion(&lVer);
 
-			printf("SDL version: %d.%d.%d\n", cVer.major, cVer.minor, cVer.patch);
-			printf("SDL linked version:%d.%d.%d\n", lVer.major, lVer.minor, lVer.patch);
-			printf("OpenGL version: %s\n", glGetString(GL_VERSION));
-			printf("OpenGL vendor: %s\n", glGetString(GL_VENDOR));
-			printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
-			printf("GLSL version: %s\n\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+			C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
+			C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+			C_Initialization("OpenGL version: %s", glGetString(GL_VERSION));
+			C_Initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
+			C_Initialization("OpenGL renderer: %s", glGetString(GL_RENDERER));
+			C_Initialization("GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 			C_SDL_INITED = true;
 

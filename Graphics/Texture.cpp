@@ -18,11 +18,11 @@ namespace C
 	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight)
 	{
 		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath, 0);
-		if (formato == FIF_UNKNOWN) { printf("Error: Can't get type of File: %s\n", aPath); return NULL; }
+		if (formato == FIF_UNKNOWN) { C_Error("Can't get type of File: %s", aPath); return NULL; }
 		FIBITMAP* imagen = FreeImage_Load(formato, aPath);
-		if (!imagen) { printf("Error: Can't load Image File: %s\n", aPath); return NULL; }
+		if (!imagen) { C_Error("Can't load Image File: %s", aPath); return NULL; }
 		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
-		if (!imagen) { printf("Error: Can't convert image to 32 Bits: %s\n", aPath); return NULL; }
+		if (!imagen) { C_Error("Can't convert image to 32 Bits: %s", aPath); return NULL; }
 		FreeImage_Unload(imagen);
 		imagen = temp;
 
@@ -30,7 +30,7 @@ namespace C
 		*aWidth = FreeImage_GetWidth(imagen);
 		*aHeight = FreeImage_GetHeight(imagen);
 
-		printf("Image successfuly loaded: %s\n", aPath);
+		C_Success("Image loaded: %s", aPath);
 
 		return bits;
 	}
@@ -59,11 +59,11 @@ namespace C
 		if (mBuffer != NULL)
 			FreeImage_Unload(mBuffer);
 		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath, 0);
-		if (formato == FIF_UNKNOWN) { printf("Error: Image Format Unknown: %s\n", aPath); return; }
+		if (formato == FIF_UNKNOWN) { C_Error("Can't get type of File: %s", aPath); return; }
 		FIBITMAP* imagen = FreeImage_Load(formato, aPath);
-		if (!imagen) { printf("Error: Can't load Image: %s\n", aPath); return; }
+		if (!imagen) { C_Error("Can't load Image File: %s", aPath); return; }
 		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
-		if (!imagen) { printf("Error: Can't convert Image to 32 Bits: %s\n", aPath); return; }
+		if (!imagen) { C_Error("Can't convert image to 32 Bits: %s", aPath); return; }
 		FreeImage_Unload(imagen);
 		imagen = temp;
 
@@ -133,7 +133,7 @@ namespace C
 		mHeight = nHeight;
 		mBPP = nBPP;
 
-		printf("Texture successfuly loaded: %s\n", aPath);
+		C_Success("Texture loaded: %s", aPath);
 
 	}
 
@@ -283,7 +283,7 @@ namespace C
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		printf("Texture successfuly reloaded");
+		C_Success("Texture reloaded");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set texture config
@@ -466,6 +466,8 @@ namespace C
 					{
 						FreeImage_Save(FIF_BMP, mBuffer, aFile, 0);
 					}
+
+		C_Success("Image saved: %s", aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Bind texture

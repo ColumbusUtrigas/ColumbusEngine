@@ -13,6 +13,7 @@
 #include <Graphics/Render.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Skybox.h>
+#include <System/Console.h>
 #include <System/System.h>
 #include <System/Timer.h>
 #include <Graphics/Texture.h>

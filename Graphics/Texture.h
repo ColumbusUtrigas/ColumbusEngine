@@ -17,6 +17,7 @@
 #include <cstring>
 
 #include <System/System.h>
+#include <System/Console.h>
 
 namespace C
 {

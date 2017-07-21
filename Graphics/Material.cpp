@@ -148,7 +148,7 @@ namespace C
 		C_XMLElement* tmp = doc.NewElement("Color");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material color: %s\n", aFile);
+			C_Error("Can't save Material color: %s", aFile);
 			return;
 		}
 		tmp->SetAttribute("R", color.x);
@@ -159,23 +159,10 @@ namespace C
 
 		tmp = NULL;
 
-		tmp = doc.NewElement("Diffuse");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			printf("Error: Can't save Material diffuse: %s\n", aFile);
-			return;
-		}
-		tmp->SetAttribute("R", diffuse.x);
-		tmp->SetAttribute("G", diffuse.y);
-		tmp->SetAttribute("B", diffuse.z);
-		root->InsertEndChild(tmp);
-
-		tmp = NULL;
-
 		tmp = doc.NewElement("Ambient");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material ambient: %s\n", aFile);
+			C_Error("Can't save Material ambient: %s", aFile);
 			return;
 		}
 		tmp->SetAttribute("R", ambient.x);
@@ -185,10 +172,23 @@ namespace C
 
 		tmp = NULL;
 
+		tmp = doc.NewElement("Diffuse");
+		if(tmp == NULL && tmp == nullptr)
+		{
+			C_Error("Can't save Material diffuse: %s", aFile);
+			return;
+		}
+		tmp->SetAttribute("R", diffuse.x);
+		tmp->SetAttribute("G", diffuse.y);
+		tmp->SetAttribute("B", diffuse.z);
+		root->InsertEndChild(tmp);
+
+		tmp = NULL;
+
 		tmp = doc.NewElement("Specular");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material specular: %s\n", aFile);
+			C_Error("Can't save Material specular: %s", aFile);
 			return;
 		}
 		tmp->SetAttribute("R", specular.x);
@@ -201,7 +201,7 @@ namespace C
 		tmp = doc.NewElement("Shininess");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material shininess: %s\n", aFile);
+			C_Error("Can't save Material shininess: %s", aFile);
 			return;
 		}
 		tmp->SetText(shininess);
@@ -209,11 +209,11 @@ namespace C
 
 		if(doc.SaveFile(aFile) != C_XML_SUCCESS)
 		{
-			printf("Error: Can't save Material: %s\n", aFile);
+			C_Error("Can't save Material: %s", aFile);
 			return;
 		}
 
-		printf("Material successfuly saved: %s\n", aFile);
+		C_Success("Material saved: %s", aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Deserialize from XML file
@@ -222,21 +222,21 @@ namespace C
 		C_XMLDoc doc;
 		if(doc.LoadFile(aFile) != C_XML_SUCCESS)
 		{
-			printf("Error: Can't load Material: %s\n", aFile);
+			C_Error("Can't load Material: %s\n", aFile);
 			return;
 		}
 
 		C_XMLElement* root = doc.FirstChildElement("Material");
 		if(root == NULL && root == nullptr)
 		{
-			printf("Error: Can't load Material: %s\n", aFile);
+			C_Error("Can't load Material: %s\n", aFile);
 			return;
 		}
 
 		C_XMLElement* tmp = root->FirstChildElement("Color");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Color: %s\n", aFile);
+			C_Error("Can't load Material color: %s", aFile);
 			return;
 		}
 
@@ -250,7 +250,7 @@ namespace C
 		tmp = root->FirstChildElement("Ambient");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Ambient: %s\n", aFile);
+			C_Error("Can't load Material ambient: %s", aFile);
 			return;
 		}
 
@@ -263,7 +263,7 @@ namespace C
 		tmp = root->FirstChildElement("Diffuse");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Diffuse: %s\n", aFile);
+			C_Error("Can't load Material diffuse: %s", aFile);
 			return;
 		}
 
@@ -276,7 +276,7 @@ namespace C
 		tmp = root->FirstChildElement("Specular");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Specular: %s\n", aFile);
+			C_Error("Can't load Material specular: %s", aFile);
 			return;
 		}
 
@@ -289,7 +289,7 @@ namespace C
 		tmp = root->FirstChildElement("Shininess");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Shininess: %s\n", aFile);
+			C_Error("Can't load Material shininess: %s", aFile);
 			return;
 		}
 
@@ -297,7 +297,7 @@ namespace C
 
 		tmp = NULL;
 
-		printf("Material successfuly loaded: %s\n", aFile);
+		C_Success("Material loaded: %s", aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

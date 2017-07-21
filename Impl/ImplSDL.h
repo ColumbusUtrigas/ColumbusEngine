@@ -18,6 +18,7 @@
 #include <GL/glew.h>
 
 #include <Math/Vector2.h>
+#include <System/Console.h>
 
 namespace C
 {

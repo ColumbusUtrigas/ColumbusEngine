@@ -32,12 +32,12 @@ namespace C
 		data[4] = C_LoadImage(aPath[4].c_str(), &nWidth[4], &nHeight[4]);
 		data[5] = C_LoadImage(aPath[5].c_str(), &nWidth[5], &nHeight[5]);
 
-		if (data[0] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[1] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[2] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[3] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[4] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[5] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[0] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[2] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[3] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[1] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[4] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[5] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
 
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, nWidth[0], nHeight[0], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[0]);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, nWidth[1], nHeight[1], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[1]);

@@ -16,6 +16,7 @@
 #include <FreeImage.h>
 
 #include <Graphics/Texture.h>
+#include <System/Console.h>
 
 namespace C
 {
