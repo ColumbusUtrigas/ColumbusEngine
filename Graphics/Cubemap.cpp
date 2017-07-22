@@ -1,8 +1,20 @@
+/************************************************
+*              		 Cubemap.cpp                  *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   20.07.2017                  *
+*************************************************/
+
 #include <Graphics/Cubemap.h>
 
 namespace C
 {
 
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor
 	C_Cubemap::C_Cubemap(C_CubemapPath aPath)
 	{
 		glGenTextures(1, &mID);
@@ -20,12 +32,12 @@ namespace C
 		data[4] = C_LoadImage(aPath[4].c_str(), &nWidth[4], &nHeight[4]);
 		data[5] = C_LoadImage(aPath[5].c_str(), &nWidth[5], &nHeight[5]);
 
-		if (data[0] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[1] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[2] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[3] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[4] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[5] == NULL) { printf("Error: Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[0] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[2] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[3] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[1] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[4] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+		if (data[5] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
 
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, nWidth[0], nHeight[0], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[0]);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, nWidth[1], nHeight[1], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[1]);
@@ -40,29 +52,30 @@ namespace C
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Bind cubemap
 	void C_Cubemap::bind()
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, mID);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Create sampler and bind cubemap
 	void C_Cubemap::samplerCube(int i)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
 		bind();
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Unbind cubemap
 	void C_Cubemap::unbind()
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Destructor
 	C_Cubemap::~C_Cubemap()
 	{
 
 	}
 
 }
-
-
-

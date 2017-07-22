@@ -21,19 +21,32 @@ int main(int argc, char** argv)
 	textureManager.add(&tex);
 	textureManager.add(&spec);
 
-	//C_Mesh mesh(Importer::C_LoadOBJVertices("Data/Models/Texture.obj"));
-	C_Mesh mesh(C_PrimitiveBox());
+	Importer::C_Importer importer;
+	importer.load("Data/Models/ASD.obj");
+
+
+	C_Mesh mesh(importer.mVertices[0]);
+	C_Mesh mesh2(C_PrimitiveBox());
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
 	mesh.setPos(C_Vector3(2, 0, 0));
-	mesh.setScale(C_Vector3(2, 0.5, 0.5));
+
+	mesh2.mMat.setTexture(&tex);
+	mesh2.mMat.setSpecMap(&spec);
+	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
+	mesh2.mMat.setShader(&shader);
+	mesh2.setPos(C_Vector3(2, 0, 0));
+
+	mesh.addChild(&mesh2);
+
 
 	C_Camera camera;
 	C_Render render;
 	render.setMainCamera(&camera);
 	render.add(&mesh);
+	render.add(&mesh2);
 
 	float i = 0;
 
@@ -55,13 +68,11 @@ int main(int argc, char** argv)
 
 	render.setSkybox(&skybox);
 
-	C_ParticleEmitter particles(100);
-	particles.setSize(3.0);
-	particles.setRandom(C_Vector3(-0.5, -1, -0.5), C_Vector3(0.5, -0.5, 0.5));
-	particles.setSpeed(3.0);
+	C_ParticleEffect particleEffect;
+	C_ParticleEmitter particles(&particleEffect);
 
 	C_Texture partex("Data/Textures/smoke.png");
-	particles.setTexture(&partex);
+	//particles.setTexture(&partex);
 
 	textureManager.add(&partex);
 
@@ -71,7 +82,7 @@ int main(int argc, char** argv)
 
 		window.clear(0, 0, 0.75, 1);
 
-		C_SetPerspective(60, window.aspect(), 0.00001, 100000);
+		C_SetPerspective(60, window.aspect(), 0.001, 1000);
 
 		if (window.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * 0.1);
@@ -107,10 +118,6 @@ int main(int argc, char** argv)
 			printf("Key up\n");
 
 		//mesh.addRot(C_Vector3(1, 1, 0));
-
-		//mesh.draw();
-
-		skybox.draw();
 
 		render.render();
 

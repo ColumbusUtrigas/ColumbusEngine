@@ -5,12 +5,15 @@
 #include <Graphics/Cubemap.h>
 #include <Impl/EventSystem.h>
 #include <Impl/ImplSDL.h>
+#include <Graphics/Importer.h>
 #include <Graphics/Model.h>
+#include <Graphics/ParticleEffect.h>
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/Render.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Skybox.h>
+#include <System/Console.h>
 #include <System/System.h>
 #include <System/Timer.h>
 #include <Graphics/Texture.h>

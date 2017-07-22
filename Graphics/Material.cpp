@@ -1,8 +1,20 @@
+/************************************************
+*                 Material.cpp                  *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   20.07.2017                  *
+*************************************************/
+
 #include <Graphics/Material.h>
 
 namespace C
 {
 
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor
 	C_Material::C_Material()
 	{
 		color = C_Vector4(1, 1, 1, 1);
@@ -11,102 +23,122 @@ namespace C
 		specular = C_Vector3(1, 1, 1);
 		shininess = 32;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 2
 	C_Material::C_Material(const char* aFile)
 	{
 		loadFromFile(aFile);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set color
 	void C_Material::setColor(const C_Vector4 aColor)
 	{
 		color = (C_Vector4)aColor;
 	}
-
-	void C_Material::setDiffuse(const C_Vector3 aDiffuse)
-	{
-		diffuse = (C_Vector3)aDiffuse;
-	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set light ambient color
 	void C_Material::setAmbient(const C_Vector3 aAmbient)
 	{
 		ambient = (C_Vector3)aAmbient;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set light diffuse color
+	void C_Material::setDiffuse(const C_Vector3 aDiffuse)
+	{
+		diffuse = (C_Vector3)aDiffuse;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set light specular color
 	void C_Material::setSpecular(const C_Vector3 aSpecular)
 	{
 		specular = (C_Vector3)aSpecular;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set specular shininess
 	void C_Material::setShininess(const float aShininess)
 	{
 		shininess = (float)aShininess;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set diffuse texture
 	void C_Material::setTexture(const C_Texture* aTexture)
 	{
 		texture = (C_Texture*)aTexture;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set specular texture
 	void C_Material::setSpecMap(const C_Texture* aSpecMap)
 	{
 		specmap = (C_Texture*)aSpecMap;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set shader
 	void C_Material::setShader(const C_Shader* aShader)
 	{
 		shader = (C_Shader*)aShader;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Set cubemap reflection
 	void C_Material::setReflection(const C_Cubemap* aReflecction)
 	{
 		envRefl = (C_Cubemap*)aReflecction;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return color
 	C_Vector4 C_Material::getColor()
 	{
 		return color;
 	}
-
-	C_Vector3 C_Material::getDiffuse()
-	{
-		return diffuse;
-	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return light ambient color
 	C_Vector3 C_Material::getAmbient()
 	{
 		return ambient;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return light diffuer color
+	C_Vector3 C_Material::getDiffuse()
+	{
+		return diffuse;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return light specular color
 	C_Vector3 C_Material::getSpecular()
 	{
 		return specular;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return specular shininess
 	float C_Material::getShininess()
 	{
 		return shininess;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return diffuse texture
 	C_Texture* C_Material::getTexture()
 	{
 		return texture;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return specular texture
 	C_Texture* C_Material::getSpecMap()
 	{
 		return specmap;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Return shader
 	C_Shader* C_Material::getShader()
 	{
 		return shader;
 	}
-	
+	//////////////////////////////////////////////////////////////////////////////
+	//Return cubemap reflection
 	C_Cubemap* C_Material::getReflection()
 	{
 		return envRefl;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Serialize to XML file
 	void C_Material::saveToFile(const char* aFile)
 	{
 		C_XMLDoc doc;
@@ -116,7 +148,7 @@ namespace C
 		C_XMLElement* tmp = doc.NewElement("Color");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material color: %s\n", aFile);
+			C_Error("Can't save Material color: %s", aFile);
 			return;
 		}
 		tmp->SetAttribute("R", color.x);
@@ -127,23 +159,10 @@ namespace C
 
 		tmp = NULL;
 
-		tmp = doc.NewElement("Diffuse");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			printf("Error: Can't save Material diffuse: %s\n", aFile);
-			return;
-		}
-		tmp->SetAttribute("R", diffuse.x);
-		tmp->SetAttribute("G", diffuse.y);
-		tmp->SetAttribute("B", diffuse.z);
-		root->InsertEndChild(tmp);
-
-		tmp = NULL;
-
 		tmp = doc.NewElement("Ambient");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material ambient: %s\n", aFile);
+			C_Error("Can't save Material ambient: %s", aFile);
 			return;
 		}
 		tmp->SetAttribute("R", ambient.x);
@@ -153,10 +172,23 @@ namespace C
 
 		tmp = NULL;
 
+		tmp = doc.NewElement("Diffuse");
+		if(tmp == NULL && tmp == nullptr)
+		{
+			C_Error("Can't save Material diffuse: %s", aFile);
+			return;
+		}
+		tmp->SetAttribute("R", diffuse.x);
+		tmp->SetAttribute("G", diffuse.y);
+		tmp->SetAttribute("B", diffuse.z);
+		root->InsertEndChild(tmp);
+
+		tmp = NULL;
+
 		tmp = doc.NewElement("Specular");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material specular: %s\n", aFile);
+			C_Error("Can't save Material specular: %s", aFile);
 			return;
 		}
 		tmp->SetAttribute("R", specular.x);
@@ -169,7 +201,7 @@ namespace C
 		tmp = doc.NewElement("Shininess");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't save Material shininess: %s\n", aFile);
+			C_Error("Can't save Material shininess: %s", aFile);
 			return;
 		}
 		tmp->SetText(shininess);
@@ -177,33 +209,34 @@ namespace C
 
 		if(doc.SaveFile(aFile) != C_XML_SUCCESS)
 		{
-			printf("Error: Can't save Material: %s\n", aFile);
+			C_Error("Can't save Material: %s", aFile);
 			return;
 		}
 
-		printf("Material successfuly saved: %s\n", aFile);
+		C_Success("Material saved: %s", aFile);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Deserialize from XML file
 	void C_Material::loadFromFile(const char* aFile)
 	{
 		C_XMLDoc doc;
 		if(doc.LoadFile(aFile) != C_XML_SUCCESS)
 		{
-			printf("Error: Can't load Material: %s\n", aFile);
+			C_Error("Can't load Material: %s\n", aFile);
 			return;
 		}
 
 		C_XMLElement* root = doc.FirstChildElement("Material");
 		if(root == NULL && root == nullptr)
 		{
-			printf("Error: Can't load Material: %s\n", aFile);
+			C_Error("Can't load Material: %s\n", aFile);
 			return;
 		}
 
 		C_XMLElement* tmp = root->FirstChildElement("Color");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Color: %s\n", aFile);
+			C_Error("Can't load Material color: %s", aFile);
 			return;
 		}
 
@@ -217,7 +250,7 @@ namespace C
 		tmp = root->FirstChildElement("Ambient");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Ambient: %s\n", aFile);
+			C_Error("Can't load Material ambient: %s", aFile);
 			return;
 		}
 
@@ -230,7 +263,7 @@ namespace C
 		tmp = root->FirstChildElement("Diffuse");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Diffuse: %s\n", aFile);
+			C_Error("Can't load Material diffuse: %s", aFile);
 			return;
 		}
 
@@ -243,7 +276,7 @@ namespace C
 		tmp = root->FirstChildElement("Specular");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Specular: %s\n", aFile);
+			C_Error("Can't load Material specular: %s", aFile);
 			return;
 		}
 
@@ -256,7 +289,7 @@ namespace C
 		tmp = root->FirstChildElement("Shininess");
 		if(tmp == NULL && tmp == nullptr)
 		{
-			printf("Error: Can't load Material Shininess: %s\n", aFile);
+			C_Error("Can't load Material shininess: %s", aFile);
 			return;
 		}
 
@@ -264,9 +297,10 @@ namespace C
 
 		tmp = NULL;
 
-		printf("Material successfuly loaded: %s\n", aFile);
+		C_Success("Material loaded: %s", aFile);
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Destructor
 	C_Material::~C_Material()
 	{
 
