@@ -125,7 +125,7 @@ int main(int argc, char** argv)
 
 		window.display();
 
-		SDL_Delay(16);
+		//SDL_Delay(16);
 	}
 
 	shader.unbind();
