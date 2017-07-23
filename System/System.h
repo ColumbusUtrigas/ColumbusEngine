@@ -1,5 +1,5 @@
 /************************************************
-*              			System.h                    *
+*                   System.h                    *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
@@ -53,6 +53,8 @@ namespace C
 	float C_DegToRads(float aDeg);
 	//Conversion from radians to degrees
 	float C_RadsToDeg(float aRads);
+	//Random between two floats
+	float C_RandomBetween(float aMin, float aMax);
 
 
 }

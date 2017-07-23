@@ -24,7 +24,8 @@ namespace C
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
 			C_Particle p;
-			p.TTL = 1.0;
+			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 
 			mParticles.push_back(p);
 		}
@@ -41,8 +42,9 @@ namespace C
 			return;
 		if (mShader == nullptr)
 			return;
-
 		if (mBuf == nullptr)
+			return;
+		if (mParticleEffect->getVisible() == false)
 			return;
 
 		float e = mParticles[0].TTL / mParticleEffect->getParticlesCount();
@@ -57,7 +59,6 @@ namespace C
 		mShader->bind();
 
 		mShader->setUniform3f("uPos", C_Vector3(0, 0, 0));
-		mShader->setUniform1f("uVel", 1.0);
 
 		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
@@ -78,6 +79,8 @@ namespace C
 					mParticles[i].tm.reset();
 
 				mShader->setUniform1f("uTime", mParticles[i].tm.elapsed() / 1000000);
+				mShader->setUniform1f("uVel", mParticles[i].velocity);
+				mShader->setUniform1f("uAcc", 0.0);
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
 		}

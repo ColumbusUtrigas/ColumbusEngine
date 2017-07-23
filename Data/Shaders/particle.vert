@@ -20,7 +20,7 @@ uniform int uRenderMode;
 void main(void)
 {
 	float t = uTime;
-	vec3 a = uPos + 1 * uVel * t + uPos * uAcc * t * t / 2.0;
+	vec3 a = uPos + uPos * uVel * t + uPos * uAcc * t * t / 2.0;
 	a = aPos * uSize + a;
 
 	if (uRenderMode == 0)
@@ -29,7 +29,7 @@ void main(void)
 	if (uRenderMode == 1)
 		gl_Position = uProjection * uView * vec4(a, 1.0);
 
-	gl_Position = uProjection * uView * vec4(vec3(0.0, uTime, 0.0) + aPos, 1.0);
+	gl_Position = uProjection * uView * vec4(vec3(0.0, uTime * uVel, 0.0) + aPos + uPos, 1.0);
 
 	//gl_Position = uProjection * uView * vec4(a, 1.0);
 
