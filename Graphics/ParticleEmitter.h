@@ -29,7 +29,7 @@ namespace C
 
 	struct C_Particle
 	{
-		C_Vector3 velocity = C_Vector3(0.0, 1.0, 0.0);
+		float velocity = 1.0;
 
 		C_Timer tm;
 

@@ -1,5 +1,5 @@
 /************************************************
-*              		 ImplSDL.cpp                  *
+*                  ImplSDL.cpp                  *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
@@ -55,6 +55,9 @@ namespace C
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
    		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+		SDL_GL_SetSwapInterval(0);
+
    		glEnable(GL_TEXTURE_2D);
    		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
@@ -133,6 +136,8 @@ namespace C
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 			SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+			SDL_GL_SetSwapInterval(0);
 
 			glEnable(GL_TEXTURE_2D);
 			glEnable(GL_BLEND);
@@ -363,6 +368,12 @@ namespace C
 			return (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(aButton)) ? true : false;
 		else
 			return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set vertical sync
+	void C_SDLWindow::setVerticalSync(bool aV)
+	{
+		SDL_GL_SetSwapInterval(aV ? 1 : 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

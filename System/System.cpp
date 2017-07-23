@@ -1,5 +1,5 @@
 /************************************************
-*              		 System.cpp                   *
+*                  System.cpp                   *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
@@ -151,6 +151,11 @@ namespace C
 	{
 		return aRads * 180.0f / 3.141592659;
 	}
-
+	//////////////////////////////////////////////////////////////////////////////
+	//Random between two floats
+	float C_RandomBetween(float aMin, float aMax)
+	{
+		return (aMin + (float)(rand()) / ((float)(RAND_MAX / (aMax - aMin))));
+	}
 
 }

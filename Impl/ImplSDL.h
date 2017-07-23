@@ -1,5 +1,5 @@
 /************************************************
-*              		 	ImplSDL.h                   *
+*                   ImplSDL.h                   *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
@@ -96,6 +96,8 @@ namespace C
 		bool getKeyUp(int aKey);
 		//Return mouse-button-press in window
 		bool getMouseButton(int aButton);
+		//Set vertical sync
+		void setVerticalSync(bool aV);
 		//Destructor
 		~C_SDLWindow();
 	};

@@ -76,6 +76,10 @@ int main(int argc, char** argv)
 
 	textureManager.add(&partex);
 
+	C_Timer timer;
+
+	int FPS = 0;
+
 	while (window.isOpen())
 	{
 		event.pollEvents();
@@ -125,7 +129,18 @@ int main(int argc, char** argv)
 
 		window.display();
 
-		//SDL_Delay(16);
+		//SDL_Delay(10);
+
+		FPS++;
+
+		if ((timer.elapsed() / 1000000) > 1.0)
+		{
+			printf("%i\n", FPS);
+			FPS = 0;
+			timer.reset();
+		}
+
+		//printf("%f\n", timer.elapsed() / 1000000);
 	}
 
 	shader.unbind();
