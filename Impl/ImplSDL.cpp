@@ -264,12 +264,26 @@ namespace C
 		glClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, getSize().x, getSize().y);
+		mDrawTime.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Display window
 	void C_SDLWindow::display()
 	{
+		glFinish();
 		SDL_GL_SwapWindow(mWindow);
+
+		float RedrawTime = mDrawTime.elapsed() / 1000;
+
+		int DelayMs = (int)(mTimeToDraw * 1000 - RedrawTime);
+
+		if (DelayMs - 1 > 0)
+			SDL_Delay(DelayMs);
+
+		mRedrawTime = mDrawTime.elapsed() / 1000;
+
+		mFPS = (int)(1.0 / mRedrawTime * 1000);
+
 		//C_TimeUpdate();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -374,6 +388,31 @@ namespace C
 	void C_SDLWindow::setVerticalSync(bool aV)
 	{
 		SDL_GL_SetSwapInterval(aV ? 1 : 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set FPS limit
+	void C_SDLWindow::setFPSLimit(unsigned aFPSLimit)
+	{
+		mFPSLimit = aFPSLimit;
+		mTimeToDraw = 1.0 / (float)mFPSLimit;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return FPS limit
+	unsigned C_SDLWindow::getFPSLimit()
+	{
+		return mFPSLimit;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//return redraw time
+	float C_SDLWindow::getRedrawTime()
+	{
+		return mRedrawTime / 1000;
+	}
+	/////////////////////////////////////////////////////////////////////////////
+	//Return FPS
+	int C_SDLWindow::getFPS()
+	{
+		return mFPS;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
