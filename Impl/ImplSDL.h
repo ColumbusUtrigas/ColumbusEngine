@@ -19,6 +19,7 @@
 
 #include <Math/Vector2.h>
 #include <System/Console.h>
+#include <System/Timer.h>
 
 namespace C
 {
@@ -44,6 +45,12 @@ namespace C
 		bool mouseFocus = false;
 		bool shown = false;
 		bool minimized = false;
+
+		C_Timer mDrawTime;
+		float mTimeToDraw = 1.0 / 60.0;
+		unsigned mFPSLimit = 60;
+		float mRedrawTime = 0.0;
+		int mFPS = 0;
 
 		Uint8* keys;
 
@@ -98,6 +105,14 @@ namespace C
 		bool getMouseButton(int aButton);
 		//Set vertical sync
 		void setVerticalSync(bool aV);
+		//Set FPS limit
+		void setFPSLimit(unsigned aFPSLimit);
+		//Return FPS limit
+		unsigned getFPSLimit();
+		//Return redraw time
+		float getRedrawTime();
+		//Return FPS;
+		int getFPS();
 		//Destructor
 		~C_SDLWindow();
 	};

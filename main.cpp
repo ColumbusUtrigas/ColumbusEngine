@@ -2,6 +2,8 @@
 
 using namespace C;
 
+int FPS_LIMIT = 120;
+
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;;
@@ -80,8 +82,12 @@ int main(int argc, char** argv)
 
 	int FPS = 0;
 
+	window.setVerticalSync(true);
+
 	while (window.isOpen())
 	{
+		float RedrawTime = window.getRedrawTime();
+
 		event.pollEvents();
 
 		window.clear(0, 0, 0.75, 1);
@@ -89,30 +95,30 @@ int main(int argc, char** argv)
 		C_SetPerspective(60, window.aspect(), 0.001, 1000);
 
 		if (window.getKey(SDL_SCANCODE_W))
-			camera.addPos(camera.direction() * 0.1);
+			camera.addPos(camera.direction() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_S))
-			camera.addPos(C_Vector3(0, 0, 0) - camera.direction() * 0.1);
+			camera.addPos(C_Vector3(0, 0, 0) - camera.direction() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_A))
-			camera.addPos(C_Vector3(0, 0, 0) - camera.right() * 0.1);
+			camera.addPos(C_Vector3(0, 0, 0) - camera.right() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_D))
-			camera.addPos(camera.right() * 0.1);
+			camera.addPos(camera.right() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_UP))
-			camera.addRot(C_Vector3(-2.5, 0, 0));
+			camera.addRot(C_Vector3(-125 * RedrawTime, 0, 0));
 		if (window.getKey(SDL_SCANCODE_DOWN))
-			camera.addRot(C_Vector3(2.5, 0, 0));
+			camera.addRot(C_Vector3(125 * RedrawTime, 0, 0));
 		if (window.getKey(SDL_SCANCODE_LEFT))
-			camera.addRot(C_Vector3(0, 2.5, 0));
+			camera.addRot(C_Vector3(0, 125 * RedrawTime, 0));
 		if (window.getKey(SDL_SCANCODE_RIGHT))
-			camera.addRot(C_Vector3(0, -2.5, 0));
+			camera.addRot(C_Vector3(0, -125 * RedrawTime, 0));
 
 		if (window.getKey(SDL_SCANCODE_LSHIFT))
-			camera.addPos(C_Vector3(0, 0, 0) - camera.up() * 0.1);
+			camera.addPos(C_Vector3(0, 0, 0) - camera.up() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_SPACE))
-			camera.addPos(camera.up() * 0.1);
+			camera.addPos(camera.up() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_Q))
-			camera.addRot(C_Vector3(0, 0, 2.5));
+			camera.addRot(C_Vector3(0, 0, 125 * RedrawTime));
 		if (window.getKey(SDL_SCANCODE_E))
-			camera.addRot(C_Vector3(0, 0, -2.5));
+			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
 
 		camera.update();
 
@@ -129,18 +135,11 @@ int main(int argc, char** argv)
 
 		window.display();
 
-		//SDL_Delay(10);
-
-		FPS++;
-
 		if ((timer.elapsed() / 1000000) > 1.0)
 		{
-			printf("%i\n", FPS);
-			FPS = 0;
+			printf("%i\n", window.getFPS());
 			timer.reset();
 		}
-
-		//printf("%f\n", timer.elapsed() / 1000000);
 	}
 
 	shader.unbind();
