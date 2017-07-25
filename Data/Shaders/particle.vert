@@ -9,29 +9,22 @@ varying vec2 varTexCoord;
 uniform mat4 uView;
 uniform mat4 uProjection;
 uniform vec3 uPos;
-uniform float uRandom;
+
+uniform int uCount;
+
+uniform vec3 uDirection;
 uniform float uVel;
 uniform float uAcc;
 uniform float uTTL;
 uniform float uTime;
-uniform float uSize;
+
 uniform int uRenderMode;
 
 void main(void)
 {
-	float t = uTime;
-	vec3 a = uPos + uPos * uVel * t + uPos * uAcc * t * t / 2.0;
-	a = aPos * uSize + a;
+	vec3 pos = uTime * uVel * uDirection;
 
-	if (uRenderMode == 0)
-		gl_Position = uProjection * (uView * vec4(a.x,  a.y, a.z, 1.0));
-
-	if (uRenderMode == 1)
-		gl_Position = uProjection * uView * vec4(a, 1.0);
-
-	gl_Position = uProjection * uView * vec4(vec3(0.0, uTime * uVel, 0.0) + aPos + uPos, 1.0);
-
-	//gl_Position = uProjection * uView * vec4(a, 1.0);
+	gl_Position = uProjection * uView * vec4(pos + aPos + uPos, 1.0);
 
 	varTexCoord = aUV;
 }

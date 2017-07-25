@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <vector>
 #include <ctime>
+#include <sstream>
 
 #include <System/System.h>
 #include <System/Timer.h>
@@ -29,6 +30,8 @@ namespace C
 
 	struct C_Particle
 	{
+		C_Vector3 direction = C_Vector3(0, 1, 0);
+
 		float velocity = 1.0;
 
 		C_Timer tm;

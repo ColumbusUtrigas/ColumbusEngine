@@ -71,6 +71,7 @@ int main(int argc, char** argv)
 	render.setSkybox(&skybox);
 
 	C_ParticleEffect particleEffect;
+	particleEffect.setParticlesCount(64);
 	C_ParticleEmitter particles(&particleEffect);
 
 	C_Texture partex("Data/Textures/smoke.png");
@@ -83,6 +84,7 @@ int main(int argc, char** argv)
 	int FPS = 0;
 
 	window.setVerticalSync(true);
+	//window.setFPSLimit(120);
 
 	while (window.isOpen())
 	{

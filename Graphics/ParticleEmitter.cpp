@@ -26,6 +26,7 @@ namespace C
 			C_Particle p;
 			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			p.direction = C_Vector3::random(C_Vector3(-1, -1, -1), C_Vector3(1, 1, 1));
 
 			mParticles.push_back(p);
 		}
@@ -76,9 +77,13 @@ namespace C
 			if (mParticles[i].active == true)
 			{
 				if ((float)(mParticles[i].tm.elapsed() / 1000000) >= mParticles[i].TTL)
+				{
 					mParticles[i].tm.reset();
+					//mParticles[i].direction = C_Vector3::random(C_Vector3(-1, -1, -1), C_Vector3(1, 1, 1));
+				}
 
 				mShader->setUniform1f("uTime", mParticles[i].tm.elapsed() / 1000000);
+				mShader->setUniform3f("uDirection", mParticles[i].direction);
 				mShader->setUniform1f("uVel", mParticles[i].velocity);
 				mShader->setUniform1f("uAcc", 0.0);
 				glDrawArrays(GL_TRIANGLES, 0, 6);
