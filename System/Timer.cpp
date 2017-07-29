@@ -23,16 +23,18 @@ namespace C
 	//Reset timer
 	void C_Timer::reset()
 	{
-		start = std::chrono::high_resolution_clock::now();
-		end = std::chrono::high_resolution_clock::now();
+		start = std::chrono::steady_clock::now();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return elapsed timer
-	float C_Timer::elapsed()
+	double C_Timer::elapsed()
 	{
-		end = std::chrono::high_resolution_clock::now();
-		auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-		return dur.count();
+		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+		std::chrono::steady_clock::duration time_span = end - start;
+		double nseconds = double(time_span.count()) * std::chrono::steady_clock::period::num / std::chrono::steady_clock::period::den;
+		return nseconds;
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

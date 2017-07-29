@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 
 		window.display();
 
-		if ((timer.elapsed() / 1000000) > 1.0)
+		if ((timer.elapsed()) > 1.0)
 		{
 			printf("%i\n", window.getFPS());
 			timer.reset();
@@ -148,3 +148,4 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+

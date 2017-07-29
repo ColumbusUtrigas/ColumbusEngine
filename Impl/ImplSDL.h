@@ -47,8 +47,8 @@ namespace C
 		bool minimized = false;
 
 		C_Timer mDrawTime;
-		float mTimeToDraw = 1.0 / 60.0;
 		unsigned mFPSLimit = 60;
+		float mTimeToDraw = 1.0 / (float)mFPSLimit;
 		float mRedrawTime = 0.0;
 		int mFPS = 0;
 

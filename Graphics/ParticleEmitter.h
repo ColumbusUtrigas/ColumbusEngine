@@ -51,6 +51,7 @@ namespace C
 		C_Shader* mShader = NULL;
 
 		C_Buffer* mBuf = NULL;
+		C_Buffer* mTBuf = NULL;
 
 		C_Timer tm;
 
@@ -63,6 +64,16 @@ namespace C
 			-0.1, -0.1, 0.0,
 			0.1, -0.1, 0.0,
 			0.1, 0.1, 0.0
+		};
+		//UV buffer
+		float uvs[12] = 
+		{
+			1.0, 1.0,
+			0.0, 1.0,
+			0.0, 0.0,
+			0.0, 0.0,
+			1.0, 0.0,
+			1.0, 1.0
 		};
 	public:
 		//Constructor
