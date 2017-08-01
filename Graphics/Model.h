@@ -31,6 +31,7 @@ namespace C
 		C_Vector3 mPos;
 		C_Vector3 mRot;
 		C_Vector3 mScale;
+		C_Vector3 mPivot;
 		glm::mat4 mMatrix;
 
 		C_Mesh* mParent = NULL;
@@ -71,6 +72,12 @@ namespace C
 		void setParent(C_Mesh* aParent);
 		//Add child mesh
 		void addChild(C_Mesh* aChild);
+		//Set pivot point
+		void setPivot(C_Vector3 aPivot);
+		//Return pivot point
+		C_Vector3 getPivot();
+		//Add position to pivot point
+		void addPivot(C_Vector3 aPivot);
 		//Clear all
 		void clear();
 		//Destructor

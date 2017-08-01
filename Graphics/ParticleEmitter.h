@@ -15,6 +15,7 @@
 #include <vector>
 #include <ctime>
 #include <sstream>
+#include <algorithm>
 
 #include <System/System.h>
 #include <System/Timer.h>

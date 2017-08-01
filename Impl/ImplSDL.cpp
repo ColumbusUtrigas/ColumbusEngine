@@ -277,8 +277,6 @@ namespace C
 
 		int DelayMs = (int)(mTimeToDraw * 1000 - RedrawTime);
 
-		//printf("%i\n", DelayMs);
-
 		if (DelayMs - 1 > 0)
 			SDL_Delay(DelayMs);
 

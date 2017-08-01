@@ -33,13 +33,13 @@ int main(int argc, char** argv)
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
-	mesh.setPos(C_Vector3(2, 0, 0));
+	mesh.setPos(C_Vector3(0, 0, 0));
 
 	mesh2.mMat.setTexture(&tex);
 	mesh2.mMat.setSpecMap(&spec);
 	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh2.mMat.setShader(&shader);
-	mesh2.setPos(C_Vector3(2, 0, 0));
+	mesh2.setPos(C_Vector3(0, 0, 0));
 
 	mesh.addChild(&mesh2);
 
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
-		//mesh.addRot(C_Vector3(1, 1, 0));
+		mesh2.addRot(C_Vector3(0, 1, 0));
 
 		render.render();
 
