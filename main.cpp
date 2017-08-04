@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh.mMat.setShader(&shader);
-	mesh.setPos(C_Vector3(0, 0, 0));
+	mesh.setPos(C_Vector3(2, 0, 0));
 
 	mesh2.mMat.setTexture(&tex);
 	mesh2.mMat.setSpecMap(&spec);
@@ -70,14 +70,24 @@ int main(int argc, char** argv)
 
 	render.setSkybox(&skybox);
 
+	C_Material partmat;
+	C_Texture partex("Data/Textures/smoke.png");
+	textureManager.add(&partex);
+	partmat.setTexture(&partex);
+	partmat.setColor(C_Vector4(1.0, 1.0, 1.0, 0.5));
+
+
 	C_ParticleEffect particleEffect;
 	particleEffect.setParticlesCount(64);
+	particleEffect.setMaterial(&partmat);
+	particleEffect.setParticleSize(C_Vector2(15, 15));
+	particleEffect.setMinDirection(C_Vector3(-0.3, 0.0, -0.3));
+	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
+	particleEffect.setMinVelocity(3.0);
+	particleEffect.setMaxVelocity(3.0);
+	particleEffect.setMinTimeToLive(0.5);
+	particleEffect.setMaxTimeToLive(1.2);
 	C_ParticleEmitter particles(&particleEffect);
-
-	C_Texture partex("Data/Textures/smoke.png");
-	//particles.setTexture(&partex);
-
-	textureManager.add(&partex);
 
 	C_Timer timer;
 

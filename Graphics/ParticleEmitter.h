@@ -33,6 +33,8 @@ namespace C
 	{
 		C_Vector3 direction = C_Vector3(0, 1, 0);
 
+		C_Vector3 pos;
+
 		float velocity = 1.0;
 
 		C_Timer tm;
@@ -55,6 +57,8 @@ namespace C
 		C_Buffer* mTBuf = NULL;
 
 		C_Timer tm;
+
+		int mFrame = 0;
 
 		//Vertex buffer
 		float vrts[18] =

@@ -28,8 +28,7 @@ namespace C
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
     C_Vector3 mConstantForce = C_Vector3(0, 0, 0);
 
-    C_Vector2 mMinParticleSize = C_Vector2(1, 1);
-    C_Vector2 mMaxParticleSize = C_Vector2(1, 1);
+    C_Vector2 mParticleSize = C_Vector2(1, 1);
 
     float mMinTimeToLive = 1.0;
     float mMaxTimeToLive = 1.0;
@@ -54,10 +53,8 @@ namespace C
     void setMaxDirection(const C_Vector3 aMaxDirection);
     //Set constant force acting on particles
     void setConstantForce(const C_Vector3 aConstantForce);
-    //Set particle minimum size
-    void setMinParticleSize(const C_Vector2 aMinParticleSize);
-    //Set particle maximum size
-    void setMaxParticleSize(const C_Vector2 aMaxParticleSize);
+    //Set particle size
+    void setParticleSize(const C_Vector2 aParticleSize);
     //Set particle minimum time to live
     void setMinTimeToLive(const float aMinTimeToLive);
     //Set particle maximum time to live
@@ -88,10 +85,8 @@ namespace C
     C_Vector3 getMaxDirection();
     //Return constant force acting on particles
     C_Vector3 getConstantForce();
-    //Return minimum particle size
-    C_Vector2 getMinParticleSize();
-    //Return maximum particle size
-    C_Vector2 getMaxParticleSize();
+    //Return particle size
+    C_Vector2 getParticleSize();
     //Return particle minimum time to live
     float getMinTimeToLive();
     //Return particle maximum time to live

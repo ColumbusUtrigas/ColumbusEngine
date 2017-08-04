@@ -9,7 +9,7 @@ void main()
 {
 	vec4 tex = texture(uTex, varTexCoord);
 
-	if (tex.w < 0.1)
+	if (tex.w < 0.05)
 		discard;
 
 	if (tex.xyz != vec3(0))
@@ -17,5 +17,5 @@ void main()
 	else
 		gl_FragColor = uColor;
 
-	gl_FragColor = vec4(1);
+	//gl_FragColor = vec4(varTexCoord, 1.0, 1.0);
 }

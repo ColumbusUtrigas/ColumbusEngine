@@ -76,19 +76,21 @@ namespace C
 		//Opeator *
 		inline C_Vector3 operator*(const C_Vector3 aOther)
 		{
-			x *= aOther.x;
-			y *= aOther.y;
-			z *= aOther.z;
-			return *this;
+			C_Vector3 ret = *this;
+			ret.x *= aOther.x;
+			ret.y *= aOther.y;
+			ret.z *= aOther.z;
+			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector3 operator*(const float aOther)
 		{
-			x *= aOther;
-			y *= aOther;
-			z *= aOther;
-			return *this;
+			C_Vector3 ret = *this;
+			ret.x *= aOther;
+			ret.y *= aOther;
+			ret.z *= aOther;
+			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
@@ -164,6 +166,7 @@ namespace C
 			x /= l;
 			y /= l;
 			z /= l;
+			return *this;
 		}
 		//Destructor
 		inline ~C_Vector3() {}

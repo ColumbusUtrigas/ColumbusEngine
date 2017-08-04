@@ -8,23 +8,18 @@ varying vec2 varTexCoord;
 
 uniform mat4 uView;
 uniform mat4 uProjection;
-uniform vec3 uPos;
 
-uniform int uCount;
-
-uniform vec3 uDirection;
-uniform float uVel;
-uniform float uAcc;
-uniform float uTTL;
-uniform float uTime;
+uniform vec4 uPosition;
+uniform vec2 uSize;
 
 uniform int uRenderMode;
 
 void main(void)
 {
-	vec3 pos = uTime * uVel * uDirection;
+	vec3 CameraRight = vec3(uView[0][0], uView[1][0], uView[2][0]);
+	vec3 CameraUp = vec3(uView[0][1], uView[1][1], uView[2][1]);
 
-	gl_Position = uProjection * uView * vec4(pos + aPos + uPos, 1.0);
+	gl_Position = uProjection * uView * vec4(uPosition.xyz + aPos * vec3(uSize, 1.0), 1.0);
 
 	varTexCoord = aUV;
 }

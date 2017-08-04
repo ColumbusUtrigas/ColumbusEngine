@@ -53,15 +53,9 @@ namespace C
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set particle minimum size
-  void C_ParticleEffect::setMinParticleSize(const C_Vector2 aMinParticleSize)
+  void C_ParticleEffect::setParticleSize(const C_Vector2 aParticleSize)
   {
-    mMinParticleSize = (C_Vector2)aMinParticleSize;
-  }
-  //////////////////////////////////////////////////////////////////////////////
-  //Set particle maximum size
-  void C_ParticleEffect::setMaxParticleSize(const C_Vector2 aMaxParticleSize)
-  {
-    mMaxParticleSize = (C_Vector2)aMaxParticleSize;
+    mParticleSize = (C_Vector2)aParticleSize;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set paritcle minimum time to live
@@ -149,15 +143,9 @@ namespace C
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return minimum particle size
-  C_Vector2 C_ParticleEffect::getMinParticleSize()
+  C_Vector2 C_ParticleEffect::getParticleSize()
   {
-    return mMinParticleSize;
-  }
-  //////////////////////////////////////////////////////////////////////////////
-  //Return maximum particle size
-  C_Vector2 C_ParticleEffect::getMaxParticleSize()
-  {
-    return mMaxParticleSize;
+    return mParticleSize;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return particle minimum time to live
