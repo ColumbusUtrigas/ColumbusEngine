@@ -112,15 +112,13 @@ namespace C
 				float life = (int)(mParticles[i].tm.elapsed() * 1000) % (int)(mParticles[i].TTL * 1000);
 
 				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
-				C_Vector4 set;
-				set.x = pos.x;
-				set.y = pos.y;
-				set.z = pos.z;
-				set.w = (float)(life / 1000);
 
 				mParticles[i].pos = pos;
 
-				mShader->setUniform4f("uPosition", set);
+				float arr[6] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0};
+
+				//mShader->setUniform4f("uPosition", set);
+				mShader->setUniformArrayf("Unif", arr, 6);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}

@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.setParticlesCount(64);
+	particleEffect.setParticlesCount(1024);
 	particleEffect.setMaterial(&partmat);
 	particleEffect.setParticleSize(C_Vector2(15, 15));
 	particleEffect.setMinDirection(C_Vector3(-0.3, 0.0, -0.3));
