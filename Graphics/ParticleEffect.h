@@ -34,6 +34,9 @@ namespace C
 	C_Vector2 mStartSize = C_Vector2(1, 1);
 	C_Vector2 mFinalSize = C_Vector2(1, 1);
 
+	C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
+	C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
+
     float mMinTimeToLive = 1.0;
     float mMaxTimeToLive = 1.0;
     float mMinVelocity = 1.0;
@@ -65,6 +68,10 @@ namespace C
 	void setStartSize(const C_Vector2 aStartSize);
 	//Set particle final size
 	void setFinalSize(const C_Vector2 aFinalSize);
+	//Set particle start color
+	void setStartColor(const C_Vector4 aStartColor);
+	//Set particle final color
+	void setFinalColor(const C_Vector4 aFinalColor);
     //Set particle minimum time to live
     void setMinTimeToLive(const float aMinTimeToLive);
     //Set particle maximum time to live
@@ -103,6 +110,10 @@ namespace C
 	C_Vector2 getStartSize();
 	//Return particle final size
 	C_Vector2 getFinalSize();
+	//Return particle start color
+	C_Vector4 getStartColor();
+	//Return particle final color
+	C_Vector4 getFinalColor();
     //Return particle minimum time to live
     float getMinTimeToLive();
     //Return particle maximum time to live

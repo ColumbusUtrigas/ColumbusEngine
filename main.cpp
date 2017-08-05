@@ -39,7 +39,6 @@ int main(int argc, char** argv)
 	mesh2.mMat.setSpecMap(&spec);
 	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh2.mMat.setShader(&shader);
-	mesh2.setPos(C_Vector3(0, 0, 0));
 
 	mesh.addChild(&mesh2);
 
@@ -82,6 +81,8 @@ int main(int argc, char** argv)
 	particleEffect.setMaterial(&partmat);
 	particleEffect.setStartSize(C_Vector2(0.5, 0.5));
 	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
+	particleEffect.setStartColor(C_Vector4(1, 1, 1, 0.5));
+	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.1));
 	particleEffect.setMinDirection(C_Vector3(-0.3, 0.0, -0.3));
 	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
 	particleEffect.setMinVelocity(3.0);

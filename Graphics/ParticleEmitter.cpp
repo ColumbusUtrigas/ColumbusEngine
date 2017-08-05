@@ -73,6 +73,8 @@ namespace C
 		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
 		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
 		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
+		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
+		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
 
 		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));

@@ -76,6 +76,18 @@ namespace C
 	  mFinalSize = (C_Vector2)aFinalSize;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particle start color
+  void C_ParticleEffect::setStartColor(C_Vector4 aStartColor)
+  {
+	  mStartColor = (C_Vector4)aStartColor;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle final color
+  void C_ParticleEffect::setFinalColor(C_Vector4 aFinalColor)
+  {
+	  mFinalColor = (C_Vector4)aFinalColor;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set paritcle minimum time to live
   void C_ParticleEffect::setMinTimeToLive(const float aMinTimeToLive)
   {
@@ -178,10 +190,22 @@ namespace C
 	  return mStartSize;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //REturn particle final size
+  //Return particle final size
   C_Vector2 C_ParticleEffect::getFinalSize()
   {
 	  return mFinalSize;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle start color
+  C_Vector4 C_ParticleEffect::getStartColor()
+  {
+	  return mStartColor;;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle final color
+  C_Vector4 C_ParticleEffect::getFinalColor()
+  {
+	  return mFinalColor;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return particle minimum time to live

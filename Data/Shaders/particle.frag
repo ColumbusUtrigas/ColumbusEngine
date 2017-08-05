@@ -7,6 +7,8 @@ varying float varIsGradient;
 
 uniform vec4 uColor;
 uniform sampler2D uTex;
+uniform vec4 uStartColor;
+uniform vec4 uFinalColor;
 
 void main()
 {
@@ -14,7 +16,7 @@ void main()
 	vec4 Gradient;
 
 	if (varIsGradient != 0.0)
-		Gradient = mix(vec4(1, 1, 1, 0.5), vec4(1, 1, 1, 0.1), varTime / varTTL);
+		Gradient = mix(uStartColor, uFinalColor, varTime / varTTL);
 
 	if (varIsGradient == 0.0)
 	{
