@@ -17,6 +17,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include <glm/glm.hpp>
+
 #include <System/System.h>
 #include <System/Timer.h>
 #include <Math/Vector2.h>
@@ -60,15 +62,17 @@ namespace C
 
 		int mFrame = 0;
 
+		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
+
 		//Vertex buffer
 		float vrts[18] =
 		{
-			0.1, 0.1, 0.0,
-			-0.1, 0.1, 0.0,
-			-0.1, -0.1, 0.0,
-			-0.1, -0.1, 0.0,
-			0.1, -0.1, 0.0,
-			0.1, 0.1, 0.0
+			1, 1, 0.0,
+			-1, 1, 0.0,
+			-1, -1, 0.0,
+			-1, -1, 0.0,
+			1, -1, 0.0,
+			1, 1, 0.0
 		};
 		//UV buffer
 		float uvs[12] = 
@@ -85,6 +89,8 @@ namespace C
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 		//Set particle effect
 		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
+		//Set camera pos
+		void setCameraPos(C_Vector3 aC);
 		//Draw particles
 		void draw();
 		//Destructor

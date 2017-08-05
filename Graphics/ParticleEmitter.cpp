@@ -37,6 +37,12 @@ namespace C
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float));
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set camera pos
+	void C_ParticleEmitter::setCameraPos(C_Vector3 aC)
+	{
+		mCameraPos = aC;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
 	void C_ParticleEmitter::draw()
 	{
@@ -65,6 +71,8 @@ namespace C
 
 		mShader->setUniform3f("uPos", C_Vector3(0, 0, 0));
 		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
+		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
+		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
 
 		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
 		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
@@ -88,9 +96,26 @@ namespace C
 
 		if (mFrame >= 10)
 		{
-			auto func = [](const C_Particle & a, const C_Particle & b) -> bool
+			float mCX = mCameraPos.x;
+			float mCY = mCameraPos.y;
+			float mCZ = mCameraPos.z;
+
+			auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
 			{
-				return a.pos.z < b.pos.z;
+				/*float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
+				float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
+
+				return l1 > l2;*/
+
+				glm::vec3 mC(mCX, mCY, mCZ);
+
+				glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
+				glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
+
+				q -= mC;
+				w -= mC;
+
+				return glm::length(q) > glm::length(w);
 			};
 
 			std::sort(mParticles.begin(), mParticles.end(), func);
@@ -115,10 +140,10 @@ namespace C
 
 				mParticles[i].pos = pos;
 
-				float arr[6] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0};
+				float arr[8] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0};
 
 				//mShader->setUniform4f("uPosition", set);
-				mShader->setUniformArrayf("Unif", arr, 6);
+				mShader->setUniformArrayf("Unif", arr, 8);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}

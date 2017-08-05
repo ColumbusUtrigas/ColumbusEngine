@@ -159,6 +159,7 @@ namespace C
 			ret.z = aMin.z + (float)(rand()) / ((float)(RAND_MAX / (aMax.z - aMin.z)));
 			return ret;
 		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
 		inline C_Vector3 normalize()
 		{
@@ -167,6 +168,13 @@ namespace C
 			y /= l;
 			z /= l;
 			return *this;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return lenght between 2 vectors
+		inline float lenght(C_Vector3 aVec)
+		{
+			float l = sqrt((x - aVec.x) * (y - aVec.y) * (z - aVec.z));
+			return l;
 		}
 		//Destructor
 		inline ~C_Vector3() {}

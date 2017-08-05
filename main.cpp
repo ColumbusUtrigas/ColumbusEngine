@@ -78,9 +78,10 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.setParticlesCount(1024);
+	particleEffect.setParticlesCount(128);
 	particleEffect.setMaterial(&partmat);
-	particleEffect.setParticleSize(C_Vector2(15, 15));
+	particleEffect.setStartSize(C_Vector2(0.5, 0.5));
+	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
 	particleEffect.setMinDirection(C_Vector3(-0.3, 0.0, -0.3));
 	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
 	particleEffect.setMinVelocity(3.0);
@@ -95,6 +96,8 @@ int main(int argc, char** argv)
 
 	window.setVerticalSync(true);
 	//window.setFPSLimit(120);
+
+	render.add(&particles);
 
 	while (window.isOpen())
 	{
@@ -143,7 +146,7 @@ int main(int argc, char** argv)
 
 		render.render();
 
-		particles.draw();
+		//particles.draw();
 
 		window.display();
 

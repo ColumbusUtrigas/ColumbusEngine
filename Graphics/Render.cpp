@@ -26,6 +26,12 @@ namespace C
 		mMeshes.push_back(aMesh);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Add particle emitter
+	void C_Render::add(C_ParticleEmitter* aP)
+	{
+		mParticleEmitters.push_back(aP);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Set main camera
 	void C_Render::setMainCamera(C_Camera* aCamera)
 	{
@@ -54,6 +60,14 @@ namespace C
 				mMeshes[i]->setCamera(*mCamera);
 
 			mMeshes[i]->draw();
+		}
+
+		for (size_t i = 0; i < mParticleEmitters.size(); i++)
+		{
+			if (mCamera != nullptr)
+				mParticleEmitters[i]->setCameraPos(mCamera->pos());
+
+			mParticleEmitters[i]->draw();
 		}
 
 		glDisableVertexAttribArray(0);
