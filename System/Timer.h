@@ -18,15 +18,14 @@ namespace C
 	class C_Timer
 	{
 	private:
-		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	public:
 		//Constructor
 		C_Timer();
 		//Reset timer
 		void reset();
 		//Return elapsed time
-		float elapsed();
+		double elapsed();
 		//Destructor
 		~C_Timer();
 	};

@@ -26,6 +26,12 @@ namespace C
 		mMeshes.push_back(aMesh);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Add particle emitter
+	void C_Render::add(C_ParticleEmitter* aP)
+	{
+		mParticleEmitters.push_back(aP);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Set main camera
 	void C_Render::setMainCamera(C_Camera* aCamera)
 	{
@@ -44,6 +50,10 @@ namespace C
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+
 		for (size_t i = 0; i < mMeshes.size(); i++)
 		{
 			if (mCamera != nullptr)
@@ -51,6 +61,26 @@ namespace C
 
 			mMeshes[i]->draw();
 		}
+
+		for (size_t i = 0; i < mParticleEmitters.size(); i++)
+		{
+			if (mCamera != nullptr)
+				mParticleEmitters[i]->setCameraPos(mCamera->pos());
+
+			mParticleEmitters[i]->draw();
+		}
+
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		glDisableVertexAttribArray(2);
+
+		C_Cubemap::unbind();
+
+		C_Buffer::unbind();
+
+		C_Texture::unbind();
+
+		C_Shader::unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

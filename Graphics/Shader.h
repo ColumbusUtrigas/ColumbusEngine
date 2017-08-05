@@ -48,6 +48,8 @@ namespace C
 		void setUniform4f(const char* aName, const C_Vector4 aValue);
 		//Set matrix uniform
 		void setUniformMatrix(const char* aName, const float* aValue);
+		//Set uniform array
+		void setUniformArrayf(const char* aName, const float aArray[], const size_t aSize);
 		//Bind shader
 		void bind();
 		//Unbind shader

@@ -23,13 +23,19 @@ namespace C
     unsigned mParticleCount = 5;
 
     bool mVisible = true;
+	bool mScaleOverLifetime = false;
 
     C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
     C_Vector3 mConstantForce = C_Vector3(0, 0, 0);
 
-    C_Vector2 mMinParticleSize = C_Vector2(1, 1);
-    C_Vector2 mMaxParticleSize = C_Vector2(1, 1);
+    C_Vector2 mParticleSize = C_Vector2(1, 1);
+
+	C_Vector2 mStartSize = C_Vector2(1, 1);
+	C_Vector2 mFinalSize = C_Vector2(1, 1);
+
+	C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
+	C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
 
     float mMinTimeToLive = 1.0;
     float mMaxTimeToLive = 1.0;
@@ -48,16 +54,24 @@ namespace C
     void setParticlesCount(const unsigned aParticlesCount);
     //Set particles visible
     void setVisible(const bool aVisible);
+	//Set particles scale over lifetime
+	void setScaleOverLifetime(const bool aA);
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
     void setMaxDirection(const C_Vector3 aMaxDirection);
     //Set constant force acting on particles
     void setConstantForce(const C_Vector3 aConstantForce);
-    //Set particle minimum size
-    void setMinParticleSize(const C_Vector2 aMinParticleSize);
-    //Set particle maximum size
-    void setMaxParticleSize(const C_Vector2 aMaxParticleSize);
+    //Set particle size
+    void setParticleSize(const C_Vector2 aParticleSize);
+	//Set particle start size
+	void setStartSize(const C_Vector2 aStartSize);
+	//Set particle final size
+	void setFinalSize(const C_Vector2 aFinalSize);
+	//Set particle start color
+	void setStartColor(const C_Vector4 aStartColor);
+	//Set particle final color
+	void setFinalColor(const C_Vector4 aFinalColor);
     //Set particle minimum time to live
     void setMinTimeToLive(const float aMinTimeToLive);
     //Set particle maximum time to live
@@ -82,16 +96,24 @@ namespace C
     unsigned getParticlesCount();
     //Return particles visible
     bool getVisible();
+	//Return particles scale over lifetime
+	bool getScaleOverLifetime();
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction
     C_Vector3 getMaxDirection();
     //Return constant force acting on particles
     C_Vector3 getConstantForce();
-    //Return minimum particle size
-    C_Vector2 getMinParticleSize();
-    //Return maximum particle size
-    C_Vector2 getMaxParticleSize();
+    //Return particle size
+    C_Vector2 getParticleSize();
+	//Return particle start size
+	C_Vector2 getStartSize();
+	//Return particle final size
+	C_Vector2 getFinalSize();
+	//Return particle start color
+	C_Vector4 getStartColor();
+	//Return particle final color
+	C_Vector4 getFinalColor();
     //Return particle minimum time to live
     float getMinTimeToLive();
     //Return particle maximum time to live

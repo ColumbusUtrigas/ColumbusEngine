@@ -39,7 +39,6 @@ int main(int argc, char** argv)
 	mesh2.mMat.setSpecMap(&spec);
 	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
 	mesh2.mMat.setShader(&shader);
-	mesh2.setPos(C_Vector3(2, 0, 0));
 
 	mesh.addChild(&mesh2);
 
@@ -70,19 +69,36 @@ int main(int argc, char** argv)
 
 	render.setSkybox(&skybox);
 
-	C_ParticleEffect particleEffect;
-	C_ParticleEmitter particles(&particleEffect);
-
+	C_Material partmat;
 	C_Texture partex("Data/Textures/smoke.png");
-	//particles.setTexture(&partex);
-
 	textureManager.add(&partex);
+	partmat.setTexture(&partex);
+	partmat.setColor(C_Vector4(1.0, 1.0, 1.0, 0.5));
+
+
+	C_ParticleEffect particleEffect;
+	particleEffect.setParticlesCount(128);
+	particleEffect.setMaterial(&partmat);
+	particleEffect.setStartSize(C_Vector2(0.5, 0.5));
+	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
+	particleEffect.setStartColor(C_Vector4(1, 1, 1, 0.5));
+	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.1));
+	particleEffect.setMinDirection(C_Vector3(-0.3, 0.0, -0.3));
+	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
+	particleEffect.setMinVelocity(3.0);
+	particleEffect.setMaxVelocity(3.0);
+	particleEffect.setMinTimeToLive(0.5);
+	particleEffect.setMaxTimeToLive(1.2);
+	C_ParticleEmitter particles(&particleEffect);
 
 	C_Timer timer;
 
 	int FPS = 0;
 
 	window.setVerticalSync(true);
+	//window.setFPSLimit(120);
+
+	render.add(&particles);
 
 	while (window.isOpen())
 	{
@@ -127,15 +143,15 @@ int main(int argc, char** argv)
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
-		//mesh.addRot(C_Vector3(1, 1, 0));
+		mesh2.addRot(C_Vector3(0, 1, 0));
 
 		render.render();
 
-		particles.draw();
+		//particles.draw();
 
 		window.display();
 
-		if ((timer.elapsed() / 1000000) > 1.0)
+		if ((timer.elapsed()) > 1.0)
 		{
 			printf("%i\n", window.getFPS());
 			timer.reset();
@@ -146,3 +162,4 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+

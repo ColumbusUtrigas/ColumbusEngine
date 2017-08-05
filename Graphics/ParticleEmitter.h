@@ -14,6 +14,10 @@
 #include <cstdlib>
 #include <vector>
 #include <ctime>
+#include <sstream>
+#include <algorithm>
+
+#include <glm/glm.hpp>
 
 #include <System/System.h>
 #include <System/Timer.h>
@@ -29,6 +33,10 @@ namespace C
 
 	struct C_Particle
 	{
+		C_Vector3 direction = C_Vector3(0, 1, 0);
+
+		C_Vector3 pos;
+
 		float velocity = 1.0;
 
 		C_Timer tm;
@@ -48,24 +56,41 @@ namespace C
 		C_Shader* mShader = NULL;
 
 		C_Buffer* mBuf = NULL;
+		C_Buffer* mTBuf = NULL;
 
 		C_Timer tm;
+
+		int mFrame = 0;
+
+		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
 
 		//Vertex buffer
 		float vrts[18] =
 		{
-			0.1, 0.1, 0.0,
-			-0.1, 0.1, 0.0,
-			-0.1, -0.1, 0.0,
-			-0.1, -0.1, 0.0,
-			0.1, -0.1, 0.0,
-			0.1, 0.1, 0.0
+			1, 1, 0.0,
+			-1, 1, 0.0,
+			-1, -1, 0.0,
+			-1, -1, 0.0,
+			1, -1, 0.0,
+			1, 1, 0.0
+		};
+		//UV buffer
+		float uvs[12] = 
+		{
+			1.0, 1.0,
+			0.0, 1.0,
+			0.0, 0.0,
+			0.0, 0.0,
+			1.0, 0.0,
+			1.0, 1.0
 		};
 	public:
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 		//Set particle effect
 		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
+		//Set camera pos
+		void setCameraPos(C_Vector3 aC);
 		//Draw particles
 		void draw();
 		//Destructor

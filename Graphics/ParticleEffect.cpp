@@ -34,6 +34,12 @@ namespace C
     mVisible = (bool)aVisible;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles scale over lifetime
+  void C_ParticleEffect::setScaleOverLifetime(const bool aA)
+  {
+	  mScaleOverLifetime = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set negative direction limit
   void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
   {
@@ -52,16 +58,34 @@ namespace C
     mConstantForce = (C_Vector3)aConstantForce;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Set particle minimum size
-  void C_ParticleEffect::setMinParticleSize(const C_Vector2 aMinParticleSize)
+  //Set particle size
+  void C_ParticleEffect::setParticleSize(const C_Vector2 aParticleSize)
   {
-    mMinParticleSize = (C_Vector2)aMinParticleSize;
+    mParticleSize = (C_Vector2)aParticleSize;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Set particle maximum size
-  void C_ParticleEffect::setMaxParticleSize(const C_Vector2 aMaxParticleSize)
+  //Set particle start size
+  void C_ParticleEffect::setStartSize(C_Vector2 aStartSize)
   {
-    mMaxParticleSize = (C_Vector2)aMaxParticleSize;
+	  mStartSize = (C_Vector2)aStartSize;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle final size
+  void C_ParticleEffect::setFinalSize(C_Vector2 aFinalSize)
+  {
+	  mFinalSize = (C_Vector2)aFinalSize;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle start color
+  void C_ParticleEffect::setStartColor(C_Vector4 aStartColor)
+  {
+	  mStartColor = (C_Vector4)aStartColor;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle final color
+  void C_ParticleEffect::setFinalColor(C_Vector4 aFinalColor)
+  {
+	  mFinalColor = (C_Vector4)aFinalColor;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set paritcle minimum time to live
@@ -130,6 +154,12 @@ namespace C
     return mVisible;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Return particles scale over lifetime
+  bool C_ParticleEffect::getScaleOverLifetime()
+  {
+	  return mScaleOverLifetime;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Return minimum particle direction
   C_Vector3 C_ParticleEffect::getMinDirection()
   {
@@ -148,16 +178,34 @@ namespace C
     return mConstantForce;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Return minimum particle size
-  C_Vector2 C_ParticleEffect::getMinParticleSize()
+  //Return particle size
+  C_Vector2 C_ParticleEffect::getParticleSize()
   {
-    return mMinParticleSize;
+    return mParticleSize;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Return maximum particle size
-  C_Vector2 C_ParticleEffect::getMaxParticleSize()
+  //Return particle start size
+  C_Vector2 C_ParticleEffect::getStartSize()
   {
-    return mMaxParticleSize;
+	  return mStartSize;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle final size
+  C_Vector2 C_ParticleEffect::getFinalSize()
+  {
+	  return mFinalSize;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle start color
+  C_Vector4 C_ParticleEffect::getStartColor()
+  {
+	  return mStartColor;;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle final color
+  C_Vector4 C_ParticleEffect::getFinalColor()
+  {
+	  return mFinalColor;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return particle minimum time to live

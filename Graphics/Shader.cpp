@@ -178,6 +178,13 @@ namespace C
 			glUniformMatrix4fv(glGetUniformLocation(mID, aName), 1, GL_FALSE, aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set uniform array
+	void C_Shader::setUniformArrayf(const char* aName, const float aArray[], const size_t aSize)
+	{
+		if (mID != 0)
+			glUniform1fv(glGetUniformLocation(mID, aName), aSize, aArray);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Bind shader
 	void C_Shader::bind()
 	{

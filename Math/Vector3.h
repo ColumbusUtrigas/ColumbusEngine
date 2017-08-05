@@ -76,19 +76,21 @@ namespace C
 		//Opeator *
 		inline C_Vector3 operator*(const C_Vector3 aOther)
 		{
-			x *= aOther.x;
-			y *= aOther.y;
-			z *= aOther.z;
-			return *this;
+			C_Vector3 ret = *this;
+			ret.x *= aOther.x;
+			ret.y *= aOther.y;
+			ret.z *= aOther.z;
+			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector3 operator*(const float aOther)
 		{
-			x *= aOther;
-			y *= aOther;
-			z *= aOther;
-			return *this;
+			C_Vector3 ret = *this;
+			ret.x *= aOther;
+			ret.y *= aOther;
+			ret.z *= aOther;
+			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
@@ -157,6 +159,7 @@ namespace C
 			ret.z = aMin.z + (float)(rand()) / ((float)(RAND_MAX / (aMax.z - aMin.z)));
 			return ret;
 		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
 		inline C_Vector3 normalize()
 		{
@@ -164,6 +167,14 @@ namespace C
 			x /= l;
 			y /= l;
 			z /= l;
+			return *this;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return lenght between 2 vectors
+		inline float lenght(C_Vector3 aVec)
+		{
+			float l = sqrt((x - aVec.x) * (y - aVec.y) * (z - aVec.z));
+			return l;
 		}
 		//Destructor
 		inline ~C_Vector3() {}

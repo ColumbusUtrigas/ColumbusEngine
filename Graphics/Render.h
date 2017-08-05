@@ -13,6 +13,7 @@
 #include <Graphics/Model.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
+#include <Graphics/ParticleEmitter.h>
 
 namespace C
 {
@@ -21,6 +22,7 @@ namespace C
 	{
 	private:
 		std::vector<C_Mesh*> mMeshes;
+		std::vector<C_ParticleEmitter*> mParticleEmitters;
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
 	public:
@@ -28,6 +30,8 @@ namespace C
 		C_Render();
 		//Add mesh
 		void add(C_Mesh* aMesh);
+		//Add particle emmitter
+		void add(C_ParticleEmitter* aP);
 		//Set main camera
 		void setMainCamera(C_Camera* aCamera);
 		//Set skybox

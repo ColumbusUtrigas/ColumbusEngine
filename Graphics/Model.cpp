@@ -20,6 +20,7 @@ namespace C
 		mPos = C_Vector3(0, 0, 0);
 		mRot = C_Vector3(0, 0, 0);
 		mScale = C_Vector3(1, 1, 1);
+		mPivot = C_Vector3(0, 0, 0);
 
 		mVert = aVert;
 
@@ -85,19 +86,17 @@ namespace C
 			return;
 		buf->bind();
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
+
 		if (tbuf != NULL && tbuf != nullptr)
 		{
 			tbuf->bind();
 			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-			glEnableVertexAttribArray(1);
 		}
 
 		if (nbuf != NULL && nbuf != nullptr)
 		{
 			nbuf->bind();
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-			glEnableVertexAttribArray(2);
 		}
 
 		if (mMat.getShader() != nullptr)
@@ -106,11 +105,19 @@ namespace C
 
 			C_Texture::unbind();
 
-			mMatrix = glm::translate(glm::mat4(1.0f), mPos.toGLM());
+
+			if (mParent != nullptr)
+				mMatrix = mParent->mMatrix;
+			else
+				mMatrix = glm::mat4(1.0f);
+
+			mMatrix = glm::translate(mMatrix, mPivot.toGLM() + mPos.toGLM());
+			mMatrix = glm::scale(mMatrix, mScale.toGLM());
 			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.z), glm::vec3(0, 0, 1));
 			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.x), glm::vec3(1, 0, 0));
 			mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.y), glm::vec3(0, 1, 0));
-			mMatrix = glm::scale(mMatrix, mScale.toGLM());
+			mMatrix = glm::translate(mMatrix, -(mPivot.toGLM() + mPos.toGLM()));
+			mMatrix = glm::translate(mMatrix, mPos.toGLM());
 
 			glm::mat4 normalMat = glm::inverse(glm::transpose(mMatrix));
 
@@ -153,18 +160,6 @@ namespace C
 
 
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
-
-		C_Cubemap::unbind();
-
-		C_Buffer::unbind();
-
-		C_Texture::unbind();
-
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		glDisableVertexAttribArray(2);
-
-		C_Shader::unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set camera
@@ -223,6 +218,24 @@ namespace C
 
 		mChilds.push_back(aChild);
 		aChild->setParent(this);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set pivot point
+	void C_Mesh::setPivot(C_Vector3 aPivot)
+	{
+		mPivot = aPivot;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return pivot point
+	C_Vector3 C_Mesh::getPivot()
+	{
+		return mPivot;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Add position to pivot
+	void C_Mesh::addPivot(C_Vector3 aPivot)
+	{
+		mPivot += aPivot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
