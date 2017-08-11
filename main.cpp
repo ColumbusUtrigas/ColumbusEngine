@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
 	particleEffect.setStartColor(C_Vector4(1, 1, 1, 0.5));
 	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.1));
-	particleEffect.setMinDirection(C_Vector3(-0.3, 0.0, -0.3));
+	particleEffect.setMinDirection(C_Vector3(-0.3, 1.0, -0.3));
 	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
 	particleEffect.setMinVelocity(3.0);
 	particleEffect.setMaxVelocity(3.0);
