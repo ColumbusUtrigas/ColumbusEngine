@@ -77,18 +77,18 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.setParticlesCount(128);
+	particleEffect.setParticlesCount(100);
 	particleEffect.setMaterial(&partmat);
 	particleEffect.setStartSize(C_Vector2(0.5, 0.5));
 	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
 	particleEffect.setStartColor(C_Vector4(1, 1, 1, 0.5));
-	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.1));
+	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.01));
 	particleEffect.setMinDirection(C_Vector3(-0.3, 1.0, -0.3));
 	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
 	particleEffect.setMinVelocity(3.0);
 	particleEffect.setMaxVelocity(3.0);
-	particleEffect.setMinTimeToLive(0.5);
-	particleEffect.setMaxTimeToLive(1.2);
+	particleEffect.setMinTimeToLive(1.0);
+	particleEffect.setMaxTimeToLive(1.0);
 	C_ParticleEmitter particles(&particleEffect);
 
 	C_Timer timer;

@@ -24,13 +24,11 @@ void main()
 			gl_FragColor = uColor * tex;
 		else
 			gl_FragColor = uColor;
-	}
-
-	
-	if (varIsGradient != 0.0)
+	} else
 	{
 		gl_FragColor = Gradient * tex;
 	}
-	if (gl_FragColor.w < 0.1)
-		discard;
+
+	if (gl_FragColor.w < 0.05)
+			discard;
 }

@@ -43,6 +43,34 @@ namespace C
 		mCameraPos = aC;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Sort particles
+	void C_ParticleEmitter::sort()
+	{
+		float mCX = mCameraPos.x;
+		float mCY = mCameraPos.y;
+		float mCZ = mCameraPos.z;
+
+		auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
+		{
+			float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
+			float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
+
+			return l1 > l2;
+
+			/*glm::vec3 mC(mCX, mCY, mCZ);
+
+			glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
+			glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
+
+			q -= mC;
+			w -= mC;
+
+			return glm::length(q) > glm::length(w);*/
+		};
+
+		std::sort(mParticles.begin(), mParticles.end(), func);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
 	void C_ParticleEmitter::draw()
 	{
@@ -96,31 +124,12 @@ namespace C
 			}
 		}
 
-		if (mFrame >= 10)
+		if (mCameraLastPos.x != mCameraPos.x ||
+			mCameraLastPos.y != mCameraPos.y || 
+			mCameraLastPos.z != mCameraPos.z ||
+			mFrame >= 10)
 		{
-			float mCX = mCameraPos.x;
-			float mCY = mCameraPos.y;
-			float mCZ = mCameraPos.z;
-
-			auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
-			{
-				/*float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
-				float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
-
-				return l1 > l2;*/
-
-				glm::vec3 mC(mCX, mCY, mCZ);
-
-				glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
-				glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
-
-				q -= mC;
-				w -= mC;
-
-				return glm::length(q) > glm::length(w);
-			};
-
-			std::sort(mParticles.begin(), mParticles.end(), func);
+			sort();
 			mFrame = 0;
 		}
 

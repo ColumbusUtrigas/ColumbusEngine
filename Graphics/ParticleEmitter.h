@@ -63,6 +63,7 @@ namespace C
 		int mFrame = 0;
 
 		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
+		C_Vector3 mCameraLastPos = C_Vector3(0, 0, 5);
 
 		//Vertex buffer
 		float vrts[18] =
@@ -84,6 +85,8 @@ namespace C
 			1.0, 0.0,
 			1.0, 1.0
 		};
+		void sort();
+
 	public:
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
