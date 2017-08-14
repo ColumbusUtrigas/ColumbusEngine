@@ -63,7 +63,6 @@ namespace C
 		int mFrame = 0;
 
 		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
-		C_Vector3 mCameraLastPos = C_Vector3(0, 0, 5);
 
 		//Vertex buffer
 		float vrts[18] =

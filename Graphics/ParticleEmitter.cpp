@@ -124,16 +124,15 @@ namespace C
 			}
 		}
 
-		if (mCameraLastPos.x != mCameraPos.x ||
-			mCameraLastPos.y != mCameraPos.y || 
-			mCameraLastPos.z != mCameraPos.z ||
-			mFrame >= 10)
+		if (mFrame >= 10)
 		{
 			sort();
 			mFrame = 0;
 		}
 
 		mFrame++;
+
+		glDepthMask(GL_FALSE);
 
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
@@ -159,6 +158,8 @@ namespace C
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
 		}
+
+		glDepthMask(GL_TRUE);
 
 		C_Shader::unbind();
 		C_Texture::unbind();
