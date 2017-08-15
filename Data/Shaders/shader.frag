@@ -121,7 +121,7 @@ vec3 GetReflection()
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = reflect(I, varNormal);
 
-   	return textureCube(uReflectionMap, vec3(R.x, R.y, -R.z)).rgb;
+   	return textureCube(uReflectionMap, vec3(R.x, R.y, R.z)).rgb;
 }
 
 void main()

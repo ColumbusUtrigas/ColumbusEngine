@@ -53,12 +53,12 @@ int main(int argc, char** argv)
 
 	C_CubemapPath cpath =
 	{
-		"Data/Skyboxes/4/r.tga",
-		"Data/Skyboxes/4/l.tga",
-		"Data/Skyboxes/4/u.tga",
-		"Data/Skyboxes/4/d.tga",
-		"Data/Skyboxes/4/b.tga",
-		"Data/Skyboxes/4/f.tga",
+		"Data/Skyboxes/5/r.jpg",
+		"Data/Skyboxes/5/l.jpg",
+		"Data/Skyboxes/5/d.jpg",
+		"Data/Skyboxes/5/u.jpg",
+		"Data/Skyboxes/5/b.jpg",
+		"Data/Skyboxes/5/f.jpg",
 	};
 
 

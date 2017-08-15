@@ -124,7 +124,7 @@ namespace C
 			}
 		}
 
-		if (mFrame >= 10)
+		if (mFrame >= 60)
 		{
 			sort();
 			mFrame = 0;

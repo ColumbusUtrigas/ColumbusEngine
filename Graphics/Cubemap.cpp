@@ -25,26 +25,13 @@ namespace C
 		int nWidth[6];
 		int nHeight[6];
 
-		data[0] = C_LoadImage(aPath[0].c_str(), &nWidth[0], &nHeight[0]);
-		data[1] = C_LoadImage(aPath[1].c_str(), &nWidth[1], &nHeight[1]);
-		data[2] = C_LoadImage(aPath[2].c_str(), &nWidth[2], &nHeight[2]);
-		data[3] = C_LoadImage(aPath[3].c_str(), &nWidth[3], &nHeight[3]);
-		data[4] = C_LoadImage(aPath[4].c_str(), &nWidth[4], &nHeight[4]);
-		data[5] = C_LoadImage(aPath[5].c_str(), &nWidth[5], &nHeight[5]);
-
-		if (data[0] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[2] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[3] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[1] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[4] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-		if (data[5] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
-
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, nWidth[0], nHeight[0], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[0]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, nWidth[1], nHeight[1], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[1]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, nWidth[2], nHeight[2], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[2]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, nWidth[3], nHeight[3], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[3]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, nWidth[4], nHeight[4], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[4]);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, nWidth[5], nHeight[5], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[5]);
+		for (int i = 0; i < 6; i++)
+		{
+			data[i] = C_LoadImage(aPath[i].c_str(), &nWidth[i], &nHeight[i]);
+			if (data[i] == NULL) { C_Error("Can't load Cubemap"); glDeleteTextures(1, &mID); return; }
+			else
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, nWidth[i], nHeight[i], 0, GL_BGRA, GL_UNSIGNED_BYTE, data[i]);
+		}
 
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
