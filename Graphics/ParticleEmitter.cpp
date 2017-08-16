@@ -150,10 +150,12 @@ namespace C
 
 				mParticles[i].pos = pos;
 
-				float arr[8] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0};
+				C_Vector3 cf = mParticleEffect->getConstantForce();
+
+				float arr[11] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
 
 				//mShader->setUniform4f("uPosition", set);
-				mShader->setUniformArrayf("Unif", arr, 8);
+				mShader->setUniformArrayf("Unif", arr, 11);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
