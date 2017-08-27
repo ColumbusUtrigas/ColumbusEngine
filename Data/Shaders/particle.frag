@@ -9,6 +9,7 @@ uniform vec4 uColor;
 uniform sampler2D uTex;
 uniform vec4 uStartColor;
 uniform vec4 uFinalColor;
+uniform int uDiscard;
 
 void main()
 {
@@ -29,6 +30,6 @@ void main()
 		gl_FragColor = Gradient * tex;
 	}
 
-	if (gl_FragColor.w < 0.05)
+	if (uDiscard == 1 && gl_FragColor.w < 0.05)
 			discard;
 }

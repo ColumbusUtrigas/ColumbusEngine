@@ -33,6 +33,8 @@ namespace C
 		C_Texture* specmap = NULL;
 		C_Shader* shader = NULL;
 
+		bool discard = false;
+
 		C_Cubemap* envRefl = NULL;
 
 		float shininess = 32;
@@ -59,6 +61,8 @@ namespace C
 		void setShader(const C_Shader* aShader);
 		//Set cubemap reflection
 		void setReflection(const C_Cubemap* aReflection);
+		//Set discard alpha
+		void setDiscard(const bool aDiscard);
 		//Return color
 		C_Vector4 getColor();
 		//Return light ambient color
@@ -77,6 +81,8 @@ namespace C
 		C_Shader* getShader();
 		//Return cubemap reflection
 		C_Cubemap* getReflection();
+		//Return discard alpha
+		bool getDiscard();
 		//Serialize to XML file
 		void saveToFile(const char* aFile);
 		//Deserialize from XML file

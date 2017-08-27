@@ -152,7 +152,8 @@ void main()
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = reflect(I, varNormal);
 
-    gl_FragColor = Color + (vec4(Reflection, 1.0) * 0.2);
+    //gl_FragColor = Color + (vec4(Reflection, 1.0) * 0.9);
+    gl_FragColor = mix(Color, vec4(Reflection, 1.0), 0.2);
 
     //gl_FragColor = Color;
 

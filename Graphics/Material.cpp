@@ -84,6 +84,12 @@ namespace C
 		envRefl = (C_Cubemap*)aReflecction;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set discard alpha
+	void C_Material::setDiscard(const bool aDiscard)
+	{
+		discard = (bool)aDiscard;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Return color
 	C_Vector4 C_Material::getColor()
 	{
@@ -136,6 +142,12 @@ namespace C
 	C_Cubemap* C_Material::getReflection()
 	{
 		return envRefl;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return discard alpha
+	bool C_Material::getDiscard()
+	{
+		return discard;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Serialize to XML file
@@ -205,6 +217,17 @@ namespace C
 			return;
 		}
 		tmp->SetText(shininess);
+		root->InsertEndChild(tmp);
+
+		tmp = NULL;
+
+		tmp = doc.NewElement("Discard");
+		if (tmp == NULL && tmp == nullptr)
+		{
+			C_Error("Can't save Material discard: %s", aFile);
+			return;
+		}
+		tmp->SetText(discard);
 		root->InsertEndChild(tmp);
 
 		if(doc.SaveFile(aFile) != C_XML_SUCCESS)
@@ -294,6 +317,17 @@ namespace C
 		}
 
 		tmp->QueryFloatText(&shininess);
+
+		tmp = NULL;
+
+		tmp = root->FirstChildElement("Discard");
+		if (tmp == NULL && tmp == nullptr)
+		{
+			C_Error("Can't load Material discard: %s", aFile);
+			return;
+		}
+
+		tmp->QueryBoolText(&discard);
 
 		tmp = NULL;
 

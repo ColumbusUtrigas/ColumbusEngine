@@ -121,11 +121,13 @@ namespace C
 				mShader->setUniform1i("uTex", 0);
 				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
 			}
+
+			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 
-		if (mFrame >= 60)
+		if (mFrame >= 10)
 		{
-			sort();
+			//sort();
 			mFrame = 0;
 		}
 
