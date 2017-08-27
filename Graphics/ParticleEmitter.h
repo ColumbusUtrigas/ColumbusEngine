@@ -39,7 +39,7 @@ namespace C
 
 		float velocity = 1.0;
 
-		C_Timer tm;
+		float age = 0.0;
 
 		float TTL = 1.0;
 
@@ -59,6 +59,7 @@ namespace C
 		C_Buffer* mTBuf = NULL;
 
 		C_Timer tm;
+		C_Timer frame;
 
 		int mFrame = 0;
 

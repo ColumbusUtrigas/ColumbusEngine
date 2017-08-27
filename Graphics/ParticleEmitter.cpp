@@ -85,7 +85,6 @@ namespace C
 		if (mParticleEffect->getVisible() == false)
 			return;
 
-		float e = mParticles[0].TTL / mParticleEffect->getParticlesCount();
 		float a = tm.elapsed();
 
 		mBuf->bind();
@@ -136,15 +135,18 @@ namespace C
 
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			if (a >= (e * i))
-				mParticles[i].active = true;
-			else
-				mParticles[i].tm.reset();
+			float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
 
-
-			if (mParticles[i].active == true)
+			if (a >= (e * i) && mParticles[i].active == false)
 			{
-				float life = (int)(mParticles[i].tm.elapsed() * 1000) % (int)(mParticles[i].TTL * 1000);
+				mParticles[i].active = true;
+				mParticles[i].age = -(e * i);
+			}
+
+
+			if (mParticles[i].active == true && mParticles[i].age > 0)
+			{
+				float life = (int)(mParticles[i].age * 1000) % (int)(mParticles[i].TTL * 1000);
 
 				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
 
@@ -159,7 +161,11 @@ namespace C
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
+
+			mParticles[i].age += frame.elapsed();
 		}
+
+		frame.reset();
 
 		glDepthMask(GL_TRUE);
 
