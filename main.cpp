@@ -77,8 +77,7 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.setParticlesCount(1000);
-	particleEffect.setMaterial(&partmat);
+	/*particleEffect.setParticlesCount(1000);
 	particleEffect.setStartSize(C_Vector2(1.0, 1.0));
 	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
 	particleEffect.setStartColor(C_Vector4(1, 1, 1, 1));
@@ -89,8 +88,12 @@ int main(int argc, char** argv)
 	particleEffect.setMaxVelocity(2.0);
 	particleEffect.setMinTimeToLive(2.0);
 	particleEffect.setMaxTimeToLive(5.0);
-	particleEffect.setConstantForce(C_Vector3(-2, 0, 0));
+	particleEffect.setConstantForce(C_Vector3(-2, 0, 0));*/
+	particleEffect.loadFromXML("Data/Particles/A.particles");
+	particleEffect.setMaterial(&partmat);
 	C_ParticleEmitter particles(&particleEffect);
+
+	//particleEffect.saveToXLM("Data/Particles/A.particles");
 
 	C_Timer timer;
 

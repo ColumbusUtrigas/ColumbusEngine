@@ -256,6 +256,466 @@ namespace C
     return mMaxRotationSpeed;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Serialize to XML file
+  void C_ParticleEffect::saveToXLM(const char* aFile)
+  {
+	  C_XMLDoc doc;
+	  C_XMLNode* root = doc.NewElement("ParticleEffect");
+	  doc.InsertFirstChild(root);
+
+	  C_XMLElement* tmp = doc.NewElement("Count");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles count: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mParticleCount);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("Visible");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles visible: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mVisible);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("ScaleOL");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles scale over lifetime: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mScaleOverLifetime);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MinDirection");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min direction: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mMinDirection.x);
+	  tmp->SetAttribute("Y", mMinDirection.y);
+	  tmp->SetAttribute("Z", mMinDirection.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MaxDirection");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max direction: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mMaxDirection.x);
+	  tmp->SetAttribute("Y", mMaxDirection.y);
+	  tmp->SetAttribute("Z", mMaxDirection.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("ConstForce");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles constant force: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mConstantForce.x);
+	  tmp->SetAttribute("Y", mConstantForce.y);
+	  tmp->SetAttribute("Z", mConstantForce.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("PartSize");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles size: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mParticleSize.x);
+	  tmp->SetAttribute("Y", mParticleSize.y);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("StartSize");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles start size: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mStartSize.x);
+	  tmp->SetAttribute("Y", mStartSize.y);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("FinalSize");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles final size: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mFinalSize.x);
+	  tmp->SetAttribute("Y", mFinalSize.y);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("StartColor");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles start color: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("R", mStartColor.x);
+	  tmp->SetAttribute("G", mStartColor.y);
+	  tmp->SetAttribute("B", mStartColor.z);
+	  tmp->SetAttribute("A", mStartColor.w);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("FinalColor");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles final color: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("R", mFinalColor.x);
+	  tmp->SetAttribute("G", mFinalColor.y);
+	  tmp->SetAttribute("B", mFinalColor.z);
+	  tmp->SetAttribute("A", mFinalColor.w);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MinTTL");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min TTL: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMinTimeToLive);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MaxTTL");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max TTL: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMaxTimeToLive);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MinVelocity");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min velocity: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMinVelocity);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MaxVelocity");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max velocity: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMaxVelocity);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MinRotation");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min rotation: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMinRotation);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MaxRotation");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max rotation: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMaxRotation);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MinRotationSpeed");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min rotation speed: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMinRotationSpeed);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  tmp = doc.NewElement("MaxRotationSpeed");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max rotation speed: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mMaxRotationSpeed);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+	  if (doc.SaveFile(aFile) != C_XML_SUCCESS)
+	  {
+		  C_Error("Can't save Particle Effect: %s", aFile);
+		  return;
+	  }
+
+	  C_Success("Particle Effect saved: %s", aFile);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Serialize from XML file
+  void C_ParticleEffect::loadFromXML(const char* aFile)
+  {
+	  C_XMLDoc doc;
+	  if (doc.LoadFile(aFile) != C_XML_SUCCESS)
+	  {
+		  C_Error("Can't load Particle Effect: %s\n", aFile);
+		  return;
+	  }
+
+	  C_XMLElement* root = doc.FirstChildElement("ParticleEffect");
+	  if (root == NULL && root == nullptr)
+	  {
+		  C_Error("Can't load Particle Effect: %s\n", aFile);
+		  return;
+	  }
+
+	  C_XMLElement* tmp = root->FirstChildElement("Count");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles count: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryIntText((int*)&mParticleCount);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("Visible");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles visible: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mVisible);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("ScaleOL");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles scale over lifetime: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mScaleOverLifetime);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MinDirection");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min direction: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mMinDirection.x);
+	  tmp->QueryAttribute("Y", &mMinDirection.y);
+	  tmp->QueryAttribute("Z", &mMinDirection.z);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MaxDirection");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max direction: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mMaxDirection.x);
+	  tmp->QueryAttribute("Y", &mMaxDirection.y);
+	  tmp->QueryAttribute("Z", &mMaxDirection.z);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("ConstForce");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles constant force: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mConstantForce.x);
+	  tmp->QueryAttribute("Y", &mConstantForce.y);
+	  tmp->QueryAttribute("Z", &mConstantForce.z);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("PartSize");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles size: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mParticleSize.x);
+	  tmp->QueryAttribute("Y", &mParticleSize.y);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("StartSize");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles start size: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mStartSize.x);
+	  tmp->QueryAttribute("Y", &mStartSize.y);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("FinalSize");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles final size: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mFinalSize.x);
+	  tmp->QueryAttribute("Y", &mFinalSize.y);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("StartColor");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles start color: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("R", &mStartColor.x);
+	  tmp->QueryAttribute("G", &mStartColor.y);
+	  tmp->QueryAttribute("B", &mStartColor.z);
+	  tmp->QueryAttribute("A", &mStartColor.w);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("FinalColor");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles final color: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("R", &mFinalColor.x);
+	  tmp->QueryAttribute("G", &mFinalColor.y);
+	  tmp->QueryAttribute("B", &mFinalColor.z);
+	  tmp->QueryAttribute("A", &mFinalColor.w);
+
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MinTTL");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min TTL: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMinTimeToLive);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MaxTTL");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max TTL: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMaxTimeToLive);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MinVelocity");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min velocity: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMinVelocity);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MaxVelocity");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max velocity: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMaxVelocity);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MinRotation");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min rotation: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMinRotation);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MaxRotation");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max rotation: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMaxRotation);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MinRotationSpeed");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min rotation speed: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMinRotationSpeed);
+	  tmp = NULL;
+
+	  tmp = root->FirstChildElement("MaxRotationSpeed");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max rotation speed: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mMaxRotationSpeed);
+	  tmp = NULL;
+
+	  C_Success("Particle Effect loaded: %s", aFile);
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Destructor
   C_ParticleEffect::~C_ParticleEffect() {}
 

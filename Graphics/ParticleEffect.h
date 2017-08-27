@@ -130,6 +130,11 @@ namespace C
     float getMinRotationSpeed();
     //Return particle maximum rotation speed
     float getMaxRotationSpeed();
+
+	//Serialize to XML file
+	void saveToXLM(const char* aFile);
+	//Deserialize from XML file
+	void loadFromXML(const char* aFile);
     //Destructor
     ~C_ParticleEffect();
   };
