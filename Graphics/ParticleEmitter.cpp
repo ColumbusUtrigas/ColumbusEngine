@@ -28,6 +28,22 @@ namespace C
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 
+			switch(mParticleEffect->getParticleShape())
+			{
+				case C_PARTICLE_SHAPE_CIRCLE:
+				{
+					float ang = C_RandomBetween(0.0, 6.283185318);
+					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+
+					float xsp = rad * cos(ang);
+					float ysp = 0.0;
+					float zsp = rad * sin(ang);
+
+					p.startPos = C_Vector3(xsp, ysp, zsp);
+					break;
+				}
+			}
+
 			mParticles.push_back(p);
 		}
 
@@ -151,6 +167,8 @@ namespace C
 				float life = (int)(mParticles[i].age * 1000) % (int)(mParticles[i].TTL * 1000);
 
 				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
+
+				pos += mParticles[i].startPos;
 
 				mParticles[i].pos = pos;
 

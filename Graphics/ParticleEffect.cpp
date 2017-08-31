@@ -136,6 +136,17 @@ namespace C
     mMaxRotationSpeed = (float)aMaxRotationSpeed;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particle shape
+  void C_ParticleEffect::setParticleShape(const int aParticleShape)
+  {
+    mParticleShape = (int)aParticleShape;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  void C_ParticleEffect::setParticleShapeRadius(const float aRadius)
+  {
+    mParticleShapeRadius = (float)aRadius;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Return material
   C_Material* C_ParticleEffect::getMaterial()
   {
@@ -254,6 +265,17 @@ namespace C
   float C_ParticleEffect::getMaxRotationSpeed()
   {
     return mMaxRotationSpeed;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Retun particle shape
+  int C_ParticleEffect::getParticleShape()
+  {
+    return mParticleShape;
+  }
+  //Return particle shape radius
+  float C_ParticleEffect::getParticleShapeRadius()
+  {
+    return mParticleShapeRadius;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Serialize to XML file
@@ -476,6 +498,26 @@ namespace C
 		  return;
 	  }
 	  tmp->SetText(mMaxRotationSpeed);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+    tmp = doc.NewElement("Shape");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles shape: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mParticleShape);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+    tmp = doc.NewElement("ShapeRadius");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles shape radius: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mParticleShapeRadius);
 	  root->InsertEndChild(tmp);
 	  tmp = NULL;
 
@@ -711,6 +753,24 @@ namespace C
 		  return;
 	  }
 	  tmp->QueryFloatText(&mMaxRotationSpeed);
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("Shape");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles shape: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryIntText(&mParticleShape);
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("ShapeRadius");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles shape radius: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mParticleShapeRadius);
 	  tmp = NULL;
 
 	  C_Success("Particle Effect loaded: %s", aFile);

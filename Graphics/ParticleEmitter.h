@@ -35,6 +35,8 @@ namespace C
 	{
 		C_Vector3 direction = C_Vector3(0, 1, 0);
 
+		C_Vector3 startPos = C_Vector3(0, 0, 0);
+
 		C_Vector3 pos;
 
 		float velocity = 1.0;
@@ -76,7 +78,7 @@ namespace C
 			1, 1, 0.0
 		};
 		//UV buffer
-		float uvs[12] = 
+		float uvs[12] =
 		{
 			1.0, 1.0,
 			0.0, 1.0,
