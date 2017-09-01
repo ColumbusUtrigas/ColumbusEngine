@@ -29,8 +29,10 @@ namespace C
 		C_Vector3 diffuse;
 		C_Vector3 ambient;
 		C_Vector3 specular;
+		float reflectionPower;
 		C_Texture* texture = NULL;
 		C_Texture* specmap = NULL;
+		C_Texture* normmap = NULL;
 		C_Shader* shader = NULL;
 
 		bool discard = false;
@@ -57,10 +59,14 @@ namespace C
 		void setTexture(const C_Texture* aTexture);
 		//Set specular texture
 		void setSpecMap(const C_Texture* aSpecMap);
+		//Set normal texture
+		void setNormMap(const C_Texture* aNormMap);
 		//Set shader
 		void setShader(const C_Shader* aShader);
 		//Set cubemap reflection
 		void setReflection(const C_Cubemap* aReflection);
+		//Set reflection power
+		void setReflectionPower(const float aPower);
 		//Set discard alpha
 		void setDiscard(const bool aDiscard);
 		//Return color
@@ -77,16 +83,20 @@ namespace C
 		C_Texture* getTexture();
 		//Return specular texture
 		C_Texture* getSpecMap();
+		//Return normal texture
+		C_Texture* getNormMap();
 		//Return shader
 		C_Shader* getShader();
 		//Return cubemap reflection
 		C_Cubemap* getReflection();
+		//Return reflection power
+		float getReflectionPower();
 		//Return discard alpha
 		bool getDiscard();
 		//Serialize to XML file
-		void saveToFile(const char* aFile);
+		void saveToXML(const char* aFile);
 		//Deserialize from XML file
-		void loadFromFile(const char* aFile);
+		void loadFromXML(const char* aFile);
 		//Destructor
 		~C_Material();
 	};

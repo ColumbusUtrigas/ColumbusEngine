@@ -17,11 +17,13 @@ int main(int argc, char** argv)
 
 	C_TextureManager textureManager;
 
-	C_Texture tex("Data/Textures/metal.jpg");
-	C_Texture spec("Data/Textures/metal.jpg");
+	C_Texture tex("Data/Textures/wall2.jpg");
+	C_Texture spec("Data/Textures/wall2-spec.jpg");
+	C_Texture norm("Data/Textures/wall2-normal.jpg");
 
 	textureManager.add(&tex);
 	textureManager.add(&spec);
+	textureManager.add(&norm);
 
 	Importer::C_Importer importer;
 	importer.load("Data/Models/ASD.obj");
@@ -31,14 +33,17 @@ int main(int argc, char** argv)
 	C_Mesh mesh2(C_PrimitiveBox());
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
-	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
+	mesh.mMat.setNormMap(&norm);
 	mesh.mMat.setShader(&shader);
 	mesh.setPos(C_Vector3(2, 0, 0));
 
 	mesh2.mMat.setTexture(&tex);
 	mesh2.mMat.setSpecMap(&spec);
-	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
+	mesh2.mMat.setNormMap(&norm);
 	mesh2.mMat.setShader(&shader);
+
+	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh2.mMat.loadFromXML("Data/Materials/Default.mtl");
 
 	mesh.addChild(&mesh2);
 
@@ -147,7 +152,7 @@ int main(int argc, char** argv)
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
-		mesh2.addRot(C_Vector3(0, 1, 0));
+		//mesh2.addRot(C_Vector3(0, 1, 0));
 
 		render.render();
 

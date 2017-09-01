@@ -22,12 +22,13 @@ namespace C
 		ambient = C_Vector3(0.25, 0.25, 0.25);
 		specular = C_Vector3(1, 1, 1);
 		shininess = 32;
+		reflectionPower = 0.2;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
 	C_Material::C_Material(const char* aFile)
 	{
-		loadFromFile(aFile);
+		loadFromXML(aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set color
@@ -72,6 +73,12 @@ namespace C
 		specmap = (C_Texture*)aSpecMap;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set normal texture
+	void C_Material::setNormMap(const C_Texture* aNormMap)
+	{
+		normmap = (C_Texture*)aNormMap;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Set shader
 	void C_Material::setShader(const C_Shader* aShader)
 	{
@@ -82,6 +89,12 @@ namespace C
 	void C_Material::setReflection(const C_Cubemap* aReflecction)
 	{
 		envRefl = (C_Cubemap*)aReflecction;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set reflection power
+	void C_Material::setReflectionPower(const float aPower)
+	{
+		reflectionPower = (float)aPower;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set discard alpha
@@ -132,6 +145,11 @@ namespace C
 		return specmap;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	C_Texture* C_Material::getNormMap()
+	{
+		return normmap;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Return shader
 	C_Shader* C_Material::getShader()
 	{
@@ -144,6 +162,12 @@ namespace C
 		return envRefl;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Return reflection power
+	float C_Material::getReflectionPower()
+	{
+		return reflectionPower;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Return discard alpha
 	bool C_Material::getDiscard()
 	{
@@ -151,7 +175,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Serialize to XML file
-	void C_Material::saveToFile(const char* aFile)
+	void C_Material::saveToXML(const char* aFile)
 	{
 		C_XMLDoc doc;
 		C_XMLNode* root = doc.NewElement("Material");
@@ -221,6 +245,17 @@ namespace C
 
 		tmp = NULL;
 
+		tmp = doc.NewElement("ReflectionPower");
+		if(tmp == NULL && tmp == nullptr)
+		{
+			C_Error("Can't save Material reflection power: %s", aFile);
+			return;
+		}
+		tmp->SetText(reflectionPower);
+		root->InsertEndChild(tmp);
+
+		tmp = NULL;
+
 		tmp = doc.NewElement("Discard");
 		if (tmp == NULL && tmp == nullptr)
 		{
@@ -240,7 +275,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Deserialize from XML file
-	void C_Material::loadFromFile(const char* aFile)
+	void C_Material::loadFromXML(const char* aFile)
 	{
 		C_XMLDoc doc;
 		if(doc.LoadFile(aFile) != C_XML_SUCCESS)
@@ -317,6 +352,17 @@ namespace C
 		}
 
 		tmp->QueryFloatText(&shininess);
+
+		tmp = NULL;
+
+		tmp = root->FirstChildElement("ReflectionPower");
+		if(tmp == NULL && tmp == nullptr)
+		{
+			C_Error("Can't load Material reflection power: %s", aFile);
+			return;
+		}
+
+		tmp->QueryFloatText(&reflectionPower);
 
 		tmp = NULL;
 

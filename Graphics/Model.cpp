@@ -121,10 +121,22 @@ namespace C
 
 			glm::mat4 normalMat = glm::inverse(glm::transpose(mMatrix));
 
-			mMat.getShader()->setUniform4f("uMaterial.color", mMat.getColor());
-			mMat.getShader()->setUniform3f("uMaterial.ambient", mMat.getAmbient());
-			mMat.getShader()->setUniform3f("uMaterial.diffuse", mMat.getDiffuse());
-			mMat.getShader()->setUniform3f("uMaterial.specular", mMat.getSpecular());
+			C_Vector4 matcol = mMat.getColor();
+			C_Vector3 matamb = mMat.getAmbient();
+			C_Vector3 matdif = mMat.getDiffuse();
+			C_Vector3 matspc = mMat.getSpecular();
+
+			float MaterialUnif[14] =
+			{
+				matcol.x, matcol.y, matcol.z, matcol.w,
+				matamb.x, matamb.y, matamb.z,
+				matdif.x, matdif.y, matdif.z,
+				matspc.x, matspc.y, matspc.z,
+				mMat.getReflectionPower()
+			};
+
+			mMat.getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
+
 			mMat.getShader()->setUniform3f("uLight.color", C_Vector3(1, 1, 1));
 			mMat.getShader()->setUniform3f("uLight.pos", mCamera.pos());
 			mMat.getShader()->setUniform1i("uLight.type", 1);
@@ -142,12 +154,22 @@ namespace C
 			{
 				mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
 				mMat.getTexture()->sampler2D(0);
+			} else
+			{
+				glActiveTexture(GL_TEXTURE0);
+				mMat.getShader()->setUniform1i("uMaterial.diffuseMap", 0);
+				C_Texture::unbind();
 			}
 
 			if (mMat.getSpecMap() != nullptr)
 			{
 				mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
 				mMat.getSpecMap()->sampler2D(1);
+			} else
+			{
+				glActiveTexture(GL_TEXTURE1);
+				mMat.getShader()->setUniform1i("uMaterial.specularMap", 1);
+				C_Texture::unbind();
 			}
 
 			if (mMat.getReflection() != nullptr)
@@ -155,6 +177,22 @@ namespace C
 				glActiveTexture(GL_TEXTURE2);
 				mMat.getShader()->setUniform1i("uReflectionMap", 2);
 				mMat.getReflection()->bind();
+			} else
+			{
+				glActiveTexture(GL_TEXTURE2);
+				mMat.getShader()->setUniform1i("uReflectionMap", 2);
+				C_Texture::unbind();
+			}
+
+			if (mMat.getNormMap() != nullptr)
+			{
+				mMat.getShader()->setUniform1i("uMaterial.normalMap", 3);
+				mMat.getNormMap()->sampler2D(3);
+			} else
+			{
+				glActiveTexture(GL_TEXTURE3);
+				mMat.getShader()->setUniform1i("uMaterial.normalMap", 3);
+				C_Texture::unbind();
 			}
 		}
 
