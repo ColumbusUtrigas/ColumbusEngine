@@ -35,9 +35,29 @@ namespace C
 					float ang = C_RandomBetween(0.0, 6.283185318);
 					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
 
+					if (mParticleEffect->getEmitFromShell() == true)
+						rad = mParticleEffect->getParticleShapeRadius();
+
 					float xsp = rad * cos(ang);
 					float ysp = 0.0;
 					float zsp = rad * sin(ang);
+
+					p.startPos = C_Vector3(xsp, ysp, zsp);
+					break;
+				}
+
+				case C_PARTICLE_SHAPE_SPHERE:
+				{
+					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+					float phi = C_RandomBetween(0.0, 6.283185318);
+					float tht = C_RandomBetween(0.0, 3.141592659);
+
+					if (mParticleEffect->getEmitFromShell() == true)
+						rad = mParticleEffect->getParticleShapeRadius();
+
+					float xsp = rad * cos(phi) * sin(tht);
+					float ysp = rad * sin(phi) * sin(tht);
+					float zsp = rad * cos(tht);
 
 					p.startPos = C_Vector3(xsp, ysp, zsp);
 					break;

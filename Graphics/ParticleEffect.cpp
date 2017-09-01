@@ -40,6 +40,12 @@ namespace C
 	  mScaleOverLifetime = (bool)aA;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles emit from shell
+  void C_ParticleEffect::setEmitFromShell(const bool aA)
+  {
+    mEmitFromShell = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set negative direction limit
   void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
   {
@@ -169,6 +175,11 @@ namespace C
   bool C_ParticleEffect::getScaleOverLifetime()
   {
 	  return mScaleOverLifetime;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  bool C_ParticleEffect::getEmitFromShell()
+  {
+    return mEmitFromShell;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return minimum particle direction
@@ -314,6 +325,17 @@ namespace C
 		  return;
 	  }
 	  tmp->SetText(mScaleOverLifetime);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("EmitFromShell");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles emit from shell: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mEmitFromShell);
 	  root->InsertEndChild(tmp);
 
 	  tmp = NULL;
@@ -577,6 +599,17 @@ namespace C
 	  }
 
 	  tmp->QueryBoolText(&mScaleOverLifetime);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("EmitFromShell");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles emit from shell: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mEmitFromShell);
 
 	  tmp = NULL;
 
