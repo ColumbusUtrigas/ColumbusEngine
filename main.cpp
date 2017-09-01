@@ -53,12 +53,12 @@ int main(int argc, char** argv)
 
 	C_CubemapPath cpath =
 	{
-		"Data/Skyboxes/4/r.tga",
-		"Data/Skyboxes/4/l.tga",
-		"Data/Skyboxes/4/u.tga",
-		"Data/Skyboxes/4/d.tga",
-		"Data/Skyboxes/4/b.tga",
-		"Data/Skyboxes/4/f.tga",
+		"Data/Skyboxes/5/r.jpg",
+		"Data/Skyboxes/5/l.jpg",
+		"Data/Skyboxes/5/d.jpg",
+		"Data/Skyboxes/5/u.jpg",
+		"Data/Skyboxes/5/b.jpg",
+		"Data/Skyboxes/5/f.jpg",
 	};
 
 
@@ -77,19 +77,23 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.setParticlesCount(128);
-	particleEffect.setMaterial(&partmat);
-	particleEffect.setStartSize(C_Vector2(0.5, 0.5));
+	/*particleEffect.setParticlesCount(1000);
+	particleEffect.setStartSize(C_Vector2(1.0, 1.0));
 	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
-	particleEffect.setStartColor(C_Vector4(1, 1, 1, 0.5));
-	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.1));
+	particleEffect.setStartColor(C_Vector4(1, 1, 1, 1));
+	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.01));
 	particleEffect.setMinDirection(C_Vector3(-0.3, 1.0, -0.3));
 	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
-	particleEffect.setMinVelocity(3.0);
-	particleEffect.setMaxVelocity(3.0);
-	particleEffect.setMinTimeToLive(0.5);
-	particleEffect.setMaxTimeToLive(1.2);
+	particleEffect.setMinVelocity(1.0);
+	particleEffect.setMaxVelocity(2.0);
+	particleEffect.setMinTimeToLive(2.0);
+	particleEffect.setMaxTimeToLive(5.0);
+	particleEffect.setConstantForce(C_Vector3(-2, 0, 0));*/
+	particleEffect.loadFromXML("Data/Particles/A.particles");
+	particleEffect.setMaterial(&partmat);
 	C_ParticleEmitter particles(&particleEffect);
+
+	//particleEffect.saveToXLM("Data/Particles/A.particles");
 
 	C_Timer timer;
 
@@ -162,4 +166,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-

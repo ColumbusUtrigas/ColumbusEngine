@@ -35,11 +35,13 @@ namespace C
 	{
 		C_Vector3 direction = C_Vector3(0, 1, 0);
 
+		C_Vector3 startPos = C_Vector3(0, 0, 0);
+
 		C_Vector3 pos;
 
 		float velocity = 1.0;
 
-		C_Timer tm;
+		float age = 0.0;
 
 		float TTL = 1.0;
 
@@ -59,6 +61,7 @@ namespace C
 		C_Buffer* mTBuf = NULL;
 
 		C_Timer tm;
+		C_Timer frame;
 
 		int mFrame = 0;
 
@@ -75,7 +78,7 @@ namespace C
 			1, 1, 0.0
 		};
 		//UV buffer
-		float uvs[12] = 
+		float uvs[12] =
 		{
 			1.0, 1.0,
 			0.0, 1.0,
@@ -84,6 +87,8 @@ namespace C
 			1.0, 0.0,
 			1.0, 1.0
 		};
+		void sort();
+
 	public:
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);

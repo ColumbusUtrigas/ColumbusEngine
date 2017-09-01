@@ -28,6 +28,42 @@ namespace C
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 
+			switch(mParticleEffect->getParticleShape())
+			{
+				case C_PARTICLE_SHAPE_CIRCLE:
+				{
+					float ang = C_RandomBetween(0.0, 6.283185318);
+					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+
+					if (mParticleEffect->getEmitFromShell() == true)
+						rad = mParticleEffect->getParticleShapeRadius();
+
+					float xsp = rad * cos(ang);
+					float ysp = 0.0;
+					float zsp = rad * sin(ang);
+
+					p.startPos = C_Vector3(xsp, ysp, zsp);
+					break;
+				}
+
+				case C_PARTICLE_SHAPE_SPHERE:
+				{
+					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+					float phi = C_RandomBetween(0.0, 6.283185318);
+					float tht = C_RandomBetween(0.0, 3.141592659);
+
+					if (mParticleEffect->getEmitFromShell() == true)
+						rad = mParticleEffect->getParticleShapeRadius();
+
+					float xsp = rad * cos(phi) * sin(tht);
+					float ysp = rad * sin(phi) * sin(tht);
+					float zsp = rad * cos(tht);
+
+					p.startPos = C_Vector3(xsp, ysp, zsp);
+					break;
+				}
+			}
+
 			mParticles.push_back(p);
 		}
 
@@ -41,6 +77,34 @@ namespace C
 	void C_ParticleEmitter::setCameraPos(C_Vector3 aC)
 	{
 		mCameraPos = aC;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Sort particles
+	void C_ParticleEmitter::sort()
+	{
+		float mCX = mCameraPos.x;
+		float mCY = mCameraPos.y;
+		float mCZ = mCameraPos.z;
+
+		auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
+		{
+			float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
+			float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
+
+			return l1 > l2;
+
+			/*glm::vec3 mC(mCX, mCY, mCZ);
+
+			glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
+			glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
+
+			q -= mC;
+			w -= mC;
+
+			return glm::length(q) > glm::length(w);*/
+		};
+
+		std::sort(mParticles.begin(), mParticles.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
@@ -57,7 +121,6 @@ namespace C
 		if (mParticleEffect->getVisible() == false)
 			return;
 
-		float e = mParticles[0].TTL / mParticleEffect->getParticlesCount();
 		float a = tm.elapsed();
 
 		mBuf->bind();
@@ -94,62 +157,57 @@ namespace C
 				mShader->setUniform1i("uTex", 0);
 				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
 			}
+
+			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 
 		if (mFrame >= 10)
 		{
-			float mCX = mCameraPos.x;
-			float mCY = mCameraPos.y;
-			float mCZ = mCameraPos.z;
-
-			auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
-			{
-				/*float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
-				float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
-
-				return l1 > l2;*/
-
-				glm::vec3 mC(mCX, mCY, mCZ);
-
-				glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
-				glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
-
-				q -= mC;
-				w -= mC;
-
-				return glm::length(q) > glm::length(w);
-			};
-
-			std::sort(mParticles.begin(), mParticles.end(), func);
+			//sort();
 			mFrame = 0;
 		}
 
 		mFrame++;
 
+		glDepthMask(GL_FALSE);
+
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			if (a >= (e * i))
-				mParticles[i].active = true;
-			else
-				mParticles[i].tm.reset();
+			float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
 
-
-			if (mParticles[i].active == true)
+			if (a >= (e * i) && mParticles[i].active == false)
 			{
-				float life = (int)(mParticles[i].tm.elapsed() * 1000) % (int)(mParticles[i].TTL * 1000);
+				mParticles[i].active = true;
+				mParticles[i].age = -(e * i);
+			}
+
+
+			if (mParticles[i].active == true && mParticles[i].age > 0)
+			{
+				float life = (int)(mParticles[i].age * 1000) % (int)(mParticles[i].TTL * 1000);
 
 				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
 
+				pos += mParticles[i].startPos;
+
 				mParticles[i].pos = pos;
 
-				float arr[8] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0};
+				C_Vector3 cf = mParticleEffect->getConstantForce();
+
+				float arr[11] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
 
 				//mShader->setUniform4f("uPosition", set);
-				mShader->setUniformArrayf("Unif", arr, 8);
+				mShader->setUniformArrayf("Unif", arr, 11);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
+
+			mParticles[i].age += frame.elapsed();
 		}
+
+		frame.reset();
+
+		glDepthMask(GL_TRUE);
 
 		C_Shader::unbind();
 		C_Texture::unbind();

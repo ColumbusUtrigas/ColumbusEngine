@@ -15,6 +15,12 @@
 namespace C
 {
 
+  enum
+  {
+    C_PARTICLE_SHAPE_CIRCLE,
+    C_PARTICLE_SHAPE_SPHERE
+  };
+
   class C_ParticleEffect
   {
   private:
@@ -23,7 +29,8 @@ namespace C
     unsigned mParticleCount = 5;
 
     bool mVisible = true;
-	bool mScaleOverLifetime = false;
+    bool mScaleOverLifetime = false;
+    bool mEmitFromShell = false;
 
     C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
@@ -31,11 +38,10 @@ namespace C
 
     C_Vector2 mParticleSize = C_Vector2(1, 1);
 
-	C_Vector2 mStartSize = C_Vector2(1, 1);
-	C_Vector2 mFinalSize = C_Vector2(1, 1);
-
-	C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
-	C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
+    C_Vector2 mStartSize = C_Vector2(1, 1);
+    C_Vector2 mFinalSize = C_Vector2(1, 1);
+    C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
+    C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
 
     float mMinTimeToLive = 1.0;
     float mMaxTimeToLive = 1.0;
@@ -45,6 +51,9 @@ namespace C
     float mMaxRotation = 0.0;
     float mMinRotationSpeed = 0.0;
     float mMaxRotationSpeed = 0.0;
+
+    int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
+    float mParticleShapeRadius = 1.0;
   public:
     //Constructor
     C_ParticleEffect();
@@ -54,8 +63,10 @@ namespace C
     void setParticlesCount(const unsigned aParticlesCount);
     //Set particles visible
     void setVisible(const bool aVisible);
-	//Set particles scale over lifetime
-	void setScaleOverLifetime(const bool aA);
+    //Set particles scale over lifetime
+    void setScaleOverLifetime(const bool aA);
+    //Set particles emit from shell
+    void setEmitFromShell(const bool aA);
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
@@ -64,14 +75,14 @@ namespace C
     void setConstantForce(const C_Vector3 aConstantForce);
     //Set particle size
     void setParticleSize(const C_Vector2 aParticleSize);
-	//Set particle start size
-	void setStartSize(const C_Vector2 aStartSize);
-	//Set particle final size
-	void setFinalSize(const C_Vector2 aFinalSize);
-	//Set particle start color
-	void setStartColor(const C_Vector4 aStartColor);
-	//Set particle final color
-	void setFinalColor(const C_Vector4 aFinalColor);
+    //Set particle start size
+  	void setStartSize(const C_Vector2 aStartSize);
+    //Set particle final size
+    void setFinalSize(const C_Vector2 aFinalSize);
+    //Set particle start color
+    void setStartColor(const C_Vector4 aStartColor);
+    //Set particle final color
+    void setFinalColor(const C_Vector4 aFinalColor);
     //Set particle minimum time to live
     void setMinTimeToLive(const float aMinTimeToLive);
     //Set particle maximum time to live
@@ -88,6 +99,10 @@ namespace C
     void setMinRotationSpeed(const float aMinRotationSpeed);
     //Set particle maximum rotation speed
     void setMaxRotationSpeed(const float aMaxRotationSpeed);
+    //Set particle shape
+    void setParticleShape(const int aParticleShape);
+    //Set particle shape radius
+    void setParticleShapeRadius(const float aRadius);
 
 
     //Return material
@@ -96,8 +111,10 @@ namespace C
     unsigned getParticlesCount();
     //Return particles visible
     bool getVisible();
-	//Return particles scale over lifetime
-	bool getScaleOverLifetime();
+    //Return particles scale over lifetime
+    bool getScaleOverLifetime();
+    //Return particles emit from shell
+    bool getEmitFromShell();
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction
@@ -106,14 +123,14 @@ namespace C
     C_Vector3 getConstantForce();
     //Return particle size
     C_Vector2 getParticleSize();
-	//Return particle start size
-	C_Vector2 getStartSize();
-	//Return particle final size
-	C_Vector2 getFinalSize();
-	//Return particle start color
-	C_Vector4 getStartColor();
-	//Return particle final color
-	C_Vector4 getFinalColor();
+    //Return particle start size
+    C_Vector2 getStartSize();
+    //Return particle final size
+    C_Vector2 getFinalSize();
+    //Return particle start color
+    C_Vector4 getStartColor();
+    //Return particle final color
+    C_Vector4 getFinalColor();
     //Return particle minimum time to live
     float getMinTimeToLive();
     //Return particle maximum time to live
@@ -130,6 +147,15 @@ namespace C
     float getMinRotationSpeed();
     //Return particle maximum rotation speed
     float getMaxRotationSpeed();
+    //Return particle shape
+    int getParticleShape();
+    //Return particle shape radius
+    float getParticleShapeRadius();
+
+    //Serialize to XML file
+    void saveToXLM(const char* aFile);
+    //Deserialize from XML file
+    void loadFromXML(const char* aFile);
     //Destructor
     ~C_ParticleEffect();
   };
