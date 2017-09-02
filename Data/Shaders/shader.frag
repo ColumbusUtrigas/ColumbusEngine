@@ -52,6 +52,17 @@ uniform Camera uCamera;
 //10..12 - Material Specular
 uniform float MaterialUnif[14];
 
+//0..2 - Light Color
+//3..5 - Light Pos
+//6..8 - Light Dir
+//9 - Light Type
+//10 - Light Constant
+//11 - Light Linear
+//12 - Light Quadratic
+//13 - Light Inner Angle
+//14 - Light Outer Angle
+uniform float LightUnif[15];
+
 vec4 DiffuseMap;
 vec3 SpecularMap;
 vec3 NormalMap;
@@ -69,6 +80,14 @@ vec3 MaterialAmbient;
 vec3 MaterialDiffuse;
 vec3 MaterialSpecular;
 float MaterialReflection;
+
+vec3 LightColor;
+vec3 LightPos;
+vec3 LightDirection;
+float LightType;
+float LightConstant;
+float LightLinear;
+float LightQuadratic;
 
 float Attenuation;
 
@@ -88,58 +107,66 @@ void Init()
 	MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
 	MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
 	MaterialReflection = MaterialUnif[13];
+	
+	LightColor = vec3(LightUnif[0], LightUnif[1], LightUnif[2]);
+	LightPos = vec3(LightUnif[3], LightUnif[4], LightUnif[5]);
+	LightDirection = vec3(LightUnif[6], LightUnif[7], LightUnif[8]);
+	LightType = LightUnif[9];
+	LightConstant = LightUnif[10];
+	LightLinear = LightUnif[11];
+	LightQuadratic = LightUnif[12];
 
 
-	if(uLight.type == 1)
+	if(LightType == 1)
 	{
-		float distance = length(uLight.pos - varFragPos);
-		Attenuation = 1.0 / (uLight.constant + uLight.linear * distance + uLight.quadratic * (distance * distance));
+		float distance = length(LightPos - varFragPos);
+		Attenuation = 1.0 / (LightConstant + LightLinear * distance + LightQuadratic * (distance * distance));
 	}
 }
 
 vec3 GetAmbient()
 {
-	return MaterialColor.xyz * MaterialAmbient * uLight.color;
+	return MaterialColor.xyz * MaterialAmbient * LightColor;
 }
 
 vec3 GetDiffuse()
 {
-	if(uLight.type == 0)
+	if(LightType == 0)
 	{
-		vec3 lightDir = normalize(-uLight.direction);
+		vec3 lightDir = normalize(-LightDirection);
 		float diff = max(dot(Normal, lightDir), 0.0);
-		vec3 diffuse = diff * uLight.color;
+		vec3 diffuse = diff * LightColor;
 		return diffuse * MaterialDiffuse;
 	}
 
-	if(uLight.type == 1)
+	if(LightType == 1)
 	{
-		vec3 lightDir = normalize(uLight.pos - varFragPos);
+		vec3 lightDir = normalize(LightPos - varFragPos);
 		float diff = max(dot(Normal, lightDir), 0.0);
-		vec3 diffuse = diff * uLight.color;
+		vec3 diffuse = diff * LightColor;
 		return diffuse * MaterialDiffuse;
 	}
 }
 
 vec3 GetSpecular()
 {
-	if(uLight.type == 0)
+	if(LightType == 0)
 	{
-		vec3 lightDir = normalize(-uLight.direction);
+		vec3 lightDir = normalize(-LightDirection);
 		vec3 viewDir = normalize(uCamera.pos - varFragPos);
 		vec3 reflectDir = reflect(-lightDir, Normal);
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-		vec3 specular = 0.5 * spec * uLight.color;
+		vec3 specular = 0.5 * spec * LightColor;
 		return specular * MaterialSpecular;
 	}
 
-	if(uLight.type == 1)
+	if(LightType == 1)
 	{
-		vec3 lightDir = normalize(uLight.pos - varFragPos);
+		vec3 lightDir = normalize(LightPos - varFragPos);
 		vec3 viewDir = normalize(uCamera.pos - varFragPos);
 		vec3 reflectDir = reflect(-lightDir, Normal);
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-		vec3 specular = 0.5 * spec * uLight.color;
+		vec3 specular = 0.5 * spec * LightColor;
 		return specular * MaterialSpecular;
 	}
 }
