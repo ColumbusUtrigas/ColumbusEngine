@@ -89,6 +89,12 @@ namespace C
     cutoff = (float)aCutoff;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set spotlight outer cutoff
+  void C_Light::setOuterCutoff(const float aOuterCutoff)
+  {
+    outerCutoff = (float)aOuterCutoff;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Return light type
   int C_Light::getType()
   {
@@ -147,6 +153,12 @@ namespace C
   float C_Light::getCutoff()
   {
     return cutoff;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return spotlight outer cutoff
+  float C_Light::getOuterCutoff()
+  {
+    return outerCutoff;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Serialize to XML file

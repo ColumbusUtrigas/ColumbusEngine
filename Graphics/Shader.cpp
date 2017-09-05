@@ -83,6 +83,11 @@ namespace C
 		glBindAttribLocation(program, 0, "aPos");
 		glBindAttribLocation(program, 1, "aUV");
 		glBindAttribLocation(program, 2, "aNorm");
+		glBindAttribLocation(program, 3, "aTang");
+		glBindAttribLocation(program, 4, "aBitang");
+
+		for (int i = 0; i < mAttribNames.size(); i++)
+			glBindAttribLocation(program, mAttribValues[i], mAttribNames[i].c_str());
 
 		glValidateProgram(program);
 
@@ -134,6 +139,12 @@ namespace C
 		C_DeleteFile("fragment_shader_shd_frag_tmp");
 
 		printf("\x1b[32;1mShader successfuly loaded: \x1b[0;1m%s\x1b[0m\n", aFile);*/
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Shader::addAttribute(const char* aName, const int aValue)
+	{
+		mAttribNames.push_back(aName);
+		mAttribValues.push_back((int)aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set integer uniform

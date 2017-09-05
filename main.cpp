@@ -17,9 +17,9 @@ int main(int argc, char** argv)
 
 	C_TextureManager textureManager;
 
-	C_Texture tex("Data/Textures/wall2.jpg");
-	C_Texture spec("Data/Textures/wall2-spec.jpg");
-	C_Texture norm("Data/Textures/wall2-normal.jpg");
+	C_Texture tex("Data/Textures/metal2.jpg");
+	C_Texture spec("Data/Textures/metal2-spec.jpg");
+	C_Texture norm("Data/Textures/metal2-normal.jpg");
 
 	textureManager.add(&tex);
 	textureManager.add(&spec);

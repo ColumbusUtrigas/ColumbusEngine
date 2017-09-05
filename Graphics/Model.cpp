@@ -61,6 +61,32 @@ namespace C
 		if (n.size() > 0)
 			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float));
 		n.clear();
+
+		std::vector<float> tang;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			tang.push_back(mVert[i].tangent.x);
+			tang.push_back(mVert[i].tangent.y);
+			tang.push_back(mVert[i].tangent.z);
+		}
+
+		if (tang.size() > 0)
+			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float));
+		tang.clear();
+
+		std::vector<float> bitang;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			tang.push_back(mVert[i].bitangent.x);
+			tang.push_back(mVert[i].bitangent.y);
+			tang.push_back(mVert[i].bitangent.z);
+		}
+
+		if (bitang.size() > 0)
+			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float));
+		bitang.clear();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
@@ -97,6 +123,18 @@ namespace C
 		{
 			nbuf->bind();
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+		}
+
+		if (tangbuf != NULL && tangbuf != nullptr)
+		{
+			tangbuf->bind();
+			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+		}
+
+		if (bitangbuf != NULL && bitangbuf != nullptr)
+		{
+			bitangbuf->bind();
+			glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 		}
 
 		if (mMat.getShader() != nullptr)
@@ -137,16 +175,18 @@ namespace C
 
 			mMat.getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
 
-			float LightUnif[13] =
+			float LightUnif[15] =
 			{
 				1, 1, 1,
 				mCamera.pos().x, mCamera.pos().y, mCamera.pos().z,
+				//1, 0, 1,
 				mCamera.direction().x, mCamera.direction().y, mCamera.direction().z,
-				1,
-				1, 0.09f, 0.032f
+				2,
+				1, 0.09f, 0.032f,
+				glm::radians(12.5), glm::radians(17.5)
 			};
 
-			mMat.getShader()->setUniformArrayf("LightUnif", LightUnif, 13);
+			mMat.getShader()->setUniformArrayf("LightUnif", LightUnif, 15);
 
 			mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
 

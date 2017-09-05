@@ -43,6 +43,8 @@ namespace C
 		C_Buffer* buf = NULL;
 		C_Buffer* tbuf = NULL;
 		C_Buffer* nbuf = NULL;
+		C_Buffer* tangbuf = NULL;
+		C_Buffer* bitangbuf = NULL;
 
 		std::vector<C_Vertex> mVert;
 		C_Material mMat;

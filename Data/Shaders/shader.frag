@@ -4,6 +4,7 @@ varying vec3 varPos;
 varying vec2 texCoord;
 varying vec3 varNormal;
 varying vec3 varFragPos;
+varying mat3 varTBN;
 
 uniform samplerCube uReflectionMap;
 
@@ -88,6 +89,8 @@ float LightType;
 float LightConstant;
 float LightLinear;
 float LightQuadratic;
+float LightCutoff;
+float LightOuterCutoff;
 
 float Attenuation;
 
@@ -97,8 +100,12 @@ void Init()
 	SpecularMap = vec3(texture(uMaterial.specularMap, texCoord));
 	NormalMap = vec3(texture(uMaterial.normalMap, texCoord));
 	
-	if (NormalMap == vec3(0))
-		Normal = normalize(NormalMap * 2.0 - 1.0);  
+	if (NormalMap != vec3(0))
+	{
+		Normal = NormalMap;
+		Normal = normalize(Normal * 2.0 - 1.0);
+		//Normal = varTBN * Normal;
+	}
 	else
 		Normal = varNormal;
 		
@@ -115,9 +122,11 @@ void Init()
 	LightConstant = LightUnif[10];
 	LightLinear = LightUnif[11];
 	LightQuadratic = LightUnif[12];
+	LightCutoff = LightUnif[13];
+	LightOuterCutoff = LightUnif[14];
 
 
-	if(LightType == 1)
+	if(LightType == 1 || LightType == 2)
 	{
 		float distance = length(LightPos - varFragPos);
 		Attenuation = 1.0 / (LightConstant + LightLinear * distance + LightQuadratic * (distance * distance));
@@ -133,7 +142,7 @@ vec3 GetDiffuse()
 {
 	if(LightType == 0)
 	{
-		vec3 lightDir = normalize(-LightDirection);
+		vec3 lightDir = varTBN * normalize(-LightDirection);
 		float diff = max(dot(Normal, lightDir), 0.0);
 		vec3 diffuse = diff * LightColor;
 		return diffuse * MaterialDiffuse;
@@ -141,7 +150,15 @@ vec3 GetDiffuse()
 
 	if(LightType == 1)
 	{
-		vec3 lightDir = normalize(LightPos - varFragPos);
+		vec3 lightDir = varTBN * normalize(LightPos - varFragPos);
+		float diff = max(dot(Normal, lightDir), 0.0);
+		vec3 diffuse = diff * LightColor;
+		return diffuse * MaterialDiffuse;
+	}
+	
+	if (LightType == 2)
+	{
+		vec3 lightDir = varTBN * normalize(LightPos - varFragPos);
 		float diff = max(dot(Normal, lightDir), 0.0);
 		vec3 diffuse = diff * LightColor;
 		return diffuse * MaterialDiffuse;
@@ -152,8 +169,8 @@ vec3 GetSpecular()
 {
 	if(LightType == 0)
 	{
-		vec3 lightDir = normalize(-LightDirection);
-		vec3 viewDir = normalize(uCamera.pos - varFragPos);
+		vec3 lightDir = varTBN * normalize(-LightDirection);
+		vec3 viewDir = varTBN * normalize(uCamera.pos - varFragPos);
 		vec3 reflectDir = reflect(-lightDir, Normal);
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 		vec3 specular = 0.5 * spec * LightColor;
@@ -162,8 +179,18 @@ vec3 GetSpecular()
 
 	if(LightType == 1)
 	{
-		vec3 lightDir = normalize(LightPos - varFragPos);
-		vec3 viewDir = normalize(uCamera.pos - varFragPos);
+		vec3 lightDir = varTBN * normalize(LightPos - varFragPos);
+		vec3 viewDir = varTBN * normalize(uCamera.pos - varFragPos);
+		vec3 reflectDir = reflect(-lightDir, Normal);
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+		vec3 specular = 0.5 * spec * LightColor;
+		return specular * MaterialSpecular;
+	}
+	
+	if(LightType == 2)
+	{
+		vec3 lightDir = varTBN * normalize(LightPos - varFragPos);
+		vec3 viewDir = varTBN * normalize(uCamera.pos - varFragPos);
 		vec3 reflectDir = reflect(-lightDir, Normal);
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 		vec3 specular = 0.5 * spec * LightColor;
@@ -185,7 +212,7 @@ vec3 GetReflection()
    	
    	//a = mix(mix(b, c, 0.5), mix(d, e, 0.5), 0);
    	
-   	a = mix(mix(mix(b, c, 0.5), mix(d, e, 0.5), 0.5), a, 0);
+   	//a = mix(mix(mix(b, c, 0.5), mix(d, e, 0.5), 0.5), a, 0);
    	
    	return a;
 }
@@ -211,8 +238,8 @@ void main()
 
 	Color = vec4(Ambient + Diffuse + Specular, 1.0) * MaterialColor;
 
-	if (DiffuseMap.xyz != vec3(0))
-		Color *= DiffuseMap;
+	/*if (DiffuseMap.xyz != vec3(0))
+		Color *= DiffuseMap;*/
 
 	vec3 I = normalize(uCamera.pos - varFragPos);
     //vec3 R = reflect(I, normalize(varFragPos));
@@ -220,9 +247,9 @@ void main()
 
     //gl_FragColor = Color + (vec4(Reflection, 1.0) * 0.9);
     //gl_FragColor = mix(Color, vec4(Reflection, 1.0), 0.2);
-    gl_FragColor = Color + vec4(Reflection * MaterialReflection, 1.0);
+    gl_FragColor = Color + vec4(Reflection * 1, 1.0);
     
-    //gl_FragColor = vec4(Normal, 1);
+    gl_FragColor = Color * DiffuseMap + vec4(Reflection * 0.4, 1.0);
 
     //gl_FragColor = vec4(Reflection, 1.0);
 
