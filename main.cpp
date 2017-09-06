@@ -21,9 +21,19 @@ int main(int argc, char** argv)
 	C_Texture spec("Data/Textures/metal2-spec.jpg");
 	C_Texture norm("Data/Textures/metal2-normal.jpg");
 
+	C_Texture tex2("Data/Textures/milos.jpg");
+	C_Texture spec2("Data/Textures/milos-spec.jpg");
+	C_Texture norm2("Data/Textures/milos-normal.jpg");
+
 	textureManager.add(&tex);
 	textureManager.add(&spec);
 	textureManager.add(&norm);
+
+	textureManager.add(&tex2);
+	textureManager.add(&spec2);
+	textureManager.add(&norm2);
+
+	printf("%i\n", textureManager.size());
 
 	Importer::C_Importer importer;
 	importer.load("Data/Models/ASD.obj");
@@ -37,9 +47,9 @@ int main(int argc, char** argv)
 	mesh.mMat.setShader(&shader);
 	mesh.setPos(C_Vector3(2, 0, 0));
 
-	mesh2.mMat.setTexture(&tex);
-	mesh2.mMat.setSpecMap(&spec);
-	mesh2.mMat.setNormMap(&norm);
+	mesh2.mMat.setTexture(&tex2);
+	mesh2.mMat.setSpecMap(&spec2);
+	mesh2.mMat.setNormMap(&norm2);
 	mesh2.mMat.setShader(&shader);
 
 	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");

@@ -36,6 +36,8 @@ namespace C
     void setConfig(C_TextureConfig aConfig);
     //Reload all textures
     void reloadAll();
+    //Get images size
+    size_t size();
     //Destructor
     inline ~C_TextureManager() {}
   };
