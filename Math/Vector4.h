@@ -61,51 +61,31 @@ namespace C
 		//Opeator +
 		inline C_Vector4 operator+(const C_Vector4 aOther)
 		{
-			x += aOther.x;
-			y += aOther.y;
-			z += aOther.z;
-			w += aOther.w;
-			return *this;
+			return C_Vector4(x + aOther.x, y + aOther.y, z + aOther.z, w + aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator -
 		inline C_Vector4 operator-(const C_Vector4 aOther)
 		{
-			x -= aOther.x;
-			y -= aOther.y;
-			z -= aOther.z;
-			w -= aOther.w;
-			return *this;
+			return C_Vector4(x - aOther.x, y - aOther.y, z - aOther.z, w - aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector4 operator*(const C_Vector4 aOther)
 		{
-			x *= aOther.x;
-			y *= aOther.y;
-			z *= aOther.z;
-			w *= aOther.w;
-			return *this;
+			return C_Vector4(x * aOther.x, y * aOther.y, z * aOther.z, w * aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector4 operator*(const float aOther)
 		{
-			x *= aOther;
-			y *= aOther;
-			z *= aOther;
-			w *= aOther;
-			return *this;
+			return C_Vector4(x * aOther, y * aOther, z * aOther, w * aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
 		inline C_Vector4 operator/(const C_Vector4 aOther)
 		{
-			x /= aOther.x;
-			y /= aOther.y;
-			z /= aOther.z;
-			w /= aOther.w;
-			return *this;
+			return C_Vector4(x / aOther.x, y / aOther.y, z / aOther.z, w / aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
@@ -174,10 +154,7 @@ namespace C
 		inline C_Vector4 normalize()
 		{
 			float l = sqrt((x * x) + (y * y) + (z * z) + (w * w));
-			x /= l;
-			y /= l;
-			z /= l;
-			w /= l;
+			return C_Vector4(x / l, y / l, z / l, w / l);
 		}
 		//Destructor
 		inline ~C_Vector4() {}
