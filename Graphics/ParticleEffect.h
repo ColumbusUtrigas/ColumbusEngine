@@ -31,6 +31,7 @@ namespace C
     bool mVisible = true;
     bool mScaleOverLifetime = false;
     bool mEmitFromShell = false;
+    bool mAdditive = true;
 
     C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
@@ -67,6 +68,8 @@ namespace C
     void setScaleOverLifetime(const bool aA);
     //Set particles emit from shell
     void setEmitFromShell(const bool aA);
+    //Set particle additive blending
+    void setAdditive(const bool aA);
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
@@ -115,6 +118,8 @@ namespace C
     bool getScaleOverLifetime();
     //Return particles emit from shell
     bool getEmitFromShell();
+    //Return particles additive blending
+    bool getAdditive();
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction

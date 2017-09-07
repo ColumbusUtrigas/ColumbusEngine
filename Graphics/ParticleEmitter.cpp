@@ -28,6 +28,9 @@ namespace C
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 
+			if (p.TTL > mMaxTTL)
+				mMaxTTL = p.TTL;
+
 			switch(mParticleEffect->getParticleShape())
 			{
 				case C_PARTICLE_SHAPE_CIRCLE:
@@ -171,22 +174,34 @@ namespace C
 
 		glDepthMask(GL_FALSE);
 
+		if (mParticleEffect->getAdditive())
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+		float rate = 100;
+
+		float count = mParticleEffect->getParticlesCount();
+		float spawnT = mMaxTTL;
+		float fireT = 1.0 / rate;
+
+		a = fmod(a, spawnT);
+
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+			float e = std::min(mParticles[i].TTL, fireT) * i;
 
-			if (a >= (e * i) && mParticles[i].active == false)
-			{
-				mParticles[i].active = true;
-				mParticles[i].age = -(e * i);
-			}
+			mParticles[i].age = fmod(e + a, spawnT);
+			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
 
 
 			if (mParticles[i].active == true && mParticles[i].age > 0)
 			{
-				float life = (int)(mParticles[i].age * 1000) % (int)(mParticles[i].TTL * 1000);
+				float life = fmod(mParticles[i].age, mParticles[i].TTL);
+				//life = (int)(mLife * 1000) % (int)(100);
 
-				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
+				//C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
+
+				C_Vector3 pos = mParticles[i].direction.normalize() * mParticles[i].age * mParticles[i].velocity;
 
 				pos += mParticles[i].startPos;
 
@@ -194,7 +209,7 @@ namespace C
 
 				C_Vector3 cf = mParticleEffect->getConstantForce();
 
-				float arr[11] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
+				float arr[11] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
 
 				//mShader->setUniform4f("uPosition", set);
 				mShader->setUniformArrayf("Unif", arr, 11);
@@ -202,10 +217,17 @@ namespace C
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
 
-			mParticles[i].age += frame.elapsed();
+			//mParticles[i].age += frame.elapsed();
 		}
 
+		if (mLife >= mMaxTTL)
+			mLife = 0.0;
+		mLife += frame.elapsed();
+
 		frame.reset();
+
+		if (mParticleEffect->getAdditive())
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDepthMask(GL_TRUE);
 

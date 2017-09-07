@@ -3,6 +3,7 @@
     <Visible>1</Visible>
     <ScaleOL>0</ScaleOL>
     <EmitFromShell>0</EmitFromShell>
+    <AdditiveBlending>1</AdditiveBlending>
     <MinDirection X="-0.30000001" Y="1" Z="-0.30000001"/>
     <MaxDirection X="0.30000001" Y="1" Z="0.30000001"/>
     <ConstForce X="-2" Y="0" Z="0"/>

@@ -65,6 +65,10 @@ namespace C
 
 		int mFrame = 0;
 
+		float mLife = 0.0;
+
+		float mMaxTTL = 0.0;
+
 		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
 
 		//Vertex buffer

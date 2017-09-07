@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	textureManager.add(&spec2);
 	textureManager.add(&norm2);
 
-	printf("%i\n", textureManager.size());
+	printf("%f MB\n", (float)textureManager.size() / 1000000);
 
 	Importer::C_Importer importer;
 	importer.load("Data/Models/ASD.obj");

@@ -46,6 +46,12 @@ namespace C
     mEmitFromShell = (bool)aA;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles additive blending
+  void C_ParticleEffect::setAdditive(const bool aA)
+  {
+    mAdditive = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set negative direction limit
   void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
   {
@@ -177,9 +183,16 @@ namespace C
 	  return mScaleOverLifetime;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Return particles emit from shell
   bool C_ParticleEffect::getEmitFromShell()
   {
     return mEmitFromShell;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particles additive blending
+  bool C_ParticleEffect::getAdditive()
+  {
+    return mAdditive;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return minimum particle direction
@@ -336,6 +349,17 @@ namespace C
 		  return;
 	  }
 	  tmp->SetText(mEmitFromShell);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("AdditiveBlending");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles additive blending: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mAdditive);
 	  root->InsertEndChild(tmp);
 
 	  tmp = NULL;
@@ -610,6 +634,17 @@ namespace C
 	  }
 
 	  tmp->QueryBoolText(&mEmitFromShell);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("AdditiveBlending");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles additive blending: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mAdditive);
 
 	  tmp = NULL;
 
