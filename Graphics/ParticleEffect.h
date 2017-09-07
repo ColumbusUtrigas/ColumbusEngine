@@ -53,6 +53,8 @@ namespace C
     float mMinRotationSpeed = 0.0;
     float mMaxRotationSpeed = 0.0;
 
+    int mEmitRate = 5;
+
     int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
     float mParticleShapeRadius = 1.0;
   public:
@@ -102,6 +104,8 @@ namespace C
     void setMinRotationSpeed(const float aMinRotationSpeed);
     //Set particle maximum rotation speed
     void setMaxRotationSpeed(const float aMaxRotationSpeed);
+    //Set particles emit rate
+    void setEmitRate(const int aEmitRate);
     //Set particle shape
     void setParticleShape(const int aParticleShape);
     //Set particle shape radius
@@ -152,6 +156,8 @@ namespace C
     float getMinRotationSpeed();
     //Return particle maximum rotation speed
     float getMaxRotationSpeed();
+    //Return particles emit rate
+    int getEmitRate();
     //Return particle shape
     int getParticleShape();
     //Return particle shape radius

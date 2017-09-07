@@ -1,5 +1,5 @@
 <ParticleEffect>
-    <Count>100</Count>
+    <Count>500</Count>
     <Visible>1</Visible>
     <ScaleOL>0</ScaleOL>
     <EmitFromShell>0</EmitFromShell>
@@ -20,6 +20,7 @@
     <MaxRotation>0</MaxRotation>
     <MinRotationSpeed>0</MinRotationSpeed>
     <MaxRotationSpeed>0</MaxRotationSpeed>
+    <EmitRate>10</EmitRate>
     <Shape>0</Shape>
     <ShapeRadius>1</ShapeRadius>
 </ParticleEffect>

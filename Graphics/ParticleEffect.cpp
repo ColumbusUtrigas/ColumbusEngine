@@ -148,6 +148,12 @@ namespace C
     mMaxRotationSpeed = (float)aMaxRotationSpeed;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles emit rate
+  void C_ParticleEffect::setEmitRate(const int aEmitRate)
+  {
+    mEmitRate = (int)aEmitRate;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set particle shape
   void C_ParticleEffect::setParticleShape(const int aParticleShape)
   {
@@ -289,6 +295,12 @@ namespace C
   float C_ParticleEffect::getMaxRotationSpeed()
   {
     return mMaxRotationSpeed;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particles emit rate
+  int C_ParticleEffect::getEmitRate()
+  {
+    return mEmitRate;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Retun particle shape
@@ -544,6 +556,16 @@ namespace C
 		  return;
 	  }
 	  tmp->SetText(mMaxRotationSpeed);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+    tmp = doc.NewElement("EmitRate");
+	  if (tmp == NULL && tmp == nullptr)
+    {
+		  C_Error("Can't save Particles emit rate: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mEmitRate);
 	  root->InsertEndChild(tmp);
 	  tmp = NULL;
 
@@ -821,6 +843,15 @@ namespace C
 		  return;
 	  }
 	  tmp->QueryFloatText(&mMaxRotationSpeed);
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("EmitRate");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles emit rate: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryIntText(&mEmitRate);
 	  tmp = NULL;
 
     tmp = root->FirstChildElement("Shape");

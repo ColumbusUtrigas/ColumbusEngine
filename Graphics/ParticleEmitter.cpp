@@ -177,11 +177,14 @@ namespace C
 		if (mParticleEffect->getAdditive())
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-		float rate = 100;
+		float rate = mParticleEffect->getEmitRate();
 
 		float count = mParticleEffect->getParticlesCount();
-		float spawnT = mMaxTTL;
 		float fireT = 1.0 / rate;
+		float spawnT = count * fireT;
+
+		if (count <= rate * mMaxTTL)
+			spawnT = mMaxTTL;
 
 		a = fmod(a, spawnT);
 
