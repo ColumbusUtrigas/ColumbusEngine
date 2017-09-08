@@ -23,9 +23,8 @@ uniform vec2 uFinalSize;
 //5 - isScaleOverLifetime
 //6 - isBillboard
 //7 - isGradient
-//8..10 - constant force
 
-uniform float Unif[11];
+uniform float Unif[8];
 
 uniform int uRenderMode;
 
@@ -50,31 +49,29 @@ void main(void)
 	pos.y = Unif[1];
 	pos.z = Unif[2];
 
-	vec3 CF = vec3(Unif[8], Unif[9], Unif[10]);
 	float lifePercent = Unif[3] / Unif[4];
-	CF *= lifePercent;
 
 	//gl_Position = uProjection * uView * vec4(uPosition.xyz + aPos * vec3(uSize, 1.0), 1.0);
 	if (Unif[6] != 0.0)
 	{
 		if (Unif[5] != 0.0)
 		{
-			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, Unif[3] / Unif[4]);
-			gl_Position = uProjection * (uView * vec4(pos + CF, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0));
+			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
+			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0));
 		} else
 		{
-			gl_Position = uProjection * (uView * vec4(pos + CF, 1.0) + vec4(aPos * vec3(uSize, 1.0) + CF, 0.0));
+			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
 		}
 	}
 	else
 	{
 		if (Unif[5] != 0.0)
 		{
-			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, Unif[3] / Unif[4]);
-			gl_Position = uProjection * uView * vec4(pos + CF + aPos * vec3(SizeOverLifetime, 1.0) + CF, 1.0);
+			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
+			gl_Position = uProjection * uView * vec4(pos + aPos * vec3(SizeOverLifetime, 1.0), 1.0);
 		} else
 		{
-			gl_Position = uProjection * uView * vec4(pos + CF + aPos * vec3(uSize, 1.0) + CF, 1.0);
+			gl_Position = uProjection * uView * vec4(pos + aPos * vec3(uSize, 1.0), 1.0);
 		}
 	}
 

@@ -3,10 +3,10 @@
     <Visible>1</Visible>
     <ScaleOL>0</ScaleOL>
     <EmitFromShell>0</EmitFromShell>
-    <AdditiveBlending>1</AdditiveBlending>
+    <AdditiveBlending>0</AdditiveBlending>
     <MinDirection X="-0.30000001" Y="1" Z="-0.30000001"/>
     <MaxDirection X="0.30000001" Y="1" Z="0.30000001"/>
-    <ConstForce X="-2" Y="0" Z="0"/>
+    <ConstForce X="-1" Y="0" Z="0"/>
     <PartSize X="1" Y="1"/>
     <StartSize X="1" Y="1"/>
     <FinalSize X="2" Y="2"/>
@@ -20,7 +20,7 @@
     <MaxRotation>0</MaxRotation>
     <MinRotationSpeed>0</MinRotationSpeed>
     <MaxRotationSpeed>0</MaxRotationSpeed>
-    <EmitRate>10</EmitRate>
+    <EmitRate>20</EmitRate>
     <Shape>0</Shape>
     <ShapeRadius>1</ShapeRadius>
 </ParticleEffect>

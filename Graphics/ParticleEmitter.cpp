@@ -177,6 +177,8 @@ namespace C
 		if (mParticleEffect->getAdditive())
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
+		C_Vector3 constForce = mParticleEffect->getConstantForce();
+
 		float rate = mParticleEffect->getEmitRate();
 
 		float count = mParticleEffect->getParticlesCount();
@@ -204,18 +206,18 @@ namespace C
 
 				//C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
 
-				C_Vector3 pos = mParticles[i].direction.normalize() * mParticles[i].age * mParticles[i].velocity;
+				C_Vector3 vel = mParticles[i].direction.normalize() * mParticles[i].velocity;
+
+				C_Vector3 pos = (vel + constForce) * mParticles[i].age;
 
 				pos += mParticles[i].startPos;
 
 				mParticles[i].pos = pos;
 
-				C_Vector3 cf = mParticleEffect->getConstantForce();
-
-				float arr[11] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
+				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, 1.0, 1.0, 1.0};
 
 				//mShader->setUniform4f("uPosition", set);
-				mShader->setUniformArrayf("Unif", arr, 11);
+				mShader->setUniformArrayf("Unif", arr, 8);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
