@@ -32,9 +32,13 @@ namespace C
     bool mScaleOverLifetime = false;
     bool mEmitFromShell = false;
     bool mAdditive = true;
+    bool mBillboarding = true;
+    bool mGradienting = true;
 
     C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
+    C_Vector3 mMinAcceleration = C_Vector3(0, 0.1, 0);
+    C_Vector3 mMaxAcceleration = C_Vector3(0, 0.1, 0);
     C_Vector3 mConstantForce = C_Vector3(0, 0, 0);
 
     C_Vector2 mParticleSize = C_Vector2(1, 1);
@@ -70,12 +74,20 @@ namespace C
     void setScaleOverLifetime(const bool aA);
     //Set particles emit from shell
     void setEmitFromShell(const bool aA);
-    //Set particle additive blending
+    //Set particles additive blending
     void setAdditive(const bool aA);
+    //Set particles billboarding
+    void setBillboarding(const bool aA);
+    //Set particles gradianting
+    void setGradienting(const bool aA);
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
     void setMaxDirection(const C_Vector3 aMaxDirection);
+    //Set particle minimum acceleration
+    void setMinAcceleration(const C_Vector3 aMinAccerleration);
+    //Set particle maximum acceleration
+    void setMaxAcceleration(const C_Vector3 aMaxAcceleration);
     //Set constant force acting on particles
     void setConstantForce(const C_Vector3 aConstantForce);
     //Set particle size
@@ -124,10 +136,18 @@ namespace C
     bool getEmitFromShell();
     //Return particles additive blending
     bool getAdditive();
+    //Return particles billboarding
+    bool getBillbiarding();
+    //Return particles gradianting
+    bool getGradienting();
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction
     C_Vector3 getMaxDirection();
+    //Return particle minimum acceleration
+    C_Vector3 getMinAcceleration();
+    //Return particle maximum acceleration
+    C_Vector3 getMaxAcceleration();
     //Return constant force acting on particles
     C_Vector3 getConstantForce();
     //Return particle size
@@ -164,7 +184,7 @@ namespace C
     float getParticleShapeRadius();
 
     //Serialize to XML file
-    void saveToXLM(const char* aFile);
+    void saveToXML(const char* aFile);
     //Deserialize from XML file
     void loadFromXML(const char* aFile);
     //Destructor

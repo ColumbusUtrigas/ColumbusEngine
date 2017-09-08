@@ -52,6 +52,18 @@ namespace C
     mAdditive = (bool)aA;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles billboarding
+  void C_ParticleEffect::setBillboarding(const bool aA)
+  {
+    mBillboarding = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particles gradianting
+  void C_ParticleEffect::setGradienting(const bool aA)
+  {
+    mGradienting = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set negative direction limit
   void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
   {
@@ -62,6 +74,18 @@ namespace C
   void C_ParticleEffect::setMaxDirection(const C_Vector3 aMaxDirection)
   {
     mMaxDirection = (C_Vector3)aMaxDirection;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle minimum acceleration
+  void C_ParticleEffect::setMinAcceleration(const C_Vector3 aMinAcceleration)
+  {
+    mMinAcceleration = (C_Vector3)aMinAcceleration;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle maximum acceleration
+  void C_ParticleEffect::setMaxAcceleration(const C_Vector3 aMaxAcceleration)
+  {
+    mMaxAcceleration = (C_Vector3)aMaxAcceleration;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set constant force acting on particles
@@ -201,6 +225,18 @@ namespace C
     return mAdditive;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Return particles billboarding
+  bool C_ParticleEffect::getBillbiarding()
+  {
+    return mBillboarding;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particles gradianting
+  bool C_ParticleEffect::getGradienting()
+  {
+    return mGradienting;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Return minimum particle direction
   C_Vector3 C_ParticleEffect::getMinDirection()
   {
@@ -211,6 +247,18 @@ namespace C
   C_Vector3 C_ParticleEffect::getMaxDirection()
   {
     return mMaxDirection;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle minimum acceleration
+  C_Vector3 C_ParticleEffect::getMinAcceleration()
+  {
+    return mMinAcceleration;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle maximum acceleration
+  C_Vector3 C_ParticleEffect::getMaxAcceleration()
+  {
+    return mMaxAcceleration;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return constant force acting on particles
@@ -315,7 +363,7 @@ namespace C
   }
   //////////////////////////////////////////////////////////////////////////////
   //Serialize to XML file
-  void C_ParticleEffect::saveToXLM(const char* aFile)
+  void C_ParticleEffect::saveToXML(const char* aFile)
   {
 	  C_XMLDoc doc;
 	  C_XMLNode* root = doc.NewElement("ParticleEffect");
@@ -376,6 +424,28 @@ namespace C
 
 	  tmp = NULL;
 
+    tmp = doc.NewElement("Billboarding");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles billboarding: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mBillboarding);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("Gradianting");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles gradianting: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mGradienting);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
 	  tmp = doc.NewElement("MinDirection");
 	  if (tmp == NULL && tmp == nullptr)
 	  {
@@ -398,6 +468,32 @@ namespace C
 	  tmp->SetAttribute("X", mMaxDirection.x);
 	  tmp->SetAttribute("Y", mMaxDirection.y);
 	  tmp->SetAttribute("Z", mMaxDirection.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("MinAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min acceleration: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mMinAcceleration.x);
+	  tmp->SetAttribute("Y", mMinAcceleration.y);
+	  tmp->SetAttribute("Z", mMinAcceleration.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("MaxAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max acceleration: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mMaxAcceleration.x);
+	  tmp->SetAttribute("Y", mMaxAcceleration.y);
+	  tmp->SetAttribute("Z", mMaxAcceleration.z);
 	  root->InsertEndChild(tmp);
 
 	  tmp = NULL;
@@ -670,6 +766,28 @@ namespace C
 
 	  tmp = NULL;
 
+    tmp = root->FirstChildElement("Billboarding");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles billboarding: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mBillboarding);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("Gradienting");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles gradienting: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mGradienting);
+
+	  tmp = NULL;
+
 	  tmp = root->FirstChildElement("MinDirection");
 	  if (tmp == NULL && tmp == nullptr)
 	  {
@@ -693,6 +811,32 @@ namespace C
 	  tmp->QueryAttribute("X", &mMaxDirection.x);
 	  tmp->QueryAttribute("Y", &mMaxDirection.y);
 	  tmp->QueryAttribute("Z", &mMaxDirection.z);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("MinAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min acceleration: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mMinAcceleration.x);
+	  tmp->QueryAttribute("Y", &mMinAcceleration.y);
+	  tmp->QueryAttribute("Z", &mMinAcceleration.z);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("MaxAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max acceleration: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mMaxAcceleration.x);
+	  tmp->QueryAttribute("Y", &mMaxAcceleration.y);
+	  tmp->QueryAttribute("Z", &mMaxAcceleration.z);
 
 	  tmp = NULL;
 
