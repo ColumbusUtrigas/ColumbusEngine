@@ -13,7 +13,7 @@ int main(int argc, char** argv)
 	C_EventSystem event;
 	event.addWindow(&window);
 
-	C_Shader shader("Data/Shaders/shader.vert", "Data/Shaders/shader.frag");
+	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
 	C_TextureManager textureManager;
 

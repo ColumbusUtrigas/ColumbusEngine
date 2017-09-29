@@ -104,7 +104,7 @@ void Init()
 	{
 		Normal = NormalMap;
 		Normal = normalize(Normal * 2.0 - 1.0);
-		Normal = Normal * varTBN;
+		//Normal = Normal * varTBN;
 	}
 	else
 		Normal = varNormal;
@@ -158,7 +158,7 @@ vec3 GetDiffuse()
 	
 	if (LightType == 2)
 	{
-		vec3 lightDir = normalize(LightPos - varFragPos);
+		vec3 lightDir = varTBN * normalize(LightPos - varFragPos);
 		float diff = max(dot(Normal, lightDir), 0.0);
 		vec3 diffuse = diff * LightColor;
 		return diffuse * MaterialDiffuse;
@@ -189,8 +189,8 @@ vec3 GetSpecular()
 	
 	if(LightType == 2)
 	{
-		vec3 lightDir = normalize(LightPos - varFragPos);
-		vec3 viewDir = normalize(uCamera.pos - varFragPos);
+		vec3 lightDir = varTBN * normalize(LightPos - varFragPos);
+		vec3 viewDir = varTBN * normalize(uCamera.pos - varFragPos);
 		vec3 reflectDir = reflect(-lightDir, Normal);
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
 		vec3 specular = 0.5 * spec * LightColor;
@@ -214,7 +214,7 @@ vec3 GetReflection()
    	
    	//a = mix(mix(mix(b, c, 0.5), mix(d, e, 0.5), 0.5), a, 0);
    	
-   	return a;
+   	return vec3(0);
 }
 
 void main()
