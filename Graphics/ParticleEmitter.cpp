@@ -196,7 +196,11 @@ namespace C
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
 			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+<<<<<<< HEAD
 			float e = min(mParticles[i].TTL, fireT) * i;
+=======
+			float e = std::min(mParticles[i].TTL, fireT) * i;
+>>>>>>> dev
 
 			mParticles[i].age = fmod(e + a, spawnT);
 			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);

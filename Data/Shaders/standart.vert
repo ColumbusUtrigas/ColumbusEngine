@@ -22,14 +22,22 @@ void main()
 {
 	gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
 
+<<<<<<< HEAD
 	varPos = vec3(uModel * vec4(aPos, 1.0));
+=======
+	varPos = vec3(gl_Position);
+>>>>>>> dev
 	varUV = aUV;
 	varNormal = normalize(vec3(uNormal * vec4(aNorm, 0.0)));
 
 	varTangent = normalize(vec3(uNormal * vec4(aTang, 0.0)));
 	varBitangent = cross(varNormal, varTangent);
 
+<<<<<<< HEAD
 	varFragPos = vec3(uModel * vec4(aPos, 1.0));
+=======
+	varFragPos = vec3(uView * uModel * vec4(aPos, 1.0));
+>>>>>>> dev
 }
 
 
