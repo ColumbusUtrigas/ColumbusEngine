@@ -27,6 +27,46 @@ namespace C
 			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
+			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
+
+			if (p.TTL > mMaxTTL)
+				mMaxTTL = p.TTL;
+
+			switch(mParticleEffect->getParticleShape())
+			{
+				case C_PARTICLE_SHAPE_CIRCLE:
+				{
+					float ang = C_RandomBetween(0.0, 6.283185318);
+					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+
+					if (mParticleEffect->getEmitFromShell() == true)
+						rad = mParticleEffect->getParticleShapeRadius();
+
+					float xsp = rad * cos(ang);
+					float ysp = 0.0;
+					float zsp = rad * sin(ang);
+
+					p.startPos = C_Vector3(xsp, ysp, zsp);
+					break;
+				}
+
+				case C_PARTICLE_SHAPE_SPHERE:
+				{
+					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+					float phi = C_RandomBetween(0.0, 6.283185318);
+					float tht = C_RandomBetween(0.0, 3.141592659);
+
+					if (mParticleEffect->getEmitFromShell() == true)
+						rad = mParticleEffect->getParticleShapeRadius();
+
+					float xsp = rad * cos(phi) * sin(tht);
+					float ysp = rad * sin(phi) * sin(tht);
+					float zsp = rad * cos(tht);
+
+					p.startPos = C_Vector3(xsp, ysp, zsp);
+					break;
+				}
+			}
 
 			mParticles.push_back(p);
 		}
@@ -135,39 +175,65 @@ namespace C
 
 		glDepthMask(GL_FALSE);
 
+		if (mParticleEffect->getAdditive())
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+		float scaleOL = mParticleEffect->getScaleOverLifetime();
+		float billboard = mParticleEffect->getBillbiarding();
+		float gradient = mParticleEffect->getGradienting();
+		C_Vector3 constForce = mParticleEffect->getConstantForce();
+
+		float rate = mParticleEffect->getEmitRate();
+		float count = mParticleEffect->getParticlesCount();
+		float fireT = 1.0 / rate;
+		float spawnT = count * fireT;
+
+		if (count <= rate * mMaxTTL)
+			spawnT = mMaxTTL;
+
+		a = fmod(a, spawnT);
+
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+			float e = min(mParticles[i].TTL, fireT) * i;
 
-			if (a >= (e * i) && mParticles[i].active == false)
-			{
-				mParticles[i].active = true;
-				mParticles[i].age = -(e * i);
-			}
+			mParticles[i].age = fmod(e + a, spawnT);
+			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
 
 
 			if (mParticles[i].active == true && mParticles[i].age > 0)
 			{
-				float life = (int)(mParticles[i].age * 1000) % (int)(mParticles[i].TTL * 1000);
+				float life = fmod(mParticles[i].age, mParticles[i].TTL);
 
-				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
+				C_Vector3 vel = mParticles[i].direction.normalize() * mParticles[i].velocity;
+				C_Vector3 acc = mParticles[i].accel;
 
+				float age = mParticles[i].age;
+
+				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				pos += mParticles[i].startPos;
 				mParticles[i].pos = pos;
 
-				C_Vector3 cf = mParticleEffect->getConstantForce();
-
-				float arr[11] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
+				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, scaleOL, billboard, gradient};
 
 				//mShader->setUniform4f("uPosition", set);
-				mShader->setUniformArrayf("Unif", arr, 11);
+				mShader->setUniformArrayf("Unif", arr, 8);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
 
-			mParticles[i].age += frame.elapsed();
+			//mParticles[i].age += frame.elapsed();
 		}
 
+		if (mLife >= mMaxTTL)
+			mLife = 0.0;
+		mLife += frame.elapsed();
+
 		frame.reset();
+
+		if (mParticleEffect->getAdditive())
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDepthMask(GL_TRUE);
 

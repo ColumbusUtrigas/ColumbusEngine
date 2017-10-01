@@ -35,6 +35,7 @@ namespace C
     float quadratic;
 
     float cutoff;
+    float outerCutoff;
   public:
     //Constructor
     C_Light(const int aType);
@@ -60,6 +61,8 @@ namespace C
     void setQuadratic(const float aQuadratic);
     //Set spotlight cutoff
     void setCutoff(const float aCutoff);
+    //Set spotlight outer cuttof
+    void setOuterCutoff(const float aOuterCutoff);
     //Return light type
     int getType();
     //Return light position
@@ -80,6 +83,8 @@ namespace C
     float getQuadratic();
     //Return spotlight cutoff
     float getCutoff();
+    //Return spotlight outer cutoff
+    float getOuterCutoff();
     //Serialize to XML file
     void saveToFile(const char* aFile);
     //Deserialize from XML file

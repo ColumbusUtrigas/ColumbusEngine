@@ -40,6 +40,30 @@ namespace C
 	  mScaleOverLifetime = (bool)aA;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles emit from shell
+  void C_ParticleEffect::setEmitFromShell(const bool aA)
+  {
+    mEmitFromShell = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particles additive blending
+  void C_ParticleEffect::setAdditive(const bool aA)
+  {
+    mAdditive = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particles billboarding
+  void C_ParticleEffect::setBillboarding(const bool aA)
+  {
+    mBillboarding = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particles gradianting
+  void C_ParticleEffect::setGradienting(const bool aA)
+  {
+    mGradienting = (bool)aA;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Set negative direction limit
   void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
   {
@@ -50,6 +74,18 @@ namespace C
   void C_ParticleEffect::setMaxDirection(const C_Vector3 aMaxDirection)
   {
     mMaxDirection = (C_Vector3)aMaxDirection;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle minimum acceleration
+  void C_ParticleEffect::setMinAcceleration(const C_Vector3 aMinAcceleration)
+  {
+    mMinAcceleration = (C_Vector3)aMinAcceleration;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle maximum acceleration
+  void C_ParticleEffect::setMaxAcceleration(const C_Vector3 aMaxAcceleration)
+  {
+    mMaxAcceleration = (C_Vector3)aMaxAcceleration;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set constant force acting on particles
@@ -136,6 +172,23 @@ namespace C
     mMaxRotationSpeed = (float)aMaxRotationSpeed;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Set particles emit rate
+  void C_ParticleEffect::setEmitRate(const int aEmitRate)
+  {
+    mEmitRate = (int)aEmitRate;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set particle shape
+  void C_ParticleEffect::setParticleShape(const int aParticleShape)
+  {
+    mParticleShape = (int)aParticleShape;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  void C_ParticleEffect::setParticleShapeRadius(const float aRadius)
+  {
+    mParticleShapeRadius = (float)aRadius;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Return material
   C_Material* C_ParticleEffect::getMaterial()
   {
@@ -160,6 +213,30 @@ namespace C
 	  return mScaleOverLifetime;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Return particles emit from shell
+  bool C_ParticleEffect::getEmitFromShell()
+  {
+    return mEmitFromShell;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particles additive blending
+  bool C_ParticleEffect::getAdditive()
+  {
+    return mAdditive;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particles billboarding
+  bool C_ParticleEffect::getBillbiarding()
+  {
+    return mBillboarding;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particles gradianting
+  bool C_ParticleEffect::getGradienting()
+  {
+    return mGradienting;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Return minimum particle direction
   C_Vector3 C_ParticleEffect::getMinDirection()
   {
@@ -170,6 +247,18 @@ namespace C
   C_Vector3 C_ParticleEffect::getMaxDirection()
   {
     return mMaxDirection;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle minimum acceleration
+  C_Vector3 C_ParticleEffect::getMinAcceleration()
+  {
+    return mMinAcceleration;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Return particle maximum acceleration
+  C_Vector3 C_ParticleEffect::getMaxAcceleration()
+  {
+    return mMaxAcceleration;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return constant force acting on particles
@@ -256,8 +345,25 @@ namespace C
     return mMaxRotationSpeed;
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Return particles emit rate
+  int C_ParticleEffect::getEmitRate()
+  {
+    return mEmitRate;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Retun particle shape
+  int C_ParticleEffect::getParticleShape()
+  {
+    return mParticleShape;
+  }
+  //Return particle shape radius
+  float C_ParticleEffect::getParticleShapeRadius()
+  {
+    return mParticleShapeRadius;
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Serialize to XML file
-  void C_ParticleEffect::saveToXLM(const char* aFile)
+  void C_ParticleEffect::saveToXML(const char* aFile)
   {
 	  C_XMLDoc doc;
 	  C_XMLNode* root = doc.NewElement("ParticleEffect");
@@ -296,6 +402,50 @@ namespace C
 
 	  tmp = NULL;
 
+    tmp = doc.NewElement("EmitFromShell");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles emit from shell: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mEmitFromShell);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("AdditiveBlending");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles additive blending: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mAdditive);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("Billboarding");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles billboarding: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mBillboarding);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("Gradianting");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles gradianting: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mGradienting);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
 	  tmp = doc.NewElement("MinDirection");
 	  if (tmp == NULL && tmp == nullptr)
 	  {
@@ -318,6 +468,32 @@ namespace C
 	  tmp->SetAttribute("X", mMaxDirection.x);
 	  tmp->SetAttribute("Y", mMaxDirection.y);
 	  tmp->SetAttribute("Z", mMaxDirection.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("MinAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles min acceleration: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mMinAcceleration.x);
+	  tmp->SetAttribute("Y", mMinAcceleration.y);
+	  tmp->SetAttribute("Z", mMinAcceleration.z);
+	  root->InsertEndChild(tmp);
+
+	  tmp = NULL;
+
+    tmp = doc.NewElement("MaxAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles max acceleration: %s", aFile);
+		  return;
+	  }
+	  tmp->SetAttribute("X", mMaxAcceleration.x);
+	  tmp->SetAttribute("Y", mMaxAcceleration.y);
+	  tmp->SetAttribute("Z", mMaxAcceleration.z);
 	  root->InsertEndChild(tmp);
 
 	  tmp = NULL;
@@ -479,6 +655,36 @@ namespace C
 	  root->InsertEndChild(tmp);
 	  tmp = NULL;
 
+    tmp = doc.NewElement("EmitRate");
+	  if (tmp == NULL && tmp == nullptr)
+    {
+		  C_Error("Can't save Particles emit rate: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mEmitRate);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+    tmp = doc.NewElement("Shape");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles shape: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mParticleShape);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
+    tmp = doc.NewElement("ShapeRadius");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't save Particles shape radius: %s", aFile);
+		  return;
+	  }
+	  tmp->SetText(mParticleShapeRadius);
+	  root->InsertEndChild(tmp);
+	  tmp = NULL;
+
 	  if (doc.SaveFile(aFile) != C_XML_SUCCESS)
 	  {
 		  C_Error("Can't save Particle Effect: %s", aFile);
@@ -538,6 +744,50 @@ namespace C
 
 	  tmp = NULL;
 
+    tmp = root->FirstChildElement("EmitFromShell");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles emit from shell: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mEmitFromShell);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("AdditiveBlending");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles additive blending: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mAdditive);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("Billboarding");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles billboarding: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mBillboarding);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("Gradienting");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles gradienting: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryBoolText(&mGradienting);
+
+	  tmp = NULL;
+
 	  tmp = root->FirstChildElement("MinDirection");
 	  if (tmp == NULL && tmp == nullptr)
 	  {
@@ -561,6 +811,32 @@ namespace C
 	  tmp->QueryAttribute("X", &mMaxDirection.x);
 	  tmp->QueryAttribute("Y", &mMaxDirection.y);
 	  tmp->QueryAttribute("Z", &mMaxDirection.z);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("MinAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles min acceleration: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mMinAcceleration.x);
+	  tmp->QueryAttribute("Y", &mMinAcceleration.y);
+	  tmp->QueryAttribute("Z", &mMinAcceleration.z);
+
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("MaxAcceleration");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles max acceleration: %s", aFile);
+		  return;
+	  }
+
+	  tmp->QueryAttribute("X", &mMaxAcceleration.x);
+	  tmp->QueryAttribute("Y", &mMaxAcceleration.y);
+	  tmp->QueryAttribute("Z", &mMaxAcceleration.z);
 
 	  tmp = NULL;
 
@@ -711,6 +987,33 @@ namespace C
 		  return;
 	  }
 	  tmp->QueryFloatText(&mMaxRotationSpeed);
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("EmitRate");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles emit rate: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryIntText(&mEmitRate);
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("Shape");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles shape: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryIntText(&mParticleShape);
+	  tmp = NULL;
+
+    tmp = root->FirstChildElement("ShapeRadius");
+	  if (tmp == NULL && tmp == nullptr)
+	  {
+		  C_Error("Can't load Particles shape radius: %s", aFile);
+		  return;
+	  }
+	  tmp->QueryFloatText(&mParticleShapeRadius);
 	  tmp = NULL;
 
 	  C_Success("Particle Effect loaded: %s", aFile);

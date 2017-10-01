@@ -13,15 +13,25 @@ int main(int argc, char** argv)
 	C_EventSystem event;
 	event.addWindow(&window);
 
-	C_Shader shader("Data/Shaders/shader.vert", "Data/Shaders/shader.frag");
+	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
 	C_TextureManager textureManager;
 
-	C_Texture tex("Data/Textures/metal.jpg");
-	C_Texture spec("Data/Textures/metal.jpg");
+	C_Texture tex("Data/Textures/metal2.jpg");
+	C_Texture spec("Data/Textures/metal2-spec.jpg");
+	C_Texture norm("Data/Textures/metal2-normal.jpg");
+
+	C_Texture tex2("Data/Textures/milos.jpg");
+	C_Texture spec2("Data/Textures/milos-spec.jpg");
+	C_Texture norm2("Data/Textures/milos-normal.jpg");
 
 	textureManager.add(&tex);
 	textureManager.add(&spec);
+	textureManager.add(&norm);
+
+	textureManager.add(&tex2);
+	textureManager.add(&spec2);
+	textureManager.add(&norm2);
 
 	Importer::C_Importer importer;
 	importer.load("Data/Models/ASD.obj");
@@ -31,14 +41,17 @@ int main(int argc, char** argv)
 	C_Mesh mesh2(C_PrimitiveBox());
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
-	mesh.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
+	mesh.mMat.setNormMap(&norm);
 	mesh.mMat.setShader(&shader);
-	mesh.setPos(C_Vector3(2, 0, 0));
+	mesh.setPos(C_Vector3(0, 0, 0));
 
-	mesh2.mMat.setTexture(&tex);
-	mesh2.mMat.setSpecMap(&spec);
-	mesh2.mMat.setColor(C_Vector4(0.3, 0.3, 0.3, 1));
+	mesh2.mMat.setTexture(&tex2);
+	mesh2.mMat.setSpecMap(&spec2);
+	mesh2.mMat.setNormMap(&norm2);
 	mesh2.mMat.setShader(&shader);
+
+	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh2.mMat.loadFromXML("Data/Materials/Default.mtl");
 
 	mesh.addChild(&mesh2);
 
@@ -147,7 +160,7 @@ int main(int argc, char** argv)
 		if (window.getKeyUp(SDL_SCANCODE_V))
 			printf("Key up\n");
 
-		mesh2.addRot(C_Vector3(0, 1, 0));
+		//mesh2.addRot(C_Vector3(0, 1, 0));
 
 		render.render();
 
@@ -166,4 +179,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-

@@ -13,6 +13,7 @@
 #include <GL/glew.h>
 #include <cstdio>
 #include <vector>
+#include <string>
 
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
@@ -27,8 +28,8 @@ namespace C
 	{
 	private:
 		GLuint mID;
-		//Load shader from two files
-		void load(const char* aVert, const char* aFrag);
+		std::vector<std::string> mAttribNames;
+		std::vector<int> mAttribValues;
 		//Load shader from one file
 		void load(const char* aFile);
 	public:
@@ -36,6 +37,12 @@ namespace C
 		C_Shader(const char* aVert, const char* aFrag);
 		//Constructor 2
 		C_Shader(const char* aFile);
+		//Constructor 3
+		C_Shader() {}
+		//Load shader from two files
+		void load(const char* aVert, const char* aFrag);
+		//Add vertex attribute
+		void addAttribute(const char* aName, const int aValue);
 		//Set integer uniform
 		void setUniform1i(const char* aName, const int aValue);
 		//Set float uniform

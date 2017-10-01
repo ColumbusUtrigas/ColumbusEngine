@@ -42,5 +42,11 @@ namespace C
       a->reload();
     }
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get images size
+  size_t C_TextureManager::size()
+  {
+    return mSize;
+  }
 
 }

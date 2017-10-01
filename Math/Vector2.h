@@ -55,41 +55,31 @@ namespace C
 		//Opeator +
 		inline C_Vector2 operator+(const C_Vector2 aOther)
 		{
-			x += aOther.x;
-			y += aOther.y;
-			return *this;
+			return C_Vector2(x + aOther.x, y + aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator -
 		inline C_Vector2 operator-(const C_Vector2 aOther)
 		{
-			x -= aOther.x;
-			y -= aOther.y;
-			return *this;
+			return C_Vector2(x - aOther.x, y - aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector2 operator*(const C_Vector2 aOther)
 		{
-			x *= aOther.x;
-			y *= aOther.y;
-			return *this;
+			return C_Vector2(x * aOther.x, y * aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *
 		inline C_Vector2 operator*(const float aOther)
 		{
-			x *= aOther;
-			y *= aOther;
-			return *this;
+			return C_Vector2(x * aOther, y * aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
 		inline C_Vector2 operator/(const C_Vector2 aOther)
 		{
-			x /= aOther.x;
-			y /= aOther.y;
-			return *this;
+			return C_Vector2(x / aOther.x, y / aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
@@ -144,8 +134,7 @@ namespace C
 		inline C_Vector2 normalize()
 		{
 			float l = sqrt((x * x) + (y * y));
-			x /= l;
-			y /= l;
+			return C_Vector2(x / l, y / l);
 		}
 		//Destructor
 		inline ~C_Vector2() {}

@@ -58,48 +58,31 @@ namespace C
 		//Opeator +
 		inline C_Vector3 operator+(const C_Vector3 aOther)
 		{
-			x += aOther.x;
-			y += aOther.y;
-			z += aOther.z;
-			return *this;
+			return C_Vector3(x + aOther.x, y + aOther.y, z + aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator -
 		inline C_Vector3 operator-(const C_Vector3 aOther)
 		{
-			x -= aOther.x;
-			y -= aOther.y;
-			z -= aOther.z;
-			return *this;
+			return C_Vector3(x - aOther.x, y - aOther.y, z - aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector3 operator*(const C_Vector3 aOther)
 		{
-			C_Vector3 ret = *this;
-			ret.x *= aOther.x;
-			ret.y *= aOther.y;
-			ret.z *= aOther.z;
-			return ret;
+			return C_Vector3(x * aOther.x, y * aOther.y, z * aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector3 operator*(const float aOther)
 		{
-			C_Vector3 ret = *this;
-			ret.x *= aOther;
-			ret.y *= aOther;
-			ret.z *= aOther;
-			return ret;
+			return C_Vector3(x * aOther, y * aOther, z * aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
 		inline C_Vector3 operator/(const C_Vector3 aOther)
 		{
-			x /= aOther.x;
-			y /= aOther.y;
-			z /= aOther.z;
-			return *this;
+			return C_Vector3(x / aOther.x, y / aOther.y, z / aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
@@ -164,10 +147,7 @@ namespace C
 		inline C_Vector3 normalize()
 		{
 			float l = sqrt((x * x) + (y * y) + (z * z));
-			x /= l;
-			y /= l;
-			z /= l;
-			return *this;
+			return C_Vector3(x / l, y / l, z / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return lenght between 2 vectors
