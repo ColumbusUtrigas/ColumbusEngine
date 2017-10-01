@@ -114,6 +114,9 @@ void Cubemap(void)
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = normalize(reflect(I, Normal));
    	CubemapColor = textureCube(uReflectionMap, vec3(R.x, R.y, R.z)).rgb * MaterialUnif[13];
+
+   	if (SpecularMap != vec3(0))
+		CubemapColor *= SpecularMap;
 }
 
 void Final(void)
