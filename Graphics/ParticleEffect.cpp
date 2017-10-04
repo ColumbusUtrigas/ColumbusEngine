@@ -64,6 +64,7 @@ namespace C
     mGradienting = (bool)aA;
   }
   //////////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
   //Set particle emitter position
   void C_ParticleEffect::setPos(const C_Vector3 aPos)
   {
@@ -76,6 +77,8 @@ namespace C
     mPos += (C_Vector3)aPos;
   }
   //////////////////////////////////////////////////////////////////////////////
+=======
+>>>>>>> dev
   //Set negative direction limit
   void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
   {
@@ -190,12 +193,15 @@ namespace C
     mEmitRate = (int)aEmitRate;
   }
   //////////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
   //Set particles transformation
   void C_ParticleEffect::setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation)
   {
     mParticleTransformation = (int)aParticleTransformation;
   }
   //////////////////////////////////////////////////////////////////////////////
+=======
+>>>>>>> dev
   //Set particle shape
   void C_ParticleEffect::setParticleShape(const C_PARTICLE_SHAPE aParticleShape)
   {
@@ -255,12 +261,15 @@ namespace C
     return mGradienting;
   }
   //////////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
   //Return particle emitter position
   C_Vector3 C_ParticleEffect::getPos()
   {
     return mPos;
   }
   //////////////////////////////////////////////////////////////////////////////
+=======
+>>>>>>> dev
   //Return minimum particle direction
   C_Vector3 C_ParticleEffect::getMinDirection()
   {
@@ -375,12 +384,15 @@ namespace C
     return mEmitRate;
   }
   //////////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
   //Return particles transformation
   int C_ParticleEffect::getTransformation()
   {
     return mParticleTransformation;
   }
   //////////////////////////////////////////////////////////////////////////////
+=======
+>>>>>>> dev
   //Retun particle shape
   int C_ParticleEffect::getParticleShape()
   {
@@ -695,6 +707,7 @@ namespace C
 	  root->InsertEndChild(tmp);
 	  tmp = NULL;
 
+<<<<<<< HEAD
     tmp = doc.NewElement("Transformation");
 	  if (tmp == NULL && tmp == nullptr)
     {
@@ -705,6 +718,8 @@ namespace C
 	  root->InsertEndChild(tmp);
 	  tmp = NULL;
 
+=======
+>>>>>>> dev
     tmp = doc.NewElement("Shape");
 	  if (tmp == NULL && tmp == nullptr)
 	  {
@@ -1038,6 +1053,7 @@ namespace C
 	  tmp->QueryIntText(&mEmitRate);
 	  tmp = NULL;
 
+<<<<<<< HEAD
     tmp = root->FirstChildElement("Transformation");
 	  if (tmp == NULL && tmp == nullptr)
 	  {
@@ -1047,6 +1063,8 @@ namespace C
 	  tmp->QueryIntText(&mParticleTransformation);
 	  tmp = NULL;
 
+=======
+>>>>>>> dev
     tmp = root->FirstChildElement("Shape");
 	  if (tmp == NULL && tmp == nullptr)
 	  {

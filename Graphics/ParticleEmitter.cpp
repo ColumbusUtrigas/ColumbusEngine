@@ -26,7 +26,10 @@ namespace C
 			C_Particle p;
 			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+<<<<<<< HEAD
 			p.startPos = mParticleEffect->getPos();
+=======
+>>>>>>> dev
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
 
@@ -115,8 +118,11 @@ namespace C
 	//Draw particles
 	void C_ParticleEmitter::draw()
 	{
+<<<<<<< HEAD
 		using namespace std;
 
+=======
+>>>>>>> dev
 		if (mParticleEffect == nullptr)
 			return;
 		if (mShader == nullptr)
@@ -184,9 +190,13 @@ namespace C
 		float scaleOL = mParticleEffect->getScaleOverLifetime();
 		float billboard = mParticleEffect->getBillbiarding();
 		float gradient = mParticleEffect->getGradienting();
+<<<<<<< HEAD
 		float transformation = mParticleEffect->getTransformation();
 		C_Vector3 constForce = mParticleEffect->getConstantForce();
 		C_Vector3 startEmitterPos = mParticleEffect->getPos();
+=======
+		C_Vector3 constForce = mParticleEffect->getConstantForce();
+>>>>>>> dev
 
 		float rate = mParticleEffect->getEmitRate();
 		float count = mParticleEffect->getParticlesCount();
@@ -203,6 +213,7 @@ namespace C
 			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
 			float e = min(mParticles[i].TTL, fireT) * i;
 			mParticles[i].age = fmod(e + a, spawnT);
+<<<<<<< HEAD
 
 			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
 				mParticles[i].startEmitterPos = startEmitterPos;
@@ -210,6 +221,8 @@ namespace C
 				if ((mParticles[i].age / mParticles[i].TTL) <= 0.1)
 					mParticles[i].startEmitterPos = startEmitterPos;
 
+=======
+>>>>>>> dev
 			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
 
 
@@ -223,7 +236,11 @@ namespace C
 				float age = mParticles[i].age;
 
 				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+<<<<<<< HEAD
 				pos += mParticles[i].startPos + mParticles[i].startEmitterPos;
+=======
+				pos += mParticles[i].startPos;
+>>>>>>> dev
 				mParticles[i].pos = pos;
 
 				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, scaleOL, billboard, gradient};
