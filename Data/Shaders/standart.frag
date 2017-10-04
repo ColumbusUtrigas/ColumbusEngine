@@ -1,10 +1,7 @@
 #version 130
 
-<<<<<<< HEAD
 #define LIGHT_NUM 4
 
-=======
->>>>>>> dev
 varying vec3 varPos;
 varying vec2 varUV;
 varying vec3 varNormal;
@@ -24,18 +21,11 @@ struct Camera
 	vec3 pos;
 };
 
-<<<<<<< HEAD
 uniform samplerCube uReflectionMap;
 uniform Material uMaterial;
 uniform Camera uCamera;
 uniform float MaterialUnif[14];
 uniform float LightUnif[15];
-=======
-uniform Material uMaterial;
-uniform Camera uCamera;
-uniform float MaterialUnif[14];
-uniform samplerCube uReflectionMap;
->>>>>>> dev
 
 vec4 DiffuseMap;
 vec3 SpecularMap;
@@ -43,30 +33,17 @@ vec3 NormalMap;
 
 vec3 Normal;
 
-<<<<<<< HEAD
 vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
 vec3 CubemapColor = vec3(0);
-=======
-vec3 AmbientColor;
-vec3 DiffuseColor;
-vec3 SpecularColor;
-vec3 CubemapColor;
->>>>>>> dev
 
 vec4 FinalColor;
 
 mat3 TBN;
 
 void Init(void);
-<<<<<<< HEAD
 void Light(int id);
-=======
-void Ambient(void);
-void Diffuse(void);
-void Specular(void);
->>>>>>> dev
 void Cubemap(void);
 void Final(void);
 
@@ -74,14 +51,8 @@ void main(void)
 {
 	Init();
 
-<<<<<<< HEAD
 	Light(0);
-
-=======
-	Ambient();
-	Diffuse();
-	Specular();
->>>>>>> dev
+	
 	Cubemap();
 
 	Final();
@@ -103,7 +74,6 @@ void Init(void)
 		Normal = varNormal;
 }
 
-<<<<<<< HEAD
 void Light(int id)
 {
 	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
@@ -164,40 +134,6 @@ void Light(int id)
 		DiffuseColor *= attenuation;
 		SpecularColor *= attenuation;
 	}
-=======
-void Ambient(void)
-{
-	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
-	vec3 MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
-	AmbientColor = MaterialAmbient * vec3(1, 1, 1) * vec3(MaterialColor);
-}
-
-void Diffuse(void)
-{
-	vec3 MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
-
-	vec3 lightDir = normalize(vec3(-uCamera.pos));
-	vec3 viewDir = normalize(uCamera.pos - varPos);
-	float diff = max(0.0, dot(Normal, -lightDir));
-	DiffuseColor = vec3(1) * MaterialDiffuse * diff;
-}
-
-void Specular(void)
-{
-	vec3 MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
-
-	vec3 lightDir = normalize(vec3(-uCamera.pos));
-	vec3 viewDir = normalize(uCamera.pos - varPos);
-	vec3 reflect = normalize(reflect(lightDir, Normal));
-	float spec = pow(max(0.0, dot(viewDir, reflect)), 32);
-
-	vec3 specular = MaterialSpecular * vec3(1) * spec * 0.5;
-
-	if (SpecularMap != vec3(0))
-		SpecularColor = specular * MaterialSpecular * SpecularMap;
-	else
-		SpecularColor = specular * MaterialSpecular;
->>>>>>> dev
 }
 
 void Cubemap(void)
@@ -229,11 +165,6 @@ void Final(void)
 		else
 			FinalColor = Lighting;
 	}
-<<<<<<< HEAD
-=======
-
-	//FinalColor = vec4(CubemapColor, 1.0);
->>>>>>> dev
 }
 
 

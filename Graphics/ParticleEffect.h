@@ -88,13 +88,10 @@ namespace C
     void setBillboarding(const bool aA);
     //Set particles gradianting
     void setGradienting(const bool aA);
-<<<<<<< HEAD
     //Set particle emitter position
     void setPos(const C_Vector3 aPos);
     //Add position to current
     void addPos(const C_Vector3 aPos);
-=======
->>>>>>> dev
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
@@ -133,11 +130,8 @@ namespace C
     void setMaxRotationSpeed(const float aMaxRotationSpeed);
     //Set particles emit rate
     void setEmitRate(const int aEmitRate);
-<<<<<<< HEAD
     //Set particles transformation
     void setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation);
-=======
->>>>>>> dev
     //Set particle shape
     void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
     //Set particle shape radius
@@ -160,11 +154,8 @@ namespace C
     bool getBillbiarding();
     //Return particles gradianting
     bool getGradienting();
-<<<<<<< HEAD
     //Return particle emitter position
     C_Vector3 getPos();
-=======
->>>>>>> dev
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction
@@ -203,11 +194,8 @@ namespace C
     float getMaxRotationSpeed();
     //Return particles emit rate
     int getEmitRate();
-<<<<<<< HEAD
     //Return particles transformation
     int getTransformation();
-=======
->>>>>>> dev
     //Return particle shape
     int getParticleShape();
     //Return particle shape radius
