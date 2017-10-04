@@ -13,7 +13,7 @@ int main(int argc, char** argv)
 	C_EventSystem event;
 	event.addWindow(&window);
 
-	C_Shader shader("Data/Shaders/shader.vert", "Data/Shaders/shader.frag");
+	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
 	C_TextureManager textureManager;
 
@@ -33,8 +33,6 @@ int main(int argc, char** argv)
 	textureManager.add(&spec2);
 	textureManager.add(&norm2);
 
-	printf("%i\n", textureManager.size());
-
 	Importer::C_Importer importer;
 	importer.load("Data/Models/ASD.obj");
 
@@ -45,7 +43,7 @@ int main(int argc, char** argv)
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setNormMap(&norm);
 	mesh.mMat.setShader(&shader);
-	mesh.setPos(C_Vector3(2, 0, 0));
+	mesh.setPos(C_Vector3(0, 0, 0));
 
 	mesh2.mMat.setTexture(&tex2);
 	mesh2.mMat.setSpecMap(&spec2);
@@ -145,6 +143,15 @@ int main(int argc, char** argv)
 			camera.addRot(C_Vector3(0, 125 * RedrawTime, 0));
 		if (window.getKey(SDL_SCANCODE_RIGHT))
 			camera.addRot(C_Vector3(0, -125 * RedrawTime, 0));
+
+		if (window.getKey(SDL_SCANCODE_I))
+			particleEffect.addPos(C_Vector3(0, 0, -3) * RedrawTime);
+		if (window.getKey(SDL_SCANCODE_K))
+			particleEffect.addPos(C_Vector3(0, 0, 3) * RedrawTime);
+		if (window.getKey(SDL_SCANCODE_J))
+			particleEffect.addPos(C_Vector3(-3, 0, 0) * RedrawTime);
+		if (window.getKey(SDL_SCANCODE_L))
+			particleEffect.addPos(C_Vector3(3, 0, 0) * RedrawTime);
 
 		if (window.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(C_Vector3(0, 0, 0) - camera.up() * RedrawTime * 5);

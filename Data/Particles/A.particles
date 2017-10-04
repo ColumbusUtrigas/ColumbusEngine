@@ -1,24 +1,31 @@
 <ParticleEffect>
-    <Count>100</Count>
+    <Count>500</Count>
     <Visible>1</Visible>
-    <ScaleOL>0</ScaleOL>
+    <ScaleOL>1</ScaleOL>
     <EmitFromShell>0</EmitFromShell>
-    <MinDirection X="-0.30000001" Y="1" Z="-0.30000001"/>
-    <MaxDirection X="0.30000001" Y="1" Z="0.30000001"/>
-    <ConstForce X="-2" Y="0" Z="0"/>
+    <AdditiveBlending>0</AdditiveBlending>
+    <Billboarding>1</Billboarding>
+    <Gradienting>1</Gradienting>
+    <MinDirection X="-0.3" Y="1" Z="-0.3"/>
+    <MaxDirection X="0.3" Y="1" Z="0.3"/>
+    <MinAcceleration X="0" Y="0.1" Z="0"/>
+    <MaxAcceleration X="0" Y="0.1" Z="0"/>
+    <ConstForce X="0" Y="0" Z="0"/>
     <PartSize X="1" Y="1"/>
     <StartSize X="1" Y="1"/>
     <FinalSize X="2" Y="2"/>
-    <StartColor R="0.30000001" G="0.30000001" B="0.30000001" A="0.5"/>
-    <FinalColor R="1" G="1" B="1" A="0.0099999998"/>
+    <StartColor R="0.1" G="0.1" B="0.1" A="0.5"/>
+    <FinalColor R="0.5" G="0.5" B="0.5" A="0.001"/>
     <MinTTL>2</MinTTL>
     <MaxTTL>5</MaxTTL>
     <MinVelocity>1</MinVelocity>
-    <MaxVelocity>2</MaxVelocity>
+    <MaxVelocity>1</MaxVelocity>
     <MinRotation>0</MinRotation>
     <MaxRotation>0</MaxRotation>
     <MinRotationSpeed>0</MinRotationSpeed>
     <MaxRotationSpeed>0</MaxRotationSpeed>
+    <EmitRate>35</EmitRate>
+    <Transformation>1</Transformation>
     <Shape>0</Shape>
     <ShapeRadius>1</ShapeRadius>
 </ParticleEffect>

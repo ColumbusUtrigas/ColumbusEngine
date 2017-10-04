@@ -15,10 +15,16 @@
 namespace C
 {
 
-  enum
+  enum C_PARTICLE_SHAPE
   {
     C_PARTICLE_SHAPE_CIRCLE,
     C_PARTICLE_SHAPE_SPHERE
+  };
+
+  enum C_PARTICLE_TRANSFORMATION
+  {
+    C_PARTICLE_TRANSFORMATION_LOCAL,
+    C_PARTICLE_TRANSFORMATION_WORLD
   };
 
   class C_ParticleEffect
@@ -31,9 +37,15 @@ namespace C
     bool mVisible = true;
     bool mScaleOverLifetime = false;
     bool mEmitFromShell = false;
+    bool mAdditive = true;
+    bool mBillboarding = true;
+    bool mGradienting = true;
 
+    C_Vector3 mPos = C_Vector3(0, 0, 0);
     C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
+    C_Vector3 mMinAcceleration = C_Vector3(0, 0.1, 0);
+    C_Vector3 mMaxAcceleration = C_Vector3(0, 0.1, 0);
     C_Vector3 mConstantForce = C_Vector3(0, 0, 0);
 
     C_Vector2 mParticleSize = C_Vector2(1, 1);
@@ -52,8 +64,11 @@ namespace C
     float mMinRotationSpeed = 0.0;
     float mMaxRotationSpeed = 0.0;
 
+    int mEmitRate = 5;
+
     int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
     float mParticleShapeRadius = 1.0;
+    int mParticleTransformation = C_PARTICLE_TRANSFORMATION_WORLD;
   public:
     //Constructor
     C_ParticleEffect();
@@ -67,10 +82,24 @@ namespace C
     void setScaleOverLifetime(const bool aA);
     //Set particles emit from shell
     void setEmitFromShell(const bool aA);
+    //Set particles additive blending
+    void setAdditive(const bool aA);
+    //Set particles billboarding
+    void setBillboarding(const bool aA);
+    //Set particles gradianting
+    void setGradienting(const bool aA);
+    //Set particle emitter position
+    void setPos(const C_Vector3 aPos);
+    //Add position to current
+    void addPos(const C_Vector3 aPos);
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
     void setMaxDirection(const C_Vector3 aMaxDirection);
+    //Set particle minimum acceleration
+    void setMinAcceleration(const C_Vector3 aMinAccerleration);
+    //Set particle maximum acceleration
+    void setMaxAcceleration(const C_Vector3 aMaxAcceleration);
     //Set constant force acting on particles
     void setConstantForce(const C_Vector3 aConstantForce);
     //Set particle size
@@ -99,8 +128,12 @@ namespace C
     void setMinRotationSpeed(const float aMinRotationSpeed);
     //Set particle maximum rotation speed
     void setMaxRotationSpeed(const float aMaxRotationSpeed);
+    //Set particles emit rate
+    void setEmitRate(const int aEmitRate);
+    //Set particles transformation
+    void setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation);
     //Set particle shape
-    void setParticleShape(const int aParticleShape);
+    void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
     //Set particle shape radius
     void setParticleShapeRadius(const float aRadius);
 
@@ -115,10 +148,22 @@ namespace C
     bool getScaleOverLifetime();
     //Return particles emit from shell
     bool getEmitFromShell();
+    //Return particles additive blending
+    bool getAdditive();
+    //Return particles billboarding
+    bool getBillbiarding();
+    //Return particles gradianting
+    bool getGradienting();
+    //Return particle emitter position
+    C_Vector3 getPos();
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction
     C_Vector3 getMaxDirection();
+    //Return particle minimum acceleration
+    C_Vector3 getMinAcceleration();
+    //Return particle maximum acceleration
+    C_Vector3 getMaxAcceleration();
     //Return constant force acting on particles
     C_Vector3 getConstantForce();
     //Return particle size
@@ -147,13 +192,17 @@ namespace C
     float getMinRotationSpeed();
     //Return particle maximum rotation speed
     float getMaxRotationSpeed();
+    //Return particles emit rate
+    int getEmitRate();
+    //Return particles transformation
+    int getTransformation();
     //Return particle shape
     int getParticleShape();
     //Return particle shape radius
     float getParticleShapeRadius();
 
     //Serialize to XML file
-    void saveToXLM(const char* aFile);
+    void saveToXML(const char* aFile);
     //Deserialize from XML file
     void loadFromXML(const char* aFile);
     //Destructor
