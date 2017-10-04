@@ -25,6 +25,14 @@ namespace C
 		std::vector<C_ParticleEmitter*> mParticleEmitters;
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
+
+		C_Shader* mPostProcess = NULL;
+
+		unsigned int FBO = 0;
+		unsigned int TBO = 0;
+		unsigned int RBO = 0;
+
+		C_Vector2 mWindowSize;
 	public:
 		//Constructor
 		C_Render();
@@ -34,6 +42,8 @@ namespace C
 		void add(C_ParticleEmitter* aP);
 		//Set main camera
 		void setMainCamera(C_Camera* aCamera);
+		//Set window size
+		void setWindowSize(C_Vector2 aWindowSize);
 		//Set skybox
 		void setSkybox(C_Skybox* aSkybox);
 		//Render scene

@@ -171,6 +171,7 @@ int main(int argc, char** argv)
 
 		//mesh2.addRot(C_Vector3(0, 1, 0));
 
+		render.setWindowSize(window.getSize());
 		render.render();
 
 		//particles.draw();

@@ -243,6 +243,9 @@ namespace C
 
 
 		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
+
+		glActiveTexture(GL_TEXTURE0);
+		C_Texture::unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set camera
