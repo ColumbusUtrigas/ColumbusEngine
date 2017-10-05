@@ -14,6 +14,8 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/ParticleEmitter.h>
+#include <Graphics/Framebuffer.h>
+#include <Graphics/Renderbuffer.h>
 
 namespace C
 {
@@ -32,7 +34,14 @@ namespace C
 		unsigned int TBO = 0;
 		unsigned int RBO = 0;
 
+		C_Framebuffer* FB = nullptr;
+		C_Texture* TB = nullptr;
+		C_Renderbuffer* RB = nullptr;
+
 		C_Vector2 mWindowSize;
+
+		//Draw screen quad
+		void drawQuad();
 	public:
 		//Constructor
 		C_Render();

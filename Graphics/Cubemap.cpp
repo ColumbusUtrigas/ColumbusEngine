@@ -62,7 +62,7 @@ namespace C
 	//Destructor
 	C_Cubemap::~C_Cubemap()
 	{
-
+		glDeleteTextures(1, &mID);
 	}
 
 }

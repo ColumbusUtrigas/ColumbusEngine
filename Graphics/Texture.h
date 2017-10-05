@@ -45,7 +45,7 @@ namespace C
 	{
 	private:
 		FIBITMAP* mBuffer = NULL;
-		GLuint mID;
+		unsigned int mID;
 
 		char* mFile = NULL;
 
@@ -111,9 +111,11 @@ namespace C
 		//Unbind texture
 		static void unbind();
 		//Get texture id
-		inline int getID() { return mID; }
+		inline unsigned int getID() { return mID; }
 		//Create sampler and bind texture
 		void sampler2D(int a);
+		//Generate mipmap for texture
+		void generateMipmap();
 		//Destructor
 		~C_Texture();
 	};

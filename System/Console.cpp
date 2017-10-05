@@ -21,7 +21,7 @@ namespace C
     register int i;
 
     bool win = false;
-    if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+    if (strcmp(C_GetSystem(), "Win32") == 0 || strcmp(C_GetSystem(), "Win64") == 0)
       win = true;
 
     if (!win)
@@ -123,7 +123,7 @@ namespace C
     register int i;
 
     bool win = false;
-    if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+    if (strcmp(C_GetSystem(), "Win32") == 0 || strcmp(C_GetSystem(), "Win64") == 0)
       win = true;
 
     if (!win)
@@ -225,7 +225,7 @@ namespace C
     register int i;
 
     bool win = false;
-    if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+    if (strcmp(C_GetSystem(), "Win32") == 0 || strcmp(C_GetSystem(), "Win64") == 0)
       win = true;
 
     if (!win)
@@ -327,7 +327,7 @@ namespace C
     register int i;
 
     bool win = false;
-    if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+    if (strcmp(C_GetSystem(), "Win32") == 0 || strcmp(C_GetSystem(), "Win64") == 0)
       win = true;
 
     if (!win)
@@ -430,7 +430,7 @@ namespace C
     register int i;
 
     bool win = false;
-    if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+    if (strcmp(C_GetSystem(), "Win32") == 0 || strcmp(C_GetSystem(), "Win64") == 0)
       win = true;
 
     if (!win)
@@ -532,7 +532,7 @@ namespace C
     register int i;
 
     bool win = false;
-    if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+    if (strcmp(C_GetSystem(), "Win32") == 0 || strcmp(C_GetSystem(), "Win64") == 0)
       win = true;
 
     if (!win)

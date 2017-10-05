@@ -3,6 +3,7 @@
 #include <Graphics/Buffer.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
+#include <Graphics/Framebuffer.h>
 #include <Impl/EventSystem.h>
 #include <Impl/ImplSDL.h>
 #include <Graphics/Importer.h>
@@ -11,6 +12,7 @@
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/Render.h>
+#include <Graphics/Renderbuffer.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Skybox.h>
 #include <System/Console.h>

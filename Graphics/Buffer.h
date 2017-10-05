@@ -18,7 +18,7 @@ namespace C
 	class C_Buffer
 	{
 	private:
-		GLuint mID;
+		unsigned int mID;
 		int mSize;
 	public:
 		//Constructor

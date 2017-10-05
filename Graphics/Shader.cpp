@@ -211,7 +211,7 @@ namespace C
 	//Destructor
 	C_Shader::~C_Shader()
 	{
-
+		glDeleteProgram(mID);
 	}
 
 }

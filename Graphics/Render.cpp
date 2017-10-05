@@ -17,23 +17,15 @@ namespace C
 	//Constructor
 	C_Render::C_Render()
 	{
-		glGenFramebuffers(1, &FBO);
-		glGenTextures(1, &TBO);
-		glGenRenderbuffers(1, &RBO);
+		FB = new C_Framebuffer();
+		TB = new C_Texture(NULL, 640, 480, true);
+		RB = new C_Renderbuffer();
 
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
+		FB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, TB->getID());
+		RB->storage(C_RENDERBUFFER_DEPTH_24, 640, 480);
+		FB->setRenderbuffer(C_FRAMEBUFFER_DEPTH_ATTACH, RB->getID());
 
-		glBindTexture(GL_TEXTURE_2D, TBO);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 640, 480, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TBO, 0);
-
-    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 640, 480);
-    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+		printf("%i\n", FB->check());
 
 		mPostProcess = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/post.frag");
 	}
@@ -78,7 +70,7 @@ namespace C
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 
-		for (size_t i = 0; i < mMeshes.size(); i++)
+		/*for (size_t i = 0; i < mMeshes.size(); i++)
 		{
 			if (mCamera != nullptr)
 				mMeshes[i]->setCamera(*mCamera);
@@ -92,23 +84,19 @@ namespace C
 				mParticleEmitters[i]->setCameraPos(mCamera->pos());
 
 			//mParticleEmitters[i]->draw();
-		}
+		}*/
 
-		glBindTexture(GL_TEXTURE_2D, TBO);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWindowSize.x, mWindowSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		TB->load(NULL, mWindowSize.x, mWindowSize.y, true);
+		RB->storage(C_RENDERBUFFER_DEPTH_24, mWindowSize.x, mWindowSize.y);
 
-		glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mWindowSize.x, mWindowSize.y);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
+		//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		FB->bind();
 		glViewport(0, 0, mWindowSize.x, mWindowSize.y);
 
 		glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glViewport(0, 0, mWindowSize.x, mWindowSize.y);
+		//FB->prepare(C_Vector4(1, 1, 1, 0), mWindowSize);
 
 		mSkybox->draw();
 
@@ -116,39 +104,35 @@ namespace C
 		mMeshes[1]->draw();
 
 		mParticleEmitters[0]->draw();
-		/*glBegin(GL_TRIANGLES);
-			glVertex2f(0.0, 0.0);
-			glVertex2f(1.0, 1.0);
-			glVertex2f(0.0, 1.0);
 
-			glVertex2f(0.0, 0.0);
-			glVertex2f(1.0, 0.0);
-			glVertex2f(1.0, 1.0);
-		glEnd();*/
+		C_Framebuffer::unbind();
 
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-		glBindTexture(GL_TEXTURE_2D, TBO);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		TB->generateMipmap();
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 
 		C_Cubemap::unbind();
-
 		C_Buffer::unbind();
-
 		C_Texture::unbind();
-
 		C_Shader::unbind();
+		C_Framebuffer::unbind();
+		C_Renderbuffer::unbind();
 
 		mPostProcess->bind();
 		mPostProcess->setUniform2f("uWindowSize", mWindowSize);
 
-		glBindTexture(GL_TEXTURE_2D, TBO);
+		TB->bind();
+		drawQuad();
+		C_Texture::unbind();
 
+		C_Shader::unbind();
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Draw screen quad
+	void C_Render::drawQuad()
+	{
 		glColor3f(1.0, 1.0, 1.0);
 		glBegin(GL_TRIANGLES);
 			glTexCoord2f(0.0, 0.0);
@@ -169,10 +153,6 @@ namespace C
 			glTexCoord2f(1.0, 1.0);
 			glVertex2f(1.0, 1.0);
 		glEnd();
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		C_Shader::unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

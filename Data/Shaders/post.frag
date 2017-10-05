@@ -21,6 +21,7 @@ vec3 Pixelization(vec2 size);
 
 void main(void)
 {
+	//FinalColor = Scanline(3);
 	FinalColor = Pixelization(vec2(10, 10));
 	//FinalColor = frame;
 }
