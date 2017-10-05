@@ -26,7 +26,7 @@ namespace C
 	class C_Cubemap
 	{
 	private:
-		GLuint mID;
+		unsigned int mID;
 	public:
 		//Constructor
 		C_Cubemap(C_CubemapPath aPath);

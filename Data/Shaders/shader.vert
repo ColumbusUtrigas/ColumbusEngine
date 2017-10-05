@@ -24,9 +24,10 @@ void main()
 	varNormal = normalize(vec3(uNormal * vec4(aNorm, 1.0)));
 	varFragPos = vec3(uModel * vec4(aPos, 1.0));
 	
-	vec3 T = normalize(vec3(uModel * vec4(aTang, 0.0)));
-	vec3 B = normalize(vec3(uModel * vec4(aBitang, 0.0)));
-	vec3 N = normalize(vec3(uModel * vec4(aNorm, 0.0)));
+	vec3 T = normalize(vec3(uNormal * vec4(aTang, 0.0)));
+	vec3 B = normalize(vec3(uNormal * vec4(aBitang, 0.0)));
+	vec3 N = normalize(vec3(uNormal * vec4(aNorm, 0.0)));
+
 	varTBN = transpose(mat3(T, B, N));
 }
 

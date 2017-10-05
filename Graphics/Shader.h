@@ -27,7 +27,7 @@ namespace C
 	class C_Shader
 	{
 	private:
-		GLuint mID;
+		unsigned int mID;
 		std::vector<std::string> mAttribNames;
 		std::vector<int> mAttribValues;
 		//Load shader from one file

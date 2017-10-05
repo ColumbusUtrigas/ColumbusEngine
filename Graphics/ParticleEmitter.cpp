@@ -26,7 +26,12 @@ namespace C
 			C_Particle p;
 			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			p.startPos = mParticleEffect->getPos();
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
+			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
+
+			if (p.TTL > mMaxTTL)
+				mMaxTTL = p.TTL;
 
 			switch(mParticleEffect->getParticleShape())
 			{
@@ -110,6 +115,8 @@ namespace C
 	//Draw particles
 	void C_ParticleEmitter::draw()
 	{
+		using namespace std;
+
 		if (mParticleEffect == nullptr)
 			return;
 		if (mShader == nullptr)
@@ -171,41 +178,74 @@ namespace C
 
 		glDepthMask(GL_FALSE);
 
+		if (mParticleEffect->getAdditive())
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+		float scaleOL = mParticleEffect->getScaleOverLifetime();
+		float billboard = mParticleEffect->getBillbiarding();
+		float gradient = mParticleEffect->getGradienting();
+
+		float transformation = mParticleEffect->getTransformation();
+		C_Vector3 constForce = mParticleEffect->getConstantForce();
+		C_Vector3 startEmitterPos = mParticleEffect->getPos();
+
+		float rate = mParticleEffect->getEmitRate();
+		float count = mParticleEffect->getParticlesCount();
+		float fireT = 1.0 / rate;
+		float spawnT = count * fireT;
+
+		if (count <= rate * mMaxTTL)
+			spawnT = mMaxTTL;
+
+		a = fmod(a, spawnT);
+
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
+			float e = min(mParticles[i].TTL, fireT) * i;
+			mParticles[i].age = fmod(e + a, spawnT);
 
-			if (a >= (e * i) && mParticles[i].active == false)
-			{
-				mParticles[i].active = true;
-				mParticles[i].age = -(e * i);
-			}
+			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+				mParticles[i].startEmitterPos = startEmitterPos;
+			else
+				if ((mParticles[i].age / mParticles[i].TTL) <= 0.1)
+					mParticles[i].startEmitterPos = startEmitterPos;
+
+			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
 
 
 			if (mParticles[i].active == true && mParticles[i].age > 0)
 			{
-				float life = (int)(mParticles[i].age * 1000) % (int)(mParticles[i].TTL * 1000);
+				float life = fmod(mParticles[i].age, mParticles[i].TTL);
 
-				C_Vector3 pos = mParticles[i].direction.normalize() * (float)(life / 1000) * mParticles[i].velocity;
+				C_Vector3 vel = mParticles[i].direction.normalize() * mParticles[i].velocity;
+				C_Vector3 acc = mParticles[i].accel;
 
-				pos += mParticles[i].startPos;
+				float age = mParticles[i].age;
 
+				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				pos += mParticles[i].startPos + mParticles[i].startEmitterPos;
 				mParticles[i].pos = pos;
 
-				C_Vector3 cf = mParticleEffect->getConstantForce();
-
-				float arr[11] = {pos.x, pos.y, pos.z, (float)(life / 1000), mParticles[i].TTL, 1.0, 1.0, 1.0, cf.x, cf.y, cf.z};
+				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, scaleOL, billboard, gradient};
 
 				//mShader->setUniform4f("uPosition", set);
-				mShader->setUniformArrayf("Unif", arr, 11);
+				mShader->setUniformArrayf("Unif", arr, 8);
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);
 			}
 
-			mParticles[i].age += frame.elapsed();
+			//mParticles[i].age += frame.elapsed();
 		}
 
+		if (mLife >= mMaxTTL)
+			mLife = 0.0;
+		mLife += frame.elapsed();
+
 		frame.reset();
+
+		if (mParticleEffect->getAdditive())
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDepthMask(GL_TRUE);
 
