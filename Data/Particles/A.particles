@@ -3,7 +3,7 @@
     <Visible>1</Visible>
     <ScaleOL>1</ScaleOL>
     <EmitFromShell>0</EmitFromShell>
-    <AdditiveBlending>1</AdditiveBlending>
+    <AdditiveBlending>0</AdditiveBlending>
     <Billboarding>1</Billboarding>
     <Gradienting>1</Gradienting>
     <MinDirection X="-0.3" Y="1" Z="-0.3"/>
@@ -24,7 +24,8 @@
     <MaxRotation>0</MaxRotation>
     <MinRotationSpeed>0</MinRotationSpeed>
     <MaxRotationSpeed>0</MaxRotationSpeed>
-    <EmitRate>15</EmitRate>
+    <EmitRate>35</EmitRate>
+    <Transformation>1</Transformation>
     <Shape>0</Shape>
     <ShapeRadius>1</ShapeRadius>
 </ParticleEffect>

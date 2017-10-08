@@ -15,10 +15,16 @@
 namespace C
 {
 
-  enum
+  enum C_PARTICLE_SHAPE
   {
     C_PARTICLE_SHAPE_CIRCLE,
     C_PARTICLE_SHAPE_SPHERE
+  };
+
+  enum C_PARTICLE_TRANSFORMATION
+  {
+    C_PARTICLE_TRANSFORMATION_LOCAL,
+    C_PARTICLE_TRANSFORMATION_WORLD
   };
 
   class C_ParticleEffect
@@ -35,6 +41,7 @@ namespace C
     bool mBillboarding = true;
     bool mGradienting = true;
 
+    C_Vector3 mPos = C_Vector3(0, 0, 0);
     C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
     C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
     C_Vector3 mMinAcceleration = C_Vector3(0, 0.1, 0);
@@ -61,6 +68,7 @@ namespace C
 
     int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
     float mParticleShapeRadius = 1.0;
+    int mParticleTransformation = C_PARTICLE_TRANSFORMATION_WORLD;
   public:
     //Constructor
     C_ParticleEffect();
@@ -80,6 +88,10 @@ namespace C
     void setBillboarding(const bool aA);
     //Set particles gradianting
     void setGradienting(const bool aA);
+    //Set particle emitter position
+    void setPos(const C_Vector3 aPos);
+    //Add position to current
+    void addPos(const C_Vector3 aPos);
     //Set negative direction limit
     void setMinDirection(const C_Vector3 aMinDirection);
     //Set positive direction limit
@@ -118,8 +130,10 @@ namespace C
     void setMaxRotationSpeed(const float aMaxRotationSpeed);
     //Set particles emit rate
     void setEmitRate(const int aEmitRate);
+    //Set particles transformation
+    void setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation);
     //Set particle shape
-    void setParticleShape(const int aParticleShape);
+    void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
     //Set particle shape radius
     void setParticleShapeRadius(const float aRadius);
 
@@ -140,6 +154,8 @@ namespace C
     bool getBillbiarding();
     //Return particles gradianting
     bool getGradienting();
+    //Return particle emitter position
+    C_Vector3 getPos();
     //Return minimum particle direction
     C_Vector3 getMinDirection();
     //Return maximum particle direction
@@ -178,6 +194,8 @@ namespace C
     float getMaxRotationSpeed();
     //Return particles emit rate
     int getEmitRate();
+    //Return particles transformation
+    int getTransformation();
     //Return particle shape
     int getParticleShape();
     //Return particle shape radius

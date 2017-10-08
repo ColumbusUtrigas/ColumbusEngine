@@ -37,6 +37,8 @@ namespace C
 
 		C_Vector3 startPos = C_Vector3(0, 0, 0);
 
+		C_Vector3 startEmitterPos = C_Vector3(0, 0, 0);
+
 		C_Vector3 accel = C_Vector3(0, 0.1, 0);
 
 		C_Vector3 pos;

@@ -18,7 +18,7 @@ namespace C
 	class C_Buffer
 	{
 	private:
-		GLuint mID;
+		unsigned int mID;
 		int mSize;
 	public:
 		//Constructor
@@ -33,6 +33,8 @@ namespace C
 		static void unbind();
 		//Return vertices count
 		int getSize();
+		//Check buffer
+		bool check();
 		//Destructor
 		~C_Buffer();
 	};

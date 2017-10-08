@@ -45,7 +45,7 @@ namespace C
 	{
 	private:
 		FIBITMAP* mBuffer = NULL;
-		GLuint mID;
+		unsigned int mID;
 
 		char* mFile = NULL;
 
@@ -71,6 +71,8 @@ namespace C
 		void loadFromMemory(const char* aData, size_t aSize, bool aSmooth = true);
 		//Load texture from raw data
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
+		//Load depth texture from raw data
+		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Reload texture
 		void reload();
 		//Set texture smooth
@@ -111,9 +113,11 @@ namespace C
 		//Unbind texture
 		static void unbind();
 		//Get texture id
-		inline int getID() { return mID; }
+		inline unsigned int getID() { return mID; }
 		//Create sampler and bind texture
 		void sampler2D(int a);
+		//Generate mipmap for texture
+		void generateMipmap();
 		//Destructor
 		~C_Texture();
 	};

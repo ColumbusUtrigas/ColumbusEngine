@@ -38,18 +38,20 @@ namespace C
 	//Constructor
 	C_Texture::C_Texture()
 	{
-
+		glGenTextures(1, &mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
 	C_Texture::C_Texture(const char* aPath, bool aSmooth)
 	{
+		glGenTextures(1, &mID);
 		load(aPath, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 3
 	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
+		glGenTextures(1, &mID);
 		load(aData, aW, aH, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -72,7 +74,6 @@ namespace C
 		int nHeight = FreeImage_GetHeight(imagen);
 		int nBPP = FreeImage_GetBPP(imagen);
 
-		glGenTextures(1, &mID);
 		glBindTexture(GL_TEXTURE_2D, mID);
 
 		switch (mWrapX)
@@ -181,8 +182,7 @@ namespace C
 	//Load texture from raw data
 	void C_Texture::load(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glGenTextures(1, &mID);
+		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glBindTexture(GL_TEXTURE_2D, mID);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -196,10 +196,23 @@ namespace C
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}
 		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-		glTexImage2D(GL_TEXTURE_2D, 0, /*GL_RGBA*/GL_RED, aW, aH,
-		0, /*GL_ALPHA*/GL_RED, GL_UNSIGNED_BYTE, (void*)aData);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA/*GL_RED*/, aW, aH,
+		0, GL_RGBA/*GL_RED*/, GL_UNSIGNED_BYTE, (void*)aData);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		//printf("\x1b[32;1mTexture successfuly loaded from buffer\x1b[0m\n");
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Load depth texture from raw data
+	void C_Texture::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
+	{
+		glBindTexture(GL_TEXTURE_2D, mID);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, aW, aH,
+		0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Load texture from memory
@@ -492,6 +505,14 @@ namespace C
 	{
 		glActiveTexture(GL_TEXTURE0 + a);
 		bind();
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Generate mipmap for texture
+	void C_Texture::generateMipmap()
+	{
+		bind();
+		glGenerateMipmap(GL_TEXTURE_2D);
+		unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

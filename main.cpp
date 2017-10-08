@@ -38,7 +38,13 @@ int main(int argc, char** argv)
 
 
 	C_Mesh mesh(importer.mVertices[0]);
-	C_Mesh mesh2(C_PrimitiveBox());
+	C_Mesh mesh2(importer.mVertices[1]);
+	C_Mesh mesh3(C_PrimitiveBox(C_Vector3(5, 1, 5)));
+
+	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh2.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh3.mMat.loadFromXML("Data/Materials/Default.mtl");
+
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
 	mesh.mMat.setNormMap(&norm);
@@ -50,8 +56,12 @@ int main(int argc, char** argv)
 	mesh2.mMat.setNormMap(&norm2);
 	mesh2.mMat.setShader(&shader);
 
-	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");
-	mesh2.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh3.mMat.setColor(C_Vector4(1, 1, 1, 1));
+	mesh3.mMat.setTexture(&tex2);
+	mesh3.mMat.setSpecMap(&spec2);
+	mesh3.mMat.setNormMap(&norm2);
+	mesh3.mMat.setShader(&shader);
+	mesh3.setPos(C_Vector3(0, -2, 0));
 
 	mesh.addChild(&mesh2);
 
@@ -61,6 +71,7 @@ int main(int argc, char** argv)
 	render.setMainCamera(&camera);
 	render.add(&mesh);
 	render.add(&mesh2);
+	render.add(&mesh3);
 
 	float i = 0;
 
@@ -144,6 +155,15 @@ int main(int argc, char** argv)
 		if (window.getKey(SDL_SCANCODE_RIGHT))
 			camera.addRot(C_Vector3(0, -125 * RedrawTime, 0));
 
+		if (window.getKey(SDL_SCANCODE_I))
+			particleEffect.addPos(C_Vector3(0, 0, -3) * RedrawTime);
+		if (window.getKey(SDL_SCANCODE_K))
+			particleEffect.addPos(C_Vector3(0, 0, 3) * RedrawTime);
+		if (window.getKey(SDL_SCANCODE_J))
+			particleEffect.addPos(C_Vector3(-3, 0, 0) * RedrawTime);
+		if (window.getKey(SDL_SCANCODE_L))
+			particleEffect.addPos(C_Vector3(3, 0, 0) * RedrawTime);
+
 		if (window.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(C_Vector3(0, 0, 0) - camera.up() * RedrawTime * 5);
 		if (window.getKey(SDL_SCANCODE_SPACE))
@@ -162,6 +182,7 @@ int main(int argc, char** argv)
 
 		//mesh2.addRot(C_Vector3(0, 1, 0));
 
+		render.setWindowSize(window.getSize());
 		render.render();
 
 		//particles.draw();
