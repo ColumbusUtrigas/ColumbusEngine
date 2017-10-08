@@ -14,15 +14,18 @@ vec2 UV = gl_TexCoord[0].xy;
 vec3 frame = texture(uFrame, UV).xyz;
 
 vec3 Negative(void);
-vec3 GaussianBlur(void);
+vec3 GaussianBlur(vec2 size);
 vec3 Sobel(void);
 vec3 Scanline(float scale);
 vec3 Pixelization(vec2 size);
 
 void main(void)
 {
-	//FinalColor = Scanline(3);
-	FinalColor = Pixelization(vec2(10, 10));
+	//FinalColor = Negative();
+	FinalColor = GaussianBlur(vec2(2, 2));
+	//FinalColor = Sobel();
+	//FinalColor = Scanline(10);
+	//FinalColor = Pixelization(vec2(10, 10));
 	//FinalColor = frame;
 }
 
@@ -31,13 +34,20 @@ vec3 Negative(void)
 	return (vec3(1) - frame);
 }
 
-vec3 GaussianBlur(void)
+vec3 GaussianBlur(vec2 size)
 {
 	vec4 sum = vec4(0.0);
 
+	float sX = blurSizeH * size.x;
+	float sY = blurSizeV * size.y;
+
     for (int x = -4; x <= 4; x++)
+    {
         for (int y = -4; y <= 4; y++)
-            sum += texture(uFrame, vec2(UV.x + x * blurSizeH, UV.y + y * blurSizeV)) / 81.0;
+        {
+            sum += texture(uFrame, vec2(UV.x + x * sX, UV.y + y * sY)) / 81.0;
+        }
+    }
 
     return sum.xyz;
 }

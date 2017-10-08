@@ -14,6 +14,7 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Buffer.h>
 #include <Graphics/Shader.h>
+#include <Impl/ImplOpenGL.h>
 
 namespace C
 {

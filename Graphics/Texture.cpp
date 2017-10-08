@@ -202,6 +202,19 @@ namespace C
 		//printf("\x1b[32;1mTexture successfuly loaded from buffer\x1b[0m\n");
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Load depth texture from raw data
+	void C_Texture::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
+	{
+		glBindTexture(GL_TEXTURE_2D, mID);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, aW, aH,
+		0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Load texture from memory
 	void C_Texture::loadFromMemory(const char* aData, size_t aSize, bool aSmooth)
 	{

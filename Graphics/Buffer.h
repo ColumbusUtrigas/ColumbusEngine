@@ -33,6 +33,8 @@ namespace C
 		static void unbind();
 		//Return vertices count
 		int getSize();
+		//Check buffer
+		bool check();
 		//Destructor
 		~C_Buffer();
 	};

@@ -110,31 +110,37 @@ namespace C
 	{
 		if (buf == NULL && buf == nullptr)
 			return;
+
 		buf->bind();
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
 
 		if (tbuf != NULL && tbuf != nullptr)
 		{
 			tbuf->bind();
 			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+			glEnableVertexAttribArray(1);
 		}
 
 		if (nbuf != NULL && nbuf != nullptr)
 		{
 			nbuf->bind();
 			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+			glEnableVertexAttribArray(2);
 		}
 
 		if (tangbuf != NULL && tangbuf != nullptr)
 		{
 			tangbuf->bind();
 			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+			glEnableVertexAttribArray(3);
 		}
 
 		if (bitangbuf != NULL && bitangbuf != nullptr)
 		{
 			bitangbuf->bind();
 			glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+			glEnableVertexAttribArray(4);
 		}
 
 		if (mMat.getShader() != nullptr)

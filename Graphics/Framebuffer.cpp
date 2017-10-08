@@ -47,7 +47,7 @@ namespace C
     }
 
     bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, aID, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attach, GL_TEXTURE_2D, aID, 0);
     unbind();
   }
 
@@ -75,7 +75,7 @@ namespace C
     }
 
     bind();
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, aID);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, attach, GL_RENDERBUFFER, aID);
     unbind();
   }
 

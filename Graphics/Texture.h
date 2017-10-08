@@ -71,6 +71,8 @@ namespace C
 		void loadFromMemory(const char* aData, size_t aSize, bool aSmooth = true);
 		//Load texture from raw data
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
+		//Load depth texture from raw data
+		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Reload texture
 		void reload();
 		//Set texture smooth

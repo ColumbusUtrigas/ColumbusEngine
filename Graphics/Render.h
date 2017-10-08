@@ -16,6 +16,7 @@
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Renderbuffer.h>
+#include <Impl/ImplOpenGL.h>
 
 namespace C
 {
@@ -42,6 +43,10 @@ namespace C
 
 		//Draw screen quad
 		void drawQuad();
+		//Unbind all OpenGL varyables
+		void unbindAll();
+		//Enable all OpenGL varyables
+		void enableAll();
 	public:
 		//Constructor
 		C_Render();

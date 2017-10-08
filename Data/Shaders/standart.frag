@@ -31,6 +31,8 @@ vec4 DiffuseMap;
 vec3 SpecularMap;
 vec3 NormalMap;
 
+bool IsSpecularMap = false;
+
 vec3 Normal;
 
 vec3 AmbientColor = vec3(0);
@@ -38,7 +40,7 @@ vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
 vec3 CubemapColor = vec3(0);
 
-vec4 FinalColor;
+out vec4 FinalColor;
 
 mat3 TBN;
 
@@ -56,8 +58,6 @@ void main(void)
 	Cubemap();
 
 	Final();
-
-	gl_FragColor = FinalColor;
 }
 
 void Init(void)
@@ -67,6 +67,9 @@ void Init(void)
 	NormalMap = vec3(texture(uMaterial.normalMap, varUV));
 
 	TBN = transpose(mat3(varTangent, varBitangent, varNormal));
+
+	if (textureSize(uMaterial.specularMap, 1).xy != vec2(0))
+		IsSpecularMap = true;
 
 	if (NormalMap != vec3(0))
 		Normal = normalize(NormalMap * 2.0 - 1.0) * TBN;
@@ -103,11 +106,11 @@ void Light(int id)
 		lightDir = normalize(-LightPos);
 		break;
 	default:
-		lightDir = normalize(-LightPos - varPos);
+		lightDir = normalize(-LightPos + varPos);
 		break;
 	};
 
-	vec3 viewDir = normalize(uCamera.pos - varPos);
+	vec3 viewDir = normalize(uCamera.pos - varFragPos);
 
 	float diff = max(0.0, dot(Normal, -lightDir));
 
@@ -116,12 +119,12 @@ void Light(int id)
 	vec3 specular = MaterialSpecular * vec3(1) * spec * 0.5;
 
 	AmbientColor += MaterialAmbient * vec3(1, 1, 1) * vec3(MaterialColor);
-	DiffuseColor += vec3(1) * MaterialDiffuse * diff;
-
-	if (SpecularMap != vec3(0))
-		SpecularColor += specular * MaterialSpecular * SpecularMap;
+	DiffuseColor += vec3(1) * MaterialDiffuse * diff * MaterialColor.xyz;
+	
+	if (IsSpecularMap)
+		SpecularColor += specular * MaterialSpecular * MaterialColor.xyz * SpecularMap;
 	else
-		SpecularColor += specular * MaterialSpecular;
+		SpecularColor += specular * MaterialSpecular * MaterialColor.xyz;
 
 	if (int(LightType) != 0)
 	{
@@ -143,15 +146,19 @@ void Cubemap(void)
    	vec3 R = normalize(reflect(I, Normal));
    	CubemapColor = textureCube(uReflectionMap, vec3(R.x, R.y, R.z)).rgb * MaterialUnif[13];
 
-   	if (SpecularMap != vec3(0))
+   	if (IsSpecularMap)
 		CubemapColor *= SpecularMap;
+
+	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
+
+	CubemapColor *= MaterialColor.xyz;
 }
 
 void Final(void)
 {
 	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 
-	if (DiffuseMap != vec4(0))
+	if (DiffuseMap.xyz != vec3(0))
 	{
 		if (CubemapColor != vec3(0))
 			FinalColor = Lighting * DiffuseMap + vec4(CubemapColor, 1.0);
