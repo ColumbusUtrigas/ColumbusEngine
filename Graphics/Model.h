@@ -14,10 +14,11 @@
 #include <string>
 #include <list>
 
+#include <RenderAPI/Buffer.h>
+
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
-#include <Graphics/Buffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/Importer.h>
 #include <Graphics/Skybox.h>

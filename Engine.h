@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Buffer.h>
+#include <RenderAPI/Buffer.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
 #include <Graphics/Framebuffer.h>

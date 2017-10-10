@@ -19,12 +19,13 @@
 
 #include <glm/glm.hpp>
 
+#include <RenderAPI/Buffer.h>
+
 #include <System/System.h>
 #include <System/Timer.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <Graphics/Buffer.h>
 #include <Graphics/Camera.h>
 #include <Graphics/ParticleEffect.h>
 

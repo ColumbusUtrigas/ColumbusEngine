@@ -200,31 +200,6 @@ namespace C
 		glEnable(GL_ALPHA_TEST);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Draw screen quad
-	void C_Render::drawQuad()
-	{
-		glColor3f(1.0, 1.0, 1.0);
-		glBegin(GL_TRIANGLES);
-			glTexCoord2f(0.0, 0.0);
-			glVertex2f(-1.0, -1.0);
-
-			glTexCoord2f(1.0, 1.0);
-			glVertex2f(1.0, 1.0);
-
-			glTexCoord2f(0.0, 1.0);
-			glVertex2f(-1.0, 1.0);
-
-			glTexCoord2f(0.0, 0.0);
-			glVertex2f(-1.0, -1.0);
-
-			glTexCoord2f(1.0, 0.0);
-			glVertex2f(1.0, -1.0);
-
-			glTexCoord2f(1.0, 1.0);
-			glVertex2f(1.0, 1.0);
-		glEnd();
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_Render::~C_Render()
 	{

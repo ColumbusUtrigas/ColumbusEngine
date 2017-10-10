@@ -16,7 +16,7 @@
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Renderbuffer.h>
-#include <Impl/ImplOpenGL.h>
+#include <RenderAPI/APIOpenGL.h>
 
 namespace C
 {

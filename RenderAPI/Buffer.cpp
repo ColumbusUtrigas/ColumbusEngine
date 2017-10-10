@@ -8,7 +8,7 @@
 *                   20.07.2017                  *
 *************************************************/
 
-#include <Graphics/Buffer.h>
+#include <RenderAPI/Buffer.h>
 
 namespace C
 {
@@ -17,53 +17,54 @@ namespace C
 	//Constructor
 	C_Buffer::C_Buffer()
 	{
-		glGenBuffers(1, &mID);
+		C_GenBufferOpenGL(&mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
-	C_Buffer::C_Buffer(const float* aData, const int aSize)
+	C_Buffer::C_Buffer(const float* aData, const unsigned int aSize)
 	{
-		glGenBuffers(1, &mID);
-		setVertices(aData, (int)aSize);
+		C_GenBufferOpenGL(&mID);
+		setData(aData, aSize);
+		compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set vertices to buffer
-	void C_Buffer::setVertices(const float* aData, int aSize)
+	void C_Buffer::setData(const float* aData, const unsigned int aSize)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, mID);
-		glBufferData(GL_ARRAY_BUFFER, aSize, aData, GL_STATIC_DRAW);
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
-		mSize = aSize / sizeof(float) / 3;
+		mData = aData;
+		mSize = (unsigned int)aSize;
+		mCount = aSize / sizeof(float) / 3;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Load buffer data to GPU
+	void C_Buffer::compile()
+	{
+		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, mID);
+		C_BufferDataOpenGL(C_OGL_ARRAY_BUFFER, mSize, mData, C_OGL_STATIC_DRAW);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Bind vertex buffer
 	void C_Buffer::bind()
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, mID);
+		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Unbind vertex buffer
 	void C_Buffer::unbind()
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return vertices count
-	int C_Buffer::getSize()
+	//Return packs count
+	int C_Buffer::getCount()
 	{
-		return mSize;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Check buffer
-	bool C_Buffer::check()
-	{
-		return glIsVertexArray(mID);
+		return mCount;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_Buffer::~C_Buffer()
 	{
-		glDeleteBuffers(1, &mID);
+		C_DeleteBufferOpenGL(&mID);
 	}
 
 }

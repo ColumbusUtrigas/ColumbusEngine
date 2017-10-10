@@ -22,11 +22,11 @@ vec3 Pixelization(vec2 size);
 void main(void)
 {
 	//FinalColor = Negative();
-	FinalColor = GaussianBlur(vec2(2, 2));
+	//FinalColor = GaussianBlur(vec2(2, 2));
 	//FinalColor = Sobel();
 	//FinalColor = Scanline(10);
 	//FinalColor = Pixelization(vec2(10, 10));
-	//FinalColor = frame;
+	FinalColor = frame;
 }
 
 vec3 Negative(void)
