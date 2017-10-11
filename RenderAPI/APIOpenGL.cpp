@@ -97,5 +97,17 @@ namespace C
   {
     glTexParameteri(aTarget, aParam, aVal);
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Generate mip levels from GPU texture
+  void C_GenMipmapOpenGL(unsigned int aTarget)
+  {
+    glGenerateMipmap(aTarget);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Activate GPU texture
+  void C_ActiveTextureOpenGL(unsigned int aTexture)
+  {
+    glActiveTexture(aTexture);
+  }
 
 }

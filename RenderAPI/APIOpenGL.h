@@ -33,13 +33,14 @@ namespace C
   #define C_OGL_TEXTURE_CUBE_MAP_POS_Z   GL_TEXTURE_CUBE_MAP_POSITIVE_Z
   #define C_OGL_TEXTURE_CUBE_MAP_NEG_Z   GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 
-  #define C_OGL_TEXTURE_BASE_LEVEL   GL_TEXTURE_BASE_LEVEL
-  #define C_OGL_TEXTURE_MIN_FILTER   GL_TEXTURE_MIN_FILTER
-  #define C_OGL_TEXTURE_MAG_FILTER   GL_TEXTURE_MAG_FILTER
-  #define C_OGL_TEXTURE_MAX_LEVEL    GL_TEXTURE_MAX_LEVEL
-  #define C_OGL_TEXTURE_WRAP_S       GL_TEXTURE_WRAP_S
-  #define C_OGL_TEXTURE_WRAP_T       GL_TEXTURE_WRAP_T
-  #define C_OGL_TEXTURE_WRAP_R       GL_TEXTURE_WRAP_R
+  #define C_OGL_TEXTURE_BASE_LEVEL       GL_TEXTURE_BASE_LEVEL
+  #define C_OGL_TEXTURE_MIN_FILTER       GL_TEXTURE_MIN_FILTER
+  #define C_OGL_TEXTURE_MAG_FILTER       GL_TEXTURE_MAG_FILTER
+  #define C_OGL_TEXTURE_MAX_LEVEL        GL_TEXTURE_MAX_LEVEL
+  #define C_OGL_TEXTURE_WRAP_S           GL_TEXTURE_WRAP_S
+  #define C_OGL_TEXTURE_WRAP_T           GL_TEXTURE_WRAP_T
+  #define C_OGL_TEXTURE_WRAP_R           GL_TEXTURE_WRAP_R
+  #define C_OGL_TEXTURE_MAX_ANISOTROPY   GL_TEXTURE_MAX_ANISOTROPY_EXT
 
   #define C_OGL_NEAREST                  GL_NEAREST
   #define C_OGL_LINEAR                   GL_LINEAR
@@ -89,6 +90,39 @@ namespace C
   #define C_OGL_UNSIGNED_INT_10_10_10_2       GL_UNSIGNED_INT_10_10_10_2
   #define C_OGL_UNSIGNED_INT_2_10_10_10_REV   GL_UNSIGNED_INT_2_10_10_10_REV
 
+  #define C_OGL_TEXTURE0    GL_TEXTURE0
+  #define C_OGL_TEXTURE1    GL_TEXTURE1
+  #define C_OGL_TEXTURE2    GL_TEXTURE2
+  #define C_OGL_TEXTURE3    GL_TEXTURE3
+  #define C_OGL_TEXTURE4    GL_TEXTURE4
+  #define C_OGL_TEXTURE5    GL_TEXTURE5
+  #define C_OGL_TEXTURE6    GL_TEXTURE6
+  #define C_OGL_TEXTURE7    GL_TEXTURE7
+  #define C_OGL_TEXTURE8    GL_TEXTURE8
+  #define C_OGL_TEXTURE9    GL_TEXTURE9
+  #define C_OGL_TEXTURE10   GL_TEXTURE10
+  #define C_OGL_TEXTURE11   GL_TEXTURE11
+  #define C_OGL_TEXTURE12   GL_TEXTURE12
+  #define C_OGL_TEXTURE13   GL_TEXTURE13
+  #define C_OGL_TEXTURE14   GL_TEXTURE14
+  #define C_OGL_TEXTURE15   GL_TEXTURE15
+  #define C_OGL_TEXTURE16   GL_TEXTURE16
+  #define C_OGL_TEXTURE17   GL_TEXTURE17
+  #define C_OGL_TEXTURE18   GL_TEXTURE18
+  #define C_OGL_TEXTURE19   GL_TEXTURE19
+  #define C_OGL_TEXTURE20   GL_TEXTURE20
+  #define C_OGL_TEXTURE21   GL_TEXTURE21
+  #define C_OGL_TEXTURE22   GL_TEXTURE22
+  #define C_OGL_TEXTURE23   GL_TEXTURE23
+  #define C_OGL_TEXTURE24   GL_TEXTURE24
+  #define C_OGL_TEXTURE25   GL_TEXTURE25
+  #define C_OGL_TEXTURE26   GL_TEXTURE26
+  #define C_OGL_TEXTURE27   GL_TEXTURE27
+  #define C_OGL_TEXTURE28   GL_TEXTURE28
+  #define C_OGL_TEXTURE29   GL_TEXTURE29
+  #define C_OGL_TEXTURE30   GL_TEXTURE30
+  #define C_OGL_TEXTURE31   GL_TEXTURE31
+
   //Get OpenGL error
   bool C_GetErrorOpenGL();
   //Generate OpenGL GPU buffer
@@ -112,5 +146,9 @@ namespace C
     unsigned int aFormat, unsigned int aType, const void* aData);
   //Set OpenGL texture parameters
   void C_TextureParameter(unsigned int aTarget, int aParam, unsigned int aVal);
+  //Generate mip levels from GPU texture
+  void C_GenMipmapOpenGL(unsigned int aTarget);
+  //Activate GPU texture
+  void C_ActiveTextureOpenGL(unsigned int aTexture);
 
 }
