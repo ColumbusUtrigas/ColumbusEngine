@@ -179,7 +179,7 @@ namespace C
 		C_DisableDepthMask();
 
 		if (mParticleEffect->getAdditive())
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
 
 		float scaleOL = mParticleEffect->getScaleOverLifetime();
 		float billboard = mParticleEffect->getBillbiarding();
@@ -245,7 +245,7 @@ namespace C
 		frame.reset();
 
 		if (mParticleEffect->getAdditive())
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
 
 		C_EnableDepthMask();
 

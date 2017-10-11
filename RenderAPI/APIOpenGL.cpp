@@ -146,5 +146,11 @@ namespace C
   {
     glDrawArrays(aMode, aFirst, aCount);
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Change pixel arithmetic
+  void C_BlendFuncOpenGL(unsigned int aSFactor, unsigned int aDFactor)
+  {
+    glBlendFunc(aSFactor, aDFactor);
+  }
 
 }

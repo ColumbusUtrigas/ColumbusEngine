@@ -139,6 +139,21 @@ namespace C
   #define C_OGL_TRIANGLES_ADJACENCY        GL_TRIANGLES_ADJACENCY
   #define C_OGL_PATCHES                    GL_PATCHES
 
+  #define C_OGL_ZERO                       GL_ZERO
+  #define C_OGL_ONE                        GL_ONE
+  #define C_OGL_SRC_COLOR                  GL_SRC_COLOR
+  #define C_OGL_ONE_MINUS_SRC_COLOR        GL_ONE_MINUS_SRC_COLOR
+  #define C_OGL_DST_COLOR                  GL_DST_COLOR
+  #define C_OGL_ONE_MINUS_DST_COLOR        GL_ONE_MINUS_DST_COLOR
+  #define C_OGL_SRC_ALPHA                  GL_SRC_ALPHA
+  #define C_OGL_ONE_MINUS_SRC_ALPHA        GL_ONE_MINUS_SRC_ALPHA
+  #define C_OGL_DST_ALPHA                  GL_DST_ALPHA
+  #define C_OGL_ONE_MINUS_DST_ALPHA        GL_ONE_MINUS_DST_ALPHA
+  #define C_OGL_CONSTANT_COLOR             GL_CONSTANT_COLOR
+  #define C_OGL_ONE_MINUS_CONSTANT_COLOR   GL_ONE_MINUS_CONSTANT_COLOR
+  #define C_OGL_CONSTANT_ALPHA             GL_CONSTANT_ALPHA
+  #define C_OGL_ONE_MINUS_CONSTANT_ALPHA   GL_ONE_MINUS_CONSTANT_ALPHA
+
   //Get OpenGL error
   bool C_GetErrorOpenGL();
   //Generate OpenGL GPU buffer
@@ -179,4 +194,6 @@ namespace C
     unsigned int aType, unsigned int aNormalized, size_t aStride, const void* aData);
   //Render primitive from array data
   void C_DrawArraysOpenGL(unsigned int aMode, int aFirst, size_t aCount);
+  //Change pixel arithmetic
+  void C_BlendFuncOpenGL(unsigned int aSFactor, unsigned int aDFactor);
 }
