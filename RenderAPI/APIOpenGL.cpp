@@ -109,5 +109,29 @@ namespace C
   {
     glActiveTexture(aTexture);
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Open vertex attribute stream
+  void C_OpenStreamOpenGL(unsigned int aStream)
+  {
+    glEnableVertexAttribArray(aStream);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Close vertex attribute stream
+  void C_CloseStreamOpenGL(unsigned int aStream)
+  {
+    glDisableVertexAttribArray(aStream);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable writing into the depth buffer
+  void C_EnableDepthMask()
+  {
+    glDepthMask(GL_TRUE);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable writing into the depth buffer
+  void C_DisableDepthMask()
+  {
+    glDepthMask(GL_FALSE);
+  }
 
 }

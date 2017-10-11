@@ -90,6 +90,9 @@ namespace C
   #define C_OGL_UNSIGNED_INT_10_10_10_2       GL_UNSIGNED_INT_10_10_10_2
   #define C_OGL_UNSIGNED_INT_2_10_10_10_REV   GL_UNSIGNED_INT_2_10_10_10_REV
 
+  #define C_OGL_TRUE    GL_TRUE
+  #define C_OGL_FALSE   GL_FALSE
+
   #define C_OGL_TEXTURE0    GL_TEXTURE0
   #define C_OGL_TEXTURE1    GL_TEXTURE1
   #define C_OGL_TEXTURE2    GL_TEXTURE2
@@ -150,5 +153,13 @@ namespace C
   void C_GenMipmapOpenGL(unsigned int aTarget);
   //Activate GPU texture
   void C_ActiveTextureOpenGL(unsigned int aTexture);
+  //Open vertex attribute stream
+  void C_OpenStreamOpenGL(unsigned int aStream);
+  //Close vertex attribute stream
+  void C_CloseStreamOpenGL(unsigned int aStream);
+  //Enable writing into the depth buffer
+  void C_EnableDepthMask();
+  //Disable writing into the depth buffer
+  void C_DisableDepthMask();
 
 }

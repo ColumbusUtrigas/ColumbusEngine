@@ -101,18 +101,6 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	/*particleEffect.setParticlesCount(1000);
-	particleEffect.setStartSize(C_Vector2(1.0, 1.0));
-	particleEffect.setFinalSize(C_Vector2(2.0, 2.0));
-	particleEffect.setStartColor(C_Vector4(1, 1, 1, 1));
-	particleEffect.setFinalColor(C_Vector4(0.1, 0.1, 0.1, 0.01));
-	particleEffect.setMinDirection(C_Vector3(-0.3, 1.0, -0.3));
-	particleEffect.setMaxDirection(C_Vector3(0.3, 1.0, 0.3));
-	particleEffect.setMinVelocity(1.0);
-	particleEffect.setMaxVelocity(2.0);
-	particleEffect.setMinTimeToLive(2.0);
-	particleEffect.setMaxTimeToLive(5.0);
-	particleEffect.setConstantForce(C_Vector3(-2, 0, 0));*/
 	particleEffect.loadFromXML("Data/Particles/A.particles");
 	particleEffect.setMaterial(&partmat);
 	C_ParticleEmitter particles(&particleEffect);
@@ -123,8 +111,8 @@ int main(int argc, char** argv)
 
 	int FPS = 0;
 
-	window.setVerticalSync(true);
-	//window.setFPSLimit(120);
+	//window.setVerticalSync(true);
+	window.setFPSLimit(60);
 
 	render.add(&particles);
 

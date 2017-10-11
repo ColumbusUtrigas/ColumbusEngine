@@ -36,16 +36,16 @@ namespace C
 	{
 		if (mShader != nullptr && mCubemap != nullptr)
 		{
-			glDepthMask(GL_FALSE);
+			C_DisableDepthMask();
 
 			if (mBuf == nullptr)
 				return;
 
-			glEnableVertexAttribArray(0);
-			glDisableVertexAttribArray(1);
-			glDisableVertexAttribArray(2);
-			glDisableVertexAttribArray(3);
-			glDisableVertexAttribArray(4);
+			C_OpenStreamOpenGL(0);
+			C_CloseStreamOpenGL(1);
+			C_CloseStreamOpenGL(2);
+			C_CloseStreamOpenGL(3);
+			C_CloseStreamOpenGL(4);
 
 			mBuf->bind();
 
@@ -58,7 +58,7 @@ namespace C
 			mShader->setUniformMatrix("uView", glm::value_ptr(view));
 			mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
 
-			glActiveTexture(GL_TEXTURE0);
+			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
 			mShader->setUniform1i("uSkybox", 0);
 			mCubemap->bind();
 
@@ -68,7 +68,7 @@ namespace C
 			C_Cubemap::unbind();
 			C_Shader::unbind();
 
-			glDepthMask(GL_TRUE);
+			C_EnableDepthMask();
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
