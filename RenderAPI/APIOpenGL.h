@@ -126,6 +126,19 @@ namespace C
   #define C_OGL_TEXTURE30   GL_TEXTURE30
   #define C_OGL_TEXTURE31   GL_TEXTURE31
 
+  #define C_OGL_POINTS                     GL_POINTS
+  #define C_OGL_LINE_STRIP                 GL_LINE_STRIP
+  #define C_OGL_LINE_LOOP                  GL_LINE_LOOP
+  #define C_OGL_LINES                      GL_LINES
+  #define C_OGL_LINE_STRIP_ADJACENCY       GL_LINE_STRIP_ADJACENCY
+  #define C_OGL_LINES_ADJACENCY            GL_LINES_ADJACENCY
+  #define C_OGL_TRIANGLE_STRIP             GL_TRIANGLE_STRIP
+  #define C_OGL_TRIANGLE_FAN               GL_TRIANGLE_FAN
+  #define C_OGL_TRIANGLES                  GL_TRIANGLES
+  #define C_OGL_TRIANGLE_STRIP_ADJACENCY   GL_TRIANGLE_STRIP_ADJACENCY
+  #define C_OGL_TRIANGLES_ADJACENCY        GL_TRIANGLES_ADJACENCY
+  #define C_OGL_PATCHES                    GL_PATCHES
+
   //Get OpenGL error
   bool C_GetErrorOpenGL();
   //Generate OpenGL GPU buffer
@@ -161,5 +174,9 @@ namespace C
   void C_EnableDepthMask();
   //Disable writing into the depth buffer
   void C_DisableDepthMask();
-
+  //Set OpenGL buffer as vertex attribute
+  void C_VertexAttribPointerOpenGL(unsigned int aIndex, unsigned int aSize,
+    unsigned int aType, unsigned int aNormalized, size_t aStride, const void* aData);
+  //Render primitive from array data
+  void C_DrawArraysOpenGL(unsigned int aMode, int aFirst, size_t aCount);
 }

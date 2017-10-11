@@ -49,7 +49,7 @@ namespace C
 
 			mBuf->bind();
 
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+			C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
 
 			mShader->bind();
 
@@ -62,7 +62,7 @@ namespace C
 			mShader->setUniform1i("uSkybox", 0);
 			mCubemap->bind();
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 36);
 
 			C_Buffer::unbind();
 			C_Cubemap::unbind();

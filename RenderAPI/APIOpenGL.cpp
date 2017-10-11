@@ -133,5 +133,18 @@ namespace C
   {
     glDepthMask(GL_FALSE);
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set OpenGL buffer as vertex attribute
+  void C_VertexAttribPointerOpenGL(unsigned int aIndex, unsigned int aSize,
+    unsigned int aType, unsigned int aNormalized, size_t aStride, const void* aData)
+  {
+    glVertexAttribPointer(aIndex, aSize, aType, aNormalized, aStride, aData);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Render primitive from array data
+  void C_DrawArraysOpenGL(unsigned int aMode, int aFirst, size_t aCount)
+  {
+    glDrawArrays(aMode, aFirst, aCount);
+  }
 
 }
