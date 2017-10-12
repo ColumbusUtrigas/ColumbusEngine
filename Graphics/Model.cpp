@@ -111,9 +111,9 @@ namespace C
 		if (buf == nullptr)
 			return;
 
-		C_Buffer* buffers[5] = {buf, tbuf, nbuf, tangbuf, bitangbuf};
-		unsigned int indices[5] = {0, 1, 2, 3, 4};
-		unsigned int strides[5] = {3, 2, 3, 3, 3};
+		C_Buffer* const buffers[5] = {buf, tbuf, nbuf, tangbuf, bitangbuf};
+		unsigned const int indices[5] = {0, 1, 2, 3, 4};
+		unsigned const int strides[5] = {3, 2, 3, 3, 3};
 
 		for (int i = 0; i < 5; i++)
 			if (buffers[i] != nullptr)
@@ -273,7 +273,7 @@ namespace C
 		C_Vector3 matdif = mMat.getDiffuse();
 		C_Vector3 matspc = mMat.getSpecular();
 
-		float MaterialUnif[14] =
+		float const MaterialUnif[14] =
 		{
 			matcol.x, matcol.y, matcol.z, matcol.w,
 			matamb.x, matamb.y, matamb.z,
@@ -298,7 +298,7 @@ namespace C
 		float lightInnerAngle = glm::radians(12.5);
 		float lightOuterAngle = glm::radians(17.5);
 
-		float LightUnif[15] =
+		float const LightUnif[15] =
 		{
 			lightCol.x, lightCol.y, lightCol.z,
 			lightPos.x, lightPos.y, lightPos.z,
