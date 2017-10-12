@@ -93,7 +93,7 @@ namespace C
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set OpenGL texture parameters
-  void C_TextureParameter(unsigned int aTarget, int aParam, unsigned int aVal)
+  void C_TextureParameterOpenGL(unsigned int aTarget, int aParam, unsigned int aVal)
   {
     glTexParameteri(aTarget, aParam, aVal);
   }
@@ -137,13 +137,13 @@ namespace C
   }
   //////////////////////////////////////////////////////////////////////////////
   //Enable writing into the depth buffer
-  void C_EnableDepthMask()
+  void C_EnableDepthMaskOpenGL()
   {
     glDepthMask(GL_TRUE);
   }
   //////////////////////////////////////////////////////////////////////////////
   //Disable writing into the depth buffer
-  void C_DisableDepthMask()
+  void C_DisableDepthMaskOpenGL()
   {
     glDepthMask(GL_FALSE);
   }

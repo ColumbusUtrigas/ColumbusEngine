@@ -19,6 +19,7 @@
 #include <System/System.h>
 #include <System/Console.h>
 #include <RenderAPI/APIOpenGL.h>
+#include <Math/Vector2.h>
 
 namespace C
 {
@@ -32,6 +33,8 @@ namespace C
 		bool mipmaps = true;
 		unsigned int anisotropy = 8;
 		unsigned int LOD = 0;
+		C_Vector2 tiling = C_Vector2(1, 1);
+		C_Vector2 tilingOffset = C_Vector2(0, 0);
 	};
 
 	class C_Texture
@@ -66,6 +69,10 @@ namespace C
 		void reload();
 		//Set texture config
 		void setConfig(C_TextureConfig aConfig);
+		//Set texture smooth
+		void setSmooth(const bool aSmooth);
+		//Set texture anisotropy filtration value
+		void setAnisotropy(const unsigned int aAnisotropy);
 
 		//Return texture config
 		C_TextureConfig getConfig();

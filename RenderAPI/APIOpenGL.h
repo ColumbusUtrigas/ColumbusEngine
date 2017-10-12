@@ -176,7 +176,7 @@ namespace C
     unsigned int aInternalFormat, size_t aWidth, size_t aHeight,
     unsigned int aFormat, unsigned int aType, const void* aData);
   //Set OpenGL texture parameters
-  void C_TextureParameter(unsigned int aTarget, int aParam, unsigned int aVal);
+  void C_TextureParameterOpenGL(unsigned int aTarget, int aParam, unsigned int aVal);
   //Generate mip levels from GPU texture
   void C_GenMipmapOpenGL(unsigned int aTarget);
   //Activate GPU texture
@@ -190,9 +190,9 @@ namespace C
   //Close vertex attribute stream
   void C_CloseStreamOpenGL(unsigned int aStream);
   //Enable writing into the depth buffer
-  void C_EnableDepthMask();
+  void C_EnableDepthMaskOpenGL();
   //Disable writing into the depth buffer
-  void C_DisableDepthMask();
+  void C_DisableDepthMaskOpenGL();
   //Set OpenGL buffer as vertex attribute
   void C_VertexAttribPointerOpenGL(unsigned int aIndex, unsigned int aSize,
     unsigned int aType, unsigned int aNormalized, size_t aStride, const void* aData);

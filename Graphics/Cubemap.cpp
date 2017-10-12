@@ -41,11 +41,11 @@ namespace C
 			}
 		}
 
-		C_TextureParameter(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
-		C_TextureParameter(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
-		C_TextureParameter(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameter(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameter(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_R, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_R, C_OGL_CLAMP_TO_EDGE);
 
 		mInited = true;
 	}
@@ -65,7 +65,7 @@ namespace C
 		if (!mInited)
 			return;
 
-		glActiveTexture(GL_TEXTURE0 + i);
+		C_ActiveTextureOpenGL(C_OGL_TEXTURE0 + i);
 		bind();
 	}
 	//////////////////////////////////////////////////////////////////////////////

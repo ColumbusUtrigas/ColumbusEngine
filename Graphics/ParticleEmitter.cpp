@@ -176,7 +176,7 @@ namespace C
 
 		mFrame++;
 
-		C_DisableDepthMask();
+		C_DisableDepthMaskOpenGL();
 
 		if (mParticleEffect->getAdditive())
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
@@ -247,7 +247,7 @@ namespace C
 		if (mParticleEffect->getAdditive())
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
 
-		C_EnableDepthMask();
+		C_EnableDepthMaskOpenGL();
 
 		C_Shader::unbind();
 		C_Texture::unbind();

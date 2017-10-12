@@ -36,7 +36,7 @@ namespace C
 	{
 		if (mShader != nullptr && mCubemap != nullptr)
 		{
-			C_DisableDepthMask();
+			C_DisableDepthMaskOpenGL();
 
 			if (mBuf == nullptr)
 				return;
@@ -68,7 +68,7 @@ namespace C
 			C_Cubemap::unbind();
 			C_Shader::unbind();
 
-			C_EnableDepthMask();
+			C_EnableDepthMaskOpenGL();
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////

@@ -76,8 +76,8 @@ namespace C
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
 
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_REPEAT);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_REPEAT);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_REPEAT);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_REPEAT);
 
 		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, nWidth, nHeight,
 			C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, bits);
@@ -85,8 +85,8 @@ namespace C
 		if (mConfig.mipmaps)
 		{
 			C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_BASE_LEVEL, mConfig.LOD);
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_LEVEL, 9);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_BASE_LEVEL, mConfig.LOD);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_LEVEL, 9);
 		}
 
 		mBuffer = imagen;
@@ -94,23 +94,23 @@ namespace C
 		if (mConfig.smooth)
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 
@@ -165,26 +165,26 @@ namespace C
 	{
 		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
 
 		if (mConfig.smooth)
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA/*GL_RED*/, aW, aH,
@@ -201,26 +201,26 @@ namespace C
 	{
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
 
-		C_TextureParameter(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		C_TextureParameter(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		if (mConfig.smooth)
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
 		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, aW, aH,
@@ -251,8 +251,8 @@ namespace C
 		FIBITMAP *pImage = FreeImage_ConvertTo32Bits(bitmap);
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
 		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, FreeImage_GetWidth(pImage),
 		FreeImage_GetHeight(pImage), C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(pImage));
 		if (mConfig.mipmaps)
@@ -261,20 +261,20 @@ namespace C
 		if (mConfig.smooth)
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
@@ -297,8 +297,8 @@ namespace C
 		int nHeight = FreeImage_GetHeight(mBuffer);
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
 
 		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, nWidth, nHeight,
 			C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, bits);
@@ -309,23 +309,23 @@ namespace C
 		if (mConfig.smooth)
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
 			if (mConfig.mipmaps)
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
 			else
-				C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
 
-			C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
-		C_TextureParameter(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 
@@ -335,7 +335,56 @@ namespace C
 	//Set texture config
 	void C_Texture::setConfig(C_TextureConfig aConfig)
 	{
+		C_TextureConfig conf = mConfig;
+
 		mConfig = aConfig;
+
+		if (aConfig.smooth != conf.smooth)
+			setSmooth(aConfig.smooth);
+
+		if (aConfig.anisotropy != conf.anisotropy)
+			setAnisotropy(aConfig.anisotropy);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set texture smooth
+	void C_Texture::setSmooth(const bool aSmooth)
+	{
+		if (mConfig.smooth != aSmooth)
+		{
+			unsigned int filter;
+
+			if (aSmooth == true)
+			{
+				if (mConfig.mipmaps == true)
+					filter = C_OGL_LINEAR_MIPMAP_LINEAR;
+				else
+					filter = C_OGL_LINEAR;
+			} else
+			{
+				if (mConfig.mipmaps == true)
+					filter = C_OGL_NEAREST_MIPMAP_NEAREST;
+				else
+					filter = C_OGL_NEAREST;
+			}
+
+			mConfig.smooth = (bool)aSmooth;
+			bind();
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, filter);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
+			unbind();
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set texture anisotropy filtration value
+	void C_Texture::setAnisotropy(const unsigned int aAnisotropy)
+	{
+		if (mConfig.anisotropy != aAnisotropy)
+		{
+			mConfig.anisotropy = (unsigned int)aAnisotropy;
+			bind();
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, aAnisotropy);
+			unbind();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return texture config
