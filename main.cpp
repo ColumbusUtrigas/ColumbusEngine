@@ -90,6 +90,8 @@ int main(int argc, char** argv)
 	C_Skybox skybox(&cubemap);
 
 	mesh.mMat.setReflection(&cubemap);
+	//mesh2.mMat.setReflection(&cubemap);
+	//mesh3.mMat.setReflection(&cubemap);
 
 	render.setSkybox(&skybox);
 

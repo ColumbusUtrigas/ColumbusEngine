@@ -110,6 +110,20 @@ namespace C
     glActiveTexture(aTexture);
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Deactivate GPU texture
+  void C_DeactiveTextureOpenGL(unsigned int aTexture)
+  {
+    glActiveTexture(aTexture);
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Deactivate GPU cube map texture
+  void C_DeactiveCubemapOpenGL(unsigned int aCubemap)
+  {
+    glActiveTexture(aCubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Open vertex attribute stream
   void C_OpenStreamOpenGL(unsigned int aStream)
   {

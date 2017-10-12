@@ -181,6 +181,10 @@ namespace C
   void C_GenMipmapOpenGL(unsigned int aTarget);
   //Activate GPU texture
   void C_ActiveTextureOpenGL(unsigned int aTexture);
+  //Deactivate GPU texture
+  void C_DeactiveTextureOpenGL(unsigned int aTexture);
+  //Deactivate GPU cube map texture
+  void C_DeactiveCubemapOpenGL(unsigned int aCubemap);
   //Open vertex attribute stream
   void C_OpenStreamOpenGL(unsigned int aStream);
   //Close vertex attribute stream

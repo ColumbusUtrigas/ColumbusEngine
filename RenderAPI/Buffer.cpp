@@ -49,6 +49,16 @@ namespace C
 		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Bind buffer, set vertex attribute and open vertex attribute stream
+	void C_Buffer::bind(unsigned int aIndex, unsigned int aNorm, size_t aStride)
+	{
+		unsigned int size = mSize / sizeof(float) / mCount;
+
+		bind();
+		C_VertexAttribPointerOpenGL(aIndex, size, C_OGL_FLOAT, aNorm, aStride, NULL);
+		C_OpenStreamOpenGL(aIndex);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Unbind vertex buffer
 	void C_Buffer::unbind()
 	{

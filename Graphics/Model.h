@@ -34,12 +34,22 @@ namespace C
 		C_Vector3 mScale;
 		C_Vector3 mPivot;
 		glm::mat4 mMatrix;
+		glm::mat4 mNormalMatrix;
 
 		C_Mesh* mParent = NULL;
 
 		C_Camera mCamera;
 
 		std::list<C_Mesh*> mChilds;
+
+		//Sets texture\cubemap as uniform in shader
+		void setShaderTextures();
+		//Calculate and transfer matrices as uniform in shader
+		void setShaderMatrices();
+		//Set all material data as uniform in shader
+		void setShaderMaterial();
+		//Set all lights and camera data as unniform in shader
+		void setShaderLightAndCamera();
 	public:
 		C_Buffer* buf = NULL;
 		C_Buffer* tbuf = NULL;

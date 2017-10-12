@@ -35,6 +35,8 @@ namespace C
 		void compile();
 		//Bind buffer
 		void bind();
+		//Bind buffer, set vertex attribute and open vertex attribute stream
+		void bind(unsigned int aIndex, unsigned int aNorm, size_t aStride);
 		//Unbind buffer
 		static void unbind();
 		//Return packs count
