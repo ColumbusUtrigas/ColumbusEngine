@@ -197,6 +197,12 @@ namespace C
 		mPivot = aPivot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set light casters, which calculate to using in shaders
+	void C_Mesh::setLights(std::vector<C_Light*> aLights)
+	{
+		mLights = aLights;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Return pivot point
 	C_Vector3 C_Mesh::getPivot()
 	{
@@ -308,8 +314,46 @@ namespace C
 			lightInnerAngle, lightOuterAngle
 		};
 
+		calculateLights();
+
 		mMat.getShader()->setUniformArrayf("LightUnif", LightUnif, 15);
 		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Calculate lights
+	void C_Mesh::calculateLights()
+	{
+		sortLights();
+		//8 - max count of lights, processing in shader
+		for (int i = 0; i < 8; i++)
+		{
+			//int offset = i * 15;
+			//mLightUniform[offset] = ;
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Sort lights array by distance
+	void C_Mesh::sortLights()
+	{
+		C_Vector3 pos = mPos;
+
+		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), v.end());
+
+		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
+		{
+			if (a == nullptr || b == nullptr)
+				return false;
+
+			C_Vector3 q = a->getPos();
+			C_Vector3 w = b->getPos();
+
+			q -= pos;
+			w -= pos;
+
+			return q.length() < w.length();
+		};
+
+		std::sort(mLights.begin(), mLights.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

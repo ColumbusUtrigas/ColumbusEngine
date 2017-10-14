@@ -92,7 +92,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return camera direction
-	C_Vector3 C_Camera::direction()
+	C_Vector3 C_Camera::direction() const
 	{
 		C_Vector3 tmp;
 		tmp.fromGLM(mCameraDirection);
@@ -100,7 +100,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return camera right direction
-	C_Vector3 C_Camera::right()
+	C_Vector3 C_Camera::right() const
 	{
 		C_Vector3 tmp;
 		tmp.fromGLM(-mCameraRight);
@@ -108,7 +108,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return camera up direction
-	C_Vector3 C_Camera::up()
+	C_Vector3 C_Camera::up() const
 	{
 		C_Vector3 tmp;
 		tmp.fromGLM(mCameraUp);
@@ -116,7 +116,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return camera position
-	C_Vector3 C_Camera::pos()
+	C_Vector3 C_Camera::pos() const
 	{
 		C_Vector3 tmp;
 		tmp.fromGLM(mPos);

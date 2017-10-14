@@ -81,7 +81,7 @@ namespace C
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return light position
-  C_Vector3 C_Light::getPos()
+  C_Vector3 C_Light::getPos() const
   {
     return mPos;
   }

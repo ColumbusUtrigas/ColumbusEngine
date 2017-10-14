@@ -60,7 +60,7 @@ namespace C
     //Return light type
     int getType();
     //Return light position
-    C_Vector3 getPos();
+    C_Vector3 getPos() const;
     //Return light direction
     C_Vector3 getDir();
     //Return light color

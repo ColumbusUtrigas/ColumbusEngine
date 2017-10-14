@@ -130,12 +130,26 @@ namespace C
 			ret.y = aMin.y + (float)(rand()) / ((float)(RAND_MAX / (aMax.y - aMin.y)));
 			return ret;
 		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return length of vector
+		inline float length()
+		{
+			return sqrt((x * x) + (y * y));
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return length between 2 vectors
+		inline float length(C_Vector2 aVec)
+		{
+			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2));
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
 		inline C_Vector2 normalize()
 		{
 			float l = sqrt((x * x) + (y * y));
 			return C_Vector2(x / l, y / l);
 		}
+		////////////////////////////////////////////////////////////////////////////
 		//Destructor
 		inline ~C_Vector2() {}
 	};

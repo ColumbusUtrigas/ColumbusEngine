@@ -73,7 +73,10 @@ namespace C
 		{
 			if (mCamera != nullptr)
 				if (mMeshes[i] != nullptr)
+				{
 					mMeshes[i]->setCamera(*mCamera);
+					mMeshes[i]->setLights(mLights);
+				}
 		}
 
 		for (size_t i = 0; i < mParticleEmitters.size(); i++)
