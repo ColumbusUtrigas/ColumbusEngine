@@ -341,9 +341,6 @@ namespace C
 
 		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
 		{
-			if (a == nullptr || b == nullptr)
-				return false;
-
 			C_Vector3 q = a->getPos();
 			C_Vector3 w = b->getPos();
 
