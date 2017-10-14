@@ -18,6 +18,8 @@
 
 #include <System/System.h>
 #include <System/Console.h>
+#include <RenderAPI/APIOpenGL.h>
+#include <Math/Vector2.h>
 
 namespace C
 {
@@ -25,20 +27,14 @@ namespace C
 	//Load image from file
 	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight);
 
-	enum C_TextureWrap
-	{
-		C_TEXTURE_CLAMP,
-		C_TEXTURE_REPEAT,
-		C_TEXTURE_MIRROR_REPEAT
-	};
-
 	struct C_TextureConfig
 	{
 		bool smooth = true;
 		bool mipmaps = true;
 		unsigned int anisotropy = 8;
-		int wrapX = C_TEXTURE_CLAMP;
-		int wrapY = C_TEXTURE_CLAMP;
+		unsigned int LOD = 0;
+		C_Vector2 tiling = C_Vector2(1, 1);
+		C_Vector2 tilingOffset = C_Vector2(0, 0);
 	};
 
 	class C_Texture
@@ -49,11 +45,7 @@ namespace C
 
 		char* mFile = NULL;
 
-		bool mSmooth = true;
-		bool mMipmaps = true;
-		unsigned int mAnisotropy = 8;
-		int mWrapX = C_TEXTURE_CLAMP;
-		int mWrapY = C_TEXTURE_CLAMP;
+		C_TextureConfig mConfig;
 
 		size_t mWidth = 0;
 		size_t mHeight = 0;
@@ -75,33 +67,13 @@ namespace C
 		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Reload texture
 		void reload();
-		//Set texture smooth
-		inline void setSmooth(bool aSmooth) { mSmooth = aSmooth; }
-		//Set texture mipmapping
-		inline void setMipmaps(bool aMipmaps) { mMipmaps = aMipmaps; }
-		//Set texture anisotropy filter
-		inline void setAnisotropy(unsigned int aAnisotropy) { mAnisotropy = aAnisotropy; }
-		//Set texture x-wrapping
-		inline void setWrapX(C_TextureWrap aWrap) { mWrapX = aWrap; }
-		//Set texture y-wrapping
-		inline void setWrapY(C_TextureWrap aWrap) { mWrapY = aWrap; }
-		//Set texture wrapping
-		inline void setWrap(C_TextureWrap aWrapX, C_TextureWrap aWrapY)
-		{
-			mWrapX = aWrapX;
-			mWrapY = aWrapY;
-		}
 		//Set texture config
 		void setConfig(C_TextureConfig aConfig);
+		//Set texture smooth
+		void setSmooth(const bool aSmooth);
+		//Set texture anisotropy filtration value
+		void setAnisotropy(const unsigned int aAnisotropy);
 
-
-
-		//Return texture smooth
-		inline bool isSmooth() { return mSmooth; }
-		//Return texture mipmapping
-		inline bool isMipmaps() { return mMipmaps; }
-		//Return texture anisotropy filter
-		inline unsigned int getAnisotropy() { return mAnisotropy; }
 		//Return texture config
 		C_TextureConfig getConfig();
 		//Return texture size

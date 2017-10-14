@@ -40,6 +40,12 @@ namespace C
 		mParticleEmitters.push_back(aP);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Add light
+	void C_Render::add(C_Light* aLight)
+	{
+		mLights.push_back(aLight);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Set main camera
 	void C_Render::setMainCamera(C_Camera* aCamera)
 	{
@@ -61,25 +67,23 @@ namespace C
 	//Render scene
 	void C_Render::render()
 	{
-		//if (mSkybox != nullptr)
-			//mSkybox->draw();
-
 		enableAll();
 
 		for (size_t i = 0; i < mMeshes.size(); i++)
 		{
 			if (mCamera != nullptr)
-				mMeshes[i]->setCamera(*mCamera);
-
-			//mMeshes[i]->draw();
+				if (mMeshes[i] != nullptr)
+				{
+					mMeshes[i]->setCamera(*mCamera);
+					mMeshes[i]->setLights(mLights);
+				}
 		}
 
 		for (size_t i = 0; i < mParticleEmitters.size(); i++)
 		{
 			if (mCamera != nullptr)
-				mParticleEmitters[i]->setCameraPos(mCamera->pos());
-
-			//mParticleEmitters[i]->draw();
+				if (mParticleEmitters[i] != nullptr)
+					mParticleEmitters[i]->setCameraPos(mCamera->pos());
 		}
 
 		TB->load(NULL, mWindowSize.x, mWindowSize.y, true);
@@ -94,42 +98,27 @@ namespace C
 
 		//FB->prepare(C_Vector4(1, 1, 1, 0), mWindowSize);
 
-		mSkybox->draw();
+		if (mSkybox != nullptr)
+			mSkybox->draw();
 
 		for (size_t i = 0; i < mMeshes.size(); i++)
-		{
-			mMeshes[i]->draw();
-			//Mesh rendering error
-			//C_GetErrorOpenGL();
-		}
+			if (mMeshes[i] != nullptr)
+				mMeshes[i]->draw();
 
 		for (size_t i = 0; i < mParticleEmitters.size(); i++)
-		{
-			mParticleEmitters[i]->draw();
-			//Particles rendering error
-			//C_GetErrorOpenGL();
-		}
+			if (mParticleEmitters[i] != nullptr)
+				mParticleEmitters[i]->draw();
 
 		C_Framebuffer::unbind();
-
-		//Framebuffer error
-		//C_GetErrorOpenGL();
-
 		unbindAll();
 
 		TB->generateMipmap();
-
-		//Texture error
-		//C_GetErrorOpenGL();
 
 		mPostProcess->bind();
 		mPostProcess->setUniform2f("uWindowSize", mWindowSize);
 
 		TB->bind();
 		drawQuad();
-
-		//Framebuffer error
-		//C_GetErrorOpenGL();
 
 		C_Texture::unbind();
 
@@ -198,31 +187,6 @@ namespace C
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glEnable(GL_ALPHA_TEST);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Draw screen quad
-	void C_Render::drawQuad()
-	{
-		glColor3f(1.0, 1.0, 1.0);
-		glBegin(GL_TRIANGLES);
-			glTexCoord2f(0.0, 0.0);
-			glVertex2f(-1.0, -1.0);
-
-			glTexCoord2f(1.0, 1.0);
-			glVertex2f(1.0, 1.0);
-
-			glTexCoord2f(0.0, 1.0);
-			glVertex2f(-1.0, 1.0);
-
-			glTexCoord2f(0.0, 0.0);
-			glVertex2f(-1.0, -1.0);
-
-			glTexCoord2f(1.0, 0.0);
-			glVertex2f(1.0, -1.0);
-
-			glTexCoord2f(1.0, 1.0);
-			glVertex2f(1.0, 1.0);
-		glEnd();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

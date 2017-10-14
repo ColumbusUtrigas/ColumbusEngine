@@ -12,9 +12,9 @@
 
 #include <Graphics/Cubemap.h>
 #include <Graphics/Camera.h>
-#include <Graphics/Buffer.h>
 #include <Graphics/Shader.h>
-#include <Impl/ImplOpenGL.h>
+#include <RenderAPI/APIOpenGL.h>
+#include <RenderAPI/Buffer.h>
 
 namespace C
 {

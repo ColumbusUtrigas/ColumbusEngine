@@ -66,13 +66,13 @@ namespace C
 		//Set camera target
 		void setTarget(C_Vector3 aTarget);
 		//Return camera direction
-		C_Vector3 direction();
+		C_Vector3 direction() const;
 		//Return camera right direction
-		C_Vector3 right();
+		C_Vector3 right() const;
 		//Return camera up direction
-		C_Vector3 up();
+		C_Vector3 up() const;
 		//Return camera position
-		C_Vector3 pos();
+		C_Vector3 pos() const;
 		//Destructor
 		~C_Camera();
 	};

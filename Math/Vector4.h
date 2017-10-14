@@ -150,12 +150,26 @@ namespace C
 			ret.w = aMin.w + (float)(rand()) / ((float)(RAND_MAX / (aMax.w - aMin.w)));
 			return ret;
 		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return length of vector
+		inline float length()
+		{
+			return sqrt((x * x) + (y * y) + (z * z) + (w * w));
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return length between two vectors
+		inline float length(C_Vector4 aVec)
+		{
+			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2) + pow(aVec.z - z, 2) + pow(aVec.w - w, 2));
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
 		inline C_Vector4 normalize()
 		{
 			float l = sqrt((x * x) + (y * y) + (z * z) + (w * w));
 			return C_Vector4(x / l, y / l, z / l, w / l);
 		}
+		////////////////////////////////////////////////////////////////////////////
 		//Destructor
 		inline ~C_Vector4() {}
 	};

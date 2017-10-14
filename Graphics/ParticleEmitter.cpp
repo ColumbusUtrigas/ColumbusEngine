@@ -131,11 +131,11 @@ namespace C
 		float a = tm.elapsed();
 
 		mBuf->bind();
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
+		C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(0);
 		mTBuf->bind();
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(1);
+		C_VertexAttribPointerOpenGL(1, 2, C_OGL_FLOAT, C_OGL_FALSE, 2 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(1);
 
 		mShader->bind();
 
@@ -156,8 +156,8 @@ namespace C
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, 0);
+			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
+			C_BindTextureOpenGL(C_OGL_TEXTURE0, 0);
 
 			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
 			{
@@ -176,10 +176,10 @@ namespace C
 
 		mFrame++;
 
-		glDepthMask(GL_FALSE);
+		C_DisableDepthMaskOpenGL();
 
 		if (mParticleEffect->getAdditive())
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
 
 		float scaleOL = mParticleEffect->getScaleOverLifetime();
 		float billboard = mParticleEffect->getBillbiarding();
@@ -232,7 +232,7 @@ namespace C
 				//mShader->setUniform4f("uPosition", set);
 				mShader->setUniformArrayf("Unif", arr, 8);
 
-				glDrawArrays(GL_TRIANGLES, 0, 6);
+				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
 			}
 
 			//mParticles[i].age += frame.elapsed();
@@ -245,16 +245,16 @@ namespace C
 		frame.reset();
 
 		if (mParticleEffect->getAdditive())
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
 
-		glDepthMask(GL_TRUE);
+		C_EnableDepthMaskOpenGL();
 
 		C_Shader::unbind();
 		C_Texture::unbind();
 		C_Buffer::unbind();
 
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
+		C_CloseStreamOpenGL(0);
+		C_CloseStreamOpenGL(1);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

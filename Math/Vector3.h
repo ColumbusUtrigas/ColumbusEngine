@@ -143,6 +143,18 @@ namespace C
 			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Return length of vector
+		inline float length()
+		{
+			return sqrt((x * x) + (y * y) + (z * z));
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return length between 2 vectors
+		inline float length(C_Vector3 aVec)
+		{
+			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2) + pow(aVec.z - z, 2));
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
 		inline C_Vector3 normalize()
 		{
@@ -150,12 +162,6 @@ namespace C
 			return C_Vector3(x / l, y / l, z / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Return lenght between 2 vectors
-		inline float lenght(C_Vector3 aVec)
-		{
-			float l = sqrt((x - aVec.x) * (y - aVec.y) * (z - aVec.z));
-			return l;
-		}
 		//Destructor
 		inline ~C_Vector3() {}
 	};

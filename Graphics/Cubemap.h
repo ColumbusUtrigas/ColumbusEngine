@@ -15,6 +15,7 @@
 #include <GL/glew.h>
 #include <FreeImage.h>
 
+#include <RenderAPI/APIOpenGL.h>
 #include <Graphics/Texture.h>
 #include <System/Console.h>
 
@@ -27,6 +28,8 @@ namespace C
 	{
 	private:
 		unsigned int mID;
+
+		bool mInited = false;
 	public:
 		//Constructor
 		C_Cubemap(C_CubemapPath aPath);

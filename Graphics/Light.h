@@ -21,21 +21,19 @@ namespace C
   class C_Light
   {
   private:
-    int type;
+    int mType = 0;
 
-    C_Vector3 pos;
-    C_Vector3 dir;
+    C_Vector3 mPos = C_Vector3(0, 0, 5);
+    C_Vector3 mDir = C_Vector3(-0.5, -0.4f, -0.3f);
 
-    C_Vector3 ambient;
-    C_Vector3 diffuse;
-    C_Vector3 specular;
+    C_Vector3 mColor = C_Vector3(1, 1, 1);
 
-    float constant;
-    float linear;
-    float quadratic;
+    float mConstant = 1.0;
+    float mLinear = 0.09;
+    float mQuadratic = 0.032;
 
-    float cutoff;
-    float outerCutoff;
+    float mInnerCutoff = 12.5;
+    float mOuterCutoff = 17.5;
   public:
     //Constructor
     C_Light(const int aType);
@@ -47,42 +45,34 @@ namespace C
     void setPos(const C_Vector3 aPos);
     //Set light direction
     void setDir(const C_Vector3 aDir);
-    //Set ambient color
-    void setAmbient(const C_Vector3 aAmbient);
-    //Set diffuse color
-    void setDiffuse(const C_Vector3 aDiffuse);
-    //Set specular color
-    void setSpecular(const C_Vector3 aSpecular);
+    //Set light color
+    void setColor(const C_Vector3 aColor);
     //Set constant attenuation
     void setConstant(const float aConst);
     //Set linear attenuation
     void setLinear(const float aLinear);
     //Set quadratic attenuation
     void setQuadratic(const float aQuadratic);
-    //Set spotlight cutoff
-    void setCutoff(const float aCutoff);
+    //Set spotlight inner cutoff
+    void setInnerCutoff(const float aInnerCutoff);
     //Set spotlight outer cuttof
     void setOuterCutoff(const float aOuterCutoff);
     //Return light type
     int getType();
     //Return light position
-    C_Vector3 getPos();
+    C_Vector3 getPos() const;
     //Return light direction
     C_Vector3 getDir();
-    //Return ambient color
-    C_Vector3 getAmbient();
-    //Return diffuse color
-    C_Vector3 getDiffuse();
-    //Return specular color
-    C_Vector3 getSpecular();
+    //Return light color
+    C_Vector3 getColor();
     //Return constant attenuation
     float getConstant();
     //Return linear attenuation
     float getLinear();
     //Return quadratic attenuation
     float getQuadratic();
-    //Return spotlight cutoff
-    float getCutoff();
+    //Return spotlight inner cutoff
+    float getInnerCutoff();
     //Return spotlight outer cutoff
     float getOuterCutoff();
     //Serialize to XML file

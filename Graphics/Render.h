@@ -13,10 +13,11 @@
 #include <Graphics/Model.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
+#include <Graphics/Light.h>
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Renderbuffer.h>
-#include <Impl/ImplOpenGL.h>
+#include <RenderAPI/APIOpenGL.h>
 
 namespace C
 {
@@ -26,6 +27,7 @@ namespace C
 	private:
 		std::vector<C_Mesh*> mMeshes;
 		std::vector<C_ParticleEmitter*> mParticleEmitters;
+		std::vector<C_Light*> mLights;
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
 
@@ -54,6 +56,8 @@ namespace C
 		void add(C_Mesh* aMesh);
 		//Add particle emmitter
 		void add(C_ParticleEmitter* aP);
+		//Add light
+		void add(C_Light* aLight);
 		//Set main camera
 		void setMainCamera(C_Camera* aCamera);
 		//Set window size

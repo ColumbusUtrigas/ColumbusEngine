@@ -13,14 +13,17 @@
 #include <vector>
 #include <string>
 #include <list>
+#include <algorithm>
+
+#include <RenderAPI/Buffer.h>
 
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
-#include <Graphics/Buffer.h>
 #include <Graphics/Material.h>
 #include <Graphics/Importer.h>
 #include <Graphics/Skybox.h>
+#include <Graphics/Light.h>
 
 namespace C
 {
@@ -33,12 +36,29 @@ namespace C
 		C_Vector3 mScale;
 		C_Vector3 mPivot;
 		glm::mat4 mMatrix;
+		glm::mat4 mNormalMatrix;
 
 		C_Mesh* mParent = NULL;
 
 		C_Camera mCamera;
 
 		std::list<C_Mesh*> mChilds;
+		std::vector<C_Light*> mLights;
+
+		float mLightUniform[120];
+
+		//Sets texture\cubemap as uniform in shader
+		void setShaderTextures();
+		//Calculate and transfer matrices as uniform in shader
+		void setShaderMatrices();
+		//Set all material data as uniform in shader
+		void setShaderMaterial();
+		//Set all lights and camera data as unniform in shader
+		void setShaderLightAndCamera();
+		//Calculate lights
+		void calculateLights();
+		//Sort lights array by distance
+		void sortLights();
 	public:
 		C_Buffer* buf = NULL;
 		C_Buffer* tbuf = NULL;
@@ -76,6 +96,8 @@ namespace C
 		void addChild(C_Mesh* aChild);
 		//Set pivot point
 		void setPivot(C_Vector3 aPivot);
+		//Set light casters, which calculate to using in shaders
+		void setLights(std::vector<C_Light*> aLights);
 		//Return pivot point
 		C_Vector3 getPivot();
 		//Add position to pivot point

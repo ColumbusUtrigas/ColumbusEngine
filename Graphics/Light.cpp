@@ -17,148 +17,115 @@ namespace C
   //Constructor
   C_Light::C_Light(const int aType)
   {
-    type = (int)aType;
-    pos = C_Vector3(0, 0, 5);
-    dir = C_Vector3(-0.5, -0.4f, -0.3f);
-    ambient = C_Vector3(0.3f, 0.3f, 0.3f);
-    diffuse =  C_Vector3(0.7f, 0.7f, 0.7f);
-    specular = C_Vector3(1.0f, 1.0f, 1.0f);
-    constant = 1.0;
-    linear = 0.09;
-    quadratic = 0.032;
-    cutoff = 12.5;
+    mType = (int)aType;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set light type
   void C_Light::setType(const int aType)
   {
-    type = (int)aType;
+    mType = (int)aType;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set light position
   void C_Light::setPos(const C_Vector3 aPos)
   {
-    pos = (C_Vector3)aPos;
+    mPos = (C_Vector3)aPos;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set light direction
   void C_Light::setDir(const C_Vector3 aDir)
   {
-    dir = (C_Vector3)aDir;
+    mDir = (C_Vector3)aDir;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Set ambient color
-  void C_Light::setAmbient(const C_Vector3 aAmbient)
+  //Set light color
+  void C_Light::setColor(const C_Vector3 aColor)
   {
-    ambient = (C_Vector3)aAmbient;
-  }
-  //////////////////////////////////////////////////////////////////////////////
-  //Set diffuse color
-  void C_Light::setDiffuse(const C_Vector3 aDiffuse)
-  {
-    diffuse = (C_Vector3)aDiffuse;
-  }
-  //////////////////////////////////////////////////////////////////////////////
-  //Set specular color
-  void C_Light::setSpecular(const C_Vector3 aSpecular)
-  {
-    specular = (C_Vector3)aSpecular;
+    mColor = (C_Vector3)aColor;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set constant attenuation
   void C_Light::setConstant(const float aConstant)
   {
-    constant = (float)aConstant;
+    mConstant = (float)aConstant;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set linear attenuation
   void C_Light::setLinear(const float aLinear)
   {
-    linear = (float)aLinear;
+    mLinear = (float)aLinear;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set quadratic attenuation
   void C_Light::setQuadratic(const float aQuadratic)
   {
-    quadratic = (float)aQuadratic;
+    mQuadratic = (float)aQuadratic;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Set spotlight cutoff
-  void C_Light::setCutoff(const float aCutoff)
+  //Set spotlight inner cutoff
+  void C_Light::setInnerCutoff(const float aInnerCutoff)
   {
-    cutoff = (float)aCutoff;
+    mInnerCutoff = (float)aInnerCutoff;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Set spotlight outer cutoff
   void C_Light::setOuterCutoff(const float aOuterCutoff)
   {
-    outerCutoff = (float)aOuterCutoff;
+    mOuterCutoff = (float)aOuterCutoff;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return light type
   int C_Light::getType()
   {
-    return type;
+    return mType;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return light position
-  C_Vector3 C_Light::getPos()
+  C_Vector3 C_Light::getPos() const
   {
-    return pos;
+    return mPos;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return light direction
   C_Vector3 C_Light::getDir()
   {
-    return dir;
+    return mDir;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Retun ambient color
-  C_Vector3 C_Light::getAmbient()
+  //Return light color
+  C_Vector3 C_Light::getColor()
   {
-    return ambient;
-  }
-  //////////////////////////////////////////////////////////////////////////////
-  //Return diffuse color
-  C_Vector3 C_Light::getDiffuse()
-  {
-    return diffuse;
-  }
-  //////////////////////////////////////////////////////////////////////////////
-  //Return specular color
-  C_Vector3 C_Light::getSpecular()
-  {
-    return specular;
+    return mColor;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return constant attenuation
   float C_Light::getConstant()
   {
-    return constant;
+    return mConstant;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return linear attenuation
   float C_Light::getLinear()
   {
-    return linear;
+    return mLinear;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return quadratic attenuation
   float C_Light::getQuadratic()
   {
-    return quadratic;
+    return mQuadratic;
   }
   //////////////////////////////////////////////////////////////////////////////
-  //Return spotlight cutoff
-  float C_Light::getCutoff()
+  //Return spotlight inner cutoff
+  float C_Light::getInnerCutoff()
   {
-    return cutoff;
+    return mInnerCutoff;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Return spotlight outer cutoff
   float C_Light::getOuterCutoff()
   {
-    return outerCutoff;
+    return mOuterCutoff;
   }
   //////////////////////////////////////////////////////////////////////////////
   //Serialize to XML file

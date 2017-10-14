@@ -38,20 +38,20 @@ namespace C
 	//Constructor
 	C_Texture::C_Texture()
 	{
-		glGenTextures(1, &mID);
+		C_GenTextureOpenGL(&mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
 	C_Texture::C_Texture(const char* aPath, bool aSmooth)
 	{
-		glGenTextures(1, &mID);
+		C_GenTextureOpenGL(&mID);
 		load(aPath, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 3
 	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
-		glGenTextures(1, &mID);
+		C_GenTextureOpenGL(&mID);
 		load(aData, aW, aH, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -74,64 +74,45 @@ namespace C
 		int nHeight = FreeImage_GetHeight(imagen);
 		int nBPP = FreeImage_GetBPP(imagen);
 
-		glBindTexture(GL_TEXTURE_2D, mID);
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
 
-		switch (mWrapX)
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_REPEAT);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_REPEAT);
+
+		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, nWidth, nHeight,
+			C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, bits);
+
+		if (mConfig.mipmaps)
 		{
-			case C_TEXTURE_CLAMP:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				break;
-			case C_TEXTURE_REPEAT:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				break;
-			case C_TEXTURE_MIRROR_REPEAT:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-				break;
-		}
-
-		switch (mWrapY)
-		{
-			case C_TEXTURE_CLAMP:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-				break;
-			case C_TEXTURE_REPEAT:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-				break;
-			case C_TEXTURE_MIRROR_REPEAT:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-				break;
-		}
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, nWidth, nHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, bits);
-		if (mMipmaps == true)
-		{
-			glGenerateMipmap(GL_TEXTURE_2D);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 9);
+			C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_BASE_LEVEL, mConfig.LOD);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_LEVEL, 9);
 		}
 
 		mBuffer = imagen;
 
-		if (mSmooth == true)
+		if (mConfig.smooth)
 		{
-			if (mMipmaps == true)
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, mAnisotropy);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
 
-		glBindTexture(GL_TEXTURE_2D, 0);
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 
 		mFile = (char*)aPath;
 		mWidth = nWidth;
@@ -183,42 +164,74 @@ namespace C
 	void C_Texture::load(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
 		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glBindTexture(GL_TEXTURE_2D, mID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if(aSmooth == true)
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+
+		if (mConfig.smooth)
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		} else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
-		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA/*GL_RED*/, aW, aH,
-		0, GL_RGBA/*GL_RED*/, GL_UNSIGNED_BYTE, (void*)aData);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		//printf("\x1b[32;1mTexture successfuly loaded from buffer\x1b[0m\n");
+		else
+		{
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+		}
+
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA/*GL_RED*/, aW, aH,
+		//0, GL_RGBA/*GL_RED*/, GL_UNSIGNED_BYTE, (void*)aData);
+
+		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, aW, aH,
+		C_OGL_RGBA, C_OGL_UNSIGNED_BYTE, (void*)aData);
+
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Load depth texture from raw data
 	void C_Texture::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
-		glBindTexture(GL_TEXTURE_2D, mID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, aW, aH,
-		0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
+
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		if (mConfig.smooth)
+		{
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+		}
+		else
+		{
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+		}
+
+		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, aW, aH,
+		C_OGL_DEPTH_COMPONENT, C_OGL_UNSIGNED_BYTE, NULL);
+
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Load texture from memory
 	void C_Texture::loadFromMemory(const char* aData, size_t aSize, bool aSmooth)
 	{
-		glGenTextures(1, &mID);
 		/*
 		size_t size = C_FileSize(aPath);
 
@@ -237,22 +250,34 @@ namespace C
 		FIBITMAP* bitmap = FreeImage_LoadFromMemory(FreeImage_GetFileTypeFromMemory(hmem, 0), hmem, 0);
 		FIBITMAP *pImage = FreeImage_ConvertTo32Bits(bitmap);
 
-		glBindTexture(GL_TEXTURE_2D, mID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(pImage), FreeImage_GetHeight(pImage),
-	    0, GL_BGRA, GL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(pImage));
-		glGenerateMipmap(GL_TEXTURE_2D);
-		if(aSmooth)
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, FreeImage_GetWidth(pImage),
+		FreeImage_GetHeight(pImage), C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(pImage));
+		if (mConfig.mipmaps)
+			C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
+
+		if (mConfig.smooth)
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		} else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
-	    glBindTexture(GL_TEXTURE_2D, 0);
+		else
+		{
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
+		}
+
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 
 		FreeImage_CloseMemory(hmem);
 		FreeImage_Unload(bitmap);
@@ -271,34 +296,38 @@ namespace C
 		int nWidth = FreeImage_GetWidth(mBuffer);
 		int nHeight = FreeImage_GetHeight(mBuffer);
 
-		if (mID != 0)
-			glDeleteTextures(1, &mID);
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
 
-		glGenTextures(1, &mID);
-		glBindTexture(GL_TEXTURE_2D, mID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, nWidth, nHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, bits);
-		if (mMipmaps == true)
-			glGenerateMipmap(GL_TEXTURE_2D);
+		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, nWidth, nHeight,
+			C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, bits);
 
-		if (mSmooth == true)
+		if (mConfig.mipmaps == true)
+			C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
+
+		if (mConfig.smooth)
 		{
-			if (mMipmaps == true)
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR_MIPMAP_LINEAR);
 			else
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
 		}
 		else
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			if (mConfig.mipmaps)
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST_MIPMAP_NEAREST);
+			else
+				C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, C_OGL_NEAREST);
+
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
 		}
 
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, mAnisotropy);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
 
-		glBindTexture(GL_TEXTURE_2D, 0);
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 
 		C_Success("Texture reloaded");
 	}
@@ -306,23 +335,62 @@ namespace C
 	//Set texture config
 	void C_Texture::setConfig(C_TextureConfig aConfig)
 	{
-		mSmooth = aConfig.smooth;
-		mMipmaps = aConfig.mipmaps;
-		mAnisotropy = aConfig.anisotropy;
-		mWrapX = aConfig.wrapX;
-		mWrapY = aConfig.wrapY;
+		C_TextureConfig conf = mConfig;
+
+		mConfig = aConfig;
+
+		if (aConfig.smooth != conf.smooth)
+			setSmooth(aConfig.smooth);
+
+		if (aConfig.anisotropy != conf.anisotropy)
+			setAnisotropy(aConfig.anisotropy);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set texture smooth
+	void C_Texture::setSmooth(const bool aSmooth)
+	{
+		if (mConfig.smooth != aSmooth)
+		{
+			unsigned int filter;
+
+			if (aSmooth == true)
+			{
+				if (mConfig.mipmaps == true)
+					filter = C_OGL_LINEAR_MIPMAP_LINEAR;
+				else
+					filter = C_OGL_LINEAR;
+			} else
+			{
+				if (mConfig.mipmaps == true)
+					filter = C_OGL_NEAREST_MIPMAP_NEAREST;
+				else
+					filter = C_OGL_NEAREST;
+			}
+
+			mConfig.smooth = (bool)aSmooth;
+			bind();
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, filter);
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
+			unbind();
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set texture anisotropy filtration value
+	void C_Texture::setAnisotropy(const unsigned int aAnisotropy)
+	{
+		if (mConfig.anisotropy != aAnisotropy)
+		{
+			mConfig.anisotropy = (unsigned int)aAnisotropy;
+			bind();
+			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, aAnisotropy);
+			unbind();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return texture config
 	C_TextureConfig C_Texture::getConfig()
 	{
-		C_TextureConfig c;
-		c.smooth = mSmooth;
-		c.mipmaps = mMipmaps;
-		c.anisotropy = mAnisotropy;
-		c.wrapX = mWrapX;
-		c.wrapY = mWrapY;
-		return c;
+		return mConfig;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return texture size
@@ -491,19 +559,19 @@ namespace C
 	void C_Texture::bind()
 	{
 		if(mID != 0)
-			glBindTexture(GL_TEXTURE_2D, mID);
+			C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Unbind texture
 	void C_Texture::unbind()
 	{
-		glBindTexture(GL_TEXTURE_2D, 0);
+		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Create sampler and bind texture
 	void C_Texture::sampler2D(int a)
 	{
-		glActiveTexture(GL_TEXTURE0 + a);
+		C_ActiveTextureOpenGL(C_OGL_TEXTURE0 + a);
 		bind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -511,14 +579,14 @@ namespace C
 	void C_Texture::generateMipmap()
 	{
 		bind();
-		glGenerateMipmap(GL_TEXTURE_2D);
+		C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
 		unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_Texture::~C_Texture()
 	{
-		glDeleteTextures(1, &mID);
+		C_DeleteTextureOpenGL(&mID);
 		if(mBuffer != NULL && mBuffer != nullptr)
 			FreeImage_Unload(mBuffer);
 	}
