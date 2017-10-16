@@ -34,7 +34,7 @@ namespace C
 		}
 
 		if (v.size() > 0)
-			buf = new C_Buffer(v.data(), v.size() * sizeof(float));
+			buf = new C_Buffer(v.data(), v.size() * sizeof(float), 3);
 		v.clear();
 
 		std::vector<float> t;
@@ -46,7 +46,7 @@ namespace C
 		}
 
 		if(t.size() > 0)
-			tbuf = new C_Buffer(t.data(), t.size() * sizeof(float));
+			tbuf = new C_Buffer(t.data(), t.size() * sizeof(float), 2);
 		t.clear();
 
 		std::vector<float> n;
@@ -59,7 +59,7 @@ namespace C
 		}
 
 		if (n.size() > 0)
-			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float));
+			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float), 3);
 		n.clear();
 
 		std::vector<float> tang;
@@ -72,7 +72,7 @@ namespace C
 		}
 
 		if (tang.size() > 0)
-			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float));
+			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float), 3);
 		tang.clear();
 
 		std::vector<float> bitang;
@@ -85,7 +85,7 @@ namespace C
 		}
 
 		if (bitang.size() > 0)
-			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float));
+			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float), 3);
 		bitang.clear();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -337,7 +337,7 @@ namespace C
 	{
 		C_Vector3 pos = mPos;
 
-		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), v.end());
+		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
 
 		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
 		{

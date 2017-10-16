@@ -8,7 +8,7 @@
 *                   20.07.2017                  *
 *************************************************/
 
-#include <RenderAPI/Buffer.h>
+#include <Graphics/Buffer.h>
 
 namespace C
 {
@@ -17,64 +17,53 @@ namespace C
 	//Constructor
 	C_Buffer::C_Buffer()
 	{
-		C_GenBufferOpenGL(&mID);
+		glGenBuffers(1, &mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
-	C_Buffer::C_Buffer(const float* aData, const unsigned int aSize, const unsigned int aPackSize)
+	C_Buffer::C_Buffer(const float* aData, const int aSize)
 	{
-		C_GenBufferOpenGL(&mID);
-		setData(aData, aSize, aPackSize);
-		compile();
+		glGenBuffers(1, &mID);
+		setVertices(aData, (int)aSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set vertices to buffer
-	void C_Buffer::setData(const float* aData, const unsigned int aSize, const unsigned int aPackSize)
+	void C_Buffer::setVertices(const float* aData, int aSize)
 	{
-		mData = aData;
-		mSize = (unsigned int)aSize;
-		mCount = aSize / sizeof(float) / aPackSize;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Load buffer data to GPU
-	void C_Buffer::compile()
-	{
-		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, mID);
-		C_BufferDataOpenGL(C_OGL_ARRAY_BUFFER, mSize, mData, C_OGL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, mID);
+		glBufferData(GL_ARRAY_BUFFER, aSize, aData, GL_STATIC_DRAW);
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		mSize = aSize / sizeof(float) / 3;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Bind vertex buffer
 	void C_Buffer::bind()
 	{
-		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, mID);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Bind buffer, set vertex attribute and open vertex attribute stream
-	void C_Buffer::bind(unsigned int aIndex, unsigned int aNorm, size_t aStride)
-	{
-		unsigned int size = mSize / sizeof(float) / mCount;
-
-		bind();
-		C_VertexAttribPointerOpenGL(aIndex, size, C_OGL_FLOAT, aNorm, aStride, NULL);
-		C_OpenStreamOpenGL(aIndex);
+		glBindBuffer(GL_ARRAY_BUFFER, mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Unbind vertex buffer
 	void C_Buffer::unbind()
 	{
-		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return packs count
-	int C_Buffer::getCount()
+	//Return vertices count
+	int C_Buffer::getSize()
 	{
-		return mCount;
+		return mSize;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Check buffer
+	bool C_Buffer::check()
+	{
+		return glIsVertexArray(mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_Buffer::~C_Buffer()
 	{
-		C_DeleteBufferOpenGL(&mID);
+		glDeleteBuffers(1, &mID);
 	}
 
 }

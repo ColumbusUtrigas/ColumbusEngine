@@ -1,3 +1,4 @@
+
 /************************************************
 *                 Importer.h                    *
 *************************************************
@@ -22,8 +23,6 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-
-#include <RenderAPI/Buffer.h>
 
 namespace C
 {
@@ -271,6 +270,24 @@ namespace C
 						ver1.normal = tn[n1 - 1];
 						ver2.normal = tn[n2 - 1];
 						ver3.normal = tn[n3 - 1];
+
+						C_Vector3 deltaPos1 = ver2.pos - ver1.pos;
+						C_Vector3 deltaPos2 = ver3.pos - ver1.pos;
+
+						C_Vector2 deltaUV1 = ver2.UV - ver1.UV;
+						C_Vector2 deltaUV2 = ver3.UV - ver1.UV;
+
+						float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+						C_Vector3 tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
+						C_Vector3 bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+
+						ver1.tangent = tangent;
+						ver2.tangent = tangent;
+						ver3.tangent = tangent;
+
+						ver1.bitangent = bitangent;
+						ver2.bitangent = bitangent;
+						ver3.bitangent = bitangent;
 
 						verts.push_back(ver1);
 						verts.push_back(ver2);

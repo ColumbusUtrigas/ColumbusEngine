@@ -10,8 +10,7 @@
 
 #pragma once
 
-#include <RenderAPI/APIOpenGL.h>
-#include <vector>
+#include <GL/glew.h>
 
 namespace C
 {
@@ -19,28 +18,23 @@ namespace C
 	class C_Buffer
 	{
 	private:
-		unsigned int mID = 0;
-		unsigned int mSize = 0;
-		unsigned int mCount = 0;
-
-		const float* mData = NULL;
+		unsigned int mID;
+		int mSize;
 	public:
 		//Constructor
 		C_Buffer();
 		//Constructor 2
-		C_Buffer(const float* aData, const unsigned int aSize, const unsigned int aPackSize);
-		//Set data to buffer
-		void setData(const float* aData, const unsigned aSize, const unsigned int aPackSize);
-		//Load buffer data to GPU
-		void compile();
-		//Bind buffer
+		C_Buffer(const float* aData, const int aSize);
+		//Set vertices to buffer
+		void setVertices(const float* aData, int aSize);
+		//Bind vertex buffer
 		void bind();
-		//Bind buffer, set vertex attribute and open vertex attribute stream
-		void bind(unsigned int aIndex, unsigned int aNorm, size_t aStride);
-		//Unbind buffer
+		//Unbind vertex buffer
 		static void unbind();
-		//Return packs count
-		int getCount();
+		//Return vertices count
+		int getSize();
+		//Check buffer
+		bool check();
 		//Destructor
 		~C_Buffer();
 	};
