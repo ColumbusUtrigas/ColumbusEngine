@@ -25,7 +25,7 @@ uniform samplerCube uReflectionMap;
 uniform Material uMaterial;
 uniform Camera uCamera;
 uniform float MaterialUnif[14];
-uniform float LightUnif[15];
+uniform float LightUnif[120];
 
 vec4 DiffuseMap;
 vec3 SpecularMap;
@@ -53,7 +53,13 @@ void main(void)
 {
 	Init();
 
+	//for (int i = 0; i < 2; i++)
+		//Light(i);
+
 	Light(0);
+	Light(1);
+	Light(2);
+	Light(3);
 	
 	Cubemap();
 
@@ -96,6 +102,9 @@ void Light(int id)
 	float LightInnerAngle = LightUnif[13 + offset];
 	float LightOuterAngle = LightUnif[14 + offset];
 
+	if (LightType == -1)
+		return;
+
 	vec3 lightDir;
 
 	float attenuation = 0.0;
@@ -116,17 +125,17 @@ void Light(int id)
 
 	vec3 reflect = normalize(reflect(lightDir, Normal));
 	float spec = pow(max(0.0, dot(viewDir, reflect)), 32);
-	vec3 specular = MaterialSpecular * vec3(1) * spec * 0.5;
+	vec3 specular = MaterialSpecular * LightColor * spec * 0.5;
 
-	AmbientColor += MaterialAmbient * vec3(1, 1, 1) * vec3(MaterialColor);
-	DiffuseColor += vec3(1) * MaterialDiffuse * diff * MaterialColor.xyz;
+	AmbientColor += MaterialAmbient * LightColor * vec3(MaterialColor);
+	DiffuseColor += LightColor * MaterialDiffuse * diff * MaterialColor.xyz;
 	
 	if (IsSpecularMap)
 		SpecularColor += specular * MaterialSpecular * MaterialColor.xyz * SpecularMap;
 	else
 		SpecularColor += specular * MaterialSpecular * MaterialColor.xyz;
 
-	if (int(LightType) != 0)
+	if (int(LightType) > 0)
 	{
 		float distance = length(LightPos - varPos);
 		attenuation = 1.0 / (LightConstant +

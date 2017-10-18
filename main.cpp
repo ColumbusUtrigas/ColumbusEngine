@@ -118,6 +118,25 @@ int main(int argc, char** argv)
 
 	render.add(&particles);
 
+	C_Light light(1);
+	C_Light light2(1);
+	C_Light light3(1);
+	C_Light light4(1);
+
+	light2.setPos(C_Vector3(2, 1.02, 1));
+	light2.setColor(C_Vector3(1, 0.0, 0.0));
+
+	light3.setPos(C_Vector3(-1, 1.01, 0));
+	light3.setColor(C_Vector3(0.0, 1, 0.0));
+
+	light4.setPos(C_Vector3(1, 1.02, -2));
+	light4.setColor(C_Vector3(0.0, 0.0, 1));
+
+	render.add(&light);
+	render.add(&light2);
+	render.add(&light3);
+	render.add(&light4);
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
