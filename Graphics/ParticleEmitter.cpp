@@ -74,8 +74,8 @@ namespace C
 
 		mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
 
-		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float));
-		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float));
+		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
+		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set camera pos
