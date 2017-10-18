@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 	//if (!deserializer.getInt("Int", &serInt))
 		//C_Error("asd\n");
 
-	C_Info("%i\n", serInt);
+	//C_Info("%i\n", serInt);
 
 	while (window.isOpen())
 	{
