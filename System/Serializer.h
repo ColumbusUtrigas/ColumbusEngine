@@ -35,10 +35,16 @@ namespace C
       struct C_AttribVector3XML { std::string a, b, c; };
       struct C_AttribVector4XML { std::string a, b, c, d; };
 
+      bool mInited = false;
+
       int mMode = 0; // 0 - saving, 1 - loading
     public:
-      C_SerializerXML(std::string aFile, std::string aRoot);
+      enum C_XMLMode { C_XML_SERIALIZATION, C_XML_DESERIALIZATION };
+    public:
+      C_SerializerXML();
+      C_SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode);
 
+      bool write(std::string aFile, std::string aRoot);
       bool setInt(std::string aElement, int aValue);
       bool setBool(std::string aElement, bool aValue);
       bool setFloat(std::string aElement, float aValue);
@@ -49,7 +55,7 @@ namespace C
       bool setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs);
       bool save();
 
-      bool load(std::string aFile, std::string aRoot);
+      bool read(std::string aFile, std::string aRoot);
       bool getInt(std::string aElement, int* aValue);
       bool getBool(std::string aElement, bool* aValue);
       bool getFloat(std::string aElement, float* aValue);

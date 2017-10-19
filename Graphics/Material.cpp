@@ -177,7 +177,9 @@ namespace C
 	//Serialize to XML file
 	void C_Material::saveToXML(const char* aFile)
 	{
-		Serializer::C_SerializerXML serializer(aFile, "Material");
+		Serializer::C_SerializerXML serializer;
+
+		if (!serializer.write(aFile, "Material")) { C_Error("Can't save Material: %s", aFile); return; }
 
 		if (!serializer.setVector4("Color", color, {"R", "G", "B", "A"}))
 		{ C_Error("Can't save Material color: %s", aFile); return; }
@@ -206,9 +208,9 @@ namespace C
 	//Deserialize from XML file
 	void C_Material::loadFromXML(const char* aFile)
 	{
-		Serializer::C_SerializerXML serializer(aFile, "Material");
+		Serializer::C_SerializerXML serializer;
 
-		if (!serializer.load(aFile, "Material")) { C_Error("Can't load Material: %s", aFile); return; }
+		if (!serializer.read(aFile, "Material")) { C_Error("Can't load Material: %s", aFile); return; }
 
 		if (!serializer.getVector4("Color", &color, {"R", "G", "B", "A"}))
 		{ C_Error("Can't load Material color: %s", aFile); return; }
