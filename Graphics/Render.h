@@ -31,7 +31,8 @@ namespace C
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
 
-		C_Shader* mPostProcess = NULL;
+		C_Shader* mPostProcess = nullptr;
+		C_Shader* mNegativePost = nullptr;
 
 		unsigned int FBO = 0;
 		unsigned int TBO = 0;
@@ -43,12 +44,14 @@ namespace C
 
 		C_Vector2 mWindowSize;
 
-		//Draw screen quad
-		void drawQuad();
 		//Unbind all OpenGL varyables
 		void unbindAll();
 		//Enable all OpenGL varyables
 		void enableAll();
+		//Prepare scene to rendering
+		void prepareScene();
+		//Render scene
+		void renderScene();
 	public:
 		//Constructor
 		C_Render();

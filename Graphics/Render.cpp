@@ -26,6 +26,7 @@ namespace C
 		FB->setRenderbuffer(C_FRAMEBUFFER_DEPTH_ATTACH, RB->getID());
 
 		mPostProcess = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/post.frag");
+		mNegativePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NegativePost.frag");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Add mesh
@@ -68,7 +69,68 @@ namespace C
 	void C_Render::render()
 	{
 		enableAll();
+		prepareScene();
 
+		TB->load(NULL, mWindowSize.x, mWindowSize.y, true);
+		RB->storage(C_RENDERBUFFER_DEPTH_24_STENCIL_8, mWindowSize.x, mWindowSize.y);
+		FB->prepare(C_Vector4(1, 1, 1, 0), mWindowSize);
+
+		renderScene();
+
+		C_Framebuffer::unbind();
+		
+		unbindAll();
+
+		TB->generateMipmap();
+
+		mPostProcess->bind();
+		mPostProcess->setUniform2f("uWindowSize", mWindowSize);
+
+		TB->bind();
+		C_DrawScreenQuadOpenGL();
+
+		C_Texture::unbind();
+		C_Shader::unbind();
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Unbind all OpenGL varyables
+	void C_Render::unbindAll()
+	{
+		C_CloseStreamOpenGL(0);
+		C_CloseStreamOpenGL(1);
+		C_CloseStreamOpenGL(2);
+		C_CloseStreamOpenGL(3);
+		C_CloseStreamOpenGL(4);
+
+		C_Cubemap::unbind();
+		C_Buffer::unbind();
+		C_Texture::unbind();
+		C_Shader::unbind();
+		C_Framebuffer::unbind();
+		C_Renderbuffer::unbind();
+
+		C_DisableDepthTestOpenGL();
+		C_DisableBlendOpenGL();
+		C_DisableAlphaTestOpenGL();
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Enable all OpenGL varyables
+	void C_Render::enableAll()
+	{
+		C_OpenStreamOpenGL(0);
+		C_OpenStreamOpenGL(1);
+		C_OpenStreamOpenGL(2);
+		C_OpenStreamOpenGL(3);
+		C_OpenStreamOpenGL(4);
+
+		C_EnableDepthTestOpenGL();
+		C_EnableBlendOpenGL();
+		C_EnableAlphaTestOpenGL();
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Prepare scene to rendering
+	void C_Render::prepareScene()
+	{
 		for (size_t i = 0; i < mMeshes.size(); i++)
 		{
 			if (mCamera != nullptr)
@@ -85,19 +147,11 @@ namespace C
 				if (mParticleEmitters[i] != nullptr)
 					mParticleEmitters[i]->setCameraPos(mCamera->pos());
 		}
-
-		TB->load(NULL, mWindowSize.x, mWindowSize.y, true);
-		RB->storage(C_RENDERBUFFER_DEPTH_24_STENCIL_8, mWindowSize.x, mWindowSize.y);
-
-		FB->bind();
-		glViewport(0, 0, mWindowSize.x, mWindowSize.y);
-
-		glClearColor(1, 1, 1, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
-
-		//FB->prepare(C_Vector4(1, 1, 1, 0), mWindowSize);
-
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Render scene
+	void C_Render::renderScene()
+	{
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
@@ -108,85 +162,6 @@ namespace C
 		for (size_t i = 0; i < mParticleEmitters.size(); i++)
 			if (mParticleEmitters[i] != nullptr)
 				mParticleEmitters[i]->draw();
-
-		C_Framebuffer::unbind();
-		unbindAll();
-
-		TB->generateMipmap();
-
-		mPostProcess->bind();
-		mPostProcess->setUniform2f("uWindowSize", mWindowSize);
-
-		TB->bind();
-		drawQuad();
-
-		C_Texture::unbind();
-
-		C_Shader::unbind();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Draw screen quad
-	void C_Render::drawQuad()
-	{
-		glDepthMask(GL_FALSE);
-
-		glColor3f(1.0, 1.0, 1.0);
-		glBegin(GL_TRIANGLES);
-			glTexCoord2f(0.0, 0.0);
-			glVertex2f(-1.0, -1.0);
-
-			glTexCoord2f(1.0, 1.0);
-			glVertex2f(1.0, 1.0);
-
-			glTexCoord2f(0.0, 1.0);
-			glVertex2f(-1.0, 1.0);
-
-			glTexCoord2f(0.0, 0.0);
-			glVertex2f(-1.0, -1.0);
-
-			glTexCoord2f(1.0, 0.0);
-			glVertex2f(1.0, -1.0);
-
-			glTexCoord2f(1.0, 1.0);
-			glVertex2f(1.0, 1.0);
-		glEnd();
-
-		glDepthMask(GL_TRUE);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Unbind all OpenGL varyables
-	void C_Render::unbindAll()
-	{
-		glDisableVertexAttribArray(0);
-		glDisableVertexAttribArray(1);
-		glDisableVertexAttribArray(2);
-		glDisableVertexAttribArray(3);
-		glDisableVertexAttribArray(4);
-
-		C_Cubemap::unbind();
-		C_Buffer::unbind();
-		C_Texture::unbind();
-		C_Shader::unbind();
-		C_Framebuffer::unbind();
-		C_Renderbuffer::unbind();
-
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Enable all OpenGL varyables
-	void C_Render::enableAll()
-	{
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
-		glEnableVertexAttribArray(3);
-		glEnableVertexAttribArray(4);
-
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glEnable(GL_ALPHA_TEST);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

@@ -87,9 +87,10 @@ namespace C
   void C_Framebuffer::prepare(C_Vector4 aClear, C_Vector2 aWindowSize)
   {
     bind();
-    glViewport(0, 0, aWindowSize.x, aWindowSize.y);
-    glClearColor(aClear.x, aClear.y, aClear.z, aClear.w);
-    glClear(GL_COLOR_BUFFER_BIT || GL_DEPTH_BUFFER_BIT);
+    C_ViewportOpenGL(0, 0, aWindowSize.x, aWindowSize.y);
+		C_ClearColorOpenGL(aClear.x, aClear.y, aClear.z, aClear.w);
+		C_ClearOpenGL(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
+		C_EnableDepthTestOpenGL();
   }
 
   bool C_Framebuffer::check()

@@ -239,6 +239,18 @@ namespace C
     glDisable(GL_MULTISAMPLE);
   }
   //////////////////////////////////////////////////////////////////////////////
+  //Enable alpha testing
+  void C_EnableAlphaTestOpenGL()
+  {
+    glEnable(GL_ALPHA_TEST);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable alpha testing
+  void C_DisableAlphaTestOpenGL()
+  {
+    glDisable(GL_ALPHA_TEST);
+  }
+  //////////////////////////////////////////////////////////////////////////////
   //Change depth buffer algorithm
   void C_DepthFuncOpenGL(unsigned int aFunc)
   {
@@ -291,6 +303,35 @@ namespace C
   void C_ViewportOpenGL(int aX, int aY, size_t aW, size_t aH)
   {
     glViewport(aX, aY, aW, aH);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Draw screen quad
+  void C_DrawScreenQuadOpenGL()
+  {
+    glDepthMask(GL_FALSE);
+
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_TRIANGLES);
+			glTexCoord2f(0.0, 0.0);
+			glVertex2f(-1.0, -1.0);
+
+			glTexCoord2f(1.0, 1.0);
+			glVertex2f(1.0, 1.0);
+
+			glTexCoord2f(0.0, 1.0);
+			glVertex2f(-1.0, 1.0);
+
+			glTexCoord2f(0.0, 0.0);
+			glVertex2f(-1.0, -1.0);
+
+			glTexCoord2f(1.0, 0.0);
+			glVertex2f(1.0, -1.0);
+
+			glTexCoord2f(1.0, 1.0);
+			glVertex2f(1.0, 1.0);
+		glEnd();
+
+		glDepthMask(GL_TRUE);
   }
 
 }

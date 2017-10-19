@@ -242,6 +242,10 @@ namespace C
   void C_EnableMultisampleOpenGL();
   //Disable multisampling
   void C_DisableMultisampleOpenGL();
+  //Enable alpha testing
+  void C_EnableAlphaTestOpenGL();
+  //Disable alpha testing
+  void C_DisableAlphaTestOpenGL();
   //Change depth buffer algorithm
   void C_DepthFuncOpenGL(unsigned int aFunc);
   //Change face culling
@@ -260,5 +264,7 @@ namespace C
   void C_ClearColorOpenGL(float aR, float aG, float aB, float aA);
   //Set OpenGL viewport
   void C_ViewportOpenGL(int aX, int aY, size_t aW, size_t aH);
+  //Draw screen quad
+  void C_DrawScreenQuadOpenGL();
 
 }
