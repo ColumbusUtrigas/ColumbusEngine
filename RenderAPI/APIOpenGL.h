@@ -154,6 +154,19 @@ namespace C
   #define C_OGL_CONSTANT_ALPHA             GL_CONSTANT_ALPHA
   #define C_OGL_ONE_MINUS_CONSTANT_ALPHA   GL_ONE_MINUS_CONSTANT_ALPHA
 
+  #define C_OGL_NEVER      GL_NEVER
+  #define C_OGL_LESS       GL_LESS
+  #define C_OGL_LEQUAL     GL_LEQUAL
+  #define C_OGL_EQUAL      GL_EQUAL
+  #define C_OGL_GREATER    GL_GREATER
+  #define C_OGL_NOTEQUAL   GL_NOTEQUAL
+  #define C_OGL_GEQUAL     GL_GEQUAL
+  #define C_OGL_ALWAYS     GL_ALWAYS
+
+  #define C_OGL_FRONT            GL_FRONT
+  #define C_OGL_BACK             GL_BACK
+  #define C_OGL_FRONT_AND_BACK   GL_FRONT_AND_BACK
+
   //Get OpenGL error
   bool C_GetErrorOpenGL();
   //Generate OpenGL GPU buffer
@@ -200,4 +213,33 @@ namespace C
   void C_DrawArraysOpenGL(unsigned int aMode, int aFirst, size_t aCount);
   //Change pixel arithmetic
   void C_BlendFuncOpenGL(unsigned int aSFactor, unsigned int aDFactor);
+  //Enable depth testing
+  void C_EnableDepthTestOpenGL();
+  //Disable depth testing
+  void C_DisableDepthTestOpenGL();
+  //Enable texturing
+  void C_EnableTextureOpenGL();
+  //Disable texturing
+  void C_DisableTextureOpenGL();
+  //Enable blending
+  void C_EnableBlendOpenGL();
+  //Disable blending
+  void C_DisableBlendOpenGL();
+  //Enalbe culling
+  void C_EnableCullFaceOpenGL();
+  //Disable culling
+  void C_DisableCullFaceOpenGL();
+  //Enable cubemapping
+  void C_EnableCubemapOpenGL();
+  //Disable cubemapping
+  void C_DisableCubemapOpenGL();
+  //Enable multisampling
+  void C_EnableMultisampleOpenGL();
+  //Disable multisampling
+  void C_DisableMultisampleOpenGL();
+  //Change depth buffer algorithm
+  void C_DepthFuncOpenGL(unsigned int aFunc);
+  //Change face culling
+  void C_CullFaceOpenGL(unsigned int aMode);
+
 }
