@@ -167,6 +167,11 @@ namespace C
   #define C_OGL_BACK             GL_BACK
   #define C_OGL_FRONT_AND_BACK   GL_FRONT_AND_BACK
 
+  #define C_OGL_COLOR_BUFFER_BIT     GL_COLOR_BUFFER_BIT
+  #define C_OGL_DEPTH_BUFFER_BIT     GL_DEPTH_BUFFER_BIT
+  #define C_OGL_ACCUM_BUFFER_BIT     GL_ACCUM_BUFFER_BIT
+  #define C_OGL_STENCIL_BUFFER_BIT   GL_STENCIL_BUFFER_BIT
+
   //Get OpenGL error
   bool C_GetErrorOpenGL();
   //Generate OpenGL GPU buffer
@@ -241,5 +246,19 @@ namespace C
   void C_DepthFuncOpenGL(unsigned int aFunc);
   //Change face culling
   void C_CullFaceOpenGL(unsigned int aMode);
+  //Get OpenGL vendor
+  std::string C_GetVendorOpenGL();
+  //Get OpenGL renderer
+  std::string C_GetRendererOpenGL();
+  //Get OpenGL version
+  std::string C_GetVersionOpenGL();
+  //Get OpenGL GLSL version
+  std::string C_GetGLSLVersionOpenGL();
+  //Clear OpenGL buffer
+  void C_ClearOpenGL(unsigned int aMask);
+  //Set OpenGL clear color
+  void C_ClearColorOpenGL(float aR, float aG, float aB, float aA);
+  //Set OpenGL viewport
+  void C_ViewportOpenGL(int aX, int aY, size_t aW, size_t aH);
 
 }

@@ -110,10 +110,10 @@ namespace C
 
 		C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
 		C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		C_Initialization("OpenGL version: %s", glGetString(GL_VERSION));
-		C_Initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
-		C_Initialization("OpenGL renderer: %s", glGetString(GL_RENDERER));
-		C_Initialization("GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+		C_Initialization("OpenGL version: %s", C_GetVersionOpenGL().c_str());
+		C_Initialization("OpenGL vendor: %s", C_GetVendorOpenGL().c_str());
+		C_Initialization("OpenGL renderer: %s", C_GetRendererOpenGL().c_str());
+		C_Initialization("GLSL version: %s\n", C_GetGLSLVersionOpenGL().c_str());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Clear input
@@ -198,9 +198,9 @@ namespace C
 	void C_SDLWindow::clear(float r, float g, float b, float a)
 	{
 		SDL_GL_MakeCurrent(mWindow, mGLC);
-		glClearColor(r, g, b, a);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, getSize().x, getSize().y);
+		C_ClearColorOpenGL(r, g, b, a);
+		C_ClearOpenGL(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
+		C_ViewportOpenGL(0, 0, getSize().x, getSize().y);
 		mDrawTime.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////

@@ -250,5 +250,47 @@ namespace C
   {
     glCullFace(aMode);
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL vendor
+  std::string C_GetVendorOpenGL()
+  {
+    return (const char*)glGetString(GL_VENDOR);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL renderer
+  std::string C_GetRendererOpenGL()
+  {
+    return (const char*)glGetString(GL_RENDERER);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL renderer
+  std::string C_GetVersionOpenGL()
+  {
+    return (const char*)glGetString(GL_VERSION);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL renderer
+  std::string C_GetGLSLVersionOpenGL()
+  {
+    return (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Clear OpenGL buffer
+  void C_ClearOpenGL(unsigned int aMask)
+  {
+    glClear(aMask);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set OpenGL clear color
+  void C_ClearColorOpenGL(float aR, float aG, float aB, float aA)
+  {
+    glClearColor(aR, aG, aB, aA);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set OpenGL viewport
+  void C_ViewportOpenGL(int aX, int aY, size_t aW, size_t aH)
+  {
+    glViewport(aX, aY, aW, aH);
+  }
 
 }
