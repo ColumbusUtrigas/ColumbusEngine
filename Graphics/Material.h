@@ -18,6 +18,7 @@
 #include <Graphics/Shader.h>
 #include <System/System.h>
 #include <System/Console.h>
+#include <System/Serializer.h>
 
 namespace C
 {

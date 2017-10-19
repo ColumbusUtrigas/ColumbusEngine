@@ -29,10 +29,13 @@ namespace C
       C_XMLElement* mTmp = nullptr;
 
       std::string mFile;
+      std::string mRootName;
 
       struct C_AttribVector2XML { std::string a, b; };
       struct C_AttribVector3XML { std::string a, b, c; };
       struct C_AttribVector4XML { std::string a, b, c, d; };
+
+      int mMode = 0; // 0 - saving, 1 - loading
     public:
       C_SerializerXML(std::string aFile, std::string aRoot);
 
@@ -46,29 +49,17 @@ namespace C
       bool setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs);
       bool save();
 
-      ~C_SerializerXML();
-    };
-
-    class C_DeserializerXML
-    {
-    private:
-      C_XMLDoc mDoc;
-      C_XMLNode* mRoot = nullptr;
-      C_XMLElement* mTmp = nullptr;
-
-      std::string mFile;
-
-      bool mInited = false;
-
-      struct C_AttribVector2XML { std::string a, b; };
-      struct C_AttribVector3XML { std::string a, b, c; };
-      struct C_AttribVector4XML { std::string a, b, c, d; };
-    public:
-      C_DeserializerXML(std::string aFile, std::string aRoot);
-
+      bool load(std::string aFile, std::string aRoot);
       bool getInt(std::string aElement, int* aValue);
+      bool getBool(std::string aElement, bool* aValue);
+      bool getFloat(std::string aElement, float* aValue);
+      bool getDouble(std::string aElement, double* aValue);
+      bool getString(std::string aElement, std::string* aValue);
+      bool getVector2(std::string aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs);
+      bool getVector3(std::string aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs);
+      bool getVector4(std::string aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs);
 
-      ~C_DeserializerXML();
+      ~C_SerializerXML();
     };
 
   }

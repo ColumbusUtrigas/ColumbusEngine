@@ -177,99 +177,28 @@ namespace C
 	//Serialize to XML file
 	void C_Material::saveToXML(const char* aFile)
 	{
-		C_XMLDoc doc;
-		C_XMLNode* root = doc.NewElement("Material");
-		doc.InsertFirstChild(root);
+		Serializer::C_SerializerXML serializer(aFile, "Material");
 
-		C_XMLElement* tmp = doc.NewElement("Color");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material color: %s", aFile);
-			return;
-		}
-		tmp->SetAttribute("R", color.x);
-		tmp->SetAttribute("G", color.y);
-		tmp->SetAttribute("B", color.z);
-		tmp->SetAttribute("A", color.w);
-		root->InsertEndChild(tmp);
+		if (!serializer.setVector4("Color", color, {"R", "G", "B", "A"}))
+		{ C_Error("Can't save Material color: %s", aFile); return; }
 
-		tmp = NULL;
+		if (!serializer.setVector3("Ambient", ambient, {"R", "G", "B"}))
+		{ C_Error("Can't save Material ambient: %s", aFile); return; }
 
-		tmp = doc.NewElement("Ambient");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material ambient: %s", aFile);
-			return;
-		}
-		tmp->SetAttribute("R", ambient.x);
-		tmp->SetAttribute("G", ambient.y);
-		tmp->SetAttribute("B", ambient.z);
-		root->InsertEndChild(tmp);
+		if (!serializer.setVector3("Diffuse", diffuse, {"R", "G", "B"}))
+		{ C_Error("Can't save Material diffuse: %s", aFile); return; }
 
-		tmp = NULL;
+		if (!serializer.setVector3("Specular", specular, {"R", "G", "B"}))
+		{ C_Error("Can't save Material specular: %s", aFile); return; }
 
-		tmp = doc.NewElement("Diffuse");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material diffuse: %s", aFile);
-			return;
-		}
-		tmp->SetAttribute("R", diffuse.x);
-		tmp->SetAttribute("G", diffuse.y);
-		tmp->SetAttribute("B", diffuse.z);
-		root->InsertEndChild(tmp);
+		if (!serializer.setFloat("Shininess", shininess))
+		{ C_Error("Can't save Material shininess"); return; }
 
-		tmp = NULL;
+		if (!serializer.setFloat("ReflectionPower", reflectionPower))
+		{ C_Error("Can't save Material reflection power"); return; }
 
-		tmp = doc.NewElement("Specular");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material specular: %s", aFile);
-			return;
-		}
-		tmp->SetAttribute("R", specular.x);
-		tmp->SetAttribute("G", specular.y);
-		tmp->SetAttribute("B", specular.z);
-		root->InsertEndChild(tmp);
-
-		tmp = NULL;
-
-		tmp = doc.NewElement("Shininess");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material shininess: %s", aFile);
-			return;
-		}
-		tmp->SetText(shininess);
-		root->InsertEndChild(tmp);
-
-		tmp = NULL;
-
-		tmp = doc.NewElement("ReflectionPower");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material reflection power: %s", aFile);
-			return;
-		}
-		tmp->SetText(reflectionPower);
-		root->InsertEndChild(tmp);
-
-		tmp = NULL;
-
-		tmp = doc.NewElement("Discard");
-		if (tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't save Material discard: %s", aFile);
-			return;
-		}
-		tmp->SetText(discard);
-		root->InsertEndChild(tmp);
-
-		if(doc.SaveFile(aFile) != C_XML_SUCCESS)
-		{
-			C_Error("Can't save Material: %s", aFile);
-			return;
-		}
+		if (!serializer.setBool("Discard", discard))
+		{ C_Error("Can't save Material discard"); return; }
 
 		C_Success("Material saved: %s", aFile);
 	}
@@ -277,105 +206,30 @@ namespace C
 	//Deserialize from XML file
 	void C_Material::loadFromXML(const char* aFile)
 	{
-		C_XMLDoc doc;
-		if(doc.LoadFile(aFile) != C_XML_SUCCESS)
-		{
-			C_Error("Can't load Material: %s\n", aFile);
-			return;
-		}
+		Serializer::C_SerializerXML serializer(aFile, "Material");
 
-		C_XMLElement* root = doc.FirstChildElement("Material");
-		if(root == NULL && root == nullptr)
-		{
-			C_Error("Can't load Material: %s\n", aFile);
-			return;
-		}
+		if (!serializer.load(aFile, "Material")) { C_Error("Can't load Material: %s", aFile); return; }
 
-		C_XMLElement* tmp = root->FirstChildElement("Color");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material color: %s", aFile);
-			return;
-		}
+		if (!serializer.getVector4("Color", &color, {"R", "G", "B", "A"}))
+		{ C_Error("Can't load Material color: %s", aFile); return; }
 
-		tmp->QueryFloatAttribute("R", &color.x);
-		tmp->QueryFloatAttribute("G", &color.y);
-		tmp->QueryFloatAttribute("B", &color.z);
-		tmp->QueryFloatAttribute("A", &color.w);
+		if (!serializer.getVector3("Ambient", &ambient, {"R", "G", "B"}))
+		{ C_Error("Can't load Material ambient: %s", aFile); return; }
 
-		tmp = NULL;
+		if (!serializer.getVector3("Diffuse", &diffuse, {"R", "G", "B"}))
+		{ C_Error("Can't load Material diffuse: %s", aFile); return; }
 
-		tmp = root->FirstChildElement("Ambient");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material ambient: %s", aFile);
-			return;
-		}
+		if (!serializer.getVector3("Specular", &specular, {"R", "G", "B"}))
+		{ C_Error("Can't load Material specular: %s", aFile); return; }
 
-		tmp->QueryFloatAttribute("R", &ambient.x);
-		tmp->QueryFloatAttribute("G", &ambient.y);
-		tmp->QueryFloatAttribute("B", &ambient.z);
+		if (!serializer.getFloat("Shininess", &shininess))
+		{ C_Error("Can't load Material shininess: %s", aFile); return; }
 
-		tmp = NULL;
+		if (!serializer.getFloat("ReflectionPower", &reflectionPower))
+		{ C_Error("Can't load Material reflection power: %s", aFile); return; }
 
-		tmp = root->FirstChildElement("Diffuse");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material diffuse: %s", aFile);
-			return;
-		}
-
-		tmp->QueryFloatAttribute("R", &diffuse.x);
-		tmp->QueryFloatAttribute("G", &diffuse.y);
-		tmp->QueryFloatAttribute("B", &diffuse.z);
-
-		tmp = NULL;
-
-		tmp = root->FirstChildElement("Specular");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material specular: %s", aFile);
-			return;
-		}
-
-		tmp->QueryFloatAttribute("R", &specular.x);
-		tmp->QueryFloatAttribute("G", &specular.y);
-		tmp->QueryFloatAttribute("B", &specular.z);
-
-		tmp = NULL;
-
-		tmp = root->FirstChildElement("Shininess");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material shininess: %s", aFile);
-			return;
-		}
-
-		tmp->QueryFloatText(&shininess);
-
-		tmp = NULL;
-
-		tmp = root->FirstChildElement("ReflectionPower");
-		if(tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material reflection power: %s", aFile);
-			return;
-		}
-
-		tmp->QueryFloatText(&reflectionPower);
-
-		tmp = NULL;
-
-		tmp = root->FirstChildElement("Discard");
-		if (tmp == NULL && tmp == nullptr)
-		{
-			C_Error("Can't load Material discard: %s", aFile);
-			return;
-		}
-
-		tmp->QueryBoolText(&discard);
-
-		tmp = NULL;
+		if (!serializer.getBool("Discard", &discard))
+		{ C_Error("Can't load Material discard: %s", aFile); return; }
 
 		C_Success("Material loaded: %s", aFile);
 	}

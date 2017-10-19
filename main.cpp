@@ -137,25 +137,6 @@ int main(int argc, char** argv)
 	render.add(&light3);
 	render.add(&light4);
 
-	Serializer::C_SerializerXML serializer("test_serialize.xml", "test_serialize");
-	serializer.setInt("Int", 6);
-	serializer.setBool("Bool", true);
-	serializer.setFloat("Float", 12.573829);
-	serializer.setDouble("Double", 123.123456789876);
-	serializer.setString("String", "This is my rifle");
-	serializer.setVector2("2-axis vector", C_Vector2(4.5, 12.1), {"X", "Y"});
-	serializer.setVector3("3-axis vector", C_Vector3(11.2, 3.4, 5.1), {"X", "Y", "Z"});
-	serializer.setVector4("4-axis vector", C_Vector4(0.0, 0.015, 0.3, 1.0), {"R", "G", "B", "A"});
-	serializer.save();
-
-	//int serInt;
-
-	//Serializer::C_DeserializerXML deserializer("test_serialize.xml", "test_serialize");
-	//if (!deserializer.getInt("Int", &serInt))
-		//C_Error("asd\n");
-
-	//C_Info("%i\n", serInt);
-
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
