@@ -26,7 +26,7 @@ namespace C
 			v.push_back(skyboxVertices[i]);
 		}
 
-		mBuf = new C_Buffer(v.data(), v.size() * sizeof(float));
+		mBuf = new C_Buffer(v.data(), v.size() * sizeof(float), 3);
 
 		mShader = new C_Shader("Data/Shaders/skybox.vert", "Data/Shaders/skybox.frag");
 	}

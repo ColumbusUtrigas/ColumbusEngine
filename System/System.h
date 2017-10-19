@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <string>
 #include <tinyxml2.h>
 
 #ifdef _WIN32

@@ -34,7 +34,7 @@ namespace C
 		}
 
 		if (v.size() > 0)
-			buf = new C_Buffer(v.data(), v.size() * sizeof(float));
+			buf = new C_Buffer(v.data(), v.size() * sizeof(float), 3);
 		v.clear();
 
 		std::vector<float> t;
@@ -46,7 +46,7 @@ namespace C
 		}
 
 		if(t.size() > 0)
-			tbuf = new C_Buffer(t.data(), t.size() * sizeof(float));
+			tbuf = new C_Buffer(t.data(), t.size() * sizeof(float), 2);
 		t.clear();
 
 		std::vector<float> n;
@@ -59,7 +59,7 @@ namespace C
 		}
 
 		if (n.size() > 0)
-			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float));
+			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float), 3);
 		n.clear();
 
 		std::vector<float> tang;
@@ -72,7 +72,7 @@ namespace C
 		}
 
 		if (tang.size() > 0)
-			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float));
+			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float), 3);
 		tang.clear();
 
 		std::vector<float> bitang;
@@ -85,7 +85,7 @@ namespace C
 		}
 
 		if (bitang.size() > 0)
-			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float));
+			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float), 3);
 		bitang.clear();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -316,7 +316,8 @@ namespace C
 
 		calculateLights();
 
-		mMat.getShader()->setUniformArrayf("LightUnif", LightUnif, 15);
+		//mMat.getShader()->setUniformArrayf("LightUnif", LightUnif, 15);
+		mMat.getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
 		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -327,8 +328,39 @@ namespace C
 		//8 - max count of lights, processing in shader
 		for (int i = 0; i < 8; i++)
 		{
-			//int offset = i * 15;
-			//mLightUniform[offset] = ;
+			int offset = i * 15;
+
+			if (i < mLights.size())
+			{
+				//Color
+				mLightUniform[0 + offset] = mLights[i]->getColor().x;
+				mLightUniform[1 + offset] = mLights[i]->getColor().y;
+				mLightUniform[2 + offset] = mLights[i]->getColor().z;
+				//Position
+				mLightUniform[3 + offset] = mLights[i]->getPos().x;
+				mLightUniform[4 + offset] = mLights[i]->getPos().y;
+				mLightUniform[5 + offset] = mLights[i]->getPos().z;
+				//Direction
+				mLightUniform[6 + offset] = mLights[i]->getDir().x;
+				mLightUniform[7 + offset] = mLights[i]->getDir().y;
+				mLightUniform[8 + offset] = mLights[i]->getDir().z;
+				//Type
+				mLightUniform[9 + offset] = mLights[i]->getType();
+				//Constant attenuation
+				mLightUniform[10 + offset] = mLights[i]->getConstant();
+				//Linear attenuation
+				mLightUniform[11 + offset] = mLights[i]->getLinear();
+				//Quadratic attenuation
+				mLightUniform[12 + offset] = mLights[i]->getQuadratic();
+				//Inner cutoff
+				mLightUniform[13 + offset] = mLights[i]->getInnerCutoff();
+				//Outer cutoff
+				mLightUniform[14 + offset] = mLights[i]->getOuterCutoff();
+			} else
+			{
+				for (int j = 0; j < 15; j++)
+					mLightUniform[j + offset] = -1;
+			}
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -337,17 +369,14 @@ namespace C
 	{
 		C_Vector3 pos = mPos;
 
-		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), v.end());
+		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
 
 		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
 		{
 			C_Vector3 q = a->getPos();
 			C_Vector3 w = b->getPos();
 
-			q -= pos;
-			w -= pos;
-
-			return q.length() < w.length();
+			return q.length(pos) > w.length(pos);
 		};
 
 		std::sort(mLights.begin(), mLights.end(), func);

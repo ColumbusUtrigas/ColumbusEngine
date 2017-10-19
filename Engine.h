@@ -28,5 +28,6 @@
 #include <RenderAPI/Buffer.h>
 
 #include <System/Console.h>
+#include <System/Serializer.h>
 #include <System/System.h>
 #include <System/Timer.h>

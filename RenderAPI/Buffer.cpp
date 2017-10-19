@@ -21,19 +21,19 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
-	C_Buffer::C_Buffer(const float* aData, const unsigned int aSize)
+	C_Buffer::C_Buffer(const float* aData, const unsigned int aSize, const unsigned int aPackSize)
 	{
 		C_GenBufferOpenGL(&mID);
-		setData(aData, aSize);
+		setData(aData, aSize, aPackSize);
 		compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set vertices to buffer
-	void C_Buffer::setData(const float* aData, const unsigned int aSize)
+	void C_Buffer::setData(const float* aData, const unsigned int aSize, const unsigned int aPackSize)
 	{
 		mData = aData;
 		mSize = (unsigned int)aSize;
-		mCount = aSize / sizeof(float) / 3;
+		mCount = aSize / sizeof(float) / aPackSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Load buffer data to GPU

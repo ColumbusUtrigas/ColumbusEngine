@@ -4,4 +4,6 @@
     <Diffuse R="1" G="0.5" B="0.31"/>
     <Specular R="0.5" G="0.5" B="0.5"/>
     <Shininess>32</Shininess>
+    <ReflectionPower>0.5</ReflectionPower>
+    <Discard>0</Discard>
 </Material>

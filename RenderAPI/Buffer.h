@@ -28,9 +28,9 @@ namespace C
 		//Constructor
 		C_Buffer();
 		//Constructor 2
-		C_Buffer(const float* aData, const unsigned int aSize);
+		C_Buffer(const float* aData, const unsigned int aSize, const unsigned int aPackSize);
 		//Set data to buffer
-		void setData(const float* aData, const unsigned aSize);
+		void setData(const float* aData, const unsigned aSize, const unsigned int aPackSize);
 		//Load buffer data to GPU
 		void compile();
 		//Bind buffer
