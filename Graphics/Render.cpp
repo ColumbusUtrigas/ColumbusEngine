@@ -17,16 +17,11 @@ namespace C
 	//Constructor
 	C_Render::C_Render()
 	{
-		FB = new C_Framebuffer();
-		TB = new C_Texture(NULL, 640, 480, true);
-		RB = new C_Renderbuffer();
-
-		FB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, TB->getID());
-		RB->storage(C_RENDERBUFFER_DEPTH_24, 640, 480);
-		FB->setRenderbuffer(C_FRAMEBUFFER_DEPTH_ATTACH, RB->getID());
-
-		mPostProcess = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/post.frag");
 		mNegativePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NegativePost.frag");
+		mGaussianPost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/GaussianBlur.frag");
+
+		mNegative.setShader(mNegativePost);
+		mGaussianBlur.setShader(mGaussianPost);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Add mesh
@@ -68,50 +63,23 @@ namespace C
 	//Render scene
 	void C_Render::render()
 	{
+		mGaussianBlur.addAttrib({"uWindowSize", mWindowSize});
+		mGaussianBlur.addAttrib({"uBlurSize", C_Vector2(2, 2)});
+
 		enableAll();
 		prepareScene();
 
-		TB->load(NULL, mWindowSize.x, mWindowSize.y, true);
-		RB->storage(C_RENDERBUFFER_DEPTH_24_STENCIL_8, mWindowSize.x, mWindowSize.y);
-		FB->prepare(C_Vector4(1, 1, 1, 0), mWindowSize);
-
+		mGaussianBlur.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
 		renderScene();
+		mGaussianBlur.unbind();
 
-		C_Framebuffer::unbind();
-		
-		unbindAll();
+		mNegative.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
+		mGaussianBlur.draw();
+		mNegative.unbind();
 
-		TB->generateMipmap();
+		mNegative.draw();
 
-		mPostProcess->bind();
-		mPostProcess->setUniform2f("uWindowSize", mWindowSize);
-
-		TB->bind();
-		C_DrawScreenQuadOpenGL();
-
-		C_Texture::unbind();
-		C_Shader::unbind();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Unbind all OpenGL varyables
-	void C_Render::unbindAll()
-	{
-		C_CloseStreamOpenGL(0);
-		C_CloseStreamOpenGL(1);
-		C_CloseStreamOpenGL(2);
-		C_CloseStreamOpenGL(3);
-		C_CloseStreamOpenGL(4);
-
-		C_Cubemap::unbind();
-		C_Buffer::unbind();
-		C_Texture::unbind();
-		C_Shader::unbind();
-		C_Framebuffer::unbind();
-		C_Renderbuffer::unbind();
-
-		C_DisableDepthTestOpenGL();
-		C_DisableBlendOpenGL();
-		C_DisableAlphaTestOpenGL();
+		mGaussianBlur.clearAttribs();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Enable all OpenGL varyables

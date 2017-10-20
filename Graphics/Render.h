@@ -17,6 +17,7 @@
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Renderbuffer.h>
+#include <Graphics/PostEffect.h>
 #include <RenderAPI/APIOpenGL.h>
 
 namespace C
@@ -31,21 +32,14 @@ namespace C
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
 
-		C_Shader* mPostProcess = nullptr;
 		C_Shader* mNegativePost = nullptr;
-
-		unsigned int FBO = 0;
-		unsigned int TBO = 0;
-		unsigned int RBO = 0;
-
-		C_Framebuffer* FB = nullptr;
-		C_Texture* TB = nullptr;
-		C_Renderbuffer* RB = nullptr;
+		C_Shader* mGaussianPost = nullptr;
 
 		C_Vector2 mWindowSize;
 
-		//Unbind all OpenGL varyables
-		void unbindAll();
+		C_PostEffect mNegative;
+		C_PostEffect mGaussianBlur;
+
 		//Enable all OpenGL varyables
 		void enableAll();
 		//Prepare scene to rendering
