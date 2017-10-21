@@ -78,6 +78,7 @@ namespace C
     C_Shader* mShader = nullptr;
     C_Framebuffer* mFB = nullptr;
     C_Texture* mTB = nullptr;
+    C_Texture* mDepth = nullptr;
     C_Renderbuffer* mRB = nullptr;
 
     std::vector<C_PostEffectAttributeInt> mAttribsInt;

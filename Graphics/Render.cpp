@@ -17,9 +17,11 @@ namespace C
 	//Constructor
 	C_Render::C_Render()
 	{
+		mNonePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
 		mNegativePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NegativePost.frag");
 		mGaussianPost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/GaussianBlur.frag");
 
+		mNone.setShader(mNonePost);
 		mNegative.setShader(mNegativePost);
 		mGaussianBlur.setShader(mGaussianPost);
 	}
@@ -69,7 +71,13 @@ namespace C
 		enableAll();
 		prepareScene();
 
-		mGaussianBlur.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
+		mNone.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
+		renderScene();
+		mNone.unbind();
+
+		mNone.draw();
+
+		/*mGaussianBlur.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
 		renderScene();
 		mGaussianBlur.unbind();
 
@@ -77,7 +85,7 @@ namespace C
 		mGaussianBlur.draw();
 		mNegative.unbind();
 
-		mNegative.draw();
+		mNegative.draw();*/
 
 		mGaussianBlur.clearAttribs();
 	}

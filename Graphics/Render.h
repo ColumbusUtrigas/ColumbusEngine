@@ -32,11 +32,13 @@ namespace C
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
 
+		C_Shader* mNonePost = nullptr;
 		C_Shader* mNegativePost = nullptr;
 		C_Shader* mGaussianPost = nullptr;
 
 		C_Vector2 mWindowSize;
 
+		C_PostEffect mNone;
 		C_PostEffect mNegative;
 		C_PostEffect mGaussianBlur;
 
