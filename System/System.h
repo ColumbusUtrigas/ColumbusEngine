@@ -15,6 +15,7 @@
 #include <cstring>
 #include <cmath>
 #include <string>
+#include <iostream>
 #include <tinyxml2.h>
 
 #ifdef _WIN32
@@ -47,7 +48,7 @@ namespace C
 	//Create file
 	bool C_CreateFile(const char* aPath);
 	//Delete file
-	bool C_DeleteFile(const char* aPath);
+	bool C_DeleteFile(std::string aPath);
 	//Create folder
 	bool C_CreateFolder(const char* aPath);
 	//Conversion from degrees to radians

@@ -166,5 +166,172 @@ namespace C
   {
     glBlendFunc(aSFactor, aDFactor);
   }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable depth testing
+  void C_EnableDepthTestOpenGL()
+  {
+    glEnable(GL_DEPTH_TEST);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable depth testing
+  void C_DisableDepthTestOpenGL()
+  {
+    glDisable(GL_DEPTH_TEST);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable texturing
+  void C_EnableTextureOpenGL()
+  {
+    glEnable(GL_TEXTURE_2D);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable texturing
+  void C_DisableTextureOpenGL()
+  {
+    glDisable(GL_TEXTURE_2D);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable blending
+  void C_EnableBlendOpenGL()
+  {
+    glEnable(GL_BLEND);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable blending
+  void C_DisableBlendOpenGL()
+  {
+    glDisable(GL_BLEND);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable culling
+  void C_EnableCullFaceOpenGL()
+  {
+    glEnable(GL_CULL_FACE);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable culling
+  void C_DisableCullFaceOpenGL()
+  {
+    glDisable(GL_CULL_FACE);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable cubemapping
+  void C_EnableCubemapOpenGL()
+  {
+    glEnable(GL_TEXTURE_CUBE_MAP_ARB);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable cubemapping
+  void C_DisableCubemapOpenGL()
+  {
+    glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable multisampling
+  void C_EnableMultisampleOpenGL()
+  {
+    glEnable(GL_MULTISAMPLE);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable multisampling
+  void C_DisableMultisampleOpenGL()
+  {
+    glDisable(GL_MULTISAMPLE);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Enable alpha testing
+  void C_EnableAlphaTestOpenGL()
+  {
+    glEnable(GL_ALPHA_TEST);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Disable alpha testing
+  void C_DisableAlphaTestOpenGL()
+  {
+    glDisable(GL_ALPHA_TEST);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Change depth buffer algorithm
+  void C_DepthFuncOpenGL(unsigned int aFunc)
+  {
+    glDepthFunc(aFunc);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Change face culling
+  void C_CullFaceOpenGL(unsigned int aMode)
+  {
+    glCullFace(aMode);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL vendor
+  std::string C_GetVendorOpenGL()
+  {
+    return (const char*)glGetString(GL_VENDOR);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL renderer
+  std::string C_GetRendererOpenGL()
+  {
+    return (const char*)glGetString(GL_RENDERER);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL renderer
+  std::string C_GetVersionOpenGL()
+  {
+    return (const char*)glGetString(GL_VERSION);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Get OpenGL renderer
+  std::string C_GetGLSLVersionOpenGL()
+  {
+    return (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Clear OpenGL buffer
+  void C_ClearOpenGL(unsigned int aMask)
+  {
+    glClear(aMask);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set OpenGL clear color
+  void C_ClearColorOpenGL(float aR, float aG, float aB, float aA)
+  {
+    glClearColor(aR, aG, aB, aA);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Set OpenGL viewport
+  void C_ViewportOpenGL(int aX, int aY, size_t aW, size_t aH)
+  {
+    glViewport(aX, aY, aW, aH);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  //Draw screen quad
+  void C_DrawScreenQuadOpenGL()
+  {
+    glDepthMask(GL_FALSE);
+
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_TRIANGLES);
+			glTexCoord2f(0.0, 0.0);
+			glVertex2f(-1.0, -1.0);
+
+			glTexCoord2f(1.0, 1.0);
+			glVertex2f(1.0, 1.0);
+
+			glTexCoord2f(0.0, 1.0);
+			glVertex2f(-1.0, 1.0);
+
+			glTexCoord2f(0.0, 0.0);
+			glVertex2f(-1.0, -1.0);
+
+			glTexCoord2f(1.0, 0.0);
+			glVertex2f(1.0, -1.0);
+
+			glTexCoord2f(1.0, 1.0);
+			glVertex2f(1.0, 1.0);
+		glEnd();
+
+		glDepthMask(GL_TRUE);
+  }
 
 }

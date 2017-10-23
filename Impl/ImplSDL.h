@@ -15,7 +15,8 @@
 
 #include <cstdio>
 #include <SDL.h>
-#include <GL/glew.h>
+
+#include <RenderAPI/APIOpenGL.h>
 
 #include <Math/Vector2.h>
 #include <System/Console.h>
@@ -58,10 +59,17 @@ namespace C
 		bool keyup[256];
 
 		SDL_Event mTmpEvent;
+
+		//Initialize SDL
+		void initSDL();
+		//Initialize window
+		void initWindow(C_SDLWindowConfig aConfig);
+		//Initialize OpenGL
+		void initOpenGL();
+		//Printing API versions in console
+		void getVer();
 	public:
 		//Constructor
-		C_SDLWindow(int aW, int aH, const char* aTitle);
-		//Constructor 2
 		C_SDLWindow(C_SDLWindowConfig aConfig);
 		//Clear input
 		void SYS_CLEAR_INPUT();

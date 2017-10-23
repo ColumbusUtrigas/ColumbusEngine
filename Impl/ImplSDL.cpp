@@ -22,27 +22,43 @@ namespace C
 	#define C_BUTTON_X2 SDL_BUTTON_X2
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_SDLWindow::C_SDLWindow(int aW, int aH, const char* aTitle)
+	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig)
 	{
-		if(C_SDL_INITED == false)
+		if (C_SDL_INITED == false)
+			initSDL();
+
+		initWindow(aConfig);
+
+		glewExperimental = GL_TRUE;
+
+		if (C_SDL_INITED == false)
 		{
-			if(SDL_Init(SDL_INIT_EVERYTHING))
-			{
-				C_FatalError("Can't initialize SDL2");
-			} else
-			{
-				C_Initialization("SDL2 initialized");
-			}
+			initOpenGL();
+			getVer();
+			C_SDL_INITED = true;
 		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Initialize window
+	void C_SDLWindow::initWindow(C_SDLWindowConfig aConfig)
+	{
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
-		mWindow = SDL_CreateWindow(aTitle, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, aW, aH, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-		mGLC = SDL_GL_CreateContext(mWindow);
-		glewExperimental = GL_TRUE;
+		int flags = SDL_WINDOW_OPENGL;
+		if (aConfig.Resizable == true)
+			flags |= SDL_WINDOW_RESIZABLE;
+		if (aConfig.Fullscreen == true)
+			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-		if(C_SDL_INITED == false)
-		{
+		mWindow = SDL_CreateWindow(aConfig.Title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			aConfig.Width, aConfig.Height, flags);
+		mGLC = SDL_GL_CreateContext(mWindow);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Initialize OpenGL
+	void C_SDLWindow::initOpenGL()
+	{
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -53,30 +69,39 @@ namespace C
 		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 		SDL_GL_SetSwapInterval(0);
 
-   		glEnable(GL_TEXTURE_2D);
-   		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
+		C_EnableTextureOpenGL();
+		C_EnableBlendOpenGL();
+		C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
+		C_EnableDepthTestOpenGL();
+		C_DepthFuncOpenGL(C_OGL_LEQUAL);
+		C_EnableCullFaceOpenGL();
+		C_CullFaceOpenGL(C_OGL_BACK);
+		C_EnableCubemapOpenGL();
+		C_EnableMultisampleOpenGL();
 
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-
-		glEnable(GL_MULTISAMPLE);
-
-		if(glewInit() != GLEW_OK)
-		{
+		if (glewInit() != GLEW_OK)
 			C_FatalError("Can't initialize GLEW");
-		} else
-		{
+		else
 			C_Initialization("GLEW initialized");
-		}
-
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Initialize SDL
+	void C_SDLWindow::initSDL()
+	{
+		if (SDL_Init(SDL_INIT_EVERYTHING))
+			C_FatalError("Can't initialize SDL2");
+		else
+			C_Initialization("SDL2 initialized");
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Printing API versions int console
+	void C_SDLWindow::getVer()
+	{
 		SDL_version cVer;
 		SDL_version lVer;
 
@@ -85,98 +110,10 @@ namespace C
 
 		C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
 		C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		C_Initialization("OpenGL version: %s", glGetString(GL_VERSION));
-		C_Initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
-		C_Initialization("OpenGL renderer: %s", glGetString(GL_RENDERER));
-		C_Initialization("GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-		C_SDL_INITED = true;
-
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 2
-	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig)
-	{
-		if (C_SDL_INITED == false)
-		{
-			if (SDL_Init(SDL_INIT_EVERYTHING))
-			{
-				C_FatalError("Can't initialize SDL2");
-			}
-			else
-			{
-				C_Initialization("SDL2 initialized");
-			}
-		}
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-
-		int flags = SDL_WINDOW_OPENGL;
-		if (aConfig.Resizable == true)
-			flags |= SDL_WINDOW_RESIZABLE;
-		if (aConfig.Fullscreen == true)
-			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-
-		mWindow = SDL_CreateWindow(aConfig.Title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, aConfig.Width, aConfig.Height, flags);
-		mGLC = SDL_GL_CreateContext(mWindow);
-		glewExperimental = GL_TRUE;
-
-		if (C_SDL_INITED == false)
-		{
-			SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-			SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-			SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-
-			SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-
-			SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-			SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-			SDL_GL_SetSwapInterval(0);
-
-			glEnable(GL_TEXTURE_2D);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glEnable(GL_DEPTH_TEST);
-			glDepthFunc(GL_LEQUAL);
-
-			glEnable(GL_CULL_FACE);
-			glCullFace(GL_BACK);
-
-			glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-
-			glEnable(GL_MULTISAMPLE);
-
-			if (glewInit() != GLEW_OK)
-			{
-				C_FatalError("Can't initialize GLEW");
-			}
-			else
-			{
-				C_Initialization("SDL2 initialized");
-			}
-
-			SDL_version cVer;
-			SDL_version lVer;
-
-			SDL_VERSION(&cVer);
-			SDL_GetVersion(&lVer);
-
-			C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
-			C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-			C_Initialization("OpenGL version: %s", glGetString(GL_VERSION));
-			C_Initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
-			C_Initialization("OpenGL renderer: %s", glGetString(GL_RENDERER));
-			C_Initialization("GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-			C_SDL_INITED = true;
-
-		}
+		C_Initialization("OpenGL version: %s", C_GetVersionOpenGL().c_str());
+		C_Initialization("OpenGL vendor: %s", C_GetVendorOpenGL().c_str());
+		C_Initialization("OpenGL renderer: %s", C_GetRendererOpenGL().c_str());
+		C_Initialization("GLSL version: %s\n", C_GetGLSLVersionOpenGL().c_str());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Clear input
@@ -261,9 +198,9 @@ namespace C
 	void C_SDLWindow::clear(float r, float g, float b, float a)
 	{
 		SDL_GL_MakeCurrent(mWindow, mGLC);
-		glClearColor(r, g, b, a);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, getSize().x, getSize().y);
+		C_ClearColorOpenGL(r, g, b, a);
+		C_ClearOpenGL(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
+		C_ViewportOpenGL(0, 0, getSize().x, getSize().y);
 		mDrawTime.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////

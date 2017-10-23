@@ -154,6 +154,24 @@ namespace C
   #define C_OGL_CONSTANT_ALPHA             GL_CONSTANT_ALPHA
   #define C_OGL_ONE_MINUS_CONSTANT_ALPHA   GL_ONE_MINUS_CONSTANT_ALPHA
 
+  #define C_OGL_NEVER      GL_NEVER
+  #define C_OGL_LESS       GL_LESS
+  #define C_OGL_LEQUAL     GL_LEQUAL
+  #define C_OGL_EQUAL      GL_EQUAL
+  #define C_OGL_GREATER    GL_GREATER
+  #define C_OGL_NOTEQUAL   GL_NOTEQUAL
+  #define C_OGL_GEQUAL     GL_GEQUAL
+  #define C_OGL_ALWAYS     GL_ALWAYS
+
+  #define C_OGL_FRONT            GL_FRONT
+  #define C_OGL_BACK             GL_BACK
+  #define C_OGL_FRONT_AND_BACK   GL_FRONT_AND_BACK
+
+  #define C_OGL_COLOR_BUFFER_BIT     GL_COLOR_BUFFER_BIT
+  #define C_OGL_DEPTH_BUFFER_BIT     GL_DEPTH_BUFFER_BIT
+  #define C_OGL_ACCUM_BUFFER_BIT     GL_ACCUM_BUFFER_BIT
+  #define C_OGL_STENCIL_BUFFER_BIT   GL_STENCIL_BUFFER_BIT
+
   //Get OpenGL error
   bool C_GetErrorOpenGL();
   //Generate OpenGL GPU buffer
@@ -200,4 +218,53 @@ namespace C
   void C_DrawArraysOpenGL(unsigned int aMode, int aFirst, size_t aCount);
   //Change pixel arithmetic
   void C_BlendFuncOpenGL(unsigned int aSFactor, unsigned int aDFactor);
+  //Enable depth testing
+  void C_EnableDepthTestOpenGL();
+  //Disable depth testing
+  void C_DisableDepthTestOpenGL();
+  //Enable texturing
+  void C_EnableTextureOpenGL();
+  //Disable texturing
+  void C_DisableTextureOpenGL();
+  //Enable blending
+  void C_EnableBlendOpenGL();
+  //Disable blending
+  void C_DisableBlendOpenGL();
+  //Enalbe culling
+  void C_EnableCullFaceOpenGL();
+  //Disable culling
+  void C_DisableCullFaceOpenGL();
+  //Enable cubemapping
+  void C_EnableCubemapOpenGL();
+  //Disable cubemapping
+  void C_DisableCubemapOpenGL();
+  //Enable multisampling
+  void C_EnableMultisampleOpenGL();
+  //Disable multisampling
+  void C_DisableMultisampleOpenGL();
+  //Enable alpha testing
+  void C_EnableAlphaTestOpenGL();
+  //Disable alpha testing
+  void C_DisableAlphaTestOpenGL();
+  //Change depth buffer algorithm
+  void C_DepthFuncOpenGL(unsigned int aFunc);
+  //Change face culling
+  void C_CullFaceOpenGL(unsigned int aMode);
+  //Get OpenGL vendor
+  std::string C_GetVendorOpenGL();
+  //Get OpenGL renderer
+  std::string C_GetRendererOpenGL();
+  //Get OpenGL version
+  std::string C_GetVersionOpenGL();
+  //Get OpenGL GLSL version
+  std::string C_GetGLSLVersionOpenGL();
+  //Clear OpenGL buffer
+  void C_ClearOpenGL(unsigned int aMask);
+  //Set OpenGL clear color
+  void C_ClearColorOpenGL(float aR, float aG, float aB, float aA);
+  //Set OpenGL viewport
+  void C_ViewportOpenGL(int aX, int aY, size_t aW, size_t aH);
+  //Draw screen quad
+  void C_DrawScreenQuadOpenGL();
+
 }

@@ -9,6 +9,7 @@
 #include <Graphics/Model.h>
 #include <Graphics/ParticleEffect.h>
 #include <Graphics/ParticleEmitter.h>
+#include <Graphics/PostEffect.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/Render.h>
 #include <Graphics/Renderbuffer.h>
