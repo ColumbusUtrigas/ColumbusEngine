@@ -20,6 +20,8 @@
 #include <Graphics/PostEffect.h>
 #include <RenderAPI/APIOpenGL.h>
 
+#include <GUI/Button.h>
+
 namespace C
 {
 

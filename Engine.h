@@ -18,8 +18,14 @@
 #include <Graphics/Texture.h>
 #include <Graphics/TextureManager.h>
 
+#include <GUI/Button.h>
+#include <GUI/IO.h>
+#include <GUI/Widget.h>
+
 #include <Impl/EventSystem.h>
 #include <Impl/ImplSDL.h>
+
+#include <Input/Input.h>
 
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>

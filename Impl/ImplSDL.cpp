@@ -180,17 +180,14 @@ namespace C
 			}
 		}
 
-		if (1)
+		if (aEvent.type == SDL_KEYUP)
 		{
-			if (aEvent.type == SDL_KEYUP)
-			{
-				keyup[aEvent.key.keysym.scancode] = true;
-			}
+			keyup[aEvent.key.keysym.scancode] = true;
+		}
 
-			if (aEvent.type == SDL_KEYDOWN)
-			{
-				keydown[aEvent.key.keysym.scancode] = true;
-			}
+		if (aEvent.type == SDL_KEYDOWN)
+		{
+			keydown[aEvent.key.keysym.scancode] = true;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////

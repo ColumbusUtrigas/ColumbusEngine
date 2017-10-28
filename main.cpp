@@ -12,6 +12,8 @@ int main(int argc, char** argv)
 	C_SDLWindow window(config);
 	C_EventSystem event;
 	event.addWindow(&window);
+	C_Input input;
+	input.init();
 
 	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
@@ -136,11 +138,15 @@ int main(int argc, char** argv)
 	render.add(&light2);
 	render.add(&light3);
 
+	GUI::C_Button button;
+	GUI::C_IO io;
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
 
 		event.pollEvents();
+		input.update();
 
 		window.clear(0, 0, 0.75, 1);
 
@@ -181,17 +187,19 @@ int main(int argc, char** argv)
 		if (window.getKey(SDL_SCANCODE_E))
 			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
 
+		C_Vector2 deltaMouse = input.getMouseMovement();
+		camera.addRot(C_Vector3(-deltaMouse.y, -deltaMouse.x, 0) * 0.3);
+
 		camera.update();
-
-		if(window.getKeyDown(SDL_SCANCODE_V))
-			printf("Key down\n");
-		if (window.getKeyUp(SDL_SCANCODE_V))
-			printf("Key up\n");
-
-		//mesh2.addRot(C_Vector3(0, 1, 0));
 
 		render.setWindowSize(window.getSize());
 		render.render();
+
+		io.screen.size = window.getSize();
+		io.screen.aspect = window.aspect();
+
+		button.setIO(io);
+		button.update();
 
 		//particles.draw();
 
