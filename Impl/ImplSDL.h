@@ -103,6 +103,8 @@ namespace C
 		bool isShown();
 		//Return window minimized
 		bool isMinimized();
+		//Return SDL_Window handle
+		SDL_Window* getHandle();
 		//Return key-press in window
 		bool getKey(int aKey);
 		//Return key-down in window

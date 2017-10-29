@@ -1,17 +1,17 @@
 /************************************************
-*                   ImplSDL.h                   *
+*                    Input.h                    *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
 *             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
+*                   29.10.2017                  *
 *************************************************/
 
 #pragma once
 
 #include <Math/Vector2.h>
-#include <cmath>
+#include <Impl/ImplSDL.h>
 
 #include <SDL.h>
 
@@ -23,10 +23,9 @@ namespace C
   private:
     uint8_t* mCurrentKeyboardState;
     uint8_t* mPreviousKeyboardState;
-    uint8_t* mKeyboardState0;
-    uint8_t* mKeyboardState1;
+    uint8_t* mKeyboardStateTmp;
 
-    bool mKeyboardState0Active;
+    int mKeyboardStateNum;
 
     C_Vector2 mCurrentMousePosition;
     C_Vector2 mPreviousMousePosition;
@@ -47,6 +46,8 @@ namespace C
     C_Vector2 getMouseMovement();
 
     void showMouseCursor(bool aX);
+    void setMousePos(C_Vector2 aPos, C_SDLWindow& aWindow);
+    void setMousePosGlobal(C_Vector2 aPos);
 
     ~C_Input();
   };

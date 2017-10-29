@@ -1,3 +1,13 @@
+/************************************************
+*                   Input.cpp                   *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*             Nikolay(Columbus) Red             *
+*                   29.10.2017                  *
+*************************************************/
+
 #include <Input/Input.h>
 
 namespace C
@@ -6,19 +16,17 @@ namespace C
   C_Input::C_Input() :
   mCurrentKeyboardState(nullptr),
   mPreviousKeyboardState(nullptr),
-  mKeyboardState0(nullptr),
-  mKeyboardState1(nullptr)
+  mKeyboardStateTmp(nullptr),
+  mKeyboardStateNum(0)
   {
 
   }
   //////////////////////////////////////////////////////////////////////////////
   bool C_Input::init()
   {
-    mKeyboardState0 = new uint8_t[256];
-    mKeyboardState1 = new uint8_t[256];
-
-    mKeyboardState0 = (uint8_t*)SDL_GetKeyboardState(NULL);
-    mKeyboardState1 = (uint8_t*)SDL_GetKeyboardState(NULL);
+    mKeyboardStateTmp = (uint8_t*)SDL_GetKeyboardState(&mKeyboardStateNum);
+    mPreviousKeyboardState = new uint8_t[mKeyboardStateNum];
+    mCurrentKeyboardState = new uint8_t[mKeyboardStateNum];
 
     return true;
   }
@@ -45,26 +53,20 @@ namespace C
   //////////////////////////////////////////////////////////////////////////////
   void C_Input::update()
   {
-    if (mKeyboardState0Active)
-    {
-      mKeyboardState1 = (uint8_t*)SDL_GetKeyboardState(NULL);
-      mPreviousKeyboardState = mKeyboardState0;
-      mCurrentKeyboardState = mKeyboardState1;
-    } else
-    {
-      mKeyboardState0 = (uint8_t*)SDL_GetKeyboardState(NULL);
-      mPreviousKeyboardState = mKeyboardState1;
-      mCurrentKeyboardState = mKeyboardState0;
-    }
+    SDL_PumpEvents();
 
-    mKeyboardState0Active = !mKeyboardState0Active;
+    for (int i = 0; i < mKeyboardStateNum; i++)
+      mPreviousKeyboardState[i] = mCurrentKeyboardState[i];
+
+    for (int i = 0; i < mKeyboardStateNum; i++)
+      mCurrentKeyboardState[i] = mKeyboardStateTmp[i];
 
     mPreviousMousePosition = mCurrentMousePosition;
 
     int mx, my;
     SDL_GetMouseState(&mx, &my);
-    mCurrentMousePosition.x = mx;
-    mCurrentMousePosition.y = my;
+    mCurrentMousePosition.x = static_cast<float>(mx);
+    mCurrentMousePosition.y = static_cast<float>(my);
   }
   //////////////////////////////////////////////////////////////////////////////
   C_Vector2 C_Input::getMousePosition()
@@ -74,16 +76,33 @@ namespace C
   //////////////////////////////////////////////////////////////////////////////
   C_Vector2 C_Input::getMouseMovement()
   {
-    C_Vector2 delta;
-    delta.x = mCurrentMousePosition.x - mPreviousMousePosition.x;
-    delta.y = mCurrentMousePosition.y - mPreviousMousePosition.y;
-
-    return delta;
+    C_Vector2 mouseDelta;
+    int preX = static_cast<int>(mPreviousMousePosition.x);
+    int preY = static_cast<int>(mPreviousMousePosition.y);
+    int curX = static_cast<int>(mCurrentMousePosition.x);
+    int curY = static_cast<int>(mCurrentMousePosition.y);
+    mouseDelta.x = static_cast<float>(curX - preX);
+    mouseDelta.y = static_cast<float>(curY - preY);
+    return mouseDelta;
   }
   //////////////////////////////////////////////////////////////////////////////
   void C_Input::showMouseCursor(bool aX)
   {
     SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  void C_Input::setMousePos(C_Vector2 aPos, C_SDLWindow& aWindow)
+  {
+    int x = static_cast<int>(aPos.x);
+    int y = static_cast<int>(aPos.y);
+    SDL_WarpMouseInWindow(aWindow.getHandle(), x, y);
+    mCurrentMousePosition = aPos;
+    mPreviousMousePosition = aPos;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+  void C_Input::setMousePosGlobal(C_Vector2 aPos)
+  {
+    SDL_WarpMouseGlobal(static_cast<int>(aPos.x), static_cast<int>(aPos.y));
   }
   //////////////////////////////////////////////////////////////////////////////
   C_Input::~C_Input()

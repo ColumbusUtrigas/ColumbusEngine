@@ -275,6 +275,12 @@ namespace C
 		return (float)getSize().x / (float)getSize().y;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Return SDL_Window handle
+	SDL_Window* C_SDLWindow::getHandle()
+	{
+		return mWindow;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Return key-press in window
 	bool C_SDLWindow::getKey(int aKey)
 	{

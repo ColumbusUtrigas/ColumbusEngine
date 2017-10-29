@@ -141,6 +141,10 @@ int main(int argc, char** argv)
 	GUI::C_Button button;
 	GUI::C_IO io;
 
+	input.showMouseCursor(false);
+
+	bool cursor = false;
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
@@ -187,8 +191,18 @@ int main(int argc, char** argv)
 		if (window.getKey(SDL_SCANCODE_E))
 			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
 
-		C_Vector2 deltaMouse = input.getMouseMovement();
-		camera.addRot(C_Vector3(-deltaMouse.y, -deltaMouse.x, 0) * 0.3);
+		if (input.isKeyPressed(SDL_SCANCODE_ESCAPE))
+		{
+			cursor = !cursor;
+			input.showMouseCursor(cursor);
+		}
+
+		if (!cursor)
+		{
+			C_Vector2 deltaMouse = input.getMouseMovement();
+			camera.addRot(C_Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
+			input.setMousePos(window.getSize() * 0.5, window);
+		}
 
 		camera.update();
 
