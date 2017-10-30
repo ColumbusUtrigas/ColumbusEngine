@@ -10,11 +10,7 @@
 
 #pragma once
 
-#include <cstdio>
 #include <FreeImage.h>
-#include <GL/glew.h>
-#include <SDL.h>
-#include <cstring>
 
 #include <System/System.h>
 #include <System/Console.h>
@@ -40,10 +36,10 @@ namespace C
 	class C_Texture
 	{
 	private:
-		FIBITMAP* mBuffer = NULL;
+		uint8_t* mBuffer = nullptr;
 		unsigned int mID;
 
-		char* mFile = NULL;
+		std::string mFile;
 
 		C_TextureConfig mConfig;
 
@@ -65,8 +61,6 @@ namespace C
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load depth texture from raw data
 		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		//Reload texture
-		void reload();
 		//Set texture config
 		void setConfig(C_TextureConfig aConfig);
 		//Set texture smooth
@@ -79,7 +73,7 @@ namespace C
 		//Return texture size
 		size_t getSize();
 		//Save texture to file
-		void save(const char* aFile);
+		void save(std::string aFile);
 		//Bind texture
 		void bind();
 		//Unbind texture

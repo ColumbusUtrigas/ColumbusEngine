@@ -215,8 +215,6 @@ int main(int argc, char** argv)
 		button.setIO(io);
 		button.update();
 
-		//particles.draw();
-
 		window.display();
 
 		if ((timer.elapsed()) > 1.0)

@@ -14,7 +14,13 @@ namespace C
       bool right = false;
 
       C_Mouse& operator=(C_Mouse& other)
-      { coords = other.coords; left = other.left; middle = other.middle; right = other.right; }
+      {
+		  coords = other.coords;
+		  left = other.left;
+		  middle = other.middle;
+		  right = other.right;
+		  return *this;
+	  }
     };
 
     struct C_Screen
@@ -23,7 +29,11 @@ namespace C
       float aspect = 1.0;
       
       C_Screen& operator=(C_Screen& other)
-      { size = other.size; aspect = other.aspect; }
+      {
+		  size = other.size;
+		  aspect = other.aspect;
+		  return *this;
+	  }
     };
 
     struct C_IO
@@ -32,7 +42,11 @@ namespace C
       C_Screen screen;
 
       C_IO& operator=(C_IO& other)
-      { mouse = other.mouse; screen = other.screen; }
+	  {
+		  mouse = other.mouse;
+		  screen = other.screen;
+		  return *this;
+	  }
     };
 
   }
