@@ -14,42 +14,71 @@
 #include <Impl/ImplSDL.h>
 
 #include <SDL.h>
+#include <vector>
+#include <functional>
 
 namespace C
 {
 
-  class C_Input
-  {
-  private:
-    uint8_t* mCurrentKeyboardState;
-    uint8_t* mPreviousKeyboardState;
-    uint8_t* mKeyboardStateTmp;
+	enum C_InputBindType
+	{
+		C_INPUT_BIND_KEY,
+		C_INPUT_BIND_KEY_DOWN,
+		C_INPUT_BIND_KEY_UP,
+	};
 
-    int mKeyboardStateNum;
+	struct C_InputBind
+	{
+		C_InputBindType type;
+		unsigned int key;
+		std::function<void()> func;
 
-    C_Vector2 mCurrentMousePosition;
-    C_Vector2 mPreviousMousePosition;
-  public:
-    C_Input();
-    bool init();
+		C_InputBind(C_InputBindType aType, unsigned int aKey, std::function<void()> aFunc) :
+			type(aType), key(aKey), func(aFunc) {}
 
-    //void bindInput();
+		void execute()
+		{
+			func();
+		}
+	};
 
-    bool isKeyDown(unsigned int aKey);
-    bool isKeyUp(unsigned int aKey);
-    bool isKeyPressed(unsigned int aKey);
-    bool isKeyReleased(unsigned int aKey);
+	class C_Input
+	{
+	private:
+		uint8_t* mCurrentKeyboardState;
+		uint8_t* mPreviousKeyboardState;
+		uint8_t* mKeyboardStateTmp;
 
-    void update();
+		int mKeyboardStateNum;
 
-    C_Vector2 getMousePosition();
-    C_Vector2 getMouseMovement();
+		C_Vector2 mCurrentMousePosition;
+		C_Vector2 mPreviousMousePosition;
 
-    void showMouseCursor(bool aX);
-    void setMousePos(C_Vector2 aPos, C_SDLWindow& aWindow);
-    void setMousePosGlobal(C_Vector2 aPos);
+		std::vector<C_InputBind> mBinds;
 
-    ~C_Input();
-  };
+		C_SDLWindow* mWindow;
+	public:
+		C_Input();
+		bool init();
+
+		void bindInput(C_InputBind& aBind);
+
+		bool getKey(unsigned int aKey);
+		bool getKeyDown(unsigned int aKey);
+		bool getKeyUp(unsigned int aKey);
+
+		void setWindow(C_SDLWindow* aWindow);
+
+		void update();
+
+		C_Vector2 getMousePosition();
+		C_Vector2 getMouseMovement();
+
+		void showMouseCursor(bool aX);
+		void setMousePos(C_Vector2 aPos);
+		void setMousePosGlobal(C_Vector2 aPos);
+
+		~C_Input();
+	};
 
 }

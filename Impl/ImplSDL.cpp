@@ -22,7 +22,15 @@ namespace C
 	#define C_BUTTON_X2 SDL_BUTTON_X2
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig)
+	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig) :
+		mClosed(false),
+		mMouseFocus(false),
+		mShown(false),
+		mMinimized(false),
+		mFPSLimit(60),
+		mTimeToDraw(1.0 / static_cast<float>(mFPSLimit)),
+		mRedrawTime(0.0),
+		mFPS(0)
 	{
 		if (C_SDL_INITED == false)
 			initSDL();
@@ -116,16 +124,6 @@ namespace C
 		C_Initialization("GLSL version: %s\n", C_GetGLSLVersionOpenGL().c_str());
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Clear input
-	void C_SDLWindow::SYS_CLEAR_INPUT()
-	{
-		for (size_t i = 0; i < 256; i++)
-		{
-			keyup[i] = false;
-			keydown[i] = false;
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Poll window events
 	void C_SDLWindow::pollEvent(SDL_Event& aEvent)
 	{
@@ -141,53 +139,43 @@ namespace C
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_SHOWN)
 			{
-				shown = true;
+				mShown = true;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_HIDDEN)
 			{
-				shown = false;
+				mShown = false;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
 			{
-				minimized = true;
+				mMinimized = true;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_MAXIMIZED)
 			{
-				minimized = false;
+				mMinimized = false;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_ENTER)
 			{
-				mouseFocus = true;
+				mMouseFocus = true;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_LEAVE)
 			{
-				mouseFocus = false;
+				mMouseFocus = false;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
 			{
-				keyFocus = true;
+				mKeyFocus = true;
 			}
 
 			if(aEvent.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
 			{
-				keyFocus = false;
+				mKeyFocus = false;
 			}
-		}
-
-		if (aEvent.type == SDL_KEYUP)
-		{
-			keyup[aEvent.key.keysym.scancode] = true;
-		}
-
-		if (aEvent.type == SDL_KEYDOWN)
-		{
-			keydown[aEvent.key.keysym.scancode] = true;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -281,44 +269,11 @@ namespace C
 		return mWindow;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return key-press in window
-	bool C_SDLWindow::getKey(int aKey)
-	{
-		if(keyFocus)
-		{
-			keys = (Uint8*)SDL_GetKeyboardState(NULL);
-			return keys[aKey];
-		}
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return key-down in window
-	bool C_SDLWindow::getKeyDown(int aKey)
-	{
-		if (keyFocus)
-		{
-			return keydown[aKey];
-		}
-
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return key-up in window
-	bool C_SDLWindow::getKeyUp(int aKey)
-	{
-		if (keyFocus)
-		{
-			return keyup[aKey];
-		}
-
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Return mouse-button-press in window
 	bool C_SDLWindow::getMouseButton(int aButton)
 	{
 		//if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(aButton))
-		if(mouseFocus && keyFocus)
+		if(mMouseFocus && mKeyFocus)
 			return (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(aButton)) ? true : false;
 		else
 			return false;
@@ -353,6 +308,12 @@ namespace C
 	int C_SDLWindow::getFPS()
 	{
 		return mFPS;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return key-focus in window
+	bool C_SDLWindow::isKeyFocus()
+	{
+		return mKeyFocus;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

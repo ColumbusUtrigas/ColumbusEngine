@@ -14,6 +14,7 @@ int main(int argc, char** argv)
 	event.addWindow(&window);
 	C_Input input;
 	input.init();
+	input.setWindow(&window);
 
 	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
@@ -156,42 +157,42 @@ int main(int argc, char** argv)
 
 		C_SetPerspective(60, window.aspect(), 0.001, 1000);
 
-		if (window.getKey(SDL_SCANCODE_W))
+		if (input.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
-		if (window.getKey(SDL_SCANCODE_S))
+		if (input.getKey(SDL_SCANCODE_S))
 			camera.addPos(C_Vector3(0, 0, 0) - camera.direction() * RedrawTime * 5);
-		if (window.getKey(SDL_SCANCODE_A))
+		if (input.getKey(SDL_SCANCODE_A))
 			camera.addPos(C_Vector3(0, 0, 0) - camera.right() * RedrawTime * 5);
-		if (window.getKey(SDL_SCANCODE_D))
+		if (input.getKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
-		if (window.getKey(SDL_SCANCODE_UP))
+		if (input.getKey(SDL_SCANCODE_UP))
 			camera.addRot(C_Vector3(-125 * RedrawTime, 0, 0));
-		if (window.getKey(SDL_SCANCODE_DOWN))
+		if (input.getKey(SDL_SCANCODE_DOWN))
 			camera.addRot(C_Vector3(125 * RedrawTime, 0, 0));
-		if (window.getKey(SDL_SCANCODE_LEFT))
+		if (input.getKey(SDL_SCANCODE_LEFT))
 			camera.addRot(C_Vector3(0, 125 * RedrawTime, 0));
-		if (window.getKey(SDL_SCANCODE_RIGHT))
+		if (input.getKey(SDL_SCANCODE_RIGHT))
 			camera.addRot(C_Vector3(0, -125 * RedrawTime, 0));
 
-		if (window.getKey(SDL_SCANCODE_I))
+		if (input.getKey(SDL_SCANCODE_I))
 			particleEffect.addPos(C_Vector3(0, 0, -3) * RedrawTime);
-		if (window.getKey(SDL_SCANCODE_K))
+		if (input.getKey(SDL_SCANCODE_K))
 			particleEffect.addPos(C_Vector3(0, 0, 3) * RedrawTime);
-		if (window.getKey(SDL_SCANCODE_J))
+		if (input.getKey(SDL_SCANCODE_J))
 			particleEffect.addPos(C_Vector3(-3, 0, 0) * RedrawTime);
-		if (window.getKey(SDL_SCANCODE_L))
+		if (input.getKey(SDL_SCANCODE_L))
 			particleEffect.addPos(C_Vector3(3, 0, 0) * RedrawTime);
 
-		if (window.getKey(SDL_SCANCODE_LSHIFT))
+		if (input.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(C_Vector3(0, 0, 0) - camera.up() * RedrawTime * 5);
-		if (window.getKey(SDL_SCANCODE_SPACE))
+		if (input.getKey(SDL_SCANCODE_SPACE))
 			camera.addPos(camera.up() * RedrawTime * 5);
-		if (window.getKey(SDL_SCANCODE_Q))
+		if (input.getKey(SDL_SCANCODE_Q))
 			camera.addRot(C_Vector3(0, 0, 125 * RedrawTime));
-		if (window.getKey(SDL_SCANCODE_E))
+		if (input.getKey(SDL_SCANCODE_E))
 			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
 
-		if (input.isKeyPressed(SDL_SCANCODE_ESCAPE))
+		if (input.getKeyDown(SDL_SCANCODE_ESCAPE))
 		{
 			cursor = !cursor;
 			input.showMouseCursor(cursor);
@@ -201,7 +202,7 @@ int main(int argc, char** argv)
 		{
 			C_Vector2 deltaMouse = input.getMouseMovement();
 			camera.addRot(C_Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
-			input.setMousePos(window.getSize() * 0.5, window);
+			input.setMousePos(window.getSize() * 0.5);
 		}
 
 		camera.update();

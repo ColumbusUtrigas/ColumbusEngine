@@ -10,9 +10,6 @@
 
 #pragma once
 
-#ifndef IMPLSDL_H
-#define IMPLSDL_H
-
 #include <cstdio>
 #include <SDL.h>
 
@@ -40,23 +37,18 @@ namespace C
 		SDL_Window* mWindow;
 		SDL_GLContext mGLC;
 
-		bool mClosed = false;
+		bool mClosed;
 
-		bool keyFocus = false;
-		bool mouseFocus = false;
-		bool shown = false;
-		bool minimized = false;
+		bool mKeyFocus;
+		bool mMouseFocus;
+		bool mShown;
+		bool mMinimized;
 
 		C_Timer mDrawTime;
-		unsigned mFPSLimit = 60;
-		float mTimeToDraw = 1.0 / (float)mFPSLimit;
-		float mRedrawTime = 0.0;
-		int mFPS = 0;
-
-		Uint8* keys;
-
-		bool keydown[256];
-		bool keyup[256];
+		unsigned mFPSLimit;
+		float mTimeToDraw;
+		float mRedrawTime;
+		int mFPS;
 
 		SDL_Event mTmpEvent;
 
@@ -71,8 +63,6 @@ namespace C
 	public:
 		//Constructor
 		C_SDLWindow(C_SDLWindowConfig aConfig);
-		//Clear input
-		void SYS_CLEAR_INPUT();
 		//Poll window events
 		void pollEvent(SDL_Event& aEvent);
 		//Clear window
@@ -105,12 +95,6 @@ namespace C
 		bool isMinimized();
 		//Return SDL_Window handle
 		SDL_Window* getHandle();
-		//Return key-press in window
-		bool getKey(int aKey);
-		//Return key-down in window
-		bool getKeyDown(int aKey);
-		//Return key-up in window
-		bool getKeyUp(int aKey);
 		//Return mouse-button-press in window
 		bool getMouseButton(int aButton);
 		//Set vertical sync
@@ -129,4 +113,7 @@ namespace C
 
 }
 
-#endif
+
+
+
+
