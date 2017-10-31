@@ -5,6 +5,9 @@
 #include <Math/Vector4.h>
 
 #include <GUI/IO.h>
+#include <Graphics/Shader.h>
+#include <RenderAPI/APIOpenGL.h>
+#include <RenderAPI/Buffer.h>
 
 namespace C
 {
@@ -16,7 +19,7 @@ namespace C
 		{
 		protected:
 			C_Vector2 mPos = C_Vector2(0, 0);
-			C_Vector2 mSize = C_Vector2(0.2, 0.1);
+			C_Vector2 mSize = C_Vector2(200, 100);
 
 			int mState = 0;
 			C_IO mIO;

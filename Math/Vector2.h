@@ -99,6 +99,7 @@ namespace C
 		{
 			x += aOther.x;
 			y += aOther.y;
+			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -=
@@ -106,6 +107,7 @@ namespace C
 		{
 			x -= aOther.x;
 			y -= aOther.y;
+			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
@@ -113,6 +115,7 @@ namespace C
 		{
 			x *= aOther.x;
 			y *= aOther.y;
+			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
@@ -120,6 +123,7 @@ namespace C
 		{
 			x /= aOther.x;
 			y /= aOther.y;
+			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return random from two vectors

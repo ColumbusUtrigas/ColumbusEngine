@@ -12,6 +12,7 @@
 
 #include <Math/Vector2.h>
 #include <Impl/ImplSDL.h>
+#include <GUI/IO.h>
 
 #include <SDL.h>
 #include <vector>
@@ -55,28 +56,33 @@ namespace C
 		C_Vector2 mCurrentMousePosition;
 		C_Vector2 mPreviousMousePosition;
 
+		bool mMouseEnabled = true;
+
 		std::vector<C_InputBind> mBinds;
 
 		C_SDLWindow* mWindow = nullptr;
+		GUI::C_IO* mIO = nullptr;
+
+		void updateIO();
 	public:
 		C_Input();
 
 		void bindInput(const C_InputBind aBind);
 
-		bool getKey(const unsigned int aKey);
-		bool getKeyDown(const unsigned int aKey);
-		bool getKeyUp(const unsigned int aKey);
-
 		void setWindow(const C_SDLWindow* aWindow);
+		void setIO(const GUI::C_IO* aIO);
+		void showMouseCursor(const bool aX);
+		void setMousePos(const C_Vector2 aPos);
+		void setMousePosGlobal(const C_Vector2 aPos);
 
 		void update();
 
 		C_Vector2 getMousePosition();
 		C_Vector2 getMouseMovement();
 
-		void showMouseCursor(const bool aX);
-		void setMousePos(const C_Vector2 aPos);
-		void setMousePosGlobal(const C_Vector2 aPos);
+		bool getKey(const unsigned int aKey);
+		bool getKeyDown(const unsigned int aKey);
+		bool getKeyUp(const unsigned int aKey);
 
 		~C_Input();
 	};

@@ -9,6 +9,7 @@ namespace C
 		struct C_Mouse
 		{
 			C_Vector2 coords;
+			bool enabled = true;
 			bool left = false;
 			bool middle = false;
 			bool right = false;

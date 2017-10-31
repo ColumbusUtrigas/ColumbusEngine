@@ -20,8 +20,10 @@ int main(int argc, char** argv)
 	C_SDLWindow window(config);
 	C_EventSystem event;
 	event.addWindow(&window);
+	GUI::C_IO io;
 	C_Input input;
 	input.setWindow(&window);
+	input.setIO(&io);
 
 	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
@@ -147,7 +149,6 @@ int main(int argc, char** argv)
 	render.add(&light3);
 
 	GUI::C_Button button;
-	GUI::C_IO io;
 
 	input.showMouseCursor(false);
 
@@ -222,6 +223,7 @@ int main(int argc, char** argv)
 
 		button.setIO(io);
 		button.update();
+		button.draw();
 
 		window.display();
 
