@@ -36,33 +36,48 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_Texture::C_Texture()
+	C_Texture::C_Texture() :
+		mBuffer(nullptr),
+		mID(0),
+		mWidth(0),
+		mHeight(0),
+		mBPP(0)
 	{
 		C_GenTextureOpenGL(&mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
-	C_Texture::C_Texture(const char* aPath, bool aSmooth)
+	C_Texture::C_Texture(std::string aPath, bool aSmooth) :
+		mBuffer(nullptr),
+		mID(0),
+		mWidth(0),
+		mHeight(0),
+		mBPP(0)
 	{
 		C_GenTextureOpenGL(&mID);
 		load(aPath, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 3
-	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth)
+	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth) :
+		mBuffer(nullptr),
+		mID(0),
+		mWidth(0),
+		mHeight(0),
+		mBPP(0)
 	{
 		C_GenTextureOpenGL(&mID);
 		load(aData, aW, aH, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Load texture from file
-	void C_Texture::load(const char* aPath, bool aSmooth)
+	void C_Texture::load(std::string aPath, bool aSmooth)
 	{
 		//if (mBuffer != NULL)
 			//FreeImage_Unload(mBuffer);
-		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath, 0);
+		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath.c_str(), 0);
 		if (formato == FIF_UNKNOWN) { C_Error("Can't get type of File: %s", aPath); return; }
-		FIBITMAP* imagen = FreeImage_Load(formato, aPath);
+		FIBITMAP* imagen = FreeImage_Load(formato, aPath.c_str());
 		if (!imagen) { C_Error("Can't load Image File: %s", aPath); return; }
 		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
 		if (!imagen) { C_Error("Can't convert image to 32 Bits: %s", aPath); return; }
@@ -117,8 +132,7 @@ namespace C
 		mHeight = nHeight;
 		mBPP = nBPP;
 
-		C_Success("Texture loaded: %s", aPath);
-
+		C_Success("Texture loaded: %s", aPath.c_str());
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

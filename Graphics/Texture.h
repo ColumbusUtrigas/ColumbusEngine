@@ -37,7 +37,7 @@ namespace C
 	{
 	private:
 		uint8_t* mBuffer = nullptr;
-		unsigned int mID;
+		unsigned int mID = 0;
 
 		std::string mFile;
 
@@ -50,11 +50,11 @@ namespace C
 		//Constructor
 		C_Texture();
 		//Constructor 2
-		C_Texture(const char* aPath, bool aSmooth = true);
+		C_Texture(std::string aPath, bool aSmooth = true);
 		//Constructor 3
 		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load textures from file
-		void load(const char* aPath, bool aSmooth = true);
+		void load(std::string aPath, bool aSmooth = true);
 		//Load texture from memory
 		void loadFromMemory(const char* aData, size_t aSize, bool aSmooth = true);
 		//Load texture from raw data

@@ -5,7 +5,7 @@
 *               COLUMBUS ENGINE                 *
 *************************************************
 *             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
+*                   31.10.2017                  *
 *************************************************/
 
 #include <Impl/ImplSDL.h>
@@ -59,7 +59,7 @@ namespace C
 		if (aConfig.Fullscreen == true)
 			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-		mWindow = SDL_CreateWindow(aConfig.Title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		mWindow = SDL_CreateWindow(aConfig.Title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			aConfig.Width, aConfig.Height, flags);
 		mGLC = SDL_GL_CreateContext(mWindow);
 	}
@@ -98,6 +98,8 @@ namespace C
 			C_Initialization("GLEW initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//Initialize SDL
 	void C_SDLWindow::initSDL()
 	{
@@ -131,50 +133,36 @@ namespace C
 
 		if(aEvent.type == SDL_WINDOWEVENT && aEvent.window.windowID == SDL_GetWindowID(mWindow))
 		{
-			if(aEvent.window.event == SDL_WINDOWEVENT_CLOSE)
+			switch (aEvent.window.event)
 			{
+			case SDL_WINDOWEVENT_CLOSE:
 				SDL_HideWindow(mWindow);
 				mClosed = true;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_SHOWN)
-			{
+				break;
+			case SDL_WINDOWEVENT_SHOWN:
 				mShown = true;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_HIDDEN)
-			{
+				break;
+			case SDL_WINDOWEVENT_HIDDEN:
 				mShown = false;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
-			{
+				break;
+			case SDL_WINDOWEVENT_MINIMIZED:
 				mMinimized = true;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_MAXIMIZED)
-			{
+				break;
+			case SDL_WINDOWEVENT_MAXIMIZED:
 				mMinimized = false;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_ENTER)
-			{
+				break;
+			case SDL_WINDOWEVENT_ENTER:
 				mMouseFocus = true;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_LEAVE)
-			{
+				break;
+			case SDL_WINDOWEVENT_LEAVE:
 				mMouseFocus = false;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-			{
+				break;
+			case SDL_WINDOWEVENT_FOCUS_GAINED:
 				mKeyFocus = true;
-			}
-
-			if(aEvent.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-			{
+				break;
+			case SDL_WINDOWEVENT_FOCUS_LOST:
 				mKeyFocus = false;
+				break;
 			}
 		}
 	}
@@ -205,15 +193,24 @@ namespace C
 		mRedrawTime = mDrawTime.elapsed() * 1000;
 
 		mFPS = (int)(1.0 / (mRedrawTime / 1000));
-
-		//C_TimeUpdate();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return window open
-	bool C_SDLWindow::isOpen()
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//Set vertical sync
+	void C_SDLWindow::setVerticalSync(bool aV)
 	{
-		return !mClosed;
+		SDL_GL_SetSwapInterval(aV ? 1 : 0);
 	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set FPS limit
+	void C_SDLWindow::setFPSLimit(unsigned aFPSLimit)
+	{
+		mFPSLimit = aFPSLimit;
+		mTimeToDraw = 1.0 / (float)mFPSLimit;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//Return window size
 	void C_SDLWindow::getSize(int* aX, int* aY)
@@ -226,34 +223,6 @@ namespace C
 	{
 		int x, y;
 		SDL_GetWindowSize(mWindow, &x, &y);
-		return C_Vector2(x, y);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse position
-	void C_SDLWindow::getMousePos(int* aX, int* aY)
-	{
-		SDL_GetMouseState(aX, aY);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse position
-	C_Vector2 C_SDLWindow::getMousePos()
-	{
-		int x, y;
-		SDL_GetMouseState(&x, &y);
-		return C_Vector2(x, y);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return global mouse position
-	void C_SDLWindow::getMousePosGlobal(int* aX, int* aY)
-	{
-		SDL_GetGlobalMouseState(aX, aY);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return global mouse position
-	C_Vector2 C_SDLWindow::getMousePosGlobal()
-	{
-		int x, y;
-		SDL_GetGlobalMouseState(&x, &y);
 		return C_Vector2(x, y);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -279,19 +248,6 @@ namespace C
 			return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set vertical sync
-	void C_SDLWindow::setVerticalSync(bool aV)
-	{
-		SDL_GL_SetSwapInterval(aV ? 1 : 0);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set FPS limit
-	void C_SDLWindow::setFPSLimit(unsigned aFPSLimit)
-	{
-		mFPSLimit = aFPSLimit;
-		mTimeToDraw = 1.0 / (float)mFPSLimit;
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Return FPS limit
 	unsigned C_SDLWindow::getFPSLimit()
 	{
@@ -310,11 +266,40 @@ namespace C
 		return mFPS;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//Return window open
+	bool C_SDLWindow::isOpen()
+	{
+		return !mClosed;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Return key-focus in window
 	bool C_SDLWindow::isKeyFocus()
 	{
 		return mKeyFocus;
+	
 	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return mouse-focus in window
+	bool C_SDLWindow::isMouseFocus()
+	{
+		return mMouseFocus;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return window shown
+	bool C_SDLWindow::isShown()
+	{
+		return mShown;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return window minimized
+	bool C_SDLWindow::isMinimized()
+	{
+		return mMinimized;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_SDLWindow::~C_SDLWindow()

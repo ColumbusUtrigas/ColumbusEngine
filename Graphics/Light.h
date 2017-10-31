@@ -38,7 +38,7 @@ namespace C
     //Constructor
     C_Light(const int aType);
     //Constructor 2
-    C_Light(const char* aFile);
+    C_Light(std::string aFile);
     //Set light type
     void setType(const int aType);
     //Set light position
@@ -57,26 +57,27 @@ namespace C
     void setInnerCutoff(const float aInnerCutoff);
     //Set spotlight outer cuttof
     void setOuterCutoff(const float aOuterCutoff);
+
     //Return light type
     int getType();
     //Return light position
     C_Vector3 getPos() const;
     //Return light direction
-    C_Vector3 getDir();
+    C_Vector3 getDir() const;
     //Return light color
-    C_Vector3 getColor();
+    C_Vector3 getColor() const;
     //Return constant attenuation
-    float getConstant();
+    float getConstant() const;
     //Return linear attenuation
-    float getLinear();
+    float getLinear() const;
     //Return quadratic attenuation
-    float getQuadratic();
+    float getQuadratic() const;
     //Return spotlight inner cutoff
-    float getInnerCutoff();
+    float getInnerCutoff() const;
     //Return spotlight outer cutoff
-    float getOuterCutoff();
+    float getOuterCutoff() const;
     //Serialize to XML file
-    void saveToFile(const char* aFile);
+    void saveToFile(const char* aFile) const;
     //Deserialize from XML file
     void loadFromFile(const char* aFile);
     //Destructor

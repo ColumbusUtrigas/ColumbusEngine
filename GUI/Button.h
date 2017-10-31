@@ -15,20 +15,20 @@
 namespace C
 {
 
-  namespace GUI
-  {
+	namespace GUI
+	{
 
-    class C_Button : public C_Widget
-    {
-    public:
-      C_Button() {}
+		class C_Button : public C_Widget
+		{
+		public:
+			C_Button() {}
 
-      void update() override;
-      void draw() override;
+			void update() override;
+			void draw() override;
 
-      ~C_Button() {}
-    };
+			~C_Button() {}
+		};
 
-  }
+	}
 
 }

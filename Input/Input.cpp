@@ -20,24 +20,17 @@ namespace C
 		mKeyboardStateNum(0),
 		mWindow(nullptr)
 	{
-
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::init()
-	{
 		mKeyboardStateTmp = (uint8_t*)SDL_GetKeyboardState(&mKeyboardStateNum);
 		mPreviousKeyboardState = new uint8_t[mKeyboardStateNum];
 		mCurrentKeyboardState = new uint8_t[mKeyboardStateNum];
-
-		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::bindInput(C_InputBind& aBind)
+	void C_Input::bindInput(const C_InputBind aBind)
 	{
-		mBinds.push_back(aBind);
+		mBinds.push_back(std::move(aBind));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::getKey(unsigned int aKey)
+	bool C_Input::getKey(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -46,7 +39,7 @@ namespace C
 		return ((mPreviousKeyboardState[aKey] == true) && (mCurrentKeyboardState[aKey] == true));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::getKeyDown(unsigned int aKey)
+	bool C_Input::getKeyDown(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -55,7 +48,7 @@ namespace C
 		return ((mPreviousKeyboardState[aKey] == false) && (mCurrentKeyboardState[aKey] == true));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::getKeyUp(unsigned int aKey)
+	bool C_Input::getKeyUp(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -64,9 +57,9 @@ namespace C
 		return ((mPreviousKeyboardState[aKey] == true) && (mCurrentKeyboardState[aKey] == false));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setWindow(C_SDLWindow* aWindow)
+	void C_Input::setWindow(const C_SDLWindow* aWindow)
 	{
-		mWindow = aWindow;
+		mWindow = const_cast<C_SDLWindow*>(aWindow);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Input::update()
@@ -123,12 +116,12 @@ namespace C
 		return mouseDelta;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::showMouseCursor(bool aX)
+	void C_Input::showMouseCursor(const bool aX)
 	{
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setMousePos(C_Vector2 aPos)
+	void C_Input::setMousePos(const C_Vector2 aPos)
 	{
 		if (mWindow == nullptr)
 			return;
@@ -140,7 +133,7 @@ namespace C
 		mPreviousMousePosition = aPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setMousePosGlobal(C_Vector2 aPos)
+	void C_Input::setMousePosGlobal(const C_Vector2 aPos)
 	{
 		SDL_WarpMouseGlobal(static_cast<int>(aPos.x), static_cast<int>(aPos.y));
 	}

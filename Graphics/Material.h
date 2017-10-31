@@ -26,26 +26,26 @@ namespace C
 	class C_Material
 	{
 	private:
-		C_Vector4 color;
-		C_Vector3 diffuse;
-		C_Vector3 ambient;
-		C_Vector3 specular;
-		float reflectionPower;
-		C_Texture* texture = NULL;
-		C_Texture* specmap = NULL;
-		C_Texture* normmap = NULL;
-		C_Shader* shader = NULL;
+		C_Vector4 mColor = C_Vector4(1, 1, 1, 1);
+		C_Vector3 mDiffuse = C_Vector3(1, 1, 1);
+		C_Vector3 mAmbient = C_Vector3(0.25, 0.25, 0.25);
+		C_Vector3 mSpecular = C_Vector3(1, 1, 1);
+		float mReflectionPower = 0.2;
+		C_Texture* mTexture = nullptr;
+		C_Texture* mSpecMap = nullptr;
+		C_Texture* mNormMap = nullptr;
+		C_Shader* mShader = nullptr;
 
-		bool discard = false;
+		bool mDiscard = false;
 
-		C_Cubemap* envRefl = NULL;
+		C_Cubemap* mEnvReflection = nullptr;
 
-		float shininess = 32;
+		float mShininess = 32;
 	public:
 		//Constructor
 		C_Material();
 		//Constructor 2
-		C_Material(const char* aFile);
+		C_Material(std::string aFile);
 		//Set color
 		void setColor(const C_Vector4 aColor);
 		//Set light ambient color
@@ -70,34 +70,36 @@ namespace C
 		void setReflectionPower(const float aPower);
 		//Set discard alpha
 		void setDiscard(const bool aDiscard);
+
 		//Return color
-		C_Vector4 getColor();
+		C_Vector4 getColor() const;
 		//Return light ambient color
-		C_Vector3 getAmbient();
+		C_Vector3 getAmbient() const;
 		//Return light diffuse color
-		C_Vector3 getDiffuse();
+		C_Vector3 getDiffuse() const;
 		//Return light specular color
-		C_Vector3 getSpecular();
+		C_Vector3 getSpecular() const;
 		//Return specular shininess
-		float getShininess();
+		float getShininess() const;
 		//Return diffuse texture
-		C_Texture* getTexture();
+		C_Texture* getTexture() const;
 		//Return specular texture
-		C_Texture* getSpecMap();
+		C_Texture* getSpecMap() const;
 		//Return normal texture
-		C_Texture* getNormMap();
+		C_Texture* getNormMap() const;
 		//Return shader
-		C_Shader* getShader();
+		C_Shader* getShader() const;
 		//Return cubemap reflection
-		C_Cubemap* getReflection();
+		C_Cubemap* getReflection() const;
 		//Return reflection power
-		float getReflectionPower();
+		float getReflectionPower() const;
 		//Return discard alpha
-		bool getDiscard();
+		bool getDiscard() const;
+
 		//Serialize to XML file
-		void saveToXML(const char* aFile);
+		void saveToXML(std::string aFile) const;
 		//Deserialize from XML file
-		void loadFromXML(const char* aFile);
+		void loadFromXML(std::string aFile);
 		//Destructor
 		~C_Material();
 	};

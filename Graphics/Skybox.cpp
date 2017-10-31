@@ -15,7 +15,10 @@ namespace C
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_Skybox::C_Skybox(C_Cubemap* aCubemap)
+	C_Skybox::C_Skybox(C_Cubemap* aCubemap) :
+		mBuf(nullptr),
+		mShader(nullptr),
+		mCubemap(nullptr)
 	{
 		mCubemap = aCubemap;
 

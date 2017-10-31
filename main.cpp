@@ -4,6 +4,14 @@ using namespace C;
 
 int FPS_LIMIT = 120;
 
+template<class T>
+T getMax(T a, T b)
+{
+	T result;
+	result = (a > b) ? a : b;
+	return (result);
+}
+
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;;
@@ -13,7 +21,6 @@ int main(int argc, char** argv)
 	C_EventSystem event;
 	event.addWindow(&window);
 	C_Input input;
-	input.init();
 	input.setWindow(&window);
 
 	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");

@@ -14,6 +14,15 @@ namespace C
 {
 
 	//////////////////////////////////////////////////////////////////////////////
+	//Constructor
+	C_TextureManager::C_TextureManager() :
+		mSmooth(true),
+		mMipmaps(true),
+		mAnisotropy(8)
+	{
+
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Add texture
 	void C_TextureManager::add(C_Texture* aTexture)
 	{
@@ -34,6 +43,12 @@ namespace C
 	size_t C_TextureManager::size()
 	{
 		return mSize;
+	}
+	///////////////////////////////////////////////////////////////////////
+	//Destructor
+	C_TextureManager::~C_TextureManager()
+	{
+
 	}
 
 }

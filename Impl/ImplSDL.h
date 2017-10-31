@@ -5,7 +5,7 @@
 *               COLUMBUS ENGINE                 *
 *************************************************
 *             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
+*                   31.10.2017                  *
 *************************************************/
 
 #pragma once
@@ -28,7 +28,7 @@ namespace C
 		bool Fullscreen = false;
 		int Width = 640;
 		int Height = 480;
-		char* Title = (char*)"Columbus Engine";
+		std::string Title = "Columbus Engine";
 	};
 
 	class C_SDLWindow
@@ -37,18 +37,18 @@ namespace C
 		SDL_Window* mWindow;
 		SDL_GLContext mGLC;
 
-		bool mClosed;
+		bool mClosed = false;
 
-		bool mKeyFocus;
-		bool mMouseFocus;
-		bool mShown;
-		bool mMinimized;
+		bool mKeyFocus = false;
+		bool mMouseFocus = false;
+		bool mShown = false;
+		bool mMinimized = false;
 
 		C_Timer mDrawTime;
-		unsigned mFPSLimit;
-		float mTimeToDraw;
-		float mRedrawTime;
-		int mFPS;
+		unsigned mFPSLimit = 60;
+		float mTimeToDraw = 1.0 / static_cast<float>(mFPSLimit);
+		float mRedrawTime = 0.0;
+		int mFPS = 0;
 
 		SDL_Event mTmpEvent;
 
@@ -69,44 +69,40 @@ namespace C
 		void clear(float r, float g, float b, float a);
 		//Display window
 		void display();
-		//Return window size
-		void getSize(int* aX, int* aY);
-		//Return window size
-		C_Vector2 getSize();
-		//Return mouse position
-		void getMousePos(int* aX, int* aY);
-		//Return mouse position
-		C_Vector2 getMousePos();
-		//Return global mouse position
-		void getMousePosGlobal(int* aX, int* aY);
-		//Return global mouse position
-		C_Vector2 getMousePosGlobal();
-		//Return window aspect
-		float aspect();
-		//Return window open
-		bool isOpen();
-		//Return key-focus in window
-		bool isKeyFocus();
-		//return window mouse-focus
-		bool isMouseFocus();
-		//Return window shown
-		bool isShown();
-		//Return window minimized
-		bool isMinimized();
-		//Return SDL_Window handle
-		SDL_Window* getHandle();
-		//Return mouse-button-press in window
-		bool getMouseButton(int aButton);
+
 		//Set vertical sync
 		void setVerticalSync(bool aV);
 		//Set FPS limit
 		void setFPSLimit(unsigned aFPSLimit);
+
+		//Return window size
+		void getSize(int* aX, int* aY);
+		//Return window size
+		C_Vector2 getSize();
+		//Return window aspect
+		float aspect();
+		//Return SDL_Window handle
+		SDL_Window* getHandle();
+		//Return mouse-button-press in window
+		bool getMouseButton(int aButton);
 		//Return FPS limit
 		unsigned getFPSLimit();
 		//Return redraw time
 		float getRedrawTime();
 		//Return FPS;
 		int getFPS();
+		
+		//Return window open
+		bool isOpen();
+		//Return key-focus in window
+		bool isKeyFocus();
+		//Return mouse-focus in window
+		bool isMouseFocus();
+		//Return window shown
+		bool isShown();
+		//Return window minimized
+		bool isMinimized();
+		
 		//Destructor
 		~C_SDLWindow();
 	};
