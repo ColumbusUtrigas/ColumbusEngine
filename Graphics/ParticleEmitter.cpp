@@ -112,8 +112,113 @@ namespace C
 		std::sort(mParticles.begin(), mParticles.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::update(float aTimeTick)
+	{
+		float transformation = mParticleEffect->getTransformation();
+		C_Vector3 constForce = mParticleEffect->getConstantForce();
+		C_Vector3 startEmitterPos = mParticleEffect->getPos();
+
+		float rate = mParticleEffect->getEmitRate();
+		float count = mParticleEffect->getParticlesCount();
+		float fireT = 1.0 / rate;
+		float spawnT = count * fireT;
+
+		if (count <= rate * mMaxTTL)
+			spawnT = mMaxTTL;
+
+		float a = mLife;
+
+		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
+		{
+			float e = min(mParticles[i].TTL, fireT) * i;
+			mParticles[i].age = fmod(e + a, spawnT);
+
+			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+				mParticles[i].startEmitterPos = startEmitterPos;
+			else
+				if ((mParticles[i].age / mParticles[i].TTL) <= aTimeTick)
+					mParticles[i].startEmitterPos = startEmitterPos;
+
+			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
+
+
+			if (mParticles[i].active == true && mParticles[i].age > 0)
+			{
+				float life = fmod(mParticles[i].age, mParticles[i].TTL);
+
+				C_Vector3 vel = mParticles[i].direction.normalize() * mParticles[i].velocity;
+				C_Vector3 acc = mParticles[i].accel;
+
+				float age = mParticles[i].age;
+
+				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				pos += mParticles[i].startPos + mParticles[i].startEmitterPos;
+				mParticles[i].pos = pos;
+			}
+		}
+
+		mLife += aTimeTick;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setBuffers()
+	{
+		mBuf->bind();
+		C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(0);
+		mTBuf->bind();
+		C_VertexAttribPointerOpenGL(1, 2, C_OGL_FLOAT, C_OGL_FALSE, 2 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(1);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setUniforms()
+	{
+		mShader->setUniform3f("uPos", C_Vector3(0, 0, 0));
+		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
+		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
+		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
+		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
+		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
+
+		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
+		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
+
+		if (mParticleEffect->getMaterial() == nullptr)
+			mShader->setUniform4f("uColor", C_Vector4(1, 1, 1, 1));
+		else
+			mShader->setUniform4f("uColor", mParticleEffect->getMaterial()->getColor());
+
+		if (mParticleEffect->getMaterial() != nullptr)
+		{
+			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
+			C_BindTextureOpenGL(C_OGL_TEXTURE0, 0);
+
+			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
+			{
+				mShader->setUniform1i("uTex", 0);
+				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
+			}
+
+			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::unbindAll()
+	{
+		if (mParticleEffect->getAdditive())
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
+
+		C_EnableDepthMaskOpenGL();
+
+		C_Shader::unbind();
+		C_Texture::unbind();
+		C_Buffer::unbind();
+
+		C_CloseStreamOpenGL(0);
+		C_CloseStreamOpenGL(1);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
-	void C_ParticleEmitter::draw()
+	/*void C_ParticleEmitter::draw()
 	{
 		using namespace std;
 
@@ -168,14 +273,6 @@ namespace C
 			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 
-		if (mFrame >= 10)
-		{
-			//sort();
-			mFrame = 0;
-		}
-
-		mFrame++;
-
 		C_DisableDepthMaskOpenGL();
 
 		if (mParticleEffect->getAdditive())
@@ -197,11 +294,10 @@ namespace C
 		if (count <= rate * mMaxTTL)
 			spawnT = mMaxTTL;
 
-		a = fmod(a, spawnT);
+		a = fmod(mLife, spawnT);
 
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
 			float e = min(mParticles[i].TTL, fireT) * i;
 			mParticles[i].age = fmod(e + a, spawnT);
 
@@ -229,13 +325,10 @@ namespace C
 
 				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, scaleOL, billboard, gradient};
 
-				//mShader->setUniform4f("uPosition", set);
 				mShader->setUniformArrayf("Unif", arr, 8);
 
 				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
 			}
-
-			//mParticles[i].age += frame.elapsed();
 		}
 
 		if (mLife >= mMaxTTL)
@@ -255,6 +348,55 @@ namespace C
 
 		C_CloseStreamOpenGL(0);
 		C_CloseStreamOpenGL(1);
+	}*/
+	//////////////////////////////////////////////////////////////////////////////
+	//Draw particles
+	void C_ParticleEmitter::draw(float aTimeTick)
+	{
+		update(aTimeTick);
+
+		if (mParticleEffect == nullptr)
+			return;
+		if (mShader == nullptr)
+			return;
+		if (mBuf == nullptr)
+			return;
+		if (mTBuf == nullptr)
+			return;
+		if (mParticleEffect->getVisible() == false)
+			return;
+
+		setBuffers();
+
+		mShader->bind();
+
+		setUniforms();
+
+		C_DisableDepthMaskOpenGL();
+
+		if (mParticleEffect->getAdditive())
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
+
+		float scaleOL = mParticleEffect->getScaleOverLifetime();
+		float billboard = mParticleEffect->getBillbiarding();
+		float gradient = mParticleEffect->getGradienting();
+
+		for (auto i : mParticles)
+		{
+			if (i.active == true && i.age > 0)
+			{
+				float life = fmod(i.age, i.TTL);
+				C_Vector3 pos = i.pos;
+
+				float arr[8] = { pos.x, pos.y, pos.z, life, i.TTL, scaleOL, billboard, gradient };
+
+				mShader->setUniformArrayf("Unif", arr, 8);
+
+				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
+			}
+		}
+
+		unbindAll();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

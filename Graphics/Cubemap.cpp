@@ -15,7 +15,7 @@ namespace C
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_Cubemap::C_Cubemap(C_CubemapPath aPath)
+	C_Cubemap::C_Cubemap(std::array<std::string, 6> aPath)
 	{
 		C_GenTextureOpenGL(&mID);
 
@@ -33,7 +33,7 @@ namespace C
 				C_Error("Can't load Cubemap");
 				C_DeleteTextureOpenGL(&mID);
 				return;
-		  }
+			}
 			else
 			{
 				C_Texture2DOpenGL(C_OGL_TEXTURE_CUBE_MAP_POS_X + i, 0, C_OGL_RGBA,

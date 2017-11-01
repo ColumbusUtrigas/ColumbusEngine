@@ -97,6 +97,10 @@ namespace C
 			1.0, 1.0
 		};
 		void sort();
+		void update(float aTimeTick);
+		void setBuffers();
+		void setUniforms();
+		void unbindAll();
 
 	public:
 		//Constructor
@@ -106,7 +110,8 @@ namespace C
 		//Set camera pos
 		void setCameraPos(C_Vector3 aC);
 		//Draw particles
-		void draw();
+		//void draw();
+		void draw(float aTimeTick);
 		//Destructor
 		~C_ParticleEmitter();
 	};

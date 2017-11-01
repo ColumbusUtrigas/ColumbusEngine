@@ -97,9 +97,9 @@ namespace C
 		bool getDiscard() const;
 
 		//Serialize to XML file
-		void saveToXML(std::string aFile) const;
+		bool saveToXML(std::string aFile) const;
 		//Deserialize from XML file
-		void loadFromXML(std::string aFile);
+		bool loadFromXML(std::string aFile);
 		//Destructor
 		~C_Material();
 	};

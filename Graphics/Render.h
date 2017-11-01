@@ -19,6 +19,7 @@
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/PostEffect.h>
 #include <RenderAPI/APIOpenGL.h>
+#include <System/Timer.h>
 
 #include <GUI/Button.h>
 
@@ -33,6 +34,8 @@ namespace C
 		std::vector<C_Light*> mLights;
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
+
+		C_Timer mFrameTimer;
 
 		C_Shader* mNonePost = nullptr;
 		C_Shader* mNegativePost = nullptr;

@@ -87,14 +87,14 @@ int main(int argc, char** argv)
 
 	float i = 0;
 
-	C_CubemapPath cpath =
+	std::array<std::string, 6> cpath =
 	{
-		"Data/Skyboxes/5/r.jpg",
-		"Data/Skyboxes/5/l.jpg",
-		"Data/Skyboxes/5/d.jpg",
-		"Data/Skyboxes/5/u.jpg",
-		"Data/Skyboxes/5/b.jpg",
-		"Data/Skyboxes/5/f.jpg",
+		"Data/Skyboxes/1/r.jpg",
+		"Data/Skyboxes/1/l.jpg",
+		"Data/Skyboxes/1/d.jpg",
+		"Data/Skyboxes/1/u.jpg",
+		"Data/Skyboxes/1/b.jpg",
+		"Data/Skyboxes/1/f.jpg",
 	};
 
 
@@ -130,19 +130,18 @@ int main(int argc, char** argv)
 
 	render.add(&particles);
 
-	C_Light light1(1);
-	C_Light light2(1);
-	C_Light light3(1);
+	C_Light light1("Data/Lights/1.light");
+	C_Light light2("Data/Lights/2.light");
+	C_Light light3("Data/Lights/3.light");
 
-	light1.setPos(C_Vector3(0, 1.02, 2));
+	/*light1.setPos(C_Vector3(0, 1.02, 2));
 	light1.setColor(C_Vector3(1, 0, 0));
 
 	light2.setPos(C_Vector3(2, 1.02, -2));
 	light2.setColor(C_Vector3(0, 1, 0));
 
 	light3.setPos(C_Vector3(-2, 1.02, -2));
-	light3.setColor(C_Vector3(0, 0, 1));
-
+	light3.setColor(C_Vector3(0, 0, 1));*/
 
 	render.add(&light1);
 	render.add(&light2);
@@ -168,9 +167,9 @@ int main(int argc, char** argv)
 		if (input.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_S))
-			camera.addPos(C_Vector3(0, 0, 0) - camera.direction() * RedrawTime * 5);
+			camera.addPos(-camera.direction() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_A))
-			camera.addPos(C_Vector3(0, 0, 0) - camera.right() * RedrawTime * 5);
+			camera.addPos(-camera.right() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_UP))
@@ -192,7 +191,7 @@ int main(int argc, char** argv)
 			particleEffect.addPos(C_Vector3(3, 0, 0) * RedrawTime);
 
 		if (input.getKey(SDL_SCANCODE_LSHIFT))
-			camera.addPos(C_Vector3(0, 0, 0) - camera.up() * RedrawTime * 5);
+			camera.addPos(-camera.up() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_SPACE))
 			camera.addPos(camera.up() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_Q))

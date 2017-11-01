@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <glm/glm.hpp>
+#include <System/Random.h>
 
 namespace C
 {
@@ -64,6 +65,12 @@ namespace C
 			return C_Vector2(x - aOther.x, y - aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator -
+		inline C_Vector2 operator-()
+		{
+			return C_Vector2(-x, -y);
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector2 operator*(const C_Vector2 aOther)
 		{
@@ -82,20 +89,26 @@ namespace C
 			return C_Vector2(x / aOther.x, y / aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator /
+		inline C_Vector2 operator/(const float aOther)
+		{
+			return C_Vector2(x / aOther, y / aOther);
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
-		inline bool operator==(C_Vector2 aOther)
+		inline bool operator==(const C_Vector2 aOther)
 		{
 			return (x == aOther.x && y == aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator !=
-		inline bool operator!=(C_Vector2 aOther)
+		inline bool operator!=(const C_Vector2 aOther)
 		{
 			return (x != aOther.x && y != aOther.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator +=
-		inline C_Vector2 operator+=(C_Vector2 aOther)
+		inline C_Vector2 operator+=(const C_Vector2 aOther)
 		{
 			x += aOther.x;
 			y += aOther.y;
@@ -103,7 +116,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -=
-		inline C_Vector2 operator-=(C_Vector2 aOther)
+		inline C_Vector2 operator-=(const C_Vector2 aOther)
 		{
 			x -= aOther.x;
 			y -= aOther.y;
@@ -111,7 +124,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		inline C_Vector2 operator*=(C_Vector2 aOther)
+		inline C_Vector2 operator*=(const C_Vector2 aOther)
 		{
 			x *= aOther.x;
 			y *= aOther.y;
@@ -119,19 +132,27 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
-		inline C_Vector2 operator/=(C_Vector2 aOther)
+		inline C_Vector2 operator/=(const C_Vector2 aOther)
 		{
 			x /= aOther.x;
 			y /= aOther.y;
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator /=
+		inline C_Vector2 operator/=(const float aOther)
+		{
+			x /= aOther;
+			y /= aOther;
+			return *this;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return random from two vectors
-		inline static C_Vector2 random(C_Vector2 aMin, C_Vector2 aMax)
+		inline static C_Vector2 random(const C_Vector2 aMin, const C_Vector2 aMax)
 		{
 			C_Vector2 ret;
-			ret.x = aMin.x + (float)(rand()) / ((float)(RAND_MAX / (aMax.x - aMin.x)));
-			ret.y = aMin.y + (float)(rand()) / ((float)(RAND_MAX / (aMax.y - aMin.y)));
+			ret.x = C_Random::range(aMin.x, aMax.x);
+			ret.y = C_Random::range(aMin.y, aMax.y);
 			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -142,7 +163,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return length between 2 vectors
-		inline float length(C_Vector2 aVec)
+		inline float length(const C_Vector2 aVec)
 		{
 			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2));
 		}
