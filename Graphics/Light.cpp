@@ -47,7 +47,7 @@ namespace C
 		mInnerCutoff(12.5),
 		mOuterCutoff(17.5)
 	{
-		loadFromFile(aFile);
+		loadFromXML(aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set light type
@@ -161,7 +161,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Serialize to XML file
-	bool C_Light::saveToFile(std::string aFile) const
+	bool C_Light::saveToXML(std::string aFile) const
 	{
 		Serializer::C_SerializerXML serializer;
 
@@ -204,7 +204,7 @@ namespace C
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Deserialize from XML file
-	bool C_Light::loadFromFile(std::string aFile)
+	bool C_Light::loadFromXML(std::string aFile)
 	{
 		Serializer::C_SerializerXML serializer;
 

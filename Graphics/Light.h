@@ -81,9 +81,9 @@ namespace C
 		//Return spotlight outer cutoff
 		float getOuterCutoff() const;
 		//Serialize to XML file
-		bool saveToFile(std::string aFile) const;
+		bool saveToXML(std::string aFile) const;
 		//Deserialize from XML file
-		bool loadFromFile(std::string aFile);
+		bool loadFromXML(std::string aFile);
 		//Destructor
 		~C_Light();
 	};

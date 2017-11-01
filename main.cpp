@@ -134,15 +134,6 @@ int main(int argc, char** argv)
 	C_Light light2("Data/Lights/2.light");
 	C_Light light3("Data/Lights/3.light");
 
-	/*light1.setPos(C_Vector3(0, 1.02, 2));
-	light1.setColor(C_Vector3(1, 0, 0));
-
-	light2.setPos(C_Vector3(2, 1.02, -2));
-	light2.setColor(C_Vector3(0, 1, 0));
-
-	light3.setPos(C_Vector3(-2, 1.02, -2));
-	light3.setColor(C_Vector3(0, 0, 1));*/
-
 	render.add(&light1);
 	render.add(&light2);
 	render.add(&light3);
