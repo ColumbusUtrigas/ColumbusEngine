@@ -10,7 +10,7 @@
 
 #include <System/Serializer.h>
 
-namespace C
+namespace Columbus
 {
 
   namespace Serializer

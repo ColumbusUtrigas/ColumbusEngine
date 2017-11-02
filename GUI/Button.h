@@ -12,7 +12,7 @@
 
 #include <GUI/Widget.h>
 
-namespace C
+namespace Columbus
 {
 
 	namespace GUI

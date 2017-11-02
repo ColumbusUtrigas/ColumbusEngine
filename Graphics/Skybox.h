@@ -16,7 +16,7 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Skybox

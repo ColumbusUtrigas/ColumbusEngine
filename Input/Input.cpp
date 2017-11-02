@@ -10,7 +10,7 @@
 
 #include <Input/Input.h>
 
-namespace C
+namespace Columbus
 {
 
 	C_Input::C_Input() :

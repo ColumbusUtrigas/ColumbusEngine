@@ -24,7 +24,7 @@
 #include <Graphics/Texture.h>
 #include <Graphics/Renderbuffer.h>
 
-namespace C
+namespace Columbus
 {
 
 	struct C_PostEffectAttributeInt

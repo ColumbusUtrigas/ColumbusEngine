@@ -1,16 +1,8 @@
 #include <Engine.h>
 
-using namespace C;
+using namespace Columbus;
 
 int FPS_LIMIT = 120;
-
-template<class T>
-T getMax(T a, T b)
-{
-	T result;
-	result = (a > b) ? a : b;
-	return (result);
-}
 
 int main(int argc, char** argv)
 {
@@ -45,12 +37,12 @@ int main(int argc, char** argv)
 	textureManager.add(&spec2);
 	textureManager.add(&norm2);
 
-	Importer::C_Importer importer;
-	importer.load("Data/Models/ASD.obj");
+	Import::C_ImporterModel imp;
+	imp.loadOBJ("Data/Models/ASD.obj");
 
 
-	C_Mesh mesh(importer.mVertices[0]);
-	C_Mesh mesh2(importer.mVertices[1]);
+	C_Mesh mesh(imp.getObject(0));
+	C_Mesh mesh2(imp.getObject(1));
 	C_Mesh mesh3(C_PrimitiveBox(C_Vector3(5, 1, 5)));
 
 	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");

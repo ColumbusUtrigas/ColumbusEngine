@@ -13,7 +13,7 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <vector>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Buffer

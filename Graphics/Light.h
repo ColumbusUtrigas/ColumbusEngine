@@ -17,7 +17,7 @@
 #include <System/Console.h>
 #include <System/Serializer.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Light

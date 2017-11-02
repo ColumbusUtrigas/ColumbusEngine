@@ -10,7 +10,7 @@
 
 #include <Graphics/Primitives.h>
 
-namespace C
+namespace Columbus
 {
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate plane
@@ -102,7 +102,11 @@ namespace C
 		};
 
 		C_WriteFile("tmp_primitive_box.obj", f);
-		std::vector<C_Vertex> v = Importer::C_LoadOBJVertices("tmp_primitive_box.obj");
+
+		Import::C_ImporterModel importer;
+		importer.loadOBJ("tmp_primitive_box.obj");
+
+		std::vector<C_Vertex> v = importer.getObject(0);
 		std::vector<C_Vertex> ret;
 
 		for (size_t i = 0; i < v.size(); i++)

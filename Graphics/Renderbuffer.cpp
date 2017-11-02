@@ -10,7 +10,7 @@
 
 #include <Graphics/Renderbuffer.h>
 
-namespace C
+namespace Columbus
 {
 
 	C_Renderbuffer::C_Renderbuffer()

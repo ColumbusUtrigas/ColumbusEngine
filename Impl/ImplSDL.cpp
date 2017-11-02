@@ -10,7 +10,7 @@
 
 #include <Impl/ImplSDL.h>
 
-namespace C
+namespace Columbus
 {
 
 	static bool C_SDL_INITED = false;

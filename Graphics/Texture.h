@@ -17,7 +17,7 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <Math/Vector2.h>
 
-namespace C
+namespace Columbus
 {
 
 	//Load image from file

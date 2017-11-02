@@ -20,7 +20,7 @@
 #include <Graphics/Texture.h>
 #include <System/Console.h>
 
-namespace C
+namespace Columbus
 {
 
 	#define C_CubemapPath std::vector<std::string>

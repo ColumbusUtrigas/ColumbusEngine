@@ -15,17 +15,17 @@
 #include <list>
 #include <algorithm>
 
+#include <System/Importer.h>
 #include <RenderAPI/Buffer.h>
 
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Material.h>
-#include <Graphics/Importer.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Mesh

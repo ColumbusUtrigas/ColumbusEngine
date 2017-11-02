@@ -10,7 +10,7 @@
 
 #include <System/Random.h>
 
-namespace C
+namespace Columbus
 {
 
 	std::mt19937 rng(time(NULL));

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace C
+namespace Columbus
 {
 
 	namespace GUI

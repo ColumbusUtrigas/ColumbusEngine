@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <ctime>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Random

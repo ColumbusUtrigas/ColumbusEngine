@@ -14,7 +14,7 @@
 
 #include <Graphics/Texture.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_TextureManager

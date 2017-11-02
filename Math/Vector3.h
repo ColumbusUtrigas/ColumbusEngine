@@ -14,7 +14,7 @@
 #include <glm/glm.hpp>
 #include <System/Random.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Vector3

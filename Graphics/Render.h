@@ -21,9 +21,7 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <System/Timer.h>
 
-#include <GUI/Button.h>
-
-namespace C
+namespace Columbus
 {
 
 	class C_Render

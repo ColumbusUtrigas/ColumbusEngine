@@ -19,7 +19,7 @@
 #include <functional>
 #include <utility>
 
-namespace C
+namespace Columbus
 {
 
 	enum C_InputBindType

@@ -15,7 +15,7 @@
 
 #include <System/Console.h>
 
-namespace C
+namespace Columbus
 {
 
   #define C_OGL_ARRAY_BUFFER GL_ARRAY_BUFFER

@@ -21,7 +21,7 @@
 #include <System/System.h>
 #include <System/Console.h>
 
-namespace C
+namespace Columbus
 {
 
 	struct C_ShaderAttribute

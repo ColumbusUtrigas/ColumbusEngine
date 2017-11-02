@@ -30,7 +30,7 @@
 #include <System/Timer.h>
 #include <System/Random.h>
 
-namespace C
+namespace Columbus
 {
 
 	struct C_Particle

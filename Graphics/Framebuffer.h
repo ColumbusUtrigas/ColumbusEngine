@@ -22,7 +22,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 
-namespace C
+namespace Columbus
 {
 
   enum C_FRAMEBUFFER_ATTACHMENT

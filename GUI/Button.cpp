@@ -1,7 +1,7 @@
 #include <GUI/Button.h>
 #include <iostream>
 
-namespace C
+namespace Columbus
 {
 
 	namespace GUI

@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include <Graphics/Importer.h>
+#include <System/Importer.h>
 #include <System/System.h>
 
-namespace C
+namespace Columbus
 {
 	//Generate plane
 	std::vector<C_Vertex> C_PrimitivePlane(C_Vector2 aSize = C_Vector2(1.0, 1.0));

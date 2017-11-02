@@ -3,7 +3,6 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
 #include <Graphics/Framebuffer.h>
-#include <Graphics/Importer.h>
 #include <Graphics/Light.h>
 #include <Graphics/Material.h>
 #include <Graphics/Model.h>
@@ -35,6 +34,7 @@
 #include <RenderAPI/Buffer.h>
 
 #include <System/Console.h>
+#include <System/Importer.h>
 #include <System/Random.h>
 #include <System/Serializer.h>
 #include <System/System.h>

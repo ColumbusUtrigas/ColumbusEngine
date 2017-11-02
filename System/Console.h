@@ -16,7 +16,7 @@
 
 #include <System/System.h>
 
-namespace C
+namespace Columbus
 {
 
   void C_Info(const char* fmt, ...);

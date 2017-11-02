@@ -19,7 +19,7 @@
 #include <System/Console.h>
 #include <System/Timer.h>
 
-namespace C
+namespace Columbus
 {
 
 	enum C_MessageBoxType;

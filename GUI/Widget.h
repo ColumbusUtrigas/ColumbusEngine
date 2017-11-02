@@ -9,7 +9,7 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 
-namespace C
+namespace Columbus
 {
 
 	namespace GUI

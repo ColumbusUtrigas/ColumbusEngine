@@ -10,7 +10,7 @@
 
 #include <Impl/EventSystem.h>
 
-namespace C
+namespace Columbus
 {
 
 	/*#ifdef C_SDL
