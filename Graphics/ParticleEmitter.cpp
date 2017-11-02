@@ -24,8 +24,8 @@ namespace C
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
 			C_Particle p;
-			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			p.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+			p.velocity = C_Random::range(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.startPos = mParticleEffect->getPos();
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
@@ -37,8 +37,8 @@ namespace C
 			{
 				case C_PARTICLE_SHAPE_CIRCLE:
 				{
-					float ang = C_RandomBetween(0.0, 6.283185318);
-					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+					float ang = C_Random::range(0.0, 6.283185318);
+					float rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
 
 					if (mParticleEffect->getEmitFromShell() == true)
 						rad = mParticleEffect->getParticleShapeRadius();
@@ -53,9 +53,9 @@ namespace C
 
 				case C_PARTICLE_SHAPE_SPHERE:
 				{
-					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
-					float phi = C_RandomBetween(0.0, 6.283185318);
-					float tht = C_RandomBetween(0.0, 3.141592659);
+					float rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
+					float phi = C_Random::range(0.0, 6.283185318);
+					float tht = C_Random::range(0.0, 3.141592659);
 
 					if (mParticleEffect->getEmitFromShell() == true)
 						rad = mParticleEffect->getParticleShapeRadius();
@@ -128,33 +128,37 @@ namespace C
 
 		float a = mLife;
 
-		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
+		int counter = 0;
+
+		for (auto& Particle : mParticles)
 		{
-			float e = min(mParticles[i].TTL, fireT) * i;
-			mParticles[i].age = fmod(e + a, spawnT);
+			float e = min(Particle.TTL, fireT) * counter;
+			Particle.age = fmod(e + a, spawnT);
 
 			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
-				mParticles[i].startEmitterPos = startEmitterPos;
+				Particle.startEmitterPos = startEmitterPos;
 			else
-				if ((mParticles[i].age / mParticles[i].TTL) <= aTimeTick)
-					mParticles[i].startEmitterPos = startEmitterPos;
+				if ((Particle.age / Particle.TTL) <= aTimeTick)
+					Particle.startEmitterPos = startEmitterPos;
 
-			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
+			Particle.active = (Particle.age <= Particle.TTL);
 
 
-			if (mParticles[i].active == true && mParticles[i].age > 0)
+			if (Particle.active == true && Particle.age > 0)
 			{
-				float life = fmod(mParticles[i].age, mParticles[i].TTL);
+				float life = fmod(Particle.age, Particle.TTL);
 
-				C_Vector3 vel = mParticles[i].direction.normalize() * mParticles[i].velocity;
-				C_Vector3 acc = mParticles[i].accel;
+				C_Vector3 vel = Particle.direction.normalize() * Particle.velocity;
+				C_Vector3 acc = Particle.accel;
 
-				float age = mParticles[i].age;
+				float age = Particle.age;
 
 				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
-				pos += mParticles[i].startPos + mParticles[i].startEmitterPos;
-				mParticles[i].pos = pos;
+				pos += Particle.startPos + Particle.startEmitterPos;
+				Particle.pos = pos;
 			}
+
+			counter++;
 		}
 
 		mLife += aTimeTick;
@@ -381,14 +385,14 @@ namespace C
 		float billboard = mParticleEffect->getBillbiarding();
 		float gradient = mParticleEffect->getGradienting();
 
-		for (auto i : mParticles)
+		for (auto Particle : mParticles)
 		{
-			if (i.active == true && i.age > 0)
+			if (Particle.active == true && Particle.age > 0)
 			{
-				float life = fmod(i.age, i.TTL);
-				C_Vector3 pos = i.pos;
+				float life = fmod(Particle.age, Particle.TTL);
+				C_Vector3 pos = Particle.pos;
 
-				float arr[8] = { pos.x, pos.y, pos.z, life, i.TTL, scaleOL, billboard, gradient };
+				float arr[8] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient };
 
 				mShader->setUniformArrayf("Unif", arr, 8);
 
@@ -402,12 +406,7 @@ namespace C
 	//Destructor
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
-		if (mBuf != nullptr)
-			delete mBuf;
-		if (mShader != nullptr)
-			delete mShader;
-
-		mParticles.clear();
+		mParticles.erase(mParticles.begin(), mParticles.end());
 	}
 
 }

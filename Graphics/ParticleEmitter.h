@@ -21,13 +21,14 @@
 
 #include <RenderAPI/Buffer.h>
 
-#include <System/System.h>
-#include <System/Timer.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Graphics/Camera.h>
 #include <Graphics/ParticleEffect.h>
+#include <System/System.h>
+#include <System/Timer.h>
+#include <System/Random.h>
 
 namespace C
 {
@@ -64,9 +65,6 @@ namespace C
 
 		C_Buffer* mBuf = NULL;
 		C_Buffer* mTBuf = NULL;
-
-		C_Timer tm;
-		C_Timer frame;
 
 		int mFrame = 0;
 

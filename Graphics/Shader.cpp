@@ -15,19 +15,33 @@ namespace C
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_Shader::C_Shader(const char* aVert, const char* aFrag)
+	C_Shader::C_Shader(std::string aVert, std::string aFrag)
 	{
 		load(aVert, aFrag);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 2
+	C_Shader::C_Shader(const char* aFile)
+	{
+
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 3
+	C_Shader::C_Shader()
+	{
+
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//Load shader from two files
-	void C_Shader::load(const char* aVert, const char* aFrag)
+	void C_Shader::load(std::string aVert, std::string aFrag)
 	{
 		GLuint program = glCreateProgram();
 		GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
 		GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		const char* vertSource = C_ReadFile(aVert);
-		const char* fragSource = C_ReadFile(aFrag);
+		const char* vertSource = C_ReadFile(aVert.c_str());
+		const char* fragSource = C_ReadFile(aFrag.c_str());
 
 		if(vertSource == nullptr)
 		{
@@ -86,8 +100,8 @@ namespace C
 		glBindAttribLocation(program, 3, "aTang");
 		glBindAttribLocation(program, 4, "aBitang");
 
-		for (int i = 0; i < mAttribNames.size(); i++)
-			glBindAttribLocation(program, mAttribValues[i], mAttribNames[i].c_str());
+		for (auto Attrib : mAttributes)
+			glBindAttribLocation(program, Attrib.value, Attrib.name.c_str());
 
 		glValidateProgram(program);
 
@@ -99,107 +113,66 @@ namespace C
 		C_Success("Shader loaded %s", aFrag);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Load shader from one file
-	C_Shader::C_Shader(const char* aFile)
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//Bind shader
+	void C_Shader::bind() const
 	{
-		/*const char* vertSource;
-		const char* fragSource;
-
-		C_ZIPFile zip(aFile);
-
-		std::string asdsa = aFile;
-		std::string vs = asdsa.substr(asdsa.find_last_of('/', asdsa.size()) + 1, asdsa.size() - 4);
-
-		for(int i = 0; i < 4; i++)
-			vs.pop_back();
-
-		vs += ".vert";
-
-		std::string fs = asdsa.substr(asdsa.find_last_of('/', asdsa.size()) + 1, asdsa.size() - 4);
-
-		for(int i = 0; i < 4; i++)
-			fs.pop_back();
-
-		fs += ".frag";
-
-
-		vertSource = zip.read(vs.c_str());
-		fragSource = zip.read(fs.c_str());
-
-		FILE* vsfile = fopen("vertex_shader_shd_vert_tmp", "wt");
-		fprintf(vsfile, "%s", vertSource);
-		fclose(vsfile);
-
-		FILE* fsfile = fopen("fragment_shader_shd_frag_tmp", "wt");
-		fprintf(fsfile, "%s", fragSource);
-		fclose(fsfile);
-
-		load("vertex_shader_shd_vert_tmp", "fragment_shader_shd_frag_tmp");
-		C_DeleteFile("vertex_shader_shd_vert_tmp");
-		C_DeleteFile("fragment_shader_shd_frag_tmp");
-
-		printf("\x1b[32;1mShader successfuly loaded: \x1b[0;1m%s\x1b[0m\n", aFile);*/
+		glUseProgram(mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Shader::addAttribute(const char* aName, const int aValue)
+	void C_Shader::addAttribute(std::string aName, const int aValue)
 	{
-		mAttribNames.push_back(aName);
-		mAttribValues.push_back((int)aValue);
+		mAttributes.emplace_back(aName, aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set integer uniform
-	void C_Shader::setUniform1i(const char* aName, const int aValue)
+	void C_Shader::setUniform1i(std::string aName, const int aValue) const
 	{
 		if(mID != 0)
-			glUniform1i(glGetUniformLocation(mID, aName), aValue);
+			glUniform1i(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set float uniform
-	void C_Shader::setUniform1f(const char* aName, const float aValue)
+	void C_Shader::setUniform1f(std::string aName, const float aValue) const
 	{
 		if(mID != 0)
-			glUniform1f(glGetUniformLocation(mID, aName), aValue);
+			glUniform1f(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set 2-axis vector uniform
-	void C_Shader::setUniform2f(const char* aName, const C_Vector2 aValue)
+	void C_Shader::setUniform2f(std::string aName, const C_Vector2 aValue) const
 	{
 		if(mID != 0)
-			glUniform2f(glGetUniformLocation(mID, aName), aValue.x, aValue.y);
+			glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set 3-axis vector uniform
-	void C_Shader::setUniform3f(const char* aName, const C_Vector3 aValue)
+	void C_Shader::setUniform3f(std::string aName, const C_Vector3 aValue) const
 	{
 		if(mID != 0)
-			glUniform3f(glGetUniformLocation(mID, aName), aValue.x, aValue.y, aValue.z);
+			glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set 3-axis vector uniform
-	void C_Shader::setUniform4f(const char* aName, const C_Vector4 aValue)
+	void C_Shader::setUniform4f(std::string aName, const C_Vector4 aValue) const
 	{
 		if(mID != 0)
-			glUniform4f(glGetUniformLocation(mID, aName), aValue.x, aValue.y, aValue.z, aValue.w);
+			glUniform4f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z, aValue.w);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set matrix uniform
-	void C_Shader::setUniformMatrix(const char* aName, const float* aValue)
+	void C_Shader::setUniformMatrix(std::string aName, const float* aValue) const
 	{
 		if(mID != 0)
-			glUniformMatrix4fv(glGetUniformLocation(mID, aName), 1, GL_FALSE, aValue);
+			glUniformMatrix4fv(glGetUniformLocation(mID, aName.c_str()), 1, GL_FALSE, aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set uniform array
-	void C_Shader::setUniformArrayf(const char* aName, const float aArray[], const size_t aSize)
+	void C_Shader::setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const
 	{
 		if (mID != 0)
-			glUniform1fv(glGetUniformLocation(mID, aName), aSize, aArray);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Bind shader
-	void C_Shader::bind()
-	{
-		glUseProgram(mID);
+			glUniform1fv(glGetUniformLocation(mID, aName.c_str()), aSize, aArray);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Unbind shader
@@ -207,6 +180,8 @@ namespace C
 	{
 		glUseProgram(0);
 	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_Shader::~C_Shader()
