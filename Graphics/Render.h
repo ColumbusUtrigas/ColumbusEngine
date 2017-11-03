@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -34,7 +34,7 @@ namespace Columbus
 		C_Skybox* mSkybox = nullptr;
 
 		C_Timer mFrameTimer;
-
+    
 		C_Shader* mNonePost = nullptr;
 		C_Shader* mNegativePost = nullptr;
 		C_Shader* mGaussianPost = nullptr;
