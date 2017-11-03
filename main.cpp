@@ -135,7 +135,6 @@ int main(int argc, char** argv)
 	input.showMouseCursor(false);
 
 	bool cursor = false;
-	
 
 	while (window.isOpen())
 	{

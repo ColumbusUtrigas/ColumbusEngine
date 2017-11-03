@@ -8,6 +8,8 @@
 *                   02.11.2017                  *
 *************************************************/
 
+#include <utility>
+
 #pragma once
 
 namespace Columbus
@@ -19,9 +21,24 @@ namespace Columbus
 	private:
 		T* mObj = nullptr;
 	public:
+		C_SmartPtr(const C_SmartPtr&) = delete;
+
 		C_SmartPtr(T* aObj) :
 			mObj(aObj)
 		{}
+
+		C_SmartPtr(C_SmartPtr&& aOther)
+		{
+			std::swap(mObj, aOther.mObj);
+		}
+
+		C_SmartPtr& operator=(const C_SmartPtr&) = delete;
+
+		C_SmartPtr& operator=(C_SmartPtr&& aOther)
+		{
+			std::swap(mObj, aOther.mObj);
+			return *this;
+		}
 
 		T& operator->()
 		{
@@ -40,8 +57,7 @@ namespace Columbus
 
 		~C_SmartPtr()
 		{
-			if (mObj != nullptr)
-				delete mObj;
+			delete mObj;
 		}
 	};
 
