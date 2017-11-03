@@ -10,7 +10,7 @@
 
 #include <Impl/EventSystem.h>
 
-namespace C
+namespace Columbus
 {
 
 	/*#ifdef C_SDL
@@ -194,16 +194,13 @@ namespace C
 	//Poll all events
 	void C_EventSystem::pollEvents()
 	{
-		for (size_t i = 0; i < mWindows.size(); i++)
-			mWindows[i]->SYS_CLEAR_INPUT();
-
 		while(SDL_PollEvent(&mEvent))
 		{
 			if(mEvent.type == SDL_QUIT)
 				mQuit = true;
 
-			for(int i = 0; i < mWindows.size(); i++)
-				mWindows[i]->pollEvent(mEvent);
+			for(auto i : mWindows)
+				i->pollEvent(mEvent);
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////

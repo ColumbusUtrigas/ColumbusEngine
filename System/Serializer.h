@@ -15,7 +15,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 
-namespace C
+namespace Columbus
 {
 
   namespace Serializer

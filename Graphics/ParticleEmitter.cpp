@@ -10,7 +10,7 @@
 
 #include <Graphics/ParticleEmitter.h>
 
-namespace C
+namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@ namespace C
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
 			C_Particle p;
-			p.TTL = C_RandomBetween(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			p.velocity = C_RandomBetween(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			p.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+			p.velocity = C_Random::range(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.startPos = mParticleEffect->getPos();
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
@@ -37,8 +37,8 @@ namespace C
 			{
 				case C_PARTICLE_SHAPE_CIRCLE:
 				{
-					float ang = C_RandomBetween(0.0, 6.283185318);
-					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
+					float ang = C_Random::range(0.0, 6.283185318);
+					float rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
 
 					if (mParticleEffect->getEmitFromShell() == true)
 						rad = mParticleEffect->getParticleShapeRadius();
@@ -53,9 +53,9 @@ namespace C
 
 				case C_PARTICLE_SHAPE_SPHERE:
 				{
-					float rad = C_RandomBetween(0.0, mParticleEffect->getParticleShapeRadius());
-					float phi = C_RandomBetween(0.0, 6.283185318);
-					float tht = C_RandomBetween(0.0, 3.141592659);
+					float rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
+					float phi = C_Random::range(0.0, 6.283185318);
+					float tht = C_Random::range(0.0, 3.141592659);
 
 					if (mParticleEffect->getEmitFromShell() == true)
 						rad = mParticleEffect->getParticleShapeRadius();
@@ -112,8 +112,117 @@ namespace C
 		std::sort(mParticles.begin(), mParticles.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::update(float aTimeTick)
+	{
+		float transformation = mParticleEffect->getTransformation();
+		C_Vector3 constForce = mParticleEffect->getConstantForce();
+		C_Vector3 startEmitterPos = mParticleEffect->getPos();
+
+		float rate = mParticleEffect->getEmitRate();
+		float count = mParticleEffect->getParticlesCount();
+		float fireT = 1.0 / rate;
+		float spawnT = count * fireT;
+
+		if (count <= rate * mMaxTTL)
+			spawnT = mMaxTTL;
+
+		float a = mLife;
+
+		int counter = 0;
+
+		for (auto& Particle : mParticles)
+		{
+			float e = min(Particle.TTL, fireT) * counter;
+			Particle.age = fmod(e + a, spawnT);
+
+			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+				Particle.startEmitterPos = startEmitterPos;
+			else
+				if ((Particle.age / Particle.TTL) <= aTimeTick)
+					Particle.startEmitterPos = startEmitterPos;
+
+			Particle.active = (Particle.age <= Particle.TTL);
+
+
+			if (Particle.active == true && Particle.age > 0)
+			{
+				float life = fmod(Particle.age, Particle.TTL);
+
+				C_Vector3 vel = Particle.direction.normalize() * Particle.velocity;
+				C_Vector3 acc = Particle.accel;
+
+				float age = Particle.age;
+
+				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				pos += Particle.startPos + Particle.startEmitterPos;
+				Particle.pos = pos;
+			}
+
+			counter++;
+		}
+
+		mLife += aTimeTick;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setBuffers()
+	{
+		mBuf->bind();
+		C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(0);
+		mTBuf->bind();
+		C_VertexAttribPointerOpenGL(1, 2, C_OGL_FLOAT, C_OGL_FALSE, 2 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(1);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setUniforms()
+	{
+		mShader->setUniform3f("uPos", C_Vector3(0, 0, 0));
+		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
+		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
+		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
+		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
+		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
+
+		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
+		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
+
+		if (mParticleEffect->getMaterial() == nullptr)
+			mShader->setUniform4f("uColor", C_Vector4(1, 1, 1, 1));
+		else
+			mShader->setUniform4f("uColor", mParticleEffect->getMaterial()->getColor());
+
+		if (mParticleEffect->getMaterial() != nullptr)
+		{
+			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
+			C_BindTextureOpenGL(C_OGL_TEXTURE0, 0);
+
+			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
+			{
+				mShader->setUniform1i("uTex", 0);
+				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
+			}
+
+			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::unbindAll()
+	{
+		if (mParticleEffect->getAdditive())
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
+
+		C_EnableDepthMaskOpenGL();
+
+		C_Shader::unbind();
+		C_Texture::unbind();
+		C_Buffer::unbind();
+
+		C_CloseStreamOpenGL(0);
+		C_CloseStreamOpenGL(1);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
-	void C_ParticleEmitter::draw()
+	/*void C_ParticleEmitter::draw()
 	{
 		using namespace std;
 
@@ -168,14 +277,6 @@ namespace C
 			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 
-		if (mFrame >= 10)
-		{
-			//sort();
-			mFrame = 0;
-		}
-
-		mFrame++;
-
 		C_DisableDepthMaskOpenGL();
 
 		if (mParticleEffect->getAdditive())
@@ -197,11 +298,10 @@ namespace C
 		if (count <= rate * mMaxTTL)
 			spawnT = mMaxTTL;
 
-		a = fmod(a, spawnT);
+		a = fmod(mLife, spawnT);
 
 		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
-			//float e = mParticles[i].TTL / mParticleEffect->getParticlesCount();
 			float e = min(mParticles[i].TTL, fireT) * i;
 			mParticles[i].age = fmod(e + a, spawnT);
 
@@ -229,13 +329,10 @@ namespace C
 
 				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, scaleOL, billboard, gradient};
 
-				//mShader->setUniform4f("uPosition", set);
 				mShader->setUniformArrayf("Unif", arr, 8);
 
 				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
 			}
-
-			//mParticles[i].age += frame.elapsed();
 		}
 
 		if (mLife >= mMaxTTL)
@@ -255,17 +352,61 @@ namespace C
 
 		C_CloseStreamOpenGL(0);
 		C_CloseStreamOpenGL(1);
+	}*/
+	//////////////////////////////////////////////////////////////////////////////
+	//Draw particles
+	void C_ParticleEmitter::draw(float aTimeTick)
+	{
+		update(aTimeTick);
+
+		if (mParticleEffect == nullptr)
+			return;
+		if (mShader == nullptr)
+			return;
+		if (mBuf == nullptr)
+			return;
+		if (mTBuf == nullptr)
+			return;
+		if (mParticleEffect->getVisible() == false)
+			return;
+
+		setBuffers();
+
+		mShader->bind();
+
+		setUniforms();
+
+		C_DisableDepthMaskOpenGL();
+
+		if (mParticleEffect->getAdditive())
+			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
+
+		float scaleOL = mParticleEffect->getScaleOverLifetime();
+		float billboard = mParticleEffect->getBillbiarding();
+		float gradient = mParticleEffect->getGradienting();
+
+		for (auto Particle : mParticles)
+		{
+			if (Particle.active == true && Particle.age > 0)
+			{
+				float life = fmod(Particle.age, Particle.TTL);
+				C_Vector3 pos = Particle.pos;
+
+				float arr[8] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient };
+
+				mShader->setUniformArrayf("Unif", arr, 8);
+
+				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
+			}
+		}
+
+		unbindAll();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
-		if (mBuf != nullptr)
-			delete mBuf;
-		if (mShader != nullptr)
-			delete mShader;
-
-		mParticles.clear();
+		mParticles.erase(mParticles.begin(), mParticles.end());
 	}
 
 }

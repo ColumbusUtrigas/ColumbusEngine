@@ -12,7 +12,7 @@
 
 #include <chrono>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Timer

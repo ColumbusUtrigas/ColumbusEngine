@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <array>
 #include <vector>
 #include <string>
 #include <GL/glew.h>
@@ -19,7 +20,7 @@
 #include <Graphics/Texture.h>
 #include <System/Console.h>
 
-namespace C
+namespace Columbus
 {
 
 	#define C_CubemapPath std::vector<std::string>
@@ -32,7 +33,7 @@ namespace C
 		bool mInited = false;
 	public:
 		//Constructor
-		C_Cubemap(C_CubemapPath aPath);
+		C_Cubemap(std::array<std::string, 6> aPath);
 		//Bind cubemap
 		void bind();
 		//Create sampler and bind cubemap

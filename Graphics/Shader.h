@@ -21,44 +21,55 @@
 #include <System/System.h>
 #include <System/Console.h>
 
-namespace C
+namespace Columbus
 {
+
+	struct C_ShaderAttribute
+	{
+		std::string name;
+		int value;
+
+		C_ShaderAttribute(const std::string aName, const int aValue) :
+			name(aName), value(aValue) {}
+	};
 
 	class C_Shader
 	{
 	private:
 		unsigned int mID;
-		std::vector<std::string> mAttribNames;
-		std::vector<int> mAttribValues;
+		std::vector<C_ShaderAttribute> mAttributes;
+
 		//Load shader from one file
 		void load(const char* aFile);
 	public:
 		//Constructor
-		C_Shader(const char* aVert, const char* aFrag);
+		C_Shader(std::string aVert, std::string aFrag);
 		//Constructor 2
 		C_Shader(const char* aFile);
 		//Constructor 3
-		C_Shader() {}
+		C_Shader();
+
 		//Load shader from two files
-		void load(const char* aVert, const char* aFrag);
-		//Add vertex attribute
-		void addAttribute(const char* aName, const int aValue);
-		//Set integer uniform
-		void setUniform1i(const char* aName, const int aValue);
-		//Set float uniform
-		void setUniform1f(const char* aName, const float aValue);
-		//Set 2-axis vector uniform
-		void setUniform2f(const char* aName, const C_Vector2 aValue);
-		//Set 3-axis vector uniform
-		void setUniform3f(const char* aName, const C_Vector3 aValue);
-		//Set 4-axis vector uniform
-		void setUniform4f(const char* aName, const C_Vector4 aValue);
-		//Set matrix uniform
-		void setUniformMatrix(const char* aName, const float* aValue);
-		//Set uniform array
-		void setUniformArrayf(const char* aName, const float aArray[], const size_t aSize);
+		void load(std::string aVert, std::string aFrag);
+
 		//Bind shader
-		void bind();
+		void bind() const;
+		//Add vertex attribute
+		void addAttribute(std::string aName, const int aValue);
+		//Set integer uniform
+		void setUniform1i(std::string aName, const int aValue) const;
+		//Set float uniform
+		void setUniform1f(std::string aName, const float aValue) const;
+		//Set 2-axis vector uniform
+		void setUniform2f(std::string aName, const C_Vector2 aValue) const;
+		//Set 3-axis vector uniform
+		void setUniform3f(std::string aName, const C_Vector3 aValue) const;
+		//Set 4-axis vector uniform
+		void setUniform4f(std::string aName, const C_Vector4 aValue) const;
+		//Set matrix uniform
+		void setUniformMatrix(std::string aName, const float* aValue) const;
+		//Set uniform array
+		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
 		//Unbind shader
 		static void unbind();
 		//Destructor

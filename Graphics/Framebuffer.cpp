@@ -10,7 +10,7 @@
 
 #include <Graphics/Framebuffer.h>
 
-namespace C
+namespace Columbus
 {
 
   C_Framebuffer::C_Framebuffer()

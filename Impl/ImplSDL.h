@@ -5,13 +5,10 @@
 *               COLUMBUS ENGINE                 *
 *************************************************
 *             Nikolay(Columbus) Red             *
-*                   20.07.2017                  *
+*                   31.10.2017                  *
 *************************************************/
 
 #pragma once
-
-#ifndef IMPLSDL_H
-#define IMPLSDL_H
 
 #include <cstdio>
 #include <SDL.h>
@@ -22,8 +19,42 @@
 #include <System/Console.h>
 #include <System/Timer.h>
 
-namespace C
+namespace Columbus
 {
+
+	enum C_MessageBoxType;
+	enum C_MessageBoxButtonFlag;
+	struct C_MessageBoxButton;
+	struct C_SDLWindowConfig;
+	class C_SDLWindow;
+
+	//Show simple message box, modal of window
+	void C_ShowMessageBox(C_MessageBoxType aType, std::string aTitle,
+		std::string aMessage, C_SDLWindow* aWindow);
+	//Show complex message box, modal of window
+	void C_ShowMessageBox(C_MessageBoxType aType, std::string aTitle,
+		std::string aMessage, C_SDLWindow* aWindow,
+		std::vector<C_MessageBoxButton> aButtons, int* aID);
+
+	enum C_MessageBoxType
+	{
+		C_MB_INFO,
+		C_MB_WARNING,
+		C_MB_ERROR
+	};
+
+	enum C_MessageBoxButtonFlag
+	{
+		C_MB_BUTTON_RETURN_KEY,
+		C_MB_BUTTON_ESCAPE_KEY,
+	};
+
+	struct C_MessageBoxButton
+	{
+		unsigned int flag;
+		int id;
+		const char* text;
+	};
 
 	struct C_SDLWindowConfig
 	{
@@ -31,7 +62,7 @@ namespace C
 		bool Fullscreen = false;
 		int Width = 640;
 		int Height = 480;
-		char* Title = (char*)"Columbus Engine";
+		std::string Title = "Columbus Engine";
 	};
 
 	class C_SDLWindow
@@ -42,21 +73,16 @@ namespace C
 
 		bool mClosed = false;
 
-		bool keyFocus = false;
-		bool mouseFocus = false;
-		bool shown = false;
-		bool minimized = false;
+		bool mKeyFocus = false;
+		bool mMouseFocus = false;
+		bool mShown = false;
+		bool mMinimized = false;
 
 		C_Timer mDrawTime;
 		unsigned mFPSLimit = 60;
-		float mTimeToDraw = 1.0 / (float)mFPSLimit;
+		float mTimeToDraw = 1.0 / static_cast<float>(mFPSLimit);
 		float mRedrawTime = 0.0;
 		int mFPS = 0;
-
-		Uint8* keys;
-
-		bool keydown[256];
-		bool keyup[256];
 
 		SDL_Event mTmpEvent;
 
@@ -71,60 +97,53 @@ namespace C
 	public:
 		//Constructor
 		C_SDLWindow(C_SDLWindowConfig aConfig);
-		//Clear input
-		void SYS_CLEAR_INPUT();
 		//Poll window events
 		void pollEvent(SDL_Event& aEvent);
 		//Clear window
 		void clear(float r, float g, float b, float a);
 		//Display window
 		void display();
-		//Return window size
-		void getSize(int* aX, int* aY);
-		//Return window size
-		C_Vector2 getSize();
-		//Return mouse position
-		void getMousePos(int* aX, int* aY);
-		//Return mouse position
-		C_Vector2 getMousePos();
-		//Return global mouse position
-		void getMousePosGlobal(int* aX, int* aY);
-		//Return global mouse position
-		C_Vector2 getMousePosGlobal();
-		//Return window aspect
-		float aspect();
-		//Return window open
-		bool isOpen();
-		//Return key-focus in window
-		bool isKeyFocus();
-		//return window mouse-focus
-		bool isMouseFocus();
-		//Return window shown
-		bool isShown();
-		//Return window minimized
-		bool isMinimized();
-		//Return key-press in window
-		bool getKey(int aKey);
-		//Return key-down in window
-		bool getKeyDown(int aKey);
-		//Return key-up in window
-		bool getKeyUp(int aKey);
-		//Return mouse-button-press in window
-		bool getMouseButton(int aButton);
+
 		//Set vertical sync
 		void setVerticalSync(bool aV);
 		//Set FPS limit
 		void setFPSLimit(unsigned aFPSLimit);
+
+		//Return window size
+		void getSize(int* aX, int* aY);
+		//Return window size
+		C_Vector2 getSize();
+		//Return window aspect
+		float aspect();
+		//Return SDL_Window handle
+		SDL_Window* getHandle();
+		//Return mouse-button-press in window
+		bool getMouseButton(int aButton);
 		//Return FPS limit
 		unsigned getFPSLimit();
 		//Return redraw time
 		float getRedrawTime();
 		//Return FPS;
 		int getFPS();
+		
+		//Return window open
+		bool isOpen();
+		//Return key-focus in window
+		bool isKeyFocus();
+		//Return mouse-focus in window
+		bool isMouseFocus();
+		//Return window shown
+		bool isShown();
+		//Return window minimized
+		bool isMinimized();
+		
 		//Destructor
 		~C_SDLWindow();
 	};
 
 }
 
-#endif
+
+
+
+

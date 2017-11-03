@@ -16,7 +16,7 @@
 
 #include <Impl/ImplSDL.h>
 
-namespace C
+namespace Columbus
 {
 
 	/*#ifdef C_SDL

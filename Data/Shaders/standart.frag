@@ -53,13 +53,15 @@ void main(void)
 {
 	Init();
 
-	//for (int i = 0; i < 2; i++)
-		//Light(i);
 
 	Light(0);
 	Light(1);
 	Light(2);
 	Light(3);
+	Light(4);
+	Light(5);
+	Light(6);
+	Light(7);
 	
 	Cubemap();
 
@@ -127,13 +129,17 @@ void Light(int id)
 	float spec = pow(max(0.0, dot(viewDir, reflect)), 32);
 	vec3 specular = MaterialSpecular * LightColor * spec * 0.5;
 
-	AmbientColor += MaterialAmbient * LightColor * vec3(MaterialColor);
-	DiffuseColor += LightColor * MaterialDiffuse * diff * MaterialColor.xyz;
+	vec3 tmpAmbient = vec3(0);
+	vec3 tmpDiffuse = vec3(0);
+	vec3 tmpSpecular = vec3(0);
+
+	tmpAmbient = MaterialAmbient * LightColor * vec3(MaterialColor);
+	tmpDiffuse = LightColor * MaterialDiffuse * diff * MaterialColor.xyz;
 	
 	if (IsSpecularMap)
-		SpecularColor += specular * MaterialSpecular * MaterialColor.xyz * SpecularMap;
+		tmpSpecular = specular * MaterialSpecular * MaterialColor.xyz * SpecularMap;
 	else
-		SpecularColor += specular * MaterialSpecular * MaterialColor.xyz;
+		tmpSpecular = specular * MaterialSpecular * MaterialColor.xyz;
 
 	if (int(LightType) > 0)
 	{
@@ -142,10 +148,14 @@ void Light(int id)
 							LightLinear * distance +
 							LightQuadratic * (distance * distance));
 
-		AmbientColor *= attenuation;
-		DiffuseColor *= attenuation;
-		SpecularColor *= attenuation;
+		tmpAmbient *= attenuation;
+		tmpDiffuse *= attenuation;
+		tmpSpecular *= attenuation;
 	}
+
+	AmbientColor += tmpAmbient;
+	DiffuseColor += tmpDiffuse;
+	SpecularColor += tmpSpecular;
 }
 
 void Cubemap(void)

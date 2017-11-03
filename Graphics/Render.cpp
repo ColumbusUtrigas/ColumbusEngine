@@ -10,7 +10,7 @@
 
 #include <Graphics/Render.h>
 
-namespace C
+namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -107,21 +107,21 @@ namespace C
 	//Prepare scene to rendering
 	void C_Render::prepareScene()
 	{
-		for (size_t i = 0; i < mMeshes.size(); i++)
+		for (auto i : mMeshes)
 		{
 			if (mCamera != nullptr)
-				if (mMeshes[i] != nullptr)
+				if (i != nullptr)
 				{
-					mMeshes[i]->setCamera(*mCamera);
-					mMeshes[i]->setLights(mLights);
+					i->setCamera(*mCamera);
+					i->setLights(mLights);
 				}
 		}
 
-		for (size_t i = 0; i < mParticleEmitters.size(); i++)
+		for (auto i : mParticleEmitters)
 		{
 			if (mCamera != nullptr)
-				if (mParticleEmitters[i] != nullptr)
-					mParticleEmitters[i]->setCameraPos(mCamera->pos());
+				if (i != nullptr)
+					i->setCameraPos(mCamera->pos());
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -131,13 +131,15 @@ namespace C
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (size_t i = 0; i < mMeshes.size(); i++)
-			if (mMeshes[i] != nullptr)
-				mMeshes[i]->draw();
+		for (auto i : mMeshes)
+			if (i != nullptr)
+				i->draw();
 
-		for (size_t i = 0; i < mParticleEmitters.size(); i++)
-			if (mParticleEmitters[i] != nullptr)
-				mParticleEmitters[i]->draw();
+		for (auto i : mParticleEmitters)
+			if (i != nullptr)
+				i->draw(mFrameTimer.elapsed());
+
+		mFrameTimer.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

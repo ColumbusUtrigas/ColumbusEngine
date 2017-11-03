@@ -34,7 +34,7 @@ typedef tinyxml2::XMLNode C_XMLNode;
 typedef tinyxml2::XMLElement C_XMLElement;
 #define C_XML_SUCCESS tinyxml2::XML_SUCCESS
 
-namespace C
+namespace Columbus
 {
 
 	//Return current Operating System
