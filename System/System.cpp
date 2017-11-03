@@ -106,10 +106,10 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Delete file
-	bool C_DeleteFile(const char* aPath)
+	bool C_DeleteFile(std::string aPath)
 	{
 		int r; //Result var
-		r = remove(aPath);
+		r = remove(aPath.c_str());
 		if (r == 0)
 			return true;
 		else
@@ -120,19 +120,19 @@ namespace Columbus
 	{
 		int r; //Result var
 		#ifdef _WIN32
-				//r = _mkdir(aPath); //WIN32 Folder Creating
+			//r = _mkdir(aPath); //WIN32 Folder Creating
 
-				LPCWSTR str;
-				const size_t cSize = strlen(aPath) + 1;
-				wchar_t* wc = new wchar_t[cSize];
-				mbstowcs(wc, aPath, cSize);
-				str = wc;
+			LPCWSTR str;
+			const size_t cSize = strlen(aPath) + 1;
+			wchar_t* wc = new wchar_t[cSize];
+			mbstowcs(wc, aPath, cSize);
+			str = wc;
 
 
-				//LPSECURITY_ATTRIBUTES atr = 4555;
-				//r = CreateDirectory(str, atr);
+			//LPSECURITY_ATTRIBUTES atr = 4555;
+			//r = CreateDirectory(str, atr);
 		#else
-				r = mkdir(aPath, 4555); //UNIX Folder Creating
+			r = mkdir(aPath, 4555); //UNIX Folder Creating
 		#endif
 		if (r == 0)
 			return true;
