@@ -10,18 +10,14 @@
 
 #pragma once
 
-#include <cstdio>
 #include <FreeImage.h>
-#include <GL/glew.h>
-#include <SDL.h>
-#include <cstring>
 
 #include <System/System.h>
 #include <System/Console.h>
 #include <RenderAPI/APIOpenGL.h>
 #include <Math/Vector2.h>
 
-namespace C
+namespace Columbus
 {
 
 	//Load image from file
@@ -40,10 +36,10 @@ namespace C
 	class C_Texture
 	{
 	private:
-		FIBITMAP* mBuffer = NULL;
-		unsigned int mID;
+		uint8_t* mBuffer = nullptr;
+		unsigned int mID = 0;
 
-		char* mFile = NULL;
+		std::string mFile;
 
 		C_TextureConfig mConfig;
 
@@ -54,19 +50,17 @@ namespace C
 		//Constructor
 		C_Texture();
 		//Constructor 2
-		C_Texture(const char* aPath, bool aSmooth = true);
+		C_Texture(std::string aPath, bool aSmooth = true);
 		//Constructor 3
 		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load textures from file
-		void load(const char* aPath, bool aSmooth = true);
+		void load(std::string aPath, bool aSmooth = true);
 		//Load texture from memory
 		void loadFromMemory(const char* aData, size_t aSize, bool aSmooth = true);
 		//Load texture from raw data
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load depth texture from raw data
 		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		//Reload texture
-		void reload();
 		//Set texture config
 		void setConfig(C_TextureConfig aConfig);
 		//Set texture smooth
@@ -79,7 +73,7 @@ namespace C
 		//Return texture size
 		size_t getSize();
 		//Save texture to file
-		void save(const char* aFile);
+		void save(std::string aFile);
 		//Bind texture
 		void bind();
 		//Unbind texture

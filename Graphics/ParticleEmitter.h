@@ -21,15 +21,16 @@
 
 #include <RenderAPI/Buffer.h>
 
-#include <System/System.h>
-#include <System/Timer.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Graphics/Camera.h>
 #include <Graphics/ParticleEffect.h>
+#include <System/System.h>
+#include <System/Timer.h>
+#include <System/Random.h>
 
-namespace C
+namespace Columbus
 {
 
 	struct C_Particle
@@ -65,9 +66,6 @@ namespace C
 		C_Buffer* mBuf = NULL;
 		C_Buffer* mTBuf = NULL;
 
-		C_Timer tm;
-		C_Timer frame;
-
 		int mFrame = 0;
 
 		float mLife = 0.0;
@@ -97,6 +95,10 @@ namespace C
 			1.0, 1.0
 		};
 		void sort();
+		void update(float aTimeTick);
+		void setBuffers();
+		void setUniforms();
+		void unbindAll();
 
 	public:
 		//Constructor
@@ -106,7 +108,8 @@ namespace C
 		//Set camera pos
 		void setCameraPos(C_Vector3 aC);
 		//Draw particles
-		void draw();
+		//void draw();
+		void draw(float aTimeTick);
 		//Destructor
 		~C_ParticleEmitter();
 	};

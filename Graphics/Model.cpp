@@ -10,7 +10,7 @@
 
 #include <Graphics/Model.h>
 
-namespace C
+namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -92,8 +92,8 @@ namespace C
 	//Constructor 2
 	C_Mesh::C_Mesh(std::string aFile)
 	{
-		Importer::C_Importer importer;
-		if(importer.load(aFile))
+		Import::C_ImporterModel importer;
+		if(importer.loadOBJ(aFile))
 		{
 
 		}
@@ -376,7 +376,7 @@ namespace C
 			C_Vector3 q = a->getPos();
 			C_Vector3 w = b->getPos();
 
-			return q.length(pos) > w.length(pos);
+			return q.length(pos) < w.length(pos);
 		};
 
 		std::sort(mLights.begin(), mLights.end(), func);

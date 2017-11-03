@@ -12,8 +12,9 @@
 
 #include <cmath>
 #include <glm/glm.hpp>
+#include <System/Random.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Vector3
@@ -67,6 +68,12 @@ namespace C
 			return C_Vector3(x - aOther.x, y - aOther.y, z - aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator -
+		inline C_Vector3 operator-()
+		{
+			return C_Vector3(-x, -y, -z);
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
 		inline C_Vector3 operator*(const C_Vector3 aOther)
 		{
@@ -85,20 +92,26 @@ namespace C
 			return C_Vector3(x / aOther.x, y / aOther.y, z / aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator /
+		inline C_Vector3 operator/(const float aOther)
+		{
+			return C_Vector3(x / aOther, y / aOther, z / aOther);
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
-		inline bool operator==(C_Vector3 aOther)
+		inline bool operator==(const C_Vector3 aOther)
 		{
 			return (x == aOther.x && y == aOther.y && z == aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator !=
-		inline bool operator!=(C_Vector3 aOther)
+		inline bool operator!=(const C_Vector3 aOther)
 		{
 			return (x != aOther.x && y != aOther.y && z != aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator +=
-		inline C_Vector3 operator+=(C_Vector3 aOther)
+		inline C_Vector3 operator+=(const C_Vector3 aOther)
 		{
 			x += aOther.x;
 			y += aOther.y;
@@ -107,7 +120,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -=
-		inline C_Vector3 operator-=(C_Vector3 aOther)
+		inline C_Vector3 operator-=(const C_Vector3 aOther)
 		{
 			x -= aOther.x;
 			y -= aOther.y;
@@ -116,7 +129,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		inline C_Vector3 operator*=(C_Vector3 aOther)
+		inline C_Vector3 operator*=(const C_Vector3 aOther)
 		{
 			x *= aOther.x;
 			y *= aOther.y;
@@ -125,7 +138,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
-		inline C_Vector3 operator/=(C_Vector3 aOther)
+		inline C_Vector3 operator/=(const C_Vector3 aOther)
 		{
 			x /= aOther.x;
 			y /= aOther.y;
@@ -133,13 +146,22 @@ namespace C
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator /=
+		inline C_Vector3 operator/=(const float aOther)
+		{
+			x /= aOther;
+			y /= aOther;
+			z /= aOther;
+			return *this;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Return random from two vectors
-		inline static C_Vector3 random(C_Vector3 aMin, C_Vector3 aMax)
+		inline static C_Vector3 random(const C_Vector3 aMin, const C_Vector3 aMax)
 		{
 			C_Vector3 ret;
-			ret.x = aMin.x + (float)(rand()) / ((float)(RAND_MAX / (aMax.x - aMin.x)));
-			ret.y = aMin.y + (float)(rand()) / ((float)(RAND_MAX / (aMax.y - aMin.y)));
-			ret.z = aMin.z + (float)(rand()) / ((float)(RAND_MAX / (aMax.z - aMin.z)));
+			ret.x = C_Random::range(aMin.x, aMax.x);
+			ret.y = C_Random::range(aMin.y, aMax.y);
+			ret.z = C_Random::range(aMin.z, aMax.z);
 			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -150,7 +172,7 @@ namespace C
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return length between 2 vectors
-		inline float length(C_Vector3 aVec)
+		inline float length(const C_Vector3 aVec)
 		{
 			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2) + pow(aVec.z - z, 2));
 		}

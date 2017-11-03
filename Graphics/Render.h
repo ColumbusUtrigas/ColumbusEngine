@@ -19,8 +19,9 @@
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/PostEffect.h>
 #include <RenderAPI/APIOpenGL.h>
+#include <System/Timer.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Render
@@ -32,6 +33,8 @@ namespace C
 		C_Camera* mCamera = nullptr;
 		C_Skybox* mSkybox = nullptr;
 
+		C_Timer mFrameTimer;
+    
 		C_Shader* mNonePost = nullptr;
 		C_Shader* mNegativePost = nullptr;
 		C_Shader* mGaussianPost = nullptr;

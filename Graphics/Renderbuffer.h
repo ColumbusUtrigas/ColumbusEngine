@@ -15,33 +15,33 @@
 #include <System/System.h>
 #include <System/Console.h>
 
-namespace C
+namespace Columbus
 {
 
-  enum C_RENDERBUFFER_FORMAT
-  {
-    C_RENDERBUFFER_DEPTH_16,
-    C_RENDERBUFFER_DEPTH_24,
-    C_RENDERBUFFER_DEPTH_32,
-    C_RENDERBUFFER_DEPTH_24_STENCIL_8
-  };
+	enum C_RENDERBUFFER_FORMAT
+	{
+		C_RENDERBUFFER_DEPTH_16,
+		C_RENDERBUFFER_DEPTH_24,
+		C_RENDERBUFFER_DEPTH_32,
+		C_RENDERBUFFER_DEPTH_24_STENCIL_8
+	};
 
-  class C_Renderbuffer
-  {
-  private:
-    unsigned int mID;
-  public:
-    C_Renderbuffer();
+	class C_Renderbuffer
+	{
+	private:
+		unsigned int mID;
+	public:
+		C_Renderbuffer();
 
-    void bind();
+		void bind();
 
-    void storage(C_RENDERBUFFER_FORMAT aFormat, const int aWidth, const int aHeight);
+		void storage(C_RENDERBUFFER_FORMAT aFormat, const int aWidth, const int aHeight);
 
-    static void unbind();
+		static void unbind();
 
-    unsigned int getID();
+		unsigned int getID();
 
-    ~C_Renderbuffer();
-  };
+		~C_Renderbuffer();
+	};
 
 }

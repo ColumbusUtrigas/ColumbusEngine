@@ -24,7 +24,7 @@
 #include <Math/Vector4.h>
 #include <System/System.h>
 
-namespace C
+namespace Columbus
 {
 
 	//Return projection matrix

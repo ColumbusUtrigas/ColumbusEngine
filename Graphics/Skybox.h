@@ -16,14 +16,14 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 
-namespace C
+namespace Columbus
 {
 
 	class C_Skybox
 	{
 	private:
-		C_Buffer* mBuf = NULL;
-		C_Shader* mShader = NULL;
+		C_Buffer* mBuf = nullptr;
+		C_Shader* mShader = nullptr;
 
 		//Vertex buffer
 		float skyboxVertices[108] =
@@ -71,7 +71,7 @@ namespace C
 			1.0f, -1.0f,  1.0f
 		};
 	public:
-		C_Cubemap* mCubemap = NULL;
+		C_Cubemap* mCubemap = nullptr;
 		//Constructor
 		C_Skybox() {}
 		//Constructor 2

@@ -14,32 +14,30 @@
 
 #include <Graphics/Texture.h>
 
-namespace C
+namespace Columbus
 {
 
-  class C_TextureManager
-  {
-  private:
-    bool mSmooth = true;
-    bool mMipmaps = true;
-    unsigned int mAnisotropy = 8;
+	class C_TextureManager
+	{
+	private:
+		bool mSmooth = true;
+		bool mMipmaps = true;
+		unsigned int mAnisotropy = 8;
 
-    std::list<C_Texture*> mTextures;
+		std::list<C_Texture*> mTextures;
 
-    size_t mSize = 0;
-  public:
-    //Constructor
-    inline C_TextureManager() {}
-    //Add texture
-    void add(C_Texture* aTexture);
-    //Set texture config
-    void setConfig(C_TextureConfig aConfig);
-    //Reload all textures
-    void reloadAll();
-    //Get images size
-    size_t size();
-    //Destructor
-    inline ~C_TextureManager() {}
-  };
+		size_t mSize = 0;
+	public:
+		//Constructor
+		C_TextureManager();
+		//Add texture
+		void add(C_Texture* aTexture);
+		//Set texture config
+		void setConfig(C_TextureConfig aConfig);
+		//Get images size
+		size_t size();
+		//Destructor
+		~C_TextureManager();
+	};
 
 }

@@ -10,7 +10,7 @@
 
 #include <Graphics/Camera.h>
 
-namespace C
+namespace Columbus
 {
 
 	static glm::mat4 PROJECTION_MATRIX;
