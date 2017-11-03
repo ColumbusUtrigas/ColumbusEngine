@@ -34,7 +34,7 @@ namespace Columbus
 		C_Skybox* mSkybox = nullptr;
 
 		C_Timer mFrameTimer;
-
+    
 		C_Shader* mNonePost = nullptr;
 		C_Shader* mNegativePost = nullptr;
 		C_Shader* mGaussianPost = nullptr;
