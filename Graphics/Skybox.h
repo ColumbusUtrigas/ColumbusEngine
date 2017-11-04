@@ -24,6 +24,7 @@ namespace Columbus
 	private:
 		C_Buffer* mBuf = nullptr;
 		C_Shader* mShader = nullptr;
+		C_Cubemap* mCubemap = nullptr;
 
 		//Vertex buffer
 		float skyboxVertices[108] =
@@ -71,7 +72,6 @@ namespace Columbus
 			1.0f, -1.0f,  1.0f
 		};
 	public:
-		C_Cubemap* mCubemap = nullptr;
 		//Constructor
 		C_Skybox() {}
 		//Constructor 2

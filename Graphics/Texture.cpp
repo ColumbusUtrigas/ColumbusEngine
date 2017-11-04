@@ -27,6 +27,7 @@ namespace Columbus
 		imagen = temp;
 
 		char* bits = (char*)FreeImage_GetBits(imagen);
+
 		*aWidth = FreeImage_GetWidth(imagen);
 		*aHeight = FreeImage_GetHeight(imagen);
 
@@ -83,6 +84,8 @@ namespace Columbus
 		if (!imagen) { C_Error("Can't convert image to 32 Bits: %s", aPath); return; }
 		FreeImage_Unload(imagen);
 		imagen = temp;
+
+		mBitmap = imagen;
 
 		mBuffer = FreeImage_GetBits(imagen);
 
@@ -315,6 +318,8 @@ namespace Columbus
 		FIBITMAP* Image = FreeImage_ConvertFromRawBits(mBuffer, mWidth, mHeight,
 			mWidth * (mBPP / 8), mBPP, 0xFF0000, 0x00FF00, 0x0000FF, false);
 		FreeImage_Save(FIF_PNG, Image, aFile.c_str(), PNG_Z_BEST_SPEED);
+
+		FreeImage_Unload(Image);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Bind texture
@@ -349,6 +354,7 @@ namespace Columbus
 	C_Texture::~C_Texture()
 	{
 		C_DeleteTextureOpenGL(&mID);
+		FreeImage_Unload(mBitmap);
 	}
 
 }

@@ -60,16 +60,14 @@ namespace Columbus
 		C_ParticleEffect* mParticleEffect = NULL;
 
 		std::vector<C_Particle> mParticles;
+		std::vector<C_Particle> mActiveParticles;
 
 		C_Shader* mShader = NULL;
 
 		C_Buffer* mBuf = NULL;
 		C_Buffer* mTBuf = NULL;
 
-		int mFrame = 0;
-
 		float mLife = 0.0;
-
 		float mMaxTTL = 0.0;
 
 		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
@@ -95,6 +93,7 @@ namespace Columbus
 			1.0, 1.0
 		};
 		void sort();
+		void copyActive();
 		void update(float aTimeTick);
 		void setBuffers();
 		void setUniforms();

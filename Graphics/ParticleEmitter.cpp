@@ -16,7 +16,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	C_ParticleEmitter::C_ParticleEmitter(const C_ParticleEffect* aParticleEffect) :
-	mParticleEffect((C_ParticleEffect*)aParticleEffect)
+		mParticleEffect(const_cast<C_ParticleEffect*>(aParticleEffect)),
+		mLife(0.0),
+		mMaxTTL(0.0)
 	{
 		if (aParticleEffect == nullptr)
 			return;
@@ -87,33 +89,36 @@ namespace Columbus
 	//Sort particles
 	void C_ParticleEmitter::sort()
 	{
-		float mCX = mCameraPos.x;
-		float mCY = mCameraPos.y;
-		float mCZ = mCameraPos.z;
+		C_Vector3 pos = mCameraPos;
 
-		auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
+		auto func = [pos](const C_Particle &a, const C_Particle &b) -> bool
 		{
-			float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
-			float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
+			C_Vector3 q = a.pos;
+			C_Vector3 w = b.pos;
 
-			return l1 > l2;
-
-			/*glm::vec3 mC(mCX, mCY, mCZ);
-
-			glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
-			glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
-
-			q -= mC;
-			w -= mC;
-
-			return glm::length(q) > glm::length(w);*/
+			return q.length(pos) > w.length(pos);
 		};
 
-		std::sort(mParticles.begin(), mParticles.end(), func);
+		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::copyActive()
+	{
+		mActiveParticles.resize(mParticles.size());
+
+		auto copyFunc = [](C_Particle& p)->bool
+		{
+			return p.active == true;
+		};
+
+		auto it = std::copy_if(mParticles.begin(), mParticles.end(), mActiveParticles.begin(), copyFunc);
+		mActiveParticles.resize(std::distance(mActiveParticles.begin(), it));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::update(float aTimeTick)
 	{
+		copyActive();
+
 		float transformation = mParticleEffect->getTransformation();
 		C_Vector3 constForce = mParticleEffect->getConstantForce();
 		C_Vector3 startEmitterPos = mParticleEffect->getPos();
@@ -160,6 +165,8 @@ namespace Columbus
 
 			counter++;
 		}
+
+		sort();
 
 		mLife += aTimeTick;
 	}
@@ -385,7 +392,7 @@ namespace Columbus
 		float billboard = mParticleEffect->getBillbiarding();
 		float gradient = mParticleEffect->getGradienting();
 
-		for (auto Particle : mParticles)
+		for (auto Particle : mActiveParticles)
 		{
 			if (Particle.active == true && Particle.age > 0)
 			{
@@ -406,7 +413,7 @@ namespace Columbus
 	//Destructor
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
-		mParticles.erase(mParticles.begin(), mParticles.end());
+		mParticles.clear();
 	}
 
 }

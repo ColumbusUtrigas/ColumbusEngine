@@ -78,7 +78,8 @@ namespace Columbus
 	//Destructor
 	C_Skybox::~C_Skybox()
 	{
-
+		delete mShader;
+		delete mBuf;
 	}
 
 }

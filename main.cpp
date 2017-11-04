@@ -200,9 +200,6 @@ int main(int argc, char** argv)
 		render.setWindowSize(window.getSize());
 		render.render();
 
-		io.screen.size = window.getSize();
-		io.screen.aspect = window.aspect();
-
 		button.setIO(io);
 		button.update();
 		button.draw();

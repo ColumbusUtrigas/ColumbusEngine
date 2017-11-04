@@ -36,6 +36,7 @@ namespace Columbus
 	class C_Texture
 	{
 	private:
+		FIBITMAP* mBitmap = nullptr;
 		uint8_t* mBuffer = nullptr;
 		unsigned int mID = 0;
 

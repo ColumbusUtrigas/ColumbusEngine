@@ -107,21 +107,23 @@ namespace Columbus
 	//Prepare scene to rendering
 	void C_Render::prepareScene()
 	{
-		for (auto i : mMeshes)
+		for (auto Mesh : mMeshes)
 		{
 			if (mCamera != nullptr)
-				if (i != nullptr)
+			{
+				if (Mesh != nullptr)
 				{
-					i->setCamera(*mCamera);
-					i->setLights(mLights);
+					Mesh->setCamera(*mCamera);
+					Mesh->setLights(mLights);
 				}
+			}
 		}
 
-		for (auto i : mParticleEmitters)
+		for (auto ParticleEmitter : mParticleEmitters)
 		{
 			if (mCamera != nullptr)
-				if (i != nullptr)
-					i->setCameraPos(mCamera->pos());
+				if (ParticleEmitter != nullptr)
+					ParticleEmitter->setCameraPos(mCamera->pos());
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -131,13 +133,13 @@ namespace Columbus
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (auto i : mMeshes)
-			if (i != nullptr)
-				i->draw();
+		for (auto Mesh : mMeshes)
+			if (Mesh != nullptr)
+				Mesh->draw();
 
-		for (auto i : mParticleEmitters)
-			if (i != nullptr)
-				i->draw(mFrameTimer.elapsed());
+		for (auto ParticleEmitter : mParticleEmitters)
+			if (ParticleEmitter != nullptr)
+				ParticleEmitter->draw(mFrameTimer.elapsed());
 
 		mFrameTimer.reset();
 	}
