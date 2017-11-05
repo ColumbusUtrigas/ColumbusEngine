@@ -27,10 +27,10 @@ namespace Columbus
 
 		for (int i = 0; i < 6; i++)
 		{
-			data[i] = C_LoadImage(aPath[i].c_str(), &nWidth[i], &nHeight[i]);
+			data[i] = C_LoadImage(aPath[i], &nWidth[i], &nHeight[i]);
 			if (data[i] == NULL)
 			{
-				C_Error("Can't load Cubemap");
+				C_Log::error("Can't load Cubemap");
 				C_DeleteTextureOpenGL(&mID);
 				return;
 			}

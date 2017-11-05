@@ -33,8 +33,10 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 
-#include <System/Console.h>
+#include <System/Assert.h>
+#include <System/File.h>
 #include <System/Importer.h>
+#include <System/Log.h>
 #include <System/Random.h>
 #include <System/Serializer.h>
 #include <System/SmartPointer.h>

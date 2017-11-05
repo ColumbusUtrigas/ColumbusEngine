@@ -11,7 +11,7 @@
 #pragma once
 
 #include <Graphics/Material.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <System/Serializer.h>
 
 namespace Columbus

@@ -13,7 +13,7 @@
 #include <FreeImage.h>
 
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <RenderAPI/APIOpenGL.h>
 #include <Math/Vector2.h>
 
@@ -21,7 +21,7 @@ namespace Columbus
 {
 
 	//Load image from file
-	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight);
+	char* C_LoadImage(std::string aPath, int* aWidth, int* aHeight);
 
 	struct C_TextureConfig
 	{

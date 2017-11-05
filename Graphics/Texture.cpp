@@ -15,14 +15,14 @@ namespace Columbus
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Load image from file
-	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight)
+	char* C_LoadImage(std::string aPath, int* aWidth, int* aHeight)
 	{
-		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath, 0);
-		if (formato == FIF_UNKNOWN) { C_Error("Can't get type of File: %s", aPath); return NULL; }
-		FIBITMAP* imagen = FreeImage_Load(formato, aPath);
-		if (!imagen) { C_Error("Can't load Image File: %s", aPath); return NULL; }
+		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath.c_str(), 0);
+		if (formato == FIF_UNKNOWN) { C_Log::error("Can't get type of File: " + aPath); return NULL; }
+		FIBITMAP* imagen = FreeImage_Load(formato, aPath.c_str());
+		if (!imagen) { C_Log::error("Can't load Image File: " + aPath); return NULL; }
 		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
-		if (!imagen) { C_Error("Can't convert image to 32 Bits: %s", aPath); return NULL; }
+		if (!imagen) { C_Log::error("Can't convert image to 32 Bits: " + aPath); return NULL; }
 		FreeImage_Unload(imagen);
 		imagen = temp;
 
@@ -31,7 +31,7 @@ namespace Columbus
 		*aWidth = FreeImage_GetWidth(imagen);
 		*aHeight = FreeImage_GetHeight(imagen);
 
-		C_Success("Image loaded: %s", aPath);
+		C_Log::success("Image loaded: " + aPath);
 
 		return bits;
 	}
@@ -77,11 +77,11 @@ namespace Columbus
 		//if (mBuffer != NULL)
 			//FreeImage_Unload(mBuffer);
 		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath.c_str(), 0);
-		if (formato == FIF_UNKNOWN) { C_Error("Can't get type of File: %s", aPath); return; }
+		if (formato == FIF_UNKNOWN) { C_Log::error("Can't get type of File: " + aPath); return; }
 		FIBITMAP* imagen = FreeImage_Load(formato, aPath.c_str());
-		if (!imagen) { C_Error("Can't load Image File: %s", aPath); return; }
+		if (!imagen) { C_Log::error("Can't load Image File: " + aPath); return; }
 		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
-		if (!imagen) { C_Error("Can't convert image to 32 Bits: %s", aPath); return; }
+		if (!imagen) { C_Log::error("Can't convert image to 32 Bits: " + aPath); return; }
 		FreeImage_Unload(imagen);
 		imagen = temp;
 
@@ -135,7 +135,7 @@ namespace Columbus
 		mHeight = nHeight;
 		mBPP = nBPP;
 
-		C_Success("Texture loaded: %s", aPath.c_str());
+		C_Log::success("Texture loaded: " + aPath);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -320,6 +320,8 @@ namespace Columbus
 		FreeImage_Save(FIF_PNG, Image, aFile.c_str(), PNG_Z_BEST_SPEED);
 
 		FreeImage_Unload(Image);
+
+		C_Log::success("Texture successfully saved: " + aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Bind texture

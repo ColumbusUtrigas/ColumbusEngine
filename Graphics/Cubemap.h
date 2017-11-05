@@ -18,7 +18,7 @@
 
 #include <RenderAPI/APIOpenGL.h>
 #include <Graphics/Texture.h>
-#include <System/Console.h>
+#include <System/Log.h>
 
 namespace Columbus
 {

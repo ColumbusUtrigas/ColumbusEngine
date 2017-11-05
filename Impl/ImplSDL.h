@@ -16,7 +16,7 @@
 #include <RenderAPI/APIOpenGL.h>
 
 #include <Math/Vector2.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <System/Timer.h>
 
 namespace Columbus

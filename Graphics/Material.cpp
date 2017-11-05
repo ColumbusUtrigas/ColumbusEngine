@@ -187,33 +187,33 @@ namespace Columbus
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.write(aFile, "Material")) 
-		{ C_Error("Can't save Material: %s", aFile); return false; }
+		{ C_Log::error("Can't save Material: " + aFile); return false; }
 
 		if (!serializer.setVector4("Color", mColor, {"R", "G", "B", "A"}))
-		{ C_Error("Can't save Material color: %s", aFile); return false; }
+		{ C_Log::error("Can't save Material color: " + aFile); return false; }
 
 		if (!serializer.setVector3("Ambient", mAmbient, {"R", "G", "B"}))
-		{ C_Error("Can't save Material ambient: %s", aFile); return false; }
+		{ C_Log::error("Can't save Material ambient: " + aFile); return false; }
 
 		if (!serializer.setVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
-		{ C_Error("Can't save Material diffuse: %s", aFile); return false; }
+		{ C_Log::error("Can't save Material diffuse: " + aFile); return false; }
 
 		if (!serializer.setVector3("Specular", mSpecular, {"R", "G", "B"}))
-		{ C_Error("Can't save Material specular: %s", aFile); return false; }
+		{ C_Log::error("Can't save Material specular: " + aFile); return false; }
 
 		if (!serializer.setFloat("Shininess", mShininess))
-		{ C_Error("Can't save Material shininess"); return false; }
+		{ C_Log::error("Can't save Material shininess: " + aFile); return false; }
 
 		if (!serializer.setFloat("ReflectionPower", mReflectionPower))
-		{ C_Error("Can't save Material reflection power"); return false; }
+		{ C_Log::error("Can't save Material reflection power: " + aFile); return false; }
 
 		if (!serializer.setBool("Discard", mDiscard))
-		{ C_Error("Can't save Material discard"); return false; }
+		{ C_Log::error("Can't save Material discard: " + aFile); return false; }
 
 		if (!serializer.save())
-		{ C_Error("Can't save Material: %s", aFile); return false; }
+		{ C_Log::error("Can't save Material: " + aFile); return false; }
 
-		C_Success("Material saved: %s", aFile);
+		C_Log::success("Material saved: " + aFile);
 
 		return true;
 	}
@@ -224,30 +224,30 @@ namespace Columbus
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.read(aFile, "Material"))
-		{ C_Error("Can't load Material: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material: " + aFile); return false; }
 
 		if (!serializer.getVector4("Color", &mColor, {"R", "G", "B", "A"}))
-		{ C_Error("Can't load Material color: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material color: " + aFile); return false; }
 
 		if (!serializer.getVector3("Ambient", &mAmbient, {"R", "G", "B"}))
-		{ C_Error("Can't load Material ambient: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material ambient: " + aFile); return false; }
 
 		if (!serializer.getVector3("Diffuse", &mDiffuse, {"R", "G", "B"}))
-		{ C_Error("Can't load Material diffuse: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material diffuse: " + aFile); return false; }
 
 		if (!serializer.getVector3("Specular", &mSpecular, {"R", "G", "B"}))
-		{ C_Error("Can't load Material specular: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material specular: " + aFile); return false; }
 
 		if (!serializer.getFloat("Shininess", &mShininess))
-		{ C_Error("Can't load Material shininess: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material shininess: " + aFile); return false; }
 
 		if (!serializer.getFloat("ReflectionPower", &mReflectionPower))
-		{ C_Error("Can't load Material reflection power: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material reflection power: " + aFile); return false; }
 
 		if (!serializer.getBool("Discard", &mDiscard))
-		{ C_Error("Can't load Material discard: %s", aFile); return false; }
+		{ C_Log::error("Can't load Material discard: " + aFile); return false; }
 
-		C_Success("Material loaded: %s", aFile);
+		C_Log::success("Material loaded: " + aFile);
 
 		return true;
 	}

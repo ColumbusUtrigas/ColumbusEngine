@@ -45,13 +45,13 @@ namespace Columbus
 
 		if(vertSource == nullptr)
 		{
-			C_Error("Shader not loaded %s", aVert);
+			C_Log::error("Shader not loaded: " + aVert);
 			return;
 		}
 
 		if(fragSource == nullptr)
 		{
-			C_Error("Shader not loaded %s", aFrag);
+			C_Log::error("Shader not loaded: " + aFrag);
 			return;
 		}
 
@@ -109,8 +109,8 @@ namespace Columbus
 		glDeleteShader(fragment);
 		mID = program;
 
-		C_Success("Shader loaded %s", aVert);
-		C_Success("Shader loaded %s", aFrag);
+		C_Log::success("Shader loaded: " + aVert);
+		C_Log::success("Shader loaded: " + aFrag);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

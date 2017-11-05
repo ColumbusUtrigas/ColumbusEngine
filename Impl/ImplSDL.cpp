@@ -166,9 +166,9 @@ namespace Columbus
 		C_EnableMultisampleOpenGL();
 
 		if (glewInit() != GLEW_OK)
-			C_FatalError("Can't initialize GLEW");
+			C_Log::fatal("Can't initialize GLEW");
 		else
-			C_Initialization("GLEW initialized");
+			C_Log::initialization("GLEW initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -177,9 +177,9 @@ namespace Columbus
 	void C_SDLWindow::initSDL()
 	{
 		if (SDL_Init(SDL_INIT_EVERYTHING))
-			C_FatalError("Can't initialize SDL2");
+			C_Log::fatal("Can't initialize SDL2");
 		else
-			C_Initialization("SDL2 initialized");
+			C_Log::initialization("SDL2 initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Printing API versions int console
@@ -191,12 +191,12 @@ namespace Columbus
 		SDL_VERSION(&cVer);
 		SDL_GetVersion(&lVer);
 
-		C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
-		C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		C_Initialization("OpenGL version: %s", C_GetVersionOpenGL().c_str());
-		C_Initialization("OpenGL vendor: %s", C_GetVendorOpenGL().c_str());
-		C_Initialization("OpenGL renderer: %s", C_GetRendererOpenGL().c_str());
-		C_Initialization("GLSL version: %s\n", C_GetGLSLVersionOpenGL().c_str());
+		C_Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
+		C_Log::initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+		C_Log::initialization("OpenGL version: " + C_GetVersionOpenGL());
+		C_Log::initialization("OpenGL vendor: " + C_GetVendorOpenGL());
+		C_Log::initialization("OpenGL renderer: " + C_GetRendererOpenGL());
+		C_Log::initialization("GLSL version: " + C_GetGLSLVersionOpenGL() + "\n");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Poll window events

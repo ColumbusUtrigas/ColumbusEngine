@@ -13,7 +13,7 @@
 #include <GL/glew.h>
 #include <string>
 
-#include <System/Console.h>
+#include <System/Log.h>
 
 namespace Columbus
 {

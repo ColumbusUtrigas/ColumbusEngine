@@ -19,7 +19,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 
 namespace Columbus
 {

@@ -17,7 +17,7 @@
 #include <Graphics/Cubemap.h>
 #include <Graphics/Shader.h>
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <System/Serializer.h>
 
 namespace Columbus

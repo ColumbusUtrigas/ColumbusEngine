@@ -26,7 +26,20 @@ namespace Columbus
 		public:
 			C_Widget() {}
 
-			void setIO(C_IO& aIO) { mIO = aIO; }
+			void setPos(const C_Vector2 aPos)
+			{ mPos = static_cast<C_Vector2>(aPos); }
+
+			void setSize(const C_Vector2 aSize)
+			{ mSize = static_cast<C_Vector2>(aSize); }
+
+			void setIO(const C_IO& aIO)
+			{ mIO = static_cast<C_IO>(aIO); }
+
+			C_Vector2& getPos()
+			{ return mPos; }
+
+			C_Vector2& getSize()
+			{ return mSize; }
 
 			virtual void update() = 0;
 			virtual void draw() = 0;

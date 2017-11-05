@@ -25,8 +25,7 @@
 	#include <sys/stat.h>
 #endif
 
-typedef const char* C_Str;
-typedef const char* cstr;
+typedef std::string stdstr;
 typedef int C_Int;
 typedef int cint;
 typedef tinyxml2::XMLDocument C_XMLDoc;
@@ -38,7 +37,9 @@ namespace Columbus
 {
 
 	//Return current Operating System
-	char* C_GetSystem();
+	std::string C_GetSystem();
+	//Check the current system, if Win32 or Win64, returns true
+	bool C_CheckWindows();
 	//Read file
 	char* C_ReadFile(const char* aPath);
 	//Return file size

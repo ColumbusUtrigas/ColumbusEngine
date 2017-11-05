@@ -16,7 +16,7 @@
 #include <Graphics/Renderbuffer.h>
 
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
