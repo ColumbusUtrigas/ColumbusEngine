@@ -149,13 +149,13 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Conversion from degrees to radians
-	float C_DegToRads(float aDeg)
+	float C_DegToRads(const float aDeg)
 	{
 		return aDeg * 3.141592659 / 180.0f;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Conversion from radians to degrees
-	float C_RadsToDeg(float aRads)
+	float C_RadsToDeg(const float aRads)
 	{
 		return aRads * 180.0f / 3.141592659;
 	}

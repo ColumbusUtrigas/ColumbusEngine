@@ -39,7 +39,7 @@ namespace Columbus
 		glm::mat4 mNormalMatrix;
 
 		C_Mesh* mParent = NULL;
-
+		
 		C_Camera mCamera;
 
 		std::list<C_Mesh*> mChilds;

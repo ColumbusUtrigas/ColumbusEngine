@@ -17,6 +17,9 @@
 namespace Columbus
 {
 
+	class C_Vector2;
+	typedef C_Vector2 vec2;
+
 	class C_Vector2
 	{
 	public:
@@ -24,19 +27,28 @@ namespace Columbus
 		float y = 0;
 		////////////////////////////////////////////////////////////////////////////
 		//Constructor
-		inline C_Vector2() {}
+		inline C_Vector2() :
+			x(0),
+			y(0)
+		{}
 		////////////////////////////////////////////////////////////////////////////
 		//Constructor
-		inline C_Vector2(const float aX, const float aY) : x((float)aX), y((float)aY) {}
+		inline C_Vector2(const float aX, const float aY) :
+			x(static_cast<float>(aX)),
+			y(static_cast<float>(aY))
+		{}
 		////////////////////////////////////////////////////////////////////////////
 		//Constructor
-		inline C_Vector2(const glm::vec2 aVec) : x(aVec.x), y(aVec.y) {}
+		inline C_Vector2(const glm::vec2 aVec) :
+			x(static_cast<float>(aVec.x)),
+			y(static_cast<float>(aVec.y))
+		{}
 		////////////////////////////////////////////////////////////////////////////
 		//Conversion from GLM vector
 		inline void fromGLM(const glm::vec2 aVec)
 		{
-			x = aVec.x;
-			y = aVec.y;
+			x = static_cast<float>(aVec.x);
+			y = static_cast<float>(aVec.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Conversion to GLM vector
@@ -81,6 +93,12 @@ namespace Columbus
 		inline C_Vector2 operator*(const float aOther)
 		{
 			return C_Vector2(x * aOther, y * aOther);
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Operator *
+		inline friend C_Vector2 operator*(float aL, const C_Vector2 aR)
+		{
+			return C_Vector2(aL * aR.x, aL * aR.y);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
@@ -178,7 +196,5 @@ namespace Columbus
 		//Destructor
 		inline ~C_Vector2() {}
 	};
-
-	typedef C_Vector2 vec2;
 
 }
