@@ -205,8 +205,45 @@ namespace Columbus
 			return C_Vector3(x / l, y / l, z / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline float dot(C_Vector3 aOther)
+		{
+			return x * aOther.x + y * aOther.y + z * aOther.z;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline static float dot(C_Vector3 aV1, C_Vector3 aV2)
+		{
+			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return cross product of 2 vectors
+		inline C_Vector3 cross(C_Vector3 aOther)
+		{
+			return cross(*this, aOther);
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return cross product of 2 vectors
+		inline static C_Vector3 cross(C_Vector3 aV1, C_Vector3 aV2)
+		{
+			C_Vector3 ret;
+			ret.x = aV1.y * aV2.z - aV1.z * aV2.y;
+			ret.y = aV1.z * aV2.x - aV1.x * aV2.z;
+			ret.z = aV1.x * aV2.y - aV1.y * aV2.x;
+			return ret;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Destructor
 		inline ~C_Vector3() {}
 	};
 
 }
+
+
+
+
+
+
+
+
+

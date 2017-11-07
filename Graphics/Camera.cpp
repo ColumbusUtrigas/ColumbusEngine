@@ -13,18 +13,18 @@
 namespace Columbus
 {
 
-	static glm::mat4 PROJECTION_MATRIX;
-	static glm::mat4 VIEW_MATRIX;
+	static C_Matrix4 PROJECTION_MATRIX;
+	static C_Matrix4 VIEW_MATRIX;
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Return projection matrix
-	glm::mat4 C_GetProjectionMatrix()
+	C_Matrix4& C_GetProjectionMatrix()
 	{
 		return PROJECTION_MATRIX;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return view matrix
-	glm::mat4 C_GetViewMatrix()
+	C_Matrix4 C_GetViewMatrix()
 	{
 		return VIEW_MATRIX;
 	}
@@ -32,7 +32,7 @@ namespace Columbus
 	//Set perspective matrix
 	void C_SetPerspective(float aFOV, float aAspect, float aN, float aF)
 	{
-		PROJECTION_MATRIX = glm::perspective(C_DegToRads(aFOV), aAspect, aN, aF);
+		PROJECTION_MATRIX.perspective(aFOV, aAspect, aN, aF);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set orthographic matrix

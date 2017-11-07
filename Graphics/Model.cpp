@@ -253,30 +253,23 @@ namespace Columbus
 		if (mParent != nullptr)
 			mMatrix = mParent->mMatrix;
 		else
-			mMatrix = glm::mat4(1.0f);
+			mMatrix.identity();
 
 		C_Matrix4 matrix(mMatrix);
-		matrix.translate(mPos);
 		matrix.scale(mScale);
 		matrix.rotate(C_Vector3(0, 0, 1), mRot.z);
 		matrix.rotate(C_Vector3(1, 0, 0), mRot.x);
 		matrix.rotate(C_Vector3(0, 1, 0), mRot.y);
+		matrix.translate(mPos);
 
-		mMatrix = glm::translate(mMatrix, mPos.toGLM());
-		mMatrix = glm::scale(mMatrix, mScale.toGLM());
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.z), glm::vec3(0, 0, 1));
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.x), glm::vec3(1, 0, 0));
-		//mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.y), glm::vec3(0, 1, 0));
-		//mMatrix = glm::translate(mMatrix, -(mPivot.toGLM() + mPos.toGLM()));
-		//mMatrix = glm::translate(mMatrix, mPos.toGLM());
+		mNormalMatrix = mMatrix;
+		mNormalMatrix.transpose();
+		mNormalMatrix.invert();
 
-		mNormalMatrix = glm::inverse(glm::transpose(mMatrix));
-
-		//mMat.getShader()->setUniformMatrix("uModel", glm::value_ptr(mMatrix));
-		mMat.getShader()->setUniformMatrix("uModel", matrix.mat);
-		mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
-		mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
-		mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(mNormalMatrix));
+		mMat.getShader()->setUniformMatrix("uModel", matrix.elements());
+		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uNormal", mNormalMatrix.elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set all material data as uniform in shader

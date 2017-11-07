@@ -193,8 +193,33 @@ namespace Columbus
 			return C_Vector2(x / l, y / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline float dot(C_Vector2 aOther)
+		{
+			return x * aOther.x + y * aOther.y;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline static float dot(C_Vector2 aV1, C_Vector2 aV2)
+		{
+			return aV1.x * aV2.x + aV1.y * aV2.y;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return cross product of 2 vectors
+		inline C_Vector2 cross(C_Vector2 aOther)
+		{
+			C_Vector2 ret;
+			return ret;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Destructor
 		inline ~C_Vector2() {}
 	};
 
 }
+
+
+
+
+
+

@@ -217,8 +217,25 @@ namespace Columbus
 			return C_Vector4(x / l, y / l, z / l, w / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline float dot(C_Vector4 aOther)
+		{
+			return x * aOther.x + y * aOther.y + z * aOther.z + w * aOther.w;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline static float dot(C_Vector4 aV1, C_Vector4 aV2)
+		{
+			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z + aV1.w * aV2.w;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Destructor
 		inline ~C_Vector4() {}
 	};
 
 }
+
+
+
+
+

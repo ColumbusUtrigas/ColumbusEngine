@@ -190,8 +190,8 @@ namespace Columbus
 		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
 		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
 
-		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
-		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
+		mShader->setUniformMatrix("uView", C_GetViewMatrix().elements());
+		mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
 
 		if (mParticleEffect->getMaterial() == nullptr)
 			mShader->setUniform4f("uColor", C_Vector4(1, 1, 1, 1));

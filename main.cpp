@@ -182,8 +182,6 @@ int main(int argc, char** argv)
 		if (input.getKey(SDL_SCANCODE_E))
 			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
 
-		mesh2.addRot(C_Vector3(0, 45, 0) * RedrawTime);
-
 		if (input.getKeyDown(SDL_SCANCODE_ESCAPE))
 		{
 			cursor = !cursor;

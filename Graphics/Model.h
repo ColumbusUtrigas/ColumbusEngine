@@ -35,8 +35,8 @@ namespace Columbus
 		C_Vector3 mRot;
 		C_Vector3 mScale;
 		C_Vector3 mPivot;
-		glm::mat4 mMatrix;
-		glm::mat4 mNormalMatrix;
+		C_Matrix4 mMatrix;
+		C_Matrix4 mNormalMatrix;
 
 		C_Mesh* mParent = NULL;
 		
