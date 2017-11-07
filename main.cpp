@@ -6,7 +6,7 @@ int FPS_LIMIT = 120;
 
 int main(int argc, char** argv)
 {
-	C_SDLWindowConfig config;;
+	C_SDLWindowConfig config;
 	config.Resizable = true;
 
 	C_SDLWindow window(config);
@@ -79,18 +79,7 @@ int main(int argc, char** argv)
 
 	float i = 0;
 
-	std::array<std::string, 6> cpath =
-	{
-		"Data/Skyboxes/1/r.jpg",
-		"Data/Skyboxes/1/l.jpg",
-		"Data/Skyboxes/1/d.jpg",
-		"Data/Skyboxes/1/u.jpg",
-		"Data/Skyboxes/1/b.jpg",
-		"Data/Skyboxes/1/f.jpg",
-	};
-
-
-	C_Cubemap cubemap(cpath);
+	C_Cubemap cubemap("Data/Skyboxes/1.cubemap");
 	C_Skybox skybox(&cubemap);
 
 	mesh.mMat.setReflection(&cubemap);
@@ -129,8 +118,6 @@ int main(int argc, char** argv)
 	render.add(&light1);
 	render.add(&light2);
 	render.add(&light3);
-
-	GUI::C_Button button;
 
 	input.showMouseCursor(false);
 
@@ -199,10 +186,6 @@ int main(int argc, char** argv)
 
 		render.setWindowSize(window.getSize());
 		render.render();
-
-		button.setIO(io);
-		button.update();
-		button.draw();
 
 		window.display();
 

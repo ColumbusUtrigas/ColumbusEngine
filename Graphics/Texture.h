@@ -22,6 +22,8 @@ namespace Columbus
 
 	//Load image from file
 	char* C_LoadImage(std::string aPath, int* aWidth, int* aHeight);
+	//Load image from file
+	FIBITMAP* C_LoadImage(std::string aPath);
 
 	struct C_TextureConfig
 	{

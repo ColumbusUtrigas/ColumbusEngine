@@ -173,32 +173,33 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Create identity matrix
-		C_Matrix4& identity()
+		C_Matrix4 identity()
 		{
 			*this = C_Matrix4(1.0);
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Create orthographics matrix
-		C_Matrix4& orthographic(const float aLeft, const float aRight,
+		C_Matrix4 orthographic(const float aLeft, const float aRight,
 			const float aBottom, const float aTop, const float aNear, const float aFar)
 		{
-			C_Matrix4 res(1.0);
+			//C_Matrix4 res(1.0);
 
-			res.mat[0 + 0 * 4] = 2.0 / (aRight - aLeft);
-			res.mat[1 + 1 * 4] = 2.0 / (aTop - aBottom);
-			res.mat[2 + 2 * 4] = 2.0 / (aNear - aFar);
+			mat[0 + 0 * 4] = 2.0 / (aRight - aLeft);
+			mat[1 + 1 * 4] = 2.0 / (aTop - aBottom);
+			mat[2 + 2 * 4] = 2.0 / (aNear - aFar);
 
-			res.mat[0 + 3 * 4] = (aLeft + aRight) / (aLeft - aRight);
-			res.mat[1 + 3 * 4] = (aBottom + aTop) / (aBottom - aTop);
-			res.mat[2 + 3 * 4] = (aFar + aNear) / (aFar - aNear);
+			mat[0 + 3 * 4] = (aLeft + aRight) / (aLeft - aRight);
+			mat[1 + 3 * 4] = (aBottom + aTop) / (aBottom - aTop);
+			mat[2 + 3 * 4] = (aFar + aNear) / (aFar - aNear);
 
-			*this = res;
-			return res;
+			//*this = res;
+			//return res;
+			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Create perspective matrix
-		C_Matrix4& perspective(const float aFOV, const float aAspect,
+		C_Matrix4 perspective(const float aFOV, const float aAspect,
 			const float aNear, const float aFar)
 		{
 			for (int i = 0; i < 16; i++)
@@ -230,7 +231,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Create view matrix
-		C_Matrix4& lookAt(C_Vector3 aPos, C_Vector3 aRef, C_Vector3 aUp)
+		C_Matrix4 lookAt(C_Vector3 aPos, C_Vector3 aRef, C_Vector3 aUp)
 		{
 			vec3 zaxis = (aRef - aPos).normalize();
 			vec3 xaxis = vec3::cross(aUp, zaxis).normalize();
@@ -258,34 +259,12 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
-		//Translate the matrix
-		static C_Matrix4& translate(C_Matrix4 aMat, const C_Vector3 aTranslation)
-		{
-			aMat.mat[0 + 3 * 4] = aTranslation.x;
-			aMat.mat[1 + 3 * 4] = aTranslation.y;
-			aMat.mat[2 + 3 * 4] = aTranslation.z;
-
-			return aMat;
-		}
-		////////////////////////////////////////////////////////////////////////////
-		//Scale the matrix
-		static C_Matrix4& scale(C_Matrix4 aMat, const C_Vector3 aScale)
-		{
-			aMat.mat[0 + 0 * 4] = aScale.x;
-			aMat.mat[1 + 1 * 4] = aScale.y;
-			aMat.mat[2 + 2 * 4] = aScale.z;
-
-			return aMat;
-		}
-		////////////////////////////////////////////////////////////////////////////
-		////////////////////////////////////////////////////////////////////////////
-		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4& translate(C_Vector3 aTranslate)
+		C_Matrix4 translate(C_Vector3 aTranslate)
 		{
 			return translate(aTranslate.x, aTranslate.y, aTranslate.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4& translate(const float x, const float y, const float z)
+		C_Matrix4 translate(const float x, const float y, const float z)
 		{
 			mat[0] += mat[3] * x;   mat[4] += mat[7] * x;   mat[8] += mat[11] * x;   mat[12] += mat[15] * x;
 			mat[1] += mat[3] * y;   mat[5] += mat[7] * y;   mat[9] += mat[11] * y;   mat[13] += mat[15] * y;
@@ -294,12 +273,12 @@ namespace Columbus
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4& rotate(C_Vector3 aAxis, const float aAngle)
+		C_Matrix4 rotate(C_Vector3 aAxis, const float aAngle)
 		{
 			return rotate(aAxis.x, aAxis.y, aAxis.z, aAngle);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4& rotate(const float x, const float y, const float z, const float angle)
+		C_Matrix4 rotate(const float x, const float y, const float z, const float angle)
 		{
 			float c = cosf(C_DegToRads(angle));
 			float s = sinf(C_DegToRads(angle));
@@ -334,12 +313,12 @@ namespace Columbus
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4& scale(C_Vector3 aScale)
+		C_Matrix4 scale(C_Vector3 aScale)
 		{
 			return scale(aScale.x, aScale.y, aScale.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4& scale(const float x, const float y, const float z)
+		C_Matrix4 scale(const float x, const float y, const float z)
 		{
 			mat[0] *= x;   mat[4] *= x;   mat[8] *= x;   mat[12] *= x;
 			mat[1] *= y;   mat[5] *= y;   mat[9] *= y;   mat[13] *= y;

@@ -36,19 +36,15 @@ namespace Columbus
 	struct C_Particle
 	{
 		C_Vector3 direction = C_Vector3(0, 1, 0);
-
 		C_Vector3 startPos = C_Vector3(0, 0, 0);
-
 		C_Vector3 startEmitterPos = C_Vector3(0, 0, 0);
-
 		C_Vector3 accel = C_Vector3(0, 0.1, 0);
-
 		C_Vector3 pos;
 
 		float velocity = 1.0;
-
+		float rotation = 0.0;
+		float rotationSpeed = 0.0;
 		float age = 0.0;
-
 		float TTL = 1.0;
 
 		bool active = false;

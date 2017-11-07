@@ -36,6 +36,23 @@ namespace Columbus
 		return bits;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Load image from file
+	FIBITMAP* C_LoadImage(std::string aPath)
+	{
+		FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(aPath.c_str(), 0);
+		if (formato == FIF_UNKNOWN) { C_Log::error("Can't get type of File: " + aPath); return NULL; }
+		FIBITMAP* imagen = FreeImage_Load(formato, aPath.c_str());
+		if (!imagen) { C_Log::error("Can't load Image File: " + aPath); return NULL; }
+		FIBITMAP* temp = FreeImage_ConvertTo32Bits(imagen);
+		if (!imagen) { C_Log::error("Can't convert image to 32 Bits: " + aPath); return NULL; }
+		FreeImage_Unload(imagen);
+		imagen = temp;
+
+		C_Log::success("Image loaded: " + aPath);
+
+		return imagen;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	C_Texture::C_Texture() :
 		mBuffer(nullptr),

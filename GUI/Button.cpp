@@ -26,7 +26,9 @@ namespace Columbus
 			C_Vector2 pos = mPos / mIO.screen.size;
 			C_Vector2 size = mSize / mIO.screen.size * 2;
 
-			C_DisableDepthMaskOpenGL();
+			//C_DisableDepthMaskOpenGL();
+
+			glColor4f(1, 0, 0, 1);
 
 			glBegin(GL_QUADS);
 				glVertex2f(pos.x, pos.y);
@@ -35,7 +37,7 @@ namespace Columbus
 				glVertex2f(pos.x, pos.y + size.y);
 			glEnd();
 
-			C_EnableDepthMaskOpenGL();
+			//C_EnableDepthMaskOpenGL();
 		}
 
 	}

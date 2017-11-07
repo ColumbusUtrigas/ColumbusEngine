@@ -31,6 +31,8 @@ namespace Columbus
 			p.startPos = mParticleEffect->getPos();
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
+			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
+			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 
 			if (p.TTL > mMaxTTL)
 				mMaxTTL = p.TTL;
@@ -117,6 +119,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::update(float aTimeTick)
 	{
+		using namespace std;
+		
 		copyActive();
 
 		float transformation = mParticleEffect->getTransformation();
@@ -161,6 +165,7 @@ namespace Columbus
 				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
 				pos += Particle.startPos + Particle.startEmitterPos;
 				Particle.pos = pos;
+				Particle.rotation += Particle.rotationSpeed * aTimeTick;
 			}
 
 			counter++;
@@ -398,10 +403,11 @@ namespace Columbus
 			{
 				float life = fmod(Particle.age, Particle.TTL);
 				C_Vector3 pos = Particle.pos;
+				float rotation = Particle.rotation;
 
-				float arr[8] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient };
+				float arr[9] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient, rotation};
 
-				mShader->setUniformArrayf("Unif", arr, 8);
+				mShader->setUniformArrayf("Unif", arr, 9);
 
 				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
 			}

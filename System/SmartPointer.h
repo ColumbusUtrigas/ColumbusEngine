@@ -55,6 +55,11 @@ namespace Columbus
 			return *mObj;
 		}
 
+		bool isValide()
+		{
+			return mObj != nullptr;
+		}
+
 		~C_SmartPtr()
 		{
 			delete mObj;

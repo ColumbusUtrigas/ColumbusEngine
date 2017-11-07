@@ -20,11 +20,11 @@
     <MaxTTL>5</MaxTTL>
     <MinVelocity>1</MinVelocity>
     <MaxVelocity>1</MaxVelocity>
-    <MinRotation>0</MinRotation>
-    <MaxRotation>0</MaxRotation>
-    <MinRotationSpeed>0</MinRotationSpeed>
-    <MaxRotationSpeed>0</MaxRotationSpeed>
-    <EmitRate>35</EmitRate>
+    <MinRotation>10</MinRotation>
+    <MaxRotation>50</MaxRotation>
+    <MinRotationSpeed>-50</MinRotationSpeed>
+    <MaxRotationSpeed>50</MaxRotationSpeed>
+    <EmitRate>100</EmitRate>
     <Transformation>1</Transformation>
     <Shape>0</Shape>
     <ShapeRadius>1</ShapeRadius>

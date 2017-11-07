@@ -58,11 +58,11 @@ namespace Columbus
 			return NULL;
 
 		fseek(file, 0, SEEK_END);
-		unsigned long lenght = ftell(file);
-		char* data = new char[lenght + 1];
-		memset(data, 0, lenght + 1);
+		unsigned long lenth = ftell(file);
+		char* data = new char[lenth + 1];
+		memset(data, 0, lenth + 1);
 		fseek(file, 0, SEEK_SET);
-		fread(data, 1, lenght, file);
+		fread(data, 1, lenth, file);
 		fclose(file);
 		return data;
 	}

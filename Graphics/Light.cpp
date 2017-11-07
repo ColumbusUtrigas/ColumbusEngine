@@ -196,7 +196,7 @@ namespace Columbus
 		{ C_Log::error("Can't save Light outer cutoff: " + aFile); return false; }
 
 		if (!serializer.save())
-		{ C_Log::error("Can't save Light: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light: " + aFile); return false; }
 
 		C_Log::success("Light saved: " + aFile);
 
@@ -238,7 +238,7 @@ namespace Columbus
 		if (!serializer.getFloat("OuterCutoff", &mInnerCutoff))
 		{ C_Log::error("Can't load Light outer cutoff: " + aFile); return false; }
 
-		C_Log::success("Light loaded %s", aFile);
+		C_Log::success("Light loaded: " + aFile);
 
 		return true;
 	}
