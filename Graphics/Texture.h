@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include <FreeImage.h>
-
 #include <System/System.h>
 #include <System/Log.h>
 #include <RenderAPI/APIOpenGL.h>
@@ -20,10 +18,10 @@
 namespace Columbus
 {
 
+	struct C_TextureData;
+
 	//Load image from file
-	char* C_LoadImage(std::string aPath, int* aWidth, int* aHeight);
-	//Load image from file
-	FIBITMAP* C_LoadImage(std::string aPath);
+	C_TextureData C_LoadImage(std::string aPath);
 
 	struct C_TextureConfig
 	{
@@ -35,10 +33,19 @@ namespace Columbus
 		C_Vector2 tilingOffset = C_Vector2(0, 0);
 	};
 
+	struct C_TextureData
+	{
+		unsigned char* buffer = NULL;
+		size_t width = 0;
+		size_t height = 0;
+		int bpp = 0;
+	};
+
 	class C_Texture
 	{
 	private:
-		FIBITMAP* mBitmap = nullptr;
+		C_TextureData mData;
+
 		uint8_t* mBuffer = nullptr;
 		unsigned int mID = 0;
 
@@ -58,8 +65,6 @@ namespace Columbus
 		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load textures from file
 		void load(std::string aPath, bool aSmooth = true);
-		//Load texture from memory
-		void loadFromMemory(const char* aData, size_t aSize, bool aSmooth = true);
 		//Load texture from raw data
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load depth texture from raw data

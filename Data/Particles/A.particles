@@ -24,7 +24,7 @@
     <MaxRotation>50</MaxRotation>
     <MinRotationSpeed>-50</MinRotationSpeed>
     <MaxRotationSpeed>50</MaxRotationSpeed>
-    <EmitRate>100</EmitRate>
+    <EmitRate>35</EmitRate>
     <Transformation>1</Transformation>
     <Shape>0</Shape>
     <ShapeRadius>1</ShapeRadius>

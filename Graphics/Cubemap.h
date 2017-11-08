@@ -14,7 +14,6 @@
 #include <vector>
 #include <string>
 #include <GL/glew.h>
-#include <FreeImage.h>
 
 #include <RenderAPI/APIOpenGL.h>
 #include <Graphics/Texture.h>
@@ -29,7 +28,7 @@ namespace Columbus
 	class C_Cubemap
 	{
 	private:
-		FIBITMAP* mBitmaps[6];
+		C_TextureData mBitmaps[6];
 		unsigned int mID;
 
 		bool mInited = false;

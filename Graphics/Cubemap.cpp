@@ -66,19 +66,11 @@ namespace Columbus
 	{
 		C_BindTextureOpenGL(C_OGL_TEXTURE_CUBE_MAP, mID);
 
-		char* data[6];
-		int nWidth[6];
-		int nHeight[6];
-
 		for (int i = 0; i < 6; i++)
 		{
-			//data[i] = C_LoadImage(aPath[i], &nWidth[i], &nHeight[i]);
 			mBitmaps[i] = C_LoadImage(aPath[i]);
-			data[i] = (char*)FreeImage_GetBits(mBitmaps[i]);
-			nWidth[i] = FreeImage_GetWidth(mBitmaps[i]);
-			nHeight[i] = FreeImage_GetHeight(mBitmaps[i]);
 
-			if (data[i] == NULL)
+			if (mBitmaps[i].buffer == nullptr)
 			{
 				C_Log::error("Can't load Cubemap");
 				C_DeleteTextureOpenGL(&mID);
@@ -86,8 +78,13 @@ namespace Columbus
 			}
 			else
 			{
-				C_Texture2DOpenGL(C_OGL_TEXTURE_CUBE_MAP_POS_X + i, 0, C_OGL_RGBA,
-				nWidth[i], nHeight[i], C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, data[i]);
+				unsigned int format = C_OGL_RGBA;
+				if (mBitmaps[i].bpp == 3)
+					format = C_OGL_RGB;
+
+				C_Texture2DOpenGL(C_OGL_TEXTURE_CUBE_MAP_POS_X + i, 0, format,
+					mBitmaps[i].width, mBitmaps[i].height, format, C_OGL_UNSIGNED_BYTE,
+						mBitmaps[i].buffer);
 			}
 		}
 
@@ -129,10 +126,11 @@ namespace Columbus
 	{
 		for (int i = 0; i < 6; i++)
 		{
-			if (mBitmaps[i] == nullptr)
+			if (mBitmaps[i].buffer == nullptr)
 				return false;
 
-				FreeImage_Save(FIF_PNG, mBitmaps[i], aPath[i].c_str(), PNG_Z_BEST_SPEED);
+				//TODO: saving
+
 				C_Log::success("Cubemap face successfully saved: " + aPath[i]);
 		}
 		return true;
@@ -143,7 +141,8 @@ namespace Columbus
 	{
 		C_DeleteTextureOpenGL(&mID);
 		for (int i = 0; i < 6; i++)
-			FreeImage_Unload(mBitmaps[i]);
+			if (mBitmaps[i].buffer != nullptr)
+				free(mBitmaps[i].buffer);
 	}
 
 }
