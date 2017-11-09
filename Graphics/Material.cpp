@@ -10,6 +10,8 @@
 
 #include <Graphics/Material.h>
 
+using nlohmann::json;
+
 namespace Columbus
 {
 
@@ -218,6 +220,35 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Serializer to JSON file
+	bool C_Material::saveToJSON(std::string aFile) const
+	{
+		json j;
+		
+		j["Material"]["Color"] = {mColor.x, mColor.y, mColor.z, mColor.w};
+		j["Material"]["Ambient"] = {mAmbient.x, mAmbient.y, mAmbient.z};
+		j["Material"]["Diffuse"] = {mDiffuse.x, mDiffuse.y, mDiffuse.z};
+		j["Material"]["Specular"] = {mSpecular.x, mSpecular.y, mSpecular.z};
+		j["Material"]["Shininess"] = mShininess;
+		j["Material"]["ReflectionPower"] = mReflectionPower;
+		j["Material"]["Discard"] = mDiscard;
+	
+		std::ofstream o(aFile);
+		
+		if (o.is_open() == false)
+		{
+			C_Log::error("Can't save Material: " + aFile);
+			return false;
+		}
+
+		o << std::setw(4) << j << std::endl;
+		o.close();
+
+		C_Log::success("Material saved: " + aFile);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Deserialize from XML file
 	bool C_Material::loadFromXML(std::string aFile)
 	{
@@ -247,6 +278,46 @@ namespace Columbus
 		if (!serializer.getBool("Discard", &mDiscard))
 		{ C_Log::error("Can't load Material discard: " + aFile); return false; }
 
+		C_Log::success("Material loaded: " + aFile);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Deserialize from JSON file
+	bool C_Material::loadFromJSON(std::string aFile)
+	{
+		std::ifstream i(aFile);
+		if (i.is_open() == false)
+		{
+			C_Log::error("Can't load Material: " + aFile);
+			return false;
+		}
+		json j;
+		i >> j;
+
+		mColor.x = j["Material"]["Color"][0];
+		mColor.y = j["Material"]["Color"][1];
+		mColor.z = j["Material"]["Color"][2];
+		mColor.w = j["Material"]["Color"][3];
+
+		mAmbient.x = j["Material"]["Ambient"][0];
+		mAmbient.y = j["Material"]["Ambient"][1];
+		mAmbient.z = j["Material"]["Ambient"][2];
+
+		mDiffuse.x = j["Material"]["Diffuse"][0];
+		mDiffuse.y = j["Material"]["Diffuse"][1];
+		mDiffuse.z = j["Material"]["Diffuse"][2];
+
+		mSpecular.x = j["Material"]["Specular"][0];
+		mSpecular.y = j["Material"]["Specular"][1];
+		mSpecular.z = j["Material"]["Specular"][2];
+
+		mShininess = j["Material"]["Shininess"];
+		mReflectionPower = j["Material"]["ReflectionPower"];
+		mDiscard = j["Material"]["Discard"];
+
+		i.close();
+		
 		C_Log::success("Material loaded: " + aFile);
 
 		return true;

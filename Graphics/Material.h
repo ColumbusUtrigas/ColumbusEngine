@@ -19,6 +19,8 @@
 #include <System/System.h>
 #include <System/Log.h>
 #include <System/Serializer.h>
+#include <fstream>
+#include <json.hpp>
 
 namespace Columbus
 {
@@ -98,8 +100,12 @@ namespace Columbus
 
 		//Serialize to XML file
 		bool saveToXML(std::string aFile) const;
+		//Serializer to JSON file
+		bool saveToJSON(std::string aFile) const;
 		//Deserialize from XML file
 		bool loadFromXML(std::string aFile);
+		//Deserialize from JSON file
+		bool loadFromJSON(std::string aFile);
 		//Destructor
 		~C_Material();
 	};

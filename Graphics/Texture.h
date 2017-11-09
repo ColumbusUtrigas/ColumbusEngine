@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <System/Assert.h>
 #include <System/System.h>
 #include <System/Log.h>
 #include <RenderAPI/APIOpenGL.h>
@@ -22,6 +23,8 @@ namespace Columbus
 
 	//Load image from file
 	C_TextureData C_LoadImage(std::string aPath);
+	//Save image to file
+	bool C_SaveImage(std::string aPath, C_TextureData aData, int aQuality = 100);
 
 	struct C_TextureConfig
 	{
@@ -81,7 +84,7 @@ namespace Columbus
 		//Return texture size
 		size_t getSize();
 		//Save texture to file
-		void save(std::string aFile);
+		bool save(std::string aFile, int aQuality = 100);
 		//Bind texture
 		void bind();
 		//Unbind texture

@@ -14,9 +14,12 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
+#include <json.hpp>
 
 namespace Columbus
 {
+
+	using nlohmann::json;
 
 	namespace Serializer
 	{

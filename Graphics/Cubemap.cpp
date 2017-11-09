@@ -129,7 +129,11 @@ namespace Columbus
 			if (mBitmaps[i].buffer == nullptr)
 				return false;
 
-				//TODO: saving
+				if (C_SaveImage(aPath[i], mBitmaps[i]) == false)
+				{
+					C_Log::error("Can't load cubemap face: " + aPath[i]);
+					return false;
+				}
 
 				C_Log::success("Cubemap face successfully saved: " + aPath[i]);
 		}

@@ -1,4 +1,5 @@
 #include <Engine.h>
+#include <json.hpp>
 
 using namespace Columbus;
 
@@ -45,9 +46,9 @@ int main(int argc, char** argv)
 	C_Mesh mesh2(imp.getObject(1));
 	C_Mesh mesh3(C_PrimitiveBox(C_Vector3(5, 1, 5)));
 
-	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");
-	mesh2.mMat.loadFromXML("Data/Materials/Default.mtl");
-	mesh3.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh.mMat.loadFromXML("Data/Materials/Default.cxmat");
+	mesh2.mMat.loadFromXML("Data/Materials/Default.cxmat");
+	mesh3.mMat.loadFromXML("Data/Materials/Default.cxmat");
 
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
@@ -96,11 +97,9 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.loadFromXML("Data/Particles/A.particles");
+	particleEffect.loadFromJSON("Data/Particles/A.cjpar");
 	particleEffect.setMaterial(&partmat);
 	C_ParticleEmitter particles(&particleEffect);
-
-	//particleEffect.saveToXLM("Data/Particles/A.particles");
 
 	C_Timer timer;
 

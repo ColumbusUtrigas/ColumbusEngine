@@ -13,6 +13,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 namespace Columbus
 {
 
@@ -27,6 +30,32 @@ namespace Columbus
 		ret.height = h;
 		ret.bpp = bpp;
 		return ret;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Save image to file
+	bool C_SaveImage(std::string aPath, C_TextureData aData, int aQuality)
+	{
+		if (aPath.empty())
+			return false;
+		if (aData.buffer == nullptr)
+			return false;
+
+		switch (aData.bpp)
+		{
+		case 3:
+			stbi_write_jpg((aPath + ".jpg").c_str(), aData.width, aData.height, aData.bpp, 
+				aData.buffer, aQuality);
+			break;
+		case 4:
+			stbi_write_png((aPath + ".png").c_str(), aData.width, aData.height, aData.bpp,
+				aData.buffer, aData.width * aData.bpp);
+			break;
+		default:
+			return false;
+			break;
+		}
+
+		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
@@ -240,16 +269,16 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Save image to file
-	void C_Texture::save(std::string aFile)
+	bool C_Texture::save(std::string aFile, int aQuality)
 	{
 		if (mData.buffer == nullptr)
-			return;
-/*
-		FIBITMAP* Image = FreeImage_ConvertFromRawBits(mBuffer, mWidth, mHeight,
-			mWidth * (mBPP / 8), mBPP, 0xFF0000, 0x00FF00, 0x0000FF, false);
-		FreeImage_Save(FIF_PNG, Image, aFile.c_str(), PNG_Z_BEST_SPEED);
-
-		FreeImage_Unload(Image);*/
+			return false;
+		
+		if (C_SaveImage(aFile, mData, aQuality) == false)
+		{
+			C_Log::error("Can't save texture: " + aFile);
+			return false;
+		}
 
 		C_Log::success("Texture successfully saved: " + aFile);
 	}

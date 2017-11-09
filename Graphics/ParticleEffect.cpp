@@ -10,8 +10,11 @@
 
 #include <Graphics/ParticleEffect.h>
 
+using nlohmann::json;
+
 namespace Columbus
 {
+
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 1
 	C_ParticleEffect::C_ParticleEffect() :
@@ -547,6 +550,57 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Serialize to JSON file
+	bool C_ParticleEffect::saveToJSON(std::string aFile) const
+	{
+		json j;
+
+		j["ParticleEffect"]["Count"] = mParticlesCount;
+		j["ParticleEffect"]["Visible"] = mVisible;
+		j["ParticleEffect"]["ScaleOL"] = mScaleOverLifetime;
+		j["ParticleEffect"]["EmitFromShell"] = mEmitFromShell;
+		j["ParticleEffect"]["AdditiveBlending"] = mAdditive;
+		j["ParticleEffect"]["Billboarding"] = mBillboarding;
+		j["ParticleEffect"]["Gradienting"] = mGradienting;
+		j["ParticleEffect"]["MinDirection"] = {mMinDirection.x, mMinDirection.y, mMinDirection.z};
+		j["ParticleEffect"]["MaxDirection"] = {mMaxDirection.x, mMaxDirection.y, mMaxDirection.z};
+		j["ParticleEffect"]["MinAcceleration"] = {mMinAcceleration.x, mMinAcceleration.y, mMinAcceleration.z};
+		j["ParticleEffect"]["MaxAcceleration"] = {mMaxAcceleration.x, mMaxAcceleration.y, mMaxAcceleration.z};
+		j["ParticleEffect"]["ConstForce"] = {mConstantForce.x, mConstantForce.y, mConstantForce.z};
+		j["ParticleEffect"]["PartSize"] = {mParticleSize.x, mParticleSize.y};
+		j["ParticleEffect"]["StartSize"] = {mStartSize.x, mStartSize.y};
+		j["ParticleEffect"]["FinalSize"] = {mFinalSize.x, mFinalSize.y};
+		j["ParticleEffect"]["StartColor"] = {mStartColor.x, mStartColor.y, mStartColor.z, mStartColor.w};
+		j["ParticleEffect"]["FinalColor"] = {mFinalColor.x, mFinalColor.y, mFinalColor.z, mFinalColor.w};
+		j["ParticleEffect"]["MinTTL"] = mMinTimeToLive;
+		j["ParticleEffect"]["MaxTTL"] = mMaxTimeToLive;
+		j["ParticleEffect"]["MinVelocity"] = mMinVelocity;
+		j["ParticleEffect"]["MaxVelocity"] = mMaxVelocity;
+		j["ParticleEffect"]["MinRotation"] = mMinRotation;
+		j["ParticleEffect"]["MaxRotation"] = mMaxRotation;
+		j["ParticleEffect"]["MinRotationSpeed"] = mMinRotationSpeed;
+		j["ParticleEffect"]["MaxRotationSpeed"] = mMaxRotationSpeed;
+		j["ParticleEffect"]["EmitRate"] = mEmitRate;
+		j["ParticleEffect"]["Transformation"] = mParticleTransformation;
+		j["ParticleEffect"]["Shape"] = mParticleShape;
+		j["ParticleEffect"]["ShapeRadius"] = mParticleShapeRadius;
+	
+		std::ofstream o(aFile);
+		
+		if (o.is_open() == false)
+		{
+			C_Log::error("Can't save Particle Effect: " + aFile);
+			return false;
+		}
+
+		o << std::setw(4) << j << std::endl;
+		o.close();
+
+		C_Log::success("Particle Effect saved: " + aFile);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Serialize from XML file
 	bool C_ParticleEffect::loadFromXML(std::string aFile)
 	{
@@ -642,6 +696,87 @@ namespace Columbus
 
 		if (!serializer.getFloat("ShapeRadius", &mParticleShapeRadius))
 		{ C_Log::error("Can't load Particles shape radius: " + aFile); return false; }
+
+		C_Log::success("Particle Effect loaded: " + aFile);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Deserialize from JSON file
+	bool C_ParticleEffect::loadFromJSON(std::string aFile)
+	{
+		std::ifstream i(aFile);
+		if (i.is_open() == false)
+		{
+			C_Log::error("Can't load Particle Effect: " + aFile);
+			return false;
+		}
+		json j;
+		i >> j;
+
+		mParticlesCount = j["ParticleEffect"]["Count"];
+		mVisible = j["ParticleEffect"]["Visible"];
+		mScaleOverLifetime = j["ParticleEffect"]["ScaleOL"];
+		mEmitFromShell = j["ParticleEffect"]["EmitFromShell"];
+		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
+		mBillboarding = j["ParticleEffect"]["Billboarding"];
+		mGradienting = j["ParticleEffect"]["Gradienting"];
+		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
+		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
+
+		mMinDirection.x = j["ParticleEffect"]["MinDirection"][0];
+		mMinDirection.y = j["ParticleEffect"]["MinDirection"][1];
+		mMinDirection.z = j["ParticleEffect"]["MinDirection"][2];
+
+		mMaxDirection.x = j["ParticleEffect"]["MaxDirection"][0];
+		mMaxDirection.y = j["ParticleEffect"]["MaxDirection"][1];
+		mMaxDirection.z = j["ParticleEffect"]["MaxDirection"][2];
+
+		mMinAcceleration.x = j["ParticleEffect"]["MinAcceleration"][0];
+		mMinAcceleration.y = j["ParticleEffect"]["MinAcceleration"][1];
+		mMinAcceleration.z = j["ParticleEffect"]["MinAcceleration"][2];
+
+		mMaxAcceleration.x = j["ParticleEffect"]["MaxAcceleration"][0];
+		mMaxAcceleration.y = j["ParticleEffect"]["MaxAcceleration"][1];
+		mMaxAcceleration.z = j["ParticleEffect"]["MaxAcceleration"][2];
+
+		mConstantForce.x = j["ParticleEffect"]["ConstForce"][0];
+		mConstantForce.y = j["ParticleEffect"]["ConstForce"][1];
+		mConstantForce.z = j["ParticleEffect"]["ConstForce"][2];
+
+		mParticleSize.x = j["ParticleEffect"]["PartSize"][0];
+		mParticleSize.y = j["ParticleEffect"]["PartSize"][1];
+
+		mStartSize.x = j["ParticleEffect"]["StartSize"][0];
+		mStartSize.y = j["ParticleEffect"]["StartSize"][1];
+
+		mFinalSize.x = j["ParticleEffect"]["FinalSize"][0];
+		mFinalSize.y = j["ParticleEffect"]["FinalSize"][1];
+
+		mStartColor.x = j["ParticleEffect"]["StartColor"][0];
+		mStartColor.y = j["ParticleEffect"]["StartColor"][1];
+		mStartColor.z = j["ParticleEffect"]["StartColor"][2];
+		mStartColor.w = j["ParticleEffect"]["StartColor"][3];
+
+		mFinalColor.x = j["ParticleEffect"]["FinalColor"][0];
+		mFinalColor.y = j["ParticleEffect"]["FinalColor"][1];
+		mFinalColor.z = j["ParticleEffect"]["FinalColor"][2];
+		mFinalColor.w = j["ParticleEffect"]["FinalColor"][3];
+
+		mMinTimeToLive = j["ParticleEffect"]["MinTTL"];
+		mMaxTimeToLive = j["ParticleEffect"]["MaxTTL"];
+		mMinVelocity = j["ParticleEffect"]["MinVelocity"];
+		mMaxVelocity = j["ParticleEffect"]["MaxVelocity"];
+		mMinRotation = j["ParticleEffect"]["MinRotation"];
+		mMaxRotation = j["ParticleEffect"]["MaxRotation"];
+		mMinRotationSpeed = j["ParticleEffect"]["MinRotationSpeed"];
+		mMaxRotationSpeed = j["ParticleEffect"]["MaxRotationSpeed"];
+		mEmitRate = j["ParticleEffect"]["EmitRate"];
+		mParticleTransformation = j["ParticleEffect"]["Transformation"];
+		mParticleShape = j["ParticleEffect"]["Shape"];
+		mParticleShapeRadius = j["ParticleEffect"]["ShapeRadius"];
+
+		i.close();
 
 		C_Log::success("Particle Effect loaded: " + aFile);
 

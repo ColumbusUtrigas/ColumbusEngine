@@ -84,10 +84,10 @@ void main(void)
 		if (Unif[5] != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			gl_Position = uProjection * uView * vec4(pos + aPos * vec3(SizeOverLifetime, 1.0), 1.0) * Rotation;
+			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
 		} else
 		{
-			gl_Position = uProjection * uView * vec4(pos + aPos * vec3(uSize, 1.0), 1.0) * Rotation;
+			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
 		}
 	}
 
