@@ -121,6 +121,18 @@ int main(int argc, char** argv)
 
 	bool cursor = false;
 
+	C_Scene scene;
+
+	C_GameObject* obj = new C_GameObject();
+	C_Component* component = new C_MeshRenderer(&mesh3);
+
+	obj->addComponent(component);
+	C_Transform transf;
+	transf.setPos(C_Vector3(0, -2, 0));
+	obj->setTransform(transf);
+
+	scene.add(0, obj);
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
@@ -183,7 +195,9 @@ int main(int argc, char** argv)
 		camera.update();
 
 		render.setWindowSize(window.getSize());
-		render.render();
+		//render.render();
+		scene.update();
+		scene.render();
 
 		window.display();
 

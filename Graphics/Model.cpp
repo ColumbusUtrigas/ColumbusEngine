@@ -133,6 +133,33 @@ namespace Columbus
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, mVert.size());
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Render mesh
+	void C_Mesh::render(C_Transform aTransform)
+	{
+		if (buf == nullptr)
+			return;
+
+		C_Buffer* const buffers[5] = { buf, tbuf, nbuf, tangbuf, bitangbuf };
+		unsigned const int indices[5] = { 0, 1, 2, 3, 4 };
+		unsigned const int strides[5] = { 3, 2, 3, 3, 3 };
+
+		for (int i = 0; i < 5; i++)
+			if (buffers[i] != nullptr)
+				buffers[i]->bind(indices[i], C_OGL_FALSE, strides[i] * sizeof(float));
+
+		if (mMat.getShader() != nullptr)
+		{
+			mMat.getShader()->bind();
+
+			setShaderMatrices(aTransform);
+			setShaderMaterial();
+			setShaderLightAndCamera();
+			setShaderTextures();
+		}
+
+		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, mVert.size());
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Set camera
 	void C_Mesh::setCamera(C_Camera aCamera)
 	{
@@ -270,6 +297,13 @@ namespace Columbus
 		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uNormal", mNormalMatrix.elements());
+	}
+	void C_Mesh::setShaderMatrices(C_Transform aTransform)
+	{
+		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uNormal", aTransform.getNormalMatrix().elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set all material data as uniform in shader
