@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -15,31 +15,39 @@ namespace Columbus
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Return current Operating System
-	char* C_GetSystem()
+	std::string C_GetSystem()
 	{
 		#ifdef _WIN32
-				return (char*)"Win32";
+				return "Win32";
 		#endif
 
 		#ifdef _WIN64
-				return (char*)"Win64";
+				return "Win64";
 		#endif
 
 		#ifdef __LINUX__
-				return (char*)"Linux";
+				return "Linux";
 		#endif
 
 		#ifdef __unix
-				return (char*)"Unix";
+				return "Unix";
 		#endif
 
 		#ifdef __posix
-				return (char*)"POSIX";
+				return "POSIX";
 		#endif
 
 		#ifdef __APPLE__
-				return (char*)"Apple";
+				return "Apple";
 		#endif
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Check the current system, if Win32 or Win64, returns true
+	bool C_CheckWindows()
+	{
+		if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
+			return true;
+		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Read file
@@ -50,11 +58,11 @@ namespace Columbus
 			return NULL;
 
 		fseek(file, 0, SEEK_END);
-		unsigned long lenght = ftell(file);
-		char* data = new char[lenght + 1];
-		memset(data, 0, lenght + 1);
+		unsigned long lenth = ftell(file);
+		char* data = new char[lenth + 1];
+		memset(data, 0, lenth + 1);
 		fseek(file, 0, SEEK_SET);
-		fread(data, 1, lenght, file);
+		fread(data, 1, lenth, file);
 		fclose(file);
 		return data;
 	}
@@ -141,13 +149,13 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Conversion from degrees to radians
-	float C_DegToRads(float aDeg)
+	float C_DegToRads(const float aDeg)
 	{
 		return aDeg * 3.141592659 / 180.0f;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Conversion from radians to degrees
-	float C_RadsToDeg(float aRads)
+	float C_RadsToDeg(const float aRads)
 	{
 		return aRads * 180.0f / 3.141592659;
 	}

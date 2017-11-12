@@ -4,14 +4,17 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
 #include <Graphics/ParticleEffect.h>
 
+using nlohmann::json;
+
 namespace Columbus
 {
+
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 1
 	C_ParticleEffect::C_ParticleEffect() :
@@ -449,100 +452,151 @@ namespace Columbus
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.write(aFile, "ParticleEffect"))
-		{ C_Error("Can't save Particle Effect: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particle Effect: " + aFile); return false; }
 
 		if (!serializer.setInt("Count", mParticlesCount))
-		{ C_Error("Can't save Particles count: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles count: " + aFile); return false; }
 
 		if (!serializer.setBool("Visible", mVisible))
-		{ C_Error("Can't save Particles visible: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles visible: " + aFile); return false; }
 
 		if (!serializer.setBool("ScaleOL", mScaleOverLifetime))
-		{ C_Error("Can't save Particles scale over lifetime: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles scale over lifetime: " + aFile); return false; }
 
 		if (!serializer.setBool("EmitFromShell", mEmitFromShell))
-		{ C_Error("Can't save Particles emit from shell: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles emit from shell: " + aFile); return false; }
 
 		if (!serializer.setBool("AdditiveBlending", mAdditive))
-		{ C_Error("Can't save Particles additive blending: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles additive blending: " + aFile); return false; }
 
 		if (!serializer.setBool("Billboarding", mBillboarding))
-		{ C_Error("Can't save Particles billboarding: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles billboarding: " + aFile); return false; }
 
 		if (!serializer.setBool("Gradienting", mGradienting))
-		{ C_Error("Can't save Particles gradienting: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles gradienting: " + aFile); return false; }
 
 		if (!serializer.setVector3("MinDirection", mMinDirection, { "X", "Y", "Z" }))
-		{ C_Error("Can't save Particles min direction: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles min direction: " + aFile); return false; }
 
 		if (!serializer.setVector3("MaxDirection", mMaxDirection, { "X", "Y", "Z" }))
-		{ C_Error("Can't save Particles max direction: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles max direction: " + aFile); return false; }
 
 		if (!serializer.setVector3("MinAcceleration", mMinAcceleration, { "X", "Y", "Z" }))
-		{ C_Error("Can't save Particles min acceleration: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles min acceleration: " + aFile); return false; }
 
 		if (!serializer.setVector3("MaxAcceleration", mMaxAcceleration, { "X", "Y", "Z" }))
-		{ C_Error("Can't save Particles max acceleration: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles max acceleration: " + aFile); return false; }
 
 		if (!serializer.setVector3("ConstForce", mConstantForce, { "X", "Y", "Z" }))
-		{ C_Error("Can't save Particles constant force: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles constant force: " + aFile); return false; }
 
 		if (!serializer.setVector2("PartSize", mParticleSize, { "X", "Y" }))
-		{ C_Error("Can't save Particles size: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles size: " + aFile); return false; }
 
 		if (!serializer.setVector2("StartSize", mStartSize, { "X", "Y" }))
-		{ C_Error("Can't save Particles start size: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles start size: " + aFile); return false; }
 
 		if (!serializer.setVector2("FinalSize", mFinalSize, { "X", "Y" }))
-		{ C_Error("Can't save Particles final size: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles final size: " + aFile); return false; }
 
-		if (!serializer.setVector4("StartColor", mStartColor, { "R", "G" "B", "A" }))
-		{ C_Error("Can't save Particles start color: %s", aFile); return false; }
+		if (!serializer.setVector4("StartColor", mStartColor, { "R", "G", "B", "A" }))
+		{ C_Log::error("Can't save Particles start color: ", aFile); return false; }
 
-		if (!serializer.setVector4("FinalColor", mFinalColor, { "R", "G" "B", "A" }))
-		{ C_Error("Can't save Particles final color: %s", aFile); return false; }
+		if (!serializer.setVector4("FinalColor", mFinalColor, { "R", "G", "B", "A" }))
+		{ C_Log::error("Can't save Particles final color: ", aFile); return false; }
 
 		if (!serializer.setFloat("MinTTL", mMinTimeToLive))
-		{ C_Error("Can't save Particles min TTL: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles min TTL: " + aFile); return false; }
 
 		if (!serializer.setFloat("MaxTTL", mMaxTimeToLive))
-		{ C_Error("Can't save Particles max TTL: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles max TTL: " + aFile); return false; }
 
 		if (!serializer.setFloat("MinVelocity", mMinVelocity))
-		{ C_Error("Can't save Particles min velocity: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles min velocity: " + aFile); return false; }
 
 		if (!serializer.setFloat("MaxVelocity", mMaxVelocity))
-		{ C_Error("Can't save Particles max velocity: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles max velocity: " + aFile); return false; }
 
 		if (!serializer.setFloat("MinRotation", mMinRotation))
-		{ C_Error("Can't save Particles min rotation: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles min rotation: " + aFile); return false; }
 
 		if (!serializer.setFloat("MaxRotation", mMaxRotation))
-		{ C_Error("Can't save Particles max rotation: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles max rotation: " + aFile); return false; }
 
 		if (!serializer.setFloat("MinRotationSpeed", mMinRotationSpeed))
-		{ C_Error("Can't save Particles min rotation speed: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles min rotation speed: " + aFile); return false; }
 
 		if (!serializer.setFloat("MaxRotationSpeed", mMaxRotationSpeed))
-		{ C_Error("Can't save Particles max rotation speed: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles max rotation speed: " + aFile); return false; }
 
 		if (!serializer.setInt("EmitRate", mEmitRate))
-		{ C_Error("Can't save Particles emit rate: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles emit rate: " + aFile); return false; }
 
 		if (!serializer.setInt("Transformation", mParticleTransformation))
-		{ C_Error("Can't save Particles transformation: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles transformation: " + aFile); return false; }
 
 		if (!serializer.setInt("Shape", mParticleShape))
-		{ C_Error("Can't save Particles shape: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles shape: " + aFile); return false; }
 
 		if (!serializer.setInt("ShapeRadius", mParticleShapeRadius))
-		{ C_Error("Can't save Particles shape radius: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particles shape radius: " + aFile); return false; }
 
 		if (!serializer.save())
-		{ C_Error("Can't save Particle Effect: %s", aFile); return false; }
+		{ C_Log::error("Can't save Particle Effect: " + aFile); return false; }
 
 
-		C_Success("Particle Effect saved: %s", aFile);
+		C_Log::success("Particle Effect saved: " + aFile);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Serialize to JSON file
+	bool C_ParticleEffect::saveToJSON(std::string aFile) const
+	{
+		json j;
+
+		j["ParticleEffect"]["Count"] = mParticlesCount;
+		j["ParticleEffect"]["Visible"] = mVisible;
+		j["ParticleEffect"]["ScaleOL"] = mScaleOverLifetime;
+		j["ParticleEffect"]["EmitFromShell"] = mEmitFromShell;
+		j["ParticleEffect"]["AdditiveBlending"] = mAdditive;
+		j["ParticleEffect"]["Billboarding"] = mBillboarding;
+		j["ParticleEffect"]["Gradienting"] = mGradienting;
+		j["ParticleEffect"]["MinDirection"] = {mMinDirection.x, mMinDirection.y, mMinDirection.z};
+		j["ParticleEffect"]["MaxDirection"] = {mMaxDirection.x, mMaxDirection.y, mMaxDirection.z};
+		j["ParticleEffect"]["MinAcceleration"] = {mMinAcceleration.x, mMinAcceleration.y, mMinAcceleration.z};
+		j["ParticleEffect"]["MaxAcceleration"] = {mMaxAcceleration.x, mMaxAcceleration.y, mMaxAcceleration.z};
+		j["ParticleEffect"]["ConstForce"] = {mConstantForce.x, mConstantForce.y, mConstantForce.z};
+		j["ParticleEffect"]["PartSize"] = {mParticleSize.x, mParticleSize.y};
+		j["ParticleEffect"]["StartSize"] = {mStartSize.x, mStartSize.y};
+		j["ParticleEffect"]["FinalSize"] = {mFinalSize.x, mFinalSize.y};
+		j["ParticleEffect"]["StartColor"] = {mStartColor.x, mStartColor.y, mStartColor.z, mStartColor.w};
+		j["ParticleEffect"]["FinalColor"] = {mFinalColor.x, mFinalColor.y, mFinalColor.z, mFinalColor.w};
+		j["ParticleEffect"]["MinTTL"] = mMinTimeToLive;
+		j["ParticleEffect"]["MaxTTL"] = mMaxTimeToLive;
+		j["ParticleEffect"]["MinVelocity"] = mMinVelocity;
+		j["ParticleEffect"]["MaxVelocity"] = mMaxVelocity;
+		j["ParticleEffect"]["MinRotation"] = mMinRotation;
+		j["ParticleEffect"]["MaxRotation"] = mMaxRotation;
+		j["ParticleEffect"]["MinRotationSpeed"] = mMinRotationSpeed;
+		j["ParticleEffect"]["MaxRotationSpeed"] = mMaxRotationSpeed;
+		j["ParticleEffect"]["EmitRate"] = mEmitRate;
+		j["ParticleEffect"]["Transformation"] = mParticleTransformation;
+		j["ParticleEffect"]["Shape"] = mParticleShape;
+		j["ParticleEffect"]["ShapeRadius"] = mParticleShapeRadius;
+	
+		std::ofstream o(aFile);
+		
+		if (o.is_open() == false)
+		{
+			C_Log::error("Can't save Particle Effect: " + aFile);
+			return false;
+		}
+
+		o << std::setw(4) << j << std::endl;
+		o.close();
+
+		C_Log::success("Particle Effect saved: " + aFile);
 
 		return true;
 	}
@@ -554,96 +608,177 @@ namespace Columbus
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.read(aFile, "ParticleEffect"))
-		{ C_Error("Can't load Particle Effect: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particle Effect: " + aFile); return false; }
 
 		if (!serializer.getInt("Count", &mParticlesCount))
-		{ C_Error("Can't load Particles count: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles count: " + aFile); return false; }
 
 		if (!serializer.getBool("Visible", &mVisible))
-		{ C_Error("Can't load Particles visible: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles visible: " + aFile); return false; }
 
 		if (!serializer.getBool("ScaleOL", &mScaleOverLifetime))
-		{ C_Error("Can't load Particles scale over lifetime: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles scale over lifetime: " + aFile); return false; }
 
 		if (!serializer.getBool("EmitFromShell", &mEmitFromShell))
-		{ C_Error("Can't load Particles emit from shell: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles emit from shell: " + aFile); return false; }
 
 		if (!serializer.getBool("AdditiveBlending", &mAdditive))
-		{ C_Error("Can't load Particles additive blending: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles additive blending: " + aFile); return false; }
 
 		if (!serializer.getBool("Billboarding", &mBillboarding))
-		{ C_Error("Can't load Particles billboarding: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles billboarding: " + aFile); return false; }
 
 		if (!serializer.getBool("Gradienting", &mGradienting))
-		{ C_Error("Can't load Particles gradienting: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles gradienting: " + aFile); return false; }
 
 		if (!serializer.getVector3("MinDirection", &mMinDirection, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Particles min direction: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles min direction: " + aFile); return false; }
 
 		if (!serializer.getVector3("MaxDirection", &mMaxDirection, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Particles max direction: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles max direction: " + aFile); return false; }
 
 		if (!serializer.getVector3("MinAcceleration", &mMinAcceleration, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Particles min acceleration: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles min acceleration: " + aFile); return false; }
 
 		if (!serializer.getVector3("MaxAcceleration", &mMaxAcceleration, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Particles max acceleration: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles max acceleration: " + aFile); return false; }
 
 		if (!serializer.getVector3("ConstForce", &mConstantForce, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Particles constant force: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles constant force: " + aFile); return false; }
 
 		if (!serializer.getVector2("PartSize", &mParticleSize, { "X", "Y"}))
-		{ C_Error("Can't load Particles size: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles size: " + aFile); return false; }
 
 		if (!serializer.getVector2("StartSize", &mStartSize, { "X", "Y" }))
-		{ C_Error("Can't load Particles start size: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles start size: " + aFile); return false; }
 
 		if (!serializer.getVector2("FinalSize", &mFinalSize, { "X", "Y" }))
-		{ C_Error("Can't load Particles final size: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles final size: " + aFile); return false; }
 
 		if (!serializer.getVector4("StartColor", &mStartColor, { "R", "G", "B", "A"}))
-		{ C_Error("Can't load Particles start color: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles start color: " + aFile); return false; }
 
 		if (!serializer.getVector4("FinalColor", &mFinalColor, { "R", "G", "B", "A" }))
-		{ C_Error("Can't load Particles final color: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles final color: " + aFile); return false; }
 
 		if (!serializer.getFloat("MinTTL", &mMinTimeToLive))
-		{ C_Error("Can't load Particles min TTL: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles min TTL: " + aFile); return false; }
 
 		if (!serializer.getFloat("MaxTTL", &mMaxTimeToLive))
-		{ C_Error("Can't load Particles max TTL: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles max TTL: " + aFile); return false; }
 
 		if (!serializer.getFloat("MinVelocity", &mMinVelocity))
-		{ C_Error("Can't load Particles min velocity: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles min velocity: " + aFile); return false; }
 
 		if (!serializer.getFloat("MaxVelocity", &mMaxVelocity))
-		{ C_Error("Can't load Particles max velocity: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles max velocity: " + aFile); return false; }
 
 		if (!serializer.getFloat("MinRotation", &mMinRotation))
-		{ C_Error("Can't load Particles min rotation: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles min rotation: " + aFile); return false; }
 
 		if (!serializer.getFloat("MaxRotation", &mMaxRotation))
-		{ C_Error("Can't load Particles max rotation: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles max rotation: " + aFile); return false; }
 
 		if (!serializer.getFloat("MinRotationSpeed", &mMinRotationSpeed))
-		{ C_Error("Can't load Particles min rotation speed: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles min rotation speed: " + aFile); return false; }
 
 		if (!serializer.getFloat("MaxRotationSpeed", &mMaxRotationSpeed))
-		{ C_Error("Can't load Particles max rotation speed: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles max rotation speed: " + aFile); return false; }
 
 		if (!serializer.getInt("EmitRate", &mEmitRate))
-		{ C_Error("Can't load Particles emit rate: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles emit rate: " + aFile); return false; }
 
 		if (!serializer.getInt("Transformation", &mParticleTransformation))
-		{ C_Error("Can't load Particles transformation: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles transformation: " + aFile); return false; }
 
 		if (!serializer.getInt("Shape", &mParticleShape))
-		{ C_Error("Can't load Particles shape: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles shape: " + aFile); return false; }
 
 		if (!serializer.getFloat("ShapeRadius", &mParticleShapeRadius))
-		{ C_Error("Can't load Particles shape radius: %s", aFile); return false; }
+		{ C_Log::error("Can't load Particles shape radius: " + aFile); return false; }
 
-		C_Success("Particle Effect loaded: %s", aFile);
+		C_Log::success("Particle Effect loaded: " + aFile);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Deserialize from JSON file
+	bool C_ParticleEffect::loadFromJSON(std::string aFile)
+	{
+		std::ifstream i(aFile);
+		if (i.is_open() == false)
+		{
+			C_Log::error("Can't load Particle Effect: " + aFile);
+			return false;
+		}
+		json j;
+		i >> j;
+
+		mParticlesCount = j["ParticleEffect"]["Count"];
+		mVisible = j["ParticleEffect"]["Visible"];
+		mScaleOverLifetime = j["ParticleEffect"]["ScaleOL"];
+		mEmitFromShell = j["ParticleEffect"]["EmitFromShell"];
+		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
+		mBillboarding = j["ParticleEffect"]["Billboarding"];
+		mGradienting = j["ParticleEffect"]["Gradienting"];
+		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
+		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
+
+		mMinDirection.x = j["ParticleEffect"]["MinDirection"][0];
+		mMinDirection.y = j["ParticleEffect"]["MinDirection"][1];
+		mMinDirection.z = j["ParticleEffect"]["MinDirection"][2];
+
+		mMaxDirection.x = j["ParticleEffect"]["MaxDirection"][0];
+		mMaxDirection.y = j["ParticleEffect"]["MaxDirection"][1];
+		mMaxDirection.z = j["ParticleEffect"]["MaxDirection"][2];
+
+		mMinAcceleration.x = j["ParticleEffect"]["MinAcceleration"][0];
+		mMinAcceleration.y = j["ParticleEffect"]["MinAcceleration"][1];
+		mMinAcceleration.z = j["ParticleEffect"]["MinAcceleration"][2];
+
+		mMaxAcceleration.x = j["ParticleEffect"]["MaxAcceleration"][0];
+		mMaxAcceleration.y = j["ParticleEffect"]["MaxAcceleration"][1];
+		mMaxAcceleration.z = j["ParticleEffect"]["MaxAcceleration"][2];
+
+		mConstantForce.x = j["ParticleEffect"]["ConstForce"][0];
+		mConstantForce.y = j["ParticleEffect"]["ConstForce"][1];
+		mConstantForce.z = j["ParticleEffect"]["ConstForce"][2];
+
+		mParticleSize.x = j["ParticleEffect"]["PartSize"][0];
+		mParticleSize.y = j["ParticleEffect"]["PartSize"][1];
+
+		mStartSize.x = j["ParticleEffect"]["StartSize"][0];
+		mStartSize.y = j["ParticleEffect"]["StartSize"][1];
+
+		mFinalSize.x = j["ParticleEffect"]["FinalSize"][0];
+		mFinalSize.y = j["ParticleEffect"]["FinalSize"][1];
+
+		mStartColor.x = j["ParticleEffect"]["StartColor"][0];
+		mStartColor.y = j["ParticleEffect"]["StartColor"][1];
+		mStartColor.z = j["ParticleEffect"]["StartColor"][2];
+		mStartColor.w = j["ParticleEffect"]["StartColor"][3];
+
+		mFinalColor.x = j["ParticleEffect"]["FinalColor"][0];
+		mFinalColor.y = j["ParticleEffect"]["FinalColor"][1];
+		mFinalColor.z = j["ParticleEffect"]["FinalColor"][2];
+		mFinalColor.w = j["ParticleEffect"]["FinalColor"][3];
+
+		mMinTimeToLive = j["ParticleEffect"]["MinTTL"];
+		mMaxTimeToLive = j["ParticleEffect"]["MaxTTL"];
+		mMinVelocity = j["ParticleEffect"]["MinVelocity"];
+		mMaxVelocity = j["ParticleEffect"]["MaxVelocity"];
+		mMinRotation = j["ParticleEffect"]["MinRotation"];
+		mMaxRotation = j["ParticleEffect"]["MaxRotation"];
+		mMinRotationSpeed = j["ParticleEffect"]["MinRotationSpeed"];
+		mMaxRotationSpeed = j["ParticleEffect"]["MaxRotationSpeed"];
+		mEmitRate = j["ParticleEffect"]["EmitRate"];
+		mParticleTransformation = j["ParticleEffect"]["Transformation"];
+		mParticleShape = j["ParticleEffect"]["Shape"];
+		mParticleShapeRadius = j["ParticleEffect"]["ShapeRadius"];
+
+		i.close();
+
+		C_Log::success("Particle Effect loaded: " + aFile);
 
 		return true;
 	}

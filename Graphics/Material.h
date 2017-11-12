@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -17,8 +17,10 @@
 #include <Graphics/Cubemap.h>
 #include <Graphics/Shader.h>
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <System/Serializer.h>
+#include <fstream>
+#include <json.hpp>
 
 namespace Columbus
 {
@@ -98,8 +100,12 @@ namespace Columbus
 
 		//Serialize to XML file
 		bool saveToXML(std::string aFile) const;
+		//Serializer to JSON file
+		bool saveToJSON(std::string aFile) const;
 		//Deserialize from XML file
 		bool loadFromXML(std::string aFile);
+		//Deserialize from JSON file
+		bool loadFromJSON(std::string aFile);
 		//Destructor
 		~C_Material();
 	};

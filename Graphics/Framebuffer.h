@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   05.10.2017                  *
 *************************************************/
 
@@ -16,7 +16,7 @@
 #include <Graphics/Renderbuffer.h>
 
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>

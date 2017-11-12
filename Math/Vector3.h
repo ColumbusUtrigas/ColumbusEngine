@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -17,6 +17,9 @@
 namespace Columbus
 {
 
+	class C_Vector3;
+	typedef C_Vector3 vec3;
+
 	class C_Vector3
 	{
 	public:
@@ -25,20 +28,32 @@ namespace Columbus
 		float z = 0;
 		////////////////////////////////////////////////////////////////////////////
 		//Constructor
-		inline C_Vector3() {}
+		inline C_Vector3() :
+			x(0),
+			y(0),
+			z(0)
+		{}
 		////////////////////////////////////////////////////////////////////////////
 		//Constructor
-		inline C_Vector3(float aX, float aY, float aZ) : x(aX), y(aY), z(aZ) {}
+		inline C_Vector3(const float aX, const float aY, const float aZ) :
+			x(static_cast<float>(aX)),
+			y(static_cast<float>(aY)),
+			z(static_cast<float>(aZ))
+		{}
 		////////////////////////////////////////////////////////////////////////////
 		//Constructor
-		inline C_Vector3(const glm::vec3 aVec) : x(aVec.x), y(aVec.y), z(aVec.z) {}
+		inline C_Vector3(const glm::vec3 aVec) :
+			x(static_cast<float>(aVec.x)),
+			y(static_cast<float>(aVec.y)),
+			z(static_cast<float>(aVec.z))
+		{}
 		////////////////////////////////////////////////////////////////////////////
 		//Conversion from GLM vector
 		inline void fromGLM(const glm::vec3 aVec)
 		{
-			x = aVec.x;
-			y = aVec.y;
-			z = aVec.z;
+			x = static_cast<float>(aVec.x);
+			y = static_cast<float>(aVec.y);
+			z = static_cast<float>(aVec.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Conversion to GLM vector
@@ -84,6 +99,12 @@ namespace Columbus
 		inline C_Vector3 operator*(const float aOther)
 		{
 			return C_Vector3(x * aOther, y * aOther, z * aOther);
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Operator *
+		inline friend C_Vector3 operator*(float aL, const C_Vector3 aR)
+		{
+			return C_Vector3(aL * aR.x, aL * aR.y, aL * aR.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
@@ -184,10 +205,45 @@ namespace Columbus
 			return C_Vector3(x / l, y / l, z / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline float dot(C_Vector3 aOther)
+		{
+			return x * aOther.x + y * aOther.y + z * aOther.z;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return dot product of 2 vectors
+		inline static float dot(C_Vector3 aV1, C_Vector3 aV2)
+		{
+			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return cross product of 2 vectors
+		inline C_Vector3 cross(C_Vector3 aOther)
+		{
+			return cross(*this, aOther);
+		}
+		////////////////////////////////////////////////////////////////////////////
+		//Return cross product of 2 vectors
+		inline static C_Vector3 cross(C_Vector3 aV1, C_Vector3 aV2)
+		{
+			C_Vector3 ret;
+			ret.x = aV1.y * aV2.z - aV1.z * aV2.y;
+			ret.y = aV1.z * aV2.x - aV1.x * aV2.z;
+			ret.z = aV1.x * aV2.y - aV1.y * aV2.x;
+			return ret;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Destructor
 		inline ~C_Vector3() {}
 	};
 
-	typedef C_Vector3 vec3;
-
 }
+
+
+
+
+
+
+
+
+

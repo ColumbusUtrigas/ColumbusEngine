@@ -26,6 +26,7 @@
 
 #include <Input/Input.h>
 
+#include <Math/Matrix4.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
@@ -33,8 +34,10 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 
-#include <System/Console.h>
+#include <System/Assert.h>
+#include <System/File.h>
 #include <System/Importer.h>
+#include <System/Log.h>
 #include <System/Random.h>
 #include <System/Serializer.h>
 #include <System/SmartPointer.h>

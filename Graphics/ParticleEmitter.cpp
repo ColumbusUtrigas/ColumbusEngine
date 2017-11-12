@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -16,7 +16,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	C_ParticleEmitter::C_ParticleEmitter(const C_ParticleEffect* aParticleEffect) :
-	mParticleEffect((C_ParticleEffect*)aParticleEffect)
+		mParticleEffect(const_cast<C_ParticleEffect*>(aParticleEffect)),
+		mLife(0.0),
+		mMaxTTL(0.0)
 	{
 		if (aParticleEffect == nullptr)
 			return;
@@ -29,6 +31,8 @@ namespace Columbus
 			p.startPos = mParticleEffect->getPos();
 			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
+			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
+			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 
 			if (p.TTL > mMaxTTL)
 				mMaxTTL = p.TTL;
@@ -87,33 +91,38 @@ namespace Columbus
 	//Sort particles
 	void C_ParticleEmitter::sort()
 	{
-		float mCX = mCameraPos.x;
-		float mCY = mCameraPos.y;
-		float mCZ = mCameraPos.z;
+		C_Vector3 pos = mCameraPos;
 
-		auto func = [mCX, mCY, mCZ](const C_Particle &a, const C_Particle &b) -> bool
+		auto func = [pos](const C_Particle &a, const C_Particle &b) -> bool
 		{
-			float l1 = (a.pos.x - mCX) * (a.pos.x - mCX) + (a.pos.y - mCY) * (a.pos.y - mCY) + (a.pos.z - mCZ) * (a.pos.z - mCZ);
-			float l2 = (b.pos.x - mCX) * (b.pos.x - mCX) + (b.pos.y - mCY) * (b.pos.y - mCY) + (b.pos.z - mCZ) * (b.pos.z - mCZ);
+			C_Vector3 q = a.pos;
+			C_Vector3 w = b.pos;
 
-			return l1 > l2;
-
-			/*glm::vec3 mC(mCX, mCY, mCZ);
-
-			glm::vec3 q(a.pos.x, a.pos.y, a.pos.z);
-			glm::vec3 w(b.pos.x, b.pos.y, b.pos.z);
-
-			q -= mC;
-			w -= mC;
-
-			return glm::length(q) > glm::length(w);*/
+			return q.length(pos) > w.length(pos);
 		};
 
-		std::sort(mParticles.begin(), mParticles.end(), func);
+		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::copyActive()
+	{
+		mActiveParticles.resize(mParticles.size());
+
+		auto copyFunc = [](C_Particle& p)->bool
+		{
+			return p.active == true;
+		};
+
+		auto it = std::copy_if(mParticles.begin(), mParticles.end(), mActiveParticles.begin(), copyFunc);
+		mActiveParticles.resize(std::distance(mActiveParticles.begin(), it));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::update(float aTimeTick)
 	{
+		using namespace std;
+		
+		copyActive();
+
 		float transformation = mParticleEffect->getTransformation();
 		C_Vector3 constForce = mParticleEffect->getConstantForce();
 		C_Vector3 startEmitterPos = mParticleEffect->getPos();
@@ -156,10 +165,13 @@ namespace Columbus
 				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
 				pos += Particle.startPos + Particle.startEmitterPos;
 				Particle.pos = pos;
+				Particle.rotation += Particle.rotationSpeed * aTimeTick;
 			}
 
 			counter++;
 		}
+
+		sort();
 
 		mLife += aTimeTick;
 	}
@@ -183,8 +195,8 @@ namespace Columbus
 		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
 		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
 
-		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
-		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
+		mShader->setUniformMatrix("uView", C_GetViewMatrix().elements());
+		mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
 
 		if (mParticleEffect->getMaterial() == nullptr)
 			mShader->setUniform4f("uColor", C_Vector4(1, 1, 1, 1));
@@ -385,16 +397,17 @@ namespace Columbus
 		float billboard = mParticleEffect->getBillbiarding();
 		float gradient = mParticleEffect->getGradienting();
 
-		for (auto Particle : mParticles)
+		for (auto Particle : mActiveParticles)
 		{
 			if (Particle.active == true && Particle.age > 0)
 			{
 				float life = fmod(Particle.age, Particle.TTL);
 				C_Vector3 pos = Particle.pos;
+				float rotation = Particle.rotation;
 
-				float arr[8] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient };
+				float arr[9] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient, rotation};
 
-				mShader->setUniformArrayf("Unif", arr, 8);
+				mShader->setUniformArrayf("Unif", arr, 9);
 
 				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
 			}
@@ -406,7 +419,7 @@ namespace Columbus
 	//Destructor
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
-		mParticles.erase(mParticles.begin(), mParticles.end());
+		mParticles.clear();
 	}
 
 }

@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -35,11 +35,11 @@ namespace Columbus
 		C_Vector3 mRot;
 		C_Vector3 mScale;
 		C_Vector3 mPivot;
-		glm::mat4 mMatrix;
-		glm::mat4 mNormalMatrix;
+		C_Matrix4 mMatrix;
+		C_Matrix4 mNormalMatrix;
 
 		C_Mesh* mParent = NULL;
-
+		
 		C_Camera mCamera;
 
 		std::list<C_Mesh*> mChilds;

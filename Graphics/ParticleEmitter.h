@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -36,19 +36,15 @@ namespace Columbus
 	struct C_Particle
 	{
 		C_Vector3 direction = C_Vector3(0, 1, 0);
-
 		C_Vector3 startPos = C_Vector3(0, 0, 0);
-
 		C_Vector3 startEmitterPos = C_Vector3(0, 0, 0);
-
 		C_Vector3 accel = C_Vector3(0, 0.1, 0);
-
 		C_Vector3 pos;
 
 		float velocity = 1.0;
-
+		float rotation = 0.0;
+		float rotationSpeed = 0.0;
 		float age = 0.0;
-
 		float TTL = 1.0;
 
 		bool active = false;
@@ -60,16 +56,14 @@ namespace Columbus
 		C_ParticleEffect* mParticleEffect = NULL;
 
 		std::vector<C_Particle> mParticles;
+		std::vector<C_Particle> mActiveParticles;
 
 		C_Shader* mShader = NULL;
 
 		C_Buffer* mBuf = NULL;
 		C_Buffer* mTBuf = NULL;
 
-		int mFrame = 0;
-
 		float mLife = 0.0;
-
 		float mMaxTTL = 0.0;
 
 		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
@@ -95,6 +89,7 @@ namespace Columbus
 			1.0, 1.0
 		};
 		void sort();
+		void copyActive();
 		void update(float aTimeTick);
 		void setBuffers();
 		void setUniforms();

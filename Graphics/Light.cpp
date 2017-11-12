@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -166,39 +166,39 @@ namespace Columbus
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.write(aFile, "Light"))
-		{ C_Error("Can't save Light: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light: " + aFile); return false; }
 
 		if (!serializer.setInt("Type", mType))
-		{ C_Error("Can't save Light type: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light type: " + aFile); return false; }
 
 		if (!serializer.setVector3("Position", mPos, {"X", "Y", "Z"}))
-		{ C_Error("Can't save Light position: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light position: " + aFile); return false; }
 
 		if (!serializer.setVector3("Direction", mDir, { "X", "Y", "Z" }))
-		{ C_Error("Can't save Light direction: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light direction: " + aFile); return false; }
 
 		if (!serializer.setVector3("Color", mColor, { "R", "G", "B" }))
-		{ C_Error("Can't save Light color: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light color: " + aFile); return false; }
 
 		if (!serializer.setFloat("Constant", mConstant))
-		{ C_Error("Can't save Light constant: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light constant: " + aFile); return false; }
 
 		if (!serializer.setFloat("Linear", mLinear))
-		{ C_Error("Can't save Light linear: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light linear: " + aFile); return false; }
 
 		if (!serializer.setFloat("Quadratic", mQuadratic))
-		{ C_Error("Can't save Light quadratic: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light quadratic: " + aFile); return false; }
 
 		if (!serializer.setFloat("InnerCutoff", mInnerCutoff))
-		{ C_Error("Can't save Light inner cutoff: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light inner cutoff: " + aFile); return false; }
 
 		if (!serializer.setFloat("OuterCutoff", mOuterCutoff))
-		{ C_Error("Can't save Light outer cutoff: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light outer cutoff: " + aFile); return false; }
 
 		if (!serializer.save())
-		{ C_Error("Can't save Light: %s", aFile); return false; }
+		{ C_Log::error("Can't save Light: " + aFile); return false; }
 
-		C_Success("Light saved: %s", aFile);
+		C_Log::success("Light saved: " + aFile);
 
 		return true;
 	}
@@ -209,36 +209,36 @@ namespace Columbus
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.read(aFile, "Light"))
-		{ C_Error("Can't load Light: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light: " + aFile); return false; }
 
 		if (!serializer.getInt("Type", &mType))
-		{ C_Error("Can't load Light type: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light type: %s" + aFile); return false; }
 
 		if (!serializer.getVector3("Position", &mPos, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Light position: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light position: %s" + aFile); return false; }
 
 		if (!serializer.getVector3("Direction", &mDir, { "X", "Y", "Z" }))
-		{ C_Error("Can't load Light direction: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light direction: %s" + aFile); return false; }
 
 		if (!serializer.getVector3("Color", &mColor, { "R", "G", "B" }))
-		{ C_Error("Can't load Light color: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light color: " + aFile); return false; }
 
 		if (!serializer.getFloat("Constant", &mConstant))
-		{ C_Error("Can't load Light constant: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light constant: " + aFile); return false; }
 
 		if (!serializer.getFloat("Linear", &mLinear))
-		{ C_Error("Can't load Light linear: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light linear: " + aFile); return false; }
 
 		if (!serializer.getFloat("Quadratic", &mQuadratic))
-		{ C_Error("Can't load Light quadratic: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light quadratic: " + aFile); return false; }
 
 		if (!serializer.getFloat("InnerCutoff", &mInnerCutoff))
-		{ C_Error("Can't load Light inner cutoff: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light inner cutoff: " + aFile); return false; }
 
 		if (!serializer.getFloat("OuterCutoff", &mInnerCutoff))
-		{ C_Error("Can't load Light outer cutoff: %s", aFile); return false; }
+		{ C_Log::error("Can't load Light outer cutoff: " + aFile); return false; }
 
-		C_Success("Light loaded %s", aFile);
+		C_Log::success("Light loaded: " + aFile);
 
 		return true;
 	}

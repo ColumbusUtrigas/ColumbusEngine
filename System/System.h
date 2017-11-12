@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -25,8 +25,7 @@
 	#include <sys/stat.h>
 #endif
 
-typedef const char* C_Str;
-typedef const char* cstr;
+typedef std::string stdstr;
 typedef int C_Int;
 typedef int cint;
 typedef tinyxml2::XMLDocument C_XMLDoc;
@@ -38,7 +37,9 @@ namespace Columbus
 {
 
 	//Return current Operating System
-	char* C_GetSystem();
+	std::string C_GetSystem();
+	//Check the current system, if Win32 or Win64, returns true
+	bool C_CheckWindows();
 	//Read file
 	char* C_ReadFile(const char* aPath);
 	//Return file size
@@ -52,9 +53,9 @@ namespace Columbus
 	//Create folder
 	bool C_CreateFolder(const char* aPath);
 	//Conversion from degrees to radians
-	float C_DegToRads(float aDeg);
+	float C_DegToRads(const float aDeg);
 	//Conversion from radians to degrees
-	float C_RadsToDeg(float aRads);
+	float C_RadsToDeg(const float aRads);
 	//Random between two floats
 	float C_RandomBetween(float aMin, float aMax);
 

@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -19,18 +19,19 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/closest_point.hpp>
 
+#include <System/System.h>
+#include <Math/Matrix4.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <System/System.h>
 
 namespace Columbus
 {
 
 	//Return projection matrix
-	glm::mat4 C_GetProjectionMatrix();
+	C_Matrix4& C_GetProjectionMatrix();
 	//Return view matrix
-	glm::mat4 C_GetViewMatrix();
+	C_Matrix4 C_GetViewMatrix();
 	//Set perspective matrix
 	void C_SetPerspective(float aFOV, float aAspect, float aN, float aF);
 	//Set orthographic matrix

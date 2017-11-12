@@ -1,0 +1,186 @@
+/************************************************
+*                   File.cpp                    *
+*************************************************
+*          This file is a part of:              *
+*               COLUMBUS ENGINE                 *
+*************************************************
+*                Nika(Columbus) Red             *
+*                   05.11.2017                  *
+*************************************************/
+
+#include <System/File.h>
+
+namespace Columbus
+{
+	//////////////////////////////////////////////////////////////////////////////
+	struct C_File::C_FileData
+	{
+		FILE* file = nullptr;
+		std::string name;
+	};
+	//////////////////////////////////////////////////////////////////////////////
+	C_File::C_File() :
+		mData(new C_FileData())
+	{}
+	//////////////////////////////////////////////////////////////////////////////
+	C_File::C_File(C_File& aOther) :
+		mData(new C_FileData())
+	{
+		mData->file = aOther.mData->file;
+		mData->name = aOther.mData->name;
+		aOther.mData->file = nullptr;
+		aOther.mData->name = "";
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	C_File::C_File(std::string aFile, std::string aModes) :
+		mData(new C_FileData())
+	{
+		open(aFile, aModes);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	C_File& C_File::operator=(C_File& aOther)
+	{
+		if (this == &aOther) return *this;
+		COLUMBUS_ASSERT(mData == nullptr && "C_File::operator=(): file is not closed");
+		C_FileData* d = mData;
+		mData = aOther.mData;
+		aOther.mData = d;
+		return *this;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	C_File& C_File::operator<<(const char aChar)
+	{
+		write(&aChar, sizeof(char), 1);
+		return *this;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	C_File& C_File::operator<<(const std::string aString)
+	{
+		write(aString.c_str(), aString.size() * sizeof(char), 1);
+		return *this;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::open(std::string aFile, std::string aModes)
+	{
+		COLUMBUS_ASSERT(mData->file == nullptr && "C_File::open(): file is already opened");
+		mData->file = fopen(aFile.c_str(), aModes.c_str());
+		if (mData->file != nullptr)
+		{
+			mData->name = aFile;
+			return true;
+		}
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::close()
+	{
+		COLUMBUS_ASSERT(mData->file == nullptr && "C_File::close(): file is already closed");
+		bool ret = fclose(mData->file) == 0;
+		mData->file = nullptr;
+		mData->name.clear();
+		return ret;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	std::string C_File::getName() const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::getName(): file is not opened");
+		return mData->name;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	int C_File::getSize() const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::getSize(): file is not opened");
+		int offset = tell();
+		seekEnd(0);
+		int size = tell();
+		seekSet(offset);
+		return size;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::eof() const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::eof(): file is not opened");
+		return (feof(mData->file) == 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	int C_File::getc() const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::getc(): file is not opened");
+		return (fgetc(mData->file) == 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::seekSet(long int aOffset) const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::seekSet(): file is not opened");
+		return (fseek(mData->file, aOffset, SEEK_SET) == 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::seekEnd(long int aOffset) const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::seekEnd(): file is not opened");
+		return (fseek(mData->file, aOffset, SEEK_END) == 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::seekCur(long int aOffset) const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::seekCur(): file is not opened");
+		return (fseek(mData->file, aOffset, SEEK_CUR) == 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	int C_File::tell() const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::tell(): file is not opened");
+		return ftell(mData->file);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::flush() const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::flush(): file is not opened");
+		return (fflush(mData->file) == 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_File::isOpened() const
+	{
+		return (mData->file != nullptr);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	size_t C_File::read(void* aData, size_t aSize, size_t aPacks) const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::read(): file is not opened");
+		return fread(aData, aSize, aPacks, mData->file);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	size_t C_File::write(const void* aData, size_t aSize, size_t aPacks) const
+	{
+		COLUMBUS_ASSERT(mData->file != nullptr && "C_File::write(): file is not opened");
+		return fwrite(aData, aSize, aPacks, mData->file);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	C_File::~C_File()
+	{
+		close();
+		COLUMBUS_ASSERT(mData == nullptr && "C_File::~C_File(): file is not closed");
+		delete mData;
+	}
+
+}
+
+
+
+
+

@@ -4,24 +4,27 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
 #pragma once
 
-#include <FreeImage.h>
-
+#include <System/Assert.h>
 #include <System/System.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <RenderAPI/APIOpenGL.h>
 #include <Math/Vector2.h>
 
 namespace Columbus
 {
 
+	struct C_TextureData;
+
 	//Load image from file
-	char* C_LoadImage(const char* aPath, int* aWidth, int* aHeight);
+	C_TextureData C_LoadImage(std::string aPath);
+	//Save image to file
+	bool C_SaveImage(std::string aPath, C_TextureData aData, int aQuality = 100);
 
 	struct C_TextureConfig
 	{
@@ -33,9 +36,19 @@ namespace Columbus
 		C_Vector2 tilingOffset = C_Vector2(0, 0);
 	};
 
+	struct C_TextureData
+	{
+		unsigned char* buffer = NULL;
+		size_t width = 0;
+		size_t height = 0;
+		int bpp = 0;
+	};
+
 	class C_Texture
 	{
 	private:
+		C_TextureData mData;
+
 		uint8_t* mBuffer = nullptr;
 		unsigned int mID = 0;
 
@@ -55,8 +68,6 @@ namespace Columbus
 		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load textures from file
 		void load(std::string aPath, bool aSmooth = true);
-		//Load texture from memory
-		void loadFromMemory(const char* aData, size_t aSize, bool aSmooth = true);
 		//Load texture from raw data
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		//Load depth texture from raw data
@@ -73,7 +84,7 @@ namespace Columbus
 		//Return texture size
 		size_t getSize();
 		//Save texture to file
-		void save(std::string aFile);
+		bool save(std::string aFile, int aQuality = 100);
 		//Bind texture
 		void bind();
 		//Unbind texture
