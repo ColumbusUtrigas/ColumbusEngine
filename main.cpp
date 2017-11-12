@@ -6,7 +6,7 @@ int FPS_LIMIT = 120;
 
 int main(int argc, char** argv)
 {
-	C_SDLWindowConfig config;;
+	C_SDLWindowConfig config;
 	config.Resizable = true;
 
 	C_SDLWindow window(config);
@@ -45,9 +45,9 @@ int main(int argc, char** argv)
 	C_Mesh mesh2(imp.getObject(1));
 	C_Mesh mesh3(C_PrimitiveBox(C_Vector3(5, 1, 5)));
 
-	mesh.mMat.loadFromXML("Data/Materials/Default.mtl");
-	mesh2.mMat.loadFromXML("Data/Materials/Default.mtl");
-	mesh3.mMat.loadFromXML("Data/Materials/Default.mtl");
+	mesh.mMat.loadFromXML("Data/Materials/Default.cxmat");
+	mesh2.mMat.loadFromXML("Data/Materials/Default.cxmat");
+	mesh3.mMat.loadFromXML("Data/Materials/Default.cxmat");
 
 	mesh.mMat.setTexture(&tex);
 	mesh.mMat.setSpecMap(&spec);
@@ -79,18 +79,7 @@ int main(int argc, char** argv)
 
 	float i = 0;
 
-	std::array<std::string, 6> cpath =
-	{
-		"Data/Skyboxes/1/r.jpg",
-		"Data/Skyboxes/1/l.jpg",
-		"Data/Skyboxes/1/d.jpg",
-		"Data/Skyboxes/1/u.jpg",
-		"Data/Skyboxes/1/b.jpg",
-		"Data/Skyboxes/1/f.jpg",
-	};
-
-
-	C_Cubemap cubemap(cpath);
+	C_Cubemap cubemap("Data/Skyboxes/1.cubemap");
 	C_Skybox skybox(&cubemap);
 
 	mesh.mMat.setReflection(&cubemap);
@@ -107,11 +96,9 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.loadFromXML("Data/Particles/A.particles");
+	particleEffect.loadFromJSON("Data/Particles/A.cjpar");
 	particleEffect.setMaterial(&partmat);
 	C_ParticleEmitter particles(&particleEffect);
-
-	//particleEffect.saveToXLM("Data/Particles/A.particles");
 
 	C_Timer timer;
 
@@ -129,8 +116,6 @@ int main(int argc, char** argv)
 	render.add(&light1);
 	render.add(&light2);
 	render.add(&light3);
-
-	GUI::C_Button button;
 
 	input.showMouseCursor(false);
 
@@ -199,13 +184,6 @@ int main(int argc, char** argv)
 
 		render.setWindowSize(window.getSize());
 		render.render();
-
-		io.screen.size = window.getSize();
-		io.screen.aspect = window.aspect();
-
-		button.setIO(io);
-		button.update();
-		button.draw();
 
 		window.display();
 

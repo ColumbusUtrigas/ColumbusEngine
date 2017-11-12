@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -24,6 +24,7 @@ namespace Columbus
 	private:
 		C_Buffer* mBuf = nullptr;
 		C_Shader* mShader = nullptr;
+		C_Cubemap* mCubemap = nullptr;
 
 		//Vertex buffer
 		float skyboxVertices[108] =
@@ -71,7 +72,6 @@ namespace Columbus
 			1.0f, -1.0f,  1.0f
 		};
 	public:
-		C_Cubemap* mCubemap = nullptr;
 		//Constructor
 		C_Skybox() {}
 		//Constructor 2

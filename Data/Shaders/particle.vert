@@ -23,13 +23,29 @@ uniform vec2 uFinalSize;
 //5 - isScaleOverLifetime
 //6 - isBillboard
 //7 - isGradient
+//8 - rotation
 
-uniform float Unif[8];
+uniform float Unif[9];
 
 uniform int uRenderMode;
 
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
+
 void main(void)
 {
+	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), Unif[8] / 90);
 	mat4 ModelView = uView * mat4(1);
 
 	ModelView[0][0] = 1;
@@ -51,16 +67,16 @@ void main(void)
 
 	float lifePercent = Unif[3] / Unif[4];
 
-	//gl_Position = uProjection * uView * vec4(uPosition.xyz + aPos * vec3(uSize, 1.0), 1.0);
+	vec3 Pos = aPos;
 	if (Unif[6] != 0.0)
 	{
 		if (Unif[5] != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0));
+			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
 		} else
 		{
-			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
+			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
 		}
 	}
 	else
@@ -68,10 +84,10 @@ void main(void)
 		if (Unif[5] != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			gl_Position = uProjection * uView * vec4(pos + aPos * vec3(SizeOverLifetime, 1.0), 1.0);
+			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
 		} else
 		{
-			gl_Position = uProjection * uView * vec4(pos + aPos * vec3(uSize, 1.0), 1.0);
+			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
 		}
 	}
 

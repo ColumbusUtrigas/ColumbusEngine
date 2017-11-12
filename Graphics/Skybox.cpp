@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -56,10 +56,12 @@ namespace Columbus
 
 			mShader->bind();
 
-			glm::mat4 view = glm::mat4(glm::mat3(C_GetViewMatrix()));
+			C_Matrix4 view = C_GetViewMatrix();
+			view.setRow(3, C_Vector4(0, 0, 0, 1));
+			view.setColumn(3, C_Vector4(0, 0, 0, 1));
 
-			mShader->setUniformMatrix("uView", glm::value_ptr(view));
-			mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
+			mShader->setUniformMatrix("uView", view.elements());
+			mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
 
 			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
 			mShader->setUniform1i("uSkybox", 0);
@@ -78,7 +80,8 @@ namespace Columbus
 	//Destructor
 	C_Skybox::~C_Skybox()
 	{
-
+		delete mShader;
+		delete mBuf;
 	}
 
 }

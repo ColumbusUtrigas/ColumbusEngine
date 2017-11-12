@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -19,33 +19,19 @@ namespace Columbus
 	{
 		C_GenTextureOpenGL(&mID);
 
-		C_BindTextureOpenGL(C_OGL_TEXTURE_CUBE_MAP, mID);
+		if (!load(aPath))
+			return;
 
-		char* data[6];
-		int nWidth[6];
-		int nHeight[6];
-
-		for (int i = 0; i < 6; i++)
-		{
-			data[i] = C_LoadImage(aPath[i].c_str(), &nWidth[i], &nHeight[i]);
-			if (data[i] == NULL)
-			{
-				C_Error("Can't load Cubemap");
-				C_DeleteTextureOpenGL(&mID);
-				return;
-			}
-			else
-			{
-				C_Texture2DOpenGL(C_OGL_TEXTURE_CUBE_MAP_POS_X + i, 0, C_OGL_RGBA,
-				nWidth[i], nHeight[i], C_OGL_BGRA, C_OGL_UNSIGNED_BYTE, data[i]);
-			}
-		}
-
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_R, C_OGL_CLAMP_TO_EDGE);
+		mInited = true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 2
+	C_Cubemap::C_Cubemap(std::string aPath)
+	{
+		C_GenTextureOpenGL(&mID);
+		
+		if (!load(aPath))
+			return;
 
 		mInited = true;
 	}
@@ -75,10 +61,92 @@ namespace Columbus
 		C_BindTextureOpenGL(C_OGL_TEXTURE_CUBE_MAP, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Load cubemap from 6 textures
+	bool C_Cubemap::load(std::array<std::string, 6> aPath)
+	{
+		C_BindTextureOpenGL(C_OGL_TEXTURE_CUBE_MAP, mID);
+
+		for (int i = 0; i < 6; i++)
+		{
+			mBitmaps[i] = C_LoadImage(aPath[i]);
+
+			if (mBitmaps[i].buffer == nullptr)
+			{
+				C_Log::error("Can't load Cubemap");
+				C_DeleteTextureOpenGL(&mID);
+				return false;
+			}
+			else
+			{
+				unsigned int format = C_OGL_RGBA;
+				if (mBitmaps[i].bpp == 3)
+					format = C_OGL_RGB;
+
+				C_Texture2DOpenGL(C_OGL_TEXTURE_CUBE_MAP_POS_X + i, 0, format,
+					mBitmaps[i].width, mBitmaps[i].height, format, C_OGL_UNSIGNED_BYTE,
+						mBitmaps[i].buffer);
+			}
+		}
+
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MIN_FILTER, C_OGL_LINEAR);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
+		C_TextureParameterOpenGL(C_OGL_TEXTURE_CUBE_MAP, C_OGL_TEXTURE_WRAP_R, C_OGL_CLAMP_TO_EDGE);
+
+		C_BindTextureOpenGL(C_OGL_TEXTURE_CUBE_MAP, 0);
+
+		return true;
+	}
+	//Load cubemap from 1 XML file, pointing on 6 textures
+	bool C_Cubemap::load(std::string aPath)
+	{
+		std::array<std::string, 6> pathes;
+		std::string names[6] = 
+		{
+			"PosX", "NegX", "PosY", "NegY", "PosZ", "NegZ"
+		};
+
+		Serializer::C_SerializerXML serializer;
+
+		if (!serializer.read(aPath, "Cubemap"))
+		{ C_Log::error("Can't load Cubemap XML: " + aPath); return false; }
+
+		for (int i = 0; i < 6; i++)
+		{
+			if (!serializer.getString(names[i], &pathes[i]))
+			{ C_Log::error("Can't load Cubemap XML: " + aPath); return false; }
+		}
+
+		return load(pathes);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Save cubemap to 6 textures
+	bool C_Cubemap::save(std::array<std::string, 6> aPath)
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			if (mBitmaps[i].buffer == nullptr)
+				return false;
+
+				if (C_SaveImage(aPath[i], mBitmaps[i]) == false)
+				{
+					C_Log::error("Can't load cubemap face: " + aPath[i]);
+					return false;
+				}
+
+				C_Log::success("Cubemap face successfully saved: " + aPath[i]);
+		}
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_Cubemap::~C_Cubemap()
 	{
 		C_DeleteTextureOpenGL(&mID);
+		for (int i = 0; i < 6; i++)
+			if (mBitmaps[i].buffer != nullptr)
+				free(mBitmaps[i].buffer);
 	}
 
 }

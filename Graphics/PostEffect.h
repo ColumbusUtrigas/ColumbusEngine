@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.10.2017                  *
 *************************************************/
 

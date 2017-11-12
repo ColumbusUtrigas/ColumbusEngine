@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   02.11.2017                  *
 *************************************************/
 
@@ -53,6 +53,11 @@ namespace Columbus
 		T& get()
 		{
 			return *mObj;
+		}
+
+		bool isValide()
+		{
+			return mObj != nullptr;
 		}
 
 		~C_SmartPtr()

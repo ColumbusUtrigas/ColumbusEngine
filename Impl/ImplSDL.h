@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   31.10.2017                  *
 *************************************************/
 
@@ -16,45 +16,14 @@
 #include <RenderAPI/APIOpenGL.h>
 
 #include <Math/Vector2.h>
-#include <System/Console.h>
+#include <System/Log.h>
 #include <System/Timer.h>
 
 namespace Columbus
 {
-
-	enum C_MessageBoxType;
-	enum C_MessageBoxButtonFlag;
-	struct C_MessageBoxButton;
+	
 	struct C_SDLWindowConfig;
 	class C_SDLWindow;
-
-	//Show simple message box, modal of window
-	void C_ShowMessageBox(C_MessageBoxType aType, std::string aTitle,
-		std::string aMessage, C_SDLWindow* aWindow);
-	//Show complex message box, modal of window
-	void C_ShowMessageBox(C_MessageBoxType aType, std::string aTitle,
-		std::string aMessage, C_SDLWindow* aWindow,
-		std::vector<C_MessageBoxButton> aButtons, int* aID);
-
-	enum C_MessageBoxType
-	{
-		C_MB_INFO,
-		C_MB_WARNING,
-		C_MB_ERROR
-	};
-
-	enum C_MessageBoxButtonFlag
-	{
-		C_MB_BUTTON_RETURN_KEY,
-		C_MB_BUTTON_ESCAPE_KEY,
-	};
-
-	struct C_MessageBoxButton
-	{
-		unsigned int flag;
-		int id;
-		const char* text;
-	};
 
 	struct C_SDLWindowConfig
 	{

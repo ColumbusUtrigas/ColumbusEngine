@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   31.10.2017                  *
 *************************************************/
 
@@ -20,77 +20,6 @@ namespace Columbus
 	#define C_BUTTON_RIGHT SDL_BUTTON_RIGHT
 	#define C_BUTTON_X1 SDL_BUTTON_X1
 	#define C_BUTTON_X2 SDL_BUTTON_X2
-	//////////////////////////////////////////////////////////////////////////////
-	//Show simple message box, modal of window
-	void C_ShowMessageBox(C_MessageBoxType aType, std::string aTitle,
-		std::string aMessage, C_SDLWindow* aWindow)
-	{
-		SDL_Window* win = nullptr;
-		unsigned int type;
-		if (aWindow != nullptr)
-			win = aWindow->getHandle();
-		switch (aType)
-		{
-		case C_MB_INFO:    type = SDL_MESSAGEBOX_INFORMATION; break;
-		case C_MB_WARNING: type = SDL_MESSAGEBOX_WARNING;     break;
-		case C_MB_ERROR:   type = SDL_MESSAGEBOX_ERROR;       break;
-		}
-
-		SDL_ShowSimpleMessageBox(type, aTitle.c_str(), aMessage.c_str(), win);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Show complex message box, modal of window
-	void C_ShowMessageBox(C_MessageBoxType aType, std::string aTitle,
-		std::string aMessage, C_SDLWindow* aWindow,
-		std::vector<C_MessageBoxButton> aButtons, int* aID)
-	{
-		SDL_Window* win = nullptr;
-		unsigned int type;
-		std::vector<SDL_MessageBoxButtonData> buttons;
-
-		if (aWindow != nullptr)
-			win = aWindow->getHandle();
-
-		//Message box type
-		switch (aType)
-		{
-		case C_MB_INFO:    type = SDL_MESSAGEBOX_INFORMATION; break;
-		case C_MB_WARNING: type = SDL_MESSAGEBOX_WARNING;     break;
-		case C_MB_ERROR:   type = SDL_MESSAGEBOX_ERROR;       break;
-		}
-
-		//Lamda for coverting button data
-		auto button = [](C_MessageBoxButton aButton)->unsigned int
-		{
-			unsigned int flag;
-			switch (aButton.flag)
-			{
-			case C_MB_BUTTON_RETURN_KEY:
-				flag = SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT;
-				break;
-			case C_MB_BUTTON_ESCAPE_KEY:
-				flag = SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT;
-				break;
-			default:
-				flag = aButton.flag;
-				break;
-			}
-			return flag;
-		};
-
-		for (auto i : aButtons)
-		{
-			buttons.push_back({ button(i), i.id, i.text });
-		}
-
-		SDL_MessageBoxData data = 
-		{
-			type, win, aTitle.c_str(), aMessage.c_str(),
-			buttons.size(), buttons.data(), nullptr
-		};
-
-		SDL_ShowMessageBox(&data, aID);
-	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -166,9 +95,9 @@ namespace Columbus
 		C_EnableMultisampleOpenGL();
 
 		if (glewInit() != GLEW_OK)
-			C_FatalError("Can't initialize GLEW");
+			C_Log::fatal("Can't initialize GLEW");
 		else
-			C_Initialization("GLEW initialized");
+			C_Log::initialization("GLEW initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -177,9 +106,9 @@ namespace Columbus
 	void C_SDLWindow::initSDL()
 	{
 		if (SDL_Init(SDL_INIT_EVERYTHING))
-			C_FatalError("Can't initialize SDL2");
+			C_Log::fatal("Can't initialize SDL2");
 		else
-			C_Initialization("SDL2 initialized");
+			C_Log::initialization("SDL2 initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Printing API versions int console
@@ -191,12 +120,12 @@ namespace Columbus
 		SDL_VERSION(&cVer);
 		SDL_GetVersion(&lVer);
 
-		C_Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
-		C_Initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		C_Initialization("OpenGL version: %s", C_GetVersionOpenGL().c_str());
-		C_Initialization("OpenGL vendor: %s", C_GetVendorOpenGL().c_str());
-		C_Initialization("OpenGL renderer: %s", C_GetRendererOpenGL().c_str());
-		C_Initialization("GLSL version: %s\n", C_GetGLSLVersionOpenGL().c_str());
+		C_Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
+		C_Log::initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+		C_Log::initialization("OpenGL version: " + C_GetVersionOpenGL());
+		C_Log::initialization("OpenGL vendor: " + C_GetVendorOpenGL());
+		C_Log::initialization("OpenGL renderer: " + C_GetRendererOpenGL());
+		C_Log::initialization("GLSL version: " + C_GetGLSLVersionOpenGL() + "\n");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Poll window events

@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                  10.10.2017                   *
 *************************************************/
 
@@ -13,7 +13,7 @@
 #include <GL/glew.h>
 #include <string>
 
-#include <System/Console.h>
+#include <System/Log.h>
 
 namespace Columbus
 {

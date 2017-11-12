@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   02.11.2017                  *
 *************************************************/
 
@@ -19,7 +19,7 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <System/Console.h>
+#include <System/Log.h>
 
 namespace Columbus
 {

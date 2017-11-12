@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
 
@@ -100,7 +100,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 3
-  C_Mesh::C_Mesh()
+	C_Mesh::C_Mesh()
 	{
 
 	}
@@ -253,22 +253,23 @@ namespace Columbus
 		if (mParent != nullptr)
 			mMatrix = mParent->mMatrix;
 		else
-			mMatrix = glm::mat4(1.0f);
+			mMatrix.identity();
 
-		mMatrix = glm::translate(mMatrix, mPivot.toGLM() + mPos.toGLM());
-		mMatrix = glm::scale(mMatrix, mScale.toGLM());
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.z), glm::vec3(0, 0, 1));
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.x), glm::vec3(1, 0, 0));
-		mMatrix = glm::rotate(mMatrix, C_DegToRads(mRot.y), glm::vec3(0, 1, 0));
-		mMatrix = glm::translate(mMatrix, -(mPivot.toGLM() + mPos.toGLM()));
-		mMatrix = glm::translate(mMatrix, mPos.toGLM());
+		C_Matrix4 matrix(mMatrix);
+		matrix.scale(mScale);
+		matrix.rotate(C_Vector3(0, 0, 1), mRot.z);
+		matrix.rotate(C_Vector3(1, 0, 0), mRot.x);
+		matrix.rotate(C_Vector3(0, 1, 0), mRot.y);
+		matrix.translate(mPos);
 
-		mNormalMatrix = glm::inverse(glm::transpose(mMatrix));
+		mNormalMatrix = mMatrix;
+		mNormalMatrix.transpose();
+		mNormalMatrix.invert();
 
-		mMat.getShader()->setUniformMatrix("uModel", glm::value_ptr(mMatrix));
-		mMat.getShader()->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
-		mMat.getShader()->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
-		mMat.getShader()->setUniformMatrix("uNormal", glm::value_ptr(mNormalMatrix));
+		mMat.getShader()->setUniformMatrix("uModel", matrix.elements());
+		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uNormal", mNormalMatrix.elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set all material data as uniform in shader

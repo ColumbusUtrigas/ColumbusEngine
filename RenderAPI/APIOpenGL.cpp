@@ -4,7 +4,7 @@
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
-*             Nikolay(Columbus) Red             *
+*                Nika(Columbus) Red             *
 *                  10.10.2017                   *
 *************************************************/
 
@@ -34,7 +34,7 @@ namespace Columbus
   			case GL_TABLE_TOO_LARGE:        error = "TABLE_TOO_LARGE";        break;
 			}
 
-			C_Error("OpenGL: %s\n", error.c_str());
+			C_Log::error("OpenGL: " + error);
 			return true;
 		}
 		return false;
