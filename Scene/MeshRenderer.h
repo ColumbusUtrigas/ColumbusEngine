@@ -30,6 +30,9 @@ namespace Columbus
 
 		void update() override;
 		void render(C_Transform aTransform) override;
+		//This component methods
+		std::string getType() override;
+		void setLights(std::vector<C_Light*> aLights);
 
 		~C_MeshRenderer();
 	};

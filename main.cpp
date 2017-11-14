@@ -124,14 +124,23 @@ int main(int argc, char** argv)
 	C_Scene scene;
 
 	C_GameObject* obj = new C_GameObject();
-	C_Component* component = new C_MeshRenderer(&mesh3);
+	C_GameObject* l1 = new C_GameObject();
+	C_GameObject* l2 = new C_GameObject();
+	C_GameObject* l3 = new C_GameObject();
 
-	obj->addComponent(component);
+	obj->addComponent(new C_MeshRenderer(&mesh3));
+	l1->addComponent(new C_LightComponent(&light1));
+	l2->addComponent(new C_LightComponent(&light2));
+	l3->addComponent(new C_LightComponent(&light3));
+
 	C_Transform transf;
 	transf.setPos(C_Vector3(0, -2, 0));
 	obj->setTransform(transf);
 
 	scene.add(0, obj);
+	scene.add(1, l1);
+	scene.add(2, l2);
+	scene.add(3, l3);
 
 	while (window.isOpen())
 	{
@@ -196,6 +205,9 @@ int main(int argc, char** argv)
 
 		render.setWindowSize(window.getSize());
 		//render.render();
+
+		skybox.draw();
+
 		scene.update();
 		scene.render();
 

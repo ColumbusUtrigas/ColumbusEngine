@@ -35,6 +35,9 @@ namespace Columbus
 		void update();
 		void render();
 
+		bool hasComponent(std::string aName);
+		C_Component* getComponent(std::string aName);
+
 		~C_GameObject();
 	};
 

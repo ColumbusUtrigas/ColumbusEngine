@@ -10,6 +10,8 @@
 #pragma once
 
 #include <Scene/GameObject.h>
+#include <Scene/LightComponent.h>
+#include <Scene/MeshRenderer.h>
 
 namespace Columbus
 {
@@ -18,6 +20,10 @@ namespace Columbus
 	{
 	private:
 		std::map<unsigned int, C_GameObject*> mMeshes;
+		std::vector<C_Light*> mLights;
+
+		void lightWorkflow();
+		void meshWorkflow();
 	public:
 		C_Scene();
 

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <Scene/Transform.h>
+#include <string>
 
 namespace Columbus
 {
@@ -26,6 +27,8 @@ namespace Columbus
 		virtual void update();
 
 		virtual void render(C_Transform aTransform);
+
+		virtual std::string getType();
 
 		void destroy();
 
