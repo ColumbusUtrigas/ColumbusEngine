@@ -28,8 +28,8 @@ namespace Columbus
 		bool onCreate() override;
 		bool onUpdate() override;
 
-		void update() override;
-		void render(C_Transform aTransform) override;
+		void update(const float aTimeTick) override;
+		void render(C_Transform& aTransform) override;
 		//This component methods
 		std::string getType() override;
 		void setLights(std::vector<C_Light*> aLights);

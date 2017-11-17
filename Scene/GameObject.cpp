@@ -46,7 +46,7 @@ namespace Columbus
 		mTransform.update();
 
 		for (auto Comp : mComponents)
-			Comp->update();
+			Comp->update(mTimer.elapsed());
 
 		for (auto Child : mChildren)
 			Child->update();
@@ -59,6 +59,8 @@ namespace Columbus
 
 		for (auto Child : mChildren)
 			Child->render();
+
+		mTimer.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_GameObject::hasComponent(std::string aName)

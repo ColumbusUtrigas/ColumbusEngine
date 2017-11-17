@@ -22,12 +22,12 @@ namespace Columbus
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_LightComponent::update()
+	void C_LightComponent::update(const float aTimeTick)
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_LightComponent::render(C_Transform aTransform)
+	void C_LightComponent::render(C_Transform& aTransform)
 	{
 
 	}

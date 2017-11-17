@@ -31,12 +31,12 @@ namespace Columbus
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::update()
+	void C_MeshRenderer::update(const float aTimeTick)
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::render(C_Transform aTransform)
+	void C_MeshRenderer::render(C_Transform& aTransform)
 	{
 		if (mMesh != nullptr)
 			mMesh->render(aTransform);

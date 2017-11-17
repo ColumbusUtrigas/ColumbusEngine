@@ -12,6 +12,7 @@
 #include <Graphics/Model.h>
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
+#include <System/Timer.h>
 
 namespace Columbus
 {
@@ -23,6 +24,7 @@ namespace Columbus
 		std::vector<C_Component*> mComponents;
 
 		C_Transform mTransform;
+		C_Timer mTimer;
 	public:
 		C_GameObject();
 

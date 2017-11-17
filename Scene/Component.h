@@ -24,9 +24,9 @@ namespace Columbus
 	public:
 		C_Component();
 
-		virtual void update();
+		virtual void update(const float aTimeTick);
 
-		virtual void render(C_Transform aTransform);
+		virtual void render(C_Transform& aTransform);
 
 		virtual std::string getType();
 
