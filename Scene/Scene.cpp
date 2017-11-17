@@ -13,7 +13,8 @@
 namespace Columbus
 {
 
-	C_Scene::C_Scene()
+	C_Scene::C_Scene() :
+		mSkybox(nullptr)
 	{
 
 	}
@@ -51,6 +52,11 @@ namespace Columbus
 		mMeshes.insert(std::pair<unsigned int, C_GameObject*>(aID, aMesh));
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_Scene::setSkybox(const C_Skybox* aSkybox)
+	{
+		mSkybox = const_cast<C_Skybox*>(aSkybox);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::update()
 	{
 		lightWorkflow();
@@ -62,6 +68,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::render()
 	{
+		if (mSkybox != nullptr)
+			mSkybox->draw();
+
 		for (auto Mesh : mMeshes)
 			Mesh.second->render();
 	}

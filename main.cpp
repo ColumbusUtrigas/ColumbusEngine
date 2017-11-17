@@ -123,6 +123,8 @@ int main(int argc, char** argv)
 
 	C_Scene scene;
 
+	scene.setSkybox(&skybox);
+
 	C_GameObject* obj = new C_GameObject();
 	C_GameObject* l1 = new C_GameObject();
 	C_GameObject* l2 = new C_GameObject();
@@ -205,8 +207,6 @@ int main(int argc, char** argv)
 
 		render.setWindowSize(window.getSize());
 		//render.render();
-
-		skybox.draw();
 
 		scene.update();
 		scene.render();
