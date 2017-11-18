@@ -39,11 +39,14 @@ int main(int argc, char** argv)
 
 	Import::C_ImporterModel imp;
 	imp.loadOBJ("Data/Models/ASD.obj");
+	Import::C_ImporterModel imp2;
+	imp2.loadOBJ("Data/Models/Dragon.obj");
 
 
 	C_Mesh mesh(imp.getObject(0));
 	C_Mesh mesh2(imp.getObject(1));
 	C_Mesh mesh3(C_PrimitiveBox(C_Vector3(5, 1, 5)));
+	C_Mesh mesh4(imp2.getObject(0));
 
 	mesh.mMat.loadFromXML("Data/Materials/Default.cxmat");
 	mesh2.mMat.loadFromXML("Data/Materials/Default.cxmat");
@@ -67,6 +70,8 @@ int main(int argc, char** argv)
 	mesh3.mMat.setShader(&shader);
 	mesh3.setPos(C_Vector3(0, -2, 0));
 
+	mesh4.mMat.setShader(&shader);
+
 	mesh.addChild(&mesh2);
 
 
@@ -85,6 +90,7 @@ int main(int argc, char** argv)
 	mesh.mMat.setReflection(&cubemap);
 	mesh2.mMat.setReflection(&cubemap);
 	mesh3.mMat.setReflection(&cubemap);
+	mesh4.mMat.setReflection(&cubemap);
 
 	render.setSkybox(&skybox);
 
@@ -124,13 +130,16 @@ int main(int argc, char** argv)
 	C_Scene scene;
 
 	scene.setSkybox(&skybox);
+	scene.setCamera(&camera);
 
 	C_GameObject* obj = new C_GameObject();
+	C_GameObject* obj2 = new C_GameObject();
 	C_GameObject* l1 = new C_GameObject();
 	C_GameObject* l2 = new C_GameObject();
 	C_GameObject* l3 = new C_GameObject();
 
 	obj->addComponent(new C_MeshRenderer(&mesh3));
+	obj2->addComponent(new C_MeshRenderer(&mesh4));
 	l1->addComponent(new C_LightComponent(&light1));
 	l2->addComponent(new C_LightComponent(&light2));
 	l3->addComponent(new C_LightComponent(&light3));
@@ -138,11 +147,14 @@ int main(int argc, char** argv)
 	C_Transform transf;
 	transf.setPos(C_Vector3(0, -2, 0));
 	obj->setTransform(transf);
+	transf.setPos(C_Vector3(0, -1, 0));
+	obj2->setTransform(transf);
 
 	scene.add(0, obj);
-	scene.add(1, l1);
-	scene.add(2, l2);
-	scene.add(3, l3);
+	scene.add(1, obj2);
+	scene.add(2, l1);
+	scene.add(3, l2);
+	scene.add(4, l3);
 
 	while (window.isOpen())
 	{

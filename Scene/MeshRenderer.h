@@ -11,6 +11,7 @@
 
 #include <Scene/Component.h>
 #include <Graphics/Model.h>
+#include <Graphics/Camera.h>
 
 namespace Columbus
 {
@@ -22,6 +23,7 @@ namespace Columbus
 		bool mUpdateMoment = false;
 
 		C_Mesh* mMesh = nullptr;
+		C_Camera mCamera;
 	public:
 		C_MeshRenderer(C_Mesh* aMesh);
 
@@ -33,6 +35,7 @@ namespace Columbus
 		//This component methods
 		std::string getType() override;
 		void setLights(std::vector<C_Light*> aLights);
+		void setCamera(const C_Camera mCamera);
 
 		~C_MeshRenderer();
 	};

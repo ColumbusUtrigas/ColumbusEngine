@@ -13,6 +13,7 @@
 #include <Scene/LightComponent.h>
 #include <Scene/MeshRenderer.h>
 #include <Graphics/Skybox.h>
+#include <Graphics/Camera.h>
 
 namespace Columbus
 {
@@ -23,6 +24,7 @@ namespace Columbus
 		std::map<unsigned int, C_GameObject*> mMeshes;
 		std::vector<C_Light*> mLights;
 		C_Skybox* mSkybox = nullptr;
+		C_Camera* mCamera = nullptr;
 
 		void lightWorkflow();
 		void meshWorkflow();
@@ -31,6 +33,7 @@ namespace Columbus
 
 		void add(unsigned int aID, C_GameObject* aMesh);
 		void setSkybox(const C_Skybox* aSkybox);
+		void setCamera(const C_Camera* aCamera);
 
 		void update();
 		void render();

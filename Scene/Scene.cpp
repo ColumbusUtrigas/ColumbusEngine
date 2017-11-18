@@ -43,7 +43,11 @@ namespace Columbus
 				static_cast<C_MeshRenderer*>(Mesh.second->getComponent("MeshRenderer"));
 
 			if (mesh != nullptr)
+			{
 				mesh->setLights(mLights);
+				if (mCamera != nullptr)
+					mesh->setCamera(*mCamera);
+			}
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -55,6 +59,11 @@ namespace Columbus
 	void C_Scene::setSkybox(const C_Skybox* aSkybox)
 	{
 		mSkybox = const_cast<C_Skybox*>(aSkybox);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Scene::setCamera(const C_Camera* aCamera)
+	{
+		mCamera = const_cast<C_Camera*>(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::update()
