@@ -25,6 +25,8 @@
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
 
+#include <Scene/Transform.h>
+
 namespace Columbus
 {
 
@@ -51,6 +53,7 @@ namespace Columbus
 		void setShaderTextures();
 		//Calculate and transfer matrices as uniform in shader
 		void setShaderMatrices();
+		void setShaderMatrices(C_Transform aTransform);
 		//Set all material data as uniform in shader
 		void setShaderMaterial();
 		//Set all lights and camera data as unniform in shader
@@ -76,6 +79,8 @@ namespace Columbus
 		C_Mesh(std::vector<C_Vertex> aVert);
 		//Draw mesh
 		void draw();
+		//Render mesh
+		void render(C_Transform aTransform);
 		//Set mesh position
 		void setPos(C_Vector3 aPos);
 		//Set mesh rotation

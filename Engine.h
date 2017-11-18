@@ -34,6 +34,12 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 
+#include <Scene/Component.h>
+#include <Scene/GameObject.h>
+#include <Scene/MeshRenderer.h>
+#include <Scene/Scene.h>
+#include <Scene/Transform.h>
+
 #include <System/Assert.h>
 #include <System/File.h>
 #include <System/Importer.h>
