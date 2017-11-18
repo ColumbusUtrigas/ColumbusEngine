@@ -1,5 +1,5 @@
 # Columbus Engine
-3D engine cross-platform, written in C++14
+3D cross-platform engine, written in C++14
 ## Columbus Engine can:
 * Load 3D models from OBJ format
 * Load images from PNG, JPEG, TGA, BMP, HDR format
