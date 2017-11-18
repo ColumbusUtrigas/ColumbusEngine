@@ -12,7 +12,7 @@ Advanced cross-platform 3D engine, written in C++14
 * Graphics System (in work)
 * Implantation System (in work)
 * Low-level System (in work)
-* Input Systm
+* Input System
 * Scene manager
 * Advanced Entity-Component System
 * Advanced Particle Effect System (no ECS support, in work)
