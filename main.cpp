@@ -71,6 +71,7 @@ int main(int argc, char** argv)
 	mesh3.setPos(C_Vector3(0, -2, 0));
 
 	mesh4.mMat.setShader(&shader);
+	mesh4.mMat.loadFromXML("Data/Materials/Default.cxmat");
 
 	mesh.addChild(&mesh2);
 
@@ -111,7 +112,7 @@ int main(int argc, char** argv)
 	int FPS = 0;
 
 	//window.setVerticalSync(true);
-	window.setFPSLimit(60);
+	window.setFPSLimit(100);
 
 	render.add(&particles);
 
