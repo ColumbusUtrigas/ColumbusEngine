@@ -240,6 +240,21 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubVector2(std::vector<std::string> aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
+			mTmp->InsertEndChild(subElement);
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setVector3(std::string aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs)
 		{
 			if (mMode != 0) return false;
@@ -254,6 +269,22 @@ namespace Columbus
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubVector3(std::vector<std::string> aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
+			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
+			mTmp->InsertEndChild(subElement);
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs)
@@ -271,6 +302,23 @@ namespace Columbus
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubVector4(std::vector<std::string> aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
+			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
+			subElement->SetAttribute(aAttribs.d.c_str(), aValue.w);
+			mTmp->InsertEndChild(subElement);
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::save()
