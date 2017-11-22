@@ -55,12 +55,19 @@ namespace Columbus
 			bool setInt(std::string aElement, int aValue);
 			bool setSubInt(std::vector<std::string> aElement, int aValue);
 			bool setBool(std::string aElement, bool aValue);
+			bool setSubBool(std::vector<std::string> aElement, bool aValue);
 			bool setFloat(std::string aElement, float aValue);
+			bool setSubFloat(std::vector<std::string> aElement, float aValue);
 			bool setDouble(std::string aElement, double aValue);
+			bool setSubDouble(std::vector<std::string> aElement, double aValue);
 			bool setString(std::string aElement, std::string aValue);
+			bool setSubString(std::vector<std::string> aElement, std::string aValue);
 			bool setVector2(std::string aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs);
+			bool setSubVector2(std::vector<std::string> aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs);
 			bool setVector3(std::string aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs);
+			bool setSubVector3(std::vector<std::string> aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs);
 			bool setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs);
+			bool setSubVector4(std::vector<std::string> aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs);
 			bool save();
 
 			bool read(std::string aFile, std::string aRoot);

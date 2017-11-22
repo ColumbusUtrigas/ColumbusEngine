@@ -127,6 +127,20 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubBool(std::vector<std::string> aElement, bool aValue)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetText(aValue);
+			mTmp->InsertEndChild(subElement);
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setFloat(std::string aElement, float aValue)
 		{
 			if (mMode != 0) return false;
@@ -139,6 +153,20 @@ namespace Columbus
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubFloat(std::vector<std::string> aElement, float aValue)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetText(aValue);
+			mTmp->InsertEndChild(subElement);
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setDouble(std::string aElement, double aValue)
@@ -155,6 +183,20 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubDouble(std::vector<std::string> aElement, double aValue)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetText(aValue);
+			mTmp->InsertEndChild(subElement);
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setString(std::string aElement, std::string aValue)
 		{
 			if (mMode != 0) return false;
@@ -167,6 +209,20 @@ namespace Columbus
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::setSubString(std::vector<std::string> aElement, std::string aValue)
+		{
+			if (mMode != 0) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+
+			std::string end = aElement[aElement.size() - 1];
+			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			subElement->SetText(aValue.c_str());
+			mTmp->InsertEndChild(subElement);
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setVector2(std::string aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs)
