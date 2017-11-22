@@ -43,12 +43,17 @@ namespace Columbus
 			int mMode = 0; // 0 - saving, 1 - loading
 			public:
 			enum C_XMLMode { C_XML_SERIALIZATION, C_XML_DESERIALIZATION };
+
+			C_XMLElement* getElementFromHierarchy(std::vector<std::string> aElement);
 		public:
 			C_SerializerXML();
 			C_SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode);
 
 			bool write(std::string aFile, std::string aRoot);
+			bool setEmpty(std::string aElement);
+			bool setSubEmpty(std::vector<std::string> aElement);
 			bool setInt(std::string aElement, int aValue);
+			bool setSubInt(std::vector<std::string> aElement, int aValue);
 			bool setBool(std::string aElement, bool aValue);
 			bool setFloat(std::string aElement, float aValue);
 			bool setDouble(std::string aElement, double aValue);
