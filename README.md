@@ -15,7 +15,7 @@
 * Input System
 * Scene manager
 * Advanced Entity-Component System
-* Advanced Particle Effect System (no ECS support, in work)
+* Advanced Particle Effect System (70% progress)
 * Cubemaps
 * Camera
 * Advanced Math Lib (vec2, vec3, vec4, mat4)
