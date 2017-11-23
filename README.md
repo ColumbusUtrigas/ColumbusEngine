@@ -4,8 +4,8 @@
 * Load 3D models from OBJ format
 * Load images from PNG, JPEG, TGA, BMP, HDR format
 * Write images to PNG and JPEG format
-* Load simple XML files
-* Write simple XML files
+* Load XML files
+* Write XML files
 * Load JSON files
 * Write JSON files
 * Material and Shader system (in work)
