@@ -83,6 +83,7 @@ namespace Columbus
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setInt(std::string aElement, int aValue)
@@ -111,6 +112,7 @@ namespace Columbus
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setBool(std::string aElement, bool aValue)
@@ -139,6 +141,7 @@ namespace Columbus
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setFloat(std::string aElement, float aValue)
@@ -167,6 +170,7 @@ namespace Columbus
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setDouble(std::string aElement, double aValue)
@@ -195,6 +199,7 @@ namespace Columbus
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setString(std::string aElement, std::string aValue)
@@ -223,6 +228,7 @@ namespace Columbus
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue.c_str());
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setVector2(std::string aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs)
@@ -253,6 +259,7 @@ namespace Columbus
 			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
 			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setVector3(std::string aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs)
@@ -285,6 +292,7 @@ namespace Columbus
 			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
 			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs)
@@ -319,6 +327,7 @@ namespace Columbus
 			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
 			subElement->SetAttribute(aAttribs.d.c_str(), aValue.w);
 			mTmp->InsertEndChild(subElement);
+			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::save()
@@ -355,6 +364,19 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubInt(std::vector<std::string> aElement, int* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
+			mTmp->QueryIntText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::getBool(std::string aElement, bool* aValue)
 		{
 			if (mMode != 1) return false;
@@ -364,6 +386,19 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
+			mTmp->QueryBoolText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubBool(std::vector<std::string> aElement, bool* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
 			mTmp->QueryBoolText(aValue);
 			return true;
 		}
@@ -381,6 +416,19 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubFloat(std::vector<std::string> aElement, float* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
+			mTmp->QueryFloatText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::getDouble(std::string aElement, double* aValue)
 		{
 			if (mMode != 1) return false;
@@ -390,6 +438,19 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
+			mTmp->QueryDoubleText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubDouble(std::vector<std::string> aElement, double* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
 			mTmp->QueryDoubleText(aValue);
 			return true;
 		}
@@ -407,6 +468,19 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubString(std::vector<std::string> aElement, std::string* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
+			*aValue = mTmp->GetText();
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::getVector2(std::string aElement, C_Vector2* aValue, C_AttribVector2XML aAttrib)
 		{
 			if (mMode != 1) return false;
@@ -416,6 +490,20 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
+			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
+			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubVector2(std::vector<std::string> aElement, C_Vector2* aValue, C_AttribVector2XML aAttrib)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
 			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
 			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
 			return true;
@@ -436,6 +524,21 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubVector3(std::vector<std::string> aElement, C_Vector3* aValue, C_AttribVector3XML aAttrib)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
+			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
+			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
+			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::getVector4(std::string aElement, C_Vector4* aValue, C_AttribVector4XML aAttrib)
 		{
 			if (mMode != 1) return false;
@@ -445,6 +548,22 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
+			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
+			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
+			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
+			mTmp->QueryFloatAttribute(aAttrib.d.c_str(), &aValue->w);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getSubVector4(std::vector<std::string> aElement, C_Vector4* aValue, C_AttribVector4XML aAttrib)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (getElementFromHierarchy(aElement) == nullptr) return false;
+			mTmp = mTmp->FirstChildElement(aElement[aElement.size() - 1].c_str());
 			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
 			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
 			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
