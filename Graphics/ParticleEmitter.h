@@ -26,6 +26,7 @@
 #include <Math/Vector4.h>
 #include <Graphics/Camera.h>
 #include <Graphics/ParticleEffect.h>
+#include <Graphics/Light.h>
 #include <System/System.h>
 #include <System/Timer.h>
 #include <System/Random.h>
@@ -57,6 +58,7 @@ namespace Columbus
 
 		std::vector<C_Particle> mParticles;
 		std::vector<C_Particle> mActiveParticles;
+		std::vector<C_Light*> mLights;
 
 		C_Shader* mShader = NULL;
 
@@ -92,6 +94,7 @@ namespace Columbus
 		void copyActive();
 		void setBuffers();
 		void setUniforms();
+		void setShaderMaterial();
 		void unbindAll();
 
 	public:

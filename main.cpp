@@ -103,7 +103,7 @@ int main(int argc, char** argv)
 
 
 	C_ParticleEffect particleEffect;
-	particleEffect.loadFromJSON("Data/Particles/A.cjpar");
+	particleEffect.loadFromXML("Data/Particles/A.cxpar");
 	particleEffect.setMaterial(&partmat);
 	C_ParticleEmitter particles(&particleEffect);
 

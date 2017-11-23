@@ -230,6 +230,28 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setShaderMaterial()
+	{
+		if (mParticleEffect == nullptr) return;
+		if (mParticleEffect->getMaterial() == nullptr) return;
+
+		C_Vector4 matcol = mParticleEffect->getMaterial()->getColor();
+		C_Vector3 matamb = mParticleEffect->getMaterial()->getAmbient();
+		C_Vector3 matdif = mParticleEffect->getMaterial()->getDiffuse();
+		C_Vector3 matspc = mParticleEffect->getMaterial()->getSpecular();
+
+		float const MaterialUnif[14] =
+		{
+			matcol.x, matcol.y, matcol.z, matcol.w,
+			matamb.x, matamb.y, matamb.z,
+			matdif.x, matdif.y, matdif.z,
+			matspc.x, matspc.y, matspc.z,
+			mParticleEffect->getMaterial()->getReflectionPower()
+		};
+
+		mShader->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::unbindAll()
 	{
 		if (mParticleEffect->getAdditive())
@@ -406,6 +428,8 @@ namespace Columbus
 		float scaleOL = mParticleEffect->getScaleOverLifetime();
 		float billboard = mParticleEffect->getBillbiarding();
 		float gradient = mParticleEffect->getGradienting();
+
+		setShaderMaterial();
 
 		for (auto Particle : mActiveParticles)
 		{
