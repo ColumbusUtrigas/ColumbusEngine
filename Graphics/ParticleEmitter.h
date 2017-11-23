@@ -53,7 +53,7 @@ namespace Columbus
 	class C_ParticleEmitter
 	{
 	private:
-		C_ParticleEffect* mParticleEffect = NULL;
+		C_ParticleEffect* mParticleEffect = nullptr;
 
 		std::vector<C_Particle> mParticles;
 		std::vector<C_Particle> mActiveParticles;
@@ -90,7 +90,6 @@ namespace Columbus
 		};
 		void sort();
 		void copyActive();
-		void update(float aTimeTick);
 		void setBuffers();
 		void setUniforms();
 		void unbindAll();
@@ -100,11 +99,14 @@ namespace Columbus
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 		//Set particle effect
 		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
+		//Return particle effect
+		C_ParticleEffect* getParticleEffect() const;
 		//Set camera pos
 		void setCameraPos(C_Vector3 aC);
 		//Draw particles
 		//void draw();
-		void draw(float aTimeTick);
+		void update(const float aTimeTick);
+		void draw();
 		//Destructor
 		~C_ParticleEmitter();
 	};

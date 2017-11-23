@@ -135,12 +135,14 @@ int main(int argc, char** argv)
 
 	C_GameObject* obj = new C_GameObject();
 	C_GameObject* obj2 = new C_GameObject();
+	C_GameObject* part = new C_GameObject();
 	C_GameObject* l1 = new C_GameObject();
 	C_GameObject* l2 = new C_GameObject();
 	C_GameObject* l3 = new C_GameObject();
 
 	obj->addComponent(new C_MeshRenderer(&mesh3));
 	obj2->addComponent(new C_MeshRenderer(&mesh4));
+	part->addComponent(new C_ParticleSystem(&particles));
 	l1->addComponent(new C_LightComponent(&light1));
 	l2->addComponent(new C_LightComponent(&light2));
 	l3->addComponent(new C_LightComponent(&light3));
@@ -153,10 +155,11 @@ int main(int argc, char** argv)
 
 	scene.add(0, obj);
 	scene.add(1, obj2);
-	scene.add(2, l1);
-	scene.add(3, l2);
-	scene.add(4, l3);
-
+	scene.add(2, part);
+	scene.add(3, l1);
+	scene.add(4, l2);
+	scene.add(5, l3);
+	
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();

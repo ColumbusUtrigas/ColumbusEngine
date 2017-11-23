@@ -82,6 +82,18 @@ namespace Columbus
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set particle effect
+	void C_ParticleEmitter::setParticleEffect(const C_ParticleEffect* aParticleEffect)
+	{
+		mParticleEffect = const_cast<C_ParticleEffect*>(aParticleEffect);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return particle effect
+	C_ParticleEffect* C_ParticleEmitter::getParticleEffect() const
+	{
+		return mParticleEffect;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Set camera pos
 	void C_ParticleEmitter::setCameraPos(C_Vector3 aC)
 	{
@@ -117,7 +129,7 @@ namespace Columbus
 		mActiveParticles.resize(std::distance(mActiveParticles.begin(), it));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::update(float aTimeTick)
+	void C_ParticleEmitter::update(const float aTimeTick)
 	{
 		using namespace std;
 		
@@ -367,10 +379,8 @@ namespace Columbus
 	}*/
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
-	void C_ParticleEmitter::draw(float aTimeTick)
+	void C_ParticleEmitter::draw()
 	{
-		update(aTimeTick);
-
 		if (mParticleEffect == nullptr)
 			return;
 		if (mShader == nullptr)
