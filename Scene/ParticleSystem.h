@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Scene/Component.h>
+#include <Graphics/Camera.h>
+#include <Graphics/Light.h>
 #include <Graphics/ParticleEmitter.h>
 
 namespace Columbus
@@ -21,6 +23,8 @@ namespace Columbus
 		//This component methods
 		std::string getType() override;
 		C_ParticleEmitter* getEmitter() const;
+		void setLights(std::vector<C_Light*> aLights);
+		void setCamera(C_Camera aCamera);
 
 		~C_ParticleSystem();
 	};

@@ -95,8 +95,12 @@ namespace Columbus
 		void setBuffers();
 		void setUniforms();
 		void setShaderMaterial();
+		void setShaderLightAndCamera();
+		void calculateLights();
+		void sortLights();
 		void unbindAll();
-
+		
+		float mLightUniform[120];
 	public:
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
@@ -108,6 +112,8 @@ namespace Columbus
 		void setCameraPos(C_Vector3 aC);
 		//Draw particles
 		//void draw();
+		//Set light casters, which calculate to using in shaders
+		void setLights(std::vector<C_Light*> aLights);
 		void update(const float aTimeTick);
 		void draw();
 		//Destructor

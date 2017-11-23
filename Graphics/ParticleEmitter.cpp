@@ -129,6 +129,12 @@ namespace Columbus
 		mActiveParticles.resize(std::distance(mActiveParticles.begin(), it));
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set light casters, which calculate to using in shaders
+	void C_ParticleEmitter::setLights(std::vector<C_Light*> aLights)
+	{
+		mLights = aLights;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::update(const float aTimeTick)
 	{
 		using namespace std;
@@ -250,6 +256,73 @@ namespace Columbus
 		};
 
 		mShader->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setShaderLightAndCamera()
+	{
+		calculateLights();
+		mShader->setUniformArrayf("LightUnif", mLightUniform, 120);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::calculateLights()
+	{
+		sortLights();
+		//8 - max count of lights, processing in shader
+		for (int i = 0; i < 8; i++)
+		{
+			int offset = i * 15;
+
+			if (i < mLights.size())
+			{
+				//Color
+				mLightUniform[0 + offset] = mLights[i]->getColor().x;
+				mLightUniform[1 + offset] = mLights[i]->getColor().y;
+				mLightUniform[2 + offset] = mLights[i]->getColor().z;
+				//Position
+				mLightUniform[3 + offset] = mLights[i]->getPos().x;
+				mLightUniform[4 + offset] = mLights[i]->getPos().y;
+				mLightUniform[5 + offset] = mLights[i]->getPos().z;
+				//Direction
+				mLightUniform[6 + offset] = mLights[i]->getDir().x;
+				mLightUniform[7 + offset] = mLights[i]->getDir().y;
+				mLightUniform[8 + offset] = mLights[i]->getDir().z;
+				//Type
+				mLightUniform[9 + offset] = mLights[i]->getType();
+				//Constant attenuation
+				mLightUniform[10 + offset] = mLights[i]->getConstant();
+				//Linear attenuation
+				mLightUniform[11 + offset] = mLights[i]->getLinear();
+				//Quadratic attenuation
+				mLightUniform[12 + offset] = mLights[i]->getQuadratic();
+				//Inner cutoff
+				mLightUniform[13 + offset] = mLights[i]->getInnerCutoff();
+				//Outer cutoff
+				mLightUniform[14 + offset] = mLights[i]->getOuterCutoff();
+			} else
+			{
+				for (int j = 0; j < 15; j++)
+					mLightUniform[j + offset] = -1;
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::sortLights()
+	{
+		if (mParticleEffect == nullptr) return;
+
+		C_Vector3 pos = mParticleEffect->getPos();
+
+		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
+
+		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
+		{
+			C_Vector3 q = a->getPos();
+			C_Vector3 w = b->getPos();
+
+			return q.length(pos) < w.length(pos);
+		};
+
+		std::sort(mLights.begin(), mLights.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::unbindAll()
@@ -430,6 +503,7 @@ namespace Columbus
 		float gradient = mParticleEffect->getGradienting();
 
 		setShaderMaterial();
+		setShaderLightAndCamera();
 
 		for (auto Particle : mActiveParticles)
 		{
