@@ -12,6 +12,7 @@
 #include <Scene/GameObject.h>
 #include <Scene/LightComponent.h>
 #include <Scene/MeshRenderer.h>
+#include <Scene/ParticleSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
 
@@ -28,6 +29,7 @@ namespace Columbus
 
 		void lightWorkflow();
 		void meshWorkflow();
+		void particlesWorkflow();
 	public:
 		C_Scene();
 

@@ -10,11 +10,10 @@
 
 #include <Graphics/Texture.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
+
+#include <SDL_image.h>
 
 namespace Columbus
 {
@@ -24,11 +23,18 @@ namespace Columbus
 	C_TextureData C_LoadImage(std::string aPath)
 	{
 		C_TextureData ret;
-		int w, h, bpp;
-		ret.buffer = stbi_load(aPath.c_str(), &w, &h, &bpp, 0);
-		ret.width = w;
-		ret.height = h;
-		ret.bpp = bpp;
+		SDL_Surface* surf = IMG_Load(aPath.c_str());
+
+		ret.width = surf->w;
+		ret.height = surf->h;
+		ret.bpp = surf->format->BytesPerPixel;
+
+		size_t size = ret.width * ret.height * ret.bpp;
+
+		ret.buffer = new uint8_t[size];
+		memcpy(ret.buffer, surf->pixels, size + 1);
+
+		SDL_FreeSurface(surf);
 		return ret;
 	}
 	//////////////////////////////////////////////////////////////////////////////

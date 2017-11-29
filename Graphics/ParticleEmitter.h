@@ -26,6 +26,7 @@
 #include <Math/Vector4.h>
 #include <Graphics/Camera.h>
 #include <Graphics/ParticleEffect.h>
+#include <Graphics/Light.h>
 #include <System/System.h>
 #include <System/Timer.h>
 #include <System/Random.h>
@@ -53,10 +54,11 @@ namespace Columbus
 	class C_ParticleEmitter
 	{
 	private:
-		C_ParticleEffect* mParticleEffect = NULL;
+		C_ParticleEffect* mParticleEffect = nullptr;
 
 		std::vector<C_Particle> mParticles;
 		std::vector<C_Particle> mActiveParticles;
+		std::vector<C_Light*> mLights;
 
 		C_Shader* mShader = NULL;
 
@@ -90,21 +92,30 @@ namespace Columbus
 		};
 		void sort();
 		void copyActive();
-		void update(float aTimeTick);
 		void setBuffers();
 		void setUniforms();
+		void setShaderMaterial();
+		void setShaderLightAndCamera();
+		void calculateLights();
+		void sortLights();
 		void unbindAll();
-
+		
+		float mLightUniform[120];
 	public:
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 		//Set particle effect
 		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
+		//Return particle effect
+		C_ParticleEffect* getParticleEffect() const;
 		//Set camera pos
 		void setCameraPos(C_Vector3 aC);
 		//Draw particles
 		//void draw();
-		void draw(float aTimeTick);
+		//Set light casters, which calculate to using in shaders
+		void setLights(std::vector<C_Light*> aLights);
+		void update(const float aTimeTick);
+		void draw();
 		//Destructor
 		~C_ParticleEmitter();
 	};

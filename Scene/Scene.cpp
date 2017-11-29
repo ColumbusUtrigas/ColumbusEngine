@@ -51,6 +51,22 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_Scene::particlesWorkflow()
+	{
+		for (auto PS : mMeshes)
+		{
+			C_ParticleSystem* ps =
+				static_cast<C_ParticleSystem*>(PS.second->getComponent("ParticleSystem"));
+
+			if (ps != nullptr)
+			{
+				ps->setLights(mLights);
+				if (mCamera != nullptr)
+					ps->setCamera(*mCamera);
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::add(unsigned int aID, C_GameObject* aMesh)
 	{
 		mMeshes.insert(std::pair<unsigned int, C_GameObject*>(aID, aMesh));
@@ -70,6 +86,7 @@ namespace Columbus
 	{
 		lightWorkflow();
 		meshWorkflow();
+		particlesWorkflow();
 
 		for (auto Mesh : mMeshes)
 			Mesh.second->update();
