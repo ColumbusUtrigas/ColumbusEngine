@@ -137,9 +137,9 @@ namespace Columbus
 			if (Mesh != nullptr)
 				Mesh->draw();
 
-		for (auto ParticleEmitter : mParticleEmitters)
-			if (ParticleEmitter != nullptr)
-				ParticleEmitter->draw(mFrameTimer.elapsed());
+		//for (auto ParticleEmitter : mParticleEmitters)
+			//if (ParticleEmitter != nullptr)
+				//ParticleEmitter->draw(mFrameTimer.elapsed());
 
 		mFrameTimer.reset();
 	}

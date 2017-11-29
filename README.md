@@ -4,8 +4,8 @@
 * Load 3D models from OBJ format
 * Load images from PNG, JPEG, TGA, BMP, HDR format
 * Write images to PNG and JPEG format
-* Load simple XML files
-* Write simple XML files
+* Load XML files
+* Write XML files
 * Load JSON files
 * Write JSON files
 * Material and Shader system (in work)
@@ -15,7 +15,7 @@
 * Input System
 * Scene manager
 * Advanced Entity-Component System
-* Advanced Particle Effect System (no ECS support, in work)
+* Advanced Particle Effect System (70% progress)
 * Cubemaps
 * Camera
 * Advanced Math Lib (vec2, vec3, vec4, mat4)

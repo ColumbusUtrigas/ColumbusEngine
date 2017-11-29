@@ -188,10 +188,10 @@ namespace Columbus
 		float RedrawTime = mDrawTime.elapsed() * 1000;
 
 		int DelayMs = (int)(mTimeToDraw * 1000 - RedrawTime);
+		
 
 		if (DelayMs - 1 > 0)
 			SDL_Delay(DelayMs);
-
 		mRedrawTime = mDrawTime.elapsed() * 1000;
 
 		mFPS = (int)(1.0 / (mRedrawTime / 1000));

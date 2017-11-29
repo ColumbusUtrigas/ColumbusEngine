@@ -4,6 +4,7 @@ attribute vec3 aPos;
 attribute vec2 aUV;
 attribute vec3 aNorm;
 
+varying vec3 varPos;
 varying vec2 varTexCoord;
 varying float varTime;
 varying float varTTL;
@@ -73,10 +74,10 @@ void main(void)
 		if (Unif[5] != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
+			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
 		} else
 		{
-			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
+			gl_Position = Rotation * uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
 		}
 	}
 	else
@@ -91,6 +92,7 @@ void main(void)
 		}
 	}
 
+	varPos = pos + aPos;
 	varTexCoord = aUV;
 	varTime = Unif[3];
 	varTTL = Unif[4];

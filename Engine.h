@@ -36,7 +36,9 @@
 
 #include <Scene/Component.h>
 #include <Scene/GameObject.h>
+#include <Scene/LightComponent.h>
 #include <Scene/MeshRenderer.h>
+#include <Scene/ParticleSystem.h>
 #include <Scene/Scene.h>
 #include <Scene/Transform.h>
 
