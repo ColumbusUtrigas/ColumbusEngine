@@ -37,6 +37,7 @@ void main()
 	Light(5);
 	Light(6);
 	Light(7);
+
 	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 
 	if (varIsGradient == 0.0)

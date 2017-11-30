@@ -60,10 +60,12 @@ namespace Columbus
 		std::vector<C_Particle> mActiveParticles;
 		std::vector<C_Light*> mLights;
 
-		C_Shader* mShader = NULL;
+		C_Shader* mShader = nullptr;
 
-		C_Buffer* mBuf = NULL;
-		C_Buffer* mTBuf = NULL;
+		C_Buffer* mBuf = nullptr;
+		C_Buffer* mTBuf = nullptr;
+		C_Buffer* mPBuf = nullptr;
+		C_Buffer* mLBuf = nullptr;
 
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;

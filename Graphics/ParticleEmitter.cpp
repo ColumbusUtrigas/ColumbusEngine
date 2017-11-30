@@ -76,10 +76,15 @@ namespace Columbus
 			mParticles.push_back(p);
 		}
 
-		mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
+		//mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
+		mShader = new C_Shader();
+		mShader->addAttribute("aPoses", 5);
+		mShader->load("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
+		mPBuf = new C_Buffer();
+		mLBuf = new C_Buffer();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set particle effect
@@ -202,6 +207,12 @@ namespace Columbus
 		mTBuf->bind();
 		C_VertexAttribPointerOpenGL(1, 2, C_OGL_FLOAT, C_OGL_FALSE, 2 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(1);
+		mPBuf->bind();
+		C_VertexAttribPointerOpenGL(2, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(2);
+		mLBuf->bind();
+		C_VertexAttribPointerOpenGL(3, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(3);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setUniforms()
@@ -212,6 +223,9 @@ namespace Columbus
 		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
 		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
 		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
+		mShader->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
+		mShader->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
+		mShader->setUniform1f("uGradient", static_cast<float>(mParticleEffect->getGradienting()));
 
 		mShader->setUniformMatrix("uView", C_GetViewMatrix().elements());
 		mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
@@ -338,6 +352,8 @@ namespace Columbus
 
 		C_CloseStreamOpenGL(0);
 		C_CloseStreamOpenGL(1);
+		C_CloseStreamOpenGL(2);
+		C_CloseStreamOpenGL(3);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
@@ -498,28 +514,46 @@ namespace Columbus
 		if (mParticleEffect->getAdditive())
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
 
-		float scaleOL = mParticleEffect->getScaleOverLifetime();
-		float billboard = mParticleEffect->getBillbiarding();
-		float gradient = mParticleEffect->getGradienting();
-
 		setShaderMaterial();
 		setShaderLightAndCamera();
 
+		std::vector<float> vertData;
+		std::vector<float> uvdata;
+		std::vector<float> posdata;
+		std::vector<float> timedata;
+
 		for (auto Particle : mActiveParticles)
-		{
-			if (Particle.active == true && Particle.age > 0)
+			for (int i = 0; i < 6; i++)
 			{
-				float life = fmod(Particle.age, Particle.TTL);
-				C_Vector3 pos = Particle.pos;
-				float rotation = Particle.rotation;
+				vertData.push_back(vrts[3 * i + 0]);
+				vertData.push_back(vrts[3 * i + 1]);
+				vertData.push_back(vrts[3 * i + 2]);
 
-				float arr[9] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient, rotation};
+				uvdata.push_back(uvs[2 * i + 0]);
+				uvdata.push_back(uvs[2 * i + 1]);
 
-				mShader->setUniformArrayf("Unif", arr, 9);
+				posdata.push_back(Particle.pos.x);
+				posdata.push_back(Particle.pos.y);
+				posdata.push_back(Particle.pos.z);
 
-				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
+				timedata.push_back(Particle.age);
+				timedata.push_back(Particle.TTL);
+				timedata.push_back(Particle.rotation);
 			}
-		}
+
+		mBuf->setData(vertData.data(), 18 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 3);
+		mBuf->compile();
+
+		mTBuf->setData(uvdata.data(), 12 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 2);
+		mTBuf->compile();
+
+		mPBuf->setData(posdata.data(), 18 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 3);
+		mPBuf->compile();
+
+		mLBuf->setData(timedata.data(), 18 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 3);
+		mLBuf->compile();
+
+		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6 * mActiveParticles.size());
 
 		unbindAll();
 	}
