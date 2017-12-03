@@ -503,8 +503,6 @@ namespace Columbus
 		if (mParticleEffect->getVisible() == false)
 			return;
 
-		setBuffers();
-
 		mShader->bind();
 
 		setUniforms();
@@ -541,17 +539,19 @@ namespace Columbus
 				timedata.push_back(Particle.rotation);
 			}
 
-		mBuf->setData(vertData.data(), 18 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 3);
+		mBuf->setData(vertData.data(), 18 * sizeof(float) * mActiveParticles.size(), 3);
 		mBuf->compile();
 
-		mTBuf->setData(uvdata.data(), 12 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 2);
+		mTBuf->setData(uvdata.data(), 12 * sizeof(float) * mActiveParticles.size(), 2);
 		mTBuf->compile();
 
-		mPBuf->setData(posdata.data(), 18 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 3);
+		mPBuf->setData(posdata.data(), 18 * sizeof(float)* mActiveParticles.size(), 3);
 		mPBuf->compile();
 
-		mLBuf->setData(timedata.data(), 18 * sizeof(float) * sizeof(float) * mActiveParticles.size(), 3);
+		mLBuf->setData(timedata.data(), 18 * sizeof(float) * mActiveParticles.size(), 3);
 		mLBuf->compile();
+
+		setBuffers();
 
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6 * mActiveParticles.size());
 

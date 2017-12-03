@@ -4,11 +4,11 @@ using namespace Columbus;
 
 int FPS_LIMIT = 120;
 
+
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;
 	config.Resizable = true;
-
 	C_SDLWindow window(config);
 	C_EventSystem event;
 	event.addWindow(&window);
@@ -240,3 +240,5 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+
