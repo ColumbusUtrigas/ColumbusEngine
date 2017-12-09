@@ -8,6 +8,7 @@ varying vec3 varNormal;
 varying vec3 varTangent;
 varying vec3 varBitangent;
 varying vec3 varFragPos;
+varying mat3 varTBN;
 
 struct Material
 {
@@ -74,7 +75,7 @@ void Init(void)
 	SpecularMap = vec3(texture(uMaterial.specularMap, varUV));
 	NormalMap = vec3(texture(uMaterial.normalMap, varUV));
 
-	TBN = transpose(mat3(varTangent, varBitangent, varNormal));
+	TBN = varTBN;
 
 	if (textureSize(uMaterial.specularMap, 1).xy != vec2(0))
 		IsSpecularMap = true;

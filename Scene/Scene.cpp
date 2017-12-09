@@ -97,8 +97,15 @@ namespace Columbus
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (auto Mesh : mMeshes)
-			Mesh.second->render();
+		C_Render::enableDepthPrepass();
+
+		for (auto Object : mMeshes)
+			C_Render::renderDepthPrepass(Object.second);
+
+		C_Render::disableDepthPrepass();
+
+		for (auto Object : mMeshes)
+			C_Render::render(Object.second);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

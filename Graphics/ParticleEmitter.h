@@ -60,8 +60,6 @@ namespace Columbus
 		std::vector<C_Particle> mActiveParticles;
 		std::vector<C_Light*> mLights;
 
-		C_Shader* mShader = nullptr;
-
 		C_Buffer* mBuf = nullptr;
 		C_Buffer* mTBuf = nullptr;
 		C_Buffer* mPBuf = nullptr;
@@ -104,6 +102,8 @@ namespace Columbus
 		
 		float mLightUniform[120];
 	public:
+		C_Shader* mShader = nullptr;
+
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 		//Set particle effect
