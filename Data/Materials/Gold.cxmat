@@ -6,4 +6,5 @@
     <Shininess>32</Shininess>
     <ReflectionPower>0.2</ReflectionPower>
     <Discard>0</Discard>
+    <Lighting>1</Lighting>
 </Material>

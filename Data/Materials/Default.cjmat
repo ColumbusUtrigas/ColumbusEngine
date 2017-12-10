@@ -17,6 +17,7 @@
             1.0
         ],
         "Discard": false,
+        "Lighting": true,
         "ReflectionPower": 0.2,
         "Shininess": 32.0,
         "Specular": [

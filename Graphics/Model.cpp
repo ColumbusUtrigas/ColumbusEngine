@@ -368,7 +368,7 @@ namespace Columbus
 		{
 			int offset = i * 15;
 
-			if (i < mLights.size())
+			if (i < mLights.size() && mMat.getLighting() == true)
 			{
 				//Color
 				mLightUniform[0 + offset] = mLights[i]->getColor().x;

@@ -90,6 +90,7 @@ int main(int argc, char** argv)
 	mesh4.mMat.setReflection(&cubemap);
 
 	C_Material partmat;
+	partmat.loadFromXML("Data/Materials/Smoke.cxmat");
 	C_Texture partex("Data/Textures/smoke.png");
 	textureManager.add(&partex);
 	partmat.setTexture(&partex);
