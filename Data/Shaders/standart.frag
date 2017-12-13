@@ -8,6 +8,7 @@ varying vec3 varNormal;
 varying vec3 varTangent;
 varying vec3 varBitangent;
 varying vec3 varFragPos;
+varying mat3 varTBN;
 
 struct Material
 {
@@ -39,6 +40,7 @@ vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
 vec3 CubemapColor = vec3(0);
+bool IsLightEnabled = false;
 
 out vec4 FinalColor;
 
@@ -74,7 +76,7 @@ void Init(void)
 	SpecularMap = vec3(texture(uMaterial.specularMap, varUV));
 	NormalMap = vec3(texture(uMaterial.normalMap, varUV));
 
-	TBN = transpose(mat3(varTangent, varBitangent, varNormal));
+	TBN = varTBN;
 
 	if (textureSize(uMaterial.specularMap, 1).xy != vec2(0))
 		IsSpecularMap = true;
@@ -104,8 +106,8 @@ void Light(int id)
 	float LightInnerAngle = LightUnif[13 + offset];
 	float LightOuterAngle = LightUnif[14 + offset];
 
-	if (LightType == -1)
-		return;
+	if (LightType == -1) return;
+	else IsLightEnabled = true;
 
 	vec3 lightDir;
 
@@ -177,6 +179,8 @@ void Cubemap(void)
 void Final(void)
 {
 	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
+	if (IsLightEnabled == false)
+		Lighting = vec4(1);
 
 	if (DiffuseMap.xyz != vec3(0))
 	{

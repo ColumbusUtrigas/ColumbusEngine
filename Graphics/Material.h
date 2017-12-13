@@ -39,6 +39,7 @@ namespace Columbus
 		C_Shader* mShader = nullptr;
 
 		bool mDiscard = false;
+		bool mLighting = true;
 
 		C_Cubemap* mEnvReflection = nullptr;
 
@@ -72,6 +73,8 @@ namespace Columbus
 		void setReflectionPower(const float aPower);
 		//Set discard alpha
 		void setDiscard(const bool aDiscard);
+		//Set object lighting
+		void setLighting(const bool aLighting);
 
 		//Return color
 		C_Vector4 getColor() const;
@@ -97,6 +100,8 @@ namespace Columbus
 		float getReflectionPower() const;
 		//Return discard alpha
 		bool getDiscard() const;
+		//Return object lighting
+		bool getLighting() const;
 
 		//Serialize to XML file
 		bool saveToXML(std::string aFile) const;

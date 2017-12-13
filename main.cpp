@@ -4,11 +4,11 @@ using namespace Columbus;
 
 int FPS_LIMIT = 120;
 
+
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;
 	config.Resizable = true;
-
 	C_SDLWindow window(config);
 	C_EventSystem event;
 	event.addWindow(&window);
@@ -89,9 +89,8 @@ int main(int argc, char** argv)
 	mesh3.mMat.setReflection(&cubemap);
 	mesh4.mMat.setReflection(&cubemap);
 
-	render.setSkybox(&skybox);
-
 	C_Material partmat;
+	partmat.loadFromXML("Data/Materials/Smoke.cxmat");
 	C_Texture partex("Data/Textures/smoke.png");
 	textureManager.add(&partex);
 	partmat.setTexture(&partex);
@@ -227,3 +226,5 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+

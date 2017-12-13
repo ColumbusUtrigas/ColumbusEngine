@@ -12,6 +12,7 @@
 #include <Scene/Component.h>
 #include <Graphics/Model.h>
 #include <Graphics/Camera.h>
+#include <Graphics/Shader.h>
 
 namespace Columbus
 {
@@ -36,6 +37,8 @@ namespace Columbus
 		std::string getType() override;
 		void setLights(std::vector<C_Light*> aLights);
 		void setCamera(const C_Camera mCamera);
+		C_Shader* getShader() const;
+		void setShader(C_Shader* aShader);
 
 		~C_MeshRenderer();
 	};

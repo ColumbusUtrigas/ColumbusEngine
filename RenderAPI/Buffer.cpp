@@ -40,7 +40,8 @@ namespace Columbus
 	void C_Buffer::compile()
 	{
 		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, mID);
-		C_BufferDataOpenGL(C_OGL_ARRAY_BUFFER, mSize, mData, C_OGL_STATIC_DRAW);
+		C_BufferDataOpenGL(C_OGL_ARRAY_BUFFER, mSize, mData, C_OGL_DYNAMIC_DRAW);
+		C_BindBufferOpenGL(C_OGL_ARRAY_BUFFER, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Bind vertex buffer
