@@ -17,13 +17,7 @@ namespace Columbus
 	//Constructor
 	C_Render::C_Render()
 	{
-		mNonePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
-		mNegativePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NegativePost.frag");
-		mGaussianPost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/GaussianBlur.frag");
-
-		mNone.setShader(mNonePost);
-		mNegative.setShader(mNegativePost);
-		mGaussianBlur.setShader(mGaussianPost);
+		
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Add mesh
@@ -38,24 +32,6 @@ namespace Columbus
 		mParticleEmitters.push_back(aP);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Add light
-	void C_Render::add(C_Light* aLight)
-	{
-		mLights.push_back(aLight);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set main camera
-	void C_Render::setMainCamera(C_Camera* aCamera)
-	{
-		mCamera = aCamera;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set window size
-	void C_Render::setWindowSize(C_Vector2 aWindowSize)
-	{
-		mWindowSize = aWindowSize;
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Set skybox
 	void C_Render::setSkybox(C_Skybox* aSkybox)
 	{
@@ -65,29 +41,16 @@ namespace Columbus
 	//Render scene
 	void C_Render::render()
 	{
-		mGaussianBlur.addAttrib({"uWindowSize", mWindowSize});
-		mGaussianBlur.addAttrib({"uBlurSize", C_Vector2(2, 2)});
+		/*for (auto Mesh : mMeshes)
+			if (Mesh != nullptr)
+				Mesh->draw();*/
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Render::render(C_GameObject* aObject)
+	{
+		if (aObject == nullptr) return;
 
-		enableAll();
-		prepareScene();
-
-		mNone.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
-		renderScene();
-		mNone.unbind();
-
-		mNone.draw();
-
-		/*mGaussianBlur.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
-		renderScene();
-		mGaussianBlur.unbind();
-
-		mNegative.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
-		mGaussianBlur.draw();
-		mNegative.unbind();
-
-		mNegative.draw();*/
-
-		mGaussianBlur.clearAttribs();
+		aObject->render();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Enable all OpenGL varyables
@@ -104,44 +67,27 @@ namespace Columbus
 		C_EnableAlphaTestOpenGL();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Prepare scene to rendering
-	void C_Render::prepareScene()
+	//Prepass scene before rendering
+	void C_Render::prepassScene()
 	{
-		for (auto Mesh : mMeshes)
-		{
-			if (mCamera != nullptr)
-			{
-				if (Mesh != nullptr)
-				{
-					Mesh->setCamera(*mCamera);
-					Mesh->setLights(mLights);
-				}
-			}
-		}
 
-		for (auto ParticleEmitter : mParticleEmitters)
-		{
-			if (mCamera != nullptr)
-				if (ParticleEmitter != nullptr)
-					ParticleEmitter->setCameraPos(mCamera->pos());
-		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Render scene
 	void C_Render::renderScene()
 	{
-		if (mSkybox != nullptr)
+		/*if (mSkybox != nullptr)
 			mSkybox->draw();
 
 		for (auto Mesh : mMeshes)
 			if (Mesh != nullptr)
 				Mesh->draw();
 
-		//for (auto ParticleEmitter : mParticleEmitters)
-			//if (ParticleEmitter != nullptr)
-				//ParticleEmitter->draw(mFrameTimer.elapsed());
+		for (auto ParticleEmitter : mParticleEmitters)
+			if (ParticleEmitter != nullptr)
+				ParticleEmitter->draw();
 
-		mFrameTimer.reset();
+		mFrameTimer.reset();*/
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

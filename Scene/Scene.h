@@ -15,6 +15,7 @@
 #include <Scene/ParticleSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
+#include <Graphics/Render.h>
 
 namespace Columbus
 {
