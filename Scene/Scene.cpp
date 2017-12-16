@@ -16,7 +16,9 @@ namespace Columbus
 	C_Scene::C_Scene() :
 		mSkybox(nullptr)
 	{
+		mNoneShader = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
 
+		mNoneEffect.setShader(mNoneShader);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -82,6 +84,11 @@ namespace Columbus
 		mCamera = const_cast<C_Camera*>(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_Scene::setContextSize(const C_Vector2 aContextSize)
+	{
+		mContextSize = static_cast<C_Vector2>(aContextSize);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::update()
 	{
 		lightWorkflow();
@@ -94,18 +101,21 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::render()
 	{
+		C_EnableDepthTestOpenGL();
+		C_EnableBlendOpenGL();
+		C_EnableAlphaTestOpenGL();
+
+		mNoneEffect.bind(C_Vector4(1, 1, 1, 0), mContextSize);
+		
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		C_Render::enableDepthPrepass();
-
-		for (auto Object : mMeshes)
-			C_Render::renderDepthPrepass(Object.second);
-
-		C_Render::disableDepthPrepass();
-
 		for (auto Object : mMeshes)
 			C_Render::render(Object.second);
+
+		mNoneEffect.unbind();
+
+		mNoneEffect.draw();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

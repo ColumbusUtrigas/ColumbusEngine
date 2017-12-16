@@ -210,6 +210,7 @@ int main(int argc, char** argv)
 
 		camera.update();
 
+		scene.setContextSize(window.getSize());
 		scene.update();
 		scene.render();
 
