@@ -13,81 +13,13 @@
 namespace Columbus
 {
 
+	C_Shader* gMeshWhiteShader = nullptr;
+	C_Shader* gParticleWhiteShader = nullptr;
+
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	C_Render::C_Render()
 	{
-		mNonePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
-		mNegativePost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NegativePost.frag");
-		mGaussianPost = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/GaussianBlur.frag");
-
-		mNone.setShader(mNonePost);
-		mNegative.setShader(mNegativePost);
-		mGaussianBlur.setShader(mGaussianPost);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add mesh
-	void C_Render::add(C_Mesh* aMesh)
-	{
-		mMeshes.push_back(aMesh);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add particle emitter
-	void C_Render::add(C_ParticleEmitter* aP)
-	{
-		mParticleEmitters.push_back(aP);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add light
-	void C_Render::add(C_Light* aLight)
-	{
-		mLights.push_back(aLight);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set main camera
-	void C_Render::setMainCamera(C_Camera* aCamera)
-	{
-		mCamera = aCamera;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set window size
-	void C_Render::setWindowSize(C_Vector2 aWindowSize)
-	{
-		mWindowSize = aWindowSize;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set skybox
-	void C_Render::setSkybox(C_Skybox* aSkybox)
-	{
-		mSkybox = aSkybox;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Render scene
-	void C_Render::render()
-	{
-		mGaussianBlur.addAttrib({"uWindowSize", mWindowSize});
-		mGaussianBlur.addAttrib({"uBlurSize", C_Vector2(2, 2)});
-
-		enableAll();
-		prepareScene();
-
-		mNone.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
-		renderScene();
-		mNone.unbind();
-
-		mNone.draw();
-
-		/*mGaussianBlur.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
-		renderScene();
-		mGaussianBlur.unbind();
-
-		mNegative.bind(C_Vector4(1, 1, 1, 0), mWindowSize);
-		mGaussianBlur.draw();
-		mNegative.unbind();
-
-		mNegative.draw();*/
-
-		mGaussianBlur.clearAttribs();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Enable all OpenGL varyables
@@ -104,44 +36,54 @@ namespace Columbus
 		C_EnableAlphaTestOpenGL();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Prepare scene to rendering
-	void C_Render::prepareScene()
+	void C_Render::enableDepthPrepass()
 	{
-		for (auto Mesh : mMeshes)
+		glColorMask(0, 0, 0, 0);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Render::disableDepthPrepass()
+	{
+		glColorMask(1, 1, 1, 1);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Render::renderDepthPrepass(C_GameObject* aGameObject)
+	{
+		if (aGameObject == nullptr) return;
+		if (aGameObject->hasComponent("MeshRenderer") == false &&
+			aGameObject->hasComponent("ParticleSystem") == false) return;
+
+		if (aGameObject->hasComponent("MeshRenderer"))
+			if (gMeshWhiteShader == nullptr)
+				gMeshWhiteShader = new C_Shader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
+
+		if (aGameObject->hasComponent("ParticleSystem"))
+			if (gParticleWhiteShader == nullptr)
+				gParticleWhiteShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/White.frag");
+
+		if (aGameObject->hasComponent("MeshRenderer"))
 		{
-			if (mCamera != nullptr)
-			{
-				if (Mesh != nullptr)
-				{
-					Mesh->setCamera(*mCamera);
-					Mesh->setLights(mLights);
-				}
-			}
+			C_Shader* shaderPtr = static_cast<C_MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->getShader();
+			static_cast<C_MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(gMeshWhiteShader);
+			aGameObject->render();
+			static_cast<C_MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(shaderPtr);
+			return;
 		}
 
-		for (auto ParticleEmitter : mParticleEmitters)
+		if (aGameObject->hasComponent("ParticleSystem"))
 		{
-			if (mCamera != nullptr)
-				if (ParticleEmitter != nullptr)
-					ParticleEmitter->setCameraPos(mCamera->pos());
+			C_Shader* shaderPtr = static_cast<C_ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->getShader();
+			static_cast<C_ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(gParticleWhiteShader);
+			aGameObject->render();
+			static_cast<C_ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(shaderPtr);
+			return;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Render scene
-	void C_Render::renderScene()
+	void C_Render::render(C_GameObject* aGameObject)
 	{
-		if (mSkybox != nullptr)
-			mSkybox->draw();
+		if (aGameObject == nullptr) return;
 
-		for (auto Mesh : mMeshes)
-			if (Mesh != nullptr)
-				Mesh->draw();
-
-		//for (auto ParticleEmitter : mParticleEmitters)
-			//if (ParticleEmitter != nullptr)
-				//ParticleEmitter->draw(mFrameTimer.elapsed());
-
-		mFrameTimer.reset();
+		aGameObject->render();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

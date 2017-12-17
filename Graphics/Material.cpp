@@ -24,6 +24,7 @@ namespace Columbus
 		mNormMap(nullptr),
 		mShader(nullptr),
 		mDiscard(false),
+		mLighting(false),
 		mEnvReflection(nullptr),
 		mShininess(32)
 	{
@@ -108,6 +109,12 @@ namespace Columbus
 		mDiscard = static_cast<bool>(aDiscard);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Set object lighting
+	void C_Material::setLighting(const bool aLighting)
+	{
+		mLighting = static_cast<bool>(aLighting);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//Return color
@@ -181,6 +188,12 @@ namespace Columbus
 		return mDiscard;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Return object lighting
+	bool C_Material::getLighting() const
+	{
+		return mLighting;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//Serialize to XML file
@@ -212,6 +225,9 @@ namespace Columbus
 		if (!serializer.setBool("Discard", mDiscard))
 		{ C_Log::error("Can't save Material discard: " + aFile); return false; }
 
+		if (!serializer.setBool("Lighting", mLighting))
+		{ C_Log::error("Can't save Material lighting: " + aFile); return false; }
+
 		if (!serializer.save())
 		{ C_Log::error("Can't save Material: " + aFile); return false; }
 
@@ -232,6 +248,7 @@ namespace Columbus
 		j["Material"]["Shininess"] = mShininess;
 		j["Material"]["ReflectionPower"] = mReflectionPower;
 		j["Material"]["Discard"] = mDiscard;
+		j["Material"]["Lighting"] = mLighting;
 	
 		std::ofstream o(aFile);
 		
@@ -278,6 +295,9 @@ namespace Columbus
 		if (!serializer.getBool("Discard", &mDiscard))
 		{ C_Log::error("Can't load Material discard: " + aFile); return false; }
 
+		if (!serializer.getBool("Lighting", &mLighting))
+		{ C_Log::error("Can't load Material lighting: " + aFile); return false; }
+
 		C_Log::success("Material loaded: " + aFile);
 
 		return true;
@@ -315,6 +335,7 @@ namespace Columbus
 		mShininess = j["Material"]["Shininess"];
 		mReflectionPower = j["Material"]["ReflectionPower"];
 		mDiscard = j["Material"]["Discard"];
+		mLighting = j["Material"]["Lighting"];
 
 		i.close();
 		

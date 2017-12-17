@@ -15,6 +15,8 @@
 #include <Scene/ParticleSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
+#include <Graphics/Render.h>
+#include <Graphics/PostEffect.h>
 
 namespace Columbus
 {
@@ -27,6 +29,11 @@ namespace Columbus
 		C_Skybox* mSkybox = nullptr;
 		C_Camera* mCamera = nullptr;
 
+		C_PostEffect mNoneEffect;
+		C_Shader* mNoneShader = nullptr;
+
+		C_Vector2 mContextSize = C_Vector2(640, 480);
+
 		void lightWorkflow();
 		void meshWorkflow();
 		void particlesWorkflow();
@@ -36,6 +43,7 @@ namespace Columbus
 		void add(unsigned int aID, C_GameObject* aMesh);
 		void setSkybox(const C_Skybox* aSkybox);
 		void setCamera(const C_Camera* aCamera);
+		void setContextSize(const C_Vector2 aContextSize);
 
 		void update();
 		void render();

@@ -18,10 +18,18 @@
 namespace Columbus
 {
 
+	static bool SDL_IMAGE_INITED = false;
+
 	//////////////////////////////////////////////////////////////////////////////
 	//Load image from file
 	C_TextureData C_LoadImage(std::string aPath)
 	{
+		if (SDL_IMAGE_INITED == false)
+		{
+			IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF | IMG_INIT_WEBP);
+			SDL_IMAGE_INITED = true;
+		}
+
 		C_TextureData ret;
 		SDL_Surface* surf = IMG_Load(aPath.c_str());
 
@@ -35,6 +43,7 @@ namespace Columbus
 		memcpy(ret.buffer, surf->pixels, size + 1);
 
 		SDL_FreeSurface(surf);
+
 		return ret;
 	}
 	//////////////////////////////////////////////////////////////////////////////

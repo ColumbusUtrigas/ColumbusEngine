@@ -18,6 +18,7 @@ uniform float LightUnif[120];
 vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
+bool IsLightEnabled = false;
 
 void Light(int id);
 
@@ -37,7 +38,10 @@ void main()
 	Light(5);
 	Light(6);
 	Light(7);
+
 	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
+	if (IsLightEnabled == false)
+		Lighting = vec4(1);
 
 	if (varIsGradient == 0.0)
 	{
@@ -73,8 +77,8 @@ void Light(int id)
 	float LightInnerAngle = LightUnif[13 + offset];
 	float LightOuterAngle = LightUnif[14 + offset];
 
-	if (LightType == -1)
-		return;
+	if (LightType == -1) return;
+	else IsLightEnabled = true;
 
 	vec3 lightDir;
 

@@ -4,11 +4,11 @@ using namespace Columbus;
 
 int FPS_LIMIT = 120;
 
+
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;
 	config.Resizable = true;
-
 	C_SDLWindow window(config);
 	C_EventSystem event;
 	event.addWindow(&window);
@@ -78,10 +78,6 @@ int main(int argc, char** argv)
 
 	C_Camera camera;
 	C_Render render;
-	render.setMainCamera(&camera);
-	render.add(&mesh);
-	render.add(&mesh2);
-	render.add(&mesh3);
 
 	float i = 0;
 
@@ -93,9 +89,8 @@ int main(int argc, char** argv)
 	mesh3.mMat.setReflection(&cubemap);
 	mesh4.mMat.setReflection(&cubemap);
 
-	render.setSkybox(&skybox);
-
 	C_Material partmat;
+	partmat.loadFromXML("Data/Materials/Smoke.cxmat");
 	C_Texture partex("Data/Textures/smoke.png");
 	textureManager.add(&partex);
 	partmat.setTexture(&partex);
@@ -114,15 +109,9 @@ int main(int argc, char** argv)
 	//window.setVerticalSync(true);
 	window.setFPSLimit(100);
 
-	render.add(&particles);
-
 	C_Light light1("Data/Lights/1.light");
 	C_Light light2("Data/Lights/2.light");
 	C_Light light3("Data/Lights/3.light");
-
-	render.add(&light1);
-	render.add(&light2);
-	render.add(&light3);
 
 	input.showMouseCursor(false);
 
@@ -221,9 +210,7 @@ int main(int argc, char** argv)
 
 		camera.update();
 
-		render.setWindowSize(window.getSize());
-		//render.render();
-
+		scene.setContextSize(window.getSize());
 		scene.update();
 		scene.render();
 
@@ -240,3 +227,5 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+

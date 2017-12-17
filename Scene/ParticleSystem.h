@@ -25,6 +25,8 @@ namespace Columbus
 		C_ParticleEmitter* getEmitter() const;
 		void setLights(std::vector<C_Light*> aLights);
 		void setCamera(C_Camera aCamera);
+		C_Shader* getShader() const;
+		void setShader(C_Shader* aShader);
 
 		~C_ParticleSystem();
 	};
