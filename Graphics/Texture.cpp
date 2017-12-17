@@ -43,6 +43,7 @@ namespace Columbus
 		memcpy(ret.buffer, surf->pixels, size + 1);
 
 		SDL_FreeSurface(surf);
+
 		return ret;
 	}
 	//////////////////////////////////////////////////////////////////////////////

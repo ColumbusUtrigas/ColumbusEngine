@@ -54,7 +54,7 @@ namespace Columbus
 
 		if (aGameObject->hasComponent("MeshRenderer"))
 			if (gMeshWhiteShader == nullptr)
-				gMeshWhiteShader = new C_Shader("Data/Shaders/Standart.vert", "Data/Shaders/White.frag");
+				gMeshWhiteShader = new C_Shader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
 
 		if (aGameObject->hasComponent("ParticleSystem"))
 			if (gParticleWhiteShader == nullptr)
