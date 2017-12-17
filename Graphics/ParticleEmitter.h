@@ -60,10 +60,10 @@ namespace Columbus
 		std::vector<C_Particle> mActiveParticles;
 		std::vector<C_Light*> mLights;
 
-		C_Shader* mShader = NULL;
-
-		C_Buffer* mBuf = NULL;
-		C_Buffer* mTBuf = NULL;
+		C_Buffer* mBuf = nullptr;
+		C_Buffer* mTBuf = nullptr;
+		C_Buffer* mPBuf = nullptr;
+		C_Buffer* mLBuf = nullptr;
 
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;
@@ -101,7 +101,14 @@ namespace Columbus
 		void unbindAll();
 		
 		float mLightUniform[120];
+		float* mVertData = nullptr;
+		float* mUvData = nullptr;
+		float* mPosData = nullptr;
+		float* mTimeData = nullptr;
+		unsigned int mParticlesCount = 0;
 	public:
+		C_Shader* mShader = nullptr;
+
 		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 		//Set particle effect

@@ -2,7 +2,8 @@
 
 attribute vec3 aPos;
 attribute vec2 aUV;
-attribute vec3 aNorm;
+attribute vec3 aNorm; //poses
+attribute vec3 aTang; //Times
 
 varying vec3 varPos;
 varying vec2 varTexCoord;
@@ -17,16 +18,9 @@ uniform vec4 uPosition;
 uniform vec2 uSize;
 uniform vec2 uStartSize;
 uniform vec2 uFinalSize;
-
-//0..2 - position
-//3 - time
-//4 - ttl
-//5 - isScaleOverLifetime
-//6 - isBillboard
-//7 - isGradient
-//8 - rotation
-
-uniform float Unif[9];
+uniform float uScaleOL;
+uniform float uBillboard;
+uniform float uGradient;
 
 uniform int uRenderMode;
 
@@ -46,7 +40,7 @@ mat4 rotationMatrix(vec3 axis, float angle)
 
 void main(void)
 {
-	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), Unif[8] / 90);
+	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), aTang.z / 90);
 	mat4 ModelView = uView * mat4(1);
 
 	ModelView[0][0] = 1;
@@ -61,17 +55,14 @@ void main(void)
 	ModelView[2][1] = 0;
 	ModelView[2][2] = 1;
 
-	vec3 pos;
-	pos.x = Unif[0];
-	pos.y = Unif[1];
-	pos.z = Unif[2];
+	vec3 pos = aNorm;
 
-	float lifePercent = Unif[3] / Unif[4];
+	float lifePercent = aTang.x / aTang.y;
 
 	vec3 Pos = aPos;
-	if (Unif[6] != 0.0)
+	if (uBillboard != 0.0)
 	{
-		if (Unif[5] != 0.0)
+		if (uScaleOL != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
 			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
@@ -82,7 +73,7 @@ void main(void)
 	}
 	else
 	{
-		if (Unif[5] != 0.0)
+		if (uScaleOL != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
 			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
@@ -94,7 +85,7 @@ void main(void)
 
 	varPos = pos + aPos;
 	varTexCoord = aUV;
-	varTime = Unif[3];
-	varTTL = Unif[4];
-	varIsGradient = Unif[7];
+	varTime = aTang.x;
+	varTTL = aTang.y;
+	varIsGradient = uGradient;
 }

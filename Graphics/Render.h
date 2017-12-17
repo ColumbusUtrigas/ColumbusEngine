@@ -20,6 +20,10 @@
 #include <Graphics/PostEffect.h>
 #include <RenderAPI/APIOpenGL.h>
 #include <System/Timer.h>
+#include <Scene/GameObject.h>
+#include <Scene/MeshRenderer.h>
+#include <Scene/ParticleSystem.h>
+#include <Scene/Component.h>
 
 namespace Columbus
 {
@@ -27,47 +31,15 @@ namespace Columbus
 	class C_Render
 	{
 	private:
-		std::vector<C_Mesh*> mMeshes;
-		std::vector<C_ParticleEmitter*> mParticleEmitters;
-		std::vector<C_Light*> mLights;
-		C_Camera* mCamera = nullptr;
-		C_Skybox* mSkybox = nullptr;
-
-		C_Timer mFrameTimer;
-    
-		C_Shader* mNonePost = nullptr;
-		C_Shader* mNegativePost = nullptr;
-		C_Shader* mGaussianPost = nullptr;
-
-		C_Vector2 mWindowSize;
-
-		C_PostEffect mNone;
-		C_PostEffect mNegative;
-		C_PostEffect mGaussianBlur;
-
 		//Enable all OpenGL varyables
 		void enableAll();
-		//Prepare scene to rendering
-		void prepareScene();
-		//Render scene
-		void renderScene();
 	public:
 		//Constructor
 		C_Render();
-		//Add mesh
-		void add(C_Mesh* aMesh);
-		//Add particle emmitter
-		void add(C_ParticleEmitter* aP);
-		//Add light
-		void add(C_Light* aLight);
-		//Set main camera
-		void setMainCamera(C_Camera* aCamera);
-		//Set window size
-		void setWindowSize(C_Vector2 aWindowSize);
-		//Set skybox
-		void setSkybox(C_Skybox* aSkybox);
-		//Render scene
-		void render();
+		static void enableDepthPrepass();
+		static void renderDepthPrepass(C_GameObject* aGameObject);
+		static void disableDepthPrepass();
+		static void render(C_GameObject* aGameObject);
 		//Destructor
 		~C_Render();
 	};

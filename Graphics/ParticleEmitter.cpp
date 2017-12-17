@@ -76,10 +76,15 @@ namespace Columbus
 			mParticles.push_back(p);
 		}
 
-		mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
+		//mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
+		mShader = new C_Shader();
+		mShader->addAttribute("aPoses", 5);
+		mShader->load("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
+		mPBuf = new C_Buffer();
+		mLBuf = new C_Buffer();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set particle effect
@@ -202,6 +207,12 @@ namespace Columbus
 		mTBuf->bind();
 		C_VertexAttribPointerOpenGL(1, 2, C_OGL_FLOAT, C_OGL_FALSE, 2 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(1);
+		mPBuf->bind();
+		C_VertexAttribPointerOpenGL(2, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(2);
+		mLBuf->bind();
+		C_VertexAttribPointerOpenGL(3, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(3);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setUniforms()
@@ -212,6 +223,9 @@ namespace Columbus
 		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
 		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
 		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
+		mShader->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
+		mShader->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
+		mShader->setUniform1f("uGradient", static_cast<float>(mParticleEffect->getGradienting()));
 
 		mShader->setUniformMatrix("uView", C_GetViewMatrix().elements());
 		mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
@@ -272,7 +286,7 @@ namespace Columbus
 		{
 			int offset = i * 15;
 
-			if (i < mLights.size())
+			if (i < mLights.size() && mParticleEffect->getMaterial()->getLighting() == true)
 			{
 				//Color
 				mLightUniform[0 + offset] = mLights[i]->getColor().x;
@@ -338,6 +352,8 @@ namespace Columbus
 
 		C_CloseStreamOpenGL(0);
 		C_CloseStreamOpenGL(1);
+		C_CloseStreamOpenGL(2);
+		C_CloseStreamOpenGL(3);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
@@ -487,8 +503,6 @@ namespace Columbus
 		if (mParticleEffect->getVisible() == false)
 			return;
 
-		setBuffers();
-
 		mShader->bind();
 
 		setUniforms();
@@ -498,28 +512,64 @@ namespace Columbus
 		if (mParticleEffect->getAdditive())
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
 
-		float scaleOL = mParticleEffect->getScaleOverLifetime();
-		float billboard = mParticleEffect->getBillbiarding();
-		float gradient = mParticleEffect->getGradienting();
-
 		setShaderMaterial();
 		setShaderLightAndCamera();
 
+		if (mParticleEffect->getParticlesCount() != mParticlesCount)
+		{
+			delete mVertData;
+			delete mUvData;
+			delete mPosData;
+			delete mTimeData;
+
+			mParticlesCount = mParticleEffect->getParticlesCount();
+
+			mVertData = new float[mParticlesCount * 18];
+			mUvData = new float[mParticlesCount * 12];
+			mPosData = new float[mParticlesCount * 18];
+			mTimeData = new float[mParticlesCount * 18];
+		}
+
+		unsigned int vertCounter = 0;
+		unsigned int uvCounter = 0;
+		unsigned int posCounter = 0;
+		unsigned int timeCounter = 0;
+
 		for (auto Particle : mActiveParticles)
 		{
-			if (Particle.active == true && Particle.age > 0)
+			memcpy(mVertData + vertCounter, vrts, sizeof(vrts));
+			vertCounter += 18;
+
+			memcpy(mUvData + uvCounter, uvs, sizeof(uvs));
+			uvCounter += 12;
+
+			for (int i = 0; i < 6; i++)
 			{
-				float life = fmod(Particle.age, Particle.TTL);
-				C_Vector3 pos = Particle.pos;
-				float rotation = Particle.rotation;
+				mPosData[posCounter++] = Particle.pos.x;
+				mPosData[posCounter++] = Particle.pos.y;
+				mPosData[posCounter++] = Particle.pos.z;
 
-				float arr[9] = { pos.x, pos.y, pos.z, life, Particle.TTL, scaleOL, billboard, gradient, rotation};
-
-				mShader->setUniformArrayf("Unif", arr, 9);
-
-				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
+				mTimeData[timeCounter++] = Particle.age;
+				mTimeData[timeCounter++] = Particle.TTL;
+				mTimeData[timeCounter++] = Particle.rotation;
 			}
 		}
+
+		mBuf->setData(mVertData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mBuf->compile();
+
+		mTBuf->setData(mUvData, 12 * sizeof(float) * mActiveParticles.size(), 2);
+		mTBuf->compile();
+
+		mPBuf->setData(mPosData, 18 * sizeof(float)* mActiveParticles.size(), 3);
+		mPBuf->compile();
+
+		mLBuf->setData(mTimeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mLBuf->compile();
+
+		setBuffers();
+
+		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6 * mActiveParticles.size());
 
 		unbindAll();
 	}
@@ -528,6 +578,12 @@ namespace Columbus
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
 		mParticles.clear();
+		mActiveParticles.clear();
+		
+		if (mVertData != nullptr) delete mVertData;
+		if (mUvData != nullptr) delete mUvData;
+		if (mUvData != nullptr) delete mPosData;
+		if (mUvData != nullptr) delete mTimeData;
 	}
 
 }

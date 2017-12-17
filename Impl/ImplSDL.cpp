@@ -93,6 +93,7 @@ namespace Columbus
 		C_CullFaceOpenGL(C_OGL_BACK);
 		C_EnableCubemapOpenGL();
 		C_EnableMultisampleOpenGL();
+		C_EnableAlphaTestOpenGL();
 
 		if (glewInit() != GLEW_OK)
 			C_Log::fatal("Can't initialize GLEW");

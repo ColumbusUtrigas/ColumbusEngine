@@ -12,6 +12,7 @@ varying vec3 varNormal;
 varying vec3 varTangent;
 varying vec3 varBitangent;
 varying vec3 varFragPos;
+varying mat3 varTBN;
 
 uniform mat4 uModel;
 uniform mat4 uView;
@@ -30,6 +31,8 @@ void main()
 	varBitangent = cross(varNormal, varTangent);
 
 	varFragPos = vec3(uModel * vec4(aPos, 1.0));
+
+	varTBN = transpose(mat3(varTangent, varBitangent, varNormal));
 }
 
 
