@@ -112,10 +112,18 @@ namespace Columbus
 
 		auto func = [pos](const C_Particle &a, const C_Particle &b) -> bool
 		{
-			C_Vector3 q = a.pos;
+			/*C_Vector3 q = a.pos;
 			C_Vector3 w = b.pos;
 
-			return q.length(pos) > w.length(pos);
+			float ql = pow(pos.x - q.x, 2) + pow(pos.y - q.y, 2) + pow(pos.z - q.z, 2);
+			float wl = pow(pos.x - w.x, 2) + pow(pos.y - w.y, 2) + pow(pos.z - w.z, 2);
+
+			return ql > wl;*/
+
+			C_Vector3 q = a.pos - pos;
+			C_Vector3 w = a.pos - pos;
+
+			return C_Vector3::dot(q, q) > C_Vector3::dot(w, w);
 		};
 
 		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
@@ -528,21 +536,25 @@ namespace Columbus
 			mUvData = new float[mParticlesCount * 12];
 			mPosData = new float[mParticlesCount * 18];
 			mTimeData = new float[mParticlesCount * 18];
+
+			unsigned int vertCounter = 0;
+			unsigned int uvCounter = 0;
+
+			for (size_t i = 0; i < mParticlesCount; i++)
+			{
+				memcpy(mVertData + vertCounter, vrts, sizeof(vrts));
+				vertCounter += 18;
+
+				memcpy(mUvData + uvCounter, uvs, sizeof(uvs));
+				uvCounter += 12;
+			}
 		}
 
-		unsigned int vertCounter = 0;
-		unsigned int uvCounter = 0;
 		unsigned int posCounter = 0;
 		unsigned int timeCounter = 0;
 
 		for (auto Particle : mActiveParticles)
 		{
-			memcpy(mVertData + vertCounter, vrts, sizeof(vrts));
-			vertCounter += 18;
-
-			memcpy(mUvData + uvCounter, uvs, sizeof(uvs));
-			uvCounter += 12;
-
 			for (int i = 0; i < 6; i++)
 			{
 				mPosData[posCounter++] = Particle.pos.x;

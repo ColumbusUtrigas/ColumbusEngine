@@ -72,31 +72,31 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator +
-		inline C_Vector3 operator+(const C_Vector3 aOther)
+		inline C_Vector3 operator+(const C_Vector3 aOther) const
 		{
 			return C_Vector3(x + aOther.x, y + aOther.y, z + aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator -
-		inline C_Vector3 operator-(const C_Vector3 aOther)
+		inline C_Vector3 operator-(const C_Vector3 aOther) const
 		{
 			return C_Vector3(x - aOther.x, y - aOther.y, z - aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -
-		inline C_Vector3 operator-()
+		inline C_Vector3 operator-() const
 		{
 			return C_Vector3(-x, -y, -z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
-		inline C_Vector3 operator*(const C_Vector3 aOther)
+		inline C_Vector3 operator*(const C_Vector3 aOther) const
 		{
 			return C_Vector3(x * aOther.x, y * aOther.y, z * aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
-		inline C_Vector3 operator*(const float aOther)
+		inline C_Vector3 operator*(const float aOther) const
 		{
 			return C_Vector3(x * aOther, y * aOther, z * aOther);
 		}
@@ -108,25 +108,25 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
-		inline C_Vector3 operator/(const C_Vector3 aOther)
+		inline C_Vector3 operator/(const C_Vector3 aOther) const
 		{
 			return C_Vector3(x / aOther.x, y / aOther.y, z / aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /
-		inline C_Vector3 operator/(const float aOther)
+		inline C_Vector3 operator/(const float aOther) const
 		{
 			return C_Vector3(x / aOther, y / aOther, z / aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
-		inline bool operator==(const C_Vector3 aOther)
+		inline bool operator==(const C_Vector3 aOther) const
 		{
 			return (x == aOther.x && y == aOther.y && z == aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator !=
-		inline bool operator!=(const C_Vector3 aOther)
+		inline bool operator!=(const C_Vector3 aOther) const
 		{
 			return (x != aOther.x && y != aOther.y && z != aOther.z);
 		}
