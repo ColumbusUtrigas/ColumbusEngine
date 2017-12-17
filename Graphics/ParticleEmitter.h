@@ -101,6 +101,11 @@ namespace Columbus
 		void unbindAll();
 		
 		float mLightUniform[120];
+		float* mVertData = nullptr;
+		float* mUvData = nullptr;
+		float* mPosData = nullptr;
+		float* mTimeData = nullptr;
+		unsigned int mParticlesCount = 0;
 	public:
 		C_Shader* mShader = nullptr;
 

@@ -515,10 +515,20 @@ namespace Columbus
 		setShaderMaterial();
 		setShaderLightAndCamera();
 
-		float* vertData = (float*)malloc(mActiveParticles.size() * 18 * sizeof(float));
-		float* uvData = (float*)malloc(mActiveParticles.size() * 12 * sizeof(float));
-		float* posData = (float*)malloc(mActiveParticles.size() * 18 * sizeof(float));
-		float* timeData = (float*)malloc(mActiveParticles.size() * 18 * sizeof(float));
+		if (mParticleEffect->getParticlesCount() != mParticlesCount)
+		{
+			delete mVertData;
+			delete mUvData;
+			delete mPosData;
+			delete mTimeData;
+
+			mParticlesCount = mParticleEffect->getParticlesCount();
+
+			mVertData = new float[mParticlesCount * 18];
+			mUvData = new float[mParticlesCount * 12];
+			mPosData = new float[mParticlesCount * 18];
+			mTimeData = new float[mParticlesCount * 18];
+		}
 
 		unsigned int vertCounter = 0;
 		unsigned int uvCounter = 0;
@@ -526,34 +536,35 @@ namespace Columbus
 		unsigned int timeCounter = 0;
 
 		for (auto Particle : mActiveParticles)
+		{
+			memcpy(mVertData + vertCounter, vrts, sizeof(vrts));
+			vertCounter += 18;
+
+			memcpy(mUvData + uvCounter, uvs, sizeof(uvs));
+			uvCounter += 12;
+
 			for (int i = 0; i < 6; i++)
 			{
-				vertData[vertCounter++] = vrts[3 * i + 0];
-				vertData[vertCounter++] = vrts[3 * i + 1];
-				vertData[vertCounter++] = vrts[3 * i + 2];
+				mPosData[posCounter++] = Particle.pos.x;
+				mPosData[posCounter++] = Particle.pos.y;
+				mPosData[posCounter++] = Particle.pos.z;
 
-				uvData[uvCounter++] = uvs[2 * i + 0];
-				uvData[uvCounter++] = uvs[2 * i + 1];
-
-				posData[posCounter++] = Particle.pos.x;
-				posData[posCounter++] = Particle.pos.y;
-				posData[posCounter++] = Particle.pos.z;
-
-				timeData[timeCounter++] = Particle.age;
-				timeData[timeCounter++] = Particle.TTL;
-				timeData[timeCounter++] = Particle.rotation;
+				mTimeData[timeCounter++] = Particle.age;
+				mTimeData[timeCounter++] = Particle.TTL;
+				mTimeData[timeCounter++] = Particle.rotation;
 			}
+		}
 
-		mBuf->setData(vertData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mBuf->setData(mVertData, 18 * sizeof(float) * mActiveParticles.size(), 3);
 		mBuf->compile();
 
-		mTBuf->setData(uvData, 12 * sizeof(float) * mActiveParticles.size(), 2);
+		mTBuf->setData(mUvData, 12 * sizeof(float) * mActiveParticles.size(), 2);
 		mTBuf->compile();
 
-		mPBuf->setData(posData, 18 * sizeof(float)* mActiveParticles.size(), 3);
+		mPBuf->setData(mPosData, 18 * sizeof(float)* mActiveParticles.size(), 3);
 		mPBuf->compile();
 
-		mLBuf->setData(timeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mLBuf->setData(mTimeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
 		mLBuf->compile();
 
 		setBuffers();
@@ -561,16 +572,18 @@ namespace Columbus
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6 * mActiveParticles.size());
 
 		unbindAll();
-		free(vertData);
-		free(uvData);
-		free(posData);
-		free(timeData);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
 		mParticles.clear();
+		mActiveParticles.clear();
+		
+		if (mVertData != nullptr) delete mVertData;
+		if (mUvData != nullptr) delete mUvData;
+		if (mUvData != nullptr) delete mPosData;
+		if (mUvData != nullptr) delete mTimeData;
 	}
 
 }
