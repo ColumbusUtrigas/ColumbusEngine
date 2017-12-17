@@ -515,40 +515,45 @@ namespace Columbus
 		setShaderMaterial();
 		setShaderLightAndCamera();
 
-		std::vector<float> vertData;
-		std::vector<float> uvdata;
-		std::vector<float> posdata;
-		std::vector<float> timedata;
+		float* vertData = (float*)malloc(mActiveParticles.size() * 18 * sizeof(float));
+		float* uvData = (float*)malloc(mActiveParticles.size() * 12 * sizeof(float));
+		float* posData = (float*)malloc(mActiveParticles.size() * 18 * sizeof(float));
+		float* timeData = (float*)malloc(mActiveParticles.size() * 18 * sizeof(float));
+
+		unsigned int vertCounter = 0;
+		unsigned int uvCounter = 0;
+		unsigned int posCounter = 0;
+		unsigned int timeCounter = 0;
 
 		for (auto Particle : mActiveParticles)
 			for (int i = 0; i < 6; i++)
 			{
-				vertData.push_back(vrts[3 * i + 0]);
-				vertData.push_back(vrts[3 * i + 1]);
-				vertData.push_back(vrts[3 * i + 2]);
+				vertData[vertCounter++] = vrts[3 * i + 0];
+				vertData[vertCounter++] = vrts[3 * i + 1];
+				vertData[vertCounter++] = vrts[3 * i + 2];
 
-				uvdata.push_back(uvs[2 * i + 0]);
-				uvdata.push_back(uvs[2 * i + 1]);
+				uvData[uvCounter++] = uvs[2 * i + 0];
+				uvData[uvCounter++] = uvs[2 * i + 1];
 
-				posdata.push_back(Particle.pos.x);
-				posdata.push_back(Particle.pos.y);
-				posdata.push_back(Particle.pos.z);
+				posData[posCounter++] = Particle.pos.x;
+				posData[posCounter++] = Particle.pos.y;
+				posData[posCounter++] = Particle.pos.z;
 
-				timedata.push_back(Particle.age);
-				timedata.push_back(Particle.TTL);
-				timedata.push_back(Particle.rotation);
+				timeData[timeCounter++] = Particle.age;
+				timeData[timeCounter++] = Particle.TTL;
+				timeData[timeCounter++] = Particle.rotation;
 			}
 
-		mBuf->setData(vertData.data(), 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mBuf->setData(vertData, 18 * sizeof(float) * mActiveParticles.size(), 3);
 		mBuf->compile();
 
-		mTBuf->setData(uvdata.data(), 12 * sizeof(float) * mActiveParticles.size(), 2);
+		mTBuf->setData(uvData, 12 * sizeof(float) * mActiveParticles.size(), 2);
 		mTBuf->compile();
 
-		mPBuf->setData(posdata.data(), 18 * sizeof(float)* mActiveParticles.size(), 3);
+		mPBuf->setData(posData, 18 * sizeof(float)* mActiveParticles.size(), 3);
 		mPBuf->compile();
 
-		mLBuf->setData(timedata.data(), 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mLBuf->setData(timeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
 		mLBuf->compile();
 
 		setBuffers();
@@ -556,6 +561,10 @@ namespace Columbus
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6 * mActiveParticles.size());
 
 		unbindAll();
+		free(vertData);
+		free(uvData);
+		free(posData);
+		free(timeData);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
