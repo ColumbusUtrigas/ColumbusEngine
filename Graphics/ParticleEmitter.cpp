@@ -112,18 +112,18 @@ namespace Columbus
 
 		auto func = [pos](const C_Particle &a, const C_Particle &b) -> bool
 		{
-			/*C_Vector3 q = a.pos;
+			C_Vector3 q = a.pos;
 			C_Vector3 w = b.pos;
 
 			float ql = pow(pos.x - q.x, 2) + pow(pos.y - q.y, 2) + pow(pos.z - q.z, 2);
 			float wl = pow(pos.x - w.x, 2) + pow(pos.y - w.y, 2) + pow(pos.z - w.z, 2);
 
-			return ql > wl;*/
+			return ql > wl;
 
-			C_Vector3 q = a.pos - pos;
+			/*C_Vector3 q = a.pos - pos;
 			C_Vector3 w = a.pos - pos;
 
-			return C_Vector3::dot(q, q) > C_Vector3::dot(w, w);
+			return C_Vector3::dot(q, q) > C_Vector3::dot(w, w);*/
 		};
 
 		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);

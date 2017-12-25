@@ -22,13 +22,25 @@ bool IsLightEnabled = false;
 
 void Light(int id);
 
+#define IS_GRADIENT varIsGradient
+
 void main()
 {
 	vec4 tex = texture(uTex, varTexCoord);
-	vec4 Gradient;
+	vec4 Gradient = mix(uStartColor, uFinalColor, varTime / varTTL) * clamp(varIsGradient, 0.0, 1.0);
+	vec4 Color = uColor;
 
-	if (varIsGradient != 0.0)
-		Gradient = mix(uStartColor, uFinalColor, varTime / varTTL);
+	if (varIsGradient == 0.0)
+	{
+		if (textureSize(uTex, 0).x > 0)
+			Color = uColor * tex;	
+	} else
+	{
+		if (textureSize(uTex, 0).x > 0)
+			Color = uColor * tex * Gradient;
+		else
+			Color = uColor * Gradient;
+	}
 
 	Light(0);
 	Light(1);
@@ -43,42 +55,37 @@ void main()
 	if (IsLightEnabled == false)
 		Lighting = vec4(1);
 
-	if (varIsGradient == 0.0)
-	{
-		if (tex.xyz != vec3(0))
-			gl_FragColor = uColor * tex * Lighting;
-		else
-			gl_FragColor = uColor * Lighting;
-	} else
-	{
-		gl_FragColor = Gradient * tex * Lighting;
-	}
+	gl_FragColor = Color * Lighting;
 
-	if (uDiscard == 1 && gl_FragColor.w < 0.05)
-			discard;
+	//if (uDiscard == 1 && gl_FragColor.w < 0.05)
+			//discard;
+
+	if (gl_FragColor.w < 0.01) discard;
 }
 
 void Light(int id)
 {
-	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
-	vec3 MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
-	vec3 MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
-	vec3 MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
-
 	int offset = id * 15;
+
+	float LightType = LightUnif[9 + offset];
+
+	if (LightType == -1) return;
+	else IsLightEnabled = true;
 
 	vec3 LightColor = vec3(LightUnif[0 + offset], LightUnif[1 + offset], LightUnif[2 + offset]);
 	vec3 LightPos = vec3(LightUnif[3 + offset], LightUnif[4 + offset], LightUnif[5 + offset]);
 	vec3 LightDir = vec3(LightUnif[6 + offset], LightUnif[7 + offset], LightUnif[8 + offset]);
-	float LightType = LightUnif[9 + offset];
+
 	float LightConstant = LightUnif[10 + offset];
 	float LightLinear = LightUnif[11 + offset];
 	float LightQuadratic = LightUnif[12 + offset];
 	float LightInnerAngle = LightUnif[13 + offset];
 	float LightOuterAngle = LightUnif[14 + offset];
 
-	if (LightType == -1) return;
-	else IsLightEnabled = true;
+	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
+	vec3 MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
+	vec3 MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
+	vec3 MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
 
 	vec3 lightDir;
 
