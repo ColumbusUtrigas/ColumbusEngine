@@ -119,6 +119,8 @@ int main(int argc, char** argv)
 
 	C_Scene scene;
 
+	scene.load("Data/1.scene");
+
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
 

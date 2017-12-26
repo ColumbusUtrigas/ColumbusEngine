@@ -1,0 +1,20 @@
+<Scene>
+	<Count>8</Count>
+
+	<GameObject7>
+		<Name>Suzanne</Name>
+
+		<Transform>
+			<Position X="0" Y="0" Z="3"/>
+		</Transform>
+
+		<Material>Data/Materials/Default.cxmat</Material>
+		<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
+		<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+		<MeshRenderer>Data/Models/Suzanne.obj</MeshRenderer>
+	</GameObject7>
+</Scene>
+
+
+
+

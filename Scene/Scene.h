@@ -40,6 +40,8 @@ namespace Columbus
 	public:
 		C_Scene();
 
+		bool load(std::string aFile);
+
 		void add(unsigned int aID, C_GameObject* aMesh);
 		void setSkybox(const C_Skybox* aSkybox);
 		void setCamera(const C_Camera* aCamera);

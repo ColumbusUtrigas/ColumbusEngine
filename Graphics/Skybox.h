@@ -78,6 +78,8 @@ namespace Columbus
 		C_Skybox(C_Cubemap* aCubemap);
 		//Draw skybox
 		void draw();
+		//Return Cubemap
+		C_Cubemap* getCubemap() const;
 		//Destructor
 		~C_Skybox();
 	};
