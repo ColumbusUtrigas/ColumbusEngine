@@ -47,6 +47,7 @@
 #include <System/Importer.h>
 #include <System/Log.h>
 #include <System/Random.h>
+#include <System/ResourceManager.h>
 #include <System/Serializer.h>
 #include <System/SmartPointer.h>
 #include <System/System.h>

@@ -196,6 +196,26 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
+	//Return diffuse map ID
+	int C_Material::getTextureID() const
+	{
+		return mTextureID;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return specular map ID
+	int C_Material::getSpecMapID() const
+	{
+		return mSpecMapID;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Return normal map ID
+	int C_Material::getNormMapID() const
+	{
+		return mNormMapID;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//Serialize to XML file
 	bool C_Material::saveToXML(std::string aFile) const
 	{
@@ -307,13 +327,13 @@ namespace Columbus
 		serializer.getSubString({"Textures", "Normal"}, &normalMapPath);
 
 		if (diffuseMapPath != "None")
-			mTexture = new C_Texture(diffuseMapPath);
+			mTextureID = std::atoi(diffuseMapPath.c_str());
 
 		if (specularMapPath != "None")
-			mSpecMap = new C_Texture(specularMapPath);
+			mSpecMapID = std::atoi(specularMapPath.c_str());
 
 		if (normalMapPath != "None")
-			mNormMap = new C_Texture(normalMapPath);
+			mNormMapID = std::atoi(normalMapPath.c_str());
 
 		C_Log::success("Material loaded: " + aFile);
 

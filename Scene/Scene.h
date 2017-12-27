@@ -17,6 +17,7 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Render.h>
 #include <Graphics/PostEffect.h>
+#include <System/ResourceManager.h>
 
 namespace Columbus
 {
@@ -26,6 +27,8 @@ namespace Columbus
 	private:
 		std::map<unsigned int, C_GameObject*> mMeshes;
 		std::vector<C_Light*> mLights;
+		std::map<int, C_Texture*> mTextures;
+
 		C_Skybox* mSkybox = nullptr;
 		C_Camera* mCamera = nullptr;
 

@@ -1,4 +1,16 @@
 <Scene>
+
+	<Resources>
+		<Textures>
+			<Count>3</Count>
+
+			<Texture0>Data/Textures/milos.jpg</Texture0>
+			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
+			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
+		</Textures>		
+	</Resources>
+
+
 	<Count>8</Count>
 
 	<GameObject7>

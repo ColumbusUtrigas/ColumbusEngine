@@ -9,8 +9,8 @@
     <Lighting>1</Lighting>
 
     <Textures>
-    	<Diffuse>Data/Textures/milos.jpg</Diffuse>
-    	<Specular>Data/Textures/milos-spec.jpg</Specular>
-    	<Normal>Data/Textures/milos-normal.jpg</Normal>
+    	<Diffuse>0</Diffuse>
+    	<Specular>1</Specular>
+    	<Normal>2</Normal>
     </Textures>
 </Material>

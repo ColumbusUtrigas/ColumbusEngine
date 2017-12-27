@@ -79,6 +79,18 @@ namespace Columbus
 		{ C_Log::error("Can't load Scene: " + aFile); return false; }
 
 		int count = 0;
+		int texCount = 0;
+
+		if (serializer.getSubInt({"Resources", "Textures", "Count"}, &texCount))
+		{
+			for (int i = 0; i < texCount; i++)
+			{
+				std::string path;
+				std::string elem = std::string("Texture") + std::to_string(i);
+				if (serializer.getSubString({"Resources", "Textures", elem}, &path))
+					mTextures.insert(std::pair<int, C_Texture*>(i, new C_Texture(path)));
+			}
+		}
 
 		if (!serializer.getInt("Count", &count))
 		{ C_Log::error("Can't load Scene Count: " + aFile); return false; }
@@ -124,6 +136,14 @@ namespace Columbus
 			imp.loadOBJ(meshPath);
 			C_Mesh* mesh = new C_Mesh(imp.getObject(0));
 			material->setShader(shader);
+
+			if (material->getTextureID() != -1)
+				material->setTexture(mTextures.at(material->getTextureID()));
+			if (material->getSpecMapID() != -1)
+				material->setSpecMap(mTextures.at(material->getSpecMapID()));
+			if (material->getNormMapID() != -1)
+				material->setNormMap(mTextures.at(material->getNormMapID()));
+
 			mesh->mMat = *material;
 
 			Transform.setPos(position);
