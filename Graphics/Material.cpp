@@ -298,6 +298,23 @@ namespace Columbus
 		if (!serializer.getBool("Lighting", &mLighting))
 		{ C_Log::error("Can't load Material lighting: " + aFile); return false; }
 
+		std::string diffuseMapPath = "None";
+		std::string specularMapPath = "None";
+		std::string normalMapPath = "None";
+
+		serializer.getSubString({"Textures", "Diffuse"}, &diffuseMapPath);
+		serializer.getSubString({"Textures", "Specular"}, &specularMapPath);
+		serializer.getSubString({"Textures", "Normal"}, &normalMapPath);
+
+		if (diffuseMapPath != "None")
+			mTexture = new C_Texture(diffuseMapPath);
+
+		if (specularMapPath != "None")
+			mSpecMap = new C_Texture(specularMapPath);
+
+		if (normalMapPath != "None")
+			mNormMap = new C_Texture(normalMapPath);
+
 		C_Log::success("Material loaded: " + aFile);
 
 		return true;

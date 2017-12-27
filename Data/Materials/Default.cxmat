@@ -7,4 +7,10 @@
     <ReflectionPower>0.2</ReflectionPower>
     <Discard>0</Discard>
     <Lighting>1</Lighting>
+
+    <Textures>
+    	<Diffuse>Data/Textures/milos.jpg</Diffuse>
+    	<Specular>Data/Textures/milos-spec.jpg</Specular>
+    	<Normal>Data/Textures/milos-normal.jpg</Normal>
+    </Textures>
 </Material>

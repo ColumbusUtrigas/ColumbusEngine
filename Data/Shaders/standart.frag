@@ -128,7 +128,7 @@ void Light(int id)
 	float diff = max(0.0, dot(Normal, -lightDir));
 
 	vec3 reflect = normalize(reflect(lightDir, Normal));
-	vec3 halfDir = normalize(normalize(LightPos) + viewDir);
+	vec3 halfDir = normalize(normalize(-lightDir) + normalize(viewDir));
 	float spec = pow(max(0.0, dot(halfDir, reflect)), 32);
 	vec3 specular = MaterialSpecular * LightColor * spec * 0.5;
 

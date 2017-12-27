@@ -19,24 +19,6 @@ int main(int argc, char** argv)
 
 	C_Shader shader("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
 
-	C_TextureManager textureManager;
-
-	C_Texture tex("Data/Textures/metal2.jpg");
-	C_Texture spec("Data/Textures/metal2-spec.jpg");
-	C_Texture norm("Data/Textures/metal2-normal.jpg");
-
-	C_Texture tex2("Data/Textures/milos.jpg");
-	C_Texture spec2("Data/Textures/milos-spec.jpg");
-	C_Texture norm2("Data/Textures/milos-normal.jpg");
-
-	textureManager.add(&tex);
-	textureManager.add(&spec);
-	textureManager.add(&norm);
-
-	textureManager.add(&tex2);
-	textureManager.add(&spec2);
-	textureManager.add(&norm2);
-
 	Import::C_ImporterModel imp;
 	imp.loadOBJ("Data/Models/ASD.obj");
 	Import::C_ImporterModel imp2;
@@ -51,48 +33,25 @@ int main(int argc, char** argv)
 	mesh.mMat.loadFromXML("Data/Materials/Default.cxmat");
 	mesh2.mMat.loadFromXML("Data/Materials/Default.cxmat");
 	mesh3.mMat.loadFromXML("Data/Materials/Default.cxmat");
-
-	mesh.mMat.setTexture(&tex);
-	mesh.mMat.setSpecMap(&spec);
-	mesh.mMat.setNormMap(&norm);
-	mesh.mMat.setShader(&shader);
-	mesh.setPos(C_Vector3(0, 0, 0));
-
-	mesh2.mMat.setTexture(&tex2);
-	mesh2.mMat.setSpecMap(&spec2);
-	mesh2.mMat.setNormMap(&norm2);
-	mesh2.mMat.setShader(&shader);
-
-	mesh3.mMat.setColor(C_Vector4(1, 1, 1, 1));
-	mesh3.mMat.setTexture(&tex2);
-	mesh3.mMat.setSpecMap(&spec2);
-	mesh3.mMat.setNormMap(&norm2);
-	mesh3.mMat.setShader(&shader);
-	mesh3.setPos(C_Vector3(0, -2, 0));
-
-	mesh4.mMat.setShader(&shader);
 	mesh4.mMat.loadFromXML("Data/Materials/Default.cxmat");
+
+	mesh.mMat.setShader(&shader);
+	mesh2.mMat.setShader(&shader);
+	mesh3.mMat.setShader(&shader);
+	mesh4.mMat.setShader(&shader);
 
 	mesh.addChild(&mesh2);
 
-
 	C_Camera camera;
-	C_Render render;
 
 	float i = 0;
 
 	C_Cubemap cubemap("Data/Skyboxes/1.cubemap");
 	C_Skybox skybox(&cubemap);
 
-	mesh.mMat.setReflection(&cubemap);
-	mesh2.mMat.setReflection(&cubemap);
-	mesh3.mMat.setReflection(&cubemap);
-	mesh4.mMat.setReflection(&cubemap);
-
 	C_Material partmat;
 	partmat.loadFromXML("Data/Materials/Smoke.cxmat");
 	C_Texture partex("Data/Textures/smoke.png");
-	textureManager.add(&partex);
 	partmat.setTexture(&partex);
 	partmat.setColor(C_Vector4(1.0, 1.0, 1.0, 0.5));
 
