@@ -344,10 +344,12 @@ namespace Columbus
 			} else
 			{
 				mMat.getShader()->setUniform1i(unifs[i].c_str(), indices[i]);
-				C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
-				C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
-				C_DeactiveTextureOpenGL(C_OGL_TEXTURE1);
-				C_DeactiveTextureOpenGL(C_OGL_TEXTURE3);
+				if (textures[0] == nullptr)
+					C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
+				if (textures[1] == nullptr)
+					C_DeactiveTextureOpenGL(C_OGL_TEXTURE1);
+				if (textures[2] == nullptr)
+					C_DeactiveTextureOpenGL(C_OGL_TEXTURE3);
 			}
 		}
 

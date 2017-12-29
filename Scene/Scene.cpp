@@ -89,19 +89,17 @@ namespace Columbus
 		C_Shader* shader = new C_Shader();
 		Import::C_ImporterModel imp;
 
-		if (!aSerializer->getSubString({aElement, "Name"}, &name)) return false;
-		aSerializer->getSubVector3({aElement, "Transform", "Position"}, &position, {"X", "Y", "Z"});
-		aSerializer->getSubVector3({aElement, "Transform", "Rotation"}, &rotation, {"X", "Y", "Z"});
-		aSerializer->getSubVector3({aElement, "Transform", "Scale"}, &scale, {"X", "Y", "Z"});
+		if (!aSerializer->getSubString({"GameObjects", aElement, "Name"}, &name)) return false;
+		aSerializer->getSubVector3({"GameObjects", aElement, "Transform", "Position"}, &position, {"X", "Y", "Z"});
+		aSerializer->getSubVector3({"GameObjects", aElement, "Transform", "Rotation"}, &rotation, {"X", "Y", "Z"});
+		aSerializer->getSubVector3({"GameObjects", aElement, "Transform", "Scale"}, &scale, {"X", "Y", "Z"});
 
-		if (aSerializer->getSubString({aElement, "Material"}, &materialPath))
+		if (aSerializer->getSubString({"GameObjects", aElement, "Material"}, &materialPath))
 			material->loadFromXML(materialPath);
 		else return false;
 
-		if (!aSerializer->getSubString({aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
-		if (!aSerializer->getSubString({aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
-
-		//if (!aSerializer->getSubString({aElement, "MeshRenderer"}, &meshPath)) return false; // TODO
+		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
+		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
 
 		shader->load(vertShaderPath, fragShaderPath);
 		material->setShader(shader);
@@ -113,7 +111,12 @@ namespace Columbus
 		if (material->getNormMapID() != -1)
 			material->setNormMap(mTextures.at(material->getNormMapID()));
 
-		if (aSerializer->getSubString({aElement, "Components", "MeshRenderer", "Primitive"}, &primitive))
+		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "MeshRenderer", "Mesh"}, &meshPath))
+		{
+			imp.loadOBJ(meshPath);
+			if (imp.getCount() > 0)
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
+		} else if (aSerializer->getSubString({"GameObjects", aElement, "Components", "MeshRenderer", "Primitive"}, &primitive))
 		{
 			if (primitive == "Cube")
 			{
@@ -157,12 +160,12 @@ namespace Columbus
 			}
 		}
 
-		if (!serializer.getInt("Count", &count))
+		if (!serializer.getSubInt({"GameObjects", "Count"}, &count))
 		{ C_Log::error("Can't load Scene Count: " + aFile); return false; }
 
 		for (int i = 0; i < count; i++)
 		{
-			std::string elem = std::string("GameObject") + std::to_string(i);
+			std::string elem = "GameObject" + std::to_string(i);
 			loadGameObject(&serializer, elem, i);
 		}
 
