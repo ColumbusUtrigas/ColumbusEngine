@@ -63,11 +63,11 @@ namespace Columbus
 		//Sort lights array by distance
 		void sortLights();
 	public:
-		C_Buffer* buf = NULL;
-		C_Buffer* tbuf = NULL;
-		C_Buffer* nbuf = NULL;
-		C_Buffer* tangbuf = NULL;
-		C_Buffer* bitangbuf = NULL;
+		C_Buffer* buf = nullptr;
+		C_Buffer* tbuf = nullptr;
+		C_Buffer* nbuf = nullptr;
+		C_Buffer* tangbuf = nullptr;
+		C_Buffer* bitangbuf = nullptr;
 
 		std::vector<C_Vertex> mVert;
 		C_Material mMat;
@@ -77,6 +77,11 @@ namespace Columbus
 		C_Mesh(std::string aFile);
 		//Constructor 3
 		C_Mesh(std::vector<C_Vertex> aVert);
+		//Constructor 4
+		C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat);
+
+		void setVertices(std::vector<C_Vertex> aVert);
+
 		//Draw mesh
 		void draw();
 		//Render mesh

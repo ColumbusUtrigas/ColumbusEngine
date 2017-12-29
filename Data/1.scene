@@ -7,24 +7,33 @@
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
 			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-		</Textures>		
+		</Textures>
 	</Resources>
 
 
-	<Count>8</Count>
+	<Count>2</Count>
 
-	<GameObject7>
+	<GameObject0>
 		<Name>Suzanne</Name>
 
 		<Transform>
 			<Position X="0" Y="0" Z="3"/>
+			<Rotation X="0" Y="45" Z="0"/>
+			<Scale X="1" Y="1" Z="1"/>
 		</Transform>
 
 		<Material>Data/Materials/Default.cxmat</Material>
 		<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
 		<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
-		<MeshRenderer>Data/Models/Suzanne.obj</MeshRenderer>
-	</GameObject7>
+		<MeshRenderer>Data/Models/LibertStatue.obj</MeshRenderer>
+
+		<Components>
+			<MeshRenderer>
+				<Primitive>Cube</Primitive>
+				<Mesh>LibertStatue.obj</Mesh>
+			</MeshRenderer>
+		</Components>
+	</GameObject0>
 </Scene>
 
 

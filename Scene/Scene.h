@@ -16,6 +16,7 @@
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Render.h>
+#include <Graphics/Primitives.h>
 #include <Graphics/PostEffect.h>
 #include <System/ResourceManager.h>
 
@@ -40,6 +41,9 @@ namespace Columbus
 		void lightWorkflow();
 		void meshWorkflow();
 		void particlesWorkflow();
+
+		bool loadGameObject(Serializer::C_SerializerXML* aSerializer,
+			std::string aElement, unsigned int aID);
 	public:
 		C_Scene();
 

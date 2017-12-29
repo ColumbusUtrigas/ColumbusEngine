@@ -22,8 +22,6 @@ bool IsLightEnabled = false;
 
 void Light(int id);
 
-#define IS_GRADIENT varIsGradient
-
 void main()
 {
 	vec4 tex = texture(uTex, varTexCoord);

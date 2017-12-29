@@ -70,6 +70,71 @@ namespace Columbus
 			}
 		}
 	}
+	bool C_Scene::loadGameObject(Serializer::C_SerializerXML* aSerializer,
+		std::string aElement, unsigned int aID)
+	{
+		std::string name;
+		std::string materialPath;
+		std::string vertShaderPath;
+		std::string fragShaderPath;
+		std::string meshPath;
+		std::string primitive;
+
+		C_GameObject* GameObject = new C_GameObject();
+		C_Transform Transform;
+		C_Vector3 position;
+		C_Vector3 rotation;
+		C_Vector3 scale;
+		C_Material* material = new C_Material();
+		C_Shader* shader = new C_Shader();
+		Import::C_ImporterModel imp;
+
+		if (!aSerializer->getSubString({aElement, "Name"}, &name)) return false;
+		aSerializer->getSubVector3({aElement, "Transform", "Position"}, &position, {"X", "Y", "Z"});
+		aSerializer->getSubVector3({aElement, "Transform", "Rotation"}, &rotation, {"X", "Y", "Z"});
+		aSerializer->getSubVector3({aElement, "Transform", "Scale"}, &scale, {"X", "Y", "Z"});
+
+		if (aSerializer->getSubString({aElement, "Material"}, &materialPath))
+			material->loadFromXML(materialPath);
+		else return false;
+
+		if (!aSerializer->getSubString({aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
+		if (!aSerializer->getSubString({aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
+
+		//if (!aSerializer->getSubString({aElement, "MeshRenderer"}, &meshPath)) return false; // TODO
+
+		shader->load(vertShaderPath, fragShaderPath);
+		material->setShader(shader);
+
+		if (material->getTextureID() != -1)
+			material->setTexture(mTextures.at(material->getTextureID()));
+		if (material->getSpecMapID() != -1)
+			material->setSpecMap(mTextures.at(material->getSpecMapID()));
+		if (material->getNormMapID() != -1)
+			material->setNormMap(mTextures.at(material->getNormMapID()));
+
+		if (aSerializer->getSubString({aElement, "Components", "MeshRenderer", "Primitive"}, &primitive))
+		{
+			if (primitive == "Cube")
+			{
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveBox(), *material)));
+			}
+		}
+
+		//imp.loadOBJ(meshPath);
+		//mesh->mMat = *material;
+
+		Transform.setPos(position);
+		Transform.setRot(rotation);
+		Transform.setScale(scale);
+		GameObject->setTransform(Transform);
+
+		add(aID, GameObject);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Scene::load(std::string aFile)
 	{
@@ -97,60 +162,8 @@ namespace Columbus
 
 		for (int i = 0; i < count; i++)
 		{
-			std::string name;
-			std::string materialPath;
-			std::string vertShaderPath;
-			std::string fragShaderPath;
-			std::string meshPath;
-
 			std::string elem = std::string("GameObject") + std::to_string(i);
-
-			C_GameObject* GameObject = new C_GameObject();
-			C_Transform Transform;
-			C_Vector3 position;
-			C_Material* material = new C_Material();
-			C_Shader* shader = new C_Shader();
-			Import::C_ImporterModel imp;
-
-			if (!serializer.getSubString({elem, "Name"}, &name)) continue;
-
-			if (!serializer.getSubVector3({elem, "Transform", "Position"}, &position, {"X", "Y", "Z"}))
-			{ C_Log::error("Can't load Scene Object Material: " + aFile); return false; }
-
-			if (!serializer.getSubString({elem, "Material"}, &materialPath))
-			{ C_Log::error("Can't load Scene Object Material: " + aFile); return false; }
-
-			material->loadFromXML(materialPath);
-
-			if (!serializer.getSubString({elem, "ShaderVertex"}, &vertShaderPath))
-			{ C_Log::error("Can't load Scene Object Vertex Shader: " + aFile); return false; }
-
-			if (!serializer.getSubString({elem, "ShaderFragment"}, &fragShaderPath))
-			{ C_Log::error("Can't load Scene Object Fragment Shader: " + aFile); return false; }
-
-			shader->load(vertShaderPath, fragShaderPath);
-
-			if (!serializer.getSubString({elem, "MeshRenderer"}, &meshPath))
-			{ C_Log::error("Can't load Scene Object Mesh: " + aFile); return false; }
-
-			imp.loadOBJ(meshPath);
-			C_Mesh* mesh = new C_Mesh(imp.getObject(0));
-			material->setShader(shader);
-
-			if (material->getTextureID() != -1)
-				material->setTexture(mTextures.at(material->getTextureID()));
-			if (material->getSpecMapID() != -1)
-				material->setSpecMap(mTextures.at(material->getSpecMapID()));
-			if (material->getNormMapID() != -1)
-				material->setNormMap(mTextures.at(material->getNormMapID()));
-
-			mesh->mMat = *material;
-
-			Transform.setPos(position);
-			GameObject->setTransform(Transform);
-			GameObject->addComponent(new C_MeshRenderer(mesh));
-
-			add(i, GameObject);
+			loadGameObject(&serializer, elem, i);
 		}
 
 		return true;

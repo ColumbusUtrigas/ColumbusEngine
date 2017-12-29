@@ -22,6 +22,107 @@ namespace Columbus
 		mScale = C_Vector3(1, 1, 1);
 		mPivot = C_Vector3(0, 0, 0);
 
+		setVertices(aVert);
+
+		/*mVert = aVert;
+
+		std::vector<float> v;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			v.push_back(mVert[i].pos.x);
+			v.push_back(mVert[i].pos.y);
+			v.push_back(mVert[i].pos.z);
+		}
+
+		if (v.size() > 0)
+			buf = new C_Buffer(v.data(), v.size() * sizeof(float), 3);
+		v.clear();
+
+		std::vector<float> t;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			t.push_back(mVert[i].UV.x);
+			t.push_back(mVert[i].UV.y);
+		}
+
+		if(t.size() > 0)
+			tbuf = new C_Buffer(t.data(), t.size() * sizeof(float), 2);
+		t.clear();
+
+		std::vector<float> n;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			n.push_back(mVert[i].normal.x);
+			n.push_back(mVert[i].normal.y);
+			n.push_back(mVert[i].normal.z);
+		}
+
+		if (n.size() > 0)
+			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float), 3);
+		n.clear();
+
+		std::vector<float> tang;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			tang.push_back(mVert[i].tangent.x);
+			tang.push_back(mVert[i].tangent.y);
+			tang.push_back(mVert[i].tangent.z);
+		}
+
+		if (tang.size() > 0)
+			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float), 3);
+		tang.clear();
+
+		std::vector<float> bitang;
+
+		for (size_t i = 0; i < mVert.size(); i++)
+		{
+			tang.push_back(mVert[i].bitangent.x);
+			tang.push_back(mVert[i].bitangent.y);
+			tang.push_back(mVert[i].bitangent.z);
+		}
+
+		if (bitang.size() > 0)
+			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float), 3);
+		bitang.clear();*/
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 2
+	C_Mesh::C_Mesh(std::string aFile)
+	{
+		Import::C_ImporterModel importer;
+		if(importer.loadOBJ(aFile))
+		{
+
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 3
+	C_Mesh::C_Mesh()
+	{
+
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 4
+	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat)
+	{
+		setVertices(aVert);
+		mMat = aMat;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Mesh::setVertices(std::vector<C_Vertex> aVert)
+	{
+		delete buf;
+		delete tbuf;
+		delete nbuf;
+		delete tangbuf;
+		delete bitangbuf;
+
+		mVert.clear();
 		mVert = aVert;
 
 		std::vector<float> v;
@@ -87,22 +188,6 @@ namespace Columbus
 		if (bitang.size() > 0)
 			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float), 3);
 		bitang.clear();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 2
-	C_Mesh::C_Mesh(std::string aFile)
-	{
-		Import::C_ImporterModel importer;
-		if(importer.loadOBJ(aFile))
-		{
-
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 3
-	C_Mesh::C_Mesh()
-	{
-
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw mesh

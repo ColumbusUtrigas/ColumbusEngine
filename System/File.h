@@ -7,7 +7,6 @@
 *                Nika(Columbus) Red             *
 *                   05.11.2017                  *
 *************************************************/
-
 #pragma once
 
 #include <cstdio>

@@ -184,8 +184,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	shader.unbind();
-
 	return 0;
 }
 
