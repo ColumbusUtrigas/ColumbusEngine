@@ -2,16 +2,17 @@
 
 	<Resources>
 		<Textures>
-			<Count>3</Count>
+			<Count>4</Count>
 
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
 			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
+			<Texture3>Data/Textures/spark.png</Texture3>
 		</Textures>
 	</Resources>
 
 	<GameObjects>
-		<Count>2</Count>
+		<Count>5</Count>
 
 		<GameObject0>
 			<Name>LibertyStatue</Name>
@@ -28,11 +29,90 @@
 
 			<Components>
 				<MeshRenderer>
-					<Primitive>Cube</Primitive>
 					<Mesh>Data/Models/Liberty.obj</Mesh>
 				</MeshRenderer>
 			</Components>
 		</GameObject0>
+
+		<GameObject1>
+			<Name>Particles</Name>
+
+			<Transform>
+				<Position X="0" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Smoke.cxmat</Material>
+			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/A.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject1>
+
+		<GameObject2>
+			<Name>Light1</Name>
+
+			<Transform>
+				<Position X="0" Y="1" Z="2"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>None</Material>
+			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+
+			<Components>
+				<LightComponent>
+					<Light>Data/Lights/1.cxlig</Light>
+				</LightComponent>
+			</Components>
+		</GameObject2>
+
+		<GameObject3>
+			<Name>Light2</Name>
+
+			<Transform>
+				<Position X="2" Y="1" Z="-2"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>None</Material>
+			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+
+			<Components>
+				<LightComponent>
+					<Light>Data/Lights/2.cxlig</Light>
+				</LightComponent>
+			</Components>
+		</GameObject3>
+
+		<GameObject4>
+			<Name>Light3</Name>
+
+			<Transform>
+				<Position X="-2" Y="1" Z="-2"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>None</Material>
+			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+
+			<Components>
+				<LightComponent>
+					<Light>Data/Lights/3.cxlig</Light>
+				</LightComponent>
+			</Components>
+		</GameObject4>
 	</GameObjects>
 </Scene>
 

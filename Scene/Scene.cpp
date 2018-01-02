@@ -78,7 +78,8 @@ namespace Columbus
 		std::string vertShaderPath;
 		std::string fragShaderPath;
 		std::string meshPath;
-		std::string primitive;
+		std::string particlePath;
+		std::string lightPath;
 
 		C_GameObject* GameObject = new C_GameObject();
 		C_Transform Transform;
@@ -89,14 +90,18 @@ namespace Columbus
 		C_Shader* shader = new C_Shader();
 		Import::C_ImporterModel imp;
 
-		if (!aSerializer->getSubString({"GameObjects", aElement, "Name"}, &name)) return false;
-		aSerializer->getSubVector3({"GameObjects", aElement, "Transform", "Position"}, &position, {"X", "Y", "Z"});
-		aSerializer->getSubVector3({"GameObjects", aElement, "Transform", "Rotation"}, &rotation, {"X", "Y", "Z"});
-		aSerializer->getSubVector3({"GameObjects", aElement, "Transform", "Scale"}, &scale, {"X", "Y", "Z"});
+		if (!aSerializer->getSubString({ "GameObjects", aElement, "Name" }, &name)) return false;
+		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Position" }, &position, { "X", "Y", "Z" });
+		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Rotation" }, &rotation, { "X", "Y", "Z" });
+		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Scale" }, &scale, { "X", "Y", "Z" });
 
-		if (aSerializer->getSubString({"GameObjects", aElement, "Material"}, &materialPath))
-			material->loadFromXML(materialPath);
-		else return false;
+		if (aSerializer->getSubString({ "GameObjects", aElement, "Material" }, &materialPath))
+		{
+			if (materialPath != "None")
+			{
+				material->loadFromXML(materialPath);
+			}
+		} else return false;
 
 		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
 		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
@@ -113,19 +118,32 @@ namespace Columbus
 
 		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "MeshRenderer", "Mesh"}, &meshPath))
 		{
-			imp.loadOBJ(meshPath);
-			if (imp.getCount() > 0)
-				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
-		} else if (aSerializer->getSubString({"GameObjects", aElement, "Components", "MeshRenderer", "Primitive"}, &primitive))
-		{
-			if (primitive == "Cube")
+			if (meshPath == "Plane")
+			{
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitivePlane(), *material)));
+			} else if (meshPath == "Cube")
 			{
 				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveBox(), *material)));
+			} else if (meshPath == "Sphere")
+			{
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveSphere(1, 50, 50), *material)));
+			} else
+			{
+				imp.loadOBJ(meshPath);
+				if (imp.getCount() > 0)
+					GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
 			}
 		}
 
-		//imp.loadOBJ(meshPath);
-		//mesh->mMat = *material;
+		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "ParticleSystem", "Particles"}, &particlePath))
+		{
+			GameObject->addComponent(new C_ParticleSystem(new C_ParticleEmitter(new C_ParticleEffect(particlePath, material))));
+		}
+
+		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "LightComponent", "Light"}, &lightPath))
+		{
+			GameObject->addComponent(new C_LightComponent(new C_Light(lightPath, position)));
+		}
 
 		Transform.setPos(position);
 		Transform.setRot(rotation);

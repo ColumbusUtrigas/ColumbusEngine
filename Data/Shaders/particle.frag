@@ -30,11 +30,11 @@ void main()
 
 	if (varIsGradient == 0.0)
 	{
-		if (textureSize(uTex, 0).x > 0)
+		if (textureSize(uTex, 0).x > 1)
 			Color = uColor * tex;	
 	} else
 	{
-		if (textureSize(uTex, 0).x > 0)
+		if (textureSize(uTex, 0).x > 1)
 			Color = uColor * tex * Gradient;
 		else
 			Color = uColor * Gradient;

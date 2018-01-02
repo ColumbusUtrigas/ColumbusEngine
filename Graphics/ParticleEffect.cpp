@@ -28,15 +28,14 @@ namespace Columbus
 		mGradienting(true),
 		mMinTimeToLive(1.0),
 		mMaxTimeToLive(1.0),
-		mMinVelocity(1.0),
-		mMaxVelocity(1.0),
 		mMinRotation(0.0),
 		mMaxRotation(0.0),
 		mMinRotationSpeed(0.0),
 		mEmitRate(5),
 		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD)
+		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(C_PARTICLE_SORT_MODE_NONE)
 	{
 
 	}
@@ -53,17 +52,41 @@ namespace Columbus
 		mGradienting(true),
 		mMinTimeToLive(1.0),
 		mMaxTimeToLive(1.0),
-		mMinVelocity(1.0),
-		mMaxVelocity(1.0),
 		mMinRotation(0.0),
 		mMaxRotation(0.0),
 		mMinRotationSpeed(0.0),
 		mEmitRate(5),
 		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD)
+		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(C_PARTICLE_SORT_MODE_NONE)
 	{
-		loadFromXML(aFile);
+		load(aFile);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 3
+	C_ParticleEffect::C_ParticleEffect(std::string aFile, C_Material* aMaterial) :
+		mMaterial(nullptr),
+		mParticlesCount(5),
+		mVisible(true),
+		mScaleOverLifetime(false),
+		mEmitFromShell(false),
+		mAdditive(false),
+		mBillboarding(true),
+		mGradienting(true),
+		mMinTimeToLive(1.0),
+		mMaxTimeToLive(1.0),
+		mMinRotation(0.0),
+		mMaxRotation(0.0),
+		mMinRotationSpeed(0.0),
+		mEmitRate(5),
+		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mParticleShapeRadius(1.0),
+		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+	{
+		load(aFile);
+		mMaterial = aMaterial;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -128,16 +151,16 @@ namespace Columbus
 		mPos += static_cast<C_Vector3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set negative direction limit
-	void C_ParticleEffect::setMinDirection(const C_Vector3 aMinDirection)
+	//Set particle minimum velocity
+	void C_ParticleEffect::setMinVelocity(const C_Vector3 aMinVelocity)
 	{
-		mMinDirection = static_cast<C_Vector3>(aMinDirection);
+		mMinVelocity = static_cast<C_Vector3>(aMinVelocity);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set positive direction limit
-	void C_ParticleEffect::setMaxDirection(const C_Vector3 aMaxDirection)
+	//Set particle maximum velocity
+	void C_ParticleEffect::setMaxVelocity(const C_Vector3 aMaxVelocity)
 	{
-		mMaxDirection = static_cast<C_Vector3>(aMaxDirection);
+		mMaxVelocity = static_cast<C_Vector3>(aMaxVelocity);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set particle minimum acceleration
@@ -200,18 +223,6 @@ namespace Columbus
 		mMaxTimeToLive = static_cast<float>(aMaxTimeToLive);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set particle minimum velocity
-	void C_ParticleEffect::setMinVelocity(const float aMinVelocity)
-	{
-		mMinVelocity = static_cast<float>(aMinVelocity);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set particle maximum velocity
-	void C_ParticleEffect::setMaxVelocity(const float aMaxVelocity)
-	{
-		mMaxVelocity = static_cast<float>(aMaxVelocity);
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Set particle minimum roation
 	void C_ParticleEffect::setMinRotation(const float aMinRotation)
 	{
@@ -257,6 +268,12 @@ namespace Columbus
 	void C_ParticleEffect::setParticleShapeRadius(const float aRadius)
 	{
 		mParticleShapeRadius = static_cast<float>(aRadius);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Set particles mode
+	void C_ParticleEffect::setSortMode(const C_PARTICLE_SORT_MODE aSortMode)
+	{
+		mSortMode = static_cast<int>(aSortMode);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -315,16 +332,16 @@ namespace Columbus
 		return mPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return minimum particle direction
-	C_Vector3 C_ParticleEffect::getMinDirection() const
+	//Return particle minimum velocity
+	C_Vector3 C_ParticleEffect::getMinVelocity() const
 	{
-		return mMinDirection;
+		return mMinVelocity;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return maximum particle direction
-	C_Vector3 C_ParticleEffect::getMaxDirection() const
+	//Return particle maximum velocity
+	C_Vector3 C_ParticleEffect::getMaxVelocity() const
 	{
-		return mMaxDirection;
+		return mMaxVelocity;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return particle minimum acceleration
@@ -387,18 +404,6 @@ namespace Columbus
 		return mMaxTimeToLive;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return particle minimum velocity
-	float C_ParticleEffect::getMinVelocity() const
-	{
-		return mMinVelocity;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return particle maximum velocity
-	float C_ParticleEffect::getMaxVelocity() const
-	{
-		return mMaxVelocity;
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Return particle minimum rotation
 	float C_ParticleEffect::getMinRotation() const
 	{
@@ -446,6 +451,12 @@ namespace Columbus
 		return mParticleShapeRadius;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Return particles mode
+	int C_ParticleEffect::getSortMode() const
+	{
+		return mSortMode;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Serialize to XML file
 	bool C_ParticleEffect::saveToXML(std::string aFile) const
 	{
@@ -475,11 +486,11 @@ namespace Columbus
 		if (!serializer.setBool("Gradienting", mGradienting))
 		{ C_Log::error("Can't save Particles gradienting: " + aFile); return false; }
 
-		if (!serializer.setVector3("MinDirection", mMinDirection, { "X", "Y", "Z" }))
-		{ C_Log::error("Can't save Particles min direction: " + aFile); return false; }
+		if (!serializer.setVector3("MinVelocity", mMinVelocity, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't save Particles min velocity: " + aFile); return false; }
 
-		if (!serializer.setVector3("MaxDirection", mMaxDirection, { "X", "Y", "Z" }))
-		{ C_Log::error("Can't save Particles max direction: " + aFile); return false; }
+		if (!serializer.setVector3("MaxVelocity", mMaxVelocity, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't save Particles max velocity: " + aFile); return false; }
 
 		if (!serializer.setVector3("MinAcceleration", mMinAcceleration, { "X", "Y", "Z" }))
 		{ C_Log::error("Can't save Particles min acceleration: " + aFile); return false; }
@@ -511,12 +522,6 @@ namespace Columbus
 		if (!serializer.setFloat("MaxTTL", mMaxTimeToLive))
 		{ C_Log::error("Can't save Particles max TTL: " + aFile); return false; }
 
-		if (!serializer.setFloat("MinVelocity", mMinVelocity))
-		{ C_Log::error("Can't save Particles min velocity: " + aFile); return false; }
-
-		if (!serializer.setFloat("MaxVelocity", mMaxVelocity))
-		{ C_Log::error("Can't save Particles max velocity: " + aFile); return false; }
-
 		if (!serializer.setFloat("MinRotation", mMinRotation))
 		{ C_Log::error("Can't save Particles min rotation: " + aFile); return false; }
 
@@ -538,8 +543,11 @@ namespace Columbus
 		if (!serializer.setInt("Shape", mParticleShape))
 		{ C_Log::error("Can't save Particles shape: " + aFile); return false; }
 
-		if (!serializer.setInt("ShapeRadius", mParticleShapeRadius))
+		if (!serializer.setFloat("ShapeRadius", mParticleShapeRadius))
 		{ C_Log::error("Can't save Particles shape radius: " + aFile); return false; }
+
+		if (!serializer.setInt("SortMode", mSortMode))
+		{ C_Log::error("Can't save Particles sort mode: " + aFile); return false; }
 
 		if (!serializer.save())
 		{ C_Log::error("Can't save Particle Effect: " + aFile); return false; }
@@ -562,8 +570,8 @@ namespace Columbus
 		j["ParticleEffect"]["AdditiveBlending"] = mAdditive;
 		j["ParticleEffect"]["Billboarding"] = mBillboarding;
 		j["ParticleEffect"]["Gradienting"] = mGradienting;
-		j["ParticleEffect"]["MinDirection"] = {mMinDirection.x, mMinDirection.y, mMinDirection.z};
-		j["ParticleEffect"]["MaxDirection"] = {mMaxDirection.x, mMaxDirection.y, mMaxDirection.z};
+		j["ParticleEffect"]["MinVelocity"] = {mMinVelocity.x, mMinVelocity.y, mMinVelocity.z};
+		j["ParticleEffect"]["MaxVelocity"] = {mMaxVelocity.x, mMaxVelocity.y, mMaxVelocity.z};
 		j["ParticleEffect"]["MinAcceleration"] = {mMinAcceleration.x, mMinAcceleration.y, mMinAcceleration.z};
 		j["ParticleEffect"]["MaxAcceleration"] = {mMaxAcceleration.x, mMaxAcceleration.y, mMaxAcceleration.z};
 		j["ParticleEffect"]["ConstForce"] = {mConstantForce.x, mConstantForce.y, mConstantForce.z};
@@ -574,8 +582,6 @@ namespace Columbus
 		j["ParticleEffect"]["FinalColor"] = {mFinalColor.x, mFinalColor.y, mFinalColor.z, mFinalColor.w};
 		j["ParticleEffect"]["MinTTL"] = mMinTimeToLive;
 		j["ParticleEffect"]["MaxTTL"] = mMaxTimeToLive;
-		j["ParticleEffect"]["MinVelocity"] = mMinVelocity;
-		j["ParticleEffect"]["MaxVelocity"] = mMaxVelocity;
 		j["ParticleEffect"]["MinRotation"] = mMinRotation;
 		j["ParticleEffect"]["MaxRotation"] = mMaxRotation;
 		j["ParticleEffect"]["MinRotationSpeed"] = mMinRotationSpeed;
@@ -584,6 +590,7 @@ namespace Columbus
 		j["ParticleEffect"]["Transformation"] = mParticleTransformation;
 		j["ParticleEffect"]["Shape"] = mParticleShape;
 		j["ParticleEffect"]["ShapeRadius"] = mParticleShapeRadius;
+		j["ParticleEffect"]["SortMode"] = mSortMode;
 	
 		std::ofstream o(aFile);
 		
@@ -631,11 +638,11 @@ namespace Columbus
 		if (!serializer.getBool("Gradienting", &mGradienting))
 		{ C_Log::error("Can't load Particles gradienting: " + aFile); return false; }
 
-		if (!serializer.getVector3("MinDirection", &mMinDirection, { "X", "Y", "Z" }))
-		{ C_Log::error("Can't load Particles min direction: " + aFile); return false; }
+		if (!serializer.getVector3("MinVelocity", &mMinVelocity, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't load Particles min velocity: " + aFile); return false; }
 
-		if (!serializer.getVector3("MaxDirection", &mMaxDirection, { "X", "Y", "Z" }))
-		{ C_Log::error("Can't load Particles max direction: " + aFile); return false; }
+		if (!serializer.getVector3("MaxVelocity", &mMaxVelocity, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't load Particles max velocity: " + aFile); return false; }
 
 		if (!serializer.getVector3("MinAcceleration", &mMinAcceleration, { "X", "Y", "Z" }))
 		{ C_Log::error("Can't load Particles min acceleration: " + aFile); return false; }
@@ -667,12 +674,6 @@ namespace Columbus
 		if (!serializer.getFloat("MaxTTL", &mMaxTimeToLive))
 		{ C_Log::error("Can't load Particles max TTL: " + aFile); return false; }
 
-		if (!serializer.getFloat("MinVelocity", &mMinVelocity))
-		{ C_Log::error("Can't load Particles min velocity: " + aFile); return false; }
-
-		if (!serializer.getFloat("MaxVelocity", &mMaxVelocity))
-		{ C_Log::error("Can't load Particles max velocity: " + aFile); return false; }
-
 		if (!serializer.getFloat("MinRotation", &mMinRotation))
 		{ C_Log::error("Can't load Particles min rotation: " + aFile); return false; }
 
@@ -696,6 +697,9 @@ namespace Columbus
 
 		if (!serializer.getFloat("ShapeRadius", &mParticleShapeRadius))
 		{ C_Log::error("Can't load Particles shape radius: " + aFile); return false; }
+
+		if (!serializer.getInt("SortMode", &mSortMode))
+		{ C_Log::error("Can't load Particles sort mode: " + aFile); return false; }
 
 		C_Log::success("Particle Effect loaded: " + aFile);
 
@@ -724,13 +728,13 @@ namespace Columbus
 		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
 		mAdditive = j["ParticleEffect"]["AdditiveBlending"];
 
-		mMinDirection.x = j["ParticleEffect"]["MinDirection"][0];
-		mMinDirection.y = j["ParticleEffect"]["MinDirection"][1];
-		mMinDirection.z = j["ParticleEffect"]["MinDirection"][2];
+		mMinVelocity.x = j["ParticleEffect"]["MinVelocity"][0];
+		mMinVelocity.y = j["ParticleEffect"]["MinVelocity"][1];
+		mMinVelocity.z = j["ParticleEffect"]["MinVelocity"][2];
 
-		mMaxDirection.x = j["ParticleEffect"]["MaxDirection"][0];
-		mMaxDirection.y = j["ParticleEffect"]["MaxDirection"][1];
-		mMaxDirection.z = j["ParticleEffect"]["MaxDirection"][2];
+		mMaxVelocity.x = j["ParticleEffect"]["MaxVelocity"][0];
+		mMaxVelocity.y = j["ParticleEffect"]["MaxVelocity"][1];
+		mMaxVelocity.z = j["ParticleEffect"]["MaxVelocity"][2];
 
 		mMinAcceleration.x = j["ParticleEffect"]["MinAcceleration"][0];
 		mMinAcceleration.y = j["ParticleEffect"]["MinAcceleration"][1];
@@ -765,8 +769,6 @@ namespace Columbus
 
 		mMinTimeToLive = j["ParticleEffect"]["MinTTL"];
 		mMaxTimeToLive = j["ParticleEffect"]["MaxTTL"];
-		mMinVelocity = j["ParticleEffect"]["MinVelocity"];
-		mMaxVelocity = j["ParticleEffect"]["MaxVelocity"];
 		mMinRotation = j["ParticleEffect"]["MinRotation"];
 		mMaxRotation = j["ParticleEffect"]["MaxRotation"];
 		mMinRotationSpeed = j["ParticleEffect"]["MinRotationSpeed"];
@@ -775,12 +777,23 @@ namespace Columbus
 		mParticleTransformation = j["ParticleEffect"]["Transformation"];
 		mParticleShape = j["ParticleEffect"]["Shape"];
 		mParticleShapeRadius = j["ParticleEffect"]["ShapeRadius"];
+		mSortMode = j["ParticleEffect"]["SortMode"];
 
 		i.close();
 
 		C_Log::success("Particle Effect loaded: " + aFile);
 
 		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Deserialize from XML or JSON file
+	bool C_ParticleEffect::load(std::string aFile)
+	{
+		if (aFile.find_last_of(".cxpar") != std::string::npos)
+			return loadFromXML(aFile);
+		else if (aFile.find_last_of(".cjpar") != std::string::npos)
+			return loadFromJSON(aFile);
+		else return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

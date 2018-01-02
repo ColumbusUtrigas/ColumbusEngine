@@ -27,9 +27,8 @@ namespace Columbus
 		{
 			C_Particle p;
 			p.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			p.velocity = C_Random::range(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			p.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.startPos = mParticleEffect->getPos();
-			p.direction = C_Vector3::random(mParticleEffect->getMinDirection(), mParticleEffect->getMaxDirection());
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
 			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
 			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
@@ -108,22 +107,9 @@ namespace Columbus
 	//Sort particles
 	void C_ParticleEmitter::sort()
 	{
-		C_Vector3 pos = mCameraPos;
-
-		auto func = [pos](const C_Particle &a, const C_Particle &b) -> bool
+		auto func = [](const C_Particle &a, const C_Particle &b) -> bool
 		{
-			C_Vector3 q = a.pos;
-			C_Vector3 w = b.pos;
-
-			float ql = pow(pos.x - q.x, 2) + pow(pos.y - q.y, 2) + pow(pos.z - q.z, 2);
-			float wl = pow(pos.x - w.x, 2) + pow(pos.y - w.y, 2) + pow(pos.z - w.z, 2);
-
-			return ql > wl;
-
-			/*C_Vector3 q = a.pos - pos;
-			C_Vector3 w = a.pos - pos;
-
-			return C_Vector3::dot(q, q) > C_Vector3::dot(w, w);*/
+			return a.cameraDistance > b.cameraDistance;
 		};
 
 		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
@@ -181,28 +167,39 @@ namespace Columbus
 				if ((Particle.age / Particle.TTL) <= aTimeTick)
 					Particle.startEmitterPos = startEmitterPos;
 
+			bool prevActive = Particle.active;
 			Particle.active = (Particle.age <= Particle.TTL);
 
+			if (Particle.active == true && prevActive == false)
+			{
+				Particle.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+				Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+				Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+			}
 
 			if (Particle.active == true && Particle.age > 0)
 			{
 				float life = fmod(Particle.age, Particle.TTL);
 
-				C_Vector3 vel = Particle.direction.normalize() * Particle.velocity;
+				C_Vector3 vel = Particle.velocity;
 				C_Vector3 acc = Particle.accel;
 
 				float age = Particle.age;
 
 				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+
 				pos += Particle.startPos + Particle.startEmitterPos;
 				Particle.pos = pos;
 				Particle.rotation += Particle.rotationSpeed * aTimeTick;
+
+				Particle.cameraDistance = pow(mCameraPos.x - Particle.pos.x, 2) + pow(mCameraPos.y - Particle.pos.y, 2) + pow(mCameraPos.z - Particle.pos.z, 2);
 			}
 
 			counter++;
 		}
 
-		sort();
+		if (mParticleEffect->getSortMode() == C_PARTICLE_SORT_MODE_DISTANCE)
+			sort();
 
 		mLife += aTimeTick;
 	}

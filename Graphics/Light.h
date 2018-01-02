@@ -25,8 +25,8 @@ namespace Columbus
 	private:
 		int mType = 0;
 
-		C_Vector3 mPos = C_Vector3(0, 0, 5);
-		C_Vector3 mDir = C_Vector3(-0.5, -0.4f, -0.3f);
+		C_Vector3 mPos = C_Vector3(0, 0, 0);
+		C_Vector3 mDir = C_Vector3(-0.5, -0.4, -0.3);
 
 		C_Vector3 mColor = C_Vector3(1, 1, 1);
 
@@ -40,9 +40,10 @@ namespace Columbus
 		//Constructor 1
 		C_Light();
 		//Constructor 2
-		C_Light(const int aType);
+		C_Light(const int aType, C_Vector3 aPos = C_Vector3(0, 0, 0));
 		//Constructor 3
-		C_Light(std::string aFile);
+		C_Light(std::string aFile, C_Vector3 aPos = C_Vector3(0, 0, 0));
+
 		//Set light type
 		void setType(const int aType);
 		//Set light position
@@ -84,6 +85,8 @@ namespace Columbus
 		bool saveToXML(std::string aFile) const;
 		//Deserialize from XML file
 		bool loadFromXML(std::string aFile);
+		//Deserialize from XML file
+		bool load(std::string aFile);
 		//Destructor
 		~C_Light();
 	};
