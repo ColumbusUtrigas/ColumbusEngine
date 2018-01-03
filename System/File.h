@@ -50,6 +50,22 @@ namespace Columbus
 		size_t read(void* aData, size_t aSize, size_t aPacks) const;
 		size_t write(const void* aData, size_t aSize, size_t aPacks) const;
 
+		bool readBytes(void* aData, size_t aSize);
+		bool readUint8(uint8_t* aData);
+		bool readInt8(int8_t* aData);
+		bool readUint16(uint16_t* aData);
+		bool readInt16(int16_t* aData);
+		bool readUint32(uint32_t* aData);
+		bool readInt32(int32_t* aData);
+
+		bool writeBytes(const void* aData, size_t aSize);
+		bool writeUint8(const uint8_t* aData);
+		bool writeInt8(const int8_t* aData);
+		bool writeUint16(const uint16_t* aData);
+		bool writeInt16(const int16_t* aData);
+		bool writeUint32(const uint32_t* aData);
+		bool writeInt32(const int32_t* aData);
+
 		~C_File();
 	};
 

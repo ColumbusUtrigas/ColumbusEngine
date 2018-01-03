@@ -15,6 +15,8 @@
 
 #include <SDL_image.h>
 
+#include <Common/Image/Image.h>
+
 namespace Columbus
 {
 
@@ -31,6 +33,13 @@ namespace Columbus
 		}
 
 		C_TextureData ret;
+
+		if (aPath.substr(aPath.size() - 4) == ".bmp")
+		{
+			ret.buffer = ImageLoadBMP(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
+			return ret;
+		}
+
 		SDL_Surface* surf = IMG_Load(aPath.c_str());
 
 		ret.width = surf->w;

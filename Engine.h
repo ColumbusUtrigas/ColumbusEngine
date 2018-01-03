@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Common/Image/Image.h>
+
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
 #include <Graphics/Framebuffer.h>
