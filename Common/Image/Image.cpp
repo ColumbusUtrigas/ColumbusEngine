@@ -148,6 +148,9 @@ namespace Columbus
 		if (ImageIsBMP(aFile))
 			return ImageLoadBMP(aFile, aWidth, aHeight, aBPP);
 
+		if (ImageIsPNG(aFile))
+			return ImageLoadPNG(aFile, aWidth, aHeight, aBPP);
+
 		if (ImageIsTGA(aFile))
 			return ImageLoadTGA(aFile, aWidth, aHeight, aBPP);
 
@@ -164,6 +167,9 @@ namespace Columbus
 			break;
 		case E_IMAGE_SAVE_FORMAT_TGA:
 			return ImageSaveTGA(aFile, aWidth, aHeight, aBPP, aData);
+			break;
+		case E_IMAGE_SAVE_FORMAT_PNG:
+			return ImageSavePNG(aFile, aWidth, aHeight, aBPP, aData);
 			break;
 		}
 	}

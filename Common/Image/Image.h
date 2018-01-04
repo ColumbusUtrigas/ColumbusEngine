@@ -17,14 +17,17 @@
 namespace Columbus
 {
 
-	bool ImageIsBMP(std::string aFile); //Check magic of file
+	bool ImageIsBMP(std::string aFile); //Check file magic
 	bool ImageIsTGA(std::string aFile); //Check file extension (*.tga, *.vda, *.icb, *.vst)
+	bool ImageIsPNG(std::string aFile); //Check file magic
 
 	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
+	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 
 	bool ImageSaveBMP(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
 	bool ImageSaveTGA(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
+	bool ImageSavePNG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
 
 	unsigned char* ImageLoad(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData, const unsigned int aFormat, const unsigned int aQuality = 100);
@@ -39,7 +42,7 @@ namespace Columbus
 	bool ImageFlipY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
 	bool ImageFlipXY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
 
-	enum E_IAMGE_LOAD
+	enum E_IMAGE_LOAD
 	{
 		E_IMAGE_NONE,
 		E_IMAGE_FLIP_X,
@@ -49,7 +52,8 @@ namespace Columbus
 	enum E_IMAGE_SAVE
 	{
 		E_IMAGE_SAVE_FORMAT_BMP,
-		E_IMAGE_SAVE_FORMAT_TGA
+		E_IMAGE_SAVE_FORMAT_TGA,
+		E_IMAGE_SAVE_FORMAT_PNG
 	};
 
 	class C_Image

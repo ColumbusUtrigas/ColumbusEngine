@@ -40,6 +40,12 @@ namespace Columbus
 			return ret;
 		}
 
+		if (aPath.substr(aPath.size() - 4) == ".png")
+		{
+			ret.buffer = ImageLoadPNG(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
+			return ret;
+		}
+
 		if (ImageIsTGA(aPath))
 		{
 			ret.buffer = ImageLoadTGA(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
