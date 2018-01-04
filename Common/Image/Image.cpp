@@ -33,7 +33,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool ImageBGRA2RGBA(uint8_t* aData, size_t aSize)
 	{
-		if (aData == nullptr) return 0;
+		if (aData == nullptr) return false;
 
 		uint8_t bgr[3];
 		for (int i = 0; i < aSize; i += 4)
@@ -48,7 +48,28 @@ namespace Columbus
 			aData[i + 3] = aData[i + 3];
 		}
 
-		return 1;
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool ImageABGR2RGBA(uint8_t* aData, size_t aSize)
+	{
+		if (aData == nullptr) return false;
+
+		uint8_t abgr[4];
+		for (int i = 0; i < aSize; i += 4)
+		{
+			abgr[0] = aData[i + 0];
+			abgr[1] = aData[i + 1];
+			abgr[2] = aData[i + 2];
+			abgr[3] = aData[i + 3];
+
+			aData[i + 0] = abgr[3];
+			aData[i + 1] = abgr[2];
+			aData[i + 2] = abgr[1];
+			aData[i + 3] = abgr[0];
+		}
+
+		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool ImageRGB2BGR(uint8_t* aData, size_t aSize)
@@ -58,7 +79,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool ImageRGBA2BGRA(uint8_t* aData, size_t aSize)
 	{
-		return ImageBGR2RGB(aData, aSize);
+		return ImageBGRA2RGBA(aData, aSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool ImageFlipX(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP)
@@ -66,15 +87,20 @@ namespace Columbus
 		if (aData == nullptr) return false;
 
 		const size_t stride = aWidth * aBPP;
-		uint8_t* row = (uint8_t*)malloc(stride);
+		uint8_t* row;
+		uint8_t* pixel = (uint8_t*)malloc(aBPP);
 
 		for (size_t i = 0; i < aHeight; i++)
 		{
-			memcpy(row, &aData[stride * i], stride);
-			std::reverse(row, &row[stride - 1]);
-			memcpy(&aData[stride * i], row, stride);
+			row = &aData[i * stride];
+
+			for (size_t j = 0; j < aWidth / 2; j++)
+			{
+				memcpy(pixel, &row[j * aBPP], aBPP);
+				memcpy(&row[j * aBPP], &row[(aWidth - j) * aBPP], aBPP);
+				memcpy(&row[(aWidth - j) * aBPP], pixel, aBPP);
+			}
 		}
-		free(row);
 
 		return true;
 	}
@@ -85,16 +111,32 @@ namespace Columbus
 
 		const size_t stride = aWidth * aBPP;
 		uint8_t* row = (uint8_t*)malloc(stride);
-		uint8_t* low = aData;
-		uint8_t* high = &aData[(aHeight - 1) * stride];
 
-		for (; low < high; low += stride, high -= stride)
+		for (size_t i = 0; i < aHeight / 2; i++)
 		{
-			memcpy(row, low, stride);
-			memcpy(low, high, stride);
-			memcpy(high, row, stride);
+			memcpy(row, &aData[i * stride], stride);
+			memcpy(&aData[i * stride], &aData[(aHeight - i) * stride], stride);
+			memcpy(&aData[(aHeight - i) * stride], row, stride);
 		}
 		free(row);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool ImageFlipXY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP)
+	{
+		if (aData == nullptr) return false;
+
+		const size_t size = aWidth * aHeight;
+		uint8_t* pixel = new uint8_t[aBPP];
+
+		for (size_t i = 0; i < size / 2; i++)
+		{
+			memcpy(pixel, &aData[i * aBPP], aBPP);
+			memcpy(&aData[i * aBPP], &aData[(size - i) * aBPP], aBPP);
+			memcpy(&aData[(size - i) * aBPP], pixel, aBPP);
+		}
+		free(pixel);
 
 		return true;
 	}
@@ -106,7 +148,24 @@ namespace Columbus
 		if (ImageIsBMP(aFile))
 			return ImageLoadBMP(aFile, aWidth, aHeight, aBPP);
 
+		if (ImageIsTGA(aFile))
+			return ImageLoadTGA(aFile, aWidth, aHeight, aBPP);
+
 		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, 
+		const unsigned int aBPP, const unsigned char* aData, const unsigned int aFormat, const unsigned int aQuality)
+	{
+		switch (aFormat)
+		{
+		case E_IMAGE_SAVE_FORMAT_BMP:
+			return ImageSaveBMP(aFile, aWidth, aHeight, aBPP, aData);
+			break;
+		case E_IMAGE_SAVE_FORMAT_TGA:
+			return ImageSaveTGA(aFile, aWidth, aHeight, aBPP, aData);
+			break;
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -135,6 +194,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Image::load(const std::string aFile, const unsigned int aFlags)
 	{
+		freeData();
+
 		mData = ImageLoad(aFile, &mWidth, &mHeight, &mBPP);
 		if (mData == nullptr) return false;
 		else
@@ -158,12 +219,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Image::save(const std::string aFile, const unsigned int aFormat) const
 	{
-		switch (aFormat)
-		{
-		case E_IMAGE_SAVE_FORMAT_BMP:
-			return ImageSaveBMP(aFile, mWidth, mHeight, mBPP, mData);
-			break;
-		}
+		if (!isExist()) return false;
+		return ImageSave(aFile, mWidth, mHeight, mBPP, mData, aFormat);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Image::isExist() const
@@ -189,6 +246,7 @@ namespace Columbus
 		if (!isExist()) return false;
 		return ImageFlipX(mData, mWidth, mHeight, mBPP);
 	}
+	//////////////////////////////////////////////////////////////////////////////
 	bool C_Image::flipY()
 	{
 		if (!isExist()) return false;

@@ -40,6 +40,12 @@ namespace Columbus
 			return ret;
 		}
 
+		if (ImageIsTGA(aPath))
+		{
+			ret.buffer = ImageLoadTGA(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
+			return ret;
+		}
+
 		SDL_Surface* surf = IMG_Load(aPath.c_str());
 
 		ret.width = surf->w;

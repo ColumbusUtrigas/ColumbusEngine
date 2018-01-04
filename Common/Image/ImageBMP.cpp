@@ -104,21 +104,6 @@ namespace Columbus
 		return true;
 	}
 
-	static bool Decode(uint8_t* aData, size_t aSize, size_t aBits)
-	{
-		switch (aBits)
-		{
-		case 24:
-			return ImageBGR2RGB(aData, aSize);
-			break;
-		case 32:
-			return ImageBGRA2RGBA(aData, aSize);
-			break;
-		};
-
-		return true;
-	}
-
 	static bool Encode(uint8_t* aData, size_t aSize, size_t aBits)
 	{
 		switch (aBits)
@@ -144,7 +129,7 @@ namespace Columbus
 		file.close();
 
 		if (magic[0] == 'B' && magic[1] == 'M') return true;
-		else return false;
+		return false;
 	}
 
 	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
@@ -162,14 +147,21 @@ namespace Columbus
 		if (!ReadHeader(&header, &file)) return nullptr;
 		if (!ReadInfo(&info, &file)) return nullptr;
 
-		uint8_t* data = (uint8_t*)malloc(header.size - 68);
-		file.read(data, header.size - 68, 1);
+		uint8_t* data = (uint8_t*)malloc(header.size - 66);
+		file.read(data, header.size - 66, 1);
 		file.close();
 
 		size_t size = info.width * info.height * info.bits / 8;
 
-		Decode(data, size, info.bits);
-		ImageFlipY(data, info.width, info.height, info.bits / 8);
+		switch (info.bits)
+		{
+		case 24:
+			ImageBGR2RGB(data, size);
+			break;
+		case 32:
+			ImageABGR2RGBA(data, size);
+			break;
+		};
 
 		*aWidth = info.width;
 		*aHeight = info.height;
@@ -180,6 +172,8 @@ namespace Columbus
 
 	bool ImageSaveBMP(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
 	{
+		if (aData == nullptr) return false;
+
 		C_File file(aFile, "wb");
 
 		BMP_HEADER header;
@@ -210,8 +204,16 @@ namespace Columbus
 		memcpy(buffer, aData, aWidth * aHeight * aBPP);
 
 		size_t size = aWidth * aHeight * aBPP;
-		Encode(buffer, size, aBPP * 8);
-		ImageFlipY(buffer, aWidth, aHeight, aBPP);
+
+		switch (aBPP * 8)
+		{
+		case 24:
+			ImageRGB2BGR(buffer, size);
+			break;
+		case 32:
+			ImageRGBA2BGRA(buffer, size);
+			break;
+		};
 
 		file.write(buffer, aWidth * aHeight * aBPP, 1);
 

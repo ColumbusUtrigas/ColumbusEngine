@@ -76,6 +76,8 @@ void Init(void)
 	SpecularMap = vec3(texture(uMaterial.specularMap, varUV));
 	NormalMap = vec3(texture(uMaterial.normalMap, varUV));
 
+	if (DiffuseMap.w <= 0.1) discard;
+
 	TBN = varTBN;
 
 	if (textureSize(uMaterial.specularMap, 1).xy != vec2(0))
