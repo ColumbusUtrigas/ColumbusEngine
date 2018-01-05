@@ -35,7 +35,7 @@ namespace Columbus
 		bool close();
 
 		std::string getName() const;
-		int getSize() const;
+		size_t getSize() const;
 
 		bool eof() const;
 		int getc() const;

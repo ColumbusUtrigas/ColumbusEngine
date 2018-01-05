@@ -8,10 +8,30 @@
 *                   03.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
+#include <Common/Compress/Compress.h>
 #include <System/File.h>
 
 namespace Columbus
 {
+
+#define READPIXEL24(a) \
+		blue = *a++; \
+		green = *a++; \
+		red = *a++;
+
+#define READPIXEL32(a) \
+		READPIXEL24(a) \
+		alpha = *a++;
+
+#define WRITEPIXEL24(a) \
+		*a++ = 1; \
+		*a++ = 1; \
+		*a++ = 1;
+
+#define WRITEPIXEL32(a) \
+		WRITEPIXEL24(a) \
+		*a++ = alpha;
+
 
 	typedef struct
 	{
@@ -86,9 +106,71 @@ namespace Columbus
 		std::string ext = aFile.substr(aFile.size() - 4);
 
 		if (ext == ".tga" || ext == ".vda" ||
-			ext == ".icb" || ext == ".vst") return true;
+		    ext == ".icb" || ext == ".vst") return true;
 
 		return false;
+	}
+
+	static void RGBCompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
+	{
+		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
+		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+
+		int header, pixelcount;
+		int blue, green, red;
+		int i, j;
+
+		for (i = 0; i < aSize; )
+		{
+			header = *aIn++;
+			pixelcount = (header & 0x7f) + 1;
+			if (header & 0x80)
+			{
+				READPIXEL24(aIn);
+				for (j = 0; j < pixelcount; j++)
+				{
+					WRITEPIXEL24(aOut);
+				}
+				i += pixelcount;
+			}
+			else
+			{
+				memcpy(aOut, aIn, pixelcount * 3);
+				aIn += pixelcount * 3;
+				aOut += pixelcount * 3;
+				i += pixelcount;
+			}
+		}
+	}
+
+	static void RGBACompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
+	{
+		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
+		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+
+		int header, pixelcount;
+		int blue, green, red, alpha;
+		int i, pix;
+
+		for (i = 0; i < aSize; )
+		{
+			header = *aIn++;
+			pixelcount = (header & 0x7f) + 1;
+			if (header & 0x80)
+			{
+				READPIXEL32(aIn);
+				memset(aOut, pix, pixelcount);
+				aOut += pixelcount * 4;
+				i += pixelcount;
+			}
+			else
+			{
+				memcpy(aOut, aIn, pixelcount * 4);
+				aIn += pixelcount * 4;
+				aOut += pixelcount * 4;
+				i += pixelcount;
+			}
+		}
 	}
 
 	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
@@ -100,23 +182,32 @@ namespace Columbus
 
 		if (!ReadHeader(&tga, &file)) return false;
 
+		size_t dSize = file.getSize() - sizeof(TGA_HEADER);
 		size_t size = tga.width * tga.height * tga.bits / 8;
 
-		uint8_t* buffer = (uint8_t*)malloc(size);
+		uint8_t* buffer = (uint8_t*)malloc(dSize);
+		file.read(buffer, dSize, 1);
 
-		if (tga.image_type == 2)
+		uint8_t* data = nullptr;
+
+		switch (tga.image_type)
 		{
-			file.read(buffer, size, 1);
-
-			switch (tga.bits)
-			{
-			case 24:
+		case 2:
+			//Uncompressed RGB
+			data = buffer;
+			if (tga.bits == 24)
 				ImageBGR2RGB(buffer, size);
-				break;
-			case 32:
+			else
 				ImageBGRA2RGBA(buffer, size);
-				break;
-			};
+			break;
+		case 10:
+			//Compressed RGB
+			data = (uint8_t*)malloc(size);
+			if (tga.bits == 24)
+				RGBCompressedTGA(buffer, data, tga.width * tga.height);
+			else
+				RGBACompressedTGA(buffer, data, tga.width * tga.height);
+			break;
 		}
 
 		if (tga.x_origin != 0)
@@ -130,7 +221,7 @@ namespace Columbus
 		*aWidth = tga.width;
 		*aHeight = tga.height;
 		*aBPP = tga.bits / 8;
-		return buffer;
+		return data;
 	}
 
 	bool ImageSaveTGA(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
@@ -147,7 +238,7 @@ namespace Columbus
 		uint8_t* buffer = (uint8_t*)malloc(size);
 		memcpy(buffer, aData, size);
 
-		switch (aBPP * 8)
+		switch (tga.bits)
 		{
 		case 24:
 			ImageRGB2BGR(buffer, size);
@@ -163,6 +254,9 @@ namespace Columbus
 		free(buffer);
 		return true;
 	}
+
+#undef READPIXEL24
+#undef WRITEPIXEL24
 
 }
 

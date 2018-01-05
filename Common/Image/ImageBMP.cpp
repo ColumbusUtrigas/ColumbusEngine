@@ -104,21 +104,6 @@ namespace Columbus
 		return true;
 	}
 
-	static bool Encode(uint8_t* aData, size_t aSize, size_t aBits)
-	{
-		switch (aBits)
-		{
-		case 24:
-			return ImageRGB2BGR(aData, aSize);
-			break;
-		case 32:
-			return ImageRGBA2BGRA(aData, aSize);
-			break;
-		};
-
-		return true;
-	}
-
 	bool ImageIsBMP(std::string aFile)
 	{
 		C_File file(aFile, "rb");

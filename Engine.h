@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Common/Compress/Compress.h>
 #include <Common/Image/Image.h>
 
 #include <Graphics/Camera.h>

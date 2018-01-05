@@ -1,11 +1,11 @@
 /************************************************
-*              	   ImageTGA.cpp                 *
+*              	   ImagePNG.cpp                 *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
 *************************************************
 *                Nika(Columbus) Red             *
-*                   03.01.2018                  *
+*                   04.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
 #include <System/File.h>
@@ -13,6 +13,7 @@
 
 namespace Columbus
 {
+
 	bool ImageIsPNG(std::string aFile)
 	{
 		C_File file(aFile, "rb");
@@ -23,8 +24,8 @@ namespace Columbus
 		file.close();
 
 		if (magic[1] == 'P' &&
-			magic[2] == 'N' &&
-			magic[3] == 'G') return true;
+		    magic[2] == 'N' &&
+		    magic[3] == 'G') return true;
 		else return false;
 	}
 
@@ -105,20 +106,7 @@ namespace Columbus
 
 		png_set_IHDR(png, info, aWidth, aHeight, 8, type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-		//unsigned char* buffer = new unsigned char[aWidth * aHeight * aBPP];
-		unsigned char** rows = new unsigned char*[aHeight];
-
-		for (int i = 0; i < aHeight; i++)
-			rows[i] = (unsigned char*)&aData[i * aWidth];
-
-		png_set_rows(png, info, rows);
-		png_write_png(png, info, PNG_TRANSFORM_IDENTITY, nullptr);
-		png_write_end(png, info);
-
-		png_destroy_write_struct(&png, nullptr);
-		//fclose(fp);
-
-		/*png_colorp palette = (png_colorp)png_malloc(png, PNG_MAX_PALETTE_LENGTH * sizeof(png_color));
+		png_colorp palette = (png_colorp)png_malloc(png, PNG_MAX_PALETTE_LENGTH * sizeof(png_color));
 		if (!palette)
 		{
 			fclose(fp);
@@ -132,13 +120,21 @@ namespace Columbus
 
 		png_bytepp rows = (png_bytepp)png_malloc(png, aHeight * sizeof(png_bytep));
 		int rowbytes = aWidth * aBPP;
+		for (int i = 0; i < aHeight; i++)
+		{
+			rows[i] = (png_bytep)malloc(rowbytes);
+			memcpy(rows[i], aData + (aHeight - i - 1) * rowbytes, rowbytes);
+		}
 
 		png_write_image(png, rows);
 		png_write_end(png, info);
 		png_free(png, palette);
-		png_destroy_write_struct(&png, &info);*/
-
+		png_destroy_write_struct(&png, &info);
 		fclose(fp);
+
+		for (int i = 0; i < aHeight; i++)
+			free(rows[i]);
+
 		return true;
 	}
 

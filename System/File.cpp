@@ -107,11 +107,11 @@ namespace Columbus
 		return mData->name;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_File::getSize() const
+	size_t C_File::getSize() const
 	{
-		int offset = tell();
+		size_t offset = tell();
 		seekEnd(0);
-		int size = tell();
+		size_t size = tell();
 		seekSet(offset);
 		return size;
 	}
