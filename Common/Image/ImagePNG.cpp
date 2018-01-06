@@ -31,6 +31,10 @@ namespace Columbus
 
 	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
 	{
+		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadPNG(): invalid width")
+		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadPNG(): invalid height")
+		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadPNG(): invalid BPP")
+
 		FILE* fp = fopen(aFile.c_str(), "rb");
 		if (fp == nullptr) return nullptr;
 

@@ -4,25 +4,6 @@ using namespace Columbus;
 
 int FPS_LIMIT = 120;
 
-void kod_rle(std::ifstream& inpf, std::ofstream& outf)
-{
-	char sym;//символ, который мы будем считывать
-	int kol = 1;// количество повтор€ющихс€ символов
-	while (!inpf.eof())
-	{
-		inpf.get(sym);//считываем символ
-		if (sym != inpf.peek())// если символ не совпадает со слеующим в файле
-		{
-			//outf&lt; &lt; kol&lt; &lt; sym;// записываем результаты в выходной файл
-			outf << kol << sym;
-			kol = 0;
-		}
-		kol++;
-	}
-
-}
-
-
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;
@@ -59,9 +40,6 @@ int main(int argc, char** argv)
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
-
-	//C_Image img("Data/Textures/metal2.tga");
-	//img.save("Data/Textures/spark.tga", E_IMAGE_SAVE_FORMAT_TGA);
 	
 	while (window.isOpen())
 	{

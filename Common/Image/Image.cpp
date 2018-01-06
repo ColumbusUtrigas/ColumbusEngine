@@ -145,11 +145,18 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	unsigned char* ImageLoad(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
 	{
+		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoad(): invalid width")
+		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoad(): invalid height")
+		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoad(): invalid BPP")
+
 		if (ImageIsBMP(aFile))
 			return ImageLoadBMP(aFile, aWidth, aHeight, aBPP);
 
 		if (ImageIsPNG(aFile))
 			return ImageLoadPNG(aFile, aWidth, aHeight, aBPP);
+
+		if (ImageIsTIF(aFile))
+			return ImageLoadTIF(aFile, aWidth, aHeight, aBPP);
 
 		if (ImageIsTGA(aFile))
 			return ImageLoadTGA(aFile, aWidth, aHeight, aBPP);

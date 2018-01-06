@@ -34,21 +34,12 @@ namespace Columbus
 
 		C_TextureData ret;
 
-		if (aPath.substr(aPath.size() - 4) == ".bmp")
+		if (ImageIsBMP(aPath) ||
+			ImageIsPNG(aPath) ||
+			ImageIsTGA(aPath) ||
+		    ImageIsTIF(aPath))
 		{
-			ret.buffer = ImageLoadBMP(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
-			return ret;
-		}
-
-		if (aPath.substr(aPath.size() - 4) == ".png")
-		{
-			ret.buffer = ImageLoadPNG(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
-			return ret;
-		}
-
-		if (ImageIsTGA(aPath))
-		{
-			ret.buffer = ImageLoadTGA(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
+			ret.buffer = ImageLoad(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
 			return ret;
 		}
 

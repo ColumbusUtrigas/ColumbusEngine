@@ -9,6 +9,7 @@
 *************************************************/
 #pragma once
 
+#include <System/Assert.h>
 #include <System/System.h>
 #include <string>
 #include <cstdlib>
@@ -20,14 +21,18 @@ namespace Columbus
 	bool ImageIsBMP(std::string aFile); //Check file magic
 	bool ImageIsTGA(std::string aFile); //Check file extension (*.tga, *.vda, *.icb, *.vst)
 	bool ImageIsPNG(std::string aFile); //Check file magic
+	bool ImageIsJPG(std::string aFile); //Check file magic
+	bool ImageIsTIF(std::string aFile); //Check file magic
 
 	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
+	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 
 	bool ImageSaveBMP(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
 	bool ImageSaveTGA(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
 	bool ImageSavePNG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
+	bool ImageSaveTIF(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
 
 	unsigned char* ImageLoad(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP);
 	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData, const unsigned int aFormat, const unsigned int aQuality = 100);

@@ -24,9 +24,9 @@ namespace Columbus
 		alpha = *a++;
 
 #define WRITEPIXEL24(a) \
-		*a++ = 1; \
-		*a++ = 1; \
-		*a++ = 1;
+		*a++ = red; \
+		*a++ = green; \
+		*a++ = blue;
 
 #define WRITEPIXEL32(a) \
 		WRITEPIXEL24(a) \
@@ -118,26 +118,29 @@ namespace Columbus
 
 		int header, pixelcount;
 		int blue, green, red;
+		uint8_t* pixel = (uint8_t*)malloc(3);
 		int i, j;
 
 		for (i = 0; i < aSize; )
 		{
 			header = *aIn++;
 			pixelcount = (header & 0x7f) + 1;
+
 			if (header & 0x80)
 			{
-				READPIXEL24(aIn);
+				READPIXEL24(aIn)
 				for (j = 0; j < pixelcount; j++)
 				{
-					WRITEPIXEL24(aOut);
+					WRITEPIXEL24(aOut)
 				}
 				i += pixelcount;
-			}
-			else
+			} else
 			{
-				memcpy(aOut, aIn, pixelcount * 3);
-				aIn += pixelcount * 3;
-				aOut += pixelcount * 3;
+				for (j = 0; j < pixelcount; j++)
+				{
+					READPIXEL24(aIn)
+					WRITEPIXEL24(aOut)
+				}
 				i += pixelcount;
 			}
 		}
@@ -150,7 +153,7 @@ namespace Columbus
 
 		int header, pixelcount;
 		int blue, green, red, alpha;
-		int i, pix;
+		int i, j, pix;
 
 		for (i = 0; i < aSize; )
 		{
@@ -159,15 +162,23 @@ namespace Columbus
 			if (header & 0x80)
 			{
 				READPIXEL32(aIn);
-				memset(aOut, pix, pixelcount);
-				aOut += pixelcount * 4;
+				pix = red | (green << 8) | (blue << 16) | (alpha << 24);
+
+				for (int j = 0; j < pixelcount; j++)
+				{
+					memcpy(aOut, &pix, 4);
+					aOut += 4;
+				}
+
 				i += pixelcount;
 			}
 			else
 			{
-				memcpy(aOut, aIn, pixelcount * 4);
-				aIn += pixelcount * 4;
-				aOut += pixelcount * 4;
+				for (j = 0; j < pixelcount; j++)
+				{
+					READPIXEL32(aIn)
+					WRITEPIXEL32(aOut)
+				}
 				i += pixelcount;
 			}
 		}
@@ -175,6 +186,10 @@ namespace Columbus
 
 	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
 	{
+		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadTGA(): invalid width")
+		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadTGA(): invalid height")
+		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadTGA(): invalid BPP")
+
 		C_File file(aFile, "rb");
 		if (!file.isOpened()) return false;
 
