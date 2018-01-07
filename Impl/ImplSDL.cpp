@@ -56,6 +56,7 @@ namespace Columbus
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
 		int flags = SDL_WINDOW_OPENGL;
+		
 		if (aConfig.Resizable == true)
 			flags |= SDL_WINDOW_RESIZABLE;
 		if (aConfig.Fullscreen == true)
