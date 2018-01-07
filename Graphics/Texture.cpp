@@ -13,49 +13,17 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-#include <SDL_image.h>
-
 #include <Common/Image/Image.h>
 
 namespace Columbus
 {
 
-	static bool SDL_IMAGE_INITED = false;
-
 	//////////////////////////////////////////////////////////////////////////////
 	//Load image from file
 	C_TextureData C_LoadImage(std::string aPath)
 	{
-		if (SDL_IMAGE_INITED == false)
-		{
-			IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF | IMG_INIT_WEBP);
-			SDL_IMAGE_INITED = true;
-		}
-
 		C_TextureData ret;
-
-		if (ImageIsBMP(aPath) ||
-			ImageIsPNG(aPath) ||
-			ImageIsTGA(aPath) ||
-		    ImageIsTIF(aPath))
-		{
-			ret.buffer = ImageLoad(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
-			return ret;
-		}
-
-		SDL_Surface* surf = IMG_Load(aPath.c_str());
-
-		ret.width = surf->w;
-		ret.height = surf->h;
-		ret.bpp = surf->format->BytesPerPixel;
-
-		size_t size = ret.width * ret.height * ret.bpp;
-
-		ret.buffer = new uint8_t[size];
-		memcpy(ret.buffer, surf->pixels, size + 1);
-
-		SDL_FreeSurface(surf);
-
+		ret.buffer = ImageLoad(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
 		return ret;
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -123,7 +91,8 @@ namespace Columbus
 	//Load texture from file
 	void C_Texture::load(std::string aPath, bool aSmooth)
 	{
-		mData = C_LoadImage(aPath);
+		//mData = C_LoadImage(aPath);
+		mImage.load(aPath);
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
 
@@ -131,11 +100,11 @@ namespace Columbus
 		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_REPEAT);
 
 		unsigned int format = C_OGL_RGBA;
-		if (mData.bpp == 3)
+		if (mImage.getBPP() == 3)
 			format = C_OGL_RGB;
 
-		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, format, mData.width, mData.height,
-			format, C_OGL_UNSIGNED_BYTE, mData.buffer);
+		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, format, mImage.getWidth(), mImage.getHeight(),
+			format, C_OGL_UNSIGNED_BYTE, mImage.getData());
 
 		if (mConfig.mipmaps)
 		{
@@ -289,23 +258,26 @@ namespace Columbus
 	//Return texture size
 	size_t C_Texture::getSize()
 	{
-		if (mData.buffer == nullptr)
-			return 0;
+		if (!mImage.isExist()) return 0;
 
 		return mWidth * mHeight * (mBPP / 8);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Save image to file
-	bool C_Texture::save(std::string aFile, int aQuality)
+	bool C_Texture::save(std::string aFile, size_t aQuality)
 	{
-		if (mData.buffer == nullptr)
-			return false;
-		
-		if (C_SaveImage(aFile, mData, aQuality) == false)
+		if (!mImage.isExist())
+		{ C_Log::error("Texture didn't saved: " + aFile);  return false; }
+
+		int type = E_IMAGE_SAVE_FORMAT_PNG;
+
+		switch (mImage.getBPP())
 		{
-			C_Log::error("Can't save texture: " + aFile);
-			return false;
+		case 3: type = E_IMAGE_SAVE_FORMAT_JPG; break;
+		case 4: type = E_IMAGE_SAVE_FORMAT_PNG; break;
 		}
+
+		ImageSave(aFile, mImage.getWidth(), mImage.getHeight(), mImage.getBPP(), mImage.getData(), type, aQuality);
 
 		C_Log::success("Texture successfully saved: " + aFile);
 	}
@@ -342,7 +314,7 @@ namespace Columbus
 	C_Texture::~C_Texture()
 	{
 		C_DeleteTextureOpenGL(&mID);
-		free(mData.buffer);
+		//free(mData.buffer);
 	}
 
 }

@@ -84,7 +84,39 @@ namespace Columbus
 	
 	bool ImageSaveTIF(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
 	{
+		if (aData == nullptr) return false;
 
+		TIFF* tif = TIFFOpen(aFile.c_str(), "w");
+		if (tif == nullptr) return false;
+
+		TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, aWidth);
+		TIFFSetField(tif, TIFFTAG_IMAGELENGTH, aHeight);
+		TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, aBPP);
+		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
+		TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+
+		TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+		TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+		TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+
+		size_t stride = aWidth * aBPP;
+
+		uint8_t* row = (uint8_t*)malloc(stride);
+		uint32_t i;
+
+		TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif, stride));
+
+		for (i = 0; i < aHeight; i++)
+		{
+			memcpy(row, &aData[(aHeight - i - 1) * stride], stride);
+			if (TIFFWriteScanline(tif, row, i, 0) < 0)
+				break;
+		}
+
+		TIFFClose(tif);
+		if (row) free(row);
+
+		return true;
 	}
 
 }

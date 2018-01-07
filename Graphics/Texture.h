@@ -13,6 +13,7 @@
 #include <System/Assert.h>
 #include <System/System.h>
 #include <System/Log.h>
+#include <Common/Image/Image.h>
 #include <RenderAPI/APIOpenGL.h>
 #include <Math/Vector2.h>
 
@@ -47,7 +48,8 @@ namespace Columbus
 	class C_Texture
 	{
 	private:
-		C_TextureData mData;
+		//C_TextureData mData;
+		C_Image mImage;
 
 		uint8_t* mBuffer = nullptr;
 		unsigned int mID = 0;
@@ -84,7 +86,7 @@ namespace Columbus
 		//Return texture size
 		size_t getSize();
 		//Save texture to file
-		bool save(std::string aFile, int aQuality = 100);
+		bool save(std::string aFile, size_t aQuality = 100);
 		//Bind texture
 		void bind();
 		//Unbind texture

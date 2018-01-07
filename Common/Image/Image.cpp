@@ -158,6 +158,9 @@ namespace Columbus
 		if (ImageIsTIF(aFile))
 			return ImageLoadTIF(aFile, aWidth, aHeight, aBPP);
 
+		if (ImageIsJPG(aFile))
+			return ImageLoadJPG(aFile, aWidth, aHeight, aBPP);
+
 		if (ImageIsTGA(aFile))
 			return ImageLoadTGA(aFile, aWidth, aHeight, aBPP);
 
@@ -177,6 +180,12 @@ namespace Columbus
 			break;
 		case E_IMAGE_SAVE_FORMAT_PNG:
 			return ImageSavePNG(aFile, aWidth, aHeight, aBPP, aData);
+			break;
+		case E_IMAGE_SAVE_FORMAT_TIF:
+			return ImageSaveTIF(aFile, aWidth, aHeight, aBPP, aData);
+			break;
+		case E_IMAGE_SAVE_FORMAT_JPG:
+			return ImageSaveJPG(aFile, aWidth, aHeight, aBPP, aData, aQuality);
 			break;
 		}
 	}
@@ -230,10 +239,10 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Image::save(const std::string aFile, const unsigned int aFormat) const
+	bool C_Image::save(const std::string aFile, const unsigned int aFormat, const unsigned int aQuality) const
 	{
 		if (!isExist()) return false;
-		return ImageSave(aFile, mWidth, mHeight, mBPP, mData, aFormat);
+		return ImageSave(aFile, mWidth, mHeight, mBPP, mData, aFormat, aQuality);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Image::isExist() const
