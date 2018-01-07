@@ -124,7 +124,7 @@ namespace Columbus
 
 		png_bytepp rows = (png_bytepp)png_malloc(png, aHeight * sizeof(png_bytep));
 		int rowbytes = aWidth * aBPP;
-		for (int i = 0; i < aHeight; i++)
+		for (size_t i = 0; i < aHeight; i++)
 		{
 			rows[i] = (png_bytep)malloc(rowbytes);
 			memcpy(rows[i], aData + (aHeight - i - 1) * rowbytes, rowbytes);
@@ -136,7 +136,7 @@ namespace Columbus
 		png_destroy_write_struct(&png, &info);
 		fclose(fp);
 
-		for (int i = 0; i < aHeight; i++)
+		for (size_t i = 0; i < aHeight; i++)
 			free(rows[i]);
 
 		return true;

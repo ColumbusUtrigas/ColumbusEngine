@@ -17,7 +17,7 @@ namespace Columbus
 		if (aData == nullptr) return false;
 
 		uint8_t bgr[3];
-		for (int i = 0; i < aSize; i += 3)
+		for (size_t i = 0; i < aSize; i += 3)
 		{
 			bgr[0] = aData[i + 0];
 			bgr[1] = aData[i + 1];
@@ -36,7 +36,7 @@ namespace Columbus
 		if (aData == nullptr) return false;
 
 		uint8_t bgr[3];
-		for (int i = 0; i < aSize; i += 4)
+		for (size_t i = 0; i < aSize; i += 4)
 		{
 			bgr[0] = aData[i + 0];
 			bgr[1] = aData[i + 1];
@@ -56,7 +56,7 @@ namespace Columbus
 		if (aData == nullptr) return false;
 
 		uint8_t abgr[4];
-		for (int i = 0; i < aSize; i += 4)
+		for (size_t i = 0; i < aSize; i += 4)
 		{
 			abgr[0] = aData[i + 0];
 			abgr[1] = aData[i + 1];
@@ -227,11 +227,14 @@ namespace Columbus
 
 			switch (aFlags)
 			{
-			case E_IMAGE_FLIP_X:
+			case E_IMAGE_LOAD_FLIP_X:
 				flipX();
 				break;
-			case E_IMAGE_FLIP_Y:
+			case E_IMAGE_LOAD_FLIP_Y:
 				flipY();
+				break;
+			case E_IMAGE_LOAD_FLIP_XY:
+				flipXY();
 				break;
 			}
 
@@ -273,6 +276,12 @@ namespace Columbus
 	{
 		if (!isExist()) return false;
 		return ImageFlipY(mData, mWidth, mHeight, mBPP);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_Image::flipXY()
+	{
+		if (!isExist()) return false;
+		return ImageFlipXY(mData, mWidth, mHeight, mBPP);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

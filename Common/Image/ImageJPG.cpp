@@ -123,7 +123,7 @@ namespace Columbus
 		while (cinfo.next_scanline < cinfo.image_height)
 		{
 			row_pointer[0] = (JSAMPROW)&aData[cinfo.next_scanline * row_stride];
-			(void)jpeg_write_scanlines(&cinfo, row_pointer, 1);
+			jpeg_write_scanlines(&cinfo, row_pointer, 1);
 		}
 
 		jpeg_finish_compress(&cinfo);

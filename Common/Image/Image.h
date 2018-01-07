@@ -51,9 +51,10 @@ namespace Columbus
 
 	enum E_IMAGE_LOAD
 	{
-		E_IMAGE_NONE,
-		E_IMAGE_FLIP_X,
-		E_IMAGE_FLIP_Y
+		E_IMAGE_LOAD_NONE,
+		E_IMAGE_LOAD_FLIP_X,
+		E_IMAGE_LOAD_FLIP_Y,
+		E_IMAGE_LOAD_FLIP_XY
 	};
 
 	enum E_IMAGE_SAVE
@@ -77,15 +78,16 @@ namespace Columbus
 		std::string mFilename;
 	public:
 		C_Image();
-		C_Image(const std::string aFile, const unsigned int aFlags = E_IMAGE_NONE);
+		C_Image(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
 
-		bool load(const std::string aFile, const unsigned int aFlags = E_IMAGE_NONE);
+		bool load(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
 		bool save(const std::string aFile, const unsigned int aFlags, const unsigned int aQuality = 100) const;
 		bool isExist() const;
 		void freeData(); //This method checks image existance
 
 		bool flipX();
 		bool flipY();
+		bool flipXY();
 
 		unsigned int getWidth() const;
 		unsigned int getHeight() const;

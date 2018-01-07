@@ -114,12 +114,12 @@ namespace Columbus
 	static void RGBCompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
 	{
 		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
-		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+			COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
 
-		int header, pixelcount;
+		int header;
 		int blue, green, red;
 		uint8_t* pixel = (uint8_t*)malloc(3);
-		int i, j;
+		size_t i, j, pixelcount;
 
 		for (i = 0; i < aSize; )
 		{
@@ -149,11 +149,12 @@ namespace Columbus
 	static void RGBACompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
 	{
 		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
-		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+			COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
 
-		int header, pixelcount;
+		int header;
 		int blue, green, red, alpha;
-		int i, j, pix;
+		int pix;
+		size_t i, j, pixelcount;
 
 		for (i = 0; i < aSize; )
 		{
@@ -164,7 +165,7 @@ namespace Columbus
 				READPIXEL32(aIn);
 				pix = red | (green << 8) | (blue << 16) | (alpha << 24);
 
-				for (int j = 0; j < pixelcount; j++)
+				for (j = 0; j < pixelcount; j++)
 				{
 					memcpy(aOut, &pix, 4);
 					aOut += 4;
@@ -246,7 +247,7 @@ namespace Columbus
 		C_File file(aFile, "wb");
 		if (!file.isOpened()) return false;
 
-		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, aWidth, aHeight, aBPP * 8, 8 };
+		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, (uint16_t)aWidth, (uint16_t)aHeight, (uint8_t)aBPP * 8, 8 };
 
 		size_t size = aWidth * aHeight * aBPP;
 
