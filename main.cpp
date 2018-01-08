@@ -2,8 +2,6 @@
 
 using namespace Columbus;
 
-int FPS_LIMIT = 120;
-
 int main(int argc, char** argv)
 {
 	C_SDLWindowConfig config;

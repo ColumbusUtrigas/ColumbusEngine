@@ -28,7 +28,7 @@ namespace Columbus
 	class C_Cubemap
 	{
 	private:
-		C_TextureData mBitmaps[6];
+		C_Image mBitmaps[6];
 		unsigned int mID;
 
 		bool mInited = false;

@@ -7,7 +7,6 @@
 *                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #pragma once
 
 #include <System/Assert.h>
@@ -20,13 +19,6 @@
 namespace Columbus
 {
 
-	struct C_TextureData;
-
-	//Load image from file
-	C_TextureData C_LoadImage(std::string aPath);
-	//Save image to file
-	bool C_SaveImage(std::string aPath, C_TextureData aData, int aQuality = 100);
-
 	struct C_TextureConfig
 	{
 		bool smooth = true;
@@ -37,18 +29,9 @@ namespace Columbus
 		C_Vector2 tilingOffset = C_Vector2(0, 0);
 	};
 
-	struct C_TextureData
-	{
-		unsigned char* buffer = NULL;
-		size_t width = 0;
-		size_t height = 0;
-		int bpp = 0;
-	};
-
 	class C_Texture
 	{
 	private:
-		//C_TextureData mData;
 		C_Image mImage;
 
 		uint8_t* mBuffer = nullptr;

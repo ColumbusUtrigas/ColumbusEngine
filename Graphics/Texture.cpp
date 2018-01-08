@@ -9,49 +9,11 @@
 *************************************************/
 
 #include <Graphics/Texture.h>
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
-
 #include <Common/Image/Image.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Load image from file
-	C_TextureData C_LoadImage(std::string aPath)
-	{
-		C_TextureData ret;
-		ret.buffer = ImageLoad(aPath, &ret.width, &ret.height, (unsigned int*)&ret.bpp);
-		return ret;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Save image to file
-	bool C_SaveImage(std::string aPath, C_TextureData aData, int aQuality)
-	{
-		if (aPath.empty())
-			return false;
-		if (aData.buffer == nullptr)
-			return false;
-
-		switch (aData.bpp)
-		{
-		case 3:
-			stbi_write_jpg((aPath + ".jpg").c_str(), aData.width, aData.height, aData.bpp, 
-				aData.buffer, aQuality);
-			break;
-		case 4:
-			stbi_write_png((aPath + ".png").c_str(), aData.width, aData.height, aData.bpp,
-				aData.buffer, aData.width * aData.bpp);
-			break;
-		default:
-			return false;
-			break;
-		}
-
-		return true;
-	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	C_Texture::C_Texture() :
@@ -91,7 +53,6 @@ namespace Columbus
 	//Load texture from file
 	void C_Texture::load(std::string aPath, bool aSmooth)
 	{
-		//mData = C_LoadImage(aPath);
 		mImage.load(aPath);
 
 		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
@@ -314,7 +275,6 @@ namespace Columbus
 	C_Texture::~C_Texture()
 	{
 		C_DeleteTextureOpenGL(&mID);
-		//free(mData.buffer);
 	}
 
 }
