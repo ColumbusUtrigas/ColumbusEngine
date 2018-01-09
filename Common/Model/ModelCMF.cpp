@@ -15,7 +15,7 @@ namespace Columbus
 
 	typedef struct
 	{
-		uint8_t magic[19]; //Magic string "COLUMBUS MODEL FILE"
+		uint8_t magic[21]; //Magic string "COLUMBUS MODEL FORMAT"
 		uint32_t count; //Polygons count
 	} CMF_HEADER;
 
@@ -23,7 +23,7 @@ namespace Columbus
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
-		if (!aFile->readBytes(aHeader->magic, 19)) return false;
+		if (!aFile->readBytes(aHeader->magic, 21)) return false;
 		if (!aFile->readUint32(&aHeader->count)) return false;
 
 		return true;
@@ -34,14 +34,14 @@ namespace Columbus
 		C_File file(aFile, "rb");
 		if (!file.isOpened()) return false;
 
-		const char* magic = "COLUMBUS MODEL FILE";
-		uint8_t fmagic[19];
+		const char* magic = "COLUMBUS MODEL FORMAT";
+		uint8_t fmagic[21];
 		bool ret = true;
 
-		file.read(fmagic, 19, 1);
+		file.read(fmagic, 21, 1);
 		file.close();
 
-		for (int i = 0; i < 19; i++)
+		for (int i = 0; i < 21; i++)
 			if (magic[i] != fmagic[i]) ret = false;
 
 		return ret;
