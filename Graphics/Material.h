@@ -44,6 +44,10 @@ namespace Columbus
 		C_Cubemap* mEnvReflection = nullptr;
 
 		float mShininess = 32;
+
+		int mTextureID = -1;
+		int mSpecMapID = -1;
+		int mNormMapID = -1;
 	public:
 		//Constructor
 		C_Material();
@@ -102,6 +106,13 @@ namespace Columbus
 		bool getDiscard() const;
 		//Return object lighting
 		bool getLighting() const;
+
+		//Return diffuse map ID
+		int getTextureID() const;
+		//Return specular map ID
+		int getSpecMapID() const;
+		//Return normal map ID
+		int getNormMapID() const;
 
 		//Serialize to XML file
 		bool saveToXML(std::string aFile) const;

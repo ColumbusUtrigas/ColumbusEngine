@@ -14,39 +14,61 @@ namespace Columbus
 {
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate plane
-	std::vector<C_Vertex> C_PrimitivePlane(C_Vector2 aSize)
+	std::vector<C_Vertex> C_PrimitivePlane(C_Vector3 aSize)
 	{
 		float verts[18] =
 		{
-		(float)0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y,
-		(float)-0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y,
-		(float)-0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
+			(float)0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y,
+			(float)-0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y,
+			(float)-0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
 	
-		(float)-0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
-		(float)0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
-		(float)0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y
+			(float)-0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
+			(float)0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
+			(float)0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y
 		};
 
 		float uvs[12] =
 		{
-		1.0, 1.0,
-		0.0, 1.0,
-		0.0, 0.0,
+			1.0, 1.0,
+			0.0, 1.0,
+			0.0, 0.0,
 
-		0.0, 0.0,
-		1.0, 0.0,
-		1.0, 1.0
+			0.0, 0.0,
+			1.0, 0.0,
+			1.0, 1.0
 		};
 
 		float norms[18] =
 		{
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
+			0.0, 1.0, 0.0,
+			0.0, 1.0, 0.0,
+			0.0, 1.0, 0.0,
 
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0
+			0.0, 1.0, 0.0,
+			0.0, 1.0, 0.0,
+			0.0, 1.0, 0.0
+		};
+
+		float tangs[18] = 
+		{
+			0.0, 0.0, -1.0,
+			0.0, 0.0, -1.0,
+			0.0, 0.0, -1.0,
+
+			0.0, 0.0, -1.0,
+			0.0, 0.0, -1.0,
+			0.0, 0.0, -1.0
+		};
+
+		float bitangs[18] =
+		{
+			-1.0, 0.0, 0.0,
+			-1.0, 0.0, 0.0,
+			-1.0, 0.0, 0.0,
+
+			-1.0, 0.0, 0.0,
+			-1.0, 0.0, 0.0,
+			-1.0, 0.0, 0.0
 		};
 
 		std::vector<C_Vertex> v;
@@ -57,6 +79,8 @@ namespace Columbus
 			a.pos = C_Vector3(verts[0 + i * 3], verts[1 + i * 3], verts[2 + i * 3]);
 			a.UV = C_Vector2(uvs[0 + i * 2], uvs[1 + i * 2]);
 			a.normal = C_Vector3(norms[0 + i * 3], norms[1 + i * 3], norms[2 + i * 3]);
+			a.tangent = C_Vector3(tangs[0 + i * 3], tangs[1 + i * 3], tangs[2 + i * 3]);
+			a.bitangent = C_Vector3(bitangs[0 + i * 3], bitangs[1 + i * 3], bitangs[2 + i * 3]);
 			v.push_back(a);
 		};
 
@@ -109,14 +133,11 @@ namespace Columbus
 		std::vector<C_Vertex> v = importer.getObject(0);
 		std::vector<C_Vertex> ret;
 
-		for (size_t i = 0; i < v.size(); i++)
+		for (auto Vertex : v)
 		{
-			C_Vertex a = v[i];
-			a.pos.x *= aSize.x;
-			a.pos.y *= aSize.y;
-			a.pos.z *= aSize.z;
-			ret.push_back(a);
-	    }
+			Vertex.pos *= aSize;
+			ret.push_back(Vertex);
+		}
 
 		v.clear();
 

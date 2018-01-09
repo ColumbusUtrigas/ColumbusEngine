@@ -30,6 +30,12 @@ namespace Columbus
 		C_PARTICLE_TRANSFORMATION_WORLD
 	};
 
+	enum C_PARTICLE_SORT_MODE
+	{
+		C_PARTICLE_SORT_MODE_NONE,
+		C_PARTICLE_SORT_MODE_DISTANCE
+	};
+
 	class C_ParticleEffect
 	{
 	private:
@@ -45,8 +51,8 @@ namespace Columbus
 		bool mGradienting = true;
 
 		C_Vector3 mPos = C_Vector3(0, 0, 0);
-		C_Vector3 mMinDirection = C_Vector3(-1, -1, -1);
-		C_Vector3 mMaxDirection = C_Vector3(1, 1, 1);
+		C_Vector3 mMinVelocity = C_Vector3(-1, -1, -1);
+		C_Vector3 mMaxVelocity = C_Vector3(1, 1, 1);
 		C_Vector3 mMinAcceleration = C_Vector3(0, 0.1, 0);
 		C_Vector3 mMaxAcceleration = C_Vector3(0, 0.1, 0);
 		C_Vector3 mConstantForce = C_Vector3(0, 0, 0);
@@ -60,8 +66,8 @@ namespace Columbus
 
 		float mMinTimeToLive = 1.0;
 		float mMaxTimeToLive = 1.0;
-		float mMinVelocity = 1.0;
-		float mMaxVelocity = 1.0;
+		//float mMinVelocity = 1.0;
+		//float mMaxVelocity = 1.0;
 		float mMinRotation = 0.0;
 		float mMaxRotation = 0.0;
 		float mMinRotationSpeed = 0.0;
@@ -72,11 +78,14 @@ namespace Columbus
 		int mParticleTransformation = C_PARTICLE_TRANSFORMATION_WORLD;
 		int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
 		float mParticleShapeRadius = 1.0;
+		int mSortMode = C_PARTICLE_SORT_MODE_NONE;
 	public:
 		//Constructor 1
 		C_ParticleEffect();
 		//Constructor 2
 		C_ParticleEffect(std::string aFile);
+		//Constructor 3
+		C_ParticleEffect(std::string aFile, C_Material* aMaterial);
 
 		//Set particles material
 		void setMaterial(const C_Material* aMaterial);
@@ -98,10 +107,10 @@ namespace Columbus
 		void setPos(const C_Vector3 aPos);
 		//Add position to current
 		void addPos(const C_Vector3 aPos);
-		//Set negative direction limit
-		void setMinDirection(const C_Vector3 aMinDirection);
-		//Set positive direction limit
-		void setMaxDirection(const C_Vector3 aMaxDirection);
+		//Set particle minimum velocity
+		void setMinVelocity(const C_Vector3 aMinVelocity);
+		//Set particle maximum velocity
+		void setMaxVelocity(const C_Vector3 aMaxVelocity);
 		//Set particle minimum acceleration
 		void setMinAcceleration(const C_Vector3 aMinAccerleration);
 		//Set particle maximum acceleration
@@ -122,10 +131,6 @@ namespace Columbus
 		void setMinTimeToLive(const float aMinTimeToLive);
 		//Set particle maximum time to live
 		void setMaxTimeToLive(const float aMaxTimeToLive);
-		//Set particle minimum velocity
-		void setMinVelocity(const float aMinVelocity);
-		//Set particle maximum velocity
-		void setMaxVelocity(const float aMaxVelocity);
 		//Set particle minimum rotation
 		void setMinRotation(const float aMinRotation);
 		//Set particle maximum rotation
@@ -142,6 +147,8 @@ namespace Columbus
 		void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
 		//Set particle shape radius
 		void setParticleShapeRadius(const float aRadius);
+		//Set particles mode
+		void setSortMode(const C_PARTICLE_SORT_MODE aSortMode);
 
 
 		//Return material
@@ -162,10 +169,10 @@ namespace Columbus
 		bool getGradienting() const;
 		//Return particle emitter position
 		C_Vector3 getPos() const;
-		//Return minimum particle direction
-		C_Vector3 getMinDirection() const;
-		//Return maximum particle direction
-		C_Vector3 getMaxDirection() const;
+		//Return particle minimum velocity
+		C_Vector3 getMinVelocity() const;
+		//Return particle maximum velocity
+		C_Vector3 getMaxVelocity() const;
 		//Return particle minimum acceleration
 		C_Vector3 getMinAcceleration() const;
 		//Return particle maximum acceleration
@@ -186,10 +193,6 @@ namespace Columbus
 		float getMinTimeToLive() const;
 		//Return particle maximum time to live
 		float getMaxTimeToLive() const;
-		//Return particle minimum velocity
-		float getMinVelocity() const;
-		//Return particle maximum velocity
-		float getMaxVelocity() const;
 		//Return particle minimum rotation
 		float getMinRotation() const;
 		//Return partile maximum rotation
@@ -206,6 +209,8 @@ namespace Columbus
 		int getParticleShape() const;
 		//Return particle shape radius
 		float getParticleShapeRadius() const;
+		//Return particles mode
+		int getSortMode() const;
 
 		//Serialize to XML file
 		bool saveToXML(std::string aFile) const;
@@ -215,6 +220,8 @@ namespace Columbus
 		bool loadFromXML(std::string aFile);
 		//Deserialize from JSON file
 		bool loadFromJSON(std::string aFile);
+		//Deserialize from XML or JSON file
+		bool load(std::string aFile);
 
 		//Destructor
 		~C_ParticleEffect();

@@ -47,6 +47,8 @@ namespace Columbus
 			if (mesh != nullptr)
 			{
 				mesh->setLights(mLights);
+				if (mSkybox != nullptr)
+					mesh->setReflection(mSkybox->getCubemap());
 				if (mCamera != nullptr)
 					mesh->setCamera(*mCamera);
 			}
@@ -67,6 +69,127 @@ namespace Columbus
 					ps->setCamera(*mCamera);
 			}
 		}
+	}
+	bool C_Scene::loadGameObject(Serializer::C_SerializerXML* aSerializer,
+		std::string aElement, unsigned int aID)
+	{
+		std::string name;
+		std::string materialPath;
+		std::string vertShaderPath;
+		std::string fragShaderPath;
+		std::string meshPath;
+		std::string particlePath;
+		std::string lightPath;
+
+		C_GameObject* GameObject = new C_GameObject();
+		C_Transform Transform;
+		C_Vector3 position;
+		C_Vector3 rotation;
+		C_Vector3 scale;
+		C_Material* material = new C_Material();
+		C_Shader* shader = new C_Shader();
+		Import::C_ImporterModel imp;
+
+		if (!aSerializer->getSubString({ "GameObjects", aElement, "Name" }, &name)) return false;
+		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Position" }, &position, { "X", "Y", "Z" });
+		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Rotation" }, &rotation, { "X", "Y", "Z" });
+		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Scale" }, &scale, { "X", "Y", "Z" });
+
+		if (aSerializer->getSubString({ "GameObjects", aElement, "Material" }, &materialPath))
+		{
+			if (materialPath != "None")
+			{
+				material->loadFromXML(materialPath);
+			}
+		} else return false;
+
+		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
+		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
+
+		shader->load(vertShaderPath, fragShaderPath);
+		material->setShader(shader);
+
+		if (material->getTextureID() != -1)
+			material->setTexture(mTextures.at(material->getTextureID()));
+		if (material->getSpecMapID() != -1)
+			material->setSpecMap(mTextures.at(material->getSpecMapID()));
+		if (material->getNormMapID() != -1)
+			material->setNormMap(mTextures.at(material->getNormMapID()));
+
+		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "MeshRenderer", "Mesh"}, &meshPath))
+		{
+			if (meshPath == "Plane")
+			{
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitivePlane(), *material)));
+			} else if (meshPath == "Cube")
+			{
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveBox(), *material)));
+			} else if (meshPath == "Sphere")
+			{
+				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveSphere(1, 50, 50), *material)));
+			} else
+			{
+				if (ModelIsCMF(meshPath))
+					GameObject->addComponent(new C_MeshRenderer(new C_Mesh(ModelLoadCMF(meshPath), *material)));
+				//imp.loadOBJ(meshPath);
+				//if (imp.getCount() > 0)
+					//GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
+			}
+		}
+
+		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "ParticleSystem", "Particles"}, &particlePath))
+		{
+			GameObject->addComponent(new C_ParticleSystem(new C_ParticleEmitter(new C_ParticleEffect(particlePath, material))));
+		}
+
+		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "LightComponent", "Light"}, &lightPath))
+		{
+			GameObject->addComponent(new C_LightComponent(new C_Light(lightPath, position)));
+		}
+
+		Transform.setPos(position);
+		Transform.setRot(rotation);
+		Transform.setScale(scale);
+		GameObject->setTransform(Transform);
+
+		add(aID, GameObject);
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	bool C_Scene::load(std::string aFile)
+	{
+		Serializer::C_SerializerXML serializer;
+
+		if (!serializer.read(aFile, "Scene"))
+		{ C_Log::error("Can't load Scene: " + aFile); return false; }
+
+		int count = 0;
+		int texCount = 0;
+
+		if (serializer.getSubInt({"Resources", "Textures", "Count"}, &texCount))
+		{
+			for (int i = 0; i < texCount; i++)
+			{
+				std::string path;
+				std::string elem = std::string("Texture") + std::to_string(i);
+				if (serializer.getSubString({"Resources", "Textures", elem}, &path))
+					mTextures.insert(std::pair<int, C_Texture*>(i, new C_Texture(path)));
+			}
+		}
+
+		if (!serializer.getSubInt({"GameObjects", "Count"}, &count))
+		{ C_Log::error("Can't load Scene Count: " + aFile); return false; }
+
+		for (int i = 0; i < count; i++)
+		{
+			std::string elem = "GameObject" + std::to_string(i);
+			loadGameObject(&serializer, elem, i);
+		}
+
+		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::add(unsigned int aID, C_GameObject* aMesh)
@@ -111,7 +234,12 @@ namespace Columbus
 			mSkybox->draw();
 
 		for (auto Object : mMeshes)
-			C_Render::render(Object.second);
+			if (Object.second->hasComponent("MeshRenderer"))
+				C_Render::render(Object.second);
+
+		for (auto Object : mMeshes)
+			if (Object.second->hasComponent("ParticleSystem"))
+				C_Render::render(Object.second);
 
 		mNoneEffect.unbind();
 

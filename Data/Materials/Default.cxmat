@@ -7,4 +7,10 @@
     <ReflectionPower>0.2</ReflectionPower>
     <Discard>0</Discard>
     <Lighting>1</Lighting>
+
+    <Textures>
+    	<Diffuse>0</Diffuse>
+    	<Specular>1</Specular>
+    	<Normal>2</Normal>
+    </Textures>
 </Material>

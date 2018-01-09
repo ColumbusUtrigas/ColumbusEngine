@@ -23,6 +23,8 @@ namespace Columbus
 		std::vector<C_GameObject*> mChildren;
 		std::vector<C_Component*> mComponents;
 
+		std::string mName;
+
 		C_Transform mTransform;
 		C_Timer mTimer;
 	public:

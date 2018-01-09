@@ -56,6 +56,7 @@ namespace Columbus
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
 		int flags = SDL_WINDOW_OPENGL;
+		
 		if (aConfig.Resizable == true)
 			flags |= SDL_WINDOW_RESIZABLE;
 		if (aConfig.Fullscreen == true)
@@ -122,7 +123,7 @@ namespace Columbus
 		SDL_GetVersion(&lVer);
 
 		C_Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
-		C_Log::initialization("SDL linked version:%d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+		C_Log::initialization("SDL linked version: %d.%d.%d", lVer.major, lVer.minor, lVer.patch);
 		C_Log::initialization("OpenGL version: " + C_GetVersionOpenGL());
 		C_Log::initialization("OpenGL vendor: " + C_GetVendorOpenGL());
 		C_Log::initialization("OpenGL renderer: " + C_GetRendererOpenGL());

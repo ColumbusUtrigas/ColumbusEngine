@@ -22,71 +22,7 @@ namespace Columbus
 		mScale = C_Vector3(1, 1, 1);
 		mPivot = C_Vector3(0, 0, 0);
 
-		mVert = aVert;
-
-		std::vector<float> v;
-
-		for (size_t i = 0; i < mVert.size(); i++)
-		{
-			v.push_back(mVert[i].pos.x);
-			v.push_back(mVert[i].pos.y);
-			v.push_back(mVert[i].pos.z);
-		}
-
-		if (v.size() > 0)
-			buf = new C_Buffer(v.data(), v.size() * sizeof(float), 3);
-		v.clear();
-
-		std::vector<float> t;
-
-		for (size_t i = 0; i < mVert.size(); i++)
-		{
-			t.push_back(mVert[i].UV.x);
-			t.push_back(mVert[i].UV.y);
-		}
-
-		if(t.size() > 0)
-			tbuf = new C_Buffer(t.data(), t.size() * sizeof(float), 2);
-		t.clear();
-
-		std::vector<float> n;
-
-		for (size_t i = 0; i < mVert.size(); i++)
-		{
-			n.push_back(mVert[i].normal.x);
-			n.push_back(mVert[i].normal.y);
-			n.push_back(mVert[i].normal.z);
-		}
-
-		if (n.size() > 0)
-			nbuf = new C_Buffer(n.data(), n.size() * sizeof(float), 3);
-		n.clear();
-
-		std::vector<float> tang;
-
-		for (size_t i = 0; i < mVert.size(); i++)
-		{
-			tang.push_back(mVert[i].tangent.x);
-			tang.push_back(mVert[i].tangent.y);
-			tang.push_back(mVert[i].tangent.z);
-		}
-
-		if (tang.size() > 0)
-			tangbuf = new C_Buffer(tang.data(), tang.size() * sizeof(float), 3);
-		tang.clear();
-
-		std::vector<float> bitang;
-
-		for (size_t i = 0; i < mVert.size(); i++)
-		{
-			tang.push_back(mVert[i].bitangent.x);
-			tang.push_back(mVert[i].bitangent.y);
-			tang.push_back(mVert[i].bitangent.z);
-		}
-
-		if (bitang.size() > 0)
-			bitangbuf = new C_Buffer(bitang.data(), bitang.size() * sizeof(float), 3);
-		bitang.clear();
+		setVertices(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
@@ -105,11 +41,74 @@ namespace Columbus
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//Constructor 4
+	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat)
+	{
+		setVertices(aVert);
+		mMat = aMat;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Mesh::setVertices(std::vector<C_Vertex> aVert)
+	{
+		delete buf;
+		delete tbuf;
+		delete nbuf;
+		delete tangbuf;
+		delete bitangbuf;
+
+		mVert.clear();
+		mVert = aVert;
+
+		float* v = new float[mVert.size() * 3]; //Vertex buffer
+		float* u = new float[mVert.size() * 2]; //UV buffer
+		float* n = new float[mVert.size() * 3]; //Normal buffer
+		float* t = new float[mVert.size() * 3]; //Tangent buffer
+		float* b = new float[mVert.size() * 3]; //Bitangent buffer
+		uint64_t vcounter = 0;
+		uint64_t ucounter = 0;
+		uint64_t ncounter = 0;
+		uint64_t tcounter = 0;
+		uint64_t bcounter = 0;
+
+		for (auto Vertex : mVert)
+		{
+			v[vcounter++] = Vertex.pos.x;
+			v[vcounter++] = Vertex.pos.y;
+			v[vcounter++] = Vertex.pos.z;
+
+			u[ucounter++] = Vertex.UV.x;
+			u[ucounter++] = Vertex.UV.y;
+
+			n[ncounter++] = Vertex.normal.x;
+			n[ncounter++] = Vertex.normal.y;
+			n[ncounter++] = Vertex.normal.z;
+
+			t[tcounter++] = Vertex.tangent.x;
+			t[tcounter++] = Vertex.tangent.y;
+			t[tcounter++] = Vertex.tangent.z;
+
+			b[bcounter++] = Vertex.bitangent.x;
+			b[bcounter++] = Vertex.bitangent.y;
+			b[bcounter++] = Vertex.bitangent.z;
+		}
+
+		buf = new C_Buffer(v, mVert.size() * 3 * sizeof(float), 3);
+		tbuf = new C_Buffer(u, mVert.size() * 2 * sizeof(float), 2);
+		nbuf = new C_Buffer(n, mVert.size() * 3 * sizeof(float), 3);
+		tangbuf = new C_Buffer(t, mVert.size() * 3 * sizeof(float), 3);
+		bitangbuf = new C_Buffer(b, mVert.size() * 3 * sizeof(float), 3);
+
+		delete[] v;
+		delete[] u;
+		delete[] n;
+		delete[] t;
+		delete[] b;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//Draw mesh
 	void C_Mesh::draw()
 	{
-		if (buf == nullptr)
-			return;
+		if (buf == nullptr) return;
 
 		C_Buffer* const buffers[5] = {buf, tbuf, nbuf, tangbuf, bitangbuf};
 		unsigned const int indices[5] = {0, 1, 2, 3, 4};
@@ -128,7 +127,6 @@ namespace Columbus
 			setShaderLightAndCamera();
 			setShaderTextures();
 		}
-
 
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, mVert.size());
 	}
@@ -259,10 +257,12 @@ namespace Columbus
 			} else
 			{
 				mMat.getShader()->setUniform1i(unifs[i].c_str(), indices[i]);
-				C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
-				C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
-				C_DeactiveTextureOpenGL(C_OGL_TEXTURE1);
-				C_DeactiveTextureOpenGL(C_OGL_TEXTURE3);
+				if (textures[0] == nullptr)
+					C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
+				if (textures[1] == nullptr)
+					C_DeactiveTextureOpenGL(C_OGL_TEXTURE1);
+				if (textures[2] == nullptr)
+					C_DeactiveTextureOpenGL(C_OGL_TEXTURE3);
 			}
 		}
 

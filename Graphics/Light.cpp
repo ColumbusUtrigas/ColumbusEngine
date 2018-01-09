@@ -17,6 +17,8 @@ namespace Columbus
 	//Constructor 1
 	C_Light::C_Light() :
 		mType(0),
+		mPos(C_Vector3(0, 0, 0)),
+		mDir(C_Vector3(-0.5, -0.4, -0.3)),
 		mConstant(1.0),
 		mLinear(0.09),
 		mQuadratic(0.032),
@@ -27,8 +29,10 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 2
-	C_Light::C_Light(const int aType) :
+	C_Light::C_Light(const int aType, C_Vector3 aPos) :
 		mType(aType),
+		mPos(aPos),
+		mDir(C_Vector3(-0.5, -0.4, -0.3)),
 		mConstant(1.0),
 		mLinear(0.09),
 		mQuadratic(0.032),
@@ -39,15 +43,17 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor 3
-	C_Light::C_Light(std::string aFile) :
+	C_Light::C_Light(std::string aFile, C_Vector3 aPos) :
 		mType(0),
+		mPos(aPos),
+		mDir(C_Vector3(-0.5, -0.4, -0.3)),
 		mConstant(1.0),
 		mLinear(0.09),
 		mQuadratic(0.032),
 		mInnerCutoff(12.5),
 		mOuterCutoff(17.5)
 	{
-		loadFromXML(aFile);
+		load(aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set light type
@@ -171,9 +177,6 @@ namespace Columbus
 		if (!serializer.setInt("Type", mType))
 		{ C_Log::error("Can't save Light type: " + aFile); return false; }
 
-		if (!serializer.setVector3("Position", mPos, {"X", "Y", "Z"}))
-		{ C_Log::error("Can't save Light position: " + aFile); return false; }
-
 		if (!serializer.setVector3("Direction", mDir, { "X", "Y", "Z" }))
 		{ C_Log::error("Can't save Light direction: " + aFile); return false; }
 
@@ -214,9 +217,6 @@ namespace Columbus
 		if (!serializer.getInt("Type", &mType))
 		{ C_Log::error("Can't load Light type: %s" + aFile); return false; }
 
-		if (!serializer.getVector3("Position", &mPos, { "X", "Y", "Z" }))
-		{ C_Log::error("Can't load Light position: %s" + aFile); return false; }
-
 		if (!serializer.getVector3("Direction", &mDir, { "X", "Y", "Z" }))
 		{ C_Log::error("Can't load Light direction: %s" + aFile); return false; }
 
@@ -241,6 +241,14 @@ namespace Columbus
 		C_Log::success("Light loaded: " + aFile);
 
 		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Deserialize from XML file
+	bool C_Light::load(std::string aFile)
+	{
+		if (aFile.find_last_of(".cxlig") != std::string::npos)
+			return loadFromXML(aFile);
+		else return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

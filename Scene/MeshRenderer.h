@@ -13,6 +13,7 @@
 #include <Graphics/Model.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
+#include <Graphics/Cubemap.h>
 
 namespace Columbus
 {
@@ -39,6 +40,7 @@ namespace Columbus
 		void setCamera(const C_Camera mCamera);
 		C_Shader* getShader() const;
 		void setShader(C_Shader* aShader);
+		void setReflection(const C_Cubemap* aCubemap);
 
 		~C_MeshRenderer();
 	};
