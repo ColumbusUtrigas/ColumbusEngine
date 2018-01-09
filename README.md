@@ -23,7 +23,7 @@
 ## OpenGL 3.0 supported
 
 ## Tests
-![Optional Text](./Data/Tests/1.jpg)
-![Optional Text](./Data/Tests/2.jpg)
-![Optional Text](./Data/Tests/3.jpg)
-![Optional Text](./Data/Tests/4.jpg)
+![Optional Text](./Tests/1.jpg)
+![Optional Text](./Tests/2.jpg)
+![Optional Text](./Tests/3.jpg)
+![Optional Text](./Tests/4.jpg)
