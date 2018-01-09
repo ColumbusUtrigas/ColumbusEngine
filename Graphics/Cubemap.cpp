@@ -68,9 +68,9 @@ namespace Columbus
 
 		for (int i = 0; i < 6; i++)
 		{
-			mBitmaps[i] = C_LoadImage(aPath[i]);
+			mBitmaps[i].load(aPath[i]);
 
-			if (mBitmaps[i].buffer == nullptr)
+			if (!mBitmaps[i].isExist())
 			{
 				C_Log::error("Can't load Cubemap");
 				C_DeleteTextureOpenGL(&mID);
@@ -79,12 +79,12 @@ namespace Columbus
 			else
 			{
 				unsigned int format = C_OGL_RGBA;
-				if (mBitmaps[i].bpp == 3)
+				if (mBitmaps[i].getBPP() == 3)
 					format = C_OGL_RGB;
 
 				C_Texture2DOpenGL(C_OGL_TEXTURE_CUBE_MAP_POS_X + i, 0, format,
-					mBitmaps[i].width, mBitmaps[i].height, format, C_OGL_UNSIGNED_BYTE,
-						mBitmaps[i].buffer);
+					mBitmaps[i].getWidth(), mBitmaps[i].getHeight(), format, C_OGL_UNSIGNED_BYTE,
+						mBitmaps[i].getData());
 			}
 		}
 
@@ -126,16 +126,19 @@ namespace Columbus
 	{
 		for (int i = 0; i < 6; i++)
 		{
-			if (mBitmaps[i].buffer == nullptr)
+			if (!mBitmaps[i].isExist()) return false;
+
+			int type = E_IMAGE_SAVE_FORMAT_PNG;
+			if (mBitmaps[i].getBPP() == 3)
+				type == E_IMAGE_SAVE_FORMAT_JPG;
+
+			if (!mBitmaps[i].save(aPath[i], type, 90))
+			{
+				C_Log::error("Can't load cubemap face: " + aPath[i]);
 				return false;
+			}
 
-				if (C_SaveImage(aPath[i], mBitmaps[i]) == false)
-				{
-					C_Log::error("Can't load cubemap face: " + aPath[i]);
-					return false;
-				}
-
-				C_Log::success("Cubemap face successfully saved: " + aPath[i]);
+			C_Log::success("Cubemap face successfully saved: " + aPath[i]);
 		}
 		return true;
 	}
@@ -144,9 +147,6 @@ namespace Columbus
 	C_Cubemap::~C_Cubemap()
 	{
 		C_DeleteTextureOpenGL(&mID);
-		for (int i = 0; i < 6; i++)
-			if (mBitmaps[i].buffer != nullptr)
-				free(mBitmaps[i].buffer);
 	}
 
 }

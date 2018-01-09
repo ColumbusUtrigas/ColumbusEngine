@@ -6,5 +6,11 @@
     <Shininess>32</Shininess>
     <ReflectionPower>0.2</ReflectionPower>
     <Discard>0</Discard>
-    <Lighting>1</Lighting>
+    <Lighting>0</Lighting>
+
+    <Textures>
+    	<Diffuse>3</Diffuse>
+    	<Specular>None</Specular>
+    	<Normal>None</Normal>
+    </Textures>
 </Material>

@@ -16,22 +16,11 @@
 #include <fstream>
 #include <sstream>
 
-#include <Math/Vector2.h>
-#include <Math/Vector3.h>
-#include <Math/Vector4.h>
+#include <Common/Model/Model.h>
 #include <System/Log.h>
 
 namespace Columbus
 {
-
-	struct C_Vertex
-	{
-		C_Vector3 pos;
-		C_Vector2 UV;
-		C_Vector3 normal;
-		C_Vector3 tangent;
-		C_Vector3 bitangent;
-	};
 
 	namespace Import
 	{
@@ -45,7 +34,8 @@ namespace Columbus
 		public:
 			C_ImporterModel();
 
-			bool loadOBJ(std::string aFile);
+			bool load(const std::string aFile);
+			bool loadOBJ(const std::string aFile);
 
 			unsigned int getCount() const;
 			std::vector<std::string> getNames() const;

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <Common/Compress/Compress.h>
+#include <Common/Image/Image.h>
+#include <Common/Model/Model.h>
+
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
 #include <Graphics/Framebuffer.h>
@@ -47,6 +51,7 @@
 #include <System/Importer.h>
 #include <System/Log.h>
 #include <System/Random.h>
+#include <System/ResourceManager.h>
 #include <System/Serializer.h>
 #include <System/SmartPointer.h>
 #include <System/System.h>
