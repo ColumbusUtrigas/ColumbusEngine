@@ -29,7 +29,7 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Data/Models/Liberty.obj</Mesh>
+					<Mesh>Data/Models/Dragon.cmf</Mesh>
 				</MeshRenderer>
 			</Components>
 		</GameObject0>

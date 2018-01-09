@@ -38,6 +38,8 @@ int main(int argc, char** argv)
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
+
+	printf("%i\n", ModelIsCMF("Data/Models/cube.cmf"));
 	
 	while (window.isOpen())
 	{

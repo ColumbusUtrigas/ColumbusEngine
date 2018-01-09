@@ -164,7 +164,7 @@ namespace Columbus
 		if (ImageIsTGA(aFile))
 			return ImageLoadTGA(aFile, aWidth, aHeight, aBPP);
 
-		return false;
+		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, 

@@ -129,9 +129,11 @@ namespace Columbus
 				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveSphere(1, 50, 50), *material)));
 			} else
 			{
-				imp.loadOBJ(meshPath);
-				if (imp.getCount() > 0)
-					GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
+				if (ModelIsCMF(meshPath))
+					GameObject->addComponent(new C_MeshRenderer(new C_Mesh(ModelLoadCMF(meshPath), *material)));
+				//imp.loadOBJ(meshPath);
+				//if (imp.getCount() > 0)
+					//GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
 			}
 		}
 

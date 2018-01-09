@@ -192,11 +192,11 @@ namespace Columbus
 		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadTGA(): invalid BPP")
 
 		C_File file(aFile, "rb");
-		if (!file.isOpened()) return false;
+		if (!file.isOpened()) return nullptr;
 
 		TGA_HEADER tga;
 
-		if (!ReadHeader(&tga, &file)) return false;
+		if (!ReadHeader(&tga, &file)) return nullptr;
 
 		size_t dSize = file.getSize() - sizeof(TGA_HEADER);
 		size_t size = tga.width * tga.height * tga.bits / 8;
@@ -247,7 +247,12 @@ namespace Columbus
 		C_File file(aFile, "wb");
 		if (!file.isOpened()) return false;
 
-		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, (uint16_t)aWidth, (uint16_t)aHeight, (uint8_t)aBPP * 8, 8 };
+		uint16_t width = static_cast<uint16_t>(aWidth);
+		uint16_t height = static_cast<uint16_t>(aHeight);
+		uint8_t bpp = static_cast<uint8_t>(aBPP * 8);
+		uint8_t descriptor = static_cast<uint8_t>(8);
+
+		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, width, height, bpp, descriptor};
 
 		size_t size = aWidth * aHeight * aBPP;
 
