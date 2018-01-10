@@ -88,18 +88,18 @@ namespace Columbus
 
 		glShaderSource(vertex, 1, &vertSrc, NULL);
 		glCompileShader(vertex);
-     	glGetShaderiv(vertex, GL_COMPILE_STATUS, &result);
+		glGetShaderiv(vertex, GL_COMPILE_STATUS, &result);
 
 		if(result == GL_FALSE)
 		{
-		    glGetShaderiv(vertex, GL_INFO_LOG_LENGTH, &length);
-		    error = new char[length];
-		    glGetShaderInfoLog(vertex, length, &length, error);
-		    printf("%s\n", error);
-		    glDeleteShader(vertex);
-		    glDeleteShader(fragment);
-		    mID = 0;
-		    return false;
+			glGetShaderiv(vertex, GL_INFO_LOG_LENGTH, &length);
+			error = new char[length];
+			glGetShaderInfoLog(vertex, length, &length, error);
+			printf("%s\n", error);
+			glDeleteShader(vertex);
+			glDeleteShader(fragment);
+			mID = 0;
+			return false;
 		}
 
 		glShaderSource(fragment, 1, &fragSrc, NULL);
@@ -108,14 +108,14 @@ namespace Columbus
 
 		if(result == GL_FALSE)
 		{
-		    glGetShaderiv(fragment, GL_INFO_LOG_LENGTH, &length);
-		    error = new char[length];
-		    glGetShaderInfoLog(fragment, length, &length, error);
-		    printf("%s\n", error);
-		    glDeleteShader(vertex);
-		    glDeleteShader(fragment);
-		    mID = 0;
-		    return false;
+			glGetShaderiv(fragment, GL_INFO_LOG_LENGTH, &length);
+			error = new char[length];
+			glGetShaderInfoLog(fragment, length, &length, error);
+			printf("%s\n", error);
+			glDeleteShader(vertex);
+			glDeleteShader(fragment);
+			mID = 0;
+			return false;
 		}
 
 		glAttachShader(program, vertex);
