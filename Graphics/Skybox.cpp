@@ -22,7 +22,9 @@ namespace Columbus
 	{
 		mCubemap = aCubemap;
 		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = new C_Shader("Data/Shaders/skybox.vert", "Data/Shaders/skybox.frag");
+		mShader = new C_Shader();
+		mShader->load("Data/Shaders/skybox.vert", "Data/Shaders/skybox.frag");
+		mShader->compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw skybox

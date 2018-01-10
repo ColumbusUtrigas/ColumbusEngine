@@ -32,8 +32,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat)
 	{
-		setVertices(aVert);
 		mMat = aMat;
+		setVertices(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -93,12 +93,21 @@ namespace Columbus
 		delete[] n;
 		delete[] t;
 		delete[] b;
+
+		if (mMat.getShader() == nullptr) return;
+		mMat.getShader()->addAttribute("aPos", 0);
+		mMat.getShader()->addAttribute("aUV", 1);
+		mMat.getShader()->addAttribute("aNorm", 2);
+		mMat.getShader()->addAttribute("aTang", 3);
+		mMat.getShader()->addAttribute("aBitang", 4);
+		mMat.getShader()->compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Render mesh
 	void C_Mesh::render(C_Transform aTransform)
 	{
 		if (mVBuf == nullptr) return;
+		if (mMat.getShader() == nullptr) return;
 
 		C_Buffer* const buffers[5] = { mVBuf, mUBuf, mNBuf, mTBuf, mBBuf };
 		unsigned const int indices[5] = { 0, 1, 2, 3, 4 };
@@ -109,15 +118,12 @@ namespace Columbus
 			if (buffers[i] != nullptr)
 				buffers[i]->bind(indices[i], C_OGL_FALSE, strides[i] * sizeof(float));
 
-		if (mMat.getShader() != nullptr)
-		{
-			mMat.getShader()->bind();
+		mMat.getShader()->bind();
 
-			setShaderMatrices(aTransform);
-			setShaderMaterial();
-			setShaderLightAndCamera();
-			setShaderTextures();
-		}
+		setShaderMatrices(aTransform);
+		setShaderMaterial();
+		setShaderLightAndCamera();
+		setShaderTextures();
 
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, mVert.size());
 	}

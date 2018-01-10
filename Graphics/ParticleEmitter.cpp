@@ -80,8 +80,14 @@ namespace Columbus
 		}
 
 		mShader = new C_Shader();
-		mShader->addAttribute("aPoses", 5);
 		mShader->load("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
+		
+		mShader->addAttribute("aPos", 0);
+		mShader->addAttribute("aUV", 1);
+		mShader->addAttribute("aNorm", 2);
+		mShader->addAttribute("aTang", 3);
+		mShader->addAttribute("aBitang", 4);
+		mShader->compile();
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
