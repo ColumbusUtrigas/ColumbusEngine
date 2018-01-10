@@ -34,25 +34,23 @@ namespace Columbus
 	{
 	private:
 		C_Vector3 mPos;
-		C_Vector3 mRot;
-		C_Vector3 mScale;
-		C_Vector3 mPivot;
-		C_Matrix4 mMatrix;
-		C_Matrix4 mNormalMatrix;
-
-		C_Mesh* mParent = NULL;
-		
+		C_Mesh* mParent = nullptr;
 		C_Camera mCamera;
 
 		std::list<C_Mesh*> mChilds;
 		std::vector<C_Light*> mLights;
+
+		C_Buffer* mVBuf = nullptr; //Vertex buffer
+		C_Buffer* mUBuf = nullptr; //UV buffer
+		C_Buffer* mNBuf = nullptr; //Normal buffer
+		C_Buffer* mTBuf = nullptr; //Tangent buffer
+		C_Buffer* mBBuf = nullptr; //Bitangent buffer
 
 		float mLightUniform[120];
 
 		//Sets texture\cubemap as uniform in shader
 		void setShaderTextures();
 		//Calculate and transfer matrices as uniform in shader
-		void setShaderMatrices();
 		void setShaderMatrices(C_Transform aTransform);
 		//Set all material data as uniform in shader
 		void setShaderMaterial();
@@ -63,58 +61,28 @@ namespace Columbus
 		//Sort lights array by distance
 		void sortLights();
 	public:
-		C_Buffer* buf = nullptr;
-		C_Buffer* tbuf = nullptr;
-		C_Buffer* nbuf = nullptr;
-		C_Buffer* tangbuf = nullptr;
-		C_Buffer* bitangbuf = nullptr;
-
 		std::vector<C_Vertex> mVert;
 		C_Material mMat;
-		//Constructor
+		
 		C_Mesh();
-		//Constructor 2
 		C_Mesh(std::string aFile);
-		//Constructor 3
 		C_Mesh(std::vector<C_Vertex> aVert);
-		//Constructor 4
 		C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat);
 
 		void setVertices(std::vector<C_Vertex> aVert);
-
-		//Draw mesh
-		void draw();
-		//Render mesh
 		void render(C_Transform aTransform);
-		//Set mesh position
+		
 		void setPos(C_Vector3 aPos);
-		//Set mesh rotation
-		void setRot(C_Vector3 aRot);
-		//Set mesh scale
-		void setScale(C_Vector3 aScale);
-		//Add position to current
 		void addPos(C_Vector3 aPos);
-		//Add rotation to current
-		void addRot(C_Vector3 aRot);
-		//Add scale to current
-		void addScale(C_Vector3 aScale);
-		//Set camera
+		C_Vector3 getPos() const;
+
 		void setCamera(C_Camera camera);
-		//Set parent mesh
 		void setParent(C_Mesh* aParent);
-		//Add child mesh
 		void addChild(C_Mesh* aChild);
-		//Set pivot point
-		void setPivot(C_Vector3 aPivot);
-		//Set light casters, which calculate to using in shaders
 		void setLights(std::vector<C_Light*> aLights);
-		//Return pivot point
-		C_Vector3 getPivot();
-		//Add position to pivot point
-		void addPivot(C_Vector3 aPivot);
-		//Clear all
+
 		void clear();
-		//Destructor
+
 		~C_Mesh();
 	};
 

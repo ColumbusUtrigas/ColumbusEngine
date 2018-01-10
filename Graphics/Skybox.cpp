@@ -21,16 +21,7 @@ namespace Columbus
 		mCubemap(nullptr)
 	{
 		mCubemap = aCubemap;
-
-		std::vector<float> v;
-
-		for (size_t i = 0; i < 108; i++)
-		{
-			v.push_back(skyboxVertices[i]);
-		}
-
-		mBuf = new C_Buffer(v.data(), v.size() * sizeof(float), 3);
-
+		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
 		mShader = new C_Shader("Data/Shaders/skybox.vert", "Data/Shaders/skybox.frag");
 	}
 	//////////////////////////////////////////////////////////////////////////////

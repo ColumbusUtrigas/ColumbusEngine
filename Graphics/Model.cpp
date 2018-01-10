@@ -5,7 +5,7 @@
 *               COLUMBUS ENGINE                 *
 *************************************************
 *                Nika(Columbus) Red             *
-*                   20.07.2017                  *
+*                   10.01.2018                  *
 *************************************************/
 
 #include <Graphics/Model.h>
@@ -14,47 +14,37 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
-	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert)
+	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert) :
+		mPos(C_Vector3(0, 0, 0))
 	{
-		mPos = C_Vector3(0, 0, 0);
-		mRot = C_Vector3(0, 0, 0);
-		mScale = C_Vector3(1, 1, 1);
-		mPivot = C_Vector3(0, 0, 0);
-
 		setVertices(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 2
 	C_Mesh::C_Mesh(std::string aFile)
 	{
-		Import::C_ImporterModel importer;
-		if(importer.loadOBJ(aFile))
-		{
-
-		}
+		
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 3
 	C_Mesh::C_Mesh()
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Constructor 4
 	C_Mesh::C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat)
 	{
 		setVertices(aVert);
 		mMat = aMat;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Mesh::setVertices(std::vector<C_Vertex> aVert)
 	{
-		delete buf;
-		delete tbuf;
-		delete nbuf;
-		delete tangbuf;
-		delete bitangbuf;
+		delete mVBuf;
+		delete mUBuf;
+		delete mNBuf;
+		delete mTBuf;
+		delete mBBuf;
 
 		mVert.clear();
 		mVert = aVert;
@@ -92,11 +82,11 @@ namespace Columbus
 			b[bcounter++] = Vertex.bitangent.z;
 		}
 
-		buf = new C_Buffer(v, mVert.size() * 3 * sizeof(float), 3);
-		tbuf = new C_Buffer(u, mVert.size() * 2 * sizeof(float), 2);
-		nbuf = new C_Buffer(n, mVert.size() * 3 * sizeof(float), 3);
-		tangbuf = new C_Buffer(t, mVert.size() * 3 * sizeof(float), 3);
-		bitangbuf = new C_Buffer(b, mVert.size() * 3 * sizeof(float), 3);
+		mVBuf = new C_Buffer(v, mVert.size() * 3 * sizeof(float), 3);
+		mUBuf = new C_Buffer(u, mVert.size() * 2 * sizeof(float), 2);
+		mNBuf = new C_Buffer(n, mVert.size() * 3 * sizeof(float), 3);
+		mTBuf = new C_Buffer(t, mVert.size() * 3 * sizeof(float), 3);
+		mBBuf = new C_Buffer(b, mVert.size() * 3 * sizeof(float), 3);
 
 		delete[] v;
 		delete[] u;
@@ -105,43 +95,17 @@ namespace Columbus
 		delete[] b;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Draw mesh
-	void C_Mesh::draw()
-	{
-		if (buf == nullptr) return;
-
-		C_Buffer* const buffers[5] = {buf, tbuf, nbuf, tangbuf, bitangbuf};
-		unsigned const int indices[5] = {0, 1, 2, 3, 4};
-		unsigned const int strides[5] = {3, 2, 3, 3, 3};
-
-		for (int i = 0; i < 5; i++)
-			if (buffers[i] != nullptr)
-				buffers[i]->bind(indices[i], C_OGL_FALSE, strides[i] * sizeof(float));
-
-		if (mMat.getShader() != nullptr)
-		{
-			mMat.getShader()->bind();
-
-			setShaderMatrices();
-			setShaderMaterial();
-			setShaderLightAndCamera();
-			setShaderTextures();
-		}
-
-		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, mVert.size());
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//Render mesh
 	void C_Mesh::render(C_Transform aTransform)
 	{
-		if (buf == nullptr)
-			return;
+		if (mVBuf == nullptr) return;
 
-		C_Buffer* const buffers[5] = { buf, tbuf, nbuf, tangbuf, bitangbuf };
+		C_Buffer* const buffers[5] = { mVBuf, mUBuf, mNBuf, mTBuf, mBBuf };
 		unsigned const int indices[5] = { 0, 1, 2, 3, 4 };
 		unsigned const int strides[5] = { 3, 2, 3, 3, 3 };
+		int i;
 
-		for (int i = 0; i < 5; i++)
+		for (i = 0; i < 5; i++)
 			if (buffers[i] != nullptr)
 				buffers[i]->bind(indices[i], C_OGL_FALSE, strides[i] * sizeof(float));
 
@@ -158,89 +122,46 @@ namespace Columbus
 		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, mVert.size());
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set camera
 	void C_Mesh::setCamera(C_Camera aCamera)
 	{
 		mCamera = aCamera;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set mesh position
 	void C_Mesh::setPos(C_Vector3 aPos)
 	{
 		mPos = aPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set mesh rotation
-	void C_Mesh::setRot(C_Vector3 aRot)
-	{
-		mRot = aRot;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set mesh scale
-	void C_Mesh::setScale(C_Vector3 aScale)
-	{
-		mScale = aScale;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add position to current
 	void C_Mesh::addPos(C_Vector3 aPos)
 	{
 		mPos += aPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Add rotation to current
-	void C_Mesh::addRot(C_Vector3 aRot)
+	C_Vector3 C_Mesh::getPos() const
 	{
-		mRot += aRot;
+		return mPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Add scale to current
-	void C_Mesh::addScale(C_Vector3 aScale)
-	{
-		mScale += aScale;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set parent mesh
 	void C_Mesh::setParent(C_Mesh* aParent)
 	{
 		mParent = aParent;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Add child mesh
 	void C_Mesh::addChild(C_Mesh* aChild)
 	{
-		if (aChild == nullptr)
-			return;
+		if (aChild == nullptr) return;
 
 		mChilds.push_back(aChild);
 		aChild->setParent(this);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set pivot point
-	void C_Mesh::setPivot(C_Vector3 aPivot)
-	{
-		mPivot = aPivot;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Set light casters, which calculate to using in shaders
+	//Set light casters, which will calculate to using in shaders
 	void C_Mesh::setLights(std::vector<C_Light*> aLights)
 	{
 		mLights = aLights;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return pivot point
-	C_Vector3 C_Mesh::getPivot()
-	{
-		return mPivot;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Add position to pivot
-	void C_Mesh::addPivot(C_Vector3 aPivot)
-	{
-		mPivot += aPivot;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Sets texture\cubemap as uniform in shader
+	//Sets textures/cubemaps as uniform in shader
 	void C_Mesh::setShaderTextures()
 	{
 		C_Texture* textures[3] = {mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap()};
@@ -278,31 +199,9 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Calculate and transfer matrices as uniform in shader
-	void C_Mesh::setShaderMatrices()
-	{
-		if (mParent != nullptr)
-			mMatrix = mParent->mMatrix;
-		else
-			mMatrix.identity();
-
-		C_Matrix4 matrix(mMatrix);
-		matrix.scale(mScale);
-		matrix.rotate(C_Vector3(0, 0, 1), mRot.z);
-		matrix.rotate(C_Vector3(1, 0, 0), mRot.x);
-		matrix.rotate(C_Vector3(0, 1, 0), mRot.y);
-		matrix.translate(mPos);
-
-		mNormalMatrix = mMatrix;
-		mNormalMatrix.transpose();
-		mNormalMatrix.invert();
-
-		mMat.getShader()->setUniformMatrix("uModel", matrix.elements());
-		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uNormal", mNormalMatrix.elements());
-	}
 	void C_Mesh::setShaderMatrices(C_Transform aTransform)
 	{
+		mPos = aTransform.getPos();
 		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
@@ -332,29 +231,8 @@ namespace Columbus
 	//Set all lights and camera data as unniform in shader
 	void C_Mesh::setShaderLightAndCamera()
 	{
-		C_Vector3 lightCol = C_Vector3(1, 1, 1);
-		C_Vector3 lightPos = mCamera.pos();
-		C_Vector3 lightDir = mCamera.direction();
-		float lightType = 2;
-		float lightConst = 1;
-		float lightLinear = 0.09;
-		float lightQuadratic = 0.032;
-		float lightInnerAngle = glm::radians(12.5);
-		float lightOuterAngle = glm::radians(17.5);
-
-		float const LightUnif[15] =
-		{
-			lightCol.x, lightCol.y, lightCol.z,
-			lightPos.x, lightPos.y, lightPos.z,
-			lightDir.x, lightDir.y, lightDir.z,
-			lightType,
-			lightConst, lightLinear, lightQuadratic,
-			lightInnerAngle, lightOuterAngle
-		};
-
 		calculateLights();
 
-		//mMat.getShader()->setUniformArrayf("LightUnif", LightUnif, 15);
 		mMat.getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
 		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
 	}
@@ -363,10 +241,11 @@ namespace Columbus
 	void C_Mesh::calculateLights()
 	{
 		sortLights();
+		int i, j, offset;
 		//8 - max count of lights, processing in shader
-		for (int i = 0; i < 8; i++)
+		for (i = 0; i < 8; i++)
 		{
-			int offset = i * 15;
+			offset = i * 15;
 
 			if (i < mLights.size() && mMat.getLighting() == true)
 			{
@@ -396,7 +275,7 @@ namespace Columbus
 				mLightUniform[14 + offset] = mLights[i]->getOuterCutoff();
 			} else
 			{
-				for (int j = 0; j < 15; j++)
+				for (j = 0; j < 15; j++)
 					mLightUniform[j + offset] = -1;
 			}
 		}
@@ -420,10 +299,15 @@ namespace Columbus
 		std::sort(mLights.begin(), mLights.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	C_Mesh::~C_Mesh()
 	{
-
+		delete mVBuf;
+		delete mUBuf;
+		delete mNBuf;
+		delete mTBuf;
+		delete mBBuf;
 	}
 
 }
