@@ -63,10 +63,10 @@ void main(void)
 		if (uScaleOL != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			gl_Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
+			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
 		} else
 		{
-			gl_Position = Rotation * uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
+			Position = Rotation * uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
 		}
 	}
 	else
@@ -74,10 +74,10 @@ void main(void)
 		if (uScaleOL != 0.0)
 		{
 			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
+			Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
 		} else
 		{
-			gl_Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
+			Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
 		}
 	}
 
