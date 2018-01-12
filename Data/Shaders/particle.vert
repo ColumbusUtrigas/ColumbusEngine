@@ -1,5 +1,3 @@
-#version 130
-
 attribute vec3 aPos;
 attribute vec2 aUV;
 attribute vec3 aNorm; //poses
@@ -89,3 +87,6 @@ void main(void)
 	varTTL = aTang.y;
 	varIsGradient = uGradient;
 }
+
+
+

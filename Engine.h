@@ -17,6 +17,7 @@
 #include <Graphics/Render.h>
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/Shader.h>
+#include <Graphics/ShaderBuilder.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Texture.h>
 #include <Graphics/TextureManager.h>

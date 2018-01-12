@@ -21,6 +21,7 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
+#include <Graphics/ShaderBuilder.h>
 
 namespace Columbus
 {
@@ -37,6 +38,7 @@ namespace Columbus
 	class C_Shader
 	{
 	private:
+		C_ShaderBuilder mBuilder;
 		unsigned int mID;
 		std::vector<C_ShaderAttribute> mAttributes;
 

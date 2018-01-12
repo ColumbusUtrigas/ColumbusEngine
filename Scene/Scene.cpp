@@ -17,6 +17,7 @@ namespace Columbus
 		mSkybox(nullptr)
 	{
 		mNoneShader = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
+		mNoneShader->compile();
 
 		mNoneEffect.setShader(mNoneShader);
 	}

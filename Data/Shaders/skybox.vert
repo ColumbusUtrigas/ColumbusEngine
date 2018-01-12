@@ -12,7 +12,6 @@ uniform mat4 uProjection;
 void main()
 {
 	gl_Position = uProjection * uView * vec4(aPos, 1.0);
-	//texCoord = vec3(-aPos.x, -aPos.y, -aPos.z);
 	texCoord = aPos;
 }
 
