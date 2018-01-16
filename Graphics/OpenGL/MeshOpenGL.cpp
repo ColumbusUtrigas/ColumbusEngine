@@ -100,7 +100,6 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::render(C_Transform aTransform)
 	{
-		if (!glIsBuffer(mVBuf)) return;
 		if (mMat.getShader() == nullptr) return;
 
 		size_t const offsets[4] = { mVOffset, mUOffset, mNOffset, mTOffset };
