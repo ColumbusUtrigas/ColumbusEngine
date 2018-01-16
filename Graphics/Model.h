@@ -32,7 +32,7 @@ namespace Columbus
 
 	class C_Mesh
 	{
-	private:
+	protected:
 		C_Vector3 mPos;
 		C_Mesh* mParent = nullptr;
 		C_Camera mCamera;
@@ -65,12 +65,11 @@ namespace Columbus
 		C_Material mMat;
 		
 		C_Mesh();
-		C_Mesh(std::string aFile);
 		C_Mesh(std::vector<C_Vertex> aVert);
 		C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat);
 
-		void setVertices(std::vector<C_Vertex> aVert);
-		void render(C_Transform aTransform);
+		virtual void setVertices(std::vector<C_Vertex> aVert);
+		virtual void render(C_Transform aTransform);
 		
 		void setPos(C_Vector3 aPos);
 		void addPos(C_Vector3 aPos);
