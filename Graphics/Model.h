@@ -39,27 +39,6 @@ namespace Columbus
 
 		std::list<C_Mesh*> mChilds;
 		std::vector<C_Light*> mLights;
-
-		C_Buffer* mVBuf = nullptr; //Vertex buffer
-		C_Buffer* mUBuf = nullptr; //UV buffer
-		C_Buffer* mNBuf = nullptr; //Normal buffer
-		C_Buffer* mTBuf = nullptr; //Tangent buffer
-		C_Buffer* mBBuf = nullptr; //Bitangent buffer
-
-		float mLightUniform[120];
-
-		//Sets texture\cubemap as uniform in shader
-		void setShaderTextures();
-		//Calculate and transfer matrices as uniform in shader
-		void setShaderMatrices(C_Transform aTransform);
-		//Set all material data as uniform in shader
-		void setShaderMaterial();
-		//Set all lights and camera data as unniform in shader
-		void setShaderLightAndCamera();
-		//Calculate lights
-		void calculateLights();
-		//Sort lights array by distance
-		void sortLights();
 	public:
 		std::vector<C_Vertex> mVert;
 		C_Material mMat;
@@ -70,10 +49,6 @@ namespace Columbus
 
 		virtual void setVertices(std::vector<C_Vertex> aVert);
 		virtual void render(C_Transform aTransform);
-		
-		void setPos(C_Vector3 aPos);
-		void addPos(C_Vector3 aPos);
-		C_Vector3 getPos() const;
 
 		void setCamera(C_Camera camera);
 		void setParent(C_Mesh* aParent);
