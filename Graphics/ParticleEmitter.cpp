@@ -164,6 +164,8 @@ namespace Columbus
 		float a = mLife;
 		float e, life, age;
 		bool prevActive;
+		C_Vector3 pos;
+		float noise[3];
 
 		size_t counter = 0;
 
@@ -197,7 +199,12 @@ namespace Columbus
 
 				age = Particle.age;
 
-				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				noise[0] = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z)) * 0.1;
+				noise[1] = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z)) * 0.1;
+				noise[2] = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z)) * 0.1;
+
+				pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				pos += C_Vector3(noise[0], noise[1], noise[2]);
 
 				pos += Particle.startPos + Particle.startEmitterPos;
 				Particle.pos = pos;

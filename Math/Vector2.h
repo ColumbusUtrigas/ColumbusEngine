@@ -149,6 +149,14 @@ namespace Columbus
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
+		//Operator *=
+		inline C_Vector2 operator*=(const float aOther)
+		{
+			x *= aOther;
+			y *= aOther;
+			return *this;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
 		inline C_Vector2 operator/=(const C_Vector2 aOther)
 		{

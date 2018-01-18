@@ -3,6 +3,7 @@
 #include <Common/Compress/Compress.h>
 #include <Common/Image/Image.h>
 #include <Common/Model/Model.h>
+#include <Common/Noise/PerlinNoise.h>
 
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>

@@ -132,9 +132,6 @@ namespace Columbus
 			{
 				if (ModelIsCMF(meshPath))
 					GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(ModelLoadCMF(meshPath), *material)));
-				//imp.loadOBJ(meshPath);
-				//if (imp.getCount() > 0)
-					//GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
 			}
 		}
 
