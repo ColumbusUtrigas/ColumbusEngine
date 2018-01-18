@@ -7,7 +7,7 @@
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
 			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-			<Texture3>Data/Textures/fire.png</Texture3>
+			<Texture3>Data/Textures/spark.tif</Texture3>
 		</Textures>
 	</Resources>
 
@@ -49,7 +49,7 @@
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/B.cxpar</Particles>
+					<Particles>Data/Particles/A.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject1>
