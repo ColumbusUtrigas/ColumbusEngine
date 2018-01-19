@@ -28,7 +28,7 @@
     <NoisePersistence>0.1</NoisePersistence>
     <NoiseFrequency>1</NoiseFrequency>
     <NoiseAmplitude>0.5</NoiseAmplitude>
-    <EmitRate>50</EmitRate>
+    <EmitRate>15</EmitRate>
     <Transformation>1</Transformation>
     <Shape>0</Shape>
     <ShapeRadius>0.1</ShapeRadius>

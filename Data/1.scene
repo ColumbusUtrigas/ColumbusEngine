@@ -57,26 +57,6 @@
 		</GameObject1>
 
 		<GameObject2>
-			<Name>Fire</Name>
-
-			<Transform>
-				<Position X="0" Y="0" Z="0"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Fire.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/B.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject2>
-
-		<GameObject3>
 			<Name>Smoke</Name>
 
 			<Transform>
@@ -92,6 +72,26 @@
 			<Components>
 				<ParticleSystem>
 					<Particles>Data/Particles/C.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject2>
+
+		<GameObject3>
+			<Name>Fire</Name>
+
+			<Transform>
+				<Position X="0" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Fire.cxmat</Material>
+			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/B.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject3>
