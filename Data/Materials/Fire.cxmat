@@ -9,8 +9,9 @@
     <Lighting>0</Lighting>
 
     <Textures>
-    	<Diffuse>4</Diffuse>
+    	<Diffuse>3</Diffuse>
     	<Specular>None</Specular>
     	<Normal>None</Normal>
     </Textures>
 </Material>
+

@@ -30,7 +30,7 @@
 #include <System/System.h>
 #include <System/Timer.h>
 #include <System/Random.h>
-#include <Common/Noise/PerlinNoise.h>
+#include <Common/Noise/FractalNoise.h>
 
 namespace Columbus
 {
@@ -66,7 +66,7 @@ namespace Columbus
 		C_Buffer* mPBuf = nullptr;
 		C_Buffer* mLBuf = nullptr;
 
-		C_PerlinNoise mNoise;
+		C_FractalNoise mNoise;
 
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;

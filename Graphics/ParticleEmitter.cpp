@@ -27,6 +27,12 @@ namespace Columbus
 		float ang, rad,phi, tht;
 		float xsp, ysp, zsp;
 
+		mNoise.setOctaves(mParticleEffect->getNoiseOctaves());
+		mNoise.setLacunarity(mParticleEffect->getNoiseLacunarity());
+		mNoise.setPersistence(mParticleEffect->getNoisePersistence());
+		mNoise.setFrequency(mParticleEffect->getNoiseFrequency());
+		mNoise.setAmplitude(mParticleEffect->getNoiseAmplitude());
+
 		for (i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
 			C_Particle p;
@@ -166,6 +172,7 @@ namespace Columbus
 		bool prevActive;
 		C_Vector3 pos;
 		float noise[3];
+		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
 
@@ -198,16 +205,17 @@ namespace Columbus
 				C_Vector3 acc = Particle.accel;
 
 				age = Particle.age;
-
-				noise[0] = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z)) * 1;
-				noise[1] = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z)) * 1;
-				noise[2] = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z)) * 1;
-
 				pos = (vel + constForce) * age + (acc * 0.5 * age * age);
-				pos += C_Vector3(noise[0], noise[1], noise[2]);
 
+				noise[0] = static_cast<float>(mNoise.noise(Particle.pos.x, Particle.pos.y, Particle.pos.z));
+				noise[1] = static_cast<float>(mNoise.noise(Particle.pos.z, Particle.pos.y, Particle.pos.x));
+				noise[2] = static_cast<float>(mNoise.noise(Particle.pos.y, Particle.pos.x, Particle.pos.z));
+
+				pos += C_Vector3(noise[0], noise[1], noise[2]) * noiseStrength;
 				pos += Particle.startPos + Particle.startEmitterPos;
+
 				Particle.pos = pos;
+				Particle.velocity = vel;
 				Particle.rotation += Particle.rotationSpeed * aTimeTick;
 
 				Particle.cameraDistance = pow(mCameraPos.x - Particle.pos.x, 2) + pow(mCameraPos.y - Particle.pos.y, 2) + pow(mCameraPos.z - Particle.pos.z, 2);
