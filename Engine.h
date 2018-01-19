@@ -3,6 +3,7 @@
 #include <Common/Compress/Compress.h>
 #include <Common/Image/Image.h>
 #include <Common/Model/Model.h>
+#include <Common/Noise/PerlinNoise.h>
 
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
@@ -17,6 +18,7 @@
 #include <Graphics/Render.h>
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/Shader.h>
+#include <Graphics/ShaderBuilder.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Texture.h>
 #include <Graphics/TextureManager.h>

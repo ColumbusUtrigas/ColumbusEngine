@@ -15,11 +15,13 @@
 #include <vector>
 #include <string>
 
+#include <System/File.h>
+#include <System/System.h>
+#include <System/Log.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <System/System.h>
-#include <System/Log.h>
+#include <Graphics/ShaderBuilder.h>
 
 namespace Columbus
 {
@@ -36,25 +38,31 @@ namespace Columbus
 	class C_Shader
 	{
 	private:
+		C_ShaderBuilder mBuilder;
 		unsigned int mID;
 		std::vector<C_ShaderAttribute> mAttributes;
+
+		std::string mVertShaderPath;
+		std::string mFragShaderPath;
+
+		std::string mVertShaderSource;
+		std::string mFragShaderSource;
+
+		bool mLoaded = false;
+		bool mCompiled = false;
 
 		//Load shader from one file
 		void load(const char* aFile);
 	public:
-		//Constructor
 		C_Shader(std::string aVert, std::string aFrag);
-		//Constructor 2
 		C_Shader(const char* aFile);
-		//Constructor 3
 		C_Shader();
 
 		//Load shader from two files
-		void load(std::string aVert, std::string aFrag);
+		bool load(std::string aVert, std::string aFrag);
+		bool compile();
 
-		//Bind shader
 		void bind() const;
-		//Add vertex attribute
 		void addAttribute(std::string aName, const int aValue);
 		//Set integer uniform
 		void setUniform1i(std::string aName, const int aValue) const;
@@ -68,11 +76,11 @@ namespace Columbus
 		void setUniform4f(std::string aName, const C_Vector4 aValue) const;
 		//Set matrix uniform
 		void setUniformMatrix(std::string aName, const float* aValue) const;
-		//Set uniform array
+		//Set uniform float array
 		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
 		//Unbind shader
 		static void unbind();
-		//Destructor
+
 		~C_Shader();
 	};
 

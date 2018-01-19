@@ -23,7 +23,17 @@ namespace Columbus
 		if (aParticleEffect == nullptr)
 			return;
 
-		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
+		size_t i;
+		float ang, rad,phi, tht;
+		float xsp, ysp, zsp;
+
+		mNoise.setOctaves(mParticleEffect->getNoiseOctaves());
+		mNoise.setLacunarity(mParticleEffect->getNoiseLacunarity());
+		mNoise.setPersistence(mParticleEffect->getNoisePersistence());
+		mNoise.setFrequency(mParticleEffect->getNoiseFrequency());
+		mNoise.setAmplitude(mParticleEffect->getNoiseAmplitude());
+
+		for (i = 0; i < mParticleEffect->getParticlesCount(); i++)
 		{
 			C_Particle p;
 			p.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
@@ -40,15 +50,15 @@ namespace Columbus
 			{
 				case C_PARTICLE_SHAPE_CIRCLE:
 				{
-					float ang = C_Random::range(0.0, 6.283185318);
-					float rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
+					ang = C_Random::range(0.0, 6.283185318);
+					rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
 
 					if (mParticleEffect->getEmitFromShell() == true)
 						rad = mParticleEffect->getParticleShapeRadius();
 
-					float xsp = rad * cos(ang);
-					float ysp = 0.0;
-					float zsp = rad * sin(ang);
+					xsp = rad * cos(ang);
+					ysp = 0.0;
+					zsp = rad * sin(ang);
 
 					p.startPos = C_Vector3(xsp, ysp, zsp);
 					break;
@@ -56,16 +66,16 @@ namespace Columbus
 
 				case C_PARTICLE_SHAPE_SPHERE:
 				{
-					float rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
-					float phi = C_Random::range(0.0, 6.283185318);
-					float tht = C_Random::range(0.0, 3.141592659);
+					rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
+					phi = C_Random::range(0.0, 6.283185318);
+					tht = C_Random::range(0.0, 3.141592659);
 
 					if (mParticleEffect->getEmitFromShell() == true)
 						rad = mParticleEffect->getParticleShapeRadius();
 
-					float xsp = rad * cos(phi) * sin(tht);
-					float ysp = rad * sin(phi) * sin(tht);
-					float zsp = rad * cos(tht);
+					xsp = rad * cos(phi) * sin(tht);
+					ysp = rad * sin(phi) * sin(tht);
+					zsp = rad * cos(tht);
 
 					p.startPos = C_Vector3(xsp, ysp, zsp);
 					break;
@@ -75,10 +85,15 @@ namespace Columbus
 			mParticles.push_back(p);
 		}
 
-		//mShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
 		mShader = new C_Shader();
-		mShader->addAttribute("aPoses", 5);
 		mShader->load("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
+		
+		mShader->addAttribute("aPos", 0);
+		mShader->addAttribute("aUV", 1);
+		mShader->addAttribute("aNorm", 2);
+		mShader->addAttribute("aTang", 3);
+		mShader->addAttribute("aBitang", 4);
+		mShader->compile();
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
@@ -153,12 +168,17 @@ namespace Columbus
 			spawnT = mMaxTTL;
 
 		float a = mLife;
+		float e, life, age;
+		bool prevActive;
+		C_Vector3 pos;
+		float noise[3];
+		float noiseStrength = mParticleEffect->getNoiseStrength();
 
-		int counter = 0;
+		size_t counter = 0;
 
 		for (auto& Particle : mParticles)
 		{
-			float e = min(Particle.TTL, fireT) * counter;
+			e = min(Particle.TTL, fireT) * counter;
 			Particle.age = fmod(e + a, spawnT);
 
 			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
@@ -167,7 +187,7 @@ namespace Columbus
 				if ((Particle.age / Particle.TTL) <= aTimeTick)
 					Particle.startEmitterPos = startEmitterPos;
 
-			bool prevActive = Particle.active;
+			prevActive = Particle.active;
 			Particle.active = (Particle.age <= Particle.TTL);
 
 			if (Particle.active == true && prevActive == false)
@@ -179,17 +199,23 @@ namespace Columbus
 
 			if (Particle.active == true && Particle.age > 0)
 			{
-				float life = fmod(Particle.age, Particle.TTL);
+				life = fmod(Particle.age, Particle.TTL);
 
 				C_Vector3 vel = Particle.velocity;
 				C_Vector3 acc = Particle.accel;
 
-				float age = Particle.age;
+				age = Particle.age;
+				pos = (vel + constForce) * age + (acc * 0.5 * age * age);
 
-				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
+				noise[0] = static_cast<float>(mNoise.noise(Particle.pos.x, Particle.pos.y, Particle.pos.z));
+				noise[1] = static_cast<float>(mNoise.noise(Particle.pos.z, Particle.pos.y, Particle.pos.x));
+				noise[2] = static_cast<float>(mNoise.noise(Particle.pos.y, Particle.pos.x, Particle.pos.z));
 
+				pos += C_Vector3(noise[0], noise[1], noise[2]) * noiseStrength;
 				pos += Particle.startPos + Particle.startEmitterPos;
+
 				Particle.pos = pos;
+				Particle.velocity = vel;
 				Particle.rotation += Particle.rotationSpeed * aTimeTick;
 
 				Particle.cameraDistance = pow(mCameraPos.x - Particle.pos.x, 2) + pow(mCameraPos.y - Particle.pos.y, 2) + pow(mCameraPos.z - Particle.pos.z, 2);
@@ -286,10 +312,11 @@ namespace Columbus
 	void C_ParticleEmitter::calculateLights()
 	{
 		sortLights();
+		int i, j, offset;
 		//8 - max count of lights, processing in shader
-		for (int i = 0; i < 8; i++)
+		for (i = 0; i < 8; i++)
 		{
-			int offset = i * 15;
+			offset = i * 15;
 
 			if (i < mLights.size() && mParticleEffect->getMaterial()->getLighting() == true)
 			{
@@ -319,7 +346,7 @@ namespace Columbus
 				mLightUniform[14 + offset] = mLights[i]->getOuterCutoff();
 			} else
 			{
-				for (int j = 0; j < 15; j++)
+				for (j = 0; j < 15; j++)
 					mLightUniform[j + offset] = -1;
 			}
 		}
@@ -360,139 +387,6 @@ namespace Columbus
 		C_CloseStreamOpenGL(2);
 		C_CloseStreamOpenGL(3);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Draw particles
-	/*void C_ParticleEmitter::draw()
-	{
-		using namespace std;
-
-		if (mParticleEffect == nullptr)
-			return;
-		if (mShader == nullptr)
-			return;
-		if (mBuf == nullptr)
-			return;
-		if (mTBuf == nullptr)
-			return;
-		if (mParticleEffect->getVisible() == false)
-			return;
-
-		float a = tm.elapsed();
-
-		mBuf->bind();
-		C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
-		C_OpenStreamOpenGL(0);
-		mTBuf->bind();
-		C_VertexAttribPointerOpenGL(1, 2, C_OGL_FLOAT, C_OGL_FALSE, 2 * sizeof(float), NULL);
-		C_OpenStreamOpenGL(1);
-
-		mShader->bind();
-
-		mShader->setUniform3f("uPos", C_Vector3(0, 0, 0));
-		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
-		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
-		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
-		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
-		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
-
-		mShader->setUniformMatrix("uView", glm::value_ptr(C_GetViewMatrix()));
-		mShader->setUniformMatrix("uProjection", glm::value_ptr(C_GetProjectionMatrix()));
-
-		if (mParticleEffect->getMaterial() == nullptr)
-			mShader->setUniform4f("uColor", C_Vector4(1, 1, 1, 1));
-		else
-			mShader->setUniform4f("uColor", mParticleEffect->getMaterial()->getColor());
-
-		if (mParticleEffect->getMaterial() != nullptr)
-		{
-			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
-			C_BindTextureOpenGL(C_OGL_TEXTURE0, 0);
-
-			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
-			{
-				mShader->setUniform1i("uTex", 0);
-				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
-			}
-
-			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
-		}
-
-		C_DisableDepthMaskOpenGL();
-
-		if (mParticleEffect->getAdditive())
-			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
-
-		float scaleOL = mParticleEffect->getScaleOverLifetime();
-		float billboard = mParticleEffect->getBillbiarding();
-		float gradient = mParticleEffect->getGradienting();
-
-		float transformation = mParticleEffect->getTransformation();
-		C_Vector3 constForce = mParticleEffect->getConstantForce();
-		C_Vector3 startEmitterPos = mParticleEffect->getPos();
-
-		float rate = mParticleEffect->getEmitRate();
-		float count = mParticleEffect->getParticlesCount();
-		float fireT = 1.0 / rate;
-		float spawnT = count * fireT;
-
-		if (count <= rate * mMaxTTL)
-			spawnT = mMaxTTL;
-
-		a = fmod(mLife, spawnT);
-
-		for (int i = 0; i < mParticleEffect->getParticlesCount(); i++)
-		{
-			float e = min(mParticles[i].TTL, fireT) * i;
-			mParticles[i].age = fmod(e + a, spawnT);
-
-			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
-				mParticles[i].startEmitterPos = startEmitterPos;
-			else
-				if ((mParticles[i].age / mParticles[i].TTL) <= 0.1)
-					mParticles[i].startEmitterPos = startEmitterPos;
-
-			mParticles[i].active = (mParticles[i].age <= mParticles[i].TTL);
-
-
-			if (mParticles[i].active == true && mParticles[i].age > 0)
-			{
-				float life = fmod(mParticles[i].age, mParticles[i].TTL);
-
-				C_Vector3 vel = mParticles[i].direction.normalize() * mParticles[i].velocity;
-				C_Vector3 acc = mParticles[i].accel;
-
-				float age = mParticles[i].age;
-
-				C_Vector3 pos = (vel + constForce) * age + (acc * 0.5 * age * age);
-				pos += mParticles[i].startPos + mParticles[i].startEmitterPos;
-				mParticles[i].pos = pos;
-
-				float arr[8] = {pos.x, pos.y, pos.z, life, mParticles[i].TTL, scaleOL, billboard, gradient};
-
-				mShader->setUniformArrayf("Unif", arr, 8);
-
-				C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6);
-			}
-		}
-
-		if (mLife >= mMaxTTL)
-			mLife = 0.0;
-		mLife += frame.elapsed();
-
-		frame.reset();
-
-		if (mParticleEffect->getAdditive())
-			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
-
-		C_EnableDepthMaskOpenGL();
-
-		C_Shader::unbind();
-		C_Texture::unbind();
-		C_Buffer::unbind();
-
-		C_CloseStreamOpenGL(0);
-		C_CloseStreamOpenGL(1);
-	}*/
 	//////////////////////////////////////////////////////////////////////////////
 	//Draw particles
 	void C_ParticleEmitter::draw()

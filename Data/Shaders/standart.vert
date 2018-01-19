@@ -1,10 +1,8 @@
-#version 130
-
-attribute vec3 aPos;
-attribute vec2 aUV;
-attribute vec3 aNorm;
-attribute vec3 aTang;
-attribute vec3 aBitang;
+in vec3 aPos;
+in vec2 aUV;
+in vec3 aNorm;
+in vec3 aTang;
+in vec3 aBitang;
 
 varying vec3 varPos;
 varying vec2 varUV;
@@ -19,9 +17,10 @@ uniform mat4 uView;
 uniform mat4 uProjection;
 uniform mat4 uNormal;
 
+
 void main()
 {
-	gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
+	Position = uProjection * uView * uModel * vec4(aPos, 1.0);
 
 	varPos = vec3(uModel * vec4(aPos, 1.0));
 	varUV = aUV;
@@ -34,6 +33,7 @@ void main()
 
 	varTBN = transpose(mat3(varTangent, varBitangent, varNormal));
 }
+
 
 
 
