@@ -17,6 +17,7 @@ namespace Columbus
 		mSkybox(nullptr)
 	{
 		mNoneShader = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
+		mNoneShader->compile();
 
 		mNoneEffect.setShader(mNoneShader);
 	}
@@ -120,20 +121,17 @@ namespace Columbus
 		{
 			if (meshPath == "Plane")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitivePlane(), *material)));
+				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitivePlane(), *material)));
 			} else if (meshPath == "Cube")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveBox(), *material)));
+				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveBox(), *material)));
 			} else if (meshPath == "Sphere")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_Mesh(C_PrimitiveSphere(1, 50, 50), *material)));
+				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveSphere(1, 50, 50), *material)));
 			} else
 			{
 				if (ModelIsCMF(meshPath))
-					GameObject->addComponent(new C_MeshRenderer(new C_Mesh(ModelLoadCMF(meshPath), *material)));
-				//imp.loadOBJ(meshPath);
-				//if (imp.getCount() > 0)
-					//GameObject->addComponent(new C_MeshRenderer(new C_Mesh(imp.getObject(0), *material)));
+					GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(ModelLoadCMF(meshPath), *material)));
 			}
 		}
 

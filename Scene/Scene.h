@@ -18,6 +18,7 @@
 #include <Graphics/Render.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/PostEffect.h>
+#include <Graphics/OpenGL/MeshOpenGL.h>
 #include <System/ResourceManager.h>
 
 namespace Columbus

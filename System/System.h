@@ -25,6 +25,20 @@
 	#include <sys/stat.h>
 #endif
 
+#undef COLUMBUS_SYSTEM_WINDOWS
+#undef COLUMBUS_SYSTEM_LINUX
+#undef COLUMBUS_SYSTEM_APPLE
+
+#ifdef _WIN32
+	#define COLUMBUS_SYSTEM_WINDOWS
+#elif _WIN64
+	#define COLUMBUS_SYSTEM_WINDOWS
+#elif __LINUX__
+	#define COLUMBUS_SYSTEM_LINUX
+#elif __APPLE__
+	#define COLUMBUS_SYSTEM_APPLE
+#endif
+
 typedef std::string stdstr;
 typedef int C_Int;
 typedef int cint;

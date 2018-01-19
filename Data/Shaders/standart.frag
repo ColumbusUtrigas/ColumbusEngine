@@ -2,13 +2,13 @@
 
 #define LIGHT_NUM 4
 
-varying vec3 varPos;
-varying vec2 varUV;
-varying vec3 varNormal;
-varying vec3 varTangent;
-varying vec3 varBitangent;
-varying vec3 varFragPos;
-varying mat3 varTBN;
+in vec3 varPos;
+in vec2 varUV;
+in vec3 varNormal;
+in vec3 varTangent;
+in vec3 varBitangent;
+in vec3 varFragPos;
+in mat3 varTBN;
 
 struct Material
 {
