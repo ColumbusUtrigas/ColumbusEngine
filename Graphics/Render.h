@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <Graphics/Model.h>
+#include <Graphics/Mesh.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>

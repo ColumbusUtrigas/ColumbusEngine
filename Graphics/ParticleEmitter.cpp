@@ -170,8 +170,8 @@ namespace Columbus
 		float a = mLife;
 		float e, life, age;
 		bool prevActive;
-		C_Vector3 pos;
-		float noise[3];
+		C_Vector3 pos, vel, acc;
+		float noise;
 		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
@@ -201,17 +201,15 @@ namespace Columbus
 			{
 				life = fmod(Particle.age, Particle.TTL);
 
-				C_Vector3 vel = Particle.velocity;
-				C_Vector3 acc = Particle.accel;
+				vel = Particle.velocity;
+				acc = Particle.accel;
 
 				age = Particle.age;
 				pos = (vel + constForce) * age + (acc * 0.5 * age * age);
 
-				noise[0] = static_cast<float>(mNoise.noise(Particle.pos.x, Particle.pos.y, Particle.pos.z));
-				noise[1] = static_cast<float>(mNoise.noise(Particle.pos.z, Particle.pos.y, Particle.pos.x));
-				noise[2] = static_cast<float>(mNoise.noise(Particle.pos.y, Particle.pos.x, Particle.pos.z));
+				noise = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z));
 
-				pos += C_Vector3(noise[0], noise[1], noise[2]) * noiseStrength;
+				pos += C_Vector3(noise, noise, noise) * noiseStrength;
 				pos += Particle.startPos + Particle.startEmitterPos;
 
 				Particle.pos = pos;
