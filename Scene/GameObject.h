@@ -9,7 +9,7 @@
 *************************************************/
 #pragma once
 
-#include <Graphics/Model.h>
+#include <Graphics/Mesh.h>
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <System/Timer.h>

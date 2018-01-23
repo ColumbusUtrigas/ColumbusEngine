@@ -11,7 +11,7 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Light.h>
 #include <Graphics/Material.h>
-#include <Graphics/Model.h>
+#include <Graphics/Mesh.h>
 #include <Graphics/ParticleEffect.h>
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/PostEffect.h>

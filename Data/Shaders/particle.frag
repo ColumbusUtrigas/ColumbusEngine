@@ -44,10 +44,10 @@ void main()
 	Light(1);
 	Light(2);
 	Light(3);
-	Light(4);
-	Light(5);
-	Light(6);
-	Light(7);
+	//Light(4);
+	//Light(5);
+	//Light(6);
+	//Light(7);
 
 	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 	if (IsLightEnabled == false)
