@@ -14,16 +14,26 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
 	C_ParticleEmitter::C_ParticleEmitter(const C_ParticleEffect* aParticleEffect) :
 		mParticleEffect(const_cast<C_ParticleEffect*>(aParticleEffect)),
 		mLife(0.0),
 		mMaxTTL(0.0)
 	{
-		if (aParticleEffect == nullptr)
-			return;
+		if (aParticleEffect == nullptr) return;
 
-		size_t i;
+		setParticleEffect(aParticleEffect);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEmitter::setParticleEffect(const C_ParticleEffect* aParticleEffect)
+	{
+		delete mBuf;
+		delete mTBuf;
+		delete mPBuf;
+		delete mLBuf;
+
+		mParticleEffect = const_cast<C_ParticleEffect*>(aParticleEffect);
+
+		size_t i, j;
 		float ang, rad,phi, tht;
 		float xsp, ysp, zsp;
 
@@ -42,6 +52,9 @@ namespace Columbus
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
 			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
 			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+
+			for (j = 0; j < 9; j++)
+				p.noise[j] = C_Random::range(0, 256);
 
 			if (p.TTL > mMaxTTL)
 				mMaxTTL = p.TTL;
@@ -101,25 +114,16 @@ namespace Columbus
 		mLBuf = new C_Buffer();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set particle effect
-	void C_ParticleEmitter::setParticleEffect(const C_ParticleEffect* aParticleEffect)
-	{
-		mParticleEffect = const_cast<C_ParticleEffect*>(aParticleEffect);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return particle effect
 	C_ParticleEffect* C_ParticleEmitter::getParticleEffect() const
 	{
 		return mParticleEffect;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set camera pos
 	void C_ParticleEmitter::setCameraPos(C_Vector3 aC)
 	{
 		mCameraPos = aC;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Sort particles
 	void C_ParticleEmitter::sort()
 	{
 		auto func = [](const C_Particle &a, const C_Particle &b) -> bool
@@ -143,7 +147,6 @@ namespace Columbus
 		mActiveParticles.resize(std::distance(mActiveParticles.begin(), it));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set light casters, which calculate to using in shaders
 	void C_ParticleEmitter::setLights(std::vector<C_Light*> aLights)
 	{
 		mLights = aLights;
@@ -171,10 +174,11 @@ namespace Columbus
 		float e, life, age;
 		bool prevActive;
 		C_Vector3 pos, vel, acc;
-		float noise;
+		float noise[3];
 		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
+		size_t i;
 
 		for (auto& Particle : mParticles)
 		{
@@ -207,9 +211,14 @@ namespace Columbus
 				age = Particle.age;
 				pos = (vel + constForce) * age + (acc * 0.5 * age * age);
 
-				noise = static_cast<float>(mNoise.noise(pos.x, pos.y, pos.z));
+				for (i = 0; i < 9; i++)
+					Particle.noise[i] = fmod(Particle.noise[i] + 0.01, 256);
 
-				pos += C_Vector3(noise, noise, noise) * noiseStrength;
+				noise[0] = static_cast<float>(mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]));
+				noise[1] = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
+				noise[2] = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
+
+				pos += C_Vector3(noise[0], noise[1], noise[2]) * noiseStrength;
 				pos += Particle.startPos + Particle.startEmitterPos;
 
 				Particle.pos = pos;
@@ -386,19 +395,13 @@ namespace Columbus
 		C_CloseStreamOpenGL(3);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Draw particles
 	void C_ParticleEmitter::draw()
 	{
-		if (mParticleEffect == nullptr)
-			return;
-		if (mShader == nullptr)
-			return;
-		if (mBuf == nullptr)
-			return;
-		if (mTBuf == nullptr)
-			return;
-		if (mParticleEffect->getVisible() == false)
-			return;
+		if (mParticleEffect == nullptr) return;
+		if (mShader == nullptr) return;
+		if (mBuf == nullptr) return;
+		if (mTBuf == nullptr) return;
+		if (mParticleEffect->getVisible() == false) return;
 
 		mShader->bind();
 
@@ -475,7 +478,6 @@ namespace Columbus
 		unbindAll();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
 	C_ParticleEmitter::~C_ParticleEmitter()
 	{
 		mParticles.clear();

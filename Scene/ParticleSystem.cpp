@@ -31,7 +31,12 @@ namespace Columbus
 	void C_ParticleSystem::render(C_Transform& aTransform)
 	{
 		if (mEmitter != nullptr)
+		{
+			if (mEmitter->getParticleEffect() != nullptr)
+				mEmitter->getParticleEffect()->setPos(aTransform.getPos());
+			
 			mEmitter->draw();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	std::string C_ParticleSystem::getType()
