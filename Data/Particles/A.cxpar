@@ -22,7 +22,7 @@
     <MaxRotation>50</MaxRotation>
     <MinRotationSpeed>-50</MinRotationSpeed>
     <MaxRotationSpeed>50</MaxRotationSpeed>
-    <NoiseStrength>1</NoiseStrength>
+    <NoiseStrength>2</NoiseStrength>
     <NoiseOctaves>4</NoiseOctaves>
     <NoiseLacunarity>1</NoiseLacunarity>
     <NoisePersistence>0.5</NoisePersistence>

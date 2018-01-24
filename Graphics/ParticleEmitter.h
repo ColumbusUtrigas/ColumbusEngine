@@ -48,6 +48,7 @@ namespace Columbus
 		float age = 0.0;
 		float TTL = 1.0;
 		float cameraDistance = 1000.0;
+		float noise[9];
 
 		bool active = false;
 	};
@@ -93,6 +94,7 @@ namespace Columbus
 			1.0, 0.0,
 			1.0, 1.0
 		};
+		
 		void sort();
 		void copyActive();
 		void setBuffers();
@@ -112,21 +114,18 @@ namespace Columbus
 	public:
 		C_Shader* mShader = nullptr;
 
-		//Constructor
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
-		//Set particle effect
+
 		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
-		//Return particle effect
 		C_ParticleEffect* getParticleEffect() const;
-		//Set camera pos
-		void setCameraPos(C_Vector3 aC);
-		//Draw particles
-		//void draw();
-		//Set light casters, which calculate to using in shaders
-		void setLights(std::vector<C_Light*> aLights);
+
 		void update(const float aTimeTick);
 		void draw();
-		//Destructor
+
+		void setCameraPos(C_Vector3 aC);
+		//Set light casters, which calculate to using in shaders
+		void setLights(std::vector<C_Light*> aLights);
+
 		~C_ParticleEmitter();
 	};
 

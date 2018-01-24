@@ -22,12 +22,12 @@
     <MaxRotation>50</MaxRotation>
     <MinRotationSpeed>-50</MinRotationSpeed>
     <MaxRotationSpeed>50</MaxRotationSpeed>
-    <NoiseStrength>0.0</NoiseStrength>
-    <NoiseOctaves>3</NoiseOctaves>
+    <NoiseStrength>1</NoiseStrength>
+    <NoiseOctaves>2</NoiseOctaves>
     <NoiseLacunarity>1</NoiseLacunarity>
     <NoisePersistence>1</NoisePersistence>
-    <NoiseFrequency>0.5</NoiseFrequency>
-    <NoiseAmplitude>0.6</NoiseAmplitude>
+    <NoiseFrequency>1</NoiseFrequency>
+    <NoiseAmplitude>0.2</NoiseAmplitude>
     <EmitRate>5</EmitRate>
     <Transformation>1</Transformation>
     <Shape>0</Shape>

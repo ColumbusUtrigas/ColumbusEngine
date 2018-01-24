@@ -31,6 +31,6 @@
     <EmitRate>10</EmitRate>
     <Transformation>1</Transformation>
     <Shape>1</Shape>
-    <ShapeRadius>1</ShapeRadius>
+    <ShapeRadius>0.5</ShapeRadius>
     <SortMode>1</SortMode>
 </ParticleEffect>
