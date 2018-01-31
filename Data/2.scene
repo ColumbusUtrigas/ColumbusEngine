@@ -7,9 +7,9 @@
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
 			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-			<Texture3>Data/Textures/fire2.png</Texture3>
+			<Texture3>Data/Textures/fire.png</Texture3>
 			<Texture4>Data/Textures/smoke.png</Texture4>
-			<Texture5>Data/Textures/spark1.png</Texture5>
+			<Texture5>Data/Textures/spark.tif</Texture5>
 		</Textures>
 	</Resources>
 
@@ -36,26 +36,6 @@
 			</Components>
 		</GameObject0>
 
-		<GameObject1>
-			<Name>Embers</Name>
-
-			<Transform>
-				<Position X="0" Y="0.5" Z="0"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Embers.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Embers.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject1>
-
 		<GameObject2>
 			<Name>Smoke</Name>
 
@@ -75,26 +55,6 @@
 				</ParticleSystem>
 			</Components>
 		</GameObject2>
-
-		<GameObject3>
-			<Name>Fire</Name>
-
-			<Transform>
-				<Position X="0" Y="0" Z="0"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Fire.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Fire.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject3>
 
 		<GameObject4>
 			<Name>Light1</Name>

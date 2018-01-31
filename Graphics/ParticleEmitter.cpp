@@ -103,13 +103,14 @@ namespace Columbus
 		
 		mShader->addAttribute("aPos", 0);
 		mShader->addAttribute("aUV", 1);
-		mShader->addAttribute("aNorm", 2);
-		mShader->addAttribute("aTang", 3);
-		mShader->addAttribute("aBitang", 4);
+		mShader->addAttribute("aPoses", 2);
+		mShader->addAttribute("aTimes", 3);
+		mShader->addAttribute("aColors", 4);
 		mShader->compile();
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
+		mCBuf = new C_Buffer();
 		mPBuf = new C_Buffer();
 		mLBuf = new C_Buffer();
 	}
@@ -171,14 +172,25 @@ namespace Columbus
 			spawnT = mMaxTTL;
 
 		float a = mLife;
-		float e, life, age;
+		float e, life, age, percent;
 		bool prevActive;
+		C_Vector4 up, down;
 		C_Vector3 pos, vel, acc;
 		float noise[3];
 		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
-		size_t i;
+		size_t i, size;
+
+		auto func = [](const C_ColorKey &a, const C_ColorKey &b) -> bool
+		{
+			return a.key > b.key;
+		};
+
+		std::sort(mColorKeys.begin(), mColorKeys.end(), func);
+
+		down = mParticleEffect->getStartColor();
+		up = mParticleEffect->getFinalColor();
 
 		for (auto& Particle : mParticles)
 		{
@@ -204,6 +216,7 @@ namespace Columbus
 			if (Particle.active == true && Particle.age > 0)
 			{
 				life = fmod(Particle.age, Particle.TTL);
+				percent = life / Particle.TTL;
 
 				vel = Particle.velocity;
 				acc = Particle.accel;
@@ -221,6 +234,7 @@ namespace Columbus
 				pos += C_Vector3(noise[0], noise[1], noise[2]) * noiseStrength;
 				pos += Particle.startPos + Particle.startEmitterPos;
 
+				Particle.color = down * (1 - percent) + up * percent;
 				Particle.pos = pos;
 				Particle.velocity = vel;
 				Particle.rotation += Particle.rotationSpeed * aTimeTick;
@@ -251,6 +265,9 @@ namespace Columbus
 		mLBuf->bind();
 		C_VertexAttribPointerOpenGL(3, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(3);
+		mCBuf->bind();
+		C_VertexAttribPointerOpenGL(4, 4, C_OGL_FLOAT, C_OGL_FALSE, 4 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(4);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setUniforms()
@@ -259,19 +276,11 @@ namespace Columbus
 		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
 		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
 		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
-		mShader->setUniform4f("uStartColor", mParticleEffect->getStartColor());
-		mShader->setUniform4f("uFinalColor", mParticleEffect->getFinalColor());
 		mShader->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
 		mShader->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
-		mShader->setUniform1f("uGradient", static_cast<float>(mParticleEffect->getGradienting()));
 
 		mShader->setUniformMatrix("uView", C_GetViewMatrix().elements());
 		mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
-
-		if (mParticleEffect->getMaterial() == nullptr)
-			mShader->setUniform4f("uColor", C_Vector4(1, 1, 1, 1));
-		else
-			mShader->setUniform4f("uColor", mParticleEffect->getMaterial()->getColor());
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
@@ -393,6 +402,7 @@ namespace Columbus
 		C_CloseStreamOpenGL(1);
 		C_CloseStreamOpenGL(2);
 		C_CloseStreamOpenGL(3);
+		C_CloseStreamOpenGL(4);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::draw()
@@ -419,6 +429,7 @@ namespace Columbus
 		{
 			delete mVertData;
 			delete mUvData;
+			delete mColData;
 			delete mPosData;
 			delete mTimeData;
 
@@ -426,6 +437,7 @@ namespace Columbus
 
 			mVertData = new float[mParticlesCount * 18];
 			mUvData = new float[mParticlesCount * 12];
+			mColData = new float[mParticlesCount * 24];
 			mPosData = new float[mParticlesCount * 18];
 			mTimeData = new float[mParticlesCount * 18];
 
@@ -444,6 +456,7 @@ namespace Columbus
 
 		unsigned int posCounter = 0;
 		unsigned int timeCounter = 0;
+		unsigned int colCounter = 0;
 
 		for (auto Particle : mActiveParticles)
 		{
@@ -456,6 +469,11 @@ namespace Columbus
 				mTimeData[timeCounter++] = Particle.age;
 				mTimeData[timeCounter++] = Particle.TTL;
 				mTimeData[timeCounter++] = Particle.rotation;
+
+				mColData[colCounter++] = Particle.color.x;
+				mColData[colCounter++] = Particle.color.y;
+				mColData[colCounter++] = Particle.color.z;
+				mColData[colCounter++] = Particle.color.w;
 			}
 		}
 
@@ -464,6 +482,9 @@ namespace Columbus
 
 		mTBuf->setData(mUvData, 12 * sizeof(float) * mActiveParticles.size(), 2);
 		mTBuf->compile();
+
+		mCBuf->setData(mColData, 24 * sizeof(float) * mActiveParticles.size(), 4);
+		mCBuf->compile();
 
 		mPBuf->setData(mPosData, 18 * sizeof(float)* mActiveParticles.size(), 3);
 		mPBuf->compile();

@@ -37,6 +37,7 @@ namespace Columbus
 
 	struct C_Particle
 	{
+		C_Vector4 color = C_Vector4(1, 1, 1, 1);
 		C_Vector3 velocity = C_Vector3(0, 1, 0);
 		C_Vector3 startPos = C_Vector3(0, 0, 0);
 		C_Vector3 startEmitterPos = C_Vector3(0, 0, 0);
@@ -53,6 +54,12 @@ namespace Columbus
 		bool active = false;
 	};
 
+	struct C_ColorKey
+	{
+		C_Vector4 color = C_Vector4(1, 1, 1, 1);
+		float key = 0.0;
+	};
+
 	class C_ParticleEmitter
 	{
 	private:
@@ -61,9 +68,11 @@ namespace Columbus
 		std::vector<C_Particle> mParticles;
 		std::vector<C_Particle> mActiveParticles;
 		std::vector<C_Light*> mLights;
+		std::vector<C_ColorKey> mColorKeys;
 
 		C_Buffer* mBuf = nullptr;
 		C_Buffer* mTBuf = nullptr;
+		C_Buffer* mCBuf = nullptr;
 		C_Buffer* mPBuf = nullptr;
 		C_Buffer* mLBuf = nullptr;
 
@@ -108,6 +117,7 @@ namespace Columbus
 		float mLightUniform[120];
 		float* mVertData = nullptr;
 		float* mUvData = nullptr;
+		float* mColData = nullptr;
 		float* mPosData = nullptr;
 		float* mTimeData = nullptr;
 		unsigned int mParticlesCount = 0;

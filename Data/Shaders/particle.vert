@@ -1,13 +1,12 @@
 attribute vec3 aPos;
 attribute vec2 aUV;
-attribute vec3 aNorm; //poses
-attribute vec3 aTang; //Times
+attribute vec3 aPoses;
+attribute vec3 aTimes;
+attribute vec4 aColors;
 
 varying vec3 varPos;
 varying vec2 varTexCoord;
-varying float varTime;
-varying float varTTL;
-varying float varIsGradient;
+varying vec4 varColor;
 
 uniform mat4 uView;
 uniform mat4 uProjection;
@@ -18,7 +17,6 @@ uniform vec2 uStartSize;
 uniform vec2 uFinalSize;
 uniform float uScaleOL;
 uniform float uBillboard;
-uniform float uGradient;
 
 uniform int uRenderMode;
 
@@ -38,7 +36,7 @@ mat4 rotationMatrix(vec3 axis, float angle)
 
 void main(void)
 {
-	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), aTang.z / 90);
+	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), aTimes.z / 90);
 	mat4 ModelView = uView * mat4(1);
 
 	ModelView[0][0] = 1;
@@ -53,9 +51,9 @@ void main(void)
 	ModelView[2][1] = 0;
 	ModelView[2][2] = 1;
 
-	vec3 pos = aNorm;
+	vec3 pos = aPoses;
 
-	float lifePercent = aTang.x / aTang.y;
+	float lifePercent = aTimes.x / aTimes.y;
 
 	vec3 Pos = aPos;
 	if (uBillboard != 0.0)
@@ -83,9 +81,7 @@ void main(void)
 
 	varPos = pos + aPos;
 	varTexCoord = aUV;
-	varTime = aTang.x;
-	varTTL = aTang.y;
-	varIsGradient = uGradient;
+	varColor = aColors;
 }
 
 
