@@ -2,14 +2,9 @@
 
 varying vec3 varPos;
 varying vec2 varTexCoord;
-varying float varTime;
-varying float varTTL;
-varying float varIsGradient;
+varying vec4 varColor;
 
-uniform vec4 uColor;
 uniform sampler2D uTex;
-uniform vec4 uStartColor;
-uniform vec4 uFinalColor;
 uniform int uDiscard;
 
 uniform float MaterialUnif[14];
@@ -25,20 +20,12 @@ void Light(int id);
 void main()
 {
 	vec4 tex = texture(uTex, varTexCoord);
-	vec4 Gradient = mix(uStartColor, uFinalColor, varTime / varTTL) * clamp(varIsGradient, 0.0, 1.0);
-	vec4 Color = uColor;
+	vec4 Color = varColor;
 
-	if (varIsGradient == 0.0)
-	{
-		if (textureSize(uTex, 0).x > 1)
-			Color = uColor * tex;	
-	} else
-	{
-		if (textureSize(uTex, 0).x > 1)
-			Color = uColor * tex * Gradient;
-		else
-			Color = uColor * Gradient;
-	}
+	if (textureSize(uTex, 0).x > 1)
+		Color = varColor * tex;
+	else
+		Color = varColor;
 
 	Light(0);
 	Light(1);
@@ -54,9 +41,6 @@ void main()
 		Lighting = vec4(1);
 
 	gl_FragColor = Color * Lighting;
-
-	//if (uDiscard == 1 && gl_FragColor.w < 0.05)
-			//discard;
 
 	if (gl_FragColor.w < 0.01) discard;
 }
