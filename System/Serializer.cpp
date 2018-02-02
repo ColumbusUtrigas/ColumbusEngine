@@ -46,6 +46,30 @@ namespace Columbus
 			}
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		C_SerializerXML::Element* C_SerializerXML::getElement(std::string aElement)
+		{
+			if (mMode != 1) return nullptr;
+			if (mInited == false) return nullptr;
+			if (mRoot == nullptr) return nullptr;
+
+			C_SerializerXML::Element* elem = new C_SerializerXML::Element;
+			elem->elem = mRoot->FirstChildElement(aElement.c_str());
+
+			return elem;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getInt(const C_SerializerXML::Element* aElement, int* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryIntText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::write(std::string aFile, std::string aRoot)
 		{
 			mMode = 0;
