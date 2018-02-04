@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 
 		window.clear(0, 0, 0.75, 1);
 
-		C_SetPerspective(60, window.aspect(), 0.001, 1000);
+		C_SetPerspective(60, window.aspect(), 0.1, 1000);
 
 		if (input.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);

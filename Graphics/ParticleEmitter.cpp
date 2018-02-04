@@ -52,6 +52,7 @@ namespace Columbus
 			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
 			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
 			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+			p.startEmitterPos = mParticleEffect->getPos();
 
 			for (j = 0; j < 9; j++)
 				p.noise[j] = C_Random::range(0, 256);
@@ -197,14 +198,18 @@ namespace Columbus
 			e = min(Particle.TTL, fireT) * counter;
 			Particle.age = fmod(e + a, spawnT);
 
-			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+			//if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
 				Particle.startEmitterPos = startEmitterPos;
-			else
-				if ((Particle.age / Particle.TTL) <= aTimeTick)
-					Particle.startEmitterPos = startEmitterPos;
+			//else
+				//if (Particle.age <= aTimeTick)
+					//Particle.startEmitterPos = startEmitterPos;
 
 			prevActive = Particle.active;
 			Particle.active = (Particle.age <= Particle.TTL);
+
+			if (Particle.active == true && prevActive == false)
+				if ((Particle.age / Particle.TTL) <= aTimeTick)
+					Particle.startEmitterPos = startEmitterPos;
 
 			if (Particle.active == true && prevActive == false)
 			{
