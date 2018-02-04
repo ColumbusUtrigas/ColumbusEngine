@@ -38,6 +38,8 @@ int main(int argc, char** argv)
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
+
+	printf("%f %f %f\n", Min(1.2, 1.5), Max(1.2, 1.5), Clamp(0.5, 0.0, 0.3));
 	
 	while (window.isOpen())
 	{
@@ -86,6 +88,7 @@ int main(int argc, char** argv)
 		{
 			C_Vector2 deltaMouse = input.getMouseMovement();
 			camera.addRot(C_Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
+			camera.setRot(C_Vector3::clamp(camera.getRot(), C_Vector3(-89.9, -360, 0.0), C_Vector3(89.9, 360, 0.0)));
 			input.setMousePos(window.getSize() * 0.5);
 		}
 
