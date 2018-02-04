@@ -201,7 +201,7 @@ namespace Columbus
 		calculateLights();
 
 		mMat.getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
-		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
+		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::calculateLights()

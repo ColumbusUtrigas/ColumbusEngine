@@ -13,6 +13,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include <System/Random.h>
+#include <Math/MathUtil.h>
 
 namespace Columbus
 {
@@ -218,6 +219,13 @@ namespace Columbus
 		{
 			C_Vector2 ret;
 			return ret;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		inline static C_Vector2 clamp(C_Vector2 a, C_Vector2 aMin, C_Vector2 aMax)
+		{
+			a.x = Clamp(a.x, aMin.x, aMax.x);
+			a.y = Clamp(a.y, aMin.y, aMax.y);
+			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Destructor
