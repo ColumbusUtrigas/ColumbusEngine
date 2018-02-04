@@ -36,6 +36,11 @@ bool IsSpecularMap = false;
 
 vec3 Normal;
 
+vec4 MaterialColor = vec4(0);
+vec3 MaterialAmbient = vec3(0);
+vec3 MaterialDiffuse = vec3(0);
+vec3 MaterialSpecular = vec3(0);
+
 vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
@@ -76,6 +81,11 @@ void Init(void)
 	SpecularMap = vec3(texture(uMaterial.specularMap, varUV));
 	NormalMap = vec3(texture(uMaterial.normalMap, varUV));
 
+	MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
+	MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
+	MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
+	MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
+
 	if (DiffuseMap.w <= 0.1) discard;
 
 	TBN = varTBN;
@@ -91,11 +101,6 @@ void Init(void)
 
 void Light(int id)
 {
-	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
-	vec3 MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
-	vec3 MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
-	vec3 MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
-
 	int offset = id * 15;
 
 	vec3 LightColor = vec3(LightUnif[0 + offset], LightUnif[1 + offset], LightUnif[2 + offset]);
@@ -180,6 +185,7 @@ void Cubemap(void)
 void Final(void)
 {
 	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
+
 	if (IsLightEnabled == false)
 		Lighting = vec4(1);
 

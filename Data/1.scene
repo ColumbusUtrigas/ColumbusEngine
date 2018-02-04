@@ -241,7 +241,7 @@
 		</GameObject10>
 
 		<GameObject11>
-			<Name>Torch</Name>
+			<Name>Blood</Name>
 
 			<Transform>
 				<Position X="0" Y="0.2" Z="0"/>
