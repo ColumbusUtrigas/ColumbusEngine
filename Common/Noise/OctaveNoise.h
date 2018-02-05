@@ -5,7 +5,7 @@
 namespace Columbus
 {
 
-	class C_FractalNoise
+	class C_OctaveNoise
 	{
 	private:
 		C_PerlinNoise* m_perlinSource = nullptr;
@@ -16,7 +16,7 @@ namespace Columbus
 		float m_baseFrequency = 1.0;
 		float m_baseAmplitude = 1.0;
 	public:
-		C_FractalNoise() :
+		C_OctaveNoise() :
 			m_octaves(1),
 			m_lacunarity(2.0),
 			m_persistence(0.5),
@@ -70,7 +70,7 @@ namespace Columbus
 			m_baseAmplitude = a;
 		}
 
-		~C_FractalNoise()
+		~C_OctaveNoise()
 		{
 			delete m_perlinSource;
 		}

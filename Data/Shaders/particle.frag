@@ -10,11 +10,6 @@ uniform int uDiscard;
 uniform float MaterialUnif[14];
 uniform float LightUnif[120];
 
-vec4 MaterialColor = vec4(0);
-vec3 MaterialAmbient = vec3(0);
-vec3 MaterialDiffuse = vec3(0);
-vec3 MaterialSpecular = vec3(0);
-
 vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
@@ -69,10 +64,10 @@ void Light(int id)
 	float LightInnerAngle = LightUnif[13 + offset];
 	float LightOuterAngle = LightUnif[14 + offset];
 
-	MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
-	MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
-	MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
-	MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
+	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
+	vec3 MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
+	vec3 MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
+	vec3 MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
 
 	vec3 lightDir;
 

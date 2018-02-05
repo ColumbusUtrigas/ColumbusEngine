@@ -3,7 +3,7 @@
 #include <Common/Compress/Compress.h>
 #include <Common/Image/Image.h>
 #include <Common/Model/Model.h>
-#include <Common/Noise/FractalNoise.h>
+#include <Common/Noise/OctaveNoise.h>
 #include <Common/Noise/PerlinNoise.h>
 
 #include <Graphics/Camera.h>

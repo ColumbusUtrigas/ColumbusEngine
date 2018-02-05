@@ -28,22 +28,25 @@ namespace Columbus
 	{
 		mLights.clear();
 		
-		for (auto Mesh : mMeshes)
+		for (auto Object : mObjects)
 		{
 			C_LightComponent* light =
-				static_cast<C_LightComponent*>(Mesh.second->getComponent("LightComponent"));
+				static_cast<C_LightComponent*>(Object.second->getComponent("LightComponent"));
 
 			if (light != nullptr)
+			{
+				light->render(Object.second->Transform);
 				mLights.push_back(light->getLight());
+			}
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::meshWorkflow()
 	{
-		for (auto Mesh : mMeshes)
+		for (auto Object : mObjects)
 		{
 			C_MeshRenderer* mesh =
-				static_cast<C_MeshRenderer*>(Mesh.second->getComponent("MeshRenderer"));
+				static_cast<C_MeshRenderer*>(Object.second->getComponent("MeshRenderer"));
 
 			if (mesh != nullptr)
 			{
@@ -58,10 +61,10 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::particlesWorkflow()
 	{
-		for (auto PS : mMeshes)
+		for (auto Object : mObjects)
 		{
 			C_ParticleSystem* ps =
-				static_cast<C_ParticleSystem*>(PS.second->getComponent("ParticleSystem"));
+				static_cast<C_ParticleSystem*>(Object.second->getComponent("ParticleSystem"));
 
 			if (ps != nullptr)
 			{
@@ -149,6 +152,7 @@ namespace Columbus
 		Transform.setRot(rotation);
 		Transform.setScale(scale);
 		GameObject->setTransform(Transform);
+		GameObject->setName(name);
 
 		add(aID, GameObject);
 
@@ -192,7 +196,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::add(unsigned int aID, C_GameObject* aMesh)
 	{
-		mMeshes.insert(std::pair<unsigned int, C_GameObject*>(aID, aMesh));
+		mObjects.insert(std::pair<unsigned int, C_GameObject*>(aID, aMesh));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::setSkybox(const C_Skybox* aSkybox)
@@ -210,14 +214,33 @@ namespace Columbus
 		mContextSize = static_cast<C_Vector2>(aContextSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	C_GameObject* C_Scene::getGameObject(const unsigned int aID) const
+	{
+		return mObjects.at(aID);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	C_GameObject* C_Scene::getGameObject(const std::string aName) const
+	{
+		for (auto Object : mObjects)
+			if (Object.second != nullptr)
+				if (Object.second->getName() == aName)
+					return Object.second;
+
+		return nullptr;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::update()
 	{
 		lightWorkflow();
 		meshWorkflow();
 		particlesWorkflow();
 
-		for (auto Mesh : mMeshes)
-			Mesh.second->update();
+		for (auto Object : mObjects)
+			Object.second->update();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::render()
@@ -231,11 +254,11 @@ namespace Columbus
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (auto Object : mMeshes)
+		for (auto Object : mObjects)
 			if (Object.second->hasComponent("MeshRenderer"))
 				C_Render::render(Object.second);
 
-		for (auto Object : mMeshes)
+		for (auto Object : mObjects)
 			if (Object.second->hasComponent("ParticleSystem"))
 				C_Render::render(Object.second);
 

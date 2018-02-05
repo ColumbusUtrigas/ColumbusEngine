@@ -176,12 +176,11 @@ namespace Columbus
 		float e, life, age, percent;
 		bool prevActive;
 		C_Vector4 up, down;
-		C_Vector3 pos, vel, acc;
-		float noise[3];
+		C_Vector3 noise;
 		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
-		size_t i, size;
+		size_t size;
 
 		auto func = [](const C_ColorKey &a, const C_ColorKey &b) -> bool
 		{
@@ -223,28 +222,13 @@ namespace Columbus
 				life = fmod(Particle.age, Particle.TTL);
 				percent = life / Particle.TTL;
 
-				vel = Particle.velocity;
-				acc = Particle.accel;
-
-				age = Particle.age;
-				pos = (vel + constForce) * age + (acc * 0.5 * age * age);
-
-				for (i = 0; i < 9; i++)
-					Particle.noise[i] = fmod(Particle.noise[i] + 0.01, 256);
-
-				noise[0] = static_cast<float>(mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]));
-				noise[1] = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
-				noise[2] = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
-
-				pos += C_Vector3(noise[0], noise[1], noise[2]) * noiseStrength;
-				pos += Particle.startPos + Particle.startEmitterPos;
+				noise.x = static_cast<float>(mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]));
+				noise.y = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
+				noise.z = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
 
 				Particle.color = down * (1 - percent) + up * percent;
-				Particle.pos = pos;
-				Particle.velocity = vel;
-				Particle.rotation += Particle.rotationSpeed * aTimeTick;
 
-				Particle.cameraDistance = pow(mCameraPos.x - Particle.pos.x, 2) + pow(mCameraPos.y - Particle.pos.y, 2) + pow(mCameraPos.z - Particle.pos.z, 2);
+				Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
 			}
 
 			counter++;
