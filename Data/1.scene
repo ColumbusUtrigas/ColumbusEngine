@@ -2,7 +2,7 @@
 
 	<Resources>
 		<Textures>
-			<Count>10</Count>
+			<Count>13</Count>
 
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
@@ -14,11 +14,14 @@
 			<Texture7>Data/Textures/wall-torch-n.png</Texture7>
 			<Texture8>Data/Textures/blood.png</Texture8>
 			<Texture9>Data/Textures/blood-n.png</Texture9>
+			<Texture10>Data/Textures/metal.jpg</Texture10>
+			<Texture11>Data/Textures/metal-spec.tif</Texture11>
+			<Texture12>Data/Textures/metal-normal.jpg</Texture12>
 		</Textures>
 	</Resources>
 
 	<GameObjects>
-		<Count>12</Count>
+		<Count>13</Count>
 
 		<GameObject0>
 			<Name>Sponza</Name>
@@ -141,7 +144,7 @@
 		</GameObject5>
 
 		<GameObject6>
-			<Name>Embers</Name>
+			<Name>Embers1</Name>
 
 			<Transform>
 				<Position X="0" Y="10.5" Z="3.5"/>
@@ -161,7 +164,7 @@
 		</GameObject6>
 
 		<GameObject7>
-			<Name>Smoke</Name>
+			<Name>Smoke1</Name>
 
 			<Transform>
 				<Position X="0" Y="11" Z="3.5"/>
@@ -181,7 +184,7 @@
 		</GameObject7>
 
 		<GameObject8>
-			<Name>Fire</Name>
+			<Name>Fire1</Name>
 
 			<Transform>
 				<Position X="0" Y="10" Z="3.5"/>
@@ -221,7 +224,7 @@
 		</GameObject9>
 
 		<GameObject10>
-			<Name>Torch</Name>
+			<Name>Torch1</Name>
 
 			<Transform>
 				<Position X="0" Y="9.6" Z="3.5"/>
@@ -259,6 +262,26 @@
 				</MeshRenderer>
 			</Components>
 		</GameObject11>
+
+		<GameObject12>
+			<Name>Dragon</Name>
+
+			<Transform>
+				<Position X="0" Y="0.2" Z="0"/>
+				<Rotation X="0" Y="90" Z="0"/>
+				<Scale X="0.5" Y="0.5" Z="0.5"/>
+			</Transform>
+
+			<Material>Data/Materials/Dragon.cxmat</Material>
+			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>Data/Models/Dragon.cmf</Mesh>
+				</MeshRenderer>
+			</Components>
+		</GameObject12>
 	</GameObjects>
 </Scene>
 

@@ -30,6 +30,18 @@ namespace Columbus
 		return Min(Max(a, minValue), maxValue);
 	}
 
+	template <class T>
+	T Radians(const T degrees)
+	{
+		return degrees * 3.141592659 / 180.0f;
+	}
+
+	template <class T>
+	T Degrees(const T radians)
+	{
+		return T * 3.141592659 / 180.0f;
+	}
+
 }
 
 

@@ -30,13 +30,16 @@
 #include <System/System.h>
 #include <System/Timer.h>
 #include <System/Random.h>
-#include <Common/Noise/FractalNoise.h>
+#include <Common/Noise/OctaveNoise.h>
 
 namespace Columbus
 {
 
-	struct C_Particle
+	class C_Particle
 	{
+	private:
+		size_t i;
+	public:
 		C_Vector4 color = C_Vector4(1, 1, 1, 1);
 		C_Vector3 velocity = C_Vector3(0, 1, 0);
 		C_Vector3 startPos = C_Vector3(0, 0, 0);
@@ -52,6 +55,19 @@ namespace Columbus
 		float noise[9];
 
 		bool active = false;
+
+		void update(const float aTimeTick, const vec3 aCamera, const vec3 aForce, const vec3 aNoise)
+		{
+			for (i = 0; i < 9; i++)
+				noise[i] = fmod(noise[i] + 0.01, 256);
+
+			pos = (velocity + aForce) * age + (accel * 0.5 * age * age);
+			pos += startPos + startEmitterPos;
+			pos += aNoise;
+
+			rotation += rotationSpeed * aTimeTick;
+			cameraDistance = pow(aCamera.x - pos.x, 2) + pow(aCamera.y - pos.y, 2) + pow(aCamera.z - pos.z, 2);
+		}
 	};
 
 	struct C_ColorKey
@@ -76,7 +92,7 @@ namespace Columbus
 		C_Buffer* mPBuf = nullptr;
 		C_Buffer* mLBuf = nullptr;
 
-		C_FractalNoise mNoise;
+		C_OctaveNoise mNoise;
 
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;

@@ -17,7 +17,7 @@ namespace Columbus
 	static C_Matrix4 VIEW_MATRIX;
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_Matrix4& C_GetProjectionMatrix()
+	C_Matrix4 C_GetProjectionMatrix()
 	{
 		return PROJECTION_MATRIX;
 	}
@@ -37,11 +37,6 @@ namespace Columbus
 		PROJECTION_MATRIX = glm::ortho(aL, aR, aB, aT, aN, aF);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_SetCamera(C_Vector3 aEye, C_Vector3 aRef)
-	{
-		VIEW_MATRIX = glm::lookAt(aEye.toGLM(), aRef.toGLM(), glm::vec3(0, 1, 0));
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	C_Camera::C_Camera()
@@ -56,47 +51,47 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setPos(C_Vector3 aPos)
+	void C_Camera::setPos(vec3 aPos)
 	{
-		mPos = static_cast<C_Vector3>(aPos).toGLM();
+		mPos = static_cast<vec3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addPos(C_Vector3 aPos)
+	void C_Camera::addPos(vec3 aPos)
 	{
-		mPos += static_cast<C_Vector3>(aPos).toGLM();
+		mPos += static_cast<vec3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getPos() const
+	vec3 C_Camera::getPos() const
 	{
 		return mPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setRot(C_Vector3 aRot)
+	void C_Camera::setRot(vec3 aRot)
 	{
-		mRot = aRot.toGLM();
+		mRot = aRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addRot(C_Vector3 aRot)
+	void C_Camera::addRot(vec3 aRot)
 	{
-		mRot += aRot.toGLM();
+		mRot += aRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getRot() const
+	vec3 C_Camera::getRot() const
 	{
 		return mRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setTarget(C_Vector3 aTarget)
+	void C_Camera::setTarget(vec3 aTarget)
 	{
-		mTarget = aTarget.toGLM();
+		mTarget = aTarget;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addTarget(C_Vector3 aTarget)
+	void C_Camera::addTarget(vec3 aTarget)
 	{
-		mTarget += aTarget.toGLM();
+		mTarget += aTarget;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getTarget() const
+	vec3 C_Camera::getTarget() const
 	{
 		return mTarget;
 	}
@@ -118,16 +113,6 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Camera::update()
 	{
-		/*glm::vec3 y = glm::vec3(0, 0, -1);
-		C_Vector3 rot;
-		rot.x = C_DegToRads(mRot.x);
-		rot.y = C_DegToRads(mRot.y);
-		rot.z = C_DegToRads(mRot.z);
-		y = glm::rotateY(y, rot.y);
-		y = glm::rotateX(y, rot.x);
-		y = glm::rotateZ(y, rot.z);
-		mTarget = y + mPos;*/
-
 		if (mPos.x >= 360 || mPos.x <= -360) mPos.x = 0.0;
 		if (mPos.y >= 360 || mPos.y <= -360) mPos.y = 0.0;
 		if (mPos.z >= 360 || mPos.z <= -360) mPos.z = 0.0;
@@ -136,18 +121,19 @@ namespace Columbus
 		if (mRot.y >= 360 || mRot.y <= -360) mRot.y = 0.0;
 		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;
 
-		glm::vec3 front;
-		front.z = cos(glm::radians(mRot.x)) * cos(glm::radians(mRot.y));
-		front.y = sin(glm::radians(mRot.x));
-		front.x = cos(glm::radians(mRot.x)) * sin(glm::radians(mRot.y));
-		mCameraDirection = glm::normalize(-front);
+		vec3 front;
+		front.z = cos(Radians(mRot.x)) * cos(Radians(mRot.y));
+		front.y = sin(Radians(mRot.x));
+		front.x = cos(Radians(mRot.x)) * sin(Radians(mRot.y));
+		mCameraDirection = -front.normalize().toGLM();
 
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-		mCameraRight = glm::normalize(glm::cross(up, mCameraDirection));
+		vec3 up = vec3(0.0f, 1.0f, 0.0f);
+		mCameraRight = vec3::cross(up, mCameraDirection).normalize();
 
-		mCameraUp = glm::cross(mCameraDirection, mCameraRight);
+		mCameraUp = vec3::cross(mCameraDirection, mCameraRight);
 
-		VIEW_MATRIX = glm::lookAt(mPos, mCameraDirection + mPos, mCameraUp);
+		VIEW_MATRIX = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
+		//VIEW_MATRIX.lookAt(mPos, mCameraDirection + mPos, mCameraUp);
 
 		preTargeted = false;
 	}
