@@ -21,7 +21,7 @@
 	</Resources>
 
 	<GameObjects>
-		<Count>13</Count>
+		<Count>14</Count>
 
 		<GameObject0>
 			<Name>Sponza</Name>
@@ -267,7 +267,7 @@
 			<Name>Dragon</Name>
 
 			<Transform>
-				<Position X="0" Y="0.2" Z="0"/>
+				<Position X="5" Y="0.2" Z="0"/>
 				<Rotation X="0" Y="90" Z="0"/>
 				<Scale X="0.5" Y="0.5" Z="0.5"/>
 			</Transform>
@@ -282,6 +282,26 @@
 				</MeshRenderer>
 			</Components>
 		</GameObject12>
+
+		<GameObject13>
+			<Name>Liberty</Name>
+
+			<Transform>
+				<Position X="0" Y="0.2" Z="0"/>
+				<Rotation X="0" Y="90" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
+			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>Data/Models/Liberty.cmf</Mesh>
+				</MeshRenderer>
+			</Components>
+		</GameObject13>
 	</GameObjects>
 </Scene>
 
