@@ -39,7 +39,7 @@ namespace Columbus
 	template <class T>
 	T Degrees(const T radians)
 	{
-		return T * 3.141592659 / 180.0f;
+		return radians * 3.141592659 / 180.0f;
 	}
 
 }

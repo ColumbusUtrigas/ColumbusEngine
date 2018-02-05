@@ -10,8 +10,8 @@
 			<Texture3>Data/Textures/fire1.png</Texture3>
 			<Texture4>Data/Textures/smoke.png</Texture4>
 			<Texture5>Data/Textures/spark1.png</Texture5>
-			<Texture6>Data/Textures/wall-torch.png</Texture6>
-			<Texture7>Data/Textures/wall-torch-n.png</Texture7>
+			<Texture6>Data/Textures/wall-torch.jpg</Texture6>
+			<Texture7>Data/Textures/wall-torch-n.jpg</Texture7>
 			<Texture8>Data/Textures/blood.png</Texture8>
 			<Texture9>Data/Textures/blood-n.png</Texture9>
 			<Texture10>Data/Textures/metal.jpg</Texture10>
