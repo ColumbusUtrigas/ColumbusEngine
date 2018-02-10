@@ -99,15 +99,15 @@ namespace Columbus
 			mParticles.push_back(p);
 		}
 
-		mShader = new C_Shader();
-		mShader->load("Data/Shaders/particle.vert", "Data/Shaders/particle.frag");
-		
-		mShader->addAttribute("aPos", 0);
-		mShader->addAttribute("aUV", 1);
-		mShader->addAttribute("aPoses", 2);
-		mShader->addAttribute("aTimes", 3);
-		mShader->addAttribute("aColors", 4);
-		mShader->compile();
+		if (!mParticleEffect->getMaterial()->getShader()->isCompiled())
+		{
+			mParticleEffect->getMaterial()->getShader()->addAttribute("aPos", 0);
+			mParticleEffect->getMaterial()->getShader()->addAttribute("aUV", 1);
+			mParticleEffect->getMaterial()->getShader()->addAttribute("aPoses", 2);
+			mParticleEffect->getMaterial()->getShader()->addAttribute("aTimes", 3);
+			mParticleEffect->getMaterial()->getShader()->addAttribute("aColors", 4);
+			mParticleEffect->getMaterial()->getShader()->compile();
+		}
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
 		mTBuf = new C_Buffer(uvs, sizeof(uvs) * sizeof(float), 2);
@@ -261,15 +261,15 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setUniforms()
 	{
-		mShader->setUniform3f("uPos", C_Vector3(0, 0, 0));
-		mShader->setUniform2f("uSize", mParticleEffect->getParticleSize());
-		mShader->setUniform2f("uStartSize", mParticleEffect->getStartSize());
-		mShader->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
-		mShader->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
-		mShader->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
+		mParticleEffect->getMaterial()->getShader()->setUniform3f("uPos", C_Vector3(0, 0, 0));
+		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSize", mParticleEffect->getParticleSize());
+		mParticleEffect->getMaterial()->getShader()->setUniform2f("uStartSize", mParticleEffect->getStartSize());
+		mParticleEffect->getMaterial()->getShader()->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
 
-		mShader->setUniformMatrix("uView", C_GetViewMatrix().elements());
-		mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
@@ -278,11 +278,11 @@ namespace Columbus
 
 			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
 			{
-				mShader->setUniform1i("uTex", 0);
+				mParticleEffect->getMaterial()->getShader()->setUniform1i("uTex", 0);
 				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
 			}
 
-			mShader->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
+			mParticleEffect->getMaterial()->getShader()->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -305,13 +305,13 @@ namespace Columbus
 			mParticleEffect->getMaterial()->getReflectionPower()
 		};
 
-		mShader->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
+		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setShaderLightAndCamera()
 	{
 		calculateLights();
-		mShader->setUniformArrayf("LightUnif", mLightUniform, 120);
+		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::calculateLights()
@@ -397,12 +397,12 @@ namespace Columbus
 	void C_ParticleEmitter::draw()
 	{
 		if (mParticleEffect == nullptr) return;
-		if (mShader == nullptr) return;
+		if (mParticleEffect->getMaterial()->getShader() == nullptr) return;
 		if (mBuf == nullptr) return;
 		if (mTBuf == nullptr) return;
 		if (mParticleEffect->getVisible() == false) return;
 
-		mShader->bind();
+		mParticleEffect->getMaterial()->getShader()->bind();
 
 		setUniforms();
 

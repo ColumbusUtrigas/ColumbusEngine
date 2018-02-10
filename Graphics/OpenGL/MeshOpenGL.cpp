@@ -91,11 +91,15 @@ namespace Columbus
 		delete[] t;
 
 		if (mMat.getShader() == nullptr) return;
-		mMat.getShader()->addAttribute("aPos", 0);
-		mMat.getShader()->addAttribute("aUV", 1);
-		mMat.getShader()->addAttribute("aNorm", 2);
-		mMat.getShader()->addAttribute("aTang", 3);
-		mMat.getShader()->compile();
+
+		if (!mMat.getShader()->isCompiled())
+		{
+			mMat.getShader()->addAttribute("aPos", 0);
+			mMat.getShader()->addAttribute("aUV", 1);
+			mMat.getShader()->addAttribute("aNorm", 2);
+			mMat.getShader()->addAttribute("aTang", 3);
+			mMat.getShader()->compile();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::render(C_Transform aTransform)

@@ -75,11 +75,12 @@ namespace Columbus
 
 		uint8_t* data = (uint8_t*)malloc(cinfo.image_width * cinfo.image_height * 3);
 		uint64_t counter = 0;
+		uint64_t maxsize = row_stride * cinfo.image_height;
 
 		while (cinfo.output_scanline < cinfo.output_height)
 		{
 			jpeg_read_scanlines(&cinfo, buffer, 1);
-			memcpy(data + counter, buffer[0], row_stride);
+			memcpy(data + (maxsize - counter - row_stride), buffer[0], row_stride);
 			counter += row_stride;
 		}
 
@@ -120,9 +121,11 @@ namespace Columbus
 
 		row_stride = aWidth * aBPP;
 
+		uint64_t maxsize = row_stride * aHeight;
+
 		while (cinfo.next_scanline < cinfo.image_height)
 		{
-			row_pointer[0] = (JSAMPROW)&aData[cinfo.next_scanline * row_stride];
+			row_pointer[0] = (JSAMPROW)&aData[maxsize - cinfo.next_scanline * row_stride - row_stride];
 			jpeg_write_scanlines(&cinfo, row_pointer, 1);
 		}
 

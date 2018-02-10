@@ -69,6 +69,7 @@ namespace Columbus
 		for (int i = 0; i < 6; i++)
 		{
 			mBitmaps[i].load(aPath[i]);
+			mBitmaps[i].flipY();
 
 			if (!mBitmaps[i].isExist())
 			{

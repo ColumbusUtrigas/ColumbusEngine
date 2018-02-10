@@ -51,35 +51,28 @@ namespace Columbus
 		bool mLoaded = false;
 		bool mCompiled = false;
 
-		//Load shader from one file
 		void load(const char* aFile);
 	public:
 		C_Shader(std::string aVert, std::string aFrag);
 		C_Shader(const char* aFile);
 		C_Shader();
 
-		//Load shader from two files
 		bool load(std::string aVert, std::string aFrag);
 		bool compile();
 
+		bool isCompiled() const;
+
 		void bind() const;
-		void addAttribute(std::string aName, const int aValue);
-		//Set integer uniform
-		void setUniform1i(std::string aName, const int aValue) const;
-		//Set float uniform
-		void setUniform1f(std::string aName, const float aValue) const;
-		//Set 2-axis vector uniform
-		void setUniform2f(std::string aName, const C_Vector2 aValue) const;
-		//Set 3-axis vector uniform
-		void setUniform3f(std::string aName, const C_Vector3 aValue) const;
-		//Set 4-axis vector uniform
-		void setUniform4f(std::string aName, const C_Vector4 aValue) const;
-		//Set matrix uniform
-		void setUniformMatrix(std::string aName, const float* aValue) const;
-		//Set uniform float array
-		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
-		//Unbind shader
 		static void unbind();
+
+		void addAttribute(std::string aName, const int aValue);
+		void setUniform1i(std::string aName, const int aValue) const;
+		void setUniform1f(std::string aName, const float aValue) const;
+		void setUniform2f(std::string aName, const C_Vector2 aValue) const;
+		void setUniform3f(std::string aName, const C_Vector3 aValue) const;
+		void setUniform4f(std::string aName, const C_Vector4 aValue) const;
+		void setUniformMatrix(std::string aName, const float* aValue) const;
+		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
 
 		~C_Shader();
 	};

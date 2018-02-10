@@ -64,13 +64,13 @@ namespace Columbus
 	C_Shader* C_ParticleSystem::getShader() const
 	{
 		if (mEmitter != nullptr)
-			return mEmitter->mShader;
+			return mEmitter->getParticleEffect()->getMaterial()->getShader();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleSystem::setShader(C_Shader* aShader)
 	{
 		if (mEmitter != nullptr)
-			mEmitter->mShader = aShader;
+			mEmitter->getParticleEffect()->getMaterial()->setShader(aShader);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
