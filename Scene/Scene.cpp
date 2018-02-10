@@ -79,8 +79,7 @@ namespace Columbus
 	{
 		std::string name;
 		std::string materialPath;
-		std::string vertShaderPath;
-		std::string fragShaderPath;
+		int shaderID = -1;
 		std::string meshPath;
 		std::string particlePath;
 		std::string lightPath;
@@ -91,7 +90,7 @@ namespace Columbus
 		C_Vector3 rotation;
 		C_Vector3 scale;
 		C_Material* material = new C_Material();
-		C_Shader* shader = new C_Shader();
+		C_Mesh* mesh;
 		Import::C_ImporterModel imp;
 
 		if (!aSerializer->getSubString({ "GameObjects", aElement, "Name" }, &name)) return false;
@@ -107,11 +106,9 @@ namespace Columbus
 			}
 		} else return false;
 
-		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
-		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
-
-		shader->load(vertShaderPath, fragShaderPath);
-		material->setShader(shader);
+		if (aSerializer->getSubInt({ "GameObjects", aElement, "Shader" }, &shaderID))
+			material->setShader(mShaders.at(shaderID));
+		else return false;
 
 		if (material->getTextureID() != -1)
 			material->setTexture(mTextures.at(material->getTextureID()));
@@ -133,8 +130,15 @@ namespace Columbus
 				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveSphere(1, 50, 50), *material)));
 			} else
 			{
-				if (ModelIsCMF(meshPath))
-					GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(ModelLoadCMF(meshPath), *material)));
+				if (atoi(meshPath.c_str()) >= 0)
+				{
+					mesh = mMeshes.at(atoi(meshPath.c_str()));
+					if (mesh != nullptr)
+					{
+						mesh->mMat = *material;
+						GameObject->addComponent(new C_MeshRenderer(mesh));
+					}
+				}
 			}
 		}
 
@@ -170,22 +174,59 @@ namespace Columbus
 
 		int count = 0;
 		int texCount = 0;
+		int shadersCount = 0;
+		int meshesCount = 0;
+		size_t i;
 
-		if (serializer.getSubInt({"Resources", "Textures", "Count"}, &texCount))
+		std::string path, path1, elem;
+
+		if (serializer.getSubInt({ "Resources", "Textures", "Count" }, &texCount))
 		{
-			for (int i = 0; i < texCount; i++)
+			for (i = 0; i < texCount; i++)
 			{
-				std::string path;
-				std::string elem = std::string("Texture") + std::to_string(i);
-				if (serializer.getSubString({"Resources", "Textures", elem}, &path))
+				elem = std::string("Texture") + std::to_string(i);
+				if (serializer.getSubString({ "Resources", "Textures", elem }, &path))
 					mTextures.insert(std::pair<int, C_Texture*>(i, new C_Texture(path)));
+			}
+		}
+
+		if (serializer.getSubInt({ "Resources", "Shaders", "Count" }, &shadersCount))
+		{
+			for (i = 0; i < shadersCount; i++)
+			{
+				elem = std::string("Shader") + std::to_string(i);
+				if (serializer.getSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
+					serializer.getSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
+				{
+					mShaders.insert(std::pair<int, C_Shader*>(i, new C_Shader(path, path1)));
+				}
+			}
+		}
+
+		if (serializer.getSubInt({ "Resources", "Meshes", "Count" }, &meshesCount))
+		{
+			for (i = 0; i < meshesCount; i++)
+			{
+				elem = std::string("Mesh") + std::to_string(i);
+				if (serializer.getSubString({ "Resources", "Meshes", elem }, &path))
+				{
+					if (ModelIsCMF(path))
+					{
+						mMeshes.insert(std::pair<int, C_Mesh*>(i, new C_MeshOpenGL(ModelLoadCMF(path))));
+						C_Log::success("Mesh loaded: " + path);
+					}
+					else
+					{
+						C_Log::error("Can't load mesh: " + path);
+					}
+				}
 			}
 		}
 
 		if (!serializer.getSubInt({"GameObjects", "Count"}, &count))
 		{ C_Log::error("Can't load Scene Count: " + aFile); return false; }
 
-		for (int i = 0; i < count; i++)
+		for (i = 0; i < count; i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
 			loadGameObject(&serializer, elem, i);

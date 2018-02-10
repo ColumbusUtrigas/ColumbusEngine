@@ -115,8 +115,8 @@ namespace Columbus
 		for (size_t i = 0; i < aHeight / 2; i++)
 		{
 			memcpy(row, &aData[i * stride], stride);
-			memcpy(&aData[i * stride], &aData[(aHeight - i) * stride], stride);
-			memcpy(&aData[(aHeight - i) * stride], row, stride);
+			memcpy(&aData[i * stride], &aData[(aHeight - i - 1) * stride], stride);
+			memcpy(&aData[(aHeight - i - 1) * stride], row, stride);
 		}
 		free(row);
 

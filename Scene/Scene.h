@@ -29,7 +29,9 @@ namespace Columbus
 	private:
 		std::map<unsigned int, C_GameObject*> mObjects;
 		std::vector<C_Light*> mLights;
+		std::map<int, C_Mesh*> mMeshes;
 		std::map<int, C_Texture*> mTextures;
+		std::map<int, C_Shader*> mShaders;
 
 		C_Skybox* mSkybox = nullptr;
 		C_Camera* mCamera = nullptr;

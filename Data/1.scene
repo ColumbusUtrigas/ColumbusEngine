@@ -18,6 +18,29 @@
 			<Texture11>Data/Textures/metal-spec.tif</Texture11>
 			<Texture12>Data/Textures/metal-normal.jpg</Texture12>
 		</Textures>
+
+		<Shaders>
+			<Count>2</Count>
+
+			<Shader0>
+				<Vertex>Data/Shaders/standart.vert</Vertex>
+				<Fragment>Data/Shaders/standart.frag</Fragment>
+			</Shader0>
+
+			<Shader1>
+				<Vertex>Data/Shaders/particle.vert</Vertex>
+				<Fragment>Data/Shaders/particle.frag</Fragment>
+			</Shader1>
+		</Shaders>
+
+		<Meshes>
+			<Count>4</Count>
+
+			<Mesh0>Data/Models/Sponza.cmf</Mesh0>
+			<Mesh1>Data/Models/Torch.cmf</Mesh1>
+			<Mesh2>Data/Models/Dragon.cmf</Mesh2>
+			<Mesh3>Data/Models/Liberty.cmf</Mesh3>
+		</Meshes>
 	</Resources>
 
 	<GameObjects>
@@ -33,17 +56,16 @@
 			</Transform>
 
 			<Material>Data/Materials/Default.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Shader>0</Shader>
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Data/Models/Sponza.cmf</Mesh>
+					<Mesh>0</Mesh>
 				</MeshRenderer>
 			</Components>
 		</GameObject0>
 
-		<GameObject1>
+			<GameObject1>
 			<Name>Light1</Name>
 
 			<Transform>
@@ -53,8 +75,7 @@
 			</Transform>
 
 			<Material>None</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<LightComponent>
@@ -73,8 +94,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Embers.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
@@ -93,8 +113,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Smoke.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
@@ -113,8 +132,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Fire.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
@@ -133,8 +151,7 @@
 			</Transform>
 
 			<Material>None</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<LightComponent>
@@ -153,8 +170,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Embers.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
@@ -173,8 +189,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Smoke.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
@@ -193,8 +208,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Fire.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
@@ -213,12 +227,11 @@
 			</Transform>
 
 			<Material>Data/Materials/Torch.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Shader>0</Shader>
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Data/Models/Torch.cmf</Mesh>
+					<Mesh>1</Mesh>
 				</MeshRenderer>
 			</Components>
 		</GameObject9>
@@ -233,12 +246,11 @@
 			</Transform>
 
 			<Material>Data/Materials/Torch.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Shader>0</Shader>
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Data/Models/Torch.cmf</Mesh>
+					<Mesh>1</Mesh>
 				</MeshRenderer>
 			</Components>
 		</GameObject10>
@@ -253,8 +265,7 @@
 			</Transform>
 
 			<Material>Data/Materials/Blood.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Shader>0</Shader>
 
 			<Components>
 				<MeshRenderer>
@@ -273,12 +284,11 @@
 			</Transform>
 
 			<Material>Data/Materials/Dragon.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Shader>0</Shader>
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Data/Models/Dragon.cmf</Mesh>
+					<Mesh>2</Mesh>
 				</MeshRenderer>
 			</Components>
 		</GameObject12>
@@ -293,15 +303,14 @@
 			</Transform>
 
 			<Material>Data/Materials/Default.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Shader>0</Shader>
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Data/Models/Liberty.cmf</Mesh>
+					<Mesh>3</Mesh>
 				</MeshRenderer>
 			</Components>
-		</GameObject13>
+</GameObject13>
 	</GameObjects>
 </Scene>
 

@@ -227,10 +227,20 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
+	bool C_Shader::isCompiled() const
+	{
+		return mCompiled;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Shader::bind() const
 	{
 		if (!mCompiled) return;
 		glUseProgram(mID);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Shader::unbind()
+	{
+		glUseProgram(0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Shader::addAttribute(std::string aName, const int aValue)
@@ -238,64 +248,50 @@ namespace Columbus
 		mAttributes.emplace_back(aName, aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set integer uniform
 	void C_Shader::setUniform1i(std::string aName, const int aValue) const
 	{
 		if(mID != 0 && mCompiled)
 			glUniform1i(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set float uniform
 	void C_Shader::setUniform1f(std::string aName, const float aValue) const
 	{
 		if(mID != 0 && mCompiled)
 			glUniform1f(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set 2-axis vector uniform
 	void C_Shader::setUniform2f(std::string aName, const C_Vector2 aValue) const
 	{
 		if(mID != 0 && mCompiled)
 			glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set 3-axis vector uniform
 	void C_Shader::setUniform3f(std::string aName, const C_Vector3 aValue) const
 	{
 		if(mID != 0 && mCompiled)
 			glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set 3-axis vector uniform
 	void C_Shader::setUniform4f(std::string aName, const C_Vector4 aValue) const
 	{
 		if(mID != 0 && mCompiled)
 			glUniform4f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z, aValue.w);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set matrix uniform
 	void C_Shader::setUniformMatrix(std::string aName, const float* aValue) const
 	{
 		if(mID != 0 && mCompiled)
 			glUniformMatrix4fv(glGetUniformLocation(mID, aName.c_str()), 1, GL_FALSE, aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set uniform array
 	void C_Shader::setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const
 	{
 		if (mID != 0 && mCompiled)
 			glUniform1fv(glGetUniformLocation(mID, aName.c_str()), aSize, aArray);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Unbind shader
-	void C_Shader::unbind()
-	{
-		glUseProgram(0);
-	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
 	C_Shader::~C_Shader()
 	{
 		if (mCompiled)

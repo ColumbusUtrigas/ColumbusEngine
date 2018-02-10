@@ -45,42 +45,30 @@ namespace Columbus
 		size_t mHeight = 0;
 		int mBPP = 0;
 	public:
-		//Constructor
 		C_Texture();
-		//Constructor 2
 		C_Texture(std::string aPath, bool aSmooth = true);
-		//Constructor 3
 		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		//Load textures from file
+		
 		void load(std::string aPath, bool aSmooth = true);
-		//Load texture from raw data
 		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		//Load depth texture from raw data
 		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		//Set texture config
+		
 		void setConfig(C_TextureConfig aConfig);
-		//Set texture smooth
 		void setSmooth(const bool aSmooth);
-		//Set texture anisotropy filtration value
 		void setAnisotropy(const unsigned int aAnisotropy);
 
-		//Return texture config
 		C_TextureConfig getConfig();
-		//Return texture size
 		size_t getSize();
-		//Save texture to file
+
 		bool save(std::string aFile, size_t aQuality = 100);
-		//Bind texture
+		
 		void bind();
-		//Unbind texture
 		static void unbind();
-		//Get texture id
+		
 		inline unsigned int getID() { return mID; }
-		//Create sampler and bind texture
 		void sampler2D(int a);
-		//Generate mipmap for texture
 		void generateMipmap();
-		//Destructor
+		
 		~C_Texture();
 	};
 

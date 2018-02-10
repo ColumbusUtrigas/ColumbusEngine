@@ -138,8 +138,6 @@ namespace Columbus
 		float* mTimeData = nullptr;
 		unsigned int mParticlesCount = 0;
 	public:
-		C_Shader* mShader = nullptr;
-
 		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
 
 		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
