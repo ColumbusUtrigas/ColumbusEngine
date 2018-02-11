@@ -54,6 +54,8 @@ namespace Columbus
 		float cameraDistance = 1000.0;
 		float noise[9];
 
+		unsigned int frame = 0;
+
 		bool active = false;
 
 		void update(const float aTimeTick, const vec3 aCamera, const vec3 aForce, const vec3 aNoise)

@@ -34,5 +34,5 @@ void main()
 
 	FinalColor = vec4(d, d, d, 1.0);
 	FinalColor = vec4(texture(uColor, UV).rgb, 1.0);
-	//FinalColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
+	FinalColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
 }

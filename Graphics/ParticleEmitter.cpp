@@ -53,6 +53,7 @@ namespace Columbus
 			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
 			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 			p.startEmitterPos = mParticleEffect->getPos();
+			p.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
 
 			for (j = 0; j < 9; j++)
 				p.noise[j] = C_Random::range(0, 256);
@@ -163,6 +164,8 @@ namespace Columbus
 		float transformation = mParticleEffect->getTransformation();
 		C_Vector3 constForce = mParticleEffect->getConstantForce();
 		C_Vector3 startEmitterPos = mParticleEffect->getPos();
+		C_Vector4 color = mParticleEffect->getMaterial()->getColor();
+		bool gradienting = mParticleEffect->getGradienting();
 
 		float rate = mParticleEffect->getEmitRate();
 		float count = mParticleEffect->getParticlesCount();
@@ -215,6 +218,7 @@ namespace Columbus
 				Particle.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 				Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 				Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+				Particle.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
 			}
 
 			if (Particle.active == true && Particle.age > 0)
@@ -226,7 +230,10 @@ namespace Columbus
 				noise.y = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
 				noise.z = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
 
-				Particle.color = down * (1 - percent) + up * percent;
+				if (gradienting)
+					Particle.color = down * (1 - percent) + up * percent;
+				else
+					Particle.color = color;
 
 				Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
 			}
@@ -252,7 +259,7 @@ namespace Columbus
 		C_VertexAttribPointerOpenGL(2, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(2);
 		mLBuf->bind();
-		C_VertexAttribPointerOpenGL(3, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_VertexAttribPointerOpenGL(3, 4, C_OGL_FLOAT, C_OGL_FALSE, 4 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(3);
 		mCBuf->bind();
 		C_VertexAttribPointerOpenGL(4, 4, C_OGL_FLOAT, C_OGL_FALSE, 4 * sizeof(float), NULL);
@@ -261,12 +268,13 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setUniforms()
 	{
-		mParticleEffect->getMaterial()->getShader()->setUniform3f("uPos", C_Vector3(0, 0, 0));
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSize", mParticleEffect->getParticleSize());
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uStartSize", mParticleEffect->getStartSize());
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
+		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", mParticleEffect->getSubUV());
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", static_cast<float>(mParticleEffect->getSubUVMode()));
 
 		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
 		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
@@ -428,7 +436,7 @@ namespace Columbus
 			mUvData = new float[mParticlesCount * 12];
 			mColData = new float[mParticlesCount * 24];
 			mPosData = new float[mParticlesCount * 18];
-			mTimeData = new float[mParticlesCount * 18];
+			mTimeData = new float[mParticlesCount * 24];
 
 			unsigned int vertCounter = 0;
 			unsigned int uvCounter = 0;
@@ -458,6 +466,7 @@ namespace Columbus
 				mTimeData[timeCounter++] = Particle.age;
 				mTimeData[timeCounter++] = Particle.TTL;
 				mTimeData[timeCounter++] = Particle.rotation;
+				mTimeData[timeCounter++] = Particle.frame;
 
 				mColData[colCounter++] = Particle.color.x;
 				mColData[colCounter++] = Particle.color.y;
@@ -478,7 +487,7 @@ namespace Columbus
 		mPBuf->setData(mPosData, 18 * sizeof(float)* mActiveParticles.size(), 3);
 		mPBuf->compile();
 
-		mLBuf->setData(mTimeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mLBuf->setData(mTimeData, 24 * sizeof(float) * mActiveParticles.size(), 4);
 		mLBuf->compile();
 
 		setBuffers();

@@ -7,7 +7,7 @@
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
 			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-			<Texture3>Data/Textures/fire1.png</Texture3>
+			<Texture3>Data/Textures/flame.png</Texture3>
 			<Texture4>Data/Textures/smoke.png</Texture4>
 			<Texture5>Data/Textures/spark1.png</Texture5>
 			<Texture6>Data/Textures/wall-torch.jpg</Texture6>
@@ -310,7 +310,7 @@
 					<Mesh>3</Mesh>
 				</MeshRenderer>
 			</Components>
-</GameObject13>
+		</GameObject13>
 	</GameObjects>
 </Scene>
 
