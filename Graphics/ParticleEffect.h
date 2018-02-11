@@ -36,6 +36,12 @@ namespace Columbus
 		C_PARTICLE_SORT_MODE_DISTANCE
 	};
 
+	enum C_PARTICLE_SUB_UV_MODE
+	{
+		C_PARTICLE_SUB_UV_MODE_LINEAR,
+		C_PARTICLE_SUB_UV_MODE_RANDOM
+	};
+
 	class C_ParticleEffect
 	{
 	private:
@@ -61,6 +67,7 @@ namespace Columbus
 
 		C_Vector2 mStartSize = C_Vector2(1, 1);
 		C_Vector2 mFinalSize = C_Vector2(1, 1);
+		C_Vector2 mSubUV = C_Vector2(1, 1);
 		C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
 		C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
 
@@ -83,6 +90,7 @@ namespace Columbus
 		int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
 		float mParticleShapeRadius = 1.0;
 		int mSortMode = C_PARTICLE_SORT_MODE_NONE;
+		int mSubUVMode = C_PARTICLE_SUB_UV_MODE_LINEAR;
 	public:
 		C_ParticleEffect();
 		C_ParticleEffect(std::string aFile);
@@ -106,6 +114,7 @@ namespace Columbus
 		void setParticleSize(const C_Vector2 aParticleSize);
 		void setStartSize(const C_Vector2 aStartSize);
 		void setFinalSize(const C_Vector2 aFinalSize);
+		void setSubUV(const C_Vector2 aSubUV);
 		void setStartColor(const C_Vector4 aStartColor);
 		void setFinalColor(const C_Vector4 aFinalColor);
 		void setMinTimeToLive(const float aMinTimeToLive);
@@ -125,6 +134,7 @@ namespace Columbus
 		void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
 		void setParticleShapeRadius(const float aRadius);
 		void setSortMode(const C_PARTICLE_SORT_MODE aSortMode);
+		void setSubUVMode(const C_PARTICLE_SUB_UV_MODE aSubUVMode);
 
 
 		C_Material* getMaterial() const;
@@ -143,6 +153,7 @@ namespace Columbus
 		C_Vector3 getConstantForce() const;
 		C_Vector2 getParticleSize() const;
 		C_Vector2 getStartSize() const;
+		C_Vector2 getSubUV() const;
 		C_Vector2 getFinalSize() const;
 		C_Vector4 getStartColor() const;
 		C_Vector4 getFinalColor() const;
@@ -163,6 +174,7 @@ namespace Columbus
 		int getParticleShape() const;
 		float getParticleShapeRadius() const;
 		int getSortMode() const;
+		int getSubUVMode() const;
 
 		bool saveToXML(std::string aFile) const;
 		bool saveToJSON(std::string aFile) const;

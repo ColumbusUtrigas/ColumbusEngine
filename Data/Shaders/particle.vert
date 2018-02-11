@@ -1,7 +1,7 @@
 attribute vec3 aPos;
 attribute vec2 aUV;
 attribute vec3 aPoses;
-attribute vec3 aTimes;
+attribute vec4 aTimes;
 attribute vec4 aColors;
 
 varying vec3 varPos;
@@ -11,14 +11,16 @@ varying vec4 varColor;
 uniform mat4 uView;
 uniform mat4 uProjection;
 
-uniform vec4 uPosition;
 uniform vec2 uSize;
 uniform vec2 uStartSize;
 uniform vec2 uFinalSize;
+uniform vec2 uSubUV;
 uniform float uScaleOL;
 uniform float uBillboard;
+uniform float uSubUVMode;
 
-uniform int uRenderMode;
+#define ROWS 6
+#define COLUMNS 8
 
 mat4 rotationMatrix(vec3 axis, float angle)
 {
@@ -54,6 +56,21 @@ void main(void)
 	vec3 pos = aPoses;
 
 	float lifePercent = aTimes.x / aTimes.y;
+	int frameNumber = 0;
+	
+	if (uSubUVMode == 0)
+		frameNumber = int(floor(uSubUV.x * uSubUV.y * lifePercent));
+	else if (uSubUVMode == 1)
+		frameNumber = int(aTimes.w);
+
+	int frameHorizontal = frameNumber % int(uSubUV.x);
+	int frameVertical = int(uSubUV.y) - int(frameNumber / uSubUV.x) - 1;
+
+	float frame_X = 1.0 / uSubUV.x;
+	float frame_Y = 1.0 / uSubUV.y;
+
+	vec2 frame = vec2(aUV.x * frame_X + frame_X *  frameHorizontal,
+		aUV.y * frame_Y + frame_Y * frameVertical);
 
 	vec3 Pos = aPos;
 	if (uBillboard != 0.0)
@@ -80,7 +97,7 @@ void main(void)
 	}
 
 	varPos = pos + aPos;
-	varTexCoord = aUV;
+	varTexCoord = frame;
 	varColor = aColors;
 }
 

@@ -14,6 +14,7 @@
     <PartSize X="1" Y="1"/>
     <StartSize X="1" Y="1"/>
     <FinalSize X="3" Y="3"/>
+    <SubUV X="1" Y="1"/>
     <StartColor R="1" G="0.5" B="0" A="0.1"/>
     <FinalColor R="0.5" G="0.25" B="0" A="0.01"/>
     <MinTTL>5</MinTTL>
@@ -33,4 +34,5 @@
     <Shape>1</Shape>
     <ShapeRadius>0.5</ShapeRadius>
     <SortMode>1</SortMode>
+    <SubUVMode>0</SubUVMode>
 </ParticleEffect>
