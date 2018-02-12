@@ -49,80 +49,46 @@ namespace Columbus
 		int mSpecMapID = -1;
 		int mNormMapID = -1;
 	public:
-		//Constructor
 		C_Material();
-		//Constructor 2
 		C_Material(std::string aFile);
-		//Set color
+
 		void setColor(const C_Vector4 aColor);
-		//Set light ambient color
 		void setAmbient(const C_Vector3 aAmbient);
-		//Set light diffuse color
 		void setDiffuse(const C_Vector3 aDiffuse);
-		//Set light specular color
 		void setSpecular(const C_Vector3 aSpecular);
-		//Set specular shininess
 		void setShininess(const float aShininess);
-		//Set diffuse texture
 		void setTexture(const C_Texture* aTexture);
-		//Set specular texture
 		void setSpecMap(const C_Texture* aSpecMap);
-		//Set normal texture
 		void setNormMap(const C_Texture* aNormMap);
-		//Set shader
 		void setShader(const C_Shader* aShader);
-		//Set cubemap reflection
 		void setReflection(const C_Cubemap* aReflection);
-		//Set reflection power
 		void setReflectionPower(const float aPower);
-		//Set discard alpha
 		void setDiscard(const bool aDiscard);
-		//Set object lighting
 		void setLighting(const bool aLighting);
 
-		//Return color
 		C_Vector4 getColor() const;
-		//Return light ambient color
 		C_Vector3 getAmbient() const;
-		//Return light diffuse color
 		C_Vector3 getDiffuse() const;
-		//Return light specular color
 		C_Vector3 getSpecular() const;
-		//Return specular shininess
 		float getShininess() const;
-		//Return diffuse texture
 		C_Texture* getTexture() const;
-		//Return specular texture
 		C_Texture* getSpecMap() const;
-		//Return normal texture
 		C_Texture* getNormMap() const;
-		//Return shader
 		C_Shader* getShader() const;
-		//Return cubemap reflection
 		C_Cubemap* getReflection() const;
-		//Return reflection power
 		float getReflectionPower() const;
-		//Return discard alpha
 		bool getDiscard() const;
-		//Return object lighting
 		bool getLighting() const;
 
-		//Return diffuse map ID
 		int getTextureID() const;
-		//Return specular map ID
 		int getSpecMapID() const;
-		//Return normal map ID
 		int getNormMapID() const;
 
-		//Serialize to XML file
 		bool saveToXML(std::string aFile) const;
-		//Serializer to JSON file
 		bool saveToJSON(std::string aFile) const;
-		//Deserialize from XML file
 		bool loadFromXML(std::string aFile);
-		//Deserialize from JSON file
 		bool loadFromJSON(std::string aFile);
-		//Destructor
+
 		~C_Material();
 	};
 
