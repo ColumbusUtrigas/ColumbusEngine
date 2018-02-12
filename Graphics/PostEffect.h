@@ -23,6 +23,7 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Renderbuffer.h>
+#include <Graphics/OpenGL/FramebufferOpenGL.h>
 
 namespace Columbus
 {
@@ -79,7 +80,6 @@ namespace Columbus
 		C_Framebuffer* mFB = nullptr;
 		C_Texture* mTB = nullptr;
 		C_Texture* mDepth = nullptr;
-		C_Renderbuffer* mRB = nullptr;
 
 		std::vector<C_PostEffectAttributeInt> mAttribsInt;
 		std::vector<C_PostEffectAttributeFloat> mAttribsFloat;
@@ -96,6 +96,7 @@ namespace Columbus
 		void addAttrib(C_PostEffectAttributeVector3 aAttrib);
 		void addAttrib(C_PostEffectAttributeVector4 aAttrib);
 		void clearAttribs();
+
 		void bind(C_Vector4 aClear, C_Vector2 aWindowSize);
 		void draw();
 		void unbind();
@@ -104,3 +105,6 @@ namespace Columbus
 	};
 
 }
+
+
+

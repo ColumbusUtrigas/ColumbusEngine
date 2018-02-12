@@ -290,6 +290,8 @@ namespace Columbus
 		C_EnableBlendOpenGL();
 		C_EnableAlphaTestOpenGL();
 
+		mNoneEffect.clearAttribs();
+		mNoneEffect.addAttrib({ "uResolution", mContextSize });
 		mNoneEffect.bind(C_Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
