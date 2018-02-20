@@ -137,10 +137,10 @@ namespace Columbus
 
 			if (!frag.isOpened())
 			{ C_Log::error("Shader not loaded: " + aFrag); return false; }
-
 			frag.close();
 
-			fragSource = C_ReadFile(aFrag.c_str());
+			mBuilder.build(C_ReadFile(aFrag.c_str()), E_SHADER_TYPE_FRAGMENT);
+			fragSource = mBuilder.getShader();
 		}
 
 		if (vertSource.empty())

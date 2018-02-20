@@ -1,5 +1,3 @@
-#version 130
-
 #define LIGHT_NUM 4
 
 in vec3 varPos;

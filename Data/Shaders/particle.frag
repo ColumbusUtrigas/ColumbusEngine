@@ -1,5 +1,3 @@
-#version 130
-
 varying vec3 varPos;
 varying vec2 varTexCoord;
 varying vec4 varColor;
