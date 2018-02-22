@@ -81,7 +81,7 @@ void main(void)
 			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
 		} else
 		{
-			Position = Rotation * uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
+			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
 		}
 	}
 	else
