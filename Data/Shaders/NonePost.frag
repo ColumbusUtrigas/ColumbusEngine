@@ -3,7 +3,6 @@ uniform sampler2D uDepth;
 uniform vec2 uResolution;
 
 in vec2 UV;
-out vec4 FinalColor;
 
 float blurSizeH = 1.0 / uResolution.x;
 float blurSizeV = 1.0 / uResolution.y;
@@ -30,7 +29,9 @@ void main()
 {
 	float d = pow(texture(uDepth, UV).x, 256);
 
-	//FinalColor = vec4(d, d, d, 1.0);
-	FinalColor = vec4(texture(uColor, UV).rgb, 1.0);
-	FinalColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
+	//FragColor = vec4(d, d, d, 1.0);
+	FragColor = vec4(texture(uColor, UV).rgb, 1.0);
+	//FragColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
+    //FragColor = vec4(vec3(1) - texture(uColor, UV).rgb, 1.0);
+    //FragColor = vec4(vec3(1.0) - GaussianBlur(vec2(d, d)), 1.0);
 }

@@ -196,8 +196,9 @@ namespace Columbus
 		mMaterialUnif[11] = matspc.y;
 		mMaterialUnif[12] = matspc.z;
 		mMaterialUnif[13] = mMat.getReflectionPower();
+		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
 
-		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 14);
+		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::setShaderLightAndCamera()
