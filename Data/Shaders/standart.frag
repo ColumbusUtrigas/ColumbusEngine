@@ -23,7 +23,7 @@ struct Camera
 uniform samplerCube uReflectionMap;
 uniform Material uMaterial;
 uniform Camera uCamera;
-uniform float MaterialUnif[14];
+uniform float MaterialUnif[15];
 uniform float LightUnif[120];
 
 vec4 DiffuseMap;
@@ -38,9 +38,7 @@ vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
 vec3 CubemapColor = vec3(0);
-bool IsLightEnabled = false;
-
-out vec4 FinalColor;
+vec4 Lighting = vec4(1);
 
 mat3 TBN;
 
@@ -54,14 +52,19 @@ void main(void)
 	Init();
 
 
-	Light(0);
-	Light(1);
-	Light(2);
-	Light(3);
-	Light(4);
-	Light(5);
-	Light(6);
-	Light(7);
+	if (MaterialUnif[14] != 0.0)
+	{
+		Light(0);
+		Light(1);
+		Light(2);
+		Light(3);
+		Light(4);
+		Light(5);
+		Light(6);
+		Light(7);
+
+		Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
+	}
 	
 	Cubemap();
 
@@ -107,7 +110,6 @@ void Light(int id)
 	float LightOuterAngle = LightUnif[14 + offset];
 
 	if (LightType == -1) return;
-	else IsLightEnabled = true;
 
 	vec3 lightDir;
 
@@ -177,23 +179,19 @@ void Cubemap(void)
 
 void Final(void)
 {
-	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
-	if (IsLightEnabled == false)
-		Lighting = vec4(1);
-
 	if (DiffuseMap.xyz != vec3(0))
 	{
 		if (CubemapColor != vec3(0))
-			FinalColor = Lighting * DiffuseMap + vec4(CubemapColor, 1.0);
+			FragColor = Lighting * DiffuseMap + vec4(CubemapColor, 1.0);
 		else
-			FinalColor = Lighting * DiffuseMap;
+			FragColor = Lighting * DiffuseMap;
 	}
 	else
 	{
 		if (CubemapColor != vec3(0))
-			FinalColor = Lighting + vec4(CubemapColor, 1.0);
+			FragColor = Lighting + vec4(CubemapColor, 1.0);
 		else
-			FinalColor = Lighting;
+			FragColor = Lighting;
 	}
 }
 

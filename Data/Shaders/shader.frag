@@ -8,7 +8,6 @@ varying mat3 varTBN;
 
 uniform samplerCube uReflectionMap;
 
-
 uniform sampler2D diffTex;
 uniform sampler2D specTex;
 

@@ -304,16 +304,17 @@ namespace Columbus
 		C_Vector3 matdif = mParticleEffect->getMaterial()->getDiffuse();
 		C_Vector3 matspc = mParticleEffect->getMaterial()->getSpecular();
 
-		float const MaterialUnif[14] =
+		float const MaterialUnif[15] =
 		{
 			matcol.x, matcol.y, matcol.z, matcol.w,
 			matamb.x, matamb.y, matamb.z,
 			matdif.x, matdif.y, matdif.z,
 			matspc.x, matspc.y, matspc.z,
-			mParticleEffect->getMaterial()->getReflectionPower()
+			mParticleEffect->getMaterial()->getReflectionPower(),
+			mParticleEffect->getMaterial()->getLighting() ? 1.0f : 0.0f
 		};
 
-		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 14);
+		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setShaderLightAndCamera()
