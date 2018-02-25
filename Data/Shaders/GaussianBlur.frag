@@ -1,10 +1,6 @@
-#version 130
-
 uniform sampler2D uFrame;
 uniform vec2 uWindowSize;
 uniform vec2 uBlurSize;
-
-out vec3 FinalColor;
 
 void main(void)
 {
@@ -26,7 +22,7 @@ void main(void)
         }
     }
 
-    FinalColor = sum.xyz;
+    FragColor = vec4(sum.xyz, 1.0);
 }
 
 

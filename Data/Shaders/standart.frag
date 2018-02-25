@@ -3,8 +3,6 @@
 in vec3 varPos;
 in vec2 varUV;
 in vec3 varNormal;
-in vec3 varTangent;
-in vec3 varBitangent;
 in vec3 varFragPos;
 in mat3 varTBN;
 
