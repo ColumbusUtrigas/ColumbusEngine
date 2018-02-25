@@ -54,6 +54,11 @@ vec3 BokehBlur(float radius, float amount)
 	return acc / div;
 }
 
+vec3 Grayscale()
+{
+	return vec3(dot(texture2D(uColor, UV).rgb, vec3(0.3333, 0.3333, 0.3333)));
+}
+
 void main()
 {
 	float d = pow(texture(uDepth, UV).x, 256);
@@ -61,7 +66,8 @@ void main()
 	//FragColor = vec4(d, d, d, 1.0);
 	//FragColor = vec4(texture(uColor, UV).rgb, 1.0);
 	//FragColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
-	FragColor = vec4(BokehBlur(1, 10), 1.0);
+	FragColor = vec4(BokehBlur(d / 2, 5), 1.0);
     //FragColor = vec4(vec3(1) - texture(uColor, UV).rgb, 1.0);
     //FragColor = vec4(vec3(1.0) - GaussianBlur(vec2(d, d)), 1.0);
+    //FragColor = vec4(Grayscale(), 1.0);
 }
