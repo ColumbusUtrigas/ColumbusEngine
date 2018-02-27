@@ -40,14 +40,14 @@ vec3 BokehBlur(float radius, float amount)
 {
 	vec3 acc = vec3(0.0);
 	vec3 div = vec3(0.0);
-    vec2 pixel = vec2(uResolution.y / uResolution.x, 1.0) * radius * .025;
+    vec2 pixel = vec2(uResolution.y / uResolution.x, 1.0) * radius * 0.025;
     float r = 1.0;
 
 	for (float j = 0.0; j < GOLDEN_ANGLE * ITERATIONS; j += GOLDEN_ANGLE)
     {
        	
 		vec3 col = texture2D(uColor, UV + pixel * Sample(j, r)).xyz;
-		vec3 bokeh = vec3(.5) + pow(col, vec3(10.0)) * amount;
+		vec3 bokeh = vec3(0.5) + pow(col, vec3(10.0)) * amount;
 		acc += col * bokeh;
 		div += bokeh;
 	}
@@ -59,15 +59,21 @@ vec3 Grayscale()
 	return vec3(dot(texture2D(uColor, UV).rgb, vec3(0.3333, 0.3333, 0.3333)));
 }
 
+vec3 Fog(vec3 color, float coef)
+{
+	return mix(texture(uColor, UV).rgb, color, coef);
+}
+
 void main()
 {
 	float d = pow(texture(uDepth, UV).x, 256);
 
 	//FragColor = vec4(d, d, d, 1.0);
-	//FragColor = vec4(texture(uColor, UV).rgb, 1.0);
+	FragColor = vec4(texture(uColor, UV).rgb, 1.0);
 	//FragColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
-	FragColor = vec4(BokehBlur(d / 2, 5), 1.0);
+	//FragColor = vec4(BokehBlur(0.5, 6), 1.0);
     //FragColor = vec4(vec3(1) - texture(uColor, UV).rgb, 1.0);
     //FragColor = vec4(vec3(1.0) - GaussianBlur(vec2(d, d)), 1.0);
     //FragColor = vec4(Grayscale(), 1.0);
+    //FragColor = vec4(Fog(vec3(0.7, 0.7, 0.7), clamp(d - 0.3, 0.0, 1.0)), 1.0);
 }

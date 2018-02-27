@@ -29,6 +29,22 @@ namespace Columbus
 		C_INPUT_BIND_KEY_UP,
 	};
 
+	enum E_InputSystemCursor
+	{
+		E_INPUT_SYSTEM_CURSOR_ARROW,
+		E_INPUT_SYSTEM_CURSOR_IBEAM,
+		E_INPUT_SYSTEM_CURSOR_WAIT,
+		E_INPUT_SYSTEM_CURSOR_CROSSHAIR,
+		E_INPUT_SYSTEM_CURSOR_WAITARROW,
+		E_INPUT_SYSTEM_CURSOR_SIZENWSE,
+		E_INPUT_SYSTEM_CURSOR_SIZENESW,
+		E_INPUT_SYSTEM_CURSOR_SIZEWE,
+		E_INPUT_SYSTEM_CURSOR_SIZENS,
+		E_INPUT_SYSTEM_CURSOR_SIZEALL,
+		E_INPUT_SYSTEM_CURSOR_NO,
+		E_INPUT_SYSTEM_CURSOR_HAND
+	};
+
 	struct C_InputBind
 	{
 		C_InputBindType type;
@@ -71,7 +87,11 @@ namespace Columbus
 
 		void setWindow(const C_SDLWindow* aWindow);
 		void setIO(const GUI::C_IO* aIO);
+
 		void showMouseCursor(const bool aX);
+		void setSystemCursor(const E_InputSystemCursor aID);
+		void setColoredCursor(const void* aPixels, const unsigned int aWidth,
+			const unsigned int aHeight, const unsigned int aBPP, const C_Vector2 aHot);
 		void setMousePos(const C_Vector2 aPos);
 		void setMousePosGlobal(const C_Vector2 aPos);
 
