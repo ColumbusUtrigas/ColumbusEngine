@@ -6,8 +6,8 @@
     <AdditiveBlending>1</AdditiveBlending>
     <Billboarding>1</Billboarding>
     <Gradienting>1</Gradienting>
-    <MinVelocity X="-0.2" Y="1" Z="-0.2"/>
-    <MaxVelocity X="0.2" Y="3" Z="0.2"/>
+    <MinVelocity X="-0.5" Y="2" Z="-0.5"/>
+    <MaxVelocity X="0.5" Y="3" Z="0.5"/>
     <MinAcceleration X="0" Y="0" Z="0"/>
     <MaxAcceleration X="0" Y="0" Z="0"/>
     <ConstForce X="0" Y="0" Z="0"/>
@@ -18,8 +18,8 @@
     <SubUVMode>0</SubUVMode>
     <StartColor R="2" G="1" B="0" A="1"/>
     <FinalColor R="1" G="0" B="0" A="0.5"/>
-    <MinTTL>2</MinTTL>
-    <MaxTTL>4</MaxTTL>
+    <MinTTL>0.5</MinTTL>
+    <MaxTTL>1</MaxTTL>
     <MinRotation>10</MinRotation>
     <MaxRotation>50</MaxRotation>
     <MinRotationSpeed>-50</MinRotationSpeed>
@@ -28,7 +28,7 @@
     <NoiseOctaves>4</NoiseOctaves>
     <NoiseLacunarity>1</NoiseLacunarity>
     <NoisePersistence>0.5</NoisePersistence>
-    <NoiseFrequency>0.5</NoiseFrequency>
+    <NoiseFrequency>1</NoiseFrequency>
     <NoiseAmplitude>0.5</NoiseAmplitude>
     <EmitRate>15</EmitRate>
     <Transformation>1</Transformation>
