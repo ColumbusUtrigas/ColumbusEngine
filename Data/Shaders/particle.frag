@@ -35,6 +35,8 @@ void main()
 		//Light(5);
 		//Light(6);
 		//Light(7);
+
+		Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 	}
 
 	FragColor = Color * Lighting;

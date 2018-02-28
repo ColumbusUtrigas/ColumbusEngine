@@ -204,14 +204,19 @@ namespace Columbus
 		mSubUV = static_cast<C_Vector2>(aSubUV);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setStartColor(C_Vector4 aStartColor)
+	void C_ParticleEffect::setStartColor(const C_Vector4 aStartColor)
 	{
 		mStartColor = static_cast<C_Vector4>(aStartColor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setFinalColor(C_Vector4 aFinalColor)
+	void C_ParticleEffect::setFinalColor(const C_Vector4 aFinalColor)
 	{
 		mFinalColor = static_cast<C_Vector4>(aFinalColor);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEffect::setBoxShapeSize(const C_Vector3 aBoxShapeSize)
+	{
+		mBoxShapeSize = static_cast<C_Vector3>(aBoxShapeSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEffect::setMinTimeToLive(const float aMinTimeToLive)
@@ -406,6 +411,11 @@ namespace Columbus
 		return mFinalColor;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	C_Vector3 C_ParticleEffect::getBoxShapeSize() const
+	{
+		return mBoxShapeSize;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	float C_ParticleEffect::getMinTimeToLive() const
 	{
 		return mMinTimeToLive;
@@ -556,6 +566,9 @@ namespace Columbus
 
 		if (!serializer.setVector4("FinalColor", mFinalColor, { "R", "G", "B", "A" }))
 		{ C_Log::error("Can't save Particles final color: ", aFile); return false; }
+
+		if (!serializer.setVector3("BoxShapeSize", mBoxShapeSize, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't save Particles box shape size: ", aFile); return false; }
 
 		if (!serializer.setFloat("MinTTL", mMinTimeToLive))
 		{ C_Log::error("Can't save Particles min TTL: " + aFile); return false; }
@@ -729,6 +742,9 @@ namespace Columbus
 
 		if (!serializer.getVector4("FinalColor", &mFinalColor, { "R", "G", "B", "A" }))
 		{ C_Log::error("Can't load Particles final color: " + aFile); return false; }
+
+		if (!serializer.getVector3("BoxShapeSize", &mBoxShapeSize, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't load Particles box shape size: " + aFile); return false; }
 
 		if (!serializer.getFloat("MinTTL", &mMinTimeToLive))
 		{ C_Log::error("Can't load Particles min TTL: " + aFile); return false; }

@@ -1,13 +1,13 @@
 <ParticleEffect>
-    <Count>100</Count>
+    <Count>1000</Count>
     <Visible>1</Visible>
     <ScaleOL>1</ScaleOL>
     <EmitFromShell>0</EmitFromShell>
     <AdditiveBlending>1</AdditiveBlending>
     <Billboarding>1</Billboarding>
     <Gradienting>1</Gradienting>
-    <MinVelocity X="-1" Y="2" Z="-1"/>
-    <MaxVelocity X="1" Y="3" Z="1"/>
+    <MinVelocity X="-1" Y="1" Z="-1"/>
+    <MaxVelocity X="1" Y="2" Z="1"/>
     <MinAcceleration X="0" Y="0" Z="0"/>
     <MaxAcceleration X="0" Y="0" Z="0"/>
     <ConstForce X="0" Y="0" Z="0"/>
@@ -17,9 +17,8 @@
     <SubUV X="1.0" Y="1.0"/>
     <StartColor R="2" G="1" B="0" A="1"/>
     <FinalColor R="1" G="0" B="0" A="0.5"/>
-    <BoxShapeSize X="1" Y="1" Z="2"/>
-    <MinTTL>0.5</MinTTL>
-    <MaxTTL>1</MaxTTL>
+    <MinTTL>3</MinTTL>
+    <MaxTTL>4</MaxTTL>
     <MinRotation>10</MinRotation>
     <MaxRotation>50</MaxRotation>
     <MinRotationSpeed>-50</MinRotationSpeed>
@@ -30,10 +29,11 @@
     <NoisePersistence>0.5</NoisePersistence>
     <NoiseFrequency>1</NoiseFrequency>
     <NoiseAmplitude>0.5</NoiseAmplitude>
-    <EmitRate>15</EmitRate>
+    <EmitRate>50</EmitRate>
     <Transformation>1</Transformation>
-    <Shape>0</Shape>
+    <Shape>2</Shape>
     <ShapeRadius>0.1</ShapeRadius>
+    <BoxShapeSize X="30" Y="5" Z="20"/>
     <SortMode>0</SortMode>
     <SubUVMode>0</SubUVMode>
 </ParticleEffect>

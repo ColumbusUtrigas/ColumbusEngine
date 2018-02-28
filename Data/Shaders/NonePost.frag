@@ -56,7 +56,8 @@ vec3 BokehBlur(float radius, float amount)
 
 vec3 Grayscale()
 {
-	return vec3(dot(texture2D(uColor, UV).rgb, vec3(0.3333, 0.3333, 0.3333)));
+	vec3 tex = texture(uColor, UV).rgb;
+	return vec3(0.2126 * tex.r + 0.7152 * tex.g + 0.0722 * tex.b);
 }
 
 vec3 Fog(vec3 color, float coef)

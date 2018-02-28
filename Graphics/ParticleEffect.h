@@ -21,7 +21,8 @@ namespace Columbus
 	enum C_PARTICLE_SHAPE
 	{
 		C_PARTICLE_SHAPE_CIRCLE,
-		C_PARTICLE_SHAPE_SPHERE
+		C_PARTICLE_SHAPE_SPHERE,
+		C_PARTICLE_SHAPE_CUBE
 	};
 
 	enum C_PARTICLE_TRANSFORMATION
@@ -70,6 +71,7 @@ namespace Columbus
 		C_Vector2 mSubUV = C_Vector2(1, 1);
 		C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
 		C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
+		C_Vector3 mBoxShapeSize = C_Vector3(1, 1, 1);
 
 		float mMinTimeToLive = 1.0;
 		float mMaxTimeToLive = 1.0;
@@ -117,6 +119,7 @@ namespace Columbus
 		void setSubUV(const C_Vector2 aSubUV);
 		void setStartColor(const C_Vector4 aStartColor);
 		void setFinalColor(const C_Vector4 aFinalColor);
+		void setBoxShapeSize(const C_Vector3 aBoxShapeSize);
 		void setMinTimeToLive(const float aMinTimeToLive);
 		void setMaxTimeToLive(const float aMaxTimeToLive);
 		void setMinRotation(const float aMinRotation);
@@ -157,6 +160,7 @@ namespace Columbus
 		C_Vector2 getFinalSize() const;
 		C_Vector4 getStartColor() const;
 		C_Vector4 getFinalColor() const;
+		C_Vector3 getBoxShapeSize() const;
 		float getMinTimeToLive() const;
 		float getMaxTimeToLive() const;
 		float getMinRotation() const;
