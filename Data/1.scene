@@ -44,7 +44,7 @@
 	</Resources>
 
 	<GameObjects>
-		<Count>14</Count>
+		<Count>15</Count>
 
 		<GameObject0>
 			<Name>Sponza</Name>
@@ -85,25 +85,6 @@
 		</GameObject1>
 
 		<GameObject2>
-			<Name>Embers</Name>
-
-			<Transform>
-				<Position X="0" Y="10.5" Z="-3.5"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Embers.cxmat</Material>
-			<Shader>1</Shader>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Embers.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject2>
-
-		<GameObject3>
 			<Name>Smoke</Name>
 
 			<Transform>
@@ -118,6 +99,25 @@
 			<Components>
 				<ParticleSystem>
 					<Particles>Data/Particles/Smoke.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject2>
+
+		<GameObject3>
+			<Name>Embers</Name>
+
+			<Transform>
+				<Position X="0" Y="10.5" Z="-3.5"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Embers.cxmat</Material>
+			<Shader>1</Shader>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/Embers.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject3>
@@ -161,25 +161,6 @@
 		</GameObject5>
 
 		<GameObject6>
-			<Name>Embers1</Name>
-
-			<Transform>
-				<Position X="0" Y="10.5" Z="3.5"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Embers.cxmat</Material>
-			<Shader>1</Shader>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Embers.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject6>
-
-		<GameObject7>
 			<Name>Smoke1</Name>
 
 			<Transform>
@@ -194,6 +175,25 @@
 			<Components>
 				<ParticleSystem>
 					<Particles>Data/Particles/Smoke.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject6>
+
+		<GameObject7>
+			<Name>Embers1</Name>
+
+			<Transform>
+				<Position X="0" Y="10.5" Z="3.5"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Embers.cxmat</Material>
+			<Shader>1</Shader>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/Embers.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject7>
@@ -311,6 +311,25 @@
 				</MeshRenderer>
 			</Components>
 		</GameObject13>
+
+		<GameObject14>
+			<Name>WarEmbers</Name>
+
+			<Transform>
+				<Position X="6" Y="5" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Embers.cxmat</Material>
+			<Shader>1</Shader>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/War Embers.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject14>
 	</GameObjects>
 </Scene>
 

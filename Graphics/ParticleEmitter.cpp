@@ -34,8 +34,11 @@ namespace Columbus
 		mParticleEffect = const_cast<C_ParticleEffect*>(aParticleEffect);
 
 		size_t i, j;
-		float ang, rad,phi, tht;
+		float ang, rad, phi, tht;
 		float xsp, ysp, zsp;
+		float radius = mParticleEffect->getParticleShapeRadius();
+		bool emitFromShell = mParticleEffect->getEmitFromShell();
+		C_Vector3 box = mParticleEffect->getBoxShapeSize();
 
 		mNoise.setOctaves(mParticleEffect->getNoiseOctaves());
 		mNoise.setLacunarity(mParticleEffect->getNoiseLacunarity());
@@ -63,38 +66,9 @@ namespace Columbus
 
 			switch(mParticleEffect->getParticleShape())
 			{
-				case C_PARTICLE_SHAPE_CIRCLE:
-				{
-					ang = C_Random::range(0.0, 6.283185318);
-					rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
-
-					if (mParticleEffect->getEmitFromShell() == true)
-						rad = mParticleEffect->getParticleShapeRadius();
-
-					xsp = rad * cos(ang);
-					ysp = 0.0;
-					zsp = rad * sin(ang);
-
-					p.startPos = C_Vector3(xsp, ysp, zsp);
-					break;
-				}
-
-				case C_PARTICLE_SHAPE_SPHERE:
-				{
-					rad = C_Random::range(0.0, mParticleEffect->getParticleShapeRadius());
-					phi = C_Random::range(0.0, 6.283185318);
-					tht = C_Random::range(0.0, 3.141592659);
-
-					if (mParticleEffect->getEmitFromShell() == true)
-						rad = mParticleEffect->getParticleShapeRadius();
-
-					xsp = rad * cos(phi) * sin(tht);
-					ysp = rad * sin(phi) * sin(tht);
-					zsp = rad * cos(tht);
-
-					p.startPos = C_Vector3(xsp, ysp, zsp);
-					break;
-				}
+				case C_PARTICLE_SHAPE_CIRCLE: p.genCircle(radius, emitFromShell); break;
+				case C_PARTICLE_SHAPE_SPHERE: p.genSphere(radius, emitFromShell); break;
+				case C_PARTICLE_SHAPE_CUBE: p.genCube(box, emitFromShell); break;
 			}
 
 			mParticles.push_back(p);

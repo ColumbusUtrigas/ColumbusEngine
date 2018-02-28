@@ -17,6 +17,7 @@
     <SubUV X="4" Y="4"/>
     <StartColor R="1" G="0.5" B="0" A="0.9"/>
     <FinalColor R="0.5" G="0.25" B="0" A="0.01"/>
+    <BoxShapeSize X="1" Y="1" Z="2"/>
     <MinTTL>5</MinTTL>
     <MaxTTL>10</MaxTTL>
     <MinRotation>10</MinRotation>
