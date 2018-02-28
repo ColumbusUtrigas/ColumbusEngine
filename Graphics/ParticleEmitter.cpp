@@ -133,7 +133,7 @@ namespace Columbus
 	{
 		using namespace std;
 		
-		copyActive();
+		//copyActive();
 
 		float transformation = mParticleEffect->getTransformation();
 		C_Vector3 constForce = mParticleEffect->getConstantForce();
@@ -157,19 +157,68 @@ namespace Columbus
 		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
-		size_t size;
+		/*size_t size;
 
 		auto func = [](const C_ColorKey &a, const C_ColorKey &b) -> bool
 		{
 			return a.key > b.key;
 		};
 
-		std::sort(mColorKeys.begin(), mColorKeys.end(), func);
+		std::sort(mColorKeys.begin(), mColorKeys.end(), func);*/
 
 		down = mParticleEffect->getStartColor();
 		up = mParticleEffect->getFinalColor();
 
+		mTimer += aTimeTick;
+
 		for (auto& Particle : mParticles)
+		{
+			if (mTimer < fireT) break;
+			mTimer -= fireT;
+			//if (Particle.active == true) continue;
+
+			Particle.age = mTimer;
+			Particle.active = true;
+			Particle.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+			Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+			Particle.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
+			Particle.startEmitterPos = startEmitterPos;
+
+			mActiveParticles.push_back(Particle);
+			mParticles.erase(mParticles.begin() + counter);
+
+			counter++;
+		}
+
+		counter = 0;
+
+		for (auto& Particle : mActiveParticles)
+		{
+			if (Particle.age > Particle.TTL)
+			{
+				Particle.age = 0.0;
+				Particle.active = false;
+
+				//mParticles.push_back(Particle);
+				//mActiveParticles.erase(mActiveParticles.begin() + counter);
+			}
+
+			life = fmod(Particle.age, Particle.TTL);
+			percent = life / Particle.TTL;
+
+			if (gradienting) Particle.color = down * (1 - percent) + up * percent;
+			else Particle.color = color;
+
+			noise.x = static_cast<float>(mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]));
+			noise.y = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
+			noise.z = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
+
+			Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
+			counter++;
+		}
+
+		/*for (auto& Particle : mParticles)
 		{
 			e = min(Particle.TTL, fireT) * counter;
 			Particle.age = fmod(e + a, spawnT);
@@ -213,7 +262,7 @@ namespace Columbus
 			}
 
 			counter++;
-		}
+		}*/
 
 		if (mParticleEffect->getSortMode() == C_PARTICLE_SORT_MODE_DISTANCE)
 			sort();

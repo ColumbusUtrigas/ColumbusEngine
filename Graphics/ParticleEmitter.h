@@ -118,6 +118,8 @@ namespace Columbus
 			for (i = 0; i < 9; i++)
 				noise[i] = fmod(noise[i] + 0.01, 256);
 
+			age += aTimeTick;
+
 			pos = (velocity + aForce) * age + (accel * 0.5 * age * age);
 			pos += startPos + startEmitterPos;
 			pos += aNoise;
@@ -188,6 +190,7 @@ namespace Columbus
 		void unbindAll();
 		
 		float mLightUniform[120];
+		float mTimer = 0.0;
 		float* mVertData = nullptr;
 		float* mUvData = nullptr;
 		float* mColData = nullptr;
