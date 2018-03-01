@@ -173,6 +173,9 @@ namespace Columbus
 
 		for (auto& Particle : mParticles)
 		{
+			Particle.age = 0.0;
+			Particle.active = false;
+
 			if (mTimer < fireT) break;
 			mTimer -= fireT;
 			//if (Particle.active == true) continue;
@@ -184,6 +187,7 @@ namespace Columbus
 			Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 			Particle.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
 			Particle.startEmitterPos = startEmitterPos;
+
 
 			mActiveParticles.push_back(Particle);
 			mParticles.erase(mParticles.begin() + counter);
@@ -200,8 +204,8 @@ namespace Columbus
 				Particle.age = 0.0;
 				Particle.active = false;
 
-				//mParticles.push_back(Particle);
-				//mActiveParticles.erase(mActiveParticles.begin() + counter);
+				mParticles.push_back(Particle);
+				mActiveParticles.erase(mActiveParticles.begin() + counter);
 			}
 
 			life = fmod(Particle.age, Particle.TTL);

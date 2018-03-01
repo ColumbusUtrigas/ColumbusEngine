@@ -86,7 +86,7 @@ namespace Columbus
 		float mNoiseFrequency = 1.0;
 		float mNoiseAmplitude = 1.0;
 
-		int mEmitRate = 5;
+		float mEmitRate = 5.0;
 
 		int mParticleTransformation = C_PARTICLE_TRANSFORMATION_WORLD;
 		int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
@@ -132,7 +132,7 @@ namespace Columbus
 		void setNoisePersistence(const float aNoisePersistence);
 		void setNoiseFrequency(const float aNoiseFrequency);
 		void setNoiseAmplitude(const float aNoiseAmplitude);
-		void setEmitRate(const int aEmitRate);
+		void setEmitRate(const float aEmitRate);
 		void setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation);
 		void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
 		void setParticleShapeRadius(const float aRadius);
@@ -173,7 +173,7 @@ namespace Columbus
 		float getNoisePersistence() const;
 		float getNoiseFrequency() const;
 		float getNoiseAmplitude() const;
-		int getEmitRate() const;
+		float getEmitRate() const;
 		int getTransformation() const;
 		int getParticleShape() const;
 		float getParticleShapeRadius() const;
