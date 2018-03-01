@@ -37,7 +37,7 @@ namespace Columbus
 		mNoisePersistence(0.5),
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
-		mEmitRate(5),
+		mEmitRate(5.0),
 		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
 		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
@@ -67,7 +67,7 @@ namespace Columbus
 		mNoisePersistence(0.5),
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
-		mEmitRate(5),
+		mEmitRate(5.0),
 		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
 		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
@@ -97,7 +97,7 @@ namespace Columbus
 		mNoisePersistence(0.5),
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
-		mEmitRate(5),
+		mEmitRate(5.0),
 		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
 		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
@@ -279,9 +279,9 @@ namespace Columbus
 		mNoiseAmplitude = static_cast<float>(aNoiseAmplitude);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setEmitRate(const int aEmitRate)
+	void C_ParticleEffect::setEmitRate(const float aEmitRate)
 	{
-		mEmitRate = static_cast<int>(aEmitRate);
+		mEmitRate = static_cast<float>(aEmitRate);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEffect::setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation)
@@ -476,7 +476,7 @@ namespace Columbus
 		return mNoiseAmplitude;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getEmitRate() const
+	float C_ParticleEffect::getEmitRate() const
 	{
 		return mEmitRate;
 	}
@@ -606,7 +606,7 @@ namespace Columbus
 		if (!serializer.setFloat("NoiseAmplitude", mNoiseAmplitude))
 		{ C_Log::error("Can't save Particles noise amplitude: " + aFile); return false; }
 
-		if (!serializer.setInt("EmitRate", mEmitRate))
+		if (!serializer.setFloat("EmitRate", mEmitRate))
 		{ C_Log::error("Can't save Particles emit rate: " + aFile); return false; }
 
 		if (!serializer.setInt("Transformation", mParticleTransformation))
@@ -782,7 +782,7 @@ namespace Columbus
 		if (!serializer.getFloat("NoiseAmplitude", &mNoiseAmplitude))
 		{ C_Log::error("Can't load Particles noise amplitude: " + aFile); return false; }
 
-		if (!serializer.getInt("EmitRate", &mEmitRate))
+		if (!serializer.getFloat("EmitRate", &mEmitRate))
 		{ C_Log::error("Can't load Particles emit rate: " + aFile); return false; }
 
 		if (!serializer.getInt("Transformation", &mParticleTransformation))
