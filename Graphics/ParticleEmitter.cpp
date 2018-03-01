@@ -150,7 +150,7 @@ namespace Columbus
 			spawnT = mMaxTTL;
 
 		float a = mLife;
-		float e, life, age, percent;
+		float e, age, percent;
 		bool prevActive;
 		C_Vector4 up, down;
 		C_Vector3 noise;
@@ -175,6 +175,7 @@ namespace Columbus
 		{
 			Particle.age = 0.0;
 			Particle.active = false;
+			Particle.startEmitterPos = startEmitterPos;
 
 			if (mTimer < fireT) break;
 			mTimer -= fireT;
@@ -186,7 +187,6 @@ namespace Columbus
 			Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 			Particle.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
-			Particle.startEmitterPos = startEmitterPos;
 
 
 			mActiveParticles.push_back(Particle);
@@ -208,8 +208,7 @@ namespace Columbus
 				mActiveParticles.erase(mActiveParticles.begin() + counter);
 			}
 
-			life = fmod(Particle.age, Particle.TTL);
-			percent = life / Particle.TTL;
+			percent = Particle.age / Particle.TTL;
 
 			if (gradienting) Particle.color = down * (1 - percent) + up * percent;
 			else Particle.color = color;
