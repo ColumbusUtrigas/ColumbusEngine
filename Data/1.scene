@@ -313,7 +313,7 @@
 		</GameObject13>
 
 		<GameObject14>
-			<Name>WarEmbers</Name>
+			<Name>Dust</Name>
 
 			<Transform>
 				<Position X="6" Y="5" Z="0"/>
@@ -326,7 +326,7 @@
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/War Embers.cxpar</Particles>
+					<Particles>Data/Particles/Dust.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject14>
