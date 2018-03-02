@@ -32,7 +32,7 @@
     <NoiseAmplitude>1.0</NoiseAmplitude>
     <EmitRate>10</EmitRate>
     <Transformation>1</Transformation>
-    <Shape>1</Shape>
+    <Shape>0</Shape>
     <ShapeRadius>0.5</ShapeRadius>
     <SortMode>1</SortMode>
     <SubUVMode>1</SubUVMode>

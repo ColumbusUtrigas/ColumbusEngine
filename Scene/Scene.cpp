@@ -51,10 +51,8 @@ namespace Columbus
 			if (mesh != nullptr)
 			{
 				mesh->setLights(mLights);
-				if (mSkybox != nullptr)
-					mesh->setReflection(mSkybox->getCubemap());
-				if (mCamera != nullptr)
-					mesh->setCamera(*mCamera);
+				if (mSkybox != nullptr) mesh->setReflection(mSkybox->getCubemap());
+				if (mCamera != nullptr) mesh->setCamera(*mCamera);
 			}
 		}
 	}
@@ -69,8 +67,9 @@ namespace Columbus
 			if (ps != nullptr)
 			{
 				ps->setLights(mLights);
-				if (mCamera != nullptr)
-					ps->setCamera(*mCamera);
+				if (ps->getEmitter() != nullptr || ps->getEmitter()->getParticleEffect() != nullptr)
+					ps->getEmitter()->getParticleEffect()->setPos(Object.second->Transform.getPos());
+				if (mCamera != nullptr) ps->setCamera(*mCamera);
 			}
 		}
 	}

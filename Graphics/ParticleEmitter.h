@@ -56,8 +56,6 @@ namespace Columbus
 
 		unsigned int frame = 0;
 
-		bool active = false;
-
 		void genCircle(const float aRadius, const bool aEmitFromShell)
 		{
 			float ang = C_Random::range(0.0, 6.283185306);
@@ -180,7 +178,6 @@ namespace Columbus
 		};
 		
 		void sort();
-		void copyActive();
 		void setBuffers();
 		void setUniforms();
 		void setShaderMaterial();
