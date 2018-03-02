@@ -31,11 +31,10 @@ namespace Columbus
 
 	class C_Texture
 	{
-	private:
+	protected:
 		C_Image mImage;
 
-		uint8_t* mBuffer = nullptr;
-		unsigned int mID = 0;
+		//unsigned int mID = 0;
 
 		std::string mFile;
 
@@ -49,25 +48,28 @@ namespace Columbus
 		C_Texture(std::string aPath, bool aSmooth = true);
 		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		
-		void load(std::string aPath, bool aSmooth = true);
-		void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
+		virtual void load(std::string aPath, bool aSmooth = true);
+		virtual void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
+		virtual void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		
-		void setConfig(C_TextureConfig aConfig);
-		void setSmooth(const bool aSmooth);
-		void setAnisotropy(const unsigned int aAnisotropy);
+		virtual void setConfig(C_TextureConfig aConfig);
+		virtual void setSmooth(const bool aSmooth);
+		virtual void setAnisotropy(const unsigned int aAnisotropy);
 
 		C_TextureConfig getConfig();
 		size_t getSize();
 
 		bool save(std::string aFile, size_t aQuality = 100);
 		
-		void bind();
-		static void unbind();
+		virtual void bind();
+		virtual void unbind();
 		
-		inline unsigned int getID() { return mID; }
-		void sampler2D(int a);
-		void generateMipmap();
+		//inline unsigned int getID() { return mID; }
+
+		virtual void sampler2D(int a);
+		virtual void generateMipmap();
+
+		virtual std::string getType();
 		
 		~C_Texture();
 	};

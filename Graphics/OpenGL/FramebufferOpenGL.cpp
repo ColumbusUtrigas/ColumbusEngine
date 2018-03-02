@@ -9,6 +9,7 @@
 *************************************************/
 
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
+#include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -33,27 +34,27 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_FramebufferOpenGL::setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, int aID)
+	bool C_FramebufferOpenGL::setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, C_Texture* aTexture)
 	{
-		if (!glIsTexture(aID)) return false;
+		if (aTexture == nullptr) return false;
+		if (aTexture->getType() != "OpenGL Texture") return false;
+
+		unsigned int id = 0;
+		id = static_cast<C_TextureOpenGL*>(aTexture)->getID();
+
+		if (!glIsTexture(id)) return false;
 
 		unsigned int attach = GL_COLOR_ATTACHMENT0;
 
 		switch (aAttach)
 		{
-		case C_FRAMEBUFFER_COLOR_ATTACH:
-			attach = GL_COLOR_ATTACHMENT0;
-			break;
-		case C_FRAMEBUFFER_DEPTH_ATTACH:
-			attach = GL_DEPTH_ATTACHMENT;
-			break;
-		case C_FRAMEBUFFER_STENCIL_ATTACH:
-			attach = GL_STENCIL_ATTACHMENT;
-			break;
+		case C_FRAMEBUFFER_COLOR_ATTACH: attach = GL_COLOR_ATTACHMENT0; break;
+		case C_FRAMEBUFFER_DEPTH_ATTACH: attach = GL_DEPTH_ATTACHMENT; break;
+		case C_FRAMEBUFFER_STENCIL_ATTACH: attach = GL_STENCIL_ATTACHMENT; break;
 		}
 
 		bind();
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attach, GL_TEXTURE_2D, aID, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, attach, GL_TEXTURE_2D, id, 0);
 		unbind();
 
 		return true;

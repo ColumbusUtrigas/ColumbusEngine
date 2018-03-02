@@ -24,6 +24,7 @@
 #include <Graphics/Texture.h>
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
+#include <Graphics/OpenGL/TextureOpenGL.h>
 
 namespace Columbus
 {
