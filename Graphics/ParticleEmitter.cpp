@@ -111,19 +111,6 @@ namespace Columbus
 		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::copyActive()
-	{
-		mActiveParticles.resize(mParticles.size());
-
-		auto copyFunc = [](C_Particle& p)->bool
-		{
-			return p.active == true;
-		};
-
-		auto it = std::copy_if(mParticles.begin(), mParticles.end(), mActiveParticles.begin(), copyFunc);
-		mActiveParticles.resize(std::distance(mActiveParticles.begin(), it));
-	}
-	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEmitter::setLights(std::vector<C_Light*> aLights)
 	{
 		mLights = aLights;
@@ -174,20 +161,16 @@ namespace Columbus
 		for (auto& Particle : mParticles)
 		{
 			Particle.age = 0.0;
-			Particle.active = false;
 			Particle.startEmitterPos = startEmitterPos;
 
-			if (mTimer < fireT) break;
+			if (mTimer < fireT) continue;
 			mTimer -= fireT;
-			//if (Particle.active == true) continue;
 
 			Particle.age = mTimer;
-			Particle.active = true;
 			Particle.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 			Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 			Particle.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
-
 
 			mActiveParticles.push_back(Particle);
 			mParticles.erase(mParticles.begin() + counter);
@@ -202,11 +185,13 @@ namespace Columbus
 			if (Particle.age > Particle.TTL)
 			{
 				Particle.age = 0.0;
-				Particle.active = false;
 
 				mParticles.push_back(Particle);
 				mActiveParticles.erase(mActiveParticles.begin() + counter);
 			}
+
+			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+				Particle.startEmitterPos = startEmitterPos;
 
 			percent = Particle.age / Particle.TTL;
 
@@ -267,8 +252,7 @@ namespace Columbus
 			counter++;
 		}*/
 
-		if (mParticleEffect->getSortMode() == C_PARTICLE_SORT_MODE_DISTANCE)
-			sort();
+		if (mParticleEffect->getSortMode() == C_PARTICLE_SORT_MODE_DISTANCE) sort();
 
 		mLife += aTimeTick;
 	}

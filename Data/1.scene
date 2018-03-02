@@ -316,7 +316,7 @@
 			<Name>Dust</Name>
 
 			<Transform>
-				<Position X="6" Y="5" Z="0"/>
+				<Position X="0" Y="5" Z="0"/>
 				<Rotation X="0" Y="0" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>

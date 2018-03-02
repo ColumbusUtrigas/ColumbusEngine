@@ -33,7 +33,7 @@
     <Transformation>1</Transformation>
     <Shape>2</Shape>
     <ShapeRadius>0.1</ShapeRadius>
-    <BoxShapeSize X="30" Y="5" Z="20"/>
+    <BoxShapeSize X="60" Y="10" Z="30"/>
     <SortMode>0</SortMode>
     <SubUVMode>0</SubUVMode>
 </ParticleEffect>
