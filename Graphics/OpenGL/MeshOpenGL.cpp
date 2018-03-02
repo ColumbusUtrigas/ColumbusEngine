@@ -8,6 +8,7 @@
 *                   16.01.2018                  *
 *************************************************/
 #include <Graphics/OpenGL/MeshOpenGL.h>
+#include <GL/glew.h>
 
 namespace Columbus
 {

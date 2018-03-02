@@ -15,194 +15,54 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_Texture::C_Texture() :
-		mBuffer(nullptr),
-		mID(0),
-		mWidth(0),
-		mHeight(0),
-		mBPP(0)
+	C_Texture::C_Texture()
 	{
-		C_GenTextureOpenGL(&mID);
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Texture::C_Texture(std::string aPath, bool aSmooth) :
-		mBuffer(nullptr),
-		mID(0),
-		mWidth(0),
-		mHeight(0),
-		mBPP(0)
+	C_Texture::C_Texture(std::string aPath, bool aSmooth)
 	{
-		C_GenTextureOpenGL(&mID);
-		load(aPath, aSmooth);
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth) :
-		mBuffer(nullptr),
-		mID(0),
-		mWidth(0),
-		mHeight(0),
-		mBPP(0)
+	C_Texture::C_Texture(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
-		C_GenTextureOpenGL(&mID);
-		load(aData, aW, aH, aSmooth);
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::load(std::string aPath, bool aSmooth)
 	{
-		mImage.load(aPath);
 
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
-
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_REPEAT);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_REPEAT);
-
-		unsigned int format = C_OGL_RGBA;
-		if (mImage.getBPP() == 3)
-			format = C_OGL_RGB;
-
-		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, format, mImage.getWidth(), mImage.getHeight(),
-			format, C_OGL_UNSIGNED_BYTE, mImage.getData());
-
-		if (mConfig.mipmaps)
-		{
-			C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_BASE_LEVEL, mConfig.LOD);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_LEVEL, 9);
-		}
-
-		unsigned int filter;
-
-		if (mConfig.smooth)
-		{
-			mConfig.mipmaps ? (filter = C_OGL_LINEAR_MIPMAP_LINEAR) : (filter = C_OGL_LINEAR);
-
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
-		}
-		else
-		{
-			mConfig.mipmaps ? (filter = C_OGL_NEAREST_MIPMAP_NEAREST) : (filter = C_OGL_NEAREST);
-
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
-		}
-
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, mConfig.anisotropy);
-
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
-
-		C_Log::success("Texture loaded: " + aPath);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::load(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
-		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_S, C_OGL_CLAMP_TO_EDGE);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_WRAP_T, C_OGL_CLAMP_TO_EDGE);
 
-		unsigned int filter;
-
-		if (mConfig.smooth)
-		{
-			mConfig.mipmaps ? (filter = C_OGL_LINEAR_MIPMAP_LINEAR) : (filter = C_OGL_LINEAR);
-
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
-		}
-		else
-		{
-			mConfig.mipmaps ? (filter = C_OGL_NEAREST_MIPMAP_NEAREST) : (filter = C_OGL_NEAREST);
-
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
-		}
-
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA/*GL_RED*/, aW, aH,
-		//0, GL_RGBA/*GL_RED*/, GL_UNSIGNED_BYTE, (void*)aData);
-
-		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, C_OGL_RGBA, aW, aH,
-		C_OGL_RGBA, C_OGL_UNSIGNED_BYTE, (void*)aData);
-
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
 
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		unsigned int filter;
-
-		if (mConfig.smooth)
-		{
-			mConfig.mipmaps ? (filter = C_OGL_LINEAR_MIPMAP_LINEAR) : (filter = C_OGL_LINEAR);
-
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_LINEAR);
-		}
-		else
-		{
-			mConfig.mipmaps ? (filter = C_OGL_NEAREST_MIPMAP_NEAREST) : (filter = C_OGL_NEAREST);
-
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, C_OGL_NEAREST);
-		}
-
-		C_Texture2DOpenGL(C_OGL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, aW, aH,
-		C_OGL_DEPTH_COMPONENT, C_OGL_FLOAT, NULL);
-
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::setConfig(C_TextureConfig aConfig)
 	{
-		C_TextureConfig conf = mConfig;
 
-		mConfig = aConfig;
-
-		if (aConfig.smooth != conf.smooth)
-			setSmooth(aConfig.smooth);
-
-		if (aConfig.anisotropy != conf.anisotropy)
-			setAnisotropy(aConfig.anisotropy);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::setSmooth(const bool aSmooth)
 	{
-		if (mConfig.smooth != aSmooth)
-		{
-			unsigned int filter;
 
-			if (aSmooth == true)
-				mConfig.mipmaps ? (filter = C_OGL_LINEAR_MIPMAP_LINEAR) : (filter = C_OGL_LINEAR);
-			else
-				mConfig.mipmaps ? (filter = C_OGL_NEAREST_MIPMAP_NEAREST) : (filter = C_OGL_NEAREST);
-
-			mConfig.smooth = (bool)aSmooth;
-			bind();
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MIN_FILTER, filter);
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAG_FILTER, filter);
-			unbind();
-		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::setAnisotropy(const unsigned int aAnisotropy)
 	{
-		if (mConfig.anisotropy != aAnisotropy)
-		{
-			mConfig.anisotropy = (unsigned int)aAnisotropy;
-			bind();
-			C_TextureParameterOpenGL(C_OGL_TEXTURE_2D, C_OGL_TEXTURE_MAX_ANISOTROPY, aAnisotropy);
-			unbind();
-		}
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -243,35 +103,38 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::bind()
 	{
-		if(mID != 0)
-			C_BindTextureOpenGL(C_OGL_TEXTURE_2D, mID);
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::unbind()
 	{
-		C_BindTextureOpenGL(C_OGL_TEXTURE_2D, 0);
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::sampler2D(int a)
 	{
-		C_ActiveTextureOpenGL(C_OGL_TEXTURE0 + a);
-		bind();
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Texture::generateMipmap()
 	{
-		bind();
-		C_GenMipmapOpenGL(C_OGL_TEXTURE_2D);
-		unbind();
+
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	std::string C_Texture::getType()
+	{
+		return "Texture";
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	C_Texture::~C_Texture()
 	{
-		C_DeleteTextureOpenGL(&mID);
+
 	}
 
 }

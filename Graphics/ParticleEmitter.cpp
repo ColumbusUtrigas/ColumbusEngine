@@ -403,7 +403,8 @@ namespace Columbus
 		C_EnableDepthMaskOpenGL();
 
 		C_Shader::unbind();
-		C_Texture::unbind();
+		//C_Texture::unbind();
+		glBindTexture(GL_TEXTURE_2D, 0);
 		C_Buffer::unbind();
 
 		C_CloseStreamOpenGL(0);

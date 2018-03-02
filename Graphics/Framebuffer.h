@@ -38,7 +38,7 @@ namespace Columbus
 		virtual void bind();
 		virtual void unbind();
 
-		virtual bool setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, int aID);
+		virtual bool setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, C_Texture* aTexture);
 		virtual bool prepare(C_Vector4 aClear, C_Vector2 aWindowSize);
 		virtual bool check();
 

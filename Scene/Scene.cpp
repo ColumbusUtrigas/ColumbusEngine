@@ -185,7 +185,7 @@ namespace Columbus
 			{
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.getSubString({ "Resources", "Textures", elem }, &path))
-					mTextures.insert(std::pair<int, C_Texture*>(i, new C_Texture(path)));
+					mTextures.insert(std::pair<int, C_Texture*>(i, new C_TextureOpenGL(path)));
 			}
 		}
 
