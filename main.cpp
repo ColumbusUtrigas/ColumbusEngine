@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	C_Image* cur = new C_Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
 
 	input.showMouseCursor(false);
-	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_NO);
+	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_CROSSHAIR);
 	input.setColoredCursor(cur->getData(), cur->getWidth(), cur->getHeight(), cur->getBPP(), vec2(17, 3));
 
 	bool cursor = false;

@@ -49,7 +49,7 @@ namespace Columbus
 
 		C_Timer mDrawTime;
 		unsigned mFPSLimit = 60;
-		float mTimeToDraw = 1.0 / static_cast<float>(mFPSLimit);
+		float mTimeToDraw = 1.0f / static_cast<float>(mFPSLimit);
 		float mRedrawTime = 0.0;
 		int mFPS = 0;
 

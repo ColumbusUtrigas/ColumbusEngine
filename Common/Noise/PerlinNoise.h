@@ -17,7 +17,7 @@ namespace Columbus
 	public:
 		C_PerlinNoise()
 		{
-			srand(time(NULL));
+			srand(static_cast<unsigned int>(time(NULL)));
 
 			p = new int[256];
 			Gx = new float[256];

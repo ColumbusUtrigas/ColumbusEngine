@@ -18,6 +18,7 @@ uniform vec2 uSubUV;
 uniform float uScaleOL;
 uniform float uBillboard;
 uniform float uSubUVMode;
+uniform float uSubUVCycles;
 
 #define ROWS 6
 #define COLUMNS 8
@@ -59,7 +60,7 @@ void main(void)
 	int frameNumber = 0;
 	
 	if (uSubUVMode == 0)
-		frameNumber = int(floor(uSubUV.x * uSubUV.y * lifePercent));
+		frameNumber = int(floor(uSubUV.x * uSubUV.y * lifePercent * uSubUVCycles));
 	else if (uSubUVMode == 1)
 		frameNumber = int(aTimes.w);
 

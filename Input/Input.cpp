@@ -105,7 +105,7 @@ namespace Columbus
 		#endif
 
 		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(const_cast<void*>(aPixels), aW, aH, aBPP * 8, aW * aBPP, rmask, gmask, bmask, amask);
-		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, aHot.x, aHot.y);
+		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, static_cast<int>(aHot.x), static_cast<int>(aHot.y));
 		SDL_SetCursor(cursor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -194,7 +194,7 @@ namespace Columbus
 			if (mWindow->isKeyFocus() == false)
 				return false;
 
-		return ((mPreviousKeyboardState[aKey] == true) && (mCurrentKeyboardState[aKey] == true));
+		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Input::getKeyDown(const unsigned int aKey)
@@ -203,7 +203,7 @@ namespace Columbus
 			if (mWindow->isKeyFocus() == false)
 				return false;
 
-		return ((mPreviousKeyboardState[aKey] == false) && (mCurrentKeyboardState[aKey] == true));
+		return ((mPreviousKeyboardState[aKey] == 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Input::getKeyUp(const unsigned int aKey)
@@ -212,7 +212,7 @@ namespace Columbus
 			if (mWindow->isKeyFocus() == false)
 				return false;
 
-		return ((mPreviousKeyboardState[aKey] == true) && (mCurrentKeyboardState[aKey] == false));
+		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] == 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

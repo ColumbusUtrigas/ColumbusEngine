@@ -65,11 +65,13 @@ vec3 Fog(vec3 color, float coef)
 	return mix(texture(uColor, UV).rgb, color, coef);
 }
 
-vec3 Pixelization(vec2 resolution)
+vec3 Pixelization(vec2 size)
 {
-	vec2 d = 1 / resolution;
-	vec2 c = d + (floor(resolution * UV) * d);
-	return texture(uColor, c).rgb;
+	float dx = size.x * (1.0 / uResolution.x);
+    float dy = size.y * (1.0 / uResolution.y);
+    vec2 coord = vec2(dx * floor(UV.x / dx),
+                      dy * floor(UV.y / dy));
+    return texture(uColor, coord).rgb;
 }
 
 void main()
@@ -84,5 +86,5 @@ void main()
     //FragColor = vec4(vec3(1.0) - GaussianBlur(vec2(d, d)), 1.0);
     //FragColor = vec4(Grayscale(), 1.0);
     //FragColor = vec4(Fog(vec3(0.7, 0.7, 0.7), clamp(d - 0.3, 0.0, 1.0)), 1.0);
-    //FragColor = vec4(Pixelization(uResolution * 0.01), 1.0);
+    //FragColor = vec4(Pixelization(vec2(15, 15)), 1.0);
 }

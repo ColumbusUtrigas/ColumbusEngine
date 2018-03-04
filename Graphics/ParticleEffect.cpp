@@ -309,6 +309,11 @@ namespace Columbus
 		mSubUVMode = static_cast<int>(aSubUVMode);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEffect::setSubUVCycles(const float aSubUVCycles)
+	{
+		mSubUVCycles = static_cast<float>(aSubUVCycles);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	C_Material* C_ParticleEffect::getMaterial() const
@@ -506,6 +511,13 @@ namespace Columbus
 		return mSubUVMode;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	float C_ParticleEffect::getSubUVCycles() const
+	{
+		return mSubUVCycles;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	bool C_ParticleEffect::saveToXML(std::string aFile) const
 	{
 		Serializer::C_SerializerXML serializer;
@@ -623,6 +635,9 @@ namespace Columbus
 
 		if (!serializer.setInt("SubUVMode", mSubUVMode))
 		{ C_Log::error("Can't save Particles sub UV mode: " + aFile); return false; }
+
+		if (!serializer.setFloat("SubUVCycles", mSubUVCycles))
+		{ C_Log::error("Can't save Particles sub UV cycles: " + aFile); return false; }
 
 		if (!serializer.save())
 		{ C_Log::error("Can't save Particle Effect: " + aFile); return false; }
@@ -799,6 +814,9 @@ namespace Columbus
 
 		if (!serializer.getInt("SubUVMode", &mSubUVMode))
 		{ C_Log::error("Can't load Particles sub UV mode: " + aFile); return false; }
+
+		if (!serializer.getFloat("SubUVCycles", &mSubUVCycles))
+		{ C_Log::error("Can't load Particles sub UV cycles: " + aFile); return false; }
 
 		C_Log::success("Particle Effect loaded: " + aFile);
 

@@ -66,8 +66,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_PostEffect::bind(C_Vector4 aClear, C_Vector2 aWindowSize)
 	{
-		mTB->load(NULL, aWindowSize.x, aWindowSize.y, true);
-		mDepth->loadDepth(NULL, aWindowSize.x, aWindowSize.y, true);
+		mTB->load(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
+		mDepth->loadDepth(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
 		mFB->prepare(aClear, aWindowSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -104,7 +104,8 @@ namespace Columbus
 
 		//C_Texture::unbind();
 		glBindTexture(GL_TEXTURE_2D, 0);
-		C_Shader::unbind();
+		glUseProgram(0);
+		//C_Shader::unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_PostEffect::unbind()
@@ -119,7 +120,8 @@ namespace Columbus
 		C_Buffer::unbind();
 		//C_Texture::unbind();
 		glBindTexture(GL_TEXTURE_2D, 0);
-		C_Shader::unbind();
+		glUseProgram(0);
+		//C_Shader::unbind();
 		mFB->unbind();
 		C_Renderbuffer::unbind();
 

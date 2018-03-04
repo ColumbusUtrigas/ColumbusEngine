@@ -30,8 +30,8 @@ namespace Columbus
 		mShown(false),
 		mMinimized(false),
 		mFPSLimit(60),
-		mTimeToDraw(1.0 / static_cast<float>(mFPSLimit)),
-		mRedrawTime(0.0),
+		mTimeToDraw(1.0f / static_cast<float>(mFPSLimit)),
+		mRedrawTime(0.0f),
 		mFPS(0)
 	{
 		if (C_SDL_INITED == false)
@@ -177,7 +177,7 @@ namespace Columbus
 		SDL_GL_MakeCurrent(mWindow, mGLC);
 		C_ClearColorOpenGL(r, g, b, a);
 		C_ClearOpenGL(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
-		C_ViewportOpenGL(0, 0, getSize().x, getSize().y);
+		C_ViewportOpenGL(0, 0, static_cast<size_t>(getSize().x), static_cast<size_t>(getSize().y));
 		mDrawTime.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -187,14 +187,14 @@ namespace Columbus
 		glFinish();
 		SDL_GL_SwapWindow(mWindow);
 
-		float RedrawTime = mDrawTime.elapsed() * 1000;
+		float RedrawTime = static_cast<float>(mDrawTime.elapsed() * 1000);
 
 		int DelayMs = (int)(mTimeToDraw * 1000 - RedrawTime);
 		
 
 		if (DelayMs - 1 > 0)
 			SDL_Delay(DelayMs);
-		mRedrawTime = mDrawTime.elapsed() * 1000;
+		mRedrawTime = static_cast<float>(mDrawTime.elapsed() * 1000);
 
 		mFPS = (int)(1.0 / (mRedrawTime / 1000));
 	}
@@ -211,7 +211,7 @@ namespace Columbus
 	void C_SDLWindow::setFPSLimit(unsigned aFPSLimit)
 	{
 		mFPSLimit = aFPSLimit;
-		mTimeToDraw = 1.0 / (float)mFPSLimit;
+		mTimeToDraw = 1.0f / (float)mFPSLimit;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -227,7 +227,7 @@ namespace Columbus
 	{
 		int x, y;
 		SDL_GetWindowSize(mWindow, &x, &y);
-		return C_Vector2(x, y);
+		return C_Vector2(static_cast<float>(x), static_cast<float>(y));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//return window aspect

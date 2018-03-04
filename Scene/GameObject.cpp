@@ -56,7 +56,7 @@ namespace Columbus
 		Transform.update();
 
 		for (auto Comp : mComponents)
-			Comp->update(mTimer.elapsed());
+			Comp->update(static_cast<float>(mTimer.elapsed()));
 
 		for (auto Child : mChildren)
 			Child->update();

@@ -14,7 +14,6 @@
     <PartSize X="1" Y="1"/>
     <StartSize X="0.03" Y="0.03"/>
     <FinalSize X="0.05" Y="0.05"/>
-    <SubUV X="1.0" Y="1.0"/>
     <StartColor R="2" G="1" B="0" A="1"/>
     <FinalColor R="1" G="0" B="0" A="0.5"/>
     <BoxShapeSize X="1" Y="1" Z="2"/>
@@ -35,5 +34,7 @@
     <Shape>0</Shape>
     <ShapeRadius>0.1</ShapeRadius>
     <SortMode>0</SortMode>
+    <SubUV X="1.0" Y="1.0"/>
     <SubUVMode>0</SubUVMode>
+    <SubUVCycles>1.0</SubUVCycles>
 </ParticleEffect>
