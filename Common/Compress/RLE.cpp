@@ -30,7 +30,7 @@ namespace Columbus
 			sym = aIn[i];
 			if (sym != prevSym)
 			{
-				buffer[bufCounter++] = count;
+				buffer[bufCounter++] = static_cast<uint8_t>(count);
 				buffer[bufCounter++] = aIn[i];
 				size += 2;
 				count = 0;

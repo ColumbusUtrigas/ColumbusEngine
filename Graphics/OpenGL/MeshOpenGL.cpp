@@ -213,7 +213,7 @@ namespace Columbus
 	void C_MeshOpenGL::calculateLights()
 	{
 		sortLights();
-		int i, j, offset;
+		size_t i, j, offset;
 		//8 - max count of lights, processing in shader
 		for (i = 0; i < 8; i++)
 		{
@@ -234,7 +234,7 @@ namespace Columbus
 				mLightUniform[7 + offset] = mLights[i]->getDir().y;
 				mLightUniform[8 + offset] = mLights[i]->getDir().z;
 				//Type
-				mLightUniform[9 + offset] = mLights[i]->getType();
+				mLightUniform[9 + offset] = static_cast<float>(mLights[i]->getType());
 				//Constant attenuation
 				mLightUniform[10 + offset] = mLights[i]->getConstant();
 				//Linear attenuation

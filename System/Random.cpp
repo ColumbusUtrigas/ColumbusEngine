@@ -13,7 +13,7 @@
 namespace Columbus
 {
 
-	std::mt19937 rng(time(NULL));
+	std::mt19937 rng(static_cast<unsigned int>(time(NULL)));
 
 	//////////////////////////////////////////////////////////////////////////////
 	C_Random::C_Random()

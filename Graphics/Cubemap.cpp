@@ -130,8 +130,7 @@ namespace Columbus
 			if (!mBitmaps[i].isExist()) return false;
 
 			int type = E_IMAGE_SAVE_FORMAT_PNG;
-			if (mBitmaps[i].getBPP() == 3)
-				type == E_IMAGE_SAVE_FORMAT_JPG;
+			if (mBitmaps[i].getBPP() == 3) type = E_IMAGE_SAVE_FORMAT_JPG;
 
 			if (!mBitmaps[i].save(aPath[i], type, 90))
 			{

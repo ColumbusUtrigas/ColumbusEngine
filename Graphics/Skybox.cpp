@@ -22,7 +22,7 @@ namespace Columbus
 	{
 		mCubemap = aCubemap;
 		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = new C_Shader();
+		mShader = new C_ShaderOpenGL();
 		mShader->load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
 		mShader->compile();
 	}
@@ -64,7 +64,8 @@ namespace Columbus
 
 			C_Buffer::unbind();
 			C_Cubemap::unbind();
-			C_Shader::unbind();
+			//C_Shader::unbind();
+			glUseProgram(0);
 
 			C_EnableDepthMaskOpenGL();
 		}

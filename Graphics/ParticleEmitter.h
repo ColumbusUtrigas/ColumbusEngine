@@ -113,8 +113,7 @@ namespace Columbus
 
 		void update(const float aTimeTick, const vec3 aCamera, const vec3 aForce, const vec3 aNoise)
 		{
-			for (i = 0; i < 9; i++)
-				noise[i] = fmod(noise[i] + 0.01, 256);
+			for (i = 0; i < 9; i++) noise[i] = static_cast<float>(fmod(noise[i] + 0.01, 256));
 
 			age += aTimeTick;
 

@@ -16,7 +16,7 @@ namespace Columbus
 	C_Scene::C_Scene() :
 		mSkybox(nullptr)
 	{
-		mNoneShader = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
+		mNoneShader = new C_ShaderOpenGL("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
 		mNoneShader->compile();
 
 		mNoneEffect.setShader(mNoneShader);
@@ -175,13 +175,13 @@ namespace Columbus
 		int texCount = 0;
 		int shadersCount = 0;
 		int meshesCount = 0;
-		size_t i;
+		unsigned int i;
 
 		std::string path, path1, elem;
 
 		if (serializer.getSubInt({ "Resources", "Textures", "Count" }, &texCount))
 		{
-			for (i = 0; i < texCount; i++)
+			for (i = 0; i < static_cast<unsigned int>(texCount); i++)
 			{
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.getSubString({ "Resources", "Textures", elem }, &path))
@@ -191,20 +191,20 @@ namespace Columbus
 
 		if (serializer.getSubInt({ "Resources", "Shaders", "Count" }, &shadersCount))
 		{
-			for (i = 0; i < shadersCount; i++)
+			for (i = 0; i < static_cast<unsigned int>(shadersCount); i++)
 			{
 				elem = std::string("Shader") + std::to_string(i);
 				if (serializer.getSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
 					serializer.getSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
 				{
-					mShaders.insert(std::pair<int, C_Shader*>(i, new C_Shader(path, path1)));
+					mShaders.insert(std::pair<int, C_Shader*>(i, new C_ShaderOpenGL(path, path1)));
 				}
 			}
 		}
 
 		if (serializer.getSubInt({ "Resources", "Meshes", "Count" }, &meshesCount))
 		{
-			for (i = 0; i < meshesCount; i++)
+			for (i = 0; i < static_cast<unsigned int>(meshesCount); i++)
 			{
 				elem = std::string("Mesh") + std::to_string(i);
 				if (serializer.getSubString({ "Resources", "Meshes", elem }, &path))
@@ -225,7 +225,7 @@ namespace Columbus
 		if (!serializer.getSubInt({"GameObjects", "Count"}, &count))
 		{ C_Log::error("Can't load Scene Count: " + aFile); return false; }
 
-		for (i = 0; i < count; i++)
+		for (i = 0; i < static_cast<unsigned int>(count); i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
 			loadGameObject(&serializer, elem, i);

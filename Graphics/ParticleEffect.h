@@ -92,6 +92,7 @@ namespace Columbus
 		int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
 		float mParticleShapeRadius = 1.0;
 		int mSortMode = C_PARTICLE_SORT_MODE_NONE;
+		float mSubUVCycles = 1.0;
 		int mSubUVMode = C_PARTICLE_SUB_UV_MODE_LINEAR;
 	public:
 		C_ParticleEffect();
@@ -138,6 +139,7 @@ namespace Columbus
 		void setParticleShapeRadius(const float aRadius);
 		void setSortMode(const C_PARTICLE_SORT_MODE aSortMode);
 		void setSubUVMode(const C_PARTICLE_SUB_UV_MODE aSubUVMode);
+		void setSubUVCycles(const float aSubUVCycles);
 
 
 		C_Material* getMaterial() const;
@@ -179,6 +181,7 @@ namespace Columbus
 		float getParticleShapeRadius() const;
 		int getSortMode() const;
 		int getSubUVMode() const;
+		float getSubUVCycles() const;
 
 		bool saveToXML(std::string aFile) const;
 		bool saveToJSON(std::string aFile) const;

@@ -66,12 +66,6 @@ namespace Columbus
 	bool C_DeleteFile(std::string aPath);
 	//Create folder
 	bool C_CreateFolder(const char* aPath);
-	//Conversion from degrees to radians
-	float C_DegToRads(const float aDeg);
-	//Conversion from radians to degrees
-	float C_RadsToDeg(const float aRads);
-	//Random between two floats
-	float C_RandomBetween(float aMin, float aMax);
 
 
 }

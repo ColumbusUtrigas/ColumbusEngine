@@ -33,13 +33,13 @@ namespace Columbus
 	template <class T>
 	T Radians(const T degrees)
 	{
-		return degrees * 3.141592659 / 180.0f;
+		return degrees * 3.141592653f / 180.0f;
 	}
 
 	template <class T>
 	T Degrees(const T radians)
 	{
-		return radians * 3.141592659 / 180.0f;
+		return radians * 3.141592653f / 180.0f;
 	}
 
 }
