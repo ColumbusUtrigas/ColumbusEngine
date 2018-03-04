@@ -190,9 +190,9 @@ namespace Columbus
 		mMaterialUnif[4] = matamb.x;
 		mMaterialUnif[5] = matamb.y;
 		mMaterialUnif[6] = matamb.z;
-		mMaterialUnif[7] = matamb.x;
-		mMaterialUnif[8] = matamb.y;
-		mMaterialUnif[9] = matamb.z;
+		mMaterialUnif[7] = matdif.x;
+		mMaterialUnif[8] = matdif.y;
+		mMaterialUnif[9] = matdif.z;
 		mMaterialUnif[10] = matspc.x;
 		mMaterialUnif[11] = matspc.y;
 		mMaterialUnif[12] = matspc.z;
