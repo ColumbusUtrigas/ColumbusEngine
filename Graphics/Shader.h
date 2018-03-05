@@ -50,8 +50,8 @@ namespace Columbus
 		bool mLoaded = false;
 		bool mCompiled = false;
 	public:
-		C_Shader(std::string aVert, std::string aFrag);
 		C_Shader();
+		C_Shader(std::string aVert, std::string aFrag);
 
 		virtual bool load(std::string aVert, std::string aFrag);
 		virtual bool compile();
