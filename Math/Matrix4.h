@@ -34,14 +34,12 @@ namespace Columbus
 		float mat[16];
 	public:
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
 		C_Matrix4()
 		{
 			for (int i = 0; i < 16; i++)
 				mat[i] = 0.0;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
 		C_Matrix4(const float aDiagonal)
 		{
 			for (int i = 0; i < 16; i++)
@@ -53,7 +51,6 @@ namespace Columbus
 			mat[3 + 3 * 4] = static_cast<float>(aDiagonal);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
 		C_Matrix4(const glm::mat4 aMat)
 		{
 			fromGLM(aMat);
@@ -62,18 +59,19 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Set matrix row
-		void setRow(int index, const C_Vector4 aRow)
+		void setRow(const unsigned int index, const C_Vector4 aRow)
 		{
-			COLUMBUS_ASSERT(index < 4 && index >= 0);
+			COLUMBUS_ASSERT(index < 4);
 			mat[index + 0 * 4] = aRow.x;
 			mat[index + 1 * 4] = aRow.y;
 			mat[index + 2 * 4] = aRow.z;
 			mat[index + 3 * 4] = aRow.w;
 		}
+		////////////////////////////////////////////////////////////////////////////
 		//Set matrix column
-		void setColumn(int index, const C_Vector4 aColumnn)
+		void setColumn(const unsigned int index, const C_Vector4 aColumnn)
 		{
-			COLUMBUS_ASSERT(index < 4 && index >= 0);
+			COLUMBUS_ASSERT(index < 4);
 			mat[0 + index * 4] = aColumnn.x;
 			mat[1 + index * 4] = aColumnn.y;
 			mat[2 + index * 4] = aColumnn.z;
@@ -273,8 +271,8 @@ namespace Columbus
 			float s = sinf(Degrees(angle));
 			float c1 = 1.0f - c;
 			float m0 = mat[0], m4 = mat[4], m8 = mat[8], m12 = mat[12],
-				m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
-				m2 = mat[2], m6 = mat[6], m10 = mat[10], m14 = mat[14];
+			      m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
+			      m2 = mat[2], m6 = mat[6], m10 = mat[10], m14 = mat[14];
 
 			float r0 = x * x * c1 + c;
 			float r1 = x * y * c1 + z * s;

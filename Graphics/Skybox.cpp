@@ -34,8 +34,7 @@ namespace Columbus
 		{
 			C_DisableDepthMaskOpenGL();
 
-			if (mBuf == nullptr)
-				return;
+			if (mBuf == nullptr) return;
 
 			C_OpenStreamOpenGL(0);
 			C_CloseStreamOpenGL(1);
@@ -63,9 +62,9 @@ namespace Columbus
 			C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 36);
 
 			C_Buffer::unbind();
-			C_Cubemap::unbind();
-			//C_Shader::unbind();
-			glUseProgram(0);
+
+			mShader->unbind();
+			mCubemap->unbind();
 
 			C_EnableDepthMaskOpenGL();
 		}

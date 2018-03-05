@@ -102,10 +102,8 @@ namespace Columbus
 
 		C_DrawScreenQuadOpenGL();
 
-		//C_Texture::unbind();
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glUseProgram(0);
-		//C_Shader::unbind();
+		if (mTB) mTB->unbind();
+		if (mShader) mShader->unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_PostEffect::unbind()
@@ -116,12 +114,11 @@ namespace Columbus
 		C_CloseStreamOpenGL(3);
 		C_CloseStreamOpenGL(4);
 
-		C_Cubemap::unbind();
 		C_Buffer::unbind();
-		//C_Texture::unbind();
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glUseProgram(0);
-		//C_Shader::unbind();
+
+		if (mTB) mTB->unbind();
+		if (mShader) mShader->unbind();
+		
 		mFB->unbind();
 		C_Renderbuffer::unbind();
 

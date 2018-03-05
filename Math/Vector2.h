@@ -27,20 +27,17 @@ namespace Columbus
 		float x = 0;
 		float y = 0;
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector2() :
+		inline explicit C_Vector2() :
 			x(0),
 			y(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector2(const float aX, const float aY) :
+		inline explicit C_Vector2(const float aX, const float aY) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector2(const glm::vec2 aVec) :
+		inline explicit C_Vector2(const glm::vec2 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y))
 		{}
@@ -195,7 +192,7 @@ namespace Columbus
 			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2));
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Return normalize vector
+		//Return normalized vector
 		inline C_Vector2 normalize()
 		{
 			float l = sqrt((x * x) + (y * y));
@@ -228,7 +225,6 @@ namespace Columbus
 			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Destructor
 		inline ~C_Vector2() {}
 	};
 

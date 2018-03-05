@@ -29,24 +29,21 @@ namespace Columbus
 		float z = 0;
 		float w = 0;
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector4() :
+		inline explicit C_Vector4() :
 			x(0),
 			y(0),
 			z(0),
 			w(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector4(const float aX, const float aY, const float aZ, const float aW) :
+		inline explicit C_Vector4(const float aX, const float aY, const float aZ, const float aW) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY)),
 			z(static_cast<float>(aZ)),
 			w(static_cast<float>(aW))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector4(const glm::vec4 aVec) :
+		inline explicit C_Vector4(const glm::vec4 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y)),
 			z(static_cast<float>(aVec.z)),
@@ -249,7 +246,6 @@ namespace Columbus
 			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Destructor
 		inline ~C_Vector4() {}
 	};
 

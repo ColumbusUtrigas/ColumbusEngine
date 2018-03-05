@@ -28,22 +28,19 @@ namespace Columbus
 		float y = 0;
 		float z = 0;
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector3() :
+		inline explicit C_Vector3() :
 			x(0),
 			y(0),
 			z(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector3(const float aX, const float aY, const float aZ) :
+		inline explicit C_Vector3(const float aX, const float aY, const float aZ) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY)),
 			z(static_cast<float>(aZ))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector3(const glm::vec3 aVec) :
+		inline explicit C_Vector3(const glm::vec3 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y)),
 			z(static_cast<float>(aVec.z))

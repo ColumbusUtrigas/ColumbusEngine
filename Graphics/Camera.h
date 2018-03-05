@@ -36,12 +36,12 @@ namespace Columbus
 	class C_Camera
 	{
 	private:
-		vec3 mPos;
-		vec3 mRot;
-		vec3 mTarget;
-		vec3 mCameraDirection;
-		vec3 mCameraRight;
-		vec3 mCameraUp;
+		vec3 mPos = vec3(0, 0, 5);
+		vec3 mRot = vec3(0, 0, 0);
+		vec3 mTarget = vec3(0, 0, 4);
+		vec3 mCameraDirection = vec3(0, 0, -1);
+		vec3 mCameraRight = vec3(1, 0, 0);
+		vec3 mCameraUp = vec3(0, 1, 0);
 
 		bool rotMode = false;
 		bool preTargeted = false;
@@ -50,16 +50,16 @@ namespace Columbus
 		
 		void update();
 		
-		void setPos(C_Vector3 aPos);
-		void addPos(C_Vector3 aPos);
+		void setPos(const C_Vector3 aPos);
+		void addPos(const C_Vector3 aPos);
 		vec3 getPos() const;
 
-		void setRot(C_Vector3 aRot);
-		void addRot(C_Vector3 aRot);
+		void setRot(const C_Vector3 aRot);
+		void addRot(const C_Vector3 aRot);
 		vec3 getRot() const;
 
-		void setTarget(C_Vector3 aTarget);
-		void addTarget(C_Vector3 aTarget);
+		void setTarget(const C_Vector3 aTarget);
+		void addTarget(const C_Vector3 aTarget);
 		vec3 getTarget() const;
 		
 		vec3 direction() const;
