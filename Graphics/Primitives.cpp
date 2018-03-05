@@ -9,6 +9,7 @@
 *************************************************/
 
 #include <Graphics/Primitives.h>
+#include <cmath>
 
 namespace Columbus
 {
@@ -18,13 +19,13 @@ namespace Columbus
 	{
 		float verts[18] =
 		{
-			(float)0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y,
-			(float)-0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y,
-			(float)-0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
+			0.5f * aSize.x, 0.0f, -0.5f * aSize.y,
+			-0.5f * aSize.x, 0.0f, -0.5f * aSize.y,
+			-0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
 	
-			(float)-0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
-			(float)0.5 * aSize.x, 0.0, (float)0.5 * aSize.y,
-			(float)0.5 * aSize.x, 0.0, (float)-0.5 * aSize.y
+			-0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
+			0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
+			0.5f * aSize.x, 0.0f, -0.5f * aSize.y
 		};
 
 		float uvs[12] =
@@ -38,50 +39,22 @@ namespace Columbus
 			1.0, 1.0
 		};
 
-		float norms[18] =
-		{
-			0.0, 1.0, 0.0,
-			0.0, 1.0, 0.0,
-			0.0, 1.0, 0.0,
-
-			0.0, 1.0, 0.0,
-			0.0, 1.0, 0.0,
-			0.0, 1.0, 0.0
-		};
-
-		float tangs[18] = 
-		{
-			0.0, 0.0, -1.0,
-			0.0, 0.0, -1.0,
-			0.0, 0.0, -1.0,
-
-			0.0, 0.0, -1.0,
-			0.0, 0.0, -1.0,
-			0.0, 0.0, -1.0
-		};
-
-		float bitangs[18] =
-		{
-			-1.0, 0.0, 0.0,
-			-1.0, 0.0, 0.0,
-			-1.0, 0.0, 0.0,
-
-			-1.0, 0.0, 0.0,
-			-1.0, 0.0, 0.0,
-			-1.0, 0.0, 0.0
-		};
-
 		std::vector<C_Vertex> v;
+
+		vec3 norm(0, 1, 0);
+		vec3 tang(0, 0, -1);
+		vec3 bitang(-1, 0, 0);
+
+		C_Vertex vert;
 
 		for (size_t i = 0; i < 6; i++)
 		{
-			C_Vertex a;
-			a.pos = C_Vector3(verts[0 + i * 3], verts[1 + i * 3], verts[2 + i * 3]);
-			a.UV = C_Vector2(uvs[0 + i * 2], uvs[1 + i * 2]);
-			a.normal = C_Vector3(norms[0 + i * 3], norms[1 + i * 3], norms[2 + i * 3]);
-			a.tangent = C_Vector3(tangs[0 + i * 3], tangs[1 + i * 3], tangs[2 + i * 3]);
-			a.bitangent = C_Vector3(bitangs[0 + i * 3], bitangs[1 + i * 3], bitangs[2 + i * 3]);
-			v.push_back(a);
+			vert.pos = C_Vector3(verts[0 + i * 3], verts[1 + i * 3], verts[2 + i * 3]);
+			vert.UV = C_Vector2(uvs[0 + i * 2], uvs[1 + i * 2]);
+			vert.normal = norm;
+			vert.tangent = tang;
+			vert.bitangent = bitang;
+			v.push_back(vert);
 		};
 
 		return v;
@@ -90,68 +63,188 @@ namespace Columbus
 	//Generate box
 	std::vector<C_Vertex> C_PrimitiveBox(C_Vector3 aSize)
 	{
-		const char* f =
+		vec3 v[8] = 
 		{
-		  "o Cube_Cube.001\n"
-		  "v -1.000000 -1.000000 1.000000\n"
-		  "v -1.000000 1.000000 1.000000\n"
-		  "v -1.000000 -1.000000 -1.000000\n"
-		  "v -1.000000 1.000000 -1.000000\n"
-		  "v 1.000000 -1.000000 1.000000\n"
-		  "v 1.000000 1.000000 1.000000\n"
-		  "v 1.000000 -1.000000 -1.000000\n"
-		  "v 1.000000 1.000000 -1.000000\n"
-		  "vt 1.000000 0.000000\n"
-		  "vt 1.000000 1.000000\n"
-		  "vt 0.000000 1.000000\n"
-		  "vt 0.000000 0.000000\n"
-		  "vn -1.000000 0.000000 0.000000\n"
-		  "vn 0.000000 0.000000 -1.000000\n"
-		  "vn 1.000000 0.000000 0.000000\n"
-		  "vn 0.000000 0.000000 1.000000\n"
-		  "vn 0.000000 -1.000000 0.000000\n"
-		  "vn 0.000000 1.000000 0.000000\n"
-		  "f 4/1/1 3/2/1 1/3/1\n"
-		  "f 8/1/2 7/2/2 3/3/2\n"
-		  "f 6/1/3 5/2/3 7/3/3\n"
-		  "f 2/1/4 1/2/4 5/3/4\n"
-		  "f 3/1/5 7/2/5 5/3/5\n"
-		  "f 8/1/6 4/2/6 2/3/6\n"
-		  "f 2/4/1 4/1/1 1/3/1\n"
-		  "f 4/4/2 8/1/2 3/3/2\n"
-		  "f 8/4/3 6/1/3 7/3/3\n"
-		  "f 6/4/4 2/1/4 5/3/4\n"
-		  "f 1/4/5 3/1/5 5/3/5\n"
-		  "f 6/4/6 8/1/6 2/3/6\n"
+			vec3(-0.5f, -0.5f, 0.5f),
+			vec3(-0.5f, 0.5f, 0.5f),
+			vec3(0.5f, -0.5f, 0.5f),
+			vec3(0.5f, 0.5f, 0.5f),
+
+			vec3(-0.5f, -0.5f, -0.5f),
+			vec3(-0.5f, 0.5f, -0.5f),
+			vec3(0.5f, -0.5f, -0.5f),
+			vec3(0.5f, 0.5f, -0.5f)
 		};
 
-		C_WriteFile("tmp_primitive_box.obj", f);
-
-		Import::C_ImporterModel importer;
-		importer.loadOBJ("tmp_primitive_box.obj");
-
-		std::vector<C_Vertex> v = importer.getObject(0);
-		std::vector<C_Vertex> ret;
-
-		for (auto Vertex : v)
+		vec2 u[4] =
 		{
-			Vertex.pos *= aSize;
-			ret.push_back(Vertex);
+			vec2(0.0f, 0.0f),
+			vec2(0.0f, 1.0f),
+			vec2(1.0f, 0.0f),
+			vec2(1.0f, 1.0f)
+		};
+
+		vec3 n[6] = 
+		{
+			vec3(0, 0, -1),
+			vec3(0, 0, 1),
+			vec3(1, 0, 0),
+			vec3(-1, 0, 0),
+			vec3(0, 1, 0),
+			vec3(0, -1, 0)
+		};
+
+		int vindices[36] =
+		{
+			0, 2, 3, 0, 3, 1,
+			6, 4, 7, 4, 5, 7,
+			2, 6, 7, 2, 7, 3,
+			0, 1, 5, 0, 5, 4,
+			1, 3, 7, 1, 7, 5,
+			0, 4, 6, 0, 6, 2
+		};
+
+		int uindices[36] = 
+		{
+			0, 2, 3, 0, 3, 1,
+			0, 2, 1, 2, 3, 1,
+			0, 2, 3, 0, 3, 1,
+			2, 3, 1, 2, 1, 0,
+			0, 2, 3, 0, 3, 1,
+			1, 0, 2, 1, 2, 3
+		};
+
+		std::vector<C_Vertex> verts;
+
+		C_Vertex vert[3];
+		vec3 deltaPos1, deltaPos2;
+		vec2 deltaUV1, deltaUV2;
+		vec3 tangent, bitangent;
+		float r;
+
+		size_t i, j, c = 0;
+		for (i = 0; i < 12; i++)
+		{
+			for (j = 0; j < 3; j++)
+			{
+				vert[j].pos = v[vindices[c]] * aSize;
+				vert[j].UV = u[uindices[c]];
+				vert[j].normal = n[c / 6];
+
+				c++;
+			}
+
+			deltaPos1 = vert[1].pos - vert[0].pos;
+			deltaPos2 = vert[2].pos - vert[0].pos;
+
+			deltaUV1 = vert[1].UV - vert[0].UV;
+			deltaUV2 = vert[2].UV - vert[0].UV;
+
+			r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+			tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
+			bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+
+			for (j = 0; j < 3; j++)
+			{
+				vert[j].tangent = tangent;
+				vert[j].bitangent = bitangent;
+				verts.push_back(vert[j]);
+			}
 		}
 
-		v.clear();
-
-		C_DeleteFile("tmp_primitive_box.obj");
-
-		return ret;
+		return verts;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate sphere
-	std::vector<C_Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors, C_Vector3 aSize)
+	std::vector<C_Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors)
 	{
-		std::vector<C_Vertex> v;
+		const double PI = 3.141592653589793238462643383279502884197;
 
-		return v;
+		std::vector<C_Vertex> verts;
+
+		std::vector<vec3> vertices;
+		std::vector<vec2> texcoords;
+		std::vector<vec3> normals;
+
+		float const R = 1.0f / static_cast<float>(aRings - 1);
+		float const S = 1.0f / static_cast<float>(aSectors - 1);
+		size_t r, s;
+		C_Vertex vert;
+
+		vertices.resize(aRings * aSectors * 3);
+		texcoords.resize(aRings * aSectors * 2);
+		normals.resize(aRings * aSectors * 3);
+		std::vector<vec3>::iterator v = vertices.begin();
+		std::vector<vec2>::iterator t = texcoords.begin();
+		std::vector<vec3>::iterator n = normals.begin();
+
+		float dtheta = static_cast<float>(PI / 12);
+		float dphi = static_cast<float>(2 * PI / 10);
+		float theta = 0.0f;
+		float phi = 0.0f;
+
+		for (r = 0; r < aRings; r++)
+		{
+			theta += dtheta;
+			for (s = 0; s < aSectors; s++)
+			{
+				phi += dphi;
+				float const x = sin(theta) * cos(phi);
+				float const y = sin(theta) * sin(phi);
+				float const z = cos(theta);
+
+				*v++ = vec3(x * aRadius, y * aRadius, z * aRadius);
+				*t++ = vec2(s * S, r * R);
+				*n++ = vec3(x, y, z);
+			}
+		}
+
+		for (r = 0; r < aRings - 1; r++)
+		{
+			for (s = 0; s < aSectors - 1; s++)
+			{
+				vert.pos = vertices[r * aSectors + s]; vert.UV = texcoords[r * aSectors + s]; vert.normal = normals[r * aSectors + s];
+				verts.push_back(vert);
+				vert.pos = vertices[(r + 1) * aSectors + s]; vert.UV = texcoords[(r + 1) * aSectors + s]; vert.normal = normals[(r + 1) * aSectors + s];
+				verts.push_back(vert);
+				vert.pos = vertices[(r + 1) * aSectors + (s + 1)]; vert.UV = texcoords[(r + 1) * aSectors + (s + 1)]; vert.normal = normals[(r + 1) * aSectors + (s + 1)];
+				verts.push_back(vert);
+				vert.pos = vertices[r * aSectors + s]; vert.UV = texcoords[r * aSectors + s]; vert.normal = normals[r * aSectors + s];
+				verts.push_back(vert);
+				vert.pos = vertices[(r + 1) * aSectors + (s + 1)]; vert.UV = texcoords[(r + 1) * aSectors + (s + 1)]; vert.normal = normals[(r + 1) * aSectors + (s + 1)];
+				verts.push_back(vert);
+				vert.pos = vertices[r * aSectors + (s + 1)]; vert.UV = texcoords[r * aSectors + (s + 1)]; vert.normal = normals[r * aSectors + (s + 1)];
+			}
+		}
+
+		return verts;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Generate cone
+	std::vector<C_Vertex> c_PrimitiveCone(const float aBase, const float aHeight, const size_t aSlices, const size_t aStacks)
+	{
+		std::vector<C_Vertex> verts;
+
+		return verts;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Generate torus
+	std::vector<C_Vertex> C_PrimitiveTorus(const float aInner, const float aOuter, const size_t aSides, const size_t aRings)
+	{
+		std::vector<C_Vertex> verts;
+
+		return verts;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//Generate cylinder
+	std::vector<C_Vertex> C_PrimitiveCylinder(const float aRadius, const float aHeight, const size_t aSlices, const size_t aStacks)
+	{
+		std::vector<C_Vertex> verts;
+
+		return verts;
 	}
 
 }
+
+
+
