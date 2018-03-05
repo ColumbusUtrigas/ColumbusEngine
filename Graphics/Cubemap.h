@@ -23,33 +23,24 @@
 namespace Columbus
 {
 
-	#define C_CubemapPath std::vector<std::string>
-
 	class C_Cubemap
 	{
-	private:
+	protected:
 		C_Image mBitmaps[6];
-		unsigned int mID;
-
 		bool mInited = false;
 	public:
-		//Constructor
+		C_Cubemap();
 		C_Cubemap(std::array<std::string, 6> aPath);
-		//Constructor 2
 		C_Cubemap(std::string aPath);
-		//Bind cubemap
-		void bind();
-		//Create sampler and bind cubemap
-		void samplerCube(int i);
-		//Unbind cubemap
-		static void unbind();
-		//Load cubemap from 6 textures
-		bool load(std::array<std::string, 6> aPath);
-		//Load cubemap from 1 XML file, pointing on 6 textures
-		bool load(std::string aFile);
-		//Save cubemap to 6 textures
-		bool save(std::array<std::string, 6> aPath);
-		//Destructor
+		
+		virtual void bind() const;
+		virtual void samplerCube(int i) const;
+		virtual void unbind() const;
+		
+		virtual bool load(std::array<std::string, 6> aPath);
+		virtual bool load(std::string aFile);
+		bool save(std::array<std::string, 6> aPath) const;
+		
 		~C_Cubemap();
 	};
 

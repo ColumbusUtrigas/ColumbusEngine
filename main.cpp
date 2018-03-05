@@ -1,4 +1,5 @@
 #include <Engine.h>
+#include <Graphics/OpenGL/CubemapOpenGL.h>
 
 using namespace Columbus;
 
@@ -20,8 +21,7 @@ int main(int argc, char** argv)
 
 	float i = 0;
 
-	C_Cubemap cubemap("Data/Skyboxes/1.cubemap");
-	C_Skybox skybox(&cubemap);
+	C_Skybox skybox(new C_CubemapOpenGL("Data/Skyboxes/1.cubemap"));
 
 	C_Timer timer;
 

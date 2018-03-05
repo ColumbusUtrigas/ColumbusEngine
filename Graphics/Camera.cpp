@@ -41,57 +41,52 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	C_Camera::C_Camera()
 	{
-		mPos = glm::vec3(0, 0, 5);
-		mRot = glm::vec3(0, 0, 0);
-		mTarget = glm::vec3(0, 0, 4);
-		mCameraDirection = glm::vec3(0, 0, -1);
-		mCameraRight = glm::vec3(1, 0, 0);
-		mCameraUp = glm::vec3(0, 1, 0);
+
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setPos(vec3 aPos)
+	void C_Camera::setPos(const C_Vector3 aPos)
 	{
-		mPos = static_cast<vec3>(aPos);
+		mPos = static_cast<C_Vector3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addPos(vec3 aPos)
+	void C_Camera::addPos(const C_Vector3 aPos)
 	{
-		mPos += static_cast<vec3>(aPos);
+		mPos += aPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	vec3 C_Camera::getPos() const
+	C_Vector3 C_Camera::getPos() const
 	{
 		return mPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setRot(vec3 aRot)
+	void C_Camera::setRot(const C_Vector3 aRot)
 	{
-		mRot = aRot;
+		mRot = static_cast<C_Vector3>(aRot);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addRot(vec3 aRot)
+	void C_Camera::addRot(const C_Vector3 aRot)
 	{
 		mRot += aRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	vec3 C_Camera::getRot() const
+	C_Vector3 C_Camera::getRot() const
 	{
 		return mRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setTarget(vec3 aTarget)
+	void C_Camera::setTarget(const C_Vector3 aTarget)
 	{
-		mTarget = aTarget;
+		mTarget = static_cast<C_Vector3>(aTarget);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addTarget(vec3 aTarget)
+	void C_Camera::addTarget(const C_Vector3 aTarget)
 	{
 		mTarget += aTarget;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	vec3 C_Camera::getTarget() const
+	C_Vector3 C_Camera::getTarget() const
 	{
 		return mTarget;
 	}
@@ -125,7 +120,7 @@ namespace Columbus
 		front.z = cos(Radians(mRot.x)) * cos(Radians(mRot.y));
 		front.y = sin(Radians(mRot.x));
 		front.x = cos(Radians(mRot.x)) * sin(Radians(mRot.y));
-		mCameraDirection = -front.normalize().toGLM();
+		mCameraDirection = -front.normalize();
 
 		vec3 up = vec3(0.0f, 1.0f, 0.0f);
 		mCameraRight = vec3::cross(up, mCameraDirection).normalize();
