@@ -9,6 +9,7 @@
 *************************************************/
 
 #include <Scene/Scene.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -120,13 +121,13 @@ namespace Columbus
 		{
 			if (meshPath == "Plane")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitivePlane(), *material)));
+				GameObject->addComponent(new C_MeshRenderer(gDevice->createMesh(C_PrimitivePlane(), *material)));
 			} else if (meshPath == "Cube")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveBox(), *material)));
+				GameObject->addComponent(new C_MeshRenderer(gDevice->createMesh(C_PrimitiveBox(), *material)));
 			} else if (meshPath == "Sphere")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveSphere(1, 50, 50), *material)));
+				GameObject->addComponent(new C_MeshRenderer(gDevice->createMesh(C_PrimitiveSphere(1, 50, 50), *material)));
 			} else
 			{
 				if (atoi(meshPath.c_str()) >= 0)
@@ -166,6 +167,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Scene::load(std::string aFile)
 	{
+		if (!gDevice)
+		{ C_Log::error("Can't load Scene: " + aFile + " : Device is missing"); return false; }
+
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.read(aFile, "Scene"))
@@ -185,7 +189,7 @@ namespace Columbus
 			{
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.getSubString({ "Resources", "Textures", elem }, &path))
-					mTextures.insert(std::pair<int, C_Texture*>(i, new C_TextureOpenGL(path)));
+					mTextures.insert(std::pair<int, C_Texture*>(i, gDevice->createTexture(path)));
 			}
 		}
 
@@ -197,7 +201,7 @@ namespace Columbus
 				if (serializer.getSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
 					serializer.getSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
 				{
-					mShaders.insert(std::pair<int, C_Shader*>(i, new C_ShaderOpenGL(path, path1)));
+					mShaders.insert(std::pair<int, C_Shader*>(i, gDevice->createShader(path, path1)));
 				}
 			}
 		}
@@ -211,7 +215,7 @@ namespace Columbus
 				{
 					if (ModelIsCMF(path))
 					{
-						mMeshes.insert(std::pair<int, C_Mesh*>(i, new C_MeshOpenGL(ModelLoadCMF(path))));
+						mMeshes.insert(std::pair<int, C_Mesh*>(i, gDevice->createMesh(ModelLoadCMF(path))));
 						C_Log::success("Mesh loaded: " + path);
 					}
 					else
