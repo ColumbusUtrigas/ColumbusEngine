@@ -166,8 +166,9 @@ namespace Columbus
 		//Operator /=
 		inline C_Vector2 operator/=(const float aOther)
 		{
-			x /= aOther;
-			y /= aOther;
+			const float Scalar = 1.0f / aOther;
+			x *= Scalar;
+			y *= Scalar;
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
