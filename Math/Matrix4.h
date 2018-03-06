@@ -267,8 +267,8 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		C_Matrix4 rotate(const float x, const float y, const float z, const float angle)
 		{
-			float c = cosf(Degrees(angle));
-			float s = sinf(Degrees(angle));
+			float c = cosf(Radians(angle));
+			float s = sinf(Radians(angle));
 			float c1 = 1.0f - c;
 			float m0 = mat[0], m4 = mat[4], m8 = mat[8], m12 = mat[12],
 			      m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
