@@ -9,37 +9,68 @@
 *************************************************/
 #pragma once
 
+#include <cstdlib>
+#include <cmath>
+
 namespace Columbus
 {
 
+	inline int32_t TruncToInt(const float Value) { return (int32_t)Value; }
+	inline float TruncToFloat(const double Value) { return (float)Value; }
+
+	//e ^ Value
+	inline float Exp(const float Value) { return expf(Value); }
+	//2 ^ value
+	inline float Exp2(const float Value) { return powf(2.0f, Value); }
+
+	inline float Sin(const float Value)	{ return sinf(Value); }
+	inline float Cos(const float Value) { return cosf(Value); }
+	inline float Tan(const float Value) { return tanf(Value); }
+	inline float Sqrt(const float Value) { return sqrtf(Value); }
+	inline float Pow(const float A, const float B) { return powf(A, B); };
+
+	inline bool IsPowerOf2(const int32_t Value) { return (Value & (Value - 1)) == 0; }
+
 	template <class T>
-	T Min(const T a, const T b)
+	inline T Abs(const T Value)
+	{
+		return (Value >= (T)0) ? Value : -Value;
+	}
+
+	template <class T>
+	inline T Min(const T a, const T b)
 	{
 		return a < b ? a : b;
 	}
 
 	template <class T>
-	T Max(const T a, const T b)
+	inline T Max(const T a, const T b)
 	{
 		return a > b ? a : b;
 	}
-
+	//Constrain a value to lie between two further values
 	template <class T>
-	T Clamp(const T a, const T minValue, const T maxValue)
+	inline T Clamp(const T a, const T MinValue, const T MaxValue)
 	{
-		return Min(Max(a, minValue), maxValue);
+		return Min(Max(a, MinValue), MaxValue);
 	}
 
+	//Converts degrees to radians
 	template <class T>
-	T Radians(const T degrees)
+	inline T Radians(const T Degrees)
 	{
-		return degrees * 3.141592653f / 180.0f;
+		//Degrees * 3.141592653f / 180.0f;
+		//0.017453293 = 3.141592653 / 180.0
+		return Degrees * 0.017453293f;
 	}
 
+	//Converts radians to degrees
 	template <class T>
-	T Degrees(const T radians)
+	inline T Degrees(const T Radians)
 	{
-		return radians * 3.141592653f / 180.0f;
+		//Radians * 180.0f / 3.141592653f;
+		//57.295779524 = 180.0 / 3.141592653
+		return Radians * 57.295779524f;
 	}
 
 }
