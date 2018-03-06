@@ -64,9 +64,9 @@ namespace Columbus
 
 			switch(mParticleEffect->getParticleShape())
 			{
-				case C_PARTICLE_SHAPE_CIRCLE: p.genCircle(radius, emitFromShell); break;
-				case C_PARTICLE_SHAPE_SPHERE: p.genSphere(radius, emitFromShell); break;
-				case C_PARTICLE_SHAPE_CUBE: p.genCube(box, emitFromShell); break;
+				case E_PARTICLE_SHAPE_CIRCLE: p.genCircle(radius, emitFromShell); break;
+				case E_PARTICLE_SHAPE_SPHERE: p.genSphere(radius, emitFromShell); break;
+				case E_PARTICLE_SHAPE_CUBE: p.genCube(box, emitFromShell); break;
 			}
 
 			mParticles.push_back(p);
@@ -188,7 +188,7 @@ namespace Columbus
 					mActiveParticles.erase(mActiveParticles.begin() + counter);
 			}
 
-			if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+			if (transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
 				Particle.startEmitterPos = startEmitterPos;
 
 			percent = Particle.age / Particle.TTL;
@@ -250,7 +250,7 @@ namespace Columbus
 			counter++;
 		}*/
 
-		if (mParticleEffect->getSortMode() == C_PARTICLE_SORT_MODE_DISTANCE) sort();
+		if (mParticleEffect->getSortMode() == E_PARTICLE_SORT_MODE_DISTANCE) sort();
 
 		mLife += aTimeTick;
 	}

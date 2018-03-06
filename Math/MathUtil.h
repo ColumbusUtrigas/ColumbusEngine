@@ -68,16 +68,16 @@ namespace Columbus
 	template <class T>
 	inline T Radians(const T Degrees)
 	{
-		//Degrees * 3.141592653f / 180.0f;
+		return Degrees * 3.141592653f / 180.0f;
 		//0.017453293 = 3.141592653 / 180.0
-		return Degrees * 0.017453293f;
+		//return Degrees * 0.017453293f;
 	}
 
 	//Converts radians to degrees
 	template <class T>
 	inline T Degrees(const T Radians)
 	{
-		//Radians * 180.0f / 3.141592653f;
+		//return Radians * 180.0f / 3.141592653f;
 		//57.295779524 = 180.0 / 3.141592653
 		return Radians * 57.295779524f;
 	}

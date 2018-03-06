@@ -38,10 +38,10 @@ namespace Columbus
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
 		mEmitRate(5.0),
-		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mParticleShape(E_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
-		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+		mParticleTransformation(E_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(E_PARTICLE_SORT_MODE_NONE)
 	{
 
 	}
@@ -68,10 +68,10 @@ namespace Columbus
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
 		mEmitRate(5.0),
-		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mParticleShape(E_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
-		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+		mParticleTransformation(E_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(E_PARTICLE_SORT_MODE_NONE)
 	{
 		load(aFile);
 	}
@@ -98,10 +98,10 @@ namespace Columbus
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
 		mEmitRate(5.0),
-		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mParticleShape(E_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
-		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+		mParticleTransformation(E_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(E_PARTICLE_SORT_MODE_NONE)
 	{
 		load(aFile);
 		mMaterial = aMaterial;
@@ -284,12 +284,12 @@ namespace Columbus
 		mEmitRate = static_cast<float>(aEmitRate);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation)
+	void C_ParticleEffect::setTransformation(const E_PARTICLE_TRANSFORMATION aParticleTransformation)
 	{
 		mParticleTransformation = static_cast<int>(aParticleTransformation);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setParticleShape(const C_PARTICLE_SHAPE aParticleShape)
+	void C_ParticleEffect::setParticleShape(const E_PARTICLE_SHAPE aParticleShape)
 	{
 		mParticleShape = static_cast<int>(aParticleShape);
 	}
@@ -299,12 +299,12 @@ namespace Columbus
 		mParticleShapeRadius = static_cast<float>(aRadius);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSortMode(const C_PARTICLE_SORT_MODE aSortMode)
+	void C_ParticleEffect::setSortMode(const E_PARTICLE_SORT_MODE aSortMode)
 	{
 		mSortMode = static_cast<int>(aSortMode);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSubUVMode(const C_PARTICLE_SUB_UV_MODE aSubUVMode)
+	void C_ParticleEffect::setSubUVMode(const E_PARTICLE_SUB_UV_MODE aSubUVMode)
 	{
 		mSubUVMode = static_cast<int>(aSubUVMode);
 	}

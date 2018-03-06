@@ -18,29 +18,29 @@
 namespace Columbus
 {
 
-	enum C_PARTICLE_SHAPE
+	enum E_PARTICLE_SHAPE
 	{
-		C_PARTICLE_SHAPE_CIRCLE,
-		C_PARTICLE_SHAPE_SPHERE,
-		C_PARTICLE_SHAPE_CUBE
+		E_PARTICLE_SHAPE_CIRCLE,
+		E_PARTICLE_SHAPE_SPHERE,
+		E_PARTICLE_SHAPE_CUBE
 	};
 
-	enum C_PARTICLE_TRANSFORMATION
+	enum E_PARTICLE_TRANSFORMATION
 	{
-		C_PARTICLE_TRANSFORMATION_LOCAL,
-		C_PARTICLE_TRANSFORMATION_WORLD
+		E_PARTICLE_TRANSFORMATION_LOCAL,
+		E_PARTICLE_TRANSFORMATION_WORLD
 	};
 
-	enum C_PARTICLE_SORT_MODE
+	enum E_PARTICLE_SORT_MODE
 	{
-		C_PARTICLE_SORT_MODE_NONE,
-		C_PARTICLE_SORT_MODE_DISTANCE
+		E_PARTICLE_SORT_MODE_NONE,
+		E_PARTICLE_SORT_MODE_DISTANCE
 	};
 
-	enum C_PARTICLE_SUB_UV_MODE
+	enum E_PARTICLE_SUB_UV_MODE
 	{
-		C_PARTICLE_SUB_UV_MODE_LINEAR,
-		C_PARTICLE_SUB_UV_MODE_RANDOM
+		E_PARTICLE_SUB_UV_MODE_LINEAR,
+		E_PARTICLE_SUB_UV_MODE_RANDOM
 	};
 
 	class C_ParticleEffect
@@ -88,12 +88,12 @@ namespace Columbus
 
 		float mEmitRate = 5.0;
 
-		int mParticleTransformation = C_PARTICLE_TRANSFORMATION_WORLD;
-		int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
+		int mParticleTransformation = E_PARTICLE_TRANSFORMATION_WORLD;
+		int mParticleShape = E_PARTICLE_SHAPE_CIRCLE;
 		float mParticleShapeRadius = 1.0;
-		int mSortMode = C_PARTICLE_SORT_MODE_NONE;
+		int mSortMode = E_PARTICLE_SORT_MODE_NONE;
 		float mSubUVCycles = 1.0;
-		int mSubUVMode = C_PARTICLE_SUB_UV_MODE_LINEAR;
+		int mSubUVMode = E_PARTICLE_SUB_UV_MODE_LINEAR;
 	public:
 		C_ParticleEffect();
 		C_ParticleEffect(std::string aFile);
@@ -134,11 +134,11 @@ namespace Columbus
 		void setNoiseFrequency(const float aNoiseFrequency);
 		void setNoiseAmplitude(const float aNoiseAmplitude);
 		void setEmitRate(const float aEmitRate);
-		void setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation);
-		void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
+		void setTransformation(const E_PARTICLE_TRANSFORMATION aParticleTransformation);
+		void setParticleShape(const E_PARTICLE_SHAPE aParticleShape);
 		void setParticleShapeRadius(const float aRadius);
-		void setSortMode(const C_PARTICLE_SORT_MODE aSortMode);
-		void setSubUVMode(const C_PARTICLE_SUB_UV_MODE aSubUVMode);
+		void setSortMode(const E_PARTICLE_SORT_MODE aSortMode);
+		void setSubUVMode(const E_PARTICLE_SUB_UV_MODE aSubUVMode);
 		void setSubUVCycles(const float aSubUVCycles);
 
 
