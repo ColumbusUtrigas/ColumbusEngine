@@ -208,25 +208,28 @@ namespace Columbus
 			//Uncompressed RGB
 			data = buffer;
 			if (tga.bits == 24)
+			{
 				ImageBGR2RGB(buffer, size);
-			else
+			} else
+			{
 				ImageBGRA2RGBA(buffer, size);
+			}
 			break;
 		case 10:
 			//Compressed RGB
 			data = (uint8_t*)malloc(size);
 			if (tga.bits == 24)
+			{
 				RGBCompressedTGA(buffer, data, tga.width * tga.height);
-			else
+			} else
+			{
 				RGBACompressedTGA(buffer, data, tga.width * tga.height);
+			}
 			break;
 		}
 
-		if (tga.x_origin != 0)
-			ImageFlipX(buffer, tga.width, tga.height, tga.bits / 8);
-
-		if (tga.y_origin != 0)
-			ImageFlipY(buffer, tga.width, tga.height, tga.bits / 8);
+		if (tga.x_origin != 0) ImageFlipX(buffer, tga.width, tga.height, tga.bits / 8);
+		if (tga.y_origin != 0) ImageFlipY(buffer, tga.width, tga.height, tga.bits / 8);
 
 		file.close();
 
@@ -257,12 +260,8 @@ namespace Columbus
 
 		switch (tga.bits)
 		{
-		case 24:
-			ImageRGB2BGR(buffer, size);
-			break;
-		case 32:
-			ImageRGBA2BGRA(buffer, size);
-			break;
+		case 24: ImageRGB2BGR(buffer, size); break;
+		case 32: ImageRGBA2BGRA(buffer, size); break;
 		};
 
 		WriteHeader(tga, &file);

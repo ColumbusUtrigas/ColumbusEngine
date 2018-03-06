@@ -34,7 +34,7 @@ namespace Columbus
 		FILE* fp = fopen(aFile.c_str(), "rb");
 		if (fp == nullptr) return nullptr;
 
-		png_structp	png_ptr;
+		png_structp png_ptr;
 		png_infop info_ptr;
 		png_uint_32 width;
 		png_uint_32 height;
@@ -62,10 +62,8 @@ namespace Columbus
 		int rowbytes;
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
-		if (color_type == PNG_COLOR_TYPE_RGB)
-			bpp = 3;
-		if (color_type == PNG_COLOR_TYPE_RGBA)
-			bpp = 4;
+		if (color_type == PNG_COLOR_TYPE_RGB) bpp = 3;
+		if (color_type == PNG_COLOR_TYPE_RGBA) bpp = 4;
 
 		aWidth = width;
 		aHeight = height;
@@ -73,12 +71,13 @@ namespace Columbus
 
 		uint8_t* data = (uint8_t*)malloc(width * height * bpp);
 
+		//Copying row data into byte buffer with reversed vertical
 		for (size_t i = 0; i < height; i++)
+		{
 			memcpy(&data[rowbytes * i], rows[height - i - 1], rowbytes);
-
-		if (png_ptr && info_ptr)
-			png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-
+		}
+		
+		if (png_ptr && info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 		fclose(fp);
 
 		return data;
@@ -101,8 +100,7 @@ namespace Columbus
 
 		png_init_io(png, fp);
 		int type = PNG_COLOR_TYPE_RGB;
-		if (aBPP == 4)
-			type = PNG_COLOR_TYPE_RGBA;
+		if (aBPP == 4) type = PNG_COLOR_TYPE_RGBA;
 
 		png_set_IHDR(png, info, aWidth, aHeight, 8, type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
@@ -133,7 +131,9 @@ namespace Columbus
 		fclose(fp);
 
 		for (size_t i = 0; i < aHeight; i++)
+		{
 			free(rows[i]);
+		}
 
 		return true;
 	}

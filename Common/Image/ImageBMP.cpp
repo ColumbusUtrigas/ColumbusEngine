@@ -136,12 +136,8 @@ namespace Columbus
 
 		switch (info.bits)
 		{
-		case 24:
-			ImageBGR2RGB(data, size);
-			break;
-		case 32:
-			ImageABGR2RGBA(data, size);
-			break;
+		case 24: ImageBGR2RGB(data, size); break;
+		case 32: ImageABGR2RGBA(data, size); break;
 		};
 
 		aWidth = info.width;

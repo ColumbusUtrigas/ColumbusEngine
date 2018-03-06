@@ -64,8 +64,7 @@ namespace Columbus
 			data[i + 0] = TIFFGetR(*buffer);
 			data[i + 1] = TIFFGetG(*buffer);
 			data[i + 2] = TIFFGetB(*buffer);
-			if (bpp == 4)
-				data[i + 3] = TIFFGetA(*buffer);
+			if (bpp == 4) data[i + 3] = TIFFGetA(*buffer);
 
 			buffer++;
 		}
@@ -105,8 +104,7 @@ namespace Columbus
 		for (i = 0; i < aHeight; i++)
 		{
 			memcpy(row, &aData[(aHeight - i - 1) * stride], stride);
-			if (TIFFWriteScanline(tif, row, i, 0) < 0)
-				break;
+			if (TIFFWriteScanline(tif, row, i, 0) < 0) break;
 		}
 
 		TIFFClose(tif);
