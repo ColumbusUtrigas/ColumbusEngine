@@ -117,12 +117,8 @@ namespace Columbus
 		return false;
 	}
 
-	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		if (aWidth == nullptr) return nullptr;
-		if (aHeight == nullptr) return nullptr;
-		if (aBPP == nullptr) return nullptr;
-
 		C_File file(aFile, "rb");
 		if (!file.isOpened()) return nullptr;
 
@@ -148,9 +144,9 @@ namespace Columbus
 			break;
 		};
 
-		*aWidth = info.width;
-		*aHeight = info.height;
-		*aBPP = info.bits / 8;
+		aWidth = info.width;
+		aHeight = info.height;
+		aBPP = info.bits / 8;
 
 		return data;
 	}
