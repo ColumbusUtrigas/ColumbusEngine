@@ -188,10 +188,11 @@ namespace Columbus
 		//Operator /=
 		inline C_Vector4 operator/=(const float aOther)
 		{
-			x /= aOther;
-			y /= aOther;
-			z /= aOther;
-			w /= aOther;
+			const float Scalar = 1.0f / aOther;
+			x *= Scalar;
+			y *= Scalar;
+			z *= Scalar;
+			w *= Scalar;
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
