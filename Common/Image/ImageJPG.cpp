@@ -26,9 +26,9 @@ namespace Columbus
 		file.close();
 		
 		if (magic[0] == 'J' &&
-			magic[1] == 'F' &&
-			magic[2] == 'I' &&
-			magic[3] == 'F') return true;
+		    magic[1] == 'F' &&
+		    magic[2] == 'I' &&
+		    magic[3] == 'F') return true;
 		else return false;
 	}
 

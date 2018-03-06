@@ -149,7 +149,7 @@ namespace Columbus
 	static void RGBACompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
 	{
 		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
-			COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
 
 		int header;
 		int blue, green, red, alpha;
