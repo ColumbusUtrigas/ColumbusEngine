@@ -38,12 +38,8 @@ namespace Columbus
 		else return false;
 	}
 
-	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadTIF(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadTIF(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadTIF(): invalid BPP")
-
 		TIFF* tif = TIFFOpen(aFile.c_str(), "r");
 		if (tif == nullptr) return nullptr;
 
@@ -55,9 +51,9 @@ namespace Columbus
 		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
 		TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &bpp);
 
-		*aWidth = width;
-		*aHeight = height;
-		*aBPP = bpp;
+		aWidth = width;
+		aHeight = height;
+		aBPP = bpp;
 
 		uint32_t* buffer = (uint32_t*)malloc(width * height * sizeof(uint32_t));
 		TIFFReadRGBAImage(tif, width, height, buffer, 0);

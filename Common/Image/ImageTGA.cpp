@@ -185,12 +185,8 @@ namespace Columbus
 		}
 	}
 
-	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadTGA(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadTGA(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadTGA(): invalid BPP")
-
 		C_File file(aFile, "rb");
 		if (!file.isOpened()) return nullptr;
 
@@ -234,9 +230,9 @@ namespace Columbus
 
 		file.close();
 
-		*aWidth = tga.width;
-		*aHeight = tga.height;
-		*aBPP = tga.bits / 8;
+		aWidth = tga.width;
+		aHeight = tga.height;
+		aBPP = tga.bits / 8;
 		return data;
 	}
 
@@ -278,6 +274,8 @@ namespace Columbus
 
 #undef READPIXEL24
 #undef WRITEPIXEL24
+#undef READPIXEL32
+#undef WRITEPIXEL32
 
 }
 

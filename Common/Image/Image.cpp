@@ -12,6 +12,19 @@
 namespace Columbus
 {
 
+	E_IMAGE_FORMAT ImageGetFormat(std::string aFile)
+	{
+		if (ImageIsBMP(aFile)) return E_IMAGE_FORMAT_BMP;
+		if (ImageIsPNG(aFile)) return E_IMAGE_FORMAT_PNG;
+		if (ImageIsTIF(aFile)) return E_IMAGE_FORMAT_TIF;
+		if (ImageIsJPG(aFile)) return E_IMAGE_FORMAT_JPG;
+		if (ImageIsTGA(aFile)) return E_IMAGE_FORMAT_TGA;
+
+		return E_IMAGE_FORMAT_UNKNOWN;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	bool ImageBGR2RGB(uint8_t* aData, size_t aSize)
 	{
 		if (aData == nullptr) return false;
@@ -143,26 +156,18 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	unsigned char* ImageLoad(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoad(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoad(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoad(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoad(): invalid BPP")
-
-		if (ImageIsBMP(aFile))
-			return ImageLoadBMP(aFile, aWidth, aHeight, aBPP);
-
-		if (ImageIsPNG(aFile))
-			return ImageLoadPNG(aFile, aWidth, aHeight, aBPP);
-
-		if (ImageIsTIF(aFile))
-			return ImageLoadTIF(aFile, aWidth, aHeight, aBPP);
-
-		if (ImageIsJPG(aFile))
-			return ImageLoadJPG(aFile, aWidth, aHeight, aBPP);
-
-		if (ImageIsTGA(aFile))
-			return ImageLoadTGA(aFile, aWidth, aHeight, aBPP);
+		switch (ImageGetFormat(aFile))
+		{
+		case E_IMAGE_FORMAT_BMP: return ImageLoadBMP(aFile, aWidth, aHeight, aBPP); break;
+		case E_IMAGE_FORMAT_PNG: return ImageLoadPNG(aFile, aWidth, aHeight, aBPP); break;
+		case E_IMAGE_FORMAT_TIF: return ImageLoadTIF(aFile, aWidth, aHeight, aBPP); break;
+		case E_IMAGE_FORMAT_JPG: return ImageLoadJPG(aFile, aWidth, aHeight, aBPP); break;
+		case E_IMAGE_FORMAT_TGA: return ImageLoadTGA(aFile, aWidth, aHeight, aBPP); break;
+		case E_IMAGE_FORMAT_UNKNOWN: return nullptr; break;
+		default: return nullptr; break;
+		}
 
 		return nullptr;
 	}
@@ -172,19 +177,19 @@ namespace Columbus
 	{
 		switch (aFormat)
 		{
-		case E_IMAGE_SAVE_FORMAT_BMP:
+		case E_IMAGE_FORMAT_BMP:
 			return ImageSaveBMP(aFile, aWidth, aHeight, aBPP, aData);
 			break;
-		case E_IMAGE_SAVE_FORMAT_TGA:
+		case E_IMAGE_FORMAT_TGA:
 			return ImageSaveTGA(aFile, aWidth, aHeight, aBPP, aData);
 			break;
-		case E_IMAGE_SAVE_FORMAT_PNG:
+		case E_IMAGE_FORMAT_PNG:
 			return ImageSavePNG(aFile, aWidth, aHeight, aBPP, aData);
 			break;
-		case E_IMAGE_SAVE_FORMAT_TIF:
+		case E_IMAGE_FORMAT_TIF:
 			return ImageSaveTIF(aFile, aWidth, aHeight, aBPP, aData);
 			break;
-		case E_IMAGE_SAVE_FORMAT_JPG:
+		case E_IMAGE_FORMAT_JPG:
 			return ImageSaveJPG(aFile, aWidth, aHeight, aBPP, aData, aQuality);
 			break;
 		}
@@ -218,7 +223,7 @@ namespace Columbus
 	{
 		freeData();
 
-		mData = ImageLoad(aFile, &mWidth, &mHeight, &mBPP);
+		mData = ImageLoad(aFile, mWidth, mHeight, mBPP);
 		if (mData == nullptr) return false;
 		else
 		{
@@ -227,15 +232,9 @@ namespace Columbus
 
 			switch (aFlags)
 			{
-			case E_IMAGE_LOAD_FLIP_X:
-				flipX();
-				break;
-			case E_IMAGE_LOAD_FLIP_Y:
-				flipY();
-				break;
-			case E_IMAGE_LOAD_FLIP_XY:
-				flipXY();
-				break;
+			case E_IMAGE_LOAD_FLIP_X: flipX(); break;
+			case E_IMAGE_LOAD_FLIP_Y: flipY(); break;
+			case E_IMAGE_LOAD_FLIP_XY: flipXY(); break;
 			}
 
 			return true;

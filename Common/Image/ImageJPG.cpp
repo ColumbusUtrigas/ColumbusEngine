@@ -32,12 +32,8 @@ namespace Columbus
 		else return false;
 	}
 
-	unsigned char* ImageLoadJPG(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadJPG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadJPG(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadJPG(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadJPG(): invalid BPP")
-
 		struct jpeg_decompress_struct cinfo;
 
 		struct jpeg_error_mgr pub;
@@ -64,9 +60,9 @@ namespace Columbus
 
 		jpeg_read_header(&cinfo, TRUE);
 
-		*aWidth = cinfo.image_width;
-		*aHeight = cinfo.image_height;
-		*aBPP = 3;
+		aWidth = cinfo.image_width;
+		aHeight = cinfo.image_height;
+		aBPP = 3;
 
 		jpeg_start_decompress(&cinfo);
 

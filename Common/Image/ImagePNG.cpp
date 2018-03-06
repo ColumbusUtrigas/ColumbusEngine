@@ -29,12 +29,8 @@ namespace Columbus
 		else return false;
 	}
 
-	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadPNG(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadPNG(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadPNG(): invalid BPP")
-
 		FILE* fp = fopen(aFile.c_str(), "rb");
 		if (fp == nullptr) return nullptr;
 
@@ -71,9 +67,9 @@ namespace Columbus
 		if (color_type == PNG_COLOR_TYPE_RGBA)
 			bpp = 4;
 
-		*aWidth = width;
-		*aHeight = height;
-		*aBPP = bpp;
+		aWidth = width;
+		aHeight = height;
+		aBPP = bpp;
 
 		uint8_t* data = (uint8_t*)malloc(width * height * bpp);
 
