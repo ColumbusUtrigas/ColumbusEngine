@@ -25,7 +25,7 @@ namespace Columbus
 		file.close();
 
 		bool II = (magic[0] == 'I' &&
-			       magic[1] == 'I' &&
+		           magic[1] == 'I' &&
 		           magic[2] == 42 &&
 		           magic[3] == 0);
 
