@@ -86,12 +86,12 @@ namespace Columbus
 		if (!mImage.isExist())
 		{ C_Log::error("Texture didn't saved: " + aFile);  return false; }
 
-		int type = E_IMAGE_SAVE_FORMAT_PNG;
+		int type = E_IMAGE_FORMAT_PNG;
 
 		switch (mImage.getBPP())
 		{
-		case 3: type = E_IMAGE_SAVE_FORMAT_JPG; break;
-		case 4: type = E_IMAGE_SAVE_FORMAT_PNG; break;
+		case 3: type = E_IMAGE_FORMAT_JPG; break;
+		case 4: type = E_IMAGE_FORMAT_PNG; break;
 		}
 
 		ImageSave(aFile, mImage.getWidth(), mImage.getHeight(), mImage.getBPP(), mImage.getData(), type, aQuality);
