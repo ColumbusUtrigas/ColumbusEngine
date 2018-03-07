@@ -31,13 +31,13 @@
 
 #undef COLUMBUS_INLINE
 
-#ifdef _WIN32
+#if defined(_WIN32)
 	#define COLUMBUS_SYSTEM_WINDOWS
-#elif _WIN64
+#elif defined(_WIN64)
 	#define COLUMBUS_SYSTEM_WINDOWS
-#elif __linux
+#elif defined(__linux)
 	#define COLUMBUS_SYSTEM_LINUX
-#elif __APPLE__
+#elif defined(__APPLE__)
 	#define COLUMBUS_SYSTEM_APPLE
 #else
 	#error Unsupported platform

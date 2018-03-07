@@ -16,23 +16,15 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	std::string GetSystem()
 	{
-		#ifdef COLUMBUS_PLATFORM_WINDOWS
+		#ifdef COLUMBUS_SYSTEM_WINDOWS
 				return "Windows";
 		#endif
 
-		#ifdef __LINUX__
+		#ifdef COLUMBUS_SYSTEM_LINUX
 				return "Linux";
 		#endif
 
-		#ifdef __unix
-				return "Unix";
-		#endif
-
-		#ifdef __posix
-				return "POSIX";
-		#endif
-
-		#ifdef __APPLE__
+		#ifdef COLUMBUS_SYSTEM_APPLE
 				return "Apple";
 		#endif
 	}
