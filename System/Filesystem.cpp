@@ -1,9 +1,11 @@
 #include <System/Filesystem.h>
 #include <System/System.h>
 
-#ifdef COLUMBUS_PLATFORM_WINDOWS
+#if COLUMBUS_SYSTEM_WINDOWS
 	#include <windows.h>
-#elif COLUMBUS_PLATFORM_LINUX
+#endif
+
+#ifdef COLUMBUS_SYSTEM_LINUX
 	#include <dirent.h>
 	#include <unistd.h>
 	#include <fcntl.h>
@@ -19,19 +21,21 @@ namespace Columbus
 	*/
 	std::string C_Filesystem::getCurrent()
 	{
-		#ifdef COLUMBUS_PLATFORM_LINUX
+		#ifdef COLUMBUS_SYSTEM_LINUX
 			char dir[4096];
 			getcwd(dir, 4096);
 			return dir;
 		#endif
 
-		#ifdef COLUMBUS_PLATFORM_WINDOWS
+		#ifdef COLUMBUS_SYSTEM_WINDOWS
 			wchar_t wdir[MAX_PATH];
 			char dir[MAX_PATH];
 			GetCurrentDirectory(MAX_PATH, wdir);
 			wcstombs(dir, wdir, MAX_PATH);
 			return dir;
 		#endif
+
+		return "";
 	}
 	/* 
 	* Creates new directory
@@ -40,11 +44,11 @@ namespace Columbus
 	*/
 	bool C_Filesystem::createDirectory(const std::string aPath)
 	{
-		#ifdef COLUMBUS_PLATFORM_LINUX
+		#ifdef COLUMBUS_SYSTEM_LINUX
 			return mkdir(aPath.c_str(), 0777) == 0;
 		#endif
 
-		#ifdef COLUMBUS_PLATFORM_WINDOWS
+		#ifdef COLUMBUS_SYSTEM_WINDOWS
 			wchar_t* name = new wchar_t[aPath.size()];
 			mbstowcs(name, aPath.c_str(), aPath.size() * 2);
 			return CreateDirectory(name, NULL);
@@ -59,7 +63,7 @@ namespace Columbus
 	*/
 	bool C_Filesystem::createFile(const std::string aPath)
 	{
-		#ifdef COLUMBUS_PLATFORM_LINUX
+		#ifdef COLUMBUS_SYSTEM_LINUX
 			return open(aPath.c_str(), O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRWXU) >= 0;
 		#endif
 
@@ -74,11 +78,11 @@ namespace Columbus
 	*/
 	bool C_Filesystem::removeDirectory(const std::string aPath)
 	{
-		#ifdef COLUMBUS_PLATFORM_LINUX
+		#ifdef COLUMBUS_SYSTEM_LINUX
 			return rmdir(aPath.c_str()) == 0;
 		#endif
 
-		#ifdef COLUMBUS_PLATFORM_WINDOWS
+		#ifdef COLUMBUS_SYSTEM_WINDOWS
 			wchar_t* name = new wchar_t[aPath.size()];
 			mbstowcs(name, aPath.c_str(), aPath.size() * 2);
 			return RemoveDirectory(name);
@@ -93,7 +97,7 @@ namespace Columbus
 	*/
 	bool C_Filesystem::removeFile(const std::string aPath)
 	{
-		#ifdef COLUMBUS_PLATFORM_LINUX
+		#ifdef COLUMBUS_SYSTEM_LINUX
 			return remove(aPath.c_str()) == 0;
 		#endif
 
@@ -110,7 +114,7 @@ namespace Columbus
 	{
 		std::vector<std::string> ret;
 
-		#ifdef COLUMBUS_PLATFORM_LINUX
+		#ifdef COLUMBUS_SYSTEM_LINUX
 			DIR* dir = opendir(aPath.c_str());
 			if (dir == NULL) return ret;
 
@@ -124,7 +128,7 @@ namespace Columbus
 			closedir(dir);
 		#endif
 
-		#ifdef COLUMBUS_PLATFORM_WINDOWS
+		#ifdef COLUMBUS_SYSTEM_WINDOWS
 			HANDLE hFind;
 			WIN32_FIND_DATA data;
 
