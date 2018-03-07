@@ -29,6 +29,8 @@
 #undef COLUMBUS_SYSTEM_LINUX
 #undef COLUMBUS_SYSTEM_APPLE
 
+#undef COLUMBUS_INLINE
+
 #ifdef _WIN32
 	#define COLUMBUS_SYSTEM_WINDOWS
 #elif _WIN64
@@ -37,6 +39,12 @@
 	#define COLUMBUS_SYSTEM_LINUX
 #elif __APPLE__
 	#define COLUMBUS_SYSTEM_APPLE
+#endif
+
+#ifdef COLUMBUS_SYSTEM_WINDOWS
+	#define COLUMBUS_INLINE __forceinline
+#else
+	#define COLUMBUS_INLINE inline
 #endif
 
 typedef std::string stdstr;
@@ -66,12 +74,6 @@ namespace Columbus
 	bool C_DeleteFile(std::string aPath);
 	//Create folder
 	bool C_CreateFolder(const char* aPath);
-	//Conversion from degrees to radians
-	float C_DegToRads(const float aDeg);
-	//Conversion from radians to degrees
-	float C_RadsToDeg(const float aRads);
-	//Random between two floats
-	float C_RandomBetween(float aMin, float aMax);
 
 
 }

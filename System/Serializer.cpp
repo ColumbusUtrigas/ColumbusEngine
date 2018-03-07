@@ -32,6 +32,8 @@ namespace Columbus
 			return mTmp;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
 		C_SerializerXML::C_SerializerXML()
 		{
 
@@ -45,6 +47,137 @@ namespace Columbus
 			case C_XML_DESERIALIZATION:   read(aFile, aRoot);    break;
 			}
 		}
+		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
+		C_SerializerXML::Element* C_SerializerXML::getElement(std::string aElement)
+		{
+			if (mMode != 1) return nullptr;
+			if (mInited == false) return nullptr;
+			if (mRoot == nullptr) return nullptr;
+
+			C_SerializerXML::Element* elem = new C_SerializerXML::Element;
+			elem->elem = mRoot->FirstChildElement(aElement.c_str());
+
+			return elem;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		C_SerializerXML::Element* C_SerializerXML::getElement(Element* aElement, std::string aName)
+		{
+			if (mMode != 1) return nullptr;
+			if (mInited == false) return nullptr;
+			if (mRoot == nullptr) return nullptr;
+			if (aElement == nullptr) return nullptr;
+
+			C_SerializerXML::Element* elem = new C_SerializerXML::Element;
+			elem->elem = aElement->elem->FirstChildElement(aName.c_str());
+
+			return elem;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getInt(const C_SerializerXML::Element* aElement, int* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryIntText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getBool(const Element* aElement, bool* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryBoolText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getFloat(const Element* aElement, float* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryFloatText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getDouble(const Element* aElement, double* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryDoubleText(aValue);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getString(const Element* aElement, std::string* aValue)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			*aValue = aElement->elem->GetText();
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getVector2(const Element* aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->x);
+			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->y);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getVector3(const Element* aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->x);
+			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->y);
+			aElement->elem->QueryFloatAttribute(aAttribs.c.c_str(), &aValue->z);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		bool C_SerializerXML::getVector4(const Element* aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs)
+		{
+			if (mMode != 1) return false;
+			if (mInited == false) return false;
+			if (mRoot == nullptr) return false;
+			if (aValue == nullptr) return false;
+
+			if (aElement->elem == nullptr) return false;
+			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->x);
+			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->y);
+			aElement->elem->QueryFloatAttribute(aAttribs.c.c_str(), &aValue->z);
+			aElement->elem->QueryFloatAttribute(aAttribs.d.c_str(), &aValue->w);
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::write(std::string aFile, std::string aRoot)
 		{
@@ -338,6 +471,8 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
 		bool C_SerializerXML::read(std::string aFile, std::string aRoot)
 		{
 			mMode = 1;
@@ -570,6 +705,8 @@ namespace Columbus
 			mTmp->QueryFloatAttribute(aAttrib.d.c_str(), &aValue->w);
 			return true;
 		}
+		//////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		C_SerializerXML::~C_SerializerXML()
 		{

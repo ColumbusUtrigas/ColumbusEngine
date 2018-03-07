@@ -8,6 +8,7 @@
 *                   16.01.2018                  *
 *************************************************/
 #include <Graphics/OpenGL/MeshOpenGL.h>
+#include <GL/glew.h>
 
 namespace Columbus
 {
@@ -91,11 +92,15 @@ namespace Columbus
 		delete[] t;
 
 		if (mMat.getShader() == nullptr) return;
-		mMat.getShader()->addAttribute("aPos", 0);
-		mMat.getShader()->addAttribute("aUV", 1);
-		mMat.getShader()->addAttribute("aNorm", 2);
-		mMat.getShader()->addAttribute("aTang", 3);
-		mMat.getShader()->compile();
+
+		if (!mMat.getShader()->isCompiled())
+		{
+			mMat.getShader()->addAttribute("aPos", 0);
+			mMat.getShader()->addAttribute("aUV", 1);
+			mMat.getShader()->addAttribute("aNorm", 2);
+			mMat.getShader()->addAttribute("aTang", 3);
+			mMat.getShader()->compile();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::render(C_Transform aTransform)
@@ -185,15 +190,16 @@ namespace Columbus
 		mMaterialUnif[4] = matamb.x;
 		mMaterialUnif[5] = matamb.y;
 		mMaterialUnif[6] = matamb.z;
-		mMaterialUnif[7] = matamb.x;
-		mMaterialUnif[8] = matamb.y;
-		mMaterialUnif[9] = matamb.z;
+		mMaterialUnif[7] = matdif.x;
+		mMaterialUnif[8] = matdif.y;
+		mMaterialUnif[9] = matdif.z;
 		mMaterialUnif[10] = matspc.x;
 		mMaterialUnif[11] = matspc.y;
 		mMaterialUnif[12] = matspc.z;
 		mMaterialUnif[13] = mMat.getReflectionPower();
+		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
 
-		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 14);
+		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::setShaderLightAndCamera()
@@ -201,13 +207,13 @@ namespace Columbus
 		calculateLights();
 
 		mMat.getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
-		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.pos());
+		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_MeshOpenGL::calculateLights()
 	{
 		sortLights();
-		int i, j, offset;
+		size_t i, j, offset;
 		//8 - max count of lights, processing in shader
 		for (i = 0; i < 8; i++)
 		{
@@ -228,7 +234,7 @@ namespace Columbus
 				mLightUniform[7 + offset] = mLights[i]->getDir().y;
 				mLightUniform[8 + offset] = mLights[i]->getDir().z;
 				//Type
-				mLightUniform[9 + offset] = mLights[i]->getType();
+				mLightUniform[9 + offset] = static_cast<float>(mLights[i]->getType());
 				//Constant attenuation
 				mLightUniform[10 + offset] = mLights[i]->getConstant();
 				//Linear attenuation

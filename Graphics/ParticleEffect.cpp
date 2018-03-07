@@ -37,11 +37,11 @@ namespace Columbus
 		mNoisePersistence(0.5),
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
-		mEmitRate(5),
-		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mEmitRate(5.0),
+		mParticleShape(E_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
-		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+		mParticleTransformation(E_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(E_PARTICLE_SORT_MODE_NONE)
 	{
 
 	}
@@ -67,11 +67,11 @@ namespace Columbus
 		mNoisePersistence(0.5),
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
-		mEmitRate(5),
-		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mEmitRate(5.0),
+		mParticleShape(E_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
-		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+		mParticleTransformation(E_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(E_PARTICLE_SORT_MODE_NONE)
 	{
 		load(aFile);
 	}
@@ -97,11 +97,11 @@ namespace Columbus
 		mNoisePersistence(0.5),
 		mNoiseFrequency(1.0),
 		mNoiseAmplitude(1.0),
-		mEmitRate(5),
-		mParticleShape(C_PARTICLE_SHAPE_CIRCLE),
+		mEmitRate(5.0),
+		mParticleShape(E_PARTICLE_SHAPE_CIRCLE),
 		mParticleShapeRadius(1.0),
-		mParticleTransformation(C_PARTICLE_TRANSFORMATION_WORLD),
-		mSortMode(C_PARTICLE_SORT_MODE_NONE)
+		mParticleTransformation(E_PARTICLE_TRANSFORMATION_WORLD),
+		mSortMode(E_PARTICLE_SORT_MODE_NONE)
 	{
 		load(aFile);
 		mMaterial = aMaterial;
@@ -189,24 +189,34 @@ namespace Columbus
 		mParticleSize = static_cast<C_Vector2>(aParticleSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setStartSize(C_Vector2 aStartSize)
+	void C_ParticleEffect::setStartSize(const C_Vector2 aStartSize)
 	{
 		mStartSize = static_cast<C_Vector2>(aStartSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setFinalSize(C_Vector2 aFinalSize)
+	void C_ParticleEffect::setFinalSize(const C_Vector2 aFinalSize)
 	{
 		mFinalSize = static_cast<C_Vector2>(aFinalSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setStartColor(C_Vector4 aStartColor)
+	void C_ParticleEffect::setSubUV(const C_Vector2 aSubUV)
+	{
+		mSubUV = static_cast<C_Vector2>(aSubUV);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEffect::setStartColor(const C_Vector4 aStartColor)
 	{
 		mStartColor = static_cast<C_Vector4>(aStartColor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setFinalColor(C_Vector4 aFinalColor)
+	void C_ParticleEffect::setFinalColor(const C_Vector4 aFinalColor)
 	{
 		mFinalColor = static_cast<C_Vector4>(aFinalColor);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEffect::setBoxShapeSize(const C_Vector3 aBoxShapeSize)
+	{
+		mBoxShapeSize = static_cast<C_Vector3>(aBoxShapeSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleEffect::setMinTimeToLive(const float aMinTimeToLive)
@@ -269,17 +279,17 @@ namespace Columbus
 		mNoiseAmplitude = static_cast<float>(aNoiseAmplitude);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setEmitRate(const int aEmitRate)
+	void C_ParticleEffect::setEmitRate(const float aEmitRate)
 	{
-		mEmitRate = static_cast<int>(aEmitRate);
+		mEmitRate = static_cast<float>(aEmitRate);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation)
+	void C_ParticleEffect::setTransformation(const E_PARTICLE_TRANSFORMATION aParticleTransformation)
 	{
 		mParticleTransformation = static_cast<int>(aParticleTransformation);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setParticleShape(const C_PARTICLE_SHAPE aParticleShape)
+	void C_ParticleEffect::setParticleShape(const E_PARTICLE_SHAPE aParticleShape)
 	{
 		mParticleShape = static_cast<int>(aParticleShape);
 	}
@@ -289,9 +299,19 @@ namespace Columbus
 		mParticleShapeRadius = static_cast<float>(aRadius);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSortMode(const C_PARTICLE_SORT_MODE aSortMode)
+	void C_ParticleEffect::setSortMode(const E_PARTICLE_SORT_MODE aSortMode)
 	{
 		mSortMode = static_cast<int>(aSortMode);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEffect::setSubUVMode(const E_PARTICLE_SUB_UV_MODE aSubUVMode)
+	{
+		mSubUVMode = static_cast<int>(aSubUVMode);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_ParticleEffect::setSubUVCycles(const float aSubUVCycles)
+	{
+		mSubUVCycles = static_cast<float>(aSubUVCycles);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -376,6 +396,11 @@ namespace Columbus
 		return mStartSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	C_Vector2 C_ParticleEffect::getSubUV() const
+	{
+		return mSubUV;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	C_Vector2 C_ParticleEffect::getFinalSize() const
 	{
 		return mFinalSize;
@@ -389,6 +414,11 @@ namespace Columbus
 	C_Vector4 C_ParticleEffect::getFinalColor() const
 	{
 		return mFinalColor;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	C_Vector3 C_ParticleEffect::getBoxShapeSize() const
+	{
+		return mBoxShapeSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	float C_ParticleEffect::getMinTimeToLive() const
@@ -451,7 +481,7 @@ namespace Columbus
 		return mNoiseAmplitude;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getEmitRate() const
+	float C_ParticleEffect::getEmitRate() const
 	{
 		return mEmitRate;
 	}
@@ -475,6 +505,18 @@ namespace Columbus
 	{
 		return mSortMode;
 	}
+	//////////////////////////////////////////////////////////////////////////////
+	int C_ParticleEffect::getSubUVMode() const
+	{
+		return mSubUVMode;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	float C_ParticleEffect::getSubUVCycles() const
+	{
+		return mSubUVCycles;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_ParticleEffect::saveToXML(std::string aFile) const
 	{
@@ -528,11 +570,17 @@ namespace Columbus
 		if (!serializer.setVector2("FinalSize", mFinalSize, { "X", "Y" }))
 		{ C_Log::error("Can't save Particles final size: " + aFile); return false; }
 
+		if (!serializer.setVector2("SubUV", mSubUV, { "X", "Y" }))
+		{ C_Log::error("Can't save Particles sub UV: " + aFile); return false; }
+
 		if (!serializer.setVector4("StartColor", mStartColor, { "R", "G", "B", "A" }))
 		{ C_Log::error("Can't save Particles start color: ", aFile); return false; }
 
 		if (!serializer.setVector4("FinalColor", mFinalColor, { "R", "G", "B", "A" }))
 		{ C_Log::error("Can't save Particles final color: ", aFile); return false; }
+
+		if (!serializer.setVector3("BoxShapeSize", mBoxShapeSize, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't save Particles box shape size: ", aFile); return false; }
 
 		if (!serializer.setFloat("MinTTL", mMinTimeToLive))
 		{ C_Log::error("Can't save Particles min TTL: " + aFile); return false; }
@@ -570,7 +618,7 @@ namespace Columbus
 		if (!serializer.setFloat("NoiseAmplitude", mNoiseAmplitude))
 		{ C_Log::error("Can't save Particles noise amplitude: " + aFile); return false; }
 
-		if (!serializer.setInt("EmitRate", mEmitRate))
+		if (!serializer.setFloat("EmitRate", mEmitRate))
 		{ C_Log::error("Can't save Particles emit rate: " + aFile); return false; }
 
 		if (!serializer.setInt("Transformation", mParticleTransformation))
@@ -584,6 +632,12 @@ namespace Columbus
 
 		if (!serializer.setInt("SortMode", mSortMode))
 		{ C_Log::error("Can't save Particles sort mode: " + aFile); return false; }
+
+		if (!serializer.setInt("SubUVMode", mSubUVMode))
+		{ C_Log::error("Can't save Particles sub UV mode: " + aFile); return false; }
+
+		if (!serializer.setFloat("SubUVCycles", mSubUVCycles))
+		{ C_Log::error("Can't save Particles sub UV cycles: " + aFile); return false; }
 
 		if (!serializer.save())
 		{ C_Log::error("Can't save Particle Effect: " + aFile); return false; }
@@ -645,7 +699,6 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_ParticleEffect::loadFromXML(std::string aFile)
 	{
-
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.read(aFile, "ParticleEffect"))
@@ -696,11 +749,17 @@ namespace Columbus
 		if (!serializer.getVector2("FinalSize", &mFinalSize, { "X", "Y" }))
 		{ C_Log::error("Can't load Particles final size: " + aFile); return false; }
 
+		if (!serializer.getVector2("SubUV", &mSubUV, { "X", "Y" }))
+		{ C_Log::error("Can't load Particles sub UV: " + aFile); return false; }
+
 		if (!serializer.getVector4("StartColor", &mStartColor, { "R", "G", "B", "A"}))
 		{ C_Log::error("Can't load Particles start color: " + aFile); return false; }
 
 		if (!serializer.getVector4("FinalColor", &mFinalColor, { "R", "G", "B", "A" }))
 		{ C_Log::error("Can't load Particles final color: " + aFile); return false; }
+
+		if (!serializer.getVector3("BoxShapeSize", &mBoxShapeSize, { "X", "Y", "Z" }))
+		{ C_Log::error("Can't load Particles box shape size: " + aFile); return false; }
 
 		if (!serializer.getFloat("MinTTL", &mMinTimeToLive))
 		{ C_Log::error("Can't load Particles min TTL: " + aFile); return false; }
@@ -738,7 +797,7 @@ namespace Columbus
 		if (!serializer.getFloat("NoiseAmplitude", &mNoiseAmplitude))
 		{ C_Log::error("Can't load Particles noise amplitude: " + aFile); return false; }
 
-		if (!serializer.getInt("EmitRate", &mEmitRate))
+		if (!serializer.getFloat("EmitRate", &mEmitRate))
 		{ C_Log::error("Can't load Particles emit rate: " + aFile); return false; }
 
 		if (!serializer.getInt("Transformation", &mParticleTransformation))
@@ -752,6 +811,12 @@ namespace Columbus
 
 		if (!serializer.getInt("SortMode", &mSortMode))
 		{ C_Log::error("Can't load Particles sort mode: " + aFile); return false; }
+
+		if (!serializer.getInt("SubUVMode", &mSubUVMode))
+		{ C_Log::error("Can't load Particles sub UV mode: " + aFile); return false; }
+
+		if (!serializer.getFloat("SubUVCycles", &mSubUVCycles))
+		{ C_Log::error("Can't load Particles sub UV cycles: " + aFile); return false; }
 
 		C_Log::success("Particle Effect loaded: " + aFile);
 

@@ -34,14 +34,12 @@ namespace Columbus
 		float mat[16];
 	public:
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
 		C_Matrix4()
 		{
 			for (int i = 0; i < 16; i++)
 				mat[i] = 0.0;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
 		C_Matrix4(const float aDiagonal)
 		{
 			for (int i = 0; i < 16; i++)
@@ -53,7 +51,6 @@ namespace Columbus
 			mat[3 + 3 * 4] = static_cast<float>(aDiagonal);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
 		C_Matrix4(const glm::mat4 aMat)
 		{
 			fromGLM(aMat);
@@ -62,18 +59,19 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Set matrix row
-		void setRow(int index, const C_Vector4 aRow)
+		void setRow(const unsigned int index, const C_Vector4 aRow)
 		{
-			COLUMBUS_ASSERT(index < 4 && index >= 0);
+			COLUMBUS_ASSERT(index < 4);
 			mat[index + 0 * 4] = aRow.x;
 			mat[index + 1 * 4] = aRow.y;
 			mat[index + 2 * 4] = aRow.z;
 			mat[index + 3 * 4] = aRow.w;
 		}
+		////////////////////////////////////////////////////////////////////////////
 		//Set matrix column
-		void setColumn(int index, const C_Vector4 aColumnn)
+		void setColumn(const unsigned int index, const C_Vector4 aColumnn)
 		{
-			COLUMBUS_ASSERT(index < 4 && index >= 0);
+			COLUMBUS_ASSERT(index < 4);
 			mat[0 + index * 4] = aColumnn.x;
 			mat[1 + index * 4] = aColumnn.y;
 			mat[2 + index * 4] = aColumnn.z;
@@ -183,18 +181,15 @@ namespace Columbus
 		C_Matrix4 orthographic(const float aLeft, const float aRight,
 			const float aBottom, const float aTop, const float aNear, const float aFar)
 		{
-			//C_Matrix4 res(1.0);
 
-			mat[0 + 0 * 4] = 2.0 / (aRight - aLeft);
-			mat[1 + 1 * 4] = 2.0 / (aTop - aBottom);
-			mat[2 + 2 * 4] = 2.0 / (aNear - aFar);
+			mat[0 + 0 * 4] = 2.0f / (aRight - aLeft);
+			mat[1 + 1 * 4] = 2.0f / (aTop - aBottom);
+			mat[2 + 2 * 4] = 2.0f / (aNear - aFar);
 
 			mat[0 + 3 * 4] = (aLeft + aRight) / (aLeft - aRight);
 			mat[1 + 3 * 4] = (aBottom + aTop) / (aBottom - aTop);
 			mat[2 + 3 * 4] = (aFar + aNear) / (aFar - aNear);
 
-			//*this = res;
-			//return res;
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -205,7 +200,7 @@ namespace Columbus
 			for (int i = 0; i < 16; i++)
 				mat[i] = 0.0;
 
-			float xymax = aNear * tan(aFOV / 360.0 * 3.141592);
+			float xymax = aNear * tan(aFOV / 360.0f * 3.141592f);
 			float ymin = -xymax;
 			float xmin = -xymax;
 
@@ -233,26 +228,18 @@ namespace Columbus
 		//Create view matrix
 		C_Matrix4 lookAt(C_Vector3 aPos, C_Vector3 aRef, C_Vector3 aUp)
 		{
+			/*vec3 f((aRef - aPos).normalize());
+			vec3 s(vec3::cross(aUp, f).normalize());
+			vec3 u(vec3::cross(f, s));*/
+
 			vec3 zaxis = (aRef - aPos).normalize();
 			vec3 xaxis = vec3::cross(aUp, zaxis).normalize();
 			vec3 yaxis = vec3::cross(zaxis, xaxis);
 
-			mat[0] = xaxis.x;
-			mat[1] = yaxis.x;
-			mat[2] = zaxis.x;
-			mat[3] = 0;
-			mat[4] = xaxis.y;
-			mat[5] = yaxis.y;
-			mat[6] = zaxis.y;
-			mat[7] = 0;
-			mat[8] = xaxis.z;
-			mat[9] = yaxis.z;
-			mat[10] = zaxis.z;
-			mat[11] = 0;
-			mat[12] = vec3::dot(xaxis, -aPos);
-			mat[13] = vec3::dot(yaxis, -aPos);
-			mat[14] = vec3::dot(zaxis, -aPos);
-			mat[15] = 1.0;
+			setColumn(0, vec4(xaxis.x, yaxis.x, zaxis.x, 0.0));
+			setColumn(1, vec4(xaxis.y, yaxis.y, zaxis.y, 0.0));
+			setColumn(2, vec4(xaxis.z, yaxis.z, zaxis.z, 0.0));
+			setColumn(3, vec4(-vec3::dot(xaxis, aPos), -vec3::dot(yaxis, aPos), -vec3::dot(zaxis, aPos), 1.0));
 
 			return *this;
 		}
@@ -280,12 +267,12 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		C_Matrix4 rotate(const float x, const float y, const float z, const float angle)
 		{
-			float c = cosf(C_DegToRads(angle));
-			float s = sinf(C_DegToRads(angle));
+			float c = cosf(Radians(angle));
+			float s = sinf(Radians(angle));
 			float c1 = 1.0f - c;
 			float m0 = mat[0], m4 = mat[4], m8 = mat[8], m12 = mat[12],
-				m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
-				m2 = mat[2], m6 = mat[6], m10 = mat[10], m14 = mat[14];
+			      m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
+			      m2 = mat[2], m6 = mat[6], m10 = mat[10], m14 = mat[14];
 
 			float r0 = x * x * c1 + c;
 			float r1 = x * y * c1 + z * s;

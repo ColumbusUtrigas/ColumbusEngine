@@ -1,4 +1,5 @@
 #include <Engine.h>
+#include <Graphics/OpenGL/DeviceOpenGL.h>
 
 using namespace Columbus;
 
@@ -15,11 +16,15 @@ int main(int argc, char** argv)
 	input.setIO(&io);
 
 	C_Camera camera;
+	camera.setPos(vec3(10, 10, 0));
+	camera.setRot(vec3(0, 90, 0));
 
 	float i = 0;
 
-	C_Cubemap cubemap("Data/Skyboxes/1.cubemap");
-	C_Skybox skybox(&cubemap);
+	gDevice = new C_DeviceOpenGL();
+
+	//C_Skybox skybox(new C_CubemapOpenGL("Data/Skyboxes/1.cubemap"));
+	C_Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
 	C_Timer timer;
 
@@ -28,7 +33,11 @@ int main(int argc, char** argv)
 	//window.setVerticalSync(true);
 	window.setFPSLimit(60);
 
+	C_Image* cur = new C_Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
+
 	input.showMouseCursor(false);
+	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_CROSSHAIR);
+	input.setColoredCursor(cur->getData(), cur->getWidth(), cur->getHeight(), cur->getBPP(), vec2(17, 3));
 
 	bool cursor = false;
 
@@ -38,8 +47,6 @@ int main(int argc, char** argv)
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
-
-	printf("%i\n", ModelIsCMF("Data/Models/cube.cmf"));
 	
 	while (window.isOpen())
 	{
@@ -50,7 +57,7 @@ int main(int argc, char** argv)
 
 		window.clear(0, 0, 0.75, 1);
 
-		C_SetPerspective(60, window.aspect(), 0.001, 1000);
+		C_SetPerspective(60, window.aspect(), 0.1, 1000);
 
 		if (input.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
@@ -91,6 +98,7 @@ int main(int argc, char** argv)
 			input.setMousePos(window.getSize() * 0.5);
 		}
 
+		camera.setRot(C_Vector3::clamp(camera.getRot(), C_Vector3(-89.9, -360, 0.0), C_Vector3(89.9, 360, 0.0)));
 		camera.update();
 
 		scene.setContextSize(window.getSize());

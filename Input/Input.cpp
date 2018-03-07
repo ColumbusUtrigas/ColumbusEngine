@@ -62,6 +62,53 @@ namespace Columbus
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	void C_Input::setSystemCursor(const E_InputSystemCursor aID)
+	{
+		SDL_SystemCursor id = SDL_SYSTEM_CURSOR_NO;
+
+		switch (aID)
+		{
+		case E_INPUT_SYSTEM_CURSOR_ARROW: id = SDL_SYSTEM_CURSOR_ARROW; break;
+		case E_INPUT_SYSTEM_CURSOR_IBEAM: id = SDL_SYSTEM_CURSOR_IBEAM; break;
+		case E_INPUT_SYSTEM_CURSOR_WAIT: id = SDL_SYSTEM_CURSOR_WAIT; break;
+		case E_INPUT_SYSTEM_CURSOR_CROSSHAIR: id = SDL_SYSTEM_CURSOR_CROSSHAIR; break;
+		case E_INPUT_SYSTEM_CURSOR_WAITARROW: id = SDL_SYSTEM_CURSOR_WAITARROW; break;
+		case E_INPUT_SYSTEM_CURSOR_SIZENWSE: id = SDL_SYSTEM_CURSOR_SIZENWSE; break;
+		case E_INPUT_SYSTEM_CURSOR_SIZENESW: id = SDL_SYSTEM_CURSOR_SIZENESW; break;
+		case E_INPUT_SYSTEM_CURSOR_SIZEWE: id = SDL_SYSTEM_CURSOR_SIZEWE; break;
+		case E_INPUT_SYSTEM_CURSOR_SIZENS: id = SDL_SYSTEM_CURSOR_SIZENS; break;
+		case E_INPUT_SYSTEM_CURSOR_SIZEALL: id = SDL_SYSTEM_CURSOR_SIZEALL; break;
+		case E_INPUT_SYSTEM_CURSOR_NO: id = SDL_SYSTEM_CURSOR_NO; break;
+		case E_INPUT_SYSTEM_CURSOR_HAND: id = SDL_SYSTEM_CURSOR_HAND; break;
+		default: id = SDL_SYSTEM_CURSOR_NO; break;
+		}
+
+		SDL_Cursor* cursor = SDL_CreateSystemCursor(id);
+		SDL_SetCursor(cursor);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void C_Input::setColoredCursor(const void* aPixels, const unsigned int aW,
+			const unsigned int aH, const unsigned int aBPP, const C_Vector2 aHot)
+	{
+		Uint32 rmask, gmask, bmask, amask;
+		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			int shift = (aBPP == 4) ? 8 : 0;
+			rmask = 0xff000000 >> shift;
+			gmask = 0x00ff0000 >> shift;
+			bmask = 0x0000ff00 >> shift;
+			amask = 0x000000ff >> shift;
+		#else
+			rmask = 0x000000ff;
+			gmask = 0x0000ff00;
+			bmask = 0x00ff0000;
+			amask = (aBPP == 3) ? 0 : 0xff000000;
+		#endif
+
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(const_cast<void*>(aPixels), aW, aH, aBPP * 8, aW * aBPP, rmask, gmask, bmask, amask);
+		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, static_cast<int>(aHot.x), static_cast<int>(aHot.y));
+		SDL_SetCursor(cursor);
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Input::setMousePos(const C_Vector2 aPos)
 	{
 		if (mWindow == nullptr)
@@ -147,7 +194,7 @@ namespace Columbus
 			if (mWindow->isKeyFocus() == false)
 				return false;
 
-		return ((mPreviousKeyboardState[aKey] == true) && (mCurrentKeyboardState[aKey] == true));
+		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Input::getKeyDown(const unsigned int aKey)
@@ -156,7 +203,7 @@ namespace Columbus
 			if (mWindow->isKeyFocus() == false)
 				return false;
 
-		return ((mPreviousKeyboardState[aKey] == false) && (mCurrentKeyboardState[aKey] == true));
+		return ((mPreviousKeyboardState[aKey] == 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Input::getKeyUp(const unsigned int aKey)
@@ -165,7 +212,7 @@ namespace Columbus
 			if (mWindow->isKeyFocus() == false)
 				return false;
 
-		return ((mPreviousKeyboardState[aKey] == true) && (mCurrentKeyboardState[aKey] == false));
+		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] == 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

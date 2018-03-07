@@ -10,7 +10,7 @@
 #pragma once
 
 #include <Scene/Component.h>
-#include <Graphics/Model.h>
+#include <Graphics/Mesh.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Cubemap.h>

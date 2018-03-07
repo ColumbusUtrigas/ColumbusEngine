@@ -50,6 +50,7 @@ namespace Columbus
 		size_t read(void* aData, size_t aSize, size_t aPacks) const;
 		size_t write(const void* aData, size_t aSize, size_t aPacks) const;
 
+		//Read batch of data from file
 		bool readBytes(void* aData, size_t aSize);
 		bool readUint8(uint8_t* aData);
 		bool readInt8(int8_t* aData);
@@ -58,6 +59,7 @@ namespace Columbus
 		bool readUint32(uint32_t* aData);
 		bool readInt32(int32_t* aData);
 
+		//Write batch of data inro file
 		bool writeBytes(const void* aData, size_t aSize);
 		bool writeUint8(const uint8_t* aData);
 		bool writeInt8(const int8_t* aData);

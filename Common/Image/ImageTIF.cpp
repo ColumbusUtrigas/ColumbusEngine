@@ -25,7 +25,7 @@ namespace Columbus
 		file.close();
 
 		bool II = (magic[0] == 'I' &&
-			       magic[1] == 'I' &&
+		           magic[1] == 'I' &&
 		           magic[2] == 42 &&
 		           magic[3] == 0);
 
@@ -38,12 +38,8 @@ namespace Columbus
 		else return false;
 	}
 
-	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadTIF(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadTIF(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadTIF(): invalid BPP")
-
 		TIFF* tif = TIFFOpen(aFile.c_str(), "r");
 		if (tif == nullptr) return nullptr;
 
@@ -55,9 +51,9 @@ namespace Columbus
 		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
 		TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &bpp);
 
-		*aWidth = width;
-		*aHeight = height;
-		*aBPP = bpp;
+		aWidth = width;
+		aHeight = height;
+		aBPP = bpp;
 
 		uint32_t* buffer = (uint32_t*)malloc(width * height * sizeof(uint32_t));
 		TIFFReadRGBAImage(tif, width, height, buffer, 0);
@@ -68,8 +64,7 @@ namespace Columbus
 			data[i + 0] = TIFFGetR(*buffer);
 			data[i + 1] = TIFFGetG(*buffer);
 			data[i + 2] = TIFFGetB(*buffer);
-			if (bpp == 4)
-				data[i + 3] = TIFFGetA(*buffer);
+			if (bpp == 4) data[i + 3] = TIFFGetA(*buffer);
 
 			buffer++;
 		}
@@ -109,8 +104,7 @@ namespace Columbus
 		for (i = 0; i < aHeight; i++)
 		{
 			memcpy(row, &aData[(aHeight - i - 1) * stride], stride);
-			if (TIFFWriteScanline(tif, row, i, 0) < 0)
-				break;
+			if (TIFFWriteScanline(tif, row, i, 0) < 0) break;
 		}
 
 		TIFFClose(tif);

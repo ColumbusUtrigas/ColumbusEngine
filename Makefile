@@ -1,6 +1,6 @@
 TARGET = asd
 CC = g++
-LIBS = -lSDL2 -lSDL2main -lSDL2_image -lGL -lGLU -lGLEW -ltinyxml2 -lpng -ltiff -ljpeg
+LIBS = -lSDL2 -lSDL2main -lGL -lGLU -lGLEW -ltinyxml2 -lpng -ltiff -ljpeg
 SRC = ./Common/Compress/*.cpp ./Common/Image/*.cpp ./Common/Model/*.cpp
 SRC += ./*.cpp ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./GUI/*.cpp ./Impl/*.cpp ./Input/*.cpp ./RenderAPI/*.cpp 
 SRC += ./Scene/*.cpp ./System/*.cpp

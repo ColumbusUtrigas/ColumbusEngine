@@ -1,64 +1,47 @@
-#version 130
-
 varying vec3 varPos;
 varying vec2 varTexCoord;
-varying float varTime;
-varying float varTTL;
-varying float varIsGradient;
+varying vec4 varColor;
 
-uniform vec4 uColor;
 uniform sampler2D uTex;
-uniform vec4 uStartColor;
-uniform vec4 uFinalColor;
 uniform int uDiscard;
 
-uniform float MaterialUnif[14];
+uniform float MaterialUnif[15];
 uniform float LightUnif[120];
 
 vec3 AmbientColor = vec3(0);
 vec3 DiffuseColor = vec3(0);
 vec3 SpecularColor = vec3(0);
-bool IsLightEnabled = false;
 
 void Light(int id);
 
 void main()
 {
 	vec4 tex = texture(uTex, varTexCoord);
-	vec4 Gradient = mix(uStartColor, uFinalColor, varTime / varTTL) * clamp(varIsGradient, 0.0, 1.0);
-	vec4 Color = uColor;
+	vec4 Color = varColor;
+	vec4 Lighting = vec4(1);
 
-	if (varIsGradient == 0.0)
+	if (textureSize(uTex, 0).x > 1)
+		Color = varColor * tex;
+	else
+		Color = varColor;
+
+	if (MaterialUnif[14] != 0.0)
 	{
-		if (textureSize(uTex, 0).x > 1)
-			Color = uColor * tex;	
-	} else
-	{
-		if (textureSize(uTex, 0).x > 1)
-			Color = uColor * tex * Gradient;
-		else
-			Color = uColor * Gradient;
+		Light(0);
+		Light(1);
+		Light(2);
+		Light(3);
+		//Light(4);
+		//Light(5);
+		//Light(6);
+		//Light(7);
+
+		Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 	}
 
-	Light(0);
-	Light(1);
-	Light(2);
-	Light(3);
-	Light(4);
-	Light(5);
-	Light(6);
-	Light(7);
+	FragColor = Color * Lighting;
 
-	vec4 Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
-	if (IsLightEnabled == false)
-		Lighting = vec4(1);
-
-	gl_FragColor = Color * Lighting;
-
-	//if (uDiscard == 1 && gl_FragColor.w < 0.05)
-			//discard;
-
-	if (gl_FragColor.w < 0.01) discard;
+	if (FragColor.w < 0.01) discard;
 }
 
 void Light(int id)
@@ -66,9 +49,6 @@ void Light(int id)
 	int offset = id * 15;
 
 	float LightType = LightUnif[9 + offset];
-
-	if (LightType == -1) return;
-	else IsLightEnabled = true;
 
 	vec3 LightColor = vec3(LightUnif[0 + offset], LightUnif[1 + offset], LightUnif[2 + offset]);
 	vec3 LightPos = vec3(LightUnif[3 + offset], LightUnif[4 + offset], LightUnif[5 + offset]);

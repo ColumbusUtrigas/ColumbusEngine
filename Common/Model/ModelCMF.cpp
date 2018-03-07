@@ -16,7 +16,7 @@ namespace Columbus
 	typedef struct
 	{
 		uint8_t magic[21]; //Magic string "COLUMBUS MODEL FORMAT"
-		uint32_t count; //Polygons count
+		uint32_t count;    //Polygons count
 	} CMF_HEADER;
 
 	static bool ReadHeader(CMF_HEADER* aHeader, C_File* aFile)

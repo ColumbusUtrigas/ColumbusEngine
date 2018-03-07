@@ -13,6 +13,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include <System/Random.h>
+#include <Math/MathUtil.h>
 
 namespace Columbus
 {
@@ -28,24 +29,21 @@ namespace Columbus
 		float z = 0;
 		float w = 0;
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector4() :
+		inline explicit C_Vector4() :
 			x(0),
 			y(0),
 			z(0),
 			w(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector4(const float aX, const float aY, const float aZ, const float aW) :
+		inline explicit C_Vector4(const float aX, const float aY, const float aZ, const float aW) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY)),
 			z(static_cast<float>(aZ)),
 			w(static_cast<float>(aW))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector4(const glm::vec4 aVec) :
+		inline explicit C_Vector4(const glm::vec4 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y)),
 			z(static_cast<float>(aVec.z)),
@@ -190,10 +188,11 @@ namespace Columbus
 		//Operator /=
 		inline C_Vector4 operator/=(const float aOther)
 		{
-			x /= aOther;
-			y /= aOther;
-			z /= aOther;
-			w /= aOther;
+			const float Scalar = 1.0f / aOther;
+			x *= Scalar;
+			y *= Scalar;
+			z *= Scalar;
+			w *= Scalar;
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -239,7 +238,15 @@ namespace Columbus
 			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z + aV1.w * aV2.w;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		//Destructor
+		inline static C_Vector4 clamp(C_Vector4 a, C_Vector4 aMin, C_Vector4 aMax)
+		{
+			a.x = Clamp(a.x, aMin.x, aMax.x);
+			a.y = Clamp(a.y, aMin.y, aMax.y);
+			a.z = Clamp(a.z, aMin.z, aMax.z);
+			a.w = Clamp(a.w, aMin.w, aMax.w);
+			return a;
+		}
+		////////////////////////////////////////////////////////////////////////////
 		inline ~C_Vector4() {}
 	};
 

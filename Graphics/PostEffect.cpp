@@ -16,17 +16,16 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	C_PostEffect::C_PostEffect()
 	{
-		mFB = new C_Framebuffer();
-		mTB = new C_Texture(NULL, 640, 480, true);
-		mDepth = new C_Texture();
+		mFB = new C_FramebufferOpenGL();
+		mTB = new C_TextureOpenGL(NULL, 640, 480, true);
+		mDepth = new C_TextureOpenGL();
 		mDepth->loadDepth(NULL, 640, 480, true);
-		mRB = new C_Renderbuffer();
 
-		mFB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, mTB->getID());
-		mFB->setTexture2D(C_FRAMEBUFFER_DEPTH_ATTACH, mDepth->getID());
-		//mRB->storage(C_RENDERBUFFER_DEPTH_24, 640, 480);
-		//mFB->setRenderbuffer(C_FRAMEBUFFER_DEPTH_ATTACH, mRB->getID());
+		mFB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, mTB);
+		mFB->setTexture2D(C_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
 	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	void C_PostEffect::setShader(C_Shader* aShader)
 	{
@@ -63,11 +62,12 @@ namespace Columbus
 		mAttribsFloat.clear();
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	void C_PostEffect::bind(C_Vector4 aClear, C_Vector2 aWindowSize)
 	{
-		mTB->load(NULL, aWindowSize.x, aWindowSize.y, true);
-		mDepth->loadDepth(NULL, aWindowSize.x, aWindowSize.y, true);
-		//mRB->storage(C_RENDERBUFFER_DEPTH_24_STENCIL_8, aWindowSize.x, aWindowSize.y);
+		mTB->load(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
+		mDepth->loadDepth(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
 		mFB->prepare(aClear, aWindowSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -102,8 +102,8 @@ namespace Columbus
 
 		C_DrawScreenQuadOpenGL();
 
-		C_Texture::unbind();
-		C_Shader::unbind();
+		if (mTB) mTB->unbind();
+		if (mShader) mShader->unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_PostEffect::unbind()
@@ -114,17 +114,20 @@ namespace Columbus
 		C_CloseStreamOpenGL(3);
 		C_CloseStreamOpenGL(4);
 
-		C_Cubemap::unbind();
 		C_Buffer::unbind();
-		C_Texture::unbind();
-		C_Shader::unbind();
-		C_Framebuffer::unbind();
+
+		if (mTB) mTB->unbind();
+		if (mShader) mShader->unbind();
+		
+		mFB->unbind();
 		C_Renderbuffer::unbind();
 
 		C_DisableDepthTestOpenGL();
 		C_DisableBlendOpenGL();
 		C_DisableAlphaTestOpenGL();
 	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	C_PostEffect::~C_PostEffect()
 	{
