@@ -20,13 +20,11 @@ namespace Columbus
 	private:
 		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	public:
-		//Constructor
 		C_Timer();
-		//Reset timer
+		
 		void reset();
-		//Return elapsed time
 		double elapsed();
-		//Destructor
+		
 		~C_Timer();
 	};
 

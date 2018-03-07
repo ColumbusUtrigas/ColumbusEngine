@@ -14,15 +14,10 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	//Return current Operating System
-	std::string C_GetSystem()
+	std::string GetSystem()
 	{
-		#ifdef _WIN32
-				return "Win32";
-		#endif
-
-		#ifdef _WIN64
-				return "Win64";
+		#ifdef COLUMBUS_PLATFORM_WINDOWS
+				return "Windows";
 		#endif
 
 		#ifdef __LINUX__
@@ -42,20 +37,16 @@ namespace Columbus
 		#endif
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Check the current system, if Win32 or Win64, returns true
-	bool C_CheckWindows()
+	bool CheckWindows()
 	{
-		if (C_GetSystem() == "Win32" || C_GetSystem() == "Win64")
-			return true;
+		if (GetSystem() == "Windows") return true;
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Read file
 	char* C_ReadFile(const char* aPath)
 	{
 		FILE* file = fopen(aPath, "rt");
-		if (file == NULL)
-			return NULL;
+		if (file == NULL) return NULL;
 
 		fseek(file, 0, SEEK_END);
 		unsigned long lenth = ftell(file);
@@ -65,87 +56,6 @@ namespace Columbus
 		fread(data, 1, lenth, file);
 		fclose(file);
 		return data;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return file size
-	unsigned long int C_FileSize(const char* aFile)
-	{
-		FILE* fp = fopen(aFile, "rb");
-		if (fp == NULL)
-		{
-			//C_Error("Can't get size of '%s' file", aFile);
-			return 0;
-		}
-		fseek(fp, 0, SEEK_END);
-		unsigned long int l = ftell(fp);
-		fclose(fp);
-		return l;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Write buffer to file
-	bool C_WriteFile(const char* aFile, const char* aText)
-	{
-			FILE* fp = fopen(aFile, "wt");
-		  if (fp == NULL)
-			{
-  			return false;
-			}
-
-			size_t size = strlen(aText);
-
-			for (size_t i = 0; i < size; i++)
-			{
-				fputc(aText[i], fp);
-			}
-
-			fclose(fp);
-
-			return true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Create file
-	bool C_CreateFile(const char* aPath)
-	{
-		FILE* fp = fopen(aPath, "w");
-		if (fp == NULL)
-			return false;
-		fclose(fp);
-		return true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Delete file
-	bool C_DeleteFile(std::string aPath)
-	{
-		int r; //Result var
-		r = remove(aPath.c_str());
-		if (r == 0)
-			return true;
-		else
-			return false;
-	}
-	//Create folder
-	bool C_CreateFolder(const char* aPath)
-	{
-		int r; //Result var
-		#ifdef _WIN32
-			//r = _mkdir(aPath); //WIN32 Folder Creating
-
-			LPCWSTR str;
-			const size_t cSize = strlen(aPath) + 1;
-			wchar_t* wc = new wchar_t[cSize];
-			mbstowcs(wc, aPath, cSize);
-			str = wc;
-
-
-			//LPSECURITY_ATTRIBUTES atr = 4555;
-			//r = CreateDirectory(str, atr);
-		#else
-			r = mkdir(aPath, 4555); //UNIX Folder Creating
-		#endif
-		if (r == 0)
-			return true;
-		else
-			return false;
 	}
 
 }
