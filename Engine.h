@@ -52,6 +52,7 @@
 
 #include <System/Assert.h>
 #include <System/File.h>
+#include <System/Filesystem.h>
 #include <System/Importer.h>
 #include <System/Log.h>
 #include <System/Random.h>
