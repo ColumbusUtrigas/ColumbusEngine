@@ -149,7 +149,7 @@ namespace Columbus
 	static void RGBACompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
 	{
 		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
-			COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
 
 		int header;
 		int blue, green, red, alpha;
@@ -185,12 +185,8 @@ namespace Columbus
 		}
 	}
 
-	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int* aWidth, unsigned int* aHeight, unsigned int* aBPP)
+	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aWidth, "ImageLoadTGA(): invalid width")
-		COLUMBUS_ASSERT_MESSAGE(aHeight, "ImageLoadTGA(): invalid height")
-		COLUMBUS_ASSERT_MESSAGE(aBPP, "ImageLoadTGA(): invalid BPP")
-
 		C_File file(aFile, "rb");
 		if (!file.isOpened()) return nullptr;
 
@@ -212,31 +208,34 @@ namespace Columbus
 			//Uncompressed RGB
 			data = buffer;
 			if (tga.bits == 24)
+			{
 				ImageBGR2RGB(buffer, size);
-			else
+			} else
+			{
 				ImageBGRA2RGBA(buffer, size);
+			}
 			break;
 		case 10:
 			//Compressed RGB
 			data = (uint8_t*)malloc(size);
 			if (tga.bits == 24)
+			{
 				RGBCompressedTGA(buffer, data, tga.width * tga.height);
-			else
+			} else
+			{
 				RGBACompressedTGA(buffer, data, tga.width * tga.height);
+			}
 			break;
 		}
 
-		if (tga.x_origin != 0)
-			ImageFlipX(buffer, tga.width, tga.height, tga.bits / 8);
-
-		if (tga.y_origin != 0)
-			ImageFlipY(buffer, tga.width, tga.height, tga.bits / 8);
+		if (tga.x_origin != 0) ImageFlipX(buffer, tga.width, tga.height, tga.bits / 8);
+		if (tga.y_origin != 0) ImageFlipY(buffer, tga.width, tga.height, tga.bits / 8);
 
 		file.close();
 
-		*aWidth = tga.width;
-		*aHeight = tga.height;
-		*aBPP = tga.bits / 8;
+		aWidth = tga.width;
+		aHeight = tga.height;
+		aBPP = tga.bits / 8;
 		return data;
 	}
 
@@ -261,12 +260,8 @@ namespace Columbus
 
 		switch (tga.bits)
 		{
-		case 24:
-			ImageRGB2BGR(buffer, size);
-			break;
-		case 32:
-			ImageRGBA2BGRA(buffer, size);
-			break;
+		case 24: ImageRGB2BGR(buffer, size); break;
+		case 32: ImageRGBA2BGRA(buffer, size); break;
 		};
 
 		WriteHeader(tga, &file);
@@ -278,6 +273,8 @@ namespace Columbus
 
 #undef READPIXEL24
 #undef WRITEPIXEL24
+#undef READPIXEL32
+#undef WRITEPIXEL32
 
 }
 

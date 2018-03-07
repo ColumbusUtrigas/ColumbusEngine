@@ -9,6 +9,7 @@
 *************************************************/
 
 #include <Scene/Scene.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -16,7 +17,7 @@ namespace Columbus
 	C_Scene::C_Scene() :
 		mSkybox(nullptr)
 	{
-		mNoneShader = new C_Shader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
+		mNoneShader = new C_ShaderOpenGL("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
 		mNoneShader->compile();
 
 		mNoneEffect.setShader(mNoneShader);
@@ -28,46 +29,48 @@ namespace Columbus
 	{
 		mLights.clear();
 		
-		for (auto Mesh : mMeshes)
+		for (auto Object : mObjects)
 		{
 			C_LightComponent* light =
-				static_cast<C_LightComponent*>(Mesh.second->getComponent("LightComponent"));
+				static_cast<C_LightComponent*>(Object.second->getComponent("LightComponent"));
 
 			if (light != nullptr)
+			{
+				light->render(Object.second->Transform);
 				mLights.push_back(light->getLight());
+			}
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::meshWorkflow()
 	{
-		for (auto Mesh : mMeshes)
+		for (auto Object : mObjects)
 		{
 			C_MeshRenderer* mesh =
-				static_cast<C_MeshRenderer*>(Mesh.second->getComponent("MeshRenderer"));
+				static_cast<C_MeshRenderer*>(Object.second->getComponent("MeshRenderer"));
 
 			if (mesh != nullptr)
 			{
 				mesh->setLights(mLights);
-				if (mSkybox != nullptr)
-					mesh->setReflection(mSkybox->getCubemap());
-				if (mCamera != nullptr)
-					mesh->setCamera(*mCamera);
+				if (mSkybox != nullptr) mesh->setReflection(mSkybox->getCubemap());
+				if (mCamera != nullptr) mesh->setCamera(*mCamera);
 			}
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::particlesWorkflow()
 	{
-		for (auto PS : mMeshes)
+		for (auto Object : mObjects)
 		{
 			C_ParticleSystem* ps =
-				static_cast<C_ParticleSystem*>(PS.second->getComponent("ParticleSystem"));
+				static_cast<C_ParticleSystem*>(Object.second->getComponent("ParticleSystem"));
 
 			if (ps != nullptr)
 			{
 				ps->setLights(mLights);
-				if (mCamera != nullptr)
-					ps->setCamera(*mCamera);
+				if (ps->getEmitter() != nullptr || ps->getEmitter()->getParticleEffect() != nullptr)
+					ps->getEmitter()->getParticleEffect()->setPos(Object.second->Transform.getPos());
+				if (mCamera != nullptr) ps->setCamera(*mCamera);
 			}
 		}
 	}
@@ -76,8 +79,7 @@ namespace Columbus
 	{
 		std::string name;
 		std::string materialPath;
-		std::string vertShaderPath;
-		std::string fragShaderPath;
+		int shaderID = -1;
 		std::string meshPath;
 		std::string particlePath;
 		std::string lightPath;
@@ -88,7 +90,7 @@ namespace Columbus
 		C_Vector3 rotation;
 		C_Vector3 scale;
 		C_Material* material = new C_Material();
-		C_Shader* shader = new C_Shader();
+		C_Mesh* mesh;
 		Import::C_ImporterModel imp;
 
 		if (!aSerializer->getSubString({ "GameObjects", aElement, "Name" }, &name)) return false;
@@ -104,11 +106,9 @@ namespace Columbus
 			}
 		} else return false;
 
-		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderVertex"}, &vertShaderPath)) return false;  // TO
-		if (!aSerializer->getSubString({"GameObjects", aElement, "ShaderFragment"}, &fragShaderPath)) return false;// DO
-
-		shader->load(vertShaderPath, fragShaderPath);
-		material->setShader(shader);
+		if (aSerializer->getSubInt({ "GameObjects", aElement, "Shader" }, &shaderID))
+			material->setShader(mShaders.at(shaderID));
+		else return false;
 
 		if (material->getTextureID() != -1)
 			material->setTexture(mTextures.at(material->getTextureID()));
@@ -121,17 +121,24 @@ namespace Columbus
 		{
 			if (meshPath == "Plane")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitivePlane(), *material)));
+				GameObject->addComponent(new C_MeshRenderer(gDevice->createMesh(C_PrimitivePlane(), *material)));
 			} else if (meshPath == "Cube")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveBox(), *material)));
+				GameObject->addComponent(new C_MeshRenderer(gDevice->createMesh(C_PrimitiveBox(), *material)));
 			} else if (meshPath == "Sphere")
 			{
-				GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(C_PrimitiveSphere(1, 50, 50), *material)));
+				GameObject->addComponent(new C_MeshRenderer(gDevice->createMesh(C_PrimitiveSphere(1, 50, 50), *material)));
 			} else
 			{
-				if (ModelIsCMF(meshPath))
-					GameObject->addComponent(new C_MeshRenderer(new C_MeshOpenGL(ModelLoadCMF(meshPath), *material)));
+				if (atoi(meshPath.c_str()) >= 0)
+				{
+					mesh = mMeshes.at(atoi(meshPath.c_str()));
+					if (mesh != nullptr)
+					{
+						mesh->mMat = *material;
+						GameObject->addComponent(new C_MeshRenderer(mesh));
+					}
+				}
 			}
 		}
 
@@ -149,6 +156,7 @@ namespace Columbus
 		Transform.setRot(rotation);
 		Transform.setScale(scale);
 		GameObject->setTransform(Transform);
+		GameObject->setName(name);
 
 		add(aID, GameObject);
 
@@ -159,6 +167,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Scene::load(std::string aFile)
 	{
+		if (!gDevice)
+		{ C_Log::error("Can't load Scene: " + aFile + " : Device is missing"); return false; }
+
 		Serializer::C_SerializerXML serializer;
 
 		if (!serializer.read(aFile, "Scene"))
@@ -166,22 +177,59 @@ namespace Columbus
 
 		int count = 0;
 		int texCount = 0;
+		int shadersCount = 0;
+		int meshesCount = 0;
+		unsigned int i;
 
-		if (serializer.getSubInt({"Resources", "Textures", "Count"}, &texCount))
+		std::string path, path1, elem;
+
+		if (serializer.getSubInt({ "Resources", "Textures", "Count" }, &texCount))
 		{
-			for (int i = 0; i < texCount; i++)
+			for (i = 0; i < static_cast<unsigned int>(texCount); i++)
 			{
-				std::string path;
-				std::string elem = std::string("Texture") + std::to_string(i);
-				if (serializer.getSubString({"Resources", "Textures", elem}, &path))
-					mTextures.insert(std::pair<int, C_Texture*>(i, new C_Texture(path)));
+				elem = std::string("Texture") + std::to_string(i);
+				if (serializer.getSubString({ "Resources", "Textures", elem }, &path))
+					mTextures.insert(std::pair<int, C_Texture*>(i, gDevice->createTexture(path)));
+			}
+		}
+
+		if (serializer.getSubInt({ "Resources", "Shaders", "Count" }, &shadersCount))
+		{
+			for (i = 0; i < static_cast<unsigned int>(shadersCount); i++)
+			{
+				elem = std::string("Shader") + std::to_string(i);
+				if (serializer.getSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
+					serializer.getSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
+				{
+					mShaders.insert(std::pair<int, C_Shader*>(i, gDevice->createShader(path, path1)));
+				}
+			}
+		}
+
+		if (serializer.getSubInt({ "Resources", "Meshes", "Count" }, &meshesCount))
+		{
+			for (i = 0; i < static_cast<unsigned int>(meshesCount); i++)
+			{
+				elem = std::string("Mesh") + std::to_string(i);
+				if (serializer.getSubString({ "Resources", "Meshes", elem }, &path))
+				{
+					if (ModelIsCMF(path))
+					{
+						mMeshes.insert(std::pair<int, C_Mesh*>(i, gDevice->createMesh(ModelLoadCMF(path))));
+						C_Log::success("Mesh loaded: " + path);
+					}
+					else
+					{
+						C_Log::error("Can't load mesh: " + path);
+					}
+				}
 			}
 		}
 
 		if (!serializer.getSubInt({"GameObjects", "Count"}, &count))
 		{ C_Log::error("Can't load Scene Count: " + aFile); return false; }
 
-		for (int i = 0; i < count; i++)
+		for (i = 0; i < static_cast<unsigned int>(count); i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
 			loadGameObject(&serializer, elem, i);
@@ -192,7 +240,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::add(unsigned int aID, C_GameObject* aMesh)
 	{
-		mMeshes.insert(std::pair<unsigned int, C_GameObject*>(aID, aMesh));
+		mObjects.insert(std::pair<unsigned int, C_GameObject*>(aID, aMesh));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::setSkybox(const C_Skybox* aSkybox)
@@ -210,14 +258,33 @@ namespace Columbus
 		mContextSize = static_cast<C_Vector2>(aContextSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	C_GameObject* C_Scene::getGameObject(const unsigned int aID) const
+	{
+		return mObjects.at(aID);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	C_GameObject* C_Scene::getGameObject(const std::string aName) const
+	{
+		for (auto Object : mObjects)
+			if (Object.second != nullptr)
+				if (Object.second->getName() == aName)
+					return Object.second;
+
+		return nullptr;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::update()
 	{
 		lightWorkflow();
 		meshWorkflow();
 		particlesWorkflow();
 
-		for (auto Mesh : mMeshes)
-			Mesh.second->update();
+		for (auto Object : mObjects)
+			Object.second->update();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Scene::render()
@@ -226,16 +293,18 @@ namespace Columbus
 		C_EnableBlendOpenGL();
 		C_EnableAlphaTestOpenGL();
 
+		mNoneEffect.clearAttribs();
+		mNoneEffect.addAttrib({ "uResolution", mContextSize });
 		mNoneEffect.bind(C_Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (auto Object : mMeshes)
+		for (auto Object : mObjects)
 			if (Object.second->hasComponent("MeshRenderer"))
 				C_Render::render(Object.second);
 
-		for (auto Object : mMeshes)
+		for (auto Object : mObjects)
 			if (Object.second->hasComponent("ParticleSystem"))
 				C_Render::render(Object.second);
 

@@ -31,7 +31,12 @@ namespace Columbus
 	void C_ParticleSystem::render(C_Transform& aTransform)
 	{
 		if (mEmitter != nullptr)
+		{
+			if (mEmitter->getParticleEffect() != nullptr)
+				mEmitter->getParticleEffect()->setPos(aTransform.getPos());
+			
 			mEmitter->draw();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	std::string C_ParticleSystem::getType()
@@ -53,19 +58,19 @@ namespace Columbus
 	void C_ParticleSystem::setCamera(C_Camera aCamera)
 	{
 		if (mEmitter != nullptr)
-			mEmitter->setCameraPos(aCamera.pos());
+			mEmitter->setCameraPos(aCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	C_Shader* C_ParticleSystem::getShader() const
 	{
 		if (mEmitter != nullptr)
-			return mEmitter->mShader;
+			return mEmitter->getParticleEffect()->getMaterial()->getShader();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_ParticleSystem::setShader(C_Shader* aShader)
 	{
 		if (mEmitter != nullptr)
-			mEmitter->mShader = aShader;
+			mEmitter->getParticleEffect()->getMaterial()->setShader(aShader);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

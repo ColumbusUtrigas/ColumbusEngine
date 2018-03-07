@@ -3,7 +3,7 @@
 #include <Common/Compress/Compress.h>
 #include <Common/Image/Image.h>
 #include <Common/Model/Model.h>
-#include <Common/Noise/FractalNoise.h>
+#include <Common/Noise/OctaveNoise.h>
 #include <Common/Noise/PerlinNoise.h>
 
 #include <Graphics/Camera.h>
@@ -11,7 +11,7 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Light.h>
 #include <Graphics/Material.h>
-#include <Graphics/Model.h>
+#include <Graphics/Mesh.h>
 #include <Graphics/ParticleEffect.h>
 #include <Graphics/ParticleEmitter.h>
 #include <Graphics/PostEffect.h>
@@ -33,6 +33,7 @@
 
 #include <Input/Input.h>
 
+#include <Math/MathUtil.h>
 #include <Math/Matrix4.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>

@@ -9,7 +9,7 @@
 *************************************************/
 #pragma once
 
-#include <Graphics/Model.h>
+#include <Graphics/Mesh.h>
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <System/Timer.h>
@@ -25,10 +25,14 @@ namespace Columbus
 
 		std::string mName;
 
-		C_Transform mTransform;
 		C_Timer mTimer;
 	public:
+		C_Transform Transform;
+
 		C_GameObject();
+
+		void setName(const std::string aName);
+		std::string getName() const;
 
 		void addChild(C_GameObject* aChild);
 		void addComponent(C_Component* aComponent);

@@ -37,9 +37,8 @@ namespace Columbus
 
 	class C_Shader
 	{
-	private:
+	protected:
 		C_ShaderBuilder mBuilder;
-		unsigned int mID;
 		std::vector<C_ShaderAttribute> mAttributes;
 
 		std::string mVertShaderPath;
@@ -50,36 +49,26 @@ namespace Columbus
 
 		bool mLoaded = false;
 		bool mCompiled = false;
-
-		//Load shader from one file
-		void load(const char* aFile);
 	public:
-		C_Shader(std::string aVert, std::string aFrag);
-		C_Shader(const char* aFile);
 		C_Shader();
+		C_Shader(std::string aVert, std::string aFrag);
 
-		//Load shader from two files
-		bool load(std::string aVert, std::string aFrag);
-		bool compile();
+		virtual bool load(std::string aVert, std::string aFrag);
+		virtual bool compile();
 
-		void bind() const;
+		bool isCompiled() const;
+
+		virtual void bind() const;
+		virtual void unbind() const;
+
 		void addAttribute(std::string aName, const int aValue);
-		//Set integer uniform
-		void setUniform1i(std::string aName, const int aValue) const;
-		//Set float uniform
-		void setUniform1f(std::string aName, const float aValue) const;
-		//Set 2-axis vector uniform
-		void setUniform2f(std::string aName, const C_Vector2 aValue) const;
-		//Set 3-axis vector uniform
-		void setUniform3f(std::string aName, const C_Vector3 aValue) const;
-		//Set 4-axis vector uniform
-		void setUniform4f(std::string aName, const C_Vector4 aValue) const;
-		//Set matrix uniform
-		void setUniformMatrix(std::string aName, const float* aValue) const;
-		//Set uniform float array
-		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
-		//Unbind shader
-		static void unbind();
+		virtual void setUniform1i(std::string aName, const int aValue) const;
+		virtual void setUniform1f(std::string aName, const float aValue) const;
+		virtual void setUniform2f(std::string aName, const C_Vector2 aValue) const;
+		virtual void setUniform3f(std::string aName, const C_Vector3 aValue) const;
+		virtual void setUniform4f(std::string aName, const C_Vector4 aValue) const;
+		virtual void setUniformMatrix(std::string aName, const float* aValue) const;
+		virtual void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
 
 		~C_Shader();
 	};

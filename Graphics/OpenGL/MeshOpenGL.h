@@ -9,9 +9,7 @@
 *************************************************/
 #pragma once
 
-#include <RenderAPI/Buffer.h>
-#include <Graphics/Model.h>
-#include <GL/glew.h>
+#include <Graphics/Mesh.h>
 
 namespace Columbus
 {

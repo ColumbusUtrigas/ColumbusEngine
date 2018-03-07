@@ -19,6 +19,8 @@
 #include <Graphics/Primitives.h>
 #include <Graphics/PostEffect.h>
 #include <Graphics/OpenGL/MeshOpenGL.h>
+#include <Graphics/OpenGL/TextureOpenGL.h>
+#include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <System/ResourceManager.h>
 
 namespace Columbus
@@ -27,9 +29,11 @@ namespace Columbus
 	class C_Scene
 	{
 	private:
-		std::map<unsigned int, C_GameObject*> mMeshes;
+		std::map<unsigned int, C_GameObject*> mObjects;
 		std::vector<C_Light*> mLights;
+		std::map<int, C_Mesh*> mMeshes;
 		std::map<int, C_Texture*> mTextures;
+		std::map<int, C_Shader*> mShaders;
 
 		C_Skybox* mSkybox = nullptr;
 		C_Camera* mCamera = nullptr;
@@ -54,6 +58,9 @@ namespace Columbus
 		void setSkybox(const C_Skybox* aSkybox);
 		void setCamera(const C_Camera* aCamera);
 		void setContextSize(const C_Vector2 aContextSize);
+
+		C_GameObject* getGameObject(const unsigned int aID) const;
+		C_GameObject* getGameObject(const std::string aName) const;
 
 		void update();
 		void render();

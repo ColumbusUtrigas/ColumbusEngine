@@ -15,6 +15,12 @@ namespace Columbus
 	const std::string gVertexShaderHeader =
 	"#version 130\n"
 	"#define Position gl_Position\n\n";
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	const std::string gFragmentShaderHeader = 
+	"#version 130\n"
+	"#define FragColor gl_FragColor\n\n";
 
 	C_ShaderBuilder::C_ShaderBuilder()
 	{
@@ -37,7 +43,7 @@ namespace Columbus
 			break;
 
 		case E_SHADER_TYPE_FRAGMENT:
-			shader = aShader;
+			shader = gFragmentShaderHeader + "\n" + aShader + "\n";
 			break;
 		};
 		return false;

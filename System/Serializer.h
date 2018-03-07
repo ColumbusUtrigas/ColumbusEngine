@@ -46,8 +46,25 @@ namespace Columbus
 
 			C_XMLElement* getElementFromHierarchy(std::vector<std::string> aElement);
 		public:
+			struct Element
+			{
+				C_XMLElement* elem;
+			};
+
 			C_SerializerXML();
 			C_SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode);
+
+			Element* getElement(std::string aElement);
+			Element* getElement(Element* aElement, std::string aName);
+
+			bool getInt(const Element* aElement, int* aValue);
+			bool getBool(const Element* aElement, bool* aValue);
+			bool getFloat(const Element* aElement, float* aValue);
+			bool getDouble(const Element* aElement, double* aValue);
+			bool getString(const Element* aElement, std::string* aValue);
+			bool getVector2(const Element* aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool getVector3(const Element* aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool getVector4(const Element* aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs);
 
 			bool write(std::string aFile, std::string aRoot);
 			bool setEmpty(std::string aElement);
@@ -90,6 +107,10 @@ namespace Columbus
 
 			~C_SerializerXML();
 		};
+
+		#define C_XML_NEXT_ELEMENT(a, b) \
+			a->elem = a->elem->NextSiblingElement(b); \
+			if (a->elem == nullptr) a = nullptr;
 
 	}
 

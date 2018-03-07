@@ -1,11 +1,7 @@
-#version 130
-
 varying vec2 varUV;
 
 uniform sampler2D uFrame;
 uniform vec2 uWindowSize;
-
-out vec3 FinalColor;
 
 float blurSizeH = 1.0 / uWindowSize.x;
 float blurSizeV = 1.0 / uWindowSize.y;
@@ -21,12 +17,12 @@ vec3 Pixelization(vec2 size);
 
 void main(void)
 {
-	//FinalColor = Negative();
-	//FinalColor = GaussianBlur(vec2(2, 2));
-	//FinalColor = Sobel();
-	//FinalColor = Scanline(10);
-	//FinalColor = Pixelization(vec2(10, 10));
-	FinalColor = frame;
+	//FragColor = Negative();
+	//FragColor = GaussianBlur(vec2(2, 2));
+	//FragColor = Sobel();
+	//FragColor = Scanline(10);
+	//FragColor = Pixelization(vec2(10, 10));
+	FragColor = frame;
 }
 
 vec3 Negative(void)

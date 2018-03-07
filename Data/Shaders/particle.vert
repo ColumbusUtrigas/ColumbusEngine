@@ -1,26 +1,27 @@
 attribute vec3 aPos;
 attribute vec2 aUV;
-attribute vec3 aNorm; //poses
-attribute vec3 aTang; //Times
+attribute vec3 aPoses;
+attribute vec4 aTimes;
+attribute vec4 aColors;
 
 varying vec3 varPos;
 varying vec2 varTexCoord;
-varying float varTime;
-varying float varTTL;
-varying float varIsGradient;
+varying vec4 varColor;
 
 uniform mat4 uView;
 uniform mat4 uProjection;
 
-uniform vec4 uPosition;
 uniform vec2 uSize;
 uniform vec2 uStartSize;
 uniform vec2 uFinalSize;
+uniform vec2 uSubUV;
 uniform float uScaleOL;
 uniform float uBillboard;
-uniform float uGradient;
+uniform float uSubUVMode;
+uniform float uSubUVCycles;
 
-uniform int uRenderMode;
+#define ROWS 6
+#define COLUMNS 8
 
 mat4 rotationMatrix(vec3 axis, float angle)
 {
@@ -38,7 +39,7 @@ mat4 rotationMatrix(vec3 axis, float angle)
 
 void main(void)
 {
-	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), aTang.z / 90);
+	mat4 Rotation = rotationMatrix(vec3(0, 0, 1), aTimes.z / 90);
 	mat4 ModelView = uView * mat4(1);
 
 	ModelView[0][0] = 1;
@@ -53,9 +54,24 @@ void main(void)
 	ModelView[2][1] = 0;
 	ModelView[2][2] = 1;
 
-	vec3 pos = aNorm;
+	vec3 pos = aPoses;
 
-	float lifePercent = aTang.x / aTang.y;
+	float lifePercent = aTimes.x / aTimes.y;
+	int frameNumber = 0;
+	
+	if (uSubUVMode == 0)
+		frameNumber = int(floor(uSubUV.x * uSubUV.y * lifePercent * uSubUVCycles));
+	else if (uSubUVMode == 1)
+		frameNumber = int(aTimes.w);
+
+	int frameHorizontal = frameNumber % int(uSubUV.x);
+	int frameVertical = int(uSubUV.y) - int(frameNumber / uSubUV.x) - 1;
+
+	float frame_X = 1.0 / uSubUV.x;
+	float frame_Y = 1.0 / uSubUV.y;
+
+	vec2 frame = vec2(aUV.x * frame_X + frame_X *  frameHorizontal,
+		aUV.y * frame_Y + frame_Y * frameVertical);
 
 	vec3 Pos = aPos;
 	if (uBillboard != 0.0)
@@ -66,7 +82,7 @@ void main(void)
 			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
 		} else
 		{
-			Position = Rotation * uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0));
+			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
 		}
 	}
 	else
@@ -82,10 +98,8 @@ void main(void)
 	}
 
 	varPos = pos + aPos;
-	varTexCoord = aUV;
-	varTime = aTang.x;
-	varTTL = aTang.y;
-	varIsGradient = uGradient;
+	varTexCoord = frame;
+	varColor = aColors;
 }
 
 

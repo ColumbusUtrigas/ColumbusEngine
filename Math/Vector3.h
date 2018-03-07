@@ -13,6 +13,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include <System/Random.h>
+#include <Math/MathUtil.h>
 
 namespace Columbus
 {
@@ -27,22 +28,19 @@ namespace Columbus
 		float y = 0;
 		float z = 0;
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector3() :
+		inline explicit C_Vector3() :
 			x(0),
 			y(0),
 			z(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector3(const float aX, const float aY, const float aZ) :
+		inline explicit C_Vector3(const float aX, const float aY, const float aZ) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY)),
 			z(static_cast<float>(aZ))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		//Constructor
-		inline C_Vector3(const glm::vec3 aVec) :
+		inline explicit C_Vector3(const glm::vec3 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y)),
 			z(static_cast<float>(aVec.z))
@@ -179,9 +177,10 @@ namespace Columbus
 		//Operator /=
 		inline C_Vector3 operator/=(const float aOther)
 		{
-			x /= aOther;
-			y /= aOther;
-			z /= aOther;
+			const float Scalar = 1.0f / aOther;
+			x *= Scalar;
+			y *= Scalar;
+			z *= Scalar;
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -240,6 +239,14 @@ namespace Columbus
 			ret.y = aV1.z * aV2.x - aV1.x * aV2.z;
 			ret.z = aV1.x * aV2.y - aV1.y * aV2.x;
 			return ret;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		inline static C_Vector3 clamp(C_Vector3 a, C_Vector3 aMin, C_Vector3 aMax)
+		{
+			a.x = Clamp(a.x, aMin.x, aMax.x);
+			a.y = Clamp(a.y, aMin.y, aMax.y);
+			a.z = Clamp(a.z, aMin.z, aMax.z);
+			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Destructor

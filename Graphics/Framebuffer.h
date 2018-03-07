@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include <GL/glew.h>
-
 #include <Graphics/Texture.h>
 #include <Graphics/Renderbuffer.h>
 
@@ -25,33 +23,26 @@
 namespace Columbus
 {
 
-  enum C_FRAMEBUFFER_ATTACHMENT
-  {
-    C_FRAMEBUFFER_COLOR_ATTACH,
-    C_FRAMEBUFFER_DEPTH_ATTACH,
-    C_FRAMEBUFFER_STENCIL_ATTACH
-  };
+	enum C_FRAMEBUFFER_ATTACHMENT
+	{
+		C_FRAMEBUFFER_COLOR_ATTACH,
+		C_FRAMEBUFFER_DEPTH_ATTACH,
+		C_FRAMEBUFFER_STENCIL_ATTACH
+	};
 
-  class C_Framebuffer
-  {
-  private:
-    unsigned int mID;
-  public:
-    C_Framebuffer();
+	class C_Framebuffer
+	{
+	public:
+		C_Framebuffer();
 
-    void bind();
+		virtual void bind();
+		virtual void unbind();
 
-    void setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, int aID);
+		virtual bool setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, C_Texture* aTexture);
+		virtual bool prepare(C_Vector4 aClear, C_Vector2 aWindowSize);
+		virtual bool check();
 
-    void setRenderbuffer(C_FRAMEBUFFER_ATTACHMENT aAttach, int aID);
-
-    static void unbind();
-
-    void prepare(C_Vector4 aClear, C_Vector2 aWindowSize);
-
-    bool check();
-
-    ~C_Framebuffer();
-  };
+		~C_Framebuffer();
+	};
 
 }

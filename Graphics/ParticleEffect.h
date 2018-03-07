@@ -18,22 +18,29 @@
 namespace Columbus
 {
 
-	enum C_PARTICLE_SHAPE
+	enum E_PARTICLE_SHAPE
 	{
-		C_PARTICLE_SHAPE_CIRCLE,
-		C_PARTICLE_SHAPE_SPHERE
+		E_PARTICLE_SHAPE_CIRCLE,
+		E_PARTICLE_SHAPE_SPHERE,
+		E_PARTICLE_SHAPE_CUBE
 	};
 
-	enum C_PARTICLE_TRANSFORMATION
+	enum E_PARTICLE_TRANSFORMATION
 	{
-		C_PARTICLE_TRANSFORMATION_LOCAL,
-		C_PARTICLE_TRANSFORMATION_WORLD
+		E_PARTICLE_TRANSFORMATION_LOCAL,
+		E_PARTICLE_TRANSFORMATION_WORLD
 	};
 
-	enum C_PARTICLE_SORT_MODE
+	enum E_PARTICLE_SORT_MODE
 	{
-		C_PARTICLE_SORT_MODE_NONE,
-		C_PARTICLE_SORT_MODE_DISTANCE
+		E_PARTICLE_SORT_MODE_NONE,
+		E_PARTICLE_SORT_MODE_DISTANCE
+	};
+
+	enum E_PARTICLE_SUB_UV_MODE
+	{
+		E_PARTICLE_SUB_UV_MODE_LINEAR,
+		E_PARTICLE_SUB_UV_MODE_RANDOM
 	};
 
 	class C_ParticleEffect
@@ -61,8 +68,10 @@ namespace Columbus
 
 		C_Vector2 mStartSize = C_Vector2(1, 1);
 		C_Vector2 mFinalSize = C_Vector2(1, 1);
+		C_Vector2 mSubUV = C_Vector2(1, 1);
 		C_Vector4 mStartColor = C_Vector4(1, 1, 1, 1);
 		C_Vector4 mFinalColor = C_Vector4(1, 1, 1, 1);
+		C_Vector3 mBoxShapeSize = C_Vector3(1, 1, 1);
 
 		float mMinTimeToLive = 1.0;
 		float mMaxTimeToLive = 1.0;
@@ -77,12 +86,14 @@ namespace Columbus
 		float mNoiseFrequency = 1.0;
 		float mNoiseAmplitude = 1.0;
 
-		int mEmitRate = 5;
+		float mEmitRate = 5.0;
 
-		int mParticleTransformation = C_PARTICLE_TRANSFORMATION_WORLD;
-		int mParticleShape = C_PARTICLE_SHAPE_CIRCLE;
+		int mParticleTransformation = E_PARTICLE_TRANSFORMATION_WORLD;
+		int mParticleShape = E_PARTICLE_SHAPE_CIRCLE;
 		float mParticleShapeRadius = 1.0;
-		int mSortMode = C_PARTICLE_SORT_MODE_NONE;
+		int mSortMode = E_PARTICLE_SORT_MODE_NONE;
+		float mSubUVCycles = 1.0;
+		int mSubUVMode = E_PARTICLE_SUB_UV_MODE_LINEAR;
 	public:
 		C_ParticleEffect();
 		C_ParticleEffect(std::string aFile);
@@ -106,8 +117,10 @@ namespace Columbus
 		void setParticleSize(const C_Vector2 aParticleSize);
 		void setStartSize(const C_Vector2 aStartSize);
 		void setFinalSize(const C_Vector2 aFinalSize);
+		void setSubUV(const C_Vector2 aSubUV);
 		void setStartColor(const C_Vector4 aStartColor);
 		void setFinalColor(const C_Vector4 aFinalColor);
+		void setBoxShapeSize(const C_Vector3 aBoxShapeSize);
 		void setMinTimeToLive(const float aMinTimeToLive);
 		void setMaxTimeToLive(const float aMaxTimeToLive);
 		void setMinRotation(const float aMinRotation);
@@ -120,11 +133,13 @@ namespace Columbus
 		void setNoisePersistence(const float aNoisePersistence);
 		void setNoiseFrequency(const float aNoiseFrequency);
 		void setNoiseAmplitude(const float aNoiseAmplitude);
-		void setEmitRate(const int aEmitRate);
-		void setTransformation(const C_PARTICLE_TRANSFORMATION aParticleTransformation);
-		void setParticleShape(const C_PARTICLE_SHAPE aParticleShape);
+		void setEmitRate(const float aEmitRate);
+		void setTransformation(const E_PARTICLE_TRANSFORMATION aParticleTransformation);
+		void setParticleShape(const E_PARTICLE_SHAPE aParticleShape);
 		void setParticleShapeRadius(const float aRadius);
-		void setSortMode(const C_PARTICLE_SORT_MODE aSortMode);
+		void setSortMode(const E_PARTICLE_SORT_MODE aSortMode);
+		void setSubUVMode(const E_PARTICLE_SUB_UV_MODE aSubUVMode);
+		void setSubUVCycles(const float aSubUVCycles);
 
 
 		C_Material* getMaterial() const;
@@ -143,9 +158,11 @@ namespace Columbus
 		C_Vector3 getConstantForce() const;
 		C_Vector2 getParticleSize() const;
 		C_Vector2 getStartSize() const;
+		C_Vector2 getSubUV() const;
 		C_Vector2 getFinalSize() const;
 		C_Vector4 getStartColor() const;
 		C_Vector4 getFinalColor() const;
+		C_Vector3 getBoxShapeSize() const;
 		float getMinTimeToLive() const;
 		float getMaxTimeToLive() const;
 		float getMinRotation() const;
@@ -158,11 +175,13 @@ namespace Columbus
 		float getNoisePersistence() const;
 		float getNoiseFrequency() const;
 		float getNoiseAmplitude() const;
-		int getEmitRate() const;
+		float getEmitRate() const;
 		int getTransformation() const;
 		int getParticleShape() const;
 		float getParticleShapeRadius() const;
 		int getSortMode() const;
+		int getSubUVMode() const;
+		float getSubUVCycles() const;
 
 		bool saveToXML(std::string aFile) const;
 		bool saveToJSON(std::string aFile) const;
