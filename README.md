@@ -4,20 +4,17 @@
 * Load 3D models from CMF format
 * Load images from PNG, JPEG, TGA, BMP, TIFF format
 * Write images to PNG and JPEG format (TGA, BMP, TIFF supported)
-* Load XML files
-* Write XML files
-* Load JSON files
-* Write JSON files
+* Parse XML files
+* Parse JSON files
 * Material and Shader system (in work)
 * Graphics System (in work)
-* Implantation System (in work)
-* Low-level System (in work)
 * Input System
 * Scene manager
 * Advanced Entity-Component System
 * Advanced Particle Effect System (70% progress)
 * Cubemaps
 * Camera
+* Framebuffer
 * Advanced Math Lib (vec2, vec3, vec4, mat4)
 
 ## OpenGL 3.0 supported
