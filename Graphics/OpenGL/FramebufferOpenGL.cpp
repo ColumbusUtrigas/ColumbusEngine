@@ -34,13 +34,13 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_FramebufferOpenGL::setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, C_Texture* aTexture)
+	bool C_FramebufferOpenGL::setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, Texture* aTexture)
 	{
 		if (aTexture == nullptr) return false;
 		if (aTexture->getType() != "OpenGL Texture") return false;
 
 		unsigned int id = 0;
-		id = static_cast<C_TextureOpenGL*>(aTexture)->getID();
+		id = static_cast<TextureOpenGL*>(aTexture)->getID();
 
 		if (!glIsTexture(id)) return false;
 
@@ -60,7 +60,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_FramebufferOpenGL::prepare(C_Vector4 aClear, C_Vector2 aWindowSize)
+	bool C_FramebufferOpenGL::prepare(Vector4 aClear, Vector2 aWindowSize)
 	{
 		bind();
 		glViewport(0, 0, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y));

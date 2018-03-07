@@ -17,14 +17,14 @@
 namespace Columbus
 {
 
-	class C_Random
+	class Random
 	{
 	public:
-		C_Random();
+		Random();
 
 		static float range(float aMin, float aMax);
 
-		~C_Random();
+		~Random();
 	};
 
 }

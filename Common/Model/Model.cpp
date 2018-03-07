@@ -49,7 +49,7 @@ namespace Columbus
 		mExistance = false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	std::vector<C_Vertex> C_Model::getData() const
+	std::vector<Vertex> C_Model::getData() const
 	{
 		return mVertices;
 	}

@@ -18,7 +18,7 @@ namespace Columbus
 
 
 		//////////////////////////////////////////////////////////////////////////////
-		C_XMLElement* C_SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
+		C_XMLElement* SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
 		{
 			std::string end = aElement[aElement.size() - 1];
 
@@ -34,12 +34,12 @@ namespace Columbus
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
-		C_SerializerXML::C_SerializerXML()
+		SerializerXML::SerializerXML()
 		{
 
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		C_SerializerXML::C_SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode)
+		SerializerXML::SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode)
 		{
 			switch (aMode)
 			{
@@ -50,32 +50,32 @@ namespace Columbus
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
-		C_SerializerXML::Element* C_SerializerXML::getElement(std::string aElement)
+		SerializerXML::Element* SerializerXML::getElement(std::string aElement)
 		{
 			if (mMode != 1) return nullptr;
 			if (mInited == false) return nullptr;
 			if (mRoot == nullptr) return nullptr;
 
-			C_SerializerXML::Element* elem = new C_SerializerXML::Element;
+			SerializerXML::Element* elem = new SerializerXML::Element;
 			elem->elem = mRoot->FirstChildElement(aElement.c_str());
 
 			return elem;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		C_SerializerXML::Element* C_SerializerXML::getElement(Element* aElement, std::string aName)
+		SerializerXML::Element* SerializerXML::getElement(Element* aElement, std::string aName)
 		{
 			if (mMode != 1) return nullptr;
 			if (mInited == false) return nullptr;
 			if (mRoot == nullptr) return nullptr;
 			if (aElement == nullptr) return nullptr;
 
-			C_SerializerXML::Element* elem = new C_SerializerXML::Element;
+			SerializerXML::Element* elem = new SerializerXML::Element;
 			elem->elem = aElement->elem->FirstChildElement(aName.c_str());
 
 			return elem;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getInt(const C_SerializerXML::Element* aElement, int* aValue)
+		bool SerializerXML::getInt(const SerializerXML::Element* aElement, int* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -87,7 +87,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getBool(const Element* aElement, bool* aValue)
+		bool SerializerXML::getBool(const Element* aElement, bool* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -99,7 +99,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getFloat(const Element* aElement, float* aValue)
+		bool SerializerXML::getFloat(const Element* aElement, float* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -111,7 +111,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getDouble(const Element* aElement, double* aValue)
+		bool SerializerXML::getDouble(const Element* aElement, double* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -123,7 +123,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getString(const Element* aElement, std::string* aValue)
+		bool SerializerXML::getString(const Element* aElement, std::string* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -135,7 +135,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getVector2(const Element* aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs)
+		bool SerializerXML::getVector2(const Element* aElement, Vector2* aValue, C_AttribVector2XML aAttribs)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -148,7 +148,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getVector3(const Element* aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs)
+		bool SerializerXML::getVector3(const Element* aElement, Vector3* aValue, C_AttribVector3XML aAttribs)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -162,7 +162,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getVector4(const Element* aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs)
+		bool SerializerXML::getVector4(const Element* aElement, Vector4* aValue, C_AttribVector4XML aAttribs)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -179,7 +179,7 @@ namespace Columbus
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::write(std::string aFile, std::string aRoot)
+		bool SerializerXML::write(std::string aFile, std::string aRoot)
 		{
 			mMode = 0;
 			mInited = false;
@@ -192,7 +192,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setEmpty(std::string aElement)
+		bool SerializerXML::setEmpty(std::string aElement)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -205,7 +205,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubEmpty(std::vector<std::string> aElement)
+		bool SerializerXML::setSubEmpty(std::vector<std::string> aElement)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -219,7 +219,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setInt(std::string aElement, int aValue)
+		bool SerializerXML::setInt(std::string aElement, int aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -233,7 +233,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubInt(std::vector<std::string> aElement, int aValue)
+		bool SerializerXML::setSubInt(std::vector<std::string> aElement, int aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -248,7 +248,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setBool(std::string aElement, bool aValue)
+		bool SerializerXML::setBool(std::string aElement, bool aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -262,7 +262,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubBool(std::vector<std::string> aElement, bool aValue)
+		bool SerializerXML::setSubBool(std::vector<std::string> aElement, bool aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -277,7 +277,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setFloat(std::string aElement, float aValue)
+		bool SerializerXML::setFloat(std::string aElement, float aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -291,7 +291,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubFloat(std::vector<std::string> aElement, float aValue)
+		bool SerializerXML::setSubFloat(std::vector<std::string> aElement, float aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -306,7 +306,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setDouble(std::string aElement, double aValue)
+		bool SerializerXML::setDouble(std::string aElement, double aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -320,7 +320,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubDouble(std::vector<std::string> aElement, double aValue)
+		bool SerializerXML::setSubDouble(std::vector<std::string> aElement, double aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -335,7 +335,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setString(std::string aElement, std::string aValue)
+		bool SerializerXML::setString(std::string aElement, std::string aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -349,7 +349,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubString(std::vector<std::string> aElement, std::string aValue)
+		bool SerializerXML::setSubString(std::vector<std::string> aElement, std::string aValue)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -364,7 +364,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setVector2(std::string aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs)
+		bool SerializerXML::setVector2(std::string aElement, Vector2 aValue, C_AttribVector2XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -379,7 +379,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubVector2(std::vector<std::string> aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs)
+		bool SerializerXML::setSubVector2(std::vector<std::string> aElement, Vector2 aValue, C_AttribVector2XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -395,7 +395,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setVector3(std::string aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs)
+		bool SerializerXML::setVector3(std::string aElement, Vector3 aValue, C_AttribVector3XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -411,7 +411,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubVector3(std::vector<std::string> aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs)
+		bool SerializerXML::setSubVector3(std::vector<std::string> aElement, Vector3 aValue, C_AttribVector3XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -428,7 +428,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs)
+		bool SerializerXML::setVector4(std::string aElement, Vector4 aValue, C_AttribVector4XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -445,7 +445,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::setSubVector4(std::vector<std::string> aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs)
+		bool SerializerXML::setSubVector4(std::vector<std::string> aElement, Vector4 aValue, C_AttribVector4XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -463,7 +463,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::save()
+		bool SerializerXML::save()
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -473,7 +473,7 @@ namespace Columbus
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::read(std::string aFile, std::string aRoot)
+		bool SerializerXML::read(std::string aFile, std::string aRoot)
 		{
 			mMode = 1;
 			mInited = false;
@@ -486,7 +486,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getInt(std::string aElement, int* aValue)
+		bool SerializerXML::getInt(std::string aElement, int* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -499,7 +499,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubInt(std::vector<std::string> aElement, int* aValue)
+		bool SerializerXML::getSubInt(std::vector<std::string> aElement, int* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -512,7 +512,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getBool(std::string aElement, bool* aValue)
+		bool SerializerXML::getBool(std::string aElement, bool* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -525,7 +525,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubBool(std::vector<std::string> aElement, bool* aValue)
+		bool SerializerXML::getSubBool(std::vector<std::string> aElement, bool* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -538,7 +538,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getFloat(std::string aElement, float* aValue)
+		bool SerializerXML::getFloat(std::string aElement, float* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -551,7 +551,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubFloat(std::vector<std::string> aElement, float* aValue)
+		bool SerializerXML::getSubFloat(std::vector<std::string> aElement, float* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -564,7 +564,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getDouble(std::string aElement, double* aValue)
+		bool SerializerXML::getDouble(std::string aElement, double* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -577,7 +577,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubDouble(std::vector<std::string> aElement, double* aValue)
+		bool SerializerXML::getSubDouble(std::vector<std::string> aElement, double* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -590,7 +590,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getString(std::string aElement, std::string* aValue)
+		bool SerializerXML::getString(std::string aElement, std::string* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -603,7 +603,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubString(std::vector<std::string> aElement, std::string* aValue)
+		bool SerializerXML::getSubString(std::vector<std::string> aElement, std::string* aValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -616,7 +616,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getVector2(std::string aElement, C_Vector2* aValue, C_AttribVector2XML aAttrib)
+		bool SerializerXML::getVector2(std::string aElement, Vector2* aValue, C_AttribVector2XML aAttrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -630,7 +630,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubVector2(std::vector<std::string> aElement, C_Vector2* aValue, C_AttribVector2XML aAttrib)
+		bool SerializerXML::getSubVector2(std::vector<std::string> aElement, Vector2* aValue, C_AttribVector2XML aAttrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -644,7 +644,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getVector3(std::string aElement, C_Vector3* aValue, C_AttribVector3XML aAttrib)
+		bool SerializerXML::getVector3(std::string aElement, Vector3* aValue, C_AttribVector3XML aAttrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -659,7 +659,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubVector3(std::vector<std::string> aElement, C_Vector3* aValue, C_AttribVector3XML aAttrib)
+		bool SerializerXML::getSubVector3(std::vector<std::string> aElement, Vector3* aValue, C_AttribVector3XML aAttrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -674,7 +674,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getVector4(std::string aElement, C_Vector4* aValue, C_AttribVector4XML aAttrib)
+		bool SerializerXML::getVector4(std::string aElement, Vector4* aValue, C_AttribVector4XML aAttrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -690,7 +690,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool C_SerializerXML::getSubVector4(std::vector<std::string> aElement, C_Vector4* aValue, C_AttribVector4XML aAttrib)
+		bool SerializerXML::getSubVector4(std::vector<std::string> aElement, Vector4* aValue, C_AttribVector4XML aAttrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
@@ -708,7 +708,7 @@ namespace Columbus
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////
-		C_SerializerXML::~C_SerializerXML()
+		SerializerXML::~SerializerXML()
 		{
 
 		}

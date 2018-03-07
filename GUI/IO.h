@@ -8,7 +8,7 @@ namespace Columbus
 
 		struct C_Mouse
 		{
-			C_Vector2 coords;
+			Vector2 coords;
 			bool enabled = true;
 			bool left = false;
 			bool middle = false;
@@ -17,7 +17,7 @@ namespace Columbus
 
 		struct C_Screen
 		{
-			C_Vector2 size;
+			Vector2 size;
 			float aspect = 1.0;
 		};
 

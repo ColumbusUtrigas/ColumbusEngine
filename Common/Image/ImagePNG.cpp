@@ -16,7 +16,7 @@ namespace Columbus
 
 	bool ImageIsPNG(std::string aFile)
 	{
-		C_File file(aFile, "rb");
+		File file(aFile, "rb");
 		if (!file.isOpened()) return false;
 
 		uint8_t magic[4];

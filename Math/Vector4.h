@@ -18,10 +18,10 @@
 namespace Columbus
 {
 
-	class C_Vector4;
-	typedef C_Vector4 vec4;
+	class Vector4;
+	typedef Vector4 vec4;
 
-	class C_Vector4
+	class Vector4
 	{
 	public:
 		float x = 0;
@@ -29,21 +29,21 @@ namespace Columbus
 		float z = 0;
 		float w = 0;
 		////////////////////////////////////////////////////////////////////////////
-		inline explicit C_Vector4() :
+		inline explicit Vector4() :
 			x(0),
 			y(0),
 			z(0),
 			w(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		inline explicit C_Vector4(const float aX, const float aY, const float aZ, const float aW) :
+		inline explicit Vector4(const float aX, const float aY, const float aZ, const float aW) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY)),
 			z(static_cast<float>(aZ)),
 			w(static_cast<float>(aW))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		inline explicit C_Vector4(const glm::vec4 aVec) :
+		inline explicit Vector4(const glm::vec4 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y)),
 			z(static_cast<float>(aVec.z)),
@@ -66,7 +66,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator =
-		inline C_Vector4& operator=(C_Vector4 aOther)
+		inline Vector4& operator=(Vector4 aOther)
 		{
 			x = aOther.x;
 			y = aOther.y;
@@ -76,67 +76,67 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator +
-		inline C_Vector4 operator+(const C_Vector4 aOther)
+		inline Vector4 operator+(const Vector4 aOther)
 		{
-			return C_Vector4(x + aOther.x, y + aOther.y, z + aOther.z, w + aOther.w);
+			return Vector4(x + aOther.x, y + aOther.y, z + aOther.z, w + aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator -
-		inline C_Vector4 operator-(const C_Vector4 aOther)
+		inline Vector4 operator-(const Vector4 aOther)
 		{
-			return C_Vector4(x - aOther.x, y - aOther.y, z - aOther.z, w - aOther.w);
+			return Vector4(x - aOther.x, y - aOther.y, z - aOther.z, w - aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -
-		inline C_Vector4 operator-()
+		inline Vector4 operator-()
 		{
-			return C_Vector4(-x, -y, -z, -w);
+			return Vector4(-x, -y, -z, -w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
-		inline C_Vector4 operator*(const C_Vector4 aOther)
+		inline Vector4 operator*(const Vector4 aOther)
 		{
-			return C_Vector4(x * aOther.x, y * aOther.y, z * aOther.z, w * aOther.w);
+			return Vector4(x * aOther.x, y * aOther.y, z * aOther.z, w * aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
-		inline C_Vector4 operator*(const float aOther)
+		inline Vector4 operator*(const float aOther)
 		{
-			return C_Vector4(x * aOther, y * aOther, z * aOther, w * aOther);
+			return Vector4(x * aOther, y * aOther, z * aOther, w * aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *
-		inline friend C_Vector4 operator*(float aL, const C_Vector4 aR)
+		inline friend Vector4 operator*(float aL, const Vector4 aR)
 		{
-			return C_Vector4(aL * aR.x, aL * aR.y, aL * aR.z, aL * aR.w);
+			return Vector4(aL * aR.x, aL * aR.y, aL * aR.z, aL * aR.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
-		inline C_Vector4 operator/(const C_Vector4 aOther)
+		inline Vector4 operator/(const Vector4 aOther)
 		{
-			return C_Vector4(x / aOther.x, y / aOther.y, z / aOther.z, w / aOther.w);
+			return Vector4(x / aOther.x, y / aOther.y, z / aOther.z, w / aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /
-		inline C_Vector4 operator/(const float aOther)
+		inline Vector4 operator/(const float aOther)
 		{
-			return C_Vector4(x / aOther, y / aOther, z / aOther, w / aOther);
+			return Vector4(x / aOther, y / aOther, z / aOther, w / aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
-		inline bool operator==(const C_Vector4 aOther)
+		inline bool operator==(const Vector4 aOther)
 		{
 			return (x == aOther.x && y == aOther.y && z == aOther.z && w == aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator !=
-		inline bool operator!=(const C_Vector4 aOther)
+		inline bool operator!=(const Vector4 aOther)
 		{
 			return (x != aOther.x && y != aOther.y && z != aOther.z && w != aOther.w);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator +=
-		inline C_Vector4 operator+=(const C_Vector4 aOther)
+		inline Vector4 operator+=(const Vector4 aOther)
 		{
 			x += aOther.x;
 			y += aOther.y;
@@ -146,7 +146,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -=
-		inline C_Vector4 operator-=(const C_Vector4 aOther)
+		inline Vector4 operator-=(const Vector4 aOther)
 		{
 			x -= aOther.x;
 			y -= aOther.y;
@@ -156,7 +156,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		inline C_Vector4 operator*=(const C_Vector4 aOther)
+		inline Vector4 operator*=(const Vector4 aOther)
 		{
 			x *= aOther.x;
 			y *= aOther.y;
@@ -166,7 +166,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		inline C_Vector4 operator*=(const float aOther)
+		inline Vector4 operator*=(const float aOther)
 		{
 			x *= aOther;
 			y *= aOther;
@@ -176,7 +176,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
-		inline C_Vector4 operator/=(const C_Vector4 aOther)
+		inline Vector4 operator/=(const Vector4 aOther)
 		{
 			x /= aOther.x;
 			y /= aOther.y;
@@ -186,7 +186,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
-		inline C_Vector4 operator/=(const float aOther)
+		inline Vector4 operator/=(const float aOther)
 		{
 			const float Scalar = 1.0f / aOther;
 			x *= Scalar;
@@ -197,13 +197,13 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return random from two vectors
-		inline static C_Vector4 random(const C_Vector4 aMin, const C_Vector4 aMax)
+		inline static Vector4 random(const Vector4 aMin, const Vector4 aMax)
 		{
-			C_Vector4 ret;
-			ret.x = C_Random::range(aMin.x, aMax.x);
-			ret.y = C_Random::range(aMin.y, aMax.y);
-			ret.z = C_Random::range(aMin.z, aMax.z);
-			ret.w = C_Random::range(aMin.w, aMax.w);
+			Vector4 ret;
+			ret.x = Random::range(aMin.x, aMax.x);
+			ret.y = Random::range(aMin.y, aMax.y);
+			ret.z = Random::range(aMin.z, aMax.z);
+			ret.w = Random::range(aMin.w, aMax.w);
 			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -214,31 +214,31 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return length between two vectors
-		inline float length(const C_Vector4 aVec)
+		inline float length(const Vector4 aVec)
 		{
 			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2) + pow(aVec.z - z, 2) + pow(aVec.w - w, 2));
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
-		inline C_Vector4 normalize()
+		inline Vector4 normalize()
 		{
 			float l = sqrt((x * x) + (y * y) + (z * z) + (w * w));
-			return C_Vector4(x / l, y / l, z / l, w / l);
+			return Vector4(x / l, y / l, z / l, w / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return dot product of 2 vectors
-		inline float dot(C_Vector4 aOther)
+		inline float dot(Vector4 aOther)
 		{
 			return x * aOther.x + y * aOther.y + z * aOther.z + w * aOther.w;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return dot product of 2 vectors
-		inline static float dot(C_Vector4 aV1, C_Vector4 aV2)
+		inline static float dot(Vector4 aV1, Vector4 aV2)
 		{
 			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z + aV1.w * aV2.w;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		inline static C_Vector4 clamp(C_Vector4 a, C_Vector4 aMin, C_Vector4 aMax)
+		inline static Vector4 clamp(Vector4 a, Vector4 aMin, Vector4 aMax)
 		{
 			a.x = Clamp(a.x, aMin.x, aMax.x);
 			a.y = Clamp(a.y, aMin.y, aMax.y);
@@ -247,7 +247,7 @@ namespace Columbus
 			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		inline ~C_Vector4() {}
+		inline ~Vector4() {}
 	};
 
 }

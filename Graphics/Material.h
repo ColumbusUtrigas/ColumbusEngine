@@ -28,20 +28,20 @@ namespace Columbus
 	class C_Material
 	{
 	private:
-		C_Vector4 mColor = C_Vector4(1, 1, 1, 1);
-		C_Vector3 mDiffuse = C_Vector3(1, 1, 1);
-		C_Vector3 mAmbient = C_Vector3(0.25, 0.25, 0.25);
-		C_Vector3 mSpecular = C_Vector3(1, 1, 1);
+		Vector4 mColor = Vector4(1, 1, 1, 1);
+		Vector3 mDiffuse = Vector3(1, 1, 1);
+		Vector3 mAmbient = Vector3(0.25, 0.25, 0.25);
+		Vector3 mSpecular = Vector3(1, 1, 1);
 		float mReflectionPower = 0.2;
-		C_Texture* mTexture = nullptr;
-		C_Texture* mSpecMap = nullptr;
-		C_Texture* mNormMap = nullptr;
-		C_Shader* mShader = nullptr;
+		Texture* mTexture = nullptr;
+		Texture* mSpecMap = nullptr;
+		Texture* mNormMap = nullptr;
+		Shader* mShader = nullptr;
 
 		bool mDiscard = false;
 		bool mLighting = true;
 
-		C_Cubemap* mEnvReflection = nullptr;
+		Cubemap* mEnvReflection = nullptr;
 
 		float mShininess = 32;
 
@@ -52,30 +52,30 @@ namespace Columbus
 		C_Material();
 		C_Material(std::string aFile);
 
-		void setColor(const C_Vector4 aColor);
-		void setAmbient(const C_Vector3 aAmbient);
-		void setDiffuse(const C_Vector3 aDiffuse);
-		void setSpecular(const C_Vector3 aSpecular);
+		void setColor(const Vector4 aColor);
+		void setAmbient(const Vector3 aAmbient);
+		void setDiffuse(const Vector3 aDiffuse);
+		void setSpecular(const Vector3 aSpecular);
 		void setShininess(const float aShininess);
-		void setTexture(const C_Texture* aTexture);
-		void setSpecMap(const C_Texture* aSpecMap);
-		void setNormMap(const C_Texture* aNormMap);
-		void setShader(const C_Shader* aShader);
-		void setReflection(const C_Cubemap* aReflection);
+		void setTexture(const Texture* aTexture);
+		void setSpecMap(const Texture* aSpecMap);
+		void setNormMap(const Texture* aNormMap);
+		void setShader(const Shader* aShader);
+		void setReflection(const Cubemap* aReflection);
 		void setReflectionPower(const float aPower);
 		void setDiscard(const bool aDiscard);
 		void setLighting(const bool aLighting);
 
-		C_Vector4 getColor() const;
-		C_Vector3 getAmbient() const;
-		C_Vector3 getDiffuse() const;
-		C_Vector3 getSpecular() const;
+		Vector4 getColor() const;
+		Vector3 getAmbient() const;
+		Vector3 getDiffuse() const;
+		Vector3 getSpecular() const;
 		float getShininess() const;
-		C_Texture* getTexture() const;
-		C_Texture* getSpecMap() const;
-		C_Texture* getNormMap() const;
-		C_Shader* getShader() const;
-		C_Cubemap* getReflection() const;
+		Texture* getTexture() const;
+		Texture* getSpecMap() const;
+		Texture* getNormMap() const;
+		Shader* getShader() const;
+		Cubemap* getReflection() const;
 		float getReflectionPower() const;
 		bool getDiscard() const;
 		bool getLighting() const;

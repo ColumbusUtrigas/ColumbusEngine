@@ -5,27 +5,27 @@
 namespace Columbus
 {
 
-	class C_DeviceOpenGL : public C_Device
+	class DeviceOpenGL : public Device
 	{
 	public:
-		C_DeviceOpenGL();
+		DeviceOpenGL();
 
-		C_Shader* createShader() const override;
-		C_Shader* createShader(std::string aVert, std::string aFrag) const override;
+		Shader* createShader() const override;
+		Shader* createShader(std::string aVert, std::string aFrag) const override;
 
-		C_Cubemap* createCubemap() const override;
-		C_Cubemap* createCubemap(std::string aPath) const override;
-		C_Cubemap* createCubemap(std::array<std::string, 6> aPath) const override;
+		Cubemap* createCubemap() const override;
+		Cubemap* createCubemap(std::string aPath) const override;
+		Cubemap* createCubemap(std::array<std::string, 6> aPath) const override;
 
-		C_Texture* createTexture() const override;
-		C_Texture* createTexture(std::string aPath, bool aSmooth = true) const override;
-		C_Texture* createTexture(const char* aData, const int aW, const int aH, bool aSmooth = true) const override;
+		Texture* createTexture() const override;
+		Texture* createTexture(std::string aPath, bool aSmooth = true) const override;
+		Texture* createTexture(const char* aData, const int aW, const int aH, bool aSmooth = true) const override;
 
-		C_Mesh* createMesh() const override;
-		C_Mesh* createMesh(std::vector<C_Vertex> aVert) const override;
-		C_Mesh* createMesh(std::vector<C_Vertex> aVert, C_Material aMat) const override;
+		Mesh* createMesh() const override;
+		Mesh* createMesh(std::vector<Vertex> aVert) const override;
+		Mesh* createMesh(std::vector<Vertex> aVert, C_Material aMat) const override;
 
-		~C_DeviceOpenGL();
+		~DeviceOpenGL();
 	};
 
 }

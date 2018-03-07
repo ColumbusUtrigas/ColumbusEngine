@@ -15,24 +15,24 @@
 namespace Columbus
 {
 
-	class C_Component
+	class Component
 	{
 	protected:
 		virtual bool onCreate();
 
 		virtual bool onUpdate();
 	public:
-		C_Component();
+		Component();
 
 		virtual void update(const float aTimeTick);
 
-		virtual void render(C_Transform& aTransform);
+		virtual void render(Transform& aTransform);
 
 		virtual std::string getType();
 
 		void destroy();
 
-		~C_Component();
+		~Component();
 	};
 
 }

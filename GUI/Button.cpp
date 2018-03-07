@@ -14,7 +14,7 @@ namespace Columbus
 			if (mIO.mouse.enabled == false)
 				return;
 
-			C_Vector2 m = mIO.mouse.coords;
+			Vector2 m = mIO.mouse.coords;
 
 			if (m.x > mPos.x && m.x < (mPos.x + mSize.x))
 				if (m.y > mPos.y && m.y < (mPos.y + mSize.y))
@@ -23,8 +23,8 @@ namespace Columbus
 
 		void C_Button::draw()
 		{
-			C_Vector2 pos = mPos / mIO.screen.size;
-			C_Vector2 size = mSize / mIO.screen.size * 2;
+			Vector2 pos = mPos / mIO.screen.size;
+			Vector2 size = mSize / mIO.screen.size * 2;
 
 			//C_DisableDepthMaskOpenGL();
 

@@ -25,25 +25,25 @@ namespace Columbus
 	namespace Import
 	{
 
-		class C_ImporterModel
+		class ImporterModel
 		{
 		private:
 			unsigned int mObjectsCount = 0;
 			std::vector<std::string> mNames;
-			std::vector<std::vector<C_Vertex>> mVertices;
+			std::vector<std::vector<Vertex>> mVertices;
 		public:
-			C_ImporterModel();
+			ImporterModel();
 
 			bool load(const std::string aFile);
 			bool loadOBJ(const std::string aFile);
 
 			unsigned int getCount() const;
 			std::vector<std::string> getNames() const;
-			std::vector<std::vector<C_Vertex>> getObjects() const;
+			std::vector<std::vector<Vertex>> getObjects() const;
 			std::string getName(unsigned int aID) const;
-			std::vector<C_Vertex> getObject(unsigned int aID) const;
+			std::vector<Vertex> getObject(unsigned int aID) const;
 
-			~C_ImporterModel();
+			~ImporterModel();
 		};
 
 	}

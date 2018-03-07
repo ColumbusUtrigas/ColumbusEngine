@@ -14,7 +14,7 @@
 namespace Columbus
 {
 
-	class C_MeshOpenGL : public C_Mesh
+	class MeshOpenGL : public Mesh
 	{
 	private:
 		unsigned int mVBuf = 0;
@@ -28,20 +28,20 @@ namespace Columbus
 		float mMaterialUnif[14];
 
 		void setShaderTextures();
-		void setShaderMatrices(C_Transform aTransform);
+		void setShaderMatrices(Transform aTransform);
 		void setShaderMaterial();
 		void setShaderLightAndCamera();
 		void calculateLights();
 		void sortLights();
 	public:
-		C_MeshOpenGL();
-		C_MeshOpenGL(std::vector<C_Vertex> aVert);
-		C_MeshOpenGL(std::vector<C_Vertex> aVert, C_Material aMaterial);
+		MeshOpenGL();
+		MeshOpenGL(std::vector<Vertex> aVert);
+		MeshOpenGL(std::vector<Vertex> aVert, C_Material aMaterial);
 
-		void setVertices(std::vector<C_Vertex> aVert) override;
-		void render(C_Transform aTransform) override;
+		void setVertices(std::vector<Vertex> aVert) override;
+		void render(Transform aTransform) override;
 
-		~C_MeshOpenGL();
+		~MeshOpenGL();
 	};
 
 }

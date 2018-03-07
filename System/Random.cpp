@@ -16,19 +16,19 @@ namespace Columbus
 	std::mt19937 rng(static_cast<unsigned int>(time(NULL)));
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_Random::C_Random()
+	Random::Random()
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_Random::range(float aMin, float aMax)
+	float Random::range(float aMin, float aMax)
 	{
 		std::uniform_real_distribution<float> gen(aMin, aMax);
 
 		return gen(rng);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Random::~C_Random()
+	Random::~Random()
 	{
 
 	}

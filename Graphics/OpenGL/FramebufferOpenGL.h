@@ -24,8 +24,8 @@ namespace Columbus
 		void bind() override;
 		void unbind() override;
 
-		bool setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, C_Texture* aTexture) override;
-		bool prepare(C_Vector4 aClear, C_Vector2 aWindowSize) override;
+		bool setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, Texture* aTexture) override;
+		bool prepare(Vector4 aClear, Vector2 aWindowSize) override;
 		bool check() override;
 
 		~C_FramebufferOpenGL();

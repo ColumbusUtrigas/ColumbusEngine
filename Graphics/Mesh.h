@@ -30,34 +30,34 @@
 namespace Columbus
 {
 
-	class C_Mesh
+	class Mesh
 	{
 	protected:
-		C_Vector3 mPos;
-		C_Mesh* mParent = nullptr;
+		Vector3 mPos;
+		Mesh* mParent = nullptr;
 		C_Camera mCamera;
 
-		std::list<C_Mesh*> mChilds;
+		std::list<Mesh*> mChilds;
 		std::vector<C_Light*> mLights;
 	public:
-		std::vector<C_Vertex> mVert;
+		std::vector<Vertex> mVert;
 		C_Material mMat;
 		
-		C_Mesh();
-		C_Mesh(std::vector<C_Vertex> aVert);
-		C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat);
+		Mesh();
+		Mesh(std::vector<Vertex> aVert);
+		Mesh(std::vector<Vertex> aVert, C_Material aMat);
 
-		virtual void setVertices(std::vector<C_Vertex> aVert);
-		virtual void render(C_Transform aTransform);
+		virtual void setVertices(std::vector<Vertex> aVert);
+		virtual void render(Transform aTransform);
 
 		void setCamera(C_Camera camera);
-		void setParent(C_Mesh* aParent);
-		void addChild(C_Mesh* aChild);
+		void setParent(Mesh* aParent);
+		void addChild(Mesh* aChild);
 		void setLights(std::vector<C_Light*> aLights);
 
 		void clear();
 
-		~C_Mesh();
+		~Mesh();
 	};
 
 }

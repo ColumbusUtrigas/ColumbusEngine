@@ -19,17 +19,17 @@
 namespace Columbus
 {
 
-	struct C_TextureConfig
+	struct TextureConfig
 	{
 		bool smooth = true;
 		bool mipmaps = true;
 		unsigned int anisotropy = 8;
 		unsigned int LOD = 0;
-		C_Vector2 tiling = C_Vector2(1, 1);
-		C_Vector2 tilingOffset = C_Vector2(0, 0);
+		Vector2 tiling = Vector2(1, 1);
+		Vector2 tilingOffset = Vector2(0, 0);
 	};
 
-	class C_Texture
+	class Texture
 	{
 	protected:
 		C_Image mImage;
@@ -38,25 +38,25 @@ namespace Columbus
 
 		std::string mFile;
 
-		C_TextureConfig mConfig;
+		TextureConfig mConfig;
 
 		size_t mWidth = 0;
 		size_t mHeight = 0;
 		int mBPP = 0;
 	public:
-		C_Texture();
-		C_Texture(std::string aPath, bool aSmooth = true);
-		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
+		Texture();
+		Texture(std::string aPath, bool aSmooth = true);
+		Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		
 		virtual void load(std::string aPath, bool aSmooth = true);
 		virtual void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		virtual void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
 		
-		virtual void setConfig(C_TextureConfig aConfig);
+		virtual void setConfig(TextureConfig aConfig);
 		virtual void setSmooth(const bool aSmooth);
 		virtual void setAnisotropy(const unsigned int aAnisotropy);
 
-		C_TextureConfig getConfig();
+		TextureConfig getConfig();
 		size_t getSize();
 
 		bool save(std::string aFile, size_t aQuality = 100);
@@ -71,7 +71,7 @@ namespace Columbus
 
 		virtual std::string getType();
 		
-		~C_Texture();
+		~Texture();
 	};
 
 }

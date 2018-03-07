@@ -19,7 +19,7 @@ namespace Columbus
 		uint32_t count;    //Polygons count
 	} CMF_HEADER;
 
-	static bool ReadHeader(CMF_HEADER* aHeader, C_File* aFile)
+	static bool ReadHeader(CMF_HEADER* aHeader, File* aFile)
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
@@ -31,7 +31,7 @@ namespace Columbus
 
 	bool ModelIsCMF(const std::string aFile)
 	{
-		C_File file(aFile, "rb");
+		File file(aFile, "rb");
 		if (!file.isOpened()) return false;
 
 		const char* magic = "COLUMBUS MODEL FORMAT";
@@ -47,15 +47,15 @@ namespace Columbus
 		return ret;
 	}
 
-	std::vector<C_Vertex> ModelLoadCMF(const std::string aFile)
+	std::vector<Vertex> ModelLoadCMF(const std::string aFile)
 	{
-		std::vector<C_Vertex> ret;
+		std::vector<Vertex> ret;
 		size_t i, j;
 		uint64_t vcounter = 0;
 		uint64_t ucounter = 0;
 		uint64_t ncounter = 0;
 
-		C_File file(aFile, "rb");
+		File file(aFile, "rb");
 		if (!file.isOpened()) return ret;
 
 		CMF_HEADER header;
@@ -69,10 +69,10 @@ namespace Columbus
 		if (!file.readBytes(ubuffer, header.count * sizeof(float) * 3 * 2)) return ret;
 		if (!file.readBytes(nbuffer, header.count * sizeof(float) * 3 * 3)) return ret;
 
-		C_Vertex vert[3];
-		C_Vector3 deltaPos1, deltaPos2;
-		C_Vector2 deltaUV1, deltaUV2;
-		C_Vector3 tangent, bitangent;
+		Vertex vert[3];
+		Vector3 deltaPos1, deltaPos2;
+		Vector2 deltaUV1, deltaUV2;
+		Vector3 tangent, bitangent;
 		float r;
 
 		for (i = 0; i < header.count; i++)

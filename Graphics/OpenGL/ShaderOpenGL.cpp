@@ -64,12 +64,12 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_ShaderOpenGL::C_ShaderOpenGL()
+	ShaderOpenGL::ShaderOpenGL()
 	{
 		mID = glCreateProgram();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ShaderOpenGL::C_ShaderOpenGL(std::string aVert, std::string aFrag)
+	ShaderOpenGL::ShaderOpenGL(std::string aVert, std::string aFrag)
 	{
 		mID = glCreateProgram();
 		load(aVert, aFrag);
@@ -77,7 +77,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ShaderOpenGL::load(std::string aVert, std::string aFrag)
+	bool ShaderOpenGL::load(std::string aVert, std::string aFrag)
 	{
 		std::string vertSource;
 		std::string fragSource;
@@ -93,10 +93,10 @@ namespace Columbus
 		}
 		else
 		{
-			C_File vert(aVert, "rt");
+			File vert(aVert, "rt");
 			if (!vert.isOpened())
 			{
-				C_Log::error("Shader not loaded: " + aVert); return false;
+				Log::error("Shader not loaded: " + aVert); return false;
 			}
 			vert.close();
 
@@ -110,11 +110,11 @@ namespace Columbus
 		}
 		else
 		{
-			C_File frag(aFrag, "rt");
+			File frag(aFrag, "rt");
 
 			if (!frag.isOpened())
 			{
-				C_Log::error("Shader not loaded: " + aFrag); return false;
+				Log::error("Shader not loaded: " + aFrag); return false;
 			}
 			frag.close();
 
@@ -124,12 +124,12 @@ namespace Columbus
 
 		if (vertSource.empty())
 		{
-			C_Log::error("Shader not loaded: " + aVert); return false;
+			Log::error("Shader not loaded: " + aVert); return false;
 		}
 
 		if (fragSource.empty())
 		{
-			C_Log::error("Shader not loaded: " + aFrag); return false;
+			Log::error("Shader not loaded: " + aFrag); return false;
 		}
 
 		mVertShaderPath = aVert;
@@ -139,13 +139,13 @@ namespace Columbus
 		mFragShaderSource = fragSource;
 		mLoaded = true;
 
-		C_Log::success("Shader loaded: " + aVert);
-		C_Log::success("Shader loaded: " + aFrag);
+		Log::success("Shader loaded: " + aVert);
+		Log::success("Shader loaded: " + aFrag);
 
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ShaderOpenGL::compile()
+	bool ShaderOpenGL::compile()
 	{
 		if (!mLoaded) return false;
 
@@ -200,64 +200,64 @@ namespace Columbus
 		glDeleteShader(fragment);
 		mCompiled = true;
 
-		C_Log::success("Shader compiled: " + mVertShaderPath);
-		C_Log::success("Shader compiled: " + mFragShaderPath);
+		Log::success("Shader compiled: " + mVertShaderPath);
+		Log::success("Shader compiled: " + mFragShaderPath);
 
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::bind() const
+	void ShaderOpenGL::bind() const
 	{
 		if (mCompiled) glUseProgram(mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::unbind() const
+	void ShaderOpenGL::unbind() const
 	{
 		glUseProgram(0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniform1i(std::string aName, const int aValue) const
+	void ShaderOpenGL::setUniform1i(std::string aName, const int aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform1i(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniform1f(std::string aName, const float aValue) const
+	void ShaderOpenGL::setUniform1f(std::string aName, const float aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform1f(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniform2f(std::string aName, const C_Vector2 aValue) const
+	void ShaderOpenGL::setUniform2f(std::string aName, const Vector2 aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniform3f(std::string aName, const C_Vector3 aValue) const
+	void ShaderOpenGL::setUniform3f(std::string aName, const Vector3 aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniform4f(std::string aName, const C_Vector4 aValue) const
+	void ShaderOpenGL::setUniform4f(std::string aName, const Vector4 aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform4f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z, aValue.w);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniformMatrix(std::string aName, const float* aValue) const
+	void ShaderOpenGL::setUniformMatrix(std::string aName, const float* aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniformMatrix4fv(glGetUniformLocation(mID, aName.c_str()), 1, GL_FALSE, aValue);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ShaderOpenGL::setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const
+	void ShaderOpenGL::setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const
 	{
 		if (mID != 0 && mCompiled) glUniform1fv(glGetUniformLocation(mID, aName.c_str()), aSize, aArray);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_ShaderOpenGL::~C_ShaderOpenGL()
+	ShaderOpenGL::~ShaderOpenGL()
 	{
 		glDeleteProgram(mID);
 	}

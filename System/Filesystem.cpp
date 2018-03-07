@@ -19,7 +19,7 @@ namespace Columbus
 	/* 
 	* Returns string to current work directory
 	*/
-	std::string C_Filesystem::getCurrent()
+	std::string Filesystem::getCurrent()
 	{
 		#ifdef COLUMBUS_SYSTEM_LINUX
 			char dir[4096];
@@ -42,7 +42,7 @@ namespace Columbus
 	* @param aPath: Path to directory, where new directory should be created
 	* @return Bool-value: true if directory successfully created, false if error was occured
 	*/
-	bool C_Filesystem::createDirectory(const std::string aPath)
+	bool Filesystem::createDirectory(const std::string aPath)
 	{
 		#ifdef COLUMBUS_SYSTEM_LINUX
 			return mkdir(aPath.c_str(), 0777) == 0;
@@ -61,7 +61,7 @@ namespace Columbus
 	* @param aPath: Path to directory, where new file should be created
 	* @return Bool-value: true if file successfully created, false if error was occured
 	*/
-	bool C_Filesystem::createFile(const std::string aPath)
+	bool Filesystem::createFile(const std::string aPath)
 	{
 		#ifdef COLUMBUS_SYSTEM_LINUX
 			return open(aPath.c_str(), O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, S_IRWXU) >= 0;
@@ -76,7 +76,7 @@ namespace Columbus
 	* @param aPath: Path to directory, which should be removed
 	* @return Bool-value: true if directory successfully removed, false if error was occured
 	*/
-	bool C_Filesystem::removeDirectory(const std::string aPath)
+	bool Filesystem::removeDirectory(const std::string aPath)
 	{
 		#ifdef COLUMBUS_SYSTEM_LINUX
 			return rmdir(aPath.c_str()) == 0;
@@ -95,7 +95,7 @@ namespace Columbus
 	* @param aPath: Path to file, which should be removed
 	* @return Bool-value: true if file successfully removed, false if error was occured
 	*/
-	bool C_Filesystem::removeFile(const std::string aPath)
+	bool Filesystem::removeFile(const std::string aPath)
 	{
 		#ifdef COLUMBUS_SYSTEM_LINUX
 			return remove(aPath.c_str()) == 0;
@@ -110,7 +110,7 @@ namespace Columbus
 	* @param aPath: Path to directory, which content should be returned
 	* @return Vector of Strings: list of names of files and directories
 	*/
-	std::vector<std::string> C_Filesystem::read(const std::string aPath)
+	std::vector<std::string> Filesystem::read(const std::string aPath)
 	{
 		std::vector<std::string> ret;
 
@@ -158,7 +158,7 @@ namespace Columbus
 	* Reads list of files and directories in current
 	* @return Vector of Strings: list of names of files and directories
 	*/
-	std::vector<std::string> C_Filesystem::readCurrent()
+	std::vector<std::string> Filesystem::readCurrent()
 	{
 		return read(getCurrent());
 	}

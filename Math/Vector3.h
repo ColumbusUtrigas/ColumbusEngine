@@ -18,29 +18,29 @@
 namespace Columbus
 {
 
-	class C_Vector3;
-	typedef C_Vector3 vec3;
+	class Vector3;
+	typedef Vector3 vec3;
 
-	class C_Vector3
+	class Vector3
 	{
 	public:
 		float x = 0;
 		float y = 0;
 		float z = 0;
 		////////////////////////////////////////////////////////////////////////////
-		inline explicit C_Vector3() :
+		inline explicit Vector3() :
 			x(0),
 			y(0),
 			z(0)
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		inline explicit C_Vector3(const float aX, const float aY, const float aZ) :
+		inline explicit Vector3(const float aX, const float aY, const float aZ) :
 			x(static_cast<float>(aX)),
 			y(static_cast<float>(aY)),
 			z(static_cast<float>(aZ))
 		{}
 		////////////////////////////////////////////////////////////////////////////
-		inline explicit C_Vector3(const glm::vec3 aVec) :
+		inline explicit Vector3(const glm::vec3 aVec) :
 			x(static_cast<float>(aVec.x)),
 			y(static_cast<float>(aVec.y)),
 			z(static_cast<float>(aVec.z))
@@ -61,7 +61,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator =
-		inline C_Vector3& operator=(C_Vector3 aOther)
+		inline Vector3& operator=(Vector3 aOther)
 		{
 			x = aOther.x;
 			y = aOther.y;
@@ -70,67 +70,67 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator +
-		inline C_Vector3 operator+(const C_Vector3 aOther) const
+		inline Vector3 operator+(const Vector3 aOther) const
 		{
-			return C_Vector3(x + aOther.x, y + aOther.y, z + aOther.z);
+			return Vector3(x + aOther.x, y + aOther.y, z + aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator -
-		inline C_Vector3 operator-(const C_Vector3 aOther) const
+		inline Vector3 operator-(const Vector3 aOther) const
 		{
-			return C_Vector3(x - aOther.x, y - aOther.y, z - aOther.z);
+			return Vector3(x - aOther.x, y - aOther.y, z - aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -
-		inline C_Vector3 operator-() const
+		inline Vector3 operator-() const
 		{
-			return C_Vector3(-x, -y, -z);
+			return Vector3(-x, -y, -z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
-		inline C_Vector3 operator*(const C_Vector3 aOther) const
+		inline Vector3 operator*(const Vector3 aOther) const
 		{
-			return C_Vector3(x * aOther.x, y * aOther.y, z * aOther.z);
+			return Vector3(x * aOther.x, y * aOther.y, z * aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator *
-		inline C_Vector3 operator*(const float aOther) const
+		inline Vector3 operator*(const float aOther) const
 		{
-			return C_Vector3(x * aOther, y * aOther, z * aOther);
+			return Vector3(x * aOther, y * aOther, z * aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *
-		inline friend C_Vector3 operator*(float aL, const C_Vector3 aR)
+		inline friend Vector3 operator*(float aL, const Vector3 aR)
 		{
-			return C_Vector3(aL * aR.x, aL * aR.y, aL * aR.z);
+			return Vector3(aL * aR.x, aL * aR.y, aL * aR.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Opeator /
-		inline C_Vector3 operator/(const C_Vector3 aOther) const
+		inline Vector3 operator/(const Vector3 aOther) const
 		{
-			return C_Vector3(x / aOther.x, y / aOther.y, z / aOther.z);
+			return Vector3(x / aOther.x, y / aOther.y, z / aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /
-		inline C_Vector3 operator/(const float aOther) const
+		inline Vector3 operator/(const float aOther) const
 		{
-			return C_Vector3(x / aOther, y / aOther, z / aOther);
+			return Vector3(x / aOther, y / aOther, z / aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator ==
-		inline bool operator==(const C_Vector3 aOther) const
+		inline bool operator==(const Vector3 aOther) const
 		{
 			return (x == aOther.x && y == aOther.y && z == aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator !=
-		inline bool operator!=(const C_Vector3 aOther) const
+		inline bool operator!=(const Vector3 aOther) const
 		{
 			return (x != aOther.x && y != aOther.y && z != aOther.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator +=
-		inline C_Vector3 operator+=(const C_Vector3 aOther)
+		inline Vector3 operator+=(const Vector3 aOther)
 		{
 			x += aOther.x;
 			y += aOther.y;
@@ -139,7 +139,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator -=
-		inline C_Vector3 operator-=(const C_Vector3 aOther)
+		inline Vector3 operator-=(const Vector3 aOther)
 		{
 			x -= aOther.x;
 			y -= aOther.y;
@@ -148,7 +148,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		inline C_Vector3 operator*=(const C_Vector3 aOther)
+		inline Vector3 operator*=(const Vector3 aOther)
 		{
 			x *= aOther.x;
 			y *= aOther.y;
@@ -157,7 +157,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		inline C_Vector3 operator*=(const float aOther)
+		inline Vector3 operator*=(const float aOther)
 		{
 			x *= aOther;
 			y *= aOther;
@@ -166,7 +166,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
-		inline C_Vector3 operator/=(const C_Vector3 aOther)
+		inline Vector3 operator/=(const Vector3 aOther)
 		{
 			x /= aOther.x;
 			y /= aOther.y;
@@ -175,7 +175,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator /=
-		inline C_Vector3 operator/=(const float aOther)
+		inline Vector3 operator/=(const float aOther)
 		{
 			const float Scalar = 1.0f / aOther;
 			x *= Scalar;
@@ -185,12 +185,12 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return random from two vectors
-		inline static C_Vector3 random(const C_Vector3 aMin, const C_Vector3 aMax)
+		inline static Vector3 random(const Vector3 aMin, const Vector3 aMax)
 		{
-			C_Vector3 ret;
-			ret.x = C_Random::range(aMin.x, aMax.x);
-			ret.y = C_Random::range(aMin.y, aMax.y);
-			ret.z = C_Random::range(aMin.z, aMax.z);
+			Vector3 ret;
+			ret.x = Random::range(aMin.x, aMax.x);
+			ret.y = Random::range(aMin.y, aMax.y);
+			ret.z = Random::range(aMin.z, aMax.z);
 			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
@@ -201,47 +201,47 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return length between 2 vectors
-		inline float length(const C_Vector3 aVec)
+		inline float length(const Vector3 aVec)
 		{
 			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2) + pow(aVec.z - z, 2));
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return normalize vector
-		inline C_Vector3 normalize()
+		inline Vector3 normalize()
 		{
 			float l = sqrt((x * x) + (y * y) + (z * z));
-			return C_Vector3(x / l, y / l, z / l);
+			return Vector3(x / l, y / l, z / l);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return dot product of 2 vectors
-		inline float dot(C_Vector3 aOther)
+		inline float dot(Vector3 aOther)
 		{
 			return x * aOther.x + y * aOther.y + z * aOther.z;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return dot product of 2 vectors
-		inline static float dot(C_Vector3 aV1, C_Vector3 aV2)
+		inline static float dot(Vector3 aV1, Vector3 aV2)
 		{
 			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return cross product of 2 vectors
-		inline C_Vector3 cross(C_Vector3 aOther)
+		inline Vector3 cross(Vector3 aOther)
 		{
 			return cross(*this, aOther);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return cross product of 2 vectors
-		inline static C_Vector3 cross(C_Vector3 aV1, C_Vector3 aV2)
+		inline static Vector3 cross(Vector3 aV1, Vector3 aV2)
 		{
-			C_Vector3 ret;
+			Vector3 ret;
 			ret.x = aV1.y * aV2.z - aV1.z * aV2.y;
 			ret.y = aV1.z * aV2.x - aV1.x * aV2.z;
 			ret.z = aV1.x * aV2.y - aV1.y * aV2.x;
 			return ret;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		inline static C_Vector3 clamp(C_Vector3 a, C_Vector3 aMin, C_Vector3 aMax)
+		inline static Vector3 clamp(Vector3 a, Vector3 aMin, Vector3 aMax)
 		{
 			a.x = Clamp(a.x, aMin.x, aMax.x);
 			a.y = Clamp(a.y, aMin.y, aMax.y);
@@ -250,7 +250,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Destructor
-		inline ~C_Vector3() {}
+		inline ~Vector3() {}
 	};
 
 }

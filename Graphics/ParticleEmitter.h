@@ -40,12 +40,12 @@ namespace Columbus
 	private:
 		size_t i;
 	public:
-		C_Vector4 color = C_Vector4(1, 1, 1, 1);
-		C_Vector3 velocity = C_Vector3(0, 1, 0);
-		C_Vector3 startPos = C_Vector3(0, 0, 0);
-		C_Vector3 startEmitterPos = C_Vector3(0, 0, 0);
-		C_Vector3 accel = C_Vector3(0, 0.1, 0);
-		C_Vector3 pos;
+		Vector4 color = Vector4(1, 1, 1, 1);
+		Vector3 velocity = Vector3(0, 1, 0);
+		Vector3 startPos = Vector3(0, 0, 0);
+		Vector3 startEmitterPos = Vector3(0, 0, 0);
+		Vector3 accel = Vector3(0, 0.1, 0);
+		Vector3 pos;
 
 		float rotation = 0.0;
 		float rotationSpeed = 0.0;
@@ -58,8 +58,8 @@ namespace Columbus
 
 		void genCircle(const float aRadius, const bool aEmitFromShell)
 		{
-			float ang = C_Random::range(0.0, 6.283185306);
-			float rad = C_Random::range(0.0, aRadius);
+			float ang = Random::range(0.0, 6.283185306);
+			float rad = Random::range(0.0, aRadius);
 
 			if (aEmitFromShell) rad = aRadius;
 
@@ -70,9 +70,9 @@ namespace Columbus
 
 		void genSphere(const float aRadius, const bool aEmitFromShell)
 		{
-			float rad = C_Random::range(0.0, aRadius);
-			float phi = C_Random::range(0.0, 6.283185306);
-			float tht = C_Random::range(0.0, 3.141592653);
+			float rad = Random::range(0.0, aRadius);
+			float phi = Random::range(0.0, 6.283185306);
+			float tht = Random::range(0.0, 3.141592653);
 
 			if (aEmitFromShell) rad = aRadius;
 
@@ -81,7 +81,7 @@ namespace Columbus
 			startPos.z = rad * cos(tht);
 		}
 
-		void genCube(const C_Vector3 aSize, const bool aEmitFromShell)
+		void genCube(const Vector3 aSize, const bool aEmitFromShell)
 		{
 			if (aEmitFromShell)
 			{
@@ -89,25 +89,25 @@ namespace Columbus
 				{
 				case 0:
 					startPos.x = aSize.x / 2 * ((rand() % 2) ? -1 : 1);
-					startPos.y = C_Random::range(-aSize.y / 2, aSize.y / 2);
-					startPos.z = C_Random::range(-aSize.z / 2, aSize.z / 2);
+					startPos.y = Random::range(-aSize.y / 2, aSize.y / 2);
+					startPos.z = Random::range(-aSize.z / 2, aSize.z / 2);
 					break;
 				case 1:
-					startPos.x = C_Random::range(-aSize.x / 2, aSize.x / 2);
+					startPos.x = Random::range(-aSize.x / 2, aSize.x / 2);
 					startPos.y = aSize.y / 2 * ((rand() % 2) ? -1 : 1);
-					startPos.z = C_Random::range(-aSize.z / 2, aSize.z / 2);
+					startPos.z = Random::range(-aSize.z / 2, aSize.z / 2);
 					break;
 				case 2:
-					startPos.x = C_Random::range(-aSize.x / 2, aSize.x / 2);
-					startPos.y = C_Random::range(-aSize.y / 2, aSize.y / 2);
+					startPos.x = Random::range(-aSize.x / 2, aSize.x / 2);
+					startPos.y = Random::range(-aSize.y / 2, aSize.y / 2);
 					startPos.z = aSize.z / 2 * ((rand() % 2) ? -1 : 1);
 					break;
 				}
 			} else
 			{
-				startPos.x = C_Random::range(-aSize.x / 2, aSize.x / 2);
-				startPos.y = C_Random::range(-aSize.y / 2, aSize.y / 2);
-				startPos.z = C_Random::range(-aSize.z / 2, aSize.z / 2);
+				startPos.x = Random::range(-aSize.x / 2, aSize.x / 2);
+				startPos.y = Random::range(-aSize.y / 2, aSize.y / 2);
+				startPos.z = Random::range(-aSize.z / 2, aSize.z / 2);
 			}
 		}
 
@@ -128,7 +128,7 @@ namespace Columbus
 
 	struct C_ColorKey
 	{
-		C_Vector4 color = C_Vector4(1, 1, 1, 1);
+		Vector4 color = Vector4(1, 1, 1, 1);
 		float key = 0.0;
 	};
 
@@ -153,7 +153,7 @@ namespace Columbus
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;
 
-		C_Vector3 mCameraPos = C_Vector3(0, 0, 5);
+		Vector3 mCameraPos = Vector3(0, 0, 5);
 
 		//Vertex buffer
 		float vrts[18] =
@@ -202,7 +202,7 @@ namespace Columbus
 		void update(const float aTimeTick);
 		void draw();
 
-		void setCameraPos(C_Vector3 aC);
+		void setCameraPos(Vector3 aC);
 		//Set light casters, which calculate to using in shaders
 		void setLights(std::vector<C_Light*> aLights);
 

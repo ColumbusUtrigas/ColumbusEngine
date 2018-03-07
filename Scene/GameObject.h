@@ -17,36 +17,36 @@
 namespace Columbus
 {
 
-	class C_GameObject
+	class GameObject
 	{
 	protected:
-		std::vector<C_GameObject*> mChildren;
-		std::vector<C_Component*> mComponents;
+		std::vector<GameObject*> mChildren;
+		std::vector<Component*> mComponents;
 
 		std::string mName;
 
-		C_Timer mTimer;
+		Timer mTimer;
 	public:
-		C_Transform Transform;
+		Transform transform;
 
-		C_GameObject();
+		GameObject();
 
 		void setName(const std::string aName);
 		std::string getName() const;
 
-		void addChild(C_GameObject* aChild);
-		void addComponent(C_Component* aComponent);
+		void addChild(GameObject* aChild);
+		void addComponent(Component* aComponent);
 
-		void setTransform(C_Transform aTransform);
-		C_Transform getTransform() const;
+		void setTransform(Transform aTransform);
+		Transform getTransform() const;
 
 		void update();
 		void render();
 
 		bool hasComponent(std::string aName);
-		C_Component* getComponent(std::string aName);
+		Component* getComponent(std::string aName);
 
-		~C_GameObject();
+		~GameObject();
 	};
 
 }

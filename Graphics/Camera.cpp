@@ -13,16 +13,16 @@
 namespace Columbus
 {
 
-	static C_Matrix4 PROJECTION_MATRIX;
-	static C_Matrix4 VIEW_MATRIX;
+	static Matrix4 PROJECTION_MATRIX;
+	static Matrix4 VIEW_MATRIX;
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_Matrix4 C_GetProjectionMatrix()
+	Matrix4 C_GetProjectionMatrix()
 	{
 		return PROJECTION_MATRIX;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Matrix4 C_GetViewMatrix()
+	Matrix4 C_GetViewMatrix()
 	{
 		return VIEW_MATRIX;
 	}
@@ -46,62 +46,62 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setPos(const C_Vector3 aPos)
+	void C_Camera::setPos(const Vector3 aPos)
 	{
-		mPos = static_cast<C_Vector3>(aPos);
+		mPos = static_cast<Vector3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addPos(const C_Vector3 aPos)
+	void C_Camera::addPos(const Vector3 aPos)
 	{
 		mPos += aPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getPos() const
+	Vector3 C_Camera::getPos() const
 	{
 		return mPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setRot(const C_Vector3 aRot)
+	void C_Camera::setRot(const Vector3 aRot)
 	{
-		mRot = static_cast<C_Vector3>(aRot);
+		mRot = static_cast<Vector3>(aRot);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addRot(const C_Vector3 aRot)
+	void C_Camera::addRot(const Vector3 aRot)
 	{
 		mRot += aRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getRot() const
+	Vector3 C_Camera::getRot() const
 	{
 		return mRot;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setTarget(const C_Vector3 aTarget)
+	void C_Camera::setTarget(const Vector3 aTarget)
 	{
-		mTarget = static_cast<C_Vector3>(aTarget);
+		mTarget = static_cast<Vector3>(aTarget);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addTarget(const C_Vector3 aTarget)
+	void C_Camera::addTarget(const Vector3 aTarget)
 	{
 		mTarget += aTarget;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getTarget() const
+	Vector3 C_Camera::getTarget() const
 	{
 		return mTarget;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::direction() const
+	Vector3 C_Camera::direction() const
 	{
 		return mCameraDirection;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::right() const
+	Vector3 C_Camera::right() const
 	{
 		return -mCameraRight;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::up() const
+	Vector3 C_Camera::up() const
 	{
 		return mCameraUp;
 	}

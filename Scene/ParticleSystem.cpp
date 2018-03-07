@@ -4,7 +4,7 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleSystem::C_ParticleSystem(C_ParticleEmitter* aEmitter) :
+	ParticleSystem::ParticleSystem(C_ParticleEmitter* aEmitter) :
 		mEmitter(aEmitter)
 	{
 
@@ -12,23 +12,23 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleSystem::onCreate()
+	bool ParticleSystem::onCreate()
 	{
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleSystem::onUpdate()
+	bool ParticleSystem::onUpdate()
 	{
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleSystem::update(const float aTimeTick)
+	void ParticleSystem::update(const float aTimeTick)
 	{
 		if (mEmitter != nullptr)
 			mEmitter->update(aTimeTick);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleSystem::render(C_Transform& aTransform)
+	void ParticleSystem::render(Transform& aTransform)
 	{
 		if (mEmitter != nullptr)
 		{
@@ -39,35 +39,35 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	std::string C_ParticleSystem::getType()
+	std::string ParticleSystem::getType()
 	{
 		return "ParticleSystem";
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEmitter* C_ParticleSystem::getEmitter() const
+	C_ParticleEmitter* ParticleSystem::getEmitter() const
 	{
 		return mEmitter;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleSystem::setLights(std::vector<C_Light*> aLights)
+	void ParticleSystem::setLights(std::vector<C_Light*> aLights)
 	{
 		if (mEmitter != nullptr)
 			mEmitter->setLights(aLights);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleSystem::setCamera(C_Camera aCamera)
+	void ParticleSystem::setCamera(C_Camera aCamera)
 	{
 		if (mEmitter != nullptr)
 			mEmitter->setCameraPos(aCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Shader* C_ParticleSystem::getShader() const
+	Shader* ParticleSystem::getShader() const
 	{
 		if (mEmitter != nullptr)
 			return mEmitter->getParticleEffect()->getMaterial()->getShader();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleSystem::setShader(C_Shader* aShader)
+	void ParticleSystem::setShader(Shader* aShader)
 	{
 		if (mEmitter != nullptr)
 			mEmitter->getParticleEffect()->getMaterial()->setShader(aShader);
@@ -75,7 +75,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleSystem::~C_ParticleSystem()
+	ParticleSystem::~ParticleSystem()
 	{
 
 	}

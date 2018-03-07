@@ -22,23 +22,23 @@
 namespace Columbus
 {
 
-	struct C_Vertex
+	struct Vertex
 	{
-		C_Vector3 pos;
-		C_Vector2 UV;
-		C_Vector3 normal;
-		C_Vector3 tangent;
-		C_Vector3 bitangent;
+		Vector3 pos;
+		Vector2 UV;
+		Vector3 normal;
+		Vector3 tangent;
+		Vector3 bitangent;
 	};
 
 	bool ModelIsCMF(const std::string aFile);
 
-	std::vector<C_Vertex> ModelLoadCMF(const std::string aFile);
+	std::vector<Vertex> ModelLoadCMF(const std::string aFile);
 
 	class C_Model
 	{
 	private:
-		std::vector<C_Vertex> mVertices;
+		std::vector<Vertex> mVertices;
 		std::string mFilename;
 		bool mExistance = false;
 	public:
@@ -50,7 +50,7 @@ namespace Columbus
 		bool isExist() const;
 		bool freeData();
 
-		std::vector<C_Vertex> getData() const;
+		std::vector<Vertex> getData() const;
 		std::string getFilename() const;
 
 		~C_Model();

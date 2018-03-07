@@ -36,7 +36,7 @@ namespace Columbus
 		size_t i, j;
 		float radius = mParticleEffect->getParticleShapeRadius();
 		bool emitFromShell = mParticleEffect->getEmitFromShell();
-		C_Vector3 box = mParticleEffect->getBoxShapeSize();
+		Vector3 box = mParticleEffect->getBoxShapeSize();
 
 		mNoise.setOctaves(mParticleEffect->getNoiseOctaves());
 		mNoise.setLacunarity(mParticleEffect->getNoiseLacunarity());
@@ -47,17 +47,17 @@ namespace Columbus
 		for (i = 0; i < static_cast<size_t>(mParticleEffect->getParticlesCount()); i++)
 		{
 			C_Particle p;
-			p.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			p.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			p.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+			p.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.startPos = mParticleEffect->getPos();
-			p.accel = C_Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
-			p.rotation = C_Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
-			p.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+			p.accel = Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
+			p.rotation = Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
+			p.rotationSpeed = Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
 			p.startEmitterPos = mParticleEffect->getPos();
-			p.frame = static_cast<unsigned int>(C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y));
+			p.frame = static_cast<unsigned int>(Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y));
 
 			for (j = 0; j < 9; j++)
-				p.noise[j] = C_Random::range(0, 256);
+				p.noise[j] = Random::range(0, 256);
 
 			if (p.TTL > mMaxTTL)
 				mMaxTTL = p.TTL;
@@ -94,7 +94,7 @@ namespace Columbus
 		return mParticleEffect;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setCameraPos(C_Vector3 aC)
+	void C_ParticleEmitter::setCameraPos(Vector3 aC)
 	{
 		mCameraPos = aC;
 	}
@@ -121,9 +121,9 @@ namespace Columbus
 		//copyActive();
 
 		float transformation = static_cast<float>(mParticleEffect->getTransformation());
-		C_Vector3 constForce = mParticleEffect->getConstantForce();
-		C_Vector3 startEmitterPos = mParticleEffect->getPos();
-		C_Vector4 color = mParticleEffect->getMaterial()->getColor();
+		Vector3 constForce = mParticleEffect->getConstantForce();
+		Vector3 startEmitterPos = mParticleEffect->getPos();
+		Vector4 color = mParticleEffect->getMaterial()->getColor();
 		bool gradienting = static_cast<bool>(mParticleEffect->getGradienting());
 
 		float rate = mParticleEffect->getEmitRate();
@@ -136,8 +136,8 @@ namespace Columbus
 
 		float a = mLife;
 		float percent;
-		C_Vector4 up, down;
-		C_Vector3 noise;
+		Vector4 up, down;
+		Vector3 noise;
 		float noiseStrength = mParticleEffect->getNoiseStrength();
 
 		size_t counter = 0;
@@ -164,10 +164,10 @@ namespace Columbus
 			mTimer -= fireT;
 
 			Particle.age = mTimer;
-			Particle.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
-			Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
-			Particle.frame = static_cast<unsigned int>(C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y));
+			Particle.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+			Particle.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+			Particle.rotationSpeed = Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+			Particle.frame = static_cast<unsigned int>(Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y));
 
 			mActiveParticles.push_back(Particle);
 			mParticles.erase(mParticles.begin() + counter);
@@ -224,10 +224,10 @@ namespace Columbus
 
 			if (Particle.active == true && prevActive == false)
 			{
-				Particle.TTL = C_Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-				Particle.velocity = C_Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
-				Particle.rotationSpeed = C_Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
-				Particle.frame = C_Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
+				Particle.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
+				Particle.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
+				Particle.rotationSpeed = Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
+				Particle.frame = Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
 			}
 
 			if (Particle.active == true && Particle.age > 0)
@@ -308,10 +308,10 @@ namespace Columbus
 		if (mParticleEffect == nullptr) return;
 		if (mParticleEffect->getMaterial() == nullptr) return;
 
-		C_Vector4 matcol = mParticleEffect->getMaterial()->getColor();
-		C_Vector3 matamb = mParticleEffect->getMaterial()->getAmbient();
-		C_Vector3 matdif = mParticleEffect->getMaterial()->getDiffuse();
-		C_Vector3 matspc = mParticleEffect->getMaterial()->getSpecular();
+		Vector4 matcol = mParticleEffect->getMaterial()->getColor();
+		Vector3 matamb = mParticleEffect->getMaterial()->getAmbient();
+		Vector3 matdif = mParticleEffect->getMaterial()->getDiffuse();
+		Vector3 matspc = mParticleEffect->getMaterial()->getSpecular();
 
 		float const MaterialUnif[15] =
 		{
@@ -379,14 +379,14 @@ namespace Columbus
 	{
 		if (mParticleEffect == nullptr) return;
 
-		C_Vector3 pos = mParticleEffect->getPos();
+		Vector3 pos = mParticleEffect->getPos();
 
 		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
 
 		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
 		{
-			C_Vector3 q = a->getPos();
-			C_Vector3 w = b->getPos();
+			Vector3 q = a->getPos();
+			Vector3 w = b->getPos();
 
 			return q.length(pos) < w.length(pos);
 		};
@@ -401,7 +401,7 @@ namespace Columbus
 
 		C_EnableDepthMaskOpenGL();
 
-		//C_Shader::unbind();
+		//Shader::unbind();
 		//C_Texture::unbind();
 		glUseProgram(0);
 		glBindTexture(GL_TEXTURE_2D, 0);

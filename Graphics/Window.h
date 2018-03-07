@@ -16,14 +16,14 @@
 namespace Columbus
 {
 
-	enum E_WINDOW_FLAGS
+	enum WindowFlags
 	{
 		E_WINDOW_FLAG_RESIZABLE,
 		E_WINDOW_FLAG_FULLSCREEN,
 		E_WINDOW_FLAG_FULLSCREEN_DESKTOP
 	};
 
-	class C_Window
+	class Window
 	{
 		private:
 			bool mVSync = true;
@@ -38,19 +38,19 @@ namespace Columbus
 
 			std::string mTitle;
 
-			C_Vector2 mSize = C_Vector2(640, 480);
+			Vector2 mSize = Vector2(640, 480);
 		public:
-			C_Window(const C_Vector2 aSize, const std::string aTitle, const int aFlags);
+			Window(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags);
 
 			void update();
-			void clear(const C_Vector4 aColor);
+			void clear(const Vector4 aColor);
 			void display();
 
 			void setVSync(const bool aVSync);
 			bool getVSync() const;
 
-			void setSize(const C_Vector2 aSize);
-			C_Vector2 getSize() const;
+			void setSize(const Vector2 aSize);
+			Vector2 getSize() const;
 			float getAspect() const;
 			float getRedrawTime() const;
 			unsigned int getFPS() const;
@@ -61,7 +61,7 @@ namespace Columbus
 			bool isShown() const;
 			bool isMinimised() const;
 
-			~C_Window();
+			~Window();
 	};
 
 }

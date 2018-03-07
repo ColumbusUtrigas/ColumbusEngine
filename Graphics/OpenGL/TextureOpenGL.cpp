@@ -5,18 +5,18 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_TextureOpenGL::C_TextureOpenGL()
+	TextureOpenGL::TextureOpenGL()
 	{
 		glGenTextures(1, &mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_TextureOpenGL::C_TextureOpenGL(std::string aPath, bool aSmooth)
+	TextureOpenGL::TextureOpenGL(std::string aPath, bool aSmooth)
 	{
 		glGenTextures(1, &mID);
 		load(aPath, aSmooth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_TextureOpenGL::C_TextureOpenGL(const char* aData, const int aW, const int aH, bool aSmooth)
+	TextureOpenGL::TextureOpenGL(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
 		glGenTextures(1, &mID);
 		load(aData, aW, aH, aSmooth);
@@ -24,7 +24,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::load(std::string aPath, bool aSmooth)
+	void TextureOpenGL::load(std::string aPath, bool aSmooth)
 	{
 		mImage.load(aPath);
 
@@ -67,11 +67,11 @@ namespace Columbus
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		C_Log::success("Texture loaded: " + aPath);
+		Log::success("Texture loaded: " + aPath);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::load(const char* aData, const int aW, const int aH, bool aSmooth)
+	void TextureOpenGL::load(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
 		//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glBindTexture(GL_TEXTURE_2D, mID);
@@ -104,7 +104,7 @@ namespace Columbus
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
+	void TextureOpenGL::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
 	{
 		glBindTexture(GL_TEXTURE_2D, mID);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -135,9 +135,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::setConfig(C_TextureConfig aConfig)
+	void TextureOpenGL::setConfig(TextureConfig aConfig)
 	{
-		C_TextureConfig conf = mConfig;
+		TextureConfig conf = mConfig;
 
 		mConfig = aConfig;
 
@@ -145,7 +145,7 @@ namespace Columbus
 		if (aConfig.anisotropy != conf.anisotropy) setAnisotropy(aConfig.anisotropy);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::setSmooth(const bool aSmooth)
+	void TextureOpenGL::setSmooth(const bool aSmooth)
 	{
 		if (mConfig.smooth != aSmooth)
 		{
@@ -164,7 +164,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::setAnisotropy(const unsigned int aAnisotropy)
+	void TextureOpenGL::setAnisotropy(const unsigned int aAnisotropy)
 	{
 		if (mConfig.anisotropy != aAnisotropy)
 		{
@@ -177,25 +177,25 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::bind()
+	void TextureOpenGL::bind()
 	{
 		if(mID != 0) glBindTexture(GL_TEXTURE_2D, mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::unbind()
+	void TextureOpenGL::unbind()
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::sampler2D(int a)
+	void TextureOpenGL::sampler2D(int a)
 	{
 		glActiveTexture(GL_TEXTURE0 + a);
 		bind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_TextureOpenGL::generateMipmap()
+	void TextureOpenGL::generateMipmap()
 	{
 		bind();
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -204,19 +204,19 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	std::string C_TextureOpenGL::getType()
+	std::string TextureOpenGL::getType()
 	{
 		return "OpenGL Texture";
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	unsigned int C_TextureOpenGL::getID() const
+	unsigned int TextureOpenGL::getID() const
 	{
 		return mID;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_TextureOpenGL::~C_TextureOpenGL()
+	TextureOpenGL::~TextureOpenGL()
 	{
 		glDeleteTextures(1, &mID);
 	}

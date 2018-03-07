@@ -25,22 +25,22 @@
 namespace Columbus
 {
 
-	class C_Matrix4;
-	typedef C_Matrix4 mat4;
+	class Matrix4;
+	typedef Matrix4 mat4;
 
-	class C_Matrix4
+	class Matrix4
 	{
 	private:
 		float mat[16];
 	public:
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4()
+		Matrix4()
 		{
 			for (int i = 0; i < 16; i++)
 				mat[i] = 0.0;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4(const float aDiagonal)
+		Matrix4(const float aDiagonal)
 		{
 			for (int i = 0; i < 16; i++)
 				mat[i] = 0.0;
@@ -51,7 +51,7 @@ namespace Columbus
 			mat[3 + 3 * 4] = static_cast<float>(aDiagonal);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4(const glm::mat4 aMat)
+		Matrix4(const glm::mat4 aMat)
 		{
 			fromGLM(aMat);
 		}
@@ -59,7 +59,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Set matrix row
-		void setRow(const unsigned int index, const C_Vector4 aRow)
+		void setRow(const unsigned int index, const Vector4 aRow)
 		{
 			COLUMBUS_ASSERT(index < 4);
 			mat[index + 0 * 4] = aRow.x;
@@ -69,7 +69,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Set matrix column
-		void setColumn(const unsigned int index, const C_Vector4 aColumnn)
+		void setColumn(const unsigned int index, const Vector4 aColumnn)
 		{
 			COLUMBUS_ASSERT(index < 4);
 			mat[0 + index * 4] = aColumnn.x;
@@ -95,7 +95,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Transpose matrix
-		C_Matrix4& transpose()
+		Matrix4& transpose()
 		{
 			std::swap(mat[1], mat[4]);
 			std::swap(mat[2], mat[8]);
@@ -108,7 +108,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Invert matrix
-		C_Matrix4& invert()
+		Matrix4& invert()
 		{
 			float tmp;
 			tmp = mat[1];  mat[1] = mat[4];  mat[4] = tmp;
@@ -128,7 +128,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Multiply matrix
-		C_Matrix4& multiply(const C_Matrix4 aOther)
+		Matrix4& multiply(const Matrix4 aOther)
 		{
 			for (int row = 0; row < 4; row++)
 			{
@@ -148,7 +148,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Operator =
-		C_Matrix4& operator=(C_Matrix4 aOther)
+		Matrix4& operator=(Matrix4 aOther)
 		{
 			for (int i = 0; i < 16; i++)
 				mat[i] = aOther.mat[i];
@@ -157,13 +157,13 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *
-		friend C_Matrix4& operator*(C_Matrix4 aLeft, const C_Matrix4 aRight)
+		friend Matrix4& operator*(Matrix4 aLeft, const Matrix4 aRight)
 		{
 			return aLeft.multiply(aRight);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Operator *=
-		C_Matrix4& operator*=(const C_Matrix4 aOther)
+		Matrix4& operator*=(const Matrix4 aOther)
 		{
 			return multiply(aOther);
 		}
@@ -171,14 +171,14 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Create identity matrix
-		C_Matrix4 identity()
+		Matrix4 identity()
 		{
-			*this = C_Matrix4(1.0);
+			*this = Matrix4(1.0);
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Create orthographics matrix
-		C_Matrix4 orthographic(const float aLeft, const float aRight,
+		Matrix4 orthographic(const float aLeft, const float aRight,
 			const float aBottom, const float aTop, const float aNear, const float aFar)
 		{
 
@@ -194,7 +194,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Create perspective matrix
-		C_Matrix4 perspective(const float aFOV, const float aAspect,
+		Matrix4 perspective(const float aFOV, const float aAspect,
 			const float aNear, const float aFar)
 		{
 			for (int i = 0; i < 16; i++)
@@ -226,7 +226,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Create view matrix
-		C_Matrix4 lookAt(C_Vector3 aPos, C_Vector3 aRef, C_Vector3 aUp)
+		Matrix4 lookAt(Vector3 aPos, Vector3 aRef, Vector3 aUp)
 		{
 			/*vec3 f((aRef - aPos).normalize());
 			vec3 s(vec3::cross(aUp, f).normalize());
@@ -246,12 +246,12 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4 translate(C_Vector3 aTranslate)
+		Matrix4 translate(Vector3 aTranslate)
 		{
 			return translate(aTranslate.x, aTranslate.y, aTranslate.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4 translate(const float x, const float y, const float z)
+		Matrix4 translate(const float x, const float y, const float z)
 		{
 			mat[0] += mat[3] * x;   mat[4] += mat[7] * x;   mat[8] += mat[11] * x;   mat[12] += mat[15] * x;
 			mat[1] += mat[3] * y;   mat[5] += mat[7] * y;   mat[9] += mat[11] * y;   mat[13] += mat[15] * y;
@@ -260,12 +260,12 @@ namespace Columbus
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4 rotate(C_Vector3 aAxis, const float aAngle)
+		Matrix4 rotate(Vector3 aAxis, const float aAngle)
 		{
 			return rotate(aAxis.x, aAxis.y, aAxis.z, aAngle);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4 rotate(const float x, const float y, const float z, const float angle)
+		Matrix4 rotate(const float x, const float y, const float z, const float angle)
 		{
 			float c = cosf(Radians(angle));
 			float s = sinf(Radians(angle));
@@ -300,12 +300,12 @@ namespace Columbus
 			return *this;
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4 scale(C_Vector3 aScale)
+		Matrix4 scale(Vector3 aScale)
 		{
 			return scale(aScale.x, aScale.y, aScale.z);
 		}
 		////////////////////////////////////////////////////////////////////////////
-		C_Matrix4 scale(const float x, const float y, const float z)
+		Matrix4 scale(const float x, const float y, const float z)
 		{
 			mat[0] *= x;   mat[4] *= x;   mat[8] *= x;   mat[12] *= x;
 			mat[1] *= y;   mat[5] *= y;   mat[9] *= y;   mat[13] *= y;
@@ -317,7 +317,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////////
 		//Destructor
-		~C_Matrix4() {}
+		~Matrix4() {}
 	};
 
 }

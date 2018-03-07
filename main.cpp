@@ -5,15 +5,15 @@ using namespace Columbus;
 
 int main(int argc, char** argv)
 {
-	C_SDLWindowConfig config;
+	SDLWindowConfig config;
 	config.Resizable = true;
-	C_SDLWindow window(config);
-	C_EventSystem event;
+
+	SDLWindow window(config);
+	EventSystem event;
 	event.addWindow(&window);
-	GUI::C_IO io;
-	C_Input input;
+	
+	Input input;
 	input.setWindow(&window);
-	input.setIO(&io);
 
 	C_Camera camera;
 	camera.setPos(vec3(10, 10, 0));
@@ -21,11 +21,11 @@ int main(int argc, char** argv)
 
 	float i = 0;
 
-	gDevice = new C_DeviceOpenGL();
+	gDevice = new DeviceOpenGL();
 
 	C_Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
-	C_Timer timer;
+	Timer timer;
 
 	int FPS = 0;
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 	bool cursor = false;
 
-	C_Scene scene;
+	Scene scene;
 
 	scene.load("Data/1.scene");
 
@@ -67,22 +67,22 @@ int main(int argc, char** argv)
 		if (input.getKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_UP))
-			camera.addRot(C_Vector3(-125 * RedrawTime, 0, 0));
+			camera.addRot(Vector3(-125 * RedrawTime, 0, 0));
 		if (input.getKey(SDL_SCANCODE_DOWN))
-			camera.addRot(C_Vector3(125 * RedrawTime, 0, 0));
+			camera.addRot(Vector3(125 * RedrawTime, 0, 0));
 		if (input.getKey(SDL_SCANCODE_LEFT))
-			camera.addRot(C_Vector3(0, 125 * RedrawTime, 0));
+			camera.addRot(Vector3(0, 125 * RedrawTime, 0));
 		if (input.getKey(SDL_SCANCODE_RIGHT))
-			camera.addRot(C_Vector3(0, -125 * RedrawTime, 0));
+			camera.addRot(Vector3(0, -125 * RedrawTime, 0));
 
 		if (input.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(-camera.up() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_SPACE))
 			camera.addPos(camera.up() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_Q))
-			camera.addRot(C_Vector3(0, 0, 125 * RedrawTime));
+			camera.addRot(Vector3(0, 0, 125 * RedrawTime));
 		if (input.getKey(SDL_SCANCODE_E))
-			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
+			camera.addRot(Vector3(0, 0, -125 * RedrawTime));
 
 		if (input.getKeyDown(SDL_SCANCODE_ESCAPE))
 		{
@@ -92,12 +92,12 @@ int main(int argc, char** argv)
 
 		if (!cursor)
 		{
-			C_Vector2 deltaMouse = input.getMouseMovement();
-			camera.addRot(C_Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
+			Vector2 deltaMouse = input.getMouseMovement();
+			camera.addRot(Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
 			input.setMousePos(window.getSize() * 0.5);
 		}
 
-		camera.setRot(C_Vector3::clamp(camera.getRot(), C_Vector3(-89.9, -360, 0.0), C_Vector3(89.9, 360, 0.0)));
+		camera.setRot(Vector3::clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
 		camera.update();
 
 		scene.setContextSize(window.getSize());
