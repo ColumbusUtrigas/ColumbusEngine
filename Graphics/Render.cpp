@@ -13,8 +13,8 @@
 namespace Columbus
 {
 
-	C_Shader* gMeshWhiteShader = nullptr;
-	C_Shader* gParticleWhiteShader = nullptr;
+	Shader* gMeshWhiteShader = nullptr;
+	Shader* gParticleWhiteShader = nullptr;
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
@@ -46,7 +46,7 @@ namespace Columbus
 		glColorMask(1, 1, 1, 1);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Render::renderDepthPrepass(C_GameObject* aGameObject)
+	void C_Render::renderDepthPrepass(GameObject* aGameObject)
 	{
 		if (aGameObject == nullptr) return;
 		if (aGameObject->hasComponent("MeshRenderer") == false &&
@@ -54,32 +54,32 @@ namespace Columbus
 
 		if (aGameObject->hasComponent("MeshRenderer"))
 			if (gMeshWhiteShader == nullptr)
-				gMeshWhiteShader = new C_Shader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
+				gMeshWhiteShader = new Shader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
 
 		if (aGameObject->hasComponent("ParticleSystem"))
 			if (gParticleWhiteShader == nullptr)
-				gParticleWhiteShader = new C_Shader("Data/Shaders/particle.vert", "Data/Shaders/White.frag");
+				gParticleWhiteShader = new Shader("Data/Shaders/particle.vert", "Data/Shaders/White.frag");
 
 		if (aGameObject->hasComponent("MeshRenderer"))
 		{
-			C_Shader* shaderPtr = static_cast<C_MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->getShader();
-			static_cast<C_MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(gMeshWhiteShader);
+			Shader* shaderPtr = static_cast<MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->getShader();
+			static_cast<MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(gMeshWhiteShader);
 			aGameObject->render();
-			static_cast<C_MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(shaderPtr);
+			static_cast<MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(shaderPtr);
 			return;
 		}
 
 		if (aGameObject->hasComponent("ParticleSystem"))
 		{
-			C_Shader* shaderPtr = static_cast<C_ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->getShader();
-			static_cast<C_ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(gParticleWhiteShader);
+			Shader* shaderPtr = static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->getShader();
+			static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(gParticleWhiteShader);
 			aGameObject->render();
-			static_cast<C_ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(shaderPtr);
+			static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(shaderPtr);
 			return;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Render::render(C_GameObject* aGameObject)
+	void C_Render::render(GameObject* aGameObject)
 	{
 		if (aGameObject == nullptr) return;
 

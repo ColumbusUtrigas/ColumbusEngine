@@ -6,7 +6,7 @@
 namespace Columbus
 {
 
-	class C_Filesystem
+	class Filesystem
 	{
 	public:
 		static std::string getCurrent();

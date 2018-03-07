@@ -13,7 +13,7 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_MeshRenderer::C_MeshRenderer(C_Mesh* aMesh) :
+	MeshRenderer::MeshRenderer(Mesh* aMesh) :
 		mMesh(aMesh)
 	{
 		
@@ -21,56 +21,56 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_MeshRenderer::onCreate()
+	bool MeshRenderer::onCreate()
 	{
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_MeshRenderer::onUpdate()
+	bool MeshRenderer::onUpdate()
 	{
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::update(const float aTimeTick)
+	void MeshRenderer::update(const float aTimeTick)
 	{
 		if (mMesh != nullptr)
 			mMesh->setCamera(mCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::render(C_Transform& aTransform)
+	void MeshRenderer::render(Transform& aTransform)
 	{
 		if (mMesh != nullptr)
 			mMesh->render(aTransform);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	std::string C_MeshRenderer::getType()
+	std::string MeshRenderer::getType()
 	{
 		return "MeshRenderer";
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::setLights(std::vector<C_Light*> aLights)
+	void MeshRenderer::setLights(std::vector<C_Light*> aLights)
 	{
 		mMesh->setLights(aLights);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::setCamera(const C_Camera aCamera)
+	void MeshRenderer::setCamera(const C_Camera aCamera)
 	{
 		mCamera = static_cast<C_Camera>(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Shader* C_MeshRenderer::getShader() const
+	Shader* MeshRenderer::getShader() const
 	{
 		if (mMesh == nullptr) return nullptr;
 		return mMesh->mMat.getShader();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::setShader(C_Shader* aShader)
+	void MeshRenderer::setShader(Shader* aShader)
 	{
 		if (mMesh == nullptr) return;
 		mMesh->mMat.setShader(aShader);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshRenderer::setReflection(const C_Cubemap* aCubemap)
+	void MeshRenderer::setReflection(const Cubemap* aCubemap)
 	{
 		if (mMesh == nullptr) return;
 		mMesh->mMat.setReflection(aCubemap);
@@ -78,7 +78,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_MeshRenderer::~C_MeshRenderer()
+	MeshRenderer::~MeshRenderer()
 	{
 
 	}

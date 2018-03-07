@@ -13,17 +13,17 @@
 namespace Columbus
 {
 
-	C_MeshOpenGL::C_MeshOpenGL()
+	MeshOpenGL::MeshOpenGL()
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_MeshOpenGL::C_MeshOpenGL(std::vector<C_Vertex> aVert)
+	MeshOpenGL::MeshOpenGL(std::vector<Vertex> aVert)
 	{
 		setVertices(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_MeshOpenGL::C_MeshOpenGL(std::vector<C_Vertex> aVert, C_Material aMaterial)
+	MeshOpenGL::MeshOpenGL(std::vector<Vertex> aVert, C_Material aMaterial)
 	{
 		mMat = aMaterial;
 		setVertices(aVert);
@@ -31,7 +31,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setVertices(std::vector<C_Vertex> aVert)
+	void MeshOpenGL::setVertices(std::vector<Vertex> aVert)
 	{
 		glGenBuffers(1, &mVBuf);
 
@@ -103,7 +103,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::render(C_Transform aTransform)
+	void MeshOpenGL::render(Transform aTransform)
 	{
 		if (mMat.getShader() == nullptr) return;
 
@@ -131,10 +131,10 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderTextures()
+	void MeshOpenGL::setShaderTextures()
 	{
-		C_Texture* textures[3] = {mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap()};
-		C_Cubemap* cubemap = mMat.getReflection();
+		Texture* textures[3] = {mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap()};
+		Cubemap* cubemap = mMat.getReflection();
 		std::string unifs[3] = {"uMaterial.diffuseMap", "uMaterial.specularMap", "uMaterial.normalMap"};
 		unsigned int indices[3] = {0, 1, 3};
 
@@ -167,7 +167,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderMatrices(C_Transform aTransform)
+	void MeshOpenGL::setShaderMatrices(Transform aTransform)
 	{
 		mPos = aTransform.getPos();
 		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
@@ -176,12 +176,12 @@ namespace Columbus
 		mMat.getShader()->setUniformMatrix("uNormal", aTransform.getNormalMatrix().elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderMaterial()
+	void MeshOpenGL::setShaderMaterial()
 	{
-		C_Vector4 matcol = mMat.getColor();
-		C_Vector3 matamb = mMat.getAmbient();
-		C_Vector3 matdif = mMat.getDiffuse();
-		C_Vector3 matspc = mMat.getSpecular();
+		Vector4 matcol = mMat.getColor();
+		Vector3 matamb = mMat.getAmbient();
+		Vector3 matdif = mMat.getDiffuse();
+		Vector3 matspc = mMat.getSpecular();
 
 		mMaterialUnif[0] = matcol.x;
 		mMaterialUnif[1] = matcol.y;
@@ -202,7 +202,7 @@ namespace Columbus
 		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderLightAndCamera()
+	void MeshOpenGL::setShaderLightAndCamera()
 	{
 		calculateLights();
 
@@ -210,7 +210,7 @@ namespace Columbus
 		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::calculateLights()
+	void MeshOpenGL::calculateLights()
 	{
 		sortLights();
 		size_t i, j, offset;
@@ -253,16 +253,16 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::sortLights()
+	void MeshOpenGL::sortLights()
 	{
-		C_Vector3 pos = mPos;
+		Vector3 pos = mPos;
 
 		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
 
 		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
 		{
-			C_Vector3 q = a->getPos();
-			C_Vector3 w = b->getPos();
+			Vector3 q = a->getPos();
+			Vector3 w = b->getPos();
 
 			return q.length(pos) < w.length(pos);
 		};
@@ -272,7 +272,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_MeshOpenGL::~C_MeshOpenGL()
+	MeshOpenGL::~MeshOpenGL()
 	{
 		
 	}

@@ -17,8 +17,8 @@ namespace Columbus
 	C_PostEffect::C_PostEffect()
 	{
 		mFB = new C_FramebufferOpenGL();
-		mTB = new C_TextureOpenGL(NULL, 640, 480, true);
-		mDepth = new C_TextureOpenGL();
+		mTB = new TextureOpenGL(NULL, 640, 480, true);
+		mDepth = new TextureOpenGL();
 		mDepth->loadDepth(NULL, 640, 480, true);
 
 		mFB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, mTB);
@@ -27,7 +27,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::setShader(C_Shader* aShader)
+	void C_PostEffect::setShader(Shader* aShader)
 	{
 		mShader = aShader;
 	}
@@ -64,7 +64,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::bind(C_Vector4 aClear, C_Vector2 aWindowSize)
+	void C_PostEffect::bind(Vector4 aClear, Vector2 aWindowSize)
 	{
 		mTB->load(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
 		mDepth->loadDepth(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);

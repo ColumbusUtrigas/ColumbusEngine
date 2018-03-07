@@ -36,7 +36,7 @@ namespace Columbus
 		uint32_t important_colors; //Number of important colors;
 	} BMP_INFO;
 
-	static bool ReadHeader(BMP_HEADER* aHeader, C_File* aFile)
+	static bool ReadHeader(BMP_HEADER* aHeader, File* aFile)
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
@@ -49,7 +49,7 @@ namespace Columbus
 		return true;
 	}
 
-	static bool WriteHeader(BMP_HEADER aHeader, C_File* aFile)
+	static bool WriteHeader(BMP_HEADER aHeader, File* aFile)
 	{
 		if (aFile == nullptr) return false;
 
@@ -62,7 +62,7 @@ namespace Columbus
 		return true;
 	}
 
-	static bool ReadInfo(BMP_INFO* aInfo, C_File* aFile)
+	static bool ReadInfo(BMP_INFO* aInfo, File* aFile)
 	{
 		if (aInfo == nullptr || aFile == nullptr) return false;
 
@@ -85,7 +85,7 @@ namespace Columbus
 		return true;
 	}
 
-	static bool WriteInfo(BMP_INFO aInfo, C_File* aFile)
+	static bool WriteInfo(BMP_INFO aInfo, File* aFile)
 	{
 		if (aFile == nullptr) return false;
 
@@ -106,7 +106,7 @@ namespace Columbus
 
 	bool ImageIsBMP(std::string aFile)
 	{
-		C_File file(aFile, "rb");
+		File file(aFile, "rb");
 		if (!file.isOpened()) return false;
 
 		uint8_t magic[2];
@@ -119,7 +119,7 @@ namespace Columbus
 
 	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		C_File file(aFile, "rb");
+		File file(aFile, "rb");
 		if (!file.isOpened()) return nullptr;
 
 		BMP_HEADER header;
@@ -151,7 +151,7 @@ namespace Columbus
 	{
 		if (aData == nullptr) return false;
 
-		C_File file(aFile, "wb");
+		File file(aFile, "wb");
 
 		BMP_HEADER header;
 		BMP_INFO info;

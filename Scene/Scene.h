@@ -26,46 +26,46 @@
 namespace Columbus
 {
 
-	class C_Scene
+	class Scene
 	{
 	private:
-		std::map<unsigned int, C_GameObject*> mObjects;
+		std::map<unsigned int, GameObject*> mObjects;
 		std::vector<C_Light*> mLights;
-		std::map<int, C_Mesh*> mMeshes;
-		std::map<int, C_Texture*> mTextures;
-		std::map<int, C_Shader*> mShaders;
+		std::map<int, Mesh*> mMeshes;
+		std::map<int, Texture*> mTextures;
+		std::map<int, Shader*> mShaders;
 
 		C_Skybox* mSkybox = nullptr;
 		C_Camera* mCamera = nullptr;
 
 		C_PostEffect mNoneEffect;
-		C_Shader* mNoneShader = nullptr;
+		Shader* mNoneShader = nullptr;
 
-		C_Vector2 mContextSize = C_Vector2(640, 480);
+		Vector2 mContextSize = Vector2(640, 480);
 
 		void lightWorkflow();
 		void meshWorkflow();
 		void particlesWorkflow();
 
-		bool loadGameObject(Serializer::C_SerializerXML* aSerializer,
+		bool loadGameObject(Serializer::SerializerXML* aSerializer,
 			std::string aElement, unsigned int aID);
 	public:
-		C_Scene();
+		Scene();
 
 		bool load(std::string aFile);
 
-		void add(unsigned int aID, C_GameObject* aMesh);
+		void add(unsigned int aID, GameObject* aMesh);
 		void setSkybox(const C_Skybox* aSkybox);
 		void setCamera(const C_Camera* aCamera);
-		void setContextSize(const C_Vector2 aContextSize);
+		void setContextSize(const Vector2 aContextSize);
 
-		C_GameObject* getGameObject(const unsigned int aID) const;
-		C_GameObject* getGameObject(const std::string aName) const;
+		GameObject* getGameObject(const unsigned int aID) const;
+		GameObject* getGameObject(const std::string aName) const;
 
 		void update();
 		void render();
 
-		~C_Scene();
+		~Scene();
 	};
 
 }

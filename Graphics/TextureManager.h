@@ -17,27 +17,27 @@
 namespace Columbus
 {
 
-	class C_TextureManager
+	class TextureManager
 	{
 	private:
 		bool mSmooth = true;
 		bool mMipmaps = true;
 		unsigned int mAnisotropy = 8;
 
-		std::list<C_Texture*> mTextures;
+		std::list<Texture*> mTextures;
 
 		size_t mSize = 0;
 	public:
 		//Constructor
-		C_TextureManager();
+		TextureManager();
 		//Add texture
-		void add(C_Texture* aTexture);
+		void add(Texture* aTexture);
 		//Set texture config
-		void setConfig(C_TextureConfig aConfig);
+		void setConfig(TextureConfig aConfig);
 		//Get images size
 		size_t size();
 		//Destructor
-		~C_TextureManager();
+		~TextureManager();
 	};
 
 }

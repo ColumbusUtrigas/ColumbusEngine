@@ -50,8 +50,8 @@ namespace Columbus
 	struct C_PostEffectAttributeVector2
 	{
 		std::string name;
-		C_Vector2 value;
-		C_PostEffectAttributeVector2(std::string aName, C_Vector2 aValue) : name(aName), value(aValue) {}
+		Vector2 value;
+		C_PostEffectAttributeVector2(std::string aName, Vector2 aValue) : name(aName), value(aValue) {}
 	};
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -59,8 +59,8 @@ namespace Columbus
 	struct C_PostEffectAttributeVector3
 	{
 		std::string name;
-		C_Vector3 value;
-		C_PostEffectAttributeVector3(std::string aName, C_Vector3 aValue) : name(aName), value(aValue) {}
+		Vector3 value;
+		C_PostEffectAttributeVector3(std::string aName, Vector3 aValue) : name(aName), value(aValue) {}
 	};
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -68,8 +68,8 @@ namespace Columbus
 	struct C_PostEffectAttributeVector4
 	{
 		std::string name;
-		C_Vector4 value;
-		C_PostEffectAttributeVector4(std::string aName, C_Vector4 aValue) : name(aName), value(aValue) {}
+		Vector4 value;
+		C_PostEffectAttributeVector4(std::string aName, Vector4 aValue) : name(aName), value(aValue) {}
 	};
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -77,10 +77,10 @@ namespace Columbus
 	class C_PostEffect
 	{
 	private:
-		C_Shader* mShader = nullptr;
+		Shader* mShader = nullptr;
 		C_Framebuffer* mFB = nullptr;
-		C_Texture* mTB = nullptr;
-		C_Texture* mDepth = nullptr;
+		Texture* mTB = nullptr;
+		Texture* mDepth = nullptr;
 
 		std::vector<C_PostEffectAttributeInt> mAttribsInt;
 		std::vector<C_PostEffectAttributeFloat> mAttribsFloat;
@@ -90,7 +90,7 @@ namespace Columbus
 	public:
 		C_PostEffect();
 
-		void setShader(C_Shader* aShader);
+		void setShader(Shader* aShader);
 		void addAttrib(C_PostEffectAttributeInt aAttrib);
 		void addAttrib(C_PostEffectAttributeFloat aAttrib);
 		void addAttrib(C_PostEffectAttributeVector2 aAttrib);
@@ -98,7 +98,7 @@ namespace Columbus
 		void addAttrib(C_PostEffectAttributeVector4 aAttrib);
 		void clearAttribs();
 
-		void bind(C_Vector4 aClear, C_Vector2 aWindowSize);
+		void bind(Vector4 aClear, Vector2 aWindowSize);
 		void draw();
 		void unbind();
 

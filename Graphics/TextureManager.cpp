@@ -15,7 +15,7 @@ namespace Columbus
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_TextureManager::C_TextureManager() :
+	TextureManager::TextureManager() :
 		mSmooth(true),
 		mMipmaps(true),
 		mAnisotropy(8)
@@ -24,7 +24,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Add texture
-	void C_TextureManager::add(C_Texture* aTexture)
+	void TextureManager::add(Texture* aTexture)
 	{
 		mTextures.push_back(aTexture);
 
@@ -33,20 +33,20 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set texture config
-	void C_TextureManager::setConfig(C_TextureConfig aConfig)
+	void TextureManager::setConfig(TextureConfig aConfig)
 	{
 		for (auto i : mTextures)
 			i->setConfig(aConfig);
 	}
 	///////////////////////////////////////////////////////////////////////
 	//Get images size
-	size_t C_TextureManager::size()
+	size_t TextureManager::size()
 	{
 		return mSize;
 	}
 	///////////////////////////////////////////////////////////////////////
 	//Destructor
-	C_TextureManager::~C_TextureManager()
+	TextureManager::~TextureManager()
 	{
 
 	}

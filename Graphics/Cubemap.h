@@ -23,15 +23,15 @@
 namespace Columbus
 {
 
-	class C_Cubemap
+	class Cubemap
 	{
 	protected:
 		C_Image mBitmaps[6];
 		bool mInited = false;
 	public:
-		C_Cubemap();
-		C_Cubemap(std::array<std::string, 6> aPath);
-		C_Cubemap(std::string aPath);
+		Cubemap();
+		Cubemap(std::array<std::string, 6> aPath);
+		Cubemap(std::string aPath);
 		
 		virtual void bind() const;
 		virtual void samplerCube(int i) const;
@@ -41,7 +41,7 @@ namespace Columbus
 		virtual bool load(std::string aFile);
 		bool save(std::array<std::string, 6> aPath) const;
 		
-		~C_Cubemap();
+		~Cubemap();
 	};
 
 }

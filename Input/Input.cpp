@@ -13,7 +13,7 @@
 namespace Columbus
 {
 
-	C_Input::C_Input() :
+	Input::Input() :
 		mCurrentKeyboardState(nullptr),
 		mPreviousKeyboardState(nullptr),
 		mKeyboardStateTmp(nullptr),
@@ -29,7 +29,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::updateIO()
+	void Input::updateIO()
 	{
 		if (mIO == nullptr || mWindow == nullptr)
 			return;
@@ -42,27 +42,27 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::bindInput(const C_InputBind aBind)
+	void Input::bindInput(const InputBind aBind)
 	{
 		mBinds.push_back(std::move(aBind));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setWindow(const C_SDLWindow* aWindow)
+	void Input::setWindow(const SDLWindow* aWindow)
 	{
-		mWindow = const_cast<C_SDLWindow*>(aWindow);
+		mWindow = const_cast<SDLWindow*>(aWindow);
 	}
-	void C_Input::setIO(const GUI::C_IO* aIO)
+	void Input::setIO(const GUI::C_IO* aIO)
 	{
 		mIO = const_cast<GUI::C_IO*>(aIO);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::showMouseCursor(const bool aX)
+	void Input::showMouseCursor(const bool aX)
 	{
 		mMouseEnabled = static_cast<bool>(aX);
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setSystemCursor(const E_InputSystemCursor aID)
+	void Input::setSystemCursor(const E_InputSystemCursor aID)
 	{
 		SDL_SystemCursor id = SDL_SYSTEM_CURSOR_NO;
 
@@ -87,8 +87,8 @@ namespace Columbus
 		SDL_SetCursor(cursor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setColoredCursor(const void* aPixels, const unsigned int aW,
-			const unsigned int aH, const unsigned int aBPP, const C_Vector2 aHot)
+	void Input::setColoredCursor(const void* aPixels, const unsigned int aW,
+			const unsigned int aH, const unsigned int aBPP, const Vector2 aHot)
 	{
 		Uint32 rmask, gmask, bmask, amask;
 		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -109,7 +109,7 @@ namespace Columbus
 		SDL_SetCursor(cursor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setMousePos(const C_Vector2 aPos)
+	void Input::setMousePos(const Vector2 aPos)
 	{
 		if (mWindow == nullptr)
 			return;
@@ -121,14 +121,14 @@ namespace Columbus
 		mPreviousMousePosition = aPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::setMousePosGlobal(const C_Vector2 aPos)
+	void Input::setMousePosGlobal(const Vector2 aPos)
 	{
 		SDL_WarpMouseGlobal(static_cast<int>(aPos.x), static_cast<int>(aPos.y));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Input::update()
+	void Input::update()
 	{
 		SDL_PumpEvents();
 
@@ -151,15 +151,15 @@ namespace Columbus
 		{
 			switch (i.type)
 			{
-			case C_INPUT_BIND_KEY:
+			case E_INPUT_BIND_KEY:
 				if (getKey(i.key))
 					i.execute();
 				break;
-			case C_INPUT_BIND_KEY_DOWN:
+			case E_INPUT_BIND_KEY_DOWN:
 				if (getKeyDown(i.key))
 					i.execute();
 				break;
-			case C_INPUT_BIND_KEY_UP:
+			case E_INPUT_BIND_KEY_UP:
 				if (getKeyUp(i.key))
 					i.execute();
 				break;
@@ -169,14 +169,14 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector2 C_Input::getMousePosition()
+	Vector2 Input::getMousePosition()
 	{
 		return mCurrentMousePosition;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector2 C_Input::getMouseMovement()
+	Vector2 Input::getMouseMovement()
 	{
-		C_Vector2 mouseDelta;
+		Vector2 mouseDelta;
 		int preX = static_cast<int>(mPreviousMousePosition.x);
 		int preY = static_cast<int>(mPreviousMousePosition.y);
 		int curX = static_cast<int>(mCurrentMousePosition.x);
@@ -188,7 +188,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::getKey(const unsigned int aKey)
+	bool Input::getKey(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -197,7 +197,7 @@ namespace Columbus
 		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::getKeyDown(const unsigned int aKey)
+	bool Input::getKeyDown(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -206,7 +206,7 @@ namespace Columbus
 		return ((mPreviousKeyboardState[aKey] == 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_Input::getKeyUp(const unsigned int aKey)
+	bool Input::getKeyUp(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -217,7 +217,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_Input::~C_Input()
+	Input::~Input()
 	{
 
 	}

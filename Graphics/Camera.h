@@ -28,8 +28,8 @@
 namespace Columbus
 {
 
-	C_Matrix4 C_GetProjectionMatrix();
-	C_Matrix4 C_GetViewMatrix();
+	Matrix4 C_GetProjectionMatrix();
+	Matrix4 C_GetViewMatrix();
 	void C_SetPerspective(float aFOV, float aAspect, float aN, float aF);
 	void C_SetOrtho(float aL, float aR, float aB, float aT, float aN, float aF);
 
@@ -50,16 +50,16 @@ namespace Columbus
 		
 		void update();
 		
-		void setPos(const C_Vector3 aPos);
-		void addPos(const C_Vector3 aPos);
+		void setPos(const Vector3 aPos);
+		void addPos(const Vector3 aPos);
 		vec3 getPos() const;
 
-		void setRot(const C_Vector3 aRot);
-		void addRot(const C_Vector3 aRot);
+		void setRot(const Vector3 aRot);
+		void addRot(const Vector3 aRot);
 		vec3 getRot() const;
 
-		void setTarget(const C_Vector3 aTarget);
-		void addTarget(const C_Vector3 aTarget);
+		void setTarget(const Vector3 aTarget);
+		void addTarget(const Vector3 aTarget);
 		vec3 getTarget() const;
 		
 		vec3 direction() const;

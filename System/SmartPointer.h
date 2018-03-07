@@ -16,25 +16,25 @@ namespace Columbus
 {
 
 	template <class T>
-	class C_SmartPtr
+	class SmartPtr
 	{
 	private:
 		T* mObj = nullptr;
 	public:
-		C_SmartPtr(const C_SmartPtr&) = delete;
+		SmartPtr(const SmartPtr&) = delete;
 
-		C_SmartPtr(T* aObj) :
+		SmartPtr(T* aObj) :
 			mObj(aObj)
 		{}
 
-		C_SmartPtr(C_SmartPtr&& aOther)
+		SmartPtr(SmartPtr&& aOther)
 		{
 			std::swap(mObj, aOther.mObj);
 		}
 
-		C_SmartPtr& operator=(const C_SmartPtr&) = delete;
+		SmartPtr& operator=(const SmartPtr&) = delete;
 
-		C_SmartPtr& operator=(C_SmartPtr&& aOther)
+		SmartPtr& operator=(SmartPtr&& aOther)
 		{
 			std::swap(mObj, aOther.mObj);
 			return *this;
@@ -60,7 +60,7 @@ namespace Columbus
 			return mObj != nullptr;
 		}
 
-		~C_SmartPtr()
+		~SmartPtr()
 		{
 			delete mObj;
 		}

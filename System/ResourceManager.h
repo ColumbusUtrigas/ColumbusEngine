@@ -16,17 +16,17 @@ namespace Columbus
 {
 
 	template <class T>
-	class C_ResourceManager
+	class ResourceManager
 	{
 	private:
-		std::map<unsigned int, C_SmartPtr<T>> mResources;
+		std::map<unsigned int, SmartPtr<T>> mResources;
 	public:
-		C_ResourceManager()
+		ResourceManager()
 		{}
 
 		void add(unsigned int aID, T* aResource)
 		{
-			mResources.insert(std::pair<unsigned int, C_SmartPtr<T>>(aID, aResource));
+			mResources.insert(std::pair<unsigned int, SmartPtr<T>>(aID, aResource));
 		}
 
 		T get(unsigned int aID)
@@ -50,7 +50,7 @@ namespace Columbus
 			mResources.clear();
 		}
 
-		~C_ResourceManager()
+		~ResourceManager()
 		{}
 	};
 

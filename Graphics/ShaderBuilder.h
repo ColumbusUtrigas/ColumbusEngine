@@ -20,18 +20,18 @@ namespace Columbus
 		E_SHADER_TYPE_FRAGMENT
 	};
 
-	class C_ShaderBuilder
+	class ShaderBuilder
 	{
 	public:
 		std::string shader;
 
-		C_ShaderBuilder();
-		C_ShaderBuilder(const std::string aShader, const int aType);
+		ShaderBuilder();
+		ShaderBuilder(const std::string aShader, const int aType);
 
 		bool build(const std::string aShader, const int aType);
 		std::string getShader() const;
 
-		~C_ShaderBuilder();
+		~ShaderBuilder();
 	};
 
 }

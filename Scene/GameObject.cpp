@@ -12,48 +12,48 @@
 namespace Columbus
 {
 
-	C_GameObject::C_GameObject()
+	GameObject::GameObject()
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::setName(const std::string aName)
+	void GameObject::setName(const std::string aName)
 	{
 		mName = static_cast<std::string>(aName);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	std::string C_GameObject::getName() const
+	std::string GameObject::getName() const
 	{
 		return mName;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::addChild(C_GameObject* aChild)
+	void GameObject::addChild(GameObject* aChild)
 	{
 		mChildren.push_back(aChild);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::addComponent(C_Component* aComponent)
+	void GameObject::addComponent(Component* aComponent)
 	{
 		mComponents.push_back(aComponent);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::setTransform(C_Transform aTransform)
+	void GameObject::setTransform(Transform aTransform)
 	{
-		Transform = aTransform;
+		transform = aTransform;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Transform C_GameObject::getTransform() const
+	Transform GameObject::getTransform() const
 	{
-		return Transform;
+		return transform;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::update()
+	void GameObject::update()
 	{
-		Transform.update();
+		transform.update();
 
 		for (auto Comp : mComponents)
 			Comp->update(static_cast<float>(mTimer.elapsed()));
@@ -62,10 +62,10 @@ namespace Columbus
 			Child->update();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::render()
+	void GameObject::render()
 	{
 		for (auto Comp : mComponents)
-			Comp->render(Transform);
+			Comp->render(transform);
 
 		for (auto Child : mChildren)
 			Child->render();
@@ -73,7 +73,7 @@ namespace Columbus
 		mTimer.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_GameObject::hasComponent(std::string aName)
+	bool GameObject::hasComponent(std::string aName)
 	{
 		for (auto Comp : mComponents)
 			if (Comp->getType() == aName)
@@ -82,7 +82,7 @@ namespace Columbus
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Component* C_GameObject::getComponent(std::string aName)
+	Component* GameObject::getComponent(std::string aName)
 	{
 		for (auto Comp : mComponents)
 			if (Comp->getType() == aName)
@@ -93,7 +93,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_GameObject::~C_GameObject()
+	GameObject::~GameObject()
 	{
 
 	}

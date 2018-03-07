@@ -26,20 +26,20 @@
 namespace Columbus
 {
 
-	struct C_ShaderAttribute
+	struct ShaderAttribute
 	{
 		std::string name;
 		int value;
 
-		C_ShaderAttribute(const std::string aName, const int aValue) :
+		ShaderAttribute(const std::string aName, const int aValue) :
 			name(aName), value(aValue) {}
 	};
 
-	class C_Shader
+	class Shader
 	{
 	protected:
-		C_ShaderBuilder mBuilder;
-		std::vector<C_ShaderAttribute> mAttributes;
+		ShaderBuilder mBuilder;
+		std::vector<ShaderAttribute> mAttributes;
 
 		std::string mVertShaderPath;
 		std::string mFragShaderPath;
@@ -50,8 +50,8 @@ namespace Columbus
 		bool mLoaded = false;
 		bool mCompiled = false;
 	public:
-		C_Shader();
-		C_Shader(std::string aVert, std::string aFrag);
+		Shader();
+		Shader(std::string aVert, std::string aFrag);
 
 		virtual bool load(std::string aVert, std::string aFrag);
 		virtual bool compile();
@@ -64,13 +64,13 @@ namespace Columbus
 		void addAttribute(std::string aName, const int aValue);
 		virtual void setUniform1i(std::string aName, const int aValue) const;
 		virtual void setUniform1f(std::string aName, const float aValue) const;
-		virtual void setUniform2f(std::string aName, const C_Vector2 aValue) const;
-		virtual void setUniform3f(std::string aName, const C_Vector3 aValue) const;
-		virtual void setUniform4f(std::string aName, const C_Vector4 aValue) const;
+		virtual void setUniform2f(std::string aName, const Vector2 aValue) const;
+		virtual void setUniform3f(std::string aName, const Vector3 aValue) const;
+		virtual void setUniform4f(std::string aName, const Vector4 aValue) const;
 		virtual void setUniformMatrix(std::string aName, const float* aValue) const;
 		virtual void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
 
-		~C_Shader();
+		~Shader();
 	};
 
 }

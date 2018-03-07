@@ -17,19 +17,19 @@
 namespace Columbus
 {
 
-	class C_File
+	class File
 	{
 	private:
-		struct C_FileData;
-		C_FileData* mData;
+		struct FileData;
+		FileData* mData;
 	public:
-		C_File();
-		C_File(C_File& aOther);
-		C_File(std::string aFile, std::string aModes);
+		File();
+		File(File& aOther);
+		File(std::string aFile, std::string aModes);
 
-		C_File& operator=(C_File& aOther);
-		C_File& operator<<(const char aChar);
-		C_File& operator<<(const std::string aString);
+		File& operator=(File& aOther);
+		File& operator<<(const char aChar);
+		File& operator<<(const std::string aString);
 
 		bool open(std::string aFile, std::string aModes);
 		bool close();
@@ -68,7 +68,7 @@ namespace Columbus
 		bool writeUint32(const uint32_t* aData);
 		bool writeInt32(const int32_t* aData);
 
-		~C_File();
+		~File();
 	};
 
 }

@@ -15,36 +15,36 @@
 namespace Columbus
 {
 
-	class C_Transform
+	class Transform
 	{
 	private:
-		C_Vector3 mPos;
-		C_Vector3 mRot;
-		C_Vector3 mScale = C_Vector3(1, 1, 1);
-		C_Matrix4 mMatrix;
-		C_Matrix4 mNormalMatrix;
+		Vector3 mPos;
+		Vector3 mRot;
+		Vector3 mScale = Vector3(1, 1, 1);
+		Matrix4 mMatrix;
+		Matrix4 mNormalMatrix;
 	public:
-		C_Transform();
+		Transform();
 
-		void setPos(C_Vector3 aPos);
-		void addPos(C_Vector3 aPos);
-		C_Vector3 getPos() const;
+		void setPos(Vector3 aPos);
+		void addPos(Vector3 aPos);
+		Vector3 getPos() const;
 
-		void setRot(C_Vector3 aRot);
-		void addRot(C_Vector3 aRot);
-		C_Vector3 getRot() const;
+		void setRot(Vector3 aRot);
+		void addRot(Vector3 aRot);
+		Vector3 getRot() const;
 
-		void setScale(C_Vector3 aScale);
-		void addScale(C_Vector3 aScale);
-		C_Vector3 getScale() const;
+		void setScale(Vector3 aScale);
+		void addScale(Vector3 aScale);
+		Vector3 getScale() const;
 
 		void update();
 
-		void setMatrix(C_Matrix4 aMatrix);
-		C_Matrix4 getMatrix() const;
-		C_Matrix4 getNormalMatrix() const;
+		void setMatrix(Matrix4 aMatrix);
+		Matrix4 getMatrix() const;
+		Matrix4 getNormalMatrix() const;
 
-		~C_Transform();
+		~Transform();
 	};
 
 }

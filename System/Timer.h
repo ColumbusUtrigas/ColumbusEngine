@@ -15,17 +15,17 @@
 namespace Columbus
 {
 
-	class C_Timer
+	class Timer
 	{
 	private:
 		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	public:
-		C_Timer();
+		Timer();
 		
 		void reset();
 		double elapsed();
 		
-		~C_Timer();
+		~Timer();
 	};
 
 }

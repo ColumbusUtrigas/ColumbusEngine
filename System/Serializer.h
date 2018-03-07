@@ -24,7 +24,7 @@ namespace Columbus
 	namespace Serializer
 	{
 
-		class C_SerializerXML
+		class SerializerXML
 		{
 		private:
 			C_XMLDoc mDoc;
@@ -51,8 +51,8 @@ namespace Columbus
 				C_XMLElement* elem;
 			};
 
-			C_SerializerXML();
-			C_SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode);
+			SerializerXML();
+			SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode);
 
 			Element* getElement(std::string aElement);
 			Element* getElement(Element* aElement, std::string aName);
@@ -62,9 +62,9 @@ namespace Columbus
 			bool getFloat(const Element* aElement, float* aValue);
 			bool getDouble(const Element* aElement, double* aValue);
 			bool getString(const Element* aElement, std::string* aValue);
-			bool getVector2(const Element* aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool getVector3(const Element* aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool getVector4(const Element* aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool getVector2(const Element* aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool getVector3(const Element* aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool getVector4(const Element* aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
 
 			bool write(std::string aFile, std::string aRoot);
 			bool setEmpty(std::string aElement);
@@ -79,12 +79,12 @@ namespace Columbus
 			bool setSubDouble(std::vector<std::string> aElement, double aValue);
 			bool setString(std::string aElement, std::string aValue);
 			bool setSubString(std::vector<std::string> aElement, std::string aValue);
-			bool setVector2(std::string aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs);
-			bool setSubVector2(std::vector<std::string> aElement, C_Vector2 aValue, C_AttribVector2XML aAttribs);
-			bool setVector3(std::string aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs);
-			bool setSubVector3(std::vector<std::string> aElement, C_Vector3 aValue, C_AttribVector3XML aAttribs);
-			bool setVector4(std::string aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs);
-			bool setSubVector4(std::vector<std::string> aElement, C_Vector4 aValue, C_AttribVector4XML aAttribs);
+			bool setVector2(std::string aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
+			bool setSubVector2(std::vector<std::string> aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
+			bool setVector3(std::string aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
+			bool setSubVector3(std::vector<std::string> aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
+			bool setVector4(std::string aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
+			bool setSubVector4(std::vector<std::string> aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
 			bool save();
 
 			bool read(std::string aFile, std::string aRoot);
@@ -98,14 +98,14 @@ namespace Columbus
 			bool getSubDouble(std::vector<std::string> aElement, double* aValue);
 			bool getString(std::string aElement, std::string* aValue);
 			bool getSubString(std::vector<std::string> aElement, std::string* aValue);
-			bool getVector2(std::string aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool getSubVector2(std::vector<std::string> aElement, C_Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool getVector3(std::string aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool getSubVector3(std::vector<std::string> aElement, C_Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool getVector4(std::string aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs);
-			bool getSubVector4(std::vector<std::string> aElement, C_Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool getVector2(std::string aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool getSubVector2(std::vector<std::string> aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool getVector3(std::string aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool getSubVector3(std::vector<std::string> aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool getVector4(std::string aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool getSubVector4(std::vector<std::string> aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
 
-			~C_SerializerXML();
+			~SerializerXML();
 		};
 
 		#define C_XML_NEXT_ELEMENT(a, b) \

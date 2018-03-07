@@ -37,9 +37,9 @@ namespace Columbus
 		//Constructor
 		C_Render();
 		static void enableDepthPrepass();
-		static void renderDepthPrepass(C_GameObject* aGameObject);
+		static void renderDepthPrepass(GameObject* aGameObject);
 		static void disableDepthPrepass();
-		static void render(C_GameObject* aGameObject);
+		static void render(GameObject* aGameObject);
 		//Destructor
 		~C_Render();
 	};

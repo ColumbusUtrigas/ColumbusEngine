@@ -8,30 +8,30 @@
 namespace Columbus
 {
 
-	class C_Device
+	class Device
 	{
 	public:
-		C_Device();
+		Device();
 
-		virtual C_Shader* createShader() const;
-		virtual C_Shader* createShader(std::string aVert, std::string aFrag) const;
+		virtual Shader* createShader() const;
+		virtual Shader* createShader(std::string aVert, std::string aFrag) const;
 
-		virtual C_Cubemap* createCubemap() const;
-		virtual C_Cubemap* createCubemap(std::string aPath) const;
-		virtual C_Cubemap* createCubemap(std::array<std::string, 6> aPath) const;
+		virtual Cubemap* createCubemap() const;
+		virtual Cubemap* createCubemap(std::string aPath) const;
+		virtual Cubemap* createCubemap(std::array<std::string, 6> aPath) const;
 
-		virtual C_Texture* createTexture() const;
-		virtual C_Texture* createTexture(std::string aPath, bool aSmooth = true) const;
-		virtual C_Texture* createTexture(const char* aData, const int aW, const int aH, bool aSmooth = true) const;
+		virtual Texture* createTexture() const;
+		virtual Texture* createTexture(std::string aPath, bool aSmooth = true) const;
+		virtual Texture* createTexture(const char* aData, const int aW, const int aH, bool aSmooth = true) const;
 
-		virtual C_Mesh* createMesh() const;
-		virtual C_Mesh* createMesh(std::vector<C_Vertex> aVert) const;
-		virtual C_Mesh* createMesh(std::vector<C_Vertex> aVert, C_Material aMat) const;
+		virtual Mesh* createMesh() const;
+		virtual Mesh* createMesh(std::vector<Vertex> aVert) const;
+		virtual Mesh* createMesh(std::vector<Vertex> aVert, C_Material aMat) const;
 
-		~C_Device();
+		~Device();
 	};
 
-	extern C_Device* gDevice;
+	extern Device* gDevice;
 
 }
 

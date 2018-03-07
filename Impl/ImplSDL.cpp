@@ -23,8 +23,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
-	C_SDLWindow::C_SDLWindow(C_SDLWindowConfig aConfig) :
+	SDLWindow::SDLWindow(SDLWindowConfig aConfig) :
 		mClosed(false),
 		mMouseFocus(false),
 		mShown(false),
@@ -49,8 +48,9 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Initialize window
-	void C_SDLWindow::initWindow(C_SDLWindowConfig aConfig)
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	void SDLWindow::initWindow(SDLWindowConfig aConfig)
 	{
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
@@ -67,8 +67,7 @@ namespace Columbus
 		mGLC = SDL_GL_CreateContext(mWindow);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Initialize OpenGL
-	void C_SDLWindow::initOpenGL()
+	void SDLWindow::initOpenGL()
 	{
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -97,24 +96,22 @@ namespace Columbus
 		C_EnableAlphaTestOpenGL();
 
 		if (glewInit() != GLEW_OK)
-			C_Log::fatal("Can't initialize GLEW");
+			Log::fatal("Can't initialize GLEW");
 		else
-			C_Log::initialization("GLEW initialized");
+			Log::initialization("GLEW initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//Initialize SDL
-	void C_SDLWindow::initSDL()
+	void SDLWindow::initSDL()
 	{
 		if (SDL_Init(SDL_INIT_EVERYTHING))
-			C_Log::fatal("Can't initialize SDL2");
+			Log::fatal("Can't initialize SDL2");
 		else
-			C_Log::initialization("SDL2 initialized");
+			Log::initialization("SDL2 initialized");
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Printing API versions int console
-	void C_SDLWindow::getVer()
+	void SDLWindow::getVer()
 	{
 		SDL_version cVer;
 		SDL_version lVer;
@@ -122,16 +119,15 @@ namespace Columbus
 		SDL_VERSION(&cVer);
 		SDL_GetVersion(&lVer);
 
-		C_Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
-		C_Log::initialization("SDL linked version: %d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		C_Log::initialization("OpenGL version: " + C_GetVersionOpenGL());
-		C_Log::initialization("OpenGL vendor: " + C_GetVendorOpenGL());
-		C_Log::initialization("OpenGL renderer: " + C_GetRendererOpenGL());
-		C_Log::initialization("GLSL version: " + C_GetGLSLVersionOpenGL() + "\n");
+		Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
+		Log::initialization("SDL linked version: %d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+		Log::initialization("OpenGL version: " + C_GetVersionOpenGL());
+		Log::initialization("OpenGL vendor: " + C_GetVendorOpenGL());
+		Log::initialization("OpenGL renderer: " + C_GetRendererOpenGL());
+		Log::initialization("GLSL version: " + C_GetGLSLVersionOpenGL() + "\n");
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Poll window events
-	void C_SDLWindow::pollEvent(SDL_Event& aEvent)
+	void SDLWindow::pollEvent(SDL_Event& aEvent)
 	{
 		mTmpEvent = aEvent;
 
@@ -171,8 +167,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Clear window
-	void C_SDLWindow::clear(float r, float g, float b, float a)
+	void SDLWindow::clear(float r, float g, float b, float a)
 	{
 		SDL_GL_MakeCurrent(mWindow, mGLC);
 		C_ClearColorOpenGL(r, g, b, a);
@@ -181,8 +176,7 @@ namespace Columbus
 		mDrawTime.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Display window
-	void C_SDLWindow::display()
+	void SDLWindow::display()
 	{
 		glFinish();
 		SDL_GL_SwapWindow(mWindow);
@@ -201,14 +195,12 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//Set vertical sync
-	void C_SDLWindow::setVerticalSync(bool aV)
+	void SDLWindow::setVerticalSync(bool aV)
 	{
 		SDL_GL_SetSwapInterval(aV ? 1 : 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Set FPS limit
-	void C_SDLWindow::setFPSLimit(unsigned aFPSLimit)
+	void SDLWindow::setFPSLimit(unsigned aFPSLimit)
 	{
 		mFPSLimit = aFPSLimit;
 		mTimeToDraw = 1.0f / (float)mFPSLimit;
@@ -216,34 +208,29 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//Return window size
-	void C_SDLWindow::getSize(int* aX, int* aY)
+	void SDLWindow::getSize(int* aX, int* aY)
 	{
 		SDL_GetWindowSize(mWindow, aX, aY);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return windpow size
-	C_Vector2 C_SDLWindow::getSize()
+	Vector2 SDLWindow::getSize()
 	{
 		int x, y;
 		SDL_GetWindowSize(mWindow, &x, &y);
-		return C_Vector2(static_cast<float>(x), static_cast<float>(y));
+		return Vector2(static_cast<float>(x), static_cast<float>(y));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//return window aspect
-	float C_SDLWindow::aspect()
+	float SDLWindow::aspect()
 	{
 		return (float)getSize().x / (float)getSize().y;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return SDL_Window handle
-	SDL_Window* C_SDLWindow::getHandle()
+	SDL_Window* SDLWindow::getHandle()
 	{
 		return mWindow;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse-button-press in window
-	bool C_SDLWindow::getMouseButton(int aButton)
+	bool SDLWindow::getMouseButton(int aButton)
 	{
 		//if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(aButton))
 		if(mMouseFocus && mKeyFocus)
@@ -252,63 +239,58 @@ namespace Columbus
 			return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return FPS limit
-	unsigned C_SDLWindow::getFPSLimit()
+	unsigned SDLWindow::getFPSLimit()
 	{
 		return mFPSLimit;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//return redraw time
-	float C_SDLWindow::getRedrawTime()
+	float SDLWindow::getRedrawTime()
 	{
 		return mRedrawTime / 1000;
 	}
 	/////////////////////////////////////////////////////////////////////////////
-	//Return FPS
-	int C_SDLWindow::getFPS()
+	int SDLWindow::getFPS()
 	{
 		return mFPS;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//Return window open
-	bool C_SDLWindow::isOpen()
+	bool SDLWindow::isOpen()
 	{
 		return !mClosed;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return key-focus in window
-	bool C_SDLWindow::isKeyFocus()
+	bool SDLWindow::isKeyFocus()
 	{
 		return mKeyFocus;
 	
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return mouse-focus in window
-	bool C_SDLWindow::isMouseFocus()
+	bool SDLWindow::isMouseFocus()
 	{
 		return mMouseFocus;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return window shown
-	bool C_SDLWindow::isShown()
+	bool SDLWindow::isShown()
 	{
 		return mShown;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//Return window minimized
-	bool C_SDLWindow::isMinimized()
+	bool SDLWindow::isMinimized()
 	{
 		return mMinimized;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
-	C_SDLWindow::~C_SDLWindow()
+	SDLWindow::~SDLWindow()
 	{
 
 	}
 
 }
+
+
+
+

@@ -61,7 +61,7 @@ namespace Columbus
 		uint8_t image_descriptor;
 	} TGA_HEADER;
 
-	static bool ReadHeader(TGA_HEADER* aHeader, C_File* aFile)
+	static bool ReadHeader(TGA_HEADER* aHeader, File* aFile)
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
@@ -81,7 +81,7 @@ namespace Columbus
 		return true;
 	}
 
-	static bool WriteHeader(TGA_HEADER aHeader, C_File* aFile)
+	static bool WriteHeader(TGA_HEADER aHeader, File* aFile)
 	{
 		if (aFile == nullptr) return false;
 
@@ -187,7 +187,7 @@ namespace Columbus
 
 	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
 	{
-		C_File file(aFile, "rb");
+		File file(aFile, "rb");
 		if (!file.isOpened()) return nullptr;
 
 		TGA_HEADER tga;
@@ -243,7 +243,7 @@ namespace Columbus
 	{
 		if (aData == nullptr) return false;
 
-		C_File file(aFile, "wb");
+		File file(aFile, "wb");
 		if (!file.isOpened()) return false;
 
 		uint16_t width = static_cast<uint16_t>(aWidth);

@@ -37,24 +37,24 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setColor(const C_Vector4 aColor)
+	void C_Material::setColor(const Vector4 aColor)
 	{
-		mColor = static_cast<C_Vector4>(aColor);
+		mColor = static_cast<Vector4>(aColor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setAmbient(const C_Vector3 aAmbient)
+	void C_Material::setAmbient(const Vector3 aAmbient)
 	{
-		mAmbient = static_cast<C_Vector3>(aAmbient);
+		mAmbient = static_cast<Vector3>(aAmbient);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setDiffuse(const C_Vector3 aDiffuse)
+	void C_Material::setDiffuse(const Vector3 aDiffuse)
 	{
-		mDiffuse = static_cast<C_Vector3>(aDiffuse);
+		mDiffuse = static_cast<Vector3>(aDiffuse);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setSpecular(const C_Vector3 aSpecular)
+	void C_Material::setSpecular(const Vector3 aSpecular)
 	{
-		mSpecular = static_cast<C_Vector3>(aSpecular);
+		mSpecular = static_cast<Vector3>(aSpecular);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Material::setShininess(const float aShininess)
@@ -62,29 +62,29 @@ namespace Columbus
 		mShininess = static_cast<float>(aShininess);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setTexture(const C_Texture* aTexture)
+	void C_Material::setTexture(const Texture* aTexture)
 	{
-		mTexture = const_cast<C_Texture*>(aTexture);
+		mTexture = const_cast<Texture*>(aTexture);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setSpecMap(const C_Texture* aSpecMap)
+	void C_Material::setSpecMap(const Texture* aSpecMap)
 	{
-		mSpecMap = const_cast<C_Texture*>(aSpecMap);
+		mSpecMap = const_cast<Texture*>(aSpecMap);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setNormMap(const C_Texture* aNormMap)
+	void C_Material::setNormMap(const Texture* aNormMap)
 	{
-		mNormMap = const_cast<C_Texture*>(aNormMap);
+		mNormMap = const_cast<Texture*>(aNormMap);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setShader(const C_Shader* aShader)
+	void C_Material::setShader(const Shader* aShader)
 	{
-		mShader = const_cast<C_Shader*>(aShader);
+		mShader = const_cast<Shader*>(aShader);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Material::setReflection(const C_Cubemap* aReflecction)
+	void C_Material::setReflection(const Cubemap* aReflecction)
 	{
-		mEnvReflection = const_cast<C_Cubemap*>(aReflecction);
+		mEnvReflection = const_cast<Cubemap*>(aReflecction);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Material::setReflectionPower(const float aPower)
@@ -104,22 +104,22 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector4 C_Material::getColor() const
+	Vector4 C_Material::getColor() const
 	{
 		return mColor;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Material::getAmbient() const
+	Vector3 C_Material::getAmbient() const
 	{
 		return mAmbient;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Material::getDiffuse() const
+	Vector3 C_Material::getDiffuse() const
 	{
 		return mDiffuse;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Material::getSpecular() const
+	Vector3 C_Material::getSpecular() const
 	{
 		return mSpecular;
 	}
@@ -129,27 +129,27 @@ namespace Columbus
 		return mShininess;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Texture* C_Material::getTexture() const
+	Texture* C_Material::getTexture() const
 	{
 		return mTexture;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Texture* C_Material::getSpecMap() const
+	Texture* C_Material::getSpecMap() const
 	{
 		return mSpecMap;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Texture* C_Material::getNormMap() const
+	Texture* C_Material::getNormMap() const
 	{
 		return mNormMap;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Shader* C_Material::getShader() const
+	Shader* C_Material::getShader() const
 	{
 		return mShader;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Cubemap* C_Material::getReflection() const
+	Cubemap* C_Material::getReflection() const
 	{
 		return mEnvReflection;
 	}
@@ -190,39 +190,39 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Material::saveToXML(std::string aFile) const
 	{
-		Serializer::C_SerializerXML serializer;
+		Serializer::SerializerXML serializer;
 
 		if (!serializer.write(aFile, "Material")) 
-		{ C_Log::error("Can't save Material: " + aFile); return false; }
+		{ Log::error("Can't save Material: " + aFile); return false; }
 
 		if (!serializer.setVector4("Color", mColor, {"R", "G", "B", "A"}))
-		{ C_Log::error("Can't save Material color: " + aFile); return false; }
+		{ Log::error("Can't save Material color: " + aFile); return false; }
 
 		if (!serializer.setVector3("Ambient", mAmbient, {"R", "G", "B"}))
-		{ C_Log::error("Can't save Material ambient: " + aFile); return false; }
+		{ Log::error("Can't save Material ambient: " + aFile); return false; }
 
 		if (!serializer.setVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
-		{ C_Log::error("Can't save Material diffuse: " + aFile); return false; }
+		{ Log::error("Can't save Material diffuse: " + aFile); return false; }
 
 		if (!serializer.setVector3("Specular", mSpecular, {"R", "G", "B"}))
-		{ C_Log::error("Can't save Material specular: " + aFile); return false; }
+		{ Log::error("Can't save Material specular: " + aFile); return false; }
 
 		if (!serializer.setFloat("Shininess", mShininess))
-		{ C_Log::error("Can't save Material shininess: " + aFile); return false; }
+		{ Log::error("Can't save Material shininess: " + aFile); return false; }
 
 		if (!serializer.setFloat("ReflectionPower", mReflectionPower))
-		{ C_Log::error("Can't save Material reflection power: " + aFile); return false; }
+		{ Log::error("Can't save Material reflection power: " + aFile); return false; }
 
 		if (!serializer.setBool("Discard", mDiscard))
-		{ C_Log::error("Can't save Material discard: " + aFile); return false; }
+		{ Log::error("Can't save Material discard: " + aFile); return false; }
 
 		if (!serializer.setBool("Lighting", mLighting))
-		{ C_Log::error("Can't save Material lighting: " + aFile); return false; }
+		{ Log::error("Can't save Material lighting: " + aFile); return false; }
 
 		if (!serializer.save())
-		{ C_Log::error("Can't save Material: " + aFile); return false; }
+		{ Log::error("Can't save Material: " + aFile); return false; }
 
-		C_Log::success("Material saved: " + aFile);
+		Log::success("Material saved: " + aFile);
 
 		return true;
 	}
@@ -244,48 +244,48 @@ namespace Columbus
 		
 		if (o.is_open() == false)
 		{
-			C_Log::error("Can't save Material: " + aFile);
+			Log::error("Can't save Material: " + aFile);
 			return false;
 		}
 
 		o << std::setw(4) << j << std::endl;
 		o.close();
 
-		C_Log::success("Material saved: " + aFile);
+		Log::success("Material saved: " + aFile);
 
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	bool C_Material::loadFromXML(std::string aFile)
 	{
-		Serializer::C_SerializerXML serializer;
+		Serializer::SerializerXML serializer;
 
 		if (!serializer.read(aFile, "Material"))
-		{ C_Log::error("Can't load Material: " + aFile); return false; }
+		{ Log::error("Can't load Material: " + aFile); return false; }
 
 		if (!serializer.getVector4("Color", &mColor, {"R", "G", "B", "A"}))
-		{ C_Log::error("Can't load Material color: " + aFile); return false; }
+		{ Log::error("Can't load Material color: " + aFile); return false; }
 
 		if (!serializer.getVector3("Ambient", &mAmbient, {"R", "G", "B"}))
-		{ C_Log::error("Can't load Material ambient: " + aFile); return false; }
+		{ Log::error("Can't load Material ambient: " + aFile); return false; }
 
 		if (!serializer.getVector3("Diffuse", &mDiffuse, {"R", "G", "B"}))
-		{ C_Log::error("Can't load Material diffuse: " + aFile); return false; }
+		{ Log::error("Can't load Material diffuse: " + aFile); return false; }
 
 		if (!serializer.getVector3("Specular", &mSpecular, {"R", "G", "B"}))
-		{ C_Log::error("Can't load Material specular: " + aFile); return false; }
+		{ Log::error("Can't load Material specular: " + aFile); return false; }
 
 		if (!serializer.getFloat("Shininess", &mShininess))
-		{ C_Log::error("Can't load Material shininess: " + aFile); return false; }
+		{ Log::error("Can't load Material shininess: " + aFile); return false; }
 
 		if (!serializer.getFloat("ReflectionPower", &mReflectionPower))
-		{ C_Log::error("Can't load Material reflection power: " + aFile); return false; }
+		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
 
 		if (!serializer.getBool("Discard", &mDiscard))
-		{ C_Log::error("Can't load Material discard: " + aFile); return false; }
+		{ Log::error("Can't load Material discard: " + aFile); return false; }
 
 		if (!serializer.getBool("Lighting", &mLighting))
-		{ C_Log::error("Can't load Material lighting: " + aFile); return false; }
+		{ Log::error("Can't load Material lighting: " + aFile); return false; }
 
 		std::string diffuseMapPath = "None";
 		std::string specularMapPath = "None";
@@ -304,7 +304,7 @@ namespace Columbus
 		if (normalMapPath != "None")
 			mNormMapID = std::atoi(normalMapPath.c_str());
 
-		C_Log::success("Material loaded: " + aFile);
+		Log::success("Material loaded: " + aFile);
 
 		return true;
 	}
@@ -314,7 +314,7 @@ namespace Columbus
 		std::ifstream i(aFile);
 		if (i.is_open() == false)
 		{
-			C_Log::error("Can't load Material: " + aFile);
+			Log::error("Can't load Material: " + aFile);
 			return false;
 		}
 		json j;
@@ -344,7 +344,7 @@ namespace Columbus
 
 		i.close();
 		
-		C_Log::success("Material loaded: " + aFile);
+		Log::success("Material loaded: " + aFile);
 
 		return true;
 	}

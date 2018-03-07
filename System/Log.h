@@ -19,7 +19,7 @@
 namespace Columbus
 {
 
-	class C_Log
+	class Log
 	{
 	public:
 		static void initialization(const char* aFmt, ...);
