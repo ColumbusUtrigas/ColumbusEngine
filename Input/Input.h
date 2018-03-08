@@ -11,7 +11,7 @@
 #pragma once
 
 #include <Math/Vector2.h>
-#include <Impl/ImplSDL.h>
+#include <Graphics/OpenGL/WindowOpenGLSDL.h>
 #include <GUI/IO.h>
 
 #include <SDL.h>
@@ -76,7 +76,7 @@ namespace Columbus
 
 		std::vector<InputBind> mBinds;
 
-		SDLWindow* mWindow = nullptr;
+		Window* mWindow = nullptr;
 		GUI::IO* mIO = nullptr;
 
 		void updateIO();
@@ -85,7 +85,7 @@ namespace Columbus
 
 		void bindInput(const InputBind aBind);
 
-		void setWindow(const SDLWindow* aWindow);
+		void setWindow(const Window* aWindow);
 		void setIO(const GUI::IO* aIO);
 
 		void showMouseCursor(const bool aX);

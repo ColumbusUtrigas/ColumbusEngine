@@ -31,12 +31,11 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Input::updateIO()
 	{
-		if (mIO == nullptr || mWindow == nullptr)
-			return;
+		if (mIO == nullptr || mWindow == nullptr) return;
 
 		mIO->mouse.coords = mCurrentMousePosition;
 		mIO->mouse.enabled = mMouseEnabled;
-		mIO->screen.aspect = mWindow->aspect();
+		mIO->screen.aspect = mWindow->getAspect();
 		mIO->screen.size = mWindow->getSize();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -47,9 +46,13 @@ namespace Columbus
 		mBinds.push_back(std::move(aBind));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void Input::setWindow(const SDLWindow* aWindow)
+	void Input::setWindow(const Window* aWindow)
 	{
-		mWindow = const_cast<SDLWindow*>(aWindow);
+		if (aWindow == nullptr) return;
+		if (aWindow->getType() == "WindowOpenGLSDL")
+		{
+			mWindow = const_cast<Window*>(aWindow);
+		}
 	}
 	void Input::setIO(const GUI::IO* aIO)
 	{
@@ -111,12 +114,11 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Input::setMousePos(const Vector2 aPos)
 	{
-		if (mWindow == nullptr)
-			return;
+		if (mWindow == nullptr) return;
 
-		int x = static_cast<int>(aPos.x);
-		int y = static_cast<int>(aPos.y);
-		SDL_WarpMouseInWindow(mWindow->getHandle(), x, y);
+		int x = TruncToInt(aPos.x);
+		int y = TruncToInt(aPos.y);
+		SDL_WarpMouseInWindow((static_cast<WindowOpenGLSDL*>(mWindow))->getHandle(), x, y);
 		mCurrentMousePosition = aPos;
 		mPreviousMousePosition = aPos;
 	}
