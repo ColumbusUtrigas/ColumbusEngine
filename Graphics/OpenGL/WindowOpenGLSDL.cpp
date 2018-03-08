@@ -155,6 +155,7 @@ namespace Columbus
 	void WindowOpenGLSDL::display()
 	{
 		SDL_GL_SwapWindow(mWindow);
+		glFinish();
 		mRedrawTime = TruncToFloat(mRedrawTimer.elapsed());
 		mRedrawTimer.reset();
 		mFrames++;
