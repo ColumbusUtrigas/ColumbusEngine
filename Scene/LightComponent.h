@@ -9,9 +9,9 @@ namespace Columbus
 	class LightComponent : public Component
 	{
 	private:
-		C_Light* mLight = nullptr;
+		Light* mLight = nullptr;
 	public:
-		LightComponent(C_Light* aLight);
+		LightComponent(Light* aLight);
 
 		bool onCreate() override;
 		bool onUpdate() override;
@@ -20,7 +20,7 @@ namespace Columbus
 		void render(Transform& aTransform) override;
 		//This component methods
 		std::string getType() override;
-		C_Light* getLight() const;
+		Light* getLight() const;
 
 		~LightComponent();
 	};

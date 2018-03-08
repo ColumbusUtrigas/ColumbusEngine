@@ -71,7 +71,7 @@ namespace Columbus
 		return new MeshOpenGL(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Mesh* DeviceOpenGL::createMesh(std::vector<Vertex> aVert, C_Material aMat) const
+	Mesh* DeviceOpenGL::createMesh(std::vector<Vertex> aVert, Material aMat) const
 	{
 		return new MeshOpenGL(aVert, aMat);
 	}

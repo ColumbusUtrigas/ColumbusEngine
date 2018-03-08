@@ -7,7 +7,7 @@ namespace Columbus
 	namespace GUI
 	{
 
-		void C_Button::update()
+		void Button::update()
 		{
 			mState = 0;
 
@@ -21,7 +21,7 @@ namespace Columbus
 					mState = 1;
 		}
 
-		void C_Button::draw()
+		void Button::draw()
 		{
 			Vector2 pos = mPos / mIO.screen.size;
 			Vector2 size = mSize / mIO.screen.size * 2;

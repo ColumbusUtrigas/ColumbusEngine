@@ -20,7 +20,7 @@
 namespace Columbus
 {
 
-	class C_Skybox
+	class Skybox
 	{
 	private:
 		C_Buffer* mBuf = nullptr;
@@ -73,15 +73,15 @@ namespace Columbus
 			1.0f, -1.0f,  1.0f
 		};
 	public:
-		C_Skybox();
-		C_Skybox(Cubemap* aCubemap);
+		Skybox();
+		Skybox(Cubemap* aCubemap);
 		
 		void draw();
 
 		void setCubemap(const Cubemap* aCubemap);
 		Cubemap* getCubemap() const;
 		
-		~C_Skybox();
+		~Skybox();
 	};
 
 }

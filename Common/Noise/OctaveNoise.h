@@ -5,10 +5,10 @@
 namespace Columbus
 {
 
-	class C_OctaveNoise
+	class OctaveNoise
 	{
 	private:
-		C_PerlinNoise* m_perlinSource = nullptr;
+		PerlinNoise* m_perlinSource = nullptr;
 
 		unsigned int m_octaves = 8;
 		float m_persistence = 0.5;
@@ -16,14 +16,14 @@ namespace Columbus
 		float m_baseFrequency = 1.0;
 		float m_baseAmplitude = 1.0;
 	public:
-		C_OctaveNoise() :
+		OctaveNoise() :
 			m_octaves(1),
 			m_lacunarity(2.0),
 			m_persistence(0.5),
 			m_baseFrequency(0.1),
 			m_baseAmplitude(1.0)
 		{
-			m_perlinSource = new C_PerlinNoise();
+			m_perlinSource = new PerlinNoise();
 		}
 
 		float noise(float sample_x, float sample_y, float sample_z)
@@ -70,7 +70,7 @@ namespace Columbus
 			m_baseAmplitude = a;
 		}
 
-		~C_OctaveNoise()
+		~OctaveNoise()
 		{
 			delete m_perlinSource;
 		}

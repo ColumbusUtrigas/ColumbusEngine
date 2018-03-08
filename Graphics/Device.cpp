@@ -69,7 +69,7 @@ namespace Columbus
 		return new Mesh(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Mesh* Device::createMesh(std::vector<Vertex> aVert, C_Material aMat) const
+	Mesh* Device::createMesh(std::vector<Vertex> aVert, Material aMat) const
 	{
 		return new Mesh(aVert, aMat);
 	}

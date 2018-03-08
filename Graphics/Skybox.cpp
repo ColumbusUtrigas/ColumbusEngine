@@ -15,7 +15,7 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_Skybox::C_Skybox() :
+	Skybox::Skybox() :
 		mBuf(nullptr),
 		mCubemap(nullptr),
 		mShader(nullptr)
@@ -25,7 +25,7 @@ namespace Columbus
 		mShader->compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Skybox::C_Skybox(Cubemap* aCubemap) :
+	Skybox::Skybox(Cubemap* aCubemap) :
 		mBuf(nullptr),
 		mCubemap(aCubemap),
 		mShader(nullptr)
@@ -37,7 +37,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Skybox::draw()
+	void Skybox::draw()
 	{
 		if (mShader != nullptr && mCubemap != nullptr)
 		{
@@ -57,12 +57,12 @@ namespace Columbus
 
 			mShader->bind();
 
-			Matrix4 view = C_GetViewMatrix();
+			Matrix4 view = CameraGetViewMatrix();
 			view.setRow(3, Vector4(0, 0, 0, 1));
 			view.setColumn(3, Vector4(0, 0, 0, 1));
 
 			mShader->setUniformMatrix("uView", view.elements());
-			mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+			mShader->setUniformMatrix("uProjection", CameraGetProjectionMatrix().elements());
 
 			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
 			mShader->setUniform1i("uSkybox", 0);
@@ -81,19 +81,19 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_Skybox::setCubemap(const Cubemap* aCubemap)
+	void Skybox::setCubemap(const Cubemap* aCubemap)
 	{
 		mCubemap = const_cast<Cubemap*>(aCubemap);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Cubemap* C_Skybox::getCubemap() const
+	Cubemap* Skybox::getCubemap() const
 	{
 		return mCubemap;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_Skybox::~C_Skybox()
+	Skybox::~Skybox()
 	{
 		delete mShader;
 		delete mBuf;

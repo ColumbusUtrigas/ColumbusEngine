@@ -14,7 +14,7 @@
 namespace Columbus
 {
 
-	enum E_SHADER_TYPE
+	enum ShaderType
 	{
 		E_SHADER_TYPE_VERTEX,
 		E_SHADER_TYPE_FRAGMENT
@@ -26,9 +26,9 @@ namespace Columbus
 		std::string shader;
 
 		ShaderBuilder();
-		ShaderBuilder(const std::string aShader, const int aType);
+		ShaderBuilder(const std::string aShader, const ShaderType aType);
 
-		bool build(const std::string aShader, const int aType);
+		bool build(const std::string aShader, const ShaderType aType);
 		std::string getShader() const;
 
 		~ShaderBuilder();

@@ -51,9 +51,9 @@ namespace Columbus
 	{
 		mWindow = const_cast<SDLWindow*>(aWindow);
 	}
-	void Input::setIO(const GUI::C_IO* aIO)
+	void Input::setIO(const GUI::IO* aIO)
 	{
-		mIO = const_cast<GUI::C_IO*>(aIO);
+		mIO = const_cast<GUI::IO*>(aIO);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Input::showMouseCursor(const bool aX)
@@ -62,7 +62,7 @@ namespace Columbus
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void Input::setSystemCursor(const E_InputSystemCursor aID)
+	void Input::setSystemCursor(const InputSystemCursor aID)
 	{
 		SDL_SystemCursor id = SDL_SYSTEM_CURSOR_NO;
 

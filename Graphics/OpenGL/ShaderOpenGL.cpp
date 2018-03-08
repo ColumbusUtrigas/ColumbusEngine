@@ -94,14 +94,24 @@ namespace Columbus
 		else
 		{
 			File vert(aVert, "rt");
+
 			if (!vert.isOpened())
 			{
 				Log::error("Shader not loaded: " + aVert); return false;
 			}
+
+			char* vertFile = (char*)calloc(1, vert.getSize());
+			if (!vertFile)
+			{
+				Log::error("Shader not loaded: " + aVert); return false;	
+			}
+
+			vert.readBytes(vertFile, vert.getSize());
 			vert.close();
 
-			mBuilder.build(C_ReadFile(aVert.c_str()), E_SHADER_TYPE_VERTEX);
+			mBuilder.build(vertFile, E_SHADER_TYPE_VERTEX);
 			vertSource = mBuilder.getShader();
+			delete[] vertFile;
 		}
 		//Fragment shader loading
 		if (aFrag == "STANDART_SKY_FRAGMENT")
@@ -116,10 +126,18 @@ namespace Columbus
 			{
 				Log::error("Shader not loaded: " + aFrag); return false;
 			}
+			char* fragFile = (char*)calloc(1, frag.getSize());
+			if (!fragFile)
+			{
+				Log::error("Shader not loaded: " + aFrag); return false;	
+			}
+
+			frag.readBytes(fragFile, frag.getSize());
 			frag.close();
 
-			mBuilder.build(C_ReadFile(aFrag.c_str()), E_SHADER_TYPE_FRAGMENT);
+			mBuilder.build(fragFile, E_SHADER_TYPE_FRAGMENT);
 			fragSource = mBuilder.getShader();
+			delete[] fragFile;
 		}
 
 		if (vertSource.empty())

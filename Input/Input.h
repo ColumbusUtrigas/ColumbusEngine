@@ -22,14 +22,14 @@
 namespace Columbus
 {
 
-	enum E_InputBindType
+	enum InputBindType
 	{
 		E_INPUT_BIND_KEY,
 		E_INPUT_BIND_KEY_DOWN,
 		E_INPUT_BIND_KEY_UP,
 	};
 
-	enum E_InputSystemCursor
+	enum InputSystemCursor
 	{
 		E_INPUT_SYSTEM_CURSOR_ARROW,
 		E_INPUT_SYSTEM_CURSOR_IBEAM,
@@ -47,11 +47,11 @@ namespace Columbus
 
 	struct InputBind
 	{
-		E_InputBindType type;
+		InputBindType type;
 		unsigned int key;
 		std::function<void()> func;
 
-		InputBind(E_InputBindType aType, unsigned int aKey, std::function<void()> aFunc) :
+		InputBind(InputBindType aType, unsigned int aKey, std::function<void()> aFunc) :
 			type(aType), key(aKey), func(aFunc) {}
 
 		void execute()
@@ -77,7 +77,7 @@ namespace Columbus
 		std::vector<InputBind> mBinds;
 
 		SDLWindow* mWindow = nullptr;
-		GUI::C_IO* mIO = nullptr;
+		GUI::IO* mIO = nullptr;
 
 		void updateIO();
 	public:
@@ -86,10 +86,10 @@ namespace Columbus
 		void bindInput(const InputBind aBind);
 
 		void setWindow(const SDLWindow* aWindow);
-		void setIO(const GUI::C_IO* aIO);
+		void setIO(const GUI::IO* aIO);
 
 		void showMouseCursor(const bool aX);
-		void setSystemCursor(const E_InputSystemCursor aID);
+		void setSystemCursor(const InputSystemCursor aID);
 		void setColoredCursor(const void* aPixels, const unsigned int aWidth,
 			const unsigned int aHeight, const unsigned int aBPP, const Vector2 aHot);
 		void setMousePos(const Vector2 aPos);

@@ -113,10 +113,13 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	size_t File::getSize() const
 	{
-		size_t offset = tell();
-		seekEnd(0);
-		size_t size = tell();
-		seekSet(offset);
+		if (!mData->file) return 0;
+
+		size_t offset = ftell(mData->file);
+		fseek(mData->file, 0, SEEK_END);
+		size_t size = ftell(mData->file);
+		fseek(mData->file, offset, SEEK_SET);
+
 		return size;
 	}
 	//////////////////////////////////////////////////////////////////////////////

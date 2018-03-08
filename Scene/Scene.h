@@ -30,15 +30,15 @@ namespace Columbus
 	{
 	private:
 		std::map<unsigned int, GameObject*> mObjects;
-		std::vector<C_Light*> mLights;
+		std::vector<Light*> mLights;
 		std::map<int, Mesh*> mMeshes;
 		std::map<int, Texture*> mTextures;
 		std::map<int, Shader*> mShaders;
 
-		C_Skybox* mSkybox = nullptr;
-		C_Camera* mCamera = nullptr;
+		Skybox* mSkybox = nullptr;
+		Camera* mCamera = nullptr;
 
-		C_PostEffect mNoneEffect;
+		PostEffect mNoneEffect;
 		Shader* mNoneShader = nullptr;
 
 		Vector2 mContextSize = Vector2(640, 480);
@@ -55,8 +55,8 @@ namespace Columbus
 		bool load(std::string aFile);
 
 		void add(unsigned int aID, GameObject* aMesh);
-		void setSkybox(const C_Skybox* aSkybox);
-		void setCamera(const C_Camera* aCamera);
+		void setSkybox(const Skybox* aSkybox);
+		void setCamera(const Camera* aCamera);
 		void setContextSize(const Vector2 aContextSize);
 
 		GameObject* getGameObject(const unsigned int aID) const;

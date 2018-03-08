@@ -43,10 +43,10 @@ namespace Columbus
 		E_PARTICLE_SUB_UV_MODE_RANDOM
 	};
 
-	class C_ParticleEffect
+	class ParticleEffect
 	{
 	private:
-		C_Material* mMaterial = nullptr;
+		Material* mMaterial = nullptr;
 
 		int mParticlesCount = 5;
 
@@ -95,11 +95,11 @@ namespace Columbus
 		float mSubUVCycles = 1.0;
 		int mSubUVMode = E_PARTICLE_SUB_UV_MODE_LINEAR;
 	public:
-		C_ParticleEffect();
-		C_ParticleEffect(std::string aFile);
-		C_ParticleEffect(std::string aFile, C_Material* aMaterial);
+		ParticleEffect();
+		ParticleEffect(std::string aFile);
+		ParticleEffect(std::string aFile, Material* aMaterial);
 
-		void setMaterial(const C_Material* aMaterial);
+		void setMaterial(const Material* aMaterial);
 		void setParticlesCount(const int aParticlesCount);
 		void setVisible(const bool aVisible);
 		void setScaleOverLifetime(const bool aA);
@@ -142,7 +142,7 @@ namespace Columbus
 		void setSubUVCycles(const float aSubUVCycles);
 
 
-		C_Material* getMaterial() const;
+		Material* getMaterial() const;
 		int getParticlesCount() const;
 		bool getVisible() const;
 		bool getScaleOverLifetime() const;
@@ -189,7 +189,7 @@ namespace Columbus
 		bool loadFromJSON(std::string aFile);
 		bool load(std::string aFile);
 
-		~C_ParticleEffect();
+		~ParticleEffect();
 	};
 
 }

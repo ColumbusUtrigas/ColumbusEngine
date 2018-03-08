@@ -26,7 +26,7 @@ namespace Columbus
 	class Cubemap
 	{
 	protected:
-		C_Image mBitmaps[6];
+		Image mBitmaps[6];
 		bool mInited = false;
 	public:
 		Cubemap();

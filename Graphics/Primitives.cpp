@@ -15,7 +15,7 @@ namespace Columbus
 {
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate plane
-	std::vector<Vertex> C_PrimitivePlane(Vector3 aSize)
+	std::vector<Vertex> PrimitivePlane(Vector3 aSize)
 	{
 		float verts[18] =
 		{
@@ -61,7 +61,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate box
-	std::vector<Vertex> C_PrimitiveBox(Vector3 aSize)
+	std::vector<Vertex> PrimitiveBox(Vector3 aSize)
 	{
 		vec3 v[8] = 
 		{
@@ -156,7 +156,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate sphere
-	std::vector<Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors)
+	std::vector<Vertex> PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors)
 	{
 		const double PI = 3.141592653589793238462643383279502884197;
 
@@ -221,7 +221,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate cone
-	std::vector<Vertex> c_PrimitiveCone(const float aBase, const float aHeight, const size_t aSlices, const size_t aStacks)
+	std::vector<Vertex> PrimitiveCone(const float aBase, const float aHeight, const size_t aSlices, const size_t aStacks)
 	{
 		std::vector<Vertex> verts;
 
@@ -229,7 +229,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate torus
-	std::vector<Vertex> C_PrimitiveTorus(const float aInner, const float aOuter, const size_t aSides, const size_t aRings)
+	std::vector<Vertex> PrimitiveTorus(const float aInner, const float aOuter, const size_t aSides, const size_t aRings)
 	{
 		std::vector<Vertex> verts;
 
@@ -237,7 +237,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate cylinder
-	std::vector<Vertex> C_PrimitiveCylinder(const float aRadius, const float aHeight, const size_t aSlices, const size_t aStacks)
+	std::vector<Vertex> PrimitiveCylinder(const float aRadius, const float aHeight, const size_t aSlices, const size_t aStacks)
 	{
 		std::vector<Vertex> verts;
 

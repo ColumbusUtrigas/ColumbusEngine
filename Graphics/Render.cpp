@@ -7,8 +7,8 @@
 *                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #include <Graphics/Render.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -54,11 +54,11 @@ namespace Columbus
 
 		if (aGameObject->hasComponent("MeshRenderer"))
 			if (gMeshWhiteShader == nullptr)
-				gMeshWhiteShader = new Shader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
+				gMeshWhiteShader = gDevice->createShader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
 
 		if (aGameObject->hasComponent("ParticleSystem"))
 			if (gParticleWhiteShader == nullptr)
-				gParticleWhiteShader = new Shader("Data/Shaders/particle.vert", "Data/Shaders/White.frag");
+				gParticleWhiteShader = gDevice->createShader("Data/Shaders/particle.vert", "Data/Shaders/White.frag");
 
 		if (aGameObject->hasComponent("MeshRenderer"))
 		{

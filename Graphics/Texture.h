@@ -32,7 +32,7 @@ namespace Columbus
 	class Texture
 	{
 	protected:
-		C_Image mImage;
+		Image mImage;
 
 		//unsigned int mID = 0;
 

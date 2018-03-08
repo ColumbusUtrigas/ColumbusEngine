@@ -28,12 +28,12 @@
 namespace Columbus
 {
 
-	Matrix4 C_GetProjectionMatrix();
-	Matrix4 C_GetViewMatrix();
-	void C_SetPerspective(float aFOV, float aAspect, float aN, float aF);
-	void C_SetOrtho(float aL, float aR, float aB, float aT, float aN, float aF);
+	Matrix4 CameraGetProjectionMatrix();
+	Matrix4 CameraGetViewMatrix();
+	void CameraSetPerspective(float aFOV, float aAspect, float aN, float aF);
+	void CameraSetOrtho(float aL, float aR, float aB, float aT, float aN, float aF);
 
-	class C_Camera
+	class Camera
 	{
 	private:
 		vec3 mPos = vec3(0, 0, 5);
@@ -46,7 +46,7 @@ namespace Columbus
 		bool rotMode = false;
 		bool preTargeted = false;
 	public:
-		C_Camera();
+		Camera();
 		
 		void update();
 		
@@ -66,7 +66,7 @@ namespace Columbus
 		vec3 right() const;
 		vec3 up() const;
 		
-		~C_Camera();
+		~Camera();
 	};
 
 }

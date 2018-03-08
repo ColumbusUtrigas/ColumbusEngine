@@ -14,8 +14,8 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEmitter::C_ParticleEmitter(const C_ParticleEffect* aParticleEffect) :
-		mParticleEffect(const_cast<C_ParticleEffect*>(aParticleEffect)),
+	ParticleEmitter::ParticleEmitter(const ParticleEffect* aParticleEffect) :
+		mParticleEffect(const_cast<ParticleEffect*>(aParticleEffect)),
 		mLife(0.0),
 		mMaxTTL(0.0)
 	{
@@ -24,14 +24,14 @@ namespace Columbus
 		setParticleEffect(aParticleEffect);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setParticleEffect(const C_ParticleEffect* aParticleEffect)
+	void ParticleEmitter::setParticleEffect(const ParticleEffect* aParticleEffect)
 	{
 		delete mBuf;
 		delete mTBuf;
 		delete mPBuf;
 		delete mLBuf;
 
-		mParticleEffect = const_cast<C_ParticleEffect*>(aParticleEffect);
+		mParticleEffect = const_cast<ParticleEffect*>(aParticleEffect);
 
 		size_t i, j;
 		float radius = mParticleEffect->getParticleShapeRadius();
@@ -46,7 +46,7 @@ namespace Columbus
 
 		for (i = 0; i < static_cast<size_t>(mParticleEffect->getParticlesCount()); i++)
 		{
-			C_Particle p;
+			Particle p;
 			p.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
 			p.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
 			p.startPos = mParticleEffect->getPos();
@@ -89,19 +89,19 @@ namespace Columbus
 		mLBuf = new C_Buffer();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEffect* C_ParticleEmitter::getParticleEffect() const
+	ParticleEffect* ParticleEmitter::getParticleEffect() const
 	{
 		return mParticleEffect;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setCameraPos(Vector3 aC)
+	void ParticleEmitter::setCameraPos(Vector3 aC)
 	{
 		mCameraPos = aC;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::sort()
+	void ParticleEmitter::sort()
 	{
-		auto func = [](const C_Particle &a, const C_Particle &b) -> bool
+		auto func = [](const Particle &a, const Particle &b) -> bool
 		{
 			return a.cameraDistance > b.cameraDistance;
 		};
@@ -109,12 +109,12 @@ namespace Columbus
 		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setLights(std::vector<C_Light*> aLights)
+	void ParticleEmitter::setLights(std::vector<Light*> aLights)
 	{
 		mLights = aLights;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::update(const float aTimeTick)
+	void ParticleEmitter::update(const float aTimeTick)
 	{
 		using namespace std;
 		
@@ -209,7 +209,7 @@ namespace Columbus
 			e = min(Particle.TTL, fireT) * counter;
 			Particle.age = fmod(e + a, spawnT);
 
-			//if (transformation == C_PARTICLE_TRANSFORMATION_LOCAL)
+			//if (transformation == Particle_TRANSFORMATION_LOCAL)
 				Particle.startEmitterPos = startEmitterPos;
 			//else
 				//if (Particle.age <= aTimeTick)
@@ -255,7 +255,7 @@ namespace Columbus
 		mLife += aTimeTick;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setBuffers()
+	void ParticleEmitter::setBuffers()
 	{
 		mBuf->bind();
 		C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
@@ -274,7 +274,7 @@ namespace Columbus
 		C_OpenStreamOpenGL(4);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setUniforms()
+	void ParticleEmitter::setUniforms()
 	{
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSize", mParticleEffect->getParticleSize());
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uStartSize", mParticleEffect->getStartSize());
@@ -285,8 +285,8 @@ namespace Columbus
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", static_cast<float>(mParticleEffect->getSubUVMode()));
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", static_cast<float>(mParticleEffect->getSubUVCycles()));
 
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", CameraGetViewMatrix().elements());
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", CameraGetProjectionMatrix().elements());
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
@@ -303,7 +303,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setShaderMaterial()
+	void ParticleEmitter::setShaderMaterial()
 	{
 		if (mParticleEffect == nullptr) return;
 		if (mParticleEffect->getMaterial() == nullptr) return;
@@ -326,13 +326,13 @@ namespace Columbus
 		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::setShaderLightAndCamera()
+	void ParticleEmitter::setShaderLightAndCamera()
 	{
 		calculateLights();
 		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::calculateLights()
+	void ParticleEmitter::calculateLights()
 	{
 		sortLights();
 		size_t i, j, offset;
@@ -375,7 +375,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::sortLights()
+	void ParticleEmitter::sortLights()
 	{
 		if (mParticleEffect == nullptr) return;
 
@@ -383,7 +383,7 @@ namespace Columbus
 
 		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
 
-		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
+		auto func = [pos](const Light* a, const Light* b) mutable -> bool
 		{
 			Vector3 q = a->getPos();
 			Vector3 w = b->getPos();
@@ -394,7 +394,7 @@ namespace Columbus
 		std::sort(mLights.begin(), mLights.end(), func);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::unbindAll()
+	void ParticleEmitter::unbindAll()
 	{
 		if (mParticleEffect->getAdditive())
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
@@ -414,7 +414,7 @@ namespace Columbus
 		C_CloseStreamOpenGL(4);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEmitter::draw()
+	void ParticleEmitter::draw()
 	{
 		if (mParticleEffect == nullptr) return;
 		if (mParticleEffect->getMaterial()->getShader() == nullptr) return;
@@ -509,7 +509,7 @@ namespace Columbus
 		unbindAll();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEmitter::~C_ParticleEmitter()
+	ParticleEmitter::~ParticleEmitter()
 	{
 		mParticles.clear();
 		mActiveParticles.clear();

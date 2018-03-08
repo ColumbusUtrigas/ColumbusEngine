@@ -89,7 +89,7 @@ namespace Columbus
 		Vector3 position;
 		Vector3 rotation;
 		Vector3 scale;
-		C_Material* material = new C_Material();
+		Material* material = new Material();
 		Mesh* mesh;
 
 		if (!aSerializer->getSubString({ "GameObjects", aElement, "Name" }, &name)) return false;
@@ -120,13 +120,13 @@ namespace Columbus
 		{
 			if (meshPath == "Plane")
 			{
-				Object->addComponent(new MeshRenderer(gDevice->createMesh(C_PrimitivePlane(), *material)));
+				Object->addComponent(new MeshRenderer(gDevice->createMesh(PrimitivePlane(), *material)));
 			} else if (meshPath == "Cube")
 			{
-				Object->addComponent(new MeshRenderer(gDevice->createMesh(C_PrimitiveBox(), *material)));
+				Object->addComponent(new MeshRenderer(gDevice->createMesh(PrimitiveBox(), *material)));
 			} else if (meshPath == "Sphere")
 			{
-				Object->addComponent(new MeshRenderer(gDevice->createMesh(C_PrimitiveSphere(1, 50, 50), *material)));
+				Object->addComponent(new MeshRenderer(gDevice->createMesh(PrimitiveSphere(1, 50, 50), *material)));
 			} else
 			{
 				if (atoi(meshPath.c_str()) >= 0)
@@ -143,12 +143,12 @@ namespace Columbus
 
 		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "ParticleSystem", "Particles"}, &particlePath))
 		{
-			Object->addComponent(new ParticleSystem(new C_ParticleEmitter(new C_ParticleEffect(particlePath, material))));
+			Object->addComponent(new ParticleSystem(new ParticleEmitter(new ParticleEffect(particlePath, material))));
 		}
 
 		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "LightComponent", "Light"}, &lightPath))
 		{
-			Object->addComponent(new LightComponent(new C_Light(lightPath, position)));
+			Object->addComponent(new LightComponent(new Light(lightPath, position)));
 		}
 
 		transform.setPos(position);
@@ -242,14 +242,14 @@ namespace Columbus
 		mObjects.insert(std::pair<unsigned int, GameObject*>(aID, aMesh));
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void Scene::setSkybox(const C_Skybox* aSkybox)
+	void Scene::setSkybox(const Skybox* aSkybox)
 	{
-		mSkybox = const_cast<C_Skybox*>(aSkybox);
+		mSkybox = const_cast<Skybox*>(aSkybox);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void Scene::setCamera(const C_Camera* aCamera)
+	void Scene::setCamera(const Camera* aCamera)
 	{
-		mCamera = const_cast<C_Camera*>(aCamera);
+		mCamera = const_cast<Camera*>(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::setContextSize(const Vector2 aContextSize)

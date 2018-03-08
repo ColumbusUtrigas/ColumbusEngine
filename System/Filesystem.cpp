@@ -97,13 +97,27 @@ namespace Columbus
 	*/
 	bool Filesystem::removeFile(const std::string aPath)
 	{
-		#ifdef COLUMBUS_SYSTEM_LINUX
-			return remove(aPath.c_str()) == 0;
-		#endif
-
-		//TODO: Windows
-
-		return false;
+		return remove(aPath.c_str()) == 0;
+	}
+	/*
+	* Changes directory name
+	* @param aOld: Name of directory, which should be renamed
+	* @param aNew: New name of directory
+	* @return Bool-value: true if directory successfully renamed, false if error was occured
+	*/
+	bool Filesystem::renameDirectory(const std::string aOld, const std::string aNew)
+	{
+		return rename(aOld.c_str(), aNew.c_str()) == 0;
+	}
+	/*
+	* Changes file name
+	* @param aOld: Name of file, which should be renamed
+	* @param aNew: New name of file
+	* @return Bool-value: true if file successfully renamed, false if error was occured
+	*/
+	bool Filesystem::renameFile(const std::string aOld, const std::string aNew)
+	{
+		return rename(aOld.c_str(), aNew.c_str()) == 0;
 	}
 	/*
 	* Reads list of files and directories

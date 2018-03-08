@@ -24,7 +24,7 @@ namespace Columbus
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Mesh::Mesh(std::vector<Vertex> aVert, C_Material aMat)
+	Mesh::Mesh(std::vector<Vertex> aVert, Material aMat)
 	{
 		mMat = aMat;
 		setVertices(aVert);
@@ -43,7 +43,7 @@ namespace Columbus
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void Mesh::setCamera(C_Camera aCamera)
+	void Mesh::setCamera(Camera aCamera)
 	{
 		mCamera = aCamera;
 	}
@@ -62,7 +62,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set light casters, which will calculate to using in shaders
-	void Mesh::setLights(std::vector<C_Light*> aLights)
+	void Mesh::setLights(std::vector<Light*> aLights)
 	{
 		mLights = aLights;
 	}
