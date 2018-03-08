@@ -18,15 +18,15 @@ namespace Columbus
 	namespace GUI
 	{
 
-		class C_Button : public C_Widget
+		class Button : public Widget
 		{
 		public:
-			C_Button() {}
+			Button() {}
 
 			void update() override;
 			void draw() override;
 
-			~C_Button() {}
+			~Button() {}
 		};
 
 	}

@@ -4,7 +4,7 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	LightComponent::LightComponent(C_Light* aLight) :
+	LightComponent::LightComponent(Light* aLight) :
 		mLight(aLight)
 	{
 
@@ -38,7 +38,7 @@ namespace Columbus
 		return "LightComponent";
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_Light* LightComponent::getLight() const
+	Light* LightComponent::getLight() const
 	{
 		return mLight;
 	}

@@ -25,7 +25,7 @@
 namespace Columbus
 {
 
-	class C_Material
+	class Material
 	{
 	private:
 		Vector4 mColor = Vector4(1, 1, 1, 1);
@@ -49,8 +49,8 @@ namespace Columbus
 		int mSpecMapID = -1;
 		int mNormMapID = -1;
 	public:
-		C_Material();
-		C_Material(std::string aFile);
+		Material();
+		Material(std::string aFile);
 
 		void setColor(const Vector4 aColor);
 		void setAmbient(const Vector3 aAmbient);
@@ -89,7 +89,7 @@ namespace Columbus
 		bool loadFromXML(std::string aFile);
 		bool loadFromJSON(std::string aFile);
 
-		~C_Material();
+		~Material();
 	};
 
 }

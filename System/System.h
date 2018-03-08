@@ -63,6 +63,4 @@ namespace Columbus
 	std::string GetSystem();
 	bool CheckWindows();
 
-	char* C_ReadFile(const char* aPath);
-
 }

@@ -20,7 +20,7 @@
 namespace Columbus
 {
 
-	class C_Light
+	class Light
 	{
 	private:
 		int mType = 0;
@@ -37,9 +37,9 @@ namespace Columbus
 		float mInnerCutoff = 12.5;
 		float mOuterCutoff = 17.5;
 	public:
-		C_Light();
-		C_Light(const int aType, Vector3 aPos = Vector3(0, 0, 0));
-		C_Light(std::string aFile, Vector3 aPos = Vector3(0, 0, 0));
+		Light();
+		Light(const int aType, Vector3 aPos = Vector3(0, 0, 0));
+		Light(std::string aFile, Vector3 aPos = Vector3(0, 0, 0));
 
 		void setType(const int aType);
 		void setPos(const Vector3 aPos);
@@ -65,7 +65,7 @@ namespace Columbus
 		bool loadFromXML(std::string aFile);
 		bool load(std::string aFile);
 		
-		~C_Light();
+		~Light();
 	};
 
 }

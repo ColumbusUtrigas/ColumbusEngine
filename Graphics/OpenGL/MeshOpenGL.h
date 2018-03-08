@@ -36,7 +36,7 @@ namespace Columbus
 	public:
 		MeshOpenGL();
 		MeshOpenGL(std::vector<Vertex> aVert);
-		MeshOpenGL(std::vector<Vertex> aVert, C_Material aMaterial);
+		MeshOpenGL(std::vector<Vertex> aVert, Material aMaterial);
 
 		void setVertices(std::vector<Vertex> aVert) override;
 		void render(Transform aTransform) override;

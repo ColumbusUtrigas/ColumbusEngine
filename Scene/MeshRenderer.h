@@ -26,7 +26,7 @@ namespace Columbus
 		bool mUpdateMoment = false;
 
 		Mesh* mMesh = nullptr;
-		C_Camera mCamera;
+		Camera mCamera;
 	public:
 		MeshRenderer(Mesh* aMesh);
 
@@ -37,8 +37,8 @@ namespace Columbus
 		void render(Transform& aTransform) override;
 		//This component methods
 		std::string getType() override;
-		void setLights(std::vector<C_Light*> aLights);
-		void setCamera(const C_Camera mCamera);
+		void setLights(std::vector<Light*> aLights);
+		void setCamera(const Camera mCamera);
 		Shader* getShader() const;
 		void setShader(Shader* aShader);
 		void setReflection(const Cubemap* aCubemap);

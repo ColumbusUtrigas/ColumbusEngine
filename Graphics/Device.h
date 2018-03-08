@@ -26,7 +26,7 @@ namespace Columbus
 
 		virtual Mesh* createMesh() const;
 		virtual Mesh* createMesh(std::vector<Vertex> aVert) const;
-		virtual Mesh* createMesh(std::vector<Vertex> aVert, C_Material aMat) const;
+		virtual Mesh* createMesh(std::vector<Vertex> aVert, Material aMat) const;
 
 		~Device();
 	};

@@ -35,25 +35,25 @@ namespace Columbus
 	protected:
 		Vector3 mPos;
 		Mesh* mParent = nullptr;
-		C_Camera mCamera;
+		Camera mCamera;
 
 		std::list<Mesh*> mChilds;
-		std::vector<C_Light*> mLights;
+		std::vector<Light*> mLights;
 	public:
 		std::vector<Vertex> mVert;
-		C_Material mMat;
+		Material mMat;
 		
 		Mesh();
 		Mesh(std::vector<Vertex> aVert);
-		Mesh(std::vector<Vertex> aVert, C_Material aMat);
+		Mesh(std::vector<Vertex> aVert, Material aMat);
 
 		virtual void setVertices(std::vector<Vertex> aVert);
 		virtual void render(Transform aTransform);
 
-		void setCamera(C_Camera camera);
+		void setCamera(Camera camera);
 		void setParent(Mesh* aParent);
 		void addChild(Mesh* aChild);
-		void setLights(std::vector<C_Light*> aLights);
+		void setLights(std::vector<Light*> aLights);
 
 		void clear();
 

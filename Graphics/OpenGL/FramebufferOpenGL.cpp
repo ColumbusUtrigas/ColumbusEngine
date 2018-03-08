@@ -15,26 +15,26 @@
 namespace Columbus
 {
 
-	C_FramebufferOpenGL::C_FramebufferOpenGL()
+	FramebufferOpenGL::FramebufferOpenGL()
 	{
 		glGenFramebuffers(1, &mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_FramebufferOpenGL::bind()
+	void FramebufferOpenGL::bind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, mID);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_FramebufferOpenGL::unbind()
+	void FramebufferOpenGL::unbind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_FramebufferOpenGL::setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, Texture* aTexture)
+	bool FramebufferOpenGL::setTexture2D(FramebufferAttachment aAttach, Texture* aTexture)
 	{
 		if (aTexture == nullptr) return false;
 		if (aTexture->getType() != "OpenGL Texture") return false;
@@ -48,9 +48,9 @@ namespace Columbus
 
 		switch (aAttach)
 		{
-		case C_FRAMEBUFFER_COLOR_ATTACH: attach = GL_COLOR_ATTACHMENT0; break;
-		case C_FRAMEBUFFER_DEPTH_ATTACH: attach = GL_DEPTH_ATTACHMENT; break;
-		case C_FRAMEBUFFER_STENCIL_ATTACH: attach = GL_STENCIL_ATTACHMENT; break;
+		case E_FRAMEBUFFER_COLOR_ATTACH: attach = GL_COLOR_ATTACHMENT0; break;
+		case E_FRAMEBUFFER_DEPTH_ATTACH: attach = GL_DEPTH_ATTACHMENT; break;
+		case E_FRAMEBUFFER_STENCIL_ATTACH: attach = GL_STENCIL_ATTACHMENT; break;
 		}
 
 		bind();
@@ -60,7 +60,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_FramebufferOpenGL::prepare(Vector4 aClear, Vector2 aWindowSize)
+	bool FramebufferOpenGL::prepare(Vector4 aClear, Vector2 aWindowSize)
 	{
 		bind();
 		glViewport(0, 0, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y));
@@ -71,7 +71,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_FramebufferOpenGL::check()
+	bool FramebufferOpenGL::check()
 	{
 		bind();
 		bool ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -82,7 +82,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_FramebufferOpenGL::~C_FramebufferOpenGL()
+	FramebufferOpenGL::~FramebufferOpenGL()
 	{
 		glDeleteFramebuffers(1, &mID);
 	}

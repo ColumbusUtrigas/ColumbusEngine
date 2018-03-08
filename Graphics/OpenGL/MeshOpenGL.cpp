@@ -23,7 +23,7 @@ namespace Columbus
 		setVertices(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	MeshOpenGL::MeshOpenGL(std::vector<Vertex> aVert, C_Material aMaterial)
+	MeshOpenGL::MeshOpenGL(std::vector<Vertex> aVert, Material aMaterial)
 	{
 		mMat = aMaterial;
 		setVertices(aVert);
@@ -133,7 +133,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setShaderTextures()
 	{
-		Texture* textures[3] = {mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap()};
+		Texture* textures[3] = { mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap() };
 		Cubemap* cubemap = mMat.getReflection();
 		std::string unifs[3] = {"uMaterial.diffuseMap", "uMaterial.specularMap", "uMaterial.normalMap"};
 		unsigned int indices[3] = {0, 1, 3};
@@ -171,8 +171,8 @@ namespace Columbus
 	{
 		mPos = aTransform.getPos();
 		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uView", CameraGetViewMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uProjection", CameraGetProjectionMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uNormal", aTransform.getNormalMatrix().elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -259,7 +259,7 @@ namespace Columbus
 
 		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
 
-		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
+		auto func = [pos](const Light* a, const Light* b) mutable -> bool
 		{
 			Vector3 q = a->getPos();
 			Vector3 w = b->getPos();

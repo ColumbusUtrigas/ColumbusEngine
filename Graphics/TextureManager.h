@@ -28,15 +28,12 @@ namespace Columbus
 
 		size_t mSize = 0;
 	public:
-		//Constructor
 		TextureManager();
-		//Add texture
+
 		void add(Texture* aTexture);
-		//Set texture config
 		void setConfig(TextureConfig aConfig);
-		//Get images size
 		size_t size();
-		//Destructor
+		
 		~TextureManager();
 	};
 

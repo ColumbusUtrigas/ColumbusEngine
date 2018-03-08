@@ -48,14 +48,14 @@ namespace Columbus
 		return "MeshRenderer";
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void MeshRenderer::setLights(std::vector<C_Light*> aLights)
+	void MeshRenderer::setLights(std::vector<Light*> aLights)
 	{
 		mMesh->setLights(aLights);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void MeshRenderer::setCamera(const C_Camera aCamera)
+	void MeshRenderer::setCamera(const Camera aCamera)
 	{
-		mCamera = static_cast<C_Camera>(aCamera);
+		mCamera = static_cast<Camera>(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	Shader* MeshRenderer::getShader() const

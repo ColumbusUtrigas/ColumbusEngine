@@ -18,7 +18,7 @@
 namespace Columbus
 {
 
-	enum E_IMAGE_LOAD
+	enum ImageLoad
 	{
 		E_IMAGE_LOAD_NONE,
 		E_IMAGE_LOAD_FLIP_X,
@@ -26,7 +26,7 @@ namespace Columbus
 		E_IMAGE_LOAD_FLIP_XY
 	};
 
-	enum E_IMAGE_FORMAT
+	enum ImageFormat
 	{
 		E_IMAGE_FORMAT_BMP,
 		E_IMAGE_FORMAT_PNG,
@@ -36,7 +36,7 @@ namespace Columbus
 		E_IMAGE_FORMAT_UNKNOWN
 	};
 
-	E_IMAGE_FORMAT ImageGetFormat(std::string aFile);
+	ImageFormat ImageGetFormat(std::string aFile);
 
 	bool ImageIsBMP(std::string aFile); //Check file magic
 	bool ImageIsTGA(std::string aFile); //Check file extension (*.tga, *.vda, *.icb, *.vst)
@@ -69,7 +69,7 @@ namespace Columbus
 	bool ImageFlipY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
 	bool ImageFlipXY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
 
-	class C_Image
+	class Image
 	{
 	private:
 		unsigned int mWidth = 0;         //Width of the image
@@ -80,8 +80,8 @@ namespace Columbus
 
 		std::string mFilename;
 	public:
-		C_Image();
-		C_Image(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
+		Image();
+		Image(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
 
 		bool load(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
 		bool save(const std::string aFile, const unsigned int aFlags, const unsigned int aQuality = 100) const;
@@ -98,7 +98,7 @@ namespace Columbus
 		unsigned char* getData() const;
 		std::string getFilename() const;
 
-		~C_Image();
+		~Image();
 	};
 
 }

@@ -34,20 +34,5 @@ namespace Columbus
 		if (GetSystem() == "Windows") return true;
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	char* C_ReadFile(const char* aPath)
-	{
-		FILE* file = fopen(aPath, "rt");
-		if (file == NULL) return NULL;
-
-		fseek(file, 0, SEEK_END);
-		unsigned long lenth = ftell(file);
-		char* data = new char[lenth + 1];
-		memset(data, 0, lenth + 1);
-		fseek(file, 0, SEEK_SET);
-		fread(data, 1, lenth, file);
-		fclose(file);
-		return data;
-	}
 
 }

@@ -35,7 +35,7 @@
 namespace Columbus
 {
 
-	class C_Particle
+	class Particle
 	{
 	private:
 		size_t i;
@@ -132,14 +132,14 @@ namespace Columbus
 		float key = 0.0;
 	};
 
-	class C_ParticleEmitter
+	class ParticleEmitter
 	{
 	private:
-		C_ParticleEffect* mParticleEffect = nullptr;
+		ParticleEffect* mParticleEffect = nullptr;
 
-		std::vector<C_Particle> mParticles;
-		std::vector<C_Particle> mActiveParticles;
-		std::vector<C_Light*> mLights;
+		std::vector<Particle> mParticles;
+		std::vector<Particle> mActiveParticles;
+		std::vector<Light*> mLights;
 		std::vector<C_ColorKey> mColorKeys;
 
 		C_Buffer* mBuf = nullptr;
@@ -148,7 +148,7 @@ namespace Columbus
 		C_Buffer* mPBuf = nullptr;
 		C_Buffer* mLBuf = nullptr;
 
-		C_OctaveNoise mNoise;
+		OctaveNoise mNoise;
 
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;
@@ -194,19 +194,19 @@ namespace Columbus
 		float* mTimeData = nullptr;
 		unsigned int mParticlesCount = 0;
 	public:
-		C_ParticleEmitter(const C_ParticleEffect* aParticleEffect);
+		ParticleEmitter(const ParticleEffect* aParticleEffect);
 
-		void setParticleEffect(const C_ParticleEffect* aParticleEffect);
-		C_ParticleEffect* getParticleEffect() const;
+		void setParticleEffect(const ParticleEffect* aParticleEffect);
+		ParticleEffect* getParticleEffect() const;
 
 		void update(const float aTimeTick);
 		void draw();
 
 		void setCameraPos(Vector3 aC);
 		//Set light casters, which calculate to using in shaders
-		void setLights(std::vector<C_Light*> aLights);
+		void setLights(std::vector<Light*> aLights);
 
-		~C_ParticleEmitter();
+		~ParticleEmitter();
 	};
 
 }

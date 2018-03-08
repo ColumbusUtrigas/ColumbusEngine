@@ -16,7 +16,7 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEffect::C_ParticleEffect() :
+	ParticleEffect::ParticleEffect() :
 		mMaterial(nullptr),
 		mParticlesCount(5),
 		mVisible(true),
@@ -46,7 +46,7 @@ namespace Columbus
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEffect::C_ParticleEffect(std::string aFile) :
+	ParticleEffect::ParticleEffect(std::string aFile) :
 		mMaterial(nullptr),
 		mParticlesCount(5),
 		mVisible(true),
@@ -76,7 +76,7 @@ namespace Columbus
 		load(aFile);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEffect::C_ParticleEffect(std::string aFile, C_Material* aMaterial) :
+	ParticleEffect::ParticleEffect(std::string aFile, Material* aMaterial) :
 		mMaterial(nullptr),
 		mParticlesCount(5),
 		mVisible(true),
@@ -109,416 +109,416 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMaterial(const C_Material* aMaterial)
+	void ParticleEffect::setMaterial(const Material* aMaterial)
 	{
-		mMaterial = const_cast<C_Material*>(aMaterial);
+		mMaterial = const_cast<Material*>(aMaterial);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setParticlesCount(const int aParticlesCount)
+	void ParticleEffect::setParticlesCount(const int aParticlesCount)
 	{
 		mParticlesCount = static_cast<int>(aParticlesCount);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setVisible(const bool aVisible)
+	void ParticleEffect::setVisible(const bool aVisible)
 	{
 		mVisible = static_cast<bool>(aVisible);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setScaleOverLifetime(const bool aA)
+	void ParticleEffect::setScaleOverLifetime(const bool aA)
 	{
 		mScaleOverLifetime = static_cast<bool>(aA);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setEmitFromShell(const bool aA)
+	void ParticleEffect::setEmitFromShell(const bool aA)
 	{
 		mEmitFromShell = static_cast<bool>(aA);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setAdditive(const bool aA)
+	void ParticleEffect::setAdditive(const bool aA)
 	{
 		mAdditive = static_cast<bool>(aA);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setBillboarding(const bool aA)
+	void ParticleEffect::setBillboarding(const bool aA)
 	{
 		mBillboarding = static_cast<bool>(aA);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setGradienting(const bool aA)
+	void ParticleEffect::setGradienting(const bool aA)
 	{
 		mGradienting = static_cast<bool>(aA);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setPos(const Vector3 aPos)
+	void ParticleEffect::setPos(const Vector3 aPos)
 	{
 		mPos = static_cast<Vector3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::addPos(const Vector3 aPos)
+	void ParticleEffect::addPos(const Vector3 aPos)
 	{
 		mPos += static_cast<Vector3>(aPos);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMinVelocity(const Vector3 aMinVelocity)
+	void ParticleEffect::setMinVelocity(const Vector3 aMinVelocity)
 	{
 		mMinVelocity = static_cast<Vector3>(aMinVelocity);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMaxVelocity(const Vector3 aMaxVelocity)
+	void ParticleEffect::setMaxVelocity(const Vector3 aMaxVelocity)
 	{
 		mMaxVelocity = static_cast<Vector3>(aMaxVelocity);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMinAcceleration(const Vector3 aMinAcceleration)
+	void ParticleEffect::setMinAcceleration(const Vector3 aMinAcceleration)
 	{
 		mMinAcceleration = static_cast<Vector3>(aMinAcceleration);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMaxAcceleration(const Vector3 aMaxAcceleration)
+	void ParticleEffect::setMaxAcceleration(const Vector3 aMaxAcceleration)
 	{
 		mMaxAcceleration = static_cast<Vector3>(aMaxAcceleration);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setConstantForce(const Vector3 aConstantForce)
+	void ParticleEffect::setConstantForce(const Vector3 aConstantForce)
 	{
 		mConstantForce = static_cast<Vector3>(aConstantForce);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setParticleSize(const Vector2 aParticleSize)
+	void ParticleEffect::setParticleSize(const Vector2 aParticleSize)
 	{
 		mParticleSize = static_cast<Vector2>(aParticleSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setStartSize(const Vector2 aStartSize)
+	void ParticleEffect::setStartSize(const Vector2 aStartSize)
 	{
 		mStartSize = static_cast<Vector2>(aStartSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setFinalSize(const Vector2 aFinalSize)
+	void ParticleEffect::setFinalSize(const Vector2 aFinalSize)
 	{
 		mFinalSize = static_cast<Vector2>(aFinalSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSubUV(const Vector2 aSubUV)
+	void ParticleEffect::setSubUV(const Vector2 aSubUV)
 	{
 		mSubUV = static_cast<Vector2>(aSubUV);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setStartColor(const Vector4 aStartColor)
+	void ParticleEffect::setStartColor(const Vector4 aStartColor)
 	{
 		mStartColor = static_cast<Vector4>(aStartColor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setFinalColor(const Vector4 aFinalColor)
+	void ParticleEffect::setFinalColor(const Vector4 aFinalColor)
 	{
 		mFinalColor = static_cast<Vector4>(aFinalColor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setBoxShapeSize(const Vector3 aBoxShapeSize)
+	void ParticleEffect::setBoxShapeSize(const Vector3 aBoxShapeSize)
 	{
 		mBoxShapeSize = static_cast<Vector3>(aBoxShapeSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMinTimeToLive(const float aMinTimeToLive)
+	void ParticleEffect::setMinTimeToLive(const float aMinTimeToLive)
 	{
 		mMinTimeToLive = static_cast<float>(aMinTimeToLive);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMaxTimeToLive(const float aMaxTimeToLive)
+	void ParticleEffect::setMaxTimeToLive(const float aMaxTimeToLive)
 	{
 		mMaxTimeToLive = static_cast<float>(aMaxTimeToLive);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMinRotation(const float aMinRotation)
+	void ParticleEffect::setMinRotation(const float aMinRotation)
 	{
 		mMinRotation = static_cast<float>(aMinRotation);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMaxRotation(const float aMaxRotation)
+	void ParticleEffect::setMaxRotation(const float aMaxRotation)
 	{
 		mMaxRotation = static_cast<float>(aMaxRotation);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMinRotationSpeed(const float aMinRotationSpeed)
+	void ParticleEffect::setMinRotationSpeed(const float aMinRotationSpeed)
 	{
 		mMinRotationSpeed = static_cast<float>(aMinRotationSpeed);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setMaxRotationSpeed(const float aMaxRotationSpeed)
+	void ParticleEffect::setMaxRotationSpeed(const float aMaxRotationSpeed)
 	{
 		mMaxRotationSpeed = static_cast<float>(aMaxRotationSpeed);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setNoiseStrength(const float aNoiseStrength)
+	void ParticleEffect::setNoiseStrength(const float aNoiseStrength)
 	{
 		mNoiseStrength = static_cast<float>(aNoiseStrength);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setNoiseOctaves(const unsigned int aNoiseOctaves)
+	void ParticleEffect::setNoiseOctaves(const unsigned int aNoiseOctaves)
 	{
 		mNoiseOctaves = static_cast<unsigned int>(aNoiseOctaves);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setNoiseLacunarity(const float aNoiseLacunarity)
+	void ParticleEffect::setNoiseLacunarity(const float aNoiseLacunarity)
 	{
 		mNoiseLacunarity = static_cast<float>(aNoiseLacunarity);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setNoisePersistence(const float aNoisePersistence)
+	void ParticleEffect::setNoisePersistence(const float aNoisePersistence)
 	{
 		mNoisePersistence = static_cast<float>(aNoisePersistence);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setNoiseFrequency(const float aNoiseFrequency)
+	void ParticleEffect::setNoiseFrequency(const float aNoiseFrequency)
 	{
 		mNoiseFrequency = static_cast<float>(aNoiseFrequency);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setNoiseAmplitude(const float aNoiseAmplitude)
+	void ParticleEffect::setNoiseAmplitude(const float aNoiseAmplitude)
 	{
 		mNoiseAmplitude = static_cast<float>(aNoiseAmplitude);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setEmitRate(const float aEmitRate)
+	void ParticleEffect::setEmitRate(const float aEmitRate)
 	{
 		mEmitRate = static_cast<float>(aEmitRate);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setTransformation(const E_PARTICLE_TRANSFORMATION aParticleTransformation)
+	void ParticleEffect::setTransformation(const E_PARTICLE_TRANSFORMATION aParticleTransformation)
 	{
 		mParticleTransformation = static_cast<int>(aParticleTransformation);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setParticleShape(const E_PARTICLE_SHAPE aParticleShape)
+	void ParticleEffect::setParticleShape(const E_PARTICLE_SHAPE aParticleShape)
 	{
 		mParticleShape = static_cast<int>(aParticleShape);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setParticleShapeRadius(const float aRadius)
+	void ParticleEffect::setParticleShapeRadius(const float aRadius)
 	{
 		mParticleShapeRadius = static_cast<float>(aRadius);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSortMode(const E_PARTICLE_SORT_MODE aSortMode)
+	void ParticleEffect::setSortMode(const E_PARTICLE_SORT_MODE aSortMode)
 	{
 		mSortMode = static_cast<int>(aSortMode);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSubUVMode(const E_PARTICLE_SUB_UV_MODE aSubUVMode)
+	void ParticleEffect::setSubUVMode(const E_PARTICLE_SUB_UV_MODE aSubUVMode)
 	{
 		mSubUVMode = static_cast<int>(aSubUVMode);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_ParticleEffect::setSubUVCycles(const float aSubUVCycles)
+	void ParticleEffect::setSubUVCycles(const float aSubUVCycles)
 	{
 		mSubUVCycles = static_cast<float>(aSubUVCycles);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_Material* C_ParticleEffect::getMaterial() const
+	Material* ParticleEffect::getMaterial() const
 	{
 		return mMaterial;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getParticlesCount() const
+	int ParticleEffect::getParticlesCount() const
 	{
 		return mParticlesCount;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::getVisible() const
+	bool ParticleEffect::getVisible() const
 	{
 		return mVisible;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::getScaleOverLifetime() const
+	bool ParticleEffect::getScaleOverLifetime() const
 	{
 		return mScaleOverLifetime;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::getEmitFromShell() const
+	bool ParticleEffect::getEmitFromShell() const
 	{
 		return mEmitFromShell;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::getAdditive() const
+	bool ParticleEffect::getAdditive() const
 	{
 		return mAdditive;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::getBillbiarding() const
+	bool ParticleEffect::getBillbiarding() const
 	{
 		return mBillboarding;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::getGradienting() const
+	bool ParticleEffect::getGradienting() const
 	{
 		return mGradienting;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getPos() const
+	Vector3 ParticleEffect::getPos() const
 	{
 		return mPos;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getMinVelocity() const
+	Vector3 ParticleEffect::getMinVelocity() const
 	{
 		return mMinVelocity;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getMaxVelocity() const
+	Vector3 ParticleEffect::getMaxVelocity() const
 	{
 		return mMaxVelocity;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getMinAcceleration() const
+	Vector3 ParticleEffect::getMinAcceleration() const
 	{
 		return mMinAcceleration;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getMaxAcceleration() const
+	Vector3 ParticleEffect::getMaxAcceleration() const
 	{
 		return mMaxAcceleration;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getConstantForce() const
+	Vector3 ParticleEffect::getConstantForce() const
 	{
 		return mConstantForce;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector2 C_ParticleEffect::getParticleSize() const
+	Vector2 ParticleEffect::getParticleSize() const
 	{
 		return mParticleSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector2 C_ParticleEffect::getStartSize() const
+	Vector2 ParticleEffect::getStartSize() const
 	{
 		return mStartSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector2 C_ParticleEffect::getSubUV() const
+	Vector2 ParticleEffect::getSubUV() const
 	{
 		return mSubUV;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector2 C_ParticleEffect::getFinalSize() const
+	Vector2 ParticleEffect::getFinalSize() const
 	{
 		return mFinalSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector4 C_ParticleEffect::getStartColor() const
+	Vector4 ParticleEffect::getStartColor() const
 	{
 		return mStartColor;;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector4 C_ParticleEffect::getFinalColor() const
+	Vector4 ParticleEffect::getFinalColor() const
 	{
 		return mFinalColor;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Vector3 C_ParticleEffect::getBoxShapeSize() const
+	Vector3 ParticleEffect::getBoxShapeSize() const
 	{
 		return mBoxShapeSize;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getMinTimeToLive() const
+	float ParticleEffect::getMinTimeToLive() const
 	{
 		return mMinTimeToLive;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getMaxTimeToLive() const
+	float ParticleEffect::getMaxTimeToLive() const
 	{
 		return mMaxTimeToLive;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getMinRotation() const
+	float ParticleEffect::getMinRotation() const
 	{
 		return mMinRotation;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getMaxRotation() const
+	float ParticleEffect::getMaxRotation() const
 	{
 		return mMaxRotation;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getMinRotationSpeed() const
+	float ParticleEffect::getMinRotationSpeed() const
 	{
 		return mMinRotationSpeed;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getMaxRotationSpeed() const
+	float ParticleEffect::getMaxRotationSpeed() const
 	{
 		return mMaxRotationSpeed;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getNoiseStrength() const
+	float ParticleEffect::getNoiseStrength() const
 	{
 		return mNoiseStrength;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	unsigned int C_ParticleEffect::getNoiseOctaves() const
+	unsigned int ParticleEffect::getNoiseOctaves() const
 	{
 		return mNoiseOctaves;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getNoiseLacunarity() const
+	float ParticleEffect::getNoiseLacunarity() const
 	{
 		return mNoiseLacunarity;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getNoisePersistence() const
+	float ParticleEffect::getNoisePersistence() const
 	{
 		return mNoisePersistence;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getNoiseFrequency() const
+	float ParticleEffect::getNoiseFrequency() const
 	{
 		return mNoiseFrequency;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getNoiseAmplitude() const
+	float ParticleEffect::getNoiseAmplitude() const
 	{
 		return mNoiseAmplitude;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getEmitRate() const
+	float ParticleEffect::getEmitRate() const
 	{
 		return mEmitRate;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getTransformation() const
+	int ParticleEffect::getTransformation() const
 	{
 		return mParticleTransformation;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getParticleShape() const
+	int ParticleEffect::getParticleShape() const
 	{
 		return mParticleShape;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getParticleShapeRadius() const
+	float ParticleEffect::getParticleShapeRadius() const
 	{
 		return mParticleShapeRadius;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getSortMode() const
+	int ParticleEffect::getSortMode() const
 	{
 		return mSortMode;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	int C_ParticleEffect::getSubUVMode() const
+	int ParticleEffect::getSubUVMode() const
 	{
 		return mSubUVMode;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	float C_ParticleEffect::getSubUVCycles() const
+	float ParticleEffect::getSubUVCycles() const
 	{
 		return mSubUVCycles;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::saveToXML(std::string aFile) const
+	bool ParticleEffect::saveToXML(std::string aFile) const
 	{
 		Serializer::SerializerXML serializer;
 
@@ -648,7 +648,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::saveToJSON(std::string aFile) const
+	bool ParticleEffect::saveToJSON(std::string aFile) const
 	{
 		json j;
 
@@ -697,7 +697,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::loadFromXML(std::string aFile)
+	bool ParticleEffect::loadFromXML(std::string aFile)
 	{
 		Serializer::SerializerXML serializer;
 
@@ -823,7 +823,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::loadFromJSON(std::string aFile)
+	bool ParticleEffect::loadFromJSON(std::string aFile)
 	{
 		std::ifstream i(aFile);
 		if (i.is_open() == false)
@@ -902,7 +902,7 @@ namespace Columbus
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_ParticleEffect::load(std::string aFile)
+	bool ParticleEffect::load(std::string aFile)
 	{
 		if (aFile.find_last_of(".cxpar") != std::string::npos)
 			return loadFromXML(aFile);
@@ -912,6 +912,6 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
-	C_ParticleEffect::~C_ParticleEffect() {}
+	ParticleEffect::~ParticleEffect() {}
 
 }

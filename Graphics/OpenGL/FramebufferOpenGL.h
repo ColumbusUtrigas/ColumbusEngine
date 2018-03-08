@@ -14,21 +14,21 @@
 namespace Columbus
 {
 
-	class C_FramebufferOpenGL : public C_Framebuffer
+	class FramebufferOpenGL : public Framebuffer
 	{
 	private:
 		unsigned int mID = 0;
 	public:
-		C_FramebufferOpenGL();
+		FramebufferOpenGL();
 
 		void bind() override;
 		void unbind() override;
 
-		bool setTexture2D(C_FRAMEBUFFER_ATTACHMENT aAttach, Texture* aTexture) override;
+		bool setTexture2D(FramebufferAttachment aAttach, Texture* aTexture) override;
 		bool prepare(Vector4 aClear, Vector2 aWindowSize) override;
 		bool check() override;
 
-		~C_FramebufferOpenGL();
+		~FramebufferOpenGL();
 	};
 
 }

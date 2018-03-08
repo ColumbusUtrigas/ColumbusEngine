@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 	Input input;
 	input.setWindow(&window);
 
-	C_Camera camera;
+	Camera camera;
 	camera.setPos(vec3(10, 10, 0));
 	camera.setRot(vec3(0, 90, 0));
 
@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
 	gDevice = new DeviceOpenGL();
 
-	C_Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
+	Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
 	Timer timer;
 
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	//window.setVerticalSync(true);
 	window.setFPSLimit(60);
 
-	C_Image* cur = new C_Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
+	Image* cur = new Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
 
 	input.showMouseCursor(false);
 	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_CROSSHAIR);
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 
 		window.clear(0, 0, 0.75, 1);
 
-		C_SetPerspective(60, window.aspect(), 0.1, 1000);
+		CameraSetPerspective(60, window.aspect(), 0.1, 1000);
 
 		if (input.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);

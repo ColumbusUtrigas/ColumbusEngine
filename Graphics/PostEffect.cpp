@@ -9,54 +9,55 @@
 *************************************************/
 
 #include <Graphics/PostEffect.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_PostEffect::C_PostEffect()
+	PostEffect::PostEffect()
 	{
-		mFB = new C_FramebufferOpenGL();
-		mTB = new TextureOpenGL(NULL, 640, 480, true);
-		mDepth = new TextureOpenGL();
+		mFB = new FramebufferOpenGL();
+		mTB = gDevice->createTexture(NULL, 640, 480, true);
+		mDepth = gDevice->createTexture();
 		mDepth->loadDepth(NULL, 640, 480, true);
 
-		mFB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, mTB);
-		mFB->setTexture2D(C_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
+		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
+		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::setShader(Shader* aShader)
+	void PostEffect::setShader(Shader* aShader)
 	{
 		mShader = aShader;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeInt aAttrib)
+	void PostEffect::addAttrib(PostEffectAttributeInt aAttrib)
 	{
 		mAttribsInt.push_back(aAttrib);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeFloat aAttrib)
+	void PostEffect::addAttrib(PostEffectAttributeFloat aAttrib)
 	{
 		mAttribsFloat.push_back(aAttrib);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeVector2 aAttrib)
+	void PostEffect::addAttrib(PostEffectAttributeVector2 aAttrib)
 	{
 		mAttribsVector2.push_back(aAttrib);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeVector3 aAttrib)
+	void PostEffect::addAttrib(PostEffectAttributeVector3 aAttrib)
 	{
 		mAttribsVector3.push_back(aAttrib);
 	}
-	void C_PostEffect::addAttrib(C_PostEffectAttributeVector4 aAttrib)
+	void PostEffect::addAttrib(PostEffectAttributeVector4 aAttrib)
 	{
 		mAttribsVector4.push_back(aAttrib);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::clearAttribs()
+	void PostEffect::clearAttribs()
 	{
 		mAttribsInt.clear();
 		mAttribsFloat.clear();
@@ -64,14 +65,14 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::bind(Vector4 aClear, Vector2 aWindowSize)
+	void PostEffect::bind(Vector4 aClear, Vector2 aWindowSize)
 	{
 		mTB->load(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
 		mDepth->loadDepth(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
 		mFB->prepare(aClear, aWindowSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::draw()
+	void PostEffect::draw()
 	{
 		if (mShader == nullptr) return;
 
@@ -106,7 +107,7 @@ namespace Columbus
 		if (mShader) mShader->unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::unbind()
+	void PostEffect::unbind()
 	{
 		C_CloseStreamOpenGL(0);
 		C_CloseStreamOpenGL(1);
@@ -129,7 +130,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_PostEffect::~C_PostEffect()
+	PostEffect::~PostEffect()
 	{
 
 	}

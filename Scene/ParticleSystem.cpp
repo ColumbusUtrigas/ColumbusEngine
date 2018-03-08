@@ -4,7 +4,7 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	ParticleSystem::ParticleSystem(C_ParticleEmitter* aEmitter) :
+	ParticleSystem::ParticleSystem(ParticleEmitter* aEmitter) :
 		mEmitter(aEmitter)
 	{
 
@@ -44,18 +44,18 @@ namespace Columbus
 		return "ParticleSystem";
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_ParticleEmitter* ParticleSystem::getEmitter() const
+	ParticleEmitter* ParticleSystem::getEmitter() const
 	{
 		return mEmitter;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::setLights(std::vector<C_Light*> aLights)
+	void ParticleSystem::setLights(std::vector<Light*> aLights)
 	{
 		if (mEmitter != nullptr)
 			mEmitter->setLights(aLights);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::setCamera(C_Camera aCamera)
+	void ParticleSystem::setCamera(Camera aCamera)
 	{
 		if (mEmitter != nullptr)
 			mEmitter->setCameraPos(aCamera.getPos());

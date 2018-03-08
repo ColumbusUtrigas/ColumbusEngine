@@ -11,9 +11,9 @@ namespace Columbus
 	class ParticleSystem : public Component
 	{
 	private:
-		C_ParticleEmitter* mEmitter = nullptr;
+		ParticleEmitter* mEmitter = nullptr;
 	public:
-		ParticleSystem(C_ParticleEmitter* aEmitter);
+		ParticleSystem(ParticleEmitter* aEmitter);
 
 		bool onCreate() override;
 		bool onUpdate() override;
@@ -22,9 +22,9 @@ namespace Columbus
 		void render(Transform& aTransform) override;
 		//This component methods
 		std::string getType() override;
-		C_ParticleEmitter* getEmitter() const;
-		void setLights(std::vector<C_Light*> aLights);
-		void setCamera(C_Camera aCamera);
+		ParticleEmitter* getEmitter() const;
+		void setLights(std::vector<Light*> aLights);
+		void setCamera(Camera aCamera);
 		Shader* getShader() const;
 		void setShader(Shader* aShader);
 

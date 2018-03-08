@@ -8,7 +8,6 @@
 *                   03.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
-#include <Common/Compress/Compress.h>
 #include <System/File.h>
 
 namespace Columbus
