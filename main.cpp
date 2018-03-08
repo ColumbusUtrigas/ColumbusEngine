@@ -1,16 +1,12 @@
 #include <Engine.h>
 #include <Graphics/OpenGL/DeviceOpenGL.h>
+#include <Graphics/OpenGL/WindowOpenGLSDL.h>
 
 using namespace Columbus;
 
 int main(int argc, char** argv)
 {
-	SDLWindowConfig config;
-	config.Resizable = true;
-
-	SDLWindow window(config);
-	EventSystem event;
-	event.addWindow(&window);
+	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
 	
 	Input input;
 	input.setWindow(&window);
@@ -29,8 +25,7 @@ int main(int argc, char** argv)
 
 	int FPS = 0;
 
-	//window.setVerticalSync(true);
-	window.setFPSLimit(60);
+	window.setVSync(true);
 
 	Image* cur = new Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
 
@@ -51,12 +46,12 @@ int main(int argc, char** argv)
 	{
 		float RedrawTime = window.getRedrawTime();
 
-		event.pollEvents();
+		window.update();
 		input.update();
 
-		window.clear(0, 0, 0.75, 1);
+		window.clear(vec4(0, 0, 0.75, 1));
 
-		CameraSetPerspective(60, window.aspect(), 0.1, 1000);
+		CameraSetPerspective(60, window.getAspect(), 0.1, 1000);
 
 		if (input.getKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
