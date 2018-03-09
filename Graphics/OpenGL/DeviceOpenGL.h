@@ -25,6 +25,8 @@ namespace Columbus
 		Mesh* createMesh(std::vector<Vertex> aVert) const override;
 		Mesh* createMesh(std::vector<Vertex> aVert, Material aMat) const override;
 
+		Framebuffer* createFramebuffer() const override;
+
 		~DeviceOpenGL();
 	};
 

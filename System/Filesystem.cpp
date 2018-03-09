@@ -23,7 +23,7 @@ namespace Columbus
 	{
 		#ifdef COLUMBUS_SYSTEM_LINUX
 			char dir[4096];
-			getcwd(dir, 4096);
+			if (getcwd(dir, 4096) == NULL) return "";
 			return dir;
 		#endif
 

@@ -56,6 +56,7 @@ namespace Columbus
 		bool mAdditive = false;
 		bool mBillboarding = true;
 		bool mGradienting = true;
+		bool mNoise = false;
 
 		Vector3 mPos = Vector3(0, 0, 0);
 		Vector3 mMinVelocity = Vector3(-1, -1, -1);
@@ -127,6 +128,7 @@ namespace Columbus
 		void setMaxRotation(const float aMaxRotation);
 		void setMinRotationSpeed(const float aMinRotationSpeed);
 		void setMaxRotationSpeed(const float aMaxRotationSpeed);
+		void setNoise(const bool aNoise);
 		void setNoiseStrength(const float aNoiseStrength);
 		void setNoiseOctaves(const unsigned int aNoiseOctaves);
 		void setNoiseLacunarity(const float aNoiseLacunarity);
@@ -169,6 +171,7 @@ namespace Columbus
 		float getMaxRotation() const;
 		float getMinRotationSpeed() const;
 		float getMaxRotationSpeed() const;
+		bool getNoise() const;
 		float getNoiseStrength() const;
 		unsigned int getNoiseOctaves() const;
 		float getNoiseLacunarity() const;

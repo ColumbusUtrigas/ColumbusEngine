@@ -111,6 +111,17 @@ namespace Columbus
 			}
 		}
 
+		void update(const float aTimeTick, const vec3 aCamera, const vec3 aForce)
+		{
+			age += aTimeTick;
+
+			pos = (velocity + aForce) * age + (accel * 0.5 * age * age);
+			pos += startPos + startEmitterPos;
+
+			rotation += rotationSpeed * aTimeTick;
+			cameraDistance = pow(aCamera.x - pos.x, 2) + pow(aCamera.y - pos.y, 2) + pow(aCamera.z - pos.z, 2);
+		}
+
 		void update(const float aTimeTick, const vec3 aCamera, const vec3 aForce, const vec3 aNoise)
 		{
 			for (i = 0; i < 9; i++) noise[i] = fmodf(noise[i] + (0.625f * aTimeTick), 256);
@@ -126,7 +137,7 @@ namespace Columbus
 		}
 	};
 
-	struct C_ColorKey
+	struct ColorKey
 	{
 		Vector4 color = Vector4(1, 1, 1, 1);
 		float key = 0.0;
@@ -140,7 +151,7 @@ namespace Columbus
 		std::vector<Particle> mParticles;
 		std::vector<Particle> mActiveParticles;
 		std::vector<Light*> mLights;
-		std::vector<C_ColorKey> mColorKeys;
+		std::vector<ColorKey> mColorKeys;
 
 		C_Buffer* mBuf = nullptr;
 		C_Buffer* mTBuf = nullptr;
