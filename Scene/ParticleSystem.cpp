@@ -58,7 +58,7 @@ namespace Columbus
 	void ParticleSystem::setCamera(Camera aCamera)
 	{
 		if (mEmitter != nullptr)
-			mEmitter->setCameraPos(aCamera.getPos());
+			mEmitter->setCamera(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	Shader* ParticleSystem::getShader() const

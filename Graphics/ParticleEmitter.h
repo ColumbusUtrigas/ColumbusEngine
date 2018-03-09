@@ -163,8 +163,8 @@ namespace Columbus
 
 		float mLife = 0.0;
 		float mMaxTTL = 0.0;
-
-		Vector3 mCameraPos = Vector3(0, 0, 5);
+		
+		Camera mCamera;
 
 		//Vertex buffer
 		float vrts[18] =
@@ -213,7 +213,7 @@ namespace Columbus
 		void update(const float aTimeTick);
 		void draw();
 
-		void setCameraPos(Vector3 aC);
+		void setCamera(const Camera aCamera);
 		//Set light casters, which calculate to using in shaders
 		void setLights(std::vector<Light*> aLights);
 

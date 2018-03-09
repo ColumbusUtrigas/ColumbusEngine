@@ -26,6 +26,7 @@
 #include <Graphics/Light.h>
 
 #include <Scene/Transform.h>
+#include <Math/OBB.h>
 
 namespace Columbus
 {
@@ -36,6 +37,7 @@ namespace Columbus
 		Vector3 mPos;
 		Mesh* mParent = nullptr;
 		Camera mCamera;
+		OBB mOBB;
 
 		std::list<Mesh*> mChilds;
 		std::vector<Light*> mLights;
@@ -54,6 +56,8 @@ namespace Columbus
 		void setParent(Mesh* aParent);
 		void addChild(Mesh* aChild);
 		void setLights(std::vector<Light*> aLights);
+
+		OBB getOBB() const;
 
 		void clear();
 

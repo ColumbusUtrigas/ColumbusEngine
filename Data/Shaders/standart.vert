@@ -2,7 +2,6 @@ in vec3 aPos;
 in vec2 aUV;
 in vec3 aNorm;
 in vec3 aTang;
-in vec3 aBitang;
 
 varying vec3 varPos;
 varying vec2 varUV;
