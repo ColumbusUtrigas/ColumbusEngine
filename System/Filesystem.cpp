@@ -100,24 +100,14 @@ namespace Columbus
 		return remove(aPath.c_str()) == 0;
 	}
 	/*
-	* Changes directory name
-	* @param aOld: Name of directory, which should be renamed
-	* @param aNew: New name of directory
-	* @return Bool-value: true if directory successfully renamed, false if error was occured
+	* Changes directory or file name
+	* @param aOld: Path to directory or file, which should be renamed
+	* @param aNew: New name of directory or file
+	* @return Bool-value: true if directory or file successfully renamed, false if error was occured
 	*/
-	bool Filesystem::renameDirectory(const std::string aOld, const std::string aNew)
+	bool Filesystem::rename(const std::string aOld, const std::string aNew)
 	{
-		return rename(aOld.c_str(), aNew.c_str()) == 0;
-	}
-	/*
-	* Changes file name
-	* @param aOld: Name of file, which should be renamed
-	* @param aNew: New name of file
-	* @return Bool-value: true if file successfully renamed, false if error was occured
-	*/
-	bool Filesystem::renameFile(const std::string aOld, const std::string aNew)
-	{
-		return rename(aOld.c_str(), aNew.c_str()) == 0;
+		std::rename(aOld.c_str(), aNew.c_str());
 	}
 	/*
 	* Reads list of files and directories
