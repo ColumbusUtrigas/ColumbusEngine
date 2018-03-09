@@ -17,7 +17,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	PostEffect::PostEffect()
 	{
-		mFB = new FramebufferOpenGL();
+		mFB = gDevice->createFramebuffer();
 		mTB = gDevice->createTexture(NULL, 640, 480, true);
 		mDepth = gDevice->createTexture();
 		mDepth->loadDepth(NULL, 640, 480, true);
@@ -52,6 +52,7 @@ namespace Columbus
 	{
 		mAttribsVector3.push_back(aAttrib);
 	}
+	//////////////////////////////////////////////////////////////////////////////
 	void PostEffect::addAttrib(PostEffectAttributeVector4 aAttrib)
 	{
 		mAttribsVector4.push_back(aAttrib);
@@ -61,6 +62,9 @@ namespace Columbus
 	{
 		mAttribsInt.clear();
 		mAttribsFloat.clear();
+		mAttribsVector2.clear();
+		mAttribsVector3.clear();
+		mAttribsVector4.clear();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

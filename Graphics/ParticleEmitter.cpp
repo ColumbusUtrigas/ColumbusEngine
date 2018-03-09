@@ -124,7 +124,9 @@ namespace Columbus
 		Vector3 constForce = mParticleEffect->getConstantForce();
 		Vector3 startEmitterPos = mParticleEffect->getPos();
 		Vector4 color = mParticleEffect->getMaterial()->getColor();
-		bool gradienting = static_cast<bool>(mParticleEffect->getGradienting());
+
+		bool gradienting = mParticleEffect->getGradienting();
+		bool isNoise = mParticleEffect->getNoise();
 
 		float rate = mParticleEffect->getEmitRate();
 		float count = static_cast<float>(mParticleEffect->getParticlesCount());
@@ -185,72 +187,40 @@ namespace Columbus
 
 				mParticles.push_back(Particle);
 				if (counter < mActiveParticles.size())
+				{
 					mActiveParticles.erase(mActiveParticles.begin() + counter);
+				}
 			}
 
 			if (transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
 				Particle.startEmitterPos = startEmitterPos;
 
-			percent = Particle.age / Particle.TTL;
+			if (gradienting)
+			{
+				percent = Particle.age / Particle.TTL;
+				Particle.color = down * (1 - percent) + up * percent;
+			} else
+			{
+				Particle.color = color;
+			}
 
-			if (gradienting) Particle.color = down * (1 - percent) + up * percent;
-			else Particle.color = color;
+			if (isNoise)
+			{
+				noise.x = mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]);
+				noise.y = mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]);
+				noise.z = mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]);
 
-			noise.x = static_cast<float>(mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]));
-			noise.y = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
-			noise.z = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
-
-			Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
+				Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
+			} else
+			{
+				Particle.update(aTimeTick, mCameraPos, constForce);
+			}
+			
 			counter++;
 		}
 
-		/*for (auto& Particle : mParticles)
-		{
-			e = min(Particle.TTL, fireT) * counter;
-			Particle.age = fmod(e + a, spawnT);
-
-			//if (transformation == Particle_TRANSFORMATION_LOCAL)
-				Particle.startEmitterPos = startEmitterPos;
-			//else
-				//if (Particle.age <= aTimeTick)
-					//Particle.startEmitterPos = startEmitterPos;
-
-			prevActive = Particle.active;
-			Particle.active = (Particle.age <= Particle.TTL);
-
-			if (Particle.active == true && prevActive == false)
-				if ((Particle.age / Particle.TTL) <= aTimeTick)
-					Particle.startEmitterPos = startEmitterPos;
-
-			if (Particle.active == true && prevActive == false)
-			{
-				Particle.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-				Particle.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
-				Particle.rotationSpeed = Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
-				Particle.frame = Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y);
-			}
-
-			if (Particle.active == true && Particle.age > 0)
-			{
-				life = fmod(Particle.age, Particle.TTL);
-				percent = life / Particle.TTL;
-
-				noise.x = static_cast<float>(mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]));
-				noise.y = static_cast<float>(mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]));
-				noise.z = static_cast<float>(mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]));
-
-				if (gradienting)
-					Particle.color = down * (1 - percent) + up * percent;
-				else
-					Particle.color = color;
-
-				Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
-			}
-
-			counter++;
-		}*/
-
-		if (mParticleEffect->getSortMode() == E_PARTICLE_SORT_MODE_DISTANCE) sort();
+		if (mParticleEffect->getSortMode() == E_PARTICLE_SORT_MODE_DISTANCE)
+			sort();
 
 		mLife += aTimeTick;
 	}

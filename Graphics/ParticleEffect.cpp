@@ -31,6 +31,7 @@ namespace Columbus
 		mMaxRotation(0.0),
 		mMinRotationSpeed(0.0),
 		mMaxRotationSpeed(0.0),
+		mNoise(false),
 		mNoiseStrength(1.0),
 		mNoiseOctaves(1),
 		mNoiseLacunarity(2.0),
@@ -61,6 +62,7 @@ namespace Columbus
 		mMaxRotation(0.0),
 		mMinRotationSpeed(0.0),
 		mMaxRotationSpeed(0.0),
+		mNoise(false),
 		mNoiseStrength(1.0),
 		mNoiseOctaves(1),
 		mNoiseLacunarity(2.0),
@@ -91,6 +93,7 @@ namespace Columbus
 		mMaxRotation(0.0),
 		mMinRotationSpeed(0.0),
 		mMaxRotationSpeed(0.0),
+		mNoise(false),
 		mNoiseStrength(1.0),
 		mNoiseOctaves(1),
 		mNoiseLacunarity(2.0),
@@ -247,6 +250,11 @@ namespace Columbus
 	void ParticleEffect::setMaxRotationSpeed(const float aMaxRotationSpeed)
 	{
 		mMaxRotationSpeed = static_cast<float>(aMaxRotationSpeed);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ParticleEffect::setNoise(const bool aNoise)
+	{
+		mNoise = static_cast<bool>(aNoise);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEffect::setNoiseStrength(const float aNoiseStrength)
@@ -451,6 +459,11 @@ namespace Columbus
 		return mMaxRotationSpeed;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	bool ParticleEffect::getNoise() const
+	{
+		return mNoise;
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	float ParticleEffect::getNoiseStrength() const
 	{
 		return mNoiseStrength;
@@ -599,6 +612,9 @@ namespace Columbus
 
 		if (!serializer.setFloat("MaxRotationSpeed", mMaxRotationSpeed))
 		{ Log::error("Can't save Particles max rotation speed: " + aFile); return false; }
+
+		if (!serializer.setBool("Noise", mNoise))
+		{ Log::error("Can't save Particles noise: " + aFile); return false; }
 
 		if (!serializer.setFloat("NoiseStrength", mNoiseStrength))
 		{ Log::error("Can't save Particles noise strength: " + aFile); return false; }
@@ -778,6 +794,9 @@ namespace Columbus
 
 		if (!serializer.getFloat("MaxRotationSpeed", &mMaxRotationSpeed))
 		{ Log::error("Can't load Particles max rotation speed: " + aFile); return false; }
+
+		if (!serializer.getBool("Noise", &mNoise))
+		{ Log::error("Can't load Particles noise: " + aFile); return false; }
 
 		if (!serializer.getFloat("NoiseStrength", &mNoiseStrength))
 		{ Log::error("Can't load Particles noise strength: " + aFile); return false; }
