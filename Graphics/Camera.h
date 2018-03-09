@@ -28,20 +28,17 @@
 namespace Columbus
 {
 
-	Matrix4 CameraGetProjectionMatrix();
-	Matrix4 CameraGetViewMatrix();
-	void CameraSetPerspective(float aFOV, float aAspect, float aN, float aF);
-	void CameraSetOrtho(float aL, float aR, float aB, float aT, float aN, float aF);
-
 	class Camera
 	{
 	private:
-		vec3 mPos = vec3(0, 0, 5);
-		vec3 mRot = vec3(0, 0, 0);
-		vec3 mTarget = vec3(0, 0, 4);
-		vec3 mCameraDirection = vec3(0, 0, -1);
-		vec3 mCameraRight = vec3(1, 0, 0);
-		vec3 mCameraUp = vec3(0, 1, 0);
+		Vector3 mPos = Vector3(0, 0, 5);
+		Vector3 mRot = Vector3(0, 0, 0);
+		Vector3 mTarget = Vector3(0, 0, 4);
+		Vector3 mCameraDirection = Vector3(0, 0, -1);
+		Vector3 mCameraRight = Vector3(1, 0, 0);
+		Vector3 mCameraUp = Vector3(0, 1, 0);
+		Matrix4 mProjectionMatrix;
+		Matrix4 mViewMatrix;
 
 		bool rotMode = false;
 		bool preTargeted = false;
@@ -52,19 +49,25 @@ namespace Columbus
 		
 		void setPos(const Vector3 aPos);
 		void addPos(const Vector3 aPos);
-		vec3 getPos() const;
+		Vector3 getPos() const;
 
 		void setRot(const Vector3 aRot);
 		void addRot(const Vector3 aRot);
-		vec3 getRot() const;
+		Vector3 getRot() const;
 
 		void setTarget(const Vector3 aTarget);
 		void addTarget(const Vector3 aTarget);
-		vec3 getTarget() const;
+		Vector3 getTarget() const;
 		
-		vec3 direction() const;
-		vec3 right() const;
-		vec3 up() const;
+		Vector3 direction() const;
+		Vector3 right() const;
+		Vector3 up() const;
+
+		void perspective(const float aFOV, const float aAspect, const float aNear, const float aFar);
+		//void ortho();
+
+		Matrix4 getProjectionMatrix() const;
+		Matrix4 getViewMatrix() const;
 		
 		~Camera();
 	};

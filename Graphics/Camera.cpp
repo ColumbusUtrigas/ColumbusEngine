@@ -7,37 +7,11 @@
 *                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #include <Graphics/Camera.h>
 
 namespace Columbus
 {
 
-	static Matrix4 PROJECTION_MATRIX;
-	static Matrix4 VIEW_MATRIX;
-
-	//////////////////////////////////////////////////////////////////////////////
-	Matrix4 CameraGetProjectionMatrix()
-	{
-		return PROJECTION_MATRIX;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	Matrix4 CameraGetViewMatrix()
-	{
-		return VIEW_MATRIX;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void CameraSetPerspective(float aFOV, float aAspect, float aN, float aF)
-	{
-		PROJECTION_MATRIX.perspective(aFOV, aAspect, aN, aF);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void CameraSetOrtho(float aL, float aR, float aB, float aT, float aN, float aF)
-	{
-		PROJECTION_MATRIX = glm::ortho(aL, aR, aB, aT, aN, aF);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	Camera::Camera()
 	{
@@ -116,21 +90,39 @@ namespace Columbus
 		if (mRot.y >= 360 || mRot.y <= -360) mRot.y = 0.0;
 		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;
 
-		vec3 front;
+		Vector3 front;
 		front.z = cos(Radians(mRot.x)) * cos(Radians(mRot.y));
 		front.y = sin(Radians(mRot.x));
 		front.x = cos(Radians(mRot.x)) * sin(Radians(mRot.y));
 		mCameraDirection = -front.normalize();
 
-		vec3 up = vec3(0.0f, 1.0f, 0.0f);
-		mCameraRight = vec3::cross(up, mCameraDirection).normalize();
+		Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
+		mCameraRight = Vector3::cross(up, mCameraDirection).normalize();
 
-		mCameraUp = vec3::cross(mCameraDirection, mCameraRight);
-
-		VIEW_MATRIX = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
-		//VIEW_MATRIX.lookAt(mPos, mCameraDirection + mPos, mCameraUp);
+		mCameraUp = Vector3::cross(mCameraDirection, mCameraRight);
+		
+		mViewMatrix = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
 
 		preTargeted = false;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	void Camera::perspective(const float aFOV, const float aAspect, const float aNear, const float aFar)
+	{
+		mProjectionMatrix.perspective(aFOV, aAspect, aNear, aFar);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	Matrix4 Camera::getProjectionMatrix() const
+	{
+		return mProjectionMatrix;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	Matrix4 Camera::getViewMatrix() const
+	{
+		return mViewMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

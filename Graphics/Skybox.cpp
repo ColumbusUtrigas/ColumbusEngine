@@ -57,12 +57,12 @@ namespace Columbus
 
 			mShader->bind();
 
-			Matrix4 view = CameraGetViewMatrix();
+			Matrix4 view = mCamera.getViewMatrix();
 			view.setRow(3, Vector4(0, 0, 0, 1));
 			view.setColumn(3, Vector4(0, 0, 0, 1));
 
 			mShader->setUniformMatrix("uView", view.elements());
-			mShader->setUniformMatrix("uProjection", CameraGetProjectionMatrix().elements());
+			mShader->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
 
 			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
 			mShader->setUniform1i("uSkybox", 0);
@@ -80,6 +80,11 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	void Skybox::setCamera(const Camera aCamera)
+	{
+		mCamera = static_cast<Camera>(aCamera);
+	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Skybox::setCubemap(const Cubemap* aCubemap)
 	{

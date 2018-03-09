@@ -94,9 +94,9 @@ namespace Columbus
 		return mParticleEffect;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleEmitter::setCameraPos(Vector3 aC)
+	void ParticleEmitter::setCamera(const Camera aCamera)
 	{
-		mCameraPos = aC;
+		mCamera = static_cast<Camera>(aCamera);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::sort()
@@ -210,10 +210,10 @@ namespace Columbus
 				noise.y = mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]);
 				noise.z = mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]);
 
-				Particle.update(aTimeTick, mCameraPos, constForce, noise * noiseStrength);
+				Particle.update(aTimeTick, mCamera.getPos(), constForce, noise * noiseStrength);
 			} else
 			{
-				Particle.update(aTimeTick, mCameraPos, constForce);
+				Particle.update(aTimeTick, mCamera.getPos(), constForce);
 			}
 			
 			counter++;
@@ -255,8 +255,8 @@ namespace Columbus
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", static_cast<float>(mParticleEffect->getSubUVMode()));
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", static_cast<float>(mParticleEffect->getSubUVCycles()));
 
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", CameraGetViewMatrix().elements());
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", CameraGetProjectionMatrix().elements());
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{

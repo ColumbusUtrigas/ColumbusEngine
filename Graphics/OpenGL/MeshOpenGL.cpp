@@ -38,6 +38,17 @@ namespace Columbus
 		mVert.clear();
 		mVert = aVert;
 
+		//Temperary Oriented Bounding Box Data
+		struct TOBBData
+		{
+			float minX = 0.0f;
+			float maxX = 0.0f;
+			float minY = 0.0f;
+			float maxY = 0.0f;
+			float minZ = 0.0f;
+			float maxZ = 0.0f;
+		};
+
 		float* v = new float[mVert.size() * 3]; //Vertex buffer
 		float* u = new float[mVert.size() * 2]; //UV buffer
 		float* n = new float[mVert.size() * 3]; //Normal buffer
@@ -47,8 +58,17 @@ namespace Columbus
 		uint64_t ncounter = 0;
 		uint64_t tcounter = 0;
 
+		TOBBData OBBData;
+
 		for (auto Vertex : mVert)
 		{
+			if (Vertex.pos.x < OBBData.minX) OBBData.minX = Vertex.pos.x;
+			if (Vertex.pos.x > OBBData.maxX) OBBData.maxX = Vertex.pos.x;
+			if (Vertex.pos.y < OBBData.minY) OBBData.minY = Vertex.pos.y;
+			if (Vertex.pos.y > OBBData.maxY) OBBData.maxY = Vertex.pos.y;
+			if (Vertex.pos.z < OBBData.minZ) OBBData.minZ = Vertex.pos.z;
+			if (Vertex.pos.z > OBBData.maxZ) OBBData.maxZ = Vertex.pos.z;
+
 			v[vcounter++] = Vertex.pos.x;
 			v[vcounter++] = Vertex.pos.y;
 			v[vcounter++] = Vertex.pos.z;
@@ -90,6 +110,9 @@ namespace Columbus
 		delete[] u;
 		delete[] n;
 		delete[] t;
+
+		mOBB.Min = Vector3(OBBData.minX, OBBData.minY, OBBData.minZ);
+		mOBB.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 
 		if (mMat.getShader() == nullptr) return;
 
@@ -171,8 +194,8 @@ namespace Columbus
 	{
 		mPos = aTransform.getPos();
 		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uView", CameraGetViewMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uProjection", CameraGetProjectionMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uNormal", aTransform.getNormalMatrix().elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////

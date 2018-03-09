@@ -26,6 +26,7 @@ namespace Columbus
 		C_Buffer* mBuf = nullptr;
 		Shader* mShader = nullptr;
 		Cubemap* mCubemap = nullptr;
+		Camera mCamera;
 
 		//Vertex buffer
 		float skyboxVertices[108] =
@@ -78,6 +79,7 @@ namespace Columbus
 		
 		void draw();
 
+		void setCamera(const Camera aCamera);
 		void setCubemap(const Cubemap* aCubemap);
 		Cubemap* getCubemap() const;
 		

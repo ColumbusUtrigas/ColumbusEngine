@@ -282,6 +282,11 @@ namespace Columbus
 		meshWorkflow();
 		particlesWorkflow();
 
+		if (mSkybox && mCamera)
+		{
+			mSkybox->setCamera(*mCamera);
+		}
+
 		for (auto Object : mObjects)
 			Object.second->update();
 	}
