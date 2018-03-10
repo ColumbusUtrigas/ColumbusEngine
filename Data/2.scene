@@ -2,82 +2,45 @@
 
 	<Resources>
 		<Textures>
-			<Count>6</Count>
+			<Count>10</Count>
 
 			<Texture0>Data/Textures/milos.jpg</Texture0>
 			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
 			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-			<Texture3>Data/Textures/fire1.png</Texture3>
+			<Texture3>Data/Textures/flame.png</Texture3>
 			<Texture4>Data/Textures/smoke.png</Texture4>
 			<Texture5>Data/Textures/spark1.png</Texture5>
+			<Texture6>Data/Textures/wall-torch.jpg</Texture6>
+			<Texture7>Data/Textures/wall-torch-n.jpg</Texture7>
+			<Texture8>Data/Textures/blood.png</Texture8>
+			<Texture9>Data/Textures/blood-n.png</Texture9>
 		</Textures>
+
+		<Shaders>
+			<Count>2</Count>
+
+			<Shader0>
+				<Vertex>Data/Shaders/standart.vert</Vertex>
+				<Fragment>Data/Shaders/standart.frag</Fragment>
+			</Shader0>
+
+			<Shader1>
+				<Vertex>Data/Shaders/particle.vert</Vertex>
+				<Fragment>Data/Shaders/particle.frag</Fragment>
+			</Shader1>
+		</Shaders>
+
+		<Meshes>
+			<Count>1</Count>
+			<Mesh0>Data/Models/Sponza.cmf</Mesh0>
+		</Meshes>
 	</Resources>
 
 	<GameObjects>
-		<Count>6</Count>
+		<Count>3</Count>
 
 		<GameObject0>
-			<Name>LibertyStatue</Name>
-
-			<Transform>
-				<Position X="0" Y="0" Z="3"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Default.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
-
-			<Components>
-				<MeshRenderer>
-					<Mesh>Data/Models/Dragon.cmf</Mesh>
-				</MeshRenderer>
-			</Components>
-		</GameObject0>
-
-		<GameObject1>
-			<Name>Embers</Name>
-
-			<Transform>
-				<Position X="0" Y="0.5" Z="0"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Embers.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Embers.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject1>
-
-		<GameObject2>
-			<Name>Smoke</Name>
-
-			<Transform>
-				<Position X="0" Y="1" Z="0"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Smoke.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Smoke.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject2>
-
-		<GameObject3>
-			<Name>Fire</Name>
+			<Name>Sponza</Name>
 
 			<Transform>
 				<Position X="0" Y="0" Z="0"/>
@@ -85,56 +48,53 @@
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/Fire.cxmat</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
 
 			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Fire.cxpar</Particles>
-				</ParticleSystem>
+				<MeshRenderer>
+					<Mesh>0</Mesh>
+				</MeshRenderer>
 			</Components>
-		</GameObject3>
+		</GameObject0>
 
-		<GameObject4>
+		<GameObject1>
 			<Name>Light1</Name>
 
 			<Transform>
-				<Position X="0" Y="1" Z="0"/>
+				<Position X="0" Y="10" Z="-3.5"/>
 				<Rotation X="0" Y="0" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
 			<Material>None</Material>
-			<ShaderVertex>Data/Shaders/particle.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/particle.frag</ShaderFragment>
+			<Shader>1</Shader>
 
 			<Components>
 				<LightComponent>
 					<Light>Data/Lights/1.cxlig</Light>
 				</LightComponent>
 			</Components>
-		</GameObject4>
+		</GameObject1>
 
-		<GameObject0>
-			<Name>Torch1</Name>
+		<GameObject2>
+			<Name>Smoke</Name>
 
 			<Transform>
-				<Position X="0" Y="10" Z="0"/>
+				<Position X="0" Y="11" Z="-3.5"/>
 				<Rotation X="0" Y="0" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/Torch.cxmat</Material>
-			<ShaderVertex>Data/Shaders/standart.vert</ShaderVertex>
-			<ShaderFragment>Data/Shaders/standart.frag</ShaderFragment>
+			<Material>Data/Materials/Smoke.cxmat</Material>
+			<Shader>1</Shader>
 
 			<Components>
-				<MeshRenderer>
-					<Mesh>Data/Models/Torch.cmf</Mesh>
-				</MeshRenderer>
+				<ParticleSystem>
+					<Particles>Data/Particles/Smoke.cxpar</Particles>
+				</ParticleSystem>
 			</Components>
-		</GameObject0>
+		</GameObject2>
 	</GameObjects>
 </Scene>
 

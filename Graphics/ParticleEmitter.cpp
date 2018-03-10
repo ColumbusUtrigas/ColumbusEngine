@@ -16,8 +16,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	ParticleEmitter::ParticleEmitter(const ParticleEffect* aParticleEffect) :
 		mParticleEffect(const_cast<ParticleEffect*>(aParticleEffect)),
-		mLife(0.0),
-		mMaxTTL(0.0)
+		mLife(0.0)
 	{
 		if (aParticleEffect == nullptr) return;
 
@@ -30,43 +29,32 @@ namespace Columbus
 		delete mTBuf;
 		delete mPBuf;
 		delete mLBuf;
+		delete mSBuf;
 
 		mParticleEffect = const_cast<ParticleEffect*>(aParticleEffect);
 
-		size_t i, j;
-		float radius = mParticleEffect->getParticleShapeRadius();
-		bool emitFromShell = mParticleEffect->getEmitFromShell();
-		Vector3 box = mParticleEffect->getBoxShapeSize();
+		mNoise.setOctaves(mParticleEffect->Noise.Octaves);
+		mNoise.setLacunarity(mParticleEffect->Noise.Lacunarity);
+		mNoise.setPersistence(mParticleEffect->Noise.Persistence);
+		mNoise.setFrequency(mParticleEffect->Noise.Frequency);
+		mNoise.setAmplitude(mParticleEffect->Noise.Amplitude);
 
-		mNoise.setOctaves(mParticleEffect->getNoiseOctaves());
-		mNoise.setLacunarity(mParticleEffect->getNoiseLacunarity());
-		mNoise.setPersistence(mParticleEffect->getNoisePersistence());
-		mNoise.setFrequency(mParticleEffect->getNoiseFrequency());
-		mNoise.setAmplitude(mParticleEffect->getNoiseAmplitude());
+		int i, j;
 
-		for (i = 0; i < static_cast<size_t>(mParticleEffect->getParticlesCount()); i++)
+		for (i = 0; i < mParticleEffect->Emit.Count; i++)
 		{
 			Particle p;
-			p.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			p.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
-			p.startPos = mParticleEffect->getPos();
-			p.accel = Vector3::random(mParticleEffect->getMinAcceleration(), mParticleEffect->getMaxAcceleration());
-			p.rotation = Random::range(mParticleEffect->getMinRotation(), mParticleEffect->getMaxRotation());
-			p.rotationSpeed = Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
-			p.startEmitterPos = mParticleEffect->getPos();
-			p.frame = static_cast<unsigned int>(Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y));
 
 			for (j = 0; j < 9; j++)
-				p.noise[j] = Random::range(0, 256);
-
-			if (p.TTL > mMaxTTL)
-				mMaxTTL = p.TTL;
-
-			switch(mParticleEffect->getParticleShape())
 			{
-				case E_PARTICLE_SHAPE_CIRCLE: p.genCircle(radius, emitFromShell); break;
-				case E_PARTICLE_SHAPE_SPHERE: p.genSphere(radius, emitFromShell); break;
-				case E_PARTICLE_SHAPE_CUBE: p.genCube(box, emitFromShell); break;
+				p.noise[j] = Random::range(0, 256);
+			}
+
+			switch(mParticleEffect->Location.Shape)
+			{
+				case E_PARTICLE_SHAPE_CIRCLE: p.genCircle(mParticleEffect->Location.Radius, mParticleEffect->Location.EmitFromShell); break;
+				case E_PARTICLE_SHAPE_SPHERE: p.genSphere(mParticleEffect->Location.Radius, mParticleEffect->Location.EmitFromShell); break;
+				case E_PARTICLE_SHAPE_BOX: p.genCube(mParticleEffect->Location.Size, mParticleEffect->Location.EmitFromShell); break;
 			}
 
 			mParticles.push_back(p);
@@ -79,6 +67,7 @@ namespace Columbus
 			mParticleEffect->getMaterial()->getShader()->addAttribute("aPoses", 2);
 			mParticleEffect->getMaterial()->getShader()->addAttribute("aTimes", 3);
 			mParticleEffect->getMaterial()->getShader()->addAttribute("aColors", 4);
+			mParticleEffect->getMaterial()->getShader()->addAttribute("aSizes", 5);
 			mParticleEffect->getMaterial()->getShader()->compile();
 		}
 
@@ -87,6 +76,7 @@ namespace Columbus
 		mCBuf = new C_Buffer();
 		mPBuf = new C_Buffer();
 		mLBuf = new C_Buffer();
+		mSBuf = new C_Buffer();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	ParticleEffect* ParticleEmitter::getParticleEffect() const
@@ -117,64 +107,62 @@ namespace Columbus
 	void ParticleEmitter::update(const float aTimeTick)
 	{
 		using namespace std;
-		
-		//copyActive();
 
-		float transformation = static_cast<float>(mParticleEffect->getTransformation());
-		Vector3 constForce = mParticleEffect->getConstantForce();
+		int transformation = mParticleEffect->Required.Transformation;
 		Vector3 startEmitterPos = mParticleEffect->getPos();
-		Vector4 color = mParticleEffect->getMaterial()->getColor();
+		bool IsNoise = mParticleEffect->Noise.Active;
 
-		bool gradienting = mParticleEffect->getGradienting();
-		bool isNoise = mParticleEffect->getNoise();
-
-		float rate = mParticleEffect->getEmitRate();
-		float count = static_cast<float>(mParticleEffect->getParticlesCount());
+		float rate = mParticleEffect->Emit.EmitRate;
 		float fireT = 1.0f / rate;
-		float spawnT = static_cast<float>(count * fireT);
 
-		if (count <= rate * mMaxTTL)
-			spawnT = mMaxTTL;
-
-		float a = mLife;
-		float percent;
-		Vector4 up, down;
-		Vector3 noise;
-		float noiseStrength = mParticleEffect->getNoiseStrength();
+		float Percent;
+		Vector3 Noise;
 
 		size_t counter = 0;
-		/*size_t size;
-
-		auto func = [](const C_ColorKey &a, const C_ColorKey &b) -> bool
-		{
-			return a.key > b.key;
-		};
-
-		std::sort(mColorKeys.begin(), mColorKeys.end(), func);*/
-
-		down = mParticleEffect->getStartColor();
-		up = mParticleEffect->getFinalColor();
 
 		mTimer += aTimeTick;
 
-		for (auto& Particle : mParticles)
+		if (mParticleEffect->Emit.Emitting)
 		{
-			Particle.age = 0.0;
-			Particle.startEmitterPos = startEmitterPos;
+			for (auto& Particle : mParticles)
+			{
+				Particle.age = 0.0;
+				Particle.startEmitterPos = startEmitterPos;
 
-			if (mTimer < fireT) continue;
-			mTimer -= fireT;
+				if (mTimer < fireT) continue;
+				mTimer -= fireT;
 
-			Particle.age = mTimer;
-			Particle.TTL = Random::range(mParticleEffect->getMinTimeToLive(), mParticleEffect->getMaxTimeToLive());
-			Particle.velocity = Vector3::random(mParticleEffect->getMinVelocity(), mParticleEffect->getMaxVelocity());
-			Particle.rotationSpeed = Random::range(mParticleEffect->getMinRotationSpeed(), mParticleEffect->getMaxRotationSpeed());
-			Particle.frame = static_cast<unsigned int>(Random::range(0, mParticleEffect->getSubUV().x * mParticleEffect->getSubUV().y));
+				Particle.age = mTimer;
+				Particle.TTL = Random::range(mParticleEffect->Lifetime.Min, mParticleEffect->Lifetime.Max);
+				Particle.velocity = Vector3::random(mParticleEffect->InitialVelocity.Min, mParticleEffect->InitialVelocity.Max);
+				Particle.rotation = Random::range(mParticleEffect->InitialRotation.Min, mParticleEffect->InitialRotation.Max);
+				Particle.rotationSpeed = Random::range(mParticleEffect->InitialRotation.MinVelocity, mParticleEffect->InitialRotation.MaxVelocity);
+				Particle.frame = TruncToInt(Random::range(0, mParticleEffect->SubUV.Horizontal * mParticleEffect->SubUV.Vertical));
+				Particle.accel = Vector3::random(mParticleEffect->InitialAcceleration.Min, mParticleEffect->InitialAcceleration.Max);
 
-			mActiveParticles.push_back(Particle);
-			mParticles.erase(mParticles.begin() + counter);
+				if (mParticleEffect->ColorOverLife.Active)
+				{
+					Particle.startColor = Vector4::random(mParticleEffect->ColorOverLife.MinStart, mParticleEffect->ColorOverLife.MaxStart);
+					Particle.finalColor = Vector4::random(mParticleEffect->ColorOverLife.MinFinal, mParticleEffect->ColorOverLife.MaxFinal);
+				} else
+				{
+					Particle.color = Vector4::random(mParticleEffect->InitialColor.Min, mParticleEffect->InitialColor.Max);
+				}
 
-			counter++;
+				if (mParticleEffect->SizeOverLife.Active)
+				{
+					Particle.startSize = Vector3::random(mParticleEffect->SizeOverLife.MinStart, mParticleEffect->SizeOverLife.MaxStart);
+					Particle.finalSize = Vector3::random(mParticleEffect->SizeOverLife.MinFinal, mParticleEffect->SizeOverLife.MaxFinal);
+				} else
+				{
+					Particle.size = Vector3::random(mParticleEffect->InitialSize.Min, mParticleEffect->InitialSize.Max);
+				}
+
+				mActiveParticles.push_back(Particle);
+				mParticles.erase(mParticles.begin() + counter);
+
+				counter++;
+			}
 		}
 
 		counter = 0;
@@ -195,32 +183,41 @@ namespace Columbus
 			if (transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
 				Particle.startEmitterPos = startEmitterPos;
 
-			if (gradienting)
+			if (mParticleEffect->ColorOverLife.Active ||
+			    mParticleEffect->SizeOverLife.Active)
 			{
-				percent = Particle.age / Particle.TTL;
-				Particle.color = down * (1 - percent) + up * percent;
-			} else
-			{
-				Particle.color = color;
+				Percent = Particle.age / Particle.TTL;
 			}
 
-			if (isNoise)
+			if (mParticleEffect->ColorOverLife.Active)
 			{
-				noise.x = mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]);
-				noise.y = mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]);
-				noise.z = mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]);
+				Particle.color = Particle.startColor * (1 - Percent) + Particle.finalColor * Percent;
+			}
 
-				Particle.update(aTimeTick, mCamera.getPos(), constForce, noise * noiseStrength);
+			if (mParticleEffect->SizeOverLife.Active)
+			{
+				Particle.size = Particle.startSize * (1 - Percent) + Particle.finalSize * Percent;
+			}
+
+			if (IsNoise)
+			{
+				Noise.x = mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]);
+				Noise.y = mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]);
+				Noise.z = mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]);
+
+				Particle.update(aTimeTick, mCamera.getPos(), Noise * mParticleEffect->Noise.Strength);
 			} else
 			{
-				Particle.update(aTimeTick, mCamera.getPos(), constForce);
+				Particle.update(aTimeTick, mCamera.getPos());
 			}
 			
 			counter++;
 		}
 
-		if (mParticleEffect->getSortMode() == E_PARTICLE_SORT_MODE_DISTANCE)
+		if (mParticleEffect->Required.SortMode == E_PARTICLE_SORT_MODE_DISTANCE)
+		{
 			sort();
+		}
 
 		mLife += aTimeTick;
 	}
@@ -242,18 +239,17 @@ namespace Columbus
 		mCBuf->bind();
 		C_VertexAttribPointerOpenGL(4, 4, C_OGL_FLOAT, C_OGL_FALSE, 4 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(4);
+		mSBuf->bind();
+		C_VertexAttribPointerOpenGL(5, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+		C_OpenStreamOpenGL(5);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::setUniforms()
 	{
-		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSize", mParticleEffect->getParticleSize());
-		mParticleEffect->getMaterial()->getShader()->setUniform2f("uStartSize", mParticleEffect->getStartSize());
-		mParticleEffect->getMaterial()->getShader()->setUniform2f("uFinalSize", mParticleEffect->getFinalSize());
-		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", mParticleEffect->getSubUV());
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uScaleOL", static_cast<float>(mParticleEffect->getScaleOverLifetime()));
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->getBillbiarding()));
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", static_cast<float>(mParticleEffect->getSubUVMode()));
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", static_cast<float>(mParticleEffect->getSubUVCycles()));
+		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", Vector2(mParticleEffect->SubUV.Horizontal, mParticleEffect->SubUV.Vertical));
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required.Billboarding));
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", mParticleEffect->SubUV.Mode);
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", mParticleEffect->SubUV.Cycles);
 
 		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
 		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
@@ -366,8 +362,10 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::unbindAll()
 	{
-		if (mParticleEffect->getAdditive())
+		if (mParticleEffect->Required.AdditiveBlending)
+		{
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
+		}
 
 		C_EnableDepthMaskOpenGL();
 
@@ -390,7 +388,7 @@ namespace Columbus
 		if (mParticleEffect->getMaterial()->getShader() == nullptr) return;
 		if (mBuf == nullptr) return;
 		if (mTBuf == nullptr) return;
-		if (mParticleEffect->getVisible() == false) return;
+		if (mParticleEffect->Required.Visible == false) return;
 
 		mParticleEffect->getMaterial()->getShader()->bind();
 
@@ -398,27 +396,31 @@ namespace Columbus
 
 		C_DisableDepthMaskOpenGL();
 
-		if (mParticleEffect->getAdditive())
+		if (mParticleEffect->Required.AdditiveBlending)
+		{
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
+		}
 
 		setShaderMaterial();
 		setShaderLightAndCamera();
 
-		if (mParticleEffect->getParticlesCount() != mParticlesCount)
+		if (mParticleEffect->Emit.Count != mParticlesCount)
 		{
 			delete mVertData;
 			delete mUvData;
 			delete mColData;
 			delete mPosData;
 			delete mTimeData;
+			delete mSizeData;
 
-			mParticlesCount = mParticleEffect->getParticlesCount();
+			mParticlesCount = mParticleEffect->Emit.Count;
 
 			mVertData = new float[mParticlesCount * 18];
 			mUvData = new float[mParticlesCount * 12];
 			mColData = new float[mParticlesCount * 24];
 			mPosData = new float[mParticlesCount * 18];
 			mTimeData = new float[mParticlesCount * 24];
+			mSizeData = new float[mParticlesCount * 18];
 
 			unsigned int vertCounter = 0;
 			unsigned int uvCounter = 0;
@@ -436,6 +438,7 @@ namespace Columbus
 		unsigned int posCounter = 0;
 		unsigned int timeCounter = 0;
 		unsigned int colCounter = 0;
+		unsigned int sizeCounter = 0;
 
 		for (auto Particle : mActiveParticles)
 		{
@@ -454,6 +457,10 @@ namespace Columbus
 				mColData[colCounter++] = Particle.color.y;
 				mColData[colCounter++] = Particle.color.z;
 				mColData[colCounter++] = Particle.color.w;
+
+				mSizeData[sizeCounter++] = Particle.size.x;
+				mSizeData[sizeCounter++] = Particle.size.y;
+				mSizeData[sizeCounter++] = Particle.size.z;
 			}
 		}
 
@@ -471,6 +478,9 @@ namespace Columbus
 
 		mLBuf->setData(mTimeData, 24 * sizeof(float) * mActiveParticles.size(), 4);
 		mLBuf->compile();
+
+		mSBuf->setData(mSizeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mSBuf->compile();
 
 		setBuffers();
 

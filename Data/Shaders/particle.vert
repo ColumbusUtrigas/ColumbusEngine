@@ -3,6 +3,7 @@ attribute vec2 aUV;
 attribute vec3 aPoses;
 attribute vec4 aTimes;
 attribute vec4 aColors;
+attribute vec3 aSizes;
 
 varying vec3 varPos;
 varying vec2 varTexCoord;
@@ -73,28 +74,12 @@ void main(void)
 	vec2 frame = vec2(aUV.x * frame_X + frame_X *  frameHorizontal,
 		aUV.y * frame_Y + frame_Y * frameVertical);
 
-	vec3 Pos = aPos;
 	if (uBillboard != 0.0)
 	{
-		if (uScaleOL != 0.0)
-		{
-			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(SizeOverLifetime, 1.0, 0.0) * Rotation);
-		} else
-		{
-			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
-		}
-	}
-	else
+		Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(aSizes, 0.0) * Rotation);
+	} else
 	{
-		if (uScaleOL != 0.0)
-		{
-			vec2 SizeOverLifetime = mix(uStartSize, uFinalSize, lifePercent);
-			Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(SizeOverLifetime, 1.0), 0.0) * Rotation);
-		} else
-		{
-			Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * vec3(uSize, 1.0), 0.0) * Rotation);
-		}
+		Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * aSizes, 0.0) * Rotation);
 	}
 
 	varPos = pos + aPos;
