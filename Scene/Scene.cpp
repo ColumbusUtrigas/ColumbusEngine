@@ -106,7 +106,13 @@ namespace Columbus
 		} else return false;
 
 		if (aSerializer->getSubInt({ "GameObjects", aElement, "Shader" }, &shaderID))
+		{
 			material->setShader(mShaders.at(shaderID));
+			if (!material->getShader()->isCompiled())
+			{
+				material->getShader()->compile();
+			}
+		}
 		else return false;
 
 		if (material->getTextureID() != -1)
@@ -306,11 +312,11 @@ namespace Columbus
 
 		for (auto Object : mObjects)
 			if (Object.second->hasComponent("MeshRenderer"))
-				C_Render::render(Object.second);
+				Object.second->render();
 
 		for (auto Object : mObjects)
 			if (Object.second->hasComponent("ParticleSystem"))
-				C_Render::render(Object.second);
+				Object.second->render();
 
 		mNoneEffect.unbind();
 
