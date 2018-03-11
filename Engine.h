@@ -11,8 +11,8 @@
 #include <Graphics/Light.h>
 #include <Graphics/Material.h>
 #include <Graphics/Mesh.h>
-#include <Graphics/ParticleEffect.h>
-#include <Graphics/ParticleEmitter.h>
+#include <Graphics/Particles/ParticleEffect.h>
+#include <Graphics/Particles/ParticleEmitter.h>
 #include <Graphics/PostEffect.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/Render.h>

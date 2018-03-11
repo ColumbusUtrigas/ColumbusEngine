@@ -14,7 +14,7 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
-#include <Graphics/ParticleEmitter.h>
+#include <Graphics/Particles/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/PostEffect.h>

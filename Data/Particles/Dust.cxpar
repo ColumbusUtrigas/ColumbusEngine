@@ -25,12 +25,12 @@
         <Max>20</Max>
     </Lifetime>
 
-    <InitialRotation>
+    <Rotation>
         <Min>10</Min>
         <Max>50</Max>
         <MinVelocity>-50</MinVelocity>
         <MaxVelocity>50</MaxVelocity>
-    </InitialRotation>
+    </Rotation>
 
     <InitialVelocity>
         <Min X="-0.2" Y="-0.2" Z="-0.2"/>

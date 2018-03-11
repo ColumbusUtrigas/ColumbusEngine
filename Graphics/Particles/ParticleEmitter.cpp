@@ -8,7 +8,7 @@
 *                   20.07.2017                  *
 *************************************************/
 
-#include <Graphics/ParticleEmitter.h>
+#include <Graphics/Particles/ParticleEmitter.h>
 
 namespace Columbus
 {
@@ -39,9 +39,12 @@ namespace Columbus
 		mNoise.setFrequency(mParticleEffect->Noise.Frequency);
 		mNoise.setAmplitude(mParticleEffect->Noise.Amplitude);
 
+		ParticleModuleEmit* Emit = static_cast<ParticleModuleEmit*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_EMIT));
+		if (Emit == nullptr) return;
+
 		int i, j;
 
-		for (i = 0; i < mParticleEffect->Emit.Count; i++)
+		for (i = 0; i < Emit->Count; i++)
 		{
 			Particle p;
 
@@ -112,7 +115,15 @@ namespace Columbus
 		Vector3 startEmitterPos = mParticleEffect->getPos();
 		bool IsNoise = mParticleEffect->Noise.Active;
 
-		float rate = mParticleEffect->Emit.EmitRate;
+		ParticleModuleEmit* Emit = static_cast<ParticleModuleEmit*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_EMIT));
+		ParticleModule* Lifetime = mParticleEffect->GetModule(E_PARTICLE_MODULE_LIFETIME);
+		ParticleModule* Velocity = mParticleEffect->GetModule(E_PARTICLE_MODULE_VELOCITY);
+		ParticleModule* SubUV = mParticleEffect->GetModule(E_PARTICLE_MODULE_SUBUV);
+
+		if (Emit == nullptr ||
+		    Lifetime == nullptr) return;
+
+		float rate = Emit->EmitRate;
 		float fireT = 1.0f / rate;
 
 		float Percent;
@@ -122,7 +133,7 @@ namespace Columbus
 
 		mTimer += aTimeTick;
 
-		if (mParticleEffect->Emit.Emitting)
+		if (Emit->Active)
 		{
 			for (auto& Particle : mParticles)
 			{
@@ -133,11 +144,11 @@ namespace Columbus
 				mTimer -= fireT;
 
 				Particle.age = mTimer;
-				Particle.TTL = Random::range(mParticleEffect->Lifetime.Min, mParticleEffect->Lifetime.Max);
-				Particle.velocity = Vector3::random(mParticleEffect->InitialVelocity.Min, mParticleEffect->InitialVelocity.Max);
-				Particle.rotation = Random::range(mParticleEffect->InitialRotation.Min, mParticleEffect->InitialRotation.Max);
-				Particle.rotationSpeed = Random::range(mParticleEffect->InitialRotation.MinVelocity, mParticleEffect->InitialRotation.MaxVelocity);
-				Particle.frame = TruncToInt(Random::range(0, mParticleEffect->SubUV.Horizontal * mParticleEffect->SubUV.Vertical));
+				Lifetime->Spawn(Particle);
+				Velocity->Spawn(Particle);
+				Particle.rotation = mParticleEffect->Rotation.GetInitialRotation();
+				Particle.rotationSpeed = mParticleEffect->Rotation.GetInitialVelocity();
+				SubUV->Spawn(Particle);
 				Particle.accel = Vector3::random(mParticleEffect->InitialAcceleration.Min, mParticleEffect->InitialAcceleration.Max);
 
 				if (mParticleEffect->ColorOverLife.Active)
@@ -246,10 +257,12 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::setUniforms()
 	{
-		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", Vector2(mParticleEffect->SubUV.Horizontal, mParticleEffect->SubUV.Vertical));
+		ParticleModuleSubUV* SubUV = static_cast<ParticleModuleSubUV*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_SUBUV));
+
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required.Billboarding));
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", mParticleEffect->SubUV.Mode);
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", mParticleEffect->SubUV.Cycles);
+		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", SubUV->Mode);
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", SubUV->Cycles);
 
 		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
 		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
@@ -390,6 +403,9 @@ namespace Columbus
 		if (mTBuf == nullptr) return;
 		if (mParticleEffect->Required.Visible == false) return;
 
+		ParticleModuleEmit* Emit = static_cast<ParticleModuleEmit*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_EMIT));
+		if (Emit == nullptr) return;
+
 		mParticleEffect->getMaterial()->getShader()->bind();
 
 		setUniforms();
@@ -404,7 +420,7 @@ namespace Columbus
 		setShaderMaterial();
 		setShaderLightAndCamera();
 
-		if (mParticleEffect->Emit.Count != mParticlesCount)
+		if (Emit->Count != mParticlesCount)
 		{
 			delete mVertData;
 			delete mUvData;
@@ -413,7 +429,7 @@ namespace Columbus
 			delete mTimeData;
 			delete mSizeData;
 
-			mParticlesCount = mParticleEffect->Emit.Count;
+			mParticlesCount = Emit->Count;
 
 			mVertData = new float[mParticlesCount * 18];
 			mUvData = new float[mParticlesCount * 12];
