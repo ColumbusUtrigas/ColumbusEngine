@@ -133,6 +133,11 @@ namespace Columbus
 
 		mTimer += aTimeTick;
 
+		if (mParticles.size() == 0)
+		{
+			mTimer = 0.0f;
+		}
+
 		if (Emit->Active)
 		{
 			for (auto& Particle : mParticles)
@@ -140,7 +145,7 @@ namespace Columbus
 				Particle.age = 0.0;
 				Particle.startEmitterPos = startEmitterPos;
 
-				if (mTimer < fireT) continue;
+				if (mTimer < fireT || mParticles.size() == 0) continue;
 				mTimer -= fireT;
 
 				Particle.age = mTimer;
@@ -185,10 +190,7 @@ namespace Columbus
 				Particle.age = 0.0;
 
 				mParticles.push_back(Particle);
-				if (counter < mActiveParticles.size())
-				{
-					mActiveParticles.erase(mActiveParticles.begin() + counter);
-				}
+				mActiveParticles.erase(mActiveParticles.begin() + counter);
 			}
 
 			if (transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
@@ -455,9 +457,13 @@ namespace Columbus
 		unsigned int timeCounter = 0;
 		unsigned int colCounter = 0;
 		unsigned int sizeCounter = 0;
+		unsigned int counter = 0;
 
 		for (auto Particle : mActiveParticles)
 		{
+			if (counter >= mActiveParticles.size()) break;
+			counter++;
+
 			for (int i = 0; i < 6; i++)
 			{
 				mPosData[posCounter++] = Particle.pos.x;
@@ -510,10 +516,11 @@ namespace Columbus
 		mParticles.clear();
 		mActiveParticles.clear();
 		
-		if (mVertData != nullptr) delete mVertData;
-		if (mUvData != nullptr) delete mUvData;
-		if (mUvData != nullptr) delete mPosData;
-		if (mUvData != nullptr) delete mTimeData;
+		delete mVertData;
+		delete mUvData;
+		delete mPosData;
+		delete mTimeData;
+		delete mSizeData;
 	}
 
 }
