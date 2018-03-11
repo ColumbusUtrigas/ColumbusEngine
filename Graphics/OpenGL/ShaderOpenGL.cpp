@@ -111,7 +111,7 @@ namespace Columbus
 
 			mBuilder.build(vertFile, E_SHADER_TYPE_VERTEX);
 			vertSource = mBuilder.getShader();
-			delete[] vertFile;
+			//delete vertFile;
 		}
 		//Fragment shader loading
 		if (aFrag == "STANDART_SKY_FRAGMENT")
@@ -137,7 +137,7 @@ namespace Columbus
 
 			mBuilder.build(fragFile, E_SHADER_TYPE_FRAGMENT);
 			fragSource = mBuilder.getShader();
-			delete[] fragFile;
+			//delete fragFile;
 		}
 
 		if (vertSource.empty())
