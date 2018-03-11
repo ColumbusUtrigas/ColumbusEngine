@@ -3,7 +3,7 @@
 #include <Scene/Component.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Light.h>
-#include <Graphics/ParticleEmitter.h>
+#include <Graphics/Particles/ParticleEmitter.h>
 
 namespace Columbus
 {

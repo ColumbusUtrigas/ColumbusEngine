@@ -8,9 +8,7 @@
 *                   20.07.2017                  *
 *************************************************/
 
-#include <Graphics/ParticleEffect.h>
-
-using nlohmann::json;
+#include <Graphics/Particles/ParticleEffect.h>
 
 namespace Columbus
 {
@@ -30,6 +28,31 @@ namespace Columbus
 	{
 		load(aFile);
 		mMaterial = aMaterial;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	void ParticleEffect::AddModule(ParticleModule* Module)
+	{
+		if (Module == nullptr) return;
+		if (GetModule(Module->GetType()) != nullptr) return;
+		Modules.push_back(Module);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	ParticleModule* ParticleEffect::GetModule(ParticleModuleType Type) const
+	{
+		for (auto Module : Modules)
+		{
+			if (Module != nullptr)
+			{
+				if (Module->GetType() == Type)
+				{
+					return Module;
+				}
+			}
+		}
+
+		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -203,19 +226,21 @@ namespace Columbus
 		if (!serializer.read(aFile, "ParticleEffect"))
 		{ Log::error("Can't load Particle Effect: " + aFile); return false; }
 
-		ParticleRequired tRequired;
-		ParticleEmit tEmit;
+		ParticleRequiredModule tRequired;
+		ParticleModuleEmit* tEmit = new ParticleModuleEmit();
 		ParticleLocation tLocation;
-		ParticleLifetime tLifetime;
-		ParticleInitialRotation tInitialRotation;
-		ParticleInitialVelocity tInitialVelocity;
+		ParticleModuleLifetime* tLifetime = new ParticleModuleLifetime();
+		ParticleRotationModule tRotation;
+		ParticleModuleVelocityBase* tVelocityBase = nullptr;
+
 		ParticleInitialAcceleration tInitialAcceleration;
 		ParticleInitialSize tInitialSize;
 		ParticleSizeOverLife tSizeOverLife;
 		ParticleInitialColor tInitialColor;
 		ParticleColorOverLife tColorOverLife;
-		ParticleNoise tNoise;
-		ParticleSubUV tSubUV;
+		ParticleNoiseModule tNoise;
+		//ParticleSubUVModule tSubUV;
+		ParticleModuleSubUVBase* tSubUVBase = nullptr;
 
 		serializer.getSubBool({ "Required", "Visible" }, &tRequired.Visible);
 		serializer.getSubBool({ "Required", "AdditiveBlending" }, &tRequired.AdditiveBlending);
@@ -223,25 +248,35 @@ namespace Columbus
 		serializer.getSubInt({ "Required", "Transformation" }, (int*)&tRequired.Transformation);
 		serializer.getSubInt({ "Required", "Transformation" }, (int*)&tRequired.SortMode);
 
-		serializer.getSubBool({ "Emit", "Emitting" }, &tEmit.Emitting);
-		serializer.getSubInt({ "Emit", "Count" }, &tEmit.Count);
-		serializer.getSubFloat({ "Emit", "EmitRate" }, &tEmit.EmitRate);
+		if (serializer.getSubBool({ "Emit", "Emitting" }, &tEmit->Active) &&
+		    serializer.getSubInt({ "Emit", "Count" }, &tEmit->Count) &&
+		    serializer.getSubFloat({ "Emit", "EmitRate" }, &tEmit->EmitRate))
+		{
+			AddModule(tEmit);
+		}
 
 		serializer.getSubBool({ "Location", "EmitFromShell" }, &tLocation.EmitFromShell);
 		serializer.getSubInt({ "Location", "Shape" }, (int*)&tLocation.Shape);
 		serializer.getSubFloat({ "Location", "Radius" }, &tLocation.Radius);
 		serializer.getSubVector3({ "Location", "Size" }, &tLocation.Size, { "X", "Y", "Z" });
 
-		serializer.getSubFloat({ "Lifetime", "Min" }, &tLifetime.Min);
-		serializer.getSubFloat({ "Lifetime", "Max" }, &tLifetime.Max);
+		if (serializer.getSubFloat({ "Lifetime", "Min" }, &tLifetime->Min) &&
+		    serializer.getSubFloat({ "Lifetime", "Max" }, &tLifetime->Max))
+		{
+			AddModule(tLifetime);
+		}
 
-		serializer.getSubFloat({ "InitialRotation", "Min" }, &tInitialRotation.Min);
-		serializer.getSubFloat({ "InitialRotation", "Max" }, &tInitialRotation.Max);
-		serializer.getSubFloat({ "InitialRotation", "MinVelocity" }, &tInitialRotation.MinVelocity);
-		serializer.getSubFloat({ "InitialRotation", "MaxVelocity" }, &tInitialRotation.MaxVelocity);
+		serializer.getSubFloat({ "Rotation", "Min" }, &tRotation.Min);
+		serializer.getSubFloat({ "Rotation", "Max" }, &tRotation.Max);
+		serializer.getSubFloat({ "Rotation", "MinVelocity" }, &tRotation.MinVelocity);
+		serializer.getSubFloat({ "Rotation", "MaxVelocity" }, &tRotation.MaxVelocity);
 
-		serializer.getSubVector3({ "InitialVelocity", "Min" }, &tInitialVelocity.Min, { "X", "Y", "Z" });
-		serializer.getSubVector3({ "InitialVelocity", "Max" }, &tInitialVelocity.Max, { "X", "Y", "Z" });
+		ParticleModuleVelocity* tVelocity = new ParticleModuleVelocity();
+		if (serializer.getSubVector3({ "InitialVelocity", "Min" }, &tVelocity->Min, { "X", "Y", "Z" }) &&
+		    serializer.getSubVector3({ "InitialVelocity", "Max" }, &tVelocity->Max, { "X", "Y", "Z" }))
+		{
+			tVelocityBase = tVelocity;
+		}
 
 		serializer.getSubVector3({ "InitialAcceleration", "Min" }, &tInitialAcceleration.Min, {  "X", "Y", "Z" });
 		serializer.getSubVector3({ "InitialAcceleration", "Max" }, &tInitialAcceleration.Max, {  "X", "Y", "Z" });
@@ -272,26 +307,38 @@ namespace Columbus
 		serializer.getSubFloat({ "Noise", "Frequency" }, &tNoise.Frequency);
 		serializer.getSubFloat({ "Noise", "Amplitude" }, &tNoise.Amplitude);
 
-		serializer.getSubInt({ "SubUV", "Mode" }, (int*)&tSubUV.Mode);
-		serializer.getSubInt({ "SubUV", "Horizontal" }, &tSubUV.Horizontal);
-		serializer.getSubInt({ "SubUV", "Vertical" }, &tSubUV.Vertical);
-		serializer.getSubFloat({ "SubUV", "Cycles" }, &tSubUV.Cycles);
+		ParticleModuleSubUV* tSubUV = new ParticleModuleSubUV();
+
+		if (serializer.getSubInt({ "SubUV", "Mode" }, (int*)&tSubUV->Mode) &&
+		    serializer.getSubInt({ "SubUV", "Horizontal" }, &tSubUV->Horizontal) &&
+		    serializer.getSubInt({ "SubUV", "Vertical" }, &tSubUV->Vertical) &&
+		    serializer.getSubFloat({ "SubUV", "Cycles" }, &tSubUV->Cycles))
+		{
+			tSubUVBase = tSubUV;
+		}
 
 		Log::success("Particle Effect loaded: " + aFile);
 
+		if (tVelocityBase != nullptr)
+		{
+			AddModule(tVelocityBase);
+		}
+
+		if (tSubUVBase != nullptr)
+		{
+			AddModule(tSubUVBase);	
+		}
+
 		Required = tRequired;
-		Emit = tEmit;
 		Location = tLocation;
-		Lifetime = tLifetime;
-		InitialRotation = tInitialRotation;
-		InitialVelocity = tInitialVelocity;
+		Rotation = tRotation;
 		InitialAcceleration = tInitialAcceleration;
 		InitialSize = tInitialSize;
 		SizeOverLife = tSizeOverLife;
 		InitialColor = tInitialColor;
 		ColorOverLife = tColorOverLife;
 		Noise = tNoise;
-		SubUV = tSubUV;
+		//SubUV = tSubUV;
 
 		return true;
 	}
