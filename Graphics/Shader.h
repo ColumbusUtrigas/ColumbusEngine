@@ -70,7 +70,7 @@ namespace Columbus
 		virtual void setUniformMatrix(std::string aName, const float* aValue) const;
 		virtual void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
 
-		~Shader();
+		virtual ~Shader();
 	};
 
 }

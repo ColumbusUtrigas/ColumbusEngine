@@ -15,16 +15,18 @@ namespace Columbus
 
 	MeshOpenGL::MeshOpenGL()
 	{
-
+		glGenBuffers(1, &mVBuf);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	MeshOpenGL::MeshOpenGL(std::vector<Vertex> aVert)
 	{
+		glGenBuffers(1, &mVBuf);
 		setVertices(aVert);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	MeshOpenGL::MeshOpenGL(std::vector<Vertex> aVert, Material aMaterial)
 	{
+		glGenBuffers(1, &mVBuf);
 		mMat = aMaterial;
 		setVertices(aVert);
 	}
@@ -33,8 +35,6 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setVertices(std::vector<Vertex> aVert)
 	{
-		glGenBuffers(1, &mVBuf);
-
 		mVert.clear();
 		mVert = aVert;
 
@@ -297,7 +297,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	MeshOpenGL::~MeshOpenGL()
 	{
-		
+		glDeleteBuffers(1, &mVBuf);
 	}
 
 }

@@ -28,7 +28,7 @@ namespace Columbus
 		bool prepare(Vector4 aClear, Vector2 aWindowSize) override;
 		bool check() override;
 
-		~FramebufferOpenGL();
+		~FramebufferOpenGL() override;
 	};
 
 }

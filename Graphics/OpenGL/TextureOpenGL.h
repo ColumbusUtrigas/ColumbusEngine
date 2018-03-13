@@ -31,7 +31,7 @@ namespace Columbus
 		std::string getType() override;
 		unsigned int getID() const; //Get OpenGL texture ID
 
-		~TextureOpenGL();
+		~TextureOpenGL() override;
 	};
 
 }

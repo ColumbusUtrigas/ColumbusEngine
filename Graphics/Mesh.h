@@ -61,7 +61,7 @@ namespace Columbus
 
 		void clear();
 
-		~Mesh();
+		virtual ~Mesh();
 	};
 
 }

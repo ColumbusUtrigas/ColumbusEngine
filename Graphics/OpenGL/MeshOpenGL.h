@@ -41,7 +41,7 @@ namespace Columbus
 		void setVertices(std::vector<Vertex> aVert) override;
 		void render(Transform aTransform) override;
 
-		~MeshOpenGL();
+		~MeshOpenGL() override;
 	};
 
 }
