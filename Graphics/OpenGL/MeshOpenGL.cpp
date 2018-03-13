@@ -129,6 +129,14 @@ namespace Columbus
 	void MeshOpenGL::render(Transform aTransform)
 	{
 		if (mMat.getShader() == nullptr) return;
+		if (!mMat.getShader()->isCompiled())
+		{
+			mMat.getShader()->addAttribute("aPos", 0);
+			mMat.getShader()->addAttribute("aUV", 1);
+			mMat.getShader()->addAttribute("aNorm", 2);
+			mMat.getShader()->addAttribute("aTang", 3);
+			mMat.getShader()->compile();
+		}
 
 		size_t const offsets[4] = { mVOffset, mUOffset, mNOffset, mTOffset };
 		unsigned const int strides[4] = { 3, 2, 3, 3 };
