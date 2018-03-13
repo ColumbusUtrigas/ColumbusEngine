@@ -108,10 +108,6 @@ namespace Columbus
 		if (aSerializer->getSubInt({ "GameObjects", aElement, "Shader" }, &shaderID))
 		{
 			material->setShader(mShaders.at(shaderID));
-			if (!material->getShader()->isCompiled())
-			{
-				material->getShader()->compile();
-			}
 		}
 		else return false;
 

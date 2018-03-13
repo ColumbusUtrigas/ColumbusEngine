@@ -7,10 +7,8 @@
 *                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #pragma once
 
-#include <GL/glew.h>
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -29,9 +27,9 @@ namespace Columbus
 	struct ShaderAttribute
 	{
 		std::string name;
-		int value;
+		unsigned int value;
 
-		ShaderAttribute(const std::string aName, const int aValue) :
+		ShaderAttribute(std::string aName, unsigned int aValue) :
 			name(aName), value(aValue) {}
 	};
 
