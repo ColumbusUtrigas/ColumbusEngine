@@ -23,7 +23,7 @@ namespace Columbus
 
 		unsigned int getID() const; //Get OpenGL cubemap texture ID
 
-		~CubemapOpenGL();
+		~CubemapOpenGL() override;
 	};
 
 }

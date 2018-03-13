@@ -42,7 +42,7 @@ namespace Columbus
 		virtual bool prepare(Vector4 aClear, Vector2 aWindowSize);
 		virtual bool check();
 
-		~Framebuffer();
+		virtual ~Framebuffer();
 	};
 
 }

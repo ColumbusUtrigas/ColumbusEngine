@@ -27,7 +27,7 @@ namespace Columbus
 		void setUniformMatrix(std::string aName, const float* aValue) const override;
 		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const override;
 
-		~ShaderOpenGL();
+		~ShaderOpenGL() override;
 	};
 
 }

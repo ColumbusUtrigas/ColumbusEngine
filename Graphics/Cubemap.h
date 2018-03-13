@@ -41,7 +41,7 @@ namespace Columbus
 		virtual bool load(std::string aFile);
 		bool save(std::array<std::string, 6> aPath) const;
 		
-		~Cubemap();
+		virtual ~Cubemap();
 	};
 
 }

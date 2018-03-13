@@ -71,7 +71,7 @@ namespace Columbus
 
 		virtual std::string getType();
 		
-		~Texture();
+		virtual ~Texture();
 	};
 
 }
