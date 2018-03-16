@@ -107,7 +107,7 @@ namespace Columbus
 	*/
 	bool Filesystem::rename(const std::string aOld, const std::string aNew)
 	{
-		std::rename(aOld.c_str(), aNew.c_str());
+		return std::rename(aOld.c_str(), aNew.c_str()) == 0;
 	}
 	/*
 	* Reads list of files and directories

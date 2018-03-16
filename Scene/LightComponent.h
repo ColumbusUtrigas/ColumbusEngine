@@ -22,7 +22,7 @@ namespace Columbus
 		std::string getType() override;
 		Light* getLight() const;
 
-		~LightComponent();
+		~LightComponent() override;
 	};
 
 }

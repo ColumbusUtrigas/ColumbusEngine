@@ -193,6 +193,8 @@ namespace Columbus
 			return ImageSaveJPG(aFile, aWidth, aHeight, aBPP, aData, aQuality);
 			break;
 		}
+
+		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -207,7 +209,7 @@ namespace Columbus
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Image::Image(const std::string aFile, const unsigned int aFlags) :
+	Image::Image(std::string aFile, int aFlags) :
 		mWidth(0),
 		mHeight(0),
 		mBPP(0),
@@ -219,7 +221,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool Image::load(const std::string aFile, const unsigned int aFlags)
+	bool Image::load(std::string aFile, int aFlags)
 	{
 		freeData();
 
@@ -241,7 +243,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool Image::save(const std::string aFile, const unsigned int aFormat, const unsigned int aQuality) const
+	bool Image::save(std::string aFile, int aFormat, size_t aQuality) const
 	{
 		if (!isExist()) return false;
 		return ImageSave(aFile, mWidth, mHeight, mBPP, mData, aFormat, aQuality);

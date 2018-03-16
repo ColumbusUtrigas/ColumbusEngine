@@ -47,6 +47,8 @@ namespace Columbus
 		mVertices.clear();
 		mFilename.clear();
 		mExistance = false;
+
+		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	std::vector<Vertex> C_Model::getData() const

@@ -15,15 +15,11 @@ int main(int argc, char** argv)
 	camera.setPos(vec3(10, 10, 0));
 	camera.setRot(vec3(0, 90, 0));
 
-	float i = 0;
-
 	gDevice = new DeviceOpenGL();
 
 	Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
 	Timer timer;
-
-	int FPS = 0;
 
 	window.setVSync(true);
 

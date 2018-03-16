@@ -25,10 +25,16 @@ namespace Columbus
 			mTmp = mRoot->FirstChildElement(aElement[0].c_str());
 
 			for (auto Name : aElement)
+			{
 				if (Name != aElement[0] && Name != end)
+				{
 					if (mTmp != nullptr)
+					{
 						mTmp = mTmp->FirstChildElement(Name.c_str());
-					else return nullptr;
+					} else return nullptr;
+				}
+			}
+
 			return mTmp;
 		}
 		//////////////////////////////////////////////////////////////////////////////

@@ -28,7 +28,7 @@ namespace Columbus
 		Shader* getShader() const;
 		void setShader(Shader* aShader);
 
-		~ParticleSystem();
+		~ParticleSystem() override;
 	};
 
 }

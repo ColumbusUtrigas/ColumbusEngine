@@ -8,7 +8,7 @@ SRC += ./Scene/*.cpp ./System/*.cpp
 INCL = -I./ -I/usr/include/SDL2/ -I./Lib/JSON/
 
 all:
-	$(CC) $(SRC) -o $(TARGET) $(LIBS) $(INCL) -std=c++14 -O3
+	$(CC) $(SRC) -o $(TARGET) $(LIBS) $(INCL) -std=c++14 -O3 -Wall -Wno-reorder -Wno-sign-compare
 
 
 
