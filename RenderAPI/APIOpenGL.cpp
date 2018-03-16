@@ -17,7 +17,7 @@ namespace Columbus
   //Get OpenGL error
   bool C_GetErrorOpenGL()
 	{
-		GLenum err;
+		GLenum err = 0;
 		if (err != GL_NO_ERROR)
 		{
 			std::string error;

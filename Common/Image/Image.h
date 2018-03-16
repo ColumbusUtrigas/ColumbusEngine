@@ -81,10 +81,10 @@ namespace Columbus
 		std::string mFilename;
 	public:
 		Image();
-		Image(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
+		Image(std::string aFile, int aFlags = E_IMAGE_LOAD_NONE);
 
-		bool load(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
-		bool save(const std::string aFile, const unsigned int aFlags, const unsigned int aQuality = 100) const;
+		bool load(std::string aFile, int aFlags = E_IMAGE_LOAD_NONE);
+		bool save(std::string aFile, int aFormat, size_t aQuality = 100) const;
 		bool isExist() const;
 		void freeData(); //This method checks image existance
 

@@ -25,14 +25,11 @@ namespace Columbus
 		Component();
 
 		virtual void update(const float aTimeTick);
-
 		virtual void render(Transform& aTransform);
-
 		virtual std::string getType();
+		virtual void destroy();
 
-		void destroy();
-
-		~Component();
+		virtual ~Component();
 	};
 
 }

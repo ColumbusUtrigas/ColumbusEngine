@@ -40,7 +40,7 @@ namespace Columbus
 			return ret;
 		}
 
-		bool remove(unsigned int aID)
+		void remove(unsigned int aID)
 		{
 			mResources.erase(aID);
 		}

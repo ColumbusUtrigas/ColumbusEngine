@@ -20,9 +20,9 @@ namespace Columbus
 	inline int32_t FloorToInt(const float Value) { return (int32_t)floorf(Value); }
 	inline float FloorToFloat(const float Value) { return floorf(Value); }
 	inline double FloorToDouble(const double Value) { return floor(Value); }
-	inline int32_t RoundToInt(const float Value) { FloorToInt(Value + 0.5f); }
-	inline float RoundToFloat(const float Value) { FloorToFloat(Value + 0.5f); }
-	inline double RoundToDouble(const double Value) { FloorToDouble(Value + 0.5); }
+	inline int32_t RoundToInt(const float Value) { return FloorToInt(Value + 0.5f); }
+	inline float RoundToFloat(const float Value) { return FloorToFloat(Value + 0.5f); }
+	inline double RoundToDouble(const double Value) { return FloorToDouble(Value + 0.5); }
 	inline int32_t CeilToInt(const float Value) { return TruncToInt(ceilf(Value)); }
 	inline float CeilToFloat(const float Value) { return ceilf(Value); }
 	inline double CeilToDouble(const double Value) { return ceil(Value); }

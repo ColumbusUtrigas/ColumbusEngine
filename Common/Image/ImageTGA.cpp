@@ -117,7 +117,6 @@ namespace Columbus
 
 		int header;
 		int blue, green, red;
-		uint8_t* pixel = (uint8_t*)malloc(3);
 		size_t i, j, pixelcount;
 
 		for (i = 0; i < aSize; )

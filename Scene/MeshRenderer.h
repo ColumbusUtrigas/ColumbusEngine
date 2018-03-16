@@ -1,5 +1,4 @@
 /************************************************
-/************************************************
 *                 MeshRenderer.h                *
 *************************************************
 *          This file is a part of:              *
@@ -43,7 +42,7 @@ namespace Columbus
 		void setShader(Shader* aShader);
 		void setReflection(const Cubemap* aCubemap);
 
-		~MeshRenderer();
+		~MeshRenderer() override;
 	};
 
 }

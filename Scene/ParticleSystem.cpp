@@ -65,6 +65,8 @@ namespace Columbus
 	{
 		if (mEmitter != nullptr)
 			return mEmitter->getParticleEffect()->getMaterial()->getShader();
+
+		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleSystem::setShader(Shader* aShader)

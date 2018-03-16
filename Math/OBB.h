@@ -28,6 +28,7 @@ namespace Columbus
 		{
 			this->Min = aOther.Min;
 			this->Max = aOther.Max;
+			return *this;
 		}
 
 		~OBB() {}
