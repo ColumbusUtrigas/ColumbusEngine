@@ -14,10 +14,10 @@
     </Emit>
 
     <Location>
-        <EmitFromShell>0</EmitFromShell>
-        <Shape>0</Shape>
-        <Radius>0.5</Radius>
-        <Size X="1" Y="1" Z="1"/>
+        <Circle>
+        	<Radius>0.5</Radius>
+        	<EmitFromShell>0</EmitFromShell>
+        </Circle>
     </Location>
 
     <Lifetime>
@@ -37,36 +37,30 @@
         <Max X="0.2" Y="2.0" Z="0.2"/>
     </InitialVelocity>
 
-    <InitialAcceleration>
-        <Min X="0.0" Y="0.0" Z="0.0"/>
-        <Max X="0.0" Y="0.0" Z="0.0"/>
-    </InitialAcceleration>
+    <Acceleration>
+    	<Initial>
+        	<Min X="0.0" Y="0.0" Z="0.0"/>
+        	<Max X="0.0" Y="0.0" Z="0.0"/>
+    	</Initial>
+    </Acceleration>
 
-    <InitialSize>
-        <Min X="1.0" Y="1.0" Z="1.0"/>
-        <Max X="1.0" Y="1.0" Z="1.0"/>
-    </InitialSize>
+    <Size>
+    	<OverLife>
+    		<MinStart X="1" Y="1" Z="1"/>
+	        <MaxStart X="1" Y="1" Z="1"/>
+	        <MinFinal X="3" Y="3" Z="3"/>
+	        <MaxFinal X="3" Y="3" Z="3"/>
+    	</OverLife>
+    </Size>
 
-    <SizeOverLife>
-        <Active>1</Active>
-        <MinStart X="1" Y="1" Z="1"/>
-        <MaxStart X="1" Y="1" Z="1"/>
-        <MinFinal X="3" Y="3" Z="3"/>
-        <MaxFinal X="3" Y="3" Z="3"/>
-    </SizeOverLife>
-
-    <InitialColor>
-        <Min R="1.0" G="1.0" B="1.0" A="1.0"/>
-        <Max R="1.0" G="1.0" B="1.0" A="1.0"/>
-    </InitialColor>
-
-    <ColorOverLife>
-        <Active>1</Active>
-        <MinStart R="1" G="0.5" B="0" A="0.9"/>
-        <MaxStart R="1" G="0.5" B="0" A="0.9"/>
-        <MinFinal R="0.5" G="0.25" B="0" A="0.01"/>
-        <MaxFinal R="0.5" G="0.25" B="0" A="0.01"/>
-    </ColorOverLife>
+    <Color>
+    	<OverLife>
+    		<MinStart R="1" G="0.5" B="0" A="0.9"/>
+	        <MaxStart R="1" G="0.5" B="0" A="0.9"/>
+	        <MinFinal R="0.5" G="0.25" B="0" A="0.01"/>
+	        <MaxFinal R="0.5" G="0.25" B="0" A="0.01"/>
+    	</OverLife>
+    </Color>
 
     <Noise>
         <Active>1</Active>

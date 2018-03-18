@@ -17,7 +17,7 @@ namespace Columbus
 	std::string GetSystem()
 	{
 		#ifdef COLUMBUS_SYSTEM_WINDOWS
-			+return "Windows";
+			return "Windows";
 		#endif
 
 		#ifdef COLUMBUS_SYSTEM_LINUX

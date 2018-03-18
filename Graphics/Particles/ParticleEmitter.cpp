@@ -23,6 +23,19 @@ namespace Columbus
 		setParticleEffect(aParticleEffect);
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	void ParticleEmitter::UpdateNoise(ParticleModuleNoise* Noise)
+	{
+		mNoise.setOctaves(Noise->Octaves);
+		mNoise.setLacunarity(Noise->Lacunarity);
+		mNoise.setPersistence(Noise->Persistence);
+		mNoise.setFrequency(Noise->Frequency);
+		mNoise.setAmplitude(Noise->Amplitude);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::setParticleEffect(const ParticleEffect* aParticleEffect)
 	{
 		delete mBuf;
@@ -32,12 +45,6 @@ namespace Columbus
 		delete mSBuf;
 
 		mParticleEffect = const_cast<ParticleEffect*>(aParticleEffect);
-
-		mNoise.setOctaves(mParticleEffect->Noise.Octaves);
-		mNoise.setLacunarity(mParticleEffect->Noise.Lacunarity);
-		mNoise.setPersistence(mParticleEffect->Noise.Persistence);
-		mNoise.setFrequency(mParticleEffect->Noise.Frequency);
-		mNoise.setAmplitude(mParticleEffect->Noise.Amplitude);
 
 		ParticleModuleEmit* Emit = static_cast<ParticleModuleEmit*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_EMIT));
 		if (Emit == nullptr) return;
@@ -51,13 +58,6 @@ namespace Columbus
 			for (j = 0; j < 9; j++)
 			{
 				p.noise[j] = Random::range(0, 256);
-			}
-
-			switch(mParticleEffect->Location.Shape)
-			{
-				case E_PARTICLE_SHAPE_CIRCLE: p.genCircle(mParticleEffect->Location.Radius, mParticleEffect->Location.EmitFromShell); break;
-				case E_PARTICLE_SHAPE_SPHERE: p.genSphere(mParticleEffect->Location.Radius, mParticleEffect->Location.EmitFromShell); break;
-				case E_PARTICLE_SHAPE_BOX: p.genCube(mParticleEffect->Location.Size, mParticleEffect->Location.EmitFromShell); break;
 			}
 
 			mParticles.push_back(p);
@@ -111,23 +111,35 @@ namespace Columbus
 	{
 		using namespace std;
 
-		int transformation = mParticleEffect->Required.Transformation;
 		Vector3 startEmitterPos = mParticleEffect->getPos();
-		bool IsNoise = mParticleEffect->Noise.Active;
 
+		ParticleModule* Acceleration = mParticleEffect->GetModule(E_PARTICLE_MODULE_ACCELERATION);
+		ParticleModule* Color = mParticleEffect->GetModule(E_PARTICLE_MODULE_COLOR);
 		ParticleModuleEmit* Emit = static_cast<ParticleModuleEmit*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_EMIT));
 		ParticleModule* Lifetime = mParticleEffect->GetModule(E_PARTICLE_MODULE_LIFETIME);
+		ParticleModule* Location = mParticleEffect->GetModule(E_PARTICLE_MODULE_LOCATION);
+		ParticleModuleNoise* Noise = static_cast<ParticleModuleNoise*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_NOISE));
+		ParticleModuleRequired* Required = static_cast<ParticleModuleRequired*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_REQUIRED));
+		ParticleModule* Rotation = mParticleEffect->GetModule(E_PARTICLE_MODULE_ROTATION);
+		ParticleModule* Size = mParticleEffect->GetModule(E_PARTICLE_MODULE_SIZE);
 		ParticleModule* Velocity = mParticleEffect->GetModule(E_PARTICLE_MODULE_VELOCITY);
 		ParticleModule* SubUV = mParticleEffect->GetModule(E_PARTICLE_MODULE_SUBUV);
 
 		if (Emit == nullptr ||
-		    Lifetime == nullptr) return;
+		    Lifetime == nullptr ||
+			Noise == nullptr ||
+		    Required == nullptr) return;
+
+		UpdateNoise(Noise);
+
+		int Transformation = Required->Transformation;
+		bool IsNoise = Noise->Active;
 
 		float rate = Emit->EmitRate;
 		float fireT = 1.0f / rate;
 
 		float Percent;
-		Vector3 Noise;
+		Vector3 VNoise;
 
 		size_t counter = 0;
 
@@ -149,30 +161,14 @@ namespace Columbus
 				mTimer -= fireT;
 
 				Particle.age = mTimer;
+				Acceleration->Spawn(Particle);
+				Color->Spawn(Particle);
 				Lifetime->Spawn(Particle);
+				Location->Spawn(Particle);
 				Velocity->Spawn(Particle);
-				Particle.rotation = mParticleEffect->Rotation.GetInitialRotation();
-				Particle.rotationSpeed = mParticleEffect->Rotation.GetInitialVelocity();
+				Rotation->Spawn(Particle);
+				Size->Spawn(Particle);
 				SubUV->Spawn(Particle);
-				Particle.accel = Vector3::random(mParticleEffect->InitialAcceleration.Min, mParticleEffect->InitialAcceleration.Max);
-
-				if (mParticleEffect->ColorOverLife.Active)
-				{
-					Particle.startColor = Vector4::random(mParticleEffect->ColorOverLife.MinStart, mParticleEffect->ColorOverLife.MaxStart);
-					Particle.finalColor = Vector4::random(mParticleEffect->ColorOverLife.MinFinal, mParticleEffect->ColorOverLife.MaxFinal);
-				} else
-				{
-					Particle.color = Vector4::random(mParticleEffect->InitialColor.Min, mParticleEffect->InitialColor.Max);
-				}
-
-				if (mParticleEffect->SizeOverLife.Active)
-				{
-					Particle.startSize = Vector3::random(mParticleEffect->SizeOverLife.MinStart, mParticleEffect->SizeOverLife.MaxStart);
-					Particle.finalSize = Vector3::random(mParticleEffect->SizeOverLife.MinFinal, mParticleEffect->SizeOverLife.MaxFinal);
-				} else
-				{
-					Particle.size = Vector3::random(mParticleEffect->InitialSize.Min, mParticleEffect->InitialSize.Max);
-				}
 
 				mActiveParticles.push_back(Particle);
 				mParticles.erase(mParticles.begin() + counter);
@@ -190,35 +186,27 @@ namespace Columbus
 				Particle.age = 0.0;
 
 				mParticles.push_back(Particle);
-				mActiveParticles.erase(mActiveParticles.begin() + counter);
+				if (counter < mActiveParticles.size())
+				{
+					mActiveParticles.erase(mActiveParticles.begin() + counter);
+				}
 			}
 
-			if (transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
+			if (Transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
+			{
 				Particle.startEmitterPos = startEmitterPos;
-
-			if (mParticleEffect->ColorOverLife.Active ||
-			    mParticleEffect->SizeOverLife.Active)
-			{
-				Percent = Particle.age / Particle.TTL;
 			}
 
-			if (mParticleEffect->ColorOverLife.Active)
-			{
-				Particle.color = Particle.startColor * (1 - Percent) + Particle.finalColor * Percent;
-			}
-
-			if (mParticleEffect->SizeOverLife.Active)
-			{
-				Particle.size = Particle.startSize * (1 - Percent) + Particle.finalSize * Percent;
-			}
+			Color->Update(Particle);
+			Size->Update(Particle);
 
 			if (IsNoise)
 			{
-				Noise.x = mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]);
-				Noise.y = mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]);
-				Noise.z = mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]);
+				VNoise.x = mNoise.noise(Particle.noise[0], Particle.noise[1], Particle.noise[2]);
+				VNoise.y = mNoise.noise(Particle.noise[3], Particle.noise[4], Particle.noise[5]);
+				VNoise.z = mNoise.noise(Particle.noise[6], Particle.noise[7], Particle.noise[8]);
 
-				Particle.update(aTimeTick, mCamera.getPos(), Noise * mParticleEffect->Noise.Strength);
+				Particle.update(aTimeTick, mCamera.getPos(), VNoise * Noise->Strength);
 			} else
 			{
 				Particle.update(aTimeTick, mCamera.getPos());
@@ -227,7 +215,7 @@ namespace Columbus
 			counter++;
 		}
 
-		if (mParticleEffect->Required.SortMode == E_PARTICLE_SORT_MODE_DISTANCE)
+		if (Required->SortMode == E_PARTICLE_SORT_MODE_DISTANCE)
 		{
 			sort();
 		}
@@ -259,9 +247,13 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::setUniforms()
 	{
+		ParticleModuleRequired* Required = static_cast<ParticleModuleRequired*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_REQUIRED));
 		ParticleModuleSubUV* SubUV = static_cast<ParticleModuleSubUV*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_SUBUV));
 
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required.Billboarding));
+		if (Required == nullptr ||
+			SubUV == nullptr) return;
+
+		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(Required->Billboarding));
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVMode", SubUV->Mode);
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uSubUVCycles", SubUV->Cycles);
@@ -377,7 +369,11 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void ParticleEmitter::unbindAll()
 	{
-		if (mParticleEffect->Required.AdditiveBlending)
+		ParticleModuleRequired* Required = static_cast<ParticleModuleRequired*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_REQUIRED));
+
+		if (Required == nullptr) return;
+
+		if (Required->AdditiveBlending)
 		{
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE_MINUS_SRC_ALPHA);
 		}
@@ -403,10 +399,13 @@ namespace Columbus
 		if (mParticleEffect->getMaterial()->getShader() == nullptr) return;
 		if (mBuf == nullptr) return;
 		if (mTBuf == nullptr) return;
-		if (mParticleEffect->Required.Visible == false) return;
 
+		ParticleModuleRequired* Required = static_cast<ParticleModuleRequired*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_REQUIRED));
 		ParticleModuleEmit* Emit = static_cast<ParticleModuleEmit*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_EMIT));
-		if (Emit == nullptr) return;
+		if (Emit == nullptr ||
+		    Required == nullptr) return;
+
+		if (Required->Visible == false) return;
 
 		mParticleEffect->getMaterial()->getShader()->bind();
 
@@ -414,7 +413,7 @@ namespace Columbus
 
 		C_DisableDepthMaskOpenGL();
 
-		if (mParticleEffect->Required.AdditiveBlending)
+		if (Required->AdditiveBlending)
 		{
 			C_BlendFuncOpenGL(C_OGL_SRC_ALPHA, C_OGL_ONE);
 		}

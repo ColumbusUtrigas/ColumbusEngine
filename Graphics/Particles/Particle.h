@@ -31,63 +31,9 @@ namespace Columbus
 		float TTL = 1.0;
 		float cameraDistance = 1000.0;
 		float noise[9];
+		float percent;
 
 		unsigned int frame = 0;
-
-		void genCircle(const float aRadius, const bool aEmitFromShell)
-		{
-			float ang = Random::range(0.0, 6.283185306);
-			float rad = Random::range(0.0, aRadius);
-
-			if (aEmitFromShell) rad = aRadius;
-
-			startPos.x = rad * cos(ang);
-			startPos.y = 0.0;
-			startPos.z = rad * sin(ang);
-		}
-
-		void genSphere(const float aRadius, const bool aEmitFromShell)
-		{
-			float rad = Random::range(0.0, aRadius);
-			float phi = Random::range(0.0, 6.283185306);
-			float tht = Random::range(0.0, 3.141592653);
-
-			if (aEmitFromShell) rad = aRadius;
-
-			startPos.x = rad * cos(phi) * sin(tht);
-			startPos.y = rad * sin(phi) * sin(tht);
-			startPos.z = rad * cos(tht);
-		}
-
-		void genCube(const Vector3 aSize, const bool aEmitFromShell)
-		{
-			if (aEmitFromShell)
-			{
-				switch (rand() % 3)
-				{
-				case 0:
-					startPos.x = aSize.x / 2 * ((rand() % 2) ? -1 : 1);
-					startPos.y = Random::range(-aSize.y / 2, aSize.y / 2);
-					startPos.z = Random::range(-aSize.z / 2, aSize.z / 2);
-					break;
-				case 1:
-					startPos.x = Random::range(-aSize.x / 2, aSize.x / 2);
-					startPos.y = aSize.y / 2 * ((rand() % 2) ? -1 : 1);
-					startPos.z = Random::range(-aSize.z / 2, aSize.z / 2);
-					break;
-				case 2:
-					startPos.x = Random::range(-aSize.x / 2, aSize.x / 2);
-					startPos.y = Random::range(-aSize.y / 2, aSize.y / 2);
-					startPos.z = aSize.z / 2 * ((rand() % 2) ? -1 : 1);
-					break;
-				}
-			} else
-			{
-				startPos.x = Random::range(-aSize.x / 2, aSize.x / 2);
-				startPos.y = Random::range(-aSize.y / 2, aSize.y / 2);
-				startPos.z = Random::range(-aSize.z / 2, aSize.z / 2);
-			}
-		}
 
 		void update(const float aTimeTick, const vec3 aCamera)
 		{
@@ -98,6 +44,7 @@ namespace Columbus
 
 			rotation += rotationSpeed * aTimeTick;
 			cameraDistance = pow(aCamera.x - pos.x, 2) + pow(aCamera.y - pos.y, 2) + pow(aCamera.z - pos.z, 2);
+			percent = age / TTL;
 		}
 
 		void update(const float aTimeTick, const vec3 aCamera, const vec3 aNoise)
@@ -112,6 +59,7 @@ namespace Columbus
 
 			rotation += rotationSpeed * aTimeTick;
 			cameraDistance = pow(aCamera.x - pos.x, 2) + pow(aCamera.y - pos.y, 2) + pow(aCamera.z - pos.z, 2);
+			percent = age / TTL;
 		}
 	};
 

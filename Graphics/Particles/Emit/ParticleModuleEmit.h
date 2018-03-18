@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/ParticleModule.h>
+#include <Graphics/Particles/Emit/ParticleModuleEmitBase.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleEmit : public ParticleModule
+	class ParticleModuleEmit : public ParticleModuleEmitBase
 	{
 	public:
 		int Count;
@@ -17,7 +17,7 @@ namespace Columbus
 		*/
 		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_EMIT; }
 
-		~ParticleModuleEmit() {}
+		~ParticleModuleEmit() override {}
 	};
 
 }
