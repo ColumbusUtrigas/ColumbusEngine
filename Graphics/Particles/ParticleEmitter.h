@@ -104,6 +104,8 @@ namespace Columbus
 		float* mTimeData = nullptr;
 		float* mSizeData = nullptr;
 		unsigned int mParticlesCount = 0;
+
+		void UpdateNoise(ParticleModuleNoise* Noise);
 	public:
 		ParticleEmitter(const ParticleEffect* aParticleEffect);
 

@@ -1,4 +1,4 @@
-#pragma once\
+#pragma once
 
 #include <Graphics/Particles/ParticleModule.h>
 

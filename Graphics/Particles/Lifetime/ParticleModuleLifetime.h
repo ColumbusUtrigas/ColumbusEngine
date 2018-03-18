@@ -1,12 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/ParticleModule.h>
-#include <System/Random.h>
+#include <Graphics/Particles/Lifetime/ParticleModuleLifetimeBase.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleLifetime : public ParticleModule
+	class ParticleModuleLifetime : public ParticleModuleLifetimeBase
 	{
 	public:
 		float Min;
@@ -32,7 +31,7 @@ namespace Columbus
 			aParticle.TTL = Random::range(Min, Max);
 		}
 
-		~ParticleModuleLifetime() {}
+		~ParticleModuleLifetime() override {}
 	};
 
 }
