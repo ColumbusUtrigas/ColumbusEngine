@@ -51,8 +51,10 @@ namespace Columbus
 	private:
 		Material* mMaterial = nullptr;
 		Vector3 mPos = Vector3(0, 0, 0);
-
+	public:
 		std::vector<ParticleModule*> Modules;
+		ParticleModuleEmit* Emit;
+		ParticleModuleRequired* Required;
 	public:
 		ParticleEffect();
 		ParticleEffect(std::string aFile);

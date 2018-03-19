@@ -18,8 +18,6 @@ uniform vec2 uFinalSize;
 uniform vec2 uSubUV;
 uniform float uScaleOL;
 uniform float uBillboard;
-uniform float uSubUVMode;
-uniform float uSubUVCycles;
 
 #define ROWS 6
 #define COLUMNS 8
@@ -58,12 +56,7 @@ void main(void)
 	vec3 pos = aPoses;
 
 	float lifePercent = aTimes.x / aTimes.y;
-	int frameNumber = 0;
-	
-	if (uSubUVMode == 0)
-		frameNumber = int(floor(uSubUV.x * uSubUV.y * lifePercent * uSubUVCycles));
-	else if (uSubUVMode == 1)
-		frameNumber = int(aTimes.w);
+	int frameNumber = int(aTimes.w);
 
 	int frameHorizontal = frameNumber % int(uSubUV.x);
 	int frameVertical = int(uSubUV.y) - int(frameNumber / uSubUV.x) - 1;
@@ -71,8 +64,8 @@ void main(void)
 	float frame_X = 1.0 / uSubUV.x;
 	float frame_Y = 1.0 / uSubUV.y;
 
-	vec2 frame = vec2(aUV.x * frame_X + frame_X *  frameHorizontal,
-		aUV.y * frame_Y + frame_Y * frameVertical);
+	vec2 frame = vec2(aUV.x * frame_X + frame_X * frameHorizontal,
+	                  aUV.y * frame_Y + frame_Y * frameVertical);
 
 	if (uBillboard != 0.0)
 	{

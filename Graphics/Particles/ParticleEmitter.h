@@ -59,8 +59,6 @@ namespace Columbus
 		C_Buffer* mLBuf = nullptr;
 		C_Buffer* mSBuf = nullptr;
 
-		OctaveNoise mNoise;
-
 		float mLife = 0.0;
 		
 		Camera mCamera;
@@ -104,8 +102,6 @@ namespace Columbus
 		float* mTimeData = nullptr;
 		float* mSizeData = nullptr;
 		unsigned int mParticlesCount = 0;
-
-		void UpdateNoise(ParticleModuleNoise* Noise);
 	public:
 		ParticleEmitter(const ParticleEffect* aParticleEffect);
 
