@@ -25,7 +25,7 @@ namespace Columbus
 		/*
 		* Set random frame for particle if random and 0 if linear
 		*/
-		virtual void Spawn(Particle& aParticle) override
+		void Spawn(Particle& aParticle) override
 		{
 			if (Mode == E_PARTICLE_SUB_UV_MODE_LINEAR)
 			{
@@ -33,6 +33,16 @@ namespace Columbus
 			} else
 			{
 				aParticle.frame = TruncToInt(Random::range(0, Horizontal * Vertical));
+			}
+		}
+		/*
+		* Update particle parameter
+		*/
+		void Update(Particle& aParticle) override
+		{
+			if (Mode == E_PARTICLE_SUB_UV_MODE_LINEAR)
+			{
+				aParticle.frame = TruncToInt(floor(Horizontal * Vertical * aParticle.percent * Cycles));
 			}
 		}
 

@@ -258,7 +258,7 @@ namespace Columbus
 		ParticleModuleLocationBox* tLocationBox = new ParticleModuleLocationBox();
 
 		if (serializer.getSubVector3({ "Location", "Box", "Size" }, &tLocationBox->Size, { "X", "Y", "Z" }) &&
-			serializer.getSubBool({ "Location", "Box", "EmitFromShell" }, &tLocationBox->EmitFromShell))
+		    serializer.getSubBool({ "Location", "Box", "EmitFromShell" }, &tLocationBox->EmitFromShell))
 		{
 			tLocationBase = tLocationBox;
 		}
@@ -266,7 +266,7 @@ namespace Columbus
 		ParticleModuleLocationSphere* tLocationSphere = new ParticleModuleLocationSphere();
 
 		if (serializer.getSubFloat({ "Location", "Sphere", "Radius" }, &tLocationSphere->Radius) &&
-			serializer.getSubBool({ "Location", "Sphere", "EmitFromShell" }, &tLocationSphere->EmitFromShell))
+		    serializer.getSubBool({ "Location", "Sphere", "EmitFromShell" }, &tLocationSphere->EmitFromShell))
 		{
 			tLocationBase = tLocationSphere;
 		}
@@ -292,10 +292,10 @@ namespace Columbus
 		ParticleModuleRequired* tRequired = new ParticleModuleRequired();
 
 		if (serializer.getSubBool({ "Required", "Visible" }, &tRequired->Active) &&
-			serializer.getSubBool({ "Required", "AdditiveBlending" }, &tRequired->AdditiveBlending) &&
-			serializer.getSubBool({ "Required", "Billboarding" }, &tRequired->Billboarding) &&
-			serializer.getSubInt({ "Required", "Transformation" }, (int*)&tRequired->Transformation) &&
-			serializer.getSubInt({ "Required", "SortMode" }, (int*)&tRequired->SortMode))
+		    serializer.getSubBool({ "Required", "AdditiveBlending" }, &tRequired->AdditiveBlending) &&
+		    serializer.getSubBool({ "Required", "Billboarding" }, &tRequired->Billboarding) &&
+		    serializer.getSubInt({ "Required", "Transformation" }, (int*)&tRequired->Transformation) &&
+		    serializer.getSubInt({ "Required", "SortMode" }, (int*)&tRequired->SortMode))
 		{
 			tRequiredBase = tRequired;
 		}
@@ -311,7 +311,7 @@ namespace Columbus
 		ParticleModuleAcceleration* tAcceleration = new ParticleModuleAcceleration();
 
 		if (serializer.getSubVector3({ "Acceleration", "Initial", "Min" }, &tAcceleration->Min, { "X", "Y", "Z" }) &&
-			serializer.getSubVector3({ "Acceleration", "Initial", "Max" }, &tAcceleration->Max, { "X", "Y", "Z" }))
+		    serializer.getSubVector3({ "Acceleration", "Initial", "Max" }, &tAcceleration->Max, { "X", "Y", "Z" }))
 		{
 			tAccelerationBase = tAcceleration;
 		}
@@ -319,7 +319,7 @@ namespace Columbus
 		ParticleModuleSize* tSize = new ParticleModuleSize();
 
 		if (serializer.getSubVector3({ "Size", "Initial", "Min" }, &tSize->Min, { "X", "Y", "Z" }) &&
-			serializer.getSubVector3({ "Size", "Initial", "Max" }, &tSize->Max, { "X", "Y", "Z" }))
+		    serializer.getSubVector3({ "Size", "Initial", "Max" }, &tSize->Max, { "X", "Y", "Z" }))
 		{
 			tSizeBase = tSize;
 		}
@@ -327,9 +327,9 @@ namespace Columbus
 		ParticleModuleSizeOverLife* tSizeOverLife = new ParticleModuleSizeOverLife();
 
 		if (serializer.getSubVector3({ "Size", "OverLife", "MinStart" }, &tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
-			serializer.getSubVector3({ "Size", "OverLife", "MaxStart" }, &tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
-			serializer.getSubVector3({ "Size", "OverLife", "MinFinal" }, &tSizeOverLife->MinFinal, { "X", "Y", "Z" }) &&
-			serializer.getSubVector3({ "Size", "OverLife", "MaxFinal" }, &tSizeOverLife->MaxFinal, { "X", "Y", "Z" }))
+		    serializer.getSubVector3({ "Size", "OverLife", "MaxStart" }, &tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
+		    serializer.getSubVector3({ "Size", "OverLife", "MinFinal" }, &tSizeOverLife->MinFinal, { "X", "Y", "Z" }) &&
+		    serializer.getSubVector3({ "Size", "OverLife", "MaxFinal" }, &tSizeOverLife->MaxFinal, { "X", "Y", "Z" }))
 		{
 			tSizeBase = tSizeOverLife;
 		}
@@ -337,7 +337,7 @@ namespace Columbus
 		ParticleModuleColor* tColor = new ParticleModuleColor();
 
 		if (serializer.getSubVector4({ "Color", "Initial", "Min" }, &tColor->Min, { "R", "G", "B", "A" }) &&
-			serializer.getSubVector4({ "Color", "Initial", "Max" }, &tColor->Max, { "R", "G", "B", "A" }))
+		    serializer.getSubVector4({ "Color", "Initial", "Max" }, &tColor->Max, { "R", "G", "B", "A" }))
 		{
 			tColorBase = tColor;
 		}
@@ -345,9 +345,9 @@ namespace Columbus
 		ParticleModuleColorOverLife* tColorOverLife = new ParticleModuleColorOverLife();
 
 		if (serializer.getSubVector4({ "Color", "OverLife", "MinStart" }, &tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
-			serializer.getSubVector4({ "Color", "OverLife", "MaxStart" }, &tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
-			serializer.getSubVector4({ "Color", "OverLife", "MinFinal" }, &tColorOverLife->MinFinal, { "R", "G", "B", "A" }) &&
-			serializer.getSubVector4({ "Color", "OverLife", "MaxFinal" }, &tColorOverLife->MaxFinal, { "R", "G", "B", "A" }))
+		    serializer.getSubVector4({ "Color", "OverLife", "MaxStart" }, &tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
+		    serializer.getSubVector4({ "Color", "OverLife", "MinFinal" }, &tColorOverLife->MinFinal, { "R", "G", "B", "A" }) &&
+		    serializer.getSubVector4({ "Color", "OverLife", "MaxFinal" }, &tColorOverLife->MaxFinal, { "R", "G", "B", "A" }))
 		{
 			tColorBase = tColorOverLife;
 		}
@@ -391,6 +391,7 @@ namespace Columbus
 		if (tEmitBase != nullptr)
 		{
 			AddModule(tEmitBase);
+			Emit = static_cast<ParticleModuleEmit*>(tEmitBase);
 		}
 
 		if (tLifetimeBase != nullptr)
@@ -411,6 +412,7 @@ namespace Columbus
 		if (tRequiredBase != nullptr)
 		{
 			AddModule(tRequiredBase);
+			Required = static_cast<ParticleModuleRequired*>(tRequiredBase);
 		}
 
 		if (tRotationBase != nullptr)
