@@ -57,7 +57,13 @@ namespace Columbus
 
 		for (int i = 0; i < 6; i++)
 		{
-			mBitmaps[i].load(aPath[i]);
+			if (!mBitmaps[i].load(aPath[i]))
+			{
+				Log::error("Can't load Cubemap face: " + aPath[i]);
+				glDeleteTextures(1, &mID);
+				return false;
+			}
+
 			mBitmaps[i].flipY();
 
 			if (!mBitmaps[i].isExist())

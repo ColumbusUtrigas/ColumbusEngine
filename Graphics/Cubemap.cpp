@@ -71,7 +71,7 @@ namespace Columbus
 
 			if (!mBitmaps[i].save(aPath[i], type, 90))
 			{
-				Log::error("Can't load cubemap face: " + aPath[i]);
+				Log::error("Can't save cubemap face: " + aPath[i]);
 				return false;
 			}
 

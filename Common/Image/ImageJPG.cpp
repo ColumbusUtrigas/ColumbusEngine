@@ -20,15 +20,13 @@ namespace Columbus
 		File file(aFile, "rb");
 		if (!file.isOpened()) return false;
 
-		uint8_t magic[4];
-		file.seekCur(6);
+		uint8_t magic[3];
 		if (!file.readBytes(magic, sizeof(magic))) return false;
 		file.close();
-		
-		if (magic[0] == 'J' &&
-		    magic[1] == 'F' &&
-		    magic[2] == 'I' &&
-		    magic[3] == 'F') return true;
+
+		if (magic[0] == 0xFF &&
+			magic[1] == 0xD8 &&
+			magic[2] == 0xFF) return true;
 		else return false;
 	}
 
