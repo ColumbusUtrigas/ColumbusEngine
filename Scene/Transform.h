@@ -25,6 +25,9 @@ namespace Columbus
 		Matrix4 mNormalMatrix;
 	public:
 		Transform();
+		Transform(Vector3 aPos);
+		Transform(Vector3 aPos, Vector3 aRot);
+		Transform(Vector3 aPos, Vector3 aRot, Vector3 aScale);
 
 		void setPos(Vector3 aPos);
 		void addPos(Vector3 aPos);

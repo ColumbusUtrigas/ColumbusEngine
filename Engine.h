@@ -40,6 +40,16 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 
+#include <Physics/PhysicsShape.h>
+#include <Physics/PhysicsShapeBox.h>
+#include <Physics/PhysicsShapeCapsule.h>
+#include <Physics/PhysicsShapeCone.h>
+#include <Physics/PhysicsShapeCylinder.h>
+#include <Physics/PhysicsShapeMultiSphere.h>
+#include <Physics/PhysicsShapeSphere.h>
+#include <Physics/PhysicsWorld.h>
+#include <Physics/Rigidbody.h>
+
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
 

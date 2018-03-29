@@ -15,10 +15,35 @@ namespace Columbus
 
 	//////////////////////////////////////////////////////////////////////////////
 	Transform::Transform() :
-		mMatrix(1.0)
+		mMatrix(1.0f)
 	{
 		
 	}
+
+	Transform::Transform(Vector3 aPos) :
+		mPos(aPos),
+		mMatrix(1.0f)
+	{
+
+	}
+
+	Transform::Transform(Vector3 aPos, Vector3 aRot) :
+		mPos(aPos),
+		mRot(aRot),
+		mMatrix(1.0f)
+	{
+
+	}
+
+	Transform::Transform(Vector3 aPos, Vector3 aRot, Vector3 aScale) :
+		mPos(aPos),
+		mRot(aRot),
+		mScale(aScale),
+		mMatrix(1.0f)
+	{
+
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
