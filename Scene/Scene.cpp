@@ -299,9 +299,9 @@ namespace Columbus
 		C_EnableBlendOpenGL();
 		C_EnableAlphaTestOpenGL();
 
-		mNoneEffect.clearAttribs();
-		mNoneEffect.addAttrib({ "uResolution", mContextSize });
-		mNoneEffect.bind(Vector4(1, 1, 1, 0), mContextSize);
+		//mNoneEffect.clearAttribs();
+		//mNoneEffect.addAttrib({ "uResolution", mContextSize });
+		//mNoneEffect.bind(Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
 			mSkybox->draw();
@@ -314,9 +314,9 @@ namespace Columbus
 			if (Object.second->hasComponent("ParticleSystem"))
 				Object.second->render();
 
-		mNoneEffect.unbind();
+		//mNoneEffect.unbind();
 
-		mNoneEffect.draw();
+		//mNoneEffect.draw();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
