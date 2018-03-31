@@ -21,8 +21,8 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <System/Timer.h>
 #include <Scene/GameObject.h>
-#include <Scene/MeshRenderer.h>
-#include <Scene/ParticleSystem.h>
+#include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentParticleSystem.h>
 #include <Scene/Component.h>
 
 namespace Columbus

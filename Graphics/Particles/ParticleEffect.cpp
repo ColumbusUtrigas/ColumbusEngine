@@ -223,7 +223,7 @@ namespace Columbus
 	{
 		Serializer::SerializerXML serializer;
 
-		if (!serializer.read(aFile, "ParticleEffect"))
+		if (!serializer.Read(aFile, "ParticleEffect"))
 		{ Log::error("Can't load Particle Effect: " + aFile); return false; }
 
 		ParticleModuleAccelerationBase* tAccelerationBase = nullptr;
@@ -240,114 +240,114 @@ namespace Columbus
 
 		ParticleModuleEmit* tEmit = new ParticleModuleEmit();
 
-		if (serializer.getSubBool({ "Emit", "Emitting" }, &tEmit->Active) &&
-		    serializer.getSubInt({ "Emit", "Count" }, &tEmit->Count) &&
-		    serializer.getSubFloat({ "Emit", "EmitRate" }, &tEmit->EmitRate))
+		if (serializer.GetSubBool({ "Emit", "Emitting" }, &tEmit->Active) &&
+		    serializer.GetSubInt({ "Emit", "Count" }, &tEmit->Count) &&
+		    serializer.GetSubFloat({ "Emit", "EmitRate" }, &tEmit->EmitRate))
 		{
 			tEmitBase = tEmit;
 		}
 
 		ParticleModuleLocationCircle* tLocationCircle = new ParticleModuleLocationCircle();
 
-		if (serializer.getSubFloat({ "Location", "Circle", "Radius" }, &tLocationCircle->Radius) &&
-		    serializer.getSubBool({ "Location", "Circle", "EmitFromShell" }, &tLocationCircle->EmitFromShell))
+		if (serializer.GetSubFloat({ "Location", "Circle", "Radius" }, &tLocationCircle->Radius) &&
+		    serializer.GetSubBool({ "Location", "Circle", "EmitFromShell" }, &tLocationCircle->EmitFromShell))
 		{
 			tLocationBase = tLocationCircle;
 		}
 
 		ParticleModuleLocationBox* tLocationBox = new ParticleModuleLocationBox();
 
-		if (serializer.getSubVector3({ "Location", "Box", "Size" }, &tLocationBox->Size, { "X", "Y", "Z" }) &&
-		    serializer.getSubBool({ "Location", "Box", "EmitFromShell" }, &tLocationBox->EmitFromShell))
+		if (serializer.GetSubVector3({ "Location", "Box", "Size" }, &tLocationBox->Size, { "X", "Y", "Z" }) &&
+		    serializer.GetSubBool({ "Location", "Box", "EmitFromShell" }, &tLocationBox->EmitFromShell))
 		{
 			tLocationBase = tLocationBox;
 		}
 
 		ParticleModuleLocationSphere* tLocationSphere = new ParticleModuleLocationSphere();
 
-		if (serializer.getSubFloat({ "Location", "Sphere", "Radius" }, &tLocationSphere->Radius) &&
-		    serializer.getSubBool({ "Location", "Sphere", "EmitFromShell" }, &tLocationSphere->EmitFromShell))
+		if (serializer.GetSubFloat({ "Location", "Sphere", "Radius" }, &tLocationSphere->Radius) &&
+		    serializer.GetSubBool({ "Location", "Sphere", "EmitFromShell" }, &tLocationSphere->EmitFromShell))
 		{
 			tLocationBase = tLocationSphere;
 		}
 
 		ParticleModuleLifetime* tLifetime = new ParticleModuleLifetime();
 
-		if (serializer.getSubFloat({ "Lifetime", "Min" }, &tLifetime->Min) &&
-		    serializer.getSubFloat({ "Lifetime", "Max" }, &tLifetime->Max))
+		if (serializer.GetSubFloat({ "Lifetime", "Min" }, &tLifetime->Min) &&
+		    serializer.GetSubFloat({ "Lifetime", "Max" }, &tLifetime->Max))
 		{
 			tLifetimeBase = tLifetime;
 		}
 
 		ParticleModuleRotation* tRotation = new ParticleModuleRotation();
 
-		if (serializer.getSubFloat({ "Rotation", "Min" }, &tRotation->Min) &&
-		    serializer.getSubFloat({ "Rotation", "Max" }, &tRotation->Max) &&
-		    serializer.getSubFloat({ "Rotation", "MinVelocity" }, &tRotation->MinVelocity) &&
-		    serializer.getSubFloat({ "Rotation", "MaxVelocity" }, &tRotation->MaxVelocity))
+		if (serializer.GetSubFloat({ "Rotation", "Min" }, &tRotation->Min) &&
+		    serializer.GetSubFloat({ "Rotation", "Max" }, &tRotation->Max) &&
+		    serializer.GetSubFloat({ "Rotation", "MinVelocity" }, &tRotation->MinVelocity) &&
+		    serializer.GetSubFloat({ "Rotation", "MaxVelocity" }, &tRotation->MaxVelocity))
 		{
 			tRotationBase = tRotation;
 		}
 
 		ParticleModuleRequired* tRequired = new ParticleModuleRequired();
 
-		if (serializer.getSubBool({ "Required", "Visible" }, &tRequired->Active) &&
-		    serializer.getSubBool({ "Required", "AdditiveBlending" }, &tRequired->AdditiveBlending) &&
-		    serializer.getSubBool({ "Required", "Billboarding" }, &tRequired->Billboarding) &&
-		    serializer.getSubInt({ "Required", "Transformation" }, (int*)&tRequired->Transformation) &&
-		    serializer.getSubInt({ "Required", "SortMode" }, (int*)&tRequired->SortMode))
+		if (serializer.GetSubBool({ "Required", "Visible" }, &tRequired->Active) &&
+		    serializer.GetSubBool({ "Required", "AdditiveBlending" }, &tRequired->AdditiveBlending) &&
+		    serializer.GetSubBool({ "Required", "Billboarding" }, &tRequired->Billboarding) &&
+		    serializer.GetSubInt({ "Required", "Transformation" }, (int*)&tRequired->Transformation) &&
+		    serializer.GetSubInt({ "Required", "SortMode" }, (int*)&tRequired->SortMode))
 		{
 			tRequiredBase = tRequired;
 		}
 
 		ParticleModuleVelocity* tVelocity = new ParticleModuleVelocity();
 
-		if (serializer.getSubVector3({ "InitialVelocity", "Min" }, &tVelocity->Min, { "X", "Y", "Z" }) &&
-		    serializer.getSubVector3({ "InitialVelocity", "Max" }, &tVelocity->Max, { "X", "Y", "Z" }))
+		if (serializer.GetSubVector3({ "InitialVelocity", "Min" }, &tVelocity->Min, { "X", "Y", "Z" }) &&
+		    serializer.GetSubVector3({ "InitialVelocity", "Max" }, &tVelocity->Max, { "X", "Y", "Z" }))
 		{
 			tVelocityBase = tVelocity;
 		}
 
 		ParticleModuleAcceleration* tAcceleration = new ParticleModuleAcceleration();
 
-		if (serializer.getSubVector3({ "Acceleration", "Initial", "Min" }, &tAcceleration->Min, { "X", "Y", "Z" }) &&
-		    serializer.getSubVector3({ "Acceleration", "Initial", "Max" }, &tAcceleration->Max, { "X", "Y", "Z" }))
+		if (serializer.GetSubVector3({ "Acceleration", "Initial", "Min" }, &tAcceleration->Min, { "X", "Y", "Z" }) &&
+		    serializer.GetSubVector3({ "Acceleration", "Initial", "Max" }, &tAcceleration->Max, { "X", "Y", "Z" }))
 		{
 			tAccelerationBase = tAcceleration;
 		}
 
 		ParticleModuleSize* tSize = new ParticleModuleSize();
 
-		if (serializer.getSubVector3({ "Size", "Initial", "Min" }, &tSize->Min, { "X", "Y", "Z" }) &&
-		    serializer.getSubVector3({ "Size", "Initial", "Max" }, &tSize->Max, { "X", "Y", "Z" }))
+		if (serializer.GetSubVector3({ "Size", "Initial", "Min" }, &tSize->Min, { "X", "Y", "Z" }) &&
+		    serializer.GetSubVector3({ "Size", "Initial", "Max" }, &tSize->Max, { "X", "Y", "Z" }))
 		{
 			tSizeBase = tSize;
 		}
 
 		ParticleModuleSizeOverLife* tSizeOverLife = new ParticleModuleSizeOverLife();
 
-		if (serializer.getSubVector3({ "Size", "OverLife", "MinStart" }, &tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
-		    serializer.getSubVector3({ "Size", "OverLife", "MaxStart" }, &tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
-		    serializer.getSubVector3({ "Size", "OverLife", "MinFinal" }, &tSizeOverLife->MinFinal, { "X", "Y", "Z" }) &&
-		    serializer.getSubVector3({ "Size", "OverLife", "MaxFinal" }, &tSizeOverLife->MaxFinal, { "X", "Y", "Z" }))
+		if (serializer.GetSubVector3({ "Size", "OverLife", "MinStart" }, &tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
+		    serializer.GetSubVector3({ "Size", "OverLife", "MaxStart" }, &tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
+		    serializer.GetSubVector3({ "Size", "OverLife", "MinFinal" }, &tSizeOverLife->MinFinal, { "X", "Y", "Z" }) &&
+		    serializer.GetSubVector3({ "Size", "OverLife", "MaxFinal" }, &tSizeOverLife->MaxFinal, { "X", "Y", "Z" }))
 		{
 			tSizeBase = tSizeOverLife;
 		}
 
 		ParticleModuleColor* tColor = new ParticleModuleColor();
 
-		if (serializer.getSubVector4({ "Color", "Initial", "Min" }, &tColor->Min, { "R", "G", "B", "A" }) &&
-		    serializer.getSubVector4({ "Color", "Initial", "Max" }, &tColor->Max, { "R", "G", "B", "A" }))
+		if (serializer.GetSubVector4({ "Color", "Initial", "Min" }, &tColor->Min, { "R", "G", "B", "A" }) &&
+		    serializer.GetSubVector4({ "Color", "Initial", "Max" }, &tColor->Max, { "R", "G", "B", "A" }))
 		{
 			tColorBase = tColor;
 		}
 
 		ParticleModuleColorOverLife* tColorOverLife = new ParticleModuleColorOverLife();
 
-		if (serializer.getSubVector4({ "Color", "OverLife", "MinStart" }, &tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
-		    serializer.getSubVector4({ "Color", "OverLife", "MaxStart" }, &tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
-		    serializer.getSubVector4({ "Color", "OverLife", "MinFinal" }, &tColorOverLife->MinFinal, { "R", "G", "B", "A" }) &&
-		    serializer.getSubVector4({ "Color", "OverLife", "MaxFinal" }, &tColorOverLife->MaxFinal, { "R", "G", "B", "A" }))
+		if (serializer.GetSubVector4({ "Color", "OverLife", "MinStart" }, &tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
+		    serializer.GetSubVector4({ "Color", "OverLife", "MaxStart" }, &tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
+		    serializer.GetSubVector4({ "Color", "OverLife", "MinFinal" }, &tColorOverLife->MinFinal, { "R", "G", "B", "A" }) &&
+		    serializer.GetSubVector4({ "Color", "OverLife", "MaxFinal" }, &tColorOverLife->MaxFinal, { "R", "G", "B", "A" }))
 		{
 			tColorBase = tColorOverLife;
 		}
@@ -355,23 +355,23 @@ namespace Columbus
 
 		ParticleModuleNoise* tNoise = new ParticleModuleNoise();
 
-		if (serializer.getSubBool({ "Noise", "Active" }, &tNoise->Active) &&
-		    serializer.getSubFloat({ "Noise", "Strength" }, &tNoise->Strength) &&
-		    serializer.getSubInt({ "Noise", "Octaves" }, &tNoise->Octaves) &&
-		    serializer.getSubFloat({ "Noise", "Lacunarity" }, &tNoise->Lacunarity) &&
-		    serializer.getSubFloat({ "Noise", "Persistence" }, &tNoise->Persistence) &&
-		    serializer.getSubFloat({ "Noise", "Frequency" }, &tNoise->Frequency) &&
-		    serializer.getSubFloat({ "Noise", "Amplitude" }, &tNoise->Amplitude))
+		if (serializer.GetSubBool({ "Noise", "Active" }, &tNoise->Active) &&
+		    serializer.GetSubFloat({ "Noise", "Strength" }, &tNoise->Strength) &&
+		    serializer.GetSubInt({ "Noise", "Octaves" }, &tNoise->Octaves) &&
+		    serializer.GetSubFloat({ "Noise", "Lacunarity" }, &tNoise->Lacunarity) &&
+		    serializer.GetSubFloat({ "Noise", "Persistence" }, &tNoise->Persistence) &&
+		    serializer.GetSubFloat({ "Noise", "Frequency" }, &tNoise->Frequency) &&
+		    serializer.GetSubFloat({ "Noise", "Amplitude" }, &tNoise->Amplitude))
 		{
 			tNoiseBase = tNoise;
 		}
 
 		ParticleModuleSubUV* tSubUV = new ParticleModuleSubUV();
 
-		if (serializer.getSubInt({ "SubUV", "Mode" }, (int*)&tSubUV->Mode) &&
-		    serializer.getSubInt({ "SubUV", "Horizontal" }, &tSubUV->Horizontal) &&
-		    serializer.getSubInt({ "SubUV", "Vertical" }, &tSubUV->Vertical) &&
-		    serializer.getSubFloat({ "SubUV", "Cycles" }, &tSubUV->Cycles))
+		if (serializer.GetSubInt({ "SubUV", "Mode" }, (int*)&tSubUV->Mode) &&
+		    serializer.GetSubInt({ "SubUV", "Horizontal" }, &tSubUV->Horizontal) &&
+		    serializer.GetSubInt({ "SubUV", "Vertical" }, &tSubUV->Vertical) &&
+		    serializer.GetSubFloat({ "SubUV", "Cycles" }, &tSubUV->Cycles))
 		{
 			tSubUVBase = tSubUV;
 		}

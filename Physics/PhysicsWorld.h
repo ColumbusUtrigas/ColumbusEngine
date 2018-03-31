@@ -13,9 +13,8 @@ namespace Columbus
 		btDefaultCollisionConfiguration* mCollisionConfiguration;
 		btCollisionDispatcher* mDispatcher;
 		btSequentialImpulseConstraintSolver* mSolver;
-	public:
 		btDiscreteDynamicsWorld* mWorld;
-
+	public:
 		PhysicsWorld();
 
 		virtual void SetGravity(Vector3 aGravity);

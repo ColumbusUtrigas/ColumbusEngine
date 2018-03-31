@@ -190,36 +190,36 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool Material::saveToXML(std::string aFile) const
 	{
-		Serializer::SerializerXML serializer;
+		Serializer::SerializerXML Serializer;
 
-		if (!serializer.write(aFile, "Material")) 
+		if (!Serializer.Write(aFile, "Material"))
 		{ Log::error("Can't save Material: " + aFile); return false; }
 
-		if (!serializer.setVector4("Color", mColor, {"R", "G", "B", "A"}))
+		if (!Serializer.SetVector4("Color", mColor, {"R", "G", "B", "A"}))
 		{ Log::error("Can't save Material color: " + aFile); return false; }
 
-		if (!serializer.setVector3("Ambient", mAmbient, {"R", "G", "B"}))
+		if (!Serializer.SetVector3("Ambient", mAmbient, {"R", "G", "B"}))
 		{ Log::error("Can't save Material ambient: " + aFile); return false; }
 
-		if (!serializer.setVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
+		if (!Serializer.SetVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
 		{ Log::error("Can't save Material diffuse: " + aFile); return false; }
 
-		if (!serializer.setVector3("Specular", mSpecular, {"R", "G", "B"}))
+		if (!Serializer.SetVector3("Specular", mSpecular, {"R", "G", "B"}))
 		{ Log::error("Can't save Material specular: " + aFile); return false; }
 
-		if (!serializer.setFloat("Shininess", mShininess))
+		if (!Serializer.SetFloat("Shininess", mShininess))
 		{ Log::error("Can't save Material shininess: " + aFile); return false; }
 
-		if (!serializer.setFloat("ReflectionPower", mReflectionPower))
+		if (!Serializer.SetFloat("ReflectionPower", mReflectionPower))
 		{ Log::error("Can't save Material reflection power: " + aFile); return false; }
 
-		if (!serializer.setBool("Discard", mDiscard))
+		if (!Serializer.SetBool("Discard", mDiscard))
 		{ Log::error("Can't save Material discard: " + aFile); return false; }
 
-		if (!serializer.setBool("Lighting", mLighting))
+		if (!Serializer.SetBool("Lighting", mLighting))
 		{ Log::error("Can't save Material lighting: " + aFile); return false; }
 
-		if (!serializer.save())
+		if (!Serializer.Save())
 		{ Log::error("Can't save Material: " + aFile); return false; }
 
 		Log::success("Material saved: " + aFile);
@@ -258,42 +258,42 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool Material::loadFromXML(std::string aFile)
 	{
-		Serializer::SerializerXML serializer;
+		Serializer::SerializerXML Serializer;
 
-		if (!serializer.read(aFile, "Material"))
+		if (!Serializer.Read(aFile, "Material"))
 		{ Log::error("Can't load Material: " + aFile); return false; }
 
-		if (!serializer.getVector4("Color", &mColor, {"R", "G", "B", "A"}))
+		if (!Serializer.GetVector4("Color", &mColor, {"R", "G", "B", "A"}))
 		{ Log::error("Can't load Material color: " + aFile); return false; }
 
-		if (!serializer.getVector3("Ambient", &mAmbient, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Ambient", &mAmbient, {"R", "G", "B"}))
 		{ Log::error("Can't load Material ambient: " + aFile); return false; }
 
-		if (!serializer.getVector3("Diffuse", &mDiffuse, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Diffuse", &mDiffuse, {"R", "G", "B"}))
 		{ Log::error("Can't load Material diffuse: " + aFile); return false; }
 
-		if (!serializer.getVector3("Specular", &mSpecular, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Specular", &mSpecular, {"R", "G", "B"}))
 		{ Log::error("Can't load Material specular: " + aFile); return false; }
 
-		if (!serializer.getFloat("Shininess", &mShininess))
+		if (!Serializer.GetFloat("Shininess", &mShininess))
 		{ Log::error("Can't load Material shininess: " + aFile); return false; }
 
-		if (!serializer.getFloat("ReflectionPower", &mReflectionPower))
+		if (!Serializer.GetFloat("ReflectionPower", &mReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
 
-		if (!serializer.getBool("Discard", &mDiscard))
+		if (!Serializer.GetBool("Discard", &mDiscard))
 		{ Log::error("Can't load Material discard: " + aFile); return false; }
 
-		if (!serializer.getBool("Lighting", &mLighting))
+		if (!Serializer.GetBool("Lighting", &mLighting))
 		{ Log::error("Can't load Material lighting: " + aFile); return false; }
 
 		std::string diffuseMapPath = "None";
 		std::string specularMapPath = "None";
 		std::string normalMapPath = "None";
 
-		serializer.getSubString({"Textures", "Diffuse"}, &diffuseMapPath);
-		serializer.getSubString({"Textures", "Specular"}, &specularMapPath);
-		serializer.getSubString({"Textures", "Normal"}, &normalMapPath);
+		Serializer.GetSubString({"Textures", "Diffuse"}, &diffuseMapPath);
+		Serializer.GetSubString({"Textures", "Specular"}, &specularMapPath);
+		Serializer.GetSubString({"Textures", "Normal"}, &normalMapPath);
 
 		if (diffuseMapPath != "None")
 			mTextureID = std::atoi(diffuseMapPath.c_str());

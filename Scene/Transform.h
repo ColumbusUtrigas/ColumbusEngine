@@ -18,34 +18,34 @@ namespace Columbus
 	class Transform
 	{
 	private:
-		Vector3 mPos;
-		Vector3 mRot;
-		Vector3 mScale = Vector3(1, 1, 1);
-		Matrix4 mMatrix;
-		Matrix4 mNormalMatrix;
+		Vector3 Position;
+		Vector3 Rotation;
+		Vector3 Scale = Vector3(1, 1, 1);
+		Matrix4 Matrix;
+		Matrix4 NormalMatrix;
 	public:
 		Transform();
-		Transform(Vector3 aPos);
-		Transform(Vector3 aPos, Vector3 aRot);
-		Transform(Vector3 aPos, Vector3 aRot, Vector3 aScale);
+		Transform(Vector3 Pos);
+		Transform(Vector3 Pos, Vector3 Rot);
+		Transform(Vector3 Pos, Vector3 Rot, Vector3 Scale);
 
-		void setPos(Vector3 aPos);
-		void addPos(Vector3 aPos);
-		Vector3 getPos() const;
+		void SetPos(Vector3 Pos);
+		void AddPos(Vector3 Pos);
+		Vector3 GetPos() const;
 
-		void setRot(Vector3 aRot);
-		void addRot(Vector3 aRot);
-		Vector3 getRot() const;
+		void SetRot(Vector3 Rot);
+		void AddRot(Vector3 Rot);
+		Vector3 GetRot() const;
 
-		void setScale(Vector3 aScale);
-		void addScale(Vector3 aScale);
-		Vector3 getScale() const;
+		void SetScale(Vector3 Scale);
+		void AddScale(Vector3 Scale);
+		Vector3 GetScale() const;
 
-		void update();
+		void Update();
 
-		void setMatrix(Matrix4 aMatrix);
-		Matrix4 getMatrix() const;
-		Matrix4 getNormalMatrix() const;
+		void SetMatrix(Matrix4 Matrix);
+		Matrix4 GetMatrix() const;
+		Matrix4 GetNormalMatrix() const;
 
 		~Transform();
 	};

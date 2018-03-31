@@ -14,12 +14,9 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <json.hpp>
 
 namespace Columbus
 {
-
-	using nlohmann::json;
 
 	namespace Serializer
 	{
@@ -27,9 +24,9 @@ namespace Columbus
 		class SerializerXML
 		{
 		private:
-			C_XMLDoc mDoc;
-			C_XMLNode* mRoot = nullptr;
-			C_XMLElement* mTmp = nullptr;
+			tinyxml2::XMLDocument mDoc;
+			tinyxml2::XMLNode* mRoot = nullptr;
+			tinyxml2::XMLElement* mTmp = nullptr;
 
 			std::string mFile;
 			std::string mRootName;
@@ -41,10 +38,10 @@ namespace Columbus
 			bool mInited = false;
 
 			int mMode = 0; // 0 - saving, 1 - loading
-			public:
-			enum C_XMLMode { C_XML_SERIALIZATION, C_XML_DESERIALIZATION };
 
 			C_XMLElement* getElementFromHierarchy(std::vector<std::string> aElement);
+		public:
+			enum XMLMode { XML_SERIALIZATION, XML_DESERIALIZATION };
 		public:
 			struct Element
 			{
@@ -52,63 +49,66 @@ namespace Columbus
 			};
 
 			SerializerXML();
-			SerializerXML(std::string aFile, std::string aRoot, C_XMLMode aMode);
+			SerializerXML(std::string aFile, std::string aRoot, XMLMode aMode);
 
-			Element* getElement(std::string aElement);
-			Element* getElement(Element* aElement, std::string aName);
+			Element* GetElement(std::string aElement);
+			Element* GetElement(Element* aElement, std::string aName);
+			Element* GetSubElement(std::vector<std::string> Elements);
+			Element* GetSubElement(std::vector<std::string> Elements, Element* Elem);
+			Element* NextElement(Element* Elem, std::string Name);
 
-			bool getInt(const Element* aElement, int* aValue);
-			bool getBool(const Element* aElement, bool* aValue);
-			bool getFloat(const Element* aElement, float* aValue);
-			bool getDouble(const Element* aElement, double* aValue);
-			bool getString(const Element* aElement, std::string* aValue);
-			bool getVector2(const Element* aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool getVector3(const Element* aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool getVector4(const Element* aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool GetInt(const Element* aElement, int* aValue);
+			bool GetBool(const Element* aElement, bool* aValue);
+			bool GetFloat(const Element* aElement, float* aValue);
+			bool GetDouble(const Element* aElement, double* aValue);
+			bool GetString(const Element* aElement, std::string* aValue);
+			bool GetVector2(const Element* aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool GetVector3(const Element* aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool GetVector4(const Element* aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
 
-			bool write(std::string aFile, std::string aRoot);
-			bool setEmpty(std::string aElement);
-			bool setSubEmpty(std::vector<std::string> aElement);
-			bool setInt(std::string aElement, int aValue);
-			bool setSubInt(std::vector<std::string> aElement, int aValue);
-			bool setBool(std::string aElement, bool aValue);
-			bool setSubBool(std::vector<std::string> aElement, bool aValue);
-			bool setFloat(std::string aElement, float aValue);
-			bool setSubFloat(std::vector<std::string> aElement, float aValue);
-			bool setDouble(std::string aElement, double aValue);
-			bool setSubDouble(std::vector<std::string> aElement, double aValue);
-			bool setString(std::string aElement, std::string aValue);
-			bool setSubString(std::vector<std::string> aElement, std::string aValue);
-			bool setVector2(std::string aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
-			bool setSubVector2(std::vector<std::string> aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
-			bool setVector3(std::string aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
-			bool setSubVector3(std::vector<std::string> aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
-			bool setVector4(std::string aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
-			bool setSubVector4(std::vector<std::string> aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
-			bool save();
+			bool Write(std::string aFile, std::string aRoot);
+			bool SetEmpty(std::string aElement);
+			bool SetSubEmpty(std::vector<std::string> aElement);
+			bool SetInt(std::string aElement, int aValue);
+			bool SetSubInt(std::vector<std::string> aElement, int aValue);
+			bool SetBool(std::string aElement, bool aValue);
+			bool SetSubBool(std::vector<std::string> aElement, bool aValue);
+			bool SetFloat(std::string aElement, float aValue);
+			bool SetSubFloat(std::vector<std::string> aElement, float aValue);
+			bool SetDouble(std::string aElement, double aValue);
+			bool SetSubDouble(std::vector<std::string> aElement, double aValue);
+			bool SetString(std::string aElement, std::string aValue);
+			bool SetSubString(std::vector<std::string> aElement, std::string aValue);
+			bool SetVector2(std::string aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
+			bool SetSubVector2(std::vector<std::string> aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
+			bool SetVector3(std::string aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
+			bool SetSubVector3(std::vector<std::string> aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
+			bool SetVector4(std::string aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
+			bool SetSubVector4(std::vector<std::string> aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
+			bool Save();
 
-			bool read(std::string aFile, std::string aRoot);
-			bool getInt(std::string aElement, int* aValue);
-			bool getSubInt(std::vector<std::string> aElement, int* aValue);
-			bool getBool(std::string aElement, bool* aValue);
-			bool getSubBool(std::vector<std::string> aElement, bool* aValue);
-			bool getFloat(std::string aElement, float* aValue);
-			bool getSubFloat(std::vector<std::string> aElement, float* aValue);
-			bool getDouble(std::string aElement, double* aValue);
-			bool getSubDouble(std::vector<std::string> aElement, double* aValue);
-			bool getString(std::string aElement, std::string* aValue);
-			bool getSubString(std::vector<std::string> aElement, std::string* aValue);
-			bool getVector2(std::string aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool getSubVector2(std::vector<std::string> aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool getVector3(std::string aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool getSubVector3(std::vector<std::string> aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool getVector4(std::string aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
-			bool getSubVector4(std::vector<std::string> aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool Read(std::string aFile, std::string aRoot);
+			bool GetInt(std::string aElement, int* aValue);
+			bool GetSubInt(std::vector<std::string> aElement, int* aValue);
+			bool GetBool(std::string aElement, bool* aValue);
+			bool GetSubBool(std::vector<std::string> aElement, bool* aValue);
+			bool GetFloat(std::string aElement, float* aValue);
+			bool GetSubFloat(std::vector<std::string> aElement, float* aValue);
+			bool GetDouble(std::string aElement, double* aValue);
+			bool GetSubDouble(std::vector<std::string> aElement, double* aValue);
+			bool GetString(std::string aElement, std::string* aValue);
+			bool GetSubString(std::vector<std::string> aElement, std::string* aValue);
+			bool GetVector2(std::string aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool GetSubVector2(std::vector<std::string> aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
+			bool GetVector3(std::string aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool GetSubVector3(std::vector<std::string> aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
+			bool GetVector4(std::string aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool GetSubVector4(std::vector<std::string> aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
 
 			~SerializerXML();
 		};
 
-		#define C_XML_NEXT_ELEMENT(a, b) \
+		#define XML_NEXT_ELEMENT(a, b) \
 			a->elem = a->elem->NextSiblingElement(b); \
 			if (a->elem == nullptr) a = nullptr;
 

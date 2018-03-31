@@ -17,17 +17,25 @@ namespace Columbus
 
 	class Component
 	{
-	protected:
-		virtual bool onCreate();
-
-		virtual bool onUpdate();
+	public:
+		enum Type
+		{
+			COMPONENT,
+			COMPONENT_LIGHT,
+			COMPONENT_MESH_RENDERER,
+			COMPONENT_PARTICLE_SYSTEM,
+			COMPONENT_RIGIDBODY
+		};
 	public:
 		Component();
 
-		virtual void update(const float aTimeTick);
-		virtual void render(Transform& aTransform);
-		virtual std::string getType();
-		virtual void destroy();
+		virtual bool OnCreate();
+		virtual bool OnUpdate();
+
+		virtual void Update(const float aTimeTick);
+		virtual void Render(Transform& aTransform);
+		virtual Type GetType() const;
+		virtual void Destroy();
 
 		virtual ~Component();
 	};
