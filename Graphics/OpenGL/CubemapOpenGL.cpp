@@ -99,14 +99,14 @@ namespace Columbus
 		std::array<std::string, 6> pathes;
 		std::string names[6] =  { "PosX", "NegX", "PosY", "NegY", "PosZ", "NegZ" };
 
-		Serializer::SerializerXML serializer;
+		Serializer::SerializerXML Serializer;
 
-		if (!serializer.read(aPath, "Cubemap"))
+		if (!Serializer.Read(aPath, "Cubemap"))
 		{ Log::error("Can't load Cubemap XML: " + aPath); return false; }
 
 		for (int i = 0; i < 6; i++)
 		{
-			if (!serializer.getString(names[i], &pathes[i]))
+			if (!Serializer.GetString(names[i], &pathes[i]))
 			{ Log::error("Can't load Cubemap XML: " + aPath); return false; }
 		}
 

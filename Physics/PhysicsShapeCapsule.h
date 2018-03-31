@@ -7,31 +7,33 @@ namespace Columbus
 
 	class PhysicsShapeCapsule : public PhysicsShape
 	{
+	private:
+		float Radius;
+		float Height;
 	public:
-		PhysicsShapeCapsule(float Radius, float Height) { mShape = new btCapsuleShape(Radius, Height);  }
+		PhysicsShapeCapsule(float Radius, float Height) :
+			Radius(0.0f),
+			Height(0.0f)
+		{
+			mShape = new btCapsuleShape(Radius, Height); 
+			this->Radius = Radius;
+			this->Height = Height;
+		}
 		/*
-		* Returns radius of capsule shape
+		* Returns radius of capsule collision shape
+		* @return float: Radius of capsule shape
 		*/
 		float GetRadius() const
 		{
-			if (mShape != nullptr)
-			{
-				return static_cast<btCapsuleShape*>(mShape)->getRadius();
-			}
-
-			return 0.0f;
+			return Radius;
 		}
 		/*
-		* Returns height of capsule shape
+		* Returns height of capsule collision shape
+		* @return float: Height of capsule shape
 		*/
 		float GetHeight() const
 		{
-			if (mShape != nullptr)
-			{
-				return static_cast<btCapsuleShape*>(mShape)->getHalfHeight() * 2;
-			}
-
-			return 0.0f;
+			return Height;
 		}
 	};
 

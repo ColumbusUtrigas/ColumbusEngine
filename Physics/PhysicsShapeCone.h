@@ -7,31 +7,33 @@ namespace Columbus
 
 	class PhysicsShapeCone : public PhysicsShape
 	{
+	private:
+		float Radius;
+		float Height;
 	public:
-		PhysicsShapeCone(float Radius, float Height) { mShape = new btConeShape(Radius, Height); }
+		PhysicsShapeCone(float Radius, float Height) :
+			Radius(0.0f),
+			Height(0.0f)
+		{
+			mShape = new btConeShape(Radius, Height);
+			this->Radius = Radius;
+			this->Height = Height;
+		}
 		/*
-		* Returns radius of cone shape
+		* Returns radius of cone collision shape
+		* @return float: Radius of cone shape
 		*/
 		float GetRadius() const
 		{
-			if (mShape != nullptr)
-			{
-				return static_cast<btConeShape*>(mShape)->getRadius();
-			}
-
-			return 0.0f;
+			return Radius;
 		}
 		/*
-		* Returns height of cone shape
+		* Returns height of cone collision shape
+		* @return float: Height of cone shape
 		*/
 		float GetHeight() const
 		{
-			if (mShape != nullptr)
-			{
-				return static_cast<btConeShape*>(mShape)->getHeight();
-			}
-
-			return 0.0f;
+			return Height;
 		}
 	};
 

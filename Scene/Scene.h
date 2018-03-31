@@ -10,9 +10,10 @@
 #pragma once
 
 #include <Scene/GameObject.h>
-#include <Scene/LightComponent.h>
-#include <Scene/MeshRenderer.h>
-#include <Scene/ParticleSystem.h>
+#include <Scene/ComponentLight.h>
+#include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentParticleSystem.h>
+#include <Scene/ComponentRigidbody.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Render.h>
@@ -21,7 +22,17 @@
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Physics/PhysicsShape.h>
+#include <Physics/PhysicsShapeBox.h>
+#include <Physics/PhysicsShapeCapsule.h>
+#include <Physics/PhysicsShapeCone.h>
+#include <Physics/PhysicsShapeConvexHull.h>
+#include <Physics/PhysicsShapeCylinder.h>
+#include <Physics/PhysicsShapeMultiSphere.h>
+#include <Physics/PhysicsShapeSphere.h>
+#include <Physics/PhysicsWorld.h>
 #include <System/ResourceManager.h>
+#include <Core/Types.h>
 
 namespace Columbus
 {
@@ -29,11 +40,14 @@ namespace Columbus
 	class Scene
 	{
 	private:
-		std::map<unsigned int, GameObject*> mObjects;
+		std::map<uint32, GameObject*> mObjects;
 		std::vector<Light*> mLights;
-		std::map<int, Mesh*> mMeshes;
-		std::map<int, Texture*> mTextures;
-		std::map<int, Shader*> mShaders;
+		std::map<uint32, Mesh*> mMeshes;
+		std::map<uint32, Texture*> mTextures;
+		std::map<uint32, Shader*> mShaders;
+
+		Timer DeltaTime;
+		PhysicsWorld PhysWorld;
 
 		Skybox* mSkybox = nullptr;
 		Camera* mCamera = nullptr;
@@ -46,9 +60,8 @@ namespace Columbus
 		void lightWorkflow();
 		void meshWorkflow();
 		void particlesWorkflow();
-
-		bool loadGameObject(Serializer::SerializerXML* aSerializer,
-			std::string aElement, unsigned int aID);
+		void rigidbodyWorkflow();
+		void rigidbodyPostWorkflow();
 	public:
 		Scene();
 

@@ -17,11 +17,11 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		virtual ParticleModuleType GetType() const { return E_PARTICLE_MODULE_ACCELERATION; }
+		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_ACCELERATION; }
 		/*
 		* Set parameter for particle
 		*/
-		virtual void Spawn(Particle& aParticle)
+		void Spawn(Particle& aParticle) override
 		{
 			aParticle.accel = Vector3::random(Min, Max);
 		}

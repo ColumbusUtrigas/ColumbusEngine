@@ -37,30 +37,6 @@ int main(int argc, char** argv)
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
-
-	PhysicsWorld world;
-	world.SetGravity(Vector3(0, -9.81, 0));
-
-	PhysicsShapeBox BoxShape(Vector3(100, 0.2, 100));
-	Rigidbody Plane(Transform(Vector3(0, 0, 0)), &BoxShape);
-	Plane.SetMass(0);
-	world.AddRigidbody(&Plane);
-
-	PhysicsShapeSphere SphereShape(1);
-	Rigidbody rigidbody(Transform(Vector3(0, 15, 0)), &SphereShape);
-	rigidbody.SetMass(1);
-	rigidbody.SetFriction(0.8);
-	rigidbody.SetLinearVelocity(Vector3(0, 0, 5));
-	rigidbody.SetLinearDamping(0.3);
-	rigidbody.SetAngularDamping(0.3);
-	world.AddRigidbody(&rigidbody);
-
-	ShaderOpenGL* shader = new ShaderOpenGL("Data/Shaders/standart.vert", "Data/Shaders/standart.frag");
-	TextureOpenGL* tex = new TextureOpenGL("Data/Textures/metal.jpg");
-	Material* mat = new Material();
-	mat->setTexture(tex);
-	mat->setShader(shader);
-	MeshOpenGL* mesh = new MeshOpenGL(ModelLoadCMF("Data/Models/Sphere.cmf"), *mat);
 	
 	while (window.isOpen())
 	{
@@ -119,11 +95,6 @@ int main(int argc, char** argv)
 		scene.update();
 		scene.render();
 
-		world.Step(RedrawTime, 10);
-
-		mesh->setCamera(camera);
-		mesh->render(rigidbody.GetTransform());
-
 		window.display();
 
 		if ((timer.elapsed()) > 1.0)
@@ -132,9 +103,6 @@ int main(int argc, char** argv)
 			timer.reset();
 		}
 	}
-
-	world.RemoveRigidbody(&rigidbody);
-	world.RemoveRigidbody(&Plane);
 
 	return 0;
 }

@@ -20,10 +20,10 @@ namespace Columbus
 	class GameObject
 	{
 	protected:
-		std::vector<GameObject*> mChildren;
-		std::vector<Component*> mComponents;
+		std::vector<GameObject*> Children;
+		std::vector<Component*> Components;
 
-		std::string mName;
+		std::string Name;
 
 		Timer mTimer;
 	public:
@@ -31,20 +31,20 @@ namespace Columbus
 
 		GameObject();
 
-		void setName(const std::string aName);
-		std::string getName() const;
+		void SetName(std::string Name);
+		std::string GetName() const;
 
-		void addChild(GameObject* aChild);
-		void addComponent(Component* aComponent);
+		void AddChild(GameObject* Child);
+		void AddComponent(Component* Component);
 
-		void setTransform(Transform aTransform);
-		Transform getTransform() const;
+		void SetTransform(Transform Transform);
+		Transform GetTransform() const;
 
-		void update();
-		void render();
+		void Update();
+		void Render();
 
-		bool hasComponent(std::string aName);
-		Component* getComponent(std::string aName);
+		bool HasComponent(Component::Type Type);
+		Component* GetComponent(Component::Type Type);
 
 		~GameObject();
 	};

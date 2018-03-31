@@ -21,6 +21,7 @@ namespace Columbus
 		mNoneShader->compile();
 
 		mNoneEffect.setShader(mNoneShader);
+		PhysWorld.SetGravity(Vector3(0, -9.81, 0));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -31,13 +32,13 @@ namespace Columbus
 		
 		for (auto Object : mObjects)
 		{
-			LightComponent* light =
-				static_cast<LightComponent*>(Object.second->getComponent("LightComponent"));
+			ComponentLight* light =
+				static_cast<ComponentLight*>(Object.second->GetComponent(Component::COMPONENT_LIGHT));
 
 			if (light != nullptr)
 			{
-				light->render(Object.second->transform);
-				mLights.push_back(light->getLight());
+				light->Render(Object.second->transform);
+				mLights.push_back(light->GetLight());
 			}
 		}
 	}
@@ -46,14 +47,14 @@ namespace Columbus
 	{
 		for (auto Object : mObjects)
 		{
-			MeshRenderer* mesh =
-				static_cast<MeshRenderer*>(Object.second->getComponent("MeshRenderer"));
+			ComponentMeshRenderer* mesh =
+				static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::COMPONENT_MESH_RENDERER));
 
 			if (mesh != nullptr)
 			{
-				mesh->setLights(mLights);
-				if (mSkybox != nullptr) mesh->setReflection(mSkybox->getCubemap());
-				if (mCamera != nullptr) mesh->setCamera(*mCamera);
+				mesh->SetLights(mLights);
+				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->getCubemap());
+				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
 			}
 		}
 	}
@@ -62,106 +63,381 @@ namespace Columbus
 	{
 		for (auto Object : mObjects)
 		{
-			ParticleSystem* ps =
-				static_cast<ParticleSystem*>(Object.second->getComponent("ParticleSystem"));
+			ComponentParticleSystem* ps =
+				static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::COMPONENT_PARTICLE_SYSTEM));
 
 			if (ps != nullptr)
 			{
-				ps->setLights(mLights);
-				if (ps->getEmitter() != nullptr || ps->getEmitter()->getParticleEffect() != nullptr)
-					ps->getEmitter()->getParticleEffect()->setPos(Object.second->transform.getPos());
-				if (mCamera != nullptr) ps->setCamera(*mCamera);
+				ps->SetLights(mLights);
+				if (ps->GetEmitter() != nullptr)
+					if(ps->GetEmitter()->getParticleEffect() != nullptr)
+						ps->GetEmitter()->getParticleEffect()->setPos(Object.second->transform.GetPos());
+
+				if (mCamera != nullptr) ps->SetCamera(*mCamera);
 			}
 		}
 	}
-	bool Scene::loadGameObject(Serializer::SerializerXML* aSerializer,
-		std::string aElement, unsigned int aID)
+
+	void Scene::rigidbodyWorkflow()
 	{
-		std::string name;
-		std::string materialPath;
-		int shaderID = -1;
-		std::string meshPath;
-		std::string particlePath;
-		std::string lightPath;
-
-		GameObject* Object = new GameObject();
-		Transform transform;
-		Vector3 position;
-		Vector3 rotation;
-		Vector3 scale;
-		Material* material = new Material();
-		Mesh* mesh;
-
-		if (!aSerializer->getSubString({ "GameObjects", aElement, "Name" }, &name)) return false;
-		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Position" }, &position, { "X", "Y", "Z" });
-		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Rotation" }, &rotation, { "X", "Y", "Z" });
-		aSerializer->getSubVector3({ "GameObjects", aElement, "Transform", "Scale" }, &scale, { "X", "Y", "Z" });
-
-		if (aSerializer->getSubString({ "GameObjects", aElement, "Material" }, &materialPath))
+		for (auto& Object : mObjects)
 		{
-			if (materialPath != "None")
+			ComponentRigidbody* rb =
+				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::COMPONENT_RIGIDBODY));
+
+			if (rb != nullptr)
 			{
-				material->loadFromXML(materialPath);
+				rb->Render(Object.second->GetTransform());
 			}
-		} else return false;
-
-		if (aSerializer->getSubInt({ "GameObjects", aElement, "Shader" }, &shaderID))
-		{
-			material->setShader(mShaders.at(shaderID));
 		}
-		else return false;
+	}
 
-		if (material->getTextureID() != -1)
-			material->setTexture(mTextures.at(material->getTextureID()));
-		if (material->getSpecMapID() != -1)
-			material->setSpecMap(mTextures.at(material->getSpecMapID()));
-		if (material->getNormMapID() != -1)
-			material->setNormMap(mTextures.at(material->getNormMapID()));
-
-		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "MeshRenderer", "Mesh"}, &meshPath))
+	void Scene::rigidbodyPostWorkflow()
+	{
+		for (auto& Object : mObjects)
 		{
-			if (meshPath == "Plane")
+			ComponentRigidbody* rb =
+				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::COMPONENT_RIGIDBODY));
+
+			if (rb != nullptr)
 			{
-				Object->addComponent(new MeshRenderer(gDevice->createMesh(PrimitivePlane(), *material)));
-			} else if (meshPath == "Cube")
+				Object.second->SetTransform(rb->GetRigidbody()->GetTransform());
+			}
+		}
+	}
+
+	/*
+	*
+	* Additional functions for loading GameObject
+	*
+	*/
+
+	static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, std::string Element)
+	{
+		Transform Trans;
+
+		if (Serializer != nullptr)
+		{
+			Vector3 Position;
+			Vector3 Rotation;
+			Vector3 Scale(1, 1, 1);
+
+			if (Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, &Position, { "X", "Y", "Z" }) &&
+			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, &Rotation, { "X", "Y", "Z" }) &&
+			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" }, &Scale, { "X", "Y", "Z" }))
 			{
-				Object->addComponent(new MeshRenderer(gDevice->createMesh(PrimitiveBox(), *material)));
-			} else if (meshPath == "Sphere")
+				Trans.SetPos(Position);
+				Trans.SetRot(Rotation);
+				Trans.SetScale(Scale);
+			}
+		}
+
+		return Trans;
+	}
+
+	static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, std::string Element)
+	{
+		Material* Mat = new Material();
+
+		if (Serializer != nullptr)
+		{
+			std::string Path;
+
+			if (Serializer->GetSubString({ "GameObjects", Element, "Material" }, &Path))
 			{
-				Object->addComponent(new MeshRenderer(gDevice->createMesh(PrimitiveSphere(1, 50, 50), *material)));
-			} else
-			{
-				if (atoi(meshPath.c_str()) >= 0)
+				if (Path != "None")
 				{
-					mesh = mMeshes.at(atoi(meshPath.c_str()));
-					if (mesh != nullptr)
+					Mat->loadFromXML(Path);
+				}
+			} else return nullptr;
+		} else return nullptr;
+
+		return Mat;
+	}
+
+	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat, std::map<uint32, Mesh*>* Meshes)
+	{
+		ComponentMeshRenderer* MeshRenderer = nullptr;
+
+		if (Serializer != nullptr && Mat != nullptr && Meshes != nullptr)
+		{
+			std::string MeshPath;
+
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshRenderer", "Mesh" }, &MeshPath))
+			{
+				if (MeshPath == "Plane")
+				{
+					MeshRenderer = new ComponentMeshRenderer(gDevice->createMesh(PrimitivePlane(), *Mat));
+				}
+				else if (MeshPath == "Cube")
+				{
+					MeshRenderer = new ComponentMeshRenderer(gDevice->createMesh(PrimitiveBox(), *Mat));
+				}
+				else if (MeshPath == "Sphere")
+				{
+					MeshRenderer = new ComponentMeshRenderer(gDevice->createMesh(PrimitiveSphere(1, 50, 50), *Mat));
+				}
+				else
+				{
+					if (atoi(MeshPath.c_str()) >= 0)
 					{
-						mesh->mMat = *material;
-						Object->addComponent(new MeshRenderer(mesh));
+						Mesh* mesh = Meshes->at(atoi(MeshPath.c_str()));
+
+						if (mesh != nullptr)
+						{
+							mesh->mMat = *Mat;
+							MeshRenderer = new ComponentMeshRenderer(mesh);
+						}
 					}
 				}
 			}
 		}
 
-		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "ParticleSystem", "Particles"}, &particlePath))
+		return MeshRenderer;
+	}
+
+	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat)
+	{
+		ComponentParticleSystem* ParticleSystem = nullptr;
+
+		if (Serializer != nullptr && Mat != nullptr)
 		{
-			Object->addComponent(new ParticleSystem(new ParticleEmitter(new ParticleEffect(particlePath, material))));
+			std::string ParticleSystemPath;
+
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "ParticleSystem", "Particles" }, &ParticleSystemPath))
+			{
+				if (ParticleSystemPath != "None")
+				{
+					ParticleSystem = new ComponentParticleSystem(new ParticleEmitter(new ParticleEffect(ParticleSystemPath, Mat)));
+				}
+			}
 		}
 
-		if (aSerializer->getSubString({"GameObjects", aElement, "Components", "LightComponent", "Light"}, &lightPath))
+		return ParticleSystem;
+	}
+
+	static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, std::string Element, Vector3 Position)
+	{
+		ComponentLight* CLight = nullptr;
+
+		if (Serializer != nullptr)
 		{
-			Object->addComponent(new LightComponent(new Light(lightPath, position)));
+			std::string LightPath;
+
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "LightComponent", "Light" }, &LightPath))
+			{
+				if (LightPath != "None")
+				{
+					CLight = new ComponentLight(new Light(LightPath, Position));
+				}
+			}
 		}
 
-		transform.setPos(position);
-		transform.setRot(rotation);
-		transform.setScale(scale);
-		Object->setTransform(transform);
-		Object->setName(name);
+		return CLight;
+	}
 
-		add(aID, Object);
+	static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, std::string Element, Transform Trans, PhysicsShape* Shape)
+	{
+		ComponentRigidbody* CRigidbody = nullptr;
 
-		return true;
+		if (Serializer != nullptr && Shape != nullptr)
+		{
+			struct
+			{
+				bool Static = false;
+				float Mass = 1.0f;
+				float Restitution = 0.0f;
+				float Friction = 0.3f;
+				float RollingFriction = 0.0f;
+				float AngularDamping = 0.3f;
+				float AngularTreshold = 0.25f;
+				float LinearDamping = 0.3f;
+				float LinearTreshold = 0.2f;
+			} RigidbodyProperties;
+
+			if (Serializer->GetSubBool({ "GameObjects", Element, "Components", "Rigidbody", "Static" }, &RigidbodyProperties.Static) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Mass" }, &RigidbodyProperties.Mass) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Restitution" }, &RigidbodyProperties.Restitution) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Friction" }, &RigidbodyProperties.Friction) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "RollingFriction" }, &RigidbodyProperties.RollingFriction) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "AngularDamping" }, &RigidbodyProperties.AngularDamping) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "AngularTreshold" }, &RigidbodyProperties.AngularTreshold) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "LinearDamping" }, &RigidbodyProperties.LinearDamping) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "LinearTreshold" }, &RigidbodyProperties.LinearTreshold))
+			{
+				Rigidbody* rigidbody = new Rigidbody(Trans, Shape);
+
+				rigidbody->SetMass(RigidbodyProperties.Mass);
+				rigidbody->SetRestitution(RigidbodyProperties.Restitution);
+				rigidbody->SetFriction(RigidbodyProperties.Friction);
+				rigidbody->SetRollingFriction(RigidbodyProperties.RollingFriction);
+				rigidbody->SetAngularDamping(RigidbodyProperties.AngularDamping);
+				rigidbody->SetAngularTreshold(RigidbodyProperties.AngularTreshold);
+				rigidbody->SetLinearDamping(RigidbodyProperties.LinearDamping);
+				rigidbody->SetLinearTreshold(RigidbodyProperties.LinearTreshold);
+
+				rigidbody->SetStatic(RigidbodyProperties.Static);
+
+				rigidbody->SetAngularVelocity(Vector3(50, 0, 0));
+
+				CRigidbody = new ComponentRigidbody(rigidbody);
+			}
+		}
+
+		return CRigidbody;
+	}
+
+	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, std::string Element, std::map<uint32, Mesh*>* Meshes)
+	{
+		PhysicsShape* Shape = nullptr;
+
+		if (Serializer != nullptr && Meshes != nullptr)
+		{
+
+			Vector3 rbShapeSize;
+			Vector3 rbShapePosition;
+			Vector2 rbShapeRadiusHeight;
+			std::string rbShapeMesh = "None";
+			float rbShapeRadius = 0.0f;
+			float rbShapeHeight = 0.0f;
+			Serializer::SerializerXML::Element* rbElement = nullptr;
+
+			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeBox" }, &rbShapeSize, { "X", "Y", "Z" }))
+			{
+				delete Shape;
+				Shape = new PhysicsShapeBox(rbShapeSize);
+			}
+
+			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCapsule" }, &rbShapeRadiusHeight, { "Radius", "Height" }))
+			{
+				delete Shape;
+				Shape = new PhysicsShapeCapsule(rbShapeRadiusHeight.x, rbShapeRadiusHeight.y);
+			}
+
+			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCone" }, &rbShapeRadiusHeight, { "Radius", "Height" }))
+			{
+				delete Shape;
+				Shape = new PhysicsShapeCone(rbShapeRadiusHeight.x, rbShapeRadiusHeight.y);
+			}
+
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "Rigidbody", "ShapeConvexHull" }, &rbShapeMesh))
+			{
+				if (rbShapeMesh != "None")
+				{
+					if (atoi(rbShapeMesh.c_str()) >= 0)
+					{
+						delete Shape;
+						Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str()))->mVert);
+					}
+				}
+			}
+
+			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCylinder" }, &rbShapeSize, { "X", "Y", "Z" }))
+			{
+				delete Shape;
+				Shape = new PhysicsShapeCylinder(rbShapeSize);
+			}
+
+			if (Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "ShapeSphere" }, &rbShapeRadius))
+			{
+				delete Shape;
+				Shape = new PhysicsShapeSphere(rbShapeRadius);
+			}
+
+			if ((rbElement = Serializer->GetSubElement({ "GameObjects", Element, "Components", "Rigidbody", "ShapeMultiSphere", "Sphere" })) != nullptr)
+			{
+				std::vector<Vector3> rbShapePositions;
+				std::vector<float> rbShapeRadiuses;
+				uint32 Count = 0;
+
+				do
+				{
+					Serializer->GetVector3(rbElement, &rbShapePosition, { "X", "Y", "Z" });
+					Serializer->GetFloat(rbElement, &rbShapeRadius);
+					rbElement = Serializer->NextElement(rbElement, "Sphere");
+					rbShapePositions.push_back(rbShapePosition);
+					rbShapeRadiuses.push_back(rbShapeRadius);
+					Count++;
+				} while (rbElement != nullptr);
+
+				delete Shape;
+				Shape = new PhysicsShapeMultiSphere(rbShapePositions.data(), rbShapeRadiuses.data(), Count);
+			}
+		}
+
+		return Shape;
+	}
+	/*
+	*
+	* End of additional functions for loading GameObject
+	*
+	*/
+
+	static GameObject* SceneLoadGameObject(Serializer::SerializerXML* Serializer, std::string Element,
+		std::map<uint32, Mesh*>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, Shader*>* Shaders,
+		PhysicsWorld* PhysWorld)
+	{
+		GameObject* Object = new GameObject();
+
+		if (Serializer != nullptr && Meshes != nullptr && Textures != nullptr && Shaders != nullptr && PhysWorld != nullptr)
+		{
+			std::string name;
+			int shaderID = -1;
+
+			if (!Serializer->GetSubString({ "GameObjects", Element, "Name" }, &name)) return false;
+
+			Transform transform = SceneGameObjectLoadTransform(Serializer, Element);
+			Material* material = SceneGameObjectLoadMaterial(Serializer, Element);
+			if (material == nullptr) return false;
+
+			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" }, &shaderID))
+			{
+				material->setShader(Shaders->at(shaderID));
+			}
+			else
+			{
+				delete Object;
+				return nullptr;
+			}
+
+			if (material->getTextureID() != -1)
+				material->setTexture(Textures->at(material->getTextureID()));
+			if (material->getSpecMapID() != -1)
+				material->setSpecMap(Textures->at(material->getSpecMapID()));
+			if (material->getNormMapID() != -1)
+				material->setNormMap(Textures->at(material->getNormMapID()));
+
+			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
+			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
+			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.GetPos());
+			ComponentRigidbody* Rigidbody = SceneGameObjectLoadComponentRigidbody(Serializer, Element, transform, SceneGameObjectLoadComponentRigidbodyShape(Serializer, Element, Meshes));
+
+			if (MeshRenderer != nullptr)
+			{
+				Object->AddComponent(MeshRenderer);
+			}
+
+			if (ParticleSystem != nullptr)
+			{
+				Object->AddComponent(ParticleSystem);
+			}
+
+			if (Light != nullptr)
+			{
+				Object->AddComponent(Light);
+			}
+
+			if (Rigidbody != nullptr)
+			{
+				PhysWorld->AddRigidbody(Rigidbody->GetRigidbody());
+				Object->AddComponent(Rigidbody);
+			}
+
+			Object->SetTransform(transform);
+			Object->SetName(name);
+		}
+
+		return Object;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -173,46 +449,47 @@ namespace Columbus
 
 		Serializer::SerializerXML serializer;
 
-		if (!serializer.read(aFile, "Scene"))
+		if (!serializer.Read(aFile, "Scene"))
 		{ Log::error("Can't load Scene: " + aFile); return false; }
 
-		int count = 0;
-		int texCount = 0;
-		int shadersCount = 0;
-		int meshesCount = 0;
-		unsigned int i;
+		uint32 count = 0;
+		uint32 texCount = 0;
+		uint32 shadersCount = 0;
+		uint32 meshesCount = 0;
 
 		std::string path, path1, elem;
 
-		if (serializer.getSubInt({ "Resources", "Textures", "Count" }, &texCount))
+		if (serializer.GetSubInt({ "Resources", "Textures", "Count" }, (int32*)&texCount))
 		{
-			for (i = 0; i < static_cast<unsigned int>(texCount); i++)
+			for (uint32 i = 0; i < texCount; i++)
 			{
 				elem = std::string("Texture") + std::to_string(i);
-				if (serializer.getSubString({ "Resources", "Textures", elem }, &path))
+				if (serializer.GetSubString({ "Resources", "Textures", elem }, &path))
+				{
 					mTextures.insert(std::pair<int, Texture*>(i, gDevice->createTexture(path)));
+				}
 			}
 		}
 
-		if (serializer.getSubInt({ "Resources", "Shaders", "Count" }, &shadersCount))
+		if (serializer.GetSubInt({ "Resources", "Shaders", "Count" }, (int32*)&shadersCount))
 		{
-			for (i = 0; i < static_cast<unsigned int>(shadersCount); i++)
+			for (uint32 i = 0; i < shadersCount; i++)
 			{
 				elem = std::string("Shader") + std::to_string(i);
-				if (serializer.getSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
-					serializer.getSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
+				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
+				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
 				{
 					mShaders.insert(std::pair<int, Shader*>(i, gDevice->createShader(path, path1)));
 				}
 			}
 		}
 
-		if (serializer.getSubInt({ "Resources", "Meshes", "Count" }, &meshesCount))
+		if (serializer.GetSubInt({ "Resources", "Meshes", "Count" }, (int32*)&meshesCount))
 		{
-			for (i = 0; i < static_cast<unsigned int>(meshesCount); i++)
+			for (uint32 i = 0; i < meshesCount; i++)
 			{
 				elem = std::string("Mesh") + std::to_string(i);
-				if (serializer.getSubString({ "Resources", "Meshes", elem }, &path))
+				if (serializer.GetSubString({ "Resources", "Meshes", elem }, &path))
 				{
 					if (ModelIsCMF(path))
 					{
@@ -227,13 +504,18 @@ namespace Columbus
 			}
 		}
 
-		if (!serializer.getSubInt({"GameObjects", "Count"}, &count))
+		if (!serializer.GetSubInt({"GameObjects", "Count"}, (int32*)&count))
 		{ Log::error("Can't load Scene Count: " + aFile); return false; }
 
-		for (i = 0; i < static_cast<unsigned int>(count); i++)
+		for (uint32 i = 0; i < count; i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
-			loadGameObject(&serializer, elem, i);
+			GameObject* Object = SceneLoadGameObject(&serializer, elem, &mMeshes, &mTextures, &mShaders, &PhysWorld);
+
+			if (Object != nullptr)
+			{
+				add(i, Object);
+			}
 		}
 
 		return true;
@@ -270,7 +552,7 @@ namespace Columbus
 	{
 		for (auto Object : mObjects)
 			if (Object.second != nullptr)
-				if (Object.second->getName() == aName)
+				if (Object.second->GetName() == aName)
 					return Object.second;
 
 		return nullptr;
@@ -283,6 +565,12 @@ namespace Columbus
 		lightWorkflow();
 		meshWorkflow();
 		particlesWorkflow();
+		//rigidbodyWorkflow();
+
+		PhysWorld.Step(TruncToFloat(DeltaTime.elapsed()), 10);
+		DeltaTime.reset();
+
+		rigidbodyPostWorkflow();
 
 		if (mSkybox && mCamera)
 		{
@@ -290,7 +578,7 @@ namespace Columbus
 		}
 
 		for (auto Object : mObjects)
-			Object.second->update();
+			Object.second->Update();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::render()
@@ -299,24 +587,24 @@ namespace Columbus
 		C_EnableBlendOpenGL();
 		C_EnableAlphaTestOpenGL();
 
-		//mNoneEffect.clearAttribs();
-		//mNoneEffect.addAttrib({ "uResolution", mContextSize });
-		//mNoneEffect.bind(Vector4(1, 1, 1, 0), mContextSize);
+		mNoneEffect.clearAttribs();
+		mNoneEffect.addAttrib({ "uResolution", mContextSize });
+		mNoneEffect.bind(Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
 		for (auto Object : mObjects)
-			if (Object.second->hasComponent("MeshRenderer"))
-				Object.second->render();
+			if (Object.second->HasComponent(Component::COMPONENT_MESH_RENDERER))
+				Object.second->Render();
 
 		for (auto Object : mObjects)
-			if (Object.second->hasComponent("ParticleSystem"))
-				Object.second->render();
+			if (Object.second->HasComponent(Component::COMPONENT_PARTICLE_SYSTEM))
+				Object.second->Render();
 
-		//mNoneEffect.unbind();
+		mNoneEffect.unbind();
 
-		//mNoneEffect.draw();
+		mNoneEffect.draw();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

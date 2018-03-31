@@ -151,36 +151,36 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool Light::saveToXML(std::string aFile) const
 	{
-		Serializer::SerializerXML serializer;
+		Serializer::SerializerXML Serializer;
 
-		if (!serializer.write(aFile, "Light"))
+		if (!Serializer.Write(aFile, "Light"))
 		{ Log::error("Can't save Light: " + aFile); return false; }
 
-		if (!serializer.setInt("Type", mType))
+		if (!Serializer.SetInt("Type", mType))
 		{ Log::error("Can't save Light type: " + aFile); return false; }
 
-		if (!serializer.setVector3("Direction", mDir, { "X", "Y", "Z" }))
+		if (!Serializer.SetVector3("Direction", mDir, { "X", "Y", "Z" }))
 		{ Log::error("Can't save Light direction: " + aFile); return false; }
 
-		if (!serializer.setVector3("Color", mColor, { "R", "G", "B" }))
+		if (!Serializer.SetVector3("Color", mColor, { "R", "G", "B" }))
 		{ Log::error("Can't save Light color: " + aFile); return false; }
 
-		if (!serializer.setFloat("Constant", mConstant))
+		if (!Serializer.SetFloat("Constant", mConstant))
 		{ Log::error("Can't save Light constant: " + aFile); return false; }
 
-		if (!serializer.setFloat("Linear", mLinear))
+		if (!Serializer.SetFloat("Linear", mLinear))
 		{ Log::error("Can't save Light linear: " + aFile); return false; }
 
-		if (!serializer.setFloat("Quadratic", mQuadratic))
+		if (!Serializer.SetFloat("Quadratic", mQuadratic))
 		{ Log::error("Can't save Light quadratic: " + aFile); return false; }
 
-		if (!serializer.setFloat("InnerCutoff", mInnerCutoff))
+		if (!Serializer.SetFloat("InnerCutoff", mInnerCutoff))
 		{ Log::error("Can't save Light inner cutoff: " + aFile); return false; }
 
-		if (!serializer.setFloat("OuterCutoff", mOuterCutoff))
+		if (!Serializer.SetFloat("OuterCutoff", mOuterCutoff))
 		{ Log::error("Can't save Light outer cutoff: " + aFile); return false; }
 
-		if (!serializer.save())
+		if (!Serializer.Save())
 		{ Log::error("Can't save Light: " + aFile); return false; }
 
 		Log::success("Light saved: " + aFile);
@@ -190,33 +190,33 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool Light::loadFromXML(std::string aFile)
 	{
-		Serializer::SerializerXML serializer;
+		Serializer::SerializerXML Serializer;
 
-		if (!serializer.read(aFile, "Light"))
+		if (!Serializer.Read(aFile, "Light"))
 		{ Log::error("Can't load Light: " + aFile); return false; }
 
-		if (!serializer.getInt("Type", &mType))
+		if (!Serializer.GetInt("Type", &mType))
 		{ Log::error("Can't load Light type: %s" + aFile); return false; }
 
-		if (!serializer.getVector3("Direction", &mDir, { "X", "Y", "Z" }))
+		if (!Serializer.GetVector3("Direction", &mDir, { "X", "Y", "Z" }))
 		{ Log::error("Can't load Light direction: %s" + aFile); return false; }
 
-		if (!serializer.getVector3("Color", &mColor, { "R", "G", "B" }))
+		if (!Serializer.GetVector3("Color", &mColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Light color: " + aFile); return false; }
 
-		if (!serializer.getFloat("Constant", &mConstant))
+		if (!Serializer.GetFloat("Constant", &mConstant))
 		{ Log::error("Can't load Light constant: " + aFile); return false; }
 
-		if (!serializer.getFloat("Linear", &mLinear))
+		if (!Serializer.GetFloat("Linear", &mLinear))
 		{ Log::error("Can't load Light linear: " + aFile); return false; }
 
-		if (!serializer.getFloat("Quadratic", &mQuadratic))
+		if (!Serializer.GetFloat("Quadratic", &mQuadratic))
 		{ Log::error("Can't load Light quadratic: " + aFile); return false; }
 
-		if (!serializer.getFloat("InnerCutoff", &mInnerCutoff))
+		if (!Serializer.GetFloat("InnerCutoff", &mInnerCutoff))
 		{ Log::error("Can't load Light inner cutoff: " + aFile); return false; }
 
-		if (!serializer.getFloat("OuterCutoff", &mInnerCutoff))
+		if (!Serializer.GetFloat("OuterCutoff", &mInnerCutoff))
 		{ Log::error("Can't load Light outer cutoff: " + aFile); return false; }
 
 		Log::success("Light loaded: " + aFile);

@@ -1,85 +1,97 @@
-#include <Scene/ParticleSystem.h>
+#include <Scene/ComponentParticleSystem.h>
 
 namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	ParticleSystem::ParticleSystem(ParticleEmitter* aEmitter) :
-		mEmitter(aEmitter)
+	ComponentParticleSystem::ComponentParticleSystem(ParticleEmitter* Emitter) :
+		Emitter(Emitter)
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool ParticleSystem::onCreate()
+	bool ComponentParticleSystem::OnCreate()
 	{
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool ParticleSystem::onUpdate()
+	bool ComponentParticleSystem::OnUpdate()
 	{
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::update(const float aTimeTick)
+	void ComponentParticleSystem::Update(const float TimeTick)
 	{
-		if (mEmitter != nullptr)
-			mEmitter->update(aTimeTick);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::render(Transform& aTransform)
-	{
-		if (mEmitter != nullptr)
+		if (Emitter != nullptr)
 		{
-			if (mEmitter->getParticleEffect() != nullptr)
-				mEmitter->getParticleEffect()->setPos(aTransform.getPos());
-			
-			mEmitter->draw();
+			Emitter->update(TimeTick);
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	std::string ParticleSystem::getType()
+	void ComponentParticleSystem::Render(Transform& Transform)
 	{
-		return "ParticleSystem";
+		if (Emitter != nullptr)
+		{
+			if (Emitter->getParticleEffect() != nullptr)
+			{
+				Emitter->getParticleEffect()->setPos(Transform.GetPos());
+			}
+			
+			Emitter->draw();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	ParticleEmitter* ParticleSystem::getEmitter() const
+	Component::Type ComponentParticleSystem::GetType() const
 	{
-		return mEmitter;
+		return COMPONENT_PARTICLE_SYSTEM;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::setLights(std::vector<Light*> aLights)
+	ParticleEmitter* ComponentParticleSystem::GetEmitter() const
 	{
-		if (mEmitter != nullptr)
-			mEmitter->setLights(aLights);
+		return Emitter;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::setCamera(Camera aCamera)
+	void ComponentParticleSystem::SetLights(std::vector<Light*> Lights)
 	{
-		if (mEmitter != nullptr)
-			mEmitter->setCamera(aCamera);
+		if (Emitter != nullptr)
+		{
+			Emitter->setLights(Lights);
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Shader* ParticleSystem::getShader() const
+	void ComponentParticleSystem::SetCamera(Camera Camera)
 	{
-		if (mEmitter != nullptr)
-			return mEmitter->getParticleEffect()->getMaterial()->getShader();
+		if (Emitter != nullptr)
+		{
+			Emitter->setCamera(Camera);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	Shader* ComponentParticleSystem::GetShader() const
+	{
+		if (Emitter != nullptr)
+		{
+			return Emitter->getParticleEffect()->getMaterial()->getShader();
+		}
 
 		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ParticleSystem::setShader(Shader* aShader)
+	void ComponentParticleSystem::SetShader(Shader* Shader)
 	{
-		if (mEmitter != nullptr)
-			mEmitter->getParticleEffect()->getMaterial()->setShader(aShader);
+		if (Emitter != nullptr)
+		{
+			Emitter->getParticleEffect()->getMaterial()->setShader(Shader);
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	ParticleSystem::~ParticleSystem()
+	ComponentParticleSystem::~ComponentParticleSystem()
 	{
-
+		delete Emitter;
 	}
 
 }

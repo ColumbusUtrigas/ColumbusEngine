@@ -44,6 +44,7 @@
 #include <Physics/PhysicsShapeBox.h>
 #include <Physics/PhysicsShapeCapsule.h>
 #include <Physics/PhysicsShapeCone.h>
+#include <Physics/PhysicsShapeConvexHull.h>
 #include <Physics/PhysicsShapeCylinder.h>
 #include <Physics/PhysicsShapeMultiSphere.h>
 #include <Physics/PhysicsShapeSphere.h>
@@ -55,9 +56,9 @@
 
 #include <Scene/Component.h>
 #include <Scene/GameObject.h>
-#include <Scene/LightComponent.h>
-#include <Scene/MeshRenderer.h>
-#include <Scene/ParticleSystem.h>
+#include <Scene/ComponentLight.h>
+#include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentParticleSystem.h>
 #include <Scene/Scene.h>
 #include <Scene/Transform.h>
 

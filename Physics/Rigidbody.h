@@ -14,7 +14,9 @@ namespace Columbus
 	private:
 		bool Static;
 		float Mass;
+		float Restitution;
 		float Friction;
+		float RollingFriction;
 		float AngularDamping;
 		float AngularTreshold;
 		Vector3 AngularFactor;
@@ -32,7 +34,9 @@ namespace Columbus
 		virtual void SetStatic(bool Static);
 		virtual void SetTransform(Transform Transform);
 		virtual void SetMass(float Mass);
+		virtual void SetRestitution(float Restitution);
 		virtual void SetFriction(float Friction);
+		virtual void SetRollingFriction(float Friction);
 		virtual void SetAngularDamping(float Damping);
 		virtual void SetAngularTreshold(float Treshold);
 		virtual void SetAngularFactor(Vector3 Factor);
@@ -46,7 +50,9 @@ namespace Columbus
 		virtual bool IsStatic() const;
 		virtual Transform GetTransform() const;
 		virtual float GetMass() const;
+		virtual float GetRestitution() const;
 		virtual float GetFriction() const;
+		virtual float GetRollingFriction() const;
 		virtual float GetAngularDamping() const;
 		virtual float GetAngularTreshold() const;
 		virtual Vector3 GetAngularFactor() const;

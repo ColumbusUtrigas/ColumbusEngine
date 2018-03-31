@@ -1,5 +1,5 @@
 /************************************************
-*              	  GameObejct.cpp                *
+*                MeshRenderer.cpp               *
 *************************************************
 *          This file is a part of:              *
 *               COLUMBUS ENGINE                 *
@@ -7,96 +7,86 @@
 *                Nika(Columbus) Red             *
 *                   12.11.2017                  *
 *************************************************/
-#include <Scene/GameObject.h>
+#include <Scene/ComponentMeshRenderer.h>
 
 namespace Columbus
 {
 
-	GameObject::GameObject()
+	//////////////////////////////////////////////////////////////////////////////
+	ComponentMeshRenderer::ComponentMeshRenderer(Mesh* Mesh) :
+		mMesh(Mesh)
 	{
-
+		
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void GameObject::SetName(std::string Name)
+	bool ComponentMeshRenderer::OnCreate()
 	{
-		this->Name = Name;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string GameObject::GetName() const
-	{
-		return Name;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void GameObject::AddChild(GameObject* Child)
-	{
-		Children.push_back(Child);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void GameObject::AddComponent(Component* Component)
-	{
-		Components.push_back(Component);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void GameObject::SetTransform(Transform Transform)
-	{
-		transform = Transform;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	Transform GameObject::GetTransform() const
-	{
-		return transform;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void GameObject::Update()
-	{
-		transform.Update();
-
-		for (auto Comp : Components)
-			Comp->Update(static_cast<float>(mTimer.elapsed()));
-
-		for (auto Child : Children)
-			Child->Update();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void GameObject::Render()
-	{
-		for (auto Comp : Components)
-			Comp->Render(transform);
-
-		for (auto Child : Children)
-			Child->Render();
-
-		mTimer.reset();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool GameObject::HasComponent(Component::Type Type)
-	{
-		for (auto Comp : Components)
-			if (Comp->GetType() == Type)
-				return true;
-
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Component* GameObject::GetComponent(Component::Type Type)
+	bool ComponentMeshRenderer::OnUpdate()
 	{
-		for (auto Comp : Components)
-			if (Comp->GetType() == Type)
-				return Comp;
-
-		return nullptr;
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ComponentMeshRenderer::Update(const float TimeTick)
+	{
+		if (mMesh != nullptr)
+		{
+			mMesh->setCamera(mCamera);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ComponentMeshRenderer::Render(Transform& Transform)
+	{
+		if (mMesh != nullptr)
+		{
+			mMesh->render(Transform);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	Component::Type ComponentMeshRenderer::GetType() const
+	{
+		return COMPONENT_MESH_RENDERER;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ComponentMeshRenderer::SetLights(std::vector<Light*> aLights)
+	{
+		mMesh->setLights(aLights);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ComponentMeshRenderer::SetCamera(Camera Camera)
+	{
+		mCamera = Camera;
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	Shader* ComponentMeshRenderer::GetShader() const
+	{
+		if (mMesh == nullptr) return nullptr;
+		return mMesh->mMat.getShader();
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ComponentMeshRenderer::SetShader(Shader* Shader)
+	{
+		if (mMesh == nullptr) return;
+		mMesh->mMat.setShader(Shader);
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	void ComponentMeshRenderer::SetReflection(Cubemap* Cubemap)
+	{
+		if (mMesh == nullptr) return;
+		mMesh->mMat.setReflection(Cubemap);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	GameObject::~GameObject()
+	ComponentMeshRenderer::~ComponentMeshRenderer()
 	{
 
 	}
 
 }
+
 

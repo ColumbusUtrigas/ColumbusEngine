@@ -48,7 +48,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Render::renderDepthPrepass(GameObject* aGameObject)
 	{
-		if (aGameObject == nullptr) return;
+		/*if (aGameObject == nullptr) return;
 		if (aGameObject->hasComponent("MeshRenderer") == false &&
 			aGameObject->hasComponent("ParticleSystem") == false) return;
 
@@ -76,14 +76,14 @@ namespace Columbus
 			aGameObject->render();
 			static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(shaderPtr);
 			return;
-		}
+		}*/
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void C_Render::render(GameObject* aGameObject)
 	{
-		if (aGameObject == nullptr) return;
+		/*if (aGameObject == nullptr) return;
 
-		aGameObject->render();
+		aGameObject->render();*/
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor

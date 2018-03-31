@@ -6,7 +6,9 @@ namespace Columbus
 	Rigidbody::Rigidbody(PhysicsShape* Shape) :
 		Static(false),
 		Mass(1.0f),
-		Friction(0.5),
+		Restitution(0.0f),
+		Friction(0.5f),
+		RollingFriction(0.0f),
 		AngularDamping(0.2f),
 		AngularTreshold(0.25f),
 		AngularFactor(Vector3(1, 1, 1)),
@@ -28,7 +30,9 @@ namespace Columbus
 	Rigidbody::Rigidbody(Transform Transform, PhysicsShape* Shape) :
 		Static(false),
 		Mass(1.0f),
-		Friction(0.5),
+		Restitution(0.0f),
+		Friction(0.5f),
+		RollingFriction(0.0f),
 		AngularDamping(0.2f),
 		AngularTreshold(0.25f),
 		AngularFactor(Vector3(1, 1, 1)),
@@ -71,14 +75,23 @@ namespace Columbus
 		if (mRigidbody != nullptr)
 		{
 			btTransform Trans;
-			Vector3 pos = Transform.getPos();
-			Vector3 rot = Transform.getRot();
-			Vector3 scale = Transform.getScale();
-			btQuaternion quat; quat.setEuler(rot.x, rot.y, rot.z);
+			Vector3 pos = Transform.GetPos();
+			Vector3 rot = Transform.GetRot();
+			Vector3 scale = Transform.GetScale();
+
+			if (rot.x > 180) rot.x -= 360;
+			if (rot.y > 180) rot.y -= 360;
+			if (rot.z > 180) rot.z -= 360;
+
+			rot.x = Radians(rot.x);
+			rot.y = Radians(rot.y);
+			rot.z = Radians(rot.z);
+
+			btQuaternion quat; quat.setEulerZYX(rot.z, rot.y, rot.x);
 
 			Trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
 			Trans.setRotation(quat);
-			mRigidbody->setWorldTransform(Trans);
+			mRigidbody->proceedToTransform(Trans);
 		}
 		//mShape->setLocalScaling(btVector3(scale.x, scale.y, scale.z)); //Hmmm
 	}
@@ -93,11 +106,30 @@ namespace Columbus
 		}
 	}
 
+	void Rigidbody::SetRestitution(float Restitution)
+	{
+		if (mRigidbody != nullptr)
+		{
+			this->Restitution = Restitution;
+			mRigidbody->setRestitution(Restitution);
+		}
+	}
+
 	void Rigidbody::SetFriction(float Friction)
 	{
 		if (mRigidbody != nullptr)
 		{
+			this->Friction = Friction;
 			mRigidbody->setFriction(Friction);
+		}
+	}
+
+	void Rigidbody::SetRollingFriction(float Friction)
+	{
+		if (mRigidbody != nullptr)
+		{
+			this->RollingFriction = Friction;
+			mRigidbody->setRollingFriction(Friction);
 		}
 	}
 
@@ -214,9 +246,9 @@ namespace Columbus
 			if (rot.y < 0.0f) rot.y += 360;
 			if (rot.z < 0.0f) rot.z += 360;
 
-			Trans.setPos(Vector3(pos.getX(), pos.getY(), pos.getZ()));
-			Trans.setRot(Vector3(rot.x, rot.y, rot.z));
-			Trans.update(); //Hmmm
+			Trans.SetPos(Vector3(pos.getX(), pos.getY(), pos.getZ()));
+			Trans.SetRot(Vector3(rot.x, rot.y, rot.z));
+			Trans.Update(); //Hmmm
 		}
 
 		return Trans;
@@ -227,9 +259,19 @@ namespace Columbus
 		return Mass;
 	}
 
+	float Rigidbody::GetRestitution() const
+	{
+		return Restitution;
+	}
+
 	float Rigidbody::GetFriction() const
 	{
 		return Friction;
+	}
+
+	float Rigidbody::GetRollingFriction() const
+	{
+		return RollingFriction;
 	}
 
 	float Rigidbody::GetAngularDamping() const

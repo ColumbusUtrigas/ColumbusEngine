@@ -200,11 +200,11 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setShaderMatrices(Transform aTransform)
 	{
-		mPos = aTransform.getPos();
-		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
+		mPos = aTransform.GetPos();
+		mMat.getShader()->setUniformMatrix("uModel", aTransform.GetMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
 		mMat.getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uNormal", aTransform.getNormalMatrix().elements());
+		mMat.getShader()->setUniformMatrix("uNormal", aTransform.GetNormalMatrix().elements());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setShaderMaterial()

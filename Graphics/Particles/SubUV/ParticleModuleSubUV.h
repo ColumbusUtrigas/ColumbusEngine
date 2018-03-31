@@ -32,7 +32,7 @@ namespace Columbus
 				aParticle.frame = 0;
 			} else
 			{
-				aParticle.frame = TruncToInt(Random::range(0, Horizontal * Vertical));
+				aParticle.frame = TruncToInt(Random::range(0.0f, float(Horizontal * Vertical)));
 			}
 		}
 		/*
