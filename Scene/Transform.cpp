@@ -9,6 +9,9 @@
 *************************************************/
 
 #include <Scene/Transform.h>
+#include <Math/RotationMatrix.h>
+#include <Math/ScaleMatrix.h>
+#include <Math/TranslationMatrix.h>
 
 namespace Columbus
 {
@@ -100,7 +103,6 @@ namespace Columbus
 	void Transform::Update()
 	{
 		Matrix.identity();
-
 		Matrix.scale(Scale);
 		Matrix.rotate(Vector3(0, 0, 1), Rotation.z);
 		Matrix.rotate(Vector3(1, 0, 0), Rotation.x);

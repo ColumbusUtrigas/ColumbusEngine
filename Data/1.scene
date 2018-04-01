@@ -45,7 +45,7 @@
 	</Resources>
 
 	<GameObjects>
-		<Count>16</Count>
+		<Count>20</Count>
 
 		<GameObject0>
 			<Name>Sponza</Name>
@@ -305,6 +305,19 @@
 				<MeshRenderer>
 					<Mesh>2</Mesh>
 				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>1</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.3</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+					<ShapeBox X="10" Y="7" Z="1"/>
+				</Rigidbody>
 			</Components>
 		</GameObject12>
 
@@ -322,7 +335,7 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>3</Mesh>
+					
 				</MeshRenderer>
 
 				<Rigidbody>
@@ -335,8 +348,6 @@
 					<AngularTreshold>0.25</AngularTreshold>
 					<LinearDamping>0.3</LinearDamping>
 					<LinearTreshold>0.2</LinearTreshold>
-
-					<ShapeConvexHull>3</ShapeConvexHull>
 				</Rigidbody>
 			</Components>
 		</GameObject13>
@@ -369,7 +380,7 @@
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/Default.cxmat</Material>
+			<Material>Data/Materials/Dragon.cxmat</Material>
 			<Shader>0</Shader>
 
 			<Components>
@@ -392,6 +403,138 @@
 				</Rigidbody>
 			</Components>
 		</GameObject15>
+
+		<GameObject16>
+			<Name>Cube</Name>
+
+			<Transform>
+				<Position X="0" Y="30" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>Cube</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>1</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="1" Y="1" Z="1"/>
+				</Rigidbody>
+			</Components>
+		</GameObject16>
+
+		<GameObject17>
+			<Name>Cube1</Name>
+
+			<Transform>
+				<Position X="0" Y="32" Z="0"/>
+				<Rotation X="70" Y="-30" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>Cube</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.5</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="1" Y="1" Z="1"/>
+				</Rigidbody>
+			</Components>
+		</GameObject17>
+
+		<GameObject18>
+			<Name>Cube2</Name>
+
+			<Transform>
+				<Position X="0" Y="34" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>Cube</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.5</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="1" Y="1" Z="1"/>
+				</Rigidbody>
+			</Components>
+		</GameObject18>
+
+		<GameObject19>
+			<Name>Cube3</Name>
+
+			<Transform>
+				<Position X="0" Y="36" Z="0"/>
+				<Rotation X="0" Y="0" Z="30"/>
+				<Scale X="2" Y="2" Z="2"/>
+			</Transform>
+
+			<Material>Data/Materials/Dragon.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>Cube</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>5</Mass>
+					<Restitution>0.5</Restitution>
+					<Friction>0.5</Friction>
+					<RollingFriction>0.0</RollingFriction>
+					<AngularDamping>0.3</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="2" Y="2" Z="2"/>
+				</Rigidbody>
+			</Components>
+		</GameObject19>
 	</GameObjects>
 </Scene>
 

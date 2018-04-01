@@ -30,9 +30,10 @@ namespace Columbus
 
 	class Matrix4
 	{
-	private:
-		float mat[16];
+	protected:
 	public:
+		float mat[16];
+
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4()
 		{
@@ -50,6 +51,15 @@ namespace Columbus
 			mat[2 + 2 * 4] = static_cast<float>(aDiagonal);
 			mat[3 + 3 * 4] = static_cast<float>(aDiagonal);
 		}
+
+		Matrix4(Vector4 a, Vector4 b, Vector4 c, Vector4 d)
+		{
+			setRow(0, a);
+			setRow(1, b);
+			setRow(2, c);
+			setRow(3, d);
+		}
+
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4(const glm::mat4 aMat)
 		{
@@ -298,6 +308,37 @@ namespace Columbus
 			mat[14] = r2 * m12 + r6 * m13 + r10* m14;
 
 			return *this;
+		}
+		////////////////////////////////////////////////////////////////////////////
+		Matrix4 rotate(Vector3 Angle)
+		{
+			float sr, sp, sy, cr, cp, cy;
+
+			sy = Sin(Radians(Angle.y));
+			cy = Cos(Radians(Angle.y));
+
+			sp = Sin(Radians(Angle.x));
+			cp = Cos(Radians(Angle.x));
+
+			sr = Sin(Radians(Angle.z));
+			cr = Cos(Radians(Angle.z));
+
+			Matrix4 m;
+
+			m.mat[0] = cp*cy;
+			m.mat[1] = cp*sy;
+			m.mat[2] = -sp;
+			m.mat[4] = sr*sp*cy + cr*-sy;
+			m.mat[5] = sr*sp*sy + cr*cy;
+			m.mat[6] = sr*cp;
+			m.mat[8] = (cr*sp*cy + -sr*-sy);
+			m.mat[9] = (cr*sp*sy + -sr*cy);
+			m.mat[10] = cr*cp;
+			m.mat[12] = 0.f;
+			m.mat[13] = 0.f;
+			m.mat[14] = 0.f;
+
+			return m;
 		}
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 scale(Vector3 aScale)

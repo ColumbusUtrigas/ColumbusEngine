@@ -25,6 +25,7 @@ namespace Columbus
 		Vector3 LinearFactor;
 
 		PhysicsShape* Shape;
+		Transform Trans;
 	public:
 		btRigidBody* mRigidbody;
 	public:

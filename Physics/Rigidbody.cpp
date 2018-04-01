@@ -92,6 +92,8 @@ namespace Columbus
 			Trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
 			Trans.setRotation(quat);
 			mRigidbody->proceedToTransform(Trans);
+
+			this->Trans = Transform;
 		}
 		//mShape->setLocalScaling(btVector3(scale.x, scale.y, scale.z)); //Hmmm
 	}
@@ -233,22 +235,23 @@ namespace Columbus
 			btVector3 pos;
 			Vector3 rot;
 
+			float roll, pitch, yaw;
+
 			bTrans = mRigidbody->getWorldTransform();
 
 			pos = bTrans.getOrigin();
-			bTrans.getBasis().getEulerYPR(rot.z, rot.y, rot.x);
+			bTrans.getBasis().getEulerZYX(rot.z, rot.y, rot.x);
 
 			rot.x = Degrees(rot.x);
 			rot.y = Degrees(rot.y);
 			rot.z = Degrees(rot.z);
 
-			if (rot.x < 0.0f) rot.x += 360;
-			if (rot.y < 0.0f) rot.y += 360;
-			if (rot.z < 0.0f) rot.z += 360;
-
 			Trans.SetPos(Vector3(pos.getX(), pos.getY(), pos.getZ()));
 			Trans.SetRot(Vector3(rot.x, rot.y, rot.z));
+			Trans.SetScale(this->Trans.GetScale());
 			Trans.Update(); //Hmmm
+
+			(Transform)this->Trans = Trans;
 		}
 
 		return Trans;
