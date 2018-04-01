@@ -278,8 +278,6 @@ namespace Columbus
 
 				rigidbody->SetStatic(RigidbodyProperties.Static);
 
-				rigidbody->SetAngularVelocity(Vector3(50, 0, 0));
-
 				CRigidbody = new ComponentRigidbody(rigidbody);
 			}
 		}
