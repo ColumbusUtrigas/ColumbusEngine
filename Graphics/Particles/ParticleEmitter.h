@@ -59,6 +59,9 @@ namespace Columbus
 		C_Buffer* mLBuf = nullptr;
 		C_Buffer* mSBuf = nullptr;
 
+		float UniformViewMatrix[16];
+		float UniformProjectionMatrix[16];
+
 		float mLife = 0.0;
 		
 		Camera mCamera;

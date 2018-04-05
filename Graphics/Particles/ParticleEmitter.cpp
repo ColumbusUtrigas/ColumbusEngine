@@ -208,8 +208,11 @@ namespace Columbus
 		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required->Billboarding));
 		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
 
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
+		mCamera.getViewMatrix().Elements(UniformViewMatrix);
+		mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
+
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", UniformViewMatrix);
+		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", UniformProjectionMatrix);
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
@@ -369,12 +372,12 @@ namespace Columbus
 
 		if (mParticleEffect->Emit->Count != mParticlesCount)
 		{
-			delete mVertData;
-			delete mUvData;
-			delete mColData;
-			delete mPosData;
-			delete mTimeData;
-			delete mSizeData;
+			delete[] mVertData;
+			delete[] mUvData;
+			delete[] mColData;
+			delete[] mPosData;
+			delete[] mTimeData;
+			delete[] mSizeData;
 
 			mParticlesCount = mParticleEffect->Emit->Count;
 

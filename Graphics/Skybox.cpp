@@ -39,11 +39,9 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Skybox::draw()
 	{
-		if (mShader != nullptr && mCubemap != nullptr)
+		if (mShader != nullptr && mBuf != nullptr && mCubemap != nullptr)
 		{
 			C_DisableDepthMaskOpenGL();
-
-			if (mBuf == nullptr) return;
 
 			C_OpenStreamOpenGL(0);
 			C_CloseStreamOpenGL(1);
@@ -57,12 +55,15 @@ namespace Columbus
 
 			mShader->bind();
 
-			Matrix4 view = mCamera.getViewMatrix();
-			view.setRow(3, Vector4(0, 0, 0, 1));
-			view.setColumn(3, Vector4(0, 0, 0, 1));
+			auto view = mCamera.getViewMatrix();
+			view.SetRow(3, Vector4(0, 0, 0, 1));
+			view.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			mShader->setUniformMatrix("uView", view.elements());
-			mShader->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
+			view.Elements(UniformViewMatrix);
+			mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
+
+			mShader->setUniformMatrix("uView", UniformViewMatrix);
+			mShader->setUniformMatrix("uProjection", UniformProjectionMatrix);
 
 			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
 			mShader->setUniform1i("uSkybox", 0);

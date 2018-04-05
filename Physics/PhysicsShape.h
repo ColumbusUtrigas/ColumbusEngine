@@ -47,7 +47,7 @@ namespace Columbus
 			return 0.0f;
 		}
 
-		~PhysicsShape() { delete mShape; }
+		virtual ~PhysicsShape() { delete mShape; }
 	};
 
 }

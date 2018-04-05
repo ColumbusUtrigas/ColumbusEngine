@@ -39,7 +39,7 @@ namespace Columbus
 		mVert = aVert;
 
 		//Temperary Oriented Bounding Box Data
-		struct TOBBData
+		struct
 		{
 			float minX = 0.0f;
 			float maxX = 0.0f;
@@ -47,7 +47,7 @@ namespace Columbus
 			float maxY = 0.0f;
 			float minZ = 0.0f;
 			float maxZ = 0.0f;
-		};
+		} OBBData;
 
 		float* v = new float[mVert.size() * 3]; //Vertex buffer
 		float* u = new float[mVert.size() * 2]; //UV buffer
@@ -57,8 +57,6 @@ namespace Columbus
 		uint64_t ucounter = 0;
 		uint64_t ncounter = 0;
 		uint64_t tcounter = 0;
-
-		TOBBData OBBData;
 
 		for (auto Vertex : mVert)
 		{
@@ -85,24 +83,24 @@ namespace Columbus
 			t[tcounter++] = Vertex.tangent.z;
 		}
 
-		size_t size = (sizeof(float) * mVert.size() * 3)
+		uint64 size = (sizeof(float) * mVert.size() * 3)
 		            + (sizeof(float) * mVert.size() * 2)
 		            + (sizeof(float) * mVert.size() * 3)
 		            + (sizeof(float) * mVert.size() * 3);
 
-		mVOffset = 0;
-		mUOffset = mVOffset + (sizeof(float) * mVert.size() * 3);
-		mNOffset = mUOffset + (sizeof(float) * mVert.size() * 2);
-		mTOffset = mNOffset + (sizeof(float) * mVert.size() * 3);
+		VOffset = 0;
+		UOffset = VOffset + (sizeof(float) * mVert.size() * 3);
+		NOffset = UOffset + (sizeof(float) * mVert.size() * 2);
+		TOffset = NOffset + (sizeof(float) * mVert.size() * 3);
 
 		glBindBuffer(GL_ARRAY_BUFFER, mVBuf);
 		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_STATIC_DRAW);
 
 
-		glBufferSubData(GL_ARRAY_BUFFER, mVOffset, mVert.size() * 3 * sizeof(float), v);
-		glBufferSubData(GL_ARRAY_BUFFER, mUOffset, mVert.size() * 2 * sizeof(float), u);
-		glBufferSubData(GL_ARRAY_BUFFER, mNOffset, mVert.size() * 3 * sizeof(float), n);
-		glBufferSubData(GL_ARRAY_BUFFER, mTOffset, mVert.size() * 3 * sizeof(float), t);
+		glBufferSubData(GL_ARRAY_BUFFER, VOffset, mVert.size() * 3 * sizeof(float), v);
+		glBufferSubData(GL_ARRAY_BUFFER, UOffset, mVert.size() * 2 * sizeof(float), u);
+		glBufferSubData(GL_ARRAY_BUFFER, NOffset, mVert.size() * 3 * sizeof(float), n);
+		glBufferSubData(GL_ARRAY_BUFFER, TOffset, mVert.size() * 3 * sizeof(float), t);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -126,7 +124,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::render(Transform aTransform)
+	void MeshOpenGL::render(Transform InTransform)
 	{
 		if (mMat.getShader() == nullptr) return;
 		if (!mMat.getShader()->isCompiled())
@@ -138,13 +136,12 @@ namespace Columbus
 			mMat.getShader()->compile();
 		}
 
-		size_t const offsets[4] = { mVOffset, mUOffset, mNOffset, mTOffset };
-		unsigned const int strides[4] = { 3, 2, 3, 3 };
-		int i;
+		uint64 const offsets[4] = { VOffset, UOffset, NOffset, TOffset };
+		uint32 const strides[4] = { 3, 2, 3, 3 };
 
 		glBindBuffer(GL_ARRAY_BUFFER, mVBuf);
 
-		for (i = 0; i < 4; i++)
+		for (uint32 i = 0; i < 4; i++)
 		{
 			glVertexAttribPointer(i, strides[i], GL_FLOAT, GL_FALSE, 0, (void*)offsets[i]);
 			glEnableVertexAttribArray(i);
@@ -152,7 +149,7 @@ namespace Columbus
 
 		mMat.getShader()->bind();
 
-		setShaderMatrices(aTransform);
+		setShaderMatrices(InTransform);
 		setShaderMaterial();
 		setShaderLightAndCamera();
 		setShaderTextures();
@@ -198,13 +195,16 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::setShaderMatrices(Transform aTransform)
+	void MeshOpenGL::setShaderMatrices(Transform InTransform)
 	{
-		mPos = aTransform.GetPos();
-		mMat.getShader()->setUniformMatrix("uModel", aTransform.GetMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uView", mCamera.getViewMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uProjection", mCamera.getProjectionMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uNormal", aTransform.GetNormalMatrix().elements());
+		InTransform.GetMatrix().ElementsTransposed(UniformModelMatrix);
+		mCamera.getViewMatrix().Elements(UniformViewMatrix);
+		mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
+
+		mPos = InTransform.GetPos();
+		mMat.getShader()->setUniformMatrix("uModel", UniformModelMatrix);
+		mMat.getShader()->setUniformMatrix("uView", UniformViewMatrix);
+		mMat.getShader()->setUniformMatrix("uProjection", UniformProjectionMatrix);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setShaderMaterial()
@@ -244,11 +244,11 @@ namespace Columbus
 	void MeshOpenGL::calculateLights()
 	{
 		sortLights();
-		size_t i, j, offset;
+
 		//8 - max count of lights, processing in shader
-		for (i = 0; i < 8; i++)
+		for (uint32 i = 0; i < 8; i++)
 		{
-			offset = i * 15;
+			uint32 offset = i * 15;
 
 			if (i < mLights.size() && mMat.getLighting() == true)
 			{
@@ -278,8 +278,10 @@ namespace Columbus
 				mLightUniform[14 + offset] = mLights[i]->getOuterCutoff();
 			} else
 			{
-				for (j = 0; j < 15; j++)
+				for (uint32 j = 0; j < 15; j++)
+				{
 					mLightUniform[j + offset] = -1;
+				}
 			}
 		}
 	}
