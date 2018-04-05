@@ -109,14 +109,9 @@ namespace Columbus
 			}
 		}
 
-		if (vbuffer != nullptr)
-			free(vbuffer);
-
-		if (ubuffer != nullptr)
-			free(ubuffer);
-
-		if (nbuffer != nullptr)
-			free(nbuffer);
+		delete[] vbuffer;
+		delete[] ubuffer;
+		delete[] nbuffer;
 
 		return ret;
 	}
