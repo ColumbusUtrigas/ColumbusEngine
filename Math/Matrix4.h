@@ -99,7 +99,7 @@ namespace Columbus
 		}
 		////////////////////////////////////////////////////////////////////////////
 		//Return values array
-		float* elements()
+		float* Elements()
 		{
 			return mat;
 		}
@@ -362,12 +362,6 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
 
 
 
