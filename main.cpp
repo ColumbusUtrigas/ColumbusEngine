@@ -2,6 +2,11 @@
 #include <Graphics/OpenGL/DeviceOpenGL.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
 
+#include <AL/al.h>
+#include <AL/alc.h>
+
+#include <Audio/OpenAL/AudioSourceOpenAL.h>
+
 using namespace Columbus;
 
 int main(int argc, char** argv)
@@ -37,6 +42,24 @@ int main(int argc, char** argv)
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
+
+	ALCdevice* device;
+	ALCcontext *context;
+
+	device = alcOpenDevice(NULL);
+	context = alcCreateContext(device, NULL);
+	alcMakeContextCurrent(context);
+
+	AudioSource* Source = new AudioSourceOpenAL();
+	if (!Source->GetSound()->Load("Data/Sounds/cartoon001.wav"))
+	{
+		Log::error("Couldn't load sound");
+	}
+
+	Source->SetSound(Source->GetSound());
+
+	Source->SetLooping(true);
+	Source->Play();
 	
 	while (window.isOpen())
 	{
@@ -103,6 +126,11 @@ int main(int argc, char** argv)
 			timer.reset();
 		}
 	}
+
+	delete Source;
+
+	alcDestroyContext(context);
+	alcCloseDevice(device); 
 
 	return 0;
 }
