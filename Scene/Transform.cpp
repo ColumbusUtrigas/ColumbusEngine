@@ -13,18 +13,20 @@
 #include <Math/ScaleMatrix.h>
 #include <Math/TranslationMatrix.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace Columbus
 {
 
 	Transform::Transform() :
-		Matrix(1.0f)
+		ModelMatrix(1.0f)
 	{
 		
 	}
 
 	Transform::Transform(Vector3 Pos) :
 		Position(Pos),
-		Matrix(1.0f)
+		ModelMatrix(1.0f)
 	{
 
 	}
@@ -32,7 +34,7 @@ namespace Columbus
 	Transform::Transform(Vector3 Pos, Vector3 Rot) :
 		Position(Pos),
 		Rotation(Rot),
-		Matrix(1.0f)
+		ModelMatrix(1.0f)
 	{
 
 	}
@@ -41,7 +43,7 @@ namespace Columbus
 		Position(Pos),
 		Rotation(Rot),
 		Scale(Scale),
-		Matrix(1.0f)
+		ModelMatrix(1.0f)
 	{
 
 	}
@@ -102,28 +104,34 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Transform::Update()
 	{
-		Matrix.identity();
-		Matrix.scale(Scale);
-		Matrix.rotate(Vector3(0, 0, 1), Rotation.z);
-		Matrix.rotate(Vector3(1, 0, 0), Rotation.x);
-		Matrix.rotate(Vector3(0, 1, 0), Rotation.y);
-		Matrix.translate(Position);
+		//Matrix.scale(Scale);
+		//Matrix.rotate(Vector3(0, 1, 0), Rotation.y);
+		//Matrix.rotate(Vector3(1, 0, 0), Rotation.x);
+		//Matrix.rotate(Vector3(0, 0, 1), Rotation.z);
+		//Matrix.translate(Position);
 
-		NormalMatrix = Matrix;
-		NormalMatrix.transpose();
-		NormalMatrix.invert();
+		ModelMatrix.SetIdentity();
+		ModelMatrix.Scale(Scale);
+		//ModelMatrix = ModelMatrix.GetRotation(Rotation) * ModelMatrix;
+		//ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.x);
+		//ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.z);
+		ModelMatrix.Translate(Position);
+
+		//NormalMatrix = Matrix;
+		//NormalMatrix.transpose();
+		//NormalMatrix.invert();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void Transform::SetMatrix(Matrix4 Matrix)
+	void Transform::SetMatrix(Matrix InMatrix)
 	{
-		this->Matrix = Matrix;
+		this->ModelMatrix = InMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Matrix4 Transform::GetMatrix() const
+	Matrix Transform::GetMatrix() const
 	{
-		return Matrix;
+		return ModelMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	Matrix4 Transform::GetNormalMatrix() const

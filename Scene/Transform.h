@@ -11,6 +11,7 @@
 
 #include <Math/Vector3.h>
 #include <Math/Matrix4.h>
+#include <Math/Matrix.h>
 
 namespace Columbus
 {
@@ -21,7 +22,7 @@ namespace Columbus
 		Vector3 Position;
 		Vector3 Rotation;
 		Vector3 Scale = Vector3(1, 1, 1);
-		Matrix4 Matrix;
+		Matrix ModelMatrix;
 		Matrix4 NormalMatrix;
 	public:
 		Transform();
@@ -43,8 +44,8 @@ namespace Columbus
 
 		void Update();
 
-		void SetMatrix(Matrix4 Matrix);
-		Matrix4 GetMatrix() const;
+		void SetMatrix(Matrix InMatrix);
+		Matrix GetMatrix() const;
 		Matrix4 GetNormalMatrix() const;
 
 		~Transform();
