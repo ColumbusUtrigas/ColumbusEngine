@@ -28,6 +28,9 @@ namespace Columbus
 		Cubemap* mCubemap = nullptr;
 		Camera mCamera;
 
+		float UniformViewMatrix[16];
+		float UniformProjectionMatrix[16];
+
 		//Vertex buffer
 		float skyboxVertices[108] =
 		{

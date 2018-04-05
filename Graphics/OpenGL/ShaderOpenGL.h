@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/Shader.h>
+#include <Core/Types.h>
 
 namespace Columbus
 {
@@ -8,7 +9,7 @@ namespace Columbus
 	class ShaderOpenGL : public Shader
 	{
 	private:
-		unsigned int mID = 0;
+		uint32 mID = 0;
 	public:
 		ShaderOpenGL();
 		ShaderOpenGL(std::string aVert, std::string aFrag);

@@ -70,6 +70,45 @@ namespace Columbus
 		}
 	}
 
+	/*
+	* Additional functions for angles convertation
+	*/
+	void MatrixToAngles(btMatrix3x3 InMatrix, Vector3& OutAngles)
+	{
+		auto Forward = InMatrix.getColumn(2);
+		auto Left = InMatrix.getColumn(0);
+		auto Up = InMatrix.getColumn(1);
+
+		float Dist = sqrtf(Forward.getZ() * Forward.getZ() + Forward.getX() * Forward.getX());
+		
+		//Enough here to get angles?
+		if (Dist > 0.001f)
+		{
+			// (yaw) y = ATAN(Forward.y, Forward.x);
+			OutAngles.y = Degrees(atan2f(Forward.getX(), Forward.getZ()));
+
+			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
+			OutAngles.x = Degrees(atan2f(-Forward.getY(), Dist));
+
+			// (roll) z = ATAN(Left.z, Up.z);
+			OutAngles.z = Degrees(atan2f(Left.getY(), Up.getY()));
+		}
+		else
+		{
+			// (yaw) y = ATAN(-Left.x, Left.y);
+			OutAngles.y = Degrees(atan2f(-Left.getZ(), Left.getX()));
+
+			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
+			OutAngles.x = Degrees(atan2f(-Forward.getY(), Dist));
+
+			// Assume no roll in this case as one degree of freedom has been lost (i.e. yaw == roll)
+			OutAngles.z = 0;
+		}
+	}
+	/*
+	* End of additional functions for angles convertation
+	*/
+
 	void Rigidbody::SetTransform(Transform Transform)
 	{
 		if (mRigidbody != nullptr)
@@ -87,10 +126,11 @@ namespace Columbus
 			rot.y = Radians(rot.y);
 			rot.z = Radians(rot.z);
 
-			btQuaternion quat; quat.setEulerZYX(rot.z, rot.y, rot.x);
+			//btQuaternion quat; quat.setEulerZYX(rot.z, rot.y, rot.x);
 
 			Trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
-			Trans.setRotation(quat);
+			Trans.getBasis().setEulerZYX(rot.x, rot.z, rot.y);
+			//Trans.setRotation(quat);
 			mRigidbody->proceedToTransform(Trans);
 
 			this->Trans = Transform;
@@ -235,16 +275,17 @@ namespace Columbus
 			btVector3 pos;
 			Vector3 rot;
 
-			float roll, pitch, yaw;
-
 			bTrans = mRigidbody->getWorldTransform();
 
 			pos = bTrans.getOrigin();
-			bTrans.getBasis().getEulerZYX(rot.z, rot.y, rot.x);
+
+			MatrixToAngles(bTrans.getBasis(), rot);
+
+			/*bTrans.getBasis().getEulerYPR(rot.x, rot.z, rot.y);
 
 			rot.x = Degrees(rot.x);
 			rot.y = Degrees(rot.y);
-			rot.z = Degrees(rot.z);
+			rot.z = Degrees(rot.z);*/
 
 			Trans.SetPos(Vector3(pos.getX(), pos.getY(), pos.getZ()));
 			Trans.SetRot(Vector3(rot.x, rot.y, rot.z));

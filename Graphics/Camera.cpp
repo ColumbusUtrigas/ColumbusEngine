@@ -82,47 +82,62 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Camera::update()
 	{
-		if (mPos.x >= 360 || mPos.x <= -360) mPos.x = 0.0;
-		if (mPos.y >= 360 || mPos.y <= -360) mPos.y = 0.0;
-		if (mPos.z >= 360 || mPos.z <= -360) mPos.z = 0.0;
+		while (mRot.x >= 360.0f || mRot.x <= -360.0f)
+		{
+			mRot.x -= 360.0f * Sign(mRot.x);
+		}
 
-		if (mRot.x >= 360 || mRot.x <= -360) mRot.x = 0.0;
+		while (mRot.y >= 360.0f || mRot.y <= -360.0f)
+		{
+			mRot.y -= 360.0f * Sign(mRot.y);
+		}
+
+		while (mRot.z >= 360.0f || mRot.z <= -360.0f)
+		{
+			mRot.z -= 360.0f * Sign(mRot.z);
+		}
+
+		/*if (mRot.x >= 360 || mRot.x <= -360) mRot.x = 0.0;
 		if (mRot.y >= 360 || mRot.y <= -360) mRot.y = 0.0;
-		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;
+		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;*/
 
-		Vector3 front;
-		front.z = cos(Radians(mRot.x)) * cos(Radians(mRot.y));
-		front.y = sin(Radians(mRot.x));
-		front.x = cos(Radians(mRot.x)) * sin(Radians(mRot.y));
-		mCameraDirection = -front.normalize();
+		//Vector3 Front;
+		mCameraDirection.z = Cos(Radians(mRot.x)) * Cos(Radians(mRot.y));
+		mCameraDirection.y = Sin(Radians(mRot.x));
+		mCameraDirection.x = Cos(Radians(mRot.x)) * Sin(Radians(mRot.y));
+		mCameraDirection = -mCameraDirection.normalize();
+		//mCameraDirection = -Front.normalize();
 
 		Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 		mCameraRight = Vector3::cross(up, mCameraDirection).normalize();
 
 		mCameraUp = Vector3::cross(mCameraDirection, mCameraRight);
 		
-		mViewMatrix = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
+		//mViewMatrix = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
+		ViewMatrix.LookAt(mPos, mCameraRight, mCameraDirection, mCameraUp);
 
 		preTargeted = false;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void Camera::perspective(const float aFOV, const float aAspect, const float aNear, const float aFar)
+	void Camera::perspective(float FOV, float Aspect, float Near, float Far)
 	{
-		mProjectionMatrix.perspective(aFOV, aAspect, aNear, aFar);
+		//mProjectionMatrix.perspective(FOV, Aspect, Near, Far);
+		//mProjectionMatrix = glm::perspective(FOV, Aspect, Near, Far);
+		ProjectionMatrix.Perspective(FOV, Aspect, Near, Far);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	Matrix4 Camera::getProjectionMatrix() const
+	Matrix Camera::getProjectionMatrix() const
 	{
-		return mProjectionMatrix;
+		return ProjectionMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Matrix4 Camera::getViewMatrix() const
+	Matrix Camera::getViewMatrix() const
 	{
-		return mViewMatrix;
+		return ViewMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,6 @@
 *                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -21,6 +20,7 @@
 
 #include <System/System.h>
 #include <Math/Matrix4.h>
+#include <Math/Matrix.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
@@ -37,8 +37,9 @@ namespace Columbus
 		Vector3 mCameraDirection = Vector3(0, 0, -1);
 		Vector3 mCameraRight = Vector3(1, 0, 0);
 		Vector3 mCameraUp = Vector3(0, 1, 0);
-		Matrix4 mProjectionMatrix;
-		Matrix4 mViewMatrix;
+
+		Matrix ProjectionMatrix;
+		Matrix ViewMatrix;
 
 		bool rotMode = false;
 		bool preTargeted = false;
@@ -63,11 +64,11 @@ namespace Columbus
 		Vector3 right() const;
 		Vector3 up() const;
 
-		void perspective(const float aFOV, const float aAspect, const float aNear, const float aFar);
+		void perspective(float FOV, float Aspect, float Near, float Far);
 		//void ortho();
 
-		Matrix4 getProjectionMatrix() const;
-		Matrix4 getViewMatrix() const;
+		Matrix getProjectionMatrix() const;
+		Matrix getViewMatrix() const;
 		
 		~Camera();
 	};

@@ -3,6 +3,7 @@
 
 namespace Columbus
 {
+
 	//STANDART MESH VERTEX SHADER
 	const std::string gMeshVertexShader =
 		"#version 130\n"
@@ -97,21 +98,19 @@ namespace Columbus
 
 			if (!vert.isOpened())
 			{
-				Log::error("Shader not loaded: " + aVert); return false;
+				Log::error("Shader not loaded: " + aVert);
+				return false;
 			}
 
-			char* vertFile = (char*)calloc(1, vert.getSize());
-			if (!vertFile)
-			{
-				Log::error("Shader not loaded: " + aVert); return false;	
-			}
+			char* vertFile = new char[vert.getSize() + 1];
+			vertFile[vert.getSize()] = 0;
 
 			vert.readBytes(vertFile, vert.getSize());
 			vert.close();
 
 			mBuilder.build(vertFile, E_SHADER_TYPE_VERTEX);
 			vertSource = mBuilder.getShader();
-			//delete vertFile;
+			delete[] vertFile;
 		}
 		//Fragment shader loading
 		if (aFrag == "STANDART_SKY_FRAGMENT")
@@ -124,30 +123,31 @@ namespace Columbus
 
 			if (!frag.isOpened())
 			{
-				Log::error("Shader not loaded: " + aFrag); return false;
+				Log::error("Shader not loaded: " + aFrag);
+				return false;
 			}
-			char* fragFile = (char*)calloc(1, frag.getSize());
-			if (!fragFile)
-			{
-				Log::error("Shader not loaded: " + aFrag); return false;	
-			}
+
+			char* fragFile = new char[frag.getSize() + 1];
+			fragFile[frag.getSize()] = 0;
 
 			frag.readBytes(fragFile, frag.getSize());
 			frag.close();
 
 			mBuilder.build(fragFile, E_SHADER_TYPE_FRAGMENT);
 			fragSource = mBuilder.getShader();
-			//delete fragFile;
+			delete[] fragFile;
 		}
 
 		if (vertSource.empty())
 		{
-			Log::error("Shader not loaded: " + aVert); return false;
+			Log::error("Shader not loaded: " + aVert);
+			return false;
 		}
 
 		if (fragSource.empty())
 		{
-			Log::error("Shader not loaded: " + aFrag); return false;
+			Log::error("Shader not loaded: " + aFrag);
+			return false;
 		}
 
 		mVertShaderPath = aVert;
@@ -167,14 +167,15 @@ namespace Columbus
 	{
 		if (!mLoaded) return false;
 
-		unsigned int vertex = glCreateShader(GL_VERTEX_SHADER);
-		unsigned int fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		int result, length;
+		uint32 vertex = glCreateShader(GL_VERTEX_SHADER);
+		uint32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
+		int32 length, result;
 		char* error;
-		const char* vertSrc = mVertShaderSource.c_str();
-		const char* fragSrc = mFragShaderSource.c_str();
 
-		glShaderSource(vertex, 1, &vertSrc, NULL);
+		auto VertexSource = mVertShaderSource.c_str();
+		auto FragmentSource = mFragShaderSource.c_str();
+
+		glShaderSource(vertex, 1, &VertexSource, NULL);
 		glCompileShader(vertex);
 		glGetShaderiv(vertex, GL_COMPILE_STATUS, &result);
 
@@ -187,10 +188,12 @@ namespace Columbus
 			glDeleteShader(vertex);
 			glDeleteShader(fragment);
 			mID = 0;
+
+			delete[] error;
 			return false;
 		}
 
-		glShaderSource(fragment, 1, &fragSrc, NULL);
+		glShaderSource(fragment, 1, &FragmentSource, NULL);
 		glCompileShader(fragment);
 		glGetShaderiv(fragment, GL_COMPILE_STATUS, &result);
 
@@ -203,6 +206,8 @@ namespace Columbus
 			glDeleteShader(vertex);
 			glDeleteShader(fragment);
 			mID = 0;
+
+			delete error;
 			return false;
 		}
 
@@ -242,32 +247,32 @@ namespace Columbus
 	{
 		if (mID != 0 && mCompiled) glUniform1i(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	void ShaderOpenGL::setUniform1f(std::string aName, const float aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform1f(glGetUniformLocation(mID, aName.c_str()), aValue);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	void ShaderOpenGL::setUniform2f(std::string aName, const Vector2 aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	void ShaderOpenGL::setUniform3f(std::string aName, const Vector3 aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	void ShaderOpenGL::setUniform4f(std::string aName, const Vector4 aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniform4f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z, aValue.w);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ShaderOpenGL::setUniformMatrix(std::string aName, const float* aValue) const
 	{
 		if (mID != 0 && mCompiled) glUniformMatrix4fv(glGetUniformLocation(mID, aName.c_str()), 1, GL_FALSE, aValue);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ShaderOpenGL::setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const
 	{
 		if (mID != 0 && mCompiled) glUniform1fv(glGetUniformLocation(mID, aName.c_str()), aSize, aArray);
