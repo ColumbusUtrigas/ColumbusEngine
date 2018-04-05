@@ -424,7 +424,7 @@
 				<Rigidbody>
 					<Static>0</Static>
 					<Mass>1</Mass>
-					<Restitution>0</Restitution>
+					<Restitution>0.5</Restitution>
 					<Friction>0.6</Friction>
 					<RollingFriction>1</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
@@ -457,7 +457,7 @@
 				<Rigidbody>
 					<Static>0</Static>
 					<Mass>1</Mass>
-					<Restitution>0</Restitution>
+					<Restitution>0.5</Restitution>
 					<Friction>0.6</Friction>
 					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
@@ -490,7 +490,7 @@
 				<Rigidbody>
 					<Static>0</Static>
 					<Mass>1</Mass>
-					<Restitution>0</Restitution>
+					<Restitution>0.5</Restitution>
 					<Friction>0.6</Friction>
 					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
@@ -525,7 +525,7 @@
 					<Mass>5</Mass>
 					<Restitution>0.5</Restitution>
 					<Friction>0.5</Friction>
-					<RollingFriction>0.0</RollingFriction>
+					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.3</AngularDamping>
 					<AngularTreshold>0.25</AngularTreshold>
 					<LinearDamping>0.3</LinearDamping>
