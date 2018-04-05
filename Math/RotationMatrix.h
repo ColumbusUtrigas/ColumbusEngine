@@ -46,9 +46,24 @@ namespace Columbus
 			mat[14] = r2 * m12 + r6 * m13 + r10* m14;
 		}
 
+		inline RotationMatrix(Vector3 EulerAngle)
+		{
+			/*const float Sx = Sin(EulerAngle.x);
+		    const float Sy = Sin(EulerAngle.y);
+		    const float Sz = Sin(EulerAngle.z);
+		    const float Cx = Cos(EulerAngle.x);
+		    const float Cy = Cos(EulerAngle.y);
+		    const float Cz = Cos(EulerAngle.z);*/
+		}
+
 		inline static Matrix4 Make(Vector3 Axis, float Angle)
 		{
 			return RotationMatrix(Axis, Angle);
+		}
+
+		inline static Matrix4 Make(Vector3 EulerAngle)
+		{
+			return RotationMatrix(EulerAngle);
 		}
 	};
 

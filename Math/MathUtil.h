@@ -9,27 +9,29 @@
 *************************************************/
 #pragma once
 
+#include <Core/Types.h>
+
 #include <cstdlib>
 #include <cmath>
 
 namespace Columbus
 {
 
-	inline int32_t TruncToInt(const float Value) { return (int32_t)Value; }
+	inline int32 TruncToInt(const float Value) { return (int32)Value; }
 	inline float TruncToFloat(const double Value) { return (float)Value; }
-	inline int32_t FloorToInt(const float Value) { return (int32_t)floorf(Value); }
+	inline int32 FloorToInt(const float Value) { return (int32)floorf(Value); }
 	inline float FloorToFloat(const float Value) { return floorf(Value); }
 	inline double FloorToDouble(const double Value) { return floor(Value); }
-	inline int32_t RoundToInt(const float Value) { return FloorToInt(Value + 0.5f); }
+	inline int32 RoundToInt(const float Value) { return FloorToInt(Value + 0.5f); }
 	inline float RoundToFloat(const float Value) { return FloorToFloat(Value + 0.5f); }
 	inline double RoundToDouble(const double Value) { return FloorToDouble(Value + 0.5); }
-	inline int32_t CeilToInt(const float Value) { return TruncToInt(ceilf(Value)); }
+	inline int32 CeilToInt(const float Value) { return TruncToInt(ceilf(Value)); }
 	inline float CeilToFloat(const float Value) { return ceilf(Value); }
 	inline double CeilToDouble(const double Value) { return ceil(Value); }
 
-	//e ^ Value
+	/** e ^ Value */
 	inline float Exp(const float Value) { return expf(Value); }
-	//2 ^ value
+	/** 2 ^ value */
 	inline float Exp2(const float Value) { return powf(2.0f, Value); }
 
 	inline float Sin(const float Value)	{ return sinf(Value); }
@@ -38,33 +40,81 @@ namespace Columbus
 	inline float Sqrt(const float Value) { return sqrtf(Value); }
 	inline float Pow(const float A, const float B) { return powf(A, B); };
 
-	inline bool IsPowerOf2(const int32_t Value) { return (Value & (Value - 1)) == 0; }
-
+	/*
+	* Find sinus and cosine of Value
+	* @param const float Value: Value for finding sinus and cosine
+	* @param float& S: Sinus value reference
+	* @param float& C: Cosine value reference
+	*/
+	inline void SinCos(const float Value, float& S, float& C)
+	{
+		S = Sin(Value);
+		C = Cos(Value);
+	}
+	/*
+	* Return true if Value is power of 2
+	*/
+	inline bool IsPowerOf2(const int32 Value)
+	{
+		return (Value & (Value - 1)) == 0;
+	}
+	/*
+	* Return true if Value is Nan (not a number)
+	*/
+	inline bool IsNan(float Value)
+	{
+		return ((*(uint32*)&Value) & 0x7FFFFFFF) > 0x7F800000;
+	}
+	/*
+	* Return true if Value if finite (not NaN and not infinity)
+	*/
+	inline bool IsFinite(float Value)
+	{
+		return ((*(uint32*)&Value) & 0x7F800000) != 0x7F800000;
+	}
+	/*
+	* Return absolute value in a generic way
+	*/
 	template <class T>
 	inline T Abs(const T Value)
 	{
 		return (Value >= (T)0) ? Value : -Value;
 	}
-
+	/*
+	* Returns 1, 0, or -1 depending on relation of T to 0
+	*/
 	template <class T>
-	inline T Min(const T a, const T b)
+	inline T Sign(const T A)
 	{
-		return a < b ? a : b;
+		return (A > (T)0) ? (T)1 : ((A < (T)0) ? (T)-1 : (T)0);
 	}
-
+	/*
+	* Return lower value in a generic way
+	*/
 	template <class T>
-	inline T Max(const T a, const T b)
+	inline T Min(const T A, const T B)
 	{
-		return a > b ? a : b;
+		return A < B ? A : B;
 	}
-	//Constrain a value to lie between two further values
+	/*
+	* Return heigher value in a generic way
+	*/
 	template <class T>
-	inline T Clamp(const T a, const T MinValue, const T MaxValue)
+	inline T Max(const T A, const T B)
 	{
-		return Min(Max(a, MinValue), MaxValue);
+		return A > B ? A : B;
 	}
-
-	//Converts degrees to radians
+	/*
+	* Constrain a value to lie between two further values
+	*/
+	template <class T>
+	inline T Clamp(const T A, const T MinValue, const T MaxValue)
+	{
+		return Min(Max(A, MinValue), MaxValue);
+	}
+	/*
+	* Converts Degrees to radians
+	*/
 	template <class T>
 	inline T Radians(const T Degrees)
 	{
@@ -73,7 +123,9 @@ namespace Columbus
 		return Degrees * 0.017453293f;
 	}
 
-	//Converts radians to degrees
+	/*
+	* Converts Radians to degrees
+	*/
 	template <class T>
 	inline T Degrees(const T Radians)
 	{
