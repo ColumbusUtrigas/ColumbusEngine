@@ -87,7 +87,7 @@ namespace Columbus
 
 			if (rb != nullptr)
 			{
-				rb->Render(Object.second->GetTransform());
+				rb->Render(Object.second->transform);
 			}
 		}
 	}
@@ -297,7 +297,6 @@ namespace Columbus
 			Vector2 rbShapeRadiusHeight;
 			std::string rbShapeMesh = "None";
 			float rbShapeRadius = 0.0f;
-			float rbShapeHeight = 0.0f;
 			Serializer::SerializerXML::Element* rbElement = nullptr;
 
 			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeBox" }, &rbShapeSize, { "X", "Y", "Z" }))
@@ -382,11 +381,19 @@ namespace Columbus
 			std::string name;
 			int shaderID = -1;
 
-			if (!Serializer->GetSubString({ "GameObjects", Element, "Name" }, &name)) return false;
+			if (!Serializer->GetSubString({ "GameObjects", Element, "Name" }, &name))
+			{
+				delete Object;
+				return nullptr;
+			}
 
 			Transform transform = SceneGameObjectLoadTransform(Serializer, Element);
 			Material* material = SceneGameObjectLoadMaterial(Serializer, Element);
-			if (material == nullptr) return false;
+			if (material == nullptr)
+			{
+				delete Object;
+				return nullptr;
+			}
 
 			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" }, &shaderID))
 			{
@@ -464,7 +471,7 @@ namespace Columbus
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Textures", elem }, &path))
 				{
-					mTextures.insert(std::pair<int, Texture*>(i, gDevice->createTexture(path)));
+					mTextures.insert(std::pair<uint32, Texture*>(i, gDevice->createTexture(path)));
 				}
 			}
 		}
@@ -477,7 +484,7 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
 				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
 				{
-					mShaders.insert(std::pair<int, Shader*>(i, gDevice->createShader(path, path1)));
+					mShaders.insert(std::pair<uint32, Shader*>(i, gDevice->createShader(path, path1)));
 				}
 			}
 		}
@@ -491,7 +498,7 @@ namespace Columbus
 				{
 					if (ModelIsCMF(path))
 					{
-						mMeshes.insert(std::pair<int, Mesh*>(i, gDevice->createMesh(ModelLoadCMF(path))));
+						mMeshes.insert(std::pair<uint32, Mesh*>(i, gDevice->createMesh(ModelLoadCMF(path))));
 						Log::success("Mesh loaded: " + path);
 					}
 					else
