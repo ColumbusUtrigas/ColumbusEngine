@@ -5,6 +5,8 @@
 
 using namespace Columbus;
 
+#include <AL/al.h>
+
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
@@ -46,10 +48,16 @@ int main(int argc, char** argv)
 		Log::error("Couldn't load sound");
 	}
 
-	Source->SetSound(Source->GetSound());
-
+	Source->SetPosition(Vector3(0, 10, 3.5));
 	Source->SetLooping(true);
+	Source->SetMinDistance(1.0f);
+	Source->SetMaxDistance(1000.0f);
+
+	Source->SetSound(Source->GetSound());
+	
 	Source->Play();
+
+	float xPos = 8.0f;
 	
 	while (window.isOpen())
 	{
@@ -100,6 +108,10 @@ int main(int argc, char** argv)
 			camera.addRot(Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
 			input.setMousePos(window.getSize() * 0.5);
 		}
+
+		xPos -= 0.05f;
+
+		Source->SetPosition(Vector3(xPos, 0.0f, 0.0f));
 
 		camera.setRot(Vector3::clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
 		camera.update();
