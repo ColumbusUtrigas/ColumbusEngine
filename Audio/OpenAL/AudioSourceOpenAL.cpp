@@ -7,9 +7,6 @@ namespace Columbus
 	AudioSourceOpenAL::AudioSourceOpenAL()
 	{
 		SoundClip = new Sound();
-
-		alGenBuffers(1, &OpenALBuffer);
-		alGenSources(1, &OpenALSource);
 	}
 
 	void AudioSourceOpenAL::Play()
@@ -38,11 +35,14 @@ namespace Columbus
 
 		if (SoundClip != nullptr)
 		{
-			alDeleteBuffers(1, &OpenALBuffer);
-			alGenBuffers(1, &OpenALBuffer);
-
 			if (SoundClip->GetBuffer() != nullptr && SoundClip->GetBufferSize() != 0 && SoundClip->GetFrequency() != 0 && SoundClip->GetChannelsCount() != 0)
 			{
+				alSourcei(OpenALSource, AL_BUFFER, 0);
+				alDeleteSources(1, &OpenALSource);
+				alDeleteBuffers(1, &OpenALBuffer);
+				alGenSources(1, &OpenALSource);
+				alGenBuffers(1, &OpenALBuffer);
+
 				switch (SoundClip->GetChannelsCount())
 				{
 				case 1:
@@ -96,8 +96,9 @@ namespace Columbus
 
 	AudioSourceOpenAL::~AudioSourceOpenAL()
 	{
-		alDeleteBuffers(1, &OpenALBuffer);
+		alSourcei(OpenALSource, AL_BUFFER, 0);
 		alDeleteSources(1, &OpenALSource);
+		alDeleteBuffers(1, &OpenALBuffer);
 	}	
 
 }

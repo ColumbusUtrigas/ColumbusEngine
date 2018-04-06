@@ -1,11 +1,7 @@
 #include <Engine.h>
 #include <Graphics/OpenGL/DeviceOpenGL.h>
+#include <Audio/OpenAL/AudioDeviceOpenAL.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
-
-#include <AL/al.h>
-#include <AL/alc.h>
-
-#include <Audio/OpenAL/AudioSourceOpenAL.h>
 
 using namespace Columbus;
 
@@ -21,6 +17,7 @@ int main(int argc, char** argv)
 	camera.setRot(vec3(0, 90, 0));
 
 	gDevice = new DeviceOpenGL();
+	gAudioDevice = new AudioDeviceOpenAL();
 
 	Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
@@ -43,14 +40,7 @@ int main(int argc, char** argv)
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
 
-	ALCdevice* device;
-	ALCcontext *context;
-
-	device = alcOpenDevice(NULL);
-	context = alcCreateContext(device, NULL);
-	alcMakeContextCurrent(context);
-
-	AudioSource* Source = new AudioSourceOpenAL();
+	AudioSource* Source = gAudioDevice->CreateSource();
 	if (!Source->GetSound()->Load("Data/Sounds/cartoon001.wav"))
 	{
 		Log::error("Couldn't load sound");
@@ -128,9 +118,8 @@ int main(int argc, char** argv)
 	}
 
 	delete Source;
-
-	alcDestroyContext(context);
-	alcCloseDevice(device); 
+	delete gDevice;
+	delete gAudioDevice;
 
 	return 0;
 }

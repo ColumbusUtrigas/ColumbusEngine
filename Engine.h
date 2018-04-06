@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Audio/AudioDevice.h>
 #include <Audio/AudioSource.h>
 
 #include <Common/Image/Image.h>
