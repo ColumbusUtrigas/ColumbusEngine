@@ -24,6 +24,9 @@ namespace Columbus
 		void SetDirection(Vector3 InDirection) override;
 		void SetGain(float InGain) override;
 		void SetPitch(float InPitch) override;
+		void SetMinDistance(float InDistance) override;
+		void SetMaxDistance(float InDistance) override;
+		void SetRolloff(float InRolloff) override;
 		void SetLooping(bool InLooping) override;
 
 		~AudioSourceOpenAL() override;

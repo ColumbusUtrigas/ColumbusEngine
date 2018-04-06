@@ -33,13 +33,14 @@ namespace Columbus
 	{
 		this->SoundClip = InSound;
 
+		alSourcei(OpenALSource, AL_BUFFER, 0);
+		alDeleteSources(1, &OpenALSource);
+		alDeleteBuffers(1, &OpenALBuffer);
+
 		if (SoundClip != nullptr)
 		{
 			if (SoundClip->GetBuffer() != nullptr && SoundClip->GetBufferSize() != 0 && SoundClip->GetFrequency() != 0 && SoundClip->GetChannelsCount() != 0)
 			{
-				alSourcei(OpenALSource, AL_BUFFER, 0);
-				alDeleteSources(1, &OpenALSource);
-				alDeleteBuffers(1, &OpenALBuffer);
 				alGenSources(1, &OpenALSource);
 				alGenBuffers(1, &OpenALBuffer);
 
@@ -54,6 +55,16 @@ namespace Columbus
 				}
 
 				alSourcei(OpenALSource, AL_BUFFER, OpenALBuffer);
+
+				alSource3f(OpenALSource, AL_POSITION, Position.x, Position.y, Position.z);
+				alSource3f(OpenALSource, AL_VELOCITY, Velocity.x, Velocity.y, Velocity.z);
+				alSource3f(OpenALSource, AL_DIRECTION, Direction.x, Direction.y, Direction.z);
+				alSourcef(OpenALSource, AL_GAIN, Gain);
+				alSourcef(OpenALSource, AL_PITCH, Pitch);
+				alSourcef(OpenALSource, AL_REFERENCE_DISTANCE, MinDistance);
+				alSourcef(OpenALSource, AL_MAX_DISTANCE, MaxDistance);
+				alSourcef(OpenALSource, AL_ROLLOFF_FACTOR, Rolloff);
+				alSourcei(OpenALSource, AL_LOOPING, Looping);
 			}
 		}
 	}
@@ -86,6 +97,24 @@ namespace Columbus
 	{
 		this->Pitch = InPitch;
 		alSourcef(OpenALSource, AL_PITCH, Pitch);
+	}
+
+	void AudioSourceOpenAL::SetMinDistance(float InDistance)
+	{
+		this->MinDistance = InDistance;
+		alSourcef(OpenALSource, AL_REFERENCE_DISTANCE, MinDistance);
+	}
+
+	void AudioSourceOpenAL::SetMaxDistance(float InDistance)
+	{
+		this->MaxDistance = InDistance;
+		alSourcef(OpenALSource, AL_MAX_DISTANCE, MaxDistance);
+	}
+
+	void AudioSourceOpenAL::SetRolloff(float InRolloff)
+	{
+		this->Rolloff = InRolloff;
+		alSourcef(OpenALSource, AL_ROLLOFF_FACTOR, Rolloff);
 	}
 
 	void AudioSourceOpenAL::SetLooping(bool InLooping)
