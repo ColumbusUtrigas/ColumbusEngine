@@ -7,9 +7,16 @@ namespace Columbus
 		SoundClip(nullptr),
 		Gain(1.0f),
 		Pitch(1.0f),
+		MinDistance(0.01f),
+		MaxDistance(1000.0f),
+		Rolloff(1.0f),
 		Looping(false)
 	{
 		SoundClip = new Sound();
+
+		SetMinDistance(0.0f);
+		SetMaxDistance(100.0f);
+		SetRolloff(1.0f);
 	}
 
 	void AudioSource::Play() {}
@@ -47,6 +54,21 @@ namespace Columbus
 		this->Pitch = InPitch;
 	}
 
+	void AudioSource::SetMinDistance(float InDistance)
+	{
+		this->MinDistance = InDistance;
+	}
+
+	void AudioSource::SetMaxDistance(float InDistance)
+	{
+		this->MaxDistance = InDistance;
+	}
+
+	void AudioSource::SetRolloff(float InRolloff)
+	{
+		this->Rolloff = InRolloff;
+	}
+
 	void AudioSource::SetLooping(bool InLooping)
 	{
 		this->Looping = InLooping;
@@ -80,6 +102,21 @@ namespace Columbus
 	float AudioSource::GetPitch() const
 	{
 		return Pitch;
+	}
+
+	float AudioSource::GetMinDistance() const
+	{
+		return MinDistance;
+	}
+
+	float AudioSource::GetMaxDistance() const
+	{
+		return MaxDistance;
+	}
+
+	float AudioSource::GetRolloff() const
+	{
+		return Rolloff;
 	}
 
 	bool AudioSource::GetLooping() const

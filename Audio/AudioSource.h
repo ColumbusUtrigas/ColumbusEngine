@@ -15,6 +15,9 @@ namespace Columbus
 		Vector3 Direction;
 		float Gain;
 		float Pitch;
+		float MinDistance;
+		float MaxDistance;
+		float Rolloff;
 		bool Looping;
 	public:
 		AudioSource();
@@ -30,6 +33,9 @@ namespace Columbus
 		virtual void SetDirection(Vector3 InDirection);
 		virtual void SetGain(float InGain);
 		virtual void SetPitch(float InPitch);
+		virtual void SetMinDistance(float InDistance);
+		virtual void SetMaxDistance(float InDistance);
+		virtual void SetRolloff(float InRollof);
 		virtual void SetLooping(bool InLooping);
 
 		virtual Sound* GetSound() const;
@@ -38,6 +44,9 @@ namespace Columbus
 		virtual Vector3 GetDirection() const;
 		virtual float GetGain() const;
 		virtual float GetPitch() const;
+		virtual float GetMinDistance() const;
+		virtual float GetMaxDistance() const;
+		virtual float GetRolloff() const;
 		virtual bool GetLooping() const;
 
 		virtual ~AudioSource();
