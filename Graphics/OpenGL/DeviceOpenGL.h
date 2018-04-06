@@ -27,7 +27,7 @@ namespace Columbus
 
 		Framebuffer* createFramebuffer() const override;
 
-		~DeviceOpenGL();
+		~DeviceOpenGL() override;
 	};
 
 }

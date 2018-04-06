@@ -31,7 +31,7 @@ namespace Columbus
 
 		virtual Framebuffer* createFramebuffer() const;
 
-		~Device();
+		virtual ~Device();
 	};
 
 	extern Device* gDevice;
