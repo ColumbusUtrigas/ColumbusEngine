@@ -117,9 +117,9 @@ namespace Columbus
 					Vector2 deltaUV1 = ver2.UV - ver1.UV;
 					Vector2 deltaUV2 = ver3.UV - ver1.UV;
 
-					float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-					Vector3 tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
-					Vector3 bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+					float r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.X);
+					Vector3 tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+					Vector3 bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
 
 					ver1.tangent = tangent;
 					ver2.tangent = tangent;

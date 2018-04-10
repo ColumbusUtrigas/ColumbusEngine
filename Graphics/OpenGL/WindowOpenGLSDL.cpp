@@ -48,7 +48,7 @@ namespace Columbus
 		case E_WINDOW_FLAG_FULLSCREEN_DESKTOP: flags |= SDL_WINDOW_FULLSCREEN_DESKTOP; break;
 		}
 
-		mWindow = SDL_CreateWindow(aTitle.c_str(), pos, pos, aSize.x, aSize.y, flags);
+		mWindow = SDL_CreateWindow(aTitle.c_str(), pos, pos, aSize.X, aSize.Y, flags);
 		mGLC = SDL_GL_CreateContext(mWindow);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -134,8 +134,8 @@ namespace Columbus
 	{
 		int x, y;
 		SDL_GetWindowSize(mWindow, &x, &y);
-		mSize.x = x;
-		mSize.y = y;
+		mSize.X = x;
+		mSize.Y = y;
 
 		while(SDL_PollEvent(&mTmpEvent))
 		{
@@ -151,14 +151,14 @@ namespace Columbus
 		SDL_GL_SetSwapInterval(mVSync ? 1 : 0);
 		glClearColor(aColor.x, aColor.y, aColor.z, aColor.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, TruncToInt(getSize().x), TruncToInt(getSize().y));
+		glViewport(0, 0, Math::TruncToInt(getSize().X), Math::TruncToInt(getSize().Y));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void WindowOpenGLSDL::display()
 	{
 		SDL_GL_SwapWindow(mWindow);
 		glFinish();
-		mRedrawTime = TruncToFloat(mRedrawTimer.elapsed());
+		mRedrawTime = Math::TruncToFloat(mRedrawTimer.elapsed());
 		mRedrawTimer.reset();
 		mFrames++;
 		if (mFPSTimer.elapsed() >= 1.0f)

@@ -63,7 +63,7 @@ namespace Columbus
 	bool FramebufferOpenGL::prepare(Vector4 aClear, Vector2 aWindowSize)
 	{
 		bind();
-		glViewport(0, 0, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y));
+		glViewport(0, 0, (uint32)(aWindowSize.X), (uint32)(aWindowSize.Y));
 		glClearColor(aClear.x, aClear.y, aClear.z, aClear.w);
 		glClear(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);

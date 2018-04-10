@@ -277,8 +277,8 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 rotate(const float x, const float y, const float z, const float angle)
 		{
-			float c = cosf(Radians(angle));
-			float s = sinf(Radians(angle));
+			float c = Math::Cos(Math::Radians(angle));
+			float s = Math::Sin(Math::Radians(angle));
 			float c1 = 1.0f - c;
 			float m0 = mat[0], m4 = mat[4], m8 = mat[8], m12 = mat[12],
 			      m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
@@ -314,14 +314,14 @@ namespace Columbus
 		{
 			float sr, sp, sy, cr, cp, cy;
 
-			sy = Sin(Radians(Angle.y));
-			cy = Cos(Radians(Angle.y));
+			sy = Math::Sin(Math::Radians(Angle.y));
+			cy = Math::Cos(Math::Radians(Angle.y));
 
-			sp = Sin(Radians(Angle.x));
-			cp = Cos(Radians(Angle.x));
+			sp = Math::Sin(Math::Radians(Angle.x));
+			cp = Math::Cos(Math::Radians(Angle.x));
 
-			sr = Sin(Radians(Angle.z));
-			cr = Cos(Radians(Angle.z));
+			sr = Math::Sin(Math::Radians(Angle.z));
+			cr = Math::Cos(Math::Radians(Angle.z));
 
 			Matrix4 m;
 

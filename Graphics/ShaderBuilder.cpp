@@ -36,6 +36,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool ShaderBuilder::build(const std::string aShader, const ShaderType aType)
 	{
+		shader.clear();
+
 		switch (aType)
 		{
 		case E_SHADER_TYPE_VERTEX:

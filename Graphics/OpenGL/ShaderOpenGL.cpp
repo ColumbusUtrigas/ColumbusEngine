@@ -1,5 +1,6 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <GL/glew.h>
+#include <fstream>
 
 namespace Columbus
 {
@@ -94,23 +95,18 @@ namespace Columbus
 		}
 		else
 		{
-			File vert(aVert, "rt");
-
-			if (!vert.isOpened())
+			std::ifstream vert;
+			vert.open(aVert.c_str());
+			if (!vert.is_open())
 			{
-				Log::error("Shader not loaded: " + aVert);
+				Log::error("Shader not loaded: " + aFrag);
 				return false;
 			}
 
-			char* vertFile = new char[vert.getSize() + 1];
-			vertFile[vert.getSize()] = 0;
-
-			vert.readBytes(vertFile, vert.getSize());
-			vert.close();
+			std::string vertFile((std::istreambuf_iterator<char>(vert)), std::istreambuf_iterator<char>());
 
 			mBuilder.build(vertFile, E_SHADER_TYPE_VERTEX);
 			vertSource = mBuilder.getShader();
-			delete[] vertFile;
 		}
 		//Fragment shader loading
 		if (aFrag == "STANDART_SKY_FRAGMENT")
@@ -119,23 +115,18 @@ namespace Columbus
 		}
 		else
 		{
-			File frag(aFrag, "rt");
-
-			if (!frag.isOpened())
+			std::ifstream frag;
+			frag.open(aFrag.c_str());
+			if (!frag.is_open())
 			{
 				Log::error("Shader not loaded: " + aFrag);
 				return false;
 			}
 
-			char* fragFile = new char[frag.getSize() + 1];
-			fragFile[frag.getSize()] = 0;
-
-			frag.readBytes(fragFile, frag.getSize());
-			frag.close();
+			std::string fragFile((std::istreambuf_iterator<char>(frag)), std::istreambuf_iterator<char>());
 
 			mBuilder.build(fragFile, E_SHADER_TYPE_FRAGMENT);
 			fragSource = mBuilder.getShader();
-			delete[] fragFile;
 		}
 
 		if (vertSource.empty())
@@ -255,7 +246,7 @@ namespace Columbus
 
 	void ShaderOpenGL::setUniform2f(std::string aName, const Vector2 aValue) const
 	{
-		if (mID != 0 && mCompiled) glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y);
+		if (mID != 0 && mCompiled) glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.X, aValue.Y);
 	}
 
 	void ShaderOpenGL::setUniform3f(std::string aName, const Vector3 aValue) const

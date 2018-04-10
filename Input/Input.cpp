@@ -108,7 +108,7 @@ namespace Columbus
 		#endif
 
 		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(const_cast<void*>(aPixels), aW, aH, aBPP * 8, aW * aBPP, rmask, gmask, bmask, amask);
-		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, static_cast<int>(aHot.x), static_cast<int>(aHot.y));
+		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, static_cast<int>(aHot.X), static_cast<int>(aHot.Y));
 		SDL_SetCursor(cursor);
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -116,8 +116,8 @@ namespace Columbus
 	{
 		if (mWindow == nullptr) return;
 
-		int x = TruncToInt(aPos.x);
-		int y = TruncToInt(aPos.y);
+		int x = Math::TruncToInt(aPos.X);
+		int y = Math::TruncToInt(aPos.Y);
 		SDL_WarpMouseInWindow((static_cast<WindowOpenGLSDL*>(mWindow))->getHandle(), x, y);
 		mCurrentMousePosition = aPos;
 		mPreviousMousePosition = aPos;
@@ -125,7 +125,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Input::setMousePosGlobal(const Vector2 aPos)
 	{
-		SDL_WarpMouseGlobal(static_cast<int>(aPos.x), static_cast<int>(aPos.y));
+		SDL_WarpMouseGlobal(static_cast<int>(aPos.X), static_cast<int>(aPos.Y));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -144,8 +144,8 @@ namespace Columbus
 
 		int mx, my;
 		SDL_GetMouseState(&mx, &my);
-		mCurrentMousePosition.x = static_cast<float>(mx);
-		mCurrentMousePosition.y = static_cast<float>(my);
+		mCurrentMousePosition.X = static_cast<float>(mx);
+		mCurrentMousePosition.Y = static_cast<float>(my);
 
 		updateIO();
 
@@ -179,12 +179,12 @@ namespace Columbus
 	Vector2 Input::getMouseMovement()
 	{
 		Vector2 mouseDelta;
-		int preX = static_cast<int>(mPreviousMousePosition.x);
-		int preY = static_cast<int>(mPreviousMousePosition.y);
-		int curX = static_cast<int>(mCurrentMousePosition.x);
-		int curY = static_cast<int>(mCurrentMousePosition.y);
-		mouseDelta.x = static_cast<float>(curX - preX);
-		mouseDelta.y = static_cast<float>(curY - preY);
+		int preX = static_cast<int>(mPreviousMousePosition.X);
+		int preY = static_cast<int>(mPreviousMousePosition.Y);
+		int curX = static_cast<int>(mCurrentMousePosition.X);
+		int curY = static_cast<int>(mCurrentMousePosition.Y);
+		mouseDelta.X = static_cast<float>(curX - preX);
+		mouseDelta.Y = static_cast<float>(curY - preY);
 		return mouseDelta;
 	}
 	//////////////////////////////////////////////////////////////////////////////

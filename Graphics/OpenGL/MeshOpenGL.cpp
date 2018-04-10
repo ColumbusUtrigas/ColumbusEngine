@@ -71,8 +71,8 @@ namespace Columbus
 			v[vcounter++] = Vertex.pos.y;
 			v[vcounter++] = Vertex.pos.z;
 
-			u[ucounter++] = Vertex.UV.x;
-			u[ucounter++] = Vertex.UV.y;
+			u[ucounter++] = Vertex.UV.X;
+			u[ucounter++] = Vertex.UV.Y;
 
 			n[ncounter++] = Vertex.normal.x;
 			n[ncounter++] = Vertex.normal.y;

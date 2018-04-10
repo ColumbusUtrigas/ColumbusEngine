@@ -73,7 +73,7 @@ namespace Columbus
 	/*
 	* Additional functions for angles convertation
 	*/
-	void MatrixToAngles(btMatrix3x3 InMatrix, Vector3& OutAngles)
+	void MatrixToAngles(btMatrix3x3& InMatrix, Vector3& OutAngles)
 	{
 		auto Forward = InMatrix.getColumn(2);
 		auto Left = InMatrix.getColumn(0);
@@ -85,21 +85,21 @@ namespace Columbus
 		if (Dist > 0.001f)
 		{
 			// (yaw) y = ATAN(Forward.y, Forward.x);
-			OutAngles.y = Degrees(atan2f(Forward.getX(), Forward.getZ()));
+			OutAngles.y = Math::Degrees(atan2f(Forward.getX(), Forward.getZ()));
 
 			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
-			OutAngles.x = Degrees(atan2f(-Forward.getY(), Dist));
+			OutAngles.x = Math::Degrees(atan2f(-Forward.getY(), Dist));
 
 			// (roll) z = ATAN(Left.z, Up.z);
-			OutAngles.z = Degrees(atan2f(Left.getY(), Up.getY()));
+			OutAngles.z = Math::Degrees(atan2f(Left.getY(), Up.getY()));
 		}
 		else
 		{
 			// (yaw) y = ATAN(-Left.x, Left.y);
-			OutAngles.y = Degrees(atan2f(-Left.getZ(), Left.getX()));
+			OutAngles.y = Math::Degrees(atan2f(-Left.getZ(), Left.getX()));
 
 			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
-			OutAngles.x = Degrees(atan2f(-Forward.getY(), Dist));
+			OutAngles.x = Math::Degrees(atan2f(-Forward.getY(), Dist));
 
 			// Assume no roll in this case as one degree of freedom has been lost (i.e. yaw == roll)
 			OutAngles.z = 0;
@@ -122,9 +122,9 @@ namespace Columbus
 			if (rot.y > 180) rot.y -= 360;
 			if (rot.z > 180) rot.z -= 360;
 
-			rot.x = Radians(rot.x);
-			rot.y = Radians(rot.y);
-			rot.z = Radians(rot.z);
+			rot.x = Math::Radians(rot.x);
+			rot.y = Math::Radians(rot.y);
+			rot.z = Math::Radians(rot.z);
 
 			//btQuaternion quat; quat.setEulerZYX(rot.z, rot.y, rot.x);
 
@@ -206,7 +206,7 @@ namespace Columbus
 	{
 		if (mRigidbody != nullptr)
 		{
-			mRigidbody->setAngularVelocity(btVector3(Radians(Velocity.x), Radians(Velocity.y), Radians(Velocity.z)));
+			mRigidbody->setAngularVelocity(btVector3(Math::Radians(Velocity.x), Math::Radians(Velocity.y), Math::Radians(Velocity.z)));
 		}
 	}
 

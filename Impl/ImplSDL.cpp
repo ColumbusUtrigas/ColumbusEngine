@@ -172,7 +172,7 @@ namespace Columbus
 		SDL_GL_MakeCurrent(mWindow, mGLC);
 		C_ClearColorOpenGL(r, g, b, a);
 		C_ClearOpenGL(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
-		C_ViewportOpenGL(0, 0, static_cast<size_t>(getSize().x), static_cast<size_t>(getSize().y));
+		C_ViewportOpenGL(0, 0, static_cast<size_t>(getSize().X), static_cast<size_t>(getSize().Y));
 		mDrawTime.reset();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -222,7 +222,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	float SDLWindow::aspect()
 	{
-		return (float)getSize().x / (float)getSize().y;
+		return (float)getSize().X / (float)getSize().Y;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	SDL_Window* SDLWindow::getHandle()

@@ -71,8 +71,8 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void PostEffect::bind(Vector4 aClear, Vector2 aWindowSize)
 	{
-		mTB->load(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
-		mDepth->loadDepth(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
+		mTB->load(NULL, Math::TruncToInt(aWindowSize.X), Math::TruncToInt(aWindowSize.Y), true);
+		mDepth->loadDepth(NULL, Math::TruncToInt(aWindowSize.X), Math::TruncToInt(aWindowSize.Y), true);
 		mFB->prepare(aClear, aWindowSize);
 	}
 	//////////////////////////////////////////////////////////////////////////////

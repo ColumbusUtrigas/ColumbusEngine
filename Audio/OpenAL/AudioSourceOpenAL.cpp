@@ -1,5 +1,5 @@
 #include <Audio/OpenAL/AudioSourceOpenAL.h>
-#include <AL/al.h>
+#include <al.h>
 
 namespace Columbus
 {
