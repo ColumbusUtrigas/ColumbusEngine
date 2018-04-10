@@ -140,9 +140,9 @@ namespace Columbus
 			deltaUV1 = vert[1].UV - vert[0].UV;
 			deltaUV2 = vert[2].UV - vert[0].UV;
 
-			r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-			tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
-			bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+			r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.X);
+			tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+			bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
 
 			for (j = 0; j < 3; j++)
 			{

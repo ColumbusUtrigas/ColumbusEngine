@@ -5,8 +5,6 @@
 
 using namespace Columbus;
 
-#include <AL/al.h>
-
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
@@ -105,7 +103,7 @@ int main(int argc, char** argv)
 		if (!cursor)
 		{
 			Vector2 deltaMouse = input.getMouseMovement();
-			camera.addRot(Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
+			camera.addRot(Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3);
 			input.setMousePos(window.getSize() * 0.5);
 		}
 

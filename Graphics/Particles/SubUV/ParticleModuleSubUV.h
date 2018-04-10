@@ -32,7 +32,7 @@ namespace Columbus
 				aParticle.frame = 0;
 			} else
 			{
-				aParticle.frame = TruncToInt(Random::range(0.0f, float(Horizontal * Vertical)));
+				aParticle.frame = Math::TruncToInt(Random::range(0.0f, float(Horizontal * Vertical)));
 			}
 		}
 		/*
@@ -42,7 +42,7 @@ namespace Columbus
 		{
 			if (Mode == E_PARTICLE_SUB_UV_MODE_LINEAR)
 			{
-				aParticle.frame = TruncToInt(floor(Horizontal * Vertical * aParticle.percent * Cycles));
+				aParticle.frame = Math::TruncToInt(floor(Horizontal * Vertical * aParticle.percent * Cycles));
 			}
 		}
 

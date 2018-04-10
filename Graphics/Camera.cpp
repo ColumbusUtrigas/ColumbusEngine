@@ -84,17 +84,17 @@ namespace Columbus
 	{
 		while (mRot.x >= 360.0f || mRot.x <= -360.0f)
 		{
-			mRot.x -= 360.0f * Sign(mRot.x);
+			mRot.x -= 360.0f * Math::Sign(mRot.x);
 		}
 
 		while (mRot.y >= 360.0f || mRot.y <= -360.0f)
 		{
-			mRot.y -= 360.0f * Sign(mRot.y);
+			mRot.y -= 360.0f * Math::Sign(mRot.y);
 		}
 
 		while (mRot.z >= 360.0f || mRot.z <= -360.0f)
 		{
-			mRot.z -= 360.0f * Sign(mRot.z);
+			mRot.z -= 360.0f * Math::Sign(mRot.z);
 		}
 
 		/*if (mRot.x >= 360 || mRot.x <= -360) mRot.x = 0.0;
@@ -102,9 +102,9 @@ namespace Columbus
 		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;*/
 
 		//Vector3 Front;
-		mCameraDirection.z = Cos(Radians(mRot.x)) * Cos(Radians(mRot.y));
-		mCameraDirection.y = Sin(Radians(mRot.x));
-		mCameraDirection.x = Cos(Radians(mRot.x)) * Sin(Radians(mRot.y));
+		mCameraDirection.z = Math::Cos(Math::Radians(mRot.x)) * Math::Cos(Math::Radians(mRot.y));
+		mCameraDirection.y = Math::Sin(Math::Radians(mRot.x));
+		mCameraDirection.x = Math::Cos(Math::Radians(mRot.x)) * Math::Sin(Math::Radians(mRot.y));
 		mCameraDirection = -mCameraDirection.normalize();
 		//mCameraDirection = -Front.normalize();
 

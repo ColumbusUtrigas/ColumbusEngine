@@ -240,10 +240,10 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		inline static Vector4 clamp(Vector4 a, Vector4 aMin, Vector4 aMax)
 		{
-			a.x = Clamp(a.x, aMin.x, aMax.x);
-			a.y = Clamp(a.y, aMin.y, aMax.y);
-			a.z = Clamp(a.z, aMin.z, aMax.z);
-			a.w = Clamp(a.w, aMin.w, aMax.w);
+			a.x = Math::Clamp(a.x, aMin.x, aMax.x);
+			a.y = Math::Clamp(a.y, aMin.y, aMax.y);
+			a.z = Math::Clamp(a.z, aMin.z, aMax.z);
+			a.w = Math::Clamp(a.w, aMin.w, aMax.w);
 			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////

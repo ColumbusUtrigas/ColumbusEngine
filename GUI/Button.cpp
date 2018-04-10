@@ -16,9 +16,13 @@ namespace Columbus
 
 			Vector2 m = mIO.mouse.coords;
 
-			if (m.x > mPos.x && m.x < (mPos.x + mSize.x))
-				if (m.y > mPos.y && m.y < (mPos.y + mSize.y))
+			if (m.X > mPos.X && m.X < (mPos.X + mSize.Y))
+			{
+				if (m.Y > mPos.Y && m.Y < (mPos.Y + mSize.Y))
+				{
 					mState = 1;
+				}
+			}
 		}
 
 		void Button::draw()
@@ -31,10 +35,10 @@ namespace Columbus
 			glColor4f(1, 0, 0, 1);
 
 			glBegin(GL_QUADS);
-				glVertex2f(pos.x, pos.y);
-				glVertex2f(pos.x + size.x, pos.y);
-				glVertex2f(pos.x + size.x, pos.y + size.y);
-				glVertex2f(pos.x, pos.y + size.y);
+				glVertex2f(pos.X, pos.Y);
+				glVertex2f(pos.X + size.X, pos.Y);
+				glVertex2f(pos.X + size.X, pos.Y + size.Y);
+				glVertex2f(pos.X, pos.Y + size.Y);
 			glEnd();
 
 			//C_EnableDepthMaskOpenGL();

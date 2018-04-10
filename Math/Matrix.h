@@ -176,8 +176,8 @@ namespace Columbus
 			float y = Axis.y;
 			float z = Axis.z;
 
-			float c = Cos(Radians(Angle));
-			float s = Sin(Radians(Angle));
+			float c = Math::Cos(Math::Radians(Angle));
+			float s = Math::Sin(Math::Radians(Angle));
 			float c1 = 1.0f - c;
 			float m0 = M[0][0], m4 = M[1][0], m8 = M[2][0], m12 = M[3][0],
 			      m1 = M[0][1], m5 = M[1][1], m9 = M[2][1], m13 = M[3][1],
@@ -218,9 +218,9 @@ namespace Columbus
 
 			float sr, sp, sy, cr, cp, cy;
 
-			SinCos(Radians(EulerAngles.x), sy, cy);
-			SinCos(Radians(EulerAngles.z), sp, cp);
-			SinCos(Radians(EulerAngles.y), sr, cr);
+			Math::SinCos(Math::Radians(EulerAngles.x), sy, cy);
+			Math::SinCos(Math::Radians(EulerAngles.z), sp, cp);
+			Math::SinCos(Math::Radians(EulerAngles.y), sr, cr);
 
 			// matrix = (YAW * PITCH) * ROLL
 			ResultMat.M[0][0] = cp*cy;
@@ -345,21 +345,21 @@ namespace Columbus
 		/*
 		* Get result of multiplying a Vector4 to this matrix
 		* @param Vector4 Other: The Vector4 to multiply this by
-		* @return Matrix: The result of mutiplication
+		* @return Vector4: The result of mutiplication
 		*/
-		inline Matrix operator*(const Vector4 Other)
+		inline Vector4 operator*(const Vector4 Other)
 		{
-			Matrix ResultMat;
+			Vector4 ResultVec;
 
 			for (uint32 X = 0; X < 4; X++)
 			{
-				ResultMat.M[X][0] = Other.x;
-				ResultMat.M[X][1] = Other.y;
-				ResultMat.M[X][2] = Other.z;
-				ResultMat.M[X][3] = Other.w;
+				ResultVec.x += M[X][0] * Other.x;
+				ResultVec.y += M[X][1] * Other.y;
+				ResultVec.z += M[X][2] * Other.z;
+				ResultVec.w += M[X][3] * Other.w;
 			}
 
-			return ResultMat;
+			return ResultVec;
 		}
 		/*
 		* Multiply this by Other Matrix
@@ -367,14 +367,6 @@ namespace Columbus
 		* @return Matrix&: *this
 		*/
 		inline Matrix& operator*=(const Matrix Other)
-		{
-			*this = *this * Other;
-			return *this;
-		}
-		/*
-		*
-		*/
-		inline Matrix& operator*=(const Vector4 Other)
 		{
 			*this = *this * Other;
 			return *this;

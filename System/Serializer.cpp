@@ -238,8 +238,8 @@ namespace Columbus
 			if (aValue == nullptr) return false;
 
 			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->x);
-			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->y);
+			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->X);
+			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->Y);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -467,8 +467,8 @@ namespace Columbus
 
 			mTmp = mDoc.NewElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.y);
+			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.Y);
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
@@ -484,8 +484,8 @@ namespace Columbus
 			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.Y);
 			mTmp->InsertEndChild(subElement);
 			return true;
 		}
@@ -715,8 +715,8 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
+			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->X);
+			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->Y);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -728,8 +728,8 @@ namespace Columbus
 			if (aValue == nullptr) return false;
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
+			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->X);
+			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->Y);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////

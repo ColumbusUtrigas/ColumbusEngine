@@ -308,13 +308,13 @@ namespace Columbus
 			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCapsule" }, &rbShapeRadiusHeight, { "Radius", "Height" }))
 			{
 				delete Shape;
-				Shape = new PhysicsShapeCapsule(rbShapeRadiusHeight.x, rbShapeRadiusHeight.y);
+				Shape = new PhysicsShapeCapsule(rbShapeRadiusHeight.X, rbShapeRadiusHeight.Y);
 			}
 
 			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCone" }, &rbShapeRadiusHeight, { "Radius", "Height" }))
 			{
 				delete Shape;
-				Shape = new PhysicsShapeCone(rbShapeRadiusHeight.x, rbShapeRadiusHeight.y);
+				Shape = new PhysicsShapeCone(rbShapeRadiusHeight.X, rbShapeRadiusHeight.Y);
 			}
 
 			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "Rigidbody", "ShapeConvexHull" }, &rbShapeMesh))
@@ -572,7 +572,7 @@ namespace Columbus
 		particlesWorkflow();
 		//rigidbodyWorkflow();
 
-		PhysWorld.Step(TruncToFloat(DeltaTime.elapsed()), 10);
+		PhysWorld.Step(Math::TruncToFloat(DeltaTime.elapsed()), 10);
 		DeltaTime.reset();
 
 		rigidbodyPostWorkflow();

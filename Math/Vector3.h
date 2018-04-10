@@ -243,9 +243,9 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		inline static Vector3 clamp(Vector3 a, Vector3 aMin, Vector3 aMax)
 		{
-			a.x = Clamp(a.x, aMin.x, aMax.x);
-			a.y = Clamp(a.y, aMin.y, aMax.y);
-			a.z = Clamp(a.z, aMin.z, aMax.z);
+			a.x = Math::Clamp(a.x, aMin.x, aMax.x);
+			a.y = Math::Clamp(a.y, aMin.y, aMax.y);
+			a.z = Math::Clamp(a.z, aMin.z, aMax.z);
 			return a;
 		}
 		////////////////////////////////////////////////////////////////////////////
