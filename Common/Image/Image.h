@@ -11,6 +11,7 @@
 
 #include <System/Assert.h>
 #include <System/System.h>
+#include <Core/Types.h>
 #include <string>
 #include <cstdlib>
 #include <cstring>
@@ -36,67 +37,66 @@ namespace Columbus
 		E_IMAGE_FORMAT_UNKNOWN
 	};
 
-	ImageFormat ImageGetFormat(std::string aFile);
+	ImageFormat ImageGetFormat(std::string FileName);
 
-	bool ImageIsBMP(std::string aFile); //Check file magic
-	bool ImageIsTGA(std::string aFile); //Check file extension (*.tga, *.vda, *.icb, *.vst)
-	bool ImageIsPNG(std::string aFile); //Check file magic
-	bool ImageIsTIF(std::string aFile); //Check file magic
-	bool ImageIsJPG(std::string aFile); //Check file magic
+	bool ImageIsBMP(std::string FileName); //Check file magic
+	bool ImageIsTGA(std::string FileName); //Check file extension (*.tga, *.vda, *.icb, *.vst)
+	bool ImageIsPNG(std::string FileName); //Check file magic
+	bool ImageIsTIF(std::string FileName); //Check file magic
+	bool ImageIsJPG(std::string FileName); //Check file magic
 
-	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadJPG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
+	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
+	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
+	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
+	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
+	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
 
-	bool ImageSaveBMP(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSaveTGA(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSavePNG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSaveTIF(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSaveJPG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData, const unsigned int aQuality = 100);
+	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
+	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
+	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
+	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
+	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, uint32 Quality = 100);
 
-	unsigned char* ImageLoad(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData, const unsigned int aFormat, const unsigned int aQuality = 100);
+	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
+	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, int Format, uint32 Quality = 100);
 
-	bool ImageBGR2RGB(uint8_t* aData, size_t aSize);
-	bool ImageBGRA2RGBA(uint8_t* aData, size_t aSize);
-	bool ImageABGR2RGBA(uint8_t* aData, size_t aSize);
-	bool ImageRGB2BGR(uint8_t* aData, size_t aSize);
-	bool ImageRGBA2BGRA(uint8_t* aData, size_t aSize);
+	bool ImageBGR2RGB(uint8* Data, size_t Size);
+	bool ImageBGRA2RGBA(uint8* Data, size_t Size);
+	bool ImageABGR2RGBA(uint8* Data, size_t Size);
+	bool ImageRGB2BGR(uint8* Data, size_t Size);
+	bool ImageRGBA2BGRA(uint8* Data, size_t Size);
 
-	bool ImageFlipX(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
-	bool ImageFlipY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
-	bool ImageFlipXY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
+	bool ImageFlipX(uint8* Data, size_t Width, size_t Height, size_t BPP);
+	bool ImageFlipY(uint8* Data, size_t Width, size_t Height, size_t BPP);
+	bool ImageFlipXY(uint8* Data, size_t Width, size_t Height, size_t BPP);
 
 	class Image
 	{
 	private:
-		unsigned int mWidth = 0;         //Width of the image
-		unsigned int mHeight = 0;        //Height of the image
-		unsigned int mBPP = 0;           //Byte (!) depth of the image: 3, 4
-		unsigned char* mData = nullptr;  //Pixel data
-		bool mExist = false;             //Is image exist
+		uint32 Width = 0;         //Width of the image
+		uint32 Height = 0;        //Height of the image
+		uint32 BPP = 0;           //Byte (!) depth of the image: 3, 4
+		uint8* Data = nullptr;    //Pixel data
+		bool Exist = false;       //Is image exist
 
-		std::string mFilename;
+		std::string FileName;
 	public:
 		Image();
-		Image(std::string aFile, int aFlags = E_IMAGE_LOAD_NONE);
 
-		bool load(std::string aFile, int aFlags = E_IMAGE_LOAD_NONE);
-		bool save(std::string aFile, int aFormat, size_t aQuality = 100) const;
+		bool load(std::string InFilename, int Flags = E_IMAGE_LOAD_NONE);
+		bool save(std::string InFilename, int Format, size_t Quality = 100) const;
 		bool isExist() const;
-		void freeData(); //This method checks image existance
+		void freeData();
 
 		bool flipX();
 		bool flipY();
 		bool flipXY();
 
-		unsigned int getWidth() const;
-		unsigned int getHeight() const;
-		unsigned int getBPP() const;
-		unsigned char* getData() const;
-		std::string getFilename() const;
+		uint32 getWidth() const;
+		uint32 getHeight() const;
+		uint32 getBPP() const;
+		uint8* getData() const;
+		std::string getFileName() const;
 
 		~Image();
 	};

@@ -8,18 +8,19 @@
 *                   04.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
+#include <Core/Memory.h>
 #include <System/File.h>
 #include <png.h>
 
 namespace Columbus
 {
 
-	bool ImageIsPNG(std::string aFile)
+	bool ImageIsPNG(std::string FileName)
 	{
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return false;
 
-		uint8_t magic[4];
+		uint8 magic[4];
 		if (!file.readBytes(magic, sizeof(magic))) return false;
 		file.close();
 
@@ -29,9 +30,9 @@ namespace Columbus
 		else return false;
 	}
 
-	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
+	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
 	{
-		FILE* fp = fopen(aFile.c_str(), "rb");
+		FILE* fp = fopen(FileName.c_str(), "rb");
 		if (fp == nullptr) return nullptr;
 
 		png_structp png_ptr;
@@ -65,16 +66,16 @@ namespace Columbus
 		if (color_type == PNG_COLOR_TYPE_RGB) bpp = 3;
 		if (color_type == PNG_COLOR_TYPE_RGBA) bpp = 4;
 
-		aWidth = width;
-		aHeight = height;
-		aBPP = bpp;
+		OutWidth = width;
+		OutHeight = height;
+		OutBPP = bpp;
 
-		uint8_t* data = (uint8_t*)malloc(width * height * bpp);
+		uint8* data = (uint8*)Memory::Malloc(width * height * bpp);
 
 		//Copying row data into byte buffer with reversed vertical
 		for (size_t i = 0; i < height; i++)
 		{
-			memcpy(&data[rowbytes * i], rows[height - i - 1], rowbytes);
+			Memory::Memcpy(&data[rowbytes * i], rows[height - i - 1], rowbytes);
 		}
 		
 		if (png_ptr && info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
@@ -83,9 +84,9 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageSavePNG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
+	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
 	{
-		FILE* fp = fopen(aFile.c_str(), "wb");
+		FILE* fp = fopen(FileName.c_str(), "wb");
 		if (fp == nullptr) return false;
 
 		png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -100,9 +101,9 @@ namespace Columbus
 
 		png_init_io(png, fp);
 		int type = PNG_COLOR_TYPE_RGB;
-		if (aBPP == 4) type = PNG_COLOR_TYPE_RGBA;
+		if (BPP == 4) type = PNG_COLOR_TYPE_RGBA;
 
-		png_set_IHDR(png, info, aWidth, aHeight, 8, type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+		png_set_IHDR(png, info, Width, Height, 8, type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 		png_colorp palette = (png_colorp)png_malloc(png, PNG_MAX_PALETTE_LENGTH * sizeof(png_color));
 		if (!palette)
@@ -116,12 +117,12 @@ namespace Columbus
 		png_write_info(png, info);
 		png_set_packing(png);
 
-		png_bytepp rows = (png_bytepp)png_malloc(png, aHeight * sizeof(png_bytep));
-		int rowbytes = aWidth * aBPP;
-		for (size_t i = 0; i < aHeight; i++)
+		png_bytepp rows = (png_bytepp)png_malloc(png, Height * sizeof(png_bytep));
+		int rowbytes = Width * BPP;
+		for (size_t i = 0; i < Height; i++)
 		{
-			rows[i] = (png_bytep)malloc(rowbytes);
-			memcpy(rows[i], aData + (aHeight - i - 1) * rowbytes, rowbytes);
+			rows[i] = (png_bytep)Memory::Malloc(rowbytes);
+			Memory::Memcpy(rows[i], Data + (Height - i - 1) * rowbytes, rowbytes);
 		}
 
 		png_write_image(png, rows);
@@ -130,9 +131,9 @@ namespace Columbus
 		png_destroy_write_struct(&png, &info);
 		fclose(fp);
 
-		for (size_t i = 0; i < aHeight; i++)
+		for (size_t i = 0; i < Height; i++)
 		{
-			free(rows[i]);
+			Memory::Free(rows[i]);
 		}
 
 		return true;

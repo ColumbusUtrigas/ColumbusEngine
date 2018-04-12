@@ -8,6 +8,7 @@
 *                   03.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
+#include <Core/Memory.h>
 #include <System/File.h>
 
 namespace Columbus
@@ -34,9 +35,9 @@ namespace Columbus
 
 	typedef struct
 	{
-		uint8_t idlen; //Image ID Lenght
-		uint8_t color_map_type; //Color map type
-		uint8_t image_type; //Image Type
+		uint8 idlen; //Image ID Lenght
+		uint8 color_map_type; //Color map type
+		uint8 image_type; //Image Type
 							/*
 							0  -  No image data included.
 							1  -  Uncompressed, color-mapped images.
@@ -48,16 +49,16 @@ namespace Columbus
 							32  -  Compressed color-mapped data, using Huffman, Delta, and runlength encoding.
 							33  -  Compressed color-mapped data, using Huffman, Delta, and runlength encoding.  4-pass quadtree-type process.
 							*/
-		uint16_t color_map_origin;    //Color
-		uint16_t color_map_length;    //map
-		uint8_t color_map_entry_size; //specification
+		uint16 color_map_origin;    //Color
+		uint16 color_map_length;    //map
+		uint8 color_map_entry_size; //specification
 
-		uint16_t x_origin; //
-		uint16_t y_origin; //Image
-		uint16_t width;    //specification
-		uint16_t height;   //
-		uint8_t bits; // Bit depth. 8, 16, 24 or 32
-		uint8_t image_descriptor;
+		uint16 x_origin; //
+		uint16 y_origin; //Image
+		uint16 width;    //specification
+		uint16 height;   //
+		uint8 bits; // Bit depth. 8, 16, 24 or 32
+		uint8 image_descriptor;
 	} TGA_HEADER;
 
 	static bool ReadHeader(TGA_HEADER* aHeader, File* aFile)
@@ -100,9 +101,9 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageIsTGA(std::string aFile)
+	bool ImageIsTGA(std::string FileName)
 	{
-		std::string ext = aFile.substr(aFile.size() - 4);
+		std::string ext = FileName.substr(FileName.size() - 4);
 
 		if (ext == ".tga" || ext == ".vda" ||
 		    ext == ".icb" || ext == ".vst") return true;
@@ -110,63 +111,63 @@ namespace Columbus
 		return false;
 	}
 
-	static void RGBCompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
+	static void RGBCompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
-			COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB compression: invalid input")
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGB compression: invalid output")
 
 		int header;
 		int blue, green, red;
 		size_t i, j, pixelcount;
 
-		for (i = 0; i < aSize; )
+		for (i = 0; i < Size; )
 		{
-			header = *aIn++;
+			header = *InBuffer++;
 			pixelcount = (header & 0x7f) + 1;
 
 			if (header & 0x80)
 			{
-				READPIXEL24(aIn)
+				READPIXEL24(InBuffer)
 				for (j = 0; j < pixelcount; j++)
 				{
-					WRITEPIXEL24(aOut)
+					WRITEPIXEL24(OutBuffer)
 				}
 				i += pixelcount;
 			} else
 			{
 				for (j = 0; j < pixelcount; j++)
 				{
-					READPIXEL24(aIn)
-					WRITEPIXEL24(aOut)
+					READPIXEL24(InBuffer)
+					WRITEPIXEL24(OutBuffer)
 				}
 				i += pixelcount;
 			}
 		}
 	}
 
-	static void RGBACompressedTGA(uint8_t* aIn, uint8_t* aOut, size_t aSize)
+	static void RGBACompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
-		COLUMBUS_ASSERT_MESSAGE(aIn, "TGA RGB compression: invalid input")
-		COLUMBUS_ASSERT_MESSAGE(aOut, "TGA RGB compression: invalid output")
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB compression: invalid input")
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGB compression: invalid output")
 
 		int header;
 		int blue, green, red, alpha;
 		int pix;
 		size_t i, j, pixelcount;
 
-		for (i = 0; i < aSize; )
+		for (i = 0; i < Size; )
 		{
-			header = *aIn++;
+			header = *InBuffer++;
 			pixelcount = (header & 0x7f) + 1;
 			if (header & 0x80)
 			{
-				READPIXEL32(aIn);
+				READPIXEL32(InBuffer);
 				pix = red | (green << 8) | (blue << 16) | (alpha << 24);
 
 				for (j = 0; j < pixelcount; j++)
 				{
-					memcpy(aOut, &pix, 4);
-					aOut += 4;
+					memcpy(OutBuffer, &pix, 4);
+					OutBuffer += 4;
 				}
 
 				i += pixelcount;
@@ -175,17 +176,17 @@ namespace Columbus
 			{
 				for (j = 0; j < pixelcount; j++)
 				{
-					READPIXEL32(aIn)
-					WRITEPIXEL32(aOut)
+					READPIXEL32(InBuffer)
+					WRITEPIXEL32(OutBuffer)
 				}
 				i += pixelcount;
 			}
 		}
 	}
 
-	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
+	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
 	{
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return nullptr;
 
 		TGA_HEADER tga;
@@ -195,10 +196,10 @@ namespace Columbus
 		size_t dSize = file.getSize() - sizeof(TGA_HEADER);
 		size_t size = tga.width * tga.height * tga.bits / 8;
 
-		uint8_t* buffer = (uint8_t*)malloc(dSize);
+		uint8* buffer = (uint8*)Memory::Malloc(dSize);
 		file.read(buffer, dSize, 1);
 
-		uint8_t* data = nullptr;
+		uint8* data = nullptr;
 
 		switch (tga.image_type)
 		{
@@ -215,7 +216,7 @@ namespace Columbus
 			break;
 		case 10:
 			//Compressed RGB
-			data = (uint8_t*)malloc(size);
+			data = (uint8*)malloc(size);
 			if (tga.bits == 24)
 			{
 				RGBCompressedTGA(buffer, data, tga.width * tga.height);
@@ -231,30 +232,30 @@ namespace Columbus
 
 		file.close();
 
-		aWidth = tga.width;
-		aHeight = tga.height;
-		aBPP = tga.bits / 8;
+		OutWidth = tga.width;
+		OutHeight = tga.height;
+		OutBPP = tga.bits / 8;
 		return data;
 	}
 
-	bool ImageSaveTGA(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
+	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
 	{
-		if (aData == nullptr) return false;
+		if (Data == nullptr) return false;
 
-		File file(aFile, "wb");
+		File file(FileName, "wb");
 		if (!file.isOpened()) return false;
 
-		uint16_t width = static_cast<uint16_t>(aWidth);
-		uint16_t height = static_cast<uint16_t>(aHeight);
-		uint8_t bpp = static_cast<uint8_t>(aBPP * 8);
-		uint8_t descriptor = static_cast<uint8_t>(8);
+		uint16 width = static_cast<uint16_t>(Width);
+		uint16 height = static_cast<uint16_t>(Height);
+		uint8 bpp = static_cast<uint8_t>(BPP * 8);
+		uint8 descriptor = static_cast<uint8_t>(8);
 
 		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, width, height, bpp, descriptor};
 
-		size_t size = aWidth * aHeight * aBPP;
+		size_t size = Width * Height * BPP;
 
-		uint8_t* buffer = (uint8_t*)malloc(size);
-		memcpy(buffer, aData, size);
+		uint8* buffer = (uint8*)Memory::Malloc(size);
+		Memory::Memcpy(buffer, Data, size);
 
 		switch (tga.bits)
 		{
@@ -265,7 +266,7 @@ namespace Columbus
 		WriteHeader(tga, &file);
 		file.write(buffer, size, 1);
 
-		free(buffer);
+		Memory::Free(buffer);
 		return true;
 	}
 
