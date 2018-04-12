@@ -31,27 +31,27 @@ namespace Columbus
 		Vector3 bitangent;
 	};
 
-	bool ModelIsCMF(const std::string aFile);
+	bool ModelIsCMF(std::string FileName);
 
-	std::vector<Vertex> ModelLoadCMF(const std::string aFile);
+	std::vector<Vertex> ModelLoadCMF(std::string FileName);
 
 	class C_Model
 	{
 	private:
-		std::vector<Vertex> mVertices;
-		std::string mFilename;
-		bool mExistance = false;
+		std::vector<Vertex> Vertices;
+		std::string FileName;
+		bool Existance = false;
 	public:
 		C_Model();
-		C_Model(const std::string aFile);
+		C_Model(std::string aFile);
 
-		bool load(const std::string aFile); //Load model from OBJ or CMF format
-		bool save(const std::string aFile) const; //Save to CMF format ONLY!!!
-		bool isExist() const;
-		bool freeData();
+		bool Load(std::string aFile);
+		bool Save(std::string aFile) const;
+		bool IsExist() const;
+		bool Free();
 
-		std::vector<Vertex> getData() const;
-		std::string getFilename() const;
+		std::vector<Vertex> GetData() const;
+		std::string GetFilename() const;
 
 		~C_Model();
 	};

@@ -25,7 +25,8 @@ int main(int argc, char** argv)
 
 	window.setVSync(true);
 
-	Image* cur = new Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
+	Image* cur = new Image;
+	cur->load("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
 
 	input.showMouseCursor(false);
 	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_CROSSHAIR);

@@ -26,9 +26,34 @@ namespace Columbus
 		if (SDL_Init(SDL_INIT_EVERYTHING))
 		{
 			Log::fatal("Can't initialize SDL2");
-		} else
+		}
+		else
 		{
+			if (SDL_GetNumVideoDisplays() < 0)
+			{
+				Log::fatal("No display");
+			}
+
+			SDL_DisplayMode* DisplayModes = new SDL_DisplayMode[SDL_GetNumVideoDisplays()];
+
 			Log::initialization("SDL2 initialized");
+			Log::initialization("Current video driver: " + std::string(SDL_GetCurrentVideoDriver()));
+			Log::initialization("Display count: " + std::to_string(SDL_GetNumVideoDisplays()));
+
+			for (uint32 i = 0; i < SDL_GetNumVideoDisplays(); i++)
+			{
+				if (SDL_GetDesktopDisplayMode(i, &DisplayModes[i]) != 0)
+				{
+					Log::fatal("Can't get display info (" + std::to_string(i + 1) + ")");
+				}
+				else
+				{
+					Log::initialization("Display resolution (" + std::to_string(i + 1) + std::string(")") + std::string(": ") + std::to_string(DisplayModes[i].w) + std::string("x") + std::to_string(DisplayModes[i].h));
+					Log::initialization("Display refresh rate (" + std::to_string(i + 1) + std::string(")") + std::string(": ") + std::to_string(DisplayModes[i].refresh_rate));
+				}
+			}
+
+			delete[] DisplayModes;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@
 *                   02.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
+#include <Core/Memory.h>
 #include <System/File.h>
 
 namespace Columbus
@@ -15,25 +16,25 @@ namespace Columbus
 
 	typedef struct
 	{
-		uint8_t magic[2]; //Magic Bytes 'B' and 'M'
-		uint32_t size;    //Size of whole file
-		uint32_t unused;  //Should be 0
-		uint32_t offset;  //Offset to bitmap data
+		uint8 magic[2]; //Magic Bytes 'B' and 'M'
+		uint32 size;    //Size of whole file
+		uint32 unused;  //Should be 0
+		uint32 offset;  //Offset to bitmap data
 	} BMP_HEADER;
 
 	typedef struct
 	{
-		uint32_t infosize;         //Size of info struct (40 bytes)
-		int32_t width;             //Width of image
-		int32_t height;            //Height of image
-		uint16_t planes;           //Should be 1
-		uint16_t bits;             //Bits per pixel (1, 4, 8, 16, 24, 32)
-		uint32_t compression;      //0 = none, 1 = 8-bit RLE, 2 = 4-bit RLE
-		uint32_t size_data;        //Size of pixel data
-		uint32_t hres;             //Horizontal resolution (pixel per meter)
-		uint32_t vres;             //Vertical resolution (pixel per meter)
-		uint32_t colors;           //Number of palette colors
-		uint32_t important_colors; //Number of important colors;
+		uint32 infosize;         //Size of info struct (40 bytes)
+		int32 width;             //Width of image
+		int32 height;            //Height of image
+		uint16 planes;           //Should be 1
+		uint16 bits;             //Bits per pixel (1, 4, 8, 16, 24, 32)
+		uint32 compression;      //0 = none, 1 = 8-bit RLE, 2 = 4-bit RLE
+		uint32 size_data;        //Size of pixel data
+		uint32 hres;             //Horizontal resolution (pixel per meter)
+		uint32 vres;             //Vertical resolution (pixel per meter)
+		uint32 colors;           //Number of palette colors
+		uint32 important_colors; //Number of important colors;
 	} BMP_INFO;
 
 	static bool ReadHeader(BMP_HEADER* aHeader, File* aFile)
@@ -78,7 +79,7 @@ namespace Columbus
 		if (!aFile->readUint32(&aInfo->colors)) return false;
 		if (!aFile->readUint32(&aInfo->important_colors)) return false;
 
-		uint8_t* empty = (uint8_t*)malloc(68);
+		uint8_t* empty = (uint8*)Memory::Malloc(68);
 		aFile->readBytes(empty, 68);
 		free(empty);
 
@@ -104,9 +105,9 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageIsBMP(std::string aFile)
+	bool ImageIsBMP(std::string FileName)
 	{
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return false;
 
 		uint8_t magic[2];
@@ -117,9 +118,9 @@ namespace Columbus
 		return false;
 	}
 
-	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
+	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
 	{
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return nullptr;
 
 		BMP_HEADER header;
@@ -128,7 +129,7 @@ namespace Columbus
 		if (!ReadHeader(&header, &file)) return nullptr;
 		if (!ReadInfo(&info, &file)) return nullptr;
 
-		uint8_t* data = (uint8_t*)malloc(header.size - 66);
+		uint8* data = (uint8*)Memory::Malloc(header.size - 66);
 		file.read(data, header.size - 66, 1);
 		file.close();
 
@@ -140,35 +141,35 @@ namespace Columbus
 		case 32: ImageABGR2RGBA(data, size); break;
 		};
 
-		aWidth = info.width;
-		aHeight = info.height;
-		aBPP = info.bits / 8;
+		OutWidth = info.width;
+		OutHeight = info.height;
+		OutBPP = info.bits / 8;
 
 		return data;
 	}
 
-	bool ImageSaveBMP(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
+	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
 	{
-		if (aData == nullptr) return false;
+		if (Data == nullptr) return false;
 
-		File file(aFile, "wb");
+		File file(FileName, "wb");
 
 		BMP_HEADER header;
 		BMP_INFO info;
 
 		header.magic[0] = 'B';
 		header.magic[1] = 'M';
-		header.size = aWidth * aHeight * aBPP + 54;
+		header.size = Width * Height * BPP + 54;
 		header.unused = 0;
 		header.offset = 54;
 
 		info.infosize = 40;
-		info.width = aWidth;
-		info.height = aHeight;
+		info.width = Width;
+		info.height = Height;
 		info.planes = 1;
-		info.bits = aBPP * 8;
+		info.bits = BPP * 8;
 		info.compression = 0;
-		info.size_data = aWidth * aHeight * aBPP;
+		info.size_data = Width * Height * BPP;
 		info.hres = 0;
 		info.vres = 0;
 		info.colors = 0;
@@ -177,12 +178,12 @@ namespace Columbus
 		if (!WriteHeader(header, &file)) return false;
 		if (!WriteInfo(info, &file)) return false;
 
-		uint8_t* buffer = (uint8_t*)malloc(aWidth * aHeight * aBPP);
-		memcpy(buffer, aData, aWidth * aHeight * aBPP);
+		uint8* buffer = (uint8*)Memory::Malloc(Width * Height * BPP);
+		Memory::Memcpy(buffer, Data, Width * Height * BPP);
 
-		size_t size = aWidth * aHeight * aBPP;
+		size_t size = Width * Height * BPP;
 
-		switch (aBPP * 8)
+		switch (BPP * 8)
 		{
 		case 24:
 			ImageRGB2BGR(buffer, size);
@@ -192,10 +193,10 @@ namespace Columbus
 			break;
 		};
 
-		file.write(buffer, aWidth * aHeight * aBPP, 1);
+		file.write(buffer, Width * Height * BPP, 1);
 
 		file.close();
-		free(buffer);
+		Memory::Free(buffer);
 
 		return true;
 	}

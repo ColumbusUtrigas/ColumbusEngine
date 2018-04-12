@@ -12,13 +12,13 @@
 namespace Columbus
 {
 
-	ImageFormat ImageGetFormat(std::string aFile)
+	ImageFormat ImageGetFormat(std::string FileName)
 	{
-		if (ImageIsBMP(aFile)) return E_IMAGE_FORMAT_BMP;
-		if (ImageIsPNG(aFile)) return E_IMAGE_FORMAT_PNG;
-		if (ImageIsTIF(aFile)) return E_IMAGE_FORMAT_TIF;
-		if (ImageIsJPG(aFile)) return E_IMAGE_FORMAT_JPG;
-		if (ImageIsTGA(aFile)) return E_IMAGE_FORMAT_TGA;
+		if (ImageIsBMP(FileName)) return E_IMAGE_FORMAT_BMP;
+		if (ImageIsPNG(FileName)) return E_IMAGE_FORMAT_PNG;
+		if (ImageIsTIF(FileName)) return E_IMAGE_FORMAT_TIF;
+		if (ImageIsJPG(FileName)) return E_IMAGE_FORMAT_JPG;
+		if (ImageIsTGA(FileName)) return E_IMAGE_FORMAT_TGA;
 
 		return E_IMAGE_FORMAT_UNKNOWN;
 	}
@@ -156,15 +156,15 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	unsigned char* ImageLoad(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
+	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
 	{
-		switch (ImageGetFormat(aFile))
+		switch (ImageGetFormat(FileName))
 		{
-		case E_IMAGE_FORMAT_BMP: return ImageLoadBMP(aFile, aWidth, aHeight, aBPP); break;
-		case E_IMAGE_FORMAT_PNG: return ImageLoadPNG(aFile, aWidth, aHeight, aBPP); break;
-		case E_IMAGE_FORMAT_TIF: return ImageLoadTIF(aFile, aWidth, aHeight, aBPP); break;
-		case E_IMAGE_FORMAT_JPG: return ImageLoadJPG(aFile, aWidth, aHeight, aBPP); break;
-		case E_IMAGE_FORMAT_TGA: return ImageLoadTGA(aFile, aWidth, aHeight, aBPP); break;
+		case E_IMAGE_FORMAT_BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutBPP); break;
+		case E_IMAGE_FORMAT_PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutBPP); break;
+		case E_IMAGE_FORMAT_TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutBPP); break;
+		case E_IMAGE_FORMAT_JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutBPP); break;
+		case E_IMAGE_FORMAT_TGA: return ImageLoadTGA(FileName, OutWidth, OutHeight, OutBPP); break;
 		case E_IMAGE_FORMAT_UNKNOWN: return nullptr; break;
 		default: return nullptr; break;
 		}
@@ -172,67 +172,57 @@ namespace Columbus
 		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, 
-		const unsigned int aBPP, const unsigned char* aData, const unsigned int aFormat, const unsigned int aQuality)
+	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, int Format, uint32 Quality)
 	{
-		switch (aFormat)
+		switch (Format)
 		{
 		case E_IMAGE_FORMAT_BMP:
-			return ImageSaveBMP(aFile, aWidth, aHeight, aBPP, aData);
+			return ImageSaveBMP(FileName, Width, Height, BPP, Data);
 			break;
 		case E_IMAGE_FORMAT_TGA:
-			return ImageSaveTGA(aFile, aWidth, aHeight, aBPP, aData);
+			return ImageSaveTGA(FileName, Width, Height, BPP, Data);
 			break;
 		case E_IMAGE_FORMAT_PNG:
-			return ImageSavePNG(aFile, aWidth, aHeight, aBPP, aData);
+			return ImageSavePNG(FileName, Width, Height, BPP, Data);
 			break;
 		case E_IMAGE_FORMAT_TIF:
-			return ImageSaveTIF(aFile, aWidth, aHeight, aBPP, aData);
+			return ImageSaveTIF(FileName, Width, Height, BPP, Data);
 			break;
 		case E_IMAGE_FORMAT_JPG:
-			return ImageSaveJPG(aFile, aWidth, aHeight, aBPP, aData, aQuality);
+			return ImageSaveJPG(FileName, Width, Height, BPP, Data, Quality);
 			break;
 		}
 
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	/*
+	* Image class
+	*/
 	Image::Image() :
-		mWidth(0),
-		mHeight(0),
-		mBPP(0),
-		mExist(false),
-		mData(nullptr)
-	{
-
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	Image::Image(std::string aFile, int aFlags) :
-		mWidth(0),
-		mHeight(0),
-		mBPP(0),
-		mExist(false),
-		mData(nullptr)
-	{
-		load(aFile, aFlags);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool Image::load(std::string aFile, int aFlags)
+		Width(0),
+		Height(0),
+		BPP(0),
+		Exist(false),
+		Data(nullptr)
+	{ }
+	/*
+	* Load image from file
+	* @param std::string InFileName: Name of image file to load
+	* @param int Flags: Loading flags
+	*/
+	bool Image::load(std::string InFileName, int Flags)
 	{
 		freeData();
 
-		mData = ImageLoad(aFile, mWidth, mHeight, mBPP);
-		if (mData == nullptr) return false;
+		Data = ImageLoad(InFileName, Width, Height, BPP);
+		if (Data == nullptr) return false;
+
 		else
 		{
-			mFilename = aFile;
-			mExist = true;
+			FileName = InFileName;
+			Exist = true;
 
-			switch (aFlags)
+			switch (Flags)
 			{
 			case E_IMAGE_LOAD_FLIP_X: flipX(); break;
 			case E_IMAGE_LOAD_FLIP_Y: flipY(); break;
@@ -242,80 +232,106 @@ namespace Columbus
 			return true;
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool Image::save(std::string aFile, int aFormat, size_t aQuality) const
+	/*
+	* Save image to file
+	* @param std::string InFileName: Name of image file to save
+	* @param Format: Image format
+	* @param Quality: Compression level
+	*/
+	bool Image::save(std::string InFileName, int Format, size_t Quality) const
 	{
 		if (!isExist()) return false;
-		return ImageSave(aFile, mWidth, mHeight, mBPP, mData, aFormat, aQuality);
+		return ImageSave(InFileName, Width, Height, BPP, Data, Format, Quality);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	/*
+	* Checks if image is exist in memory
+	*/
 	bool Image::isExist() const
 	{
-		return mExist;
+		return Exist;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	/*
+	* Frees image data
+	*/
 	void Image::freeData()
 	{
-		if (mExist == false) return;
-		mWidth = 0;
-		mHeight = 0;
-		mBPP = 0;
-		mExist = false;
-		if (mData == nullptr) return;
-		free(mData);
+		if (Exist == false) return;
+		Width = 0;
+		Height = 0;
+		BPP = 0;
+		Exist = false;
+
+		if (Data != nullptr)
+		{
+			free(Data);
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	/*
+	* Horizontal image flipping
+	*/
 	bool Image::flipX()
 	{
-		if (!isExist()) return false;
-		return ImageFlipX(mData, mWidth, mHeight, mBPP);
+		if (isExist())
+		{
+			return ImageFlipX(Data, Width, Height, BPP);
+		}
+
+		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	/*
+	* Vertical image flipping
+	*/
 	bool Image::flipY()
 	{
-		if (!isExist()) return false;
-		return ImageFlipY(mData, mWidth, mHeight, mBPP);
+		if (isExist())
+		{
+			return ImageFlipY(Data, Width, Height, BPP);
+		}
+
+		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	/*
+	* Diagonal image flipping
+	*/
 	bool Image::flipXY()
 	{
 		if (!isExist()) return false;
-		return ImageFlipXY(mData, mWidth, mHeight, mBPP);
+		return ImageFlipXY(Data, Width, Height, BPP);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	unsigned int Image::getWidth() const
+	
+	uint32 Image::getWidth() const
 	{
-		return mWidth;
+		return Width;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	unsigned int Image::getHeight() const
+	
+	uint32 Image::getHeight() const
 	{
-		return mHeight;
+		return Height;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	unsigned int Image::getBPP() const
+	
+	uint32 Image::getBPP() const
 	{
-		return mBPP;
+		return BPP;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	unsigned char* Image::getData() const
+	
+	uint8* Image::getData() const
 	{
-		return mData;
+		return Data;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string Image::getFilename() const
+	
+	std::string Image::getFileName() const
 	{
-		return mFilename;
+		return FileName;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Image::~Image()
 	{
 		freeData();
 	}
 }
+
+
+
+
+
+

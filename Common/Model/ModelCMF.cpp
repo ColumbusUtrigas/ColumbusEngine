@@ -8,6 +8,8 @@
 *                   08.01.2018                  *
 *************************************************/
 #include <Common/Model/Model.h>
+#include <Core/Types.h>
+#include <Core/Memory.h>
 #include <System/File.h>
 
 namespace Columbus
@@ -15,8 +17,8 @@ namespace Columbus
 
 	typedef struct
 	{
-		uint8_t magic[21]; //Magic string "COLUMBUS MODEL FORMAT"
-		uint32_t count;    //Polygons count
+		uint8 magic[21]; //Magic string "COLUMBUS MODEL FORMAT"
+		uint32 count;    //Polygons count
 	} CMF_HEADER;
 
 	static bool ReadHeader(CMF_HEADER* aHeader, File* aFile)
@@ -29,25 +31,30 @@ namespace Columbus
 		return true;
 	}
 
-	bool ModelIsCMF(const std::string aFile)
+	bool ModelIsCMF(std::string FileName)
 	{
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return false;
 
 		const char* magic = "COLUMBUS MODEL FORMAT";
-		uint8_t fmagic[21];
+		uint8 fmagic[21];
 		bool ret = true;
 
 		file.read(fmagic, 21, 1);
 		file.close();
 
 		for (int i = 0; i < 21; i++)
-			if (magic[i] != fmagic[i]) ret = false;
+		{
+			if (magic[i] != fmagic[i])
+			{
+				ret = false;
+			}
+		}
 
 		return ret;
 	}
 
-	std::vector<Vertex> ModelLoadCMF(const std::string aFile)
+	std::vector<Vertex> ModelLoadCMF(std::string FileName)
 	{
 		std::vector<Vertex> ret;
 		size_t i, j;
@@ -55,7 +62,7 @@ namespace Columbus
 		uint64_t ucounter = 0;
 		uint64_t ncounter = 0;
 
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return ret;
 
 		CMF_HEADER header;

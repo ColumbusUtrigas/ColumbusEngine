@@ -8,6 +8,7 @@
 *                   06.01.2018                  *
 *************************************************/
 #include <Common/Image/Image.h>
+#include <Core/Memory.h>
 #include <System/File.h>
 #include <tiff.h>
 #include <tiffio.h>
@@ -15,9 +16,9 @@
 namespace Columbus
 {
 
-	bool ImageIsTIF(std::string aFile)
+	bool ImageIsTIF(std::string FileName)
 	{
-		File file(aFile, "rb");
+		File file(FileName, "rb");
 		if (!file.isOpened()) return false;
 
 		uint8_t magic[4];
@@ -38,9 +39,9 @@ namespace Columbus
 		else return false;
 	}
 
-	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP)
+	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
 	{
-		TIFF* tif = TIFFOpen(aFile.c_str(), "r");
+		TIFF* tif = TIFFOpen(FileName.c_str(), "r");
 		if (tif == nullptr) return nullptr;
 
 		unsigned int width = 0;
@@ -51,14 +52,14 @@ namespace Columbus
 		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
 		TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &bpp);
 
-		aWidth = width;
-		aHeight = height;
-		aBPP = bpp;
+		OutWidth = width;
+		OutHeight = height;
+		OutBPP = bpp;
 
-		uint32_t* buffer = (uint32_t*)malloc(width * height * sizeof(uint32_t));
+		uint32* buffer = (uint32*)Memory::Malloc(width * height * sizeof(uint32));
 		TIFFReadRGBAImage(tif, width, height, buffer, 0);
 
-		uint8_t* data = (uint8_t*)malloc(width * height * bpp);
+		uint8* data = (uint8*)Memory::Malloc(width * height * bpp);
 		for (size_t i = 0; i < width * height * bpp; i += bpp)
 		{
 			data[i + 0] = TIFFGetR(*buffer);
@@ -70,23 +71,23 @@ namespace Columbus
 		}
 
 		buffer -= width * height;
-		free(buffer);
+		Memory::Free(buffer);
 
 		TIFFClose(tif);
 
 		return data;
 	}
 	
-	bool ImageSaveTIF(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData)
+	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
 	{
-		if (aData == nullptr) return false;
+		if (Data == nullptr) return false;
 
-		TIFF* tif = TIFFOpen(aFile.c_str(), "w");
+		TIFF* tif = TIFFOpen(FileName.c_str(), "w");
 		if (tif == nullptr) return false;
 
-		TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, aWidth);
-		TIFFSetField(tif, TIFFTAG_IMAGELENGTH, aHeight);
-		TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, aBPP);
+		TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, Width);
+		TIFFSetField(tif, TIFFTAG_IMAGELENGTH, Height);
+		TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, BPP);
 		TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
 		TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
@@ -94,21 +95,24 @@ namespace Columbus
 		TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
 		TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
 
-		size_t stride = aWidth * aBPP;
+		size_t stride = Width * BPP;
 
-		uint8_t* row = (uint8_t*)malloc(stride);
-		uint32_t i;
+		uint8* row = (uint8*)Memory::Malloc(stride);
+		uint32 i;
 
 		TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif, stride));
 
-		for (i = 0; i < aHeight; i++)
+		for (i = 0; i < Height; i++)
 		{
-			memcpy(row, &aData[(aHeight - i - 1) * stride], stride);
+			Memory::Memcpy(row, &Data[(Height - i - 1) * stride], stride);
 			if (TIFFWriteScanline(tif, row, i, 0) < 0) break;
 		}
 
 		TIFFClose(tif);
-		if (row) free(row);
+		if (row != nullptr)
+		{
+			Memory::Free(row);
+		}
 
 		return true;
 	}

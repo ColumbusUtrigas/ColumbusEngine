@@ -50,8 +50,6 @@
 #endif
 
 typedef std::string stdstr;
-typedef int C_Int;
-typedef int cint;
 typedef tinyxml2::XMLDocument C_XMLDoc;
 typedef tinyxml2::XMLNode C_XMLNode;
 typedef tinyxml2::XMLElement C_XMLElement;
