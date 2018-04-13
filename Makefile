@@ -10,7 +10,7 @@ SRC += ./Scene/*.cpp ./System/*.cpp ./Physics/*.cpp
 INCL = -I./ -I/usr/include/SDL2/ -I./Lib/JSON/ -I/usr/include/bullet/ -I/usr/include/AL/
 
 all:
-	$(CC) $(SRC) -o $(TARGET) $(LIBS) $(INCL) -std=c++14 -O3 -Wall -Wno-reorder -Wno-sign-compare -Wno-strict-aliasing
+	$(CC) $(SRC) -o $(TARGET) $(LIBS) $(INCL) -std=c++14 -O3 -Wall -Wno-reorder -Wno-sign-compare -Wno-strict-aliasing -fsanitize=address
 
 
 
