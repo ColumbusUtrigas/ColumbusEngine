@@ -10,7 +10,6 @@
 #include <Common/Sound/Sound.h>
 
 #include <Core/Core.h>
-#include <Core/Types.h>
 
 #include <Graphics/Camera.h>
 #include <Graphics/Cubemap.h>
