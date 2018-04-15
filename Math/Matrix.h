@@ -160,9 +160,9 @@ namespace Columbus
 		*/
 		inline Matrix& Translate(Vector3 Position)
 		{
-			M[0][3] += Position.x;
-			M[1][3] += Position.y;
-			M[2][3] += Position.z;
+			M[0][3] += Position.X;
+			M[1][3] += Position.Y;
+			M[2][3] += Position.Z;
 
 			return *this;
 		}
@@ -172,9 +172,9 @@ namespace Columbus
 		*/
 		inline Matrix& Rotate(Vector3 Axis, float Angle)
 		{
-			float x = Axis.x;
-			float y = Axis.y;
-			float z = Axis.z;
+			float x = Axis.X;
+			float y = Axis.Y;
+			float z = Axis.Z;
 
 			float c = Math::Cos(Math::Radians(Angle));
 			float s = Math::Sin(Math::Radians(Angle));
@@ -218,9 +218,9 @@ namespace Columbus
 
 			float sr, sp, sy, cr, cp, cy;
 
-			Math::SinCos(Math::Radians(EulerAngles.x), sy, cy);
-			Math::SinCos(Math::Radians(EulerAngles.z), sp, cp);
-			Math::SinCos(Math::Radians(EulerAngles.y), sr, cr);
+			Math::SinCos(Math::Radians(EulerAngles.X), sy, cy);
+			Math::SinCos(Math::Radians(EulerAngles.Z), sp, cp);
+			Math::SinCos(Math::Radians(EulerAngles.Y), sr, cr);
 
 			// matrix = (YAW * PITCH) * ROLL
 			ResultMat.M[0][0] = cp*cy;
@@ -244,9 +244,9 @@ namespace Columbus
 		*/
 		inline Matrix& Scale(Vector3 Scale)
 		{
-			M[0][0] *= Scale.x;
-			M[1][1] *= Scale.y;
-			M[2][2] *= Scale.z;
+			M[0][0] *= Scale.X;
+			M[1][1] *= Scale.Y;
+			M[2][2] *= Scale.Z;
 
 			return *this;
 		}
@@ -305,13 +305,13 @@ namespace Columbus
 		*/
 		inline Matrix& LookAt(Vector3 Position, Vector3 Right, Vector3 Forward, Vector3 Up)
 		{
-			float RightDt = Vector3::dot(Right, -Position);
-			float ForwardDt = Vector3::dot(Forward, -Position);
-			float UpDt = Vector3::dot(Up, -Position);
+			float RightDt = Vector3::Dot(Right, -Position);
+			float ForwardDt = Vector3::Dot(Forward, -Position);
+			float UpDt = Vector3::Dot(Up, -Position);
 
-			M[0][0] = Right.x; M[0][1] = Up.x; M[0][2] = Forward.x; M[0][3] = 0.0f;
-			M[1][0] = Right.y; M[1][1] = Up.y; M[1][2] = Forward.y; M[1][3] = 0.0f;
-			M[2][0] = Right.z; M[2][1] = Up.z; M[2][2] = Forward.z; M[2][3] = 0.0f;
+			M[0][0] = Right.X; M[0][1] = Up.X; M[0][2] = Forward.X; M[0][3] = 0.0f;
+			M[1][0] = Right.Y; M[1][1] = Up.Y; M[1][2] = Forward.Y; M[1][3] = 0.0f;
+			M[2][0] = Right.Z; M[2][1] = Up.Z; M[2][2] = Forward.Z; M[2][3] = 0.0f;
 			M[3][0] = RightDt; M[3][1] = UpDt; M[3][2] = ForwardDt; M[3][3] = 1.0f;
 
 			return *this;

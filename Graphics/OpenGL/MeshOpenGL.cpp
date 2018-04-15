@@ -60,27 +60,27 @@ namespace Columbus
 
 		for (auto Vertex : mVert)
 		{
-			if (Vertex.pos.x < OBBData.minX) OBBData.minX = Vertex.pos.x;
-			if (Vertex.pos.x > OBBData.maxX) OBBData.maxX = Vertex.pos.x;
-			if (Vertex.pos.y < OBBData.minY) OBBData.minY = Vertex.pos.y;
-			if (Vertex.pos.y > OBBData.maxY) OBBData.maxY = Vertex.pos.y;
-			if (Vertex.pos.z < OBBData.minZ) OBBData.minZ = Vertex.pos.z;
-			if (Vertex.pos.z > OBBData.maxZ) OBBData.maxZ = Vertex.pos.z;
+			if (Vertex.pos.X < OBBData.minX) OBBData.minX = Vertex.pos.X;
+			if (Vertex.pos.X > OBBData.maxX) OBBData.maxX = Vertex.pos.X;
+			if (Vertex.pos.Y < OBBData.minY) OBBData.minY = Vertex.pos.Y;
+			if (Vertex.pos.Y > OBBData.maxY) OBBData.maxY = Vertex.pos.Y;
+			if (Vertex.pos.Z < OBBData.minZ) OBBData.minZ = Vertex.pos.Z;
+			if (Vertex.pos.Z > OBBData.maxZ) OBBData.maxZ = Vertex.pos.Z;
 
-			v[vcounter++] = Vertex.pos.x;
-			v[vcounter++] = Vertex.pos.y;
-			v[vcounter++] = Vertex.pos.z;
+			v[vcounter++] = Vertex.pos.X;
+			v[vcounter++] = Vertex.pos.Y;
+			v[vcounter++] = Vertex.pos.Z;
 
 			u[ucounter++] = Vertex.UV.X;
 			u[ucounter++] = Vertex.UV.Y;
 
-			n[ncounter++] = Vertex.normal.x;
-			n[ncounter++] = Vertex.normal.y;
-			n[ncounter++] = Vertex.normal.z;
+			n[ncounter++] = Vertex.normal.X;
+			n[ncounter++] = Vertex.normal.Y;
+			n[ncounter++] = Vertex.normal.Z;
 
-			t[tcounter++] = Vertex.tangent.x;
-			t[tcounter++] = Vertex.tangent.y;
-			t[tcounter++] = Vertex.tangent.z;
+			t[tcounter++] = Vertex.tangent.X;
+			t[tcounter++] = Vertex.tangent.Y;
+			t[tcounter++] = Vertex.tangent.Z;
 		}
 
 		uint64 size = (sizeof(float) * mVert.size() * 3)
@@ -218,15 +218,15 @@ namespace Columbus
 		mMaterialUnif[1] = matcol.y;
 		mMaterialUnif[2] = matcol.z;
 		mMaterialUnif[3] = matcol.w;
-		mMaterialUnif[4] = matamb.x;
-		mMaterialUnif[5] = matamb.y;
-		mMaterialUnif[6] = matamb.z;
-		mMaterialUnif[7] = matdif.x;
-		mMaterialUnif[8] = matdif.y;
-		mMaterialUnif[9] = matdif.z;
-		mMaterialUnif[10] = matspc.x;
-		mMaterialUnif[11] = matspc.y;
-		mMaterialUnif[12] = matspc.z;
+		mMaterialUnif[4] = matamb.X;
+		mMaterialUnif[5] = matamb.Y;
+		mMaterialUnif[6] = matamb.Z;
+		mMaterialUnif[7] = matdif.X;
+		mMaterialUnif[8] = matdif.Y;
+		mMaterialUnif[9] = matdif.Z;
+		mMaterialUnif[10] = matspc.X;
+		mMaterialUnif[11] = matspc.Y;
+		mMaterialUnif[12] = matspc.Z;
 		mMaterialUnif[13] = mMat.getReflectionPower();
 		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
 
@@ -253,17 +253,17 @@ namespace Columbus
 			if (i < mLights.size() && mMat.getLighting() == true)
 			{
 				//Color
-				mLightUniform[0 + offset] = mLights[i]->getColor().x;
-				mLightUniform[1 + offset] = mLights[i]->getColor().y;
-				mLightUniform[2 + offset] = mLights[i]->getColor().z;
+				mLightUniform[0 + offset] = mLights[i]->getColor().X;
+				mLightUniform[1 + offset] = mLights[i]->getColor().Y;
+				mLightUniform[2 + offset] = mLights[i]->getColor().Z;
 				//Position
-				mLightUniform[3 + offset] = mLights[i]->getPos().x;
-				mLightUniform[4 + offset] = mLights[i]->getPos().y;
-				mLightUniform[5 + offset] = mLights[i]->getPos().z;
+				mLightUniform[3 + offset] = mLights[i]->getPos().X;
+				mLightUniform[4 + offset] = mLights[i]->getPos().Y;
+				mLightUniform[5 + offset] = mLights[i]->getPos().Z;
 				//Direction
-				mLightUniform[6 + offset] = mLights[i]->getDir().x;
-				mLightUniform[7 + offset] = mLights[i]->getDir().y;
-				mLightUniform[8 + offset] = mLights[i]->getDir().z;
+				mLightUniform[6 + offset] = mLights[i]->getDir().X;
+				mLightUniform[7 + offset] = mLights[i]->getDir().Y;
+				mLightUniform[8 + offset] = mLights[i]->getDir().Z;
 				//Type
 				mLightUniform[9 + offset] = static_cast<float>(mLights[i]->getType());
 				//Constant attenuation
@@ -297,7 +297,7 @@ namespace Columbus
 			Vector3 q = a->getPos();
 			Vector3 w = b->getPos();
 
-			return q.length(pos) < w.length(pos);
+			return q.Length(pos) < w.Length(pos);
 		};
 
 		std::sort(mLights.begin(), mLights.end(), func);

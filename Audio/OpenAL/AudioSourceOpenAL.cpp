@@ -56,9 +56,9 @@ namespace Columbus
 
 				alSourcei(OpenALSource, AL_BUFFER, OpenALBuffer);
 
-				alSource3f(OpenALSource, AL_POSITION, Position.x, Position.y, Position.z);
-				alSource3f(OpenALSource, AL_VELOCITY, Velocity.x, Velocity.y, Velocity.z);
-				alSource3f(OpenALSource, AL_DIRECTION, Direction.x, Direction.y, Direction.z);
+				alSource3f(OpenALSource, AL_POSITION, Position.X, Position.Y, Position.Z);
+				alSource3f(OpenALSource, AL_VELOCITY, Velocity.X, Velocity.Y, Velocity.Z);
+				alSource3f(OpenALSource, AL_DIRECTION, Direction.X, Direction.Y, Direction.Z);
 				alSourcef(OpenALSource, AL_GAIN, Gain);
 				alSourcef(OpenALSource, AL_PITCH, Pitch);
 				alSourcef(OpenALSource, AL_REFERENCE_DISTANCE, MinDistance);
@@ -72,19 +72,19 @@ namespace Columbus
 	void AudioSourceOpenAL::SetPosition(Vector3 InPosition)
 	{
 		this->Position = InPosition;
-		alSource3f(OpenALSource, AL_POSITION, Position.x, Position.y, Position.z);
+		alSource3f(OpenALSource, AL_POSITION, Position.X, Position.Y, Position.Z);
 	}
 
 	void AudioSourceOpenAL::SetVelocity(Vector3 InVelocity)
 	{
 		this->Velocity = InVelocity;
-		alSource3f(OpenALSource, AL_VELOCITY, Velocity.x, Velocity.y, Velocity.z);
+		alSource3f(OpenALSource, AL_VELOCITY, Velocity.X, Velocity.Y, Velocity.Z);
 	}
 
 	void AudioSourceOpenAL::SetDirection(Vector3 InDirection)
 	{
 		this->Direction = InDirection;
-		alSource3f(OpenALSource, AL_DIRECTION, Direction.x, Direction.y, Direction.z);
+		alSource3f(OpenALSource, AL_DIRECTION, Direction.X, Direction.Y, Direction.Z);
 	}
 
 	void AudioSourceOpenAL::SetGain(float InGain)

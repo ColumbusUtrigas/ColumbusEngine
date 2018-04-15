@@ -122,9 +122,9 @@ namespace Columbus
 			Vector3 Rotation;
 			Vector3 Scale(1, 1, 1);
 
-			if (Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, &Position, { "X", "Y", "Z" }) &&
-			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, &Rotation, { "X", "Y", "Z" }) &&
-			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" }, &Scale, { "X", "Y", "Z" }))
+			if (Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, Position, { "X", "Y", "Z" }) &&
+			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, Rotation, { "X", "Y", "Z" }) &&
+			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" }, Scale, { "X", "Y", "Z" }))
 			{
 				Trans.SetPos(Position);
 				Trans.SetRot(Rotation);
@@ -143,7 +143,7 @@ namespace Columbus
 		{
 			std::string Path;
 
-			if (Serializer->GetSubString({ "GameObjects", Element, "Material" }, &Path))
+			if (Serializer->GetSubString({ "GameObjects", Element, "Material" }, Path))
 			{
 				if (Path != "None")
 				{
@@ -163,7 +163,7 @@ namespace Columbus
 		{
 			std::string MeshPath;
 
-			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshRenderer", "Mesh" }, &MeshPath))
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshRenderer", "Mesh" }, MeshPath))
 			{
 				if (MeshPath == "Plane")
 				{
@@ -204,7 +204,7 @@ namespace Columbus
 		{
 			std::string ParticleSystemPath;
 
-			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "ParticleSystem", "Particles" }, &ParticleSystemPath))
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "ParticleSystem", "Particles" }, ParticleSystemPath))
 			{
 				if (ParticleSystemPath != "None")
 				{
@@ -224,7 +224,7 @@ namespace Columbus
 		{
 			std::string LightPath;
 
-			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "LightComponent", "Light" }, &LightPath))
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "LightComponent", "Light" }, LightPath))
 			{
 				if (LightPath != "None")
 				{
@@ -255,15 +255,15 @@ namespace Columbus
 				float LinearTreshold = 0.2f;
 			} RigidbodyProperties;
 
-			if (Serializer->GetSubBool({ "GameObjects", Element, "Components", "Rigidbody", "Static" }, &RigidbodyProperties.Static) &&
-				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Mass" }, &RigidbodyProperties.Mass) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Restitution" }, &RigidbodyProperties.Restitution) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Friction" }, &RigidbodyProperties.Friction) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "RollingFriction" }, &RigidbodyProperties.RollingFriction) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "AngularDamping" }, &RigidbodyProperties.AngularDamping) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "AngularTreshold" }, &RigidbodyProperties.AngularTreshold) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "LinearDamping" }, &RigidbodyProperties.LinearDamping) &&
-			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "LinearTreshold" }, &RigidbodyProperties.LinearTreshold))
+			if (Serializer->GetSubBool({ "GameObjects", Element, "Components", "Rigidbody", "Static" }, RigidbodyProperties.Static) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Mass" }, RigidbodyProperties.Mass) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Restitution" }, RigidbodyProperties.Restitution) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "Friction" }, RigidbodyProperties.Friction) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "RollingFriction" }, RigidbodyProperties.RollingFriction) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "AngularDamping" }, RigidbodyProperties.AngularDamping) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "AngularTreshold" }, RigidbodyProperties.AngularTreshold) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "LinearDamping" }, RigidbodyProperties.LinearDamping) &&
+			    Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "LinearTreshold" }, RigidbodyProperties.LinearTreshold))
 			{
 				Rigidbody* rigidbody = new Rigidbody(Trans, Shape);
 
@@ -299,25 +299,25 @@ namespace Columbus
 			float rbShapeRadius = 0.0f;
 			Serializer::SerializerXML::Element* rbElement = nullptr;
 
-			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeBox" }, &rbShapeSize, { "X", "Y", "Z" }))
+			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeBox" }, rbShapeSize, { "X", "Y", "Z" }))
 			{
 				delete Shape;
 				Shape = new PhysicsShapeBox(rbShapeSize);
 			}
 
-			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCapsule" }, &rbShapeRadiusHeight, { "Radius", "Height" }))
+			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCapsule" }, rbShapeRadiusHeight, { "Radius", "Height" }))
 			{
 				delete Shape;
 				Shape = new PhysicsShapeCapsule(rbShapeRadiusHeight.X, rbShapeRadiusHeight.Y);
 			}
 
-			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCone" }, &rbShapeRadiusHeight, { "Radius", "Height" }))
+			if (Serializer->GetSubVector2({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCone" }, rbShapeRadiusHeight, { "Radius", "Height" }))
 			{
 				delete Shape;
 				Shape = new PhysicsShapeCone(rbShapeRadiusHeight.X, rbShapeRadiusHeight.Y);
 			}
 
-			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "Rigidbody", "ShapeConvexHull" }, &rbShapeMesh))
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "Rigidbody", "ShapeConvexHull" }, rbShapeMesh))
 			{
 				if (rbShapeMesh != "None")
 				{
@@ -329,13 +329,13 @@ namespace Columbus
 				}
 			}
 
-			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCylinder" }, &rbShapeSize, { "X", "Y", "Z" }))
+			if (Serializer->GetSubVector3({ "GameObjects", Element, "Components", "Rigidbody", "ShapeCylinder" }, rbShapeSize, { "X", "Y", "Z" }))
 			{
 				delete Shape;
 				Shape = new PhysicsShapeCylinder(rbShapeSize);
 			}
 
-			if (Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "ShapeSphere" }, &rbShapeRadius))
+			if (Serializer->GetSubFloat({ "GameObjects", Element, "Components", "Rigidbody", "ShapeSphere" }, rbShapeRadius))
 			{
 				delete Shape;
 				Shape = new PhysicsShapeSphere(rbShapeRadius);
@@ -349,8 +349,8 @@ namespace Columbus
 
 				do
 				{
-					Serializer->GetVector3(rbElement, &rbShapePosition, { "X", "Y", "Z" });
-					Serializer->GetFloat(rbElement, &rbShapeRadius);
+					Serializer->GetVector3(rbElement, rbShapePosition, { "X", "Y", "Z" });
+					Serializer->GetFloat(rbElement, rbShapeRadius);
 					rbElement = Serializer->NextElement(rbElement, "Sphere");
 					rbShapePositions.push_back(rbShapePosition);
 					rbShapeRadiuses.push_back(rbShapeRadius);
@@ -381,7 +381,7 @@ namespace Columbus
 			std::string name;
 			int shaderID = -1;
 
-			if (!Serializer->GetSubString({ "GameObjects", Element, "Name" }, &name))
+			if (!Serializer->GetSubString({ "GameObjects", Element, "Name" }, name))
 			{
 				delete Object;
 				return nullptr;
@@ -395,7 +395,7 @@ namespace Columbus
 				return nullptr;
 			}
 
-			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" }, &shaderID))
+			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" },shaderID))
 			{
 				material->setShader(Shaders->at(shaderID));
 			}
@@ -464,37 +464,37 @@ namespace Columbus
 
 		std::string path, path1, elem;
 
-		if (serializer.GetSubInt({ "Resources", "Textures", "Count" }, (int32*)&texCount))
+		if (serializer.GetSubInt({ "Resources", "Textures", "Count" }, (int32&)texCount))
 		{
 			for (uint32 i = 0; i < texCount; i++)
 			{
 				elem = std::string("Texture") + std::to_string(i);
-				if (serializer.GetSubString({ "Resources", "Textures", elem }, &path))
+				if (serializer.GetSubString({ "Resources", "Textures", elem }, path))
 				{
 					mTextures.insert(std::pair<uint32, Texture*>(i, gDevice->createTexture(path)));
 				}
 			}
 		}
 
-		if (serializer.GetSubInt({ "Resources", "Shaders", "Count" }, (int32*)&shadersCount))
+		if (serializer.GetSubInt({ "Resources", "Shaders", "Count" }, (int32&)shadersCount))
 		{
 			for (uint32 i = 0; i < shadersCount; i++)
 			{
 				elem = std::string("Shader") + std::to_string(i);
-				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, &path) &&
-				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, &path1))
+				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, path) &&
+				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, path1))
 				{
 					mShaders.insert(std::pair<uint32, Shader*>(i, gDevice->createShader(path, path1)));
 				}
 			}
 		}
 
-		if (serializer.GetSubInt({ "Resources", "Meshes", "Count" }, (int32*)&meshesCount))
+		if (serializer.GetSubInt({ "Resources", "Meshes", "Count" }, (int32&)meshesCount))
 		{
 			for (uint32 i = 0; i < meshesCount; i++)
 			{
 				elem = std::string("Mesh") + std::to_string(i);
-				if (serializer.GetSubString({ "Resources", "Meshes", elem }, &path))
+				if (serializer.GetSubString({ "Resources", "Meshes", elem }, path))
 				{
 					if (ModelIsCMF(path))
 					{
@@ -509,7 +509,7 @@ namespace Columbus
 			}
 		}
 
-		if (!serializer.GetSubInt({"GameObjects", "Count"}, (int32*)&count))
+		if (!serializer.GetSubInt({"GameObjects", "Count"}, (int32&)count))
 		{ Log::error("Can't load Scene Count: " + aFile); return false; }
 
 		for (uint32 i = 0; i < count; i++)

@@ -14,7 +14,7 @@ namespace Columbus
 
 	void PhysicsWorld::SetGravity(Vector3 aGravity)
 	{
-		mWorld->setGravity(btVector3(aGravity.x, aGravity.y, aGravity.z));
+		mWorld->setGravity(btVector3(aGravity.X, aGravity.Y, aGravity.Z));
 	}
 
 	void PhysicsWorld::AddRigidbody(Rigidbody* aRigidbody)

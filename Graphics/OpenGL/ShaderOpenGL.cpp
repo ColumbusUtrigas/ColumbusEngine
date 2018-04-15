@@ -251,7 +251,7 @@ namespace Columbus
 
 	void ShaderOpenGL::setUniform3f(std::string aName, const Vector3 aValue) const
 	{
-		if (mID != 0 && mCompiled) glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z);
+		if (mID != 0 && mCompiled) glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.X, aValue.Y, aValue.Z);
 	}
 
 	void ShaderOpenGL::setUniform4f(std::string aName, const Vector4 aValue) const

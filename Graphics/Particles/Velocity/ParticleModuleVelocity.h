@@ -8,10 +8,13 @@ namespace Columbus
 	class ParticleModuleVelocity : public ParticleModuleVelocityBase
 	{ 
 	public:
-		Vector3 Min = Vector3(-1, -1, -1);
-		Vector3 Max = Vector3(1, 1, 1);
-
-		ParticleModuleVelocity() {}
+		Vector3 Min;
+		Vector3 Max;
+	public:
+		ParticleModuleVelocity() :
+			Min(-1, -1, -1),
+			Max(1, 1, 1)
+		{ }
 		/*
 		* For determening module type
 		*/
@@ -21,10 +24,10 @@ namespace Columbus
 		*/
 		void Spawn(Particle& aParticle) override
 		{
-			aParticle.velocity = Vector3::random(Min, Max);
+			aParticle.velocity = Vector3::Random(Min, Max);
 		}
 
-		~ParticleModuleVelocity() {}
+		~ParticleModuleVelocity() { }
 	};
 
 }

@@ -11,10 +11,10 @@ namespace Columbus
 		RollingFriction(0.0f),
 		AngularDamping(0.2f),
 		AngularTreshold(0.25f),
-		AngularFactor(Vector3(1, 1, 1)),
+		AngularFactor(1, 1, 1),
 		LinearDamping(0.2f),
 		LinearTreshold(0.2),
-		LinearFactor(Vector3(1, 1, 1))
+		LinearFactor(1, 1, 1)
 	{
 		btDefaultMotionState* MotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
@@ -35,10 +35,10 @@ namespace Columbus
 		RollingFriction(0.0f),
 		AngularDamping(0.2f),
 		AngularTreshold(0.25f),
-		AngularFactor(Vector3(1, 1, 1)),
+		AngularFactor(1, 1, 1),
 		LinearDamping(0.2f),
 		LinearTreshold(0.2),
-		LinearFactor(Vector3(1, 1, 1))
+		LinearFactor(1, 1, 1)
 	{
 		btDefaultMotionState* MotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
@@ -85,24 +85,24 @@ namespace Columbus
 		if (Dist > 0.001f)
 		{
 			// (yaw) y = ATAN(Forward.y, Forward.x);
-			OutAngles.y = Math::Degrees(atan2f(Forward.getX(), Forward.getZ()));
+			OutAngles.Y = Math::Degrees(atan2f(Forward.getX(), Forward.getZ()));
 
 			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
-			OutAngles.x = Math::Degrees(atan2f(-Forward.getY(), Dist));
+			OutAngles.X = Math::Degrees(atan2f(-Forward.getY(), Dist));
 
 			// (roll) z = ATAN(Left.z, Up.z);
-			OutAngles.z = Math::Degrees(atan2f(Left.getY(), Up.getY()));
+			OutAngles.Z = Math::Degrees(atan2f(Left.getY(), Up.getY()));
 		}
 		else
 		{
 			// (yaw) y = ATAN(-Left.x, Left.y);
-			OutAngles.y = Math::Degrees(atan2f(-Left.getZ(), Left.getX()));
+			OutAngles.Y = Math::Degrees(atan2f(-Left.getZ(), Left.getX()));
 
 			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
-			OutAngles.x = Math::Degrees(atan2f(-Forward.getY(), Dist));
+			OutAngles.X = Math::Degrees(atan2f(-Forward.getY(), Dist));
 
 			// Assume no roll in this case as one degree of freedom has been lost (i.e. yaw == roll)
-			OutAngles.z = 0;
+			OutAngles.Z = 0;
 		}
 	}
 	/*
@@ -118,18 +118,18 @@ namespace Columbus
 			Vector3 rot = Transform.GetRot();
 			Vector3 scale = Transform.GetScale();
 
-			if (rot.x > 180) rot.x -= 360;
-			if (rot.y > 180) rot.y -= 360;
-			if (rot.z > 180) rot.z -= 360;
+			if (rot.X > 180) rot.X -= 360;
+			if (rot.Y > 180) rot.Y -= 360;
+			if (rot.Z > 180) rot.Z -= 360;
 
-			rot.x = Math::Radians(rot.x);
-			rot.y = Math::Radians(rot.y);
-			rot.z = Math::Radians(rot.z);
+			rot.X = Math::Radians(rot.Z);
+			rot.Y = Math::Radians(rot.Y);
+			rot.Z = Math::Radians(rot.Z);
 
 			//btQuaternion quat; quat.setEulerZYX(rot.z, rot.y, rot.x);
 
-			Trans.setOrigin(btVector3(pos.x, pos.y, pos.z));
-			Trans.getBasis().setEulerZYX(rot.x, rot.z, rot.y);
+			Trans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
+			Trans.getBasis().setEulerZYX(rot.X, rot.Z, rot.Y);
 			//Trans.setRotation(quat);
 			mRigidbody->proceedToTransform(Trans);
 
@@ -198,7 +198,7 @@ namespace Columbus
 		if (mRigidbody != nullptr)
 		{
 			AngularFactor = Factor;
-			mRigidbody->setAngularFactor(btVector3(Factor.x, Factor.y, Factor.z));
+			mRigidbody->setAngularFactor(btVector3(Factor.X, Factor.Y, Factor.Z));
 		}
 	}
 
@@ -206,7 +206,7 @@ namespace Columbus
 	{
 		if (mRigidbody != nullptr)
 		{
-			mRigidbody->setAngularVelocity(btVector3(Math::Radians(Velocity.x), Math::Radians(Velocity.y), Math::Radians(Velocity.z)));
+			mRigidbody->setAngularVelocity(btVector3(Math::Radians(Velocity.X), Math::Radians(Velocity.Y), Math::Radians(Velocity.Z)));
 		}
 	}
 
@@ -233,7 +233,7 @@ namespace Columbus
 		if (mRigidbody != nullptr)
 		{
 			LinearFactor = Factor;
-			mRigidbody->setLinearFactor(btVector3(Factor.x, Factor.y, Factor.z));
+			mRigidbody->setLinearFactor(btVector3(Factor.X, Factor.Y, Factor.Z));
 		}
 	}
 
@@ -241,7 +241,7 @@ namespace Columbus
 	{
 		if (mRigidbody != nullptr)
 		{
-			mRigidbody->setLinearVelocity(btVector3(Velocity.x, Velocity.y, Velocity.z));
+			mRigidbody->setLinearVelocity(btVector3(Velocity.X, Velocity.Y, Velocity.Z));
 		}
 	}
 
@@ -288,7 +288,7 @@ namespace Columbus
 			rot.z = Degrees(rot.z);*/
 
 			Trans.SetPos(Vector3(pos.getX(), pos.getY(), pos.getZ()));
-			Trans.SetRot(Vector3(rot.x, rot.y, rot.z));
+			Trans.SetRot(Vector3(rot.X, rot.Y, rot.Z));
 			Trans.SetScale(this->Trans.GetScale());
 			Trans.Update(); //Hmmm
 

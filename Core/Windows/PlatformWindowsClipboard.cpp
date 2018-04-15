@@ -1,5 +1,5 @@
 #include <Core/Windows/PlatformWindowsClipboard.h>
-#include <Core/Platform/Memory.h>
+#include <Core/Memory.h>
 #include <windows.h>
 
 namespace Columbus
@@ -17,9 +17,9 @@ namespace Columbus
 		CloseClipboard();
 	}
 
-	void ClipbarodWindows::GetClipboard(std::string& Text)
+	void ClipboardWindows::GetClipboard(std::string& Text)
 	{
-		OpenClipboard(nullptr)
+		OpenClipboard(nullptr);
 		HANDLE hData = GetClipboardData(CF_TEXT);
 		if (hData == nullptr)
 		{
@@ -34,9 +34,9 @@ namespace Columbus
 		CloseClipboard();
 	}
 
-	bool ClipbarodWindows::HasClipboard()
+	bool ClipboardWindows::HasClipboard()
 	{
-		OpenClipboard(nullptr)
+		OpenClipboard(nullptr);
 		HANDLE hData = GetClipboardData(CF_TEXT);
 		if (hData == nullptr)
 		{

@@ -10,10 +10,11 @@ namespace Columbus
 	public:
 		Vector3 Min;
 		Vector3 Max;
-
+	public:
 		ParticleModuleSize() :
 			Min(Vector3(1, 1, 1)),
-			Max(Vector3(1, 1, 1)) {}
+			Max(Vector3(1, 1, 1))
+		{ }
 		/*
 		* For determening module type
 		*/
@@ -23,14 +24,14 @@ namespace Columbus
 		*/
 		void Spawn(Particle& aParticle) override
 		{
-			aParticle.size = Vector3::random(Min, Max);
+			aParticle.size = Vector3::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override {}
+		void Update(Particle& aParticle) override { }
 
-		~ParticleModuleSize() override {}
+		~ParticleModuleSize() override { }
 	};
 
 }

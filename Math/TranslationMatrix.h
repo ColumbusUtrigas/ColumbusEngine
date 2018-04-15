@@ -11,9 +11,9 @@ namespace Columbus
 	{
 	public:
 		inline TranslationMatrix(Vector3 Translation) :
-			Matrix(Vector4(1.0f, 0.0f, 0.0f, Translation.x),
-			       Vector4(0.0f, 1.0f, 0.0f, Translation.y),
-			       Vector4(0.0f, 0.0f, 1.0f, Translation.z),
+			Matrix(Vector4(1.0f, 0.0f, 0.0f, Translation.X),
+			       Vector4(0.0f, 1.0f, 0.0f, Translation.Y),
+			       Vector4(0.0f, 0.0f, 1.0f, Translation.Z),
 			       Vector4(0.0f, 0.0f, 0.0f, 1.0f))
 		{
 		}

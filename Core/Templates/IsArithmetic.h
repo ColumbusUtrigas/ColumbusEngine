@@ -6,27 +6,27 @@ namespace Columbus
 {
 
 	template <typename T>
-	struct TIsArithmetic
+	struct IsArithmetic
 	{ 
 		enum { Value = false };
 	};
 
-	template <> struct TIsArithmetic<float>       { enum { Value = true }; };
-	template <> struct TIsArithmetic<double>      { enum { Value = true }; };
-	template <> struct TIsArithmetic<long double> { enum { Value = true }; };
-	template <> struct TIsArithmetic<uint8>       { enum { Value = true }; };
-	template <> struct TIsArithmetic<uint16>      { enum { Value = true }; };
-	template <> struct TIsArithmetic<uint32>      { enum { Value = true }; };
-	template <> struct TIsArithmetic<uint64>      { enum { Value = true }; };
-	template <> struct TIsArithmetic<int8>        { enum { Value = true }; };
-	template <> struct TIsArithmetic<int16>       { enum { Value = true }; };
-	template <> struct TIsArithmetic<int32>       { enum { Value = true }; };
-	template <> struct TIsArithmetic<int64>       { enum { Value = true }; };
-	template <> struct TIsArithmetic<bool>        { enum { Value = true }; };
+	template <> struct IsArithmetic<float>       { enum { Value = true }; };
+	template <> struct IsArithmetic<double>      { enum { Value = true }; };
+	template <> struct IsArithmetic<long double> { enum { Value = true }; };
+	template <> struct IsArithmetic<uint8>       { enum { Value = true }; };
+	template <> struct IsArithmetic<uint16>      { enum { Value = true }; };
+	template <> struct IsArithmetic<uint32>      { enum { Value = true }; };
+	template <> struct IsArithmetic<uint64>      { enum { Value = true }; };
+	template <> struct IsArithmetic<int8>        { enum { Value = true }; };
+	template <> struct IsArithmetic<int16>       { enum { Value = true }; };
+	template <> struct IsArithmetic<int32>       { enum { Value = true }; };
+	template <> struct IsArithmetic<int64>       { enum { Value = true }; };
+	template <> struct IsArithmetic<bool>        { enum { Value = true }; };
 
-	template <typename T> struct TIsArithmetic<const          T> { enum { Value = TIsArithmetic<T>::Value }; };
-	template <typename T> struct TIsArithmetic<      volatile T> { enum { Value = TIsArithmetic<T>::Value }; };
-	template <typename T> struct TIsArithmetic<const volatile T> { enum { Value = TIsArithmetic<T>::Value }; };
+	template <typename T> struct IsArithmetic<const          T> { enum { Value = TIsArithmetic<T>::Value }; };
+	template <typename T> struct IsArithmetic<      volatile T> { enum { Value = TIsArithmetic<T>::Value }; };
+	template <typename T> struct IsArithmetic<const volatile T> { enum { Value = TIsArithmetic<T>::Value }; };
 
 }
 

@@ -47,7 +47,7 @@ namespace Columbus
 			pos += NoiseModifier;
 
 			rotation += rotationSpeed * aTimeTick;
-			cameraDistance = pow(aCamera.x - pos.x, 2) + pow(aCamera.y - pos.y, 2) + pow(aCamera.z - pos.z, 2);
+			cameraDistance = pow(aCamera.X - pos.X, 2) + pow(aCamera.Y - pos.Y, 2) + pow(aCamera.Z - pos.Z, 2);
 			percent = age / TTL;
 		}
 	};

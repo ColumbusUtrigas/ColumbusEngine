@@ -86,16 +86,16 @@ namespace Columbus
 		{
 			for (j = 0; j < 3; j++)
 			{
-				vert[j].pos.x = vbuffer[vcounter++];
-				vert[j].pos.y = vbuffer[vcounter++];
-				vert[j].pos.z = vbuffer[vcounter++];
+				vert[j].pos.X = vbuffer[vcounter++];
+				vert[j].pos.Y = vbuffer[vcounter++];
+				vert[j].pos.Z = vbuffer[vcounter++];
 
 				vert[j].UV.X = ubuffer[ucounter++];
 				vert[j].UV.Y = ubuffer[ucounter++];
 
-				vert[j].normal.x = nbuffer[ncounter++];
-				vert[j].normal.y = nbuffer[ncounter++];
-				vert[j].normal.z = nbuffer[ncounter++];
+				vert[j].normal.X = nbuffer[ncounter++];
+				vert[j].normal.Y = nbuffer[ncounter++];
+				vert[j].normal.Z = nbuffer[ncounter++];
 			}
 
 			deltaPos1 = vert[1].pos - vert[0].pos;

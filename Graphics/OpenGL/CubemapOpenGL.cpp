@@ -106,7 +106,7 @@ namespace Columbus
 
 		for (int i = 0; i < 6; i++)
 		{
-			if (!Serializer.GetString(names[i], &pathes[i]))
+			if (!Serializer.GetString(names[i], pathes[i]))
 			{ Log::error("Can't load Cubemap XML: " + aPath); return false; }
 		}
 

@@ -13,7 +13,7 @@ namespace Columbus
 	public:
 		PhysicsShapeCylinder(Vector3 Size)
 		{
-			mShape = new btCylinderShape(btVector3(Size.x * 0.5f, Size.y * 0.5f, Size.z * 0.5f));
+			mShape = new btCylinderShape(btVector3(Size.X * 0.5f, Size.Y * 0.5f, Size.Z * 0.5f));
 			this->Size = Size;
 		}
 		/*

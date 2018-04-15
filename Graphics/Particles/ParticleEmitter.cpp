@@ -242,9 +242,9 @@ namespace Columbus
 		float const MaterialUnif[15] =
 		{
 			matcol.x, matcol.y, matcol.z, matcol.w,
-			matamb.x, matamb.y, matamb.z,
-			matdif.x, matdif.y, matdif.z,
-			matspc.x, matspc.y, matspc.z,
+			matamb.X, matamb.Y, matamb.Z,
+			matdif.X, matdif.Y, matdif.Z,
+			matspc.X, matspc.Y, matspc.Z,
 			mParticleEffect->getMaterial()->getReflectionPower(),
 			mParticleEffect->getMaterial()->getLighting() ? 1.0f : 0.0f
 		};
@@ -270,17 +270,17 @@ namespace Columbus
 			if (i < mLights.size() && mParticleEffect->getMaterial()->getLighting() == true)
 			{
 				//Color
-				mLightUniform[0 + offset] = mLights[i]->getColor().x;
-				mLightUniform[1 + offset] = mLights[i]->getColor().y;
-				mLightUniform[2 + offset] = mLights[i]->getColor().z;
+				mLightUniform[0 + offset] = mLights[i]->getColor().X;
+				mLightUniform[1 + offset] = mLights[i]->getColor().Y;
+				mLightUniform[2 + offset] = mLights[i]->getColor().Z;
 				//Position
-				mLightUniform[3 + offset] = mLights[i]->getPos().x;
-				mLightUniform[4 + offset] = mLights[i]->getPos().y;
-				mLightUniform[5 + offset] = mLights[i]->getPos().z;
+				mLightUniform[3 + offset] = mLights[i]->getPos().X;
+				mLightUniform[4 + offset] = mLights[i]->getPos().Y;
+				mLightUniform[5 + offset] = mLights[i]->getPos().Z;
 				//Direction
-				mLightUniform[6 + offset] = mLights[i]->getDir().x;
-				mLightUniform[7 + offset] = mLights[i]->getDir().y;
-				mLightUniform[8 + offset] = mLights[i]->getDir().z;
+				mLightUniform[6 + offset] = mLights[i]->getDir().X;
+				mLightUniform[7 + offset] = mLights[i]->getDir().Y;
+				mLightUniform[8 + offset] = mLights[i]->getDir().Z;
 				//Type
 				mLightUniform[9 + offset] = static_cast<float>(mLights[i]->getType());
 				//Constant attenuation
@@ -314,7 +314,7 @@ namespace Columbus
 			Vector3 q = a->getPos();
 			Vector3 w = b->getPos();
 
-			return q.length(pos) < w.length(pos);
+			return q.Length(pos) < w.Length(pos);
 		};
 
 		std::sort(mLights.begin(), mLights.end(), func);
@@ -414,9 +414,9 @@ namespace Columbus
 
 			for (int i = 0; i < 6; i++)
 			{
-				mPosData[posCounter++] = Particle.pos.x;
-				mPosData[posCounter++] = Particle.pos.y;
-				mPosData[posCounter++] = Particle.pos.z;
+				mPosData[posCounter++] = Particle.pos.X;
+				mPosData[posCounter++] = Particle.pos.Y;
+				mPosData[posCounter++] = Particle.pos.Z;
 
 				mTimeData[timeCounter++] = Particle.age;
 				mTimeData[timeCounter++] = Particle.TTL;
@@ -428,9 +428,9 @@ namespace Columbus
 				mColData[colCounter++] = Particle.color.z;
 				mColData[colCounter++] = Particle.color.w;
 
-				mSizeData[sizeCounter++] = Particle.size.x;
-				mSizeData[sizeCounter++] = Particle.size.y;
-				mSizeData[sizeCounter++] = Particle.size.z;
+				mSizeData[sizeCounter++] = Particle.size.X;
+				mSizeData[sizeCounter++] = Particle.size.Y;
+				mSizeData[sizeCounter++] = Particle.size.Z;
 			}
 		}
 
