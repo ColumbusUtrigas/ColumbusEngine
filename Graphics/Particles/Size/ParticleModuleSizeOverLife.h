@@ -12,12 +12,13 @@ namespace Columbus
 		Vector3 MaxStart;
 		Vector3 MinFinal;
 		Vector3 MaxFinal;
-
+	public:
 		ParticleModuleSizeOverLife() : 
-			MinStart(Vector3(1, 1, 1)),
-			MaxStart(Vector3(1, 1, 1)),
-			MinFinal(Vector3(1, 1, 1)),
-			MaxFinal(Vector3(1, 1, 1)) {}
+			MinStart(1, 1, 1),
+			MaxStart(1, 1, 1),
+			MinFinal(1, 1, 1),
+			MaxFinal(1, 1, 1)
+		{ }
 		/*
 		* For determening module type
 		*/
@@ -27,8 +28,8 @@ namespace Columbus
 		*/
 		void Spawn(Particle& aParticle) override
 		{
-			aParticle.startSize = Vector3::random(MinStart, MaxStart);
-			aParticle.finalSize = Vector3::random(MinFinal, MaxFinal);
+			aParticle.startSize = Vector3::Random(MinStart, MaxStart);
+			aParticle.finalSize = Vector3::Random(MinFinal, MaxFinal);
 		}
 		/*
 		* Update particle parameter
@@ -38,7 +39,7 @@ namespace Columbus
 			aParticle.size = aParticle.startSize * (1 - aParticle.percent) + aParticle.finalSize * aParticle.percent;
 		}
 
-		~ParticleModuleSizeOverLife() override {}
+		~ParticleModuleSizeOverLife() override { }
 	};
 
 }

@@ -24,7 +24,7 @@ namespace Columbus
 		#error Unsupported platform
 	#endif
 
-	#if COLUMBUS_PLATFORM_WINDOWS
+	#if defined(COLUMBUS_PLATFORM_WINDOWS)
 		#define FORCEINLINE __forceinline
 	#else
 		#define FORCEINLINE inline

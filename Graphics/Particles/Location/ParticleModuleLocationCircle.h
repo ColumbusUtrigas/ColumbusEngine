@@ -10,10 +10,11 @@ namespace Columbus
 	public:
 		float Radius;
 		bool EmitFromShell;
-
+	public:
 		ParticleModuleLocationCircle() :
 			Radius(1.0f),
-			EmitFromShell(false) {}
+			EmitFromShell(false)
+		{ }
 		/*
 		* For determening module type
 		*/
@@ -28,12 +29,12 @@ namespace Columbus
 
 			if (EmitFromShell) rad = Radius;
 
-			aParticle.startPos.x = rad * cos(ang);
-			aParticle.startPos.y = 0.0;
-			aParticle.startPos.z = rad * sin(ang);
+			aParticle.startPos.X = rad * Math::Cos(ang);
+			aParticle.startPos.Y = 0.0;
+			aParticle.startPos.Z = rad * Math::Sin(ang);
 		}
 
-		~ParticleModuleLocationCircle() override {}
+		~ParticleModuleLocationCircle() override { }
 	};
 
 }

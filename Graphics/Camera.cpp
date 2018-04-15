@@ -82,19 +82,19 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Camera::update()
 	{
-		while (mRot.x >= 360.0f || mRot.x <= -360.0f)
+		while (mRot.X >= 360.0f || mRot.X <= -360.0f)
 		{
-			mRot.x -= 360.0f * Math::Sign(mRot.x);
+			mRot.X -= 360.0f * Math::Sign(mRot.X);
 		}
 
-		while (mRot.y >= 360.0f || mRot.y <= -360.0f)
+		while (mRot.Y >= 360.0f || mRot.Y <= -360.0f)
 		{
-			mRot.y -= 360.0f * Math::Sign(mRot.y);
+			mRot.Y -= 360.0f * Math::Sign(mRot.Y);
 		}
 
-		while (mRot.z >= 360.0f || mRot.z <= -360.0f)
+		while (mRot.Z >= 360.0f || mRot.Z <= -360.0f)
 		{
-			mRot.z -= 360.0f * Math::Sign(mRot.z);
+			mRot.Z -= 360.0f * Math::Sign(mRot.Z);
 		}
 
 		/*if (mRot.x >= 360 || mRot.x <= -360) mRot.x = 0.0;
@@ -102,16 +102,16 @@ namespace Columbus
 		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;*/
 
 		//Vector3 Front;
-		mCameraDirection.z = Math::Cos(Math::Radians(mRot.x)) * Math::Cos(Math::Radians(mRot.y));
-		mCameraDirection.y = Math::Sin(Math::Radians(mRot.x));
-		mCameraDirection.x = Math::Cos(Math::Radians(mRot.x)) * Math::Sin(Math::Radians(mRot.y));
-		mCameraDirection = -mCameraDirection.normalize();
+		mCameraDirection.Z = Math::Cos(Math::Radians(mRot.X)) * Math::Cos(Math::Radians(mRot.Y));
+		mCameraDirection.Y = Math::Sin(Math::Radians(mRot.X));
+		mCameraDirection.X = Math::Cos(Math::Radians(mRot.X)) * Math::Sin(Math::Radians(mRot.Y));
+		mCameraDirection = -mCameraDirection.Normalize();
 		//mCameraDirection = -Front.normalize();
 
 		Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
-		mCameraRight = Vector3::cross(up, mCameraDirection).normalize();
+		mCameraRight = Vector3::Cross(up, mCameraDirection).Normalize();
 
-		mCameraUp = Vector3::cross(mCameraDirection, mCameraRight);
+		mCameraUp = Vector3::Cross(mCameraDirection, mCameraRight);
 		
 		//mViewMatrix = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
 		ViewMatrix.LookAt(mPos, mCameraRight, mCameraDirection, mCameraUp);

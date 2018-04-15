@@ -29,9 +29,9 @@ namespace Columbus
 
 			if (EmitFromShell) rad = Radius;
 
-			aParticle.startPos.x = rad * cos(phi) * sin(tht);
-			aParticle.startPos.y = rad * sin(phi) * sin(tht);
-			aParticle.startPos.z = rad * cos(tht);
+			aParticle.startPos.X = rad * Math::Cos(phi) * Math::Sin(tht);
+			aParticle.startPos.Y = rad * Math::Sin(phi) * Math::Sin(tht);
+			aParticle.startPos.Z = rad * Math::Cos(tht);
 		}
 
 		~ParticleModuleLocationSphere() override {}

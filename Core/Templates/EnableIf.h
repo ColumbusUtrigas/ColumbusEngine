@@ -4,16 +4,16 @@ namespace Columbus
 {
 
 	template <bool Predicate, typename Result = void>
-	class TEnableIf;
+	class EnableIf;
 
 	template<typename Result>
-	struct TEnableIf<true, Result>
+	struct EnableIf<true, Result>
 	{
 		typedef Result Type;
 	};
 
 	template<typename Result>
-	struct TEnableIf<false, Result>
+	struct EnableIf<false, Result>
 	{ };
 
 }

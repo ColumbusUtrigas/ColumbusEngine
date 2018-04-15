@@ -19,13 +19,13 @@ namespace Columbus
 	{
 		float verts[18] =
 		{
-			0.5f * aSize.x, 0.0f, -0.5f * aSize.y,
-			-0.5f * aSize.x, 0.0f, -0.5f * aSize.y,
-			-0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
+			0.5f * aSize.X, 0.0f, -0.5f * aSize.Y,
+			-0.5f * aSize.X, 0.0f, -0.5f * aSize.Y,
+			-0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
 	
-			-0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
-			0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
-			0.5f * aSize.x, 0.0f, -0.5f * aSize.y
+			-0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
+			0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
+			0.5f * aSize.X, 0.0f, -0.5f * aSize.Y
 		};
 
 		float uvs[12] =

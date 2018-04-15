@@ -6,19 +6,19 @@ namespace Columbus
 {
 
 	template <typename T = void>
-	struct TGreater
+	struct Greater
 	{
-		FORCEINLINE bool operator()(const T& A, const T& B) const
+		inline bool operator()(const T& A, const T& B) const
 		{
 			return B < A;
 		}
 	};
 
 	template <>
-	struct TGreater<void>
+	struct Greater<void>
 	{
 		template <typename T>
-		FORCEINLINE bool operator()(const T& A, const T& B) const
+		inline bool operator()(const T& A, const T& B) const
 		{
 			return B < A;
 		}

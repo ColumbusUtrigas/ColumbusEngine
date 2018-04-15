@@ -18,9 +18,9 @@ namespace Columbus
 			      m1 = mat[1], m5 = mat[5], m9 = mat[9], m13 = mat[13],
 			      m2 = mat[2], m6 = mat[6], m10 = mat[10], m14 = mat[14];
 
-			float x = Axis.x,
-			      y = Axis.y,
-			      z = Axis.z;
+			float x = Axis.X,
+			      y = Axis.Y,
+			      z = Axis.Z;
 
 			float r0 = x * x * c1 + c;
 			float r1 = x * y * c1 + z * s;

@@ -22,9 +22,9 @@ namespace Columbus
 				btVector3* bPoses = new btVector3[NumSpheres];
 				for (uint32 i = 0; i < NumSpheres; i++)
 				{
-					bPoses[i].setX(Positions[i].x);
-					bPoses[i].setY(Positions[i].y);
-					bPoses[i].setZ(Positions[i].z);
+					bPoses[i].setX(Positions[i].X);
+					bPoses[i].setY(Positions[i].Y);
+					bPoses[i].setZ(Positions[i].Z);
 
 					this->Positions.push_back(Positions[i]);
 					this->Radiuses.push_back(Radiuses[i]);

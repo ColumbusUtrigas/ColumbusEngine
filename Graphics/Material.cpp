@@ -231,10 +231,10 @@ namespace Columbus
 	{
 		json j;
 		
-		j["Material"]["Color"] = {mColor.x, mColor.y, mColor.z, mColor.w};
-		j["Material"]["Ambient"] = {mAmbient.x, mAmbient.y, mAmbient.z};
-		j["Material"]["Diffuse"] = {mDiffuse.x, mDiffuse.y, mDiffuse.z};
-		j["Material"]["Specular"] = {mSpecular.x, mSpecular.y, mSpecular.z};
+		j["Material"]["Color"] = { mColor.x, mColor.y, mColor.z, mColor.w };
+		j["Material"]["Ambient"] = { mAmbient.X, mAmbient.Y, mAmbient.Z };
+		j["Material"]["Diffuse"] = { mDiffuse.X, mDiffuse.Y, mDiffuse.Z };
+		j["Material"]["Specular"] = { mSpecular.X, mSpecular.Y, mSpecular.Z };
 		j["Material"]["Shininess"] = mShininess;
 		j["Material"]["ReflectionPower"] = mReflectionPower;
 		j["Material"]["Discard"] = mDiscard;
@@ -263,37 +263,37 @@ namespace Columbus
 		if (!Serializer.Read(aFile, "Material"))
 		{ Log::error("Can't load Material: " + aFile); return false; }
 
-		if (!Serializer.GetVector4("Color", &mColor, {"R", "G", "B", "A"}))
+		if (!Serializer.GetVector4("Color", mColor, {"R", "G", "B", "A"}))
 		{ Log::error("Can't load Material color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Ambient", &mAmbient, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Ambient", mAmbient, {"R", "G", "B"}))
 		{ Log::error("Can't load Material ambient: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Diffuse", &mDiffuse, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
 		{ Log::error("Can't load Material diffuse: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Specular", &mSpecular, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Specular", mSpecular, {"R", "G", "B"}))
 		{ Log::error("Can't load Material specular: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("Shininess", &mShininess))
+		if (!Serializer.GetFloat("Shininess", mShininess))
 		{ Log::error("Can't load Material shininess: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("ReflectionPower", &mReflectionPower))
+		if (!Serializer.GetFloat("ReflectionPower", mReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
 
-		if (!Serializer.GetBool("Discard", &mDiscard))
+		if (!Serializer.GetBool("Discard", mDiscard))
 		{ Log::error("Can't load Material discard: " + aFile); return false; }
 
-		if (!Serializer.GetBool("Lighting", &mLighting))
+		if (!Serializer.GetBool("Lighting", mLighting))
 		{ Log::error("Can't load Material lighting: " + aFile); return false; }
 
 		std::string diffuseMapPath = "None";
 		std::string specularMapPath = "None";
 		std::string normalMapPath = "None";
 
-		Serializer.GetSubString({"Textures", "Diffuse"}, &diffuseMapPath);
-		Serializer.GetSubString({"Textures", "Specular"}, &specularMapPath);
-		Serializer.GetSubString({"Textures", "Normal"}, &normalMapPath);
+		Serializer.GetSubString({"Textures", "Diffuse"}, diffuseMapPath);
+		Serializer.GetSubString({"Textures", "Specular"}, specularMapPath);
+		Serializer.GetSubString({"Textures", "Normal"}, normalMapPath);
 
 		if (diffuseMapPath != "None")
 			mTextureID = std::atoi(diffuseMapPath.c_str());
@@ -325,17 +325,17 @@ namespace Columbus
 		mColor.z = j["Material"]["Color"][2];
 		mColor.w = j["Material"]["Color"][3];
 
-		mAmbient.x = j["Material"]["Ambient"][0];
-		mAmbient.y = j["Material"]["Ambient"][1];
-		mAmbient.z = j["Material"]["Ambient"][2];
+		mAmbient.X = j["Material"]["Ambient"][0];
+		mAmbient.Y = j["Material"]["Ambient"][1];
+		mAmbient.Z = j["Material"]["Ambient"][2];
 
-		mDiffuse.x = j["Material"]["Diffuse"][0];
-		mDiffuse.y = j["Material"]["Diffuse"][1];
-		mDiffuse.z = j["Material"]["Diffuse"][2];
+		mDiffuse.X = j["Material"]["Diffuse"][0];
+		mDiffuse.Y = j["Material"]["Diffuse"][1];
+		mDiffuse.Z = j["Material"]["Diffuse"][2];
 
-		mSpecular.x = j["Material"]["Specular"][0];
-		mSpecular.y = j["Material"]["Specular"][1];
-		mSpecular.z = j["Material"]["Specular"][2];
+		mSpecular.X = j["Material"]["Specular"][0];
+		mSpecular.Y = j["Material"]["Specular"][1];
+		mSpecular.Z = j["Material"]["Specular"][2];
 
 		mShininess = j["Material"]["Shininess"];
 		mReflectionPower = j["Material"]["ReflectionPower"];

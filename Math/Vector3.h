@@ -1,13 +1,3 @@
-/************************************************
-*                   Vector3.h                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <cmath>
@@ -24,233 +14,272 @@ namespace Columbus
 	class Vector3
 	{
 	public:
-		float x = 0;
-		float y = 0;
-		float z = 0;
-		////////////////////////////////////////////////////////////////////////////
-		inline explicit Vector3() :
-			x(0),
-			y(0),
-			z(0)
-		{}
-		////////////////////////////////////////////////////////////////////////////
-		inline explicit Vector3(const float aX, const float aY, const float aZ) :
-			x(static_cast<float>(aX)),
-			y(static_cast<float>(aY)),
-			z(static_cast<float>(aZ))
-		{}
-		////////////////////////////////////////////////////////////////////////////
-		inline explicit Vector3(const glm::vec3 aVec) :
-			x(static_cast<float>(aVec.x)),
-			y(static_cast<float>(aVec.y)),
-			z(static_cast<float>(aVec.z))
-		{}
-		////////////////////////////////////////////////////////////////////////////
-		//Conversion from GLM vector
-		inline void fromGLM(const glm::vec3 aVec)
+		float X = 0;
+		float Y = 0;
+		float Z = 0;
+	public:
+		constexpr explicit Vector3() :
+			X(0.0f),
+			Y(0.0f),
+			Z(0.0f)
+		{ }
+
+		constexpr Vector3 (const Vector3& Base) :
+			X(Base.X),
+			Y(Base.Y),
+			Z(Base.Z)
+		{ }
+
+		constexpr Vector3 (Vector3&& Base) noexcept :
+			X(std::move(Base.X)),
+			Y(std::move(Base.Y)),
+			Z(std::move(Base.Z))
+		{ }
+		
+		constexpr Vector3(float InX, float InY, float InZ) :
+			X(InX),
+			Y(InY),
+			Z(InZ)
+		{ }
+		
+		explicit Vector3(glm::vec3 InVec) :
+			X(InVec.x),
+			Y(InVec.y),
+			Z(InVec.z)
+		{ }
+		/*
+		* Convert from GLM vec3 to Columbus Vector3
+		*/
+		inline void FromGLM(glm::vec3 InVec)
 		{
-			x = static_cast<float>(aVec.x);
-			y = static_cast<float>(aVec.y);
-			z = static_cast<float>(aVec.z);
+			X = InVec.x;
+			Y = InVec.y;
+			Z = InVec.z;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Conversion to GLM vector
-		inline glm::vec3 toGLM()
+		/*
+		* Convert from Columbus Vector3 to GLM vec3
+		*/
+		inline glm::vec3 ToGLM()
 		{
-			return glm::vec3(x, y, z);
+			return glm::vec3(X, Y, Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Opeator =
-		inline Vector3& operator=(Vector3 aOther)
+		/*
+		* Operator= for equaling to vectors
+		* @return Vector3&: *this
+		*/
+		inline Vector3& operator=(const Vector3 Other)
 		{
-			x = aOther.x;
-			y = aOther.y;
-			z = aOther.z;
+			X = Other.X;
+			Y = Other.Y;
+			Z = Other.Z;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Opeator +
-		inline Vector3 operator+(const Vector3 aOther) const
+		/*
+		* Operator= for summing two vectors
+		* Summing component to component
+		*/
+		inline Vector3 operator+(const Vector3 Other) const
 		{
-			return Vector3(x + aOther.x, y + aOther.y, z + aOther.z);
+			return Vector3(X + Other.X, Y + Other.Y, Z + Other.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Opeator -
-		inline Vector3 operator-(const Vector3 aOther) const
+		/*
+		* Operator- for subtraction two vectors
+		* Subtract component by component
+		*/
+		inline Vector3 operator-(const Vector3 Other) const
 		{
-			return Vector3(x - aOther.x, y - aOther.y, z - aOther.z);
+			return Vector3(X - Other.X, Y - Other.Y, Z - Other.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator -
+		/*
+		* Operator- for negation of vector
+		*/
 		inline Vector3 operator-() const
 		{
-			return Vector3(-x, -y, -z);
+			return Vector3(-X, -Y, -Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Opeator *
-		inline Vector3 operator*(const Vector3 aOther) const
+		/*
+		* Operator* for multiplying two vectors
+		*/
+		inline Vector3 operator*(const Vector3 Other) const
 		{
-			return Vector3(x * aOther.x, y * aOther.y, z * aOther.z);
+			return Vector3(X * Other.X, Y * Other.Y, Z * Other.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Opeator *
-		inline Vector3 operator*(const float aOther) const
+		/*
+		* Operator* for multiplying vector by scalar
+		*/
+		inline Vector3 operator*(const float Other) const
 		{
-			return Vector3(x * aOther, y * aOther, z * aOther);
+			return Vector3(X * Other, Y * Other, Z * Other);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator *
-		inline friend Vector3 operator*(float aL, const Vector3 aR)
+		/*
+		* Operator* for multiplying scalar with vector
+		*/
+		inline friend Vector3 operator*(float L, const Vector3 R)
 		{
-			return Vector3(aL * aR.x, aL * aR.y, aL * aR.z);
+			return Vector3(L * R.X, L * R.Y, L * R.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Opeator /
-		inline Vector3 operator/(const Vector3 aOther) const
+		/*
+		* Operator/ for division vector by vector
+		*/
+		inline Vector3 operator/(const Vector3 Other) const
 		{
-			return Vector3(x / aOther.x, y / aOther.y, z / aOther.z);
+			return Vector3(X / Other.X, Y / Other.Y, Z / Other.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator /
-		inline Vector3 operator/(const float aOther) const
+		/*
+		* Operator/ for division vector by scalar
+		*/
+		inline Vector3 operator/(const float Other) const
 		{
-			return Vector3(x / aOther, y / aOther, z / aOther);
+			const float Scalar = 1.0f / Other;
+			return Vector3(X * Scalar, Y * Scalar, Z * Scalar);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator ==
-		inline bool operator==(const Vector3 aOther) const
+		/*
+		* Operator== for comparison two vectors
+		*/
+		inline bool operator==(const Vector3 Other) const
 		{
-			return (x == aOther.x && y == aOther.y && z == aOther.z);
+			return (X == Other.X && Y == Other.Y && Z == Other.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator !=
-		inline bool operator!=(const Vector3 aOther) const
+		/*
+		* Operator!= for comparison two vectors
+		*/
+		inline bool operator!=(const Vector3 Other) const
 		{
-			return (x != aOther.x && y != aOther.y && z != aOther.z);
+			return (X != Other.X && Y != Other.Y && Z != Other.Z);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator +=
-		inline Vector3 operator+=(const Vector3 aOther)
+		/*
+		* Operator+= for summing two vectors
+		*/
+		inline Vector3& operator+=(const Vector3 Other)
 		{
-			x += aOther.x;
-			y += aOther.y;
-			z += aOther.z;
+			*this = *this + Other;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator -=
-		inline Vector3 operator-=(const Vector3 aOther)
+		/*
+		* Operator-= for subtraction two vectors
+		*/
+		inline Vector3& operator-=(const Vector3 Other)
 		{
-			x -= aOther.x;
-			y -= aOther.y;
-			z -= aOther.z;
+			*this = *this - Other;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator *=
-		inline Vector3 operator*=(const Vector3 aOther)
+		/*
+		* Operator*= for multiplying two vectors
+		*/
+		inline Vector3& operator*=(const Vector3 Other)
 		{
-			x *= aOther.x;
-			y *= aOther.y;
-			z *= aOther.z;
+			*this = *this * Other;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator *=
-		inline Vector3 operator*=(const float aOther)
+		/*
+		* Operator*= for multiplying vector with scalar
+		*/
+		inline Vector3& operator*=(const float Other)
 		{
-			x *= aOther;
-			y *= aOther;
-			z *= aOther;
+			*this = *this * Other;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator /=
-		inline Vector3 operator/=(const Vector3 aOther)
+		/*
+		* Operator=/ for division vector by vector
+		*/
+		inline Vector3& operator/=(const Vector3 Other)
 		{
-			x /= aOther.x;
-			y /= aOther.y;
-			z /= aOther.z;
+			*this = *this / Other;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Operator /=
-		inline Vector3 operator/=(const float aOther)
+		/*
+		* Operator/= for division vector by scalar
+		*/
+		inline Vector3& operator/=(const float Other)
 		{
-			const float Scalar = 1.0f / aOther;
-			x *= Scalar;
-			y *= Scalar;
-			z *= Scalar;
+			*this = *this / Other;
 			return *this;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return random from two vectors
-		inline static Vector3 random(const Vector3 aMin, const Vector3 aMax)
+		/*
+		* Return random vector between
+		*/
+		inline static Vector3 Random(const Vector3 Min, const Vector3 Max)
 		{
-			Vector3 ret;
-			ret.x = Random::range(aMin.x, aMax.x);
-			ret.y = Random::range(aMin.y, aMax.y);
-			ret.z = Random::range(aMin.z, aMax.z);
-			return ret;
+			Vector3 Result;
+			Result.X = Random::range(Min.X, Max.X);
+			Result.Y = Random::range(Min.Y, Max.Y);
+			Result.Z = Random::range(Min.Z, Max.Z);
+			return Result;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return length of vector
-		inline float length()
+		/*
+		* Return length of this vector
+		*/
+		inline float Length()
 		{
-			return sqrt((x * x) + (y * y) + (z * z));
+			return Math::Sqrt((X * X) + (Y * Y) + (Z * Z));
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return length between 2 vectors
-		inline float length(const Vector3 aVec)
+		/*
+		* Return length between this vector and Vec
+		*/
+		inline float Length(const Vector3 InVec)
 		{
-			return sqrt(pow(aVec.x - x, 2) + pow(aVec.y - y, 2) + pow(aVec.z - z, 2));
+			return sqrt(pow(InVec.X - X, 2) + pow(InVec.Y - Y, 2) + pow(InVec.Z - Z, 2));
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return normalize vector
-		inline Vector3 normalize()
+		/*
+		* Return normalized vector
+		*/
+		inline Vector3 Normalize()
 		{
-			float l = sqrt((x * x) + (y * y) + (z * z));
-			return Vector3(x / l, y / l, z / l);
+			const float l = sqrt((X * X) + (Y * Y) + (Z * Z));
+			const float Scalar = 1.0f / l;
+			return Vector3(X * Scalar, Y * Scalar, Z * Scalar);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return dot product of 2 vectors
-		inline float dot(Vector3 aOther)
+		/*
+		* Dot product of two vectors
+		*/
+		inline float Dot(const Vector3 Other)
 		{
-			return x * aOther.x + y * aOther.y + z * aOther.z;
+			return X * Other.X + Y * Other.Y + Z * Other.Z;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return dot product of 2 vectors
-		inline static float dot(Vector3 aV1, Vector3 aV2)
+		/*
+		* Dot product of two vectors
+		*/
+		inline static float Dot(const Vector3 V1, const Vector3 V2)
 		{
-			return aV1.x * aV2.x + aV1.y * aV2.y + aV1.z * aV2.z;
+			return V1.X * V2.X + V1.Y * V2.Y + V1.Z * V2.Z;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return cross product of 2 vectors
-		inline Vector3 cross(Vector3 aOther)
+		/*
+		* Cross product of two vectors
+		*/
+		inline Vector3 Cross(Vector3 Other)
 		{
-			return cross(*this, aOther);
+			return Cross(*this, Other);
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Return cross product of 2 vectors
-		inline static Vector3 cross(Vector3 aV1, Vector3 aV2)
+		/*
+		* Cross product of two vectors
+		*/
+		inline static Vector3 Cross(Vector3 V1, Vector3 V2)
 		{
-			Vector3 ret;
-			ret.x = aV1.y * aV2.z - aV1.z * aV2.y;
-			ret.y = aV1.z * aV2.x - aV1.x * aV2.z;
-			ret.z = aV1.x * aV2.y - aV1.y * aV2.x;
-			return ret;
+			Vector3 Result;
+			Result.X = V1.Y * V2.Z - V1.Z * V2.Y;
+			Result.Y = V1.Z * V2.X - V1.X * V2.Z;
+			Result.Z = V1.X * V2.Y - V1.Y * V2.X;
+			return Result;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		inline static Vector3 clamp(Vector3 a, Vector3 aMin, Vector3 aMax)
+		/*
+		* Clamp each component of vector
+		*/
+		inline static Vector3 Clamp(Vector3 A, const Vector3 Min, const Vector3 Max)
 		{
-			a.x = Math::Clamp(a.x, aMin.x, aMax.x);
-			a.y = Math::Clamp(a.y, aMin.y, aMax.y);
-			a.z = Math::Clamp(a.z, aMin.z, aMax.z);
-			return a;
+			A.X = Math::Clamp(A.X, Min.X, Max.X);
+			A.Y = Math::Clamp(A.Y, Min.Y, Max.Y);
+			A.Z = Math::Clamp(A.Z, Min.Z, Max.Z);
+			return A;
 		}
-		////////////////////////////////////////////////////////////////////////////
-		//Destructor
-		inline ~Vector3() {}
+		/*
+		* Clamp each component of this vector
+		*/
+		inline Vector3& Clamp(const Vector3 Min, const Vector3 Max)
+		{
+			return Clamp(*this, Min, Max);
+		}
+		
+		~Vector3() { }
 	};
 
 }

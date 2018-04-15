@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 
 		Source->SetPosition(Vector3(xPos, 0.0f, 0.0f));
 
-		camera.setRot(Vector3::clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
+		camera.setRot(Vector3::Clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
 		camera.update();
 
 		scene.setContextSize(window.getSize());

@@ -4,22 +4,22 @@ namespace Columbus
 {
 
 	template<typename A, typename B>
-	struct TAreTypesEqual;
+	struct AreTypesEqual;
 
 	template<typename, typename>
-	struct TAreTypesEqual
+	struct AreTypesEqual
 	{
 		enum { Value = false };
 	};
 
 	template<typename A>
-	struct TAreTypesEqual<A, A>
+	struct AreTypesEqual<A, A>
 	{
 		enum { Value = true };
 	};
 
 
-	#define ARE_TYPES_EQUAL(A, B) TAreTypesEqual<A, B>::Value
+	#define ARE_TYPES_EQUAL(A, B) AreTypesEqual<A, B>::Value
 	
 }
 

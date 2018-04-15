@@ -195,28 +195,28 @@ namespace Columbus
 		if (!Serializer.Read(aFile, "Light"))
 		{ Log::error("Can't load Light: " + aFile); return false; }
 
-		if (!Serializer.GetInt("Type", &mType))
+		if (!Serializer.GetInt("Type", mType))
 		{ Log::error("Can't load Light type: %s" + aFile); return false; }
 
-		if (!Serializer.GetVector3("Direction", &mDir, { "X", "Y", "Z" }))
+		if (!Serializer.GetVector3("Direction", mDir, { "X", "Y", "Z" }))
 		{ Log::error("Can't load Light direction: %s" + aFile); return false; }
 
-		if (!Serializer.GetVector3("Color", &mColor, { "R", "G", "B" }))
+		if (!Serializer.GetVector3("Color", mColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Light color: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("Constant", &mConstant))
+		if (!Serializer.GetFloat("Constant", mConstant))
 		{ Log::error("Can't load Light constant: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("Linear", &mLinear))
+		if (!Serializer.GetFloat("Linear", mLinear))
 		{ Log::error("Can't load Light linear: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("Quadratic", &mQuadratic))
+		if (!Serializer.GetFloat("Quadratic", mQuadratic))
 		{ Log::error("Can't load Light quadratic: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("InnerCutoff", &mInnerCutoff))
+		if (!Serializer.GetFloat("InnerCutoff", mInnerCutoff))
 		{ Log::error("Can't load Light inner cutoff: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("OuterCutoff", &mInnerCutoff))
+		if (!Serializer.GetFloat("OuterCutoff", mInnerCutoff))
 		{ Log::error("Can't load Light outer cutoff: " + aFile); return false; }
 
 		Log::success("Light loaded: " + aFile);

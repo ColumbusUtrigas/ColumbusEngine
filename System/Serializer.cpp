@@ -16,7 +16,6 @@ namespace Columbus
 	namespace Serializer
 	{
 
-
 		//////////////////////////////////////////////////////////////////////////////
 		C_XMLElement* SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
 		{
@@ -170,105 +169,105 @@ namespace Columbus
 		}
 
 		
-		bool SerializerXML::GetInt(const SerializerXML::Element* aElement, int* aValue)
+		bool SerializerXML::GetInt(const SerializerXML::Element* InElement, int& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryIntText(aValue);
+			InElement->elem->QueryIntText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetBool(const Element* aElement, bool* aValue)
+		bool SerializerXML::GetBool(const Element* InElement, bool& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryBoolText(aValue);
+			InElement->elem->QueryBoolText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetFloat(const Element* aElement, float* aValue)
+		bool SerializerXML::GetFloat(const Element* InElement, float& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryFloatText(aValue);
+			InElement->elem->QueryFloatText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetDouble(const Element* aElement, double* aValue)
+		bool SerializerXML::GetDouble(const Element* InElement, double& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryDoubleText(aValue);
+			InElement->elem->QueryDoubleText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetString(const Element* aElement, std::string* aValue)
+		bool SerializerXML::GetString(const Element* InElement, std::string& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			*aValue = aElement->elem->GetText();
+			OutValue = InElement->elem->GetText();
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetVector2(const Element* aElement, Vector2* aValue, C_AttribVector2XML aAttribs)
+		bool SerializerXML::GetVector2(const Element* InElement, Vector2& OutValue, AttribVector2XML Attribs)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->X);
-			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->Y);
+			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.X);
+			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.Y);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetVector3(const Element* aElement, Vector3* aValue, C_AttribVector3XML aAttribs)
+		bool SerializerXML::GetVector3(const Element* InElement, Vector3& OutValue, AttribVector3XML Attribs)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->x);
-			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->y);
-			aElement->elem->QueryFloatAttribute(aAttribs.c.c_str(), &aValue->z);
+			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.X);
+			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.Y);
+			InElement->elem->QueryFloatAttribute(Attribs.c.c_str(), &OutValue.Z);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetVector4(const Element* aElement, Vector4* aValue, C_AttribVector4XML aAttribs)
+		bool SerializerXML::GetVector4(const Element* InElement, Vector4& OutValue, AttribVector4XML Attribs)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
+			if (InElement == nullptr) return false;
+			if (InElement->elem == nullptr) return false;
 
-			if (aElement->elem == nullptr) return false;
-			aElement->elem->QueryFloatAttribute(aAttribs.a.c_str(), &aValue->x);
-			aElement->elem->QueryFloatAttribute(aAttribs.b.c_str(), &aValue->y);
-			aElement->elem->QueryFloatAttribute(aAttribs.c.c_str(), &aValue->z);
-			aElement->elem->QueryFloatAttribute(aAttribs.d.c_str(), &aValue->w);
+			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.x);
+			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.y);
+			InElement->elem->QueryFloatAttribute(Attribs.c.c_str(), &OutValue.z);
+			InElement->elem->QueryFloatAttribute(Attribs.d.c_str(), &OutValue.w);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -459,7 +458,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::SetVector2(std::string aElement, Vector2 aValue, C_AttribVector2XML aAttribs)
+		bool SerializerXML::SetVector2(std::string aElement, Vector2 aValue, AttribVector2XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -474,7 +473,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::SetSubVector2(std::vector<std::string> aElement, Vector2 aValue, C_AttribVector2XML aAttribs)
+		bool SerializerXML::SetSubVector2(std::vector<std::string> aElement, Vector2 aValue, AttribVector2XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -490,7 +489,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::SetVector3(std::string aElement, Vector3 aValue, C_AttribVector3XML aAttribs)
+		bool SerializerXML::SetVector3(std::string aElement, Vector3 aValue, AttribVector3XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -498,15 +497,15 @@ namespace Columbus
 
 			mTmp = mDoc.NewElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.y);
-			mTmp->SetAttribute(aAttribs.c.c_str(), aValue.z);
+			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.Y);
+			mTmp->SetAttribute(aAttribs.c.c_str(), aValue.Z);
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::SetSubVector3(std::vector<std::string> aElement, Vector3 aValue, C_AttribVector3XML aAttribs)
+		bool SerializerXML::SetSubVector3(std::vector<std::string> aElement, Vector3 aValue, AttribVector3XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -516,14 +515,14 @@ namespace Columbus
 			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
-			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.Y);
+			subElement->SetAttribute(aAttribs.c.c_str(), aValue.Z);
 			mTmp->InsertEndChild(subElement);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::SetVector4(std::string aElement, Vector4 aValue, C_AttribVector4XML aAttribs)
+		bool SerializerXML::SetVector4(std::string aElement, Vector4 aValue, AttribVector4XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -540,7 +539,7 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::SetSubVector4(std::vector<std::string> aElement, Vector4 aValue, C_AttribVector4XML aAttribs)
+		bool SerializerXML::SetSubVector4(std::vector<std::string> aElement, Vector4 aValue, AttribVector4XML aAttribs)
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
@@ -581,215 +580,199 @@ namespace Columbus
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetInt(std::string aElement, int* aValue)
+		bool SerializerXML::GetInt(std::string InElement, int& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryIntText(aValue);
+			mTmp->QueryIntText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubInt(std::vector<std::string> aElement, int* aValue)
+		bool SerializerXML::GetSubInt(std::vector<std::string> InElement, int& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryIntText(aValue);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryIntText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetBool(std::string aElement, bool* aValue)
+		bool SerializerXML::GetBool(std::string InElement, bool& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryBoolText(aValue);
+			mTmp->QueryBoolText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubBool(std::vector<std::string> aElement, bool* aValue)
+		bool SerializerXML::GetSubBool(std::vector<std::string> InElement, bool& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryBoolText(aValue);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryBoolText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetFloat(std::string aElement, float* aValue)
+		bool SerializerXML::GetFloat(std::string InElement, float& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatText(aValue);
+			mTmp->QueryFloatText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubFloat(std::vector<std::string> aElement, float* aValue)
+		bool SerializerXML::GetSubFloat(std::vector<std::string> InElement, float& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryFloatText(aValue);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryFloatText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetDouble(std::string aElement, double* aValue)
+		bool SerializerXML::GetDouble(std::string InElement, double& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryDoubleText(aValue);
+			mTmp->QueryDoubleText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubDouble(std::vector<std::string> aElement, double* aValue)
+		bool SerializerXML::GetSubDouble(std::vector<std::string> InElement, double& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryDoubleText(aValue);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryDoubleText(&OutValue);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetString(std::string aElement, std::string* aValue)
+		bool SerializerXML::GetString(std::string InElement, std::string& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			*aValue = mTmp->GetText();
+			OutValue = mTmp->GetText();
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubString(std::vector<std::string> aElement, std::string* aValue)
+		bool SerializerXML::GetSubString(std::vector<std::string> InElement, std::string& OutValue)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			*aValue = mTmp->GetText();
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			OutValue = mTmp->GetText();
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetVector2(std::string aElement, Vector2* aValue, C_AttribVector2XML aAttrib)
+		bool SerializerXML::GetVector2(std::string InElement, Vector2& OutValue, AttribVector2XML Attrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->X);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->Y);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubVector2(std::vector<std::string> aElement, Vector2* aValue, C_AttribVector2XML aAttrib)
+		bool SerializerXML::GetSubVector2(std::vector<std::string> InElement, Vector2& OutValue, AttribVector2XML Attrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->X);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->Y);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetVector3(std::string aElement, Vector3* aValue, C_AttribVector3XML aAttrib)
+		bool SerializerXML::GetVector3(std::string InElement, Vector3& OutValue, AttribVector3XML Attrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
-			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.Z);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubVector3(std::vector<std::string> aElement, Vector3* aValue, C_AttribVector3XML aAttrib)
+		bool SerializerXML::GetSubVector3(std::vector<std::string> InElement, Vector3& OutValue, AttribVector3XML Attrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
-			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.Z);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetVector4(std::string aElement, Vector4* aValue, C_AttribVector4XML aAttrib)
+		bool SerializerXML::GetVector4(std::string InElement, Vector4& OutValue, AttribVector4XML Attrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			mTmp = mRoot->FirstChildElement(aElement.c_str());
+			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
-			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
-			mTmp->QueryFloatAttribute(aAttrib.d.c_str(), &aValue->w);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.x);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.z);
+			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.w);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
-		bool SerializerXML::GetSubVector4(std::vector<std::string> aElement, Vector4* aValue, C_AttribVector4XML aAttrib)
+		bool SerializerXML::GetSubVector4(std::vector<std::string> InElement, Vector4& OutValue, AttribVector4XML Attrib)
 		{
 			if (mMode != 1) return false;
 			if (mInited == false) return false;
 			if (mRoot == nullptr) return false;
-			if (aValue == nullptr) return false;
 
-			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			mTmp->QueryFloatAttribute(aAttrib.a.c_str(), &aValue->x);
-			mTmp->QueryFloatAttribute(aAttrib.b.c_str(), &aValue->y);
-			mTmp->QueryFloatAttribute(aAttrib.c.c_str(), &aValue->z);
-			mTmp->QueryFloatAttribute(aAttrib.d.c_str(), &aValue->w);
+			if (getElementFromHierarchy(InElement) == nullptr) return false;
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.x);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.z);
+			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.w);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////

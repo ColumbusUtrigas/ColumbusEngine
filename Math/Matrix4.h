@@ -242,14 +242,14 @@ namespace Columbus
 			vec3 s(vec3::cross(aUp, f).normalize());
 			vec3 u(vec3::cross(f, s));*/
 
-			vec3 zaxis = (aRef - aPos).normalize();
-			vec3 xaxis = vec3::cross(aUp, zaxis).normalize();
-			vec3 yaxis = vec3::cross(zaxis, xaxis);
+			Vector3 zaxis = (aRef - aPos).Normalize();
+			Vector3 xaxis = Vector3::Cross(aUp, zaxis).Normalize();
+			Vector3 yaxis = Vector3::Cross(zaxis, xaxis);
 
-			setColumn(0, vec4(xaxis.x, yaxis.x, zaxis.x, 0.0));
-			setColumn(1, vec4(xaxis.y, yaxis.y, zaxis.y, 0.0));
-			setColumn(2, vec4(xaxis.z, yaxis.z, zaxis.z, 0.0));
-			setColumn(3, vec4(-vec3::dot(xaxis, aPos), -vec3::dot(yaxis, aPos), -vec3::dot(zaxis, aPos), 1.0));
+			setColumn(0, Vector4(xaxis.X, yaxis.X, zaxis.X, 0.0));
+			setColumn(1, Vector4(xaxis.Y, yaxis.Y, zaxis.Y, 0.0));
+			setColumn(2, Vector4(xaxis.Z, yaxis.Z, zaxis.Z, 0.0));
+			setColumn(3, Vector4(-Vector3::Dot(xaxis, aPos), -Vector3::Dot(yaxis, aPos), -Vector3::Dot(zaxis, aPos), 1.0));
 
 			return *this;
 		}
@@ -258,7 +258,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 translate(Vector3 aTranslate)
 		{
-			return translate(aTranslate.x, aTranslate.y, aTranslate.z);
+			return translate(aTranslate.X, aTranslate.Y, aTranslate.Z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 translate(const float x, const float y, const float z)
@@ -272,7 +272,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 rotate(Vector3 aAxis, const float aAngle)
 		{
-			return rotate(aAxis.x, aAxis.y, aAxis.z, aAngle);
+			return rotate(aAxis.X, aAxis.Y, aAxis.Z, aAngle);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 rotate(const float x, const float y, const float z, const float angle)
@@ -314,14 +314,14 @@ namespace Columbus
 		{
 			float sr, sp, sy, cr, cp, cy;
 
-			sy = Math::Sin(Math::Radians(Angle.y));
-			cy = Math::Cos(Math::Radians(Angle.y));
+			sy = Math::Sin(Math::Radians(Angle.Y));
+			cy = Math::Cos(Math::Radians(Angle.Y));
 
-			sp = Math::Sin(Math::Radians(Angle.x));
-			cp = Math::Cos(Math::Radians(Angle.x));
+			sp = Math::Sin(Math::Radians(Angle.X));
+			cp = Math::Cos(Math::Radians(Angle.X));
 
-			sr = Math::Sin(Math::Radians(Angle.z));
-			cr = Math::Cos(Math::Radians(Angle.z));
+			sr = Math::Sin(Math::Radians(Angle.Z));
+			cr = Math::Cos(Math::Radians(Angle.Z));
 
 			Matrix4 m;
 
@@ -343,7 +343,7 @@ namespace Columbus
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 scale(Vector3 aScale)
 		{
-			return scale(aScale.x, aScale.y, aScale.z);
+			return scale(aScale.X, aScale.Y, aScale.Z);
 		}
 		////////////////////////////////////////////////////////////////////////////
 		Matrix4 scale(const float x, const float y, const float z)

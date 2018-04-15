@@ -10,10 +10,11 @@ namespace Columbus
 	public:
 		Vector3 Size;
 		bool EmitFromShell;
-
+	public:
 		ParticleModuleLocationBox() :
-			Size(Vector3(0, 0, 0)),
-			EmitFromShell(false) {}
+			Size(0, 0, 0),
+			EmitFromShell(false)
+		{ }
 		/*
 		* For determening module type
 		*/
@@ -28,31 +29,31 @@ namespace Columbus
 				switch (rand() % 3)
 				{
 				case 0:
-					aParticle.startPos.x = Size.x / 2 * ((rand() % 2) ? -1 : 1);
-					aParticle.startPos.y = Random::range(-Size.y / 2, Size.y / 2);
-					aParticle.startPos.z = Random::range(-Size.z / 2, Size.z / 2);
+					aParticle.startPos.X = Size.X * 0.5f * ((rand() % 2) ? -1 : 1);
+					aParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
+					aParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
 					break;
 				case 1:
-					aParticle.startPos.x = Random::range(-Size.x / 2, Size.x / 2);
-					aParticle.startPos.y = Size.y / 2 * ((rand() % 2) ? -1 : 1);
-					aParticle.startPos.z = Random::range(-Size.z / 2, Size.z / 2);
+					aParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
+					aParticle.startPos.Y = Size.Y * 0.5f * ((rand() % 2) ? -1 : 1);
+					aParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
 					break;
 				case 2:
-					aParticle.startPos.x = Random::range(-Size.x / 2, Size.x / 2);
-					aParticle.startPos.y = Random::range(-Size.y / 2, Size.y / 2);
-					aParticle.startPos.z = Size.z / 2 * ((rand() % 2) ? -1 : 1);
+					aParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
+					aParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
+					aParticle.startPos.Z = Size.Z * 0.5f * ((rand() % 2) ? -1 : 1);
 					break;
 				}
 			}
 			else
 			{
-				aParticle.startPos.x = Random::range(-Size.x / 2, Size.x / 2);
-				aParticle.startPos.y = Random::range(-Size.y / 2, Size.y / 2);
-				aParticle.startPos.z = Random::range(-Size.z / 2, Size.z / 2);
+				aParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
+				aParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
+				aParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
 			}
 		}
 
-		~ParticleModuleLocationBox() override {}
+		~ParticleModuleLocationBox() override { }
 	};
 
 }

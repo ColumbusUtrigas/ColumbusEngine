@@ -17,32 +17,42 @@ namespace Columbus
 		float X = 0.0f;
 		float Y = 0.0f;
 	public:
-		inline explicit Vector2() :
+		explicit Vector2() :
 			X(0.0f),
 			Y(0.0f)
 		{ }
+
+		Vector2(const Vector2& Base) :
+			X(Base.X),
+			Y(Base.Y)
+		{ }
+
+		Vector2(Vector2&& Base) noexcept :
+			X(std::move(Base.X)),
+			Y(std::move(Base.Y))
+		{ }
 		
-		inline explicit Vector2(float InX, float InY) :
+		Vector2(float InX, float InY) :
 			X(InX),
 			Y(InY)
 		{ }
 		
-		inline explicit Vector2(glm::vec2 InVec) :
+		explicit Vector2(glm::vec2 InVec) :
 			X(InVec.x),
 			Y(InVec.y)
 		{ }
 		/*
-		* Conversion from GLM vec2 to Columbus Vector2
+		* Covert from GLM vec2 to Columbus Vector2
 		*/
-		inline void FromGLM(glm::vec2 InVec)
+		void FromGLM(glm::vec2 InVec)
 		{
 			X = InVec.x;
 			Y = InVec.y;
 		}
 		/*
-		* Conversion from Columbus Vector2 to GLM vec2
+		* Covert from Columbus Vector2 to GLM vec2
 		*/
-		inline glm::vec2 ToGLM()
+		glm::vec2 ToGLM()
 		{
 			return glm::vec2(X, Y);
 		}
@@ -50,7 +60,7 @@ namespace Columbus
 		* Operator= for equaling to vectors
 		* @return Vector2&: *this
 		*/
-		inline Vector2& operator=(Vector2 Other)
+		inline Vector2& operator=(const Vector2 Other)
 		{
 			X = Other.X;
 			Y = Other.Y;
@@ -60,7 +70,7 @@ namespace Columbus
 		* Operator= for summing two vectors
 		* Summing component to component
 		*/
-		inline Vector2 operator+(Vector2 Other)
+		inline Vector2 operator+(const Vector2 Other)
 		{
 			return Vector2(X + Other.X, Y + Other.Y);
 		}
@@ -68,7 +78,7 @@ namespace Columbus
 		* Operator- for subtraction two vectors
 		* Subtract component by component
 		*/
-		inline Vector2 operator-(Vector2 Other)
+		inline Vector2 operator-(const Vector2 Other)
 		{
 			return Vector2(X - Other.X, Y - Other.Y);
 		}
@@ -82,35 +92,35 @@ namespace Columbus
 		/*
 		* Operator* for multiplying two vectors
 		*/
-		inline Vector2 operator*(Vector2 Other)
+		inline Vector2 operator*(const Vector2 Other)
 		{
 			return Vector2(X * Other.X, Y * Other.Y);
 		}
 		/*
 		* Operator* for multiplying vector by scalar
 		*/
-		inline Vector2 operator*(float Other)
+		inline Vector2 operator*(const float Other)
 		{
 			return Vector2(X * Other, Y * Other);
 		}
 		/*
 		* Operator* for multiplying scalar with vector
 		*/
-		inline friend Vector2 operator*(float L, const Vector2 R)
+		inline friend Vector2 operator*(const float L, const Vector2 R)
 		{
 			return Vector2(L * R.X, L * R.Y);
 		}
 		/*
 		* Operator/ for division vector by vector
 		*/
-		inline Vector2 operator/(Vector2 Other)
+		inline Vector2 operator/(const Vector2 Other)
 		{
 			return Vector2(X / Other.X, Y / Other.Y);
 		}
 		/*
 		* Operator/ for division vector by scalar
 		*/
-		inline Vector2 operator/(float Other)
+		inline Vector2 operator/(const float Other)
 		{
 			const float Scalar = 1.0f / Other;
 			return Vector2(X * Scalar, Y * Scalar);
@@ -187,11 +197,11 @@ namespace Columbus
 		/*
 		* Return random vector between
 		*/
-		inline static Vector2 Random(const Vector2 aMin, const Vector2 aMaX)
+		inline static Vector2 Random(const Vector2 Min, const Vector2 MaX)
 		{
 			Vector2 ret;
-			ret.X = Random::range(aMin.X, aMaX.X);
-			ret.Y = Random::range(aMin.Y, aMaX.Y);
+			ret.X = Random::range(Min.X, MaX.X);
+			ret.Y = Random::range(Min.Y, MaX.Y);
 			return ret;
 		}
 		/*
@@ -213,35 +223,35 @@ namespace Columbus
 		*/
 		inline Vector2 Normalize()
 		{
-			float l = sqrt((X * X) + (Y * Y));
+			float l = Math::Sqrt((X * X) + (Y * Y));
 			float S = 1.0f / l;
 			return Vector2(X * S, Y * S);
 		}
 		/*
 		* Dot product of two vectors
 		*/
-		inline float Dot(Vector2 Other)
+		inline float Dot(const Vector2 Other)
 		{
 			return X * Other.X + Y * Other.Y;
 		}
 		/*
 		* Dot product of two vectors
 		*/
-		inline static float Dot(Vector2 V1, Vector2 V2)
+		inline static float Dot(const Vector2 V1, const Vector2 V2)
 		{
 			return V1.X * V2.X + V1.Y * V2.Y;
 		}
 		/*
 		* Clamp each component of this vector
 		*/
-		inline static Vector2 Clamp(Vector2 A, Vector2 Min, Vector2 Max)
+		inline static Vector2 Clamp(Vector2 A, const Vector2 Min, const Vector2 Max)
 		{
 			A.X = Math::Clamp(A.X, Min.X, Max.X);
 			A.Y = Math::Clamp(A.Y, Min.Y, Max.Y);
 			return A;
 		}
 
-		inline ~Vector2() {}
+		~Vector2() { }
 	};
 
 }

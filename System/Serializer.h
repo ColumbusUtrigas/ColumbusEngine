@@ -31,9 +31,9 @@ namespace Columbus
 			std::string mFile;
 			std::string mRootName;
 
-			struct C_AttribVector2XML { std::string a, b; };
-			struct C_AttribVector3XML { std::string a, b, c; };
-			struct C_AttribVector4XML { std::string a, b, c, d; };
+			struct AttribVector2XML { std::string a, b; };
+			struct AttribVector3XML { std::string a, b, c; };
+			struct AttribVector4XML { std::string a, b, c, d; };
 
 			bool mInited = false;
 
@@ -57,14 +57,14 @@ namespace Columbus
 			Element* GetSubElement(std::vector<std::string> Elements, Element* Elem);
 			Element* NextElement(Element* Elem, std::string Name);
 
-			bool GetInt(const Element* aElement, int* aValue);
-			bool GetBool(const Element* aElement, bool* aValue);
-			bool GetFloat(const Element* aElement, float* aValue);
-			bool GetDouble(const Element* aElement, double* aValue);
-			bool GetString(const Element* aElement, std::string* aValue);
-			bool GetVector2(const Element* aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool GetVector3(const Element* aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool GetVector4(const Element* aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool GetInt(const Element* InElement, int& OutValue);
+			bool GetBool(const Element* InElement, bool& OutValue);
+			bool GetFloat(const Element* InElement, float& OutValue);
+			bool GetDouble(const Element* InElement, double& OutValue);
+			bool GetString(const Element* InElement, std::string& OutValue);
+			bool GetVector2(const Element* InElement, Vector2& OutValue, AttribVector2XML Attribs);
+			bool GetVector3(const Element* InElement, Vector3& OutValue, AttribVector3XML Attribs);
+			bool GetVector4(const Element* InElement, Vector4& OutValue, AttribVector4XML Attribs);
 
 			bool Write(std::string aFile, std::string aRoot);
 			bool SetEmpty(std::string aElement);
@@ -79,31 +79,31 @@ namespace Columbus
 			bool SetSubDouble(std::vector<std::string> aElement, double aValue);
 			bool SetString(std::string aElement, std::string aValue);
 			bool SetSubString(std::vector<std::string> aElement, std::string aValue);
-			bool SetVector2(std::string aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
-			bool SetSubVector2(std::vector<std::string> aElement, Vector2 aValue, C_AttribVector2XML aAttribs);
-			bool SetVector3(std::string aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
-			bool SetSubVector3(std::vector<std::string> aElement, Vector3 aValue, C_AttribVector3XML aAttribs);
-			bool SetVector4(std::string aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
-			bool SetSubVector4(std::vector<std::string> aElement, Vector4 aValue, C_AttribVector4XML aAttribs);
+			bool SetVector2(std::string aElement, Vector2 aValue, AttribVector2XML aAttribs);
+			bool SetSubVector2(std::vector<std::string> aElement, Vector2 aValue, AttribVector2XML aAttribs);
+			bool SetVector3(std::string aElement, Vector3 aValue, AttribVector3XML aAttribs);
+			bool SetSubVector3(std::vector<std::string> aElement, Vector3 aValue, AttribVector3XML aAttribs);
+			bool SetVector4(std::string aElement, Vector4 aValue, AttribVector4XML aAttribs);
+			bool SetSubVector4(std::vector<std::string> aElement, Vector4 aValue, AttribVector4XML aAttribs);
 			bool Save();
 
 			bool Read(std::string aFile, std::string aRoot);
-			bool GetInt(std::string aElement, int* aValue);
-			bool GetSubInt(std::vector<std::string> aElement, int* aValue);
-			bool GetBool(std::string aElement, bool* aValue);
-			bool GetSubBool(std::vector<std::string> aElement, bool* aValue);
-			bool GetFloat(std::string aElement, float* aValue);
-			bool GetSubFloat(std::vector<std::string> aElement, float* aValue);
-			bool GetDouble(std::string aElement, double* aValue);
-			bool GetSubDouble(std::vector<std::string> aElement, double* aValue);
-			bool GetString(std::string aElement, std::string* aValue);
-			bool GetSubString(std::vector<std::string> aElement, std::string* aValue);
-			bool GetVector2(std::string aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool GetSubVector2(std::vector<std::string> aElement, Vector2* aValue, C_AttribVector2XML aAttribs);
-			bool GetVector3(std::string aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool GetSubVector3(std::vector<std::string> aElement, Vector3* aValue, C_AttribVector3XML aAttribs);
-			bool GetVector4(std::string aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
-			bool GetSubVector4(std::vector<std::string> aElement, Vector4* aValue, C_AttribVector4XML aAttribs);
+			bool GetInt(std::string InElement, int& OutValue);
+			bool GetSubInt(std::vector<std::string> InElement, int& OutValue);
+			bool GetBool(std::string InElement, bool& OutValue);
+			bool GetSubBool(std::vector<std::string> InElement, bool& OutValue);
+			bool GetFloat(std::string InElement, float& OutValue);
+			bool GetSubFloat(std::vector<std::string> InElement, float& OutValue);
+			bool GetDouble(std::string InElement, double& OutValue);
+			bool GetSubDouble(std::vector<std::string> InElement, double& OutValue);
+			bool GetString(std::string InElement, std::string& OutValue);
+			bool GetSubString(std::vector<std::string> InElement, std::string& OutValue);
+			bool GetVector2(std::string InElement, Vector2& OutValue, AttribVector2XML Attribs);
+			bool GetSubVector2(std::vector<std::string> InElement, Vector2& OutValue, AttribVector2XML Attribs);
+			bool GetVector3(std::string InElement, Vector3& OutValue, AttribVector3XML Attribs);
+			bool GetSubVector3(std::vector<std::string> InElement, Vector3& OutValue, AttribVector3XML Attribs);
+			bool GetVector4(std::string InElement, Vector4& OutValue, AttribVector4XML Attribs);
+			bool GetSubVector4(std::vector<std::string> InElement, Vector4& OutValue, AttribVector4XML Attribs);
 
 			~SerializerXML();
 		};

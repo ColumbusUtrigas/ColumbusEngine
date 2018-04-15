@@ -31,9 +31,9 @@ namespace Columbus
 				uint64 Counter = 0;
 				for (auto& Vertex : Vertices)
 				{
-					Points[Counter++] = Vertex.pos.x;
-					Points[Counter++] = Vertex.pos.y;
-					Points[Counter++] = Vertex.pos.z;
+					Points[Counter++] = Vertex.pos.X;
+					Points[Counter++] = Vertex.pos.Y;
+					Points[Counter++] = Vertex.pos.Z;
 				}
 
 				this->Count = Vertices.size();
@@ -50,7 +50,7 @@ namespace Columbus
 			return Count;
 		}
 
-		~PhysicsShapeConvexHull() {}
+		~PhysicsShapeConvexHull() { }
 	};
 
 }
