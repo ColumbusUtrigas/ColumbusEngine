@@ -24,9 +24,9 @@ namespace Columbus
 	template <> struct IsArithmetic<int64>       { enum { Value = true }; };
 	template <> struct IsArithmetic<bool>        { enum { Value = true }; };
 
-	template <typename T> struct IsArithmetic<const          T> { enum { Value = TIsArithmetic<T>::Value }; };
-	template <typename T> struct IsArithmetic<      volatile T> { enum { Value = TIsArithmetic<T>::Value }; };
-	template <typename T> struct IsArithmetic<const volatile T> { enum { Value = TIsArithmetic<T>::Value }; };
+	template <typename T> struct IsArithmetic<const          T> { enum { Value = IsArithmetic<T>::Value }; };
+	template <typename T> struct IsArithmetic<      volatile T> { enum { Value = IsArithmetic<T>::Value }; };
+	template <typename T> struct IsArithmetic<const volatile T> { enum { Value = IsArithmetic<T>::Value }; };
 
 }
 
