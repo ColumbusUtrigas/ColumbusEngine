@@ -274,7 +274,7 @@ namespace Columbus
 		/*
 		* Clamp each component of this vector
 		*/
-		inline Vector3& Clamp(const Vector3 Min, const Vector3 Max)
+		inline Vector3 Clamp(const Vector3 Min, const Vector3 Max)
 		{
 			return Clamp(*this, Min, Max);
 		}
