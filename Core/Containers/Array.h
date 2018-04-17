@@ -8,7 +8,7 @@ namespace Columbus
 
 	#define ARRAY_COUNT(x) (sizeof(x) / sizeof(x[0]))
 
-	template <typename ContainerType, typename ElementType, typename IndexType>
+	template<typename ContainerType, typename ElementType, typename IndexType>
 	class ArrayIndexedIterator
 	{
 	private:
@@ -89,11 +89,11 @@ namespace Columbus
 		FORCEINLINE friend bool operator!=(const ArrayIndexedIterator& L, const ArrayIndexedIterator& R) { return L.Index != R.Index || L.Container != R.Container; }
 	};
 
-	template <typename ElementType>
+	template<typename T>
 	class Array
 	{
 	private:
-		ElementType* Ptr;
+		T* Ptr;
 		uint32 ArrayCount;
 		uint32 ArrayMax;
 		uint32 ArrayEndIndex;
@@ -103,67 +103,114 @@ namespace Columbus
 			ArrayMax(8),
 			ArrayEndIndex(0)
 		{
-			Ptr = (ElementType*)Memory::Malloc(ArrayMax * GetTypeSize());
+			Ptr = new T[ArrayMax];
 		}
-		/*
-		* Reserve memory for Num elements
-		* @param uint32 Num: Number of elements
-		*/
-		void Reserve(uint32 Num)
+
+		Array(const Array& Base) :
+			ArrayCount(Base.ArrayCount),
+			ArrayMax(Base.ArrayMax),
+			ArrayEndIndex(Base.ArrayEndIndex)
 		{
-			uint64 PWRCount = Math::UpperPowerOf2(Num);
-			ElementType* TmpPtr = (ElementType*)Memory::Malloc(PWRCount * GetTypeSize());
-			Memory::Memcpy(TmpPtr, Ptr, ArrayMax * GetTypeSize());
-			Memory::Free(Ptr);
-			ArrayMax = PWRCount;
-			Ptr = TmpPtr;
+			Ptr = new T[Base.GetMax()];
+			Memory::Memcpy(Ptr, Base.Ptr, Base.GetMax() * Base.GetTypeSize());
 		}
 		/*
 		* Add element in back of array
-		* @param const ElementType Value: Value which will added in back of array
+		* @param const T Value: Value which will added in back of array
 		*/
-		void Add(const ElementType Value)
+		void Add(const T Value)
 		{
 			if (ArrayEndIndex >= ArrayMax)
 			{
-				Reserve(ArrayMax * 2);
+				T* TmpPtr = new T[ArrayMax];
+				Memory::Memcpy(TmpPtr, Ptr, ArrayMax * GetTypeSize());
+				ArrayMax *= 2;
+				delete[] Ptr;
+				Ptr = TmpPtr;
 			}
 
-			Ptr[ArrayEndIndex++] = Value;
-			ArrayCount++;
+			Ptr[ArrayCount++] = Value;
+		}
+		/*
+		* Return first element in array
+		* @return T: First element in array
+		*/
+		T Front() const
+		{
+			return Ptr[0];
+		}
+		/*
+		* Return last element in array
+		* @return T: Last element in array
+		*/
+		T Last() const
+		{
+			return Ptr[ArrayCount - 1];
+		}
+		/*
+		*
+		*/
+		void Resize(uint32 Count)
+		{
+			int64 PWRCount = Math::UpperPowerOf2(Count);
+			T* TmpPtr = new T[PWRCount];
+
+			if (Count <= ArrayCount)
+			{
+				Memory::Memcpy(TmpPtr, Ptr, Count * GetTypeSize());
+				ArrayCount = Count;
+				ArrayEndIndex = Count;
+			}
+			else
+			{
+				Memory::Memcpy(TmpPtr, Ptr, ArrayMax * GetTypeSize());
+			}
+
+			ArrayMax = (uint32)PWRCount;
+			delete[] Ptr;
+			Ptr = TmpPtr;
 		}
 		/*
 		* Fill an array with a number of copies of an element
-		* @param const ElementType Value: The value to which the array will be populated
+		* @param const T Value: The value to which the array will be populated
 		* @param uint32 Num: Number of element copies
 		*/
-		void Init(const ElementType Value, uint32 Num)
+		void Init(const T Value, uint32 Num)
 		{
 			Clear();
 
 			if (Num > ArrayMax)
 			{
-				Reserve(Num);
+				uint64 PWRCount = Math::UpperPowerOf2(Num);
+				T* TmpPtr = new T[PWRCount];
+				Memory::Memcpy(TmpPtr, Ptr, ArrayMax * GetTypeSize());
+				ArrayMax = (uint32)PWRCount;
+				delete[] Ptr;
+				Ptr = TmpPtr;
 			}
 
 			for (uint32 i = 0; i < Num; i++)
 			{
-				Ptr[ArrayEndIndex++] = Value;
-				ArrayCount++;
+				Ptr[ArrayCount++] = Value;
 			}
 		}
 		/*
 		* Append row data pointer in the back of array
-		* @param const ElementType* Data: Data pointer
+		* @param const T* Data: Data pointer
 		* @param uint32 Num: Number of elements
 		*/
-		void Append(const ElementType* Data, uint32 Num)
+		void Append(const T* Data, uint32 Num)
 		{
 			uint32 Pos = ArrayCount + Num;
 
 			if (Pos > ArrayMax)
 			{
-				Reserve(Pos);
+				int64 PWRCount = Math::UpperPowerOf2(Num);
+				T* TmpPtr = new T[PWRCount];
+				Memory::Memcpy(TmpPtr, Ptr, ArrayMax * GetTypeSize());
+				ArrayMax = (uint32)PWRCount;
+				delete[] Ptr;
+				Ptr = TmpPtr;
 			}
 
 			Memory::Memcpy(Ptr + ArrayCount, Data, Num * GetTypeSize());
@@ -176,7 +223,7 @@ namespace Columbus
 		*/
 		FORCEINLINE bool IsValidIndex(uint32 Index) const
 		{
-			return Index >= 0 && Index < Count;
+			return Index >= 0 && Index < ArrayCount;
 		}
 		/*
 		* Return size of inner type
@@ -184,28 +231,29 @@ namespace Columbus
 		*/
 		FORCEINLINE uint32 GetTypeSize() const
 		{
-			return sizeof(ElementType);
+			return sizeof(T);
 		}
 		/*
 		* Return count of elements
 		* @return uint32: Count of elements in array
 		*/
-		FORCEINLINE uint32 Count() const
+		FORCEINLINE uint32 GetCount() const
 		{
 			return ArrayCount;
 		}
 		/*
-		*
+		* Return max count of elements
+		* @return uint32: Max count of elements in array
 		*/
-		FORCEINLINE uint32 Max() const
+		FORCEINLINE uint32 GetMax() const
 		{
 			return ArrayMax;
 		}
 		/*
 		* Return data pointer of array
-		* @return ElementType*: Data pointer
+		* @return T*: Data pointer
 		*/
-		FORCEINLINE ElementType* Data() const
+		FORCEINLINE T* GetData() const
 		{
 			return Ptr;
 		}
@@ -220,24 +268,24 @@ namespace Columbus
 
 			if (Ptr != nullptr)
 			{
-				Memory::Free(Ptr);
+				delete[] Ptr;
 				Ptr = nullptr;
 			}
 
-			Ptr = (ElementType*)Memory::Malloc(ArrayMax * GetTypeSize());
+			Ptr = new T[ArrayMax];
 		}
 
-		FORCEINLINE Array& operator=(Array& Other)
+		FORCEINLINE Array& operator=(const Array& Other)
 		{
 			if (*this != Other)
 			{
 				if (Ptr != nullptr)
 				{
-					Memory::Free(Ptr);
+					delete[] Ptr;
 				}
 
-				Ptr = (ElementType*)Memory::Malloc(Other.Max() * Other.GetTypeSize());
-				Memory::Memcpy(Ptr, Other.Data(), Other.Count() * Other.GetTypeSize());
+				Ptr = new T[Other.GetMax()];
+				Memory::Memcpy(Ptr, Other.GetData(), Other.GetCount() * Other.GetTypeSize());
 
 				ArrayMax = Other.ArrayMax;
 				ArrayCount = Other.ArrayCount;
@@ -253,11 +301,11 @@ namespace Columbus
 			{
 				if (Ptr != nullptr)
 				{
-					Memory::Free(Ptr);
+					delete[] Ptr;
 				}
 
-				Ptr = (T*)Memory::Malloc(Other.Max() * Other.GetTypeSize());
-				Memory::Memmove(Ptr, Other.Data(), Other.Count() * Other.GetTypeSize());
+				Ptr = new T[Other.GetMax()];
+				Memory::Memmove(Ptr, Other.GetData(), Other.GetCount() * Other.GetTypeSize());
 
 				ArrayMax = Other.ArrayMax;
 				ArrayCount = Other.ArrayCount;
@@ -270,14 +318,14 @@ namespace Columbus
 		/*
 		* Get array element by index
 		*/
-		FORCEINLINE ElementType& operator[](uint32 Index)
+		FORCEINLINE T& operator[](uint32 Index)
 		{
 			return Ptr[Index];
 		}
 
 		FORCEINLINE bool operator==(const Array& Other)
 		{
-			return Count() == Other.Count() && Memory::Memcmp(Data(), Other.Data(), Count() * GetTypeSize()) == 0;
+			return GetCount() == Other.GetCount() && Memory::Memcmp(GetData(), Other.GetData(), GetCount() * GetTypeSize()) == 0;
 		}
 
 		FORCEINLINE bool operator!=(const Array& Other)
@@ -285,8 +333,8 @@ namespace Columbus
 			return !(*this == Other);
 		}
 
-		typedef ArrayIndexedIterator<Array, ElementType, uint32> Iterator;
-		typedef ArrayIndexedIterator<const Array, const ElementType, uint32> ConstIterator;
+		typedef ArrayIndexedIterator<Array, T, uint32> Iterator;
+		typedef ArrayIndexedIterator<const Array, const T, uint32> ConstIterator;
 
 		Iterator CreateIterator()
 		{
@@ -299,7 +347,7 @@ namespace Columbus
 		}
 
 		FORCEINLINE Iterator begin() { return Iterator(this, 0); }
-		FORCEINLINE Iterator end() { return Iterator(this, Count()); }
+		FORCEINLINE Iterator end() { return Iterator(this, GetCount()); }
 
 		~Array()
 		{
