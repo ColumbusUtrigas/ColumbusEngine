@@ -52,7 +52,11 @@ namespace Columbus
 		*/
 		inline String& Append(const String& InString)
 		{
-			Data.Resize(Data.GetCount() - 2);
+			if (Data.Last() == '\0')
+			{
+				Data.Resize(Data.GetCount() - 2);
+			}
+
 			Data.Append(*InString, InString.Length());
 			Data.Add('\0');
 			return *this;	
@@ -60,7 +64,11 @@ namespace Columbus
 
 		inline String& Append(String&& InString)
 		{
-			Data.Resize(Data.GetCount() - 2);
+			if (Data.Last() == '\0')
+			{
+				Data.Resize(Data.GetCount() - 1);
+			}
+
 			Data.Append(*InString, InString.Length());
 			Data.Add('\0');
 			return *this;	
@@ -68,7 +76,11 @@ namespace Columbus
 
 		inline String& Append(const char* InString)
 		{
-			Data.Resize(Data.GetCount() - 2);
+			if (Data.Last() == '\0')
+			{
+				Data.Resize(Data.GetCount() - 1);
+			}
+
 			Data.Append(InString, strlen(InString));
 			Data.Add('\0');
 			return *this;
@@ -76,7 +88,11 @@ namespace Columbus
 
 		inline String& Append(const char Character)
 		{
-			Data.Resize(Data.GetCount() - 2);
+			if (Data.Last() == '\0')
+			{
+				Data.Resize(Data.GetCount() - 1);
+			}
+			
 			Data.Add(Character);
 			Data.Add('\0');
 			return *this;
@@ -87,7 +103,7 @@ namespace Columbus
 		{
 			if (Data.Last() == '\0')
 			{
-				Data.Resize(Data.GetCount() - 2);
+				Data.Resize(Data.GetCount() - 1);
 			}
 
 			while (First != Last)

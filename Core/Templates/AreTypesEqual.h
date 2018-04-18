@@ -9,13 +9,13 @@ namespace Columbus
 	template<typename, typename>
 	struct AreTypesEqual
 	{
-		enum { Value = false };
+		static const bool Value = false;
 	};
 
 	template<typename A>
 	struct AreTypesEqual<A, A>
 	{
-		enum { Value = true };
+		static const bool Value = true;
 	};
 
 

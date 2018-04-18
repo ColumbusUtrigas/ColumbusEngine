@@ -4,12 +4,15 @@ namespace Columbus
 {
 
 	template <typename T>
-	struct IsAbstract
+	struct IsEnum
 	{
-		static const bool Value = __is_abstract(T);
+		static const bool Value = __is_enum(T);
 	};
-	
+
 }
+
+
+
 
 
 
