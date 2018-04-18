@@ -4,7 +4,7 @@
 
 namespace Columbus
 {
-	
+
 	/*
 	* Comparison predicates
 	*/
@@ -12,7 +12,7 @@ namespace Columbus
 	/*
 	* @see: http://en.cppreference.com/w/cpp/utility/functional/greater
 	*/
-	template <typename T = void>
+	template <typename T>
 	struct Greater
 	{
 		constexpr inline bool operator()(const T& A, const T& B) const
@@ -23,7 +23,7 @@ namespace Columbus
 	/*
 	* @see: http://en.cppreference.com/w/cpp/utility/functional/less
 	*/
-	template <typename T = void>
+	template <typename T>
 	struct Less
 	{
 		constexpr inline bool operator()(const T& A, const T& B) const
