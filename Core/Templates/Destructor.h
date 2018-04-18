@@ -1,11 +1,16 @@
 #pragma once
 
 #include <Core/Templates/EnableIf.h>
-#include <Core/Templates/HasTrivialDestructor.h>
 #include <Core/Types.h>
 
 namespace Columbus
 {
+
+	template <typename T>
+	struct HasTrivialDestructor
+	{
+		static const bool Value = __has_trivial_destructor(T);
+	};
 
 	/*
 	* Functions destruct elements if they have non-trivial destructor
@@ -49,7 +54,7 @@ namespace Columbus
 	template <typename Type>
 	typename EnableIf<HasTrivialDestructor<Type>::Value>::Type DestructElements(Type* Elements, uint32 Count)
 	{
-		
+
 	}
 
 }
