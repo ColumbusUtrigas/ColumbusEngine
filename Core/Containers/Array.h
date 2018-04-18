@@ -8,7 +8,7 @@ namespace Columbus
 
 	#define ARRAY_COUNT(x) (sizeof(x) / sizeof(x[0]))
 
-	template<typename ContainerType, typename ElementType, typename IndexType>
+	template <typename ContainerType, typename ElementType, typename IndexType>
 	class ArrayIndexedIterator
 	{
 	private:
@@ -89,7 +89,7 @@ namespace Columbus
 		FORCEINLINE friend bool operator!=(const ArrayIndexedIterator& L, const ArrayIndexedIterator& R) { return L.Index != R.Index || L.Container != R.Container; }
 	};
 
-	template<typename T>
+	template <typename T>
 	class Array
 	{
 	private:
