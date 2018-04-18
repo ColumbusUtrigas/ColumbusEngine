@@ -147,7 +147,9 @@ namespace Columbus
 			return Ptr[ArrayCount - 1];
 		}
 		/*
-		*
+		* Resize array to Count elements
+		* It will extend array if Count > count of elements in array
+		* It will reduce array if Count < count of elements in array
 		*/
 		void Resize(uint32 Count)
 		{
@@ -156,14 +158,12 @@ namespace Columbus
 
 			if (Count <= ArrayCount)
 			{
-				//Copy(Ptr, Ptr + Count, TmpPtr);
-				Memory::Memcpy(TmpPtr, Ptr, Count * GetTypeSize());
+				Copy(Ptr, Ptr + Count, TmpPtr);
 				ArrayCount = Count;
 			}
 			else
 			{
-				//Copy(Ptr, Ptr + GetMax(), TmpPtr);
-				Memory::Memcpy(TmpPtr, Ptr, ArrayMax * GetTypeSize());
+				Copy(Ptr, Ptr + GetMax(), TmpPtr);
 			}
 
 			delete[] Ptr;
