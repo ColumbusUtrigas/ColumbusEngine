@@ -41,8 +41,8 @@ namespace Columbus
 		{
 			if (!(*First1 == *First2))
 			{
-            	return false;
-        	}
+				return false;
+			}
 
 			++First1;
 			++First2;
