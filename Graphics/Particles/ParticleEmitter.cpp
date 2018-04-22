@@ -13,7 +13,6 @@
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
 	ParticleEmitter::ParticleEmitter(const ParticleEffect* aParticleEffect) :
 		mParticleEffect(const_cast<ParticleEffect*>(aParticleEffect)),
 		mLife(0.0)
@@ -22,9 +21,7 @@ namespace Columbus
 
 		setParticleEffect(aParticleEffect);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setParticleEffect(const ParticleEffect* aParticleEffect)
 	{
 		if (aParticleEffect == nullptr) return;
@@ -38,18 +35,17 @@ namespace Columbus
 		mParticleEffect = const_cast<ParticleEffect*>(aParticleEffect);
 		if (mParticleEffect->Emit == nullptr) return;
 
-		int i, j;
+		mParticles.resize(mParticleEffect->Emit->Count);
+		Particle p;
 
-		for (i = 0; i < mParticleEffect->Emit->Count; i++)
+		for (auto& Particle : mParticles)
 		{
-			Particle p;
-
-			for (j = 0; j < 9; j++)
+			for (uint32 j = 0; j < 9; j++)
 			{
 				p.noise[j] = Random::range(0, 256);
 			}
 
-			mParticles.push_back(p);
+			Particle = p;
 		}
 
 		if (!mParticleEffect->getMaterial()->getShader()->isCompiled())
@@ -70,17 +66,17 @@ namespace Columbus
 		mLBuf = new C_Buffer();
 		mSBuf = new C_Buffer();
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	ParticleEffect* ParticleEmitter::getParticleEffect() const
 	{
 		return mParticleEffect;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setCamera(const Camera aCamera)
 	{
 		mCamera = static_cast<Camera>(aCamera);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::sort()
 	{
 		auto func = [](const Particle &a, const Particle &b) -> bool
@@ -90,12 +86,12 @@ namespace Columbus
 
 		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setLights(std::vector<Light*> aLights)
 	{
 		mLights = aLights;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::update(const float aTimeTick)
 	{
 		Vector3 startEmitterPos = mParticleEffect->getPos();
@@ -175,7 +171,7 @@ namespace Columbus
 
 		mLife += aTimeTick;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setBuffers()
 	{
 		mBuf->bind();
@@ -197,7 +193,7 @@ namespace Columbus
 		C_VertexAttribPointerOpenGL(5, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
 		C_OpenStreamOpenGL(5);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setUniforms()
 	{
 		ParticleModuleSubUV* SubUV = static_cast<ParticleModuleSubUV*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_SUBUV));
@@ -228,7 +224,7 @@ namespace Columbus
 			mParticleEffect->getMaterial()->getShader()->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setShaderMaterial()
 	{
 		if (mParticleEffect == nullptr) return;
@@ -251,13 +247,13 @@ namespace Columbus
 
 		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 15);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::setShaderLightAndCamera()
 	{
 		calculateLights();
 		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::calculateLights()
 	{
 		sortLights();
@@ -300,7 +296,7 @@ namespace Columbus
 			}
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::sortLights()
 	{
 		if (mParticleEffect == nullptr) return;
@@ -319,7 +315,7 @@ namespace Columbus
 
 		std::sort(mLights.begin(), mLights.end(), func);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::unbindAll()
 	{
 		if (mParticleEffect->Required == nullptr) return;
@@ -343,7 +339,7 @@ namespace Columbus
 		C_CloseStreamOpenGL(3);
 		C_CloseStreamOpenGL(4);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ParticleEmitter::draw()
 	{
 		if (mParticleEffect == nullptr) return;
@@ -458,7 +454,7 @@ namespace Columbus
 
 		unbindAll();
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	ParticleEmitter::~ParticleEmitter()
 	{
 		mParticles.clear();

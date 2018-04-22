@@ -29,7 +29,9 @@ namespace Columbus
 		mTextures.push_back(aTexture);
 
 		if (aTexture != nullptr)
-			mSize += aTexture->getSize();
+		{
+			mSize += aTexture->GetSize();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Set texture config

@@ -34,15 +34,13 @@ namespace Columbus
 	protected:
 		Image mImage;
 
-		//unsigned int mID = 0;
-
 		std::string mFile;
 
 		TextureConfig mConfig;
 
 		size_t mWidth = 0;
 		size_t mHeight = 0;
-		int mBPP = 0;
+		uint32 mBPP = 0;
 	public:
 		Texture();
 		Texture(std::string aPath, bool aSmooth = true);
@@ -56,15 +54,13 @@ namespace Columbus
 		virtual void setSmooth(const bool aSmooth);
 		virtual void setAnisotropy(const unsigned int aAnisotropy);
 
-		TextureConfig getConfig();
-		size_t getSize();
+		TextureConfig GetConfig() const;
+		uint64 GetSize() const;
 
 		bool save(std::string aFile, size_t aQuality = 100);
 		
 		virtual void bind();
 		virtual void unbind();
-		
-		//inline unsigned int getID() { return mID; }
 
 		virtual void sampler2D(int a);
 		virtual void generateMipmap();

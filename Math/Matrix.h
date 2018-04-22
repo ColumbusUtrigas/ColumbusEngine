@@ -2,7 +2,7 @@
 
 #include <Math/Vector4.h>
 #include <System/Assert.h>
-#include <Core/Types.h>
+#include <Core/Templates/Copy.h>
 
 namespace Columbus
 {
@@ -16,7 +16,7 @@ namespace Columbus
 		* Constructor
 		* @param float Diag: Specifies matrix main diagonal value
 		*/
-		inline Matrix(float Diag = 1.0f)
+		inline explicit Matrix(float Diag = 1.0f)
 		{
 			M[0][0] = Diag; M[0][1] = 0.0f; M[0][2] = 0.0f; M[0][3] = 0.0f;
 			M[1][0] = 0.0f; M[1][1] = Diag; M[1][2] = 0.0f; M[1][3] = 0.0f;
@@ -34,6 +34,7 @@ namespace Columbus
 			SetRow(2, C);
 			SetRow(3, D);
 		}
+
 		/*
 		* Set this matrix to identity
 		*/
@@ -100,22 +101,8 @@ namespace Columbus
 		{
 			if (Elems != nullptr)
 			{
-				/*for (uint32 X = 0; X < 4; X++)
-				{
-					for (uint32 Y = 0; Y < 4; Y++)
-					{
-						Elems[Y + X * 4] = M[X][Y];
-					}
-				}*/
-
-				//Maybe-maybe
-				//memcpy(Elems, &M[0][0], sizeof(float) * 16);
-				//Or this?
-				//std::copy(&M[0][0], &M[0][0] + 16, Elems);
-
-				//So, this
 				//16 is size of matrix (4 * 4)
-				std::copy(&M[0][0], &M[0][0] + 16, Elems);
+				Copy(&M[0][0], &M[0][0] + 16, Elems);
 			}
 		}
 		/*
@@ -298,22 +285,29 @@ namespace Columbus
 		/*
 		* Create view matrix from this
 		* @param Vector3 Position: Position of observer
-		* @param Vector3 Right: Right-direction of observer
 		* @param Vector3 Forward: Forward-direction of observer
 		* @param Vector3 Up: Up-direction of observer
 		* @return Matrix&: *this
 		*/
-		inline Matrix& LookAt(Vector3 Position, Vector3 Right, Vector3 Forward, Vector3 Up)
+		inline Matrix& LookAt(Vector3 Position, Vector3 Center, Vector3 Up)
 		{
-			float RightDt = Vector3::Dot(Right, -Position);
-			float ForwardDt = Vector3::Dot(Forward, -Position);
-			float UpDt = Vector3::Dot(Up, -Position);
+			Vector3 const f(Vector3::Normalize(Center - Position));
+			Vector3 const s(Vector3::Normalize(Vector3::Cross(f, Up)));
+			Vector3 const u(Vector3::Cross(s, f));
 
-			M[0][0] = Right.X; M[0][1] = Up.X; M[0][2] = Forward.X; M[0][3] = 0.0f;
-			M[1][0] = Right.Y; M[1][1] = Up.Y; M[1][2] = Forward.Y; M[1][3] = 0.0f;
-			M[2][0] = Right.Z; M[2][1] = Up.Z; M[2][2] = Forward.Z; M[2][3] = 0.0f;
-			M[3][0] = RightDt; M[3][1] = UpDt; M[3][2] = ForwardDt; M[3][3] = 1.0f;
-
+			SetIdentity();
+			M[0][0] = s.X;
+			M[1][0] = s.Y;
+			M[2][0] = s.Z;
+			M[0][1] = u.X;
+			M[1][1] = u.Y;
+			M[2][1] = u.Z;
+			M[0][2] = -f.X;
+			M[1][2] = -f.Y;
+			M[2][2] = -f.Z;
+			M[3][0] = -Vector3::Dot(s, Position);
+			M[3][1] = -Vector3::Dot(u, Position);
+			M[3][2] = Vector3::Dot(f, Position);
 			return *this;
 		}
 		/*

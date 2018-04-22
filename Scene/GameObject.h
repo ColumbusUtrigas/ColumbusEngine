@@ -13,6 +13,7 @@
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <System/Timer.h>
+#include <Core/Containers/Array.h>
 
 namespace Columbus
 {
@@ -20,8 +21,8 @@ namespace Columbus
 	class GameObject
 	{
 	protected:
-		std::vector<GameObject*> Children;
-		std::vector<Component*> Components;
+		Array<GameObject*> Children;
+		Array<Component*> Components;
 
 		std::string Name;
 
