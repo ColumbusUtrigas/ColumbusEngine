@@ -223,11 +223,18 @@ namespace Columbus
 		/*
 		* Return normalized vector
 		*/
-		inline Vector3 Normalize()
+		inline Vector3 Normalize() const
 		{
-			const float l = sqrt((X * X) + (Y * Y) + (Z * Z));
-			const float Scalar = 1.0f / l;
-			return Vector3(X * Scalar, Y * Scalar, Z * Scalar);
+			return Normalize(*this);
+		}
+		/*
+		* Return normalized vector
+		*/
+		inline static Vector3 Normalize(Vector3 Vec)
+		{
+			const float L = Math::Sqrt((Vec.X * Vec.X) + (Vec.Y * Vec.Y) + (Vec.Z * Vec.Z));
+			const float Scalar = 1.0f / L;
+			return Vector3(Vec * Scalar);
 		}
 		/*
 		* Dot product of two vectors

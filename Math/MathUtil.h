@@ -24,7 +24,7 @@ namespace Columbus
 		static inline double CeilToDouble(const double Value)  noexcept { return ceil(Value); }
 
 		/** e ^ Value */
-		static inline float Exp(const float Value) noexcept { return expf(Value); }
+		static inline float Exp(const float Value)  noexcept { return expf(Value); }
 		/** 2 ^ value */
 		static inline float Exp2(const float Value) noexcept { return powf(2.0f, Value); }
 
@@ -49,14 +49,14 @@ namespace Columbus
 		/*
 		* Return true if Value is power of 2
 		*/
-		static inline bool IsPowerOf2(const int32 Value) noexcept
+		static constexpr inline bool IsPowerOf2(const int32 Value) noexcept
 		{
 			return (Value & (Value - 1)) == 0;
 		}
 		/*
 		* Finding upper power of 2
 		*/
-		static inline int64 UpperPowerOf2(int64 Value) noexcept
+		static constexpr inline int64 UpperPowerOf2(int64 Value) noexcept
 		{
 			Value--;
 			Value |= Value >> 1;
