@@ -1,5 +1,6 @@
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
 #include <System/Log.h>
+#include <RenderAPIOpenGL/OpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -112,6 +113,8 @@ namespace Columbus
 		{
 			Log::initialization("GLEW initialized");
 		}
+
+		OpenGL::Init();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void WindowOpenGLSDL::getVersions()

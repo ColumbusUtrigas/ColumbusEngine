@@ -45,7 +45,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	Component::Type ComponentParticleSystem::GetType() const
 	{
-		return COMPONENT_PARTICLE_SYSTEM;
+		return Component::Type::ParticleSystem;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	ParticleEmitter* ComponentParticleSystem::GetEmitter() const

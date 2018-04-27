@@ -17,7 +17,7 @@ namespace Columbus
 	class MeshOpenGL : public Mesh
 	{
 	private:
-		unsigned int mVBuf = 0;
+		uint32 VBuf = 0;
 
 		uint64 VOffset = 0;
 		uint64 UOffset = 0;
@@ -30,19 +30,19 @@ namespace Columbus
 		float UniformViewMatrix[16];
 		float UniformProjectionMatrix[16];
 
-		void setShaderTextures();
-		void setShaderMatrices(Transform InTransform);
-		void setShaderMaterial();
-		void setShaderLightAndCamera();
-		void calculateLights();
-		void sortLights();
+		void SetShaderTextures();
+		void SetShaderMatrices(Transform InTransform);
+		void SetShaderMaterial();
+		void SetShaderLightAndCamera();
+		void CalculateLights();
+		void SortLights();
 	public:
 		MeshOpenGL();
 		MeshOpenGL(std::vector<Vertex> aVert);
 		MeshOpenGL(std::vector<Vertex> aVert, Material aMaterial);
 
-		void setVertices(std::vector<Vertex> aVert) override;
-		void render(Transform InTransform) override;
+		void SetVertices(std::vector<Vertex> aVert) override;
+		void Render(Transform InTransform) override;
 
 		~MeshOpenGL() override;
 	};

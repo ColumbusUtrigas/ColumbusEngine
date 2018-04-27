@@ -17,7 +17,7 @@ namespace Columbus
 	*/
 	Component::Type ComponentRigidbody::GetType() const
 	{
-		return Component::COMPONENT_RIGIDBODY;
+		return Component::Type::Rigidbody;
 	}
 
 	Rigidbody* ComponentRigidbody::GetRigidbody() const
