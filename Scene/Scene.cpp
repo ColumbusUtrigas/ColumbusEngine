@@ -34,7 +34,7 @@ namespace Columbus
 		for (auto Object : mObjects)
 		{
 			ComponentLight* light =
-				static_cast<ComponentLight*>(Object.second->GetComponent(Component::COMPONENT_LIGHT));
+				static_cast<ComponentLight*>(Object.second->GetComponent(Component::Type::Light));
 
 			if (light != nullptr)
 			{
@@ -49,7 +49,7 @@ namespace Columbus
 		for (auto Object : mObjects)
 		{
 			ComponentMeshRenderer* mesh =
-				static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::COMPONENT_MESH_RENDERER));
+				static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
 
 			if (mesh != nullptr)
 			{
@@ -65,7 +65,7 @@ namespace Columbus
 		for (auto Object : mObjects)
 		{
 			ComponentParticleSystem* ps =
-				static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::COMPONENT_PARTICLE_SYSTEM));
+				static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
 
 			if (ps != nullptr)
 			{
@@ -84,7 +84,7 @@ namespace Columbus
 		for (auto& Object : mObjects)
 		{
 			ComponentRigidbody* rb =
-				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::COMPONENT_RIGIDBODY));
+				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
 
 			if (rb != nullptr)
 			{
@@ -98,7 +98,7 @@ namespace Columbus
 		for (auto& Object : mObjects)
 		{
 			ComponentRigidbody* rb =
-				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::COMPONENT_RIGIDBODY));
+				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
 
 			if (rb != nullptr)
 			{
@@ -325,7 +325,7 @@ namespace Columbus
 					if (atoi(rbShapeMesh.c_str()) >= 0)
 					{
 						delete Shape;
-						Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str()))->mVert);
+						Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str()))->Vertices);
 					}
 				}
 			}
@@ -614,11 +614,11 @@ namespace Columbus
 			mSkybox->draw();
 
 		for (auto Object : mObjects)
-			if (Object.second->HasComponent(Component::COMPONENT_MESH_RENDERER))
+			if (Object.second->HasComponent(Component::Type::MeshRenderer))
 				Object.second->Render();
 
 		for (auto Object : mObjects)
-			if (Object.second->HasComponent(Component::COMPONENT_PARTICLE_SYSTEM))
+			if (Object.second->HasComponent(Component::Type::ParticleSystem))
 				Object.second->Render();
 
 		mNoneEffect.unbind();

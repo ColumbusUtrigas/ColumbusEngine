@@ -35,7 +35,7 @@ namespace Columbus
 	{
 		if (mMesh != nullptr)
 		{
-			mMesh->setCamera(mCamera);
+			mMesh->SetCamera(mCamera);
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -43,18 +43,18 @@ namespace Columbus
 	{
 		if (mMesh != nullptr)
 		{
-			mMesh->render(Transform);
+			mMesh->Render(Transform);
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	Component::Type ComponentMeshRenderer::GetType() const
 	{
-		return COMPONENT_MESH_RENDERER;
+		return Component::Type::MeshRenderer;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ComponentMeshRenderer::SetLights(std::vector<Light*> aLights)
 	{
-		mMesh->setLights(aLights);
+		mMesh->SetLights(aLights);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ComponentMeshRenderer::SetCamera(Camera Camera)

@@ -1,5 +1,5 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
-#include <GL/glew.h>
+#include <RenderAPIOpenGL/OpenGL.h>
 #include <fstream>
 
 namespace Columbus

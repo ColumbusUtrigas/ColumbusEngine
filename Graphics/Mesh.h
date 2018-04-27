@@ -1,13 +1,3 @@
-/************************************************
-*                   Model.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <vector>
@@ -34,39 +24,40 @@ namespace Columbus
 	class Mesh
 	{
 	protected:
-		Vector3 mPos;
-		Mesh* mParent = nullptr;
-		Camera mCamera;
-		OBB mOBB;
+		Vector3 Position;
+		Mesh* Parent = nullptr;
+		Camera ObjectCamera;
+		OBB BoundingBox;
 
-		std::list<Mesh*> mChilds;
-		std::vector<Light*> mLights;
+		std::list<Mesh*> Childs;
+		std::vector<Light*> Lights;
 	public:
-		std::vector<Vertex> mVert;
+		std::vector<Vertex> Vertices;
 		Material mMat;
 		
 		Mesh() { }
-		Mesh(std::vector<Vertex> aVert) { setVertices(aVert); }
-		Mesh(std::vector<Vertex> aVert, Material aMat) {  mMat = aMat; setVertices(aVert); }
+		Mesh(std::vector<Vertex> InVertices) { SetVertices(InVertices); }
+		Mesh(std::vector<Vertex> InVertices, Material InMaterial) {  mMat = InMaterial; SetVertices(InVertices); }
 
-		virtual void setVertices(std::vector<Vertex> aVert) { };
-		virtual void render(Transform aTransform) { };
+		virtual void SetVertices(std::vector<Vertex> InVertices) {}
+		virtual void Render(Transform aTransform) {}
 
-		void setCamera(Camera InCamera) { mCamera = InCamera; }
-		void setParent(Mesh* InParent) { mParent = InParent; }
-		void addChild(Mesh* InChild)
+		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
+		void SetParent(Mesh* InParent) { Parent = InParent; }
+		void AddChild(Mesh* InChild)
 		{
 			if (InChild == nullptr) return;
 
-			mChilds.push_back(InChild);
-			InChild->setParent(this);
+			Childs.push_back(InChild);
+			InChild->SetParent(this);
 		}
 
-		void setLights(std::vector<Light*>& InLights) { mLights = InLights; }
+		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }
 
-		OBB getOBB() const { return mOBB; }
+		OBB GetOBB() const { return BoundingBox; }
+		Material& GetMaterial() { return mMat; }
 
-		void clear() {}
+		void Clear() {}
 
 		virtual ~Mesh() {}
 	};

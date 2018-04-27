@@ -18,13 +18,13 @@ namespace Columbus
 	class Component
 	{
 	public:
-		enum Type
+		enum class Type
 		{
-			COMPONENT,
-			COMPONENT_LIGHT,
-			COMPONENT_MESH_RENDERER,
-			COMPONENT_PARTICLE_SYSTEM,
-			COMPONENT_RIGIDBODY
+			Component,
+			Light,
+			MeshRenderer,
+			ParticleSystem,
+			Rigidbody
 		};
 	public:
 		Component();
