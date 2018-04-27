@@ -21,6 +21,8 @@ namespace Columbus
 		static int32 MaxVertexUniformVectors;
 		static int32 MaxViewportDims;
 
+		static bool bSupportsInstancing;
+		static bool bSupportsTransformFeedback;
 		static bool bSupportsShader;
 		static bool bSupportsGeometryShader;
 		static bool bSupportsTesselation;
@@ -42,6 +44,8 @@ namespace Columbus
 
 		static inline uint64 GetVideoMemorySize() { return 0; }
 
+		static inline bool SupportsInstancing() { return bSupportsInstancing; }
+		static inline bool SupportsTransformFeedback() { return bSupportsTransformFeedback; }
 		static inline bool SupportsShader() { return bSupportsShader; }
 		static inline bool SupportsGeometryShader() { return bSupportsGeometryShader; }
 		static inline bool SupportsTesselation() { return bSupportsTesselation; }

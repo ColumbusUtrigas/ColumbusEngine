@@ -15,6 +15,8 @@ namespace Columbus
 	int32 OpenGL::MaxVertexUniformVectors = -1;
 	int32 OpenGL::MaxViewportDims = -1;
 
+	bool OpenGL::bSupportsInstancing = false;
+	bool OpenGL::bSupportsTransformFeedback = false;
 	bool OpenGL::bSupportsShader = false;
 	bool OpenGL::bSupportsGeometryShader = false;
 	bool OpenGL::bSupportsTesselation = false;
@@ -34,22 +36,35 @@ namespace Columbus
 		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &MaxVertexUniformVectors);
 		glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &MaxViewportDims);
 
-		if (glewIsSupported("GL_ARB_vertex_program GL_ARB_fragment_program") == GL_TRUE)
+		if (glewGetExtension("GL_ARB_instanced_arrays") == GL_TRUE &&
+		    glewGetExtension("GL_ARB_draw_instanced") == GL_TRUE &&
+		    glewGetExtension("GL_EXT_draw_instanced") == GL_TRUE)
+		{
+			bSupportsInstancing = true;
+		}
+
+		if (glewGetExtension("GL_EXT_transform_feedback") == GL_TRUE)
+		{
+			bSupportsTransformFeedback = true;
+		}
+
+		if (glewGetExtension("GL_ARB_vertex_program") == GL_TRUE &&
+		    glewGetExtension("GL_ARB_fragment_program") == GL_TRUE)
 		{
 			bSupportsShader = true;
 		}
 
-		if (glewIsSupported("GL_ARB_geometry_shader4") == GL_TRUE)
+		if (glewGetExtension("GL_ARB_geometry_shader4") == GL_TRUE)
 		{
 			bSupportsGeometryShader = true;
 		}
 
-		if (glewIsSupported("GL_ARB_tessellation_shader") == GL_TRUE)
+		if (glewGetExtension("GL_ARB_tessellation_shader") == GL_TRUE)
 		{
 			bSupportsTesselation = true;
 		}
 
-		if (glewIsSupported("GL_ARB_compute_shader") == GL_TRUE)
+		if (glewGetExtension("GL_ARB_compute_shader") == GL_TRUE)
 		{
 			bSupportsComputeShader = true;
 		}
