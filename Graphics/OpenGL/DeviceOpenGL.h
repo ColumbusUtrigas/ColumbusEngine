@@ -11,7 +11,6 @@ namespace Columbus
 		DeviceOpenGL();
 
 		Shader* createShader() const override;
-		Shader* createShader(std::string aVert, std::string aFrag) const override;
 
 		Cubemap* createCubemap() const override;
 		Cubemap* createCubemap(std::string aPath) const override;

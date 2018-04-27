@@ -15,7 +15,6 @@ namespace Columbus
 		Device();
 
 		virtual Shader* createShader() const;
-		virtual Shader* createShader(std::string aVert, std::string aFrag) const;
 
 		virtual Cubemap* createCubemap() const;
 		virtual Cubemap* createCubemap(std::string aPath) const;

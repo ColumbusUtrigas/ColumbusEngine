@@ -1,12 +1,3 @@
-/************************************************
-*                 ShaderBuilder.h               *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   11.01.2018                  *
-*************************************************/
 #pragma once
 
 #include <System/System.h>
@@ -14,24 +5,22 @@
 namespace Columbus
 {
 
-	enum ShaderType
+	enum class ShaderType
 	{
-		E_SHADER_TYPE_VERTEX,
-		E_SHADER_TYPE_FRAGMENT
+		Vertex,
+		Fragment
 	};
 
 	class ShaderBuilder
 	{
 	public:
-		std::string shader;
+		std::string ShaderSource;
 
-		ShaderBuilder();
-		ShaderBuilder(const std::string aShader, const ShaderType aType);
+		ShaderBuilder() {}
 
-		bool build(const std::string aShader, const ShaderType aType);
-		std::string getShader() const;
+		bool Build(std::string InShader, ShaderType Type);
 
-		~ShaderBuilder();
+		~ShaderBuilder() {}
 	};
 
 }

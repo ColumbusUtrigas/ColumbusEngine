@@ -21,8 +21,9 @@ namespace Columbus
 		mShader(nullptr)
 	{
 		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = gDevice->createShader("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
-		mShader->compile();
+		mShader = gDevice->createShader();
+		mShader->Load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
+		mShader->Compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	Skybox::Skybox(Cubemap* aCubemap) :
@@ -31,8 +32,9 @@ namespace Columbus
 		mShader(nullptr)
 	{
 		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = gDevice->createShader("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
-		mShader->compile();
+		mShader = gDevice->createShader();
+		mShader->Load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
+		mShader->Compile();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -53,7 +55,7 @@ namespace Columbus
 
 			C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
 
-			mShader->bind();
+			mShader->Bind();
 
 			auto view = mCamera.getViewMatrix();
 			view.SetRow(3, Vector4(0, 0, 0, 1));
@@ -62,18 +64,18 @@ namespace Columbus
 			view.Elements(UniformViewMatrix);
 			mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
-			mShader->setUniformMatrix("uView", UniformViewMatrix);
-			mShader->setUniformMatrix("uProjection", UniformProjectionMatrix);
+			mShader->SetUniformMatrix("uView", UniformViewMatrix);
+			mShader->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
 			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
-			mShader->setUniform1i("uSkybox", 0);
+			mShader->SetUniform1i("uSkybox", 0);
 			mCubemap->bind();
 
 			C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 36);
 
 			C_Buffer::unbind();
 
-			mShader->unbind();
+			mShader->Unbind();
 			mCubemap->unbind();
 
 			C_EnableDepthMaskOpenGL();

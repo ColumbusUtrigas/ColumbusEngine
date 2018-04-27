@@ -45,23 +45,30 @@ namespace Columbus
 		std::vector<Vertex> mVert;
 		Material mMat;
 		
-		Mesh();
-		Mesh(std::vector<Vertex> aVert);
-		Mesh(std::vector<Vertex> aVert, Material aMat);
+		Mesh() { }
+		Mesh(std::vector<Vertex> aVert) { setVertices(aVert); }
+		Mesh(std::vector<Vertex> aVert, Material aMat) {  mMat = aMat; setVertices(aVert); }
 
-		virtual void setVertices(std::vector<Vertex> aVert);
-		virtual void render(Transform aTransform);
+		virtual void setVertices(std::vector<Vertex> aVert) { };
+		virtual void render(Transform aTransform) { };
 
-		void setCamera(Camera camera);
-		void setParent(Mesh* aParent);
-		void addChild(Mesh* aChild);
-		void setLights(std::vector<Light*> aLights);
+		void setCamera(Camera InCamera) { mCamera = InCamera; }
+		void setParent(Mesh* InParent) { mParent = InParent; }
+		void addChild(Mesh* InChild)
+		{
+			if (InChild == nullptr) return;
 
-		OBB getOBB() const;
+			mChilds.push_back(InChild);
+			InChild->setParent(this);
+		}
 
-		void clear();
+		void setLights(std::vector<Light*>& InLights) { mLights = InLights; }
 
-		virtual ~Mesh();
+		OBB getOBB() const { return mOBB; }
+
+		void clear() {}
+
+		virtual ~Mesh() {}
 	};
 
 }

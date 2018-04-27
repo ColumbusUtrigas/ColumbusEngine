@@ -73,7 +73,7 @@ namespace Columbus
 
 		virtual std::string getType() const;
 
-		~Window();
+		virtual ~Window();
 	};
 
 }

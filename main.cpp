@@ -5,6 +5,11 @@
 
 using namespace Columbus;
 
+void a()
+{
+
+}
+
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
@@ -57,7 +62,12 @@ int main(int argc, char** argv)
 	Source->Play();
 
 	float xPos = 8.0f;
-	
+
+	const char* arr = "Fuck me";
+	String str("Oh....");
+	str.Append(arr, arr + 7);
+	std::cout << str + ", my sweety" << std::endl;
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
