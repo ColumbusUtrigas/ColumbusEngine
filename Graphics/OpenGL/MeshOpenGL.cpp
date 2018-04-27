@@ -114,26 +114,26 @@ namespace Columbus
 
 		if (mMat.getShader() == nullptr) return;
 
-		if (!mMat.getShader()->isCompiled())
+		if (!mMat.getShader()->IsCompiled())
 		{
-			mMat.getShader()->addAttribute("aPos", 0);
-			mMat.getShader()->addAttribute("aUV", 1);
-			mMat.getShader()->addAttribute("aNorm", 2);
-			mMat.getShader()->addAttribute("aTang", 3);
-			mMat.getShader()->compile();
+			mMat.getShader()->AddAttribute("aPos", 0);
+			mMat.getShader()->AddAttribute("aUV", 1);
+			mMat.getShader()->AddAttribute("aNorm", 2);
+			mMat.getShader()->AddAttribute("aTang", 3);
+			mMat.getShader()->Compile();
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::render(Transform InTransform)
 	{
 		if (mMat.getShader() == nullptr) return;
-		if (!mMat.getShader()->isCompiled())
+		if (!mMat.getShader()->IsCompiled())
 		{
-			mMat.getShader()->addAttribute("aPos", 0);
-			mMat.getShader()->addAttribute("aUV", 1);
-			mMat.getShader()->addAttribute("aNorm", 2);
-			mMat.getShader()->addAttribute("aTang", 3);
-			mMat.getShader()->compile();
+			mMat.getShader()->AddAttribute("aPos", 0);
+			mMat.getShader()->AddAttribute("aUV", 1);
+			mMat.getShader()->AddAttribute("aNorm", 2);
+			mMat.getShader()->AddAttribute("aTang", 3);
+			mMat.getShader()->Compile();
 		}
 
 		uint64 const offsets[4] = { VOffset, UOffset, NOffset, TOffset };
@@ -147,7 +147,7 @@ namespace Columbus
 			glEnableVertexAttribArray(i);
 		}
 
-		mMat.getShader()->bind();
+		mMat.getShader()->Bind();
 
 		setShaderMatrices(InTransform);
 		setShaderMaterial();
@@ -170,11 +170,12 @@ namespace Columbus
 		{
 			if (textures[i] != nullptr)
 			{
-				mMat.getShader()->setUniform1i(unifs[i].c_str(), indices[i]);
+				mMat.getShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
 				textures[i]->sampler2D(indices[i]);
-			} else
+			}
+			else
 			{
-				mMat.getShader()->setUniform1i(unifs[i].c_str(), indices[i]);
+				mMat.getShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
 				if (textures[0] == nullptr)
 					C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
 				if (textures[1] == nullptr)
@@ -186,11 +187,12 @@ namespace Columbus
 
 		if (cubemap != nullptr)
 		{
-			mMat.getShader()->setUniform1i("uReflectionMap", 2);
+			mMat.getShader()->SetUniform1i("uReflectionMap", 2);
 			cubemap->samplerCube(2);
-		} else
+		}
+		else
 		{
-			mMat.getShader()->setUniform1i("uReflectionMap", 2);
+			mMat.getShader()->SetUniform1i("uReflectionMap", 2);
 			C_DeactiveCubemapOpenGL(C_OGL_TEXTURE2);
 		}
 	}
@@ -202,9 +204,9 @@ namespace Columbus
 		mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
 		mPos = InTransform.GetPos();
-		mMat.getShader()->setUniformMatrix("uModel", UniformModelMatrix);
-		mMat.getShader()->setUniformMatrix("uView", UniformViewMatrix);
-		mMat.getShader()->setUniformMatrix("uProjection", UniformProjectionMatrix);
+		mMat.getShader()->SetUniformMatrix("uModel", UniformModelMatrix);
+		mMat.getShader()->SetUniformMatrix("uView", UniformViewMatrix);
+		mMat.getShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setShaderMaterial()
@@ -230,15 +232,15 @@ namespace Columbus
 		mMaterialUnif[13] = mMat.getReflectionPower();
 		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
 
-		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 15);
+		mMat.getShader()->SetUniformArrayf("MaterialUnif", mMaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::setShaderLightAndCamera()
 	{
 		calculateLights();
 
-		mMat.getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
-		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.getPos());
+		mMat.getShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
+		mMat.getShader()->SetUniform3f("uCamera.pos", mCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::calculateLights()

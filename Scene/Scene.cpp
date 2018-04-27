@@ -17,8 +17,9 @@ namespace Columbus
 	Scene::Scene() :
 		mSkybox(nullptr)
 	{
-		mNoneShader = gDevice->createShader("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
-		mNoneShader->compile();
+		mNoneShader = gDevice->createShader();
+		mNoneShader->Load("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
+		mNoneShader->Compile();
 
 		mNoneEffect.setShader(mNoneShader);
 		PhysWorld.SetGravity(Vector3(0, -9.81, 0));
@@ -484,7 +485,20 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, path) &&
 				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, path1))
 				{
-					mShaders.insert(std::pair<uint32, Shader*>(i, gDevice->createShader(path, path1)));
+					auto TmpShader = gDevice->createShader();
+					if (TmpShader != nullptr)
+					{
+						if (!TmpShader->Load(path, path1))
+						{
+							continue;
+						}
+					}
+					else
+					{
+						continue;
+					}
+
+					mShaders.insert(std::pair<uint32, Shader*>(i, TmpShader));
 				}
 			}
 		}

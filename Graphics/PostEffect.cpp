@@ -82,33 +82,33 @@ namespace Columbus
 
 		mTB->generateMipmap();
 		mDepth->generateMipmap();
-		mShader->bind();
+		mShader->Bind();
     
-		mShader->setUniform1i("uColor", 0);
+		mShader->SetUniform1i("uColor", 0);
 		mTB->sampler2D(0);
 
-		mShader->setUniform1i("uDepth", 1);
+		mShader->SetUniform1i("uDepth", 1);
 		mDepth->sampler2D(1);
 
 		for (auto& Attrib : mAttribsInt)
-			mShader->setUniform1i(Attrib.name, Attrib.value);
+			mShader->SetUniform1i(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsFloat)
-			mShader->setUniform1f(Attrib.name, Attrib.value);
+			mShader->SetUniform1f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector2)
-			mShader->setUniform2f(Attrib.name, Attrib.value);
+			mShader->SetUniform2f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector3)
-			mShader->setUniform3f(Attrib.name, Attrib.value);
+			mShader->SetUniform3f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector4)
-			mShader->setUniform4f(Attrib.name, Attrib.value);
+			mShader->SetUniform4f(Attrib.name, Attrib.value);
 
 		C_DrawScreenQuadOpenGL();
 
 		if (mTB) mTB->unbind();
-		if (mShader) mShader->unbind();
+		if (mShader) mShader->Unbind();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void PostEffect::unbind()
@@ -122,7 +122,7 @@ namespace Columbus
 		C_Buffer::unbind();
 
 		if (mTB) mTB->unbind();
-		if (mShader) mShader->unbind();
+		if (mShader) mShader->Unbind();
 		
 		mFB->unbind();
 		C_Renderbuffer::unbind();

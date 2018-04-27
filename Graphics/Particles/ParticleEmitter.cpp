@@ -48,15 +48,15 @@ namespace Columbus
 			Particle = p;
 		}
 
-		if (!mParticleEffect->getMaterial()->getShader()->isCompiled())
+		if (!mParticleEffect->getMaterial()->getShader()->IsCompiled())
 		{
-			mParticleEffect->getMaterial()->getShader()->addAttribute("aPos", 0);
-			mParticleEffect->getMaterial()->getShader()->addAttribute("aUV", 1);
-			mParticleEffect->getMaterial()->getShader()->addAttribute("aPoses", 2);
-			mParticleEffect->getMaterial()->getShader()->addAttribute("aTimes", 3);
-			mParticleEffect->getMaterial()->getShader()->addAttribute("aColors", 4);
-			mParticleEffect->getMaterial()->getShader()->addAttribute("aSizes", 5);
-			mParticleEffect->getMaterial()->getShader()->compile();
+			mParticleEffect->getMaterial()->getShader()->AddAttribute("aPos", 0);
+			mParticleEffect->getMaterial()->getShader()->AddAttribute("aUV", 1);
+			mParticleEffect->getMaterial()->getShader()->AddAttribute("aPoses", 2);
+			mParticleEffect->getMaterial()->getShader()->AddAttribute("aTimes", 3);
+			mParticleEffect->getMaterial()->getShader()->AddAttribute("aColors", 4);
+			mParticleEffect->getMaterial()->getShader()->AddAttribute("aSizes", 5);
+			mParticleEffect->getMaterial()->getShader()->Compile();
 		}
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);
@@ -201,14 +201,14 @@ namespace Columbus
 		if (mParticleEffect->Required == nullptr ||
 		    SubUV == nullptr) return;
 
-		mParticleEffect->getMaterial()->getShader()->setUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required->Billboarding));
-		mParticleEffect->getMaterial()->getShader()->setUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
+		mParticleEffect->getMaterial()->getShader()->SetUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required->Billboarding));
+		mParticleEffect->getMaterial()->getShader()->SetUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
 
 		mCamera.getViewMatrix().Elements(UniformViewMatrix);
 		mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uView", UniformViewMatrix);
-		mParticleEffect->getMaterial()->getShader()->setUniformMatrix("uProjection", UniformProjectionMatrix);
+		mParticleEffect->getMaterial()->getShader()->SetUniformMatrix("uView", UniformViewMatrix);
+		mParticleEffect->getMaterial()->getShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
@@ -217,11 +217,11 @@ namespace Columbus
 
 			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
 			{
-				mParticleEffect->getMaterial()->getShader()->setUniform1i("uTex", 0);
+				mParticleEffect->getMaterial()->getShader()->SetUniform1i("uTex", 0);
 				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
 			}
 
-			mParticleEffect->getMaterial()->getShader()->setUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
+			mParticleEffect->getMaterial()->getShader()->SetUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 	}
 	
@@ -245,13 +245,13 @@ namespace Columbus
 			mParticleEffect->getMaterial()->getLighting() ? 1.0f : 0.0f
 		};
 
-		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("MaterialUnif", MaterialUnif, 15);
+		mParticleEffect->getMaterial()->getShader()->SetUniformArrayf("MaterialUnif", MaterialUnif, 15);
 	}
 	
 	void ParticleEmitter::setShaderLightAndCamera()
 	{
 		calculateLights();
-		mParticleEffect->getMaterial()->getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
+		mParticleEffect->getMaterial()->getShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
 	}
 	
 	void ParticleEmitter::calculateLights()
@@ -352,7 +352,7 @@ namespace Columbus
 
 		if (mParticleEffect->Required->Visible == false) return;
 
-		mParticleEffect->getMaterial()->getShader()->bind();
+		mParticleEffect->getMaterial()->getShader()->Bind();
 
 		setUniforms();
 
@@ -468,3 +468,6 @@ namespace Columbus
 	}
 
 }
+
+
+

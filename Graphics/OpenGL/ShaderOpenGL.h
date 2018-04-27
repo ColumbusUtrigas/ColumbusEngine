@@ -9,24 +9,23 @@ namespace Columbus
 	class ShaderOpenGL : public Shader
 	{
 	private:
-		uint32 mID = 0;
+		uint32 ID = 0;
 	public:
 		ShaderOpenGL();
-		ShaderOpenGL(std::string aVert, std::string aFrag);
 
-		bool load(std::string aVert, std::string aFrag) override;
-		bool compile() override;
+		bool Load(std::string InVert, std::string InFrag) override;
+		bool Compile() override;
 
-		void bind() const override;
-		void unbind() const override;
+		void Bind() const override;
+		void Unbind() const override;
 
-		void setUniform1i(std::string aName, const int aValue) const override; 
-		void setUniform1f(std::string aName, const float aValue) const override;
-		void setUniform2f(std::string aName, const Vector2 aValue) const override;
-		void setUniform3f(std::string aName, const Vector3 aValue) const override;
-		void setUniform4f(std::string aName, const Vector4 aValue) const override;
-		void setUniformMatrix(std::string aName, const float* aValue) const override;
-		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const override;
+		void SetUniform1i(std::string Name, int Value) const override; 
+		void SetUniform1f(std::string Name, float Value) const override;
+		void SetUniform2f(std::string Name, Vector2 Value) const override;
+		void SetUniform3f(std::string Name, Vector3 Value) const override;
+		void SetUniform4f(std::string Name, Vector4 Value) const override;
+		void SetUniformMatrix(std::string Name, const float* Value) const override;
+		void SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const override;
 
 		~ShaderOpenGL() override;
 	};

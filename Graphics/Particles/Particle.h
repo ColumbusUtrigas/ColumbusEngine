@@ -9,7 +9,7 @@ namespace Columbus
 	class Particle
 	{
 	private:
-		size_t i;
+		uint32 i = 0;
 	public:
 		Vector4 startColor = Vector4(1, 1, 1, 1);
 		Vector4 finalColor = Vector4(1, 1, 1, 1);
@@ -32,7 +32,7 @@ namespace Columbus
 		float TTL = 1.0;
 		float cameraDistance = 1000.0;
 		float noise[9];
-		float percent;
+		float percent = 0.0f;
 
 		unsigned int frame = 0;
 

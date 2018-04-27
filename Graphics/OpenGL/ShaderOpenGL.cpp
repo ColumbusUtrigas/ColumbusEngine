@@ -4,38 +4,6 @@
 
 namespace Columbus
 {
-
-	//STANDART MESH VERTEX SHADER
-	const std::string gMeshVertexShader =
-		"#version 130\n"
-		"attribute vec3 aPos;\n"
-		"attribute vec2 aUV;\n"
-		"attribute vec3 aNorm;\n"
-		"attribute vec3 aTang;\n"
-		"attribute vec3 aBitang;\n"
-		"varying vec3 varPos;\n"
-		"varying vec2 varUV;\n"
-		"varying vec3 varNormal;\n"
-		"varying vec3 varTangent;\n"
-		"varying vec3 varBitangent;\n"
-		"varying vec3 varFragPos;\n"
-		"varying mat3 varTBN;\n"
-		"uniform mat4 uModel;\n"
-		"uniform mat4 uView;\n"
-		"uniform mat4 uProjection;\n"
-		"uniform mat4 uNormal;\n"
-		"void main()\n"
-		"{\n"
-		"gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);\n"
-		"varPos = vec3(uModel * vec4(aPos, 1.0));\n"
-		"varUV = aUV;\n"
-		"varNormal = normalize(vec3(uNormal * vec4(aNorm, 0.0)));\n"
-		"varTangent = normalize(vec3(uNormal * vec4(aTang, 0.0)));\n"
-		"varBitangent = cross(varNormal, varTangent);\n"
-		"varFragPos = vec3(uModel * vec4(aPos, 1.0));\n"
-		"varTBN = transpose(mat3(varTangent, varBitangent, varNormal));\n"
-		"}\n";
-
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -66,214 +34,248 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
+	/*
+	*
+	* Shader loading functions
+	*
+	*/
+	bool ShaderLoadFromFile(std::string InFile, std::string& OutSource, ShaderBuilder& Builder, ShaderType Type)
+	{
+		std::ifstream File;
+		File.open(InFile.c_str());
+
+		if (!File.is_open())
+		{
+			Log::error("Shader not loaded: " + InFile);
+			return false;
+		}
+
+		std::string TmpFile = std::string((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+
+		if (!Builder.Build(TmpFile, Type))
+		{
+			Log::error("Shader not built: " + InFile);
+			return false;
+		}
+
+		if (Builder.ShaderSource.empty())
+		{
+			Log::error("Shader loading incorrect: " + InFile);
+			return false;
+		}
+
+		OutSource = Builder.ShaderSource;
+
+		return true;
+	}
+
+	bool ShaderLoad(std::string InPath, std::string& OutSource, ShaderBuilder& Builder, ShaderType Type)
+	{
+		switch (Type)
+		{
+			case ShaderType::Vertex:
+			{
+				if (InPath == "STANDART_SKY_VERTEX")
+				{
+					OutSource = gSkyVertexShader;
+					return true;
+				}
+				else if (ShaderLoadFromFile(InPath, OutSource, Builder, Type))
+				{
+					return true;
+				}
+
+				break;
+			}
+
+			case ShaderType::Fragment:
+			{
+				if (InPath == "STANDART_SKY_FRAGMENT")
+				{
+					OutSource = gSkyFragmentShader;
+					return true;
+				}
+				else if (ShaderLoadFromFile(InPath, OutSource, Builder, Type))
+				{
+					return true;
+				}
+
+				break;
+			}
+		}
+
+		return false;
+	}
+	/*
+	*
+	* End of shader loading functions
+	*
+	*/
+
+	/*
+	*
+	* Shader compilation functions
+	*
+	*/
+	bool ShaderGetError(std::string ShaderPath, int32 ShaderID)
+	{
+		int32 Status = GL_TRUE;
+		int32 Length = 0;
+		char* Error = nullptr;
+
+		glGetShaderiv(ShaderID, GL_COMPILE_STATUS, &Status);
+
+		if (Status == GL_FALSE)
+		{
+			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
+			Error = new char[Length];
+			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
+			Log::error(ShaderPath + ": " + Error);
+
+			delete[] Error;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ShaderCompile(std::string ShaderPath, std::string ShaderSource, int32 ShaderID)
+	{
+		auto Source = ShaderSource.c_str();
+		glShaderSource(ShaderID, 1, &Source, NULL);
+		glCompileShader(ShaderID);
+
+		if (ShaderGetError(ShaderPath, ShaderID))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void ShaderCleanup(int32 VertexID, int32 FragmentID)
+	{
+		glDeleteShader(VertexID);
+		glDeleteShader(FragmentID);
+	}
+	/*
+	*
+	* End of shader compilation functions
+	*
+	*/
 	ShaderOpenGL::ShaderOpenGL()
 	{
-		mID = glCreateProgram();
+		ID = glCreateProgram();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	ShaderOpenGL::ShaderOpenGL(std::string aVert, std::string aFrag)
+
+	bool ShaderOpenGL::Load(std::string InVert, std::string InFrag)
 	{
-		mID = glCreateProgram();
-		load(aVert, aFrag);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool ShaderOpenGL::load(std::string aVert, std::string aFrag)
-	{
-		std::string vertSource;
-		std::string fragSource;
+		std::string VertSource;
+		std::string FragSource;
 
-		//Vertex shader loading
-		if (aVert == "STANDART_MESH_VERTEX")
-		{
-			vertSource = gMeshVertexShader;
-		}
-		else if (aVert == "STANDART_SKY_VERTEX")
-		{
-			vertSource = gSkyVertexShader;
-		}
-		else
-		{
-			std::ifstream vert;
-			vert.open(aVert.c_str());
-			if (!vert.is_open())
-			{
-				Log::error("Shader not loaded: " + aFrag);
-				return false;
-			}
+		if (!ShaderLoad(InVert, VertSource, Builder, ShaderType::Vertex)) return false;
+		if (!ShaderLoad(InFrag, FragSource, Builder, ShaderType::Fragment)) return false;
 
-			std::string vertFile((std::istreambuf_iterator<char>(vert)), std::istreambuf_iterator<char>());
+		VertShaderPath = InVert;
+		FragShaderPath = InFrag;
 
-			mBuilder.build(vertFile, E_SHADER_TYPE_VERTEX);
-			vertSource = mBuilder.getShader();
-		}
-		//Fragment shader loading
-		if (aFrag == "STANDART_SKY_FRAGMENT")
-		{
-			fragSource = gSkyFragmentShader;
-		}
-		else
-		{
-			std::ifstream frag;
-			frag.open(aFrag.c_str());
-			if (!frag.is_open())
-			{
-				Log::error("Shader not loaded: " + aFrag);
-				return false;
-			}
+		VertShaderSource = VertSource;
+		FragShaderSource = FragSource;
+		Loaded = true;
+		Compiled = false;
 
-			std::string fragFile((std::istreambuf_iterator<char>(frag)), std::istreambuf_iterator<char>());
-
-			mBuilder.build(fragFile, E_SHADER_TYPE_FRAGMENT);
-			fragSource = mBuilder.getShader();
-		}
-
-		if (vertSource.empty())
-		{
-			Log::error("Shader not loaded: " + aVert);
-			return false;
-		}
-
-		if (fragSource.empty())
-		{
-			Log::error("Shader not loaded: " + aFrag);
-			return false;
-		}
-
-		mVertShaderPath = aVert;
-		mFragShaderPath = aFrag;
-
-		mVertShaderSource = vertSource;
-		mFragShaderSource = fragSource;
-		mLoaded = true;
-
-		Log::success("Shader loaded: " + aVert);
-		Log::success("Shader loaded: " + aFrag);
+		Log::success("Shader loaded: " + InVert);
+		Log::success("Shader loaded: " + InFrag);
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ShaderOpenGL::compile()
+	
+	bool ShaderOpenGL::Compile()
 	{
-		if (!mLoaded) return false;
+		if (!Loaded) return false;
 
-		uint32 vertex = glCreateShader(GL_VERTEX_SHADER);
-		uint32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		int32 length, result;
-		char* error;
+		uint32 VertexID = glCreateShader(GL_VERTEX_SHADER);
+		uint32 FragmentID = glCreateShader(GL_FRAGMENT_SHADER);
 
-		auto VertexSource = mVertShaderSource.c_str();
-		auto FragmentSource = mFragShaderSource.c_str();
+		if (!ShaderCompile(VertShaderPath, VertShaderSource, VertexID))   { ShaderCleanup(VertexID, FragmentID); return false; }
+		if (!ShaderCompile(FragShaderPath, FragShaderSource, FragmentID)) { ShaderCleanup(VertexID, FragmentID); return false; }
 
-		glShaderSource(vertex, 1, &VertexSource, NULL);
-		glCompileShader(vertex);
-		glGetShaderiv(vertex, GL_COMPILE_STATUS, &result);
+		glAttachShader(ID, VertexID);
+		glAttachShader(ID, FragmentID);
 
-		if (result == GL_FALSE)
+		for (auto Attrib : Attributes)
 		{
-			glGetShaderiv(vertex, GL_INFO_LOG_LENGTH, &length);
-			error = new char[length];
-			glGetShaderInfoLog(vertex, length, &length, error);
-			printf("%s\n", error);
-			glDeleteShader(vertex);
-			glDeleteShader(fragment);
-			mID = 0;
-
-			delete[] error;
-			return false;
+			glBindAttribLocation(ID, Attrib.Value, Attrib.Name.c_str());
 		}
 
-		glShaderSource(fragment, 1, &FragmentSource, NULL);
-		glCompileShader(fragment);
-		glGetShaderiv(fragment, GL_COMPILE_STATUS, &result);
+		glLinkProgram(ID);
 
-		if (result == GL_FALSE)
-		{
-			glGetShaderiv(fragment, GL_INFO_LOG_LENGTH, &length);
-			error = new char[length];
-			glGetShaderInfoLog(fragment, length, &length, error);
-			printf("%s\n", error);
-			glDeleteShader(vertex);
-			glDeleteShader(fragment);
-			mID = 0;
+		ShaderCleanup(VertexID, FragmentID);
+		Compiled = true;
 
-			delete error;
-			return false;
-		}
-
-		glAttachShader(mID, vertex);
-		glAttachShader(mID, fragment);
-
-		for (auto Attrib : mAttributes)
-			glBindAttribLocation(mID, Attrib.value, Attrib.name.c_str());
-
-		glLinkProgram(mID);
-
-		glDeleteShader(vertex);
-		glDeleteShader(fragment);
-		mCompiled = true;
-
-		Log::success("Shader compiled: " + mVertShaderPath);
-		Log::success("Shader compiled: " + mFragShaderPath);
+		Log::success("Shader compiled: " + VertShaderPath);
+		Log::success("Shader compiled: " + FragShaderPath);
 
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void ShaderOpenGL::bind() const
+	void ShaderOpenGL::Bind() const
 	{
-		if (mCompiled) glUseProgram(mID);
+		if (Compiled)
+		{
+			glUseProgram(ID);
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void ShaderOpenGL::unbind() const
+	
+	void ShaderOpenGL::Unbind() const
 	{
 		glUseProgram(0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void ShaderOpenGL::setUniform1i(std::string aName, const int aValue) const
+	void ShaderOpenGL::SetUniform1i(std::string Name, int Value) const
 	{
-		if (mID != 0 && mCompiled) glUniform1i(glGetUniformLocation(mID, aName.c_str()), aValue);
+		if (ID != 0 && Compiled) glUniform1i(glGetUniformLocation(ID, Name.c_str()), Value);
 	}
 
-	void ShaderOpenGL::setUniform1f(std::string aName, const float aValue) const
+	void ShaderOpenGL::SetUniform1f(std::string Name, float Value) const
 	{
-		if (mID != 0 && mCompiled) glUniform1f(glGetUniformLocation(mID, aName.c_str()), aValue);
+		if (ID != 0 && Compiled) glUniform1f(glGetUniformLocation(ID, Name.c_str()), Value);
 	}
 
-	void ShaderOpenGL::setUniform2f(std::string aName, const Vector2 aValue) const
+	void ShaderOpenGL::SetUniform2f(std::string Name, Vector2 Value) const
 	{
-		if (mID != 0 && mCompiled) glUniform2f(glGetUniformLocation(mID, aName.c_str()), aValue.X, aValue.Y);
+		if (ID != 0 && Compiled) glUniform2f(glGetUniformLocation(ID, Name.c_str()), Value.X, Value.Y);
 	}
 
-	void ShaderOpenGL::setUniform3f(std::string aName, const Vector3 aValue) const
+	void ShaderOpenGL::SetUniform3f(std::string Name, Vector3 Value) const
 	{
-		if (mID != 0 && mCompiled) glUniform3f(glGetUniformLocation(mID, aName.c_str()), aValue.X, aValue.Y, aValue.Z);
+		if (ID != 0 && Compiled) glUniform3f(glGetUniformLocation(ID, Name.c_str()), Value.X, Value.Y, Value.Z);
 	}
 
-	void ShaderOpenGL::setUniform4f(std::string aName, const Vector4 aValue) const
+	void ShaderOpenGL::SetUniform4f(std::string Name, Vector4 Value) const
 	{
-		if (mID != 0 && mCompiled) glUniform4f(glGetUniformLocation(mID, aName.c_str()), aValue.x, aValue.y, aValue.z, aValue.w);
+		if (ID != 0 && Compiled) glUniform4f(glGetUniformLocation(ID, Name.c_str()), Value.x, Value.y, Value.z, Value.w);
 	}
 	
-	void ShaderOpenGL::setUniformMatrix(std::string aName, const float* aValue) const
+	void ShaderOpenGL::SetUniformMatrix(std::string Name, const float* Value) const
 	{
-		if (mID != 0 && mCompiled) glUniformMatrix4fv(glGetUniformLocation(mID, aName.c_str()), 1, GL_FALSE, aValue);
+		if (ID != 0 && Compiled) glUniformMatrix4fv(glGetUniformLocation(ID, Name.c_str()), 1, GL_FALSE, Value);
 	}
 	
-	void ShaderOpenGL::setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const
+	void ShaderOpenGL::SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const
 	{
-		if (mID != 0 && mCompiled) glUniform1fv(glGetUniformLocation(mID, aName.c_str()), aSize, aArray);
+		if (ID != 0 && Compiled) glUniform1fv(glGetUniformLocation(ID, Name.c_str()), Size, Array);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	ShaderOpenGL::~ShaderOpenGL()
 	{
-		glDeleteProgram(mID);
+		glDeleteProgram(ID);
 	}
 
 }

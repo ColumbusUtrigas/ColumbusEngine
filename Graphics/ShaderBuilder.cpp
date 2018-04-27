@@ -21,46 +21,25 @@ namespace Columbus
 	const std::string gFragmentShaderHeader = 
 	"#version 130\n"
 	"#define FragColor gl_FragColor\n\n";
-
-	ShaderBuilder::ShaderBuilder()
+	
+	bool ShaderBuilder::Build(std::string InShader, ShaderType Type)
 	{
+		ShaderSource.clear();
 
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	ShaderBuilder::ShaderBuilder(const std::string aShader, const ShaderType aType)
-	{
-		build(aShader, aType);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool ShaderBuilder::build(const std::string aShader, const ShaderType aType)
-	{
-		shader.clear();
-
-		switch (aType)
+		switch (Type)
 		{
-		case E_SHADER_TYPE_VERTEX:
-			shader = gVertexShaderHeader + "\n" + aShader + "\n";
+		case ShaderType::Vertex:
+			ShaderSource = gVertexShaderHeader + "\n" + InShader + "\n";
+			return true;
 			break;
 
-		case E_SHADER_TYPE_FRAGMENT:
-			shader = gFragmentShaderHeader + "\n" + aShader + "\n";
+		case ShaderType::Fragment:
+			ShaderSource = gFragmentShaderHeader + "\n" + InShader + "\n";
+			return true;
 			break;
 		};
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string ShaderBuilder::getShader() const
-	{
-		return shader;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	ShaderBuilder::~ShaderBuilder()
-	{
 
+		return false;
 	}
 
 }
