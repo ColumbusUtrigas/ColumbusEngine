@@ -65,6 +65,8 @@ int main(int argc, char** argv)
 	str.Append(arr, arr + 7);
 	std::cout << str + ", my sweety" << std::endl;
 
+	std::cout << "Instancing support: " << (OpenGL::SupportsInstancing() ? "Yes" : "No") << std::endl;
+	std::cout << "Transform feedback support: " << (OpenGL::SupportsTransformFeedback() ? "Yes" : "No") << std::endl;
 	std::cout << "Shaders support: " << (OpenGL::SupportsShader() ? "Yes" : "No") << std::endl;
 	std::cout << "Geometry shaders support: " << (OpenGL::SupportsGeometryShader() ? "Yes" : "No") << std::endl;
 	std::cout << "Tesselation support: " << (OpenGL::SupportsTesselation() ? "Yes" : "No") << std::endl;
