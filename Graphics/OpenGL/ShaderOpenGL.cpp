@@ -236,39 +236,93 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
+	void ShaderOpenGL::AddUniform(std::string Name)
+	{
+		UniformLocations[Name] = glGetUniformLocation(ID, Name.c_str());
+	}
+
 	void ShaderOpenGL::SetUniform1i(std::string Name, int Value) const
 	{
-		if (ID != 0 && Compiled) glUniform1i(glGetUniformLocation(ID, Name.c_str()), Value);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniform1i(UniformLocations.at(Name), Value);
+			}
+		}
 	}
 
 	void ShaderOpenGL::SetUniform1f(std::string Name, float Value) const
 	{
-		if (ID != 0 && Compiled) glUniform1f(glGetUniformLocation(ID, Name.c_str()), Value);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniform1f(UniformLocations.at(Name), Value);
+			}
+		}
 	}
 
 	void ShaderOpenGL::SetUniform2f(std::string Name, Vector2 Value) const
 	{
-		if (ID != 0 && Compiled) glUniform2f(glGetUniformLocation(ID, Name.c_str()), Value.X, Value.Y);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniform2f(UniformLocations.at(Name), Value.X, Value.Y);
+			}
+		}
 	}
 
 	void ShaderOpenGL::SetUniform3f(std::string Name, Vector3 Value) const
 	{
-		if (ID != 0 && Compiled) glUniform3f(glGetUniformLocation(ID, Name.c_str()), Value.X, Value.Y, Value.Z);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniform3f(UniformLocations.at(Name), Value.X, Value.Y, Value.Z);
+			}
+		}
 	}
 
 	void ShaderOpenGL::SetUniform4f(std::string Name, Vector4 Value) const
 	{
-		if (ID != 0 && Compiled) glUniform4f(glGetUniformLocation(ID, Name.c_str()), Value.x, Value.y, Value.z, Value.w);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniform4f(UniformLocations.at(Name), Value.x, Value.y, Value.z, Value.w);
+			}
+		}
 	}
 	
 	void ShaderOpenGL::SetUniformMatrix(std::string Name, const float* Value) const
 	{
-		if (ID != 0 && Compiled) glUniformMatrix4fv(glGetUniformLocation(ID, Name.c_str()), 1, GL_FALSE, Value);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniformMatrix4fv(UniformLocations.at(Name), 1, GL_FALSE, Value);
+			}
+		}
 	}
 	
 	void ShaderOpenGL::SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const
 	{
-		if (ID != 0 && Compiled) glUniform1fv(glGetUniformLocation(ID, Name.c_str()), Size, Array);
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glUniform1fv(UniformLocations.at(Name), Size, Array);
+			}
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

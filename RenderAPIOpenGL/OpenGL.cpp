@@ -15,6 +15,7 @@ namespace Columbus
 	int32 OpenGL::MaxVertexUniformVectors = -1;
 	int32 OpenGL::MaxViewportDims = -1;
 
+	bool OpenGL::bSupportsUniformBuffer = false;
 	bool OpenGL::bSupportsInstancing = false;
 	bool OpenGL::bSupportsTransformFeedback = false;
 	bool OpenGL::bSupportsShader = false;
@@ -36,6 +37,11 @@ namespace Columbus
 		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &MaxVertexUniformVectors);
 		glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &MaxViewportDims);
 
+		if (glewGetExtension("GL_ARB_uniform_buffer_object") == GL_TRUE)
+		{
+			bSupportsUniformBuffer = true;
+		}
+
 		if (glewGetExtension("GL_ARB_instanced_arrays") == GL_TRUE &&
 		    glewGetExtension("GL_ARB_draw_instanced") == GL_TRUE &&
 		    glewGetExtension("GL_EXT_draw_instanced") == GL_TRUE)
@@ -43,7 +49,7 @@ namespace Columbus
 			bSupportsInstancing = true;
 		}
 
-		if (glewGetExtension("GL_EXT_transform_feedback") == GL_TRUE)
+		if (glewGetExtension("GL_ARB_transform_feedback2") == GL_TRUE)
 		{
 			bSupportsTransformFeedback = true;
 		}

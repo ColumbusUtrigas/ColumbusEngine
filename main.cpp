@@ -31,8 +31,8 @@ int main(int argc, char** argv)
 	cur->load("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
 
 	input.showMouseCursor(false);
-	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_CROSSHAIR);
-	input.setColoredCursor(cur->getData(), cur->getWidth(), cur->getHeight(), cur->getBPP(), vec2(17, 3));
+	//input.SetSystemCursor(SystemCursor::Crosshair);
+	input.SetColoredCursor(cur->getData(), cur->getWidth(), cur->getHeight(), cur->getBPP(), vec2(17, 3));
 
 	bool cursor = false;
 
@@ -49,6 +49,13 @@ int main(int argc, char** argv)
 		Log::error("Couldn't load sound");
 	}
 
+	Array<uint32> intarr;
+
+	for (auto& i : intarr)
+	{
+
+	}
+
 	Source->SetPosition(Vector3(0, 10, 3.5));
 	Source->SetLooping(true);
 	Source->SetMinDistance(1.0f);
@@ -60,11 +67,7 @@ int main(int argc, char** argv)
 
 	float xPos = 8.0f;
 
-	const char* arr = "Fuck me";
-	String str("Oh....");
-	str.Append(arr, arr + 7);
-	std::cout << str + ", my sweety" << std::endl;
-
+	std::cout << "Uniform buffer support: " << (OpenGL::SupportsUniformBuffer() ? "Yes" : "No") << std::endl;
 	std::cout << "Instancing support: " << (OpenGL::SupportsInstancing() ? "Yes" : "No") << std::endl;
 	std::cout << "Transform feedback support: " << (OpenGL::SupportsTransformFeedback() ? "Yes" : "No") << std::endl;
 	std::cout << "Shaders support: " << (OpenGL::SupportsShader() ? "Yes" : "No") << std::endl;

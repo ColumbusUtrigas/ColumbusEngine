@@ -50,13 +50,24 @@ namespace Columbus
 
 		if (!mParticleEffect->getMaterial()->getShader()->IsCompiled())
 		{
-			mParticleEffect->getMaterial()->getShader()->AddAttribute("aPos", 0);
-			mParticleEffect->getMaterial()->getShader()->AddAttribute("aUV", 1);
-			mParticleEffect->getMaterial()->getShader()->AddAttribute("aPoses", 2);
-			mParticleEffect->getMaterial()->getShader()->AddAttribute("aTimes", 3);
-			mParticleEffect->getMaterial()->getShader()->AddAttribute("aColors", 4);
-			mParticleEffect->getMaterial()->getShader()->AddAttribute("aSizes", 5);
-			mParticleEffect->getMaterial()->getShader()->Compile();
+			auto tShader = mParticleEffect->getMaterial()->getShader();
+
+			tShader->AddAttribute("aPos", 0);
+			tShader->AddAttribute("aUV", 1);
+			tShader->AddAttribute("aPoses", 2);
+			tShader->AddAttribute("aTimes", 3);
+			tShader->AddAttribute("aColors", 4);
+			tShader->AddAttribute("aSizes", 5);
+			tShader->Compile();
+
+			tShader->AddUniform("uBillboard");
+			tShader->AddUniform("uSubUV");
+			tShader->AddUniform("uView");
+			tShader->AddUniform("uProjection");
+			tShader->AddUniform("uTex");
+			tShader->AddUniform("uDiscard");
+			tShader->AddUniform("MaterialUnif");
+			tShader->AddUniform("LightUnif");
 		}
 
 		mBuf = new C_Buffer(vrts, sizeof(vrts) * sizeof(float), 3);

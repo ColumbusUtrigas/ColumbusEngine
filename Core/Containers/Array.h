@@ -326,12 +326,12 @@ namespace Columbus
 		typedef ArrayIndexedIterator<Array, T, uint32> Iterator;
 		typedef ArrayIndexedIterator<const Array, const T, uint32> ConstIterator;
 
-		Iterator CreateIterator()
+		Iterator CreateIterator() const
 		{
 			return Iterator(this);
 		}
 
-		ConstIterator CreateConstIterator()
+		ConstIterator CreateConstIterator() const
 		{
 			return ConstIterator(this);
 		}
