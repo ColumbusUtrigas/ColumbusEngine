@@ -26,9 +26,7 @@ namespace Columbus
 		mPreviousKeyboardState = new uint8_t[mKeyboardStateNum];
 		mCurrentKeyboardState = new uint8_t[mKeyboardStateNum];
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::updateIO()
 	{
 		if (mIO == nullptr || mWindow == nullptr) return;
@@ -38,14 +36,12 @@ namespace Columbus
 		mIO->screen.aspect = mWindow->getAspect();
 		mIO->screen.size = mWindow->getSize();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::bindInput(const InputBind aBind)
 	{
 		mBinds.push_back(std::move(aBind));
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::setWindow(const Window* aWindow)
 	{
 		if (aWindow == nullptr) return;
@@ -58,39 +54,39 @@ namespace Columbus
 	{
 		mIO = const_cast<GUI::IO*>(aIO);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::showMouseCursor(const bool aX)
 	{
 		mMouseEnabled = static_cast<bool>(aX);
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Input::setSystemCursor(const InputSystemCursor aID)
+	
+	void Input::SetSystemCursor(SystemCursor Cursor)
 	{
 		SDL_SystemCursor id = SDL_SYSTEM_CURSOR_NO;
 
-		switch (aID)
+		switch (Cursor)
 		{
-		case E_INPUT_SYSTEM_CURSOR_ARROW: id = SDL_SYSTEM_CURSOR_ARROW; break;
-		case E_INPUT_SYSTEM_CURSOR_IBEAM: id = SDL_SYSTEM_CURSOR_IBEAM; break;
-		case E_INPUT_SYSTEM_CURSOR_WAIT: id = SDL_SYSTEM_CURSOR_WAIT; break;
-		case E_INPUT_SYSTEM_CURSOR_CROSSHAIR: id = SDL_SYSTEM_CURSOR_CROSSHAIR; break;
-		case E_INPUT_SYSTEM_CURSOR_WAITARROW: id = SDL_SYSTEM_CURSOR_WAITARROW; break;
-		case E_INPUT_SYSTEM_CURSOR_SIZENWSE: id = SDL_SYSTEM_CURSOR_SIZENWSE; break;
-		case E_INPUT_SYSTEM_CURSOR_SIZENESW: id = SDL_SYSTEM_CURSOR_SIZENESW; break;
-		case E_INPUT_SYSTEM_CURSOR_SIZEWE: id = SDL_SYSTEM_CURSOR_SIZEWE; break;
-		case E_INPUT_SYSTEM_CURSOR_SIZENS: id = SDL_SYSTEM_CURSOR_SIZENS; break;
-		case E_INPUT_SYSTEM_CURSOR_SIZEALL: id = SDL_SYSTEM_CURSOR_SIZEALL; break;
-		case E_INPUT_SYSTEM_CURSOR_NO: id = SDL_SYSTEM_CURSOR_NO; break;
-		case E_INPUT_SYSTEM_CURSOR_HAND: id = SDL_SYSTEM_CURSOR_HAND; break;
+		case SystemCursor::Arrow: id = SDL_SYSTEM_CURSOR_ARROW; break;
+		case SystemCursor::IBeam: id = SDL_SYSTEM_CURSOR_IBEAM; break;
+		case SystemCursor::Wait: id = SDL_SYSTEM_CURSOR_WAIT; break;
+		case SystemCursor::Crosshair: id = SDL_SYSTEM_CURSOR_CROSSHAIR; break;
+		case SystemCursor::WaitArrow: id = SDL_SYSTEM_CURSOR_WAITARROW; break;
+		case SystemCursor::SizeNWSE: id = SDL_SYSTEM_CURSOR_SIZENWSE; break;
+		case SystemCursor::SizeNESW: id = SDL_SYSTEM_CURSOR_SIZENESW; break;
+		case SystemCursor::SizeWE: id = SDL_SYSTEM_CURSOR_SIZEWE; break;
+		case SystemCursor::SizeNS: id = SDL_SYSTEM_CURSOR_SIZENS; break;
+		case SystemCursor::SizeAll: id = SDL_SYSTEM_CURSOR_SIZEALL; break;
+		case SystemCursor::No: id = SDL_SYSTEM_CURSOR_NO; break;
+		case SystemCursor::Hand: id = SDL_SYSTEM_CURSOR_HAND; break;
 		default: id = SDL_SYSTEM_CURSOR_NO; break;
 		}
 
 		SDL_Cursor* cursor = SDL_CreateSystemCursor(id);
 		SDL_SetCursor(cursor);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Input::setColoredCursor(const void* aPixels, const unsigned int aW,
+
+	void Input::SetColoredCursor(const void* aPixels, const unsigned int aW,
 			const unsigned int aH, const unsigned int aBPP, const Vector2 aHot)
 	{
 		Uint32 rmask, gmask, bmask, amask;
@@ -111,7 +107,7 @@ namespace Columbus
 		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, static_cast<int>(aHot.X), static_cast<int>(aHot.Y));
 		SDL_SetCursor(cursor);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::setMousePos(const Vector2 aPos)
 	{
 		if (mWindow == nullptr) return;
@@ -122,14 +118,12 @@ namespace Columbus
 		mCurrentMousePosition = aPos;
 		mPreviousMousePosition = aPos;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::setMousePosGlobal(const Vector2 aPos)
 	{
 		SDL_WarpMouseGlobal(static_cast<int>(aPos.X), static_cast<int>(aPos.Y));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Input::update()
 	{
 		SDL_PumpEvents();
@@ -149,33 +143,37 @@ namespace Columbus
 
 		updateIO();
 
-		for (auto i : mBinds)
+		for (auto& Bind : mBinds)
 		{
-			switch (i.type)
+			switch (Bind.Type)
 			{
-			case E_INPUT_BIND_KEY:
-				if (getKey(i.key))
-					i.execute();
+			case InputBindType::Key:
+				if (getKey(Bind.Key))
+				{
+					Bind.Execute();
+				}
 				break;
-			case E_INPUT_BIND_KEY_DOWN:
-				if (getKeyDown(i.key))
-					i.execute();
+			case InputBindType::KeyDown:
+				if (getKeyDown(Bind.Key))
+				{
+					Bind.Execute();
+				}
 				break;
-			case E_INPUT_BIND_KEY_UP:
-				if (getKeyUp(i.key))
-					i.execute();
+			case InputBindType::KeyUp:
+				if (getKeyUp(Bind.Key))
+				{
+					Bind.Execute();
+				}
 				break;
 			}
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Vector2 Input::getMousePosition()
 	{
 		return mCurrentMousePosition;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Vector2 Input::getMouseMovement()
 	{
 		Vector2 mouseDelta;
@@ -187,9 +185,7 @@ namespace Columbus
 		mouseDelta.Y = static_cast<float>(curY - preY);
 		return mouseDelta;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool Input::getKey(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
@@ -198,7 +194,7 @@ namespace Columbus
 
 		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool Input::getKeyDown(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
@@ -207,7 +203,7 @@ namespace Columbus
 
 		return ((mPreviousKeyboardState[aKey] == 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool Input::getKeyUp(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
@@ -216,12 +212,13 @@ namespace Columbus
 
 		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] == 0x00));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Input::~Input()
 	{
 
 	}
 
 }
+
+
+

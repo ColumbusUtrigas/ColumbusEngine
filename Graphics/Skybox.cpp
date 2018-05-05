@@ -14,31 +14,47 @@
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
+	static Shader* CreateSkyboxShader()
+	{
+		Shader* tShader = gDevice->createShader();
+
+		if (!tShader->Load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT"))
+		{
+			delete tShader;
+			return nullptr;
+		}
+
+		if (!tShader->Compile())
+		{
+			delete tShader;
+			return nullptr;
+		}
+
+		tShader->AddUniform("uView");
+		tShader->AddUniform("uProjection");
+		tShader->AddUniform("uSkybox");
+
+		return tShader;
+	}
+
 	Skybox::Skybox() :
 		mBuf(nullptr),
 		mCubemap(nullptr),
 		mShader(nullptr)
 	{
 		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = gDevice->createShader();
-		mShader->Load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
-		mShader->Compile();
+		mShader = CreateSkyboxShader();
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Skybox::Skybox(Cubemap* aCubemap) :
 		mBuf(nullptr),
 		mCubemap(aCubemap),
 		mShader(nullptr)
 	{
 		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = gDevice->createShader();
-		mShader->Load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
-		mShader->Compile();
+		mShader = CreateSkyboxShader();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Skybox::draw()
 	{
 		if (mShader != nullptr && mBuf != nullptr && mCubemap != nullptr)
@@ -81,26 +97,22 @@ namespace Columbus
 			C_EnableDepthMaskOpenGL();
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Skybox::setCamera(const Camera aCamera)
 	{
 		mCamera = static_cast<Camera>(aCamera);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Skybox::setCubemap(const Cubemap* aCubemap)
 	{
 		mCubemap = const_cast<Cubemap*>(aCubemap);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Cubemap* Skybox::getCubemap() const
 	{
 		return mCubemap;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Skybox::~Skybox()
 	{
 		delete mShader;

@@ -61,6 +61,8 @@ namespace Columbus
 		virtual void Unbind() const {}
 
 		void AddAttribute(std::string InName, uint32 InValue) { Attributes.emplace_back(InName, InValue); }
+
+		virtual void AddUniform(std::string Name) {}
 		virtual void SetUniform1i(std::string Name, int Value) const {}
 		virtual void SetUniform1f(std::string Name, float Value) const {}
 		virtual void SetUniform2f(std::string Name, Vector2 Value) const {}

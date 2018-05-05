@@ -22,50 +22,51 @@
 namespace Columbus
 {
 
-	enum InputBindType
+	enum class InputBindType
 	{
-		E_INPUT_BIND_KEY,
-		E_INPUT_BIND_KEY_DOWN,
-		E_INPUT_BIND_KEY_UP,
+		Key,
+		KeyDown,
+		KeyUp
 	};
 
-	enum InputSystemCursor
+	enum class SystemCursor
 	{
-		E_INPUT_SYSTEM_CURSOR_ARROW,
-		E_INPUT_SYSTEM_CURSOR_IBEAM,
-		E_INPUT_SYSTEM_CURSOR_WAIT,
-		E_INPUT_SYSTEM_CURSOR_CROSSHAIR,
-		E_INPUT_SYSTEM_CURSOR_WAITARROW,
-		E_INPUT_SYSTEM_CURSOR_SIZENWSE,
-		E_INPUT_SYSTEM_CURSOR_SIZENESW,
-		E_INPUT_SYSTEM_CURSOR_SIZEWE,
-		E_INPUT_SYSTEM_CURSOR_SIZENS,
-		E_INPUT_SYSTEM_CURSOR_SIZEALL,
-		E_INPUT_SYSTEM_CURSOR_NO,
-		E_INPUT_SYSTEM_CURSOR_HAND
+		Arrow,
+		IBeam,
+		Wait,
+		Crosshair,
+		WaitArrow,
+		SizeNWSE,
+		SizeNESW,
+		SizeWE,
+		SizeNS,
+		SizeAll,
+		No,
+		Hand
 	};
 
 	struct InputBind
 	{
-		InputBindType type;
-		unsigned int key;
-		std::function<void()> func;
+		InputBindType Type;
+		uint32 Key;
+		std::function<void()> Func;
 
-		InputBind(InputBindType aType, unsigned int aKey, std::function<void()> aFunc) :
-			type(aType), key(aKey), func(aFunc) {}
+		InputBind(InputBindType InType, uint32 InKey, std::function<void()> InFunc) :
+			Type(InType), Key(InKey), Func(InFunc)
+		{}
 
-		void execute()
+		void Execute()
 		{
-			func();
+			Func();
 		}
 	};
 
 	class Input
 	{
 	private:
-		uint8_t* mCurrentKeyboardState = nullptr;
-		uint8_t* mPreviousKeyboardState = nullptr;
-		uint8_t* mKeyboardStateTmp = nullptr;
+		uint8* mCurrentKeyboardState = nullptr;
+		uint8* mPreviousKeyboardState = nullptr;
+		uint8* mKeyboardStateTmp = nullptr;
 
 		int mKeyboardStateNum = 0;
 
@@ -89,8 +90,8 @@ namespace Columbus
 		void setIO(const GUI::IO* aIO);
 
 		void showMouseCursor(const bool aX);
-		void setSystemCursor(const InputSystemCursor aID);
-		void setColoredCursor(const void* aPixels, const unsigned int aWidth,
+		void SetSystemCursor(SystemCursor Cursor);
+		void SetColoredCursor(const void* aPixels, const unsigned int aWidth,
 			const unsigned int aHeight, const unsigned int aBPP, const Vector2 aHot);
 		void setMousePos(const Vector2 aPos);
 		void setMousePosGlobal(const Vector2 aPos);

@@ -104,14 +104,23 @@ namespace Columbus
 
 		if (mMat.getShader() == nullptr) return;
 
-		if (!mMat.getShader()->IsCompiled())
+		/*if (!mMat.getShader()->IsCompiled())
 		{
 			mMat.getShader()->AddAttribute("aPos", 0);
 			mMat.getShader()->AddAttribute("aUV", 1);
 			mMat.getShader()->AddAttribute("aNorm", 2);
 			mMat.getShader()->AddAttribute("aTang", 3);
 			mMat.getShader()->Compile();
-		}
+
+			mMat.getShader()->AddUniform("uMaterial.diffuseMap");
+			mMat.getShader()->AddUniform("uMaterial.specularMap");
+			mMat.getShader()->AddUniform("uMaterial.normalMap");
+			mMat.getShader()->AddUniform("uReflectionMap");
+
+			mMat.getShader()->AddUniform("uModel");
+			mMat.getShader()->AddUniform("uView");
+			mMat.getShader()->AddUniform("uProjection");
+		}*/
 	}
 	
 	void MeshOpenGL::Render(Transform InTransform)
@@ -119,11 +128,26 @@ namespace Columbus
 		if (mMat.getShader() == nullptr) return;
 		if (!mMat.getShader()->IsCompiled())
 		{
-			mMat.getShader()->AddAttribute("aPos", 0);
-			mMat.getShader()->AddAttribute("aUV", 1);
-			mMat.getShader()->AddAttribute("aNorm", 2);
-			mMat.getShader()->AddAttribute("aTang", 3);
-			mMat.getShader()->Compile();
+			auto tShader = mMat.getShader();
+
+			tShader->AddAttribute("aPos", 0);
+			tShader->AddAttribute("aUV", 1);
+			tShader->AddAttribute("aNorm", 2);
+			tShader->AddAttribute("aTang", 3);
+			tShader->Compile();
+
+			tShader->AddUniform("uMaterial.diffuseMap");
+			tShader->AddUniform("uMaterial.specularMap");
+			tShader->AddUniform("uMaterial.normalMap");
+			tShader->AddUniform("uReflectionMap");
+
+			tShader->AddUniform("uModel");
+			tShader->AddUniform("uView");
+			tShader->AddUniform("uProjection");
+
+			tShader->AddUniform("MaterialUnif");
+			tShader->AddUniform("LightUnif");
+			tShader->AddUniform("uCamera.pos");
 		}
 
 		uint64 const offsets[4] = { VOffset, UOffset, NOffset, TOffset };
