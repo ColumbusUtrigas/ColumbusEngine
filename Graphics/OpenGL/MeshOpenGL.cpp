@@ -7,17 +7,20 @@ namespace Columbus
 	MeshOpenGL::MeshOpenGL()
 	{
 		glGenBuffers(1, &VBuf);
+		glGenVertexArrays(1, &VAO);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices)
 	{
 		glGenBuffers(1, &VBuf);
+		glGenVertexArrays(1, &VAO);
 		SetVertices(InVertices);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices, Material InMaterial)
 	{
 		glGenBuffers(1, &VBuf);
+		glGenVertexArrays(1, &VAO);
 		mMat = InMaterial;
 		SetVertices(InVertices);
 	}
@@ -94,6 +97,20 @@ namespace Columbus
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+		uint64 const offsets[4] = { VOffset, UOffset, NOffset, TOffset };
+		uint32 const strides[4] = { 3, 2, 3, 3 };
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
+
+		for (uint32 i = 0; i < 4; i++)
+		{
+			glVertexAttribPointer(i, strides[i], GL_FLOAT, GL_FALSE, 0, (void*)offsets[i]);
+			glEnableVertexAttribArray(i);
+		}
+
+		glBindVertexArray(0);
+
 		delete[] v;
 		delete[] u;
 		delete[] n;
@@ -150,16 +167,7 @@ namespace Columbus
 			tShader->AddUniform("uCamera.pos");
 		}
 
-		uint64 const offsets[4] = { VOffset, UOffset, NOffset, TOffset };
-		uint32 const strides[4] = { 3, 2, 3, 3 };
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
-
-		for (uint32 i = 0; i < 4; i++)
-		{
-			glVertexAttribPointer(i, strides[i], GL_FLOAT, GL_FALSE, 0, (void*)offsets[i]);
-			glEnableVertexAttribArray(i);
-		}
+		glBindVertexArray(VAO);
 
 		mMat.getShader()->Bind();
 
@@ -169,6 +177,7 @@ namespace Columbus
 		SetShaderTextures();
 
 		glDrawArrays(GL_TRIANGLES, 0, Vertices.size());
+		glBindVertexArray(0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -324,6 +333,7 @@ namespace Columbus
 	MeshOpenGL::~MeshOpenGL()
 	{
 		glDeleteBuffers(1, &VBuf);
+		glDeleteVertexArrays(1, &VAO);
 	}
 
 }

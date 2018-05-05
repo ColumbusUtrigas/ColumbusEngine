@@ -18,6 +18,7 @@ namespace Columbus
 	{
 	private:
 		uint32 VBuf = 0;
+		uint32 VAO = 0;
 
 		uint64 VOffset = 0;
 		uint64 UOffset = 0;
