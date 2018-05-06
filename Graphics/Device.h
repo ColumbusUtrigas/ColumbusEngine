@@ -14,7 +14,6 @@ namespace Columbus
 	public:
 		Device();
 
-		virtual Shader* createShader() const;
 		virtual ShaderStage* CreateShaderStage() const;
 		virtual ShaderProgram* CreateShaderProgram() const;
 

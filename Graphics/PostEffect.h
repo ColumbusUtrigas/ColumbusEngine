@@ -15,6 +15,7 @@
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
+#include <Core/Containers/Array.h>
 
 namespace Columbus
 {
@@ -57,12 +58,12 @@ namespace Columbus
 	class PostEffect
 	{
 	private:
-		Shader* mShader = nullptr;
-		ShaderProgram* PostShader = nullptr;
+		ShaderProgram* Shader = nullptr;
 		Framebuffer* mFB = nullptr;
 		Texture* mTB = nullptr;
 		Texture* mDepth = nullptr;
 
+		std::vector<std::string> AttributeNames;
 		std::vector<PostEffectAttributeInt> mAttribsInt;
 		std::vector<PostEffectAttributeFloat> mAttribsFloat;
 		std::vector<PostEffectAttributeVector2> mAttribsVector2;
@@ -72,7 +73,7 @@ namespace Columbus
 		PostEffect();
 
 		void SetShader(ShaderProgram* InShader);
-		void setShader(Shader* aShader);
+		void AddAttributeName(std::string Name);
 		void addAttrib(PostEffectAttributeInt aAttrib);
 		void addAttrib(PostEffectAttributeFloat aAttrib);
 		void addAttrib(PostEffectAttributeVector2 aAttrib);

@@ -105,6 +105,7 @@ namespace Columbus
 		glEnable(GL_TEXTURE_CUBE_MAP_ARB);
 		glEnable(GL_ALPHA_TEST);
 		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_PROGRAM_POINT_SIZE);
 
 		if (glewInit() != GLEW_OK)
 		{

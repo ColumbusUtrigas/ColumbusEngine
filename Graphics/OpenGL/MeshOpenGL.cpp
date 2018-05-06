@@ -167,8 +167,6 @@ namespace Columbus
 			tShader->AddUniform("uCamera.pos");
 		}
 
-		glBindVertexArray(VAO);
-
 		mMat.GetShader()->Bind();
 
 		SetShaderMatrices(InTransform);
@@ -176,6 +174,7 @@ namespace Columbus
 		SetShaderLightAndCamera();
 		SetShaderTextures();
 
+		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, Vertices.size());
 		glBindVertexArray(0);
 	}

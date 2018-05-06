@@ -13,9 +13,6 @@
 namespace Columbus
 {
 
-	Shader* gMeshWhiteShader = nullptr;
-	Shader* gParticleWhiteShader = nullptr;
-
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	C_Render::C_Render()

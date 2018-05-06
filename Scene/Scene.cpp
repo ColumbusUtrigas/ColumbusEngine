@@ -16,8 +16,7 @@ namespace Columbus
 		NoneShader->AddStage(frag);
 		NoneShader->Compile();
 
-		NoneShader->AddUniform("uColor");
-		NoneShader->AddUniform("uDepth");
+		mNoneEffect.AddAttributeName("uResolution");
 
 		mNoneEffect.SetShader(NoneShader);
 
@@ -371,8 +370,8 @@ namespace Columbus
 	*/
 
 	static GameObject* SceneLoadGameObject(Serializer::SerializerXML* Serializer, std::string Element,
-		std::map<uint32, Mesh*>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, Shader*>* Shaders,
-		std::map<uint32, ShaderProgram*>* ShaderPrograms, PhysicsWorld* PhysWorld)
+		std::map<uint32, Mesh*>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
+		PhysicsWorld* PhysWorld)
 	{
 		GameObject* Object = new GameObject();
 
@@ -397,7 +396,7 @@ namespace Columbus
 
 			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" },shaderID))
 			{
-				material->SetShader(ShaderPrograms->at(shaderID));
+				material->SetShader(Shaders->at(shaderID));
 			}
 			else
 			{
@@ -484,7 +483,6 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, path) &&
 				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, path1))
 				{
-					auto TmpShader = gDevice->createShader();
 					auto tShader = gDevice->CreateShaderProgram();
 
 					auto VertexStage = gDevice->CreateShaderStage();
@@ -500,20 +498,6 @@ namespace Columbus
 
 						ShaderPrograms[i] = tShader;
 					}
-
-					if (TmpShader != nullptr)
-					{
-						if (!TmpShader->Load(path, path1))
-						{
-							continue;
-						}
-					}
-					else
-					{
-						continue;
-					}
-
-					mShaders[i] = TmpShader;
 				}
 			}
 		}
@@ -544,7 +528,7 @@ namespace Columbus
 		for (uint32 i = 0; i < count; i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
-			GameObject* Object = SceneLoadGameObject(&serializer, elem, &mMeshes, &mTextures, &mShaders, &ShaderPrograms, &PhysWorld);
+			GameObject* Object = SceneLoadGameObject(&serializer, elem, &mMeshes, &mTextures, &ShaderPrograms, &PhysWorld);
 
 			if (Object != nullptr)
 			{
