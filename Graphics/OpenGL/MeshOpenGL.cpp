@@ -119,7 +119,7 @@ namespace Columbus
 		BoundingBox.Min = Vector3(OBBData.minX, OBBData.minY, OBBData.minZ);
 		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 
-		if (mMat.getShader() == nullptr) return;
+		if (mMat.GetShader() == nullptr) return;
 
 		/*if (!mMat.getShader()->IsCompiled())
 		{
@@ -142,10 +142,10 @@ namespace Columbus
 	
 	void MeshOpenGL::Render(Transform InTransform)
 	{
-		if (mMat.getShader() == nullptr) return;
-		if (!mMat.getShader()->IsCompiled())
+		if (mMat.GetShader() == nullptr) return;
+		if (!mMat.GetShader()->IsCompiled())
 		{
-			auto tShader = mMat.getShader();
+			auto tShader = mMat.GetShader();
 
 			tShader->AddAttribute("aPos", 0);
 			tShader->AddAttribute("aUV", 1);
@@ -169,7 +169,7 @@ namespace Columbus
 
 		glBindVertexArray(VAO);
 
-		mMat.getShader()->Bind();
+		mMat.GetShader()->Bind();
 
 		SetShaderMatrices(InTransform);
 		SetShaderMaterial();
@@ -193,12 +193,12 @@ namespace Columbus
 		{
 			if (textures[i] != nullptr)
 			{
-				mMat.getShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
+				mMat.GetShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
 				textures[i]->sampler2D(indices[i]);
 			}
 			else
 			{
-				mMat.getShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
+				mMat.GetShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
 				if (textures[0] == nullptr)
 					C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
 				if (textures[1] == nullptr)
@@ -210,12 +210,12 @@ namespace Columbus
 
 		if (cubemap != nullptr)
 		{
-			mMat.getShader()->SetUniform1i("uReflectionMap", 2);
+			mMat.GetShader()->SetUniform1i("uReflectionMap", 2);
 			cubemap->samplerCube(2);
 		}
 		else
 		{
-			mMat.getShader()->SetUniform1i("uReflectionMap", 2);
+			mMat.GetShader()->SetUniform1i("uReflectionMap", 2);
 			C_DeactiveCubemapOpenGL(C_OGL_TEXTURE2);
 		}
 	}
@@ -227,9 +227,9 @@ namespace Columbus
 		ObjectCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
 		Position = InTransform.GetPos();
-		mMat.getShader()->SetUniformMatrix("uModel", UniformModelMatrix);
-		mMat.getShader()->SetUniformMatrix("uView", UniformViewMatrix);
-		mMat.getShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
+		mMat.GetShader()->SetUniformMatrix("uModel", UniformModelMatrix);
+		mMat.GetShader()->SetUniformMatrix("uView", UniformViewMatrix);
+		mMat.GetShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::SetShaderMaterial()
@@ -255,15 +255,15 @@ namespace Columbus
 		mMaterialUnif[13] = mMat.getReflectionPower();
 		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
 
-		mMat.getShader()->SetUniformArrayf("MaterialUnif", mMaterialUnif, 15);
+		mMat.GetShader()->SetUniformArrayf("MaterialUnif", mMaterialUnif, 15);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::SetShaderLightAndCamera()
 	{
 		CalculateLights();
 
-		mMat.getShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
-		mMat.getShader()->SetUniform3f("uCamera.pos", ObjectCamera.getPos());
+		mMat.GetShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
+		mMat.GetShader()->SetUniform3f("uCamera.pos", ObjectCamera.getPos());
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void MeshOpenGL::CalculateLights()

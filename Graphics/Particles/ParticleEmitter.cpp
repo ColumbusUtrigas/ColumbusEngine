@@ -1,13 +1,3 @@
-/************************************************
-*              ParticleEmitter.cpp              *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Particles/ParticleEmitter.h>
 
 namespace Columbus
@@ -48,9 +38,9 @@ namespace Columbus
 			Particle = p;
 		}
 
-		if (!mParticleEffect->getMaterial()->getShader()->IsCompiled())
+		if (!mParticleEffect->getMaterial()->GetShader()->IsCompiled())
 		{
-			auto tShader = mParticleEffect->getMaterial()->getShader();
+			auto tShader = mParticleEffect->getMaterial()->GetShader();
 
 			tShader->AddAttribute("aPos", 0);
 			tShader->AddAttribute("aUV", 1);
@@ -212,14 +202,14 @@ namespace Columbus
 		if (mParticleEffect->Required == nullptr ||
 		    SubUV == nullptr) return;
 
-		mParticleEffect->getMaterial()->getShader()->SetUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required->Billboarding));
-		mParticleEffect->getMaterial()->getShader()->SetUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
+		mParticleEffect->getMaterial()->GetShader()->SetUniform1f("uBillboard", static_cast<float>(mParticleEffect->Required->Billboarding));
+		mParticleEffect->getMaterial()->GetShader()->SetUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
 
 		mCamera.getViewMatrix().Elements(UniformViewMatrix);
 		mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
-		mParticleEffect->getMaterial()->getShader()->SetUniformMatrix("uView", UniformViewMatrix);
-		mParticleEffect->getMaterial()->getShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
+		mParticleEffect->getMaterial()->GetShader()->SetUniformMatrix("uView", UniformViewMatrix);
+		mParticleEffect->getMaterial()->GetShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
@@ -228,11 +218,11 @@ namespace Columbus
 
 			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
 			{
-				mParticleEffect->getMaterial()->getShader()->SetUniform1i("uTex", 0);
+				mParticleEffect->getMaterial()->GetShader()->SetUniform1i("uTex", 0);
 				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
 			}
 
-			mParticleEffect->getMaterial()->getShader()->SetUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
+			mParticleEffect->getMaterial()->GetShader()->SetUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 	}
 	
@@ -256,13 +246,13 @@ namespace Columbus
 			mParticleEffect->getMaterial()->getLighting() ? 1.0f : 0.0f
 		};
 
-		mParticleEffect->getMaterial()->getShader()->SetUniformArrayf("MaterialUnif", MaterialUnif, 15);
+		mParticleEffect->getMaterial()->GetShader()->SetUniformArrayf("MaterialUnif", MaterialUnif, 15);
 	}
 	
 	void ParticleEmitter::setShaderLightAndCamera()
 	{
 		calculateLights();
-		mParticleEffect->getMaterial()->getShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
+		mParticleEffect->getMaterial()->GetShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
 	}
 	
 	void ParticleEmitter::calculateLights()
@@ -354,7 +344,7 @@ namespace Columbus
 	void ParticleEmitter::draw()
 	{
 		if (mParticleEffect == nullptr) return;
-		if (mParticleEffect->getMaterial()->getShader() == nullptr) return;
+		if (mParticleEffect->getMaterial()->GetShader() == nullptr) return;
 		if (mBuf == nullptr) return;
 		if (mTBuf == nullptr) return;
 
@@ -363,7 +353,7 @@ namespace Columbus
 
 		if (mParticleEffect->Required->Visible == false) return;
 
-		mParticleEffect->getMaterial()->getShader()->Bind();
+		mParticleEffect->getMaterial()->GetShader()->Bind();
 
 		setUniforms();
 
@@ -461,7 +451,7 @@ namespace Columbus
 
 		setBuffers();
 
-		C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 6 * mActiveParticles.size());
+		glDrawArrays(GL_TRIANGLES, 0, 6 * mActiveParticles.size());
 
 		unbindAll();
 	}

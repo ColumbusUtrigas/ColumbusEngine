@@ -69,21 +69,21 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Shader* ComponentParticleSystem::GetShader() const
+	ShaderProgram* ComponentParticleSystem::GetShader() const
 	{
 		if (Emitter != nullptr)
 		{
-			return Emitter->getParticleEffect()->getMaterial()->getShader();
+			return Emitter->getParticleEffect()->getMaterial()->GetShader();
 		}
 
 		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void ComponentParticleSystem::SetShader(Shader* Shader)
+	void ComponentParticleSystem::SetShader(ShaderProgram* Shader)
 	{
 		if (Emitter != nullptr)
 		{
-			Emitter->getParticleEffect()->getMaterial()->setShader(Shader);
+			Emitter->getParticleEffect()->getMaterial()->SetShader(Shader);
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////

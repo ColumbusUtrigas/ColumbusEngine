@@ -1,13 +1,3 @@
-/************************************************
-*                 PostEffect.h                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.10.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <vector>
@@ -35,49 +25,40 @@ namespace Columbus
 		int value;
 		PostEffectAttributeInt(std::string aName, int aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	struct PostEffectAttributeFloat
 	{
 		std::string name;
 		float value;
 		PostEffectAttributeFloat(std::string aName, float aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	struct PostEffectAttributeVector2
 	{
 		std::string name;
 		Vector2 value;
 		PostEffectAttributeVector2(std::string aName, Vector2 aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	struct PostEffectAttributeVector3
 	{
 		std::string name;
 		Vector3 value;
 		PostEffectAttributeVector3(std::string aName, Vector3 aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	struct PostEffectAttributeVector4
 	{
 		std::string name;
 		Vector4 value;
 		PostEffectAttributeVector4(std::string aName, Vector4 aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	class PostEffect
 	{
 	private:
 		Shader* mShader = nullptr;
+		ShaderProgram* PostShader = nullptr;
 		Framebuffer* mFB = nullptr;
 		Texture* mTB = nullptr;
 		Texture* mDepth = nullptr;
@@ -90,6 +71,7 @@ namespace Columbus
 	public:
 		PostEffect();
 
+		void SetShader(ShaderProgram* InShader);
 		void setShader(Shader* aShader);
 		void addAttrib(PostEffectAttributeInt aAttrib);
 		void addAttrib(PostEffectAttributeFloat aAttrib);
@@ -98,9 +80,9 @@ namespace Columbus
 		void addAttrib(PostEffectAttributeVector4 aAttrib);
 		void clearAttribs();
 
-		void bind(Vector4 aClear, Vector2 aWindowSize);
-		void draw();
-		void unbind();
+		void Bind(Vector4 ClearColor, Vector2 ContextSize);
+		void Render();
+		void Unbind();
 
 		~PostEffect();
 	};

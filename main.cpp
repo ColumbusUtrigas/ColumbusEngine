@@ -49,13 +49,6 @@ int main(int argc, char** argv)
 		Log::error("Couldn't load sound");
 	}
 
-	Array<uint32> intarr;
-
-	for (auto& i : intarr)
-	{
-
-	}
-
 	Source->SetPosition(Vector3(0, 10, 3.5));
 	Source->SetLooping(true);
 	Source->SetMinDistance(1.0f);

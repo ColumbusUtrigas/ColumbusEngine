@@ -21,7 +21,6 @@ namespace Columbus
 		mTexture(nullptr),
 		mSpecMap(nullptr),
 		mNormMap(nullptr),
-		mShader(nullptr),
 		mDiscard(false),
 		mLighting(false),
 		mEnvReflection(nullptr),
@@ -76,11 +75,12 @@ namespace Columbus
 	{
 		mNormMap = const_cast<Texture*>(aNormMap);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Material::setShader(const Shader* aShader)
+	
+	void Material::SetShader(ShaderProgram* InShader)
 	{
-		mShader = const_cast<Shader*>(aShader);
+		ShaderProg = InShader;
 	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	void Material::setReflection(const Cubemap* aReflecction)
 	{
@@ -143,12 +143,12 @@ namespace Columbus
 	{
 		return mNormMap;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	Shader* Material::getShader() const
+
+	ShaderProgram* Material::GetShader() const
 	{
-		return mShader;
+		return ShaderProg;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	Cubemap* Material::getReflection() const
 	{
 		return mEnvReflection;
