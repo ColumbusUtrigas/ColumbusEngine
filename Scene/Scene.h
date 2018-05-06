@@ -35,7 +35,6 @@ namespace Columbus
 		std::vector<Light*> mLights;
 		std::map<uint32, Mesh*> mMeshes;
 		std::map<uint32, Texture*> mTextures;
-		std::map<uint32, Shader*> mShaders;
 		std::map<uint32, ShaderProgram*> ShaderPrograms;
 
 		Timer DeltaTime;

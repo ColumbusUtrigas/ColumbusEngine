@@ -17,12 +17,33 @@ namespace Columbus
 	
 	void PostEffect::SetShader(ShaderProgram* InShader)
 	{
-		PostShader = InShader;
+		if (InShader != nullptr)
+		{
+			if (!InShader->IsCompiled())
+			{
+				InShader->Compile();
+			}
+
+			InShader->AddUniform("uColor");
+			InShader->AddUniform("uDepth");
+
+			for (auto& Name : AttributeNames)
+			{
+				InShader->AddUniform(Name);
+			}
+
+			Shader = InShader;
+		}
 	}
 
-	void PostEffect::setShader(Shader* aShader)
+	void PostEffect::AddAttributeName(std::string Name)
 	{
-		mShader = aShader;
+		AttributeNames.push_back(Name);
+
+		if (Shader != nullptr)
+		{
+			Shader->AddUniform(Name);
+		}
 	}
 	
 	void PostEffect::addAttrib(PostEffectAttributeInt aAttrib)
@@ -68,37 +89,37 @@ namespace Columbus
 
 	void PostEffect::Render()
 	{
-		if (PostShader == nullptr) return;
+		if (Shader == nullptr) return;
 
 		mTB->generateMipmap();
 		mDepth->generateMipmap();
-		PostShader->Bind();
+		Shader->Bind();
 
-		PostShader->SetUniform1i("uColor", 0);
+		Shader->SetUniform1i("uColor", 0);
 		mTB->sampler2D(0);
 
-		PostShader->SetUniform1i("uDepth", 1);
+		Shader->SetUniform1i("uDepth", 1);
 		mDepth->sampler2D(1);
 
 		for (auto& Attrib : mAttribsInt)
-			PostShader->SetUniform1i(Attrib.name, Attrib.value);
+			Shader->SetUniform1i(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsFloat)
-			PostShader->SetUniform1f(Attrib.name, Attrib.value);
+			Shader->SetUniform1f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector2)
-			PostShader->SetUniform2f(Attrib.name, Attrib.value);
+			Shader->SetUniform2f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector3)
-			PostShader->SetUniform3f(Attrib.name, Attrib.value);
+			Shader->SetUniform3f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector4)
-			PostShader->SetUniform4f(Attrib.name, Attrib.value);
+			Shader->SetUniform4f(Attrib.name, Attrib.value);
 
 		C_DrawScreenQuadOpenGL();
 
 		if (mTB) mTB->unbind();
-		if (PostShader) PostShader->Unbind();
+		if (Shader) Shader->Unbind();
 	}
 
 	void PostEffect::Unbind()
@@ -111,7 +132,7 @@ namespace Columbus
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		if (mTB) mTB->unbind();
-		if (mShader) mShader->Unbind();
+		if (Shader) Shader->Unbind();
 
 		mFB->unbind();
 

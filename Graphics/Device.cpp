@@ -10,11 +10,6 @@ namespace Columbus
 	{
 
 	}
-	
-	Shader* Device::createShader() const
-	{
-		return new Shader();
-	}
 
 	ShaderStage* Device::CreateShaderStage() const
 	{
