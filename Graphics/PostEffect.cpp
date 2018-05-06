@@ -1,20 +1,9 @@
-/************************************************
-*                 PostEffect.cpp                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.10.2017                  *
-*************************************************/
-
 #include <Graphics/PostEffect.h>
 #include <Graphics/Device.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
 	PostEffect::PostEffect()
 	{
 		mFB = gDevice->createFramebuffer();
@@ -25,39 +14,42 @@ namespace Columbus
 		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
 		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
+	void PostEffect::SetShader(ShaderProgram* InShader)
+	{
+		PostShader = InShader;
+	}
+
 	void PostEffect::setShader(Shader* aShader)
 	{
 		mShader = aShader;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void PostEffect::addAttrib(PostEffectAttributeInt aAttrib)
 	{
 		mAttribsInt.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void PostEffect::addAttrib(PostEffectAttributeFloat aAttrib)
 	{
 		mAttribsFloat.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void PostEffect::addAttrib(PostEffectAttributeVector2 aAttrib)
 	{
 		mAttribsVector2.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void PostEffect::addAttrib(PostEffectAttributeVector3 aAttrib)
 	{
 		mAttribsVector3.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void PostEffect::addAttrib(PostEffectAttributeVector4 aAttrib)
 	{
 		mAttribsVector4.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void PostEffect::clearAttribs()
 	{
 		mAttribsInt.clear();
@@ -66,77 +58,74 @@ namespace Columbus
 		mAttribsVector3.clear();
 		mAttribsVector4.clear();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void PostEffect::bind(Vector4 aClear, Vector2 aWindowSize)
+
+	void PostEffect::Bind(Vector4 ClearColor, Vector2 ContextSize)
 	{
-		mTB->load(NULL, Math::TruncToInt(aWindowSize.X), Math::TruncToInt(aWindowSize.Y), true);
-		mDepth->loadDepth(NULL, Math::TruncToInt(aWindowSize.X), Math::TruncToInt(aWindowSize.Y), true);
-		mFB->prepare(aClear, aWindowSize);
+		mTB->load(NULL, Math::TruncToInt(ContextSize.X), Math::TruncToInt(ContextSize.Y), true);
+		mDepth->loadDepth(NULL, Math::TruncToInt(ContextSize.X), Math::TruncToInt(ContextSize.Y), true);
+		mFB->prepare(ClearColor, ContextSize);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void PostEffect::draw()
+
+	void PostEffect::Render()
 	{
-		if (mShader == nullptr) return;
+		if (PostShader == nullptr) return;
 
 		mTB->generateMipmap();
 		mDepth->generateMipmap();
-		mShader->Bind();
-    
-		mShader->SetUniform1i("uColor", 0);
+		PostShader->Bind();
+
+		PostShader->SetUniform1i("uColor", 0);
 		mTB->sampler2D(0);
 
-		mShader->SetUniform1i("uDepth", 1);
+		PostShader->SetUniform1i("uDepth", 1);
 		mDepth->sampler2D(1);
 
 		for (auto& Attrib : mAttribsInt)
-			mShader->SetUniform1i(Attrib.name, Attrib.value);
+			PostShader->SetUniform1i(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsFloat)
-			mShader->SetUniform1f(Attrib.name, Attrib.value);
+			PostShader->SetUniform1f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector2)
-			mShader->SetUniform2f(Attrib.name, Attrib.value);
+			PostShader->SetUniform2f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector3)
-			mShader->SetUniform3f(Attrib.name, Attrib.value);
+			PostShader->SetUniform3f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector4)
-			mShader->SetUniform4f(Attrib.name, Attrib.value);
+			PostShader->SetUniform4f(Attrib.name, Attrib.value);
 
 		C_DrawScreenQuadOpenGL();
 
 		if (mTB) mTB->unbind();
-		if (mShader) mShader->Unbind();
+		if (PostShader) PostShader->Unbind();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void PostEffect::unbind()
-	{
-		C_CloseStreamOpenGL(0);
-		C_CloseStreamOpenGL(1);
-		C_CloseStreamOpenGL(2);
-		C_CloseStreamOpenGL(3);
-		C_CloseStreamOpenGL(4);
 
-		C_Buffer::unbind();
+	void PostEffect::Unbind()
+	{
+		for (int32 i = 0; i < 5; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		if (mTB) mTB->unbind();
 		if (mShader) mShader->Unbind();
-		
-		mFB->unbind();
-		C_Renderbuffer::unbind();
 
-		C_DisableDepthTestOpenGL();
+		mFB->unbind();
+
+		/*C_DisableDepthTestOpenGL();
 		C_DisableBlendOpenGL();
-		C_DisableAlphaTestOpenGL();
+		C_DisableAlphaTestOpenGL();*/
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+
 	PostEffect::~PostEffect()
 	{
 
 	}
 
 }
+
+
+

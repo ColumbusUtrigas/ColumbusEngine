@@ -1,12 +1,3 @@
-/************************************************
-*              	     Scene.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #pragma once
 
 #include <Scene/GameObject.h>
@@ -45,6 +36,7 @@ namespace Columbus
 		std::map<uint32, Mesh*> mMeshes;
 		std::map<uint32, Texture*> mTextures;
 		std::map<uint32, Shader*> mShaders;
+		std::map<uint32, ShaderProgram*> ShaderPrograms;
 
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
@@ -53,7 +45,7 @@ namespace Columbus
 		Camera* mCamera = nullptr;
 
 		PostEffect mNoneEffect;
-		Shader* mNoneShader = nullptr;
+		ShaderProgram* NoneShader = nullptr;
 
 		Vector2 mContextSize = Vector2(640, 480);
 

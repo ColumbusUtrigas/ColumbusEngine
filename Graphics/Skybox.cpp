@@ -1,34 +1,20 @@
-/************************************************
-*                  Skybox.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Skybox.h>
 #include <Graphics/Device.h>
 
 namespace Columbus
 {
 
-	static Shader* CreateSkyboxShader()
+	static ShaderProgram* CreateSkyboxShader()
 	{
-		Shader* tShader = gDevice->createShader();
-
-		if (!tShader->Load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT"))
-		{
-			delete tShader;
-			return nullptr;
-		}
-
-		if (!tShader->Compile())
-		{
-			delete tShader;
-			return nullptr;
-		}
+		ShaderProgram* tShader = gDevice->CreateShaderProgram();
+		ShaderStage *vert, *frag;
+		vert = gDevice->CreateShaderStage();
+		frag = gDevice->CreateShaderStage();
+		vert->Load("STANDART_SKY_VERTEX", ShaderType::Vertex);
+		frag->Load("STANDART_SKY_FRAGMENT", ShaderType::Fragment);
+		tShader->AddStage(vert);
+		tShader->AddStage(frag);
+		tShader->Compile();
 
 		tShader->AddUniform("uView");
 		tShader->AddUniform("uProjection");
@@ -37,41 +23,50 @@ namespace Columbus
 		return tShader;
 	}
 
-	Skybox::Skybox() :
-		mBuf(nullptr),
-		mCubemap(nullptr),
-		mShader(nullptr)
+	static void CreateSkyboxBuffer(uint32* VBO, uint32* VAO, float* Vertices)
 	{
-		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = CreateSkyboxShader();
+		glGenBuffers(1, VBO);
+		glGenVertexArrays(1, VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+		glBufferData(GL_ARRAY_BUFFER, 108 * sizeof(float), Vertices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindVertexArray(*VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+		glEnableVertexAttribArray(0);
+		glBindVertexArray(0);
+	}
+
+	Skybox::Skybox() :
+		mCubemap(nullptr),
+		Shader(nullptr)
+	{
+		Shader = CreateSkyboxShader();
+		CreateSkyboxBuffer(&VBO, &VAO, skyboxVertices);
 	}
 	
 	Skybox::Skybox(Cubemap* aCubemap) :
-		mBuf(nullptr),
 		mCubemap(aCubemap),
-		mShader(nullptr)
+		Shader(nullptr)
 	{
-		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = CreateSkyboxShader();
+		Shader = CreateSkyboxShader();
+		CreateSkyboxBuffer(&VBO, &VAO, skyboxVertices);
 	}
 	
 	void Skybox::draw()
 	{
-		if (mShader != nullptr && mBuf != nullptr && mCubemap != nullptr)
+		if (Shader != nullptr && mCubemap != nullptr)
 		{
-			C_DisableDepthMaskOpenGL();
+			glDepthMask(GL_FALSE);
 
-			C_OpenStreamOpenGL(0);
-			C_CloseStreamOpenGL(1);
-			C_CloseStreamOpenGL(2);
-			C_CloseStreamOpenGL(3);
-			C_CloseStreamOpenGL(4);
+			for (int32 i = 0; i < 5; i++)
+			{
+				glDisableVertexAttribArray(i);
+			}
 
-			mBuf->bind();
-
-			C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
-
-			mShader->Bind();
+			Shader->Bind();
 
 			auto view = mCamera.getViewMatrix();
 			view.SetRow(3, Vector4(0, 0, 0, 1));
@@ -80,21 +75,21 @@ namespace Columbus
 			view.Elements(UniformViewMatrix);
 			mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
-			mShader->SetUniformMatrix("uView", UniformViewMatrix);
-			mShader->SetUniformMatrix("uProjection", UniformProjectionMatrix);
+			Shader->SetUniformMatrix("uView", UniformViewMatrix);
+			Shader->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
-			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
-			mShader->SetUniform1i("uSkybox", 0);
+			glActiveTexture(GL_TEXTURE0);
+			Shader->SetUniform1i("uSkybox", 0);
 			mCubemap->bind();
 
-			C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 36);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
 
-			C_Buffer::unbind();
-
-			mShader->Unbind();
+			Shader->Unbind();
 			mCubemap->unbind();
 
-			C_EnableDepthMaskOpenGL();
+			glDepthMask(GL_TRUE);
 		}
 	}
 	
@@ -115,8 +110,11 @@ namespace Columbus
 	
 	Skybox::~Skybox()
 	{
-		delete mShader;
-		delete mBuf;
+		delete Shader;
+		glDeleteBuffers(1, &VBO);
 	}
 
 }
+
+
+

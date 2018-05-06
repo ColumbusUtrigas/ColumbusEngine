@@ -61,17 +61,17 @@ namespace Columbus
 	{
 		mCamera = Camera;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	Shader* ComponentMeshRenderer::GetShader() const
+	
+	ShaderProgram* ComponentMeshRenderer::GetShader() const
 	{
 		if (mMesh == nullptr) return nullptr;
-		return mMesh->mMat.getShader();
+		return mMesh->mMat.GetShader();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void ComponentMeshRenderer::SetShader(Shader* Shader)
+	
+	void ComponentMeshRenderer::SetShader(ShaderProgram* Shader)
 	{
 		if (mMesh == nullptr) return;
-		mMesh->mMat.setShader(Shader);
+		mMesh->mMat.SetShader(Shader);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void ComponentMeshRenderer::SetReflection(Cubemap* Cubemap)

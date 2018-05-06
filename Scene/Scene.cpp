@@ -1,13 +1,3 @@
-/************************************************
-*              	    Scene.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   11.11.2017                  *
-*************************************************/
-
 #include <Scene/Scene.h>
 #include <Graphics/Device.h>
 
@@ -17,11 +7,20 @@ namespace Columbus
 	Scene::Scene() :
 		mSkybox(nullptr)
 	{
-		mNoneShader = gDevice->createShader();
-		mNoneShader->Load("Data/Shaders/post.vert", "Data/Shaders/NonePost.frag");
-		mNoneShader->Compile();
+		NoneShader = gDevice->CreateShaderProgram();
+		ShaderStage* vert = gDevice->CreateShaderStage();
+		ShaderStage* frag = gDevice->CreateShaderStage();
+		vert->Load("Data/Shaders/post.vert", ShaderType::Vertex);
+		frag->Load("Data/Shaders/NonePost.frag", ShaderType::Fragment);
+		NoneShader->AddStage(vert);
+		NoneShader->AddStage(frag);
+		NoneShader->Compile();
 
-		mNoneEffect.setShader(mNoneShader);
+		NoneShader->AddUniform("uColor");
+		NoneShader->AddUniform("uDepth");
+
+		mNoneEffect.SetShader(NoneShader);
+
 		PhysWorld.SetGravity(Vector3(0, -9.81, 0));
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -373,7 +372,7 @@ namespace Columbus
 
 	static GameObject* SceneLoadGameObject(Serializer::SerializerXML* Serializer, std::string Element,
 		std::map<uint32, Mesh*>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, Shader*>* Shaders,
-		PhysicsWorld* PhysWorld)
+		std::map<uint32, ShaderProgram*>* ShaderPrograms, PhysicsWorld* PhysWorld)
 	{
 		GameObject* Object = new GameObject();
 
@@ -398,7 +397,7 @@ namespace Columbus
 
 			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" },shaderID))
 			{
-				material->setShader(Shaders->at(shaderID));
+				material->SetShader(ShaderPrograms->at(shaderID));
 			}
 			else
 			{
@@ -486,6 +485,22 @@ namespace Columbus
 				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, path1))
 				{
 					auto TmpShader = gDevice->createShader();
+					auto tShader = gDevice->CreateShaderProgram();
+
+					auto VertexStage = gDevice->CreateShaderStage();
+					auto FragmentStage = gDevice->CreateShaderStage();
+					VertexStage->Load(path, ShaderType::Vertex);
+					FragmentStage->Load(path1, ShaderType::Fragment);
+
+					if (VertexStage->IsLoaded() &&
+					    FragmentStage->IsLoaded())
+					{
+						tShader->AddStage(VertexStage);
+						tShader->AddStage(FragmentStage);
+
+						ShaderPrograms[i] = tShader;
+					}
+
 					if (TmpShader != nullptr)
 					{
 						if (!TmpShader->Load(path, path1))
@@ -498,7 +513,7 @@ namespace Columbus
 						continue;
 					}
 
-					mShaders.insert(std::pair<uint32, Shader*>(i, TmpShader));
+					mShaders[i] = TmpShader;
 				}
 			}
 		}
@@ -529,7 +544,7 @@ namespace Columbus
 		for (uint32 i = 0; i < count; i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
-			GameObject* Object = SceneLoadGameObject(&serializer, elem, &mMeshes, &mTextures, &mShaders, &PhysWorld);
+			GameObject* Object = SceneLoadGameObject(&serializer, elem, &mMeshes, &mTextures, &mShaders, &ShaderPrograms, &PhysWorld);
 
 			if (Object != nullptr)
 			{
@@ -608,7 +623,7 @@ namespace Columbus
 
 		mNoneEffect.clearAttribs();
 		mNoneEffect.addAttrib({ "uResolution", mContextSize });
-		mNoneEffect.bind(Vector4(1, 1, 1, 0), mContextSize);
+		mNoneEffect.Bind(Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
 			mSkybox->draw();
@@ -621,9 +636,9 @@ namespace Columbus
 			if (Object.second->HasComponent(Component::Type::ParticleSystem))
 				Object.second->Render();
 
-		mNoneEffect.unbind();
+		mNoneEffect.Unbind();
 
-		mNoneEffect.draw();
+		mNoneEffect.Render();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

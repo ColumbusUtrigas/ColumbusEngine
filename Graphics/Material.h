@@ -36,7 +36,7 @@ namespace Columbus
 		Texture* mTexture = nullptr;
 		Texture* mSpecMap = nullptr;
 		Texture* mNormMap = nullptr;
-		Shader* mShader = nullptr;
+		ShaderProgram* ShaderProg = nullptr;
 
 		bool mDiscard = false;
 		bool mLighting = true;
@@ -60,7 +60,7 @@ namespace Columbus
 		void setTexture(const Texture* aTexture);
 		void setSpecMap(const Texture* aSpecMap);
 		void setNormMap(const Texture* aNormMap);
-		void setShader(const Shader* aShader);
+		void SetShader(ShaderProgram* InShader);
 		void setReflection(const Cubemap* aReflection);
 		void setReflectionPower(const float aPower);
 		void setDiscard(const bool aDiscard);
@@ -74,7 +74,7 @@ namespace Columbus
 		Texture* getTexture() const;
 		Texture* getSpecMap() const;
 		Texture* getNormMap() const;
-		Shader* getShader() const;
+		ShaderProgram* GetShader() const;
 		Cubemap* getReflection() const;
 		float getReflectionPower() const;
 		bool getDiscard() const;

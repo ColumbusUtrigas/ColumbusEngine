@@ -1,13 +1,3 @@
-/************************************************
-*                  Skybox.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <Graphics/Cubemap.h>
@@ -23,8 +13,9 @@ namespace Columbus
 	class Skybox
 	{
 	private:
-		C_Buffer* mBuf = nullptr;
-		Shader* mShader = nullptr;
+		uint32 VBO = 0;
+		uint32 VAO = 0;
+		ShaderProgram* Shader = nullptr;
 		Cubemap* mCubemap = nullptr;
 		Camera mCamera;
 

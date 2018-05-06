@@ -38,8 +38,8 @@ namespace Columbus
 		Type GetType() const override;
 		void SetLights(std::vector<Light*> Lights);
 		void SetCamera(Camera Camera);
-		Shader* GetShader() const;
-		void SetShader(Shader* Shader);
+		ShaderProgram* GetShader() const;
+		void SetShader(ShaderProgram* Shader);
 		void SetReflection(Cubemap* Cubemap);
 
 		~ComponentMeshRenderer() override;
