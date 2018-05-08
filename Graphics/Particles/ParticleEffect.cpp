@@ -343,14 +343,34 @@ namespace Columbus
 		}
 
 		ParticleModuleColorOverLife* tColorOverLife = new ParticleModuleColorOverLife();
+		auto Elem = serializer.GetSubElement({ "Color", "OverLife", "ColorKey" });
 
-		if (serializer.GetSubVector4({ "Color", "OverLife", "MinStart" }, tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
+		if (Elem != nullptr)
+		{
+			Vector4 Value;
+			float Key;
+
+			while (Elem != nullptr)
+			{
+				if (serializer.GetVector4(Elem, Value, { "R", "G", "B", "A" }) &&
+				    serializer.GetFloat(Elem, Key))
+				{
+					tColorOverLife->ColorCurve.AddPoint(Value, Key);
+				}
+
+				Elem = serializer.NextElement(Elem, "ColorKey");
+			}
+
+			tColorBase = tColorOverLife;
+		}
+
+		/*if (serializer.GetSubVector4({ "Color", "OverLife", "MinStart" }, tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
 		    serializer.GetSubVector4({ "Color", "OverLife", "MaxStart" }, tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
 		    serializer.GetSubVector4({ "Color", "OverLife", "MinFinal" }, tColorOverLife->MinFinal, { "R", "G", "B", "A" }) &&
 		    serializer.GetSubVector4({ "Color", "OverLife", "MaxFinal" }, tColorOverLife->MaxFinal, { "R", "G", "B", "A" }))
 		{
 			tColorBase = tColorOverLife;
-		}
+		}*/
 
 
 		ParticleModuleNoise* tNoise = new ParticleModuleNoise();

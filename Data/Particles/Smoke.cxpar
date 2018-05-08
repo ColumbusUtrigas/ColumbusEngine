@@ -4,7 +4,7 @@
         <AdditiveBlending>0</AdditiveBlending>
         <Billboarding>1</Billboarding>
         <Transformation>1</Transformation>
-        <SortMode>1</SortMode>
+        <SortMode>0</SortMode>
     </Required>
 
     <Emit>
@@ -55,6 +55,11 @@
 
     <Color>
     	<OverLife>
+            <ColorKey R="1" G="0.5" B="0" A="0.0">0.0</ColorKey>
+            <ColorKey R="1" G="0.5" B="0" A="0.9">0.25</ColorKey>
+            <ColorKey R="1" G="0.5" B="0" A="0.9">0.5</ColorKey>
+            <ColorKey R="0.5" G="0.25" B="0" A="0.0">1.0</ColorKey>
+
     		<MinStart R="1" G="0.5" B="0" A="0.9"/>
 	        <MaxStart R="1" G="0.5" B="0" A="0.9"/>
 	        <MinFinal R="0.5" G="0.25" B="0" A="0.01"/>
