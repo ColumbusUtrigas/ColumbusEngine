@@ -1,4 +1,4 @@
-#define LIGHT_NUM 4
+#define LIGHT_NUM 8
 
 in vec3 varPos;
 in vec2 varUV;
@@ -8,21 +8,40 @@ in mat3 varTBN;
 
 struct Material
 {
-	sampler2D diffuseMap;
-	sampler2D specularMap;
-	sampler2D normalMap;
+	sampler2D DiffuseMap;
+	sampler2D SpecularMap;
+	sampler2D NormalMap;
+	samplerCube ReflectionMap;
+
+	vec4 Color;
+	vec3 AmbientColor;
+	vec3 DiffuseColor;
+	vec3 SpecularColor;
+	float ReflectionPower;
+	bool Lighting;
+};
+
+struct Light
+{
+	vec3 Color;
+	vec3 Position;
+	vec3 Direction;
+	int Type;
+	float Constant;
+	float Linear;
+	float Quadratic;
+	float InnerCutoff;
+	float OuterCutoff;
 };
 
 struct Camera
 {
-	vec3 pos;
+	vec3 Position;
 };
 
-uniform samplerCube uReflectionMap;
 uniform Material uMaterial;
+uniform Light uLights[LIGHT_NUM];
 uniform Camera uCamera;
-uniform float MaterialUnif[15];
-uniform float LightUnif[120];
 
 vec4 DiffuseMap;
 vec3 SpecularMap;
@@ -41,7 +60,7 @@ vec4 Lighting = vec4(1);
 mat3 TBN;
 
 void Init(void);
-void Light(int id);
+void LightCalc(int id);
 void Cubemap(void);
 void Final(void);
 
@@ -49,17 +68,16 @@ void main(void)
 {
 	Init();
 
-
-	if (MaterialUnif[14] != 0.0)
+	if (uMaterial.Lighting == true)
 	{
-		Light(0);
-		Light(1);
-		Light(2);
-		Light(3);
-		Light(4);
-		Light(5);
-		Light(6);
-		Light(7);
+		LightCalc(0);
+		LightCalc(1);
+		LightCalc(2);
+		LightCalc(3);
+		LightCalc(4);
+		LightCalc(5);
+		LightCalc(6);
+		LightCalc(7);
 
 		Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 	}
@@ -71,15 +89,15 @@ void main(void)
 
 void Init(void)
 {
-	DiffuseMap = texture(uMaterial.diffuseMap, varUV);
-	SpecularMap = vec3(texture(uMaterial.specularMap, varUV));
-	NormalMap = vec3(texture(uMaterial.normalMap, varUV));
+	DiffuseMap = texture(uMaterial.DiffuseMap, varUV);
+	SpecularMap = vec3(texture(uMaterial.SpecularMap, varUV));
+	NormalMap = vec3(texture(uMaterial.NormalMap, varUV));
 
 	if (DiffuseMap.w <= 0.1) discard;
 
 	TBN = varTBN;
 
-	if (textureSize(uMaterial.specularMap, 1).xy != vec2(0))
+	if (textureSize(uMaterial.SpecularMap, 1).xy != vec2(0))
 		IsSpecularMap = true;
 
 	if (NormalMap != vec3(0))
@@ -88,67 +106,50 @@ void Init(void)
 		Normal = varNormal;
 }
 
-void Light(int id)
+void LightCalc(int id)
 {
-	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
-	vec3 MaterialAmbient = vec3(MaterialUnif[4], MaterialUnif[5], MaterialUnif[6]);
-	vec3 MaterialDiffuse = vec3(MaterialUnif[7], MaterialUnif[8], MaterialUnif[9]);
-	vec3 MaterialSpecular = vec3(MaterialUnif[10], MaterialUnif[11], MaterialUnif[12]);
-
-	int offset = id * 15;
-
-	vec3 LightColor = vec3(LightUnif[0 + offset], LightUnif[1 + offset], LightUnif[2 + offset]);
-	vec3 LightPos = vec3(LightUnif[3 + offset], LightUnif[4 + offset], LightUnif[5 + offset]);
-	vec3 LightDir = vec3(LightUnif[6 + offset], LightUnif[7 + offset], LightUnif[8 + offset]);
-	float LightType = LightUnif[9 + offset];
-	float LightConstant = LightUnif[10 + offset];
-	float LightLinear = LightUnif[11 + offset];
-	float LightQuadratic = LightUnif[12 + offset];
-	float LightInnerAngle = LightUnif[13 + offset];
-	float LightOuterAngle = LightUnif[14 + offset];
-
-	if (LightType == -1) return;
+	if (uLights[id].Type == -1) return;
 
 	vec3 lightDir;
 
 	float attenuation = 0.0;
 
-	switch (int(LightType))
+	switch (int(uLights[id].Type))
 	{
 	case 0:
-		lightDir = normalize(-LightPos);
+		lightDir = normalize(-uLights[id].Position);
 		break;
 	default:
-		lightDir = normalize(-LightPos + varPos);
+		lightDir = normalize(-uLights[id].Position + varPos);
 		break;
 	};
 
-	vec3 viewDir = normalize(uCamera.pos - varFragPos);
+	vec3 viewDir = normalize(uCamera.Position - varFragPos);
 
 	float diff = max(0.0, dot(Normal, -lightDir));
 
 	vec3 reflect = normalize(reflect(lightDir, Normal));
 	float spec = pow(max(0.0, dot(viewDir, reflect)), 32);
-	vec3 specular = MaterialSpecular * LightColor * spec * 0.5;
+	vec3 specular = uMaterial.SpecularColor * uLights[id].Color * spec * 0.5;
 
 	vec3 tmpAmbient = vec3(0);
 	vec3 tmpDiffuse = vec3(0);
 	vec3 tmpSpecular = vec3(0);
 
-	tmpAmbient = MaterialAmbient * LightColor * vec3(MaterialColor);
-	tmpDiffuse = LightColor * MaterialDiffuse * diff * MaterialColor.xyz;
+	tmpAmbient = uMaterial.AmbientColor * uLights[id].Color * vec3(uMaterial.Color);
+	tmpDiffuse = uLights[id].Color * uMaterial.DiffuseColor * diff * uMaterial.Color.rgb;
 	
 	if (IsSpecularMap)
-		tmpSpecular = specular * MaterialSpecular * MaterialColor.xyz * SpecularMap;
+		tmpSpecular = specular * uMaterial.SpecularColor * uMaterial.Color.rgb * SpecularMap;
 	else
-		tmpSpecular = specular * MaterialSpecular * MaterialColor.xyz;
+		tmpSpecular = specular * uMaterial.SpecularColor * uMaterial.Color.rgb;
 
-	if (int(LightType) > 0)
+	if (int(uLights[id].Type) > 0)
 	{
-		float distance = length(LightPos - varPos);
-		attenuation = 1.0 / (LightConstant +
-							LightLinear * distance +
-							LightQuadratic * (distance * distance));
+		float distance = length(uLights[id].Position - varPos);
+		attenuation = 1.0 / (uLights[id].Constant +
+							uLights[id].Linear * distance +
+							uLights[id].Quadratic * (distance * distance));
 
 		tmpAmbient *= attenuation;
 		tmpDiffuse *= attenuation;
@@ -162,17 +163,17 @@ void Light(int id)
 
 void Cubemap(void)
 {
-	vec3 I = normalize(uCamera.pos - varFragPos);
+	vec3 I = normalize(uCamera.Position - varFragPos);
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = normalize(reflect(I, Normal));
-   	CubemapColor = textureCube(uReflectionMap, -vec3(R.x, R.y, R.z)).rgb * MaterialUnif[13];
+   	CubemapColor = textureCube(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
 
    	if (IsSpecularMap)
+   	{
 		CubemapColor *= SpecularMap;
+   	}
 
-	vec4 MaterialColor = vec4(MaterialUnif[0], MaterialUnif[1], MaterialUnif[2], MaterialUnif[3]);
-
-	CubemapColor *= MaterialColor.xyz;
+	CubemapColor *= uMaterial.Color.rgb;
 }
 
 void Final(void)
