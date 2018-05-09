@@ -607,7 +607,7 @@ namespace Columbus
 
 		mNoneEffect.clearAttribs();
 		mNoneEffect.addAttrib({ "uResolution", mContextSize });
-		mNoneEffect.Bind(Vector4(1, 1, 1, 0), mContextSize);
+		//mNoneEffect.Bind(Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
 			mSkybox->draw();
@@ -620,9 +620,9 @@ namespace Columbus
 			if (Object.second->HasComponent(Component::Type::ParticleSystem))
 				Object.second->Render();
 
-		mNoneEffect.Unbind();
+		//mNoneEffect.Unbind();
 
-		mNoneEffect.Render();
+		//mNoneEffect.Render();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

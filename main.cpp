@@ -4,6 +4,7 @@
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
 
 #include <RenderAPIOpenGL/OpenGL.h>
+#include <Graphics/OpenGL/MeshInstancedOpenGL.h>
 
 using namespace Columbus;
 
@@ -68,6 +69,27 @@ int main(int argc, char** argv)
 	std::cout << "Tesselation support: " << (OpenGL::SupportsTesselation() ? "Yes" : "No") << std::endl;
 	std::cout << "Compute shaders support: " << (OpenGL::SupportsComputeShader() ? "Yes" : "No") << std::endl;
 
+	Material mat;
+	ShaderProgram* prog = gDevice->CreateShaderProgram();
+	ShaderStage* vert, *frag;
+	vert = gDevice->CreateShaderStage();
+	frag = gDevice->CreateShaderStage();
+
+	vert->Load("Data/Shaders/instanced.vert", ShaderType::Vertex);
+	frag->Load("Data/Shaders/instanced.frag", ShaderType::Fragment);
+
+	prog->AddStage(vert);
+	prog->AddStage(frag);
+
+	mat.SetShader(prog);
+
+	MeshInstancedOpenGL mesh;
+	mat.setTexture(gDevice->createTexture("Data/Textures/metal.jpg"));
+	mat.setSpecMap(gDevice->createTexture("Data/Textures/metal-specular.jpg"));
+	mat.setNormMap(gDevice->createTexture("Data/Textures/metal-normal.jpg"));
+	mesh.Mat = mat;
+	mesh.SetVertices(ModelLoadCMF("Data/Models/Dragon.cmf"));
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
@@ -128,6 +150,9 @@ int main(int argc, char** argv)
 		scene.setContextSize(window.getSize());
 		scene.update();
 		scene.render();
+
+		mesh.SetCamera(camera);
+		mesh.Render();
 
 		window.display();
 

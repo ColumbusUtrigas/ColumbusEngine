@@ -89,8 +89,14 @@ namespace Columbus
 
 		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		int MajorVersion = 3;
+		int MinorVersion = 0;
+
+		glGetIntegerv(GL_MAJOR_VERSION, &MajorVersion);
+		glGetIntegerv(GL_MINOR_VERSION, &MinorVersion);
+
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, MajorVersion);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, MinorVersion);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 		SDL_GL_SetSwapInterval(1);
@@ -113,6 +119,7 @@ namespace Columbus
 		} else
 		{
 			Log::initialization("GLEW initialized");
+			Log::initialization("Initialized OpenGL " + std::to_string(MajorVersion) + "." + std::to_string(MinorVersion));
 		}
 
 		OpenGL::Init();

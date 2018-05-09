@@ -365,6 +365,7 @@ namespace Columbus
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
+
 			if (Location != UniformLocations.end())
 			{
 				glUniform3f(UniformLocations.at(Name), Value.X, Value.Y, Value.Z);

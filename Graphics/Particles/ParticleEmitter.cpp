@@ -211,11 +211,17 @@ namespace Columbus
 		mParticleEffect->getMaterial()->GetShader()->SetUniformMatrix("uView", UniformViewMatrix);
 		mParticleEffect->getMaterial()->GetShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
+		for (uint32 i = 0; i < 3; i++)
+		{
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
-			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
-			C_BindTextureOpenGL(C_OGL_TEXTURE0, 0);
-
 			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
 			{
 				mParticleEffect->getMaterial()->GetShader()->SetUniform1i("uTex", 0);

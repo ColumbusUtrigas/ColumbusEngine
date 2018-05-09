@@ -12,6 +12,7 @@ namespace Columbus
 	{
 	private:
 		std::map<float, PointType> Points;
+		PointType Down, Up;
 	public:
 		InterpolationCurve() {}
 
@@ -35,25 +36,20 @@ namespace Columbus
 			{
 				if (Position >= 0.0f && Position <= 1.0f)
 				{
-					PointType Down, Up;
 					float DownPos = 0.0f, UpPos = 0.0f;
 					float Percent = 0.0f;
 
 					for (auto& Point : Points)
 					{
-						if (Position < Point.first)
-						{
-							DownPos = UpPos;
-							Down = Up;
-							UpPos = Point.first;
-							Up = Point.second;
-							break;
-						}
-
 						DownPos = UpPos;
 						Down = Up;
 						UpPos = Point.first;
 						Up = Point.second;
+
+						if (Position < Point.first)
+						{
+							break;
+						}
 					}
 
 					float Length = UpPos - DownPos;

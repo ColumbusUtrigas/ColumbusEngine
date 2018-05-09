@@ -113,8 +113,9 @@ namespace Columbus
 		ModelMatrix.SetIdentity();
 		ModelMatrix.Scale(Scale);
 		//ModelMatrix = ModelMatrix.GetRotation(Rotation) * ModelMatrix;
-		//ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.x);
-		//ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.z);
+		ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.X);
+		ModelMatrix.Rotate(Vector3(0, 1, 0), Rotation.Y);
+		ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.Z);
 		ModelMatrix.Translate(Position);
 
 		//NormalMatrix = Matrix;

@@ -4,19 +4,156 @@
 namespace Columbus
 {
 
+	/*
+	*
+	* Shader uniforms functions
+	*
+	*/
+	static void ShaderSetMatrices(ShaderProgram* InShader, Transform InTransform, Camera InCamera)
+	{
+		static float sModelMatrix[16];
+		static float sViewMatrix[16];
+		static float sProjectionMatrix[16];
+
+		if (InShader != nullptr)
+		{
+			if (InShader->IsCompiled())
+			{
+				InTransform.GetMatrix().ElementsTransposed(sModelMatrix);
+				InCamera.getViewMatrix().Elements(sViewMatrix);
+				InCamera.getProjectionMatrix().ElementsTransposed(sProjectionMatrix);
+
+				InShader->SetUniformMatrix("uModel", sModelMatrix);
+				InShader->SetUniformMatrix("uView", sViewMatrix);
+				InShader->SetUniformMatrix("uProjection", sProjectionMatrix);
+			}
+		}
+	}
+
+	static void ShaderSetMaterial(Material InMaterial)
+	{
+		auto tShader = InMaterial.GetShader();
+
+		for (uint32 i = 0; i < 3; i++)
+		{
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+		if (tShader != nullptr)
+		{
+			if (tShader->IsCompiled())
+			{
+				Texture* Textures[3] = { InMaterial.getTexture(), InMaterial.getSpecMap(), InMaterial.getNormMap() };
+				Cubemap* Reflection = InMaterial.getReflection();
+				std::string Names[3] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap" };
+
+				for (int32 i = 0; i < 3; i++)
+				{
+					if (Textures[i] != nullptr)
+					{
+						tShader->SetUniform1i(Names[i], i);
+						Textures[i]->sampler2D(i);
+					}
+				}
+
+				if (Reflection != nullptr)
+				{
+					tShader->SetUniform1i("uMaterial.ReflectionMap", 3);
+					Reflection->samplerCube(3);
+				}
+
+				tShader->SetUniform4f("uMaterial.Color", InMaterial.getColor());
+				tShader->SetUniform3f("uMaterial.AmbientColor", InMaterial.getAmbient());
+				tShader->SetUniform3f("uMaterial.DiffuseColor", InMaterial.getDiffuse());
+				tShader->SetUniform3f("uMaterial.SpecularColor", InMaterial.getSpecular());
+				tShader->SetUniform1f("uMaterial.ReflectionPower", InMaterial.getReflectionPower());
+				tShader->SetUniform1i("uMaterial.Lighting", InMaterial.getLighting());
+			}
+		}
+	}
+
+	static void ShaderSetLight(ShaderProgram* InShader, Light InLight, uint32 Number)
+	{
+		if (InShader != nullptr)
+		{
+			if (InShader->IsCompiled())
+			{
+				std::string Element = "uLights[" + std::to_string(Number) + "].";
+				InShader->SetUniform3f(Element + "Color", InLight.getColor());
+				InShader->SetUniform3f(Element + "Position", InLight.getPos());
+				InShader->SetUniform3f(Element + "Direction", InLight.getDir());
+				InShader->SetUniform1i(Element + "Type", InLight.getType());
+				InShader->SetUniform1f(Element + "Constant", InLight.getConstant());
+				InShader->SetUniform1f(Element + "Linear", InLight.getLinear());
+				InShader->SetUniform1f(Element + "Quadratic", InLight.getQuadratic());
+				InShader->SetUniform1f(Element + "InnerCutoff", InLight.getInnerCutoff());
+				InShader->SetUniform1f(Element + "OuterCutoff", InLight.getOuterCutoff());
+			}
+		}
+	}
+
+	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
+	{
+		uint32 Counter = 0;
+
+		for (auto& Light : InLights)
+		{
+			if (Light != nullptr)
+			{
+				ShaderSetLight(InShader, *Light, Counter++);
+			}
+		}
+	}
+
+	static void ShaderSetLightsAndCamera(ShaderProgram* InShader, std::vector<Light*> InLights, Camera InCamera)
+	{
+		if (InShader != nullptr)
+		{
+			if (InShader->IsCompiled())
+			{
+				ShaderSetLights(InShader, InLights);
+				InShader->SetUniform3f("uCamera.Position", InCamera.getPos());
+			}
+		}
+	}
+
+	static void ShaderSetAll(Material InMaterial, std::vector<Light*> InLights, Camera InCamera, Transform InTransform)
+	{
+		auto tShader = InMaterial.GetShader();
+
+		if (tShader != nullptr)
+		{
+			if (tShader->IsCompiled())
+			{
+				ShaderSetMatrices(tShader, InTransform, InCamera);
+				ShaderSetMaterial(InMaterial);
+				ShaderSetLightsAndCamera(tShader, InLights, InCamera);
+			}
+		}
+	}
+	/*
+	*
+	* End of shader uniforms functions
+	*
+	*/
+
 	MeshOpenGL::MeshOpenGL()
 	{
 		glGenBuffers(1, &VBuf);
 		glGenVertexArrays(1, &VAO);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices)
 	{
 		glGenBuffers(1, &VBuf);
 		glGenVertexArrays(1, &VAO);
 		SetVertices(InVertices);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices, Material InMaterial)
 	{
 		glGenBuffers(1, &VBuf);
@@ -24,9 +161,7 @@ namespace Columbus
 		mMat = InMaterial;
 		SetVertices(InVertices);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void MeshOpenGL::SetVertices(std::vector<Vertex> InVertices)
 	{
 		Vertices.clear();
@@ -118,26 +253,6 @@ namespace Columbus
 
 		BoundingBox.Min = Vector3(OBBData.minX, OBBData.minY, OBBData.minZ);
 		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
-
-		if (mMat.GetShader() == nullptr) return;
-
-		/*if (!mMat.getShader()->IsCompiled())
-		{
-			mMat.getShader()->AddAttribute("aPos", 0);
-			mMat.getShader()->AddAttribute("aUV", 1);
-			mMat.getShader()->AddAttribute("aNorm", 2);
-			mMat.getShader()->AddAttribute("aTang", 3);
-			mMat.getShader()->Compile();
-
-			mMat.getShader()->AddUniform("uMaterial.diffuseMap");
-			mMat.getShader()->AddUniform("uMaterial.specularMap");
-			mMat.getShader()->AddUniform("uMaterial.normalMap");
-			mMat.getShader()->AddUniform("uReflectionMap");
-
-			mMat.getShader()->AddUniform("uModel");
-			mMat.getShader()->AddUniform("uView");
-			mMat.getShader()->AddUniform("uProjection");
-		}*/
 	}
 	
 	void MeshOpenGL::Render(Transform InTransform)
@@ -153,163 +268,50 @@ namespace Columbus
 			tShader->AddAttribute("aTang", 3);
 			tShader->Compile();
 
-			tShader->AddUniform("uMaterial.diffuseMap");
-			tShader->AddUniform("uMaterial.specularMap");
-			tShader->AddUniform("uMaterial.normalMap");
-			tShader->AddUniform("uReflectionMap");
+			tShader->AddUniform("uMaterial.DiffuseMap");
+			tShader->AddUniform("uMaterial.SpecularMap");
+			tShader->AddUniform("uMaterial.NormalMap");
+			tShader->AddUniform("uMaterial.ReflectionMap");
+
+			tShader->AddUniform("uMaterial.Color");
+			tShader->AddUniform("uMaterial.AmbientColor");
+			tShader->AddUniform("uMaterial.DiffuseColor");
+			tShader->AddUniform("uMaterial.SpecularColor");
+			tShader->AddUniform("uMaterial.ReflectionPower");
+			tShader->AddUniform("uMaterial.Lighting");
+
+			for (uint32 i = 0; i < 8; i++)
+			{
+				std::string Element = "uLights[" + std::to_string(i) + "].";
+				tShader->AddUniform(Element + "Color");
+				tShader->AddUniform(Element + "Position");
+				tShader->AddUniform(Element + "Direction");
+				tShader->AddUniform(Element + "Type");
+				tShader->AddUniform(Element + "Constant");
+				tShader->AddUniform(Element + "Linear");
+				tShader->AddUniform(Element + "Quadratic");
+				tShader->AddUniform(Element + "InnerCutoff");
+				tShader->AddUniform(Element + "OuterCutoff");
+			}
 
 			tShader->AddUniform("uModel");
 			tShader->AddUniform("uView");
 			tShader->AddUniform("uProjection");
 
-			tShader->AddUniform("MaterialUnif");
-			tShader->AddUniform("LightUnif");
-			tShader->AddUniform("uCamera.pos");
+			tShader->AddUniform("uCamera.Position");
 		}
 
 		mMat.GetShader()->Bind();
 
-		SetShaderMatrices(InTransform);
-		SetShaderMaterial();
-		SetShaderLightAndCamera();
-		SetShaderTextures();
+		SortLights();
+
+		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, Vertices.size());
 		glBindVertexArray(0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::SetShaderTextures()
-	{
-		Texture* textures[3] = { mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap() };
-		Cubemap* cubemap = mMat.getReflection();
-		std::string unifs[3] = {"uMaterial.diffuseMap", "uMaterial.specularMap", "uMaterial.normalMap"};
-		unsigned int indices[3] = {0, 1, 3};
-
-		for (int i = 0; i < 3; i++)
-		{
-			if (textures[i] != nullptr)
-			{
-				mMat.GetShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
-				textures[i]->sampler2D(indices[i]);
-			}
-			else
-			{
-				mMat.GetShader()->SetUniform1i(unifs[i].c_str(), indices[i]);
-				if (textures[0] == nullptr)
-					C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
-				if (textures[1] == nullptr)
-					C_DeactiveTextureOpenGL(C_OGL_TEXTURE1);
-				if (textures[2] == nullptr)
-					C_DeactiveTextureOpenGL(C_OGL_TEXTURE3);
-			}
-		}
-
-		if (cubemap != nullptr)
-		{
-			mMat.GetShader()->SetUniform1i("uReflectionMap", 2);
-			cubemap->samplerCube(2);
-		}
-		else
-		{
-			mMat.GetShader()->SetUniform1i("uReflectionMap", 2);
-			C_DeactiveCubemapOpenGL(C_OGL_TEXTURE2);
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::SetShaderMatrices(Transform InTransform)
-	{
-		InTransform.GetMatrix().ElementsTransposed(UniformModelMatrix);
-		ObjectCamera.getViewMatrix().Elements(UniformViewMatrix);
-		ObjectCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
-
-		Position = InTransform.GetPos();
-		mMat.GetShader()->SetUniformMatrix("uModel", UniformModelMatrix);
-		mMat.GetShader()->SetUniformMatrix("uView", UniformViewMatrix);
-		mMat.GetShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::SetShaderMaterial()
-	{
-		Vector4 matcol = mMat.getColor();
-		Vector3 matamb = mMat.getAmbient();
-		Vector3 matdif = mMat.getDiffuse();
-		Vector3 matspc = mMat.getSpecular();
-
-		mMaterialUnif[0] = matcol.x;
-		mMaterialUnif[1] = matcol.y;
-		mMaterialUnif[2] = matcol.z;
-		mMaterialUnif[3] = matcol.w;
-		mMaterialUnif[4] = matamb.X;
-		mMaterialUnif[5] = matamb.Y;
-		mMaterialUnif[6] = matamb.Z;
-		mMaterialUnif[7] = matdif.X;
-		mMaterialUnif[8] = matdif.Y;
-		mMaterialUnif[9] = matdif.Z;
-		mMaterialUnif[10] = matspc.X;
-		mMaterialUnif[11] = matspc.Y;
-		mMaterialUnif[12] = matspc.Z;
-		mMaterialUnif[13] = mMat.getReflectionPower();
-		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
-
-		mMat.GetShader()->SetUniformArrayf("MaterialUnif", mMaterialUnif, 15);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::SetShaderLightAndCamera()
-	{
-		CalculateLights();
-
-		mMat.GetShader()->SetUniformArrayf("LightUnif", mLightUniform, 120);
-		mMat.GetShader()->SetUniform3f("uCamera.pos", ObjectCamera.getPos());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void MeshOpenGL::CalculateLights()
-	{
-		SortLights();
-
-		//8 - max count of lights, processing in shader
-		for (uint32 i = 0; i < 8; i++)
-		{
-			uint32 offset = i * 15;
-
-			if (i < Lights.size() && mMat.getLighting() == true)
-			{
-				//Color
-				mLightUniform[0 + offset] = Lights[i]->getColor().X;
-				mLightUniform[1 + offset] = Lights[i]->getColor().Y;
-				mLightUniform[2 + offset] = Lights[i]->getColor().Z;
-				//Position
-				mLightUniform[3 + offset] = Lights[i]->getPos().X;
-				mLightUniform[4 + offset] = Lights[i]->getPos().Y;
-				mLightUniform[5 + offset] = Lights[i]->getPos().Z;
-				//Direction
-				mLightUniform[6 + offset] = Lights[i]->getDir().X;
-				mLightUniform[7 + offset] = Lights[i]->getDir().Y;
-				mLightUniform[8 + offset] = Lights[i]->getDir().Z;
-				//Type
-				mLightUniform[9 + offset] = static_cast<float>(Lights[i]->getType());
-				//Constant attenuation
-				mLightUniform[10 + offset] = Lights[i]->getConstant();
-				//Linear attenuation
-				mLightUniform[11 + offset] = Lights[i]->getLinear();
-				//Quadratic attenuation
-				mLightUniform[12 + offset] = Lights[i]->getQuadratic();
-				//Inner cutoff
-				mLightUniform[13 + offset] = Lights[i]->getInnerCutoff();
-				//Outer cutoff
-				mLightUniform[14 + offset] = Lights[i]->getOuterCutoff();
-			} else
-			{
-				for (uint32 j = 0; j < 15; j++)
-				{
-					mLightUniform[j + offset] = -1;
-				}
-			}
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void MeshOpenGL::SortLights()
 	{
 		Vector3 pos = Position;
@@ -326,9 +328,7 @@ namespace Columbus
 
 		std::sort(Lights.begin(), Lights.end(), func);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	MeshOpenGL::~MeshOpenGL()
 	{
 		glDeleteBuffers(1, &VBuf);

@@ -68,7 +68,7 @@
     </Color>
 
     <Noise>
-        <Active>1</Active>
+        <Active>0</Active>
         <Strength>0.1</Strength>
         <Octaves>8</Octaves>
         <Lacunarity>1.0</Lacunarity>

@@ -25,17 +25,6 @@ namespace Columbus
 		uint64 NOffset = 0;
 		uint64 TOffset = 0;
 
-		float mLightUniform[120];
-		float mMaterialUnif[15];
-		float UniformModelMatrix[16];
-		float UniformViewMatrix[16];
-		float UniformProjectionMatrix[16];
-
-		void SetShaderTextures();
-		void SetShaderMatrices(Transform InTransform);
-		void SetShaderMaterial();
-		void SetShaderLightAndCamera();
-		void CalculateLights();
 		void SortLights();
 	public:
 		MeshOpenGL();
