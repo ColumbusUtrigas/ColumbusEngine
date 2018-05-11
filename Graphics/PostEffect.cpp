@@ -13,16 +13,64 @@ namespace Columbus
 
 		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
 		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
+
+		static float Vertices[] = 
+		{
+			-1.0, -1.0, 0.0,
+			-1.0, 1.0, 0.0,
+			1.0, 1.0, 0.0,
+			1.0, -1.0, 0.0
+		};
+
+		static float UVs[] = 
+		{
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		static uint16 Indices[] = 
+		{
+			0, 2, 1,
+			0, 3, 2
+		};
+
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &IBO);
+		glGenVertexArrays(1, &VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices) + sizeof(UVs), nullptr, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(Vertices), sizeof(UVs), UVs);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		glBindVertexArray(VAO);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)sizeof(Vertices));
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+		glBindVertexArray(0);
 	}
 	
 	void PostEffect::SetShader(ShaderProgram* InShader)
 	{
 		if (InShader != nullptr)
 		{
-			if (!InShader->IsCompiled())
-			{
-				InShader->Compile();
-			}
+			InShader->AddAttribute("aPos", 0);
+			InShader->AddAttribute("aUV", 1);
+			InShader->Compile();
 
 			InShader->AddUniform("uColor");
 			InShader->AddUniform("uDepth");
@@ -116,7 +164,13 @@ namespace Columbus
 		for (auto& Attrib : mAttribsVector4)
 			Shader->SetUniform4f(Attrib.name, Attrib.value);
 
-		C_DrawScreenQuadOpenGL();
+		glDepthMask(GL_FALSE);
+
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr);
+		glBindVertexArray(0);
+
+		glDepthMask(GL_TRUE);
 
 		if (mTB) mTB->unbind();
 		if (Shader) Shader->Unbind();
@@ -135,10 +189,6 @@ namespace Columbus
 		if (Shader) Shader->Unbind();
 
 		mFB->unbind();
-
-		/*C_DisableDepthTestOpenGL();
-		C_DisableBlendOpenGL();
-		C_DisableAlphaTestOpenGL();*/
 	}
 
 	PostEffect::~PostEffect()

@@ -1,13 +1,13 @@
-attribute vec3 aPos;
-attribute vec2 aUV;
-attribute vec3 aPoses;
-attribute vec4 aTimes;
-attribute vec4 aColors;
-attribute vec3 aSizes;
+in vec3 aPos;
+in vec2 aUV;
+in vec3 aPoses;
+in vec4 aTimes;
+in vec4 aColors;
+in vec3 aSizes;
 
-varying vec3 varPos;
-varying vec2 varTexCoord;
-varying vec4 varColor;
+out vec3 varPos;
+out vec2 varTexCoord;
+out vec4 varColor;
 
 uniform mat4 uView;
 uniform mat4 uProjection;

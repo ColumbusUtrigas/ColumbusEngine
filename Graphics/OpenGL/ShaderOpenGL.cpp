@@ -11,10 +11,10 @@ namespace Columbus
 	//STANDART SKYBOX VERTEX SHADER
 	const std::string gSkyVertexShader =
 		"#version 130\n"
-		"attribute vec3 aPos;\n"
-		"attribute vec2 aUV;\n"
-		"attribute vec3 aNorm;\n"
-		"varying vec3 texCoord;\n"
+		"in vec3 aPos;\n"
+		"in vec2 aUV;\n"
+		"in vec3 aNorm;\n"
+		"out vec3 texCoord;\n"
 		"uniform mat4 uView;\n"
 		"uniform mat4 uProjection;\n"
 		"void main()\n"
@@ -26,11 +26,12 @@ namespace Columbus
 	//STANDART SKYBOX FRAGMENT SHADER
 	const std::string gSkyFragmentShader =
 		"#version 130\n"
-		"varying vec3 texCoord;\n"
+		"out vec4 FragColor;\n"
+		"in vec3 texCoord;\n"
 		"uniform samplerCube uSkybox;\n"
 		"void main()\n"
 		"{\n"
-		"gl_FragColor = textureCube(uSkybox, texCoord);\n"
+		"FragColor = textureCube(uSkybox, texCoord);\n"
 		"}\n";
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

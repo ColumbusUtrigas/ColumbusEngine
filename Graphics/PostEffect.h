@@ -63,6 +63,10 @@ namespace Columbus
 		Texture* mTB = nullptr;
 		Texture* mDepth = nullptr;
 
+		uint32 VBO;
+		uint32 IBO;
+		uint32 VAO;
+
 		std::vector<std::string> AttributeNames;
 		std::vector<PostEffectAttributeInt> mAttribsInt;
 		std::vector<PostEffectAttributeFloat> mAttribsFloat;

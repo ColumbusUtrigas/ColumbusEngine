@@ -1,6 +1,6 @@
-varying vec3 varPos;
-varying vec2 varTexCoord;
-varying vec4 varColor;
+in vec3 varPos;
+in vec2 varTexCoord;
+in vec4 varColor;
 
 uniform sampler2D uTex;
 uniform int uDiscard;
