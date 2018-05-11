@@ -1,16 +1,16 @@
 #extension GL_EXT_draw_instanced : enable
 
-attribute vec3 aPos;
-attribute vec2 aUV;
-attribute vec3 aNorm;
-attribute vec3 aTang;
+in vec3 aPos;
+in vec2 aUV;
+in vec3 aNorm;
+in vec3 aTang;
 
 uniform mat4 uModels[5];
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
 
-varying vec2 varUV;
+out vec2 varUV;
 
 void main()
 {

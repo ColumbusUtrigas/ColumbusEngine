@@ -5,9 +5,10 @@ namespace Columbus
 
 	SoundFormat SoundGetFormat(std::string FileName)
 	{
-		if (SoundIsWAV(FileName)) return E_SOUND_FORMAT_WAV;
+		if (SoundIsWAV(FileName)) return SoundFormat::WAV;
+		if (SoundIsOGG(FileName)) return SoundFormat::OGG;
 
-		return E_SOUND_FORMAT_UNKNOWN;
+		return SoundFormat::Unknown;
 	}
 
 	uint16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
@@ -16,8 +17,9 @@ namespace Columbus
 
 		switch (Format)
 		{
-		case E_SOUND_FORMAT_UNKNOWN: return nullptr; break;
-		case E_SOUND_FORMAT_WAV: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::Unknown: return nullptr; break;
+		case SoundFormat::WAV: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::OGG: return SoundLoadOGG(FileName, OutSize, OutFrequency, OutChannels); break;
 		}
 
 		return nullptr;

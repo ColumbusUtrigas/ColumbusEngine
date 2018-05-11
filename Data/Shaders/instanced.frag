@@ -15,8 +15,8 @@ struct Material
 
 uniform Material uMaterial;
 
-varying vec3 varColor;
-varying vec2 varUV;
+in vec3 varColor;
+in vec2 varUV;
 
 void main()
 {

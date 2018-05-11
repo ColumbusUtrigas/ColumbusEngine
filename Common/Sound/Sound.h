@@ -6,17 +6,20 @@
 namespace Columbus
 {
 
-	enum SoundFormat
+	enum class SoundFormat
 	{
-		E_SOUND_FORMAT_WAV,
-		E_SOUND_FORMAT_UNKNOWN
+		WAV,
+		OGG,
+		Unknown
 	};
 
 	SoundFormat SoundGetFormat(std::string FileName);
 
 	bool SoundIsWAV(std::string FileName); //Check file magic
+	bool SoundIsOGG(std::string FileName); //Check file magic
 
 	uint16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	uint16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
 	uint16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 

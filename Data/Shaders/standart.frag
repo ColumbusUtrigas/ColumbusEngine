@@ -166,7 +166,7 @@ void Cubemap(void)
 	vec3 I = normalize(uCamera.Position - varFragPos);
     //vec3 R = reflect(I, normalize(varFragPos));
    	vec3 R = normalize(reflect(I, Normal));
-   	CubemapColor = textureCube(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
+   	CubemapColor = texture(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
 
    	if (IsSpecularMap)
    	{

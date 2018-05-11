@@ -6,6 +6,10 @@
 #include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/MeshInstancedOpenGL.h>
 
+#include <Audio/AudioPlayer.h>
+
+#include <zstd.h>
+
 using namespace Columbus;
 
 int main(int argc, char** argv)
@@ -45,7 +49,8 @@ int main(int argc, char** argv)
 	scene.setCamera(&camera);
 
 	AudioSource* Source = gAudioDevice->CreateSource();
-	if (!Source->GetSound()->Load("Data/Sounds/cartoon001.wav"))
+
+	if (!Source->GetSound()->Load("Data/Sounds/cartoon001.ogg"))
 	{
 		Log::error("Couldn't load sound");
 	}
@@ -57,7 +62,7 @@ int main(int argc, char** argv)
 
 	Source->SetSound(Source->GetSound());
 	
-	Source->Play();
+	//Source->Play();
 
 	float xPos = 8.0f;
 
@@ -90,8 +95,36 @@ int main(int argc, char** argv)
 	mesh.Mat = mat;
 	mesh.SetVertices(ModelLoadCMF("Data/Models/Dragon.cmf"));
 
+	/*uint32 fSize = 0;
+
+	char* src;
+
+	FILE* inf = fopen("test.txt", "r");
+	fseek(inf, 0, SEEK_END);
+	fSize = ftell(inf);
+	fseek(inf, 0, SEEK_SET);
+	src = new char[fSize];
+	fread(src, sizeof(char), fSize, inf);
+	fclose(inf);
+
+	uint32 Bound = ZSTD_compressBound(fSize);
+	char* dst = new char[Bound];
+
+	uint32 size = ZSTD_compress(dst, Bound, src, fSize, 1);
+
+	std::ofstream ofs;
+	ofs.open("test.bin", std::ios::binary);
+	ofs.write(dst, size);
+	ofs.close();
+
+	delete[] dst;*/
+
+	AudioPlayer player;
+
 	while (window.isOpen())
 	{
+		player.Play();
+
 		float RedrawTime = window.getRedrawTime();
 
 		window.update();
