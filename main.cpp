@@ -93,31 +93,10 @@ int main(int argc, char** argv)
 	mat.setSpecMap(gDevice->createTexture("Data/Textures/metal-specular.jpg"));
 	mat.setNormMap(gDevice->createTexture("Data/Textures/metal-normal.jpg"));
 	mesh.Mat = mat;
-	mesh.SetVertices(ModelLoadCMF("Data/Models/Dragon.cmf"));
 
-	/*uint32 fSize = 0;
-
-	char* src;
-
-	FILE* inf = fopen("test.txt", "r");
-	fseek(inf, 0, SEEK_END);
-	fSize = ftell(inf);
-	fseek(inf, 0, SEEK_SET);
-	src = new char[fSize];
-	fread(src, sizeof(char), fSize, inf);
-	fclose(inf);
-
-	uint32 Bound = ZSTD_compressBound(fSize);
-	char* dst = new char[Bound];
-
-	uint32 size = ZSTD_compress(dst, Bound, src, fSize, 1);
-
-	std::ofstream ofs;
-	ofs.open("test.bin", std::ios::binary);
-	ofs.write(dst, size);
-	ofs.close();
-
-	delete[] dst;*/
+	std::vector<Vertex> Vertices;
+	ModelLoadCMFCompressed("Data/Models/Dragon.cmf.compressed", Vertices);
+	mesh.SetVertices(Vertices);
 
 	AudioPlayer player;
 

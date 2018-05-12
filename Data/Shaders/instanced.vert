@@ -6,7 +6,6 @@ in vec3 aNorm;
 in vec3 aTang;
 
 uniform mat4 uModels[5];
-uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
 

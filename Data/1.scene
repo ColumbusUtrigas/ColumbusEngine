@@ -36,11 +36,11 @@
 		<Meshes>
 			<Count>5</Count>
 
-			<Mesh0>Data/Models/Sponza.cmf</Mesh0>
-			<Mesh1>Data/Models/Torch.cmf</Mesh1>
-			<Mesh2>Data/Models/Dragon.cmf</Mesh2>
-			<Mesh3>Data/Models/Liberty.cmf</Mesh3>
-			<Mesh4>Data/Models/Sphere.cmf</Mesh4>
+			<Mesh0>Data/Models/Sponza.cmf.compressed</Mesh0>
+			<Mesh1>Data/Models/Torch.cmf.compressed</Mesh1>
+			<Mesh2>Data/Models/Dragon.cmf.compressed</Mesh2>
+			<Mesh3>Data/Models/Liberty.cmf.compressed</Mesh3>
+			<Mesh4>Data/Models/Sphere.cmf.compressed</Mesh4>
 		</Meshes>
 	</Resources>
 

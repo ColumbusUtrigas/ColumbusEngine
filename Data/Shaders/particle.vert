@@ -16,7 +16,6 @@ uniform vec2 uSize;
 uniform vec2 uStartSize;
 uniform vec2 uFinalSize;
 uniform vec2 uSubUV;
-uniform float uScaleOL;
 uniform float uBillboard;
 
 #define ROWS 6
