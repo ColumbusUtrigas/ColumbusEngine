@@ -147,7 +147,6 @@ namespace Columbus
 				tShader->AddUniform("uModels[" + std::to_string(i) + "]");
 			}
 
-			tShader->AddUniform("uModel");
 			tShader->AddUniform("uView");
 			tShader->AddUniform("uProjection");
 

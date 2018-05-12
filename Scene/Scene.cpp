@@ -509,15 +509,26 @@ namespace Columbus
 				elem = std::string("Mesh") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Meshes", elem }, path))
 				{
-					if (ModelIsCMF(path))
+					std::vector<Vertex> Vertices;
+
+					if (path.find_last_of(".compressed") == path.size() - 1)
 					{
-						mMeshes.insert(std::pair<uint32, Mesh*>(i, gDevice->createMesh(ModelLoadCMF(path))));
-						Log::success("Mesh loaded: " + path);
+						ModelLoadCMFCompressed(path, Vertices);
 					}
 					else
 					{
-						Log::error("Can't load mesh: " + path);
+						if (!ModelIsCMF(path))
+						{
+							continue;
+							Log::error("Can't load mesh: " + path);
+
+						}
+
+						ModelLoadCMF(path, Vertices);
 					}
+
+					mMeshes.insert(std::pair<uint32, Mesh*>(i, gDevice->createMesh(Vertices)));
+					Log::success("Mesh loaded: " + path);
 				}
 			}
 		}

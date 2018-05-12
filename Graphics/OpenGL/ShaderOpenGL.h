@@ -27,7 +27,7 @@ namespace Columbus
 	class ShaderProgramOpenGL : public ShaderProgram
 	{
 	private:
-		std::map<std::string, uint32> UniformLocations;
+		mutable std::map<std::string, uint32> UniformLocations;
 		uint32 ID = 0;
 	public:
 		ShaderProgramOpenGL();

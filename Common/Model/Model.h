@@ -32,8 +32,14 @@ namespace Columbus
 	};
 
 	bool ModelIsCMF(std::string FileName);
+	bool ModelIsCMFMemory(uint8* FileData, uint64 FileSize);
 
-	std::vector<Vertex> ModelLoadCMF(std::string FileName);
+	uint32 ModelLoadCMF(std::string FileName, std::vector<Vertex>& OutVertices);
+	uint32 ModelLoadCMFCompressed(std::string FileName, std::vector<Vertex>& OutVertices);
+	uint32 ModelLoadCMFFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices);
+	uint32 ModelLoadCMFCompressedFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices);
+
+	void ModelConvertCMFToCompressed(std::string SourceFileName, std::string DestinyFileName);
 
 	class C_Model
 	{

@@ -38,20 +38,40 @@ namespace Columbus
 		AudioPlayer()
 		{
 			Clip = new Sound();
-			Clip->Load("Data/Sounds/cartoon001.ogg");
+			Clip->Load("Data/Sounds/thestonemasons.ogg");
 
 			Spec.freq = Clip->GetFrequency();
 			Spec.format = AUDIO_S16;
 			Spec.channels = Clip->GetChannelsCount();
-			Spec.samples = Clip->GetBufferSize() / Clip->GetChannelsCount() / sizeof(uint16);
+			Spec.samples = 2048;
 			Spec.callback = audioCallback;
-			Spec.userdata = nullptr;
+			Spec.userdata = NULL;
+
+			if (Spec.freq <= 11025)
+			{
+				Spec.samples = 256;
+			}
+			else if (Spec.freq <= 22050)
+			{
+				Spec.samples = 512;
+			}
+			else if (Spec.freq <= 44100)
+			{
+				Spec.samples = 1024;
+			}
+			else
+			{
+				Spec.samples = 2048;
+			}
 
 			AudioPos = (Uint8*)Clip->GetBuffer();
 			AudioLen = Clip->GetBufferSize();
 			AudioLength = Clip->GetBufferSize();
 
-			if (SDL_OpenAudio(&Spec, NULL) < 0) std::cout << SDL_GetError() << std::endl;
+			if (SDL_OpenAudio(&Spec, NULL) < 0)
+			{
+				std::cout << SDL_GetError() << std::endl;
+			}
 		}
 
 		void AddSoundClip(uint32 Key, Sound* SoundClip)
