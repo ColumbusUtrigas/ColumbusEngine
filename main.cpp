@@ -33,11 +33,11 @@ int main(int argc, char** argv)
 	window.setVSync(true);
 
 	Image* cur = new Image;
-	cur->load("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
+	cur->Load("Data/Textures/cursor.tif", ImageLoading::FlipY);
 
 	input.showMouseCursor(false);
-	//input.SetSystemCursor(SystemCursor::Crosshair);
-	input.SetColoredCursor(cur->getData(), cur->getWidth(), cur->getHeight(), cur->getBPP(), vec2(17, 3));
+	input.SetSystemCursor(SystemCursor::Crosshair);
+	input.SetColoredCursor(cur->GetData(), cur->GetWidth(), cur->GetHeight(), GetBPPFromFormat(cur->GetFormat()), vec2(17, 3));
 
 	bool cursor = false;
 
@@ -97,8 +97,17 @@ int main(int argc, char** argv)
 	std::vector<Vertex> Vertices;
 	ModelLoadCMFCompressed("Data/Models/Dragon.cmf.compressed", Vertices);
 	mesh.SetVertices(Vertices);
+	Vertices.clear();
 
-	AudioPlayer player;
+	Sound Clip;
+	Clip.Load("Data/Sounds/thestonemasons.ogg");
+
+	AudioPlayer player(Clip.GetBuffer(), Clip.GetChannelsCount(), Clip.GetFrequency(), Clip.GetBufferSize());
+
+	uint32 w, h;
+	TextureFormat f;
+
+	ImageLoadDDS("metal.dds", w, h, f);
 
 	while (window.isOpen())
 	{

@@ -8,11 +8,11 @@ namespace Columbus
 	bool SoundIsOGG(std::string FileName)
 	{
 		File OGGSoundFile(FileName, "rb");
-		if (!OGGSoundFile.isOpened()) return false;
+		if (!OGGSoundFile.IsOpened()) return false;
 
 		uint8 Magic[4];
-		OGGSoundFile.read(Magic, sizeof(Magic), 1);
-		OGGSoundFile.close();
+		OGGSoundFile.Read(Magic, sizeof(Magic), 1);
+		OGGSoundFile.Close();
 
 		if (Magic[0] == 'O' &&
 		    Magic[1] == 'g' &&

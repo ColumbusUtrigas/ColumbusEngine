@@ -19,63 +19,76 @@
 namespace Columbus
 {
 
-	enum ImageLoad
+	enum class ImageLoading
 	{
-		E_IMAGE_LOAD_NONE,
-		E_IMAGE_LOAD_FLIP_X,
-		E_IMAGE_LOAD_FLIP_Y,
-		E_IMAGE_LOAD_FLIP_XY
+		None,
+		FlipX,
+		FlipY,
+		FlipXY
 	};
 
-	enum ImageFormat
+	enum class ImageFormat
 	{
-		E_IMAGE_FORMAT_BMP,
-		E_IMAGE_FORMAT_PNG,
-		E_IMAGE_FORMAT_TIF,
-		E_IMAGE_FORMAT_JPG,
-		E_IMAGE_FORMAT_TGA,
-		E_IMAGE_FORMAT_UNKNOWN
+		BMP,
+		DDS,
+		PNG,
+		TIF,
+		JPG,
+		TGA,
+		Unknown
+	};
+
+	enum class TextureFormat
+	{
+		RGB,
+		RGBA,
+		S3TC_A1,
+		S3TC_A4,
+		S3TC_A8
 	};
 
 	ImageFormat ImageGetFormat(std::string FileName);
+	uint32 GetBPPFromFormat(TextureFormat Format);
 
 	bool ImageIsBMP(std::string FileName); //Check file magic
+	bool ImageIsDDS(std::string FileName); //Check file magic
 	bool ImageIsTGA(std::string FileName); //Check file extension (*.tga, *.vda, *.icb, *.vst)
 	bool ImageIsPNG(std::string FileName); //Check file magic
 	bool ImageIsTIF(std::string FileName); //Check file magic
 	bool ImageIsJPG(std::string FileName); //Check file magic
 
-	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
-	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
-	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
-	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
-	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
+	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
 
-	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
-	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
-	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
-	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data);
-	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, uint32 Quality = 100);
+	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
 
-	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP);
-	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, int Format, uint32 Quality = 100);
+	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality = 100);
 
-	bool ImageBGR2RGB(uint8* Data, size_t Size);
-	bool ImageBGRA2RGBA(uint8* Data, size_t Size);
-	bool ImageABGR2RGBA(uint8* Data, size_t Size);
-	bool ImageRGB2BGR(uint8* Data, size_t Size);
-	bool ImageRGBA2BGRA(uint8* Data, size_t Size);
+	bool ImageBGR2RGB(uint8* Data, uint64 Size);
+	bool ImageBGRA2RGBA(uint8* Data, uint64 Size);
+	bool ImageABGR2RGBA(uint8* Data, uint64 Size);
+	bool ImageRGB2BGR(uint8* Data, uint64 Size);
+	bool ImageRGBA2BGRA(uint8* Data, uint64 Size);
 
-	bool ImageFlipX(uint8* Data, size_t Width, size_t Height, size_t BPP);
-	bool ImageFlipY(uint8* Data, size_t Width, size_t Height, size_t BPP);
-	bool ImageFlipXY(uint8* Data, size_t Width, size_t Height, size_t BPP);
+	bool ImageFlipX(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
+	bool ImageFlipY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
+	bool ImageFlipXY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
 
 	class Image
 	{
 	private:
 		uint32 Width = 0;         //Width of the image
 		uint32 Height = 0;        //Height of the image
-		uint32 BPP = 0;           //Byte (!) depth of the image: 3, 4
+		TextureFormat Format = TextureFormat::RGBA;
 		uint8* Data = nullptr;    //Pixel data
 		bool Exist = false;       //Is image exist
 
@@ -83,20 +96,20 @@ namespace Columbus
 	public:
 		Image();
 
-		bool load(std::string InFilename, int Flags = E_IMAGE_LOAD_NONE);
-		bool save(std::string InFilename, int Format, size_t Quality = 100) const;
-		bool isExist() const;
-		void freeData();
+		bool Load(std::string InFilename, ImageLoading Flags = ImageLoading::None);
+		bool Save(std::string InFilename, ImageFormat Format, size_t Quality = 100) const;
+		bool IsExist() const;
+		void FreeData();
 
-		bool flipX();
-		bool flipY();
-		bool flipXY();
+		bool FlipX();
+		bool FlipY();
+		bool FlipXY();
 
-		uint32 getWidth() const;
-		uint32 getHeight() const;
-		uint32 getBPP() const;
-		uint8* getData() const;
-		std::string getFileName() const;
+		uint32 GetWidth() const;
+		uint32 GetHeight() const;
+		TextureFormat GetFormat() const;
+		uint8* GetData() const;
+		std::string GetFileName() const;
 
 		~Image();
 	};

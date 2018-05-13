@@ -27,8 +27,8 @@ namespace Columbus
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
-		if (!aFile->readBytes(aHeader->magic, 21)) return false;
-		if (!aFile->readUint32(&aHeader->count)) return false;
+		if (!aFile->ReadBytes(aHeader->magic, 21)) return false;
+		if (!aFile->ReadUint32(&aHeader->count)) return false;
 
 		return true;
 	}
@@ -93,14 +93,14 @@ namespace Columbus
 	bool ModelIsCMF(std::string FileName)
 	{
 		File file(FileName, "rb");
-		if (!file.isOpened()) return false;
+		if (!file.IsOpened()) return false;
 
 		const char* magic = "COLUMBUS MODEL FORMAT";
 		uint8 fmagic[21];
 		bool ret = true;
 
-		file.read(fmagic, 21, 1);
-		file.close();
+		file.Read(fmagic, 21, 1);
+		file.Close();
 
 		for (int i = 0; i < 21; i++)
 		{
@@ -116,12 +116,12 @@ namespace Columbus
 	uint32 ModelLoadCMF(std::string FileName, std::vector<Vertex>& OutVertices)
 	{
 		File CMFModelFile(FileName, "rb");
-		if (!CMFModelFile.isOpened()) return 0;
+		if (!CMFModelFile.IsOpened()) return 0;
 
-		uint64 FileSize = CMFModelFile.getSize();
+		uint64 FileSize = CMFModelFile.GetSize();
 		uint8* FileData = new uint8[FileSize];
 
-		CMFModelFile.readBytes(FileData, FileSize);
+		CMFModelFile.ReadBytes(FileData, FileSize);
 
 		uint32 Count = ModelLoadCMFFromMemory(FileData, FileSize, OutVertices);
 		delete[] FileData;
@@ -131,12 +131,12 @@ namespace Columbus
 	uint32 ModelLoadCMFCompressed(std::string FileName, std::vector<Vertex>& OutVertices)
 	{
 		File CMFModelFile(FileName, "rb");
-		if (!CMFModelFile.isOpened()) return 0;
+		if (!CMFModelFile.IsOpened()) return 0;
 
-		uint64 FileSize = CMFModelFile.getSize();
+		uint64 FileSize = CMFModelFile.GetSize();
 		uint8* FileData = new uint8[FileSize];
 
-		CMFModelFile.readBytes(FileData, FileSize);
+		CMFModelFile.ReadBytes(FileData, FileSize);
 
 		uint32 Count = ModelLoadCMFCompressedFromMemory(FileData, FileSize, OutVertices);
 		delete[] FileData;
@@ -213,19 +213,19 @@ namespace Columbus
 	{
 		File CMFSourceModelFile(SourceFileName, "rb");
 		File CMFDestinyModelFile(DestinyFileName, "wb");
-		if (!CMFSourceModelFile.isOpened()) return;
-		if (!CMFDestinyModelFile.isOpened()) return;
+		if (!CMFSourceModelFile.IsOpened()) return;
+		if (!CMFDestinyModelFile.IsOpened()) return;
 
-		uint64 FileSize = CMFSourceModelFile.getSize();
+		uint64 FileSize = CMFSourceModelFile.GetSize();
 		uint8* SourceFile = new uint8[FileSize];
-		CMFSourceModelFile.readBytes(SourceFile, FileSize);
-		CMFSourceModelFile.close();
+		CMFSourceModelFile.ReadBytes(SourceFile, FileSize);
+		CMFSourceModelFile.Close();
 
 		uint64 Bound = ZSTD_compressBound(FileSize);
 		char* DestinyFile = new char[Bound];
 		uint64 DestinySize = ZSTD_compress(DestinyFile, Bound, SourceFile, FileSize, 1);
-		CMFDestinyModelFile.writeBytes(DestinyFile, DestinySize);
-		CMFDestinyModelFile.close();
+		CMFDestinyModelFile.WriteBytes(DestinyFile, DestinySize);
+		CMFDestinyModelFile.Close();
 
 		delete[] SourceFile;
 		delete[] DestinyFile;

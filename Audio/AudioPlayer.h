@@ -1,10 +1,7 @@
 #pragma once
 
 #include <Common/Sound/Sound.h>
-#include <map>
-
 #include <SDL.h>
-#include <iostream>
 
 namespace Columbus
 {
@@ -13,7 +10,7 @@ namespace Columbus
 	static Uint32 AudioLen;
 	static Uint32 AudioLength;
 
-	void audioCallback(void* userdata, Uint8* stream, int len)
+	static void audioCallback(void* userdata, Uint8* stream, int len)
 	{
 		if (AudioLen == 0)
 		{
@@ -21,31 +18,30 @@ namespace Columbus
 			AudioLen = AudioLength;
 			return;
 		}
+
 		len = (len > AudioLen ? AudioLen : len);
-		SDL_memcpy(stream, AudioPos, len);
+
+		Memory::Memcpy(stream, AudioPos, len);
 		AudioPos += len;
 		AudioLen -= len;
 	}
 
 	class AudioPlayer
 	{
-	protected:
-		std::map<uint32, Sound*> SoundClips;
-	public:
-		Sound* Clip; //Just testing
+	private:
 		SDL_AudioSpec Spec;
-
-		AudioPlayer()
+	public:
+		AudioPlayer(const uint16* Data, uint16 Channels, uint32 Frequency, uint64 Size)
 		{
-			Clip = new Sound();
-			Clip->Load("Data/Sounds/thestonemasons.ogg");
+			COLUMBUS_ASSERT_MESSAGE(Data, "AudioPlayer::AudioPlayer(): Invalid data")
+			COLUMBUS_ASSERT_MESSAGE(Channels >= 1, "AudioPlayer::AudioPlayer(): Invalid channels count")
+			COLUMBUS_ASSERT_MESSAGE(Frequency > 0, "AudioPlayer::AudioPlayer(): Invalid frequency")
+			COLUMBUS_ASSERT_MESSAGE(Size > 0, "AudioPlayer::AudioPlayer(): Invalid size")
 
-			Spec.freq = Clip->GetFrequency();
+			Spec.freq = Frequency;
 			Spec.format = AUDIO_S16;
-			Spec.channels = Clip->GetChannelsCount();
-			Spec.samples = 2048;
+			Spec.channels = Channels;
 			Spec.callback = audioCallback;
-			Spec.userdata = NULL;
 
 			if (Spec.freq <= 11025)
 			{
@@ -64,21 +60,14 @@ namespace Columbus
 				Spec.samples = 2048;
 			}
 
-			AudioPos = (Uint8*)Clip->GetBuffer();
-			AudioLen = Clip->GetBufferSize();
-			AudioLength = Clip->GetBufferSize();
+			AudioPos = (Uint8*)Data;
+			AudioLen = Size;
+			AudioLength = Size;
 
 			if (SDL_OpenAudio(&Spec, NULL) < 0)
 			{
-				std::cout << SDL_GetError() << std::endl;
-			}
-		}
-
-		void AddSoundClip(uint32 Key, Sound* SoundClip)
-		{
-			if (SoundClip != nullptr)
-			{
-				SoundClips[Key] = SoundClip;
+				printf("%s\n", SDL_GetError());
+				COLUMBUS_ASSERT_MESSAGE(0, "AudioPlayer::AudioPlayer(): Couldn't initialize audio stream")
 			}
 		}
 
@@ -92,7 +81,10 @@ namespace Columbus
 			SDL_PauseAudio(1);
 		}
 
-		virtual ~AudioPlayer() {}
+		virtual ~AudioPlayer()
+		{
+			SDL_CloseAudio();
+		}
 	};
 
 }

@@ -57,16 +57,14 @@ namespace Columbus
 
 		for (int i = 0; i < 6; i++)
 		{
-			if (!mBitmaps[i].load(aPath[i]))
+			if (!mBitmaps[i].Load(aPath[i], ImageLoading::FlipY))
 			{
 				Log::error("Can't load Cubemap face: " + aPath[i]);
 				glDeleteTextures(1, &mID);
 				return false;
 			}
 
-			mBitmaps[i].flipY();
-
-			if (!mBitmaps[i].isExist())
+			if (!mBitmaps[i].IsExist())
 			{
 				Log::error("Can't load Cubemap");
 				glDeleteTextures(1, &mID);
@@ -74,12 +72,17 @@ namespace Columbus
 			}
 			else
 			{
-				unsigned int format = GL_RGBA;
-				if (mBitmaps[i].getBPP() == 3) format = GL_RGB;
+				uint32 format = GL_RGBA;
+				switch (mBitmaps[i].GetFormat())
+				{
+				case TextureFormat::RGB:  format = GL_RGB;  break;
+				case TextureFormat::RGBA: format = GL_RGBA; break;
+				default: format = GL_RGBA; break;
+				}
 
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
-					mBitmaps[i].getWidth(), mBitmaps[i].getHeight(), 0, format, GL_UNSIGNED_BYTE,
-						mBitmaps[i].getData());
+					mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, format, GL_UNSIGNED_BYTE,
+						mBitmaps[i].GetData());
 			}
 		}
 
