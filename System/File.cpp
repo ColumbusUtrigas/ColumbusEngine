@@ -1,13 +1,3 @@
-/************************************************
-*                   File.cpp                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   05.11.2017                  *
-*************************************************/
-
 #include <System/File.h>
 
 namespace Columbus
@@ -18,257 +8,236 @@ namespace Columbus
 		if (fread(aData, aSize, 1, aFile) != 1) return false;
 		else return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool FileReadUint8(uint8_t* aData, FILE* aFile)
 	{
 		return FileReadBytes(aData, sizeof(uint8_t), aFile);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	struct File::FileData
-	{
-		FILE* file = nullptr;
-		std::string name;
-	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+
+	
 	File::File() :
-		mData(new FileData())
+		Handle(nullptr),
+		FileSize(0)
 	{}
-	//////////////////////////////////////////////////////////////////////////////
-	File::File(File& aOther) :
-		mData(new FileData())
+	
+	File::File(File& Other) :
+		Handle(nullptr),
+		FileSize(0)
 	{
-		mData->file = aOther.mData->file;
-		mData->name = aOther.mData->name;
-		aOther.mData->file = nullptr;
-		aOther.mData->name = "";
+		Handle = Other.Handle;
+		FileSize = Other.FileSize;
+		FileName = Other.FileName;
+
+		Other.Handle = nullptr;
+		Other.FileSize = 0;
+		Other.FileName.clear();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	File::File(std::string aFile, std::string aModes) :
-		mData(new FileData())
+
+	File::File(std::string File, std::string Modes) :
+		Handle(nullptr),
+		FileSize(0)
 	{
-		open(aFile, aModes);
+		Open(File, Modes);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	File& File::operator=(File& aOther)
+
+	File& File::operator=(File& Other)
 	{
-		if (this == &aOther) return *this;
-		FileData* d = mData;
-		mData = aOther.mData;
-		aOther.mData = d;
+		if (this == &Other) return *this;
+
+		std::swap(Handle, Other.Handle);
+		std::swap(FileSize, Other.FileSize);
+		std::swap(FileName, Other.FileName);
+
 		return *this;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	File& File::operator<<(const char aChar)
 	{
-		write(&aChar, sizeof(char), 1);
+		Write(&aChar, sizeof(char), 1);
 		return *this;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	File& File::operator<<(const std::string aString)
 	{
-		write(aString.c_str(), aString.size() * sizeof(char), 1);
+		Write(aString.c_str(), aString.size() * sizeof(char), 1);
 		return *this;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::open(std::string aFile, std::string aModes)
+
+	bool File::Open(std::string aFile, std::string aModes)
 	{
-		mData->file = fopen(aFile.c_str(), aModes.c_str());
-		if (mData->file != nullptr)
+		Handle = fopen(aFile.c_str(), aModes.c_str());
+		if (Handle != nullptr)
 		{
-			mData->name = aFile;
+			FileName = aFile;
+
+			fseek(Handle, 0, SEEK_END);
+			FileSize = ftell(Handle);
+			fseek(Handle, 0, SEEK_SET);
+
 			return true;
 		}
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::close()
+
+	bool File::Close()
 	{
 		bool ret = false;
 
-		if (mData->file != nullptr)
+		if (Handle != nullptr)
 		{
-			ret = fclose(mData->file) == 0;
-			mData->file = nullptr;
+			ret = fclose(Handle) == 0;
+			Handle = nullptr;
 		}
 		
-		mData->name.clear();
+		FileName.clear();
 		return ret;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	std::string File::getName() const
-	{
-		return mData->name;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	size_t File::getSize() const
-	{
-		if (!mData->file) return 0;
 
-		size_t offset = ftell(mData->file);
-		fseek(mData->file, 0, SEEK_END);
-		size_t size = ftell(mData->file);
-		fseek(mData->file, offset, SEEK_SET);
+	std::string File::GetName() const
+	{
+		return FileName;
+	}
 
-		return size;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::eof() const
+	uint64 File::GetSize() const
 	{
-		return (feof(mData->file) == 0);
+		if (Handle == nullptr) return 0;
+
+		return FileSize;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	int File::getc() const
+
+	bool File::IsEOF() const
 	{
-		return (fgetc(mData->file) == 0);
+		return (feof(Handle) == 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::seekSet(long int aOffset) const
+
+	int File::Getc() const
 	{
-		return (fseek(mData->file, aOffset, SEEK_SET) == 0);
+		return (fgetc(Handle) == 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::seekEnd(long int aOffset) const
+
+	bool File::SeekSet(long int aOffset) const
 	{
-		return (fseek(mData->file, aOffset, SEEK_END) == 0);
+		return (fseek(Handle, aOffset, SEEK_SET) == 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::seekCur(long int aOffset) const
+	
+	bool File::SeekEnd(long int aOffset) const
 	{
-		return (fseek(mData->file, aOffset, SEEK_CUR) == 0);
+		return (fseek(Handle, aOffset, SEEK_END) == 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	int File::tell() const
+	
+	bool File::SeekCur(long int aOffset) const
 	{
-		if (!isOpened()) return 0;
-		return ftell(mData->file);
+		return (fseek(Handle, aOffset, SEEK_CUR) == 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::flush() const
+	
+	int File::Tell() const
 	{
-		if (!isOpened()) return false;
-		return (fflush(mData->file) == 0);
+		if (Handle == nullptr) return 0;
+		return ftell(Handle);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::isOpened() const
+	
+	bool File::Flush() const
 	{
-		return (mData->file != nullptr);
+		if (Handle == nullptr) return false;
+		return (fflush(Handle) == 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	size_t File::read(void* aData, size_t aSize, size_t aPacks) const
+	
+	bool File::IsOpened() const
 	{
-		if (!isOpened()) return 0;
-		return fread(aData, aSize, aPacks, mData->file);
+		return (Handle != nullptr);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	size_t File::write(const void* aData, size_t aSize, size_t aPacks) const
+	
+	size_t File::Read(void* aData, size_t aSize, size_t aPacks) const
 	{
-		if (!isOpened()) return 0;
-		return fwrite(aData, aSize, aPacks, mData->file);
+		if (Handle == nullptr) return 0;
+		return fread(aData, aSize, aPacks, Handle);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readBytes(void* aData, size_t aSize)
+
+	size_t File::Write(const void* aData, size_t aSize, size_t aPacks) const
+	{
+		if (Handle == nullptr) return 0;
+		return fwrite(aData, aSize, aPacks, Handle);
+	}
+
+	bool File::ReadBytes(void* aData, uint64 aSize)
 	{
 		if (!aData) return false;
-		if (!isOpened()) return false;
-		if (fread(aData, aSize, 1, mData->file) != 1) return false;
+		if (Handle == nullptr) return false;
+		if (fread(aData, aSize, 1, Handle) != 1) return false;
 		else return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readUint8(uint8_t* aData)
+
+	bool File::ReadUint8(uint8* Data)
 	{
-		return readBytes(aData, sizeof(uint8_t));
+		return ReadBytes(Data, sizeof(uint8));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readInt8(int8_t* aData)
+
+	bool File::ReadInt8(int8* Data)
 	{
-		return readBytes(aData, sizeof(int8_t));
+		return ReadBytes(Data, sizeof(int8));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readUint16(uint16_t* aData)
+
+	bool File::ReadUint16(uint16* Data)
 	{
-		return readBytes(aData, sizeof(uint16_t));
+		return ReadBytes(Data, sizeof(uint16));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readInt16(int16_t* aData)
+
+	bool File::ReadInt16(int16* Data)
 	{
-		return readBytes(aData, sizeof(int16_t));
+		return ReadBytes(Data, sizeof(int16));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readUint32(uint32_t* aData)
+
+	bool File::ReadUint32(uint32* Data)
 	{
-		return readBytes(aData, sizeof(uint32_t));
+		return ReadBytes(Data, sizeof(uint32));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::readInt32(int32_t* aData)
+
+	bool File::ReadInt32(int32* Data)
 	{
-		return readBytes(aData, sizeof(int32_t));
+		return ReadBytes(Data, sizeof(int32));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeBytes(const void* aData, size_t aSize)
+
+	bool File::WriteBytes(const void* Data, uint64 Size)
 	{
-		if (!aData) return false;
-		if (!isOpened()) return false;
-		if (fwrite(aData, aSize, 1, mData->file) != 1) return false;
+		if (!Data) return false;
+		if (Handle == nullptr) return false;
+		if (fwrite(Data, Size, 1, Handle) != 1) return false;
 		else return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeUint8(const uint8_t* aData)
+	
+	bool File::WriteUint8(const uint8 Data)
 	{
-		return writeBytes(aData, sizeof(uint8_t));
+		return WriteBytes(&Data, sizeof(uint8));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeInt8(const int8_t* aData)
+	
+	bool File::WriteInt8(const int8 Data)
 	{
-		return writeBytes(aData, sizeof(int8_t));
+		return WriteBytes(&Data, sizeof(int8));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeUint16(const uint16_t* aData)
+
+	bool File::WriteUint16(const uint16 Data)
 	{
-		return writeBytes(aData, sizeof(uint16_t));
+		return WriteBytes(&Data, sizeof(uint16));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeInt16(const int16_t* aData)
+
+	bool File::WriteInt16(const int16 Data)
 	{
-		return writeBytes(aData, sizeof(int16_t));
+		return WriteBytes(&Data, sizeof(int16));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeUint32(const uint32_t* aData)
+
+	bool File::WriteUint32(const uint32 Data)
 	{
-		return writeBytes(aData, sizeof(uint32_t));
+		return WriteBytes(&Data, sizeof(uint32));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool File::writeInt32(const int32_t* aData)
+
+	bool File::WriteInt32(const int32 Data)
 	{
-		return writeBytes(aData, sizeof(int32_t));
+		return WriteBytes(&Data, sizeof(int32));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+
 	File::~File()
 	{
-		close();
-		delete mData;
+		Close();
 	}
 
 }

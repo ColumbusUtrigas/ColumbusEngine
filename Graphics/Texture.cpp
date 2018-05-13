@@ -58,25 +58,25 @@ namespace Columbus
 	
 	uint64 Texture::GetSize() const
 	{
-		if (!mImage.isExist()) return 0;
+		if (!mImage.IsExist()) return 0;
 
 		return mWidth * mHeight * (mBPP / 8);
 	}
 	
 	bool Texture::save(std::string aFile, size_t aQuality)
 	{
-		if (!mImage.isExist())
+		if (!mImage.IsExist())
 		{ Log::error("Texture didn't saved: " + aFile);  return false; }
 
-		int type = E_IMAGE_FORMAT_PNG;
+		ImageFormat type = ImageFormat::PNG;
 
-		switch (mImage.getBPP())
+		switch (GetBPPFromFormat(mImage.GetFormat()))
 		{
-		case 3: type = E_IMAGE_FORMAT_JPG; break;
-		case 4: type = E_IMAGE_FORMAT_PNG; break;
+		case 3: type = ImageFormat::JPG; break;
+		case 4: type = ImageFormat::PNG; break;
 		}
 
-		ImageSave(aFile, mImage.getWidth(), mImage.getHeight(), mImage.getBPP(), mImage.getData(), type, aQuality);
+		ImageSave(aFile, mImage.GetWidth(), mImage.GetHeight(), mImage.GetFormat(), mImage.GetData(), type, aQuality);
 
 		Log::success("Texture successfully saved: " + aFile);
 		return true;

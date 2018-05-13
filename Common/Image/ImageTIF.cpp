@@ -19,11 +19,11 @@ namespace Columbus
 	bool ImageIsTIF(std::string FileName)
 	{
 		File file(FileName, "rb");
-		if (!file.isOpened()) return false;
+		if (!file.IsOpened()) return false;
 
 		uint8_t magic[4];
-		if (!file.readBytes(magic, sizeof(magic))) return false;
-		file.close();
+		if (!file.ReadBytes(magic, sizeof(magic))) return false;
+		file.Close();
 
 		bool II = (magic[0] == 'I' &&
 		           magic[1] == 'I' &&
@@ -39,7 +39,7 @@ namespace Columbus
 		else return false;
 	}
 
-	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
+	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
 	{
 		TIFF* tif = TIFFOpen(FileName.c_str(), "r");
 		if (tif == nullptr) return nullptr;
@@ -54,7 +54,12 @@ namespace Columbus
 
 		OutWidth = width;
 		OutHeight = height;
-		OutBPP = bpp;
+
+		switch (bpp)
+		{
+		case 3: OutFormat = TextureFormat::RGB;  break;
+		case 4: OutFormat = TextureFormat::RGBA; break;
+		}
 
 		uint32* buffer = (uint32*)Memory::Malloc(width * height * sizeof(uint32));
 		TIFFReadRGBAImage(tif, width, height, buffer, 0);
@@ -78,12 +83,14 @@ namespace Columbus
 		return data;
 	}
 	
-	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
+	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		if (Data == nullptr) return false;
 
 		TIFF* tif = TIFFOpen(FileName.c_str(), "w");
 		if (tif == nullptr) return false;
+
+		uint32 BPP = GetBPPFromFormat(Format);
 
 		TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, Width);
 		TIFFSetField(tif, TIFFTAG_IMAGELENGTH, Height);

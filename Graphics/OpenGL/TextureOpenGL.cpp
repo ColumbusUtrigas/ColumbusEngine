@@ -26,18 +26,24 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void TextureOpenGL::load(std::string aPath, bool aSmooth)
 	{
-		mImage.load(aPath);
+		mImage.Load(aPath);
 
 		glBindTexture(GL_TEXTURE_2D, mID);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-		unsigned int format = GL_RGBA;
-		if (mImage.getBPP() == 3) format = GL_RGB;
+		uint32 OpenGLFormat = GL_RGBA;
+		
+		switch (mImage.GetFormat())
+		{
+		case TextureFormat::RGB:  OpenGLFormat = GL_RGB;  break;
+		case TextureFormat::RGBA: OpenGLFormat = GL_RGBA; break;
+		default: OpenGLFormat = GL_RGBA; break;
+		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, format, mImage.getWidth(), mImage.getHeight(), 0,
-			format, GL_UNSIGNED_BYTE, mImage.getData());
+		glTexImage2D(GL_TEXTURE_2D, 0, OpenGLFormat, mImage.GetWidth(), mImage.GetHeight(), 0,
+			OpenGLFormat, GL_UNSIGNED_BYTE, mImage.GetData());
 
 		if (mConfig.mipmaps)
 		{

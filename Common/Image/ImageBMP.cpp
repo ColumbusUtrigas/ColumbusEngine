@@ -41,11 +41,11 @@ namespace Columbus
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
-		if (!aFile->readUint8(&aHeader->magic[0])) return false;
-		if (!aFile->readUint8(&aHeader->magic[1])) return false;
-		if (!aFile->readUint32(&aHeader->size)) return false;
-		if (!aFile->readUint32(&aHeader->unused)) return false;
-		if (!aFile->readUint32(&aHeader->offset)) return false;
+		if (!aFile->ReadUint8(&aHeader->magic[0])) return false;
+		if (!aFile->ReadUint8(&aHeader->magic[1])) return false;
+		if (!aFile->ReadUint32(&aHeader->size)) return false;
+		if (!aFile->ReadUint32(&aHeader->unused)) return false;
+		if (!aFile->ReadUint32(&aHeader->offset)) return false;
 
 		return true;
 	}
@@ -54,11 +54,11 @@ namespace Columbus
 	{
 		if (aFile == nullptr) return false;
 
-		if (!aFile->writeUint8(&aHeader.magic[0])) return false;
-		if (!aFile->writeUint8(&aHeader.magic[1])) return false;
-		if (!aFile->writeUint32(&aHeader.size)) return false;
-		if (!aFile->writeUint32(&aHeader.unused)) return false;
-		if (!aFile->writeUint32(&aHeader.offset)) return false;
+		if (!aFile->WriteUint8(aHeader.magic[0])) return false;
+		if (!aFile->WriteUint8(aHeader.magic[1])) return false;
+		if (!aFile->WriteUint32(aHeader.size)) return false;
+		if (!aFile->WriteUint32(aHeader.unused)) return false;
+		if (!aFile->WriteUint32(aHeader.offset)) return false;
 
 		return true;
 	}
@@ -67,20 +67,20 @@ namespace Columbus
 	{
 		if (aInfo == nullptr || aFile == nullptr) return false;
 
-		if (!aFile->readUint32(&aInfo->infosize)) return false;
-		if (!aFile->readInt32(&aInfo->width)) return false;
-		if (!aFile->readInt32(&aInfo->height)) return false;
-		if (!aFile->readUint16(&aInfo->planes)) return false;
-		if (!aFile->readUint16(&aInfo->bits)) return false;
-		if (!aFile->readUint32(&aInfo->compression)) return false;
-		if (!aFile->readUint32(&aInfo->size_data)) return false;
-		if (!aFile->readUint32(&aInfo->hres)) return false;
-		if (!aFile->readUint32(&aInfo->vres)) return false;
-		if (!aFile->readUint32(&aInfo->colors)) return false;
-		if (!aFile->readUint32(&aInfo->important_colors)) return false;
+		if (!aFile->ReadUint32(&aInfo->infosize)) return false;
+		if (!aFile->ReadInt32(&aInfo->width)) return false;
+		if (!aFile->ReadInt32(&aInfo->height)) return false;
+		if (!aFile->ReadUint16(&aInfo->planes)) return false;
+		if (!aFile->ReadUint16(&aInfo->bits)) return false;
+		if (!aFile->ReadUint32(&aInfo->compression)) return false;
+		if (!aFile->ReadUint32(&aInfo->size_data)) return false;
+		if (!aFile->ReadUint32(&aInfo->hres)) return false;
+		if (!aFile->ReadUint32(&aInfo->vres)) return false;
+		if (!aFile->ReadUint32(&aInfo->colors)) return false;
+		if (!aFile->ReadUint32(&aInfo->important_colors)) return false;
 
 		uint8_t* empty = (uint8*)Memory::Malloc(68);
-		aFile->readBytes(empty, 68);
+		aFile->ReadBytes(empty, 68);
 		free(empty);
 
 		return true;
@@ -90,17 +90,17 @@ namespace Columbus
 	{
 		if (aFile == nullptr) return false;
 
-		if (!aFile->writeUint32(&aInfo.infosize)) return false;
-		if (!aFile->writeInt32(&aInfo.width)) return false;
-		if (!aFile->writeInt32(&aInfo.height)) return false;
-		if (!aFile->writeUint16(&aInfo.planes)) return false;
-		if (!aFile->writeUint16(&aInfo.bits)) return false;
-		if (!aFile->writeUint32(&aInfo.compression)) return false;
-		if (!aFile->writeUint32(&aInfo.size_data)) return false;
-		if (!aFile->writeUint32(&aInfo.hres)) return false;
-		if (!aFile->writeUint32(&aInfo.vres)) return false;
-		if (!aFile->writeUint32(&aInfo.colors)) return false;
-		if (!aFile->writeUint32(&aInfo.important_colors)) return false;
+		if (!aFile->WriteUint32(aInfo.infosize)) return false;
+		if (!aFile->WriteInt32(aInfo.width)) return false;
+		if (!aFile->WriteInt32(aInfo.height)) return false;
+		if (!aFile->WriteUint16(aInfo.planes)) return false;
+		if (!aFile->WriteUint16(aInfo.bits)) return false;
+		if (!aFile->WriteUint32(aInfo.compression)) return false;
+		if (!aFile->WriteUint32(aInfo.size_data)) return false;
+		if (!aFile->WriteUint32(aInfo.hres)) return false;
+		if (!aFile->WriteUint32(aInfo.vres)) return false;
+		if (!aFile->WriteUint32(aInfo.colors)) return false;
+		if (!aFile->WriteUint32(aInfo.important_colors)) return false;
 
 		return true;
 	}
@@ -108,20 +108,20 @@ namespace Columbus
 	bool ImageIsBMP(std::string FileName)
 	{
 		File file(FileName, "rb");
-		if (!file.isOpened()) return false;
+		if (!file.IsOpened()) return false;
 
 		uint8_t magic[2];
-		file.read(magic, sizeof(magic), 1);
-		file.close();
+		file.Read(magic, sizeof(magic), 1);
+		file.Close();
 
 		if (magic[0] == 'B' && magic[1] == 'M') return true;
 		return false;
 	}
 
-	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
+	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
 	{
 		File file(FileName, "rb");
-		if (!file.isOpened()) return nullptr;
+		if (!file.IsOpened()) return nullptr;
 
 		BMP_HEADER header;
 		BMP_INFO info;
@@ -130,8 +130,8 @@ namespace Columbus
 		if (!ReadInfo(&info, &file)) return nullptr;
 
 		uint8* data = (uint8*)Memory::Malloc(header.size - 66);
-		file.read(data, header.size - 66, 1);
-		file.close();
+		file.Read(data, header.size - 66, 1);
+		file.Close();
 
 		size_t size = info.width * info.height * info.bits / 8;
 
@@ -143,12 +143,17 @@ namespace Columbus
 
 		OutWidth = info.width;
 		OutHeight = info.height;
-		OutBPP = info.bits / 8;
+
+		switch (info.bits)
+		{
+		case 24: OutFormat = TextureFormat::RGB;  break;
+		case 32: OutFormat = TextureFormat::RGBA; break;
+		}
 
 		return data;
 	}
 
-	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
+	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		if (Data == nullptr) return false;
 
@@ -156,6 +161,8 @@ namespace Columbus
 
 		BMP_HEADER header;
 		BMP_INFO info;
+
+		uint32 BPP = GetBPPFromFormat(Format);
 
 		header.magic[0] = 'B';
 		header.magic[1] = 'M';
@@ -185,17 +192,13 @@ namespace Columbus
 
 		switch (BPP * 8)
 		{
-		case 24:
-			ImageRGB2BGR(buffer, size);
-			break;
-		case 32:
-			ImageRGBA2BGRA(buffer, size);
-			break;
+		case 24: ImageRGB2BGR(buffer, size);   break;
+		case 32: ImageRGBA2BGRA(buffer, size); break;
 		};
 
-		file.write(buffer, Width * Height * BPP, 1);
+		file.Write(buffer, Width * Height * BPP, 1);
 
-		file.close();
+		file.Close();
 		Memory::Free(buffer);
 
 		return true;

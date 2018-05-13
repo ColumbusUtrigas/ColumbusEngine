@@ -19,11 +19,11 @@ namespace Columbus
 	bool ImageIsJPG(std::string FileName)
 	{
 		File file(FileName, "rb");
-		if (!file.isOpened()) return false;
+		if (!file.IsOpened()) return false;
 
 		uint8_t magic[3];
-		if (!file.readBytes(magic, sizeof(magic))) return false;
-		file.close();
+		if (!file.ReadBytes(magic, sizeof(magic))) return false;
+		file.Close();
 
 		if (magic[0] == 0xFF &&
 			magic[1] == 0xD8 &&
@@ -31,7 +31,7 @@ namespace Columbus
 		else return false;
 	}
 
-	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
+	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
 	{
 		struct jpeg_decompress_struct cinfo;
 
@@ -61,7 +61,7 @@ namespace Columbus
 
 		OutWidth = cinfo.image_width;
 		OutHeight = cinfo.image_height;
-		OutBPP = 3;
+		OutFormat = TextureFormat::RGB;
 
 		jpeg_start_decompress(&cinfo);
 
@@ -87,7 +87,7 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, uint32 Quality)
+	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality)
 	{
 		if (Data == nullptr) return false;
 
@@ -104,6 +104,8 @@ namespace Columbus
 		jpeg_create_compress(&cinfo);
 
 		jpeg_stdio_dest(&cinfo, file);
+
+		uint32 BPP = GetBPPFromFormat(Format);
 
 		cinfo.image_width = Width;
 		cinfo.image_height = Height;

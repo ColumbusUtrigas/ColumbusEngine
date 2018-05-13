@@ -18,11 +18,11 @@ namespace Columbus
 	bool ImageIsPNG(std::string FileName)
 	{
 		File file(FileName, "rb");
-		if (!file.isOpened()) return false;
+		if (!file.IsOpened()) return false;
 
 		uint8 magic[4];
-		if (!file.readBytes(magic, sizeof(magic))) return false;
-		file.close();
+		if (!file.ReadBytes(magic, sizeof(magic))) return false;
+		file.Close();
 
 		if (magic[1] == 'P' &&
 		    magic[2] == 'N' &&
@@ -30,7 +30,7 @@ namespace Columbus
 		else return false;
 	}
 
-	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
+	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
 	{
 		FILE* fp = fopen(FileName.c_str(), "rb");
 		if (fp == nullptr) return nullptr;
@@ -68,7 +68,12 @@ namespace Columbus
 
 		OutWidth = width;
 		OutHeight = height;
-		OutBPP = bpp;
+
+		switch (bpp)
+		{
+		case 3: OutFormat = TextureFormat::RGB;  break;
+		case 4: OutFormat = TextureFormat::RGBA; break;
+		}
 
 		uint8* data = (uint8*)Memory::Malloc(width * height * bpp);
 
@@ -84,7 +89,7 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data)
+	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		FILE* fp = fopen(FileName.c_str(), "wb");
 		if (fp == nullptr) return false;
@@ -100,6 +105,9 @@ namespace Columbus
 		}
 
 		png_init_io(png, fp);
+
+		uint32 BPP = GetBPPFromFormat(Format);
+
 		int type = PNG_COLOR_TYPE_RGB;
 		if (BPP == 4) type = PNG_COLOR_TYPE_RGBA;
 

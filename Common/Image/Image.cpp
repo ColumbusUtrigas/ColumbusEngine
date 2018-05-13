@@ -1,36 +1,39 @@
-/************************************************
-*              	    Image.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   02.01.2018                  *
-*************************************************/
 #include <Common/Image/Image.h>
+#include <Core/Core.h>
 
 namespace Columbus
 {
 
+	uint32 GetBPPFromFormat(TextureFormat Format)
+	{
+		switch (Format)
+		{
+		case TextureFormat::RGB:  return 3;  break;
+		case TextureFormat::RGBA: return 4; break;
+		}
+
+		return 0;
+	}
+
 	ImageFormat ImageGetFormat(std::string FileName)
 	{
-		if (ImageIsBMP(FileName)) return E_IMAGE_FORMAT_BMP;
-		if (ImageIsPNG(FileName)) return E_IMAGE_FORMAT_PNG;
-		if (ImageIsTIF(FileName)) return E_IMAGE_FORMAT_TIF;
-		if (ImageIsJPG(FileName)) return E_IMAGE_FORMAT_JPG;
-		if (ImageIsTGA(FileName)) return E_IMAGE_FORMAT_TGA;
+		if (ImageIsBMP(FileName)) return ImageFormat::BMP;
+		if (ImageIsPNG(FileName)) return ImageFormat::PNG;
+		if (ImageIsTIF(FileName)) return ImageFormat::TIF;
+		if (ImageIsJPG(FileName)) return ImageFormat::JPG;
+		if (ImageIsTGA(FileName)) return ImageFormat::TGA;
 
-		return E_IMAGE_FORMAT_UNKNOWN;
+		return ImageFormat::Unknown;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool ImageBGR2RGB(uint8_t* aData, size_t aSize)
+	bool ImageBGR2RGB(uint8* aData, uint64 aSize)
 	{
 		if (aData == nullptr) return false;
 
-		uint8_t bgr[3];
-		for (size_t i = 0; i < aSize; i += 3)
+		uint8 bgr[3];
+		for (uint64 i = 0; i < aSize; i += 3)
 		{
 			bgr[0] = aData[i + 0];
 			bgr[1] = aData[i + 1];
@@ -43,13 +46,13 @@ namespace Columbus
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageBGRA2RGBA(uint8_t* aData, size_t aSize)
+	
+	bool ImageBGRA2RGBA(uint8* aData, uint64 aSize)
 	{
 		if (aData == nullptr) return false;
 
-		uint8_t bgr[3];
-		for (size_t i = 0; i < aSize; i += 4)
+		uint8 bgr[3];
+		for (uint64 i = 0; i < aSize; i += 4)
 		{
 			bgr[0] = aData[i + 0];
 			bgr[1] = aData[i + 1];
@@ -63,13 +66,13 @@ namespace Columbus
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageABGR2RGBA(uint8_t* aData, size_t aSize)
+	
+	bool ImageABGR2RGBA(uint8* aData, uint64 aSize)
 	{
 		if (aData == nullptr) return false;
 
-		uint8_t abgr[4];
-		for (size_t i = 0; i < aSize; i += 4)
+		uint8 abgr[4];
+		for (uint64 i = 0; i < aSize; i += 4)
 		{
 			abgr[0] = aData[i + 0];
 			abgr[1] = aData[i + 1];
@@ -84,111 +87,111 @@ namespace Columbus
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageRGB2BGR(uint8_t* aData, size_t aSize)
+	
+	bool ImageRGB2BGR(uint8* aData, uint64 aSize)
 	{
 		return ImageBGR2RGB(aData, aSize);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageRGBA2BGRA(uint8_t* aData, size_t aSize)
+	
+	bool ImageRGBA2BGRA(uint8* aData, uint64 aSize)
 	{
 		return ImageBGRA2RGBA(aData, aSize);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageFlipX(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP)
+	
+	bool ImageFlipX(uint8* Data, uint32 Width, uint32 Height, uint32 BPP)
 	{
-		if (aData == nullptr) return false;
+		if (Data == nullptr) return false;
 
-		const size_t stride = aWidth * aBPP;
-		uint8_t* row;
-		uint8_t* pixel = (uint8_t*)malloc(aBPP);
+		const uint32 stride = Width * BPP;
+		uint8* row;
+		uint8* pixel = new uint8[BPP];
 
-		for (size_t i = 0; i < aHeight; i++)
+		for (uint32 i = 0; i < Height; i++)
 		{
-			row = &aData[i * stride];
+			row = &Data[i * stride];
 
-			for (size_t j = 0; j < aWidth / 2; j++)
+			for (uint32 j = 0; j < Width / 2; j++)
 			{
-				memcpy(pixel, &row[j * aBPP], aBPP);
-				memcpy(&row[j * aBPP], &row[(aWidth - j) * aBPP], aBPP);
-				memcpy(&row[(aWidth - j) * aBPP], pixel, aBPP);
+				Memory::Memcpy(pixel, &row[j * BPP], BPP);
+				Memory::Memcpy(&row[j * BPP], &row[(Width - j) * BPP], BPP);
+				Memory::Memcpy(&row[(Width - j) * BPP], pixel, BPP);
 			}
 		}
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageFlipY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP)
+	
+	bool ImageFlipY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP)
 	{
-		if (aData == nullptr) return false;
+		if (Data == nullptr) return false;
 
-		const size_t stride = aWidth * aBPP;
-		uint8_t* row = (uint8_t*)malloc(stride);
+		const uint32 stride = Width * BPP;
+		uint8* row = (uint8_t*)malloc(stride);
 
-		for (size_t i = 0; i < aHeight / 2; i++)
+		for (uint32 i = 0; i < Height / 2; i++)
 		{
-			memcpy(row, &aData[i * stride], stride);
-			memcpy(&aData[i * stride], &aData[(aHeight - i - 1) * stride], stride);
-			memcpy(&aData[(aHeight - i - 1) * stride], row, stride);
+			Memory::Memcpy(row, &Data[i * stride], stride);
+			Memory::Memcpy(&Data[i * stride], &Data[(Height - i - 1) * stride], stride);
+			Memory::Memcpy(&Data[(Height - i - 1) * stride], row, stride);
 		}
-		free(row);
+		Memory::Free(row);
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ImageFlipXY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP)
+	
+	bool ImageFlipXY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP)
 	{
-		if (aData == nullptr) return false;
+		if (Data == nullptr) return false;
 
-		const size_t size = aWidth * aHeight;
-		uint8_t* pixel = new uint8_t[aBPP];
+		const uint32 size = Width * Height;
+		uint8* pixel = new uint8[BPP];
 
 		for (size_t i = 0; i < size / 2; i++)
 		{
-			memcpy(pixel, &aData[i * aBPP], aBPP);
-			memcpy(&aData[i * aBPP], &aData[(size - i) * aBPP], aBPP);
-			memcpy(&aData[(size - i) * aBPP], pixel, aBPP);
+			Memory::Memcpy(pixel, &Data[i * BPP], BPP);
+			Memory::Memcpy(&Data[i * BPP], &Data[(size - i) * BPP], BPP);
+			Memory::Memcpy(&Data[(size - i) * BPP], pixel, BPP);
 		}
-		free(pixel);
+		Memory::Free(pixel);
 
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint32& OutBPP)
+	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
 	{
 		switch (ImageGetFormat(FileName))
 		{
-		case E_IMAGE_FORMAT_BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutBPP); break;
-		case E_IMAGE_FORMAT_PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutBPP); break;
-		case E_IMAGE_FORMAT_TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutBPP); break;
-		case E_IMAGE_FORMAT_JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutBPP); break;
-		case E_IMAGE_FORMAT_TGA: return ImageLoadTGA(FileName, OutWidth, OutHeight, OutBPP); break;
-		case E_IMAGE_FORMAT_UNKNOWN: return nullptr; break;
+		case ImageFormat::BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::TGA: return ImageLoadTGA(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::Unknown: return nullptr; break;
 		default: return nullptr; break;
 		}
 
 		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, uint32 BPP, uint8* Data, int Format, uint32 Quality)
+	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality)
 	{
 		switch (Format)
 		{
-		case E_IMAGE_FORMAT_BMP:
+		case ImageFormat::BMP:
 			return ImageSaveBMP(FileName, Width, Height, BPP, Data);
 			break;
-		case E_IMAGE_FORMAT_TGA:
+		case ImageFormat::TGA:
 			return ImageSaveTGA(FileName, Width, Height, BPP, Data);
 			break;
-		case E_IMAGE_FORMAT_PNG:
+		case ImageFormat::PNG:
 			return ImageSavePNG(FileName, Width, Height, BPP, Data);
 			break;
-		case E_IMAGE_FORMAT_TIF:
+		case ImageFormat::TIF:
 			return ImageSaveTIF(FileName, Width, Height, BPP, Data);
 			break;
-		case E_IMAGE_FORMAT_JPG:
+		case ImageFormat::JPG:
 			return ImageSaveJPG(FileName, Width, Height, BPP, Data, Quality);
 			break;
 		}
@@ -201,7 +204,6 @@ namespace Columbus
 	Image::Image() :
 		Width(0),
 		Height(0),
-		BPP(0),
 		Exist(false),
 		Data(nullptr)
 	{ }
@@ -210,11 +212,11 @@ namespace Columbus
 	* @param std::string InFileName: Name of image file to load
 	* @param int Flags: Loading flags
 	*/
-	bool Image::load(std::string InFileName, int Flags)
+	bool Image::Load(std::string InFileName, ImageLoading Flags)
 	{
-		freeData();
+		FreeData();
 
-		Data = ImageLoad(InFileName, Width, Height, BPP);
+		Data = ImageLoad(InFileName, Width, Height, Format);
 		if (Data == nullptr) return false;
 
 		else
@@ -224,9 +226,9 @@ namespace Columbus
 
 			switch (Flags)
 			{
-			case E_IMAGE_LOAD_FLIP_X: flipX(); break;
-			case E_IMAGE_LOAD_FLIP_Y: flipY(); break;
-			case E_IMAGE_LOAD_FLIP_XY: flipXY(); break;
+			case ImageLoading::FlipX:  FlipX(); break;
+			case ImageLoading::FlipY:  FlipY(); break;
+			case ImageLoading::FlipXY: FlipXY(); break;
 			}
 
 			return true;
@@ -238,28 +240,30 @@ namespace Columbus
 	* @param Format: Image format
 	* @param Quality: Compression level
 	*/
-	bool Image::save(std::string InFileName, int Format, size_t Quality) const
+	bool Image::Save(std::string InFileName, ImageFormat InFormat, size_t Quality) const
 	{
-		if (!isExist()) return false;
-		return ImageSave(InFileName, Width, Height, BPP, Data, Format, Quality);
+		return false;
+		if (!IsExist()) return false;
+		return ImageSave(InFileName, Width, Height, Format, Data, InFormat, Quality);
 	}
 	/*
 	* Checks if image is exist in memory
 	*/
-	bool Image::isExist() const
+	bool Image::IsExist() const
 	{
 		return Exist;
 	}
 	/*
 	* Frees image data
 	*/
-	void Image::freeData()
+	void Image::FreeData()
 	{
 		if (Exist == false) return;
 		Width = 0;
 		Height = 0;
-		BPP = 0;
+		Format = TextureFormat::RGBA;
 		Exist = false;
+		FileName.clear();
 
 		if (Data != nullptr)
 		{
@@ -269,11 +273,11 @@ namespace Columbus
 	/*
 	* Horizontal image flipping
 	*/
-	bool Image::flipX()
+	bool Image::FlipX()
 	{
-		if (isExist())
+		if (IsExist())
 		{
-			return ImageFlipX(Data, Width, Height, BPP);
+			return ImageFlipX(Data, Width, Height, GetBPPFromFormat(Format));
 		}
 
 		return false;
@@ -281,11 +285,11 @@ namespace Columbus
 	/*
 	* Vertical image flipping
 	*/
-	bool Image::flipY()
+	bool Image::FlipY()
 	{
-		if (isExist())
+		if (IsExist())
 		{
-			return ImageFlipY(Data, Width, Height, BPP);
+			return ImageFlipY(Data, Width, Height, GetBPPFromFormat(Format));
 		}
 
 		return false;
@@ -293,40 +297,44 @@ namespace Columbus
 	/*
 	* Diagonal image flipping
 	*/
-	bool Image::flipXY()
+	bool Image::FlipXY()
 	{
-		if (!isExist()) return false;
-		return ImageFlipXY(Data, Width, Height, BPP);
+		if (IsExist())
+		{
+			return ImageFlipXY(Data, Width, Height, GetBPPFromFormat(Format));
+		}
+
+		return false;
 	}
 	
-	uint32 Image::getWidth() const
+	uint32 Image::GetWidth() const
 	{
 		return Width;
 	}
 	
-	uint32 Image::getHeight() const
+	uint32 Image::GetHeight() const
 	{
 		return Height;
 	}
-	
-	uint32 Image::getBPP() const
+
+	TextureFormat Image::GetFormat() const
 	{
-		return BPP;
+		return Format;
 	}
 	
-	uint8* Image::getData() const
+	uint8* Image::GetData() const
 	{
 		return Data;
 	}
 	
-	std::string Image::getFileName() const
+	std::string Image::GetFileName() const
 	{
 		return FileName;
 	}
 	
 	Image::~Image()
 	{
-		freeData();
+		FreeData();
 	}
 }
 

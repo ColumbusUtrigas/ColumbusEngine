@@ -60,16 +60,16 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	bool Cubemap::save(std::array<std::string, 6> aPath) const
 	{
-		int i, type;
+		ImageFormat type;
 		
-		for (i = 0; i < 6; i++)
+		for (uint32 i = 0; i < 6; i++)
 		{
-			if (!mBitmaps[i].isExist()) return false;
+			if (!mBitmaps[i].IsExist()) return false;
 
-			type = E_IMAGE_FORMAT_PNG;
-			if (mBitmaps[i].getBPP() == 3) type = E_IMAGE_FORMAT_JPG;
+			type = ImageFormat::PNG;
+			if (GetBPPFromFormat(mBitmaps[i].GetFormat()) == 3) type = ImageFormat::JPG;
 
-			if (!mBitmaps[i].save(aPath[i], type, 90))
+			if (!mBitmaps[i].Save(aPath[i], type, 90))
 			{
 				Log::error("Can't save cubemap face: " + aPath[i]);
 				return false;

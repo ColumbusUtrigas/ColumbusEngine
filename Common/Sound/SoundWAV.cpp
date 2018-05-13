@@ -25,19 +25,19 @@ namespace Columbus
 	{
 		if (Header == nullptr || InFile == nullptr) return false;
 
-		if (!InFile->readBytes(Header->RIFFMagic, sizeof(Header->RIFFMagic))) return false;
-		if (!InFile->readUint32(&Header->Size)) return false;
-		if (!InFile->readBytes(Header->WAVEMagic, sizeof(Header->WAVEMagic))) return false;
-		if (!InFile->readBytes(Header->FMTMagic, sizeof(Header->FMTMagic))) return false;
-		if (!InFile->readUint32(&Header->SChunkSize)) return false;
-		if (!InFile->readUint16(&Header->Format)) return false;
-		if (!InFile->readUint16(&Header->Channels)) return false;
-		if (!InFile->readUint32(&Header->Frequency)) return false;
-		if (!InFile->readUint32(&Header->ByteRate)) return false;
-		if (!InFile->readUint16(&Header->BlockAlign)) return false;
-		if (!InFile->readUint16(&Header->BPS)) return false;
-		if (!InFile->readBytes(Header->DataMagic, sizeof(Header->DataMagic))) return false;
-		if (!InFile->readUint32(&Header->DataSize)) return false;
+		if (!InFile->ReadBytes(Header->RIFFMagic, sizeof(Header->RIFFMagic))) return false;
+		if (!InFile->ReadUint32(&Header->Size)) return false;
+		if (!InFile->ReadBytes(Header->WAVEMagic, sizeof(Header->WAVEMagic))) return false;
+		if (!InFile->ReadBytes(Header->FMTMagic, sizeof(Header->FMTMagic))) return false;
+		if (!InFile->ReadUint32(&Header->SChunkSize)) return false;
+		if (!InFile->ReadUint16(&Header->Format)) return false;
+		if (!InFile->ReadUint16(&Header->Channels)) return false;
+		if (!InFile->ReadUint32(&Header->Frequency)) return false;
+		if (!InFile->ReadUint32(&Header->ByteRate)) return false;
+		if (!InFile->ReadUint16(&Header->BlockAlign)) return false;
+		if (!InFile->ReadUint16(&Header->BPS)) return false;
+		if (!InFile->ReadBytes(Header->DataMagic, sizeof(Header->DataMagic))) return false;
+		if (!InFile->ReadUint32(&Header->DataSize)) return false;
 
 		return true;
 	}
@@ -45,11 +45,11 @@ namespace Columbus
 	bool SoundIsWAV(std::string FileName)
 	{
 		File WAVSoundFile(FileName, "rb");
-		if (!WAVSoundFile.isOpened()) return false;
+		if (!WAVSoundFile.IsOpened()) return false;
 
 		uint8 Magic[12];
-		WAVSoundFile.read(Magic, sizeof(Magic), 1);
-		WAVSoundFile.close();
+		WAVSoundFile.Read(Magic, sizeof(Magic), 1);
+		WAVSoundFile.Close();
 
 		if (Magic[0] == 'R' &&
 		    Magic[1] == 'I' &&
@@ -73,7 +73,7 @@ namespace Columbus
 	uint16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		File WAVSoundFile(FileName, "rb");
-		if (!WAVSoundFile.isOpened())
+		if (!WAVSoundFile.IsOpened())
 		{
 			return nullptr;
 		}
@@ -87,7 +87,7 @@ namespace Columbus
 
 		uint16* WAVSoundData = new uint16[Header.DataSize / sizeof(uint16)];
 
-		if (!WAVSoundFile.readBytes(WAVSoundData, Header.DataSize))
+		if (!WAVSoundFile.ReadBytes(WAVSoundData, Header.DataSize))
 		{
 			delete[] WAVSoundData;
 			return nullptr;
