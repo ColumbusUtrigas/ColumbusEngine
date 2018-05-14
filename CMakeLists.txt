@@ -20,13 +20,16 @@ set(TARGET ColumbusEngine)
 
 include_directories(./)
 include_directories(./Lib/JSON/)
+include_directories(./Lib/STB/)
+include_directories(./Lib/ZSTD/Include/)
 include_directories(/usr/include/SDL2/)
 include_directories(/usr/include/bullet/)
 include_directories(/usr/include/AL/)
 
 add_executable(${TARGET} ${SRC})
 
-target_link_libraries(${TARGET} SDL2 SDL2main GL GLU GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics openal)
+target_link_libraries(${TARGET} SDL2 SDL2main GL GLU GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics openal pthread)
+target_link_libraries(${TARGET} ${CMAKE_SOURCE_DIR}/Lib/ZSTD/Lib/libZSTD.a)
 
 
 

@@ -21,7 +21,7 @@ struct Material
 	bool Lighting;
 };
 
-struct Light
+/*struct Light
 {
 	vec3 Color;
 	vec3 Position;
@@ -32,7 +32,7 @@ struct Light
 	float Quadratic;
 	float InnerCutoff;
 	float OuterCutoff;
-};
+};*/
 
 struct Camera
 {
@@ -40,7 +40,8 @@ struct Camera
 };
 
 uniform Material uMaterial;
-uniform Light uLights[LIGHT_NUM];
+//uniform Light uLights[LIGHT_NUM]; //FUCKING SHIT
+uniform float uLighting[15 * LIGHT_NUM];
 uniform Camera uCamera;
 
 vec4 DiffuseMap;
@@ -108,19 +109,29 @@ void Init(void)
 
 void LightCalc(int id)
 {
-	if (uLights[id].Type == -1) return;
+	int Offset = id * 15;
+
+	vec3 LightColor = vec3(uLighting[Offset + 0], uLighting[Offset + 1], uLighting[Offset + 2]);
+	vec3 LightPos = vec3(uLighting[Offset + 3], uLighting[Offset + 4], uLighting[Offset + 5]);
+	vec3 LightDir = vec3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
+	float LightType = uLighting[Offset + 9];
+	float LightConstant = uLighting[Offset + 10];
+	float LightLinear = uLighting[Offset + 11];
+	float LightQuadratic = uLighting[Offset + 12];
+	float LightInnerCutoff = uLighting[Offset + 13];
+	float LightOuterCutoff = uLighting[Offset + 14];
 
 	vec3 lightDir;
 
 	float attenuation = 0.0;
 
-	switch (int(uLights[id].Type))
+	switch (int(LightType))
 	{
 	case 0:
-		lightDir = normalize(-uLights[id].Position);
+		lightDir = normalize(-LightPos);
 		break;
 	default:
-		lightDir = normalize(-uLights[id].Position + varPos);
+		lightDir = normalize(-LightPos + varPos);
 		break;
 	};
 
@@ -130,26 +141,26 @@ void LightCalc(int id)
 
 	vec3 reflect = normalize(reflect(lightDir, Normal));
 	float spec = pow(max(0.0, dot(viewDir, reflect)), 32);
-	vec3 specular = uMaterial.SpecularColor * uLights[id].Color * spec * 0.5;
+	vec3 specular = uMaterial.SpecularColor * LightColor * spec * 0.5;
 
 	vec3 tmpAmbient = vec3(0);
 	vec3 tmpDiffuse = vec3(0);
 	vec3 tmpSpecular = vec3(0);
 
-	tmpAmbient = uMaterial.AmbientColor * uLights[id].Color * vec3(uMaterial.Color);
-	tmpDiffuse = uLights[id].Color * uMaterial.DiffuseColor * diff * uMaterial.Color.rgb;
+	tmpAmbient = uMaterial.AmbientColor * LightColor * vec3(uMaterial.Color);
+	tmpDiffuse = LightColor * uMaterial.DiffuseColor * diff * uMaterial.Color.rgb;
 	
 	if (IsSpecularMap)
 		tmpSpecular = specular * uMaterial.SpecularColor * uMaterial.Color.rgb * SpecularMap;
 	else
 		tmpSpecular = specular * uMaterial.SpecularColor * uMaterial.Color.rgb;
 
-	if (int(uLights[id].Type) > 0)
+	if (int(LightType) > 0)
 	{
-		float distance = length(uLights[id].Position - varPos);
-		attenuation = 1.0 / (uLights[id].Constant +
-							uLights[id].Linear * distance +
-							uLights[id].Quadratic * (distance * distance));
+		float distance = length(LightPos - varPos);
+		attenuation = 1.0 / (LightConstant +
+		                     LightLinear * distance +
+		                     LightQuadratic * (distance * distance));
 
 		tmpAmbient *= attenuation;
 		tmpDiffuse *= attenuation;

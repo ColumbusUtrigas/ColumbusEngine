@@ -1,4 +1,4 @@
-#extension GL_EXT_draw_instanced : enable
+#extension GL_ARB_draw_instanced : enable
 
 in vec3 aPos;
 in vec2 aUV;
