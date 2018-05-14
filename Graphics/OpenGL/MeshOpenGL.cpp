@@ -76,37 +76,45 @@ namespace Columbus
 		}
 	}
 
-	static void ShaderSetLight(ShaderProgram* InShader, Light InLight, uint32 Number)
-	{
-		if (InShader != nullptr)
-		{
-			if (InShader->IsCompiled())
-			{
-				std::string Element = "uLights[" + std::to_string(Number) + "].";
-				InShader->SetUniform3f(Element + "Color", InLight.getColor());
-				InShader->SetUniform3f(Element + "Position", InLight.getPos());
-				InShader->SetUniform3f(Element + "Direction", InLight.getDir());
-				InShader->SetUniform1i(Element + "Type", InLight.getType());
-				InShader->SetUniform1f(Element + "Constant", InLight.getConstant());
-				InShader->SetUniform1f(Element + "Linear", InLight.getLinear());
-				InShader->SetUniform1f(Element + "Quadratic", InLight.getQuadratic());
-				InShader->SetUniform1f(Element + "InnerCutoff", InLight.getInnerCutoff());
-				InShader->SetUniform1f(Element + "OuterCutoff", InLight.getOuterCutoff());
-			}
-		}
-	}
-
 	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
 	{
-		uint32 Counter = 0;
+		static float Lights[15 * 8];
 
 		for (auto& Light : InLights)
 		{
 			if (Light != nullptr)
 			{
-				ShaderSetLight(InShader, *Light, Counter++);
+				uint32 Counter = 0;
+
+				for (auto& L : InLights)
+				{
+					uint32 Offset = Counter * 15;
+
+					if (InLights.size() > Counter)
+					{
+						Lights[Offset + 0] = L->getColor().X;
+						Lights[Offset + 1] = L->getColor().Y;
+						Lights[Offset + 2] = L->getColor().Z;
+						Lights[Offset + 3] = L->getPos().X;
+						Lights[Offset + 4] = L->getPos().Y;
+						Lights[Offset + 5] = L->getPos().Z;
+						Lights[Offset + 6] = L->getDir().X;
+						Lights[Offset + 7] = L->getDir().Y;
+						Lights[Offset + 8] = L->getDir().Z;
+						Lights[Offset + 9] = (float)L->getType();
+						Lights[Offset + 10] = L->getConstant();
+						Lights[Offset + 11] = L->getLinear();
+						Lights[Offset + 12] = L->getQuadratic();
+						Lights[Offset + 13] = L->getInnerCutoff();
+						Lights[Offset + 14] = L->getOuterCutoff();
+					}
+
+					Counter++;
+				}
 			}
 		}
+
+		InShader->SetUniformArrayf("uLighting", Lights, 120 * sizeof(float));
 	}
 
 	static void ShaderSetLightsAndCamera(ShaderProgram* InShader, std::vector<Light*> InLights, Camera InCamera)
@@ -280,19 +288,7 @@ namespace Columbus
 			tShader->AddUniform("uMaterial.ReflectionPower");
 			tShader->AddUniform("uMaterial.Lighting");
 
-			for (uint32 i = 0; i < 8; i++)
-			{
-				std::string Element = "uLights[" + std::to_string(i) + "].";
-				tShader->AddUniform(Element + "Color");
-				tShader->AddUniform(Element + "Position");
-				tShader->AddUniform(Element + "Direction");
-				tShader->AddUniform(Element + "Type");
-				tShader->AddUniform(Element + "Constant");
-				tShader->AddUniform(Element + "Linear");
-				tShader->AddUniform(Element + "Quadratic");
-				tShader->AddUniform(Element + "InnerCutoff");
-				tShader->AddUniform(Element + "OuterCutoff");
-			}
+			tShader->AddUniform("uLighting");
 
 			tShader->AddUniform("uModel");
 			tShader->AddUniform("uView");
