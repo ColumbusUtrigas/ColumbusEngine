@@ -34,16 +34,27 @@ namespace Columbus
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 		uint32 OpenGLFormat = GL_RGBA;
+		bool IsDDS = false;
 		
 		switch (mImage.GetFormat())
 		{
 		case TextureFormat::RGB:  OpenGLFormat = GL_RGB;  break;
 		case TextureFormat::RGBA: OpenGLFormat = GL_RGBA; break;
+		case TextureFormat::S3TC_A1:
+			OpenGLFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+			IsDDS = true;
+			break;
 		default: OpenGLFormat = GL_RGBA; break;
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, OpenGLFormat, mImage.GetWidth(), mImage.GetHeight(), 0,
-			OpenGLFormat, GL_UNSIGNED_BYTE, mImage.GetData());
+		if (IsDDS)
+		{
+			glCompressedTexImage2D(GL_TEXTURE_2D, 0, OpenGLFormat, mImage.GetWidth(), mImage.GetHeight(), 0, mImage.GetSize(), mImage.GetData());
+		}
+		else
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, OpenGLFormat, mImage.GetWidth(), mImage.GetHeight(), 0, OpenGLFormat, GL_UNSIGNED_BYTE, mImage.GetData());
+		}
 
 		if (mConfig.mipmaps)
 		{

@@ -34,7 +34,7 @@ namespace Columbus
 		uint32 Width;
 		uint32 PitchOrLinearSize;
 		uint32 Depth;
-		uint32 MipMapcount;
+		uint32 MipMapCount;
 		uint32 Reserved1[11];
 		DDS_PIXELFORMAT PixelFormat;
 		uint32 Caps1;
@@ -245,7 +245,7 @@ namespace Columbus
 		return false;
 	}
 
-	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
+	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
 	{
 		File DDSImageFile(FileName, "rb");
 		if (!DDSImageFile.IsOpened()) return false;
@@ -299,15 +299,17 @@ namespace Columbus
 			OutFormat = TextureFormat::S3TC_A8; break;
 		default: return nullptr; break;
 		}
-		
+
+		OutWidth = Header.Width;
+		OutHeight = Header.Height;
+		OutSize = DDSImageFile.GetSize() - sizeof(DDS_HEADER);
+		OutMipMaps = Header.MipMapCount;
 
 		uint8* Data = new uint8[DDSImageFile.GetSize() - sizeof(DDS_HEADER)];
 		DDSImageFile.Read(Data, DDSImageFile.GetSize() - sizeof(DDS_HEADER), 1);
 		DDSImageFile.Close();
 
-		OutWidth = Header.Width;
-		OutHeight = Header.Height;
-
+		printf("Count of Mipmaps: %i\n", Header.MipMapCount);
 		printf("DXT1 Format: %s\n", OutFormat == TextureFormat::S3TC_A1 ? "Yes" : "No");
 		printf("Has DX10 Header: %s\n", HasDX10Header ? "Yes" : "No");
 		printf("Size: %i\n", Header.Size);

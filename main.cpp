@@ -89,7 +89,7 @@ int main(int argc, char** argv)
 	mat.SetShader(prog);
 
 	MeshInstancedOpenGL mesh;
-	mat.setTexture(gDevice->createTexture("Data/Textures/metal.jpg"));
+	mat.setTexture(gDevice->createTexture("metal.dds"));
 	mat.setSpecMap(gDevice->createTexture("Data/Textures/metal-specular.jpg"));
 	mat.setNormMap(gDevice->createTexture("Data/Textures/metal-normal.jpg"));
 	mesh.Mat = mat;
@@ -104,10 +104,13 @@ int main(int argc, char** argv)
 
 	AudioPlayer player(Clip.GetBuffer(), Clip.GetChannelsCount(), Clip.GetFrequency(), Clip.GetBufferSize());
 
-	uint32 w, h;
+	/*uint32 w, h;
+	uint64 s;
 	TextureFormat f;
 
-	ImageLoadDDS("metal.dds", w, h, f);
+	ImageLoadDDS("metal.dds", w, h, s, f);*/
+
+	//TextureOpenGL tex("metal.dds");
 
 	while (window.isOpen())
 	{
