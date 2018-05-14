@@ -18,6 +18,7 @@ namespace Columbus
 	ImageFormat ImageGetFormat(std::string FileName)
 	{
 		if (ImageIsBMP(FileName)) return ImageFormat::BMP;
+		if (ImageIsDDS(FileName)) return ImageFormat::DDS;
 		if (ImageIsPNG(FileName)) return ImageFormat::PNG;
 		if (ImageIsTIF(FileName)) return ImageFormat::TIF;
 		if (ImageIsJPG(FileName)) return ImageFormat::JPG;
@@ -159,11 +160,12 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
+	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
 	{
 		switch (ImageGetFormat(FileName))
 		{
 		case ImageFormat::BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::DDS: return ImageLoadDDS(FileName, OutWidth, OutHeight, OutSize, OutMipMaps, OutFormat); break;
 		case ImageFormat::PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutFormat); break;
 		case ImageFormat::TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutFormat); break;
 		case ImageFormat::JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutFormat); break;
@@ -204,6 +206,8 @@ namespace Columbus
 	Image::Image() :
 		Width(0),
 		Height(0),
+		Size(0),
+		MipMaps(0),
 		Exist(false),
 		Data(nullptr)
 	{ }
@@ -216,7 +220,7 @@ namespace Columbus
 	{
 		FreeData();
 
-		Data = ImageLoad(InFileName, Width, Height, Format);
+		Data = ImageLoad(InFileName, Width, Height, Size, MipMaps, Format);
 		if (Data == nullptr) return false;
 
 		else
@@ -261,6 +265,8 @@ namespace Columbus
 		if (Exist == false) return;
 		Width = 0;
 		Height = 0;
+		Size = 0;
+		MipMaps = 0;
 		Format = TextureFormat::RGBA;
 		Exist = false;
 		FileName.clear();
@@ -315,6 +321,11 @@ namespace Columbus
 	uint32 Image::GetHeight() const
 	{
 		return Height;
+	}
+
+	uint64 Image::GetSize() const
+	{
+		return Size;
 	}
 
 	TextureFormat Image::GetFormat() const

@@ -58,7 +58,7 @@ namespace Columbus
 	bool ImageIsJPG(std::string FileName); //Check file magic
 
 	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
-	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
 	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
 	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
 	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
@@ -70,7 +70,7 @@ namespace Columbus
 	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
 
-	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
 	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality = 100);
 
 	bool ImageBGR2RGB(uint8* Data, uint64 Size);
@@ -88,6 +88,8 @@ namespace Columbus
 	private:
 		uint32 Width = 0;         //Width of the image
 		uint32 Height = 0;        //Height of the image
+		uint64 Size = 0;
+		uint32 MipMaps = 0;
 		TextureFormat Format = TextureFormat::RGBA;
 		uint8* Data = nullptr;    //Pixel data
 		bool Exist = false;       //Is image exist
@@ -107,6 +109,7 @@ namespace Columbus
 
 		uint32 GetWidth() const;
 		uint32 GetHeight() const;
+		uint64 GetSize() const;
 		TextureFormat GetFormat() const;
 		uint8* GetData() const;
 		std::string GetFileName() const;
