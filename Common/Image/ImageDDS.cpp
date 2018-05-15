@@ -245,14 +245,49 @@ namespace Columbus
 		return false;
 	}
 
+	bool ImageIsDDSMemory(const uint8* Data, uint64 Size)
+	{
+		if (Data == nullptr || Size == 0)
+		{
+			return false;
+		}
+
+		if (Memory::Memcmp(Data, "DDS ", 4) == 0)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
 	{
 		File DDSImageFile(FileName, "rb");
-		if (!DDSImageFile.IsOpened()) return false;
-
-		if (DDSImageFile.GetSize() < sizeof(DDS_HEADER))
+		if (!DDSImageFile.IsOpened())
 		{
-			Log::error("ImageLoadDDS() error: Couldn't load DDS file: DDS file size less than header size");
+			Log::error("ImageLoadDDS() error: Couldn't load DDS: Couldn'y open file");
+			return nullptr;
+		}
+
+		uint8* Data = new uint8[DDSImageFile.GetSize()];
+		DDSImageFile.Read(Data, DDSImageFile.GetSize(), 1);
+		uint8* Result = ImageLoadDDSMemory(Data, DDSImageFile.GetSize(), OutWidth, OutHeight, OutSize, OutMipMaps, OutFormat);
+		DDSImageFile.Close();
+		delete[] Data;
+
+		return Result;
+	}
+
+	uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
+	{
+		if (Data == nullptr || Size == 0)
+		{
+			return nullptr;
+		}
+
+		if (Size < sizeof(DDS_HEADER))
+		{
+			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: DDS size less than header size");
 			return nullptr;
 		}
 
@@ -261,7 +296,7 @@ namespace Columbus
 		DDS_HEADER Header;
 		DDS_HEADER_FLAGS HeaderFlags;
 		DDS_HEADER_DX10 DX10Header;
-		DDSImageFile.Read(&Header, sizeof(Header), 1);
+		Memory::Memcpy(&Header, Data, sizeof(DDS_HEADER));
 		HeaderFlags.Read(Header.Flags);
 
 		if (HeaderFlags.Caps == false ||
@@ -270,20 +305,20 @@ namespace Columbus
 		    HeaderFlags.PixelFormat == false ||
 		    HeaderFlags.Texture == false)
 		{
-			Log::error("ImageLoadDDS() error: Couldn't load DDS file: Invalid DDS flags");
+			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS flags");
 			return nullptr;
 		}
 
 
 		if (Header.PixelFormat.FourCC == ('D' | ('X' << 8) | ('1' << 16) | ('0' << 24)))
 		{
-			DDSImageFile.Read(&DX10Header, sizeof(DX10Header), 1);
+			//DX10Header = *reinterpret_cast<DDS_HEADER_DX10*>(Data);
 			HasDX10Header = true;
 		}
 
 		if ((Header.PixelFormat.Flags & 0x4) == 0)
 		{
-			Log::error("ImageLoadDDS() error: Couldn't load DDS file: Invalid DDS Pixel format flags");
+			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS Pixel format flags");
 			return nullptr;
 		}
 
@@ -302,20 +337,13 @@ namespace Columbus
 
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
-		OutSize = DDSImageFile.GetSize() - sizeof(DDS_HEADER);
+		OutSize = Size - sizeof(DDS_HEADER);
 		OutMipMaps = Header.MipMapCount;
 
-		uint8* Data = new uint8[DDSImageFile.GetSize() - sizeof(DDS_HEADER)];
-		DDSImageFile.Read(Data, DDSImageFile.GetSize() - sizeof(DDS_HEADER), 1);
-		DDSImageFile.Close();
+		uint8* Buffer = new uint8[Size - sizeof(DDS_HEADER)];
+		std::copy(Data + sizeof(DDS_HEADER), Data + Size - sizeof(DDS_HEADER), Buffer);
 
-		printf("Count of Mipmaps: %i\n", Header.MipMapCount);
-		printf("DXT1 Format: %s\n", OutFormat == TextureFormat::S3TC_A1 ? "Yes" : "No");
-		printf("Has DX10 Header: %s\n", HasDX10Header ? "Yes" : "No");
-		printf("Size: %i\n", Header.Size);
-		printf("Width: %i\nHeight: %i\nDepth: %i\n", Header.Width, Header.Height, Header.Depth);
-
-		return Data;
+		return Buffer;
 	}
 
 }

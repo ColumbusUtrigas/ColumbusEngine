@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(CLMBSEngine)
 
 file(GLOB SRC_AUDIO ./Audio/*.cpp ./Audio/OpenAL/*.cpp)
-file(GLOB SRC_COMMON ./Common/Image/*.cpp ./Common/Model/*.cpp ./Common/Sound/*.cpp)
+file(GLOB SRC_COMMON ./Common/Image/*.cpp ./Common/Model/*.cpp ./Common/Sound/*.cpp ./Common/Compression/*.cpp)
 file(GLOB SRC_CORE ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
 file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp)
 file(GLOB SRC_INPUT ./Input/*.cpp)

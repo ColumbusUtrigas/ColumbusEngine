@@ -511,24 +511,17 @@ namespace Columbus
 				{
 					std::vector<Vertex> Vertices;
 
-					if (path.find_last_of(".compressed") == path.size() - 1)
+					if (ModelIsCMF(path))
 					{
-						ModelLoadCMFCompressed(path, Vertices);
+						ModelLoadCMF(path, Vertices);
+						mMeshes.insert(std::pair<uint32, Mesh*>(i, gDevice->createMesh(Vertices)));
+						Log::success("Mesh loaded: " + path);
 					}
 					else
 					{
-						if (!ModelIsCMF(path))
-						{
-							continue;
-							Log::error("Can't load mesh: " + path);
-
-						}
-
-						ModelLoadCMF(path, Vertices);
+						Log::error("Couldn't load mesh: " + path);
+						continue;
 					}
-
-					mMeshes.insert(std::pair<uint32, Mesh*>(i, gDevice->createMesh(Vertices)));
-					Log::success("Mesh loaded: " + path);
 				}
 			}
 		}

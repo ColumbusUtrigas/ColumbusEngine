@@ -92,25 +92,19 @@ namespace Columbus
 
 	bool ModelIsCMF(std::string FileName)
 	{
-		File file(FileName, "rb");
-		if (!file.IsOpened()) return false;
+		File CMFModelFile(FileName, "rb");
+		if (!CMFModelFile.IsOpened()) return false;
 
-		const char* magic = "COLUMBUS MODEL FORMAT";
-		uint8 fmagic[21];
-		bool ret = true;
+		uint8 Magic[21];
+		CMFModelFile.ReadBytes(Magic, sizeof(Magic));
+		CMFModelFile.Close();
 
-		file.Read(fmagic, 21, 1);
-		file.Close();
-
-		for (int i = 0; i < 21; i++)
+		if (Memory::Memcmp(Magic, "COLUMBUS MODEL FORMAT", 21) == 0)
 		{
-			if (magic[i] != fmagic[i])
-			{
-				ret = false;
-			}
+			return true;
 		}
 
-		return ret;
+		return false;
 	}
 
 	uint32 ModelLoadCMF(std::string FileName, std::vector<Vertex>& OutVertices)
@@ -128,21 +122,6 @@ namespace Columbus
 		return Count;
 	}
 
-	uint32 ModelLoadCMFCompressed(std::string FileName, std::vector<Vertex>& OutVertices)
-	{
-		File CMFModelFile(FileName, "rb");
-		if (!CMFModelFile.IsOpened()) return 0;
-
-		uint64 FileSize = CMFModelFile.GetSize();
-		uint8* FileData = new uint8[FileSize];
-
-		CMFModelFile.ReadBytes(FileData, FileSize);
-
-		uint32 Count = ModelLoadCMFCompressedFromMemory(FileData, FileSize, OutVertices);
-		delete[] FileData;
-		return Count;
-	}
-
 	uint32 ModelLoadCMFFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices)
 	{
 		if (FileData == nullptr &&
@@ -153,58 +132,40 @@ namespace Columbus
 
 		FileData += 21;
 		uint32 Count = 0;
-		Count = *reinterpret_cast<uint32*>(FileData);
-		FileData += sizeof(uint32);
+		uint8 Compressed = 0;
+		Memory::Memcpy(&Count, FileData, sizeof(uint32));     FileData += sizeof(uint32);
+		Memory::Memcpy(&Compressed, FileData, sizeof(uint8)); FileData += sizeof(uint8);
 
 		float* vbuffer = new float[Count * 3 * 3]; //Vertex buffer
 		float* ubuffer = new float[Count * 3 * 2]; //TexCoord buffer
 		float* nbuffer = new float[Count * 3 * 3]; //Normal buffer
 
-		Memory::Memcpy(vbuffer, FileData, Count * sizeof(float) * 3 * 3); FileData += Count * sizeof(float) * 3 * 3;
-		Memory::Memcpy(ubuffer, FileData, Count * sizeof(float) * 3 * 2); FileData += Count * sizeof(float) * 3 * 2;
-		Memory::Memcpy(nbuffer, FileData, Count * sizeof(float) * 3 * 3); FileData += Count * sizeof(float) * 3 * 3;
-
-		ProcessVertices(Count, vbuffer, ubuffer, nbuffer, OutVertices);
-
-		delete[] vbuffer;
-		delete[] ubuffer;
-		delete[] nbuffer;
-
-		return Count;
-	}
-
-	uint32 ModelLoadCMFCompressedFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices)
-	{
-		if (FileData == nullptr &&
-		    FileSize == 0)
+		if (Compressed == 0x00)
 		{
-			return 0;
+			Memory::Memcpy(vbuffer, FileData, Count * sizeof(float) * 3 * 3); FileData += Count * sizeof(float) * 3 * 3;
+			Memory::Memcpy(ubuffer, FileData, Count * sizeof(float) * 3 * 2); FileData += Count * sizeof(float) * 3 * 2;
+			Memory::Memcpy(nbuffer, FileData, Count * sizeof(float) * 3 * 3); FileData += Count * sizeof(float) * 3 * 3;
+		}
+		else if (Compressed == 0xFF)
+		{
+			uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, FileSize - 26);
+			uint8* Decompressed = new uint8[DecompressedSize];
+			ZSTD_decompress(Decompressed, DecompressedSize, FileData, FileSize - 26);
+
+			Memory::Memcpy(vbuffer, Decompressed, Count * sizeof(float) * 3 * 3); Decompressed += Count * sizeof(float) * 3 * 3;
+			Memory::Memcpy(ubuffer, Decompressed, Count * sizeof(float) * 3 * 2); Decompressed += Count * sizeof(float) * 3 * 2;
+			Memory::Memcpy(nbuffer, Decompressed, Count * sizeof(float) * 3 * 3); Decompressed += Count * sizeof(float) * 3 * 3;
+
+			Decompressed -= DecompressedSize;
+
+			delete[] Decompressed;
 		}
 
-		uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, FileSize);
-		uint8* Decompressed = new uint8[DecompressedSize];
-		ZSTD_decompress(Decompressed, DecompressedSize, FileData, FileSize);
-
-		Decompressed += 21;
-		uint32 Count = 0;
-		Count = *reinterpret_cast<uint32*>(Decompressed);
-		Decompressed += sizeof(uint32);
-
-		float* vbuffer = new float[Count * 3 * 3]; //Vertex buffer
-		float* ubuffer = new float[Count * 3 * 2]; //TexCoord buffer
-		float* nbuffer = new float[Count * 3 * 3]; //Normal buffer
-
-		Memory::Memcpy(vbuffer, Decompressed, Count * sizeof(float) * 3 * 3); Decompressed += Count * sizeof(float) * 3 * 3;
-		Memory::Memcpy(ubuffer, Decompressed, Count * sizeof(float) * 3 * 2); Decompressed += Count * sizeof(float) * 3 * 2;
-		Memory::Memcpy(nbuffer, Decompressed, Count * sizeof(float) * 3 * 3); Decompressed += Count * sizeof(float) * 3 * 3;
-
 		ProcessVertices(Count, vbuffer, ubuffer, nbuffer, OutVertices);
-		Decompressed -= DecompressedSize;
 
 		delete[] vbuffer;
 		delete[] ubuffer;
 		delete[] nbuffer;
-		delete[] Decompressed;
 
 		return Count;
 	}
@@ -216,14 +177,19 @@ namespace Columbus
 		if (!CMFSourceModelFile.IsOpened()) return;
 		if (!CMFDestinyModelFile.IsOpened()) return;
 
+		uint8* Header = new uint8[26];
+
 		uint64 FileSize = CMFSourceModelFile.GetSize();
-		uint8* SourceFile = new uint8[FileSize];
+		uint8* SourceFile = new uint8[FileSize - 26];
+		CMFSourceModelFile.ReadBytes(Header, 26);
 		CMFSourceModelFile.ReadBytes(SourceFile, FileSize);
 		CMFSourceModelFile.Close();
 
-		uint64 Bound = ZSTD_compressBound(FileSize);
-		char* DestinyFile = new char[Bound];
-		uint64 DestinySize = ZSTD_compress(DestinyFile, Bound, SourceFile, FileSize, 1);
+		uint64 Bound = ZSTD_compressBound(FileSize - 26);
+		uint8* DestinyFile = new uint8[Bound];
+		uint64 DestinySize = ZSTD_compress(DestinyFile, Bound, SourceFile, FileSize - 26, 1);
+		CMFDestinyModelFile.WriteBytes(Header, 25);
+		CMFDestinyModelFile.WriteUint8(0xFF);
 		CMFDestinyModelFile.WriteBytes(DestinyFile, DestinySize);
 		CMFDestinyModelFile.Close();
 

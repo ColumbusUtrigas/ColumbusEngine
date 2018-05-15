@@ -3,6 +3,7 @@
 #include <Audio/AudioDevice.h>
 #include <Audio/AudioSource.h>
 
+#include <Common/Compression/Compression.h>
 #include <Common/Image/Image.h>
 #include <Common/Model/Model.h>
 #include <Common/Noise/OctaveNoise.h>
