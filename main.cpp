@@ -89,13 +89,13 @@ int main(int argc, char** argv)
 	mat.SetShader(prog);
 
 	MeshInstancedOpenGL mesh;
-	mat.setTexture(gDevice->createTexture("metal.dds"));
+	mat.setTexture(gDevice->createTexture("Data/Textures/metal.dds"));
 	mat.setSpecMap(gDevice->createTexture("Data/Textures/metal-specular.jpg"));
-	mat.setNormMap(gDevice->createTexture("Data/Textures/metal-normal.jpg"));
+	mat.setNormMap(gDevice->createTexture("Data/Textures/metal-normal.dds"));
 	mesh.Mat = mat;
 
 	std::vector<Vertex> Vertices;
-	ModelLoadCMFCompressed("Data/Models/Dragon.cmf.compressed", Vertices);
+	ModelLoadCMF("Data/Models/Dragon.cmf", Vertices);
 	mesh.SetVertices(Vertices);
 	Vertices.clear();
 
@@ -103,14 +103,6 @@ int main(int argc, char** argv)
 	Clip.Load("Data/Sounds/thestonemasons.ogg");
 
 	AudioPlayer player(Clip.GetBuffer(), Clip.GetChannelsCount(), Clip.GetFrequency(), Clip.GetBufferSize());
-
-	/*uint32 w, h;
-	uint64 s;
-	TextureFormat f;
-
-	ImageLoadDDS("metal.dds", w, h, s, f);*/
-
-	//TextureOpenGL tex("metal.dds");
 
 	while (window.isOpen())
 	{

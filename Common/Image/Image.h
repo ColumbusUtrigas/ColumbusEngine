@@ -52,6 +52,7 @@ namespace Columbus
 
 	bool ImageIsBMP(std::string FileName); //Check file magic
 	bool ImageIsDDS(std::string FileName); //Check file magic
+	bool ImageIsDDSMemory(const uint8* Data, uint64 Size);
 	bool ImageIsTGA(std::string FileName); //Check file extension (*.tga, *.vda, *.icb, *.vst)
 	bool ImageIsPNG(std::string FileName); //Check file magic
 	bool ImageIsTIF(std::string FileName); //Check file magic
@@ -59,6 +60,7 @@ namespace Columbus
 
 	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
 	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
+	uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
 	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
 	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
 	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
