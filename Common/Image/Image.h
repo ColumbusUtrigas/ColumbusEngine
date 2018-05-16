@@ -44,7 +44,8 @@ namespace Columbus
 		RGBA,
 		S3TC_A1,
 		S3TC_A4,
-		S3TC_A8
+		S3TC_A8,
+		Unknown
 	};
 
 	ImageFormat ImageGetFormat(std::string FileName);

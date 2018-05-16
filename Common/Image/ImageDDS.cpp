@@ -6,6 +6,51 @@ namespace Columbus
 {
 
 	/*
+	* Surface description flags
+	*/
+	constexpr uint32 DDSFlagCaps = 0x00000001;
+	constexpr uint32 DDSFlagHeight = 0x00000002;
+	constexpr uint32 DDSFlagWidth = 0x00000004;
+	constexpr uint32 DDSFlagPitch = 0x00000008;
+	constexpr uint32 DDSFlagPixelFormat = 0x00001000;
+	constexpr uint32 DDSFlagMipMapCount = 0x00020000;
+	constexpr uint32 DDSFlagLinearSize = 0x00080000;
+	constexpr uint32 DDSFlagDepth = 0x00800000;
+	/*
+	* Pixel format flags
+	*/
+	constexpr uint32 DDSAlphaPixels = 0x00000001;
+	constexpr uint32 DDSFourCC = 0x00000004;
+	constexpr uint32 DDSRGB = 0x00000040;
+	constexpr uint32 DDSRGBA = 0x00000041;
+	/*
+	* Caps1 flags
+	*/
+	constexpr uint32 DDSComplex = 0x00000008;
+	constexpr uint32 DDSTexture = 0x00001000;
+	constexpr uint32 DDSMipMap = 0x00400000;
+	/*
+	* Caps2 flags
+	*/
+	constexpr uint32 DDSCubemap = 0x00000200;
+	constexpr uint32 DDSCubemapPositiveX = 0x00000400;
+	constexpr uint32 DDSCubemapNegativeX = 0x00000800;
+	constexpr uint32 DDSCubemapPositiveY = 0x00001000;
+	constexpr uint32 DDSCubemapNegativeY = 0x00002000;
+	constexpr uint32 DDSCubemapPositiveZ = 0x00004000;
+	constexpr uint32 DDSCubemapNegativeZ = 0x00008000;
+	constexpr uint32 DDSCubemapAllFaces = 0x0000FC00;
+	constexpr uint32 DDSVolume = 0x00200000;
+	/*
+	* Compression types
+	*/
+	constexpr uint32 DDSFourCC_DXT1 = 0x31545844; // "DXT1"
+	constexpr uint32 DDSFourCC_DXT2 = 0x32545844; // "DXT2"
+	constexpr uint32 DDSFourCC_DXT3 = 0x33545844; // "DXT3"
+	constexpr uint32 DDSFourCC_DXT4 = 0x34545844; // "DXT4"
+	constexpr uint32 DDSFourCC_DXT5 = 0x35545844; // "DXT5"
+
+	/*
 	* DDS Image pixel format struct
 	* @see: https://msdn.microsoft.com/en-us/library/windows/desktop/bb943984(v=vs.85).aspx
 	*/
@@ -193,7 +238,6 @@ namespace Columbus
 		uint32 MiscFlag;
 		uint32 ArraySize;
 		uint32 MiscFlags2;
-
 	} DDS_HEADER_DX10;
 
 	typedef struct
@@ -213,20 +257,37 @@ namespace Columbus
 
 		void Read(uint32 Flags)
 		{
-			Caps = Flags & 0x1;
-			Height = Flags & 0x2;
-			Width = Flags & 0x4;
-			Pitch = Flags & 0x8;
-			PixelFormat = Flags & 0x1000;
-			MipMapCount = Flags & 0x20000;
-			LinearSize = Flags & 0x80000;
-			Depth = Flags & 0x800000;
+			Caps = Flags & DDSFlagCaps;
+			Height = Flags & DDSFlagHeight;
+			Width = Flags & DDSFlagWidth;
+			Pitch = Flags & DDSFlagPitch;
+			PixelFormat = Flags & DDSFlagPixelFormat;
+			MipMapCount = Flags & DDSFlagMipMapCount;
+			LinearSize = Flags & DDSFlagLinearSize;
+			Depth = Flags & DDSFlagDepth;
 
-			Texture = (Flags & 0x1) | (Flags & 0x2) | (Flags & 0x4) | (Flags & 0x1000);
-			Mipmap = Flags & 0x20000;
-			Volume = Flags & 0x800000;
+			Texture = (Flags & DDSFlagCaps) | (Flags & DDSFlagHeight) | (Flags & DDSFlagWidth) | (Flags & DDSFlagPixelFormat);
+			Mipmap = Flags & DDSFlagMipMapCount;
+			Volume = Flags & DDSFlagDepth;
 		}
 	} DDS_HEADER_FLAGS;
+
+	static TextureFormat FourCCDecode(uint32 FourCC)
+	{
+		TextureFormat Result = TextureFormat::Unknown;
+
+		switch (FourCC)
+		{
+		case DDSFourCC_DXT1: Result = TextureFormat::S3TC_A1; break;
+		case DDSFourCC_DXT2:
+		case DDSFourCC_DXT3: Result = TextureFormat::S3TC_A4; break;
+		case DDSFourCC_DXT4:
+		case DDSFourCC_DXT5: Result = TextureFormat::S3TC_A8; break;
+		default: Result = TextureFormat::Unknown; break;
+		}
+
+		return Result;
+	}
 
 	bool ImageIsDDS(std::string FileName)
 	{
@@ -296,7 +357,7 @@ namespace Columbus
 		DDS_HEADER Header;
 		DDS_HEADER_FLAGS HeaderFlags;
 		DDS_HEADER_DX10 DX10Header;
-		Memory::Memcpy(&Header, Data, sizeof(DDS_HEADER));
+		Header = *(DDS_HEADER*)(Data);
 		HeaderFlags.Read(Header.Flags);
 
 		if (HeaderFlags.Caps == false ||
@@ -312,8 +373,8 @@ namespace Columbus
 
 		if (Header.PixelFormat.FourCC == ('D' | ('X' << 8) | ('1' << 16) | ('0' << 24)))
 		{
-			//DX10Header = *reinterpret_cast<DDS_HEADER_DX10*>(Data);
-			HasDX10Header = true;
+			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
+			return nullptr;
 		}
 
 		if ((Header.PixelFormat.Flags & 0x4) == 0)
@@ -322,23 +383,18 @@ namespace Columbus
 			return nullptr;
 		}
 
-		switch (Header.PixelFormat.FourCC)
-		{
-		case 0x31545844u:
-			OutFormat = TextureFormat::S3TC_A1; break;
-		case 0x32545844u:
-		case 0x33545844u:
-			OutFormat = TextureFormat::S3TC_A4; break;
-		case 0x34545844u:
-		case 0x35545844u:
-			OutFormat = TextureFormat::S3TC_A8; break;
-		default: return nullptr; break;
-		}
-
+		OutFormat = FourCCDecode(Header.PixelFormat.FourCC);
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
 		OutSize = Size - sizeof(DDS_HEADER);
 		OutMipMaps = Header.MipMapCount;
+
+		switch (OutFormat)
+		{
+		case TextureFormat::S3TC_A1: BlockSize = 8;  break;
+		case TextureFormat::S3TC_A4: BlockSize = 16; break;
+		case TextureFormat::S3TC_A8: BlockSize = 16; break;
+		}
 
 		uint8* Buffer = new uint8[Size - sizeof(DDS_HEADER)];
 		std::copy(Data + sizeof(DDS_HEADER), Data + Size - sizeof(DDS_HEADER), Buffer);
