@@ -352,11 +352,8 @@ namespace Columbus
 			return nullptr;
 		}
 
-		bool HasDX10Header = false;
-
 		DDS_HEADER Header;
 		DDS_HEADER_FLAGS HeaderFlags;
-		DDS_HEADER_DX10 DX10Header;
 		Header = *(DDS_HEADER*)(Data);
 		HeaderFlags.Read(Header.Flags);
 
@@ -388,13 +385,6 @@ namespace Columbus
 		OutHeight = Header.Height;
 		OutSize = Size - sizeof(DDS_HEADER);
 		OutMipMaps = Header.MipMapCount;
-
-		switch (OutFormat)
-		{
-		case TextureFormat::S3TC_A1: BlockSize = 8;  break;
-		case TextureFormat::S3TC_A4: BlockSize = 16; break;
-		case TextureFormat::S3TC_A8: BlockSize = 16; break;
-		}
 
 		uint8* Buffer = new uint8[Size - sizeof(DDS_HEADER)];
 		std::copy(Data + sizeof(DDS_HEADER), Data + Size - sizeof(DDS_HEADER), Buffer);
