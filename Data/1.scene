@@ -4,19 +4,19 @@
 		<Textures>
 			<Count>13</Count>
 
-			<Texture0>Data/Textures/milos.jpg</Texture0>
-			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
-			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
+			<Texture0>Data/Textures/milos.dds</Texture0>
+			<Texture1>Data/Textures/milos-spec.dds</Texture1>
+			<Texture2>Data/Textures/milos-normal.dds</Texture2>
 			<Texture3>Data/Textures/flame.png</Texture3>
 			<Texture4>Data/Textures/smoke.png</Texture4>
 			<Texture5>Data/Textures/spark1.png</Texture5>
-			<Texture6>Data/Textures/wall-torch.jpg</Texture6>
+			<Texture6>Data/Textures/wall-torch.dds</Texture6>
 			<Texture7>Data/Textures/wall-torch-n.jpg</Texture7>
 			<Texture8>Data/Textures/blood.png</Texture8>
 			<Texture9>Data/Textures/blood-n.png</Texture9>
 			<Texture10>Data/Textures/metal.dds</Texture10>
-			<Texture11>Data/Textures/metal-spec.tif</Texture11>
-			<Texture12>Data/Textures/metal-normal.jpg</Texture12>
+			<Texture11>Data/Textures/metal-spec.dds</Texture11>
+			<Texture12>Data/Textures/metal-normal.dds</Texture12>
 		</Textures>
 
 		<Shaders>

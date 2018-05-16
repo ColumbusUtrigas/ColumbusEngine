@@ -44,6 +44,14 @@ namespace Columbus
 			OpenGLFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 			IsDDS = true;
 			break;
+		case TextureFormat::S3TC_A4:
+			OpenGLFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+			IsDDS = true;
+			break;
+		case TextureFormat::S3TC_A8:
+			OpenGLFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			IsDDS = true;
+			break;
 		default: OpenGLFormat = GL_RGBA; break;
 		}
 
