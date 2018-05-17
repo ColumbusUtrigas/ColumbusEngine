@@ -7,14 +7,14 @@
 			<Texture0>Data/Textures/milos.dds</Texture0>
 			<Texture1>Data/Textures/milos-spec.dds</Texture1>
 			<Texture2>Data/Textures/milos-normal.dds</Texture2>
-			<Texture3>Data/Textures/flame.png</Texture3>
-			<Texture4>Data/Textures/smoke.png</Texture4>
-			<Texture5>Data/Textures/spark1.png</Texture5>
+			<Texture3>Data/Textures/flame.dds</Texture3>
+			<Texture4>Data/Textures/smoke.dds</Texture4>
+			<Texture5>Data/Textures/spark.dds</Texture5>
 			<Texture6>Data/Textures/wall-torch.dds</Texture6>
-			<Texture7>Data/Textures/wall-torch-n.jpg</Texture7>
-			<Texture8>Data/Textures/blood.png</Texture8>
-			<Texture9>Data/Textures/blood-n.png</Texture9>
-			<Texture10>Data/Textures/metal.dds</Texture10>
+			<Texture7>Data/Textures/wall-torch-n.dds</Texture7>
+			<Texture8>Data/Textures/blood.dds</Texture8>
+			<Texture9>Data/Textures/blood-n.dds</Texture9>
+			<Texture10>Data/Textures/metal.tga</Texture10>
 			<Texture11>Data/Textures/metal-spec.dds</Texture11>
 			<Texture12>Data/Textures/metal-normal.dds</Texture12>
 		</Textures>

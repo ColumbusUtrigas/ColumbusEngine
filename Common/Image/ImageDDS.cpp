@@ -354,7 +354,7 @@ namespace Columbus
 
 		DDS_HEADER Header;
 		DDS_HEADER_FLAGS HeaderFlags;
-		Header = *(DDS_HEADER*)(Data);
+		Header = *(DDS_HEADER*)(Data); Data += sizeof(DDS_HEADER);
 		HeaderFlags.Read(Header.Flags);
 
 		if (HeaderFlags.Caps == false ||
@@ -383,11 +383,25 @@ namespace Columbus
 		OutFormat = FourCCDecode(Header.PixelFormat.FourCC);
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
-		OutSize = Size - sizeof(DDS_HEADER);
+		//OutSize = Size - sizeof(DDS_HEADER);
+		//OutSize = (Header.Width * Header.Height) / 2;
 		OutMipMaps = Header.MipMapCount;
 
-		uint8* Buffer = new uint8[Size - sizeof(DDS_HEADER)];
-		std::copy(Data + sizeof(DDS_HEADER), Data + Size - sizeof(DDS_HEADER), Buffer);
+		uint32 BlockSize = 0;
+
+		if (OutFormat == TextureFormat::S3TC_A1)
+		{
+			BlockSize = 8;
+		}
+		else
+		{
+			BlockSize = 16;
+		}
+
+		OutSize = ((Header.Width + 3) / 4) * ((Header.Height + 3) / 4) * BlockSize;
+
+		uint8* Buffer = new uint8[OutSize];
+		std::copy(Data, Data + OutSize, Buffer);
 
 		return Buffer;
 	}
