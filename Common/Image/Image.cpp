@@ -8,8 +8,10 @@ namespace Columbus
 	{
 		switch (Format)
 		{
-		case TextureFormat::RGB:  return 3;  break;
-		case TextureFormat::RGBA: return 4; break;
+		case TextureFormat::RGB:
+		case TextureFormat::BGR:  return 3; break;
+		case TextureFormat::RGBA:
+		case TextureFormat::BGRA: return 4; break;
 		}
 
 		return 0;

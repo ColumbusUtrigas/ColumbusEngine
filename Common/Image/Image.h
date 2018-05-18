@@ -41,7 +41,9 @@ namespace Columbus
 	enum class TextureFormat
 	{
 		RGB,
+		BGR,
 		RGBA,
+		BGRA,
 		S3TC_A1,
 		S3TC_A4,
 		S3TC_A8,

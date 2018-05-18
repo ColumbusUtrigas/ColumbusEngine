@@ -1,12 +1,3 @@
-/************************************************
-*              	   ImageTGA.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   03.01.2018                  *
-*************************************************/
 #include <Common/Image/Image.h>
 #include <Core/Memory.h>
 #include <System/File.h>
@@ -15,8 +6,8 @@ namespace Columbus
 {
 
 #define READPIXEL24(a) \
-		blue = *a++; \
-		green = *a++; \
+		blue = *a++;   \
+		green = *a++;  \
 		red = *a++;
 
 #define READPIXEL32(a) \
@@ -24,8 +15,8 @@ namespace Columbus
 		alpha = *a++;
 
 #define WRITEPIXEL24(a) \
-		*a++ = red; \
-		*a++ = green; \
+		*a++ = red;     \
+		*a++ = green;   \
 		*a++ = blue;
 
 #define WRITEPIXEL32(a) \
@@ -35,19 +26,19 @@ namespace Columbus
 
 	typedef struct
 	{
-		uint8 idlen; //Image ID Lenght
+		uint8 idlen;          //Image ID Length
 		uint8 color_map_type; //Color map type
-		uint8 image_type; //Image Type
+		uint8 image_type;     //Image Type
 							/*
 							0  -  No image data included.
 							1  -  Uncompressed, color-mapped images.
 							2  -  Uncompressed, RGB images.
 							3  -  Uncompressed, black and white images.
 							9  -  Runlength encoded color-mapped images.
-							10  -  Runlength encoded RGB images.
-							11  -  Compressed, black and white images.
-							32  -  Compressed color-mapped data, using Huffman, Delta, and runlength encoding.
-							33  -  Compressed color-mapped data, using Huffman, Delta, and runlength encoding.  4-pass quadtree-type process.
+							10  - Runlength encoded RGB images.
+							11  - Compressed, black and white images.
+							32  - Compressed color-mapped data, using Huffman, Delta, and runlength encoding.
+							33  - Compressed color-mapped data, using Huffman, Delta, and runlength encoding.  4-pass quadtree-type process.
 							*/
 		uint16 color_map_origin;    //Color
 		uint16 color_map_length;    //map
@@ -57,7 +48,7 @@ namespace Columbus
 		uint16 y_origin; //Image
 		uint16 width;    //specification
 		uint16 height;   //
-		uint8 bits; // Bit depth. 8, 16, 24 or 32
+		uint8 bits;      // Bit depth. 8, 16, 24 or 32
 		uint8 image_descriptor;
 	} TGA_HEADER;
 
@@ -196,7 +187,7 @@ namespace Columbus
 		size_t dSize = file.GetSize() - sizeof(TGA_HEADER);
 		size_t size = tga.width * tga.height * tga.bits / 8;
 
-		uint8* buffer = (uint8*)Memory::Malloc(dSize);
+		uint8* buffer = new uint8[dSize];
 		file.Read(buffer, dSize, 1);
 
 		uint8* data = nullptr;
@@ -205,14 +196,27 @@ namespace Columbus
 		{
 		case 2:
 			//Uncompressed RGB
-			data = buffer;
+			data = new uint8[size + 1];
+
 			if (tga.bits == 24)
 			{
-				ImageBGR2RGB(buffer, size);
-			} else
-			{
-				ImageBGRA2RGBA(buffer, size);
+				std::copy(&buffer[0], &buffer[size], &data[0]);
+
+				for (uint64 i = 0; i < size; i += 3)
+				{
+					std::swap(data[i + 0], data[i + 2]);
+				}
 			}
+			else if (tga.bits == 32)
+			{
+				std::copy(&buffer[0], &buffer[size], &data[0]);
+
+				for (uint64 i = 0; i < size; i += 4)
+				{
+					std::swap(data[i + 0], data[i + 2]);
+				}
+			}
+
 			break;
 		case 10:
 			//Compressed RGB
@@ -237,10 +241,11 @@ namespace Columbus
 
 		switch (tga.bits)
 		{
-		case 24: ImageBGR2RGB(data, size); break;
-		case 32: ImageABGR2RGBA(data, size); break;
+		case 24: OutFormat = TextureFormat::RGB;  break;
+		case 32: OutFormat = TextureFormat::RGBA; break;
 		};
 
+		//delete[] buffer;
 		return data;
 	}
 
