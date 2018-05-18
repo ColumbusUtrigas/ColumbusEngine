@@ -1,12 +1,3 @@
-/************************************************
-*              	   ImageBMP.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   02.01.2018                  *
-*************************************************/
 #include <Common/Image/Image.h>
 #include <Core/Memory.h>
 #include <System/File.h>
@@ -107,31 +98,35 @@ namespace Columbus
 
 	bool ImageIsBMP(std::string FileName)
 	{
-		File file(FileName, "rb");
-		if (!file.IsOpened()) return false;
+		File BMPImageFile(FileName, "rb");
+		if (!BMPImageFile.IsOpened()) return false;
 
-		uint8_t magic[2];
-		file.Read(magic, sizeof(magic), 1);
-		file.Close();
+		uint8_t Magic[2];
+		BMPImageFile.Read(Magic, sizeof(Magic), 1);
+		BMPImageFile.Close();
 
-		if (magic[0] == 'B' && magic[1] == 'M') return true;
+		if (Memory::Memcmp(Magic, "BM", 2) == 0)
+		{
+			return true;
+		}
+
 		return false;
 	}
 
 	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
 	{
-		File file(FileName, "rb");
-		if (!file.IsOpened()) return nullptr;
+		File BMPImageFile(FileName, "rb");
+		if (!BMPImageFile.IsOpened()) return nullptr;
 
 		BMP_HEADER header;
 		BMP_INFO info;
 
-		if (!ReadHeader(&header, &file)) return nullptr;
-		if (!ReadInfo(&info, &file)) return nullptr;
+		if (!ReadHeader(&header, &BMPImageFile)) return nullptr;
+		if (!ReadInfo(&info, &BMPImageFile)) return nullptr;
 
-		uint8* data = (uint8*)Memory::Malloc(header.size - 66);
-		file.Read(data, header.size - 66, 1);
-		file.Close();
+		uint8* data = (uint8*)Memory::Malloc(header.size);
+		BMPImageFile.Read(data, header.size, 1);
+		BMPImageFile.Close();
 
 		size_t size = info.width * info.height * info.bits / 8;
 

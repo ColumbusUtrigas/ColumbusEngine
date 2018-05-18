@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	window.setVSync(true);
 
 	Image* cur = new Image;
-	cur->Load("Data/Textures/cursor.tif", ImageLoading::FlipY);
+	cur->Load("Data/Textures/cursor.tga", ImageLoading::FlipY);
 
 	input.showMouseCursor(false);
 	input.SetSystemCursor(SystemCursor::Crosshair);

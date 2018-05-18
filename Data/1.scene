@@ -14,7 +14,7 @@
 			<Texture7>Data/Textures/wall-torch-n.dds</Texture7>
 			<Texture8>Data/Textures/blood.dds</Texture8>
 			<Texture9>Data/Textures/blood-n.dds</Texture9>
-			<Texture10>Data/Textures/metal.tga</Texture10>
+			<Texture10>Data/Textures/metal.dds</Texture10>
 			<Texture11>Data/Textures/metal-spec.dds</Texture11>
 			<Texture12>Data/Textures/metal-normal.dds</Texture12>
 		</Textures>

@@ -334,8 +334,8 @@ namespace Columbus
 		DDSImageFile.Read(Data, DDSImageFile.GetSize(), 1);
 		uint8* Result = ImageLoadDDSMemory(Data, DDSImageFile.GetSize(), OutWidth, OutHeight, OutSize, OutMipMaps, OutFormat);
 		DDSImageFile.Close();
-		delete[] Data;
 
+		delete[] Data;
 		return Result;
 	}
 
@@ -383,8 +383,6 @@ namespace Columbus
 		OutFormat = FourCCDecode(Header.PixelFormat.FourCC);
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
-		//OutSize = Size - sizeof(DDS_HEADER);
-		//OutSize = (Header.Width * Header.Height) / 2;
 		OutMipMaps = Header.MipMapCount;
 
 		uint32 BlockSize = 0;
