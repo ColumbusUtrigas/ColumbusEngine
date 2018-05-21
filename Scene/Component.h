@@ -23,6 +23,7 @@ namespace Columbus
 			Component,
 			Light,
 			MeshRenderer,
+			MeshInstancedRenderer,
 			ParticleSystem,
 			Rigidbody
 		};

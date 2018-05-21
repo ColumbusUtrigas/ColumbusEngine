@@ -3,6 +3,7 @@
 #include <Scene/GameObject.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentMeshInstancedRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/ComponentRigidbody.h>
 #include <Graphics/Skybox.h>
@@ -50,6 +51,7 @@ namespace Columbus
 
 		void lightWorkflow();
 		void meshWorkflow();
+		void meshInstancedWorkflow();
 		void particlesWorkflow();
 		void rigidbodyWorkflow();
 		void rigidbodyPostWorkflow();

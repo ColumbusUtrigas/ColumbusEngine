@@ -14,20 +14,20 @@ vec3 GaussianBlur(vec2 size)
 	float sX = blurSizeH * size.x;
 	float sY = blurSizeV * size.y;
 
-    for (int x = -4; x <= 4; x++)
-    {
-        for (int y = -4; y <= 4; y++)
-        {
-            sum += texture(uColor, vec2(UV.x + x * sX, UV.y + y * sY)) / 81.0;
-        }
-    }
+	for (int x = -4; x <= 4; x++)
+	{
+		for (int y = -4; y <= 4; y++)
+		{
+			sum += texture(uColor, vec2(UV.x + x * sX, UV.y + y * sY)) / 81.0;
+		}
+	}
 
-    return sum.xyz;
+	return sum.xyz;
 }
 
 vec2 Sample(in float theta, inout float r)
 {
-    r += 1.0 / r;
+	r += 1.0 / r;
 	return (r-1.0) * vec2(cos(theta), sin(theta)) * .06;
 }
 
@@ -40,12 +40,11 @@ vec3 BokehBlur(float radius, float amount)
 {
 	vec3 acc = vec3(0.0);
 	vec3 div = vec3(0.0);
-    vec2 pixel = vec2(uResolution.y / uResolution.x, 1.0) * radius * 0.025;
-    float r = 1.0;
+	vec2 pixel = vec2(uResolution.y / uResolution.x, 1.0) * radius * 0.025;
+	float r = 1.0;
 
 	for (float j = 0.0; j < GOLDEN_ANGLE * ITERATIONS; j += GOLDEN_ANGLE)
-    {
-       	
+	{
 		vec3 col = texture2D(uColor, UV + pixel * Sample(j, r)).xyz;
 		vec3 bokeh = vec3(0.5) + pow(col, vec3(10.0)) * amount;
 		acc += col * bokeh;
@@ -68,10 +67,10 @@ vec3 Fog(vec3 color, float coef)
 vec3 Pixelization(vec2 size)
 {
 	float dx = size.x * (1.0 / uResolution.x);
-    float dy = size.y * (1.0 / uResolution.y);
-    vec2 coord = vec2(dx * floor(UV.x / dx),
-                      dy * floor(UV.y / dy));
-    return texture(uColor, coord).rgb;
+	float dy = size.y * (1.0 / uResolution.y);
+	vec2 coord = vec2(dx * floor(UV.x / dx),
+	                  dy * floor(UV.y / dy));
+	return texture(uColor, coord).rgb;
 }
 
 void main()
@@ -82,9 +81,9 @@ void main()
 	FragColor = vec4(texture(uColor, UV).rgb, 1.0);
 	//FragColor = vec4(GaussianBlur(vec2(d, d)), 1.0);
 	//FragColor = vec4(BokehBlur(0.5, 6), 1.0);
-    //FragColor = vec4(vec3(1) - texture(uColor, UV).rgb, 1.0);
-    //FragColor = vec4(vec3(1.0) - GaussianBlur(vec2(d, d)), 1.0);
-    //FragColor = vec4(Grayscale(), 1.0);
-    //FragColor = vec4(Fog(vec3(0.7, 0.7, 0.7), clamp(d - 0.3, 0.0, 1.0)), 1.0);
-    //FragColor = vec4(Pixelization(vec2(15, 15)), 1.0);
+	//FragColor = vec4(vec3(1) - texture(uColor, UV).rgb, 1.0);
+	//FragColor = vec4(vec3(1.0) - GaussianBlur(vec2(d, d)), 1.0);
+	//FragColor = vec4(Grayscale(), 1.0);
+	//FragColor = vec4(Fog(vec3(0.7, 0.7, 0.7), clamp(d - 0.3, 0.0, 1.0)), 1.0);
+	//FragColor = vec4(Pixelization(vec2(15, 15)), 1.0);
 }

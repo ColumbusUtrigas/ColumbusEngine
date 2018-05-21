@@ -57,6 +57,23 @@ namespace Columbus
 			}
 		}
 	}
+
+	void Scene::meshInstancedWorkflow()
+	{
+		for (auto Object : mObjects)
+		{
+			ComponentMeshInstancedRenderer* mesh =
+				static_cast<ComponentMeshInstancedRenderer*>(Object.second->GetComponent(Component::Type::MeshInstancedRenderer));
+
+			if (mesh != nullptr)
+			{
+				mesh->SetLights(mLights);
+				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->getCubemap());
+				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
+			}
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::particlesWorkflow()
 	{
@@ -586,6 +603,7 @@ namespace Columbus
 	{
 		lightWorkflow();
 		meshWorkflow();
+		meshInstancedWorkflow();
 		particlesWorkflow();
 		//rigidbodyWorkflow();
 
@@ -617,7 +635,7 @@ namespace Columbus
 			mSkybox->draw();
 
 		for (auto Object : mObjects)
-			if (Object.second->HasComponent(Component::Type::MeshRenderer))
+			if (Object.second->HasComponent(Component::Type::MeshRenderer) || Object.second->HasComponent(Component::Type::MeshInstancedRenderer))
 				Object.second->Render();
 
 		for (auto Object : mObjects)

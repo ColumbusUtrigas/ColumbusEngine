@@ -175,7 +175,7 @@ namespace Columbus
 		}
 	}
 
-	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
+	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		File file(FileName, "rb");
 		if (!file.IsOpened()) return nullptr;
@@ -238,6 +238,7 @@ namespace Columbus
 
 		OutWidth = tga.width;
 		OutHeight = tga.height;
+		OutSize = tga.width * tga.height * tga.bits / 8;
 
 		switch (tga.bits)
 		{
