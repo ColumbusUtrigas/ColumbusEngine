@@ -30,7 +30,7 @@ namespace Columbus
 		else return false;
 	}
 
-	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
+	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		FILE* fp = fopen(FileName.c_str(), "rb");
 		if (fp == nullptr) return nullptr;
@@ -68,6 +68,7 @@ namespace Columbus
 
 		OutWidth = width;
 		OutHeight = height;
+		OutSize = width * height * bpp;
 
 		switch (bpp)
 		{

@@ -2,6 +2,8 @@
 #include <Core/Memory.h>
 #include <System/File.h>
 
+#include <SDL.h>
+
 namespace Columbus
 {
 
@@ -113,9 +115,36 @@ namespace Columbus
 		return false;
 	}
 
-	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
+	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		File BMPImageFile(FileName, "rb");
+		if (!BMPImageFile.IsOpened()) return nullptr;
+		BMPImageFile.Close();
+
+		SDL_Surface* Surf = SDL_LoadBMP(FileName.c_str());
+		OutWidth = Surf->w;
+		OutHeight = Surf->h;
+		OutSize = OutWidth * OutHeight * Surf->format->BitsPerPixel / 8;
+
+		switch (Surf->format->BitsPerPixel)
+		{
+		case 24: OutFormat = TextureFormat::RGB;  break;
+		case 32: OutFormat = TextureFormat::RGBA; break;
+		}
+
+		uint8* Data = new uint8[OutSize];
+		Memory::Memcpy(Data, Surf->pixels, OutSize);
+		ImageFlipY(Data, OutWidth, OutHeight, Surf->format->BitsPerPixel / 8);
+
+		/*switch (Surf->format->BitsPerPixel)
+		{
+		case 24: ImageBGR2RGB(Data, OutSize);   break;
+		case 32: ImageBGRA2RGBA(Data, OutSize); break;
+		}*/
+
+		return Data;
+
+		/*File BMPImageFile(FileName, "rb");
 		if (!BMPImageFile.IsOpened()) return nullptr;
 
 		BMP_HEADER header;
@@ -138,6 +167,7 @@ namespace Columbus
 
 		OutWidth = info.width;
 		OutHeight = info.height;
+		OutSize = info.width * info.height * info.bits / 8;
 
 		switch (info.bits)
 		{
@@ -145,7 +175,7 @@ namespace Columbus
 		case 32: OutFormat = TextureFormat::RGBA; break;
 		}
 
-		return data;
+		return data;*/
 	}
 
 	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)

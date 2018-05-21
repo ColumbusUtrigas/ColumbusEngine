@@ -31,7 +31,7 @@ namespace Columbus
 		else return false;
 	}
 
-	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat)
+	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		struct jpeg_decompress_struct cinfo;
 
@@ -61,6 +61,7 @@ namespace Columbus
 
 		OutWidth = cinfo.image_width;
 		OutHeight = cinfo.image_height;
+		OutSize = cinfo.image_width * cinfo.image_height * 3;
 		OutFormat = TextureFormat::RGB;
 
 		jpeg_start_decompress(&cinfo);

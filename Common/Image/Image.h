@@ -1,12 +1,3 @@
-/************************************************
-*              	     Image.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   02.01.2018                  *
-*************************************************/
 #pragma once
 
 #include <System/Assert.h>
@@ -61,13 +52,13 @@ namespace Columbus
 	bool ImageIsTIF(std::string FileName); //Check file magic
 	bool ImageIsJPG(std::string FileName); //Check file magic
 
-	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
 	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
 	uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
-	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
-	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
-	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
-	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, TextureFormat& OutFormat);
+	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
+	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
+	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
+	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
 
 	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);

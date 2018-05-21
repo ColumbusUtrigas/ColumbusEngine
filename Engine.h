@@ -4,6 +4,7 @@
 #include <Audio/AudioSource.h>
 
 #include <Common/Compression/Compression.h>
+#include <Common/Cursor/Cursor.h>
 #include <Common/Image/Image.h>
 #include <Common/Model/Model.h>
 #include <Common/Noise/OctaveNoise.h>

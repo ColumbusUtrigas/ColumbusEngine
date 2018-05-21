@@ -8,8 +8,6 @@
 
 #include <Audio/AudioPlayer.h>
 
-#include <zstd.h>
-
 using namespace Columbus;
 
 int main(int argc, char** argv)
@@ -32,12 +30,14 @@ int main(int argc, char** argv)
 
 	window.setVSync(true);
 
-	Image* cur = new Image;
-	cur->Load("Data/Textures/cursor.tga", ImageLoading::FlipY);
+	Image CursorImage;
+	CursorImage.Load("Data/Textures/cursor.tga", ImageLoading::FlipY);
 
 	input.showMouseCursor(false);
 	input.SetSystemCursor(SystemCursor::Crosshair);
-	input.SetColoredCursor(cur->GetData(), cur->GetWidth(), cur->GetHeight(), GetBPPFromFormat(cur->GetFormat()), vec2(17, 3));
+
+	Cursor Cursor(CursorImage, 3, 3);
+	input.SetCursor(Cursor);
 
 	bool cursor = false;
 
@@ -104,6 +104,11 @@ int main(int argc, char** argv)
 
 	AudioPlayer player(Clip.GetBuffer(), Clip.GetChannelsCount(), Clip.GetFrequency(), Clip.GetBufferSize());
 
+	GameObject go;
+	go.AddComponent(new ComponentMeshInstancedRenderer(&mesh));
+
+	scene.add(20, &go);
+
 	while (window.isOpen())
 	{
 		player.Play();
@@ -166,9 +171,6 @@ int main(int argc, char** argv)
 		scene.setContextSize(window.getSize());
 		scene.update();
 		scene.render();
-
-		mesh.SetCamera(camera);
-		mesh.Render();
 
 		window.display();
 

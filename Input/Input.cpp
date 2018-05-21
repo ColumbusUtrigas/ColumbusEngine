@@ -60,6 +60,38 @@ namespace Columbus
 		mMouseEnabled = static_cast<bool>(aX);
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
 	}
+
+	void Input::SetCursor(Cursor InCursor)
+	{
+		if (InCursor.FramesCount == 0 || InCursor.Frames == nullptr)
+		{
+			return;
+		}
+
+		Uint32 rmask, gmask, bmask, amask;
+		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			int shift = 0;
+			rmask = 0xff000000 >> shift;
+			gmask = 0x00ff0000 >> shift;
+			bmask = 0x0000ff00 >> shift;
+			amask = 0x000000ff >> shift;
+		#else
+			rmask = 0x000000ff;
+			gmask = 0x0000ff00;
+			bmask = 0x00ff0000;
+			amask = 0xff000000;
+		#endif
+
+		auto Pixels = InCursor.Frames[0].PixelData;
+		uint32 Width = InCursor.Frames[0].Width;
+		uint32 Height = InCursor.Frames[0].Height;
+		uint32 HotX = InCursor.Frames[0].HotPointX;
+		uint32 HotY = InCursor.Frames[0].HotPointY;
+
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(Pixels, Width, Height, 32, Width * 4, rmask, gmask, bmask, amask);
+		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, HotX, HotY);
+		SDL_SetCursor(cursor);
+	}
 	
 	void Input::SetSystemCursor(SystemCursor Cursor)
 	{

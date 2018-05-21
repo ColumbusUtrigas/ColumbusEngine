@@ -7,12 +7,12 @@
 *                Nika(Columbus) Red             *
 *                   29.10.2017                  *
 *************************************************/
-
 #pragma once
 
 #include <Math/Vector2.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
 #include <GUI/IO.h>
+#include <Common/Cursor/Cursor.h>
 
 #include <SDL.h>
 #include <vector>
@@ -90,6 +90,7 @@ namespace Columbus
 		void setIO(const GUI::IO* aIO);
 
 		void showMouseCursor(const bool aX);
+		void SetCursor(Cursor InCursor);
 		void SetSystemCursor(SystemCursor Cursor);
 		void SetColoredCursor(const void* aPixels, const unsigned int aWidth,
 			const unsigned int aHeight, const unsigned int aBPP, const Vector2 aHot);

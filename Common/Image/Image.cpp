@@ -166,12 +166,12 @@ namespace Columbus
 	{
 		switch (ImageGetFormat(FileName))
 		{
-		case ImageFormat::BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
 		case ImageFormat::DDS: return ImageLoadDDS(FileName, OutWidth, OutHeight, OutSize, OutMipMaps, OutFormat); break;
-		case ImageFormat::PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutFormat); break;
-		case ImageFormat::TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutFormat); break;
-		case ImageFormat::JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutFormat); break;
-		case ImageFormat::TGA: return ImageLoadTGA(FileName, OutWidth, OutHeight, OutFormat); break;
+		case ImageFormat::PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
+		case ImageFormat::TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
+		case ImageFormat::JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
+		case ImageFormat::TGA: return ImageLoadTGA(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
 		case ImageFormat::Unknown: return nullptr; break;
 		default: return nullptr; break;
 		}
@@ -264,7 +264,6 @@ namespace Columbus
 	*/
 	void Image::FreeData()
 	{
-		if (Exist == false) return;
 		Width = 0;
 		Height = 0;
 		Size = 0;
@@ -273,10 +272,7 @@ namespace Columbus
 		Exist = false;
 		FileName.clear();
 
-		if (Data != nullptr)
-		{
-			free(Data);
-		}
+		delete[] Data;
 	}
 	/*
 	* Horizontal image flipping
