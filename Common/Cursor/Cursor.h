@@ -21,7 +21,7 @@ namespace Columbus
 		uint16 FramesCount = 0;
 		CursorFrame* Frames = nullptr;
 
-		Cursor(Image InImage, uint16 InHotPointX, uint16 InHotPointY)
+		Cursor(Image& InImage, uint16 InHotPointX, uint16 InHotPointY)
 		{
 			FramesCount = 1;
 			Frames = new CursorFrame[1];

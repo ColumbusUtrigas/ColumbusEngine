@@ -36,6 +36,7 @@ namespace Columbus
 		void Unbind() const override;
 
 		void AddStage(ShaderStage* Stage) override;
+		bool Load(std::string FileName) override;
 		bool Compile() override;
 
 		void AddUniform(std::string Name) override;

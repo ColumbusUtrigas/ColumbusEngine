@@ -23,13 +23,11 @@
 			<Count>2</Count>
 
 			<Shader0>
-				<Vertex>Data/Shaders/standart.vert</Vertex>
-				<Fragment>Data/Shaders/standart.frag</Fragment>
+				<Program>Data/Shaders/Standart.glsl</Program>
 			</Shader0>
 
 			<Shader1>
-				<Vertex>Data/Shaders/particle.vert</Vertex>
-				<Fragment>Data/Shaders/particle.frag</Fragment>
+				<Program>Data/Shaders/Particle.glsl</Program>
 			</Shader1>
 		</Shaders>
 

@@ -8,12 +8,7 @@ namespace Columbus
 		mSkybox(nullptr)
 	{
 		NoneShader = gDevice->CreateShaderProgram();
-		ShaderStage* vert = gDevice->CreateShaderStage();
-		ShaderStage* frag = gDevice->CreateShaderStage();
-		vert->Load("Data/Shaders/post.vert", ShaderType::Vertex);
-		frag->Load("Data/Shaders/NonePost.frag", ShaderType::Fragment);
-		NoneShader->AddStage(vert);
-		NoneShader->AddStage(frag);
+		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
 		NoneShader->Compile();
 
 		mNoneEffect.AddAttributeName("uResolution");
@@ -497,24 +492,12 @@ namespace Columbus
 			for (uint32 i = 0; i < shadersCount; i++)
 			{
 				elem = std::string("Shader") + std::to_string(i);
-				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Vertex" }, path) &&
-				    serializer.GetSubString({ "Resources", "Shaders", elem, "Fragment" }, path1))
+
+				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Program" }, path))
 				{
 					auto tShader = gDevice->CreateShaderProgram();
-
-					auto VertexStage = gDevice->CreateShaderStage();
-					auto FragmentStage = gDevice->CreateShaderStage();
-					VertexStage->Load(path, ShaderType::Vertex);
-					FragmentStage->Load(path1, ShaderType::Fragment);
-
-					if (VertexStage->IsLoaded() &&
-					    FragmentStage->IsLoaded())
-					{
-						tShader->AddStage(VertexStage);
-						tShader->AddStage(FragmentStage);
-
-						ShaderPrograms[i] = tShader;
-					}
+					tShader->Load(path);
+					ShaderPrograms[i] = tShader;
 				}
 			}
 		}

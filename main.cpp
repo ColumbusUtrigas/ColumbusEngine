@@ -76,16 +76,7 @@ int main(int argc, char** argv)
 
 	Material mat;
 	ShaderProgram* prog = gDevice->CreateShaderProgram();
-	ShaderStage* vert, *frag;
-	vert = gDevice->CreateShaderStage();
-	frag = gDevice->CreateShaderStage();
-
-	vert->Load("Data/Shaders/instanced.vert", ShaderType::Vertex);
-	frag->Load("Data/Shaders/instanced.frag", ShaderType::Fragment);
-
-	prog->AddStage(vert);
-	prog->AddStage(frag);
-
+	prog->Load("Data/Shaders/StandartInstanced.glsl");
 	mat.SetShader(prog);
 
 	MeshInstancedOpenGL mesh;
