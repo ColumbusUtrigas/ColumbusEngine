@@ -33,6 +33,32 @@ namespace Columbus
 		"{\n"
 		"FragColor = textureCube(uSkybox, texCoord);\n"
 		"}\n";
+
+	const std::string gSkyboxShader =
+		"#ifdef VertexShader\n"
+		"attribute vec3 aPos;\n"
+		"attribute vec2 aUV;\n"
+		"attribute vec3 aNorm;\n"
+		"varying vec3 texCoord;\n"
+		"uniform mat4 uView;\n"
+		"uniform mat4 uProjection;\n"
+
+		"void main()\n"
+		"{\n"
+		"Position = uProjection * uView * vec4(aPos, 1.0);\n"
+		"texCoord = aPos;\n"
+		"}\n"
+		"#endif\n"
+
+		"#ifdef FragmentShader\n"
+		"varying vec3 texCoord;\n"
+		"uniform samplerCube uSkybox;\n"
+
+		"void main()\n"
+		"{\n"
+		"FragColor = textureCube(uSkybox, texCoord);\n"
+		"}\n"
+		"#endif\n";
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -276,6 +302,32 @@ namespace Columbus
 		{
 			Stages.push_back(Stage);
 		}
+	}
+
+	bool ShaderProgramOpenGL::Load(std::string FileName)
+	{
+		std::ifstream File;
+		File.open(FileName.c_str());
+
+		if (!File.is_open())
+		{
+			Log::error("Shader not loaded: " + FileName);
+			return false;
+		}
+
+		std::string TmpFile = std::string((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+
+		ShaderStage* Stage;
+
+		Stage = new ShaderStageOpenGL();
+		Stage->Load(FileName, ShaderType::Vertex);
+		AddStage(Stage);
+
+		Stage = new ShaderStageOpenGL();
+		Stage->Load(FileName, ShaderType::Fragment);
+		AddStage(Stage);
+
+		return true;
 	}
 
 	bool ShaderProgramOpenGL::Compile()

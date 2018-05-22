@@ -1,4 +1,5 @@
 #include <Common/Sound/Sound.h>
+#include <Core/Memory.h>
 
 namespace Columbus
 {
@@ -46,7 +47,8 @@ namespace Columbus
 		BufferSize = 0;
 		Frequency = 0;
 		Channels = 0;
-		delete[] Buffer;
+		//delete[] Buffer;
+		if (Buffer != nullptr) Memory::Free(Buffer);
 	}
 
 	uint64 Sound::GetBufferSize() const
@@ -71,7 +73,7 @@ namespace Columbus
 
 	Sound::~Sound()
 	{
-		delete[] Buffer;
+		Free();
 	}
 
 }

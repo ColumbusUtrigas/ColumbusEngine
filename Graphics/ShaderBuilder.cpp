@@ -14,12 +14,14 @@ namespace Columbus
 
 	const std::string gVertexShaderHeader =
 	"#version 130\n"
-	"#define Position gl_Position\n";
+	"#define Position gl_Position\n"
+	"#define VertexShader\n";
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	const std::string gFragmentShaderHeader =
 	"#version 130\n"
+	"#define FragmentShader\n"
 	"out vec4 FragColor;\n";
 	
 	bool ShaderBuilder::Build(std::string InShader, ShaderType Type)

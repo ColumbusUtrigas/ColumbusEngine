@@ -196,7 +196,7 @@ namespace Columbus
 		{
 		case 2:
 			//Uncompressed RGB
-			data = new uint8[size + 1];
+			data = new uint8[size];
 
 			if (tga.bits == 24)
 			{
@@ -220,7 +220,8 @@ namespace Columbus
 			break;
 		case 10:
 			//Compressed RGB
-			data = (uint8*)malloc(size);
+			data = new uint8[size];
+
 			if (tga.bits == 24)
 			{
 				RGBCompressedTGA(buffer, data, tga.width * tga.height);

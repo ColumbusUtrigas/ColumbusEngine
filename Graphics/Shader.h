@@ -94,6 +94,7 @@ namespace Columbus
 		virtual void Unbind() const {}
 
 		virtual void AddStage(ShaderStage* Stage) {}
+		virtual bool Load(std::string FileName) { return false; }
 		virtual bool Compile() { return false; }
 
 		virtual void AddUniform(std::string Name) {}
