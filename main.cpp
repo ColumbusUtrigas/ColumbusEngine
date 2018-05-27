@@ -116,8 +116,8 @@ int main(int argc, char** argv)
 	GameObject go;
 	go.AddComponent(new ComponentMeshInstancedRenderer(&mesh));
 
-	scene.add(20, &go);
-    scene.getGameObject(12)->AddComponent(new Rotator());
+	scene.Add(20, go);
+	scene.getGameObject(12)->AddComponent(new Rotator());
 
 	while (window.isOpen())
 	{
