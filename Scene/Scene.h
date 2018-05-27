@@ -11,9 +11,6 @@
 #include <Graphics/Render.h>
 #include <Graphics/Primitives.h>
 #include <Graphics/PostEffect.h>
-#include <Graphics/OpenGL/MeshOpenGL.h>
-#include <Graphics/OpenGL/TextureOpenGL.h>
-#include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Physics/PhysicsShape.h>
 #include <Physics/PhysicsShapeBox.h>
 #include <Physics/PhysicsShapeCapsule.h>
@@ -23,7 +20,7 @@
 #include <Physics/PhysicsShapeMultiSphere.h>
 #include <Physics/PhysicsShapeSphere.h>
 #include <Physics/PhysicsWorld.h>
-#include <System/ResourceManager.h>
+#include <System/SmartPointer.h>
 #include <Core/Types.h>
 
 namespace Columbus
@@ -32,7 +29,7 @@ namespace Columbus
 	class Scene
 	{
 	private:
-		std::map<uint32, GameObject*> mObjects;
+		std::map<uint32, SmartPointer<GameObject>> mObjects;
 		std::vector<Light*> mLights;
 		std::map<uint32, Mesh*> mMeshes;
 		std::map<uint32, Texture*> mTextures;
@@ -60,7 +57,11 @@ namespace Columbus
 
 		bool load(std::string aFile);
 
-		void add(unsigned int aID, GameObject* aMesh);
+		void Add(uint32 ID, GameObject InObject)
+		{
+			mObjects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
+		}
+
 		void setSkybox(const Skybox* aSkybox);
 		void setCamera(const Camera* aCamera);
 		void setContextSize(const Vector2 aContextSize);

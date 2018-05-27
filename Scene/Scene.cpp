@@ -24,7 +24,7 @@ namespace Columbus
 	{
 		mLights.clear();
 		
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 		{
 			ComponentLight* light =
 				static_cast<ComponentLight*>(Object.second->GetComponent(Component::Type::Light));
@@ -39,7 +39,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::meshWorkflow()
 	{
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 		{
 			ComponentMeshRenderer* mesh =
 				static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
@@ -55,7 +55,7 @@ namespace Columbus
 
 	void Scene::meshInstancedWorkflow()
 	{
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 		{
 			ComponentMeshInstancedRenderer* mesh =
 				static_cast<ComponentMeshInstancedRenderer*>(Object.second->GetComponent(Component::Type::MeshInstancedRenderer));
@@ -72,7 +72,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::particlesWorkflow()
 	{
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 		{
 			ComponentParticleSystem* ps =
 				static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
@@ -381,12 +381,10 @@ namespace Columbus
 	*
 	*/
 
-	static GameObject* SceneLoadGameObject(Serializer::SerializerXML* Serializer, std::string Element,
+	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, std::string Element,
 		std::map<uint32, Mesh*>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
 		PhysicsWorld* PhysWorld)
 	{
-		GameObject* Object = new GameObject();
-
 		if (Serializer != nullptr && Meshes != nullptr && Textures != nullptr && Shaders != nullptr && PhysWorld != nullptr)
 		{
 			std::string name;
@@ -394,16 +392,14 @@ namespace Columbus
 
 			if (!Serializer->GetSubString({ "GameObjects", Element, "Name" }, name))
 			{
-				delete Object;
-				return nullptr;
+				return false;
 			}
 
 			Transform transform = SceneGameObjectLoadTransform(Serializer, Element);
 			Material* material = SceneGameObjectLoadMaterial(Serializer, Element);
 			if (material == nullptr)
 			{
-				delete Object;
-				return nullptr;
+				return false;
 			}
 
 			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" },shaderID))
@@ -412,8 +408,7 @@ namespace Columbus
 			}
 			else
 			{
-				delete Object;
-				return nullptr;
+				return false;
 			}
 
 			if (material->getTextureID() != -1)
@@ -430,30 +425,30 @@ namespace Columbus
 
 			if (MeshRenderer != nullptr)
 			{
-				Object->AddComponent(MeshRenderer);
+				OutObject.AddComponent(MeshRenderer);
 			}
 
 			if (ParticleSystem != nullptr)
 			{
-				Object->AddComponent(ParticleSystem);
+				OutObject.AddComponent(ParticleSystem);
 			}
 
 			if (Light != nullptr)
 			{
-				Object->AddComponent(Light);
+				OutObject.AddComponent(Light);
 			}
 
 			if (Rigidbody != nullptr)
 			{
 				PhysWorld->AddRigidbody(Rigidbody->GetRigidbody());
-				Object->AddComponent(Rigidbody);
+				OutObject.AddComponent(Rigidbody);
 			}
 
-			Object->SetTransform(transform);
-			Object->SetName(name);
+			OutObject.SetTransform(transform);
+			OutObject.SetName(name);
 		}
 
-		return Object;
+		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -532,20 +527,16 @@ namespace Columbus
 		for (uint32 i = 0; i < count; i++)
 		{
 			std::string elem = "GameObject" + std::to_string(i);
-			GameObject* Object = SceneLoadGameObject(&serializer, elem, &mMeshes, &mTextures, &ShaderPrograms, &PhysWorld);
 
-			if (Object != nullptr)
+			GameObject Object;
+
+			if (SceneLoadGameObject(Object, &serializer, elem, &mMeshes, &mTextures, &ShaderPrograms, &PhysWorld))
 			{
-				add(i, Object);
+				Add(i, Object);
 			}
 		}
 
 		return true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Scene::add(unsigned int aID, GameObject* aMesh)
-	{
-		mObjects.insert(std::pair<unsigned int, GameObject*>(aID, aMesh));
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::setSkybox(const Skybox* aSkybox)
@@ -567,15 +558,15 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	GameObject* Scene::getGameObject(const unsigned int aID) const
 	{
-		return mObjects.at(aID);
+		return mObjects.at(aID).get();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	GameObject* Scene::getGameObject(const std::string aName) const
 	{
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 			if (Object.second != nullptr)
 				if (Object.second->GetName() == aName)
-					return Object.second;
+					return Object.second.get();
 
 		return nullptr;
 	}
@@ -600,7 +591,7 @@ namespace Columbus
 			mSkybox->setCamera(*mCamera);
 		}
 
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 			Object.second->Update();
 	}
 	//////////////////////////////////////////////////////////////////////////////
@@ -617,11 +608,11 @@ namespace Columbus
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 			if (Object.second->HasComponent(Component::Type::MeshRenderer) || Object.second->HasComponent(Component::Type::MeshInstancedRenderer))
 				Object.second->Render();
 
-		for (auto Object : mObjects)
+		for (auto& Object : mObjects)
 			if (Object.second->HasComponent(Component::Type::ParticleSystem))
 				Object.second->Render();
 
@@ -634,7 +625,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	Scene::~Scene()
 	{
-
+		mObjects.clear();
 	}
 
 }

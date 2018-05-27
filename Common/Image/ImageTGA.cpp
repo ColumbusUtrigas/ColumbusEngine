@@ -247,7 +247,7 @@ namespace Columbus
 		case 32: OutFormat = TextureFormat::RGBA; break;
 		};
 
-		//delete[] buffer;
+		delete[] buffer;
 		return data;
 	}
 

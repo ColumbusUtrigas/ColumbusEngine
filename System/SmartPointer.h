@@ -1,66 +1,66 @@
-/************************************************
-*                 SmartPointer.h                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   02.11.2017                  *
-*************************************************/
+#pragma once
 
 #include <utility>
-
-#pragma once
 
 namespace Columbus
 {
 
 	template <class T>
-	class SmartPtr
+	class SmartPointer
 	{
 	private:
 		T* mObj = nullptr;
 	public:
-		SmartPtr(const SmartPtr&) = delete;
+		SmartPointer(const SmartPointer&) = delete;
 
-		SmartPtr(T* aObj) :
+		explicit SmartPointer(T* aObj) :
 			mObj(aObj)
 		{}
 
-		SmartPtr(SmartPtr&& aOther)
+		SmartPointer(SmartPointer&& aOther)
 		{
 			std::swap(mObj, aOther.mObj);
 		}
 
-		SmartPtr& operator=(const SmartPtr&) = delete;
+		SmartPointer& operator=(const SmartPointer&) = delete;
 
-		SmartPtr& operator=(SmartPtr&& aOther)
+		SmartPointer& operator=(SmartPointer&& aOther)
 		{
 			std::swap(mObj, aOther.mObj);
 			return *this;
 		}
 
-		T& operator->()
+		bool operator==(T* Other) const
+		{
+			return mObj == Other;
+		}
+
+		bool operator!=(T* Other) const
+		{
+			return mObj != Other;
+		}
+
+		T* operator->() const
+		{
+			return const_cast<T*>(mObj);
+		}
+
+		T& operator*() const
 		{
 			return *mObj;
 		}
 
-		T& operator*()
+		T* get() const
 		{
-			return *mObj;
+			return const_cast<T*>(mObj);
 		}
 
-		T& get()
-		{
-			return *mObj;
-		}
-
-		bool isValide()
+		bool isValide() const
 		{
 			return mObj != nullptr;
 		}
 
-		~SmartPtr()
+		~SmartPointer()
 		{
 			delete mObj;
 		}
