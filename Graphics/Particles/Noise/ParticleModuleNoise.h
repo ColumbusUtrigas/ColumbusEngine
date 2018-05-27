@@ -30,11 +30,11 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_NOISE; }
+		Type GetType() const override { return Type::Noise; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
 			if (Active)
 			{
@@ -48,15 +48,15 @@ namespace Columbus
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override
+		void Update(Particle& OutParticle) override
 		{
 			if (Active)
 			{
-				VNoise.X = Noise.noise(aParticle.noise[0], aParticle.noise[1], aParticle.noise[2]);
-				VNoise.Y = Noise.noise(aParticle.noise[3], aParticle.noise[4], aParticle.noise[5]);
-				VNoise.Z = Noise.noise(aParticle.noise[6], aParticle.noise[7], aParticle.noise[8]);
+				VNoise.X = Noise.noise(OutParticle.noise[0], OutParticle.noise[1], OutParticle.noise[2]);
+				VNoise.Y = Noise.noise(OutParticle.noise[3], OutParticle.noise[4], OutParticle.noise[5]);
+				VNoise.Z = Noise.noise(OutParticle.noise[6], OutParticle.noise[7], OutParticle.noise[8]);
 
-				aParticle.NoiseModifier = VNoise * Strength;
+				OutParticle.NoiseModifier = VNoise * Strength;
 			}
 		}
 

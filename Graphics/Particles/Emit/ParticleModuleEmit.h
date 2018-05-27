@@ -15,7 +15,7 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_EMIT; }
+		Type GetType() const override { return Type::Emit; }
 
 		~ParticleModuleEmit() override {}
 	};

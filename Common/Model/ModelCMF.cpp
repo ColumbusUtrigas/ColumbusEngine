@@ -23,16 +23,6 @@ namespace Columbus
 		uint32 count;    //Polygons count
 	} CMF_HEADER;
 
-	static bool ReadHeader(CMF_HEADER* aHeader, File* aFile)
-	{
-		if (aHeader == nullptr || aFile == nullptr) return false;
-
-		if (!aFile->ReadBytes(aHeader->magic, 21)) return false;
-		if (!aFile->ReadUint32(&aHeader->count)) return false;
-
-		return true;
-	}
-
 	static void ProcessVertices(uint32 Count, float* InVertexBuffer, float* InUVBuffer, float* InNormalBuffer, std::vector<Vertex>& OutVertices)
 	{
 		if (Count == 0 &&

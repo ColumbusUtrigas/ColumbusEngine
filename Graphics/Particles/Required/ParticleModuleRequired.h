@@ -8,18 +8,18 @@ namespace Columbus
 	/*
 	* Shitcode, i'm so bad
 	*/
-	enum ParticleTransformation
+	enum class ParticleTransformation
 	{
-		E_PARTICLE_TRANSFORMATION_LOCAL,
-		E_PARTICLE_TRANSFORMATION_WORLD
+		Local,
+		World
 	};
 	/*
 	* Particles may sorting by distance from camera and may be rendered without sorting
 	*/
 	enum ParticleSortMode
 	{
-		E_PARTICLE_SORT_MODE_NONE,
-		E_PARTICLE_SORT_MODE_DISTANCE
+		None,
+		Distance
 	};
 
 	class ParticleModuleRequired : public ParticleModuleRequiredBase
@@ -35,16 +35,16 @@ namespace Columbus
 			Visible(true),
 			AdditiveBlending(false),
 			Billboarding(true),
-			Transformation(E_PARTICLE_TRANSFORMATION_WORLD),
-			SortMode(E_PARTICLE_SORT_MODE_DISTANCE) {}
+			Transformation(ParticleTransformation::World),
+			SortMode(ParticleSortMode::Distance) {}
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_REQUIRED; }
+		Type GetType() const override { return Type::Required; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
 			
 		}

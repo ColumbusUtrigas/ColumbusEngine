@@ -4,7 +4,7 @@ namespace Columbus
 {
 
 	template <bool Predicate, typename Result = void>
-	class EnableIf;
+	struct EnableIf;
 
 	template<typename Result>
 	struct EnableIf<true, Result>

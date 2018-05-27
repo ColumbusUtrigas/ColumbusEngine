@@ -13,9 +13,6 @@ namespace Columbus
 	public:
 		ComponentRigidbody(Rigidbody* RB);
 
-		bool OnCreate() override;
-		bool OnUpdate() override;
-
 		void Update(const float TimeTick) override;
 		void Render(Transform& Transform) override;
 		//This component methods

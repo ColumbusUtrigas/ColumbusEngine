@@ -12,23 +12,17 @@ namespace Columbus
 	class ComponentMeshRenderer : public Component
 	{
 	private:
-		bool CreateMoment = true;
-		bool UpdateMoment = false;
-
-		Mesh* mMesh = nullptr;
-		Camera mCamera;
+		Mesh* Object = nullptr;
+		Camera ObjectCamera;
 	public:
-		ComponentMeshRenderer(Mesh* Mesh);
-
-		bool OnCreate() override;
-		bool OnUpdate() override;
+		ComponentMeshRenderer(Mesh* InMesh);
 
 		void Update(const float TimeTick) override;
 		void Render(Transform& Transform) override;
 		//This component methods
 		Type GetType() const override;
 		void SetLights(std::vector<Light*> Lights);
-		void SetCamera(Camera Camera);
+		void SetCamera(Camera InCamera);
 		ShaderProgram* GetShader() const;
 		void SetShader(ShaderProgram* Shader);
 		void SetReflection(Cubemap* Cubemap);

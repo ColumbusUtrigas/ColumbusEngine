@@ -69,20 +69,6 @@ namespace Columbus
 			return Value;
 		}
 		/*
-		* Return true if Value is Nan (not a number)
-		*/
-		static constexpr inline bool IsNan(float Value) noexcept
-		{
-			return ((*(uint32*)&Value) & 0x7FFFFFFF) > 0x7F800000;
-		}
-		/*
-		* Return true if Value if finite (not NaN and not infinity)
-		*/
-		static constexpr inline bool IsFinite(float Value) noexcept
-		{
-			return ((*(uint32*)&Value) & 0x7F800000) != 0x7F800000;
-		}
-		/*
 		* Return absolute value in a generic way
 		*/
 		template <class T>

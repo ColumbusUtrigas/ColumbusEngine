@@ -4,8 +4,6 @@ namespace Columbus
 {
 
 	ComponentRigidbody::ComponentRigidbody(Rigidbody* RB) : RB(RB) {}
-	bool ComponentRigidbody::OnCreate() { return false; }
-	bool ComponentRigidbody::OnUpdate() { return false; }
 	void ComponentRigidbody::Update(const float TimeTick) {}
 
 	void ComponentRigidbody::Render(Transform& Transform)

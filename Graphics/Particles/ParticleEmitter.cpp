@@ -150,7 +150,7 @@ namespace Columbus
 				}
 			}
 
-			if (mParticleEffect->Required->Transformation == E_PARTICLE_TRANSFORMATION_LOCAL)
+			if (mParticleEffect->Required->Transformation == ParticleTransformation::Local)
 			{
 				Particle.startEmitterPos = startEmitterPos;
 			}
@@ -165,7 +165,7 @@ namespace Columbus
 			counter++;
 		}
 
-		if (mParticleEffect->Required->SortMode == E_PARTICLE_SORT_MODE_DISTANCE)
+		if (mParticleEffect->Required->SortMode == ParticleSortMode::Distance)
 		{
 			sort();
 		}
@@ -197,7 +197,7 @@ namespace Columbus
 	
 	void ParticleEmitter::setUniforms()
 	{
-		ParticleModuleSubUV* SubUV = static_cast<ParticleModuleSubUV*>(mParticleEffect->GetModule(E_PARTICLE_MODULE_SUBUV));
+		ParticleModuleSubUV* SubUV = static_cast<ParticleModuleSubUV*>(mParticleEffect->GetModule(ParticleModule::Type::SubUV));
 
 		if (mParticleEffect->Required == nullptr ||
 		    SubUV == nullptr) return;

@@ -70,45 +70,6 @@ namespace Columbus
 		}
 	}
 
-	/*
-	* Additional functions for angles convertation
-	*/
-	void MatrixToAngles(btMatrix3x3& InMatrix, Vector3& OutAngles)
-	{
-		auto Forward = InMatrix.getColumn(2);
-		auto Left = InMatrix.getColumn(0);
-		auto Up = InMatrix.getColumn(1);
-
-		float Dist = sqrtf(Forward.getZ() * Forward.getZ() + Forward.getX() * Forward.getX());
-		
-		//Enough here to get angles?
-		if (Dist > 0.001f)
-		{
-			// (yaw) y = ATAN(Forward.y, Forward.x);
-			OutAngles.Y = Math::Degrees(atan2f(Forward.getX(), Forward.getZ()));
-
-			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
-			OutAngles.X = Math::Degrees(atan2f(-Forward.getY(), Dist));
-
-			// (roll) z = ATAN(Left.z, Up.z);
-			OutAngles.Z = Math::Degrees(atan2f(Left.getY(), Up.getY()));
-		}
-		else
-		{
-			// (yaw) y = ATAN(-Left.x, Left.y);
-			OutAngles.Y = Math::Degrees(atan2f(-Left.getZ(), Left.getX()));
-
-			// (pitch) x = ATAN(-Forward.z, sqrt(Forward.x * Forward.x + Forward.y * Forward.y));
-			OutAngles.X = Math::Degrees(atan2f(-Forward.getY(), Dist));
-
-			// Assume no roll in this case as one degree of freedom has been lost (i.e. yaw == roll)
-			OutAngles.Z = 0;
-		}
-	}
-	/*
-	* End of additional functions for angles convertation
-	*/
-
 	void Rigidbody::SetTransform(Transform Transform)
 	{
 		if (mRigidbody != nullptr)

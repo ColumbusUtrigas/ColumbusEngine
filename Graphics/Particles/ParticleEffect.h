@@ -61,7 +61,7 @@ namespace Columbus
 		ParticleEffect(std::string aFile, Material* aMaterial);
 
 		void AddModule(ParticleModule* Module);
-		ParticleModule* GetModule(ParticleModuleType Type) const;
+		ParticleModule* GetModule(ParticleModule::Type Type) const;
 
 		void setMaterial(const Material* aMaterial);
 		void setPos(const Vector3 aPos);

@@ -15,7 +15,7 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		virtual ParticleModuleType GetType() const { return E_PARTICLE_MODULE_LIFETIME; }
+		Type GetType() const override { return Type::Lifetime; }
 		/*
 		* Random value between Min and Max
 		*/
@@ -26,9 +26,9 @@ namespace Columbus
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			aParticle.TTL = Random::range(Min, Max);
+			OutParticle.TTL = Random::range(Min, Max);
 		}
 
 		~ParticleModuleLifetime() override {}

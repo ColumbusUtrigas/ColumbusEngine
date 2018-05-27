@@ -15,10 +15,7 @@ namespace Columbus
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	TextureManager::TextureManager() :
-		mSmooth(true),
-		mMipmaps(true),
-		mAnisotropy(8)
+	TextureManager::TextureManager()
 	{
 
 	}

@@ -7,9 +7,6 @@ namespace Columbus
 		Object(InMesh)
 	{ }
 
-	bool ComponentMeshInstancedRenderer::OnCreate() { return false; }
-	bool ComponentMeshInstancedRenderer::OnUpdate() { return false; }
-
 	void ComponentMeshInstancedRenderer::Update(const float TimeTick)
 	{
 		if (Object != nullptr)

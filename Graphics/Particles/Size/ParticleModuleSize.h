@@ -18,18 +18,18 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_SIZE; }
+		Type GetType() const override { return Type::Size; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			aParticle.size = Vector3::Random(Min, Max);
+			OutParticle.size = Vector3::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override { }
+		void Update(Particle& OutParticle) override { }
 
 		~ParticleModuleSize() override { }
 	};

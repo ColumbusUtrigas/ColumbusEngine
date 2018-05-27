@@ -1,91 +1,70 @@
-/************************************************
-*                MeshRenderer.cpp               *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #include <Scene/ComponentMeshRenderer.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	ComponentMeshRenderer::ComponentMeshRenderer(Mesh* Mesh) :
-		mMesh(Mesh)
-	{
-		
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool ComponentMeshRenderer::OnCreate()
-	{
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ComponentMeshRenderer::OnUpdate()
-	{
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
+	ComponentMeshRenderer::ComponentMeshRenderer(Mesh* InMesh) :
+		Object(InMesh)
+	{ }
+	
 	void ComponentMeshRenderer::Update(const float TimeTick)
 	{
-		if (mMesh != nullptr)
+		if (Object != nullptr)
 		{
-			mMesh->SetCamera(mCamera);
+			Object->SetCamera(ObjectCamera);
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	void ComponentMeshRenderer::Render(Transform& Transform)
 	{
-		if (mMesh != nullptr)
+		if (Object != nullptr)
 		{
-			mMesh->Render(Transform);
+			Object->Render(Transform);
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Component::Type ComponentMeshRenderer::GetType() const
 	{
 		return Component::Type::MeshRenderer;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ComponentMeshRenderer::SetLights(std::vector<Light*> aLights)
 	{
-		mMesh->SetLights(aLights);
+		Object->SetLights(aLights);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void ComponentMeshRenderer::SetCamera(Camera Camera)
+	
+	void ComponentMeshRenderer::SetCamera(Camera InCamera)
 	{
-		mCamera = Camera;
+		ObjectCamera = InCamera;
 	}
 	
 	ShaderProgram* ComponentMeshRenderer::GetShader() const
 	{
-		if (mMesh == nullptr) return nullptr;
-		return mMesh->mMat.GetShader();
+		if (Object != nullptr)
+		{
+			return Object->mMat.GetShader();
+		}
+
+		return nullptr;
 	}
 	
 	void ComponentMeshRenderer::SetShader(ShaderProgram* Shader)
 	{
-		if (mMesh == nullptr) return;
-		mMesh->mMat.SetShader(Shader);
+		if (Object != nullptr)
+		{
+			Object->mMat.SetShader(Shader);
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void ComponentMeshRenderer::SetReflection(Cubemap* Cubemap)
 	{
-		if (mMesh == nullptr) return;
-		mMesh->mMat.setReflection(Cubemap);
+		if (Object != nullptr)
+		{
+			Object->mMat.setReflection(Cubemap);
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	ComponentMeshRenderer::~ComponentMeshRenderer()
-	{
-
-	}
+	
+	ComponentMeshRenderer::~ComponentMeshRenderer() { }
 
 }
 
