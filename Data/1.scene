@@ -492,7 +492,7 @@
 			<Name>Cube3</Name>
 
 			<Transform>
-				<Position X="0" Y="36" Z="0"/>
+				<Position X="1" Y="36" Z="0"/>
 				<Rotation X="0" Y="0" Z="0"/>
 				<Scale X="2" Y="2" Z="2"/>
 			</Transform>

@@ -107,7 +107,10 @@
 			Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 		}
 		
-		Cubemap();
+		if (textureSize(uMaterial.ReflectionMap, 0).x > 1)
+		{
+			Cubemap();
+		}
 
 		Final();
 	}
@@ -199,14 +202,14 @@
 	void Cubemap(void)
 	{
 		vec3 I = normalize(uCamera.Position - varFragPos);
-	    //vec3 R = reflect(I, normalize(varFragPos));
-	   	vec3 R = normalize(reflect(I, Normal));
-	   	CubemapColor = texture(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
+		//vec3 R = reflect(I, normalize(varFragPos));
+		vec3 R = normalize(reflect(I, Normal));
+		CubemapColor = texture(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
 
-	   	if (IsSpecularMap)
-	   	{
+		if (IsSpecularMap)
+		{
 			CubemapColor *= SpecularMap;
-	   	}
+		}
 
 		CubemapColor *= uMaterial.Color.rgb;
 	}
@@ -215,17 +218,11 @@
 	{
 		if (DiffuseMap.xyz != vec3(0))
 		{
-			if (CubemapColor != vec3(0))
-				FragColor = Lighting * DiffuseMap + vec4(CubemapColor, 1.0);
-			else
-				FragColor = Lighting * DiffuseMap;
+			FragColor = Lighting * DiffuseMap + vec4(CubemapColor, 0.0);
 		}
 		else
 		{
-			if (CubemapColor != vec3(0))
-				FragColor = Lighting + vec4(CubemapColor, 1.0);
-			else
-				FragColor = Lighting;
+			FragColor = Lighting + vec4(CubemapColor, 0.0);
 		}
 	}
 
