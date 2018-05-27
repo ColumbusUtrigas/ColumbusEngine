@@ -8,41 +8,51 @@ namespace Columbus
 	class ParticleModuleSubUV : public ParticleModuleSubUVBase
 	{
 	public:
+		/*
+		* If nedded to create particle spritesheet animation or random texture from sheet
+		*/
+		enum class SubUVMode
+		{
+			Linear,
+			Random
+		};
+	public:
 		int Horizontal;
 		int Vertical;
-		ParticleSubUVMode Mode;
+		SubUVMode Mode;
 		float Cycles;
 
 		ParticleModuleSubUV() :
 			Horizontal(1),
 			Vertical(1),
-			Mode(E_PARTICLE_SUB_UV_MODE_LINEAR),
+			Mode(SubUVMode::Linear),
 			Cycles(1.0f) {}
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_SUBUV; }
+		Type GetType() const override { return Type::SubUV; }
 		/*
 		* Set random frame for particle if random and 0 if linear
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			if (Mode == E_PARTICLE_SUB_UV_MODE_LINEAR)
+			if (Mode == SubUVMode::Linear)
 			{
-				aParticle.frame = 0;
-			} else
+				OutParticle.frame = 0;
+			}
+			else
 			{
-				aParticle.frame = Math::TruncToInt(Random::range(0.0f, float(Horizontal * Vertical)));
+				OutParticle.frame = Math::TruncToInt(Random::range(0.0f, float(Horizontal * Vertical)));
 			}
 		}
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override
+		void Update(Particle& OutParticle) override
 		{
-			if (Mode == E_PARTICLE_SUB_UV_MODE_LINEAR)
+			if (Mode == SubUVMode::Linear)
 			{
-				aParticle.frame = Math::TruncToInt(floor(Horizontal * Vertical * aParticle.percent * Cycles));
+				OutParticle.frame = Math::TruncToInt(floor(Horizontal * Vertical * OutParticle.percent * Cycles));
 			}
 		}
 

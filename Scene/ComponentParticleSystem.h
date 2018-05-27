@@ -13,10 +13,7 @@ namespace Columbus
 	private:
 		ParticleEmitter* Emitter = nullptr;
 	public:
-		ComponentParticleSystem(ParticleEmitter* Emitter);
-
-		bool OnCreate() override;
-		bool OnUpdate() override;
+		ComponentParticleSystem(ParticleEmitter* InEmitter);
 
 		void Update(const float TimeTick) override;
 		void Render(Transform& Transform) override;

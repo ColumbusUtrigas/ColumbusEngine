@@ -17,18 +17,18 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_COLOR; }
+		Type GetType() const override { return Type::Color; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			aParticle.color = Vector4::random(Min, Max);
+			OutParticle.color = Vector4::random(Min, Max);
 		}
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override {}
+		void Update(Particle& OutParticle) override {}
 
 		~ParticleModuleColor() override {}
 	};

@@ -40,8 +40,7 @@ namespace Columbus
 
 		Matrix ProjectionMatrix;
 		Matrix ViewMatrix;
-
-		bool rotMode = false;
+		
 		bool preTargeted = false;
 	public:
 		Camera();

@@ -24,21 +24,21 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_COLOR; }
+		Type GetType() const override { return Type::Color; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			aParticle.startColor = Vector4::random(MinStart, MaxStart);
-			aParticle.finalColor = Vector4::random(MinFinal, MaxFinal);
+			OutParticle.startColor = Vector4::random(MinStart, MaxStart);
+			OutParticle.finalColor = Vector4::random(MinFinal, MaxFinal);
 		}
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override
+		void Update(Particle& OutParticle) override
 		{
-			aParticle.color = ColorCurve.Interpolate(aParticle.percent);
+			OutParticle.color = ColorCurve.Interpolate(OutParticle.percent);
 		}
 
 		~ParticleModuleColorOverLife() override {}

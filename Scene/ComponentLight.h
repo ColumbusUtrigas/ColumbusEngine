@@ -9,15 +9,12 @@ namespace Columbus
 	class ComponentLight : public Component
 	{
 	private:
-		Light* mLight = nullptr;
+		Light* LightSource = nullptr;
 	public:
-		ComponentLight(Light* aLight);
+		ComponentLight(Light* InLight);
 
-		bool OnCreate() override;
-		bool OnUpdate() override;
-
-		void Update(const float aTimeTick) override;
-		void Render(Transform& aTransform) override;
+		void Update(const float TimeTick) override;
+		void Render(Transform& Trans) override;
 		//This component methods
 		Type GetType() const override;
 		Light* GetLight() const;

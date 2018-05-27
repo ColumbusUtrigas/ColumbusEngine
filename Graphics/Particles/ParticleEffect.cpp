@@ -39,7 +39,7 @@ namespace Columbus
 		Modules.push_back(Module);
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	ParticleModule* ParticleEffect::GetModule(ParticleModuleType Type) const
+	ParticleModule* ParticleEffect::GetModule(ParticleModule::Type Type) const
 	{
 		for (auto Module : Modules)
 		{

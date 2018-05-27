@@ -12,16 +12,10 @@ namespace Columbus
 	class ComponentMeshInstancedRenderer : public Component
 	{
 	private:
-		bool CreateMoment = true;
-		bool UpdateMoment = false;
-
 		MeshInstanced* Object = nullptr;
 		Camera ObjectCamera;
 	public:
 		ComponentMeshInstancedRenderer(MeshInstanced* InMesh);
-
-		bool OnCreate() override;
-		bool OnUpdate() override;
 
 		void Update(const float TimeTick) override;
 		void Render(Transform& InTransform) override;

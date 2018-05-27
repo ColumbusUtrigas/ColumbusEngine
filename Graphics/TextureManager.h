@@ -20,10 +20,6 @@ namespace Columbus
 	class TextureManager
 	{
 	private:
-		bool mSmooth = true;
-		bool mMipmaps = true;
-		unsigned int mAnisotropy = 8;
-
 		std::list<Texture*> mTextures;
 
 		size_t mSize = 0;

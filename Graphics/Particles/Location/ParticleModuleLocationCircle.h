@@ -18,20 +18,20 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_LOCATION; }
+		Type GetType() const override { return Type::Location; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
 			float ang = Random::range(0.0, 6.283185306);
 			float rad = Random::range(0.0, Radius);
 
 			if (EmitFromShell) rad = Radius;
 
-			aParticle.startPos.X = rad * Math::Cos(ang);
-			aParticle.startPos.Y = 0.0;
-			aParticle.startPos.Z = rad * Math::Sin(ang);
+			OutParticle.startPos.X = rad * Math::Cos(ang);
+			OutParticle.startPos.Y = 0.0;
+			OutParticle.startPos.Z = rad * Math::Sin(ang);
 		}
 
 		~ParticleModuleLocationCircle() override { }

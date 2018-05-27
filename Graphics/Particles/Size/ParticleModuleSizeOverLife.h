@@ -22,21 +22,21 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_SIZE; }
+		Type GetType() const override { return Type::Size; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			aParticle.startSize = Vector3::Random(MinStart, MaxStart);
-			aParticle.finalSize = Vector3::Random(MinFinal, MaxFinal);
+			OutParticle.startSize = Vector3::Random(MinStart, MaxStart);
+			OutParticle.finalSize = Vector3::Random(MinFinal, MaxFinal);
 		}
 		/*
 		* Update particle parameter
 		*/
-		void Update(Particle& aParticle) override
+		void Update(Particle& OutParticle) override
 		{
-			aParticle.size = aParticle.startSize * (1 - aParticle.percent) + aParticle.finalSize * aParticle.percent;
+			OutParticle.size = OutParticle.startSize * (1 - OutParticle.percent) + OutParticle.finalSize * OutParticle.percent;
 		}
 
 		~ParticleModuleSizeOverLife() override { }

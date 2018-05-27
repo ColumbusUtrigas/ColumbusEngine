@@ -16,8 +16,7 @@ namespace Columbus
 		uint64 NOffset = 0;
 		uint64 TOffset = 0;
 
-		float LightUniform[120];
-		float MaterialUnif[15];
+		//float LightUniform[120];
 		float UniformModelMatrix[16];
 		float UniformViewMatrix[16];
 		float UniformProjectionMatrix[16];

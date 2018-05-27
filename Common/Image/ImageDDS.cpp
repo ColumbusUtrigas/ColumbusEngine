@@ -374,7 +374,7 @@ namespace Columbus
 			return nullptr;
 		}
 
-		if ((Header.PixelFormat.Flags & 0x4) == 0)
+		if ((Header.PixelFormat.Flags & DDSFourCC) == 0x00)
 		{
 			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS Pixel format flags");
 			return nullptr;

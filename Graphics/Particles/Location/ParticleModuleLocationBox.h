@@ -18,38 +18,38 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_LOCATION; }
+		Type GetType() const override { return Type::Location; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
 			if (EmitFromShell)
 			{
 				switch (rand() % 3)
 				{
 				case 0:
-					aParticle.startPos.X = Size.X * 0.5f * ((rand() % 2) ? -1 : 1);
-					aParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
-					aParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
+					OutParticle.startPos.X = Size.X * 0.5f * ((rand() % 2) ? -1 : 1);
+					OutParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
+					OutParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
 					break;
 				case 1:
-					aParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
-					aParticle.startPos.Y = Size.Y * 0.5f * ((rand() % 2) ? -1 : 1);
-					aParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
+					OutParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
+					OutParticle.startPos.Y = Size.Y * 0.5f * ((rand() % 2) ? -1 : 1);
+					OutParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
 					break;
 				case 2:
-					aParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
-					aParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
-					aParticle.startPos.Z = Size.Z * 0.5f * ((rand() % 2) ? -1 : 1);
+					OutParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
+					OutParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
+					OutParticle.startPos.Z = Size.Z * 0.5f * ((rand() % 2) ? -1 : 1);
 					break;
 				}
 			}
 			else
 			{
-				aParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
-				aParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
-				aParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
+				OutParticle.startPos.X = Random::range(-Size.X * 0.5f, Size.X * 0.5f);
+				OutParticle.startPos.Y = Random::range(-Size.Y * 0.5f, Size.Y * 0.5f);
+				OutParticle.startPos.Z = Random::range(-Size.Z * 0.5f, Size.Z * 0.5f);
 			}
 		}
 

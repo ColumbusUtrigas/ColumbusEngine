@@ -21,14 +21,14 @@ namespace Columbus
 		/*
 		* For determening module type
 		*/
-		ParticleModuleType GetType() const override { return E_PARTICLE_MODULE_ROTATION; }
+		Type GetType() const override { return Type::Rotation; }
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& aParticle) override
+		void Spawn(Particle& OutParticle) override
 		{
-			aParticle.rotation = Random::range(Min, Max);
-			aParticle.rotationSpeed = Random::range(MinVelocity, MaxVelocity);
+			OutParticle.rotation = Random::range(Min, Max);
+			OutParticle.rotationSpeed = Random::range(MinVelocity, MaxVelocity);
 		}
 
 		~ParticleModuleRotation() override {}
