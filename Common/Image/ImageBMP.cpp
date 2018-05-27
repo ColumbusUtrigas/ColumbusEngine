@@ -30,19 +30,6 @@ namespace Columbus
 		uint32 important_colors; //Number of important colors;
 	} BMP_INFO;
 
-	static bool ReadHeader(BMP_HEADER* aHeader, File* aFile)
-	{
-		if (aHeader == nullptr || aFile == nullptr) return false;
-
-		if (!aFile->ReadUint8(&aHeader->magic[0])) return false;
-		if (!aFile->ReadUint8(&aHeader->magic[1])) return false;
-		if (!aFile->ReadUint32(&aHeader->size)) return false;
-		if (!aFile->ReadUint32(&aHeader->unused)) return false;
-		if (!aFile->ReadUint32(&aHeader->offset)) return false;
-
-		return true;
-	}
-
 	static bool WriteHeader(BMP_HEADER aHeader, File* aFile)
 	{
 		if (aFile == nullptr) return false;
@@ -52,29 +39,6 @@ namespace Columbus
 		if (!aFile->WriteUint32(aHeader.size)) return false;
 		if (!aFile->WriteUint32(aHeader.unused)) return false;
 		if (!aFile->WriteUint32(aHeader.offset)) return false;
-
-		return true;
-	}
-
-	static bool ReadInfo(BMP_INFO* aInfo, File* aFile)
-	{
-		if (aInfo == nullptr || aFile == nullptr) return false;
-
-		if (!aFile->ReadUint32(&aInfo->infosize)) return false;
-		if (!aFile->ReadInt32(&aInfo->width)) return false;
-		if (!aFile->ReadInt32(&aInfo->height)) return false;
-		if (!aFile->ReadUint16(&aInfo->planes)) return false;
-		if (!aFile->ReadUint16(&aInfo->bits)) return false;
-		if (!aFile->ReadUint32(&aInfo->compression)) return false;
-		if (!aFile->ReadUint32(&aInfo->size_data)) return false;
-		if (!aFile->ReadUint32(&aInfo->hres)) return false;
-		if (!aFile->ReadUint32(&aInfo->vres)) return false;
-		if (!aFile->ReadUint32(&aInfo->colors)) return false;
-		if (!aFile->ReadUint32(&aInfo->important_colors)) return false;
-
-		uint8_t* empty = (uint8*)Memory::Malloc(68);
-		aFile->ReadBytes(empty, 68);
-		free(empty);
 
 		return true;
 	}

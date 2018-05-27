@@ -13,6 +13,9 @@
 #include <Math/Matrix4.h>
 #include <Math/Matrix.h>
 
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 namespace Columbus
 {
 
@@ -25,6 +28,8 @@ namespace Columbus
 		Matrix ModelMatrix;
 		Matrix4 NormalMatrix;
 	public:
+		glm::quat RotationQuaternion;
+
 		Transform();
 		Transform(Vector3 Pos);
 		Transform(Vector3 Pos, Vector3 Rot);
@@ -35,6 +40,7 @@ namespace Columbus
 		Vector3 GetPos() const;
 
 		void SetRot(Vector3 Rot);
+		void SetRot(glm::quat InRotation);
 		void AddRot(Vector3 Rot);
 		Vector3 GetRot() const;
 
@@ -45,7 +51,7 @@ namespace Columbus
 		void Update();
 
 		void SetMatrix(Matrix InMatrix);
-		Matrix GetMatrix() const;
+		Matrix& GetMatrix();
 		Matrix4 GetNormalMatrix() const;
 
 		~Transform();

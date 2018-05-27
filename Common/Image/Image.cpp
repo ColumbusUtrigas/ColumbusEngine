@@ -12,6 +12,10 @@ namespace Columbus
 		case TextureFormat::BGR:  return 3; break;
 		case TextureFormat::RGBA:
 		case TextureFormat::BGRA: return 4; break;
+		case TextureFormat::S3TC_A1:
+		case TextureFormat::S3TC_A4:
+		case TextureFormat::S3TC_A8:
+		case TextureFormat::Unknown: return 0; break;
 		}
 
 		return 0;
@@ -186,6 +190,9 @@ namespace Columbus
 		case ImageFormat::BMP:
 			return ImageSaveBMP(FileName, Width, Height, BPP, Data);
 			break;
+		case ImageFormat::DDS:
+			return false; //TODO
+			break;
 		case ImageFormat::TGA:
 			return ImageSaveTGA(FileName, Width, Height, BPP, Data);
 			break;
@@ -197,6 +204,9 @@ namespace Columbus
 			break;
 		case ImageFormat::JPG:
 			return ImageSaveJPG(FileName, Width, Height, BPP, Data, Quality);
+			break;
+		case ImageFormat::Unknown:
+			return false;
 			break;
 		}
 
@@ -232,9 +242,10 @@ namespace Columbus
 
 			switch (Flags)
 			{
-			case ImageLoading::FlipX:  FlipX(); break;
-			case ImageLoading::FlipY:  FlipY(); break;
+			case ImageLoading::FlipX:  FlipX();  break;
+			case ImageLoading::FlipY:  FlipY();  break;
 			case ImageLoading::FlipXY: FlipXY(); break;
+			case ImageLoading::None: break;
 			}
 
 			return true;

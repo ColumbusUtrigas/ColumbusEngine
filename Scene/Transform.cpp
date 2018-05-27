@@ -14,6 +14,8 @@
 #include <Math/TranslationMatrix.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace Columbus
 {
@@ -45,7 +47,7 @@ namespace Columbus
 		Scale(Scale),
 		ModelMatrix(1.0f)
 	{
-
+		SetRot(Rot);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -71,6 +73,12 @@ namespace Columbus
 	void Transform::SetRot(Vector3 Rot)
 	{
 		this->Rotation = Rot;
+		SetRot(glm::quat(glm::vec3(Math::Radians(Rot.X), Math::Radians(Rot.Y), Math::Radians(Rot.Z))));
+	}
+
+	void Transform::SetRot(glm::quat InRotation)
+	{
+		RotationQuaternion = InRotation;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Transform::AddRot(Vector3 Rot)
@@ -104,23 +112,19 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Transform::Update()
 	{
-		//Matrix.scale(Scale);
-		//Matrix.rotate(Vector3(0, 1, 0), Rotation.y);
-		//Matrix.rotate(Vector3(1, 0, 0), Rotation.x);
-		//Matrix.rotate(Vector3(0, 0, 1), Rotation.z);
-		//Matrix.translate(Position);
+		glm::mat4 RotationMatrix = glm::mat4_cast(RotationQuaternion);
+		float* Value = glm::value_ptr(RotationMatrix);
+
+		Matrix tRotationMatrix;
+		memcpy(&tRotationMatrix.M[0][0], Value, 64);
 
 		ModelMatrix.SetIdentity();
 		ModelMatrix.Scale(Scale);
-		//ModelMatrix = ModelMatrix.GetRotation(Rotation) * ModelMatrix;
-		ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.X);
-		ModelMatrix.Rotate(Vector3(0, 1, 0), Rotation.Y);
-		ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.Z);
+		//ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.X);
+		//ModelMatrix.Rotate(Vector3(0, 1, 0), Rotation.Y);
+		//ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.Z);
+		ModelMatrix = ModelMatrix * tRotationMatrix;
 		ModelMatrix.Translate(Position);
-
-		//NormalMatrix = Matrix;
-		//NormalMatrix.transpose();
-		//NormalMatrix.invert();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -130,7 +134,7 @@ namespace Columbus
 		this->ModelMatrix = InMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	Matrix Transform::GetMatrix() const
+	Matrix& Transform::GetMatrix()
 	{
 		return ModelMatrix;
 	}
