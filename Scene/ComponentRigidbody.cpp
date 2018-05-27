@@ -10,7 +10,8 @@ namespace Columbus
 
 	void ComponentRigidbody::Render(Transform& Transform)
 	{
-		RB->SetTransform(Transform);
+		//FUCK THIS SHIT
+		//RB->SetTransform(Transform);
 	}
 	/*
 	* This component methods

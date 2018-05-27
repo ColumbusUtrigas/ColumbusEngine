@@ -115,22 +115,13 @@ namespace Columbus
 		{
 			btTransform Trans;
 			Vector3 pos = Transform.GetPos();
-			Vector3 rot = Transform.GetRot();
 			Vector3 scale = Transform.GetScale();
 
-			if (rot.X > 180) rot.X -= 360;
-			if (rot.Y > 180) rot.Y -= 360;
-			if (rot.Z > 180) rot.Z -= 360;
-
-			rot.X = Math::Radians(rot.Z);
-			rot.Y = Math::Radians(rot.Y);
-			rot.Z = Math::Radians(rot.Z);
-
-			//btQuaternion quat; quat.setEulerZYX(rot.z, rot.y, rot.x);
+			glm::quat tQuat = Transform.RotationQuaternion;
+			btQuaternion bQuat(tQuat.x, tQuat.y, tQuat.z, tQuat.w);
 
 			Trans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
-			Trans.getBasis().setEulerZYX(rot.X, rot.Z, rot.Y);
-			//Trans.setRotation(quat);
+			Trans.setRotation(bQuat);
 			mRigidbody->proceedToTransform(Trans);
 
 			this->Trans = Transform;
@@ -267,35 +258,27 @@ namespace Columbus
 
 	Transform Rigidbody::GetTransform() const
 	{
-		Transform Trans;
+		Transform Result;
 
 		if (mRigidbody != nullptr)
 		{
 			btTransform bTrans;
-			btVector3 pos;
-			Vector3 rot;
 
 			bTrans = mRigidbody->getWorldTransform();
+			//mRigidbody->getMotionState()->getWorldTransform(bTrans);
 
-			pos = bTrans.getOrigin();
+			Result.SetPos(Vector3(bTrans.getOrigin().getX(), bTrans.getOrigin().getY(), bTrans.getOrigin().getZ()));
+			Result.SetRot(glm::quat(-bTrans.getRotation().getZ(), bTrans.getRotation().getY(), bTrans.getRotation().getX(), bTrans.getRotation().getW()));
+			Result.SetScale(Trans.GetScale());
+			Result.Update(); //Hmmm
 
-			MatrixToAngles(bTrans.getBasis(), rot);
+			glm::vec3 rot(-3.141592653, 0, 0);
+			Result.RotationQuaternion = glm::normalize(Result.RotationQuaternion * glm::quat(rot));
 
-			/*bTrans.getBasis().getEulerYPR(rot.x, rot.z, rot.y);
-
-			rot.x = Degrees(rot.x);
-			rot.y = Degrees(rot.y);
-			rot.z = Degrees(rot.z);*/
-
-			Trans.SetPos(Vector3(pos.getX(), pos.getY(), pos.getZ()));
-			Trans.SetRot(Vector3(rot.X, rot.Y, rot.Z));
-			Trans.SetScale(this->Trans.GetScale());
-			Trans.Update(); //Hmmm
-
-			(Transform)this->Trans = Trans;
+			(Transform)this->Trans = Result;
 		}
 
-		return Trans;
+		return Result;
 	}
 
 	float Rigidbody::GetMass() const

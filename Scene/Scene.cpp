@@ -588,7 +588,7 @@ namespace Columbus
 		meshWorkflow();
 		meshInstancedWorkflow();
 		particlesWorkflow();
-		//rigidbodyWorkflow();
+		rigidbodyWorkflow();
 
 		PhysWorld.Step(Math::TruncToFloat(DeltaTime.elapsed()), 10);
 		DeltaTime.reset();

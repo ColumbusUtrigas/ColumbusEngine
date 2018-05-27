@@ -8,7 +8,25 @@
 
 #include <Audio/AudioPlayer.h>
 
+#include <btBulletDynamicsCommon.h>
+
 using namespace Columbus;
+
+class Rotator : public Component
+{
+private:
+	Vector3 v;
+public:
+	void Update(float TimeTick) override
+	{
+		v += Vector3(0, 45, 0) * TimeTick;
+	}
+
+	void Render(Transform& Trans) override
+	{
+		Trans.SetRot(v);
+	}
+};
 
 int main(int argc, char** argv)
 {
@@ -99,6 +117,7 @@ int main(int argc, char** argv)
 	go.AddComponent(new ComponentMeshInstancedRenderer(&mesh));
 
 	scene.add(20, &go);
+    scene.getGameObject(12)->AddComponent(new Rotator());
 
 	while (window.isOpen())
 	{
@@ -161,7 +180,7 @@ int main(int argc, char** argv)
 
 		scene.setContextSize(window.getSize());
 		scene.update();
-		scene.render();
+        scene.render();
 
 		window.display();
 
