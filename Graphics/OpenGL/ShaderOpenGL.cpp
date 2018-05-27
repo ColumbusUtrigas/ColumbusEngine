@@ -1,67 +1,12 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <RenderAPIOpenGL/OpenGL.h>
+#include <Graphics/OpenGL/StandartShadersOpenGL.h>
 #include <fstream>
 #include <algorithm>
 
 namespace Columbus
 {
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//STANDART SKYBOX VERTEX SHADER
-	const std::string gSkyVertexShader =
-		"#version 130\n"
-		"in vec3 aPos;\n"
-		"in vec2 aUV;\n"
-		"in vec3 aNorm;\n"
-		"out vec3 texCoord;\n"
-		"uniform mat4 uView;\n"
-		"uniform mat4 uProjection;\n"
-		"void main()\n"
-		"{\n"
-		"gl_Position = uProjection * uView * vec4(aPos, 1.0);\n"
-		"texCoord = aPos;\n"
-		"}\n";
-	//////////////////////////////////////////////////////////////////////////////
-	//STANDART SKYBOX FRAGMENT SHADER
-	const std::string gSkyFragmentShader =
-		"#version 130\n"
-		"out vec4 FragColor;\n"
-		"in vec3 texCoord;\n"
-		"uniform samplerCube uSkybox;\n"
-		"void main()\n"
-		"{\n"
-		"FragColor = textureCube(uSkybox, texCoord);\n"
-		"}\n";
-
-	const std::string gSkyboxShader =
-		"#ifdef VertexShader\n"
-		"attribute vec3 aPos;\n"
-		"attribute vec2 aUV;\n"
-		"attribute vec3 aNorm;\n"
-		"varying vec3 texCoord;\n"
-		"uniform mat4 uView;\n"
-		"uniform mat4 uProjection;\n"
-
-		"void main()\n"
-		"{\n"
-		"Position = uProjection * uView * vec4(aPos, 1.0);\n"
-		"texCoord = aPos;\n"
-		"}\n"
-		"#endif\n"
-
-		"#ifdef FragmentShader\n"
-		"varying vec3 texCoord;\n"
-		"uniform samplerCube uSkybox;\n"
-
-		"void main()\n"
-		"{\n"
-		"FragColor = textureCube(uSkybox, texCoord);\n"
-		"}\n"
-		"#endif\n";
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	/*
 	*
 	* Shader loading functions
@@ -105,7 +50,7 @@ namespace Columbus
 			{
 				if (InPath == "STANDART_SKY_VERTEX")
 				{
-					OutSource = gSkyVertexShader;
+					OutSource = gSkyboxVertexShader;
 					return true;
 				}
 				else if (ShaderLoadFromFile(InPath, OutSource, Builder, Type))
@@ -120,7 +65,7 @@ namespace Columbus
 			{
 				if (InPath == "STANDART_SKY_FRAGMENT")
 				{
-					OutSource = gSkyFragmentShader;
+					OutSource = gSkyboxFragmentShader;
 					return true;
 				}
 				else if (ShaderLoadFromFile(InPath, OutSource, Builder, Type))
@@ -213,15 +158,9 @@ namespace Columbus
 		
 		switch (InType)
 		{
-		case ShaderType::Vertex:
-			tType = GL_VERTEX_SHADER;
-			break;
-		case ShaderType::Fragment:
-			tType = GL_FRAGMENT_SHADER;
-			break;
-		default:
-			return false;
-			break;
+		case ShaderType::Vertex:   tType = GL_VERTEX_SHADER; break;
+		case ShaderType::Fragment: tType = GL_FRAGMENT_SHADER; break;
+		default: return false; break;
 		}
 		
 		ID = glCreateShader(tType);
@@ -302,6 +241,26 @@ namespace Columbus
 		{
 			Stages.push_back(Stage);
 		}
+	}
+
+	bool ShaderProgramOpenGL::Load(ShaderProgram::StandartProgram Program)
+	{
+		switch (Program)
+		{
+			case ShaderProgram::StandartProgram::Skybox:
+			{
+				ShaderStage* VertexStage = new ShaderStageOpenGL();
+				ShaderStage* FragmentStage = new ShaderStageOpenGL();
+
+				VertexStage->Load("STANDART_SKY_VERTEX", ShaderType::Vertex);
+				FragmentStage->Load("STANDART_SKY_FRAGMENT", ShaderType::Fragment);
+
+				AddStage(VertexStage);
+				AddStage(FragmentStage);
+			}
+		}
+
+		return true;
 	}
 
 	bool ShaderProgramOpenGL::Load(std::string FileName)
