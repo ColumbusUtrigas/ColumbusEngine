@@ -7,13 +7,7 @@ namespace Columbus
 	static ShaderProgram* CreateSkyboxShader()
 	{
 		ShaderProgram* tShader = gDevice->CreateShaderProgram();
-		ShaderStage *vert, *frag;
-		vert = gDevice->CreateShaderStage();
-		frag = gDevice->CreateShaderStage();
-		vert->Load("STANDART_SKY_VERTEX", ShaderType::Vertex);
-		frag->Load("STANDART_SKY_FRAGMENT", ShaderType::Fragment);
-		tShader->AddStage(vert);
-		tShader->AddStage(frag);
+		tShader->Load(ShaderProgram::StandartProgram::Skybox);
 		tShader->Compile();
 
 		tShader->AddUniform("uView");

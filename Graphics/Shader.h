@@ -58,6 +58,11 @@ namespace Columbus
 
 		bool Compiled;
 	public:
+		enum class StandartProgram
+		{
+			Skybox
+		};
+	public:
 		ShaderProgram() {}
 
 		bool IsLoaded() const
@@ -95,6 +100,7 @@ namespace Columbus
 
 		virtual void AddStage(ShaderStage* Stage) {}
 		virtual bool Load(std::string FileName) { return false; }
+		virtual bool Load(StandartProgram Program) { return false; }
 		virtual bool Compile() { return false; }
 
 		virtual void AddUniform(std::string Name) {}
