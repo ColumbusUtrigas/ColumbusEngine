@@ -84,14 +84,6 @@ int main(int argc, char** argv)
 
 	float xPos = 8.0f;
 
-	std::cout << "Uniform buffer support: " << (OpenGL::SupportsUniformBuffer() ? "Yes" : "No") << std::endl;
-	std::cout << "Instancing support: " << (OpenGL::SupportsInstancing() ? "Yes" : "No") << std::endl;
-	std::cout << "Transform feedback support: " << (OpenGL::SupportsTransformFeedback() ? "Yes" : "No") << std::endl;
-	std::cout << "Shaders support: " << (OpenGL::SupportsShader() ? "Yes" : "No") << std::endl;
-	std::cout << "Geometry shaders support: " << (OpenGL::SupportsGeometryShader() ? "Yes" : "No") << std::endl;
-	std::cout << "Tesselation support: " << (OpenGL::SupportsTesselation() ? "Yes" : "No") << std::endl;
-	std::cout << "Compute shaders support: " << (OpenGL::SupportsComputeShader() ? "Yes" : "No") << std::endl;
-
 	Material mat;
 	ShaderProgram* prog = gDevice->CreateShaderProgram();
 	prog->Load("Data/Shaders/StandartInstanced.glsl");
@@ -119,6 +111,9 @@ int main(int argc, char** argv)
 	scene.Add(20, go);
 	scene.getGameObject(12)->AddComponent(new Rotator());
 
+	auto Sphere = scene.getGameObject(15);
+	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
+
 	while (window.isOpen())
 	{
 		player.Play();
@@ -140,14 +135,24 @@ int main(int argc, char** argv)
 			camera.addPos(-camera.right() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_UP))
+
+		/*if (input.getKey(SDL_SCANCODE_UP))
 			camera.addRot(Vector3(-125 * RedrawTime, 0, 0));
 		if (input.getKey(SDL_SCANCODE_DOWN))
 			camera.addRot(Vector3(125 * RedrawTime, 0, 0));
 		if (input.getKey(SDL_SCANCODE_LEFT))
 			camera.addRot(Vector3(0, 125 * RedrawTime, 0));
 		if (input.getKey(SDL_SCANCODE_RIGHT))
-			camera.addRot(Vector3(0, -125 * RedrawTime, 0));
+			camera.addRot(Vector3(0, -125 * RedrawTime, 0));*/
+
+		if (input.getKey(SDL_SCANCODE_UP))
+			RB->mRigidbody->applyCentralImpulse(btVector3(-0.3, 0, 0));
+		if (input.getKey(SDL_SCANCODE_DOWN))
+			RB->mRigidbody->applyCentralImpulse(btVector3(0.3, 0, 0));
+		if (input.getKey(SDL_SCANCODE_LEFT))
+			RB->mRigidbody->applyCentralImpulse(btVector3(0, 0, 0.3));
+		if (input.getKey(SDL_SCANCODE_RIGHT))
+			RB->mRigidbody->applyCentralImpulse(btVector3(0, 0, -0.3));
 
 		if (input.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(-camera.up() * RedrawTime * 5);

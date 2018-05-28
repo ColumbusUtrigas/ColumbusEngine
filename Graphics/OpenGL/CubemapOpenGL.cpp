@@ -73,16 +73,30 @@ namespace Columbus
 			else
 			{
 				uint32 format = GL_RGBA;
+				bool IsDXT = false;
+
 				switch (mBitmaps[i].GetFormat())
 				{
 				case TextureFormat::RGB:  format = GL_RGB;  break;
 				case TextureFormat::RGBA: format = GL_RGBA; break;
+				case TextureFormat::S3TC_A1: format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; IsDXT = true; break;
+				case TextureFormat::S3TC_A4: format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; IsDXT = true; break;
+				case TextureFormat::S3TC_A8: format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; IsDXT = true; break;
 				default: format = GL_RGBA; break;
 				}
 
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
-					mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, format, GL_UNSIGNED_BYTE,
+				if (IsDXT)
+				{
+					glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
+						mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, mBitmaps[i].GetSize(),
 						mBitmaps[i].GetData());
+				}
+				else
+				{
+					glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
+						mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, format, GL_UNSIGNED_BYTE,
+						mBitmaps[i].GetData());
+				}
 			}
 		}
 
