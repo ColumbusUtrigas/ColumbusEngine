@@ -87,7 +87,6 @@ namespace Columbus
 
 			this->Trans = Transform;
 		}
-		//mShape->setLocalScaling(btVector3(scale.x, scale.y, scale.z)); //Hmmm
 	}
 
 	void Rigidbody::SetMass(float Mass)
@@ -229,7 +228,7 @@ namespace Columbus
 			//mRigidbody->getMotionState()->getWorldTransform(bTrans);
 
 			Result.SetPos(Vector3(bTrans.getOrigin().getX(), bTrans.getOrigin().getY(), bTrans.getOrigin().getZ()));
-			Result.SetRot(glm::quat(-bTrans.getRotation().getZ(), bTrans.getRotation().getY(), bTrans.getRotation().getX(), bTrans.getRotation().getW()));
+			Result.SetRot(glm::quat(-bTrans.getRotation().getZ(), -bTrans.getRotation().getY(), -bTrans.getRotation().getX(), bTrans.getRotation().getW()));
 			Result.SetScale(Trans.GetScale());
 			Result.Update(); //Hmmm
 

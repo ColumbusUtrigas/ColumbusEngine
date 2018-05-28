@@ -1,8 +1,8 @@
 <Cubemap>
-    <PosX>Data/Skyboxes/2/r.jpg</PosX>
-    <NegX>Data/Skyboxes/2/l.jpg</NegX>
-    <PosY>Data/Skyboxes/2/u.jpg</PosY>
-    <NegY>Data/Skyboxes/2/d.jpg</NegY>
-    <PosZ>Data/Skyboxes/2/b.jpg</PosZ>
-    <NegZ>Data/Skyboxes/2/f.jpg</NegZ>
+    <PosX>Data/Skyboxes/1/r.dds</PosX>
+    <NegX>Data/Skyboxes/1/l.dds</NegX>
+    <PosY>Data/Skyboxes/1/u.dds</PosY>
+    <NegY>Data/Skyboxes/1/d.dds</NegY>
+    <PosZ>Data/Skyboxes/1/b.dds</PosZ>
+    <NegZ>Data/Skyboxes/1/f.dds</NegZ>
 </Cubemap>
