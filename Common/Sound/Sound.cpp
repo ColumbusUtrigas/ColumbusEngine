@@ -12,7 +12,7 @@ namespace Columbus
 		return SoundFormat::Unknown;
 	}
 
-	uint16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		SoundFormat Format = SoundGetFormat(FileName);
 
@@ -66,7 +66,7 @@ namespace Columbus
 		return Channels;
 	}
 
-	uint16* Sound::GetBuffer() const
+	int16* Sound::GetBuffer() const
 	{
 		return Buffer;
 	}

@@ -25,11 +25,11 @@ namespace Columbus
 		return false;
 	}
 
-	uint16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		int16* Ret;
 		OutSize = stb_vorbis_decode_filename(FileName.c_str(), (int*)&OutChannels, (int*)&OutFrequency, &Ret) * OutChannels * sizeof(uint16);
-		return (uint16*)Ret;
+		return Ret;
 	}
 
 }

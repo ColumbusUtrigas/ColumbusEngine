@@ -515,7 +515,6 @@
 					<AngularTreshold>0.25</AngularTreshold>
 					<LinearDamping>0.3</LinearDamping>
 					<LinearTreshold>0.2</LinearTreshold>
-
 					<ShapeBox X="2" Y="2" Z="2"/>
 				</Rigidbody>
 			</Components>

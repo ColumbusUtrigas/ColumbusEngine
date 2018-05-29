@@ -110,7 +110,6 @@ int main(int argc, char** argv)
 
 	scene.Add(20, go);
 	scene.getGameObject(12)->AddComponent(new Rotator());
-	scene.getGameObject(18)->AddComponent(new Rotator());
 
 	auto Sphere = scene.getGameObject(15);
 	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();

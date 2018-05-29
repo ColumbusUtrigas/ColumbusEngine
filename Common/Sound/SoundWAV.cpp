@@ -70,7 +70,7 @@ namespace Columbus
 		return false;
 	}
 
-	uint16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		File WAVSoundFile(FileName, "rb");
 		if (!WAVSoundFile.IsOpened())
@@ -85,7 +85,7 @@ namespace Columbus
 			return nullptr;
 		}
 
-		uint16* WAVSoundData = new uint16[Header.DataSize / sizeof(uint16)];
+		int16* WAVSoundData = new int16[Header.DataSize / sizeof(int16)];
 
 		if (!WAVSoundFile.ReadBytes(WAVSoundData, Header.DataSize))
 		{

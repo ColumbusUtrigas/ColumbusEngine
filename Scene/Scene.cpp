@@ -98,7 +98,8 @@ namespace Columbus
 
 			if (rb != nullptr)
 			{
-				rb->Render(Object.second->transform);
+				//rb->Render(Object.second->transform);
+				rb->GetRigidbody()->SetTransform(Object.second->transform);
 			}
 		}
 	}
