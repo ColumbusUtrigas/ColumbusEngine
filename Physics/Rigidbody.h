@@ -11,7 +11,7 @@ namespace Columbus
 
 	class Rigidbody
 	{
-	private:
+	protected:
 		bool Static;
 		float Mass;
 		float Restitution;
@@ -29,24 +29,32 @@ namespace Columbus
 	public:
 		btRigidBody* mRigidbody;
 	public:
-		Rigidbody(PhysicsShape* Shape = nullptr);
-		Rigidbody(Transform Transform, PhysicsShape* Shape = nullptr);
+		Rigidbody(PhysicsShape* InShape = nullptr);
+		Rigidbody(Transform InTransform, PhysicsShape* INShape = nullptr);
 
-		virtual void SetStatic(bool Static);
-		virtual void SetTransform(Transform Transform);
-		virtual void SetMass(float Mass);
-		virtual void SetRestitution(float Restitution);
-		virtual void SetFriction(float Friction);
-		virtual void SetRollingFriction(float Friction);
-		virtual void SetAngularDamping(float Damping);
-		virtual void SetAngularTreshold(float Treshold);
-		virtual void SetAngularFactor(Vector3 Factor);
-		virtual void SetAngularVelocity(Vector3 Velocity);
-		virtual void SetLinearDamping(float Damping);
-		virtual void SetLinearTreshold(float Treshold);
-		virtual void SetLinearFactor(Vector3 Factor);
+		virtual void ApplyCentralForce(Vector3 Force);
+		virtual void ApplyCentralImpulse(Vector3 Impulse);
+		virtual void ApplyForce(Vector3 Force, Vector3 RelPos);
+		virtual void ApplyImpulse(Vector3 Impulse, Vector3 RelPos);
+		virtual void ApplyTorque(Vector3 Torque);
+		virtual void ApplyTorqueImpulse(Vector3 Torque);
+
+		virtual void SetStatic(bool InStatic);
+		virtual void SetTransform(Transform InTransform);
+		virtual void SetMass(float InMass);
+		virtual void SetRestitution(float InRestitution);
+		virtual void SetFriction(float InFriction);
+		virtual void SetRollingFriction(float InFriction);
+		virtual void SetAngularDamping(float InDamping);
+		virtual void SetAngularTreshold(float InTreshold);
+		virtual void SetAngularFactor(Vector3 InFactor);
+		virtual void SetAngularVelocity(Vector3 InVelocity);
+		virtual void SetLinearDamping(float InDamping);
+		virtual void SetLinearTreshold(float InTreshold);
+		virtual void SetLinearFactor(Vector3 InFactor);
 		virtual void SetLinearVelocity(Vector3 Velocity);
-		virtual void SetCollisionShape(PhysicsShape* Shape);
+		virtual void SetGravity(Vector3 Gravity);
+		virtual void SetCollisionShape(PhysicsShape* InShape);
 
 		virtual bool IsStatic() const;
 		virtual Transform GetTransform() const;
@@ -62,6 +70,7 @@ namespace Columbus
 		virtual float GetLinearTreshold() const;
 		virtual Vector3 GetLinearFactor() const;
 		virtual Vector3 GetLinearVelocity() const;
+		virtual Vector3 GetGravity() const;
 		virtual PhysicsShape* GetCollisionShape() const;
 
 		~Rigidbody();

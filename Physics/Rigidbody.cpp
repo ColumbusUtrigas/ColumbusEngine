@@ -3,7 +3,7 @@
 namespace Columbus
 {
 
-	Rigidbody::Rigidbody(PhysicsShape* Shape) :
+	Rigidbody::Rigidbody(PhysicsShape* InShape) :
 		Static(false),
 		Mass(1.0f),
 		Restitution(0.0f),
@@ -20,14 +20,14 @@ namespace Columbus
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
 		mRigidbody = new btRigidBody(*CI);
 
-		SetCollisionShape(Shape);
+		SetCollisionShape(InShape);
 		SetAngularDamping(AngularDamping);
 		SetLinearDamping(LinearDamping);
 		SetAngularTreshold(AngularTreshold);
 		SetLinearTreshold(LinearTreshold);
 	}
 
-	Rigidbody::Rigidbody(Transform Transform, PhysicsShape* Shape) :
+	Rigidbody::Rigidbody(Transform InTransform, PhysicsShape* InShape) :
 		Static(false),
 		Mass(1.0f),
 		Restitution(0.0f),
@@ -44,21 +44,75 @@ namespace Columbus
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
 		mRigidbody = new btRigidBody(*CI);
 
-		SetTransform(Transform);
-		SetCollisionShape(Shape);
+		SetTransform(InTransform);
+		SetCollisionShape(InShape);
 		SetAngularDamping(AngularDamping);
 		SetLinearDamping(LinearDamping);
 		SetAngularTreshold(AngularTreshold);
 		SetLinearTreshold(LinearTreshold);
 	}
 
-	void Rigidbody::SetStatic(bool Static)
+	void Rigidbody::ApplyCentralForce(Vector3 Force)
 	{
 		if (mRigidbody != nullptr)
 		{
-			this->Static = Static;
+			mRigidbody->activate();
+			mRigidbody->applyCentralForce(btVector3(Force.X, Force.Y, Force.Z));
+		}
+	}
 
-			if (Static == true)
+	void Rigidbody::ApplyCentralImpulse(Vector3 Impulse)
+	{
+		if (mRigidbody != nullptr)
+		{
+			mRigidbody->activate();
+			mRigidbody->applyCentralImpulse(btVector3(Impulse.X, Impulse.Y, Impulse.Z));
+		}
+	}
+
+	void Rigidbody::ApplyForce(Vector3 Force, Vector3 RelPos)
+	{
+		if (mRigidbody != nullptr)
+		{
+			mRigidbody->activate();
+			mRigidbody->applyForce(btVector3(Force.X, Force.Y, Force.Z), btVector3(RelPos.X, RelPos.Y, RelPos.Z));
+		}
+	}
+
+	void Rigidbody::ApplyImpulse(Vector3 Impulse, Vector3 RelPos)
+	{
+		if (mRigidbody != nullptr)
+		{
+			mRigidbody->activate();
+			mRigidbody->applyImpulse(btVector3(Impulse.X, Impulse.Y, Impulse.Z), btVector3(RelPos.X, RelPos.Y, RelPos.Z));
+		}
+	}
+
+	void Rigidbody::ApplyTorque(Vector3 Torque)
+	{
+		if (mRigidbody != nullptr)
+		{
+			mRigidbody->activate();
+			mRigidbody->applyTorque(btVector3(Torque.X, Torque.Y, Torque.Z));
+		}
+	}
+
+	void Rigidbody::ApplyTorqueImpulse(Vector3 Torque)
+	{
+		if (mRigidbody != nullptr)
+		{
+			mRigidbody->activate();
+			mRigidbody->applyTorqueImpulse(btVector3(Torque.X, Torque.Y, Torque.Z));
+		}
+	}
+
+	void Rigidbody::SetStatic(bool InStatic)
+	{
+		if (mRigidbody != nullptr)
+		{
+			Static = InStatic;
+
+			if (InStatic == true)
 			{
 				mRigidbody->setMassProps(0, btVector3(0, 0, 0));
 			} else
@@ -70,86 +124,87 @@ namespace Columbus
 		}
 	}
 
-	void Rigidbody::SetTransform(Transform Transform)
+	void Rigidbody::SetTransform(Transform InTransform)
 	{
 		if (mRigidbody != nullptr)
 		{
-			btTransform Trans;
-			Vector3 pos = Transform.GetPos();
-			Vector3 scale = Transform.GetScale();
+			btTransform bTrans;
+			Vector3 pos = InTransform.GetPos();
+			Vector3 scale = InTransform.GetScale();
 
-			glm::quat tQuat = Transform.RotationQuaternion;
+			glm::quat tQuat = InTransform.RotationQuaternion;
 			btQuaternion bQuat(tQuat.x, tQuat.y, tQuat.z, tQuat.w);
 
-			Trans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
-			Trans.setRotation(bQuat);
-			mRigidbody->proceedToTransform(Trans);
+			bTrans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
+			bTrans.setRotation(bQuat);
+			mRigidbody->proceedToTransform(bTrans);
 
-			this->Trans = Transform;
+			Trans = InTransform;
 		}
 	}
 
-	void Rigidbody::SetMass(float Mass)
+	void Rigidbody::SetMass(float InMass)
 	{
 		if (mRigidbody != nullptr)
 		{
+			Mass = InMass;
 			btVector3 Inertia;
-			mRigidbody->getCollisionShape()->calculateLocalInertia(Mass, Inertia);
-			mRigidbody->setMassProps(Mass, Inertia);
+			mRigidbody->getCollisionShape()->calculateLocalInertia(InMass, Inertia);
+			mRigidbody->setMassProps(InMass, Inertia);
 		}
 	}
 
-	void Rigidbody::SetRestitution(float Restitution)
+	void Rigidbody::SetRestitution(float InRestitution)
 	{
 		if (mRigidbody != nullptr)
 		{
-			this->Restitution = Restitution;
-			mRigidbody->setRestitution(Restitution);
+			Restitution = InRestitution;
+			mRigidbody->setRestitution(InRestitution);
 		}
 	}
 
-	void Rigidbody::SetFriction(float Friction)
+	void Rigidbody::SetFriction(float InFriction)
 	{
 		if (mRigidbody != nullptr)
 		{
-			this->Friction = Friction;
-			mRigidbody->setFriction(Friction);
+			Friction = InFriction;
+			mRigidbody->setFriction(InFriction);
 		}
 	}
 
-	void Rigidbody::SetRollingFriction(float Friction)
+	void Rigidbody::SetRollingFriction(float InFriction)
 	{
 		if (mRigidbody != nullptr)
 		{
-			this->RollingFriction = Friction;
-			mRigidbody->setRollingFriction(Friction);
+			RollingFriction = InFriction;
+			mRigidbody->setRollingFriction(InFriction);
 		}
 	}
 
-	void Rigidbody::SetAngularDamping(float Damping)
+	void Rigidbody::SetAngularDamping(float InDamping)
 	{
 		if (mRigidbody != nullptr)
 		{
-			AngularDamping = Damping;
+			AngularDamping = InDamping;
 			mRigidbody->setDamping(LinearDamping, AngularDamping);
 		}
 	}
 
-	void Rigidbody::SetAngularTreshold(float Treshold)
+	void Rigidbody::SetAngularTreshold(float InTreshold)
 	{
 		if (mRigidbody != nullptr)
 		{
-			AngularTreshold = Treshold;
+			AngularTreshold = InTreshold;
 			mRigidbody->setSleepingThresholds(LinearTreshold, AngularTreshold);
 		}
 	}
 
-	void Rigidbody::SetAngularFactor(Vector3 Factor)
+	void Rigidbody::SetAngularFactor(Vector3 InFactor)
 	{
 		if (mRigidbody != nullptr)
 		{
-			AngularFactor = Factor;
-			mRigidbody->setAngularFactor(btVector3(Factor.X, Factor.Y, Factor.Z));
+			AngularFactor = InFactor;
+			mRigidbody->setAngularFactor(btVector3(InFactor.X, InFactor.Y, InFactor.Z));
 		}
 	}
 
@@ -157,34 +212,35 @@ namespace Columbus
 	{
 		if (mRigidbody != nullptr)
 		{
+			mRigidbody->activate();
 			mRigidbody->setAngularVelocity(btVector3(Math::Radians(Velocity.X), Math::Radians(Velocity.Y), Math::Radians(Velocity.Z)));
 		}
 	}
 
-	void Rigidbody::SetLinearDamping(float Damping)
+	void Rigidbody::SetLinearDamping(float InDamping)
 	{
 		if (mRigidbody != nullptr)
 		{
-			LinearDamping = Damping;
+			LinearDamping = InDamping;
 			mRigidbody->setDamping(LinearDamping, AngularDamping);
 		}
 	}
 
-	void Rigidbody::SetLinearTreshold(float Treshold)
+	void Rigidbody::SetLinearTreshold(float InTreshold)
 	{
 		if (mRigidbody != nullptr)
 		{
-			LinearTreshold = Treshold;
+			LinearTreshold = InTreshold;
 			mRigidbody->setSleepingThresholds(LinearTreshold, AngularTreshold);
 		}
 	}
 
-	void Rigidbody::SetLinearFactor(Vector3 Factor)
+	void Rigidbody::SetLinearFactor(Vector3 InFactor)
 	{
 		if (mRigidbody != nullptr)
 		{
-			LinearFactor = Factor;
-			mRigidbody->setLinearFactor(btVector3(Factor.X, Factor.Y, Factor.Z));
+			LinearFactor = InFactor;
+			mRigidbody->setLinearFactor(btVector3(InFactor.X, InFactor.Y, InFactor.Z));
 		}
 	}
 
@@ -192,20 +248,30 @@ namespace Columbus
 	{
 		if (mRigidbody != nullptr)
 		{
+			mRigidbody->activate();
 			mRigidbody->setLinearVelocity(btVector3(Velocity.X, Velocity.Y, Velocity.Z));
 		}
 	}
 
-	void Rigidbody::SetCollisionShape(PhysicsShape* Shape)
+	void Rigidbody::SetGravity(Vector3 Gravity)
 	{
 		if (mRigidbody != nullptr)
 		{
-			if (Shape != nullptr)
+			mRigidbody->setGravity(btVector3(Gravity.X, Gravity.Y, Gravity.Z));
+			mRigidbody->applyGravity();
+		}
+	}
+
+	void Rigidbody::SetCollisionShape(PhysicsShape* InShape)
+	{
+		if (mRigidbody != nullptr)
+		{
+			if (InShape != nullptr)
 			{
-				if (Shape->mShape != nullptr)
+				if (InShape->mShape != nullptr)
 				{
-					this->Shape = Shape;
-					mRigidbody->setCollisionShape(Shape->mShape);
+					Shape = InShape;
+					mRigidbody->setCollisionShape(InShape->mShape);
 				}
 			}
 		}
@@ -308,6 +374,17 @@ namespace Columbus
 		{
 			btVector3 Velocity = mRigidbody->getLinearVelocity();
 			return Vector3(Velocity.getX(), Velocity.getY(), Velocity.getZ());
+		}
+
+		return Vector3(0, 0, 0);
+	}
+
+	Vector3 Rigidbody::GetGravity() const
+	{
+		if (mRigidbody != nullptr)
+		{
+			btVector3 Gravity = mRigidbody->getGravity();
+			return Vector3(Gravity.getX(), Gravity.getY(), Gravity.getZ());
 		}
 
 		return Vector3(0, 0, 0);

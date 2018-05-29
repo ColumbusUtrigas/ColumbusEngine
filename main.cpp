@@ -110,6 +110,7 @@ int main(int argc, char** argv)
 
 	scene.Add(20, go);
 	scene.getGameObject(12)->AddComponent(new Rotator());
+	scene.getGameObject(18)->AddComponent(new Rotator());
 
 	auto Sphere = scene.getGameObject(15);
 	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
@@ -146,13 +147,13 @@ int main(int argc, char** argv)
 			camera.addRot(Vector3(0, -125 * RedrawTime, 0));*/
 
 		if (input.getKey(SDL_SCANCODE_UP))
-			RB->mRigidbody->applyCentralImpulse(btVector3(-0.3, 0, 0));
+			RB->ApplyCentralImpulse(Vector3(-0.3, 0, 0));
 		if (input.getKey(SDL_SCANCODE_DOWN))
-			RB->mRigidbody->applyCentralImpulse(btVector3(0.3, 0, 0));
+			RB->ApplyCentralImpulse(Vector3(0.3, 0, 0));
 		if (input.getKey(SDL_SCANCODE_LEFT))
-			RB->mRigidbody->applyCentralImpulse(btVector3(0, 0, 0.3));
+			RB->ApplyCentralImpulse(Vector3(0, 0, 0.3));
 		if (input.getKey(SDL_SCANCODE_RIGHT))
-			RB->mRigidbody->applyCentralImpulse(btVector3(0, 0, -0.3));
+			RB->ApplyCentralImpulse(Vector3(0, 0, -0.3));
 
 		if (input.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(-camera.up() * RedrawTime * 5);
