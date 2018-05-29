@@ -18,10 +18,10 @@ namespace Columbus
 	bool SoundIsWAV(std::string FileName); //Check file magic
 	bool SoundIsOGG(std::string FileName); //Check file magic
 
-	uint16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
-	uint16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
-	uint16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
 	class Sound
 	{
@@ -30,7 +30,7 @@ namespace Columbus
 		uint32 Frequency;  //Sound frequency (22050, 44100)
 		uint16 Channels;   //Sound channels (1 for mono, 2 for stereo) 
 
-		uint16* Buffer;
+		int16* Buffer;
 	public:
 		Sound();
 
@@ -40,7 +40,7 @@ namespace Columbus
 		uint64 GetBufferSize() const;
 		uint32 GetFrequency() const;
 		uint16 GetChannelsCount() const;
-		uint16* GetBuffer() const;
+		int16* GetBuffer() const;
  
 		~Sound();
 	};

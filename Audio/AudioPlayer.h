@@ -6,7 +6,7 @@
 namespace Columbus
 {
 
-	static Uint8* AudioPos;
+	static int16* AudioPos;
 	static Uint32 AudioLen;
 	static Uint32 AudioLength;
 
@@ -21,8 +21,24 @@ namespace Columbus
 
 		len = (len > AudioLen ? AudioLen : len);
 
+		#define VOL_CONV(x) (1.0f - sqrtf(1.0f - x * x));
+		float Volume = VOL_CONV(1.0f)
+		#undef VOL_CONV
+
+		uint32 BufferLength = len / sizeof(int16);
+
+		while (BufferLength--)
+		{
+			*AudioPos = *AudioPos * Volume;
+			AudioPos++;
+			AudioLen--;
+		}
+
+		AudioPos -= len / sizeof(int16);
+
 		Memory::Memcpy(stream, AudioPos, len);
-		AudioPos += len;
+
+		AudioPos += len / sizeof(int16);
 		AudioLen -= len;
 	}
 
@@ -31,12 +47,11 @@ namespace Columbus
 	private:
 		SDL_AudioSpec Spec;
 	public:
-		AudioPlayer(const uint16* Data, uint16 Channels, uint32 Frequency, uint64 Size)
+		AudioPlayer(const int16* Data, uint16 Channels, uint32 Frequency, uint64 Size)
 		{
 			COLUMBUS_ASSERT_MESSAGE(Data, "AudioPlayer::AudioPlayer(): Invalid data")
 			COLUMBUS_ASSERT_MESSAGE(Channels >= 1, "AudioPlayer::AudioPlayer(): Invalid channels count")
 			COLUMBUS_ASSERT_MESSAGE(Frequency > 0, "AudioPlayer::AudioPlayer(): Invalid frequency")
-			COLUMBUS_ASSERT_MESSAGE(Size > 0, "AudioPlayer::AudioPlayer(): Invalid size")
 
 			Spec.freq = Frequency;
 			Spec.format = AUDIO_S16;
@@ -60,7 +75,7 @@ namespace Columbus
 				Spec.samples = 2048;
 			}
 
-			AudioPos = (Uint8*)Data;
+			AudioPos = (int16*)Data;
 			AudioLen = Size;
 			AudioLength = Size;
 
