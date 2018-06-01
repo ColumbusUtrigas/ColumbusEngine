@@ -111,7 +111,7 @@ namespace Columbus
 			ArrayMax(Base.ArrayMax)
 		{
 			Ptr = new T[Base.GetMax()];
-			Copy(Base.Ptr, Base.Ptr + Base.GetCount(), Ptr);
+			std::copy(Base.Ptr, Base.Ptr + Base.GetCount(), Ptr);
 		}
 		/*
 		* Add element in back of array
@@ -122,7 +122,7 @@ namespace Columbus
 			if (ArrayCount >= ArrayMax)
 			{
 				T* TmpPtr = new T[ArrayMax * 2];
-				Copy(Ptr, Ptr + GetCount(), TmpPtr);
+				std::copy(Ptr, Ptr + GetCount(), TmpPtr);
 				delete[] Ptr;
 				Ptr = TmpPtr;
 				ArrayMax *= 2;
@@ -158,12 +158,12 @@ namespace Columbus
 
 			if (Count <= ArrayCount)
 			{
-				Copy(Ptr, Ptr + Count, TmpPtr);
+				std::copy(Ptr, Ptr + Count, TmpPtr);
 				ArrayCount = Count;
 			}
 			else
 			{
-				Copy(Ptr, Ptr + GetMax(), TmpPtr);
+				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
 			}
 
 			delete[] Ptr;
@@ -183,7 +183,7 @@ namespace Columbus
 			{
 				uint64 PWRCount = Math::UpperPowerOf2(Num);
 				T* TmpPtr = new T[PWRCount];
-				Copy(Ptr, Ptr + GetMax(), TmpPtr);
+				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
 				delete[] Ptr;
 				Ptr = TmpPtr;
 				ArrayMax = (uint32)PWRCount;
@@ -207,13 +207,13 @@ namespace Columbus
 			{
 				int64 PWRCount = Math::UpperPowerOf2(Num);
 				T* TmpPtr = new T[PWRCount];
-				Copy(Ptr, Ptr + GetMax(), TmpPtr);
+				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
 				delete[] Ptr;
 				Ptr = TmpPtr;
 				ArrayMax = (uint32)PWRCount;
 			}
 
-			Copy(Data, Data + Num, Ptr + ArrayCount);
+			std::copy(Data, Data + Num, Ptr + ArrayCount);
 			ArrayCount += Num;
 		}
 		/*
@@ -284,7 +284,7 @@ namespace Columbus
 				}
 
 				Ptr = new T[Other.GetMax()];
-				Copy(Other.GetData(), Other.GetData() + Other.GetCount(), Ptr);
+				std::copy(Other.GetData(), Other.GetData() + Other.GetCount(), Ptr);
 
 				ArrayMax = Other.ArrayMax;
 				ArrayCount = Other.ArrayCount;

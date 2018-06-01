@@ -18,8 +18,6 @@
 	void main()
 	{
 		Position = uProjection * uView * uModel * vec4(aPos, 1.0);
-		//Position = vec4(aPos, 1.0) * uModel * uView * uProjection;
-		//Position = uProjection * uView * vec4(aPos, 1.0) * uModel;
 
 		vec3 normal = normalize(vec3(uModel * vec4(aNorm, 0.0)));
 		vec3 tangent = normalize(vec3(uModel * vec4(aTang, 0.0)));
@@ -82,8 +80,6 @@
 	vec3 CubemapColor = vec3(0);
 	vec4 Lighting = vec4(1);
 
-	mat3 TBN;
-
 	void Init(void);
 	void LightCalc(int id);
 	void Cubemap(void);
@@ -95,14 +91,10 @@
 
 		if (uMaterial.Lighting == true)
 		{
-			LightCalc(0);
-			LightCalc(1);
-			LightCalc(2);
-			LightCalc(3);
-			LightCalc(4);
-			LightCalc(5);
-			LightCalc(6);
-			LightCalc(7);
+			for (int i = 0; i < LIGHT_NUM; i++)
+			{
+				LightCalc(i);
+			}
 
 			Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 		}
@@ -123,13 +115,11 @@
 
 		if (DiffuseMap.w <= 0.1) discard;
 
-		TBN = varTBN;
-
-		if (textureSize(uMaterial.SpecularMap, 1).xy != vec2(0))
+		if (textureSize(uMaterial.SpecularMap, 0).xy != vec2(0))
 			IsSpecularMap = true;
 
 		if (NormalMap != vec3(0))
-			Normal = normalize(NormalMap * 2.0 - 1.0) * TBN;
+			Normal = normalize(NormalMap * 2.0 - 1.0) * varTBN;
 		else
 			Normal = varNormal;
 	}
@@ -202,7 +192,6 @@
 	void Cubemap(void)
 	{
 		vec3 I = normalize(uCamera.Position - varFragPos);
-		//vec3 R = reflect(I, normalize(varFragPos));
 		vec3 R = normalize(reflect(I, Normal));
 		CubemapColor = texture(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
 

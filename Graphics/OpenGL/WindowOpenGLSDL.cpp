@@ -234,6 +234,7 @@ namespace Columbus
 			{
 			case SDL_WINDOWEVENT_CLOSE:
 				SDL_HideWindow(mWindow);
+				SDL_LockAudio();
 				mOpen = false;
 				break;
 			case SDL_WINDOWEVENT_SHOWN:

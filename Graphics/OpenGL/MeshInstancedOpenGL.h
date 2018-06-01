@@ -23,7 +23,7 @@ namespace Columbus
 	public:
 		MeshInstancedOpenGL();
 
-		void SetVertices(std::vector<Vertex> InVertices) override;
+		void SetVertices(std::vector<Vertex> Vertices) override;
 		void Render() override;
 
 		~MeshInstancedOpenGL() override;

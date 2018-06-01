@@ -14,33 +14,28 @@
 	uniform mat4 uView;
 	uniform mat4 uProjection;
 
-	uniform vec2 uSize;
-	uniform vec2 uStartSize;
-	uniform vec2 uFinalSize;
 	uniform vec2 uSubUV;
 	uniform float uBillboard;
 
-	#define ROWS 6
-	#define COLUMNS 8
-
-	mat4 rotationMatrix(vec3 axis, float angle)
+	void RotationMatrix(vec3 axis, float angle, out mat4 Result)
 	{
 	    axis = normalize(axis);
 	    float s = sin(angle);
 	    float c = cos(angle);
 	    float oc = 1.0 - c;
 	    
-	    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-	                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-	                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-	                0.0,                                0.0,                                0.0,                                1.0);
+	    Result =  mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+	                   oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+	                   oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+	                   0.0,                                0.0,                                0.0,                                1.0);
 	}
 
 
 	void main(void)
 	{
-		mat4 Rotation = rotationMatrix(vec3(0, 0, 1), aTimes.z / 90);
+		mat4 Rotation;
 		mat4 ModelView = uView * mat4(1);
+		RotationMatrix(vec3(0, 0, 1), aTimes.z * 0.011111, Rotation);
 
 		ModelView[0][0] = 1;
 		ModelView[0][1] = 0;
@@ -56,7 +51,6 @@
 
 		vec3 pos = aPoses;
 
-		float lifePercent = aTimes.x / aTimes.y;
 		int frameNumber = int(aTimes.w);
 
 		int frameHorizontal = frameNumber % int(uSubUV.x);
@@ -85,6 +79,8 @@
 
 #ifdef FragmentShader
 
+	#define MAX_LIGHTS_NUMBER 4
+
 	in vec3 varPos;
 	in vec2 varTexCoord;
 	in vec4 varColor;
@@ -107,21 +103,17 @@
 		vec4 Color = varColor;
 		vec4 Lighting = vec4(1);
 
-		if (textureSize(uTex, 0).x > 1)
+		if (textureSize(uTex, 0).x >= 1)
 			Color = varColor * tex;
 		else
 			Color = varColor;
 
 		if (MaterialUnif[14] != 0.0)
 		{
-			Light(0);
-			Light(1);
-			Light(2);
-			Light(3);
-			//Light(4);
-			//Light(5);
-			//Light(6);
-			//Light(7);
+			for (int i = 0; i < MAX_LIGHTS_NUMBER; i++)
+			{
+				Light(i);
+			}
 
 			Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
 		}

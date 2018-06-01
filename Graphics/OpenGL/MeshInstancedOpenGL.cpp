@@ -55,10 +55,9 @@ namespace Columbus
 		glGenVertexArrays(1, &VAO);
 	}
 
-	void MeshInstancedOpenGL::SetVertices(std::vector<Vertex> InVertices)
+	void MeshInstancedOpenGL::SetVertices(std::vector<Vertex> Vertices)
 	{
-		Vertices.clear();
-		Vertices = InVertices;
+		VerticesCount = Vertices.size();
 
 		float* v = new float[Vertices.size() * 3]; //Vertex buffer
 		float* u = new float[Vertices.size() * 2]; //UV buffer
@@ -69,7 +68,7 @@ namespace Columbus
 		uint64_t ncounter = 0;
 		uint64_t tcounter = 0;
 
-		for (auto Vertex : Vertices)
+		for (auto& Vertex : Vertices)
 		{
 			v[vcounter++] = Vertex.pos.X;
 			v[vcounter++] = Vertex.pos.Y;
@@ -132,6 +131,7 @@ namespace Columbus
 	void MeshInstancedOpenGL::Render()
 	{
 		if (Mat.GetShader() == nullptr) return;
+
 		if (!Mat.GetShader()->IsCompiled())
 		{
 			auto tShader = Mat.GetShader();
@@ -198,7 +198,7 @@ namespace Columbus
 		Mat.GetShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
 		glBindVertexArray(VAO);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, Vertices.size(), 5);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, VerticesCount, 5);
 		glBindVertexArray(0);
 	}
 

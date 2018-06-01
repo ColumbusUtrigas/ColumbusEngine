@@ -1,12 +1,3 @@
-/************************************************
-*                   MeshOpenGL.h                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   16.01.2018                  *
-*************************************************/
 #pragma once
 
 #include <Graphics/Mesh.h>
@@ -28,10 +19,10 @@ namespace Columbus
 		void SortLights();
 	public:
 		MeshOpenGL();
-		MeshOpenGL(std::vector<Vertex> aVert);
-		MeshOpenGL(std::vector<Vertex> aVert, Material aMaterial);
+		MeshOpenGL(std::vector<Vertex> Vertices);
+		MeshOpenGL(std::vector<Vertex> Vertices, Material aMaterial);
 
-		void SetVertices(std::vector<Vertex> aVert) override;
+		void SetVertices(std::vector<Vertex> Vertices) override;
 		void Render(Transform InTransform) override;
 
 		~MeshOpenGL() override;

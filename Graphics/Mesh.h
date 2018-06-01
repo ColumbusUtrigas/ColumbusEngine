@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <list>
 #include <algorithm>
 
 #include <System/Importer.h>
@@ -27,27 +26,30 @@ namespace Columbus
 		Camera ObjectCamera;
 		OBB BoundingBox;
 
-		std::list<Mesh*> Childs;
+		std::map<uint32, Mesh*> Childs;
 		std::vector<Light*> Lights;
+
+		uint32 VerticesCount;
 	public:
-		std::vector<Vertex> Vertices;
+		//std::vector<Vertex> Vertices;
 		Material mMat;
-		
-		Mesh() { }
-		Mesh(std::vector<Vertex> InVertices) { SetVertices(InVertices); }
-		Mesh(std::vector<Vertex> InVertices, Material InMaterial) {  mMat = InMaterial; SetVertices(InVertices); }
+	public:
+		Mesh() : VerticesCount(0) { }
+		Mesh(std::vector<Vertex> Vertices) : VerticesCount(0) { SetVertices(Vertices); }
+		Mesh(std::vector<Vertex> Vertices, Material InMaterial) : VerticesCount(0) {  mMat = InMaterial; SetVertices(Vertices); }
 
 		virtual void SetVertices(std::vector<Vertex> InVertices) {}
 		virtual void Render(Transform aTransform) {}
 
 		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
 		void SetParent(Mesh* InParent) { Parent = InParent; }
-		void AddChild(Mesh* InChild)
+		void AddChild(uint32 ID, Mesh* InChild)
 		{
-			if (InChild == nullptr) return;
-
-			Childs.push_back(InChild);
-			InChild->SetParent(this);
+			if (InChild != nullptr)
+			{
+				Childs[ID] = InChild;
+				InChild->SetParent(this);
+			}
 		}
 
 		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }

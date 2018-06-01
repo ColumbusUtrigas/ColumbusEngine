@@ -4,6 +4,7 @@
 #include <Graphics/Cubemap.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Mesh.h>
+#include <Graphics/MeshInstanced.h>
 #include <Graphics/Framebuffer.h>
 
 namespace Columbus
@@ -28,6 +29,8 @@ namespace Columbus
 		virtual Mesh* createMesh() const;
 		virtual Mesh* createMesh(std::vector<Vertex> aVert) const;
 		virtual Mesh* createMesh(std::vector<Vertex> aVert, Material aMat) const;
+
+		virtual MeshInstanced* CreateMeshInstanced() const;
 
 		virtual Framebuffer* createFramebuffer() const;
 

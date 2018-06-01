@@ -94,6 +94,8 @@ namespace Columbus
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
+		mImage.FreeData(); //Hmmm
+
 		Log::success("Texture loaded: " + aPath);
 	}
 

@@ -29,12 +29,12 @@ namespace Columbus
 	
 	void GameObject::AddChild(GameObject* Child)
 	{
-		Children.Add(Child);
+		Children.push_back(SmartPointer<GameObject>(Child));
 	}
 	
-	void GameObject::AddComponent(Component* Component)
+	void GameObject::AddComponent(Component* InComponent)
 	{
-		Components.Add(Component);
+		Components.push_back(SmartPointer<Component>(InComponent));
 	}
 	
 	void GameObject::SetTransform(Transform Transform)
@@ -56,8 +56,10 @@ namespace Columbus
 			Comp->Update(static_cast<float>(mTimer.elapsed()));
 		}
 
-		for (auto Child : Children)
+		for (auto& Child : Children)
+		{
 			Child->Update();
+		}
 	}
 	
 	void GameObject::Render()
@@ -67,8 +69,10 @@ namespace Columbus
 			Comp->Render(transform);
 		}
 
-		for (auto Child : Children)
+		for (auto& Child : Children)
+		{
 			Child->Render();
+		}
 
 		mTimer.reset();
 	}
@@ -92,7 +96,7 @@ namespace Columbus
 		{
 			if (Comp->GetType() == Type)
 			{
-				return Comp;
+				return Comp.get();
 			}
 		}
 
