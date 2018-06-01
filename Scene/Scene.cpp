@@ -167,7 +167,7 @@ namespace Columbus
 		return Mat;
 	}
 
-	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat, std::map<uint32, Mesh*>* Meshes)
+	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat, std::map <uint32, std::vector<Vertex>>* Meshes)
 	{
 		ComponentMeshRenderer* MeshRenderer = nullptr;
 
@@ -193,7 +193,7 @@ namespace Columbus
 				{
 					if (atoi(MeshPath.c_str()) >= 0)
 					{
-						Mesh* mesh = Meshes->at(atoi(MeshPath.c_str()));
+						Mesh* mesh = gDevice->createMesh(Meshes->at(atoi(MeshPath.c_str())));
 
 						if (mesh != nullptr)
 						{
@@ -206,6 +206,30 @@ namespace Columbus
 		}
 
 		return MeshRenderer;
+	}
+
+	static ComponentMeshInstancedRenderer* SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat, std::map <uint32, std::vector<Vertex>>* Meshes)
+	{
+		ComponentMeshInstancedRenderer* MeshInstancedRenderer = nullptr;
+
+		if (Serializer != nullptr && Mat != nullptr && Meshes != nullptr)
+		{
+			std::string MeshPath;
+
+			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshInstancedRenderer", "Mesh" }, MeshPath))
+			{
+				MeshInstanced* mesh = gDevice->CreateMeshInstanced();
+
+				if (mesh != nullptr)
+				{
+					mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
+					mesh->Mat = *Mat;
+					MeshInstancedRenderer = new ComponentMeshInstancedRenderer(mesh);
+				}
+			}
+		}
+
+		return MeshInstancedRenderer;
 	}
 
 	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat)
@@ -297,7 +321,7 @@ namespace Columbus
 		return CRigidbody;
 	}
 
-	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, std::string Element, std::map<uint32, Mesh*>* Meshes)
+	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, std::string Element, std::map<uint32, std::vector<Vertex>>* Meshes)
 	{
 		PhysicsShape* Shape = nullptr;
 
@@ -336,7 +360,7 @@ namespace Columbus
 					if (atoi(rbShapeMesh.c_str()) >= 0)
 					{
 						delete Shape;
-						Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str()))->Vertices);
+						Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str())));
 					}
 				}
 			}
@@ -383,7 +407,7 @@ namespace Columbus
 	*/
 
 	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, std::string Element,
-		std::map<uint32, Mesh*>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
+		std::map<uint32, std::vector<Vertex>>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
 		PhysicsWorld* PhysWorld)
 	{
 		if (Serializer != nullptr && Meshes != nullptr && Textures != nullptr && Shaders != nullptr && PhysWorld != nullptr)
@@ -403,7 +427,7 @@ namespace Columbus
 				return false;
 			}
 
-			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" },shaderID))
+			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" }, shaderID))
 			{
 				material->SetShader(Shaders->at(shaderID));
 			}
@@ -420,6 +444,7 @@ namespace Columbus
 				material->setNormMap(Textures->at(material->getNormMapID()));
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
+			ComponentMeshInstancedRenderer* MeshInstancedRenderer = SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
 			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.GetPos());
 			ComponentRigidbody* Rigidbody = SceneGameObjectLoadComponentRigidbody(Serializer, Element, transform, SceneGameObjectLoadComponentRigidbodyShape(Serializer, Element, Meshes));
@@ -427,6 +452,11 @@ namespace Columbus
 			if (MeshRenderer != nullptr)
 			{
 				OutObject.AddComponent(MeshRenderer);
+			}
+
+			if (MeshInstancedRenderer != nullptr)
+			{
+				OutObject.AddComponent(MeshInstancedRenderer);
 			}
 
 			if (ParticleSystem != nullptr)
@@ -510,7 +540,7 @@ namespace Columbus
 					if (ModelIsCMF(path))
 					{
 						ModelLoadCMF(path, Vertices);
-						mMeshes.insert(std::pair<uint32, Mesh*>(i, gDevice->createMesh(Vertices)));
+						Meshes.insert(std::pair<uint32, std::vector<Vertex>>(i, Vertices));
 						Log::success("Mesh loaded: " + path);
 					}
 					else
@@ -531,12 +561,15 @@ namespace Columbus
 
 			GameObject Object;
 
-			if (SceneLoadGameObject(Object, &serializer, elem, &mMeshes, &mTextures, &ShaderPrograms, &PhysWorld))
+			if (SceneLoadGameObject(Object, &serializer, elem, &Meshes, &mTextures, &ShaderPrograms, &PhysWorld))
 			{
-				Add(i, Object);
+				Add(i, std::move(Object));
 			}
 		}
 
+		//Deleting temperary data
+
+		Meshes.clear();
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////

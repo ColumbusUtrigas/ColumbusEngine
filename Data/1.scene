@@ -20,7 +20,7 @@
 		</Textures>
 
 		<Shaders>
-			<Count>2</Count>
+			<Count>3</Count>
 
 			<Shader0>
 				<Program>Data/Shaders/Standart.glsl</Program>
@@ -29,6 +29,10 @@
 			<Shader1>
 				<Program>Data/Shaders/Particle.glsl</Program>
 			</Shader1>
+
+			<Shader2>
+				<Program>Data/Shaders/StandartInstanced.glsl</Program>
+			</Shader2>
 		</Shaders>
 
 		<Meshes>
@@ -43,7 +47,7 @@
 	</Resources>
 
 	<GameObjects>
-		<Count>20</Count>
+		<Count>21</Count>
 
 		<GameObject0>
 			<Name>Sponza</Name>
@@ -376,8 +380,8 @@
 				<Rigidbody>
 					<Static>0</Static>
 					<Mass>1</Mass>
-					<Restitution>0</Restitution>
-					<Friction>0.6</Friction>
+					<Restitution>0.9</Restitution>
+					<Friction>1</Friction>
 					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
 					<AngularTreshold>0.25</AngularTreshold>
@@ -410,7 +414,7 @@
 					<Static>0</Static>
 					<Mass>1</Mass>
 					<Restitution>0.5</Restitution>
-					<Friction>0.6</Friction>
+					<Friction>0.9</Friction>
 					<RollingFriction>1</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
 					<AngularTreshold>0.25</AngularTreshold>
@@ -443,7 +447,7 @@
 					<Static>0</Static>
 					<Mass>1</Mass>
 					<Restitution>0.5</Restitution>
-					<Friction>0.6</Friction>
+					<Friction>0.9</Friction>
 					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
 					<AngularTreshold>0.25</AngularTreshold>
@@ -476,7 +480,7 @@
 					<Static>0</Static>
 					<Mass>1</Mass>
 					<Restitution>0.5</Restitution>
-					<Friction>0.6</Friction>
+					<Friction>0.9</Friction>
 					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.1</AngularDamping>
 					<AngularTreshold>0.25</AngularTreshold>
@@ -509,7 +513,7 @@
 					<Static>0</Static>
 					<Mass>5</Mass>
 					<Restitution>0.5</Restitution>
-					<Friction>0.5</Friction>
+					<Friction>0.9</Friction>
 					<RollingFriction>0.5</RollingFriction>
 					<AngularDamping>0.3</AngularDamping>
 					<AngularTreshold>0.25</AngularTreshold>
@@ -519,6 +523,25 @@
 				</Rigidbody>
 			</Components>
 		</GameObject19>
+
+		<GameObject20>
+			<Name>InstancedDragon</Name>
+
+			<Transform>
+				<Position X="0" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Dragon.cxmat</Material>
+			<Shader>2</Shader>
+
+			<Components>
+				<MeshInstancedRenderer>
+					<Mesh>2</Mesh>
+				</MeshInstancedRenderer>
+			</Components>
+		</GameObject20>
 	</GameObjects>
 </Scene>
 

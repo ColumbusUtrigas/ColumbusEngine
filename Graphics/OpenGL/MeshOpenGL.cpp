@@ -170,10 +170,9 @@ namespace Columbus
 		SetVertices(InVertices);
 	}
 	
-	void MeshOpenGL::SetVertices(std::vector<Vertex> InVertices)
+	void MeshOpenGL::SetVertices(std::vector<Vertex> Vertices)
 	{
-		Vertices.clear();
-		Vertices = InVertices;
+		VerticesCount = Vertices.size();
 
 		//Temperary Oriented Bounding Box Data
 		struct
@@ -195,7 +194,7 @@ namespace Columbus
 		uint64_t ncounter = 0;
 		uint64_t tcounter = 0;
 
-		for (auto Vertex : Vertices)
+		for (auto& Vertex : Vertices)
 		{
 			if (Vertex.pos.X < OBBData.minX) OBBData.minX = Vertex.pos.X;
 			if (Vertex.pos.X > OBBData.maxX) OBBData.maxX = Vertex.pos.X;
@@ -304,7 +303,7 @@ namespace Columbus
 		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
 
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, Vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 		glBindVertexArray(0);
 	}
 	

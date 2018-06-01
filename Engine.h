@@ -80,6 +80,5 @@
 #include <System/Log.h>
 #include <System/Random.h>
 #include <System/Serializer.h>
-#include <System/SmartPointer.h>
 #include <System/System.h>
 #include <System/Timer.h>

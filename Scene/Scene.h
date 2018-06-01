@@ -20,8 +20,8 @@
 #include <Physics/PhysicsShapeMultiSphere.h>
 #include <Physics/PhysicsShapeSphere.h>
 #include <Physics/PhysicsWorld.h>
-#include <System/SmartPointer.h>
 #include <Core/Types.h>
+#include <Core/SmartPointer.h>
 
 namespace Columbus
 {
@@ -31,9 +31,10 @@ namespace Columbus
 	private:
 		std::map<uint32, SmartPointer<GameObject>> mObjects;
 		std::vector<Light*> mLights;
-		std::map<uint32, Mesh*> mMeshes;
 		std::map<uint32, Texture*> mTextures;
 		std::map<uint32, ShaderProgram*> ShaderPrograms;
+
+		std::map<uint32, std::vector<Vertex>> Meshes;
 
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
@@ -57,7 +58,7 @@ namespace Columbus
 
 		bool load(std::string aFile);
 
-		void Add(uint32 ID, GameObject InObject)
+		void Add(uint32 ID, GameObject&& InObject)
 		{
 			mObjects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
 		}

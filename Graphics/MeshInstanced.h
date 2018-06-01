@@ -13,16 +13,16 @@ namespace Columbus
 	class MeshInstanced
 	{
 	protected:
-		std::vector<Vertex> Vertices;
 		Camera ObjectCamera;
+		uint32 VerticesCount;
 	public:
 		Material Mat;
 	public:
-		MeshInstanced() {}
+		MeshInstanced() : VerticesCount(0) {}
 
 		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
 
-		virtual void SetVertices(std::vector<Vertex> InVertices) {}
+		virtual void SetVertices(std::vector<Vertex> Vertices) {}
 		virtual void Render() {}
 
 		virtual ~MeshInstanced() {}

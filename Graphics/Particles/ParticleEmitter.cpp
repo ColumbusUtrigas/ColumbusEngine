@@ -25,19 +25,6 @@ namespace Columbus
 		mParticleEffect = const_cast<ParticleEffect*>(aParticleEffect);
 		if (mParticleEffect->Emit == nullptr) return;
 
-		mParticles.resize(mParticleEffect->Emit->Count);
-		Particle p;
-
-		for (auto& Particle : mParticles)
-		{
-			for (uint32 j = 0; j < 9; j++)
-			{
-				p.noise[j] = Random::range(0, 256);
-			}
-
-			Particle = p;
-		}
-
 		if (!mParticleEffect->getMaterial()->GetShader()->IsCompiled())
 		{
 			auto tShader = mParticleEffect->getMaterial()->GetShader();
@@ -85,7 +72,7 @@ namespace Columbus
 			return a.cameraDistance > b.cameraDistance;
 		};
 
-		std::sort(mActiveParticles.begin(), mActiveParticles.end(), func);
+		std::sort(Particles.begin(), Particles.end(), func);
 	}
 	
 	void ParticleEmitter::setLights(std::vector<Light*> aLights)
@@ -106,50 +93,41 @@ namespace Columbus
 
 		mTimer += aTimeTick;
 
-		if (mParticles.size() == 0)
+		if (mParticleEffect->Emit->Count == 0)
 		{
 			mTimer = 0.0f;
 		}
 
+		//Spawning new particles
 		if (mParticleEffect->Emit->Active)
 		{
-			for (auto& Particle : mParticles)
+			while (mTimer >= fireT && Particles.size() <= mParticleEffect->Emit->Count)
 			{
-				Particle.age = 0.0;
-				Particle.startEmitterPos = startEmitterPos;
-
-				if (mTimer < fireT || mParticles.size() == 0) continue;
 				mTimer -= fireT;
 
-				Particle.age = mTimer;
+				Particle NewParticle;
+				NewParticle.age = mTimer;
+				NewParticle.startEmitterPos = startEmitterPos;
+
+				for (uint32 j = 0; j < 9; j++)
+				{
+					NewParticle.noise[j] = Random::range(0, 256);
+				}
 
 				for (auto& Module : mParticleEffect->Modules)
 				{
-					Module->Spawn(Particle);
+					Module->Spawn(NewParticle);
 				}
 
-				mActiveParticles.push_back(Particle);
-				mParticles.erase(mParticles.begin() + counter);
-
-				counter++;
+				Particles.push_back(NewParticle);
 			}
 		}
 
+		//Updating active particles
 		counter = 0;
 
-		for (auto& Particle : mActiveParticles)
+		for (auto& Particle : Particles)
 		{
-			if (Particle.age > Particle.TTL)
-			{
-				Particle.age = 0.0;
-
-				mParticles.push_back(Particle);
-				if (counter < mActiveParticles.size())
-				{
-					mActiveParticles.erase(mActiveParticles.begin() + counter);
-				}
-			}
-
 			if (mParticleEffect->Required->Transformation == ParticleTransformation::Local)
 			{
 				Particle.startEmitterPos = startEmitterPos;
@@ -162,6 +140,22 @@ namespace Columbus
 
 			Particle.update(aTimeTick, mCamera.getPos());
 			
+			counter++;
+		}
+
+		//Deleting dead particles
+		counter = 0;
+
+		for (auto& Particle : Particles)
+		{
+			if (Particle.age >= Particle.TTL)
+			{
+				if (counter < Particles.size())
+				{
+					Particles.erase(Particles.begin() + counter);
+				}
+			}
+
 			counter++;
 		}
 
@@ -410,9 +404,9 @@ namespace Columbus
 		unsigned int sizeCounter = 0;
 		unsigned int counter = 0;
 
-		for (auto Particle : mActiveParticles)
+		for (auto Particle : Particles)
 		{
-			if (counter >= mActiveParticles.size()) break;
+			if (counter >= Particles.size()) break;
 			counter++;
 
 			for (int i = 0; i < 6; i++)
@@ -436,36 +430,35 @@ namespace Columbus
 				mSizeData[sizeCounter++] = Particle.size.Z;
 			}
 
-			mBuf->setData(mVertData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+			mBuf->setData(mVertData, 18 * sizeof(float) * Particles.size(), 3);
 			mBuf->compile();
 
-			mTBuf->setData(mUvData, 12 * sizeof(float) * mActiveParticles.size(), 2);
+			mTBuf->setData(mUvData, 12 * sizeof(float) * Particles.size(), 2);
 			mTBuf->compile();
 		}
 
-		mCBuf->setData(mColData, 24 * sizeof(float) * mActiveParticles.size(), 4);
+		mCBuf->setData(mColData, 24 * sizeof(float) * Particles.size(), 4);
 		mCBuf->compile();
 
-		mPBuf->setData(mPosData, 18 * sizeof(float)* mActiveParticles.size(), 3);
+		mPBuf->setData(mPosData, 18 * sizeof(float)* Particles.size(), 3);
 		mPBuf->compile();
 
-		mLBuf->setData(mTimeData, 24 * sizeof(float) * mActiveParticles.size(), 4);
+		mLBuf->setData(mTimeData, 24 * sizeof(float) * Particles.size(), 4);
 		mLBuf->compile();
 
-		mSBuf->setData(mSizeData, 18 * sizeof(float) * mActiveParticles.size(), 3);
+		mSBuf->setData(mSizeData, 18 * sizeof(float) * Particles.size(), 3);
 		mSBuf->compile();
 
 		setBuffers();
 
-		glDrawArrays(GL_TRIANGLES, 0, 6 * mActiveParticles.size());
+		glDrawArrays(GL_TRIANGLES, 0, 6 * Particles.size());
 
 		unbindAll();
 	}
 	
 	ParticleEmitter::~ParticleEmitter()
 	{
-		mParticles.clear();
-		mActiveParticles.clear();
+		Particles.clear();
 		
 		delete mVertData;
 		delete mUvData;

@@ -47,8 +47,7 @@ namespace Columbus
 	private:
 		ParticleEffect* mParticleEffect = nullptr;
 
-		std::vector<Particle> mParticles;
-		std::vector<Particle> mActiveParticles;
+		std::vector<Particle> Particles;
 		std::vector<Light*> mLights;
 		std::vector<ColorKey> mColorKeys;
 

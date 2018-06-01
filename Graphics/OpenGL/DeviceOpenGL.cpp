@@ -3,6 +3,7 @@
 #include <Graphics/OpenGL/CubemapOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/MeshOpenGL.h>
+#include <Graphics/OpenGL/MeshInstancedOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 
 namespace Columbus
@@ -66,6 +67,11 @@ namespace Columbus
 	Mesh* DeviceOpenGL::createMesh(std::vector<Vertex> aVert, Material aMat) const
 	{
 		return new MeshOpenGL(aVert, aMat);
+	}
+
+	MeshInstanced* DeviceOpenGL::CreateMeshInstanced() const
+	{
+		return new MeshInstancedOpenGL();
 	}
 	
 	Framebuffer* DeviceOpenGL::createFramebuffer() const

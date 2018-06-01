@@ -108,6 +108,11 @@ namespace Columbus
 
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
+		for (uint32 i = 0; i < 6; i++)
+		{
+			mBitmaps[i].FreeData(); //Hmmm
+		}
+
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////

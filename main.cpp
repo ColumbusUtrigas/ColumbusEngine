@@ -6,9 +6,7 @@
 #include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/MeshInstancedOpenGL.h>
 
-#include <Audio/AudioPlayer.h>
-
-#include <btBulletDynamicsCommon.h>
+#include <Audio/AudioMixer.h>
 
 using namespace Columbus;
 
@@ -34,6 +32,8 @@ int main(int argc, char** argv)
 	
 	Input input;
 	input.setWindow(&window);
+
+	AudioMixer Mixer;
 
 	Camera camera;
 	camera.setPos(vec3(10, 10, 0));
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
 
-	AudioSource* Source = gAudioDevice->CreateSource();
+	/*AudioSource* Source = gAudioDevice->CreateSource();
 
 	if (!Source->GetSound()->Load("Data/Sounds/cartoon001.ogg"))
 	{
@@ -80,45 +80,22 @@ int main(int argc, char** argv)
 
 	Source->SetSound(Source->GetSound());
 	
-	//Source->Play();
+	Source->Play();*/
 
 	float xPos = 8.0f;
 
-	Material mat;
-	ShaderProgram* prog = gDevice->CreateShaderProgram();
-	prog->Load("Data/Shaders/StandartInstanced.glsl");
-	mat.SetShader(prog);
-
-	MeshInstancedOpenGL mesh;
-	mat.setTexture(gDevice->createTexture("Data/Textures/metal.dds"));
-	mat.setSpecMap(gDevice->createTexture("Data/Textures/metal-specular.jpg"));
-	mat.setNormMap(gDevice->createTexture("Data/Textures/metal-normal.dds"));
-	mesh.Mat = mat;
-
-	std::vector<Vertex> Vertices;
-	ModelLoadCMF("Data/Models/Dragon.cmf", Vertices);
-	mesh.SetVertices(Vertices);
-	Vertices.clear();
-
-	Sound Clip;
-	Clip.Load("Data/Sounds/thestonemasons.ogg");
-
-	AudioPlayer player(Clip.GetBuffer(), Clip.GetChannelsCount(), Clip.GetFrequency(), Clip.GetBufferSize());
-
-	GameObject go;
-	go.AddComponent(new ComponentMeshInstancedRenderer(&mesh));
-
-	scene.Add(20, go);
 	scene.getGameObject(12)->AddComponent(new Rotator());
 
 	auto Sphere = scene.getGameObject(15);
 	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
 
+	Mixer.Play();
+
 	while (window.isOpen())
 	{
-		player.Play();
-
 		float RedrawTime = window.getRedrawTime();
+
+		Mixer.Update(RedrawTime);
 
 		window.update();
 		input.update();
@@ -135,15 +112,6 @@ int main(int argc, char** argv)
 			camera.addPos(-camera.right() * RedrawTime * 5);
 		if (input.getKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
-
-		/*if (input.getKey(SDL_SCANCODE_UP))
-			camera.addRot(Vector3(-125 * RedrawTime, 0, 0));
-		if (input.getKey(SDL_SCANCODE_DOWN))
-			camera.addRot(Vector3(125 * RedrawTime, 0, 0));
-		if (input.getKey(SDL_SCANCODE_LEFT))
-			camera.addRot(Vector3(0, 125 * RedrawTime, 0));
-		if (input.getKey(SDL_SCANCODE_RIGHT))
-			camera.addRot(Vector3(0, -125 * RedrawTime, 0));*/
 
 		if (input.getKey(SDL_SCANCODE_UP))
 			RB->ApplyCentralImpulse(Vector3(-0.3, 0, 0));
@@ -176,10 +144,6 @@ int main(int argc, char** argv)
 			input.setMousePos(window.getSize() * 0.5);
 		}
 
-		xPos -= 0.05f;
-
-		Source->SetPosition(Vector3(xPos, 0.0f, 0.0f));
-
 		camera.setRot(Vector3::Clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
 		camera.update();
 
@@ -196,7 +160,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	delete Source;
+	//delete Source;
 	delete gDevice;
 	delete gAudioDevice;
 

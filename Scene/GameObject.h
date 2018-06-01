@@ -14,6 +14,7 @@
 #include <Scene/Component.h>
 #include <System/Timer.h>
 #include <Core/Containers/Array.h>
+#include <Core/SmartPointer.h>
 
 namespace Columbus
 {
@@ -21,8 +22,8 @@ namespace Columbus
 	class GameObject
 	{
 	protected:
-		Array<GameObject*> Children;
-		Array<Component*> Components;
+		std::vector<SmartPointer<GameObject>> Children;
+		std::vector<SmartPointer<Component>> Components;
 
 		std::string Name;
 
@@ -31,6 +32,8 @@ namespace Columbus
 		Transform transform;
 
 		GameObject();
+		GameObject(const GameObject&) = delete;
+		GameObject(GameObject&&) = default;
 
 		void SetName(std::string Name);
 		std::string GetName() const;
@@ -46,6 +49,9 @@ namespace Columbus
 
 		bool HasComponent(Component::Type Type);
 		Component* GetComponent(Component::Type Type);
+
+		GameObject& operator=(const GameObject&) = delete;
+		GameObject& operator=(GameObject&&) = default;
 
 		~GameObject();
 	};
