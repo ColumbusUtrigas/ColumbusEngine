@@ -6,7 +6,7 @@
 #include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/MeshInstancedOpenGL.h>
 
-#include <Audio/AudioMixer.h>
+#include <Audio/AudioSystem.h>
 
 using namespace Columbus;
 
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	Input input;
 	input.setWindow(&window);
 
-	AudioMixer Mixer;
+	AudioSystem Audio;
 
 	Camera camera;
 	camera.setPos(vec3(10, 10, 0));
@@ -82,20 +82,16 @@ int main(int argc, char** argv)
 	
 	Source->Play();*/
 
-	float xPos = 8.0f;
-
 	scene.getGameObject(12)->AddComponent(new Rotator());
 
 	auto Sphere = scene.getGameObject(15);
 	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
 
-	Mixer.Play();
+	Audio.Play();
 
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
-
-		Mixer.Update(RedrawTime);
 
 		window.update();
 		input.update();
