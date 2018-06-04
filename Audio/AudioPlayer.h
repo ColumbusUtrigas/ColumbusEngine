@@ -1,52 +1,22 @@
 #pragma once
 
 #include <Common/Sound/Sound.h>
+#include <Audio/AudioMixer.h>
+#include <System/Log.h>
+#include <System/Assert.h>
 #include <SDL.h>
 
 namespace Columbus
 {
 
-	static int16* AudioPos;
-	static Uint32 AudioLen;
-	static Uint32 AudioLength;
-	static bool TimeToSet = true;
-
-	static void audioCallback(void* userdata, Uint8* stream, int len)
+	static void audioCallback(void* UserData, Uint8* Stream, int StreamSize)
 	{
-		/*if (AudioLen == 0)
+		Memory::Memset(Stream, 0, StreamSize);
+		
+		if (UserData != nullptr)
 		{
-			AudioPos -= AudioLength;
-			AudioLen = AudioLength;
-			return;
-		}*/
-
-		//len = (len > AudioLen ? AudioLen : len);
-
-		Memory::Memcpy(stream, AudioPos, len);
-		TimeToSet = true;
-
-		//AudioPos += len / sizeof(int16);
-		//AudioLen -= len;
-
-		/*#define VOL_CONV(x) (1.0f - sqrtf(1.0f - x * x));
-		float Volume = VOL_CONV(1.0f)
-		#undef VOL_CONV
-
-		uint32 BufferLength = len / sizeof(int16);
-
-		while (BufferLength--)
-		{
-			*AudioPos = *AudioPos * Volume;
-			AudioPos++;
-			AudioLen--;
+			static_cast<AudioMixer*>(UserData)->Update((Sound::Frame*)Stream, StreamSize / sizeof(Sound::Frame));
 		}
-
-		AudioPos -= len / sizeof(int16);
-
-		Memory::Memcpy(stream, AudioPos, len);
-
-		AudioPos += len / sizeof(int16);
-		AudioLen -= len;*/
 	}
 
 	class AudioPlayer
@@ -54,16 +24,17 @@ namespace Columbus
 	private:
 		SDL_AudioSpec Spec;
 	public:
-		AudioPlayer(const int16* Data, uint16 Channels, uint32 Frequency, uint64 Size)
+		AudioPlayer(uint16 Channels, uint32 Frequency, AudioMixer* Mixer)
 		{
 			Log::initialization("Audio system initialization");
-			COLUMBUS_ASSERT_MESSAGE(Data, "AudioPlayer::AudioPlayer(): Invalid data")
 			COLUMBUS_ASSERT_MESSAGE(Channels >= 1, "AudioPlayer::AudioPlayer(): Invalid channels count")
 			COLUMBUS_ASSERT_MESSAGE(Frequency > 0, "AudioPlayer::AudioPlayer(): Invalid frequency")
+			COLUMBUS_ASSERT_MESSAGE(Mixer, "AudioPlayer::AudioPlayer(): Invalid mixer")
 
 			Spec.freq = Frequency;
 			Spec.format = AUDIO_S16;
 			Spec.channels = Channels;
+			Spec.userdata = Mixer;
 			Spec.callback = audioCallback;
 
 			if (Spec.freq <= 11025)
@@ -82,10 +53,6 @@ namespace Columbus
 			{
 				Spec.samples = 2048;
 			}
-
-			AudioPos = (int16*)Data;
-			AudioLen = Size;
-			AudioLength = Size;
 
 			if (SDL_OpenAudio(&Spec, NULL) < 0)
 			{
@@ -124,42 +91,48 @@ namespace Columbus
 
 			for (uint32 i = 0; i < AudioPlaybackDevicesCount; i++)
 			{
-				Log::initialization("Audio playback device name (" + std::to_string(i + 1) + "): " + SDL_GetAudioDeviceName(i, 0));
+				if (SDL_GetAudioDeviceName(i, 0) != nullptr)
+				{
+					Log::initialization("Audio playback device name (" + std::to_string(i + 1) + "): " + SDL_GetAudioDeviceName(i, 0));
+				}
+				else
+				{
+					Log::initialization("Audio playback device name (" + std::to_string(i + 1) + "): " + "");
+				}
 			}
 
 			Log::initialization("Audio recording devices count: " + std::to_string(AudioRecordingDevicesCount));
 
 			for (uint32 i = 0; i < AudioRecordingDevicesCount; i++)
 			{
-				Log::initialization("Audio recording device name (" + std::to_string(i + 1) + SDL_GetAudioDeviceName(i, 1));
+				if (SDL_GetAudioDeviceName(i, 1) != nullptr)
+				{
+					Log::initialization("Audio recording device name (" + std::to_string(i + 1) + "): "  + SDL_GetAudioDeviceName(i, 1));
+				}
+				else
+				{
+					Log::initialization("Audio recording device name (" + std::to_string(i + 1) + "): " + "");
+				}
 			}
 
 			Log::initialization("Audio system initialized\n");
-
-			SDL_UnlockAudio();
-		}
-
-		void SetData(const int16* Data)
-		{
-			AudioPos = (int16*)Data;
 		}
 
 		void Play()
 		{
 			SDL_PauseAudio(0);
-			SDL_UnlockAudio();
 		}
 
-		void Pause()
+		void Stop()
 		{
-			SDL_LockAudio();
 			SDL_PauseAudio(1);
 		}
 
 		virtual ~AudioPlayer()
 		{
-			SDL_LockAudio();
-			SDL_CloseAudio();
+			//SDL_PauseAudio(1);
+			//SDL_LockAudio();
+			//SDL_CloseAudio();
 		}
 	};
 

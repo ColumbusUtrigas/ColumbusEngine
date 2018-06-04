@@ -32,6 +32,12 @@ namespace Columbus
 
 		int16* Buffer;
 	public:
+		struct Frame
+		{
+			int16 L;
+			int16 R;
+		};
+	public:
 		Sound();
 
 		bool Load(std::string FileName);

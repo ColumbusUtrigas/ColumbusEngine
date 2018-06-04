@@ -18,7 +18,10 @@ namespace Columbus
 		float MinDistance;
 		float MaxDistance;
 		float Rolloff;
+		bool Playing;
 		bool Looping;
+
+		uint64 Offset;
 	public:
 		AudioSource();
 
@@ -47,7 +50,10 @@ namespace Columbus
 		virtual float GetMinDistance() const;
 		virtual float GetMaxDistance() const;
 		virtual float GetRolloff() const;
-		virtual bool GetLooping() const;
+		virtual bool IsPlaying() const;
+		virtual bool IsLooping() const;
+
+		virtual void PrepareBuffer(Sound::Frame* Frames, uint32 Count);
 
 		virtual ~AudioSource();
 	};

@@ -1,4 +1,5 @@
 #include <Audio/AudioSource.h>
+#include <Core/Memory.h>
 
 namespace Columbus
 {
@@ -10,7 +11,9 @@ namespace Columbus
 		MinDistance(0.01f),
 		MaxDistance(1000.0f),
 		Rolloff(1.0f),
-		Looping(false)
+		Playing(false),
+		Looping(false),
+		Offset(0)
 	{
 		SoundClip = new Sound();
 
@@ -19,10 +22,10 @@ namespace Columbus
 		SetRolloff(1.0f);
 	}
 
-	void AudioSource::Play() {}
-	void AudioSource::Pause() {}
-	void AudioSource::Stop() {}
-	void AudioSource::Rewind() {}
+	void AudioSource::Play() { Playing = true; }
+	void AudioSource::Pause() { Playing = false; }
+	void AudioSource::Stop() { Playing = false; Offset = 0; }
+	void AudioSource::Rewind() { Offset = 0; }
 
 	void AudioSource::SetSound(Sound* InSound)
 	{
@@ -119,9 +122,69 @@ namespace Columbus
 		return Rolloff;
 	}
 
-	bool AudioSource::GetLooping() const
+	bool AudioSource::IsPlaying() const
+	{
+		return Playing;
+	}
+
+	bool AudioSource::IsLooping() const
 	{
 		return Looping;
+	}
+
+	void AudioSource::PrepareBuffer(Sound::Frame* Frames, uint32 Count)
+	{
+		if (Frames != nullptr && Count != 0)
+		{
+			Memory::Memset(Frames, 0, Count * 2);
+
+			if (Playing)
+			{
+				if (SoundClip != nullptr)
+				{
+					if (SoundClip->GetBufferSize() != 0 &&
+					    SoundClip->GetFrequency() != 0 &&
+					    SoundClip->GetChannelsCount() != 0 &&
+					    SoundClip->GetBuffer() != nullptr)
+					{
+						uint32 FramesCount = 0;
+
+						if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
+						{
+							uint32 BufferSize = Offset - (SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame));
+							FramesCount = BufferSize / sizeof(Sound::Frame);
+						}
+						else
+						{
+							FramesCount = Count;
+						}
+
+						for (uint32 i = 0; i < FramesCount; i++)
+						{
+							if (SoundClip->GetChannelsCount() == 1)
+							{
+								Frames[i].L = Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+							}
+							else
+							{
+								Frames[i].L = *(SoundClip->GetBuffer() + Offset++);
+								Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+							}
+						}
+
+						if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
+						{
+							Offset = 0;
+
+							if (!Looping)
+							{
+								Playing = false;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	AudioSource::~AudioSource() {}
