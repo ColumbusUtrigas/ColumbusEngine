@@ -36,6 +36,8 @@ namespace Columbus
 
 		std::map<uint32, std::vector<Vertex>> Meshes;
 
+		Renderer Render;
+
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 

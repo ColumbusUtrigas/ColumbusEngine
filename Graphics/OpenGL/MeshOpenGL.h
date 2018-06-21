@@ -23,7 +23,10 @@ namespace Columbus
 		MeshOpenGL(std::vector<Vertex> Vertices, Material aMaterial);
 
 		void SetVertices(std::vector<Vertex> Vertices) override;
-		void Render(Transform InTransform) override;
+		void Bind() override;
+		uint32 Render(Transform InTransform) override;
+		void Unbind() override;
+		uint64 GetMemoryUsage() const override;
 
 		~MeshOpenGL() override;
 	};

@@ -2,7 +2,9 @@
 
 #include <Audio/AudioDevice.h>
 #include <Audio/AudioSource.h>
+#include <Audio/AudioListener.h>
 #include <Common/Sound/Sound.h>
+#include <Core/Containers/Array.h>
 #include <Core/Memory.h>
 
 namespace Columbus
@@ -11,40 +13,33 @@ namespace Columbus
 	class AudioMixer
 	{
 	private:
+		AudioListener Listener;
+		Array<AudioSource*> Sources;
 
+		Sound::Frame* Data = nullptr;
+		Sound::FrameHight* Mixed = nullptr;
+
+		bool BufferInitialized = false;
 	public:
-		AudioSource* Source;
-		Sound Clip;
-		uint64 Offset = 0;
-	public:
-		AudioMixer()
+		AudioMixer() {}
+
+		void AddSource(AudioSource* Source)
 		{
-			Source = new AudioSource();
-			Source->GetSound()->Load("Data/Sounds/thestonemasons.ogg");
-			//Clip.Load("Data/Sounds/thestonemasons.ogg");
-			Source->Play();
-			Source->SetLooping(true);
+			Sources.Add(Source);
 		}
 
-		void Update(Sound::Frame* Frames, uint32 Count)
+		void SetListener(AudioListener InListener)
 		{
-			Source->PrepareBuffer(Frames, Count);
-			/*Memory::Memset(OutBuffer, 0, Size);
-
-			if (Offset >= Clip.GetBufferSize() / sizeof(int16) - Size)
-			{
-				uint32 BufferSize = Offset - (Clip.GetBufferSize() / sizeof(int16) - Size);
-				Memory::Memcpy(OutBuffer, Clip.GetBuffer() + Offset, BufferSize);
-				Offset = 0;
-			}
-			else
-			{
-				Memory::Memcpy(OutBuffer, Clip.GetBuffer() + Offset, Size);
-				Offset += Size / sizeof(int16);
-			}*/
+			Listener = InListener;
 		}
 
-		~AudioMixer() {}
+		void Update(Sound::Frame* Frames, uint32 Count);
+
+		~AudioMixer()
+		{
+			delete[] Data;
+			delete[] Mixed;
+		}
 	};
 
 }

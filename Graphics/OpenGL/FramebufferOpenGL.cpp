@@ -37,10 +37,9 @@ namespace Columbus
 	bool FramebufferOpenGL::setTexture2D(FramebufferAttachment aAttach, Texture* aTexture)
 	{
 		if (aTexture == nullptr) return false;
-		if (aTexture->getType() != "OpenGL Texture") return false;
 
 		unsigned int id = 0;
-		id = static_cast<TextureOpenGL*>(aTexture)->getID();
+		id = static_cast<TextureOpenGL*>(aTexture)->GetID();
 
 		if (!glIsTexture(id)) return false;
 

@@ -33,6 +33,35 @@ namespace Columbus
 	{
 		loadFromXML(aFile);
 	}
+
+	void Material::AddUniform(std::string Name)
+	{
+		if (ShaderProg != nullptr)
+		{
+			if (ShaderProg->AddUniform(Name))
+			{
+				Uniforms.push_back(Name);
+			}
+		}
+	}
+
+	bool Material::Prepare()
+	{
+		if (ShaderProg != nullptr)
+		{
+			if (!ShaderProg->IsCompiled())
+			{
+				ShaderProg->Compile();
+			}
+
+			ShaderProg->Bind();
+
+			return true;
+		}
+
+		return false;
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -348,6 +377,32 @@ namespace Columbus
 
 		return true;
 	}
+
+	bool Material::operator==(Material Other)
+	{
+		return (mColor == Other.mColor &&
+		        mDiffuse == Other.mDiffuse &&
+			    mAmbient == Other.mAmbient &&
+			    mSpecular == Other.mSpecular &&
+			    mReflectionPower == Other.mReflectionPower &&
+			    mTexture == Other.mTexture &&
+			    mSpecMap == Other.mSpecMap &&
+			    mNormMap == Other.mNormMap &&
+			    ShaderProg == Other.ShaderProg &&
+			    mDiscard == Other.mDiscard &&
+			    mLighting == Other.mLighting &&
+			    mEnvReflection == Other.mEnvReflection &&
+			    mShininess == Other.mShininess &&
+			    mTextureID == Other.mTextureID &&
+			    mSpecMapID == Other.mSpecMapID &&
+			    mNormMapID == Other.mNormMapID);
+	}
+
+	bool Material::operator!=(Material Other)
+	{
+		return !(*this == Other);
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

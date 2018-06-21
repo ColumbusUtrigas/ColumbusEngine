@@ -36,13 +36,14 @@
 		</Shaders>
 
 		<Meshes>
-			<Count>5</Count>
+			<Count>6</Count>
 
 			<Mesh0>Data/Models/Sponza.cmf</Mesh0>
 			<Mesh1>Data/Models/Torch.cmf</Mesh1>
 			<Mesh2>Data/Models/Dragon.cmf</Mesh2>
 			<Mesh3>Data/Models/Liberty.cmf</Mesh3>
 			<Mesh4>Data/Models/Sphere.cmf</Mesh4>
+			<Mesh5>Data/Models/Box.cmf</Mesh5>
 		</Meshes>
 	</Resources>
 
@@ -407,7 +408,7 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Cube</Mesh>
+					<Mesh>5</Mesh>
 				</MeshRenderer>
 
 				<Rigidbody>
@@ -440,7 +441,7 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Cube</Mesh>
+					<Mesh>5</Mesh>
 				</MeshRenderer>
 
 				<Rigidbody>
@@ -473,7 +474,7 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Cube</Mesh>
+					<Mesh>5</Mesh>
 				</MeshRenderer>
 
 				<Rigidbody>
@@ -506,7 +507,7 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>Cube</Mesh>
+					<Mesh>5</Mesh>
 				</MeshRenderer>
 
 				<Rigidbody>

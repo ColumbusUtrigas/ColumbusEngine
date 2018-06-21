@@ -31,13 +31,36 @@ namespace Columbus
 
 	enum class TextureFormat
 	{
-		RGB,
-		BGR,
-		RGBA,
-		BGRA,
-		S3TC_A1,
-		S3TC_A4,
-		S3TC_A8,
+		R8,
+		RG8,
+		RGB8,
+		RGBA8,
+
+		R16,
+		RG16,
+		RGB16,
+		RGBA16,
+
+		R16F,
+		RG16F,
+		RGB16F,
+		RGBA16F,
+
+		R32F,
+		RG32F,
+		RGB32F,
+		RGBA32F,
+
+		DXT1,
+		DXT3,
+		DXT5,
+
+		Depth,
+		Depth16,
+		Depth24,
+		Depth24Stencil8,
+		Depth32F,
+		Depth32FStencil8,
 		Unknown
 	};
 
@@ -81,16 +104,29 @@ namespace Columbus
 
 	class Image
 	{
+	public:
+		enum class Type;
 	private:
 		uint32 Width = 0;         //Width of the image
 		uint32 Height = 0;        //Height of the image
+		uint32 Depth = 0;
 		uint64 Size = 0;
 		uint32 MipMaps = 0;
-		TextureFormat Format = TextureFormat::RGBA;
+		TextureFormat Format = TextureFormat::RGBA8;
 		uint8* Data = nullptr;    //Pixel data
 		bool Exist = false;       //Is image exist
 
+		Type ImageType;
+
 		std::string FileName;
+	public:
+		enum class Type
+		{
+			Image2D,
+			Image3D,
+			ImageCube,
+			Image2DArray
+		};
 	public:
 		Image();
 
@@ -103,9 +139,25 @@ namespace Columbus
 		bool FlipY();
 		bool FlipXY();
 
+		bool IsRawFormat() const;
+		bool IsUnsignedShortFormat() const;
+		bool IsHalfFormat() const;
+		bool IsFloatFormat() const;
+		bool IsCompressedFormat() const;
+
+		Type GetType() const;
+
 		uint32 GetWidth() const;
 		uint32 GetHeight() const;
+		uint32 GetDepth() const;
+		uint32 GetMipmapsCount() const;
+
+		uint64 GetOffset(uint32 Level) const;
 		uint64 GetSize() const;
+
+		uint8* Get2DData(uint32 Level = 0) const;
+		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;
+
 		TextureFormat GetFormat() const;
 		uint8* GetData() const;
 		std::string GetFileName() const;

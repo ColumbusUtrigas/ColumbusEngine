@@ -2,6 +2,7 @@
 #include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
 #include <fstream>
+#include <sstream>
 #include <algorithm>
 
 namespace Columbus
@@ -274,7 +275,7 @@ namespace Columbus
 			return false;
 		}
 
-		std::string TmpFile = std::string((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+		//std::string TmpFile = std::string((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
 
 		ShaderStage* Stage;
 
@@ -285,6 +286,36 @@ namespace Columbus
 		Stage = new ShaderStageOpenGL();
 		Stage->Load(FileName, ShaderType::Fragment);
 		AddStage(Stage);
+
+		std::string Line;
+
+		while (!File.eof())
+		{
+			std::getline(File, Line);
+			std::stringstream ISS(Line);
+
+			char C;
+			std::string Name;
+			std::string Value;
+
+			ISS >> C; if (C == '/')
+			ISS >> C; if (C == '/')
+			ISS >> C; if (C == '@')
+			{
+				ISS >> Name;
+				if (Name == "Attribute")
+				{
+					ISS >> Name;
+					ISS >> Value;
+					AddAttribute(Name, std::atoi(Value.c_str()));
+				}
+				else if (Name == "Uniform")
+				{
+					ISS >> Name;
+					Uniforms.push_back(Name);
+				}
+			}
+		}
 
 		return true;
 	}
@@ -318,12 +349,19 @@ namespace Columbus
 			glAttachShader(ID, static_cast<ShaderStageOpenGL*>(Stage)->GetID());
 		}
 
-		for (auto Attrib : Attributes)
+		for (auto& Attrib : Attributes)
 		{
 			glBindAttribLocation(ID, Attrib.Value, Attrib.Name.c_str());
 		}
 
 		glLinkProgram(ID);
+
+		for (auto& Uniform : Uniforms)
+		{
+			AddUniform(Uniform);
+		}
+
+		Uniforms.clear();
 
 		Compiled = true;
 		Log::success("Shader program compiled");
@@ -331,9 +369,17 @@ namespace Columbus
 		return true;
 	}
 
-	void ShaderProgramOpenGL::AddUniform(std::string Name)
+	bool ShaderProgramOpenGL::AddUniform(std::string Name)
 	{
-		UniformLocations[Name] = glGetUniformLocation(ID, Name.c_str());
+		int32 Value = glGetUniformLocation(ID, Name.c_str());
+
+		if (Value != -1)
+		{
+			UniformLocations[Name] = Value;
+			return true;
+		}
+
+		return false;
 	}
 
 	void ShaderProgramOpenGL::SetUniform1i(std::string Name, int Value) const

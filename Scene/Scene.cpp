@@ -179,26 +179,39 @@ namespace Columbus
 			{
 				if (MeshPath == "Plane")
 				{
-					MeshRenderer = new ComponentMeshRenderer(gDevice->createMesh(PrimitivePlane(), *Mat));
+					Mesh* Mesh = gDevice->CreateMesh();
+					Mesh->SetVertices(PrimitivePlane());
+					Mesh->mMat = *Mat;
+
+					MeshRenderer = new ComponentMeshRenderer(Mesh);
 				}
 				else if (MeshPath == "Cube")
 				{
-					MeshRenderer = new ComponentMeshRenderer(gDevice->createMesh(PrimitiveBox(), *Mat));
+					Mesh* Mesh = gDevice->CreateMesh();
+					Mesh->SetVertices(PrimitiveBox());
+					Mesh->mMat = *Mat;
+
+					MeshRenderer = new ComponentMeshRenderer(Mesh);
 				}
 				else if (MeshPath == "Sphere")
 				{
-					MeshRenderer = new ComponentMeshRenderer(gDevice->createMesh(PrimitiveSphere(1, 50, 50), *Mat));
+					Mesh* Mesh = gDevice->CreateMesh();
+					Mesh->SetVertices(PrimitiveSphere(1, 50, 50));
+					Mesh->mMat = *Mat;
+
+					MeshRenderer = new ComponentMeshRenderer(Mesh);
 				}
 				else
 				{
 					if (atoi(MeshPath.c_str()) >= 0)
 					{
-						Mesh* mesh = gDevice->createMesh(Meshes->at(atoi(MeshPath.c_str())));
+						Mesh* Mesh = gDevice->CreateMesh();
+						Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
+						Mesh->mMat = *Mat;
 
-						if (mesh != nullptr)
+						if (Mesh != nullptr)
 						{
-							mesh->mMat = *Mat;
-							MeshRenderer = new ComponentMeshRenderer(mesh);
+							MeshRenderer = new ComponentMeshRenderer(Mesh);
 						}
 					}
 				}
@@ -508,7 +521,17 @@ namespace Columbus
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Textures", elem }, path))
 				{
-					mTextures.insert(std::pair<uint32, Texture*>(i, gDevice->createTexture(path)));
+					auto Tex = gDevice->CreateTexture();
+					Image Img;
+
+					if (Img.Load(path))
+					{
+						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), Img.GetSize(), 0, 0, Img.GetFormat()));
+						Tex->Load(Img);
+
+						Log::success("Texture loaded: " + path);
+						mTextures[i] = Tex;
+					}
 				}
 			}
 		}
@@ -642,16 +665,21 @@ namespace Columbus
 		if (mSkybox != nullptr)
 			mSkybox->draw();
 
-		for (auto& Object : mObjects)
+		Render.SetMainCamera(*mCamera);
+		Render.SetRenderList(&mObjects);
+		Render.CompileLists();
+		Render.Render(Renderer::Stage::Opaque);
+		Render.Render(Renderer::Stage::Transparent);
+
+		/*for (auto& Object : mObjects)
 			if (Object.second->HasComponent(Component::Type::MeshRenderer) || Object.second->HasComponent(Component::Type::MeshInstancedRenderer))
 				Object.second->Render();
 
 		for (auto& Object : mObjects)
 			if (Object.second->HasComponent(Component::Type::ParticleSystem))
-				Object.second->Render();
+				Object.second->Render();*/
 
 		mNoneEffect.Unbind();
-
 		mNoneEffect.Render();
 	}
 	//////////////////////////////////////////////////////////////////////////////

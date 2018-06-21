@@ -21,6 +21,7 @@ namespace Columbus
 		void Render(Transform& Transform) override;
 		//This component methods
 		Type GetType() const override;
+		Mesh* GetMesh() const;
 		void SetLights(std::vector<Light*> Lights);
 		void SetCamera(Camera InCamera);
 		ShaderProgram* GetShader() const;

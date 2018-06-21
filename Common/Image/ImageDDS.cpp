@@ -278,11 +278,11 @@ namespace Columbus
 
 		switch (FourCC)
 		{
-		case DDSFourCC_DXT1: Result = TextureFormat::S3TC_A1; break;
+		case DDSFourCC_DXT1: Result = TextureFormat::DXT1; break;
 		case DDSFourCC_DXT2:
-		case DDSFourCC_DXT3: Result = TextureFormat::S3TC_A4; break;
+		case DDSFourCC_DXT3: Result = TextureFormat::DXT3; break;
 		case DDSFourCC_DXT4:
-		case DDSFourCC_DXT5: Result = TextureFormat::S3TC_A8; break;
+		case DDSFourCC_DXT5: Result = TextureFormat::DXT5; break;
 		default: Result = TextureFormat::Unknown; break;
 		}
 
@@ -387,7 +387,7 @@ namespace Columbus
 
 		uint32 BlockSize = 0;
 
-		if (OutFormat == TextureFormat::S3TC_A1)
+		if (OutFormat == TextureFormat::DXT1)
 		{
 			BlockSize = 8;
 		}

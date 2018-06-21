@@ -32,14 +32,33 @@ namespace Columbus
 		BufferSize(0),
 		Frequency(0),
 		Channels(0),
-		Buffer(nullptr)
+		Buffer(nullptr),
+		Decoder(nullptr)
 	{ }
 	
-	bool Sound::Load(std::string FileName)
+	bool Sound::Load(std::string FileName, bool Stream)
 	{
-		Buffer = SoundLoad(FileName, BufferSize, Frequency, Channels);
+		Free();
 
-		return Buffer != nullptr;
+		if (Stream == false)
+		{
+			Buffer = SoundLoad(FileName, BufferSize, Frequency, Channels);
+			Streaming = false;
+			return Buffer != nullptr;
+		}
+		else
+		{
+			switch (SoundGetFormat(FileName))
+			{
+			case SoundFormat::OGG:
+				Decoder = new SoundDecoderOGG();
+				Streaming = true;
+				return Decoder->Load(FileName);
+				break;
+			}
+		}
+
+		return false;
 	}
 
 	void Sound::Free()
@@ -49,26 +68,102 @@ namespace Columbus
 		Channels = 0;
 		//delete[] Buffer;
 		if (Buffer != nullptr) Memory::Free(Buffer);
+		Streaming = false;
+		if (Decoder != nullptr) delete Decoder;
+		Decoder = nullptr;
+	}
+
+	void Sound::Seek(uint64 Offset)
+	{
+		if (Streaming)
+		{
+			if (Decoder != nullptr)
+			{
+				Decoder->Seek(Offset);
+			}
+		}
+	}
+
+	uint32 Sound::Decode(Frame* Frames, uint32 Count, uint64 Offset)
+	{
+		if (Frames != nullptr)
+		{
+			if (Streaming)
+			{
+				if (Decoder != nullptr)
+				{
+					return Decoder->Decode(Frames, Count);
+				}
+			}
+		}
+
+		return 0;
 	}
 
 	uint64 Sound::GetBufferSize() const
 	{
-		return BufferSize;
+		if (Streaming)
+		{
+			if (Decoder != nullptr)
+			{
+				return Decoder->GetSize();
+			}
+		}
+		else
+		{
+			return BufferSize;
+		}
+
+		return 0;
 	}
 
 	uint32 Sound::GetFrequency() const
 	{
-		return Frequency;
+		if (Streaming)
+		{
+			if (Decoder != nullptr)
+			{
+				return Decoder->GetFrequency();
+			}
+		}
+		else
+		{
+			return Frequency;
+		}
+
+		return 0;
 	}
 
 	uint16 Sound::GetChannelsCount() const
 	{
-		return Channels;
+		if (Streaming)
+		{
+			if (Decoder != nullptr)
+			{
+				return Decoder->GetChannels();
+			}
+		}
+		else
+		{
+			return Channels;
+		}
+		
+		return 0;
 	}
 
 	int16* Sound::GetBuffer() const
 	{
 		return Buffer;
+	}
+
+	double Sound::GetLength() const
+	{
+		return (double)BufferSize / (double)Frequency / (double)(Channels * sizeof(int16));
+	}
+
+	bool Sound::IsStreaming() const
+	{
+		return Streaming && Decoder != nullptr;
 	}
 
 	Sound::~Sound()

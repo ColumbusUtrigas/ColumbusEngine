@@ -63,6 +63,8 @@ namespace Columbus
 		Texture* mTB = nullptr;
 		Texture* mDepth = nullptr;
 
+		Vector2 PreviousSize;
+
 		uint32 VBO;
 		uint32 IBO;
 		uint32 VAO;

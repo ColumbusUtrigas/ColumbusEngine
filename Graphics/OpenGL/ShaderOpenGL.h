@@ -27,7 +27,11 @@ namespace Columbus
 	class ShaderProgramOpenGL : public ShaderProgram
 	{
 	private:
+		static constexpr int MaxUniforms = 256;
+
 		mutable std::map<std::string, uint32> UniformLocations;
+		mutable int32 FastUniforms[MaxUniforms]; //Uniforms ID by FastID
+		std::vector<std::string> Uniforms;
 		uint32 ID = 0;
 	public:
 		ShaderProgramOpenGL();
@@ -40,7 +44,7 @@ namespace Columbus
 		bool Load(StandartProgram Program) override;
 		bool Compile() override;
 
-		void AddUniform(std::string Name) override;
+		bool AddUniform(std::string Name) override;
 		void SetUniform1i(std::string Name, int Value) const override;
 		void SetUniform1f(std::string Name, float Value) const override;
 		void SetUniform2f(std::string Name, Vector2 Value) const override;

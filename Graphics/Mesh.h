@@ -22,16 +22,13 @@ namespace Columbus
 	{
 	protected:
 		Vector3 Position;
-		Mesh* Parent = nullptr;
 		Camera ObjectCamera;
 		OBB BoundingBox;
 
-		std::map<uint32, Mesh*> Childs;
 		std::vector<Light*> Lights;
 
 		uint32 VerticesCount;
 	public:
-		//std::vector<Vertex> Vertices;
 		Material mMat;
 	public:
 		Mesh() : VerticesCount(0) { }
@@ -39,18 +36,12 @@ namespace Columbus
 		Mesh(std::vector<Vertex> Vertices, Material InMaterial) : VerticesCount(0) {  mMat = InMaterial; SetVertices(Vertices); }
 
 		virtual void SetVertices(std::vector<Vertex> InVertices) {}
-		virtual void Render(Transform aTransform) {}
+		virtual void Bind() {}
+		virtual uint32 Render(Transform aTransform) { return 0; }
+		virtual void Unbind() {}
+		virtual uint64 GetMemoryUsage() const { return 0;  }
 
 		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
-		void SetParent(Mesh* InParent) { Parent = InParent; }
-		void AddChild(uint32 ID, Mesh* InChild)
-		{
-			if (InChild != nullptr)
-			{
-				Childs[ID] = InChild;
-				InChild->SetParent(this);
-			}
-		}
 
 		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }
 

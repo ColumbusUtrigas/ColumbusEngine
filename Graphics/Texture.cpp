@@ -4,63 +4,9 @@
 namespace Columbus
 {
 
-	
-	Texture::Texture()
-	{
-
-	}
-	
-	Texture::Texture(std::string aPath, bool aSmooth)
-	{
-
-	}
-	
-	Texture::Texture(const char* aData, const int aW, const int aH, bool aSmooth)
-	{
-
-	}
-	
-	void Texture::load(std::string aPath, bool aSmooth)
-	{
-
-	}
-
-	
-	void Texture::load(const char* aData, const int aW, const int aH, bool aSmooth)
-	{
-
-	}
-	
-	void Texture::loadDepth(const char* aData, const int aW, const int aH, bool aSmooth)
-	{
-
-	}
-	
-	void Texture::setConfig(TextureConfig aConfig)
-	{
-
-	}
-	
-	void Texture::setSmooth(const bool aSmooth)
-	{
-
-	}
-	
-	void Texture::setAnisotropy(const unsigned int aAnisotropy)
-	{
-
-	}
-	
 	TextureConfig Texture::GetConfig() const
 	{
 		return mConfig;
-	}
-	
-	uint64 Texture::GetSize() const
-	{
-		if (!mImage.IsExist()) return 0;
-
-		return mWidth * mHeight * (mBPP / 8);
 	}
 	
 	bool Texture::save(std::string aFile, size_t aQuality)
@@ -100,11 +46,6 @@ namespace Columbus
 	void Texture::generateMipmap()
 	{
 
-	}
-	
-	std::string Texture::getType()
-	{
-		return "Texture";
 	}
 	
 	Texture::~Texture()

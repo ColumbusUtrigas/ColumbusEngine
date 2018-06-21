@@ -3,6 +3,15 @@
 	#extension GL_ARB_draw_instanced : enable
 	#extension GL_EXT_draw_instanced : enable
 
+	//@Attribute aPos  0
+	//@Attribute aUV   1
+	//@Attribute aNorm 2
+	//@Attribute aTang 3
+
+	//@Uniform uModels
+	//@Uniform uView
+	//@Uniform uProjection
+
 	in vec3 aPos;
 	in vec2 aUV;
 	in vec3 aNorm;
@@ -38,6 +47,8 @@
 		float ReflectionPower;
 		bool Lighting;
 	};
+
+	//@Uniform uMaterial
 
 	uniform Material uMaterial;
 

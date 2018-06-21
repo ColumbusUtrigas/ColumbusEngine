@@ -7,9 +7,11 @@ namespace Columbus
 	PostEffect::PostEffect()
 	{
 		mFB = gDevice->createFramebuffer();
-		mTB = gDevice->createTexture(NULL, 640, 480, true);
-		mDepth = gDevice->createTexture();
-		mDepth->loadDepth(NULL, 640, 480, true);
+		mTB = gDevice->CreateTexture();
+		mDepth = gDevice->CreateTexture();
+
+		mTB->Create2D(Texture::Properties(640, 480, 1, 0, 0, TextureFormat::RGB8));
+		mDepth->Create2D(Texture::Properties(640, 480, 1, 0, 0, TextureFormat::Depth16));
 
 		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
 		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
@@ -130,8 +132,18 @@ namespace Columbus
 
 	void PostEffect::Bind(Vector4 ClearColor, Vector2 ContextSize)
 	{
-		mTB->load(NULL, Math::TruncToInt(ContextSize.X), Math::TruncToInt(ContextSize.Y), true);
-		mDepth->loadDepth(NULL, Math::TruncToInt(ContextSize.X), Math::TruncToInt(ContextSize.Y), true);
+		if (ContextSize != PreviousSize)
+		{
+			int32 W, H;
+			W = Math::TruncToInt(ContextSize.X);
+			H = Math::TruncToInt(ContextSize.Y);
+
+			mTB->Load(nullptr, Texture::Properties(W, H, 0, 0, 0, TextureFormat::RGBA8));
+			mDepth->Load(nullptr, Texture::Properties(W, H, 0, 0, 0, TextureFormat::Depth16));
+		}
+
+		PreviousSize = ContextSize;
+
 		mFB->prepare(ClearColor, ContextSize);
 	}
 

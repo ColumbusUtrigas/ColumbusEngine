@@ -72,8 +72,8 @@ namespace Columbus
 
 		switch (bpp)
 		{
-		case 3: OutFormat = TextureFormat::RGB;  break;
-		case 4: OutFormat = TextureFormat::RGBA; break;
+		case 3: OutFormat = TextureFormat::RGB8;  break;
+		case 4: OutFormat = TextureFormat::RGBA8; break;
 		}
 
 		uint8* data = (uint8*)Memory::Malloc(width * height * bpp);

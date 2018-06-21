@@ -8,7 +8,21 @@
 
 #include <Audio/AudioSystem.h>
 
+#include <SDL_ttf.h>
+#include <minimp3.h>
+
 using namespace Columbus;
+
+#ifdef COLUMBUS_PLATFORM_WINDOWS
+	// hint to the driver to use discrete GPU
+	extern "C" 
+	{
+		// NVIDIA
+		__declspec(dllexport) int NvOptimusEnablement = 1;
+		// AMD
+		__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+	}
+#endif
 
 class Rotator : public Component
 {
@@ -34,6 +48,7 @@ int main(int argc, char** argv)
 	input.setWindow(&window);
 
 	AudioSystem Audio;
+	AudioListener Listener;
 
 	Camera camera;
 	camera.setPos(vec3(10, 10, 0));
@@ -46,7 +61,7 @@ int main(int argc, char** argv)
 
 	Timer timer;
 
-	window.setVSync(true);
+	window.setVSync(false);
 
 	Image CursorImage;
 	CursorImage.Load("Data/Textures/cursor.tga", ImageLoading::FlipY);
@@ -66,28 +81,73 @@ int main(int argc, char** argv)
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
 
-	/*AudioSource* Source = gAudioDevice->CreateSource();
+	AudioSource* Source1 = new AudioSource();
+	AudioSource* Source2 = new AudioSource();
+	AudioSource* BackgroundMusic = new AudioSource();
 
-	if (!Source->GetSound()->Load("Data/Sounds/cartoon001.ogg"))
-	{
-		Log::error("Couldn't load sound");
-	}
+	Sound FireSound;
+	Sound BackgroundSound;
+	FireSound.Load("Data/Sounds/Fire.ogg");
+	BackgroundSound.Load("Data/Sounds/thestonemasons.ogg", true);
 
-	Source->SetPosition(Vector3(0, 10, 3.5));
-	Source->SetLooping(true);
-	Source->SetMinDistance(1.0f);
-	Source->SetMaxDistance(1000.0f);
+	BackgroundMusic->SetSound(&BackgroundSound);
+	BackgroundMusic->SetMode(AudioSource::Mode::Sound2D);
+	BackgroundMusic->SetLooping(true);
+	BackgroundMusic->Play();
 
-	Source->SetSound(Source->GetSound());
-	
-	Source->Play();*/
+	Source1->SetSound(&FireSound);
+	Source2->SetSound(&FireSound);
+
+	Source1->SetPlayedTime(Random::range(0.0f, FireSound.GetLength()));
+	Source2->SetPlayedTime(Random::range(0.0f, FireSound.GetLength()));
+
+	Source1->SetPosition(Vector3(0, 10, 3.5));
+	Source2->SetPosition(Vector3(0, 10, -3.5));
+
+	Source1->SetLooping(true);
+	Source2->SetLooping(true);
+	Source1->Play();
+	Source2->Play();
+
+	Audio.AddSource(BackgroundMusic);
+	Audio.AddSource(Source1);
+	Audio.AddSource(Source2);
 
 	scene.getGameObject(12)->AddComponent(new Rotator());
 
 	auto Sphere = scene.getGameObject(15);
 	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
 
+	/*GameObject Tests[3000];
+
+	for (uint32 i = 0; i < 3000; i++)
+	{
+		Tests[i].AddComponent(Sphere->GetComponent(Component::Type::MeshRenderer));
+		Tests[i].SetTransform(Transform(Vector3((float)i * 0.1, 0, 0)));
+		scene.Add(21 + i, std::move(Tests[i]));
+	}*/
+
 	Audio.Play();
+
+	TTF_Init();
+	auto Font = TTF_OpenFont("Data/A.ttf", 35);
+
+	SDL_Color Color;
+	Color.r = 255;
+	Color.g = 0;
+	Color.b = 0;
+	Color.a = 255;
+
+	SDL_Surface* Surf = TTF_RenderUNICODE_Blended(Font, (Uint16*)L"ÍÊÂÄ", Color);
+
+	ImageBGRA2RGBA((uint8*)Surf->pixels, Surf->w * Surf->h * 4);
+	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);
+
+	Texture* FontTexture = gDevice->CreateTexture();
+	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 1, 0, 0, TextureFormat::RGBA8));
+	FontTexture->Load(Surf->pixels);
+	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Point, Texture::Anisotropy::Anisotropy8 });
+	static_cast<ComponentMeshRenderer*>(scene.getGameObject(19)->GetComponent(Component::Type::MeshRenderer))->GetMesh()->mMat.setTexture(FontTexture);
 
 	while (window.isOpen())
 	{
@@ -110,13 +170,13 @@ int main(int argc, char** argv)
 			camera.addPos(camera.right() * RedrawTime * 5);
 
 		if (input.getKey(SDL_SCANCODE_UP))
-			RB->ApplyCentralImpulse(Vector3(-0.3, 0, 0));
+			RB->ApplyCentralImpulse(Vector3(-0.3, 0, 0) * 60 * RedrawTime);
 		if (input.getKey(SDL_SCANCODE_DOWN))
-			RB->ApplyCentralImpulse(Vector3(0.3, 0, 0));
+			RB->ApplyCentralImpulse(Vector3(0.3, 0, 0) * 60 * RedrawTime);
 		if (input.getKey(SDL_SCANCODE_LEFT))
-			RB->ApplyCentralImpulse(Vector3(0, 0, 0.3));
+			RB->ApplyCentralImpulse(Vector3(0, 0, 0.3) * 60 * RedrawTime);
 		if (input.getKey(SDL_SCANCODE_RIGHT))
-			RB->ApplyCentralImpulse(Vector3(0, 0, -0.3));
+			RB->ApplyCentralImpulse(Vector3(0, 0, -0.3) * 60 * RedrawTime);
 
 		if (input.getKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(-camera.up() * RedrawTime * 5);
@@ -136,12 +196,18 @@ int main(int argc, char** argv)
 		if (!cursor)
 		{
 			Vector2 deltaMouse = input.getMouseMovement();
-			camera.addRot(Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3);
+			camera.addRot(Vector3(deltaMouse.Y * 60 * RedrawTime, -deltaMouse.X * 60 * RedrawTime, 0) * 0.3);
 			input.setMousePos(window.getSize() * 0.5);
 		}
 
 		camera.setRot(Vector3::Clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
 		camera.update();
+
+		Listener.Position = camera.getPos();
+		Listener.Right = camera.right();
+		Listener.Up = camera.up();
+		Listener.Forward = camera.direction();
+		Audio.SetListener(Listener);
 
 		scene.setContextSize(window.getSize());
 		scene.update();

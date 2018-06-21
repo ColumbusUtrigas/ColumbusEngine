@@ -9,8 +9,8 @@
 
     <Emit>
         <Emitting>1</Emitting>
-        <Count>100</Count>
-        <EmitRate>10</EmitRate>
+        <Count>50</Count>
+        <EmitRate>5</EmitRate>
     </Emit>
 
     <Location>
