@@ -103,7 +103,7 @@ namespace Columbus
 		virtual bool Load(StandartProgram Program) { return false; }
 		virtual bool Compile() { return false; }
 
-		virtual void AddUniform(std::string Name) {}
+		virtual bool AddUniform(std::string Name) { return false; }
 		virtual void SetUniform1i(std::string Name, int Value) const {}
 		virtual void SetUniform1f(std::string Name, float Value) const {}
 		virtual void SetUniform2f(std::string Name, Vector2 Value) const {}

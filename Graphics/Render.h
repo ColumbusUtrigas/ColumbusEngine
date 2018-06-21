@@ -11,6 +11,7 @@
 #pragma once
 
 #include <Graphics/Mesh.h>
+#include <Graphics/MeshInstanced.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
@@ -21,9 +22,6 @@
 #include <RenderAPI/APIOpenGL.h>
 #include <System/Timer.h>
 #include <Scene/GameObject.h>
-#include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentParticleSystem.h>
-#include <Scene/Component.h>
 
 namespace Columbus
 {
@@ -40,8 +38,37 @@ namespace Columbus
 		static void renderDepthPrepass(GameObject* aGameObject);
 		static void disableDepthPrepass();
 		static void render(GameObject* aGameObject);
-		//Destructor
+
+
 		~C_Render();
+	};
+
+	class Renderer
+	{
+	protected:
+		std::map<uint32, SmartPointer<GameObject>>* RenderList;
+		std::vector<std::pair<Mesh*, Transform>> Meshes;
+		std::vector<MeshInstanced*> MeshesInstanced;
+		std::vector<ParticleEmitter*> ParticleEmitters;
+
+		Camera MainCamera;
+	public:
+		enum class Stage
+		{
+			Opaque,
+			Transparent
+		};
+	public:
+		Renderer();
+
+		void SetMainCamera(Camera& InCamera) { MainCamera = InCamera; }
+
+		virtual void SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List);
+		virtual void CompileLists();
+		virtual void Render(Stage RenderStage);
+		virtual void Render(std::map<uint32, SmartPointer<GameObject>>* RenderList);
+
+		~Renderer();
 	};
 
 }

@@ -8,6 +8,8 @@ namespace Columbus
 
 	class AudioSource
 	{
+	public:
+		enum class Mode;
 	protected:
 		Sound* SoundClip;
 		Vector3 Position;
@@ -22,6 +24,15 @@ namespace Columbus
 		bool Looping;
 
 		uint64 Offset;
+		double Played;
+
+		Mode SoundMode;
+	public:
+		enum class Mode
+		{
+			Sound2D,
+			Sound3D
+		};
 	public:
 		AudioSource();
 
@@ -29,6 +40,12 @@ namespace Columbus
 		virtual void Pause();
 		virtual void Stop();
 		virtual void Rewind();
+
+		void SetPlayedTime(double Time);
+		double GetPlayedTime() const;
+
+		void SetMode(Mode InMode);
+		Mode GetMode() const;
 
 		virtual void SetSound(Sound* InSound);
 		virtual void SetPosition(Vector3 InPosition);

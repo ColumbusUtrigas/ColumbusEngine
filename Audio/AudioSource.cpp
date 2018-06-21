@@ -8,24 +8,40 @@ namespace Columbus
 		SoundClip(nullptr),
 		Gain(1.0f),
 		Pitch(1.0f),
-		MinDistance(0.01f),
-		MaxDistance(1000.0f),
+		MinDistance(Math::Sqrt(8)),
+		MaxDistance(100.0f),
 		Rolloff(1.0f),
 		Playing(false),
 		Looping(false),
-		Offset(0)
+		Offset(0),
+		Played(0.0),
+		SoundMode(AudioSource::Mode::Sound3D)
 	{
 		SoundClip = new Sound();
-
-		SetMinDistance(0.0f);
-		SetMaxDistance(100.0f);
-		SetRolloff(1.0f);
 	}
 
 	void AudioSource::Play() { Playing = true; }
 	void AudioSource::Pause() { Playing = false; }
 	void AudioSource::Stop() { Playing = false; Offset = 0; }
 	void AudioSource::Rewind() { Offset = 0; }
+
+	void AudioSource::SetPlayedTime(double Time)
+	{
+		if (SoundClip != nullptr)
+		{
+			Played = Time;
+			Offset = Time * SoundClip->GetFrequency();
+			SoundClip->Seek(Offset);
+		}
+	}
+
+	double AudioSource::GetPlayedTime() const
+	{
+		return Played;
+	}
+
+	void AudioSource::SetMode(AudioSource::Mode InMode) { SoundMode = InMode; }
+	AudioSource::Mode AudioSource::GetMode() const { return SoundMode; }
 
 	void AudioSource::SetSound(Sound* InSound)
 	{
@@ -136,49 +152,73 @@ namespace Columbus
 	{
 		if (Frames != nullptr && Count != 0)
 		{
-			Memory::Memset(Frames, 0, Count * 2);
-
 			if (Playing)
 			{
 				if (SoundClip != nullptr)
 				{
-					if (SoundClip->GetBufferSize() != 0 &&
-					    SoundClip->GetFrequency() != 0 &&
-					    SoundClip->GetChannelsCount() != 0 &&
-					    SoundClip->GetBuffer() != nullptr)
+					if (SoundClip->IsStreaming())
 					{
-						uint32 FramesCount = 0;
+						if (SoundClip->GetFrequency() != 0 &&
+						    SoundClip->GetChannelsCount() != 0)
+						{
+							uint32 Decoded = SoundClip->Decode(Frames, Count, Offset);
 
-						if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
-						{
-							uint32 BufferSize = Offset - (SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame));
-							FramesCount = BufferSize / sizeof(Sound::Frame);
-						}
-						else
-						{
-							FramesCount = Count;
-						}
+							Offset += Count * SoundClip->GetChannelsCount();
+							Played += 1.0 / SoundClip->GetFrequency() * Count;
 
-						for (uint32 i = 0; i < FramesCount; i++)
-						{
-							if (SoundClip->GetChannelsCount() == 1)
+							if (Decoded < Count)
 							{
-								Frames[i].L = Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+								SoundClip->Seek(0);
+								Offset = 0;
+								Played = 0.0;
+							}
+						}
+					}
+					else
+					{
+						if (SoundClip->GetBufferSize() != 0 &&
+							SoundClip->GetFrequency() != 0 &&
+							SoundClip->GetChannelsCount() != 0 &&
+							SoundClip->GetBuffer() != nullptr)
+						{
+							uint32 FramesCount = 0;
+
+							if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
+							{
+								uint32 BufferSize = Offset - (SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame));
+								FramesCount = BufferSize / sizeof(Sound::Frame);
 							}
 							else
 							{
-								Frames[i].L = *(SoundClip->GetBuffer() + Offset++);
-								Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+								FramesCount = Count;
 							}
-						}
 
-						if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
-						{
-							Offset = 0;
+							const double TimeStep = 1.0 / SoundClip->GetFrequency();
 
-							if (!Looping)
+							for (uint32 i = 0; i < FramesCount; i++)
 							{
-								Playing = false;
+								if (SoundClip->GetChannelsCount() == 1)
+								{
+									Frames[i].L = Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+								}
+								else
+								{
+									Frames[i].L = *(SoundClip->GetBuffer() + Offset++);
+									Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+								}
+
+								Played += TimeStep;
+							}
+
+							if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
+							{
+								Offset = 0;
+								Played = 0.0;
+
+								if (!Looping)
+								{
+									Playing = false;
+								}
 							}
 						}
 					}

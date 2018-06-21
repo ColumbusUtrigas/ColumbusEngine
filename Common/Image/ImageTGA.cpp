@@ -243,8 +243,8 @@ namespace Columbus
 
 		switch (tga.bits)
 		{
-		case 24: OutFormat = TextureFormat::RGB;  break;
-		case 32: OutFormat = TextureFormat::RGBA; break;
+		case 24: OutFormat = TextureFormat::RGB8;  break;
+		case 32: OutFormat = TextureFormat::RGBA8; break;
 		};
 
 		delete[] buffer;

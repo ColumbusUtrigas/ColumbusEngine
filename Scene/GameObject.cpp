@@ -60,6 +60,8 @@ namespace Columbus
 		{
 			Child->Update();
 		}
+
+		mTimer.reset();
 	}
 	
 	void GameObject::Render()
@@ -73,8 +75,6 @@ namespace Columbus
 		{
 			Child->Render();
 		}
-
-		mTimer.reset();
 	}
 	
 	bool GameObject::HasComponent(Component::Type Type)

@@ -429,13 +429,13 @@ namespace Columbus
 				mSizeData[sizeCounter++] = Particle.size.Y;
 				mSizeData[sizeCounter++] = Particle.size.Z;
 			}
-
-			mBuf->setData(mVertData, 18 * sizeof(float) * Particles.size(), 3);
-			mBuf->compile();
-
-			mTBuf->setData(mUvData, 12 * sizeof(float) * Particles.size(), 2);
-			mTBuf->compile();
 		}
+
+		mBuf->setData(mVertData, 18 * sizeof(float) * Particles.size(), 3);
+		mBuf->compile();
+
+		mTBuf->setData(mUvData, 12 * sizeof(float) * Particles.size(), 2);
+		mTBuf->compile();
 
 		mCBuf->setData(mColData, 24 * sizeof(float) * Particles.size(), 4);
 		mCBuf->compile();

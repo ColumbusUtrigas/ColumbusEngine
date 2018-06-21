@@ -1,5 +1,10 @@
 #ifdef VertexShader
 
+	//@Attribute aPos  0
+	//@Attribute aUV   1
+	//@Attribute aNorm 2
+	//@Attribute aTang 3
+
 	in vec3 aPos;
 	in vec2 aUV;
 	in vec3 aNorm;
@@ -10,6 +15,10 @@
 	out vec3 varNormal;
 	out vec3 varFragPos;
 	out mat3 varTBN;
+
+	//@Uniform uModel
+	//@Uniform uView
+	//@Uniform uProjection
 
 	uniform mat4 uModel;
 	uniform mat4 uView;
@@ -62,6 +71,19 @@
 		vec3 Position;
 	};
 
+	//@Uniform uMaterial.DiffuseMap
+	//@Uniform uMaterial.SpecularMap
+	//@Uniform uMaterial.NormalMap
+	//@Uniform uMaterial.ReflectionMap
+	//@Uniform uMaterial.Color
+	//@Uniform uMaterial.AmbientColor
+	//@Uniform uMaterial.DiffuseColor
+	//@Uniform uMaterial.SpecularColor
+	//@Uniform uMaterial.ReflectionPower
+	//@Uniform uMaterial.Lighting
+	//@Uniform uLighting
+	//@Uniform uCamera.Position
+
 	uniform Material uMaterial;
 	uniform float uLighting[15 * LIGHT_NUM];
 	uniform Camera uCamera;
@@ -113,9 +135,9 @@
 		SpecularMap = vec3(texture(uMaterial.SpecularMap, varUV));
 		NormalMap = vec3(texture(uMaterial.NormalMap, varUV));
 
-		if (DiffuseMap.w <= 0.1) discard;
+		//if (DiffuseMap.w <= 0.1) discard;
 
-		if (textureSize(uMaterial.SpecularMap, 0).xy != vec2(0))
+		if (textureSize(uMaterial.SpecularMap, 0).x > 1)
 			IsSpecularMap = true;
 
 		if (NormalMap != vec3(0))
@@ -184,7 +206,8 @@
 			tmpSpecular *= attenuation;
 		}
 
-		AmbientColor += tmpAmbient;
+		AmbientColor = vec3(0.1);
+		//AmbientColor += tmpAmbient;
 		DiffuseColor += tmpDiffuse;
 		SpecularColor += tmpSpecular;
 	}

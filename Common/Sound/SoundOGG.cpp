@@ -5,6 +5,73 @@
 namespace Columbus
 {
 
+	struct SoundDecoderOGG::StreamData
+	{
+		stb_vorbis* Ogg;
+		stb_vorbis_alloc Alloc;
+	};
+
+	SoundDecoderOGG::SoundDecoderOGG() : Data(nullptr) {}
+
+	bool SoundDecoderOGG::Load(std::string FileName)
+	{
+		Free();
+		Data = new StreamData;
+
+		Data->Alloc.alloc_buffer_length_in_bytes = 256 * 1024;
+		Data->Alloc.alloc_buffer = new char[Data->Alloc.alloc_buffer_length_in_bytes];
+
+		Data->Ogg = stb_vorbis_open_filename(FileName.c_str(), NULL, &Data->Alloc);
+		stb_vorbis_info info = stb_vorbis_get_info(Data->Ogg);
+
+		this->Size = 0;
+		this->Frequency = info.sample_rate;
+		this->Channels = info.channels;
+
+		return true;
+	}
+
+	void SoundDecoderOGG::Free()
+	{
+		if (Data != nullptr)
+		{
+			if (Data->Ogg != nullptr)
+			{
+				stb_vorbis_close(Data->Ogg);
+			}
+		}
+
+		Size = 0;
+		Frequency = 0;
+		Channels = 0;
+
+		delete Data;
+	}
+
+	void SoundDecoderOGG::Seek(uint64 Offset)
+	{
+		stb_vorbis_seek(Data->Ogg, Offset);
+	}
+
+	uint32 SoundDecoderOGG::Decode(Sound::Frame* Frames, uint32 Count)
+	{
+		uint32 i = 0;
+
+		while (i < Count)
+		{
+			int res = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, (short*)Frames + i, (Count - i) * 2);
+			if (!res) break;
+			i += res;
+		}
+
+		return i;
+	}
+
+	SoundDecoderOGG::~SoundDecoderOGG()
+	{
+		Free();
+	}
+
 	bool SoundIsOGG(std::string FileName)
 	{
 		File OGGSoundFile(FileName, "rb");

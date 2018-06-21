@@ -38,35 +38,15 @@ namespace Columbus
 	{
 		return new CubemapOpenGL(aPath);
 	}
-	
-	Texture* DeviceOpenGL::createTexture() const
+
+	Texture* DeviceOpenGL::CreateTexture() const
 	{
 		return new TextureOpenGL();
 	}
 	
-	Texture* DeviceOpenGL::createTexture(std::string aPath, bool aSmooth) const
-	{
-		return new TextureOpenGL(aPath, aSmooth);
-	}
-	
-	Texture* DeviceOpenGL::createTexture(const char* aData, const int aW, const int aH, bool aSmooth) const
-	{
-		return new TextureOpenGL(aData, aW, aH, aSmooth);
-	}
-	
-	Mesh* DeviceOpenGL::createMesh() const
+	Mesh* DeviceOpenGL::CreateMesh() const
 	{
 		return new MeshOpenGL();
-	}
-	
-	Mesh* DeviceOpenGL::createMesh(std::vector<Vertex> aVert) const
-	{
-		return new MeshOpenGL(aVert);
-	}
-	
-	Mesh* DeviceOpenGL::createMesh(std::vector<Vertex> aVert, Material aMat) const
-	{
-		return new MeshOpenGL(aVert, aMat);
 	}
 
 	MeshInstanced* DeviceOpenGL::CreateMeshInstanced() const

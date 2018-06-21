@@ -24,40 +24,28 @@
 	float blurSizeH = 1.0 / uResolution.x;
 	float blurSizeV = 1.0 / uResolution.y;
 
-	vec2 Sample(in float theta, inout float r)
+	vec3 GaussianBlur(vec2 size)
 	{
-	    r += 1.0 / r;
-		return (r-1.0) * vec2(cos(theta), sin(theta)) * .06;
-	}
+		vec4 sum = vec4(0.0);
 
-	#define ITERATIONS 150.0
-	#define ONEOVER_ITR  1.0 / ITERATIONS
-	#define PI 3.141596
-	#define GOLDEN_ANGLE 2.39996323
+		float sX = blurSizeH * size.x;
+		float sY = blurSizeV * size.y;
 
-	vec3 BokehBlur(float radius, float amount)
-	{
-		vec3 acc = vec3(0.0);
-		vec3 div = vec3(0.0);
-	    vec2 pixel = vec2(uResolution.y / uResolution.x, 1.0) * radius * 0.025;
-	    float r = 1.0;
-
-		for (float j = 0.0; j < GOLDEN_ANGLE * ITERATIONS; j += GOLDEN_ANGLE)
-	    {
-	       	
-			vec3 col = texture2D(uColor, UV + pixel * Sample(j, r)).xyz;
-			vec3 bokeh = vec3(0.5) + pow(col, vec3(10.0)) * amount;
-			acc += col * bokeh;
-			div += bokeh;
+		for (int x = -4; x <= 4; x++)
+		{
+			for (int y = -4; y <= 4; y++)
+			{
+				sum += texture(uColor, vec2(UV.x + x * sX, UV.y + y * sY)) / 81.0;
+			}
 		}
-		return acc / div;
+
+		return sum.xyz;
 	}
 
 	void main()
 	{
-		float d = pow(texture(uDepth, UV).x, 256);
+		//float d = pow(texture(uDepth, UV).x, 256);
 
-		//FragColor = vec4(BokehBlur(d * 0.3, 6), 1.0);
 		FragColor = vec4(texture(uColor, UV).rgb, 1.0);
 	}
 

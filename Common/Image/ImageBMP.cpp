@@ -92,8 +92,8 @@ namespace Columbus
 
 		switch (Surf->format->BitsPerPixel)
 		{
-		case 24: OutFormat = TextureFormat::RGB;  break;
-		case 32: OutFormat = TextureFormat::RGBA; break;
+		case 24: OutFormat = TextureFormat::RGB8;  break;
+		case 32: OutFormat = TextureFormat::RGBA8; break;
 		}
 
 		uint8* Data = new uint8[OutSize];

@@ -27,6 +27,11 @@ namespace Columbus
 	{
 		return Component::Type::MeshRenderer;
 	}
+
+	Mesh* ComponentMeshRenderer::GetMesh() const
+	{
+		return Object;
+	}
 	
 	void ComponentMeshRenderer::SetLights(std::vector<Light*> aLights)
 	{

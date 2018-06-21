@@ -62,7 +62,7 @@ namespace Columbus
 		OutWidth = cinfo.image_width;
 		OutHeight = cinfo.image_height;
 		OutSize = cinfo.image_width * cinfo.image_height * 3;
-		OutFormat = TextureFormat::RGB;
+		OutFormat = TextureFormat::RGB8;
 
 		jpeg_start_decompress(&cinfo);
 

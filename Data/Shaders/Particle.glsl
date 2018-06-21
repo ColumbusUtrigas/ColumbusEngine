@@ -34,22 +34,7 @@
 	void main(void)
 	{
 		mat4 Rotation;
-		mat4 ModelView = uView * mat4(1);
 		RotationMatrix(vec3(0, 0, 1), aTimes.z * 0.011111, Rotation);
-
-		ModelView[0][0] = 1;
-		ModelView[0][1] = 0;
-		ModelView[0][2] = 0;
-
-		ModelView[1][0] = 0;
-		ModelView[1][1] = 1;
-		ModelView[1][2] = 0;
-
-		ModelView[2][0] = 0;
-		ModelView[2][1] = 0;
-		ModelView[2][2] = 1;
-
-		vec3 pos = aPoses;
 
 		int frameNumber = int(aTimes.w);
 
@@ -64,13 +49,13 @@
 
 		if (uBillboard != 0.0)
 		{
-			Position = uProjection * (uView * vec4(pos, 1.0) + vec4(aPos, 0.0) * vec4(aSizes, 0.0) * Rotation);
+			Position = uProjection * (uView * vec4(aPoses, 1.0) + vec4(aPos, 0.0) * vec4(aSizes, 0.0) * Rotation);
 		} else
 		{
-			Position = uProjection * uView * (vec4(pos, 1.0) + vec4(aPos * aSizes, 0.0) * Rotation);
+			Position = uProjection * uView * (vec4(aPoses, 1.0) + vec4(aPos * aSizes, 0.0) * Rotation);
 		}
 
-		varPos = pos + aPos;
+		varPos = aPoses + aPos;
 		varTexCoord = frame;
 		varColor = aColors;
 	}

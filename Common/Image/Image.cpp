@@ -8,14 +8,28 @@ namespace Columbus
 	{
 		switch (Format)
 		{
-		case TextureFormat::RGB:
-		case TextureFormat::BGR:  return 3; break;
-		case TextureFormat::RGBA:
-		case TextureFormat::BGRA: return 4; break;
-		case TextureFormat::S3TC_A1:
-		case TextureFormat::S3TC_A4:
-		case TextureFormat::S3TC_A8:
-		case TextureFormat::Unknown: return 0; break;
+		case TextureFormat::R8:      return 1;  break;
+		case TextureFormat::RG8:     return 2;  break;
+		case TextureFormat::RGB8:    return 3;  break;
+		case TextureFormat::RGBA8:   return 4;  break;
+
+		case TextureFormat::R16:    
+		case TextureFormat::R16F:    return 2;  break;
+		case TextureFormat::RG16:    
+		case TextureFormat::RG16F:   return 4;  break;
+		case TextureFormat::RGB16:
+		case TextureFormat::RGB16F:  return 6;  break;
+		case TextureFormat::RGBA16:
+		case TextureFormat::RGBA16F: return 8;  break;
+
+		case TextureFormat::R32F:    return 4;  break;
+		case TextureFormat::RG32F:   return 8;  break;
+		case TextureFormat::RGB32F:  return 12; break;
+		case TextureFormat::RGBA32F: return 16; break;
+
+		case TextureFormat::Unknown: return 0;  break;
+
+		default:                     return 0;  break;
 		}
 
 		return 0;
@@ -279,7 +293,7 @@ namespace Columbus
 		Height = 0;
 		Size = 0;
 		MipMaps = 0;
-		Format = TextureFormat::RGBA;
+		Format = TextureFormat::RGBA8;
 		Exist = false;
 		FileName.clear();
 
@@ -321,6 +335,45 @@ namespace Columbus
 
 		return false;
 	}
+
+	bool Image::IsRawFormat() const
+	{
+		return (Format == TextureFormat::R8 ||
+		        Format == TextureFormat::RG8 ||
+		        Format == TextureFormat::RGB8 ||
+		        Format == TextureFormat::RGBA8);
+	}
+
+	bool Image::IsUnsignedShortFormat() const
+	{
+		return (Format == TextureFormat::R16 ||
+		        Format == TextureFormat::RG16 ||
+		        Format == TextureFormat::RGB16 ||
+		        Format == TextureFormat::RGBA16);
+	}
+
+	bool Image::IsHalfFormat() const
+	{
+		return (Format == TextureFormat::R16F ||
+		        Format == TextureFormat::RG16F ||
+		        Format == TextureFormat::RGB16F ||
+		        Format == TextureFormat::RGBA16F);
+	}
+
+	bool Image::IsFloatFormat() const
+	{
+		return (Format == TextureFormat::R32F ||
+		        Format == TextureFormat::RG32F ||
+		        Format == TextureFormat::RGB32F ||
+		        Format == TextureFormat::RGBA32F);
+	}
+
+	bool Image::IsCompressedFormat() const
+	{
+		return (Format == TextureFormat::DXT1 ||
+		        Format == TextureFormat::DXT3 ||
+		        Format == TextureFormat::DXT5);
+	}
 	
 	uint32 Image::GetWidth() const
 	{
@@ -332,9 +385,34 @@ namespace Columbus
 		return Height;
 	}
 
+	uint32 Image::GetDepth() const
+	{
+		return Depth;
+	}
+
+	uint32 Image::GetMipmapsCount() const
+	{
+		return MipMaps;
+	}
+
+	uint64 Image::GetOffset(uint32 Level) const
+	{
+		return 0; //TODO
+	}
+
 	uint64 Image::GetSize() const
 	{
 		return Size;
+	}
+
+	uint8* Image::Get2DData(uint32 Level) const
+	{
+		if (Data != nullptr)
+		{
+			return Data + GetOffset(Level);
+		}
+
+		return nullptr;
 	}
 
 	TextureFormat Image::GetFormat() const

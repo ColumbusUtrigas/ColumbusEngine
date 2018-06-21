@@ -77,11 +77,11 @@ namespace Columbus
 
 				switch (mBitmaps[i].GetFormat())
 				{
-				case TextureFormat::RGB:  format = GL_RGB;  break;
-				case TextureFormat::RGBA: format = GL_RGBA; break;
-				case TextureFormat::S3TC_A1: format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; IsDXT = true; break;
-				case TextureFormat::S3TC_A4: format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; IsDXT = true; break;
-				case TextureFormat::S3TC_A8: format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; IsDXT = true; break;
+				case TextureFormat::RGB8:  format = GL_RGB;  break;
+				case TextureFormat::RGBA8: format = GL_RGBA; break;
+				case TextureFormat::DXT1: format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; IsDXT = true; break;
+				case TextureFormat::DXT3: format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; IsDXT = true; break;
+				case TextureFormat::DXT5: format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; IsDXT = true; break;
 				default: format = GL_RGBA; break;
 				}
 

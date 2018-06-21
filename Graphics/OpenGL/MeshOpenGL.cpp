@@ -189,10 +189,10 @@ namespace Columbus
 		float* u = new float[Vertices.size() * 2]; //UV buffer
 		float* n = new float[Vertices.size() * 3]; //Normal buffer
 		float* t = new float[Vertices.size() * 3]; //Tangent buffer
-		uint64_t vcounter = 0;
-		uint64_t ucounter = 0;
-		uint64_t ncounter = 0;
-		uint64_t tcounter = 0;
+		uint64 vcounter = 0;
+		uint64 ucounter = 0;
+		uint64 ncounter = 0;
+		uint64 tcounter = 0;
 
 		for (auto& Vertex : Vertices)
 		{
@@ -261,50 +261,32 @@ namespace Columbus
 		BoundingBox.Min = Vector3(OBBData.minX, OBBData.minY, OBBData.minZ);
 		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 	}
-	
-	void MeshOpenGL::Render(Transform InTransform)
+
+	void MeshOpenGL::Bind()
 	{
-		if (mMat.GetShader() == nullptr) return;
-		if (!mMat.GetShader()->IsCompiled())
-		{
-			auto tShader = mMat.GetShader();
-
-			tShader->AddAttribute("aPos", 0);
-			tShader->AddAttribute("aUV", 1);
-			tShader->AddAttribute("aNorm", 2);
-			tShader->AddAttribute("aTang", 3);
-			tShader->Compile();
-
-			tShader->AddUniform("uMaterial.DiffuseMap");
-			tShader->AddUniform("uMaterial.SpecularMap");
-			tShader->AddUniform("uMaterial.NormalMap");
-			tShader->AddUniform("uMaterial.ReflectionMap");
-
-			tShader->AddUniform("uMaterial.Color");
-			tShader->AddUniform("uMaterial.AmbientColor");
-			tShader->AddUniform("uMaterial.DiffuseColor");
-			tShader->AddUniform("uMaterial.SpecularColor");
-			tShader->AddUniform("uMaterial.ReflectionPower");
-			tShader->AddUniform("uMaterial.Lighting");
-
-			tShader->AddUniform("uLighting");
-
-			tShader->AddUniform("uModel");
-			tShader->AddUniform("uView");
-			tShader->AddUniform("uProjection");
-
-			tShader->AddUniform("uCamera.Position");
-		}
-
-		mMat.GetShader()->Bind();
-
+		glBindVertexArray(VAO);
+	}
+	
+	uint32 MeshOpenGL::Render(Transform InTransform)
+	{
 		SortLights();
-
 		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
 
-		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
+
+		return VerticesCount / 3;
+	}
+
+	void MeshOpenGL::Unbind()
+	{
 		glBindVertexArray(0);
+	}
+
+	uint64 MeshOpenGL::GetMemoryUsage() const
+	{
+		uint64 Usage = 0;
+		Usage += sizeof(Vertex) * VerticesCount;
+		return Usage;
 	}
 	
 	void MeshOpenGL::SortLights()
