@@ -61,6 +61,14 @@ namespace Columbus
 				Streaming = true;
 				return Decoder->Load(FileName);
 				break;
+			case SoundFormat::MP3:
+				Streaming = false;
+				return false;
+				break;
+			case SoundFormat::Unknown:
+				Streaming = false;
+				return false;
+				break;
 			}
 		}
 
