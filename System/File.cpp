@@ -107,7 +107,7 @@ namespace Columbus
 
 	bool File::IsEOF() const
 	{
-		return (feof(Handle) == 0);
+		return (feof(Handle) != 0);
 	}
 
 	int File::Getc() const

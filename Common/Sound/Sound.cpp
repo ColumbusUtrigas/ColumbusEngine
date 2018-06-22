@@ -8,6 +8,7 @@ namespace Columbus
 	{
 		if (SoundIsWAV(FileName)) return SoundFormat::WAV;
 		if (SoundIsOGG(FileName)) return SoundFormat::OGG;
+		if (SoundIsMP3(FileName)) return SoundFormat::MP3;
 
 		return SoundFormat::Unknown;
 	}
@@ -21,6 +22,7 @@ namespace Columbus
 		case SoundFormat::Unknown: return nullptr; break;
 		case SoundFormat::WAV: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels); break;
 		case SoundFormat::OGG: return SoundLoadOGG(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::MP3: return SoundLoadMP3(FileName, OutSize, OutFrequency, OutChannels); break;
 		}
 
 		return nullptr;
@@ -50,6 +52,10 @@ namespace Columbus
 		{
 			switch (SoundGetFormat(FileName))
 			{
+			case SoundFormat::WAV:
+				Decoder = new SoundDecoderPCM();
+				Streaming = true;
+				return Decoder->Load(FileName);
 			case SoundFormat::OGG:
 				Decoder = new SoundDecoderOGG();
 				Streaming = true;
@@ -84,7 +90,7 @@ namespace Columbus
 		}
 	}
 
-	uint32 Sound::Decode(Frame* Frames, uint32 Count, uint64 Offset)
+	uint32 Sound::Decode(Frame* Frames, uint32 Count)
 	{
 		if (Frames != nullptr)
 		{

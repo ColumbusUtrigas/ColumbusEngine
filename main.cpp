@@ -9,7 +9,6 @@
 #include <Audio/AudioSystem.h>
 
 #include <SDL_ttf.h>
-#include <minimp3.h>
 
 using namespace Columbus;
 

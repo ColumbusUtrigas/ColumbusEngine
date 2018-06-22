@@ -100,6 +100,88 @@ namespace Columbus
 		return WAVSoundData;
 	}
 
+	SoundDecoderPCM::SoundDecoderPCM() { }
+
+	bool SoundDecoderPCM::Load(std::string FileName)
+	{
+		Free();
+		if (!SoundIsWAV(FileName))
+		{
+			return false;
+		}
+
+		WAVSoundFile.Open(FileName, "rb");
+
+		if (!WAVSoundFile.IsOpened())
+		{
+			return false;
+		}
+
+		WAV_HEADER Header;
+
+		if (!ReadHeader(&Header, &WAVSoundFile))
+		{
+			WAVSoundFile.Close();
+			return false;
+		}
+
+		Size = WAVSoundFile.GetSize() - sizeof(WAV_HEADER);
+		Frequency = Header.Frequency;
+		Channels = Header.Channels;
+	}
+
+	void SoundDecoderPCM::Free()
+	{
+		WAVSoundFile.Close();
+		Size = 0;
+		Frequency = 0;
+		Channels = 0;
+	}
+
+	void SoundDecoderPCM::Seek(uint64 Offset)
+	{
+
+	}
+
+	uint32 SoundDecoderPCM::Decode(Sound::Frame* Frames, uint32 Count)
+	{
+		if (Frames != nullptr && Count != 0 && WAVSoundFile.IsOpened())
+		{
+			Sound::Frame Frame;
+			uint32 Samples = 0;
+
+			for (uint32 i = 0; i < Count; i++)
+			{
+				if (WAVSoundFile.IsEOF())
+				{
+					return Samples;
+				}
+
+				if (Channels == 1)
+				{
+					WAVSoundFile.Read(&Frame.L, sizeof(int16), 1);
+					Frame.R = Frame.L;
+				}
+				else 
+				{
+					WAVSoundFile.Read(&Frame, sizeof(Sound::Frame), 1);
+				}
+
+				Frames[i] = Frame;
+				Samples++;
+			}
+
+			return Samples;
+		}
+
+		return 0;
+	}
+
+	SoundDecoderPCM::~SoundDecoderPCM()
+	{
+		Free();
+	}
+
 }
 
 
