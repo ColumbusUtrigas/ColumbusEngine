@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 	Color.b = 0;
 	Color.a = 255;
 
-	SDL_Surface* Surf = TTF_RenderUNICODE_Blended(Font, (Uint16*)L"ÍÊÂÄ", Color);
+	SDL_Surface* Surf = TTF_RenderUNICODE_Blended(Font, (Uint16*)L"ÐÐšÐ’Ð”", Color);
 
 	ImageBGRA2RGBA((uint8*)Surf->pixels, Surf->w * Surf->h * 4);
 	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);

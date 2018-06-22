@@ -73,8 +73,8 @@ namespace Columbus
 
 		struct Flags
 		{
-			Filter Filter = Filter::Linear;
-			Anisotropy Anisotropy = Anisotropy::Anisotropy8;
+			Filter Filtering = Filter::Linear;
+			Anisotropy AnisotropyFilter = Anisotropy::Anisotropy8;
 		};
 
 		struct Properties

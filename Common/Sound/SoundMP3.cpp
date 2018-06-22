@@ -5,6 +5,8 @@
 #include <minimp3.h>
 #include <vector>
 
+#include <System/Timer.h>
+
 namespace Columbus
 {
 
@@ -13,12 +15,15 @@ namespace Columbus
 		File MP3SoundFile(FileName, "rb");
 		if (!MP3SoundFile.IsOpened()) return false;
 
-		uint8 Magic[2];
+		uint8 Magic[3];
 		MP3SoundFile.Read(Magic, sizeof(Magic), 1);
 		MP3SoundFile.Close();
 
-		if (Magic[0] == 0xFF &&
-		    Magic[1] == 0xFB)
+		if ((Magic[0] == 0xFF &&
+		     Magic[1] == 0xFB) ||
+			(Magic[0] == 'I' &&
+		     Magic[1] == 'D' &&
+		     Magic[2] == '3'))
 		{
 			return true;
 		}
@@ -55,16 +60,19 @@ namespace Columbus
 		uint64 TotalSamples = 0;
 		uint64 Offset = 0;
 
+		Timer t;
+
 		do
 		{
 			uint32 Samples = mp3dec_decode_frame(&MP3Decoder, Buffer, MP3Size, PCM, &MP3FrameInfo);
 			TotalSamples += Samples;
 
-			Data.reserve(TotalSamples);
-
-			for (uint32 i = 0; i < Samples; i++)
+			if (Samples != 0)
 			{
-				Data.push_back(PCM[i]);
+				for (uint32 i = 0; i < Samples * MP3FrameInfo.channels; i++)
+				{
+					Data.push_back(PCM[i]);
+				}
 			}
 
 			Offset += MP3FrameInfo.frame_bytes;
@@ -76,7 +84,7 @@ namespace Columbus
 		OutFrequency = MP3FrameInfo.hz;
 		OutChannels = MP3FrameInfo.channels;
 
-		Ret = new int16[TotalSamples];
+		Ret = new int16[TotalSamples * MP3FrameInfo.channels];
 		std::copy(Data.begin(), Data.end(), Ret);
 
 		Buffer -= Offset;
@@ -86,6 +94,7 @@ namespace Columbus
 	}
 
 }
+
 
 
 

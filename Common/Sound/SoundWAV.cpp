@@ -128,6 +128,8 @@ namespace Columbus
 		Size = WAVSoundFile.GetSize() - sizeof(WAV_HEADER);
 		Frequency = Header.Frequency;
 		Channels = Header.Channels;
+
+		return true;
 	}
 
 	void SoundDecoderPCM::Free()
