@@ -161,7 +161,7 @@ namespace Columbus
 						if (SoundClip->GetFrequency() != 0 &&
 						    SoundClip->GetChannelsCount() != 0)
 						{
-							uint32 Decoded = SoundClip->Decode(Frames, Count, Offset);
+							uint32 Decoded = SoundClip->Decode(Frames, Count);
 
 							Offset += Count * SoundClip->GetChannelsCount();
 							Played += 1.0 / SoundClip->GetFrequency() * Count;
@@ -177,9 +177,9 @@ namespace Columbus
 					else
 					{
 						if (SoundClip->GetBufferSize() != 0 &&
-							SoundClip->GetFrequency() != 0 &&
-							SoundClip->GetChannelsCount() != 0 &&
-							SoundClip->GetBuffer() != nullptr)
+						    SoundClip->GetFrequency() != 0 &&
+						    SoundClip->GetChannelsCount() != 0 &&
+						    SoundClip->GetBuffer() != nullptr)
 						{
 							uint32 FramesCount = 0;
 

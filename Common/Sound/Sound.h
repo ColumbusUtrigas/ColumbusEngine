@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Types.h>
+#include <System/File.h>
 #include <string>
 
 namespace Columbus
@@ -10,10 +11,12 @@ namespace Columbus
 	{
 		WAV,
 		OGG,
+		MP3,
 		Unknown
 	};
 
 	class SoundDecoder;
+	class SoundDecoderPCM;
 	class SoundDecoderOGG;
 	class Sound;
 
@@ -21,9 +24,11 @@ namespace Columbus
 
 	bool SoundIsWAV(std::string FileName); //Check file magic
 	bool SoundIsOGG(std::string FileName); //Check file magic
+	bool SoundIsMP3(std::string FileName);
 
 	int16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 	int16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoadMP3(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
 	int16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
@@ -57,7 +62,7 @@ namespace Columbus
 		void Free();
 
 		void Seek(uint64 Offset);
-		uint32 Decode(Frame* Frames, uint32 Count, uint64 Offset);
+		uint32 Decode(Frame* Frames, uint32 Count);
 
 		uint64 GetBufferSize() const;
 		uint32 GetFrequency() const;
@@ -88,6 +93,21 @@ namespace Columbus
 		uint16 GetChannels() const { return Channels; }
 
 		virtual ~SoundDecoder() {}
+	};
+
+	class SoundDecoderPCM : public SoundDecoder
+	{
+	private:
+		File WAVSoundFile;
+	public:
+		SoundDecoderPCM();
+
+		bool Load(std::string FileName) override;
+		void Free() override;
+		void Seek(uint64 Offset) override;
+		uint32 Decode(Sound::Frame* Frames, uint32 Count) override;
+
+		~SoundDecoderPCM() override;
 	};
 
 	class SoundDecoderOGG : public SoundDecoder
