@@ -1,103 +1,211 @@
 #include <Common/Sound/Sound.h>
 #include <System/File.h>
+#include <Math/MathUtil.h>
+#include <Core/Memory.h>
+#include <vector>
 
 namespace Columbus
 {
 
-	typedef struct 
-	{
-		uint8 RIFFMagic[4]; //Magic bytes "RIFF"
-		uint32 Size;        //Size of whole file (In WAVE file it Size - 8)
-		uint8 WAVEMagic[4]; //Magic bytes "WAVE"
-		uint8 FMTMagic[4];  //Magic bytes "fmt "
-		uint32 SChunkSize;  //Must be 16
-		uint16 Format;      //1 if PCM
-		uint16 Channels;    //1 for mono, 2 for stereo
-		uint32 Frequency;   //Sound fequency (22050Hz, 44100Hz, etc...)
-		uint32 ByteRate;    //Bytes per second
-		uint16 BlockAlign;  //Bytes per sample including all channels
-		uint16 BPS;         //Bits per sample (8, 16, etc...)
-		uint8 DataMagic[4]; //Magic bytes "data"
-		uint32 DataSize;    //Size of sound data
-	} WAV_HEADER;
-
-	static bool ReadHeader(WAV_HEADER* Header, File* InFile)
-	{
-		if (Header == nullptr || InFile == nullptr) return false;
-
-		if (!InFile->ReadBytes(Header->RIFFMagic, sizeof(Header->RIFFMagic))) return false;
-		if (!InFile->ReadUint32(&Header->Size)) return false;
-		if (!InFile->ReadBytes(Header->WAVEMagic, sizeof(Header->WAVEMagic))) return false;
-		if (!InFile->ReadBytes(Header->FMTMagic, sizeof(Header->FMTMagic))) return false;
-		if (!InFile->ReadUint32(&Header->SChunkSize)) return false;
-		if (!InFile->ReadUint16(&Header->Format)) return false;
-		if (!InFile->ReadUint16(&Header->Channels)) return false;
-		if (!InFile->ReadUint32(&Header->Frequency)) return false;
-		if (!InFile->ReadUint32(&Header->ByteRate)) return false;
-		if (!InFile->ReadUint16(&Header->BlockAlign)) return false;
-		if (!InFile->ReadUint16(&Header->BPS)) return false;
-		if (!InFile->ReadBytes(Header->DataMagic, sizeof(Header->DataMagic))) return false;
-		if (!InFile->ReadUint32(&Header->DataSize)) return false;
-
-		return true;
-	}
-
-	bool SoundIsWAV(std::string FileName)
+	#define FOURCC(str) uint32(((uint8*)(str))[0] | (((uint8*)(str))[1] << 8) | (((uint8*)(str))[2] << 16) | (((uint8*)(str))[3] << 24))
+	static int64 GetWAVFormat(std::string FileName, uint64& OutSize, uint16& OutFormat, uint16& OutChannels, uint32& OutFreq, uint16& OutBlock)
 	{
 		File WAVSoundFile(FileName, "rb");
-		if (!WAVSoundFile.IsOpened()) return false;
+		if (!WAVSoundFile.IsOpened()) return -1;
 
-		uint8 Magic[12];
-		WAVSoundFile.Read(Magic, sizeof(Magic), 1);
-		WAVSoundFile.Close();
-
-		if (Magic[0] == 'R' &&
-		    Magic[1] == 'I' &&
-		    Magic[2] == 'F' &&
-		    Magic[3] == 'F')
+		struct FMTChunk
 		{
-			//This file format is RIFF
-			if (Magic[8] == 'W' &&
-			    Magic[9] == 'A' &&
-			    Magic[10] == 'V' &&
-			    Magic[11] == 'E')
+			uint16  Format;
+			uint16  Channels;
+			uint32  SamplesPerSec;
+			uint32  BytesPerSec;
+			uint16  Block;
+			uint16  SampleBits;
+		} FMT;
+
+		int64 BeginOffset = -1;
+
+		uint32 FourCC;
+		WAVSoundFile.Read(FourCC);
+
+		if (FourCC == FOURCC("RIFF"))
+		{
+			WAVSoundFile.SeekCur(8);
+
+			while (!WAVSoundFile.IsEOF())
 			{
-				//This file format is WAVE
-				return true;
+				uint32 type, size;
+
+				WAVSoundFile.Read(type);
+				WAVSoundFile.Read(size);
+
+				if (type == FOURCC("fmt "))
+				{
+					WAVSoundFile.Read(&FMT, sizeof(FMTChunk), 1);
+					WAVSoundFile.SeekCur(size - sizeof(FMTChunk));
+				}
+				else if (type == FOURCC("data"))
+				{
+					OutSize = size;
+					OutFormat = FMT.Format;
+					OutFreq = FMT.SamplesPerSec;
+					OutChannels = FMT.Channels;
+					OutBlock = FMT.Block;
+					BeginOffset = WAVSoundFile.Tell();
+
+					break;
+				}
+				else
+				{
+					WAVSoundFile.SeekCur(size);
+				}
 			}
+		}
+
+		return BeginOffset;
+	}
+
+	bool SoundIsWAV_PCM(std::string FileName)
+	{
+		uint64 Size;
+		uint16 Format;
+		uint16 Channels;
+		uint32 Freq;
+		uint16 Block;
+
+		if (GetWAVFormat(FileName, Size, Format, Channels, Freq, Block) != -1)
+		{
+			return Format == 1;
 		}
 
 		return false;
 	}
 
+	bool SoundIsWAV_ADPCM(std::string FileName)
+	{
+		uint64 Size;
+		uint16 Format;
+		uint16 Channels;
+		uint32 Freq;
+		uint16 Block;
+
+		if (GetWAVFormat(FileName, Size, Format, Channels, Freq, Block) != -1)
+		{
+			return Format == 2;
+		}
+
+		return false;
+	}
+
+	static int16* LoadWAV_PCM(File* WAVSoundFile)
+	{
+		if (WAVSoundFile != nullptr)
+		{
+			if (WAVSoundFile->IsOpened())
+			{
+				uint64 Size = WAVSoundFile->GetSize() - WAVSoundFile->Tell();
+
+				int16* WAVSoundData = new int16[Size / sizeof(int16)];
+
+				if (!WAVSoundFile->ReadBytes(WAVSoundData, Size))
+				{
+					delete[] WAVSoundData;
+					return nullptr;
+				}
+
+				return WAVSoundData;
+			}
+		}
+
+		return nullptr;
+	}
+
 	int16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
+		uint64 Size;
+		uint16 Format;
+		uint16 Channels;
+		uint32 Freq;
+		uint16 Block;
+		uint64 BeginOffset;
+
+		if ((BeginOffset = GetWAVFormat(FileName, Size, Format, Channels, Freq, Block)) == -1)
+		{
+			return nullptr;
+		}
+
 		File WAVSoundFile(FileName, "rb");
 		if (!WAVSoundFile.IsOpened())
 		{
 			return nullptr;
 		}
 
-		WAV_HEADER Header;
+		WAVSoundFile.SeekSet(BeginOffset);
 
-		if (!ReadHeader(&Header, &WAVSoundFile))
+		switch (Format)
 		{
-			return nullptr;
+			case 1: /*Microsoft PCM*/
+			{
+				int16* Data = LoadWAV_PCM(&WAVSoundFile);
+				OutSize = Size;
+				OutFrequency = Freq;
+				OutChannels = Channels;
+
+				return Data;
+			}
+
+			case 2: /*Microsoft ADPCM*/
+			{
+				WAVSoundFile.Close();
+				SoundDecoder* Decoder = new SoundDecoderADPCM();
+				if (!Decoder->Load(FileName))
+				{
+					delete Decoder;
+					return nullptr;
+				}
+
+				std::vector<int16> TmpBuffer;
+
+				uint32 Count = 512;
+				Sound::Frame* Frames = new Sound::Frame[512];
+
+				uint64 TotalSamples = 0;
+
+				while (true)
+				{
+					uint32 Samples = Decoder->Decode(Frames, Count);
+					TotalSamples += Samples;
+
+					for (uint32 i= 0; i < Samples; i++)
+					{
+						TmpBuffer.push_back(Frames[i].L);
+
+						if (Channels == 2)
+						{
+							TmpBuffer.push_back(Frames[i].R);
+						}
+					}
+
+					if (Samples < Count)
+					{
+						break;
+					}
+				}
+
+				int16* Data = new int16[TmpBuffer.size()];
+				std::copy(TmpBuffer.begin(), TmpBuffer.end(), Data);
+
+				OutSize = TotalSamples * sizeof(int16);
+				OutFrequency = Freq;
+				OutChannels = Channels;
+
+				delete Frames;
+				return Data;
+			}
 		}
 
-		int16* WAVSoundData = new int16[Header.DataSize / sizeof(int16)];
 
-		if (!WAVSoundFile.ReadBytes(WAVSoundData, Header.DataSize))
-		{
-			delete[] WAVSoundData;
-			return nullptr;
-		}
-
-		OutSize = Header.DataSize;
-		OutFrequency = Header.Frequency;
-		OutChannels = Header.Channels;
-
-		return WAVSoundData;
+		return nullptr;
 	}
 
 	SoundDecoderPCM::SoundDecoderPCM() { }
@@ -105,29 +213,27 @@ namespace Columbus
 	bool SoundDecoderPCM::Load(std::string FileName)
 	{
 		Free();
-		if (!SoundIsWAV(FileName))
-		{
-			return false;
-		}
 
 		WAVSoundFile.Open(FileName, "rb");
-
 		if (!WAVSoundFile.IsOpened())
 		{
 			return false;
 		}
 
-		WAV_HEADER Header;
+		uint16 Format = 0;
+		uint16 Block = 0;
 
-		if (!ReadHeader(&Header, &WAVSoundFile))
+		if ((BeginOffset = GetWAVFormat(FileName, Size, Format, Channels, Frequency, Block)) == -1)
 		{
-			WAVSoundFile.Close();
 			return false;
 		}
 
-		Size = WAVSoundFile.GetSize() - sizeof(WAV_HEADER);
-		Frequency = Header.Frequency;
-		Channels = Header.Channels;
+		if (Format != 1/*Microsoft PCM*/)
+		{
+			return false;
+		}
+
+		WAVSoundFile.SeekSet(BeginOffset);
 
 		return true;
 	}
@@ -142,7 +248,12 @@ namespace Columbus
 
 	void SoundDecoderPCM::Seek(uint64 Offset)
 	{
+		if (WAVSoundFile.IsOpened())
+		{
+			uint32 SampleSize = sizeof(int16) * Channels;
 
+			WAVSoundFile.SeekSet(Offset * SampleSize + BeginOffset);
+		}
 	}
 
 	uint32 SoundDecoderPCM::Decode(Sound::Frame* Frames, uint32 Count)
@@ -161,12 +272,12 @@ namespace Columbus
 
 				if (Channels == 1)
 				{
-					WAVSoundFile.Read(&Frame.L, sizeof(int16), 1);
+					WAVSoundFile.Read(Frame.L);
 					Frame.R = Frame.L;
 				}
 				else 
 				{
-					WAVSoundFile.Read(&Frame, sizeof(Sound::Frame), 1);
+					WAVSoundFile.Read(Frame);
 				}
 
 				Frames[i] = Frame;
@@ -184,10 +295,143 @@ namespace Columbus
 		Free();
 	}
 
+	SoundDecoderADPCM::SoundDecoderADPCM() { }
+
+	bool SoundDecoderADPCM::Load(std::string FileName)
+	{
+		Free();
+
+		WAVSoundFile.Open(FileName, "rb");
+		if (!WAVSoundFile.IsOpened())
+		{
+			return false;
+		}
+
+		uint16 Format = 0;
+
+		if ((BeginOffset = GetWAVFormat(FileName, Size, Format, Channels, Frequency, Block)) == -1)
+		{
+			return false;
+		}
+
+		if (Format != 2/*Microsoft ADPCM*/)
+		{
+			return false;
+		}
+
+		WAVSoundFile.SeekSet(BeginOffset);
+
+		return true;
+	}
+
+	void SoundDecoderADPCM::Free()
+	{
+		WAVSoundFile.Close();
+		Size = 0;
+		Frequency = 0;
+		Channels = 0;
+		Block = 0;
+	}
+
+	void SoundDecoderADPCM::Seek(uint64 Offset)
+	{
+		if (WAVSoundFile.IsOpened())
+		{
+			WAVSoundFile.SeekSet(Offset + BeginOffset);
+		}
+	}
+
+	int SoundDecoderADPCM::Channel::Predicate(uint8 Nibble)
+	{
+		static const int Table[] = { 230, 230, 230, 230, 307, 409, 512, 614, 768, 614, 512, 409, 307, 230, 230, 230 };
+
+		int8 Ns = Nibble;
+		if (Ns & 8) Ns -= 16;
+
+		int Sample = (Sample1 * C1 + Sample2 * C2) / 256 + Ns * InitialDelta;
+		Sample  = Math::Clamp(Sample, -32768, 32767);
+		Sample2 = Sample1;
+		Sample1 = Sample;
+		InitialDelta   = Math::Max(Table[Nibble] * InitialDelta / 256, 16);
+
+		return Sample;
+	}
+
+	uint32 SoundDecoderADPCM::Decode(Sound::Frame* Frames, uint32 Count)
+	{
+		static const int AdaptCoeff1[] = { 256, 512, 0, 192, 240, 460, 392 };
+		static const int AdaptCoeff2[] = { 0, -256, 0, 64, 0, -208, -232 };
+
+		uint32 TotalSamples = 0;
+
+		while (TotalSamples < Count)
+		{
+			if (WAVSoundFile.IsEOF())
+			{
+				break;
+			}
+
+			if ((WAVSoundFile.Tell() - BeginOffset) % Block == 0)
+			{
+				for (uint32 i = 0; i < Channels; i++)
+				{
+					uint8 Index;
+					WAVSoundFile.Read(Index);
+
+					Chans[i].C1 = AdaptCoeff1[Index];
+					Chans[i].C2 = AdaptCoeff2[Index];
+				}
+
+				for (uint32 i = 0; i < Channels; i++) WAVSoundFile.Read(Chans[i].InitialDelta);
+				for (uint32 i = 0; i < Channels; i++) WAVSoundFile.Read(Chans[i].Sample1);
+				for (uint32 i = 0; i < Channels; i++) WAVSoundFile.Read(Chans[i].Sample2);
+
+				if (Channels == 1)
+				{
+					Frames[TotalSamples].L = Frames[TotalSamples].R = Chans[0].Sample2; TotalSamples++;
+					Frames[TotalSamples].L = Frames[TotalSamples].R = Chans[0].Sample1; TotalSamples++;
+				}
+				else
+				{
+					Frames[TotalSamples].L = Chans[0].Sample2;
+					Frames[TotalSamples].R = Chans[1].Sample2; TotalSamples++;
+					Frames[TotalSamples].L = Chans[0].Sample1;
+					Frames[TotalSamples].R = Chans[1].Sample1; TotalSamples++;
+				}
+			}
+			else
+			{
+				uint8 Value;
+				WAVSoundFile.Read(Value);
+
+				uint8 N1 = Value >> 4;
+				uint8 N2 = Value & 0xF;
+
+				if (Channels == 1)
+				{
+					Frames[TotalSamples].L = Frames[TotalSamples].R = Chans[0].Predicate(N1); TotalSamples++;
+					Frames[TotalSamples].L = Frames[TotalSamples].R = Chans[0].Predicate(N2); TotalSamples++;
+				}
+				else
+				{
+					Frames[TotalSamples].L = Chans[0].Predicate(N1);
+					Frames[TotalSamples].R = Chans[1].Predicate(N2);
+					TotalSamples++;
+				}
+			}
+		}
+
+		return TotalSamples;
+	}
+
+	SoundDecoderADPCM::~SoundDecoderADPCM()
+	{
+		Free();
+	}
+
+	#undef FOURCC
+
 }
-
-
-
 
 
 

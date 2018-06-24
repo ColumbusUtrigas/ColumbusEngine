@@ -55,16 +55,21 @@ namespace Columbus
 
 	uint32 SoundDecoderOGG::Decode(Sound::Frame* Frames, uint32 Count)
 	{
-		uint32 i = 0;
+		uint32 TotalSamples = 0;
 
-		while (i < Count)
+		while (TotalSamples < Count)
 		{
-			int res = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, (short*)Frames + i, (Count - i) * 2);
-			if (!res) break;
-			i += res;
+			int Samples = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, (short*)Frames + TotalSamples, (Count - TotalSamples) * 2);
+
+			if (Samples == 0)
+			{
+				break;
+			}
+
+			TotalSamples += Samples;
 		}
 
-		return i;
+		return TotalSamples;
 	}
 
 	SoundDecoderOGG::~SoundDecoderOGG()
