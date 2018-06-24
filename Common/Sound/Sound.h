@@ -9,7 +9,8 @@ namespace Columbus
 
 	enum class SoundFormat
 	{
-		WAV,
+		WAV_PCM,
+		WAV_ADPCM,
 		OGG,
 		MP3,
 		Unknown
@@ -17,12 +18,14 @@ namespace Columbus
 
 	class SoundDecoder;
 	class SoundDecoderPCM;
+	class SoundDecoderADPCM;
 	class SoundDecoderOGG;
 	class Sound;
 
 	SoundFormat SoundGetFormat(std::string FileName);
 
-	bool SoundIsWAV(std::string FileName); //Check file magic
+	bool SoundIsWAV_PCM(std::string FileName);
+	bool SoundIsWAV_ADPCM(std::string FileName);
 	bool SoundIsOGG(std::string FileName); //Check file magic
 	bool SoundIsMP3(std::string FileName);
 
@@ -78,6 +81,7 @@ namespace Columbus
 	{
 	protected:
 		uint64 Size;
+		uint64 BeginOffset;
 		uint32 Frequency;
 		uint16 Channels;
 	public:
@@ -108,6 +112,35 @@ namespace Columbus
 		uint32 Decode(Sound::Frame* Frames, uint32 Count) override;
 
 		~SoundDecoderPCM() override;
+	};
+
+	/*
+	* @see: https://wiki.multimedia.cx/?title=Microsoft_ADPCM
+	*/
+	class SoundDecoderADPCM : public SoundDecoder
+	{
+	private:
+		File WAVSoundFile;
+		uint16 Block;
+
+		struct Channel
+		{
+			int16 C1, C2;
+			int16 InitialDelta;
+			int16 Sample1;
+			int16 Sample2;
+
+			int Predicate(uint8 Nibble);
+		} Chans[2];
+	public:
+		SoundDecoderADPCM();
+
+		bool Load(std::string FileName) override;
+		void Free() override;
+		void Seek(uint64 Offset) override;
+		uint32 Decode(Sound::Frame* Frames, uint32 Count) override;
+
+		~SoundDecoderADPCM() override;
 	};
 
 	class SoundDecoderOGG : public SoundDecoder
