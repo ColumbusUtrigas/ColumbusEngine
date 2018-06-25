@@ -180,8 +180,8 @@ namespace Columbus
 			{
 				case Renderer::Stage::Opaque:
 				{
-					ShaderProgram* CurrentShader;
-					ShaderProgram* PreviousShader;
+					ShaderProgram* CurrentShader = nullptr;
+					ShaderProgram* PreviousShader = nullptr;
 
 					for (auto& MeshRenderer : Meshes)
 					{

@@ -42,7 +42,7 @@ namespace Columbus
 		void AddComponent(Component* Component);
 
 		void SetTransform(Transform Transform);
-		Transform GetTransform() const;
+		Transform& GetTransform();
 
 		void Update();
 		void Render();

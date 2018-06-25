@@ -13,12 +13,12 @@
 using namespace Columbus;
 
 #ifdef COLUMBUS_PLATFORM_WINDOWS
-	// hint to the driver to use discrete GPU
+	//Hint to the driver to use discrete GPU
 	extern "C" 
 	{
-		// NVIDIA
+		//NVIDIA
 		__declspec(dllexport) int NvOptimusEnablement = 1;
-		// AMD
+		//AMD
 		__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 	}
 #endif
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 	Sound FireSound;
 	Sound BackgroundSound;
 	FireSound.Load("Data/Sounds/Fire.ogg");
-	BackgroundSound.Load("Data/Sounds/thestonemasons.ogg", true);
+	BackgroundSound.Load("Data/Sounds/thestonemasons.wav", true);
 
 	BackgroundMusic->SetSound(&BackgroundSound);
 	BackgroundMusic->SetMode(AudioSource::Mode::Sound2D);
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 	Color.b = 0;
 	Color.a = 255;
 
-	SDL_Surface* Surf = TTF_RenderUNICODE_Blended(Font, (Uint16*)L"ÍÊÂÄ", Color);
+	SDL_Surface* Surf = TTF_RenderUNICODE_Blended(Font, (Uint16*)L"ÐÐšÐ’Ð”", Color);
 
 	ImageBGRA2RGBA((uint8*)Surf->pixels, Surf->w * Surf->h * 4);
 	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);

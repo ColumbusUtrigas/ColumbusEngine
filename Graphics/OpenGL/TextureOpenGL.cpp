@@ -241,6 +241,11 @@ namespace Columbus
 				return true;
 				break;
 			}
+
+			case TextureFormat::Unknown:
+			{
+				return false;
+			}
 		}
 
 		return false;
@@ -273,8 +278,8 @@ namespace Columbus
 		glGenerateMipmap(Target);
 
 		Flags f;
-		f.Filter = Texture::Filter::Trilinear;
-		f.Anisotropy = Texture::Anisotropy::Anisotropy8;
+		f.Filtering = Texture::Filter::Trilinear;
+		f.AnisotropyFilter = Texture::Anisotropy::Anisotropy8;
 
 		SetFlags(f);
 
@@ -396,7 +401,7 @@ namespace Columbus
 
 		glBindTexture(Target, ID);
 
-		switch (TextureFlags.Filter)
+		switch (TextureFlags.Filtering)
 		{
 			case Texture::Filter::Point:
 			{
@@ -427,7 +432,7 @@ namespace Columbus
 			}
 		}
 
-		switch (TextureFlags.Anisotropy)
+		switch (TextureFlags.AnisotropyFilter)
 		{
 		case Texture::Anisotropy::Anisotropy1:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
 		case Texture::Anisotropy::Anisotropy2:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 2);  break;

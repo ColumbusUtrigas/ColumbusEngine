@@ -43,6 +43,12 @@ namespace Columbus
 		size_t Read(void* aData, size_t aSize, size_t aPacks) const;
 		size_t Write(const void* aData, size_t aSize, size_t aPacks) const;
 
+		template<typename T>
+		bool Read(T& Data)
+		{
+			return ReadBytes(&Data, sizeof(T));
+		}
+
 		//Read batch of data from file
 		bool ReadBytes(void* Data, uint64 Size);
 		bool ReadUint8(uint8* Data);

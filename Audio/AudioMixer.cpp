@@ -52,23 +52,8 @@ namespace Columbus
 		{
 			for (uint32 i = 0; i < Count; i++)
 			{
-				if (Buffer[i].L > 0x7FFF)
-				{
-					Buffer[i].L = 0x7FFF;
-				}
-				else if (Buffer[i].L < -0x7FFF)
-				{
-					Buffer[i].L = -0x7FFF;
-				}
-
-				if (Buffer[i].R > 0x7FFF)
-				{
-					Buffer[i].R = 0x7FFF;
-				}
-				else if (Buffer[i].R < -0x7FFF)
-				{
-					Buffer[i].R = -0x7FFF;
-				}
+				Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
+				Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
 			}
 		}
 	}
