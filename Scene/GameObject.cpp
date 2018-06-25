@@ -42,7 +42,7 @@ namespace Columbus
 		transform = Transform;
 	}
 	
-	Transform GameObject::GetTransform() const
+	Transform& GameObject::GetTransform()
 	{
 		return transform;
 	}

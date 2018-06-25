@@ -6,7 +6,8 @@ namespace Columbus
 
 	SoundFormat SoundGetFormat(std::string FileName)
 	{
-		if (SoundIsWAV(FileName)) return SoundFormat::WAV;
+		if (SoundIsWAV_PCM(FileName)) return SoundFormat::WAV_PCM;
+		if (SoundIsWAV_ADPCM(FileName)) return SoundFormat::WAV_ADPCM;
 		if (SoundIsOGG(FileName)) return SoundFormat::OGG;
 		if (SoundIsMP3(FileName)) return SoundFormat::MP3;
 
@@ -19,10 +20,11 @@ namespace Columbus
 
 		switch (Format)
 		{
-		case SoundFormat::Unknown: return nullptr; break;
-		case SoundFormat::WAV: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels); break;
-		case SoundFormat::OGG: return SoundLoadOGG(FileName, OutSize, OutFrequency, OutChannels); break;
-		case SoundFormat::MP3: return SoundLoadMP3(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::Unknown:   return nullptr; break;
+		case SoundFormat::WAV_PCM:
+		case SoundFormat::WAV_ADPCM: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::OGG:       return SoundLoadOGG(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::MP3:       return SoundLoadMP3(FileName, OutSize, OutFrequency, OutChannels); break;
 		}
 
 		return nullptr;
@@ -52,14 +54,26 @@ namespace Columbus
 		{
 			switch (SoundGetFormat(FileName))
 			{
-			case SoundFormat::WAV:
+			case SoundFormat::WAV_PCM:
 				Decoder = new SoundDecoderPCM();
+				Streaming = true;
+				return Decoder->Load(FileName);
+			case SoundFormat::WAV_ADPCM:
+				Decoder = new SoundDecoderADPCM();
 				Streaming = true;
 				return Decoder->Load(FileName);
 			case SoundFormat::OGG:
 				Decoder = new SoundDecoderOGG();
 				Streaming = true;
 				return Decoder->Load(FileName);
+				break;
+			case SoundFormat::MP3:
+				Streaming = false;
+				return false;
+				break;
+			case SoundFormat::Unknown:
+				Streaming = false;
+				return false;
 				break;
 			}
 		}
