@@ -10,6 +10,9 @@
 
 #include <SDL_ttf.h>
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
+
 using namespace Columbus;
 
 #ifdef COLUMBUS_PLATFORM_WINDOWS
@@ -129,15 +132,15 @@ int main(int argc, char** argv)
 	Audio.Play();
 
 	TTF_Init();
-	auto Font = TTF_OpenFont("Data/A.ttf", 35);
+	auto Font = TTF_OpenFont("Data/A.ttf", 50);
 
 	SDL_Color Color;
-	Color.r = 255;
-	Color.g = 0;
-	Color.b = 0;
+	Color.r = 10;
+	Color.g = 10;
+	Color.b = 10;
 	Color.a = 255;
 
-	SDL_Surface* Surf = TTF_RenderUNICODE_Blended(Font, (Uint16*)L"НКВД", Color);
+	SDL_Surface* Surf = TTF_RenderGlyph_Blended(Font, L'B', Color);
 
 	ImageBGRA2RGBA((uint8*)Surf->pixels, Surf->w * Surf->h * 4);
 	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);
@@ -145,7 +148,7 @@ int main(int argc, char** argv)
 	Texture* FontTexture = gDevice->CreateTexture();
 	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 1, 0, 0, TextureFormat::RGBA8));
 	FontTexture->Load(Surf->pixels);
-	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Point, Texture::Anisotropy::Anisotropy8 });
+	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Linear, Texture::Anisotropy::Anisotropy8 });
 	static_cast<ComponentMeshRenderer*>(scene.getGameObject(19)->GetComponent(Component::Type::MeshRenderer))->GetMesh()->mMat.setTexture(FontTexture);
 
 	while (window.isOpen())
