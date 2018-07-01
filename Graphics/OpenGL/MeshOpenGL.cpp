@@ -267,10 +267,10 @@ namespace Columbus
 		glBindVertexArray(VAO);
 	}
 	
-	uint32 MeshOpenGL::Render(Transform InTransform)
+	uint32 MeshOpenGL::Render(Transform InTransform, Material InMaterial)
 	{
 		SortLights();
-		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
+		ShaderSetAll(InMaterial, Lights, ObjectCamera, InTransform);
 
 		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 

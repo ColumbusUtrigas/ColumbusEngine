@@ -1,13 +1,3 @@
-/************************************************
-*                   Input.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   29.10.2017                  *
-*************************************************/
-
 #include <Input/Input.h>
 
 namespace Columbus
@@ -27,7 +17,7 @@ namespace Columbus
 		mCurrentKeyboardState = new uint8_t[mKeyboardStateNum];
 	}
 	
-	void Input::updateIO()
+	void Input::UpdateIO()
 	{
 		if (mIO == nullptr || mWindow == nullptr) return;
 
@@ -37,12 +27,12 @@ namespace Columbus
 		mIO->screen.size = mWindow->getSize();
 	}
 	
-	void Input::bindInput(const InputBind aBind)
+	void Input::BindInput(const InputBind aBind)
 	{
 		mBinds.push_back(std::move(aBind));
 	}
 	
-	void Input::setWindow(const Window* aWindow)
+	void Input::SetWindow(const Window* aWindow)
 	{
 		if (aWindow == nullptr) return;
 		if (aWindow->getType() == "WindowOpenGLSDL")
@@ -50,12 +40,12 @@ namespace Columbus
 			mWindow = const_cast<Window*>(aWindow);
 		}
 	}
-	void Input::setIO(const GUI::IO* aIO)
+	void Input::SetIO(const GUI::IO* aIO)
 	{
 		mIO = const_cast<GUI::IO*>(aIO);
 	}
 	
-	void Input::showMouseCursor(const bool aX)
+	void Input::ShowMouseCursor(const bool aX)
 	{
 		mMouseEnabled = static_cast<bool>(aX);
 		SDL_ShowCursor(aX ? SDL_ENABLE : SDL_DISABLE);
@@ -140,7 +130,7 @@ namespace Columbus
 		SDL_SetCursor(cursor);
 	}
 	
-	void Input::setMousePos(const Vector2 aPos)
+	void Input::SetMousePos(const Vector2 aPos)
 	{
 		if (mWindow == nullptr) return;
 
@@ -151,12 +141,12 @@ namespace Columbus
 		mPreviousMousePosition = aPos;
 	}
 	
-	void Input::setMousePosGlobal(const Vector2 aPos)
+	void Input::SetMousePosGlobal(const Vector2 aPos)
 	{
 		SDL_WarpMouseGlobal(static_cast<int>(aPos.X), static_cast<int>(aPos.Y));
 	}
 	
-	void Input::update()
+	void Input::Update()
 	{
 		SDL_PumpEvents();
 
@@ -173,26 +163,26 @@ namespace Columbus
 		mCurrentMousePosition.X = static_cast<float>(mx);
 		mCurrentMousePosition.Y = static_cast<float>(my);
 
-		updateIO();
+		UpdateIO();
 
 		for (auto& Bind : mBinds)
 		{
 			switch (Bind.Type)
 			{
 			case InputBindType::Key:
-				if (getKey(Bind.Key))
+				if (GetKey(Bind.Key))
 				{
 					Bind.Execute();
 				}
 				break;
 			case InputBindType::KeyDown:
-				if (getKeyDown(Bind.Key))
+				if (GetKeyDown(Bind.Key))
 				{
 					Bind.Execute();
 				}
 				break;
 			case InputBindType::KeyUp:
-				if (getKeyUp(Bind.Key))
+				if (GetKeyUp(Bind.Key))
 				{
 					Bind.Execute();
 				}
@@ -201,12 +191,12 @@ namespace Columbus
 		}
 	}
 	
-	Vector2 Input::getMousePosition()
+	Vector2 Input::GetMousePosition()
 	{
 		return mCurrentMousePosition;
 	}
 	
-	Vector2 Input::getMouseMovement()
+	Vector2 Input::GetMouseMovement()
 	{
 		Vector2 mouseDelta;
 		int preX = static_cast<int>(mPreviousMousePosition.X);
@@ -218,7 +208,7 @@ namespace Columbus
 		return mouseDelta;
 	}
 	
-	bool Input::getKey(const unsigned int aKey)
+	bool Input::GetKey(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -227,7 +217,7 @@ namespace Columbus
 		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	
-	bool Input::getKeyDown(const unsigned int aKey)
+	bool Input::GetKeyDown(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)
@@ -236,7 +226,7 @@ namespace Columbus
 		return ((mPreviousKeyboardState[aKey] == 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
 	
-	bool Input::getKeyUp(const unsigned int aKey)
+	bool Input::GetKeyUp(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
 			if (mWindow->isKeyFocus() == false)

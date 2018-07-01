@@ -19,7 +19,7 @@ namespace Columbus
 	{
 		if (Object != nullptr)
 		{
-			Object->Render(Transform);
+			//Object->Render(Transform);
 		}
 	}
 	

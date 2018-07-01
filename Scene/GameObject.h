@@ -1,15 +1,6 @@
-/************************************************
-*              	   GameObejct.h                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #pragma once
 
-#include <Graphics/Mesh.h>
+#include <Graphics/Material.h>
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <System/Timer.h>
@@ -28,6 +19,8 @@ namespace Columbus
 		std::string Name;
 
 		Timer mTimer;
+
+		Material ObjectMaterial;
 	public:
 		Transform transform;
 
@@ -43,6 +36,9 @@ namespace Columbus
 
 		void SetTransform(Transform Transform);
 		Transform& GetTransform();
+
+		void SetMaterial(Material InMaterial);
+		Material& GetMaterial();
 
 		void Update();
 		void Render();

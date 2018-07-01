@@ -46,6 +46,16 @@ namespace Columbus
 	{
 		return transform;
 	}
+
+	void GameObject::SetMaterial(Material InMaterial)
+	{
+		ObjectMaterial = InMaterial;
+	}
+
+	Material& GameObject::GetMaterial()
+	{
+		return ObjectMaterial;
+	}
 	
 	void GameObject::Update()
 	{

@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
 	
 	Input input;
-	input.setWindow(&window);
+	input.SetWindow(&window);
 
 	AudioSystem Audio;
 	AudioListener Listener;
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 	Image CursorImage;
 	CursorImage.Load("Data/Textures/cursor.tga", ImageLoading::FlipY);
 
-	input.showMouseCursor(false);
+	input.ShowMouseCursor(false);
 	input.SetSystemCursor(SystemCursor::Crosshair);
 
 	Cursor Cursor(CursorImage, 3, 3);
@@ -152,50 +152,50 @@ int main(int argc, char** argv)
 		float RedrawTime = window.getRedrawTime();
 
 		window.update();
-		input.update();
+		input.Update();
 
 		window.clear(vec4(0, 0, 0.75, 1));
 
 		camera.perspective(60, window.getAspect(), 0.1, 1000);
 
-		if (input.getKey(SDL_SCANCODE_W))
+		if (input.GetKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_S))
+		if (input.GetKey(SDL_SCANCODE_S))
 			camera.addPos(-camera.direction() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_A))
+		if (input.GetKey(SDL_SCANCODE_A))
 			camera.addPos(-camera.right() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_D))
+		if (input.GetKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
 
-		if (input.getKey(SDL_SCANCODE_UP))
+		if (input.GetKey(SDL_SCANCODE_UP))
 			RB->ApplyCentralImpulse(Vector3(-0.3, 0, 0) * 60 * RedrawTime);
-		if (input.getKey(SDL_SCANCODE_DOWN))
+		if (input.GetKey(SDL_SCANCODE_DOWN))
 			RB->ApplyCentralImpulse(Vector3(0.3, 0, 0) * 60 * RedrawTime);
-		if (input.getKey(SDL_SCANCODE_LEFT))
+		if (input.GetKey(SDL_SCANCODE_LEFT))
 			RB->ApplyCentralImpulse(Vector3(0, 0, 0.3) * 60 * RedrawTime);
-		if (input.getKey(SDL_SCANCODE_RIGHT))
+		if (input.GetKey(SDL_SCANCODE_RIGHT))
 			RB->ApplyCentralImpulse(Vector3(0, 0, -0.3) * 60 * RedrawTime);
 
-		if (input.getKey(SDL_SCANCODE_LSHIFT))
+		if (input.GetKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(-camera.up() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_SPACE))
+		if (input.GetKey(SDL_SCANCODE_SPACE))
 			camera.addPos(camera.up() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_Q))
+		if (input.GetKey(SDL_SCANCODE_Q))
 			camera.addRot(Vector3(0, 0, 125 * RedrawTime));
-		if (input.getKey(SDL_SCANCODE_E))
+		if (input.GetKey(SDL_SCANCODE_E))
 			camera.addRot(Vector3(0, 0, -125 * RedrawTime));
 
-		if (input.getKeyDown(SDL_SCANCODE_ESCAPE))
+		if (input.GetKeyDown(SDL_SCANCODE_ESCAPE))
 		{
 			cursor = !cursor;
-			input.showMouseCursor(cursor);
+			input.ShowMouseCursor(cursor);
 		}
 
 		if (!cursor)
 		{
-			Vector2 deltaMouse = input.getMouseMovement();
+			Vector2 deltaMouse = input.GetMouseMovement();
 			camera.addRot(Vector3(deltaMouse.Y * 60 * RedrawTime, -deltaMouse.X * 60 * RedrawTime, 0) * 0.3);
-			input.setMousePos(window.getSize() * 0.5);
+			input.SetMousePos(window.getSize() * 0.5);
 		}
 
 		camera.setRot(Vector3::Clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));

@@ -20,17 +20,21 @@
 #include <System/System.h>
 #include <System/Log.h>
 #include <System/Serializer.h>
-#include <fstream>
-#include <json.hpp>
 
 namespace Columbus
 {
 
 	class Material
 	{
+	public:
+		enum class Cull
+		{
+			No,
+			Front,
+			Back,
+			FrontAndBack
+		};
 	private:
-		std::vector<std::string> Uniforms;
-
 		Vector4 mColor = Vector4(1, 1, 1, 1);
 		Vector3 mDiffuse = Vector3(1, 1, 1);
 		Vector3 mAmbient = Vector3(0.25, 0.25, 0.25);
@@ -39,7 +43,6 @@ namespace Columbus
 		Texture* mTexture = nullptr;
 		Texture* mSpecMap = nullptr;
 		Texture* mNormMap = nullptr;
-		ShaderProgram* ShaderProg = nullptr;
 
 		bool mDiscard = false;
 		bool mLighting = true;
@@ -51,11 +54,14 @@ namespace Columbus
 		int mTextureID = -1;
 		int mSpecMapID = -1;
 		int mNormMapID = -1;
+	protected:
+		ShaderProgram* ShaderProg = nullptr;
+	public:
+		Cull Culling = Cull::Back;
+		bool DepthWriting = true;
 	public:
 		Material();
 		Material(std::string aFile);
-
-		void AddUniform(std::string Name);
 
 		bool Prepare();
 		void SetBool(std::string Name, bool Value);
@@ -101,9 +107,7 @@ namespace Columbus
 		int getNormMapID() const;
 
 		bool saveToXML(std::string aFile) const;
-		bool saveToJSON(std::string aFile) const;
 		bool loadFromXML(std::string aFile);
-		bool loadFromJSON(std::string aFile);
 
 		bool operator==(Material Other);
 		bool operator!=(Material Other);

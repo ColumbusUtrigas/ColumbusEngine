@@ -349,7 +349,7 @@ namespace Columbus
 		if (mTBuf == nullptr) return;
 
 		if (mParticleEffect->Emit == nullptr ||
-			mParticleEffect->Required == nullptr) return;
+		    mParticleEffect->Required == nullptr) return;
 
 		if (mParticleEffect->Required->Visible == false) return;
 
