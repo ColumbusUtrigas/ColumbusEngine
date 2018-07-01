@@ -29,7 +29,7 @@ include_directories(/usr/include/AL/)
 
 add_executable(${TARGET} ${SRC})
 
-target_link_libraries(${TARGET} SDL2 SDL2main SDL2_ttf GL GLU GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics openal pthread)
+target_link_libraries(${TARGET} SDL2 SDL2main SDL2_ttf GL GLU GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics pthread)
 target_link_libraries(${TARGET} ${CMAKE_SOURCE_DIR}/Lib/ZSTD/Lib/libZSTD.a)
 
 

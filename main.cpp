@@ -1,12 +1,9 @@
 #include <Engine.h>
 #include <Graphics/OpenGL/DeviceOpenGL.h>
-#include <Audio/OpenAL/AudioDeviceOpenAL.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
 
 #include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/MeshInstancedOpenGL.h>
-
-#include <Audio/AudioSystem.h>
 
 #include <SDL_ttf.h>
 
@@ -57,7 +54,6 @@ int main(int argc, char** argv)
 	camera.setRot(vec3(0, 90, 0));
 
 	gDevice = new DeviceOpenGL();
-	gAudioDevice = new AudioDeviceOpenAL();
 
 	Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
@@ -226,7 +222,6 @@ int main(int argc, char** argv)
 
 	//delete Source;
 	delete gDevice;
-	delete gAudioDevice;
 
 	return 0;
 }
