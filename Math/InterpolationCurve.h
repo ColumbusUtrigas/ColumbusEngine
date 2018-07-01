@@ -2,8 +2,6 @@
 
 #include <map>
 
-#include <iostream>
-
 namespace Columbus
 {
 
@@ -18,15 +16,11 @@ namespace Columbus
 
 		void AddPoint(PointType Point, float Position)
 		{
-			if (Position >= 0.0f && Position <= 1.0f)
-			{
-				Points[Position] = Point;
-			}
+			Points[Position] = Point;
 		}
 		/*
 		* Interpolate curve
 		* @param float Position: Position of X on curve
-		* Position must be >= 0 and <= 1
 		*/		
 		PointType Interpolate(float Position)
 		{
@@ -34,33 +28,30 @@ namespace Columbus
 
 			if (Points.size() >= 2)
 			{
-				if (Position >= 0.0f && Position <= 1.0f)
+				float DownPos = 0.0f, UpPos = 0.0f;
+				float Percent = 0.0f;
+
+				for (auto& Point : Points)
 				{
-					float DownPos = 0.0f, UpPos = 0.0f;
-					float Percent = 0.0f;
+					DownPos = UpPos;
+					Down = Up;
+					UpPos = Point.first;
+					Up = Point.second;
 
-					for (auto& Point : Points)
+					if (Position < Point.first)
 					{
-						DownPos = UpPos;
-						Down = Up;
-						UpPos = Point.first;
-						Up = Point.second;
-
-						if (Position < Point.first)
-						{
-							break;
-						}
+						break;
 					}
-
-					float Length = UpPos - DownPos;
-
-					if (Length > 0.00001)
-					{
-						Percent = (Position - DownPos) / Length;
-					}
-
-					Result = Down * (1 - Percent) + Up * Percent;
 				}
+
+				float Length = UpPos - DownPos;
+
+				if (Length > 0.00001)
+				{
+					Percent = (Position - DownPos) / Length;
+				}
+
+				Result = Down * (1 - Percent) + Up * Percent;
 			}
 			else if(Points.size() == 1)
 			{

@@ -1,7 +1,9 @@
 #pragma once
 
-#include <Audio/AudioDevice.h>
+#include <Audio/AudioListener.h>
+#include <Audio/AudioPlayer.h>
 #include <Audio/AudioSource.h>
+#include <Audio/AudioSystem.h>
 
 #include <Common/Compression/Compression.h>
 #include <Common/Cursor/Cursor.h>
