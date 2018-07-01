@@ -489,6 +489,7 @@ namespace Columbus
 			}
 
 			OutObject.SetTransform(transform);
+			OutObject.SetMaterial(*material);
 			OutObject.SetName(name);
 		}
 
@@ -649,7 +650,10 @@ namespace Columbus
 		}
 
 		for (auto& Object : mObjects)
+		{
+			Object.second->GetMaterial().setReflection(mSkybox->getCubemap());
 			Object.second->Update();
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	void Scene::render()

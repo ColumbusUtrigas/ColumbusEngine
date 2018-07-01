@@ -46,8 +46,21 @@ namespace Columbus
 	class Renderer
 	{
 	protected:
+		struct MeshRenderData
+		{
+			Mesh* Object;
+			Transform ObjectTransform;
+			Material ObjectMaterial;
+
+			MeshRenderData(Mesh* InObject, Transform InTransform, Material InMaterial) :
+				Object(InObject),
+				ObjectTransform(InTransform),
+				ObjectMaterial(InMaterial) {}
+		};
+	protected:
 		std::map<uint32, SmartPointer<GameObject>>* RenderList;
-		std::vector<std::pair<Mesh*, Transform>> Meshes;
+		
+		std::vector<MeshRenderData> Meshes;
 		std::vector<MeshInstanced*> MeshesInstanced;
 		std::vector<ParticleEmitter*> ParticleEmitters;
 

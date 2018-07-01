@@ -1,12 +1,3 @@
-/************************************************
-*                    Input.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   29.10.2017                  *
-*************************************************/
 #pragma once
 
 #include <Math/Vector2.h>
@@ -80,31 +71,31 @@ namespace Columbus
 		Window* mWindow = nullptr;
 		GUI::IO* mIO = nullptr;
 
-		void updateIO();
+		void UpdateIO();
 	public:
 		Input();
 
-		void bindInput(const InputBind aBind);
+		void BindInput(const InputBind aBind);
 
-		void setWindow(const Window* aWindow);
-		void setIO(const GUI::IO* aIO);
+		void SetWindow(const Window* aWindow);
+		void SetIO(const GUI::IO* aIO);
 
-		void showMouseCursor(const bool aX);
+		void ShowMouseCursor(const bool aX);
 		void SetCursor(Cursor InCursor);
 		void SetSystemCursor(SystemCursor Cursor);
 		void SetColoredCursor(const void* aPixels, const unsigned int aWidth,
 			const unsigned int aHeight, const unsigned int aBPP, const Vector2 aHot);
-		void setMousePos(const Vector2 aPos);
-		void setMousePosGlobal(const Vector2 aPos);
+		void SetMousePos(const Vector2 aPos);
+		void SetMousePosGlobal(const Vector2 aPos);
 
-		void update();
+		void Update();
 
-		Vector2 getMousePosition();
-		Vector2 getMouseMovement();
+		Vector2 GetMousePosition();
+		Vector2 GetMouseMovement();
 
-		bool getKey(const unsigned int aKey);
-		bool getKeyDown(const unsigned int aKey);
-		bool getKeyUp(const unsigned int aKey);
+		bool GetKey(const unsigned int aKey);
+		bool GetKeyDown(const unsigned int aKey);
+		bool GetKeyUp(const unsigned int aKey);
 
 		~Input();
 	};

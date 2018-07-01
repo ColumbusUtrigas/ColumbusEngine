@@ -37,7 +37,7 @@ namespace Columbus
 
 		virtual void SetVertices(std::vector<Vertex> InVertices) {}
 		virtual void Bind() {}
-		virtual uint32 Render(Transform aTransform) { return 0; }
+		virtual uint32 Render(Transform InTransform, Material InMaterial) { return 0; }
 		virtual void Unbind() {}
 		virtual uint64 GetMemoryUsage() const { return 0;  }
 

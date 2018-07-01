@@ -130,7 +130,7 @@ namespace Columbus
 
 					if (Mesh != nullptr)
 					{
-						Meshes.push_back(std::make_pair(Mesh, Object.second->GetTransform()));
+						Meshes.push_back(MeshRenderData(Mesh, Object.second->GetTransform(), Object.second->GetMaterial()));
 					}
 				}
 
@@ -183,9 +183,12 @@ namespace Columbus
 					ShaderProgram* CurrentShader = nullptr;
 					ShaderProgram* PreviousShader = nullptr;
 
+					Material::Cull Culling = Material::Cull::No;
+					bool DepthWriting = true;
+
 					for (auto& MeshRenderer : Meshes)
 					{
-						CurrentShader = MeshRenderer.first->GetMaterial().GetShader();
+						CurrentShader = MeshRenderer.ObjectMaterial.GetShader();
 
 						if (CurrentShader != nullptr)
 						{
@@ -199,12 +202,60 @@ namespace Columbus
 								CurrentShader->Bind();
 							}
 
-							MeshRenderer.first->Bind();
-							PolygonsRendered += MeshRenderer.first->Render(MeshRenderer.second);
-							MeshRenderer.first->Unbind();
+							if (Culling != MeshRenderer.ObjectMaterial.Culling)
+							{
+								switch (MeshRenderer.ObjectMaterial.Culling)
+								{
+									case Material::Cull::No:
+									{
+										glDisable(GL_CULL_FACE);
+										break;
+									}
+
+									case Material::Cull::Front:
+									{
+										glEnable(GL_CULL_FACE);
+										glCullFace(GL_FRONT);
+										break;
+									}
+
+									case Material::Cull::Back:
+									{
+										glEnable(GL_CULL_FACE);
+										glCullFace(GL_BACK);
+										break;
+									}
+
+									case Material::Cull::FrontAndBack:
+									{
+										glEnable(GL_CULL_FACE);
+										glCullFace(GL_FRONT_AND_BACK);
+										break;
+									}
+								}
+							}
+
+							if (DepthWriting != MeshRenderer.ObjectMaterial.DepthWriting)
+							{
+								if (MeshRenderer.ObjectMaterial.DepthWriting)
+								{
+									glDepthMask(GL_TRUE);
+								}
+								else
+								{
+									glDepthMask(GL_FALSE);
+								}
+							}
+
+							Culling = MeshRenderer.ObjectMaterial.Culling;
+							DepthWriting = MeshRenderer.ObjectMaterial.DepthWriting;
+
+							MeshRenderer.Object->Bind();
+							PolygonsRendered += MeshRenderer.Object->Render(MeshRenderer.ObjectTransform, MeshRenderer.ObjectMaterial);
+							MeshRenderer.Object->Unbind();
 						}
 
-						PreviousShader = MeshRenderer.first->GetMaterial().GetShader();
+						PreviousShader = MeshRenderer.ObjectMaterial.GetShader();
 					}
 
 					for (auto& MeshInstancedRenderer : MeshesInstanced)
@@ -250,3 +301,6 @@ namespace Columbus
 	}
 
 }
+
+
+
