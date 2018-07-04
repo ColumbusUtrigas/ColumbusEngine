@@ -63,6 +63,12 @@
 		vec3 DiffuseColor;
 		vec3 SpecularColor;
 		float ReflectionPower;
+
+		float Rim;
+		float RimPower;
+		float RimBias;
+		vec3 RimColor;
+
 		bool Lighting;
 	};
 
@@ -80,6 +86,10 @@
 	//@Uniform uMaterial.DiffuseColor
 	//@Uniform uMaterial.SpecularColor
 	//@Uniform uMaterial.ReflectionPower
+	//@Uniform uMaterial.Rim
+	//@Uniform uMaterial.RimPower
+	//@Uniform uMaterial.RimBias
+	//@Uniform uMaterial.RimColor
 	//@Uniform uMaterial.Lighting
 	//@Uniform uLighting
 	//@Uniform uCamera.Position
@@ -100,10 +110,12 @@
 	vec3 DiffuseColor = vec3(0);
 	vec3 SpecularColor = vec3(0);
 	vec3 CubemapColor = vec3(0);
+	vec3 RimColor = vec3(0);
 	vec4 Lighting = vec4(1);
 
 	void Init(void);
 	void LightCalc(int id);
+	void RimCalc();
 	void Cubemap(void);
 	void Final(void);
 
@@ -118,7 +130,9 @@
 				LightCalc(i);
 			}
 
-			Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor, 1.0);
+			RimCalc();
+
+			Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor + RimColor, 1.0);
 		}
 		
 		if (textureSize(uMaterial.ReflectionMap, 0).x > 1)
@@ -210,6 +224,15 @@
 		//AmbientColor += tmpAmbient;
 		DiffuseColor += tmpDiffuse;
 		SpecularColor += tmpSpecular;
+	}
+
+	void RimCalc()
+	{
+		vec3 ViewDirection = normalize(uCamera.Position - varFragPos);
+
+		float Rim = pow(1.0 + uMaterial.RimBias - max(dot(Normal, ViewDirection), 0.0), uMaterial.RimPower);
+
+		RimColor = Rim * uMaterial.RimColor * uMaterial.Rim;
 	}
 
 	void Cubemap(void)
