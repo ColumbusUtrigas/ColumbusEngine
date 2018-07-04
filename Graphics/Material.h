@@ -35,21 +35,9 @@ namespace Columbus
 			FrontAndBack
 		};
 	private:
-		Vector4 mColor = Vector4(1, 1, 1, 1);
-		Vector3 mDiffuse = Vector3(1, 1, 1);
-		Vector3 mAmbient = Vector3(0.25, 0.25, 0.25);
-		Vector3 mSpecular = Vector3(1, 1, 1);
-		float mReflectionPower = 0.2;
-		Texture* mTexture = nullptr;
-		Texture* mSpecMap = nullptr;
-		Texture* mNormMap = nullptr;
-
-		bool mDiscard = false;
 		bool mLighting = true;
 
 		Cubemap* mEnvReflection = nullptr;
-
-		float mShininess = 32;
 
 		int mTextureID = -1;
 		int mSpecMapID = -1;
@@ -59,6 +47,18 @@ namespace Columbus
 	public:
 		Cull Culling = Cull::Back;
 		bool DepthWriting = true;
+
+		Vector4 Color;
+		Vector3 AmbientColor;
+		Vector3 DiffuseColor;
+		Vector3 SpecularColor;
+
+		Texture* DiffuseTexture = nullptr;
+		Texture* SpecularTexture = nullptr;
+		Texture* NormalTexture = nullptr;
+		Cubemap* Reflection = nullptr;
+
+		float ReflectionPower = 0.2f;
 	public:
 		Material();
 		Material(std::string aFile);
@@ -74,32 +74,12 @@ namespace Columbus
 		void SetMatrix(std::string Name, Matrix Value);
 		void SetTexture(std::string Name, Texture* Value, uint32 Sampler);
 
-		void setColor(const Vector4 aColor);
-		void setAmbient(const Vector3 aAmbient);
-		void setDiffuse(const Vector3 aDiffuse);
-		void setSpecular(const Vector3 aSpecular);
-		void setShininess(const float aShininess);
-		void setTexture(const Texture* aTexture);
-		void setSpecMap(const Texture* aSpecMap);
-		void setNormMap(const Texture* aNormMap);
 		void SetShader(ShaderProgram* InShader);
 		void setReflection(const Cubemap* aReflection);
-		void setReflectionPower(const float aPower);
-		void setDiscard(const bool aDiscard);
 		void setLighting(const bool aLighting);
 
-		Vector4 getColor() const;
-		Vector3 getAmbient() const;
-		Vector3 getDiffuse() const;
-		Vector3 getSpecular() const;
-		float getShininess() const;
-		Texture* getTexture() const;
-		Texture* getSpecMap() const;
-		Texture* getNormMap() const;
 		ShaderProgram* GetShader() const;
 		Cubemap* getReflection() const;
-		float getReflectionPower() const;
-		bool getDiscard() const;
 		bool getLighting() const;
 
 		int getTextureID() const;
@@ -116,3 +96,6 @@ namespace Columbus
 	};
 
 }
+
+
+

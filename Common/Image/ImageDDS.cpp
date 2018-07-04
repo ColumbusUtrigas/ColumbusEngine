@@ -396,7 +396,10 @@ namespace Columbus
 			BlockSize = 16;
 		}
 
-		OutSize = ((Header.Width + 3) / 4) * ((Header.Height + 3) / 4) * BlockSize;
+		for (uint32 i = 0; i < Header.MipMapCount; i++)
+		{
+			OutSize += (((Header.Width >> i) + 3) / 4) * (((Header.Height >> i) + 3) / 4) * BlockSize;
+		}
 
 		uint8* Buffer = new uint8[OutSize];
 		std::copy(Data, Data + OutSize, Buffer);

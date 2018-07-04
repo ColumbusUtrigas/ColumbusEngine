@@ -37,7 +37,7 @@ namespace Columbus
 
 		virtual void SetVertices(std::vector<Vertex> InVertices) {}
 		virtual void Bind() {}
-		virtual uint32 Render(Transform InTransform, Material InMaterial) { return 0; }
+		virtual uint32 Render(Transform InTransform) { return 0; }
 		virtual void Unbind() {}
 		virtual uint64 GetMemoryUsage() const { return 0;  }
 
@@ -47,6 +47,7 @@ namespace Columbus
 
 		OBB GetOBB() const { return BoundingBox; }
 		Material& GetMaterial() { return mMat; }
+		Camera& GetCamera() { return ObjectCamera; }
 
 		void Clear() {}
 

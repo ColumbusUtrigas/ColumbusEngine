@@ -397,7 +397,48 @@ namespace Columbus
 
 	uint64 Image::GetOffset(uint32 Level) const
 	{
-		return 0; //TODO
+		if (IsCompressedFormat())
+		{
+			if (Level < MipMaps)
+			{
+				uint64 Offset = 0;
+				uint32 BlockSize = 0;
+
+				if (Format == TextureFormat::DXT1)
+				{
+					BlockSize = 8;
+				}
+				else
+				{
+					BlockSize = 16;
+				}
+
+				for (uint32 i = 0; i < Level; i++)
+				{
+					Offset += (((Width >> i) + 3) / 4) * (((Height >> i) + 3) / 4) * BlockSize;
+				}
+
+				return Offset;
+			}
+		}
+
+		return 0;
+	}
+
+	uint64 Image::GetSize(uint32 Level) const
+	{
+		uint32 BlockSize = 0;
+
+		if (Format == TextureFormat::DXT1)
+		{
+			BlockSize = 8;
+		}
+		else
+		{
+			BlockSize = 16;
+		}
+
+		return (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
 	}
 
 	uint64 Image::GetSize() const

@@ -450,11 +450,19 @@ namespace Columbus
 			}
 
 			if (material->getTextureID() != -1)
-				material->setTexture(Textures->at(material->getTextureID()));
+			{
+				material->DiffuseTexture = Textures->at(material->getTextureID());
+			}
+
 			if (material->getSpecMapID() != -1)
-				material->setSpecMap(Textures->at(material->getSpecMapID()));
+			{
+				material->SpecularTexture = Textures->at(material->getSpecMapID());
+			}
+
 			if (material->getNormMapID() != -1)
-				material->setNormMap(Textures->at(material->getNormMapID()));
+			{
+				material->NormalTexture = Textures->at(material->getNormMapID());
+			}
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
 			ComponentMeshInstancedRenderer* MeshInstancedRenderer = SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer, Element, material, Meshes);

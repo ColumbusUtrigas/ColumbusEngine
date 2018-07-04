@@ -153,6 +153,7 @@ namespace Columbus
 		uint32 GetMipmapsCount() const;
 
 		uint64 GetOffset(uint32 Level) const;
+		uint64 GetSize(uint32 Level) const;
 		uint64 GetSize() const;
 
 		uint8* Get2DData(uint32 Level = 0) const;
