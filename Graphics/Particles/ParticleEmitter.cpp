@@ -216,13 +216,13 @@ namespace Columbus
 
 		if (mParticleEffect->getMaterial() != nullptr)
 		{
-			if (mParticleEffect->getMaterial()->getTexture() != nullptr)
+			if (mParticleEffect->getMaterial()->DiffuseTexture != nullptr)
 			{
 				mParticleEffect->getMaterial()->GetShader()->SetUniform1i("uTex", 0);
-				mParticleEffect->getMaterial()->getTexture()->sampler2D(0);
+				mParticleEffect->getMaterial()->DiffuseTexture->sampler2D(0);
 			}
 
-			mParticleEffect->getMaterial()->GetShader()->SetUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
+			//mParticleEffect->getMaterial()->GetShader()->SetUniform1i("uDiscard", mParticleEffect->getMaterial()->getDiscard());
 		}
 	}
 	
@@ -231,10 +231,10 @@ namespace Columbus
 		if (mParticleEffect == nullptr) return;
 		if (mParticleEffect->getMaterial() == nullptr) return;
 
-		Vector4 matcol = mParticleEffect->getMaterial()->getColor();
-		Vector3 matamb = mParticleEffect->getMaterial()->getAmbient();
-		Vector3 matdif = mParticleEffect->getMaterial()->getDiffuse();
-		Vector3 matspc = mParticleEffect->getMaterial()->getSpecular();
+		Vector4 matcol = mParticleEffect->getMaterial()->Color;
+		Vector3 matamb = mParticleEffect->getMaterial()->AmbientColor;
+		Vector3 matdif = mParticleEffect->getMaterial()->DiffuseColor;
+		Vector3 matspc = mParticleEffect->getMaterial()->SpecularColor;
 
 		float const MaterialUnif[15] =
 		{
@@ -242,7 +242,7 @@ namespace Columbus
 			matamb.X, matamb.Y, matamb.Z,
 			matdif.X, matdif.Y, matdif.Z,
 			matspc.X, matspc.Y, matspc.Z,
-			mParticleEffect->getMaterial()->getReflectionPower(),
+			mParticleEffect->getMaterial()->ReflectionPower,
 			mParticleEffect->getMaterial()->getLighting() ? 1.0f : 0.0f
 		};
 

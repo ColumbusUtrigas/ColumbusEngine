@@ -313,7 +313,44 @@ namespace Columbus
 
 	bool TextureOpenGL::Load(Image& InImage)
 	{
-		return Load(InImage.Get2DData(0));
+		if (glIsTexture(ID))
+		{
+			bool Success = true;
+			bool Compressed;
+
+			UpdateFormat(Format, Compressed);
+
+			glBindTexture(Target, ID);
+
+			if (Compressed)
+			{
+				glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
+				glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, InImage.GetMipmapsCount() - 1);
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+				for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
+				{
+					glCompressedTexImage2D(Target, Level, InternalFormat, Width, Height, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
+				}
+			}
+			else
+			{
+				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
+				glGenerateMipmap(Target);
+			}
+
+			Flags f;
+			f.Filtering = Texture::Filter::Trilinear;
+			f.AnisotropyFilter = Texture::Anisotropy::Anisotropy8;
+
+			SetFlags(f);
+
+			glBindTexture(Target, 0);
+
+			return Success;
+		}
+
+		return false;
 	}
 
 	bool TextureOpenGL::Load(std::string File)

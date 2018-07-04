@@ -1,12 +1,3 @@
-/************************************************
-*                 Render.cpp                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
 #include <Graphics/Render.h>
 #include <Graphics/Device.h>
 #include <Scene/ComponentMeshRenderer.h>
@@ -17,80 +8,93 @@
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
-	C_Render::C_Render()
+	static void PrepareFaceCulling(Material::Cull Culling)
 	{
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Enable all OpenGL varyables
-	void C_Render::enableAll()
-	{
-		C_OpenStreamOpenGL(0);
-		C_OpenStreamOpenGL(1);
-		C_OpenStreamOpenGL(2);
-		C_OpenStreamOpenGL(3);
-		C_OpenStreamOpenGL(4);
-
-		C_EnableDepthTestOpenGL();
-		C_EnableBlendOpenGL();
-		C_EnableAlphaTestOpenGL();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Render::enableDepthPrepass()
-	{
-		glColorMask(0, 0, 0, 0);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Render::disableDepthPrepass()
-	{
-		glColorMask(1, 1, 1, 1);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Render::renderDepthPrepass(GameObject* aGameObject)
-	{
-		/*if (aGameObject == nullptr) return;
-		if (aGameObject->hasComponent("MeshRenderer") == false &&
-			aGameObject->hasComponent("ParticleSystem") == false) return;
-
-		if (aGameObject->hasComponent("MeshRenderer"))
-			if (gMeshWhiteShader == nullptr)
-				gMeshWhiteShader = gDevice->createShader("Data/Shaders/standart.vert", "Data/Shaders/White.frag");
-
-		if (aGameObject->hasComponent("ParticleSystem"))
-			if (gParticleWhiteShader == nullptr)
-				gParticleWhiteShader = gDevice->createShader("Data/Shaders/particle.vert", "Data/Shaders/White.frag");
-
-		if (aGameObject->hasComponent("MeshRenderer"))
+		switch (Culling)
 		{
-			Shader* shaderPtr = static_cast<MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->getShader();
-			static_cast<MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(gMeshWhiteShader);
-			aGameObject->render();
-			static_cast<MeshRenderer*>(aGameObject->getComponent("MeshRenderer"))->setShader(shaderPtr);
-			return;
+			case Material::Cull::No:
+			{
+				glDisable(GL_CULL_FACE);
+				break;
+			}
+
+			case Material::Cull::Front:
+			{
+				glEnable(GL_CULL_FACE);
+				glCullFace(GL_FRONT);
+				break;
+			}
+
+			case Material::Cull::Back:
+			{
+				glEnable(GL_CULL_FACE);
+				glCullFace(GL_BACK);
+				break;
+			}
+
+			case Material::Cull::FrontAndBack:
+			{
+				glEnable(GL_CULL_FACE);
+				glCullFace(GL_FRONT_AND_BACK);
+				break;
+			}
 		}
+	}
 
-		if (aGameObject->hasComponent("ParticleSystem"))
+	static void ShaderSetMatrices(ShaderProgram* Program, Transform* InTransform, Camera* InCamera)
+	{
+		static float sModelMatrix[16];
+		static float sViewMatrix[16];
+		static float sProjectionMatrix[16];
+
+		if (Program != nullptr && InTransform != nullptr && InCamera != nullptr)
 		{
-			Shader* shaderPtr = static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->getShader();
-			static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(gParticleWhiteShader);
-			aGameObject->render();
-			static_cast<ParticleSystem*>(aGameObject->getComponent("ParticleSystem"))->setShader(shaderPtr);
-			return;
-		}*/
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Render::render(GameObject* aGameObject)
-	{
-		/*if (aGameObject == nullptr) return;
+			if (Program->IsCompiled())
+			{
+				InTransform->GetMatrix().ElementsTransposed(sModelMatrix);
+				InCamera->getViewMatrix().Elements(sViewMatrix);
+				InCamera->getProjectionMatrix().ElementsTransposed(sProjectionMatrix);
 
-		aGameObject->render();*/
+				Program->SetUniformMatrix("uModel", sModelMatrix);
+				Program->SetUniformMatrix("uView", sViewMatrix);
+				Program->SetUniformMatrix("uProjection", sProjectionMatrix);
+			}
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
-	C_Render::~C_Render()
-	{
 
+	static void ShaderSetMaterial(ShaderProgram* Program, Material* InMaterial)
+	{
+		if (Program != nullptr && InMaterial != nullptr)
+		{
+			if (Program->IsCompiled())
+			{
+				Texture* Textures[3] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture };
+				Cubemap* Reflection = InMaterial->getReflection();
+				static std::string Names[3] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap" };
+
+				for (int32 i = 0; i < 3; i++)
+				{
+					if (Textures[i] != nullptr)
+					{
+						Program->SetUniform1i(Names[i], i);
+						Textures[i]->sampler2D(i);
+					}
+				}
+
+				if (Reflection != nullptr)
+				{
+					Program->SetUniform1i("uMaterial.ReflectionMap", 3);
+					Reflection->samplerCube(3);
+				}
+
+				Program->SetUniform4f("uMaterial.Color", InMaterial->Color);
+				Program->SetUniform3f("uMaterial.AmbientColor", InMaterial->AmbientColor);
+				Program->SetUniform3f("uMaterial.DiffuseColor", InMaterial->DiffuseColor);
+				Program->SetUniform3f("uMaterial.SpecularColor", InMaterial->SpecularColor);
+				Program->SetUniform1f("uMaterial.ReflectionPower", InMaterial->ReflectionPower);
+				Program->SetUniform1i("uMaterial.Lighting", InMaterial->getLighting());
+			}
+		}
 	}
 
 	Renderer::Renderer()
@@ -154,6 +158,11 @@ namespace Columbus
 		Vector3 CameraPosition = MainCamera.getPos();
 		Vector3 APosition, BPosition;
 
+		auto MaterialSorter = [&](MeshRenderData A, MeshRenderData B)->bool
+		{
+			return A.ObjectMaterial == B.ObjectMaterial;
+		};
+
 		auto ParticleSorter = [&](ParticleEmitter* A, ParticleEmitter* B)->bool
 		{
 			double ADistance, BDistance;
@@ -167,6 +176,7 @@ namespace Columbus
 			return ADistance > BDistance;
 		};
 
+		std::sort(Meshes.begin(), Meshes.end(), MaterialSorter);
 		std::sort(ParticleEmitters.begin(), ParticleEmitters.end(), ParticleSorter);
 	}
 
@@ -182,6 +192,8 @@ namespace Columbus
 				{
 					ShaderProgram* CurrentShader = nullptr;
 					ShaderProgram* PreviousShader = nullptr;
+
+					Material PreviousMaterial;
 
 					Material::Cull Culling = Material::Cull::No;
 					bool DepthWriting = true;
@@ -204,58 +216,31 @@ namespace Columbus
 
 							if (Culling != MeshRenderer.ObjectMaterial.Culling)
 							{
-								switch (MeshRenderer.ObjectMaterial.Culling)
-								{
-									case Material::Cull::No:
-									{
-										glDisable(GL_CULL_FACE);
-										break;
-									}
-
-									case Material::Cull::Front:
-									{
-										glEnable(GL_CULL_FACE);
-										glCullFace(GL_FRONT);
-										break;
-									}
-
-									case Material::Cull::Back:
-									{
-										glEnable(GL_CULL_FACE);
-										glCullFace(GL_BACK);
-										break;
-									}
-
-									case Material::Cull::FrontAndBack:
-									{
-										glEnable(GL_CULL_FACE);
-										glCullFace(GL_FRONT_AND_BACK);
-										break;
-									}
-								}
+								PrepareFaceCulling(MeshRenderer.ObjectMaterial.Culling);
 							}
 
 							if (DepthWriting != MeshRenderer.ObjectMaterial.DepthWriting)
 							{
-								if (MeshRenderer.ObjectMaterial.DepthWriting)
-								{
-									glDepthMask(GL_TRUE);
-								}
-								else
-								{
-									glDepthMask(GL_FALSE);
-								}
+								glDepthMask(MeshRenderer.ObjectMaterial.DepthWriting ? GL_TRUE : GL_FALSE);
 							}
 
 							Culling = MeshRenderer.ObjectMaterial.Culling;
 							DepthWriting = MeshRenderer.ObjectMaterial.DepthWriting;
 
+							ShaderSetMatrices(CurrentShader, &MeshRenderer.ObjectTransform, &MeshRenderer.Object->GetCamera());
+
+							if (MeshRenderer.ObjectMaterial != PreviousMaterial)
+							{
+								ShaderSetMaterial(CurrentShader, &MeshRenderer.ObjectMaterial);
+							}
+
 							MeshRenderer.Object->Bind();
-							PolygonsRendered += MeshRenderer.Object->Render(MeshRenderer.ObjectTransform, MeshRenderer.ObjectMaterial);
+							PolygonsRendered += MeshRenderer.Object->Render(MeshRenderer.ObjectTransform);
 							MeshRenderer.Object->Unbind();
 						}
 
 						PreviousShader = MeshRenderer.ObjectMaterial.GetShader();
+						PreviousMaterial = MeshRenderer.ObjectMaterial;
 					}
 
 					for (auto& MeshInstancedRenderer : MeshesInstanced)

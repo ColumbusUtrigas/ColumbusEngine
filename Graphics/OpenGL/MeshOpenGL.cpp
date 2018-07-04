@@ -9,72 +9,6 @@ namespace Columbus
 	* Shader uniforms functions
 	*
 	*/
-	static void ShaderSetMatrices(ShaderProgram* InShader, Transform InTransform, Camera InCamera)
-	{
-		static float sModelMatrix[16];
-		static float sViewMatrix[16];
-		static float sProjectionMatrix[16];
-
-		if (InShader != nullptr)
-		{
-			if (InShader->IsCompiled())
-			{
-				InTransform.GetMatrix().ElementsTransposed(sModelMatrix);
-				InCamera.getViewMatrix().Elements(sViewMatrix);
-				InCamera.getProjectionMatrix().ElementsTransposed(sProjectionMatrix);
-
-				InShader->SetUniformMatrix("uModel", sModelMatrix);
-				InShader->SetUniformMatrix("uView", sViewMatrix);
-				InShader->SetUniformMatrix("uProjection", sProjectionMatrix);
-			}
-		}
-	}
-
-	static void ShaderSetMaterial(Material InMaterial)
-	{
-		auto tShader = InMaterial.GetShader();
-
-		for (uint32 i = 0; i < 3; i++)
-		{
-			glActiveTexture(GL_TEXTURE0 + i);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-		if (tShader != nullptr)
-		{
-			if (tShader->IsCompiled())
-			{
-				Texture* Textures[3] = { InMaterial.getTexture(), InMaterial.getSpecMap(), InMaterial.getNormMap() };
-				Cubemap* Reflection = InMaterial.getReflection();
-				std::string Names[3] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap" };
-
-				for (int32 i = 0; i < 3; i++)
-				{
-					if (Textures[i] != nullptr)
-					{
-						tShader->SetUniform1i(Names[i], i);
-						Textures[i]->sampler2D(i);
-					}
-				}
-
-				if (Reflection != nullptr)
-				{
-					tShader->SetUniform1i("uMaterial.ReflectionMap", 3);
-					Reflection->samplerCube(3);
-				}
-
-				tShader->SetUniform4f("uMaterial.Color", InMaterial.getColor());
-				tShader->SetUniform3f("uMaterial.AmbientColor", InMaterial.getAmbient());
-				tShader->SetUniform3f("uMaterial.DiffuseColor", InMaterial.getDiffuse());
-				tShader->SetUniform3f("uMaterial.SpecularColor", InMaterial.getSpecular());
-				tShader->SetUniform1f("uMaterial.ReflectionPower", InMaterial.getReflectionPower());
-				tShader->SetUniform1i("uMaterial.Lighting", InMaterial.getLighting());
-			}
-		}
-	}
 
 	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
 	{
@@ -137,8 +71,6 @@ namespace Columbus
 		{
 			if (tShader->IsCompiled())
 			{
-				ShaderSetMatrices(tShader, InTransform, InCamera);
-				ShaderSetMaterial(InMaterial);
 				ShaderSetLightsAndCamera(tShader, InLights, InCamera);
 			}
 		}
@@ -267,10 +199,10 @@ namespace Columbus
 		glBindVertexArray(VAO);
 	}
 	
-	uint32 MeshOpenGL::Render(Transform InTransform, Material InMaterial)
+	uint32 MeshOpenGL::Render(Transform InTransform)
 	{
 		SortLights();
-		ShaderSetAll(InMaterial, Lights, ObjectCamera, InTransform);
+		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
 
 		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 

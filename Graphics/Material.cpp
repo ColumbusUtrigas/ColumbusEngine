@@ -4,17 +4,8 @@ namespace Columbus
 {
 
 	Material::Material() :
-		mReflectionPower(0.2),
-		mTexture(nullptr),
-		mSpecMap(nullptr),
-		mNormMap(nullptr),
-		mDiscard(false),
 		mLighting(false),
-		mEnvReflection(nullptr),
-		mShininess(32)
-	{
-		
-	}
+		mEnvReflection(nullptr) {}
 	
 	Material::Material(std::string aFile)
 	{
@@ -37,33 +28,8 @@ namespace Columbus
 
 		return false;
 	}
-
-	void Material::setColor(const Vector4 aColor)
-	{
-		mColor = static_cast<Vector4>(aColor);
-	}
 	
-	void Material::setAmbient(const Vector3 aAmbient)
-	{
-		mAmbient = static_cast<Vector3>(aAmbient);
-	}
-	
-	void Material::setDiffuse(const Vector3 aDiffuse)
-	{
-		mDiffuse = static_cast<Vector3>(aDiffuse);
-	}
-	
-	void Material::setSpecular(const Vector3 aSpecular)
-	{
-		mSpecular = static_cast<Vector3>(aSpecular);
-	}
-	
-	void Material::setShininess(const float aShininess)
-	{
-		mShininess = static_cast<float>(aShininess);
-	}
-	
-	void Material::setTexture(const Texture* aTexture)
+	/*void Material::setTexture(const Texture* aTexture)
 	{
 		mTexture = const_cast<Texture*>(aTexture);
 	}
@@ -76,27 +42,16 @@ namespace Columbus
 	void Material::setNormMap(const Texture* aNormMap)
 	{
 		mNormMap = const_cast<Texture*>(aNormMap);
-	}
+	}*/
 	
 	void Material::SetShader(ShaderProgram* InShader)
 	{
 		ShaderProg = InShader;
 	}
 
-	
 	void Material::setReflection(const Cubemap* aReflecction)
 	{
 		mEnvReflection = const_cast<Cubemap*>(aReflecction);
-	}
-	
-	void Material::setReflectionPower(const float aPower)
-	{
-		mReflectionPower = static_cast<float>(aPower);
-	}
-	
-	void Material::setDiscard(const bool aDiscard)
-	{
-		mDiscard = static_cast<bool>(aDiscard);
 	}
 	
 	void Material::setLighting(const bool aLighting)
@@ -104,32 +59,7 @@ namespace Columbus
 		mLighting = static_cast<bool>(aLighting);
 	}
 	
-	Vector4 Material::getColor() const
-	{
-		return mColor;
-	}
-	
-	Vector3 Material::getAmbient() const
-	{
-		return mAmbient;
-	}
-	
-	Vector3 Material::getDiffuse() const
-	{
-		return mDiffuse;
-	}
-	
-	Vector3 Material::getSpecular() const
-	{
-		return mSpecular;
-	}
-	
-	float Material::getShininess() const
-	{
-		return mShininess;
-	}
-	
-	Texture* Material::getTexture() const
+	/*Texture* Material::getTexture() const
 	{
 		return mTexture;
 	}
@@ -142,7 +72,7 @@ namespace Columbus
 	Texture* Material::getNormMap() const
 	{
 		return mNormMap;
-	}
+	}*/
 
 	ShaderProgram* Material::GetShader() const
 	{
@@ -152,16 +82,6 @@ namespace Columbus
 	Cubemap* Material::getReflection() const
 	{
 		return mEnvReflection;
-	}
-	
-	float Material::getReflectionPower() const
-	{
-		return mReflectionPower;
-	}
-	
-	bool Material::getDiscard() const
-	{
-		return mDiscard;
 	}
 	
 	bool Material::getLighting() const
@@ -188,7 +108,7 @@ namespace Columbus
 	{
 		Serializer::SerializerXML Serializer;
 
-		if (!Serializer.Write(aFile, "Material"))
+		/*if (!Serializer.Write(aFile, "Material"))
 		{ Log::error("Can't save Material: " + aFile); return false; }
 
 		if (!Serializer.SetVector4("Color", mColor, {"R", "G", "B", "A"}))
@@ -203,20 +123,14 @@ namespace Columbus
 		if (!Serializer.SetVector3("Specular", mSpecular, {"R", "G", "B"}))
 		{ Log::error("Can't save Material specular: " + aFile); return false; }
 
-		if (!Serializer.SetFloat("Shininess", mShininess))
-		{ Log::error("Can't save Material shininess: " + aFile); return false; }
-
 		if (!Serializer.SetFloat("ReflectionPower", mReflectionPower))
 		{ Log::error("Can't save Material reflection power: " + aFile); return false; }
-
-		if (!Serializer.SetBool("Discard", mDiscard))
-		{ Log::error("Can't save Material discard: " + aFile); return false; }
 
 		if (!Serializer.SetBool("Lighting", mLighting))
 		{ Log::error("Can't save Material lighting: " + aFile); return false; }
 
 		if (!Serializer.Save())
-		{ Log::error("Can't save Material: " + aFile); return false; }
+		{ Log::error("Can't save Material: " + aFile); return false; }*/
 
 		Log::success("Material saved: " + aFile);
 
@@ -238,26 +152,20 @@ namespace Columbus
 		if (!Serializer.GetBool("DepthWriting", DepthWriting))
 		{ Log::error("Can't load Material depth writing: " + aFile); return false; }
 
-		if (!Serializer.GetVector4("Color", mColor, {"R", "G", "B", "A"}))
+		if (!Serializer.GetVector4("Color", Color, {"R", "G", "B", "A"}))
 		{ Log::error("Can't load Material color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Ambient", mAmbient, {"R", "G", "B"}))
-		{ Log::error("Can't load Material ambient: " + aFile); return false; }
+		if (!Serializer.GetVector3("Ambient", AmbientColor, {"R", "G", "B"}))
+		{ Log::error("Can't load Material ambient color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
-		{ Log::error("Can't load Material diffuse: " + aFile); return false; }
+		if (!Serializer.GetVector3("Diffuse", DiffuseColor, {"R", "G", "B"}))
+		{ Log::error("Can't load Material diffuse color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Specular", mSpecular, {"R", "G", "B"}))
-		{ Log::error("Can't load Material specular: " + aFile); return false; }
+		if (!Serializer.GetVector3("Specular", SpecularColor, {"R", "G", "B"}))
+		{ Log::error("Can't load Material specular color: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("Shininess", mShininess))
-		{ Log::error("Can't load Material shininess: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("ReflectionPower", mReflectionPower))
+		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
-
-		if (!Serializer.GetBool("Discard", mDiscard))
-		{ Log::error("Can't load Material discard: " + aFile); return false; }
 
 		if (!Serializer.GetBool("Lighting", mLighting))
 		{ Log::error("Can't load Material lighting: " + aFile); return false; }
@@ -309,22 +217,19 @@ namespace Columbus
 
 	bool Material::operator==(Material Other)
 	{
-		return (mColor == Other.mColor &&
-		        mDiffuse == Other.mDiffuse &&
-			    mAmbient == Other.mAmbient &&
-			    mSpecular == Other.mSpecular &&
-			    mReflectionPower == Other.mReflectionPower &&
-			    mTexture == Other.mTexture &&
-			    mSpecMap == Other.mSpecMap &&
-			    mNormMap == Other.mNormMap &&
-			    ShaderProg == Other.ShaderProg &&
-			    mDiscard == Other.mDiscard &&
-			    mLighting == Other.mLighting &&
-			    mEnvReflection == Other.mEnvReflection &&
-			    mShininess == Other.mShininess &&
-			    mTextureID == Other.mTextureID &&
-			    mSpecMapID == Other.mSpecMapID &&
-			    mNormMapID == Other.mNormMapID);
+		return (Color == Other.Color &&
+		        AmbientColor == Other.AmbientColor &&
+		        DiffuseColor == Other.DiffuseColor &&
+		        SpecularColor == Other.SpecularColor &&
+		        DiffuseTexture == Other.DiffuseTexture &&
+		        SpecularTexture == Other.SpecularTexture &&
+		        NormalTexture == Other.NormalTexture &&
+		        ShaderProg == Other.ShaderProg &&
+		        mLighting == Other.mLighting &&
+		        mEnvReflection == Other.mEnvReflection &&
+		        mTextureID == Other.mTextureID &&
+		        mSpecMapID == Other.mSpecMapID &&
+		        mNormMapID == Other.mNormMapID);
 	}
 
 	bool Material::operator!=(Material Other)
@@ -332,12 +237,13 @@ namespace Columbus
 		return !(*this == Other);
 	}
 
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
 	Material::~Material()
 	{
 
 	}
 
 }
+
+
+
+

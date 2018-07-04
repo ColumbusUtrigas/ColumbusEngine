@@ -116,12 +116,14 @@ int main(int argc, char** argv)
 	auto Sphere = scene.getGameObject(15);
 	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
 
-	/*GameObject Tests[3000];
+	/*constexpr int TestsSize = 500;
+	GameObject Tests[TestsSize];
 
-	for (uint32 i = 0; i < 3000; i++)
+	for (uint32 i = 0; i < TestsSize; i++)
 	{
 		Tests[i].AddComponent(Sphere->GetComponent(Component::Type::MeshRenderer));
 		Tests[i].SetTransform(Transform(Vector3((float)i * 0.1, 0, 0)));
+		Tests[i].SetMaterial(Sphere->GetMaterial());
 		scene.Add(21 + i, std::move(Tests[i]));
 	}*/
 
@@ -145,7 +147,8 @@ int main(int argc, char** argv)
 	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 1, 0, 0, TextureFormat::RGBA8));
 	FontTexture->Load(Surf->pixels);
 	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Linear, Texture::Anisotropy::Anisotropy8 });
-	static_cast<ComponentMeshRenderer*>(scene.getGameObject(19)->GetComponent(Component::Type::MeshRenderer))->GetMesh()->mMat.setTexture(FontTexture);
+
+	//scene.getGameObject(19)->GetMaterial().DiffuseTexture = FontTexture;
 
 	while (window.isOpen())
 	{
