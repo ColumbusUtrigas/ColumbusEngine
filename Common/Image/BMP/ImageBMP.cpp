@@ -1,4 +1,5 @@
 #include <Common/Image/Image.h>
+#include <Common/Image/BMP/ImageBMP.h>
 #include <Core/Memory.h>
 #include <System/File.h>
 
@@ -62,24 +63,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageIsBMP(std::string FileName)
-	{
-		File BMPImageFile(FileName, "rb");
-		if (!BMPImageFile.IsOpened()) return false;
-
-		uint8_t Magic[2];
-		BMPImageFile.Read(Magic, sizeof(Magic), 1);
-		BMPImageFile.Close();
-
-		if (Memory::Memcmp(Magic, "BM", 2) == 0)
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		File BMPImageFile(FileName, "rb");
 		if (!BMPImageFile.IsOpened()) return nullptr;
@@ -88,7 +72,7 @@ namespace Columbus
 		SDL_Surface* Surf = SDL_LoadBMP(FileName.c_str());
 		OutWidth = Surf->w;
 		OutHeight = Surf->h;
-		OutSize = OutWidth * OutHeight * Surf->format->BitsPerPixel / 8;
+		OutSize = OutWidth * OutHeight * Surf->format->BytesPerPixel;
 
 		switch (Surf->format->BitsPerPixel)
 		{
@@ -98,13 +82,14 @@ namespace Columbus
 
 		uint8* Data = new uint8[OutSize];
 		Memory::Memcpy(Data, Surf->pixels, OutSize);
-		ImageFlipY(Data, OutWidth, OutHeight, Surf->format->BitsPerPixel / 8);
 
-		/*switch (Surf->format->BitsPerPixel)
+		ImageFlipY(Data, OutWidth, OutHeight, Surf->format->BytesPerPixel);
+
+		switch (Surf->format->BitsPerPixel)
 		{
 		case 24: ImageBGR2RGB(Data, OutSize);   break;
 		case 32: ImageBGRA2RGBA(Data, OutSize); break;
-		}*/
+		}
 
 		return Data;
 
@@ -140,6 +125,42 @@ namespace Columbus
 		}
 
 		return data;*/
+	}
+
+	bool ImageLoaderBMP::IsBMP(std::string FileName)
+	{
+		File BMPImageFile(FileName, "rb");
+		if (!BMPImageFile.IsOpened()) return false;
+
+		uint8_t Magic[2];
+		BMPImageFile.Read(Magic, sizeof(Magic), 1);
+		BMPImageFile.Close();
+
+		if (Memory::Memcmp(Magic, "BM", 2) == 0)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ImageLoaderBMP::Load(std::string FileName)
+	{
+		Free();
+		uint64 Size = 0;
+
+		Data = ImageLoadBMP(FileName, Width, Height, Size, Format);
+
+		return (Data != nullptr);
+	}
+
+	void ImageLoaderBMP::Free()
+	{
+		delete[] Data;
+		Width = 0;
+		Height = 0;
+		Mipmaps = 0;
+		Format = TextureFormat::RGBA8;
 	}
 
 	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)

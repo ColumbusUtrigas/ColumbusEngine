@@ -1,4 +1,5 @@
 #include <Common/Image/Image.h>
+#include <Common/Image/DDS/ImageDDS.h>
 #include <System/File.h>
 #include <Core/Core.h>
 
@@ -289,57 +290,7 @@ namespace Columbus
 		return Result;
 	}
 
-	bool ImageIsDDS(std::string FileName)
-	{
-		File DDSImageFile(FileName, "rb");
-		if (!DDSImageFile.IsOpened()) return false;
-
-		uint8 Magic[4];
-		DDSImageFile.ReadBytes(Magic, sizeof(Magic));
-		DDSImageFile.Close();
-
-		if (Memory::Memcmp(Magic, "DDS ", 4) == 0)
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	bool ImageIsDDSMemory(const uint8* Data, uint64 Size)
-	{
-		if (Data == nullptr || Size == 0)
-		{
-			return false;
-		}
-
-		if (Memory::Memcmp(Data, "DDS ", 4) == 0)
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
-	{
-		File DDSImageFile(FileName, "rb");
-		if (!DDSImageFile.IsOpened())
-		{
-			Log::error("ImageLoadDDS() error: Couldn't load DDS: Couldn'y open file");
-			return nullptr;
-		}
-
-		uint8* Data = new uint8[DDSImageFile.GetSize()];
-		DDSImageFile.Read(Data, DDSImageFile.GetSize(), 1);
-		uint8* Result = ImageLoadDDSMemory(Data, DDSImageFile.GetSize(), OutWidth, OutHeight, OutSize, OutMipMaps, OutFormat);
-		DDSImageFile.Close();
-
-		delete[] Data;
-		return Result;
-	}
-
-	uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
+	static uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint32& OutMipMaps, TextureFormat& OutFormat)
 	{
 		if (Data == nullptr || Size == 0)
 		{
@@ -396,15 +347,61 @@ namespace Columbus
 			BlockSize = 16;
 		}
 
+		uint64 DataSize = 0;
+
 		for (uint32 i = 0; i < Header.MipMapCount; i++)
 		{
-			OutSize += (((Header.Width >> i) + 3) / 4) * (((Header.Height >> i) + 3) / 4) * BlockSize;
+			DataSize += (((Header.Width >> i) + 3) / 4) * (((Header.Height >> i) + 3) / 4) * BlockSize;
 		}
 
-		uint8* Buffer = new uint8[OutSize];
-		std::copy(Data, Data + OutSize, Buffer);
+		uint8* Buffer = new uint8[DataSize];
+		std::copy(Data, Data + DataSize, Buffer);
 
 		return Buffer;
+	}
+
+	bool ImageLoaderDDS::IsDDS(std::string FileName)
+	{
+		File DDSImageFile(FileName, "rb");
+		if (!DDSImageFile.IsOpened()) return false;
+
+		uint8 Magic[4];
+		DDSImageFile.ReadBytes(Magic, sizeof(Magic));
+		DDSImageFile.Close();
+
+		if (Memory::Memcmp(Magic, "DDS ", 4) == 0)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ImageLoaderDDS::Load(std::string FileName)
+	{
+		File DDSImageFile(FileName, "rb");
+		if (!DDSImageFile.IsOpened())
+		{
+			Log::error("ImageLoadDDS() error: Couldn't load DDS: Couldn'y open file");
+			return false;
+		}
+
+		uint8* TmpData = new uint8[DDSImageFile.GetSize()];
+		DDSImageFile.Read(TmpData, DDSImageFile.GetSize(), 1);
+		Data = ImageLoadDDSMemory(TmpData, DDSImageFile.GetSize(), Width, Height, Mipmaps, Format);
+		DDSImageFile.Close();
+
+		delete[] TmpData;
+		return (Data != nullptr);
+	}
+
+	void ImageLoaderDDS::Free()
+	{
+		delete[] Data;
+		Width = 0;
+		Height = 0;
+		Mipmaps = 0;
+		Format = TextureFormat::RGBA8;
 	}
 
 }

@@ -1,4 +1,10 @@
 #include <Common/Image/Image.h>
+#include <Common/Image/BMP/ImageBMP.h>
+#include <Common/Image/DDS/ImageDDS.h>
+#include <Common/Image/JPG/ImageJPG.h>
+#include <Common/Image/PNG/ImagePNG.h>
+#include <Common/Image/TGA/ImageTGA.h>
+#include <Common/Image/TIF/ImageTIF.h>
 #include <Core/Core.h>
 
 namespace Columbus
@@ -8,28 +14,28 @@ namespace Columbus
 	{
 		switch (Format)
 		{
-		case TextureFormat::R8:      return 1;  break;
-		case TextureFormat::RG8:     return 2;  break;
-		case TextureFormat::RGB8:    return 3;  break;
-		case TextureFormat::RGBA8:   return 4;  break;
+			case TextureFormat::R8:      return 1;  break;
+			case TextureFormat::RG8:     return 2;  break;
+			case TextureFormat::RGB8:    return 3;  break;
+			case TextureFormat::RGBA8:   return 4;  break;
 
-		case TextureFormat::R16:    
-		case TextureFormat::R16F:    return 2;  break;
-		case TextureFormat::RG16:    
-		case TextureFormat::RG16F:   return 4;  break;
-		case TextureFormat::RGB16:
-		case TextureFormat::RGB16F:  return 6;  break;
-		case TextureFormat::RGBA16:
-		case TextureFormat::RGBA16F: return 8;  break;
+			case TextureFormat::R16:    
+			case TextureFormat::R16F:    return 2;  break;
+			case TextureFormat::RG16:    
+			case TextureFormat::RG16F:   return 4;  break;
+			case TextureFormat::RGB16:
+			case TextureFormat::RGB16F:  return 6;  break;
+			case TextureFormat::RGBA16:
+			case TextureFormat::RGBA16F: return 8;  break;
 
-		case TextureFormat::R32F:    return 4;  break;
-		case TextureFormat::RG32F:   return 8;  break;
-		case TextureFormat::RGB32F:  return 12; break;
-		case TextureFormat::RGBA32F: return 16; break;
+			case TextureFormat::R32F:    return 4;  break;
+			case TextureFormat::RG32F:   return 8;  break;
+			case TextureFormat::RGB32F:  return 12; break;
+			case TextureFormat::RGBA32F: return 16; break;
 
-		case TextureFormat::Unknown: return 0;  break;
+			case TextureFormat::Unknown: return 0;  break;
 
-		default:                     return 0;  break;
+			default:                     return 0;  break;
 		}
 
 		return 0;
@@ -37,12 +43,12 @@ namespace Columbus
 
 	ImageFormat ImageGetFormat(std::string FileName)
 	{
-		if (ImageIsBMP(FileName)) return ImageFormat::BMP;
-		if (ImageIsDDS(FileName)) return ImageFormat::DDS;
-		if (ImageIsPNG(FileName)) return ImageFormat::PNG;
-		if (ImageIsTIF(FileName)) return ImageFormat::TIF;
-		if (ImageIsJPG(FileName)) return ImageFormat::JPG;
-		if (ImageIsTGA(FileName)) return ImageFormat::TGA;
+		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
+		if (ImageLoaderDDS::IsDDS(FileName)) return ImageFormat::DDS;
+		if (ImageLoaderPNG::IsPNG(FileName)) return ImageFormat::PNG;
+		if (ImageLoaderTIF::IsTIF(FileName)) return ImageFormat::TIF;
+		if (ImageLoaderJPG::IsJPG(FileName)) return ImageFormat::JPG;
+		if (ImageLoaderTGA::IsTGA(FileName)) return ImageFormat::TGA;
 
 		return ImageFormat::Unknown;
 	}
@@ -177,26 +183,7 @@ namespace Columbus
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat)
-	{
-		switch (ImageGetFormat(FileName))
-		{
-		case ImageFormat::BMP: return ImageLoadBMP(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
-		case ImageFormat::DDS: return ImageLoadDDS(FileName, OutWidth, OutHeight, OutSize, OutMipMaps, OutFormat); break;
-		case ImageFormat::PNG: return ImageLoadPNG(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
-		case ImageFormat::TIF: return ImageLoadTIF(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
-		case ImageFormat::JPG: return ImageLoadJPG(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
-		case ImageFormat::TGA: return ImageLoadTGA(FileName, OutWidth, OutHeight, OutSize, OutFormat); break;
-		case ImageFormat::Unknown: return nullptr; break;
-		default: return nullptr; break;
-		}
-
-		return nullptr;
-	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality)
 	{
 		switch (Format)
@@ -246,24 +233,55 @@ namespace Columbus
 	{
 		FreeData();
 
-		Data = ImageLoad(InFileName, Width, Height, Size, MipMaps, Format);
-		if (Data == nullptr) return false;
+		ImageLoader* Loader = nullptr;
 
-		else
+		switch (ImageGetFormat(InFileName))
 		{
-			FileName = InFileName;
-			Exist = true;
+			case ImageFormat::BMP: Loader = new ImageLoaderBMP(); break;
+			case ImageFormat::DDS: Loader = new ImageLoaderDDS(); break;
+			case ImageFormat::PNG: Loader = new ImageLoaderPNG(); break;
+			case ImageFormat::TIF: Loader = new ImageLoaderTIF(); break;
+			case ImageFormat::JPG: Loader = new ImageLoaderJPG(); break;
+			case ImageFormat::TGA: Loader = new ImageLoaderTGA(); break;
+			case ImageFormat::Unknown: return false; break;
+			default: return false; break;
+		}
 
-			switch (Flags)
+		if (Loader != nullptr)
+		{
+			if (!Loader->Load(InFileName))
 			{
+				Loader->Free();
+				delete Loader;
+				return false;
+			}
+
+			Data = Loader->GetData();
+			Width = Loader->GetWidth();
+			Height = Loader->GetHeight();
+			MipMaps = Loader->GetMipmaps();
+			Format = Loader->GetFormat();
+
+			delete Loader;
+		}
+
+		if (Data == nullptr)
+		{
+			return false;
+		}
+
+		FileName = InFileName;
+		Exist = true;
+
+		switch (Flags)
+		{
 			case ImageLoading::FlipX:  FlipX();  break;
 			case ImageLoading::FlipY:  FlipY();  break;
 			case ImageLoading::FlipXY: FlipXY(); break;
 			case ImageLoading::None: break;
-			}
-
-			return true;
 		}
+
+		return true;
 	}
 	/*
 	* Save image to file
@@ -274,7 +292,12 @@ namespace Columbus
 	bool Image::Save(std::string InFileName, ImageFormat InFormat, size_t Quality) const
 	{
 		return false;
-		if (!IsExist()) return false;
+
+		if (!IsExist())
+		{
+			return false;
+		}
+
 		return ImageSave(InFileName, Width, Height, Format, Data, InFormat, Quality);
 	}
 	/*
@@ -395,6 +418,23 @@ namespace Columbus
 		return MipMaps;
 	}
 
+	uint32 Image::GetBytesPerPixel() const
+	{
+		return GetBPPFromFormat(Format);
+	}
+
+	uint32 Image::GetBytesPerBlock() const
+	{
+		switch (Format)
+		{
+			case TextureFormat::DXT1: return 8;  break;
+			case TextureFormat::DXT3: return 16; break;
+			case TextureFormat::DXT5: return 16; break;
+		}
+
+		return 0;
+	}
+
 	uint64 Image::GetOffset(uint32 Level) const
 	{
 		if (IsCompressedFormat())
@@ -441,16 +481,16 @@ namespace Columbus
 		return (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
 	}
 
-	uint64 Image::GetSize() const
+	/*uint64 Image::GetSize() const
 	{
 		return Size;
-	}
+	}*/
 
 	uint8* Image::Get2DData(uint32 Level) const
 	{
 		if (Data != nullptr)
 		{
-			return Data + GetOffset(Level);
+			return &Data[0] + GetOffset(Level);
 		}
 
 		return nullptr;

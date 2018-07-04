@@ -1,13 +1,5 @@
-/************************************************
-*              	   ImageJPG.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   06.01.2018                  *
-*************************************************/
 #include <Common/Image/Image.h>
+#include <Common/Image/JPG/ImageJPG.h>
 #include <Core/Memory.h>
 #include <System/File.h>
 #include <jpeglib.h>
@@ -16,22 +8,7 @@
 namespace Columbus
 {
 
-	bool ImageIsJPG(std::string FileName)
-	{
-		File file(FileName, "rb");
-		if (!file.IsOpened()) return false;
-
-		uint8_t magic[3];
-		if (!file.ReadBytes(magic, sizeof(magic))) return false;
-		file.Close();
-
-		if (magic[0] == 0xFF &&
-			magic[1] == 0xD8 &&
-			magic[2] == 0xFF) return true;
-		else return false;
-	}
-
-	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		struct jpeg_decompress_struct cinfo;
 
@@ -132,6 +109,46 @@ namespace Columbus
 		jpeg_destroy_compress(&cinfo);
 
 		return true;
+	}
+
+	bool ImageLoaderJPG::IsJPG(std::string FileName)
+	{
+		File JPGImageFile(FileName, "rb");
+		if (!JPGImageFile.IsOpened()) return false;
+
+		uint8_t magic[3];
+		if (!JPGImageFile.ReadBytes(magic, sizeof(magic))) return false;
+		JPGImageFile.Close();
+
+		if (magic[0] == 0xFF &&
+		    magic[1] == 0xD8 &&
+		    magic[2] == 0xFF)
+		{
+		    return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	bool ImageLoaderJPG::Load(std::string FileName)
+	{
+		Free();
+		uint64 Size = 0;
+
+		Data = ImageLoadJPG(FileName, Width, Height, Size, Format);
+
+		return (Data != nullptr);
+	}
+
+	void ImageLoaderJPG::Free()
+	{
+		delete[] Data;
+		Width = 0;
+		Height = 0;
+		Mipmaps = 0;
+		Format = TextureFormat::RGBA8;
 	}
 
 }

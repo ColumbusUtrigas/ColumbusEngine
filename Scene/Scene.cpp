@@ -535,7 +535,7 @@ namespace Columbus
 
 					if (Img.Load(path))
 					{
-						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), Img.GetSize(), 0, 0, Img.GetFormat()));
+						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, 0, 0, Img.GetFormat()));
 						Tex->Load(Img);
 
 						Log::success("Texture loaded: " + path);
