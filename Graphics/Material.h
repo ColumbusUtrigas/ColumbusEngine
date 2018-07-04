@@ -59,6 +59,11 @@ namespace Columbus
 		Cubemap* Reflection = nullptr;
 
 		float ReflectionPower = 0.2f;
+
+		float Rim = 1.0f;
+		float RimPower = 8.0f;
+		float RimBias = 0.3f;
+		Vector3 RimColor;
 	public:
 		Material();
 		Material(std::string aFile);

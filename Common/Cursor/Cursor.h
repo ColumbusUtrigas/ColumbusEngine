@@ -29,8 +29,11 @@ namespace Columbus
 			Frames[0].Height = InImage.GetHeight();
 			Frames[0].HotPointX = InHotPointX;
 			Frames[0].HotPointY = InHotPointY;
-			Frames[0].PixelData = new uint8[InImage.GetSize()];
-			std::copy(&InImage.GetData()[0], &InImage.GetData()[0] + InImage.GetSize(), Frames[0].PixelData);
+
+			uint64 Size = InImage.GetWidth() * InImage.GetHeight() * InImage.GetBytesPerPixel();
+
+			Frames[0].PixelData = new uint8[Size];
+			std::copy(&InImage.GetData()[0], &InImage.GetData()[0] + Size, Frames[0].PixelData);
 		}
 	};
 

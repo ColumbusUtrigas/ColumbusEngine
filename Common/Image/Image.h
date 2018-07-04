@@ -64,24 +64,31 @@ namespace Columbus
 		Unknown
 	};
 
+	class ImageLoader
+	{
+	protected:
+		uint8* Data = nullptr;
+		uint32 Width = 0;
+		uint32 Height = 0;
+		uint32 Mipmaps = 0;
+		TextureFormat Format = TextureFormat::RGBA8;
+	public:
+		ImageLoader() {}
+
+		virtual bool Load(std::string FileName) { return false; }
+		virtual void Free() {}
+
+		uint8* GetData() const { return Data; }
+		uint32 GetWidth() const { return Width; }
+		uint32 GetHeight() const { return Height; }
+		uint32 GetMipmaps() const { return Mipmaps; }
+		TextureFormat GetFormat() const { return Format; }
+
+		virtual ~ImageLoader() {}
+	};
+
 	ImageFormat ImageGetFormat(std::string FileName);
 	uint32 GetBPPFromFormat(TextureFormat Format);
-
-	bool ImageIsBMP(std::string FileName); //Check file magic
-	bool ImageIsDDS(std::string FileName); //Check file magic
-	bool ImageIsDDSMemory(const uint8* Data, uint64 Size);
-	bool ImageIsTGA(std::string FileName); //Check file extension (*.tga, *.vda, *.icb, *.vst)
-	bool ImageIsPNG(std::string FileName); //Check file magic
-	bool ImageIsTIF(std::string FileName); //Check file magic
-	bool ImageIsJPG(std::string FileName); //Check file magic
-
-	uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
-	uint8* ImageLoadDDS(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
-	uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
-	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
-	uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
-	uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
-	uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat);
 
 	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
@@ -89,7 +96,6 @@ namespace Columbus
 	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
 
-	uint8* ImageLoad(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, uint32& OutMipMaps, TextureFormat& OutFormat);
 	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality = 100);
 
 	bool ImageBGR2RGB(uint8* Data, uint64 Size);
@@ -151,10 +157,12 @@ namespace Columbus
 		uint32 GetHeight() const;
 		uint32 GetDepth() const;
 		uint32 GetMipmapsCount() const;
+		uint32 GetBytesPerPixel() const;
+		uint32 GetBytesPerBlock() const;
 
 		uint64 GetOffset(uint32 Level) const;
 		uint64 GetSize(uint32 Level) const;
-		uint64 GetSize() const;
+		//uint64 GetSize() const;
 
 		uint8* Get2DData(uint32 Level = 0) const;
 		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;

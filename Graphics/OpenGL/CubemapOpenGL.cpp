@@ -88,7 +88,7 @@ namespace Columbus
 				if (IsDXT)
 				{
 					glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
-						mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, mBitmaps[i].GetSize(),
+						mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, mBitmaps[i].GetSize(0),
 						mBitmaps[i].GetData());
 				}
 				else

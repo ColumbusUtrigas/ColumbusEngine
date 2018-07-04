@@ -1,4 +1,5 @@
 #include <Common/Image/Image.h>
+#include <Common/Image/TGA/ImageTGA.h>
 #include <Core/Memory.h>
 #include <System/File.h>
 
@@ -92,16 +93,6 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageIsTGA(std::string FileName)
-	{
-		std::string ext = FileName.substr(FileName.size() - 4);
-
-		if (ext == ".tga" || ext == ".vda" ||
-		    ext == ".icb" || ext == ".vst") return true;
-
-		return false;
-	}
-
 	static void RGBCompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
 		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB compression: invalid input")
@@ -175,7 +166,7 @@ namespace Columbus
 		}
 	}
 
-	uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		File file(FileName, "rb");
 		if (!file.IsOpened()) return nullptr;
@@ -249,6 +240,32 @@ namespace Columbus
 
 		delete[] buffer;
 		return data;
+	}
+
+	bool ImageLoaderTGA::IsTGA(std::string FileName)
+	{
+		std::string ext = FileName.substr(FileName.size() - 4);
+
+		if (ext == ".tga" || ext == ".vda" ||
+		    ext == ".icb" || ext == ".vst") return true;
+
+		return false;
+	}
+
+	bool ImageLoaderTGA::Load(std::string FileName)
+	{
+		uint64 Size;
+		Data = ImageLoadTGA(FileName, Width, Height, Size, Format);
+		return (Data != nullptr);
+	}
+
+	void ImageLoaderTGA::Free()
+	{
+		delete[] Data;
+		Width = 0;
+		Height = 0;
+		Mipmaps = 0;
+		Format = TextureFormat::RGBA8;
 	}
 
 	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)

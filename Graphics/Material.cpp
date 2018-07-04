@@ -167,6 +167,18 @@ namespace Columbus
 		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
 
+		if (!Serializer.GetFloat("Rim", Rim))
+		{ Log::error("Can't load Material Rim: " + aFile); return false; }
+
+		if (!Serializer.GetFloat("RimPower", RimPower))
+		{ Log::error("Can't load Material Rim power: " + aFile); return false; }
+
+		if (!Serializer.GetFloat("RimBias", RimBias))
+		{ Log::error("Can't load Material Rim bias: " + aFile); return false; }
+
+		if (!Serializer.GetVector3("RimColor", RimColor, {"R", "G", "B"}))
+		{ Log::error("Can't load Material Rim color: " + aFile); return false; }
+
 		if (!Serializer.GetBool("Lighting", mLighting))
 		{ Log::error("Can't load Material lighting: " + aFile); return false; }
 
@@ -225,6 +237,11 @@ namespace Columbus
 		        SpecularTexture == Other.SpecularTexture &&
 		        NormalTexture == Other.NormalTexture &&
 		        ShaderProg == Other.ShaderProg &&
+		        ReflectionPower == Other.ReflectionPower &&
+		        Rim == Other.Rim &&
+		        RimPower == Other.RimPower &&
+		        RimBias == Other.RimBias &&
+		        RimColor == Other.RimColor &&
 		        mLighting == Other.mLighting &&
 		        mEnvReflection == Other.mEnvReflection &&
 		        mTextureID == Other.mTextureID &&

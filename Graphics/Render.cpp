@@ -92,6 +92,10 @@ namespace Columbus
 				Program->SetUniform3f("uMaterial.DiffuseColor", InMaterial->DiffuseColor);
 				Program->SetUniform3f("uMaterial.SpecularColor", InMaterial->SpecularColor);
 				Program->SetUniform1f("uMaterial.ReflectionPower", InMaterial->ReflectionPower);
+				Program->SetUniform1f("uMaterial.Rim", InMaterial->Rim);
+				Program->SetUniform1f("uMaterial.RimPower", InMaterial->RimPower);
+				Program->SetUniform1f("uMaterial.RimBias", InMaterial->RimBias);
+				Program->SetUniform3f("uMaterial.RimColor", InMaterial->RimColor);
 				Program->SetUniform1i("uMaterial.Lighting", InMaterial->getLighting());
 			}
 		}

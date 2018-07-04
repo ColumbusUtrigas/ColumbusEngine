@@ -335,6 +335,7 @@ namespace Columbus
 			}
 			else
 			{
+				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
 				glGenerateMipmap(Target);
 			}
