@@ -1,4 +1,5 @@
 #include <Common/Sound/Sound.h>
+#include <Common/Sound/WAV/SoundWAV.h>
 #include <System/File.h>
 #include <Math/MathUtil.h>
 #include <Core/Memory.h>
@@ -63,38 +64,6 @@ namespace Columbus
 		}
 
 		return BeginOffset;
-	}
-
-	bool SoundIsWAV_PCM(std::string FileName)
-	{
-		uint64 Size;
-		uint16 Format;
-		uint16 Channels;
-		uint32 Freq;
-		uint16 Block;
-
-		if (GetWAVFormat(FileName, Size, Format, Channels, Freq, Block) != -1)
-		{
-			return Format == 1;
-		}
-
-		return false;
-	}
-
-	bool SoundIsWAV_ADPCM(std::string FileName)
-	{
-		uint64 Size;
-		uint16 Format;
-		uint16 Channels;
-		uint32 Freq;
-		uint16 Block;
-
-		if (GetWAVFormat(FileName, Size, Format, Channels, Freq, Block) != -1)
-		{
-			return Format == 2;
-		}
-
-		return false;
 	}
 
 	static int16* LoadWAV_PCM(File* WAVSoundFile)
@@ -210,6 +179,22 @@ namespace Columbus
 
 	SoundDecoderPCM::SoundDecoderPCM() { }
 
+	bool SoundDecoderPCM::IsWAV(std::string FileName)
+	{
+		uint64 Size;
+		uint16 Format;
+		uint16 Channels;
+		uint32 Freq;
+		uint16 Block;
+
+		if (GetWAVFormat(FileName, Size, Format, Channels, Freq, Block) != -1)
+		{
+			return Format == 1;
+		}
+
+		return false;
+	}
+
 	bool SoundDecoderPCM::Load(std::string FileName)
 	{
 		Free();
@@ -296,6 +281,22 @@ namespace Columbus
 	}
 
 	SoundDecoderADPCM::SoundDecoderADPCM() { }
+
+	bool SoundDecoderADPCM::IsWAV(std::string FileName)
+	{
+		uint64 Size;
+		uint16 Format;
+		uint16 Channels;
+		uint32 Freq;
+		uint16 Block;
+
+		if (GetWAVFormat(FileName, Size, Format, Channels, Freq, Block) != -1)
+		{
+			return Format == 2;
+		}
+
+		return false;
+	}
 
 	bool SoundDecoderADPCM::Load(std::string FileName)
 	{
