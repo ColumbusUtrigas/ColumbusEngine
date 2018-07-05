@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 	BackgroundMusic->SetSound(&BackgroundSound);
 	BackgroundMusic->SetMode(AudioSource::Mode::Sound2D);
 	BackgroundMusic->SetLooping(true);
-	//BackgroundMusic->Play();
+	BackgroundMusic->Play();
 
 	Source1->SetSound(&FireSound);
 	Source2->SetSound(&FireSound);

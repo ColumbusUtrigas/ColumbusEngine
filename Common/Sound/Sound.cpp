@@ -1,4 +1,6 @@
 #include <Common/Sound/Sound.h>
+#include <Common/Sound/OGG/SoundOGG.h>
+#include <Common/Sound/WAV/SoundWAV.h>
 #include <Core/Memory.h>
 
 namespace Columbus
@@ -6,10 +8,10 @@ namespace Columbus
 
 	SoundFormat SoundGetFormat(std::string FileName)
 	{
-		if (SoundIsWAV_PCM(FileName)) return SoundFormat::WAV_PCM;
-		if (SoundIsWAV_ADPCM(FileName)) return SoundFormat::WAV_ADPCM;
-		if (SoundIsOGG(FileName)) return SoundFormat::OGG;
-		if (SoundIsMP3(FileName)) return SoundFormat::MP3;
+		if (SoundDecoderPCM::IsWAV  (FileName)) return SoundFormat::WAV_PCM;
+		if (SoundDecoderADPCM::IsWAV(FileName)) return SoundFormat::WAV_ADPCM;
+		if (SoundDecoderOGG::IsOGG  (FileName)) return SoundFormat::OGG;
+		if (SoundIsMP3              (FileName)) return SoundFormat::MP3;
 
 		return SoundFormat::Unknown;
 	}
