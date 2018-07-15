@@ -56,13 +56,20 @@
 		sampler2D DiffuseMap;
 		sampler2D SpecularMap;
 		sampler2D NormalMap;
+		sampler2D DetailDiffuseMap;
+		sampler2D DetailNormalMap;
 		samplerCube ReflectionMap;
+
+		vec2 Tiling;
+		vec2 DetailTiling;
 
 		vec4 Color;
 		vec3 AmbientColor;
 		vec3 DiffuseColor;
 		vec3 SpecularColor;
+
 		float ReflectionPower;
+		float DetailNormalStrength;
 
 		float Rim;
 		float RimPower;
@@ -80,12 +87,17 @@
 	//@Uniform uMaterial.DiffuseMap
 	//@Uniform uMaterial.SpecularMap
 	//@Uniform uMaterial.NormalMap
+	//@Uniform uMaterial.DetailDiffuseMap
+	//@Uniform uMaterial.DetailNormalMap
+	//@Uniform uMaterial.Tiling
+	//@Uniform uMaterial.DetailTiling
 	//@Uniform uMaterial.ReflectionMap
 	//@Uniform uMaterial.Color
 	//@Uniform uMaterial.AmbientColor
 	//@Uniform uMaterial.DiffuseColor
 	//@Uniform uMaterial.SpecularColor
 	//@Uniform uMaterial.ReflectionPower
+	//@Uniform uMaterial.DetailNormalStrength
 	//@Uniform uMaterial.Rim
 	//@Uniform uMaterial.RimPower
 	//@Uniform uMaterial.RimBias
@@ -101,6 +113,8 @@
 	vec4 DiffuseMap;
 	vec3 SpecularMap;
 	vec3 NormalMap;
+	vec4 DetailDiffuseMap;
+	vec3 DetailNormalMap;
 
 	bool IsSpecularMap = false;
 
@@ -145,9 +159,21 @@
 
 	void Init(void)
 	{
-		DiffuseMap = texture(uMaterial.DiffuseMap, varUV);
-		SpecularMap = vec3(texture(uMaterial.SpecularMap, varUV));
-		NormalMap = vec3(texture(uMaterial.NormalMap, varUV));
+		DiffuseMap = texture(uMaterial.DiffuseMap, varUV * uMaterial.Tiling);
+		SpecularMap = texture(uMaterial.SpecularMap, varUV * uMaterial.Tiling).rgb;
+		NormalMap = texture(uMaterial.NormalMap, varUV * uMaterial.Tiling).rgb;
+		DetailDiffuseMap = texture(uMaterial.DetailDiffuseMap, varUV * uMaterial.DetailTiling);
+		DetailNormalMap = texture(uMaterial.DetailNormalMap, varUV * uMaterial.DetailTiling).rgb;
+
+		if (textureSize(uMaterial.DiffuseMap, 0).x > 1 && textureSize(uMaterial.DetailDiffuseMap, 0).x > 1)
+		{
+			DiffuseMap = vec4(DiffuseMap.rgb * DetailDiffuseMap.rgb * 1.8f, DiffuseMap.a);
+		}
+
+		if (textureSize(uMaterial.NormalMap, 0).x > 1 && textureSize(uMaterial.DetailNormalMap, 0).x > 1)
+		{
+			NormalMap = mix(NormalMap.rgb, DetailNormalMap.rgb, uMaterial.DetailNormalStrength);
+		}
 
 		//if (DiffuseMap.w <= 0.1) discard;
 

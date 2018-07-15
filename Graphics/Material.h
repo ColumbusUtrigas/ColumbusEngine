@@ -1,13 +1,3 @@
-/************************************************
-*              	   Material.h                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <Math/Vector2.h>
@@ -42,23 +32,31 @@ namespace Columbus
 		int mTextureID = -1;
 		int mSpecMapID = -1;
 		int mNormMapID = -1;
+		int DetailDiffuseMapID = -1;
+		int DetailNormalMapID = -1;
 	protected:
 		ShaderProgram* ShaderProg = nullptr;
 	public:
 		Cull Culling = Cull::Back;
 		bool DepthWriting = true;
 
+		Texture* DiffuseTexture = nullptr;
+		Texture* SpecularTexture = nullptr;
+		Texture* NormalTexture = nullptr;
+		Texture* DetailDiffuseMap = nullptr;
+		Texture* DetailNormalMap = nullptr;
+		Cubemap* Reflection = nullptr;
+
+		Vector2 Tiling = Vector2(1, 1);
+		Vector2 DetailTiling = Vector2(4, 4);
+
 		Vector4 Color;
 		Vector3 AmbientColor;
 		Vector3 DiffuseColor;
 		Vector3 SpecularColor;
 
-		Texture* DiffuseTexture = nullptr;
-		Texture* SpecularTexture = nullptr;
-		Texture* NormalTexture = nullptr;
-		Cubemap* Reflection = nullptr;
-
 		float ReflectionPower = 0.2f;
+		float DetailNormalStrength = 0.3f;
 
 		float Rim = 1.0f;
 		float RimPower = 8.0f;
@@ -90,6 +88,8 @@ namespace Columbus
 		int getTextureID() const;
 		int getSpecMapID() const;
 		int getNormMapID() const;
+		int GetDetailDiffuseMapID() const;
+		int GetDetailNormalMapID() const;
 
 		bool saveToXML(std::string aFile) const;
 		bool loadFromXML(std::string aFile);
