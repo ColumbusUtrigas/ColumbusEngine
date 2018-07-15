@@ -103,6 +103,16 @@ namespace Columbus
 	{
 		return mNormMapID;
 	}
+
+	int Material::GetDetailDiffuseMapID() const
+	{
+		return DetailDiffuseMapID;
+	}
+
+	int Material::GetDetailNormalMapID() const
+	{
+		return DetailNormalMapID;
+	}
 	
 	bool Material::saveToXML(std::string aFile) const
 	{
@@ -152,20 +162,29 @@ namespace Columbus
 		if (!Serializer.GetBool("DepthWriting", DepthWriting))
 		{ Log::error("Can't load Material depth writing: " + aFile); return false; }
 
-		if (!Serializer.GetVector4("Color", Color, {"R", "G", "B", "A"}))
+		if (!Serializer.GetVector2("Tiling", Tiling, { "X", "Y"}))
+		{ Log::error("Can't load Material tiling: " + aFile); return false; }
+
+		if (!Serializer.GetVector2("DetailTiling", DetailTiling, { "X", "Y"}))
+		{ Log::error("Can't load Material detail tiling: " + aFile); return false; }
+
+		if (!Serializer.GetVector4("Color", Color, { "R", "G", "B", "A" }))
 		{ Log::error("Can't load Material color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Ambient", AmbientColor, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Ambient", AmbientColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Material ambient color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Diffuse", DiffuseColor, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Diffuse", DiffuseColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Material diffuse color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Specular", SpecularColor, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("Specular", SpecularColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Material specular color: " + aFile); return false; }
 
 		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
+
+		if (!Serializer.GetFloat("DetailNormalStrength", DetailNormalStrength))
+		{ Log::error("Can't load Material detail normal strength: " + aFile); return false; }
 
 		if (!Serializer.GetFloat("Rim", Rim))
 		{ Log::error("Can't load Material Rim: " + aFile); return false; }
@@ -176,7 +195,7 @@ namespace Columbus
 		if (!Serializer.GetFloat("RimBias", RimBias))
 		{ Log::error("Can't load Material Rim bias: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("RimColor", RimColor, {"R", "G", "B"}))
+		if (!Serializer.GetVector3("RimColor", RimColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Material Rim color: " + aFile); return false; }
 
 		if (!Serializer.GetBool("Lighting", mLighting))
@@ -185,10 +204,14 @@ namespace Columbus
 		std::string diffuseMapPath = "None";
 		std::string specularMapPath = "None";
 		std::string normalMapPath = "None";
+		std::string DetailDiffuseMapPath = "None";
+		std::string DetailNormalMapPath = "None";
 
 		Serializer.GetSubString({"Textures", "Diffuse"}, diffuseMapPath);
 		Serializer.GetSubString({"Textures", "Specular"}, specularMapPath);
 		Serializer.GetSubString({"Textures", "Normal"}, normalMapPath);
+		Serializer.GetSubString({"Textures", "DetailDiffuse"}, DetailDiffuseMapPath);
+		Serializer.GetSubString({"Textures", "DetailNormal"}, DetailNormalMapPath);
 
 		if (diffuseMapPath != "None")
 		{
@@ -203,6 +226,16 @@ namespace Columbus
 		if (normalMapPath != "None")
 		{
 			mNormMapID = std::atoi(normalMapPath.c_str());
+		}
+
+		if (DetailDiffuseMapPath != "None")
+		{
+			DetailDiffuseMapID = std::atoi(DetailDiffuseMapPath.c_str());
+		}
+
+		if (DetailNormalMapPath != "None")
+		{
+			DetailNormalMapID = std::atoi(DetailNormalMapPath.c_str());
 		}
 
 		if (MaterialCulling == "No")

@@ -2,7 +2,7 @@
 
 	<Resources>
 		<Textures>
-			<Count>13</Count>
+			<Count>15</Count>
 
 			<Texture0>Data/Textures/milos.dds</Texture0>
 			<Texture1>Data/Textures/milos-spec.dds</Texture1>
@@ -17,6 +17,8 @@
 			<Texture10>Data/Textures/metal.dds</Texture10>
 			<Texture11>Data/Textures/metal-spec.dds</Texture11>
 			<Texture12>Data/Textures/metal-normal.dds</Texture12>
+			<Texture13>Data/Textures/Detail.dds</Texture13>
+			<Texture14>Data/Textures/Detail-Normal.dds</Texture14>
 		</Textures>
 
 		<Shaders>

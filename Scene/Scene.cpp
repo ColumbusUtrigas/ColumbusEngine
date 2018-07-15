@@ -464,6 +464,16 @@ namespace Columbus
 				material->NormalTexture = Textures->at(material->getNormMapID());
 			}
 
+			if (material->GetDetailDiffuseMapID() != -1)
+			{
+				material->DetailDiffuseMap = Textures->at(material->GetDetailDiffuseMapID());
+			}
+
+			if (material->GetDetailNormalMapID() != -1)
+			{
+				material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID());
+			}
+
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
 			ComponentMeshInstancedRenderer* MeshInstancedRenderer = SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);

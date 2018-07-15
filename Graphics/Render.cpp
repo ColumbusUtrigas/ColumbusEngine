@@ -68,30 +68,38 @@ namespace Columbus
 		{
 			if (Program->IsCompiled())
 			{
-				Texture* Textures[3] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture };
+				Texture* Textures[5] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture, InMaterial->DetailDiffuseMap, InMaterial->DetailNormalMap };
 				Cubemap* Reflection = InMaterial->getReflection();
-				static std::string Names[3] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap" };
+				static std::string Names[5] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap" };
 
-				for (int32 i = 0; i < 3; i++)
+				for (int32 i = 0; i < 5; i++)
 				{
 					if (Textures[i] != nullptr)
 					{
 						Program->SetUniform1i(Names[i], i);
 						Textures[i]->sampler2D(i);
 					}
+					else
+					{
+						glActiveTexture(GL_TEXTURE0 + i);
+						glBindTexture(GL_TEXTURE_2D, 0);
+					}
 				}
 
 				if (Reflection != nullptr)
 				{
-					Program->SetUniform1i("uMaterial.ReflectionMap", 3);
-					Reflection->samplerCube(3);
+					Program->SetUniform1i("uMaterial.ReflectionMap", 5);
+					Reflection->samplerCube(5);
 				}
 
+				Program->SetUniform2f("uMaterial.Tiling", InMaterial->Tiling);
+				Program->SetUniform2f("uMaterial.DetailTiling", InMaterial->DetailTiling);
 				Program->SetUniform4f("uMaterial.Color", InMaterial->Color);
 				Program->SetUniform3f("uMaterial.AmbientColor", InMaterial->AmbientColor);
 				Program->SetUniform3f("uMaterial.DiffuseColor", InMaterial->DiffuseColor);
 				Program->SetUniform3f("uMaterial.SpecularColor", InMaterial->SpecularColor);
 				Program->SetUniform1f("uMaterial.ReflectionPower", InMaterial->ReflectionPower);
+				Program->SetUniform1f("uMaterial.DetailNormalStrength", InMaterial->DetailNormalStrength);
 				Program->SetUniform1f("uMaterial.Rim", InMaterial->Rim);
 				Program->SetUniform1f("uMaterial.RimPower", InMaterial->RimPower);
 				Program->SetUniform1f("uMaterial.RimBias", InMaterial->RimBias);
