@@ -15,36 +15,36 @@ namespace Columbus
 	namespace GUI
 	{
 
-		class C_Widget
+		class Widget
 		{
 		protected:
-			C_Vector2 mPos = C_Vector2(0, 0);
-			C_Vector2 mSize = C_Vector2(200, 100);
+			Vector2 mPos = Vector2(0, 0);
+			Vector2 mSize = Vector2(200, 100);
 
 			int mState = 0;
-			C_IO mIO;
+			IO mIO;
 		public:
-			C_Widget() {}
+			Widget() {}
 
-			void setPos(const C_Vector2 aPos)
-			{ mPos = static_cast<C_Vector2>(aPos); }
+			void setPos(const Vector2 aPos)
+			{ mPos = static_cast<Vector2>(aPos); }
 
-			void setSize(const C_Vector2 aSize)
-			{ mSize = static_cast<C_Vector2>(aSize); }
+			void setSize(const Vector2 aSize)
+			{ mSize = static_cast<Vector2>(aSize); }
 
-			void setIO(const C_IO& aIO)
-			{ mIO = static_cast<C_IO>(aIO); }
+			void setIO(const IO& aIO)
+			{ mIO = static_cast<IO>(aIO); }
 
-			C_Vector2& getPos()
+			Vector2& getPos()
 			{ return mPos; }
 
-			C_Vector2& getSize()
+			Vector2& getSize()
 			{ return mSize; }
 
 			virtual void update() = 0;
 			virtual void draw() = 0;
 
-			~C_Widget() {}
+			~Widget() {}
 		};
 
 	}

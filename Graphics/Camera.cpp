@@ -7,135 +7,125 @@
 *                Nika(Columbus) Red             *
 *                   20.07.2017                  *
 *************************************************/
-
 #include <Graphics/Camera.h>
 
 namespace Columbus
 {
 
-	static C_Matrix4 PROJECTION_MATRIX;
-	static C_Matrix4 VIEW_MATRIX;
-
-	//////////////////////////////////////////////////////////////////////////////
-	C_Matrix4 C_GetProjectionMatrix()
-	{
-		return PROJECTION_MATRIX;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Matrix4 C_GetViewMatrix()
-	{
-		return VIEW_MATRIX;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_SetPerspective(float aFOV, float aAspect, float aN, float aF)
-	{
-		PROJECTION_MATRIX.perspective(aFOV, aAspect, aN, aF);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_SetOrtho(float aL, float aR, float aB, float aT, float aN, float aF)
-	{
-		PROJECTION_MATRIX = glm::ortho(aL, aR, aB, aT, aN, aF);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_Camera::C_Camera()
+	
+	Camera::Camera()
 	{
 
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setPos(const C_Vector3 aPos)
+	
+	void Camera::setPos(const Vector3 aPos)
 	{
-		mPos = static_cast<C_Vector3>(aPos);
+		mPos = static_cast<Vector3>(aPos);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addPos(const C_Vector3 aPos)
+	
+	void Camera::addPos(const Vector3 aPos)
 	{
 		mPos += aPos;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getPos() const
+	
+	Vector3 Camera::getPos() const
 	{
 		return mPos;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setRot(const C_Vector3 aRot)
+	
+	void Camera::setRot(const Vector3 aRot)
 	{
-		mRot = static_cast<C_Vector3>(aRot);
+		mRot = static_cast<Vector3>(aRot);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addRot(const C_Vector3 aRot)
+	
+	void Camera::addRot(const Vector3 aRot)
 	{
 		mRot += aRot;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getRot() const
+	
+	Vector3 Camera::getRot() const
 	{
 		return mRot;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::setTarget(const C_Vector3 aTarget)
+	
+	void Camera::setTarget(const Vector3 aTarget)
 	{
-		mTarget = static_cast<C_Vector3>(aTarget);
+		mTarget = static_cast<Vector3>(aTarget);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::addTarget(const C_Vector3 aTarget)
+	
+	void Camera::addTarget(const Vector3 aTarget)
 	{
 		mTarget += aTarget;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::getTarget() const
+	
+	Vector3 Camera::getTarget() const
 	{
 		return mTarget;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::direction() const
+	
+	Vector3 Camera::direction() const
 	{
 		return mCameraDirection;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::right() const
+
+	Vector3 Camera::right() const
 	{
 		return -mCameraRight;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Vector3 C_Camera::up() const
+	
+	Vector3 Camera::up() const
 	{
 		return mCameraUp;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_Camera::update()
+	
+	void Camera::update()
 	{
-		if (mPos.x >= 360 || mPos.x <= -360) mPos.x = 0.0;
-		if (mPos.y >= 360 || mPos.y <= -360) mPos.y = 0.0;
-		if (mPos.z >= 360 || mPos.z <= -360) mPos.z = 0.0;
+		while (mRot.X >= 360.0f || mRot.X <= -360.0f)
+		{
+			mRot.X -= 360.0f * Math::Sign(mRot.X);
+		}
 
-		if (mRot.x >= 360 || mRot.x <= -360) mRot.x = 0.0;
-		if (mRot.y >= 360 || mRot.y <= -360) mRot.y = 0.0;
-		if (mRot.z >= 360 || mRot.z <= -360) mRot.z = 0.0;
+		while (mRot.Y >= 360.0f || mRot.Y <= -360.0f)
+		{
+			mRot.Y -= 360.0f * Math::Sign(mRot.Y);
+		}
 
-		vec3 front;
-		front.z = cos(Radians(mRot.x)) * cos(Radians(mRot.y));
-		front.y = sin(Radians(mRot.x));
-		front.x = cos(Radians(mRot.x)) * sin(Radians(mRot.y));
-		mCameraDirection = -front.normalize();
+		while (mRot.Z >= 360.0f || mRot.Z <= -360.0f)
+		{
+			mRot.Z -= 360.0f * Math::Sign(mRot.Z);
+		}
 
-		vec3 up = vec3(0.0f, 1.0f, 0.0f);
-		mCameraRight = vec3::cross(up, mCameraDirection).normalize();
+		mCameraDirection.Z = Math::Cos(Math::Radians(mRot.X)) * Math::Cos(Math::Radians(mRot.Y));
+		mCameraDirection.Y = Math::Sin(Math::Radians(mRot.X));
+		mCameraDirection.X = Math::Cos(Math::Radians(mRot.X)) * Math::Sin(Math::Radians(mRot.Y));
+		mCameraDirection = -mCameraDirection.Normalize();
 
-		mCameraUp = vec3::cross(mCameraDirection, mCameraRight);
+		Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
+		mCameraRight = Vector3::Cross(up, mCameraDirection).Normalize();
 
-		VIEW_MATRIX = glm::lookAt(mPos.toGLM(), mCameraDirection.toGLM() + mPos.toGLM(), mCameraUp.toGLM());
-		//VIEW_MATRIX.lookAt(mPos, mCameraDirection + mPos, mCameraUp);
+		mCameraUp = Vector3::Cross(mCameraDirection, mCameraRight);
+
+		ViewMatrix.LookAt(mPos, mCameraDirection + mPos, mCameraUp);
 
 		preTargeted = false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_Camera::~C_Camera()
+	
+	void Camera::perspective(float FOV, float Aspect, float Near, float Far)
+	{
+		ProjectionMatrix.Perspective(FOV, Aspect, Near, Far);
+	}
+	
+	Matrix Camera::getProjectionMatrix() const
+	{
+		return ProjectionMatrix;
+	}
+	
+	Matrix Camera::getViewMatrix() const
+	{
+		return ViewMatrix;
+	}
+	
+	Camera::~Camera()
 	{
 
 	}

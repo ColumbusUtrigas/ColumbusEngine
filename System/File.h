@@ -1,74 +1,73 @@
-/************************************************
-*                     File.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   05.11.2017                  *
-*************************************************/
 #pragma once
 
 #include <cstdio>
 #include <string>
 
 #include <System/Assert.h>
+#include <Core/Types.h>
 
 namespace Columbus
 {
 
-	class C_File
+	class File
 	{
 	private:
-		struct C_FileData;
-		C_FileData* mData;
+		FILE* Handle;
+		uint64 FileSize;
+		std::string FileName;
 	public:
-		C_File();
-		C_File(C_File& aOther);
-		C_File(std::string aFile, std::string aModes);
+		File();
+		File(File& Other);
+		File(std::string File, std::string Modes);
 
-		C_File& operator=(C_File& aOther);
-		C_File& operator<<(const char aChar);
-		C_File& operator<<(const std::string aString);
+		File& operator=(File& Other);
+		File& operator<<(const char Char);
+		File& operator<<(std::string String);
 
-		bool open(std::string aFile, std::string aModes);
-		bool close();
+		bool Open(std::string File, std::string Modes);
+		bool Close();
 
-		std::string getName() const;
-		size_t getSize() const;
+		std::string GetName() const;
+		uint64 GetSize() const;
 
-		bool eof() const;
-		int getc() const;
-		bool seekSet(long int aOffset) const;
-		bool seekEnd(long int aOffset) const;
-		bool seekCur(long int aOffset) const;
-		int tell() const;
-		bool flush() const;
+		bool IsEOF() const;
+		int Getc() const;
+		bool SeekSet(long int aOffset) const;
+		bool SeekEnd(long int aOffset) const;
+		bool SeekCur(long int aOffset) const;
+		int Tell() const;
+		bool Flush() const;
 
-		bool isOpened() const;
+		bool IsOpened() const;
 
-		size_t read(void* aData, size_t aSize, size_t aPacks) const;
-		size_t write(const void* aData, size_t aSize, size_t aPacks) const;
+		size_t Read(void* aData, size_t aSize, size_t aPacks) const;
+		size_t Write(const void* aData, size_t aSize, size_t aPacks) const;
+
+		template<typename T>
+		bool Read(T& Data)
+		{
+			return ReadBytes(&Data, sizeof(T));
+		}
 
 		//Read batch of data from file
-		bool readBytes(void* aData, size_t aSize);
-		bool readUint8(uint8_t* aData);
-		bool readInt8(int8_t* aData);
-		bool readUint16(uint16_t* aData);
-		bool readInt16(int16_t* aData);
-		bool readUint32(uint32_t* aData);
-		bool readInt32(int32_t* aData);
+		bool ReadBytes(void* Data, uint64 Size);
+		bool ReadUint8(uint8* Data);
+		bool ReadInt8(int8* Data);
+		bool ReadUint16(uint16* Data);
+		bool ReadInt16(int16* Data);
+		bool ReadUint32(uint32* Data);
+		bool ReadInt32(int32* Data);
 
-		//Write batch of data inro file
-		bool writeBytes(const void* aData, size_t aSize);
-		bool writeUint8(const uint8_t* aData);
-		bool writeInt8(const int8_t* aData);
-		bool writeUint16(const uint16_t* aData);
-		bool writeInt16(const int16_t* aData);
-		bool writeUint32(const uint32_t* aData);
-		bool writeInt32(const int32_t* aData);
+		//Write batch of data into file
+		bool WriteBytes(const void* Data, uint64 Size);
+		bool WriteUint8(const uint8 Data);
+		bool WriteInt8(const int8 Data);
+		bool WriteUint16(const uint16 Data);
+		bool WriteInt16(const int16 Data);
+		bool WriteUint32(const uint32 Data);
+		bool WriteInt32(const int32 Data);
 
-		~C_File();
+		~File();
 	};
 
 }

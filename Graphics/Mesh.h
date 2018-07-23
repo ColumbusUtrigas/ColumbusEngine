@@ -1,23 +1,10 @@
-/************************************************
-*                   Model.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <vector>
 #include <string>
-#include <list>
 #include <algorithm>
 
 #include <System/Importer.h>
-#include <RenderAPI/Buffer.h>
-
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
@@ -26,38 +13,45 @@
 #include <Graphics/Light.h>
 
 #include <Scene/Transform.h>
+#include <Math/OBB.h>
 
 namespace Columbus
 {
 
-	class C_Mesh
+	class Mesh
 	{
 	protected:
-		C_Vector3 mPos;
-		C_Mesh* mParent = nullptr;
-		C_Camera mCamera;
+		Vector3 Position;
+		Camera ObjectCamera;
+		OBB BoundingBox;
 
-		std::list<C_Mesh*> mChilds;
-		std::vector<C_Light*> mLights;
+		std::vector<Light*> Lights;
+
+		uint32 VerticesCount;
 	public:
-		std::vector<C_Vertex> mVert;
-		C_Material mMat;
-		
-		C_Mesh();
-		C_Mesh(std::vector<C_Vertex> aVert);
-		C_Mesh(std::vector<C_Vertex> aVert, C_Material aMat);
+		Material mMat;
+	public:
+		Mesh() : VerticesCount(0) { }
+		Mesh(std::vector<Vertex> Vertices) : VerticesCount(0) { SetVertices(Vertices); }
+		Mesh(std::vector<Vertex> Vertices, Material InMaterial) : VerticesCount(0) {  mMat = InMaterial; SetVertices(Vertices); }
 
-		virtual void setVertices(std::vector<C_Vertex> aVert);
-		virtual void render(C_Transform aTransform);
+		virtual void SetVertices(std::vector<Vertex> InVertices) {}
+		virtual void Bind() {}
+		virtual uint32 Render(Transform InTransform) { return 0; }
+		virtual void Unbind() {}
+		virtual uint64 GetMemoryUsage() const { return 0;  }
 
-		void setCamera(C_Camera camera);
-		void setParent(C_Mesh* aParent);
-		void addChild(C_Mesh* aChild);
-		void setLights(std::vector<C_Light*> aLights);
+		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
 
-		void clear();
+		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }
 
-		~C_Mesh();
+		OBB GetOBB() const { return BoundingBox; }
+		Material& GetMaterial() { return mMat; }
+		Camera& GetCamera() { return ObjectCamera; }
+
+		void Clear() {}
+
+		virtual ~Mesh() {}
 	};
 
 }

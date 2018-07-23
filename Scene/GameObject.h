@@ -1,52 +1,55 @@
-/************************************************
-*              	   GameObejct.h                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #pragma once
 
-#include <Graphics/Mesh.h>
+#include <Graphics/Material.h>
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <System/Timer.h>
+#include <Core/Containers/Array.h>
+#include <Core/SmartPointer.h>
 
 namespace Columbus
 {
 
-	class C_GameObject
+	class GameObject
 	{
 	protected:
-		std::vector<C_GameObject*> mChildren;
-		std::vector<C_Component*> mComponents;
+		std::vector<SmartPointer<GameObject>> Children;
+		std::vector<SmartPointer<Component>> Components;
 
-		std::string mName;
+		std::string Name;
 
-		C_Timer mTimer;
+		Timer mTimer;
+
+		Material ObjectMaterial;
 	public:
-		C_Transform Transform;
+		Transform transform;
 
-		C_GameObject();
+		GameObject();
+		GameObject(const GameObject&) = delete;
+		GameObject(GameObject&&) = default;
 
-		void setName(const std::string aName);
-		std::string getName() const;
+		void SetName(std::string Name);
+		std::string GetName() const;
 
-		void addChild(C_GameObject* aChild);
-		void addComponent(C_Component* aComponent);
+		void AddChild(GameObject* Child);
+		void AddComponent(Component* Component);
 
-		void setTransform(C_Transform aTransform);
-		C_Transform getTransform() const;
+		void SetTransform(Transform Transform);
+		Transform& GetTransform();
 
-		void update();
-		void render();
+		void SetMaterial(Material InMaterial);
+		Material& GetMaterial();
 
-		bool hasComponent(std::string aName);
-		C_Component* getComponent(std::string aName);
+		void Update();
+		void Render();
 
-		~C_GameObject();
+		bool HasComponent(Component::Type Type);
+		Component* GetComponent(Component::Type Type);
+
+		GameObject& operator=(const GameObject&) = delete;
+		GameObject& operator=(GameObject&&) = default;
+
+		~GameObject();
 	};
 
 }

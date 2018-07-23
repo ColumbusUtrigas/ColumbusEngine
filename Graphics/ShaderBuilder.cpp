@@ -14,51 +14,34 @@ namespace Columbus
 
 	const std::string gVertexShaderHeader =
 	"#version 130\n"
-	"#define Position gl_Position\n\n";
+	"#define Position gl_Position\n"
+	"#define VertexShader\n";
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	const std::string gFragmentShaderHeader = 
+	const std::string gFragmentShaderHeader =
 	"#version 130\n"
-	"#define FragColor gl_FragColor\n\n";
+	"#define FragmentShader\n"
+	"out vec4 FragColor;\n";
+	
+	bool ShaderBuilder::Build(std::string InShader, ShaderType Type)
+	{
+		ShaderSource.clear();
 
-	C_ShaderBuilder::C_ShaderBuilder()
-	{
-
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_ShaderBuilder::C_ShaderBuilder(const std::string aShader, const int aType)
-	{
-		build(aShader, aType);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_ShaderBuilder::build(const std::string aShader, const int aType)
-	{
-		switch (aType)
+		switch (Type)
 		{
-		case E_SHADER_TYPE_VERTEX:
-			shader = gVertexShaderHeader + "\n" + aShader + "\n";
+		case ShaderType::Vertex:
+			ShaderSource = gVertexShaderHeader + "\n" + InShader + "\n";
+			return true;
 			break;
 
-		case E_SHADER_TYPE_FRAGMENT:
-			shader = gFragmentShaderHeader + "\n" + aShader + "\n";
+		case ShaderType::Fragment:
+			ShaderSource = gFragmentShaderHeader + "\n" + InShader + "\n";
+			return true;
 			break;
 		};
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string C_ShaderBuilder::getShader() const
-	{
-		return shader;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_ShaderBuilder::~C_ShaderBuilder()
-	{
 
+		return false;
 	}
 
 }

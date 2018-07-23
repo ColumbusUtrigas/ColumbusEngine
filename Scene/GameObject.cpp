@@ -12,88 +12,108 @@
 namespace Columbus
 {
 
-	C_GameObject::C_GameObject()
+	GameObject::GameObject()
 	{
 
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::setName(const std::string aName)
+	
+	void GameObject::SetName(std::string Name)
 	{
-		mName = static_cast<std::string>(aName);
+		this->Name = Name;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string C_GameObject::getName() const
+	
+	std::string GameObject::GetName() const
 	{
-		return mName;
+		return Name;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::addChild(C_GameObject* aChild)
+	
+	void GameObject::AddChild(GameObject* Child)
 	{
-		mChildren.push_back(aChild);
+		Children.push_back(SmartPointer<GameObject>(Child));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::addComponent(C_Component* aComponent)
+	
+	void GameObject::AddComponent(Component* InComponent)
 	{
-		mComponents.push_back(aComponent);
+		Components.push_back(SmartPointer<Component>(InComponent));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::setTransform(C_Transform aTransform)
+	
+	void GameObject::SetTransform(Transform Transform)
 	{
-		Transform = aTransform;
+		transform = Transform;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Transform C_GameObject::getTransform() const
+	
+	Transform& GameObject::GetTransform()
 	{
-		return Transform;
+		return transform;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::update()
-	{
-		Transform.update();
 
-		for (auto Comp : mComponents)
-			Comp->update(static_cast<float>(mTimer.elapsed()));
-
-		for (auto Child : mChildren)
-			Child->update();
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_GameObject::render()
+	void GameObject::SetMaterial(Material InMaterial)
 	{
-		for (auto Comp : mComponents)
-			Comp->render(Transform);
+		ObjectMaterial = InMaterial;
+	}
 
-		for (auto Child : mChildren)
-			Child->render();
+	Material& GameObject::GetMaterial()
+	{
+		return ObjectMaterial;
+	}
+	
+	void GameObject::Update()
+	{
+		transform.Update();
+
+		for (auto& Comp : Components)
+		{
+			Comp->Update(static_cast<float>(mTimer.elapsed()));
+		}
+
+		for (auto& Child : Children)
+		{
+			Child->Update();
+		}
 
 		mTimer.reset();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_GameObject::hasComponent(std::string aName)
+	
+	void GameObject::Render()
 	{
-		for (auto Comp : mComponents)
-			if (Comp->getType() == aName)
+		for (auto& Comp : Components)
+		{
+			Comp->Render(transform);
+		}
+
+		for (auto& Child : Children)
+		{
+			Child->Render();
+		}
+	}
+	
+	bool GameObject::HasComponent(Component::Type Type)
+	{
+		for (auto& Comp : Components)
+		{
+			if (Comp->GetType() == Type)
+			{
 				return true;
+			}
+		}
 
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_Component* C_GameObject::getComponent(std::string aName)
+	
+	Component* GameObject::GetComponent(Component::Type Type)
 	{
-		for (auto Comp : mComponents)
-			if (Comp->getType() == aName)
-				return Comp;
+		for (auto& Comp : Components)
+		{
+			if (Comp->GetType() == Type)
+			{
+				return Comp.get();
+			}
+		}
 
 		return nullptr;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_GameObject::~C_GameObject()
+	
+	GameObject::~GameObject()
 	{
 
 	}

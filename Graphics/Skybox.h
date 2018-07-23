@@ -1,13 +1,3 @@
-/************************************************
-*                  Skybox.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <Graphics/Cubemap.h>
@@ -20,12 +10,17 @@
 namespace Columbus
 {
 
-	class C_Skybox
+	class Skybox
 	{
 	private:
-		C_Buffer* mBuf = nullptr;
-		C_Shader* mShader = nullptr;
-		C_Cubemap* mCubemap = nullptr;
+		uint32 VBO = 0;
+		uint32 VAO = 0;
+		ShaderProgram* Shader = nullptr;
+		Cubemap* mCubemap = nullptr;
+		Camera mCamera;
+
+		float UniformViewMatrix[16];
+		float UniformProjectionMatrix[16];
 
 		//Vertex buffer
 		float skyboxVertices[108] =
@@ -73,16 +68,16 @@ namespace Columbus
 			1.0f, -1.0f,  1.0f
 		};
 	public:
-		//Constructor
-		C_Skybox() {}
-		//Constructor 2
-		C_Skybox(C_Cubemap* aCubemap);
-		//Draw skybox
+		Skybox();
+		Skybox(Cubemap* aCubemap);
+		
 		void draw();
-		//Return Cubemap
-		C_Cubemap* getCubemap() const;
-		//Destructor
-		~C_Skybox();
+
+		void setCamera(const Camera aCamera);
+		void setCubemap(const Cubemap* aCubemap);
+		Cubemap* getCubemap() const;
+		
+		~Skybox();
 	};
 
 }

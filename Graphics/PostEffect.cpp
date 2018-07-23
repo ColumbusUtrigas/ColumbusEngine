@@ -1,137 +1,214 @@
-/************************************************
-*                 PostEffect.cpp                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.10.2017                  *
-*************************************************/
-
 #include <Graphics/PostEffect.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	C_PostEffect::C_PostEffect()
+	PostEffect::PostEffect()
 	{
-		mFB = new C_FramebufferOpenGL();
-		mTB = new C_TextureOpenGL(NULL, 640, 480, true);
-		mDepth = new C_TextureOpenGL();
-		mDepth->loadDepth(NULL, 640, 480, true);
+		mFB = gDevice->createFramebuffer();
+		mTB = gDevice->CreateTexture();
+		mDepth = gDevice->CreateTexture();
 
-		mFB->setTexture2D(C_FRAMEBUFFER_COLOR_ATTACH, mTB);
-		mFB->setTexture2D(C_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
+		mTB->Create2D(Texture::Properties(640, 480, 1, 0, 0, TextureFormat::RGB8));
+		mDepth->Create2D(Texture::Properties(640, 480, 1, 0, 0, TextureFormat::Depth16));
+
+		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
+		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
+
+		static float Vertices[] = 
+		{
+			-1.0, -1.0, 0.0,
+			-1.0, 1.0, 0.0,
+			1.0, 1.0, 0.0,
+			1.0, -1.0, 0.0
+		};
+
+		static float UVs[] = 
+		{
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		static uint16 Indices[] = 
+		{
+			0, 2, 1,
+			0, 3, 2
+		};
+
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &IBO);
+		glGenVertexArrays(1, &VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices) + sizeof(UVs), nullptr, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(Vertices), sizeof(UVs), UVs);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		glBindVertexArray(VAO);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)sizeof(Vertices));
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+		glBindVertexArray(0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::setShader(C_Shader* aShader)
+	
+	void PostEffect::SetShader(ShaderProgram* InShader)
 	{
-		mShader = aShader;
+		if (InShader != nullptr)
+		{
+			InShader->AddAttribute("aPos", 0);
+			InShader->AddAttribute("aUV", 1);
+			InShader->Compile();
+
+			InShader->AddUniform("uColor");
+			InShader->AddUniform("uDepth");
+
+			for (auto& Name : AttributeNames)
+			{
+				InShader->AddUniform(Name);
+			}
+
+			Shader = InShader;
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeInt aAttrib)
+
+	void PostEffect::AddAttributeName(std::string Name)
+	{
+		AttributeNames.push_back(Name);
+
+		if (Shader != nullptr)
+		{
+			Shader->AddUniform(Name);
+		}
+	}
+	
+	void PostEffect::addAttrib(PostEffectAttributeInt aAttrib)
 	{
 		mAttribsInt.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeFloat aAttrib)
+	
+	void PostEffect::addAttrib(PostEffectAttributeFloat aAttrib)
 	{
 		mAttribsFloat.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeVector2 aAttrib)
+	
+	void PostEffect::addAttrib(PostEffectAttributeVector2 aAttrib)
 	{
 		mAttribsVector2.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::addAttrib(C_PostEffectAttributeVector3 aAttrib)
+	
+	void PostEffect::addAttrib(PostEffectAttributeVector3 aAttrib)
 	{
 		mAttribsVector3.push_back(aAttrib);
 	}
-	void C_PostEffect::addAttrib(C_PostEffectAttributeVector4 aAttrib)
+	
+	void PostEffect::addAttrib(PostEffectAttributeVector4 aAttrib)
 	{
 		mAttribsVector4.push_back(aAttrib);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::clearAttribs()
+	
+	void PostEffect::clearAttribs()
 	{
 		mAttribsInt.clear();
 		mAttribsFloat.clear();
+		mAttribsVector2.clear();
+		mAttribsVector3.clear();
+		mAttribsVector4.clear();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::bind(C_Vector4 aClear, C_Vector2 aWindowSize)
+
+	void PostEffect::Bind(Vector4 ClearColor, Vector2 ContextSize)
 	{
-		mTB->load(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
-		mDepth->loadDepth(NULL, static_cast<size_t>(aWindowSize.x), static_cast<size_t>(aWindowSize.y), true);
-		mFB->prepare(aClear, aWindowSize);
+		if (ContextSize != PreviousSize)
+		{
+			int32 W, H;
+			W = Math::TruncToInt(ContextSize.X);
+			H = Math::TruncToInt(ContextSize.Y);
+
+			mTB->Load(nullptr, Texture::Properties(W, H, 0, 0, 0, TextureFormat::RGBA8));
+			mDepth->Load(nullptr, Texture::Properties(W, H, 0, 0, 0, TextureFormat::Depth16));
+		}
+
+		PreviousSize = ContextSize;
+
+		mFB->prepare(ClearColor, ContextSize);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::draw()
+
+	void PostEffect::Render()
 	{
-		if (mShader == nullptr) return;
+		if (Shader == nullptr) return;
 
 		mTB->generateMipmap();
 		mDepth->generateMipmap();
-		mShader->bind();
-    
-		mShader->setUniform1i("uColor", 0);
+		Shader->Bind();
+
+		Shader->SetUniform1i("uColor", 0);
 		mTB->sampler2D(0);
 
-		mShader->setUniform1i("uDepth", 1);
+		Shader->SetUniform1i("uDepth", 1);
 		mDepth->sampler2D(1);
 
 		for (auto& Attrib : mAttribsInt)
-			mShader->setUniform1i(Attrib.name, Attrib.value);
+			Shader->SetUniform1i(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsFloat)
-			mShader->setUniform1f(Attrib.name, Attrib.value);
+			Shader->SetUniform1f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector2)
-			mShader->setUniform2f(Attrib.name, Attrib.value);
+			Shader->SetUniform2f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector3)
-			mShader->setUniform3f(Attrib.name, Attrib.value);
+			Shader->SetUniform3f(Attrib.name, Attrib.value);
 
 		for (auto& Attrib : mAttribsVector4)
-			mShader->setUniform4f(Attrib.name, Attrib.value);
+			Shader->SetUniform4f(Attrib.name, Attrib.value);
 
-		C_DrawScreenQuadOpenGL();
+		glDepthMask(GL_FALSE);
+
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr);
+		glBindVertexArray(0);
+
+		glDepthMask(GL_TRUE);
 
 		if (mTB) mTB->unbind();
-		if (mShader) mShader->unbind();
+		if (Shader) Shader->Unbind();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_PostEffect::unbind()
+
+	void PostEffect::Unbind()
 	{
-		C_CloseStreamOpenGL(0);
-		C_CloseStreamOpenGL(1);
-		C_CloseStreamOpenGL(2);
-		C_CloseStreamOpenGL(3);
-		C_CloseStreamOpenGL(4);
+		for (int32 i = 0; i < 5; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
 
-		C_Buffer::unbind();
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		if (mTB) mTB->unbind();
-		if (mShader) mShader->unbind();
-		
-		mFB->unbind();
-		C_Renderbuffer::unbind();
+		if (Shader) Shader->Unbind();
 
-		C_DisableDepthTestOpenGL();
-		C_DisableBlendOpenGL();
-		C_DisableAlphaTestOpenGL();
+		mFB->unbind();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_PostEffect::~C_PostEffect()
+
+	PostEffect::~PostEffect()
 	{
 
 	}
 
 }
+
+
+

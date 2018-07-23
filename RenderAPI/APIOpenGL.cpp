@@ -17,7 +17,7 @@ namespace Columbus
   //Get OpenGL error
   bool C_GetErrorOpenGL()
 	{
-		GLenum err;
+		GLenum err = 0;
 		if (err != GL_NO_ERROR)
 		{
 			std::string error;
@@ -34,7 +34,7 @@ namespace Columbus
   			case GL_TABLE_TOO_LARGE:        error = "TABLE_TOO_LARGE";        break;
 			}
 
-			C_Log::error("OpenGL: " + error);
+			Log::error("OpenGL: " + error);
 			return true;
 		}
 		return false;

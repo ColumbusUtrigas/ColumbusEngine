@@ -15,17 +15,17 @@ namespace Columbus
 {
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate plane
-	std::vector<C_Vertex> C_PrimitivePlane(C_Vector3 aSize)
+	std::vector<Vertex> PrimitivePlane(Vector3 aSize)
 	{
 		float verts[18] =
 		{
-			0.5f * aSize.x, 0.0f, -0.5f * aSize.y,
-			-0.5f * aSize.x, 0.0f, -0.5f * aSize.y,
-			-0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
+			0.5f * aSize.X, 0.0f, -0.5f * aSize.Y,
+			-0.5f * aSize.X, 0.0f, -0.5f * aSize.Y,
+			-0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
 	
-			-0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
-			0.5f * aSize.x, 0.0f, 0.5f * aSize.y,
-			0.5f * aSize.x, 0.0f, -0.5f * aSize.y
+			-0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
+			0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
+			0.5f * aSize.X, 0.0f, -0.5f * aSize.Y
 		};
 
 		float uvs[12] =
@@ -39,18 +39,18 @@ namespace Columbus
 			1.0, 1.0
 		};
 
-		std::vector<C_Vertex> v;
+		std::vector<Vertex> v;
 
 		vec3 norm(0, 1, 0);
 		vec3 tang(0, 0, -1);
 		vec3 bitang(-1, 0, 0);
 
-		C_Vertex vert;
+		Vertex vert;
 
 		for (size_t i = 0; i < 6; i++)
 		{
-			vert.pos = C_Vector3(verts[0 + i * 3], verts[1 + i * 3], verts[2 + i * 3]);
-			vert.UV = C_Vector2(uvs[0 + i * 2], uvs[1 + i * 2]);
+			vert.pos = Vector3(verts[0 + i * 3], verts[1 + i * 3], verts[2 + i * 3]);
+			vert.UV = Vector2(uvs[0 + i * 2], uvs[1 + i * 2]);
 			vert.normal = norm;
 			vert.tangent = tang;
 			vert.bitangent = bitang;
@@ -61,7 +61,7 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate box
-	std::vector<C_Vertex> C_PrimitiveBox(C_Vector3 aSize)
+	std::vector<Vertex> PrimitiveBox(Vector3 aSize)
 	{
 		vec3 v[8] = 
 		{
@@ -114,9 +114,9 @@ namespace Columbus
 			1, 0, 2, 1, 2, 3
 		};
 
-		std::vector<C_Vertex> verts;
+		std::vector<Vertex> verts;
 
-		C_Vertex vert[3];
+		Vertex vert[3];
 		vec3 deltaPos1, deltaPos2;
 		vec2 deltaUV1, deltaUV2;
 		vec3 tangent, bitangent;
@@ -140,9 +140,9 @@ namespace Columbus
 			deltaUV1 = vert[1].UV - vert[0].UV;
 			deltaUV2 = vert[2].UV - vert[0].UV;
 
-			r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-			tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
-			bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+			r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.X);
+			tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+			bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
 
 			for (j = 0; j < 3; j++)
 			{
@@ -156,11 +156,11 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate sphere
-	std::vector<C_Vertex> C_PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors)
+	std::vector<Vertex> PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors)
 	{
 		const double PI = 3.141592653589793238462643383279502884197;
 
-		std::vector<C_Vertex> verts;
+		std::vector<Vertex> verts;
 
 		std::vector<vec3> vertices;
 		std::vector<vec2> texcoords;
@@ -169,7 +169,7 @@ namespace Columbus
 		float const R = 1.0f / static_cast<float>(aRings - 1);
 		float const S = 1.0f / static_cast<float>(aSectors - 1);
 		size_t r, s;
-		C_Vertex vert;
+		Vertex vert;
 
 		vertices.resize(aRings * aSectors * 3);
 		texcoords.resize(aRings * aSectors * 2);
@@ -221,25 +221,25 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate cone
-	std::vector<C_Vertex> c_PrimitiveCone(const float aBase, const float aHeight, const size_t aSlices, const size_t aStacks)
+	std::vector<Vertex> PrimitiveCone(const float aBase, const float aHeight, const size_t aSlices, const size_t aStacks)
 	{
-		std::vector<C_Vertex> verts;
+		std::vector<Vertex> verts;
 
 		return verts;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate torus
-	std::vector<C_Vertex> C_PrimitiveTorus(const float aInner, const float aOuter, const size_t aSides, const size_t aRings)
+	std::vector<Vertex> PrimitiveTorus(const float aInner, const float aOuter, const size_t aSides, const size_t aRings)
 	{
-		std::vector<C_Vertex> verts;
+		std::vector<Vertex> verts;
 
 		return verts;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Generate cylinder
-	std::vector<C_Vertex> C_PrimitiveCylinder(const float aRadius, const float aHeight, const size_t aSlices, const size_t aStacks)
+	std::vector<Vertex> PrimitiveCylinder(const float aRadius, const float aHeight, const size_t aSlices, const size_t aStacks)
 	{
-		std::vector<C_Vertex> verts;
+		std::vector<Vertex> verts;
 
 		return verts;
 	}

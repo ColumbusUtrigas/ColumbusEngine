@@ -1,12 +1,3 @@
-/************************************************
-*                  Component.h                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #pragma once
 
 #include <Scene/Transform.h>
@@ -15,24 +6,27 @@
 namespace Columbus
 {
 
-	class C_Component
+	class Component
 	{
-	protected:
-		virtual bool onCreate();
-
-		virtual bool onUpdate();
 	public:
-		C_Component();
+		enum class Type
+		{
+			Component,
+			Light,
+			MeshRenderer,
+			MeshInstancedRenderer,
+			ParticleSystem,
+			Rigidbody
+		};
+	public:
+		Component() {}
 
-		virtual void update(const float aTimeTick);
+		virtual void Update(const float TimeTick) {}
+		virtual void Render(Transform& Trans) {}
+		virtual Type GetType() const { return Type::Component; }
+		virtual void Destroy() {}
 
-		virtual void render(C_Transform& aTransform);
-
-		virtual std::string getType();
-
-		void destroy();
-
-		~C_Component();
+		virtual ~Component() {}
 	};
 
 }

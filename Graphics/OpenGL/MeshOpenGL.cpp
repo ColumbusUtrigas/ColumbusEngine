@@ -1,280 +1,247 @@
-/************************************************
-*                  MeshOpenGL.cpp               *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   16.01.2018                  *
-*************************************************/
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
 {
 
-	C_MeshOpenGL::C_MeshOpenGL()
-	{
+	/*
+	*
+	* Shader uniforms functions
+	*
+	*/
 
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_MeshOpenGL::C_MeshOpenGL(std::vector<C_Vertex> aVert)
+	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
 	{
-		setVertices(aVert);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_MeshOpenGL::C_MeshOpenGL(std::vector<C_Vertex> aVert, C_Material aMaterial)
-	{
-		mMat = aMaterial;
-		setVertices(aVert);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setVertices(std::vector<C_Vertex> aVert)
-	{
-		glGenBuffers(1, &mVBuf);
+		static float Lights[15 * 8];
 
-		mVert.clear();
-		mVert = aVert;
-
-		float* v = new float[mVert.size() * 3]; //Vertex buffer
-		float* u = new float[mVert.size() * 2]; //UV buffer
-		float* n = new float[mVert.size() * 3]; //Normal buffer
-		float* t = new float[mVert.size() * 3]; //Tangent buffer
-		uint64_t vcounter = 0;
-		uint64_t ucounter = 0;
-		uint64_t ncounter = 0;
-		uint64_t tcounter = 0;
-
-		for (auto Vertex : mVert)
+		for (auto& Light : InLights)
 		{
-			v[vcounter++] = Vertex.pos.x;
-			v[vcounter++] = Vertex.pos.y;
-			v[vcounter++] = Vertex.pos.z;
+			if (Light != nullptr)
+			{
+				uint32 Counter = 0;
 
-			u[ucounter++] = Vertex.UV.x;
-			u[ucounter++] = Vertex.UV.y;
+				for (auto& L : InLights)
+				{
+					uint32 Offset = Counter * 15;
 
-			n[ncounter++] = Vertex.normal.x;
-			n[ncounter++] = Vertex.normal.y;
-			n[ncounter++] = Vertex.normal.z;
+					if (InLights.size() > Counter)
+					{
+						Lights[Offset + 0] = L->getColor().X;
+						Lights[Offset + 1] = L->getColor().Y;
+						Lights[Offset + 2] = L->getColor().Z;
+						Lights[Offset + 3] = L->getPos().X;
+						Lights[Offset + 4] = L->getPos().Y;
+						Lights[Offset + 5] = L->getPos().Z;
+						Lights[Offset + 6] = L->getDir().X;
+						Lights[Offset + 7] = L->getDir().Y;
+						Lights[Offset + 8] = L->getDir().Z;
+						Lights[Offset + 9] = (float)L->getType();
+						Lights[Offset + 10] = L->getConstant();
+						Lights[Offset + 11] = L->getLinear();
+						Lights[Offset + 12] = L->getQuadratic();
+						Lights[Offset + 13] = L->getInnerCutoff();
+						Lights[Offset + 14] = L->getOuterCutoff();
+					}
 
-			t[tcounter++] = Vertex.tangent.x;
-			t[tcounter++] = Vertex.tangent.y;
-			t[tcounter++] = Vertex.tangent.z;
+					Counter++;
+				}
+			}
 		}
 
-		size_t size = (sizeof(float) * mVert.size() * 3)
-		            + (sizeof(float) * mVert.size() * 2)
-		            + (sizeof(float) * mVert.size() * 3)
-		            + (sizeof(float) * mVert.size() * 3);
+		InShader->SetUniformArrayf("uLighting", Lights, 120 * sizeof(float));
+	}
 
-		mVOffset = 0;
-		mUOffset = mVOffset + (sizeof(float) * mVert.size() * 3);
-		mNOffset = mUOffset + (sizeof(float) * mVert.size() * 2);
-		mTOffset = mNOffset + (sizeof(float) * mVert.size() * 3);
+	static void ShaderSetLightsAndCamera(ShaderProgram* InShader, std::vector<Light*> InLights, Camera InCamera)
+	{
+		if (InShader != nullptr)
+		{
+			if (InShader->IsCompiled())
+			{
+				ShaderSetLights(InShader, InLights);
+				InShader->SetUniform3f("uCamera.Position", InCamera.getPos());
+			}
+		}
+	}
 
-		glBindBuffer(GL_ARRAY_BUFFER, mVBuf);
+	static void ShaderSetAll(Material InMaterial, std::vector<Light*> InLights, Camera InCamera, Transform InTransform)
+	{
+		auto tShader = InMaterial.GetShader();
+
+		if (tShader != nullptr)
+		{
+			if (tShader->IsCompiled())
+			{
+				ShaderSetLightsAndCamera(tShader, InLights, InCamera);
+			}
+		}
+	}
+	/*
+	*
+	* End of shader uniforms functions
+	*
+	*/
+
+	MeshOpenGL::MeshOpenGL()
+	{
+		glGenBuffers(1, &VBuf);
+		glGenVertexArrays(1, &VAO);
+	}
+	
+	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices)
+	{
+		glGenBuffers(1, &VBuf);
+		glGenVertexArrays(1, &VAO);
+		SetVertices(InVertices);
+	}
+	
+	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices, Material InMaterial)
+	{
+		glGenBuffers(1, &VBuf);
+		glGenVertexArrays(1, &VAO);
+		mMat = InMaterial;
+		SetVertices(InVertices);
+	}
+	
+	void MeshOpenGL::SetVertices(std::vector<Vertex> Vertices)
+	{
+		VerticesCount = Vertices.size();
+
+		//Temperary Oriented Bounding Box Data
+		struct
+		{
+			float minX = 0.0f;
+			float maxX = 0.0f;
+			float minY = 0.0f;
+			float maxY = 0.0f;
+			float minZ = 0.0f;
+			float maxZ = 0.0f;
+		} OBBData;
+
+		float* v = new float[Vertices.size() * 3]; //Vertex buffer
+		float* u = new float[Vertices.size() * 2]; //UV buffer
+		float* n = new float[Vertices.size() * 3]; //Normal buffer
+		float* t = new float[Vertices.size() * 3]; //Tangent buffer
+		uint64 vcounter = 0;
+		uint64 ucounter = 0;
+		uint64 ncounter = 0;
+		uint64 tcounter = 0;
+
+		for (auto& Vertex : Vertices)
+		{
+			if (Vertex.pos.X < OBBData.minX) OBBData.minX = Vertex.pos.X;
+			if (Vertex.pos.X > OBBData.maxX) OBBData.maxX = Vertex.pos.X;
+			if (Vertex.pos.Y < OBBData.minY) OBBData.minY = Vertex.pos.Y;
+			if (Vertex.pos.Y > OBBData.maxY) OBBData.maxY = Vertex.pos.Y;
+			if (Vertex.pos.Z < OBBData.minZ) OBBData.minZ = Vertex.pos.Z;
+			if (Vertex.pos.Z > OBBData.maxZ) OBBData.maxZ = Vertex.pos.Z;
+
+			v[vcounter++] = Vertex.pos.X;
+			v[vcounter++] = Vertex.pos.Y;
+			v[vcounter++] = Vertex.pos.Z;
+
+			u[ucounter++] = Vertex.UV.X;
+			u[ucounter++] = Vertex.UV.Y;
+
+			n[ncounter++] = Vertex.normal.X;
+			n[ncounter++] = Vertex.normal.Y;
+			n[ncounter++] = Vertex.normal.Z;
+
+			t[tcounter++] = Vertex.tangent.X;
+			t[tcounter++] = Vertex.tangent.Y;
+			t[tcounter++] = Vertex.tangent.Z;
+		}
+
+		uint64 size = (sizeof(float) * Vertices.size() * 3)
+		            + (sizeof(float) * Vertices.size() * 2)
+		            + (sizeof(float) * Vertices.size() * 3)
+		            + (sizeof(float) * Vertices.size() * 3);
+
+		VOffset = 0;
+		UOffset = VOffset + (sizeof(float) * Vertices.size() * 3);
+		NOffset = UOffset + (sizeof(float) * Vertices.size() * 2);
+		TOffset = NOffset + (sizeof(float) * Vertices.size() * 3);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
 		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_STATIC_DRAW);
 
-
-		glBufferSubData(GL_ARRAY_BUFFER, mVOffset, mVert.size() * 3 * sizeof(float), v);
-		glBufferSubData(GL_ARRAY_BUFFER, mUOffset, mVert.size() * 2 * sizeof(float), u);
-		glBufferSubData(GL_ARRAY_BUFFER, mNOffset, mVert.size() * 3 * sizeof(float), n);
-		glBufferSubData(GL_ARRAY_BUFFER, mTOffset, mVert.size() * 3 * sizeof(float), t);
+		glBufferSubData(GL_ARRAY_BUFFER, VOffset, Vertices.size() * 3 * sizeof(float), v);
+		glBufferSubData(GL_ARRAY_BUFFER, UOffset, Vertices.size() * 2 * sizeof(float), u);
+		glBufferSubData(GL_ARRAY_BUFFER, NOffset, Vertices.size() * 3 * sizeof(float), n);
+		glBufferSubData(GL_ARRAY_BUFFER, TOffset, Vertices.size() * 3 * sizeof(float), t);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		uint64 const offsets[4] = { VOffset, UOffset, NOffset, TOffset };
+		uint32 const strides[4] = { 3, 2, 3, 3 };
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
+
+		for (uint32 i = 0; i < 4; i++)
+		{
+			glVertexAttribPointer(i, strides[i], GL_FLOAT, GL_FALSE, 0, (void*)offsets[i]);
+			glEnableVertexAttribArray(i);
+		}
+
+		glBindVertexArray(0);
 
 		delete[] v;
 		delete[] u;
 		delete[] n;
 		delete[] t;
 
-		if (mMat.getShader() == nullptr) return;
-
-		if (!mMat.getShader()->isCompiled())
-		{
-			mMat.getShader()->addAttribute("aPos", 0);
-			mMat.getShader()->addAttribute("aUV", 1);
-			mMat.getShader()->addAttribute("aNorm", 2);
-			mMat.getShader()->addAttribute("aTang", 3);
-			mMat.getShader()->compile();
-		}
+		BoundingBox.Min = Vector3(OBBData.minX, OBBData.minY, OBBData.minZ);
+		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::render(C_Transform aTransform)
+
+	void MeshOpenGL::Bind()
 	{
-		if (mMat.getShader() == nullptr) return;
-
-		size_t const offsets[4] = { mVOffset, mUOffset, mNOffset, mTOffset };
-		unsigned const int strides[4] = { 3, 2, 3, 3 };
-		int i;
-
-		glBindBuffer(GL_ARRAY_BUFFER, mVBuf);
-
-		for (i = 0; i < 4; i++)
-		{
-			glVertexAttribPointer(i, strides[i], GL_FLOAT, GL_FALSE, 0, (void*)offsets[i]);
-			glEnableVertexAttribArray(i);
-		}
-
-		mMat.getShader()->bind();
-
-		setShaderMatrices(aTransform);
-		setShaderMaterial();
-		setShaderLightAndCamera();
-		setShaderTextures();
-
-		glDrawArrays(GL_TRIANGLES, 0, mVert.size());
+		glBindVertexArray(VAO);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderTextures()
+	
+	uint32 MeshOpenGL::Render(Transform InTransform)
 	{
-		C_Texture* textures[3] = {mMat.getTexture(), mMat.getSpecMap(), mMat.getNormMap()};
-		C_Cubemap* cubemap = mMat.getReflection();
-		std::string unifs[3] = {"uMaterial.diffuseMap", "uMaterial.specularMap", "uMaterial.normalMap"};
-		unsigned int indices[3] = {0, 1, 3};
+		SortLights();
+		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
 
-		for (int i = 0; i < 3; i++)
-		{
-			if (textures[i] != nullptr)
-			{
-				mMat.getShader()->setUniform1i(unifs[i].c_str(), indices[i]);
-				textures[i]->sampler2D(indices[i]);
-			} else
-			{
-				mMat.getShader()->setUniform1i(unifs[i].c_str(), indices[i]);
-				if (textures[0] == nullptr)
-					C_DeactiveTextureOpenGL(C_OGL_TEXTURE0);
-				if (textures[1] == nullptr)
-					C_DeactiveTextureOpenGL(C_OGL_TEXTURE1);
-				if (textures[2] == nullptr)
-					C_DeactiveTextureOpenGL(C_OGL_TEXTURE3);
-			}
-		}
+		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 
-		if (cubemap != nullptr)
-		{
-			mMat.getShader()->setUniform1i("uReflectionMap", 2);
-			cubemap->samplerCube(2);
-		} else
-		{
-			mMat.getShader()->setUniform1i("uReflectionMap", 2);
-			C_DeactiveCubemapOpenGL(C_OGL_TEXTURE2);
-		}
+		return VerticesCount / 3;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderMatrices(C_Transform aTransform)
-	{
-		mPos = aTransform.getPos();
-		mMat.getShader()->setUniformMatrix("uModel", aTransform.getMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uView", C_GetViewMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
-		mMat.getShader()->setUniformMatrix("uNormal", aTransform.getNormalMatrix().elements());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderMaterial()
-	{
-		C_Vector4 matcol = mMat.getColor();
-		C_Vector3 matamb = mMat.getAmbient();
-		C_Vector3 matdif = mMat.getDiffuse();
-		C_Vector3 matspc = mMat.getSpecular();
 
-		mMaterialUnif[0] = matcol.x;
-		mMaterialUnif[1] = matcol.y;
-		mMaterialUnif[2] = matcol.z;
-		mMaterialUnif[3] = matcol.w;
-		mMaterialUnif[4] = matamb.x;
-		mMaterialUnif[5] = matamb.y;
-		mMaterialUnif[6] = matamb.z;
-		mMaterialUnif[7] = matdif.x;
-		mMaterialUnif[8] = matdif.y;
-		mMaterialUnif[9] = matdif.z;
-		mMaterialUnif[10] = matspc.x;
-		mMaterialUnif[11] = matspc.y;
-		mMaterialUnif[12] = matspc.z;
-		mMaterialUnif[13] = mMat.getReflectionPower();
-		mMaterialUnif[14] = mMat.getLighting() ? 1.0f : 0.0f;
-
-		mMat.getShader()->setUniformArrayf("MaterialUnif", mMaterialUnif, 15);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::setShaderLightAndCamera()
+	void MeshOpenGL::Unbind()
 	{
-		calculateLights();
-
-		mMat.getShader()->setUniformArrayf("LightUnif", mLightUniform, 120);
-		mMat.getShader()->setUniform3f("uCamera.pos", mCamera.getPos());
+		glBindVertexArray(0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::calculateLights()
+
+	uint64 MeshOpenGL::GetMemoryUsage() const
 	{
-		sortLights();
-		size_t i, j, offset;
-		//8 - max count of lights, processing in shader
-		for (i = 0; i < 8; i++)
+		uint64 Usage = 0;
+		Usage += sizeof(Vertex) * VerticesCount;
+		return Usage;
+	}
+	
+	void MeshOpenGL::SortLights()
+	{
+		Vector3 pos = Position;
+
+		Lights.erase(std::remove(Lights.begin(), Lights.end(), nullptr), Lights.end());
+
+		auto func = [pos](const Light* a, const Light* b) mutable -> bool
 		{
-			offset = i * 15;
+			Vector3 q = a->getPos();
+			Vector3 w = b->getPos();
 
-			if (i < mLights.size() && mMat.getLighting() == true)
-			{
-				//Color
-				mLightUniform[0 + offset] = mLights[i]->getColor().x;
-				mLightUniform[1 + offset] = mLights[i]->getColor().y;
-				mLightUniform[2 + offset] = mLights[i]->getColor().z;
-				//Position
-				mLightUniform[3 + offset] = mLights[i]->getPos().x;
-				mLightUniform[4 + offset] = mLights[i]->getPos().y;
-				mLightUniform[5 + offset] = mLights[i]->getPos().z;
-				//Direction
-				mLightUniform[6 + offset] = mLights[i]->getDir().x;
-				mLightUniform[7 + offset] = mLights[i]->getDir().y;
-				mLightUniform[8 + offset] = mLights[i]->getDir().z;
-				//Type
-				mLightUniform[9 + offset] = static_cast<float>(mLights[i]->getType());
-				//Constant attenuation
-				mLightUniform[10 + offset] = mLights[i]->getConstant();
-				//Linear attenuation
-				mLightUniform[11 + offset] = mLights[i]->getLinear();
-				//Quadratic attenuation
-				mLightUniform[12 + offset] = mLights[i]->getQuadratic();
-				//Inner cutoff
-				mLightUniform[13 + offset] = mLights[i]->getInnerCutoff();
-				//Outer cutoff
-				mLightUniform[14 + offset] = mLights[i]->getOuterCutoff();
-			} else
-			{
-				for (j = 0; j < 15; j++)
-					mLightUniform[j + offset] = -1;
-			}
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void C_MeshOpenGL::sortLights()
-	{
-		C_Vector3 pos = mPos;
-
-		mLights.erase(std::remove(mLights.begin(), mLights.end(), nullptr), mLights.end());
-
-		auto func = [pos](const C_Light* a, const C_Light* b) mutable -> bool
-		{
-			C_Vector3 q = a->getPos();
-			C_Vector3 w = b->getPos();
-
-			return q.length(pos) < w.length(pos);
+			return q.Length(pos) < w.Length(pos);
 		};
 
-		std::sort(mLights.begin(), mLights.end(), func);
+		std::sort(Lights.begin(), Lights.end(), func);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_MeshOpenGL::~C_MeshOpenGL()
+	
+	MeshOpenGL::~MeshOpenGL()
 	{
-		
+		glDeleteBuffers(1, &VBuf);
+		glDeleteVertexArrays(1, &VAO);
 	}
 
 }

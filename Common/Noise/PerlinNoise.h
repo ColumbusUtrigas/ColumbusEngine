@@ -7,7 +7,7 @@
 
 namespace Columbus
 {
-	class C_PerlinNoise
+	class PerlinNoise
 	{
 	private:
 		int* p;
@@ -15,7 +15,7 @@ namespace Columbus
 		float* Gy;
 		float* Gz;
 	public:
-		C_PerlinNoise()
+		PerlinNoise()
 		{
 			srand(static_cast<unsigned int>(time(NULL)));
 
@@ -96,7 +96,7 @@ namespace Columbus
 			return value;
 		}
 
-		~C_PerlinNoise()
+		~PerlinNoise()
 		{
 			delete p;
 			delete Gx;

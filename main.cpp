@@ -1,109 +1,218 @@
 #include <Engine.h>
 #include <Graphics/OpenGL/DeviceOpenGL.h>
+#include <Graphics/OpenGL/WindowOpenGLSDL.h>
+
+#include <RenderAPIOpenGL/OpenGL.h>
+#include <Graphics/OpenGL/MeshInstancedOpenGL.h>
+
+#include <SDL_ttf.h>
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
 
 using namespace Columbus;
 
+#ifdef COLUMBUS_PLATFORM_WINDOWS
+	//Hint to the driver to use discrete GPU
+	extern "C" 
+	{
+		//NVIDIA
+		__declspec(dllexport) int NvOptimusEnablement = 1;
+		//AMD
+		__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+	}
+#endif
+
+class Rotator : public Component
+{
+private:
+	Vector3 v;
+public:
+	void Update(float TimeTick) override
+	{
+		v += Vector3(0, 45, 0) * TimeTick;
+	}
+
+	void Render(Transform& Trans) override
+	{
+		Trans.SetRot(v);
+	}
+};
+
 int main(int argc, char** argv)
 {
-	C_SDLWindowConfig config;
-	config.Resizable = true;
-	C_SDLWindow window(config);
-	C_EventSystem event;
-	event.addWindow(&window);
-	GUI::C_IO io;
-	C_Input input;
-	input.setWindow(&window);
-	input.setIO(&io);
+	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
+	
+	Input input;
+	input.SetWindow(&window);
 
-	C_Camera camera;
+	AudioSystem Audio;
+	AudioListener Listener;
+
+	Camera camera;
 	camera.setPos(vec3(10, 10, 0));
 	camera.setRot(vec3(0, 90, 0));
 
-	float i = 0;
+	gDevice = new DeviceOpenGL();
 
-	gDevice = new C_DeviceOpenGL();
+	Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
 
-	//C_Skybox skybox(new C_CubemapOpenGL("Data/Skyboxes/1.cubemap"));
-	C_Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
+	Timer timer;
 
-	C_Timer timer;
+	window.setVSync(false);
 
-	int FPS = 0;
+	Image CursorImage;
+	CursorImage.Load("Data/Textures/cursor.tga", ImageLoading::FlipY);
 
-	//window.setVerticalSync(true);
-	window.setFPSLimit(60);
+	input.ShowMouseCursor(false);
+	input.SetSystemCursor(SystemCursor::Crosshair);
 
-	C_Image* cur = new C_Image("Data/Textures/cursor.tif", E_IMAGE_LOAD_FLIP_Y);
-
-	input.showMouseCursor(false);
-	//input.setSystemCursor(E_INPUT_SYSTEM_CURSOR_CROSSHAIR);
-	input.setColoredCursor(cur->getData(), cur->getWidth(), cur->getHeight(), cur->getBPP(), vec2(17, 3));
+	Cursor Cursor(CursorImage, 3, 3);
+	input.SetCursor(Cursor);
 
 	bool cursor = false;
 
-	C_Scene scene;
+	Scene scene;
 
 	scene.load("Data/1.scene");
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
-	
+
+	AudioSource* Source1 = new AudioSource();
+	AudioSource* Source2 = new AudioSource();
+	AudioSource* BackgroundMusic = new AudioSource();
+
+	Sound FireSound;
+	Sound BackgroundSound;
+	FireSound.Load("Data/Sounds/Fire.ogg");
+	BackgroundSound.Load("Data/Sounds/thestonemasons.wav", true);
+
+	BackgroundMusic->SetSound(&BackgroundSound);
+	BackgroundMusic->SetMode(AudioSource::Mode::Sound2D);
+	BackgroundMusic->SetLooping(true);
+	BackgroundMusic->Play();
+
+	Source1->SetSound(&FireSound);
+	Source2->SetSound(&FireSound);
+
+	Source1->SetPlayedTime(Random::range(0.0f, FireSound.GetLength()));
+	Source2->SetPlayedTime(Random::range(0.0f, FireSound.GetLength()));
+
+	Source1->SetPosition(Vector3(0, 10, 3.5));
+	Source2->SetPosition(Vector3(0, 10, -3.5));
+
+	Source1->SetLooping(true);
+	Source2->SetLooping(true);
+	Source1->Play();
+	Source2->Play();
+
+	Audio.AddSource(BackgroundMusic);
+	Audio.AddSource(Source1);
+	Audio.AddSource(Source2);
+
+	scene.getGameObject(12)->AddComponent(new Rotator());
+
+	auto Sphere = scene.getGameObject(15);
+	Rigidbody* RB = static_cast<ComponentRigidbody*>(Sphere->GetComponent(Component::Type::Rigidbody))->GetRigidbody();
+
+	/*constexpr int TestsSize = 500;
+	GameObject Tests[TestsSize];
+
+	for (uint32 i = 0; i < TestsSize; i++)
+	{
+		Tests[i].AddComponent(Sphere->GetComponent(Component::Type::MeshRenderer));
+		Tests[i].SetTransform(Transform(Vector3((float)i * 0.1, 0, 0)));
+		Tests[i].SetMaterial(Sphere->GetMaterial());
+		scene.Add(21 + i, std::move(Tests[i]));
+	}*/
+
+	Audio.Play();
+
+	TTF_Init();
+	auto Font = TTF_OpenFont("Data/A.ttf", 50);
+
+	SDL_Color Color;
+	Color.r = 10;
+	Color.g = 10;
+	Color.b = 10;
+	Color.a = 255;
+
+	SDL_Surface* Surf = TTF_RenderGlyph_Blended(Font, L'B', Color);
+
+	ImageBGRA2RGBA((uint8*)Surf->pixels, Surf->w * Surf->h * 4);
+	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);
+
+	Texture* FontTexture = gDevice->CreateTexture();
+	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 1, 0, 0, TextureFormat::RGBA8));
+	FontTexture->Load(Surf->pixels);
+	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Linear, Texture::Anisotropy::Anisotropy8 });
+
+	//scene.getGameObject(19)->GetMaterial().DiffuseTexture = FontTexture;
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();
 
-		event.pollEvents();
-		input.update();
+		window.update();
+		input.Update();
 
-		window.clear(0, 0, 0.75, 1);
+		window.clear(vec4(0, 0, 0.75, 1));
 
-		C_SetPerspective(60, window.aspect(), 0.1, 1000);
+		camera.perspective(60, window.getAspect(), 0.1, 1000);
 
-		if (input.getKey(SDL_SCANCODE_W))
+		if (input.GetKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_S))
+		if (input.GetKey(SDL_SCANCODE_S))
 			camera.addPos(-camera.direction() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_A))
+		if (input.GetKey(SDL_SCANCODE_A))
 			camera.addPos(-camera.right() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_D))
+		if (input.GetKey(SDL_SCANCODE_D))
 			camera.addPos(camera.right() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_UP))
-			camera.addRot(C_Vector3(-125 * RedrawTime, 0, 0));
-		if (input.getKey(SDL_SCANCODE_DOWN))
-			camera.addRot(C_Vector3(125 * RedrawTime, 0, 0));
-		if (input.getKey(SDL_SCANCODE_LEFT))
-			camera.addRot(C_Vector3(0, 125 * RedrawTime, 0));
-		if (input.getKey(SDL_SCANCODE_RIGHT))
-			camera.addRot(C_Vector3(0, -125 * RedrawTime, 0));
 
-		if (input.getKey(SDL_SCANCODE_LSHIFT))
+		if (input.GetKey(SDL_SCANCODE_UP))
+			RB->ApplyCentralImpulse(Vector3(-0.3, 0, 0) * 60 * RedrawTime);
+		if (input.GetKey(SDL_SCANCODE_DOWN))
+			RB->ApplyCentralImpulse(Vector3(0.3, 0, 0) * 60 * RedrawTime);
+		if (input.GetKey(SDL_SCANCODE_LEFT))
+			RB->ApplyCentralImpulse(Vector3(0, 0, 0.3) * 60 * RedrawTime);
+		if (input.GetKey(SDL_SCANCODE_RIGHT))
+			RB->ApplyCentralImpulse(Vector3(0, 0, -0.3) * 60 * RedrawTime);
+
+		if (input.GetKey(SDL_SCANCODE_LSHIFT))
 			camera.addPos(-camera.up() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_SPACE))
+		if (input.GetKey(SDL_SCANCODE_SPACE))
 			camera.addPos(camera.up() * RedrawTime * 5);
-		if (input.getKey(SDL_SCANCODE_Q))
-			camera.addRot(C_Vector3(0, 0, 125 * RedrawTime));
-		if (input.getKey(SDL_SCANCODE_E))
-			camera.addRot(C_Vector3(0, 0, -125 * RedrawTime));
+		if (input.GetKey(SDL_SCANCODE_Q))
+			camera.addRot(Vector3(0, 0, 125 * RedrawTime));
+		if (input.GetKey(SDL_SCANCODE_E))
+			camera.addRot(Vector3(0, 0, -125 * RedrawTime));
 
-		if (input.getKeyDown(SDL_SCANCODE_ESCAPE))
+		if (input.GetKeyDown(SDL_SCANCODE_ESCAPE))
 		{
 			cursor = !cursor;
-			input.showMouseCursor(cursor);
+			input.ShowMouseCursor(cursor);
 		}
 
 		if (!cursor)
 		{
-			C_Vector2 deltaMouse = input.getMouseMovement();
-			camera.addRot(C_Vector3(deltaMouse.y, -deltaMouse.x, 0) * 0.3);
-			input.setMousePos(window.getSize() * 0.5);
+			Vector2 deltaMouse = input.GetMouseMovement();
+			camera.addRot(Vector3(deltaMouse.Y * 60 * RedrawTime, -deltaMouse.X * 60 * RedrawTime, 0) * 0.3);
+			input.SetMousePos(window.getSize() * 0.5);
 		}
 
-		camera.setRot(C_Vector3::clamp(camera.getRot(), C_Vector3(-89.9, -360, 0.0), C_Vector3(89.9, 360, 0.0)));
+		camera.setRot(Vector3::Clamp(camera.getRot(), Vector3(-89.9, -360, 0.0), Vector3(89.9, 360, 0.0)));
 		camera.update();
+
+		Listener.Position = camera.getPos();
+		Listener.Right = camera.right();
+		Listener.Up = camera.up();
+		Listener.Forward = camera.direction();
+		Audio.SetListener(Listener);
 
 		scene.setContextSize(window.getSize());
 		scene.update();
-		scene.render();
+        scene.render();
 
 		window.display();
 
@@ -113,6 +222,9 @@ int main(int argc, char** argv)
 			timer.reset();
 		}
 	}
+
+	//delete Source;
+	delete gDevice;
 
 	return 0;
 }

@@ -2,49 +2,55 @@
 
 	<Resources>
 		<Textures>
-			<Count>13</Count>
+			<Count>15</Count>
 
-			<Texture0>Data/Textures/milos.jpg</Texture0>
-			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
-			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-			<Texture3>Data/Textures/flame.png</Texture3>
-			<Texture4>Data/Textures/smoke.png</Texture4>
-			<Texture5>Data/Textures/spark1.png</Texture5>
-			<Texture6>Data/Textures/wall-torch.jpg</Texture6>
-			<Texture7>Data/Textures/wall-torch-n.jpg</Texture7>
-			<Texture8>Data/Textures/blood.png</Texture8>
-			<Texture9>Data/Textures/blood-n.png</Texture9>
-			<Texture10>Data/Textures/metal.jpg</Texture10>
-			<Texture11>Data/Textures/metal-spec.tif</Texture11>
-			<Texture12>Data/Textures/metal-normal.jpg</Texture12>
+			<Texture0>Data/Textures/milos.dds</Texture0>
+			<Texture1>Data/Textures/milos-spec.dds</Texture1>
+			<Texture2>Data/Textures/milos-normal.dds</Texture2>
+			<Texture3>Data/Textures/flame.dds</Texture3>
+			<Texture4>Data/Textures/smoke.dds</Texture4>
+			<Texture5>Data/Textures/spark.dds</Texture5>
+			<Texture6>Data/Textures/wall-torch.dds</Texture6>
+			<Texture7>Data/Textures/wall-torch-n.dds</Texture7>
+			<Texture8>Data/Textures/blood.dds</Texture8>
+			<Texture9>Data/Textures/blood-n.dds</Texture9>
+			<Texture10>Data/Textures/metal.dds</Texture10>
+			<Texture11>Data/Textures/metal-spec.dds</Texture11>
+			<Texture12>Data/Textures/metal-normal.dds</Texture12>
+			<Texture13>Data/Textures/Detail.dds</Texture13>
+			<Texture14>Data/Textures/Detail-Normal.dds</Texture14>
 		</Textures>
 
 		<Shaders>
-			<Count>2</Count>
+			<Count>3</Count>
 
 			<Shader0>
-				<Vertex>Data/Shaders/standart.vert</Vertex>
-				<Fragment>Data/Shaders/standart.frag</Fragment>
+				<Program>Data/Shaders/Standart.glsl</Program>
 			</Shader0>
 
 			<Shader1>
-				<Vertex>Data/Shaders/particle.vert</Vertex>
-				<Fragment>Data/Shaders/particle.frag</Fragment>
+				<Program>Data/Shaders/Particle.glsl</Program>
 			</Shader1>
+
+			<Shader2>
+				<Program>Data/Shaders/StandartInstanced.glsl</Program>
+			</Shader2>
 		</Shaders>
 
 		<Meshes>
-			<Count>4</Count>
+			<Count>6</Count>
 
 			<Mesh0>Data/Models/Sponza.cmf</Mesh0>
 			<Mesh1>Data/Models/Torch.cmf</Mesh1>
 			<Mesh2>Data/Models/Dragon.cmf</Mesh2>
 			<Mesh3>Data/Models/Liberty.cmf</Mesh3>
+			<Mesh4>Data/Models/Sphere.cmf</Mesh4>
+			<Mesh5>Data/Models/Box.cmf</Mesh5>
 		</Meshes>
 	</Resources>
 
 	<GameObjects>
-		<Count>15</Count>
+		<Count>21</Count>
 
 		<GameObject0>
 			<Name>Sponza</Name>
@@ -62,6 +68,20 @@
 				<MeshRenderer>
 					<Mesh>0</Mesh>
 				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>1</Static>
+					<Mass>0</Mass>
+					<Restitution>0.3</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.3</RollingFriction>
+					<AngularDamping>0.3</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="100" Y="0.4" Z="100"/>
+				</Rigidbody>
 			</Components>
 		</GameObject0>
 
@@ -222,7 +242,7 @@
 
 			<Transform>
 				<Position X="0" Y="9.6" Z="-3.5"/>
-				<Rotation X="0" Y="-90" Z="0"/>
+				<Rotation X="0" Y="90" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
@@ -241,7 +261,7 @@
 
 			<Transform>
 				<Position X="0" Y="9.6" Z="3.5"/>
-				<Rotation X="0" Y="90" Z="0"/>
+				<Rotation X="0" Y="-90" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
@@ -298,7 +318,7 @@
 
 			<Transform>
 				<Position X="0" Y="0.2" Z="0"/>
-				<Rotation X="0" Y="90" Z="0"/>
+				<Rotation X="3" Y="123" Z="3"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
@@ -307,8 +327,20 @@
 
 			<Components>
 				<MeshRenderer>
-					<Mesh>3</Mesh>
+					
 				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>1</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.3</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+				</Rigidbody>
 			</Components>
 		</GameObject13>
 
@@ -330,6 +362,189 @@
 				</ParticleSystem>
 			</Components>
 		</GameObject14>
+
+		<GameObject15>
+			<Name>Sphere</Name>
+
+			<Transform>
+				<Position X="0" Y="25" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Dragon.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>4</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0.9</Restitution>
+					<Friction>1</Friction>
+					<RollingFriction>0.5</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeSphere>1</ShapeSphere>
+				</Rigidbody>
+			</Components>
+		</GameObject15>
+
+		<GameObject16>
+			<Name>Cube</Name>
+
+			<Transform>
+				<Position X="0" Y="30" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>5</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0.5</Restitution>
+					<Friction>0.9</Friction>
+					<RollingFriction>1</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="1" Y="1" Z="1"/>
+				</Rigidbody>
+			</Components>
+		</GameObject16>
+
+		<GameObject17>
+			<Name>Cube1</Name>
+
+			<Transform>
+				<Position X="0" Y="32" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>5</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0.5</Restitution>
+					<Friction>0.9</Friction>
+					<RollingFriction>0.5</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="1" Y="1" Z="1"/>
+				</Rigidbody>
+			</Components>
+		</GameObject17>
+
+		<GameObject18>
+			<Name>Cube2</Name>
+
+			<Transform>
+				<Position X="0" Y="34" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Default.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>5</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>1</Mass>
+					<Restitution>0.5</Restitution>
+					<Friction>0.9</Friction>
+					<RollingFriction>0.5</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="1" Y="1" Z="1"/>
+				</Rigidbody>
+			</Components>
+		</GameObject18>
+
+		<GameObject19>
+			<Name>Cube3</Name>
+
+			<Transform>
+				<Position X="1" Y="36" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="2" Y="2" Z="2"/>
+			</Transform>
+
+			<Material>Data/Materials/Dragon.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>5</Mesh>
+				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>0</Static>
+					<Mass>5</Mass>
+					<Restitution>0.5</Restitution>
+					<Friction>0.9</Friction>
+					<RollingFriction>0.5</RollingFriction>
+					<AngularDamping>0.3</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+					<ShapeBox X="2" Y="2" Z="2"/>
+				</Rigidbody>
+			</Components>
+		</GameObject19>
+
+		<GameObject20>
+			<Name>InstancedDragon</Name>
+
+			<Transform>
+				<Position X="0" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Dragon.cxmat</Material>
+			<Shader>2</Shader>
+
+			<Components>
+				<MeshInstancedRenderer>
+					<Mesh>2</Mesh>
+				</MeshInstancedRenderer>
+			</Components>
+		</GameObject20>
 	</GameObjects>
 </Scene>
 

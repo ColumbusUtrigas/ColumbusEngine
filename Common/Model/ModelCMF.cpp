@@ -8,87 +8,57 @@
 *                   08.01.2018                  *
 *************************************************/
 #include <Common/Model/Model.h>
+#include <Core/Types.h>
+#include <Core/Memory.h>
 #include <System/File.h>
+
+#include <zstd.h>
 
 namespace Columbus
 {
 
 	typedef struct
 	{
-		uint8_t magic[21]; //Magic string "COLUMBUS MODEL FORMAT"
-		uint32_t count;    //Polygons count
+		uint8 magic[21]; //Magic string "COLUMBUS MODEL FORMAT"
+		uint32 count;    //Polygons count
 	} CMF_HEADER;
 
-	static bool ReadHeader(CMF_HEADER* aHeader, C_File* aFile)
+	static void ProcessVertices(uint32 Count, float* InVertexBuffer, float* InUVBuffer, float* InNormalBuffer, std::vector<Vertex>& OutVertices)
 	{
-		if (aHeader == nullptr || aFile == nullptr) return false;
+		if (Count == 0 &&
+		    InVertexBuffer == nullptr &&
+		    InUVBuffer == nullptr &&
+		    InNormalBuffer == nullptr)
+		{
+			return;
+		}
 
-		if (!aFile->readBytes(aHeader->magic, 21)) return false;
-		if (!aFile->readUint32(&aHeader->count)) return false;
-
-		return true;
-	}
-
-	bool ModelIsCMF(const std::string aFile)
-	{
-		C_File file(aFile, "rb");
-		if (!file.isOpened()) return false;
-
-		const char* magic = "COLUMBUS MODEL FORMAT";
-		uint8_t fmagic[21];
-		bool ret = true;
-
-		file.read(fmagic, 21, 1);
-		file.close();
-
-		for (int i = 0; i < 21; i++)
-			if (magic[i] != fmagic[i]) ret = false;
-
-		return ret;
-	}
-
-	std::vector<C_Vertex> ModelLoadCMF(const std::string aFile)
-	{
-		std::vector<C_Vertex> ret;
-		size_t i, j;
-		uint64_t vcounter = 0;
-		uint64_t ucounter = 0;
-		uint64_t ncounter = 0;
-
-		C_File file(aFile, "rb");
-		if (!file.isOpened()) return ret;
-
-		CMF_HEADER header;
-		if (!ReadHeader(&header, &file)) return ret;
-
-		float* vbuffer = new float[header.count * 3 * 3]; //Vertex buffer
-		float* ubuffer = new float[header.count * 3 * 2]; //TexCoord buffer
-		float* nbuffer = new float[header.count * 3 * 3]; //Normal buffer
-
-		if (!file.readBytes(vbuffer, header.count * sizeof(float) * 3 * 3)) return ret;
-		if (!file.readBytes(ubuffer, header.count * sizeof(float) * 3 * 2)) return ret;
-		if (!file.readBytes(nbuffer, header.count * sizeof(float) * 3 * 3)) return ret;
-
-		C_Vertex vert[3];
-		C_Vector3 deltaPos1, deltaPos2;
-		C_Vector2 deltaUV1, deltaUV2;
-		C_Vector3 tangent, bitangent;
+		Vertex vert[3];
+		Vector3 deltaPos1, deltaPos2;
+		Vector2 deltaUV1, deltaUV2;
+		Vector3 tangent, bitangent;
 		float r;
 
-		for (i = 0; i < header.count; i++)
+		uint64 vcounter = 0;
+		uint64 ucounter = 0;
+		uint64 ncounter = 0;
+
+		OutVertices.reserve(Count);
+
+		for (uint32 i = 0; i < Count; i++)
 		{
-			for (j = 0; j < 3; j++)
+			for (uint32 j = 0; j < 3; j++)
 			{
-				vert[j].pos.x = vbuffer[vcounter++];
-				vert[j].pos.y = vbuffer[vcounter++];
-				vert[j].pos.z = vbuffer[vcounter++];
+				vert[j].pos.X = InVertexBuffer[vcounter++];
+				vert[j].pos.Y = InVertexBuffer[vcounter++];
+				vert[j].pos.Z = InVertexBuffer[vcounter++];
 
-				vert[j].UV.x = ubuffer[ucounter++];
-				vert[j].UV.y = ubuffer[ucounter++];
+				vert[j].UV.X = InUVBuffer[ucounter++];
+				vert[j].UV.Y = InUVBuffer[ucounter++];
 
-				vert[j].normal.x = nbuffer[ncounter++];
-				vert[j].normal.y = nbuffer[ncounter++];
-				vert[j].normal.z = nbuffer[ncounter++];
+				vert[j].normal.X = InNormalBuffer[ncounter++];
+				vert[j].normal.Y = InNormalBuffer[ncounter++];
+				vert[j].normal.Z = InNormalBuffer[ncounter++];
 			}
 
 			deltaPos1 = vert[1].pos - vert[0].pos;
@@ -97,28 +67,124 @@ namespace Columbus
 			deltaUV1 = vert[1].UV - vert[0].UV;
 			deltaUV2 = vert[2].UV - vert[0].UV;
 
-			r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-			tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
-			bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+			r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.X);
+			tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+			bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
 
-			for (j = 0; j < 3; j++)
+			for (uint32 j = 0; j < 3; j++)
 			{
 				vert[j].tangent = tangent;
 				vert[j].bitangent = bitangent;
-				ret.push_back(vert[j]);
+				OutVertices.push_back(vert[j]);
 			}
 		}
+	}
 
-		if (vbuffer != nullptr)
-			free(vbuffer);
+	bool ModelIsCMF(std::string FileName)
+	{
+		File CMFModelFile(FileName, "rb");
+		if (!CMFModelFile.IsOpened()) return false;
 
-		if (ubuffer != nullptr)
-			free(ubuffer);
+		uint8 Magic[21];
+		CMFModelFile.ReadBytes(Magic, sizeof(Magic));
+		CMFModelFile.Close();
 
-		if (nbuffer != nullptr)
-			free(nbuffer);
+		if (Memory::Memcmp(Magic, "COLUMBUS MODEL FORMAT", 21) == 0)
+		{
+			return true;
+		}
 
-		return ret;
+		return false;
+	}
+
+	uint32 ModelLoadCMF(std::string FileName, std::vector<Vertex>& OutVertices)
+	{
+		File CMFModelFile(FileName, "rb");
+		if (!CMFModelFile.IsOpened()) return 0;
+
+		uint64 FileSize = CMFModelFile.GetSize();
+		uint8* FileData = new uint8[FileSize];
+
+		CMFModelFile.ReadBytes(FileData, FileSize);
+
+		uint32 Count = ModelLoadCMFFromMemory(FileData, FileSize, OutVertices);
+		delete[] FileData;
+		return Count;
+	}
+
+	uint32 ModelLoadCMFFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices)
+	{
+		if (FileData == nullptr &&
+		    FileSize == 0)
+		{
+			return 0;
+		}
+
+		FileData += 21;
+		uint32 Count = 0;
+		uint8 Compressed = 0;
+		Memory::Memcpy(&Count, FileData, sizeof(uint32));     FileData += sizeof(uint32);
+		Memory::Memcpy(&Compressed, FileData, sizeof(uint8)); FileData += sizeof(uint8);
+
+		float* vbuffer = new float[Count * 3 * 3]; //Vertex buffer
+		float* ubuffer = new float[Count * 3 * 2]; //TexCoord buffer
+		float* nbuffer = new float[Count * 3 * 3]; //Normal buffer
+
+		if (Compressed == 0x00)
+		{
+			Memory::Memcpy(vbuffer, FileData, Count * sizeof(float) * 3 * 3); FileData += Count * sizeof(float) * 3 * 3;
+			Memory::Memcpy(ubuffer, FileData, Count * sizeof(float) * 3 * 2); FileData += Count * sizeof(float) * 3 * 2;
+			Memory::Memcpy(nbuffer, FileData, Count * sizeof(float) * 3 * 3); FileData += Count * sizeof(float) * 3 * 3;
+		}
+		else if (Compressed == 0xFF)
+		{
+			uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, FileSize - 26);
+			uint8* Decompressed = new uint8[DecompressedSize];
+			ZSTD_decompress(Decompressed, DecompressedSize, FileData, FileSize - 26);
+
+			Memory::Memcpy(vbuffer, Decompressed, Count * sizeof(float) * 3 * 3); Decompressed += Count * sizeof(float) * 3 * 3;
+			Memory::Memcpy(ubuffer, Decompressed, Count * sizeof(float) * 3 * 2); Decompressed += Count * sizeof(float) * 3 * 2;
+			Memory::Memcpy(nbuffer, Decompressed, Count * sizeof(float) * 3 * 3); Decompressed += Count * sizeof(float) * 3 * 3;
+
+			Decompressed -= DecompressedSize;
+
+			delete[] Decompressed;
+		}
+
+		ProcessVertices(Count, vbuffer, ubuffer, nbuffer, OutVertices);
+
+		delete[] vbuffer;
+		delete[] ubuffer;
+		delete[] nbuffer;
+
+		return Count;
+	}
+
+	void ModelConvertCMFToCompressed(std::string SourceFileName, std::string DestinyFileName)
+	{
+		File CMFSourceModelFile(SourceFileName, "rb");
+		File CMFDestinyModelFile(DestinyFileName, "wb");
+		if (!CMFSourceModelFile.IsOpened()) return;
+		if (!CMFDestinyModelFile.IsOpened()) return;
+
+		uint8* Header = new uint8[26];
+
+		uint64 FileSize = CMFSourceModelFile.GetSize();
+		uint8* SourceFile = new uint8[FileSize - 26];
+		CMFSourceModelFile.ReadBytes(Header, 26);
+		CMFSourceModelFile.ReadBytes(SourceFile, FileSize);
+		CMFSourceModelFile.Close();
+
+		uint64 Bound = ZSTD_compressBound(FileSize - 26);
+		uint8* DestinyFile = new uint8[Bound];
+		uint64 DestinySize = ZSTD_compress(DestinyFile, Bound, SourceFile, FileSize - 26, 1);
+		CMFDestinyModelFile.WriteBytes(Header, 25);
+		CMFDestinyModelFile.WriteUint8(0xFF);
+		CMFDestinyModelFile.WriteBytes(DestinyFile, DestinySize);
+		CMFDestinyModelFile.Close();
+
+		delete[] SourceFile;
+		delete[] DestinyFile;
 	}
 
 }
