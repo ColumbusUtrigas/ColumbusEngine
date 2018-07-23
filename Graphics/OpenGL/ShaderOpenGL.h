@@ -1,33 +1,59 @@
 #pragma once
 
 #include <Graphics/Shader.h>
+#include <Core/Types.h>
+#include <map>
 
 namespace Columbus
 {
 
-	class C_ShaderOpenGL : public C_Shader
+	class ShaderStageOpenGL : public ShaderStage
 	{
 	private:
-		unsigned int mID = 0;
+		uint32 ID = 0;
 	public:
-		C_ShaderOpenGL();
-		C_ShaderOpenGL(std::string aVert, std::string aFrag);
+		ShaderStageOpenGL();
 
-		bool load(std::string aVert, std::string aFrag) override;
-		bool compile() override;
+		bool IsValid() const override;
+		bool Load(std::string InPath, ShaderType InType) override;
+		bool Compile() override;
 
-		void bind() const override;
-		void unbind() const override;
+		//Get OpenGL-sepcifed identifier
+		uint32 GetID() const;
 
-		void setUniform1i(std::string aName, const int aValue) const override; 
-		void setUniform1f(std::string aName, const float aValue) const override;
-		void setUniform2f(std::string aName, const C_Vector2 aValue) const override;
-		void setUniform3f(std::string aName, const C_Vector3 aValue) const override;
-		void setUniform4f(std::string aName, const C_Vector4 aValue) const override;
-		void setUniformMatrix(std::string aName, const float* aValue) const override;
-		void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const override;
+		~ShaderStageOpenGL() override;
+	};
 
-		~C_ShaderOpenGL();
+	class ShaderProgramOpenGL : public ShaderProgram
+	{
+	private:
+		static constexpr int MaxUniforms = 256;
+
+		mutable std::map<std::string, uint32> UniformLocations;
+		mutable int32 FastUniforms[MaxUniforms]; //Uniforms ID by FastID
+		std::vector<std::string> Uniforms;
+		uint32 ID = 0;
+	public:
+		ShaderProgramOpenGL();
+
+		void Bind() const override;
+		void Unbind() const override;
+
+		void AddStage(ShaderStage* Stage) override;
+		bool Load(std::string FileName) override;
+		bool Load(StandartProgram Program) override;
+		bool Compile() override;
+
+		bool AddUniform(std::string Name) override;
+		void SetUniform1i(std::string Name, int Value) const override;
+		void SetUniform1f(std::string Name, float Value) const override;
+		void SetUniform2f(std::string Name, Vector2 Value) const override;
+		void SetUniform3f(std::string Name, Vector3 Value) const override;
+		void SetUniform4f(std::string Name, Vector4 Value) const override;
+		void SetUniformMatrix(std::string Name, const float* Value) const override;
+		void SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const override;
+
+		~ShaderProgramOpenGL() override;
 	};
 
 }

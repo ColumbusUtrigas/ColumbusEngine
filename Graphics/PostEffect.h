@@ -1,13 +1,3 @@
-/************************************************
-*                 PostEffect.h                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.10.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <vector>
@@ -25,84 +15,83 @@
 #include <Graphics/Renderbuffer.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
+#include <Core/Containers/Array.h>
 
 namespace Columbus
 {
 
-	struct C_PostEffectAttributeInt
+	struct PostEffectAttributeInt
 	{
 		std::string name;
 		int value;
-		C_PostEffectAttributeInt(std::string aName, int aValue) : name(aName), value(aValue) {}
+		PostEffectAttributeInt(std::string aName, int aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	struct C_PostEffectAttributeFloat
+	
+	struct PostEffectAttributeFloat
 	{
 		std::string name;
 		float value;
-		C_PostEffectAttributeFloat(std::string aName, float aValue) : name(aName), value(aValue) {}
+		PostEffectAttributeFloat(std::string aName, float aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	struct C_PostEffectAttributeVector2
+	
+	struct PostEffectAttributeVector2
 	{
 		std::string name;
-		C_Vector2 value;
-		C_PostEffectAttributeVector2(std::string aName, C_Vector2 aValue) : name(aName), value(aValue) {}
+		Vector2 value;
+		PostEffectAttributeVector2(std::string aName, Vector2 aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	struct C_PostEffectAttributeVector3
+	
+	struct PostEffectAttributeVector3
 	{
 		std::string name;
-		C_Vector3 value;
-		C_PostEffectAttributeVector3(std::string aName, C_Vector3 aValue) : name(aName), value(aValue) {}
+		Vector3 value;
+		PostEffectAttributeVector3(std::string aName, Vector3 aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	struct C_PostEffectAttributeVector4
+	
+	struct PostEffectAttributeVector4
 	{
 		std::string name;
-		C_Vector4 value;
-		C_PostEffectAttributeVector4(std::string aName, C_Vector4 aValue) : name(aName), value(aValue) {}
+		Vector4 value;
+		PostEffectAttributeVector4(std::string aName, Vector4 aValue) : name(aName), value(aValue) {}
 	};
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	class C_PostEffect
+	
+	class PostEffect
 	{
 	private:
-		C_Shader* mShader = nullptr;
-		C_Framebuffer* mFB = nullptr;
-		C_Texture* mTB = nullptr;
-		C_Texture* mDepth = nullptr;
+		ShaderProgram* Shader = nullptr;
+		Framebuffer* mFB = nullptr;
+		Texture* mTB = nullptr;
+		Texture* mDepth = nullptr;
 
-		std::vector<C_PostEffectAttributeInt> mAttribsInt;
-		std::vector<C_PostEffectAttributeFloat> mAttribsFloat;
-		std::vector<C_PostEffectAttributeVector2> mAttribsVector2;
-		std::vector<C_PostEffectAttributeVector3> mAttribsVector3;
-		std::vector<C_PostEffectAttributeVector4> mAttribsVector4;
+		Vector2 PreviousSize;
+
+		uint32 VBO;
+		uint32 IBO;
+		uint32 VAO;
+
+		std::vector<std::string> AttributeNames;
+		std::vector<PostEffectAttributeInt> mAttribsInt;
+		std::vector<PostEffectAttributeFloat> mAttribsFloat;
+		std::vector<PostEffectAttributeVector2> mAttribsVector2;
+		std::vector<PostEffectAttributeVector3> mAttribsVector3;
+		std::vector<PostEffectAttributeVector4> mAttribsVector4;
 	public:
-		C_PostEffect();
+		PostEffect();
 
-		void setShader(C_Shader* aShader);
-		void addAttrib(C_PostEffectAttributeInt aAttrib);
-		void addAttrib(C_PostEffectAttributeFloat aAttrib);
-		void addAttrib(C_PostEffectAttributeVector2 aAttrib);
-		void addAttrib(C_PostEffectAttributeVector3 aAttrib);
-		void addAttrib(C_PostEffectAttributeVector4 aAttrib);
+		void SetShader(ShaderProgram* InShader);
+		void AddAttributeName(std::string Name);
+		void addAttrib(PostEffectAttributeInt aAttrib);
+		void addAttrib(PostEffectAttributeFloat aAttrib);
+		void addAttrib(PostEffectAttributeVector2 aAttrib);
+		void addAttrib(PostEffectAttributeVector3 aAttrib);
+		void addAttrib(PostEffectAttributeVector4 aAttrib);
 		void clearAttribs();
 
-		void bind(C_Vector4 aClear, C_Vector2 aWindowSize);
-		void draw();
-		void unbind();
+		void Bind(Vector4 ClearColor, Vector2 ContextSize);
+		void Render();
+		void Unbind();
 
-		~C_PostEffect();
+		~PostEffect();
 	};
 
 }

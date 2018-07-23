@@ -14,12 +14,12 @@ namespace Columbus
 {
 
 	/*#ifdef C_SDL
-		C_EventSystem::C_EventSystem()
+		EventSystem::EventSystem()
 		{
 			update();
 		}
 
-		void C_EventSystem::update()
+		void EventSystem::update()
 		{
 			text = NULL;
 
@@ -84,38 +84,38 @@ namespace Columbus
 			}
 		}
 
-		void C_EventSystem::mouseCoords(int *aX, int* aY)
+		void EventSystem::mouseCoords(int *aX, int* aY)
 		{
 			SDL_GetMouseState(aX, aY);
 		}
 
-		void C_EventSystem::globalMouseCoords(int *aX, int* aY)
+		void EventSystem::globalMouseCoords(int *aX, int* aY)
 		{
 			SDL_GetGlobalMouseState(aX, aY);
 		}
 
-		void C_EventSystem::mouseRel(int *aX, int* aY)
+		void EventSystem::mouseRel(int *aX, int* aY)
 		{
 			SDL_GetRelativeMouseState(aX, aY);
 		}
 
-		bool C_EventSystem::isKey(int aKey)
+		bool EventSystem::isKey(int aKey)
 		{
 			keys = (Uint8*)SDL_GetKeyboardState(NULL);
 			return keys[aKey];
 		}
 
-		bool C_EventSystem::isKeyDown(int aKey)
+		bool EventSystem::isKeyDown(int aKey)
 		{
 
 		}
 
-		bool C_EventSystem::isKeyUp(int aKey)
+		bool EventSystem::isKeyUp(int aKey)
 		{
 
 		}
 
-		bool C_EventSystem::isText(char aText)
+		bool EventSystem::isText(char aText)
 		{
 			if(text != NULL)
 				if(text[0] == aText)
@@ -125,7 +125,7 @@ namespace Columbus
 			return false;
 		}
 
-		bool C_EventSystem::isMouseButton(int aButton)
+		bool EventSystem::isMouseButton(int aButton)
 		{
 			if(aButton == SDL_BUTTON_LEFT || aButton == C_BUTTON_LEFT)
 				return mouseLeft;
@@ -135,7 +135,7 @@ namespace Columbus
 				return mouseMiddle;
 		}
 
-		bool C_EventSystem::isMouseButtonClick(int aButton, int aClicks, int *aX, int* aY)
+		bool EventSystem::isMouseButtonClick(int aButton, int aClicks, int *aX, int* aY)
 		{
 			SDL_PollEvent(&mEvent);
 			if(mEvent.type == SDL_MOUSEBUTTONDOWN)
@@ -149,18 +149,18 @@ namespace Columbus
 			return false;
 		}
 
-		bool C_EventSystem::isExit()
+		bool EventSystem::isExit()
 		{
 			return (mEvent.type == SDL_QUIT);
 		}
 
-		char C_EventSystem::getText()
+		char EventSystem::getText()
 		{
 			if(text != NULL)
 				return text[0];
 		}
 
-		int C_EventSystem::getWheelX()
+		int EventSystem::getWheelX()
 		{
 			if(mouseWheelLeft == true)
 				return -1;
@@ -169,7 +169,7 @@ namespace Columbus
 			return 0;
 		}
 
-		int C_EventSystem::getWheelY()
+		int EventSystem::getWheelY()
 		{
 			if(mouseWheelDown == true)
 				return -1;
@@ -178,7 +178,7 @@ namespace Columbus
 			return 0;
 		}
 
-		C_EventSystem::~C_EventSystem()
+		EventSystem::~EventSystem()
 		{
 
 		}
@@ -186,13 +186,13 @@ namespace Columbus
 
 	//////////////////////////////////////////////////////////////////////////////
 	//Constructor
-	C_EventSystem::C_EventSystem()
+	EventSystem::EventSystem()
 	{
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Poll all events
-	void C_EventSystem::pollEvents()
+	void EventSystem::pollEvents()
 	{
 		while(SDL_PollEvent(&mEvent))
 		{
@@ -205,19 +205,19 @@ namespace Columbus
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Add window
-	void C_EventSystem::addWindow(C_SDLWindow* aWindow)
+	void EventSystem::addWindow(SDLWindow* aWindow)
 	{
 		mWindows.push_back(aWindow);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Return running
-	bool C_EventSystem::isRun()
+	bool EventSystem::isRun()
 	{
 		return !mQuit;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//Destructor
-	C_EventSystem::~C_EventSystem()
+	EventSystem::~EventSystem()
 	{
 
 	}

@@ -134,7 +134,7 @@ namespace Columbus
 	#endif*/
 
 
-	/*class C_EventSystem
+	/*class EventSystem
 	{
 	private:
 		SDL_Event mEvent;
@@ -149,7 +149,7 @@ namespace Columbus
 		bool mouseWheelUp = false;
 		bool mouseWheelDown = false;
 	public:
-		C_EventSystem();
+		EventSystem();
 
 		void update();
 
@@ -179,27 +179,24 @@ namespace Columbus
 
 		int getWheelY();
 
-		~C_EventSystem();
+		~EventSystem();
 	};*/
 
-	class C_EventSystem
+	class EventSystem
 	{
 	private:
 		SDL_Event mEvent;
-		std::vector<C_SDLWindow*> mWindows;
+		std::vector<SDLWindow*> mWindows;
 
 		bool mQuit = false;
 	public:
-		//Constructor
-		C_EventSystem();
-		//Poll all events
+		EventSystem();
+
 		void pollEvents();
-		//Add window
-		void addWindow(C_SDLWindow* aWindow);
-		//Return running
+		void addWindow(SDLWindow* aWindow);
 		bool isRun();
-		//Destructor
-		~C_EventSystem();
+
+		~EventSystem();
 	};
 
 }

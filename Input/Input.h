@@ -1,18 +1,9 @@
-/************************************************
-*                    Input.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   29.10.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <Math/Vector2.h>
-#include <Impl/ImplSDL.h>
+#include <Graphics/OpenGL/WindowOpenGLSDL.h>
 #include <GUI/IO.h>
+#include <Common/Cursor/Cursor.h>
 
 #include <SDL.h>
 #include <vector>
@@ -22,89 +13,91 @@
 namespace Columbus
 {
 
-	enum C_InputBindType
+	enum class InputBindType
 	{
-		C_INPUT_BIND_KEY,
-		C_INPUT_BIND_KEY_DOWN,
-		C_INPUT_BIND_KEY_UP,
+		Key,
+		KeyDown,
+		KeyUp
 	};
 
-	enum E_InputSystemCursor
+	enum class SystemCursor
 	{
-		E_INPUT_SYSTEM_CURSOR_ARROW,
-		E_INPUT_SYSTEM_CURSOR_IBEAM,
-		E_INPUT_SYSTEM_CURSOR_WAIT,
-		E_INPUT_SYSTEM_CURSOR_CROSSHAIR,
-		E_INPUT_SYSTEM_CURSOR_WAITARROW,
-		E_INPUT_SYSTEM_CURSOR_SIZENWSE,
-		E_INPUT_SYSTEM_CURSOR_SIZENESW,
-		E_INPUT_SYSTEM_CURSOR_SIZEWE,
-		E_INPUT_SYSTEM_CURSOR_SIZENS,
-		E_INPUT_SYSTEM_CURSOR_SIZEALL,
-		E_INPUT_SYSTEM_CURSOR_NO,
-		E_INPUT_SYSTEM_CURSOR_HAND
+		Arrow,
+		IBeam,
+		Wait,
+		Crosshair,
+		WaitArrow,
+		SizeNWSE,
+		SizeNESW,
+		SizeWE,
+		SizeNS,
+		SizeAll,
+		No,
+		Hand
 	};
 
-	struct C_InputBind
+	struct InputBind
 	{
-		C_InputBindType type;
-		unsigned int key;
-		std::function<void()> func;
+		InputBindType Type;
+		uint32 Key;
+		std::function<void()> Func;
 
-		C_InputBind(C_InputBindType aType, unsigned int aKey, std::function<void()> aFunc) :
-			type(aType), key(aKey), func(aFunc) {}
+		InputBind(InputBindType InType, uint32 InKey, std::function<void()> InFunc) :
+			Type(InType), Key(InKey), Func(InFunc)
+		{}
 
-		void execute()
+		void Execute()
 		{
-			func();
+			Func();
 		}
 	};
 
-	class C_Input
+	class Input
 	{
 	private:
-		uint8_t* mCurrentKeyboardState = nullptr;
-		uint8_t* mPreviousKeyboardState = nullptr;
-		uint8_t* mKeyboardStateTmp = nullptr;
+		uint8* mCurrentKeyboardState = nullptr;
+		uint8* mPreviousKeyboardState = nullptr;
+		uint8* mKeyboardStateTmp = nullptr;
 
 		int mKeyboardStateNum = 0;
 
-		C_Vector2 mCurrentMousePosition;
-		C_Vector2 mPreviousMousePosition;
+		Vector2 mCurrentMousePosition;
+		Vector2 mPreviousMousePosition;
 
 		bool mMouseEnabled = true;
 
-		std::vector<C_InputBind> mBinds;
+		std::vector<InputBind> mBinds;
 
-		C_SDLWindow* mWindow = nullptr;
-		GUI::C_IO* mIO = nullptr;
+		Window* mWindow = nullptr;
+		GUI::IO* mIO = nullptr;
 
-		void updateIO();
+		void UpdateIO();
 	public:
-		C_Input();
+		Input();
 
-		void bindInput(const C_InputBind aBind);
+		void BindInput(const InputBind aBind);
 
-		void setWindow(const C_SDLWindow* aWindow);
-		void setIO(const GUI::C_IO* aIO);
+		void SetWindow(const Window* aWindow);
+		void SetIO(const GUI::IO* aIO);
 
-		void showMouseCursor(const bool aX);
-		void setSystemCursor(const E_InputSystemCursor aID);
-		void setColoredCursor(const void* aPixels, const unsigned int aWidth,
-			const unsigned int aHeight, const unsigned int aBPP, const C_Vector2 aHot);
-		void setMousePos(const C_Vector2 aPos);
-		void setMousePosGlobal(const C_Vector2 aPos);
+		void ShowMouseCursor(const bool aX);
+		void SetCursor(Cursor InCursor);
+		void SetSystemCursor(SystemCursor Cursor);
+		void SetColoredCursor(const void* aPixels, const unsigned int aWidth,
+			const unsigned int aHeight, const unsigned int aBPP, const Vector2 aHot);
+		void SetMousePos(const Vector2 aPos);
+		void SetMousePosGlobal(const Vector2 aPos);
 
-		void update();
+		void Update();
 
-		C_Vector2 getMousePosition();
-		C_Vector2 getMouseMovement();
+		Vector2 GetMousePosition();
+		Vector2 GetMouseMovement();
 
-		bool getKey(const unsigned int aKey);
-		bool getKeyDown(const unsigned int aKey);
-		bool getKeyUp(const unsigned int aKey);
+		bool GetKey(const unsigned int aKey);
+		bool GetKeyDown(const unsigned int aKey);
+		bool GetKeyUp(const unsigned int aKey);
 
-		~C_Input();
+		~Input();
 	};
 
 }

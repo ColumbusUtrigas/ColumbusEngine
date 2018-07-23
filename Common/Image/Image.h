@@ -1,16 +1,8 @@
-/************************************************
-*              	     Image.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   02.01.2018                  *
-*************************************************/
 #pragma once
 
 #include <System/Assert.h>
 #include <System/System.h>
+#include <Core/Types.h>
 #include <string>
 #include <cstdlib>
 #include <cstring>
@@ -18,87 +10,168 @@
 namespace Columbus
 {
 
-	enum E_IMAGE_LOAD
+	enum class ImageLoading
 	{
-		E_IMAGE_LOAD_NONE,
-		E_IMAGE_LOAD_FLIP_X,
-		E_IMAGE_LOAD_FLIP_Y,
-		E_IMAGE_LOAD_FLIP_XY
+		None,
+		FlipX,
+		FlipY,
+		FlipXY
 	};
 
-	enum E_IMAGE_FORMAT
+	enum class ImageFormat
 	{
-		E_IMAGE_FORMAT_BMP,
-		E_IMAGE_FORMAT_PNG,
-		E_IMAGE_FORMAT_TIF,
-		E_IMAGE_FORMAT_JPG,
-		E_IMAGE_FORMAT_TGA,
-		E_IMAGE_FORMAT_UNKNOWN
+		BMP,
+		DDS,
+		PNG,
+		TIF,
+		JPG,
+		TGA,
+		Unknown
 	};
 
-	E_IMAGE_FORMAT ImageGetFormat(std::string aFile);
-
-	bool ImageIsBMP(std::string aFile); //Check file magic
-	bool ImageIsTGA(std::string aFile); //Check file extension (*.tga, *.vda, *.icb, *.vst)
-	bool ImageIsPNG(std::string aFile); //Check file magic
-	bool ImageIsTIF(std::string aFile); //Check file magic
-	bool ImageIsJPG(std::string aFile); //Check file magic
-
-	unsigned char* ImageLoadBMP(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadTGA(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadPNG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadTIF(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	unsigned char* ImageLoadJPG(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-
-	bool ImageSaveBMP(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSaveTGA(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSavePNG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSaveTIF(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData);
-	bool ImageSaveJPG(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData, const unsigned int aQuality = 100);
-
-	unsigned char* ImageLoad(const std::string aFile, unsigned int& aWidth, unsigned int& aHeight, unsigned int& aBPP);
-	bool ImageSave(const std::string aFile, const unsigned int aWidth, const unsigned int aHeight, const unsigned int aBPP, const unsigned char* aData, const unsigned int aFormat, const unsigned int aQuality = 100);
-
-	bool ImageBGR2RGB(uint8_t* aData, size_t aSize);
-	bool ImageBGRA2RGBA(uint8_t* aData, size_t aSize);
-	bool ImageABGR2RGBA(uint8_t* aData, size_t aSize);
-	bool ImageRGB2BGR(uint8_t* aData, size_t aSize);
-	bool ImageRGBA2BGRA(uint8_t* aData, size_t aSize);
-
-	bool ImageFlipX(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
-	bool ImageFlipY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
-	bool ImageFlipXY(uint8_t* aData, size_t aWidth, size_t aHeight, size_t aBPP);
-
-	class C_Image
+	enum class TextureFormat
 	{
-	private:
-		unsigned int mWidth = 0;         //Width of the image
-		unsigned int mHeight = 0;        //Height of the image
-		unsigned int mBPP = 0;           //Byte (!) depth of the image: 3, 4
-		unsigned char* mData = nullptr;  //Pixel data
-		bool mExist = false;             //Is image exist
+		R8,
+		RG8,
+		RGB8,
+		RGBA8,
 
-		std::string mFilename;
+		R16,
+		RG16,
+		RGB16,
+		RGBA16,
+
+		R16F,
+		RG16F,
+		RGB16F,
+		RGBA16F,
+
+		R32F,
+		RG32F,
+		RGB32F,
+		RGBA32F,
+
+		DXT1,
+		DXT3,
+		DXT5,
+
+		Depth,
+		Depth16,
+		Depth24,
+		Depth24Stencil8,
+		Depth32F,
+		Depth32FStencil8,
+		Unknown
+	};
+
+	class ImageLoader
+	{
+	protected:
+		uint8* Data = nullptr;
+		uint32 Width = 0;
+		uint32 Height = 0;
+		uint32 Mipmaps = 0;
+		TextureFormat Format = TextureFormat::RGBA8;
 	public:
-		C_Image();
-		C_Image(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
+		ImageLoader() {}
 
-		bool load(const std::string aFile, const unsigned int aFlags = E_IMAGE_LOAD_NONE);
-		bool save(const std::string aFile, const unsigned int aFlags, const unsigned int aQuality = 100) const;
-		bool isExist() const;
-		void freeData(); //This method checks image existance
+		virtual bool Load(std::string FileName) { return false; }
+		virtual void Free() {}
 
-		bool flipX();
-		bool flipY();
-		bool flipXY();
+		uint8* GetData() const { return Data; }
+		uint32 GetWidth() const { return Width; }
+		uint32 GetHeight() const { return Height; }
+		uint32 GetMipmaps() const { return Mipmaps; }
+		TextureFormat GetFormat() const { return Format; }
 
-		unsigned int getWidth() const;
-		unsigned int getHeight() const;
-		unsigned int getBPP() const;
-		unsigned char* getData() const;
-		std::string getFilename() const;
+		virtual ~ImageLoader() {}
+	};
 
-		~C_Image();
+	ImageFormat ImageGetFormat(std::string FileName);
+	uint32 GetBPPFromFormat(TextureFormat Format);
+
+	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
+
+	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality = 100);
+
+	bool ImageBGR2RGB(uint8* Data, uint64 Size);
+	bool ImageBGRA2RGBA(uint8* Data, uint64 Size);
+	bool ImageABGR2RGBA(uint8* Data, uint64 Size);
+	bool ImageRGB2BGR(uint8* Data, uint64 Size);
+	bool ImageRGBA2BGRA(uint8* Data, uint64 Size);
+
+	bool ImageFlipX(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
+	bool ImageFlipY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
+	bool ImageFlipXY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
+
+	class Image
+	{
+	public:
+		enum class Type;
+	private:
+		uint32 Width = 0;         //Width of the image
+		uint32 Height = 0;        //Height of the image
+		uint32 Depth = 0;
+		uint64 Size = 0;
+		uint32 MipMaps = 0;
+		TextureFormat Format = TextureFormat::RGBA8;
+		uint8* Data = nullptr;    //Pixel data
+		bool Exist = false;       //Is image exist
+
+		Type ImageType;
+
+		std::string FileName;
+	public:
+		enum class Type
+		{
+			Image2D,
+			Image3D,
+			ImageCube,
+			Image2DArray
+		};
+	public:
+		Image();
+
+		bool Load(std::string InFilename, ImageLoading Flags = ImageLoading::None);
+		bool Save(std::string InFilename, ImageFormat Format, size_t Quality = 100) const;
+		bool IsExist() const;
+		void FreeData();
+
+		bool FlipX();
+		bool FlipY();
+		bool FlipXY();
+
+		bool IsRawFormat() const;
+		bool IsUnsignedShortFormat() const;
+		bool IsHalfFormat() const;
+		bool IsFloatFormat() const;
+		bool IsCompressedFormat() const;
+
+		Type GetType() const;
+
+		uint32 GetWidth() const;
+		uint32 GetHeight() const;
+		uint32 GetDepth() const;
+		uint32 GetMipmapsCount() const;
+		uint32 GetBytesPerPixel() const;
+		uint32 GetBytesPerBlock() const;
+
+		uint64 GetOffset(uint32 Level) const;
+		uint64 GetSize(uint32 Level) const;
+		//uint64 GetSize() const;
+
+		uint8* Get2DData(uint32 Level = 0) const;
+		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;
+
+		TextureFormat GetFormat() const;
+		uint8* GetData() const;
+		std::string GetFileName() const;
+
+		~Image();
 	};
 
 }

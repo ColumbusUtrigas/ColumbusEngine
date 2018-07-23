@@ -5,41 +5,41 @@
 namespace Columbus
 {
 
-	class C_OctaveNoise
+	class OctaveNoise
 	{
 	private:
-		C_PerlinNoise* m_perlinSource = nullptr;
+		PerlinNoise* mPerlinSource = nullptr;
 
-		unsigned int m_octaves = 8;
-		float m_persistence = 0.5;
-		float m_lacunarity = 2.0;
-		float m_baseFrequency = 1.0;
-		float m_baseAmplitude = 1.0;
+		unsigned int mOctaves = 8;
+		float mPersistence = 0.5;
+		float mLacunarity = 2.0;
+		float mBaseFrequency = 1.0;
+		float mBaseAmplitude = 1.0;
 	public:
-		C_OctaveNoise() :
-			m_octaves(1),
-			m_lacunarity(2.0),
-			m_persistence(0.5),
-			m_baseFrequency(0.1),
-			m_baseAmplitude(1.0)
+		OctaveNoise() :
+			mOctaves(8),
+			mPersistence(0.5),
+			mLacunarity(2.0),
+			mBaseFrequency(1.0),
+			mBaseAmplitude(1.0)
 		{
-			m_perlinSource = new C_PerlinNoise();
+			mPerlinSource = new PerlinNoise();
 		}
 
 		float noise(float sample_x, float sample_y, float sample_z)
 		{
 			float sum = 0;
-			float freq = m_baseFrequency;
-			float amp = m_baseAmplitude;
+			float freq = mBaseFrequency;
+			float amp = mBaseAmplitude;
 
 			size_t i;
 
-			for (i = 0; i < m_octaves; i++)
+			for (i = 0; i < mOctaves; i++)
 			{
-				sum += m_perlinSource->noise(sample_x * freq, sample_y * freq, sample_z * freq) * amp;
+				sum += mPerlinSource->noise(sample_x * freq, sample_y * freq, sample_z * freq) * amp;
 
-				freq *= m_lacunarity;
-				amp *= m_persistence;
+				freq *= mLacunarity;
+				amp *= mPersistence;
 			}
 
 			return sum;
@@ -47,34 +47,34 @@ namespace Columbus
 
 		void setOctaves(unsigned int o)
 		{
-			m_octaves = o;
+			mOctaves = o;
 		}
 
 		void setPersistence(float p)
 		{
-			m_persistence = p;
+			mPersistence = p;
 		}
 
 		void setLacunarity(float l)
 		{
-			m_lacunarity = l;
+			mLacunarity = l;
 		}
 		
 		void setFrequency(float f)
 		{
-			m_baseFrequency = f;
+			mBaseFrequency = f;
 		}
 
 		void setAmplitude(float a)
 		{
-			m_baseAmplitude = a;
+			mBaseAmplitude = a;
 		}
 
-		~C_OctaveNoise()
+		~OctaveNoise()
 		{
-			delete m_perlinSource;
+			delete mPerlinSource;
 		}
-};
+	};
 
 }
 

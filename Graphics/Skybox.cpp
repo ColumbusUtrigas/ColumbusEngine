@@ -1,86 +1,114 @@
-/************************************************
-*                  Skybox.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Skybox.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Constructor
-	C_Skybox::C_Skybox(C_Cubemap* aCubemap) :
-		mBuf(nullptr),
-		mShader(nullptr),
-		mCubemap(nullptr)
+	static ShaderProgram* CreateSkyboxShader()
 	{
-		mCubemap = aCubemap;
-		mBuf = new C_Buffer(skyboxVertices, 108 * sizeof(float), 3);
-		mShader = new C_ShaderOpenGL();
-		mShader->load("STANDART_SKY_VERTEX", "STANDART_SKY_FRAGMENT");
-		mShader->compile();
+		ShaderProgram* tShader = gDevice->CreateShaderProgram();
+		tShader->Load(ShaderProgram::StandartProgram::Skybox);
+		tShader->Compile();
+
+		tShader->AddUniform("uView");
+		tShader->AddUniform("uProjection");
+		tShader->AddUniform("uSkybox");
+
+		return tShader;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Draw skybox
-	void C_Skybox::draw()
+
+	static void CreateSkyboxBuffer(uint32* VBO, uint32* VAO, float* Vertices)
 	{
-		if (mShader != nullptr && mCubemap != nullptr)
+		glGenBuffers(1, VBO);
+		glGenVertexArrays(1, VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+		glBufferData(GL_ARRAY_BUFFER, 108 * sizeof(float), Vertices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindVertexArray(*VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+		glEnableVertexAttribArray(0);
+		glBindVertexArray(0);
+	}
+
+	Skybox::Skybox() :
+		mCubemap(nullptr),
+		Shader(nullptr)
+	{
+		Shader = CreateSkyboxShader();
+		CreateSkyboxBuffer(&VBO, &VAO, skyboxVertices);
+	}
+	
+	Skybox::Skybox(Cubemap* aCubemap) :
+		mCubemap(aCubemap),
+		Shader(nullptr)
+	{
+		Shader = CreateSkyboxShader();
+		CreateSkyboxBuffer(&VBO, &VAO, skyboxVertices);
+	}
+	
+	void Skybox::draw()
+	{
+		if (Shader != nullptr && mCubemap != nullptr)
 		{
-			C_DisableDepthMaskOpenGL();
+			glDepthMask(GL_FALSE);
 
-			if (mBuf == nullptr) return;
+			for (int32 i = 0; i < 5; i++)
+			{
+				glDisableVertexAttribArray(i);
+			}
 
-			C_OpenStreamOpenGL(0);
-			C_CloseStreamOpenGL(1);
-			C_CloseStreamOpenGL(2);
-			C_CloseStreamOpenGL(3);
-			C_CloseStreamOpenGL(4);
+			Shader->Bind();
 
-			mBuf->bind();
+			auto view = mCamera.getViewMatrix();
+			view.SetRow(3, Vector4(0, 0, 0, 1));
+			view.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			C_VertexAttribPointerOpenGL(0, 3, C_OGL_FLOAT, C_OGL_FALSE, 3 * sizeof(float), NULL);
+			view.Elements(UniformViewMatrix);
+			mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
 
-			mShader->bind();
+			Shader->SetUniformMatrix("uView", UniformViewMatrix);
+			Shader->SetUniformMatrix("uProjection", UniformProjectionMatrix);
 
-			C_Matrix4 view = C_GetViewMatrix();
-			view.setRow(3, C_Vector4(0, 0, 0, 1));
-			view.setColumn(3, C_Vector4(0, 0, 0, 1));
-
-			mShader->setUniformMatrix("uView", view.elements());
-			mShader->setUniformMatrix("uProjection", C_GetProjectionMatrix().elements());
-
-			C_ActiveTextureOpenGL(C_OGL_TEXTURE0);
-			mShader->setUniform1i("uSkybox", 0);
+			glActiveTexture(GL_TEXTURE0);
+			Shader->SetUniform1i("uSkybox", 0);
 			mCubemap->bind();
 
-			C_DrawArraysOpenGL(C_OGL_TRIANGLES, 0, 36);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
 
-			C_Buffer::unbind();
-
-			mShader->unbind();
+			Shader->Unbind();
 			mCubemap->unbind();
 
-			C_EnableDepthMaskOpenGL();
+			glDepthMask(GL_TRUE);
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Return Cubemap
-	C_Cubemap* C_Skybox::getCubemap() const
+	
+	void Skybox::setCamera(const Camera aCamera)
+	{
+		mCamera = static_cast<Camera>(aCamera);
+	}
+	
+	void Skybox::setCubemap(const Cubemap* aCubemap)
+	{
+		mCubemap = const_cast<Cubemap*>(aCubemap);
+	}
+	
+	Cubemap* Skybox::getCubemap() const
 	{
 		return mCubemap;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Destructor
-	C_Skybox::~C_Skybox()
+	
+	Skybox::~Skybox()
 	{
-		delete mShader;
-		delete mBuf;
+		delete Shader;
+		glDeleteBuffers(1, &VBO);
 	}
 
 }
+
+
+

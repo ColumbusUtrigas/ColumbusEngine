@@ -1,16 +1,5 @@
-/************************************************
-*                   Shader.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
-#include <GL/glew.h>
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -22,55 +11,108 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Graphics/ShaderBuilder.h>
+#include <Core/Containers/Array.h>
 
 namespace Columbus
 {
 
-	struct C_ShaderAttribute
+	struct ShaderAttribute
 	{
-		std::string name;
-		int value;
+		std::string Name;
+		uint32 Value;
 
-		C_ShaderAttribute(const std::string aName, const int aValue) :
-			name(aName), value(aValue) {}
+		ShaderAttribute(std::string InName, uint32 InValue) :
+			Name(InName), Value(InValue) {}
 	};
 
-	class C_Shader
+	class ShaderStage
 	{
 	protected:
-		C_ShaderBuilder mBuilder;
-		std::vector<C_ShaderAttribute> mAttributes;
+		ShaderBuilder Builder;
+		ShaderType Type;
 
-		std::string mVertShaderPath;
-		std::string mFragShaderPath;
+		std::string ShaderPath;
+		std::string ShaderSource;
 
-		std::string mVertShaderSource;
-		std::string mFragShaderSource;
-
-		bool mLoaded = false;
-		bool mCompiled = false;
+		bool Loaded;
+		bool Compiled;
 	public:
-		C_Shader();
-		C_Shader(std::string aVert, std::string aFrag);
+		ShaderStage() {}
 
-		virtual bool load(std::string aVert, std::string aFrag);
-		virtual bool compile();
+		virtual bool IsValid() const { return false; }
+		virtual bool Load(std::string InPath, ShaderType InType) { return false; }
+		virtual bool Compile() { return false; }
 
-		bool isCompiled() const;
+		bool IsLoaded() const { return Loaded; }
+		bool IsCompiled() const  { return Compiled; }
+		ShaderType GetType() const { return Type; }
 
-		virtual void bind() const;
-		virtual void unbind() const;
+		virtual ~ShaderStage() {}
+	};
 
-		void addAttribute(std::string aName, const int aValue);
-		virtual void setUniform1i(std::string aName, const int aValue) const;
-		virtual void setUniform1f(std::string aName, const float aValue) const;
-		virtual void setUniform2f(std::string aName, const C_Vector2 aValue) const;
-		virtual void setUniform3f(std::string aName, const C_Vector3 aValue) const;
-		virtual void setUniform4f(std::string aName, const C_Vector4 aValue) const;
-		virtual void setUniformMatrix(std::string aName, const float* aValue) const;
-		virtual void setUniformArrayf(std::string aName, const float aArray[], const size_t aSize) const;
+	class ShaderProgram
+	{
+	protected:
+		std::vector<ShaderAttribute> Attributes;
+		std::vector<ShaderStage*> Stages;
 
-		~C_Shader();
+		bool Compiled;
+	public:
+		enum class StandartProgram
+		{
+			Skybox
+		};
+	public:
+		ShaderProgram() {}
+
+		bool IsLoaded() const
+		{
+			for (auto& Stage : Stages)
+			{
+				if (!Stage->IsLoaded())
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool IsCompiled() const
+		{
+			if (!Compiled) return false;
+
+			for (auto& Stage : Stages)
+			{
+				if (!Stage->IsCompiled())
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		void AddAttribute(std::string InName, uint32 InValue) { Attributes.emplace_back(InName, InValue); }
+
+		virtual void Bind() const {}
+		virtual void Unbind() const {}
+
+		virtual void AddStage(ShaderStage* Stage) {}
+		virtual bool Load(std::string FileName) { return false; }
+		virtual bool Load(StandartProgram Program) { return false; }
+		virtual bool Compile() { return false; }
+
+		virtual bool AddUniform(std::string Name) { return false; }
+		virtual void SetUniform1i(std::string Name, int Value) const {}
+		virtual void SetUniform1f(std::string Name, float Value) const {}
+		virtual void SetUniform2f(std::string Name, Vector2 Value) const {}
+		virtual void SetUniform3f(std::string Name, Vector3 Value) const {}
+		virtual void SetUniform4f(std::string Name, Vector4 Value) const {}
+		virtual void SetUniformMatrix(std::string Name, const float* Value) const {}
+		virtual void SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const {}
+
+		virtual ~ShaderProgram() {}
 	};
 
 }

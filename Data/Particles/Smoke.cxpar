@@ -1,40 +1,86 @@
 <ParticleEffect>
-    <Count>100</Count>
-    <Visible>1</Visible>
-    <ScaleOL>1</ScaleOL>
-    <EmitFromShell>0</EmitFromShell>
-    <AdditiveBlending>0</AdditiveBlending>
-    <Billboarding>1</Billboarding>
-    <Gradienting>1</Gradienting>
-    <MinVelocity X="-0.2" Y="1" Z="-0.2"/>
-    <MaxVelocity X="0.2" Y="2" Z="0.2"/>
-    <MinAcceleration X="0" Y="0" Z="0"/>
-    <MaxAcceleration X="0" Y="0" Z="0"/>
-    <ConstForce X="0" Y="0" Z="0"/>
-    <PartSize X="1" Y="1"/>
-    <StartSize X="1" Y="1"/>
-    <FinalSize X="3" Y="3"/>
-    <StartColor R="1" G="0.5" B="0" A="0.9"/>
-    <FinalColor R="0.5" G="0.25" B="0" A="0.01"/>
-    <BoxShapeSize X="1" Y="1" Z="2"/>
-    <MinTTL>5</MinTTL>
-    <MaxTTL>10</MaxTTL>
-    <MinRotation>10</MinRotation>
-    <MaxRotation>50</MaxRotation>
-    <MinRotationSpeed>-50</MinRotationSpeed>
-    <MaxRotationSpeed>50</MaxRotationSpeed>
-    <NoiseStrength>0.1</NoiseStrength>
-    <NoiseOctaves>8</NoiseOctaves>
-    <NoiseLacunarity>1.0</NoiseLacunarity>
-    <NoisePersistence>0.7</NoisePersistence>
-    <NoiseFrequency>1</NoiseFrequency>
-    <NoiseAmplitude>1.0</NoiseAmplitude>
-    <EmitRate>10</EmitRate>
-    <Transformation>1</Transformation>
-    <Shape>0</Shape>
-    <ShapeRadius>0.5</ShapeRadius>
-    <SortMode>1</SortMode>
-    <SubUV X="4" Y="4"/>
-    <SubUVMode>1</SubUVMode>
-    <SubUVCycles>1.0</SubUVCycles>
+    <Required>
+        <Visible>1</Visible>
+        <AdditiveBlending>0</AdditiveBlending>
+        <Billboarding>1</Billboarding>
+        <Transformation>1</Transformation>
+        <SortMode>0</SortMode>
+    </Required>
+
+    <Emit>
+        <Emitting>1</Emitting>
+        <Count>50</Count>
+        <EmitRate>5</EmitRate>
+    </Emit>
+
+    <Location>
+        <Circle>
+        	<Radius>0.5</Radius>
+        	<EmitFromShell>0</EmitFromShell>
+        </Circle>
+    </Location>
+
+    <Lifetime>
+        <Min>5.0</Min>
+        <Max>10.0</Max>
+    </Lifetime>
+
+    <Rotation>
+        <Min>10</Min>
+        <Max>50</Max>
+        <MinVelocity>-50</MinVelocity>
+        <MaxVelocity>50</MaxVelocity>
+    </Rotation>
+
+    <InitialVelocity>
+        <Min X="-0.2" Y="1.0" Z="-0.2"/>
+        <Max X="0.2" Y="2.0" Z="0.2"/>
+    </InitialVelocity>
+
+    <Acceleration>
+    	<Initial>
+        	<Min X="0.0" Y="0.0" Z="0.0"/>
+        	<Max X="0.0" Y="0.0" Z="0.0"/>
+    	</Initial>
+    </Acceleration>
+
+    <Size>
+    	<OverLife>
+    		<MinStart X="1" Y="1" Z="1"/>
+	        <MaxStart X="1" Y="1" Z="1"/>
+	        <MinFinal X="3" Y="3" Z="3"/>
+	        <MaxFinal X="3" Y="3" Z="3"/>
+    	</OverLife>
+    </Size>
+
+    <Color>
+    	<OverLife>
+            <ColorKey R="1" G="0.5" B="0" A="0.0">0.0</ColorKey>
+            <ColorKey R="1" G="0.5" B="0" A="0.9">0.25</ColorKey>
+            <ColorKey R="1" G="0.5" B="0" A="0.9">0.5</ColorKey>
+            <ColorKey R="0.5" G="0.25" B="0" A="0.0">1.0</ColorKey>
+
+    		<MinStart R="1" G="0.5" B="0" A="0.9"/>
+	        <MaxStart R="1" G="0.5" B="0" A="0.9"/>
+	        <MinFinal R="0.5" G="0.25" B="0" A="0.01"/>
+	        <MaxFinal R="0.5" G="0.25" B="0" A="0.01"/>
+    	</OverLife>
+    </Color>
+
+    <Noise>
+        <Active>0</Active>
+        <Strength>0.1</Strength>
+        <Octaves>8</Octaves>
+        <Lacunarity>1.0</Lacunarity>
+        <Persistence>0.7</Persistence>
+        <Frequency>1.0</Frequency>
+        <Amplitude>1.0</Amplitude>
+    </Noise>
+
+    <SubUV>
+        <Mode>1</Mode>
+        <Horizontal>4</Horizontal>
+        <Vertical>4</Vertical>
+        <Cycles>1.0</Cycles>
+    </SubUV>
 </ParticleEffect>

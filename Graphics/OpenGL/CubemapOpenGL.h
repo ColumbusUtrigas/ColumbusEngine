@@ -5,14 +5,14 @@
 namespace Columbus
 {
 
-	class C_CubemapOpenGL : public C_Cubemap
+	class CubemapOpenGL : public Cubemap
 	{
 	private:
 		unsigned int mID = 0;
 	public:
-		C_CubemapOpenGL();
-		C_CubemapOpenGL(std::array<std::string, 6> aPath);
-		C_CubemapOpenGL(std::string aPath);
+		CubemapOpenGL();
+		CubemapOpenGL(std::array<std::string, 6> aPath);
+		CubemapOpenGL(std::string aPath);
 
 		void bind() const override;
 		void samplerCube(int i) const override;
@@ -23,7 +23,7 @@ namespace Columbus
 
 		unsigned int getID() const; //Get OpenGL cubemap texture ID
 
-		~C_CubemapOpenGL();
+		~CubemapOpenGL() override;
 	};
 
 }

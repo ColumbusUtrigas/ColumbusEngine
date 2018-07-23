@@ -5,29 +5,29 @@ namespace Columbus
 {
 
 	//////////////////////////////////////////////////////////////////////////////
-	C_CubemapOpenGL::C_CubemapOpenGL()
+	CubemapOpenGL::CubemapOpenGL()
 	{
 		glGenTextures(1, &mID);
 		mInited = true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	C_CubemapOpenGL::C_CubemapOpenGL(std::array<std::string, 6> aPath)
-	{
-		glGenTextures(1, &mID);
-		if (!load(aPath)) return;
-		mInited = true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	C_CubemapOpenGL::C_CubemapOpenGL(std::string aPath)
+	CubemapOpenGL::CubemapOpenGL(std::array<std::string, 6> aPath)
 	{
 		glGenTextures(1, &mID);
 		if (!load(aPath)) return;
 		mInited = true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	CubemapOpenGL::CubemapOpenGL(std::string aPath)
+	{
+		glGenTextures(1, &mID);
+		if (!load(aPath)) return;
+		mInited = true;
+	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	void C_CubemapOpenGL::bind() const
+	//////////////////////////////////////////////////////////////////////////////
+	void CubemapOpenGL::bind() const
 	{
 		if (mInited)
 		{
@@ -35,7 +35,7 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_CubemapOpenGL::samplerCube(int i) const
+	void CubemapOpenGL::samplerCube(int i) const
 	{
 		if (mInited)
 		{
@@ -44,36 +44,59 @@ namespace Columbus
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	void C_CubemapOpenGL::unbind() const
+	void CubemapOpenGL::unbind() const
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_CubemapOpenGL::load(std::array<std::string, 6> aPath)
+	bool CubemapOpenGL::load(std::array<std::string, 6> aPath)
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, mID);
 
 		for (int i = 0; i < 6; i++)
 		{
-			mBitmaps[i].load(aPath[i]);
-			mBitmaps[i].flipY();
-
-			if (!mBitmaps[i].isExist())
+			if (!mBitmaps[i].Load(aPath[i], ImageLoading::FlipY))
 			{
-				C_Log::error("Can't load Cubemap");
+				Log::error("Can't load Cubemap face: " + aPath[i]);
+				glDeleteTextures(1, &mID);
+				return false;
+			}
+
+			if (!mBitmaps[i].IsExist())
+			{
+				Log::error("Can't load Cubemap");
 				glDeleteTextures(1, &mID);
 				return false;
 			}
 			else
 			{
-				unsigned int format = GL_RGBA;
-				if (mBitmaps[i].getBPP() == 3) format = GL_RGB;
+				uint32 format = GL_RGBA;
+				bool IsDXT = false;
 
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
-					mBitmaps[i].getWidth(), mBitmaps[i].getHeight(), 0, format, GL_UNSIGNED_BYTE,
-						mBitmaps[i].getData());
+				switch (mBitmaps[i].GetFormat())
+				{
+				case TextureFormat::RGB8:  format = GL_RGB;  break;
+				case TextureFormat::RGBA8: format = GL_RGBA; break;
+				case TextureFormat::DXT1: format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; IsDXT = true; break;
+				case TextureFormat::DXT3: format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; IsDXT = true; break;
+				case TextureFormat::DXT5: format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; IsDXT = true; break;
+				default: format = GL_RGBA; break;
+				}
+
+				if (IsDXT)
+				{
+					glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
+						mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, mBitmaps[i].GetSize(0),
+						mBitmaps[i].GetData());
+				}
+				else
+				{
+					glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
+						mBitmaps[i].GetWidth(), mBitmaps[i].GetHeight(), 0, format, GL_UNSIGNED_BYTE,
+						mBitmaps[i].GetData());
+				}
 			}
 		}
 
@@ -85,23 +108,28 @@ namespace Columbus
 
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
+		for (uint32 i = 0; i < 6; i++)
+		{
+			mBitmaps[i].FreeData(); //Hmmm
+		}
+
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	bool C_CubemapOpenGL::load(std::string aPath)
+	bool CubemapOpenGL::load(std::string aPath)
 	{
 		std::array<std::string, 6> pathes;
 		std::string names[6] =  { "PosX", "NegX", "PosY", "NegY", "PosZ", "NegZ" };
 
-		Serializer::C_SerializerXML serializer;
+		Serializer::SerializerXML Serializer;
 
-		if (!serializer.read(aPath, "Cubemap"))
-		{ C_Log::error("Can't load Cubemap XML: " + aPath); return false; }
+		if (!Serializer.Read(aPath, "Cubemap"))
+		{ Log::error("Can't load Cubemap XML: " + aPath); return false; }
 
 		for (int i = 0; i < 6; i++)
 		{
-			if (!serializer.getString(names[i], &pathes[i]))
-			{ C_Log::error("Can't load Cubemap XML: " + aPath); return false; }
+			if (!Serializer.GetString(names[i], pathes[i]))
+			{ Log::error("Can't load Cubemap XML: " + aPath); return false; }
 		}
 
 		return load(pathes);
@@ -109,14 +137,14 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	unsigned int C_CubemapOpenGL::getID() const
+	unsigned int CubemapOpenGL::getID() const
 	{
 		return mID;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
-	C_CubemapOpenGL::~C_CubemapOpenGL()
+	CubemapOpenGL::~CubemapOpenGL()
 	{
 		glDeleteTextures(1, &mID);
 	}

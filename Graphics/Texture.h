@@ -1,12 +1,3 @@
-/************************************************
-*                   Texture.h                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
 #pragma once
 
 #include <System/Assert.h>
@@ -19,59 +10,125 @@
 namespace Columbus
 {
 
-	struct C_TextureConfig
+	struct TextureConfig
 	{
 		bool smooth = true;
 		bool mipmaps = true;
 		unsigned int anisotropy = 8;
 		unsigned int LOD = 0;
-		C_Vector2 tiling = C_Vector2(1, 1);
-		C_Vector2 tilingOffset = C_Vector2(0, 0);
+		Vector2 tiling = Vector2(1, 1);
+		Vector2 tilingOffset = Vector2(0, 0);
 	};
 
-	class C_Texture
+	class Texture
 	{
+	public:
+		enum class Filter;
+		enum class Anisotropy;
+		enum class Type;
+		struct Flags;
+		struct Properties;
 	protected:
-		C_Image mImage;
-
-		//unsigned int mID = 0;
+		Image mImage;
 
 		std::string mFile;
 
-		C_TextureConfig mConfig;
+		TextureConfig mConfig;
 
-		size_t mWidth = 0;
-		size_t mHeight = 0;
-		int mBPP = 0;
+		uint32 Width;
+		uint32 Height;
+		uint64 Size;
+
+		uint32 MipmapsCount;
+		uint32 MipmapLevel;
+
+		TextureFormat Format;
+
+		Type TextureType;
 	public:
-		C_Texture();
-		C_Texture(std::string aPath, bool aSmooth = true);
-		C_Texture(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		
-		virtual void load(std::string aPath, bool aSmooth = true);
-		virtual void load(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		virtual void loadDepth(const char* aData, const int aW, const int aH, bool aSmooth = true);
-		
-		virtual void setConfig(C_TextureConfig aConfig);
-		virtual void setSmooth(const bool aSmooth);
-		virtual void setAnisotropy(const unsigned int aAnisotropy);
+		enum class Filter
+		{
+			Point,
+			Linear,
+			Bilinear,
+			Trilinear
+		};
 
-		C_TextureConfig getConfig();
-		size_t getSize();
+		enum class Anisotropy
+		{
+			Anisotropy1,
+			Anisotropy2,
+			Anisotropy4,
+			Anisotropy8,
+			Anisotropy16
+		};
+
+		enum class Type
+		{
+			Texture2D,
+			Texture3D,
+			TextureCube,
+			Texture2DArray
+		};
+
+		struct Flags
+		{
+			Filter Filtering = Filter::Linear;
+			Anisotropy AnisotropyFilter = Anisotropy::Anisotropy8;
+		};
+
+		struct Properties
+		{
+			uint32 Width = 0;
+			uint32 Height = 0;
+			uint64 Size = 0;
+			uint32 Mipmaps = 0;
+			uint32 LOD = 0;
+			TextureFormat Format;
+
+			Properties(uint32 InWidth, uint32 InHeight, uint64 InSize, uint32 InMipmaps, uint32 InLOD, TextureFormat InFormat) :
+				Width(InWidth),
+				Height(InHeight),
+				Size(InSize),
+				Mipmaps(InMipmaps),
+				LOD(InLOD),
+				Format(InFormat) {}
+		};
+	public:
+		Texture() {}
+
+		virtual bool Load(const void* Data) = 0;
+		virtual bool Load(const void* Data, Properties Props) = 0;
+		virtual bool Load(Image& InImage) = 0;
+		virtual bool Load(std::string File) = 0;
+
+		virtual void Clear() = 0;
+
+		virtual bool Create2D(Properties Props) = 0;
+		virtual bool CreateCube(Properties Props) = 0;
+
+		virtual void SetFlags(Flags F) = 0;
+
+		virtual void SetMipmapLevel(uint32 Level) = 0;
+		uint32 GetMipmapLevel() const { return MipmapLevel; }
+
+		TextureConfig GetConfig() const;
 
 		bool save(std::string aFile, size_t aQuality = 100);
 		
 		virtual void bind();
 		virtual void unbind();
-		
-		//inline unsigned int getID() { return mID; }
 
 		virtual void sampler2D(int a);
 		virtual void generateMipmap();
-
-		virtual std::string getType();
 		
-		~C_Texture();
+		virtual ~Texture();
+	protected:
+		Flags TextureFlags;
 	};
 
 }
+
+
+
+
