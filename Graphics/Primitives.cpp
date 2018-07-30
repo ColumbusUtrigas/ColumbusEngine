@@ -41,9 +41,9 @@ namespace Columbus
 
 		std::vector<Vertex> v;
 
-		vec3 norm(0, 1, 0);
-		vec3 tang(0, 0, -1);
-		vec3 bitang(-1, 0, 0);
+		Vector3 norm(0, 1, 0);
+		Vector3 tang(0, 0, -1);
+		Vector3 bitang(-1, 0, 0);
 
 		Vertex vert;
 
@@ -63,35 +63,35 @@ namespace Columbus
 	//Generate box
 	std::vector<Vertex> PrimitiveBox(Vector3 aSize)
 	{
-		vec3 v[8] = 
+		Vector3 v[8] = 
 		{
-			vec3(-0.5f, -0.5f, 0.5f),
-			vec3(-0.5f, 0.5f, 0.5f),
-			vec3(0.5f, -0.5f, 0.5f),
-			vec3(0.5f, 0.5f, 0.5f),
+			Vector3(-0.5f, -0.5f, 0.5f),
+			Vector3(-0.5f, 0.5f, 0.5f),
+			Vector3(0.5f, -0.5f, 0.5f),
+			Vector3(0.5f, 0.5f, 0.5f),
 
-			vec3(-0.5f, -0.5f, -0.5f),
-			vec3(-0.5f, 0.5f, -0.5f),
-			vec3(0.5f, -0.5f, -0.5f),
-			vec3(0.5f, 0.5f, -0.5f)
+			Vector3(-0.5f, -0.5f, -0.5f),
+			Vector3(-0.5f, 0.5f, -0.5f),
+			Vector3(0.5f, -0.5f, -0.5f),
+			Vector3(0.5f, 0.5f, -0.5f)
 		};
 
-		vec2 u[4] =
+		Vector2 u[4] =
 		{
-			vec2(0.0f, 0.0f),
-			vec2(0.0f, 1.0f),
-			vec2(1.0f, 0.0f),
-			vec2(1.0f, 1.0f)
+			Vector2(0.0f, 0.0f),
+			Vector2(0.0f, 1.0f),
+			Vector2(1.0f, 0.0f),
+			Vector2(1.0f, 1.0f)
 		};
 
-		vec3 n[6] = 
+		Vector3 n[6] = 
 		{
-			vec3(0, 0, -1),
-			vec3(0, 0, 1),
-			vec3(1, 0, 0),
-			vec3(-1, 0, 0),
-			vec3(0, 1, 0),
-			vec3(0, -1, 0)
+			Vector3(0, 0, -1),
+			Vector3(0, 0, 1),
+			Vector3(1, 0, 0),
+			Vector3(-1, 0, 0),
+			Vector3(0, 1, 0),
+			Vector3(0, -1, 0)
 		};
 
 		int vindices[36] =
@@ -117,9 +117,9 @@ namespace Columbus
 		std::vector<Vertex> verts;
 
 		Vertex vert[3];
-		vec3 deltaPos1, deltaPos2;
-		vec2 deltaUV1, deltaUV2;
-		vec3 tangent, bitangent;
+		Vector3 deltaPos1, deltaPos2;
+		Vector2 deltaUV1, deltaUV2;
+		Vector3 tangent, bitangent;
 		float r;
 
 		size_t i, j, c = 0;
@@ -162,9 +162,9 @@ namespace Columbus
 
 		std::vector<Vertex> verts;
 
-		std::vector<vec3> vertices;
-		std::vector<vec2> texcoords;
-		std::vector<vec3> normals;
+		std::vector<Vector3> vertices;
+		std::vector<Vector2> texcoords;
+		std::vector<Vector3> normals;
 
 		float const R = 1.0f / static_cast<float>(aRings - 1);
 		float const S = 1.0f / static_cast<float>(aSectors - 1);
@@ -174,9 +174,9 @@ namespace Columbus
 		vertices.resize(aRings * aSectors * 3);
 		texcoords.resize(aRings * aSectors * 2);
 		normals.resize(aRings * aSectors * 3);
-		std::vector<vec3>::iterator v = vertices.begin();
-		std::vector<vec2>::iterator t = texcoords.begin();
-		std::vector<vec3>::iterator n = normals.begin();
+		std::vector<Vector3>::iterator v = vertices.begin();
+		std::vector<Vector2>::iterator t = texcoords.begin();
+		std::vector<Vector3>::iterator n = normals.begin();
 
 		float dtheta = static_cast<float>(PI / 12);
 		float dphi = static_cast<float>(2 * PI / 10);
@@ -193,9 +193,9 @@ namespace Columbus
 				float const y = sin(theta) * sin(phi);
 				float const z = cos(theta);
 
-				*v++ = vec3(x * aRadius, y * aRadius, z * aRadius);
-				*t++ = vec2(s * S, r * R);
-				*n++ = vec3(x, y, z);
+				*v++ = Vector3(x * aRadius, y * aRadius, z * aRadius);
+				*t++ = Vector2(s * S, r * R);
+				*n++ = Vector3(x, y, z);
 			}
 		}
 

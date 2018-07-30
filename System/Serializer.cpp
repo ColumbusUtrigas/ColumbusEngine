@@ -1,13 +1,3 @@
-/************************************************
-*              	 Serializer.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   18.10.2017                  *
-*************************************************/
-
 #include <System/Serializer.h>
 
 namespace Columbus
@@ -264,10 +254,10 @@ namespace Columbus
 			if (InElement == nullptr) return false;
 			if (InElement->elem == nullptr) return false;
 
-			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.x);
-			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.y);
-			InElement->elem->QueryFloatAttribute(Attribs.c.c_str(), &OutValue.z);
-			InElement->elem->QueryFloatAttribute(Attribs.d.c_str(), &OutValue.w);
+			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.X);
+			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.Y);
+			InElement->elem->QueryFloatAttribute(Attribs.c.c_str(), &OutValue.Z);
+			InElement->elem->QueryFloatAttribute(Attribs.d.c_str(), &OutValue.W);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -530,10 +520,10 @@ namespace Columbus
 
 			mTmp = mDoc.NewElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.y);
-			mTmp->SetAttribute(aAttribs.c.c_str(), aValue.z);
-			mTmp->SetAttribute(aAttribs.d.c_str(), aValue.w);
+			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.Y);
+			mTmp->SetAttribute(aAttribs.c.c_str(), aValue.Z);
+			mTmp->SetAttribute(aAttribs.d.c_str(), aValue.W);
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
@@ -549,10 +539,10 @@ namespace Columbus
 			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
-			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
-			subElement->SetAttribute(aAttribs.d.c_str(), aValue.w);
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.Y);
+			subElement->SetAttribute(aAttribs.c.c_str(), aValue.Z);
+			subElement->SetAttribute(aAttribs.d.c_str(), aValue.W);
 			mTmp->InsertEndChild(subElement);
 			return true;
 		}
@@ -755,10 +745,10 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.x);
-			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.y);
-			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.z);
-			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.w);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.Z);
+			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.W);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -769,10 +759,10 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			if (getElementFromHierarchy(InElement) == nullptr) return false;
-			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.x);
-			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.y);
-			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.z);
-			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.w);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.Z);
+			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.W);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////

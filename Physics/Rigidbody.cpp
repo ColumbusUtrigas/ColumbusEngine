@@ -130,7 +130,7 @@ namespace Columbus
 		{
 			btTransform bTrans;
 			Vector3 pos = InTransform.GetPos();
-			Vector3 scale = InTransform.GetScale();
+			//Vector3 scale = InTransform.GetScale();
 
 			glm::quat tQuat = InTransform.RotationQuaternion;
 			btQuaternion bQuat(-tQuat.z, -tQuat.w, tQuat.x, -tQuat.y);

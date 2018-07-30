@@ -43,12 +43,8 @@
 
 #include <Math/Frustum.h>
 #include <Math/MathUtil.h>
-#include <Math/Matrix4.h>
 #include <Math/OBB.h>
 #include <Math/Quaternion.h>
-#include <Math/RotationMatrix.h>
-#include <Math/ScaleMatrix.h>
-#include <Math/TranslationMatrix.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>

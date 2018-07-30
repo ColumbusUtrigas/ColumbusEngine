@@ -36,7 +36,7 @@ namespace Columbus
 
 		unsigned int frame = 0;
 
-		void update(const float aTimeTick, const vec3 aCamera)
+		void update(const float aTimeTick, const Vector3 aCamera)
 		{
 			for (i = 0; i < 9; i++) noise[i] = fmodf(noise[i] + (0.625f * aTimeTick), 256);
 

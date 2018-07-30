@@ -1,19 +1,7 @@
-/************************************************
-*                  Transform.cpp                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
-
 #include <Scene/Transform.h>
-#include <Math/RotationMatrix.h>
-#include <Math/ScaleMatrix.h>
-#include <Math/TranslationMatrix.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -137,11 +125,6 @@ namespace Columbus
 	Matrix& Transform::GetMatrix()
 	{
 		return ModelMatrix;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	Matrix4 Transform::GetNormalMatrix() const
-	{
-		return NormalMatrix;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

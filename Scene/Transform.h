@@ -1,16 +1,6 @@
-/************************************************
-*                  Transform.h                  *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #pragma once
 
 #include <Math/Vector3.h>
-#include <Math/Matrix4.h>
 #include <Math/Matrix.h>
 
 #include <glm/gtc/quaternion.hpp>
@@ -26,7 +16,6 @@ namespace Columbus
 		Vector3 Rotation;
 		Vector3 Scale = Vector3(1, 1, 1);
 		Matrix ModelMatrix;
-		Matrix4 NormalMatrix;
 	public:
 		glm::quat RotationQuaternion;
 
@@ -52,7 +41,6 @@ namespace Columbus
 
 		void SetMatrix(Matrix InMatrix);
 		Matrix& GetMatrix();
-		Matrix4 GetNormalMatrix() const;
 
 		~Transform();
 	};

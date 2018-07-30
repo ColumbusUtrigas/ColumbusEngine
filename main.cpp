@@ -50,8 +50,8 @@ int main(int argc, char** argv)
 	AudioListener Listener;
 
 	Camera camera;
-	camera.setPos(vec3(10, 10, 0));
-	camera.setRot(vec3(0, 90, 0));
+	camera.setPos(Vector3(10, 10, 0));
+	camera.setRot(Vector3(0, 90, 0));
 
 	gDevice = new DeviceOpenGL();
 
@@ -157,7 +157,7 @@ int main(int argc, char** argv)
 		window.update();
 		input.Update();
 
-		window.clear(vec4(0, 0, 0.75, 1));
+		window.clear(Vector4(0, 0, 0.75, 1));
 
 		camera.perspective(60, window.getAspect(), 0.1, 1000);
 
