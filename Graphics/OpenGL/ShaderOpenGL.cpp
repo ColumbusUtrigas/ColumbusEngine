@@ -438,7 +438,7 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform4f(UniformLocations.at(Name), Value.x, Value.y, Value.z, Value.w);
+				glUniform4f(UniformLocations.at(Name), Value.X, Value.Y, Value.Z, Value.W);
 			}
 		}
 	}

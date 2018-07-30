@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <System/Assert.h>
 #include <Core/Templates/Copy.h>
@@ -53,10 +54,10 @@ namespace Columbus
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetRow(): Index >= 4");
 
-			M[Index][0] = Row.x;
-			M[Index][1] = Row.y;
-			M[Index][2] = Row.z;
-			M[Index][3] = Row.w;
+			M[Index][0] = Row.X;
+			M[Index][1] = Row.Y;
+			M[Index][2] = Row.Z;
+			M[Index][3] = Row.W;
 		}
 		/*
 		* Set indexed column of this matrix
@@ -66,10 +67,10 @@ namespace Columbus
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetColumn(): Index >= 4");
 
-			M[0][Index] = Column.x;
-			M[1][Index] = Column.y;
-			M[2][Index] = Column.z;
-			M[3][Index] = Column.w;
+			M[0][Index] = Column.X;
+			M[1][Index] = Column.Y;
+			M[2][Index] = Column.Z;
+			M[3][Index] = Column.W;
 		}
 		/*
 		* Return indexed row of this matrix
@@ -145,7 +146,7 @@ namespace Columbus
 		* Translate this matrix in Position
 		* @return Matrix&: *this
 		*/
-		inline Matrix& Translate(Vector3 Position)
+		inline Matrix& Translate(const Vector3& Position)
 		{
 			M[0][3] += Position.X;
 			M[1][3] += Position.Y;
@@ -347,10 +348,10 @@ namespace Columbus
 
 			for (uint32 X = 0; X < 4; X++)
 			{
-				ResultVec.x += M[X][0] * Other.x;
-				ResultVec.y += M[X][1] * Other.y;
-				ResultVec.z += M[X][2] * Other.z;
-				ResultVec.w += M[X][3] * Other.w;
+				ResultVec.X += M[X][0] * Other.X;
+				ResultVec.Y += M[X][1] * Other.Y;
+				ResultVec.Z += M[X][2] * Other.Z;
+				ResultVec.W += M[X][3] * Other.W;
 			}
 
 			return ResultVec;

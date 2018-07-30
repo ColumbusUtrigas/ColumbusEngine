@@ -39,6 +39,7 @@ namespace Columbus
 		{
 			if (Source->GetMode() == AudioSource::Mode::Sound3D)
 			{
+
 				return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->GetPosition() - Listener.Position));
 			}
 		}

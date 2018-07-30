@@ -23,7 +23,7 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.color = Vector4::random(Min, Max);
+			OutParticle.color = Vector4::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter

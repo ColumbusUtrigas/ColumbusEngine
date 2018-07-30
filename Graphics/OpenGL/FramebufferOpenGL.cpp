@@ -63,7 +63,7 @@ namespace Columbus
 	{
 		bind();
 		glViewport(0, 0, (uint32)(aWindowSize.X), (uint32)(aWindowSize.Y));
-		glClearColor(aClear.x, aClear.y, aClear.z, aClear.w);
+		glClearColor(aClear.X, aClear.Y, aClear.Z, aClear.W);
 		glClear(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 

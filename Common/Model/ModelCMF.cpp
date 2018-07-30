@@ -1,12 +1,3 @@
-/************************************************
-*                   ModelCMF.cpp                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   08.01.2018                  *
-*************************************************/
 #include <Common/Model/Model.h>
 #include <Core/Types.h>
 #include <Core/Memory.h>

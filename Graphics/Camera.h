@@ -1,12 +1,3 @@
-/************************************************
-*                  Camera.h                     *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
 #pragma once
 
 #include <glm/glm.hpp>
@@ -19,7 +10,6 @@
 #include <glm/gtx/closest_point.hpp>
 
 #include <System/System.h>
-#include <Math/Matrix4.h>
 #include <Math/Matrix.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>

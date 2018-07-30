@@ -185,7 +185,7 @@ namespace Columbus
 	{
 		SDL_GL_MakeCurrent(mWindow, mGLC);
 		SDL_GL_SetSwapInterval(mVSync ? 1 : 0);
-		glClearColor(aColor.x, aColor.y, aColor.z, aColor.w);
+		glClearColor(aColor.X, aColor.Y, aColor.Z, aColor.W);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, Math::TruncToInt(getSize().X), Math::TruncToInt(getSize().Y));
 	}

@@ -1,260 +1,216 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
-#include <glm/glm.hpp>
 #include <System/Random.h>
 #include <Math/MathUtil.h>
 
 namespace Columbus
 {
 
-	class Vector2;
-	typedef Vector2 vec2;
+	template <typename Type>
+	struct Vector2_t;
 
-	class Vector2
+	typedef Vector2_t<float> Vector2;
+	typedef Vector2_t<double> dVector2;
+	typedef Vector2_t<int> iVector2;
+	typedef Vector2_t<bool> bVector2;
+
+	template <typename Type>
+	struct Vector2_t
 	{
-	public:
-		float X = 0.0f;
-		float Y = 0.0f;
-	public:
-		explicit Vector2() :
-			X(0.0f),
-			Y(0.0f)
-		{ }
+		Type X = 0;
+		Type Y = 0;
 
-		Vector2(const Vector2& Base) :
-			X(Base.X),
-			Y(Base.Y)
-		{ }
+		Vector2_t() {}
+		Vector2_t(const Vector2_t& Base) : X(Base.X), Y(Base.Y) {}
+		Vector2_t(Vector2_t&& Base) : X(std::move(Base.X)), Y(std::move(Base.Y)) {}
+		Vector2_t(const Type& Scalar) : X(Scalar), Y(Scalar) {}
+		Vector2_t(const Type& InX, const Type& InY) : X(InX), Y(InY) {}
 
-		Vector2(Vector2&& Base) noexcept :
-			X(std::move(Base.X)),
-			Y(std::move(Base.Y))
-		{ }
-		
-		Vector2(float InX, float InY) :
-			X(InX),
-			Y(InY)
-		{ }
-		
-		explicit Vector2(glm::vec2 InVec) :
-			X(InVec.x),
-			Y(InVec.y)
-		{ }
-		/*
-		* Covert from GLM vec2 to Columbus Vector2
-		*/
-		void FromGLM(glm::vec2 InVec)
-		{
-			X = InVec.x;
-			Y = InVec.y;
-		}
-		/*
-		* Covert from Columbus Vector2 to GLM vec2
-		*/
-		glm::vec2 ToGLM()
-		{
-			return glm::vec2(X, Y);
-		}
-		/*
-		* Operator= for equaling to vectors
-		* @return Vector2&: *this
-		*/
-		inline Vector2& operator=(const Vector2 Other)
+		Vector2_t& operator=(const Vector2_t& Other)
 		{
 			X = Other.X;
 			Y = Other.Y;
 			return *this;
 		}
-		/*
-		* Operator= for summing two vectors
-		* Summing component to component
-		*/
-		inline Vector2 operator+(const Vector2 Other)
+
+		Vector2_t& operator=(Vector2_t&& Other)
 		{
-			return Vector2(X + Other.X, Y + Other.Y);
+			X = std::move(Other.X);
+			Y = std::move(Other.Y);
+			return *this;
 		}
-		/*
-		* Operator- for subtraction two vectors
-		* Subtract component by component
-		*/
-		inline Vector2 operator-(const Vector2 Other)
+
+		Vector2_t<Type> XX() const { return Vector2_t<Type>(X, X); }
+		Vector2_t<Type> XY() const { return Vector2_t<Type>(X, Y); }
+		Vector2_t<Type> YX() const { return Vector2_t<Type>(Y, X); }
+		Vector2_t<Type> YY() const { return Vector2_t<Type>(Y, Y); }
+
+		Vector2_t operator+() const
 		{
-			return Vector2(X - Other.X, Y - Other.Y);
+			return *this;
 		}
-		/*
-		* Operator- for negation of vector
-		*/
-		inline Vector2 operator-()
+
+		Vector2_t operator+(const Type& Scalar) const
 		{
-			return Vector2(-X, -Y);
+			return Vector2_t(X + Scalar, Y + Scalar);
 		}
-		/*
-		* Operator* for multiplying two vectors
-		*/
-		inline Vector2 operator*(const Vector2 Other)
+
+		friend Vector2_t operator+(const Type& Scalar, const Vector2_t& Other)
 		{
-			return Vector2(X * Other.X, Y * Other.Y);
+			return Other + Scalar;
 		}
-		/*
-		* Operator* for multiplying vector by scalar
-		*/
-		inline Vector2 operator*(const float Other)
+
+		Vector2_t operator+(const Vector2_t& Other)
 		{
-			return Vector2(X * Other, Y * Other);
+			return Vector2_t(X + Other.X, Y + Other.Y);
 		}
-		/*
-		* Operator* for multiplying scalar with vector
-		*/
-		inline friend Vector2 operator*(const float L, const Vector2 R)
+
+		Vector2_t operator-() const
 		{
-			return Vector2(L * R.X, L * R.Y);
+			return Vector2_t(-X, -Y);
 		}
-		/*
-		* Operator/ for division vector by vector
-		*/
-		inline Vector2 operator/(const Vector2 Other)
+
+		Vector2_t operator-(const Type& Scalar) const
 		{
-			return Vector2(X / Other.X, Y / Other.Y);
+			return Vector2_t(X - Scalar, Y - Scalar);
 		}
-		/*
-		* Operator/ for division vector by scalar
-		*/
-		inline Vector2 operator/(const float Other)
+
+		friend Vector2_t operator-(const Type& Scalar, const Vector2_t& Other)
 		{
-			const float Scalar = 1.0f / Other;
-			return Vector2(X * Scalar, Y * Scalar);
+			return Vector2_t(Scalar - Other.X, Scalar - Other.Y);
 		}
-		/*
-		* Operator== for comparison two vectors
-		*/
-		inline bool operator==(const Vector2 Other)
+
+		Vector2_t operator-(const Vector2_t& Other) const
 		{
-			return (X == Other.X && Y == Other.Y);
+			return Vector2_t(X - Other.X, Y - Other.Y);
 		}
-		/*
-		* Operator!= for comparison two vectors
-		*/
-		inline bool operator!=(const Vector2 Other)
+
+		Vector2_t operator*(const Type& Scalar) const
+		{
+			return Vector2_t(X * Scalar, Y * Scalar);
+		}
+
+		friend Vector2_t operator*(const Type& Scalar, const Vector2_t& Other)
+		{
+			return Other * Scalar;
+		}
+
+		Vector2_t operator*(const Vector2_t& Other) const
+		{
+			return Vector2_t(X * Other.X, Y * Other.Y);
+		}
+
+		Vector2_t operator/(const Type& Scalar) const
+		{
+			const Type Factor = 1.0 / Scalar;
+			return Vector2_t(X * Factor, Y * Factor);
+		}
+
+		friend Vector2_t operator/(const Type& Scalar, const Vector2_t& Other)
+		{
+			return Vector2_t(Scalar / Other.X, Scalar / Other.Y);
+		}
+
+		Vector2_t operator/(const Vector2_t& Other) const
+		{
+			return Vector2_t(X / Other.X, Y / Other.Y);
+		}
+
+		Vector2_t& operator+=(const Type& Scalar)
+		{
+			return *this = *this + Scalar;
+		}
+
+		Vector2_t& operator+=(const Vector2_t& Other)
+		{
+			return *this = *this + Other;
+		}
+
+		Vector2_t& operator-=(const Type& Scalar)
+		{
+			return *this = *this - Scalar;
+		}
+
+		Vector2_t& operator-=(const Vector2_t& Other)
+		{
+			return *this = *this - Other;
+		}
+
+		Vector2_t& operator*=(const Type& Scalar)
+		{
+			return *this = *this * Scalar;
+		}
+
+		Vector2_t& operator*=(const Vector2_t& Other)
+		{
+			return *this = *this * Other;
+		}
+
+		Vector2_t& operator/=(const Type& Scalar)
+		{
+			return *this = *this / Scalar;
+		}
+
+		Vector2_t& operator/=(const Vector2_t& Other)
+		{
+			return *this = *this / Other;
+		}
+
+		bool operator==(const Vector2_t& Other) const
+		{
+			return X == Other.X && Y == Other.Y;
+		}
+
+		bool operator!=(const Vector2_t& Other) const
 		{
 			return !(*this == Other);
 		}
-		/*
-		* Operator+= for summing two vectors
-		*/
-		inline Vector2 operator+=(const Vector2 Other)
+
+		static Vector2_t Random(const Vector2_t& Min, const Vector2_t& Max)
 		{
-			X += Other.X;
-			Y += Other.Y;
-			return *this;
+			Vector2_t Result;
+
+			Result.X = Random::range(Min.X, Max.X);
+			Result.Y = Random::range(Min.Y, Max.Y);
+
+			return Result;
 		}
-		/*
-		* Operator-= for subtraction two vectors
-		*/
-		inline Vector2 operator-=(const Vector2 Other)
+
+		Vector2_t Clamped(const Vector2_t& Min, const Vector2_t& Max) const
 		{
-			X -= Other.X;
-			Y -= Other.Y;
-			return *this;
+			return Vector2_t(Math::Clamp(X, Min.X, Max.X), Math::Clamp(Y, Min.Y, Max.Y));
 		}
-		/*
-		* Operator*= for multiplying two vectors
-		*/
-		inline Vector2 operator*=(const Vector2 Other)
+
+		Vector2_t& Clamp(const Vector2_t& Min, const Vector2_t& Max)
 		{
-			X *= Other.X;
-			Y *= Other.Y;
-			return *this;
+			return *this = Clamped(Min, Max);
 		}
-		/*
-		* Operator*= for multiplying vector with scalar
-		*/
-		inline Vector2 operator*=(const float Other)
+
+		Vector2_t Normalized() const
 		{
-			X *= Other;
-			Y *= Other;
-			return *this;
+			return *this * (1.0 / Math::Sqrt(X * X + Y * Y));
 		}
-		/*
-		* Operator=/ for division vector by vector
-		*/
-		inline Vector2 operator/=(const Vector2 Other)
+
+		Vector2_t& Normalize() const
 		{
-			X /= Other.X;
-			Y /= Other.Y;
-			return *this;
+			return *this = Normalized();
 		}
-		/*
-		* Operator/= for division vector by scalar
-		*/
-		inline Vector2 operator/=(const float Other)
+
+		Type Length(const Vector2_t& Other) const
 		{
-			const float Scalar = 1.0f / Other;
-			X *= Scalar;
-			Y *= Scalar;
-			return *this;
+			return Math::Sqrt(Math::Pow(Other.X - X, 2) + Math::Pow(Other.Y - Y, 2));
 		}
-		/*
-		* Return random vector between
-		*/
-		inline static Vector2 Random(const Vector2 Min, const Vector2 MaX)
-		{
-			Vector2 ret;
-			ret.X = Random::range(Min.X, MaX.X);
-			ret.Y = Random::range(Min.Y, MaX.Y);
-			return ret;
-		}
-		/*
-		* Return length of this vector
-		*/
-		inline float Length()
-		{
-			return sqrt((X * X) + (Y * Y));
-		}
-		/*
-		* Return length between this vector and Vec
-		*/
-		inline float Length(const Vector2 Vec)
-		{
-			return sqrt(pow(Vec.X - X, 2) + pow(Vec.Y - Y, 2));
-		}
-		/*
-		* Return normalized vector
-		*/
-		inline Vector2 Normalize()
-		{
-			float l = Math::Sqrt((X * X) + (Y * Y));
-			float S = 1.0f / l;
-			return Vector2(X * S, Y * S);
-		}
-		/*
-		* Dot product of two vectors
-		*/
-		inline float Dot(const Vector2 Other)
+
+		Type Dot(const Vector2_t& Other) const
 		{
 			return X * Other.X + Y * Other.Y;
 		}
-		/*
-		* Dot product of two vectors
-		*/
-		inline static float Dot(const Vector2 V1, const Vector2 V2)
-		{
-			return V1.X * V2.X + V1.Y * V2.Y;
-		}
-		/*
-		* Clamp each component of this vector
-		*/
-		inline static Vector2 Clamp(Vector2 A, const Vector2 Min, const Vector2 Max)
-		{
-			A.X = Math::Clamp(A.X, Min.X, Max.X);
-			A.Y = Math::Clamp(A.Y, Min.Y, Max.Y);
-			return A;
-		}
-
-		~Vector2() { }
 	};
 
 }
+
 
 
 

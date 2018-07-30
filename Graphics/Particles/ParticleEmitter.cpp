@@ -238,7 +238,7 @@ namespace Columbus
 
 		float const MaterialUnif[15] =
 		{
-			matcol.x, matcol.y, matcol.z, matcol.w,
+			matcol.X, matcol.Y, matcol.Z, matcol.W,
 			matamb.X, matamb.Y, matamb.Z,
 			matdif.X, matdif.Y, matdif.Z,
 			matspc.X, matspc.Y, matspc.Z,
@@ -420,10 +420,10 @@ namespace Columbus
 				mTimeData[timeCounter++] = Particle.rotation;
 				mTimeData[timeCounter++] = static_cast<float>(Particle.frame);
 
-				mColData[colCounter++] = Particle.color.x;
-				mColData[colCounter++] = Particle.color.y;
-				mColData[colCounter++] = Particle.color.z;
-				mColData[colCounter++] = Particle.color.w;
+				mColData[colCounter++] = Particle.color.X;
+				mColData[colCounter++] = Particle.color.Y;
+				mColData[colCounter++] = Particle.color.Z;
+				mColData[colCounter++] = Particle.color.W;
 
 				mSizeData[sizeCounter++] = Particle.size.X;
 				mSizeData[sizeCounter++] = Particle.size.Y;
