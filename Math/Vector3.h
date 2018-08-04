@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <algorithm>
-#include <System/Random.h>
+#include <Core/Random.h>
 #include <Math/Vector2.h>
 #include <Math/MathUtil.h>
 
@@ -211,9 +211,9 @@ namespace Columbus
 		{
 			Vector3_t Result;
 
-			Result.X = Random::range(Min.X, Max.X);
-			Result.Y = Random::range(Min.Y, Max.Y);
-			Result.Z = Random::range(Min.Z, Max.Z);
+			Result.X = Random::Range(Min.X, Max.X);
+			Result.Y = Random::Range(Min.Y, Max.Y);
+			Result.Z = Random::Range(Min.Z, Max.Z);
 
 			return Result;
 		}
