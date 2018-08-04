@@ -1,13 +1,3 @@
-/************************************************
-*                   Random.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   31.10.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <random>
@@ -16,13 +6,23 @@
 
 namespace Columbus
 {
+	namespace
+	{
+		std::mt19937 Rnd(static_cast<unsigned int>(time(NULL)));
+	}
 
 	class Random
 	{
 	public:
 		Random();
 
-		static float range(float aMin, float aMax);
+		template <typename Type>
+		static Type range(const Type Min, const Type Max)
+		{
+			std::uniform_real_distribution<Type> Generator(Min, Max);
+
+			return Generator(Rnd);
+		}
 
 		~Random();
 	};

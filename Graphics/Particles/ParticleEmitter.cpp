@@ -111,7 +111,7 @@ namespace Columbus
 
 				for (uint32 j = 0; j < 9; j++)
 				{
-					NewParticle.noise[j] = Random::range(0, 256);
+					NewParticle.noise[j] = Random::range(0.0f, 256.0f);
 				}
 
 				for (auto& Module : mParticleEffect->Modules)

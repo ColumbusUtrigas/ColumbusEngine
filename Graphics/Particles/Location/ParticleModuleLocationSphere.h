@@ -23,9 +23,9 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			float rad = Random::range(0.0, Radius);
-			float phi = Random::range(0.0, 6.283185306);
-			float tht = Random::range(0.0, 3.141592653);
+			float rad = Random::range(0.0f, Radius);
+			float phi = Random::range(0.0f, 6.283185306f);
+			float tht = Random::range(0.0f, 3.141592653f);
 
 			if (EmitFromShell) rad = Radius;
 
