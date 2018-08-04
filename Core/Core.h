@@ -2,6 +2,7 @@
 
 #include <Core/Types.h>
 #include <Core/Memory.h>
+#include <Core/Random.h>
 #include <Core/SmartPointer.h>
 
 #include <Core/Containers/Array.h>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Math/Vector3.h>
-#include <System/Random.h>
+#include <Core/Random.h>
 #include <Graphics/Particles/Particle.h>
 
 namespace Columbus

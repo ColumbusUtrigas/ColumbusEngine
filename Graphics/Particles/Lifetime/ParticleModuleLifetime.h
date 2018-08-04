@@ -21,14 +21,14 @@ namespace Columbus
 		*/
 		float GetLifetime() const
 		{
-			return Random::range(Min, Max);
+			return Random::Range(Min, Max);
 		}
 		/*
 		* Set parameter for particle
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.TTL = Random::range(Min, Max);
+			OutParticle.TTL = Random::Range(Min, Max);
 		}
 
 		~ParticleModuleLifetime() override {}

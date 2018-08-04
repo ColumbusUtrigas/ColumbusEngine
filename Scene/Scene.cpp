@@ -4,8 +4,7 @@
 namespace Columbus
 {
 
-	Scene::Scene() :
-		mSkybox(nullptr)
+	Scene::Scene() : mSkybox(nullptr)
 	{
 		NoneShader = gDevice->CreateShaderProgram();
 		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
@@ -17,9 +16,7 @@ namespace Columbus
 
 		PhysWorld.SetGravity(Vector3(0, -9.81, 0));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+
 	void Scene::lightWorkflow()
 	{
 		mLights.clear();
@@ -36,7 +33,7 @@ namespace Columbus
 			}
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+
 	void Scene::meshWorkflow()
 	{
 		for (auto& Object : mObjects)
@@ -69,7 +66,7 @@ namespace Columbus
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Scene::particlesWorkflow()
 	{
 		for (auto& Object : mObjects)
@@ -418,7 +415,6 @@ namespace Columbus
 	* End of additional functions for loading GameObject
 	*
 	*/
-
 	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, std::string Element,
 		std::map<uint32, std::vector<Vertex>>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
 		PhysicsWorld* PhysWorld)
@@ -614,41 +610,43 @@ namespace Columbus
 		Meshes.clear();
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Scene::setSkybox(const Skybox* aSkybox)
 	{
 		mSkybox = const_cast<Skybox*>(aSkybox);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Scene::setCamera(const Camera* aCamera)
 	{
 		mCamera = const_cast<Camera*>(aCamera);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Scene::setContextSize(const Vector2 aContextSize)
 	{
 		mContextSize = static_cast<Vector2>(aContextSize);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	GameObject* Scene::getGameObject(const unsigned int aID) const
 	{
-		return mObjects.at(aID).get();
+		return mObjects.at(aID).Get();
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	GameObject* Scene::getGameObject(const std::string aName) const
 	{
 		for (auto& Object : mObjects)
+		{
 			if (Object.second != nullptr)
+			{
 				if (Object.second->GetName() == aName)
-					return Object.second.get();
+				{
+					return Object.second.Get();
+				}
+			}
+		}
 
 		return nullptr;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Scene::update()
 	{
 		lightWorkflow();
@@ -673,7 +671,7 @@ namespace Columbus
 			Object.second->Update();
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void Scene::render()
 	{
 		C_EnableDepthTestOpenGL();
@@ -685,7 +683,9 @@ namespace Columbus
 		mNoneEffect.Bind(Vector4(1, 1, 1, 0), mContextSize);
 		
 		if (mSkybox != nullptr)
+		{
 			mSkybox->draw();
+		}
 
 		Render.SetMainCamera(*mCamera);
 		Render.SetRenderList(&mObjects);
@@ -704,9 +704,7 @@ namespace Columbus
 		mNoneEffect.Unbind();
 		mNoneEffect.Render();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	Scene::~Scene()
 	{
 		mObjects.clear();

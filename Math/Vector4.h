@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cmath>
-#include <System/Random.h>
+#include <algorithm>
+#include <Core/Random.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/MathUtil.h>
@@ -518,10 +519,10 @@ namespace Columbus
 		{
 			Vector4 Result;
 
-			Result.X = Random::range(Min.X, Max.X);
-			Result.Y = Random::range(Min.Y, Max.Y);
-			Result.Z = Random::range(Min.Z, Max.Z);
-			Result.W = Random::range(Min.W, Max.W);
+			Result.X = Random::Range(Min.X, Max.X);
+			Result.Y = Random::Range(Min.Y, Max.Y);
+			Result.Z = Random::Range(Min.Z, Max.Z);
+			Result.W = Random::Range(Min.W, Max.W);
 
 			return Result;
 		}

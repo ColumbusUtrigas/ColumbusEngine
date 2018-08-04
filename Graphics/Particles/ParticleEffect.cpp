@@ -1,13 +1,3 @@
-/************************************************
-*              ParticleEffect.cpp               *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Particles/ParticleEffect.h>
 
 namespace Columbus

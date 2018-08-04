@@ -1,23 +1,10 @@
-/************************************************
-*              ParticleEmitter.h                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
 #include <ctime>
-#include <sstream>
 #include <algorithm>
-
-#include <glm/glm.hpp>
 
 #include <RenderAPI/Buffer.h>
 
@@ -30,7 +17,7 @@
 #include <Graphics/Light.h>
 #include <System/System.h>
 #include <System/Timer.h>
-#include <System/Random.h>
+#include <Core/Random.h>
 #include <Common/Noise/OctaveNoise.h>
 
 namespace Columbus

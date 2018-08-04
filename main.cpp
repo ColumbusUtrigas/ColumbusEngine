@@ -3,7 +3,6 @@
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
 
 #include <RenderAPIOpenGL/OpenGL.h>
-#include <Graphics/OpenGL/MeshInstancedOpenGL.h>
 
 #include <SDL_ttf.h>
 
@@ -96,8 +95,8 @@ int main(int argc, char** argv)
 	Source1->SetSound(&FireSound);
 	Source2->SetSound(&FireSound);
 
-	Source1->SetPlayedTime(Random::range(0.0, FireSound.GetLength()));
-	Source2->SetPlayedTime(Random::range(0.0, FireSound.GetLength()));
+	Source1->SetPlayedTime(Random::Range(0.0, FireSound.GetLength()));
+	Source2->SetPlayedTime(Random::Range(0.0, FireSound.GetLength()));
 
 	Source1->SetPosition(Vector3(0, 10, 3.5));
 	Source2->SetPosition(Vector3(0, 10, -3.5));
