@@ -10,6 +10,7 @@
 
 #include <Core/Platform/Platform.h>
 #include <Core/Platform/PlatformClipboard.h>
+#include <Core/Platform/PlatformFilesystem.h>
 
 #include <Core/Templates/Algorithm.h>
 #include <Core/Templates/AreTypesEqual.h>
