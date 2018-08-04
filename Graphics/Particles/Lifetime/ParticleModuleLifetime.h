@@ -10,7 +10,7 @@ namespace Columbus
 	public:
 		float Min;
 		float Max;
-
+	public:
 		ParticleModuleLifetime() : Min(1.0f), Max(1.0f) {}
 		/*
 		* For determening module type

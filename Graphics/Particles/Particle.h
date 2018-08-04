@@ -11,9 +11,7 @@ namespace Columbus
 	private:
 		uint32 i = 0;
 	public:
-		Vector4 startColor = Vector4(1, 1, 1, 1);
-		Vector4 finalColor = Vector4(1, 1, 1, 1);
-		Vector4 color = Vector4(1, 1, 1, 1);
+		Vector4 Color = Vector4(1, 1, 1, 1);
 
 		Vector3 velocity = Vector3(0, 1, 0);
 		Vector3 startPos = Vector3(0, 0, 0);
@@ -35,7 +33,7 @@ namespace Columbus
 		float percent = 0.0f;
 
 		unsigned int frame = 0;
-
+	public:
 		void update(const float aTimeTick, const Vector3 aCamera)
 		{
 			for (i = 0; i < 9; i++) noise[i] = fmodf(noise[i] + (0.625f * aTimeTick), 256);
