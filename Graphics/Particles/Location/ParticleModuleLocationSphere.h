@@ -10,7 +10,7 @@ namespace Columbus
 	public:
 		float Radius;
 		bool EmitFromShell;
-
+	public:
 		ParticleModuleLocationSphere() :
 			Radius(1.0f),
 			EmitFromShell(false) {}

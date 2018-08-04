@@ -398,36 +398,36 @@ namespace Columbus
 			}
 		}
 
-		unsigned int posCounter = 0;
-		unsigned int timeCounter = 0;
-		unsigned int colCounter = 0;
-		unsigned int sizeCounter = 0;
-		unsigned int counter = 0;
+		uint64 PosCounter = 0;
+		uint64 TimeCounter = 0;
+		uint64 ColorCounter = 0;
+		uint64 SizeCounter = 0;
+		uint64 Counter = 0;
 
-		for (auto Particle : Particles)
+		for (const auto& Particle : Particles)
 		{
-			if (counter >= Particles.size()) break;
-			counter++;
+			if (Counter >= Particles.size()) break;
+			Counter++;
 
 			for (int i = 0; i < 6; i++)
 			{
-				mPosData[posCounter++] = Particle.pos.X;
-				mPosData[posCounter++] = Particle.pos.Y;
-				mPosData[posCounter++] = Particle.pos.Z;
+				mPosData[PosCounter++] = Particle.pos.X;
+				mPosData[PosCounter++] = Particle.pos.Y;
+				mPosData[PosCounter++] = Particle.pos.Z;
 
-				mTimeData[timeCounter++] = Particle.age;
-				mTimeData[timeCounter++] = Particle.TTL;
-				mTimeData[timeCounter++] = Particle.rotation;
-				mTimeData[timeCounter++] = static_cast<float>(Particle.frame);
+				mTimeData[TimeCounter++] = Particle.age;
+				mTimeData[TimeCounter++] = Particle.TTL;
+				mTimeData[TimeCounter++] = Particle.rotation;
+				mTimeData[TimeCounter++] = Particle.frame;
 
-				mColData[colCounter++] = Particle.color.X;
-				mColData[colCounter++] = Particle.color.Y;
-				mColData[colCounter++] = Particle.color.Z;
-				mColData[colCounter++] = Particle.color.W;
+				mColData[ColorCounter++] = Particle.Color.X;
+				mColData[ColorCounter++] = Particle.Color.Y;
+				mColData[ColorCounter++] = Particle.Color.Z;
+				mColData[ColorCounter++] = Particle.Color.W;
 
-				mSizeData[sizeCounter++] = Particle.size.X;
-				mSizeData[sizeCounter++] = Particle.size.Y;
-				mSizeData[sizeCounter++] = Particle.size.Z;
+				mSizeData[SizeCounter++] = Particle.size.X;
+				mSizeData[SizeCounter++] = Particle.size.Y;
+				mSizeData[SizeCounter++] = Particle.size.Z;
 			}
 		}
 

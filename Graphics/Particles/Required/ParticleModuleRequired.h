@@ -16,7 +16,7 @@ namespace Columbus
 	/*
 	* Particles may sorting by distance from camera and may be rendered without sorting
 	*/
-	enum ParticleSortMode
+	enum class ParticleSortMode
 	{
 		None,
 		Distance
@@ -30,7 +30,7 @@ namespace Columbus
 		bool Billboarding;
 		ParticleTransformation Transformation;
 		ParticleSortMode SortMode;
-
+	public:
 		ParticleModuleRequired() :
 			Visible(true),
 			AdditiveBlending(false),

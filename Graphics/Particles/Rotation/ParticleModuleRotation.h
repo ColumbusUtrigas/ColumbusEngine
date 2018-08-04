@@ -12,7 +12,7 @@ namespace Columbus
 		float Max;
 		float MinVelocity;
 		float MaxVelocity;
-
+	public:
 		ParticleModuleRotation() :
 			Min(0.0f),
 			Max(0.0f),

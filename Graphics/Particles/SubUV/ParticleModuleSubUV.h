@@ -21,7 +21,7 @@ namespace Columbus
 		int Vertical;
 		SubUVMode Mode;
 		float Cycles;
-
+	public:
 		ParticleModuleSubUV() :
 			Horizontal(1),
 			Vertical(1),

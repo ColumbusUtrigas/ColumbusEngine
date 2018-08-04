@@ -10,7 +10,7 @@ namespace Columbus
 	public:
 		Vector4 Min;
 		Vector4 Max;
-
+	public:
 		ParticleModuleColor() :
 			Min(Vector4(1, 1, 1, 1)),
 			Max(Vector4(1, 1, 1, 1)) {}
@@ -23,7 +23,7 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.color = Vector4::Random(Min, Max);
+			OutParticle.Color = Vector4::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter
