@@ -46,10 +46,8 @@
 
     <Size>
     	<OverLife>
-    		<MinStart X="0.03" Y="0.03" Z="0.03"/>
-	        <MaxStart X="0.03" Y="0.03" Z="0.03"/>
-	        <MinFinal X="0.05" Y="0.05" Z="0.05"/>
-	        <MaxFinal X="0.05" Y="0.05" Z="0.05"/>
+            <SizeKey X="0.03" Y="0.03" Z="0.03">0.0</SizeKey>
+            <SizeKey X="0.05" Y="0.05" Z="0.05">1.0</SizeKey>
     	</OverLife>
     </Size>
 
@@ -58,11 +56,6 @@
             <ColorKey R="2" G="1" B="0" A="1">0.0</ColorKey>
             <ColorKey R="1" G="0" B="0" A="0.5">0.9</ColorKey>
             <ColorKey R="1" G="0" B="0" A="0.1">1.0</ColorKey>
-
-    		<MinStart R="2" G="1" B="0" A="1"/>
-	        <MaxStart R="2" G="1" B="0" A="1"/>
-	        <MinFinal R="1" G="0" B="0" A="0.5"/>
-	        <MaxFinal R="1" G="0" B="0" A="0.5"/>
     	</OverLife>
     </Color>
 

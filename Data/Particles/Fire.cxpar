@@ -46,10 +46,8 @@
 
     <Size>
     	<OverLife>
-    		<MinStart X="0.5" Y="0.5" Z="0.5"/>
-	        <MaxStart X="0.5" Y="0.5" Z="0.5"/>
-	        <MinFinal X="1.5" Y="1.5" Z="1.5"/>
-	        <MaxFinal X="1.5" Y="1.5" Z="1.5"/>
+            <SizeKey X="0.5" Y="0.5" Z="0.5">0.0</SizeKey>
+            <SizeKey X="1.5" Y="1.5" Z="1.5">1.0</SizeKey>
     	</OverLife>
     </Size>
 
