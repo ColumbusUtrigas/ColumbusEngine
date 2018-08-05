@@ -315,14 +315,34 @@ namespace Columbus
 		}
 
 		ParticleModuleSizeOverLife* tSizeOverLife = new ParticleModuleSizeOverLife();
+		auto SizeOverLifeElement = serializer.GetSubElement({ "Size", "OverLife", "SizeKey" });
 
-		if (serializer.GetSubVector3({ "Size", "OverLife", "MinStart" }, tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
+		if (SizeOverLifeElement != nullptr)
+		{
+			Vector3 Value;
+			float Key;
+
+			while (SizeOverLifeElement != nullptr)
+			{
+				if (serializer.GetVector3(SizeOverLifeElement, Value, { "X", "Y", "Z" }) &&
+				    serializer.GetFloat(SizeOverLifeElement, Key))
+				{
+					tSizeOverLife->SizeCurve.AddPoint(Value, Key);
+				}
+
+				SizeOverLifeElement = serializer.NextElement(SizeOverLifeElement, "SizeKey");
+			}
+
+			tSizeBase = tSizeOverLife;
+		}
+
+		/*if (serializer.GetSubVector3({ "Size", "OverLife", "MinStart" }, tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
 		    serializer.GetSubVector3({ "Size", "OverLife", "MaxStart" }, tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
 		    serializer.GetSubVector3({ "Size", "OverLife", "MinFinal" }, tSizeOverLife->MinFinal, { "X", "Y", "Z" }) &&
 		    serializer.GetSubVector3({ "Size", "OverLife", "MaxFinal" }, tSizeOverLife->MaxFinal, { "X", "Y", "Z" }))
 		{
 			tSizeBase = tSizeOverLife;
-		}
+		}*/
 
 		ParticleModuleColor* tColor = new ParticleModuleColor();
 

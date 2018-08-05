@@ -24,7 +24,7 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.size = Vector3::Random(Min, Max);
+			OutParticle.Size = Vector3::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter

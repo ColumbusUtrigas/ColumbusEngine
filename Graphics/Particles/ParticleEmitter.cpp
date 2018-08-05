@@ -425,9 +425,9 @@ namespace Columbus
 				mColData[ColorCounter++] = Particle.Color.Z;
 				mColData[ColorCounter++] = Particle.Color.W;
 
-				mSizeData[SizeCounter++] = Particle.size.X;
-				mSizeData[SizeCounter++] = Particle.size.Y;
-				mSizeData[SizeCounter++] = Particle.size.Z;
+				mSizeData[SizeCounter++] = Particle.Size.X;
+				mSizeData[SizeCounter++] = Particle.Size.Y;
+				mSizeData[SizeCounter++] = Particle.Size.Z;
 			}
 		}
 
