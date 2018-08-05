@@ -117,7 +117,7 @@ namespace Columbus
 		* Add element in back of array
 		* @param const T Value: Value which will added in back of array
 		*/
-		void Add(const T Value)
+		void Add(const T& Value)
 		{
 			if (ArrayCount >= ArrayMax)
 			{
@@ -175,7 +175,7 @@ namespace Columbus
 		* @param const T Value: The value to which the array will be populated
 		* @param uint32 Num: Number of element copies
 		*/
-		void Init(const T Value, uint32 Num)
+		void Init(const T& Value, uint32 Num)
 		{
 			Clear();
 
