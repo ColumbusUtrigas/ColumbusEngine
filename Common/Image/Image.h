@@ -66,12 +66,24 @@ namespace Columbus
 
 	class ImageLoader
 	{
+	public:
+		enum class Type;
 	protected:
 		uint8* Data = nullptr;
 		uint32 Width = 0;
 		uint32 Height = 0;
 		uint32 Mipmaps = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
+
+		Type ImageType;
+	public:
+		enum class Type
+		{
+			Image2D,
+			Image3D,
+			ImageCube,
+			Image2DArray
+		};
 	public:
 		ImageLoader() {}
 
@@ -83,6 +95,7 @@ namespace Columbus
 		uint32 GetHeight() const { return Height; }
 		uint32 GetMipmaps() const { return Mipmaps; }
 		TextureFormat GetFormat() const { return Format; }
+		Type GetType() const { return ImageType; }
 
 		virtual ~ImageLoader() {}
 	};
@@ -113,14 +126,14 @@ namespace Columbus
 	public:
 		enum class Type;
 	private:
-		uint32 Width = 0;         //Width of the image
-		uint32 Height = 0;        //Height of the image
+		uint32 Width = 0;
+		uint32 Height = 0;
 		uint32 Depth = 0;
 		uint64 Size = 0;
 		uint32 MipMaps = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
-		uint8* Data = nullptr;    //Pixel data
-		bool Exist = false;       //Is image exist
+		uint8* Data = nullptr;
+		bool Exist = false;
 
 		Type ImageType;
 
@@ -162,7 +175,6 @@ namespace Columbus
 
 		uint64 GetOffset(uint32 Level) const;
 		uint64 GetSize(uint32 Level) const;
-		//uint64 GetSize() const;
 
 		uint8* Get2DData(uint32 Level = 0) const;
 		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;

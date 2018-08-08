@@ -4,6 +4,52 @@
 namespace Columbus
 {
 
+	static float skyboxVertices[108] =
+	{
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f, -1.0f,
+		1.0f,  1.0f,  1.0f,
+		1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		1.0f, -1.0f,  1.0f
+	};
+
+
 	static ShaderProgram* CreateSkyboxShader()
 	{
 		ShaderProgram* tShader = gDevice->CreateShaderProgram();
@@ -34,15 +80,15 @@ namespace Columbus
 	}
 
 	Skybox::Skybox() :
-		mCubemap(nullptr),
+		Tex(nullptr),
 		Shader(nullptr)
 	{
 		Shader = CreateSkyboxShader();
 		CreateSkyboxBuffer(&VBO, &VAO, skyboxVertices);
 	}
 	
-	Skybox::Skybox(Cubemap* aCubemap) :
-		mCubemap(aCubemap),
+	Skybox::Skybox(Texture* InTexture) :
+		Tex(InTexture),
 		Shader(nullptr)
 	{
 		Shader = CreateSkyboxShader();
@@ -51,7 +97,7 @@ namespace Columbus
 	
 	void Skybox::draw()
 	{
-		if (Shader != nullptr && mCubemap != nullptr)
+		if (Shader != nullptr && Tex != nullptr)
 		{
 			glDepthMask(GL_FALSE);
 
@@ -74,14 +120,14 @@ namespace Columbus
 
 			glActiveTexture(GL_TEXTURE0);
 			Shader->SetUniform1i("uSkybox", 0);
-			mCubemap->bind();
+			Tex->bind();
 
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 			glBindVertexArray(0);
 
 			Shader->Unbind();
-			mCubemap->unbind();
+			Tex->unbind();
 
 			glDepthMask(GL_TRUE);
 		}
@@ -90,16 +136,6 @@ namespace Columbus
 	void Skybox::setCamera(const Camera aCamera)
 	{
 		mCamera = static_cast<Camera>(aCamera);
-	}
-	
-	void Skybox::setCubemap(const Cubemap* aCubemap)
-	{
-		mCubemap = const_cast<Cubemap*>(aCubemap);
-	}
-	
-	Cubemap* Skybox::getCubemap() const
-	{
-		return mCubemap;
 	}
 	
 	Skybox::~Skybox()

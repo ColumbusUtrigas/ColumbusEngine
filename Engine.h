@@ -16,7 +16,6 @@
 #include <Core/Core.h>
 
 #include <Graphics/Camera.h>
-#include <Graphics/Cubemap.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Light.h>
 #include <Graphics/Material.h>

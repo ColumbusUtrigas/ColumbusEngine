@@ -61,11 +61,11 @@ namespace Columbus
 		}
 	}
 	
-	void ComponentMeshRenderer::SetReflection(Cubemap* Cubemap)
+	void ComponentMeshRenderer::SetReflection(Texture* Cubemap)
 	{
 		if (Object != nullptr)
 		{
-			Object->mMat.setReflection(Cubemap);
+			Object->mMat.Reflection = Cubemap;
 		}
 	}
 	

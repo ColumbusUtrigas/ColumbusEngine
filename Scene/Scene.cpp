@@ -44,7 +44,7 @@ namespace Columbus
 			if (mesh != nullptr)
 			{
 				mesh->SetLights(mLights);
-				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->getCubemap());
+				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->GetCubemap());
 				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
 			}
 		}
@@ -60,7 +60,7 @@ namespace Columbus
 			if (mesh != nullptr)
 			{
 				mesh->SetLights(mLights);
-				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->getCubemap());
+				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->GetCubemap());
 				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
 			}
 		}
@@ -541,7 +541,7 @@ namespace Columbus
 
 					if (Img.Load(path))
 					{
-						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, 0, 0, Img.GetFormat()));
+						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, Img.GetFormat()));
 						Tex->Load(Img);
 
 						Log::success("Texture loaded: " + path);
@@ -667,7 +667,7 @@ namespace Columbus
 
 		for (auto& Object : mObjects)
 		{
-			Object.second->GetMaterial().setReflection(mSkybox->getCubemap());
+			Object.second->GetMaterial().Reflection = mSkybox->GetCubemap();
 			Object.second->Update();
 		}
 	}

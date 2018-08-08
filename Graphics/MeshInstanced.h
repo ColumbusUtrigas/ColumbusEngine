@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Common/Model/Model.h>
-#include <Graphics/Cubemap.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Material.h>
 #include <Graphics/Light.h>

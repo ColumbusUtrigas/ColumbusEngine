@@ -19,7 +19,6 @@ namespace Columbus
 	public:
 		TextureOpenGL();
 
-		bool Load(const void* Data) override;
 		bool Load(const void* Data, Texture::Properties Props) override;
 		bool Load(Image& InImage) override;
 		bool Load(std::string File) override;

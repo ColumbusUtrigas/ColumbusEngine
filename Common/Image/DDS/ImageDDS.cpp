@@ -290,7 +290,7 @@ namespace Columbus
 		return Result;
 	}
 
-	static uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint32& OutMipMaps, TextureFormat& OutFormat)
+	static uint8* ImageLoadDDSMemory(const uint8* Data, uint64 Size, uint32& OutWidth, uint32& OutHeight, uint32& OutMipMaps, ImageLoader::Type& OutImageType, TextureFormat& OutFormat)
 	{
 		if (Data == nullptr || Size == 0)
 		{
@@ -331,6 +331,22 @@ namespace Columbus
 			return nullptr;
 		}
 
+		if (Header.Caps2 & 0x200) //Check for cubemap
+		{
+			if ((Header.Caps2 & 0x0400) == 0 ||  //Check cubemap for complexity
+			    (Header.Caps2 & 0x0800) == 0 ||
+			    (Header.Caps2 & 0x1000) == 0 ||
+			    (Header.Caps2 & 0x2000) == 0 ||
+			    (Header.Caps2 & 0x4000) == 0 ||
+			    (Header.Caps2 & 0x8000) == 0)
+			{
+				Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: cubemap is not complex");
+				return nullptr;
+			}
+
+			OutImageType = ImageLoader::Type::ImageCube;
+		}
+
 		OutFormat = FourCCDecode(Header.PixelFormat.FourCC);
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
@@ -353,6 +369,8 @@ namespace Columbus
 		{
 			DataSize += (((Header.Width >> i) + 3) / 4) * (((Header.Height >> i) + 3) / 4) * BlockSize;
 		}
+
+		if (OutImageType == ImageLoader::Type::ImageCube) DataSize *= 6;
 
 		uint8* Buffer = new uint8[DataSize];
 		std::copy(Data, Data + DataSize, Buffer);
@@ -386,9 +404,11 @@ namespace Columbus
 			return false;
 		}
 
+		ImageType = Type::Image2D;
+
 		uint8* TmpData = new uint8[DDSImageFile.GetSize()];
 		DDSImageFile.Read(TmpData, DDSImageFile.GetSize(), 1);
-		Data = ImageLoadDDSMemory(TmpData, DDSImageFile.GetSize(), Width, Height, Mipmaps, Format);
+		Data = ImageLoadDDSMemory(TmpData, DDSImageFile.GetSize(), Width, Height, Mipmaps, ImageType, Format);
 		DDSImageFile.Close();
 
 		delete[] TmpData;
