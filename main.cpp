@@ -54,7 +54,14 @@ int main(int argc, char** argv)
 
 	gDevice = new DeviceOpenGL();
 
-	Skybox skybox(gDevice->createCubemap("Data/Skyboxes/1.cubemap"));
+	Image ReflImage;
+	ReflImage.Load("./Data/Skyboxes/Sky.dds");
+
+	Texture* Refl = gDevice->CreateTexture();
+	Refl->CreateCube(Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
+	Refl->Load(ReflImage);
+
+	Skybox skybox(Refl);
 
 	Timer timer;
 
@@ -143,8 +150,8 @@ int main(int argc, char** argv)
 	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);
 
 	Texture* FontTexture = gDevice->CreateTexture();
-	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 1, 0, 0, TextureFormat::RGBA8));
-	FontTexture->Load(Surf->pixels);
+	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 0, TextureFormat::RGBA8));
+	//FontTexture->Load(Surf->pixels);
 	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Linear, Texture::Anisotropy::Anisotropy8 });
 
 	//scene.getGameObject(19)->GetMaterial().DiffuseTexture = FontTexture;

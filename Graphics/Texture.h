@@ -37,7 +37,6 @@ namespace Columbus
 
 		uint32 Width;
 		uint32 Height;
-		uint64 Size;
 
 		uint32 MipmapsCount;
 		uint32 MipmapLevel;
@@ -81,23 +80,18 @@ namespace Columbus
 		{
 			uint32 Width = 0;
 			uint32 Height = 0;
-			uint64 Size = 0;
-			uint32 Mipmaps = 0;
 			uint32 LOD = 0;
 			TextureFormat Format;
 
-			Properties(uint32 InWidth, uint32 InHeight, uint64 InSize, uint32 InMipmaps, uint32 InLOD, TextureFormat InFormat) :
+			Properties(uint32 InWidth, uint32 InHeight, uint32 InLOD, TextureFormat InFormat) :
 				Width(InWidth),
 				Height(InHeight),
-				Size(InSize),
-				Mipmaps(InMipmaps),
 				LOD(InLOD),
 				Format(InFormat) {}
 		};
 	public:
 		Texture() {}
 
-		virtual bool Load(const void* Data) = 0;
 		virtual bool Load(const void* Data, Properties Props) = 0;
 		virtual bool Load(Image& InImage) = 0;
 		virtual bool Load(std::string File) = 0;

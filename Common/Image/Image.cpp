@@ -262,6 +262,14 @@ namespace Columbus
 			MipMaps = Loader->GetMipmaps();
 			Format = Loader->GetFormat();
 
+			switch (Loader->GetType())
+			{
+			case ImageLoader::Type::Image2D:      ImageType = Type::Image2D;      break;
+			case ImageLoader::Type::Image3D:      ImageType = Type::Image3D;      break;
+			case ImageLoader::Type::ImageCube:    ImageType = Type::ImageCube;    break;
+			case ImageLoader::Type::Image2DArray: ImageType = Type::Image2DArray; break;
+			}
+
 			delete Loader;
 		}
 
@@ -397,6 +405,11 @@ namespace Columbus
 		        Format == TextureFormat::DXT3 ||
 		        Format == TextureFormat::DXT5);
 	}
+
+	Image::Type Image::GetType() const
+	{
+		return ImageType;
+	}
 	
 	uint32 Image::GetWidth() const
 	{
@@ -467,30 +480,52 @@ namespace Columbus
 
 	uint64 Image::GetSize(uint32 Level) const
 	{
-		uint32 BlockSize = 0;
-
-		if (Format == TextureFormat::DXT1)
+		if (IsCompressedFormat())
 		{
-			BlockSize = 8;
+			uint32 BlockSize = 0;
+
+			if (Format == TextureFormat::DXT1)
+			{
+				BlockSize = 8;
+			}
+			else
+			{
+				BlockSize = 16;
+			}
+
+			return (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
 		}
 		else
 		{
-			BlockSize = 16;
+			return (Width >> Level) * (Height >> Level) * GetBytesPerPixel();
 		}
 
-		return (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
+		return 0;
 	}
-
-	/*uint64 Image::GetSize() const
-	{
-		return Size;
-	}*/
 
 	uint8* Image::Get2DData(uint32 Level) const
 	{
-		if (Data != nullptr)
+		if (ImageType == Type::Image2D)
 		{
-			return &Data[0] + GetOffset(Level);
+			if (Data != nullptr)
+			{
+				return &Data[0] + GetOffset(Level);
+			}
+		}
+
+		return nullptr;
+	}
+
+	uint8* Image::GetCubeData(uint32 Face, uint32 Level) const
+	{
+		if (ImageType == Type::ImageCube)
+		{
+			if (Data != nullptr)
+			{
+				uint64 FaceSize = 0;
+				for (uint32 i = 0; i < MipMaps; i++) FaceSize += GetSize(i);
+				return &Data[0] + Face * FaceSize + GetOffset(Level);
+			}
 		}
 
 		return nullptr;

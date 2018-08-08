@@ -5,7 +5,7 @@
 #include <Math/Vector4.h>
 #include <Math/Matrix.h>
 #include <Graphics/Texture.h>
-#include <Graphics/Cubemap.h>
+//#include <Graphics/Cubemap.h>
 #include <Graphics/Shader.h>
 #include <System/System.h>
 #include <System/Log.h>
@@ -27,7 +27,7 @@ namespace Columbus
 	private:
 		bool mLighting = true;
 
-		Cubemap* mEnvReflection = nullptr;
+		//Cubemap* mEnvReflection = nullptr;
 
 		int mTextureID = -1;
 		int mSpecMapID = -1;
@@ -45,7 +45,8 @@ namespace Columbus
 		Texture* NormalTexture = nullptr;
 		Texture* DetailDiffuseMap = nullptr;
 		Texture* DetailNormalMap = nullptr;
-		Cubemap* Reflection = nullptr;
+		Texture* Reflection = nullptr;
+		//Cubemap* Reflection = nullptr;
 
 		Vector2 Tiling = Vector2(1, 1);
 		Vector2 DetailTiling = Vector2(4, 4);
@@ -78,11 +79,11 @@ namespace Columbus
 		void SetTexture(std::string Name, Texture* Value, uint32 Sampler);
 
 		void SetShader(ShaderProgram* InShader);
-		void setReflection(const Cubemap* aReflection);
+		//void setReflection(const Cubemap* aReflection);
 		void setLighting(const bool aLighting);
 
 		ShaderProgram* GetShader() const;
-		Cubemap* getReflection() const;
+		//Cubemap* getReflection() const;
 		bool getLighting() const;
 
 		int getTextureID() const;

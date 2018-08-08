@@ -4,7 +4,7 @@
 #include <Graphics/MeshInstanced.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Cubemap.h>
+#include <Graphics/Texture.h>
 
 namespace Columbus
 {
@@ -25,7 +25,7 @@ namespace Columbus
 		void SetCamera(Camera InCamera);
 		ShaderProgram* GetShader() const;
 		void SetShader(ShaderProgram* InShader);
-		void SetReflection(Cubemap* InCubemap);
+		void SetReflection(Texture* Cubemap);
 
 		~ComponentMeshInstancedRenderer() override;
 	};

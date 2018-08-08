@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Graphics/Shader.h>
-#include <Graphics/Cubemap.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Mesh.h>
 #include <Graphics/MeshInstanced.h>
@@ -17,10 +16,6 @@ namespace Columbus
 
 		virtual ShaderStage* CreateShaderStage() const;
 		virtual ShaderProgram* CreateShaderProgram() const;
-
-		virtual Cubemap* createCubemap() const;
-		virtual Cubemap* createCubemap(std::string aPath) const;
-		virtual Cubemap* createCubemap(std::array<std::string, 6> aPath) const;
 		
 		virtual Texture* CreateTexture() const { return nullptr; }
 

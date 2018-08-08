@@ -10,8 +10,8 @@ namespace Columbus
 		mTB = gDevice->CreateTexture();
 		mDepth = gDevice->CreateTexture();
 
-		mTB->Create2D(Texture::Properties(640, 480, 1, 0, 0, TextureFormat::RGB8));
-		mDepth->Create2D(Texture::Properties(640, 480, 1, 0, 0, TextureFormat::Depth16));
+		mTB->Create2D(Texture::Properties(640, 480, 0, TextureFormat::RGB8));
+		mDepth->Create2D(Texture::Properties(640, 480, 0, TextureFormat::Depth16));
 
 		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
 		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
@@ -138,8 +138,8 @@ namespace Columbus
 			W = Math::TruncToInt(ContextSize.X);
 			H = Math::TruncToInt(ContextSize.Y);
 
-			mTB->Load(nullptr, Texture::Properties(W, H, 0, 0, 0, TextureFormat::RGBA8));
-			mDepth->Load(nullptr, Texture::Properties(W, H, 0, 0, 0, TextureFormat::Depth16));
+			mTB->Load(nullptr, Texture::Properties(W, H, 0, TextureFormat::RGBA8));
+			mDepth->Load(nullptr, Texture::Properties(W, H, 0, TextureFormat::Depth16));
 		}
 
 		PreviousSize = ContextSize;

@@ -13,10 +13,6 @@ namespace Columbus
 		ShaderStage* CreateShaderStage() const override;
 		ShaderProgram* CreateShaderProgram() const override;
 
-		Cubemap* createCubemap() const override;
-		Cubemap* createCubemap(std::string aPath) const override;
-		Cubemap* createCubemap(std::array<std::string, 6> aPath) const override;
-
 		Texture* CreateTexture() const override;
 
 		Mesh* CreateMesh() const override;

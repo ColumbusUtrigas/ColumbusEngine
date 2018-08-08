@@ -8,7 +8,6 @@
 
 #include <RenderAPI/APIOpenGL.h>
 #include <RenderAPI/Buffer.h>
-#include <Graphics/Cubemap.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Texture.h>

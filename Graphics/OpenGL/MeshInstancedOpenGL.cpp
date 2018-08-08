@@ -18,7 +18,7 @@ namespace Columbus
 			if (tShader->IsCompiled())
 			{
 				Texture* Textures[3] = { InMaterial.DiffuseTexture, InMaterial.SpecularTexture, InMaterial.NormalTexture };
-				Cubemap* Reflection = InMaterial.getReflection();
+				//Cubemap* Reflection = InMaterial.getReflection();
 				std::string Names[3] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap" };
 
 				for (int32 i = 0; i < 3; i++)
@@ -30,11 +30,11 @@ namespace Columbus
 					}
 				}
 
-				if (Reflection != nullptr)
+				/*if (Reflection != nullptr)
 				{
 					tShader->SetUniform1i("uMaterial.ReflectionMap", 4);
 					Reflection->samplerCube(4);
-				}
+				}*/
 
 				tShader->SetUniform4f("uMaterial.Color", InMaterial.Color);
 				tShader->SetUniform3f("uMaterial.AmbientColor", InMaterial.AmbientColor);

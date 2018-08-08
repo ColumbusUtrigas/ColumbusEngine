@@ -4,8 +4,7 @@ namespace Columbus
 {
 
 	Material::Material() :
-		mLighting(false),
-		mEnvReflection(nullptr) {}
+		mLighting(false) {}
 	
 	Material::Material(std::string aFile)
 	{
@@ -29,59 +28,19 @@ namespace Columbus
 		return false;
 	}
 	
-	/*void Material::setTexture(const Texture* aTexture)
-	{
-		mTexture = const_cast<Texture*>(aTexture);
-	}
-	
-	void Material::setSpecMap(const Texture* aSpecMap)
-	{
-		mSpecMap = const_cast<Texture*>(aSpecMap);
-	}
-	
-	void Material::setNormMap(const Texture* aNormMap)
-	{
-		mNormMap = const_cast<Texture*>(aNormMap);
-	}*/
-	
 	void Material::SetShader(ShaderProgram* InShader)
 	{
 		ShaderProg = InShader;
-	}
-
-	void Material::setReflection(const Cubemap* aReflecction)
-	{
-		mEnvReflection = const_cast<Cubemap*>(aReflecction);
 	}
 	
 	void Material::setLighting(const bool aLighting)
 	{
 		mLighting = static_cast<bool>(aLighting);
 	}
-	
-	/*Texture* Material::getTexture() const
-	{
-		return mTexture;
-	}
-	
-	Texture* Material::getSpecMap() const
-	{
-		return mSpecMap;
-	}
-	
-	Texture* Material::getNormMap() const
-	{
-		return mNormMap;
-	}*/
 
 	ShaderProgram* Material::GetShader() const
 	{
 		return ShaderProg;
-	}
-
-	Cubemap* Material::getReflection() const
-	{
-		return mEnvReflection;
 	}
 	
 	bool Material::getLighting() const
@@ -276,7 +235,6 @@ namespace Columbus
 		        RimBias == Other.RimBias &&
 		        RimColor == Other.RimColor &&
 		        mLighting == Other.mLighting &&
-		        mEnvReflection == Other.mEnvReflection &&
 		        mTextureID == Other.mTextureID &&
 		        mSpecMapID == Other.mSpecMapID &&
 		        mNormMapID == Other.mNormMapID);
