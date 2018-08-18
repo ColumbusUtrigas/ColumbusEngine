@@ -2,7 +2,7 @@
 
 #include <Math/Vector2.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
-#include <GUI/IO.h>
+#include <GUI/VirtualInput.h>
 #include <Common/Cursor/Cursor.h>
 
 #include <SDL.h>
@@ -69,7 +69,7 @@ namespace Columbus
 		std::vector<InputBind> mBinds;
 
 		Window* mWindow = nullptr;
-		GUI::IO* mIO = nullptr;
+		VirtualInput* VI = nullptr;
 
 		void UpdateIO();
 	public:
@@ -78,7 +78,7 @@ namespace Columbus
 		void BindInput(const InputBind aBind);
 
 		void SetWindow(const Window* aWindow);
-		void SetIO(const GUI::IO* aIO);
+		void SetVirtualInput(const VirtualInput* InVI);
 
 		void ShowMouseCursor(const bool aX);
 		void SetCursor(Cursor InCursor);
@@ -96,6 +96,7 @@ namespace Columbus
 		bool GetKey(const unsigned int aKey);
 		bool GetKeyDown(const unsigned int aKey);
 		bool GetKeyUp(const unsigned int aKey);
+		bool GetMouseButton(uint32 Button);
 
 		~Input();
 	};

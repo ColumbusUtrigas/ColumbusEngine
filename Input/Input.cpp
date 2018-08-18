@@ -10,7 +10,7 @@ namespace Columbus
 		mKeyboardStateNum(0),
 		mMouseEnabled(true),
 		mWindow(nullptr),
-		mIO(nullptr)
+		VI(nullptr)
 	{
 		mKeyboardStateTmp = (uint8_t*)SDL_GetKeyboardState(&mKeyboardStateNum);
 		mPreviousKeyboardState = new uint8_t[mKeyboardStateNum];
@@ -19,12 +19,15 @@ namespace Columbus
 	
 	void Input::UpdateIO()
 	{
-		if (mIO == nullptr || mWindow == nullptr) return;
+		if (VI == nullptr) return;
 
-		mIO->mouse.coords = mCurrentMousePosition;
-		mIO->mouse.enabled = mMouseEnabled;
-		mIO->screen.aspect = mWindow->getAspect();
-		mIO->screen.size = mWindow->getSize();
+		VI->Mouse.Coords = mCurrentMousePosition;
+		VI->Mouse.Left = GetMouseButton(SDL_BUTTON_LEFT);
+		VI->Mouse.Middle = GetMouseButton(SDL_BUTTON_MIDDLE);
+		VI->Mouse.Right = GetMouseButton(SDL_BUTTON_RIGHT);
+		VI->Mouse.Enabled = mMouseEnabled;
+		VI->Screen.Aspect = mWindow->getAspect();
+		VI->Screen.Size = mWindow->getSize();
 	}
 	
 	void Input::BindInput(const InputBind aBind)
@@ -40,9 +43,9 @@ namespace Columbus
 			mWindow = const_cast<Window*>(aWindow);
 		}
 	}
-	void Input::SetIO(const GUI::IO* aIO)
+	void Input::SetVirtualInput(const VirtualInput* InVI)
 	{
-		mIO = const_cast<GUI::IO*>(aIO);
+		VI = const_cast<VirtualInput*>(InVI);
 	}
 	
 	void Input::ShowMouseCursor(const bool aX)
@@ -211,8 +214,12 @@ namespace Columbus
 	bool Input::GetKey(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
+		{
 			if (mWindow->isKeyFocus() == false)
+			{
 				return false;
+			}
+		}
 
 		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
@@ -220,8 +227,12 @@ namespace Columbus
 	bool Input::GetKeyDown(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
+		{
 			if (mWindow->isKeyFocus() == false)
+			{
 				return false;
+			}
+		}
 
 		return ((mPreviousKeyboardState[aKey] == 0x00) && (mCurrentKeyboardState[aKey] != 0x00));
 	}
@@ -229,10 +240,20 @@ namespace Columbus
 	bool Input::GetKeyUp(const unsigned int aKey)
 	{
 		if (mWindow != nullptr)
+		{
 			if (mWindow->isKeyFocus() == false)
+			{
 				return false;
+			}
+		}
 
 		return ((mPreviousKeyboardState[aKey] != 0x00) && (mCurrentKeyboardState[aKey] == 0x00));
+	}
+
+	bool Input::GetMouseButton(uint32 Button)
+	{
+		return SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(Button);
+
 	}
 	
 	Input::~Input()

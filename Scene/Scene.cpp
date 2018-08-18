@@ -660,6 +660,11 @@ namespace Columbus
 
 		rigidbodyPostWorkflow();
 
+		if (Listener != nullptr)
+		{
+			Audio.SetListener(*Listener);
+		}
+
 		if (mSkybox && mCamera)
 		{
 			mSkybox->setCamera(*mCamera);

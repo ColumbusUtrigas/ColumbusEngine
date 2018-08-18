@@ -6,6 +6,7 @@
 #include <Scene/ComponentMeshInstancedRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/ComponentRigidbody.h>
+#include <Audio/AudioSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Render.h>
@@ -43,6 +44,7 @@ namespace Columbus
 
 		Skybox* mSkybox = nullptr;
 		Camera* mCamera = nullptr;
+		AudioListener* Listener = nullptr;
 
 		PostEffect mNoneEffect;
 		ShaderProgram* NoneShader = nullptr;
@@ -56,6 +58,8 @@ namespace Columbus
 		void rigidbodyWorkflow();
 		void rigidbodyPostWorkflow();
 	public:
+		AudioSystem Audio;
+	public:
 		Scene();
 
 		bool load(std::string aFile);
@@ -67,6 +71,7 @@ namespace Columbus
 
 		void setSkybox(const Skybox* aSkybox);
 		void setCamera(const Camera* aCamera);
+		void SetAudioListener(AudioListener* InListener) { Listener = InListener; }
 		void setContextSize(const Vector2 aContextSize);
 
 		GameObject* getGameObject(const unsigned int aID) const;

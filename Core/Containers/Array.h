@@ -308,7 +308,7 @@ namespace Columbus
 		/*
 		* Get array element by index
 		*/
-		inline T& operator[](uint32 Index)
+		inline T& operator[](uint32 Index) const
 		{
 			return Ptr[Index];
 		}
@@ -338,6 +338,8 @@ namespace Columbus
 
 		inline Iterator begin() { return Iterator(this, 0); }
 		inline Iterator end() { return Iterator(this, GetCount()); }
+		inline ConstIterator begin() const { return ConstIterator(this, 0); }
+		inline ConstIterator end() const { return ConstIterator(this, GetCount()); }
 
 		~Array()
 		{

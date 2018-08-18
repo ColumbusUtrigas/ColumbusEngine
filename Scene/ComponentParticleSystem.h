@@ -13,19 +13,55 @@ namespace Columbus
 	private:
 		ParticleEmitter* Emitter = nullptr;
 	public:
-		ComponentParticleSystem(ParticleEmitter* InEmitter);
+		ComponentParticleSystem(ParticleEmitter* InEmitter) : Emitter(InEmitter) {}
 
-		void Update(const float TimeTick) override;
-		void Render(Transform& Transform) override;
+		virtual void Render(Transform& Transform) override {}
+		virtual void Update(float TimeTick, Transform& Trans) override
+		{
+			if (Emitter != nullptr)
+			{
+				Emitter->update(TimeTick);
+			}
+		}
+
 		//This component methods
-		Type GetType() const override;
-		ParticleEmitter* GetEmitter() const;
-		void SetLights(std::vector<Light*> Lights);
-		void SetCamera(Camera Camera);
-		ShaderProgram* GetShader() const;
-		void SetShader(ShaderProgram* Shader);
+		virtual Type GetType() const override { return Component::Type::ParticleSystem; }
+		ParticleEmitter* GetEmitter() const { return Emitter; }
+		void SetLights(std::vector<Light*> Lights)
+		{
+			if (Emitter != nullptr)
+			{
+				Emitter->setLights(Lights);
+			}
+		}
 
-		~ComponentParticleSystem() override;
+		void SetCamera(Camera Camera)
+		{
+			if (Emitter != nullptr)
+			{
+				Emitter->setCamera(Camera);
+			}
+		}
+
+		ShaderProgram* GetShader() const
+		{
+			if (Emitter != nullptr)
+			{
+				return Emitter->getParticleEffect()->getMaterial()->GetShader();
+			}
+
+			return nullptr;
+		}
+
+		void SetShader(ShaderProgram* Shader)
+		{
+			if (Emitter != nullptr)
+			{
+				Emitter->getParticleEffect()->getMaterial()->SetShader(Shader);
+			}
+		}
+
+		virtual ~ComponentParticleSystem() override {}
 	};
 
 }

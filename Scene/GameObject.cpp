@@ -50,12 +50,12 @@ namespace Columbus
 	
 	void GameObject::Update()
 	{
-		transform.Update();
-
 		for (auto& Comp : Components)
 		{
-			Comp->Update(static_cast<float>(mTimer.elapsed()));
+			Comp->Update(mTimer.elapsed(), transform);
 		}
+
+		transform.Update();
 
 		for (auto& Child : Children)
 		{

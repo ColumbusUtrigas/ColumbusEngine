@@ -62,7 +62,7 @@ namespace Columbus
 			return Other + Scalar;
 		}
 
-		Vector2_t operator+(const Vector2_t& Other)
+		Vector2_t operator+(const Vector2_t& Other) const
 		{
 			return Vector2_t(X + Other.X, Y + Other.Y);
 		}

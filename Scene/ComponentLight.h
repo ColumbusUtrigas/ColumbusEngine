@@ -11,15 +11,22 @@ namespace Columbus
 	private:
 		Light* LightSource = nullptr;
 	public:
-		ComponentLight(Light* InLight);
+		ComponentLight(Light* InLight) : LightSource(InLight) {}
 
-		void Update(const float TimeTick) override;
-		void Render(Transform& Trans) override;
+		virtual void Render(Transform& Trans) override {}
+		virtual void Update(float TimeTick, Transform& Trans) override
+		{
+			if (LightSource != nullptr)
+			{
+				LightSource->setPos(Trans.GetPos());
+			}
+		}
+
 		//This component methods
-		Type GetType() const override;
-		Light* GetLight() const;
+		virtual Type GetType() const override { return Component::Type::Light; }
+		Light* GetLight() const { return LightSource; }
 
-		~ComponentLight() override;
+		virtual ~ComponentLight() override {}
 	};
 
 }
