@@ -298,7 +298,7 @@
 			<Name>Dragon</Name>
 
 			<Transform>
-				<Position X="5" Y="0.2" Z="0"/>
+				<Position X="0" Y="0.2" Z="0"/>
 				<Rotation X="0" Y="90" Z="0"/>
 				<Scale X="0.5" Y="0.5" Z="0.5"/>
 			</Transform>
@@ -310,6 +310,20 @@
 				<MeshRenderer>
 					<Mesh>2</Mesh>
 				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>1</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.3</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="3" Y="3" Z="1"/>
+				</Rigidbody>
 			</Components>
 		</GameObject12>
 

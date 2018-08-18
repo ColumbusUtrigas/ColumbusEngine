@@ -27,13 +27,9 @@ class Rotator : public Component
 private:
 	Vector3 v;
 public:
-	void Update(float TimeTick) override
+	void Update(float TimeTick, Transform& Trans) override
 	{
 		v += Vector3(0, 45, 0) * TimeTick;
-	}
-
-	void Render(Transform& Trans) override
-	{
 		Trans.SetRot(v);
 	}
 };
@@ -41,11 +37,13 @@ public:
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window(Vector2(640, 480), "Columbus Engine", E_WINDOW_FLAG_RESIZABLE);
-	
-	Input input;
-	input.SetWindow(&window);
 
-	AudioSystem Audio;
+	Input input;
+	VirtualInput VI;
+
+	input.SetWindow(&window);
+	input.SetVirtualInput(&VI);
+
 	AudioListener Listener;
 
 	Camera camera;
@@ -53,6 +51,8 @@ int main(int argc, char** argv)
 	camera.setRot(Vector3(0, 90, 0));
 
 	gDevice = new DeviceOpenGL();
+
+	Scene scene;
 
 	Image ReflImage;
 	ReflImage.Load("./Data/Skyboxes/Sky.dds");
@@ -78,12 +78,29 @@ int main(int argc, char** argv)
 
 	bool cursor = false;
 
-	Scene scene;
+	Image BImage;
+	BImage.Load("Data/Textures/Button.tga");
+
+	auto BTexture = gDevice->CreateTexture();
+	BTexture->Create2D(Texture::Properties(BImage.GetWidth(), BImage.GetHeight(), 0, BImage.GetFormat()));
+	BTexture->Load(BImage);
+
+	GUI UI;
+	Button B({0, 0}, {1, 0.4});
+
+	B.NoneColor = {1, 0, 0, 0.8};
+	B.HoverColor = {0, 1, 0, 0.8};
+	B.DownColor = {0, 0, 1, 0.8};
+	B.Shader = gDevice->CreateShaderProgram();
+	B.Shader->Load("Data/Shaders/GUI.glsl");
+	B.MainTexture = BTexture;
+	UI.Add(&B);
 
 	scene.load("Data/1.scene");
 
 	scene.setSkybox(&skybox);
 	scene.setCamera(&camera);
+	scene.SetAudioListener(&Listener);
 
 	AudioSource* Source1 = new AudioSource();
 	AudioSource* Source2 = new AudioSource();
@@ -113,9 +130,10 @@ int main(int argc, char** argv)
 	Source1->Play();
 	Source2->Play();
 
-	Audio.AddSource(BackgroundMusic);
-	Audio.AddSource(Source1);
-	Audio.AddSource(Source2);
+	scene.Audio.AddSource(BackgroundMusic);
+	scene.Audio.AddSource(Source1);
+	scene.Audio.AddSource(Source2);
+	scene.Audio.Play();
 
 	scene.getGameObject(12)->AddComponent(new Rotator());
 
@@ -133,28 +151,13 @@ int main(int argc, char** argv)
 		scene.Add(21 + i, std::move(Tests[i]));
 	}*/
 
-	Audio.Play();
-
-	TTF_Init();
-	auto Font = TTF_OpenFont("Data/A.ttf", 50);
-
-	SDL_Color Color;
-	Color.r = 10;
-	Color.g = 10;
-	Color.b = 10;
-	Color.a = 255;
-
-	SDL_Surface* Surf = TTF_RenderGlyph_Blended(Font, L'B', Color);
-
-	ImageBGRA2RGBA((uint8*)Surf->pixels, Surf->w * Surf->h * 4);
-	ImageFlipY((uint8*)Surf->pixels, Surf->w, Surf->h, 4);
-
-	Texture* FontTexture = gDevice->CreateTexture();
-	FontTexture->Create2D(Texture::Properties(Surf->w, Surf->h, 0, TextureFormat::RGBA8));
-	//FontTexture->Load(Surf->pixels);
-	FontTexture->SetFlags(Texture::Flags{ Texture::Filter::Linear, Texture::Anisotropy::Anisotropy8 });
-
-	//scene.getGameObject(19)->GetMaterial().DiffuseTexture = FontTexture;
+	Animation anim;
+	anim.PositionAnimation.AddPoint({0, 0.2, 0}, 0.0);
+	anim.PositionAnimation.AddPoint({1, 0.2, 1}, 0.25);
+	anim.PositionAnimation.AddPoint({2, 0.2, 0}, 0.5);
+	anim.PositionAnimation.AddPoint({1, 0.2, -1}, 0.75);
+	anim.PositionAnimation.AddPoint({0, 0.2, 0}, 1.0);
+	anim.Speed = 0.5;
 
 	while (window.isOpen())
 	{
@@ -214,11 +217,14 @@ int main(int argc, char** argv)
 		Listener.Right = camera.right();
 		Listener.Up = camera.up();
 		Listener.Forward = camera.direction();
-		Audio.SetListener(Listener);
+
+		anim.Update(RedrawTime);
+		scene.getGameObject(12)->GetTransform().SetPos(anim.GetCurrentPosition());
 
 		scene.setContextSize(window.getSize());
 		scene.update();
         scene.render();
+        UI.Render(VI);
 
 		window.display();
 

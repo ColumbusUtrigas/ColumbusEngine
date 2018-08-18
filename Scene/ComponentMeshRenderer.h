@@ -15,20 +15,49 @@ namespace Columbus
 		Mesh* Object = nullptr;
 		Camera ObjectCamera;
 	public:
-		ComponentMeshRenderer(Mesh* InMesh);
+		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh) {}
 
-		void Update(const float TimeTick) override;
-		void Render(Transform& Transform) override;
+		virtual void Render(Transform& Transform) override {}
+		virtual void Update(float TimeTick, Transform& Trans) override
+		{
+			if (Object != nullptr)
+			{
+				Object->SetCamera(ObjectCamera);
+			}
+		}
+
 		//This component methods
-		Type GetType() const override;
-		Mesh* GetMesh() const;
-		void SetLights(std::vector<Light*> Lights);
-		void SetCamera(Camera InCamera);
-		ShaderProgram* GetShader() const;
-		void SetShader(ShaderProgram* Shader);
-		void SetReflection(Texture* Cubemap);
+		virtual Type GetType() const override { return Component::Type::MeshRenderer; }
+		Mesh* GetMesh() const { return Object; }
+		void SetLights(std::vector<Light*> Lights) { Object->SetLights(Lights); }
+		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
+		ShaderProgram* GetShader() const
+		{
+			if (Object != nullptr)
+			{
+				return Object->mMat.GetShader();
+			}
 
-		~ComponentMeshRenderer() override;
+			return nullptr;
+		}
+
+		void SetShader(ShaderProgram* Shader)
+		{
+			if (Object != nullptr)
+			{
+				Object->mMat.SetShader(Shader);
+			}
+		}
+
+		void SetReflection(Texture* Cubemap)
+		{
+			if (Object != nullptr)
+			{
+				Object->mMat.Reflection = Cubemap;
+			}
+		}
+
+		virtual ~ComponentMeshRenderer() override {}
 	};
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Animation/Animation.h>
+
 #include <Audio/AudioListener.h>
 #include <Audio/AudioPlayer.h>
 #include <Audio/AudioSource.h>
@@ -30,9 +32,12 @@
 #include <Graphics/ShaderBuilder.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Texture.h>
+#include <Graphics/UIRender.h>
+#include <Graphics/Window.h>
 
 #include <GUI/Button.h>
-#include <GUI/IO.h>
+#include <GUI/GUI.h>
+#include <GUI/VirtualInput.h>
 #include <GUI/Widget.h>
 
 #include <Impl/EventSystem.h>
