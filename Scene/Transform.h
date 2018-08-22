@@ -4,7 +4,6 @@
 #include <Math/Matrix.h>
 
 #include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 namespace Columbus
 {

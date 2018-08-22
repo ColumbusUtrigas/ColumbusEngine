@@ -83,9 +83,11 @@ namespace Columbus
 	{
 		uint32 TotalSamples = 0;
 
+		int16 Buffer[Count * Channels];
+
 		while (TotalSamples < Count)
 		{
-			int Samples = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, (short*)Frames + TotalSamples, (Count - TotalSamples) * 2);
+			int Samples = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, Buffer + TotalSamples, (Count - TotalSamples) * Channels);
 
 			if (Samples == 0)
 			{
@@ -93,6 +95,22 @@ namespace Columbus
 			}
 
 			TotalSamples += Samples;
+		}
+
+		#undef L
+		#undef R
+
+		for (uint32 i = 0; i < Count; i++)
+		{
+			if (Channels == 1)
+			{
+				Frames[i].L = Frames[i].R = Buffer[i];
+			}
+			else
+			{
+				Frames[i].L = Buffer[(i * 2) + 0];
+				Frames[i].R = Buffer[(i * 2) + 1];
+			}
 		}
 
 		return TotalSamples;

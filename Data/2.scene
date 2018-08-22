@@ -1,46 +1,57 @@
 <Scene>
+	<Defaults>
+		<Skybox>Data/Skyboxes/Sky.dds</Skybox>
+	</Defaults>
 
 	<Resources>
 		<Textures>
 			<Count>10</Count>
 
-			<Texture0>Data/Textures/milos.jpg</Texture0>
-			<Texture1>Data/Textures/milos-spec.jpg</Texture1>
-			<Texture2>Data/Textures/milos-normal.jpg</Texture2>
-			<Texture3>Data/Textures/flame.png</Texture3>
-			<Texture4>Data/Textures/smoke.png</Texture4>
-			<Texture5>Data/Textures/spark1.png</Texture5>
-			<Texture6>Data/Textures/wall-torch.jpg</Texture6>
-			<Texture7>Data/Textures/wall-torch-n.jpg</Texture7>
-			<Texture8>Data/Textures/blood.png</Texture8>
-			<Texture9>Data/Textures/blood-n.png</Texture9>
+			<Texture0>Data/Textures/Hercules.dds</Texture0>
+			<Texture1>Data/Textures/Detail.dds</Texture1>
+			<Texture2>Data/Textures/Detail-Normal.dds</Texture2>
+			<Texture3>Data/Textures/statue_d.dds</Texture3>
+			<Texture4>Data/Textures/statue_s.dds</Texture4>
+			<Texture5>Data/Textures/statue_n.dds</Texture5>
+			<Texture6>Data/Textures/Fireplace.dds</Texture6>
+			<Texture7>Data/Textures/spark.dds</Texture7>
+			<Texture8>Data/Textures/smoke.dds</Texture8>
+			<Texture9>Data/Textures/Fireplace-E.dds</Texture9>
 		</Textures>
 
 		<Shaders>
 			<Count>2</Count>
 
 			<Shader0>
-				<Vertex>Data/Shaders/standart.vert</Vertex>
-				<Fragment>Data/Shaders/standart.frag</Fragment>
+				<Program>Data/Shaders/Standart.glsl</Program>
 			</Shader0>
 
 			<Shader1>
-				<Vertex>Data/Shaders/particle.vert</Vertex>
-				<Fragment>Data/Shaders/particle.frag</Fragment>
+				<Program>Data/Shaders/Particle.glsl</Program>
 			</Shader1>
 		</Shaders>
 
 		<Meshes>
-			<Count>1</Count>
-			<Mesh0>Data/Models/Sponza.cmf</Mesh0>
+			<Count>3</Count>
+			<Mesh0>Data/Models/Hercules.cmf</Mesh0>
+			<Mesh1>Data/Models/Statue.cmf</Mesh1>
+			<Mesh2>Data/Models/Fireplace.cmf</Mesh2>
 		</Meshes>
+
+		<Sounds>
+			<Count>1</Count>
+			<Sound0>
+				<Path>Data/Sounds/Fire.wav</Path>
+				<Streaming>1</Streaming>
+			</Sound0>
+		</Sounds>
 	</Resources>
 
 	<GameObjects>
-		<Count>3</Count>
+		<Count>8</Count>
 
 		<GameObject0>
-			<Name>Sponza</Name>
+			<Name>Hercules</Name>
 
 			<Transform>
 				<Position X="0" Y="0" Z="0"/>
@@ -48,7 +59,7 @@
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/Default.cxmat</Material>
+			<Material>Data/Materials/Hercules.cxmat</Material>
 			<Shader>0</Shader>
 
 			<Components>
@@ -59,42 +70,133 @@
 		</GameObject0>
 
 		<GameObject1>
-			<Name>Light1</Name>
+			<Name>Statue</Name>
 
 			<Transform>
-				<Position X="0" Y="10" Z="-3.5"/>
+				<Position X="20" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="5" Y="5" Z="5"/>
+			</Transform>
+
+			<Material>Data/Materials/Statue.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>1</Mesh>
+				</MeshRenderer>
+			</Components>
+		</GameObject1>
+
+		<GameObject2>
+			<Name>Fireplace</Name>
+
+			<Transform>
+				<Position X="10" Y="0" Z="0"/>
+				<Rotation X="90" Y="0" Z="0"/>
+				<Scale X="2" Y="2" Z="2"/>
+			</Transform>
+
+			<Material>Data/Materials/Fireplace.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>2</Mesh>
+				</MeshRenderer>
+
+				<AudioSource>
+					<Playing>1</Playing>
+					<Played>0</Played>
+					<Mode>3D</Mode>
+
+					<Sound>0</Sound>
+					<Direction X="0" Y="0" Z="0"/>
+					<Gain>-1</Gain>
+					<Pitch>-1</Pitch>
+					<MinDistance>-1</MinDistance>
+					<MaxDistance>-1</MaxDistance>
+					<RolloffFactor>-1</RolloffFactor>
+					<Looping>1</Looping>
+				</AudioSource>
+			</Components>
+		</GameObject2>
+
+		<GameObject3>
+			<Name>Embers</Name>
+
+			<Transform>
+				<Position X="10" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/FireplaceEmbers.cxmat</Material>
+			<Shader>1</Shader>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/FireplaceEmbers.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject3>
+
+		<GameObject4>
+			<Name>Smoke</Name>
+
+			<Transform>
+				<Position X="10" Y="0" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/FireplaceSmoke.cxmat</Material>
+			<Shader>1</Shader>
+
+			<Components>
+				<ParticleSystem>
+					<Particles>Data/Particles/FireplaceSmoke.cxpar</Particles>
+				</ParticleSystem>
+			</Components>
+		</GameObject4>
+
+		<GameObject6>
+			<Name>Sun</Name>
+
+			<Transform>
+				<Position X="0" Y="15" Z="15"/>
 				<Rotation X="0" Y="0" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
 			<Material>None</Material>
-			<Shader>1</Shader>
+			<Shader>0</Shader>
+
+			<Components>
+				<LightComponent>
+					<Light>Data/Lights/Sun.cxlig</Light>
+				</LightComponent>
+			</Components>
+		</GameObject6>
+
+		<GameObject7>
+			<Name>FireplaceLight</Name>
+
+			<Transform>
+				<Position X="10" Y="1" Z="0"/>
+				<Rotation X="0" Y="0" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>None</Material>
+			<Shader>0</Shader>
 
 			<Components>
 				<LightComponent>
 					<Light>Data/Lights/1.cxlig</Light>
 				</LightComponent>
 			</Components>
-		</GameObject1>
-
-		<GameObject2>
-			<Name>Smoke</Name>
-
-			<Transform>
-				<Position X="0" Y="11" Z="-3.5"/>
-				<Rotation X="0" Y="0" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
-			</Transform>
-
-			<Material>Data/Materials/Smoke.cxmat</Material>
-			<Shader>1</Shader>
-
-			<Components>
-				<ParticleSystem>
-					<Particles>Data/Particles/Smoke.cxpar</Particles>
-				</ParticleSystem>
-			</Components>
-		</GameObject2>
+		</GameObject7>
 	</GameObjects>
 </Scene>
 

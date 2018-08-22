@@ -68,13 +68,14 @@ namespace Columbus
 		{
 			if (Program->IsCompiled())
 			{
-				Texture* Textures[6] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture, InMaterial->DetailDiffuseMap, InMaterial->DetailNormalMap, InMaterial->Reflection };
-				static std::string Names[6] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap" };
+				Texture* Textures[7] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture, InMaterial->DetailDiffuseMap, InMaterial->DetailNormalMap, InMaterial->Reflection, InMaterial->EmissionMap };
+				static std::string Names[7] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap", "uMaterial.EmissionMap" };
 
-				for (int32 i = 0; i < 6; i++)
+				for (int32 i = 0; i < 7; i++)
 				{
 					if (Textures[i] != nullptr)
 					{
+						if (i == 7) printf("a\n");
 						glActiveTexture(GL_TEXTURE0 + i);
 						Program->SetUniform1i(Names[i], i);
 						Textures[i]->bind();
@@ -82,6 +83,7 @@ namespace Columbus
 					else
 					{
 						glActiveTexture(GL_TEXTURE0 + i);
+						Program->SetUniform1i(Names[i], i);
 						glBindTexture(GL_TEXTURE_2D, 0);
 					}
 				}
@@ -93,6 +95,7 @@ namespace Columbus
 				Program->SetUniform3f("uMaterial.DiffuseColor", InMaterial->DiffuseColor);
 				Program->SetUniform3f("uMaterial.SpecularColor", InMaterial->SpecularColor);
 				Program->SetUniform1f("uMaterial.ReflectionPower", InMaterial->ReflectionPower);
+				Program->SetUniform1f("uMaterial.EmissionStrength", InMaterial->EmissionStrength);
 				Program->SetUniform1f("uMaterial.DetailNormalStrength", InMaterial->DetailNormalStrength);
 				Program->SetUniform1f("uMaterial.Rim", InMaterial->Rim);
 				Program->SetUniform1f("uMaterial.RimPower", InMaterial->RimPower);
@@ -204,6 +207,9 @@ namespace Columbus
 					Material::Cull Culling = Material::Cull::No;
 					bool DepthWriting = true;
 
+					PrepareFaceCulling(Material::Cull::No);
+					glDepthMask(GL_TRUE);
+
 					for (auto& MeshRenderer : Meshes)
 					{
 						CurrentShader = MeshRenderer.ObjectMaterial.GetShader();
@@ -230,9 +236,6 @@ namespace Columbus
 								glDepthMask(MeshRenderer.ObjectMaterial.DepthWriting ? GL_TRUE : GL_FALSE);
 							}
 
-							Culling = MeshRenderer.ObjectMaterial.Culling;
-							DepthWriting = MeshRenderer.ObjectMaterial.DepthWriting;
-
 							ShaderSetMatrices(CurrentShader, &MeshRenderer.ObjectTransform, &MeshRenderer.Object->GetCamera());
 
 							if (MeshRenderer.ObjectMaterial != PreviousMaterial)
@@ -247,6 +250,8 @@ namespace Columbus
 
 						PreviousShader = MeshRenderer.ObjectMaterial.GetShader();
 						PreviousMaterial = MeshRenderer.ObjectMaterial;
+						Culling = MeshRenderer.ObjectMaterial.Culling;
+						DepthWriting = MeshRenderer.ObjectMaterial.DepthWriting;
 					}
 
 					for (auto& MeshInstancedRenderer : MeshesInstanced)

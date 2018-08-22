@@ -32,6 +32,19 @@ namespace Columbus
 			Listener = InListener;
 		}
 
+		bool HasSource(AudioSource* Source)
+		{
+			for (const auto& Audio : Sources)
+			{
+				if (Audio == Source)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		void Update(Sound::Frame* Frames, uint32 Count);
 
 		~AudioMixer()

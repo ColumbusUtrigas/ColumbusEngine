@@ -1,0 +1,10 @@
+<Light>
+    <Type>0</Type>
+    <Direction X="-0.5" Y="-0.40000001" Z="-0.30000001"/>
+    <Color R="1" G="1" B="1"/>
+    <Constant>0.5</Constant>
+    <Linear>0.090000004</Linear>
+    <Quadratic>0.032000002</Quadratic>
+    <InnerCutoff>12.5</InnerCutoff>
+    <OuterCutoff>17.5</OuterCutoff>
+</Light>

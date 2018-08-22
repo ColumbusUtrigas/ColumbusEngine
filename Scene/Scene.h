@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Scene/GameObject.h>
+#include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentMeshInstancedRenderer.h>
@@ -36,6 +37,7 @@ namespace Columbus
 		std::map<uint32, ShaderProgram*> ShaderPrograms;
 
 		std::map<uint32, std::vector<Vertex>> Meshes;
+		std::map<uint32, Sound*> Sounds;
 
 		Renderer Render;
 
@@ -51,6 +53,7 @@ namespace Columbus
 
 		Vector2 mContextSize = Vector2(640, 480);
 
+		void audioWorkflow();
 		void lightWorkflow();
 		void meshWorkflow();
 		void meshInstancedWorkflow();

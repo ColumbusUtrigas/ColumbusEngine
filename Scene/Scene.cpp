@@ -17,6 +17,22 @@ namespace Columbus
 		PhysWorld.SetGravity(Vector3(0, -9.81, 0));
 	}
 
+	void Scene::audioWorkflow()
+	{
+		for (auto& Object : mObjects)
+		{
+			ComponentAudioSource* audio = static_cast<ComponentAudioSource*>(Object.second->GetComponent(Component::Type::AudioSource));
+
+			if (audio != nullptr)
+			{
+				if (!Audio.HasSource(audio->GetSource()))
+				{
+					Audio.AddSource(audio->GetSource());
+				}
+			}
+		}
+	}
+
 	void Scene::lightWorkflow()
 	{
 		mLights.clear();
@@ -410,6 +426,75 @@ namespace Columbus
 
 		return Shape;
 	}
+
+	static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, std::string Element, std::map<uint32, Sound*>* Sounds)
+	{
+		ComponentAudioSource* CAudioSource = nullptr;
+
+		if (Serializer != nullptr && Sounds != nullptr)
+		{
+			struct
+			{
+				bool Playing;
+				double Played;
+				std::string Mode;
+				std::string SourceSound;
+				Vector3 Direction;
+				float Gain;
+				float Pitch;
+				float MinDistance;
+				float MaxDistance;
+				float RolloffFactor;
+				bool Looping;
+			} AudioSourceProperties;
+
+			if (Serializer->GetSubBool({ "GameObjects", Element, "Components", "AudioSource", "Playing" }, AudioSourceProperties.Playing) &&
+				Serializer->GetSubDouble({ "GameObjects", Element, "Components", "AudioSource", "Played" }, AudioSourceProperties.Played) &&
+				Serializer->GetSubString({ "GameObjects", Element, "Components", "AudioSource", "Mode" }, AudioSourceProperties.Mode) &&
+				Serializer->GetSubString({ "GameObjects", Element, "Components", "AudioSource", "Sound" }, AudioSourceProperties.SourceSound) &&
+				Serializer->GetSubVector3({ "GameObjects", Element, "Components", "AudioSource", "Direction" }, AudioSourceProperties.Direction, {"X", "Y", "Z"}) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "AudioSource", "Gain" }, AudioSourceProperties.Gain) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "AudioSource", "Pitch" }, AudioSourceProperties.Pitch) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "AudioSource", "MinDistance" }, AudioSourceProperties.MinDistance) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "AudioSource", "MaxDistance" }, AudioSourceProperties.MaxDistance) &&
+				Serializer->GetSubFloat({ "GameObjects", Element, "Components", "AudioSource", "RolloffFactor" }, AudioSourceProperties.RolloffFactor) &&
+				Serializer->GetSubBool({ "GameObjects", Element, "Components", "AudioSource", "Looping" }, AudioSourceProperties.Looping))
+			{
+
+				AudioSource* Source = new AudioSource();
+
+				AudioSourceProperties.Playing ? Source->Play() : Source->Stop();
+				Source->SetPlayedTime(AudioSourceProperties.Played);
+
+				if (AudioSourceProperties.Mode == "2D")
+				{
+					Source->SetMode(AudioSource::Mode::Sound2D);
+				}
+				else if (AudioSourceProperties.Mode == "3D")
+				{
+					Source->SetMode(AudioSource::Mode::Sound3D);
+				}
+
+				Source->SetDirection(AudioSourceProperties.Direction);
+				Source->SetLooping(AudioSourceProperties.Looping);
+
+				if (atoi(AudioSourceProperties.SourceSound.c_str()) >= 0)
+				{
+					Source->SetSound(Sounds->at(atoi(AudioSourceProperties.SourceSound.c_str())));
+				}
+
+				if (AudioSourceProperties.Gain >= 0.0f)          Source->SetGain(AudioSourceProperties.Gain);
+				if (AudioSourceProperties.Pitch >= 0.0f)         Source->SetPitch(AudioSourceProperties.Pitch);
+				if (AudioSourceProperties.MinDistance >= 0.0f)   Source->SetMinDistance(AudioSourceProperties.MinDistance);
+				if (AudioSourceProperties.MaxDistance >= 0.0f)   Source->SetMaxDistance(AudioSourceProperties.MaxDistance);
+				if (AudioSourceProperties.RolloffFactor >= 0.0f) Source->SetRolloff(AudioSourceProperties.RolloffFactor);
+
+				CAudioSource = new ComponentAudioSource(Source);
+			}
+		}
+
+		return CAudioSource;
+	}
 	/*
 	*
 	* End of additional functions for loading GameObject
@@ -417,7 +502,7 @@ namespace Columbus
 	*/
 	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, std::string Element,
 		std::map<uint32, std::vector<Vertex>>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
-		PhysicsWorld* PhysWorld)
+		std::map<uint32, Sound*>* Sounds, PhysicsWorld* PhysWorld)
 	{
 		if (Serializer != nullptr && Meshes != nullptr && Textures != nullptr && Shaders != nullptr && PhysWorld != nullptr)
 		{
@@ -470,11 +555,17 @@ namespace Columbus
 				material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID());
 			}
 
+			if (material->GetEmissionMapID() != -1)
+			{
+				material->EmissionMap = Textures->at(material->GetEmissionMapID());
+			}
+
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
 			ComponentMeshInstancedRenderer* MeshInstancedRenderer = SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
 			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.GetPos());
 			ComponentRigidbody* Rigidbody = SceneGameObjectLoadComponentRigidbody(Serializer, Element, transform, SceneGameObjectLoadComponentRigidbodyShape(Serializer, Element, Meshes));
+			ComponentAudioSource* AudioSource = SceneGameObjectLoadComponentAudioSource(Serializer, Element, Sounds);
 
 			if (MeshRenderer != nullptr)
 			{
@@ -502,6 +593,11 @@ namespace Columbus
 				OutObject.AddComponent(Rigidbody);
 			}
 
+			if (AudioSource != nullptr)
+			{
+				OutObject.AddComponent(AudioSource);
+			}
+
 			OutObject.SetTransform(transform);
 			OutObject.SetMaterial(*material);
 			OutObject.SetName(name);
@@ -526,8 +622,24 @@ namespace Columbus
 		uint32 texCount = 0;
 		uint32 shadersCount = 0;
 		uint32 meshesCount = 0;
+		uint32 soundsCount = 0;
 
 		std::string path, path1, elem;
+
+		if (serializer.GetSubString({ "Defaults", "Skybox" }, path))
+		{
+			Image ReflImage;
+
+			if (ReflImage.Load(path))
+			{
+				Texture* Refl = gDevice->CreateTexture();
+				Refl->CreateCube(Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
+				Refl->Load(ReflImage);
+				mSkybox = new Skybox(Refl);
+
+				Log::success("Default skybox loaded: " + path);
+			}
+		}
 
 		if (serializer.GetSubInt({ "Resources", "Textures", "Count" }, (int32&)texCount))
 		{
@@ -536,11 +648,11 @@ namespace Columbus
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Textures", elem }, path))
 				{
-					auto Tex = gDevice->CreateTexture();
 					Image Img;
 
 					if (Img.Load(path))
 					{
+						auto Tex = gDevice->CreateTexture();
 						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, Img.GetFormat()));
 						Tex->Load(Img);
 
@@ -590,6 +702,32 @@ namespace Columbus
 			}
 		}
 
+		if (serializer.GetSubInt({ "Resources", "Sounds", "Count" }, (int32&)soundsCount))
+		{
+			bool streaming = false;
+
+			for (uint32 i = 0; i < soundsCount; i++)
+			{
+				elem = std::string("Sound") + std::to_string(i);
+				if (serializer.GetSubString({ "Resources", "Sounds", elem, "Path" }, path) &&
+				    serializer.GetSubBool({ "Resources", "Sounds", elem, "Streaming" }, streaming))
+				{
+					Sound* snd = new Sound();
+
+					if (snd->Load(path, streaming))
+					{
+						Sounds.insert(std::pair<uint32, Sound*>(i, snd));
+						Log::success("Sound loaded: " + path);
+					}
+					else
+					{
+						delete snd;
+						continue;
+					}
+				}
+			}
+		}
+
 		if (!serializer.GetSubInt({"GameObjects", "Count"}, (int32&)count))
 		{ Log::error("Can't load Scene Count: " + aFile); return false; }
 
@@ -599,7 +737,7 @@ namespace Columbus
 
 			GameObject Object;
 
-			if (SceneLoadGameObject(Object, &serializer, elem, &Meshes, &mTextures, &ShaderPrograms, &PhysWorld))
+			if (SceneLoadGameObject(Object, &serializer, elem, &Meshes, &mTextures, &ShaderPrograms, &Sounds, &PhysWorld))
 			{
 				Add(i, std::move(Object));
 			}
@@ -649,6 +787,7 @@ namespace Columbus
 	
 	void Scene::update()
 	{
+		audioWorkflow();
 		lightWorkflow();
 		meshWorkflow();
 		meshInstancedWorkflow();
@@ -672,8 +811,15 @@ namespace Columbus
 
 		for (auto& Object : mObjects)
 		{
-			Object.second->GetMaterial().Reflection = mSkybox->GetCubemap();
-			Object.second->Update();
+			if (Object.second != nullptr)
+			{
+				if (mSkybox != nullptr)
+				{
+					Object.second->GetMaterial().Reflection = mSkybox->GetCubemap();
+				}
+
+				Object.second->Update();
+			}
 		}
 	}
 	

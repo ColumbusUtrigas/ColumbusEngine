@@ -274,7 +274,11 @@ namespace Columbus
 				UpdateFormat(Format, Compressed);
 
 				glBindTexture(Target, ID);
+
 				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
+				glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				
 				glBindTexture(Target, 0);
 
 				return true;
