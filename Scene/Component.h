@@ -16,7 +16,8 @@ namespace Columbus
 			MeshRenderer,
 			MeshInstancedRenderer,
 			ParticleSystem,
-			Rigidbody
+			Rigidbody,
+			AudioSource
 		};
 	public:
 		Component() {}

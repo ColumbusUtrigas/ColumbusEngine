@@ -4,7 +4,7 @@
 namespace Columbus
 {
 
-	static float CalculateSourceAttenuation(AudioSource* Source, Vector3 Listener)
+	static float CalculateSourceAttenuation(AudioSource* Source, const Vector3& Listener)
 	{
 		float Attenuation = 1.0f;
 
@@ -33,7 +33,7 @@ namespace Columbus
 		return Attenuation;
 	}
 
-	static float CalculateSourcePan(AudioSource* Source, AudioListener Listener)
+	static float CalculateSourcePan(AudioSource* Source, const AudioListener& Listener)
 	{
 		if (Source != nullptr)
 		{
@@ -53,8 +53,8 @@ namespace Columbus
 		{
 			for (uint32 i = 0; i < Count; i++)
 			{
-				Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
-				Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
+				Buffer[i].L = Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
+				Buffer[i].R = Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
 			}
 		}
 	}

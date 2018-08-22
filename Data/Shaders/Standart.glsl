@@ -59,6 +59,7 @@
 		sampler2D DetailDiffuseMap;
 		sampler2D DetailNormalMap;
 		samplerCube ReflectionMap;
+		sampler2D EmissionMap;
 
 		vec2 Tiling;
 		vec2 DetailTiling;
@@ -69,6 +70,7 @@
 		vec3 SpecularColor;
 
 		float ReflectionPower;
+		float EmissionStrength;
 		float DetailNormalStrength;
 
 		float Rim;
@@ -89,14 +91,16 @@
 	//@Uniform uMaterial.NormalMap
 	//@Uniform uMaterial.DetailDiffuseMap
 	//@Uniform uMaterial.DetailNormalMap
+	//@Uniform uMaterial.ReflectionMap
+	//@Uniform uMaterial.EmissionMap
 	//@Uniform uMaterial.Tiling
 	//@Uniform uMaterial.DetailTiling
-	//@Uniform uMaterial.ReflectionMap
 	//@Uniform uMaterial.Color
 	//@Uniform uMaterial.AmbientColor
 	//@Uniform uMaterial.DiffuseColor
 	//@Uniform uMaterial.SpecularColor
 	//@Uniform uMaterial.ReflectionPower
+	//@Uniform uMaterial.EmissionStrength
 	//@Uniform uMaterial.DetailNormalStrength
 	//@Uniform uMaterial.Rim
 	//@Uniform uMaterial.RimPower
@@ -169,21 +173,27 @@
 		{
 			DiffuseMap = vec4(DiffuseMap.rgb * DetailDiffuseMap.rgb * 1.8f, DiffuseMap.a);
 		}
+		else if (textureSize(uMaterial.DetailDiffuseMap, 0).x > 1)
+		{
+			DiffuseMap = DetailDiffuseMap;
+		}
 
 		if (textureSize(uMaterial.NormalMap, 0).x > 1 && textureSize(uMaterial.DetailNormalMap, 0).x > 1)
 		{
 			NormalMap = mix(NormalMap.rgb, DetailNormalMap.rgb, uMaterial.DetailNormalStrength);
 		}
-
-		//if (DiffuseMap.w <= 0.1) discard;
-
-		if (textureSize(uMaterial.SpecularMap, 0).x > 1)
-			IsSpecularMap = true;
+		else if (textureSize(uMaterial.DetailNormalMap, 0).x > 1)
+		{
+			NormalMap = DetailNormalMap.rgb;
+		}
 
 		if (NormalMap != vec3(0))
 			Normal = normalize(NormalMap * 2.0 - 1.0) * varTBN;
 		else
 			Normal = varNormal;
+
+		if (textureSize(uMaterial.SpecularMap, 0).x > 1)
+			IsSpecularMap = true;
 	}
 
 	void LightCalc(int id)
@@ -246,8 +256,7 @@
 			tmpSpecular *= attenuation;
 		}
 
-		AmbientColor = vec3(0.1);
-		//AmbientColor += tmpAmbient;
+		AmbientColor = uMaterial.AmbientColor;
 		DiffuseColor += tmpDiffuse;
 		SpecularColor += tmpSpecular;
 	}
@@ -277,14 +286,21 @@
 
 	void Final(void)
 	{
+		FragColor = vec4(0);
+
 		if (DiffuseMap.xyz != vec3(0))
 		{
-			FragColor = Lighting * DiffuseMap + vec4(CubemapColor, 0.0);
+			FragColor = Lighting * DiffuseMap * uMaterial.Color;
 		}
 		else
 		{
-			FragColor = Lighting + vec4(CubemapColor, 0.0);
+			FragColor = Lighting * uMaterial.Color;
 		}
+
+		FragColor += vec4(CubemapColor, 0);
+		FragColor += texture(uMaterial.EmissionMap, varUV) * uMaterial.EmissionStrength;
+
+		if (texture(uMaterial.DiffuseMap, varUV).a < 0.5) discard;
 	}
 
 #endif

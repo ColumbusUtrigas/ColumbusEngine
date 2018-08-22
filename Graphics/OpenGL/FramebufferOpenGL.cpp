@@ -73,10 +73,10 @@ namespace Columbus
 	bool FramebufferOpenGL::check()
 	{
 		bind();
-		bool ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		int ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		unbind();
 
-		return ret;
+		return ret == GL_FRAMEBUFFER_COMPLETE;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

@@ -19,6 +19,11 @@ namespace Columbus
 		Mixer->SetListener(Listener);
 	}
 
+	bool AudioSystem::HasSource(AudioSource* Source)
+	{
+		return Mixer->HasSource(Source);
+	}
+
 	void AudioSystem::Play()
 	{
 		Player->Play();

@@ -34,6 +34,7 @@ namespace Columbus
 		int mNormMapID = -1;
 		int DetailDiffuseMapID = -1;
 		int DetailNormalMapID = -1;
+		int EmissionMapID = -1;
 	protected:
 		ShaderProgram* ShaderProg = nullptr;
 	public:
@@ -45,8 +46,8 @@ namespace Columbus
 		Texture* NormalTexture = nullptr;
 		Texture* DetailDiffuseMap = nullptr;
 		Texture* DetailNormalMap = nullptr;
+		Texture* EmissionMap = nullptr;
 		Texture* Reflection = nullptr;
-		//Cubemap* Reflection = nullptr;
 
 		Vector2 Tiling = Vector2(1, 1);
 		Vector2 DetailTiling = Vector2(4, 4);
@@ -57,6 +58,7 @@ namespace Columbus
 		Vector3 SpecularColor;
 
 		float ReflectionPower = 0.2f;
+		float EmissionStrength = 0.5f;
 		float DetailNormalStrength = 0.3f;
 
 		float Rim = 1.0f;
@@ -91,6 +93,7 @@ namespace Columbus
 		int getNormMapID() const;
 		int GetDetailDiffuseMapID() const;
 		int GetDetailNormalMapID() const;
+		int GetEmissionMapID() const;
 
 		bool saveToXML(std::string aFile) const;
 		bool loadFromXML(std::string aFile);

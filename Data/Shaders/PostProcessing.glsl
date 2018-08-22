@@ -44,9 +44,10 @@
 
 	void main()
 	{
-		//float d = pow(texture(uDepth, UV).x, 256);
+		float d = pow(texture(uDepth, UV).x, 256);
+		FragColor = vec4(GaussianBlur(vec2(d)), 1);
 
-		FragColor = vec4(texture(uColor, UV).rgb, 1.0);
+		//FragColor = vec4(texture(uColor, UV).rgb, 1.0);
 	}
 
 #endif

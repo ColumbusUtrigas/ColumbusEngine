@@ -72,6 +72,11 @@ namespace Columbus
 	{
 		return DetailNormalMapID;
 	}
+
+	int Material::GetEmissionMapID() const
+	{
+		return EmissionMapID;
+	}
 	
 	bool Material::saveToXML(std::string aFile) const
 	{
@@ -142,6 +147,9 @@ namespace Columbus
 		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
 
+		if (!Serializer.GetFloat("EmissionStrength", EmissionStrength))
+		{ Log::error("Can't load Material emission strength: " + aFile); return false; }
+
 		if (!Serializer.GetFloat("DetailNormalStrength", DetailNormalStrength))
 		{ Log::error("Can't load Material detail normal strength: " + aFile); return false; }
 
@@ -165,12 +173,14 @@ namespace Columbus
 		std::string normalMapPath = "None";
 		std::string DetailDiffuseMapPath = "None";
 		std::string DetailNormalMapPath = "None";
+		std::string EmissionMapPath = "None";
 
 		Serializer.GetSubString({"Textures", "Diffuse"}, diffuseMapPath);
 		Serializer.GetSubString({"Textures", "Specular"}, specularMapPath);
 		Serializer.GetSubString({"Textures", "Normal"}, normalMapPath);
 		Serializer.GetSubString({"Textures", "DetailDiffuse"}, DetailDiffuseMapPath);
 		Serializer.GetSubString({"Textures", "DetailNormal"}, DetailNormalMapPath);
+		Serializer.GetSubString({"Textures", "Emission"}, EmissionMapPath);
 
 		if (diffuseMapPath != "None")
 		{
@@ -195,6 +205,11 @@ namespace Columbus
 		if (DetailNormalMapPath != "None")
 		{
 			DetailNormalMapID = std::atoi(DetailNormalMapPath.c_str());
+		}
+
+		if (EmissionMapPath != "None")
+		{
+			EmissionMapID = std::atoi(EmissionMapPath.c_str());
 		}
 
 		if (MaterialCulling == "No")
@@ -228,8 +243,13 @@ namespace Columbus
 		        DiffuseTexture == Other.DiffuseTexture &&
 		        SpecularTexture == Other.SpecularTexture &&
 		        NormalTexture == Other.NormalTexture &&
+		        DetailDiffuseMap == Other.DetailDiffuseMap &&
+		        DetailNormalMap == Other.DetailNormalMap &&
+		        Reflection == Other.Reflection &&
+		        EmissionMap == Other.EmissionMap &&
 		        ShaderProg == Other.ShaderProg &&
 		        ReflectionPower == Other.ReflectionPower &&
+		        EmissionStrength == Other.EmissionStrength &&
 		        Rim == Other.Rim &&
 		        RimPower == Other.RimPower &&
 		        RimBias == Other.RimBias &&
