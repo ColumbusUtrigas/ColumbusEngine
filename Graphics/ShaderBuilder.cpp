@@ -21,6 +21,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	const std::string gFragmentShaderHeader =
 	"#version 130\n"
+	"#define FragData gl_FragData\n"
 	"#define FragmentShader\n"
 	"out vec4 FragColor;\n";
 	

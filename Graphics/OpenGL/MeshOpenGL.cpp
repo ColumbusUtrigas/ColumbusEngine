@@ -4,12 +4,6 @@
 namespace Columbus
 {
 
-	/*
-	*
-	* Shader uniforms functions
-	*
-	*/
-
 	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
 	{
 		static float Lights[15 * 8];
@@ -50,36 +44,6 @@ namespace Columbus
 
 		InShader->SetUniformArrayf("uLighting", Lights, 120 * sizeof(float));
 	}
-
-	static void ShaderSetLightsAndCamera(ShaderProgram* InShader, std::vector<Light*> InLights, Camera InCamera)
-	{
-		if (InShader != nullptr)
-		{
-			if (InShader->IsCompiled())
-			{
-				ShaderSetLights(InShader, InLights);
-				InShader->SetUniform3f("uCamera.Position", InCamera.getPos());
-			}
-		}
-	}
-
-	static void ShaderSetAll(Material InMaterial, std::vector<Light*> InLights, Camera InCamera, Transform InTransform)
-	{
-		auto tShader = InMaterial.GetShader();
-
-		if (tShader != nullptr)
-		{
-			if (tShader->IsCompiled())
-			{
-				ShaderSetLightsAndCamera(tShader, InLights, InCamera);
-			}
-		}
-	}
-	/*
-	*
-	* End of shader uniforms functions
-	*
-	*/
 
 	MeshOpenGL::MeshOpenGL()
 	{
@@ -199,10 +163,10 @@ namespace Columbus
 		glBindVertexArray(VAO);
 	}
 	
-	uint32 MeshOpenGL::Render(Transform InTransform)
+	uint32 MeshOpenGL::Render(Transform InTransfor, ShaderProgram* InShader)
 	{
 		SortLights();
-		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
+		ShaderSetLights(InShader, Lights);
 
 		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 

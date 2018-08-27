@@ -233,8 +233,8 @@ namespace Columbus
 
 		Vector4 matcol = mParticleEffect->getMaterial()->Color;
 		Vector3 matamb = mParticleEffect->getMaterial()->AmbientColor;
-		Vector3 matdif = mParticleEffect->getMaterial()->DiffuseColor;
-		Vector3 matspc = mParticleEffect->getMaterial()->SpecularColor;
+		Vector3 matdif = Vector3(1);
+		Vector3 matspc = Vector3(1);
 
 		float const MaterialUnif[15] =
 		{

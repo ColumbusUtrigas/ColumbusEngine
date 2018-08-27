@@ -6,23 +6,29 @@
 namespace Columbus
 {
 
+#define READPIXEL8(a) \
+        red = *a++;
+
 #define READPIXEL24(a) \
-		blue = *a++;   \
-		green = *a++;  \
-		red = *a++;
+        blue = *a++;   \
+        green = *a++;  \
+        red = *a++;
 
 #define READPIXEL32(a) \
-		READPIXEL24(a) \
-		alpha = *a++;
+        READPIXEL24(a) \
+        alpha = *a++;
+
+#define WRITEPIXEL8(a) \
+        *a++ = red;
 
 #define WRITEPIXEL24(a) \
-		*a++ = red;     \
-		*a++ = green;   \
-		*a++ = blue;
+        *a++ = red;     \
+        *a++ = green;   \
+        *a++ = blue;
 
 #define WRITEPIXEL32(a) \
-		WRITEPIXEL24(a) \
-		*a++ = alpha;
+        WRITEPIXEL24(a) \
+        *a++ = alpha;
 
 
 	typedef struct
@@ -93,10 +99,90 @@ namespace Columbus
 		return true;
 	}
 
+	template <typename Type>
+	static void RGBPalettedTGA(Type* InBuffer, uint8* ColorMap, uint8* OutBuffer, size_t Size)
+	{
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB paletted: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(ColorMap, "TGA RGB paletted: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGB paletted: invalid output");
+
+		const int PixelSize = 3;
+		int Index;
+		int red, green, blue;
+		size_t i;
+		uint8* ColorMapPtr;
+
+		for (i = 0; i < Size; i++)
+		{
+			Index = InBuffer[i];
+			ColorMapPtr = &ColorMap[Index * PixelSize];
+
+			READPIXEL24(ColorMapPtr);
+			WRITEPIXEL24(OutBuffer);
+		}
+	}
+
+	template <typename Type>
+	static void RGBAPalettedTGA(Type* InBuffer, uint8* ColorMap, uint8* OutBuffer, size_t Size)
+	{
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGBA paletted: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(ColorMap, "TGA RGBA paletted: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGBA paletted: invalid output");
+
+		const int PixelSize = 4;
+		int Index;
+		int red, green, blue, alpha;
+		size_t i;
+		uint8* ColorMapPtr;
+
+		for (i = 0; i < Size; i++)
+		{
+			Index = InBuffer[i];
+			ColorMapPtr = &ColorMap[Index * PixelSize];
+
+			READPIXEL32(ColorMapPtr);
+			WRITEPIXEL32(OutBuffer);
+		}
+	}
+
+	static void RCompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
+	{
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA R compressed: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA R compressed: invalid output");
+
+		int header;
+		int red;
+		size_t i, j, pixelcount;
+
+		for (i = 0; i < Size; )
+		{
+			header = *InBuffer++;
+			pixelcount = (header & 0x7F) + 1;
+
+			if (header & 0x80)
+			{
+				READPIXEL8(InBuffer);
+				for (j = 0; j < pixelcount; j++)
+				{
+					WRITEPIXEL8(OutBuffer);
+				}
+				i += pixelcount;
+			} else
+			{
+				for (j = 0; j < pixelcount; j++)
+				{
+					READPIXEL8(InBuffer);
+					WRITEPIXEL8(OutBuffer);
+				}
+				i += pixelcount;
+			}
+		}
+	}
+
 	static void RGBCompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
-		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB compression: invalid input")
-		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGB compression: invalid output")
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB compressed: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGB compressed: invalid output");
 
 		int header;
 		int blue, green, red;
@@ -105,22 +191,22 @@ namespace Columbus
 		for (i = 0; i < Size; )
 		{
 			header = *InBuffer++;
-			pixelcount = (header & 0x7f) + 1;
+			pixelcount = (header & 0x7F) + 1;
 
 			if (header & 0x80)
 			{
-				READPIXEL24(InBuffer)
+				READPIXEL24(InBuffer);
 				for (j = 0; j < pixelcount; j++)
 				{
-					WRITEPIXEL24(OutBuffer)
+					WRITEPIXEL24(OutBuffer);
 				}
 				i += pixelcount;
 			} else
 			{
 				for (j = 0; j < pixelcount; j++)
 				{
-					READPIXEL24(InBuffer)
-					WRITEPIXEL24(OutBuffer)
+					READPIXEL24(InBuffer);
+					WRITEPIXEL24(OutBuffer);
 				}
 				i += pixelcount;
 			}
@@ -129,8 +215,8 @@ namespace Columbus
 
 	static void RGBACompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
-		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGB compression: invalid input")
-		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGB compression: invalid output")
+		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGBA compressed: invalid input");
+		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGBA compressed: invalid output");
 
 		int header;
 		int blue, green, red, alpha;
@@ -140,7 +226,7 @@ namespace Columbus
 		for (i = 0; i < Size; )
 		{
 			header = *InBuffer++;
-			pixelcount = (header & 0x7f) + 1;
+			pixelcount = (header & 0x7F) + 1;
 			if (header & 0x80)
 			{
 				READPIXEL32(InBuffer);
@@ -158,8 +244,8 @@ namespace Columbus
 			{
 				for (j = 0; j < pixelcount; j++)
 				{
-					READPIXEL32(InBuffer)
-					WRITEPIXEL32(OutBuffer)
+					READPIXEL32(InBuffer);
+					WRITEPIXEL32(OutBuffer);
 				}
 				i += pixelcount;
 			}
@@ -172,72 +258,127 @@ namespace Columbus
 		if (!file.IsOpened()) return nullptr;
 
 		TGA_HEADER tga;
-
 		if (!ReadHeader(&tga, &file)) return nullptr;
 
-		size_t dSize = file.GetSize() - sizeof(TGA_HEADER);
-		size_t size = tga.width * tga.height * tga.bits / 8;
+		uint8* Descriptor = new uint8[tga.image_descriptor];
+		file.ReadBytes(Descriptor, tga.image_descriptor);
+
+		size_t ColorMapElementSize = tga.color_map_entry_size / 8;
+		size_t ColorMapSize = tga.color_map_length * ColorMapElementSize;
+		uint8* ColorMap = new uint8[tga.color_map_type == 1 ? ColorMapSize : 1];
+		if (tga.color_map_type == 1)
+		{
+			file.ReadBytes(ColorMap, ColorMapSize);
+		}
+
+		size_t PixelSize = tga.color_map_type == 0 ? (tga.bits / 8) : ColorMapElementSize;
+		size_t dSize = file.GetSize() - sizeof(TGA_HEADER) - tga.image_descriptor - ColorMapSize;
+		size_t size = tga.width * tga.height * PixelSize;
 
 		uint8* buffer = new uint8[dSize];
 		file.Read(buffer, dSize, 1);
 
-		uint8* data = nullptr;
+		uint8* data = new uint8[size];
+		Memory::Memset(data, 0, size);
 
 		switch (tga.image_type)
 		{
-		case 2:
-			//Uncompressed RGB
-			data = new uint8[size];
-
-			if (tga.bits == 24)
+			case 0: break; //No image
+			case 1: //Uncompressed paletted
 			{
-				std::copy(&buffer[0], &buffer[size], &data[0]);
-
-				for (uint64 i = 0; i < size; i += 3)
+				if (tga.bits == 8)
 				{
-					std::swap(data[i + 0], data[i + 2]);
+					switch (PixelSize)
+					{
+						case 3: RGBPalettedTGA((uint8*)buffer, ColorMap, data, tga.width * tga.height);  break;
+						case 4: RGBAPalettedTGA((uint8*)buffer, ColorMap, data, tga.width * tga.height); break;
+					}
 				}
-			}
-			else if (tga.bits == 32)
-			{
-				std::copy(&buffer[0], &buffer[size], &data[0]);
-
-				for (uint64 i = 0; i < size; i += 4)
+				else if (tga.bits == 16)
 				{
-					std::swap(data[i + 0], data[i + 2]);
+					switch (PixelSize)
+					{
+						case 3: RGBPalettedTGA((uint16*)buffer, ColorMap, data, tga.width * tga.height);  break;
+						case 4: RGBAPalettedTGA((uint16*)buffer, ColorMap, data, tga.width * tga.height); break;
+					}
 				}
+
+				break;
 			}
 
-			break;
-		case 10:
-			//Compressed RGB
-			data = new uint8[size];
+			case 2: //Uncompressed RGB
+			{
+				if (tga.bits == 24)
+				{
+					std::copy(&buffer[0], &buffer[size], &data[0]);
 
-			if (tga.bits == 24)
-			{
-				RGBCompressedTGA(buffer, data, tga.width * tga.height);
-			} else
-			{
-				RGBACompressedTGA(buffer, data, tga.width * tga.height);
+					for (uint64 i = 0; i < size; i += 3)
+					{
+						std::swap(data[i + 0], data[i + 2]);
+					}
+				}
+				else if (tga.bits == 32)
+				{
+					std::copy(&buffer[0], &buffer[size], &data[0]);
+
+					for (uint64 i = 0; i < size; i += 4)
+					{
+						std::swap(data[i + 0], data[i + 2]);
+					}
+				}
+
+				break;
 			}
-			break;
+			case 3: //Uncompressed monochrome
+			{
+				if (tga.bits == 8)
+				{
+					std::copy(&buffer[0], &buffer[size], &data[0]);
+				}
+
+				break;
+			}
+			case 9: break;//Compressed paletted TODO
+			case 10: //Compressed RGB
+			{
+				if (tga.bits == 24)
+				{
+					RGBCompressedTGA(buffer, data, tga.width * tga.height);
+				} else
+				{
+					RGBACompressedTGA(buffer, data, tga.width * tga.height);
+				}
+				break;
+			}
+			case 11: //Compressed monochrome
+			{
+				if (tga.bits == 8)
+				{
+					RCompressedTGA(buffer, data, tga.width * tga.height);
+				}
+
+				break;
+			}
 		}
 
-		if (tga.x_origin != 0) ImageFlipX(buffer, tga.width, tga.height, tga.bits / 8);
-		if (tga.y_origin != 0) ImageFlipY(buffer, tga.width, tga.height, tga.bits / 8);
+		if (tga.x_origin != 0) ImageFlipX(buffer, tga.width, tga.height, PixelSize);
+		if (tga.y_origin != 0) ImageFlipY(buffer, tga.width, tga.height, PixelSize);
 
 		file.Close();
 
 		OutWidth = tga.width;
 		OutHeight = tga.height;
-		OutSize = tga.width * tga.height * tga.bits / 8;
+		OutSize = tga.width * tga.height * PixelSize;
 
-		switch (tga.bits)
+		switch (PixelSize)
 		{
-		case 24: OutFormat = TextureFormat::RGB8;  break;
-		case 32: OutFormat = TextureFormat::RGBA8; break;
+		case 1: OutFormat = TextureFormat::R8;    break;
+		case 3: OutFormat = TextureFormat::RGB8;  break;
+		case 4: OutFormat = TextureFormat::RGBA8; break;
 		};
 
+		delete[] Descriptor;
+		delete[] ColorMap;
 		delete[] buffer;
 		return data;
 	}
@@ -282,7 +423,7 @@ namespace Columbus
 		uint8 bpp = static_cast<uint8>(BPP * 8);
 		uint8 descriptor = static_cast<uint8>(8);
 
-		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, width, height, bpp, descriptor};
+		TGA_HEADER tga = { 0, 0, 2, 0, 0, 0, 0, 0, width, height, bpp, descriptor };
 
 		size_t size = Width * Height * BPP;
 
@@ -302,9 +443,11 @@ namespace Columbus
 		return true;
 	}
 
+#undef READPIXEL8
 #undef READPIXEL24
-#undef WRITEPIXEL24
 #undef READPIXEL32
+#undef WRITEPIXEL8
+#undef WRITEPIXEL24
 #undef WRITEPIXEL32
 
 }

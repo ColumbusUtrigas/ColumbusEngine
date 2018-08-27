@@ -16,6 +16,7 @@
 #ifdef FragmentShader
 
 	uniform sampler2D uColor;
+	uniform sampler2D uNormal;
 	uniform sampler2D uDepth;
 	uniform vec2 uResolution;
 
@@ -30,24 +31,32 @@
 
 		float sX = blurSizeH * size.x;
 		float sY = blurSizeV * size.y;
+		float factor = 1.0 / 81.0;
 
 		for (int x = -4; x <= 4; x++)
 		{
 			for (int y = -4; y <= 4; y++)
 			{
-				sum += texture(uColor, vec2(UV.x + x * sX, UV.y + y * sY)) / 81.0;
+				sum += texture(uColor, vec2(UV.x + x * sX, UV.y + y * sY)) * factor;
 			}
 		}
 
 		return sum.xyz;
 	}
 
+	vec3 DecodeNormal(in vec2 v)
+	{
+		vec2 fenc = 4.0 * v - 2.0;
+		float f = dot(fenc, fenc);
+		return vec3(fenc * sqrt(1.0 - 0.25 * f), 1.0 - 0.5 * f);
+	}
+
 	void main()
 	{
-		float d = pow(texture(uDepth, UV).x, 256);
-		FragColor = vec4(GaussianBlur(vec2(d)), 1);
-
-		//FragColor = vec4(texture(uColor, UV).rgb, 1.0);
+		//float d = 2 * texture(uDepth, UV).x - 1;
+		//FragColor = vec4(GaussianBlur(vec2(d)), 1);
+		FragColor = vec4(texture(uColor, UV).rgb, 1);
+		//FragColor = vec4(DecodeNormal(texture(uNormal, UV).rg), 1);
 	}
 
 #endif

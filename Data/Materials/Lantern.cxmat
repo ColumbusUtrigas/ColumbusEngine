@@ -1,0 +1,33 @@
+<Material>
+    <Culling>Back</Culling>
+    <DepthWriting>1</DepthWriting>
+
+    <Tiling X="1" Y="1"/>
+    <DetailTiling X="16" Y="16"/>
+    
+    <Color R="1" G="1" B="1" A="1"/>
+    <Ambient R="0.2" G="0.2" B="0.2"/>
+
+    <Roughness>1</Roughness>
+    <Metallic>0.1</Metallic>
+    <ReflectionPower>0</ReflectionPower>
+    <EmissionStrength>1</EmissionStrength>
+    <DetailNormalStrength>0.3</DetailNormalStrength>
+
+    <Rim>0.05</Rim>
+    <RimPower>8</RimPower>
+    <RimBias>0.2</RimBias>
+    <RimColor R="1" G="1" B="1"/>
+    <Lighting>1</Lighting>
+
+    <Textures>
+    	<Diffuse>10</Diffuse>
+    	<Normal>12</Normal>
+        <Roughness>13</Roughness>
+        <Metallic>11</Metallic>
+        <Occlusion>9</Occlusion>
+        <Emission>None</Emission>
+        <DetailDiffuse>1</DetailDiffuse>
+        <DetailNormal>2</DetailNormal>
+    </Textures>
+</Material>

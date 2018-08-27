@@ -8,13 +8,16 @@ namespace Columbus
 	{
 		mFB = gDevice->createFramebuffer();
 		mTB = gDevice->CreateTexture();
+		NormalMap = gDevice->CreateTexture();
 		mDepth = gDevice->CreateTexture();
 
 		mTB->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGB8));
+		NormalMap->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGB8));
 		mDepth->Create2D(Texture::Properties(100, 100, 0, TextureFormat::Depth16));
 
-		mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
-		mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
+		mFB->setTexture2D(Framebuffer::Attachment::Color0, mTB);
+		mFB->setTexture2D(Framebuffer::Attachment::Color1, NormalMap);
+		mFB->setTexture2D(Framebuffer::Attachment::Depth, mDepth);
 
 		static float Vertices[] = 
 		{
@@ -75,6 +78,7 @@ namespace Columbus
 			InShader->Compile();
 
 			InShader->AddUniform("uColor");
+			InShader->AddUniform("uNormal");
 			InShader->AddUniform("uDepth");
 
 			for (auto& Name : AttributeNames)
@@ -139,15 +143,20 @@ namespace Columbus
 			H = Math::TruncToInt(ContextSize.Y);
 
 			mTB->Create2D(Texture::Properties(W, H, 0, TextureFormat::RGBA8));
+			NormalMap->Create2D(Texture::Properties(W, H, 0, TextureFormat::RGB8));
 			mDepth->Create2D(Texture::Properties(W, H, 0, TextureFormat::Depth16));
 
-			mFB->setTexture2D(E_FRAMEBUFFER_COLOR_ATTACH, mTB);
-			mFB->setTexture2D(E_FRAMEBUFFER_DEPTH_ATTACH, mDepth);
+			mFB->setTexture2D(Framebuffer::Attachment::Color0, mTB);
+			mFB->setTexture2D(Framebuffer::Attachment::Color1, NormalMap);
+			mFB->setTexture2D(Framebuffer::Attachment::Depth, mDepth);
 		}
 
 		PreviousSize = ContextSize;
 
 		mFB->prepare(ClearColor, ContextSize);
+
+		GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers(2, drawBuffers);
 	}
 
 	void PostEffect::Render()
@@ -163,7 +172,11 @@ namespace Columbus
 		mTB->bind();
 
 		glActiveTexture(GL_TEXTURE1);
-		Shader->SetUniform1i("uDepth", 1);
+		Shader->SetUniform1i("uNormal", 1);
+		NormalMap->bind();
+
+		glActiveTexture(GL_TEXTURE2);
+		Shader->SetUniform1i("uDepth", 2);
 		mDepth->bind();
 
 		for (auto& Attrib : mAttribsInt)
