@@ -62,20 +62,19 @@ namespace Columbus
 		}
 	}
 
-	static void ShaderSetMaterial(ShaderProgram* Program, Material* InMaterial)
+	static void ShaderSetMaterial(ShaderProgram* Program, Material* InMaterial, const Camera& MainCamera)
 	{
 		if (Program != nullptr && InMaterial != nullptr)
 		{
 			if (Program->IsCompiled())
 			{
-				Texture* Textures[7] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture, InMaterial->DetailDiffuseMap, InMaterial->DetailNormalMap, InMaterial->Reflection, InMaterial->EmissionMap };
-				static std::string Names[7] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap", "uMaterial.EmissionMap" };
+				Texture* Textures[9] = { InMaterial->DiffuseTexture, InMaterial->NormalTexture, InMaterial->RoughnessTexture, InMaterial->MetallicTexture, InMaterial->OcclusionMap, InMaterial->EmissionMap, InMaterial->DetailDiffuseMap, InMaterial->DetailNormalMap, InMaterial->Reflection};
+				static std::string Names[9] = { "uMaterial.DiffuseMap" , "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap"};
 
-				for (int32 i = 0; i < 7; i++)
+				for (int32 i = 0; i < 9; i++)
 				{
 					if (Textures[i] != nullptr)
 					{
-						if (i == 7) printf("a\n");
 						glActiveTexture(GL_TEXTURE0 + i);
 						Program->SetUniform1i(Names[i], i);
 						Textures[i]->bind();
@@ -92,8 +91,8 @@ namespace Columbus
 				Program->SetUniform2f("uMaterial.DetailTiling", InMaterial->DetailTiling);
 				Program->SetUniform4f("uMaterial.Color", InMaterial->Color);
 				Program->SetUniform3f("uMaterial.AmbientColor", InMaterial->AmbientColor);
-				Program->SetUniform3f("uMaterial.DiffuseColor", InMaterial->DiffuseColor);
-				Program->SetUniform3f("uMaterial.SpecularColor", InMaterial->SpecularColor);
+				Program->SetUniform1f("uMaterial.Roughness", InMaterial->Roughness);
+				Program->SetUniform1f("uMaterial.Metallic", InMaterial->Metallic);
 				Program->SetUniform1f("uMaterial.ReflectionPower", InMaterial->ReflectionPower);
 				Program->SetUniform1f("uMaterial.EmissionStrength", InMaterial->EmissionStrength);
 				Program->SetUniform1f("uMaterial.DetailNormalStrength", InMaterial->DetailNormalStrength);
@@ -101,7 +100,9 @@ namespace Columbus
 				Program->SetUniform1f("uMaterial.RimPower", InMaterial->RimPower);
 				Program->SetUniform1f("uMaterial.RimBias", InMaterial->RimBias);
 				Program->SetUniform3f("uMaterial.RimColor", InMaterial->RimColor);
-				Program->SetUniform1i("uMaterial.Lighting", InMaterial->getLighting());
+				//Program->SetUniform1i("uMaterial.Lighting", InMaterial->getLighting());
+
+				Program->SetUniform3f("uCamera.Position", MainCamera.getPos());
 			}
 		}
 	}
@@ -240,11 +241,11 @@ namespace Columbus
 
 							if (MeshRenderer.ObjectMaterial != PreviousMaterial)
 							{
-								ShaderSetMaterial(CurrentShader, &MeshRenderer.ObjectMaterial);
+								ShaderSetMaterial(CurrentShader, &MeshRenderer.ObjectMaterial, MainCamera);
 							}
 
 							MeshRenderer.Object->Bind();
-							PolygonsRendered += MeshRenderer.Object->Render(MeshRenderer.ObjectTransform);
+							PolygonsRendered += MeshRenderer.Object->Render(MeshRenderer.ObjectTransform, MeshRenderer.ObjectMaterial.GetShader());
 							MeshRenderer.Object->Unbind();
 						}
 

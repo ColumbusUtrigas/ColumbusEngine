@@ -5,18 +5,23 @@
 
 	<Resources>
 		<Textures>
-			<Count>10</Count>
+			<Count>14</Count>
 
 			<Texture0>Data/Textures/Hercules.dds</Texture0>
 			<Texture1>Data/Textures/Detail.dds</Texture1>
 			<Texture2>Data/Textures/Detail-Normal.dds</Texture2>
 			<Texture3>Data/Textures/statue_d.dds</Texture3>
-			<Texture4>Data/Textures/statue_s.dds</Texture4>
-			<Texture5>Data/Textures/statue_n.dds</Texture5>
-			<Texture6>Data/Textures/Fireplace.dds</Texture6>
+			<Texture4>Data/Textures/statue_e.dds</Texture4>
+			<Texture5>Data/Textures/Fireplace.dds</Texture5>
+			<Texture6>Data/Textures/Fireplace-E.dds</Texture6>
 			<Texture7>Data/Textures/spark.dds</Texture7>
 			<Texture8>Data/Textures/smoke.dds</Texture8>
-			<Texture9>Data/Textures/Fireplace-E.dds</Texture9>
+
+			<Texture9>Data/Textures/chest_AO.jpg</Texture9>
+			<Texture10>Data/Textures/chest_Albedo.jpg</Texture10>
+			<Texture11>Data/Textures/chest_Metallic.jpg</Texture11>
+			<Texture12>Data/Textures/chest_Normal.jpg</Texture12>
+			<Texture13>Data/Textures/chest_Roughness.jpg</Texture13>
 		</Textures>
 
 		<Shaders>
@@ -32,10 +37,11 @@
 		</Shaders>
 
 		<Meshes>
-			<Count>3</Count>
+			<Count>4</Count>
 			<Mesh0>Data/Models/Hercules.cmf</Mesh0>
 			<Mesh1>Data/Models/Statue.cmf</Mesh1>
 			<Mesh2>Data/Models/Fireplace.cmf</Mesh2>
+			<Mesh3>Data/Models/Chest.cmf</Mesh3>
 		</Meshes>
 
 		<Sounds>
@@ -123,6 +129,25 @@
 		</GameObject2>
 
 		<GameObject3>
+			<Name>Lantern</Name>
+
+			<Transform>
+				<Position X="10" Y="0" Z="10"/>
+				<Rotation X="0" Y="180" Z="0"/>
+				<Scale X="1" Y="1" Z="1"/>
+			</Transform>
+
+			<Material>Data/Materials/Lantern.cxmat</Material>
+			<Shader>0</Shader>
+
+			<Components>
+				<MeshRenderer>
+					<Mesh>3</Mesh>
+				</MeshRenderer>
+			</Components>
+		</GameObject3>
+
+		<GameObject4>
 			<Name>Embers</Name>
 
 			<Transform>
@@ -139,9 +164,9 @@
 					<Particles>Data/Particles/FireplaceEmbers.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
-		</GameObject3>
+		</GameObject4>
 
-		<GameObject4>
+		<GameObject5>
 			<Name>Smoke</Name>
 
 			<Transform>
@@ -158,13 +183,13 @@
 					<Particles>Data/Particles/FireplaceSmoke.cxpar</Particles>
 				</ParticleSystem>
 			</Components>
-		</GameObject4>
+		</GameObject5>
 
 		<GameObject6>
 			<Name>Sun</Name>
 
 			<Transform>
-				<Position X="0" Y="15" Z="15"/>
+				<Position X="0" Y="0" Z="0"/>
 				<Rotation X="0" Y="0" Z="0"/>
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>

@@ -194,7 +194,7 @@ namespace Columbus
 				{
 					Mesh* Mesh = gDevice->CreateMesh();
 					Mesh->SetVertices(PrimitivePlane());
-					Mesh->mMat = *Mat;
+					//Mesh->mMat = *Mat;
 
 					MeshRenderer = new ComponentMeshRenderer(Mesh);
 				}
@@ -202,7 +202,7 @@ namespace Columbus
 				{
 					Mesh* Mesh = gDevice->CreateMesh();
 					Mesh->SetVertices(PrimitiveBox());
-					Mesh->mMat = *Mat;
+					//Mesh->mMat = *Mat;
 
 					MeshRenderer = new ComponentMeshRenderer(Mesh);
 				}
@@ -210,7 +210,7 @@ namespace Columbus
 				{
 					Mesh* Mesh = gDevice->CreateMesh();
 					Mesh->SetVertices(PrimitiveSphere(1, 50, 50));
-					Mesh->mMat = *Mat;
+					//Mesh->mMat = *Mat;
 
 					MeshRenderer = new ComponentMeshRenderer(Mesh);
 				}
@@ -220,7 +220,7 @@ namespace Columbus
 					{
 						Mesh* Mesh = gDevice->CreateMesh();
 						Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
-						Mesh->mMat = *Mat;
+						//Mesh->mMat = *Mat;
 
 						if (Mesh != nullptr)
 						{
@@ -535,14 +535,29 @@ namespace Columbus
 				material->DiffuseTexture = Textures->at(material->getTextureID());
 			}
 
-			if (material->getSpecMapID() != -1)
-			{
-				material->SpecularTexture = Textures->at(material->getSpecMapID());
-			}
-
 			if (material->getNormMapID() != -1)
 			{
 				material->NormalTexture = Textures->at(material->getNormMapID());
+			}
+
+			if (material->GetRoughnessMapID() != -1)
+			{
+				material->RoughnessTexture = Textures->at(material->GetRoughnessMapID());
+			}
+
+			if (material->GetMetallicMapID() != -1)
+			{
+				material->MetallicTexture = Textures->at(material->GetMetallicMapID());
+			}
+
+			if (material->GetOcclusionMapID() != -1)
+			{
+				material->OcclusionMap = Textures->at(material->GetOcclusionMapID());
+			}
+
+			if (material->GetEmissionMapID() != -1)
+			{
+				material->EmissionMap = Textures->at(material->GetEmissionMapID());
 			}
 
 			if (material->GetDetailDiffuseMapID() != -1)
@@ -553,11 +568,6 @@ namespace Columbus
 			if (material->GetDetailNormalMapID() != -1)
 			{
 				material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID());
-			}
-
-			if (material->GetEmissionMapID() != -1)
-			{
-				material->EmissionMap = Textures->at(material->GetEmissionMapID());
 			}
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);

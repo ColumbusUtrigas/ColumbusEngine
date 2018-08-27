@@ -73,6 +73,41 @@ int main(int argc, char** argv)
 	Fireplace = scene.getGameObject(2);
 	Fireplace->AddComponent(new FireplaceBright());
 
+	std::vector<Vertex> Vertices;
+	ModelLoadCMF("Data/Models/Sphere.cmf", Vertices);
+
+	Mesh* Sphere = gDevice->CreateMesh();
+	Sphere->SetVertices(Vertices);
+
+	float Values[] = { 0.01f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
+
+	GameObject Tests[36];
+
+	float X = -6.0f;
+	float Y = 6.0f;
+
+	Transform trans;
+
+	for (int Roughness = 0; Roughness < 6; Roughness++)
+	{
+		Y = 6.0f;
+		X += 2;
+
+		for (int Metallic = 0; Metallic < 6; Metallic++)
+		{
+			Y -= 2;
+			Tests[Roughness * 6 + Metallic].GetMaterial().SetShader(scene.getGameObject(0)->GetMaterial().GetShader());
+			Tests[Roughness * 6 + Metallic].GetMaterial().Color = Vector4(1);
+			Tests[Roughness * 6 + Metallic].GetMaterial().AmbientColor = Vector3(0.2);
+			Tests[Roughness * 6 + Metallic].GetMaterial().Roughness = Values[Roughness];
+			Tests[Roughness * 6 + Metallic].GetMaterial().Metallic = Values[Metallic];
+			trans.SetPos(Vector3(X, Y, 20));
+			Tests[Roughness * 6 + Metallic].SetTransform(trans);
+			Tests[Roughness * 6 + Metallic].AddComponent(new ComponentMeshRenderer(Sphere));
+			scene.Add(8 + (Roughness * 6 + Metallic), std::move(Tests[Roughness * 6 + Metallic]));
+		}
+	}
+
 	while (window.isOpen())
 	{
 		float RedrawTime = window.getRedrawTime();

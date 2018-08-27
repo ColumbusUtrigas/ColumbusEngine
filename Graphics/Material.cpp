@@ -52,15 +52,30 @@ namespace Columbus
 	{
 		return mTextureID;
 	}
-	
-	int Material::getSpecMapID() const
-	{
-		return mSpecMapID;
-	}
 
 	int Material::getNormMapID() const
 	{
 		return mNormMapID;
+	}
+
+	int Material::GetRoughnessMapID() const
+	{
+		return RoughnessMapID;
+	}
+
+	int Material::GetMetallicMapID() const
+	{
+		return MetallicMapID;
+	}
+
+	int Material::GetOcclusionMapID() const
+	{
+		return OcclusionMapID;
+	}
+
+	int Material::GetEmissionMapID() const
+	{
+		return EmissionMapID;
 	}
 
 	int Material::GetDetailDiffuseMapID() const
@@ -71,11 +86,6 @@ namespace Columbus
 	int Material::GetDetailNormalMapID() const
 	{
 		return DetailNormalMapID;
-	}
-
-	int Material::GetEmissionMapID() const
-	{
-		return EmissionMapID;
 	}
 	
 	bool Material::saveToXML(std::string aFile) const
@@ -138,11 +148,11 @@ namespace Columbus
 		if (!Serializer.GetVector3("Ambient", AmbientColor, { "R", "G", "B" }))
 		{ Log::error("Can't load Material ambient color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Diffuse", DiffuseColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material diffuse color: " + aFile); return false; }
+		if (!Serializer.GetFloat("Roughness", Roughness))
+		{ Log::error("Can't load Material roughness: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Specular", SpecularColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material specular color: " + aFile); return false; }
+		if (!Serializer.GetFloat("Metallic", Metallic))
+		{ Log::error("Can't load Material metallic: " + aFile); return false; }
 
 		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
 		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
@@ -169,32 +179,51 @@ namespace Columbus
 		{ Log::error("Can't load Material lighting: " + aFile); return false; }
 
 		std::string diffuseMapPath = "None";
-		std::string specularMapPath = "None";
 		std::string normalMapPath = "None";
+		std::string RoughnessMapPath = "None";
+		std::string MetallicMapPath = "None";
+		std::string OcclusionMapPath = "None";
+		std::string EmissionMapPath = "None";
 		std::string DetailDiffuseMapPath = "None";
 		std::string DetailNormalMapPath = "None";
-		std::string EmissionMapPath = "None";
 
 		Serializer.GetSubString({"Textures", "Diffuse"}, diffuseMapPath);
-		Serializer.GetSubString({"Textures", "Specular"}, specularMapPath);
 		Serializer.GetSubString({"Textures", "Normal"}, normalMapPath);
+		Serializer.GetSubString({"Textures", "Roughness"}, RoughnessMapPath);
+		Serializer.GetSubString({"Textures", "Metallic"}, MetallicMapPath);
+		Serializer.GetSubString({"Textures", "Occlusion"}, OcclusionMapPath);
+		Serializer.GetSubString({"Textures", "Emission"}, EmissionMapPath);
 		Serializer.GetSubString({"Textures", "DetailDiffuse"}, DetailDiffuseMapPath);
 		Serializer.GetSubString({"Textures", "DetailNormal"}, DetailNormalMapPath);
-		Serializer.GetSubString({"Textures", "Emission"}, EmissionMapPath);
 
 		if (diffuseMapPath != "None")
 		{
 			mTextureID = std::atoi(diffuseMapPath.c_str());
 		}
 
-		if (specularMapPath != "None")
-		{
-			mSpecMapID = std::atoi(specularMapPath.c_str());
-		}
-
 		if (normalMapPath != "None")
 		{
 			mNormMapID = std::atoi(normalMapPath.c_str());
+		}
+
+		if (RoughnessMapPath != "None")
+		{
+			RoughnessMapID = std::atoi(RoughnessMapPath.c_str());
+		}
+
+		if (MetallicMapPath != "None")
+		{
+			MetallicMapID = std::atoi(MetallicMapPath.c_str());
+		}
+
+		if (OcclusionMapPath != "None")
+		{
+			OcclusionMapID = std::atoi(OcclusionMapPath.c_str());
+		}
+
+		if (EmissionMapPath != "None")
+		{
+			EmissionMapID = std::atoi(EmissionMapPath.c_str());
 		}
 
 		if (DetailDiffuseMapPath != "None")
@@ -205,11 +234,6 @@ namespace Columbus
 		if (DetailNormalMapPath != "None")
 		{
 			DetailNormalMapID = std::atoi(DetailNormalMapPath.c_str());
-		}
-
-		if (EmissionMapPath != "None")
-		{
-			EmissionMapID = std::atoi(EmissionMapPath.c_str());
 		}
 
 		if (MaterialCulling == "No")
@@ -238,26 +262,25 @@ namespace Columbus
 	{
 		return (Color == Other.Color &&
 		        AmbientColor == Other.AmbientColor &&
-		        DiffuseColor == Other.DiffuseColor &&
-		        SpecularColor == Other.SpecularColor &&
 		        DiffuseTexture == Other.DiffuseTexture &&
-		        SpecularTexture == Other.SpecularTexture &&
 		        NormalTexture == Other.NormalTexture &&
+		        RoughnessTexture == Other.RoughnessTexture &&
+		        MetallicTexture == Other.MetallicTexture &&
+		        OcclusionMap == Other.OcclusionMap &&
+		        EmissionMap == Other.EmissionMap &&
 		        DetailDiffuseMap == Other.DetailDiffuseMap &&
 		        DetailNormalMap == Other.DetailNormalMap &&
 		        Reflection == Other.Reflection &&
-		        EmissionMap == Other.EmissionMap &&
 		        ShaderProg == Other.ShaderProg &&
+		        Roughness == Other.Roughness &&
+		        Metallic == Other.Metallic &&
 		        ReflectionPower == Other.ReflectionPower &&
 		        EmissionStrength == Other.EmissionStrength &&
 		        Rim == Other.Rim &&
 		        RimPower == Other.RimPower &&
 		        RimBias == Other.RimBias &&
 		        RimColor == Other.RimColor &&
-		        mLighting == Other.mLighting &&
-		        mTextureID == Other.mTextureID &&
-		        mSpecMapID == Other.mSpecMapID &&
-		        mNormMapID == Other.mNormMapID);
+		        mLighting == Other.mLighting);
 	}
 
 	bool Material::operator!=(Material Other)

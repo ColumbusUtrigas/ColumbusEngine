@@ -40,6 +40,7 @@ namespace Columbus
 		int rowbytes;
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
+		if (color_type == PNG_COLOR_TYPE_GRAY) bpp = 1;
 		if (color_type == PNG_COLOR_TYPE_RGB) bpp = 3;
 		if (color_type == PNG_COLOR_TYPE_RGBA) bpp = 4;
 
@@ -49,6 +50,7 @@ namespace Columbus
 
 		switch (bpp)
 		{
+		case 1: OutFormat = TextureFormat::R8;    break;
 		case 3: OutFormat = TextureFormat::RGB8;  break;
 		case 4: OutFormat = TextureFormat::RGBA8; break;
 		}

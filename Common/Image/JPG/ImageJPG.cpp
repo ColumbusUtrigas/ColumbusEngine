@@ -36,17 +36,28 @@ namespace Columbus
 
 		jpeg_read_header(&cinfo, TRUE);
 
+		int bpp;
+		switch (cinfo.out_color_space)
+		{
+			case JCS_GRAYSCALE: bpp = 1; break;
+			case JCS_RGB:       bpp = 3; break;
+		}
+
 		OutWidth = cinfo.image_width;
 		OutHeight = cinfo.image_height;
-		OutSize = cinfo.image_width * cinfo.image_height * 3;
-		OutFormat = TextureFormat::RGB8;
+		OutSize = cinfo.image_width * cinfo.image_height * bpp;
+		switch (bpp)
+		{
+			case 1: OutFormat = TextureFormat::R8;   break;
+			case 3: OutFormat = TextureFormat::RGB8; break;
+		}
 
 		jpeg_start_decompress(&cinfo);
 
 		row_stride = cinfo.output_width * cinfo.output_components;
 		buffer = (*cinfo.mem->alloc_sarray) ((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
 
-		uint8* data = (uint8*)Memory::Malloc(cinfo.image_width * cinfo.image_height * 3);
+		uint8* data = (uint8*)Memory::Malloc(cinfo.image_width * cinfo.image_height * bpp);
 		uint64 counter = 0;
 		uint64 maxsize = row_stride * cinfo.image_height;
 

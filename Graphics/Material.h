@@ -27,14 +27,14 @@ namespace Columbus
 	private:
 		bool mLighting = true;
 
-		//Cubemap* mEnvReflection = nullptr;
-
 		int mTextureID = -1;
-		int mSpecMapID = -1;
 		int mNormMapID = -1;
+		int RoughnessMapID = -1;
+		int MetallicMapID = -1;
+		int OcclusionMapID = -1;
+		int EmissionMapID = -1;
 		int DetailDiffuseMapID = -1;
 		int DetailNormalMapID = -1;
-		int EmissionMapID = -1;
 	protected:
 		ShaderProgram* ShaderProg = nullptr;
 	public:
@@ -42,11 +42,13 @@ namespace Columbus
 		bool DepthWriting = true;
 
 		Texture* DiffuseTexture = nullptr;
-		Texture* SpecularTexture = nullptr;
 		Texture* NormalTexture = nullptr;
+		Texture* RoughnessTexture = nullptr;
+		Texture* MetallicTexture = nullptr;
+		Texture* OcclusionMap = nullptr;
+		Texture* EmissionMap = nullptr;
 		Texture* DetailDiffuseMap = nullptr;
 		Texture* DetailNormalMap = nullptr;
-		Texture* EmissionMap = nullptr;
 		Texture* Reflection = nullptr;
 
 		Vector2 Tiling = Vector2(1, 1);
@@ -54,8 +56,9 @@ namespace Columbus
 
 		Vector4 Color;
 		Vector3 AmbientColor;
-		Vector3 DiffuseColor;
-		Vector3 SpecularColor;
+
+		float Roughness = 1.0f;
+		float Metallic = 0.1f;
 
 		float ReflectionPower = 0.2f;
 		float EmissionStrength = 0.5f;
@@ -81,19 +84,19 @@ namespace Columbus
 		void SetTexture(std::string Name, Texture* Value, uint32 Sampler);
 
 		void SetShader(ShaderProgram* InShader);
-		//void setReflection(const Cubemap* aReflection);
 		void setLighting(const bool aLighting);
 
 		ShaderProgram* GetShader() const;
-		//Cubemap* getReflection() const;
 		bool getLighting() const;
 
 		int getTextureID() const;
-		int getSpecMapID() const;
 		int getNormMapID() const;
+		int GetRoughnessMapID() const;
+		int GetMetallicMapID() const;
+		int GetOcclusionMapID() const;
+		int GetEmissionMapID() const;
 		int GetDetailDiffuseMapID() const;
 		int GetDetailNormalMapID() const;
-		int GetEmissionMapID() const;
 
 		bool saveToXML(std::string aFile) const;
 		bool loadFromXML(std::string aFile);

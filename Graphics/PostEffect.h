@@ -60,6 +60,7 @@ namespace Columbus
 		ShaderProgram* Shader = nullptr;
 		Framebuffer* mFB = nullptr;
 		Texture* mTB = nullptr;
+		Texture* NormalMap = nullptr;
 		Texture* mDepth = nullptr;
 
 		Vector2 PreviousSize;

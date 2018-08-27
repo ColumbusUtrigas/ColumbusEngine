@@ -27,6 +27,7 @@ namespace Columbus
 
 		switch (bpp)
 		{
+		case 1: OutFormat = TextureFormat::R8;    break;
 		case 3: OutFormat = TextureFormat::RGB8;  break;
 		case 4: OutFormat = TextureFormat::RGBA8; break;
 		}
@@ -34,7 +35,8 @@ namespace Columbus
 		uint32* buffer = (uint32*)Memory::Malloc(width * height * sizeof(uint32));
 		TIFFReadRGBAImage(tif, width, height, buffer, 0);
 
-		uint8* data = (uint8*)Memory::Malloc(width * height * bpp);
+		uint8* data = new uint8[width * height * bpp];
+
 		for (size_t i = 0; i < width * height * bpp; i += bpp)
 		{
 			data[i + 0] = TIFFGetR(*buffer);

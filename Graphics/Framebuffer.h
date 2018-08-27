@@ -13,26 +13,29 @@
 namespace Columbus
 {
 
-	enum FramebufferAttachment
-	{
-		E_FRAMEBUFFER_COLOR_ATTACH,
-		E_FRAMEBUFFER_DEPTH_ATTACH,
-		E_FRAMEBUFFER_STENCIL_ATTACH
-	};
-
 	class Framebuffer
 	{
 	public:
-		Framebuffer();
+		enum class Attachment
+		{
+			Color0,
+			Color1,
+			Color2,
+			Color3,
+			Depth,
+			Stencil
+		};
+	public:
+		Framebuffer() {}
 
-		virtual void bind();
-		virtual void unbind();
+		virtual void bind() {}
+		virtual void unbind() {}
 
-		virtual bool setTexture2D(FramebufferAttachment aAttach, Texture* aTexture);
-		virtual bool prepare(Vector4 aClear, Vector2 aWindowSize);
-		virtual bool check();
+		virtual bool setTexture2D(Attachment Attach, Texture* InTexture) { return false; }
+		virtual bool prepare(const Vector4& Clear, const Vector2& WindowSize) { return false; }
+		virtual bool check() { return false; }
 
-		virtual ~Framebuffer();
+		virtual ~Framebuffer() {}
 	};
 
 }
