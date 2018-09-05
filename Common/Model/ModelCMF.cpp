@@ -30,26 +30,22 @@ namespace Columbus
 		Vector3 tangent, bitangent;
 		float r;
 
-		uint64 vcounter = 0;
-		uint64 ucounter = 0;
-		uint64 ncounter = 0;
-
 		OutVertices.reserve(Count);
 
 		for (uint32 i = 0; i < Count; i++)
 		{
 			for (uint32 j = 0; j < 3; j++)
 			{
-				vert[j].pos.X = InVertexBuffer[vcounter++];
-				vert[j].pos.Y = InVertexBuffer[vcounter++];
-				vert[j].pos.Z = InVertexBuffer[vcounter++];
+				vert[j].pos.X = *InVertexBuffer++;
+				vert[j].pos.Y = *InVertexBuffer++;
+				vert[j].pos.Z = *InVertexBuffer++;
 
-				vert[j].UV.X = InUVBuffer[ucounter++];
-				vert[j].UV.Y = InUVBuffer[ucounter++];
+				vert[j].UV.X = *InUVBuffer++;
+				vert[j].UV.Y = *InUVBuffer++;
 
-				vert[j].normal.X = InNormalBuffer[ncounter++];
-				vert[j].normal.Y = InNormalBuffer[ncounter++];
-				vert[j].normal.Z = InNormalBuffer[ncounter++];
+				vert[j].normal.X = *InNormalBuffer++;
+				vert[j].normal.Y = *InNormalBuffer++;
+				vert[j].normal.Z = *InNormalBuffer++;
 			}
 
 			deltaPos1 = vert[1].pos - vert[0].pos;

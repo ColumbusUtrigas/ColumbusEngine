@@ -106,6 +106,7 @@ namespace Columbus
 		mCameraUp = Vector3::Cross(mCameraDirection, mCameraRight);
 
 		ViewMatrix.LookAt(mPos, mCameraDirection + mPos, mCameraUp);
+		ViewProjection = ViewMatrix * ProjectionMatrix;
 
 		preTargeted = false;
 	}
@@ -113,6 +114,11 @@ namespace Columbus
 	void Camera::perspective(float FOV, float Aspect, float Near, float Far)
 	{
 		ProjectionMatrix.Perspective(FOV, Aspect, Near, Far);
+	}
+
+	Matrix Camera::GetViewProjection() const
+	{
+		return ViewProjection;
 	}
 	
 	Matrix Camera::getProjectionMatrix() const

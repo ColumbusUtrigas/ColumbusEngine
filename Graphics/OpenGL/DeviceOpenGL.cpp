@@ -1,4 +1,5 @@
 #include <Graphics/OpenGL/DeviceOpenGL.h>
+#include <Graphics/OpenGL/BufferOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/MeshOpenGL.h>
@@ -11,6 +12,11 @@ namespace Columbus
 	DeviceOpenGL::DeviceOpenGL()
 	{
 
+	}
+
+	Buffer* DeviceOpenGL::CreateBuffer() const
+	{
+		return new BufferOpenGL();
 	}
 
 	ShaderStage* DeviceOpenGL::CreateShaderStage() const

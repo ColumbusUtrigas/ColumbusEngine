@@ -1,6 +1,7 @@
 <Material>
     <Culling>Back</Culling>
     <DepthWriting>0</DepthWriting>
+    <Transparent>1</Transparent>
 
     <Tiling X="1" Y="1"/>
     <DetailTiling X="4" Y="4"/>

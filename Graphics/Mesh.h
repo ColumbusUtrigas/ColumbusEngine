@@ -13,7 +13,7 @@
 #include <Graphics/Light.h>
 
 #include <Scene/Transform.h>
-#include <Math/OBB.h>
+#include <Math/Box.h>
 
 namespace Columbus
 {
@@ -23,13 +23,12 @@ namespace Columbus
 	protected:
 		Vector3 Position;
 		Camera ObjectCamera;
-		OBB BoundingBox;
-
-		std::vector<Light*> Lights;
+		Box BoundingBox;
 
 		uint32 VerticesCount;
 	public:
 		Material mMat;
+		std::vector<Light*> Lights;
 	public:
 		Mesh() : VerticesCount(0) { }
 		Mesh(std::vector<Vertex> Vertices) : VerticesCount(0) { SetVertices(Vertices); }
@@ -45,7 +44,7 @@ namespace Columbus
 
 		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }
 
-		OBB GetOBB() const { return BoundingBox; }
+		Box GetBoundingBox() const { return BoundingBox; }
 		Material& GetMaterial() { return mMat; }
 		Camera& GetCamera() { return ObjectCamera; }
 

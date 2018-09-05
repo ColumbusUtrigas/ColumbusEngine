@@ -18,9 +18,6 @@ namespace Columbus
 		ShaderProgram* Shader = nullptr;
 		Texture* Tex = nullptr;
 		Camera mCamera;
-
-		float UniformViewMatrix[16];
-		float UniformProjectionMatrix[16];
 	public:
 		Skybox();
 		Skybox(Texture* InTexture);

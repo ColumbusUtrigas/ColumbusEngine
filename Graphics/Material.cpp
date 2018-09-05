@@ -136,6 +136,9 @@ namespace Columbus
 		if (!Serializer.GetBool("DepthWriting", DepthWriting))
 		{ Log::error("Can't load Material depth writing: " + aFile); return false; }
 
+		if (!Serializer.GetBool("Transparent", Transparent))
+		{ Log::error("Can't load Material transparent: " + aFile); return false; }
+
 		if (!Serializer.GetVector2("Tiling", Tiling, { "X", "Y"}))
 		{ Log::error("Can't load Material tiling: " + aFile); return false; }
 
@@ -258,7 +261,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool Material::operator==(Material Other)
+	bool Material::operator==(Material Other) const
 	{
 		return (Color == Other.Color &&
 		        AmbientColor == Other.AmbientColor &&
@@ -283,7 +286,7 @@ namespace Columbus
 		        mLighting == Other.mLighting);
 	}
 
-	bool Material::operator!=(Material Other)
+	bool Material::operator!=(Material Other) const
 	{
 		return !(*this == Other);
 	}

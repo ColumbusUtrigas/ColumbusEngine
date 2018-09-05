@@ -20,7 +20,7 @@ namespace Columbus
 		{
 			if (Emitter != nullptr)
 			{
-				Emitter->update(TimeTick);
+				Emitter->Update(TimeTick);
 			}
 		}
 
@@ -31,15 +31,15 @@ namespace Columbus
 		{
 			if (Emitter != nullptr)
 			{
-				Emitter->setLights(Lights);
+				//Emitter->setLights(Lights);
 			}
 		}
 
-		void SetCamera(Camera Camera)
+		void SetCamera(const Camera& Camera)
 		{
 			if (Emitter != nullptr)
 			{
-				Emitter->setCamera(Camera);
+				Emitter->SetCamera(Camera);
 			}
 		}
 
@@ -47,7 +47,7 @@ namespace Columbus
 		{
 			if (Emitter != nullptr)
 			{
-				return Emitter->getParticleEffect()->getMaterial()->GetShader();
+				return Emitter->GetParticleEffect()->getMaterial()->GetShader();
 			}
 
 			return nullptr;
@@ -57,7 +57,7 @@ namespace Columbus
 		{
 			if (Emitter != nullptr)
 			{
-				Emitter->getParticleEffect()->getMaterial()->SetShader(Shader);
+				Emitter->GetParticleEffect()->getMaterial()->SetShader(Shader);
 			}
 		}
 

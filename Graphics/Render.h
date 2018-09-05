@@ -36,23 +36,39 @@ namespace Columbus
 	class Renderer
 	{
 	protected:
-		struct MeshRenderData
+		struct OpaqueRenderData
 		{
 			Mesh* Object;
 			Transform ObjectTransform;
 			Material ObjectMaterial;
 
-			MeshRenderData(Mesh* InObject, Transform InTransform, Material InMaterial) :
+			OpaqueRenderData(Mesh* InObject, const Transform& InTransform, const Material& InMaterial) :
 				Object(InObject),
+				ObjectTransform(InTransform),
+				ObjectMaterial(InMaterial) {}
+		};
+
+		struct TransparentRenderData
+		{
+			Mesh* MeshObject;
+			ParticleEmitter* ParticleObject;
+
+			Transform ObjectTransform;
+			Material ObjectMaterial;
+
+			TransparentRenderData(Mesh* InMesh, ParticleEmitter* InParticles, const Transform& InTransform, const Material& InMaterial) :
+				MeshObject(InMesh),
+				ParticleObject(InParticles),
 				ObjectTransform(InTransform),
 				ObjectMaterial(InMaterial) {}
 		};
 	protected:
 		std::map<uint32, SmartPointer<GameObject>>* RenderList;
-		
-		std::vector<MeshRenderData> Meshes;
-		std::vector<MeshInstanced*> MeshesInstanced;
-		std::vector<ParticleEmitter*> ParticleEmitters;
+
+		//std::vector<OpaqueRenderData> OpaqueObjects;
+		//std::vector<TransparentRenderData> TransparentObjects;
+		Array<OpaqueRenderData> OpaqueObjects;
+		Array<TransparentRenderData> TransparentObjects;
 
 		Camera MainCamera;
 	public:
@@ -68,6 +84,8 @@ namespace Columbus
 
 		virtual void SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List);
 		virtual void CompileLists();
+		virtual void RenderOpaqueStage();
+		virtual void RenderTransparentStage();
 		virtual void Render(Stage RenderStage);
 		virtual void Render(std::map<uint32, SmartPointer<GameObject>>* RenderList);
 

@@ -112,6 +112,7 @@ namespace Columbus
 		glEnable(GL_ALPHA_TEST);
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_PROGRAM_POINT_SIZE);
+		//glEnable(GL_DITHER);
 
 		if (glewInit() != GLEW_OK)
 		{

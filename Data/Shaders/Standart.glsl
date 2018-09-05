@@ -13,30 +13,30 @@
 	out vec3 varPos;
 	out vec2 varUV;
 	out vec3 varNormal;
-	out vec3 varFragPos;
 	out mat3 varTBN;
 
 	//@Uniform uModel
+	//@Uniform uViewProjection
 	//@Uniform uView
 	//@Uniform uProjection
 
 	uniform mat4 uModel;
+	uniform mat4 uViewProjection;
 	uniform mat4 uView;
 	uniform mat4 uProjection;
 
 	void main()
 	{
-		Position = uProjection * uView * uModel * vec4(aPos, 1.0);
+		vec3 normal = normalize(vec3(vec4(aNorm, 0.0) * uModel));
+		vec3 tangent = normalize(vec3(vec4(aTang, 0.0) * uModel));
+		vec3 binormal = cross(normal, tangent);
 
-		vec3 normal = normalize(vec3(uModel * vec4(aNorm, 0.0)));
-		vec3 tangent = normalize(vec3(uModel * vec4(aTang, 0.0)));
-		vec3 bitangent = cross(normal, tangent);
-
-		varPos = vec3(uModel * vec4(aPos, 1.0));
+		varPos = vec3(vec4(aPos, 1.0) * uModel);
 		varUV = aUV;
 		varNormal = normal;
-		varFragPos = vec3(uModel * vec4(aPos, 1.0));
-		varTBN = transpose(mat3(tangent, bitangent, normal));
+		varTBN = transpose(mat3(tangent, binormal, normal));
+
+		Position = uViewProjection * vec4(varPos, 1);
 	}
 
 #endif
@@ -44,12 +44,11 @@
 #ifdef FragmentShader
 
 	#define PI 3.141592653
-	#define LIGHT_NUM 8
+	#define LIGHT_NUM 4
 
 	in vec3 varPos;
 	in vec2 varUV;
 	in vec3 varNormal;
-	in vec3 varFragPos;
 	in mat3 varTBN;
 
 	struct Material
@@ -68,8 +67,6 @@
 		vec2 DetailTiling;
 
 		vec4 Color;
-		vec3 AmbientColor;
-
 		float Roughness;
 		float Metallic;
 
@@ -82,7 +79,7 @@
 		float RimBias;
 		vec3 RimColor;
 
-		bool Lighting;
+		bool Transparent;
 	};
 
 	struct Camera
@@ -112,7 +109,7 @@
 	//@Uniform uMaterial.RimPower
 	//@Uniform uMaterial.RimBias
 	//@Uniform uMaterial.RimColor
-	//@Uniform uMaterial.Lighting
+	//@Uniform uMaterial.Transparent
 	//@Uniform uLighting
 	//@Uniform uCamera.Position
 
@@ -133,11 +130,8 @@
 
 	vec3 CubemapColor = vec3(0);
 	vec3 RimColor = vec3(0);
-	vec4 Lighting = vec4(0);
 
 	void Init(void);
-	vec3 LightCalc(int id);
-	vec3 Lights();
 	vec3 RimCalc();
 	void Cubemap(void);
 	void Final(void);
@@ -145,19 +139,6 @@
 	void main(void)
 	{
 		Init();
-
-		Lighting += vec4(LightCalc(0), 0);
-		Lighting += vec4(LightCalc(1), 0);
-		Lighting += vec4(LightCalc(2), 0);
-		Lighting += vec4(LightCalc(3), 0);
-
-		Lighting = Lighting / (Lighting + vec4(1.0));
-		Lighting = pow(Lighting, vec4(1.0 / 2.2));  
-
-		//Lighting += vec4(uMaterial.AmbientColor, 0);
-		Lighting += vec4(RimCalc(), 0);
-		Lighting.w = 1;
-		Lighting = clamp(Lighting, 0, 1);
 		
 		if (textureSize(uMaterial.ReflectionMap, 0).x > 1)
 		{
@@ -197,7 +178,7 @@
 		}
 		else if (textureSize(uMaterial.DetailNormalMap, 0).x > 1)
 		{
-			//Normal = normalize(DetailNormalMap.rgb * 2.0 - 1.0) * varTBN;
+			Normal = normalize(DetailNormalMap.rgb * 2.0 - 1.0) * varTBN;
 		}
 
 		if (textureSize(uMaterial.RoughnessMap, 0).x > 1)
@@ -248,7 +229,7 @@
 	vec3 CookTorranceSpecularBRDF(in vec3 N, in vec3 L, in vec3 V, in vec3 H, out vec3 F)
 	{
 		vec3 F0 = vec3(0.04); 
-		F0 = mix(F0, uMaterial.Color.rgb, Metallic);
+		F0 = mix(F0, vec3(1), Metallic);
 
 		float NdotV = max(0, dot(N, V));
 		float NdotL = max(0, dot(N, L));
@@ -314,7 +295,7 @@
 
 	vec3 RimCalc()
 	{
-		vec3 ViewDirection = normalize(uCamera.Position - varFragPos);
+		vec3 ViewDirection = normalize(uCamera.Position - varPos);
 		float Rim = pow(1.0 + uMaterial.RimBias - max(dot(Normal, ViewDirection), 0.0), uMaterial.RimPower);
 		RimColor = Rim * uMaterial.RimColor * uMaterial.Rim;
 		return RimColor;
@@ -322,7 +303,7 @@
 
 	void Cubemap(void)
 	{
-		vec3 I = normalize(uCamera.Position - varFragPos);
+		vec3 I = normalize(uCamera.Position - varPos);
 		vec3 R = normalize(reflect(I, varNormal));
 		CubemapColor = texture(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
 		//CubemapColor *= uMaterial.Color.rgb * Roughness;
@@ -335,8 +316,7 @@
 
 	void Final(void)
 	{
-		Lighting = vec4(Lights(), 1);
-		vec4 Color = Lighting * uMaterial.Color;
+		vec4 Color = vec4(Lights(), uMaterial.Color.a);
 
 		if (textureSize(uMaterial.DiffuseMap, 0).x > 1)
 		{
@@ -349,7 +329,8 @@
 		FragData[0] = Color;
 		FragData[1] = vec4(Normal, 1);
 
-		if (texture(uMaterial.DiffuseMap, varUV * uMaterial.Tiling).a < 0.5) discard;
+		if (!uMaterial.Transparent && Color.a < 1.0) discard;
+		if (uMaterial.Transparent && Color.a == 1.0) discard;
 	}
 
 #endif

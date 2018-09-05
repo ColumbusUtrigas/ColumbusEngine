@@ -21,8 +21,8 @@
     </Location>
 
     <Lifetime>
-        <Min>1</Min>
-        <Max>2</Max>
+        <Min>0.5</Min>
+        <Max>1.0</Max>
     </Lifetime>
 
     <Rotation>

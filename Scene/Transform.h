@@ -39,7 +39,7 @@ namespace Columbus
 		void Update();
 
 		void SetMatrix(Matrix InMatrix);
-		Matrix& GetMatrix();
+		const Matrix& GetMatrix() const;
 
 		~Transform();
 	};

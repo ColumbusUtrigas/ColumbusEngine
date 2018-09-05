@@ -92,10 +92,15 @@ namespace Columbus
 
 			if (ps != nullptr)
 			{
-				ps->SetLights(mLights);
+				//ps->SetLights(mLights);
+
 				if (ps->GetEmitter() != nullptr)
-					if(ps->GetEmitter()->getParticleEffect() != nullptr)
-						ps->GetEmitter()->getParticleEffect()->setPos(Object.second->transform.GetPos());
+				{
+					if(ps->GetEmitter()->GetParticleEffect() != nullptr)
+					{
+						ps->GetEmitter()->GetParticleEffect()->setPos(Object.second->transform.GetPos());
+					}
+				}
 
 				if (mCamera != nullptr) ps->SetCamera(*mCamera);
 			}
