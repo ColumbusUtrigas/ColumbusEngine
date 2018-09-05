@@ -24,6 +24,7 @@ namespace Columbus
 
 		Matrix ProjectionMatrix;
 		Matrix ViewMatrix;
+		Matrix ViewProjection;
 		
 		bool preTargeted = false;
 	public:
@@ -50,6 +51,7 @@ namespace Columbus
 		void perspective(float FOV, float Aspect, float Near, float Far);
 		//void ortho();
 
+		Matrix GetViewProjection() const;
 		Matrix getProjectionMatrix() const;
 		Matrix getViewMatrix() const;
 		

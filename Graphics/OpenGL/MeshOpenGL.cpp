@@ -4,47 +4,6 @@
 namespace Columbus
 {
 
-	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
-	{
-		static float Lights[15 * 8];
-
-		for (auto& Light : InLights)
-		{
-			if (Light != nullptr)
-			{
-				uint32 Counter = 0;
-
-				for (auto& L : InLights)
-				{
-					uint32 Offset = Counter * 15;
-
-					if (InLights.size() > Counter)
-					{
-						Lights[Offset + 0] = L->getColor().X;
-						Lights[Offset + 1] = L->getColor().Y;
-						Lights[Offset + 2] = L->getColor().Z;
-						Lights[Offset + 3] = L->getPos().X;
-						Lights[Offset + 4] = L->getPos().Y;
-						Lights[Offset + 5] = L->getPos().Z;
-						Lights[Offset + 6] = L->getDir().X;
-						Lights[Offset + 7] = L->getDir().Y;
-						Lights[Offset + 8] = L->getDir().Z;
-						Lights[Offset + 9] = (float)L->getType();
-						Lights[Offset + 10] = L->getConstant();
-						Lights[Offset + 11] = L->getLinear();
-						Lights[Offset + 12] = L->getQuadratic();
-						Lights[Offset + 13] = L->getInnerCutoff();
-						Lights[Offset + 14] = L->getOuterCutoff();
-					}
-
-					Counter++;
-				}
-			}
-		}
-
-		InShader->SetUniformArrayf("uLighting", Lights, 120 * sizeof(float));
-	}
-
 	MeshOpenGL::MeshOpenGL()
 	{
 		glGenBuffers(1, &VBuf);
@@ -160,14 +119,12 @@ namespace Columbus
 
 	void MeshOpenGL::Bind()
 	{
+		SortLights();
 		glBindVertexArray(VAO);
 	}
 	
 	uint32 MeshOpenGL::Render(Transform InTransfor, ShaderProgram* InShader)
 	{
-		SortLights();
-		ShaderSetLights(InShader, Lights);
-
 		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 
 		return VerticesCount / 3;

@@ -17,11 +17,11 @@
 			<Texture7>Data/Textures/spark.dds</Texture7>
 			<Texture8>Data/Textures/smoke.dds</Texture8>
 
-			<Texture9>Data/Textures/chest_AO.jpg</Texture9>
-			<Texture10>Data/Textures/chest_Albedo.jpg</Texture10>
-			<Texture11>Data/Textures/chest_Metallic.jpg</Texture11>
-			<Texture12>Data/Textures/chest_Normal.jpg</Texture12>
-			<Texture13>Data/Textures/chest_Roughness.jpg</Texture13>
+			<Texture9>Data/Textures/lantern_AO.jpg</Texture9>
+			<Texture10>Data/Textures/lantern_Albedo.png</Texture10>
+			<Texture11>Data/Textures/lantern_Metallic.jpg</Texture11>
+			<Texture12>Data/Textures/lantern_Normal.jpg</Texture12>
+			<Texture13>Data/Textures/lantern_Roughness.jpg</Texture13>
 		</Textures>
 
 		<Shaders>
@@ -41,7 +41,7 @@
 			<Mesh0>Data/Models/Hercules.cmf</Mesh0>
 			<Mesh1>Data/Models/Statue.cmf</Mesh1>
 			<Mesh2>Data/Models/Fireplace.cmf</Mesh2>
-			<Mesh3>Data/Models/Chest.cmf</Mesh3>
+			<Mesh3>Data/Models/Lantern.cmf</Mesh3>
 		</Meshes>
 
 		<Sounds>
@@ -134,7 +134,7 @@
 			<Transform>
 				<Position X="10" Y="0" Z="10"/>
 				<Rotation X="0" Y="180" Z="0"/>
-				<Scale X="1" Y="1" Z="1"/>
+				<Scale X="0.1" Y="0.1" Z="0.1"/>
 			</Transform>
 
 			<Material>Data/Materials/Lantern.cxmat</Material>

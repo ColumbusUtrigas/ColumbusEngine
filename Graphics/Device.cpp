@@ -6,9 +6,11 @@ namespace Columbus
 	Device* gDevice = nullptr;
 
 	
-	Device::Device()
-	{
+	Device::Device() {}
 
+	Buffer* Device::CreateBuffer() const
+	{
+		return new Buffer();
 	}
 
 	ShaderStage* Device::CreateShaderStage() const
@@ -21,6 +23,16 @@ namespace Columbus
 		return new ShaderProgram();
 	}
 
+	Texture* Device::CreateTexture() const
+	{
+		return nullptr;
+	}
+
+	Mesh* Device::CreateMesh() const
+	{
+		return new Mesh();
+	}
+
 	MeshInstanced* Device::CreateMeshInstanced() const
 	{
 		return new MeshInstanced();
@@ -31,10 +43,7 @@ namespace Columbus
 		return new Framebuffer();
 	}
 	
-	Device::~Device()
-	{
-
-	}
+	Device::~Device() {}
 
 }
 

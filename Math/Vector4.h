@@ -36,6 +36,12 @@ namespace Columbus
 
 		Vector4_t(const Type& Scalar) : X(Scalar), Y(Scalar), Z(Scalar), W(Scalar) {}
 		Vector4_t(const Type& InX, const Type& InY, const Type& InZ, const Type& InW) : X(InX), Y(InY), Z(InZ), W(InW) {}
+		Vector4_t(const Vector2_t<Type>& A, const Type& B, const Type& C) : X(A.X), Y(A.Y), Z(B), W(C) {}
+		Vector4_t(const Type& A, const Vector2_t<Type>& B, const Type& C) : X(A), Y(B.X), Z(B.Y), W(C) {}
+		Vector4_t(const Type& A, const Type& B, const Vector2_t<Type>& C) : X(A), Y(B), Z(C.X), W(C.Y) {}
+		Vector4_t(const Vector2_t<Type>& A, const Vector2_t<Type>& B) : X(A.X), Y(A.Y), Z(B.X), W(B.Y) {}
+		Vector4_t(const Vector3_t<Type>& A, const Type& B) : X(A.X), Y(A.Y), Z(A.Z), W(B) {}
+		Vector4_t(const Type& A, const Vector3_t<Type>& B) : X(A), Y(B.X), Z(B.Y), W(B.Z) {}
 
 		Vector2_t<Type> XX() const { return Vector2_t<Type>(X, X); }
 		Vector2_t<Type> XY() const { return Vector2_t<Type>(X, Y); }

@@ -40,6 +40,7 @@ namespace Columbus
 	public:
 		Cull Culling = Cull::Back;
 		bool DepthWriting = true;
+		bool Transparent = false;
 
 		Texture* DiffuseTexture = nullptr;
 		Texture* NormalTexture = nullptr;
@@ -101,8 +102,8 @@ namespace Columbus
 		bool saveToXML(std::string aFile) const;
 		bool loadFromXML(std::string aFile);
 
-		bool operator==(Material Other);
-		bool operator!=(Material Other);
+		bool operator==(Material Other) const;
+		bool operator!=(Material Other) const;
 
 		~Material();
 	};

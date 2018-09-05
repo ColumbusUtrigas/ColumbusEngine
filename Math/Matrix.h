@@ -28,7 +28,7 @@ namespace Columbus
 		* Constructor
 		* @params Vector4 A, B, C and D specifies matrix rows
 		*/
-		inline Matrix(Vector4 A, Vector4 B, Vector4 C, Vector4 D)
+		inline Matrix(const Vector4& A, const Vector4& B, const Vector4& C, const Vector4& D)
 		{
 			SetRow(0, A);
 			SetRow(1, B);
@@ -50,7 +50,7 @@ namespace Columbus
 		* Set indexed row of this matrix
 		* If Index >= 4, occures assertation
 		*/
-		inline void SetRow(uint32 Index, Vector4 Row)
+		inline void SetRow(uint32 Index, const Vector4& Row)
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetRow(): Index >= 4");
 
@@ -63,7 +63,7 @@ namespace Columbus
 		* Set indexed column of this matrix
 		* If Index >= 4, occures assertation
 		*/
-		inline void SetColumn(uint32 Index, Vector4 Column)
+		inline void SetColumn(uint32 Index, const Vector4& Column)
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetColumn(): Index >= 4");
 
@@ -158,7 +158,7 @@ namespace Columbus
 		* Rotate matrix around Axis on Angle (in degrees)
 		* @return Matrix&: *this
 		*/
-		inline Matrix& Rotate(Vector3 Axis, float Angle)
+		inline Matrix& Rotate(const Vector3& Axis, float Angle)
 		{
 			float x = Axis.X;
 			float y = Axis.Y;
@@ -200,7 +200,7 @@ namespace Columbus
 		* Create rotation matrix by Euler Angles
 		* @return Matrix: Result of rotation
 		*/
-		inline Matrix GetRotation(Vector3 EulerAngles)
+		inline Matrix GetRotation(const Vector3& EulerAngles)
 		{
 			Matrix ResultMat;
 
@@ -270,9 +270,8 @@ namespace Columbus
 			M[0][0] = w;
 			M[1][1] = h;
 			M[2][2] = q;
-			M[2][3] = qn;
-			M[3][2] = -1.0f;
-			M[3][3] = 0.0f;
+			M[3][2] = qn;
+			M[2][3] = -1.0f;
 
 			return *this;
 		}
@@ -290,7 +289,7 @@ namespace Columbus
 		* @param Vector3 Up: Up-direction of observer
 		* @return Matrix&: *this
 		*/
-		inline Matrix& LookAt(Vector3 Position, Vector3 Center, Vector3 Up)
+		inline Matrix& LookAt(const Vector3& Position, const Vector3& Center, const Vector3& Up)
 		{
 			Vector3 const f(Vector3::Normalize(Center - Position));
 			Vector3 const s(Vector3::Normalize(Vector3::Cross(f, Up)));
@@ -316,7 +315,7 @@ namespace Columbus
 		* @param Matrix Other: The Matrix to multiply this by
 		* @return Matrix: The result of multiplication
 		*/
-		inline Matrix operator*(const Matrix Other)
+		inline Matrix operator*(const Matrix& Other) const
 		{
 			Matrix ResultMat;
 
@@ -342,26 +341,43 @@ namespace Columbus
 		* @param Vector4 Other: The Vector4 to multiply this by
 		* @return Vector4: The result of mutiplication
 		*/
-		inline Vector4 operator*(const Vector4 Other)
+		inline Vector4 operator*(const Vector4& Other) const
 		{
-			Vector4 ResultVec;
+			static float Result[4];
 
 			for (uint32 X = 0; X < 4; X++)
 			{
-				ResultVec.X += M[X][0] * Other.X;
-				ResultVec.Y += M[X][1] * Other.Y;
-				ResultVec.Z += M[X][2] * Other.Z;
-				ResultVec.W += M[X][3] * Other.W;
+				Result[X] = 0.0f;
+				Result[X] += M[0][X] * Other.X;
+				Result[X] += M[1][X] * Other.Y;
+				Result[X] += M[2][X] * Other.Z;
+				Result[X] += M[3][X] * Other.W;
 			}
 
-			return ResultVec;
+			return Vector4(Result[0], Result[1], Result[2], Result[3]);
+		}
+
+		friend Vector4 operator*(const Vector4& Left, const Matrix& Right)
+		{
+			static float Result[4];
+
+			for (uint32 X = 0; X < 4; X++)
+			{
+				Result[X] = 0.0f;
+				Result[X] += Left.X * Right.M[X][0];
+				Result[X] += Left.Y * Right.M[X][1];
+				Result[X] += Left.Z * Right.M[X][2];
+				Result[X] += Left.W * Right.M[X][3];
+			}
+
+			return Vector4(Result[0], Result[1], Result[2], Result[3]);
 		}
 		/*
 		* Multiply this by Other Matrix
 		* @param Matrix Other: The Matrix to multiply by this
 		* @return Matrix&: *this
 		*/
-		inline Matrix& operator*=(const Matrix Other)
+		inline Matrix& operator*=(const Matrix& Other)
 		{
 			*this = *this * Other;
 			return *this;
@@ -371,7 +387,7 @@ namespace Columbus
 		* @param Matrix Other:
 		* @return Matrix: The Matrix to add
 		*/
-		inline Matrix operator+(const Matrix Other)
+		inline Matrix operator+(const Matrix& Other)
 		{
 			Matrix ResultMat;
 
@@ -390,7 +406,7 @@ namespace Columbus
 		* @param Matrix Other: The Matrix to add to this
 		* @return Matrix: *this
 		*/
-		inline Matrix operator+=(const Matrix Other)
+		inline Matrix operator+=(const Matrix& Other)
 		{
 			*this = *this + Other;
 			return *this;
@@ -400,7 +416,7 @@ namespace Columbus
 		* @param Matrix Other: The Matrix to compare with this
 		* @return bool: Bool-value of comparison
 		*/
-		inline bool operator==(const Matrix Other)
+		inline bool operator==(const Matrix& Other)
 		{
 			for (uint32 X = 0; X < 4; X++)
 			{
@@ -420,7 +436,7 @@ namespace Columbus
 		* @param Matrix Other: The Matrix to compare with this
 		* @return bool: Bool-value of comparison
 		*/
-		inline bool operator!=(const Matrix Other)
+		inline bool operator!=(const Matrix& Other)
 		{
 			return !(*this == Other);
 		}

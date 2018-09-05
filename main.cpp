@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 
 	Camera camera;
 	camera.setPos(Vector3(10, 10, 0));
-	camera.setRot(Vector3(0, 90, 0));
+	camera.setRot(Vector3(0, 180, 0));
 
 	gDevice = new DeviceOpenGL();
 
@@ -98,7 +98,10 @@ int main(int argc, char** argv)
 			Y -= 2;
 			Tests[Roughness * 6 + Metallic].GetMaterial().SetShader(scene.getGameObject(0)->GetMaterial().GetShader());
 			Tests[Roughness * 6 + Metallic].GetMaterial().Color = Vector4(1);
-			Tests[Roughness * 6 + Metallic].GetMaterial().AmbientColor = Vector3(0.2);
+			//Tests[Roughness * 6 + Metallic].GetMaterial().Color = Vector4(Vector3(0, 1, 0), 0.5);
+			///Tests[Roughness * 6 + Metallic].GetMaterial().Transparent = true;
+			//Tests[Roughness * 6 + Metallic].GetMaterial().Culling = Material::Cull::No;
+			//Tests[Roughness * 6 + Metallic].GetMaterial().AmbientColor = Vector3(0.2);
 			Tests[Roughness * 6 + Metallic].GetMaterial().Roughness = Values[Roughness];
 			Tests[Roughness * 6 + Metallic].GetMaterial().Metallic = Values[Metallic];
 			trans.SetPos(Vector3(X, Y, 20));
@@ -160,7 +163,7 @@ int main(int argc, char** argv)
 
 		scene.setContextSize(window.getSize());
 		scene.update();
-        scene.render();
+		scene.render();
 
 		window.display();
 

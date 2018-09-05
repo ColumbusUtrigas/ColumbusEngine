@@ -56,8 +56,7 @@ namespace Columbus
 		tShader->Load(ShaderProgram::StandartProgram::Skybox);
 		tShader->Compile();
 
-		tShader->AddUniform("uView");
-		tShader->AddUniform("uProjection");
+		tShader->AddUniform("uViewProjection");
 		tShader->AddUniform("uSkybox");
 
 		return tShader;
@@ -99,6 +98,8 @@ namespace Columbus
 	{
 		if (Shader != nullptr && Tex != nullptr)
 		{
+			static float UniformViewProjection[16];
+
 			glDepthMask(GL_FALSE);
 
 			for (int32 i = 0; i < 5; i++)
@@ -108,15 +109,13 @@ namespace Columbus
 
 			Shader->Bind();
 
-			auto view = mCamera.getViewMatrix();
-			view.SetRow(3, Vector4(0, 0, 0, 1));
-			view.SetColumn(3, Vector4(0, 0, 0, 1));
+			auto View = mCamera.getViewMatrix();
+			View.SetRow(3, Vector4(0, 0, 0, 1));
+			View.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			view.Elements(UniformViewMatrix);
-			mCamera.getProjectionMatrix().ElementsTransposed(UniformProjectionMatrix);
+			(View * mCamera.getProjectionMatrix()).Elements(UniformViewProjection);
 
-			Shader->SetUniformMatrix("uView", UniformViewMatrix);
-			Shader->SetUniformMatrix("uProjection", UniformProjectionMatrix);
+			Shader->SetUniformMatrix("uViewProjection", UniformViewProjection);
 
 			glActiveTexture(GL_TEXTURE0);
 			Shader->SetUniform1i("uSkybox", 0);

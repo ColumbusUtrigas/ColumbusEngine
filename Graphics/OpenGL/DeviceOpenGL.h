@@ -10,17 +10,19 @@ namespace Columbus
 	public:
 		DeviceOpenGL();
 
-		ShaderStage* CreateShaderStage() const override;
-		ShaderProgram* CreateShaderProgram() const override;
+		virtual Buffer* CreateBuffer() const override;
 
-		Texture* CreateTexture() const override;
+		virtual ShaderStage* CreateShaderStage() const override;
+		virtual ShaderProgram* CreateShaderProgram() const override;
 
-		Mesh* CreateMesh() const override;
-		MeshInstanced* CreateMeshInstanced() const override;
+		virtual Texture* CreateTexture() const override;
 
-		Framebuffer* createFramebuffer() const override;
+		virtual Mesh* CreateMesh() const override;
+		virtual MeshInstanced* CreateMeshInstanced() const override;
 
-		~DeviceOpenGL() override;
+		virtual Framebuffer* createFramebuffer() const override;
+
+		virtual ~DeviceOpenGL() override;
 	};
 
 }
