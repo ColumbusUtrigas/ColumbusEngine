@@ -40,112 +40,14 @@ namespace Columbus
 		return Played;
 	}
 
-	void AudioSource::SetMode(AudioSource::Mode InMode) { SoundMode = InMode; }
-	AudioSource::Mode AudioSource::GetMode() const { return SoundMode; }
-
 	void AudioSource::SetSound(Sound* InSound)
 	{
-		this->SoundClip = InSound;
-	}
-
-	void AudioSource::SetPosition(Vector3 InPosition)
-	{
-		this->Position = InPosition;
-	}
-
-	void AudioSource::SetVelocity(Vector3 InVelocity)
-	{
-		this->Velocity = InVelocity;
-	}
-
-	void AudioSource::SetDirection(Vector3 InDirection)
-	{
-		this->Direction = InDirection;
-	}
-
-	void AudioSource::SetGain(float InGain)
-	{
-		this->Gain = InGain;
-	}
-
-	void AudioSource::SetPitch(float InPitch)
-	{
-		this->Pitch = InPitch;
-	}
-
-	void AudioSource::SetMinDistance(float InDistance)
-	{
-		this->MinDistance = InDistance;
-	}
-
-	void AudioSource::SetMaxDistance(float InDistance)
-	{
-		this->MaxDistance = InDistance;
-	}
-
-	void AudioSource::SetRolloff(float InRolloff)
-	{
-		this->Rolloff = InRolloff;
-	}
-
-	void AudioSource::SetLooping(bool InLooping)
-	{
-		this->Looping = InLooping;
+		SoundClip = InSound;
 	}
 
 	Sound* AudioSource::GetSound() const
 	{
 		return SoundClip;
-	}
-
-	Vector3 AudioSource::GetPosition() const
-	{
-		return Position;
-	}
-
-	Vector3 AudioSource::GetVelocity() const
-	{
-		return Velocity;
-	}
-
-	Vector3 AudioSource::GetDirection() const
-	{
-		return Direction;
-	}
-
-	float AudioSource::GetGain() const
-	{
-		return Gain;
-	}
-
-	float AudioSource::GetPitch() const
-	{
-		return Pitch;
-	}
-
-	float AudioSource::GetMinDistance() const
-	{
-		return MinDistance;
-	}
-
-	float AudioSource::GetMaxDistance() const
-	{
-		return MaxDistance;
-	}
-
-	float AudioSource::GetRolloff() const
-	{
-		return Rolloff;
-	}
-
-	bool AudioSource::IsPlaying() const
-	{
-		return Playing;
-	}
-
-	bool AudioSource::IsLooping() const
-	{
-		return Looping;
 	}
 
 	void AudioSource::PrepareBuffer(Sound::Frame* Frames, uint32 Count)

@@ -123,7 +123,7 @@ namespace Columbus
 		glBindVertexArray(VAO);
 	}
 	
-	uint32 MeshOpenGL::Render(Transform InTransfor, ShaderProgram* InShader)
+	uint32 MeshOpenGL::Render()
 	{
 		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
 

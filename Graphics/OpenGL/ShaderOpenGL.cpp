@@ -1,9 +1,9 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
-#include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <GL/glew.h>
 
 namespace Columbus
 {
@@ -177,6 +177,7 @@ namespace Columbus
 		Type = InType;
 		Loaded = true;
 		Compiled = false;
+		Error = false;
 		Log::success("Shader loaded: " + InPath);
 
 		return true;
@@ -187,18 +188,29 @@ namespace Columbus
 		if (!Loaded)
 		{
 			Log::error("Couldn't compile shader: Shader wasn't loaded");
+			Compiled = false;
+			Error = true;
 			return false;
 		}
 
 		if (!IsValid())
 		{
 			Log::error("Couldn't compile shader: Shader is invalid");
+			Compiled = false;
+			Error = true;
 			return false;
 		}
 
-		if (!ShaderCompile(ShaderPath, ShaderSource, ID)) { glDeleteShader(ID); return false; }
+		if (!ShaderCompile(ShaderPath, ShaderSource, ID))
+		{
+			glDeleteShader(ID);
+			Compiled = false;
+			Error = true;
+			return false;
+		}
 
 		Compiled = true;
+		Error = false;
 		Log::success("Shader compiled: " + ShaderPath);
 
 		return true;
@@ -224,6 +236,9 @@ namespace Columbus
 	ShaderProgramOpenGL::ShaderProgramOpenGL()
 	{
 		ID = glCreateProgram();
+
+		Compiled = false;
+		Error = false;
 	}
 
 	void ShaderProgramOpenGL::Bind() const
@@ -326,6 +341,8 @@ namespace Columbus
 			std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Fragment; }) == Stages.end())
 		{
 			Log::error("Coldn't compile Shader Program: Needs vertex and fragment shader");
+			Compiled = false;
+			Error = true;
 			return false;
 		}
 
@@ -336,6 +353,8 @@ namespace Columbus
 				if (!Stage->Compile())
 				{
 					Log::error("Couldn't compile Shader Program: One or more of the shader not compiled");
+					Compiled = false;
+					Error = true;
 					return false;
 				}
 			}
@@ -343,6 +362,8 @@ namespace Columbus
 			if (!Stage->IsValid())
 			{
 				Log::error("Couldn't compile Shader Program: One or more of the shaders is invalid");
+				Compiled = false;
+				Error = true;
 				return false;
 			}
 
@@ -364,6 +385,7 @@ namespace Columbus
 		Uniforms.clear();
 
 		Compiled = true;
+		Error = false;
 		Log::success("Shader program compiled");
 
 		return true;

@@ -37,12 +37,12 @@ namespace Columbus
 		Colors = gDevice->CreateBuffer();
 		Sizes = gDevice->CreateBuffer();
 
-		VerticesBuffer->CreateArray(Buffer::Properties{0});
-		UVBuffer->CreateArray(Buffer::Properties{0});
-		Positions->CreateArray(Buffer::Properties{0});
-		Times->CreateArray(Buffer::Properties{0});
-		Colors->CreateArray(Buffer::Properties{0});
-		Sizes->CreateArray(Buffer::Properties{0});
+		VerticesBuffer->CreateArray(Buffer::Properties::Default());
+		UVBuffer->CreateArray(Buffer::Properties::Default());
+		Positions->CreateArray(Buffer::Properties{0, Buffer::Usage::Write, Buffer::Changing::Stream});
+		Times->CreateArray(Buffer::Properties{0, Buffer::Usage::Write, Buffer::Changing::Stream});
+		Colors->CreateArray(Buffer::Properties{0, Buffer::Usage::Write, Buffer::Changing::Stream});
+		Sizes->CreateArray(Buffer::Properties{0, Buffer::Usage::Write, Buffer::Changing::Stream});
 	}
 	
 	void ParticleEmitter::SetParticleEffect(ParticleEffect* InEffect)
@@ -50,16 +50,6 @@ namespace Columbus
 		if (InEffect != nullptr)
 		{
 			Effect = InEffect;
-
-			if (Effect->Emit != nullptr)
-			{
-				if (!Effect->getMaterial()->GetShader()->IsCompiled())
-				{
-					auto tShader = Effect->getMaterial()->GetShader();
-
-					tShader->Compile();
-				}
-			}
 		}
 	}
 	
@@ -274,7 +264,15 @@ namespace Columbus
 				{
 					if (Effect->Required->Visible)
 					{
-						Effect->getMaterial()->GetShader()->Bind();
+						if (!Effect->getMaterial()->GetShader()->IsError())
+						{
+							if (!Effect->getMaterial()->GetShader()->IsCompiled())
+							{
+								if (!Effect->getMaterial()->GetShader()->Compile()) return;
+							}
+
+							Effect->getMaterial()->GetShader()->Bind();
+						} else return;
 
 						if (Effect->Required->AdditiveBlending)
 						{
@@ -309,10 +307,10 @@ namespace Columbus
 						VerticesBuffer->Load(Buffer::Properties{ 18 * sizeof(float) * ParticlesCount }, VertData);
 						UVBuffer->Load(Buffer::Properties{ 12 * sizeof(float) * ParticlesCount }, UVData);
 
-						Positions->Load(Buffer::Properties{ 18 * sizeof(float) * Particles.size() }, PositionData);
-						Times->Load(Buffer::Properties{ 12 * sizeof(float) * Particles.size() }, TimeData);
-						Colors->Load(Buffer::Properties{ 24 * sizeof(float) * Particles.size() }, ColorData);
-						Sizes->Load(Buffer::Properties{ 18 * sizeof(float) * Particles.size() }, SizeData);
+						Positions->Load(Buffer::Properties{ 18 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, PositionData);
+						Times->Load(Buffer::Properties{ 12 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, TimeData);
+						Colors->Load(Buffer::Properties{ 24 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, ColorData);
+						Sizes->Load(Buffer::Properties{ 18 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, SizeData);
 
 						SetBuffers();
 						SetUniforms();

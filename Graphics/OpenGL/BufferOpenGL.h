@@ -11,6 +11,8 @@ namespace Columbus
 		uint32 ID;
 		uint32 Target;
 		uint32 Usage;
+
+		void UpdateUsage();
 	public:
 		BufferOpenGL();
 

@@ -473,26 +473,26 @@ namespace Columbus
 
 				if (AudioSourceProperties.Mode == "2D")
 				{
-					Source->SetMode(AudioSource::Mode::Sound2D);
+					Source->SoundMode = AudioSource::Mode::Sound2D;
 				}
 				else if (AudioSourceProperties.Mode == "3D")
 				{
-					Source->SetMode(AudioSource::Mode::Sound3D);
+					Source->SoundMode = AudioSource::Mode::Sound3D;
 				}
 
-				Source->SetDirection(AudioSourceProperties.Direction);
-				Source->SetLooping(AudioSourceProperties.Looping);
+				Source->Direction = AudioSourceProperties.Direction;
+				Source->Looping = AudioSourceProperties.Looping;
 
 				if (atoi(AudioSourceProperties.SourceSound.c_str()) >= 0)
 				{
 					Source->SetSound(Sounds->at(atoi(AudioSourceProperties.SourceSound.c_str())));
 				}
 
-				if (AudioSourceProperties.Gain >= 0.0f)          Source->SetGain(AudioSourceProperties.Gain);
-				if (AudioSourceProperties.Pitch >= 0.0f)         Source->SetPitch(AudioSourceProperties.Pitch);
-				if (AudioSourceProperties.MinDistance >= 0.0f)   Source->SetMinDistance(AudioSourceProperties.MinDistance);
-				if (AudioSourceProperties.MaxDistance >= 0.0f)   Source->SetMaxDistance(AudioSourceProperties.MaxDistance);
-				if (AudioSourceProperties.RolloffFactor >= 0.0f) Source->SetRolloff(AudioSourceProperties.RolloffFactor);
+				if (AudioSourceProperties.Gain >= 0.0f)          Source->Gain = AudioSourceProperties.Gain;
+				if (AudioSourceProperties.Pitch >= 0.0f)         Source->Pitch = AudioSourceProperties.Pitch;
+				if (AudioSourceProperties.MinDistance >= 0.0f)   Source->MinDistance = AudioSourceProperties.MinDistance;
+				if (AudioSourceProperties.MaxDistance >= 0.0f)   Source->MaxDistance = AudioSourceProperties.MaxDistance;
+				if (AudioSourceProperties.RolloffFactor >= 0.0f) Source->Rolloff = AudioSourceProperties.RolloffFactor;
 
 				CAudioSource = new ComponentAudioSource(Source);
 			}

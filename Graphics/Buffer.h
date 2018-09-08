@@ -9,19 +9,41 @@ namespace Columbus
 	{
 	public:
 		enum class Type;
+		enum class Usage;
+		enum class Changing;
 		struct Properties;
 	protected:
 		uint64 Size;
 		Type BufferType;
+		Usage BufferUsage;
+		Changing BufferChanging;
 	public:
 		enum class Type
 		{
 			Array
 		};
 
+		enum class Usage
+		{
+			Write,
+			Read,
+			Copy
+		};
+
+		enum class Changing
+		{
+			Static,
+			Dynamic,
+			Stream
+		};
+
 		struct Properties
 		{
+			static Properties Default() { return Properties{0, Buffer::Usage::Write, Buffer::Changing::Dynamic}; }
+
 			uint64 DataSize;
+			Usage DataUsage;
+			Changing DataChanging;
 		};
 	public:
 		Buffer() : Size(0) {}

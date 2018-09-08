@@ -72,12 +72,6 @@
 
 		float ReflectionPower;
 		float EmissionStrength;
-		float DetailNormalStrength;
-
-		float Rim;
-		float RimPower;
-		float RimBias;
-		vec3 RimColor;
 
 		bool Transparent;
 	};
@@ -118,11 +112,11 @@
 	uniform Camera uCamera;
 
 	vec4 DiffuseMap;
-	vec3 NormalMap;
+	vec4 NormalMap;
 	vec3 RoughnessMap;
 	vec3 MetallicMap;
 	vec4 DetailDiffuseMap;
-	vec3 DetailNormalMap;
+	vec4 DetailNormalMap;
 
 	vec3 Normal;
 	float Roughness;
@@ -132,7 +126,6 @@
 	vec3 RimColor = vec3(0);
 
 	void Init(void);
-	vec3 RimCalc();
 	void Cubemap(void);
 	void Final(void);
 
@@ -148,14 +141,24 @@
 		Final();
 	}
 
+	vec3 NormalBlend(in vec4 n1, in vec4 n2)
+	{
+		//UDN
+		vec3 c = vec3(2, 1, 0);
+		vec3 r;
+		r = n2.xyz * c.yyz + n1.xyz;
+		r = r * c.xxx - c.xxy;
+		return normalize(r);
+	}
+
 	void Init(void)
 	{
 		DiffuseMap = texture(uMaterial.DiffuseMap, varUV * uMaterial.Tiling);
-		NormalMap = texture(uMaterial.NormalMap, varUV * uMaterial.Tiling).rgb;
+		NormalMap = texture(uMaterial.NormalMap, varUV * uMaterial.Tiling);
 		RoughnessMap = texture(uMaterial.RoughnessMap, varUV * uMaterial.Tiling).rgb;
 		MetallicMap = texture(uMaterial.RoughnessMap, varUV * uMaterial.Tiling).rgb;
 		DetailDiffuseMap = texture(uMaterial.DetailDiffuseMap, varUV * uMaterial.DetailTiling);
-		DetailNormalMap = texture(uMaterial.DetailNormalMap, varUV * uMaterial.DetailTiling).rgb;
+		DetailNormalMap = texture(uMaterial.DetailNormalMap, varUV * uMaterial.DetailTiling);
 
 		Normal = varNormal;
 		Roughness = uMaterial.Roughness;
@@ -172,9 +175,7 @@
 
 		if (textureSize(uMaterial.NormalMap, 0).x > 1 && textureSize(uMaterial.DetailNormalMap, 0).x > 1)
 		{
-			vec3 n1 = normalize(NormalMap.rgb * 2.0 - 1.0) * varTBN;
-			vec3 n2 = normalize(DetailNormalMap * 2.0 - 1.0) * varTBN;
-			Normal = normalize(vec3(n1.xy + n2.xy, n1.z));
+			Normal = NormalBlend(NormalMap, DetailNormalMap) * varTBN;
 		}
 		else if (textureSize(uMaterial.DetailNormalMap, 0).x > 1)
 		{
@@ -291,14 +292,6 @@
 		BRDF = pow(BRDF, vec3(1.0 / 2.2));
 
 		return BRDF;
-	}
-
-	vec3 RimCalc()
-	{
-		vec3 ViewDirection = normalize(uCamera.Position - varPos);
-		float Rim = pow(1.0 + uMaterial.RimBias - max(dot(Normal, ViewDirection), 0.0), uMaterial.RimPower);
-		RimColor = Rim * uMaterial.RimColor * uMaterial.Rim;
-		return RimColor;
 	}
 
 	void Cubemap(void)
