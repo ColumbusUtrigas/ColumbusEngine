@@ -36,6 +36,7 @@ namespace Columbus
 
 		bool Loaded;
 		bool Compiled;
+		bool Error;
 	public:
 		ShaderStage() {}
 
@@ -45,6 +46,7 @@ namespace Columbus
 
 		bool IsLoaded() const { return Loaded; }
 		bool IsCompiled() const  { return Compiled; }
+		bool IsError() const { return Error; }
 		ShaderType GetType() const { return Type; }
 
 		virtual ~ShaderStage() {}
@@ -57,6 +59,7 @@ namespace Columbus
 		std::vector<ShaderStage*> Stages;
 
 		bool Compiled;
+		bool Error;
 	public:
 		enum class StandartProgram
 		{
@@ -80,7 +83,8 @@ namespace Columbus
 
 		bool IsCompiled() const
 		{
-			if (!Compiled) return false;
+			return Compiled;
+			/*if (!Compiled) return false;
 
 			for (auto& Stage : Stages)
 			{
@@ -90,7 +94,23 @@ namespace Columbus
 				}
 			}
 
-			return true;
+			return true;*/
+		}
+
+		bool IsError() const
+		{
+			return Error;
+			/*if (Error) return true;
+
+			for (auto& Stage : Stages)
+			{
+				if (Stage->IsError())
+				{
+					return true;
+				}
+			}
+
+			return false;*/
 		}
 
 		void AddAttribute(std::string InName, uint32 InValue) { Attributes.emplace_back(InName, InValue); }

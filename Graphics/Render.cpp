@@ -293,9 +293,12 @@ namespace Columbus
 				{
 					if (CurrentShader != PreviousShader)
 					{
-						if (!CurrentShader->IsCompiled())
+						if (!CurrentShader->IsError())
 						{
-							CurrentShader->Compile();
+							if (!CurrentShader->IsCompiled())
+							{
+								CurrentShader->Compile();
+							}
 						}
 
 						CurrentShader->Bind();
@@ -320,7 +323,7 @@ namespace Columbus
 						Object.Object->Bind();
 					}
 
-					PolygonsRendered += Object.Object->Render(Object.ObjectTransform, CurrentShader);
+					PolygonsRendered += Object.Object->Render();
 				}
 
 				PreviousShader = Object.ObjectMaterial.GetShader();
@@ -351,6 +354,14 @@ namespace Columbus
 
 					if (CurrentShader != nullptr)
 					{
+						if (!CurrentShader->IsError())
+						{
+							if (!CurrentShader->IsCompiled())
+							{
+								CurrentShader->Compile();
+							}
+						}
+
 						CurrentShader->Bind();
 
 						ShaderSetMatrices(Object.ObjectMaterial.GetShader(), Object.ObjectTransform, MainCamera);
@@ -364,14 +375,14 @@ namespace Columbus
 							glDepthMask(GL_TRUE);
 							CurrentShader->SetUniform1i("uMaterial.Transparent", 0);
 							PrepareFaceCulling(Material::Cull::No);
-							CurrentMesh->Render(Object.ObjectTransform, Object.ObjectMaterial.GetShader());
+							CurrentMesh->Render();
 
 							glDepthMask(GL_FALSE);
 							CurrentShader->SetUniform1i("uMaterial.Transparent", 1);
 							PrepareFaceCulling(Material::Cull::Front);
-							CurrentMesh->Render(Object.ObjectTransform, Object.ObjectMaterial.GetShader());
+							CurrentMesh->Render();
 							PrepareFaceCulling(Material::Cull::Back);
-							CurrentMesh->Render(Object.ObjectTransform, Object.ObjectMaterial.GetShader());
+							CurrentMesh->Render();
 						}
 						else
 						{
@@ -379,11 +390,11 @@ namespace Columbus
 
 							glDepthMask(GL_TRUE);
 							CurrentShader->SetUniform1i("uMaterial.Transparent", 0);
-							CurrentMesh->Render(Object.ObjectTransform, Object.ObjectMaterial.GetShader());
+							CurrentMesh->Render();
 
 							glDepthMask(GL_FALSE);
 							CurrentShader->SetUniform1i("uMaterial.Transparent", 1);
-							CurrentMesh->Render(Object.ObjectTransform, Object.ObjectMaterial.GetShader());
+							CurrentMesh->Render();
 						}
 
 						Object.MeshObject->Unbind();
@@ -396,6 +407,7 @@ namespace Columbus
 
 				if (Object.ParticleObject != nullptr)
 				{
+					PrepareFaceCulling(Material::Cull::Back);
 					Object.ParticleObject->Render();
 				}
 			}

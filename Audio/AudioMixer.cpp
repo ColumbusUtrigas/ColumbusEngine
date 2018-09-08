@@ -8,17 +8,12 @@ namespace Columbus
 	{
 		float Attenuation = 1.0f;
 
-		if (Source->GetMode() == AudioSource::Mode::Sound3D)
+		if (Source->SoundMode == AudioSource::Mode::Sound3D)
 		{
-			float Distance = Source->GetPosition().Length(Listener);
-			float MinDist = Source->GetMinDistance();
-			float MaxDist = Source->GetMaxDistance();
-			float Rolloff = Source->GetRolloff();
-
-			if (Distance == 0.0f)
-			{
-				Distance = 0.000001f;
-			}
+			float Distance = Math::Max(0.000001f, Source->Position.Length(Listener));
+			float MinDist = Source->MinDistance;
+			float MaxDist = Source->MaxDistance;
+			float Rolloff = Source->Rolloff;
 
 			if (Distance < MaxDist)
 			{
@@ -37,10 +32,10 @@ namespace Columbus
 	{
 		if (Source != nullptr)
 		{
-			if (Source->GetMode() == AudioSource::Mode::Sound3D)
+			if (Source->SoundMode == AudioSource::Mode::Sound3D)
 			{
 
-				return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->GetPosition() - Listener.Position));
+				return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->Position - Listener.Position));
 			}
 		}
 
@@ -80,7 +75,7 @@ namespace Columbus
 			float LVolume = Math::Min(1.0f, 1.0f - Pan);
 			float RVolume = Math::Min(1.0f, 1.0f + Pan);
 
-			float Gain = Source->GetGain() * Attenuation;
+			float Gain = Source->Gain * Attenuation;
 			Gain = 1.0f - Math::Sqrt(1.0f - Gain * Gain);
 
 			Source->PrepareBuffer(Data, Count);

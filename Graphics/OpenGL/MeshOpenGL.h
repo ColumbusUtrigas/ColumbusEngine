@@ -24,7 +24,7 @@ namespace Columbus
 
 		void SetVertices(std::vector<Vertex> Vertices) override;
 		void Bind() override;
-		uint32 Render(Transform InTransform, ShaderProgram* InShader) override;
+		uint32 Render() override;
 		void Unbind() override;
 		uint64 GetMemoryUsage() const override;
 
