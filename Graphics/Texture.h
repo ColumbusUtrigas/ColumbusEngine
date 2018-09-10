@@ -25,6 +25,7 @@ namespace Columbus
 	public:
 		enum class Filter;
 		enum class Anisotropy;
+		enum class Wrap;
 		enum class Type;
 		struct Flags;
 		struct Properties;
@@ -62,6 +63,15 @@ namespace Columbus
 			Anisotropy16
 		};
 
+		enum class Wrap
+		{
+			Clamp,
+			ClampToEdge,
+			Repeat,
+			MirroredRepeat,
+			MirroredClampToEdge
+		};
+
 		enum class Type
 		{
 			Texture2D,
@@ -72,8 +82,9 @@ namespace Columbus
 
 		struct Flags
 		{
-			Filter Filtering = Filter::Linear;
+			Filter Filtering = Filter::Trilinear;
 			Anisotropy AnisotropyFilter = Anisotropy::Anisotropy8;
+			Wrap Wrapping = Wrap::Repeat;
 		};
 
 		struct Properties
