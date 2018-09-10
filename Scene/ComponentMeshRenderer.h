@@ -31,31 +31,6 @@ namespace Columbus
 		Mesh* GetMesh() const { return Object; }
 		void SetLights(std::vector<Light*> Lights) { Object->SetLights(Lights); }
 		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
-		ShaderProgram* GetShader() const
-		{
-			if (Object != nullptr)
-			{
-				return Object->mMat.GetShader();
-			}
-
-			return nullptr;
-		}
-
-		void SetShader(ShaderProgram* Shader)
-		{
-			if (Object != nullptr)
-			{
-				Object->mMat.SetShader(Shader);
-			}
-		}
-
-		void SetReflection(Texture* Cubemap)
-		{
-			if (Object != nullptr)
-			{
-				Object->mMat.Reflection = Cubemap;
-			}
-		}
 
 		virtual ~ComponentMeshRenderer() override {}
 	};

@@ -27,12 +27,10 @@ namespace Columbus
 
 		uint32 VerticesCount;
 	public:
-		Material mMat;
 		std::vector<Light*> Lights;
 	public:
 		Mesh() : VerticesCount(0) { }
 		Mesh(std::vector<Vertex> Vertices) : VerticesCount(0) { SetVertices(Vertices); }
-		Mesh(std::vector<Vertex> Vertices, Material InMaterial) : VerticesCount(0) {  mMat = InMaterial; SetVertices(Vertices); }
 
 		virtual void SetVertices(std::vector<Vertex> InVertices) {}
 		virtual void Bind() {}
@@ -45,7 +43,6 @@ namespace Columbus
 		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }
 
 		Box GetBoundingBox() const { return BoundingBox; }
-		Material& GetMaterial() { return mMat; }
 		Camera& GetCamera() { return ObjectCamera; }
 
 		void Clear() {}
