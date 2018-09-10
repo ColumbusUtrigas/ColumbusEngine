@@ -60,7 +60,7 @@ namespace Columbus
 			if (mesh != nullptr)
 			{
 				mesh->SetLights(mLights);
-				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->GetCubemap());
+
 				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
 			}
 		}
@@ -199,25 +199,31 @@ namespace Columbus
 				{
 					Mesh* Mesh = gDevice->CreateMesh();
 					Mesh->SetVertices(PrimitivePlane());
-					//Mesh->mMat = *Mat;
 
-					MeshRenderer = new ComponentMeshRenderer(Mesh);
+					if (Mesh != nullptr)
+					{
+						MeshRenderer = new ComponentMeshRenderer(Mesh);
+					}
 				}
 				else if (MeshPath == "Cube")
 				{
 					Mesh* Mesh = gDevice->CreateMesh();
 					Mesh->SetVertices(PrimitiveBox());
-					//Mesh->mMat = *Mat;
 
-					MeshRenderer = new ComponentMeshRenderer(Mesh);
+					if (Mesh != nullptr)
+					{
+						MeshRenderer = new ComponentMeshRenderer(Mesh);
+					}
 				}
 				else if (MeshPath == "Sphere")
 				{
 					Mesh* Mesh = gDevice->CreateMesh();
 					Mesh->SetVertices(PrimitiveSphere(1, 50, 50));
-					//Mesh->mMat = *Mat;
 
-					MeshRenderer = new ComponentMeshRenderer(Mesh);
+					if (Mesh != nullptr)
+					{
+						MeshRenderer = new ComponentMeshRenderer(Mesh);
+					}
 				}
 				else
 				{
@@ -225,7 +231,6 @@ namespace Columbus
 					{
 						Mesh* Mesh = gDevice->CreateMesh();
 						Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
-						//Mesh->mMat = *Mat;
 
 						if (Mesh != nullptr)
 						{

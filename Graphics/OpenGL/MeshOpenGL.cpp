@@ -17,14 +17,6 @@ namespace Columbus
 		SetVertices(InVertices);
 	}
 	
-	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices, Material InMaterial)
-	{
-		glGenBuffers(1, &VBuf);
-		glGenVertexArrays(1, &VAO);
-		mMat = InMaterial;
-		SetVertices(InVertices);
-	}
-	
 	void MeshOpenGL::SetVertices(std::vector<Vertex> Vertices)
 	{
 		VerticesCount = Vertices.size();
