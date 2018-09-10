@@ -314,6 +314,8 @@ namespace Columbus
 							glCompressedTexImage2D(Target, Level, InternalFormat, Width, Height, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
 						}
 
+						TextureFlags.Wrapping = Texture::Wrap::Repeat;
+
 						break;
 					}
 
@@ -333,9 +335,7 @@ namespace Columbus
 							}
 						}
 
-						glTexParameteri(Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-						glTexParameteri(Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-						glTexParameteri(Target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+						TextureFlags.Wrapping = Texture::Wrap::ClampToEdge;
 
 						break;
 					}
@@ -350,11 +350,7 @@ namespace Columbus
 				glGenerateMipmap(Target);
 			}
 
-			Flags f;
-			f.Filtering = Texture::Filter::Trilinear;
-			f.AnisotropyFilter = Texture::Anisotropy::Anisotropy8;
-
-			SetFlags(f);
+			SetFlags(TextureFlags);
 
 			glBindTexture(Target, 0);
 
@@ -506,6 +502,21 @@ namespace Columbus
 		case Texture::Anisotropy::Anisotropy16: glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16); break;
 		default:                                glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
 		}
+
+		GLuint ClampMode = GL_CLAMP_TO_EDGE;
+
+		switch (TextureFlags.Wrapping)
+		{
+		case Texture::Wrap::Clamp:               ClampMode = GL_CLAMP;                break;
+		case Texture::Wrap::ClampToEdge:         ClampMode = GL_CLAMP_TO_EDGE;        break;
+		case Texture::Wrap::Repeat:              ClampMode = GL_REPEAT;               break;
+		case Texture::Wrap::MirroredRepeat:      ClampMode = GL_MIRRORED_REPEAT;      break;
+		case Texture::Wrap::MirroredClampToEdge: ClampMode = GL_MIRROR_CLAMP_TO_EDGE; break;
+		}
+
+		glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);
+		glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
+		glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
 
 		glBindTexture(Target, 0);
 	}
