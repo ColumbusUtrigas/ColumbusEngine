@@ -219,11 +219,12 @@ namespace Columbus
 	Image::Image() :
 		Width(0),
 		Height(0),
+		Depth(0),
 		Size(0),
 		MipMaps(0),
-		Exist(false),
-		Data(nullptr)
-	{ }
+		Format(TextureFormat::RGBA8),
+		Data(nullptr),
+		Exist(false) {}
 	/*
 	* Load image from file
 	* @param std::string InFileName: Name of image file to load
@@ -443,6 +444,30 @@ namespace Columbus
 			case TextureFormat::DXT1: return 8;  break;
 			case TextureFormat::DXT3: return 16; break;
 			case TextureFormat::DXT5: return 16; break;
+
+			case TextureFormat::R8:
+			case TextureFormat::RG8:
+			case TextureFormat::RGB8:
+			case TextureFormat::RGBA8:
+			case TextureFormat::R16:
+			case TextureFormat::RG16:
+			case TextureFormat::RGB16:
+			case TextureFormat::RGBA16:
+			case TextureFormat::R16F:
+			case TextureFormat::RG16F:
+			case TextureFormat::RGB16F:
+			case TextureFormat::RGBA16F:
+			case TextureFormat::R32F:
+			case TextureFormat::RG32F:
+			case TextureFormat::RGB32F:
+			case TextureFormat::RGBA32F:
+			case TextureFormat::Depth:
+			case TextureFormat::Depth16:
+			case TextureFormat::Depth24:
+			case TextureFormat::Depth24Stencil8:
+			case TextureFormat::Depth32F:
+			case TextureFormat::Depth32FStencil8:
+			case TextureFormat::Unknown: return 0; break;
 		}
 
 		return 0;

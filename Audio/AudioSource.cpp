@@ -6,6 +6,11 @@ namespace Columbus
 
 	AudioSource::AudioSource() :
 		SoundClip(nullptr),
+		Offset(0),
+		Played(0.0),
+		Position(0.0f),
+		Velocity(0.0f),
+		Direction(0.0f),
 		Gain(1.0f),
 		Pitch(1.0f),
 		MinDistance(Math::Sqrt(8)),
@@ -13,8 +18,6 @@ namespace Columbus
 		Rolloff(1.0f),
 		Playing(false),
 		Looping(false),
-		Offset(0),
-		Played(0.0),
 		SoundMode(AudioSource::Mode::Sound3D)
 	{
 		SoundClip = new Sound();

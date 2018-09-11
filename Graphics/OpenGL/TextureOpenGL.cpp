@@ -293,7 +293,7 @@ namespace Columbus
 		if (glIsTexture(ID))
 		{
 			bool Success = true;
-			bool Compressed;
+			bool Compressed = false;
 
 			UpdateFormat(Format, Compressed);
 
@@ -335,7 +335,7 @@ namespace Columbus
 							}
 						}
 
-						TextureFlags.Wrapping = Texture::Wrap::ClampToEdge;
+						TextureFlags.Wrapping = Texture::Wrap::Repeat;
 
 						break;
 					}
@@ -408,7 +408,7 @@ namespace Columbus
 		Height = Props.Height;
 		Format = Props.Format;
 
-		bool Compressed;
+		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
 
@@ -436,7 +436,7 @@ namespace Columbus
 		Height = Props.Height;
 		Format = Props.Format;
 
-		bool Compressed;
+		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
 

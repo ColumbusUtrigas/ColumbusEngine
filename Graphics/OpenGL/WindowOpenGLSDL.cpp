@@ -41,7 +41,7 @@ namespace Columbus
 			Log::initialization("Current video driver: " + std::string(SDL_GetCurrentVideoDriver()));
 			Log::initialization("Display count: " + std::to_string(SDL_GetNumVideoDisplays()));
 
-			for (uint32 i = 0; i < SDL_GetNumVideoDisplays(); i++)
+			for (int32 i = 0; i < SDL_GetNumVideoDisplays(); i++)
 			{
 				if (SDL_GetDesktopDisplayMode(i, &DisplayModes[i]) != 0)
 				{
@@ -112,6 +112,7 @@ namespace Columbus
 		glEnable(GL_ALPHA_TEST);
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_PROGRAM_POINT_SIZE);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		//glEnable(GL_DITHER);
 
 		if (glewInit() != GLEW_OK)
