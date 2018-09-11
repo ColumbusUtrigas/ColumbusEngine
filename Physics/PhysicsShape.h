@@ -12,7 +12,7 @@ namespace Columbus
 	public:
 		btCollisionShape* mShape;
 	public:
-		PhysicsShape() : mShape(nullptr), Margin(0.0f) {}
+		PhysicsShape() : Margin(0.0f), mShape(nullptr) {}
 		/*
 		* Returns true if Shape exits, else returns false
 		* @return bool: Exits-value

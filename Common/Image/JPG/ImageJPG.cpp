@@ -41,6 +41,7 @@ namespace Columbus
 		{
 			case JCS_GRAYSCALE: bpp = 1; break;
 			case JCS_RGB:       bpp = 3; break;
+			case JCS_EXT_RGBA:  bpp = 4; break;
 		}
 
 		OutWidth = cinfo.image_width;
@@ -48,8 +49,9 @@ namespace Columbus
 		OutSize = cinfo.image_width * cinfo.image_height * bpp;
 		switch (bpp)
 		{
-			case 1: OutFormat = TextureFormat::R8;   break;
-			case 3: OutFormat = TextureFormat::RGB8; break;
+			case 1: OutFormat = TextureFormat::R8;    break;
+			case 3: OutFormat = TextureFormat::RGB8;  break;
+			case 4: OutFormat = TextureFormat::RGBA8; break;
 		}
 
 		jpeg_start_decompress(&cinfo);
@@ -83,7 +85,7 @@ namespace Columbus
 		struct jpeg_compress_struct cinfo;
 		struct jpeg_error_mgr jerr;
 		
-		FILE* file = fopen(FileName.c_str(), "wb");;
+		FILE* file = fopen(FileName.c_str(), "wb");
 		if (file == nullptr) return false;
 
 		JSAMPROW row_pointer[1];
