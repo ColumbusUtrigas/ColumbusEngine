@@ -1,16 +1,11 @@
 #pragma once
 
-#include <cstdio>
-#include <cstdlib>
 #include <vector>
-#include <ctime>
-#include <algorithm>
 
 #include <Graphics/Buffer.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Particles/ParticleEffect.h>
 #include <Graphics/Particles/Particle.h>
-#include <Graphics/Light.h>
 
 #include <Common/Noise/OctaveNoise.h>
 
@@ -47,8 +42,8 @@ namespace Columbus
 		Buffer* Colors = nullptr;
 		Buffer* Sizes = nullptr;
 		
-		float* VertData = nullptr;
-		float* UVData = nullptr;
+		Vector3* VertData = nullptr;
+		Vector2* UVData = nullptr;
 
 		Vector3* PositionData = nullptr;
 		Vector2* TimeData = nullptr;

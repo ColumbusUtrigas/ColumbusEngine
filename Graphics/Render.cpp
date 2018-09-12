@@ -214,7 +214,7 @@ namespace Columbus
 
 					if (Mesh != nullptr)
 					{
-						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetScale() + Object.second->GetTransform().GetPos()))
+						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetMatrix()))
 						{
 							if (Object.second->GetMaterial().Transparent)
 							{

@@ -168,7 +168,7 @@ namespace Columbus
 				OutFrequency = Freq;
 				OutChannels = Channels;
 
-				delete Frames;
+				delete[] Frames;
 				return Data;
 			}
 		}

@@ -142,7 +142,7 @@ namespace Columbus
 	*
 	*/
 
-	static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, std::string Element)
+	static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, const std::string& Element)
 	{
 		Transform Trans;
 
@@ -165,7 +165,7 @@ namespace Columbus
 		return Trans;
 	}
 
-	static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, std::string Element)
+	static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, const std::string& Element)
 	{
 		Material* Mat = new Material();
 
@@ -185,7 +185,7 @@ namespace Columbus
 		return Mat;
 	}
 
-	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat, std::map <uint32, std::vector<Vertex>>* Meshes)
+	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		ComponentMeshRenderer* MeshRenderer = nullptr;
 
@@ -229,12 +229,13 @@ namespace Columbus
 				{
 					if (atoi(MeshPath.c_str()) >= 0)
 					{
-						Mesh* Mesh = gDevice->CreateMesh();
-						Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
+						//Mesh* Mesh = gDevice->CreateMesh();
+						//Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
+						Mesh* tMesh = Meshes->at(atoi(MeshPath.c_str())).Get();
 
-						if (Mesh != nullptr)
+						if (tMesh != nullptr)
 						{
-							MeshRenderer = new ComponentMeshRenderer(Mesh);
+							MeshRenderer = new ComponentMeshRenderer(tMesh);
 						}
 					}
 				}
@@ -244,11 +245,11 @@ namespace Columbus
 		return MeshRenderer;
 	}
 
-	static ComponentMeshInstancedRenderer* SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat, std::map <uint32, std::vector<Vertex>>* Meshes)
+	static ComponentMeshInstancedRenderer* SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		ComponentMeshInstancedRenderer* MeshInstancedRenderer = nullptr;
 
-		if (Serializer != nullptr && Mat != nullptr && Meshes != nullptr)
+		/*if (Serializer != nullptr && Mat != nullptr && Meshes != nullptr)
 		{
 			std::string MeshPath;
 
@@ -263,12 +264,12 @@ namespace Columbus
 					MeshInstancedRenderer = new ComponentMeshInstancedRenderer(mesh);
 				}
 			}
-		}
+		}*/
 
 		return MeshInstancedRenderer;
 	}
 
-	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, std::string Element, Material* Mat)
+	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat)
 	{
 		ComponentParticleSystem* ParticleSystem = nullptr;
 
@@ -288,7 +289,7 @@ namespace Columbus
 		return ParticleSystem;
 	}
 
-	static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, std::string Element, Vector3 Position)
+	static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, const std::string& Element, Vector3 Position)
 	{
 		ComponentLight* CLight = nullptr;
 
@@ -308,7 +309,7 @@ namespace Columbus
 		return CLight;
 	}
 
-	static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, std::string Element, Transform Trans, PhysicsShape* Shape)
+	static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, const std::string& Element, Transform Trans, PhysicsShape* Shape)
 	{
 		ComponentRigidbody* CRigidbody = nullptr;
 
@@ -357,7 +358,7 @@ namespace Columbus
 		return CRigidbody;
 	}
 
-	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, std::string Element, std::map<uint32, std::vector<Vertex>>* Meshes)
+	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		PhysicsShape* Shape = nullptr;
 
@@ -396,7 +397,7 @@ namespace Columbus
 					if (atoi(rbShapeMesh.c_str()) >= 0)
 					{
 						delete Shape;
-						Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str())));
+						//Shape = new PhysicsShapeConvexHull(Meshes->at(atoi(rbShapeMesh.c_str())));
 					}
 				}
 			}
@@ -437,7 +438,7 @@ namespace Columbus
 		return Shape;
 	}
 
-	static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, std::string Element, std::map<uint32, Sound*>* Sounds)
+	static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Sound>>* Sounds)
 	{
 		ComponentAudioSource* CAudioSource = nullptr;
 
@@ -490,7 +491,7 @@ namespace Columbus
 
 				if (atoi(AudioSourceProperties.SourceSound.c_str()) >= 0)
 				{
-					Source->SetSound(Sounds->at(atoi(AudioSourceProperties.SourceSound.c_str())));
+					Source->SetSound(Sounds->at(atoi(AudioSourceProperties.SourceSound.c_str())).Get());
 				}
 
 				if (AudioSourceProperties.Gain >= 0.0f)          Source->Gain = AudioSourceProperties.Gain;
@@ -510,9 +511,9 @@ namespace Columbus
 	* End of additional functions for loading GameObject
 	*
 	*/
-	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, std::string Element,
-		std::map<uint32, std::vector<Vertex>>* Meshes, std::map<uint32, Texture*>* Textures, std::map<uint32, ShaderProgram*>* Shaders,
-		std::map<uint32, Sound*>* Sounds, PhysicsWorld* PhysWorld)
+	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, const std::string& Element,
+		std::map<uint32, SmartPointer<Mesh>>* Meshes, std::map<uint32, SmartPointer<Texture>>* Textures, std::map<uint32, SmartPointer<ShaderProgram>>* Shaders,
+		std::map<uint32, SmartPointer<Sound>>* Sounds, PhysicsWorld* PhysWorld)
 	{
 		if (Serializer != nullptr && Meshes != nullptr && Textures != nullptr && Shaders != nullptr && PhysWorld != nullptr)
 		{
@@ -533,51 +534,52 @@ namespace Columbus
 
 			if (Serializer->GetSubInt({ "GameObjects", Element, "Shader" }, shaderID))
 			{
-				material->SetShader(Shaders->at(shaderID));
+				material->SetShader(Shaders->at(shaderID).Get());
 			}
 			else
 			{
+				delete material;
 				return false;
 			}
 
 			if (material->getTextureID() != -1)
 			{
-				material->DiffuseTexture = Textures->at(material->getTextureID());
+				material->DiffuseTexture = Textures->at(material->getTextureID()).Get();
 			}
 
 			if (material->getNormMapID() != -1)
 			{
-				material->NormalTexture = Textures->at(material->getNormMapID());
+				material->NormalTexture = Textures->at(material->getNormMapID()).Get();
 			}
 
 			if (material->GetRoughnessMapID() != -1)
 			{
-				material->RoughnessTexture = Textures->at(material->GetRoughnessMapID());
+				material->RoughnessTexture = Textures->at(material->GetRoughnessMapID()).Get();
 			}
 
 			if (material->GetMetallicMapID() != -1)
 			{
-				material->MetallicTexture = Textures->at(material->GetMetallicMapID());
+				material->MetallicTexture = Textures->at(material->GetMetallicMapID()).Get();
 			}
 
 			if (material->GetOcclusionMapID() != -1)
 			{
-				material->OcclusionMap = Textures->at(material->GetOcclusionMapID());
+				material->OcclusionMap = Textures->at(material->GetOcclusionMapID()).Get();
 			}
 
 			if (material->GetEmissionMapID() != -1)
 			{
-				material->EmissionMap = Textures->at(material->GetEmissionMapID());
+				material->EmissionMap = Textures->at(material->GetEmissionMapID()).Get();
 			}
 
 			if (material->GetDetailDiffuseMapID() != -1)
 			{
-				material->DetailDiffuseMap = Textures->at(material->GetDetailDiffuseMapID());
+				material->DetailDiffuseMap = Textures->at(material->GetDetailDiffuseMapID()).Get();
 			}
 
 			if (material->GetDetailNormalMapID() != -1)
 			{
-				material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID());
+				material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID()).Get();
 			}
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
@@ -677,7 +679,7 @@ namespace Columbus
 						Tex->Load(Img);
 
 						Log::success("Texture loaded: " + path);
-						mTextures[i] = Tex;
+						mTextures.insert(std::make_pair(i, SmartPointer<Texture>(Tex)));
 					}
 				}
 			}
@@ -693,7 +695,7 @@ namespace Columbus
 				{
 					auto tShader = gDevice->CreateShaderProgram();
 					tShader->Load(path);
-					ShaderPrograms[i] = tShader;
+					ShaderPrograms.insert(std::make_pair(i, SmartPointer<ShaderProgram>(tShader)));
 				}
 			}
 		}
@@ -710,7 +712,16 @@ namespace Columbus
 					if (ModelIsCMF(path))
 					{
 						ModelLoadCMF(path, Vertices);
-						Meshes.insert(std::pair<uint32, std::vector<Vertex>>(i, Vertices));
+						//Meshes.insert(std::pair<uint32, std::vector<Vertex>>(i, Vertices));
+
+						Mesh* tMesh = gDevice->CreateMesh();
+
+						if (tMesh != nullptr)
+						{
+							tMesh->SetVertices(Vertices);
+							Meshes.insert(std::make_pair(i, SmartPointer<Mesh>(tMesh)));
+						}
+
 						Log::success("Mesh loaded: " + path);
 					}
 					else
@@ -732,16 +743,16 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Sounds", elem, "Path" }, path) &&
 				    serializer.GetSubBool({ "Resources", "Sounds", elem, "Streaming" }, streaming))
 				{
-					Sound* snd = new Sound();
+					Sound* tSound = new Sound();
 
-					if (snd->Load(path, streaming))
+					if (tSound->Load(path, streaming))
 					{
-						Sounds.insert(std::pair<uint32, Sound*>(i, snd));
+						Sounds.insert(std::make_pair(i, SmartPointer<Sound>(tSound)));
 						Log::success("Sound loaded: " + path);
 					}
 					else
 					{
-						delete snd;
+						delete tSound;
 						continue;
 					}
 				}
@@ -762,10 +773,6 @@ namespace Columbus
 				Add(i, std::move(Object));
 			}
 		}
-
-		//Deleting temperary data
-
-		Meshes.clear();
 		return true;
 	}
 	

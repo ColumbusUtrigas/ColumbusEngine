@@ -175,6 +175,7 @@ int main(int argc, char** argv)
 	}
 
 	delete gDevice;
+	delete Sphere;
 
 	return 0;
 }

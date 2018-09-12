@@ -88,7 +88,7 @@ namespace Columbus
 			aData[i + 0] = bgr[2];
 			aData[i + 1] = bgr[1];
 			aData[i + 2] = bgr[0];
-			aData[i + 3] = aData[i + 3];
+			//aData[i + 3] = aData[i + 3];
 		}
 
 		return true;
