@@ -83,7 +83,7 @@ namespace Columbus
 	//////////////////////////////////////////////////////////////////////////////
 	void Log::error(const char* aFmt, ...)
 	{
-		std::string fmt = LogText(aFmt, "[ERROR]: ", "\x1b[33;1m", "\x1b[37;1m");
+		std::string fmt = LogText(aFmt, "[ERROR]: ", "\x1b[31;1m", "\x1b[37;1m");
 
 		va_list args;
 		va_start(args, aFmt);

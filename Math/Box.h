@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Math/Vector3.h>
+#include <Math/Matrix.h>
 
 namespace Columbus
 {
@@ -22,6 +23,11 @@ namespace Columbus
 		Box operator*(const Vector3& Other) const
 		{
 			return Box(Min * Other, Max * Other);
+		}
+
+		Box operator*(const Matrix& Other) const
+		{
+			return Box((Vector4(Min, 1) * Other).XYZ(), (Vector4(Max, 1) * Other).XYZ());
 		}
 
 		~Box() {}

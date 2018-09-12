@@ -33,11 +33,11 @@ namespace Columbus
 	private:
 		std::map<uint32, SmartPointer<GameObject>> mObjects;
 		std::vector<Light*> mLights;
-		std::map<uint32, Texture*> mTextures;
-		std::map<uint32, ShaderProgram*> ShaderPrograms;
+		std::map<uint32, SmartPointer<Texture>> mTextures;
+		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 
-		std::map<uint32, std::vector<Vertex>> Meshes;
-		std::map<uint32, Sound*> Sounds;
+		std::map<uint32, SmartPointer<Mesh>> Meshes;
+		std::map<uint32, SmartPointer<Sound>> Sounds;
 
 		Renderer Render;
 

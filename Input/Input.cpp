@@ -258,7 +258,8 @@ namespace Columbus
 	
 	Input::~Input()
 	{
-
+		delete[] mPreviousKeyboardState;
+		delete[] mCurrentKeyboardState;
 	}
 
 }

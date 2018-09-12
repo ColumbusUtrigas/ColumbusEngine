@@ -235,7 +235,7 @@ namespace Columbus
 		    serializer.GetSubFloat({ "Emit", "EmitRate" }, tEmit->EmitRate))
 		{
 			tEmitBase = tEmit;
-		}
+		} else delete tEmit;
 
 		ParticleModuleLocationCircle* tLocationCircle = new ParticleModuleLocationCircle();
 
@@ -243,7 +243,7 @@ namespace Columbus
 		    serializer.GetSubBool({ "Location", "Circle", "EmitFromShell" }, tLocationCircle->EmitFromShell))
 		{
 			tLocationBase = tLocationCircle;
-		}
+		} else delete tLocationCircle;
 
 		ParticleModuleLocationBox* tLocationBox = new ParticleModuleLocationBox();
 
@@ -251,7 +251,7 @@ namespace Columbus
 		    serializer.GetSubBool({ "Location", "Box", "EmitFromShell" }, tLocationBox->EmitFromShell))
 		{
 			tLocationBase = tLocationBox;
-		}
+		} else delete tLocationBox;
 
 		ParticleModuleLocationSphere* tLocationSphere = new ParticleModuleLocationSphere();
 
@@ -259,7 +259,7 @@ namespace Columbus
 		    serializer.GetSubBool({ "Location", "Sphere", "EmitFromShell" }, tLocationSphere->EmitFromShell))
 		{
 			tLocationBase = tLocationSphere;
-		}
+		} else delete tLocationSphere;
 
 		ParticleModuleLifetime* tLifetime = new ParticleModuleLifetime();
 
@@ -267,7 +267,7 @@ namespace Columbus
 		    serializer.GetSubFloat({ "Lifetime", "Max" }, tLifetime->Max))
 		{
 			tLifetimeBase = tLifetime;
-		}
+		} else delete tLifetime;
 
 		ParticleModuleRotation* tRotation = new ParticleModuleRotation();
 
@@ -277,7 +277,7 @@ namespace Columbus
 		    serializer.GetSubFloat({ "Rotation", "MaxVelocity" }, tRotation->MaxVelocity))
 		{
 			tRotationBase = tRotation;
-		}
+		} else delete tRotation;
 
 		ParticleModuleRequired* tRequired = new ParticleModuleRequired();
 
@@ -288,7 +288,7 @@ namespace Columbus
 		    serializer.GetSubInt({ "Required", "SortMode" }, (int32&)tRequired->SortMode))
 		{
 			tRequiredBase = tRequired;
-		}
+		} else delete tRequired;
 
 		ParticleModuleVelocity* tVelocity = new ParticleModuleVelocity();
 
@@ -296,7 +296,7 @@ namespace Columbus
 		    serializer.GetSubVector3({ "InitialVelocity", "Max" }, tVelocity->Max, { "X", "Y", "Z" }))
 		{
 			tVelocityBase = tVelocity;
-		}
+		} else delete tVelocity;
 
 		ParticleModuleAcceleration* tAcceleration = new ParticleModuleAcceleration();
 
@@ -304,7 +304,7 @@ namespace Columbus
 		    serializer.GetSubVector3({ "Acceleration", "Initial", "Max" }, tAcceleration->Max, { "X", "Y", "Z" }))
 		{
 			tAccelerationBase = tAcceleration;
-		}
+		} else delete tAcceleration;
 
 		ParticleModuleSize* tSize = new ParticleModuleSize();
 
@@ -312,7 +312,7 @@ namespace Columbus
 		    serializer.GetSubVector3({ "Size", "Initial", "Max" }, tSize->Max, { "X", "Y", "Z" }))
 		{
 			tSizeBase = tSize;
-		}
+		} else delete tSize;
 
 		ParticleModuleSizeOverLife* tSizeOverLife = new ParticleModuleSizeOverLife();
 		auto SizeOverLifeElement = serializer.GetSubElement({ "Size", "OverLife", "SizeKey" });
@@ -334,7 +334,9 @@ namespace Columbus
 			}
 
 			tSizeBase = tSizeOverLife;
-		}
+		} else delete tSizeOverLife;
+
+		delete SizeOverLifeElement;
 
 		/*if (serializer.GetSubVector3({ "Size", "OverLife", "MinStart" }, tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
 		    serializer.GetSubVector3({ "Size", "OverLife", "MaxStart" }, tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
@@ -350,7 +352,7 @@ namespace Columbus
 		    serializer.GetSubVector4({ "Color", "Initial", "Max" }, tColor->Max, { "R", "G", "B", "A" }))
 		{
 			tColorBase = tColor;
-		}
+		} else delete tColor;
 
 		ParticleModuleColorOverLife* tColorOverLife = new ParticleModuleColorOverLife();
 		auto Elem = serializer.GetSubElement({ "Color", "OverLife", "ColorKey" });
@@ -372,7 +374,9 @@ namespace Columbus
 			}
 
 			tColorBase = tColorOverLife;
-		}
+		} else delete tColorOverLife;
+
+		delete Elem;
 
 		/*if (serializer.GetSubVector4({ "Color", "OverLife", "MinStart" }, tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
 		    serializer.GetSubVector4({ "Color", "OverLife", "MaxStart" }, tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
@@ -394,7 +398,7 @@ namespace Columbus
 		    serializer.GetSubFloat({ "Noise", "Amplitude" }, tNoise->Amplitude))
 		{
 			tNoiseBase = tNoise;
-		}
+		} else delete tNoise;
 
 		ParticleModuleSubUV* tSubUV = new ParticleModuleSubUV();
 
@@ -404,7 +408,7 @@ namespace Columbus
 		    serializer.GetSubFloat({ "SubUV", "Cycles" }, tSubUV->Cycles))
 		{
 			tSubUVBase = tSubUV;
-		}
+		} else delete tSubUV;
 
 		Log::success("Particle Effect loaded: " + aFile);
 

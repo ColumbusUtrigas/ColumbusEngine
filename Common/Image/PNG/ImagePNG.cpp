@@ -26,10 +26,10 @@ namespace Columbus
 		png_bytepp rows;
 
 		png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-		if (!png_ptr) return nullptr;
+		if (!png_ptr) { fclose(fp); return nullptr; }
 
 		info_ptr = png_create_info_struct(png_ptr);
-		if (!png_ptr) return nullptr;
+		if (!png_ptr) { fclose(fp); return nullptr; }
 
 		png_init_io(png_ptr, fp);
 		png_read_png(png_ptr, info_ptr, 0, 0);
@@ -75,12 +75,13 @@ namespace Columbus
 		if (fp == nullptr) return false;
 
 		png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-		if (!png) return false;
+		if (!png) { fclose(fp); return false; }
 
 		png_infop info = png_create_info_struct(png);
 		if (!info)
 		{
 			png_destroy_write_struct(&png, &info);
+			fclose(fp);
 			return false;
 		}
 

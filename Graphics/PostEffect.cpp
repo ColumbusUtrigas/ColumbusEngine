@@ -223,7 +223,10 @@ namespace Columbus
 
 	PostEffect::~PostEffect()
 	{
-
+		delete mTB;
+		delete NormalMap;
+		delete mDepth;
+		delete mFB;
 	}
 
 }

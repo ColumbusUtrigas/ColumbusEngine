@@ -147,7 +147,7 @@ namespace Columbus
 				{
 					static auto Sorter = [](const Particle& A, const Particle& B)->bool
 					{
-						return A.cameraDistance > A.cameraDistance;
+						return A.cameraDistance > B.cameraDistance;
 					};
 
 					std::sort(Particles.begin(), Particles.end(), Sorter);
@@ -171,24 +171,21 @@ namespace Columbus
 
 			ParticlesCount = Effect->Emit->Count;
 
-			VertData = new float[ParticlesCount * 18];
-			UVData = new float[ParticlesCount * 12];
+			VertData = new Vector3[ParticlesCount * 6];
+			UVData = new Vector2[ParticlesCount * 6];
 
 			PositionData = new Vector3[ParticlesCount * 6];
 			TimeData = new Vector2[ParticlesCount * 6];
 			ColorData = new Vector4[ParticlesCount * 6];
 			SizeData = new Vector3[ParticlesCount * 6];
 
-			uint32 VertCounter = 0;
-			uint32 UVCounter = 0;
+			uint32 Counter = 0;
 
 			for (uint32 i = 0; i < ParticlesCount; i++)
 			{
-				Memory::Memcpy(VertData + VertCounter, vrts, sizeof(vrts));
-				VertCounter += 18;
-
-				Memory::Memcpy(UVData + UVCounter, uvs, sizeof(uvs));
-				UVCounter += 12;
+				Memory::Memcpy(VertData + Counter, vrts, sizeof(vrts));
+				Memory::Memcpy(UVData + Counter, uvs, sizeof(uvs));
+				Counter += 6;
 			}
 		}
 	}
