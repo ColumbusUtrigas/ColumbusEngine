@@ -190,8 +190,8 @@ namespace Columbus
 
 	void Renderer::CompileLists()
 	{
-		OpaqueObjects.Clear();
-		TransparentObjects.Clear();
+		OpaqueObjects.clear();
+		TransparentObjects.clear();
 
 		ComponentMeshRenderer* MeshRenderer;
 		ComponentParticleSystem* ParticleSystem;
@@ -218,11 +218,11 @@ namespace Columbus
 						{
 							if (Object.second->GetMaterial().Transparent)
 							{
-								TransparentObjects.Add(TransparentRenderData(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial()));
+								TransparentObjects.push_back(TransparentRenderData(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial()));
 							}
 							else
 							{
-								OpaqueObjects.Add(OpaqueRenderData(Mesh, Object.second->GetTransform(), Object.second->GetMaterial()));
+								OpaqueObjects.push_back(OpaqueRenderData(Mesh, Object.second->GetTransform(), Object.second->GetMaterial()));
 							}
 						}
 					}
@@ -234,13 +234,15 @@ namespace Columbus
 
 					if (Emitter != nullptr)
 					{
-						//Transform Trans(Emitter->GetParticleEffect()->getPos());
-						TransparentObjects.Add(TransparentRenderData(nullptr, Emitter, Object.second->GetTransform(), Object.second->GetMaterial()));
+						TransparentObjects.push_back(TransparentRenderData(nullptr, Emitter, Object.second->GetTransform(), Object.second->GetMaterial()));
 					}
 				}
 			}
 		}
+	}
 
+	void Renderer::SortLists()
+	{
 		Vector3 CameraPosition = MainCamera.getPos();
 		Vector3 APosition, BPosition;
 		double ADistance, BDistance;
@@ -261,19 +263,15 @@ namespace Columbus
 			return ADistance > BDistance;
 		};
 
-		std::sort(OpaqueObjects.GetData(), OpaqueObjects.GetData() + OpaqueObjects.GetCount(), OpaqueSorter);
-		std::sort(TransparentObjects.GetData(), TransparentObjects.GetData() + TransparentObjects.GetCount(), TransparentSorter);
-		//Sort(OpaqueObjects.GetData(), OpaqueObjects.GetCount(), OpaqueSorter);
-		//Sort(TransparentObjects.GetData(), TransparentObjects.GetCount(), TransparentSorter);
-		//std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
-		//std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
+		std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
+		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
 	}
 
 	void Renderer::RenderOpaqueStage()
 	{
 		uint32 PolygonsRendered = 0;
 
-		if (RenderList != nullptr && OpaqueObjects.GetCount() != 0)
+		if (RenderList != nullptr && OpaqueObjects.size() != 0)
 		{
 			ClearOptimizations();
 
@@ -339,7 +337,7 @@ namespace Columbus
 
 	void Renderer::RenderTransparentStage()
 	{
-		if (RenderList != nullptr && TransparentObjects.GetCount() != 0)
+		if (RenderList != nullptr && TransparentObjects.size() != 0)
 		{
 			ClearOptimizations();
 			glDepthMask(GL_FALSE);

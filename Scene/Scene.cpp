@@ -852,10 +852,6 @@ namespace Columbus
 	
 	void Scene::render()
 	{
-		C_EnableDepthTestOpenGL();
-		C_EnableBlendOpenGL();
-		C_EnableAlphaTestOpenGL();
-
 		mNoneEffect.clearAttribs();
 		mNoneEffect.addAttrib({ "uResolution", mContextSize });
 		mNoneEffect.Bind(Vector4(1, 1, 1, 0), mContextSize);
@@ -868,16 +864,9 @@ namespace Columbus
 		Render.SetMainCamera(*mCamera);
 		Render.SetRenderList(&mObjects);
 		Render.CompileLists();
+		Render.SortLists();
 		Render.Render(Renderer::Stage::Opaque);
 		Render.Render(Renderer::Stage::Transparent);
-
-		/*for (auto& Object : mObjects)
-			if (Object.second->HasComponent(Component::Type::MeshRenderer) || Object.second->HasComponent(Component::Type::MeshInstancedRenderer))
-				Object.second->Render();
-
-		for (auto& Object : mObjects)
-			if (Object.second->HasComponent(Component::Type::ParticleSystem))
-				Object.second->Render();*/
 
 		mNoneEffect.Unbind();
 		mNoneEffect.Render();

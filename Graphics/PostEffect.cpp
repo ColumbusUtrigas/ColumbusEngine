@@ -6,18 +6,18 @@ namespace Columbus
 
 	PostEffect::PostEffect()
 	{
-		mFB = gDevice->createFramebuffer();
-		mTB = gDevice->CreateTexture();
-		NormalMap = gDevice->CreateTexture();
-		mDepth = gDevice->CreateTexture();
+		FB = gDevice->createFramebuffer();
+		ColorTexture = gDevice->CreateTexture();
+		NormalTexture = gDevice->CreateTexture();
+		DepthTexture = gDevice->CreateTexture();
 
-		mTB->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGB8));
-		NormalMap->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGB8));
-		mDepth->Create2D(Texture::Properties(100, 100, 0, TextureFormat::Depth16));
+		ColorTexture->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGB8));
+		NormalTexture->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGB8));
+		DepthTexture->Create2D(Texture::Properties(100, 100, 0, TextureFormat::Depth16));
 
-		mFB->setTexture2D(Framebuffer::Attachment::Color0, mTB);
-		mFB->setTexture2D(Framebuffer::Attachment::Color1, NormalMap);
-		mFB->setTexture2D(Framebuffer::Attachment::Depth, mDepth);
+		FB->setTexture2D(Framebuffer::Attachment::Color0, ColorTexture);
+		FB->setTexture2D(Framebuffer::Attachment::Color1, NormalTexture);
+		FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
 
 		static float Vertices[] = 
 		{
@@ -142,18 +142,20 @@ namespace Columbus
 			W = Math::TruncToInt(ContextSize.X);
 			H = Math::TruncToInt(ContextSize.Y);
 
-			mTB->Create2D(Texture::Properties(W, H, 0, TextureFormat::RGBA8));
-			NormalMap->Create2D(Texture::Properties(W, H, 0, TextureFormat::RGB8));
-			mDepth->Create2D(Texture::Properties(W, H, 0, TextureFormat::Depth16));
+			ColorTexture->Create2D(Texture::Properties(W, H, 0, TextureFormat::RGBA8));
+			NormalTexture->Create2D(Texture::Properties(W, H, 0, TextureFormat::RGB8));
+			DepthTexture->Create2D(Texture::Properties(W, H, 0, TextureFormat::Depth16));
 
-			mFB->setTexture2D(Framebuffer::Attachment::Color0, mTB);
-			mFB->setTexture2D(Framebuffer::Attachment::Color1, NormalMap);
-			mFB->setTexture2D(Framebuffer::Attachment::Depth, mDepth);
+			FB->setTexture2D(Framebuffer::Attachment::Color0, ColorTexture);
+			FB->setTexture2D(Framebuffer::Attachment::Color1, NormalTexture);
+			FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+
+			SizeChanged = true;
 		}
 
 		PreviousSize = ContextSize;
 
-		mFB->prepare(ClearColor, ContextSize);
+		FB->prepare(ClearColor, ContextSize);
 
 		GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		glDrawBuffers(2, drawBuffers);
@@ -163,21 +165,28 @@ namespace Columbus
 	{
 		if (Shader == nullptr) return;
 
-		mTB->generateMipmap();
-		mDepth->generateMipmap();
+		if (SizeChanged)
+		{
+			ColorTexture->generateMipmap();
+			DepthTexture->generateMipmap();
+			NormalTexture->generateMipmap();
+		}
+
+		SizeChanged = false;
+
 		Shader->Bind();
 
 		glActiveTexture(GL_TEXTURE0);
 		Shader->SetUniform1i("uColor", 0);
-		mTB->bind();
+		ColorTexture->bind();
 
 		glActiveTexture(GL_TEXTURE1);
 		Shader->SetUniform1i("uNormal", 1);
-		NormalMap->bind();
+		NormalTexture->bind();
 
 		glActiveTexture(GL_TEXTURE2);
 		Shader->SetUniform1i("uDepth", 2);
-		mDepth->bind();
+		DepthTexture->bind();
 
 		for (auto& Attrib : mAttribsInt)
 			Shader->SetUniform1i(Attrib.name, Attrib.value);
@@ -201,32 +210,19 @@ namespace Columbus
 		glBindVertexArray(0);
 
 		glDepthMask(GL_TRUE);
-
-		if (mTB) mTB->unbind();
-		if (Shader) Shader->Unbind();
 	}
 
 	void PostEffect::Unbind()
 	{
-		for (int32 i = 0; i < 5; i++)
-		{
-			glDisableVertexAttribArray(i);
-		}
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		if (mTB) mTB->unbind();
-		if (Shader) Shader->Unbind();
-
-		mFB->unbind();
+		FB->unbind();
 	}
 
 	PostEffect::~PostEffect()
 	{
-		delete mTB;
-		delete NormalMap;
-		delete mDepth;
-		delete mFB;
+		delete ColorTexture;
+		delete NormalTexture;
+		delete DepthTexture;
+		delete FB;
 	}
 
 }
