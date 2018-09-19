@@ -65,10 +65,8 @@ namespace Columbus
 	protected:
 		std::map<uint32, SmartPointer<GameObject>>* RenderList;
 
-		//std::vector<OpaqueRenderData> OpaqueObjects;
-		//std::vector<TransparentRenderData> TransparentObjects;
-		Array<OpaqueRenderData> OpaqueObjects;
-		Array<TransparentRenderData> TransparentObjects;
+		std::vector<OpaqueRenderData> OpaqueObjects;
+		std::vector<TransparentRenderData> TransparentObjects;
 
 		Camera MainCamera;
 	public:
@@ -84,6 +82,8 @@ namespace Columbus
 
 		virtual void SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List);
 		virtual void CompileLists();
+		virtual void SortLists();
+
 		virtual void RenderOpaqueStage();
 		virtual void RenderTransparentStage();
 		virtual void Render(Stage RenderStage);

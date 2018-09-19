@@ -58,12 +58,13 @@ namespace Columbus
 	{
 	private:
 		ShaderProgram* Shader = nullptr;
-		Framebuffer* mFB = nullptr;
-		Texture* mTB = nullptr;
-		Texture* NormalMap = nullptr;
-		Texture* mDepth = nullptr;
+		Framebuffer* FB = nullptr;
+		Texture* ColorTexture = nullptr;
+		Texture* NormalTexture = nullptr;
+		Texture* DepthTexture = nullptr;
 
 		Vector2 PreviousSize;
+		bool SizeChanged = false;
 
 		uint32 VBO;
 		uint32 IBO;
