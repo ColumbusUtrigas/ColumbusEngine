@@ -19,9 +19,9 @@ namespace Columbus
 		void SortLights();
 	public:
 		MeshOpenGL();
-		MeshOpenGL(std::vector<Vertex> Vertices);
+		MeshOpenGL(const std::vector<Vertex>& Vertices);
 
-		void SetVertices(std::vector<Vertex> Vertices) override;
+		void SetVertices(const std::vector<Vertex>& Vertices) override;
 		void Bind() override;
 		uint32 Render() override;
 		void Unbind() override;

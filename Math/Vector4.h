@@ -382,6 +382,9 @@ namespace Columbus
 		Vector4_t<Type> WWWZ() const { return Vector4_t<Type>(W, W, W, Z); }
 		Vector4_t<Type> WWWW() const { return Vector4_t<Type>(W, W, W, W); }
 
+		template <typename T>
+		operator Vector4_t<T>() { return Vector4_t<T>((T)X, (T)Y, (T)Z, (T)W); }
+
 		Vector4_t& operator=(const Vector4_t& Other)
 		{
 			X = Other.X;
@@ -457,8 +460,7 @@ namespace Columbus
 
 		Vector4_t operator/(const Type& Scalar) const
 		{
-			const Type Factor = 1.0 / Scalar;
-			return Vector4_t(X * Factor, Y * Factor, Z * Factor, W * Factor);
+			return Vector4_t(X / Scalar, Y / Scalar, Z / Scalar, W / Scalar);
 		}
 
 		friend Vector4_t operator/(const Type& Scalar, const Vector4_t& Other)
@@ -545,7 +547,7 @@ namespace Columbus
 
 		Vector4_t Normalized() const
 		{
-			return *this * (1.0 / Math::Sqrt(X * X + Y * Y + Z * Z + W * W));
+			return *this * (1.0f / sqrtf(X * X + Y * Y + Z * Z + W * W));
 		}
 
 		Vector4_t& Normalize()
@@ -555,7 +557,7 @@ namespace Columbus
 
 		Type Length(const Vector4_t& Other) const
 		{
-			return Math::Sqrt(Math::Pow(Other.X - X, 2) + Math::Pow(Other.Y - Y, 2) + Math::Pow(Other.Z - Z, 2) + Math::Pow(Other.W - W, 2));
+			return sqrtf(powf(Other.X - X, 2) + powf(Other.Y - Y, 2) + powf(Other.Z - Z, 2) + powf(Other.W - W, 2));
 		}
 
 		Type Dot(const Vector4_t& Other) const
@@ -565,8 +567,6 @@ namespace Columbus
 	};
 
 }
-
-
 
 
 

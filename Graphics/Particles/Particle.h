@@ -17,7 +17,7 @@ namespace Columbus
 		Vector3 velocity = Vector3(0, 1, 0);
 		Vector3 startPos = Vector3(0, 0, 0);
 		Vector3 startEmitterPos = Vector3(0, 0, 0);
-		Vector3 accel = Vector3(0, 0.1, 0);
+		Vector3 accel = Vector3(0, 0.1f, 0);
 		Vector3 pos;
 		Vector3 NoiseModifier;
 

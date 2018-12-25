@@ -1,29 +1,6 @@
-/************************************************
-*                   System.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <string>
-#include <iostream>
 #include <tinyxml2.h>
-
-#ifdef _WIN32
-	#include <windows.h>
-#else
-	#include <unistd.h>
-	#include <sys/stat.h>
-#endif
 
 #undef COLUMBUS_SYSTEM_WINDOWS
 #undef COLUMBUS_SYSTEM_LINUX
@@ -49,7 +26,6 @@
 	#define COLUMBUS_INLINE inline
 #endif
 
-typedef std::string stdstr;
 typedef tinyxml2::XMLDocument C_XMLDoc;
 typedef tinyxml2::XMLNode C_XMLNode;
 typedef tinyxml2::XMLElement C_XMLElement;
@@ -58,7 +34,7 @@ typedef tinyxml2::XMLElement C_XMLElement;
 namespace Columbus
 {
 
-	std::string GetSystem();
+	const char* GetSystem();
 	bool CheckWindows();
 
 }

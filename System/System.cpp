@@ -1,20 +1,9 @@
-/************************************************
-*                  System.cpp                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <System/System.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	std::string GetSystem()
+	const char* GetSystem()
 	{
 		#ifdef COLUMBUS_SYSTEM_WINDOWS
 			return "Windows";
@@ -27,12 +16,20 @@ namespace Columbus
 		#ifdef COLUMBUS_SYSTEM_APPLE
 			return "Apple";
 		#endif
+
+		return "Unknown";
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool CheckWindows()
 	{
-		if (GetSystem() == "Windows") return true;
+		if (GetSystem() == "Windows")
+		{
+			return true;
+		}
+
 		return false;
 	}
 
 }
+
+

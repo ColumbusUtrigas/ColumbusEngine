@@ -1,12 +1,3 @@
-/************************************************
-*                ShaderBuilder.cpp              *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   11.01.2018                  *
-*************************************************/
 #include <Graphics/ShaderBuilder.h>
 
 namespace Columbus
@@ -16,16 +7,14 @@ namespace Columbus
 	"#version 130\n"
 	"#define Position gl_Position\n"
 	"#define VertexShader\n";
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	const std::string gFragmentShaderHeader =
 	"#version 130\n"
 	"#define FragData gl_FragData\n"
 	"#define FragmentShader\n"
 	"out vec4 FragColor;\n";
 	
-	bool ShaderBuilder::Build(std::string InShader, ShaderType Type)
+	bool ShaderBuilder::Build(const std::string& InShader, ShaderType Type)
 	{
 		ShaderSource.clear();
 
@@ -46,14 +35,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
-
-
 
 

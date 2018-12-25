@@ -3,8 +3,7 @@
 namespace Columbus
 {
 
-	Material::Material() :
-		mLighting(false) {}
+	Material::Material() {}
 	
 	Material::Material(std::string aFile)
 	{
@@ -32,20 +31,10 @@ namespace Columbus
 	{
 		ShaderProg = InShader;
 	}
-	
-	void Material::setLighting(const bool aLighting)
-	{
-		mLighting = static_cast<bool>(aLighting);
-	}
 
 	ShaderProgram* Material::GetShader() const
 	{
 		return ShaderProg;
-	}
-	
-	bool Material::getLighting() const
-	{
-		return mLighting;
 	}
 	
 	int Material::getTextureID() const
@@ -88,40 +77,7 @@ namespace Columbus
 		return DetailNormalMapID;
 	}
 	
-	bool Material::saveToXML(std::string aFile) const
-	{
-		Serializer::SerializerXML Serializer;
-
-		/*if (!Serializer.Write(aFile, "Material"))
-		{ Log::error("Can't save Material: " + aFile); return false; }
-
-		if (!Serializer.SetVector4("Color", mColor, {"R", "G", "B", "A"}))
-		{ Log::error("Can't save Material color: " + aFile); return false; }
-
-		if (!Serializer.SetVector3("Ambient", mAmbient, {"R", "G", "B"}))
-		{ Log::error("Can't save Material ambient: " + aFile); return false; }
-
-		if (!Serializer.SetVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
-		{ Log::error("Can't save Material diffuse: " + aFile); return false; }
-
-		if (!Serializer.SetVector3("Specular", mSpecular, {"R", "G", "B"}))
-		{ Log::error("Can't save Material specular: " + aFile); return false; }
-
-		if (!Serializer.SetFloat("ReflectionPower", mReflectionPower))
-		{ Log::error("Can't save Material reflection power: " + aFile); return false; }
-
-		if (!Serializer.SetBool("Lighting", mLighting))
-		{ Log::error("Can't save Material lighting: " + aFile); return false; }
-
-		if (!Serializer.Save())
-		{ Log::error("Can't save Material: " + aFile); return false; }*/
-
-		Log::success("Material saved: " + aFile);
-
-		return true;
-	}
-	
-	bool Material::loadFromXML(std::string aFile)
+	bool Material::loadFromXML(const std::string& aFile)
 	{
 		Serializer::SerializerXML Serializer;
 
@@ -157,29 +113,8 @@ namespace Columbus
 		if (!Serializer.GetFloat("Metallic", Metallic))
 		{ Log::error("Can't load Material metallic: " + aFile); return false; }
 
-		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
-		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
-
 		if (!Serializer.GetFloat("EmissionStrength", EmissionStrength))
 		{ Log::error("Can't load Material emission strength: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("DetailNormalStrength", DetailNormalStrength))
-		{ Log::error("Can't load Material detail normal strength: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("Rim", Rim))
-		{ Log::error("Can't load Material Rim: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("RimPower", RimPower))
-		{ Log::error("Can't load Material Rim power: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("RimBias", RimBias))
-		{ Log::error("Can't load Material Rim bias: " + aFile); return false; }
-
-		if (!Serializer.GetVector3("RimColor", RimColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material Rim color: " + aFile); return false; }
-
-		if (!Serializer.GetBool("Lighting", mLighting))
-		{ Log::error("Can't load Material lighting: " + aFile); return false; }
 
 		std::string diffuseMapPath = "None";
 		std::string normalMapPath = "None";
@@ -261,7 +196,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool Material::operator==(Material Other) const
+	bool Material::operator==(const Material& Other) const
 	{
 		return (Color == Other.Color &&
 		        AmbientColor == Other.AmbientColor &&
@@ -277,16 +212,11 @@ namespace Columbus
 		        ShaderProg == Other.ShaderProg &&
 		        Roughness == Other.Roughness &&
 		        Metallic == Other.Metallic &&
-		        ReflectionPower == Other.ReflectionPower &&
 		        EmissionStrength == Other.EmissionStrength &&
-		        Rim == Other.Rim &&
-		        RimPower == Other.RimPower &&
-		        RimBias == Other.RimBias &&
-		        RimColor == Other.RimColor &&
-		        mLighting == Other.mLighting);
+		        Lighting == Other.Lighting);
 	}
 
-	bool Material::operator!=(Material Other) const
+	bool Material::operator!=(const Material& Other) const
 	{
 		return !(*this == Other);
 	}

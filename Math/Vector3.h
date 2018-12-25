@@ -70,6 +70,9 @@ namespace Columbus
 		Vector3_t<Type> ZZY() const { return Vector3_t<Type>(Z, Z, Y); }
 		Vector3_t<Type> ZZZ() const { return Vector3_t<Type>(Z, Z, Z); }
 
+		template <typename T>
+		operator Vector3_t<T>() { return Vector3_t<T>((T)X, (T)Y, (T)Z); }
+
 		Vector3_t& operator=(const Vector3_t& Other)
 		{
 			X = Other.X;
@@ -143,8 +146,7 @@ namespace Columbus
 
 		Vector3_t operator/(const Type& Scalar) const
 		{
-			const Type Factor = 1.0 / Scalar;
-			return Vector3_t(X * Factor, Y * Factor, Z * Factor);
+			return Vector3_t(X / Scalar, Y / Scalar, Z / Scalar);
 		}
 
 		friend Vector3_t operator/(const Type& Scalar, const Vector3_t& Other)
@@ -225,7 +227,7 @@ namespace Columbus
 
 		static Vector3_t Normalize(const Vector3_t& Other)
 		{
-			return Other * (1.0 / Math::Sqrt(Other.X * Other.X + Other.Y * Other.Y + Other.Z * Other.Z));
+			return Other * (1.0f / sqrtf(Other.X * Other.X + Other.Y * Other.Y + Other.Z * Other.Z));
 		}
 
 		static Type Dot(const Vector3_t& V1, const Vector3_t& V2)
@@ -250,7 +252,7 @@ namespace Columbus
 
 		Vector3_t Normalized() const
 		{
-			return *this * (1.0 / Math::Sqrt(X * X + Y * Y + Z * Z));
+			return *this * (1.0f / sqrtf(X * X + Y * Y + Z * Z));
 		}
 
 		Vector3_t& Normalize()
@@ -260,7 +262,7 @@ namespace Columbus
 
 		Type Length(const Vector3_t& Other) const
 		{
-			return Math::Sqrt(Math::Pow(Other.X - X, 2) + Math::Pow(Other.Y - Y, 2) + Math::Pow(Other.Z - Z, 2));
+			return sqrtf(powf(Other.X - X, 2) + pow(Other.Y - Y, 2) + pow(Other.Z - Z, 2));
 		}
 
 		Type Dot(const Vector3_t& Other) const
@@ -275,12 +277,6 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
 
 
 

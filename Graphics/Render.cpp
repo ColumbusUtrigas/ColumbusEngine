@@ -5,10 +5,15 @@
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/Component.h>
 #include <Math/Frustum.h>
-#include <Core/Templates/Sort.h>
 
 namespace Columbus
 {
+
+	struct
+	{
+		Material::Cull Culling = Material::Cull::No;
+		bool DepthWriting = true;
+	} State;
 
 	namespace
 	{
@@ -31,39 +36,31 @@ namespace Columbus
 
 			PreviousMesh = nullptr;
 			CurrentMesh = nullptr;
+
+			State.Culling = Material::Cull::No;
+			State.DepthWriting = true;
 		}
 	}
 
 	static void PrepareFaceCulling(Material::Cull Culling)
 	{
-		switch (Culling)
+		if (State.Culling != Culling)
 		{
-			case Material::Cull::No:
+			switch (Culling)
 			{
-				glDisable(GL_CULL_FACE);
-				break;
+			case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
+			case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT); break;
+			case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK); break;
+			case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
 			}
+		}
+	}
 
-			case Material::Cull::Front:
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
-				break;
-			}
-
-			case Material::Cull::Back:
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_BACK);
-				break;
-			}
-
-			case Material::Cull::FrontAndBack:
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT_AND_BACK);
-				break;
-			}
+	static void PrepareDepthWriting(bool DepthWriting)
+	{
+		if (State.DepthWriting != DepthWriting)
+		{
+			glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
 		}
 	}
 
@@ -152,21 +149,21 @@ namespace Columbus
 
 						if (InLights.size() > Counter && Counter < LightsCount)
 						{
-							Lights[Offset + 0] = L->getColor().X;
-							Lights[Offset + 1] = L->getColor().Y;
-							Lights[Offset + 2] = L->getColor().Z;
-							Lights[Offset + 3] = L->getPos().X;
-							Lights[Offset + 4] = L->getPos().Y;
-							Lights[Offset + 5] = L->getPos().Z;
-							Lights[Offset + 6] = L->getDir().X;
-							Lights[Offset + 7] = L->getDir().Y;
-							Lights[Offset + 8] = L->getDir().Z;
-							Lights[Offset + 9] = (float)L->getType();
-							Lights[Offset + 10] = L->getConstant();
-							Lights[Offset + 11] = L->getLinear();
-							Lights[Offset + 12] = L->getQuadratic();
-							Lights[Offset + 13] = L->getInnerCutoff();
-							Lights[Offset + 14] = L->getOuterCutoff();
+							Lights[Offset + 0] = L->Color.X;
+							Lights[Offset + 1] = L->Color.Y;
+							Lights[Offset + 2] = L->Color.Z;
+							Lights[Offset + 3] = L->Pos.X;
+							Lights[Offset + 4] = L->Pos.Y;
+							Lights[Offset + 5] = L->Pos.Z;
+							Lights[Offset + 6] = L->Dir.X;
+							Lights[Offset + 7] = L->Dir.Y;
+							Lights[Offset + 8] = L->Dir.Z;
+							Lights[Offset + 9] = (float)L->Type;
+							Lights[Offset + 10] = L->Constant;
+							Lights[Offset + 11] = L->Linear;
+							Lights[Offset + 12] = L->Quadratic;
+							Lights[Offset + 13] = L->InnerCutoff;
+							Lights[Offset + 14] = L->OuterCutoff;
 						}
 
 						Counter++;
@@ -249,7 +246,13 @@ namespace Columbus
 
 		auto OpaqueSorter = [&](const OpaqueRenderData& A, const OpaqueRenderData& B)->bool
 		{
-			return A.ObjectMaterial == B.ObjectMaterial;
+			APosition = A.ObjectTransform.GetPos();
+			BPosition = B.ObjectTransform.GetPos();
+
+			ADistance = pow(CameraPosition.X - APosition.X, 2) + pow(CameraPosition.Y - APosition.Y, 2) + pow(CameraPosition.Z - APosition.Z, 2);
+			BDistance = pow(CameraPosition.X - BPosition.X, 2) + pow(CameraPosition.Y - BPosition.Y, 2) + pow(CameraPosition.Z - BPosition.Z, 2);
+
+			return ADistance < BDistance;
 		};
 
 		auto TransparentSorter = [&](const TransparentRenderData& A, const TransparentRenderData& B)->bool
@@ -275,10 +278,7 @@ namespace Columbus
 		{
 			ClearOptimizations();
 
-			Material::Cull Culling = Material::Cull::No;
-			bool DepthWriting = true;
-
-			PrepareFaceCulling(Material::Cull::No);
+			glDisable(GL_CULL_FACE);
 			glDepthMask(GL_TRUE);
 
 			for (auto& Object : OpaqueObjects)
@@ -302,15 +302,8 @@ namespace Columbus
 						CurrentShader->Bind();
 					}
 
-					if (Culling != Object.ObjectMaterial.Culling)
-					{
-						PrepareFaceCulling(Object.ObjectMaterial.Culling);
-					}
-
-					if (DepthWriting != Object.ObjectMaterial.DepthWriting)
-					{
-						glDepthMask(Object.ObjectMaterial.DepthWriting ? GL_TRUE : GL_FALSE);
-					}
+					PrepareFaceCulling(Object.ObjectMaterial.Culling);
+					PrepareDepthWriting(Object.ObjectMaterial.DepthWriting);
 
 					ShaderSetMatrices(CurrentShader, Object.ObjectTransform, MainCamera);
 					ShaderSetLights(CurrentShader, Object.Object->Lights);
@@ -327,8 +320,8 @@ namespace Columbus
 				PreviousShader = Object.ObjectMaterial.GetShader();
 				PreviousMesh = Object.Object;
 				PreviousMaterial = Object.ObjectMaterial;
-				Culling = Object.ObjectMaterial.Culling;
-				DepthWriting = Object.ObjectMaterial.DepthWriting;
+				State.Culling = Object.ObjectMaterial.Culling;
+				State.DepthWriting = Object.ObjectMaterial.DepthWriting;
 			}
 
 			CurrentMesh->Unbind();

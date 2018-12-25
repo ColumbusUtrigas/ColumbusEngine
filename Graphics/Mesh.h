@@ -4,15 +4,9 @@
 #include <string>
 #include <algorithm>
 
-#include <System/Importer.h>
 #include <Graphics/Camera.h>
-#include <Graphics/Shader.h>
-#include <Graphics/Texture.h>
-#include <Graphics/Material.h>
-#include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
-
-#include <Scene/Transform.h>
+#include <Common/Model/Model.h>
 #include <Math/Box.h>
 
 namespace Columbus
@@ -30,9 +24,9 @@ namespace Columbus
 		std::vector<Light*> Lights;
 	public:
 		Mesh() : VerticesCount(0) { }
-		Mesh(std::vector<Vertex> Vertices) : VerticesCount(0) { SetVertices(Vertices); }
+		Mesh(const std::vector<Vertex>& Vertices) : VerticesCount(0) { SetVertices(Vertices); }
 
-		virtual void SetVertices(std::vector<Vertex> InVertices) {}
+		virtual void SetVertices(const std::vector<Vertex>& InVertices) {}
 		virtual void Bind() {}
 		virtual uint32 Render() { return 0; }
 		virtual void Unbind() {}
@@ -40,7 +34,7 @@ namespace Columbus
 
 		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
 
-		void SetLights(std::vector<Light*>& InLights) { Lights = InLights; }
+		void SetLights(const std::vector<Light*>& InLights) { Lights = InLights; }
 
 		Box GetBoundingBox() const { return BoundingBox; }
 		Camera& GetCamera() { return ObjectCamera; }

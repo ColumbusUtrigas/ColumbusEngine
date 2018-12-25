@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{89F961DB-06CF-4150-BF0A-557A00808332}</ProjectGuid>
+    <RootNamespace>ColumbusEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\JSON;C:\Users\User\source\repos\ColumbusEngine;C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLM;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\MiniMP3;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\include;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\include;C:\Users\User\source\repos\ColumbusEngine\Lib\STB;C:\Users\User\source\repos\ColumbusEngine\Lib\TinyXML2;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\lib;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\lib\Release\Win32;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\JSON;C:\Users\User\source\repos\ColumbusEngine;C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLM;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\MiniMP3;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\include;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\include;C:\Users\User\source\repos\ColumbusEngine\Lib\STB;C:\Users\User\source\repos\ColumbusEngine\Lib\TinyXML2;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\lib;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\lib\Release\Win32;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\JSON;C:\Users\User\source\repos\ColumbusEngine;C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLM;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\MiniMP3;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\include;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\include;C:\Users\User\source\repos\ColumbusEngine\Lib\STB;C:\Users\User\source\repos\ColumbusEngine\Lib\TinyXML2;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\lib;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\lib\Release\Win32;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\JSON;C:\Users\User\source\repos\ColumbusEngine;C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\include;C:\Users\User\source\repos\ColumbusEngine\Lib\GLM;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\MiniMP3;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\include;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\include;C:\Users\User\source\repos\ColumbusEngine\Lib\STB;C:\Users\User\source\repos\ColumbusEngine\Lib\TinyXML2;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Include;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Users\User\source\repos\ColumbusEngine\Lib\Bullet\lib;C:\Users\User\source\repos\ColumbusEngine\Lib\GLEW\lib\Release\Win32;C:\Users\User\source\repos\ColumbusEngine\Lib\LibJPEG\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibPNG\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\LibTIFF\Lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\SDL2_TTF\lib\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZLib\Lib\Windows\x86;C:\Users\User\source\repos\ColumbusEngine\Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;SDL2_ttf.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Animation\Animation.h" />
+    <ClInclude Include="Audio\AudioListener.h" />
+    <ClInclude Include="Audio\AudioMixer.h" />
+    <ClInclude Include="Audio\AudioPlayer.h" />
+    <ClInclude Include="Audio\AudioSource.h" />
+    <ClInclude Include="Audio\AudioSystem.h" />
+    <ClInclude Include="Common\Compression\Compression.h" />
+    <ClInclude Include="Common\Cursor\Cursor.h" />
+    <ClInclude Include="Common\Image\BMP\ImageBMP.h" />
+    <ClInclude Include="Common\Image\DDS\ImageDDS.h" />
+    <ClInclude Include="Common\Image\Image.h" />
+    <ClInclude Include="Common\Image\JPG\ImageJPG.h" />
+    <ClInclude Include="Common\Image\PNG\ImagePNG.h" />
+    <ClInclude Include="Common\Image\TGA\ImageTGA.h" />
+    <ClInclude Include="Common\Image\TIF\ImageTIF.h" />
+    <ClInclude Include="Common\Model\Model.h" />
+    <ClInclude Include="Common\Noise\OctaveNoise.h" />
+    <ClInclude Include="Common\Noise\PerlinNoise.h" />
+    <ClInclude Include="Common\Sound\OGG\SoundOGG.h" />
+    <ClInclude Include="Common\Sound\Sound.h" />
+    <ClInclude Include="Common\Sound\WAV\SoundWAV.h" />
+    <ClInclude Include="Core\Containers\Array.h" />
+    <ClInclude Include="Core\Containers\String.h" />
+    <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\Linux\PlatformLinuxClipboard.h" />
+    <ClInclude Include="Core\Linux\PlatformLinuxFilesystem.h" />
+    <ClInclude Include="Core\Memory.h" />
+    <ClInclude Include="Core\Platform\Platform.h" />
+    <ClInclude Include="Core\Platform\PlatformClipboard.h" />
+    <ClInclude Include="Core\Platform\PlatformFilesystem.h" />
+    <ClInclude Include="Core\Random.h" />
+    <ClInclude Include="Core\SmartPointer.h" />
+    <ClInclude Include="Core\Types.h" />
+    <ClInclude Include="Core\Windows\PlatformWindowsClipboard.h" />
+    <ClInclude Include="Engine.h" />
+    <ClInclude Include="Graphics\Buffer.h" />
+    <ClInclude Include="Graphics\Camera.h" />
+    <ClInclude Include="Graphics\Device.h" />
+    <ClInclude Include="Graphics\Framebuffer.h" />
+    <ClInclude Include="Graphics\Light.h" />
+    <ClInclude Include="Graphics\Material.h" />
+    <ClInclude Include="Graphics\Mesh.h" />
+    <ClInclude Include="Graphics\MeshInstanced.h" />
+    <ClInclude Include="Graphics\OpenGL\BufferOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\DeviceOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\FramebufferOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\MeshInstancedOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\MeshOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\ShaderOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\StandartShadersOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\TextureOpenGL.h" />
+    <ClInclude Include="Graphics\OpenGL\WindowOpenGLSDL.h" />
+    <ClInclude Include="Graphics\Particles\Acceleration\ParticleModuleAcceleration.h" />
+    <ClInclude Include="Graphics\Particles\Acceleration\ParticleModuleAccelerationBase.h" />
+    <ClInclude Include="Graphics\Particles\Color\ParticleModuleColor.h" />
+    <ClInclude Include="Graphics\Particles\Color\ParticleModuleColorBase.h" />
+    <ClInclude Include="Graphics\Particles\Color\ParticleModuleColorOverLife.h" />
+    <ClInclude Include="Graphics\Particles\Emit\ParticleModuleEmit.h" />
+    <ClInclude Include="Graphics\Particles\Emit\ParticleModuleEmitBase.h" />
+    <ClInclude Include="Graphics\Particles\Lifetime\ParticleModuleLifetime.h" />
+    <ClInclude Include="Graphics\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
+    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationBase.h" />
+    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationBox.h" />
+    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationCircle.h" />
+    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationSphere.h" />
+    <ClInclude Include="Graphics\Particles\Noise\ParticleModuleNoise.h" />
+    <ClInclude Include="Graphics\Particles\Noise\ParticleModuleNoiseBase.h" />
+    <ClInclude Include="Graphics\Particles\Particle.h" />
+    <ClInclude Include="Graphics\Particles\ParticleEffect.h" />
+    <ClInclude Include="Graphics\Particles\ParticleModule.h" />
+    <ClInclude Include="Graphics\Particles\Required\ParticleModuleRequired.h" />
+    <ClInclude Include="Graphics\Particles\Required\ParticleModuleRequiredBase.h" />
+    <ClInclude Include="Graphics\Particles\Rotation\ParticleModuleRotation.h" />
+    <ClInclude Include="Graphics\Particles\Rotation\ParticleModuleRotationBase.h" />
+    <ClInclude Include="Graphics\Particles\Size\ParticleModuleSize.h" />
+    <ClInclude Include="Graphics\Particles\Size\ParticleModuleSizeBase.h" />
+    <ClInclude Include="Graphics\Particles\Size\ParticleModuleSizeOverLife.h" />
+    <ClInclude Include="Graphics\Particles\SubUV\ParticleModuleSubUV.h" />
+    <ClInclude Include="Graphics\Particles\SubUV\ParticleModuleSubUVBase.h" />
+    <ClInclude Include="Graphics\Particles\Velocity\ParticleModuleVelocity.h" />
+    <ClInclude Include="Graphics\Particles\Velocity\ParticleModuleVelocityBase.h" />
+    <ClInclude Include="Graphics\PostEffect.h" />
+    <ClInclude Include="Graphics\Primitives.h" />
+    <ClInclude Include="Graphics\Render.h" />
+    <ClInclude Include="Graphics\Renderbuffer.h" />
+    <ClInclude Include="Graphics\Shader.h" />
+    <ClInclude Include="Graphics\ShaderBuilder.h" />
+    <ClInclude Include="Graphics\Skybox.h" />
+    <ClInclude Include="Graphics\Texture.h" />
+    <ClInclude Include="Graphics\UIRender.h" />
+    <ClInclude Include="Graphics\Window.h" />
+    <ClInclude Include="GUI\Button.h" />
+    <ClInclude Include="GUI\GUI.h" />
+    <ClInclude Include="GUI\VirtualInput.h" />
+    <ClInclude Include="GUI\Widget.h" />
+    <ClInclude Include="Impl\EventSystem.h" />
+    <ClInclude Include="Impl\ImplSDL.h" />
+    <ClInclude Include="Input\Input.h" />
+    <ClInclude Include="Lib\TinyXML2\tinyxml2.h" />
+    <ClInclude Include="Math\Box.h" />
+    <ClInclude Include="Math\Frustum.h" />
+    <ClInclude Include="Math\InterpolationCurve.h" />
+    <ClInclude Include="Math\MathUtil.h" />
+    <ClInclude Include="Math\Matrix.h" />
+    <ClInclude Include="Math\OBB.h" />
+    <ClInclude Include="Math\Quaternion.h" />
+    <ClInclude Include="Math\Vector2.h" />
+    <ClInclude Include="Math\Vector3.h" />
+    <ClInclude Include="Math\Vector4.h" />
+    <ClInclude Include="Physics\PhysicsShape.h" />
+    <ClInclude Include="Physics\PhysicsShapeBox.h" />
+    <ClInclude Include="Physics\PhysicsShapeCapsule.h" />
+    <ClInclude Include="Physics\PhysicsShapeCompound.h" />
+    <ClInclude Include="Physics\PhysicsShapeCone.h" />
+    <ClInclude Include="Physics\PhysicsShapeConvexHull.h" />
+    <ClInclude Include="Physics\PhysicsShapeCylinder.h" />
+    <ClInclude Include="Physics\PhysicsShapeMultiSphere.h" />
+    <ClInclude Include="Physics\PhysicsShapeSphere.h" />
+    <ClInclude Include="Physics\PhysicsWorld.h" />
+    <ClInclude Include="Physics\Rigidbody.h" />
+    <ClInclude Include="RenderAPIOpenGL\OpenGL.h" />
+    <ClInclude Include="RenderAPI\APIOpenGL.h" />
+    <ClInclude Include="RenderAPI\Buffer.h" />
+    <ClInclude Include="RenderAPI\RenderAPI.h" />
+    <ClInclude Include="Scene\Component.h" />
+    <ClInclude Include="Scene\ComponentAudioSource.h" />
+    <ClInclude Include="Scene\ComponentLight.h" />
+    <ClInclude Include="Scene\ComponentMeshInstancedRenderer.h" />
+    <ClInclude Include="Scene\ComponentMeshRenderer.h" />
+    <ClInclude Include="Scene\ComponentParticleSystem.h" />
+    <ClInclude Include="Scene\ComponentRigidbody.h" />
+    <ClInclude Include="Scene\GameObject.h" />
+    <ClInclude Include="Scene\Scene.h" />
+    <ClInclude Include="Scene\Transform.h" />
+    <ClInclude Include="System\Assert.h" />
+    <ClInclude Include="System\File.h" />
+    <ClInclude Include="System\Log.h" />
+    <ClInclude Include="System\Serializer.h" />
+    <ClInclude Include="System\System.h" />
+    <ClInclude Include="System\Timer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Audio\AudioMixer.cpp" />
+    <ClCompile Include="Audio\AudioSource.cpp" />
+    <ClCompile Include="Audio\AudioSystem.cpp" />
+    <ClCompile Include="Common\Compression\Compression.cpp" />
+    <ClCompile Include="Common\Image\BMP\ImageBMP.cpp" />
+    <ClCompile Include="Common\Image\DDS\ImageDDS.cpp" />
+    <ClCompile Include="Common\Image\Image.cpp" />
+    <ClCompile Include="Common\Image\JPG\ImageJPG.cpp" />
+    <ClCompile Include="Common\Image\PNG\ImagePNG.cpp" />
+    <ClCompile Include="Common\Image\TGA\ImageTGA.cpp" />
+    <ClCompile Include="Common\Image\TIF\ImageTIF.cpp" />
+    <ClCompile Include="Common\Model\Model.cpp" />
+    <ClCompile Include="Common\Model\ModelCMF.cpp" />
+    <ClCompile Include="Common\Sound\MP3\SoundMP3.cpp" />
+    <ClCompile Include="Common\Sound\OGG\SoundOGG.cpp" />
+    <ClCompile Include="Common\Sound\Sound.cpp" />
+    <ClCompile Include="Common\Sound\WAV\SoundWAV.cpp" />
+    <ClCompile Include="Core\Platform\PlatformClipboard.cpp" />
+    <ClCompile Include="Core\Platform\PlatformFilesystem.cpp" />
+    <ClCompile Include="Core\Windows\PlatformWindowsClipboard.cpp" />
+    <ClCompile Include="Graphics\Camera.cpp" />
+    <ClCompile Include="Graphics\Device.cpp" />
+    <ClCompile Include="Graphics\Light.cpp" />
+    <ClCompile Include="Graphics\Material.cpp" />
+    <ClCompile Include="Graphics\OpenGL\BufferOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\DeviceOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\FramebufferOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\MeshInstancedOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\MeshOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\ShaderOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\TextureOpenGL.cpp" />
+    <ClCompile Include="Graphics\OpenGL\WindowOpenGLSDL.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEffect.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEmitter.cpp" />
+    <ClCompile Include="Graphics\PostEffect.cpp" />
+    <ClCompile Include="Graphics\Primitives.cpp" />
+    <ClCompile Include="Graphics\Render.cpp" />
+    <ClCompile Include="Graphics\Renderbuffer.cpp" />
+    <ClCompile Include="Graphics\ShaderBuilder.cpp" />
+    <ClCompile Include="Graphics\Skybox.cpp" />
+    <ClCompile Include="Graphics\Texture.cpp" />
+    <ClCompile Include="GUI\Button.cpp" />
+    <ClCompile Include="Impl\EventSystem.cpp" />
+    <ClCompile Include="Impl\ImplSDL.cpp" />
+    <ClCompile Include="Input\Input.cpp" />
+    <ClCompile Include="Lib\TinyXML2\tinyxml2.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Physics\PhysicsWorld.cpp" />
+    <ClCompile Include="Physics\Rigidbody.cpp" />
+    <ClCompile Include="RenderAPIOpenGL\OpenGL.cpp" />
+    <ClCompile Include="RenderAPI\APIOpenGL.cpp" />
+    <ClCompile Include="RenderAPI\Buffer.cpp" />
+    <ClCompile Include="Scene\GameObject.cpp" />
+    <ClCompile Include="Scene\Scene.cpp" />
+    <ClCompile Include="Scene\Transform.cpp" />
+    <ClCompile Include="System\File.cpp" />
+    <ClCompile Include="System\Importer.cpp" />
+    <ClCompile Include="System\Log.cpp" />
+    <ClCompile Include="System\Serializer.cpp" />
+    <ClCompile Include="System\System.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

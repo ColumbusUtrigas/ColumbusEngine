@@ -18,7 +18,7 @@ namespace Columbus
 		{
 			if (LightSource != nullptr)
 			{
-				LightSource->setPos(Trans.GetPos());
+				LightSource->Pos = Trans.GetPos();
 			}
 		}
 

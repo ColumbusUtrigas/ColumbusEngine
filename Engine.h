@@ -77,7 +77,6 @@
 
 #include <System/Assert.h>
 #include <System/File.h>
-#include <System/Importer.h>
 #include <System/Log.h>
 #include <System/Serializer.h>
 #include <System/System.h>

@@ -3,7 +3,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <System/Assert.h>
-#include <Core/Templates/Copy.h>
+#include <algorithm>
 
 namespace Columbus
 {
@@ -13,22 +13,15 @@ namespace Columbus
 	public:
 		float M[4][4];
 	public:
-		/*
-		* Constructor
-		* @param float Diag: Specifies matrix main diagonal value
-		*/
-		inline explicit Matrix(float Diag = 1.0f)
+		explicit Matrix(float Diag = 1.0f)
 		{
 			M[0][0] = Diag; M[0][1] = 0.0f; M[0][2] = 0.0f; M[0][3] = 0.0f;
 			M[1][0] = 0.0f; M[1][1] = Diag; M[1][2] = 0.0f; M[1][3] = 0.0f;
 			M[2][0] = 0.0f; M[2][1] = 0.0f; M[2][2] = Diag; M[2][3] = 0.0f;
 			M[3][0] = 0.0f; M[3][1] = 0.0f; M[3][2] = 0.0f; M[3][3] = Diag;
 		}
-		/*
-		* Constructor
-		* @params Vector4 A, B, C and D specifies matrix rows
-		*/
-		inline Matrix(const Vector4& A, const Vector4& B, const Vector4& C, const Vector4& D)
+		
+		Matrix(const Vector4& A, const Vector4& B, const Vector4& C, const Vector4& D)
 		{
 			SetRow(0, A);
 			SetRow(1, B);
@@ -36,21 +29,15 @@ namespace Columbus
 			SetRow(3, D);
 		}
 
-		/*
-		* Set this matrix to identity
-		*/
-		inline void SetIdentity()
+		void SetIdentity()
 		{
 			M[0][0] = 1.0f; M[0][1] = 0.0f; M[0][2] = 0.0f; M[0][3] = 0.0f;
 			M[1][0] = 0.0f; M[1][1] = 1.0f; M[1][2] = 0.0f; M[1][3] = 0.0f;
 			M[2][0] = 0.0f; M[2][1] = 0.0f; M[2][2] = 1.0f; M[2][3] = 0.0f;
 			M[3][0] = 0.0f; M[3][1] = 0.0f; M[3][2] = 0.0f; M[3][3] = 1.0f;	
 		}
-		/*
-		* Set indexed row of this matrix
-		* If Index >= 4, occures assertation
-		*/
-		inline void SetRow(uint32 Index, const Vector4& Row)
+		
+		void SetRow(uint32 Index, const Vector4& Row)
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetRow(): Index >= 4");
 
@@ -59,11 +46,8 @@ namespace Columbus
 			M[Index][2] = Row.Z;
 			M[Index][3] = Row.W;
 		}
-		/*
-		* Set indexed column of this matrix
-		* If Index >= 4, occures assertation
-		*/
-		inline void SetColumn(uint32 Index, const Vector4& Column)
+		
+		void SetColumn(uint32 Index, const Vector4& Column)
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetColumn(): Index >= 4");
 
@@ -72,47 +56,31 @@ namespace Columbus
 			M[2][Index] = Column.Z;
 			M[3][Index] = Column.W;
 		}
-		/*
-		* Return indexed row of this matrix
-		* If Index >= 4, occures assertation
-		*/
-		inline Vector4 GetRow(uint32 Index) const
+		
+		Vector4 GetRow(uint32 Index) const
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetRow(): Index >= 4")
 
 			return Vector4(M[Index][0], M[Index][1], M[Index][2], M[Index][3]);
 		}
-		/*
-		* Return indexed column of this matrix
-		* If Index >= 4, occures assertation
-		*/
-		inline Vector4 GetColumn(uint32 Index) const
+		
+		Vector4 GetColumn(uint32 Index) const
 		{
 			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetColumn(): Index >= 4")
 
 			return Vector4(M[0][Index], M[1][Index], M[2][Index], M[3][Index]);
 		}
-		/*
-		* Get matrix elements in float* Elems
-		* Be careful, size of float* Elems must be >= 16 (64 bytes)
-		* If float* ELems == nullptr, does nothing
-		* Use this for row-major matrix using, Direc3D for example
-		*/
-		inline void Elements(float* Elems) const
+		
+		void Elements(float* Elems) const
 		{
 			if (Elems != nullptr)
 			{
 				//16 is size of matrix (4 * 4)
-				Copy(&M[0][0], &M[0][0] + 16, Elems);
+				std::copy(&M[0][0], &M[0][0] + 16, Elems);
 			}
 		}
-		/*
-		* Get transposed matrix elements in float* Elems
-		* Be careful, size of float* Elems must be >= 16 (64 bytes)
-		* If float* ELems == nullptr, does nothing
-		* Use this for column-major matrix using, OpenGL for example
-		*/
-		inline void ElementsTransposed(float* Elems) const
+		
+		void ElementsTransposed(float* Elems) const
 		{
 			if (Elems != nullptr)
 			{
@@ -125,27 +93,17 @@ namespace Columbus
 				}
 			}
 		}
-		/*
-		* Return transposed this matrix, but this still be intact
-		* @return Matrix: Transposed matrix
-		*/
-		inline Matrix GetTransposed() const
+		
+		Matrix GetTransposed() const
 		{
 			return Matrix(GetColumn(0), GetColumn(1), GetColumn(2), GetColumn(3));
 		}
-		/*
-		* Transpose this matrix
-		* @return Matrix&: *this
-		*/
-		inline Matrix& Transpose()
+		
+		Matrix& Transpose()
 		{
-			*this = GetTransposed();
-			return *this;
+			return *this = GetTransposed();
 		}
-		/*
-		* Translate this matrix in Position
-		* @return Matrix&: *this
-		*/
+		
 		inline Matrix& Translate(const Vector3& Position)
 		{
 			M[0][3] += Position.X;
@@ -154,11 +112,8 @@ namespace Columbus
 
 			return *this;
 		}
-		/*
-		* Rotate matrix around Axis on Angle (in degrees)
-		* @return Matrix&: *this
-		*/
-		inline Matrix& Rotate(const Vector3& Axis, float Angle)
+		
+		Matrix& Rotate(const Vector3& Axis, float Angle)
 		{
 			float x = Axis.X;
 			float y = Axis.Y;
@@ -196,11 +151,8 @@ namespace Columbus
 
 			return *this;
 		}
-		/*
-		* Create rotation matrix by Euler Angles
-		* @return Matrix: Result of rotation
-		*/
-		inline Matrix GetRotation(const Vector3& EulerAngles)
+		
+		Matrix GetRotation(const Vector3& EulerAngles)
 		{
 			Matrix ResultMat;
 
@@ -226,11 +178,8 @@ namespace Columbus
 
 			return ResultMat;
 		}
-		/*
-		* Scale this matrix on Sacle
-		* @return Matrix&: *this
-		*/
-		inline Matrix& Scale(Vector3 Scale)
+		
+		Matrix& Scale(Vector3 Scale)
 		{
 			M[0][0] *= Scale.X;
 			M[1][1] *= Scale.Y;
@@ -238,11 +187,8 @@ namespace Columbus
 
 			return *this;
 		}
-		/*
-		* Create perspective matrix from this
-		* @return Matrix&: *this
-		*/
-		inline Matrix& Perspective(float FOV, float Aspect, float Near, float Far)
+		
+		Matrix& Perspective(float FOV, float Aspect, float Near, float Far)
 		{
 			for (uint32 X = 0; X < 4; X++)
 			{
@@ -275,21 +221,13 @@ namespace Columbus
 
 			return *this;
 		}
-		/*
-		*
-		*/
-		inline Matrix& Ortho()
+		
+		Matrix& Ortho()
 		{
 			return *this;
 		}
-		/*
-		* Create view matrix from this
-		* @param Vector3 Position: Position of observer
-		* @param Vector3 Forward: Forward-direction of observer
-		* @param Vector3 Up: Up-direction of observer
-		* @return Matrix&: *this
-		*/
-		inline Matrix& LookAt(const Vector3& Position, const Vector3& Center, const Vector3& Up)
+		
+		Matrix& LookAt(const Vector3& Position, const Vector3& Center, const Vector3& Up)
 		{
 			Vector3 const f(Vector3::Normalize(Center - Position));
 			Vector3 const s(Vector3::Normalize(Vector3::Cross(f, Up)));
@@ -310,12 +248,8 @@ namespace Columbus
 			M[3][2] = Vector3::Dot(f, Position);
 			return *this;
 		}
-		/*
-		* Get result of multiplying a Matrix to this
-		* @param Matrix Other: The Matrix to multiply this by
-		* @return Matrix: The result of multiplication
-		*/
-		inline Matrix operator*(const Matrix& Other) const
+		
+		Matrix operator*(const Matrix& Other) const
 		{
 			Matrix ResultMat;
 
@@ -336,12 +270,8 @@ namespace Columbus
 
 			return ResultMat;
 		}
-		/*
-		* Get result of multiplying a Vector4 to this matrix
-		* @param Vector4 Other: The Vector4 to multiply this by
-		* @return Vector4: The result of mutiplication
-		*/
-		inline Vector4 operator*(const Vector4& Other) const
+		
+		Vector4 operator*(const Vector4& Other) const
 		{
 			static float Result[4];
 
@@ -372,22 +302,14 @@ namespace Columbus
 
 			return Vector4(Result[0], Result[1], Result[2], Result[3]);
 		}
-		/*
-		* Multiply this by Other Matrix
-		* @param Matrix Other: The Matrix to multiply by this
-		* @return Matrix&: *this
-		*/
-		inline Matrix& operator*=(const Matrix& Other)
+
+		Matrix& operator*=(const Matrix& Other)
 		{
 			*this = *this * Other;
 			return *this;
 		}
-		/*
-		* Get result of adding a Matrix to this
-		* @param Matrix Other:
-		* @return Matrix: The Matrix to add
-		*/
-		inline Matrix operator+(const Matrix& Other)
+		
+		Matrix operator+(const Matrix& Other)
 		{
 			Matrix ResultMat;
 
@@ -401,22 +323,14 @@ namespace Columbus
 
 			return ResultMat;
 		}
-		/*
-		* Add Other Matrix to this
-		* @param Matrix Other: The Matrix to add to this
-		* @return Matrix: *this
-		*/
-		inline Matrix operator+=(const Matrix& Other)
+		
+		Matrix operator+=(const Matrix& Other)
 		{
 			*this = *this + Other;
 			return *this;
 		}
-		/*
-		* Compare this Matrix and Other
-		* @param Matrix Other: The Matrix to compare with this
-		* @return bool: Bool-value of comparison
-		*/
-		inline bool operator==(const Matrix& Other)
+		
+		bool operator==(const Matrix& Other)
 		{
 			for (uint32 X = 0; X < 4; X++)
 			{
@@ -431,19 +345,13 @@ namespace Columbus
 
 			return true;
 		}
-		/*
-		* Compare this Matrix and Other
-		* @param Matrix Other: The Matrix to compare with this
-		* @return bool: Bool-value of comparison
-		*/
-		inline bool operator!=(const Matrix& Other)
+		
+		bool operator!=(const Matrix& Other)
 		{
 			return !(*this == Other);
 		}
-		/*
-		* Debug print of matrix
-		*/
-		inline void DebugPrint()
+		
+		void DebugPrint()
 		{
 			printf("---------------------------\n");
 
@@ -454,29 +362,10 @@ namespace Columbus
 
 			printf("---------------------------\n");
 		}
-		/**/
+		
 		virtual ~Matrix() {}
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
