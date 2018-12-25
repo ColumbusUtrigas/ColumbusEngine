@@ -51,7 +51,7 @@ namespace Columbus
 		PostEffect mNoneEffect;
 		ShaderProgram* NoneShader = nullptr;
 
-		Vector2 mContextSize = Vector2(640, 480);
+		iVector2 ContextSize = iVector2(640, 480);
 
 		void audioWorkflow();
 		void lightWorkflow();
@@ -72,10 +72,10 @@ namespace Columbus
 			mObjects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
 		}
 
-		void setSkybox(const Skybox* aSkybox);
-		void setCamera(const Camera* aCamera);
+		void SetSkybox(Skybox* Sky) { mSkybox = Sky; }
+		void SetCamera(Camera* Cam) { mCamera = Cam; }
 		void SetAudioListener(AudioListener* InListener) { Listener = InListener; }
-		void setContextSize(const Vector2 aContextSize);
+		void SetContextSize(const iVector2& NewContextSize) { ContextSize = NewContextSize; }
 
 		GameObject* getGameObject(const unsigned int aID) const;
 		GameObject* getGameObject(const std::string aName) const;

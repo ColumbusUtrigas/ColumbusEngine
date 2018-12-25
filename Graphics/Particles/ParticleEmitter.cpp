@@ -219,14 +219,14 @@ namespace Columbus
 	
 	void ParticleEmitter::SetUniforms()
 	{
-		ParticleModuleSubUV* SubUV = static_cast<ParticleModuleSubUV*>(Effect->GetModule(ParticleModule::Type::SubUV));
+		ParticleModuleSubUV* SubUV = (ParticleModuleSubUV*)Effect->GetModule(ParticleModule::Type::SubUV);
 
 		if (Effect->Required != nullptr && SubUV != nullptr)
 		{
 			static float UniformViewMatrix[16];
 			static float UniformProjectionMatrix[16];
 
-			Effect->getMaterial()->GetShader()->SetUniform1f("uBillboard", static_cast<float>(Effect->Required->Billboarding));
+			Effect->getMaterial()->GetShader()->SetUniform1f("uBillboard", (float)Effect->Required->Billboarding);
 			Effect->getMaterial()->GetShader()->SetUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
 
 			ObjectCamera.getViewMatrix().Elements(UniformViewMatrix);

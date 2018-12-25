@@ -1,6 +1,6 @@
 #pragma once
 
-#include <System/System.h>
+#include <string>
 
 namespace Columbus
 {
@@ -15,10 +15,10 @@ namespace Columbus
 	{
 	public:
 		std::string ShaderSource;
-
+	public:
 		ShaderBuilder() {}
 
-		bool Build(std::string InShader, ShaderType Type);
+		bool Build(const std::string& InShader, ShaderType Type);
 
 		~ShaderBuilder() {}
 	};

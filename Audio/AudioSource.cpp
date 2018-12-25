@@ -33,7 +33,7 @@ namespace Columbus
 		if (SoundClip != nullptr)
 		{
 			Played = Time;
-			Offset = Time * SoundClip->GetFrequency();
+			Offset = (uint64)(Time * SoundClip->GetFrequency());
 			SoundClip->Seek(Offset);
 		}
 	}

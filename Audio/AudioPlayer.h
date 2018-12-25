@@ -33,7 +33,7 @@ namespace Columbus
 
 			Spec.freq = Frequency;
 			Spec.format = AUDIO_S16;
-			Spec.channels = Channels;
+			Spec.channels = (Uint8)Channels;
 			Spec.userdata = Mixer;
 			Spec.callback = audioCallback;
 

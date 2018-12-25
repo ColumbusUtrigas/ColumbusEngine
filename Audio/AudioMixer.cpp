@@ -82,8 +82,8 @@ namespace Columbus
 
 			for (uint32 i = 0; i < Count; i++)
 			{
-				Mixed[i].L += Data[i].L * Gain * LVolume;
-				Mixed[i].R += Data[i].R * Gain * RVolume;
+				Mixed[i].L += (int32)(Data[i].L * Gain * LVolume);
+				Mixed[i].R += (int32)(Data[i].R * Gain * RVolume);
 			}
 		}
 

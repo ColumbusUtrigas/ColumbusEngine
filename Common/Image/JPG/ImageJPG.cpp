@@ -41,7 +41,7 @@ namespace Columbus
 		{
 			case JCS_GRAYSCALE: bpp = 1; break;
 			case JCS_RGB:       bpp = 3; break;
-			case JCS_EXT_RGBA:  bpp = 4; break;
+			//case JCS_EXT_RGBA:  bpp = 4; break;
 		}
 
 		OutWidth = cinfo.image_width;

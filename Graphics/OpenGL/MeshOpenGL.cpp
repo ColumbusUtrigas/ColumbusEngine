@@ -10,14 +10,14 @@ namespace Columbus
 		glGenVertexArrays(1, &VAO);
 	}
 	
-	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices)
+	MeshOpenGL::MeshOpenGL(const std::vector<Vertex>& InVertices)
 	{
 		glGenBuffers(1, &VBuf);
 		glGenVertexArrays(1, &VAO);
 		SetVertices(InVertices);
 	}
 	
-	void MeshOpenGL::SetVertices(std::vector<Vertex> Vertices)
+	void MeshOpenGL::SetVertices(const std::vector<Vertex>& Vertices)
 	{
 		VerticesCount = Vertices.size();
 
@@ -142,8 +142,8 @@ namespace Columbus
 
 		auto func = [pos](const Light* a, const Light* b) mutable -> bool
 		{
-			Vector3 q = a->getPos();
-			Vector3 w = b->getPos();
+			Vector3 q = a->Pos;
+			Vector3 w = b->Pos;
 
 			return q.Length(pos) < w.Length(pos);
 		};

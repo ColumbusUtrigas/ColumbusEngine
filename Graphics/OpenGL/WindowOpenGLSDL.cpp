@@ -1,6 +1,6 @@
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
-#include <System/Log.h>
 #include <RenderAPIOpenGL/OpenGL.h>
+#include <System/Log.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -8,21 +8,13 @@ namespace Columbus
 
 	static bool IsSDLInitialized = false;
 
-	WindowOpenGLSDL::WindowOpenGLSDL() :
-		mWindow(nullptr)
+	WindowOpenGLSDL::WindowOpenGLSDL() {}
+	WindowOpenGLSDL::WindowOpenGLSDL(const iVector2& InSize, const std::string& InTitle, Window::Flags F)
 	{
-
+		Create(InSize, InTitle, F);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	WindowOpenGLSDL::WindowOpenGLSDL(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags) :
-		mWindow(nullptr)
-	{
-		create(aSize, aTitle, aFlags);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::initializeSDL()
+	
+	void WindowOpenGLSDL::InitializeSDL()
 	{
 		if (SDL_Init(SDL_INIT_EVERYTHING))
 		{
@@ -57,28 +49,20 @@ namespace Columbus
 			delete[] DisplayModes;
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::initializeWindow(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags)
+	
+	void WindowOpenGLSDL::InitializeWindow(const iVector2& InSize, const std::string& InTitle, Window::Flags F)
 	{
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-		SDL_GL_SetSwapInterval(1);
-
 		int flags = SDL_WINDOW_OPENGL;
 		int pos = SDL_WINDOWPOS_CENTERED;
 
-		switch (aFlags)
-		{
-		case E_WINDOW_FLAG_RESIZABLE: flags |= SDL_WINDOW_RESIZABLE; break;
-		case E_WINDOW_FLAG_FULLSCREEN: flags |= SDL_WINDOW_FULLSCREEN; break;
-		case E_WINDOW_FLAG_FULLSCREEN_DESKTOP: flags |= SDL_WINDOW_FULLSCREEN_DESKTOP; break;
-		}
+		if ((uint32)F & (uint32)Window::Flags::Resizable)  flags |= SDL_WINDOW_RESIZABLE;
+		if ((uint32)F & (uint32)Window::Flags::Fullscreen) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-		mWindow = SDL_CreateWindow(aTitle.c_str(), pos, pos, aSize.X, aSize.Y, flags);
-		mGLC = SDL_GL_CreateContext(mWindow);
+		Window = SDL_CreateWindow(InTitle.c_str(), pos, pos, InSize.X, InSize.Y, flags);
+		Context = SDL_GL_CreateContext(Window);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::initializeOpenGL()
+	
+	void WindowOpenGLSDL::InitializeOpenGL()
 	{
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -113,7 +97,6 @@ namespace Columbus
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_PROGRAM_POINT_SIZE);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		//glEnable(GL_DITHER);
 
 		if (glewInit() != GLEW_OK)
 		{
@@ -126,8 +109,8 @@ namespace Columbus
 
 		OpenGL::Init();
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::getVersions()
+	
+	void WindowOpenGLSDL::GetVersions()
 	{
 		SDL_version cVer;
 		SDL_version lVer;
@@ -137,156 +120,140 @@ namespace Columbus
 
 		Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
 		Log::initialization("SDL linked version: %d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		Log::initialization("OpenGL version: " + stdstr((const char*)glGetString(GL_VERSION)));
-		Log::initialization("OpenGL vendor: " + stdstr((const char*)glGetString(GL_VENDOR)));
-		Log::initialization("OpenGL renderer: " + stdstr((const char*)glGetString(GL_RENDERER)));
-		Log::initialization("GLSL version: " + stdstr((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION)) + "\n");
+		Log::initialization("OpenGL version: %s", glGetString(GL_VERSION));
+		Log::initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
+		Log::initialization("OpenGL renderer: %s",glGetString(GL_RENDERER));
+		Log::initialization("GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool WindowOpenGLSDL::create(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags)
+	
+	bool WindowOpenGLSDL::Create(const iVector2& InSize, const std::string& InTitle, Window::Flags F)
 	{
 		if (!IsSDLInitialized)
 		{
-			initializeSDL();
+			InitializeSDL();
 		}
 
-		initializeWindow(aSize, aTitle, aFlags);
+		InitializeWindow(InSize, InTitle, F);
 
 		glewExperimental = GL_TRUE;
 
 		if (!IsSDLInitialized)
 		{
-			initializeOpenGL();
-			getVersions();
+			InitializeOpenGL();
+			GetVersions();
 			IsSDLInitialized = true;
 		}
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::update()
+
+	void WindowOpenGLSDL::Close()
 	{
-		int x, y;
-		SDL_GetWindowSize(mWindow, &x, &y);
-		mSize.X = x;
-		mSize.Y = y;
-
-		while(SDL_PollEvent(&mTmpEvent))
+		if (Window && Open)
 		{
-			if(mTmpEvent.type == SDL_QUIT) mOpen = false;
-
-			pollEvent(mTmpEvent);
+			SDL_GL_DeleteContext(Context);
+			SDL_DestroyWindow(Window);
+			Open = false;
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::clear(const Vector4 aColor)
+	
+	void WindowOpenGLSDL::Update()
 	{
-		SDL_GL_MakeCurrent(mWindow, mGLC);
-		SDL_GL_SetSwapInterval(mVSync ? 1 : 0);
-		glClearColor(aColor.X, aColor.Y, aColor.Z, aColor.W);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, Math::TruncToInt(getSize().X), Math::TruncToInt(getSize().Y));
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::display()
-	{
-		SDL_GL_SwapWindow(mWindow);
-		glFinish();
-		mRedrawTime = Math::TruncToFloat(mRedrawTimer.elapsed());
-		mRedrawTimer.reset();
-		mFrames++;
-		if (mFPSTimer.elapsed() >= 1.0f)
+		if (Window && Open)
 		{
-			mFPS = mFrames;
-			mFrames = 0;
-			mFPSTimer.reset();
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::setVSync(const bool aVSync)
-	{
-		mVSync = static_cast<bool>(aVSync);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::setSize(const Vector2 aSize)
-	{
+			SDL_GetWindowSize(Window, &Size.X, &Size.Y);
 
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	SDL_Window* WindowOpenGLSDL::getHandle() const
-	{
-		return mWindow;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void WindowOpenGLSDL::pollEvent(SDL_Event& aEvent)
-	{
-		if (!mWindow) return;
-
-		if(aEvent.type == SDL_WINDOWEVENT && aEvent.window.windowID == SDL_GetWindowID(mWindow))
-		{
-			switch (aEvent.window.event)
+			while (SDL_PollEvent(&TmpEvent))
 			{
-			case SDL_WINDOWEVENT_CLOSE:
-				SDL_HideWindow(mWindow);
-				SDL_LockAudio();
-				mOpen = false;
-				break;
-			case SDL_WINDOWEVENT_SHOWN:
-				mShown = true;
-				break;
-			case SDL_WINDOWEVENT_HIDDEN:
-				mShown = false;
-				break;
-			case SDL_WINDOWEVENT_MINIMIZED:
-				mMinimized = true;
-				mMaximized = false;
-				break;
-			case SDL_WINDOWEVENT_MAXIMIZED:
-				mMinimized = false;
-				mMaximized = true;
-				break;
-			case SDL_WINDOWEVENT_ENTER:
-				mMouseFocus = true;
-				break;
-			case SDL_WINDOWEVENT_LEAVE:
-				mMouseFocus = false;
-				break;
-			case SDL_WINDOWEVENT_FOCUS_GAINED:
-				mKeyFocus = true;
-				break;
-			case SDL_WINDOWEVENT_FOCUS_LOST:
-				mKeyFocus = false;
-				break;
+				if (TmpEvent.type == SDL_QUIT) Open = false;
+
+				PollEvent(TmpEvent);
 			}
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string WindowOpenGLSDL::getType() const
+	
+	void WindowOpenGLSDL::Clear(const Vector4& Color)
 	{
-		return "WindowOpenGLSDL";
+		if (Window && Open)
+		{
+			SDL_GL_MakeCurrent(Window, Context);
+			SDL_GL_SetSwapInterval(VSync ? 1 : 0);
+			glClearColor(Color.X, Color.Y, Color.Z, Color.W);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glViewport(0, 0, GetSize().X, GetSize().Y);
+		}
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
+	void WindowOpenGLSDL::Display()
+	{
+		if (Window && Open)
+		{
+			SDL_GL_SwapWindow(Window);
+			glFinish();
+			RedrawTime = (float)RedrawTimer.Elapsed();
+			RedrawTimer.Reset();
+			Frames++;
+
+			if (FPSTimer.Elapsed() >= 1.0f)
+			{
+				FPS = Frames;
+				Frames = 0;
+				FPSTimer.Reset();
+			}
+		}
+	}
+	
+	void WindowOpenGLSDL::SetSize(const iVector2& Size) {}
+	void WindowOpenGLSDL::SetMousePosition(const iVector2& Pos)
+	{
+		if (Window && Open)
+		{
+			SDL_WarpMouseInWindow(Window, Pos.X, Pos.Y);
+		}
+	}
+	
+	void WindowOpenGLSDL::PollEvent(SDL_Event& Event)
+	{
+		if (Window && Open)
+		{
+			if (Event.type == SDL_WINDOWEVENT && Event.window.windowID == SDL_GetWindowID(Window))
+			{
+				switch (Event.window.event)
+				{
+				case SDL_WINDOWEVENT_CLOSE:
+					SDL_HideWindow(Window);
+					SDL_LockAudio();
+					Open = false;
+					break;
+				case SDL_WINDOWEVENT_SHOWN:  Shown = true;  break;
+				case SDL_WINDOWEVENT_HIDDEN: Shown = false; break;
+				case SDL_WINDOWEVENT_MINIMIZED:
+					Minimized = true;
+					Maximized = false;
+					break;
+				case SDL_WINDOWEVENT_MAXIMIZED:
+					Minimized = false;
+					Maximized = true;
+					break;
+				case SDL_WINDOWEVENT_ENTER:        MouseFocus = true;  break;
+				case SDL_WINDOWEVENT_LEAVE:        MouseFocus = false; break;
+				case SDL_WINDOWEVENT_FOCUS_GAINED: KeyFocus = true;  break;
+				case SDL_WINDOWEVENT_FOCUS_LOST:   KeyFocus = false; break;
+				}
+			}
+		}
+	}
+	
 	WindowOpenGLSDL::~WindowOpenGLSDL()
 	{
-
+		if (Window)
+		{
+			SDL_GL_DeleteContext(Context);
+			SDL_DestroyWindow(Window);
+		}
 	}
 
 }
-
-
-
-
-
 
 
 

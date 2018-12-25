@@ -279,7 +279,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ShaderProgramOpenGL::Load(std::string FileName)
+	bool ShaderProgramOpenGL::Load(const std::string& FileName)
 	{
 		std::ifstream File;
 		File.open(FileName.c_str());
@@ -337,7 +337,7 @@ namespace Columbus
 
 	bool ShaderProgramOpenGL::Compile()
 	{
-		if (std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Vertex; }) == Stages.end() &&
+		if (std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Vertex; }) == Stages.end() ||
 			std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Fragment; }) == Stages.end())
 		{
 			Log::error("Coldn't compile Shader Program: Needs vertex and fragment shader");
@@ -391,7 +391,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ShaderProgramOpenGL::AddUniform(std::string Name)
+	bool ShaderProgramOpenGL::AddUniform(const std::string& Name)
 	{
 		int32 Value = glGetUniformLocation(ID, Name.c_str());
 
@@ -404,7 +404,7 @@ namespace Columbus
 		return false;
 	}
 
-	void ShaderProgramOpenGL::SetUniform1i(std::string Name, int Value) const
+	void ShaderProgramOpenGL::SetUniform1i(const std::string& Name, int Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -416,7 +416,7 @@ namespace Columbus
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform1f(std::string Name, float Value) const
+	void ShaderProgramOpenGL::SetUniform1f(const std::string& Name, float Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -428,7 +428,7 @@ namespace Columbus
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform2f(std::string Name, Vector2 Value) const
+	void ShaderProgramOpenGL::SetUniform2f(const std::string& Name, const Vector2& Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -440,7 +440,7 @@ namespace Columbus
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform3f(std::string Name, Vector3 Value) const
+	void ShaderProgramOpenGL::SetUniform3f(const std::string& Name, const Vector3& Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -453,7 +453,7 @@ namespace Columbus
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform4f(std::string Name, Vector4 Value) const
+	void ShaderProgramOpenGL::SetUniform4f(const std::string& Name, const Vector4& Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -465,7 +465,7 @@ namespace Columbus
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniformMatrix(std::string Name, const float* Value) const
+	void ShaderProgramOpenGL::SetUniformMatrix(const std::string& Name, const float* Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -477,7 +477,7 @@ namespace Columbus
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const
+	void ShaderProgramOpenGL::SetUniformArrayf(const std::string& Name, const float* Array, uint32 Size) const
 	{
 		if (ID != 0 && Compiled)
 		{

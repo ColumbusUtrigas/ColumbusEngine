@@ -7,6 +7,7 @@
 
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
+#include <GUI/VirtualInput.h>
 
 namespace Columbus
 {

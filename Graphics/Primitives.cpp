@@ -1,31 +1,20 @@
-/************************************************
-*                Primitives.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Primitives.h>
 #include <cmath>
 
 namespace Columbus
 {
-	//////////////////////////////////////////////////////////////////////////////
-	//Generate plane
-	std::vector<Vertex> PrimitivePlane(Vector3 aSize)
+	
+	std::vector<Vertex> PrimitivePlane(const Vector3& Size)
 	{
 		float verts[18] =
 		{
-			0.5f * aSize.X, 0.0f, -0.5f * aSize.Y,
-			-0.5f * aSize.X, 0.0f, -0.5f * aSize.Y,
-			-0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
+			0.5f * Size.X, 0.0f, -0.5f * Size.Y,
+			-0.5f * Size.X, 0.0f, -0.5f * Size.Y,
+			-0.5f * Size.X, 0.0f, 0.5f * Size.Y,
 	
-			-0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
-			0.5f * aSize.X, 0.0f, 0.5f * aSize.Y,
-			0.5f * aSize.X, 0.0f, -0.5f * aSize.Y
+			-0.5f * Size.X, 0.0f, 0.5f * Size.Y,
+			0.5f * Size.X, 0.0f, 0.5f * Size.Y,
+			0.5f * Size.X, 0.0f, -0.5f * Size.Y
 		};
 
 		float uvs[12] =
@@ -59,9 +48,8 @@ namespace Columbus
 
 		return v;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Generate box
-	std::vector<Vertex> PrimitiveBox(Vector3 aSize)
+	
+	std::vector<Vertex> PrimitiveBox(const Vector3& Size)
 	{
 		Vector3 v[8] = 
 		{
@@ -127,7 +115,7 @@ namespace Columbus
 		{
 			for (j = 0; j < 3; j++)
 			{
-				vert[j].pos = v[vindices[c]] * aSize;
+				vert[j].pos = v[vindices[c]] * Size;
 				vert[j].UV = u[uindices[c]];
 				vert[j].normal = n[c / 6];
 
@@ -154,11 +142,10 @@ namespace Columbus
 
 		return verts;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Generate sphere
-	std::vector<Vertex> PrimitiveSphere(float aRadius, size_t aRings, size_t aSectors)
+	
+	std::vector<Vertex> PrimitiveSphere(float Radius, uint32 Rings, uint32 Sectors)
 	{
-		const double PI = 3.141592653589793238462643383279502884197;
+		constexpr double PI = 3.141592653589793238462643383279502884197;
 
 		std::vector<Vertex> verts;
 
@@ -166,14 +153,14 @@ namespace Columbus
 		std::vector<Vector2> texcoords;
 		std::vector<Vector3> normals;
 
-		float const R = 1.0f / static_cast<float>(aRings - 1);
-		float const S = 1.0f / static_cast<float>(aSectors - 1);
+		float const R = 1.0f / (float)(Rings - 1);
+		float const S = 1.0f / (float)(Sectors - 1);
 		size_t r, s;
 		Vertex vert;
 
-		vertices.resize(aRings * aSectors * 3);
-		texcoords.resize(aRings * aSectors * 2);
-		normals.resize(aRings * aSectors * 3);
+		vertices.resize(Rings * Sectors * 3);
+		texcoords.resize(Rings * Sectors * 2);
+		normals.resize(Rings * Sectors * 3);
 		std::vector<Vector3>::iterator v = vertices.begin();
 		std::vector<Vector2>::iterator t = texcoords.begin();
 		std::vector<Vector3>::iterator n = normals.begin();
@@ -183,61 +170,58 @@ namespace Columbus
 		float theta = 0.0f;
 		float phi = 0.0f;
 
-		for (r = 0; r < aRings; r++)
+		for (r = 0; r < Rings; r++)
 		{
 			theta += dtheta;
-			for (s = 0; s < aSectors; s++)
+			for (s = 0; s < Sectors; s++)
 			{
 				phi += dphi;
 				float const x = sin(theta) * cos(phi);
 				float const y = sin(theta) * sin(phi);
 				float const z = cos(theta);
 
-				*v++ = Vector3(x * aRadius, y * aRadius, z * aRadius);
+				*v++ = Vector3(x * Radius, y * Radius, z * Radius);
 				*t++ = Vector2(s * S, r * R);
 				*n++ = Vector3(x, y, z);
 			}
 		}
 
-		for (r = 0; r < aRings - 1; r++)
+		for (r = 0; r < Rings - 1; r++)
 		{
-			for (s = 0; s < aSectors - 1; s++)
+			for (s = 0; s < Sectors - 1; s++)
 			{
-				vert.pos = vertices[r * aSectors + s]; vert.UV = texcoords[r * aSectors + s]; vert.normal = normals[r * aSectors + s];
+				vert.pos = vertices[r * Sectors + s]; vert.UV = texcoords[r * Sectors + s]; vert.normal = normals[r * Sectors + s];
 				verts.push_back(vert);
-				vert.pos = vertices[(r + 1) * aSectors + s]; vert.UV = texcoords[(r + 1) * aSectors + s]; vert.normal = normals[(r + 1) * aSectors + s];
+				vert.pos = vertices[(r + 1) * Sectors + s]; vert.UV = texcoords[(r + 1) * Sectors + s]; vert.normal = normals[(r + 1) * Sectors + s];
 				verts.push_back(vert);
-				vert.pos = vertices[(r + 1) * aSectors + (s + 1)]; vert.UV = texcoords[(r + 1) * aSectors + (s + 1)]; vert.normal = normals[(r + 1) * aSectors + (s + 1)];
+				vert.pos = vertices[(r + 1) * Sectors + (s + 1)]; vert.UV = texcoords[(r + 1) * Sectors + (s + 1)]; vert.normal = normals[(r + 1) * Sectors + (s + 1)];
 				verts.push_back(vert);
-				vert.pos = vertices[r * aSectors + s]; vert.UV = texcoords[r * aSectors + s]; vert.normal = normals[r * aSectors + s];
+				vert.pos = vertices[r * Sectors + s]; vert.UV = texcoords[r * Sectors + s]; vert.normal = normals[r * Sectors + s];
 				verts.push_back(vert);
-				vert.pos = vertices[(r + 1) * aSectors + (s + 1)]; vert.UV = texcoords[(r + 1) * aSectors + (s + 1)]; vert.normal = normals[(r + 1) * aSectors + (s + 1)];
+				vert.pos = vertices[(r + 1) * Sectors + (s + 1)]; vert.UV = texcoords[(r + 1) * Sectors + (s + 1)]; vert.normal = normals[(r + 1) * Sectors + (s + 1)];
 				verts.push_back(vert);
-				vert.pos = vertices[r * aSectors + (s + 1)]; vert.UV = texcoords[r * aSectors + (s + 1)]; vert.normal = normals[r * aSectors + (s + 1)];
+				vert.pos = vertices[r * Sectors + (s + 1)]; vert.UV = texcoords[r * Sectors + (s + 1)]; vert.normal = normals[r * Sectors + (s + 1)];
 			}
 		}
 
 		return verts;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Generate cone
-	std::vector<Vertex> PrimitiveCone(const float aBase, const float aHeight, const size_t aSlices, const size_t aStacks)
+	
+	std::vector<Vertex> PrimitiveCone(float Base, float Height, uint32 Slices, uint32 Stacks)
 	{
 		std::vector<Vertex> verts;
 
 		return verts;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Generate torus
-	std::vector<Vertex> PrimitiveTorus(const float aInner, const float aOuter, const size_t aSides, const size_t aRings)
+	
+	std::vector<Vertex> PrimitiveTorus(float Inner, float Outer, uint32 Sides, uint32 Rings)
 	{
 		std::vector<Vertex> verts;
 
 		return verts;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//Generate cylinder
-	std::vector<Vertex> PrimitiveCylinder(const float aRadius, const float aHeight, const size_t aSlices, const size_t aStacks)
+	
+	std::vector<Vertex> PrimitiveCylinder(float Radius, float Height, uint32 Slices, uint32 Stacks)
 	{
 		std::vector<Vertex> verts;
 

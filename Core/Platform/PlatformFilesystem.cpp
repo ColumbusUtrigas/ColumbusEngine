@@ -2,7 +2,7 @@
 #include <Core/Platform/PlatformFilesystem.h>
 
 #if defined(COLUMBUS_PLATFORM_WINDOWS)
-	#include <Core/Windows/PlatformWindowsFilesystem.h>
+	//#include <Core/Windows/PlatformWindowsFilesystem.h>
 #elif defined(COLUMBUS_PLATFORM_LINUX)
 	#include <Core/Linux/PlatformLinuxFilesystem.h>
 #elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -15,7 +15,7 @@ namespace Columbus
 	std::string Filesystem::GetCurrent()
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			return FilesystemWindows::GetCurrent();
+			//return FilesystemWindows::GetCurrent();
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::GetCurrent();
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -28,7 +28,7 @@ namespace Columbus
 	bool Filesystem::CreateFile(std::string Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			return FilesystemWindows::CreateFile(Path);
+			//return FilesystemWindows::CreateFile(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::CreateFile(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -41,7 +41,7 @@ namespace Columbus
 	bool Filesystem::CreateDirectory(std::string Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			return FilesystemWindows::CreateDirectory(Path);
+			//return FilesystemWindows::CreateDirectory(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::CreateDirectory(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -54,7 +54,7 @@ namespace Columbus
 	bool Filesystem::Rename(std::string Old, std::string New)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			return FilesystemWindows::Rename(Old, New);
+			//return FilesystemWindows::Rename(Old, New);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::Rename(Old, New);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -67,7 +67,7 @@ namespace Columbus
 	bool Filesystem::RemoveFile(std::string Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			return FilesystemWindows::RemoveFile(Path);
+			//return FilesystemWindows::RemoveFile(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::RemoveFile(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -80,7 +80,7 @@ namespace Columbus
 	bool Filesystem::RemoveDirectory(std::string Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			return FilesystemWindows::RemoveDirectory(Path);
+			//return FilesystemWindows::RemoveDirectory(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::RemoveDirectory(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)

@@ -14,7 +14,7 @@ namespace Columbus
 
 		mNoneEffect.SetShader(NoneShader);
 
-		PhysWorld.SetGravity(Vector3(0, -9.81, 0));
+		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
 	}
 
 	void Scene::audioWorkflow()
@@ -776,21 +776,6 @@ namespace Columbus
 		return true;
 	}
 	
-	void Scene::setSkybox(const Skybox* aSkybox)
-	{
-		mSkybox = const_cast<Skybox*>(aSkybox);
-	}
-	
-	void Scene::setCamera(const Camera* aCamera)
-	{
-		mCamera = const_cast<Camera*>(aCamera);
-	}
-	
-	void Scene::setContextSize(const Vector2 aContextSize)
-	{
-		mContextSize = static_cast<Vector2>(aContextSize);
-	}
-	
 	GameObject* Scene::getGameObject(const unsigned int aID) const
 	{
 		return mObjects.at(aID).Get();
@@ -821,8 +806,8 @@ namespace Columbus
 		particlesWorkflow();
 		rigidbodyWorkflow();
 
-		PhysWorld.Step(Math::TruncToFloat(DeltaTime.elapsed()), 10);
-		DeltaTime.reset();
+		PhysWorld.Step((float)DeltaTime.Elapsed(), 10);
+		DeltaTime.Reset();
 
 		rigidbodyPostWorkflow();
 
@@ -853,9 +838,9 @@ namespace Columbus
 	void Scene::render()
 	{
 		mNoneEffect.clearAttribs();
-		mNoneEffect.addAttrib({ "uResolution", mContextSize });
-		mNoneEffect.Bind(Vector4(1, 1, 1, 0), mContextSize);
-		
+		mNoneEffect.addAttrib({ "uResolution", ContextSize });
+		mNoneEffect.Bind(Vector4(1, 1, 1, 0), ContextSize);
+
 		if (mSkybox != nullptr)
 		{
 			mSkybox->draw();

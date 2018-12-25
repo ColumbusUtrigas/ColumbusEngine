@@ -83,7 +83,7 @@ namespace Columbus
 	{
 		uint32 TotalSamples = 0;
 
-		int16 Buffer[Count * Channels];
+		int16* Buffer = new int16[Count * Channels];
 
 		while (TotalSamples < Count)
 		{
@@ -112,6 +112,8 @@ namespace Columbus
 				Frames[i].R = Buffer[(i * 2) + 1];
 			}
 		}
+
+		delete[] Buffer;
 
 		return TotalSamples;
 	}

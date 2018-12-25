@@ -28,6 +28,14 @@ namespace Columbus
 		Vector2_t(const Type& Scalar) : X(Scalar), Y(Scalar) {}
 		Vector2_t(const Type& InX, const Type& InY) : X(InX), Y(InY) {}
 
+		Vector2_t<Type> XX() const { return Vector2_t<Type>(X, X); }
+		Vector2_t<Type> XY() const { return Vector2_t<Type>(X, Y); }
+		Vector2_t<Type> YX() const { return Vector2_t<Type>(Y, X); }
+		Vector2_t<Type> YY() const { return Vector2_t<Type>(Y, Y); }
+
+		template <typename T>
+		operator Vector2_t<T>() { return Vector2_t<T>((T)X, (T)Y); }
+
 		Vector2_t& operator=(const Vector2_t& Other)
 		{
 			X = Other.X;
@@ -41,11 +49,6 @@ namespace Columbus
 			Y = std::move(Other.Y);
 			return *this;
 		}
-
-		Vector2_t<Type> XX() const { return Vector2_t<Type>(X, X); }
-		Vector2_t<Type> XY() const { return Vector2_t<Type>(X, Y); }
-		Vector2_t<Type> YX() const { return Vector2_t<Type>(Y, X); }
-		Vector2_t<Type> YY() const { return Vector2_t<Type>(Y, Y); }
 
 		Vector2_t operator+() const
 		{
@@ -104,8 +107,7 @@ namespace Columbus
 
 		Vector2_t operator/(const Type& Scalar) const
 		{
-			const Type Factor = 1.0 / Scalar;
-			return Vector2_t(X * Factor, Y * Factor);
+			return Vector2_t(X / Scalar, Y / Scalar);
 		}
 
 		friend Vector2_t operator/(const Type& Scalar, const Vector2_t& Other)
@@ -190,7 +192,7 @@ namespace Columbus
 
 		Vector2_t Normalized() const
 		{
-			return *this * (1.0 / Math::Sqrt(X * X + Y * Y));
+			return *this * (1.0f / sqrtf(X * X + Y * Y));
 		}
 
 		Vector2_t& Normalize() const
@@ -200,7 +202,7 @@ namespace Columbus
 
 		Type Length(const Vector2_t& Other) const
 		{
-			return Math::Sqrt(Math::Pow(Other.X - X, 2) + Math::Pow(Other.Y - Y, 2));
+			return sqrtf(powf(Other.X - X, 2) + powf(Other.Y - Y, 2));
 		}
 
 		Type Dot(const Vector2_t& Other) const
@@ -210,9 +212,6 @@ namespace Columbus
 	};
 
 }
-
-
-
 
 
 

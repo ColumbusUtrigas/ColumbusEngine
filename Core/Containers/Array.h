@@ -1,14 +1,10 @@
 #pragma once
 
 #include <Core/Memory.h>
-#include <Core/Templates/Copy.h>
-#include <Core/Templates/Comparison.h>
 #include <Math/MathUtil.h>
 
 namespace Columbus
 {
-
-	#define ARRAY_COUNT(x) (sizeof(x) / sizeof(x[0]))
 
 	template <typename ContainerType, typename ElementType, typename IndexType>
 	class ArrayIndexedIterator
@@ -154,7 +150,7 @@ namespace Columbus
 		void Resize(uint32 Count)
 		{
 			int64 PWRCount = Math::UpperPowerOf2(Count);
-			T* TmpPtr = (T*)Memory::Malloc(PWRCount * sizeof(T));
+			T* TmpPtr = (T*)Memory::Malloc((uint32)PWRCount * sizeof(T));
 
 			if (Count <= ArrayCount)
 			{
@@ -182,7 +178,7 @@ namespace Columbus
 			if (Num > ArrayMax)
 			{
 				uint64 PWRCount = Math::UpperPowerOf2(Num);
-				T* TmpPtr = (T*)Memory::Malloc(PWRCount * sizeof(T));
+				T* TmpPtr = (T*)Memory::Malloc((uint32)PWRCount * sizeof(T));
 				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
 				Memory::Free(Ptr);
 				Ptr = TmpPtr;
@@ -206,7 +202,7 @@ namespace Columbus
 			if (Pos > ArrayMax)
 			{
 				int64 PWRCount = Math::UpperPowerOf2(Num);
-				T* TmpPtr = (T*)Memory::Malloc(PWRCount * sizeof(T));
+				T* TmpPtr = (T*)Memory::Malloc((uint32)PWRCount * sizeof(T));
 				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
 				Memory::Free(Ptr);
 				Ptr = TmpPtr;
@@ -315,7 +311,7 @@ namespace Columbus
 
 		inline bool operator==(const Array& Other)
 		{
-			return GetCount() == Other.GetCount() && Equal(GetData(), GetData() + GetCount(), Other.GetData());
+			return GetCount() == Other.GetCount() && std::equal(GetData(), GetData() + GetCount(), Other.GetData());
 		}
 
 		inline bool operator!=(const Array& Other)

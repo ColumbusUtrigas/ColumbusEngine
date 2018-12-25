@@ -52,7 +52,7 @@ namespace Columbus
 	{
 		for (auto& Comp : Components)
 		{
-			Comp->Update(mTimer.elapsed(), transform);
+			Comp->Update(mTimer.Elapsed(), transform);
 		}
 
 		transform.Update();
@@ -62,7 +62,7 @@ namespace Columbus
 			Child->Update();
 		}
 
-		mTimer.reset();
+		mTimer.Reset();
 	}
 	
 	void GameObject::Render()
