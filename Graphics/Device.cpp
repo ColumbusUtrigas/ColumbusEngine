@@ -32,11 +32,6 @@ namespace Columbus
 	{
 		return new Mesh();
 	}
-
-	MeshInstanced* Device::CreateMeshInstanced() const
-	{
-		return new MeshInstanced();
-	}
 	
 	Framebuffer* Device::createFramebuffer() const
 	{

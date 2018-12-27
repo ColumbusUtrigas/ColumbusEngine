@@ -16,18 +16,22 @@
 
 	uniform sampler2D BaseTexture;
 
+	#define TRESHOLD 0.5
+
 	in vec2 UV;
 
-	void main()
+	float luma(vec3 color) {
+  return dot(color, vec3(0.299, 0.587, 0.114));
+}
+
+
+	void main(void)
 	{
-		FragData[0] = vec4(texture(BaseTexture, UV).rgb, 1);
+		vec4 color = texture(BaseTexture, UV);
+		FragData[0] = luma(color.rgb) > TRESHOLD ? color : vec4(0, 0, 0, 1);
 	}
 
 #endif
-
-
-
-
 
 
 

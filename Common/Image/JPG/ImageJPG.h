@@ -11,7 +11,6 @@ namespace Columbus
 		static bool IsJPG(std::string FileName);
 
 		virtual bool Load(std::string FileName);
-		virtual void Free();
 
 		virtual ~ImageLoaderJPG() override {}
 	};

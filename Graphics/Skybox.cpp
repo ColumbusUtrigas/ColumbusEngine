@@ -1,5 +1,6 @@
 #include <Graphics/Skybox.h>
 #include <Graphics/Device.h>
+#include <GL/glew.h>
 
 namespace Columbus
 {
@@ -102,11 +103,6 @@ namespace Columbus
 
 			glDepthMask(GL_FALSE);
 
-			for (int32 i = 0; i < 5; i++)
-			{
-				glDisableVertexAttribArray(i);
-			}
-
 			Shader->Bind();
 
 			auto View = mCamera.getViewMatrix();
@@ -140,6 +136,7 @@ namespace Columbus
 	Skybox::~Skybox()
 	{
 		delete Shader;
+		delete Tex;
 		glDeleteBuffers(1, &VBO);
 	}
 

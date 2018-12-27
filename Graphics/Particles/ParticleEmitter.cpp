@@ -2,6 +2,7 @@
 #include <Graphics/Device.h>
 
 #include <Graphics/OpenGL/BufferOpenGL.h>
+#include <GL/glew.h>
 
 namespace Columbus
 {

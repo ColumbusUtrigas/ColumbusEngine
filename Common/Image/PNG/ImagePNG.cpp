@@ -151,21 +151,11 @@ namespace Columbus
 
 	bool ImageLoaderPNG::Load(std::string FileName)
 	{
-		Free();
 		uint64 Size = 0;
 
 		Data = ImageLoadPNG(FileName, Width, Height, Size, Format);
 
 		return (Data != nullptr);
-	}
-
-	void ImageLoaderPNG::Free()
-	{
-		delete[] Data;
-		Width = 0;
-		Height = 0;
-		Mipmaps = 0;
-		Format = TextureFormat::RGBA8;
 	}
 
 }

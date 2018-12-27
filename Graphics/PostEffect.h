@@ -6,12 +6,10 @@
 #include <utility>
 #include <typeinfo>
 
-#include <RenderAPI/APIOpenGL.h>
-#include <RenderAPI/Buffer.h>
+#include <Graphics/Device.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Texture.h>
-#include <Graphics/Renderbuffer.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Core/Containers/Array.h>
@@ -53,10 +51,124 @@ namespace Columbus
 		Vector4 value;
 		PostEffectAttributeVector4(std::string aName, Vector4 aValue) : name(aName), value(aValue) {}
 	};
+
+	#include <GL/glew.h>
+
+	struct BasePostEffect
+	{
+	private:
+		iVector2 PreviousSize;
+		bool SizeChanged = false;
+	public:
+		static constexpr int TexturesCount = 4;
+		static constexpr Framebuffer::Attachment Attachments[TexturesCount] =
+		{ Framebuffer::Attachment::Color0,
+		  Framebuffer::Attachment::Color1,
+		  Framebuffer::Attachment::Color2,
+		  Framebuffer::Attachment::Color3 };
+
+		Framebuffer* FB = nullptr;
+		Texture* DepthTexture = nullptr;
+
+		bool DepthTextureEnablement = false;
+
+		Texture* ColorTextures[TexturesCount];
+		bool ColorTexturesEnablement[TexturesCount];
+		TextureFormat ColorTexturesFormats[TexturesCount];
+	public:
+		BasePostEffect()
+		{
+			FB = gDevice->createFramebuffer();
+			DepthTexture = gDevice->CreateTexture();
+			/*DepthTexture->Create2D(Texture::Properties(100, 100, 0, TextureFormat::Depth16));
+			FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);*/
+
+			for (int i = 0; i < TexturesCount; i++)
+			{
+				ColorTextures[i] = gDevice->CreateTexture();
+				ColorTexturesEnablement[i] = false;
+				ColorTexturesFormats[i] = TextureFormat::RGBA8;
+				/*ColorTextures[i]->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGBA8));
+				FB->setTexture2D(Attachments[i], ColorTextures[i]);*/
+			}
+		}
+
+		void Bind(const Vector4& Color, const iVector2& Size)
+		{
+			if (Size != PreviousSize)
+			{
+				for (int i = 0; i < TexturesCount; i++)
+				{
+					if (ColorTexturesEnablement[i])
+					{
+						ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
+						FB->setTexture2D(Attachments[i], ColorTextures[i]);
+					}
+				}
+
+				if (DepthTextureEnablement)
+				{
+					DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, TextureFormat::Depth24));
+					FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+				}
+
+				SizeChanged = true;
+			}
+
+			PreviousSize = Size;
+
+			FB->prepare(Color, PreviousSize);
+
+			GLenum DrawBuffers[TexturesCount];
+			int DrawBuffersNum = 0;
+
+			for (int i = 0; i < TexturesCount; i++)
+			{
+				if (ColorTexturesEnablement[i])
+				{
+					DrawBuffers[DrawBuffersNum] = GL_COLOR_ATTACHMENT0 + i;
+					DrawBuffersNum++;
+				}
+			}
+
+			glDrawBuffers(DrawBuffersNum, DrawBuffers);
+		}
+
+		void Unbind()
+		{
+			if (SizeChanged)
+			{
+				for (int i = 0; i < TexturesCount; i++)
+				{
+					if (ColorTexturesEnablement[i])
+					{
+						ColorTextures[i]->generateMipmap();
+					}
+				}
+
+				if (DepthTextureEnablement)
+				{
+					DepthTexture->generateMipmap();
+				}
+			}
+
+			SizeChanged = false;
+
+			FB->unbind();
+		}
+
+		~BasePostEffect()
+		{
+			delete FB;
+			delete DepthTexture;
+
+			for (int i = 0; i < TexturesCount; i++) delete ColorTextures[i];
+		}
+	};
 	
 	class PostEffect
 	{
-	private:
+	public:
 		ShaderProgram* Shader = nullptr;
 		Framebuffer* FB = nullptr;
 		Texture* ColorTexture = nullptr;

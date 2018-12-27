@@ -68,7 +68,7 @@ namespace Columbus
 	{
 	public:
 		enum class Type;
-	protected:
+	public:
 		uint8* Data = nullptr;
 		uint32 Width = 0;
 		uint32 Height = 0;
@@ -88,20 +88,13 @@ namespace Columbus
 		ImageLoader() {}
 
 		virtual bool Load(std::string FileName) { return false; }
-		virtual void Free() {}
-
-		uint8* GetData() const { return Data; }
-		uint32 GetWidth() const { return Width; }
-		uint32 GetHeight() const { return Height; }
-		uint32 GetMipmaps() const { return Mipmaps; }
-		TextureFormat GetFormat() const { return Format; }
-		Type GetType() const { return ImageType; }
 
 		virtual ~ImageLoader() {}
 	};
 
 	ImageFormat ImageGetFormat(std::string FileName);
 	uint32 GetBPPFromFormat(TextureFormat Format);
+	uint32 GetBlockSizeFromFormat(TextureFormat Format);
 
 	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);

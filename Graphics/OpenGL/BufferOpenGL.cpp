@@ -50,10 +50,7 @@ namespace Columbus
 
 	void BufferOpenGL::Clear()
 	{
-		if (glIsBuffer(ID))
-		{
-			glDeleteBuffers(1, &ID);
-		}
+		glDeleteBuffers(1, &ID);
 
 		Size = 0;
 		ID = 0;
@@ -91,16 +88,11 @@ namespace Columbus
 
 	bool BufferOpenGL::Load(const void* Data)
 	{
-		if (glIsBuffer(ID) && Size != 0)
-		{
-			glBindBuffer(Target, ID);
-			glBufferData(Target, Size, Data, Usage);
-			glBindBuffer(Target, 0);
+		glBindBuffer(Target, ID);
+		glBufferData(Target, Size, Data, Usage);
+		glBindBuffer(Target, 0);
 
-			return true;
-		}
-
-		return false;
+		return true;
 	}
 
 	bool BufferOpenGL::Load(const Buffer:: Properties& Props, const void* Data)
@@ -111,16 +103,11 @@ namespace Columbus
 
 		UpdateUsage();
 
-		if (glIsBuffer(ID) && Size != 0)
-		{
-			glBindBuffer(Target, ID);
-			glBufferData(Target, Size, Data, Usage);
-			glBindBuffer(Target, 0);
+		glBindBuffer(Target, ID);
+		glBufferData(Target, Size, Data, Usage);
+		glBindBuffer(Target, 0);
 
-			return true;
-		}
-
-		return false;
+		return true;
 	}
 
 	bool BufferOpenGL::Bind() const
@@ -141,19 +128,6 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

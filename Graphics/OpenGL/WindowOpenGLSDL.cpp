@@ -58,6 +58,9 @@ namespace Columbus
 		if ((uint32)F & (uint32)Window::Flags::Resizable)  flags |= SDL_WINDOW_RESIZABLE;
 		if ((uint32)F & (uint32)Window::Flags::Fullscreen) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
 		Window = SDL_CreateWindow(InTitle.c_str(), pos, pos, InSize.X, InSize.Y, flags);
 		Context = SDL_GL_CreateContext(Window);
 	}
@@ -85,6 +88,15 @@ namespace Columbus
 
 		SDL_GL_SetSwapInterval(1);
 
+		if (glewInit() != GLEW_OK)
+		{
+			Log::fatal("Can't initialize GLEW");
+		} else
+		{
+			Log::initialization("GLEW initialized");
+			Log::initialization("Initialized OpenGL " + std::to_string(MajorVersion) + "." + std::to_string(MinorVersion));
+		}
+
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -97,15 +109,6 @@ namespace Columbus
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_PROGRAM_POINT_SIZE);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-		if (glewInit() != GLEW_OK)
-		{
-			Log::fatal("Can't initialize GLEW");
-		} else
-		{
-			Log::initialization("GLEW initialized");
-			Log::initialization("Initialized OpenGL " + std::to_string(MajorVersion) + "." + std::to_string(MinorVersion));
-		}
 
 		OpenGL::Init();
 	}

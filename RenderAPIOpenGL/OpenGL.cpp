@@ -38,28 +38,6 @@ namespace Columbus
 
 	void OpenGL::Init()
 	{
-		glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &MaxCombinedTextureImageUnits);
-		glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE, &MaxCubemapTextureSize);
-		glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &MaxFragmentUniformVectors);
-		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &MaxRenderbufferSize);
-		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
-		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-		glGetIntegerv(GL_MAX_VARYING_VECTORS, &MaxVaryingVectors);
-		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &MaxVertexAttribs);
-		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &MaxVertexTextureImageUnits);
-		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &MaxVertexUniformVectors);
-		glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &MaxViewportDims);
-		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &MaxComputeWorkGroupInvocations);
-		glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &MaxComputeSharedMemorySize);
-
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &MaxComputeWorkGroupSize.X);
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &MaxComputeWorkGroupSize.Y);
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &MaxComputeWorkGroupSize.Z);
-
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &MaxComputeWorkGroupCount.X);
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &MaxComputeWorkGroupCount.Y);
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &MaxComputeWorkGroupCount.Z);
-
 		if (glewGetExtension("GL_ARB_uniform_buffer_object") == GL_TRUE)
 		{
 			bSupportsUniformBuffer = true;
@@ -140,7 +118,31 @@ namespace Columbus
 			bSupportsMultiDrawIndirect = true;
 		}
 
+		glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &MaxCombinedTextureImageUnits);
+		glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE, &MaxCubemapTextureSize);
+		glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &MaxFragmentUniformVectors);
+		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &MaxRenderbufferSize);
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
+		glGetIntegerv(GL_MAX_VARYING_VECTORS, &MaxVaryingVectors);
+		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &MaxVertexAttribs);
+		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &MaxVertexTextureImageUnits);
+		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &MaxVertexUniformVectors);
+		glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &MaxViewportDims);
 
+		if (bSupportsComputeShader)
+		{
+			glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &MaxComputeWorkGroupInvocations);
+			glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &MaxComputeSharedMemorySize);
+
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &MaxComputeWorkGroupSize.X);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &MaxComputeWorkGroupSize.Y);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &MaxComputeWorkGroupSize.Z);
+
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &MaxComputeWorkGroupCount.X);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &MaxComputeWorkGroupCount.Y);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &MaxComputeWorkGroupCount.Z);
+		}
 	}
 
 }

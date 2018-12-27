@@ -1,14 +1,9 @@
 #pragma once
 
 #include <Graphics/Texture.h>
-#include <Graphics/Renderbuffer.h>
-
-#include <System/System.h>
-#include <System/Log.h>
-
 #include <Math/Vector2.h>
-#include <Math/Vector3.h>
 #include <Math/Vector4.h>
+#include <System/Log.h>
 
 namespace Columbus
 {
@@ -18,12 +13,12 @@ namespace Columbus
 	public:
 		enum class Attachment
 		{
-			Color0,
-			Color1,
-			Color2,
-			Color3,
-			Depth,
-			Stencil
+			Color0  = 0,
+			Color1  = 1,
+			Color2  = 2,
+			Color3  = 3,
+			Depth   = 4,
+			Stencil = 5
 		};
 	public:
 		Framebuffer() {}

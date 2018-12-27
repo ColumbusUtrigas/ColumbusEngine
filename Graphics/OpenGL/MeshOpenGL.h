@@ -21,11 +21,14 @@ namespace Columbus
 		MeshOpenGL();
 		MeshOpenGL(const std::vector<Vertex>& Vertices);
 
-		void SetVertices(const std::vector<Vertex>& Vertices) override;
-		void Bind() override;
-		uint32 Render() override;
-		void Unbind() override;
-		uint64 GetMemoryUsage() const override;
+		virtual void SetVertices(const std::vector<Vertex>& Vertices) final override;
+		virtual void Load(const Model& InModel) final override;
+
+		virtual void Bind()     final override;
+		virtual uint32 Render() final override;
+		virtual void Unbind()   final override;
+
+		virtual uint64 GetMemoryUsage() const final override;
 
 		~MeshOpenGL() override;
 	};

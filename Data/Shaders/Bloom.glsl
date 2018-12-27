@@ -13,21 +13,21 @@
 #ifdef FragmentShader
 
 	//@Uniform BaseTexture
+	//@Uniform HorizontalBlur
+	//@Uniform VerticalBlur
 
 	uniform sampler2D BaseTexture;
+	uniform sampler2D HorizontalBlur;
+	uniform sampler2D VerticalBlur;
 
 	in vec2 UV;
 
 	void main()
 	{
-		FragData[0] = vec4(texture(BaseTexture, UV).rgb, 1);
+		FragData[0] = texture(BaseTexture, UV);
 	}
 
 #endif
-
-
-
-
 
 
 

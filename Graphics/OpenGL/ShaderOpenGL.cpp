@@ -491,6 +491,13 @@ namespace Columbus
 
 	ShaderProgramOpenGL::~ShaderProgramOpenGL()
 	{
+		for (auto& Shader : Stages)
+		{
+			delete Shader;
+		}
+
+		Stages.clear();
+
 		glDeleteProgram(ID);
 	}
 

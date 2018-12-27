@@ -4,7 +4,6 @@
 #include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentMeshInstancedRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/ComponentRigidbody.h>
 #include <Audio/AudioSystem.h>
@@ -48,15 +47,11 @@ namespace Columbus
 		Camera* mCamera = nullptr;
 		AudioListener* Listener = nullptr;
 
-		PostEffect mNoneEffect;
-		ShaderProgram* NoneShader = nullptr;
-
 		iVector2 ContextSize = iVector2(640, 480);
 
 		void audioWorkflow();
 		void lightWorkflow();
 		void meshWorkflow();
-		void meshInstancedWorkflow();
 		void particlesWorkflow();
 		void rigidbodyWorkflow();
 		void rigidbodyPostWorkflow();

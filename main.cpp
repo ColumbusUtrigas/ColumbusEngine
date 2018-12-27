@@ -67,11 +67,13 @@ int main(int argc, char** argv)
 	Fireplace = scene.getGameObject(2);
 	Fireplace->AddComponent(new FireplaceBright());
 
-	std::vector<Vertex> Vertices;
-	ModelLoadCMF("Data/Models/Sphere.cmf", Vertices);
-
 	Mesh* Sphere = gDevice->CreateMesh();
-	Sphere->SetVertices(Vertices);
+
+	{
+		Model SphereModel;
+		SphereModel.Load("Data/Models/Sphere.cmf");
+		Sphere->Load(SphereModel);
+	}
 
 	float Values[] = { 0.01f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
 
@@ -95,7 +97,6 @@ int main(int argc, char** argv)
 			//Tests[Roughness * 6 + Metallic].GetMaterial().Color = Vector4(Vector3(0, 1, 0), 0.5);
 			//Tests[Roughness * 6 + Metallic].GetMaterial().Transparent = true;
 			//Tests[Roughness * 6 + Metallic].GetMaterial().Culling = Material::Cull::No;
-			//Tests[Roughness * 6 + Metallic].GetMaterial().AmbientColor = Vector3(0.2);
 			Tests[Roughness * 6 + Metallic].GetMaterial().Roughness = Values[Roughness];
 			Tests[Roughness * 6 + Metallic].GetMaterial().Metallic = Values[Metallic];
 			trans.SetPos(Vector3(X, Y, 20));
@@ -106,6 +107,8 @@ int main(int argc, char** argv)
 	}
 
 	SDL_Event Event;
+
+	float wheel = 0.0f;
 
 	while (window.IsOpen())
 	{
@@ -127,18 +130,24 @@ int main(int argc, char** argv)
 			case SDL_MOUSEBUTTONUP:
 				input.SetMouseButton(Event.button.button, { (bool)Event.button.state, Event.button.clicks, Event.button.x, Event.button.y });
 				break;
+			case SDL_MOUSEWHEEL: input.SetMouseWheel({ Event.wheel.x, Event.wheel.y }); break;
 			}
 
 			window.PollEvent(Event);
 		}
 
 		window.Update();
-		window.Clear({ 0, 0, 0.75, 1 });
+		window.Clear({ 0, 0, 0.75f, 1 });
 
 		input.SetKeyboardFocus(window.HasKeyFocus());
 		input.SetMouseFocus(window.HasMouseFocus());
 
-		camera.perspective(60, window.GetAspect(), 0.1, 1000);
+		camera.perspective(60, window.GetAspect(), 0.1f, 1000);
+
+		wheel += input.GetMouseWheel().Y * 5;
+		camera.addPos(camera.direction() * wheel * RedrawTime);
+		wheel -= wheel * 3 * RedrawTime;
+		if (abs(wheel) <= 0.2) wheel = 0.0f;
 
 		if (input.GetKey(SDL_SCANCODE_W))
 			camera.addPos(camera.direction() * RedrawTime * 5);
@@ -167,7 +176,7 @@ int main(int argc, char** argv)
 		if (!cursor)
 		{
 			Vector2 deltaMouse = input.GetMouseMovement();
-			camera.addRot(Vector3(deltaMouse.Y * 60 * RedrawTime, -deltaMouse.X * 60 * RedrawTime, 0) * 0.3f);
+			camera.addRot(Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f);
 			window.SetMousePosition(window.GetSize() / 2);
 			input.SetMousePosition (window.GetSize() / 2);
 		}

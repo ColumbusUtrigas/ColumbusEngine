@@ -6,8 +6,7 @@ namespace Columbus
 
 	TextureOpenGL::TextureOpenGL()
 	{
-		//glGenTextures(1, &ID);
-		//Target = GL_TEXTURE_2D;
+		glGenTextures(1, &ID);
 	}
 
 	bool TextureOpenGL::UpdateFormat(TextureFormat Format, bool& OutCompressed)
@@ -164,6 +163,7 @@ namespace Columbus
 			case TextureFormat::DXT1:
 			{
 				InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+				PixelFormat = GL_RGBA;
 				PixelType = GL_UNSIGNED_BYTE;
 				OutCompressed = true;
 				return true;
@@ -173,6 +173,7 @@ namespace Columbus
 			case TextureFormat::DXT3:
 			{
 				InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+				PixelFormat = GL_RGBA;
 				PixelType = GL_UNSIGNED_BYTE;
 				OutCompressed = true;
 				return true;
@@ -182,6 +183,7 @@ namespace Columbus
 			case TextureFormat::DXT5:
 			{
 				InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+				PixelFormat = GL_RGBA;
 				PixelType = GL_UNSIGNED_BYTE;
 				OutCompressed = true;
 				return true;
@@ -261,39 +263,13 @@ namespace Columbus
 
 	bool TextureOpenGL::Load(const void* Data, Texture::Properties Props)
 	{
-		if (glIsTexture(ID))
+		if (Target == GL_TEXTURE_2D)
 		{
-			if (Target == GL_TEXTURE_2D)
-			{
-				Width = Props.Width;
-				Height = Props.Height;
-				Format = Props.Format;
+			Width = Props.Width;
+			Height = Props.Height;
+			Format = Props.Format;
 
-				bool Compressed;
-
-				UpdateFormat(Format, Compressed);
-
-				glBindTexture(Target, ID);
-
-				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
-				glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				
-				glBindTexture(Target, 0);
-
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	bool TextureOpenGL::Load(Image& InImage)
-	{
-		if (glIsTexture(ID))
-		{
-			bool Success = true;
-			bool Compressed = false;
+			bool Compressed;
 
 			UpdateFormat(Format, Compressed);
 
@@ -301,63 +277,105 @@ namespace Columbus
 
 			if (Compressed)
 			{
-				switch (InImage.GetType())
-				{
-					case Image::Type::Image2D:
-					{
-						glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
-						glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, InImage.GetMipmapsCount() - 1);
-						glTexParameteri(Target, GL_GENERATE_MIPMAP, GL_TRUE);
-
-						for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
-						{
-							glCompressedTexImage2D(Target, Level, InternalFormat, Width, Height, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
-						}
-
-						TextureFlags.Wrapping = Texture::Wrap::Repeat;
-
-						break;
-					}
-
-					case Image::Type::Image3D: break;
-
-					case Image::Type::ImageCube:
-					{
-						for (uint32 Face = 0; Face < 6; Face++)
-						{
-							glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
-							glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, InImage.GetMipmapsCount() - 1);
-							glTexParameteri(Target, GL_GENERATE_MIPMAP, GL_TRUE);
-
-							for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
-							{
-								glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, Level, InternalFormat, Width, Height, 0, InImage.GetSize(Level), InImage.GetCubeData(Face, Level));
-							}
-						}
-
-						TextureFlags.Wrapping = Texture::Wrap::Repeat;
-
-						break;
-					}
-
-					case Image::Type::Image2DArray: break;
-				}
+				int Block = GetBlockSizeFromFormat(Format);
+				glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, Data);
 			}
 			else
 			{
-				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
-				glGenerateMipmap(Target);
+				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
 			}
-
-			SetFlags(TextureFlags);
-
+			
+			glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				
 			glBindTexture(Target, 0);
 
-			return Success;
 		}
 
-		return false;
+		return true;
+	}
+
+	bool TextureOpenGL::Load(Image& InImage)
+	{
+		bool Success = true;
+		bool Compressed = false;
+
+		UpdateFormat(Format, Compressed);
+
+		glBindTexture(Target, ID);
+
+		if (Compressed)
+		{
+			switch (InImage.GetType())
+			{
+				case Image::Type::Image2D:
+				{
+					for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
+					{
+						glCompressedTexImage2D(Target, Level, InternalFormat, Width >> Level, Height >> Level, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
+					}
+
+					break;
+				}
+
+				case Image::Type::Image3D: break;
+
+				case Image::Type::ImageCube:
+				{
+					for (uint32 Face = 0; Face < 6; Face++)
+					{
+						for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
+						{
+							glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, Level, InternalFormat, Width >> Level, Height >> Level, 0, InImage.GetSize(Level), InImage.GetCubeData(Face, Level));
+						}
+					}
+
+					break;
+				}
+
+				case Image::Type::Image2DArray: break;
+			}
+		}
+		else
+		{
+			switch (InImage.GetType())
+			{
+				case Image::Type::Image2D:
+				{
+					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+					glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
+					glGenerateMipmap(Target);
+
+					break;
+				}
+
+				case Image::Type::Image3D: break;
+
+				case Image::Type::ImageCube:
+				{
+					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+					for (uint32 Face = 0; Face < 6; Face++)
+					{
+						glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.GetCubeData(Face, 0));
+					}
+
+					glGenerateMipmap(Target);
+
+					break;
+				}
+
+				case Image::Type::Image2DArray: break;
+			}
+		}
+
+		TextureFlags.Wrapping = Texture::Wrap::Repeat;
+
+		SetFlags(TextureFlags);
+
+		glBindTexture(Target, 0);
+
+		return Success;
 	}
 
 	bool TextureOpenGL::Load(std::string File)
@@ -375,11 +393,6 @@ namespace Columbus
 
 	void TextureOpenGL::Clear()
 	{
-		if (glIsTexture(ID))
-		{
-			glDeleteTextures(1, &ID);
-		}
-
 		Width = 0;
 		Height = 0;
 		MipmapsCount = 0;
@@ -388,7 +401,6 @@ namespace Columbus
 		Format = TextureFormat::Unknown;
 		TextureType = Type::Texture2D;
 
-		ID = 0;
 		Target = 0;
 		InternalFormat = 0;
 		PixelFormat = 0;
@@ -398,8 +410,6 @@ namespace Columbus
 	bool TextureOpenGL::Create2D(Texture::Properties Props)
 	{
 		Clear();
-
-		glGenTextures(1, &ID);
 
 		TextureType = Texture::Type::Texture2D;
 
@@ -412,22 +422,12 @@ namespace Columbus
 
 		UpdateFormat(Format, Compressed);
 
-		glBindTexture(Target, ID);
-
-		glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
-		glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-		glBindTexture(Target, 0);
-
 		return true;
 	}
 
 	bool TextureOpenGL::CreateCube(Texture::Properties Props)
 	{
 		Clear();
-
-		glGenTextures(1, &ID);
 
 		TextureType = Texture::Type::TextureCube;
 
@@ -439,19 +439,6 @@ namespace Columbus
 		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
-
-		glBindTexture(Target, ID);
-
-		for (uint32 i = 0; i < 6; i++)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
-		}
-
-		glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-		glBindTexture(Target, 0);
-
 
 		return true;
 	}
@@ -606,11 +593,6 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
 
 
 

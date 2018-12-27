@@ -65,6 +65,14 @@
 		sampler2D DetailNormalMap;
 		samplerCube ReflectionMap;
 
+		bool HasDiffuseMap;
+		bool HasNormalMap;
+		bool HasRoughnessMap;
+		bool HasMetallicMap;
+		bool HasOcclusionMap;
+		bool HasDetailDiffuseMap;
+		bool HasDetailNormalMap;
+
 		vec2 Tiling;
 		vec2 DetailTiling;
 
@@ -90,6 +98,15 @@
 	//@Uniform uMaterial.DetailDiffuseMap
 	//@Uniform uMaterial.DetailNormalMap
 	//@Uniform uMaterial.ReflectionMap
+
+	//@Uniform uMaterial.HasDiffuseMap
+	//@Uniform uMaterial.HasNormalMap
+	//@Uniform uMaterial.HasRoughnessMap
+	//@Uniform uMaterial.HasMetallicMap
+	//@Uniform uMaterial.HasOcclusionMap
+	//@Uniform uMaterial.HasDetailDiffuseMap
+	//@Uniform uMaterial.HasDetailNormalMap
+
 	//@Uniform uMaterial.Tiling
 	//@Uniform uMaterial.DetailTiling
 	//@Uniform uMaterial.Color
@@ -104,15 +121,10 @@
 	uniform float uLighting[15 * LIGHT_NUM];
 	uniform Camera uCamera;
 
-	vec4 DiffuseMap;
-	vec4 NormalMap;
-	vec3 RoughnessMap;
-	vec3 MetallicMap;
-	vec4 DetailDiffuseMap;
-	vec4 DetailNormalMap;
-
 	vec2 TiledUV;
+	vec2 TiledDetailUV;
 
+	vec4 Diffuse;
 	vec3 Normal;
 	float Roughness;
 	float Metallic;
@@ -139,50 +151,47 @@
 	void Init(void)
 	{
 		TiledUV = varUV * uMaterial.Tiling;
+		TiledDetailUV = varUV * uMaterial.DetailTiling;
 
-		DiffuseMap = texture(uMaterial.DiffuseMap, TiledUV);
-		NormalMap = texture(uMaterial.NormalMap, TiledUV);
-		RoughnessMap = texture(uMaterial.RoughnessMap, TiledUV).rgb;
-		MetallicMap = texture(uMaterial.RoughnessMap, TiledUV).rgb;
-		DetailDiffuseMap = texture(uMaterial.DetailDiffuseMap, varUV * uMaterial.DetailTiling);
-		DetailNormalMap = texture(uMaterial.DetailNormalMap, varUV * uMaterial.DetailTiling);
+		if (uMaterial.HasDiffuseMap)
+		{
+			vec4 DiffuseSample = texture2D(uMaterial.DiffuseMap, TiledUV);
 
-		Normal = varNormal;
-		Roughness = uMaterial.Roughness;
-		Metallic = uMaterial.Metallic;
+			if (uMaterial.HasDetailDiffuseMap)
+				Diffuse = vec4(DiffuseSample.rgb * texture2D(uMaterial.DetailDiffuseMap, TiledDetailUV) * 1.8f, DiffuseSample.a);
+			else
+				Diffuse = DiffuseSample;
+		}
+		else
+			if (uMaterial.HasDetailDiffuseMap)
+				Diffuse = texture2D(uMaterial.DetailDiffuseMap, TiledDetailUV);
+			else
+				Diffuse = vec4(1);
 
-		if (textureSize(uMaterial.DiffuseMap, 0).x > 1 && textureSize(uMaterial.DetailDiffuseMap, 0).x > 1)
-		{
-			DiffuseMap = vec4(DiffuseMap.rgb * DetailDiffuseMap.rgb * 1.8f, DiffuseMap.a);
-		}
-		else if (textureSize(uMaterial.DetailDiffuseMap, 0).x > 1)
-		{
-			DiffuseMap = DetailDiffuseMap;
-		}
+		if (uMaterial.HasNormalMap)
+			if (uMaterial.HasDetailNormalMap)
+				Normal = NormalBlend(texture2D(uMaterial.NormalMap, TiledUV), texture2D(uMaterial.DetailNormalMap, TiledDetailUV)) * varTBN;
+			else
+				Normal = normalize(texture2D(uMaterial.NormalMap, TiledUV).rgb * 2.0 - 1.0) * varTBN;
+		else
+			if (uMaterial.HasDetailNormalMap)
+				Normal = normalize(texture2D(uMaterial.DetailNormalMap, TiledDetailUV).rgb * 2.0 - 1.0) * varTBN;
+			else
+				Normal = varNormal;
 
-		if (textureSize(uMaterial.NormalMap, 0).x > 1 && textureSize(uMaterial.DetailNormalMap, 0).x > 1)
-		{
-			Normal = NormalBlend(NormalMap, DetailNormalMap) * varTBN;
-		}
-		else if (textureSize(uMaterial.DetailNormalMap, 0).x > 1)
-		{
-			Normal = normalize(DetailNormalMap.rgb * 2.0 - 1.0) * varTBN;
-		}
+		if (uMaterial.HasRoughnessMap)
+			Roughness = texture2D(uMaterial.RoughnessMap, TiledUV).r;
+		else
+			Roughness = uMaterial.Roughness;
 
-		if (textureSize(uMaterial.RoughnessMap, 0).x > 1)
-		{
-			Roughness = texture(uMaterial.RoughnessMap, TiledUV).r;
-		}
-
-		if (textureSize(uMaterial.MetallicMap, 0).x > 1)
-		{
-			Metallic = texture(uMaterial.MetallicMap, TiledUV).r;
-		}
+		if (uMaterial.HasMetallicMap)
+			Metallic = texture2D(uMaterial.MetallicMap, TiledUV).r;
+		else
+			Metallic = uMaterial.Metallic;
 	}
 
 	vec3 LambertDiffuseBRDF(in vec3 color)
 	{
-		//return color / PI;
 		return color * LAMBERTIAN;
 	}
 
@@ -197,7 +206,7 @@
 		float denom = (NdotH2 * (a2 - 1.0) + 1.0);
 		denom = PI * denom * denom;
 
-		return num / max(denom, 0.001f);
+		return num / denom;
 	}
 
 	float GeometryGGX(float a, float ndotl, float ndotv)
@@ -246,7 +255,7 @@
 
 		if (LightColor == vec3(0)) return vec3(0);
 
-		float AO = 1.0; if (textureSize(uMaterial.OcclusionMap, 0).x > 1) AO = texture(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r;
+		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
 		float Distance = length(LightPos - varPos);
 		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = 1.0 / (1.0 + LightLinear * Distance + LightQuadratic * Distance * Distance);
 
@@ -279,7 +288,7 @@
 		BRDF = pow(BRDF, vec3(COLOR_EXP));
 
 		return BRDF;
-	}
+}
 
 	vec2 EncodeNormal(in vec3 n)
 	{
@@ -288,14 +297,9 @@
 
 	void Final(void)
 	{
-		vec4 Color = vec4(Lights(), uMaterial.Color.a);
+		vec4 Color = vec4(Lights(), uMaterial.Color.a) * Diffuse;
 
-		if (textureSize(uMaterial.DiffuseMap, 0).x > 1)
-		{
-			Color *= DiffuseMap;
-		}
-
-		Color += vec4(texture(uMaterial.EmissionMap, varUV * uMaterial.Tiling).rgb * uMaterial.EmissionStrength, 0);
+		Color.rgb += texture2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
 
 		FragData[0] = Color;
 		FragData[1] = vec4(Normal, 1);

@@ -4,7 +4,6 @@
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Mesh.h>
-#include <Graphics/MeshInstanced.h>
 #include <Graphics/Framebuffer.h>
 
 namespace Columbus
@@ -23,7 +22,6 @@ namespace Columbus
 		virtual Texture* CreateTexture() const;
 
 		virtual Mesh* CreateMesh() const;
-		virtual MeshInstanced* CreateMeshInstanced() const;
 
 		virtual Framebuffer* createFramebuffer() const;
 

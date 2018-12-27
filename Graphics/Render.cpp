@@ -1,13 +1,20 @@
 #include <Graphics/Render.h>
 #include <Graphics/Device.h>
 #include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentMeshInstancedRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/Component.h>
 #include <Math/Frustum.h>
+#include <GL/glew.h>
 
 namespace Columbus
 {
+	Texture* IrradianceMap;
+	Texture* BlackTexture;
+
+	ShaderProgram* NoneShader;
+	ShaderProgram* BloomBrightShader;
+	ShaderProgram* GaussBlurShader;
+	ShaderProgram* BloomShader;
 
 	struct
 	{
@@ -44,24 +51,22 @@ namespace Columbus
 
 	static void PrepareFaceCulling(Material::Cull Culling)
 	{
-		if (State.Culling != Culling)
+		State.Culling = Culling;
+
+		switch (Culling)
 		{
-			switch (Culling)
-			{
-			case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
-			case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT); break;
-			case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK); break;
-			case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
-			}
+		case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
+		case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT); break;
+		case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK); break;
+		case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
 		}
 	}
 
 	static void PrepareDepthWriting(bool DepthWriting)
 	{
-		if (State.DepthWriting != DepthWriting)
-		{
-			glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
-		}
+		State.DepthWriting = DepthWriting;
+
+		glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
 	}
 
 	static void ShaderSetMatrices(ShaderProgram* Program, const Transform& InTransform, const Camera& InCamera)
@@ -89,44 +94,46 @@ namespace Columbus
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
 
-		if (CurrentMaterial != PreviousMaterial)
+		if (CurrentShader != nullptr)
 		{
-			if (CurrentShader != nullptr)
+			Texture* Textures[9] = { CurrentMaterial.DiffuseTexture, CurrentMaterial.NormalTexture, CurrentMaterial.RoughnessTexture, CurrentMaterial.MetallicTexture, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailDiffuseMap, CurrentMaterial.DetailNormalMap, CurrentMaterial.Reflection };
+			Texture* LastTextures[9] = { PreviousMaterial.DiffuseTexture, PreviousMaterial.NormalTexture, PreviousMaterial.RoughnessTexture, PreviousMaterial.MetallicTexture, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailDiffuseMap, PreviousMaterial.DetailNormalMap, PreviousMaterial.Reflection };
+
+			for (int32 i = 0; i < 9; i++)
 			{
-				if (CurrentShader->IsCompiled())
+				if (Textures[i] != LastTextures[i] || CheckShader())
 				{
-					Texture* Textures[9] = { CurrentMaterial.DiffuseTexture, CurrentMaterial.NormalTexture, CurrentMaterial.RoughnessTexture, CurrentMaterial.MetallicTexture, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailDiffuseMap, CurrentMaterial.DetailNormalMap, CurrentMaterial.Reflection };
-					Texture* LastTextures[9] = { PreviousMaterial.DiffuseTexture, PreviousMaterial.NormalTexture, PreviousMaterial.RoughnessTexture, PreviousMaterial.MetallicTexture, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailDiffuseMap, PreviousMaterial.DetailNormalMap, PreviousMaterial.Reflection };
-
-					for (int32 i = 0; i < 9; i++)
+					if (Textures[i] != nullptr)
 					{
-						if (Textures[i] != LastTextures[i] || CheckShader())
-						{
-							if (Textures[i] != nullptr)
-							{
-								glActiveTexture(GL_TEXTURE0 + i);
-								CurrentShader->SetUniform1i(Names[i], i);
-								Textures[i]->bind();
-							}
-							else
-							{
-								glActiveTexture(GL_TEXTURE0 + i);
-								CurrentShader->SetUniform1i(Names[i], i);
-								glBindTexture(GL_TEXTURE_2D, 0);
-							}
-						}
+						glActiveTexture(GL_TEXTURE0 + i);
+						CurrentShader->SetUniform1i(Names[i], i);
+						Textures[i]->bind();
 					}
-
-					if (CheckParameter(Tiling))           CurrentShader->SetUniform2f("uMaterial.Tiling", CurrentMaterial.Tiling);
-					if (CheckParameter(DetailTiling))     CurrentShader->SetUniform2f("uMaterial.DetailTiling", CurrentMaterial.DetailTiling);
-					if (CheckParameter(Color))            CurrentShader->SetUniform4f("uMaterial.Color", CurrentMaterial.Color);
-					if (CheckParameter(Roughness))        CurrentShader->SetUniform1f("uMaterial.Roughness", CurrentMaterial.Roughness);
-					if (CheckParameter(Metallic))         CurrentShader->SetUniform1f("uMaterial.Metallic", CurrentMaterial.Metallic);
-					if (CheckParameter(EmissionStrength)) CurrentShader->SetUniform1f("uMaterial.EmissionStrength", CurrentMaterial.EmissionStrength);
-					if (CheckParameter(Transparent))      CurrentShader->SetUniform1i("uMaterial.Transparent", CurrentMaterial.Transparent);
-					if (CheckShader())                    CurrentShader->SetUniform3f("uCamera.Position", MainCamera.getPos());
+					else
+					{
+						glActiveTexture(GL_TEXTURE0 + i);
+						CurrentShader->SetUniform1i(Names[i], i);
+						BlackTexture->bind();
+					}
 				}
 			}
+
+			CurrentShader->SetUniform1i("uMaterial.HasDiffuseMap",       CurrentMaterial.DiffuseTexture   != nullptr);
+			CurrentShader->SetUniform1i("uMaterial.HasNormalMap",        CurrentMaterial.NormalTexture    != nullptr);
+			CurrentShader->SetUniform1i("uMaterial.HasRoughnessMap",     CurrentMaterial.RoughnessTexture != nullptr);
+			CurrentShader->SetUniform1i("uMaterial.HasMetallicMap",      CurrentMaterial.MetallicTexture  != nullptr);
+			CurrentShader->SetUniform1i("uMaterial.HasOcclusionMap",     CurrentMaterial.OcclusionMap     != nullptr);
+			CurrentShader->SetUniform1i("uMaterial.HasDetailDiffuseMap", CurrentMaterial.DetailDiffuseMap != nullptr);
+			CurrentShader->SetUniform1i("uMaterial.HasDetailNormalMap",  CurrentMaterial.DetailNormalMap  != nullptr);
+
+			if (CheckParameter(Tiling))           CurrentShader->SetUniform2f("uMaterial.Tiling", CurrentMaterial.Tiling);
+			if (CheckParameter(DetailTiling))     CurrentShader->SetUniform2f("uMaterial.DetailTiling", CurrentMaterial.DetailTiling);
+			if (CheckParameter(Color))            CurrentShader->SetUniform4f("uMaterial.Color", CurrentMaterial.Color);
+			if (CheckParameter(Roughness))        CurrentShader->SetUniform1f("uMaterial.Roughness", CurrentMaterial.Roughness);
+			if (CheckParameter(Metallic))         CurrentShader->SetUniform1f("uMaterial.Metallic", CurrentMaterial.Metallic);
+			if (CheckParameter(EmissionStrength)) CurrentShader->SetUniform1f("uMaterial.EmissionStrength", CurrentMaterial.EmissionStrength);
+			if (CheckParameter(Transparent))      CurrentShader->SetUniform1i("uMaterial.Transparent", CurrentMaterial.Transparent);
+			if (CheckShader())                    CurrentShader->SetUniform3f("uCamera.Position", MainCamera.getPos());
 		}
 	}
 
@@ -177,7 +184,47 @@ namespace Columbus
 
 	Renderer::Renderer()
 	{
+		IrradianceMap = gDevice->CreateTexture();
+		BlackTexture = gDevice->CreateTexture();
 
+		uint8 Zero = 0;
+		BlackTexture->Create2D(Texture::Properties(1, 1, 0, TextureFormat::R8));
+		BlackTexture->Load(&Zero, Texture::Properties(1, 1, 0, TextureFormat::R8));
+		
+		Image img;
+
+		if (img.Load("Data/Skyboxes/Irradiance.dds"))
+		{
+			IrradianceMap->CreateCube(Texture::Properties(img.GetWidth(), img.GetHeight(), 0, img.GetFormat()));
+			IrradianceMap->Load(img);
+		}
+
+		BaseEffect.ColorTexturesEnablement[0] = true;
+		BaseEffect.ColorTexturesEnablement[1] = true;
+		BaseEffect.DepthTextureEnablement = true;
+
+		BloomBrightPass.ColorTexturesEnablement[0] = true;
+
+		BloomBlurPass.ColorTexturesEnablement[0] = true;
+		BloomBlurPass.ColorTexturesEnablement[1] = true;
+
+		BloomFinalPass.ColorTexturesEnablement[0] = true;
+
+		NoneShader = gDevice->CreateShaderProgram();
+		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
+		NoneShader->Compile();
+
+		BloomBrightShader = gDevice->CreateShaderProgram();
+		BloomBrightShader->Load("Data/Shaders/Bright.glsl");
+		BloomBrightShader->Compile();
+
+		GaussBlurShader = gDevice->CreateShaderProgram();
+		GaussBlurShader->Load("Data/Shaders/GaussBlur.glsl");
+		GaussBlurShader->Compile();
+
+		BloomShader = gDevice->CreateShaderProgram();
+		BloomShader->Load("Data/Shaders/Bloom.glsl");
+		BloomShader->Compile();
 	}
 
 	void Renderer::SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List)
@@ -213,6 +260,8 @@ namespace Columbus
 					{
 						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetMatrix()))
 						{
+							Object.second->GetMaterial().Reflection = IrradianceMap;
+
 							if (Object.second->GetMaterial().Transparent)
 							{
 								TransparentObjects.push_back(TransparentRenderData(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial()));
@@ -279,6 +328,7 @@ namespace Columbus
 			ClearOptimizations();
 
 			glDisable(GL_CULL_FACE);
+			glDisable(GL_BLEND);
 			glDepthMask(GL_TRUE);
 
 			for (auto& Object : OpaqueObjects)
@@ -286,7 +336,7 @@ namespace Columbus
 				CurrentShader = Object.ObjectMaterial.GetShader();
 				CurrentMaterial = Object.ObjectMaterial;
 				CurrentMesh = Object.Object;
-
+				
 				if (CurrentShader != nullptr)
 				{
 					if (CurrentShader != PreviousShader)
@@ -326,6 +376,11 @@ namespace Columbus
 
 			CurrentMesh->Unbind();
 		}
+
+		if (Sky != nullptr)
+		{
+			Sky->draw();
+		}
 	}
 
 	void Renderer::RenderTransparentStage()
@@ -333,6 +388,8 @@ namespace Columbus
 		if (RenderList != nullptr && TransparentObjects.size() != 0)
 		{
 			ClearOptimizations();
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glDepthMask(GL_FALSE);
 
 			for (auto& Object : TransparentObjects)
@@ -403,6 +460,8 @@ namespace Columbus
 				}
 			}
 		}
+
+		glDepthMask(GL_TRUE);
 	}
 
 	void Renderer::Render(Renderer::Stage RenderStage)
@@ -411,42 +470,97 @@ namespace Columbus
 		{
 			switch (RenderStage)
 			{
-				case Renderer::Stage::Opaque:
-				{
-					RenderOpaqueStage();
-					break;
-				}
-
-				case Renderer::Stage::Transparent:
-				{
-					RenderTransparentStage();
-					break;
-				}
+				case Renderer::Stage::Opaque:      RenderOpaqueStage();      break;
+				case Renderer::Stage::Transparent: RenderTransparentStage(); break;
 			}
 		}
 
 		PrepareFaceCulling(Material::Cull::No);
 	}
 
-	void Renderer::Render(std::map<uint32, SmartPointer<GameObject>>* RenderList)
+	void Renderer::Render()
 	{
-		if (RenderList != nullptr)
-		{
-			for (auto& Object : *RenderList)
-			{
-				ComponentMeshRenderer* MeshRenderer = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
+		CompileLists();
+		SortLists();
 
-				if (MeshRenderer != nullptr)
-				{
-					MeshRenderer->Render(Object.second->GetTransform());
-				}
-			}
-		}
+		RenderOpaqueStage();
+		RenderTransparentStage();
+
+		/*BaseEffect.Bind({ 1, 1, 1, 0 }, ContextSize);
+
+		CompileLists();
+		SortLists();
+
+		RenderOpaqueStage();
+		//RenderTransparentStage();
+
+		BaseEffect.Unbind();
+
+		NoneShader->Bind();
+		glActiveTexture(GL_TEXTURE0);
+		NoneShader->SetUniform1i("BaseTexture", 0);
+		BaseEffect.ColorTextures[0]->bind();
+		Quad.Render();*/
+
+		/*BloomBrightPass.Bind({ 1, 1, 1, 0 }, ContextSize);
+
+		BloomBrightShader->Bind();
+		glActiveTexture(GL_TEXTURE0);
+		BloomBrightShader->SetUniform1i("BaseTexture", 0);
+		BaseEffect.ColorTextures[0]->bind();
+		Quad.Render();
+
+		BloomBrightPass.Unbind();
+
+		BloomBlurPass.Bind({ 1, 1, 1, 0 }, ContextSize);
+
+		NoneShader->Bind();
+		glActiveTexture(GL_TEXTURE0);
+		NoneShader->SetUniform1i("BaseTexture", 0);
+		BloomBrightPass.ColorTextures[0]->bind();
+		Quad.Render();
+
+		BloomBlurPass.Unbind();
+
+		BloomFinalPass.Bind({ 1, 1, 1, 0 }, ContextSize);
+
+		GaussBlurShader->Bind();
+		glActiveTexture(GL_TEXTURE0);
+		GaussBlurShader->SetUniform1i("BaseTexture", 0);
+		BloomBlurPass.ColorTextures[0]->bind();
+		GaussBlurShader->SetUniform2f("Resolution", ContextSize);
+
+		Quad.Render();
+
+		BloomFinalPass.Unbind();
+
+		BloomShader->Bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		BloomShader->SetUniform1i("BaseTexture", 0);
+		BaseEffect.ColorTextures[0]->bind();
+
+		glActiveTexture(GL_TEXTURE1);
+		BloomShader->SetUniform1i("HorizontalBlur", 1);
+		BloomFinalPass.ColorTextures[0]->bind();
+
+		glActiveTexture(GL_TEXTURE2);
+		BloomShader->SetUniform1i("VerticalBlur", 2);
+		BloomFinalPass.ColorTextures[1]->bind();
+
+		Quad.Render();*/
+
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	Renderer::~Renderer()
 	{
-
+		delete IrradianceMap;
+		delete BlackTexture;
+		delete NoneShader;
+		delete BloomBrightShader;
+		delete GaussBlurShader;
+		delete BloomShader;
 	}
 
 }

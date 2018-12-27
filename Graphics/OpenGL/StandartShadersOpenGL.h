@@ -22,6 +22,7 @@ namespace Columbus
 		"void main()\n"
 		"{\n"
 		"FragColor = texture(uSkybox, texCoord);\n"
+		"gl_FragDepth = 0x7FFFFFFF;"
 		"}\n";
 
 }

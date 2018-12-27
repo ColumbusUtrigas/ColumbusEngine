@@ -4,7 +4,6 @@
 #include <System/System.h>
 #include <System/Log.h>
 #include <Common/Image/Image.h>
-#include <RenderAPI/APIOpenGL.h>
 #include <Math/Vector2.h>
 
 namespace Columbus
@@ -102,6 +101,8 @@ namespace Columbus
 		};
 	public:
 		Texture() {}
+		Texture(const Texture&) = delete;
+		Texture(Texture&&) = delete;
 
 		virtual bool Load(const void* Data, Properties Props) = 0;
 		virtual bool Load(Image& InImage) = 0;

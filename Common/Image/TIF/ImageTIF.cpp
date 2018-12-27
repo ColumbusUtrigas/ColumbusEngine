@@ -125,21 +125,11 @@ namespace Columbus
 
 	bool ImageLoaderTIF::Load(std::string FileName)
 	{
-		Free();
 		uint64 Size = 0;
 
 		Data = ImageLoadTIF(FileName, Width, Height, Size, Format);
 
 		return (Data != nullptr);
-	}
-
-	void ImageLoaderTIF::Free()
-	{
-		delete[] Data;
-		Width = 0;
-		Height = 0;
-		Mipmaps = 0;
-		Format = TextureFormat::RGBA8;
 	}
 
 }
