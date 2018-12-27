@@ -41,6 +41,18 @@ namespace Columbus
 		return 0;
 	}
 
+	uint32 GetBlockSizeFromFormat(TextureFormat Format)
+	{
+		switch (Format)
+		{
+		case TextureFormat::DXT1: return 8;  break;
+		case TextureFormat::DXT3:
+		case TextureFormat::DXT5: return 16; break;
+		}
+
+		return 0;
+	}
+
 	ImageFormat ImageGetFormat(std::string FileName)
 	{
 		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
@@ -252,18 +264,17 @@ namespace Columbus
 		{
 			if (!Loader->Load(InFileName))
 			{
-				Loader->Free();
 				delete Loader;
 				return false;
 			}
 
-			Data = Loader->GetData();
-			Width = Loader->GetWidth();
-			Height = Loader->GetHeight();
-			MipMaps = Loader->GetMipmaps();
-			Format = Loader->GetFormat();
+			Data    = std::move(Loader->Data);
+			Width   = std::move(Loader->Width);
+			Height  = std::move(Loader->Height);
+			MipMaps = std::move(Loader->Mipmaps);
+			Format  = std::move(Loader->Format);
 
-			switch (Loader->GetType())
+			switch (Loader->ImageType)
 			{
 			case ImageLoader::Type::Image2D:      ImageType = Type::Image2D;      break;
 			case ImageLoader::Type::Image3D:      ImageType = Type::Image3D;      break;

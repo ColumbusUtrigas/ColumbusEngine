@@ -18,7 +18,6 @@ namespace Columbus
 		virtual Texture* CreateTexture() const override;
 
 		virtual Mesh* CreateMesh() const override;
-		virtual MeshInstanced* CreateMeshInstanced() const override;
 
 		virtual Framebuffer* createFramebuffer() const override;
 

@@ -1,14 +1,10 @@
 #pragma once
 
-#include <System/Assert.h>
-#include <System/System.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
+#include <Math/Box.h>
 #include <vector>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
 
 namespace Columbus
 {
@@ -30,25 +26,76 @@ namespace Columbus
 
 	void ModelConvertCMFToCompressed(std::string SourceFileName, std::string DestinyFileName);
 
-	class C_Model
+	class ModelLoader
+	{
+	public:
+		bool Indexed = false;
+
+		uint32 VerticesCount = 0;
+		uint32 IndicesCount = 0;
+
+		Vector3* Positions = nullptr;
+		Vector2* UVs = nullptr;
+		Vector3* Normals = nullptr;
+		Vector3* Tangents = nullptr;
+		uint32* Indices = nullptr;
+
+		Box BoundingBox;
+	public:
+		ModelLoader() {}
+
+		virtual bool Load(const std::string& File) { return false; }
+
+		~ModelLoader() {}
+	};
+
+	class Model
 	{
 	private:
-		std::vector<Vertex> Vertices;
-		std::string FileName;
-		bool Existance = false;
+		bool Indexed = false;
+		bool Exist = false;
+
+		uint32 VerticesCount = 0;
+		uint32 IndicesCount  = 0;
+
+		Vector3* Positions = nullptr;
+		Vector2* UVs = nullptr;
+		Vector3* Normals = nullptr;
+		Vector3* Tangents = nullptr;
+
+		Vertex* Vertices = nullptr;
+		uint32* Indices = nullptr;
+
+		Box BoundingBox;
 	public:
-		C_Model();
-		C_Model(std::string aFile);
+		Model();
 
-		bool Load(std::string aFile);
-		bool Save(std::string aFile) const;
-		bool IsExist() const;
-		bool Free();
+		bool Load(const std::string& File);
+		void FreeData();
 
-		std::vector<Vertex> GetData() const;
-		std::string GetFilename() const;
+		bool IsIndexed() const { return Indexed; }
+		bool IsExist()   const { return Exist;   }
 
-		~C_Model();
+		uint32 GetVerticesCount() const { return VerticesCount; }
+		uint32 GetIndicesCount()  const { return IndicesCount;  }
+
+		bool HasPositions() const { return Positions != nullptr; }
+		bool HasUVs()       const { return UVs       != nullptr; }
+		bool HasNormals()   const { return Normals   != nullptr; }
+		bool HasTangents()  const { return Tangents  != nullptr; }
+		bool HasVertices()  const { return Vertices  != nullptr; }
+		bool HasIndices()   const { return Indices   != nullptr; }
+
+		const Vector3* GetPositions() const { return Positions; }
+		const Vector2* GetUVs()       const { return UVs;       }
+		const Vector3* GetNormals()   const { return Normals;   }
+		const Vector3* GetTangents()  const { return Tangents;  }
+		const Vertex*  GetVertices()  const { return Vertices;  }
+		const uint32*  GetIndices()   const { return Indices;   }
+
+		Box GetBoundingBox() const { return BoundingBox; }
+		
+		~Model();
 	};
 
 }

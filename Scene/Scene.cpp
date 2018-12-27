@@ -6,14 +6,6 @@ namespace Columbus
 
 	Scene::Scene() : mSkybox(nullptr)
 	{
-		NoneShader = gDevice->CreateShaderProgram();
-		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
-		NoneShader->Compile();
-
-		mNoneEffect.AddAttributeName("uResolution");
-
-		mNoneEffect.SetShader(NoneShader);
-
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
 	}
 
@@ -65,23 +57,6 @@ namespace Columbus
 			}
 		}
 	}
-
-	void Scene::meshInstancedWorkflow()
-	{
-		for (auto& Object : mObjects)
-		{
-			ComponentMeshInstancedRenderer* mesh =
-				static_cast<ComponentMeshInstancedRenderer*>(Object.second->GetComponent(Component::Type::MeshInstancedRenderer));
-
-			if (mesh != nullptr)
-			{
-				mesh->SetLights(mLights);
-				if (mSkybox != nullptr) mesh->SetReflection(mSkybox->GetCubemap());
-				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
-			}
-		}
-	}
-
 	
 	void Scene::particlesWorkflow()
 	{
@@ -243,30 +218,6 @@ namespace Columbus
 		}
 
 		return MeshRenderer;
-	}
-
-	static ComponentMeshInstancedRenderer* SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
-	{
-		ComponentMeshInstancedRenderer* MeshInstancedRenderer = nullptr;
-
-		/*if (Serializer != nullptr && Mat != nullptr && Meshes != nullptr)
-		{
-			std::string MeshPath;
-
-			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshInstancedRenderer", "Mesh" }, MeshPath))
-			{
-				MeshInstanced* mesh = gDevice->CreateMeshInstanced();
-
-				if (mesh != nullptr)
-				{
-					mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
-					mesh->Mat = *Mat;
-					MeshInstancedRenderer = new ComponentMeshInstancedRenderer(mesh);
-				}
-			}
-		}*/
-
-		return MeshInstancedRenderer;
 	}
 
 	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat)
@@ -583,7 +534,6 @@ namespace Columbus
 			}
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
-			ComponentMeshInstancedRenderer* MeshInstancedRenderer = SceneGameObjectLoadComponentMeshInstancedRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
 			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.GetPos());
 			ComponentRigidbody* Rigidbody = SceneGameObjectLoadComponentRigidbody(Serializer, Element, transform, SceneGameObjectLoadComponentRigidbodyShape(Serializer, Element, Meshes));
@@ -592,11 +542,6 @@ namespace Columbus
 			if (MeshRenderer != nullptr)
 			{
 				OutObject.AddComponent(MeshRenderer);
-			}
-
-			if (MeshInstancedRenderer != nullptr)
-			{
-				OutObject.AddComponent(MeshInstancedRenderer);
 			}
 
 			if (ParticleSystem != nullptr)
@@ -627,9 +572,7 @@ namespace Columbus
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	bool Scene::load(std::string aFile)
 	{
 		if (!gDevice)
@@ -707,22 +650,17 @@ namespace Columbus
 				elem = std::string("Mesh") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Meshes", elem }, path))
 				{
-					std::vector<Vertex> Vertices;
+					Model M;
 
-					if (ModelIsCMF(path))
+					if (M.Load(path))
 					{
-						ModelLoadCMF(path, Vertices);
-						//Meshes.insert(std::pair<uint32, std::vector<Vertex>>(i, Vertices));
-
 						Mesh* tMesh = gDevice->CreateMesh();
 
 						if (tMesh != nullptr)
 						{
-							tMesh->SetVertices(Vertices);
+							tMesh->Load(M);
 							Meshes.insert(std::make_pair(i, SmartPointer<Mesh>(tMesh)));
 						}
-
-						Log::success("Mesh loaded: " + path);
 					}
 					else
 					{
@@ -802,7 +740,6 @@ namespace Columbus
 		audioWorkflow();
 		lightWorkflow();
 		meshWorkflow();
-		meshInstancedWorkflow();
 		particlesWorkflow();
 		rigidbodyWorkflow();
 
@@ -837,29 +774,17 @@ namespace Columbus
 	
 	void Scene::render()
 	{
-		mNoneEffect.clearAttribs();
-		mNoneEffect.addAttrib({ "uResolution", ContextSize });
-		mNoneEffect.Bind(Vector4(1, 1, 1, 0), ContextSize);
-
-		if (mSkybox != nullptr)
-		{
-			mSkybox->draw();
-		}
-
+		Render.SetContextSize(ContextSize);
 		Render.SetMainCamera(*mCamera);
+		Render.SetSky(mSkybox);
 		Render.SetRenderList(&mObjects);
-		Render.CompileLists();
-		Render.SortLists();
-		Render.Render(Renderer::Stage::Opaque);
-		Render.Render(Renderer::Stage::Transparent);
-
-		mNoneEffect.Unbind();
-		mNoneEffect.Render();
+		Render.Render();
 	}
 	
 	Scene::~Scene()
 	{
 		mObjects.clear();
+		delete mSkybox;
 	}
 
 }

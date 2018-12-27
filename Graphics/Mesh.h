@@ -27,6 +27,7 @@ namespace Columbus
 		Mesh(const std::vector<Vertex>& Vertices) : VerticesCount(0) { SetVertices(Vertices); }
 
 		virtual void SetVertices(const std::vector<Vertex>& InVertices) {}
+		virtual void Load(const Model& InModel) {}
 		virtual void Bind() {}
 		virtual uint32 Render() { return 0; }
 		virtual void Unbind() {}

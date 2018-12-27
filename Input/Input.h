@@ -33,6 +33,12 @@ namespace Columbus
 			int X = 0;
 			int Y = 0;
 		};
+
+		struct MouseWheel
+		{
+			int X = 0;
+			int Y = 0;
+		};
 	private:
 		uint8* KeyboardState = nullptr;
 		int KeysNum = 0;
@@ -41,6 +47,7 @@ namespace Columbus
 		bool KeysDown[256];
 		bool KeysUp[256];
 		MouseButton Buttons[8];
+		MouseWheel Wheel;
 
 		iVector2 CurrentMousePosition;
 		iVector2 PreviousMousePosition;
@@ -48,6 +55,7 @@ namespace Columbus
 		bool MouseEnabled = true;
 		bool KeyboardFocus;
 		bool MouseFocus;
+		bool KeyRepeat;
 	public:
 		Input();
 
@@ -67,13 +75,15 @@ namespace Columbus
 		void SetKeyUp(uint32 Key);
 		void SetMousePosition(const iVector2& Position);
 		void SetMouseButton(uint32 Button, const MouseButton& State);
+		void SetMouseWheel(const MouseWheel& State);
 
-		bool GetKey(uint32 Key);
-		bool GetKeyDown(uint32 Key);
-		bool GetKeyUp(uint32 Key);
-		iVector2 GetMousePosition();
-		iVector2 GetMouseMovement();
-		MouseButton GetMouseButton(uint32 Button);
+		bool GetKey(uint32 Key) const;
+		bool GetKeyDown(uint32 Key) const;
+		bool GetKeyUp(uint32 Key) const;
+		iVector2 GetMousePosition() const;
+		iVector2 GetMouseMovement() const;
+		MouseButton GetMouseButton(uint32 Button) const;
+		MouseWheel GetMouseWheel() const;
 
 		~Input();
 	};

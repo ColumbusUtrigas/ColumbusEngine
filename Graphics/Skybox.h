@@ -4,8 +4,6 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
-#include <RenderAPI/APIOpenGL.h>
-#include <RenderAPI/Buffer.h>
 
 namespace Columbus
 {

@@ -166,7 +166,7 @@ namespace Columbus
 		uint8* DestinyFile = new uint8[Bound];
 		uint64 DestinySize = ZSTD_compress(DestinyFile, Bound, SourceFile, FileSize - 26, 1);
 		CMFDestinyModelFile.WriteBytes(Header, 25);
-		CMFDestinyModelFile.WriteUint8(0xFF);
+		CMFDestinyModelFile.Write(0xFF);
 		CMFDestinyModelFile.WriteBytes(DestinyFile, DestinySize);
 		CMFDestinyModelFile.Close();
 

@@ -1,37 +1,19 @@
 #pragma once
 
 #include <Graphics/Mesh.h>
-#include <Graphics/MeshInstanced.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
 #include <Graphics/Particles/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
-#include <Graphics/Renderbuffer.h>
 #include <Graphics/PostEffect.h>
-#include <RenderAPI/APIOpenGL.h>
 #include <System/Timer.h>
 #include <Scene/GameObject.h>
 
+#include <Graphics/ScreenQuad.h>
+
 namespace Columbus
 {
-
-	class C_Render
-	{
-	private:
-		//Enable all OpenGL varyables
-		void enableAll();
-	public:
-		//Constructor
-		C_Render();
-		static void enableDepthPrepass();
-		static void renderDepthPrepass(GameObject* aGameObject);
-		static void disableDepthPrepass();
-		static void render(GameObject* aGameObject);
-
-
-		~C_Render();
-	};
 
 	class Renderer
 	{
@@ -67,8 +49,17 @@ namespace Columbus
 
 		std::vector<OpaqueRenderData> OpaqueObjects;
 		std::vector<TransparentRenderData> TransparentObjects;
-
+		
+		iVector2 ContextSize;
 		Camera MainCamera;
+		Skybox* Sky = nullptr;
+
+		BasePostEffect BaseEffect;
+		BasePostEffect BloomBrightPass;
+		BasePostEffect BloomBlurPass;
+		BasePostEffect BloomFinalPass;
+
+		ScreenQuad Quad;
 	public:
 		enum class Stage
 		{
@@ -78,7 +69,9 @@ namespace Columbus
 	public:
 		Renderer();
 
-		void SetMainCamera(Camera& InCamera) { MainCamera = InCamera; }
+		void SetContextSize(const iVector2& Size) { ContextSize = Size; }
+		void SetMainCamera(const Camera& InCamera) { MainCamera = InCamera; }
+		void SetSky(Skybox* InSky) { Sky = InSky; }
 
 		virtual void SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List);
 		virtual void CompileLists();
@@ -87,7 +80,7 @@ namespace Columbus
 		virtual void RenderOpaqueStage();
 		virtual void RenderTransparentStage();
 		virtual void Render(Stage RenderStage);
-		virtual void Render(std::map<uint32, SmartPointer<GameObject>>* RenderList);
+		virtual void Render();
 
 		~Renderer();
 	};

@@ -125,16 +125,7 @@ namespace Columbus
 		std::fill(Buttons, Buttons + 8, Input::MouseButton { false, 0, 0, 0 });
 
 		PreviousMousePosition = CurrentMousePosition;
-	}
-	
-	iVector2 Input::GetMousePosition()
-	{
-		return CurrentMousePosition;
-	}
-	
-	iVector2 Input::GetMouseMovement()
-	{
-		return CurrentMousePosition - PreviousMousePosition;
+		Wheel = { 0, 0 };
 	}
 
 	void Input::SetKeyDown(uint32 Key)
@@ -156,25 +147,45 @@ namespace Columbus
 	{
 		Buttons[Button] = State;
 	}
+
+	void Input::SetMouseWheel(const MouseWheel& State)
+	{
+		Wheel = State;
+	}
 	
-	bool Input::GetKey(uint32 Key)
+	bool Input::GetKey(uint32 Key) const
 	{
 		return Keys[Key] && KeyboardFocus;
 	}
 	
-	bool Input::GetKeyDown(uint32 Key)
+	bool Input::GetKeyDown(uint32 Key) const
 	{
 		return KeysDown[Key] && KeyboardFocus;
 	}
 	
-	bool Input::GetKeyUp(uint32 Key)
+	bool Input::GetKeyUp(uint32 Key) const
 	{
 		return KeysUp[Key] && KeyboardFocus;
 	}
 
-	Input::MouseButton Input::GetMouseButton(uint32 Button)
+	iVector2 Input::GetMousePosition() const
+	{
+		return CurrentMousePosition;
+	}
+
+	iVector2 Input::GetMouseMovement() const
+	{
+		return CurrentMousePosition - PreviousMousePosition;
+	}
+
+	Input::MouseButton Input::GetMouseButton(uint32 Button) const
 	{
 		return Buttons[Button];
+	}
+
+	Input::MouseWheel Input::GetMouseWheel() const
+	{
+		return Wheel;
 	}
 	
 	Input::~Input() {}

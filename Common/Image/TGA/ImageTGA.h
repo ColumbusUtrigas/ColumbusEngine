@@ -11,7 +11,6 @@ namespace Columbus
 		static bool IsTGA(std::string FileName);
 
 		virtual bool Load(std::string FileName) override;
-		virtual void Free() override;
 
 		virtual ~ImageLoaderTGA() {}
 	};

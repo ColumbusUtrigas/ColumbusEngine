@@ -35,11 +35,11 @@ namespace Columbus
 	{
 		if (aFile == nullptr) return false;
 
-		if (!aFile->WriteUint8(aHeader.magic[0])) return false;
-		if (!aFile->WriteUint8(aHeader.magic[1])) return false;
-		if (!aFile->WriteUint32(aHeader.size)) return false;
-		if (!aFile->WriteUint32(aHeader.unused)) return false;
-		if (!aFile->WriteUint32(aHeader.offset)) return false;
+		if (!aFile->Write(aHeader.magic[0])) return false;
+		if (!aFile->Write(aHeader.magic[1])) return false;
+		if (!aFile->Write(aHeader.size)) return false;
+		if (!aFile->Write(aHeader.unused)) return false;
+		if (!aFile->Write(aHeader.offset)) return false;
 
 		return true;
 	}
@@ -48,17 +48,17 @@ namespace Columbus
 	{
 		if (aFile == nullptr) return false;
 
-		if (!aFile->WriteUint32(aInfo.infosize)) return false;
-		if (!aFile->WriteInt32(aInfo.width)) return false;
-		if (!aFile->WriteInt32(aInfo.height)) return false;
-		if (!aFile->WriteUint16(aInfo.planes)) return false;
-		if (!aFile->WriteUint16(aInfo.bits)) return false;
-		if (!aFile->WriteUint32(aInfo.compression)) return false;
-		if (!aFile->WriteUint32(aInfo.size_data)) return false;
-		if (!aFile->WriteUint32(aInfo.hres)) return false;
-		if (!aFile->WriteUint32(aInfo.vres)) return false;
-		if (!aFile->WriteUint32(aInfo.colors)) return false;
-		if (!aFile->WriteUint32(aInfo.important_colors)) return false;
+		if (!aFile->Write(aInfo.infosize)) return false;
+		if (!aFile->Write(aInfo.width)) return false;
+		if (!aFile->Write(aInfo.height)) return false;
+		if (!aFile->Write(aInfo.planes)) return false;
+		if (!aFile->Write(aInfo.bits)) return false;
+		if (!aFile->Write(aInfo.compression)) return false;
+		if (!aFile->Write(aInfo.size_data)) return false;
+		if (!aFile->Write(aInfo.hres)) return false;
+		if (!aFile->Write(aInfo.vres)) return false;
+		if (!aFile->Write(aInfo.colors)) return false;
+		if (!aFile->Write(aInfo.important_colors)) return false;
 
 		return true;
 	}
@@ -146,21 +146,11 @@ namespace Columbus
 
 	bool ImageLoaderBMP::Load(std::string FileName)
 	{
-		Free();
 		uint64 Size = 0;
 
 		Data = ImageLoadBMP(FileName, Width, Height, Size, Format);
 
 		return (Data != nullptr);
-	}
-
-	void ImageLoaderBMP::Free()
-	{
-		delete[] Data;
-		Width = 0;
-		Height = 0;
-		Mipmaps = 0;
-		Format = TextureFormat::RGBA8;
 	}
 
 	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)

@@ -1,72 +1,86 @@
-/************************************************
-*                    Model.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   08.01.2018                  *
-*************************************************/
 #include <Common/Model/Model.h>
+#include <Common/Model/CMF/ModelCMF.h>
 
 namespace Columbus
 {
 
-	C_Model::C_Model() :
-		Existance(false)
-	{
+	Model::Model() {}
 
-	}
-	//////////////////////////////////////////////////////////////////////////////	
-	C_Model::C_Model(std::string InFileName)
+	bool Model::Load(const std::string& File)
 	{
-		Load(InFileName);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::Load(std::string InFileName)
-	{
+		FreeData();
+
+		ModelLoader* Loader = nullptr;
+
+		if (ModelLoaderCMF::IsCMF(File)) Loader = new ModelLoaderCMF();
+
+		if (Loader != nullptr)
+		{
+			if (Loader->Load(File) == false)
+			{
+				delete Loader;
+				return false;
+			}
+
+			Exist         = true;
+			Indexed       = std::move(Loader->Indexed);
+			VerticesCount = std::move(Loader->VerticesCount);
+			IndicesCount  = std::move(Loader->IndicesCount);
+
+			Positions = std::move(Loader->Positions);
+			UVs       = std::move(Loader->UVs);
+			Normals   = std::move(Loader->Normals);
+			Tangents  = std::move(Loader->Tangents);
+			Indices   = std::move(Loader->Indices);
+
+			BoundingBox = std::move(Loader->BoundingBox);
+
+			if (Positions != nullptr && UVs != nullptr && Normals != nullptr && Tangents == nullptr)
+			{
+				Tangents = new Vector3[VerticesCount];
+
+				Vector3 DeltaPos[2];
+				Vector2 DeltaUV[2];
+				Vector3 Tangent;
+				float R;
+
+				for (uint32 i = 0; i < VerticesCount; i += 3)
+				{
+					DeltaPos[0] = Positions[i + 1] - Positions[i];
+					DeltaPos[1] = Positions[i + 2] - Positions[i];
+
+					DeltaUV[0] = UVs[i + 1] - UVs[i];
+					DeltaUV[1] = UVs[i + 2] - UVs[i];
+
+					R = 1.0f / (DeltaUV[0].X * DeltaUV[1].Y - DeltaUV[0].Y * DeltaUV[1].X);
+					Tangent = R * (DeltaPos[0] * DeltaUV[1].Y - DeltaPos[1] * DeltaUV[0].Y);
+
+					for (int j = 0; j < 3; j++) Tangents[i + j] = Tangent;
+				}
+			}
+
+			delete Loader;
+			return true;
+		}
+
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::Save(std::string InFileName) const
-	{
-		if (!IsExist()) return false;
 
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::IsExist() const
+	void Model::FreeData()
 	{
-		return Existance;
+		Indexed = false;
+		Exist = false;
+		VerticesCount = 0;
+		IndicesCount = 0;
+		delete[] Positions;
+		delete[] UVs;
+		delete[] Normals;
+		delete[] Tangents;
+		delete[] Vertices;
+		delete[] Indices;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::Free()
-	{
-		Vertices.clear();
-		FileName.clear();
-		Existance = false;
 
-		return true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::vector<Vertex> C_Model::GetData() const
-	{
-		return Vertices;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string C_Model::GetFilename() const
-	{
-		return FileName;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_Model::~C_Model()
-	{
-		Free();
-	}
+	Model::~Model() { FreeData(); }
 
 }
 

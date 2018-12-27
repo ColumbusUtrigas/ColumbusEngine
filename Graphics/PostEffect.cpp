@@ -1,5 +1,6 @@
 #include <Graphics/PostEffect.h>
 #include <Graphics/Device.h>
+#include <GL/glew.h>
 
 namespace Columbus
 {

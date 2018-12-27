@@ -109,6 +109,43 @@ namespace Columbus
 		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 	}
 
+	void MeshOpenGL::Load(const Model& InModel)
+	{
+		VerticesCount = InModel.GetVerticesCount();
+		BoundingBox = InModel.GetBoundingBox();
+
+		VOffset = 0;
+		UOffset = VOffset + (InModel.GetVerticesCount() * sizeof(Vector3));
+		NOffset = UOffset + (InModel.GetVerticesCount() * sizeof(Vector2));
+		TOffset = NOffset + (InModel.GetVerticesCount() * sizeof(Vector3));
+
+		uint64 Size = InModel.GetVerticesCount() * (sizeof(Vector3) * 3 + sizeof(Vector2));
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
+		glBufferData(GL_ARRAY_BUFFER, Size, nullptr, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_ARRAY_BUFFER, VOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetPositions());
+		glBufferSubData(GL_ARRAY_BUFFER, UOffset, InModel.GetVerticesCount() * sizeof(Vector2), InModel.GetUVs());
+		glBufferSubData(GL_ARRAY_BUFFER, NOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetNormals());
+		glBufferSubData(GL_ARRAY_BUFFER, TOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetTangents());
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		uint64 const Offsets[4] = { VOffset, UOffset, NOffset, TOffset };
+		uint32 const Strides[4] = { 3, 2, 3, 3 };
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
+
+		for (uint32 i = 0; i < 4; i++)
+		{
+			glVertexAttribPointer(i, Strides[i], GL_FLOAT, GL_FALSE, 0, (void*)Offsets[i]);
+			glEnableVertexAttribArray(i);
+		}
+
+		glBindVertexArray(0);
+	}
+
 	void MeshOpenGL::Bind()
 	{
 		SortLights();

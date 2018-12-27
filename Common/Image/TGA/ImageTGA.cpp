@@ -63,18 +63,18 @@ namespace Columbus
 	{
 		if (aHeader == nullptr || aFile == nullptr) return false;
 
-		if (!aFile->ReadUint8(&aHeader->idlen)) return false;
-		if (!aFile->ReadUint8(&aHeader->color_map_type)) return false;
-		if (!aFile->ReadUint8(&aHeader->image_type)) return false;
-		if (!aFile->ReadUint16(&aHeader->color_map_origin)) return false;
-		if (!aFile->ReadUint16(&aHeader->color_map_length)) return false;
-		if (!aFile->ReadUint8(&aHeader->color_map_entry_size)) return false;
-		if (!aFile->ReadUint16(&aHeader->x_origin)) return false;
-		if (!aFile->ReadUint16(&aHeader->y_origin)) return false;
-		if (!aFile->ReadUint16(&aHeader->width)) return false;
-		if (!aFile->ReadUint16(&aHeader->height)) return false;
-		if (!aFile->ReadUint8(&aHeader->bits)) return false;
-		if (!aFile->ReadUint8(&aHeader->image_descriptor)) return false;
+		if (!aFile->Read(aHeader->idlen)) return false;
+		if (!aFile->Read(aHeader->color_map_type)) return false;
+		if (!aFile->Read(aHeader->image_type)) return false;
+		if (!aFile->Read(aHeader->color_map_origin)) return false;
+		if (!aFile->Read(aHeader->color_map_length)) return false;
+		if (!aFile->Read(aHeader->color_map_entry_size)) return false;
+		if (!aFile->Read(aHeader->x_origin)) return false;
+		if (!aFile->Read(aHeader->y_origin)) return false;
+		if (!aFile->Read(aHeader->width)) return false;
+		if (!aFile->Read(aHeader->height)) return false;
+		if (!aFile->Read(aHeader->bits)) return false;
+		if (!aFile->Read(aHeader->image_descriptor)) return false;
 
 		return true;
 	}
@@ -83,18 +83,18 @@ namespace Columbus
 	{
 		if (aFile == nullptr) return false;
 
-		if (!aFile->WriteUint8(aHeader.idlen)) return false;
-		if (!aFile->WriteUint8(aHeader.color_map_type)) return false;
-		if (!aFile->WriteUint8(aHeader.image_type)) return false;
-		if (!aFile->WriteUint16(aHeader.color_map_origin)) return false;
-		if (!aFile->WriteUint16(aHeader.color_map_length)) return false;
-		if (!aFile->WriteUint8(aHeader.color_map_entry_size)) return false;
-		if (!aFile->WriteUint16(aHeader.x_origin)) return false;
-		if (!aFile->WriteUint16(aHeader.y_origin)) return false;
-		if (!aFile->WriteUint16(aHeader.width)) return false;
-		if (!aFile->WriteUint16(aHeader.height)) return false;
-		if (!aFile->WriteUint8(aHeader.bits)) return false;
-		if (!aFile->WriteUint8(aHeader.image_descriptor)) return false;
+		if (!aFile->Write(aHeader.idlen)) return false;
+		if (!aFile->Write(aHeader.color_map_type)) return false;
+		if (!aFile->Write(aHeader.image_type)) return false;
+		if (!aFile->Write(aHeader.color_map_origin)) return false;
+		if (!aFile->Write(aHeader.color_map_length)) return false;
+		if (!aFile->Write(aHeader.color_map_entry_size)) return false;
+		if (!aFile->Write(aHeader.x_origin)) return false;
+		if (!aFile->Write(aHeader.y_origin)) return false;
+		if (!aFile->Write(aHeader.width)) return false;
+		if (!aFile->Write(aHeader.height)) return false;
+		if (!aFile->Write(aHeader.bits)) return false;
+		if (!aFile->Write(aHeader.image_descriptor)) return false;
 
 		return true;
 	}
@@ -398,15 +398,6 @@ namespace Columbus
 		uint64 Size;
 		Data = ImageLoadTGA(FileName, Width, Height, Size, Format);
 		return (Data != nullptr);
-	}
-
-	void ImageLoaderTGA::Free()
-	{
-		delete[] Data;
-		Width = 0;
-		Height = 0;
-		Mipmaps = 0;
-		Format = TextureFormat::RGBA8;
 	}
 
 	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
