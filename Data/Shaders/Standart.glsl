@@ -27,14 +27,14 @@
 
 	void main()
 	{
-		vec3 normal = normalize(vec3(vec4(aNorm, 0.0) * uModel));
-		vec3 tangent = normalize(vec3(vec4(aTang, 0.0) * uModel));
-		vec3 binormal = cross(normal, tangent);
+		vec3 Normal = normalize(vec3(vec4(aNorm, 0.0) * uModel));
+		vec3 Tangent = normalize(vec3(vec4(aTang, 0.0) * uModel));
+		vec3 Bitangent = cross(Normal, Tangent);
 
 		varPos = vec3(vec4(aPos, 1.0) * uModel);
 		varUV = aUV;
-		varNormal = normal;
-		varTBN = transpose(mat3(tangent, binormal, normal));
+		varNormal = Normal;
+		varTBN = transpose(mat3(Tangent, Bitangent, Normal));
 
 		Position = uViewProjection * vec4(varPos, 1);
 	}

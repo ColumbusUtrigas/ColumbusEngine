@@ -79,13 +79,15 @@ namespace Columbus
 		BasePostEffect()
 		{
 			FB = gDevice->createFramebuffer();
-			DepthTexture = gDevice->CreateTexture();
+			DepthTexture = nullptr;
+			//DepthTexture = gDevice->CreateTexture();
 			/*DepthTexture->Create2D(Texture::Properties(100, 100, 0, TextureFormat::Depth16));
 			FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);*/
 
 			for (int i = 0; i < TexturesCount; i++)
 			{
-				ColorTextures[i] = gDevice->CreateTexture();
+				//ColorTextures[i] = gDevice->CreateTexture();
+				ColorTextures[i] = nullptr;
 				ColorTexturesEnablement[i] = false;
 				ColorTexturesFormats[i] = TextureFormat::RGBA8;
 				/*ColorTextures[i]->Create2D(Texture::Properties(100, 100, 0, TextureFormat::RGBA8));
@@ -101,6 +103,11 @@ namespace Columbus
 				{
 					if (ColorTexturesEnablement[i])
 					{
+						if (ColorTextures[i] == nullptr)
+						{
+							ColorTextures[i] = gDevice->CreateTexture();
+						}
+
 						ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
 						FB->setTexture2D(Attachments[i], ColorTextures[i]);
 					}
@@ -108,6 +115,11 @@ namespace Columbus
 
 				if (DepthTextureEnablement)
 				{
+					if (DepthTexture == nullptr)
+					{
+						DepthTexture = gDevice->CreateTexture();
+					}
+
 					DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, TextureFormat::Depth24));
 					FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
 				}

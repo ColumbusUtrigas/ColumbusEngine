@@ -54,7 +54,6 @@ namespace Columbus
 		Vector2 DetailTiling = Vector2(4, 4);
 
 		Vector4 Color;
-		Vector3 AmbientColor;
 
 		float Roughness = 1.0f;
 		float Metallic = 0.1f;

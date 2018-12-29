@@ -40,9 +40,9 @@ namespace Columbus
 		case Framebuffer::Attachment::Stencil: attach = GL_STENCIL_ATTACHMENT; break;
 		}
 
-		bind();
+		glBindFramebuffer(GL_FRAMEBUFFER, mID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, attach, GL_TEXTURE_2D, id, 0);
-		unbind();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
 	}
@@ -53,16 +53,15 @@ namespace Columbus
 		glViewport(0, 0, (uint32)(WindowSize.X), (uint32)(WindowSize.Y));
 		glClearColor(Clear.X, Clear.Y, Clear.Z, Clear.W);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
 
 		return true;
 	}
 	
 	bool FramebufferOpenGL::check()
 	{
-		bind();
+		glBindFramebuffer(GL_FRAMEBUFFER, mID);
 		int ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		unbind();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return ret == GL_FRAMEBUFFER_COMPLETE;
 	}
@@ -73,12 +72,6 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
 
 
 

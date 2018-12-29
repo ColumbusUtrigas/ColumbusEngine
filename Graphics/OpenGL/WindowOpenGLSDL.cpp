@@ -58,8 +58,8 @@ namespace Columbus
 		if ((uint32)F & (uint32)Window::Flags::Resizable)  flags |= SDL_WINDOW_RESIZABLE;
 		if ((uint32)F & (uint32)Window::Flags::Fullscreen) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+		//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
 		Window = SDL_CreateWindow(InTitle.c_str(), pos, pos, InSize.X, InSize.Y, flags);
 		Context = SDL_GL_CreateContext(Window);
@@ -106,7 +106,7 @@ namespace Columbus
 		glCullFace(GL_BACK);
 		glEnable(GL_TEXTURE_CUBE_MAP_ARB);
 		glEnable(GL_ALPHA_TEST);
-		glEnable(GL_MULTISAMPLE);
+		//glEnable(GL_MULTISAMPLE);
 		glEnable(GL_PROGRAM_POINT_SIZE);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
