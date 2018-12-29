@@ -422,6 +422,20 @@ namespace Columbus
 
 		UpdateFormat(Format, Compressed);
 
+		glBindTexture(Target, ID);
+
+		if (Compressed)
+		{
+			int Block = GetBlockSizeFromFormat(Format);
+			glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
+		}
+		else
+		{
+			glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+		}
+
+		glBindTexture(Target, 0);
+
 		return true;
 	}
 
@@ -439,6 +453,27 @@ namespace Columbus
 		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
+
+		glBindTexture(Target, ID);
+
+		if (Compressed)
+		{
+			int Block = GetBlockSizeFromFormat(Format);
+
+			for (uint32 Face = 0; Face < 6; Face++)
+			{
+				glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
+			}
+		}
+		else
+		{
+			for (uint32 Face = 0; Face < 6; Face++)
+			{
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+			}
+		}
+
+		glBindTexture(Target, 0);
 
 		return true;
 	}

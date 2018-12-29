@@ -6,6 +6,8 @@
 #include <Math/Frustum.h>
 #include <GL/glew.h>
 
+#include <Graphics/OpenGL/ShaderOpenGL.h>
+
 namespace Columbus
 {
 	Texture* IrradianceMap;
@@ -21,6 +23,34 @@ namespace Columbus
 		Material::Cull Culling = Material::Cull::No;
 		bool DepthWriting = true;
 	} State;
+
+	struct MaterialRenderData
+	{
+		int32 Model;
+		int32 ViewProjection;
+
+		int32 TexturesIDs[9];
+
+		int32 HasDiffuseMap;
+		int32 HasNormalMap;
+		int32 HasRoughnessMap;
+		int32 HasMetallicMap;
+		int32 HasOcclusionMap;
+		int32 HasDetailDiffuseMap;
+		int32 HasDetailNormalMap;
+
+		int32 Tiling;
+		int32 DetailTiling;
+		int32 Color;
+		int32 Roughness;
+		int32 Metallic;
+		int32 EmissionStrength;
+		int32 Transparent;
+
+		int32 CameraPosition;
+
+		int32 Lighting;
+	};
 
 	namespace
 	{
@@ -69,27 +99,11 @@ namespace Columbus
 		glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
 	}
 
-	static void ShaderSetMatrices(ShaderProgram* Program, const Transform& InTransform, const Camera& InCamera)
-	{
-		static float sModelMatrix[16];
-		static float sViewProjection[16];
-
-		if (Program != nullptr)
-		{
-			if (Program->IsCompiled())
-			{
-				InTransform.GetMatrix().Elements(sModelMatrix);
-				InCamera.GetViewProjection().Elements(sViewProjection);
-
-				Program->SetUniformMatrix("uModel", sModelMatrix);
-				Program->SetUniformMatrix("uViewProjection", sViewProjection);
-			}
-		}
-	}
-
-	static void ShaderSetMaterial(const Camera& MainCamera)
+	static void ShaderSetMaterial(const Transform& Trans, const Camera& MainCamera)
 	{
 		static std::string const Names[9] = { "uMaterial.DiffuseMap", "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap"};
+		static float ModelMatrix[16];
+		static float ViewProjection[16];
 
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
@@ -99,50 +113,87 @@ namespace Columbus
 			Texture* Textures[9] = { CurrentMaterial.DiffuseTexture, CurrentMaterial.NormalTexture, CurrentMaterial.RoughnessTexture, CurrentMaterial.MetallicTexture, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailDiffuseMap, CurrentMaterial.DetailNormalMap, CurrentMaterial.Reflection };
 			Texture* LastTextures[9] = { PreviousMaterial.DiffuseTexture, PreviousMaterial.NormalTexture, PreviousMaterial.RoughnessTexture, PreviousMaterial.MetallicTexture, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailDiffuseMap, PreviousMaterial.DetailNormalMap, PreviousMaterial.Reflection };
 
+			MaterialRenderData* RenderData = (MaterialRenderData*)((ShaderProgramOpenGL*)(CurrentShader))->RenderData;
+			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
+
+			if (RenderData == nullptr)
+			{
+				MaterialRenderData* NewRenderData = new MaterialRenderData();
+
+				for (int i = 0; i < 9; i++)
+				{
+					NewRenderData->TexturesIDs[i] = ShaderOGL->GetFastUniform(Names[i]);
+				}
+
+				NewRenderData->Model          = ShaderOGL->GetFastUniform("uModel");
+				NewRenderData->ViewProjection = ShaderOGL->GetFastUniform("uViewProjection");
+
+				NewRenderData->HasDiffuseMap       = ShaderOGL->GetFastUniform("uMaterial.HasDiffuseMap");
+				NewRenderData->HasNormalMap        = ShaderOGL->GetFastUniform("uMaterial.HasNormalMap");
+				NewRenderData->HasRoughnessMap     = ShaderOGL->GetFastUniform("uMaterial.HasRoughnessMap");
+				NewRenderData->HasMetallicMap      = ShaderOGL->GetFastUniform("uMaterial.HasMetallicMap");
+				NewRenderData->HasOcclusionMap     = ShaderOGL->GetFastUniform("uMaterial.HasOcclusionMap");
+				NewRenderData->HasDetailDiffuseMap = ShaderOGL->GetFastUniform("uMaterial.HasDetailDiffuseMap");
+				NewRenderData->HasDetailNormalMap  = ShaderOGL->GetFastUniform("uMaterial.HasDetailNormalMap");
+
+				NewRenderData->Tiling           = ShaderOGL->GetFastUniform("uMaterial.Tiling");
+				NewRenderData->DetailTiling     = ShaderOGL->GetFastUniform("uMaterial.DetailTiling");
+				NewRenderData->Color            = ShaderOGL->GetFastUniform("uMaterial.Color");
+				NewRenderData->Roughness        = ShaderOGL->GetFastUniform("uMaterial.Roughness");
+				NewRenderData->Metallic         = ShaderOGL->GetFastUniform("uMaterial.Metallic");
+				NewRenderData->EmissionStrength = ShaderOGL->GetFastUniform("uMaterial.EmissionStrength");
+				NewRenderData->Transparent      = ShaderOGL->GetFastUniform("uMaterial.Transparent");
+
+				NewRenderData->CameraPosition   = ShaderOGL->GetFastUniform("uCamera.Position");
+				NewRenderData->Lighting         = ShaderOGL->GetFastUniform("uLighting");
+
+				ShaderOGL->RenderData = NewRenderData;
+				RenderData = NewRenderData;
+			}
+
+			ShaderOGL->SetUniform(RenderData->Model, false, Trans.GetMatrix());
+			ShaderOGL->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
+
 			for (int32 i = 0; i < 9; i++)
 			{
 				if (Textures[i] != LastTextures[i] || CheckShader())
 				{
 					if (Textures[i] != nullptr)
 					{
-						glActiveTexture(GL_TEXTURE0 + i);
-						CurrentShader->SetUniform1i(Names[i], i);
-						Textures[i]->bind();
+						ShaderOGL->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
 					}
 					else
 					{
-						glActiveTexture(GL_TEXTURE0 + i);
-						CurrentShader->SetUniform1i(Names[i], i);
-						BlackTexture->bind();
+						ShaderOGL->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)BlackTexture, i);
 					}
 				}
 			}
 
-			CurrentShader->SetUniform1i("uMaterial.HasDiffuseMap",       CurrentMaterial.DiffuseTexture   != nullptr);
-			CurrentShader->SetUniform1i("uMaterial.HasNormalMap",        CurrentMaterial.NormalTexture    != nullptr);
-			CurrentShader->SetUniform1i("uMaterial.HasRoughnessMap",     CurrentMaterial.RoughnessTexture != nullptr);
-			CurrentShader->SetUniform1i("uMaterial.HasMetallicMap",      CurrentMaterial.MetallicTexture  != nullptr);
-			CurrentShader->SetUniform1i("uMaterial.HasOcclusionMap",     CurrentMaterial.OcclusionMap     != nullptr);
-			CurrentShader->SetUniform1i("uMaterial.HasDetailDiffuseMap", CurrentMaterial.DetailDiffuseMap != nullptr);
-			CurrentShader->SetUniform1i("uMaterial.HasDetailNormalMap",  CurrentMaterial.DetailNormalMap  != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasDiffuseMap,       CurrentMaterial.DiffuseTexture   != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasNormalMap,        CurrentMaterial.NormalTexture    != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasRoughnessMap,     CurrentMaterial.RoughnessTexture != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasMetallicMap,      CurrentMaterial.MetallicTexture  != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasOcclusionMap,     CurrentMaterial.OcclusionMap     != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasDetailDiffuseMap, CurrentMaterial.DetailDiffuseMap != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasDetailNormalMap,  CurrentMaterial.DetailNormalMap  != nullptr);
 
-			if (CheckParameter(Tiling))           CurrentShader->SetUniform2f("uMaterial.Tiling", CurrentMaterial.Tiling);
-			if (CheckParameter(DetailTiling))     CurrentShader->SetUniform2f("uMaterial.DetailTiling", CurrentMaterial.DetailTiling);
-			if (CheckParameter(Color))            CurrentShader->SetUniform4f("uMaterial.Color", CurrentMaterial.Color);
-			if (CheckParameter(Roughness))        CurrentShader->SetUniform1f("uMaterial.Roughness", CurrentMaterial.Roughness);
-			if (CheckParameter(Metallic))         CurrentShader->SetUniform1f("uMaterial.Metallic", CurrentMaterial.Metallic);
-			if (CheckParameter(EmissionStrength)) CurrentShader->SetUniform1f("uMaterial.EmissionStrength", CurrentMaterial.EmissionStrength);
-			if (CheckParameter(Transparent))      CurrentShader->SetUniform1i("uMaterial.Transparent", CurrentMaterial.Transparent);
-			if (CheckShader())                    CurrentShader->SetUniform3f("uCamera.Position", MainCamera.getPos());
+			if (CheckParameter(Tiling))           ShaderOGL->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);
+			if (CheckParameter(DetailTiling))     ShaderOGL->SetUniform(RenderData->DetailTiling,     CurrentMaterial.DetailTiling);
+			if (CheckParameter(Color))            ShaderOGL->SetUniform(RenderData->Color,            CurrentMaterial.Color);
+			if (CheckParameter(Roughness))        ShaderOGL->SetUniform(RenderData->Roughness,        CurrentMaterial.Roughness);
+			if (CheckParameter(Metallic))         ShaderOGL->SetUniform(RenderData->Metallic,         CurrentMaterial.Metallic);
+			if (CheckParameter(EmissionStrength)) ShaderOGL->SetUniform(RenderData->EmissionStrength, CurrentMaterial.EmissionStrength);
+			if (CheckParameter(Transparent))      ShaderOGL->SetUniform(RenderData->Transparent,      CurrentMaterial.Transparent);
+			if (CheckShader())                    ShaderOGL->SetUniform(RenderData->CameraPosition,   MainCamera.getPos());
 		}
 	}
 
-	static void ShaderSetLights(ShaderProgram* InShader, const std::vector<Light*>& InLights)
+	static void ShaderSetLights(const std::vector<Light*>& InLights)
 	{
 		static constexpr int LightsCount = 4;
 		static float Lights[15 * LightsCount];
 
-		if (InShader != nullptr)
+		if (CurrentShader != nullptr)
 		{
 			for (auto& Light : InLights)
 			{
@@ -178,7 +229,10 @@ namespace Columbus
 				}
 			}
 
-			InShader->SetUniformArrayf("uLighting", Lights, 15 * LightsCount * sizeof(float));
+			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
+			MaterialRenderData* RenderData = (MaterialRenderData*)ShaderOGL->RenderData;
+
+			ShaderOGL->SetUniform(RenderData->Lighting, 15 * LightsCount * sizeof(float), Lights);
 		}
 	}
 
@@ -355,9 +409,8 @@ namespace Columbus
 					PrepareFaceCulling(Object.ObjectMaterial.Culling);
 					PrepareDepthWriting(Object.ObjectMaterial.DepthWriting);
 
-					ShaderSetMatrices(CurrentShader, Object.ObjectTransform, MainCamera);
-					ShaderSetLights(CurrentShader, Object.Object->Lights);
-					ShaderSetMaterial(MainCamera);
+					ShaderSetMaterial(Object.ObjectTransform, MainCamera);
+					ShaderSetLights(Object.Object->Lights);
 
 					if (CurrentMesh != PreviousMesh)
 					{
@@ -412,9 +465,8 @@ namespace Columbus
 
 						CurrentShader->Bind();
 
-						ShaderSetMatrices(Object.ObjectMaterial.GetShader(), Object.ObjectTransform, MainCamera);
-						ShaderSetMaterial(MainCamera);
-						ShaderSetLights(Object.ObjectMaterial.GetShader(), Object.MeshObject->Lights);
+						ShaderSetMaterial(Object.ObjectTransform, MainCamera);
+						ShaderSetLights(Object.MeshObject->Lights);
 
 						Object.MeshObject->Bind();
 
@@ -480,77 +532,21 @@ namespace Columbus
 
 	void Renderer::Render()
 	{
+		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
+
 		CompileLists();
 		SortLists();
+
+		BaseEffect.Bind({ 1, 1, 1, 0 }, ContextSize);
 
 		RenderOpaqueStage();
 		RenderTransparentStage();
 
-		/*BaseEffect.Bind({ 1, 1, 1, 0 }, ContextSize);
-
-		CompileLists();
-		SortLists();
-
-		RenderOpaqueStage();
-		//RenderTransparentStage();
-
 		BaseEffect.Unbind();
 
 		NoneShader->Bind();
-		glActiveTexture(GL_TEXTURE0);
-		NoneShader->SetUniform1i("BaseTexture", 0);
-		BaseEffect.ColorTextures[0]->bind();
-		Quad.Render();*/
-
-		/*BloomBrightPass.Bind({ 1, 1, 1, 0 }, ContextSize);
-
-		BloomBrightShader->Bind();
-		glActiveTexture(GL_TEXTURE0);
-		BloomBrightShader->SetUniform1i("BaseTexture", 0);
-		BaseEffect.ColorTextures[0]->bind();
+		((ShaderProgramOpenGL*)(NoneShader))->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
 		Quad.Render();
-
-		BloomBrightPass.Unbind();
-
-		BloomBlurPass.Bind({ 1, 1, 1, 0 }, ContextSize);
-
-		NoneShader->Bind();
-		glActiveTexture(GL_TEXTURE0);
-		NoneShader->SetUniform1i("BaseTexture", 0);
-		BloomBrightPass.ColorTextures[0]->bind();
-		Quad.Render();
-
-		BloomBlurPass.Unbind();
-
-		BloomFinalPass.Bind({ 1, 1, 1, 0 }, ContextSize);
-
-		GaussBlurShader->Bind();
-		glActiveTexture(GL_TEXTURE0);
-		GaussBlurShader->SetUniform1i("BaseTexture", 0);
-		BloomBlurPass.ColorTextures[0]->bind();
-		GaussBlurShader->SetUniform2f("Resolution", ContextSize);
-
-		Quad.Render();
-
-		BloomFinalPass.Unbind();
-
-		BloomShader->Bind();
-
-		glActiveTexture(GL_TEXTURE0);
-		BloomShader->SetUniform1i("BaseTexture", 0);
-		BaseEffect.ColorTextures[0]->bind();
-
-		glActiveTexture(GL_TEXTURE1);
-		BloomShader->SetUniform1i("HorizontalBlur", 1);
-		BloomFinalPass.ColorTextures[0]->bind();
-
-		glActiveTexture(GL_TEXTURE2);
-		BloomShader->SetUniform1i("VerticalBlur", 2);
-		BloomFinalPass.ColorTextures[1]->bind();
-
-		Quad.Render();*/
-
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	Renderer::~Renderer()

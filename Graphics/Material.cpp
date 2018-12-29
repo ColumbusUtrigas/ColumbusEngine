@@ -104,9 +104,6 @@ namespace Columbus
 		if (!Serializer.GetVector4("Color", Color, { "R", "G", "B", "A" }))
 		{ Log::error("Can't load Material color: " + aFile); return false; }
 
-		if (!Serializer.GetVector3("Ambient", AmbientColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material ambient color: " + aFile); return false; }
-
 		if (!Serializer.GetFloat("Roughness", Roughness))
 		{ Log::error("Can't load Material roughness: " + aFile); return false; }
 
@@ -199,7 +196,6 @@ namespace Columbus
 	bool Material::operator==(const Material& Other) const
 	{
 		return (Color == Other.Color &&
-		        AmbientColor == Other.AmbientColor &&
 		        DiffuseTexture == Other.DiffuseTexture &&
 		        NormalTexture == Other.NormalTexture &&
 		        RoughnessTexture == Other.RoughnessTexture &&

@@ -324,7 +324,6 @@
     <ClCompile Include="Scene\Scene.cpp" />
     <ClCompile Include="Scene\Transform.cpp" />
     <ClCompile Include="System\File.cpp" />
-    <ClCompile Include="System\Importer.cpp" />
     <ClCompile Include="System\Log.cpp" />
     <ClCompile Include="System\Serializer.cpp" />
     <ClCompile Include="System\System.cpp" />

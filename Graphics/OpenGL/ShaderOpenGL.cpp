@@ -398,6 +398,8 @@ namespace Columbus
 		if (Value != -1)
 		{
 			UniformLocations[Name] = Value;
+			FastUniformsMap[Name] = CurrentFastUniform;
+			FastUniforms[CurrentFastUniform++] = Value;
 			return true;
 		}
 
@@ -411,7 +413,7 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform1i(UniformLocations.at(Name), Value);
+				glUniform1i(Location->second, Value);
 			}
 		}
 	}
@@ -423,7 +425,7 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform1f(UniformLocations.at(Name), Value);
+				glUniform1f(Location->second, Value);
 			}
 		}
 	}
@@ -435,7 +437,7 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform2f(UniformLocations.at(Name), Value.X, Value.Y);
+				glUniform2f(Location->second, Value.X, Value.Y);
 			}
 		}
 	}
@@ -448,7 +450,7 @@ namespace Columbus
 
 			if (Location != UniformLocations.end())
 			{
-				glUniform3f(UniformLocations.at(Name), Value.X, Value.Y, Value.Z);
+				glUniform3f(Location->second, Value.X, Value.Y, Value.Z);
 			}
 		}
 	}
@@ -460,7 +462,7 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform4f(UniformLocations.at(Name), Value.X, Value.Y, Value.Z, Value.W);
+				glUniform4f(Location->second, Value.X, Value.Y, Value.Z, Value.W);
 			}
 		}
 	}
@@ -472,7 +474,7 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniformMatrix4fv(UniformLocations.at(Name), 1, GL_FALSE, Value);
+				glUniformMatrix4fv(Location->second, 1, GL_FALSE, Value);
 			}
 		}
 	}
@@ -484,9 +486,73 @@ namespace Columbus
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform1fv(UniformLocations.at(Name), Size, Array);
+				glUniform1fv(Location->second, Size, Array);
 			}
 		}
+	}
+
+	void ShaderProgramOpenGL::SetUniformTexture(const std::string& Name, TextureOpenGL* Tex, uint32 Sampler) const
+	{
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glActiveTexture(GL_TEXTURE0 + Sampler);
+				glUniform1i(Location->second, Sampler);
+				Tex->Bind();
+			}
+		}
+	}
+
+	int32 ShaderProgramOpenGL::GetFastUniform(const std::string& Name) const
+	{
+		auto Fast = FastUniformsMap.find(Name);
+		return Fast != FastUniformsMap.end() ? Fast->second : -1;
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, int Value) const
+	{
+		glUniform1i(FastUniforms[FastID], Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, float Value) const
+	{
+		glUniform1f(FastUniforms[FastID], Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, const Vector2& Value) const
+	{
+		glUniform2f(FastUniforms[FastID], Value.X, Value.Y);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, const Vector3& Value) const
+	{
+		glUniform3f(FastUniforms[FastID], Value.X, Value.Y, Value.Z);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, const Vector4& Value) const
+	{
+		glUniform4f(FastUniforms[FastID], Value.X, Value.Y, Value.Z, Value.W);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Size, const float* Value) const
+	{
+		glUniform1fv(FastUniforms[FastID], Size, Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const
+	{
+		float Value[16];
+		Mat.Elements(Value);
+		glUniformMatrix4fv(FastID, 1, Transpose ? GL_TRUE : GL_FALSE, Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, TextureOpenGL* Tex, uint32 Sampler) const
+	{
+		glActiveTexture(GL_TEXTURE0 + Sampler);
+		glUniform1i(FastUniforms[FastID], Sampler);
+		Tex->Bind();
 	}
 
 	ShaderProgramOpenGL::~ShaderProgramOpenGL()
