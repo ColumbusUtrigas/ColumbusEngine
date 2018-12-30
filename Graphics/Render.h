@@ -12,6 +12,8 @@
 
 #include <Graphics/ScreenQuad.h>
 
+#include <map>
+
 namespace Columbus
 {
 
@@ -54,10 +56,10 @@ namespace Columbus
 		Camera MainCamera;
 		Skybox* Sky = nullptr;
 
-		BasePostEffect BaseEffect;
-		BasePostEffect BloomBrightPass;
-		BasePostEffect BloomBlurPass;
-		BasePostEffect BloomFinalPass;
+		PostEffect BaseEffect;
+		PostEffect BloomBrightPass;
+		PostEffect BloomBlurPass;
+		PostEffect BloomFinalPass;
 
 		ScreenQuad Quad;
 	public:

@@ -1,13 +1,15 @@
 #include <Graphics/Particles/ParticleEmitter.h>
+#include <Graphics/Particles/SubUV/ParticleModuleSubUV.h>
 #include <Graphics/Device.h>
 
 #include <Graphics/OpenGL/BufferOpenGL.h>
+#include <Core/Random.h>
 #include <GL/glew.h>
 
 namespace Columbus
 {
 
-	static float vrts[18] =
+	static float Vertices[18] =
 	{
 		1, 1, 0.0,
 		-1, 1, 0.0,
@@ -17,7 +19,7 @@ namespace Columbus
 		1, 1, 0.0
 	};
 
-	static float uvs[12] =
+	static float Texcoords[12] =
 	{
 		1.0, 1.0,
 		0.0, 1.0,
@@ -59,11 +61,6 @@ namespace Columbus
 		return Effect;
 	}
 	
-	void ParticleEmitter::SetCamera(const Camera& InCamera)
-	{
-		ObjectCamera = InCamera;
-	}
-	
 	void ParticleEmitter::Update(float TimeTick)
 	{
 		if (Effect != nullptr)
@@ -72,9 +69,8 @@ namespace Columbus
 
 			if (Effect->Emit != nullptr && Effect->Required != nullptr)
 			{
-				float rate = Effect->Emit->EmitRate;
-				float fireT = 1.0f / rate;
-				size_t counter = 0;
+				float Rate = Effect->Emit->EmitRate;
+				float FireTime = 1.0f / Rate;
 
 				Timer += TimeTick;
 
@@ -83,65 +79,68 @@ namespace Columbus
 					Timer = 0.0f;
 				}
 
-				//Spawning new particles
-				if (Effect->Emit->Active)
+				auto ParticleSpawner = [&](Particle& P, float Timer)
 				{
-					while (Timer >= fireT && Particles.size() <= Effect->Emit->Count)
+					P.age = Timer;
+					P.startEmitterPos = startEmitterPos;
+					P.Alive = true;
+
+					for (uint32 j = 0; j < 9; j++)
 					{
-						Timer -= fireT;
-
-						Particle NewParticle;
-						NewParticle.age = Timer;
-						NewParticle.startEmitterPos = startEmitterPos;
-
-						for (uint32 j = 0; j < 9; j++)
-						{
-							NewParticle.noise[j] = Random::Range(0.0f, 256.0f);
-						}
-
-						for (auto& Module : Effect->Modules)
-						{
-							Module->Spawn(NewParticle);
-						}
-
-						Particles.push_back(NewParticle);
-					}
-				}
-
-				//Updating active particles
-				counter = 0;
-
-				for (auto& Particle : Particles)
-				{
-					if (Effect->Required->Transformation == ParticleTransformation::Local)
-					{
-						Particle.startEmitterPos = startEmitterPos;
+						P.noise[j] = Random::Range(0.0f, 256.0f);
 					}
 
 					for (auto& Module : Effect->Modules)
 					{
-						Module->Update(Particle);
+						Module->Spawn(P);
 					}
+				};
 
-					Particle.update(TimeTick, ObjectCamera.getPos());
-					
-					counter++;
+				//Spawning new particles
+				if (Effect->Emit->Active)
+				{
+					while (Timer >= FireTime && ActiveCount <= MaxCount)
+					{
+						Timer -= FireTime;
+
+						auto It = std::find_if(&Particles[0], &Particles[MaxCount], [](const Particle& A) { return !A.Alive; });
+						if (It != nullptr)
+						{
+							ParticleSpawner(*It, Timer);
+							ActiveCount++;
+						}
+					}
+				}
+
+				for (uint32 i = 0; i < MaxCount; i++)
+				{
+					if (Particles[i].Alive)
+					{
+						if (Effect->Required->Transformation == ParticleTransformation::Local)
+						{
+							Particles[i].startEmitterPos = startEmitterPos;
+						}
+
+						for (auto& Module : Effect->Modules)
+						{
+							Module->Update(Particles[i]);
+						}
+
+						Particles[i].update(TimeTick, ObjectCamera.getPos());
+					}
 				}
 
 				//Deleting dead particles
-				counter = 0;
-
-				for (auto& Particle : Particles)
+				if (ActiveCount != 0)
 				{
-					if (Particle.age >= Particle.TTL)
+					for (uint32 i = 0; i < MaxCount; i++)
 					{
-						if (counter < Particles.size())
+						if (Particles[i].age >= Particles[i].TTL && Particles[i].Alive)
 						{
-							Particles.erase(Particles.begin() + counter);
+							Particles[i].Alive = false;
+							ActiveCount--;
 						}
 					}
-
-					counter++;
 				}
 
 				if (Effect->Required->SortMode == ParticleSortMode::Distance)
@@ -151,7 +150,7 @@ namespace Columbus
 						return A.cameraDistance > B.cameraDistance;
 					};
 
-					std::sort(Particles.begin(), Particles.end(), Sorter);
+					std::sort(&Particles[0], &Particles[MaxCount], Sorter);
 				}
 
 				Life += TimeTick;
@@ -163,6 +162,7 @@ namespace Columbus
 	{
 		if (Effect != nullptr)
 		{
+			delete[] Particles;
 			delete[] VertData;
 			delete[] UVData;
 			delete[] PositionData;
@@ -170,23 +170,22 @@ namespace Columbus
 			delete[] ColorData;
 			delete[] SizeData;
 
-			ParticlesCount = Effect->Emit->Count;
+			MaxCount = Effect->Emit->Count;
 
-			VertData = new Vector3[ParticlesCount * 6];
-			UVData = new Vector2[ParticlesCount * 6];
+			Particles = new Particle[MaxCount];
 
-			PositionData = new Vector3[ParticlesCount * 6];
-			TimeData = new Vector2[ParticlesCount * 6];
-			ColorData = new Vector4[ParticlesCount * 6];
-			SizeData = new Vector3[ParticlesCount * 6];
+			VertData = new Vector3[MaxCount * 6];
+			UVData = new Vector2[MaxCount * 6];
 
-			uint32 Counter = 0;
+			PositionData = new Vector3[MaxCount * 6];
+			TimeData = new Vector2[MaxCount * 6];
+			ColorData = new Vector4[MaxCount * 6];
+			SizeData = new Vector3[MaxCount * 6];
 
-			for (uint32 i = 0; i < ParticlesCount; i++)
+			for (uint32 i = 0; i < MaxCount * 6; i += 6)
 			{
-				Memory::Memcpy(VertData + Counter, vrts, sizeof(vrts));
-				Memory::Memcpy(UVData + Counter, uvs, sizeof(uvs));
-				Counter += 6;
+				memcpy(VertData + i, Vertices, sizeof(Vertices));
+				memcpy(UVData + i, Texcoords, sizeof(Texcoords));
 			}
 		}
 	}
@@ -228,7 +227,7 @@ namespace Columbus
 			static float UniformProjectionMatrix[16];
 
 			Effect->getMaterial()->GetShader()->SetUniform1f("uBillboard", (float)Effect->Required->Billboarding);
-			Effect->getMaterial()->GetShader()->SetUniform2f("uSubUV", Vector2(SubUV->Horizontal, SubUV->Vertical));
+			Effect->getMaterial()->GetShader()->SetUniform2f("uSubUV", iVector2(SubUV->Horizontal, SubUV->Vertical));
 
 			ObjectCamera.getViewMatrix().Elements(UniformViewMatrix);
 			ObjectCamera.getProjectionMatrix().Elements(UniformProjectionMatrix);
@@ -277,7 +276,7 @@ namespace Columbus
 							glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 						}
 
-						if (Effect->Emit->Count != ParticlesCount)
+						if (Effect->Emit->Count != MaxCount)
 						{
 							UpdateMainBuffers();
 						}
@@ -288,32 +287,32 @@ namespace Columbus
 						uint64 SizesCounter = 0;
 						uint64 Counter = 0;
 
-						for (const auto& Particle : Particles)
+						for (uint32 i = 0; i < MaxCount; i++)
 						{
-							if (Counter >= Particles.size()) break;
-							Counter++;
-
-							for (int i = 0; i < 6; i++)
+							if (Particles[i].Alive)
 							{
-								PositionData[PositionsCounter++] = Particle.pos;
-								TimeData[TimesCounter++] = Vector2(Particle.rotation, Particle.frame);
-								ColorData[ColorsCounter++] = Particle.Color;
-								SizeData[SizesCounter++] = Particle.Size;
+								for (int j = 0; j < 6; j++)
+								{
+									PositionData[PositionsCounter++] = Particles[i].pos;
+									TimeData[TimesCounter++] = Vector2(Particles[i].rotation, (float)Particles[i].frame);
+									ColorData[ColorsCounter++] = Particles[i].Color;
+									SizeData[SizesCounter++] = Particles[i].Size;
+								}
 							}
 						}
 
-						VerticesBuffer->Load(Buffer::Properties{ 18 * sizeof(float) * ParticlesCount }, VertData);
-						UVBuffer->Load(Buffer::Properties{ 12 * sizeof(float) * ParticlesCount }, UVData);
+						VerticesBuffer->Load(Buffer::Properties{ sizeof(Vector3) * MaxCount * 6 }, VertData);
+						UVBuffer->Load(Buffer::Properties{ sizeof(Vector2) * MaxCount * 6 }, UVData);
 
-						Positions->Load(Buffer::Properties{ 18 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, PositionData);
-						Times->Load(Buffer::Properties{ 12 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, TimeData);
-						Colors->Load(Buffer::Properties{ 24 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, ColorData);
-						Sizes->Load(Buffer::Properties{ 18 * sizeof(float) * Particles.size(), Buffer::Usage::Write, Buffer::Changing::Static }, SizeData);
+						Positions->Load(Buffer::Properties{ sizeof(Vector3) * ActiveCount * 6, Buffer::Usage::Write, Buffer::Changing::Static }, PositionData);
+						Times->Load(Buffer::Properties{ sizeof(Vector2) * ActiveCount * 6, Buffer::Usage::Write, Buffer::Changing::Static }, TimeData);
+						Colors->Load(Buffer::Properties{ sizeof(Vector4) * ActiveCount * 6, Buffer::Usage::Write, Buffer::Changing::Static }, ColorData);
+						Sizes->Load(Buffer::Properties{ sizeof(Vector3) * ActiveCount * 6, Buffer::Usage::Write, Buffer::Changing::Static }, SizeData);
 
 						SetBuffers();
 						SetUniforms();
 
-						glDrawArrays(GL_TRIANGLES, 0, 6 * Particles.size());
+						glDrawArrays(GL_TRIANGLES, 0, 6 * ActiveCount);
 
 						if (Effect->Required->AdditiveBlending)
 						{
@@ -327,8 +326,8 @@ namespace Columbus
 	
 	ParticleEmitter::~ParticleEmitter()
 	{
-		Particles.clear();
-		
+		delete[] Particles;
+
 		delete[] VertData;
 		delete[] UVData;
 		delete[] PositionData;

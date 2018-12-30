@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Graphics/Particles/Color/ParticleModuleColorBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 #include <Math/InterpolationCurve.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleColorOverLife : public ParticleModuleColorBase
+	class ParticleModuleColorOverLife : public ParticleModule
 	{
 	public:
 		InterpolationCurve<Vector4> ColorCurve;

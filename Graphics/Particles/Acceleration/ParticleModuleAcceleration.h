@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Acceleration/ParticleModuleAccelerationBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleAcceleration : public ParticleModuleAccelerationBase
+	class ParticleModuleAcceleration : public ParticleModule
 	{
 	public:
 		Vector3 Min;

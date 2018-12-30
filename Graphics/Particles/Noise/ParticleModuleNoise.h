@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Graphics/Particles/Noise/ParticleModuleNoiseBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 #include <Common/Noise/OctaveNoise.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleNoise : public ParticleModuleNoiseBase
+	class ParticleModuleNoise : public ParticleModule
 	{
 	private:
 		OctaveNoise Noise;

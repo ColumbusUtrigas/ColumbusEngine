@@ -24,6 +24,9 @@
 #include <Core/Types.h>
 #include <Core/SmartPointer.h>
 
+#include <vector>
+#include <map>
+
 namespace Columbus
 {
 

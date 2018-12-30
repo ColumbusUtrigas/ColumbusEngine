@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Color/ParticleModuleColorBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleColor : public ParticleModuleColorBase
+	class ParticleModuleColor : public ParticleModule
 	{
 	public:
 		Vector4 Min;

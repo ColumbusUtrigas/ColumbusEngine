@@ -28,10 +28,10 @@ namespace Columbus
 	public:
 		struct MouseButton
 		{
-			bool Pressed = false;
-			uint8 Clicks = 0;
 			int X = 0;
 			int Y = 0;
+			bool Pressed = false;
+			uint8 Clicks = 0;
 		};
 
 		struct MouseWheel

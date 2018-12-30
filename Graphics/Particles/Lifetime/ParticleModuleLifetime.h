@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Lifetime/ParticleModuleLifetimeBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleLifetime : public ParticleModuleLifetimeBase
+	class ParticleModuleLifetime : public ParticleModule
 	{
 	public:
 		float Min;

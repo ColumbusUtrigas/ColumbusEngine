@@ -18,8 +18,8 @@ namespace Columbus
 		Vector3 startPos = Vector3(0, 0, 0);
 		Vector3 startEmitterPos = Vector3(0, 0, 0);
 		Vector3 accel = Vector3(0, 0.1f, 0);
-		Vector3 pos;
-		Vector3 NoiseModifier;
+		Vector3 pos = Vector3(0);
+		Vector3 NoiseModifier = Vector3(0);
 
 		float rotation = 0.0;
 		float rotationSpeed = 0.0;
@@ -30,6 +30,7 @@ namespace Columbus
 		float percent = 0.0f;
 
 		unsigned int frame = 0;
+		bool Alive = false;
 	public:
 		void update(const float aTimeTick, const Vector3& aCamera)
 		{

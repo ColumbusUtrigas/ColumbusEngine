@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Size/ParticleModuleSizeBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSize : public ParticleModuleSizeBase
+	class ParticleModuleSize : public ParticleModule
 	{
 	public:
 		Vector3 Min;
