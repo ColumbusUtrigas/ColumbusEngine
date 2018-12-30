@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/SubUV/ParticleModuleSubUVBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSubUV : public ParticleModuleSubUVBase
+	class ParticleModuleSubUV : public ParticleModule
 	{
 	public:
 		/*

@@ -38,102 +38,38 @@ namespace Columbus
 
 	void OpenGL::Init()
 	{
-		if (glewGetExtension("GL_ARB_uniform_buffer_object") == GL_TRUE)
-		{
-			bSupportsUniformBuffer = true;
-		}
-
-		if (glewGetExtension("GL_ARB_instanced_arrays") == GL_TRUE &&
-		    glewGetExtension("GL_ARB_draw_instanced") == GL_TRUE &&
-		    glewGetExtension("GL_EXT_draw_instanced") == GL_TRUE)
-		{
-			bSupportsInstancing = true;
-		}
-
-		if (glewGetExtension("GL_ARB_transform_feedback2") == GL_TRUE)
-		{
-			bSupportsTransformFeedback = true;
-		}
-
-		if (glewGetExtension("GL_ARB_vertex_program") == GL_TRUE &&
-		    glewGetExtension("GL_ARB_fragment_program") == GL_TRUE)
-		{
-			bSupportsShader = true;
-		}
-
-		if (glewGetExtension("GL_ARB_geometry_shader4") == GL_TRUE)
-		{
-			bSupportsGeometryShader = true;
-		}
-
-		if (glewGetExtension("GL_ARB_tessellation_shader") == GL_TRUE)
-		{
-			bSupportsTesselation = true;
-		}
-
-		if (glewGetExtension("GL_ARB_compute_shader") == GL_TRUE)
-		{
-			bSupportsComputeShader = true;
-		}
-
-		if (glewGetExtension("GL_ARB_direct_state_access") == GL_TRUE ||
-		    glewGetExtension("GL_EXT_direct_state_access") == GL_TRUE)
-		{
-			bSupportsDirectStateAccess = true;
-		}
-
-		if (glewGetExtension("GL_ARB_get_program_binary") == GL_TRUE)
-		{
-			bSupportsProgramBinary = true;
-		}
-
-		if (glewGetExtension("GL_ARB_shader_storage_buffer_object") == GL_TRUE)
-		{
-			bSupportsShaderStorageBuffer = true;
-		}
-
-		if (glewGetExtension("GL_ARB_shader_image_load_store") == GL_TRUE ||
-			glewGetExtension("GL_EXT_shader_image_load_store") == GL_TRUE)
-		{
-			bSupportsShaderImageLoadStore = true;
-		}
-
-		if (glewGetExtension("GL_ARB_multi_bind") == GL_TRUE)
-		{
-			bSupportsMultiBind = true;
-		}
-
-		if (glewGetExtension("GL_ARB_base_instance") == GL_TRUE)
-		{
-			bSupportsBaseInstance = true;
-		}
-
-		if (glewGetExtension("GL_ARB_draw_indirect") == GL_TRUE)
-		{
-			bSupportsDrawIndirect = true;
-		}
-
-		if (glewGetExtension("GL_ARB_multi_draw_indirect") == GL_TRUE)
-		{
-			bSupportsMultiDrawIndirect = true;
-		}
+		bSupportsUniformBuffer        = glewGetExtension("GL_ARB_uniform_buffer_object");
+		bSupportsInstancing           = glewGetExtension("GL_ARB_instanced_arrays") && (glewGetExtension("GL_ARB_draw_instanced") || glewGetExtension("GL_EXT_draw_instanced"));
+		bSupportsTransformFeedback    = glewGetExtension("GL_ARB_transform_feedback2");
+		bSupportsShader               = glewGetExtension("GL_ARB_vertex_program") && glewGetExtension("GL_ARB_fragment_program");
+		bSupportsGeometryShader       = glewGetExtension("GL_ARB_geometry_shader4");
+		bSupportsTesselation          = glewGetExtension("GL_ARB_tessellation_shader");
+		bSupportsComputeShader        = glewGetExtension("GL_ARB_compute_shader");
+		bSupportsDirectStateAccess    = glewGetExtension("GL_ARB_direct_state_access") || glewGetExtension("GL_EXT_direct_state_access");
+		bSupportsProgramBinary        = glewGetExtension("GL_ARB_get_program_binary");
+		bSupportsShaderStorageBuffer  = glewGetExtension("GL_ARB_shader_storage_buffer_object");
+		bSupportsShaderImageLoadStore = glewGetExtension("GL_ARB_shader_image_load_store") || glewGetExtension("GL_EXT_shader_image_load_store");
+		bSupportsMultiBind            = glewGetExtension("GL_ARB_multi_bind");
+		bSupportsBaseInstance         = glewGetExtension("GL_ARB_base_instance");
+		bSupportsDrawIndirect         = glewGetExtension("GL_ARB_draw_indirect");
+		bSupportsMultiDrawIndirect    = glewGetExtension("GL_ARB_multi_draw_indirect");
 
 		glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &MaxCombinedTextureImageUnits);
-		glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE, &MaxCubemapTextureSize);
-		glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &MaxFragmentUniformVectors);
-		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &MaxRenderbufferSize);
-		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
-		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-		glGetIntegerv(GL_MAX_VARYING_VECTORS, &MaxVaryingVectors);
-		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &MaxVertexAttribs);
-		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &MaxVertexTextureImageUnits);
-		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &MaxVertexUniformVectors);
-		glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &MaxViewportDims);
+		glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE,        &MaxCubemapTextureSize);
+		glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS,     &MaxFragmentUniformVectors);
+		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE,            &MaxRenderbufferSize);
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS,          &MaxTextureImageUnits);
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE,                 &MaxTextureSize);
+		glGetIntegerv(GL_MAX_VARYING_VECTORS,              &MaxVaryingVectors);
+		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS,               &MaxVertexAttribs);
+		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,   &MaxVertexTextureImageUnits);
+		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS,       &MaxVertexUniformVectors);
+		glGetIntegerv(GL_MAX_VIEWPORT_DIMS,                &MaxViewportDims);
 
 		if (bSupportsComputeShader)
 		{
 			glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &MaxComputeWorkGroupInvocations);
-			glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &MaxComputeSharedMemorySize);
+			glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE,     &MaxComputeSharedMemorySize);
 
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &MaxComputeWorkGroupSize.X);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &MaxComputeWorkGroupSize.Y);

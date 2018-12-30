@@ -35,11 +35,11 @@ namespace Columbus
 			}
 		}
 
-		void SetCamera(const Camera& Camera)
+		void SetCamera(const Camera& Cam)
 		{
 			if (Emitter != nullptr)
 			{
-				Emitter->SetCamera(Camera);
+				Emitter->SetCamera(Cam);
 			}
 		}
 

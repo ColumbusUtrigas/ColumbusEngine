@@ -1,21 +1,13 @@
 #pragma once
 
-#include <vector>
-
 #include <Graphics/Buffer.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Particles/ParticleEffect.h>
 #include <Graphics/Particles/Particle.h>
 
-#include <Common/Noise/OctaveNoise.h>
-
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-
-#include <System/System.h>
-#include <System/Timer.h>
-#include <Core/Random.h>
 
 namespace Columbus
 {
@@ -23,16 +15,9 @@ namespace Columbus
 	class ParticleEmitter
 	{
 	private:
-		struct ColorKey
-		{
-			Vector4 Color = Vector4(1, 1, 1, 1);
-			float Key = 0.0;
-		};
-	private:
 		ParticleEffect* Effect = nullptr;
 
-		std::vector<Particle> Particles;
-		std::vector<ColorKey> ColorKeys;
+		Particle* Particles = nullptr;
 
 		Buffer* VerticesBuffer = nullptr;
 		Buffer* UVBuffer = nullptr;
@@ -57,7 +42,10 @@ namespace Columbus
 		
 		float Life = 0.0f;
 		float Timer = 0.0f;
-		uint32 ParticlesCount = 0;
+
+		uint32 ActiveCount = 0;
+		uint32 MaxCount = 0;
+
 		Camera ObjectCamera;
 	public:
 		ParticleEmitter(ParticleEffect* InEffect);
@@ -68,7 +56,7 @@ namespace Columbus
 		void Update(float TimeTick);
 		void Render();
 
-		void SetCamera(const Camera& InCamera);
+		void SetCamera(const Camera& Cam) { ObjectCamera = Cam; }
 
 		~ParticleEmitter();
 	};

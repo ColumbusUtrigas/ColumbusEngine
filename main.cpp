@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
-				input.SetMouseButton(Event.button.button, { (bool)Event.button.state, Event.button.clicks, Event.button.x, Event.button.y });
+				input.SetMouseButton(Event.button.button, { Event.button.x, Event.button.y, (bool)Event.button.state, Event.button.clicks });
 				break;
 			case SDL_MOUSEWHEEL: input.SetMouseWheel({ Event.wheel.x, Event.wheel.y }); break;
 			}

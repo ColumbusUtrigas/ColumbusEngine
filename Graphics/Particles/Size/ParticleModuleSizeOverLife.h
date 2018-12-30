@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Size/ParticleModuleSizeBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSizeOverLife : public ParticleModuleSizeBase
+	class ParticleModuleSizeOverLife : public ParticleModule
 	{
 	public:
 		InterpolationCurve<Vector3> SizeCurve;

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Rotation/ParticleModuleRotationBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleRotation : public ParticleModuleRotationBase
+	class ParticleModuleRotation : public ParticleModule
 	{
 	public:
 		float Min;

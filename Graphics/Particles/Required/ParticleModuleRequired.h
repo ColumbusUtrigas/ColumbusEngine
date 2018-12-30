@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Particles/Required/ParticleModuleRequiredBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
@@ -22,7 +22,7 @@ namespace Columbus
 		Distance
 	};
 
-	class ParticleModuleRequired : public ParticleModuleRequiredBase
+	class ParticleModuleRequired : public ParticleModule
 	{
 	public:
 		bool Visible;
