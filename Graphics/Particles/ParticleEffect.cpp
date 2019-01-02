@@ -97,7 +97,7 @@ namespace Columbus
 		Serializer::SerializerXML serializer;
 
 		if (!serializer.Read(aFile, "ParticleEffect"))
-		{ Log::error("Can't load Particle Effect: " + aFile); return false; }
+		{ Log::Error("Can't load Particle Effect: %s", aFile.c_str()); return false; }
 
 		ParticleModule* tAccelerationBase = nullptr;
 		ParticleModule* tColorBase = nullptr;
@@ -276,7 +276,7 @@ namespace Columbus
 			tSubUVBase = tSubUV;
 		} else delete tSubUV;
 
-		Log::success("Particle Effect loaded: " + aFile);
+		Log::Success("Particle Effect loaded: %s", aFile.c_str());
 
 		if (tAccelerationBase != nullptr)
 		{

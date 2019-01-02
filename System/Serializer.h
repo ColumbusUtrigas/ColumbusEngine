@@ -1,6 +1,6 @@
 #pragma once
 
-#include <System/System.h>
+#include <tinyxml2.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
@@ -29,13 +29,13 @@ namespace Columbus
 
 			int mMode = 0; // 0 - saving, 1 - loading
 
-			C_XMLElement* getElementFromHierarchy(std::vector<std::string> aElement);
+			tinyxml2::XMLElement* getElementFromHierarchy(std::vector<std::string> aElement);
 		public:
 			enum XMLMode { XML_SERIALIZATION, XML_DESERIALIZATION };
 		public:
 			struct Element
 			{
-				C_XMLElement* elem;
+				tinyxml2::XMLElement* elem;
 			};
 
 			SerializerXML();

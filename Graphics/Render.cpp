@@ -184,7 +184,7 @@ namespace Columbus
 			if (CheckParameter(Metallic))         ShaderOGL->SetUniform(RenderData->Metallic,         CurrentMaterial.Metallic);
 			if (CheckParameter(EmissionStrength)) ShaderOGL->SetUniform(RenderData->EmissionStrength, CurrentMaterial.EmissionStrength);
 			if (CheckParameter(Transparent))      ShaderOGL->SetUniform(RenderData->Transparent,      CurrentMaterial.Transparent);
-			if (CheckShader())                    ShaderOGL->SetUniform(RenderData->CameraPosition,   MainCamera.getPos());
+			if (CheckShader())                    ShaderOGL->SetUniform(RenderData->CameraPosition,   MainCamera.Pos);
 		}
 	}
 
@@ -343,7 +343,7 @@ namespace Columbus
 
 	void Renderer::SortLists()
 	{
-		Vector3 CameraPosition = MainCamera.getPos();
+		Vector3 CameraPosition = MainCamera.Pos;
 		Vector3 APosition, BPosition;
 		double ADistance, BDistance;
 

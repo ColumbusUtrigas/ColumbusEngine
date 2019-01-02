@@ -3,12 +3,8 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <Math/Matrix.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Shader.h>
-#include <System/System.h>
-#include <System/Log.h>
-#include <System/Serializer.h>
 
 namespace Columbus
 {

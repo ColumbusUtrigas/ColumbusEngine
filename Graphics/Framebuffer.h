@@ -3,7 +3,6 @@
 #include <Graphics/Texture.h>
 #include <Math/Vector2.h>
 #include <Math/Vector4.h>
-#include <System/Log.h>
 
 namespace Columbus
 {

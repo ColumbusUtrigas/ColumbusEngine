@@ -6,8 +6,7 @@ namespace Columbus
 	namespace Serializer
 	{
 
-		//////////////////////////////////////////////////////////////////////////////
-		C_XMLElement* SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
+		tinyxml2::XMLElement* SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
 		{
 			if (aElement.size() <= 1) return nullptr;
 
@@ -296,7 +295,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			mTmp->InsertEndChild(subElement);
@@ -324,7 +323,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -353,7 +352,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -382,7 +381,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -411,7 +410,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -440,7 +439,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue.c_str());
@@ -470,7 +469,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
@@ -502,7 +501,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
@@ -536,7 +535,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
@@ -551,7 +550,7 @@ namespace Columbus
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
-			if (mDoc.SaveFile(mFile.c_str()) != C_XML_SUCCESS) return false;
+			if (mDoc.SaveFile(mFile.c_str()) != tinyxml2::XML_SUCCESS) return false;
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -563,7 +562,7 @@ namespace Columbus
 			mInited = false;
 			if (!aFile.empty()) mFile = aFile;
 			if (!aRoot.empty()) mRootName = aRoot;
-			if (mDoc.LoadFile(mFile.c_str()) != C_XML_SUCCESS) return false;
+			if (mDoc.LoadFile(mFile.c_str()) != tinyxml2::XML_SUCCESS) return false;
 			mRoot = mDoc.FirstChildElement(mRootName.c_str());
 			if (mRoot == nullptr) return false;
 			mInited = true;

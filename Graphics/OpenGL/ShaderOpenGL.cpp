@@ -20,7 +20,7 @@ namespace Columbus
 
 		if (!File.is_open())
 		{
-			Log::error("Shader not loaded: " + InFile);
+			Log::Error("Shader not loaded: %s", InFile.c_str());
 			return false;
 		}
 
@@ -28,13 +28,13 @@ namespace Columbus
 
 		if (!Builder.Build(TmpFile, Type))
 		{
-			Log::error("Shader not built: " + InFile);
+			Log::Error("Shader not built: %s", InFile.c_str());
 			return false;
 		}
 
 		if (Builder.ShaderSource.empty())
 		{
-			Log::error("Shader loading incorrect: " + InFile);
+			Log::Error("Shader loading incorrect: %s", InFile.c_str());
 			return false;
 		}
 
@@ -104,7 +104,7 @@ namespace Columbus
 			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
 			Error = new char[Length];
 			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::error(ShaderPath + ": " + Error);
+			Log::Error("%s: %s", ShaderPath.c_str(),  Error);
 
 			delete[] Error;
 			return true;
@@ -178,7 +178,7 @@ namespace Columbus
 		Loaded = true;
 		Compiled = false;
 		Error = false;
-		Log::success("Shader loaded: " + InPath);
+		Log::Success("Shader loaded: %s", InPath.c_str());
 
 		return true;
 	}
@@ -187,7 +187,7 @@ namespace Columbus
 	{
 		if (!Loaded)
 		{
-			Log::error("Couldn't compile shader: Shader wasn't loaded");
+			Log::Error("Couldn't compile shader: Shader wasn't loaded");
 			Compiled = false;
 			Error = true;
 			return false;
@@ -195,7 +195,7 @@ namespace Columbus
 
 		if (!IsValid())
 		{
-			Log::error("Couldn't compile shader: Shader is invalid");
+			Log::Error("Couldn't compile shader: Shader is invalid");
 			Compiled = false;
 			Error = true;
 			return false;
@@ -211,7 +211,7 @@ namespace Columbus
 
 		Compiled = true;
 		Error = false;
-		Log::success("Shader compiled: " + ShaderPath);
+		Log::Success("Shader compiled: %s", ShaderPath.c_str());
 
 		return true;
 	}
@@ -286,7 +286,7 @@ namespace Columbus
 
 		if (!File.is_open())
 		{
-			Log::error("Shader not loaded: " + FileName);
+			Log::Error("Shader not loaded: %s", FileName.c_str());
 			return false;
 		}
 
@@ -340,7 +340,7 @@ namespace Columbus
 		if (std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Vertex; }) == Stages.end() ||
 			std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Fragment; }) == Stages.end())
 		{
-			Log::error("Coldn't compile Shader Program: Needs vertex and fragment shader");
+			Log::Error("Coldn't compile Shader Program: Needs vertex and fragment shader");
 			Compiled = false;
 			Error = true;
 			return false;
@@ -352,7 +352,7 @@ namespace Columbus
 			{
 				if (!Stage->Compile())
 				{
-					Log::error("Couldn't compile Shader Program: One or more of the shader not compiled");
+					Log::Error("Couldn't compile Shader Program: One or more of the shader not compiled");
 					Compiled = false;
 					Error = true;
 					return false;
@@ -361,7 +361,7 @@ namespace Columbus
 
 			if (!Stage->IsValid())
 			{
-				Log::error("Couldn't compile Shader Program: One or more of the shaders is invalid");
+				Log::Error("Couldn't compile Shader Program: One or more of the shaders is invalid");
 				Compiled = false;
 				Error = true;
 				return false;
@@ -386,7 +386,7 @@ namespace Columbus
 
 		Compiled = true;
 		Error = false;
-		Log::success("Shader program compiled");
+		Log::Success("Shader program compiled");
 
 		return true;
 	}

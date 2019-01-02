@@ -105,11 +105,11 @@ namespace Columbus
 
 			Shader->Bind();
 
-			auto View = mCamera.getViewMatrix();
+			auto View = mCamera.GetViewMatrix();
 			View.SetRow(3, Vector4(0, 0, 0, 1));
 			View.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			(View * mCamera.getProjectionMatrix()).Elements(UniformViewProjection);
+			(View * mCamera.GetProjectionMatrix()).Elements(UniformViewProjection);
 
 			Shader->SetUniformMatrix("uViewProjection", UniformViewProjection);
 

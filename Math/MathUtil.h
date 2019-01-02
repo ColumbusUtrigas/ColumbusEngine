@@ -1,9 +1,6 @@
 #pragma once
 
 #include <Core/Types.h>
-#include <Core/Platform/Platform.h>
-
-#include <cstdlib>
 #include <cmath>
 
 namespace Columbus

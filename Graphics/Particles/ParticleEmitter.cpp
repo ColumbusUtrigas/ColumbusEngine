@@ -126,7 +126,7 @@ namespace Columbus
 							Module->Update(Particles[i]);
 						}
 
-						Particles[i].update(TimeTick, ObjectCamera.getPos());
+						Particles[i].update(TimeTick, ObjectCamera.Pos);
 					}
 				}
 
@@ -229,8 +229,8 @@ namespace Columbus
 			Effect->getMaterial()->GetShader()->SetUniform1f("uBillboard", (float)Effect->Required->Billboarding);
 			Effect->getMaterial()->GetShader()->SetUniform2f("uSubUV", iVector2(SubUV->Horizontal, SubUV->Vertical));
 
-			ObjectCamera.getViewMatrix().Elements(UniformViewMatrix);
-			ObjectCamera.getProjectionMatrix().Elements(UniformProjectionMatrix);
+			ObjectCamera.GetViewMatrix().Elements(UniformViewMatrix);
+			ObjectCamera.GetProjectionMatrix().Elements(UniformProjectionMatrix);
 
 			Effect->getMaterial()->GetShader()->SetUniformMatrix("uView", UniformViewMatrix);
 			Effect->getMaterial()->GetShader()->SetUniformMatrix("uProjection", UniformProjectionMatrix);

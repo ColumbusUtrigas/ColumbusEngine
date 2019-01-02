@@ -1,5 +1,6 @@
 #include <Scene/Scene.h>
 #include <Graphics/Device.h>
+#include <System/Serializer.h>
 
 namespace Columbus
 {
@@ -576,12 +577,12 @@ namespace Columbus
 	bool Scene::load(std::string aFile)
 	{
 		if (!gDevice)
-		{ Log::error("Can't load Scene: " + aFile + " : Device is missing"); return false; }
+		{ Log::Error("Can't load Scene: %s: Device is missing", aFile.c_str()); return false; }
 
 		Serializer::SerializerXML serializer;
 
 		if (!serializer.Read(aFile, "Scene"))
-		{ Log::error("Can't load Scene: " + aFile); return false; }
+		{ Log::Error("Can't load Scene: %s", aFile.c_str()); return false; }
 
 		uint32 count = 0;
 		uint32 texCount = 0;
@@ -602,7 +603,7 @@ namespace Columbus
 				Refl->Load(ReflImage);
 				mSkybox = new Skybox(Refl);
 
-				Log::success("Default skybox loaded: " + path);
+				Log::Success("Default skybox loaded: %s", path.c_str());
 			}
 		}
 
@@ -621,7 +622,7 @@ namespace Columbus
 						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, Img.GetFormat()));
 						Tex->Load(Img);
 
-						Log::success("Texture loaded: " + path);
+						Log::Success("Texture loaded: %s", path.c_str());
 						mTextures.insert(std::make_pair(i, SmartPointer<Texture>(Tex)));
 					}
 				}
@@ -664,7 +665,7 @@ namespace Columbus
 					}
 					else
 					{
-						Log::error("Couldn't load mesh: " + path);
+						Log::Error("Couldn't load mesh: %s", path.c_str());
 						continue;
 					}
 				}
@@ -686,7 +687,7 @@ namespace Columbus
 					if (tSound->Load(path, streaming))
 					{
 						Sounds.insert(std::make_pair(i, SmartPointer<Sound>(tSound)));
-						Log::success("Sound loaded: " + path);
+						Log::Success("Sound loaded: %s", path.c_str());
 					}
 					else
 					{
@@ -698,7 +699,7 @@ namespace Columbus
 		}
 
 		if (!serializer.GetSubInt({"GameObjects", "Count"}, (int32&)count))
-		{ Log::error("Can't load Scene Count: " + aFile); return false; }
+		{ Log::Error("Can't load Scene Count: %s", aFile.c_str()); return false; }
 
 		for (uint32 i = 0; i < count; i++)
 		{

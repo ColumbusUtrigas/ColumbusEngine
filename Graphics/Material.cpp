@@ -1,4 +1,6 @@
 #include <Graphics/Material.h>
+#include <System/Log.h>
+#include <System/Serializer.h>
 
 namespace Columbus
 {
@@ -82,36 +84,36 @@ namespace Columbus
 		Serializer::SerializerXML Serializer;
 
 		if (!Serializer.Read(aFile, "Material"))
-		{ Log::error("Can't load Material: " + aFile); return false; }
+		{ Log::Error(("Can't load Material: " + aFile).c_str()); return false; }
 
 		std::string MaterialCulling;
 
 		if (!Serializer.GetString("Culling", MaterialCulling))
-		{ Log::error("Can't load Material culling: " + aFile); return false; }
+		{ Log::Error(("Can't load Material culling: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetBool("DepthWriting", DepthWriting))
-		{ Log::error("Can't load Material depth writing: " + aFile); return false; }
+		{ Log::Error(("Can't load Material depth writing: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetBool("Transparent", Transparent))
-		{ Log::error("Can't load Material transparent: " + aFile); return false; }
+		{ Log::Error(("Can't load Material transparent: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetVector2("Tiling", Tiling, { "X", "Y"}))
-		{ Log::error("Can't load Material tiling: " + aFile); return false; }
+		{ Log::Error(("Can't load Material tiling: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetVector2("DetailTiling", DetailTiling, { "X", "Y"}))
-		{ Log::error("Can't load Material detail tiling: " + aFile); return false; }
+		{ Log::Error(("Can't load Material detail tiling: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetVector4("Color", Color, { "R", "G", "B", "A" }))
-		{ Log::error("Can't load Material color: " + aFile); return false; }
+		{ Log::Error(("Can't load Material color: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("Roughness", Roughness))
-		{ Log::error("Can't load Material roughness: " + aFile); return false; }
+		{ Log::Error(("Can't load Material roughness: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("Metallic", Metallic))
-		{ Log::error("Can't load Material metallic: " + aFile); return false; }
+		{ Log::Error(("Can't load Material metallic: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("EmissionStrength", EmissionStrength))
-		{ Log::error("Can't load Material emission strength: " + aFile); return false; }
+		{ Log::Error(("Can't load Material emission strength: " + aFile).c_str()); return false; }
 
 		std::string diffuseMapPath = "None";
 		std::string normalMapPath = "None";
@@ -188,7 +190,7 @@ namespace Columbus
 			Culling = Cull::FrontAndBack;
 		}
 
-		Log::success("Material loaded: " + aFile);
+		Log::Success(("Material loaded: " + aFile).c_str());
 
 		return true;
 	}

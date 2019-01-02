@@ -148,7 +148,7 @@ namespace Columbus
 
 		if (Size < sizeof(DDS_HEADER))
 		{
-			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: DDS size less than header size");
+			Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: DDS size less than header size");
 			return nullptr;
 		}
 
@@ -163,14 +163,14 @@ namespace Columbus
 		    HeaderFlags.PixelFormat == false ||
 		    HeaderFlags.Texture == false)
 		{
-			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS flags");
+			Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS flags");
 			return nullptr;
 		}
 
 
 		if (Header.PixelFormat.FourCC == ('D' | ('X' << 8) | ('1' << 16) | ('0' << 24)))
 		{
-			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
+			Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
 			return nullptr;
 		}
 
@@ -178,7 +178,7 @@ namespace Columbus
 		    (Header.PixelFormat.Flags & DDSRGBA)   == 0x00 &&
 		    (Header.PixelFormat.Flags & DDSRGB)    == 0x00)
 		{
-			Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS Pixel format flags");
+			Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: Invalid DDS Pixel format flags");
 			return nullptr;
 		}
 
@@ -191,7 +191,7 @@ namespace Columbus
 			    (Header.Caps2 & 0x4000) == 0 ||
 			    (Header.Caps2 & 0x8000) == 0)
 			{
-				Log::error("ImageLoadDDSMemory() error: Couldn't load DDS: cubemap is not complex");
+				Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: cubemap is not complex");
 				return nullptr;
 			}
 
@@ -264,7 +264,7 @@ namespace Columbus
 		File DDSImageFile(FileName, "rb");
 		if (!DDSImageFile.IsOpened())
 		{
-			Log::error("ImageLoadDDS() error: Couldn't load DDS: Couldn'y open file");
+			Log::Error("ImageLoadDDS() error: Couldn't load DDS: Couldn'y open file");
 			return false;
 		}
 
