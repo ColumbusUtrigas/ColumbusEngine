@@ -1,5 +1,5 @@
 #include <Graphics/Texture.h>
-#include <Common/Image/Image.h>
+#include <System/Log.h>
 
 namespace Columbus
 {
@@ -12,7 +12,7 @@ namespace Columbus
 	bool Texture::save(std::string aFile, size_t aQuality)
 	{
 		if (!mImage.IsExist())
-		{ Log::error("Texture didn't saved: " + aFile);  return false; }
+		{ Log::Error("Texture didn't saved: %s", aFile.c_str());  return false; }
 
 		ImageFormat type = ImageFormat::PNG;
 
@@ -24,7 +24,7 @@ namespace Columbus
 
 		ImageSave(aFile, mImage.GetWidth(), mImage.GetHeight(), mImage.GetFormat(), mImage.GetData(), type, aQuality);
 
-		Log::success("Texture successfully saved: " + aFile);
+		Log::Success("Texture successfully saved: %s", aFile.c_str());
 		return true;
 	}
 	

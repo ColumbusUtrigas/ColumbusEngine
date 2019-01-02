@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Math/Vector3.h>
 #include <Common/Sound/Sound.h>
+#include <Math/Vector3.h>
 
 namespace Columbus
 {
@@ -9,17 +9,15 @@ namespace Columbus
 	class AudioSource
 	{
 	public:
-		enum class Mode;
-	protected:
-		Sound* SoundClip;
-		uint64 Offset;
-		double Played;
-	public:
 		enum class Mode
 		{
 			Sound2D,
 			Sound3D
 		};
+	protected:
+		Sound* SoundClip;
+		uint64 Offset;
+		double Played;
 	public:
 		Vector3 Position;
 		Vector3 Velocity;

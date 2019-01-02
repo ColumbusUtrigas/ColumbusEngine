@@ -71,5 +71,4 @@
 #include <System/File.h>
 #include <System/Log.h>
 #include <System/Serializer.h>
-#include <System/System.h>
 #include <System/Timer.h>

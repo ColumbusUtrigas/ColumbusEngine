@@ -22,36 +22,36 @@ namespace Columbus
 		Serializer::SerializerXML Serializer;
 
 		if (!Serializer.Write(aFile, "Light"))
-		{ Log::error("Can't save Light: " + aFile); return false; }
+		{ Log::Error(("Can't save Light: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetInt("Type", Type))
-		{ Log::error("Can't save Light type: " + aFile); return false; }
+		{ Log::Error(("Can't save Light type: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetVector3("Direction", Dir, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Light direction: " + aFile); return false; }
+		{ Log::Error(("Can't save Light direction: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetVector3("Color", Color, { "R", "G", "B" }))
-		{ Log::error("Can't save Light color: " + aFile); return false; }
+		{ Log::Error(("Can't save Light color: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetFloat("Constant", Constant))
-		{ Log::error("Can't save Light constant: " + aFile); return false; }
+		{ Log::Error(("Can't save Light constant: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetFloat("Linear", Linear))
-		{ Log::error("Can't save Light linear: " + aFile); return false; }
+		{ Log::Error(("Can't save Light linear: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetFloat("Quadratic", Quadratic))
-		{ Log::error("Can't save Light quadratic: " + aFile); return false; }
+		{ Log::Error(("Can't save Light quadratic: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetFloat("InnerCutoff", InnerCutoff))
-		{ Log::error("Can't save Light inner cutoff: " + aFile); return false; }
+		{ Log::Error(("Can't save Light inner cutoff: " + aFile).c_str()); return false; }
 
 		if (!Serializer.SetFloat("OuterCutoff", OuterCutoff))
-		{ Log::error("Can't save Light outer cutoff: " + aFile); return false; }
+		{ Log::Error(("Can't save Light outer cutoff: " + aFile).c_str()); return false; }
 
 		if (!Serializer.Save())
-		{ Log::error("Can't save Light: " + aFile); return false; }
+		{ Log::Error(("Can't save Light: " + aFile).c_str()); return false; }
 
-		Log::success("Light saved: " + aFile);
+		Log::Success(("Light saved: " + aFile).c_str());
 
 		return true;
 	}
@@ -61,33 +61,33 @@ namespace Columbus
 		Serializer::SerializerXML Serializer;
 
 		if (!Serializer.Read(aFile, "Light"))
-		{ Log::error("Can't load Light: " + aFile); return false; }
+		{ Log::Error(("Can't load Light: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetInt("Type", Type))
-		{ Log::error("Can't load Light type: %s" + aFile); return false; }
+		{ Log::Error(("Can't load Light type: %s" + aFile).c_str()); return false; }
 
 		if (!Serializer.GetVector3("Direction", Dir, { "X", "Y", "Z" }))
-		{ Log::error("Can't load Light direction: %s" + aFile); return false; }
+		{ Log::Error(("Can't load Light direction: %s" + aFile).c_str()); return false; }
 
 		if (!Serializer.GetVector3("Color", Color, { "R", "G", "B" }))
-		{ Log::error("Can't load Light color: " + aFile); return false; }
+		{ Log::Error(("Can't load Light color: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("Constant", Constant))
-		{ Log::error("Can't load Light constant: " + aFile); return false; }
+		{ Log::Error(("Can't load Light constant: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("Linear", Linear))
-		{ Log::error("Can't load Light linear: " + aFile); return false; }
+		{ Log::Error(("Can't load Light linear: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("Quadratic", Quadratic))
-		{ Log::error("Can't load Light quadratic: " + aFile); return false; }
+		{ Log::Error(("Can't load Light quadratic: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("InnerCutoff", InnerCutoff))
-		{ Log::error("Can't load Light inner cutoff: " + aFile); return false; }
+		{ Log::Error(("Can't load Light inner cutoff: " + aFile).c_str()); return false; }
 
 		if (!Serializer.GetFloat("OuterCutoff", InnerCutoff))
-		{ Log::error("Can't load Light outer cutoff: " + aFile); return false; }
+		{ Log::Error(("Can't load Light outer cutoff: " + aFile).c_str()); return false; }
 
-		Log::success("Light loaded: " + aFile);
+		Log::Success(("Light loaded: " + aFile).c_str());
 
 		return true;
 	}

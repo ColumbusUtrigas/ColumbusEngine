@@ -18,31 +18,31 @@ namespace Columbus
 	{
 		if (SDL_Init(SDL_INIT_EVERYTHING))
 		{
-			Log::fatal("Can't initialize SDL2");
+			Log::Fatal("Can't initialize SDL2");
 		}
 		else
 		{
 			if (SDL_GetNumVideoDisplays() < 0)
 			{
-				Log::fatal("No display");
+				Log::Fatal("No display");
 			}
 
 			SDL_DisplayMode* DisplayModes = new SDL_DisplayMode[SDL_GetNumVideoDisplays()];
 
-			Log::initialization("SDL2 initialized");
-			Log::initialization("Current video driver: " + std::string(SDL_GetCurrentVideoDriver()));
-			Log::initialization("Display count: " + std::to_string(SDL_GetNumVideoDisplays()));
+			Log::Initialization("SDL2 initialized");
+			Log::Initialization("Current video driver: %s", SDL_GetCurrentVideoDriver());
+			Log::Initialization("Display count: %i", SDL_GetNumVideoDisplays());
 
 			for (int32 i = 0; i < SDL_GetNumVideoDisplays(); i++)
 			{
 				if (SDL_GetDesktopDisplayMode(i, &DisplayModes[i]) != 0)
 				{
-					Log::fatal("Can't get display info (" + std::to_string(i + 1) + ")");
+					Log::Fatal("Can't get display info (%i)", i + 1);
 				}
 				else
 				{
-					Log::initialization("Display resolution (" + std::to_string(i + 1) + std::string(")") + std::string(": ") + std::to_string(DisplayModes[i].w) + std::string("x") + std::to_string(DisplayModes[i].h));
-					Log::initialization("Display refresh rate (" + std::to_string(i + 1) + std::string(")") + std::string(": ") + std::to_string(DisplayModes[i].refresh_rate));
+					Log::Initialization("Display resolution (%i): %ix%i", i + 1, DisplayModes[i].w, DisplayModes[i].h);
+					Log::Initialization("Display refresh rate (%i): %i", i + 1, DisplayModes[i].refresh_rate);
 				}
 			}
 
@@ -90,11 +90,11 @@ namespace Columbus
 
 		if (glewInit() != GLEW_OK)
 		{
-			Log::fatal("Can't initialize GLEW");
+			Log::Fatal("Can't initialize GLEW");
 		} else
 		{
-			Log::initialization("GLEW initialized");
-			Log::initialization("Initialized OpenGL " + std::to_string(MajorVersion) + "." + std::to_string(MinorVersion));
+			Log::Initialization("GLEW initialized");
+			Log::Initialization("Initialized OpenGL %i.%i", MajorVersion, MinorVersion);
 		}
 
 		glEnable(GL_TEXTURE_2D);
@@ -121,12 +121,12 @@ namespace Columbus
 		SDL_VERSION(&cVer);
 		SDL_GetVersion(&lVer);
 
-		Log::initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
-		Log::initialization("SDL linked version: %d.%d.%d", lVer.major, lVer.minor, lVer.patch);
-		Log::initialization("OpenGL version: %s", glGetString(GL_VERSION));
-		Log::initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
-		Log::initialization("OpenGL renderer: %s",glGetString(GL_RENDERER));
-		Log::initialization("GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+		Log::Initialization("SDL version: %d.%d.%d", cVer.major, cVer.minor, cVer.patch);
+		Log::Initialization("SDL linked version: %d.%d.%d", lVer.major, lVer.minor, lVer.patch);
+		Log::Initialization("OpenGL version: %s", glGetString(GL_VERSION));
+		Log::Initialization("OpenGL vendor: %s", glGetString(GL_VENDOR));
+		Log::Initialization("OpenGL renderer: %s",glGetString(GL_RENDERER));
+		Log::Initialization("GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	}
 	
 	bool WindowOpenGLSDL::Create(const iVector2& InSize, const std::string& InTitle, Window::Flags F)

@@ -3,7 +3,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <System/Assert.h>
-#include <algorithm>
+#include <cstdlib>
 
 namespace Columbus
 {
@@ -76,7 +76,8 @@ namespace Columbus
 			if (Elems != nullptr)
 			{
 				//16 is size of matrix (4 * 4)
-				std::copy(&M[0][0], &M[0][0] + 16, Elems);
+				//std::copy(&M[0][0], &M[0][0] + 16, Elems);
+				memcpy(Elems, &M[0][0], sizeof(M));
 			}
 		}
 		

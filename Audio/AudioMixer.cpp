@@ -1,4 +1,5 @@
 #include <Audio/AudioMixer.h>
+#include <Common/Sound/Sound.h>
 #include <Math/Vector2.h>
 
 namespace Columbus

@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 	AudioListener Listener;
 
 	Camera camera;
-	camera.setPos(Vector3(10, 10, 0));
-	camera.setRot(Vector3(0, 180, 0));
+	camera.Pos = Vector3(10, 10, 0);
+	camera.Rot = Vector3(0, 180, 0);
 
 	gDevice = new DeviceOpenGL();
 
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
 			case SDL_KEYDOWN: input.SetKeyDown(Event.key.keysym.scancode); break;
 			case SDL_KEYUP:   input.SetKeyUp(Event.key.keysym.scancode);   break;
 			case SDL_MOUSEMOTION:
-				input.SetMousePosition({ Event.motion.x,    Event.motion.y });
+				input.SetMousePosition({ Event.motion.x, Event.motion.y });
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
@@ -142,30 +142,30 @@ int main(int argc, char** argv)
 		input.SetKeyboardFocus(window.HasKeyFocus());
 		input.SetMouseFocus(window.HasMouseFocus());
 
-		camera.perspective(60, window.GetAspect(), 0.1f, 1000);
+		camera.Perspective(60, window.GetAspect(), 0.1f, 1000);
 
 		wheel += input.GetMouseWheel().Y * 5;
-		camera.addPos(camera.direction() * wheel * RedrawTime);
+		camera.Pos += camera.Direction() * wheel * RedrawTime;
 		wheel -= wheel * 3 * RedrawTime;
 		if (abs(wheel) <= 0.2) wheel = 0.0f;
 
 		if (input.GetKey(SDL_SCANCODE_W))
-			camera.addPos(camera.direction() * RedrawTime * 5);
+			camera.Pos += camera.Direction() * RedrawTime * 5;
 		if (input.GetKey(SDL_SCANCODE_S))
-			camera.addPos(-camera.direction() * RedrawTime * 5);
+			camera.Pos += -camera.Direction() * RedrawTime * 5;
 		if (input.GetKey(SDL_SCANCODE_A))
-			camera.addPos(-camera.right() * RedrawTime * 5);
+			camera.Pos += -camera.Right() * RedrawTime * 5;
 		if (input.GetKey(SDL_SCANCODE_D))
-			camera.addPos(camera.right() * RedrawTime * 5);
+			camera.Pos += camera.Right() * RedrawTime * 5;
 
 		if (input.GetKey(SDL_SCANCODE_LSHIFT))
-			camera.addPos(-camera.up() * RedrawTime * 5);
+			camera.Pos += -camera.Up() * RedrawTime * 5;
 		if (input.GetKey(SDL_SCANCODE_SPACE))
-			camera.addPos(camera.up() * RedrawTime * 5);
+			camera.Pos += camera.Up() * RedrawTime * 5;
 		if (input.GetKey(SDL_SCANCODE_Q))
-			camera.addRot(Vector3(0, 0, 125 * RedrawTime));
+			camera.Rot += Vector3(0, 0, 125 * RedrawTime);
 		if (input.GetKey(SDL_SCANCODE_E))
-			camera.addRot(Vector3(0, 0, -125 * RedrawTime));
+			camera.Rot += Vector3(0, 0, -125 * RedrawTime);
 
 		if (input.GetKeyDown(SDL_SCANCODE_ESCAPE))
 		{
@@ -176,18 +176,18 @@ int main(int argc, char** argv)
 		if (!cursor)
 		{
 			Vector2 deltaMouse = input.GetMouseMovement();
-			camera.addRot(Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f);
+			camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
 			window.SetMousePosition(window.GetSize() / 2);
 			input.SetMousePosition (window.GetSize() / 2);
 		}
 
-		camera.setRot(Vector3::Clamp(camera.getRot(), Vector3(-89.9f, -360.0f, 0.0f), Vector3(89.9f, 360.0f, 0.0f)));
-		camera.update();
+		camera.Rot.Clamp({ -89.9f, -360.0f, 0.0f }, {89.9f, 360.0f, 0.0f});
+		camera.Update();
 
-		Listener.Position = camera.getPos();
-		Listener.Right = camera.right();
-		Listener.Up = camera.up();
-		Listener.Forward = camera.direction();
+		Listener.Position = camera.Pos;
+		Listener.Right = camera.Right();
+		Listener.Up = camera.Up();
+		Listener.Forward = camera.Direction();
 
 		scene.SetContextSize(window.GetSize());
 		scene.update();

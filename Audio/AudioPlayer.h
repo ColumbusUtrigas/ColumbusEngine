@@ -26,7 +26,7 @@ namespace Columbus
 	public:
 		AudioPlayer(uint16 Channels, uint32 Frequency, AudioMixer* Mixer)
 		{
-			Log::initialization("Audio system initialization");
+			Log::Initialization("Audio system initialization");
 			COLUMBUS_ASSERT_MESSAGE(Channels >= 1, "AudioPlayer::AudioPlayer(): Invalid channels count")
 			COLUMBUS_ASSERT_MESSAGE(Frequency > 0, "AudioPlayer::AudioPlayer(): Invalid frequency")
 			COLUMBUS_ASSERT_MESSAGE(Mixer, "AudioPlayer::AudioPlayer(): Invalid mixer")
@@ -76,46 +76,34 @@ namespace Columbus
 
 			if (AudioRecordingDevicesCount == 0)
 			{
-				Log::error("Couldn't find audio recording device");
+				Log::Error("Couldn't find audio recording device");
 			}
 
-			Log::initialization("Audio drivers count: " + std::to_string(AudioDriversCount));
+			Log::Initialization("Audio drivers count: %i", AudioDriversCount);
 
 			for (uint32 i = 0; i < AudioDriversCount; i++)
 			{
-				Log::initialization("Audio driver (" + std::to_string(i + 1) + "): " + SDL_GetAudioDriver(i));
+				Log::Initialization("Audio driver (%i): %s", i + 1, SDL_GetAudioDriver(i));
 			}
 
-			Log::initialization("Current audio driver: " + std::string(SDL_GetCurrentAudioDriver()));
-			Log::initialization("Audio playback devices count: " + std::to_string(AudioPlaybackDevicesCount));
+			Log::Initialization("Current audio driver: %s", SDL_GetCurrentAudioDriver());
+			Log::Initialization("Audio playback devices count: %i", AudioPlaybackDevicesCount);
 
 			for (uint32 i = 0; i < AudioPlaybackDevicesCount; i++)
 			{
-				if (SDL_GetAudioDeviceName(i, 0) != nullptr)
-				{
-					Log::initialization("Audio playback device name (" + std::to_string(i + 1) + "): " + SDL_GetAudioDeviceName(i, 0));
-				}
-				else
-				{
-					Log::initialization("Audio playback device name (" + std::to_string(i + 1) + "): " + "");
-				}
+				const char* Name = SDL_GetAudioDeviceName(i, 0);
+				Log::Initialization("Audio playback device name (%i): %s", i + 1, Name != nullptr ? Name : "");
 			}
 
-			Log::initialization("Audio recording devices count: " + std::to_string(AudioRecordingDevicesCount));
+			Log::Initialization("Audio recording devices count: %i", AudioRecordingDevicesCount);
 
 			for (uint32 i = 0; i < AudioRecordingDevicesCount; i++)
 			{
-				if (SDL_GetAudioDeviceName(i, 1) != nullptr)
-				{
-					Log::initialization("Audio recording device name (" + std::to_string(i + 1) + "): "  + SDL_GetAudioDeviceName(i, 1));
-				}
-				else
-				{
-					Log::initialization("Audio recording device name (" + std::to_string(i + 1) + "): " + "");
-				}
+				const char* Name = SDL_GetAudioDeviceName(i, 1);
+				Log::Initialization("Audio recording device name (%i): %s", i + 1, Name != nullptr ? Name : "");
 			}
 
-			Log::initialization("Audio system initialized\n");
+			Log::Initialization("Audio system initialized\n");
 		}
 
 		void Play()

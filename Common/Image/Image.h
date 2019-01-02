@@ -1,11 +1,7 @@
 #pragma once
 
-#include <System/Assert.h>
-#include <System/System.h>
 #include <Core/Types.h>
 #include <string>
-#include <cstdlib>
-#include <cstring>
 
 namespace Columbus
 {
