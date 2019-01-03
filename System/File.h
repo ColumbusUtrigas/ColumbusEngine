@@ -11,7 +11,7 @@ namespace Columbus
 	private:
 		FILE* Handle = nullptr;
 		uint64 FileSize = 0;
-		char* FileName = "";
+		char* FileName = nullptr;
 	public:
 		File();
 		File(File& Other);

@@ -103,8 +103,6 @@ namespace Columbus
 	static void ShaderSetMaterial(const Transform& Trans, const Camera& MainCamera)
 	{
 		static std::string const Names[9] = { "uMaterial.DiffuseMap", "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap"};
-		static float ModelMatrix[16];
-		static float ViewProjection[16];
 
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()

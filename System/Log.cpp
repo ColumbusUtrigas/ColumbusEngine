@@ -10,14 +10,18 @@ namespace Columbus
 
 	static char* LogText(const char* Fmt, const char* Text, const char* AColor, const char* BColor)
 	{
-		int MaxLength = strlen(Fmt) + strlen(Text) + strlen(AColor) + strlen(BColor) + 16;
-		char* Result = (char*)malloc(MaxLength);
-		Result[0] = '\0';
-		strcpy(Result, Text);
-		
 		#ifdef COLUMBUS_PLATFORM_WINDOWS
+			int MaxLength = strlen(Text) + strlen(Fmt) + 2;
+			char* Result = (char*)malloc(MaxLength);
+			Result[0] = '\0';
+
+			strcat(Result, Text);
 			strcat(Result, Fmt);
 		#else
+			int MaxLength = strlen(AColor) + strlen(Text) + strlen(BColor) + strlen(Fmt) + strlen("\x1b[0m") + 2;
+			char* Result = (char*)malloc(MaxLength);
+			Result[0] = '\0';
+
 			strcat(Result, AColor);
 			strcat(Result, Text);
 			strcat(Result, BColor);

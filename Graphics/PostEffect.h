@@ -15,11 +15,11 @@ namespace Columbus
 		bool SizeChanged = false;
 	public:
 		static constexpr int TexturesCount = 4;
-		static constexpr Framebuffer::Attachment Attachments[TexturesCount] =
+		/*static constexpr Framebuffer::Attachment Attachments[TexturesCount] =
 		{ Framebuffer::Attachment::Color0,
 		  Framebuffer::Attachment::Color1,
 		  Framebuffer::Attachment::Color2,
-		  Framebuffer::Attachment::Color3 };
+		  Framebuffer::Attachment::Color3 };*/
 
 		Framebuffer* FB = nullptr;
 		Texture* DepthTexture = nullptr;
@@ -57,7 +57,9 @@ namespace Columbus
 						}
 
 						ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
-						FB->setTexture2D(Attachments[i], ColorTextures[i]);
+						int A = static_cast<int>(Framebuffer::Attachment::Color1);
+						Framebuffer::Attachment T = static_cast<Framebuffer::Attachment>(A + i);
+						FB->setTexture2D(T, ColorTextures[i]);
 					}
 				}
 

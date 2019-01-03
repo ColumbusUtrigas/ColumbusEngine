@@ -4,14 +4,15 @@
 #include <utility>
 #include <cstring>
 
-#if (defined(COLUMBUS_PLATFORM_LINUX) || defined(COLUMBUS_PLATFORM_APPLE))
-	_FILE_OFFSET_BITS = 64
-
-	#define FSeek64 fseeko
-	#define FTell64 ftello
-#elif defined(COLUMBUS_PLATFORM_WINDOWS)
+#if defined(COLUMBUS_PLATFORM_WINDOWS)
 	#define FSeek64 _fseeki64
 	#define FTell64 _ftelli64
+#else
+	// fseeko and ftello use off_t instead of long.
+	// By default, off_t is the typedef of the off32_t.
+	// To use off64_t, you should compile with the -D_FILE_OFFSET_BITS=64 flag.
+	#define FSeek64 fseeko
+	#define FTell64 ftello
 #endif
 
 namespace Columbus
@@ -27,7 +28,7 @@ namespace Columbus
 
 		Other.Handle = nullptr;
 		Other.FileSize = 0;
-		Other.FileName = "";
+		Other.FileName = nullptr;
 	}
 
 	File::File(const char* File, const char* Modes)
@@ -63,7 +64,9 @@ namespace Columbus
 		Handle = fopen(File, Modes);
 		if (Handle != nullptr)
 		{
-			FileName = (char*)File;
+			int Len = strlen(File) + 1;
+			FileName = new char[Len];
+			memcpy(FileName, File, Len);
 
 			FSeek64(Handle, 0, SEEK_END);
 			FileSize = FTell64(Handle);
@@ -85,13 +88,14 @@ namespace Columbus
 			Handle = nullptr;
 		}
 		
-		FileName = "";
+		delete[] FileName;
+		FileName = nullptr;
 		return ret;
 	}
 
 	const char* File::GetName() const
 	{
-		return FileName;
+		return FileName != nullptr ? FileName : "";
 	}
 
 	uint64 File::GetSize() const

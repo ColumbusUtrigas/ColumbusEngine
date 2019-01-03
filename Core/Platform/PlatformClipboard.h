@@ -6,7 +6,7 @@ namespace Columbus
 	struct Clipboard
 	{
 		static void SetClipboard(const char* Text);
-		static void GetClipboard(char*& Text);
+		static const char* GetClipboard();
 		static bool HasClipboard();
 	};
 
