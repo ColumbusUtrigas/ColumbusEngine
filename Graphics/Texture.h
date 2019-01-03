@@ -17,8 +17,6 @@ namespace Columbus
 	protected:
 		Image mImage;
 
-		char* mFile = "";
-
 		uint32 Width;
 		uint32 Height;
 

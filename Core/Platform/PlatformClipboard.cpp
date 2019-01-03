@@ -23,15 +23,17 @@ namespace Columbus
 		#endif
 	}
 
-	void Clipboard::GetClipboard(char*& Text)
+	const char* Clipboard::GetClipboard()
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			ClipboardWindows::GetClipboard(Text);
+			return ClipboardWindows::GetClipboard();
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
-			ClipboardLinux::GetClipboard(Text);
+			return ClipboardLinux::GetClipboard();
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
 
 		#endif
+
+		return "";
 	}
 
 	bool Clipboard::HasClipboard()

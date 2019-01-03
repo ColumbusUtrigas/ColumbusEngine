@@ -262,7 +262,6 @@ namespace Columbus
 			return false;
 		}
 
-		FileName = (char*)InFileName;
 		Exist = true;
 
 		switch (Flags)
@@ -281,7 +280,7 @@ namespace Columbus
 	* @param Format: Image format
 	* @param Quality: Compression level
 	*/
-	bool Image::Save(const char* InFileName, ImageFormat InFormat, size_t Quality) const
+	bool Image::Save(const char* InFileName, ImageFormat InFormat, uint32 Quality) const
 	{
 		return false;
 
@@ -319,7 +318,6 @@ namespace Columbus
 		MipMaps = 0;
 		Format = TextureFormat::RGBA8;
 		Exist = false;
-		FileName = "";
 
 		delete[] Data;
 	}
@@ -556,11 +554,6 @@ namespace Columbus
 	uint8* Image::GetData() const
 	{
 		return Data;
-	}
-	
-	const char* Image::GetFileName() const
-	{
-		return FileName;
 	}
 	
 	Image::~Image()

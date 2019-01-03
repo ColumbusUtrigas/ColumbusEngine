@@ -4,14 +4,14 @@
 namespace Columbus
 {
 
-	void ClipboardLinux::SetClipboard(std::string Text)
+	void ClipboardLinux::SetClipboard(const char* Text)
 	{
-		SDL_SetClipboardText(Text.c_str());
+		SDL_SetClipboardText(Text);
 	}
 
-	void ClipboardLinux::GetClipboard(std::string& Text)
+	const char* ClipboardLinux::GetClipboard()
 	{
-		Text = SDL_GetClipboardText();
+		return SDL_GetClipboardText();
 	}
 
 	bool ClipboardLinux::HasClipboard()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Memory.h>
+#include <algorithm>
 
 namespace Columbus
 {

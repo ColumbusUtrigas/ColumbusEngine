@@ -26,7 +26,7 @@ namespace Columbus
 		return "";
 	}
 
-	bool Filesystem::CreateFile(const char* Path)
+	bool Filesystem::FileCreate(const char* Path)
 	{
 		FILE* File = fopen(Path, "w");
 		bool Result = File != nullptr;
@@ -34,12 +34,12 @@ namespace Columbus
 		return Result;
 	}
 
-	bool Filesystem::CreateDirectory(const char* Path)
+	bool Filesystem::DirCreate(const char* Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
 			return FilesystemWindows::DirCreate(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
-			return FilesystemLinux::CreateDirectory(Path);
+			return FilesystemLinux::DirCreate(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
 
 		#endif
@@ -52,17 +52,17 @@ namespace Columbus
 		return rename(Old, New) == 0;
 	}
 
-	bool Filesystem::RemoveFile(const char* Path)
+	bool Filesystem::FileRemove(const char* Path)
 	{
 		return remove(Path) == 0;
 	}
 
-	bool Filesystem::RemoveDirectory(const char* Path)
+	bool Filesystem::DirRemove(const char* Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
 			return FilesystemWindows::DirRemove(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
-			return FilesystemLinux::RemoveDirectory(Path);
+			return FilesystemLinux::DirRemove(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
 
 		#endif

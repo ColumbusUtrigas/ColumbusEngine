@@ -7,7 +7,6 @@
 #include <Graphics/Particles/ParticleEmitter.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/PostEffect.h>
-#include <System/Timer.h>
 #include <Scene/GameObject.h>
 
 #include <Graphics/ScreenQuad.h>

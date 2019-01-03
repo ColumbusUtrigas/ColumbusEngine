@@ -122,8 +122,6 @@ namespace Columbus
 		bool Exist = false;
 
 		Type ImageType;
-
-		char* FileName = "";
 	public:
 		enum class Type
 		{
@@ -136,7 +134,7 @@ namespace Columbus
 		Image();
 
 		bool Load(const char* InFilename, ImageLoading Flags = ImageLoading::None);
-		bool Save(const char* InFilename, ImageFormat Format, size_t Quality = 100) const;
+		bool Save(const char* InFilename, ImageFormat Format, uint32 Quality = 100) const;
 		bool IsExist() const;
 		void FreeData();
 
@@ -167,7 +165,6 @@ namespace Columbus
 
 		TextureFormat GetFormat() const;
 		uint8* GetData() const;
-		const char* GetFileName() const;
 
 		~Image();
 	};
