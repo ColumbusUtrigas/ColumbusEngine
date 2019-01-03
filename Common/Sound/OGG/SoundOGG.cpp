@@ -7,10 +7,10 @@
 namespace Columbus
 {
 
-	int16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoadOGG(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		int16* Ret;
-		OutSize = stb_vorbis_decode_filename(FileName.c_str(), (int*)&OutChannels, (int*)&OutFrequency, &Ret) * OutChannels * sizeof(uint16);
+		OutSize = stb_vorbis_decode_filename(FileName, (int*)&OutChannels, (int*)&OutFrequency, &Ret) * OutChannels * sizeof(uint16);
 		return Ret;
 	}
 
@@ -22,7 +22,7 @@ namespace Columbus
 
 	SoundDecoderOGG::SoundDecoderOGG() : Data(nullptr) {}
 
-	bool SoundDecoderOGG::IsOGG(std::string FileName)
+	bool SoundDecoderOGG::IsOGG(const char* FileName)
 	{
 		File OGGSoundFile(FileName, "rb");
 		if (!OGGSoundFile.IsOpened()) return false;
@@ -39,7 +39,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool SoundDecoderOGG::Load(std::string FileName)
+	bool SoundDecoderOGG::Load(const char* FileName)
 	{
 		Free();
 		Data = new StreamData;
@@ -47,7 +47,7 @@ namespace Columbus
 		Data->Alloc.alloc_buffer_length_in_bytes = 256 * 1024;
 		Data->Alloc.alloc_buffer = new char[Data->Alloc.alloc_buffer_length_in_bytes];
 
-		Data->Ogg = stb_vorbis_open_filename(FileName.c_str(), NULL, &Data->Alloc);
+		Data->Ogg = stb_vorbis_open_filename(FileName, NULL, &Data->Alloc);
 		stb_vorbis_info info = stb_vorbis_get_info(Data->Ogg);
 
 		this->Size = 0;

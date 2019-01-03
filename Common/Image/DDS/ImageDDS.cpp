@@ -1,7 +1,8 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/DDS/ImageDDS.h>
 #include <System/File.h>
-#include <Core/Core.h>
+#include <System/Log.h>
+#include <cstring>
 
 namespace Columbus
 {
@@ -237,12 +238,12 @@ namespace Columbus
 		if (OutImageType == ImageLoader::Type::ImageCube) DataSize *= 6;
 
 		uint8* Buffer = new uint8[DataSize];
-		std::copy(Data, Data + DataSize, Buffer);
+		memcpy(Buffer, Data, DataSize);
 
 		return Buffer;
 	}
 
-	bool ImageLoaderDDS::IsDDS(std::string FileName)
+	bool ImageLoaderDDS::IsDDS(const char* FileName)
 	{
 		File DDSImageFile(FileName, "rb");
 		if (!DDSImageFile.IsOpened()) return false;
@@ -251,7 +252,7 @@ namespace Columbus
 		DDSImageFile.ReadBytes(Magic, sizeof(Magic));
 		DDSImageFile.Close();
 
-		if (Memory::Memcmp(Magic, "DDS ", 4) == 0)
+		if (memcmp(Magic, "DDS ", 4) == 0)
 		{
 			return true;
 		}
@@ -259,7 +260,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool ImageLoaderDDS::Load(std::string FileName)
+	bool ImageLoaderDDS::Load(const char* FileName)
 	{
 		File DDSImageFile(FileName, "rb");
 		if (!DDSImageFile.IsOpened())

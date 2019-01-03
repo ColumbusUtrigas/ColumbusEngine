@@ -1,7 +1,11 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/TGA/ImageTGA.h>
 #include <Core/Memory.h>
+#include <System/Assert.h>
 #include <System/File.h>
+#include <algorithm>
+#include <utility>
+#include <cstring>
 
 namespace Columbus
 {
@@ -252,7 +256,7 @@ namespace Columbus
 		}
 	}
 
-	static uint8* ImageLoadTGA(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadTGA(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		File file(FileName, "rb");
 		if (!file.IsOpened()) return nullptr;
@@ -346,7 +350,8 @@ namespace Columbus
 					RGBCompressedTGA(buffer, data, tga.width * tga.height);
 				} else
 				{
-					RGBACompressedTGA(buffer, data, tga.width * tga.height);
+					// TODO
+					//RGBACompressedTGA(buffer, data, tga.width * tga.height);
 				}
 				break;
 			}
@@ -383,24 +388,25 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageLoaderTGA::IsTGA(std::string FileName)
+	bool ImageLoaderTGA::IsTGA(const char* FileName)
 	{
-		std::string ext = FileName.substr(FileName.size() - 4);
+		char ext[5] = { '\0' };
+		strncpy(ext, &FileName[strlen(FileName) - 4], 4);
 
-		if (ext == ".tga" || ext == ".vda" ||
-		    ext == ".icb" || ext == ".vst") return true;
+		if (strcmp(ext, ".tga") == 0 || strcmp(ext, ".vda") == 0 ||
+		    strcmp(ext, ".icb") == 0 || strcmp(ext, ".vst") == 0) return true;
 
 		return false;
 	}
 
-	bool ImageLoaderTGA::Load(std::string FileName)
+	bool ImageLoaderTGA::Load(const char* FileName)
 	{
 		uint64 Size;
 		Data = ImageLoadTGA(FileName, Width, Height, Size, Format);
 		return (Data != nullptr);
 	}
 
-	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		if (Data == nullptr) return false;
 

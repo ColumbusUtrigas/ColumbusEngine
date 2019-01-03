@@ -1,18 +1,16 @@
 #pragma once
 
-#include <string>
-
 namespace Columbus
 {
 	
 	struct Filesystem
 	{
-		static std::string GetCurrent();
-		static bool CreateFile(std::string Path);
-		static bool CreateDirectory(std::string Path);
-		static bool Rename(std::string Old, std::string New);
-		static bool RemoveFile(std::string Path);
-		static bool RemoveDirectory(std::string Path);
+		static const char* GetCurrent();
+		static bool CreateFile(const char* Path);
+		static bool CreateDirectory(const char* Path);
+		static bool Rename(const char* Old, const char* New);
+		static bool RemoveFile(const char* Path);
+		static bool RemoveDirectory(const char* Path);
 	};
 
 }

@@ -5,6 +5,7 @@
 #include <Scene/Component.h>
 #include <Math/Frustum.h>
 #include <GL/glew.h>
+#include <algorithm>
 
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 

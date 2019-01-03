@@ -8,14 +8,14 @@
 namespace Columbus
 {
 
-	static uint8* ImageLoadJPG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadJPG(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		struct jpeg_decompress_struct cinfo;
 
 		struct jpeg_error_mgr pub;
 		jmp_buf setjmp_buffer;
 
-		FILE* file = fopen(FileName.c_str(), "rb");
+		FILE* file = fopen(FileName, "rb");
 		JSAMPARRAY buffer;
 		size_t row_stride;
 
@@ -79,14 +79,14 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality)
+	bool ImageSaveJPG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality)
 	{
 		if (Data == nullptr) return false;
 
 		struct jpeg_compress_struct cinfo;
 		struct jpeg_error_mgr jerr;
 		
-		FILE* file = fopen(FileName.c_str(), "wb");
+		FILE* file = fopen(FileName, "wb");
 		if (file == nullptr) return false;
 
 		JSAMPROW row_pointer[1];
@@ -125,7 +125,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageLoaderJPG::IsJPG(std::string FileName)
+	bool ImageLoaderJPG::IsJPG(const char* FileName)
 	{
 		File JPGImageFile(FileName, "rb");
 		if (!JPGImageFile.IsOpened()) return false;
@@ -146,7 +146,7 @@ namespace Columbus
 		}
 	}
 
-	bool ImageLoaderJPG::Load(std::string FileName)
+	bool ImageLoaderJPG::Load(const char* FileName)
 	{
 		uint64 Size = 0;
 

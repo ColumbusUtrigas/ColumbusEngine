@@ -9,9 +9,9 @@ namespace Columbus
 	static bool IsSDLInitialized = false;
 
 	WindowOpenGLSDL::WindowOpenGLSDL() {}
-	WindowOpenGLSDL::WindowOpenGLSDL(const iVector2& InSize, const std::string& InTitle, Window::Flags F)
+	WindowOpenGLSDL::WindowOpenGLSDL(const iVector2& InSize, const char* Title, Window::Flags F)
 	{
-		Create(InSize, InTitle, F);
+		Create(InSize, Title, F);
 	}
 	
 	void WindowOpenGLSDL::InitializeSDL()
@@ -50,7 +50,7 @@ namespace Columbus
 		}
 	}
 	
-	void WindowOpenGLSDL::InitializeWindow(const iVector2& InSize, const std::string& InTitle, Window::Flags F)
+	void WindowOpenGLSDL::InitializeWindow(const iVector2& InSize, const char* Title, Window::Flags F)
 	{
 		int flags = SDL_WINDOW_OPENGL;
 		int pos = SDL_WINDOWPOS_CENTERED;
@@ -61,7 +61,7 @@ namespace Columbus
 		//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 		//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
-		Window = SDL_CreateWindow(InTitle.c_str(), pos, pos, InSize.X, InSize.Y, flags);
+		Window = SDL_CreateWindow(Title, pos, pos, InSize.X, InSize.Y, flags);
 		Context = SDL_GL_CreateContext(Window);
 	}
 	
@@ -129,14 +129,14 @@ namespace Columbus
 		Log::Initialization("GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	}
 	
-	bool WindowOpenGLSDL::Create(const iVector2& InSize, const std::string& InTitle, Window::Flags F)
+	bool WindowOpenGLSDL::Create(const iVector2& InSize, const char* Title, Window::Flags F)
 	{
 		if (!IsSDLInitialized)
 		{
 			InitializeSDL();
 		}
 
-		InitializeWindow(InSize, InTitle, F);
+		InitializeWindow(InSize, Title, F);
 
 		glewExperimental = GL_TRUE;
 

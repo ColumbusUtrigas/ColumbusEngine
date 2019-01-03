@@ -8,9 +8,9 @@ namespace Columbus
 	public:
 		ImageLoaderBMP() {}
 
-		static bool IsBMP(std::string FileName);
+		static bool IsBMP(const char* FileName);
 
-		virtual bool Load(std::string FileName) override;
+		virtual bool Load(const char* FileName) override;
 
 		virtual ~ImageLoaderBMP() override {}
 	};

@@ -18,6 +18,7 @@
 #include <Graphics/Particles/SubUV/ParticleModuleSubUV.h>
 
 #include <System/Serializer.h>
+#include <System/Log.h>
 
 namespace Columbus
 {

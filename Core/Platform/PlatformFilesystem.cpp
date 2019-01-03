@@ -1,8 +1,9 @@
 #include <Core/Platform/Platform.h>
 #include <Core/Platform/PlatformFilesystem.h>
+#include <cstdio>
 
 #if defined(COLUMBUS_PLATFORM_WINDOWS)
-	//#include <Core/Windows/PlatformWindowsFilesystem.h>
+	#include <Core/Windows/PlatformWindowsFilesystem.h>
 #elif defined(COLUMBUS_PLATFORM_LINUX)
 	#include <Core/Linux/PlatformLinuxFilesystem.h>
 #elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -12,10 +13,10 @@
 namespace Columbus
 {
 
-	std::string Filesystem::GetCurrent()
+	const char* Filesystem::GetCurrent()
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			//return FilesystemWindows::GetCurrent();
+			return FilesystemWindows::GetCurrent();
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::GetCurrent();
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -25,23 +26,18 @@ namespace Columbus
 		return "";
 	}
 
-	bool Filesystem::CreateFile(std::string Path)
+	bool Filesystem::CreateFile(const char* Path)
 	{
-		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			//return FilesystemWindows::CreateFile(Path);
-		#elif defined(COLUMBUS_PLATFORM_LINUX)
-			return FilesystemLinux::CreateFile(Path);
-		#elif defined(COLUMBUS_PLATFORM_APPLE)
-
-		#endif
-
-		return false;
+		FILE* File = fopen(Path, "w");
+		bool Result = File != nullptr;
+		if (File != nullptr) fclose(File);
+		return Result;
 	}
 
-	bool Filesystem::CreateDirectory(std::string Path)
+	bool Filesystem::CreateDirectory(const char* Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			//return FilesystemWindows::CreateDirectory(Path);
+			return FilesystemWindows::DirCreate(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::CreateDirectory(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)
@@ -51,36 +47,20 @@ namespace Columbus
 		return false;
 	}
 
-	bool Filesystem::Rename(std::string Old, std::string New)
+	bool Filesystem::Rename(const char* Old, const char* New)
 	{
-		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			//return FilesystemWindows::Rename(Old, New);
-		#elif defined(COLUMBUS_PLATFORM_LINUX)
-			return FilesystemLinux::Rename(Old, New);
-		#elif defined(COLUMBUS_PLATFORM_APPLE)
-
-		#endif
-
-		return false;
+		return rename(Old, New) == 0;
 	}
 
-	bool Filesystem::RemoveFile(std::string Path)
+	bool Filesystem::RemoveFile(const char* Path)
 	{
-		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			//return FilesystemWindows::RemoveFile(Path);
-		#elif defined(COLUMBUS_PLATFORM_LINUX)
-			return FilesystemLinux::RemoveFile(Path);
-		#elif defined(COLUMBUS_PLATFORM_APPLE)
-
-		#endif
-
-		return false;
+		return remove(Path) == 0;
 	}
 
-	bool Filesystem::RemoveDirectory(std::string Path)
+	bool Filesystem::RemoveDirectory(const char* Path)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
-			//return FilesystemWindows::RemoveDirectory(Path);
+			return FilesystemWindows::DirRemove(Path);
 		#elif defined(COLUMBUS_PLATFORM_LINUX)
 			return FilesystemLinux::RemoveDirectory(Path);
 		#elif defined(COLUMBUS_PLATFORM_APPLE)

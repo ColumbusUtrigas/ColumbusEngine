@@ -53,8 +53,6 @@ namespace Columbus
 			if (mesh != nullptr)
 			{
 				mesh->SetLights(mLights);
-
-				if (mCamera != nullptr) mesh->SetCamera(*mCamera);
 			}
 		}
 	}
@@ -253,7 +251,7 @@ namespace Columbus
 			{
 				if (LightPath != "None")
 				{
-					CLight = new ComponentLight(new Light(LightPath, Position));
+					CLight = new ComponentLight(new Light(LightPath.c_str(), Position));
 				}
 			}
 		}
@@ -596,7 +594,7 @@ namespace Columbus
 		{
 			Image ReflImage;
 
-			if (ReflImage.Load(path))
+			if (ReflImage.Load(path.c_str()))
 			{
 				Texture* Refl = gDevice->CreateTexture();
 				Refl->CreateCube(Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
@@ -616,7 +614,7 @@ namespace Columbus
 				{
 					Image Img;
 
-					if (Img.Load(path))
+					if (Img.Load(path.c_str()))
 					{
 						auto Tex = gDevice->CreateTexture();
 						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, Img.GetFormat()));
@@ -653,7 +651,7 @@ namespace Columbus
 				{
 					Model M;
 
-					if (M.Load(path))
+					if (M.Load(path.c_str()))
 					{
 						Mesh* tMesh = gDevice->CreateMesh();
 
@@ -684,7 +682,7 @@ namespace Columbus
 				{
 					Sound* tSound = new Sound();
 
-					if (tSound->Load(path, streaming))
+					if (tSound->Load(path.c_str(), streaming))
 					{
 						Sounds.insert(std::make_pair(i, SmartPointer<Sound>(tSound)));
 						Log::Success("Sound loaded: %s", path.c_str());

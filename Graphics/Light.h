@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Math/Vector2.h>
 #include <Math/Vector3.h>
-#include <Math/Vector4.h>
 
 namespace Columbus
 {
@@ -26,12 +24,12 @@ namespace Columbus
 	public:
 		Light();
 		Light(int Type, const Vector3& Pos = Vector3(0, 0, 0));
-		Light(const std::string& File, const Vector3& Pos = Vector3(0, 0, 0));
+		Light(const char* File, const Vector3& Pos = Vector3(0, 0, 0));
 
-		bool SaveToXML(const std::string& File) const;
-		bool LoadFromXML(const std::string& File);
+		bool SaveToXML(const char* File) const;
+		bool LoadFromXML(const char* File);
 
-		bool Load(const std::string& File);
+		bool Load(const char* File);
 		
 		~Light();
 	};

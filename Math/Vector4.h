@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <algorithm>
 #include <Core/Random.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
@@ -28,12 +26,7 @@ namespace Columbus
 
 		Vector4_t() {}
 		Vector4_t(const Vector4_t& Base) : X(Base.X), Y(Base.Y), Z(Base.Z), W(Base.W) {}
-		Vector4_t(Vector4_t&& Base) :
-			X(std::move(Base.X)),
-			Y(std::move(Base.Y)),
-			Z(std::move(Base.Z)),
-			W(std::move(Base.W)) {}
-
+		Vector4_t(Vector4_t&& Base) : X(Base.X), Y(Base.Y), Z(Base.Z), W(Base.W) {}
 		Vector4_t(const Type& Scalar) : X(Scalar), Y(Scalar), Z(Scalar), W(Scalar) {}
 		Vector4_t(const Type& InX, const Type& InY, const Type& InZ, const Type& InW) : X(InX), Y(InY), Z(InZ), W(InW) {}
 		Vector4_t(const Vector2_t<Type>& A, const Type& B, const Type& C) : X(A.X), Y(A.Y), Z(B), W(C) {}
@@ -396,10 +389,10 @@ namespace Columbus
 
 		Vector4_t& operator=(Vector4_t&& Other)
 		{
-			X = std::move(Other.X);
-			Y = std::move(Other.Y);
-			Z = std::move(Other.Z);
-			W = std::move(Other.W);
+			X = Other.X;
+			Y = Other.Y;
+			Z = Other.Z;
+			W = Other.W;
 			return *this;
 		}
 

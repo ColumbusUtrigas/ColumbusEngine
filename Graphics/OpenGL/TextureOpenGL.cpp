@@ -378,7 +378,7 @@ namespace Columbus
 		return Success;
 	}
 
-	bool TextureOpenGL::Load(std::string File)
+	bool TextureOpenGL::Load(const char* File)
 	{
 		if (!mImage.Load(File))
 		{

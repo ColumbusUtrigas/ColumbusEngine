@@ -95,6 +95,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -110,6 +112,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -127,6 +131,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -146,6 +152,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -190,6 +198,7 @@
     <ClInclude Include="Core\SmartPointer.h" />
     <ClInclude Include="Core\Types.h" />
     <ClInclude Include="Core\Windows\PlatformWindowsClipboard.h" />
+    <ClInclude Include="Core\Windows\PlatformWindowsFilesystem.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\Camera.h" />
@@ -293,7 +302,6 @@
     <ClCompile Include="Common\Image\TIF\ImageTIF.cpp" />
     <ClCompile Include="Common\Model\CMF\ModelCMF.cpp" />
     <ClCompile Include="Common\Model\Model.cpp" />
-    <ClCompile Include="Common\Model\Old ModelCMF.cpp" />
     <ClCompile Include="Common\Sound\MP3\SoundMP3.cpp" />
     <ClCompile Include="Common\Sound\OGG\SoundOGG.cpp" />
     <ClCompile Include="Common\Sound\Sound.cpp" />
@@ -301,6 +309,7 @@
     <ClCompile Include="Core\Platform\PlatformClipboard.cpp" />
     <ClCompile Include="Core\Platform\PlatformFilesystem.cpp" />
     <ClCompile Include="Core\Windows\PlatformWindowsClipboard.cpp" />
+    <ClCompile Include="Core\Windows\PlatformWindowsFilesystem.cpp" />
     <ClCompile Include="Graphics\Camera.cpp" />
     <ClCompile Include="Graphics\Device.cpp" />
     <ClCompile Include="Graphics\Light.cpp" />
@@ -318,7 +327,6 @@
     <ClCompile Include="Graphics\Render.cpp" />
     <ClCompile Include="Graphics\ShaderBuilder.cpp" />
     <ClCompile Include="Graphics\Skybox.cpp" />
-    <ClCompile Include="Graphics\Texture.cpp" />
     <ClCompile Include="GUI\Button.cpp" />
     <ClCompile Include="Input\Input.cpp" />
     <ClCompile Include="Lib\TinyXML2\tinyxml2.cpp" />

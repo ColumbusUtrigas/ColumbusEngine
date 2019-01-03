@@ -1,5 +1,8 @@
 #include <System/File.h>
 #include <Core/Platform/Platform.h>
+#include <System/Assert.h>
+#include <utility>
+#include <cstring>
 
 #if (defined(COLUMBUS_PLATFORM_LINUX) || defined(COLUMBUS_PLATFORM_APPLE))
 	_FILE_OFFSET_BITS = 64
@@ -24,10 +27,10 @@ namespace Columbus
 
 		Other.Handle = nullptr;
 		Other.FileSize = 0;
-		Other.FileName.clear();
+		Other.FileName = "";
 	}
 
-	File::File(const std::string& File, const std::string& Modes)
+	File::File(const char* File, const char* Modes)
 	{
 		Open(File, Modes);
 	}
@@ -49,18 +52,18 @@ namespace Columbus
 		return *this;
 	}
 
-	File& File::operator<<(const std::string& String)
+	File& File::operator<<(const char* String)
 	{
-		WriteBytes(String.c_str(), String.size());
+		WriteBytes(String, strlen(String));
 		return *this;
 	}
 
-	bool File::Open(const std::string& File, const std::string& Modes)
+	bool File::Open(const char* File, const char* Modes)
 	{
-		Handle = fopen(File.c_str(), Modes.c_str());
+		Handle = fopen(File, Modes);
 		if (Handle != nullptr)
 		{
-			FileName = File;
+			FileName = (char*)File;
 
 			FSeek64(Handle, 0, SEEK_END);
 			FileSize = FTell64(Handle);
@@ -82,11 +85,11 @@ namespace Columbus
 			Handle = nullptr;
 		}
 		
-		FileName.clear();
+		FileName = "";
 		return ret;
 	}
 
-	std::string File::GetName() const
+	const char* File::GetName() const
 	{
 		return FileName;
 	}

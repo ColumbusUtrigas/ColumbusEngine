@@ -12,7 +12,7 @@
 namespace Columbus
 {
 
-	void Clipboard::SetClipboard(std::string Text)
+	void Clipboard::SetClipboard(const char* Text)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
 			ClipboardWindows::SetClipboard(Text);
@@ -23,7 +23,7 @@ namespace Columbus
 		#endif
 	}
 
-	void Clipboard::GetClipboard(std::string& Text)
+	void Clipboard::GetClipboard(char*& Text)
 	{
 		#if defined(COLUMBUS_PLATFORM_WINDOWS)
 			ClipboardWindows::GetClipboard(Text);

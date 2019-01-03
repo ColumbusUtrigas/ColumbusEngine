@@ -2,7 +2,6 @@
 
 #include <Math/Vector2.h>
 #include <Common/Cursor/Cursor.h>
-#include <SDL.h>
 
 namespace Columbus
 {
