@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Core/Types.h>
-#include <string>
 
 namespace Columbus
 {
@@ -83,22 +82,20 @@ namespace Columbus
 	public:
 		ImageLoader() {}
 
-		virtual bool Load(std::string FileName) { return false; }
+		virtual bool Load(const char* FileName) { return false; }
 
 		virtual ~ImageLoader() {}
 	};
 
-	ImageFormat ImageGetFormat(std::string FileName);
+	ImageFormat ImageGetFormat(const char* FileName);
 	uint32 GetBPPFromFormat(TextureFormat Format);
 	uint32 GetBlockSizeFromFormat(TextureFormat Format);
 
-	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
-
-	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality = 100);
+	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSavePNG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTIF(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveJPG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
 
 	bool ImageBGR2RGB(uint8* Data, uint64 Size);
 	bool ImageBGRA2RGBA(uint8* Data, uint64 Size);
@@ -126,7 +123,7 @@ namespace Columbus
 
 		Type ImageType;
 
-		std::string FileName;
+		char* FileName = "";
 	public:
 		enum class Type
 		{
@@ -138,8 +135,8 @@ namespace Columbus
 	public:
 		Image();
 
-		bool Load(std::string InFilename, ImageLoading Flags = ImageLoading::None);
-		bool Save(std::string InFilename, ImageFormat Format, size_t Quality = 100) const;
+		bool Load(const char* InFilename, ImageLoading Flags = ImageLoading::None);
+		bool Save(const char* InFilename, ImageFormat Format, size_t Quality = 100) const;
 		bool IsExist() const;
 		void FreeData();
 
@@ -170,7 +167,7 @@ namespace Columbus
 
 		TextureFormat GetFormat() const;
 		uint8* GetData() const;
-		std::string GetFileName() const;
+		const char* GetFileName() const;
 
 		~Image();
 	};

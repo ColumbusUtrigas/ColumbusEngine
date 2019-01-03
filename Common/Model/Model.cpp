@@ -6,7 +6,7 @@ namespace Columbus
 
 	Model::Model() {}
 
-	bool Model::Load(const std::string& File)
+	bool Model::Load(const char* File)
 	{
 		FreeData();
 
@@ -23,17 +23,17 @@ namespace Columbus
 			}
 
 			Exist         = true;
-			Indexed       = std::move(Loader->Indexed);
-			VerticesCount = std::move(Loader->VerticesCount);
-			IndicesCount  = std::move(Loader->IndicesCount);
+			Indexed       = Loader->Indexed;
+			VerticesCount = Loader->VerticesCount;
+			IndicesCount  = Loader->IndicesCount;
 
-			Positions = std::move(Loader->Positions);
-			UVs       = std::move(Loader->UVs);
-			Normals   = std::move(Loader->Normals);
-			Tangents  = std::move(Loader->Tangents);
-			Indices   = std::move(Loader->Indices);
+			Positions = Loader->Positions;
+			UVs       = Loader->UVs;
+			Normals   = Loader->Normals;
+			Tangents  = Loader->Tangents;
+			Indices   = Loader->Indices;
 
-			BoundingBox = std::move(Loader->BoundingBox);
+			BoundingBox = Loader->BoundingBox;
 
 			if (Positions != nullptr && UVs != nullptr && Normals != nullptr && Tangents == nullptr)
 			{

@@ -1,4 +1,5 @@
 #include <Input/Input.h>
+#include <SDL.h>
 
 namespace Columbus
 {
@@ -23,11 +24,10 @@ namespace Columbus
 
 		Uint32 RMask, GMask, BMask, AMask;
 		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-			int Shift = 0;
-			RMask = 0xFF000000 >> Shift;
-			GMask = 0x00FF0000 >> Shift;
-			BMask = 0x0000FF00 >> Shift;
-			AMask = 0x000000FF >> Shift;
+			RMask = 0xFF000000;
+			GMask = 0x00FF0000;
+			BMask = 0x0000FF00;
+			AMask = 0x000000FF;
 		#else
 			RMask = 0x000000FF;
 			GMask = 0x0000FF00;
@@ -119,10 +119,10 @@ namespace Columbus
 	{
 		SDL_PumpEvents();
 
-		std::transform(KeyboardState, KeyboardState + KeysNum, Keys, [](uint8& A) -> bool { return A != 0; });
-		std::fill(KeysDown, KeysDown + 256, false);
-		std::fill(KeysUp, KeysUp + 256, false);
-		std::fill(Buttons, Buttons + 8, Input::MouseButton { false, 0, 0, 0 });
+		for (int i = 0; i < KeysNum; i++) Keys[i] = KeyboardState[i] != 0;
+		memset(KeysDown, 0, sizeof(KeysDown));
+		memset(KeysUp, 0, sizeof(KeysUp));
+		memset(Buttons, 0, sizeof(Buttons));
 
 		PreviousMousePosition = CurrentMousePosition;
 		Wheel = { 0, 0 };

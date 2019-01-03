@@ -4,7 +4,6 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Math/Box.h>
-#include <vector>
 
 namespace Columbus
 {
@@ -17,14 +16,6 @@ namespace Columbus
 		Vector3 tangent;
 		Vector3 bitangent;
 	};
-
-	bool ModelIsCMF(std::string FileName);
-	bool ModelIsCMFMemory(uint8* FileData, uint64 FileSize);
-
-	uint32 ModelLoadCMF(std::string FileName, std::vector<Vertex>& OutVertices);
-	uint32 ModelLoadCMFFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices);
-
-	void ModelConvertCMFToCompressed(std::string SourceFileName, std::string DestinyFileName);
 
 	class ModelLoader
 	{
@@ -44,7 +35,7 @@ namespace Columbus
 	public:
 		ModelLoader() {}
 
-		virtual bool Load(const std::string& File) { return false; }
+		virtual bool Load(const char* File) { return false; }
 
 		~ModelLoader() {}
 	};
@@ -70,7 +61,7 @@ namespace Columbus
 	public:
 		Model();
 
-		bool Load(const std::string& File);
+		bool Load(const char* File);
 		void FreeData();
 
 		bool IsIndexed() const { return Indexed; }

@@ -63,13 +63,13 @@ namespace Columbus
 		return true;
 	}
 
-	static uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadBMP(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
 		File BMPImageFile(FileName, "rb");
 		if (!BMPImageFile.IsOpened()) return nullptr;
 		BMPImageFile.Close();
 
-		SDL_Surface* Surf = SDL_LoadBMP(FileName.c_str());
+		SDL_Surface* Surf = SDL_LoadBMP(FileName);
 		OutWidth = Surf->w;
 		OutHeight = Surf->h;
 		OutSize = OutWidth * OutHeight * Surf->format->BytesPerPixel;
@@ -127,7 +127,7 @@ namespace Columbus
 		return data;*/
 	}
 
-	bool ImageLoaderBMP::IsBMP(std::string FileName)
+	bool ImageLoaderBMP::IsBMP(const char* FileName)
 	{
 		File BMPImageFile(FileName, "rb");
 		if (!BMPImageFile.IsOpened()) return false;
@@ -144,7 +144,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool ImageLoaderBMP::Load(std::string FileName)
+	bool ImageLoaderBMP::Load(const char* FileName)
 	{
 		uint64 Size = 0;
 
@@ -153,7 +153,7 @@ namespace Columbus
 		return (Data != nullptr);
 	}
 
-	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		if (Data == nullptr) return false;
 

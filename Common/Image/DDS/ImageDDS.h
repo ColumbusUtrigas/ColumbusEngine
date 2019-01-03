@@ -8,9 +8,9 @@ namespace Columbus
 	public:
 		ImageLoaderDDS() {}
 
-		static bool IsDDS(std::string FileName);
+		static bool IsDDS(const char* FileName);
 
-		virtual bool Load(std::string FileName) override;
+		virtual bool Load(const char* FileName) override;
 
 		virtual ~ImageLoaderDDS() override {}
 	};

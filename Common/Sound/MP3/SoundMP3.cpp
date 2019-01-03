@@ -5,12 +5,10 @@
 #include <minimp3.h>
 #include <vector>
 
-#include <System/Timer.h>
-
 namespace Columbus
 {
 
-	bool SoundIsMP3(std::string FileName)
+	bool SoundIsMP3(const char* FileName)
 	{
 		File MP3SoundFile(FileName, "rb");
 		if (!MP3SoundFile.IsOpened()) return false;
@@ -31,7 +29,7 @@ namespace Columbus
 		return false;
 	}
 
-	int16* SoundLoadMP3(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoadMP3(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		File MP3SoundFile(FileName, "rb");
 		if (!MP3SoundFile.IsOpened()) return nullptr;
@@ -59,8 +57,6 @@ namespace Columbus
 
 		uint64 TotalSamples = 0;
 		uint64 Offset = 0;
-
-		Timer t;
 
 		do
 		{

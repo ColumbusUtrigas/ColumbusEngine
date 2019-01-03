@@ -1,10 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <string>
-#include <algorithm>
 
-#include <Graphics/Camera.h>
 #include <Graphics/Light.h>
 #include <Common/Model/Model.h>
 #include <Math/Box.h>
@@ -16,7 +13,6 @@ namespace Columbus
 	{
 	protected:
 		Vector3 Position;
-		Camera ObjectCamera;
 		Box BoundingBox;
 
 		uint32 VerticesCount;
@@ -33,12 +29,9 @@ namespace Columbus
 		virtual void Unbind() {}
 		virtual uint64 GetMemoryUsage() const { return 0;  }
 
-		void SetCamera(Camera InCamera) { ObjectCamera = InCamera; }
-
 		void SetLights(const std::vector<Light*>& InLights) { Lights = InLights; }
 
 		Box GetBoundingBox() const { return BoundingBox; }
-		Camera& GetCamera() { return ObjectCamera; }
 
 		void Clear() {}
 

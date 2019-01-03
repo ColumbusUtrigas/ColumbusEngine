@@ -32,14 +32,12 @@ namespace Columbus
 		Timer RedrawTimer;
 		Timer FPSTimer;
 
-		std::string Title;
-
 		iVector2 Size = iVector2(640, 480);
 	public:
 		Window() {}
-		Window(const iVector2& InSize, const std::string& InTitle, Flags F) {}
+		Window(const iVector2& InSize, const char* Title, Flags F) {}
 
-		virtual bool Create(const iVector2& InSize, const std::string& InTitle, Flags F) = 0;
+		virtual bool Create(const iVector2& InSize, const char* Title, Flags F) = 0;
 		virtual void Close() { Open = false; }
 
 		virtual void Update() = 0;

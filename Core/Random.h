@@ -1,24 +1,22 @@
 #pragma once
 
-#include <random>
+#include <cstdlib>
 #include <ctime>
 
 namespace Columbus
 {
-	namespace
-	{
-		std::mt19937 Rnd(static_cast<unsigned int>(time(NULL)));
-	}
 
 	struct Random
 	{
+		Random() { srand((unsigned int)time(NULL)); }
+
 		template <typename Type>
 		static Type Range(const Type Min, const Type Max)
 		{
-			std::uniform_real_distribution<Type> Generator(Min, Max);
-
-			return Generator(Rnd);
+			return (Type)((double)rand() / RAND_MAX * (Max - Min) + Min);
 		}
 	};
+
+	static Random Rnd;
 
 }

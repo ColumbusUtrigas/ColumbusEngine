@@ -9,7 +9,7 @@ namespace Columbus
 {
 
 	#define FOURCC(str) uint32(((uint8*)(str))[0] | (((uint8*)(str))[1] << 8) | (((uint8*)(str))[2] << 16) | (((uint8*)(str))[3] << 24))
-	static int64 GetWAVFormat(std::string FileName, uint64& OutSize, uint16& OutFormat, uint16& OutChannels, uint32& OutFreq, uint16& OutBlock)
+	static int64 GetWAVFormat(const char* FileName, uint64& OutSize, uint16& OutFormat, uint16& OutChannels, uint32& OutFreq, uint16& OutBlock)
 	{
 		File WAVSoundFile(FileName, "rb");
 		if (!WAVSoundFile.IsOpened()) return -1;
@@ -89,7 +89,7 @@ namespace Columbus
 		return nullptr;
 	}
 
-	int16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoadWAV(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		uint64 Size;
 		uint16 Format;
@@ -179,7 +179,7 @@ namespace Columbus
 
 	SoundDecoderPCM::SoundDecoderPCM() { }
 
-	bool SoundDecoderPCM::IsWAV(std::string FileName)
+	bool SoundDecoderPCM::IsWAV(const char* FileName)
 	{
 		uint64 Size;
 		uint16 Format;
@@ -195,7 +195,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool SoundDecoderPCM::Load(std::string FileName)
+	bool SoundDecoderPCM::Load(const char* FileName)
 	{
 		Free();
 
@@ -282,7 +282,7 @@ namespace Columbus
 
 	SoundDecoderADPCM::SoundDecoderADPCM() { }
 
-	bool SoundDecoderADPCM::IsWAV(std::string FileName)
+	bool SoundDecoderADPCM::IsWAV(const char* FileName)
 	{
 		uint64 Size;
 		uint16 Format;
@@ -298,7 +298,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool SoundDecoderADPCM::Load(std::string FileName)
+	bool SoundDecoderADPCM::Load(const char* FileName)
 	{
 		Free();
 
@@ -353,7 +353,7 @@ namespace Columbus
 		Sample  = Math::Clamp(Sample, -32768, 32767);
 		Sample2 = Sample1;
 		Sample1 = Sample;
-		InitialDelta   = Math::Max(Table[Nibble] * InitialDelta / 256, 16);
+		InitialDelta = Math::Max(Table[Nibble] * InitialDelta / 256, 16);
 
 		return Sample;
 	}

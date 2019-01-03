@@ -7,9 +7,9 @@
 namespace Columbus
 {
 
-	static uint8* ImageLoadPNG(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadPNG(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
-		FILE* fp = fopen(FileName.c_str(), "rb");
+		FILE* fp = fopen(FileName, "rb");
 		if (fp == nullptr) return nullptr;
 
 		png_structp png_ptr;
@@ -69,9 +69,9 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSavePNG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
-		FILE* fp = fopen(FileName.c_str(), "wb");
+		FILE* fp = fopen(FileName, "wb");
 		if (fp == nullptr) return false;
 
 		png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -128,7 +128,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageLoaderPNG::IsPNG(std::string FileName)
+	bool ImageLoaderPNG::IsPNG(const char* FileName)
 	{
 		File PNGImageFile(FileName, "rb");
 		if (!PNGImageFile.IsOpened()) return false;
@@ -149,7 +149,7 @@ namespace Columbus
 		}
 	}
 
-	bool ImageLoaderPNG::Load(std::string FileName)
+	bool ImageLoaderPNG::Load(const char* FileName)
 	{
 		uint64 Size = 0;
 

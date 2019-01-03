@@ -10,6 +10,45 @@ namespace Columbus
 	class String
 	{
 	private:
+		char* Data = nullptr;
+		uint32 Len = 0;
+	public:
+		String() {}
+		String(const char* Str) { operator=(Str); }
+
+		String& operator=(const char* Str)
+		{
+			Clear();
+			Len = strlen(Str);
+			Data = new char[Len + 1];
+			memcpy(Data, Str, Len + 1);
+			return *this;
+		}
+
+		const char* operator*() const
+		{
+			return Data != nullptr ? Data : "";
+		}
+
+		void Clear()
+		{
+			delete[] Data; Data = nullptr; Len = 0;
+		}
+
+		uint32 Length() const
+		{
+			return Len;
+		}
+
+		~String()
+		{
+			Clear();
+		}
+	};
+
+	/*class String
+	{
+	private:
 		Array<char> Data;
 	public:
 		inline String() { };
@@ -21,7 +60,7 @@ namespace Columbus
 
 		inline String(String&& Base) noexcept
 		{
-			Data = std::move(Base.Data);
+			Data = Base.Data;
 		};
 		
 		inline String(const char* InData)
@@ -40,16 +79,12 @@ namespace Columbus
 		{
 			Append(First, Last);
 		}
-		/*
-		* Return length of string
-		*/
+
 		inline uint32 Length() const
 		{
 			return Data.GetCount() - 1;
 		}
-		/*
-		* Extend string by appending additional characters
-		*/
+		
 		inline String& Append(const String& InString)
 		{
 			if (Data.Last() == '\0')
@@ -132,9 +167,7 @@ namespace Columbus
 		{
 			Data.Clear();
 		}
-		/*
-		* Return C-string
-		*/
+		
 		inline const char* operator*() const
 		{
 			return Data.GetData();
@@ -148,7 +181,7 @@ namespace Columbus
 
 		inline String& operator=(String&& Other)
 		{
-			Data = std::move(Other.Data);
+			Data = Other.Data;
 			return *this;
 		}
 
@@ -205,39 +238,10 @@ namespace Columbus
 		{
 			return Append(Character);
 		}
-		/*
-		* For std::cout and std::fstream
-		*/
-		inline friend std::ostream& operator<<(std::ostream& Stream, const String& InString)
-		{
-			Stream << *InString;
-			return Stream;
-		}
-		
-		inline friend std::ostream& operator<<(std::ostream& Stream, String&& InString)
-		{
-			Stream << *InString;
-			return Stream;
-		}
 
 		inline ~String() { }
-	};
+	};*/
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

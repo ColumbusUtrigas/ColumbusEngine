@@ -8,9 +8,9 @@
 namespace Columbus
 {
 
-	static uint8* ImageLoadTIF(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	static uint8* ImageLoadTIF(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
-		TIFF* tif = TIFFOpen(FileName.c_str(), "r");
+		TIFF* tif = TIFFOpen(FileName, "r");
 		if (tif == nullptr) return nullptr;
 
 		unsigned int width = 0;
@@ -55,11 +55,11 @@ namespace Columbus
 		return data;
 	}
 	
-	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveTIF(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		if (Data == nullptr) return false;
 
-		TIFF* tif = TIFFOpen(FileName.c_str(), "w");
+		TIFF* tif = TIFFOpen(FileName, "w");
 		if (tif == nullptr) return false;
 
 		uint32 BPP = GetBPPFromFormat(Format);
@@ -96,7 +96,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ImageLoaderTIF::IsTIF(std::string FileName)
+	bool ImageLoaderTIF::IsTIF(const char* FileName)
 	{
 		File TIFImageFile(FileName, "rb");
 		if (!TIFImageFile.IsOpened()) return false;
@@ -123,7 +123,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool ImageLoaderTIF::Load(std::string FileName)
+	bool ImageLoaderTIF::Load(const char* FileName)
 	{
 		uint64 Size = 0;
 

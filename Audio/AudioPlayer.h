@@ -5,6 +5,7 @@
 #include <System/Log.h>
 #include <System/Assert.h>
 #include <SDL.h>
+#include <cstdio>
 
 namespace Columbus
 {

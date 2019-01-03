@@ -3,7 +3,8 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <System/Assert.h>
-#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 namespace Columbus
 {

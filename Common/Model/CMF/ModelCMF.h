@@ -9,9 +9,9 @@ namespace Columbus
 	{
 	public:
 		ModelLoaderCMF();
-		virtual bool Load(const std::string& FileName) final override;
+		virtual bool Load(const char* FileName) final override;
 
-		static bool IsCMF(const std::string& FileName);
+		static bool IsCMF(const char* FileName);
 
 		~ModelLoaderCMF();
 	};

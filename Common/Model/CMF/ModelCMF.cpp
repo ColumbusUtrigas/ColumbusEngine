@@ -14,7 +14,7 @@ namespace Columbus
 
 	ModelLoaderCMF::ModelLoaderCMF() {}
 
-	bool ModelLoaderCMF::Load(const std::string& FileName)
+	bool ModelLoaderCMF::Load(const char* FileName)
 	{
 		File Model(FileName, "rb");
 		if (!Model.IsOpened()) return false;
@@ -70,7 +70,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool ModelLoaderCMF::IsCMF(const std::string& FileName)
+	bool ModelLoaderCMF::IsCMF(const char* FileName)
 	{
 		File Model(FileName, "rb");
 		if (!Model.IsOpened()) return false;

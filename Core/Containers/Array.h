@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Core/Memory.h>
-#include <Math/MathUtil.h>
 
 namespace Columbus
 {
@@ -118,7 +117,7 @@ namespace Columbus
 			if (ArrayCount >= ArrayMax)
 			{
 				T* TmpPtr = (T*)Memory::Malloc(ArrayMax * 2 * sizeof(T));
-				std::copy(Ptr, Ptr + GetCount(), TmpPtr);
+				memcpy(TmpPtr, Ptr, GetCount() * sizeof(T));
 				Memory::Free(Ptr);
 				Ptr = TmpPtr;
 				ArrayMax *= 2;

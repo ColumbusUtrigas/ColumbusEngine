@@ -1,6 +1,6 @@
 #pragma once
 
-#include <chrono>
+#include <SDL.h>
 
 namespace Columbus
 {
@@ -8,20 +8,19 @@ namespace Columbus
 	class Timer
 	{
 	private:
-		std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
+		Uint64 Frequency, Start;
 	public:
-		Timer() {}
+		Timer() : Frequency(SDL_GetPerformanceFrequency()) {}
 		
 		void Reset()
 		{
-			Start = std::chrono::steady_clock::now();
+			Start = SDL_GetPerformanceCounter();
 		}
 
 		double Elapsed()
 		{
-			auto End = std::chrono::steady_clock::now();
-			auto Time = End - Start;
-			return double(Time.count()) * std::chrono::steady_clock::period::num / std::chrono::steady_clock::period::den;
+			Uint64 End = SDL_GetPerformanceCounter();
+			return (double)(End - Start) / Frequency;
 		}
 		
 		~Timer() {}

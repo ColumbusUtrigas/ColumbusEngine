@@ -1,20 +1,9 @@
 #pragma once
 
 #include <Common/Image/Image.h>
-#include <Math/Vector2.h>
 
 namespace Columbus
 {
-
-	struct TextureConfig
-	{
-		bool smooth = true;
-		bool mipmaps = true;
-		unsigned int anisotropy = 8;
-		unsigned int LOD = 0;
-		Vector2 tiling = Vector2(1, 1);
-		Vector2 tilingOffset = Vector2(0, 0);
-	};
 
 	class Texture
 	{
@@ -28,9 +17,7 @@ namespace Columbus
 	protected:
 		Image mImage;
 
-		std::string mFile;
-
-		TextureConfig mConfig;
+		char* mFile = "";
 
 		uint32 Width;
 		uint32 Height;
@@ -103,7 +90,7 @@ namespace Columbus
 
 		virtual bool Load(const void* Data, Properties Props) = 0;
 		virtual bool Load(Image& InImage) = 0;
-		virtual bool Load(std::string File) = 0;
+		virtual bool Load(const char* File) = 0;
 
 		virtual void Clear() = 0;
 
@@ -114,18 +101,14 @@ namespace Columbus
 
 		virtual void SetMipmapLevel(uint32 Level) = 0;
 		uint32 GetMipmapLevel() const { return MipmapLevel; }
-
-		TextureConfig GetConfig() const;
-
-		bool save(std::string aFile, size_t aQuality = 100);
 		
-		virtual void bind();
-		virtual void unbind();
+		virtual void bind() = 0;
+		virtual void unbind() = 0;
 
-		virtual void sampler2D(int a);
-		virtual void generateMipmap();
+		virtual void sampler2D(int a) = 0;
+		virtual void generateMipmap() = 0;
 		
-		virtual ~Texture();
+		virtual ~Texture() {}
 	protected:
 		Flags TextureFlags;
 	};

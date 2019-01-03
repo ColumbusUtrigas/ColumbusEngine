@@ -3,7 +3,6 @@
 #include <Graphics/Texture.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
-#include <Graphics/OpenGL/ShaderOpenGL.h>
 
 namespace Columbus
 {

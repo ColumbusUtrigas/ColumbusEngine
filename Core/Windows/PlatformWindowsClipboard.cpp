@@ -5,11 +5,11 @@
 namespace Columbus
 {
 
-	void ClipboardWindows::SetClipboard(std::string Text)
+	void ClipboardWindows::SetClipboard(const char* Text)
 	{
-		const uint32 len = Text.size() + 1;
+		const uint32 len = strlen(Text) + 1;
 		HGLOBAL hMem =  GlobalAlloc(GMEM_MOVEABLE, len);
-		Memory::Memcpy(GlobalLock(hMem), Text.c_str(), len);
+		Memory::Memcpy(GlobalLock(hMem), Text, len);
 		GlobalUnlock(hMem);
 		OpenClipboard(nullptr);
 		EmptyClipboard();
@@ -17,13 +17,13 @@ namespace Columbus
 		CloseClipboard();
 	}
 
-	void ClipboardWindows::GetClipboard(std::string& Text)
+	void ClipboardWindows::GetClipboard(char*& Text)
 	{
 		OpenClipboard(nullptr);
 		HANDLE hData = GetClipboardData(CF_TEXT);
 		if (hData == nullptr)
 		{
-			Text.clear();
+			Text = "";
 			GlobalUnlock(hData);
 			CloseClipboard();
 			return;

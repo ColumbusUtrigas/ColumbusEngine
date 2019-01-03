@@ -14,14 +14,14 @@ namespace Columbus
 		SDL_Event TmpEvent;
 
 		void InitializeSDL();
-		void InitializeWindow(const iVector2& InSize, const std::string& InTitle, Window::Flags F);
+		void InitializeWindow(const iVector2& InSize, const char* Title, Window::Flags F);
 		void InitializeOpenGL();
 		void GetVersions();
 	public:
 		WindowOpenGLSDL();
-		WindowOpenGLSDL(const iVector2& InSize, const std::string& InTitle, Window::Flags F);
+		WindowOpenGLSDL(const iVector2& InSize, const char* Title, Window::Flags F);
 
-		virtual bool Create(const iVector2& InSize, const std::string& InTitle, Window::Flags F) final override;
+		virtual bool Create(const iVector2& InSize, const char* Title, Window::Flags F) final override;
 		virtual void Close() final override;
 
 		virtual void Update() final override;

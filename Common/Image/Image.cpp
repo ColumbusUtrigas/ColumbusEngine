@@ -5,7 +5,8 @@
 #include <Common/Image/PNG/ImagePNG.h>
 #include <Common/Image/TGA/ImageTGA.h>
 #include <Common/Image/TIF/ImageTIF.h>
-#include <Core/Core.h>
+#include <cstdlib>
+#include <cstring>
 
 namespace Columbus
 {
@@ -53,7 +54,7 @@ namespace Columbus
 		return 0;
 	}
 
-	ImageFormat ImageGetFormat(std::string FileName)
+	ImageFormat ImageGetFormat(const char* FileName)
 	{
 		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
 		if (ImageLoaderDDS::IsDDS(FileName)) return ImageFormat::DDS;
@@ -151,9 +152,9 @@ namespace Columbus
 
 			for (uint32 j = 0; j < Width / 2; j++)
 			{
-				Memory::Memcpy(pixel, &row[j * BPP], BPP);
-				Memory::Memcpy(&row[j * BPP], &row[(Width - j) * BPP], BPP);
-				Memory::Memcpy(&row[(Width - j) * BPP], pixel, BPP);
+				memcpy(pixel, &row[j * BPP], BPP);
+				memcpy(&row[j * BPP], &row[(Width - j) * BPP], BPP);
+				memcpy(&row[(Width - j) * BPP], pixel, BPP);
 			}
 		}
 
@@ -169,11 +170,11 @@ namespace Columbus
 
 		for (uint32 i = 0; i < Height / 2; i++)
 		{
-			Memory::Memcpy(row, &Data[i * stride], stride);
-			Memory::Memcpy(&Data[i * stride], &Data[(Height - i - 1) * stride], stride);
-			Memory::Memcpy(&Data[(Height - i - 1) * stride], row, stride);
+			memcpy(row, &Data[i * stride], stride);
+			memcpy(&Data[i * stride], &Data[(Height - i - 1) * stride], stride);
+			memcpy(&Data[(Height - i - 1) * stride], row, stride);
 		}
-		Memory::Free(row);
+		free(row);
 
 		return true;
 	}
@@ -187,43 +188,14 @@ namespace Columbus
 
 		for (size_t i = 0; i < size / 2; i++)
 		{
-			Memory::Memcpy(pixel, &Data[i * BPP], BPP);
-			Memory::Memcpy(&Data[i * BPP], &Data[(size - i) * BPP], BPP);
-			Memory::Memcpy(&Data[(size - i) * BPP], pixel, BPP);
+			memcpy(pixel, &Data[i * BPP], BPP);
+			memcpy(&Data[i * BPP], &Data[(size - i) * BPP], BPP);
+			memcpy(&Data[(size - i) * BPP], pixel, BPP);
 		}
-		Memory::Free(pixel);
+
+		free(pixel);
 
 		return true;
-	}
-	
-	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality)
-	{
-		switch (Format)
-		{
-		case ImageFormat::BMP:
-			return ImageSaveBMP(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::DDS:
-			return false; //TODO
-			break;
-		case ImageFormat::TGA:
-			return ImageSaveTGA(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::PNG:
-			return ImageSavePNG(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::TIF:
-			return ImageSaveTIF(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::JPG:
-			return ImageSaveJPG(FileName, Width, Height, BPP, Data, Quality);
-			break;
-		case ImageFormat::Unknown:
-			return false;
-			break;
-		}
-
-		return false;
 	}
 	/*
 	* Image class
@@ -242,7 +214,7 @@ namespace Columbus
 	* @param std::string InFileName: Name of image file to load
 	* @param int Flags: Loading flags
 	*/
-	bool Image::Load(std::string InFileName, ImageLoading Flags)
+	bool Image::Load(const char* InFileName, ImageLoading Flags)
 	{
 		FreeData();
 
@@ -268,11 +240,11 @@ namespace Columbus
 				return false;
 			}
 
-			Data    = std::move(Loader->Data);
-			Width   = std::move(Loader->Width);
-			Height  = std::move(Loader->Height);
-			MipMaps = std::move(Loader->Mipmaps);
-			Format  = std::move(Loader->Format);
+			Data    = Loader->Data;
+			Width   = Loader->Width;
+			Height  = Loader->Height;
+			MipMaps = Loader->Mipmaps;
+			Format  = Loader->Format;
 
 			switch (Loader->ImageType)
 			{
@@ -290,7 +262,7 @@ namespace Columbus
 			return false;
 		}
 
-		FileName = InFileName;
+		FileName = (char*)InFileName;
 		Exist = true;
 
 		switch (Flags)
@@ -309,7 +281,7 @@ namespace Columbus
 	* @param Format: Image format
 	* @param Quality: Compression level
 	*/
-	bool Image::Save(std::string InFileName, ImageFormat InFormat, size_t Quality) const
+	bool Image::Save(const char* InFileName, ImageFormat InFormat, size_t Quality) const
 	{
 		return false;
 
@@ -318,7 +290,16 @@ namespace Columbus
 			return false;
 		}
 
-		return ImageSave(InFileName, Width, Height, Format, Data, InFormat, Quality);
+		switch (InFormat)
+		{
+		case ImageFormat::BMP: return ImageSaveBMP(InFileName, Width, Height, Format, Data);          break;
+		case ImageFormat::JPG: return ImageSaveJPG(InFileName, Width, Height, Format, Data, Quality); break;
+		case ImageFormat::PNG: return ImageSavePNG(InFileName, Width, Height, Format, Data);          break;
+		case ImageFormat::TGA: return ImageSaveTGA(InFileName, Width, Height, Format, Data);          break;
+		case ImageFormat::TIF: return ImageSaveTIF(InFileName, Width, Height, Format, Data);          break;
+		}
+		
+		return false;
 	}
 	/*
 	* Checks if image is exist in memory
@@ -338,7 +319,7 @@ namespace Columbus
 		MipMaps = 0;
 		Format = TextureFormat::RGBA8;
 		Exist = false;
-		FileName.clear();
+		FileName = "";
 
 		delete[] Data;
 	}
@@ -577,7 +558,7 @@ namespace Columbus
 		return Data;
 	}
 	
-	std::string Image::GetFileName() const
+	const char* Image::GetFileName() const
 	{
 		return FileName;
 	}

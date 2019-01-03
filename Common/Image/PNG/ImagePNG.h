@@ -8,9 +8,9 @@ namespace Columbus
 	public:
 		ImageLoaderPNG() {}
 
-		static bool IsPNG(std::string FileName);
+		static bool IsPNG(const char* FileName);
 
-		virtual bool Load(std::string FileName) override;
+		virtual bool Load(const char* FileName) override;
 
 		virtual ~ImageLoaderPNG() override {}
 	};

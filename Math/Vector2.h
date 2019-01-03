@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>
 #include <Core/Random.h>
 #include <Math/MathUtil.h>
 
@@ -24,7 +22,7 @@ namespace Columbus
 
 		Vector2_t() {}
 		Vector2_t(const Vector2_t& Base) : X(Base.X), Y(Base.Y) {}
-		Vector2_t(Vector2_t&& Base) : X(std::move(Base.X)), Y(std::move(Base.Y)) {}
+		Vector2_t(Vector2_t&& Base) : X(Base.X), Y(Base.Y) {}
 		Vector2_t(const Type& Scalar) : X(Scalar), Y(Scalar) {}
 		Vector2_t(const Type& InX, const Type& InY) : X(InX), Y(InY) {}
 
@@ -45,8 +43,8 @@ namespace Columbus
 
 		Vector2_t& operator=(Vector2_t&& Other)
 		{
-			X = std::move(Other.X);
-			Y = std::move(Other.Y);
+			X = Other.X;
+			Y = Other.Y;
 			return *this;
 		}
 

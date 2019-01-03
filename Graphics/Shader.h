@@ -1,16 +1,12 @@
 #pragma once
 
-#include <cstdio>
 #include <vector>
 #include <string>
 
-#include <System/File.h>
-#include <System/Log.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Graphics/ShaderBuilder.h>
-#include <Core/Containers/Array.h>
 
 namespace Columbus
 {

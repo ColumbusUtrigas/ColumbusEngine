@@ -5,6 +5,7 @@
 #include <Graphics/OpenGL/BufferOpenGL.h>
 #include <Core/Random.h>
 #include <GL/glew.h>
+#include <algorithm>
 
 namespace Columbus
 {

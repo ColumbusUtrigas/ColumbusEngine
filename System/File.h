@@ -1,10 +1,7 @@
 #pragma once
 
-#include <cstdio>
-#include <string>
-
-#include <System/Assert.h>
 #include <Core/Types.h>
+#include <cstdio>
 
 namespace Columbus
 {
@@ -14,20 +11,20 @@ namespace Columbus
 	private:
 		FILE* Handle = nullptr;
 		uint64 FileSize = 0;
-		std::string FileName;
+		char* FileName = "";
 	public:
 		File();
 		File(File& Other);
-		File(const std::string& File, const std::string& Modes);
+		File(const char* File, const char* Modes);
 
 		File& operator=(File& Other);
 		File& operator<<(const char Char);
-		File& operator<<(const std::string& String);
+		File& operator<<(const char* String);
 
-		bool Open(const std::string& File, const std::string& Modes);
+		bool Open(const char* File, const char* Modes);
 		bool Close();
 
-		std::string GetName() const;
+		const char* GetName() const;
 		uint64 GetSize() const;
 
 		bool IsEOF() const;
