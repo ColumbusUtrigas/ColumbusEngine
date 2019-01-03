@@ -8,11 +8,8 @@
 	#define FSeek64 _fseeki64
 	#define FTell64 _ftelli64
 #else
-	// fseeko and ftello use off_t instead of long.
-	// By default, off_t is the typedef of the off32_t.
-	// To use off64_t, you should set _FILE_OFFSET_BITS to 64 before including <cstdio>.
-	#define FSeek64 fseeko
-	#define FTell64 ftello
+	#define FSeek64 fseeko64
+	#define FTell64 ftello64
 #endif
 
 namespace Columbus
