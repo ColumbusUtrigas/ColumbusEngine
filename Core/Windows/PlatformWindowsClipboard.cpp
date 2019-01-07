@@ -17,21 +17,20 @@ namespace Columbus
 		CloseClipboard();
 	}
 
-	void ClipboardWindows::GetClipboard(char*& Text)
+	const char* ClipboardWindows::GetClipboard()
 	{
 		OpenClipboard(nullptr);
 		HANDLE hData = GetClipboardData(CF_TEXT);
 		if (hData == nullptr)
 		{
-			Text = "";
 			GlobalUnlock(hData);
 			CloseClipboard();
-			return;
+			return "";
 		}
-		char* pszText = (char*)(GlobalLock(hData));
-		Text = pszText;
+		char* Text = (char*)(GlobalLock(hData));
 		GlobalUnlock(hData);
 		CloseClipboard();
+		return Text;
 	}
 
 	bool ClipboardWindows::HasClipboard()

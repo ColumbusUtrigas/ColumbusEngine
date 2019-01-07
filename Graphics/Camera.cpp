@@ -3,7 +3,6 @@
 namespace Columbus
 {
 
-	
 	Camera::Camera() {}
 	
 	Vector3 Camera::Direction() const
@@ -77,3 +76,5 @@ namespace Columbus
 	Camera::~Camera() {}
 
 }
+
+
