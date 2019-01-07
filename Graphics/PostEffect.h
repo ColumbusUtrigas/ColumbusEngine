@@ -45,6 +45,12 @@ namespace Columbus
 
 		void Bind(const Vector4& Color, const iVector2& Size)
 		{
+			static Framebuffer::Attachment Attachments[TexturesCount] =
+			{ Framebuffer::Attachment::Color0,
+			  Framebuffer::Attachment::Color1,
+			  Framebuffer::Attachment::Color2,
+			  Framebuffer::Attachment::Color3 };
+
 			if (Size != PreviousSize)
 			{
 				for (int i = 0; i < TexturesCount; i++)
@@ -57,9 +63,7 @@ namespace Columbus
 						}
 
 						ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
-						int A = static_cast<int>(Framebuffer::Attachment::Color1);
-						Framebuffer::Attachment T = static_cast<Framebuffer::Attachment>(A + i);
-						FB->setTexture2D(T, ColorTextures[i]);
+						FB->setTexture2D(Attachments[i], ColorTextures[i]);
 					}
 				}
 

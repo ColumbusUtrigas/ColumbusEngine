@@ -3,7 +3,7 @@
 #include <Core/Platform/Platform.h>
 
 #ifdef COLUMBUS_PLATFORM_WINDOWS
-	#include <SDL.h>
+	#include <windows.h>
 #else
 	#include <sys/time.h>
 #endif
@@ -15,22 +15,24 @@ namespace Columbus
 	class Timer
 	{
 	private:
-		Uint64 Frequency, Start;
+		LARGE_INTEGER Frequency, Start;
 	public:
-		Timer() : Frequency(SDL_GetPerformanceFrequency())
+		Timer()
 		{
-			Start = SDL_GetPerformanceCounter();
+			QueryPerformanceFrequency(&Frequency);
+			QueryPerformanceCounter(&Start);
 		}
 		
 		void Reset()
 		{
-			Start = SDL_GetPerformanceCounter();
+			QueryPerformanceCounter(&Start);
 		}
 
 		double Elapsed()
 		{
-			Uint64 End = SDL_GetPerformanceCounter();
-			return (double)(End - Start) / (double)(Frequency);
+			LARGE_INTEGER End;
+			QueryPerformanceCounter(&End);
+			return (double)(End.QuadPart - Start.QuadPart) / (double)(Frequency.QuadPart);
 		}
 		
 		~Timer() {}
