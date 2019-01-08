@@ -11,7 +11,6 @@
 
 namespace Columbus
 {
-	Texture* IrradianceMap;
 	Texture* BlackTexture;
 
 	ShaderProgram* NoneShader;
@@ -237,20 +236,11 @@ namespace Columbus
 
 	Renderer::Renderer()
 	{
-		IrradianceMap = gDevice->CreateTexture();
 		BlackTexture = gDevice->CreateTexture();
 
 		uint8 Zero = 0;
 		BlackTexture->Create2D(Texture::Properties(1, 1, 0, TextureFormat::R8));
 		BlackTexture->Load(&Zero, Texture::Properties(1, 1, 0, TextureFormat::R8));
-		
-		Image img;
-
-		if (img.Load("Data/Skyboxes/Irradiance.dds"))
-		{
-			IrradianceMap->CreateCube(Texture::Properties(img.GetWidth(), img.GetHeight(), 0, img.GetFormat()));
-			IrradianceMap->Load(img);
-		}
 
 		BaseEffect.ColorTexturesEnablement[0] = true;
 		BaseEffect.ColorTexturesEnablement[1] = true;
@@ -313,7 +303,7 @@ namespace Columbus
 					{
 						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetMatrix()))
 						{
-							Object.second->GetMaterial().Reflection = IrradianceMap;
+							Object.second->GetMaterial().Reflection = Sky->GetIrradianceMap();
 
 							if (Object.second->GetMaterial().Transparent)
 							{
@@ -431,7 +421,7 @@ namespace Columbus
 
 		if (Sky != nullptr)
 		{
-			Sky->draw();
+			Sky->Render();
 		}
 	}
 
@@ -550,7 +540,6 @@ namespace Columbus
 
 	Renderer::~Renderer()
 	{
-		delete IrradianceMap;
 		delete BlackTexture;
 		delete NoneShader;
 		delete BloomBrightShader;
