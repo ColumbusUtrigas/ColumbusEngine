@@ -754,7 +754,7 @@ namespace Columbus
 
 		if (mSkybox && mCamera)
 		{
-			mSkybox->setCamera(*mCamera);
+			mSkybox->SetCamera(*mCamera);
 		}
 
 		for (auto& Object : mObjects)

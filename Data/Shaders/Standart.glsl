@@ -224,6 +224,11 @@
 		return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 	}
 
+	vec3 FresnelRoughness(float cosTheta, vec3 F0, float roughness)
+	{
+		return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+	}
+
 	vec3 CookTorranceSpecularBRDF(in vec3 N, in vec3 L, in vec3 V, in vec3 H, out vec3 F)
 	{
 		vec3 F0 = vec3(0.04); 
@@ -233,13 +238,13 @@
 		float NdotL = max(0, dot(N, L));
 
 		float D = DistributionGGX(N, H, Roughness);
-		      F = Fresnel(NdotV, F0);
+		      F = FresnelRoughness(NdotV, F0, Roughness);
 		float G = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
 
 		return D * F * G * LAMBERTIAN * NdotL;
 	}
 
-	vec3 LightCalc(int id)
+	vec3 LightCalc(int id, out vec3 F)
 	{
 		int Offset = id * 15;
 
@@ -259,7 +264,7 @@
 		float Distance = length(LightPos - varPos);
 		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = 1.0 / (1.0 + LightLinear * Distance + LightQuadratic * Distance * Distance);
 
-		vec3 N, L, V, H, F;
+		vec3 N, L, V, H;
 		N = normalize(Normal);
 		L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
 		V = normalize(uCamera.Position - varPos);
@@ -278,17 +283,22 @@
 	vec3 Lights()
 	{
 		vec3 BRDF = vec3(0);
+		vec3 F = vec3(0);
 
-		BRDF += LightCalc(0);
-		BRDF += LightCalc(1);
-		BRDF += LightCalc(2);
-		BRDF += LightCalc(3);
+		BRDF += LightCalc(0, F);
+		BRDF += LightCalc(1, F);
+		BRDF += LightCalc(2, F);
+		BRDF += LightCalc(3, F);
+
+		vec3 Ambient = textureCube(uMaterial.ReflectionMap, Normal).rgb * uMaterial.Color.rgb;
+		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
+		BRDF += (1.0 - F) * Ambient * AO * vec3(0.03);
 
 		BRDF = BRDF / (BRDF + vec3(1.0));
 		BRDF = pow(BRDF, vec3(COLOR_EXP));
 
 		return BRDF;
-}
+	}
 
 	vec2 EncodeNormal(in vec3 n)
 	{

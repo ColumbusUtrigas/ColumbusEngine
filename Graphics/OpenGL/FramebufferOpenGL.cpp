@@ -5,6 +5,21 @@
 namespace Columbus
 {
 
+	static GLenum ConvertAttachment(Framebuffer::Attachment Attachment)
+	{
+		switch (Attachment)
+		{
+		case Framebuffer::Attachment::Color0:  return GL_COLOR_ATTACHMENT0;  break;
+		case Framebuffer::Attachment::Color1:  return GL_COLOR_ATTACHMENT1;  break;
+		case Framebuffer::Attachment::Color2:  return GL_COLOR_ATTACHMENT2;  break;
+		case Framebuffer::Attachment::Color3:  return GL_COLOR_ATTACHMENT3;  break;
+		case Framebuffer::Attachment::Depth:   return GL_DEPTH_ATTACHMENT;   break;
+		case Framebuffer::Attachment::Stencil: return GL_STENCIL_ATTACHMENT; break;
+		}
+
+		return GL_INVALID_ENUM;
+	}
+
 	FramebufferOpenGL::FramebufferOpenGL()
 	{
 		glGenFramebuffers(1, &mID);
@@ -24,24 +39,31 @@ namespace Columbus
 	{
 		if (InTexture == nullptr) return false;
 
-		uint32 id = static_cast<TextureOpenGL*>(InTexture)->GetID();
+		uint32 ID = ((TextureOpenGL*)InTexture)->GetID();
+		uint32 Attachment = ConvertAttachment(Attach);
 
-		if (!glIsTexture(id)) return false;
-
-		uint32 attach = GL_COLOR_ATTACHMENT0;
-
-		switch (Attach)
-		{
-		case Framebuffer::Attachment::Color0:  attach = GL_COLOR_ATTACHMENT0;  break;
-		case Framebuffer::Attachment::Color1:  attach = GL_COLOR_ATTACHMENT1;  break;
-		case Framebuffer::Attachment::Color2:  attach = GL_COLOR_ATTACHMENT2;  break;
-		case Framebuffer::Attachment::Color3:  attach = GL_COLOR_ATTACHMENT3;  break;
-		case Framebuffer::Attachment::Depth:   attach = GL_DEPTH_ATTACHMENT;   break;
-		case Framebuffer::Attachment::Stencil: attach = GL_STENCIL_ATTACHMENT; break;
-		}
+		if (Attachment == GL_INVALID_ENUM) return false;
+		if (!glIsTexture(ID)) return false;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, mID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attach, GL_TEXTURE_2D, id, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, ID, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		return true;
+	}
+
+	bool FramebufferOpenGL::SetTextureCube(FramebufferOpenGL::Attachment Attach, Texture* InTexture, uint32 Face)
+	{
+		if (InTexture == nullptr) return false;
+
+		uint32 ID = ((TextureOpenGL*)InTexture)->GetID();
+		uint32 Attachment = ConvertAttachment(Attach);
+
+		if (Attachment == GL_INVALID_ENUM) return false;
+		if (!glIsTexture(ID)) return false;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, mID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, ID, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;

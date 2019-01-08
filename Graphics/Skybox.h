@@ -14,15 +14,18 @@ namespace Columbus
 		uint32 VAO = 0;
 		ShaderProgram* Shader = nullptr;
 		Texture* Tex = nullptr;
-		Camera mCamera;
+		Texture* IrradianceMap = nullptr;
+
+		Camera ViewCamera;
 	public:
 		Skybox();
 		Skybox(Texture* InTexture);
 		
-		void draw();
+		void Render();
 
-		void setCamera(const Camera aCamera);
+		void SetCamera(const Camera& Cam);
 		Texture* GetCubemap() const { return Tex; }
+		Texture* GetIrradianceMap() const { return IrradianceMap; }
 		
 		~Skybox();
 	};

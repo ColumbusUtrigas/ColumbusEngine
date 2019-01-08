@@ -16,6 +16,7 @@ namespace Columbus
 		virtual void unbind() override;
 
 		virtual bool setTexture2D(Attachment Attach, Texture* InTexture) override;
+		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face) override;
 		virtual bool prepare(const Vector4& aClear, const Vector2& WindowSize) override;
 		virtual bool check() override;
 
