@@ -100,7 +100,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -117,7 +117,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -138,7 +138,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -159,7 +159,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;libjpeg.lib;LibPNG.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
