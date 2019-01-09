@@ -17,11 +17,11 @@
 			<Texture7>Data/Textures/spark.dds</Texture7>
 			<Texture8>Data/Textures/smoke.dds</Texture8>
 
-			<Texture9>Data/Textures/chest_AO.jpg</Texture9>
-			<Texture10>Data/Textures/chest_Albedo.jpg</Texture10>
-			<Texture11>Data/Textures/chest_Metallic.jpg</Texture11>
-			<Texture12>Data/Textures/chest_Normal.jpg</Texture12>
-			<Texture13>Data/Textures/chest_Roughness.jpg</Texture13>
+			<Texture9>Data/Textures/chest_AO.dds</Texture9>
+			<Texture10>Data/Textures/chest_Albedo.dds</Texture10>
+			<Texture11>Data/Textures/chest_Metallic.dds</Texture11>
+			<Texture12>Data/Textures/chest_Normal.dds</Texture12>
+			<Texture13>Data/Textures/chest_Roughness.dds</Texture13>
 		</Textures>
 
 		<Shaders>

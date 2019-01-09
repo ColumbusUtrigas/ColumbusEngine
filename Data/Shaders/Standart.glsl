@@ -63,7 +63,9 @@
 		sampler2D EmissionMap;
 		sampler2D DetailDiffuseMap;
 		sampler2D DetailNormalMap;
-		samplerCube ReflectionMap;
+		samplerCube IrradianceMap;
+		samplerCube EnvironmentMap;
+		sampler2D   IntegrationMap;
 
 		bool HasDiffuseMap;
 		bool HasNormalMap;
@@ -97,7 +99,9 @@
 	//@Uniform uMaterial.EmissionMap
 	//@Uniform uMaterial.DetailDiffuseMap
 	//@Uniform uMaterial.DetailNormalMap
-	//@Uniform uMaterial.ReflectionMap
+	//@Uniform uMaterial.IrradianceMap
+	//@Uniform uMaterial.EnvironmentMap
+	//@Uniform uMaterial.IntegrationMap
 
 	//@Uniform uMaterial.HasDiffuseMap
 	//@Uniform uMaterial.HasNormalMap
@@ -284,18 +288,27 @@
 	{
 		vec3 BRDF = vec3(0);
 		vec3 F = vec3(0);
+		vec3 V = normalize(uCamera.Position - varPos);
+		vec3 R = reflect(-V, Normal);
 
 		BRDF += LightCalc(0, F);
 		BRDF += LightCalc(1, F);
 		BRDF += LightCalc(2, F);
 		BRDF += LightCalc(3, F);
 
-		vec3 Ambient = textureCube(uMaterial.ReflectionMap, Normal).rgb * uMaterial.Color.rgb;
+		const float MAX_REFLECTION_LOD = 7.0;
+		vec3 prefilteredColor = textureCubeLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
+		vec2 envBRDF  = texture(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
+		vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+		vec3 Ambient = textureCube(uMaterial.IrradianceMap, Normal).rgb * uMaterial.Color.rgb;
 		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
-		BRDF += (1.0 - F) * Ambient * AO * vec3(0.03);
+
+		BRDF += (1.0 - Metallic) * Ambient * 0.1 * AO;
 
 		BRDF = BRDF / (BRDF + vec3(1.0));
 		BRDF = pow(BRDF, vec3(COLOR_EXP));
+
+		BRDF += Specular * AO;
 
 		return BRDF;
 	}

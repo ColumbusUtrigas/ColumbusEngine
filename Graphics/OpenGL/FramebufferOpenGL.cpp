@@ -35,7 +35,7 @@ namespace Columbus
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
-	bool FramebufferOpenGL::setTexture2D(Framebuffer::Attachment Attach, Texture* InTexture)
+	bool FramebufferOpenGL::setTexture2D(Framebuffer::Attachment Attach, Texture* InTexture, uint32 Level)
 	{
 		if (InTexture == nullptr) return false;
 
@@ -46,13 +46,13 @@ namespace Columbus
 		if (!glIsTexture(ID)) return false;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, mID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, ID, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, ID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
 	}
 
-	bool FramebufferOpenGL::SetTextureCube(FramebufferOpenGL::Attachment Attach, Texture* InTexture, uint32 Face)
+	bool FramebufferOpenGL::SetTextureCube(FramebufferOpenGL::Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level)
 	{
 		if (InTexture == nullptr) return false;
 
@@ -63,7 +63,7 @@ namespace Columbus
 		if (!glIsTexture(ID)) return false;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, mID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, ID, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, ID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;

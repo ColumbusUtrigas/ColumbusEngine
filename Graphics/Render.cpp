@@ -18,6 +18,8 @@ namespace Columbus
 	ShaderProgram* GaussBlurShader;
 	ShaderProgram* BloomShader;
 
+	Skybox* gSky;
+
 	struct
 	{
 		Material::Cull Culling = Material::Cull::No;
@@ -29,7 +31,7 @@ namespace Columbus
 		int32 Model;
 		int32 ViewProjection;
 
-		int32 TexturesIDs[9];
+		int32 TexturesIDs[11];
 
 		int32 HasDiffuseMap;
 		int32 HasNormalMap;
@@ -101,15 +103,15 @@ namespace Columbus
 
 	static void ShaderSetMaterial(const Transform& Trans, const Camera& MainCamera)
 	{
-		static std::string const Names[9] = { "uMaterial.DiffuseMap", "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.ReflectionMap"};
+		static std::string const Names[11] = { "uMaterial.DiffuseMap", "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.IrradianceMap", "uMaterial.EnvironmentMap", "uMaterial.IntegrationMap" };
 
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
 
 		if (CurrentShader != nullptr)
 		{
-			Texture* Textures[9] = { CurrentMaterial.DiffuseTexture, CurrentMaterial.NormalTexture, CurrentMaterial.RoughnessTexture, CurrentMaterial.MetallicTexture, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailDiffuseMap, CurrentMaterial.DetailNormalMap, CurrentMaterial.Reflection };
-			Texture* LastTextures[9] = { PreviousMaterial.DiffuseTexture, PreviousMaterial.NormalTexture, PreviousMaterial.RoughnessTexture, PreviousMaterial.MetallicTexture, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailDiffuseMap, PreviousMaterial.DetailNormalMap, PreviousMaterial.Reflection };
+			Texture* Textures[11] = { CurrentMaterial.DiffuseTexture, CurrentMaterial.NormalTexture, CurrentMaterial.RoughnessTexture, CurrentMaterial.MetallicTexture, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailDiffuseMap, CurrentMaterial.DetailNormalMap, gSky->GetIrradianceMap(), gSky->GetPrefilterMap(), gSky->GetIntegrationMap() };
+			Texture* LastTextures[11] = { PreviousMaterial.DiffuseTexture, PreviousMaterial.NormalTexture, PreviousMaterial.RoughnessTexture, PreviousMaterial.MetallicTexture, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailDiffuseMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
 			MaterialRenderData* RenderData = (MaterialRenderData*)((ShaderProgramOpenGL*)(CurrentShader))->RenderData;
 			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
@@ -118,7 +120,7 @@ namespace Columbus
 			{
 				MaterialRenderData* NewRenderData = new MaterialRenderData();
 
-				for (int i = 0; i < 9; i++)
+				for (int i = 0; i < 11; i++)
 				{
 					NewRenderData->TexturesIDs[i] = ShaderOGL->GetFastUniform(Names[i]);
 				}
@@ -152,7 +154,7 @@ namespace Columbus
 			ShaderOGL->SetUniform(RenderData->Model, false, Trans.GetMatrix());
 			ShaderOGL->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
 
-			for (int32 i = 0; i < 9; i++)
+			for (int32 i = 0; i < 11; i++)
 			{
 				if (Textures[i] != LastTextures[i] || CheckShader())
 				{
@@ -277,6 +279,8 @@ namespace Columbus
 
 	void Renderer::CompileLists()
 	{
+		gSky = Sky;
+
 		OpaqueObjects.clear();
 		TransparentObjects.clear();
 
