@@ -25,8 +25,8 @@ namespace Columbus
 		virtual void bind() {}
 		virtual void unbind() {}
 
-		virtual bool setTexture2D(Attachment Attach, Texture* InTexture) { return false; }
-		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face) { return false; };
+		virtual bool setTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) { return false; }
+		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level = 0) { return false; };
 		virtual bool prepare(const Vector4& Clear, const Vector2& WindowSize) { return false; }
 		virtual bool check() { return false; }
 
