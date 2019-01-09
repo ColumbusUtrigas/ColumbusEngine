@@ -300,7 +300,7 @@
 		vec3 prefilteredColor = textureCubeLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
 		vec2 envBRDF  = texture(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
 		vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-		vec3 Ambient = textureCube(uMaterial.IrradianceMap, Normal).rgb * uMaterial.Color.rgb;
+		vec3 Ambient = textureCube(uMaterial.IrradianceMap, Normal).rgb;
 		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
 
 		BRDF += (1.0 - Metallic) * Ambient * 0.1 * AO;
@@ -310,7 +310,7 @@
 
 		BRDF += Specular * AO;
 
-		return BRDF;
+		return BRDF * uMaterial.Color.rgb;
 	}
 
 	vec2 EncodeNormal(in vec3 n)
