@@ -1,6 +1,5 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
-#include <Common/Search/Search.h>
 #include <System/File.h>
 #include <GL/glew.h>
 #include <cctype>
@@ -22,8 +21,8 @@ namespace Columbus
 			return false;
 		}
 
-		char* TmpFile = new char[ShaderFile.GetSize() + 1];
-		memset(TmpFile, 0, ShaderFile.GetSize() + 1);
+		char* TmpFile = new char[(uint32)ShaderFile.GetSize() + 1];
+		memset(TmpFile, 0, (uint32)ShaderFile.GetSize() + 1);
 		ShaderFile.ReadBytes(TmpFile, ShaderFile.GetSize());
 		ShaderFile.Close();
 
@@ -409,10 +408,21 @@ namespace Columbus
 
 	bool ShaderProgramOpenGL::Compile()
 	{
-		if (LinearSearch(Stages, Stages + MaxStages, [](ShaderStage* InStage)->bool {  return InStage->GetType() == ShaderType::Vertex;   }) == Stages + MaxStages ||
-		    LinearSearch(Stages, Stages + MaxStages, [](ShaderStage* InStage)->bool {  return InStage->GetType() == ShaderType::Fragment; }) == Stages + MaxStages)
+		bool VertexShaderExists = false;
+		bool FragmentShaderExists = false;
+
+		for (auto& Stage : Stages)
 		{
-			Log::Error("Coldn't compile Shader Program: Needs vertex and fragment shader");
+			if (Stage != nullptr)
+			{
+				if (Stage->GetType() == ShaderType::Vertex) VertexShaderExists = true;
+				if (Stage->GetType() == ShaderType::Fragment) FragmentShaderExists = true;
+			}
+		}
+
+		if (!VertexShaderExists || !FragmentShaderExists)
+		{
+			Log::Error("Couldn't compile Shader Program: Needs vertex and fragment shader");
 			Compiled = false;
 			Error = true;
 			return false;
