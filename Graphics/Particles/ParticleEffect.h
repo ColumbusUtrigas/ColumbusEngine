@@ -4,6 +4,7 @@
 #include <Graphics/Particles/ParticleModule.h>
 #include <Graphics/Particles/Emit/ParticleModuleEmit.h>
 #include <Graphics/Particles/Required/ParticleModuleRequired.h>
+#include <vector>
 
 namespace Columbus
 {

@@ -151,7 +151,7 @@ namespace Columbus
 			{
 				if (Path != "None")
 				{
-					Mat->loadFromXML(Path);
+					Mat->Load(Path.c_str());
 				}
 			} else return nullptr;
 		} else return nullptr;
@@ -636,7 +636,7 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Shaders", elem, "Program" }, path))
 				{
 					auto tShader = gDevice->CreateShaderProgram();
-					tShader->Load(path);
+					tShader->Load(path.c_str());
 					ShaderPrograms.insert(std::make_pair(i, SmartPointer<ShaderProgram>(tShader)));
 				}
 			}

@@ -143,6 +143,13 @@ namespace Columbus
 	{
 		return (Handle != nullptr);
 	}
+
+	char* File::ReadLine(char* Buf, uint32 MaxCount) const
+	{
+		if (Handle == nullptr) return nullptr;
+		fgets(Buf, MaxCount, Handle);
+		return Buf;
+	}
 	
 	size_t File::Read(void* Data, size_t Size, size_t Packs) const
 	{
