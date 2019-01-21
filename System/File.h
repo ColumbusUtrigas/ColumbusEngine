@@ -37,6 +37,8 @@ namespace Columbus
 
 		bool IsOpened() const;
 
+		char* ReadLine(char* Buf, uint32 MaxCount) const;
+
 		size_t Read(void* Data, size_t Size, size_t Packs) const;
 		size_t Write(const void* Data, size_t Size, size_t Packs) const;
 

@@ -6,6 +6,7 @@
 #include <System/Timer.h>
 #include <Core/Containers/Array.h>
 #include <Core/SmartPointer.h>
+#include <vector>
 
 namespace Columbus
 {

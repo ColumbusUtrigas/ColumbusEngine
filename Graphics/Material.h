@@ -56,7 +56,7 @@ namespace Columbus
 		float EmissionStrength = 0.5f;
 	public:
 		Material();
-		Material(std::string aFile);
+		Material(const char* FileName);
 
 		bool Prepare();
 
@@ -72,7 +72,9 @@ namespace Columbus
 		int GetDetailDiffuseMapID() const;
 		int GetDetailNormalMapID() const;
 
-		bool loadFromXML(const std::string& aFile);
+		bool LoadFromXML(const char* FileName);
+		bool LoadFromJSON(const char* FileName);
+		bool Load(const char* FileName);
 
 		bool operator==(const Material& Other) const;
 		bool operator!=(const Material& Other) const;

@@ -182,6 +182,7 @@
     <ClInclude Include="Common\Model\Model.h" />
     <ClInclude Include="Common\Noise\OctaveNoise.h" />
     <ClInclude Include="Common\Noise\PerlinNoise.h" />
+    <ClInclude Include="Common\Search\Search.h" />
     <ClInclude Include="Common\Sound\OGG\SoundOGG.h" />
     <ClInclude Include="Common\Sound\Sound.h" />
     <ClInclude Include="Common\Sound\WAV\SoundWAV.h" />

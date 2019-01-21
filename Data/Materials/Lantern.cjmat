@@ -1,0 +1,25 @@
+{
+	"Culling": 2,
+	"DepthWriting": true,
+	"Transparent": true,
+	"Tiling": [1, 1],
+	"DetailTiling": [16, 16],
+	"Color": [1, 1, 1, 1],
+	"Roughness": 1,
+	"Metallic": 0.1,
+	"EmissionStrength": 1,
+	"Lighting": true,
+
+	"Textures":
+	{
+		"Diffuse": 10,
+		"Normal": 12,
+		"Roughness": 13,
+		"Metallic": 11,
+		"Occlusion": 9,
+		"Emission": null,
+		"DetailDiffuse": 1,
+		"DetailNormal": 2
+	}
+}
+
