@@ -11,13 +11,13 @@ for root, dirs, files in os.walk(os.path.dirname(sys.argv[0])):
 		name, ext = os.path.splitext(file)
 
 		if ext == '.cpp':
-			cpp_lines += len(open(root + '\\' + file).readlines())
+			cpp_lines += sum(1 for line in open(root + '/' + file))
 
 		if ext == '.h':
-			cpp_header_lines += len(open(root + '\\' + file).readlines())
+			cpp_header_lines += sum(1 for line in open(root + '/' + file))
 
 		if ext == '.glsl':
-			glsl_lines += len(open(root + '\\' + file).readlines())
+			glsl_lines += sum(1 for line in open(root + '/' + file))
 
 print('C/C++ code lines: ', cpp_lines)
 print('C/C++ headers lines: ', cpp_header_lines)

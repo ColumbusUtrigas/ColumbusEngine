@@ -17,6 +17,8 @@ namespace Columbus
 		Vector3 bitangent;
 	};
 
+	void ConvertToCompressed(const char* Old, const char* New);
+
 	class ModelLoader
 	{
 	public:
@@ -24,12 +26,13 @@ namespace Columbus
 
 		uint32 VerticesCount = 0;
 		uint32 IndicesCount = 0;
+		uint32 IndexSize = 0;
 
 		Vector3* Positions = nullptr;
 		Vector2* UVs = nullptr;
 		Vector3* Normals = nullptr;
 		Vector3* Tangents = nullptr;
-		uint32* Indices = nullptr;
+		void*    Indices = nullptr;
 
 		Box BoundingBox;
 	public:
@@ -48,6 +51,7 @@ namespace Columbus
 
 		uint32 VerticesCount = 0;
 		uint32 IndicesCount  = 0;
+		uint32 IndexSize = 0;
 
 		Vector3* Positions = nullptr;
 		Vector2* UVs = nullptr;
@@ -55,7 +59,7 @@ namespace Columbus
 		Vector3* Tangents = nullptr;
 
 		Vertex* Vertices = nullptr;
-		uint32* Indices = nullptr;
+		void* Indices = nullptr;
 
 		Box BoundingBox;
 	public:
@@ -69,6 +73,7 @@ namespace Columbus
 
 		uint32 GetVerticesCount() const { return VerticesCount; }
 		uint32 GetIndicesCount()  const { return IndicesCount;  }
+		uint32 GetIndexSize()     const { return IndexSize;     }
 
 		bool HasPositions() const { return Positions != nullptr; }
 		bool HasUVs()       const { return UVs       != nullptr; }
@@ -82,7 +87,7 @@ namespace Columbus
 		const Vector3* GetNormals()   const { return Normals;   }
 		const Vector3* GetTangents()  const { return Tangents;  }
 		const Vertex*  GetVertices()  const { return Vertices;  }
-		const uint32*  GetIndices()   const { return Indices;   }
+		const void*    GetIndices()   const { return Indices;   }
 
 		Box GetBoundingBox() const { return BoundingBox; }
 		
