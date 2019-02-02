@@ -8,12 +8,14 @@ namespace Columbus
 	MeshOpenGL::MeshOpenGL()
 	{
 		glGenBuffers(1, &VBuf);
+		glGenBuffers(1, &IBO);
 		glGenVertexArrays(1, &VAO);
 	}
 	
 	MeshOpenGL::MeshOpenGL(const std::vector<Vertex>& InVertices)
 	{
 		glGenBuffers(1, &VBuf);
+		glGenBuffers(1, &IBO);
 		glGenVertexArrays(1, &VAO);
 		SetVertices(InVertices);
 	}
@@ -113,6 +115,7 @@ namespace Columbus
 	void MeshOpenGL::Load(const Model& InModel)
 	{
 		VerticesCount = InModel.GetVerticesCount();
+		IndicesCount = InModel.GetIndicesCount();
 		BoundingBox = InModel.GetBoundingBox();
 
 		VOffset = 0;
@@ -145,6 +148,21 @@ namespace Columbus
 		}
 
 		glBindVertexArray(0);
+
+		if (InModel.IsIndexed())
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, InModel.GetIndicesCount() * InModel.GetIndexSize(), InModel.GetIndices(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			Indexed = true;
+
+			switch (InModel.GetIndexSize())
+			{
+			case 1: IndicesType = GL_UNSIGNED_BYTE;  break;
+			case 2: IndicesType = GL_UNSIGNED_SHORT; break;
+			case 4: IndicesType = GL_UNSIGNED_INT;   break;
+			}
+		}
 	}
 
 	void MeshOpenGL::Bind()
@@ -155,7 +173,16 @@ namespace Columbus
 	
 	uint32 MeshOpenGL::Render()
 	{
-		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
+		if (Indexed)
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			glDrawElements(GL_TRIANGLES, IndicesCount, IndicesType, nullptr);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
+		}
 
 		return VerticesCount / 3;
 	}
