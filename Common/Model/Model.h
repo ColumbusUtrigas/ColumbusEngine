@@ -17,8 +17,6 @@ namespace Columbus
 		Vector3 bitangent;
 	};
 
-	void ConvertToCompressed(const char* Old, const char* New);
-
 	class ModelLoader
 	{
 	public:

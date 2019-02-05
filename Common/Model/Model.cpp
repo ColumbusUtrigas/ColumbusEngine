@@ -36,7 +36,7 @@ namespace Columbus
 
 			BoundingBox = Loader->BoundingBox;
 
-			if (Vertices != nullptr & Indices != nullptr && Indexed)
+			if (Vertices != nullptr && Indices != nullptr && Indexed)
 			{
 				// On the moment of writing this code I have not discrete GPU, only laptop with Intel HD4000.
 				// So, on integrated GPU cache optimizers do not work.
