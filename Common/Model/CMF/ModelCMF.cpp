@@ -52,38 +52,8 @@ namespace Columbus
 		CMF_FORMAT_DOUBLE = 8
 	};
 
-	void ConvertToCompressed(const char* Old, const char* New)
-	{
-		File OldModel(Old, "rb");
-		File NewModel(New, "wb");
-
-		if (!OldModel.IsOpened()) return;
-		if (!NewModel.IsOpened()) return;
-
-		HeaderCMFNew Header;
-		OldModel.Read(Header);
-
-		uint32 DataSize = OldModel.GetSize() - sizeof(Header);
-
-		uint8* SourceFile = new uint8[DataSize];
-		OldModel.ReadBytes(SourceFile, DataSize);
-
-		uint64 Bound = ZSTD_compressBound(DataSize);
-		uint8* DestinyFile = new uint8[Bound];
-		uint64 DestinySize = ZSTD_compress(DestinyFile, Bound, SourceFile, DataSize, 1);
-
-		Header.Compression = CMF_COMPRESSION_ZSTD;
-		Header.Filesize = DestinySize + sizeof(Header);
-
-		NewModel.Write(Header);
-		NewModel.WriteBytes(DestinyFile, DestinySize);
-
-		delete[] SourceFile;
-		delete[] DestinyFile;
-	}
-
 	template <typename T>
-	static T* CreateAndFill(uint32 Count, void* Data, uint64 Size)
+	static T* CreateAndFill(uint32 Count, void* Data, uint32 Size)
 	{
 		T* Result = new T[Count];
 		
@@ -118,30 +88,17 @@ namespace Columbus
 
 			if (Header.Compression == CMF_COMPRESSION_NONE)
 			{
-				uint64 Size = Model.GetSize() - sizeof(HeaderCMFNew);
+				uint32 Size = Model.GetSize() - sizeof(HeaderCMFNew);
 				Data = new uint8[Size];
 				Model.ReadBytes(Data, Size);
 				Model.Close();
-			}
-			else if (Header.Compression == CMF_COMPRESSION_ZSTD)
-			{
-				uint32 FileDataSize = Model.GetSize() - sizeof(HeaderCMFNew);
-				uint8* FileData = new uint8[FileDataSize];
-				Model.ReadBytes(FileData, FileDataSize);
-
-				uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, Model.GetSize() - sizeof(HeaderCMFNew));
-				uint8* Decompressed = new uint8[DecompressedSize];
-				ZSTD_decompress(Decompressed, DecompressedSize, FileData, Model.GetSize() - sizeof(HeaderCMFNew));
-				delete[] FileData;
-
-				Data = Decompressed;
 			}
 
 			if (Data == nullptr) return false;
 
 			VerticesCount = Header.NumVertices;
 
-			for (int i = 0; i < Header.NumArrays; i++)
+			for (uint32 i = 0; i < Header.NumArrays; i++)
 			{
 				struct HeaderArray
 				{
@@ -189,9 +146,9 @@ namespace Columbus
 				Offset += ArrayHeader.Size;
 			}
 
-			//delete[] Data;
+			delete[] Data;
 
-			for (int i = 0; i < VerticesCount; i++)
+			for (uint32 i = 0; i < VerticesCount; i++)
 			{
 				if (Positions[i].X < BoundingBox.Min.X) BoundingBox.Min.X = Positions[i].X;
 				if (Positions[i].X > BoundingBox.Max.X) BoundingBox.Max.X = Positions[i].X;

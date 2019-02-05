@@ -39,18 +39,15 @@ public:
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window({ 640, 480 }, "Columbus Engine", Window::Flags::Resizable);
+	gDevice = new DeviceOpenGL();
+	Scene scene;
 	Input input;
 	AudioListener Listener;
-
 	Camera camera;
+	Timer timer;
+
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
-
-	gDevice = new DeviceOpenGL();
-
-	Scene scene;
-
-	Timer timer;
 
 	window.SetVSync(false);
 
