@@ -33,17 +33,17 @@ namespace Columbus
 
 		int32 TexturesIDs[11];
 
-		int32 HasDiffuseMap;
+		int32 HasAlbedoMap;
 		int32 HasNormalMap;
 		int32 HasRoughnessMap;
 		int32 HasMetallicMap;
 		int32 HasOcclusionMap;
-		int32 HasDetailDiffuseMap;
+		int32 HasDetailAlbedoMap;
 		int32 HasDetailNormalMap;
 
 		int32 Tiling;
 		int32 DetailTiling;
-		int32 Color;
+		int32 Albedo;
 		int32 Roughness;
 		int32 Metallic;
 		int32 EmissionStrength;
@@ -103,15 +103,15 @@ namespace Columbus
 
 	static void ShaderSetMaterial(const Transform& Trans, const Camera& MainCamera)
 	{
-		static const char* const Names[11] = { "uMaterial.DiffuseMap", "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap", "uMaterial.IrradianceMap", "uMaterial.EnvironmentMap", "uMaterial.IntegrationMap" };
+		static const char* const Names[11] = { "uMaterial.AlbedoMap", "uMaterial.NormalMap", "uMaterial.RoughnessMap", "uMaterial.MetallicMap", "uMaterial.OcclusionMap", "uMaterial.EmissionMap", "uMaterial.DetailAlbedoMap", "uMaterial.DetailNormalMap", "uMaterial.IrradianceMap", "uMaterial.EnvironmentMap", "uMaterial.IntegrationMap" };
 
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
 
 		if (CurrentShader != nullptr)
 		{
-			Texture* Textures[11] = { CurrentMaterial.DiffuseTexture, CurrentMaterial.NormalTexture, CurrentMaterial.RoughnessTexture, CurrentMaterial.MetallicTexture, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailDiffuseMap, CurrentMaterial.DetailNormalMap, gSky->GetIrradianceMap(), gSky->GetPrefilterMap(), gSky->GetIntegrationMap() };
-			Texture* LastTextures[11] = { PreviousMaterial.DiffuseTexture, PreviousMaterial.NormalTexture, PreviousMaterial.RoughnessTexture, PreviousMaterial.MetallicTexture, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailDiffuseMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
+			Texture* Textures[11] = { CurrentMaterial.AlbedoMap, CurrentMaterial.NormalMap, CurrentMaterial.RoughnessMap, CurrentMaterial.MetallicMap, CurrentMaterial.OcclusionMap, CurrentMaterial.EmissionMap, CurrentMaterial.DetailAlbedoMap, CurrentMaterial.DetailNormalMap, gSky->GetIrradianceMap(), gSky->GetPrefilterMap(), gSky->GetIntegrationMap() };
+			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
 			MaterialRenderData* RenderData = (MaterialRenderData*)((ShaderProgramOpenGL*)(CurrentShader))->RenderData;
 			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
@@ -128,17 +128,17 @@ namespace Columbus
 				NewRenderData->Model          = ShaderOGL->GetFastUniform("uModel");
 				NewRenderData->ViewProjection = ShaderOGL->GetFastUniform("uViewProjection");
 
-				NewRenderData->HasDiffuseMap       = ShaderOGL->GetFastUniform("uMaterial.HasDiffuseMap");
-				NewRenderData->HasNormalMap        = ShaderOGL->GetFastUniform("uMaterial.HasNormalMap");
-				NewRenderData->HasRoughnessMap     = ShaderOGL->GetFastUniform("uMaterial.HasRoughnessMap");
-				NewRenderData->HasMetallicMap      = ShaderOGL->GetFastUniform("uMaterial.HasMetallicMap");
-				NewRenderData->HasOcclusionMap     = ShaderOGL->GetFastUniform("uMaterial.HasOcclusionMap");
-				NewRenderData->HasDetailDiffuseMap = ShaderOGL->GetFastUniform("uMaterial.HasDetailDiffuseMap");
-				NewRenderData->HasDetailNormalMap  = ShaderOGL->GetFastUniform("uMaterial.HasDetailNormalMap");
+				NewRenderData->HasAlbedoMap       = ShaderOGL->GetFastUniform("uMaterial.HasAlbedoMap");
+				NewRenderData->HasNormalMap       = ShaderOGL->GetFastUniform("uMaterial.HasNormalMap");
+				NewRenderData->HasRoughnessMap    = ShaderOGL->GetFastUniform("uMaterial.HasRoughnessMap");
+				NewRenderData->HasMetallicMap     = ShaderOGL->GetFastUniform("uMaterial.HasMetallicMap");
+				NewRenderData->HasOcclusionMap    = ShaderOGL->GetFastUniform("uMaterial.HasOcclusionMap");
+				NewRenderData->HasDetailAlbedoMap = ShaderOGL->GetFastUniform("uMaterial.HasDetailAlbedoMap");
+				NewRenderData->HasDetailNormalMap = ShaderOGL->GetFastUniform("uMaterial.HasDetailNormalMap");
 
 				NewRenderData->Tiling           = ShaderOGL->GetFastUniform("uMaterial.Tiling");
 				NewRenderData->DetailTiling     = ShaderOGL->GetFastUniform("uMaterial.DetailTiling");
-				NewRenderData->Color            = ShaderOGL->GetFastUniform("uMaterial.Color");
+				NewRenderData->Albedo           = ShaderOGL->GetFastUniform("uMaterial.Albedo");
 				NewRenderData->Roughness        = ShaderOGL->GetFastUniform("uMaterial.Roughness");
 				NewRenderData->Metallic         = ShaderOGL->GetFastUniform("uMaterial.Metallic");
 				NewRenderData->EmissionStrength = ShaderOGL->GetFastUniform("uMaterial.EmissionStrength");
@@ -169,17 +169,17 @@ namespace Columbus
 				}
 			}
 
-			ShaderOGL->SetUniform(RenderData->HasDiffuseMap,       CurrentMaterial.DiffuseTexture   != nullptr);
-			ShaderOGL->SetUniform(RenderData->HasNormalMap,        CurrentMaterial.NormalTexture    != nullptr);
-			ShaderOGL->SetUniform(RenderData->HasRoughnessMap,     CurrentMaterial.RoughnessTexture != nullptr);
-			ShaderOGL->SetUniform(RenderData->HasMetallicMap,      CurrentMaterial.MetallicTexture  != nullptr);
-			ShaderOGL->SetUniform(RenderData->HasOcclusionMap,     CurrentMaterial.OcclusionMap     != nullptr);
-			ShaderOGL->SetUniform(RenderData->HasDetailDiffuseMap, CurrentMaterial.DetailDiffuseMap != nullptr);
-			ShaderOGL->SetUniform(RenderData->HasDetailNormalMap,  CurrentMaterial.DetailNormalMap  != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasAlbedoMap,       CurrentMaterial.AlbedoMap       != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasNormalMap,       CurrentMaterial.NormalMap       != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasRoughnessMap,    CurrentMaterial.RoughnessMap    != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasMetallicMap,     CurrentMaterial.MetallicMap     != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasOcclusionMap,    CurrentMaterial.OcclusionMap    != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
+			ShaderOGL->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
 
 			if (CheckParameter(Tiling))           ShaderOGL->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);
 			if (CheckParameter(DetailTiling))     ShaderOGL->SetUniform(RenderData->DetailTiling,     CurrentMaterial.DetailTiling);
-			if (CheckParameter(Color))            ShaderOGL->SetUniform(RenderData->Color,            CurrentMaterial.Color);
+			if (CheckParameter(Albedo))           ShaderOGL->SetUniform(RenderData->Albedo,           CurrentMaterial.Albedo);
 			if (CheckParameter(Roughness))        ShaderOGL->SetUniform(RenderData->Roughness,        CurrentMaterial.Roughness);
 			if (CheckParameter(Metallic))         ShaderOGL->SetUniform(RenderData->Metallic,         CurrentMaterial.Metallic);
 			if (CheckParameter(EmissionStrength)) ShaderOGL->SetUniform(RenderData->EmissionStrength, CurrentMaterial.EmissionStrength);
@@ -191,48 +191,43 @@ namespace Columbus
 	static void ShaderSetLights(const std::vector<Light*>& InLights)
 	{
 		static constexpr int LightsCount = 4;
-		static float Lights[15 * LightsCount];
+		static float Lights[13 * LightsCount];
 
 		if (CurrentShader != nullptr)
 		{
-			for (auto& Light : InLights)
+			uint32 Counter = 0;
+
+			for (auto& L : InLights)
 			{
-				if (Light != nullptr)
-				{
-					uint32 Counter = 0;
+				uint32 Offset = Counter * 13;
 
-					for (auto& L : InLights)
-					{
-						uint32 Offset = Counter * 15;
+				Lights[Offset + 0] = L->Color.X;
+				Lights[Offset + 1] = L->Color.Y;
+				Lights[Offset + 2] = L->Color.Z;
+				Lights[Offset + 3] = L->Pos.X;
+				Lights[Offset + 4] = L->Pos.Y;
+				Lights[Offset + 5] = L->Pos.Z;
+				Lights[Offset + 6] = L->Dir.X;
+				Lights[Offset + 7] = L->Dir.Y;
+				Lights[Offset + 8] = L->Dir.Z;
+				Lights[Offset + 9] = (float)L->Type;
+				Lights[Offset + 10] = L->Range;
+				Lights[Offset + 11] = L->InnerCutoff;
+				Lights[Offset + 12] = L->OuterCutoff;
 
-						if (InLights.size() > Counter && Counter < LightsCount)
-						{
-							Lights[Offset + 0] = L->Color.X;
-							Lights[Offset + 1] = L->Color.Y;
-							Lights[Offset + 2] = L->Color.Z;
-							Lights[Offset + 3] = L->Pos.X;
-							Lights[Offset + 4] = L->Pos.Y;
-							Lights[Offset + 5] = L->Pos.Z;
-							Lights[Offset + 6] = L->Dir.X;
-							Lights[Offset + 7] = L->Dir.Y;
-							Lights[Offset + 8] = L->Dir.Z;
-							Lights[Offset + 9] = (float)L->Type;
-							Lights[Offset + 10] = L->Constant;
-							Lights[Offset + 11] = L->Linear;
-							Lights[Offset + 12] = L->Quadratic;
-							Lights[Offset + 13] = L->InnerCutoff;
-							Lights[Offset + 14] = L->OuterCutoff;
-						}
+				Counter++;
+			}
 
-						Counter++;
-					}
-				}
+			for (; Counter < LightsCount; Counter++)
+			{
+				uint32 Offset = Counter * 13;
+				Lights[Offset + 9] = -1;
 			}
 
 			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
 			MaterialRenderData* RenderData = (MaterialRenderData*)ShaderOGL->RenderData;
 
-			ShaderOGL->SetUniform(RenderData->Lighting, 15 * LightsCount * sizeof(float), Lights);
+			ShaderOGL->SetUniform(RenderData->Lighting, sizeof(Lights), Lights);
 		}
 	}
 
@@ -307,7 +302,7 @@ namespace Columbus
 					{
 						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetMatrix()))
 						{
-							Object.second->GetMaterial().Reflection = Sky->GetIrradianceMap();
+							Object.second->GetMaterial().ReflectionMap = Sky->GetIrradianceMap();
 
 							if (Object.second->GetMaterial().Transparent)
 							{
@@ -552,6 +547,5 @@ namespace Columbus
 	}
 
 }
-
 
 

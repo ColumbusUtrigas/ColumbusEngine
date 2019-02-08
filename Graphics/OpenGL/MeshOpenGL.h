@@ -8,7 +8,7 @@ namespace Columbus
 	class MeshOpenGL : public Mesh
 	{
 	private:
-		uint32 VBuf = 0;
+		uint32 VBO = 0;
 		uint32 IBO = 0;
 		uint32 VAO = 0;
 

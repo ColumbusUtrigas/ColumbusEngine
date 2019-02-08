@@ -311,7 +311,7 @@ namespace Columbus
 
 		inline bool operator==(const Array& Other)
 		{
-			return GetCount() == Other.GetCount() && std::equal(GetData(), GetData() + GetCount(), Other.GetData());
+			return GetCount() == Other.GetCount() && memcmp(GetData(), Other.GetData(), GetCount() * sizeof(T));
 		}
 
 		inline bool operator!=(const Array& Other)

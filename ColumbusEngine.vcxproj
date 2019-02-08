@@ -178,6 +178,7 @@
     <ClInclude Include="Common\Image\PNG\ImagePNG.h" />
     <ClInclude Include="Common\Image\TGA\ImageTGA.h" />
     <ClInclude Include="Common\Image\TIF\ImageTIF.h" />
+    <ClInclude Include="Common\JSON\JSON.h" />
     <ClInclude Include="Common\Model\CMF\ModelCMF.h" />
     <ClInclude Include="Common\Model\Model.h" />
     <ClInclude Include="Common\Noise\OctaveNoise.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Common\Sound\WAV\SoundWAV.h" />
     <ClInclude Include="Core\Containers\Array.h" />
     <ClInclude Include="Core\Containers\String.h" />
+    <ClInclude Include="Core\Containers\Vector.h" />
     <ClInclude Include="Core\Core.h" />
     <ClInclude Include="Core\Linux\PlatformLinuxClipboard.h" />
     <ClInclude Include="Core\Linux\PlatformLinuxFilesystem.h" />
@@ -291,6 +293,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioMixer.cpp" />
+    <ClCompile Include="Audio\AudioPlayer.cpp" />
     <ClCompile Include="Audio\AudioSource.cpp" />
     <ClCompile Include="Audio\AudioSystem.cpp" />
     <ClCompile Include="Common\Image\BMP\ImageBMP.cpp" />
@@ -300,6 +303,7 @@
     <ClCompile Include="Common\Image\PNG\ImagePNG.cpp" />
     <ClCompile Include="Common\Image\TGA\ImageTGA.cpp" />
     <ClCompile Include="Common\Image\TIF\ImageTIF.cpp" />
+    <ClCompile Include="Common\JSON\JSON.cpp" />
     <ClCompile Include="Common\Model\CMF\ModelCMF.cpp" />
     <ClCompile Include="Common\Model\Model.cpp" />
     <ClCompile Include="Common\Sound\MP3\SoundMP3.cpp" />

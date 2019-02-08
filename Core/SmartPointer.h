@@ -1,7 +1,5 @@
 #pragma once
 
-#include <utility>
-
 namespace Columbus
 {
 
@@ -14,15 +12,17 @@ namespace Columbus
 		SmartPointer() : Obj(nullptr) {}
 		explicit SmartPointer(Type* Pointer) : Obj(Pointer) {}
 		SmartPointer(const SmartPointer&) = delete;
-		SmartPointer(SmartPointer&& aOther)
+		SmartPointer(SmartPointer&& Other)
 		{
-			std::swap(Obj, aOther.Obj);
+			Obj = Other.Obj;
+			Other.Obj = nullptr;
 		}
 
 		SmartPointer& operator=(const SmartPointer&) = delete;
 		SmartPointer& operator=(SmartPointer&& Other)
 		{
-			std::swap(Obj, Other.Obj);
+			Obj = Other.Obj;
+			Other.Obj = nullptr;
 			return *this;
 		}
 
@@ -63,8 +63,5 @@ namespace Columbus
 	};
 
 }
-
-
-
 
 

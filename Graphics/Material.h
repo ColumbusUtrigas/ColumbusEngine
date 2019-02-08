@@ -20,13 +20,13 @@ namespace Columbus
 			FrontAndBack
 		};
 	private:
-		int mTextureID = -1;
-		int mNormMapID = -1;
+		int AlbedoMapID = -1;
+		int NormalMapID = -1;
 		int RoughnessMapID = -1;
 		int MetallicMapID = -1;
 		int OcclusionMapID = -1;
 		int EmissionMapID = -1;
-		int DetailDiffuseMapID = -1;
+		int DetailAlbedoMapID = -1;
 		int DetailNormalMapID = -1;
 	protected:
 		ShaderProgram* ShaderProg = nullptr;
@@ -36,20 +36,20 @@ namespace Columbus
 		bool Transparent = false;
 		bool Lighting = true;
 
-		Texture* DiffuseTexture = nullptr;
-		Texture* NormalTexture = nullptr;
-		Texture* RoughnessTexture = nullptr;
-		Texture* MetallicTexture = nullptr;
+		Texture* AlbedoMap = nullptr;
+		Texture* NormalMap = nullptr;
+		Texture* RoughnessMap = nullptr;
+		Texture* MetallicMap = nullptr;
 		Texture* OcclusionMap = nullptr;
 		Texture* EmissionMap = nullptr;
-		Texture* DetailDiffuseMap = nullptr;
+		Texture* DetailAlbedoMap = nullptr;
 		Texture* DetailNormalMap = nullptr;
-		Texture* Reflection = nullptr;
+		Texture* ReflectionMap = nullptr;
 
 		Vector2 Tiling = Vector2(1, 1);
 		Vector2 DetailTiling = Vector2(4, 4);
 
-		Vector4 Color;
+		Vector4 Albedo;
 
 		float Roughness = 1.0f;
 		float Metallic = 0.1f;
@@ -63,17 +63,15 @@ namespace Columbus
 		void SetShader(ShaderProgram* InShader);
 		ShaderProgram* GetShader() const;
 
-		int getTextureID() const;
-		int getNormMapID() const;
+		int GetAlbedoMapID() const;
+		int GetNormalMapID() const;
 		int GetRoughnessMapID() const;
 		int GetMetallicMapID() const;
 		int GetOcclusionMapID() const;
 		int GetEmissionMapID() const;
-		int GetDetailDiffuseMapID() const;
+		int GetDetailAlbedoMapID() const;
 		int GetDetailNormalMapID() const;
 
-		bool LoadFromXML(const char* FileName);
-		bool LoadFromJSON(const char* FileName);
 		bool Load(const char* FileName);
 
 		bool operator==(const Material& Other) const;

@@ -65,7 +65,7 @@
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/Hercules.cxmat</Material>
+			<Material>Data/Materials/Hercules.mat</Material>
 			<Shader>0</Shader>
 
 			<Components>
@@ -84,7 +84,7 @@
 				<Scale X="5" Y="5" Z="5"/>
 			</Transform>
 
-			<Material>Data/Materials/Statue.cxmat</Material>
+			<Material>Data/Materials/Statue.mat</Material>
 			<Shader>0</Shader>
 
 			<Components>
@@ -103,7 +103,7 @@
 				<Scale X="2" Y="2" Z="2"/>
 			</Transform>
 
-			<Material>Data/Materials/Fireplace.cxmat</Material>
+			<Material>Data/Materials/Fireplace.mat</Material>
 			<Shader>0</Shader>
 
 			<Components>
@@ -137,7 +137,7 @@
 				<Scale X="2" Y="2" Z="2"/>
 			</Transform>
 
-			<Material>Data/Materials/Lantern.cxmat</Material>
+			<Material>Data/Materials/Lantern.mat</Material>
 			<Shader>0</Shader>
 
 			<Components>
@@ -156,12 +156,12 @@
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/FireplaceEmbers.cxmat</Material>
+			<Material>Data/Materials/FireplaceEmbers.mat</Material>
 			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/FireplaceEmbers.cxpar</Particles>
+					<Particles>Data/Particles/FireplaceEmbers.par</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject4>
@@ -175,12 +175,12 @@
 				<Scale X="1" Y="1" Z="1"/>
 			</Transform>
 
-			<Material>Data/Materials/FireplaceSmoke.cxmat</Material>
+			<Material>Data/Materials/FireplaceSmoke.mat</Material>
 			<Shader>1</Shader>
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/FireplaceSmoke.cxpar</Particles>
+					<Particles>Data/Particles/FireplaceSmoke.par</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject5>
@@ -199,7 +199,7 @@
 
 			<Components>
 				<LightComponent>
-					<Light>Data/Lights/Sun.cxlig</Light>
+					<Light>Data/Lights/Sun.lig</Light>
 				</LightComponent>
 			</Components>
 		</GameObject6>
@@ -218,7 +218,7 @@
 
 			<Components>
 				<LightComponent>
-					<Light>Data/Lights/1.cxlig</Light>
+					<Light>Data/Lights/FireplaceLight.lig</Light>
 				</LightComponent>
 			</Components>
 		</GameObject7>

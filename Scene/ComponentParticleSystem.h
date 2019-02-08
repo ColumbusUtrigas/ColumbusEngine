@@ -47,7 +47,7 @@ namespace Columbus
 		{
 			if (Emitter != nullptr)
 			{
-				return Emitter->GetParticleEffect()->getMaterial()->GetShader();
+				return Emitter->GetParticleEffect()->Material.GetShader();
 			}
 
 			return nullptr;
@@ -57,7 +57,7 @@ namespace Columbus
 		{
 			if (Emitter != nullptr)
 			{
-				Emitter->GetParticleEffect()->getMaterial()->SetShader(Shader);
+				Emitter->GetParticleEffect()->Material.SetShader(Shader);
 			}
 		}
 

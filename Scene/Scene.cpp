@@ -2,17 +2,34 @@
 #include <Graphics/Device.h>
 #include <System/Serializer.h>
 
+#include <Scene/ComponentAudioSource.h>
+#include <Scene/ComponentLight.h>
+#include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentParticleSystem.h>
+#include <Scene/ComponentRigidbody.h>
+
+#include <Physics/PhysicsShape.h>
+#include <Physics/PhysicsShapeBox.h>
+#include <Physics/PhysicsShapeCapsule.h>
+#include <Physics/PhysicsShapeCone.h>
+#include <Physics/PhysicsShapeConvexHull.h>
+#include <Physics/PhysicsShapeCylinder.h>
+#include <Physics/PhysicsShapeMultiSphere.h>
+#include <Physics/PhysicsShapeSphere.h>
+
+#include <Graphics/Primitives.h>
+
 namespace Columbus
 {
 
-	Scene::Scene() : mSkybox(nullptr)
+	Scene::Scene()
 	{
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
 	}
 
-	void Scene::audioWorkflow()
+	void Scene::AudioWorkflow()
 	{
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
 			ComponentAudioSource* audio = static_cast<ComponentAudioSource*>(Object.second->GetComponent(Component::Type::AudioSource));
 
@@ -26,82 +43,74 @@ namespace Columbus
 		}
 	}
 
-	void Scene::lightWorkflow()
+	void Scene::LightWorkflow()
 	{
-		mLights.clear();
+		Lights.clear();
 		
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
-			ComponentLight* light =
-				static_cast<ComponentLight*>(Object.second->GetComponent(Component::Type::Light));
+			ComponentLight* light = static_cast<ComponentLight*>(Object.second->GetComponent(Component::Type::Light));
 
 			if (light != nullptr)
 			{
 				light->Render(Object.second->transform);
-				mLights.push_back(light->GetLight());
+				Lights.push_back(light->GetLight());
 			}
 		}
 	}
 
-	void Scene::meshWorkflow()
+	void Scene::MeshWorkflow()
 	{
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
-			ComponentMeshRenderer* mesh =
-				static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
+			ComponentMeshRenderer* mesh = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
 
 			if (mesh != nullptr)
 			{
-				mesh->SetLights(mLights);
+				mesh->SetLights(Lights);
 			}
 		}
 	}
 	
-	void Scene::particlesWorkflow()
+	void Scene::ParticlesWorkflow()
 	{
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
-			ComponentParticleSystem* ps =
-				static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
+			ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
 
 			if (ps != nullptr)
 			{
-				//ps->SetLights(mLights);
-
 				if (ps->GetEmitter() != nullptr)
 				{
 					if(ps->GetEmitter()->GetParticleEffect() != nullptr)
 					{
-						ps->GetEmitter()->GetParticleEffect()->setPos(Object.second->transform.GetPos());
+						ps->GetEmitter()->GetParticleEffect()->Position = Object.second->transform.GetPos();
 					}
 				}
 
-				if (mCamera != nullptr) ps->SetCamera(*mCamera);
+				if (MainCamera != nullptr) ps->SetCamera(*MainCamera);
 			}
 		}
 	}
 
-	void Scene::rigidbodyWorkflow()
+	void Scene::RigidbodyWorkflow()
 	{
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
-			ComponentRigidbody* rb =
-				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
+			ComponentRigidbody* rb = static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
 
 			if (rb != nullptr)
 			{
-				//rb->Render(Object.second->transform);
 				rb->GetRigidbody()->SetTransform(Object.second->transform);
 			}
 		}
 	}
 
-	void Scene::rigidbodyPostWorkflow()
+	void Scene::RigidbodyPostWorkflow()
 	{
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
-			ComponentRigidbody* rb =
-				static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
+			ComponentRigidbody* rb = static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
 
 			if (rb != nullptr)
 			{
@@ -231,7 +240,11 @@ namespace Columbus
 			{
 				if (ParticleSystemPath != "None")
 				{
-					ParticleSystem = new ComponentParticleSystem(new ParticleEmitter(new ParticleEffect(ParticleSystemPath, Mat)));
+					ParticleEffect* Effect = new ParticleEffect();
+					if (!Effect->Load(ParticleSystemPath.c_str())) return nullptr;
+					Effect->Material = *Mat;
+					ParticleEmitter* Emitter = new ParticleEmitter(Effect);
+					ParticleSystem = new ComponentParticleSystem(Emitter);
 				}
 			}
 		}
@@ -492,45 +505,14 @@ namespace Columbus
 				return false;
 			}
 
-			if (material->getTextureID() != -1)
-			{
-				material->DiffuseTexture = Textures->at(material->getTextureID()).Get();
-			}
-
-			if (material->getNormMapID() != -1)
-			{
-				material->NormalTexture = Textures->at(material->getNormMapID()).Get();
-			}
-
-			if (material->GetRoughnessMapID() != -1)
-			{
-				material->RoughnessTexture = Textures->at(material->GetRoughnessMapID()).Get();
-			}
-
-			if (material->GetMetallicMapID() != -1)
-			{
-				material->MetallicTexture = Textures->at(material->GetMetallicMapID()).Get();
-			}
-
-			if (material->GetOcclusionMapID() != -1)
-			{
-				material->OcclusionMap = Textures->at(material->GetOcclusionMapID()).Get();
-			}
-
-			if (material->GetEmissionMapID() != -1)
-			{
-				material->EmissionMap = Textures->at(material->GetEmissionMapID()).Get();
-			}
-
-			if (material->GetDetailDiffuseMapID() != -1)
-			{
-				material->DetailDiffuseMap = Textures->at(material->GetDetailDiffuseMapID()).Get();
-			}
-
-			if (material->GetDetailNormalMapID() != -1)
-			{
-				material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID()).Get();
-			}
+			if (material->GetAlbedoMapID() != -1) material->AlbedoMap = Textures->at(material->GetAlbedoMapID()).Get();
+			if (material->GetNormalMapID() != -1) material->NormalMap = Textures->at(material->GetNormalMapID()).Get();
+			if (material->GetRoughnessMapID() != -1) material->RoughnessMap = Textures->at(material->GetRoughnessMapID()).Get();
+			if (material->GetMetallicMapID() != -1) material->MetallicMap = Textures->at(material->GetMetallicMapID()).Get();
+			if (material->GetOcclusionMapID() != -1) material->OcclusionMap = Textures->at(material->GetOcclusionMapID()).Get();
+			if (material->GetEmissionMapID() != -1) material->EmissionMap = Textures->at(material->GetEmissionMapID()).Get();
+			if (material->GetDetailAlbedoMapID() != -1) material->DetailAlbedoMap = Textures->at(material->GetDetailAlbedoMapID()).Get();
+			if (material->GetDetailNormalMapID() != -1) material->DetailNormalMap = Textures->at(material->GetDetailNormalMapID()).Get();
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
@@ -566,21 +548,21 @@ namespace Columbus
 
 			OutObject.SetTransform(transform);
 			OutObject.SetMaterial(*material);
-			OutObject.SetName(name);
+			OutObject.Name = name;
 		}
 
 		return true;
 	}
 	
-	bool Scene::load(std::string aFile)
+	bool Scene::Load(const char* FileName)
 	{
 		if (!gDevice)
-		{ Log::Error("Can't load Scene: %s: Device is missing", aFile.c_str()); return false; }
+		{ Log::Error("Can't load Scene: %s: Device is missing", FileName); return false; }
 
 		Serializer::SerializerXML serializer;
 
-		if (!serializer.Read(aFile, "Scene"))
-		{ Log::Error("Can't load Scene: %s", aFile.c_str()); return false; }
+		if (!serializer.Read(FileName, "Scene"))
+		{ Log::Error("Can't load Scene: %s", FileName); return false; }
 
 		uint32 count = 0;
 		uint32 texCount = 0;
@@ -599,7 +581,7 @@ namespace Columbus
 				Texture* Refl = gDevice->CreateTexture();
 				Refl->CreateCube(Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
 				Refl->Load(ReflImage);
-				mSkybox = new Skybox(Refl);
+				Sky = new Skybox(Refl);
 
 				Log::Success("Default skybox loaded: %s", path.c_str());
 			}
@@ -621,7 +603,7 @@ namespace Columbus
 						Tex->Load(Img);
 
 						Log::Success("Texture loaded: %s", path.c_str());
-						mTextures.insert(std::make_pair(i, SmartPointer<Texture>(Tex)));
+						Textures.insert(std::make_pair(i, SmartPointer<Texture>(Tex)));
 					}
 				}
 			}
@@ -697,7 +679,7 @@ namespace Columbus
 		}
 
 		if (!serializer.GetSubInt({"GameObjects", "Count"}, (int32&)count))
-		{ Log::Error("Can't load Scene Count: %s", aFile.c_str()); return false; }
+		{ Log::Error("Can't load Scene Count: %s", FileName); return false; }
 
 		for (uint32 i = 0; i < count; i++)
 		{
@@ -705,7 +687,7 @@ namespace Columbus
 
 			GameObject Object;
 
-			if (SceneLoadGameObject(Object, &serializer, elem, &Meshes, &mTextures, &ShaderPrograms, &Sounds, &PhysWorld))
+			if (SceneLoadGameObject(Object, &serializer, elem, &Meshes, &Textures, &ShaderPrograms, &Sounds, &PhysWorld))
 			{
 				Add(i, std::move(Object));
 			}
@@ -713,18 +695,18 @@ namespace Columbus
 		return true;
 	}
 	
-	GameObject* Scene::getGameObject(const unsigned int aID) const
+	GameObject* Scene::GetGameObject(uint32 ID) const
 	{
-		return mObjects.at(aID).Get();
+		return Objects.at(ID).Get();
 	}
 	
-	GameObject* Scene::getGameObject(const std::string aName) const
+	GameObject* Scene::GetGameObject(const std::string& Name) const
 	{
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
 			if (Object.second != nullptr)
 			{
-				if (Object.second->GetName() == aName)
+				if (Object.second->Name == Name)
 				{
 					return Object.second.Get();
 				}
@@ -734,60 +716,55 @@ namespace Columbus
 		return nullptr;
 	}
 	
-	void Scene::update()
+	void Scene::Update()
 	{
-		audioWorkflow();
-		lightWorkflow();
-		meshWorkflow();
-		particlesWorkflow();
-		rigidbodyWorkflow();
+		AudioWorkflow();
+		LightWorkflow();
+		MeshWorkflow();
+		ParticlesWorkflow();
+		RigidbodyWorkflow();
 
-		PhysWorld.Step((float)DeltaTime.Elapsed(), 10);
+		float Time = (float)DeltaTime.Elapsed();
+
+		PhysWorld.Step(Time, 10);
 		DeltaTime.Reset();
 
-		rigidbodyPostWorkflow();
+		RigidbodyPostWorkflow();
 
 		if (Listener != nullptr)
 		{
 			Audio.SetListener(*Listener);
 		}
 
-		if (mSkybox && mCamera)
+		if (Sky != nullptr && MainCamera != nullptr)
 		{
-			mSkybox->SetCamera(*mCamera);
+			Sky->SetCamera(*MainCamera);
 		}
 
-		for (auto& Object : mObjects)
+		for (auto& Object : Objects)
 		{
 			if (Object.second != nullptr)
 			{
-				if (mSkybox != nullptr)
-				{
-					Object.second->GetMaterial().Reflection = mSkybox->GetCubemap();
-				}
-
-				Object.second->Update();
+				Object.second->Update(Time);
 			}
 		}
 	}
 	
-	void Scene::render()
+	void Scene::Render()
 	{
-		Render.SetContextSize(ContextSize);
-		Render.SetMainCamera(*mCamera);
-		Render.SetSky(mSkybox);
-		Render.SetRenderList(&mObjects);
-		Render.Render();
+		MainRender.SetContextSize(ContextSize);
+		MainRender.SetMainCamera(*MainCamera);
+		MainRender.SetSky(Sky);
+		MainRender.SetRenderList(&Objects);
+		MainRender.Render();
 	}
 	
 	Scene::~Scene()
 	{
-		mObjects.clear();
-		delete mSkybox;
+		Objects.clear();
+		delete Sky;
 	}
 
 }
-
-
 
 

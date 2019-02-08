@@ -3,8 +3,6 @@
 #include <Graphics/Material.h>
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
-#include <System/Timer.h>
-#include <Core/Containers/Array.h>
 #include <Core/SmartPointer.h>
 #include <vector>
 
@@ -17,20 +15,14 @@ namespace Columbus
 		std::vector<SmartPointer<GameObject>> Children;
 		std::vector<SmartPointer<Component>> Components;
 
-		std::string Name;
-
-		Timer mTimer;
-
 		Material ObjectMaterial;
 	public:
 		Transform transform;
-
+		std::string Name;
+	public:
 		GameObject();
 		GameObject(const GameObject&) = delete;
 		GameObject(GameObject&&) = default;
-
-		void SetName(std::string Name);
-		std::string GetName() const;
 
 		void AddChild(GameObject* Child);
 		void AddComponent(Component* Component);
@@ -41,7 +33,7 @@ namespace Columbus
 		void SetMaterial(Material InMaterial);
 		Material& GetMaterial();
 
-		void Update();
+		void Update(float DeltaTime);
 		void Render();
 
 		bool HasComponent(Component::Type Type);
@@ -54,3 +46,5 @@ namespace Columbus
 	};
 
 }
+
+

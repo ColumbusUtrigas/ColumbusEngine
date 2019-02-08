@@ -1,15 +1,15 @@
 #include <Graphics/Material.h>
-#include <System/Log.h>
 #include <System/Serializer.h>
+#include <Common/JSON/JSON.h>
+#include <System/Log.h>
 
 namespace Columbus
 {
 
 	Material::Material() {}
-	
 	Material::Material(const char* FileName)
 	{
-		LoadFromXML(FileName);
+		Load(FileName);
 	}
 
 	bool Material::Prepare()
@@ -39,14 +39,14 @@ namespace Columbus
 		return ShaderProg;
 	}
 	
-	int Material::getTextureID() const
+	int Material::GetAlbedoMapID() const
 	{
-		return mTextureID;
+		return AlbedoMapID;
 	}
 
-	int Material::getNormMapID() const
+	int Material::GetNormalMapID() const
 	{
-		return mNormMapID;
+		return NormalMapID;
 	}
 
 	int Material::GetRoughnessMapID() const
@@ -69,164 +69,63 @@ namespace Columbus
 		return EmissionMapID;
 	}
 
-	int Material::GetDetailDiffuseMapID() const
+	int Material::GetDetailAlbedoMapID() const
 	{
-		return DetailDiffuseMapID;
+		return DetailAlbedoMapID;
 	}
 
 	int Material::GetDetailNormalMapID() const
 	{
 		return DetailNormalMapID;
 	}
-	
-	bool Material::LoadFromXML(const char* FileName)
+
+	bool Material::Load(const char* FileName)
 	{
-		Serializer::SerializerXML Serializer;
+		JSON J;
+		if (!J.Load(FileName)) return false;
 
-		if (!Serializer.Read(FileName, "Material"))
-		{ Log::Error("Can't load Material: %s", FileName); return false; }
+		if (J["Culling"].GetString() == "No")           Culling = Cull::No;
+		if (J["Culling"].GetString() == "Front")        Culling = Cull::Front;
+		if (J["Culling"].GetString() == "Back")         Culling = Cull::Back;
+		if (J["Culling"].GetString() == "FrontAndBack") Culling = Cull::FrontAndBack;
 
-		std::string MaterialCulling;
+		DepthWriting = J["DepthWriting"].GetBool();
+		Transparent  = J["Transparent"] .GetBool();
+		Lighting     = J["Lighting"]    .GetBool();
+		Tiling       = J["Tiling"]      .GetVector2<float>();
+		DetailTiling = J["DetailTiling"].GetVector2<float>();
+		Albedo       = J["Albedo"]      .GetVector4<float>();
 
-		if (!Serializer.GetString("Culling", MaterialCulling))
-		{ Log::Error("Can't load Material culling: %s", FileName); return false; }
+		Roughness        = (float)J["Roughness"]       .GetFloat();
+		Metallic         = (float)J["Metallic"]        .GetFloat();
+		EmissionStrength = (float)J["EmissionStrength"].GetFloat();
 
-		if (!Serializer.GetBool("DepthWriting", DepthWriting))
-		{ Log::Error("Can't load Material depth writing: %s", FileName); return false; }
-
-		if (!Serializer.GetBool("Transparent", Transparent))
-		{ Log::Error("Can't load Material transparent: %s", FileName); return false; }
-
-		if (!Serializer.GetVector2("Tiling", Tiling, { "X", "Y"}))
-		{ Log::Error("Can't load Material tiling: %s", FileName); return false; }
-
-		if (!Serializer.GetVector2("DetailTiling", DetailTiling, { "X", "Y"}))
-		{ Log::Error("Can't load Material detail tiling: %s", FileName); return false; }
-
-		if (!Serializer.GetVector4("Color", Color, { "R", "G", "B", "A" }))
-		{ Log::Error("Can't load Material color: %s", FileName); return false; }
-
-		if (!Serializer.GetFloat("Roughness", Roughness))
-		{ Log::Error("Can't load Material roughness: %s", FileName); return false; }
-
-		if (!Serializer.GetFloat("Metallic", Metallic))
-		{ Log::Error("Can't load Material metallic: %s", FileName); return false; }
-
-		if (!Serializer.GetFloat("EmissionStrength", EmissionStrength))
-		{ Log::Error("Can't load Material emission strength: %s", FileName); return false; }
-
-		std::string diffuseMapPath = "None";
-		std::string normalMapPath = "None";
-		std::string RoughnessMapPath = "None";
-		std::string MetallicMapPath = "None";
-		std::string OcclusionMapPath = "None";
-		std::string EmissionMapPath = "None";
-		std::string DetailDiffuseMapPath = "None";
-		std::string DetailNormalMapPath = "None";
-
-		Serializer.GetSubString({"Textures", "Diffuse"}, diffuseMapPath);
-		Serializer.GetSubString({"Textures", "Normal"}, normalMapPath);
-		Serializer.GetSubString({"Textures", "Roughness"}, RoughnessMapPath);
-		Serializer.GetSubString({"Textures", "Metallic"}, MetallicMapPath);
-		Serializer.GetSubString({"Textures", "Occlusion"}, OcclusionMapPath);
-		Serializer.GetSubString({"Textures", "Emission"}, EmissionMapPath);
-		Serializer.GetSubString({"Textures", "DetailDiffuse"}, DetailDiffuseMapPath);
-		Serializer.GetSubString({"Textures", "DetailNormal"}, DetailNormalMapPath);
-
-		if (diffuseMapPath != "None")
-		{
-			mTextureID = std::atoi(diffuseMapPath.c_str());
-		}
-
-		if (normalMapPath != "None")
-		{
-			mNormMapID = std::atoi(normalMapPath.c_str());
-		}
-
-		if (RoughnessMapPath != "None")
-		{
-			RoughnessMapID = std::atoi(RoughnessMapPath.c_str());
-		}
-
-		if (MetallicMapPath != "None")
-		{
-			MetallicMapID = std::atoi(MetallicMapPath.c_str());
-		}
-
-		if (OcclusionMapPath != "None")
-		{
-			OcclusionMapID = std::atoi(OcclusionMapPath.c_str());
-		}
-
-		if (EmissionMapPath != "None")
-		{
-			EmissionMapID = std::atoi(EmissionMapPath.c_str());
-		}
-
-		if (DetailDiffuseMapPath != "None")
-		{
-			DetailDiffuseMapID = std::atoi(DetailDiffuseMapPath.c_str());
-		}
-
-		if (DetailNormalMapPath != "None")
-		{
-			DetailNormalMapID = std::atoi(DetailNormalMapPath.c_str());
-		}
-
-		if (MaterialCulling == "No")
-		{
-			Culling = Cull::No;
-		}
-		else if (MaterialCulling == "Front")
-		{
-			Culling = Cull::Front;
-		}
-		else if (MaterialCulling == "Back")
-		{
-			Culling = Cull::Back;
-		}
-		else if (MaterialCulling == "FrontAndBack")
-		{
-			Culling = Cull::FrontAndBack;
-		}
+		AlbedoMapID       = J["Textures"]["Albedo"]      .IsInt() ? (int)J["Textures"]["Albedo"]      .GetInt() : -1;
+		NormalMapID       = J["Textures"]["Normal"]      .IsInt() ? (int)J["Textures"]["Normal"]      .GetInt() : -1;
+		RoughnessMapID    = J["Textures"]["Roughness"]   .IsInt() ? (int)J["Textures"]["Roughness"]   .GetInt() : -1;
+		MetallicMapID     = J["Textures"]["Metallic"]    .IsInt() ? (int)J["Textures"]["Metallic"]    .GetInt() : -1;
+		OcclusionMapID    = J["Textures"]["Occlusion"]   .IsInt() ? (int)J["Textures"]["Occlusion"]   .GetInt() : -1;
+		EmissionMapID     = J["Textures"]["Emission"]    .IsInt() ? (int)J["Textures"]["Emission"]    .GetInt() : -1;
+		DetailAlbedoMapID = J["Textures"]["DetailAlbedo"].IsInt() ? (int)J["Textures"]["DetailAlbedo"].GetInt() : -1;
+		DetailNormalMapID = J["Textures"]["DetailNormal"].IsInt() ? (int)J["Textures"]["DetailNormal"].GetInt() : -1;
 
 		Log::Success("Material loaded: %s", FileName);
 
 		return true;
 	}
 
-	bool Material::LoadFromJSON(const char* FileName)
-	{
-		return false;
-	}
-
-	bool Material::Load(const char* FileName)
-	{
-		if (strcmp(strrchr(FileName, '.'), ".cxmat") == 0)
-		{
-			return LoadFromXML(FileName);
-		}
-
-		if (strcmp(strrchr(FileName, '.'), ".cjmat") == 0)
-		{
-			return LoadFromJSON(FileName);
-		}
-
-		return false;
-	}
-
 	bool Material::operator==(const Material& Other) const
 	{
-		return (Color == Other.Color &&
-		        DiffuseTexture == Other.DiffuseTexture &&
-		        NormalTexture == Other.NormalTexture &&
-		        RoughnessTexture == Other.RoughnessTexture &&
-		        MetallicTexture == Other.MetallicTexture &&
+		return (Albedo == Other.Albedo &&
+		        AlbedoMap == Other.AlbedoMap &&
+		        NormalMap == Other.NormalMap &&
+		        RoughnessMap == Other.RoughnessMap &&
+		        MetallicMap == Other.MetallicMap &&
 		        OcclusionMap == Other.OcclusionMap &&
 		        EmissionMap == Other.EmissionMap &&
-		        DetailDiffuseMap == Other.DetailDiffuseMap &&
+		        DetailAlbedoMap == Other.DetailAlbedoMap &&
 		        DetailNormalMap == Other.DetailNormalMap &&
-		        Reflection == Other.Reflection &&
+		        ReflectionMap == Other.ReflectionMap &&
 		        ShaderProg == Other.ShaderProg &&
 		        Roughness == Other.Roughness &&
 		        Metallic == Other.Metallic &&
@@ -245,7 +144,5 @@ namespace Columbus
 	}
 
 }
-
-
 
 

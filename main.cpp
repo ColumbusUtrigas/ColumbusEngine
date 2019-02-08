@@ -49,19 +49,19 @@ int main(int argc, char** argv)
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
 
-	window.SetVSync(false);
+	window.SetVSync(true);
 
 	input.ShowMouseCursor(false);
 	input.SetSystemCursor(SystemCursor::Crosshair);
 
 	bool cursor = false;
-	scene.load("Data/2.scene");
+	scene.Load("Data/2.scene");
 
 	scene.SetCamera(&camera);
 	scene.SetAudioListener(&Listener);
 	scene.Audio.Play();
 
-	Fireplace = scene.getGameObject(2);
+	Fireplace = scene.GetGameObject(2);
 	Fireplace->AddComponent(new FireplaceBright());
 
 	Mesh* Sphere = gDevice->CreateMesh();
@@ -71,8 +71,6 @@ int main(int argc, char** argv)
 		SphereModel.Load("Data/Models/Sphere.cmf");
 		Sphere->Load(SphereModel);
 	}
-
-	float Values[] = { 0.01f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
 
 	GameObject Tests[36];
 
@@ -89,13 +87,13 @@ int main(int argc, char** argv)
 		for (int Metallic = 0; Metallic < 6; Metallic++)
 		{
 			Y -= 2;
-			Tests[Roughness * 6 + Metallic].GetMaterial().SetShader(scene.getGameObject(0)->GetMaterial().GetShader());
-			Tests[Roughness * 6 + Metallic].GetMaterial().Color = Vector4(1);
-			//Tests[Roughness * 6 + Metallic].GetMaterial().Color = Vector4(Vector3(0, 1, 0), 0.5);
+			Tests[Roughness * 6 + Metallic].GetMaterial().SetShader(scene.GetGameObject(0)->GetMaterial().GetShader());
+			Tests[Roughness * 6 + Metallic].GetMaterial().Albedo = Vector4(1);
+			//Tests[Roughness * 6 + Metallic].GetMaterial().Albedo = Vector4(Vector3(0, 1, 0), 0.5);
 			//Tests[Roughness * 6 + Metallic].GetMaterial().Transparent = true;
 			//Tests[Roughness * 6 + Metallic].GetMaterial().Culling = Material::Cull::No;
-			Tests[Roughness * 6 + Metallic].GetMaterial().Roughness = Values[Roughness];
-			Tests[Roughness * 6 + Metallic].GetMaterial().Metallic = Values[Metallic];
+			Tests[Roughness * 6 + Metallic].GetMaterial().Roughness = Math::Clamp(Roughness * 0.2f, 0.01f, 1.0f);
+			Tests[Roughness * 6 + Metallic].GetMaterial().Metallic = Math::Clamp(Metallic * 0.2f, 0.01f, 1.0f);
 			trans.SetPos(Vector3(X, Y, 20));
 			Tests[Roughness * 6 + Metallic].SetTransform(trans);
 			Tests[Roughness * 6 + Metallic].AddComponent(new ComponentMeshRenderer(Sphere));
@@ -106,6 +104,20 @@ int main(int argc, char** argv)
 	SDL_Event Event;
 
 	float wheel = 0.0f;
+
+	/*JSON J;
+	printf("%i\n", J.Load("test.json"));
+	printf("%s\n", J["s"].GetString().c_str());
+	printf("%i\n", J["i"].GetInt());
+	printf("%f\n", J["f"].GetFloat());
+	printf("%i\n", J["b"].GetBool());
+	printf("%i\n", J["n"].IsNull());
+	for (int i = 0; i < J["a"].GetElementsCount(); i++)
+		printf("%i\n", J["a"][i].GetInt());
+	printf("%s\n", J["o"]["s"].GetString().c_str());*/
+	/*J.Parse("{ \"hello\": \"world\" }");
+	printf("%i %i\n", J.IsObject(), J.GetChildrenCount());
+	printf("%i %s\n", J["hello"].IsString(), J["hello"].GetString().c_str());*/
 
 	while (window.IsOpen())
 	{
@@ -187,8 +199,8 @@ int main(int argc, char** argv)
 		Listener.Forward = camera.Direction();
 
 		scene.SetContextSize(window.GetSize());
-		scene.update();
-		scene.render();
+		scene.Update();
+		scene.Render();
 
 		window.Display();
 
