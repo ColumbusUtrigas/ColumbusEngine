@@ -2,7 +2,7 @@
 
 #include <Audio/AudioSource.h>
 #include <Audio/AudioListener.h>
-#include <Core/Containers/Array.h>
+#include <Core/Containers/Vector.h>
 
 namespace Columbus
 {
@@ -11,7 +11,7 @@ namespace Columbus
 	{
 	private:
 		AudioListener Listener;
-		Array<AudioSource*> Sources;
+		Vector<AudioSource*> Sources;
 
 		Sound::Frame* Data = nullptr;
 		Sound::FrameHight* Mixed = nullptr;

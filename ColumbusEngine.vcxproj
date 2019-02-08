@@ -92,7 +92,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
@@ -109,7 +109,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
@@ -128,7 +128,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
@@ -149,7 +149,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\JSON;$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>

@@ -1,5 +1,6 @@
 #include <Audio/AudioMixer.h>
 #include <Common/Sound/Sound.h>
+#include <cstring>
 
 namespace Columbus
 {
@@ -64,8 +65,8 @@ namespace Columbus
 			BufferInitialized = true;
 		}
 
-		Memory::Memset(Data, 0, Count * sizeof(Sound::Frame));
-		Memory::Memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
+		memset(Data, 0, Count * sizeof(Sound::Frame));
+		memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
 
 		for (auto& Source : Sources)
 		{

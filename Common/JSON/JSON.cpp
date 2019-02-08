@@ -149,18 +149,18 @@ namespace Columbus
 			while (*Text != '\0')
 			{
 				SkipSpace(Text);
-				if (*Text == ']' && ArrayValue.Size() == 0) { ValueType = Type::Array; return true; }
+				if (*Text == ']' && ArrayValue.size() == 0) { ValueType = Type::Array; return true; }
 
 				JSON New;
 				if (!New._Parse(Text)) { Error = true; return true; }
 
 				ValueType = Type::Array;
-				ArrayValue.Add(New);
+				ArrayValue.push_back(New);
 
 				SkipSpace(Text);
 
 				if (*Text == ']') { Text++; return true; }
-				if (*Text != ',') { ArrayValue.Clear(); Error = true; return true; }
+				if (*Text != ',') { Error = true; return true; }
 				Text++;
 			}
 		}
@@ -221,7 +221,7 @@ namespace Columbus
 		if (_ParseBool(Text)) return true;
 		if (_ParseNull(Text)) return true;
 		if (_ParseNumber(Text, Error)) return !Error;
-		if (_ParseArray(Text, Error)) { if (Error) ArrayValue.Clear();  return !Error; }
+		if (_ParseArray(Text, Error))  { if (Error) ArrayValue.clear();  return !Error; }
 		if (_ParseObject(Text, Error)) { if (Error) ObjectValue.clear(); return !Error; }
 
 		return false;
