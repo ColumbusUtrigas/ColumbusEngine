@@ -3,8 +3,8 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <Core/Containers/Vector.h>
 #include <Core/Types.h>
+#include <vector>
 #include <string>
 #include <unordered_map>
 
@@ -29,7 +29,7 @@ namespace Columbus
 		bool BoolValue = false;
 		int64 IntValue = 0;
 		double FloatValue = 0;
-		Vector<JSON> ArrayValue;
+		std::vector<JSON> ArrayValue;
 		std::unordered_map<std::string, JSON> ObjectValue;
 		Type ValueType;
 
@@ -61,7 +61,7 @@ namespace Columbus
 		bool IsArray()  const { return ValueType == Type::Array;  }
 		bool IsObject() const { return ValueType == Type::Object; }
 
-		uint32 GetElementsCount() const { return  ArrayValue.Size(); }
+		uint32 GetElementsCount() const { return  ArrayValue.size(); }
 		uint32 GetChildrenCount() const { return ObjectValue.size(); }
 
 		JSON& operator[](uint32 Index)
@@ -72,9 +72,9 @@ namespace Columbus
 				ValueType = Type::Array;
 			}
 
-			if (Index >= ArrayValue.Size())
+			if (Index >= ArrayValue.size())
 			{
-				ArrayValue.Add(JSON());
+				ArrayValue.push_back(JSON());
 			}
 
 			return ArrayValue[Index];
@@ -84,7 +84,7 @@ namespace Columbus
 		{
 			if (ValueType != Type::Object)
 			{
-				ArrayValue.Clear();
+				ArrayValue.clear();
 				ValueType = Type::Object;
 			}
 

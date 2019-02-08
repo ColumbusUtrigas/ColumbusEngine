@@ -2,17 +2,20 @@
 #include <System/Log.h>
 #include <System/Assert.h>
 #include <SDL.h>
+#include <cstring>
 
 namespace Columbus
 {
 
 	static void AudioCallback(void* UserData, Uint8* Stream, int StreamSize)
 	{
-		Memory::Memset(Stream, 0, StreamSize);
-
 		if (UserData != nullptr)
 		{
 			((AudioMixer*)(UserData))->Update((Sound::Frame*)Stream, StreamSize / sizeof(Sound::Frame));
+		}
+		else
+		{
+			memset(Stream, 0, StreamSize);
 		}
 	}
 
