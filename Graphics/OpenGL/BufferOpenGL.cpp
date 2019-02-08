@@ -62,7 +62,8 @@ namespace Columbus
 	{
 		switch (InType)
 		{
-			case Buffer::Type::Array: return CreateArray(Props); break;
+		case Buffer::Type::Array: return CreateArray(Props); break;
+		case Buffer::Type::Index: return CreateIndex(Props); break;
 		}
 
 		return false;
@@ -78,6 +79,24 @@ namespace Columbus
 		BufferChanging = Props.DataChanging;
 
 		Target = GL_ARRAY_BUFFER;
+
+		UpdateUsage();
+
+		glGenBuffers(1, &ID);
+
+		return true;
+	}
+
+	bool BufferOpenGL::CreateIndex(const Buffer::Properties& Props)
+	{
+		Clear();
+
+		Size = Props.DataSize;
+		BufferType = Buffer::Type::Index;
+		BufferUsage = Props.DataUsage;
+		BufferChanging = Props.DataChanging;
+
+		Target = GL_ELEMENT_ARRAY_BUFFER;
 
 		UpdateUsage();
 

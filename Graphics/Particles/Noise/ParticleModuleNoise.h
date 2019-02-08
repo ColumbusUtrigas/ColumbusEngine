@@ -38,11 +38,11 @@ namespace Columbus
 		{
 			if (Active)
 			{
-				Noise.setOctaves(Octaves);
-				Noise.setLacunarity(Lacunarity);
-				Noise.setPersistence(Persistence);
-				Noise.setFrequency(Frequency);
-				Noise.setAmplitude(Amplitude);
+				Noise.Octaves = Octaves;
+				Noise.Lacunarity = Lacunarity;
+				Noise.Persistence = Persistence;
+				Noise.BaseFrequency= Frequency;
+				Noise.BaseAmplitude = Amplitude;
 			}
 		}
 		/*
@@ -52,9 +52,9 @@ namespace Columbus
 		{
 			if (Active)
 			{
-				VNoise.X = Noise.noise(OutParticle.noise[0], OutParticle.noise[1], OutParticle.noise[2]);
-				VNoise.Y = Noise.noise(OutParticle.noise[3], OutParticle.noise[4], OutParticle.noise[5]);
-				VNoise.Z = Noise.noise(OutParticle.noise[6], OutParticle.noise[7], OutParticle.noise[8]);
+				VNoise.X = Noise.Noise(OutParticle.noise[0], OutParticle.noise[1], OutParticle.noise[2]);
+				VNoise.Y = Noise.Noise(OutParticle.noise[3], OutParticle.noise[4], OutParticle.noise[5]);
+				VNoise.Z = Noise.Noise(OutParticle.noise[6], OutParticle.noise[7], OutParticle.noise[8]);
 
 				OutParticle.NoiseModifier = VNoise * Strength;
 			}

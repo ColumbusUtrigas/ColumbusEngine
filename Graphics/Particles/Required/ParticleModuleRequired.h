@@ -14,12 +14,14 @@ namespace Columbus
 		World
 	};
 	/*
-	* Particles may sorting by distance from camera and may be rendered without sorting
+	* Particles may sorting by distance from camera or by lifetime and may be rendered without sorting
 	*/
 	enum class ParticleSortMode
 	{
 		None,
-		Distance
+		Distance,
+		YoungFirst,
+		OldFirst
 	};
 
 	class ParticleModuleRequired : public ParticleModule
@@ -53,10 +55,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
 
 

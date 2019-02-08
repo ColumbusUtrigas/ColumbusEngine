@@ -4,38 +4,28 @@
 #include <Graphics/Particles/ParticleModule.h>
 #include <Graphics/Particles/Emit/ParticleModuleEmit.h>
 #include <Graphics/Particles/Required/ParticleModuleRequired.h>
-#include <vector>
+#include <Core/Containers/Vector.h>
+#include <Core/SmartPointer.h>
 
 namespace Columbus
 {
 
 	class ParticleEffect
 	{
-	private:
-		Material* mMaterial = nullptr;
-		Vector3 mPos = Vector3(0, 0, 0);
 	public:
-		std::vector<ParticleModule*> Modules;
-		ParticleModuleEmit* Emit;
-		ParticleModuleRequired* Required;
+		Vector<SmartPointer<ParticleModule>> Modules;
+		ParticleModuleEmit Emit;
+		ParticleModuleRequired Required;
+
+		Material Material;
+		Vector3 Position;
 	public:
 		ParticleEffect();
-		ParticleEffect(std::string aFile);
-		ParticleEffect(std::string aFile, Material* aMaterial);
 
 		void AddModule(ParticleModule* Module);
 		ParticleModule* GetModule(ParticleModule::Type Type) const;
 
-		void setMaterial(const Material* aMaterial);
-		void setPos(const Vector3 aPos);
-		void addPos(const Vector3 aPos);
-
-		Material* getMaterial() const;
-		Vector3 getPos() const;
-
-		bool saveToXML(std::string aFile) const;
-		bool loadFromXML(std::string aFile);
-		bool load(std::string aFile);
+		bool Load(const char* FileName);
 
 		~ParticleEffect();
 	};

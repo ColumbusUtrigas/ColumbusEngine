@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Common/Noise/PerlinNoise.h>
+#include <Core/Types.h>
 
 namespace Columbus
 {
@@ -8,76 +9,34 @@ namespace Columbus
 	class OctaveNoise
 	{
 	private:
-		PerlinNoise* mPerlinSource = nullptr;
-
-		unsigned int mOctaves = 8;
-		float mPersistence = 0.5;
-		float mLacunarity = 2.0;
-		float mBaseFrequency = 1.0;
-		float mBaseAmplitude = 1.0;
+		PerlinNoise Perlin;
 	public:
-		OctaveNoise() :
-			mOctaves(8),
-			mPersistence(0.5),
-			mLacunarity(2.0),
-			mBaseFrequency(1.0),
-			mBaseAmplitude(1.0)
+		uint32 Octaves = 8;
+		float Persistence = 0.5;
+		float Lacunarity = 2.0;
+		float BaseFrequency = 1.0;
+		float BaseAmplitude = 1.0;
+	public:
+		OctaveNoise() {}
+
+		float Noise(float X, float Y, float Z)
 		{
-			mPerlinSource = new PerlinNoise();
-		}
+			float Sum = 0;
+			float Frequency = BaseFrequency;
+			float Amplitude = BaseAmplitude;
 
-		float noise(float sample_x, float sample_y, float sample_z)
-		{
-			float sum = 0;
-			float freq = mBaseFrequency;
-			float amp = mBaseAmplitude;
-
-			size_t i;
-
-			for (i = 0; i < mOctaves; i++)
+			for (uint32 i = 0; i < Octaves; i++)
 			{
-				sum += mPerlinSource->noise(sample_x * freq, sample_y * freq, sample_z * freq) * amp;
+				Sum += Perlin.Noise(X * Frequency, Y * Frequency, Z * Frequency) * Amplitude;
 
-				freq *= mLacunarity;
-				amp *= mPersistence;
+				Frequency *= Lacunarity;
+				Amplitude *= Persistence;
 			}
 
-			return sum;
-		}
-
-		void setOctaves(unsigned int o)
-		{
-			mOctaves = o;
-		}
-
-		void setPersistence(float p)
-		{
-			mPersistence = p;
-		}
-
-		void setLacunarity(float l)
-		{
-			mLacunarity = l;
-		}
-		
-		void setFrequency(float f)
-		{
-			mBaseFrequency = f;
-		}
-
-		void setAmplitude(float a)
-		{
-			mBaseAmplitude = a;
-		}
-
-		~OctaveNoise()
-		{
-			delete mPerlinSource;
+			return Sum;
 		}
 	};
 
 }
-
-
 
 

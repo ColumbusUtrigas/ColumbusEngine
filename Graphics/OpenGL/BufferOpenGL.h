@@ -20,6 +20,7 @@ namespace Columbus
 
 		virtual bool Create(Buffer::Type InType, const Buffer::Properties& Props) override;
 		virtual bool CreateArray(const Buffer::Properties& Props) override;
+		virtual bool CreateIndex(const Buffer::Properties& Props) override;
 
 		virtual bool Load(const void* Data) override;
 		virtual bool Load(const Buffer::Properties& Props, const void* BufferData) override;

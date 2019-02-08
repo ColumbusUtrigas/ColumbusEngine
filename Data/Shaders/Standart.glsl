@@ -55,30 +55,30 @@
 
 	struct Material
 	{
-		sampler2D DiffuseMap;
+		sampler2D AlbedoMap;
 		sampler2D NormalMap;
 		sampler2D RoughnessMap;
 		sampler2D MetallicMap;
 		sampler2D OcclusionMap;
 		sampler2D EmissionMap;
-		sampler2D DetailDiffuseMap;
+		sampler2D DetailAlbedoMap;
 		sampler2D DetailNormalMap;
 		samplerCube IrradianceMap;
 		samplerCube EnvironmentMap;
 		sampler2D   IntegrationMap;
 
-		bool HasDiffuseMap;
+		bool HasAlbedoMap;
 		bool HasNormalMap;
 		bool HasRoughnessMap;
 		bool HasMetallicMap;
 		bool HasOcclusionMap;
-		bool HasDetailDiffuseMap;
+		bool HasDetailAlbedoMap;
 		bool HasDetailNormalMap;
 
 		vec2 Tiling;
 		vec2 DetailTiling;
 
-		vec4 Color;
+		vec4 Albedo;
 		float Roughness;
 		float Metallic;
 		float EmissionStrength;
@@ -91,29 +91,29 @@
 		vec3 Position;
 	};
 
-	//@Uniform uMaterial.DiffuseMap
+	//@Uniform uMaterial.AlbedoMap
 	//@Uniform uMaterial.NormalMap
 	//@Uniform uMaterial.RoughnessMap
 	//@Uniform uMaterial.MetallicMap
 	//@Uniform uMaterial.OcclusionMap
 	//@Uniform uMaterial.EmissionMap
-	//@Uniform uMaterial.DetailDiffuseMap
+	//@Uniform uMaterial.DetailAlbedoMap
 	//@Uniform uMaterial.DetailNormalMap
 	//@Uniform uMaterial.IrradianceMap
 	//@Uniform uMaterial.EnvironmentMap
 	//@Uniform uMaterial.IntegrationMap
 
-	//@Uniform uMaterial.HasDiffuseMap
+	//@Uniform uMaterial.HasAlbedoMap
 	//@Uniform uMaterial.HasNormalMap
 	//@Uniform uMaterial.HasRoughnessMap
 	//@Uniform uMaterial.HasMetallicMap
 	//@Uniform uMaterial.HasOcclusionMap
-	//@Uniform uMaterial.HasDetailDiffuseMap
+	//@Uniform uMaterial.HasDetailAlbedoMap
 	//@Uniform uMaterial.HasDetailNormalMap
 
 	//@Uniform uMaterial.Tiling
 	//@Uniform uMaterial.DetailTiling
-	//@Uniform uMaterial.Color
+	//@Uniform uMaterial.Albedo
 	//@Uniform uMaterial.Roughness
 	//@Uniform uMaterial.Metallic
 	//@Uniform uMaterial.EmissionStrength
@@ -122,13 +122,13 @@
 	//@Uniform uCamera.Position
 
 	uniform Material uMaterial;
-	uniform float uLighting[15 * LIGHT_NUM];
+	uniform float uLighting[13 * LIGHT_NUM];
 	uniform Camera uCamera;
 
 	vec2 TiledUV;
 	vec2 TiledDetailUV;
 
-	vec4 Diffuse;
+	vec4 Albedo;
 	vec3 Normal;
 	float Roughness;
 	float Metallic;
@@ -157,20 +157,20 @@
 		TiledUV = varUV * uMaterial.Tiling;
 		TiledDetailUV = varUV * uMaterial.DetailTiling;
 
-		if (uMaterial.HasDiffuseMap)
+		if (uMaterial.HasAlbedoMap)
 		{
-			vec4 DiffuseSample = texture2D(uMaterial.DiffuseMap, TiledUV);
+			vec4 AlbedoSample = texture2D(uMaterial.AlbedoMap, TiledUV);
 
-			if (uMaterial.HasDetailDiffuseMap)
-				Diffuse = vec4(DiffuseSample.rgb * texture2D(uMaterial.DetailDiffuseMap, TiledDetailUV) * 1.8f, DiffuseSample.a);
+			if (uMaterial.HasDetailAlbedoMap)
+				Albedo = vec4(AlbedoSample.rgb * texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV) * 1.8f, AlbedoSample.a);
 			else
-				Diffuse = DiffuseSample;
+				Albedo = AlbedoSample;
 		}
 		else
-			if (uMaterial.HasDetailDiffuseMap)
-				Diffuse = texture2D(uMaterial.DetailDiffuseMap, TiledDetailUV);
+			if (uMaterial.HasDetailAlbedoMap)
+				Albedo = texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV);
 			else
-				Diffuse = vec4(1);
+				Albedo = vec4(1);
 
 		if (uMaterial.HasNormalMap)
 			if (uMaterial.HasDetailNormalMap)
@@ -250,23 +250,21 @@
 
 	vec3 LightCalc(int id, out vec3 F)
 	{
-		int Offset = id * 15;
+		int Offset = id * 13;
 
 		vec3 LightColor = vec3(uLighting[Offset + 0], uLighting[Offset + 1], uLighting[Offset + 2]);
 		vec3 LightPos = vec3(uLighting[Offset + 3], uLighting[Offset + 4], uLighting[Offset + 5]);
 		vec3 LightDir = vec3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
 		float LightType = uLighting[Offset + 9];
-		float LightConstant = uLighting[Offset + 10];
-		float LightLinear = uLighting[Offset + 11];
-		float LightQuadratic = uLighting[Offset + 12];
-		//float LightInnerCutoff = uLighting[Offset + 13];
-		//float LightOuterCutoff = uLighting[Offset + 14];
+		float LightRange = uLighting[Offset + 10];
+		//float LightInnerCutoff = uLighting[Offset + 11];
+		//float LightOuterCutoff = uLighting[Offset + 12];
 
 		if (LightColor == vec3(0)) return vec3(0);
 
 		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
 		float Distance = length(LightPos - varPos);
-		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = 1.0 / (1.0 + LightLinear * Distance + LightQuadratic * Distance * Distance);
+		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
 
 		vec3 N, L, V, H;
 		N = normalize(Normal);
@@ -276,7 +274,7 @@
 
 		float NdotL = max(0, dot(N, L));
 
-		vec3 DiffuseBRDF = LambertDiffuseBRDF(uMaterial.Color.rgb) * AO;
+		vec3 DiffuseBRDF = LambertDiffuseBRDF(uMaterial.Albedo.rgb) * AO;
 		vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, V, H, F);
 
 		float Factor = 1.0 - Metallic;
@@ -310,7 +308,7 @@
 
 		BRDF += Specular * AO;
 
-		return BRDF * uMaterial.Color.rgb;
+		return BRDF * uMaterial.Albedo.rgb;
 	}
 
 	vec2 EncodeNormal(in vec3 n)
@@ -320,7 +318,7 @@
 
 	void Final(void)
 	{
-		vec4 Color = vec4(Lights(), uMaterial.Color.a) * Diffuse;
+		vec4 Color = vec4(Lights(), uMaterial.Albedo.a) * Albedo;
 
 		Color.rgb += texture2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
 

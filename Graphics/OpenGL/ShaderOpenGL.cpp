@@ -623,9 +623,7 @@ namespace Columbus
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const
 	{
-		float Value[16];
-		Mat.Elements(Value);
-		glUniformMatrix4fv(FastID, 1, Transpose ? GL_TRUE : GL_FALSE, Value);
+		glUniformMatrix4fv(FastID, 1, Transpose ? GL_TRUE : GL_FALSE, &Mat.M[0][0]);
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, TextureOpenGL* Tex, uint32 Sampler) const

@@ -3,20 +3,7 @@
 namespace Columbus
 {
 
-	GameObject::GameObject()
-	{
-
-	}
-	
-	void GameObject::SetName(std::string Name)
-	{
-		this->Name = Name;
-	}
-	
-	std::string GameObject::GetName() const
-	{
-		return Name;
-	}
+	GameObject::GameObject() {}
 	
 	void GameObject::AddChild(GameObject* Child)
 	{
@@ -48,21 +35,19 @@ namespace Columbus
 		return ObjectMaterial;
 	}
 	
-	void GameObject::Update()
+	void GameObject::Update(float DeltaTime)
 	{
 		for (auto& Comp : Components)
 		{
-			Comp->Update(mTimer.Elapsed(), transform);
+			Comp->Update(DeltaTime, transform);
 		}
 
 		transform.Update();
 
 		for (auto& Child : Children)
 		{
-			Child->Update();
+			Child->Update(DeltaTime);
 		}
-
-		mTimer.Reset();
 	}
 	
 	void GameObject::Render()

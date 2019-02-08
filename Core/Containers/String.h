@@ -11,6 +11,7 @@ namespace Columbus
 	{
 	private:
 		char* Data = nullptr;
+		uint32 Cap = 0;
 		uint32 Len = 0;
 	public:
 		String() {}
@@ -19,10 +20,16 @@ namespace Columbus
 		String& operator=(const char* Str)
 		{
 			Clear();
-			Len = strlen(Str);
+			Cap = strlen(Str);
+			Len = Cap;
 			Data = new char[Len + 1];
 			memcpy(Data, Str, Len + 1);
 			return *this;
+		}
+
+		char& operator[](unsigned int ID)
+		{
+			return Data[ID];
 		}
 
 		const char* operator*() const
@@ -30,9 +37,46 @@ namespace Columbus
 			return Data != nullptr ? Data : "";
 		}
 
+		void Resize(unsigned int Size)
+		{
+			if (Size > Len)
+			{
+				char* New = new char[Size + 1];
+				memset(New + Len, 0, Size - Len + 1);
+				memcpy(New, Data, Len);
+				delete[] Data;
+				Data = New;
+				Cap = Size;
+			}
+
+			if (Size < Len)
+			{
+				char* New = new char[Size + 1];
+				memcpy(New, Data, Len);
+				delete[] Data;
+				Data = New;
+				Cap = Len = Size;
+			}
+		}
+
+		void Append(char Character)
+		{
+			if (Cap == Len)
+			{
+				Resize((unsigned int)(Len * 1.5 + 1));
+			}
+
+			Data[Len++] = Character;
+		}
+
 		void Clear()
 		{
-			delete[] Data; Data = nullptr; Len = 0;
+			delete[] Data; Data = nullptr; Cap = Len = 0;
+		}
+
+		uint32 Capacity() const
+		{
+			return Cap;
 		}
 
 		uint32 Length() const
@@ -51,41 +95,41 @@ namespace Columbus
 	private:
 		Array<char> Data;
 	public:
-		inline String() { };
+		String() { };
 
-		inline String(const String& Base)
+		String(const String& Base)
 		{
 			Data = Base.Data;
-		};
+		}
 
-		inline String(String&& Base) noexcept
+		String(String&& Base) noexcept
 		{
 			Data = Base.Data;
-		};
+		}
 		
-		inline String(const char* InData)
+		String(const char* InData)
 		{
 			Data.Append(InData, strlen(InData) + 1);
 		}
 
-		inline String(char Fill, uint32 Count)
+		String(char Fill, uint32 Count)
 		{
 			Data.Init(Fill, Count);
 			Data.Add('\0');
 		}
 		
 		template <typename InputIterator>
-		inline String(InputIterator First, InputIterator Last)
+		String(InputIterator First, InputIterator Last)
 		{
 			Append(First, Last);
 		}
 
-		inline uint32 Length() const
+		uint32 Length() const
 		{
 			return Data.GetCount() - 1;
 		}
 		
-		inline String& Append(const String& InString)
+		String& Append(const String& InString)
 		{
 			if (Data.Last() == '\0')
 			{
@@ -97,7 +141,7 @@ namespace Columbus
 			return *this;	
 		}
 
-		inline String& Append(String&& InString)
+		String& Append(String&& InString)
 		{
 			if (Data.GetCount() != 0)
 			{
@@ -112,7 +156,7 @@ namespace Columbus
 			return *this;	
 		}
 
-		inline String& Append(const char* InString)
+		String& Append(const char* InString)
 		{
 			if (Data.GetCount() != 0)
 			{
@@ -127,7 +171,7 @@ namespace Columbus
 			return *this;
 		}
 
-		inline String& Append(const char Character)
+		String& Append(const char Character)
 		{
 			if (Data.GetCount() != 0)
 			{
@@ -143,7 +187,7 @@ namespace Columbus
 		}
 
 		template <typename InputIterator>
-		inline String& Append(InputIterator First, InputIterator Last)
+		String& Append(InputIterator First, InputIterator Last)
 		{
 			if (Data.GetCount() != 0)
 			{
@@ -163,36 +207,36 @@ namespace Columbus
 			return *this;
 		}
 
-		inline void Clear()
+		void Clear()
 		{
 			Data.Clear();
 		}
 		
-		inline const char* operator*() const
+		const char* operator*() const
 		{
 			return Data.GetData();
 		}
 
-		inline String& operator=(const String& Other)
+		String& operator=(const String& Other)
 		{
 			Data = Other.Data;
 			return *this;
 		}
 
-		inline String& operator=(String&& Other)
+		String& operator=(String&& Other)
 		{
 			Data = Other.Data;
 			return *this;
 		}
 
-		inline String& operator=(const char* Other)
+		String& operator=(const char* Other)
 		{
 			Data.Clear();
 			Data.Append(Other, strlen(Other) + 1);
 			return *this;
 		}
 
-		inline String& operator=(const char Other)
+		String& operator=(const char Other)
 		{
 			Data.Clear();
 			Data.Add(Other);

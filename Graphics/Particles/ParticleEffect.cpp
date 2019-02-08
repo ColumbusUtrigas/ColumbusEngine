@@ -17,341 +17,207 @@
 #include <Graphics/Particles/Velocity/ParticleModuleVelocity.h>
 #include <Graphics/Particles/SubUV/ParticleModuleSubUV.h>
 
-#include <System/Serializer.h>
+#include <Common/JSON/JSON.h>
 #include <System/Log.h>
 
 namespace Columbus
 {
 
-	ParticleEffect::ParticleEffect()
-	{
-
-	}
-	
-	ParticleEffect::ParticleEffect(std::string aFile)
-	{
-		load(aFile);
-	}
-	
-	ParticleEffect::ParticleEffect(std::string aFile, Material* aMaterial)
-	{
-		load(aFile);
-		mMaterial = aMaterial;
-	}
+	ParticleEffect::ParticleEffect() {}
 	
 	void ParticleEffect::AddModule(ParticleModule* Module)
 	{
 		if (Module == nullptr) return;
 		if (GetModule(Module->GetType()) != nullptr) return;
-		Modules.push_back(Module);
+		Modules.Emplace(Module);
 	}
 	
 	ParticleModule* ParticleEffect::GetModule(ParticleModule::Type Type) const
 	{
-		for (auto Module : Modules)
+		for (auto& Module : Modules)
 		{
-			if (Module != nullptr)
+			if (Module.Get()->GetType() == Type)
 			{
-				if (Module->GetType() == Type)
-				{
-					return Module;
-				}
+				return Module.Get();
 			}
 		}
 
 		return nullptr;
 	}
-	
-	void ParticleEffect::setMaterial(const Material* aMaterial)
+
+	bool ParticleEffect::Load(const char* FileName)
 	{
-		mMaterial = const_cast<Material*>(aMaterial);
-	}
-	
-	void ParticleEffect::setPos(const Vector3 aPos)
-	{
-		mPos = static_cast<Vector3>(aPos);
-	}
-	
-	void ParticleEffect::addPos(const Vector3 aPos)
-	{
-		mPos += static_cast<Vector3>(aPos);
-	}
-	
-	Material* ParticleEffect::getMaterial() const
-	{
-		return mMaterial;
-	}
-	
-	Vector3 ParticleEffect::getPos() const
-	{
-		return mPos;
-	}
-	
-	bool ParticleEffect::saveToXML(std::string aFile) const
-	{
+		JSON J;
+		if (!J.Load(FileName)) return false;
+
+		ParticleModuleLocationBase* LocationBase = nullptr;
+		ParticleModuleLifetime* Lifetime = nullptr;
+		ParticleModuleRotation* Rotation = nullptr;
+		ParticleModuleVelocity* Velocity = nullptr;
+		ParticleModuleAcceleration* Acceleration = nullptr;
+		ParticleModule* SizeBase = nullptr;
+		ParticleModule* ColorBase = nullptr;
+		ParticleModuleNoise* Noise = nullptr;
+		ParticleModuleSubUV* SubUV = nullptr;
+
+		Required.Visible = J["Required"]["Visible"].GetBool();
+		Required.AdditiveBlending = J["Required"]["AdditiveBlending"].GetBool();
+		Required.Billboarding = J["Required"]["Billboarding"].GetBool();
+		if (J["Required"]["Transformation"].GetString() == "Local") Required.Transformation = ParticleTransformation::Local;
+		if (J["Required"]["Transformation"].GetString() == "World") Required.Transformation = ParticleTransformation::World;
+		if (J["Required"]["SortMode"].GetString() == "None")       Required.SortMode = ParticleSortMode::None;
+		if (J["Required"]["SortMode"].GetString() == "Distance")   Required.SortMode = ParticleSortMode::Distance;
+		if (J["Required"]["SortMode"].GetString() == "YoungFirst") Required.SortMode = ParticleSortMode::YoungFirst;
+		if (J["Required"]["SortMode"].GetString() == "OldFirst")   Required.SortMode = ParticleSortMode::OldFirst;
+
+		Emit.Active = J["Emit"]["Active"].GetBool();
+		Emit.Count = (int)J["Emit"]["Count"].GetInt();
+		Emit.EmitRate = (float)J["Emit"]["Rate"].GetFloat();
+
+		if (J["LocationBox"].IsObject())
+		{
+			delete LocationBase;
+			ParticleModuleLocationBox* Box = new ParticleModuleLocationBox();
+			Box->Size = J["LocationBox"]["Size"].GetVector3<float>();
+			Box->EmitFromShell = J["LocationBox"]["EmitFromShell"].GetBool();
+			LocationBase = Box;
+		}
+
+		if (J["LocationCircle"].IsObject())
+		{
+			delete LocationBase;
+			ParticleModuleLocationCircle* Circle = new ParticleModuleLocationCircle();
+			Circle->Radius = (float)J["LocationCircle"]["Radius"].GetFloat();
+			Circle->EmitFromShell = J["LocationCircle"]["EmitFromShell"].GetBool();
+			LocationBase = Circle;
+		}
+
+		if (J["LocationSphere"].IsObject())
+		{
+			delete LocationBase;
+			ParticleModuleLocationSphere* Sphere = new ParticleModuleLocationSphere();
+			Sphere->Radius = (float)J["LocationSphere"]["Radius"].GetFloat();
+			Sphere->EmitFromShell = J["LocationSphere"]["EmitFromShell"].GetBool();
+			LocationBase = Sphere;
+		}
+
+		if (J["Lifetime"].IsObject())
+		{
+			Lifetime = new ParticleModuleLifetime();
+			Lifetime->Min = (float)J["Lifetime"]["Min"].GetFloat();
+			Lifetime->Max = (float)J["Lifetime"]["Max"].GetFloat();
+		}
+
+		if (J["Rotation"].IsObject())
+		{
+			Rotation = new ParticleModuleRotation();
+			Rotation->Min = (float)J["Rotation"]["Min"].GetFloat();
+			Rotation->Max = (float)J["Rotation"]["Max"].GetFloat();
+			Rotation->MinVelocity = (float)J["Rotation"]["MinVelocity"].GetFloat();
+			Rotation->MaxVelocity = (float)J["Rotation"]["MaxVelocity"].GetFloat();
+		}
+
+		if (J["InitialVelocity"].IsObject())
+		{
+			Velocity = new ParticleModuleVelocity();
+			Velocity->Min = J["InitialVelocity"]["Min"].GetVector3<float>();
+			Velocity->Max = J["InitialVelocity"]["Max"].GetVector3<float>();
+		}
+
+		if (J["InitialAcceleration"].IsObject())
+		{
+			Acceleration = new ParticleModuleAcceleration();
+			Acceleration->Min = J["InitialAcceleration"]["Min"].GetVector3<float>();
+			Acceleration->Max = J["InitialAcceleration"]["Max"].GetVector3<float>();
+		}
+
+		if (J["InitialSize"].IsObject())
+		{
+			delete SizeBase;
+			ParticleModuleSize* Size = new ParticleModuleSize();
+			Size->Min = J["InitialSize"]["Min"].GetVector3<float>();
+			Size->Max = J["InitialSize"]["Max"].GetVector3<float>();
+			SizeBase = Size;
+		}
+
+		if (J["SizeOverLifetime"].IsArray())
+		{
+			delete SizeBase;
+			ParticleModuleSizeOverLife* SizeOverLife = new ParticleModuleSizeOverLife();
+			
+			for (uint32 i = 0; i < J["SizeOverLifetime"].GetElementsCount(); i++)
+			{
+				float Position = (float)J["SizeOverLifetime"][i]["Key"].GetFloat();
+				Vector3 Point = J["SizeOverLifetime"][i]["Size"].GetVector3<float>();
+				SizeOverLife->SizeCurve.AddPoint(Point, Position);
+			}
+
+			SizeBase = SizeOverLife;
+		}
+
+		if (J["InitialColor"].IsObject())
+		{
+			delete ColorBase;
+			ParticleModuleColor* Color = new ParticleModuleColor();
+			Color->Min = J["InitialColor"]["Min"].GetVector4<float>();
+			Color->Max = J["InitialColor"]["Max"].GetVector4<float>();
+			ColorBase = Color;
+		}
+
+		if (J["ColorOverLifetime"].IsArray())
+		{
+			delete ColorBase;
+			ParticleModuleColorOverLife* ColorOverLife = new ParticleModuleColorOverLife();
+
+			for (uint32 i = 0; i < J["ColorOverLifetime"].GetElementsCount(); i++)
+			{
+				float Position = (float)J["ColorOverLifetime"][i]["Key"].GetFloat();
+				Vector4 Point = J["ColorOverLifetime"][i]["Color"].GetVector4<float>();
+				ColorOverLife->ColorCurve.AddPoint(Point, Position);
+			}
+
+			ColorBase = ColorOverLife;
+		}
+
+		if (J["Noise"].IsObject())
+		{
+			Noise = new ParticleModuleNoise();
+			Noise->Active      = J["Noise"]["Active"].GetBool();
+			Noise->Strength    = (float)J["Noise"]["Strength"].GetFloat();
+			Noise->Octaves     = (int)J["Noise"]["Octaves"].GetInt();
+			Noise->Lacunarity  = (float)J["Noise"]["Lacunarity"].GetFloat();
+			Noise->Persistence = (float)J["Noise"]["Persistence"].GetFloat();
+			Noise->Frequency   = (float)J["Noise"]["Frequency"].GetFloat();
+			Noise->Amplitude   = (float)J["Noise"]["Amplitude"].GetFloat();
+		}
+
+		if (J["SubUV"].IsObject())
+		{
+			SubUV = new ParticleModuleSubUV();
+			if (J["SubUV"]["Mode"].GetString() == "Linear") SubUV->Mode = ParticleModuleSubUV::SubUVMode::Linear;
+			if (J["SubUV"]["Mode"].GetString() == "Random") SubUV->Mode = ParticleModuleSubUV::SubUVMode::Random;
+			SubUV->Horizontal = (int)J["SubUV"]["Horizontal"].GetInt();
+			SubUV->Vertical = (int)J["SubUV"]["Vertical"].GetInt();
+			SubUV->Cycles = (float)J["SubUV"]["Cycles"].GetFloat();
+		}
+
+		if (LocationBase != nullptr) AddModule(LocationBase);
+		if (Lifetime != nullptr) AddModule(Lifetime);
+		if (Rotation != nullptr) AddModule(Rotation);
+		if (Velocity != nullptr) AddModule(Velocity);
+		if (Acceleration != nullptr) AddModule(Acceleration);
+		if (SizeBase != nullptr) AddModule(SizeBase);
+		if (ColorBase != nullptr) AddModule(ColorBase);
+		if (Noise != nullptr) AddModule(Noise);
+		if (SubUV != nullptr) AddModule(SubUV);
+
+		Log::Success("Particle Effect loaded: %s", FileName);
 
 		return true;
 	}
 	
-	bool ParticleEffect::loadFromXML(std::string aFile)
-	{
-		Serializer::SerializerXML serializer;
-
-		if (!serializer.Read(aFile, "ParticleEffect"))
-		{ Log::Error("Can't load Particle Effect: %s", aFile.c_str()); return false; }
-
-		ParticleModule* tAccelerationBase = nullptr;
-		ParticleModule* tColorBase = nullptr;
-		ParticleModule* tEmitBase = nullptr;
-		ParticleModule* tLifetimeBase = nullptr;
-		ParticleModuleLocationBase* tLocationBase = nullptr;
-		ParticleModule* tNoiseBase = nullptr;
-		ParticleModule* tRequiredBase = nullptr;
-		ParticleModule* tRotationBase = nullptr;
-		ParticleModule* tSizeBase = nullptr;
-		ParticleModule* tVelocityBase = nullptr;
-		ParticleModule* tSubUVBase = nullptr;
-
-		ParticleModuleEmit* tEmit = new ParticleModuleEmit();
-
-		if (serializer.GetSubBool({ "Emit", "Emitting" }, tEmit->Active) &&
-		    serializer.GetSubInt({ "Emit", "Count" }, tEmit->Count) &&
-		    serializer.GetSubFloat({ "Emit", "EmitRate" }, tEmit->EmitRate))
-		{
-			tEmitBase = tEmit;
-		} else delete tEmit;
-
-		ParticleModuleLocationCircle* tLocationCircle = new ParticleModuleLocationCircle();
-
-		if (serializer.GetSubFloat({ "Location", "Circle", "Radius" }, tLocationCircle->Radius) &&
-		    serializer.GetSubBool({ "Location", "Circle", "EmitFromShell" }, tLocationCircle->EmitFromShell))
-		{
-			tLocationBase = tLocationCircle;
-		} else delete tLocationCircle;
-
-		ParticleModuleLocationBox* tLocationBox = new ParticleModuleLocationBox();
-
-		if (serializer.GetSubVector3({ "Location", "Box", "Size" }, tLocationBox->Size, { "X", "Y", "Z" }) &&
-		    serializer.GetSubBool({ "Location", "Box", "EmitFromShell" }, tLocationBox->EmitFromShell))
-		{
-			tLocationBase = tLocationBox;
-		} else delete tLocationBox;
-
-		ParticleModuleLocationSphere* tLocationSphere = new ParticleModuleLocationSphere();
-
-		if (serializer.GetSubFloat({ "Location", "Sphere", "Radius" }, tLocationSphere->Radius) &&
-		    serializer.GetSubBool({ "Location", "Sphere", "EmitFromShell" }, tLocationSphere->EmitFromShell))
-		{
-			tLocationBase = tLocationSphere;
-		} else delete tLocationSphere;
-
-		ParticleModuleLifetime* tLifetime = new ParticleModuleLifetime();
-
-		if (serializer.GetSubFloat({ "Lifetime", "Min" }, tLifetime->Min) &&
-		    serializer.GetSubFloat({ "Lifetime", "Max" }, tLifetime->Max))
-		{
-			tLifetimeBase = tLifetime;
-		} else delete tLifetime;
-
-		ParticleModuleRotation* tRotation = new ParticleModuleRotation();
-
-		if (serializer.GetSubFloat({ "Rotation", "Min" }, tRotation->Min) &&
-		    serializer.GetSubFloat({ "Rotation", "Max" }, tRotation->Max) &&
-		    serializer.GetSubFloat({ "Rotation", "MinVelocity" }, tRotation->MinVelocity) &&
-		    serializer.GetSubFloat({ "Rotation", "MaxVelocity" }, tRotation->MaxVelocity))
-		{
-			tRotationBase = tRotation;
-		} else delete tRotation;
-
-		ParticleModuleRequired* tRequired = new ParticleModuleRequired();
-
-		if (serializer.GetSubBool({ "Required", "Visible" }, tRequired->Active) &&
-		    serializer.GetSubBool({ "Required", "AdditiveBlending" }, tRequired->AdditiveBlending) &&
-		    serializer.GetSubBool({ "Required", "Billboarding" }, tRequired->Billboarding) &&
-		    serializer.GetSubInt({ "Required", "Transformation" }, (int32&)tRequired->Transformation) &&
-		    serializer.GetSubInt({ "Required", "SortMode" }, (int32&)tRequired->SortMode))
-		{
-			tRequiredBase = tRequired;
-		} else delete tRequired;
-
-		ParticleModuleVelocity* tVelocity = new ParticleModuleVelocity();
-
-		if (serializer.GetSubVector3({ "InitialVelocity", "Min" }, tVelocity->Min, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "InitialVelocity", "Max" }, tVelocity->Max, { "X", "Y", "Z" }))
-		{
-			tVelocityBase = tVelocity;
-		} else delete tVelocity;
-
-		ParticleModuleAcceleration* tAcceleration = new ParticleModuleAcceleration();
-
-		if (serializer.GetSubVector3({ "Acceleration", "Initial", "Min" }, tAcceleration->Min, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Acceleration", "Initial", "Max" }, tAcceleration->Max, { "X", "Y", "Z" }))
-		{
-			tAccelerationBase = tAcceleration;
-		} else delete tAcceleration;
-
-		ParticleModuleSize* tSize = new ParticleModuleSize();
-
-		if (serializer.GetSubVector3({ "Size", "Initial", "Min" }, tSize->Min, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Size", "Initial", "Max" }, tSize->Max, { "X", "Y", "Z" }))
-		{
-			tSizeBase = tSize;
-		} else delete tSize;
-
-		ParticleModuleSizeOverLife* tSizeOverLife = new ParticleModuleSizeOverLife();
-		auto SizeOverLifeElement = serializer.GetSubElement({ "Size", "OverLife", "SizeKey" });
-
-		if (SizeOverLifeElement != nullptr)
-		{
-			Vector3 Value;
-			float Key;
-
-			while (SizeOverLifeElement != nullptr)
-			{
-				if (serializer.GetVector3(SizeOverLifeElement, Value, { "X", "Y", "Z" }) &&
-				    serializer.GetFloat(SizeOverLifeElement, Key))
-				{
-					tSizeOverLife->SizeCurve.AddPoint(Value, Key);
-				}
-
-				SizeOverLifeElement = serializer.NextElement(SizeOverLifeElement, "SizeKey");
-			}
-
-			tSizeBase = tSizeOverLife;
-		} else delete tSizeOverLife;
-
-		delete SizeOverLifeElement;
-
-		ParticleModuleColor* tColor = new ParticleModuleColor();
-
-		if (serializer.GetSubVector4({ "Color", "Initial", "Min" }, tColor->Min, { "R", "G", "B", "A" }) &&
-		    serializer.GetSubVector4({ "Color", "Initial", "Max" }, tColor->Max, { "R", "G", "B", "A" }))
-		{
-			tColorBase = tColor;
-		} else delete tColor;
-
-		ParticleModuleColorOverLife* tColorOverLife = new ParticleModuleColorOverLife();
-		auto Elem = serializer.GetSubElement({ "Color", "OverLife", "ColorKey" });
-
-		if (Elem != nullptr)
-		{
-			Vector4 Value;
-			float Key;
-
-			while (Elem != nullptr)
-			{
-				if (serializer.GetVector4(Elem, Value, { "R", "G", "B", "A" }) &&
-				    serializer.GetFloat(Elem, Key))
-				{
-					tColorOverLife->ColorCurve.AddPoint(Value, Key);
-				}
-
-				Elem = serializer.NextElement(Elem, "ColorKey");
-			}
-
-			tColorBase = tColorOverLife;
-		} else delete tColorOverLife;
-
-		delete Elem;
-
-		ParticleModuleNoise* tNoise = new ParticleModuleNoise();
-
-		if (serializer.GetSubBool({ "Noise", "Active" }, tNoise->Active) &&
-		    serializer.GetSubFloat({ "Noise", "Strength" }, tNoise->Strength) &&
-		    serializer.GetSubInt({ "Noise", "Octaves" }, tNoise->Octaves) &&
-		    serializer.GetSubFloat({ "Noise", "Lacunarity" }, tNoise->Lacunarity) &&
-		    serializer.GetSubFloat({ "Noise", "Persistence" }, tNoise->Persistence) &&
-		    serializer.GetSubFloat({ "Noise", "Frequency" }, tNoise->Frequency) &&
-		    serializer.GetSubFloat({ "Noise", "Amplitude" }, tNoise->Amplitude))
-		{
-			tNoiseBase = tNoise;
-		} else delete tNoise;
-
-		ParticleModuleSubUV* tSubUV = new ParticleModuleSubUV();
-
-		if (serializer.GetSubInt({ "SubUV", "Mode" }, (int32&)tSubUV->Mode) &&
-		    serializer.GetSubInt({ "SubUV", "Horizontal" }, tSubUV->Horizontal) &&
-		    serializer.GetSubInt({ "SubUV", "Vertical" }, tSubUV->Vertical) &&
-		    serializer.GetSubFloat({ "SubUV", "Cycles" }, tSubUV->Cycles))
-		{
-			tSubUVBase = tSubUV;
-		} else delete tSubUV;
-
-		Log::Success("Particle Effect loaded: %s", aFile.c_str());
-
-		if (tAccelerationBase != nullptr)
-		{
-			AddModule(tAccelerationBase);
-		}
-
-		if (tColorBase != nullptr)
-		{
-			AddModule(tColorBase);
-		}
-
-		if (tEmitBase != nullptr)
-		{
-			AddModule(tEmitBase);
-			Emit = static_cast<ParticleModuleEmit*>(tEmitBase);
-		}
-
-		if (tLifetimeBase != nullptr)
-		{
-			AddModule(tLifetimeBase);
-		}
-
-		if (tLocationBase != nullptr)
-		{
-			AddModule(tLocationBase);
-		}
-
-		if (tNoiseBase != nullptr)
-		{
-			AddModule(tNoiseBase);
-		}
-
-		if (tRequiredBase != nullptr)
-		{
-			AddModule(tRequiredBase);
-			Required = static_cast<ParticleModuleRequired*>(tRequiredBase);
-		}
-
-		if (tRotationBase != nullptr)
-		{
-			AddModule(tRotationBase);
-		}
-
-		if (tSizeBase != nullptr)
-		{
-			AddModule(tSizeBase);
-		}
-
-		if (tVelocityBase != nullptr)
-		{
-			AddModule(tVelocityBase);
-		}
-
-		if (tSubUVBase != nullptr)
-		{
-			AddModule(tSubUVBase);	
-		}
-
-		return true;
-	}
-	
-	bool ParticleEffect::load(std::string aFile)
-	{
-		if (aFile.find_last_of(".cxpar") != std::string::npos)
-		{
-			return loadFromXML(aFile);
-		}
-		
-		return false;
-	}
-	
-	ParticleEffect::~ParticleEffect()
-	{
-
-	}
+	ParticleEffect::~ParticleEffect() {}
 
 }
+
+
