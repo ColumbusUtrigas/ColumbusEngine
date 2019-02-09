@@ -1,153 +1,75 @@
-/************************************************
-*                    Log.cpp                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   05.11.2017                  *
-*************************************************/
-
 #include <System/Log.h>
-
-#ifdef _WIN32
-#include <Windows.h>
-#endif
+#include <Core/Platform/Platform.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	//Generates system-depended text
-	static std::string LogText(const char* aFmt, const char* aPreText,
-		const char* aPreColor, const char* aColor)
+	static char* LogText(const char* Fmt, const char* Text, const char* AColor, const char* BColor)
 	{
-		std::string pre = aPreText;
-		std::string fmt;
+		#ifdef COLUMBUS_PLATFORM_WINDOWS
+			int MaxLength = strlen(Text) + strlen(Fmt) + 2;
+			char* Result = (char*)malloc(MaxLength);
+			Result[0] = '\0';
 
-		if (CheckWindows())
-		{
-			fmt = pre + aFmt;
-		} else
-		{
-			fmt = aPreColor + pre + aColor + aFmt;
-		}
+			strcat(Result, Text);
+			strcat(Result, Fmt);
+		#else
+			int MaxLength = strlen(AColor) + strlen(Text) + strlen(BColor) + strlen(Fmt) + strlen("\x1b[0m") + 2;
+			char* Result = (char*)malloc(MaxLength);
+			Result[0] = '\0';
 
-		if (!CheckWindows())
-		{
-			fmt += "\x1b[0m";
-		}
-		
-		return fmt + "\n";
+			strcat(Result, AColor);
+			strcat(Result, Text);
+			strcat(Result, BColor);
+			strcat(Result, Fmt);
+			strcat(Result, "\x1b[0m");
+		#endif
+
+		return strcat(Result, "\n");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::initialization(const char* aFmt, ...)
-	{
-		std::string fmt = LogText(aFmt, "[INITIALIZATION]: ", "\x1b[36;1m", "\x1b[37;1m");
 
-		va_list args;
-		va_start(args, aFmt);
-		vprintf(fmt.c_str(), args);
-		va_end(args);
+#define Log(Text, AColor, BColor) \
+	va_list Args; \
+	va_start(Args, Fmt); \
+	char* Result = LogText(Fmt, Text, AColor, BColor); \
+	vprintf(Result, Args); \
+	free(Result); \
+	va_end(Args);
+	
+	void Log::Initialization(const char* Fmt, ...)
+	{
+		Log("[INITIALIZATION]", "\x1b[36;1m", "\x1b[37;1m");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::success(const char* aFmt, ...)
+	
+	void Log::Success(const char* Fmt, ...)
 	{
-		std::string fmt = LogText(aFmt, "[SUCCESS]: ", "\x1b[32;1m", "\x1b[37;1m");
-
-		va_list args;
-		va_start(args, aFmt);
-		vprintf(fmt.c_str(), args);
-		va_end(args);
+		Log("[SUCCESS]: ", "\x1b[32;1m", "\x1b[37;1m");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::message(const char* aFmt, ...)
+	
+	void Log::Message(const char* Fmt, ...)
 	{
-		std::string fmt = LogText(aFmt, "[INFO]: ", "\x1b[37;1m", "\x1b[37;1m");
-
-		va_list args;
-		va_start(args, aFmt);
-		vprintf(fmt.c_str(), args);
-		va_end(args);
+		Log("[INFO]: ", "\x1b[37;1m", "\x1b[37;1m");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::warning(const char* aFmt, ...)
+	
+	void Log::Warning(const char* Fmt, ...)
 	{
-		std::string fmt = LogText(aFmt, "[WARNING]: ", "\x1b[33;1m", "\x1b[37;1m");
-
-		va_list args;
-		va_start(args, aFmt);
-		vprintf(fmt.c_str(), args);
-		va_end(args);
+		Log("[WARNING]: ", "\x1b[33;1m", "\x1b[37;1m");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::error(const char* aFmt, ...)
+	
+	void Log::Error(const char* Fmt, ...)
 	{
-		std::string fmt = LogText(aFmt, "[ERROR]: ", "\x1b[33;1m", "\x1b[37;1m");
-
-		va_list args;
-		va_start(args, aFmt);
-		vprintf(fmt.c_str(), args);
-		va_end(args);
+		Log("[ERROR]: ", "\x1b[31;1m", "\x1b[37;1m");
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::fatal(const char* aFmt, ...)
+	
+	void Log::Fatal(const char* Fmt, ...)
 	{
-		std::string fmt = LogText(aFmt, "[FATAL]: ", "\x1b[35;1m", "\x1b[37;1m");
-
-		va_list args;
-		va_start(args, aFmt);
-		vprintf(fmt.c_str(), args);
-		va_end(args);
-
+		Log("[FATAL]: ", "\x1b[35;1m", "\x1b[37;1m");
 		exit(1);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::initialization(std::string aMessage)
-	{
-		std::string mes = LogText(aMessage.c_str(), "[INITIALIZATION]: ", "\x1b[36;1m", "\x1b[37;1m");
-
-		printf("%s", mes.c_str());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::success(std::string aMessage)
-	{
-		std::string mes = LogText(aMessage.c_str(), "[SUCCESS]: ", "\x1b[32;1m", "\x1b[37;1m");
-
-		printf("%s", mes.c_str());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::message(std::string aMessage)
-	{
-		std::string mes = LogText(aMessage.c_str(), "[INFO]: ", "\x1b[37;1m", "\x1b[37;1m");
-
-		printf("%s", mes.c_str());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::warning(std::string aMessage)
-	{
-		std::string mes = LogText(aMessage.c_str(), "[WARNING]: ", "\x1b[33;1m", "\x1b[37;1m");
-
-		printf("%s", mes.c_str());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::error(std::string aMessage)
-	{
-		std::string mes = LogText(aMessage.c_str(), "[ERROR]: ", "\x1b[31;1m", "\x1b[37;1m");
-
-		printf("%s", mes.c_str());
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void Log::fatal(std::string aMessage)
-	{
-		std::string mes = LogText(aMessage.c_str(), "[FATAL]: ", "\x1b[35;1m", "\x1b[37;1m");
-
-		printf("%s", mes.c_str());
-		exit(1);
-	}
-
 
 }
 

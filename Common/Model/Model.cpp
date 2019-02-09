@@ -1,72 +1,154 @@
-/************************************************
-*                    Model.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   08.01.2018                  *
-*************************************************/
 #include <Common/Model/Model.h>
+#include <Common/Model/CMF/ModelCMF.h>
 
 namespace Columbus
 {
 
-	C_Model::C_Model() :
-		Existance(false)
-	{
+	Model::Model() {}
 
-	}
-	//////////////////////////////////////////////////////////////////////////////	
-	C_Model::C_Model(std::string InFileName)
+	bool Model::Load(const char* File)
 	{
-		Load(InFileName);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::Load(std::string InFileName)
-	{
+		FreeData();
+
+		ModelLoader* Loader = nullptr;
+
+		if (ModelLoaderCMF::IsCMF(File)) Loader = new ModelLoaderCMF();
+
+		if (Loader != nullptr)
+		{
+			if (Loader->Load(File) == false)
+			{
+				delete Loader;
+				return false;
+			}
+
+			Exist         = true;
+			Indexed       = Loader->Indexed;
+			VerticesCount = Loader->VerticesCount;
+			IndicesCount  = Loader->IndicesCount;
+			IndexSize     = Loader->IndexSize;
+
+			Positions = Loader->Positions;
+			UVs       = Loader->UVs;
+			Normals   = Loader->Normals;
+			Tangents  = Loader->Tangents;
+			Indices   = Loader->Indices;
+
+			BoundingBox = Loader->BoundingBox;
+
+			if (Vertices != nullptr && Indices != nullptr && Indexed)
+			{
+				// On the moment of writing this code I have not discrete GPU, only laptop with Intel HD4000.
+				// So, on integrated GPU cache optimizers do not work.
+				// In the future, I will test cache optimizers (AMD Tootle, NvTriStrip) and maybe use it.
+				// This block of code needs AMD Tootle library
+				/*
+				TootleInit();
+
+				uint32* OutIndices = new uint32[IndicesCount];
+				for (uint32 i = 0; i < IndicesCount; i++)
+				{
+					switch (IndexSize)
+					{
+					case 1: OutIndices[i] = ((uint8*) Indices)[i]; break;
+					case 2: OutIndices[i] = ((uint16*)Indices)[i]; break;
+					case 4: OutIndices[i] = ((uint32*)Indices)[i]; break;
+					}
+				}
+
+				TootleOptimizeVCache(OutIndices, IndicesCount / 3, VerticesCount, 8, OutIndices, nullptr);
+
+				for (uint32 i = 0; i < IndicesCount; i++)
+				{
+					switch (IndexSize)
+					{
+					case 1: ((uint8*)Indices)[i]  = OutIndices[i]; break;
+					case 2: ((uint16*)Indices)[i] = OutIndices[i]; break;
+					case 4: ((uint32*)Indices)[i] = OutIndices[i]; break;
+					}
+				}
+
+				delete[] OutIndices;
+				*/
+			}
+
+			if (Positions != nullptr && UVs != nullptr && Normals != nullptr && Tangents == nullptr)
+			{
+				Tangents = new Vector3[VerticesCount];
+
+				Vector3 DeltaPos[2];
+				Vector2 DeltaUV[2];
+				Vector3 Tangent;
+				float R;
+
+				if (Indexed)
+				{
+					uint32 CurrentIndices[3];
+
+					for (uint32 i = 0; i < IndicesCount; i += 3)
+					{
+						for (int j = 0; j < 3; j++)
+						{
+							switch (IndexSize)
+							{
+							case 1: CurrentIndices[j] = ((uint8*) Indices)[i + j]; break;
+							case 2: CurrentIndices[j] = ((uint16*)Indices)[i + j]; break;
+							case 4: CurrentIndices[j] = ((uint32*)Indices)[i + j]; break;
+							}
+						}
+
+						DeltaPos[0] = Positions[CurrentIndices[1]] - Positions[CurrentIndices[0]];
+						DeltaPos[1] = Positions[CurrentIndices[2]] - Positions[CurrentIndices[0]];
+
+						DeltaUV[0] = UVs[CurrentIndices[1]] - UVs[CurrentIndices[0]];
+						DeltaUV[1] = UVs[CurrentIndices[2]] - UVs[CurrentIndices[0]];
+
+						R = 1.0f / (DeltaUV[0].X * DeltaUV[1].Y - DeltaUV[0].Y * DeltaUV[1].X);
+						Tangent = R * (DeltaPos[0] * DeltaUV[1].Y - DeltaPos[1] * DeltaUV[0].Y);
+
+						for (int j = 0; j < 3; j++) Tangents[CurrentIndices[j]] = Tangent;
+					}
+				}
+				else
+				{
+					for (uint32 i = 0; i < VerticesCount; i += 3)
+					{
+						DeltaPos[0] = Positions[i + 1] - Positions[i];
+						DeltaPos[1] = Positions[i + 2] - Positions[i];
+
+						DeltaUV[0] = UVs[i + 1] - UVs[i];
+						DeltaUV[1] = UVs[i + 2] - UVs[i];
+
+						R = 1.0f / (DeltaUV[0].X * DeltaUV[1].Y - DeltaUV[0].Y * DeltaUV[1].X);
+						Tangent = R * (DeltaPos[0] * DeltaUV[1].Y - DeltaPos[1] * DeltaUV[0].Y);
+
+						for (int j = 0; j < 3; j++) Tangents[i + j] = Tangent;
+					}
+				}
+			}
+
+			delete Loader;
+			return true;
+		}
+
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::Save(std::string InFileName) const
-	{
-		if (!IsExist()) return false;
 
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::IsExist() const
+	void Model::FreeData()
 	{
-		return Existance;
+		Indexed = false;
+		Exist = false;
+		VerticesCount = 0;
+		IndicesCount = 0;
+		delete[] Positions;
+		delete[] UVs;
+		delete[] Normals;
+		delete[] Tangents;
+		delete[] Vertices;
+		delete[] Indices;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool C_Model::Free()
-	{
-		Vertices.clear();
-		FileName.clear();
-		Existance = false;
 
-		return true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::vector<Vertex> C_Model::GetData() const
-	{
-		return Vertices;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	std::string C_Model::GetFilename() const
-	{
-		return FileName;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	C_Model::~C_Model()
-	{
-		Free();
-	}
+	Model::~Model() { FreeData(); }
 
 }
 

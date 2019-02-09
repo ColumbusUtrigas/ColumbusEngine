@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/Size/ParticleModuleSizeBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSize : public ParticleModuleSizeBase
+	class ParticleModuleSize : public ParticleModule
 	{
 	public:
 		Vector3 Min;
@@ -24,7 +24,7 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.size = Vector3::Random(Min, Max);
+			OutParticle.Size = Vector3::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter

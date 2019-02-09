@@ -3,13 +3,8 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <Math/Matrix.h>
 #include <Graphics/Texture.h>
-#include <Graphics/Cubemap.h>
 #include <Graphics/Shader.h>
-#include <System/System.h>
-#include <System/Log.h>
-#include <System/Serializer.h>
 
 namespace Columbus
 {
@@ -24,78 +19,76 @@ namespace Columbus
 			Back,
 			FrontAndBack
 		};
+
+		enum class DepthTest
+		{
+			Less,
+			Greater,
+			LEqual,
+			GEqual,
+			Equal,
+			NotEqual,
+			Never,
+			Always
+		};
 	private:
-		bool mLighting = true;
-
-		Cubemap* mEnvReflection = nullptr;
-
-		int mTextureID = -1;
-		int mSpecMapID = -1;
-		int mNormMapID = -1;
-		int DetailDiffuseMapID = -1;
+		int AlbedoMapID = -1;
+		int NormalMapID = -1;
+		int RoughnessMapID = -1;
+		int MetallicMapID = -1;
+		int OcclusionMapID = -1;
+		int EmissionMapID = -1;
+		int DetailAlbedoMapID = -1;
 		int DetailNormalMapID = -1;
 	protected:
 		ShaderProgram* ShaderProg = nullptr;
 	public:
 		Cull Culling = Cull::Back;
+		DepthTest DepthTesting = DepthTest::LEqual;
 		bool DepthWriting = true;
+		bool Transparent = false;
+		bool Lighting = true;
 
-		Texture* DiffuseTexture = nullptr;
-		Texture* SpecularTexture = nullptr;
-		Texture* NormalTexture = nullptr;
-		Texture* DetailDiffuseMap = nullptr;
+		Texture* AlbedoMap = nullptr;
+		Texture* NormalMap = nullptr;
+		Texture* RoughnessMap = nullptr;
+		Texture* MetallicMap = nullptr;
+		Texture* OcclusionMap = nullptr;
+		Texture* EmissionMap = nullptr;
+		Texture* DetailAlbedoMap = nullptr;
 		Texture* DetailNormalMap = nullptr;
-		Cubemap* Reflection = nullptr;
+		Texture* ReflectionMap = nullptr;
 
 		Vector2 Tiling = Vector2(1, 1);
 		Vector2 DetailTiling = Vector2(4, 4);
 
-		Vector4 Color;
-		Vector3 AmbientColor;
-		Vector3 DiffuseColor;
-		Vector3 SpecularColor;
+		Vector4 Albedo;
 
-		float ReflectionPower = 0.2f;
-		float DetailNormalStrength = 0.3f;
-
-		float Rim = 1.0f;
-		float RimPower = 8.0f;
-		float RimBias = 0.3f;
-		Vector3 RimColor;
+		float Roughness = 1.0f;
+		float Metallic = 0.1f;
+		float EmissionStrength = 0.5f;
 	public:
 		Material();
-		Material(std::string aFile);
+		Material(const char* FileName);
 
 		bool Prepare();
-		void SetBool(std::string Name, bool Value);
-		void SetInt(std::string Name, int Value);
-		void SetFloat(std::string Name, float Value);
-		void SetFloatArray(std::string Name, const float* Value, uint32 Size);
-		void SetVector2(std::string Name, Vector2 Value);
-		void SetVector3(std::string Name, Vector3 Value);
-		void SetVector4(std::string Name, Vector4 Value);
-		void SetMatrix(std::string Name, Matrix Value);
-		void SetTexture(std::string Name, Texture* Value, uint32 Sampler);
 
 		void SetShader(ShaderProgram* InShader);
-		void setReflection(const Cubemap* aReflection);
-		void setLighting(const bool aLighting);
-
 		ShaderProgram* GetShader() const;
-		Cubemap* getReflection() const;
-		bool getLighting() const;
 
-		int getTextureID() const;
-		int getSpecMapID() const;
-		int getNormMapID() const;
-		int GetDetailDiffuseMapID() const;
+		int GetAlbedoMapID() const;
+		int GetNormalMapID() const;
+		int GetRoughnessMapID() const;
+		int GetMetallicMapID() const;
+		int GetOcclusionMapID() const;
+		int GetEmissionMapID() const;
+		int GetDetailAlbedoMapID() const;
 		int GetDetailNormalMapID() const;
 
-		bool saveToXML(std::string aFile) const;
-		bool loadFromXML(std::string aFile);
+		bool Load(const char* FileName);
 
-		bool operator==(Material Other);
-		bool operator!=(Material Other);
+		bool operator==(const Material& Other) const;
+		bool operator!=(const Material& Other) const;
 
 		~Material();
 	};

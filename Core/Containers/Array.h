@@ -1,14 +1,10 @@
 #pragma once
 
 #include <Core/Memory.h>
-#include <Core/Templates/Copy.h>
-#include <Core/Templates/Comparison.h>
-#include <Math/MathUtil.h>
+#include <algorithm>
 
 namespace Columbus
 {
-
-	#define ARRAY_COUNT(x) (sizeof(x) / sizeof(x[0]))
 
 	template <typename ContainerType, typename ElementType, typename IndexType>
 	class ArrayIndexedIterator
@@ -103,27 +99,27 @@ namespace Columbus
 			ArrayCount(0),
 			ArrayMax(8)
 		{
-			Ptr = new T[ArrayMax];
+			Ptr = (T*)Memory::Malloc(ArrayMax * sizeof(T));
 		}
 
 		Array(const Array& Base) :
 			ArrayCount(Base.ArrayCount),
 			ArrayMax(Base.ArrayMax)
 		{
-			Ptr = new T[Base.GetMax()];
+			Ptr = (T*)Memory::Malloc(Base.GetMax() * sizeof(T));
 			std::copy(Base.Ptr, Base.Ptr + Base.GetCount(), Ptr);
 		}
 		/*
 		* Add element in back of array
 		* @param const T Value: Value which will added in back of array
 		*/
-		void Add(const T Value)
+		void Add(const T& Value)
 		{
 			if (ArrayCount >= ArrayMax)
 			{
-				T* TmpPtr = new T[ArrayMax * 2];
-				std::copy(Ptr, Ptr + GetCount(), TmpPtr);
-				delete[] Ptr;
+				T* TmpPtr = (T*)Memory::Malloc(ArrayMax * 2 * sizeof(T));
+				memcpy(TmpPtr, Ptr, GetCount() * sizeof(T));
+				Memory::Free(Ptr);
 				Ptr = TmpPtr;
 				ArrayMax *= 2;
 			}
@@ -154,7 +150,7 @@ namespace Columbus
 		void Resize(uint32 Count)
 		{
 			int64 PWRCount = Math::UpperPowerOf2(Count);
-			T* TmpPtr = new T[PWRCount];
+			T* TmpPtr = (T*)Memory::Malloc((uint32)PWRCount * sizeof(T));
 
 			if (Count <= ArrayCount)
 			{
@@ -166,7 +162,7 @@ namespace Columbus
 				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
 			}
 
-			delete[] Ptr;
+			Memory::Free(Ptr);
 			Ptr = TmpPtr;
 			ArrayMax = (uint32)PWRCount;
 		}
@@ -175,16 +171,16 @@ namespace Columbus
 		* @param const T Value: The value to which the array will be populated
 		* @param uint32 Num: Number of element copies
 		*/
-		void Init(const T Value, uint32 Num)
+		void Init(const T& Value, uint32 Num)
 		{
 			Clear();
 
 			if (Num > ArrayMax)
 			{
 				uint64 PWRCount = Math::UpperPowerOf2(Num);
-				T* TmpPtr = new T[PWRCount];
+				T* TmpPtr = (T*)Memory::Malloc((uint32)PWRCount * sizeof(T));
 				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
-				delete[] Ptr;
+				Memory::Free(Ptr);
 				Ptr = TmpPtr;
 				ArrayMax = (uint32)PWRCount;
 			}
@@ -206,9 +202,9 @@ namespace Columbus
 			if (Pos > ArrayMax)
 			{
 				int64 PWRCount = Math::UpperPowerOf2(Num);
-				T* TmpPtr = new T[PWRCount];
+				T* TmpPtr = (T*)Memory::Malloc((uint32)PWRCount * sizeof(T));
 				std::copy(Ptr, Ptr + GetMax(), TmpPtr);
-				delete[] Ptr;
+				Memory::Free(Ptr);
 				Ptr = TmpPtr;
 				ArrayMax = (uint32)PWRCount;
 			}
@@ -267,11 +263,11 @@ namespace Columbus
 
 			if (Ptr != nullptr)
 			{
-				delete[] Ptr;
+				Memory::Free(Ptr);
 				Ptr = nullptr;
 			}
 
-			Ptr = new T[ArrayMax];
+			Ptr = (T*)Memory::Malloc(ArrayMax * sizeof(T));
 		}
 
 		inline Array& operator=(const Array& Other)
@@ -280,10 +276,10 @@ namespace Columbus
 			{
 				if (Ptr != nullptr)
 				{
-					delete[] Ptr;
+					Memory::Free(Ptr);
 				}
 
-				Ptr = new T[Other.GetMax()];
+				Ptr = (T*)Memory::Malloc(Other.GetMax() * sizeof(T));
 				std::copy(Other.GetData(), Other.GetData() + Other.GetCount(), Ptr);
 
 				ArrayMax = Other.ArrayMax;
@@ -308,14 +304,14 @@ namespace Columbus
 		/*
 		* Get array element by index
 		*/
-		inline T& operator[](uint32 Index)
+		inline T& operator[](uint32 Index) const
 		{
 			return Ptr[Index];
 		}
 
 		inline bool operator==(const Array& Other)
 		{
-			return GetCount() == Other.GetCount() && Equal(GetData(), GetData() + GetCount(), Other.GetData());
+			return GetCount() == Other.GetCount() && memcmp(GetData(), Other.GetData(), GetCount() * sizeof(T));
 		}
 
 		inline bool operator!=(const Array& Other)
@@ -338,6 +334,8 @@ namespace Columbus
 
 		inline Iterator begin() { return Iterator(this, 0); }
 		inline Iterator end() { return Iterator(this, GetCount()); }
+		inline ConstIterator begin() const { return ConstIterator(this, 0); }
+		inline ConstIterator end() const { return ConstIterator(this, GetCount()); }
 
 		~Array()
 		{

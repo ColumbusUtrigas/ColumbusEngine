@@ -1,9 +1,6 @@
 #pragma once
 
 #include <Core/Types.h>
-#include <Core/Platform/Platform.h>
-
-#include <cstdlib>
 #include <cmath>
 
 namespace Columbus
@@ -35,7 +32,7 @@ namespace Columbus
 		static inline float Sqr(const float Value)  noexcept { return Value * Value; }
 		static inline float Pow(const float A, const float B) noexcept { return powf(A, B); };
 
-		/*
+		/**
 		* Find sinus and cosine of Value
 		* @param const float Value: Value for finding sine and cosine
 		* @param float& S: Sine value reference
@@ -43,18 +40,18 @@ namespace Columbus
 		*/
 		static inline void SinCos(const float Value, float& S, float& C) noexcept
 		{
-			S = Sin(Value);
-			C = Cos(Value);
+			S = sinf(Value);
+			C = cosf(Value);
 		}
-		/*
+		/**
 		* Return true if Value is power of 2
 		*/
 		static constexpr inline bool IsPowerOf2(const int32 Value) noexcept
 		{
 			return (Value & (Value - 1)) == 0;
 		}
-		/*
-		* Finding upper power of 2
+		/**
+		* Find upper power of 2.
 		*/
 		static constexpr inline int64 UpperPowerOf2(int64 Value) noexcept
 		{
@@ -68,32 +65,32 @@ namespace Columbus
 
 			return Value;
 		}
-		/*
-		* Return absolute value in a generic way
+		/**
+		* Return absolute value.
 		*/
 		template <class T>
 		static constexpr inline T Abs(const T Value) noexcept
 		{
 			return (Value >= (T)0) ? Value : -Value;
 		}
-		/*
-		* Returns 1, 0, or -1 depending on relation of T to 0
+		/**
+		* Returns 1, 0, or -1 depending on relation of T to 0.
 		*/
 		template <class T>
 		static constexpr inline T Sign(const T A) noexcept
 		{
 			return (A > (T)0) ? (T)1 : ((A < (T)0) ? (T)-1 : (T)0);
 		}
-		/*
-		* Return lower value in a generic way
+		/**
+		* Return lower value.
 		*/
 		template <class T>
 		static constexpr inline T Min(const T A, const T B) noexcept
 		{
 			return A < B ? A : B;
 		}
-		/*
-		* Return heigher value in a generic way
+		/**
+		* Return heigher value.
 		*/
 		template <class T>
 		static constexpr inline T Max(const T A, const T B) noexcept
@@ -109,7 +106,7 @@ namespace Columbus
 			return Min(Max(A, MinValue), MaxValue);
 		}
 		/*
-		* Converts Degrees to radians
+		* Converts degrees to radians.
 		*/
 		template <class T>
 		static constexpr inline T Radians(const T Degrees) noexcept
@@ -120,7 +117,7 @@ namespace Columbus
 		}
 
 		/*
-		* Converts Radians to degrees
+		* Converts radians to degrees.
 		*/
 		template <class T>
 		static constexpr inline T Degrees(const T Radians) noexcept

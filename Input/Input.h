@@ -1,24 +1,10 @@
 #pragma once
 
 #include <Math/Vector2.h>
-#include <Graphics/OpenGL/WindowOpenGLSDL.h>
-#include <GUI/IO.h>
 #include <Common/Cursor/Cursor.h>
-
-#include <SDL.h>
-#include <vector>
-#include <functional>
-#include <utility>
 
 namespace Columbus
 {
-
-	enum class InputBindType
-	{
-		Key,
-		KeyDown,
-		KeyUp
-	};
 
 	enum class SystemCursor
 	{
@@ -36,68 +22,71 @@ namespace Columbus
 		Hand
 	};
 
-	struct InputBind
-	{
-		InputBindType Type;
-		uint32 Key;
-		std::function<void()> Func;
-
-		InputBind(InputBindType InType, uint32 InKey, std::function<void()> InFunc) :
-			Type(InType), Key(InKey), Func(InFunc)
-		{}
-
-		void Execute()
-		{
-			Func();
-		}
-	};
-
 	class Input
 	{
+	public:
+		struct MouseButton
+		{
+			int X = 0;
+			int Y = 0;
+			bool Pressed = false;
+			uint8 Clicks = 0;
+		};
+
+		struct MouseWheel
+		{
+			int X = 0;
+			int Y = 0;
+		};
 	private:
-		uint8* mCurrentKeyboardState = nullptr;
-		uint8* mPreviousKeyboardState = nullptr;
-		uint8* mKeyboardStateTmp = nullptr;
+		uint8* KeyboardState = nullptr;
+		int KeysNum = 0;
 
-		int mKeyboardStateNum = 0;
+		bool Keys[256];
+		bool KeysDown[256];
+		bool KeysUp[256];
+		MouseButton Buttons[8];
+		MouseWheel Wheel;
 
-		Vector2 mCurrentMousePosition;
-		Vector2 mPreviousMousePosition;
+		iVector2 CurrentMousePosition;
+		iVector2 PreviousMousePosition;
 
-		bool mMouseEnabled = true;
-
-		std::vector<InputBind> mBinds;
-
-		Window* mWindow = nullptr;
-		GUI::IO* mIO = nullptr;
-
-		void UpdateIO();
+		bool MouseEnabled = true;
+		bool KeyboardFocus;
+		bool MouseFocus;
+		bool KeyRepeat;
 	public:
 		Input();
 
-		void BindInput(const InputBind aBind);
-
-		void SetWindow(const Window* aWindow);
-		void SetIO(const GUI::IO* aIO);
-
-		void ShowMouseCursor(const bool aX);
+		void ShowMouseCursor(bool Show);
 		void SetCursor(Cursor InCursor);
 		void SetSystemCursor(SystemCursor Cursor);
-		void SetColoredCursor(const void* aPixels, const unsigned int aWidth,
-			const unsigned int aHeight, const unsigned int aBPP, const Vector2 aHot);
-		void SetMousePos(const Vector2 aPos);
-		void SetMousePosGlobal(const Vector2 aPos);
+		void SetColoredCursor(const void* Pixels, uint32 Width, uint32 Height, uint32 BPP, const iVector2& Hot);
+
+		void WarpMouse(const iVector2& aPos);
+
+		void SetKeyboardFocus(bool Focus);
+		void SetMouseFocus(bool Focus);
 
 		void Update();
 
-		Vector2 GetMousePosition();
-		Vector2 GetMouseMovement();
+		void SetKeyDown(uint32 Key);
+		void SetKeyUp(uint32 Key);
+		void SetMousePosition(const iVector2& Position);
+		void SetMouseButton(uint32 Button, const MouseButton& State);
+		void SetMouseWheel(const MouseWheel& State);
 
-		bool GetKey(const unsigned int aKey);
-		bool GetKeyDown(const unsigned int aKey);
-		bool GetKeyUp(const unsigned int aKey);
+		bool GetKey(uint32 Key) const;
+		bool GetKeyDown(uint32 Key) const;
+		bool GetKeyUp(uint32 Key) const;
+		iVector2 GetMousePosition() const;
+		iVector2 GetMouseMovement() const;
+		MouseButton GetMouseButton(uint32 Button) const;
+		MouseWheel GetMouseWheel() const;
 
 		~Input();
 	};
 
 }
+
+

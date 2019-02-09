@@ -1,15 +1,15 @@
 #include <Graphics/Material.h>
+#include <System/Serializer.h>
+#include <Common/JSON/JSON.h>
+#include <System/Log.h>
 
 namespace Columbus
 {
 
-	Material::Material() :
-		mLighting(false),
-		mEnvReflection(nullptr) {}
-	
-	Material::Material(std::string aFile)
+	Material::Material() {}
+	Material::Material(const char* FileName)
 	{
-		loadFromXML(aFile);
+		Load(FileName);
 	}
 
 	bool Material::Prepare()
@@ -29,260 +29,118 @@ namespace Columbus
 		return false;
 	}
 	
-	/*void Material::setTexture(const Texture* aTexture)
-	{
-		mTexture = const_cast<Texture*>(aTexture);
-	}
-	
-	void Material::setSpecMap(const Texture* aSpecMap)
-	{
-		mSpecMap = const_cast<Texture*>(aSpecMap);
-	}
-	
-	void Material::setNormMap(const Texture* aNormMap)
-	{
-		mNormMap = const_cast<Texture*>(aNormMap);
-	}*/
-	
 	void Material::SetShader(ShaderProgram* InShader)
 	{
 		ShaderProg = InShader;
 	}
 
-	void Material::setReflection(const Cubemap* aReflecction)
-	{
-		mEnvReflection = const_cast<Cubemap*>(aReflecction);
-	}
-	
-	void Material::setLighting(const bool aLighting)
-	{
-		mLighting = static_cast<bool>(aLighting);
-	}
-	
-	/*Texture* Material::getTexture() const
-	{
-		return mTexture;
-	}
-	
-	Texture* Material::getSpecMap() const
-	{
-		return mSpecMap;
-	}
-	
-	Texture* Material::getNormMap() const
-	{
-		return mNormMap;
-	}*/
-
 	ShaderProgram* Material::GetShader() const
 	{
 		return ShaderProg;
 	}
-
-	Cubemap* Material::getReflection() const
-	{
-		return mEnvReflection;
-	}
 	
-	bool Material::getLighting() const
+	int Material::GetAlbedoMapID() const
 	{
-		return mLighting;
-	}
-	
-	int Material::getTextureID() const
-	{
-		return mTextureID;
-	}
-	
-	int Material::getSpecMapID() const
-	{
-		return mSpecMapID;
+		return AlbedoMapID;
 	}
 
-	int Material::getNormMapID() const
+	int Material::GetNormalMapID() const
 	{
-		return mNormMapID;
+		return NormalMapID;
 	}
 
-	int Material::GetDetailDiffuseMapID() const
+	int Material::GetRoughnessMapID() const
 	{
-		return DetailDiffuseMapID;
+		return RoughnessMapID;
+	}
+
+	int Material::GetMetallicMapID() const
+	{
+		return MetallicMapID;
+	}
+
+	int Material::GetOcclusionMapID() const
+	{
+		return OcclusionMapID;
+	}
+
+	int Material::GetEmissionMapID() const
+	{
+		return EmissionMapID;
+	}
+
+	int Material::GetDetailAlbedoMapID() const
+	{
+		return DetailAlbedoMapID;
 	}
 
 	int Material::GetDetailNormalMapID() const
 	{
 		return DetailNormalMapID;
 	}
-	
-	bool Material::saveToXML(std::string aFile) const
+
+	bool Material::Load(const char* FileName)
 	{
-		Serializer::SerializerXML Serializer;
+		JSON J;
+		if (!J.Load(FileName)) return false;
 
-		/*if (!Serializer.Write(aFile, "Material"))
-		{ Log::error("Can't save Material: " + aFile); return false; }
+		if (J["Culling"].GetString() == "No")           Culling = Cull::No;
+		if (J["Culling"].GetString() == "Front")        Culling = Cull::Front;
+		if (J["Culling"].GetString() == "Back")         Culling = Cull::Back;
+		if (J["Culling"].GetString() == "FrontAndBack") Culling = Cull::FrontAndBack;
+		
+		if (J["DepthTesting"].GetString() == "Less")    DepthTesting = DepthTest::Less;
+		if (J["DepthTesting"].GetString() == "Greater") DepthTesting = DepthTest::Greater;
+		if (J["DepthTesting"].GetString() == "LEqual")  DepthTesting = DepthTest::LEqual;
+		if (J["DepthTesting"].GetString() == "GEqual")  DepthTesting = DepthTest::GEqual;
+		if (J["DepthTesting"].GetString() == "Never")   DepthTesting = DepthTest::Never;
+		if (J["DepthTesting"].GetString() == "Always")  DepthTesting = DepthTest::Always;
 
-		if (!Serializer.SetVector4("Color", mColor, {"R", "G", "B", "A"}))
-		{ Log::error("Can't save Material color: " + aFile); return false; }
+		DepthWriting = J["DepthWriting"].GetBool();
+		Transparent  = J["Transparent"] .GetBool();
+		Lighting     = J["Lighting"]    .GetBool();
+		Tiling       = J["Tiling"]      .GetVector2<float>();
+		DetailTiling = J["DetailTiling"].GetVector2<float>();
+		Albedo       = J["Albedo"]      .GetVector4<float>();
 
-		if (!Serializer.SetVector3("Ambient", mAmbient, {"R", "G", "B"}))
-		{ Log::error("Can't save Material ambient: " + aFile); return false; }
+		Roughness        = (float)J["Roughness"]       .GetFloat();
+		Metallic         = (float)J["Metallic"]        .GetFloat();
+		EmissionStrength = (float)J["EmissionStrength"].GetFloat();
 
-		if (!Serializer.SetVector3("Diffuse", mDiffuse, {"R", "G", "B"}))
-		{ Log::error("Can't save Material diffuse: " + aFile); return false; }
+		AlbedoMapID       = J["Textures"]["Albedo"]      .IsInt() ? (int)J["Textures"]["Albedo"]      .GetInt() : -1;
+		NormalMapID       = J["Textures"]["Normal"]      .IsInt() ? (int)J["Textures"]["Normal"]      .GetInt() : -1;
+		RoughnessMapID    = J["Textures"]["Roughness"]   .IsInt() ? (int)J["Textures"]["Roughness"]   .GetInt() : -1;
+		MetallicMapID     = J["Textures"]["Metallic"]    .IsInt() ? (int)J["Textures"]["Metallic"]    .GetInt() : -1;
+		OcclusionMapID    = J["Textures"]["Occlusion"]   .IsInt() ? (int)J["Textures"]["Occlusion"]   .GetInt() : -1;
+		EmissionMapID     = J["Textures"]["Emission"]    .IsInt() ? (int)J["Textures"]["Emission"]    .GetInt() : -1;
+		DetailAlbedoMapID = J["Textures"]["DetailAlbedo"].IsInt() ? (int)J["Textures"]["DetailAlbedo"].GetInt() : -1;
+		DetailNormalMapID = J["Textures"]["DetailNormal"].IsInt() ? (int)J["Textures"]["DetailNormal"].GetInt() : -1;
 
-		if (!Serializer.SetVector3("Specular", mSpecular, {"R", "G", "B"}))
-		{ Log::error("Can't save Material specular: " + aFile); return false; }
-
-		if (!Serializer.SetFloat("ReflectionPower", mReflectionPower))
-		{ Log::error("Can't save Material reflection power: " + aFile); return false; }
-
-		if (!Serializer.SetBool("Lighting", mLighting))
-		{ Log::error("Can't save Material lighting: " + aFile); return false; }
-
-		if (!Serializer.Save())
-		{ Log::error("Can't save Material: " + aFile); return false; }*/
-
-		Log::success("Material saved: " + aFile);
-
-		return true;
-	}
-	
-	bool Material::loadFromXML(std::string aFile)
-	{
-		Serializer::SerializerXML Serializer;
-
-		if (!Serializer.Read(aFile, "Material"))
-		{ Log::error("Can't load Material: " + aFile); return false; }
-
-		std::string MaterialCulling;
-
-		if (!Serializer.GetString("Culling", MaterialCulling))
-		{ Log::error("Can't load Material culling: " + aFile); return false; }
-
-		if (!Serializer.GetBool("DepthWriting", DepthWriting))
-		{ Log::error("Can't load Material depth writing: " + aFile); return false; }
-
-		if (!Serializer.GetVector2("Tiling", Tiling, { "X", "Y"}))
-		{ Log::error("Can't load Material tiling: " + aFile); return false; }
-
-		if (!Serializer.GetVector2("DetailTiling", DetailTiling, { "X", "Y"}))
-		{ Log::error("Can't load Material detail tiling: " + aFile); return false; }
-
-		if (!Serializer.GetVector4("Color", Color, { "R", "G", "B", "A" }))
-		{ Log::error("Can't load Material color: " + aFile); return false; }
-
-		if (!Serializer.GetVector3("Ambient", AmbientColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material ambient color: " + aFile); return false; }
-
-		if (!Serializer.GetVector3("Diffuse", DiffuseColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material diffuse color: " + aFile); return false; }
-
-		if (!Serializer.GetVector3("Specular", SpecularColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material specular color: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("ReflectionPower", ReflectionPower))
-		{ Log::error("Can't load Material reflection power: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("DetailNormalStrength", DetailNormalStrength))
-		{ Log::error("Can't load Material detail normal strength: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("Rim", Rim))
-		{ Log::error("Can't load Material Rim: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("RimPower", RimPower))
-		{ Log::error("Can't load Material Rim power: " + aFile); return false; }
-
-		if (!Serializer.GetFloat("RimBias", RimBias))
-		{ Log::error("Can't load Material Rim bias: " + aFile); return false; }
-
-		if (!Serializer.GetVector3("RimColor", RimColor, { "R", "G", "B" }))
-		{ Log::error("Can't load Material Rim color: " + aFile); return false; }
-
-		if (!Serializer.GetBool("Lighting", mLighting))
-		{ Log::error("Can't load Material lighting: " + aFile); return false; }
-
-		std::string diffuseMapPath = "None";
-		std::string specularMapPath = "None";
-		std::string normalMapPath = "None";
-		std::string DetailDiffuseMapPath = "None";
-		std::string DetailNormalMapPath = "None";
-
-		Serializer.GetSubString({"Textures", "Diffuse"}, diffuseMapPath);
-		Serializer.GetSubString({"Textures", "Specular"}, specularMapPath);
-		Serializer.GetSubString({"Textures", "Normal"}, normalMapPath);
-		Serializer.GetSubString({"Textures", "DetailDiffuse"}, DetailDiffuseMapPath);
-		Serializer.GetSubString({"Textures", "DetailNormal"}, DetailNormalMapPath);
-
-		if (diffuseMapPath != "None")
-		{
-			mTextureID = std::atoi(diffuseMapPath.c_str());
-		}
-
-		if (specularMapPath != "None")
-		{
-			mSpecMapID = std::atoi(specularMapPath.c_str());
-		}
-
-		if (normalMapPath != "None")
-		{
-			mNormMapID = std::atoi(normalMapPath.c_str());
-		}
-
-		if (DetailDiffuseMapPath != "None")
-		{
-			DetailDiffuseMapID = std::atoi(DetailDiffuseMapPath.c_str());
-		}
-
-		if (DetailNormalMapPath != "None")
-		{
-			DetailNormalMapID = std::atoi(DetailNormalMapPath.c_str());
-		}
-
-		if (MaterialCulling == "No")
-		{
-			Culling = Cull::No;
-		}
-		else if (MaterialCulling == "Front")
-		{
-			Culling = Cull::Front;
-		}
-		else if (MaterialCulling == "Back")
-		{
-			Culling = Cull::Back;
-		}
-		else if (MaterialCulling == "FrontAndBack")
-		{
-			Culling = Cull::FrontAndBack;
-		}
-
-		Log::success("Material loaded: " + aFile);
+		Log::Success("Material loaded: %s", FileName);
 
 		return true;
 	}
 
-	bool Material::operator==(Material Other)
+	bool Material::operator==(const Material& Other) const
 	{
-		return (Color == Other.Color &&
-		        AmbientColor == Other.AmbientColor &&
-		        DiffuseColor == Other.DiffuseColor &&
-		        SpecularColor == Other.SpecularColor &&
-		        DiffuseTexture == Other.DiffuseTexture &&
-		        SpecularTexture == Other.SpecularTexture &&
-		        NormalTexture == Other.NormalTexture &&
+		return (Albedo == Other.Albedo &&
+		        AlbedoMap == Other.AlbedoMap &&
+		        NormalMap == Other.NormalMap &&
+		        RoughnessMap == Other.RoughnessMap &&
+		        MetallicMap == Other.MetallicMap &&
+		        OcclusionMap == Other.OcclusionMap &&
+		        EmissionMap == Other.EmissionMap &&
+		        DetailAlbedoMap == Other.DetailAlbedoMap &&
+		        DetailNormalMap == Other.DetailNormalMap &&
+		        ReflectionMap == Other.ReflectionMap &&
 		        ShaderProg == Other.ShaderProg &&
-		        ReflectionPower == Other.ReflectionPower &&
-		        Rim == Other.Rim &&
-		        RimPower == Other.RimPower &&
-		        RimBias == Other.RimBias &&
-		        RimColor == Other.RimColor &&
-		        mLighting == Other.mLighting &&
-		        mEnvReflection == Other.mEnvReflection &&
-		        mTextureID == Other.mTextureID &&
-		        mSpecMapID == Other.mSpecMapID &&
-		        mNormMapID == Other.mNormMapID);
+		        Roughness == Other.Roughness &&
+		        Metallic == Other.Metallic &&
+		        EmissionStrength == Other.EmissionStrength &&
+		        Lighting == Other.Lighting);
 	}
 
-	bool Material::operator!=(Material Other)
+	bool Material::operator!=(const Material& Other) const
 	{
 		return !(*this == Other);
 	}
@@ -293,7 +151,5 @@ namespace Columbus
 	}
 
 }
-
-
 
 

@@ -11,20 +11,15 @@ namespace Columbus
 	private:
 		uint32 i = 0;
 	public:
-		Vector4 startColor = Vector4(1, 1, 1, 1);
-		Vector4 finalColor = Vector4(1, 1, 1, 1);
-		Vector4 color = Vector4(1, 1, 1, 1);
+		Vector4 Color = Vector4(1, 1, 1, 1);
+		Vector3 Size = Vector3(1, 1, 1);
 
 		Vector3 velocity = Vector3(0, 1, 0);
 		Vector3 startPos = Vector3(0, 0, 0);
 		Vector3 startEmitterPos = Vector3(0, 0, 0);
-		Vector3 accel = Vector3(0, 0.1, 0);
-		Vector3 pos;
-		Vector3 NoiseModifier;
-
-		Vector3 startSize = Vector3(1, 1, 1);
-		Vector3 finalSize = Vector3(1, 1, 1);
-		Vector3 size = Vector3(1, 1, 1);
+		Vector3 accel = Vector3(0, 0.1f, 0);
+		Vector3 pos = Vector3(0);
+		Vector3 NoiseModifier = Vector3(0);
 
 		float rotation = 0.0;
 		float rotationSpeed = 0.0;
@@ -35,8 +30,9 @@ namespace Columbus
 		float percent = 0.0f;
 
 		unsigned int frame = 0;
-
-		void update(const float aTimeTick, const vec3 aCamera)
+		bool Alive = false;
+	public:
+		void update(const float aTimeTick, const Vector3& aCamera)
 		{
 			for (i = 0; i < 9; i++) noise[i] = fmodf(noise[i] + (0.625f * aTimeTick), 256);
 

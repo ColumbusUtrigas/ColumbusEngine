@@ -1,24 +1,20 @@
 #include <Audio/AudioMixer.h>
-#include <Math/Vector2.h>
+#include <Common/Sound/Sound.h>
+#include <cstring>
 
 namespace Columbus
 {
 
-	static float CalculateSourceAttenuation(AudioSource* Source, Vector3 Listener)
+	static float CalculateSourceAttenuation(AudioSource* Source, const Vector3& Listener)
 	{
 		float Attenuation = 1.0f;
 
-		if (Source->GetMode() == AudioSource::Mode::Sound3D)
+		if (Source->SoundMode == AudioSource::Mode::Sound3D)
 		{
-			float Distance = Source->GetPosition().Length(Listener);
-			float MinDist = Source->GetMinDistance();
-			float MaxDist = Source->GetMaxDistance();
-			float Rolloff = Source->GetRolloff();
-
-			if (Distance == 0.0f)
-			{
-				Distance = 0.000001f;
-			}
+			float Distance = Math::Max(0.000001f, Source->Position.Length(Listener));
+			float MinDist = Source->MinDistance;
+			float MaxDist = Source->MaxDistance;
+			float Rolloff = Source->Rolloff;
 
 			if (Distance < MaxDist)
 			{
@@ -33,13 +29,14 @@ namespace Columbus
 		return Attenuation;
 	}
 
-	static float CalculateSourcePan(AudioSource* Source, AudioListener Listener)
+	static float CalculateSourcePan(AudioSource* Source, const AudioListener& Listener)
 	{
 		if (Source != nullptr)
 		{
-			if (Source->GetMode() == AudioSource::Mode::Sound3D)
+			if (Source->SoundMode == AudioSource::Mode::Sound3D)
 			{
-				return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->GetPosition() - Listener.Position));
+
+				return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->Position - Listener.Position));
 			}
 		}
 
@@ -52,8 +49,8 @@ namespace Columbus
 		{
 			for (uint32 i = 0; i < Count; i++)
 			{
-				Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
-				Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
+				Buffer[i].L = Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
+				Buffer[i].R = Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
 			}
 		}
 	}
@@ -68,8 +65,8 @@ namespace Columbus
 			BufferInitialized = true;
 		}
 
-		Memory::Memset(Data, 0, Count * sizeof(Sound::Frame));
-		Memory::Memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
+		memset(Data, 0, Count * sizeof(Sound::Frame));
+		memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
 
 		for (auto& Source : Sources)
 		{
@@ -79,15 +76,15 @@ namespace Columbus
 			float LVolume = Math::Min(1.0f, 1.0f - Pan);
 			float RVolume = Math::Min(1.0f, 1.0f + Pan);
 
-			float Gain = Source->GetGain() * Attenuation;
+			float Gain = Source->Gain * Attenuation;
 			Gain = 1.0f - Math::Sqrt(1.0f - Gain * Gain);
 
 			Source->PrepareBuffer(Data, Count);
 
 			for (uint32 i = 0; i < Count; i++)
 			{
-				Mixed[i].L += Data[i].L * Gain * LVolume;
-				Mixed[i].R += Data[i].R * Gain * RVolume;
+				Mixed[i].L += (int32)(Data[i].L * Gain * LVolume);
+				Mixed[i].R += (int32)(Data[i].R * Gain * RVolume);
 			}
 		}
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <System/System.h>
-
 namespace Columbus
 {
 
@@ -14,13 +12,14 @@ namespace Columbus
 	class ShaderBuilder
 	{
 	public:
-		std::string ShaderSource;
-
+		char* ShaderSource = nullptr;
+		unsigned int ShaderSourceLength = 0;
+	public:
 		ShaderBuilder() {}
 
-		bool Build(std::string InShader, ShaderType Type);
+		bool Build(const char* InShader, ShaderType Type);
 
-		~ShaderBuilder() {}
+		~ShaderBuilder() { delete[] ShaderSource; }
 	};
 
 }

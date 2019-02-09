@@ -8,10 +8,9 @@ namespace Columbus
 	public:
 		ImageLoaderTGA() {}
 
-		static bool IsTGA(std::string FileName);
+		static bool IsTGA(const char* FileName);
 
-		virtual bool Load(std::string FileName) override;
-		virtual void Free() override;
+		virtual bool Load(const char* FileName) override;
 
 		virtual ~ImageLoaderTGA() {}
 	};

@@ -6,9 +6,11 @@ namespace Columbus
 	Device* gDevice = nullptr;
 
 	
-	Device::Device()
-	{
+	Device::Device() {}
 
+	Buffer* Device::CreateBuffer() const
+	{
+		return new Buffer();
 	}
 
 	ShaderStage* Device::CreateShaderStage() const
@@ -20,25 +22,15 @@ namespace Columbus
 	{
 		return new ShaderProgram();
 	}
-	
-	Cubemap* Device::createCubemap() const
+
+	Texture* Device::CreateTexture() const
 	{
-		return new Cubemap();
-	}
-	
-	Cubemap* Device::createCubemap(std::string aPath) const
-	{
-		return new Cubemap(aPath);
-	}
-	
-	Cubemap* Device::createCubemap(std::array<std::string, 6> aPath) const
-	{
-		return new Cubemap(aPath);
+		return nullptr;
 	}
 
-	MeshInstanced* Device::CreateMeshInstanced() const
+	Mesh* Device::CreateMesh() const
 	{
-		return new MeshInstanced();
+		return new Mesh();
 	}
 	
 	Framebuffer* Device::createFramebuffer() const
@@ -46,10 +38,7 @@ namespace Columbus
 		return new Framebuffer();
 	}
 	
-	Device::~Device()
-	{
-
-	}
+	Device::~Device() {}
 
 }
 

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <Core/Types.h>
-#include <System/File.h>
-#include <string>
 
 namespace Columbus
 {
@@ -19,15 +17,15 @@ namespace Columbus
 	class SoundDecoder;
 	class Sound;
 
-	SoundFormat SoundGetFormat(std::string FileName);
+	SoundFormat SoundGetFormat(const char* FileName);
 	
-	bool SoundIsMP3(std::string FileName);
+	bool SoundIsMP3(const char* FileName);
 
-	int16* SoundLoadWAV(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
-	int16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
-	int16* SoundLoadMP3(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoadWAV(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoadOGG(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoadMP3(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
-	int16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
+	int16* SoundLoad(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels);
 
 	class Sound
 	{
@@ -55,7 +53,7 @@ namespace Columbus
 	public:
 		Sound();
 
-		bool Load(std::string FileName, bool Stream = false);
+		bool Load(const char* FileName, bool Stream = false);
 		void Free();
 
 		void Seek(uint64 Offset);
@@ -81,7 +79,7 @@ namespace Columbus
 	public:
 		SoundDecoder() {}
 
-		virtual bool Load(std::string FileName) { return false; }
+		virtual bool Load(const char* FileName) { return false; }
 		virtual void Free() {}
 		virtual void Seek(uint64 Offset) {}
 		virtual uint32 Decode(Sound::Frame* Frames, uint32 Count) { return 0; }

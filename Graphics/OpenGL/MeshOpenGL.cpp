@@ -1,108 +1,26 @@
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <GL/glew.h>
+#include <algorithm>
 
 namespace Columbus
 {
 
-	/*
-	*
-	* Shader uniforms functions
-	*
-	*/
-
-	static void ShaderSetLights(ShaderProgram* InShader, std::vector<Light*> InLights)
-	{
-		static float Lights[15 * 8];
-
-		for (auto& Light : InLights)
-		{
-			if (Light != nullptr)
-			{
-				uint32 Counter = 0;
-
-				for (auto& L : InLights)
-				{
-					uint32 Offset = Counter * 15;
-
-					if (InLights.size() > Counter)
-					{
-						Lights[Offset + 0] = L->getColor().X;
-						Lights[Offset + 1] = L->getColor().Y;
-						Lights[Offset + 2] = L->getColor().Z;
-						Lights[Offset + 3] = L->getPos().X;
-						Lights[Offset + 4] = L->getPos().Y;
-						Lights[Offset + 5] = L->getPos().Z;
-						Lights[Offset + 6] = L->getDir().X;
-						Lights[Offset + 7] = L->getDir().Y;
-						Lights[Offset + 8] = L->getDir().Z;
-						Lights[Offset + 9] = (float)L->getType();
-						Lights[Offset + 10] = L->getConstant();
-						Lights[Offset + 11] = L->getLinear();
-						Lights[Offset + 12] = L->getQuadratic();
-						Lights[Offset + 13] = L->getInnerCutoff();
-						Lights[Offset + 14] = L->getOuterCutoff();
-					}
-
-					Counter++;
-				}
-			}
-		}
-
-		InShader->SetUniformArrayf("uLighting", Lights, 120 * sizeof(float));
-	}
-
-	static void ShaderSetLightsAndCamera(ShaderProgram* InShader, std::vector<Light*> InLights, Camera InCamera)
-	{
-		if (InShader != nullptr)
-		{
-			if (InShader->IsCompiled())
-			{
-				ShaderSetLights(InShader, InLights);
-				InShader->SetUniform3f("uCamera.Position", InCamera.getPos());
-			}
-		}
-	}
-
-	static void ShaderSetAll(Material InMaterial, std::vector<Light*> InLights, Camera InCamera, Transform InTransform)
-	{
-		auto tShader = InMaterial.GetShader();
-
-		if (tShader != nullptr)
-		{
-			if (tShader->IsCompiled())
-			{
-				ShaderSetLightsAndCamera(tShader, InLights, InCamera);
-			}
-		}
-	}
-	/*
-	*
-	* End of shader uniforms functions
-	*
-	*/
-
 	MeshOpenGL::MeshOpenGL()
 	{
-		glGenBuffers(1, &VBuf);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &IBO);
 		glGenVertexArrays(1, &VAO);
 	}
 	
-	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices)
+	MeshOpenGL::MeshOpenGL(const std::vector<Vertex>& InVertices)
 	{
-		glGenBuffers(1, &VBuf);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &IBO);
 		glGenVertexArrays(1, &VAO);
 		SetVertices(InVertices);
 	}
 	
-	MeshOpenGL::MeshOpenGL(std::vector<Vertex> InVertices, Material InMaterial)
-	{
-		glGenBuffers(1, &VBuf);
-		glGenVertexArrays(1, &VAO);
-		mMat = InMaterial;
-		SetVertices(InVertices);
-	}
-	
-	void MeshOpenGL::SetVertices(std::vector<Vertex> Vertices)
+	void MeshOpenGL::SetVertices(const std::vector<Vertex>& Vertices)
 	{
 		VerticesCount = Vertices.size();
 
@@ -161,7 +79,7 @@ namespace Columbus
 		NOffset = UOffset + (sizeof(float) * Vertices.size() * 2);
 		TOffset = NOffset + (sizeof(float) * Vertices.size() * 3);
 
-		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_STATIC_DRAW);
 
 		glBufferSubData(GL_ARRAY_BUFFER, VOffset, Vertices.size() * 3 * sizeof(float), v);
@@ -175,7 +93,7 @@ namespace Columbus
 		uint32 const strides[4] = { 3, 2, 3, 3 };
 
 		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBuf);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 		for (uint32 i = 0; i < 4; i++)
 		{
@@ -194,19 +112,81 @@ namespace Columbus
 		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 	}
 
+	void MeshOpenGL::Load(const Model& InModel)
+	{
+		VerticesCount = InModel.GetVerticesCount();
+		IndicesCount = InModel.GetIndicesCount();
+		BoundingBox = InModel.GetBoundingBox();
+
+		VOffset = 0;
+		UOffset = VOffset + (InModel.GetVerticesCount() * sizeof(Vector3));
+		NOffset = UOffset + (InModel.GetVerticesCount() * sizeof(Vector2));
+		TOffset = NOffset + (InModel.GetVerticesCount() * sizeof(Vector3));
+
+		uint64 Size = InModel.GetVerticesCount() * (sizeof(Vector3) * 3 + sizeof(Vector2));
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, Size, nullptr, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_ARRAY_BUFFER, VOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetPositions());
+		glBufferSubData(GL_ARRAY_BUFFER, UOffset, InModel.GetVerticesCount() * sizeof(Vector2), InModel.GetUVs());
+		glBufferSubData(GL_ARRAY_BUFFER, NOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetNormals());
+		glBufferSubData(GL_ARRAY_BUFFER, TOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetTangents());
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		uint64 const Offsets[4] = { VOffset, UOffset, NOffset, TOffset };
+		uint32 const Strides[4] = { 3, 2, 3, 3 };
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		for (uint32 i = 0; i < 4; i++)
+		{
+			glVertexAttribPointer(i, Strides[i], GL_FLOAT, GL_FALSE, 0, (void*)Offsets[i]);
+			glEnableVertexAttribArray(i);
+		}
+
+		glBindVertexArray(0);
+
+		if (InModel.IsIndexed())
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, InModel.GetIndicesCount() * InModel.GetIndexSize(), InModel.GetIndices(), GL_STATIC_DRAW);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			Indexed = true;
+
+			switch (InModel.GetIndexSize())
+			{
+			case 1: IndicesType = GL_UNSIGNED_BYTE;  break;
+			case 2: IndicesType = GL_UNSIGNED_SHORT; break;
+			case 4: IndicesType = GL_UNSIGNED_INT;   break;
+			}
+		}
+	}
+
 	void MeshOpenGL::Bind()
 	{
+		SortLights();
 		glBindVertexArray(VAO);
 	}
 	
-	uint32 MeshOpenGL::Render(Transform InTransform)
+	uint32 MeshOpenGL::Render()
 	{
-		SortLights();
-		ShaderSetAll(mMat, Lights, ObjectCamera, InTransform);
+		if (Indexed)
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			glDrawElements(GL_TRIANGLES, IndicesCount, IndicesType, nullptr);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			return IndicesCount / 3;
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
+			return VerticesCount / 3;
+		}
 
-		glDrawArrays(GL_TRIANGLES, 0, VerticesCount);
-
-		return VerticesCount / 3;
+		return 0;
 	}
 
 	void MeshOpenGL::Unbind()
@@ -218,43 +198,47 @@ namespace Columbus
 	{
 		uint64 Usage = 0;
 		Usage += sizeof(Vertex) * VerticesCount;
+		if (Indexed)
+		{
+			switch (IndicesType)
+			{
+			case GL_UNSIGNED_BYTE:  Usage += IndicesCount * 1; break;
+			case GL_UNSIGNED_SHORT: Usage += IndicesCount * 2; break;
+			case GL_UNSIGNED_INT:   Usage += IndicesCount * 4; break;
+			}
+		}
 		return Usage;
 	}
 	
 	void MeshOpenGL::SortLights()
 	{
-		Vector3 pos = Position;
-
-		Lights.erase(std::remove(Lights.begin(), Lights.end(), nullptr), Lights.end());
-
-		auto func = [pos](const Light* a, const Light* b) mutable -> bool
+		if (!LightsSorted)
 		{
-			Vector3 q = a->getPos();
-			Vector3 w = b->getPos();
+			Lights.erase(std::remove(Lights.begin(), Lights.end(), nullptr), Lights.end());
 
-			return q.Length(pos) < w.Length(pos);
-		};
+			static auto func = [&](const Light* A, const Light* B) -> bool
+			{
+				double ADistance = Math::Sqr(A->Pos.X - Position.X) + Math::Sqr(A->Pos.Y - Position.Y) + Math::Sqr(A->Pos.Z - Position.Z);
+				double BDistance = Math::Sqr(B->Pos.X - Position.X) + Math::Sqr(B->Pos.Y - Position.Y) + Math::Sqr(B->Pos.Z - Position.Z);
+				return ADistance < BDistance;
+			};
 
-		std::sort(Lights.begin(), Lights.end(), func);
+			if (Lights.size() >= 4)
+			{
+				std::sort(Lights.begin(), Lights.end(), func);
+			}
+
+			LightsSorted = true;
+		}
 	}
 	
 	MeshOpenGL::~MeshOpenGL()
 	{
-		glDeleteBuffers(1, &VBuf);
+		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &IBO);
 		glDeleteVertexArrays(1, &VAO);
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 

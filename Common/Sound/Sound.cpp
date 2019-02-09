@@ -6,7 +6,7 @@
 namespace Columbus
 {
 
-	SoundFormat SoundGetFormat(std::string FileName)
+	SoundFormat SoundGetFormat(const char* FileName)
 	{
 		if (SoundDecoderPCM::IsWAV  (FileName)) return SoundFormat::WAV_PCM;
 		if (SoundDecoderADPCM::IsWAV(FileName)) return SoundFormat::WAV_ADPCM;
@@ -16,7 +16,7 @@ namespace Columbus
 		return SoundFormat::Unknown;
 	}
 
-	int16* SoundLoad(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoad(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		SoundFormat Format = SoundGetFormat(FileName);
 
@@ -42,7 +42,7 @@ namespace Columbus
 		Decoder(nullptr)
 	{ }
 	
-	bool Sound::Load(std::string FileName, bool Stream)
+	bool Sound::Load(const char* FileName, bool Stream)
 	{
 		Free();
 

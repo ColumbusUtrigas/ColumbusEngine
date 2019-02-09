@@ -1,11 +1,6 @@
 #pragma once
 
-#include <System/Assert.h>
-#include <System/System.h>
 #include <Core/Types.h>
-#include <string>
-#include <cstdlib>
-#include <cstring>
 
 namespace Columbus
 {
@@ -66,37 +61,41 @@ namespace Columbus
 
 	class ImageLoader
 	{
-	protected:
+	public:
+		enum class Type;
+	public:
 		uint8* Data = nullptr;
 		uint32 Width = 0;
 		uint32 Height = 0;
 		uint32 Mipmaps = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
+
+		Type ImageType;
+	public:
+		enum class Type
+		{
+			Image2D,
+			Image3D,
+			ImageCube,
+			Image2DArray
+		};
 	public:
 		ImageLoader() {}
 
-		virtual bool Load(std::string FileName) { return false; }
-		virtual void Free() {}
-
-		uint8* GetData() const { return Data; }
-		uint32 GetWidth() const { return Width; }
-		uint32 GetHeight() const { return Height; }
-		uint32 GetMipmaps() const { return Mipmaps; }
-		TextureFormat GetFormat() const { return Format; }
+		virtual bool Load(const char* FileName) { return false; }
 
 		virtual ~ImageLoader() {}
 	};
 
-	ImageFormat ImageGetFormat(std::string FileName);
+	ImageFormat ImageGetFormat(const char* FileName);
 	uint32 GetBPPFromFormat(TextureFormat Format);
+	uint32 GetBlockSizeFromFormat(TextureFormat Format);
 
-	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveTGA(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSavePNG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveTIF(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveJPG(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
-
-	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality = 100);
+	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSavePNG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveTIF(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
+	bool ImageSaveJPG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
 
 	bool ImageBGR2RGB(uint8* Data, uint64 Size);
 	bool ImageBGRA2RGBA(uint8* Data, uint64 Size);
@@ -113,18 +112,16 @@ namespace Columbus
 	public:
 		enum class Type;
 	private:
-		uint32 Width = 0;         //Width of the image
-		uint32 Height = 0;        //Height of the image
+		uint32 Width = 0;
+		uint32 Height = 0;
 		uint32 Depth = 0;
 		uint64 Size = 0;
 		uint32 MipMaps = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
-		uint8* Data = nullptr;    //Pixel data
-		bool Exist = false;       //Is image exist
+		uint8* Data = nullptr;
+		bool Exist = false;
 
 		Type ImageType;
-
-		std::string FileName;
 	public:
 		enum class Type
 		{
@@ -136,8 +133,8 @@ namespace Columbus
 	public:
 		Image();
 
-		bool Load(std::string InFilename, ImageLoading Flags = ImageLoading::None);
-		bool Save(std::string InFilename, ImageFormat Format, size_t Quality = 100) const;
+		bool Load(const char* InFilename, ImageLoading Flags = ImageLoading::None);
+		bool Save(const char* InFilename, ImageFormat Format, uint32 Quality = 100) const;
 		bool IsExist() const;
 		void FreeData();
 
@@ -162,14 +159,12 @@ namespace Columbus
 
 		uint64 GetOffset(uint32 Level) const;
 		uint64 GetSize(uint32 Level) const;
-		//uint64 GetSize() const;
 
 		uint8* Get2DData(uint32 Level = 0) const;
 		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;
 
 		TextureFormat GetFormat() const;
 		uint8* GetData() const;
-		std::string GetFileName() const;
 
 		~Image();
 	};

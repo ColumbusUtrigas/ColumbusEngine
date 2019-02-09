@@ -18,11 +18,12 @@ namespace Columbus
 		bool UpdateParameters();
 	public:
 		TextureOpenGL();
+		TextureOpenGL(const TextureOpenGL&) = delete;
+		TextureOpenGL(TextureOpenGL&&) = delete;
 
-		bool Load(const void* Data) override;
 		bool Load(const void* Data, Texture::Properties Props) override;
 		bool Load(Image& InImage) override;
-		bool Load(std::string File) override;
+		bool Load(const char* File) override;
 
 		void Clear() override;
 

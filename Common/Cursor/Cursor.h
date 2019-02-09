@@ -1,8 +1,7 @@
 #pragma once
 
 #include <Common/Image/Image.h>
-#include <Core/Memory.h>
-#include <algorithm>
+#include <cstring>
 
 namespace Columbus
 {
@@ -33,20 +32,10 @@ namespace Columbus
 			uint64 Size = InImage.GetWidth() * InImage.GetHeight() * InImage.GetBytesPerPixel();
 
 			Frames[0].PixelData = new uint8[Size];
-			std::copy(&InImage.GetData()[0], &InImage.GetData()[0] + Size, Frames[0].PixelData);
+			memcpy(Frames[0].PixelData, InImage.GetData(), Size);
 		}
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
 
 

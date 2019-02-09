@@ -12,9 +12,11 @@ namespace Columbus
 		AngularDamping(0.2f),
 		AngularTreshold(0.25f),
 		AngularFactor(1, 1, 1),
+		LinearTreshold(0.2f),
 		LinearDamping(0.2f),
-		LinearTreshold(0.2),
-		LinearFactor(1, 1, 1)
+		LinearFactor(1, 1, 1),
+		Shape(nullptr),
+		mRigidbody(nullptr)
 	{
 		btDefaultMotionState* MotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
@@ -36,9 +38,11 @@ namespace Columbus
 		AngularDamping(0.2f),
 		AngularTreshold(0.25f),
 		AngularFactor(1, 1, 1),
+		LinearTreshold(0.2f),
 		LinearDamping(0.2f),
-		LinearTreshold(0.2),
-		LinearFactor(1, 1, 1)
+		LinearFactor(1, 1, 1),
+		Shape(nullptr),
+		mRigidbody(nullptr)
 	{
 		btDefaultMotionState* MotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
@@ -130,7 +134,7 @@ namespace Columbus
 		{
 			btTransform bTrans;
 			Vector3 pos = InTransform.GetPos();
-			Vector3 scale = InTransform.GetScale();
+			//Vector3 scale = InTransform.GetScale();
 
 			glm::quat tQuat = InTransform.RotationQuaternion;
 			btQuaternion bQuat(-tQuat.z, -tQuat.w, tQuat.x, -tQuat.y);

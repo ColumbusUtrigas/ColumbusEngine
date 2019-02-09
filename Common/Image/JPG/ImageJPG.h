@@ -8,10 +8,9 @@ namespace Columbus
 	public:
 		ImageLoaderJPG() {}
 
-		static bool IsJPG(std::string FileName);
+		static bool IsJPG(const char* FileName);
 
-		virtual bool Load(std::string FileName);
-		virtual void Free();
+		virtual bool Load(const char* FileName);
 
 		virtual ~ImageLoaderJPG() override {}
 	};

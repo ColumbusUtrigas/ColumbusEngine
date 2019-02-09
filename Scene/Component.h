@@ -16,13 +16,15 @@ namespace Columbus
 			MeshRenderer,
 			MeshInstancedRenderer,
 			ParticleSystem,
-			Rigidbody
+			Rigidbody,
+			AudioSource
 		};
 	public:
 		Component() {}
 
-		virtual void Update(const float TimeTick) {}
+		virtual void Update(float TimeTick, Transform& Trans) {}
 		virtual void Render(Transform& Trans) {}
+
 		virtual Type GetType() const { return Type::Component; }
 		virtual void Destroy() {}
 

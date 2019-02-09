@@ -1,34 +1,23 @@
 #pragma once
 
 #include <Math/Vector3.h>
+#include <Math/Matrix.h>
 
 namespace Columbus
 {
 
-	/*
-	* Oriented Bounding Box class
-	* Min and Max fields is Bounding Box left-down-back and right-up-face corners
-	* Default values of Min and Max are (-1, -1, -1) and (1, 1, 1)
-	*/
 	class OBB
 	{
 	public:
 		Vector3 Min;
 		Vector3 Max;
 	public:
-		OBB() : 
-			Min(Vector3(-1, -1, -1)),
-			Max(Vector3(1, 1, 1)) {}
+		OBB() : Min(Vector3(-1)), Max(Vector3(1)) {}
+		OBB(const Vector3& InMin, const Vector3& InMax) : Min(InMin), Max(InMax) {}
 
-		OBB(Vector3 aMin, Vector3 aMax) :
-			Min(aMin),
-			Max(aMax) {}
-
-		OBB& operator=(const OBB aOther)
+		OBB operator*(const Matrix& Other) const
 		{
-			this->Min = aOther.Min;
-			this->Max = aOther.Max;
-			return *this;
+			return OBB { (Other * Vector4(Min, 1)).XYZ(), (Other * Vector4(Max, 1)).XYZ() };
 		}
 
 		~OBB() {}

@@ -1,4 +1,7 @@
 <Scene>
+	<Defaults>
+		<Skybox>Data/Skyboxes/Sky.dds</Skybox>
+	</Defaults>
 
 	<Resources>
 		<Textures>
@@ -47,6 +50,15 @@
 			<Mesh4>Data/Models/Sphere.cmf</Mesh4>
 			<Mesh5>Data/Models/Box.cmf</Mesh5>
 		</Meshes>
+
+		<Sounds>
+			<Count>1</Count>
+
+			<Sound0>
+				<Path>Data/Sounds/Fire.ogg</Path>
+				<Streaming>0</Streaming>
+			</Sound0>
+		</Sounds>
 	</Resources>
 
 	<GameObjects>
@@ -158,6 +170,21 @@
 				<ParticleSystem>
 					<Particles>Data/Particles/Fire.cxpar</Particles>
 				</ParticleSystem>
+
+				<AudioSource>
+					<Playing>1</Playing>
+					<Played>0</Played>
+					<Mode>3D</Mode>
+
+					<Sound>0</Sound>
+					<Direction X="0" Y="0" Z="0"/>
+					<Gain>-1</Gain>
+					<Pitch>-1</Pitch>
+					<MinDistance>-1</MinDistance>
+					<MaxDistance>-1</MaxDistance>
+					<RolloffFactor>-1</RolloffFactor>
+					<Looping>1</Looping>
+				</AudioSource>
 			</Components>
 		</GameObject4>
 
@@ -234,6 +261,22 @@
 				<ParticleSystem>
 					<Particles>Data/Particles/Fire.cxpar</Particles>
 				</ParticleSystem>
+
+				<AudioSource>
+					<Playing>1</Playing>
+					<Played>0</Played>
+					<Mode>3D</Mode>
+
+					<Sound>0</Sound>
+					<Direction X="0" Y="0" Z="0"/>
+					<Gain>-1</Gain>
+					<Pitch>-1</Pitch>
+					<MinDistance>-1</MinDistance>
+					<MaxDistance>-1</MaxDistance>
+					<RolloffFactor>-1</RolloffFactor>
+					<Looping>1</Looping>
+				</AudioSource>
+
 			</Components>
 		</GameObject8>
 
@@ -298,7 +341,7 @@
 			<Name>Dragon</Name>
 
 			<Transform>
-				<Position X="5" Y="0.2" Z="0"/>
+				<Position X="0" Y="0.2" Z="0"/>
 				<Rotation X="0" Y="90" Z="0"/>
 				<Scale X="0.5" Y="0.5" Z="0.5"/>
 			</Transform>
@@ -310,6 +353,20 @@
 				<MeshRenderer>
 					<Mesh>2</Mesh>
 				</MeshRenderer>
+
+				<Rigidbody>
+					<Static>1</Static>
+					<Mass>1</Mass>
+					<Restitution>0</Restitution>
+					<Friction>0.6</Friction>
+					<RollingFriction>0.3</RollingFriction>
+					<AngularDamping>0.1</AngularDamping>
+					<AngularTreshold>0.25</AngularTreshold>
+					<LinearDamping>0.3</LinearDamping>
+					<LinearTreshold>0.2</LinearTreshold>
+
+					<ShapeBox X="3" Y="3" Z="1"/>
+				</Rigidbody>
 			</Components>
 		</GameObject12>
 

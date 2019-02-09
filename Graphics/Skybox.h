@@ -1,11 +1,9 @@
 #pragma once
 
-#include <Graphics/Cubemap.h>
+#include <Graphics/Texture.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Shader.h>
-#include <Graphics/OpenGL/ShaderOpenGL.h>
-#include <RenderAPI/APIOpenGL.h>
-#include <RenderAPI/Buffer.h>
+#include <Graphics/Buffer.h>
 
 namespace Columbus
 {
@@ -14,70 +12,31 @@ namespace Columbus
 	{
 	private:
 		uint32 VBO = 0;
+		uint32 IBO = 0;
 		uint32 VAO = 0;
 		ShaderProgram* Shader = nullptr;
-		Cubemap* mCubemap = nullptr;
-		Camera mCamera;
 
-		float UniformViewMatrix[16];
-		float UniformProjectionMatrix[16];
+		Texture* Tex = nullptr;
+		Texture* IrradianceMap = nullptr;
+		Texture* PrefilterMap = nullptr;
+		Texture* IntegrationMap = nullptr;
 
-		//Vertex buffer
-		float skyboxVertices[108] =
-		{
-			-1.0f,  1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
-
-			-1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f, -1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
-
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-
-			-1.0f, -1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f, -1.0f,  1.0f,
-			-1.0f, -1.0f,  1.0f,
-
-			-1.0f,  1.0f, -1.0f,
-			1.0f,  1.0f, -1.0f,
-			1.0f,  1.0f,  1.0f,
-			1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f,  1.0f,
-			-1.0f,  1.0f, -1.0f,
-
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f,  1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f,  1.0f,
-			1.0f, -1.0f,  1.0f
-		};
+		Camera ViewCamera;
 	public:
 		Skybox();
-		Skybox(Cubemap* aCubemap);
-		
-		void draw();
+		Skybox(Texture* InTexture);
 
-		void setCamera(const Camera aCamera);
-		void setCubemap(const Cubemap* aCubemap);
-		Cubemap* getCubemap() const;
-		
+		void Render();
+
+		void SetCamera(const Camera& Cam);
+		Texture* GetCubemap() const { return Tex; }
+		Texture* GetIrradianceMap() const { return IrradianceMap; }
+		Texture* GetPrefilterMap() const { return PrefilterMap; }
+		Texture* GetIntegrationMap() const { return IntegrationMap; }
+
 		~Skybox();
 	};
 
 }
+
+

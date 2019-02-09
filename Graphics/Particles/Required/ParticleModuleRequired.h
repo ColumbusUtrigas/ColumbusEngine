@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Particles/Required/ParticleModuleRequiredBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
@@ -14,15 +14,17 @@ namespace Columbus
 		World
 	};
 	/*
-	* Particles may sorting by distance from camera and may be rendered without sorting
+	* Particles may sorting by distance from camera or by lifetime and may be rendered without sorting
 	*/
-	enum ParticleSortMode
+	enum class ParticleSortMode
 	{
 		None,
-		Distance
+		Distance,
+		YoungFirst,
+		OldFirst
 	};
 
-	class ParticleModuleRequired : public ParticleModuleRequiredBase
+	class ParticleModuleRequired : public ParticleModule
 	{
 	public:
 		bool Visible;
@@ -30,7 +32,7 @@ namespace Columbus
 		bool Billboarding;
 		ParticleTransformation Transformation;
 		ParticleSortMode SortMode;
-
+	public:
 		ParticleModuleRequired() :
 			Visible(true),
 			AdditiveBlending(false),
@@ -53,10 +55,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
 
 

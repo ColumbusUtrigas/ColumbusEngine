@@ -1,16 +1,16 @@
 #pragma once
 
-#include <Graphics/Particles/Color/ParticleModuleColorBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleColor : public ParticleModuleColorBase
+	class ParticleModuleColor : public ParticleModule
 	{
 	public:
 		Vector4 Min;
 		Vector4 Max;
-
+	public:
 		ParticleModuleColor() :
 			Min(Vector4(1, 1, 1, 1)),
 			Max(Vector4(1, 1, 1, 1)) {}
@@ -23,7 +23,7 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.color = Vector4::random(Min, Max);
+			OutParticle.Color = Vector4::Random(Min, Max);
 		}
 		/*
 		* Update particle parameter

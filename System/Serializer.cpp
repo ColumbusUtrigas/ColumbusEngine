@@ -1,13 +1,3 @@
-/************************************************
-*              	 Serializer.cpp                 *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   18.10.2017                  *
-*************************************************/
-
 #include <System/Serializer.h>
 
 namespace Columbus
@@ -16,8 +6,7 @@ namespace Columbus
 	namespace Serializer
 	{
 
-		//////////////////////////////////////////////////////////////////////////////
-		C_XMLElement* SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
+		tinyxml2::XMLElement* SerializerXML::getElementFromHierarchy(std::vector<std::string> aElement)
 		{
 			if (aElement.size() <= 1) return nullptr;
 
@@ -264,10 +253,10 @@ namespace Columbus
 			if (InElement == nullptr) return false;
 			if (InElement->elem == nullptr) return false;
 
-			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.x);
-			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.y);
-			InElement->elem->QueryFloatAttribute(Attribs.c.c_str(), &OutValue.z);
-			InElement->elem->QueryFloatAttribute(Attribs.d.c_str(), &OutValue.w);
+			InElement->elem->QueryFloatAttribute(Attribs.a.c_str(), &OutValue.X);
+			InElement->elem->QueryFloatAttribute(Attribs.b.c_str(), &OutValue.Y);
+			InElement->elem->QueryFloatAttribute(Attribs.c.c_str(), &OutValue.Z);
+			InElement->elem->QueryFloatAttribute(Attribs.d.c_str(), &OutValue.W);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -306,7 +295,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			mTmp->InsertEndChild(subElement);
@@ -334,7 +323,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -363,7 +352,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -392,7 +381,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -421,7 +410,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue);
@@ -450,7 +439,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetText(aValue.c_str());
@@ -480,7 +469,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
@@ -512,7 +501,7 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
 			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
@@ -530,10 +519,10 @@ namespace Columbus
 
 			mTmp = mDoc.NewElement(aElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.y);
-			mTmp->SetAttribute(aAttribs.c.c_str(), aValue.z);
-			mTmp->SetAttribute(aAttribs.d.c_str(), aValue.w);
+			mTmp->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			mTmp->SetAttribute(aAttribs.b.c_str(), aValue.Y);
+			mTmp->SetAttribute(aAttribs.c.c_str(), aValue.Z);
+			mTmp->SetAttribute(aAttribs.d.c_str(), aValue.W);
 			mRoot->InsertEndChild(mTmp);
 			mTmp = nullptr;
 			return true;
@@ -546,13 +535,13 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			std::string end = aElement[aElement.size() - 1];
-			C_XMLElement* subElement = mDoc.NewElement(end.c_str());
+			tinyxml2::XMLElement* subElement = mDoc.NewElement(end.c_str());
 
 			if (getElementFromHierarchy(aElement) == nullptr) return false;
-			subElement->SetAttribute(aAttribs.a.c_str(), aValue.x);
-			subElement->SetAttribute(aAttribs.b.c_str(), aValue.y);
-			subElement->SetAttribute(aAttribs.c.c_str(), aValue.z);
-			subElement->SetAttribute(aAttribs.d.c_str(), aValue.w);
+			subElement->SetAttribute(aAttribs.a.c_str(), aValue.X);
+			subElement->SetAttribute(aAttribs.b.c_str(), aValue.Y);
+			subElement->SetAttribute(aAttribs.c.c_str(), aValue.Z);
+			subElement->SetAttribute(aAttribs.d.c_str(), aValue.W);
 			mTmp->InsertEndChild(subElement);
 			return true;
 		}
@@ -561,7 +550,7 @@ namespace Columbus
 		{
 			if (mMode != 0) return false;
 			if (mInited == false) return false;
-			if (mDoc.SaveFile(mFile.c_str()) != C_XML_SUCCESS) return false;
+			if (mDoc.SaveFile(mFile.c_str()) != tinyxml2::XML_SUCCESS) return false;
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -573,7 +562,7 @@ namespace Columbus
 			mInited = false;
 			if (!aFile.empty()) mFile = aFile;
 			if (!aRoot.empty()) mRootName = aRoot;
-			if (mDoc.LoadFile(mFile.c_str()) != C_XML_SUCCESS) return false;
+			if (mDoc.LoadFile(mFile.c_str()) != tinyxml2::XML_SUCCESS) return false;
 			mRoot = mDoc.FirstChildElement(mRootName.c_str());
 			if (mRoot == nullptr) return false;
 			mInited = true;
@@ -755,10 +744,10 @@ namespace Columbus
 
 			mTmp = mRoot->FirstChildElement(InElement.c_str());
 			if (mTmp == nullptr) return false;
-			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.x);
-			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.y);
-			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.z);
-			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.w);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.Z);
+			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.W);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////
@@ -769,10 +758,10 @@ namespace Columbus
 			if (mRoot == nullptr) return false;
 
 			if (getElementFromHierarchy(InElement) == nullptr) return false;
-			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.x);
-			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.y);
-			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.z);
-			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.w);
+			mTmp->QueryFloatAttribute(Attrib.a.c_str(), &OutValue.X);
+			mTmp->QueryFloatAttribute(Attrib.b.c_str(), &OutValue.Y);
+			mTmp->QueryFloatAttribute(Attrib.c.c_str(), &OutValue.Z);
+			mTmp->QueryFloatAttribute(Attrib.d.c_str(), &OutValue.W);
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////////

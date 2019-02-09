@@ -1,117 +1,88 @@
 #include <Graphics/Render.h>
 #include <Graphics/Device.h>
+#include <Graphics/RenderState.h>
 #include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentMeshInstancedRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/Component.h>
+#include <Math/Frustum.h>
+#include <GL/glew.h>
+#include <algorithm>
+
+#include <Graphics/OpenGL/ShaderOpenGL.h>
 
 namespace Columbus
 {
+	Texture* BlackTexture;
+	Texture* Blob;
 
-	static void PrepareFaceCulling(Material::Cull Culling)
-	{
-		switch (Culling)
-		{
-			case Material::Cull::No:
-			{
-				glDisable(GL_CULL_FACE);
-				break;
-			}
+	ShaderProgram* NoneShader;
+	ShaderProgram* BloomBrightShader;
+	ShaderProgram* GaussBlurShader;
+	ShaderProgram* BloomShader;
+	ShaderProgram* LensFlareShader;
 
-			case Material::Cull::Front:
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
-				break;
-			}
-
-			case Material::Cull::Back:
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_BACK);
-				break;
-			}
-
-			case Material::Cull::FrontAndBack:
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT_AND_BACK);
-				break;
-			}
-		}
-	}
-
-	static void ShaderSetMatrices(ShaderProgram* Program, Transform* InTransform, Camera* InCamera)
-	{
-		static float sModelMatrix[16];
-		static float sViewMatrix[16];
-		static float sProjectionMatrix[16];
-
-		if (Program != nullptr && InTransform != nullptr && InCamera != nullptr)
-		{
-			if (Program->IsCompiled())
-			{
-				InTransform->GetMatrix().ElementsTransposed(sModelMatrix);
-				InCamera->getViewMatrix().Elements(sViewMatrix);
-				InCamera->getProjectionMatrix().ElementsTransposed(sProjectionMatrix);
-
-				Program->SetUniformMatrix("uModel", sModelMatrix);
-				Program->SetUniformMatrix("uView", sViewMatrix);
-				Program->SetUniformMatrix("uProjection", sProjectionMatrix);
-			}
-		}
-	}
-
-	static void ShaderSetMaterial(ShaderProgram* Program, Material* InMaterial)
-	{
-		if (Program != nullptr && InMaterial != nullptr)
-		{
-			if (Program->IsCompiled())
-			{
-				Texture* Textures[5] = { InMaterial->DiffuseTexture, InMaterial->SpecularTexture, InMaterial->NormalTexture, InMaterial->DetailDiffuseMap, InMaterial->DetailNormalMap };
-				Cubemap* Reflection = InMaterial->getReflection();
-				static std::string Names[5] = { "uMaterial.DiffuseMap" , "uMaterial.SpecularMap", "uMaterial.NormalMap", "uMaterial.DetailDiffuseMap", "uMaterial.DetailNormalMap" };
-
-				for (int32 i = 0; i < 5; i++)
-				{
-					if (Textures[i] != nullptr)
-					{
-						Program->SetUniform1i(Names[i], i);
-						Textures[i]->sampler2D(i);
-					}
-					else
-					{
-						glActiveTexture(GL_TEXTURE0 + i);
-						glBindTexture(GL_TEXTURE_2D, 0);
-					}
-				}
-
-				if (Reflection != nullptr)
-				{
-					Program->SetUniform1i("uMaterial.ReflectionMap", 5);
-					Reflection->samplerCube(5);
-				}
-
-				Program->SetUniform2f("uMaterial.Tiling", InMaterial->Tiling);
-				Program->SetUniform2f("uMaterial.DetailTiling", InMaterial->DetailTiling);
-				Program->SetUniform4f("uMaterial.Color", InMaterial->Color);
-				Program->SetUniform3f("uMaterial.AmbientColor", InMaterial->AmbientColor);
-				Program->SetUniform3f("uMaterial.DiffuseColor", InMaterial->DiffuseColor);
-				Program->SetUniform3f("uMaterial.SpecularColor", InMaterial->SpecularColor);
-				Program->SetUniform1f("uMaterial.ReflectionPower", InMaterial->ReflectionPower);
-				Program->SetUniform1f("uMaterial.DetailNormalStrength", InMaterial->DetailNormalStrength);
-				Program->SetUniform1f("uMaterial.Rim", InMaterial->Rim);
-				Program->SetUniform1f("uMaterial.RimPower", InMaterial->RimPower);
-				Program->SetUniform1f("uMaterial.RimBias", InMaterial->RimBias);
-				Program->SetUniform3f("uMaterial.RimColor", InMaterial->RimColor);
-				Program->SetUniform1i("uMaterial.Lighting", InMaterial->getLighting());
-			}
-		}
-	}
+	RenderState State;
 
 	Renderer::Renderer()
 	{
+		BlackTexture = gDevice->CreateTexture();
+		Blob = gDevice->CreateTexture();
 
+		uint8 Zero = 0;
+		BlackTexture->Create2D(Texture::Properties(1, 1, 0, TextureFormat::R8));
+		BlackTexture->Load(&Zero, Texture::Properties(1, 1, 0, TextureFormat::R8));
+
+		Image BlobImage;
+		BlobImage.Load("Data/Textures/blob.png");
+		Blob->Create2D(Texture::Properties{ BlobImage.GetWidth(), BlobImage.GetHeight(), 0, BlobImage.GetFormat() });
+		Blob->Load(BlobImage);
+
+		BaseEffect.ColorTexturesEnablement[0] = true;
+		BaseEffect.ColorTexturesEnablement[1] = true;
+		BaseEffect.DepthTextureEnablement = true;
+
+		BloomBrightPass.ColorTexturesEnablement[0] = true;
+
+		BloomBlurPass.ColorTexturesEnablement[0] = true;
+		BloomBlurPass.ColorTexturesEnablement[1] = true;
+
+		BloomFinalPass.ColorTexturesEnablement[0] = true;
+
+		NoneShader = gDevice->CreateShaderProgram();
+		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
+		NoneShader->Compile();
+
+		BloomBrightShader = gDevice->CreateShaderProgram();
+		BloomBrightShader->Load("Data/Shaders/Bright.glsl");
+		BloomBrightShader->Compile();
+
+		GaussBlurShader = gDevice->CreateShaderProgram();
+		GaussBlurShader->Load("Data/Shaders/GaussBlur.glsl");
+		GaussBlurShader->Compile();
+
+		BloomShader = gDevice->CreateShaderProgram();
+		BloomShader->Load("Data/Shaders/Bloom.glsl");
+		BloomShader->Compile();
+
+		LensFlareShader = gDevice->CreateShaderProgram();
+		LensFlareShader->Load("Data/Shaders/LensFlare.glsl");
+		LensFlareShader->Compile();
+	}
+
+	void Renderer::SetContextSize(const iVector2& Size)
+	{
+		ContextSize = Size;
+	}
+
+	void Renderer::SetMainCamera(const Camera& InCamera)
+	{
+		MainCamera = InCamera;
+		State.SetMainCamera(MainCamera);
+	}
+
+	void Renderer::SetSky(Skybox* InSky)
+	{
+		Sky = InSky;
 	}
 
 	void Renderer::SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List)
@@ -119,25 +90,29 @@ namespace Columbus
 		RenderList = List;
 	}
 
+	void Renderer::SetLightsList(std::vector<Light*>* List)
+	{
+		LightsList = List;
+	}
+
 	void Renderer::CompileLists()
 	{
-		Meshes.clear();
-		MeshesInstanced.clear();
-		ParticleEmitters.clear();
+		OpaqueObjects.clear();
+		TransparentObjects.clear();
 
 		ComponentMeshRenderer* MeshRenderer;
-		ComponentMeshInstancedRenderer* MeshInstancedRenderer;
 		ComponentParticleSystem* ParticleSystem;
 
 		ParticleEmitter* Emitter;
 		Mesh* Mesh;
+
+		Frustum ViewFrustum(MainCamera.GetViewProjection());
 
 		if (RenderList != nullptr)
 		{
 			for (auto& Object : *RenderList)
 			{
 				MeshRenderer = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
-				MeshInstancedRenderer = static_cast<ComponentMeshInstancedRenderer*>(Object.second->GetComponent(Component::Type::MeshInstancedRenderer));
 				ParticleSystem = static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
 
 				if (MeshRenderer != nullptr)
@@ -146,13 +121,20 @@ namespace Columbus
 
 					if (Mesh != nullptr)
 					{
-						Meshes.push_back(MeshRenderData(Mesh, Object.second->GetTransform(), Object.second->GetMaterial()));
+						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetMatrix()))
+						{
+							Object.second->GetMaterial().ReflectionMap = Sky->GetIrradianceMap();
+
+							if (Object.second->GetMaterial().Transparent)
+							{
+								TransparentObjects.push_back(TransparentRenderData(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial()));
+							}
+							else
+							{
+								OpaqueObjects.push_back(OpaqueRenderData(Mesh, Object.second->GetTransform(), Object.second->GetMaterial()));
+							}
+						}
 					}
-				}
-
-				if (MeshInstancedRenderer != nullptr)
-				{
-
 				}
 
 				if (ParticleSystem != nullptr)
@@ -161,143 +143,192 @@ namespace Columbus
 
 					if (Emitter != nullptr)
 					{
-						ParticleEmitters.push_back(Emitter);
+						TransparentObjects.push_back(TransparentRenderData(nullptr, Emitter, Object.second->GetTransform(), Object.second->GetMaterial()));
 					}
 				}
 			}
 		}
+	}
 
-		Vector3 CameraPosition = MainCamera.getPos();
-		Vector3 APosition, BPosition;
-
-		auto MaterialSorter = [&](MeshRenderData A, MeshRenderData B)->bool
+	void Renderer::SortLists()
+	{
+		auto OpaqueSorter = [&](const OpaqueRenderData& A, const OpaqueRenderData& B)->bool
 		{
-			return A.ObjectMaterial == B.ObjectMaterial;
+			return MainCamera.Pos.LengthSquare(A.ObjectTransform.GetPos()) < MainCamera.Pos.LengthSquare(B.ObjectTransform.GetPos());
 		};
 
-		auto ParticleSorter = [&](ParticleEmitter* A, ParticleEmitter* B)->bool
+		auto TransparentSorter = [&](const TransparentRenderData& A, const TransparentRenderData& B)->bool
 		{
-			double ADistance, BDistance;
-
-			APosition = A->getParticleEffect()->getPos();
-			BPosition = B->getParticleEffect()->getPos();
-
-			ADistance = pow(CameraPosition.X - APosition.X, 2) + pow(CameraPosition.Y - APosition.Y, 2) + pow(CameraPosition.Z - APosition.Z, 2);
-			BDistance = pow(CameraPosition.X - BPosition.X, 2) + pow(CameraPosition.Y - BPosition.Y, 2) + pow(CameraPosition.Z - BPosition.Z, 2);
-
-			return ADistance > BDistance;
+			return MainCamera.Pos.LengthSquare(A.ObjectTransform.GetPos()) > MainCamera.Pos.LengthSquare(B.ObjectTransform.GetPos());
 		};
 
-		std::sort(Meshes.begin(), Meshes.end(), MaterialSorter);
-		std::sort(ParticleEmitters.begin(), ParticleEmitters.end(), ParticleSorter);
+		std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
+		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
+	}
+
+	void Renderer::RenderOpaqueStage()
+	{
+		uint32 PolygonsRendered = 0;
+
+		State.Clear();
+
+		glDisable(GL_BLEND);
+
+		for (auto& Object : OpaqueObjects)
+		{
+			ShaderProgram* CurrentShader = Object.ObjectMaterial.GetShader();
+				
+			if (CurrentShader != nullptr)
+			{
+				State.SetCulling(Object.ObjectMaterial.Culling);
+				State.SetDepthTesting(Object.ObjectMaterial.DepthTesting);
+				State.SetDepthWriting(Object.ObjectMaterial.DepthWriting);
+				State.SetShaderProgram(Object.ObjectMaterial.GetShader());
+				State.SetMaterial(Object.ObjectMaterial, Object.ObjectTransform.GetMatrix(), Sky);
+				State.SetLights(Object.Object->Lights);
+				State.SetMesh(Object.Object);
+
+				PolygonsRendered += Object.Object->Render();
+			}
+		}
+	}
+
+	void Renderer::RenderSkyStage()
+	{
+		if (Sky != nullptr)
+		{
+			Sky->Render();
+		}
+	}
+
+	void Renderer::RenderTransparentStage()
+	{
+		if (RenderList != nullptr && TransparentObjects.size() != 0)
+		{
+			State.Clear();
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			for (auto& Object : TransparentObjects)
+			{
+				if (Object.MeshObject != nullptr)
+				{
+					ShaderProgram* CurrentShader = Object.ObjectMaterial.GetShader();
+					Mesh* CurrentMesh = Object.MeshObject;
+
+					if (CurrentShader != nullptr)
+					{
+						State.SetDepthTesting(Object.ObjectMaterial.DepthTesting);
+						State.SetShaderProgram(Object.ObjectMaterial.GetShader());
+						State.SetMaterial(Object.ObjectMaterial, Object.ObjectTransform.GetMatrix(), Sky);
+						State.SetLights(Object.MeshObject->Lights);
+						CurrentMesh->Bind();
+
+						if (Object.ObjectMaterial.Culling == Material::Cull::No)
+						{
+							State.SetDepthWriting(true);
+							CurrentShader->SetUniform1i("uMaterial.Transparent", 0);
+							State.SetCulling(Material::Cull::No);
+							CurrentMesh->Render();
+
+							State.SetDepthWriting(false);
+							CurrentShader->SetUniform1i("uMaterial.Transparent", 1);
+							State.SetCulling(Material::Cull::Front);
+							CurrentMesh->Render();
+							State.SetCulling(Material::Cull::Back);
+							CurrentMesh->Render();
+						}
+						else
+						{
+							State.SetCulling(Object.ObjectMaterial.Culling);
+
+							State.SetDepthWriting(true);
+							CurrentShader->SetUniform1i("uMaterial.Transparent", 0);
+							CurrentMesh->Render();
+
+							State.SetDepthWriting(false);
+							CurrentShader->SetUniform1i("uMaterial.Transparent", 1);
+							CurrentMesh->Render();
+						}
+
+						CurrentMesh->Unbind();
+					}
+				}
+
+				if (Object.ParticleObject != nullptr)
+				{
+					State.SetShaderProgram(Object.ParticleObject->GetParticleEffect()->Material.GetShader());
+					State.SetCulling(Material::Cull::Back);
+					Object.ParticleObject->Render();
+				}
+			}
+		}
+
+		State.SetDepthWriting(true);
 	}
 
 	void Renderer::Render(Renderer::Stage RenderStage)
 	{
-		uint32 PolygonsRendered = 0;
-
 		if (RenderList != nullptr)
 		{
 			switch (RenderStage)
 			{
-				case Renderer::Stage::Opaque:
-				{
-					ShaderProgram* CurrentShader = nullptr;
-					ShaderProgram* PreviousShader = nullptr;
-
-					Material PreviousMaterial;
-
-					Material::Cull Culling = Material::Cull::No;
-					bool DepthWriting = true;
-
-					for (auto& MeshRenderer : Meshes)
-					{
-						CurrentShader = MeshRenderer.ObjectMaterial.GetShader();
-
-						if (CurrentShader != nullptr)
-						{
-							if (CurrentShader != PreviousShader)
-							{
-								if (!CurrentShader->IsCompiled())
-								{
-									CurrentShader->Compile();
-								}
-
-								CurrentShader->Bind();
-							}
-
-							if (Culling != MeshRenderer.ObjectMaterial.Culling)
-							{
-								PrepareFaceCulling(MeshRenderer.ObjectMaterial.Culling);
-							}
-
-							if (DepthWriting != MeshRenderer.ObjectMaterial.DepthWriting)
-							{
-								glDepthMask(MeshRenderer.ObjectMaterial.DepthWriting ? GL_TRUE : GL_FALSE);
-							}
-
-							Culling = MeshRenderer.ObjectMaterial.Culling;
-							DepthWriting = MeshRenderer.ObjectMaterial.DepthWriting;
-
-							ShaderSetMatrices(CurrentShader, &MeshRenderer.ObjectTransform, &MeshRenderer.Object->GetCamera());
-
-							if (MeshRenderer.ObjectMaterial != PreviousMaterial)
-							{
-								ShaderSetMaterial(CurrentShader, &MeshRenderer.ObjectMaterial);
-							}
-
-							MeshRenderer.Object->Bind();
-							PolygonsRendered += MeshRenderer.Object->Render(MeshRenderer.ObjectTransform);
-							MeshRenderer.Object->Unbind();
-						}
-
-						PreviousShader = MeshRenderer.ObjectMaterial.GetShader();
-						PreviousMaterial = MeshRenderer.ObjectMaterial;
-					}
-
-					for (auto& MeshInstancedRenderer : MeshesInstanced)
-					{
-						MeshInstancedRenderer->Render();
-					}
-
-					break;
-				}
-
-				case Renderer::Stage::Transparent:
-				{
-					for (auto& Emitter : ParticleEmitters)
-					{
-						Emitter->draw();
-					}
-
-					break;
-				}
+			case Renderer::Stage::Opaque:      RenderOpaqueStage();      break;
+			case Renderer::Stage::Sky:         RenderSkyStage();         break;
+			case Renderer::Stage::Transparent: RenderTransparentStage(); break;
 			}
 		}
+
+		State.SetCulling(Material::Cull::No);
 	}
 
-	void Renderer::Render(std::map<uint32, SmartPointer<GameObject>>* RenderList)
+	void Renderer::Render()
 	{
-		if (RenderList != nullptr)
-		{
-			for (auto& Object : *RenderList)
-			{
-				ComponentMeshRenderer* MeshRenderer = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
+		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
 
-				if (MeshRenderer != nullptr)
-				{
-					MeshRenderer->Render(Object.second->GetTransform());
-				}
-			}
-		}
+		CompileLists();
+		SortLists();
+
+		BaseEffect.Bind({ 1, 1, 1, 0 }, ContextSize);
+
+		RenderOpaqueStage();
+		RenderSkyStage();
+		RenderTransparentStage();
+
+		BaseEffect.Unbind();
+
+		NoneShader->Bind();
+		((ShaderProgramOpenGL*)(NoneShader))->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		Quad.Render();
+
+		// Lens flare rendering test, I will use it in future
+
+		/*static int LensFlareShaderTextureID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Texture");
+
+		Vector4 Coords(Vector3(0), 1);
+		Coords = MainCamera.GetViewProjection() * Coords;
+
+		if (Coords.W != 0.0f)
+			Coords /= Coords.W;
+
+		float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
+
+		LensFlareShader->Bind();
+		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)Blob, 0);
+		Quad.Render(Coords.XY(),  0.2f / Vector2(Aspect, 1));
+		LensFlareShader->Unbind();*/
 	}
 
 	Renderer::~Renderer()
 	{
-
+		delete BlackTexture;
+		delete NoneShader;
+		delete BloomBrightShader;
+		delete GaussBlurShader;
+		delete BloomShader;
+		delete LensFlareShader;
 	}
 
 }
-
 
 

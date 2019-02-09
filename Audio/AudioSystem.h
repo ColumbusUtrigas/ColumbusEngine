@@ -17,6 +17,8 @@ namespace Columbus
 		void AddSource(AudioSource* Source);
 		void SetListener(AudioListener Listener);
 
+		bool HasSource(AudioSource* Source);
+
 		void Play();
 		void Stop();
 

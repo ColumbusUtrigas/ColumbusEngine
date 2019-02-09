@@ -1,26 +1,17 @@
 #pragma once
 
-#include <Graphics/Particles/Color/ParticleModuleColorBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 #include <Math/InterpolationCurve.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleColorOverLife : public ParticleModuleColorBase
+	class ParticleModuleColorOverLife : public ParticleModule
 	{
 	public:
 		InterpolationCurve<Vector4> ColorCurve;
-		Vector4 MinStart;
-		Vector4 MaxStart;
-		Vector4 MinFinal;
-		Vector4 MaxFinal;
-
-		ParticleModuleColorOverLife() :
-			MinStart(Vector4(1, 1, 1, 1)),
-			MaxStart(Vector4(1, 1, 1, 1)),
-			MinFinal(Vector4(1, 1, 1, 1)),
-			MaxFinal(Vector4(1, 1, 1, 1))
-		{}
+	public:
+		ParticleModuleColorOverLife() {}
 		/*
 		* For determening module type
 		*/
@@ -30,15 +21,14 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.startColor = Vector4::random(MinStart, MaxStart);
-			OutParticle.finalColor = Vector4::random(MinFinal, MaxFinal);
+			OutParticle.Color = ColorCurve.Interpolate(0.0f);
 		}
 		/*
 		* Update particle parameter
 		*/
 		void Update(Particle& OutParticle) override
 		{
-			OutParticle.color = ColorCurve.Interpolate(OutParticle.percent);
+			OutParticle.Color = ColorCurve.Interpolate(OutParticle.percent);
 		}
 
 		~ParticleModuleColorOverLife() override {}

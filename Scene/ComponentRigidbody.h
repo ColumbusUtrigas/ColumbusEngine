@@ -11,15 +11,16 @@ namespace Columbus
 	private:
 		Rigidbody* RB;
 	public:
-		ComponentRigidbody(Rigidbody* RB);
+		ComponentRigidbody(Rigidbody* RB) : RB(RB) {}
 
-		void Update(const float TimeTick) override;
-		void Render(Transform& Transform) override;
+		virtual void Update(float TimeTick, Transform& Trans) override {}
+		virtual void Render(Transform& Transform) override {}
+
 		//This component methods
-		Component::Type GetType() const override;
-		Rigidbody* GetRigidbody() const;
+		virtual Component::Type GetType() const override { return Component::Type::Rigidbody; }
+		Rigidbody* GetRigidbody() const { return RB; }
 
-		~ComponentRigidbody() override;
+		virtual ~ComponentRigidbody() override {}
 	};
 
 }

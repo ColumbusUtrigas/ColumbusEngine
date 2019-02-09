@@ -1,27 +1,17 @@
 #pragma once
 
-#include <Scene/GameObject.h>
-#include <Scene/ComponentLight.h>
-#include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentMeshInstancedRenderer.h>
-#include <Scene/ComponentParticleSystem.h>
-#include <Scene/ComponentRigidbody.h>
+#include <Audio/AudioSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Render.h>
-#include <Graphics/Primitives.h>
-#include <Graphics/PostEffect.h>
-#include <Physics/PhysicsShape.h>
-#include <Physics/PhysicsShapeBox.h>
-#include <Physics/PhysicsShapeCapsule.h>
-#include <Physics/PhysicsShapeCone.h>
-#include <Physics/PhysicsShapeConvexHull.h>
-#include <Physics/PhysicsShapeCylinder.h>
-#include <Physics/PhysicsShapeMultiSphere.h>
-#include <Physics/PhysicsShapeSphere.h>
 #include <Physics/PhysicsWorld.h>
-#include <Core/Types.h>
+#include <Scene/GameObject.h>
+#include <System/Timer.h>
 #include <Core/SmartPointer.h>
+#include <Core/Types.h>
+
+#include <vector>
+#include <map>
 
 namespace Columbus
 {
@@ -29,53 +19,57 @@ namespace Columbus
 	class Scene
 	{
 	private:
-		std::map<uint32, SmartPointer<GameObject>> mObjects;
-		std::vector<Light*> mLights;
-		std::map<uint32, Texture*> mTextures;
-		std::map<uint32, ShaderProgram*> ShaderPrograms;
+		std::map<uint32, SmartPointer<GameObject>> Objects;
+		std::vector<Light*> Lights;
+		std::map<uint32, SmartPointer<Texture>> Textures;
+		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 
-		std::map<uint32, std::vector<Vertex>> Meshes;
+		std::map<uint32, SmartPointer<Mesh>> Meshes;
+		std::map<uint32, SmartPointer<Sound>> Sounds;
 
-		Renderer Render;
+		Renderer MainRender;
 
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 
-		Skybox* mSkybox = nullptr;
-		Camera* mCamera = nullptr;
+		Skybox* Sky = nullptr;
+		Camera* MainCamera = nullptr;
+		AudioListener* Listener = nullptr;
 
-		PostEffect mNoneEffect;
-		ShaderProgram* NoneShader = nullptr;
+		iVector2 ContextSize = iVector2(640, 480);
 
-		Vector2 mContextSize = Vector2(640, 480);
-
-		void lightWorkflow();
-		void meshWorkflow();
-		void meshInstancedWorkflow();
-		void particlesWorkflow();
-		void rigidbodyWorkflow();
-		void rigidbodyPostWorkflow();
+		void AudioWorkflow();
+		void LightWorkflow();
+		void MeshWorkflow();
+		void ParticlesWorkflow();
+		void RigidbodyWorkflow();
+		void RigidbodyPostWorkflow();
+	public:
+		AudioSystem Audio;
 	public:
 		Scene();
 
-		bool load(std::string aFile);
+		bool Load(const char* FileName);
 
 		void Add(uint32 ID, GameObject&& InObject)
 		{
-			mObjects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
+			Objects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
 		}
 
-		void setSkybox(const Skybox* aSkybox);
-		void setCamera(const Camera* aCamera);
-		void setContextSize(const Vector2 aContextSize);
+		void SetSkybox(Skybox* InSky) { Sky = InSky; }
+		void SetCamera(Camera* InMainCamera) { MainCamera = InMainCamera; }
+		void SetAudioListener(AudioListener* InListener) { Listener = InListener; }
+		void SetContextSize(const iVector2& InContextSize) { ContextSize = InContextSize; }
 
-		GameObject* getGameObject(const unsigned int aID) const;
-		GameObject* getGameObject(const std::string aName) const;
+		GameObject* GetGameObject(uint32 ID) const;
+		GameObject* GetGameObject(const std::string& Name) const;
 
-		void update();
-		void render();
+		void Update();
+		void Render();
 
 		~Scene();
 	};
 
 }
+
+
