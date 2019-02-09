@@ -88,6 +88,13 @@ namespace Columbus
 		if (J["Culling"].GetString() == "Front")        Culling = Cull::Front;
 		if (J["Culling"].GetString() == "Back")         Culling = Cull::Back;
 		if (J["Culling"].GetString() == "FrontAndBack") Culling = Cull::FrontAndBack;
+		
+		if (J["DepthTesting"].GetString() == "Less")    DepthTesting = DepthTest::Less;
+		if (J["DepthTesting"].GetString() == "Greater") DepthTesting = DepthTest::Greater;
+		if (J["DepthTesting"].GetString() == "LEqual")  DepthTesting = DepthTest::LEqual;
+		if (J["DepthTesting"].GetString() == "GEqual")  DepthTesting = DepthTest::GEqual;
+		if (J["DepthTesting"].GetString() == "Never")   DepthTesting = DepthTest::Never;
+		if (J["DepthTesting"].GetString() == "Always")  DepthTesting = DepthTest::Always;
 
 		DepthWriting = J["DepthWriting"].GetBool();
 		Transparent  = J["Transparent"] .GetBool();

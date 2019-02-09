@@ -251,18 +251,13 @@ namespace Columbus
 
 		if (Shader != nullptr)
 		{
+			if (Shader->IsError())
+			{
+				return;
+			}
+
 			if (Effect->Required.Visible)
 			{
-				if (!Shader->IsError())
-				{
-					if (!Shader->IsCompiled())
-					{
-						if (!Shader->Compile()) return;
-					}
-
-					Shader->Bind();
-				} else return;
-
 				if (Effect->Required.AdditiveBlending)
 				{
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE);

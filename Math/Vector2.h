@@ -200,7 +200,12 @@ namespace Columbus
 
 		Type Length(const Vector2_t& Other) const
 		{
-			return sqrtf(powf(Other.X - X, 2) + powf(Other.Y - Y, 2));
+			return sqrtf(Math::Sqr(Other.X - X) + Math::Sqr(Other.Y - Y));
+		}
+
+		Type LengthSquare(const Vector2_t& Other) const
+		{
+			return Math::Sqr(Other.X - X) + Math::Sqr(Other.Y - Y);
 		}
 
 		Type Dot(const Vector2_t& Other) const

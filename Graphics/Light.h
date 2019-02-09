@@ -8,11 +8,11 @@ namespace Columbus
 	class Light
 	{
 	public:
-		int Type = 0;
-
+		Vector3 Color = Vector3(1, 1, 1);
 		Vector3 Pos = Vector3(0, 0, 0);
 		Vector3 Dir = Vector3(-0.5f, -0.4f, -0.3f);
-		Vector3 Color = Vector3(1, 1, 1);
+
+		int Type = 0;
 
 		float Range = 10.0f;
 		float InnerCutoff = 12.5f;

@@ -18,7 +18,7 @@
 ## OpenGL 3.0 renderer
 
 ## Tests
-![Optional Text](./Tests/1.jpg)
-![Optional Text](./Tests/2.jpg)
-![Optional Text](./Tests/3.jpg)
-![Optional Text](./Tests/4.jpg)
+![Optional Text](./Tests/1.png)
+![Optional Text](./Tests/2.png)
+![Optional Text](./Tests/3.png)
+![Optional Text](./Tests/4.png)
