@@ -550,7 +550,12 @@ namespace Columbus
 
 		Type Length(const Vector4_t& Other) const
 		{
-			return sqrtf(powf(Other.X - X, 2) + powf(Other.Y - Y, 2) + powf(Other.Z - Z, 2) + powf(Other.W - W, 2));
+			return sqrtf(Math::Sqr(Other.X - X) + Math::Sqr(Other.Y - Y) + Math::Sqr(Other.Z - Z) + Math::Sqr(Other.W - W));
+		}
+
+		Type LengthSquare(const Vector4_t& Other) const
+		{
+			return Math::Sqr(Other.X - X) + Math::Sqr(Other.Y - Y) + Math::Sqr(Other.Z - Z) + Math::Sqr(Other.W - W);
 		}
 
 		Type Dot(const Vector4_t& Other) const

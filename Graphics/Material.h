@@ -19,6 +19,18 @@ namespace Columbus
 			Back,
 			FrontAndBack
 		};
+
+		enum class DepthTest
+		{
+			Less,
+			Greater,
+			LEqual,
+			GEqual,
+			Equal,
+			NotEqual,
+			Never,
+			Always
+		};
 	private:
 		int AlbedoMapID = -1;
 		int NormalMapID = -1;
@@ -32,6 +44,7 @@ namespace Columbus
 		ShaderProgram* ShaderProg = nullptr;
 	public:
 		Cull Culling = Cull::Back;
+		DepthTest DepthTesting = DepthTest::LEqual;
 		bool DepthWriting = true;
 		bool Transparent = false;
 		bool Lighting = true;

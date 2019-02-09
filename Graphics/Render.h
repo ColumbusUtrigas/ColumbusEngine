@@ -47,6 +47,7 @@ namespace Columbus
 		};
 	protected:
 		std::map<uint32, SmartPointer<GameObject>>* RenderList;
+		std::vector<Light*>* LightsList;
 
 		std::vector<OpaqueRenderData> OpaqueObjects;
 		std::vector<TransparentRenderData> TransparentObjects;
@@ -65,20 +66,23 @@ namespace Columbus
 		enum class Stage
 		{
 			Opaque,
+			Sky,
 			Transparent
 		};
 	public:
 		Renderer();
-
-		void SetContextSize(const iVector2& Size) { ContextSize = Size; }
-		void SetMainCamera(const Camera& InCamera) { MainCamera = InCamera; }
-		void SetSky(Skybox* InSky) { Sky = InSky; }
+		
+		void SetContextSize(const iVector2& Size);
+		void SetMainCamera(const Camera& InCamera);
+		void SetSky(Skybox* InSky);
 
 		virtual void SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List);
+		virtual void SetLightsList(std::vector<Light*>* List);
 		virtual void CompileLists();
 		virtual void SortLists();
 
 		virtual void RenderOpaqueStage();
+		virtual void RenderSkyStage();
 		virtual void RenderTransparentStage();
 		virtual void Render(Stage RenderStage);
 		virtual void Render();

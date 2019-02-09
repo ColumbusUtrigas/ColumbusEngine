@@ -240,6 +240,7 @@
     <ClInclude Include="Graphics\PostEffect.h" />
     <ClInclude Include="Graphics\Primitives.h" />
     <ClInclude Include="Graphics\Render.h" />
+    <ClInclude Include="Graphics\RenderState.h" />
     <ClInclude Include="Graphics\ScreenQuad.h" />
     <ClInclude Include="Graphics\Shader.h" />
     <ClInclude Include="Graphics\ShaderBuilder.h" />
@@ -329,6 +330,7 @@
     <ClCompile Include="Graphics\Particles\ParticleEmitter.cpp" />
     <ClCompile Include="Graphics\Primitives.cpp" />
     <ClCompile Include="Graphics\Render.cpp" />
+    <ClCompile Include="Graphics\RenderState.cpp" />
     <ClCompile Include="Graphics\ShaderBuilder.cpp" />
     <ClCompile Include="Graphics\Skybox.cpp" />
     <ClCompile Include="GUI\Button.cpp" />

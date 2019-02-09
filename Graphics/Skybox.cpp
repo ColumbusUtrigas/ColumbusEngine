@@ -9,49 +9,26 @@
 namespace Columbus
 {
 
-	static float SkyboxVertices[108] =
+	static float Vertices[24] = 
 	{
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
+		-1, -1, -1,
+		-1, -1, +1,
+		-1, +1, -1,
+		-1, +1, +1,
+		+1, -1, -1,
+		+1, -1, +1,
+		+1, +1, -1,
+		+1, +1, +1
+	};
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		-1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f
+	static unsigned char Indices[36] = 
+	{
+		2, 0, 4, 4, 6, 2,
+		1, 0, 2, 2, 3, 1,
+		4, 5, 7, 7, 6, 4,
+		1, 3, 7, 7, 5, 1,
+		2, 6, 7, 7, 3, 2,
+		0, 1, 4, 4, 1, 5
 	};
 
 	ShaderProgram* IrradianceShader = nullptr;
@@ -70,23 +47,28 @@ namespace Columbus
 		return tShader;
 	}
 
-	static void CreateSkyboxBuffer(uint32& VBO, uint32& VAO)
+	static void CreateSkyboxBuffer(uint32& VBO, uint32& IBO, uint32& VAO)
 	{
 		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &IBO);
 		glGenVertexArrays(1, &VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(SkyboxVertices), SkyboxVertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(0);
 		glBindVertexArray(0);
 	}
 
-	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO)
+	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO, uint32 IBO)
 	{
 		Matrix CaptureProjection;
 		Matrix CaptureViews[6];
@@ -122,16 +104,20 @@ namespace Columbus
 		glActiveTexture(GL_TEXTURE0);
 		BaseMap->bind();
 
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
 		for (int i = 0; i < 6; i++)
 		{
 			Frame->SetTextureCube(Framebuffer::Attachment::Color0, IrradianceMap, i);
 			Frame->prepare({ 0, 0, 0, 0 }, { 32, 32 });
 			IrradianceShader->SetUniformMatrix("View", &CaptureViews[i].M[0][0]);
 
-			glBindVertexArray(VAO);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-			glBindVertexArray(0);
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 
 		Frame->unbind();
 		IrradianceShader->Unbind();
@@ -142,7 +128,7 @@ namespace Columbus
 		delete Frame;
 	}
 
-	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, uint32 VAO)
+	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, uint32 VAO, uint32 IBO)
 	{
 		Matrix CaptureProjection;
 		Matrix CaptureViews[6];
@@ -196,16 +182,20 @@ namespace Columbus
 
 			PrefilterShader->SetUniform1f("Roughness", Roughness);
 
+			glBindVertexArray(VAO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
 			for (uint32 i = 0; i < 6; i++)
 			{
 				Frame->SetTextureCube(Framebuffer::Attachment::Color0, PrefilterMap, i, Mip);
 				Frame->prepare({ 0, 0, 0, 0 }, { (float)Width, (float)Height });
 				PrefilterShader->SetUniformMatrix("View", &CaptureViews[i].M[0][0]);
 
-				glBindVertexArray(VAO);
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-				glBindVertexArray(0);
+				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 			}
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
 		}
 
 		Frame->unbind();
@@ -260,7 +250,7 @@ namespace Columbus
 		Shader(nullptr)
 	{
 		Shader = CreateSkyboxShader();
-		CreateSkyboxBuffer(VBO, VAO);
+		CreateSkyboxBuffer(VBO, IBO, VAO);
 	}
 
 	Skybox::Skybox(Texture* InTexture) :
@@ -268,9 +258,9 @@ namespace Columbus
 		Shader(nullptr)
 	{
 		Shader = CreateSkyboxShader();
-		CreateSkyboxBuffer(VBO, VAO);
-		CreateIrradianceMap(Tex, IrradianceMap, VAO);
-		CreatePrefilterMap(Tex, PrefilterMap, VAO);
+		CreateSkyboxBuffer(VBO, IBO, VAO);
+		CreateIrradianceMap(Tex, IrradianceMap, VAO, IBO);
+		CreatePrefilterMap(Tex, PrefilterMap, VAO, IBO);
 		CreateIntegrationMap(IntegrationMap);
 	}
 
@@ -293,7 +283,9 @@ namespace Columbus
 			Tex->bind();
 
 			glBindVertexArray(VAO);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
 
 			Shader->Unbind();
@@ -316,6 +308,7 @@ namespace Columbus
 		delete PrefilterMap;
 		delete IntegrationMap;
 		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &IBO);
 		glDeleteVertexArrays(1, &VAO);
 	}
 
