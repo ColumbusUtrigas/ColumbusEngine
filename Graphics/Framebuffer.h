@@ -1,38 +1,36 @@
 #pragma once
 
 #include <Graphics/Texture.h>
-#include <Graphics/Renderbuffer.h>
-
-#include <System/System.h>
-#include <System/Log.h>
-
 #include <Math/Vector2.h>
-#include <Math/Vector3.h>
 #include <Math/Vector4.h>
 
 namespace Columbus
 {
 
-	enum FramebufferAttachment
-	{
-		E_FRAMEBUFFER_COLOR_ATTACH,
-		E_FRAMEBUFFER_DEPTH_ATTACH,
-		E_FRAMEBUFFER_STENCIL_ATTACH
-	};
-
 	class Framebuffer
 	{
 	public:
-		Framebuffer();
+		enum class Attachment
+		{
+			Color0  = 0,
+			Color1  = 1,
+			Color2  = 2,
+			Color3  = 3,
+			Depth   = 4,
+			Stencil = 5
+		};
+	public:
+		Framebuffer() {}
 
-		virtual void bind();
-		virtual void unbind();
+		virtual void bind() {}
+		virtual void unbind() {}
 
-		virtual bool setTexture2D(FramebufferAttachment aAttach, Texture* aTexture);
-		virtual bool prepare(Vector4 aClear, Vector2 aWindowSize);
-		virtual bool check();
+		virtual bool setTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) { return false; }
+		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level = 0) { return false; };
+		virtual bool prepare(const Vector4& Clear, const Vector2& WindowSize) { return false; }
+		virtual bool check() { return false; }
 
-		virtual ~Framebuffer();
+		virtual ~Framebuffer() {}
 	};
 
 }

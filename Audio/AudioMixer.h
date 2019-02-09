@@ -2,9 +2,7 @@
 
 #include <Audio/AudioSource.h>
 #include <Audio/AudioListener.h>
-#include <Common/Sound/Sound.h>
-#include <Core/Containers/Array.h>
-#include <Core/Memory.h>
+#include <Core/Containers/Vector.h>
 
 namespace Columbus
 {
@@ -13,7 +11,7 @@ namespace Columbus
 	{
 	private:
 		AudioListener Listener;
-		Array<AudioSource*> Sources;
+		Vector<AudioSource*> Sources;
 
 		Sound::Frame* Data = nullptr;
 		Sound::FrameHight* Mixed = nullptr;
@@ -30,6 +28,19 @@ namespace Columbus
 		void SetListener(AudioListener InListener)
 		{
 			Listener = InListener;
+		}
+
+		bool HasSource(AudioSource* Source)
+		{
+			for (const auto& Audio : Sources)
+			{
+				if (Audio == Source)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		void Update(Sound::Frame* Frames, uint32 Count);

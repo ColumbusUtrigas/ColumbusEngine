@@ -13,70 +13,77 @@
 	out vec3 varPos;
 	out vec2 varUV;
 	out vec3 varNormal;
-	out vec3 varFragPos;
 	out mat3 varTBN;
 
 	//@Uniform uModel
+	//@Uniform uViewProjection
 	//@Uniform uView
 	//@Uniform uProjection
 
 	uniform mat4 uModel;
+	uniform mat4 uViewProjection;
 	uniform mat4 uView;
 	uniform mat4 uProjection;
 
 	void main()
 	{
-		Position = uProjection * uView * uModel * vec4(aPos, 1.0);
+		vec3 Normal = normalize(vec3(vec4(aNorm, 0.0) * uModel));
+		vec3 Tangent = normalize(vec3(vec4(aTang, 0.0) * uModel));
+		vec3 Bitangent = cross(Normal, Tangent);
 
-		vec3 normal = normalize(vec3(uModel * vec4(aNorm, 0.0)));
-		vec3 tangent = normalize(vec3(uModel * vec4(aTang, 0.0)));
-		vec3 bitangent = cross(normal, tangent);
-
-		varPos = vec3(uModel * vec4(aPos, 1.0));
+		varPos = vec3(vec4(aPos, 1.0) * uModel);
 		varUV = aUV;
-		varNormal = normal;
-		varFragPos = vec3(uModel * vec4(aPos, 1.0));
-		varTBN = transpose(mat3(tangent, bitangent, normal));
+		varNormal = Normal;
+		varTBN = transpose(mat3(Tangent, Bitangent, Normal));
+
+		Position = uViewProjection * vec4(varPos, 1);
 	}
 
 #endif
 
 #ifdef FragmentShader
 
-	#define LIGHT_NUM 8
+	#define PI 3.141592653
+	#define LAMBERTIAN 0.318310 // 1.0 / PI
+	#define COLOR_EXP  0.454545 //1.0 / 2.2
+	#define LIGHT_NUM 4
 
 	in vec3 varPos;
 	in vec2 varUV;
 	in vec3 varNormal;
-	in vec3 varFragPos;
 	in mat3 varTBN;
 
 	struct Material
 	{
-		sampler2D DiffuseMap;
-		sampler2D SpecularMap;
+		sampler2D AlbedoMap;
 		sampler2D NormalMap;
-		sampler2D DetailDiffuseMap;
+		sampler2D RoughnessMap;
+		sampler2D MetallicMap;
+		sampler2D OcclusionMap;
+		sampler2D EmissionMap;
+		sampler2D DetailAlbedoMap;
 		sampler2D DetailNormalMap;
-		samplerCube ReflectionMap;
+		samplerCube IrradianceMap;
+		samplerCube EnvironmentMap;
+		sampler2D   IntegrationMap;
+
+		bool HasAlbedoMap;
+		bool HasNormalMap;
+		bool HasRoughnessMap;
+		bool HasMetallicMap;
+		bool HasOcclusionMap;
+		bool HasDetailAlbedoMap;
+		bool HasDetailNormalMap;
 
 		vec2 Tiling;
 		vec2 DetailTiling;
 
-		vec4 Color;
-		vec3 AmbientColor;
-		vec3 DiffuseColor;
-		vec3 SpecularColor;
+		vec4 Albedo;
+		float Roughness;
+		float Metallic;
+		float EmissionStrength;
 
-		float ReflectionPower;
-		float DetailNormalStrength;
-
-		float Rim;
-		float RimPower;
-		float RimBias;
-		vec3 RimColor;
-
-		bool Lighting;
+		bool Transparent;
 	};
 
 	struct Camera
@@ -84,207 +91,242 @@
 		vec3 Position;
 	};
 
-	//@Uniform uMaterial.DiffuseMap
-	//@Uniform uMaterial.SpecularMap
+	//@Uniform uMaterial.AlbedoMap
 	//@Uniform uMaterial.NormalMap
-	//@Uniform uMaterial.DetailDiffuseMap
+	//@Uniform uMaterial.RoughnessMap
+	//@Uniform uMaterial.MetallicMap
+	//@Uniform uMaterial.OcclusionMap
+	//@Uniform uMaterial.EmissionMap
+	//@Uniform uMaterial.DetailAlbedoMap
 	//@Uniform uMaterial.DetailNormalMap
+	//@Uniform uMaterial.IrradianceMap
+	//@Uniform uMaterial.EnvironmentMap
+	//@Uniform uMaterial.IntegrationMap
+
+	//@Uniform uMaterial.HasAlbedoMap
+	//@Uniform uMaterial.HasNormalMap
+	//@Uniform uMaterial.HasRoughnessMap
+	//@Uniform uMaterial.HasMetallicMap
+	//@Uniform uMaterial.HasOcclusionMap
+	//@Uniform uMaterial.HasDetailAlbedoMap
+	//@Uniform uMaterial.HasDetailNormalMap
+
 	//@Uniform uMaterial.Tiling
 	//@Uniform uMaterial.DetailTiling
-	//@Uniform uMaterial.ReflectionMap
-	//@Uniform uMaterial.Color
-	//@Uniform uMaterial.AmbientColor
-	//@Uniform uMaterial.DiffuseColor
-	//@Uniform uMaterial.SpecularColor
-	//@Uniform uMaterial.ReflectionPower
-	//@Uniform uMaterial.DetailNormalStrength
-	//@Uniform uMaterial.Rim
-	//@Uniform uMaterial.RimPower
-	//@Uniform uMaterial.RimBias
-	//@Uniform uMaterial.RimColor
-	//@Uniform uMaterial.Lighting
+	//@Uniform uMaterial.Albedo
+	//@Uniform uMaterial.Roughness
+	//@Uniform uMaterial.Metallic
+	//@Uniform uMaterial.EmissionStrength
+	//@Uniform uMaterial.Transparent
 	//@Uniform uLighting
 	//@Uniform uCamera.Position
 
 	uniform Material uMaterial;
-	uniform float uLighting[15 * LIGHT_NUM];
+	uniform float uLighting[13 * LIGHT_NUM];
 	uniform Camera uCamera;
 
-	vec4 DiffuseMap;
-	vec3 SpecularMap;
-	vec3 NormalMap;
-	vec4 DetailDiffuseMap;
-	vec3 DetailNormalMap;
+	vec2 TiledUV;
+	vec2 TiledDetailUV;
 
-	bool IsSpecularMap = false;
-
+	vec4 Albedo;
 	vec3 Normal;
-
-	vec3 AmbientColor = vec3(0);
-	vec3 DiffuseColor = vec3(0);
-	vec3 SpecularColor = vec3(0);
-	vec3 CubemapColor = vec3(0);
-	vec3 RimColor = vec3(0);
-	vec4 Lighting = vec4(1);
+	float Roughness;
+	float Metallic;
 
 	void Init(void);
-	void LightCalc(int id);
-	void RimCalc();
-	void Cubemap(void);
 	void Final(void);
 
 	void main(void)
 	{
 		Init();
-
-		if (uMaterial.Lighting == true)
-		{
-			for (int i = 0; i < LIGHT_NUM; i++)
-			{
-				LightCalc(i);
-			}
-
-			RimCalc();
-
-			Lighting = vec4(AmbientColor + DiffuseColor + SpecularColor + RimColor, 1.0);
-		}
-		
-		if (textureSize(uMaterial.ReflectionMap, 0).x > 1)
-		{
-			Cubemap();
-		}
-
 		Final();
+	}
+
+	vec3 NormalBlend(in vec4 n1, in vec4 n2)
+	{
+		//UDN
+		vec3 c = vec3(2, 1, 0);
+		vec3 r;
+		r = n2.xyz * c.yyz + n1.xyz;
+		r = r * c.xxx - c.xxy;
+		return normalize(r);
 	}
 
 	void Init(void)
 	{
-		DiffuseMap = texture(uMaterial.DiffuseMap, varUV * uMaterial.Tiling);
-		SpecularMap = texture(uMaterial.SpecularMap, varUV * uMaterial.Tiling).rgb;
-		NormalMap = texture(uMaterial.NormalMap, varUV * uMaterial.Tiling).rgb;
-		DetailDiffuseMap = texture(uMaterial.DetailDiffuseMap, varUV * uMaterial.DetailTiling);
-		DetailNormalMap = texture(uMaterial.DetailNormalMap, varUV * uMaterial.DetailTiling).rgb;
+		TiledUV = varUV * uMaterial.Tiling;
+		TiledDetailUV = varUV * uMaterial.DetailTiling;
 
-		if (textureSize(uMaterial.DiffuseMap, 0).x > 1 && textureSize(uMaterial.DetailDiffuseMap, 0).x > 1)
+		if (uMaterial.HasAlbedoMap)
 		{
-			DiffuseMap = vec4(DiffuseMap.rgb * DetailDiffuseMap.rgb * 1.8f, DiffuseMap.a);
+			vec4 AlbedoSample = texture2D(uMaterial.AlbedoMap, TiledUV);
+
+			if (uMaterial.HasDetailAlbedoMap)
+				Albedo = vec4(AlbedoSample.rgb * texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV) * 1.8f, AlbedoSample.a);
+			else
+				Albedo = AlbedoSample;
 		}
-
-		if (textureSize(uMaterial.NormalMap, 0).x > 1 && textureSize(uMaterial.DetailNormalMap, 0).x > 1)
-		{
-			NormalMap = mix(NormalMap.rgb, DetailNormalMap.rgb, uMaterial.DetailNormalStrength);
-		}
-
-		//if (DiffuseMap.w <= 0.1) discard;
-
-		if (textureSize(uMaterial.SpecularMap, 0).x > 1)
-			IsSpecularMap = true;
-
-		if (NormalMap != vec3(0))
-			Normal = normalize(NormalMap * 2.0 - 1.0) * varTBN;
 		else
-			Normal = varNormal;
+			if (uMaterial.HasDetailAlbedoMap)
+				Albedo = texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV);
+			else
+				Albedo = vec4(1);
+
+		if (uMaterial.HasNormalMap)
+			if (uMaterial.HasDetailNormalMap)
+				Normal = NormalBlend(texture2D(uMaterial.NormalMap, TiledUV), texture2D(uMaterial.DetailNormalMap, TiledDetailUV)) * varTBN;
+			else
+				Normal = normalize(texture2D(uMaterial.NormalMap, TiledUV).rgb * 2.0 - 1.0) * varTBN;
+		else
+			if (uMaterial.HasDetailNormalMap)
+				Normal = normalize(texture2D(uMaterial.DetailNormalMap, TiledDetailUV).rgb * 2.0 - 1.0) * varTBN;
+			else
+				Normal = varNormal;
+
+		if (uMaterial.HasRoughnessMap)
+			Roughness = texture2D(uMaterial.RoughnessMap, TiledUV).r;
+		else
+			Roughness = uMaterial.Roughness;
+
+		if (uMaterial.HasMetallicMap)
+			Metallic = texture2D(uMaterial.MetallicMap, TiledUV).r;
+		else
+			Metallic = uMaterial.Metallic;
 	}
 
-	void LightCalc(int id)
+	vec3 LambertDiffuseBRDF(in vec3 color)
 	{
-		int Offset = id * 15;
+		return color * LAMBERTIAN;
+	}
+
+	float DistributionGGX(vec3 N, vec3 H, float roughness)
+	{
+		float a      = roughness * roughness;
+		float a2     = a * a;
+		float NdotH  = max(dot(N, H), 0.0);
+		float NdotH2 = NdotH * NdotH;
+
+		float num   = a2;
+		float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+		denom = PI * denom * denom;
+
+		return num / denom;
+	}
+
+	float GeometryGGX(float a, float ndotl, float ndotv)
+	{
+		float a2 = max(a * a, 0.001f);
+
+		float gv = ndotl * sqrt(a2 + (1.0f - a2) * ndotv * ndotv);
+		float gl = ndotv * sqrt(a2 + (1.0f - a2) * ndotl * ndotl);
+
+		return 0.5f / max(gv + gl, 0.001f);
+	}
+
+	vec3 Fresnel(in float cosTheta, in vec3 F0)
+	{
+		return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+	}
+
+	vec3 FresnelRoughness(float cosTheta, vec3 F0, float roughness)
+	{
+		return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+	}
+
+	vec3 CookTorranceSpecularBRDF(in vec3 N, in vec3 L, in vec3 V, in vec3 H, out vec3 F)
+	{
+		vec3 F0 = vec3(0.04); 
+		F0 = mix(F0, vec3(1), Metallic);
+
+		float NdotV = max(0, dot(N, V));
+		float NdotL = max(0, dot(N, L));
+
+		float D = DistributionGGX(N, H, Roughness);
+		      F = FresnelRoughness(NdotV, F0, Roughness);
+		float G = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
+
+		return D * F * G * LAMBERTIAN * NdotL;
+	}
+
+	vec3 LightCalc(int id, out vec3 F)
+	{
+		int Offset = id * 13;
 
 		vec3 LightColor = vec3(uLighting[Offset + 0], uLighting[Offset + 1], uLighting[Offset + 2]);
 		vec3 LightPos = vec3(uLighting[Offset + 3], uLighting[Offset + 4], uLighting[Offset + 5]);
 		vec3 LightDir = vec3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
 		float LightType = uLighting[Offset + 9];
-		float LightConstant = uLighting[Offset + 10];
-		float LightLinear = uLighting[Offset + 11];
-		float LightQuadratic = uLighting[Offset + 12];
-		float LightInnerCutoff = uLighting[Offset + 13];
-		float LightOuterCutoff = uLighting[Offset + 14];
+		float LightRange = uLighting[Offset + 10];
+		//float LightInnerCutoff = uLighting[Offset + 11];
+		//float LightOuterCutoff = uLighting[Offset + 12];
 
-		vec3 lightDir;
+		if (LightColor == vec3(0)) return vec3(0);
 
-		float attenuation = 0.0;
+		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
+		float Distance = length(LightPos - varPos);
+		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
 
-		switch (int(LightType))
-		{
-		case 0:
-			lightDir = normalize(-LightPos);
-			break;
-		default:
-			lightDir = normalize(-LightPos + varPos);
-			break;
-		};
+		vec3 N, L, V, H;
+		N = normalize(Normal);
+		L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
+		V = normalize(uCamera.Position - varPos);
+		H = normalize(V + L);
 
-		vec3 viewDir = normalize(uCamera.Position - varFragPos);
+		float NdotL = max(0, dot(N, L));
 
-		float diff = max(0.0, dot(Normal, -lightDir));
+		vec3 DiffuseBRDF = LambertDiffuseBRDF(uMaterial.Albedo.rgb) * AO;
+		vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, V, H, F);
 
-		vec3 reflect = normalize(reflect(lightDir, Normal));
-		float spec = pow(max(0.0, dot(viewDir, reflect)), 32);
-		vec3 specular = uMaterial.SpecularColor * LightColor * spec * 0.5;
+		float Factor = 1.0 - Metallic;
 
-		vec3 tmpAmbient = vec3(0);
-		vec3 tmpDiffuse = vec3(0);
-		vec3 tmpSpecular = vec3(0);
-
-		tmpAmbient = uMaterial.AmbientColor * LightColor * vec3(uMaterial.Color);
-		tmpDiffuse = LightColor * uMaterial.DiffuseColor * diff * uMaterial.Color.rgb;
-		
-		if (IsSpecularMap)
-			tmpSpecular = specular * uMaterial.SpecularColor * uMaterial.Color.rgb * SpecularMap;
-		else
-			tmpSpecular = specular * uMaterial.SpecularColor * uMaterial.Color.rgb;
-
-		if (int(LightType) > 0)
-		{
-			float distance = length(LightPos - varPos);
-			attenuation = 1.0 / (LightConstant +
-			                     LightLinear * distance +
-			                     LightQuadratic * (distance * distance));
-
-			tmpAmbient *= attenuation;
-			tmpDiffuse *= attenuation;
-			tmpSpecular *= attenuation;
-		}
-
-		AmbientColor = vec3(0.1);
-		//AmbientColor += tmpAmbient;
-		DiffuseColor += tmpDiffuse;
-		SpecularColor += tmpSpecular;
+		return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * LightColor * Attenuation;
 	}
 
-	void RimCalc()
+	vec3 Lights()
 	{
-		vec3 ViewDirection = normalize(uCamera.Position - varFragPos);
+		vec3 BRDF = vec3(0);
+		vec3 F = vec3(0);
+		vec3 V = normalize(uCamera.Position - varPos);
+		vec3 R = reflect(-V, Normal);
 
-		float Rim = pow(1.0 + uMaterial.RimBias - max(dot(Normal, ViewDirection), 0.0), uMaterial.RimPower);
+		BRDF += LightCalc(0, F);
+		BRDF += LightCalc(1, F);
+		BRDF += LightCalc(2, F);
+		BRDF += LightCalc(3, F);
 
-		RimColor = Rim * uMaterial.RimColor * uMaterial.Rim;
+		const float MAX_REFLECTION_LOD = 7.0;
+		vec3 prefilteredColor = textureCubeLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
+		vec2 envBRDF  = texture(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
+		vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+		vec3 Ambient = textureCube(uMaterial.IrradianceMap, Normal).rgb;
+		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
+
+		BRDF += (1.0 - Metallic) * Ambient * 0.1 * AO;
+
+		BRDF = BRDF / (BRDF + vec3(1.0));
+		BRDF = pow(BRDF, vec3(COLOR_EXP));
+
+		BRDF += Specular * AO;
+
+		return BRDF * uMaterial.Albedo.rgb;
 	}
 
-	void Cubemap(void)
+	vec2 EncodeNormal(in vec3 n)
 	{
-		vec3 I = normalize(uCamera.Position - varFragPos);
-		vec3 R = normalize(reflect(I, Normal));
-		CubemapColor = texture(uMaterial.ReflectionMap, -vec3(R.x, R.y, R.z)).rgb * uMaterial.ReflectionPower;
-
-		if (IsSpecularMap)
-		{
-			CubemapColor *= SpecularMap;
-		}
-
-		CubemapColor *= uMaterial.Color.rgb;
+		return vec2(n.xy / sqrt(8.0 * n.z + 8.0) + 0.5);
 	}
 
 	void Final(void)
 	{
-		if (DiffuseMap.xyz != vec3(0))
-		{
-			FragColor = Lighting * DiffuseMap + vec4(CubemapColor, 0.0);
-		}
-		else
-		{
-			FragColor = Lighting + vec4(CubemapColor, 0.0);
-		}
+		vec4 Color = vec4(Lights(), uMaterial.Albedo.a) * Albedo;
+
+		Color.rgb += texture2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
+
+		FragData[0] = Color;
+		FragData[1] = vec4(Normal, 1);
+
+		if (!uMaterial.Transparent && Color.a < 1.0) discard;
+		if (uMaterial.Transparent && Color.a == 1.0) discard;
 	}
 
 #endif

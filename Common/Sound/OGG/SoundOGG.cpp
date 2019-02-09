@@ -7,10 +7,10 @@
 namespace Columbus
 {
 
-	int16* SoundLoadOGG(std::string FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
+	int16* SoundLoadOGG(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
 	{
 		int16* Ret;
-		OutSize = stb_vorbis_decode_filename(FileName.c_str(), (int*)&OutChannels, (int*)&OutFrequency, &Ret) * OutChannels * sizeof(uint16);
+		OutSize = stb_vorbis_decode_filename(FileName, (int*)&OutChannels, (int*)&OutFrequency, &Ret) * OutChannels * sizeof(uint16);
 		return Ret;
 	}
 
@@ -22,7 +22,7 @@ namespace Columbus
 
 	SoundDecoderOGG::SoundDecoderOGG() : Data(nullptr) {}
 
-	bool SoundDecoderOGG::IsOGG(std::string FileName)
+	bool SoundDecoderOGG::IsOGG(const char* FileName)
 	{
 		File OGGSoundFile(FileName, "rb");
 		if (!OGGSoundFile.IsOpened()) return false;
@@ -39,7 +39,7 @@ namespace Columbus
 		return false;
 	}
 
-	bool SoundDecoderOGG::Load(std::string FileName)
+	bool SoundDecoderOGG::Load(const char* FileName)
 	{
 		Free();
 		Data = new StreamData;
@@ -47,7 +47,7 @@ namespace Columbus
 		Data->Alloc.alloc_buffer_length_in_bytes = 256 * 1024;
 		Data->Alloc.alloc_buffer = new char[Data->Alloc.alloc_buffer_length_in_bytes];
 
-		Data->Ogg = stb_vorbis_open_filename(FileName.c_str(), NULL, &Data->Alloc);
+		Data->Ogg = stb_vorbis_open_filename(FileName, NULL, &Data->Alloc);
 		stb_vorbis_info info = stb_vorbis_get_info(Data->Ogg);
 
 		this->Size = 0;
@@ -83,9 +83,11 @@ namespace Columbus
 	{
 		uint32 TotalSamples = 0;
 
+		int16* Buffer = new int16[Count * Channels];
+
 		while (TotalSamples < Count)
 		{
-			int Samples = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, (short*)Frames + TotalSamples, (Count - TotalSamples) * 2);
+			int Samples = stb_vorbis_get_samples_short_interleaved(Data->Ogg, Channels, Buffer + TotalSamples, (Count - TotalSamples) * Channels);
 
 			if (Samples == 0)
 			{
@@ -94,6 +96,24 @@ namespace Columbus
 
 			TotalSamples += Samples;
 		}
+
+		#undef L
+		#undef R
+
+		for (uint32 i = 0; i < Count; i++)
+		{
+			if (Channels == 1)
+			{
+				Frames[i].L = Frames[i].R = Buffer[i];
+			}
+			else
+			{
+				Frames[i].L = Buffer[(i * 2) + 0];
+				Frames[i].R = Buffer[(i * 2) + 1];
+			}
+		}
+
+		delete[] Buffer;
 
 		return TotalSamples;
 	}

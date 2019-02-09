@@ -9,32 +9,31 @@ namespace Columbus
 	class WindowOpenGLSDL : public Window
 	{
 	private:
-		SDL_Window* mWindow = nullptr;
-		SDL_GLContext mGLC;
-		SDL_Event mTmpEvent;
+		SDL_Window* Window;
+		SDL_GLContext Context;
+		SDL_Event TmpEvent;
 
-		void initializeSDL();
-		void initializeWindow(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags);
-		void initializeOpenGL();
-		void getVersions();
+		void InitializeSDL();
+		void InitializeWindow(const iVector2& InSize, const char* Title, Window::Flags F);
+		void InitializeOpenGL();
+		void GetVersions();
 	public:
 		WindowOpenGLSDL();
-		WindowOpenGLSDL(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags);
+		WindowOpenGLSDL(const iVector2& InSize, const char* Title, Window::Flags F);
 
-		bool create(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags) override;
+		virtual bool Create(const iVector2& InSize, const char* Title, Window::Flags F) final override;
+		virtual void Close() final override;
 
-		void update() override;
-		void clear(const Vector4 aColor) override;
-		void display() override;
+		virtual void Update() final override;
+		virtual void Clear(const Vector4& Color) final override;
+		virtual void Display() final override;
 
-		void setVSync(const bool aVSync) override;
-		void setSize(const Vector2 aSize) override;
+		virtual void SetSize(const iVector2& Size) final override;
+		virtual void SetMousePosition(const iVector2& Pos) override;
 
-		SDL_Window* getHandle() const;
-		void pollEvent(SDL_Event& aEvent);
-		std::string getType() const override;
+		void PollEvent(SDL_Event& Event);
 
-		~WindowOpenGLSDL();
+		virtual ~WindowOpenGLSDL() final override;
 	};
 
 }

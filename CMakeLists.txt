@@ -7,7 +7,7 @@ file(GLOB SRC_COMMON_IMAGE ./Common/Image/*.cpp ./Common/Image/BMP/*.cpp ./Commo
 
 file(GLOB SRC_COMMON_SOUND ./Common/Sound/*.cpp ./Common/Sound/MP3/*.cpp ./Common/Sound/OGG/*.cpp ./Common/Sound/WAV/*.cpp)
 
-file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ${SRC_COMMON_SOUND} ./Common/Compression/*.cpp)
+file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/CMF/*.cpp ${SRC_COMMON_SOUND} ./Common/Compression/*.cpp)
 
 file(GLOB SRC_CORE ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
 file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp)
@@ -20,7 +20,7 @@ file(GLOB SRC_SYSTEM ./System/*.cpp)
 
 set(SRC ${SRC_AUDIO} ${SRC_COMMON} ${SRC_CORE} ${SRC_GRAPHICS} ${SRC_INPUT} ${SRC_PHYSICS} ${SRC_RENDER_API} ${SRC_RENDER_API_OPENGL} ${SRC_SCENE} ${SRC_SYSTEM} main.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall -Wno-reorder -Wno-sign-compare -Wno-strict-aliasing")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall -Wno-strict-aliasing -fsanitize=address")
 
 set(TARGET ColumbusEngine)
 
@@ -35,7 +35,7 @@ include_directories(/usr/include/AL/)
 
 add_executable(${TARGET} ${SRC})
 
-target_link_libraries(${TARGET} SDL2 SDL2main SDL2_ttf GL GLU GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics pthread)
+target_link_libraries(${TARGET} SDL2 SDL2main SDL2_ttf GL GLU GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics pthread zstd)
 target_link_libraries(${TARGET} ${CMAKE_SOURCE_DIR}/Lib/ZSTD/Lib/libZSTD.a)
 
 

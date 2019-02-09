@@ -1,10 +1,9 @@
 #pragma once
 
+#include <Graphics/Buffer.h>
 #include <Graphics/Shader.h>
-#include <Graphics/Cubemap.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Mesh.h>
-#include <Graphics/MeshInstanced.h>
 #include <Graphics/Framebuffer.h>
 
 namespace Columbus
@@ -15,17 +14,14 @@ namespace Columbus
 	public:
 		Device();
 
+		virtual Buffer* CreateBuffer() const;
+
 		virtual ShaderStage* CreateShaderStage() const;
 		virtual ShaderProgram* CreateShaderProgram() const;
-
-		virtual Cubemap* createCubemap() const;
-		virtual Cubemap* createCubemap(std::string aPath) const;
-		virtual Cubemap* createCubemap(std::array<std::string, 6> aPath) const;
 		
-		virtual Texture* CreateTexture() const { return nullptr; }
+		virtual Texture* CreateTexture() const;
 
-		virtual Mesh* CreateMesh() const { return new Mesh(); }
-		virtual MeshInstanced* CreateMeshInstanced() const;
+		virtual Mesh* CreateMesh() const;
 
 		virtual Framebuffer* createFramebuffer() const;
 

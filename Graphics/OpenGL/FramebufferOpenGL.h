@@ -1,12 +1,3 @@
-/************************************************
-*               FramebufferOpenGL.h             *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.02.2018                  *
-*************************************************/
 #pragma once
 
 #include <Graphics/Framebuffer.h>
@@ -21,19 +12,19 @@ namespace Columbus
 	public:
 		FramebufferOpenGL();
 
-		void bind() override;
-		void unbind() override;
+		virtual void bind() override;
+		virtual void unbind() override;
 
-		bool setTexture2D(FramebufferAttachment aAttach, Texture* aTexture) override;
-		bool prepare(Vector4 aClear, Vector2 aWindowSize) override;
-		bool check() override;
+		virtual bool setTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) override;
+		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level = 0) override;
+		virtual bool prepare(const Vector4& aClear, const Vector2& WindowSize) override;
+		virtual bool check() override;
 
-		~FramebufferOpenGL() override;
+		virtual ~FramebufferOpenGL() override;
 	};
 
 }
 
 
 
-
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   

@@ -1,9 +1,8 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
-#include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
+#include <System/File.h>
+#include <GL/glew.h>
+#include <cctype>
 
 namespace Columbus
 {
@@ -13,48 +12,56 @@ namespace Columbus
 	* Shader loading functions
 	*
 	*/
-	bool ShaderLoadFromFile(std::string InFile, std::string& OutSource, ShaderBuilder& Builder, ShaderType Type)
+	bool ShaderLoadFromFile(const char* FileName, char*& OutSource, ShaderBuilder& Builder, ShaderType Type)
 	{
-		std::ifstream File;
-		File.open(InFile.c_str());
-
-		if (!File.is_open())
+		File ShaderFile(FileName, "rt");
+		if (!ShaderFile.IsOpened())
 		{
-			Log::error("Shader not loaded: " + InFile);
+			Log::Error("Shader not loaded: %s", FileName);
 			return false;
 		}
 
-		std::string TmpFile = std::string((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+		char* TmpFile = new char[(uint32)ShaderFile.GetSize() + 1];
+		memset(TmpFile, 0, (uint32)ShaderFile.GetSize() + 1);
+		ShaderFile.ReadBytes(TmpFile, ShaderFile.GetSize());
+		ShaderFile.Close();
 
 		if (!Builder.Build(TmpFile, Type))
 		{
-			Log::error("Shader not built: " + InFile);
+			Log::Error("Shader not built: %s", FileName);
 			return false;
 		}
 
-		if (Builder.ShaderSource.empty())
+		delete[] TmpFile;
+
+		if (Builder.ShaderSourceLength == 0)
 		{
-			Log::error("Shader loading incorrect: " + InFile);
+			Log::Error("Shader loading incorrect: %s", FileName);
 			return false;
 		}
 
-		OutSource = Builder.ShaderSource;
+		OutSource = new char[Builder.ShaderSourceLength + 1];
+		memcpy(OutSource, Builder.ShaderSource, Builder.ShaderSourceLength);
+		OutSource[Builder.ShaderSourceLength] = '\0';
 
 		return true;
 	}
 
-	bool ShaderLoad(std::string InPath, std::string& OutSource, ShaderBuilder& Builder, ShaderType Type)
+	bool ShaderLoad(const char* Path, char*& OutSource, ShaderBuilder& Builder, ShaderType Type)
 	{
 		switch (Type)
 		{
 			case ShaderType::Vertex:
 			{
-				if (InPath == "STANDART_SKY_VERTEX")
+				if (strcmp(Path, "STANDART_SKY_VERTEX") == 0)
 				{
-					OutSource = gSkyboxVertexShader;
+					unsigned int Length = strlen(gSkyboxVertexShader);
+					OutSource = new char[Length + 1];
+					memcpy(OutSource, gSkyboxVertexShader, Length);
+					OutSource[Length] = '\0';
 					return true;
 				}
-				else if (ShaderLoadFromFile(InPath, OutSource, Builder, Type))
+				else if (ShaderLoadFromFile(Path, OutSource, Builder, Type))
 				{
 					return true;
 				}
@@ -64,12 +71,15 @@ namespace Columbus
 
 			case ShaderType::Fragment:
 			{
-				if (InPath == "STANDART_SKY_FRAGMENT")
+				if (strcmp(Path, "STANDART_SKY_FRAGMENT") == 0)
 				{
-					OutSource = gSkyboxFragmentShader;
+					unsigned int Length = strlen(gSkyboxFragmentShader);
+					OutSource = new char[Length + 1];
+					memcpy(OutSource, gSkyboxFragmentShader, Length);
+					OutSource[Length] = '\0';
 					return true;
 				}
-				else if (ShaderLoadFromFile(InPath, OutSource, Builder, Type))
+				else if (ShaderLoadFromFile(Path, OutSource, Builder, Type))
 				{
 					return true;
 				}
@@ -91,7 +101,7 @@ namespace Columbus
 	* Shader compilation functions
 	*
 	*/
-	bool ShaderGetError(std::string ShaderPath, int32 ShaderID)
+	bool ShaderGetError(const char* ShaderPath, int32 ShaderID)
 	{
 		int32 Status = GL_TRUE;
 		int32 Length = 0;
@@ -104,7 +114,7 @@ namespace Columbus
 			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
 			Error = new char[Length];
 			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::error(ShaderPath + ": " + Error);
+			Log::Error("%s: %s", ShaderPath,  Error);
 
 			delete[] Error;
 			return true;
@@ -113,10 +123,9 @@ namespace Columbus
 		return false;
 	}
 
-	bool ShaderCompile(std::string ShaderPath, std::string ShaderSource, int32 ShaderID)
+	bool ShaderCompile(const char* ShaderPath, const char* ShaderSource, int32 ShaderID)
 	{
-		auto Source = ShaderSource.c_str();
-		glShaderSource(ShaderID, 1, &Source, NULL);
+		glShaderSource(ShaderID, 1, &ShaderSource, NULL);
 		glCompileShader(ShaderID);
 
 		if (ShaderGetError(ShaderPath, ShaderID))
@@ -153,8 +162,11 @@ namespace Columbus
 		return ID != 0 && glIsShader(ID);
 	}
 
-	bool ShaderStageOpenGL::Load(std::string InPath, ShaderType InType)
+	bool ShaderStageOpenGL::Load(const char* FileName, ShaderType InType)
 	{
+		delete[] ShaderPath;
+		delete[] ShaderSource;
+
 		uint32 tType;
 		
 		switch (InType)
@@ -168,16 +180,21 @@ namespace Columbus
 
 		if (ID == 0) return false;
 
-		if (!ShaderLoad(InPath, ShaderSource, Builder, InType))
+		if (!ShaderLoad(FileName, ShaderSource, Builder, InType))
 		{
 			return false;
 		}
 
-		ShaderPath = InPath;
+		unsigned int Length = strlen(FileName);
+		ShaderPath = new char[Length + 1];
+		memcpy(ShaderPath, FileName, Length);
+		ShaderPath[Length] = '\0';
+		
 		Type = InType;
 		Loaded = true;
 		Compiled = false;
-		Log::success("Shader loaded: " + InPath);
+		Error = false;
+		Log::Success("Shader loaded: %s", FileName);
 
 		return true;
 	}
@@ -186,20 +203,31 @@ namespace Columbus
 	{
 		if (!Loaded)
 		{
-			Log::error("Couldn't compile shader: Shader wasn't loaded");
+			Log::Error("Couldn't compile shader: Shader wasn't loaded");
+			Compiled = false;
+			Error = true;
 			return false;
 		}
 
 		if (!IsValid())
 		{
-			Log::error("Couldn't compile shader: Shader is invalid");
+			Log::Error("Couldn't compile shader: Shader is invalid");
+			Compiled = false;
+			Error = true;
 			return false;
 		}
 
-		if (!ShaderCompile(ShaderPath, ShaderSource, ID)) { glDeleteShader(ID); return false; }
+		if (!ShaderCompile(ShaderPath, ShaderSource, ID))
+		{
+			glDeleteShader(ID);
+			Compiled = false;
+			Error = true;
+			return false;
+		}
 
 		Compiled = true;
-		Log::success("Shader compiled: " + ShaderPath);
+		Error = false;
+		Log::Success("Shader compiled: %s", ShaderPath);
 
 		return true;
 	}
@@ -224,6 +252,9 @@ namespace Columbus
 	ShaderProgramOpenGL::ShaderProgramOpenGL()
 	{
 		ID = glCreateProgram();
+
+		Compiled = false;
+		Error = false;
 	}
 
 	void ShaderProgramOpenGL::Bind() const
@@ -240,7 +271,7 @@ namespace Columbus
 	{
 		if (Stage != nullptr)
 		{
-			Stages.push_back(Stage);
+			Stages[CurrentStage++] = Stage;
 		}
 	}
 
@@ -261,21 +292,30 @@ namespace Columbus
 			}
 		}
 
+		for (auto& Stage : Stages)
+		{
+			if (Stage != nullptr)
+			{
+				if (!Stage->IsLoaded())
+				{
+					Loaded = false;
+					return false;
+				}
+			}
+		}
+
+		Loaded = true;
 		return true;
 	}
 
-	bool ShaderProgramOpenGL::Load(std::string FileName)
+	bool ShaderProgramOpenGL::Load(const char* FileName)
 	{
-		std::ifstream File;
-		File.open(FileName.c_str());
-
-		if (!File.is_open())
+		File ShaderFile(FileName, "rt");
+		if (!ShaderFile.IsOpened())
 		{
-			Log::error("Shader not loaded: " + FileName);
+			Log::Error("Shader not loaded: %s", FileName);
 			return false;
 		}
-
-		//std::string TmpFile = std::string((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
 
 		ShaderStage* Stage;
 
@@ -287,45 +327,104 @@ namespace Columbus
 		Stage->Load(FileName, ShaderType::Fragment);
 		AddStage(Stage);
 
-		std::string Line;
+		constexpr int MaxCount = 4096;
+		char* Line = new char[MaxCount];
+		int Offset;
+		char Name[256];
+		int NameLength;
+		int Number;
 
-		while (!File.eof())
+		while (!ShaderFile.IsEOF())
 		{
-			std::getline(File, Line);
-			std::stringstream ISS(Line);
+			ShaderFile.ReadLine(Line, MaxCount);
+			Offset = 0;
 
-			char C;
-			std::string Name;
-			std::string Value;
+			while (isblank(*Line)) { Line++; Offset++; }
 
-			ISS >> C; if (C == '/')
-			ISS >> C; if (C == '/')
-			ISS >> C; if (C == '@')
+			if (strncmp(Line, "//@", 3) == 0)
 			{
-				ISS >> Name;
-				if (Name == "Attribute")
+				Line += 3; Offset += 3;
+				while (isblank(*Line)) { Line++; Offset++; }
+
+				if (strncmp(Line, "Attribute", 9) == 0)
 				{
-					ISS >> Name;
-					ISS >> Value;
-					AddAttribute(Name, std::atoi(Value.c_str()));
+					Line += 9; Offset += 9;
+					memset(Name, 0, sizeof(Name));
+					NameLength = 0;
+					Number = 0;
+					while (isblank(*Line)) { Line++; Offset++; }
+					while (isalpha(*Line)) { Name[NameLength++] = *Line; Line++; Offset++; }
+					while (isblank(*Line)) { Line++; Offset++; }
+					while (isdigit(*Line)) { Number *= 10; Number += *Line - '0'; Line++; Offset++; }
+
+					if (NameLength > 0 && Number >= 0)
+					{
+						char* Tmp = new char[NameLength + 1];
+						memcpy(Tmp, Name, NameLength);
+						Tmp[NameLength] = '\0';
+						Attributes[CurrentAttribute++] = { Tmp, (uint32)Number };
+					}
 				}
-				else if (Name == "Uniform")
+
+				if (strncmp(Line, "Uniform", 7) == 0)
 				{
-					ISS >> Name;
-					Uniforms.push_back(Name);
+					Line += 7; Offset += 7;
+					memset(Name, 0, sizeof(Name));
+					NameLength = 0;
+					while (isblank(*Line)) { Line++; Offset++; }
+					while (isalpha(*Line) || isdigit(*Line) || *Line == '.') { Name[NameLength++] = *Line; Line++; Offset++; }
+					Name[NameLength] = '\0';
+
+					if (NameLength > 0)
+					{
+						Uniforms[CurrentUniform] = new char[NameLength + 1];
+						memcpy(Uniforms[CurrentUniform], Name, NameLength);
+						Uniforms[CurrentUniform][NameLength] = '\0';
+						CurrentUniform++;
+					}
+				}
+			}
+
+			Line -= Offset;
+		}
+
+		delete[] Line;
+
+		for (auto& Stage : Stages)
+		{
+			if (Stage != nullptr)
+			{
+				if (!Stage->IsLoaded())
+				{
+					Loaded = false;
+					return false;
 				}
 			}
 		}
 
+		Loaded = true;
 		return true;
 	}
 
 	bool ShaderProgramOpenGL::Compile()
 	{
-		if (std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Vertex; }) == Stages.end() &&
-			std::find_if(Stages.begin(), Stages.end(), [](ShaderStage* InStage)->bool { return InStage->GetType() == ShaderType::Fragment; }) == Stages.end())
+		bool VertexShaderExists = false;
+		bool FragmentShaderExists = false;
+
+		for (auto& Stage : Stages)
 		{
-			Log::error("Coldn't compile Shader Program: Needs vertex and fragment shader");
+			if (Stage != nullptr)
+			{
+				if (Stage->GetType() == ShaderType::Vertex) VertexShaderExists = true;
+				if (Stage->GetType() == ShaderType::Fragment) FragmentShaderExists = true;
+			}
+		}
+
+		if (!VertexShaderExists || !FragmentShaderExists)
+		{
+			Log::Error("Couldn't compile Shader Program: Needs vertex and fragment shader");
+			Compiled = false;
+			Error = true;
 			return false;
 		}
 
@@ -335,90 +434,95 @@ namespace Columbus
 			{
 				if (!Stage->Compile())
 				{
-					Log::error("Couldn't compile Shader Program: One or more of the shader not compiled");
+					Log::Error("Couldn't compile Shader Program: One or more of the shader not compiled");
+					Compiled = false;
+					Error = true;
 					return false;
 				}
 			}
 
 			if (!Stage->IsValid())
 			{
-				Log::error("Couldn't compile Shader Program: One or more of the shaders is invalid");
+				Log::Error("Couldn't compile Shader Program: One or more of the shaders is invalid");
+				Compiled = false;
+				Error = true;
 				return false;
 			}
 
 			glAttachShader(ID, static_cast<ShaderStageOpenGL*>(Stage)->GetID());
 		}
 
-		for (auto& Attrib : Attributes)
+		for (int i = 0; i < CurrentAttribute; i++)
 		{
-			glBindAttribLocation(ID, Attrib.Value, Attrib.Name.c_str());
+			glBindAttribLocation(ID, Attributes[i].Value, Attributes[i].Name);
 		}
 
 		glLinkProgram(ID);
 
-		for (auto& Uniform : Uniforms)
+		for (int i = 0; i < CurrentUniform; i++)
 		{
-			AddUniform(Uniform);
+			AddUniform(Uniforms[i]);
 		}
 
-		Uniforms.clear();
-
 		Compiled = true;
-		Log::success("Shader program compiled");
+		Error = false;
+		Log::Success("Shader program compiled");
 
 		return true;
 	}
 
-	bool ShaderProgramOpenGL::AddUniform(std::string Name)
+	bool ShaderProgramOpenGL::AddUniform(const char* Name)
 	{
-		int32 Value = glGetUniformLocation(ID, Name.c_str());
+		int32 Value = glGetUniformLocation(ID, Name);
 
 		if (Value != -1)
 		{
 			UniformLocations[Name] = Value;
+			FastUniformsMap[Name] = CurrentFastUniform;
+			FastUniforms[CurrentFastUniform++] = Value;
 			return true;
 		}
 
 		return false;
 	}
 
-	void ShaderProgramOpenGL::SetUniform1i(std::string Name, int Value) const
+	void ShaderProgramOpenGL::SetUniform1i(const char* Name, int Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform1i(UniformLocations.at(Name), Value);
+				glUniform1i(Location->second, Value);
 			}
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform1f(std::string Name, float Value) const
+	void ShaderProgramOpenGL::SetUniform1f(const char* Name, float Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform1f(UniformLocations.at(Name), Value);
+				glUniform1f(Location->second, Value);
 			}
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform2f(std::string Name, Vector2 Value) const
+	void ShaderProgramOpenGL::SetUniform2f(const char* Name, const Vector2& Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform2f(UniformLocations.at(Name), Value.X, Value.Y);
+				glUniform2f(Location->second, Value.X, Value.Y);
 			}
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform3f(std::string Name, Vector3 Value) const
+	void ShaderProgramOpenGL::SetUniform3f(const char* Name, const Vector3& Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
@@ -426,49 +530,126 @@ namespace Columbus
 
 			if (Location != UniformLocations.end())
 			{
-				glUniform3f(UniformLocations.at(Name), Value.X, Value.Y, Value.Z);
+				glUniform3f(Location->second, Value.X, Value.Y, Value.Z);
 			}
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniform4f(std::string Name, Vector4 Value) const
+	void ShaderProgramOpenGL::SetUniform4f(const char* Name, const Vector4& Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform4f(UniformLocations.at(Name), Value.x, Value.y, Value.z, Value.w);
+				glUniform4f(Location->second, Value.X, Value.Y, Value.Z, Value.W);
 			}
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniformMatrix(std::string Name, const float* Value) const
+	void ShaderProgramOpenGL::SetUniformMatrix(const char* Name, const float* Value) const
 	{
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniformMatrix4fv(UniformLocations.at(Name), 1, GL_FALSE, Value);
+				glUniformMatrix4fv(Location->second, 1, GL_FALSE, Value);
 			}
 		}
 	}
 
-	void ShaderProgramOpenGL::SetUniformArrayf(std::string Name, const float* Array, uint32 Size) const
+	void ShaderProgramOpenGL::SetUniformArrayf(const char* Name, const float* Array, uint32 Size) const
 	{
 		if (ID != 0 && Compiled)
 		{
 			auto Location = UniformLocations.find(Name);
 			if (Location != UniformLocations.end())
 			{
-				glUniform1fv(UniformLocations.at(Name), Size, Array);
+				glUniform1fv(Location->second, Size, Array);
 			}
 		}
+	}
+
+	void ShaderProgramOpenGL::SetUniformTexture(const char* Name, TextureOpenGL* Tex, uint32 Sampler) const
+	{
+		if (ID != 0 && Compiled)
+		{
+			auto Location = UniformLocations.find(Name);
+			if (Location != UniformLocations.end())
+			{
+				glActiveTexture(GL_TEXTURE0 + Sampler);
+				glUniform1i(Location->second, Sampler);
+				Tex->Bind();
+			}
+		}
+	}
+
+	int32 ShaderProgramOpenGL::GetFastUniform(const char* Name) const
+	{
+		auto Fast = FastUniformsMap.find(Name);
+		return Fast != FastUniformsMap.end() ? Fast->second : -1;
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, int Value) const
+	{
+		glUniform1i(FastUniforms[FastID], Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, float Value) const
+	{
+		glUniform1f(FastUniforms[FastID], Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, const Vector2& Value) const
+	{
+		glUniform2f(FastUniforms[FastID], Value.X, Value.Y);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, const Vector3& Value) const
+	{
+		glUniform3f(FastUniforms[FastID], Value.X, Value.Y, Value.Z);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, const Vector4& Value) const
+	{
+		glUniform4f(FastUniforms[FastID], Value.X, Value.Y, Value.Z, Value.W);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Size, const float* Value) const
+	{
+		glUniform1fv(FastUniforms[FastID], Size, Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const
+	{
+		glUniformMatrix4fv(FastID, 1, Transpose ? GL_TRUE : GL_FALSE, &Mat.M[0][0]);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, TextureOpenGL* Tex, uint32 Sampler) const
+	{
+		glActiveTexture(GL_TEXTURE0 + Sampler);
+		glUniform1i(FastUniforms[FastID], Sampler);
+		Tex->Bind();
 	}
 
 	ShaderProgramOpenGL::~ShaderProgramOpenGL()
 	{
+		for (auto& Stage : Stages)
+		{
+			delete Stage;
+		}
+
+		for (auto& Attribute : Attributes)
+		{
+			delete[] Attribute.Name;
+		}
+
+		for (auto& Uniform : Uniforms)
+		{
+			delete[] Uniform;
+		}
+
 		glDeleteProgram(ID);
 	}
 

@@ -1,24 +1,16 @@
 #pragma once
 
-#include <Graphics/Particles/Size/ParticleModuleSizeBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSizeOverLife : public ParticleModuleSizeBase
+	class ParticleModuleSizeOverLife : public ParticleModule
 	{
 	public:
-		Vector3 MinStart;
-		Vector3 MaxStart;
-		Vector3 MinFinal;
-		Vector3 MaxFinal;
+		InterpolationCurve<Vector3> SizeCurve;
 	public:
-		ParticleModuleSizeOverLife() : 
-			MinStart(1, 1, 1),
-			MaxStart(1, 1, 1),
-			MinFinal(1, 1, 1),
-			MaxFinal(1, 1, 1)
-		{ }
+		ParticleModuleSizeOverLife() {}
 		/*
 		* For determening module type
 		*/
@@ -28,15 +20,14 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.startSize = Vector3::Random(MinStart, MaxStart);
-			OutParticle.finalSize = Vector3::Random(MinFinal, MaxFinal);
+			OutParticle.Size = SizeCurve.Interpolate(0.0f);
 		}
 		/*
 		* Update particle parameter
 		*/
 		void Update(Particle& OutParticle) override
 		{
-			OutParticle.size = OutParticle.startSize * (1 - OutParticle.percent) + OutParticle.finalSize * OutParticle.percent;
+			OutParticle.Size = SizeCurve.Interpolate(OutParticle.percent);
 		}
 
 		~ParticleModuleSizeOverLife() override { }

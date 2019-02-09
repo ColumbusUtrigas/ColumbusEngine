@@ -1,31 +1,9 @@
-/************************************************
-*              	  GameObejct.cpp                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.11.2017                  *
-*************************************************/
 #include <Scene/GameObject.h>
 
 namespace Columbus
 {
 
-	GameObject::GameObject()
-	{
-
-	}
-	
-	void GameObject::SetName(std::string Name)
-	{
-		this->Name = Name;
-	}
-	
-	std::string GameObject::GetName() const
-	{
-		return Name;
-	}
+	GameObject::GameObject() {}
 	
 	void GameObject::AddChild(GameObject* Child)
 	{
@@ -57,21 +35,19 @@ namespace Columbus
 		return ObjectMaterial;
 	}
 	
-	void GameObject::Update()
+	void GameObject::Update(float DeltaTime)
 	{
-		transform.Update();
-
 		for (auto& Comp : Components)
 		{
-			Comp->Update(static_cast<float>(mTimer.elapsed()));
+			Comp->Update(DeltaTime, transform);
 		}
+
+		transform.Update();
 
 		for (auto& Child : Children)
 		{
-			Child->Update();
+			Child->Update(DeltaTime);
 		}
-
-		mTimer.reset();
 	}
 	
 	void GameObject::Render()
@@ -89,7 +65,7 @@ namespace Columbus
 	
 	bool GameObject::HasComponent(Component::Type Type)
 	{
-		for (auto& Comp : Components)
+		for (const auto& Comp : Components)
 		{
 			if (Comp->GetType() == Type)
 			{
@@ -102,11 +78,11 @@ namespace Columbus
 	
 	Component* GameObject::GetComponent(Component::Type Type)
 	{
-		for (auto& Comp : Components)
+		for (const auto& Comp : Components)
 		{
 			if (Comp->GetType() == Type)
 			{
-				return Comp.get();
+				return Comp.Get();
 			}
 		}
 

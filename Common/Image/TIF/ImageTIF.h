@@ -8,10 +8,9 @@ namespace Columbus
 	public:
 		ImageLoaderTIF() {}
 
-		static bool IsTIF(std::string FileName);
+		static bool IsTIF(const char* FileName);
 
-		virtual bool Load(std::string FileName);
-		virtual void Free();
+		virtual bool Load(const char* FileName);
 
 		virtual ~ImageLoaderTIF() override {}
 	};

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Graphics/Particles/SubUV/ParticleModuleSubUVBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSubUV : public ParticleModuleSubUVBase
+	class ParticleModuleSubUV : public ParticleModule
 	{
 	public:
 		/*
@@ -21,7 +21,7 @@ namespace Columbus
 		int Vertical;
 		SubUVMode Mode;
 		float Cycles;
-
+	public:
 		ParticleModuleSubUV() :
 			Horizontal(1),
 			Vertical(1),
@@ -42,7 +42,7 @@ namespace Columbus
 			}
 			else
 			{
-				OutParticle.frame = Math::TruncToInt(Random::range(0.0f, float(Horizontal * Vertical)));
+				OutParticle.frame = Math::TruncToInt(Random::Range(0.0f, float(Horizontal * Vertical)));
 			}
 		}
 		/*

@@ -1,0 +1,19 @@
+{
+	"Culling": "Back",
+	"DepthWriting": true,
+	"Transparent": false,
+	"Lighting": true,
+	"Tiling": [1, 1],
+	"DetailTiling": [16, 16],
+	"Albedo": [1, 1, 1, 1],
+	"Roughness": 1,
+	"Metallic": 0,
+	"EmissionStrength": 0,
+
+	"Textures":
+	{
+		"Albedo": 0,
+		"DetailAlbedo": 1,
+		"DetailNormal": 2
+	}
+}

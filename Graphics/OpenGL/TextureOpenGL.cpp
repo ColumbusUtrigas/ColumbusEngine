@@ -6,8 +6,7 @@ namespace Columbus
 
 	TextureOpenGL::TextureOpenGL()
 	{
-		//glGenTextures(1, &ID);
-		//Target = GL_TEXTURE_2D;
+		glGenTextures(1, &ID);
 	}
 
 	bool TextureOpenGL::UpdateFormat(TextureFormat Format, bool& OutCompressed)
@@ -164,6 +163,7 @@ namespace Columbus
 			case TextureFormat::DXT1:
 			{
 				InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+				PixelFormat = GL_RGBA;
 				PixelType = GL_UNSIGNED_BYTE;
 				OutCompressed = true;
 				return true;
@@ -173,6 +173,7 @@ namespace Columbus
 			case TextureFormat::DXT3:
 			{
 				InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+				PixelFormat = GL_RGBA;
 				PixelType = GL_UNSIGNED_BYTE;
 				OutCompressed = true;
 				return true;
@@ -182,6 +183,7 @@ namespace Columbus
 			case TextureFormat::DXT5:
 			{
 				InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+				PixelFormat = GL_RGBA;
 				PixelType = GL_UNSIGNED_BYTE;
 				OutCompressed = true;
 				return true;
@@ -258,64 +260,15 @@ namespace Columbus
 		return true;
 	}
 
-	bool TextureOpenGL::Load(const void* Data)
-	{	
-		glBindTexture(Target, ID);
-
-		bool Compressed;
-
-		UpdateFormat(Format, Compressed);
-
-		if (Compressed)
-		{
-			glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Size, Data);
-		}
-		else
-		{
-			glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
-		}
-
-		glGenerateMipmap(Target);
-
-		Flags f;
-		f.Filtering = Texture::Filter::Trilinear;
-		f.AnisotropyFilter = Texture::Anisotropy::Anisotropy8;
-
-		SetFlags(f);
-
-		glBindTexture(Target, 0);
-
-		return true;
-	}
 
 	bool TextureOpenGL::Load(const void* Data, Texture::Properties Props)
 	{
-		if (glIsTexture(ID))
+		if (Target == GL_TEXTURE_2D)
 		{
 			Width = Props.Width;
 			Height = Props.Height;
-			Size = Props.Size;
 			Format = Props.Format;
 
-			bool Compressed;
-
-			UpdateFormat(Format, Compressed);
-
-			glBindTexture(Target, ID);
-			glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
-			glBindTexture(Target, 0);
-
-			return true;
-		}
-
-		return false;
-	}
-
-	bool TextureOpenGL::Load(Image& InImage)
-	{
-		if (glIsTexture(ID))
-		{
-			bool Success = true;
 			bool Compressed;
 
 			UpdateFormat(Format, Compressed);
@@ -324,44 +277,115 @@ namespace Columbus
 
 			if (Compressed)
 			{
-				glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
-				glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, InImage.GetMipmapsCount() - 1);
-				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-
-				for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
-				{
-					glCompressedTexImage2D(Target, Level, InternalFormat, Width, Height, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
-				}
+				int Block = GetBlockSizeFromFormat(Format);
+				glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, Data);
 			}
 			else
 			{
-				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
-				glGenerateMipmap(Target);
+				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
 			}
-
-			Flags f;
-			f.Filtering = Texture::Filter::Trilinear;
-			f.AnisotropyFilter = Texture::Anisotropy::Anisotropy8;
-
-			SetFlags(f);
-
+			
+			glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				
 			glBindTexture(Target, 0);
 
-			return Success;
 		}
 
-		return false;
+		return true;
 	}
 
-	bool TextureOpenGL::Load(std::string File)
+	bool TextureOpenGL::Load(Image& InImage)
+	{
+		bool Success = true;
+		bool Compressed = false;
+
+		UpdateFormat(Format, Compressed);
+
+		glBindTexture(Target, ID);
+
+		if (Compressed)
+		{
+			switch (InImage.GetType())
+			{
+				case Image::Type::Image2D:
+				{
+					for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
+					{
+						glCompressedTexImage2D(Target, Level, InternalFormat, Width >> Level, Height >> Level, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
+					}
+
+					break;
+				}
+
+				case Image::Type::Image3D: break;
+
+				case Image::Type::ImageCube:
+				{
+					for (uint32 Face = 0; Face < 6; Face++)
+					{
+						for (uint32 Level = 0; Level < InImage.GetMipmapsCount(); Level++)
+						{
+							glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, Level, InternalFormat, Width >> Level, Height >> Level, 0, InImage.GetSize(Level), InImage.GetCubeData(Face, Level));
+						}
+					}
+
+					break;
+				}
+
+				case Image::Type::Image2DArray: break;
+			}
+		}
+		else
+		{
+			switch (InImage.GetType())
+			{
+				case Image::Type::Image2D:
+				{
+					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+					glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
+					glGenerateMipmap(Target);
+
+					break;
+				}
+
+				case Image::Type::Image3D: break;
+
+				case Image::Type::ImageCube:
+				{
+					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+					for (uint32 Face = 0; Face < 6; Face++)
+					{
+						glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.GetCubeData(Face, 0));
+					}
+
+					glGenerateMipmap(Target);
+
+					break;
+				}
+
+				case Image::Type::Image2DArray: break;
+			}
+		}
+
+		TextureFlags.Wrapping = Texture::Wrap::Repeat;
+
+		SetFlags(TextureFlags);
+
+		glBindTexture(Target, 0);
+
+		return Success;
+	}
+
+	bool TextureOpenGL::Load(const char* File)
 	{
 		if (!mImage.Load(File))
 		{
 			return false;
 		}
 
-		bool Result = Load(mImage.GetData());
+		bool Result = Load(mImage);
 
 		mImage.FreeData();
 		return Result;
@@ -369,21 +393,14 @@ namespace Columbus
 
 	void TextureOpenGL::Clear()
 	{
-		if (glIsTexture(ID))
-		{
-			glDeleteTextures(1, &ID);
-		}
-
 		Width = 0;
 		Height = 0;
-		Size = 0;
 		MipmapsCount = 0;
 		MipmapLevel = 0;
 
 		Format = TextureFormat::Unknown;
 		TextureType = Type::Texture2D;
 
-		ID = 0;
 		Target = 0;
 		InternalFormat = 0;
 		PixelFormat = 0;
@@ -394,25 +411,28 @@ namespace Columbus
 	{
 		Clear();
 
-		glGenTextures(1, &ID);
-
 		TextureType = Texture::Type::Texture2D;
 
 		Target = GL_TEXTURE_2D;
 		Width = Props.Width;
 		Height = Props.Height;
-		Size = Props.Size;
 		Format = Props.Format;
 
-		bool Compressed;
+		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
 
 		glBindTexture(Target, ID);
 
-		glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
-		glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		if (Compressed)
+		{
+			int Block = GetBlockSizeFromFormat(Format);
+			glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
+		}
+		else
+		{
+			glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+		}
 
 		glBindTexture(Target, 0);
 
@@ -423,14 +443,39 @@ namespace Columbus
 	{
 		Clear();
 
-		glGenTextures(1, &ID);
-
 		TextureType = Texture::Type::TextureCube;
 
 		Target = GL_TEXTURE_CUBE_MAP;
+		Width = Props.Width;
+		Height = Props.Height;
+		Format = Props.Format;
 
+		bool Compressed = false;
 
-		return false;
+		UpdateFormat(Format, Compressed);
+
+		glBindTexture(Target, ID);
+
+		if (Compressed)
+		{
+			int Block = GetBlockSizeFromFormat(Format);
+
+			for (uint32 Face = 0; Face < 6; Face++)
+			{
+				glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
+			}
+		}
+		else
+		{
+			for (uint32 Face = 0; Face < 6; Face++)
+			{
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+			}
+		}
+
+		glBindTexture(Target, 0);
+
+		return true;
 	}
 
 	void TextureOpenGL::SetFlags(Texture::Flags F)
@@ -479,6 +524,21 @@ namespace Columbus
 		case Texture::Anisotropy::Anisotropy16: glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16); break;
 		default:                                glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
 		}
+
+		GLuint ClampMode = GL_CLAMP_TO_EDGE;
+
+		switch (TextureFlags.Wrapping)
+		{
+		case Texture::Wrap::Clamp:               ClampMode = GL_CLAMP;                break;
+		case Texture::Wrap::ClampToEdge:         ClampMode = GL_CLAMP_TO_EDGE;        break;
+		case Texture::Wrap::Repeat:              ClampMode = GL_REPEAT;               break;
+		case Texture::Wrap::MirroredRepeat:      ClampMode = GL_MIRRORED_REPEAT;      break;
+		case Texture::Wrap::MirroredClampToEdge: ClampMode = GL_MIRROR_CLAMP_TO_EDGE; break;
+		}
+
+		glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);
+		glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
+		glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
 
 		glBindTexture(Target, 0);
 	}
@@ -568,11 +628,6 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
 
 
 

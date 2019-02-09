@@ -1,16 +1,16 @@
 #pragma once
 
-#include <Graphics/Particles/Lifetime/ParticleModuleLifetimeBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleLifetime : public ParticleModuleLifetimeBase
+	class ParticleModuleLifetime : public ParticleModule
 	{
 	public:
 		float Min;
 		float Max;
-
+	public:
 		ParticleModuleLifetime() : Min(1.0f), Max(1.0f) {}
 		/*
 		* For determening module type
@@ -21,14 +21,14 @@ namespace Columbus
 		*/
 		float GetLifetime() const
 		{
-			return Random::range(Min, Max);
+			return Random::Range(Min, Max);
 		}
 		/*
 		* Set parameter for particle
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.TTL = Random::range(Min, Max);
+			OutParticle.TTL = Random::Range(Min, Max);
 		}
 
 		~ParticleModuleLifetime() override {}

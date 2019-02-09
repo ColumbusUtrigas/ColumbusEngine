@@ -1,79 +1,66 @@
-/************************************************
-*                    Window.h                   *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   16.01.2018                  *
-*************************************************/
 #pragma once
 
 #include <Math/Vector2.h>
 #include <Math/Vector4.h>
-#include <System/System.h>
 #include <System/Timer.h>
 
 namespace Columbus
 {
 
-	enum WindowFlags
-	{
-		E_WINDOW_FLAG_RESIZABLE,
-		E_WINDOW_FLAG_FULLSCREEN,
-		E_WINDOW_FLAG_FULLSCREEN_DESKTOP
-	};
-
 	class Window
 	{
-	protected:
-		bool mVSync = true;
-		bool mOpen = true;
-		bool mKeyFocus = true;
-		bool mMouseFocus = true;
-		bool mShown = false;
-		bool mMinimized = false;
-		bool mMaximized = false;
-		bool mInitialized = false;
-
-		float mRedrawTime = 0.0f;
-		unsigned int mFPS = 0;
-		unsigned int mFrames = 0;
-
-		Timer mRedrawTimer;
-		Timer mFPSTimer;
-
-		std::string mTitle;
-
-		Vector2 mSize = Vector2(640, 480);
 	public:
-		Window();
-		Window(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags);
+		enum class Flags
+		{
+			Resizable  = 1 << 0,
+			Fullscreen = 1 << 1
+		};
+	protected:
+		bool VSync = true;
+		bool Open = true;
+		bool KeyFocus = true;
+		bool MouseFocus = true;
+		bool Shown = false;
+		bool Minimized = false;
+		bool Maximized = false;
+		bool Initialized = false;
 
-		virtual bool create(const Vector2 aSize, const std::string aTitle, const WindowFlags aFlags);
+		float RedrawTime = 0.0f;
+		uint32 FPS = 0;
+		uint32 Frames = 0;
 
-		virtual void update();
-		virtual void clear(const Vector4 aColor);
-		virtual void display();
+		Timer RedrawTimer;
+		Timer FPSTimer;
 
-		virtual void setVSync(const bool aVSync);
-		virtual bool getVSync() const;
+		iVector2 Size = iVector2(640, 480);
+	public:
+		Window() {}
+		Window(const iVector2& InSize, const char* Title, Flags F) {}
 
-		virtual void setSize(const Vector2 aSize);
-		virtual Vector2 getSize() const;
-		virtual float getAspect() const;
-		virtual float getRedrawTime() const;
-		virtual unsigned int getFPS() const;
+		virtual bool Create(const iVector2& InSize, const char* Title, Flags F) = 0;
+		virtual void Close() { Open = false; }
 
-		virtual bool isOpen() const;
-		virtual bool isKeyFocus() const;
-		virtual bool isMouseFocus() const;
-		virtual bool isShown() const;
-		virtual bool isMinimised() const;
+		virtual void Update() = 0;
+		virtual void Clear(const Vector4& Color) = 0;
+		virtual void Display() = 0;
 
-		virtual std::string getType() const;
+		virtual void SetVSync(bool NewVSync) { VSync = NewVSync; }
 
-		virtual ~Window();
+		virtual void SetSize(const iVector2& NewSize) { Size = NewSize; }
+		virtual iVector2 GetSize() const { return Size; }
+		virtual float GetAspect() const { return (float)Size.X / (float)Size.Y; }
+		virtual float GetRedrawTime() const { return RedrawTime; }
+		virtual uint32 GetFPS() const { return FPS; }
+
+		virtual void SetMousePosition(const iVector2& Pos) = 0;
+
+		virtual bool IsOpen() const { return Open; }
+		virtual bool HasKeyFocus() const { return KeyFocus; }
+		virtual bool HasMouseFocus() const { return MouseFocus; }
+		virtual bool IsShown() const { return Shown; }
+		virtual bool IsMinimized() const { return Minimized; }
+
+		virtual ~Window() {}
 	};
 
 }

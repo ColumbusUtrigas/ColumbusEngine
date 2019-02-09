@@ -1,121 +1,62 @@
-/************************************************
-*              ParticleEmitter.h                *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #pragma once
 
-#include <cstdio>
-#include <cstdlib>
-#include <vector>
-#include <ctime>
-#include <sstream>
-#include <algorithm>
-
-#include <glm/glm.hpp>
-
-#include <RenderAPI/Buffer.h>
+#include <Graphics/Buffer.h>
+#include <Graphics/Camera.h>
+#include <Graphics/Particles/ParticleEffect.h>
+#include <Graphics/Particles/Particle.h>
 
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <Graphics/Camera.h>
-#include <Graphics/Particles/ParticleEffect.h>
-#include <Graphics/Particles/Particle.h>
-#include <Graphics/Light.h>
-#include <System/System.h>
-#include <System/Timer.h>
-#include <System/Random.h>
-#include <Common/Noise/OctaveNoise.h>
 
 namespace Columbus
 {
 
-	struct ColorKey
-	{
-		Vector4 color = Vector4(1, 1, 1, 1);
-		float key = 0.0;
-	};
-
 	class ParticleEmitter
 	{
 	private:
-		ParticleEffect* mParticleEffect = nullptr;
+		ParticleEffect* Effect = nullptr;
 
-		std::vector<Particle> Particles;
-		std::vector<Light*> mLights;
-		std::vector<ColorKey> mColorKeys;
+		Particle* Particles = nullptr;
 
-		C_Buffer* mBuf = nullptr;
-		C_Buffer* mTBuf = nullptr;
-		C_Buffer* mCBuf = nullptr;
-		C_Buffer* mPBuf = nullptr;
-		C_Buffer* mLBuf = nullptr;
-		C_Buffer* mSBuf = nullptr;
+		Buffer* VerticesBuffer = nullptr;
+		Buffer* UVBuffer = nullptr;
 
-		float UniformViewMatrix[16];
-		float UniformProjectionMatrix[16];
-
-		float mLife = 0.0;
+		Buffer* Positions = nullptr;
+		Buffer* Times = nullptr;
+		Buffer* Colors = nullptr;
+		Buffer* Sizes = nullptr;
 		
-		Camera mCamera;
+		Vector3* VertData = nullptr;
+		Vector2* UVData = nullptr;
 
-		//Vertex buffer
-		float vrts[18] =
-		{
-			1, 1, 0.0,
-			-1, 1, 0.0,
-			-1, -1, 0.0,
-			-1, -1, 0.0,
-			1, -1, 0.0,
-			1, 1, 0.0
-		};
-		//UV buffer
-		float uvs[12] =
-		{
-			1.0, 1.0,
-			0.0, 1.0,
-			0.0, 0.0,
-			0.0, 0.0,
-			1.0, 0.0,
-			1.0, 1.0
-		};
+		Vector3* PositionData = nullptr;
+		Vector2* TimeData = nullptr;
+		Vector4* ColorData = nullptr;
+		Vector3* SizeData = nullptr;
 		
-		void sort();
-		void setBuffers();
-		void setUniforms();
-		void setShaderMaterial();
-		void setShaderLightAndCamera();
-		void calculateLights();
-		void sortLights();
-		void unbindAll();
+		void UpdateMainBuffers();
+
+		void SetBuffers();
+		void SetUniforms();
 		
-		float mLightUniform[120];
-		float mTimer = 0.0;
-		float* mVertData = nullptr;
-		float* mUvData = nullptr;
-		float* mColData = nullptr;
-		float* mPosData = nullptr;
-		float* mTimeData = nullptr;
-		float* mSizeData = nullptr;
-		unsigned int mParticlesCount = 0;
+		float Life = 0.0f;
+		float Timer = 0.0f;
+
+		uint32 ActiveCount = 0;
+		uint32 MaxCount = 0;
+
+		Camera ObjectCamera;
 	public:
-		ParticleEmitter(const ParticleEffect* aParticleEffect);
+		ParticleEmitter(ParticleEffect* InEffect);
 
-		void setParticleEffect(const ParticleEffect* aParticleEffect);
-		ParticleEffect* getParticleEffect() const;
+		void SetParticleEffect(ParticleEffect* InEffect);
+		ParticleEffect* GetParticleEffect() const;
 
-		void update(const float aTimeTick);
-		void draw();
+		void Update(float TimeTick);
+		void Render();
 
-		void setCamera(const Camera aCamera);
-		//Set light casters, which calculate to using in shaders
-		void setLights(std::vector<Light*> aLights);
+		void SetCamera(const Camera& Cam) { ObjectCamera = Cam; }
 
 		~ParticleEmitter();
 	};

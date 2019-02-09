@@ -1,476 +1,223 @@
-/************************************************
-*              ParticleEffect.cpp               *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   20.07.2017                  *
-*************************************************/
-
 #include <Graphics/Particles/ParticleEffect.h>
+
+#include <Graphics/Particles/Acceleration/ParticleModuleAcceleration.h>
+#include <Graphics/Particles/Color/ParticleModuleColor.h>
+#include <Graphics/Particles/Color/ParticleModuleColorOverLife.h>
+#include <Graphics/Particles/Emit/ParticleModuleEmit.h>
+#include <Graphics/Particles/Location/ParticleModuleLocationBase.h>
+#include <Graphics/Particles/Location/ParticleModuleLocationBox.h>
+#include <Graphics/Particles/Location/ParticleModuleLocationCircle.h>
+#include <Graphics/Particles/Location/ParticleModuleLocationSphere.h>
+#include <Graphics/Particles/Lifetime/ParticleModuleLifetime.h>
+#include <Graphics/Particles/Noise/ParticleModuleNoise.h>
+#include <Graphics/Particles/Required/ParticleModuleRequired.h>
+#include <Graphics/Particles/Rotation/ParticleModuleRotation.h>
+#include <Graphics/Particles/Size/ParticleModuleSize.h>
+#include <Graphics/Particles/Size/ParticleModuleSizeOverLife.h>
+#include <Graphics/Particles/Velocity/ParticleModuleVelocity.h>
+#include <Graphics/Particles/SubUV/ParticleModuleSubUV.h>
+
+#include <Common/JSON/JSON.h>
+#include <System/Log.h>
 
 namespace Columbus
 {
 
-	//////////////////////////////////////////////////////////////////////////////
-	ParticleEffect::ParticleEffect()
-	{
-
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	ParticleEffect::ParticleEffect(std::string aFile)
-	{
-		load(aFile);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	ParticleEffect::ParticleEffect(std::string aFile, Material* aMaterial)
-	{
-		load(aFile);
-		mMaterial = aMaterial;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	ParticleEffect::ParticleEffect() {}
+	
 	void ParticleEffect::AddModule(ParticleModule* Module)
 	{
 		if (Module == nullptr) return;
 		if (GetModule(Module->GetType()) != nullptr) return;
-		Modules.push_back(Module);
+		Modules.Emplace(Module);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	ParticleModule* ParticleEffect::GetModule(ParticleModule::Type Type) const
 	{
-		for (auto Module : Modules)
+		for (auto& Module : Modules)
 		{
-			if (Module != nullptr)
+			if (Module.Get()->GetType() == Type)
 			{
-				if (Module->GetType() == Type)
-				{
-					return Module;
-				}
+				return Module.Get();
 			}
 		}
 
 		return nullptr;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	void ParticleEffect::setMaterial(const Material* aMaterial)
+
+	bool ParticleEffect::Load(const char* FileName)
 	{
-		mMaterial = const_cast<Material*>(aMaterial);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void ParticleEffect::setPos(const Vector3 aPos)
-	{
-		mPos = static_cast<Vector3>(aPos);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	void ParticleEffect::addPos(const Vector3 aPos)
-	{
-		mPos += static_cast<Vector3>(aPos);
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	Material* ParticleEffect::getMaterial() const
-	{
-		return mMaterial;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	Vector3 ParticleEffect::getPos() const
-	{
-		return mPos;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool ParticleEffect::saveToXML(std::string aFile) const
-	{
-		/*Serializer::SerializerXML serializer;
+		JSON J;
+		if (!J.Load(FileName)) return false;
 
-		if (!serializer.write(aFile, "ParticleEffect"))
-		{ Log::error("Can't save Particle Effect: " + aFile); return false; }
+		ParticleModuleLocationBase* LocationBase = nullptr;
+		ParticleModuleLifetime* Lifetime = nullptr;
+		ParticleModuleRotation* Rotation = nullptr;
+		ParticleModuleVelocity* Velocity = nullptr;
+		ParticleModuleAcceleration* Acceleration = nullptr;
+		ParticleModule* SizeBase = nullptr;
+		ParticleModule* ColorBase = nullptr;
+		ParticleModuleNoise* Noise = nullptr;
+		ParticleModuleSubUV* SubUV = nullptr;
 
-		if (!serializer.setInt("Count", mParticlesCount))
-		{ Log::error("Can't save Particles count: " + aFile); return false; }
+		Required.Visible = J["Required"]["Visible"].GetBool();
+		Required.AdditiveBlending = J["Required"]["AdditiveBlending"].GetBool();
+		Required.Billboarding = J["Required"]["Billboarding"].GetBool();
+		if (J["Required"]["Transformation"].GetString() == "Local") Required.Transformation = ParticleTransformation::Local;
+		if (J["Required"]["Transformation"].GetString() == "World") Required.Transformation = ParticleTransformation::World;
+		if (J["Required"]["SortMode"].GetString() == "None")       Required.SortMode = ParticleSortMode::None;
+		if (J["Required"]["SortMode"].GetString() == "Distance")   Required.SortMode = ParticleSortMode::Distance;
+		if (J["Required"]["SortMode"].GetString() == "YoungFirst") Required.SortMode = ParticleSortMode::YoungFirst;
+		if (J["Required"]["SortMode"].GetString() == "OldFirst")   Required.SortMode = ParticleSortMode::OldFirst;
 
-		if (!serializer.setBool("Visible", mVisible))
-		{ Log::error("Can't save Particles visible: " + aFile); return false; }
+		Emit.Active = J["Emit"]["Active"].GetBool();
+		Emit.Count = (int)J["Emit"]["Count"].GetInt();
+		Emit.EmitRate = (float)J["Emit"]["Rate"].GetFloat();
 
-		if (!serializer.setBool("ScaleOL", mScaleOverLifetime))
-		{ Log::error("Can't save Particles scale over lifetime: " + aFile); return false; }
-
-		if (!serializer.setBool("EmitFromShell", mEmitFromShell))
-		{ Log::error("Can't save Particles emit from shell: " + aFile); return false; }
-
-		if (!serializer.setBool("AdditiveBlending", mAdditive))
-		{ Log::error("Can't save Particles additive blending: " + aFile); return false; }
-
-		if (!serializer.setBool("Billboarding", mBillboarding))
-		{ Log::error("Can't save Particles billboarding: " + aFile); return false; }
-
-		if (!serializer.setBool("Gradienting", mGradienting))
-		{ Log::error("Can't save Particles gradienting: " + aFile); return false; }
-
-		if (!serializer.setVector3("MinVelocity", mMinVelocity, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Particles min velocity: " + aFile); return false; }
-
-		if (!serializer.setVector3("MaxVelocity", mMaxVelocity, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Particles max velocity: " + aFile); return false; }
-
-		if (!serializer.setVector3("MinAcceleration", mMinAcceleration, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Particles min acceleration: " + aFile); return false; }
-
-		if (!serializer.setVector3("MaxAcceleration", mMaxAcceleration, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Particles max acceleration: " + aFile); return false; }
-
-		if (!serializer.setVector3("ConstForce", mConstantForce, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Particles constant force: " + aFile); return false; }
-
-		if (!serializer.setVector2("PartSize", mParticleSize, { "X", "Y" }))
-		{ Log::error("Can't save Particles size: " + aFile); return false; }
-
-		if (!serializer.setVector2("StartSize", mStartSize, { "X", "Y" }))
-		{ Log::error("Can't save Particles start size: " + aFile); return false; }
-
-		if (!serializer.setVector2("FinalSize", mFinalSize, { "X", "Y" }))
-		{ Log::error("Can't save Particles final size: " + aFile); return false; }
-
-		if (!serializer.setVector2("SubUV", mSubUV, { "X", "Y" }))
-		{ Log::error("Can't save Particles sub UV: " + aFile); return false; }
-
-		if (!serializer.setVector4("StartColor", mStartColor, { "R", "G", "B", "A" }))
-		{ Log::error("Can't save Particles start color: ", aFile); return false; }
-
-		if (!serializer.setVector4("FinalColor", mFinalColor, { "R", "G", "B", "A" }))
-		{ Log::error("Can't save Particles final color: ", aFile); return false; }
-
-		if (!serializer.setVector3("BoxShapeSize", mBoxShapeSize, { "X", "Y", "Z" }))
-		{ Log::error("Can't save Particles box shape size: ", aFile); return false; }
-
-		if (!serializer.setFloat("MinTTL", mMinTimeToLive))
-		{ Log::error("Can't save Particles min TTL: " + aFile); return false; }
-
-		if (!serializer.setFloat("MaxTTL", mMaxTimeToLive))
-		{ Log::error("Can't save Particles max TTL: " + aFile); return false; }
-
-		if (!serializer.setFloat("MinRotation", mMinRotation))
-		{ Log::error("Can't save Particles min rotation: " + aFile); return false; }
-
-		if (!serializer.setFloat("MaxRotation", mMaxRotation))
-		{ Log::error("Can't save Particles max rotation: " + aFile); return false; }
-
-		if (!serializer.setFloat("MinRotationSpeed", mMinRotationSpeed))
-		{ Log::error("Can't save Particles min rotation speed: " + aFile); return false; }
-
-		if (!serializer.setFloat("MaxRotationSpeed", mMaxRotationSpeed))
-		{ Log::error("Can't save Particles max rotation speed: " + aFile); return false; }
-
-		if (!serializer.setBool("Noise", mNoise))
-		{ Log::error("Can't save Particles noise: " + aFile); return false; }
-
-		if (!serializer.setFloat("NoiseStrength", mNoiseStrength))
-		{ Log::error("Can't save Particles noise strength: " + aFile); return false; }
-
-		if (!serializer.setInt("NoiseOctaves", mNoiseOctaves))
-		{ Log::error("Can't save Particles noise octaves: " + aFile); return false; }
-
-		if (!serializer.setFloat("NoiseLacunarity", mNoiseLacunarity))
-		{ Log::error("Can't save Particles noise lacunarity: " + aFile); return false; }	
-
-		if (!serializer.setFloat("NoisePersistence", mNoisePersistence))
-		{ Log::error("Can't save Particles noise persistence: " + aFile); return false; }	
-
-		if (!serializer.setFloat("NoiseFrequency", mNoiseFrequency))
-		{ Log::error("Can't save Particles noise frequency: " + aFile); return false; }
-
-		if (!serializer.setFloat("NoiseAmplitude", mNoiseAmplitude))
-		{ Log::error("Can't save Particles noise amplitude: " + aFile); return false; }
-
-		if (!serializer.setFloat("EmitRate", mEmitRate))
-		{ Log::error("Can't save Particles emit rate: " + aFile); return false; }
-
-		if (!serializer.setInt("Transformation", mParticleTransformation))
-		{ Log::error("Can't save Particles transformation: " + aFile); return false; }
-
-		if (!serializer.setInt("Shape", mParticleShape))
-		{ Log::error("Can't save Particles shape: " + aFile); return false; }
-
-		if (!serializer.setFloat("ShapeRadius", mParticleShapeRadius))
-		{ Log::error("Can't save Particles shape radius: " + aFile); return false; }
-
-		if (!serializer.setInt("SortMode", mSortMode))
-		{ Log::error("Can't save Particles sort mode: " + aFile); return false; }
-
-		if (!serializer.setInt("SubUVMode", mSubUVMode))
-		{ Log::error("Can't save Particles sub UV mode: " + aFile); return false; }
-
-		if (!serializer.setFloat("SubUVCycles", mSubUVCycles))
-		{ Log::error("Can't save Particles sub UV cycles: " + aFile); return false; }
-
-		if (!serializer.save())
-		{ Log::error("Can't save Particle Effect: " + aFile); return false; }
-
-
-		Log::success("Particle Effect saved: " + aFile);*/
-
-		return true;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ParticleEffect::loadFromXML(std::string aFile)
-	{
-		Serializer::SerializerXML serializer;
-
-		if (!serializer.Read(aFile, "ParticleEffect"))
-		{ Log::error("Can't load Particle Effect: " + aFile); return false; }
-
-		ParticleModuleAccelerationBase* tAccelerationBase = nullptr;
-		ParticleModuleColorBase* tColorBase = nullptr;
-		ParticleModuleEmitBase* tEmitBase = nullptr;
-		ParticleModuleLifetimeBase* tLifetimeBase = nullptr;
-		ParticleModuleLocationBase* tLocationBase = nullptr;
-		ParticleModuleNoiseBase* tNoiseBase = nullptr;
-		ParticleModuleRequiredBase* tRequiredBase = nullptr;
-		ParticleModuleRotationBase* tRotationBase = nullptr;
-		ParticleModuleSizeBase* tSizeBase = nullptr;
-		ParticleModuleVelocityBase* tVelocityBase = nullptr;
-		ParticleModuleSubUVBase* tSubUVBase = nullptr;
-
-		ParticleModuleEmit* tEmit = new ParticleModuleEmit();
-
-		if (serializer.GetSubBool({ "Emit", "Emitting" }, tEmit->Active) &&
-		    serializer.GetSubInt({ "Emit", "Count" }, tEmit->Count) &&
-		    serializer.GetSubFloat({ "Emit", "EmitRate" }, tEmit->EmitRate))
+		if (J["LocationBox"].IsObject())
 		{
-			tEmitBase = tEmit;
+			delete LocationBase;
+			ParticleModuleLocationBox* Box = new ParticleModuleLocationBox();
+			Box->Size = J["LocationBox"]["Size"].GetVector3<float>();
+			Box->EmitFromShell = J["LocationBox"]["EmitFromShell"].GetBool();
+			LocationBase = Box;
 		}
 
-		ParticleModuleLocationCircle* tLocationCircle = new ParticleModuleLocationCircle();
-
-		if (serializer.GetSubFloat({ "Location", "Circle", "Radius" }, tLocationCircle->Radius) &&
-		    serializer.GetSubBool({ "Location", "Circle", "EmitFromShell" }, tLocationCircle->EmitFromShell))
+		if (J["LocationCircle"].IsObject())
 		{
-			tLocationBase = tLocationCircle;
+			delete LocationBase;
+			ParticleModuleLocationCircle* Circle = new ParticleModuleLocationCircle();
+			Circle->Radius = (float)J["LocationCircle"]["Radius"].GetFloat();
+			Circle->EmitFromShell = J["LocationCircle"]["EmitFromShell"].GetBool();
+			LocationBase = Circle;
 		}
 
-		ParticleModuleLocationBox* tLocationBox = new ParticleModuleLocationBox();
-
-		if (serializer.GetSubVector3({ "Location", "Box", "Size" }, tLocationBox->Size, { "X", "Y", "Z" }) &&
-		    serializer.GetSubBool({ "Location", "Box", "EmitFromShell" }, tLocationBox->EmitFromShell))
+		if (J["LocationSphere"].IsObject())
 		{
-			tLocationBase = tLocationBox;
+			delete LocationBase;
+			ParticleModuleLocationSphere* Sphere = new ParticleModuleLocationSphere();
+			Sphere->Radius = (float)J["LocationSphere"]["Radius"].GetFloat();
+			Sphere->EmitFromShell = J["LocationSphere"]["EmitFromShell"].GetBool();
+			LocationBase = Sphere;
 		}
 
-		ParticleModuleLocationSphere* tLocationSphere = new ParticleModuleLocationSphere();
-
-		if (serializer.GetSubFloat({ "Location", "Sphere", "Radius" }, tLocationSphere->Radius) &&
-		    serializer.GetSubBool({ "Location", "Sphere", "EmitFromShell" }, tLocationSphere->EmitFromShell))
+		if (J["Lifetime"].IsObject())
 		{
-			tLocationBase = tLocationSphere;
+			Lifetime = new ParticleModuleLifetime();
+			Lifetime->Min = (float)J["Lifetime"]["Min"].GetFloat();
+			Lifetime->Max = (float)J["Lifetime"]["Max"].GetFloat();
 		}
 
-		ParticleModuleLifetime* tLifetime = new ParticleModuleLifetime();
-
-		if (serializer.GetSubFloat({ "Lifetime", "Min" }, tLifetime->Min) &&
-		    serializer.GetSubFloat({ "Lifetime", "Max" }, tLifetime->Max))
+		if (J["Rotation"].IsObject())
 		{
-			tLifetimeBase = tLifetime;
+			Rotation = new ParticleModuleRotation();
+			Rotation->Min = (float)J["Rotation"]["Min"].GetFloat();
+			Rotation->Max = (float)J["Rotation"]["Max"].GetFloat();
+			Rotation->MinVelocity = (float)J["Rotation"]["MinVelocity"].GetFloat();
+			Rotation->MaxVelocity = (float)J["Rotation"]["MaxVelocity"].GetFloat();
 		}
 
-		ParticleModuleRotation* tRotation = new ParticleModuleRotation();
-
-		if (serializer.GetSubFloat({ "Rotation", "Min" }, tRotation->Min) &&
-		    serializer.GetSubFloat({ "Rotation", "Max" }, tRotation->Max) &&
-		    serializer.GetSubFloat({ "Rotation", "MinVelocity" }, tRotation->MinVelocity) &&
-		    serializer.GetSubFloat({ "Rotation", "MaxVelocity" }, tRotation->MaxVelocity))
+		if (J["InitialVelocity"].IsObject())
 		{
-			tRotationBase = tRotation;
+			Velocity = new ParticleModuleVelocity();
+			Velocity->Min = J["InitialVelocity"]["Min"].GetVector3<float>();
+			Velocity->Max = J["InitialVelocity"]["Max"].GetVector3<float>();
 		}
 
-		ParticleModuleRequired* tRequired = new ParticleModuleRequired();
-
-		if (serializer.GetSubBool({ "Required", "Visible" }, tRequired->Active) &&
-		    serializer.GetSubBool({ "Required", "AdditiveBlending" }, tRequired->AdditiveBlending) &&
-		    serializer.GetSubBool({ "Required", "Billboarding" }, tRequired->Billboarding) &&
-		    serializer.GetSubInt({ "Required", "Transformation" }, (int32&)tRequired->Transformation) &&
-		    serializer.GetSubInt({ "Required", "SortMode" }, (int32&)tRequired->SortMode))
+		if (J["InitialAcceleration"].IsObject())
 		{
-			tRequiredBase = tRequired;
+			Acceleration = new ParticleModuleAcceleration();
+			Acceleration->Min = J["InitialAcceleration"]["Min"].GetVector3<float>();
+			Acceleration->Max = J["InitialAcceleration"]["Max"].GetVector3<float>();
 		}
 
-		ParticleModuleVelocity* tVelocity = new ParticleModuleVelocity();
-
-		if (serializer.GetSubVector3({ "InitialVelocity", "Min" }, tVelocity->Min, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "InitialVelocity", "Max" }, tVelocity->Max, { "X", "Y", "Z" }))
+		if (J["InitialSize"].IsObject())
 		{
-			tVelocityBase = tVelocity;
+			delete SizeBase;
+			ParticleModuleSize* Size = new ParticleModuleSize();
+			Size->Min = J["InitialSize"]["Min"].GetVector3<float>();
+			Size->Max = J["InitialSize"]["Max"].GetVector3<float>();
+			SizeBase = Size;
 		}
 
-		ParticleModuleAcceleration* tAcceleration = new ParticleModuleAcceleration();
-
-		if (serializer.GetSubVector3({ "Acceleration", "Initial", "Min" }, tAcceleration->Min, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Acceleration", "Initial", "Max" }, tAcceleration->Max, { "X", "Y", "Z" }))
+		if (J["SizeOverLifetime"].IsArray())
 		{
-			tAccelerationBase = tAcceleration;
-		}
-
-		ParticleModuleSize* tSize = new ParticleModuleSize();
-
-		if (serializer.GetSubVector3({ "Size", "Initial", "Min" }, tSize->Min, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Size", "Initial", "Max" }, tSize->Max, { "X", "Y", "Z" }))
-		{
-			tSizeBase = tSize;
-		}
-
-		ParticleModuleSizeOverLife* tSizeOverLife = new ParticleModuleSizeOverLife();
-
-		if (serializer.GetSubVector3({ "Size", "OverLife", "MinStart" }, tSizeOverLife->MinStart, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Size", "OverLife", "MaxStart" }, tSizeOverLife->MaxStart, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Size", "OverLife", "MinFinal" }, tSizeOverLife->MinFinal, { "X", "Y", "Z" }) &&
-		    serializer.GetSubVector3({ "Size", "OverLife", "MaxFinal" }, tSizeOverLife->MaxFinal, { "X", "Y", "Z" }))
-		{
-			tSizeBase = tSizeOverLife;
-		}
-
-		ParticleModuleColor* tColor = new ParticleModuleColor();
-
-		if (serializer.GetSubVector4({ "Color", "Initial", "Min" }, tColor->Min, { "R", "G", "B", "A" }) &&
-		    serializer.GetSubVector4({ "Color", "Initial", "Max" }, tColor->Max, { "R", "G", "B", "A" }))
-		{
-			tColorBase = tColor;
-		}
-
-		ParticleModuleColorOverLife* tColorOverLife = new ParticleModuleColorOverLife();
-		auto Elem = serializer.GetSubElement({ "Color", "OverLife", "ColorKey" });
-
-		if (Elem != nullptr)
-		{
-			Vector4 Value;
-			float Key;
-
-			while (Elem != nullptr)
+			delete SizeBase;
+			ParticleModuleSizeOverLife* SizeOverLife = new ParticleModuleSizeOverLife();
+			
+			for (uint32 i = 0; i < J["SizeOverLifetime"].GetElementsCount(); i++)
 			{
-				if (serializer.GetVector4(Elem, Value, { "R", "G", "B", "A" }) &&
-				    serializer.GetFloat(Elem, Key))
-				{
-					tColorOverLife->ColorCurve.AddPoint(Value, Key);
-				}
-
-				Elem = serializer.NextElement(Elem, "ColorKey");
+				float Position = (float)J["SizeOverLifetime"][i]["Key"].GetFloat();
+				Vector3 Point = J["SizeOverLifetime"][i]["Size"].GetVector3<float>();
+				SizeOverLife->SizeCurve.AddPoint(Point, Position);
 			}
 
-			tColorBase = tColorOverLife;
+			SizeBase = SizeOverLife;
 		}
 
-		/*if (serializer.GetSubVector4({ "Color", "OverLife", "MinStart" }, tColorOverLife->MinStart, { "R", "G", "B", "A" }) &&
-		    serializer.GetSubVector4({ "Color", "OverLife", "MaxStart" }, tColorOverLife->MaxStart, { "R", "G", "B", "A" }) &&
-		    serializer.GetSubVector4({ "Color", "OverLife", "MinFinal" }, tColorOverLife->MinFinal, { "R", "G", "B", "A" }) &&
-		    serializer.GetSubVector4({ "Color", "OverLife", "MaxFinal" }, tColorOverLife->MaxFinal, { "R", "G", "B", "A" }))
+		if (J["InitialColor"].IsObject())
 		{
-			tColorBase = tColorOverLife;
-		}*/
-
-
-		ParticleModuleNoise* tNoise = new ParticleModuleNoise();
-
-		if (serializer.GetSubBool({ "Noise", "Active" }, tNoise->Active) &&
-		    serializer.GetSubFloat({ "Noise", "Strength" }, tNoise->Strength) &&
-		    serializer.GetSubInt({ "Noise", "Octaves" }, tNoise->Octaves) &&
-		    serializer.GetSubFloat({ "Noise", "Lacunarity" }, tNoise->Lacunarity) &&
-		    serializer.GetSubFloat({ "Noise", "Persistence" }, tNoise->Persistence) &&
-		    serializer.GetSubFloat({ "Noise", "Frequency" }, tNoise->Frequency) &&
-		    serializer.GetSubFloat({ "Noise", "Amplitude" }, tNoise->Amplitude))
-		{
-			tNoiseBase = tNoise;
+			delete ColorBase;
+			ParticleModuleColor* Color = new ParticleModuleColor();
+			Color->Min = J["InitialColor"]["Min"].GetVector4<float>();
+			Color->Max = J["InitialColor"]["Max"].GetVector4<float>();
+			ColorBase = Color;
 		}
 
-		ParticleModuleSubUV* tSubUV = new ParticleModuleSubUV();
-
-		if (serializer.GetSubInt({ "SubUV", "Mode" }, (int32&)tSubUV->Mode) &&
-		    serializer.GetSubInt({ "SubUV", "Horizontal" }, tSubUV->Horizontal) &&
-		    serializer.GetSubInt({ "SubUV", "Vertical" }, tSubUV->Vertical) &&
-		    serializer.GetSubFloat({ "SubUV", "Cycles" }, tSubUV->Cycles))
+		if (J["ColorOverLifetime"].IsArray())
 		{
-			tSubUVBase = tSubUV;
+			delete ColorBase;
+			ParticleModuleColorOverLife* ColorOverLife = new ParticleModuleColorOverLife();
+
+			for (uint32 i = 0; i < J["ColorOverLifetime"].GetElementsCount(); i++)
+			{
+				float Position = (float)J["ColorOverLifetime"][i]["Key"].GetFloat();
+				Vector4 Point = J["ColorOverLifetime"][i]["Color"].GetVector4<float>();
+				ColorOverLife->ColorCurve.AddPoint(Point, Position);
+			}
+
+			ColorBase = ColorOverLife;
 		}
 
-		Log::success("Particle Effect loaded: " + aFile);
-
-		if (tAccelerationBase != nullptr)
+		if (J["Noise"].IsObject())
 		{
-			AddModule(tAccelerationBase);
+			Noise = new ParticleModuleNoise();
+			Noise->Active      = J["Noise"]["Active"].GetBool();
+			Noise->Strength    = (float)J["Noise"]["Strength"].GetFloat();
+			Noise->Octaves     = (int)J["Noise"]["Octaves"].GetInt();
+			Noise->Lacunarity  = (float)J["Noise"]["Lacunarity"].GetFloat();
+			Noise->Persistence = (float)J["Noise"]["Persistence"].GetFloat();
+			Noise->Frequency   = (float)J["Noise"]["Frequency"].GetFloat();
+			Noise->Amplitude   = (float)J["Noise"]["Amplitude"].GetFloat();
 		}
 
-		if (tColorBase != nullptr)
+		if (J["SubUV"].IsObject())
 		{
-			AddModule(tColorBase);
+			SubUV = new ParticleModuleSubUV();
+			if (J["SubUV"]["Mode"].GetString() == "Linear") SubUV->Mode = ParticleModuleSubUV::SubUVMode::Linear;
+			if (J["SubUV"]["Mode"].GetString() == "Random") SubUV->Mode = ParticleModuleSubUV::SubUVMode::Random;
+			SubUV->Horizontal = (int)J["SubUV"]["Horizontal"].GetInt();
+			SubUV->Vertical = (int)J["SubUV"]["Vertical"].GetInt();
+			SubUV->Cycles = (float)J["SubUV"]["Cycles"].GetFloat();
 		}
 
-		if (tEmitBase != nullptr)
-		{
-			AddModule(tEmitBase);
-			Emit = static_cast<ParticleModuleEmit*>(tEmitBase);
-		}
+		if (LocationBase != nullptr) AddModule(LocationBase);
+		if (Lifetime != nullptr) AddModule(Lifetime);
+		if (Rotation != nullptr) AddModule(Rotation);
+		if (Velocity != nullptr) AddModule(Velocity);
+		if (Acceleration != nullptr) AddModule(Acceleration);
+		if (SizeBase != nullptr) AddModule(SizeBase);
+		if (ColorBase != nullptr) AddModule(ColorBase);
+		if (Noise != nullptr) AddModule(Noise);
+		if (SubUV != nullptr) AddModule(SubUV);
 
-		if (tLifetimeBase != nullptr)
-		{
-			AddModule(tLifetimeBase);
-		}
-
-		if (tLocationBase != nullptr)
-		{
-			AddModule(tLocationBase);
-		}
-
-		if (tNoiseBase != nullptr)
-		{
-			AddModule(tNoiseBase);
-		}
-
-		if (tRequiredBase != nullptr)
-		{
-			AddModule(tRequiredBase);
-			Required = static_cast<ParticleModuleRequired*>(tRequiredBase);
-		}
-
-		if (tRotationBase != nullptr)
-		{
-			AddModule(tRotationBase);
-		}
-
-		if (tSizeBase != nullptr)
-		{
-			AddModule(tSizeBase);
-		}
-
-		if (tVelocityBase != nullptr)
-		{
-			AddModule(tVelocityBase);
-		}
-
-		if (tSubUVBase != nullptr)
-		{
-			AddModule(tSubUVBase);	
-		}
+		Log::Success("Particle Effect loaded: %s", FileName);
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool ParticleEffect::load(std::string aFile)
-	{
-		if (aFile.find_last_of(".cxpar") != std::string::npos)
-		{
-			return loadFromXML(aFile);
-		} else return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	ParticleEffect::~ParticleEffect()
-	{
-
-	}
+	
+	ParticleEffect::~ParticleEffect() {}
 
 }
+
+

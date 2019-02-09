@@ -8,7 +8,8 @@ namespace Columbus
 	class MeshOpenGL : public Mesh
 	{
 	private:
-		uint32 VBuf = 0;
+		uint32 VBO = 0;
+		uint32 IBO = 0;
 		uint32 VAO = 0;
 
 		uint64 VOffset = 0;
@@ -16,17 +17,23 @@ namespace Columbus
 		uint64 NOffset = 0;
 		uint64 TOffset = 0;
 
+		bool Indexed = false;
+		uint32 IndicesCount = 0;
+		uint32 IndicesType = 0;
+
 		void SortLights();
 	public:
 		MeshOpenGL();
-		MeshOpenGL(std::vector<Vertex> Vertices);
-		MeshOpenGL(std::vector<Vertex> Vertices, Material aMaterial);
+		MeshOpenGL(const std::vector<Vertex>& Vertices);
 
-		void SetVertices(std::vector<Vertex> Vertices) override;
-		void Bind() override;
-		uint32 Render(Transform InTransform) override;
-		void Unbind() override;
-		uint64 GetMemoryUsage() const override;
+		virtual void SetVertices(const std::vector<Vertex>& Vertices) final override;
+		virtual void Load(const Model& InModel) final override;
+
+		virtual void Bind()     final override;
+		virtual uint32 Render() final override;
+		virtual void Unbind()   final override;
+
+		virtual uint64 GetMemoryUsage() const final override;
 
 		~MeshOpenGL() override;
 	};

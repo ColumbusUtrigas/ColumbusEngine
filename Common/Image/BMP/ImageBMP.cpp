@@ -1,217 +1,113 @@
-#include <Common/Image/Image.h>
 #include <Common/Image/BMP/ImageBMP.h>
-#include <Core/Memory.h>
 #include <System/File.h>
-
-#include <SDL.h>
 
 namespace Columbus
 {
 
 	typedef struct
 	{
-		uint8 magic[2]; //Magic Bytes 'B' and 'M'
-		uint32 size;    //Size of whole file
-		uint32 unused;  //Should be 0
-		uint32 offset;  //Offset to bitmap data
+		uint16 Magic;
+		uint32 Size;
+		uint32 Unused;
+		uint32 Offset;
 	} BMP_HEADER;
 
 	typedef struct
 	{
-		uint32 infosize;         //Size of info struct (40 bytes)
-		int32 width;             //Width of image
-		int32 height;            //Height of image
-		uint16 planes;           //Should be 1
-		uint16 bits;             //Bits per pixel (1, 4, 8, 16, 24, 32)
-		uint32 compression;      //0 = none, 1 = 8-bit RLE, 2 = 4-bit RLE
-		uint32 size_data;        //Size of pixel data
-		uint32 hres;             //Horizontal resolution (pixel per meter)
-		uint32 vres;             //Vertical resolution (pixel per meter)
-		uint32 colors;           //Number of palette colors
-		uint32 important_colors; //Number of important colors;
+		uint32 InfoSize;
+		int32 Width;
+		int32 Height;
+		uint16 Planes;
+		uint16 Bits;
+		uint32 Compression;
+		uint32 DataSize;
+		uint32 HRes;
+		uint32 VRes;
+		uint32 Colors;
+		uint32 ImportantColors;
 	} BMP_INFO;
 
-	static bool WriteHeader(BMP_HEADER aHeader, File* aFile)
-	{
-		if (aFile == nullptr) return false;
-
-		if (!aFile->WriteUint8(aHeader.magic[0])) return false;
-		if (!aFile->WriteUint8(aHeader.magic[1])) return false;
-		if (!aFile->WriteUint32(aHeader.size)) return false;
-		if (!aFile->WriteUint32(aHeader.unused)) return false;
-		if (!aFile->WriteUint32(aHeader.offset)) return false;
-
-		return true;
-	}
-
-	static bool WriteInfo(BMP_INFO aInfo, File* aFile)
-	{
-		if (aFile == nullptr) return false;
-
-		if (!aFile->WriteUint32(aInfo.infosize)) return false;
-		if (!aFile->WriteInt32(aInfo.width)) return false;
-		if (!aFile->WriteInt32(aInfo.height)) return false;
-		if (!aFile->WriteUint16(aInfo.planes)) return false;
-		if (!aFile->WriteUint16(aInfo.bits)) return false;
-		if (!aFile->WriteUint32(aInfo.compression)) return false;
-		if (!aFile->WriteUint32(aInfo.size_data)) return false;
-		if (!aFile->WriteUint32(aInfo.hres)) return false;
-		if (!aFile->WriteUint32(aInfo.vres)) return false;
-		if (!aFile->WriteUint32(aInfo.colors)) return false;
-		if (!aFile->WriteUint32(aInfo.important_colors)) return false;
-
-		return true;
-	}
-
-	static uint8* ImageLoadBMP(std::string FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
-	{
-		File BMPImageFile(FileName, "rb");
-		if (!BMPImageFile.IsOpened()) return nullptr;
-		BMPImageFile.Close();
-
-		SDL_Surface* Surf = SDL_LoadBMP(FileName.c_str());
-		OutWidth = Surf->w;
-		OutHeight = Surf->h;
-		OutSize = OutWidth * OutHeight * Surf->format->BytesPerPixel;
-
-		switch (Surf->format->BitsPerPixel)
-		{
-		case 24: OutFormat = TextureFormat::RGB8;  break;
-		case 32: OutFormat = TextureFormat::RGBA8; break;
-		}
-
-		uint8* Data = new uint8[OutSize];
-		Memory::Memcpy(Data, Surf->pixels, OutSize);
-
-		ImageFlipY(Data, OutWidth, OutHeight, Surf->format->BytesPerPixel);
-
-		switch (Surf->format->BitsPerPixel)
-		{
-		case 24: ImageBGR2RGB(Data, OutSize);   break;
-		case 32: ImageBGRA2RGBA(Data, OutSize); break;
-		}
-
-		return Data;
-
-		/*File BMPImageFile(FileName, "rb");
-		if (!BMPImageFile.IsOpened()) return nullptr;
-
-		BMP_HEADER header;
-		BMP_INFO info;
-
-		if (!ReadHeader(&header, &BMPImageFile)) return nullptr;
-		if (!ReadInfo(&info, &BMPImageFile)) return nullptr;
-
-		uint8* data = (uint8*)Memory::Malloc(header.size);
-		BMPImageFile.Read(data, header.size, 1);
-		BMPImageFile.Close();
-
-		size_t size = info.width * info.height * info.bits / 8;
-
-		switch (info.bits)
-		{
-		case 24: ImageBGR2RGB(data, size); break;
-		case 32: ImageABGR2RGBA(data, size); break;
-		};
-
-		OutWidth = info.width;
-		OutHeight = info.height;
-		OutSize = info.width * info.height * info.bits / 8;
-
-		switch (info.bits)
-		{
-		case 24: OutFormat = TextureFormat::RGB;  break;
-		case 32: OutFormat = TextureFormat::RGBA; break;
-		}
-
-		return data;*/
-	}
-
-	bool ImageLoaderBMP::IsBMP(std::string FileName)
+	bool ImageLoaderBMP::IsBMP(const char* FileName)
 	{
 		File BMPImageFile(FileName, "rb");
 		if (!BMPImageFile.IsOpened()) return false;
 
-		uint8_t Magic[2];
-		BMPImageFile.Read(Magic, sizeof(Magic), 1);
+		uint16 Magic;
+		BMPImageFile.Read(Magic);
 		BMPImageFile.Close();
 
-		if (Memory::Memcmp(Magic, "BM", 2) == 0)
+		return Magic == 0x4D42;
+	}
+
+	bool ImageLoaderBMP::Load(const char* FileName)
+	{
+		File BMPImageFile(FileName, "rb");
+		if (!BMPImageFile.IsOpened()) return false;
+
+		BMP_HEADER Header;
+		BMP_INFO Info;
+
+		BMPImageFile.Read(Header.Magic);
+		BMPImageFile.Read(Header.Size);
+		BMPImageFile.Read(Header.Unused);
+		BMPImageFile.Read(Header.Offset);
+		BMPImageFile.Read(Info);
+
+		uint32 Masks[4];
+		int Shifts[4];
+
+		if (Info.Compression == 3)
 		{
-			return true;
+			BMPImageFile.Read(Masks);
+
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					if (0xFF << j * 8 == Masks[i]) Shifts[i] = j * 8;
+				}
+			}
 		}
 
-		return false;
-	}
-
-	bool ImageLoaderBMP::Load(std::string FileName)
-	{
-		Free();
-		uint64 Size = 0;
-
-		Data = ImageLoadBMP(FileName, Width, Height, Size, Format);
-
-		return (Data != nullptr);
-	}
-
-	void ImageLoaderBMP::Free()
-	{
-		delete[] Data;
-		Width = 0;
-		Height = 0;
-		Mipmaps = 0;
-		Format = TextureFormat::RGBA8;
-	}
-
-	bool ImageSaveBMP(std::string FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
-	{
-		if (Data == nullptr) return false;
-
-		File file(FileName, "wb");
-
-		BMP_HEADER header;
-		BMP_INFO info;
-
-		uint32 BPP = GetBPPFromFormat(Format);
-
-		header.magic[0] = 'B';
-		header.magic[1] = 'M';
-		header.size = Width * Height * BPP + 54;
-		header.unused = 0;
-		header.offset = 54;
-
-		info.infosize = 40;
-		info.width = Width;
-		info.height = Height;
-		info.planes = 1;
-		info.bits = BPP * 8;
-		info.compression = 0;
-		info.size_data = Width * Height * BPP;
-		info.hres = 0;
-		info.vres = 0;
-		info.colors = 0;
-		info.important_colors = 0;
-
-		if (!WriteHeader(header, &file)) return false;
-		if (!WriteInfo(info, &file)) return false;
-
-		uint8* buffer = (uint8*)Memory::Malloc(Width * Height * BPP);
-		Memory::Memcpy(buffer, Data, Width * Height * BPP);
-
-		size_t size = Width * Height * BPP;
-
-		switch (BPP * 8)
+		switch (Info.Bits)
 		{
-		case 24: ImageRGB2BGR(buffer, size);   break;
-		case 32: ImageRGBA2BGRA(buffer, size); break;
-		};
+		case 8:  Format = TextureFormat::R8;    break;
+		case 16: Format = TextureFormat::RG8;   break;
+		case 24: Format = TextureFormat::RGB8;  break;
+		case 32: Format = TextureFormat::RGBA8; break;
+		default: return false; break;
+		}
 
-		file.Write(buffer, Width * Height * BPP, 1);
+		uint64 Size = Info.Width * Info.Height * GetBPPFromFormat(Format);
 
-		file.Close();
-		Memory::Free(buffer);
+		Width = Info.Width;
+		Height = Info.Height;
+		Mipmaps = 1;
+		Data = new uint8[Size];
 
-		return true;
+		BMPImageFile.SeekSet(Header.Offset);
+		BMPImageFile.ReadBytes(Data, Size);
+		BMPImageFile.Close();
+
+		if (Info.Compression == 3)
+		{
+			for (uint64 i = 0; i < Size; i += Info.Bits / 8)
+			{
+				uint32 Pixel = *((uint32*)(&Data[i]));
+
+				for (int j = 0; j < 4; j++)
+				{
+					Data[i + j] = (Pixel & Masks[j]) >> Shifts[j];
+				}
+			}
+		}
+
+		return Data != nullptr;
+	}
+
+	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	{
+		return false;
 	}
 
 }

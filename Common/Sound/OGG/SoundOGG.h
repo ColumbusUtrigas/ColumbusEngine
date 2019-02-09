@@ -11,9 +11,9 @@ namespace Columbus
 	public:
 		SoundDecoderOGG();
 
-		static bool IsOGG(std::string FileName);
+		static bool IsOGG(const char* FileName);
 
-		bool Load(std::string FileName) override;
+		bool Load(const char* FileName) override;
 		void Free() override;
 		void Seek(uint64 Offset) override;
 		uint32 Decode(Sound::Frame* Frames, uint32 Count) override;

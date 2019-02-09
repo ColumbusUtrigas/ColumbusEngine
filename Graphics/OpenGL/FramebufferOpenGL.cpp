@@ -1,13 +1,3 @@
-/************************************************
-*               FramebufferOpenGL.cpp           *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   12.02.2018                  *
-*************************************************/
-
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
@@ -15,84 +5,95 @@
 namespace Columbus
 {
 
+	static GLenum ConvertAttachment(Framebuffer::Attachment Attachment)
+	{
+		switch (Attachment)
+		{
+		case Framebuffer::Attachment::Color0:  return GL_COLOR_ATTACHMENT0;  break;
+		case Framebuffer::Attachment::Color1:  return GL_COLOR_ATTACHMENT1;  break;
+		case Framebuffer::Attachment::Color2:  return GL_COLOR_ATTACHMENT2;  break;
+		case Framebuffer::Attachment::Color3:  return GL_COLOR_ATTACHMENT3;  break;
+		case Framebuffer::Attachment::Depth:   return GL_DEPTH_ATTACHMENT;   break;
+		case Framebuffer::Attachment::Stencil: return GL_STENCIL_ATTACHMENT; break;
+		}
+
+		return GL_INVALID_ENUM;
+	}
+
 	FramebufferOpenGL::FramebufferOpenGL()
 	{
 		glGenFramebuffers(1, &mID);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void FramebufferOpenGL::bind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, mID);
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
 	void FramebufferOpenGL::unbind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	bool FramebufferOpenGL::setTexture2D(FramebufferAttachment aAttach, Texture* aTexture)
+	
+	bool FramebufferOpenGL::setTexture2D(Framebuffer::Attachment Attach, Texture* InTexture, uint32 Level)
 	{
-		if (aTexture == nullptr) return false;
+		if (InTexture == nullptr) return false;
 
-		unsigned int id = 0;
-		id = static_cast<TextureOpenGL*>(aTexture)->GetID();
+		uint32 ID = ((TextureOpenGL*)InTexture)->GetID();
+		uint32 Attachment = ConvertAttachment(Attach);
 
-		if (!glIsTexture(id)) return false;
+		if (Attachment == GL_INVALID_ENUM) return false;
+		if (!glIsTexture(ID)) return false;
 
-		unsigned int attach = GL_COLOR_ATTACHMENT0;
-
-		switch (aAttach)
-		{
-		case E_FRAMEBUFFER_COLOR_ATTACH: attach = GL_COLOR_ATTACHMENT0; break;
-		case E_FRAMEBUFFER_DEPTH_ATTACH: attach = GL_DEPTH_ATTACHMENT; break;
-		case E_FRAMEBUFFER_STENCIL_ATTACH: attach = GL_STENCIL_ATTACHMENT; break;
-		}
-
-		bind();
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attach, GL_TEXTURE_2D, id, 0);
-		unbind();
+		glBindFramebuffer(GL_FRAMEBUFFER, mID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, ID, Level);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	bool FramebufferOpenGL::prepare(Vector4 aClear, Vector2 aWindowSize)
+
+	bool FramebufferOpenGL::SetTextureCube(FramebufferOpenGL::Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level)
 	{
-		bind();
-		glViewport(0, 0, (uint32)(aWindowSize.X), (uint32)(aWindowSize.Y));
-		glClearColor(aClear.x, aClear.y, aClear.z, aClear.w);
-		glClear(C_OGL_COLOR_BUFFER_BIT | C_OGL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
+		if (InTexture == nullptr) return false;
+
+		uint32 ID = ((TextureOpenGL*)InTexture)->GetID();
+		uint32 Attachment = ConvertAttachment(Attach);
+
+		if (Attachment == GL_INVALID_ENUM) return false;
+		if (!glIsTexture(ID)) return false;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, mID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, ID, Level);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
 	}
-	//////////////////////////////////////////////////////////////////////////////
+	
+	bool FramebufferOpenGL::prepare(const Vector4& Clear, const Vector2& WindowSize)
+	{
+		bind();
+		glViewport(0, 0, (uint32)(WindowSize.X), (uint32)(WindowSize.Y));
+		glClearColor(Clear.X, Clear.Y, Clear.Z, Clear.W);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		return true;
+	}
+	
 	bool FramebufferOpenGL::check()
 	{
-		bind();
-		bool ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		unbind();
+		glBindFramebuffer(GL_FRAMEBUFFER, mID);
+		int ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		return ret;
+		return ret == GL_FRAMEBUFFER_COMPLETE;
 	}
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////
+	
 	FramebufferOpenGL::~FramebufferOpenGL()
 	{
 		glDeleteFramebuffers(1, &mID);
 	}
 
 }
-
-
-
-
-
-
 
 
 

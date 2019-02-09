@@ -1,78 +1,67 @@
 #pragma once
 
-#include <utility>
-
 namespace Columbus
 {
 
-	template <class T>
+	template <class Type>
 	class SmartPointer
 	{
 	private:
-		T* mObj = nullptr;
+		Type* Obj = nullptr;
 	public:
+		SmartPointer() : Obj(nullptr) {}
+		explicit SmartPointer(Type* Pointer) : Obj(Pointer) {}
 		SmartPointer(const SmartPointer&) = delete;
-
-		SmartPointer() :
-			mObj(nullptr)
-		{ }
-
-		explicit SmartPointer(T* aObj) :
-			mObj(aObj)
-		{ }
-
-		SmartPointer(SmartPointer&& aOther)
+		SmartPointer(SmartPointer&& Other)
 		{
-			std::swap(mObj, aOther.mObj);
+			Obj = Other.Obj;
+			Other.Obj = nullptr;
 		}
 
 		SmartPointer& operator=(const SmartPointer&) = delete;
-
-		SmartPointer& operator=(SmartPointer&& aOther)
+		SmartPointer& operator=(SmartPointer&& Other)
 		{
-			std::swap(mObj, aOther.mObj);
+			Obj = Other.Obj;
+			Other.Obj = nullptr;
 			return *this;
 		}
 
-		bool operator==(T* Other) const
+		bool operator==(Type* Other) const
 		{
-			return mObj == Other;
+			return Obj == Other;
 		}
 
-		bool operator!=(T* Other) const
+		bool operator!=(Type* Other) const
 		{
-			return mObj != Other;
+			return Obj != Other;
 		}
 
-		T* operator->() const
+		Type* operator->() const
 		{
-			return const_cast<T*>(mObj);
+			return const_cast<Type*>(Obj);
 		}
 
-		T& operator*() const
+		Type& operator*() const
 		{
-			return *mObj;
+			return *Obj;
 		}
 
-		T* get() const
+		Type* Get() const
 		{
-			return const_cast<T*>(mObj);
+			return const_cast<Type*>(Obj);
 		}
 
-		bool isValide() const
+		bool IsValid() const
 		{
-			return mObj != nullptr;
+			return Obj != nullptr;
 		}
 
 		~SmartPointer()
 		{
-			delete mObj;
+			delete Obj;
 		}
 	};
 
 }
-
-
-
 
 

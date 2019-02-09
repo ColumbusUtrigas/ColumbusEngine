@@ -5,7 +5,8 @@
 #include <Common/Image/PNG/ImagePNG.h>
 #include <Common/Image/TGA/ImageTGA.h>
 #include <Common/Image/TIF/ImageTIF.h>
-#include <Core/Core.h>
+#include <cstdlib>
+#include <cstring>
 
 namespace Columbus
 {
@@ -41,7 +42,19 @@ namespace Columbus
 		return 0;
 	}
 
-	ImageFormat ImageGetFormat(std::string FileName)
+	uint32 GetBlockSizeFromFormat(TextureFormat Format)
+	{
+		switch (Format)
+		{
+		case TextureFormat::DXT1: return 8;  break;
+		case TextureFormat::DXT3:
+		case TextureFormat::DXT5: return 16; break;
+		}
+
+		return 0;
+	}
+
+	ImageFormat ImageGetFormat(const char* FileName)
 	{
 		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
 		if (ImageLoaderDDS::IsDDS(FileName)) return ImageFormat::DDS;
@@ -88,7 +101,7 @@ namespace Columbus
 			aData[i + 0] = bgr[2];
 			aData[i + 1] = bgr[1];
 			aData[i + 2] = bgr[0];
-			aData[i + 3] = aData[i + 3];
+			//aData[i + 3] = aData[i + 3];
 		}
 
 		return true;
@@ -139,9 +152,9 @@ namespace Columbus
 
 			for (uint32 j = 0; j < Width / 2; j++)
 			{
-				Memory::Memcpy(pixel, &row[j * BPP], BPP);
-				Memory::Memcpy(&row[j * BPP], &row[(Width - j) * BPP], BPP);
-				Memory::Memcpy(&row[(Width - j) * BPP], pixel, BPP);
+				memcpy(pixel, &row[j * BPP], BPP);
+				memcpy(&row[j * BPP], &row[(Width - j) * BPP], BPP);
+				memcpy(&row[(Width - j) * BPP], pixel, BPP);
 			}
 		}
 
@@ -157,11 +170,11 @@ namespace Columbus
 
 		for (uint32 i = 0; i < Height / 2; i++)
 		{
-			Memory::Memcpy(row, &Data[i * stride], stride);
-			Memory::Memcpy(&Data[i * stride], &Data[(Height - i - 1) * stride], stride);
-			Memory::Memcpy(&Data[(Height - i - 1) * stride], row, stride);
+			memcpy(row, &Data[i * stride], stride);
+			memcpy(&Data[i * stride], &Data[(Height - i - 1) * stride], stride);
+			memcpy(&Data[(Height - i - 1) * stride], row, stride);
 		}
-		Memory::Free(row);
+		free(row);
 
 		return true;
 	}
@@ -175,43 +188,14 @@ namespace Columbus
 
 		for (size_t i = 0; i < size / 2; i++)
 		{
-			Memory::Memcpy(pixel, &Data[i * BPP], BPP);
-			Memory::Memcpy(&Data[i * BPP], &Data[(size - i) * BPP], BPP);
-			Memory::Memcpy(&Data[(size - i) * BPP], pixel, BPP);
+			memcpy(pixel, &Data[i * BPP], BPP);
+			memcpy(&Data[i * BPP], &Data[(size - i) * BPP], BPP);
+			memcpy(&Data[(size - i) * BPP], pixel, BPP);
 		}
-		Memory::Free(pixel);
+
+		free(pixel);
 
 		return true;
-	}
-	
-	bool ImageSave(std::string FileName, uint32 Width, uint32 Height, TextureFormat BPP, uint8* Data, ImageFormat Format, uint32 Quality)
-	{
-		switch (Format)
-		{
-		case ImageFormat::BMP:
-			return ImageSaveBMP(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::DDS:
-			return false; //TODO
-			break;
-		case ImageFormat::TGA:
-			return ImageSaveTGA(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::PNG:
-			return ImageSavePNG(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::TIF:
-			return ImageSaveTIF(FileName, Width, Height, BPP, Data);
-			break;
-		case ImageFormat::JPG:
-			return ImageSaveJPG(FileName, Width, Height, BPP, Data, Quality);
-			break;
-		case ImageFormat::Unknown:
-			return false;
-			break;
-		}
-
-		return false;
 	}
 	/*
 	* Image class
@@ -219,17 +203,18 @@ namespace Columbus
 	Image::Image() :
 		Width(0),
 		Height(0),
+		Depth(0),
 		Size(0),
 		MipMaps(0),
-		Exist(false),
-		Data(nullptr)
-	{ }
+		Format(TextureFormat::RGBA8),
+		Data(nullptr),
+		Exist(false) {}
 	/*
 	* Load image from file
 	* @param std::string InFileName: Name of image file to load
 	* @param int Flags: Loading flags
 	*/
-	bool Image::Load(std::string InFileName, ImageLoading Flags)
+	bool Image::Load(const char* InFileName, ImageLoading Flags)
 	{
 		FreeData();
 
@@ -251,16 +236,23 @@ namespace Columbus
 		{
 			if (!Loader->Load(InFileName))
 			{
-				Loader->Free();
 				delete Loader;
 				return false;
 			}
 
-			Data = Loader->GetData();
-			Width = Loader->GetWidth();
-			Height = Loader->GetHeight();
-			MipMaps = Loader->GetMipmaps();
-			Format = Loader->GetFormat();
+			Data    = Loader->Data;
+			Width   = Loader->Width;
+			Height  = Loader->Height;
+			MipMaps = Loader->Mipmaps;
+			Format  = Loader->Format;
+
+			switch (Loader->ImageType)
+			{
+			case ImageLoader::Type::Image2D:      ImageType = Type::Image2D;      break;
+			case ImageLoader::Type::Image3D:      ImageType = Type::Image3D;      break;
+			case ImageLoader::Type::ImageCube:    ImageType = Type::ImageCube;    break;
+			case ImageLoader::Type::Image2DArray: ImageType = Type::Image2DArray; break;
+			}
 
 			delete Loader;
 		}
@@ -270,7 +262,6 @@ namespace Columbus
 			return false;
 		}
 
-		FileName = InFileName;
 		Exist = true;
 
 		switch (Flags)
@@ -289,7 +280,7 @@ namespace Columbus
 	* @param Format: Image format
 	* @param Quality: Compression level
 	*/
-	bool Image::Save(std::string InFileName, ImageFormat InFormat, size_t Quality) const
+	bool Image::Save(const char* InFileName, ImageFormat InFormat, uint32 Quality) const
 	{
 		return false;
 
@@ -298,7 +289,16 @@ namespace Columbus
 			return false;
 		}
 
-		return ImageSave(InFileName, Width, Height, Format, Data, InFormat, Quality);
+		switch (InFormat)
+		{
+		case ImageFormat::BMP: return ImageSaveBMP(InFileName, Width, Height, Format, Data);          break;
+		case ImageFormat::JPG: return ImageSaveJPG(InFileName, Width, Height, Format, Data, Quality); break;
+		case ImageFormat::PNG: return ImageSavePNG(InFileName, Width, Height, Format, Data);          break;
+		case ImageFormat::TGA: return ImageSaveTGA(InFileName, Width, Height, Format, Data);          break;
+		case ImageFormat::TIF: return ImageSaveTIF(InFileName, Width, Height, Format, Data);          break;
+		}
+		
+		return false;
 	}
 	/*
 	* Checks if image is exist in memory
@@ -318,7 +318,6 @@ namespace Columbus
 		MipMaps = 0;
 		Format = TextureFormat::RGBA8;
 		Exist = false;
-		FileName.clear();
 
 		delete[] Data;
 	}
@@ -397,6 +396,11 @@ namespace Columbus
 		        Format == TextureFormat::DXT3 ||
 		        Format == TextureFormat::DXT5);
 	}
+
+	Image::Type Image::GetType() const
+	{
+		return ImageType;
+	}
 	
 	uint32 Image::GetWidth() const
 	{
@@ -430,6 +434,30 @@ namespace Columbus
 			case TextureFormat::DXT1: return 8;  break;
 			case TextureFormat::DXT3: return 16; break;
 			case TextureFormat::DXT5: return 16; break;
+
+			case TextureFormat::R8:
+			case TextureFormat::RG8:
+			case TextureFormat::RGB8:
+			case TextureFormat::RGBA8:
+			case TextureFormat::R16:
+			case TextureFormat::RG16:
+			case TextureFormat::RGB16:
+			case TextureFormat::RGBA16:
+			case TextureFormat::R16F:
+			case TextureFormat::RG16F:
+			case TextureFormat::RGB16F:
+			case TextureFormat::RGBA16F:
+			case TextureFormat::R32F:
+			case TextureFormat::RG32F:
+			case TextureFormat::RGB32F:
+			case TextureFormat::RGBA32F:
+			case TextureFormat::Depth:
+			case TextureFormat::Depth16:
+			case TextureFormat::Depth24:
+			case TextureFormat::Depth24Stencil8:
+			case TextureFormat::Depth32F:
+			case TextureFormat::Depth32FStencil8:
+			case TextureFormat::Unknown: return 0; break;
 		}
 
 		return 0;
@@ -467,30 +495,52 @@ namespace Columbus
 
 	uint64 Image::GetSize(uint32 Level) const
 	{
-		uint32 BlockSize = 0;
-
-		if (Format == TextureFormat::DXT1)
+		if (IsCompressedFormat())
 		{
-			BlockSize = 8;
+			uint32 BlockSize = 0;
+
+			if (Format == TextureFormat::DXT1)
+			{
+				BlockSize = 8;
+			}
+			else
+			{
+				BlockSize = 16;
+			}
+
+			return (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
 		}
 		else
 		{
-			BlockSize = 16;
+			return (Width >> Level) * (Height >> Level) * GetBytesPerPixel();
 		}
 
-		return (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
+		return 0;
 	}
-
-	/*uint64 Image::GetSize() const
-	{
-		return Size;
-	}*/
 
 	uint8* Image::Get2DData(uint32 Level) const
 	{
-		if (Data != nullptr)
+		if (ImageType == Type::Image2D)
 		{
-			return &Data[0] + GetOffset(Level);
+			if (Data != nullptr)
+			{
+				return &Data[0] + GetOffset(Level);
+			}
+		}
+
+		return nullptr;
+	}
+
+	uint8* Image::GetCubeData(uint32 Face, uint32 Level) const
+	{
+		if (ImageType == Type::ImageCube)
+		{
+			if (Data != nullptr)
+			{
+				uint64 FaceSize = 0;
+				for (uint32 i = 0; i < MipMaps; i++) FaceSize += GetSize(i);
+				return &Data[0] + Face * FaceSize + GetOffset(Level);
+			}
 		}
 
 		return nullptr;
@@ -504,11 +554,6 @@ namespace Columbus
 	uint8* Image::GetData() const
 	{
 		return Data;
-	}
-	
-	std::string Image::GetFileName() const
-	{
-		return FileName;
 	}
 	
 	Image::~Image()

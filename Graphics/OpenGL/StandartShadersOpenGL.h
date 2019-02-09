@@ -7,11 +7,10 @@ namespace Columbus
 		"in vec2 aUV;\n"
 		"in vec3 aNorm;\n"
 		"out vec3 texCoord;\n"
-		"uniform mat4 uView;\n"
-		"uniform mat4 uProjection;\n"
+		"uniform mat4 uViewProjection;"
 		"void main()\n"
 		"{\n"
-		"gl_Position = uProjection * uView * vec4(aPos, 1.0);\n"
+		"gl_Position = uViewProjection * vec4(aPos, 1.0);\n"
 		"texCoord = aPos;\n"
 		"}\n";
 
@@ -23,6 +22,7 @@ namespace Columbus
 		"void main()\n"
 		"{\n"
 		"FragColor = texture(uSkybox, texCoord);\n"
+		"gl_FragDepth = 0x7FFFFFFF;"
 		"}\n";
 
 }

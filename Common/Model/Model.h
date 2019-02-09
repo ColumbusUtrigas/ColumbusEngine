@@ -1,23 +1,9 @@
-/************************************************
-*                    Model.h                    *
-*************************************************
-*          This file is a part of:              *
-*               COLUMBUS ENGINE                 *
-*************************************************
-*                Nika(Columbus) Red             *
-*                   08.01.2018                  *
-*************************************************/
 #pragma once
 
-#include <System/Assert.h>
-#include <System/System.h>
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <vector>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+#include <Math/Box.h>
 
 namespace Columbus
 {
@@ -31,33 +17,79 @@ namespace Columbus
 		Vector3 bitangent;
 	};
 
-	bool ModelIsCMF(std::string FileName);
-	bool ModelIsCMFMemory(uint8* FileData, uint64 FileSize);
+	class ModelLoader
+	{
+	public:
+		bool Indexed = false;
 
-	uint32 ModelLoadCMF(std::string FileName, std::vector<Vertex>& OutVertices);
-	uint32 ModelLoadCMFFromMemory(uint8* FileData, uint64 FileSize, std::vector<Vertex>& OutVertices);
+		uint32 VerticesCount = 0;
+		uint32 IndicesCount = 0;
+		uint32 IndexSize = 0;
 
-	void ModelConvertCMFToCompressed(std::string SourceFileName, std::string DestinyFileName);
+		Vector3* Positions = nullptr;
+		Vector2* UVs = nullptr;
+		Vector3* Normals = nullptr;
+		Vector3* Tangents = nullptr;
+		void*    Indices = nullptr;
 
-	class C_Model
+		Box BoundingBox;
+	public:
+		ModelLoader() {}
+
+		virtual bool Load(const char* File) { return false; }
+
+		~ModelLoader() {}
+	};
+
+	class Model
 	{
 	private:
-		std::vector<Vertex> Vertices;
-		std::string FileName;
-		bool Existance = false;
+		bool Indexed = false;
+		bool Exist = false;
+
+		uint32 VerticesCount = 0;
+		uint32 IndicesCount  = 0;
+		uint32 IndexSize = 0;
+
+		Vector3* Positions = nullptr;
+		Vector2* UVs = nullptr;
+		Vector3* Normals = nullptr;
+		Vector3* Tangents = nullptr;
+
+		Vertex* Vertices = nullptr;
+		void* Indices = nullptr;
+
+		Box BoundingBox;
 	public:
-		C_Model();
-		C_Model(std::string aFile);
+		Model();
 
-		bool Load(std::string aFile);
-		bool Save(std::string aFile) const;
-		bool IsExist() const;
-		bool Free();
+		bool Load(const char* File);
+		void FreeData();
 
-		std::vector<Vertex> GetData() const;
-		std::string GetFilename() const;
+		bool IsIndexed() const { return Indexed; }
+		bool IsExist()   const { return Exist;   }
 
-		~C_Model();
+		uint32 GetVerticesCount() const { return VerticesCount; }
+		uint32 GetIndicesCount()  const { return IndicesCount;  }
+		uint32 GetIndexSize()     const { return IndexSize;     }
+
+		bool HasPositions() const { return Positions != nullptr; }
+		bool HasUVs()       const { return UVs       != nullptr; }
+		bool HasNormals()   const { return Normals   != nullptr; }
+		bool HasTangents()  const { return Tangents  != nullptr; }
+		bool HasVertices()  const { return Vertices  != nullptr; }
+		bool HasIndices()   const { return Indices   != nullptr; }
+
+		const Vector3* GetPositions() const { return Positions; }
+		const Vector2* GetUVs()       const { return UVs;       }
+		const Vector3* GetNormals()   const { return Normals;   }
+		const Vector3* GetTangents()  const { return Tangents;  }
+		const Vertex*  GetVertices()  const { return Vertices;  }
+		const void*    GetIndices()   const { return Indices;   }
+
+		Box GetBoundingBox() const { return BoundingBox; }
+		
+		~Model();
 	};
 
 }

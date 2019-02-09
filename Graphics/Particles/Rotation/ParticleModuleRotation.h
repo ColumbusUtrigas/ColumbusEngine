@@ -1,18 +1,18 @@
 #pragma once
 
-#include <Graphics/Particles/Rotation/ParticleModuleRotationBase.h>
+#include <Graphics/Particles/ParticleModule.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleRotation : public ParticleModuleRotationBase
+	class ParticleModuleRotation : public ParticleModule
 	{
 	public:
 		float Min;
 		float Max;
 		float MinVelocity;
 		float MaxVelocity;
-
+	public:
 		ParticleModuleRotation() :
 			Min(0.0f),
 			Max(0.0f),
@@ -27,8 +27,8 @@ namespace Columbus
 		*/
 		void Spawn(Particle& OutParticle) override
 		{
-			OutParticle.rotation = Random::range(Min, Max);
-			OutParticle.rotationSpeed = Random::range(MinVelocity, MaxVelocity);
+			OutParticle.rotation = Random::Range(Min, Max);
+			OutParticle.rotationSpeed = Random::Range(MinVelocity, MaxVelocity);
 		}
 
 		~ParticleModuleRotation() override {}
