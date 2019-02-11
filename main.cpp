@@ -1,8 +1,8 @@
-#include <Engine.h>
+#include <Scene/Scene.h>
+#include <Input/Input.h>
+#include <Scene/ComponentMeshRenderer.h>
 #include <Graphics/OpenGL/DeviceOpenGL.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
-
-#include <RenderAPIOpenGL/OpenGL.h>
 
 using namespace Columbus;
 
@@ -24,7 +24,7 @@ class FireplaceBright : public Component
 private:
 	float Time = 0.0f;
 public:
-	virtual void Update(float TimeTick, Transform& Trans) override
+	virtual void Update(float TimeTick, Transform& Trans) final override
 	{
 		float Period = 0.5f;
 		float Amplitude = 0.3f;
@@ -57,8 +57,8 @@ int main(int argc, char** argv)
 	bool cursor = false;
 	scene.Load("Data/2.scene");
 
-	scene.SetCamera(&camera);
-	scene.SetAudioListener(&Listener);
+	scene.SetCamera(camera);
+	scene.SetAudioListener(Listener);
 	scene.Audio.Play();
 
 	Fireplace = scene.GetGameObject(2);
@@ -105,20 +105,6 @@ int main(int argc, char** argv)
 
 	float wheel = 0.0f;
 
-	/*JSON J;
-	printf("%i\n", J.Load("test.json"));
-	printf("%s\n", J["s"].GetString().c_str());
-	printf("%i\n", J["i"].GetInt());
-	printf("%f\n", J["f"].GetFloat());
-	printf("%i\n", J["b"].GetBool());
-	printf("%i\n", J["n"].IsNull());
-	for (int i = 0; i < J["a"].GetElementsCount(); i++)
-		printf("%i\n", J["a"][i].GetInt());
-	printf("%s\n", J["o"]["s"].GetString().c_str());*/
-	/*J.Parse("{ \"hello\": \"world\" }");
-	printf("%i %i\n", J.IsObject(), J.GetChildrenCount());
-	printf("%i %s\n", J["hello"].IsString(), J["hello"].GetString().c_str());*/
-
 	while (window.IsOpen())
 	{
 		float RedrawTime = window.GetRedrawTime();
@@ -129,12 +115,10 @@ int main(int argc, char** argv)
 		{
 			switch (Event.type)
 			{
-			case SDL_QUIT:    window.Close();                              break;
-			case SDL_KEYDOWN: input.SetKeyDown(Event.key.keysym.scancode); break;
-			case SDL_KEYUP:   input.SetKeyUp(Event.key.keysym.scancode);   break;
-			case SDL_MOUSEMOTION:
-				input.SetMousePosition({ Event.motion.x, Event.motion.y });
-				break;
+			case SDL_QUIT:        window.Close();                                             break;
+			case SDL_KEYDOWN:     input.SetKeyDown(Event.key.keysym.scancode);                break;
+			case SDL_KEYUP:       input.SetKeyUp(Event.key.keysym.scancode);                  break;
+			case SDL_MOUSEMOTION: input.SetMousePosition({ Event.motion.x, Event.motion.y }); break;
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
 				input.SetMouseButton(Event.button.button, { Event.button.x, Event.button.y, (bool)Event.button.state, Event.button.clicks });

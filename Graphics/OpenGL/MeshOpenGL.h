@@ -27,7 +27,7 @@ namespace Columbus
 		MeshOpenGL(const std::vector<Vertex>& Vertices);
 
 		virtual void SetVertices(const std::vector<Vertex>& Vertices) final override;
-		virtual void Load(const Model& InModel) final override;
+		virtual bool Load(const Model& InModel) final override;
 
 		virtual void Bind()     final override;
 		virtual uint32 Render() final override;

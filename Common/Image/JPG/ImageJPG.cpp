@@ -151,6 +151,7 @@ namespace Columbus
 		uint64 Size = 0;
 
 		Data = ImageLoadJPG(FileName, Width, Height, Size, Format);
+		ImageType = ImageLoader::Type::Image2D;
 
 		return (Data != nullptr);
 	}

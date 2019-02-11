@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Types.h>
+#include <utility>
 
 namespace Columbus
 {
@@ -64,13 +65,14 @@ namespace Columbus
 	public:
 		enum class Type;
 	public:
-		uint8* Data = nullptr;
 		uint32 Width = 0;
 		uint32 Height = 0;
 		uint32 Mipmaps = 0;
-		TextureFormat Format = TextureFormat::RGBA8;
 
+		TextureFormat Format = TextureFormat::RGBA8;
 		Type ImageType;
+
+		uint8* Data = nullptr;
 	public:
 		enum class Type
 		{
@@ -115,8 +117,8 @@ namespace Columbus
 		uint32 Width = 0;
 		uint32 Height = 0;
 		uint32 Depth = 0;
-		uint64 Size = 0;
 		uint32 MipMaps = 0;
+		uint64 Size = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
 		uint8* Data = nullptr;
 		bool Exist = false;
@@ -132,9 +134,25 @@ namespace Columbus
 		};
 	public:
 		Image();
+		Image(const char* FileName) { if (!Load(FileName)) { Data = nullptr; Exist = false; } }
+		Image(const Image&) = delete;
+		Image(Image&& Base) noexcept { *this = std::move(Base); }
 
-		bool Load(const char* InFilename, ImageLoading Flags = ImageLoading::None);
-		bool Save(const char* InFilename, ImageFormat Format, uint32 Quality = 100) const;
+		Image& operator=(const Image&) = delete;
+		Image& operator=(Image&& Base) noexcept
+		{
+			std::swap(Width, Base.Width);
+			std::swap(Height, Base.Height);
+			std::swap(Depth, Base.Depth);
+			std::swap(MipMaps, Base.MipMaps);
+			std::swap(Size, Base.Size);
+			std::swap(Format, Base.Format);
+			std::swap(Data, Base.Data);
+			std::swap(Exist, Base.Exist);
+		}
+
+		bool Load(const char* FileName, ImageLoading Flags = ImageLoading::None);
+		bool Save(const char* FileName, ImageFormat Format, uint32 Quality = 100) const;
 		bool IsExist() const;
 		void FreeData();
 
@@ -170,6 +188,5 @@ namespace Columbus
 	};
 
 }
-
 
 

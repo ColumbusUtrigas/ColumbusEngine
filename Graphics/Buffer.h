@@ -66,18 +66,3 @@ namespace Columbus
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

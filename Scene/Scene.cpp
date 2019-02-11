@@ -594,16 +594,11 @@ namespace Columbus
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Textures", elem }, path))
 				{
-					Image Img;
-
-					if (Img.Load(path.c_str()))
+					SmartPointer<Texture> Tex(gDevice->CreateTexture());
+					if (Tex->Load(path.c_str()))
 					{
-						auto Tex = gDevice->CreateTexture();
-						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, Img.GetFormat()));
-						Tex->Load(Img);
-
 						Log::Success("Texture loaded: %s", path.c_str());
-						Textures.insert(std::make_pair(i, SmartPointer<Texture>(Tex)));
+						Textures[i] = std::move(Tex);
 					}
 				}
 			}
@@ -631,22 +626,11 @@ namespace Columbus
 				elem = std::string("Mesh") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Meshes", elem }, path))
 				{
-					Model M;
-
-					if (M.Load(path.c_str()))
+					SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
+					if (tMesh->Load(path.c_str()))
 					{
-						Mesh* tMesh = gDevice->CreateMesh();
-
-						if (tMesh != nullptr)
-						{
-							tMesh->Load(M);
-							Meshes.insert(std::make_pair(i, SmartPointer<Mesh>(tMesh)));
-						}
-					}
-					else
-					{
-						Log::Error("Couldn't load mesh: %s", path.c_str());
-						continue;
+						Log::Success("Mesh loaded: %s", path.c_str());
+						Meshes[i] = std::move(tMesh);
 					}
 				}
 			}
@@ -662,17 +646,11 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Sounds", elem, "Path" }, path) &&
 				    serializer.GetSubBool({ "Resources", "Sounds", elem, "Streaming" }, streaming))
 				{
-					Sound* tSound = new Sound();
-
+					SmartPointer<Sound> tSound(new Sound());
 					if (tSound->Load(path.c_str(), streaming))
 					{
-						Sounds.insert(std::make_pair(i, SmartPointer<Sound>(tSound)));
 						Log::Success("Sound loaded: %s", path.c_str());
-					}
-					else
-					{
-						delete tSound;
-						continue;
+						Sounds[i] = std::move(tSound);
 					}
 				}
 			}
@@ -761,7 +739,6 @@ namespace Columbus
 	
 	Scene::~Scene()
 	{
-		Objects.clear();
 		delete Sky;
 	}
 

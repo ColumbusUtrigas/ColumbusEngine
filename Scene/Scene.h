@@ -57,8 +57,8 @@ namespace Columbus
 		}
 
 		void SetSkybox(Skybox* InSky) { Sky = InSky; }
-		void SetCamera(Camera* InMainCamera) { MainCamera = InMainCamera; }
-		void SetAudioListener(AudioListener* InListener) { Listener = InListener; }
+		void SetCamera(Camera& InMainCamera) { MainCamera = &InMainCamera; }
+		void SetAudioListener(AudioListener& InListener) { Listener = &InListener; }
 		void SetContextSize(const iVector2& InContextSize) { ContextSize = InContextSize; }
 
 		GameObject* GetGameObject(uint32 ID) const;
