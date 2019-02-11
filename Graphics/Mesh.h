@@ -20,15 +20,27 @@ namespace Columbus
 	public:
 		std::vector<Light*> Lights;
 	public:
-		Mesh() : VerticesCount(0) { }
+		Mesh() : VerticesCount(0) {}
 		Mesh(const std::vector<Vertex>& Vertices) : VerticesCount(0) { SetVertices(Vertices); LightsSorted = false; }
 
-		virtual void SetVertices(const std::vector<Vertex>& InVertices) {}
-		virtual void Load(const Model& InModel) {}
-		virtual void Bind() {}
-		virtual uint32 Render() { return 0; }
-		virtual void Unbind() {}
-		virtual uint64 GetMemoryUsage() const { return 0;  }
+		bool Load(const char* FileName)
+		{
+			Model TmpModel;
+
+			if (!TmpModel.Load(FileName))
+			{
+				return false;
+			}
+
+			return Load(TmpModel);
+		}
+
+		virtual void SetVertices(const std::vector<Vertex>& InVertices) = 0;
+		virtual bool Load(const Model& InModel) = 0;
+		virtual void Bind() = 0;
+		virtual uint32 Render() = 0;
+		virtual void Unbind() = 0;
+		virtual uint64 GetMemoryUsage() const = 0;
 
 		void SetLights(const std::vector<Light*>& InLights) { Lights = InLights; }
 
@@ -36,7 +48,9 @@ namespace Columbus
 
 		void Clear() {}
 
-		virtual ~Mesh() {}
+		virtual ~Mesh() {};
 	};
 
 }
+
+

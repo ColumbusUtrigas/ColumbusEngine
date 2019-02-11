@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/Types.h>
+#include <Math/Vector2.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -9,8 +9,6 @@ namespace Columbus
 	class ScreenQuad
 	{
 	public:
-		ScreenQuad() {}
-
 		void Render(const Vector2& Position = { 0 }, const Vector2& Size = { 1 })
 		{
 			glDisable(GL_CULL_FACE);
@@ -31,11 +29,6 @@ namespace Columbus
 			glEnd();
 
 			glDepthMask(GL_TRUE);
-		}
-
-		~ScreenQuad()
-		{
-
 		}
 	};
 

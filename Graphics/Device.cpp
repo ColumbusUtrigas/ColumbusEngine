@@ -30,7 +30,7 @@ namespace Columbus
 
 	Mesh* Device::CreateMesh() const
 	{
-		return new Mesh();
+		return nullptr;
 	}
 	
 	Framebuffer* Device::createFramebuffer() const

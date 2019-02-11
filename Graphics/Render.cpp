@@ -32,10 +32,7 @@ namespace Columbus
 		BlackTexture->Create2D(Texture::Properties(1, 1, 0, TextureFormat::R8));
 		BlackTexture->Load(&Zero, Texture::Properties(1, 1, 0, TextureFormat::R8));
 
-		Image BlobImage;
-		BlobImage.Load("Data/Textures/blob.png");
-		Blob->Create2D(Texture::Properties{ BlobImage.GetWidth(), BlobImage.GetHeight(), 0, BlobImage.GetFormat() });
-		Blob->Load(BlobImage);
+		Blob->Load("Data/Textures/blob.png");
 
 		BaseEffect.ColorTexturesEnablement[0] = true;
 		BaseEffect.ColorTexturesEnablement[1] = true;
@@ -301,7 +298,7 @@ namespace Columbus
 		((ShaderProgramOpenGL*)(NoneShader))->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
 		Quad.Render();
 
-		// Lens flare rendering test, I will use it in future
+		// Lens flare rendering test, I will use it in the future
 
 		/*static int LensFlareShaderTextureID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Texture");
 

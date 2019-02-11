@@ -49,14 +49,14 @@ namespace Columbus
 	class Vector
 	{
 	private:
-		ValueType* Data = nullptr;
+		ValueType* _Data = nullptr;
 		Allocator _Allocator;
 		uint32 _Size = 0;
 		uint32 _Capacity = 10;
 	public:
 		Vector()
 		{
-			Data = _Allocator.Allocate(_Capacity);
+			_Data = _Allocator.Allocate(_Capacity);
 		}
 		Vector(const Vector& Base) { *this = Base; }
 		Vector(Vector&& Base)      { *this = Base; }
@@ -64,9 +64,14 @@ namespace Columbus
 		uint32 Size()     const { return _Size;     }
 		uint32 Capacity() const { return _Capacity; }
 
+		ValueType* Data() const
+		{
+			return _Data;
+		}
+
 		void Clear()
 		{
-			Data = _Allocator.Reallocate(Data, _Capacity);
+			//_Data = _Allocator.Reallocate(_Data, _Capacity);
 			_Size = 0;
 		}
 
@@ -75,7 +80,7 @@ namespace Columbus
 			if (NewCapacity > _Capacity)
 			{
 				_Capacity = NewCapacity;
-				Data = _Allocator.Reallocate(Data, _Capacity);
+				_Data = _Allocator.Reallocate(_Data, _Capacity);
 			}
 		}
 
@@ -97,36 +102,33 @@ namespace Columbus
 				Reserve(_Capacity * 2);
 			}
 
-			new(&Data[_Size++]) ValueType(std::forward<Args>(Arguments)...);
+			new(&_Data[_Size++]) ValueType(std::forward<Args>(Arguments)...);
 		}
 
-		RandomAccessIterator<ValueType> begin() { return RandomAccessIterator<ValueType>(Data); }
-		RandomAccessIterator<ValueType> end() { return RandomAccessIterator<ValueType>(Data + _Size); }
+		RandomAccessIterator<ValueType> begin() { return RandomAccessIterator<ValueType>(_Data); }
+		RandomAccessIterator<ValueType> end() { return RandomAccessIterator<ValueType>(_Data + _Size); }
 
-		const RandomAccessIterator<const ValueType> begin() const { return RandomAccessIterator<const ValueType>(Data); }
-		const RandomAccessIterator<const ValueType> end() const { return RandomAccessIterator<const ValueType>(Data + _Size); }
+		const RandomAccessIterator<const ValueType> begin() const { return RandomAccessIterator<const ValueType>(_Data); }
+		const RandomAccessIterator<const ValueType> end() const { return RandomAccessIterator<const ValueType>(_Data + _Size); }
 
 		Vector& operator=(const Vector& Other)
 		{
-			if (Data != nullptr) free(Data);
+			_Allocator.Deallocate(_Data);
 			_Size = Other._Size;
 			_Capacity = Other._Capacity;
-			Data = (ValueType*)malloc(_Capacity * sizeof(ValueType));
-			memcpy(Data, Other.Data, _Size * sizeof(ValueType));
+			_Data = _Allocator.Allocate(_Capacity);
+			memcpy(_Data, Other._Data, _Size * sizeof(ValueType)); // TODO
 			return *this;
 		}
 
 		ValueType& operator[](uint32 Index) const
 		{
-			return Data[Index];
+			return _Data[Index];
 		}
 
 		~Vector()
 		{
-			if (Data != nullptr)
-			{
-				free(Data);
-			}
+			_Allocator.Deallocate(_Data);
 		}
 	};
 

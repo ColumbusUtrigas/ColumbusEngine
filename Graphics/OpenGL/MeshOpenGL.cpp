@@ -112,7 +112,7 @@ namespace Columbus
 		BoundingBox.Max = Vector3(OBBData.maxX, OBBData.maxY, OBBData.maxZ);
 	}
 
-	void MeshOpenGL::Load(const Model& InModel)
+	bool MeshOpenGL::Load(const Model& InModel)
 	{
 		VerticesCount = InModel.GetVerticesCount();
 		IndicesCount = InModel.GetIndicesCount();
@@ -163,6 +163,8 @@ namespace Columbus
 			case 4: IndicesType = GL_UNSIGNED_INT;   break;
 			}
 		}
+
+		return true;
 	}
 
 	void MeshOpenGL::Bind()

@@ -84,6 +84,7 @@ namespace Columbus
 		Height = Info.Height;
 		Mipmaps = 1;
 		Data = new uint8[Size];
+		ImageType = ImageLoader::Type::Image2D;
 
 		BMPImageFile.SeekSet(Header.Offset);
 		BMPImageFile.ReadBytes(Data, Size);

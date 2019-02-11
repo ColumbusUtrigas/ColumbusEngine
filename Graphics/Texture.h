@@ -15,8 +15,6 @@ namespace Columbus
 		struct Flags;
 		struct Properties;
 	protected:
-		Image mImage;
-
 		uint32 Width;
 		uint32 Height;
 

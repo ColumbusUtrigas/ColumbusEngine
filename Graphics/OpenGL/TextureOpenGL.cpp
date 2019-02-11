@@ -380,15 +380,29 @@ namespace Columbus
 
 	bool TextureOpenGL::Load(const char* File)
 	{
-		if (!mImage.Load(File))
+		Image TmpImage;
+
+		if (!TmpImage.Load(File))
 		{
 			return false;
 		}
 
-		bool Result = Load(mImage);
+		bool Result = false;
 
-		mImage.FreeData();
-		return Result;
+		switch (TmpImage.GetType())
+		{
+		case Image::Type::Image2D: Result = Create2D(Properties{ TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat() }); break;
+		case Image::Type::Image3D: break;
+		case Image::Type::ImageCube: Result = CreateCube(Properties{ TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat() }); break;
+		case Image::Type::Image2DArray: break;
+		}
+
+		if (Result)
+		{
+			return Load(TmpImage);
+		}
+
+		return false;
 	}
 
 	void TextureOpenGL::Clear()
@@ -628,7 +642,5 @@ namespace Columbus
 	}
 
 }
-
-
 
 
