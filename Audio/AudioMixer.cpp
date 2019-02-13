@@ -64,8 +64,7 @@ namespace Columbus
 
 			BufferInitialized = true;
 		}
-
-		memset(Data, 0, Count * sizeof(Sound::Frame));
+		
 		memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
 
 		for (auto& Source : Sources)
@@ -98,26 +97,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

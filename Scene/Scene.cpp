@@ -702,10 +702,11 @@ namespace Columbus
 		ParticlesWorkflow();
 		RigidbodyWorkflow();
 
-		float Time = (float)DeltaTime.Elapsed();
+		float Time = (float)DeltaTime.Elapsed() * TimeFactor;
+		DeltaTime.Reset();
 
 		PhysWorld.Step(Time, 10);
-		DeltaTime.Reset();
+		Audio.SetSpeed(TimeFactor);
 
 		RigidbodyPostWorkflow();
 

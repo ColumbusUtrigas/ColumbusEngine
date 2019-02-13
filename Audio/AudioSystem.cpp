@@ -5,23 +5,32 @@ namespace Columbus
 
 	AudioSystem::AudioSystem()
 	{
-		Mixer = new AudioMixer();
-		Player = new AudioPlayer(2, 44100, Mixer);
+		Player = new AudioPlayer(2, 44100, &Mixer);
 	}
 
 	void AudioSystem::AddSource(AudioSource* Source)
 	{
-		Mixer->AddSource(Source);
+		Mixer.AddSource(Source);
 	}
 
 	void AudioSystem::SetListener(AudioListener Listener)
 	{
-		Mixer->SetListener(Listener);
+		Mixer.SetListener(Listener);
 	}
 
 	bool AudioSystem::HasSource(AudioSource* Source)
 	{
-		return Mixer->HasSource(Source);
+		return Mixer.HasSource(Source);
+	}
+
+	void AudioSystem::SetSpeed(float Speed)
+	{
+		Mixer.SetSpeed(Speed);
+	}
+
+	float AudioSystem::GetSpeed() const
+	{
+		return Mixer.GetSpeed();
 	}
 
 	void AudioSystem::Play()
@@ -37,7 +46,6 @@ namespace Columbus
 	AudioSystem::~AudioSystem()
 	{
 		delete Player;
-		delete Mixer;
 	}
 
 }

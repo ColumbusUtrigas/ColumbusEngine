@@ -16,6 +16,7 @@ namespace Columbus
 		Sound::Frame* Data = nullptr;
 		Sound::FrameHight* Mixed = nullptr;
 
+		float Speed = 1.0f;
 		bool BufferInitialized = false;
 	public:
 		AudioMixer() {}
@@ -29,6 +30,9 @@ namespace Columbus
 		{
 			Listener = InListener;
 		}
+
+		void SetSpeed(float InSpeed) { Speed = InSpeed; }
+		float GetSpeed() const { return Speed; }
 
 		bool HasSource(AudioSource* Source)
 		{
@@ -53,9 +57,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
 
 

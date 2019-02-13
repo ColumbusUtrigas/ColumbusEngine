@@ -46,6 +46,7 @@ namespace Columbus
 		void RigidbodyPostWorkflow();
 	public:
 		AudioSystem Audio;
+		float TimeFactor = 1.0f;
 	public:
 		Scene();
 
