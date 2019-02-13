@@ -10,7 +10,7 @@ namespace Columbus
 	{
 	private:
 		AudioPlayer* Player;
-		AudioMixer* Mixer;
+		AudioMixer Mixer;
 	public:
 		AudioSystem();
 
@@ -18,6 +18,8 @@ namespace Columbus
 		void SetListener(AudioListener Listener);
 
 		bool HasSource(AudioSource* Source);
+		void SetSpeed(float Speed);
+		float GetSpeed() const;
 
 		void Play();
 		void Stop();

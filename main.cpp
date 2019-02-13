@@ -104,6 +104,7 @@ int main(int argc, char** argv)
 	SDL_Event Event;
 
 	float wheel = 0.0f;
+	const int CameraSpeed = 5;
 
 	while (window.IsOpen())
 	{
@@ -124,6 +125,9 @@ int main(int argc, char** argv)
 				input.SetMouseButton(Event.button.button, { Event.button.x, Event.button.y, (bool)Event.button.state, Event.button.clicks });
 				break;
 			case SDL_MOUSEWHEEL: input.SetMouseWheel({ Event.wheel.x, Event.wheel.y }); break;
+			case SDL_CONTROLLERAXISMOTION: input.SetGamepadAxis((Input::GamepadAxis)Event.caxis.axis, (float)(Event.caxis.value) / 32768.0f); break;
+			case SDL_CONTROLLERBUTTONDOWN:
+			case SDL_CONTROLLERBUTTONUP: input.SetGamepadButton((Input::GamepadButton)Event.cbutton.button, Event.cbutton.state); break;
 			}
 
 			window.PollEvent(Event);
@@ -142,23 +146,15 @@ int main(int argc, char** argv)
 		wheel -= wheel * 3 * RedrawTime;
 		if (abs(wheel) <= 0.2) wheel = 0.0f;
 
-		if (input.GetKey(SDL_SCANCODE_W))
-			camera.Pos += camera.Direction() * RedrawTime * 5;
-		if (input.GetKey(SDL_SCANCODE_S))
-			camera.Pos += -camera.Direction() * RedrawTime * 5;
-		if (input.GetKey(SDL_SCANCODE_A))
-			camera.Pos += -camera.Right() * RedrawTime * 5;
-		if (input.GetKey(SDL_SCANCODE_D))
-			camera.Pos += camera.Right() * RedrawTime * 5;
+		camera.Pos += camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_W);
+		camera.Pos -= camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_S);
+		camera.Pos -= camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_A);
+		camera.Pos += camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_D);
+		camera.Pos -= camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_LSHIFT);
+		camera.Pos += camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_SPACE);
 
-		if (input.GetKey(SDL_SCANCODE_LSHIFT))
-			camera.Pos += -camera.Up() * RedrawTime * 5;
-		if (input.GetKey(SDL_SCANCODE_SPACE))
-			camera.Pos += camera.Up() * RedrawTime * 5;
-		if (input.GetKey(SDL_SCANCODE_Q))
-			camera.Rot += Vector3(0, 0, 125 * RedrawTime);
-		if (input.GetKey(SDL_SCANCODE_E))
-			camera.Rot += Vector3(0, 0, -125 * RedrawTime);
+		camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_Q);
+		camera.Rot += Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_E);
 
 		if (input.GetKeyDown(SDL_SCANCODE_ESCAPE))
 		{
@@ -174,7 +170,14 @@ int main(int argc, char** argv)
 			input.SetMousePosition (window.GetSize() / 2);
 		}
 
-		camera.Rot.Clamp({ -89.9f, -360.0f, 0.0f }, {89.9f, 360.0f, 0.0f});
+		float SpeedMultiplier = input.GetGamepadAxis(Input::GamepadAxis::RTrigger) + 1;
+		scene.TimeFactor = 1.0f - input.GetGamepadAxis(Input::GamepadAxis::LTrigger);
+
+		camera.Pos += input.GetGamepadStick(Input::Stick::Left).X * camera.Right() * RedrawTime * CameraSpeed * SpeedMultiplier;
+		camera.Pos -= input.GetGamepadStick(Input::Stick::Left).Y * camera.Direction() * RedrawTime * CameraSpeed * SpeedMultiplier;
+		camera.Rot += Vector3(input.GetGamepadStick(Input::Stick::Right).YX() * Vector2 { 1, -1 } * RedrawTime * 60, 0);
+
+		camera.Rot.Clamp({ -89.9f, -360.0f, -360.0f }, { 89.9f, 360.0f, 360.0f });
 		camera.Update();
 
 		Listener.Position = camera.Pos;

@@ -7,6 +7,15 @@ namespace Columbus
 	Input::Input()
 	{
 		KeyboardState = (uint8_t*)SDL_GetKeyboardState(&KeysNum);
+
+		for (int Joystick = 0; Joystick < SDL_NumJoysticks(); Joystick++)
+		{
+			if (SDL_IsGameController(Joystick))
+			{
+				Gamepad.Internal = SDL_GameControllerOpen(Joystick);
+				break;
+			}
+		}
 	}
 	
 	void Input::ShowMouseCursor(bool Show)
@@ -152,6 +161,16 @@ namespace Columbus
 	{
 		Wheel = State;
 	}
+
+	void Input::SetGamepadAxis(GamepadAxis Axis, float Value)
+	{
+		Gamepad.Axes[Axis] = Value;
+	}
+
+	void Input::SetGamepadButton(GamepadButton Button, bool Value)
+	{
+		Gamepad.Buttons[Button] = Value;
+	}
 	
 	bool Input::GetKey(uint32 Key) const
 	{
@@ -187,10 +206,36 @@ namespace Columbus
 	{
 		return Wheel;
 	}
+
+	float Input::GetGamepadAxis(GamepadAxis Axis) const
+	{
+		return fabs(Gamepad.Axes[Axis]) > GamepadDead ? Gamepad.Axes[Axis] : 0.0f;
+	}
+
+	Vector2 Input::GetGamepadStick(Stick Stick) const
+	{
+		switch (Stick)
+		{
+		case Stick::Left:  return { GetGamepadAxis(GamepadAxis::LStickX), GetGamepadAxis(GamepadAxis::LStickY) }; break;
+		case Stick::Right: return { GetGamepadAxis(GamepadAxis::RStickX), GetGamepadAxis(GamepadAxis::RStickY) }; break;
+		}
+
+		return {};
+	}
+
+	bool Input::GetGamepadButton(GamepadButton Button) const
+	{
+		return Gamepad.Buttons[Button];
+	}
 	
-	Input::~Input() {}
+	Input::~Input()
+	{
+		if (Gamepad.Internal != nullptr)
+		{
+			SDL_GameControllerClose((SDL_GameController*)Gamepad.Internal);
+		}
+	}
 
 }
-
 
 
