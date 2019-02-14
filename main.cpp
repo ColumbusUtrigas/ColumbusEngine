@@ -49,17 +49,11 @@ int main(int argc, char** argv)
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
 
-	window.SetVSync(true);
-
 	input.ShowMouseCursor(false);
 	input.SetSystemCursor(SystemCursor::Crosshair);
 
 	bool cursor = false;
 	scene.Load("Data/2.scene");
-
-	scene.SetCamera(camera);
-	scene.SetAudioListener(Listener);
-	scene.Audio.Play();
 
 	Fireplace = scene.GetGameObject(2);
 	Fireplace->AddComponent(new FireplaceBright());
@@ -106,6 +100,13 @@ int main(int argc, char** argv)
 	float wheel = 0.0f;
 	const int CameraSpeed = 5;
 
+	bool VSync = true;
+	window.SetVSync(VSync);
+
+	scene.SetCamera(camera);
+	scene.SetAudioListener(Listener);
+	scene.Audio.Play();
+
 	while (window.IsOpen())
 	{
 		float RedrawTime = window.GetRedrawTime();
@@ -140,6 +141,10 @@ int main(int argc, char** argv)
 		input.SetMouseFocus(window.HasMouseFocus());
 
 		camera.Perspective(60, window.GetAspect(), 0.1f, 1000);
+
+		VSync = input.GetKeyDown(SDL_SCANCODE_V) ? !VSync : VSync;
+		VSync = input.GetGamepadButton(Input::GamepadButton::DPadDown) ? !VSync : VSync;
+		window.SetVSync(VSync);
 
 		wheel += input.GetMouseWheel().Y * 5;
 		camera.Pos += camera.Direction() * wheel * RedrawTime;
