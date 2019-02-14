@@ -162,7 +162,7 @@
 			vec4 AlbedoSample = texture2D(uMaterial.AlbedoMap, TiledUV);
 
 			if (uMaterial.HasDetailAlbedoMap)
-				Albedo = vec4(AlbedoSample.rgb * texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV) * 1.8f, AlbedoSample.a);
+				Albedo = vec4(AlbedoSample.rgb * texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV).rgb * 1.8f, AlbedoSample.a);
 			else
 				Albedo = AlbedoSample;
 		}
@@ -295,10 +295,10 @@
 		BRDF += LightCalc(3, F);
 
 		const float MAX_REFLECTION_LOD = 7.0;
-		vec3 prefilteredColor = textureCubeLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
+		vec3 prefilteredColor = textureLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
 		vec2 envBRDF  = texture(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
 		vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-		vec3 Ambient = textureCube(uMaterial.IrradianceMap, Normal).rgb;
+		vec3 Ambient = texture(uMaterial.IrradianceMap, Normal).rgb;
 		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
 
 		BRDF += (1.0 - Metallic) * Ambient * 0.1 * AO;
