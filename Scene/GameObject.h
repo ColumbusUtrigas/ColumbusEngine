@@ -36,6 +36,18 @@ namespace Columbus
 		void Update(float DeltaTime);
 		void Render();
 
+		template <typename T>
+		T* GetComponent()
+		{
+			for (const auto& Comp : Components)
+			{
+				T* C = dynamic_cast<T*>(Comp.Get());
+				if (C != nullptr) return C;
+			}
+
+			return nullptr;
+		}
+
 		bool HasComponent(Component::Type Type);
 		Component* GetComponent(Component::Type Type);
 

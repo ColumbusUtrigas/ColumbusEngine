@@ -27,72 +27,6 @@ namespace Columbus
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
 	}
 
-	void Scene::AudioWorkflow()
-	{
-		for (auto& Object : Objects)
-		{
-			ComponentAudioSource* audio = static_cast<ComponentAudioSource*>(Object.second->GetComponent(Component::Type::AudioSource));
-
-			if (audio != nullptr)
-			{
-				if (!Audio.HasSource(audio->GetSource()))
-				{
-					Audio.AddSource(audio->GetSource());
-				}
-			}
-		}
-	}
-
-	void Scene::LightWorkflow()
-	{
-		Lights.clear();
-		
-		for (auto& Object : Objects)
-		{
-			ComponentLight* light = static_cast<ComponentLight*>(Object.second->GetComponent(Component::Type::Light));
-
-			if (light != nullptr)
-			{
-				light->Render(Object.second->transform);
-				Lights.push_back(light->GetLight());
-			}
-		}
-	}
-
-	void Scene::MeshWorkflow()
-	{
-		for (auto& Object : Objects)
-		{
-			ComponentMeshRenderer* mesh = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
-
-			if (mesh != nullptr)
-			{
-				mesh->SetLights(Lights);
-			}
-		}
-	}
-	
-	void Scene::ParticlesWorkflow()
-	{
-		for (auto& Object : Objects)
-		{
-			ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
-
-			if (ps != nullptr)
-			{
-				if (ps->GetEmitter() != nullptr)
-				{
-					if(ps->GetEmitter()->GetParticleEffect() != nullptr)
-					{
-						ps->GetEmitter()->GetParticleEffect()->Position = Object.second->transform.GetPos();
-					}
-				}
-
-				if (MainCamera != nullptr) ps->SetCamera(*MainCamera);
-			}
-		}
-	}
-
 	void Scene::RigidbodyWorkflow()
 	{
 		for (auto& Object : Objects)
@@ -693,17 +627,54 @@ namespace Columbus
 
 		return nullptr;
 	}
+
+	template <> void Scene::Workflow(const std::unordered_set<ComponentAudioSource*>& Pool)
+	{
+		for (auto i : Pool) if (!Audio.HasSource(i->GetSource())) Audio.AddSource(i->GetSource());
+	}
+
+	template <> void Scene::Workflow(const std::unordered_set<ComponentLight*>& Pool)
+	{
+		Lights.clear();
+		for (auto i : Pool) Lights.emplace_back(i->GetLight());
+	}
+
+	template <> void Scene::Workflow(const std::unordered_set<ComponentMeshRenderer*>& Pool)
+	{
+		for (auto i : Pool) i->SetLights(Lights);
+	}
+
+	template <> void Scene::Workflow(const std::unordered_set<ComponentParticleSystem*>& Pool)
+	{
+		for (auto i : Pool) i->SetCamera(*MainCamera);
+	}
 	
 	void Scene::Update()
 	{
-		AudioWorkflow();
-		LightWorkflow();
-		MeshWorkflow();
-		ParticlesWorkflow();
-		RigidbodyWorkflow();
-
 		float Time = (float)DeltaTime.Elapsed() * TimeFactor;
 		DeltaTime.Reset();
+
+		RigidbodyWorkflow();
+
+		for (auto& Obj : Objects)
+		{
+			Obj.second->Update(Time);
+
+			AudioSet.insert(Obj.second->GetComponent<ComponentAudioSource>());
+			LightSet.insert(Obj.second->GetComponent<ComponentLight>());
+			MeshSet.insert(Obj.second->GetComponent<ComponentMeshRenderer>());
+			ParticleSet.insert(Obj.second->GetComponent<ComponentParticleSystem>());
+		}
+
+		AudioSet.erase(nullptr);
+		LightSet.erase(nullptr);
+		MeshSet.erase(nullptr);
+		ParticleSet.erase(nullptr);
+
+		Workflow(AudioSet);
+		Workflow(LightSet);
+		Workflow(MeshSet);
+		Workflow(ParticleSet);
 
 		PhysWorld.Step(Time, 10);
 		Audio.SetSpeed(TimeFactor);
@@ -718,14 +689,6 @@ namespace Columbus
 		if (Sky != nullptr && MainCamera != nullptr)
 		{
 			Sky->SetCamera(*MainCamera);
-		}
-
-		for (auto& Object : Objects)
-		{
-			if (Object.second != nullptr)
-			{
-				Object.second->Update(Time);
-			}
 		}
 	}
 	

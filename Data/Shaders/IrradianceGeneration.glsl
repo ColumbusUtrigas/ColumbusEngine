@@ -22,7 +22,7 @@
 	in vec3 Pos;
 
 	//@Uniform EnvironmentMap
-	uniform samplerCube EnvironmentMap;
+	uniform TextureCube EnvironmentMap;
 
 	const float PI = 3.14159265359;
 
@@ -45,7 +45,7 @@
 				vec3 TangentSample = vec3(sin(Theta) * cos(Phi), sin(Theta) * sin(Phi), cos(Theta));
 				vec3 SampleVec = TangentSample.x * Right + TangentSample.y * Up + TangentSample.z * Normal; 
 
-				Irradiance += textureCube(EnvironmentMap, SampleVec).rgb * cos(Theta) * sin(Theta);
+				Irradiance += SampleCube(EnvironmentMap, SampleVec).rgb * cos(Theta) * sin(Theta);
 				NumSamples += 1.0;
 			}
 		}

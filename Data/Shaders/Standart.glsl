@@ -55,17 +55,17 @@
 
 	struct Material
 	{
-		sampler2D AlbedoMap;
-		sampler2D NormalMap;
-		sampler2D RoughnessMap;
-		sampler2D MetallicMap;
-		sampler2D OcclusionMap;
-		sampler2D EmissionMap;
-		sampler2D DetailAlbedoMap;
-		sampler2D DetailNormalMap;
-		samplerCube IrradianceMap;
-		samplerCube EnvironmentMap;
-		sampler2D   IntegrationMap;
+		Texture2D AlbedoMap;
+		Texture2D NormalMap;
+		Texture2D RoughnessMap;
+		Texture2D MetallicMap;
+		Texture2D OcclusionMap;
+		Texture2D EmissionMap;
+		Texture2D DetailAlbedoMap;
+		Texture2D DetailNormalMap;
+		TextureCube IrradianceMap;
+		TextureCube EnvironmentMap;
+		Texture2D   IntegrationMap;
 
 		bool HasAlbedoMap;
 		bool HasNormalMap;
@@ -159,37 +159,37 @@
 
 		if (uMaterial.HasAlbedoMap)
 		{
-			vec4 AlbedoSample = texture2D(uMaterial.AlbedoMap, TiledUV);
+			vec4 AlbedoSample = Sample2D(uMaterial.AlbedoMap, TiledUV);
 
 			if (uMaterial.HasDetailAlbedoMap)
-				Albedo = vec4(AlbedoSample.rgb * texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV).rgb * 1.8f, AlbedoSample.a);
+				Albedo = vec4(AlbedoSample.rgb * Sample2D(uMaterial.DetailAlbedoMap, TiledDetailUV).rgb * 1.8f, AlbedoSample.a);
 			else
 				Albedo = AlbedoSample;
 		}
 		else
 			if (uMaterial.HasDetailAlbedoMap)
-				Albedo = texture2D(uMaterial.DetailAlbedoMap, TiledDetailUV);
+				Albedo = Sample2D(uMaterial.DetailAlbedoMap, TiledDetailUV);
 			else
 				Albedo = vec4(1);
 
 		if (uMaterial.HasNormalMap)
 			if (uMaterial.HasDetailNormalMap)
-				Normal = NormalBlend(texture2D(uMaterial.NormalMap, TiledUV), texture2D(uMaterial.DetailNormalMap, TiledDetailUV)) * varTBN;
+				Normal = NormalBlend(Sample2D(uMaterial.NormalMap, TiledUV), Sample2D(uMaterial.DetailNormalMap, TiledDetailUV)) * varTBN;
 			else
-				Normal = normalize(texture2D(uMaterial.NormalMap, TiledUV).rgb * 2.0 - 1.0) * varTBN;
+				Normal = normalize(Sample2D(uMaterial.NormalMap, TiledUV).rgb * 2.0 - 1.0) * varTBN;
 		else
 			if (uMaterial.HasDetailNormalMap)
-				Normal = normalize(texture2D(uMaterial.DetailNormalMap, TiledDetailUV).rgb * 2.0 - 1.0) * varTBN;
+				Normal = normalize(Sample2D(uMaterial.DetailNormalMap, TiledDetailUV).rgb * 2.0 - 1.0) * varTBN;
 			else
 				Normal = varNormal;
 
 		if (uMaterial.HasRoughnessMap)
-			Roughness = texture2D(uMaterial.RoughnessMap, TiledUV).r;
+			Roughness = Sample2D(uMaterial.RoughnessMap, TiledUV).r;
 		else
 			Roughness = uMaterial.Roughness;
 
 		if (uMaterial.HasMetallicMap)
-			Metallic = texture2D(uMaterial.MetallicMap, TiledUV).r;
+			Metallic = Sample2D(uMaterial.MetallicMap, TiledUV).r;
 		else
 			Metallic = uMaterial.Metallic;
 	}
@@ -262,7 +262,7 @@
 
 		if (LightColor == vec3(0)) return vec3(0);
 
-		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
+		float AO = uMaterial.HasOcclusionMap ? Sample2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
 		float Distance = length(LightPos - varPos);
 		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
 
@@ -295,11 +295,11 @@
 		BRDF += LightCalc(3, F);
 
 		const float MAX_REFLECTION_LOD = 7.0;
-		vec3 prefilteredColor = textureLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
-		vec2 envBRDF  = texture(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
+		vec3 prefilteredColor = SampleCubeLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
+		vec2 envBRDF  = Sample2D(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
 		vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-		vec3 Ambient = texture(uMaterial.IrradianceMap, Normal).rgb;
-		float AO = uMaterial.HasOcclusionMap ? texture2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
+		vec3 Ambient = SampleCube(uMaterial.IrradianceMap, Normal).rgb;
+		float AO = uMaterial.HasOcclusionMap ? Sample2D(uMaterial.OcclusionMap, varUV * uMaterial.Tiling).r : 1.0;
 
 		BRDF += (1.0 - Metallic) * Ambient * 0.1 * AO;
 
@@ -320,7 +320,7 @@
 	{
 		vec4 Color = vec4(Lights(), uMaterial.Albedo.a) * Albedo;
 
-		Color.rgb += texture2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
+		Color.rgb += Sample2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
 
 		FragData[0] = Color;
 		FragData[1] = vec4(Normal, 1);
@@ -330,15 +330,5 @@
 	}
 
 #endif
-
-
-
-
-
-
-
-
-
-
 
 

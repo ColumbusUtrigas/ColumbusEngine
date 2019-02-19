@@ -13,7 +13,6 @@ namespace Columbus
 	public:
 		ComponentLight(Light* InLight) : LightSource(InLight) {}
 
-		virtual void Render(Transform& Trans) override {}
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
 			if (LightSource != nullptr)
