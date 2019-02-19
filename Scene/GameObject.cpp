@@ -50,19 +50,6 @@ namespace Columbus
 		}
 	}
 	
-	void GameObject::Render()
-	{
-		for (auto& Comp : Components)
-		{
-			Comp->Render(transform);
-		}
-
-		for (auto& Child : Children)
-		{
-			Child->Render();
-		}
-	}
-	
 	bool GameObject::HasComponent(Component::Type Type)
 	{
 		for (const auto& Comp : Components)

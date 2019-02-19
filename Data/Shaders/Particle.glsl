@@ -82,7 +82,7 @@
 	in vec4 varColor;
 
 	//@Uniform uTex
-	uniform sampler2D uTex;
+	uniform Texture2D uTex;
 
 	void main()
 	{
@@ -90,19 +90,12 @@
 
 		if (textureSize(uTex, 0).x >= 1)
 		{
-			FragColor *= texture(uTex, varTexCoord);
+			FragColor *= Sample2D(uTex, varTexCoord);
 		}
 
 		if (FragColor.w < 0.01) discard;
 	}
 
 #endif
-
-
-
-
-
-
-
 
 

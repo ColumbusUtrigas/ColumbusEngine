@@ -13,13 +13,14 @@
 #ifdef FragmentShader
 
 	//@Uniform Texture
-	uniform sampler2D Texture;
+	uniform Texture2D Texture;
 
 	in vec2 UV;
 
 	void main()
 	{
-		FragData[0] = texture(Texture, UV);
+		FragData[0] = Sample2D(Texture, UV);
+
 	}
 
 #endif

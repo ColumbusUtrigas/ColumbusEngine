@@ -10,8 +10,14 @@
 #include <Core/SmartPointer.h>
 #include <Core/Types.h>
 
+#include <unordered_set>
 #include <vector>
 #include <map>
+
+#include <Scene/ComponentAudioSource.h>
+#include <Scene/ComponentLight.h>
+#include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentParticleSystem.h>
 
 namespace Columbus
 {
@@ -38,12 +44,16 @@ namespace Columbus
 
 		iVector2 ContextSize = iVector2(640, 480);
 
-		void AudioWorkflow();
-		void LightWorkflow();
-		void MeshWorkflow();
-		void ParticlesWorkflow();
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
+
+		std::unordered_set<ComponentAudioSource*> AudioSet;
+		std::unordered_set<ComponentLight*> LightSet;
+		std::unordered_set<ComponentMeshRenderer*> MeshSet;
+		std::unordered_set<ComponentParticleSystem*> ParticleSet;
+
+		template <typename Container>
+		void Workflow(const Container& Components);
 	public:
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;

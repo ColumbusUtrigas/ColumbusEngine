@@ -15,11 +15,11 @@ namespace Columbus
 	public:
 		ComponentParticleSystem(ParticleEmitter* InEmitter) : Emitter(InEmitter) {}
 
-		virtual void Render(Transform& Transform) override {}
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
 			if (Emitter != nullptr)
 			{
+				Emitter->GetParticleEffect()->Position = Trans.GetPos();
 				Emitter->Update(TimeTick);
 			}
 		}
@@ -27,13 +27,6 @@ namespace Columbus
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::ParticleSystem; }
 		ParticleEmitter* GetEmitter() const { return Emitter; }
-		void SetLights(std::vector<Light*> Lights)
-		{
-			if (Emitter != nullptr)
-			{
-				//Emitter->setLights(Lights);
-			}
-		}
 
 		void SetCamera(const Camera& Cam)
 		{
@@ -65,10 +58,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
 
 

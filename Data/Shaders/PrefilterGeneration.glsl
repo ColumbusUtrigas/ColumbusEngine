@@ -24,7 +24,7 @@
 	//@Uniform Roughness
 	//@Uniform EnvironmentMap
 	uniform float Roughness;
-	uniform samplerCube EnvironmentMap;
+	uniform TextureCube EnvironmentMap;
 
 	const float PI = 3.14159265359;
 
@@ -93,7 +93,7 @@
 
 			if(NdotL > 0.0)
 			{
-				PrefilteredColor += textureCube(EnvironmentMap, L).rgb * NdotL;
+				PrefilteredColor += SampleCube(EnvironmentMap, L).rgb * NdotL;
 				TotalWeight      += NdotL;
 			}
 		}
