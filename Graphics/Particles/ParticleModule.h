@@ -2,6 +2,7 @@
 
 #include <Math/Vector3.h>
 #include <Graphics/Particles/Particle.h>
+#include <Graphics/Particles/ParticleContainer.h>
 
 namespace Columbus
 {

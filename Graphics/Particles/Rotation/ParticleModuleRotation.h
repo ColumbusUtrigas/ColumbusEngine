@@ -13,11 +13,7 @@ namespace Columbus
 		float MinVelocity;
 		float MaxVelocity;
 	public:
-		ParticleModuleRotation() :
-			Min(0.0f),
-			Max(0.0f),
-			MinVelocity(0.0f),
-			MaxVelocity(0.0f) {}
+		ParticleModuleRotation() : Min(0.0f), Max(0.0f), MinVelocity(0.0f), MaxVelocity(0.0f) {}
 		/*
 		* For determening module type
 		*/
@@ -31,11 +27,12 @@ namespace Columbus
 			OutParticle.rotationSpeed = Random::Range(MinVelocity, MaxVelocity);
 		}
 
+		void Spawn(const ParticleContainer& Container, size_t Spawn) const;
+		void Update(ParticleContainer& Container) const;
+
 		~ParticleModuleRotation() override {}
 	};
 
 }
-
-
 
 

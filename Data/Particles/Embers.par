@@ -1,0 +1,23 @@
+{
+	"Visible": true,
+	"Emit": true,
+	"MaxCount": 100,
+	"EmitRate": 20,
+	"Blend": "Add",
+	"Billboard": "None",
+	"Transformation": "World",
+	"Sort": "None",
+
+	"Lifetime": { "Min": 0.5, "Max": 1.0 },
+	"Location": { "Radius": 0.5, "EmitFromShell": false, "Shape": "Circle" },
+	"Velocity": { "Min": [-1, 2, -1], "Max": [1, 3, 1] },
+	"Rotation": { "Min": 10, "Max": 50, "MinVelocity": -50, "MaxVelocity": 50 },
+	"Size": { "Mode": "OverLife",
+	          "Curve": [{ "Key": 0, "Size": [0.05, 0.05, 0.05] },
+	                    { "Key": 1, "Size": [0.10, 0.10, 0.10] }]},
+	"Color": { "Mode": "OverLife",
+	           "Curve": [{ "Key": 0.00, "Color": [2, 1, 0, 1.0] },
+	                     { "Key": 0.9, "Color": [1, 0, 0, 0.5] },
+	                     { "Key": 1.0, "Color": [1, 0, 0, 0.1] }]},
+	"SubUV": { "Mode": "Random", "Horizontal": 1, "Vertical": 1, "Cycles": 1 }
+}

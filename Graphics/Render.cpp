@@ -10,6 +10,8 @@
 
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 
+#include <Graphics/Particles/ParticleEmitterLoader.h>
+
 namespace Columbus
 {
 	Texture* BlackTexture;
@@ -64,6 +66,8 @@ namespace Columbus
 		LensFlareShader = gDevice->CreateShaderProgram();
 		LensFlareShader->Load("Data/Shaders/LensFlare.glsl");
 		LensFlareShader->Compile();
+
+		ParticleEmitterLoader::Load(TestParticles, "Data/Particles/Smoke.par");
 	}
 
 	void Renderer::SetContextSize(const iVector2& Size)
@@ -100,7 +104,6 @@ namespace Columbus
 		ComponentMeshRenderer* MeshRenderer;
 		ComponentParticleSystem* ParticleSystem;
 
-		ParticleEmitter* Emitter;
 		Mesh* Mesh;
 
 		Frustum ViewFrustum(MainCamera.GetViewProjection());
@@ -136,7 +139,7 @@ namespace Columbus
 
 				if (ParticleSystem != nullptr)
 				{
-					Emitter = ParticleSystem->GetEmitter();
+					auto Emitter = &ParticleSystem->Emitter;
 
 					if (Emitter != nullptr)
 					{
@@ -204,6 +207,7 @@ namespace Columbus
 		{
 			State.Clear();
 			glEnable(GL_BLEND);
+			glBlendEquation(GL_ADD);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			for (auto& Object : TransparentObjects)
@@ -252,11 +256,12 @@ namespace Columbus
 					}
 				}
 
-				if (Object.ParticleObject != nullptr)
+				if (Object.Particles != nullptr)
 				{
-					State.SetShaderProgram(Object.ParticleObject->GetParticleEffect()->Material.GetShader());
-					State.SetCulling(Material::Cull::Back);
-					Object.ParticleObject->Render();
+					ParticlesRender.Render(*Object.Particles, MainCamera, Object.ObjectMaterial);
+					//State.SetShaderProgram(Object.ParticleObject->GetParticleEffect()->Material.GetShader());
+					//State.SetCulling(Material::Cull::Back);
+					//Object.ParticleObject->Render();
 				}
 			}
 		}

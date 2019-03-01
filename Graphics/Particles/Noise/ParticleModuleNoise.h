@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/Particles/ParticleModule.h>
+#include <Graphics/Particles/ParticleContainer.h>
 #include <Common/Noise/OctaveNoise.h>
 
 namespace Columbus

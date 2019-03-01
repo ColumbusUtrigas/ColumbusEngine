@@ -11,6 +11,9 @@
 
 #include <Graphics/ScreenQuad.h>
 
+#include <Graphics/Particles/ParticleEmitterCPU.h>
+#include <Graphics/ParticlesRenderer.h>
+
 #include <map>
 
 namespace Columbus
@@ -34,14 +37,14 @@ namespace Columbus
 		struct TransparentRenderData
 		{
 			Mesh* MeshObject;
-			ParticleEmitter* ParticleObject;
+			ParticleEmitterCPU* Particles;
 
 			Transform ObjectTransform;
 			Material ObjectMaterial;
 
-			TransparentRenderData(Mesh* InMesh, ParticleEmitter* InParticles, const Transform& InTransform, const Material& InMaterial) :
+			TransparentRenderData(Mesh* InMesh, ParticleEmitterCPU* CPU, const Transform& InTransform, const Material& InMaterial) :
 				MeshObject(InMesh),
-				ParticleObject(InParticles),
+				Particles(CPU),
 				ObjectTransform(InTransform),
 				ObjectMaterial(InMaterial) {}
 		};
@@ -62,6 +65,9 @@ namespace Columbus
 		PostEffect BloomFinalPass;
 
 		ScreenQuad Quad;
+
+		ParticleEmitterCPU TestParticles;
+		ParticlesRenderer ParticlesRender;
 	public:
 		enum class Stage
 		{

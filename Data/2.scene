@@ -161,7 +161,7 @@
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/FireplaceEmbers.par</Particles>
+					<Particles>Data/Particles/Embers.par</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject4>
@@ -180,7 +180,7 @@
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/FireplaceSmoke.par</Particles>
+					<Particles>Data/Particles/Smoke.par</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject5>

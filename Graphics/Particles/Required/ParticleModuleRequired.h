@@ -46,10 +46,7 @@ namespace Columbus
 		/*
 		* Set parameter for particle
 		*/
-		void Spawn(Particle& OutParticle) override
-		{
-			
-		}
+		void Spawn(Particle& OutParticle) override {}
 
 		~ParticleModuleRequired() override {}
 	};
