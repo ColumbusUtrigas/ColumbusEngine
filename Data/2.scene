@@ -32,7 +32,7 @@
 			</Shader0>
 
 			<Shader1>
-				<Program>Data/Shaders/Particle.glsl</Program>
+				<Program>Data/Shaders/Particles.glsl</Program>
 			</Shader1>
 		</Shaders>
 

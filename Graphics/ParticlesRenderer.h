@@ -3,7 +3,6 @@
 #include <Graphics/Particles/ParticleEmitterCPU.h>
 #include <Graphics/Material.h>
 #include <Graphics/OpenGL/BufferOpenGL.h>
-#include <Graphics/OpenGL/ShaderOpenGL.h>
 
 namespace Columbus
 {
@@ -21,8 +20,6 @@ namespace Columbus
 		BufferOpenGL SizesBuffer;
 		BufferOpenGL ColorsBuffer;
 		BufferOpenGL OtherDataBuffer;
-
-		ShaderProgramOpenGL* Shader;
 	private:
 		void Allocate(size_t NewSize);
 	public:

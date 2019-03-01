@@ -258,10 +258,8 @@ namespace Columbus
 
 				if (Object.Particles != nullptr)
 				{
+					State.SetShaderProgram(Object.ObjectMaterial.GetShader());
 					ParticlesRender.Render(*Object.Particles, MainCamera, Object.ObjectMaterial);
-					//State.SetShaderProgram(Object.ParticleObject->GetParticleEffect()->Material.GetShader());
-					//State.SetCulling(Material::Cull::Back);
-					//Object.ParticleObject->Render();
 				}
 			}
 		}

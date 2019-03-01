@@ -229,7 +229,8 @@ namespace Columbus
 		PreviousShader = CurrentShader;
 		CurrentShader = InShaderProgram;
 		
-		if (CurrentShader != PreviousShader && CurrentShader != nullptr)
+		//if (CurrentShader != PreviousShader && CurrentShader != nullptr)
+		if (CurrentShader != nullptr)
 		{
 			if (!CurrentShader->IsError())
 			{
