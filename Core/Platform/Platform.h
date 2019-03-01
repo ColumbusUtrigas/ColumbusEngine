@@ -7,6 +7,9 @@ namespace Columbus
 	#undef COLUMBUS_PLATFORM_LINUX
 	#undef COLUMBUS_PLATFORM_APPLE
 	#undef FORCEINLINE
+	#undef USE_SIMD_EXTENSIONS
+
+	#define USE_SIMD_EXTENSIONS 1
 
 	#if defined(_WIN32)
 		#define COLUMBUS_PLATFORM_WINDOWS
@@ -31,17 +34,5 @@ namespace Columbus
 	#endif
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 

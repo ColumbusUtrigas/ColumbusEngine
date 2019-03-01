@@ -141,6 +141,21 @@ namespace Columbus
 		return true;
 	}
 
+	void* BufferOpenGL::Map() const
+	{
+		glBindBuffer(Target, ID);
+		void* Result = glMapBuffer(Target, GL_READ_WRITE);
+		glBindBuffer(Target, 0);
+		return Result;
+	}
+
+	void BufferOpenGL::Unmap() const
+	{
+		glBindBuffer(Target, ID);
+		glUnmapBuffer(Target);
+		glBindBuffer(Target, 0);
+	}
+
 	BufferOpenGL::~BufferOpenGL()
 	{
 		Clear();

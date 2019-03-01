@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/Particles/ParticleModule.h>
+#include <Graphics/Particles/ParticleContainer.h>
 
 namespace Columbus
 {
@@ -19,21 +20,14 @@ namespace Columbus
 	public:
 		int Horizontal;
 		int Vertical;
-		SubUVMode Mode;
 		float Cycles;
+
+		SubUVMode Mode;
 	public:
-		ParticleModuleSubUV() :
-			Horizontal(1),
-			Vertical(1),
-			Mode(SubUVMode::Linear),
-			Cycles(1.0f) {}
-		/*
-		* For determening module type
-		*/
+		ParticleModuleSubUV() : Horizontal(1), Vertical(1), Mode(SubUVMode::Linear), Cycles(1.0f) {}
+		
 		Type GetType() const override { return Type::SubUV; }
-		/*
-		* Set random frame for particle if random and 0 if linear
-		*/
+		
 		void Spawn(Particle& OutParticle) override
 		{
 			if (Mode == SubUVMode::Linear)
@@ -45,9 +39,7 @@ namespace Columbus
 				OutParticle.frame = Math::TruncToInt(Random::Range(0.0f, float(Horizontal * Vertical)));
 			}
 		}
-		/*
-		* Update particle parameter
-		*/
+		
 		void Update(Particle& OutParticle) override
 		{
 			if (Mode == SubUVMode::Linear)
@@ -56,16 +48,12 @@ namespace Columbus
 			}
 		}
 
+		void Spawn(ParticleContainer& Container, size_t Spawn) const;
+		void Update(ParticleContainer& Container) const;
+
 		~ParticleModuleSubUV() {}
 	};
 
 }
-
-
-
-
-
-
-
 
 

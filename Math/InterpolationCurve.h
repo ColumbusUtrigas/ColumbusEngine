@@ -10,7 +10,6 @@ namespace Columbus
 	{
 	private:
 		std::map<float, PointType> Points;
-		PointType Down, Up;
 	public:
 		InterpolationCurve() {}
 
@@ -22,9 +21,10 @@ namespace Columbus
 		* Interpolate curve
 		* @param float Position: Position of X on curve
 		*/		
-		PointType Interpolate(float Position)
+		PointType Interpolate(float Position) const
 		{
 			PointType Result;
+			PointType Down, Up;
 
 			if (Points.size() >= 2)
 			{

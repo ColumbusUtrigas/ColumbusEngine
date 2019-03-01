@@ -13,22 +13,22 @@ namespace Columbus
 
 	static float Vertices[18] =
 	{
-		1, 1, 0.0,
-		-1, 1, 0.0,
-		-1, -1, 0.0,
-		-1, -1, 0.0,
-		1, -1, 0.0,
-		1, 1, 0.0
+		+1, +1, 0,
+		-1, +1, 0,
+		-1, -1, 0,
+		-1, -1, 0,
+		+1, -1, 0,
+		+1, +1, 0
 	};
 
 	static float Texcoords[12] =
 	{
-		1.0, 1.0,
-		0.0, 1.0,
-		0.0, 0.0,
-		0.0, 0.0,
-		1.0, 0.0,
-		1.0, 1.0
+		1, 1,
+		0, 1,
+		0, 0,
+		0, 0,
+		1, 0,
+		1, 1
 	};
 
 	ParticleEmitter::ParticleEmitter(ParticleEffect* InEffect) : Life(0.0f)
@@ -266,30 +266,28 @@ namespace Columbus
 				if (Effect->Emit.Count != MaxCount)
 				{
 					UpdateMainBuffers();
+					VerticesBuffer->Load(Buffer::Properties{ sizeof(Vector3) * MaxCount * 6 }, VertData);
+					UVBuffer->Load(Buffer::Properties{ sizeof(Vector2) * MaxCount * 6 }, UVData);
 				}
 
-				uint64 PositionsCounter = 0;
-				uint64 TimesCounter = 0;
-				uint64 ColorsCounter = 0;
-				uint64 SizesCounter = 0;
-				uint64 Counter = 0;
-
-				for (uint32 i = 0; i < MaxCount; i++)
+				for (uint32 i = 0, Counter = 0; i < MaxCount; i++)
 				{
 					if (Particles[i].Alive)
 					{
 						for (int j = 0; j < 6; j++)
 						{
-							PositionData[PositionsCounter++] = Particles[i].pos;
-							TimeData[TimesCounter++] = Vector2(Particles[i].rotation, (float)Particles[i].frame);
-							ColorData[ColorsCounter++] = Particles[i].Color;
-							SizeData[SizesCounter++] = Particles[i].Size;
+							PositionData[Counter * 6 + j] = Particles[i].pos;
+							TimeData[Counter * 6 + j] = Vector2(Particles[i].rotation, (float)Particles[i].frame);
+							ColorData[Counter * 6 + j] = Particles[i].Color;
+							SizeData[Counter * 6 + j] = Particles[i].Size;
 						}
+
+						Counter++;
 					}
 				}
 
-				VerticesBuffer->Load(Buffer::Properties{ sizeof(Vector3) * MaxCount * 6 }, VertData);
-				UVBuffer->Load(Buffer::Properties{ sizeof(Vector2) * MaxCount * 6 }, UVData);
+				//VerticesBuffer->Load(Buffer::Properties{ sizeof(Vector3) * MaxCount * 6 }, VertData);
+				//UVBuffer->Load(Buffer::Properties{ sizeof(Vector2) * MaxCount * 6 }, UVData);
 
 				Positions->Load(Buffer::Properties{ sizeof(Vector3) * ActiveCount * 6, Buffer::Usage::Write, Buffer::Changing::Static }, PositionData);
 				Times->Load(Buffer::Properties{ sizeof(Vector2) * ActiveCount * 6, Buffer::Usage::Write, Buffer::Changing::Static }, TimeData);
@@ -329,7 +327,5 @@ namespace Columbus
 	}
 
 }
-
-
 
 

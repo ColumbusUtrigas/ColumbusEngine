@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/Particles/ParticleModule.h>
+#include <Graphics/Particles/ParticleContainer.h>
 
 namespace Columbus
 {
@@ -11,10 +12,7 @@ namespace Columbus
 		Vector3 Min;
 		Vector3 Max;
 	public:
-		ParticleModuleVelocity() :
-			Min(-1, -1, -1),
-			Max(1, 1, 1)
-		{ }
+		ParticleModuleVelocity() : Min(-1), Max(1) {}
 		/*
 		* For determening module type
 		*/
@@ -27,20 +25,17 @@ namespace Columbus
 			OutParticle.velocity = Vector3::Random(Min, Max);
 		}
 
-		~ParticleModuleVelocity() { }
+		void Spawn(const ParticleContainer& Container, size_t Spawn)
+		{
+			for (size_t i = Container.Count; i < Container.Count + Spawn; i++)
+			{
+				Container.Velocities[i] = Vector3::Random(Min, Max);
+			}
+		}
+
+		~ParticleModuleVelocity() {}
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 

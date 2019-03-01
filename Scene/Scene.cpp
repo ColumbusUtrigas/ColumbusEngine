@@ -17,6 +17,8 @@
 #include <Physics/PhysicsShapeMultiSphere.h>
 #include <Physics/PhysicsShapeSphere.h>
 
+#include <Graphics/Particles/ParticleEmitterLoader.h>
+
 #include <Graphics/Primitives.h>
 
 namespace Columbus
@@ -174,11 +176,9 @@ namespace Columbus
 			{
 				if (ParticleSystemPath != "None")
 				{
-					ParticleEffect* Effect = new ParticleEffect();
-					if (!Effect->Load(ParticleSystemPath.c_str())) return nullptr;
-					Effect->Material = *Mat;
-					ParticleEmitter* Emitter = new ParticleEmitter(Effect);
-					ParticleSystem = new ComponentParticleSystem(Emitter);
+					ParticleEmitterCPU Emitter;
+					ParticleEmitterLoader::Load(Emitter, ParticleSystemPath.c_str());
+					ParticleSystem = new ComponentParticleSystem(std::move(Emitter));
 				}
 			}
 		}
@@ -646,7 +646,7 @@ namespace Columbus
 
 	template <> void Scene::Workflow(const std::unordered_set<ComponentParticleSystem*>& Pool)
 	{
-		for (auto i : Pool) i->SetCamera(*MainCamera);
+		for (auto i : Pool) i->Emitter.CameraPosition = MainCamera->Pos;
 	}
 	
 	void Scene::Update()

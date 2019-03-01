@@ -94,7 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -111,7 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -130,7 +130,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -153,7 +153,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -221,19 +221,24 @@
     <ClInclude Include="Graphics\OpenGL\StandartShadersOpenGL.h" />
     <ClInclude Include="Graphics\OpenGL\TextureOpenGL.h" />
     <ClInclude Include="Graphics\OpenGL\WindowOpenGLSDL.h" />
+    <ClInclude Include="Graphics\ParticlesRenderer.h" />
     <ClInclude Include="Graphics\Particles\Acceleration\ParticleModuleAcceleration.h" />
     <ClInclude Include="Graphics\Particles\Color\ParticleModuleColor.h" />
     <ClInclude Include="Graphics\Particles\Color\ParticleModuleColorOverLife.h" />
     <ClInclude Include="Graphics\Particles\Emit\ParticleModuleEmit.h" />
     <ClInclude Include="Graphics\Particles\Lifetime\ParticleModuleLifetime.h" />
+    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocation.h" />
     <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationBase.h" />
     <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationBox.h" />
     <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationCircle.h" />
     <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationSphere.h" />
     <ClInclude Include="Graphics\Particles\Noise\ParticleModuleNoise.h" />
     <ClInclude Include="Graphics\Particles\Particle.h" />
+    <ClInclude Include="Graphics\Particles\ParticleContainer.h" />
     <ClInclude Include="Graphics\Particles\ParticleEffect.h" />
     <ClInclude Include="Graphics\Particles\ParticleEmitter.h" />
+    <ClInclude Include="Graphics\Particles\ParticleEmitterCPU.h" />
+    <ClInclude Include="Graphics\Particles\ParticleEmitterLoader.h" />
     <ClInclude Include="Graphics\Particles\ParticleModule.h" />
     <ClInclude Include="Graphics\Particles\Required\ParticleModuleRequired.h" />
     <ClInclude Include="Graphics\Particles\Rotation\ParticleModuleRotation.h" />
@@ -330,8 +335,15 @@
     <ClCompile Include="Graphics\OpenGL\ShaderOpenGL.cpp" />
     <ClCompile Include="Graphics\OpenGL\TextureOpenGL.cpp" />
     <ClCompile Include="Graphics\OpenGL\WindowOpenGLSDL.cpp" />
+    <ClCompile Include="Graphics\ParticlesRenderer.cpp" />
+    <ClCompile Include="Graphics\Particles\Lifetime\ParticleModuleLifetime.cpp" />
+    <ClCompile Include="Graphics\Particles\Location\ParticleModuleLocation.cpp" />
     <ClCompile Include="Graphics\Particles\ParticleEffect.cpp" />
     <ClCompile Include="Graphics\Particles\ParticleEmitter.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEmitterCPU.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEmitterLoader.cpp" />
+    <ClCompile Include="Graphics\Particles\Rotation\ParticleModuleRotation.cpp" />
+    <ClCompile Include="Graphics\Particles\SubUV\ParticleModuleSubUV.cpp" />
     <ClCompile Include="Graphics\Primitives.cpp" />
     <ClCompile Include="Graphics\Render.cpp" />
     <ClCompile Include="Graphics\RenderState.cpp" />

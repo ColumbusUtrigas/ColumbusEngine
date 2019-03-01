@@ -32,24 +32,12 @@ namespace Columbus
 		bool Bind() const;   //OpenGL-specific binding
 		bool Unbind() const; //OpenGL-specific unbinding
 
+		void* Map() const;
+		void Unmap() const;
+
 		virtual ~BufferOpenGL() override;
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
