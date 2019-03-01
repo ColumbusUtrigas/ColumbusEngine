@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Graphics/Particles/ParticleModule.h>
 #include <Graphics/Particles/ParticleContainer.h>
 #include <Math/InterpolationCurve.h>
+#include <Math/Vector4.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleColor : public ParticleModule
+	class ParticleModuleColor
 	{
 	public:
 		enum class UpdateMode
@@ -23,11 +23,6 @@ namespace Columbus
 		UpdateMode Mode = UpdateMode::Initial;
 	public:
 		ParticleModuleColor() : Min(1), Max(1) {}
-
-		void Spawn(Particle& OutParticle) override
-		{
-			OutParticle.Color = Vector4::Random(Min, Max);
-		}
 
 		void Spawn(const ParticleContainer& Container, size_t Spawn) const
 		{
@@ -48,7 +43,7 @@ namespace Columbus
 			}
 		}
 
-		~ParticleModuleColor() override {}
+		~ParticleModuleColor() {}
 	};
 
 }

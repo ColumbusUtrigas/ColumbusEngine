@@ -4,14 +4,12 @@
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
-#include <Graphics/Particles/ParticleEmitter.h>
+#include <Graphics/Particles/ParticleEmitterCPU.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/PostEffect.h>
 #include <Scene/GameObject.h>
 
 #include <Graphics/ScreenQuad.h>
-
-#include <Graphics/Particles/ParticleEmitterCPU.h>
 #include <Graphics/ParticlesRenderer.h>
 
 #include <map>

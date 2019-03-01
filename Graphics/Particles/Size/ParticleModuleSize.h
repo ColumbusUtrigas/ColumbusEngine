@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Graphics/Particles/ParticleModule.h>
 #include <Graphics/Particles/ParticleContainer.h>
 #include <Math/InterpolationCurve.h>
+#include <Math/Vector3.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleSize : public ParticleModule
+	class ParticleModuleSize
 	{
 	public:
 		enum class UpdateMode
@@ -23,13 +23,6 @@ namespace Columbus
 		UpdateMode Mode;
 	public:
 		ParticleModuleSize() : Min(1), Max(1) {}
-		
-		// Deprecated, must not be used
-		Type GetType() const override { return Type::Size; }
-		void Spawn(Particle& OutParticle) override
-		{
-			OutParticle.Size = Vector3::Random(Min, Max);
-		}
 
 		void Spawn(const ParticleContainer& Container, size_t Spawn) const
 		{
@@ -53,7 +46,7 @@ namespace Columbus
 			}
 		}
 
-		~ParticleModuleSize() override {}
+		~ParticleModuleSize() {}
 	};
 
 }

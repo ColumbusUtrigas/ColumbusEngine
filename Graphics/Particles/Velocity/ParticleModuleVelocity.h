@@ -1,29 +1,18 @@
 #pragma once
 
-#include <Graphics/Particles/ParticleModule.h>
 #include <Graphics/Particles/ParticleContainer.h>
+#include <Math/Vector3.h>
 
 namespace Columbus
 {
 
-	class ParticleModuleVelocity : public ParticleModule
+	class ParticleModuleVelocity
 	{ 
 	public:
 		Vector3 Min;
 		Vector3 Max;
 	public:
 		ParticleModuleVelocity() : Min(-1), Max(1) {}
-		/*
-		* For determening module type
-		*/
-		Type GetType() const override { return Type::Velocity; }
-		/*
-		* Set parameter for particle
-		*/
-		void Spawn(Particle& OutParticle) override
-		{
-			OutParticle.velocity = Vector3::Random(Min, Max);
-		}
 
 		void Spawn(const ParticleContainer& Container, size_t Spawn)
 		{
