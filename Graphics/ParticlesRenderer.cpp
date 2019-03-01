@@ -1,5 +1,6 @@
 #include <Graphics/ParticlesRenderer.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
+#include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <GL/glew.h>
 
 #include <glm/gtc/type_ptr.hpp>
@@ -55,10 +56,6 @@ namespace Columbus
 		ColorsBuffer.CreateArray(Buffer::Properties::Default());
 		OtherDataBuffer.CreateArray(Buffer::Properties::Default());
 
-		Shader = new ShaderProgramOpenGL();
-		Shader->Load("Data/Shaders/ParticlesNew.glsl");
-		Shader->Compile();
-
 		Allocate(MaxSize);
 	}
 
@@ -86,9 +83,9 @@ namespace Columbus
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
 
-		Shader->Bind();
+		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 
-		glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), Math::Radians(MainCamera.Rot.Z)));
+		glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
 		glm::mat4 Billboard = glm::mat4_cast(Q);
 
 		Shader->SetUniform(Shader->GetFastUniform("ViewProjection"), false, MainCamera.GetViewProjection());
@@ -139,8 +136,6 @@ namespace Columbus
 		glEnableVertexAttribArray(5);
 
 		glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
-
-		Shader->Unbind();
 
 		glBlendEquation(GL_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
