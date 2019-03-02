@@ -145,13 +145,17 @@ namespace Columbus
 		delete[] Normals;
 		delete[] Tangents;
 		delete[] Vertices;
-		delete[] Indices;
+
+		switch (IndexSize)
+		{
+		case 1: delete[] static_cast<uint8*> (Indices); break;
+		case 2: delete[] static_cast<uint16*>(Indices); break;
+		case 4: delete[] static_cast<uint32*>(Indices); break;
+		}
 	}
 
 	Model::~Model() { FreeData(); }
 
 }
-
-
 
 

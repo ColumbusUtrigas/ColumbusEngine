@@ -63,8 +63,6 @@ namespace Columbus
 		PostEffect BloomFinalPass;
 
 		ScreenQuad Quad;
-
-		ParticleEmitterCPU TestParticles;
 		ParticlesRenderer ParticlesRender;
 	public:
 		enum class Stage
@@ -95,3 +93,5 @@ namespace Columbus
 	};
 
 }
+
+

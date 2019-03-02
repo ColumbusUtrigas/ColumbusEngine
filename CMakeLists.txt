@@ -7,10 +7,10 @@ file(GLOB SRC_COMMON_IMAGE ./Common/Image/*.cpp ./Common/Image/BMP/*.cpp ./Commo
 
 file(GLOB SRC_COMMON_SOUND ./Common/Sound/*.cpp ./Common/Sound/MP3/*.cpp ./Common/Sound/OGG/*.cpp ./Common/Sound/WAV/*.cpp)
 
-file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/CMF/*.cpp ${SRC_COMMON_SOUND} ./Common/Compression/*.cpp)
+file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/CMF/*.cpp ${SRC_COMMON_SOUND} ./Common/Compression/*.cpp ./Common/JSON/*.cpp)
 
 file(GLOB SRC_CORE ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
-file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp)
+file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp ./Graphics/Particles/*/*.cpp)
 file(GLOB SRC_INPUT ./Input/*.cpp)
 file(GLOB SRC_PHYSICS ./Physics/*.cpp)
 file(GLOB SRC_RENDER_API ./RenderAPI/*.cpp)

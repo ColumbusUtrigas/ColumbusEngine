@@ -34,7 +34,7 @@ namespace Columbus
 		MaxSize = NewSize;
 
 		delete[] Data;
-		char* Data = new char[MaxSize * sizeof(Vector4) * 6];
+		Data = new char[MaxSize * sizeof(Vector4) * 6];
 
 		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Vertices), Vertices, sizeof(Vertices));
 		VerticesBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Vertices), Buffer::Usage::Write, Buffer::Changing::Static }, Data);
@@ -86,12 +86,14 @@ namespace Columbus
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 
 		glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
-		glm::mat4 Billboard = glm::mat4_cast(Q);
+		glm::mat4 M = glm::mat4_cast(Q);
 
-		Shader->SetUniform(Shader->GetFastUniform("ViewProjection"), false, MainCamera.GetViewProjection());
-		Shader->SetUniformMatrix("View", &MainCamera.GetViewMatrix().M[0][0]);
-		Shader->SetUniformMatrix("Projection", &MainCamera.GetProjectionMatrix().M[0][0]);
-		Shader->SetUniformMatrix("Billboard", glm::value_ptr(Billboard));
+		Matrix Billboard;
+		memcpy(&Billboard.M[0][0], glm::value_ptr(M), 16 * sizeof(float));
+
+		Shader->SetUniform(Shader->GetFastUniform("View"), false, MainCamera.GetViewMatrix());
+		Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());
+		Shader->SetUniform(Shader->GetFastUniform("Billboard"), false, Billboard);
 		Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
 		Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
 

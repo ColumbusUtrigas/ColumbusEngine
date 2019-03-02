@@ -10,8 +10,6 @@
 
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 
-#include <Graphics/Particles/ParticleEmitterLoader.h>
-
 namespace Columbus
 {
 	Texture* BlackTexture;
@@ -66,8 +64,6 @@ namespace Columbus
 		LensFlareShader = gDevice->CreateShaderProgram();
 		LensFlareShader->Load("Data/Shaders/LensFlare.glsl");
 		LensFlareShader->Compile();
-
-		ParticleEmitterLoader::Load(TestParticles, "Data/Particles/Smoke.par");
 	}
 
 	void Renderer::SetContextSize(const iVector2& Size)

@@ -6,7 +6,7 @@ namespace Columbus
 {
 
 	Light::Light() {}
-	Light::Light(int Type, const Vector3& Pos) : Type(Type), Pos(Pos) {}
+	Light::Light(int Type, const Vector3& Pos) : Pos(Pos), Type(Type) {}
 	Light::Light(const char* File, const Vector3& Pos) : Pos(Pos)
 	{
 		Load(File);

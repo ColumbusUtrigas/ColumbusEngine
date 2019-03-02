@@ -36,7 +36,7 @@ namespace Columbus
 
 			case TextureFormat::Unknown: return 0;  break;
 
-			default:                     return 0;  break;
+			default: break;
 		}
 
 		return 0;
@@ -49,6 +49,7 @@ namespace Columbus
 		case TextureFormat::DXT1: return 8;  break;
 		case TextureFormat::DXT3:
 		case TextureFormat::DXT5: return 16; break;
+		default: break;
 		}
 
 		return 0;
@@ -200,15 +201,7 @@ namespace Columbus
 	/*
 	* Image class
 	*/
-	Image::Image() :
-		Width(0),
-		Height(0),
-		Depth(0),
-		Size(0),
-		MipMaps(0),
-		Format(TextureFormat::RGBA8),
-		Data(nullptr),
-		Exist(false) {}
+	Image::Image() {}
 	/*
 	* Load image from file
 	* @param std::string InFileName: Name of image file to load
@@ -296,6 +289,7 @@ namespace Columbus
 		case ImageFormat::PNG: return ImageSavePNG(InFileName, Width, Height, Format, Data);          break;
 		case ImageFormat::TGA: return ImageSaveTGA(InFileName, Width, Height, Format, Data);          break;
 		case ImageFormat::TIF: return ImageSaveTIF(InFileName, Width, Height, Format, Data);          break;
+		default: break;
 		}
 		
 		return false;

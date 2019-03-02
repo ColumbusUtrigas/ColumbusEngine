@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <map>
 
 namespace Columbus
 {
@@ -30,7 +31,7 @@ namespace Columbus
 		int64 IntValue = 0;
 		double FloatValue = 0;
 		std::vector<JSON> ArrayValue;
-		std::unordered_map<std::string, JSON> ObjectValue;
+		std::map<std::string, JSON> ObjectValue;
 		Type ValueType;
 
 		bool _ParseString(char*& Text, bool& Error);
@@ -72,7 +73,7 @@ namespace Columbus
 				ValueType = Type::Array;
 			}
 
-			if (Index >= ArrayValue.size())
+			while (Index >= ArrayValue.size())
 			{
 				ArrayValue.push_back(JSON());
 			}

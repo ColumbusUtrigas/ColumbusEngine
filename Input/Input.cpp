@@ -128,7 +128,7 @@ namespace Columbus
 	{
 		SDL_PumpEvents();
 
-		for (int i = 0; i < KeysNum; i++) Keys[i] = KeyboardState[i] != 0;
+		for (int i = 0; i < KeysNum && i < MaxKeys; i++) Keys[i] = KeyboardState[i] != 0;
 		memset(KeysDown, 0, sizeof(KeysDown));
 		memset(KeysUp, 0, sizeof(KeysUp));
 		memset(Buttons, 0, sizeof(Buttons));

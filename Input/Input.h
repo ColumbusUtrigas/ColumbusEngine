@@ -113,6 +113,7 @@ namespace Columbus
 			void* Internal = nullptr;
 		};
 	private:
+		static constexpr int MaxKeys = 512;
 		static constexpr int MaxButtons = 8;
 		static constexpr int MaxGamepads = 4;
 		static constexpr float GamepadDead = 0.05f;
@@ -120,9 +121,9 @@ namespace Columbus
 		uint8* KeyboardState = nullptr;
 		int KeysNum = 0;
 
-		bool Keys[256];
-		bool KeysDown[256];
-		bool KeysUp[256];
+		bool Keys[MaxKeys];
+		bool KeysDown[MaxKeys];
+		bool KeysUp[MaxKeys];
 
 		MouseButton Buttons[MaxButtons];
 		MouseWheel Wheel;

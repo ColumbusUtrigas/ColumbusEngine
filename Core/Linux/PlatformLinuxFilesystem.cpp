@@ -11,7 +11,7 @@ namespace Columbus
 
 	const char* FilesystemLinux::GetCurrent()
 	{
-		char dir[4096];
+		char* dir = new char[4096];
 		if (getcwd(dir, 4096) == NULL) return "";
 		return dir;
 	}

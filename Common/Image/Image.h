@@ -149,6 +149,7 @@ namespace Columbus
 			std::swap(Format, Base.Format);
 			std::swap(Data, Base.Data);
 			std::swap(Exist, Base.Exist);
+			return *this;
 		}
 
 		bool Load(const char* FileName, ImageLoading Flags = ImageLoading::None);
