@@ -57,11 +57,9 @@ namespace Columbus
 	{
 		T* Result = new T[Count];
 		
-		memcpy(Result, Data, Size);
+		memcpy((void*)Result, Data, Size);
 		return Result;
 	}
-
-	ModelLoaderCMF::ModelLoaderCMF() {}
 
 	bool IsNew(const char* FileName)
 	{
@@ -193,9 +191,9 @@ namespace Columbus
 				uint8* Decompressed = new uint8[DecompressedSize];
 				ZSTD_decompress(Decompressed, DecompressedSize, FileData, Model.GetSize() - 26);
 
-				memcpy(Positions, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
-				memcpy(UVs, Decompressed, Header.Count * sizeof(float) * 3 * 2); Decompressed += Header.Count * sizeof(float) * 3 * 2;
-				memcpy(Normals, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
+				memcpy((void*)Positions, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
+				memcpy((void*)UVs, Decompressed, Header.Count * sizeof(float) * 3 * 2); Decompressed += Header.Count * sizeof(float) * 3 * 2;
+				memcpy((void*)Normals, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
 
 				Decompressed -= DecompressedSize;
 
@@ -234,9 +232,6 @@ namespace Columbus
 		return false;
 	}
 
-	ModelLoaderCMF::~ModelLoaderCMF() {}
-
 }
-
 
 

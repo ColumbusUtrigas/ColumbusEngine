@@ -26,12 +26,12 @@ namespace Columbus
 
 			void Allocate(size_t Size)
 			{
-				Allocation = (T*)realloc(Allocation, Size * sizeof(T) + 16);
+				Allocation = (T*)realloc((void*)Allocation, Size * sizeof(T) + 16);
 				Data = Allocation;
 				Data = (T*)(((uintptr_t)Data + 15) & ~((uintptr_t)15));
 			}
 
-			~DataWrapper() { if (Data != nullptr) free(Allocation); }
+			~DataWrapper() { if (Allocation != nullptr) free(Allocation); }
 		};
 
 		size_t Count = 0;

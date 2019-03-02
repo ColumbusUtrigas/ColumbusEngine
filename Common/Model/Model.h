@@ -34,11 +34,7 @@ namespace Columbus
 
 		Box BoundingBox;
 	public:
-		ModelLoader() {}
-
 		virtual bool Load(const char* File) { return false; }
-
-		~ModelLoader() {}
 	};
 
 	class Model

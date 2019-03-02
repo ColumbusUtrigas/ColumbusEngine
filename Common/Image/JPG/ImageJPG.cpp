@@ -39,9 +39,10 @@ namespace Columbus
 		int bpp;
 		switch (cinfo.out_color_space)
 		{
-			case JCS_GRAYSCALE: bpp = 1; break;
-			case JCS_RGB:       bpp = 3; break;
-			//case JCS_EXT_RGBA:  bpp = 4; break;
+		case JCS_GRAYSCALE: bpp = 1; break;
+		case JCS_RGB:       bpp = 3; break;
+		//case JCS_EXT_RGBA:  bpp = 4; break;
+		default: bpp = 0; break;
 		}
 
 		OutWidth = cinfo.image_width;
@@ -49,9 +50,10 @@ namespace Columbus
 		OutSize = cinfo.image_width * cinfo.image_height * bpp;
 		switch (bpp)
 		{
-			case 1: OutFormat = TextureFormat::R8;    break;
-			case 3: OutFormat = TextureFormat::RGB8;  break;
-			case 4: OutFormat = TextureFormat::RGBA8; break;
+		case 1:  OutFormat = TextureFormat::R8;      break;
+		case 3:  OutFormat = TextureFormat::RGB8;    break;
+		case 4:  OutFormat = TextureFormat::RGBA8;   break;
+		default: OutFormat = TextureFormat::Unknown; break;
 		}
 
 		jpeg_start_decompress(&cinfo);
@@ -157,4 +159,5 @@ namespace Columbus
 	}
 
 }
+
 

@@ -1,6 +1,11 @@
 #include <Graphics/Particles/ParticleEmitterCPU.h>
 #include <Core/Platform/Platform.h>
-#include <intrin.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+	#include <intrin.h>
+#elif defined(__unix)
+	#include <x86intrin.h>
+#endif
 
 namespace Columbus
 {

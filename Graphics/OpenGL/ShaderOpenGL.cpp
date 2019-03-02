@@ -6,6 +6,17 @@
 
 namespace Columbus
 {
+
+	static const char* GetStringFromShaderType(ShaderType Type)
+	{
+		switch (Type)
+		{
+		case ShaderType::Vertex:   return "Vertex";
+		case ShaderType::Fragment: return "Fragment";
+		}
+
+		return "";
+	}
 	
 	/*
 	*
@@ -17,7 +28,7 @@ namespace Columbus
 		File ShaderFile(FileName, "rt");
 		if (!ShaderFile.IsOpened())
 		{
-			Log::Error("Shader not loaded: %s", FileName);
+			Log::Error("%s shader not loaded: %s", GetStringFromShaderType(Type), FileName);
 			return false;
 		}
 
@@ -28,7 +39,7 @@ namespace Columbus
 
 		if (!Builder.Build(TmpFile, Type))
 		{
-			Log::Error("Shader not built: %s", FileName);
+			Log::Error("%s shader not built: %s", GetStringFromShaderType(Type), FileName);
 			return false;
 		}
 
@@ -36,7 +47,7 @@ namespace Columbus
 
 		if (Builder.ShaderSourceLength == 0)
 		{
-			Log::Error("Shader loading incorrect: %s", FileName);
+			Log::Error("%s shader loading incorrect: %s", GetStringFromShaderType(Type), FileName);
 			return false;
 		}
 
@@ -194,7 +205,7 @@ namespace Columbus
 		Loaded = true;
 		Compiled = false;
 		Error = false;
-		Log::Success("Shader loaded: %s", FileName);
+		Log::Success("%s shader loaded: %s", GetStringFromShaderType(Type), FileName);
 
 		return true;
 	}
@@ -227,7 +238,7 @@ namespace Columbus
 
 		Compiled = true;
 		Error = false;
-		Log::Success("Shader compiled: %s", ShaderPath);
+		Log::Success("%s shader compiled: %s", GetStringFromShaderType(Type), ShaderPath);
 
 		return true;
 	}
@@ -243,6 +254,9 @@ namespace Columbus
 		{
 			glDeleteShader(ID);
 		}
+
+		delete[] ShaderPath;
+		delete[] ShaderSource;
 	}
 	/*
 	*
@@ -623,7 +637,7 @@ namespace Columbus
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const
 	{
-		glUniformMatrix4fv(FastID, 1, Transpose ? GL_TRUE : GL_FALSE, &Mat.M[0][0]);
+		glUniformMatrix4fv(FastUniforms[FastID], 1, Transpose ? GL_TRUE : GL_FALSE, &Mat.M[0][0]);
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, TextureOpenGL* Tex, uint32 Sampler) const
@@ -654,11 +668,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
 
 

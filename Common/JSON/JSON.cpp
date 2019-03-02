@@ -1,5 +1,6 @@
 #include <Common/JSON/JSON.h>
 #include <System/File.h>
+#include <string.h>
 #include <ctype.h>
 #include <math.h>
 

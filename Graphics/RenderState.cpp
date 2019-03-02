@@ -64,12 +64,14 @@ namespace Columbus
 	{
 		switch (DepthTesting)
 		{
-		case Material::DepthTest::Less:    glDepthFunc(GL_LESS);    break;
-		case Material::DepthTest::Greater: glDepthFunc(GL_GREATER); break;
-		case Material::DepthTest::LEqual:  glDepthFunc(GL_LEQUAL);  break;
-		case Material::DepthTest::GEqual:  glDepthFunc(GL_GEQUAL);  break;
-		case Material::DepthTest::Never:   glDepthFunc(GL_NEVER);   break;
-		case Material::DepthTest::Always:  glDepthFunc(GL_ALWAYS);  break;
+		case Material::DepthTest::Less:     glDepthFunc(GL_LESS);     break;
+		case Material::DepthTest::Greater:  glDepthFunc(GL_GREATER);  break;
+		case Material::DepthTest::LEqual:   glDepthFunc(GL_LEQUAL);   break;
+		case Material::DepthTest::GEqual:   glDepthFunc(GL_GEQUAL);   break;
+		case Material::DepthTest::Equal:    glDepthFunc(GL_EQUAL);    break;
+		case Material::DepthTest::NotEqual: glDepthFunc(GL_NOTEQUAL); break;
+		case Material::DepthTest::Never:    glDepthFunc(GL_NEVER);    break;
+		case Material::DepthTest::Always:   glDepthFunc(GL_ALWAYS);   break;
 		}
 	}
 
@@ -96,7 +98,7 @@ namespace Columbus
 			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), Sky->GetIntegrationMap() };
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
-			static constexpr char* const Names[11] =
+			static constexpr const char* Names[11] =
 			{ "uMaterial.AlbedoMap",
 			  "uMaterial.NormalMap",
 			  "uMaterial.RoughnessMap",
@@ -229,8 +231,7 @@ namespace Columbus
 		PreviousShader = CurrentShader;
 		CurrentShader = InShaderProgram;
 		
-		//if (CurrentShader != PreviousShader && CurrentShader != nullptr)
-		if (CurrentShader != nullptr)
+		if (CurrentShader != PreviousShader && CurrentShader != nullptr)
 		{
 			if (!CurrentShader->IsError())
 			{

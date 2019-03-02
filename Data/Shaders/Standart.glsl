@@ -138,7 +138,7 @@
 		Final();
 	}
 
-	vec3 NormalBlend(in vec4 n1, in vec4 n2)
+	vec3 NormalBlend(vec4 n1, vec4 n2)
 	{
 		//UDN
 		vec3 c = vec3(2, 1, 0);
@@ -190,7 +190,7 @@
 			Metallic = uMaterial.Metallic;
 	}
 
-	vec3 LambertDiffuseBRDF(in vec3 color)
+	vec3 LambertDiffuseBRDF(vec3 color)
 	{
 		return color * LAMBERTIAN;
 	}
@@ -229,22 +229,17 @@
 		return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 	}
 
-	vec3 CookTorranceSpecularBRDF(in vec3 N, in vec3 L, in vec3 V, in vec3 H, out vec3 F)
+	vec3 CookTorranceSpecularBRDF(vec3 N, vec3 L, vec3 H, vec3 F, float NdotV)
 	{
-		vec3 F0 = vec3(0.04); 
-		F0 = mix(F0, vec3(1), Metallic);
-
-		float NdotV = max(0, dot(N, V));
-		float NdotL = max(0, dot(N, L));
+		float NdotL = max(0.0, dot(N, L));
 
 		float D = DistributionGGX(N, H, Roughness);
-		      F = FresnelRoughness(NdotV, F0, Roughness);
 		float G = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
 
 		return D * F * G * LAMBERTIAN * NdotL;
 	}
 
-	vec3 LightCalc(int id, out vec3 F)
+	vec3 LightCalc(int id, vec3 F, vec3 N, vec3 V, float NdotV)
 	{
 		int Offset = id * 13;
 
@@ -262,16 +257,13 @@
 		float Distance = length(LightPos - varPos);
 		float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
 
-		vec3 N, L, V, H;
-		N = normalize(Normal);
-		L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
-		V = normalize(uCamera.Position - varPos);
-		H = normalize(V + L);
+		vec3 L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
+		vec3 H = normalize(V + L);
 
 		float NdotL = max(0, dot(N, L));
 
 		vec3 DiffuseBRDF = LambertDiffuseBRDF(uMaterial.Albedo.rgb) * AO;
-		vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, V, H, F);
+		vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, H, F, NdotV);
 
 		float Factor = 1.0 - Metallic;
 
@@ -280,17 +272,23 @@
 
 	vec3 Lights()
 	{
-		vec3 BRDF = vec3(0);
-		vec3 F = vec3(0);
+		vec3 N = normalize(Normal);
 		vec3 V = normalize(uCamera.Position - varPos);
 		vec3 R = reflect(-V, Normal);
+		float NdotV = max(0.0, dot(N, V));
 
-		BRDF += LightCalc(0, F);
-		BRDF += LightCalc(1, F);
-		BRDF += LightCalc(2, F);
-		BRDF += LightCalc(3, F);
+		vec3 F0 = vec3(0.04); 
+		F0 = mix(F0, vec3(1), Metallic);
 
-		const float MAX_REFLECTION_LOD = 7.0;
+		vec3 BRDF = vec3(0.0);
+		vec3 F = FresnelRoughness(NdotV, F0, Roughness);
+
+		BRDF += LightCalc(0, F, N, V, NdotV);
+		BRDF += LightCalc(1, F, N, V, NdotV);
+		BRDF += LightCalc(2, F, N, V, NdotV);
+		BRDF += LightCalc(3, F, N, V, NdotV);
+
+		const float MAX_REFLECTION_LOD = 7.0; // TODO
 		vec3 prefilteredColor = SampleCubeLod(uMaterial.EnvironmentMap, R,  Roughness * MAX_REFLECTION_LOD).rgb;
 		vec2 envBRDF  = Sample2D(uMaterial.IntegrationMap, vec2(max(dot(Normal, V), 0.0), Roughness)).rg;
 		vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
@@ -314,7 +312,7 @@
 
 	void Final(void)
 	{
-		vec4 Color = vec4(Lights(), uMaterial.Albedo.a) * Albedo;
+		vec4 Color = vec4(Lights() * Albedo.rgb, uMaterial.Albedo.a);
 
 		Color.rgb += Sample2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
 

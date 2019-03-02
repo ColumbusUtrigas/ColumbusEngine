@@ -132,17 +132,8 @@ namespace Columbus
 		}
 	}
 
-	AudioSource::~AudioSource() {}
+	AudioSource::~AudioSource() { delete SoundClip; }
 
 }
-
-
-
-
-
-
-
-
-
 
 

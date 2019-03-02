@@ -14,13 +14,11 @@
 	in vec4 Colors;
 	in vec2 OtherData;
 
-	//@Uniform ViewProjection
 	//@Uniform View
 	//@Uniform Projection
 	//@Uniform Billboard
 	//@Uniform Frame
 
-	uniform mat4 ViewProjection;
 	uniform mat4 View;
 	uniform mat4 Projection;
 	uniform mat4 Billboard;

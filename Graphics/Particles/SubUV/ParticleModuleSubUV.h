@@ -23,7 +23,7 @@ namespace Columbus
 
 		SubUVMode Mode;
 	public:
-		ParticleModuleSubUV() : Horizontal(1), Vertical(1), Mode(SubUVMode::Linear), Cycles(1.0f) {}
+		ParticleModuleSubUV() : Horizontal(1), Vertical(1), Cycles(1.0f), Mode(SubUVMode::Linear) {}
 
 		void Spawn(ParticleContainer& Container, size_t Spawn) const;
 		void Update(ParticleContainer& Container) const;

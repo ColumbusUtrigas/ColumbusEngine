@@ -21,7 +21,6 @@ namespace Columbus
 		std::vector<Light*> Lights;
 	public:
 		Mesh() : VerticesCount(0) {}
-		Mesh(const std::vector<Vertex>& Vertices) : VerticesCount(0) { SetVertices(Vertices); LightsSorted = false; }
 
 		bool Load(const char* FileName)
 		{
