@@ -10,6 +10,8 @@ namespace Columbus
 	{
 	private:
 		AudioSource* Source;
+
+		friend class Scene;
 	public:
 		ComponentAudioSource(AudioSource* InSource) : Source(InSource) {}
 
@@ -29,15 +31,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
 
 

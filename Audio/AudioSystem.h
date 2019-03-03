@@ -14,6 +14,8 @@ namespace Columbus
 	public:
 		AudioSystem();
 
+		void Clear();
+
 		void AddSource(AudioSource* Source);
 		void SetListener(AudioListener Listener);
 

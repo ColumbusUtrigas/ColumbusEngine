@@ -312,7 +312,7 @@
 
 	void Final(void)
 	{
-		vec4 Color = vec4(Lights() * Albedo.rgb, uMaterial.Albedo.a);
+		vec4 Color = vec4(Lights(), uMaterial.Albedo.a) * Albedo;
 
 		Color.rgb += Sample2D(uMaterial.EmissionMap, TiledUV).rgb * uMaterial.EmissionStrength;
 

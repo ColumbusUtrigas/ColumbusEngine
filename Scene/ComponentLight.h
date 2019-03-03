@@ -10,6 +10,8 @@ namespace Columbus
 	{
 	private:
 		Light* LightSource = nullptr;
+
+		friend class Scene;
 	public:
 		ComponentLight(Light* InLight) : LightSource(InLight) {}
 
@@ -29,6 +31,5 @@ namespace Columbus
 	};
 
 }
-
 
 

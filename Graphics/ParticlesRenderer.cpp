@@ -36,25 +36,31 @@ namespace Columbus
 		delete[] Data;
 		Data = new char[MaxSize * sizeof(Vector4) * 6];
 
-		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Vertices), Vertices, sizeof(Vertices));
-		VerticesBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Vertices), Buffer::Usage::Write, Buffer::Changing::Static }, Data);
-		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Texcoords), Texcoords, sizeof(Texcoords));
-		TexcoordsBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Texcoords), Buffer::Usage::Write, Buffer::Changing::Static }, Data);
+		auto Write = BufferOpenGL::UsageType::Write;
+		auto Static = BufferOpenGL::FrequencyType::Static;
+		auto Dynamic = BufferOpenGL::FrequencyType::Dynamic;
 
-		PositionsBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Vector3) * 6 }, nullptr);
-		SizesBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Vector3) * 6 }, nullptr);
-		ColorsBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Vector4) * 6 }, nullptr);
-		OtherDataBuffer.Load(Buffer::Properties{ MaxSize * sizeof(Vector2) * 6 }, nullptr);
+		size_t VerticesCount = MaxSize * 6;
+
+		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Vertices), Vertices, sizeof(Vertices));
+		VerticesBuffer.Load(Data, BufferOpenGL::Properties(MaxSize * sizeof(Vertices), Write, Static));
+		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Texcoords), Texcoords, sizeof(Texcoords));
+		TexcoordsBuffer.Load(Data, BufferOpenGL::Properties(MaxSize * sizeof(Texcoords), Write, Static));
+
+		PositionsBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector3), Write, Dynamic));
+		SizesBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector3), Write, Dynamic));
+		ColorsBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector4), Write, Dynamic));
+		OtherDataBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector2), Write, Dynamic));
 	}
 
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
 	{
-		VerticesBuffer.CreateArray(Buffer::Properties::Default());
-		TexcoordsBuffer.CreateArray(Buffer::Properties::Default());
-		PositionsBuffer.CreateArray(Buffer::Properties::Default());
-		SizesBuffer.CreateArray(Buffer::Properties::Default());
-		ColorsBuffer.CreateArray(Buffer::Properties::Default());
-		OtherDataBuffer.CreateArray(Buffer::Properties::Default());
+		VerticesBuffer.CreateArray(BufferOpenGL::Properties());
+		TexcoordsBuffer.CreateArray(BufferOpenGL::Properties());
+		PositionsBuffer.CreateArray(BufferOpenGL::Properties());
+		SizesBuffer.CreateArray(BufferOpenGL::Properties());
+		ColorsBuffer.CreateArray(BufferOpenGL::Properties());
+		OtherDataBuffer.CreateArray(BufferOpenGL::Properties());
 
 		Allocate(MaxSize);
 	}
@@ -97,45 +103,28 @@ namespace Columbus
 		Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
 		Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
 
-		Vector3* Positions = (Vector3*)PositionsBuffer.Map();
+		Vector3* Positions = (Vector3*)PositionsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
 		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Positions[i * 6 + a] = Particles.Particles.Positions[i].XYZ();
 		PositionsBuffer.Unmap();
 
-		Vector3* Sizes = (Vector3*)SizesBuffer.Map();
+		Vector3* Sizes = (Vector3*)SizesBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
 		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Sizes[i * 6 + a] = Particles.Particles.Sizes[i];
 		SizesBuffer.Unmap();
 
-		Vector4* Colors = (Vector4*)ColorsBuffer.Map();
+		Vector4* Colors = (Vector4*)ColorsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
 		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Colors[i * 6 + a] = Particles.Particles.Colors[i];
 		ColorsBuffer.Unmap();
 
-		Vector2* OtherData = (Vector2*)OtherDataBuffer.Map();
+		Vector2* OtherData = (Vector2*)OtherDataBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
 		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) OtherData[i * 6 + a] = Vector2(Particles.Particles.Rotations[i], (float)Particles.Particles.Frames[i]);
 		OtherDataBuffer.Unmap();
 
-		VerticesBuffer.Bind();
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-		glEnableVertexAttribArray(0);
-
-		TexcoordsBuffer.Bind();
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
-		glEnableVertexAttribArray(1);
-
-		PositionsBuffer.Bind();
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-		glEnableVertexAttribArray(2);
-
-		SizesBuffer.Bind();
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-		glEnableVertexAttribArray(3);
-
-		ColorsBuffer.Bind();
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
-		glEnableVertexAttribArray(4);
-
-		OtherDataBuffer.Bind();
-		glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
-		glEnableVertexAttribArray(5);
+		 VerticesBuffer.VertexAttribute<float>(0, 3, false, 0, nullptr);
+		TexcoordsBuffer.VertexAttribute<float>(1, 2, false, 0, nullptr);
+		PositionsBuffer.VertexAttribute<float>(2, 3, false, 0, nullptr);
+		    SizesBuffer.VertexAttribute<float>(3, 3, false, 0, nullptr);
+		   ColorsBuffer.VertexAttribute<float>(4, 4, false, 0, nullptr);
+		OtherDataBuffer.VertexAttribute<float>(5, 2, false, 0, nullptr);
 
 		glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
 

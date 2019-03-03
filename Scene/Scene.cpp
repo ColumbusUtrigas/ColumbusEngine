@@ -18,8 +18,9 @@
 #include <Physics/PhysicsShapeSphere.h>
 
 #include <Graphics/Particles/ParticleEmitterLoader.h>
-
 #include <Graphics/Primitives.h>
+
+#include <unordered_set>
 
 namespace Columbus
 {
@@ -627,27 +628,6 @@ namespace Columbus
 
 		return nullptr;
 	}
-
-	template <> void Scene::Workflow(const std::unordered_set<ComponentAudioSource*>& Pool)
-	{
-		for (auto i : Pool) if (!Audio.HasSource(i->GetSource())) Audio.AddSource(i->GetSource());
-	}
-
-	template <> void Scene::Workflow(const std::unordered_set<ComponentLight*>& Pool)
-	{
-		Lights.clear();
-		for (auto i : Pool) Lights.emplace_back(i->GetLight());
-	}
-
-	template <> void Scene::Workflow(const std::unordered_set<ComponentMeshRenderer*>& Pool)
-	{
-		for (auto i : Pool) i->SetLights(Lights);
-	}
-
-	template <> void Scene::Workflow(const std::unordered_set<ComponentParticleSystem*>& Pool)
-	{
-		for (auto i : Pool) i->Emitter.CameraPosition = MainCamera->Pos;
-	}
 	
 	void Scene::Update()
 	{
@@ -656,25 +636,28 @@ namespace Columbus
 
 		RigidbodyWorkflow();
 
-		for (auto& Obj : Objects)
-		{
-			Obj.second->Update(Time);
+		Audio.Clear();
+		Lights.clear();
 
-			AudioSet.insert(Obj.second->GetComponent<ComponentAudioSource>());
-			LightSet.insert(Obj.second->GetComponent<ComponentLight>());
-			MeshSet.insert(Obj.second->GetComponent<ComponentMeshRenderer>());
-			ParticleSet.insert(Obj.second->GetComponent<ComponentParticleSystem>());
+		for (auto& Object : Objects)
+		{
+			Object.second->Update(Time);
+
+			auto AudioSource = Object.second->GetComponent<ComponentAudioSource>();
+			auto Light = Object.second->GetComponent<ComponentLight>();
+			auto PS = Object.second->GetComponent<ComponentParticleSystem>();
+
+			if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
+			if (Light != nullptr) Lights.emplace_back(Light->LightSource);
+			if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
 		}
 
-		AudioSet.erase(nullptr);
-		LightSet.erase(nullptr);
-		MeshSet.erase(nullptr);
-		ParticleSet.erase(nullptr);
+		for (auto& Object : Objects)
+		{
+			auto Mesh = Object.second->GetComponent<ComponentMeshRenderer>();
 
-		Workflow(AudioSet);
-		Workflow(LightSet);
-		Workflow(MeshSet);
-		Workflow(ParticleSet);
+			if (Mesh != nullptr) Mesh->SetLights(Lights);
+		}
 
 		PhysWorld.Step(Time, 10);
 		Audio.SetSpeed(TimeFactor);

@@ -21,6 +21,11 @@ namespace Columbus
 	public:
 		AudioMixer() {}
 
+		void Clear()
+		{
+			Sources.Clear();
+		}
+
 		void AddSource(AudioSource* Source)
 		{
 			Sources.Add(Source);
