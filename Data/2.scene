@@ -10,7 +10,7 @@
 			<Texture0>Data/Textures/Hercules.dds</Texture0>
 			<Texture1>Data/Textures/Detail.dds</Texture1>
 			<Texture2>Data/Textures/Detail-Normal.dds</Texture2>
-			<Texture3>Data/Textures/statue_d.dds</Texture3>
+			<Texture3>Data/Textures/statue_d.tga</Texture3>
 			<Texture4>Data/Textures/statue_e.dds</Texture4>
 			<Texture5>Data/Textures/Fireplace.dds</Texture5>
 			<Texture6>Data/Textures/Fireplace-E.dds</Texture6>
