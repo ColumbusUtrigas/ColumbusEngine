@@ -8,11 +8,6 @@ namespace Columbus
 	
 	Device::Device() {}
 
-	Buffer* Device::CreateBuffer() const
-	{
-		return new Buffer();
-	}
-
 	ShaderStage* Device::CreateShaderStage() const
 	{
 		return new ShaderStage();

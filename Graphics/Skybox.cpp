@@ -245,18 +245,15 @@ namespace Columbus
 		Frame.ColorTextures[0] = Tmp;
 	}
 
-	Skybox::Skybox() :
-		Tex(nullptr),
-		Shader(nullptr)
+	Skybox::Skybox()
 	{
 		Shader = CreateSkyboxShader();
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 	}
 
-	Skybox::Skybox(Texture* InTexture) :
-		Tex(InTexture),
-		Shader(nullptr)
+	Skybox::Skybox(Texture* InTexture)
 	{
+		Tex = InTexture;
 		Shader = CreateSkyboxShader();
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 		CreateIrradianceMap(Tex, IrradianceMap, VAO, IBO);

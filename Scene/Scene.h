@@ -10,14 +10,8 @@
 #include <Core/SmartPointer.h>
 #include <Core/Types.h>
 
-#include <unordered_set>
 #include <vector>
 #include <map>
-
-#include <Scene/ComponentAudioSource.h>
-#include <Scene/ComponentLight.h>
-#include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentParticleSystem.h>
 
 namespace Columbus
 {
@@ -26,12 +20,14 @@ namespace Columbus
 	{
 	private:
 		std::map<uint32, SmartPointer<GameObject>> Objects;
-		std::vector<Light*> Lights;
 		std::map<uint32, SmartPointer<Texture>> Textures;
 		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 
 		std::map<uint32, SmartPointer<Mesh>> Meshes;
 		std::map<uint32, SmartPointer<Sound>> Sounds;
+
+		Vector<AudioSource*> AudioSources;
+		std::vector<Light*> Lights;
 
 		Renderer MainRender;
 
@@ -46,14 +42,6 @@ namespace Columbus
 
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
-
-		std::unordered_set<ComponentAudioSource*> AudioSet;
-		std::unordered_set<ComponentLight*> LightSet;
-		std::unordered_set<ComponentMeshRenderer*> MeshSet;
-		std::unordered_set<ComponentParticleSystem*> ParticleSet;
-
-		template <typename Container>
-		void Workflow(const Container& Components);
 	public:
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;

@@ -59,7 +59,7 @@ namespace Columbus
 			_Data = _Allocator.Allocate(_Capacity);
 		}
 		Vector(const Vector& Base) { *this = Base; }
-		Vector(Vector&& Base)      { *this = Base; }
+		Vector(Vector&& Base)      { *this = (Vector&&)Base; }
 
 		uint32 Size()     const { return _Size;     }
 		uint32 Capacity() const { return _Capacity; }
@@ -113,11 +113,18 @@ namespace Columbus
 
 		Vector& operator=(const Vector& Other)
 		{
-			_Allocator.Deallocate(_Data);
 			_Size = Other._Size;
 			_Capacity = Other._Capacity;
-			_Data = _Allocator.Allocate(_Capacity);
+			_Allocator.Reallocate(_Data, _Capacity);
 			memcpy(_Data, Other._Data, _Size * sizeof(ValueType)); // TODO
+			return *this;
+		}
+
+		Vector& operator=(Vector&& Other)
+		{
+			_Size = Other._Size;         Other._Size = 0;
+			_Capacity = Other._Capacity; Other._Capacity = 0;
+			_Data = Other._Data;         Other._Data = nullptr;
 			return *this;
 		}
 

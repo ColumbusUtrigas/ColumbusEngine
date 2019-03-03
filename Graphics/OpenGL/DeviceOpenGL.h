@@ -10,8 +10,6 @@ namespace Columbus
 	public:
 		DeviceOpenGL();
 
-		virtual Buffer* CreateBuffer() const override;
-
 		virtual ShaderStage* CreateShaderStage() const override;
 		virtual ShaderProgram* CreateShaderProgram() const override;
 
@@ -25,10 +23,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
 
 

@@ -4,147 +4,147 @@
 namespace Columbus
 {
 
-	void BufferOpenGL::UpdateUsage()
+	template <typename T> void foo() {}
+	template <> void foo<float>() {}
+
+	static uint32 DecodeUsage(BufferOpenGL::UsageType Usage, BufferOpenGL::FrequencyType Frequency)
 	{
-		switch (BufferUsage)
+		switch (Usage)
 		{
-			case Buffer::Usage::Write:
+			case BufferOpenGL::UsageType::Write:
 			{
-				switch (BufferChanging)
+				switch (Frequency)
 				{
-					case Buffer::Changing::Static:  Usage = GL_STATIC_DRAW;  break;
-					case Buffer::Changing::Dynamic: Usage = GL_DYNAMIC_DRAW; break;
-					case Buffer::Changing::Stream:  Usage = GL_STREAM_DRAW;  break;
+					case BufferOpenGL::FrequencyType::Static:  return GL_STATIC_DRAW;  break;
+					case BufferOpenGL::FrequencyType::Dynamic: return GL_DYNAMIC_DRAW; break;
+					case BufferOpenGL::FrequencyType::Stream:  return GL_STREAM_DRAW;  break;
 				}
 
 				break;
 			}
 
-			case Buffer::Usage::Read:
+			case BufferOpenGL::UsageType::Read:
 			{
-				switch (BufferChanging)
+				switch (Frequency)
 				{
-					case Buffer::Changing::Static:  Usage = GL_STATIC_READ;  break;
-					case Buffer::Changing::Dynamic: Usage = GL_DYNAMIC_READ; break;
-					case Buffer::Changing::Stream:  Usage = GL_STREAM_READ;  break;
+					case BufferOpenGL::FrequencyType::Static:  return GL_STATIC_READ;  break;
+					case BufferOpenGL::FrequencyType::Dynamic: return GL_DYNAMIC_READ; break;
+					case BufferOpenGL::FrequencyType::Stream:  return GL_STREAM_READ;  break;
 				}
 
 				break;
 			}
 
-			case Buffer::Usage::Copy:
+			case BufferOpenGL::UsageType::Copy:
 			{
-				switch (BufferChanging)
+				switch (Frequency)
 				{
-					case Buffer::Changing::Static:  Usage = GL_STATIC_COPY;  break;
-					case Buffer::Changing::Dynamic: Usage = GL_DYNAMIC_COPY; break;
-					case Buffer::Changing::Stream:  Usage = GL_STREAM_COPY;  break;
+					case BufferOpenGL::FrequencyType::Static:  return GL_STATIC_COPY;  break;
+					case BufferOpenGL::FrequencyType::Dynamic: return GL_DYNAMIC_COPY; break;
+					case BufferOpenGL::FrequencyType::Stream:  return GL_STREAM_COPY;  break;
 				}
 
 				break;
 			}
 		}
+
+		return 0;
 	}
 
-	BufferOpenGL::BufferOpenGL() : Buffer::Buffer(), ID(0), Target(0), Usage(0) {}
-
-	void BufferOpenGL::Clear()
+	BufferOpenGL::BufferOpenGL() :
+		Size(0), ID(0), Target(0), Usage(0), BufferType(BufferOpenGL::Type::Array)
 	{
-		glDeleteBuffers(1, &ID);
-
-		Size = 0;
-		ID = 0;
-		Target = 0;
-		Usage = 0;
+		glGenBuffers(1, &ID);
 	}
 
-	bool BufferOpenGL::Create(Buffer::Type InType, const Buffer::Properties& Props)
+	BufferOpenGL::BufferOpenGL(Type Type) :
+		Size(0), ID(0), Target(0), Usage(0), BufferType(BufferOpenGL::Type::Array)
 	{
-		switch (InType)
+		glGenBuffers(1, &ID);
+		Create(Type, BufferOpenGL::Properties());
+	}
+
+	BufferOpenGL::BufferOpenGL(Type Type, Properties Props) :
+		Size(0), ID(0), Target(0), Usage(0), BufferType(BufferOpenGL::Type::Array)
+	{
+		glGenBuffers(1, &ID);
+		Create(Type, Props);
+	}
+
+	BufferOpenGL::BufferOpenGL(Type Type, Properties Props, const void* Data) :
+		Size(0), ID(0), Target(0), Usage(0), BufferType(BufferOpenGL::Type::Array)
+	{
+		glGenBuffers(1, &ID);
+		Create(Type, Props);
+		Load(Data);
+	}
+
+	void BufferOpenGL::Create(BufferOpenGL::Type Type, const BufferOpenGL::Properties& Props)
+	{
+		BufferType = Type;
+
+		switch (Type)
 		{
-		case Buffer::Type::Array: return CreateArray(Props); break;
-		case Buffer::Type::Index: return CreateIndex(Props); break;
+		case BufferOpenGL::Type::Array: CreateArray(Props); break;
+		case BufferOpenGL::Type::Index: CreateIndex(Props); break;
 		}
-
-		return false;
 	}
 
-	bool BufferOpenGL::CreateArray(const Buffer::Properties& Props)
+	void BufferOpenGL::CreateArray(const BufferOpenGL::Properties& Props)
 	{
-		Clear();
-
-		Size = Props.DataSize;
-		BufferType = Buffer::Type::Array;
-		BufferUsage = Props.DataUsage;
-		BufferChanging = Props.DataChanging;
-
+		Size = Props.Size;
+		Usage = DecodeUsage(Props.Usage, Props.Frequency);
 		Target = GL_ARRAY_BUFFER;
-
-		UpdateUsage();
-
-		glGenBuffers(1, &ID);
-
-		return true;
+		BufferType = BufferOpenGL::Type::Array;
 	}
 
-	bool BufferOpenGL::CreateIndex(const Buffer::Properties& Props)
+	void BufferOpenGL::CreateIndex(const BufferOpenGL::Properties& Props)
 	{
-		Clear();
-
-		Size = Props.DataSize;
-		BufferType = Buffer::Type::Index;
-		BufferUsage = Props.DataUsage;
-		BufferChanging = Props.DataChanging;
-
+		Size = Props.Size;
+		Usage = DecodeUsage(Props.Usage, Props.Frequency);
 		Target = GL_ELEMENT_ARRAY_BUFFER;
-
-		UpdateUsage();
-
-		glGenBuffers(1, &ID);
-
-		return true;
+		BufferType = BufferOpenGL::Type::Index;
 	}
 
-	bool BufferOpenGL::Load(const void* Data)
+	void BufferOpenGL::Load(const void* Data)
 	{
 		glBindBuffer(Target, ID);
 		glBufferData(Target, Size, Data, Usage);
 		glBindBuffer(Target, 0);
-
-		return true;
 	}
 
-	bool BufferOpenGL::Load(const Buffer:: Properties& Props, const void* Data)
+	void BufferOpenGL::Load(const void* Data, const BufferOpenGL::Properties& Props)
 	{
-		Size = Props.DataSize;
-		BufferUsage = Props.DataUsage;
-		BufferChanging = Props.DataChanging;
-
-		UpdateUsage();
+		Size = Props.Size;
+		Usage = DecodeUsage(Props.Usage, Props.Frequency);
 
 		glBindBuffer(Target, ID);
 		glBufferData(Target, Size, Data, Usage);
 		glBindBuffer(Target, 0);
-
-		return true;
 	}
 
-	bool BufferOpenGL::Bind() const
+	void BufferOpenGL::Bind() const
 	{
 		glBindBuffer(Target, ID);
-		return true;
 	}
 
-	bool BufferOpenGL::Unbind() const
+	void BufferOpenGL::Unbind() const
 	{
 		glBindBuffer(Target, 0);
-		return true;
 	}
 
-	void* BufferOpenGL::Map() const
+	void* BufferOpenGL::Map(BufferOpenGL::AccessType Access) const
 	{
+		uint32 A = 0;
+		switch (Access)
+		{
+		case BufferOpenGL::AccessType::ReadOnly:  A = GL_READ_ONLY;  break;
+		case BufferOpenGL::AccessType::WriteOnly: A = GL_WRITE_ONLY; break;
+		case BufferOpenGL::AccessType::ReadWrite: A = GL_READ_WRITE; break;
+		}
+
 		glBindBuffer(Target, ID);
-		void* Result = glMapBuffer(Target, GL_READ_WRITE);
+		void* Result = glMapBuffer(Target, A);
 		glBindBuffer(Target, 0);
 		return Result;
 	}
@@ -158,11 +158,9 @@ namespace Columbus
 
 	BufferOpenGL::~BufferOpenGL()
 	{
-		Clear();
+		glDeleteBuffers(1, &ID);
 	}
 
 }
-
-
 
 

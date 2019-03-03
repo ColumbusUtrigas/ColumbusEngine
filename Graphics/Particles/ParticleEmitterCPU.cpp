@@ -107,7 +107,7 @@ namespace Columbus
 
 	void ParticleEmitterCPU::RemoveOldParticles()
 	{
-		// Iterate over 'active' particles and moves dead of them (RIP, particle)
+		// Iterate over 'active' particles and moves dead of them. R.I.P. (Rest In Particles)
 		for (size_t i = 0; i < Particles.Count; i++)
 		{
 			if (Particles.Percents[i] > 1.0f)

@@ -8,6 +8,11 @@ namespace Columbus
 		Player = new AudioPlayer(2, 44100, &Mixer);
 	}
 
+	void AudioSystem::Clear()
+	{
+		Mixer.Clear();
+	}
+
 	void AudioSystem::AddSource(AudioSource* Source)
 	{
 		Mixer.AddSource(Source);
