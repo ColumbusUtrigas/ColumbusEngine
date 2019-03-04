@@ -203,7 +203,7 @@ namespace Columbus
 		{
 			State.Clear();
 			glEnable(GL_BLEND);
-			glBlendEquation(GL_ADD);
+			glBlendEquation(GL_FUNC_ADD);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			for (auto& Object : TransparentObjects)
@@ -318,6 +318,7 @@ namespace Columbus
 	Renderer::~Renderer()
 	{
 		delete BlackTexture;
+		delete Blob;
 		delete NoneShader;
 		delete BloomBrightShader;
 		delete GaussBlurShader;
