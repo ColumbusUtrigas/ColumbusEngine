@@ -206,7 +206,6 @@
     <ClInclude Include="Core\Windows\PlatformWindowsClipboard.h" />
     <ClInclude Include="Core\Windows\PlatformWindowsFilesystem.h" />
     <ClInclude Include="Engine.h" />
-    <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\Camera.h" />
     <ClInclude Include="Graphics\Device.h" />
     <ClInclude Include="Graphics\Framebuffer.h" />

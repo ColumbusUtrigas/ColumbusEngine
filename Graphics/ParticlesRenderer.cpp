@@ -128,7 +128,7 @@ namespace Columbus
 
 		glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
 
-		glBlendEquation(GL_ADD);
+		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
