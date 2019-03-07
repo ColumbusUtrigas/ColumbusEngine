@@ -24,31 +24,16 @@ namespace Columbus
 		void SortLights();
 	public:
 		MeshOpenGL();
-		MeshOpenGL(const std::vector<Vertex>& Vertices);
 
-		virtual void SetVertices(const std::vector<Vertex>& Vertices) final override;
 		virtual bool Load(const Model& InModel) final override;
 
 		virtual void Bind()     final override;
 		virtual uint32 Render() final override;
 		virtual void Unbind()   final override;
 
-		virtual uint64 GetMemoryUsage() const final override;
-
 		~MeshOpenGL() override;
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 

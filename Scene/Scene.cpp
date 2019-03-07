@@ -18,7 +18,6 @@
 #include <Physics/PhysicsShapeSphere.h>
 
 #include <Graphics/Particles/ParticleEmitterLoader.h>
-#include <Graphics/Primitives.h>
 
 #include <unordered_set>
 
@@ -115,48 +114,13 @@ namespace Columbus
 
 			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshRenderer", "Mesh" }, MeshPath))
 			{
-				if (MeshPath == "Plane")
+				if (atoi(MeshPath.c_str()) >= 0)
 				{
-					Mesh* Mesh = gDevice->CreateMesh();
-					Mesh->SetVertices(PrimitivePlane());
-
-					if (Mesh != nullptr)
+					Mesh* tMesh = Meshes->at(atoi(MeshPath.c_str())).Get();
+					
+					if (tMesh != nullptr)
 					{
-						MeshRenderer = new ComponentMeshRenderer(Mesh);
-					}
-				}
-				else if (MeshPath == "Cube")
-				{
-					Mesh* Mesh = gDevice->CreateMesh();
-					Mesh->SetVertices(PrimitiveBox());
-
-					if (Mesh != nullptr)
-					{
-						MeshRenderer = new ComponentMeshRenderer(Mesh);
-					}
-				}
-				else if (MeshPath == "Sphere")
-				{
-					Mesh* Mesh = gDevice->CreateMesh();
-					Mesh->SetVertices(PrimitiveSphere(1, 50, 50));
-
-					if (Mesh != nullptr)
-					{
-						MeshRenderer = new ComponentMeshRenderer(Mesh);
-					}
-				}
-				else
-				{
-					if (atoi(MeshPath.c_str()) >= 0)
-					{
-						//Mesh* Mesh = gDevice->CreateMesh();
-						//Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
-						Mesh* tMesh = Meshes->at(atoi(MeshPath.c_str())).Get();
-
-						if (tMesh != nullptr)
-						{
-							MeshRenderer = new ComponentMeshRenderer(tMesh);
-						}
+						MeshRenderer = new ComponentMeshRenderer(tMesh);
 					}
 				}
 			}
