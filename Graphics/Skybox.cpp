@@ -4,6 +4,8 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/PostEffect.h>
 #include <Graphics/ScreenQuad.h>
+#include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -31,18 +33,15 @@ namespace Columbus
 		0, 1, 4, 4, 1, 5
 	};
 
-	ShaderProgram* IrradianceShader = nullptr;
-	ShaderProgram* PrefilterShader = nullptr;
-	ShaderProgram* IntegrationShader = nullptr;
+	ShaderProgramOpenGL* IrradianceShader = nullptr;
+	ShaderProgramOpenGL* PrefilterShader = nullptr;
+	ShaderProgramOpenGL* IntegrationShader = nullptr;
 
 	static ShaderProgram* CreateSkyboxShader()
 	{
 		ShaderProgram* tShader = gDevice->CreateShaderProgram();
 		tShader->Load(ShaderProgram::StandartProgram::Skybox);
 		tShader->Compile();
-
-		tShader->AddUniform("uViewProjection");
-		tShader->AddUniform("uSkybox");
 
 		return tShader;
 	}
@@ -83,8 +82,8 @@ namespace Columbus
 
 		if (IrradianceShader == nullptr)
 		{
-			IrradianceShader = gDevice->CreateShaderProgram();
-			IrradianceShader->Load("Data/Shaders/IrradianceGeneration.glsl");
+			IrradianceShader = (ShaderProgramOpenGL*)gDevice->CreateShaderProgram();
+			IrradianceShader->Load(ShaderProgram::StandartProgram::IrradianceGeneration);
 			IrradianceShader->Compile();
 		}
 
@@ -99,10 +98,8 @@ namespace Columbus
 		glDepthMask(GL_FALSE);
 
 		IrradianceShader->Bind();
-		IrradianceShader->SetUniformMatrix("Projection", &CaptureProjection.M[0][0]);
-		IrradianceShader->SetUniform1i("EnvironmentMap", 0);
-		glActiveTexture(GL_TEXTURE0);
-		BaseMap->bind();
+		IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("Projection"), false, CaptureProjection);
+		IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -111,7 +108,7 @@ namespace Columbus
 		{
 			Frame->SetTextureCube(Framebuffer::Attachment::Color0, IrradianceMap, i);
 			Frame->prepare({ 0, 0, 0, 0 }, { 32, 32 });
-			IrradianceShader->SetUniformMatrix("View", &CaptureViews[i].M[0][0]);
+			IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 		}
@@ -143,8 +140,8 @@ namespace Columbus
 
 		if (PrefilterShader == nullptr)
 		{
-			PrefilterShader = gDevice->CreateShaderProgram();
-			PrefilterShader->Load("Data/Shaders/PrefilterGeneration.glsl");
+			PrefilterShader = (ShaderProgramOpenGL*)gDevice->CreateShaderProgram();
+			PrefilterShader->Load(ShaderProgram::StandartProgram::PrefilterGeneration);
 			PrefilterShader->Compile();
 		}
 
@@ -166,10 +163,8 @@ namespace Columbus
 
 		glDepthMask(GL_FALSE);
 		PrefilterShader->Bind();
-		PrefilterShader->SetUniformMatrix("Projection", &CaptureProjection.M[0][0]);
-		PrefilterShader->SetUniform1i("EnvironmentMap", 0);
-		glActiveTexture(GL_TEXTURE0);
-		BaseMap->bind();
+		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("Projection"), false, CaptureProjection);
+		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
 
 		uint32 MaxMips = 8;
 
@@ -180,7 +175,7 @@ namespace Columbus
 
 			float Roughness = (float)Mip / (float)(MaxMips - 1);
 
-			PrefilterShader->SetUniform1f("Roughness", Roughness);
+			PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("Roughness"), Roughness);
 
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -189,7 +184,7 @@ namespace Columbus
 			{
 				Frame->SetTextureCube(Framebuffer::Attachment::Color0, PrefilterMap, i, Mip);
 				Frame->prepare({ 0, 0, 0, 0 }, { (float)Width, (float)Height });
-				PrefilterShader->SetUniformMatrix("View", &CaptureViews[i].M[0][0]);
+				PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 			}
@@ -209,8 +204,8 @@ namespace Columbus
 	{
 		if (IntegrationShader == nullptr)
 		{
-			IntegrationShader = gDevice->CreateShaderProgram();
-			IntegrationShader->Load("Data/Shaders/IntegrationGeneration.glsl");
+			IntegrationShader = (ShaderProgramOpenGL*)gDevice->CreateShaderProgram();
+			IntegrationShader->Load(ShaderProgram::StandartProgram::IntegrationGeneration);
 			IntegrationShader->Compile();
 		}
 
@@ -265,19 +260,18 @@ namespace Columbus
 	{
 		if (Shader != nullptr && Tex != nullptr)
 		{
+			auto ShaderOpenGL = (ShaderProgramOpenGL*)Shader;
+
 			glDepthMask(GL_FALSE);
 
-			Shader->Bind();
+			ShaderOpenGL->Bind();
 
 			auto View = ViewCamera.GetViewMatrix();
 			View.SetRow(3, Vector4(0, 0, 0, 1));
 			View.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			Shader->SetUniformMatrix("uViewProjection", &(View * ViewCamera.GetProjectionMatrix()).M[0][0]);
-
-			glActiveTexture(GL_TEXTURE0);
-			Shader->SetUniform1i("uSkybox", 0);
-			Tex->bind();
+			ShaderOpenGL->SetUniform(ShaderOpenGL->GetFastUniform("ViewProjection"), false, View * ViewCamera.GetProjectionMatrix());
+			ShaderOpenGL->SetUniform(ShaderOpenGL->GetFastUniform("Skybox"), (TextureOpenGL*)Tex, 0);
 
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -285,7 +279,7 @@ namespace Columbus
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
 
-			Shader->Unbind();
+			ShaderOpenGL->Unbind();
 			Tex->unbind();
 
 			glDepthMask(GL_TRUE);

@@ -13,13 +13,9 @@ namespace Columbus
 	public:
 		Device();
 
-		virtual ShaderStage* CreateShaderStage() const;
 		virtual ShaderProgram* CreateShaderProgram() const;
-		
 		virtual Texture* CreateTexture() const;
-
 		virtual Mesh* CreateMesh() const;
-
 		virtual Framebuffer* createFramebuffer() const;
 
 		virtual ~Device();

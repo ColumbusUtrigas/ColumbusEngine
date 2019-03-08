@@ -14,7 +14,7 @@ namespace Columbus
 
 	bool Material::Prepare()
 	{
-		if (ShaderProg != nullptr)
+		/*if (ShaderProg != nullptr)
 		{
 			if (!ShaderProg->IsCompiled())
 			{
@@ -24,7 +24,7 @@ namespace Columbus
 			ShaderProg->Bind();
 
 			return true;
-		}
+		}*/
 
 		return false;
 	}

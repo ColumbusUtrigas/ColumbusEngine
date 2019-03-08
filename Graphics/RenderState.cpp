@@ -99,17 +99,17 @@ namespace Columbus
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
 			static constexpr const char* Names[11] =
-			{ "uMaterial.AlbedoMap",
-			  "uMaterial.NormalMap",
-			  "uMaterial.RoughnessMap",
-			  "uMaterial.MetallicMap",
-			  "uMaterial.OcclusionMap",
-			  "uMaterial.EmissionMap",
-			  "uMaterial.DetailAlbedoMap",
-			  "uMaterial.DetailNormalMap",
-			  "uMaterial.IrradianceMap",
-			  "uMaterial.EnvironmentMap",
-			  "uMaterial.IntegrationMap" };
+			{ "AlbedoMap",
+			  "NormalMap",
+			  "RoughnessMap",
+			  "MetallicMap",
+			  "OcclusionMap",
+			  "EmissionMap",
+			  "DetailAlbedoMap",
+			  "DetailNormalMap",
+			  "IrradianceMap",
+			  "EnvironmentMap",
+			  "IntegrationMap" };
 
 			ShaderProgramOpenGL* Shader = (ShaderProgramOpenGL*)CurrentMaterial.GetShader();
 			MaterialRenderData* RenderData = (MaterialRenderData*)Shader->RenderData;
@@ -126,23 +126,23 @@ namespace Columbus
 				NewRenderData->Model          = Shader->GetFastUniform("uModel");
 				NewRenderData->ViewProjection = Shader->GetFastUniform("uViewProjection");
 
-				NewRenderData->HasAlbedoMap       = Shader->GetFastUniform("uMaterial.HasAlbedoMap");
-				NewRenderData->HasNormalMap       = Shader->GetFastUniform("uMaterial.HasNormalMap");
-				NewRenderData->HasRoughnessMap    = Shader->GetFastUniform("uMaterial.HasRoughnessMap");
-				NewRenderData->HasMetallicMap     = Shader->GetFastUniform("uMaterial.HasMetallicMap");
-				NewRenderData->HasOcclusionMap    = Shader->GetFastUniform("uMaterial.HasOcclusionMap");
-				NewRenderData->HasDetailAlbedoMap = Shader->GetFastUniform("uMaterial.HasDetailAlbedoMap");
-				NewRenderData->HasDetailNormalMap = Shader->GetFastUniform("uMaterial.HasDetailNormalMap");
+				NewRenderData->HasAlbedoMap       = Shader->GetFastUniform("HasAlbedoMap");
+				NewRenderData->HasNormalMap       = Shader->GetFastUniform("HasNormalMap");
+				NewRenderData->HasRoughnessMap    = Shader->GetFastUniform("HasRoughnessMap");
+				NewRenderData->HasMetallicMap     = Shader->GetFastUniform("HasMetallicMap");
+				NewRenderData->HasOcclusionMap    = Shader->GetFastUniform("HasOcclusionMap");
+				NewRenderData->HasDetailAlbedoMap = Shader->GetFastUniform("HasDetailAlbedoMap");
+				NewRenderData->HasDetailNormalMap = Shader->GetFastUniform("HasDetailNormalMap");
 
-				NewRenderData->Tiling           = Shader->GetFastUniform("uMaterial.Tiling");
-				NewRenderData->DetailTiling     = Shader->GetFastUniform("uMaterial.DetailTiling");
-				NewRenderData->Albedo           = Shader->GetFastUniform("uMaterial.Albedo");
-				NewRenderData->Roughness        = Shader->GetFastUniform("uMaterial.Roughness");
-				NewRenderData->Metallic         = Shader->GetFastUniform("uMaterial.Metallic");
-				NewRenderData->EmissionStrength = Shader->GetFastUniform("uMaterial.EmissionStrength");
-				NewRenderData->Transparent      = Shader->GetFastUniform("uMaterial.Transparent");
+				NewRenderData->Tiling           = Shader->GetFastUniform("Tiling");
+				NewRenderData->DetailTiling     = Shader->GetFastUniform("DetailTiling");
+				NewRenderData->Albedo           = Shader->GetFastUniform("Albedo");
+				NewRenderData->Roughness        = Shader->GetFastUniform("Roughness");
+				NewRenderData->Metallic         = Shader->GetFastUniform("Metallic");
+				NewRenderData->EmissionStrength = Shader->GetFastUniform("EmissionStrength");
+				NewRenderData->Transparent      = Shader->GetFastUniform("Transparent");
 
-				NewRenderData->CameraPosition = Shader->GetFastUniform("uCamera.Position");
+				NewRenderData->CameraPosition = Shader->GetFastUniform("uCameraPosition");
 				NewRenderData->Lighting       = Shader->GetFastUniform("uLighting");
 
 				Shader->RenderData = NewRenderData;
@@ -241,7 +241,7 @@ namespace Columbus
 				}
 			}
 
-			CurrentShader->Bind();
+			((ShaderProgramOpenGL*)CurrentShader)->Bind();
 		}
 	}
 

@@ -5,13 +5,7 @@ namespace Columbus
 
 	Device* gDevice = nullptr;
 
-	
 	Device::Device() {}
-
-	ShaderStage* Device::CreateShaderStage() const
-	{
-		return new ShaderStage();
-	}
 
 	ShaderProgram* Device::CreateShaderProgram() const
 	{
