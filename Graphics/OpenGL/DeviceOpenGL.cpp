@@ -12,11 +12,6 @@ namespace Columbus
 
 	}
 
-	ShaderStage* DeviceOpenGL::CreateShaderStage() const
-	{
-		return new ShaderStageOpenGL();
-	}
-
 	ShaderProgram* DeviceOpenGL::CreateShaderProgram() const
 	{
 		return new ShaderProgramOpenGL();

@@ -1,34 +1,22 @@
-#ifdef VertexShader
+#shader vertex
 
-	out vec2 UV;
+out vec2 UV;
 
-	void main(void)
-	{
-		Position = ftransform();
-		UV = gl_MultiTexCoord0.xy;
-	}
+void main(void)
+{
+	Position = ftransform();
+	UV = gl_MultiTexCoord0.xy;
+}
 
-#endif
+#shader fragment
 
-#ifdef FragmentShader
+#uniform Texture2D BaseTexture
 
-	//@Uniform BaseTexture
+in vec2 UV;
 
-	uniform sampler2D BaseTexture;
-
-	in vec2 UV;
-
-	void main()
-	{
-		FragData[0] = vec4(texture(BaseTexture, UV).rgb, 1);
-	}
-
-#endif
-
-
-
-
-
-
+void main()
+{
+	FragData[0] = vec4(Sample2D(BaseTexture, UV).rgb, 1);
+}
 
 

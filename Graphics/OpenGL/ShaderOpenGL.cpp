@@ -1,8 +1,13 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
-#include <System/File.h>
+#include <Graphics/ShaderBuilder.h>
 #include <GL/glew.h>
-#include <cctype>
+
+#include <System/File.h>
+
+#include <algorithm>
+#include <fstream>
+#include <sstream>
 
 namespace Columbus
 {
@@ -23,83 +28,129 @@ namespace Columbus
 	* Shader loading functions
 	*
 	*/
-	bool ShaderLoadFromFile(const char* FileName, char*& OutSource, ShaderBuilder& Builder, ShaderType Type)
+
+	static std::string ReadFile(const char* FileName)
 	{
-		File ShaderFile(FileName, "rt");
-		if (!ShaderFile.IsOpened())
+		std::ifstream f(FileName);
+		std::string line;
+		std::stringstream stream;
+
+		while (std::getline(f, line))
 		{
-			Log::Error("%s shader not loaded: %s", GetStringFromShaderType(Type), FileName);
-			return false;
+			if (line.find("#include") != std::string::npos)
+			{
+				auto substr = line.substr(line.find("#include") + 8);
+				size_t pos = 0;
+				std::string path;
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size())
+				{
+					if (substr[pos] != '"') path += substr[pos];
+					pos++;
+				}
+
+				stream << ReadFile(path.c_str()) << '\n';
+			}
+			else
+			{
+				stream << line << '\n';
+			}
 		}
 
-		char* TmpFile = new char[(uint32)ShaderFile.GetSize() + 1];
-		memset(TmpFile, 0, (uint32)ShaderFile.GetSize() + 1);
-		ShaderFile.ReadBytes(TmpFile, ShaderFile.GetSize());
-		ShaderFile.Close();
-
-		if (!Builder.Build(TmpFile, Type))
-		{
-			Log::Error("%s shader not built: %s", GetStringFromShaderType(Type), FileName);
-			return false;
-		}
-
-		delete[] TmpFile;
-
-		if (Builder.ShaderSourceLength == 0)
-		{
-			Log::Error("%s shader loading incorrect: %s", GetStringFromShaderType(Type), FileName);
-			return false;
-		}
-
-		OutSource = new char[Builder.ShaderSourceLength + 1];
-		memcpy(OutSource, Builder.ShaderSource, Builder.ShaderSourceLength);
-		OutSource[Builder.ShaderSourceLength] = '\0';
-
-		return true;
+		return stream.str();
 	}
 
-	bool ShaderLoad(const char* Path, char*& OutSource, ShaderBuilder& Builder, ShaderType Type)
+	ShaderProgramOpenGL::ShaderData ParseShader(const char* FileName)
 	{
-		switch (Type)
+		ShaderProgramOpenGL::ShaderData Data;
+
+		std::ifstream f(FileName);
+		std::string line;
+
+		int CurrentMode = -1;
+		std::stringstream streams[2];
+
+		while (std::getline(f, line))
 		{
-			case ShaderType::Vertex:
+			if (line.find("#shader") != std::string::npos)
 			{
-				if (strcmp(Path, "STANDART_SKY_VERTEX") == 0)
-				{
-					unsigned int Length = strlen(gSkyboxVertexShader);
-					OutSource = new char[Length + 1];
-					memcpy(OutSource, gSkyboxVertexShader, Length);
-					OutSource[Length] = '\0';
-					return true;
-				}
-				else if (ShaderLoadFromFile(Path, OutSource, Builder, Type))
-				{
-					return true;
-				}
-
-				break;
+				if (line.find("vertex")   != std::string::npos) CurrentMode = 0;
+				if (line.find("fragment") != std::string::npos) CurrentMode = 1;
 			}
-
-			case ShaderType::Fragment:
+			else if (line.find("#uniform") != std::string::npos)
 			{
-				if (strcmp(Path, "STANDART_SKY_FRAGMENT") == 0)
+				auto substr = line.substr(line.find("#uniform") + 8);
+				size_t pos = 0;
+				std::string type, name;
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size()) name += substr[pos++];
+
+				streams[CurrentMode] << "uniform " << type << ' ' << name << ';' << '\n';
+
+				Data.Uniforms.emplace_back(std::move(name));
+			}
+			else if (line.find("#attribute") != std::string::npos)
+			{
+				auto substr = line.substr(line.find("#attribute") + 10);
+				size_t pos = 0;
+				std::string type, name, slot;
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size()) name += substr[pos++];
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size()) slot += substr[pos++];
+
+				streams[CurrentMode] << "in " << type << ' ' << name << ';' << '\n';
+
+				Data.Attributes.emplace_back(std::move(name), atoi(slot.c_str()));
+			}
+			else if (line.find("#include") != std::string::npos)
+			{
+				auto substr = line.substr(line.find("#include") + 8);
+				size_t pos = 0;
+				std::string path;
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (!isspace(substr[pos]) && pos < substr.size())
 				{
-					unsigned int Length = strlen(gSkyboxFragmentShader);
-					OutSource = new char[Length + 1];
-					memcpy(OutSource, gSkyboxFragmentShader, Length);
-					OutSource[Length] = '\0';
-					return true;
-				}
-				else if (ShaderLoadFromFile(Path, OutSource, Builder, Type))
-				{
-					return true;
+					if (substr[pos] != '"') path += substr[pos];
+					pos++;
 				}
 
-				break;
+				if (CurrentMode == -1)
+				{
+					auto Included = ReadFile(path.c_str());
+					for (auto& stream : streams) stream << Included << '\n';
+				}
+				else
+				{
+					streams[CurrentMode] << ReadFile(path.c_str()) << '\n';
+				}
+			}
+			else
+			{
+				if (CurrentMode == -1)
+				{
+					for (auto& stream : streams) stream << line << '\n';
+				}
+				else
+				{
+					streams[CurrentMode] << line << '\n';
+				}
 			}
 		}
 
-		return false;
+		ShaderBuilder Builder;
+
+		Builder.Build(streams[0].str().c_str(), ShaderType::Vertex);
+		Data.VertexSource   = Builder.ShaderSource;
+
+		Builder.Build(streams[1].str().c_str(), ShaderType::Fragment);
+		Data.FragmentSource = Builder.ShaderSource;
+
+		return Data;
 	}
 	/*
 	*
@@ -112,7 +163,7 @@ namespace Columbus
 	* Shader compilation functions
 	*
 	*/
-	bool ShaderGetError(const char* ShaderPath, int32 ShaderID)
+	static bool ShaderGetError(const char* ShaderPath, int32 ShaderID, ShaderType Type)
 	{
 		int32 Status = GL_TRUE;
 		int32 Length = 0;
@@ -125,7 +176,7 @@ namespace Columbus
 			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
 			Error = new char[Length];
 			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::Error("%s: %s", ShaderPath,  Error);
+			Log::Error("%s shader: %s: %s", GetStringFromShaderType(Type), ShaderPath,  Error);
 
 			delete[] Error;
 			return true;
@@ -134,130 +185,24 @@ namespace Columbus
 		return false;
 	}
 
-	bool ShaderCompile(const char* ShaderPath, const char* ShaderSource, int32 ShaderID)
+	static bool ShaderCompile(const char* ShaderPath, const char* ShaderSource, int32 ShaderID, ShaderType Type)
 	{
-		glShaderSource(ShaderID, 1, &ShaderSource, NULL);
+		glShaderSource(ShaderID, 1, &ShaderSource, nullptr);
 		glCompileShader(ShaderID);
 
-		if (ShaderGetError(ShaderPath, ShaderID))
+		if (ShaderGetError(ShaderPath, ShaderID, Type))
 		{
 			return false;
 		}
 
 		return true;
-	}
-
-	void ShaderCleanup(int32 VertexID, int32 FragmentID)
-	{
-		glDeleteShader(VertexID);
-		glDeleteShader(FragmentID);
 	}
 	/*
 	*
 	* End of shader compilation functions
 	*
 	*/
-	
-	/*
-	*
-	* ShaderStageOpenGL implementation
-	*
-	*/
-	ShaderStageOpenGL::ShaderStageOpenGL()
-	{
-		
-	}
 
-	bool ShaderStageOpenGL::IsValid() const
-	{
-		return ID != 0 && glIsShader(ID);
-	}
-
-	bool ShaderStageOpenGL::Load(const char* FileName, ShaderType InType)
-	{
-		delete[] ShaderPath;
-		delete[] ShaderSource;
-
-		uint32 tType;
-		
-		switch (InType)
-		{
-		case ShaderType::Vertex:   tType = GL_VERTEX_SHADER; break;
-		case ShaderType::Fragment: tType = GL_FRAGMENT_SHADER; break;
-		default: return false; break;
-		}
-		
-		ID = glCreateShader(tType);
-
-		if (ID == 0) return false;
-
-		if (!ShaderLoad(FileName, ShaderSource, Builder, InType))
-		{
-			return false;
-		}
-
-		unsigned int Length = strlen(FileName);
-		ShaderPath = new char[Length + 1];
-		memcpy(ShaderPath, FileName, Length);
-		ShaderPath[Length] = '\0';
-		
-		Type = InType;
-		Loaded = true;
-		Compiled = false;
-		Error = false;
-		Log::Success("%s shader loaded: %s", GetStringFromShaderType(Type), FileName);
-
-		return true;
-	}
-
-	bool ShaderStageOpenGL::Compile()
-	{
-		if (!Loaded)
-		{
-			Log::Error("Couldn't compile shader: Shader wasn't loaded");
-			Compiled = false;
-			Error = true;
-			return false;
-		}
-
-		if (!IsValid())
-		{
-			Log::Error("Couldn't compile shader: Shader is invalid");
-			Compiled = false;
-			Error = true;
-			return false;
-		}
-
-		if (!ShaderCompile(ShaderPath, ShaderSource, ID))
-		{
-			glDeleteShader(ID);
-			Compiled = false;
-			Error = true;
-			return false;
-		}
-
-		Compiled = true;
-		Error = false;
-		Log::Success("%s shader compiled: %s", GetStringFromShaderType(Type), ShaderPath);
-
-		return true;
-	}
-
-	uint32 ShaderStageOpenGL::GetID() const
-	{
-		return ID;
-	}
-
-	ShaderStageOpenGL::~ShaderStageOpenGL()
-	{
-		if (ID != 0)
-		{
-			glDeleteShader(ID);
-		}
-
-		delete[] ShaderPath;
-		delete[] ShaderSource;
-	}
 	/*
 	*
 	* ShaderProgramOpenGL implementation
@@ -281,40 +226,58 @@ namespace Columbus
 		glUseProgram(0);
 	}
 
-	void ShaderProgramOpenGL::AddStage(ShaderStage* Stage)
-	{
-		if (Stage != nullptr)
-		{
-			Stages[CurrentStage++] = Stage;
-		}
-	}
-
 	bool ShaderProgramOpenGL::Load(ShaderProgram::StandartProgram Program)
 	{
 		switch (Program)
 		{
 			case ShaderProgram::StandartProgram::Skybox:
 			{
-				ShaderStage* VertexStage = new ShaderStageOpenGL();
-				ShaderStage* FragmentStage = new ShaderStageOpenGL();
+				Data.VertexSource = gSkyboxVertexShader;
+				Data.FragmentSource = gSkyboxFragmentShader;
 
-				VertexStage->Load("STANDART_SKY_VERTEX", ShaderType::Vertex);
-				FragmentStage->Load("STANDART_SKY_FRAGMENT", ShaderType::Fragment);
+				Data.Uniforms.emplace_back("ViewProjection");
+				Data.Uniforms.emplace_back("Skybox");
 
-				AddStage(VertexStage);
-				AddStage(FragmentStage);
+				Log::Success("Default shader program loaded: Skybox");
+				break;
 			}
-		}
 
-		for (auto& Stage : Stages)
-		{
-			if (Stage != nullptr)
+			case ShaderProgram::StandartProgram::IrradianceGeneration:
 			{
-				if (!Stage->IsLoaded())
-				{
-					Loaded = false;
-					return false;
-				}
+				Data.VertexSource = gIrradianceGenerationVertexShader;
+				Data.FragmentSource = gIrradianceGenerationFragmentShader;
+
+				Data.Attributes.emplace_back("Position", 0);
+				Data.Uniforms.emplace_back("Projection");
+				Data.Uniforms.emplace_back("View");
+				Data.Uniforms.emplace_back("EnvironmentMap");
+
+				Log::Success("Default shader program loaded: IrradianceGeneration");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::PrefilterGeneration:
+			{
+				Data.VertexSource = gPrefilterGenerationVertexShader;
+				Data.FragmentSource = gPrefilterGenerationFragmentShader;
+
+				Data.Attributes.emplace_back("Position", 0);
+				Data.Uniforms.emplace_back("Projection");
+				Data.Uniforms.emplace_back("View");
+				Data.Uniforms.emplace_back("Roughness");
+				Data.Uniforms.emplace_back("EnvironmentMap");
+
+				Log::Success("Default shader program loaded: PrefilterGeneration");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::IntegrationGeneration:
+			{
+				Data.VertexSource = gIntegrationGenerationVertexShader;
+				Data.FragmentSource = gIntegrationGenerationFragmentShader;
+
+				Log::Success("Default shader program loaded: IntegrationGeneration");
+				break;
 			}
 		}
 
@@ -331,22 +294,14 @@ namespace Columbus
 			return false;
 		}
 
-		ShaderStage* Stage;
-
-		Stage = new ShaderStageOpenGL();
-		Stage->Load(FileName, ShaderType::Vertex);
-		AddStage(Stage);
-
-		Stage = new ShaderStageOpenGL();
-		Stage->Load(FileName, ShaderType::Fragment);
-		AddStage(Stage);
+		Data = ParseShader(FileName);
+		Path = FileName;
 
 		constexpr int MaxCount = 4096;
 		char* Line = new char[MaxCount];
 		int Offset;
 		char Name[256];
 		int NameLength;
-		int Number;
 
 		while (!ShaderFile.IsEOF())
 		{
@@ -360,26 +315,6 @@ namespace Columbus
 				Line += 3; Offset += 3;
 				while (isblank(*Line)) { Line++; Offset++; }
 
-				if (strncmp(Line, "Attribute", 9) == 0)
-				{
-					Line += 9; Offset += 9;
-					memset(Name, 0, sizeof(Name));
-					NameLength = 0;
-					Number = 0;
-					while (isblank(*Line)) { Line++; Offset++; }
-					while (isalpha(*Line)) { Name[NameLength++] = *Line; Line++; Offset++; }
-					while (isblank(*Line)) { Line++; Offset++; }
-					while (isdigit(*Line)) { Number *= 10; Number += *Line - '0'; Line++; Offset++; }
-
-					if (NameLength > 0 && Number >= 0)
-					{
-						char* Tmp = new char[NameLength + 1];
-						memcpy(Tmp, Name, NameLength);
-						Tmp[NameLength] = '\0';
-						Attributes[CurrentAttribute++] = { Tmp, (uint32)Number };
-					}
-				}
-
 				if (strncmp(Line, "Uniform", 7) == 0)
 				{
 					Line += 7; Offset += 7;
@@ -391,10 +326,7 @@ namespace Columbus
 
 					if (NameLength > 0)
 					{
-						Uniforms[CurrentUniform] = new char[NameLength + 1];
-						memcpy(Uniforms[CurrentUniform], Name, NameLength);
-						Uniforms[CurrentUniform][NameLength] = '\0';
-						CurrentUniform++;
+						Data.Uniforms.emplace_back(Name);
 					}
 				}
 			}
@@ -404,17 +336,7 @@ namespace Columbus
 
 		delete[] Line;
 
-		for (auto& Stage : Stages)
-		{
-			if (Stage != nullptr)
-			{
-				if (!Stage->IsLoaded())
-				{
-					Loaded = false;
-					return false;
-				}
-			}
-		}
+		Log::Success("Shader program loaded: %s", FileName);
 
 		Loaded = true;
 		return true;
@@ -422,17 +344,8 @@ namespace Columbus
 
 	bool ShaderProgramOpenGL::Compile()
 	{
-		bool VertexShaderExists = false;
-		bool FragmentShaderExists = false;
-
-		for (auto& Stage : Stages)
-		{
-			if (Stage != nullptr)
-			{
-				if (Stage->GetType() == ShaderType::Vertex) VertexShaderExists = true;
-				if (Stage->GetType() == ShaderType::Fragment) FragmentShaderExists = true;
-			}
-		}
+		bool VertexShaderExists = !Data.VertexSource.empty();
+		bool FragmentShaderExists = !Data.FragmentSource.empty();
 
 		if (!VertexShaderExists || !FragmentShaderExists)
 		{
@@ -442,41 +355,38 @@ namespace Columbus
 			return false;
 		}
 
-		for (auto Stage : Stages)
+		VertexShader   = glCreateShader(GL_VERTEX_SHADER);
+		FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+		bool VertexCompilation   = ShaderCompile(Path.c_str(), Data.VertexSource.c_str(), VertexShader, ShaderType::Vertex);
+		bool FragmentCompilation = ShaderCompile(Path.c_str(), Data.FragmentSource.c_str(), FragmentShader, ShaderType::Fragment);
+
+		if (!VertexCompilation || !FragmentCompilation)
 		{
-			if (!Stage->IsCompiled())
-			{
-				if (!Stage->Compile())
-				{
-					Log::Error("Couldn't compile Shader Program: One or more of the shader not compiled");
-					Compiled = false;
-					Error = true;
-					return false;
-				}
-			}
-
-			if (!Stage->IsValid())
-			{
-				Log::Error("Couldn't compile Shader Program: One or more of the shaders is invalid");
-				Compiled = false;
-				Error = true;
-				return false;
-			}
-
-			glAttachShader(ID, static_cast<ShaderStageOpenGL*>(Stage)->GetID());
+			Log::Error("Couldn't compile Shader Program: One or more of the shaders not compiled");
+			Compiled = false;
+			Error = true;
+			return false;
 		}
 
-		for (int i = 0; i < CurrentAttribute; i++)
+		glAttachShader(ID, VertexShader);
+		glAttachShader(ID, FragmentShader);
+
+		for (const auto& Attribute : Data.Attributes)
 		{
-			glBindAttribLocation(ID, Attributes[i].Value, Attributes[i].Name);
+			glBindAttribLocation(ID, Attribute.Slot, Attribute.Name.c_str());
 		}
 
 		glLinkProgram(ID);
+		glValidateProgram(ID);
 
-		for (int i = 0; i < CurrentUniform; i++)
+		for (const auto& Uniform : Data.Uniforms)
 		{
-			AddUniform(Uniforms[i]);
+			AddUniform(Uniform.c_str());
 		}
+
+		glDeleteShader(VertexShader);
+		glDeleteShader(FragmentShader);
 
 		Compiled = true;
 		Error = false;
@@ -491,112 +401,12 @@ namespace Columbus
 
 		if (Value != -1)
 		{
-			UniformLocations[Name] = Value;
 			FastUniformsMap[Name] = CurrentFastUniform;
 			FastUniforms[CurrentFastUniform++] = Value;
 			return true;
 		}
 
 		return false;
-	}
-
-	void ShaderProgramOpenGL::SetUniform1i(const char* Name, int Value) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glUniform1i(Location->second, Value);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniform1f(const char* Name, float Value) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glUniform1f(Location->second, Value);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniform2f(const char* Name, const Vector2& Value) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glUniform2f(Location->second, Value.X, Value.Y);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniform3f(const char* Name, const Vector3& Value) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-
-			if (Location != UniformLocations.end())
-			{
-				glUniform3f(Location->second, Value.X, Value.Y, Value.Z);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniform4f(const char* Name, const Vector4& Value) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glUniform4f(Location->second, Value.X, Value.Y, Value.Z, Value.W);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniformMatrix(const char* Name, const float* Value) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glUniformMatrix4fv(Location->second, 1, GL_FALSE, Value);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniformArrayf(const char* Name, const float* Array, uint32 Size) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glUniform1fv(Location->second, Size, Array);
-			}
-		}
-	}
-
-	void ShaderProgramOpenGL::SetUniformTexture(const char* Name, TextureOpenGL* Tex, uint32 Sampler) const
-	{
-		if (ID != 0 && Compiled)
-		{
-			auto Location = UniformLocations.find(Name);
-			if (Location != UniformLocations.end())
-			{
-				glActiveTexture(GL_TEXTURE0 + Sampler);
-				glUniform1i(Location->second, Sampler);
-				Tex->Bind();
-			}
-		}
 	}
 
 	int32 ShaderProgramOpenGL::GetFastUniform(const char* Name) const
@@ -649,21 +459,6 @@ namespace Columbus
 
 	ShaderProgramOpenGL::~ShaderProgramOpenGL()
 	{
-		for (auto& Stage : Stages)
-		{
-			delete Stage;
-		}
-
-		for (auto& Attribute : Attributes)
-		{
-			delete[] Attribute.Name;
-		}
-
-		for (auto& Uniform : Uniforms)
-		{
-			delete[] Uniform;
-		}
-
 		glDeleteProgram(ID);
 	}
 

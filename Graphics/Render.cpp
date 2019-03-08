@@ -210,7 +210,7 @@ namespace Columbus
 			{
 				if (Object.MeshObject != nullptr)
 				{
-					ShaderProgram* CurrentShader = Object.ObjectMaterial.GetShader();
+					ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Object.ObjectMaterial.GetShader();
 					Mesh* CurrentMesh = Object.MeshObject;
 
 					if (CurrentShader != nullptr)
@@ -221,15 +221,17 @@ namespace Columbus
 						State.SetLights(Object.MeshObject->Lights);
 						CurrentMesh->Bind();
 
+						int32 Transparent = CurrentShader->GetFastUniform("Transparent");
+
 						if (Object.ObjectMaterial.Culling == Material::Cull::No)
 						{
 							State.SetDepthWriting(true);
-							CurrentShader->SetUniform1i("uMaterial.Transparent", 0);
+							CurrentShader->SetUniform(Transparent, 0);
 							State.SetCulling(Material::Cull::No);
 							CurrentMesh->Render();
 
 							State.SetDepthWriting(false);
-							CurrentShader->SetUniform1i("uMaterial.Transparent", 1);
+							CurrentShader->SetUniform(Transparent, 1);
 							State.SetCulling(Material::Cull::Front);
 							CurrentMesh->Render();
 							State.SetCulling(Material::Cull::Back);
@@ -240,11 +242,11 @@ namespace Columbus
 							State.SetCulling(Object.ObjectMaterial.Culling);
 
 							State.SetDepthWriting(true);
-							CurrentShader->SetUniform1i("uMaterial.Transparent", 0);
+							CurrentShader->SetUniform(Transparent, 0);
 							CurrentMesh->Render();
 
 							State.SetDepthWriting(false);
-							CurrentShader->SetUniform1i("uMaterial.Transparent", 1);
+							CurrentShader->SetUniform(Transparent, 1);
 							CurrentMesh->Render();
 						}
 
@@ -293,8 +295,8 @@ namespace Columbus
 
 		BaseEffect.Unbind();
 
-		NoneShader->Bind();
-		((ShaderProgramOpenGL*)(NoneShader))->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)NoneShader)->Bind();
+		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
 		Quad.Render();
 
 		// Lens flare rendering test, I will use it in the future
