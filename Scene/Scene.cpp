@@ -478,8 +478,9 @@ namespace Columbus
 			if (ReflImage.Load(path.c_str()))
 			{
 				Texture* Refl = gDevice->CreateTexture();
-				Refl->CreateCube(Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
+				Refl->Create(ReflImage.GetType(), Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
 				Refl->Load(ReflImage);
+
 				Sky = new Skybox(Refl);
 
 				Log::Success("Default skybox loaded: %s", path.c_str());

@@ -11,8 +11,7 @@ void main(void)
 #shader fragment
 
 #uniform Texture2D BaseTexture
-#uniform vec2 Resolution
-#uniform bool Stage
+#uniform bool Horizontal
 
 in vec2 UV;
 
@@ -20,21 +19,29 @@ uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.0
 
 void main()
 {
+	const float LOD = 0.0;
+
 	vec2 tex_offset = 1.0 / textureSize(BaseTexture, 0);
-	vec3 resultH = Sample2D(BaseTexture, UV).rgb * weight[0];
-	vec3 resultV = resultH;
+	vec3 result = Sample2D(BaseTexture, UV).rgb * weight[0];
 
-	for (int i = 1; i < 5; ++i)
+	if (Horizontal)
 	{
-		resultH += Sample2D(BaseTexture, UV + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
-		resultH += Sample2D(BaseTexture, UV - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
-
-		resultV += Sample2D(BaseTexture, UV + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
-		resultV += Sample2D(BaseTexture, UV - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+		for (int i = 1; i < 5; ++i)
+		{
+			result += Sample2D(BaseTexture, UV + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+			result += Sample2D(BaseTexture, UV - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+		}
+	}
+	else
+	{
+		for (int i = 1; i < 5; ++i)
+		{
+			result += Sample2D(BaseTexture, UV + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+			result += Sample2D(BaseTexture, UV - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+		}
 	}
 
-	FragData[0] = vec4(resultH, 1.0);
-	FragData[1] = vec4(resultV, 1.0);
+	FragData[0] = vec4(result, 1.0);
 }
 
 

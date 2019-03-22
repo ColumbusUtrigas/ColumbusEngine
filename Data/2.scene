@@ -1,6 +1,6 @@
 <Scene>
 	<Defaults>
-		<Skybox>Data/Skyboxes/Sky.dds</Skybox>
+		<Skybox>Data/Skyboxes/Ruins.hdr</Skybox>
 	</Defaults>
 
 	<Resources>

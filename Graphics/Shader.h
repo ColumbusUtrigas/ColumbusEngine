@@ -13,6 +13,7 @@ namespace Columbus
 		enum class StandartProgram
 		{
 			Skybox,
+			SkyboxCubemapGeneration,
 			IrradianceGeneration,
 			PrefilterGeneration,
 			IntegrationGeneration

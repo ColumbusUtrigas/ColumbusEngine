@@ -242,6 +242,19 @@ namespace Columbus
 				break;
 			}
 
+			case ShaderProgram::StandartProgram::SkyboxCubemapGeneration:
+			{
+				Data.VertexSource = gSkyboxCubemapGenerationVertexShader;
+				Data.FragmentSource = gSkyboxCubemapGenerationFragmentShader;
+
+				Data.Uniforms.emplace_back("Projection");
+				Data.Uniforms.emplace_back("View");
+				Data.Uniforms.emplace_back("BaseMap");
+
+				Log::Success("Default shader program loaded: SkyboxCubemapGeneration");
+				break;
+			}
+
 			case ShaderProgram::StandartProgram::IrradianceGeneration:
 			{
 				Data.VertexSource = gIrradianceGenerationVertexShader;

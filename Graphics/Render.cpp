@@ -38,10 +38,12 @@ namespace Columbus
 		BaseEffect.ColorTexturesEnablement[1] = true;
 		BaseEffect.DepthTextureEnablement = true;
 
+		BaseEffect.ColorTexturesFormats[0] = TextureFormat::RGBA16F;
+
 		BloomBrightPass.ColorTexturesEnablement[0] = true;
 
-		BloomBlurPass.ColorTexturesEnablement[0] = true;
-		BloomBlurPass.ColorTexturesEnablement[1] = true;
+		BloomHorizontalBlurPass.ColorTexturesEnablement[0] = true;
+		BloomVerticalBlurPass.ColorTexturesEnablement[0] = true;
 
 		BloomFinalPass.ColorTexturesEnablement[0] = true;
 
@@ -280,9 +282,61 @@ namespace Columbus
 		State.SetCulling(Material::Cull::No);
 	}
 
+	void Renderer::RenderBloom()
+	{
+		static int BloomBrightShaderTextureID = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
+		static int BrightShaderTreshold = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("Treshold");
+
+		static int BloomBlurShaderTextureID = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("BaseTexture");
+		static int BloomBlurHorizontalID = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("Horizontal");
+		static int BloomFinalPassBaseTexture = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("BaseTexture");
+		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Blur");
+		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Intensity");
+
+		BloomBrightPass.Bind({}, ContextSize);
+
+		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
+		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BloomBrightShaderTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTreshold, BloomTreshold);
+		Quad.Render();
+
+		BloomBrightPass.Unbind();
+
+		((ShaderProgramOpenGL*)GaussBlurShader)->Bind();
+
+		for (int i = 0; i < BloomIterations; i++)
+		{
+			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
+
+			BloomHorizontalBlurPass.Bind({}, ContextSize / 4);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurShaderTextureID, (TextureOpenGL*)Horiz, 0);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontalID, 1);
+			Quad.Render();
+			BloomHorizontalBlurPass.Unbind();
+
+			BloomVerticalBlurPass.Bind({}, ContextSize / 4);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurShaderTextureID, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontalID, 0);
+			Quad.Render();
+			BloomVerticalBlurPass.Unbind();
+		}
+
+		BloomFinalPass.Bind({}, ContextSize);
+
+		((ShaderProgramOpenGL*)BloomShader)->Bind();
+		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)BloomVerticalBlurPass.ColorTextures[0], 1);
+		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
+		Quad.Render();
+
+		BloomFinalPass.Unbind();
+	}
+
 	void Renderer::Render()
 	{
 		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
+		static int NoneShaderGamma = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Gamma");
+		static int NoneShaderExposure = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Exposure");
 
 		CompileLists();
 		SortLists();
@@ -295,8 +349,12 @@ namespace Columbus
 
 		BaseEffect.Unbind();
 
+		RenderBloom();
+
 		((ShaderProgramOpenGL*)NoneShader)->Bind();
-		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BloomFinalPass.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
+		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
 		Quad.Render();
 
 		// Lens flare rendering test, I will use it in the future

@@ -27,8 +27,8 @@ public:
 	virtual void Update(float TimeTick, Transform& Trans) final override
 	{
 		float Period = 0.5f;
-		float Amplitude = 0.3f;
-		float Offset = 0.7f;
+		float Amplitude = 0.1f;
+		float Offset = 0.9f;
 
 		float Sin = Math::Sin(Time += TimeTick / Period);
 		Sin = Sin < 0.0f ? (0.0f - Sin) : Sin;

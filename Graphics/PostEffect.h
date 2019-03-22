@@ -102,7 +102,7 @@ namespace Columbus
 
 		void Unbind()
 		{
-			if (SizeChanged)
+			if (SizeChanged || true)
 			{
 				for (int i = 0; i < TexturesCount; i++)
 				{

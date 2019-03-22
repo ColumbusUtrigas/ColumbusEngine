@@ -90,10 +90,15 @@ namespace Columbus
 
 		virtual void Clear() = 0;
 
+		virtual bool Create(Image::Type InType, Properties Props) = 0;
+		virtual bool Create(Type InType, Properties Props) = 0;
 		virtual bool Create2D(Properties Props) = 0;
 		virtual bool CreateCube(Properties Props) = 0;
 
 		virtual void SetFlags(Flags F) = 0;
+
+		TextureFormat GetFormat() const { return Format; }
+		Type GetType() const { return TextureType; }
 
 		virtual void SetMipmapLevel(uint32 Level) = 0;
 		uint32 GetMipmapLevel() const { return MipmapLevel; }

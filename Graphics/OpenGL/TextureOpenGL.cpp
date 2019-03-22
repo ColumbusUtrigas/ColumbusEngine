@@ -92,7 +92,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_R16F;
 				PixelFormat = GL_RED;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -101,7 +101,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_RG16F;
 				PixelFormat = GL_RG;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -110,7 +110,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_RGB16F;
 				PixelFormat = GL_RGB;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -119,7 +119,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_RGBA16F;
 				PixelFormat = GL_RGBA;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -387,15 +387,7 @@ namespace Columbus
 			return false;
 		}
 
-		bool Result = false;
-
-		switch (TmpImage.GetType())
-		{
-		case Image::Type::Image2D: Result = Create2D(Properties{ TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat() }); break;
-		case Image::Type::Image3D: break;
-		case Image::Type::ImageCube: Result = CreateCube(Properties{ TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat() }); break;
-		case Image::Type::Image2DArray: break;
-		}
+		bool Result = Create(TmpImage.GetType(), Properties(TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat()));
 
 		if (Result)
 		{
@@ -419,6 +411,32 @@ namespace Columbus
 		InternalFormat = 0;
 		PixelFormat = 0;
 		PixelType = 0;
+	}
+
+	bool TextureOpenGL::Create(Image::Type InType, Texture::Properties Props)
+	{
+		switch (InType)
+		{
+		case Image::Type::Image2D: return Create2D(Props); break;
+		case Image::Type::Image3D: break;
+		case Image::Type::ImageCube: return CreateCube(Props); break;
+		case Image::Type::Image2DArray: break;
+		}
+
+		return false;
+	}
+
+	bool TextureOpenGL::Create(Texture::Type InType, Texture::Properties Props)
+	{
+		switch (InType)
+		{
+		case Texture::Type::Texture2D: return Create2D(Props); break;
+		case Texture::Type::Texture3D: break;
+		case Texture::Type::TextureCube: return CreateCube(Props); break;
+		case Texture::Type::Texture2DArray: break;
+		}
+
+		return false;
 	}
 	
 	bool TextureOpenGL::Create2D(Texture::Properties Props)
