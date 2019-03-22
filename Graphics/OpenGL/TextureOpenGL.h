@@ -27,6 +27,8 @@ namespace Columbus
 
 		void Clear() override;
 
+		bool Create(Image::Type InType, Properties Props) override;
+		bool Create(Texture::Type InType, Properties Props) override;
 		bool Create2D(Texture::Properties Props) override;
 		bool CreateCube(Texture::Properties Props) override;
 

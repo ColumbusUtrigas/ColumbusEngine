@@ -27,8 +27,51 @@ namespace Columbus
 
 	void main(void)
 	{
-		FragColor = textureCube(Skybox, Texcoord);
+		//FragColor = vec4(pow(textureCube(Skybox, Texcoord).rgb, vec3(1.5)), 1);
+		FragColor = texture(Skybox, Texcoord);
 		gl_FragDepth = 0x7FFFFFFF;
+	}
+	)";
+
+	const char* gSkyboxCubemapGenerationVertexShader =
+	R"(
+	#version 130
+	in vec3 Position;
+	out vec3 Pos;
+
+	uniform mat4 Projection;
+	uniform mat4 View;
+
+	void main()
+	{
+		gl_Position = Projection * View * vec4(Position, 1);
+		Pos = Position;
+	}
+	)";
+
+	const char* gSkyboxCubemapGenerationFragmentShader =
+	R"(
+	#version 130
+	out vec4 FragColor;
+	in vec3 Pos;
+
+	uniform sampler2D BaseMap;
+
+	const vec2 invAtan = vec2(0.1591, 0.3183);
+	vec2 SampleSphericalMap(vec3 v)
+	{
+		vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+		uv *= invAtan;
+		uv += 0.5;
+		return uv;
+	}
+
+	void main()
+	{		
+		vec2 uv = SampleSphericalMap(normalize(Pos)); 
+		vec3 color = texture(BaseMap, uv).rgb;
+
+		FragColor = vec4(color, 1.0);
 	}
 	)";
 

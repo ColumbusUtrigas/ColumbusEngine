@@ -29,8 +29,6 @@ namespace Columbus
 		Vector<AudioSource*> AudioSources;
 		std::vector<Light*> Lights;
 
-		Renderer MainRender;
-
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 
@@ -45,6 +43,8 @@ namespace Columbus
 	public:
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
+
+		Renderer MainRender;
 	public:
 		Scene();
 

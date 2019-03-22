@@ -33,9 +33,24 @@ namespace Columbus
 		0, 1, 4, 4, 1, 5
 	};
 
+	Matrix CaptureProjection;
+	Matrix CaptureViews[6];
+
+	ShaderProgramOpenGL* SkyboxCubemapGenerationShader = nullptr;
 	ShaderProgramOpenGL* IrradianceShader = nullptr;
 	ShaderProgramOpenGL* PrefilterShader = nullptr;
 	ShaderProgramOpenGL* IntegrationShader = nullptr;
+
+	static void PrepareMatrices()
+	{
+		CaptureProjection.Perspective(90.0f, 1.0f, 0.1f, 10.0f);
+		CaptureViews[0].LookAt({ 0, 0, 0 }, { +1, 0, 0 }, { 0, -1,  0 });
+		CaptureViews[1].LookAt({ 0, 0, 0 }, { -1, 0, 0 }, { 0, -1,  0 });
+		CaptureViews[2].LookAt({ 0, 0, 0 }, { 0, +1, 0 }, { 0,  0, +1 });
+		CaptureViews[3].LookAt({ 0, 0, 0 }, { 0, -1, 0 }, { 0,  0, -1 });
+		CaptureViews[4].LookAt({ 0, 0, 0 }, { 0, 0, +1 }, { 0, -1,  0 });
+		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
+	}
 
 	static ShaderProgram* CreateSkyboxShader()
 	{
@@ -67,19 +82,52 @@ namespace Columbus
 		glBindVertexArray(0);
 	}
 
+	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, uint32 VAO, uint32 IBO)
+	{
+		Cubemap = new TextureOpenGL();
+		Cubemap->CreateCube(Texture::Properties(2048, 2048, 0, TextureFormat::RGB16F));
+
+		if (SkyboxCubemapGenerationShader == nullptr)
+		{
+			SkyboxCubemapGenerationShader = new ShaderProgramOpenGL();
+			SkyboxCubemapGenerationShader->Load(ShaderProgram::StandartProgram::SkyboxCubemapGeneration);
+			SkyboxCubemapGenerationShader->Compile();
+		}
+
+		Framebuffer* Frame = gDevice->createFramebuffer();
+
+		glDepthMask(GL_FALSE);
+
+		SkyboxCubemapGenerationShader->Bind();
+		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("Projection"), false, CaptureProjection);
+		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("BaseMap"), (TextureOpenGL*)BaseMap, 0);
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+		for (int i = 0; i < 6; i++)
+		{
+			Frame->SetTextureCube(Framebuffer::Attachment::Color0, Cubemap, i);
+			Frame->prepare({ 0, 0, 0, 0 }, { 2048, 2048 });
+			SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("View"), false, CaptureViews[i]);
+
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+		Frame->unbind();
+		SkyboxCubemapGenerationShader->Unbind();
+		glDepthMask(GL_TRUE);
+
+		Cubemap->generateMipmap();
+
+		delete Frame;
+	}
+
 	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO, uint32 IBO)
 	{
-		Matrix CaptureProjection;
-		Matrix CaptureViews[6];
-
-		CaptureProjection.Perspective(90.0f, 1.0f, 0.1f, 10.0f);
-		CaptureViews[0].LookAt({ 0, 0, 0 }, { +1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[1].LookAt({ 0, 0, 0 }, { -1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[2].LookAt({ 0, 0, 0 }, { 0, +1, 0 }, { 0,  0, +1 });
-		CaptureViews[3].LookAt({ 0, 0, 0 }, { 0, -1, 0 }, { 0,  0, -1 });
-		CaptureViews[4].LookAt({ 0, 0, 0 }, { 0, 0, +1 }, { 0, -1,  0 });
-		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
-
 		if (IrradianceShader == nullptr)
 		{
 			IrradianceShader = (ShaderProgramOpenGL*)gDevice->CreateShaderProgram();
@@ -90,7 +138,7 @@ namespace Columbus
 		if (IrradianceMap == nullptr)
 		{
 			IrradianceMap = gDevice->CreateTexture();
-			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGBA8 });
+			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGB16F });
 		}
 
 		Framebuffer* Frame = gDevice->createFramebuffer();
@@ -127,17 +175,6 @@ namespace Columbus
 
 	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, uint32 VAO, uint32 IBO)
 	{
-		Matrix CaptureProjection;
-		Matrix CaptureViews[6];
-
-		CaptureProjection.Perspective(90.0f, 1.0f, 0.1f, 10.0f);
-		CaptureViews[0].LookAt({ 0, 0, 0 }, { +1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[1].LookAt({ 0, 0, 0 }, { -1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[2].LookAt({ 0, 0, 0 }, { 0, +1, 0 }, { 0,  0, +1 });
-		CaptureViews[3].LookAt({ 0, 0, 0 }, { 0, -1, 0 }, { 0,  0, -1 });
-		CaptureViews[4].LookAt({ 0, 0, 0 }, { 0, 0, +1 }, { 0, -1,  0 });
-		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
-
 		if (PrefilterShader == nullptr)
 		{
 			PrefilterShader = (ShaderProgramOpenGL*)gDevice->CreateShaderProgram();
@@ -242,15 +279,18 @@ namespace Columbus
 
 	Skybox::Skybox()
 	{
+		PrepareMatrices();
 		Shader = CreateSkyboxShader();
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 	}
 
 	Skybox::Skybox(Texture* InTexture)
 	{
-		Tex = InTexture;
+		//Tex = InTexture;
+		PrepareMatrices();
 		Shader = CreateSkyboxShader();
 		CreateSkyboxBuffer(VBO, IBO, VAO);
+		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VAO, IBO);
 		CreateIrradianceMap(Tex, IrradianceMap, VAO, IBO);
 		CreatePrefilterMap(Tex, PrefilterMap, VAO, IBO);
 		CreateIntegrationMap(IntegrationMap);

@@ -22,6 +22,7 @@ namespace Columbus
 		TIF,
 		JPG,
 		TGA,
+		HDR,
 		Unknown
 	};
 

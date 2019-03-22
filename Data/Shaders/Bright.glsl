@@ -11,8 +11,7 @@ void main(void)
 #shader fragment
 
 #uniform Texture2D BaseTexture
-
-#define TRESHOLD 0.5
+#uniform float Treshold
 
 in vec2 UV;
 
@@ -24,7 +23,7 @@ float luma(vec3 color)
 void main(void)
 {
 	vec4 color = Sample2D(BaseTexture, UV);
-	FragData[0] = luma(color.rgb) > TRESHOLD ? color : vec4(0, 0, 0, 1);
+	FragData[0] = luma(color.rgb) > Treshold ? color : vec4(0, 0, 0, 1);
 }
 
 

@@ -192,8 +192,8 @@ vec3 Lights(void)
 
 	BRDF += (1.0 - _Metallic) * Ambient * 0.1 * AO;
 
-	BRDF = BRDF / (BRDF + vec3(1.0));
-	BRDF = pow(BRDF, vec3(COLOR_EXP));
+	//BRDF = BRDF / (BRDF + vec3(1.0));
+	//BRDF = pow(BRDF, vec3(COLOR_EXP));
 
 	BRDF += Specular * AO;
 

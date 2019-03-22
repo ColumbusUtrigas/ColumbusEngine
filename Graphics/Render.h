@@ -59,7 +59,8 @@ namespace Columbus
 
 		PostEffect BaseEffect;
 		PostEffect BloomBrightPass;
-		PostEffect BloomBlurPass;
+		PostEffect BloomHorizontalBlurPass;
+		PostEffect BloomVerticalBlurPass;
 		PostEffect BloomFinalPass;
 
 		ScreenQuad Quad;
@@ -71,6 +72,15 @@ namespace Columbus
 			Sky,
 			Transparent
 		};
+	public:
+		float Exposure = 1.3f;
+		float Gamma = 1.5f;
+
+		float BloomTreshold = 0.8f;
+		float BloomIntensity = 0.5f;
+		int BloomIterations = 2;
+	private:
+		void RenderBloom();
 	public:
 		Renderer();
 		
