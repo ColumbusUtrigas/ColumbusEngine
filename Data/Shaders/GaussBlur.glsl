@@ -12,6 +12,7 @@ void main(void)
 
 #uniform Texture2D BaseTexture
 #uniform bool Horizontal
+#uniform float Radius
 
 in vec2 UV;
 
@@ -19,9 +20,7 @@ uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.0
 
 void main()
 {
-	const float LOD = 0.0;
-
-	vec2 tex_offset = 1.0 / textureSize(BaseTexture, 0);
+	vec2 tex_offset = 1.0 / textureSize(BaseTexture, 0) * Radius;
 	vec3 result = Sample2D(BaseTexture, UV).rgb * weight[0];
 
 	if (Horizontal)
