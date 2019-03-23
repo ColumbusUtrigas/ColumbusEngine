@@ -78,6 +78,7 @@ namespace Columbus
 
 		float BloomTreshold = 0.8f;
 		float BloomIntensity = 0.5f;
+		float BloomRadius = 1.0f;
 		int BloomIterations = 2;
 	private:
 		void RenderBloom();

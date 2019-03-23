@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 project(CLMBSEngine)
 
-file(GLOB SRC_AUDIO ./Audio/*.cpp ./Audio/OpenAL/*.cpp)
+file(GLOB SRC_AUDIO ./Audio/*.cpp)
+file(GLOB SRC_COMMON_IMAGE ./Common/Image/*.cpp ./Common/Image/*/*.cpp)
+file(GLOB SRC_COMMON_SOUND ./Common/Sound/*.cpp ./Common/Sound/*/*.cpp)
 
-file(GLOB SRC_COMMON_IMAGE ./Common/Image/*.cpp ./Common/Image/BMP/*.cpp ./Common/Image/DDS/*.cpp ./Common/Image/JPG/*.cpp ./Common/Image/PNG/*.cpp ./Common/Image/TGA/*.cpp ./Common/Image/TIF/*.cpp)
-
-file(GLOB SRC_COMMON_SOUND ./Common/Sound/*.cpp ./Common/Sound/MP3/*.cpp ./Common/Sound/OGG/*.cpp ./Common/Sound/WAV/*.cpp)
-
-file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/CMF/*.cpp ${SRC_COMMON_SOUND} ./Common/Compression/*.cpp ./Common/JSON/*.cpp)
+file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/*/*.cpp ${SRC_COMMON_SOUND} ./Common/*/*.cpp)
 
 file(GLOB SRC_CORE ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
 file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp ./Graphics/Particles/*/*.cpp)

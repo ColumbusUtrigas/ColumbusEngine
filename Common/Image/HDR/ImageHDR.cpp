@@ -2,6 +2,9 @@
 #include <System/File.h>
 
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_MALLOC(sz) ((void*)new char[sz])
+#define STBI_REALLOC(p,newsz) realloc(p,newsz)
+#define STBI_FREE(p) (delete[] p)
 #include <Lib/STB/stb_image.h>
 
 namespace Columbus

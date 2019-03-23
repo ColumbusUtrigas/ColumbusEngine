@@ -37,13 +37,18 @@ namespace Columbus
 		BaseEffect.ColorTexturesEnablement[0] = true;
 		BaseEffect.ColorTexturesEnablement[1] = true;
 		BaseEffect.DepthTextureEnablement = true;
+		BaseEffect.ColorTexturesMipmaps[0] = false;
 
 		BaseEffect.ColorTexturesFormats[0] = TextureFormat::RGBA16F;
 
 		BloomBrightPass.ColorTexturesEnablement[0] = true;
+		BloomBrightPass.ColorTexturesMipmaps[0] = false;
 
 		BloomHorizontalBlurPass.ColorTexturesEnablement[0] = true;
 		BloomVerticalBlurPass.ColorTexturesEnablement[0] = true;
+
+		BloomHorizontalBlurPass.ColorTexturesMipmaps[0] = false;
+		BloomVerticalBlurPass.ColorTexturesMipmaps[0] = false;
 
 		BloomFinalPass.ColorTexturesEnablement[0] = true;
 
@@ -284,11 +289,13 @@ namespace Columbus
 
 	void Renderer::RenderBloom()
 	{
-		static int BloomBrightShaderTextureID = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
+		static int BrightShaderTexture = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
 		static int BrightShaderTreshold = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("Treshold");
 
-		static int BloomBlurShaderTextureID = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("BaseTexture");
-		static int BloomBlurHorizontalID = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("Horizontal");
+		static int BloomBlurTexture = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("BaseTexture");
+		static int BloomBlurHorizontal = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("Horizontal");
+		static int BloomBlurRadius = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("Radius");
+
 		static int BloomFinalPassBaseTexture = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("BaseTexture");
 		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Blur");
 		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Intensity");
@@ -296,27 +303,28 @@ namespace Columbus
 		BloomBrightPass.Bind({}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
-		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BloomBrightShaderTextureID, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
 		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTreshold, BloomTreshold);
 		Quad.Render();
 
 		BloomBrightPass.Unbind();
 
 		((ShaderProgramOpenGL*)GaussBlurShader)->Bind();
+		((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurRadius, BloomRadius);
 
 		for (int i = 0; i < BloomIterations; i++)
 		{
 			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
 
 			BloomHorizontalBlurPass.Bind({}, ContextSize / 4);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurShaderTextureID, (TextureOpenGL*)Horiz, 0);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontalID, 1);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 1);
 			Quad.Render();
 			BloomHorizontalBlurPass.Unbind();
 
 			BloomVerticalBlurPass.Bind({}, ContextSize / 4);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurShaderTextureID, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontalID, 0);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
+			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 0);
 			Quad.Render();
 			BloomVerticalBlurPass.Unbind();
 		}
