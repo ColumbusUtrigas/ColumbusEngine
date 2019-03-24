@@ -190,7 +190,8 @@ int main(int argc, char** argv)
 		Listener.Up = camera.Up();
 		Listener.Forward = camera.Direction();
 
-		scene.SetContextSize(window.GetSize());
+		scene.MainRender.ContextSize = window.GetSize();
+		scene.MainRender.SetViewport({0}, window.GetSize());
 		scene.Update();
 		scene.Render();
 

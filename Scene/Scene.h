@@ -36,8 +36,6 @@ namespace Columbus
 		Camera* MainCamera = nullptr;
 		AudioListener* Listener = nullptr;
 
-		iVector2 ContextSize = iVector2(640, 480);
-
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
 	public:
@@ -58,7 +56,6 @@ namespace Columbus
 		void SetSkybox(Skybox* InSky) { Sky = InSky; }
 		void SetCamera(Camera& InMainCamera) { MainCamera = &InMainCamera; }
 		void SetAudioListener(AudioListener& InListener) { Listener = &InListener; }
-		void SetContextSize(const iVector2& InContextSize) { ContextSize = InContextSize; }
 
 		GameObject* GetGameObject(uint32 ID) const;
 		GameObject* GetGameObject(const std::string& Name) const;

@@ -86,6 +86,7 @@ namespace Columbus
 	{
 		Cubemap = new TextureOpenGL();
 		Cubemap->CreateCube(Texture::Properties(2048, 2048, 0, TextureFormat::RGB16F));
+		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 
 		if (SkyboxCubemapGenerationShader == nullptr)
 		{
@@ -94,7 +95,7 @@ namespace Columbus
 			SkyboxCubemapGenerationShader->Compile();
 		}
 
-		Framebuffer* Frame = gDevice->createFramebuffer();
+		Framebuffer* Frame = gDevice->CreateFramebuffer();
 
 		glDepthMask(GL_FALSE);
 
@@ -108,7 +109,7 @@ namespace Columbus
 		for (int i = 0; i < 6; i++)
 		{
 			Frame->SetTextureCube(Framebuffer::Attachment::Color0, Cubemap, i);
-			Frame->prepare({ 0, 0, 0, 0 }, { 2048, 2048 });
+			Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, { 2048, 2048 });
 			SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
@@ -117,11 +118,11 @@ namespace Columbus
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 
-		Frame->unbind();
+		Frame->Unbind();
 		SkyboxCubemapGenerationShader->Unbind();
 		glDepthMask(GL_TRUE);
 
-		Cubemap->generateMipmap();
+		Cubemap->GenerateMipmap();
 
 		delete Frame;
 	}
@@ -139,9 +140,10 @@ namespace Columbus
 		{
 			IrradianceMap = gDevice->CreateTexture();
 			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGB16F });
+			IrradianceMap->SetFlags(Texture::Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 		}
 
-		Framebuffer* Frame = gDevice->createFramebuffer();
+		Framebuffer* Frame = gDevice->CreateFramebuffer();
 
 		glDepthMask(GL_FALSE);
 
@@ -155,7 +157,7 @@ namespace Columbus
 		for (int i = 0; i < 6; i++)
 		{
 			Frame->SetTextureCube(Framebuffer::Attachment::Color0, IrradianceMap, i);
-			Frame->prepare({ 0, 0, 0, 0 }, { 32, 32 });
+			Frame->Prepare({ 0, 0, 0, 0 }, { 0 }, { 32, 32 });
 			IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
@@ -164,11 +166,9 @@ namespace Columbus
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 
-		Frame->unbind();
+		Frame->Unbind();
 		IrradianceShader->Unbind();
 		glDepthMask(GL_TRUE);
-
-		IrradianceMap->generateMipmap();
 
 		delete Frame;
 	}
@@ -190,13 +190,12 @@ namespace Columbus
 			Flags.Wrapping = Texture::Wrap::ClampToEdge;
 
 			PrefilterMap = gDevice->CreateTexture();
-			PrefilterMap->CreateCube(Texture::Properties{ 128, 128, 0, TextureFormat::RGBA16F });
-			PrefilterMap->generateMipmap();
+			PrefilterMap->CreateCube(Texture::Properties{ 128, 128, 0, TextureFormat::RGB16F });
+			PrefilterMap->GenerateMipmap();
 			PrefilterMap->SetFlags(Flags);
-			BaseMap->SetFlags(Flags);
 		}
 
-		Framebuffer* Frame = gDevice->createFramebuffer();
+		Framebuffer* Frame = gDevice->CreateFramebuffer();
 
 		glDepthMask(GL_FALSE);
 		PrefilterShader->Bind();
@@ -204,11 +203,12 @@ namespace Columbus
 		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
 
 		uint32 MaxMips = 8;
+		uint32 Resolution = 128;
 
 		for (uint32 Mip = 0; Mip < MaxMips; Mip++)
 		{
-			uint32 Width = 128 >> Mip;
-			uint32 Height = 128 >> Mip;
+			uint32 Width  = Resolution >> Mip;
+			uint32 Height = Resolution >> Mip;
 
 			float Roughness = (float)Mip / (float)(MaxMips - 1);
 
@@ -220,7 +220,7 @@ namespace Columbus
 			for (uint32 i = 0; i < 6; i++)
 			{
 				Frame->SetTextureCube(Framebuffer::Attachment::Color0, PrefilterMap, i, Mip);
-				Frame->prepare({ 0, 0, 0, 0 }, { (float)Width, (float)Height });
+				Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, { (int)Width, (int)Height });
 				PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
@@ -230,7 +230,7 @@ namespace Columbus
 			glBindVertexArray(0);
 		}
 
-		Frame->unbind();
+		Frame->Unbind();
 		PrefilterShader->Unbind();
 		glDepthMask(GL_TRUE);
 
@@ -263,12 +263,12 @@ namespace Columbus
 		Frame.ColorTexturesEnablement[0] = true;
 		Frame.ColorTexturesFormats[0] = TextureFormat::RG16F;
 
-		Frame.Bind({ 0 }, { 1, 1 });
+		Frame.Bind({ 0 }, { 0, 0 }, { 1, 1 });
 
 		auto Tmp = Frame.ColorTextures[0];
 		Frame.ColorTextures[0] = IntegrationMap;
 
-		Frame.Bind({ 0 }, { 512, 512 });
+		Frame.Bind({ 0 }, { 0, 0}, { 512, 512 });
 		IntegrationShader->Bind();
 		Quad.Render();
 		IntegrationShader->Unbind();
@@ -320,7 +320,7 @@ namespace Columbus
 			glBindVertexArray(0);
 
 			ShaderOpenGL->Unbind();
-			Tex->unbind();
+			((TextureOpenGL*)Tex)->Unbind();
 
 			glDepthMask(GL_TRUE);
 		}

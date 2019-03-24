@@ -22,31 +22,31 @@ namespace Columbus
 
 	FramebufferOpenGL::FramebufferOpenGL()
 	{
-		glGenFramebuffers(1, &mID);
+		glGenFramebuffers(1, &ID);
 	}
 	
-	void FramebufferOpenGL::bind()
+	void FramebufferOpenGL::Bind()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, mID);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	}
 	
-	void FramebufferOpenGL::unbind()
+	void FramebufferOpenGL::Unbind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
-	bool FramebufferOpenGL::setTexture2D(Framebuffer::Attachment Attach, Texture* InTexture, uint32 Level)
+	bool FramebufferOpenGL::SetTexture2D(Framebuffer::Attachment Attach, Texture* InTexture, uint32 Level)
 	{
 		if (InTexture == nullptr) return false;
 
-		uint32 ID = ((TextureOpenGL*)InTexture)->GetID();
+		uint32 TextureID = ((TextureOpenGL*)InTexture)->GetID();
 		uint32 Attachment = ConvertAttachment(Attach);
 
 		if (Attachment == GL_INVALID_ENUM) return false;
-		if (!glIsTexture(ID)) return false;
+		if (!glIsTexture(TextureID)) return false;
 
-		glBindFramebuffer(GL_FRAMEBUFFER, mID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, ID, Level);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, TextureID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
@@ -56,32 +56,32 @@ namespace Columbus
 	{
 		if (InTexture == nullptr) return false;
 
-		uint32 ID = ((TextureOpenGL*)InTexture)->GetID();
+		uint32 TextureID = ((TextureOpenGL*)InTexture)->GetID();
 		uint32 Attachment = ConvertAttachment(Attach);
 
 		if (Attachment == GL_INVALID_ENUM) return false;
-		if (!glIsTexture(ID)) return false;
+		if (!glIsTexture(TextureID)) return false;
 
-		glBindFramebuffer(GL_FRAMEBUFFER, mID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, ID, Level);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face, TextureID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
 	}
 	
-	bool FramebufferOpenGL::prepare(const Vector4& Clear, const Vector2& WindowSize)
+	bool FramebufferOpenGL::Prepare(const Vector4& Color, const iVector2& Origin, const iVector2& Size)
 	{
-		bind();
-		glViewport(0, 0, (uint32)(WindowSize.X), (uint32)(WindowSize.Y));
-		glClearColor(Clear.X, Clear.Y, Clear.Z, Clear.W);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		glViewport(Origin.X, Origin.Y, Size.X, Size.Y);
+		glClearColor(Color.X, Color.Y, Color.Z, Color.W);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		return true;
 	}
 	
-	bool FramebufferOpenGL::check()
+	bool FramebufferOpenGL::Check()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, mID);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 		int ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -90,11 +90,9 @@ namespace Columbus
 	
 	FramebufferOpenGL::~FramebufferOpenGL()
 	{
-		glDeleteFramebuffers(1, &mID);
+		glDeleteFramebuffers(1, &ID);
 	}
 
 }
-
-
 
 

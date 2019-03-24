@@ -27,7 +27,7 @@ namespace Columbus
 		return new MeshOpenGL();
 	}
 	
-	Framebuffer* DeviceOpenGL::createFramebuffer() const
+	Framebuffer* DeviceOpenGL::CreateFramebuffer() const
 	{
 		return new FramebufferOpenGL();
 	}

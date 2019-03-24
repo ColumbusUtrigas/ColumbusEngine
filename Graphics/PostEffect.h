@@ -10,9 +10,6 @@ namespace Columbus
 
 	struct PostEffect
 	{
-	private:
-		iVector2 PreviousSize;
-		bool SizeChanged = false;
 	public:
 		static constexpr int TexturesCount = 4;
 		/*static constexpr Framebuffer::Attachment Attachments[TexturesCount] =
@@ -34,7 +31,7 @@ namespace Columbus
 	public:
 		PostEffect()
 		{
-			FB = gDevice->createFramebuffer();
+			FB = gDevice->CreateFramebuffer();
 			DepthTexture = nullptr;
 
 			for (int i = 0; i < TexturesCount; i++)
@@ -46,51 +43,44 @@ namespace Columbus
 			}
 		}
 
-		void Bind(const Vector4& Color, const iVector2& Size)
+		void Bind(const Vector4& Color, const iVector2& Origin, const iVector2& Size)
 		{
-			static Framebuffer::Attachment Attachments[TexturesCount] =
+			Framebuffer::Attachment Attachments[TexturesCount] =
 			{ Framebuffer::Attachment::Color0,
 			  Framebuffer::Attachment::Color1,
 			  Framebuffer::Attachment::Color2,
 			  Framebuffer::Attachment::Color3 };
 
-			Texture::Flags Flags { Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1 };
+			Texture::Flags Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat);
 
-			if (Size != PreviousSize)
+			for (int i = 0; i < TexturesCount; i++)
 			{
-				for (int i = 0; i < TexturesCount; i++)
+				if (ColorTexturesEnablement[i])
 				{
-					if (ColorTexturesEnablement[i])
+					if (ColorTextures[i] == nullptr)
 					{
-						if (ColorTextures[i] == nullptr)
-						{
-							ColorTextures[i] = gDevice->CreateTexture();
-						}
-
-						ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
-						ColorTextures[i]->SetFlags(Flags);
-						FB->setTexture2D(Attachments[i], ColorTextures[i]);
-					}
-				}
-
-				if (DepthTextureEnablement)
-				{
-					if (DepthTexture == nullptr)
-					{
-						DepthTexture = gDevice->CreateTexture();
+						ColorTextures[i] = gDevice->CreateTexture();
 					}
 
-					DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, TextureFormat::Depth24));
-					DepthTexture->SetFlags(Flags);
-					FB->setTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
+					ColorTextures[i]->SetFlags(Flags);
+					FB->SetTexture2D(Attachments[i], ColorTextures[i]);
 				}
-
-				SizeChanged = true;
 			}
 
-			PreviousSize = Size;
+			if (DepthTextureEnablement)
+			{
+				if (DepthTexture == nullptr)
+				{
+					DepthTexture = gDevice->CreateTexture();
+				}
 
-			FB->prepare(Color, PreviousSize);
+				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, TextureFormat::Depth24));
+				DepthTexture->SetFlags(Flags);
+				FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+			}
+
+			FB->Prepare(Color, Origin, Size);
 
 			GLenum DrawBuffers[TexturesCount];
 			int DrawBuffersNum = 0;
@@ -109,25 +99,20 @@ namespace Columbus
 
 		void Unbind()
 		{
-			if (SizeChanged || true)
+			for (int i = 0; i < TexturesCount; i++)
 			{
-				for (int i = 0; i < TexturesCount; i++)
+				if (ColorTexturesEnablement[i] && ColorTexturesMipmaps[i])
 				{
-					if (ColorTexturesEnablement[i] && ColorTexturesMipmaps[i])
-					{
-						ColorTextures[i]->generateMipmap();
-					}
-				}
-
-				if (DepthTextureEnablement && DepthTextureMipmaps)
-				{
-					DepthTexture->generateMipmap();
+					ColorTextures[i]->GenerateMipmap();
 				}
 			}
 
-			SizeChanged = false;
+			if (DepthTextureEnablement && DepthTextureMipmaps)
+			{
+				DepthTexture->GenerateMipmap();
+			}
 
-			FB->unbind();
+			FB->Unbind();
 		}
 
 		~PostEffect()

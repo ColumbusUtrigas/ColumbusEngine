@@ -642,7 +642,6 @@ namespace Columbus
 	
 	void Scene::Render()
 	{
-		MainRender.SetContextSize(ContextSize);
 		MainRender.SetMainCamera(*MainCamera);
 		MainRender.SetSky(Sky);
 		MainRender.SetRenderList(&Objects);
