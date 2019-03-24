@@ -53,7 +53,9 @@ namespace Columbus
 		std::vector<OpaqueRenderData> OpaqueObjects;
 		std::vector<TransparentRenderData> TransparentObjects;
 		
-		iVector2 ContextSize;
+		iVector2 ViewportOrigin;
+		iVector2 ViewportSize;
+
 		Camera MainCamera;
 		Skybox* Sky = nullptr;
 
@@ -73,6 +75,8 @@ namespace Columbus
 			Transparent
 		};
 	public:
+		iVector2 ContextSize;
+
 		float Exposure = 1.3f;
 		float Gamma = 1.5f;
 
@@ -85,7 +89,7 @@ namespace Columbus
 	public:
 		Renderer();
 		
-		void SetContextSize(const iVector2& Size);
+		void SetViewport(const iVector2& Origin, const iVector2& Size);
 		void SetMainCamera(const Camera& InCamera);
 		void SetSky(Skybox* InSky);
 

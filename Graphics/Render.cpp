@@ -73,9 +73,10 @@ namespace Columbus
 		LensFlareShader->Compile();
 	}
 
-	void Renderer::SetContextSize(const iVector2& Size)
+	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
 	{
-		ContextSize = Size;
+		ViewportOrigin = Origin;
+		ViewportSize = Size;
 	}
 
 	void Renderer::SetMainCamera(const Camera& InCamera)
@@ -300,7 +301,7 @@ namespace Columbus
 		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Blur");
 		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Intensity");
 
-		BloomBrightPass.Bind({}, ContextSize);
+		BloomBrightPass.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
 		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
@@ -316,20 +317,20 @@ namespace Columbus
 		{
 			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
 
-			BloomHorizontalBlurPass.Bind({}, ContextSize / 4);
+			BloomHorizontalBlurPass.Bind({}, {0}, ContextSize / 4);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 1);
 			Quad.Render();
 			BloomHorizontalBlurPass.Unbind();
 
-			BloomVerticalBlurPass.Bind({}, ContextSize / 4);
+			BloomVerticalBlurPass.Bind({}, {0}, ContextSize / 4);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 0);
 			Quad.Render();
 			BloomVerticalBlurPass.Unbind();
 		}
 
-		BloomFinalPass.Bind({}, ContextSize);
+		BloomFinalPass.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomShader)->Bind();
 		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
@@ -349,7 +350,7 @@ namespace Columbus
 		CompileLists();
 		SortLists();
 
-		BaseEffect.Bind({ 1, 1, 1, 0 }, ContextSize);
+		BaseEffect.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
 		RenderOpaqueStage();
 		RenderSkyStage();
@@ -359,11 +360,15 @@ namespace Columbus
 
 		RenderBloom();
 
+		Vector2 Origin = (Vector2)ViewportOrigin / (Vector2)ContextSize;
+		Vector2 Size = (Vector2)ViewportSize / (Vector2)ContextSize;
+		Vector2 Center = Size * 0.5f + Origin;
+
 		((ShaderProgramOpenGL*)NoneShader)->Bind();
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BloomFinalPass.ColorTextures[0], 0);
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
-		Quad.Render();
+		Quad.Render(Center * 2.0f - 1.0f, Size);
 
 		// Lens flare rendering test, I will use it in the future
 

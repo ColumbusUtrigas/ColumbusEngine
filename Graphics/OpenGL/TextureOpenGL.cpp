@@ -397,22 +397,6 @@ namespace Columbus
 		return false;
 	}
 
-	void TextureOpenGL::Clear()
-	{
-		Width = 0;
-		Height = 0;
-		MipmapsCount = 0;
-		MipmapLevel = 0;
-
-		Format = TextureFormat::Unknown;
-		TextureType = Type::Texture2D;
-
-		Target = 0;
-		InternalFormat = 0;
-		PixelFormat = 0;
-		PixelType = 0;
-	}
-
 	bool TextureOpenGL::Create(Image::Type InType, Texture::Properties Props)
 	{
 		switch (InType)
@@ -441,8 +425,6 @@ namespace Columbus
 	
 	bool TextureOpenGL::Create2D(Texture::Properties Props)
 	{
-		Clear();
-
 		TextureType = Texture::Type::Texture2D;
 
 		Target = GL_TEXTURE_2D;
@@ -473,8 +455,6 @@ namespace Columbus
 
 	bool TextureOpenGL::CreateCube(Texture::Properties Props)
 	{
-		Clear();
-
 		TextureType = Texture::Type::TextureCube;
 
 		Target = GL_TEXTURE_CUBE_MAP;
@@ -605,28 +585,12 @@ namespace Columbus
 		glActiveTexture(GL_TEXTURE0 + Unit);
 		glBindTexture(Target, 0);
 	}
-
-	void TextureOpenGL::bind()
+	
+	void TextureOpenGL::GenerateMipmap()
 	{
 		glBindTexture(Target, ID);
-	}
-	
-	void TextureOpenGL::unbind()
-	{
-		glBindTexture(Target, 0);
-	}
-
-	void TextureOpenGL::sampler2D(int a)
-	{
-		glActiveTexture(GL_TEXTURE0 + a);
-		bind();
-	}
-	
-	void TextureOpenGL::generateMipmap()
-	{
-		bind();
 		glGenerateMipmap(Target);
-		unbind();
+		glBindTexture(Target, 0);
 	}
 
 	uint32 TextureOpenGL::GetID() const

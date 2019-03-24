@@ -16,7 +16,7 @@ namespace Columbus
 		virtual ShaderProgram* CreateShaderProgram() const;
 		virtual Texture* CreateTexture() const;
 		virtual Mesh* CreateMesh() const;
-		virtual Framebuffer* createFramebuffer() const;
+		virtual Framebuffer* CreateFramebuffer() const;
 
 		virtual ~Device();
 	};

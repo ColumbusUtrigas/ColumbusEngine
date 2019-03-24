@@ -22,7 +22,7 @@ namespace Columbus
 		return nullptr;
 	}
 	
-	Framebuffer* Device::createFramebuffer() const
+	Framebuffer* Device::CreateFramebuffer() const
 	{
 		return new Framebuffer();
 	}
