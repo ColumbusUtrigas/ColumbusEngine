@@ -6,7 +6,7 @@ namespace Columbus
 
 	Input::Input()
 	{
-		KeyboardState = (uint8_t*)SDL_GetKeyboardState(&KeysNum);
+		Keyboard.KeyboardState = (uint8*)SDL_GetKeyboardState(&Keyboard.KeysNum);
 
 		for (int Joystick = 0; Joystick < SDL_NumJoysticks(); Joystick++)
 		{
@@ -61,19 +61,19 @@ namespace Columbus
 
 		switch (Cursor)
 		{
-		case SystemCursor::Arrow:     ID = SDL_SYSTEM_CURSOR_ARROW; break;
-		case SystemCursor::IBeam:     ID = SDL_SYSTEM_CURSOR_IBEAM; break;
-		case SystemCursor::Wait:      ID = SDL_SYSTEM_CURSOR_WAIT; break;
+		case SystemCursor::Arrow:     ID = SDL_SYSTEM_CURSOR_ARROW;     break;
+		case SystemCursor::IBeam:     ID = SDL_SYSTEM_CURSOR_IBEAM;     break;
+		case SystemCursor::Wait:      ID = SDL_SYSTEM_CURSOR_WAIT;      break;
 		case SystemCursor::Crosshair: ID = SDL_SYSTEM_CURSOR_CROSSHAIR; break;
 		case SystemCursor::WaitArrow: ID = SDL_SYSTEM_CURSOR_WAITARROW; break;
-		case SystemCursor::SizeNWSE:  ID = SDL_SYSTEM_CURSOR_SIZENWSE; break;
-		case SystemCursor::SizeNESW:  ID = SDL_SYSTEM_CURSOR_SIZENESW; break;
-		case SystemCursor::SizeWE:    ID = SDL_SYSTEM_CURSOR_SIZEWE; break;
-		case SystemCursor::SizeNS:    ID = SDL_SYSTEM_CURSOR_SIZENS; break;
-		case SystemCursor::SizeAll:   ID = SDL_SYSTEM_CURSOR_SIZEALL; break;
-		case SystemCursor::No:        ID = SDL_SYSTEM_CURSOR_NO; break;
-		case SystemCursor::Hand:      ID = SDL_SYSTEM_CURSOR_HAND; break;
-		default:                      ID = SDL_SYSTEM_CURSOR_NO; break;
+		case SystemCursor::SizeNWSE:  ID = SDL_SYSTEM_CURSOR_SIZENWSE;  break;
+		case SystemCursor::SizeNESW:  ID = SDL_SYSTEM_CURSOR_SIZENESW;  break;
+		case SystemCursor::SizeWE:    ID = SDL_SYSTEM_CURSOR_SIZEWE;    break;
+		case SystemCursor::SizeNS:    ID = SDL_SYSTEM_CURSOR_SIZENS;    break;
+		case SystemCursor::SizeAll:   ID = SDL_SYSTEM_CURSOR_SIZEALL;   break;
+		case SystemCursor::No:        ID = SDL_SYSTEM_CURSOR_NO;        break;
+		case SystemCursor::Hand:      ID = SDL_SYSTEM_CURSOR_HAND;      break;
+		default:                      ID = SDL_SYSTEM_CURSOR_NO;        break;
 		}
 
 		static SDL_Cursor* cursor = nullptr;
@@ -110,8 +110,8 @@ namespace Columbus
 	
 	void Input::WarpMouse(const iVector2& Pos)
 	{
-		CurrentMousePosition  = Pos;
-		PreviousMousePosition = Pos;
+		Mouse.CurrentPosition  = Pos;
+		Mouse.PreviousPosition = Pos;
 	}
 
 	void Input::SetKeyboardFocus(bool Focus)
@@ -128,96 +128,127 @@ namespace Columbus
 	{
 		SDL_PumpEvents();
 
-		for (int i = 0; i < KeysNum && i < MaxKeys; i++) Keys[i] = KeyboardState[i] != 0;
-		memset(KeysDown, 0, sizeof(KeysDown));
-		memset(KeysUp, 0, sizeof(KeysUp));
-		memset(Buttons, 0, sizeof(Buttons));
+		for (int i = 0; i < Keyboard.KeysNum && i < DeviceKeyboard::MaxKeys; i++) Keyboard.Keys[i] = Keyboard.KeyboardState[i] != 0;
+		memset(Keyboard.KeysDown, 0, sizeof(Keyboard.KeysDown));
+		memset(Keyboard.KeysUp, 0, sizeof(Keyboard.KeysUp));
 
-		PreviousMousePosition = CurrentMousePosition;
-		Wheel = { 0, 0 };
+		for (int i = 0; i < DeviceMouse::MaxButtons; i++) Mouse.Buttons[i].State = SDL_GetMouseState(nullptr, nullptr) & i;
+		memset(Mouse.ButtonsDown, 0, sizeof(Mouse.ButtonsDown));
+		memset(Mouse.ButtonsUp, 0, sizeof(Mouse.ButtonsUp));
+
+		memset(Gamepad.ButtonsDown, 0, sizeof(Gamepad.ButtonsDown));
+		memset(Gamepad.ButtonsUp, 0, sizeof(Gamepad.ButtonsUp));
+
+		Mouse.PreviousPosition = Mouse.CurrentPosition;
+		Mouse.Wheel = { 0, 0 };
 	}
 
 	void Input::SetKeyDown(uint32 Key)
 	{
-		KeysDown[Key] = true;
+		Keyboard.KeysDown[Key] = true;
 	}
 
 	void Input::SetKeyUp(uint32 Key)
 	{
-		KeysUp[Key] = true;
+		Keyboard.KeysUp[Key] = true;
 	}
 
 	void Input::SetMousePosition(const iVector2& Position)
 	{
-		CurrentMousePosition = Position;
+		Mouse.CurrentPosition = Position;
 	}
 
-	void Input::SetMouseButton(uint32 Button, const Input::MouseButton& State)
+	void Input::SetMouseButtonDown(uint32 Button, uint8 Clicks)
 	{
-		Buttons[Button] = State;
+		Mouse.ButtonsDown[Button].State = true;
+		Mouse.ButtonsDown[Button].Clicks = Clicks;
 	}
 
-	void Input::SetMouseWheel(const MouseWheel& State)
+	void Input::SetMouseButtonUp(uint32 Button, uint8 Clicks)
 	{
-		Wheel = State;
+		Mouse.ButtonsUp[Button].State = true;
+		Mouse.ButtonsUp[Button].Clicks = Clicks;
 	}
 
-	void Input::SetGamepadAxis(GamepadAxis Axis, float Value)
+	void Input::SetMouseWheel(const iVector2& State)
+	{
+		Mouse.Wheel = State;
+	}
+
+	void Input::SetGamepadAxis(uint32 Axis, float Value)
 	{
 		Gamepad.Axes[Axis] = Value;
 	}
 
-	void Input::SetGamepadButton(GamepadButton Button, bool Value)
+	void Input::SetGamepadButtonDown(uint32 Button)
 	{
-		Gamepad.Buttons[Button] = Value;
+		Gamepad.Buttons[Button] = true;
+		Gamepad.ButtonsDown[Button] = true;
+	}
+
+	void Input::SetGamepadButtonUp(uint32 Button)
+	{
+		Gamepad.Buttons[Button] = false;
+		Gamepad.ButtonsUp[Button] = true;
 	}
 	
 	bool Input::GetKey(uint32 Key) const
 	{
-		return Keys[Key] && KeyboardFocus;
+		return Keyboard.Keys[Key] && KeyboardFocus;
 	}
 	
 	bool Input::GetKeyDown(uint32 Key) const
 	{
-		return KeysDown[Key] && KeyboardFocus;
+		return Keyboard.KeysDown[Key] && KeyboardFocus;
 	}
 	
 	bool Input::GetKeyUp(uint32 Key) const
 	{
-		return KeysUp[Key] && KeyboardFocus;
-	}
-
-	iVector2 Input::GetMousePosition() const
-	{
-		return CurrentMousePosition;
-	}
-
-	iVector2 Input::GetMouseMovement() const
-	{
-		return CurrentMousePosition - PreviousMousePosition;
+		return Keyboard.KeysUp[Key] && KeyboardFocus;
 	}
 
 	Input::MouseButton Input::GetMouseButton(uint32 Button) const
 	{
-		return Buttons[Button];
+		return Mouse.Buttons[Button];
 	}
 
-	Input::MouseWheel Input::GetMouseWheel() const
+	Input::MouseButton Input::GetMouseButtonDown(uint32 Button) const
 	{
-		return Wheel;
+		return Mouse.ButtonsDown[Button];
+	}
+
+	Input::MouseButton Input::GetMouseButtonUp(uint32 Button) const
+	{
+		return Mouse.ButtonsUp[Button];
+	}
+
+	iVector2 Input::GetMousePosition() const
+	{
+		return Mouse.CurrentPosition;
+	}
+
+	iVector2 Input::GetMouseMovement() const
+	{
+		return Mouse.CurrentPosition - Mouse.PreviousPosition;
+	}
+
+	iVector2 Input::GetMouseWheel() const
+	{
+		return Mouse.Wheel;
 	}
 
 	float Input::GetGamepadAxis(GamepadAxis Axis) const
 	{
-		return fabs(Gamepad.Axes[Axis]) > GamepadDead ? Gamepad.Axes[Axis] : 0.0f;
+		float Ax = Gamepad.Axes[static_cast<uint8>(Axis)];
+		return fabs(Ax) > GamepadDead ? Ax : 0.0f;
 	}
 
-	Vector2 Input::GetGamepadStick(Stick Stick) const
+	Vector2 Input::GetGamepadStick(GamepadStick Stick) const
 	{
 		switch (Stick)
 		{
-		case Stick::Left:  return { GetGamepadAxis(GamepadAxis::LStickX), GetGamepadAxis(GamepadAxis::LStickY) }; break;
-		case Stick::Right: return { GetGamepadAxis(GamepadAxis::RStickX), GetGamepadAxis(GamepadAxis::RStickY) }; break;
+		case GamepadStick::Left:  return { GetGamepadAxis(GamepadAxis::LStickX), GetGamepadAxis(GamepadAxis::LStickY) }; break;
+		case GamepadStick::Right: return { GetGamepadAxis(GamepadAxis::RStickX), GetGamepadAxis(GamepadAxis::RStickY) }; break;
 		}
 
 		return {};
@@ -225,7 +256,17 @@ namespace Columbus
 
 	bool Input::GetGamepadButton(GamepadButton Button) const
 	{
-		return Gamepad.Buttons[Button];
+		return Gamepad.Buttons[static_cast<uint8>(Button)];
+	}
+
+	bool Input::GetGamepadButtonDown(GamepadButton Button) const
+	{
+		return Gamepad.ButtonsDown[static_cast<uint8>(Button)];
+	}
+
+	bool Input::GetGamepadButtonUp(GamepadButton Button) const
+	{
+		return Gamepad.ButtonsUp[static_cast<uint8>(Button)];
 	}
 	
 	Input::~Input()
