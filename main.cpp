@@ -117,18 +117,16 @@ int main(int argc, char** argv)
 		{
 			switch (Event.type)
 			{
-			case SDL_QUIT:        window.Close();                                             break;
-			case SDL_KEYDOWN:     input.SetKeyDown(Event.key.keysym.scancode);                break;
-			case SDL_KEYUP:       input.SetKeyUp(Event.key.keysym.scancode);                  break;
+			case SDL_QUIT: window.Close(); break;
+			case SDL_KEYDOWN: input.SetKeyDown(Event.key.keysym.scancode); break;
+			case SDL_KEYUP:   input.SetKeyUp  (Event.key.keysym.scancode); break;
 			case SDL_MOUSEMOTION: input.SetMousePosition({ Event.motion.x, Event.motion.y }); break;
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
-				input.SetMouseButton(Event.button.button, { Event.button.x, Event.button.y, (bool)Event.button.state, Event.button.clicks });
-				break;
+			case SDL_MOUSEBUTTONDOWN: input.SetMouseButtonDown(Event.button.button, Event.button.clicks); break;
+			case SDL_MOUSEBUTTONUP:   input.SetMouseButtonUp  (Event.button.button, Event.button.clicks); break;
 			case SDL_MOUSEWHEEL: input.SetMouseWheel({ Event.wheel.x, Event.wheel.y }); break;
-			case SDL_CONTROLLERAXISMOTION: input.SetGamepadAxis((Input::GamepadAxis)Event.caxis.axis, (float)(Event.caxis.value) / 32768.0f); break;
-			case SDL_CONTROLLERBUTTONDOWN:
-			case SDL_CONTROLLERBUTTONUP: input.SetGamepadButton((Input::GamepadButton)Event.cbutton.button, Event.cbutton.state); break;
+			case SDL_CONTROLLERAXISMOTION: input.SetGamepadAxis(Event.caxis.axis, (float)(Event.caxis.value) / 32768.0f); break;
+			case SDL_CONTROLLERBUTTONDOWN: input.SetGamepadButtonDown(Event.cbutton.button); break;
+			case SDL_CONTROLLERBUTTONUP:   input.SetGamepadButtonUp  (Event.cbutton.button); break;
 			}
 
 			window.PollEvent(Event);
@@ -143,7 +141,7 @@ int main(int argc, char** argv)
 		camera.Perspective(60, window.GetAspect(), 0.1f, 1000);
 
 		VSync = input.GetKeyDown(SDL_SCANCODE_V) ? !VSync : VSync;
-		VSync = input.GetGamepadButton(Input::GamepadButton::DPadDown) ? !VSync : VSync;
+		VSync = input.GetGamepadButtonDown(Input::GamepadButton::DPadDown) ? !VSync : VSync;
 		window.SetVSync(VSync);
 
 		wheel += input.GetMouseWheel().Y * 5;
@@ -178,9 +176,9 @@ int main(int argc, char** argv)
 		float SpeedMultiplier = input.GetGamepadAxis(Input::GamepadAxis::RTrigger) + 1;
 		scene.TimeFactor = 1.0f - input.GetGamepadAxis(Input::GamepadAxis::LTrigger);
 
-		camera.Pos += input.GetGamepadStick(Input::Stick::Left).X * camera.Right() * RedrawTime * CameraSpeed * SpeedMultiplier;
-		camera.Pos -= input.GetGamepadStick(Input::Stick::Left).Y * camera.Direction() * RedrawTime * CameraSpeed * SpeedMultiplier;
-		camera.Rot += Vector3(input.GetGamepadStick(Input::Stick::Right).YX() * Vector2 { 1, -1 } * RedrawTime * 60, 0);
+		camera.Pos += input.GetGamepadStick(Input::GamepadStick::Left).X * camera.Right() * RedrawTime * CameraSpeed * SpeedMultiplier;
+		camera.Pos -= input.GetGamepadStick(Input::GamepadStick::Left).Y * camera.Direction() * RedrawTime * CameraSpeed * SpeedMultiplier;
+		camera.Rot += Vector3(input.GetGamepadStick(Input::GamepadStick::Right).YX() * Vector2 { 1, -1 } * RedrawTime * 60, 0);
 
 		camera.Rot.Clamp({ -89.9f, -360.0f, -360.0f }, { 89.9f, 360.0f, 360.0f });
 		camera.Update();

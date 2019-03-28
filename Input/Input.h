@@ -27,110 +27,90 @@ namespace Columbus
 	public:
 		struct MouseButton
 		{
-			int X = 0;
-			int Y = 0;
-			bool Pressed = false;
+			bool State = false;
 			uint8 Clicks = 0;
 		};
 
-		struct MouseWheel
+		enum class GamepadAxis : uint8
 		{
-			int X = 0;
-			int Y = 0;
+			LStickX  = 0,
+			LStickY  = 1,
+			RStickX  = 2,
+			RStickY  = 3,
+			LTrigger = 4,
+			RTrigger = 5,
+			Max      = 6
 		};
 
-		struct GamepadAxis
+		enum class GamepadButton : uint8
 		{
-		private:
-			uint8 Value = 0;
-		public:
-			enum Enum
-			{
-				LStickX  = 0,
-				LStickY  = 1,
-				RStickX  = 2,
-				RStickY  = 3,
-				LTrigger = 4,
-				RTrigger = 5
-			};
-		
-			GamepadAxis() {}
-			GamepadAxis(uint8 Base) : Value(Base) {}
-			GamepadAxis(Enum Base) : Value(Base) {}
-			GamepadAxis(const GamepadAxis& Other) : Value(Other.Value) {}
-
-			GamepadAxis& operator=(uint8 Other) { Value = Other; return *this; }
-			GamepadAxis& operator=(Enum Other) { Value = Other; return *this; }
-			GamepadAxis& operator=(GamepadAxis Other) { Value = Other.Value; return *this; }
-			
-			operator uint8() const { return Value; }
+			A         = 0,
+			B         = 1,
+			X         = 2,
+			Y         = 3,
+			Back      = 4,
+			Guide     = 5,
+			Start     = 6,
+			LStick    = 7,
+			RStick    = 8,
+			LShoulder = 9,
+			RShoulder = 10,
+			DPadUp    = 11,
+			DPadDown  = 12,
+			DPadLeft  = 13,
+			DPadRight = 14,
+			Max       = 15
 		};
 
-		struct GamepadButton
-		{
-		private:
-			uint8 Value = 0;
-		public:
-			enum
-			{
-				A         = 0,
-				B         = 1,
-				X         = 2,
-				Y         = 3,
-				Back      = 4,
-				Guide     = 5,
-				Start     = 6,
-				LStick    = 7,
-				RStick    = 8,
-				LShoulder = 9,
-				RShoulder = 10,
-				DPadUp    = 11,
-				DPadDown  = 12,
-				DPadLeft  = 13,
-				DPadRight = 14
-			};
-
-			GamepadButton() {}
-			GamepadButton(uint8 Base) : Value(Base) {}
-			GamepadButton(const GamepadButton& Other) : Value(Other.Value) {}
-
-			GamepadButton& operator=(uint8 Other) { Value = Other; return *this; }
-			GamepadButton& operator=(GamepadButton Other) { Value = Other.Value; return *this; }
-
-			operator uint8() const { return Value; }
-		};
-
-		enum class Stick : uint8
+		enum class GamepadStick : uint8
 		{
 			Left,
 			Right
 		};
-		
-		struct Gamepad
+	private:
+		struct DeviceKeyboard
 		{
-			float Axes[8] = { 0.0f };
-			bool Buttons[16] = { false };
+			static constexpr int MaxKeys = 512;
+
+			uint8* KeyboardState = nullptr;
+			int KeysNum = 0;
+
+			bool Keys[MaxKeys];
+			bool KeysDown[MaxKeys];
+			bool KeysUp[MaxKeys];
+		};
+
+		struct DeviceMouse
+		{
+			static constexpr int MaxButtons = 8;
+
+			MouseButton Buttons[MaxButtons];
+			MouseButton ButtonsDown[MaxButtons];
+			MouseButton ButtonsUp[MaxButtons];
+
+			iVector2 CurrentPosition;
+			iVector2 PreviousPosition;
+			iVector2 Wheel;
+		};
+		
+		struct DeviceGamepad
+		{
+			static constexpr int MaxAxes = 8;
+			static constexpr int MaxButtons = 16;
+
+			float Axes[MaxAxes] = { 0.0f };
+			bool Buttons[MaxButtons] = { false };
+			bool ButtonsDown[MaxButtons] = { false };
+			bool ButtonsUp[MaxButtons] = { false };
 			void* Internal = nullptr;
 		};
 	private:
-		static constexpr int MaxKeys = 512;
-		static constexpr int MaxButtons = 8;
 		static constexpr int MaxGamepads = 4;
 		static constexpr float GamepadDead = 0.05f;
 
-		uint8* KeyboardState = nullptr;
-		int KeysNum = 0;
-
-		bool Keys[MaxKeys];
-		bool KeysDown[MaxKeys];
-		bool KeysUp[MaxKeys];
-
-		MouseButton Buttons[MaxButtons];
-		MouseWheel Wheel;
-		Gamepad Gamepad;
-
-		iVector2 CurrentMousePosition;
-		iVector2 PreviousMousePosition;
+		DeviceKeyboard Keyboard;
+		DeviceMouse Mouse;
+		DeviceGamepad Gamepad;
 
 		bool MouseEnabled = true;
 		bool KeyboardFocus;
@@ -154,22 +134,30 @@ namespace Columbus
 		void SetKeyDown(uint32 Key);
 		void SetKeyUp(uint32 Key);
 		void SetMousePosition(const iVector2& Position);
-		void SetMouseButton(uint32 Button, const MouseButton& State);
-		void SetMouseWheel(const MouseWheel& State);
-		void SetGamepadAxis(GamepadAxis, float Value);
-		void SetGamepadButton(GamepadButton Button, bool Value);
+		void SetMouseButtonDown(uint32 Button, uint8 Clicks);
+		void SetMouseButtonUp(uint32 Button, uint8 Clicks);
+		void SetMouseWheel(const iVector2& State);
+		void SetGamepadAxis(uint32, float Value);
+		void SetGamepadButtonDown(uint32 Button);
+		void SetGamepadButtonUp(uint32 Button);
 
 		bool GetKey(uint32 Key) const;
 		bool GetKeyDown(uint32 Key) const;
 		bool GetKeyUp(uint32 Key) const;
 
+		MouseButton GetMouseButton(uint32 Button) const;
+		MouseButton GetMouseButtonDown(uint32 Button) const;
+		MouseButton GetMouseButtonUp(uint32 Button) const;
+
 		iVector2 GetMousePosition() const;
 		iVector2 GetMouseMovement() const;
-		MouseButton GetMouseButton(uint32 Button) const;
-		MouseWheel GetMouseWheel() const;
+		iVector2 GetMouseWheel() const;
+
 		float GetGamepadAxis(GamepadAxis Axis) const;
-		Vector2 GetGamepadStick(Stick Stick) const;
+		Vector2 GetGamepadStick(GamepadStick Stick) const;
 		bool GetGamepadButton(GamepadButton Button) const;
+		bool GetGamepadButtonDown(GamepadButton Button) const;
+		bool GetGamepadButtonUp(GamepadButton Button) const;
 
 		~Input();
 	};
