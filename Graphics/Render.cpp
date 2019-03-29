@@ -52,6 +52,8 @@ namespace Columbus
 
 		BloomFinalPass.ColorTexturesEnablement[0] = true;
 
+		FinalPass.ColorTexturesEnablement[0] = true;
+
 		NoneShader = gDevice->CreateShaderProgram();
 		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
 		NoneShader->Compile();
@@ -88,6 +90,21 @@ namespace Columbus
 	void Renderer::SetSky(Skybox* InSky)
 	{
 		Sky = InSky;
+	}
+
+	uint32 Renderer::GetPolygonsRendered() const
+	{
+		return PolygonsRendered;
+	}
+
+	uint32 Renderer::GetOpaqueObjectsRendered() const
+	{
+		return OpaqueObjectsRendered;
+	}
+
+	uint32 Renderer::GetTransparentObjectsRendered() const
+	{
+		return TransparentObjectsRendered;
 	}
 
 	void Renderer::SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List)
@@ -158,12 +175,12 @@ namespace Columbus
 	{
 		auto OpaqueSorter = [&](const OpaqueRenderData& A, const OpaqueRenderData& B)->bool
 		{
-			return MainCamera.Pos.LengthSquare(A.ObjectTransform.GetPos()) < MainCamera.Pos.LengthSquare(B.ObjectTransform.GetPos());
+			return MainCamera.Pos.LengthSquare(A.ObjectTransform.Position) < MainCamera.Pos.LengthSquare(B.ObjectTransform.Position);
 		};
 
 		auto TransparentSorter = [&](const TransparentRenderData& A, const TransparentRenderData& B)->bool
 		{
-			return MainCamera.Pos.LengthSquare(A.ObjectTransform.GetPos()) > MainCamera.Pos.LengthSquare(B.ObjectTransform.GetPos());
+			return MainCamera.Pos.LengthSquare(A.ObjectTransform.Position) > MainCamera.Pos.LengthSquare(B.ObjectTransform.Position);
 		};
 
 		std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
@@ -172,8 +189,6 @@ namespace Columbus
 
 	void Renderer::RenderOpaqueStage()
 	{
-		uint32 PolygonsRendered = 0;
-
 		State.Clear();
 
 		glDisable(GL_BLEND);
@@ -193,6 +208,7 @@ namespace Columbus
 				State.SetMesh(Object.Object);
 
 				PolygonsRendered += Object.Object->Render();
+				OpaqueObjectsRendered++;
 			}
 		}
 	}
@@ -243,7 +259,7 @@ namespace Columbus
 							State.SetCulling(Material::Cull::Front);
 							CurrentMesh->Render();
 							State.SetCulling(Material::Cull::Back);
-							CurrentMesh->Render();
+							PolygonsRendered += CurrentMesh->Render();
 						}
 						else
 						{
@@ -255,8 +271,10 @@ namespace Columbus
 
 							State.SetDepthWriting(false);
 							CurrentShader->SetUniform(Transparent, 1);
-							CurrentMesh->Render();
+							PolygonsRendered += CurrentMesh->Render();
 						}
+
+						TransparentObjectsRendered++;
 
 						CurrentMesh->Unbind();
 					}
@@ -313,17 +331,26 @@ namespace Columbus
 		((ShaderProgramOpenGL*)GaussBlurShader)->Bind();
 		((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurRadius, BloomRadius);
 
+		iVector2 Resolution;
+
+		switch (BloomResolution)
+		{
+		case PostEffectResolution::Full: Resolution = ContextSize;     break;
+		case PostEffectResolution::Half: Resolution = ContextSize / 2; break;
+		case PostEffectResolution::Quad: Resolution = ContextSize / 4; break;
+		}
+
 		for (int i = 0; i < BloomIterations; i++)
 		{
 			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
 
-			BloomHorizontalBlurPass.Bind({}, {0}, ContextSize / 4);
+			BloomHorizontalBlurPass.Bind({}, {0}, Resolution);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 1);
 			Quad.Render();
 			BloomHorizontalBlurPass.Unbind();
 
-			BloomVerticalBlurPass.Bind({}, {0}, ContextSize / 4);
+			BloomVerticalBlurPass.Bind({}, {0}, Resolution);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
 			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 0);
 			Quad.Render();
@@ -346,6 +373,10 @@ namespace Columbus
 		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
 		static int NoneShaderGamma = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Gamma");
 		static int NoneShaderExposure = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Exposure");
+
+		PolygonsRendered = 0;
+		OpaqueObjectsRendered = 0;
+		TransparentObjectsRendered = 0;
 
 		CompileLists();
 		SortLists();
@@ -370,11 +401,16 @@ namespace Columbus
 		Vector2 Size = (Vector2)ViewportSize / (Vector2)ContextSize;
 		Vector2 Center = Size * 0.5f + Origin;
 
+		FinalPass.Bind({}, {}, ContextSize);
+
 		((ShaderProgramOpenGL*)NoneShader)->Bind();
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)Final, 0);
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
-		Quad.Render(Center * 2.0f - 1.0f, Size);
+		//Quad.Render(Center * 2.0f - 1.0f, Size);
+		Quad.Render();
+
+		FinalPass.Unbind();
 
 		// Lens flare rendering test, I will use it in the future
 
@@ -392,6 +428,11 @@ namespace Columbus
 		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)Blob, 0);
 		Quad.Render(Coords.XY(),  0.2f / Vector2(Aspect, 1));
 		LensFlareShader->Unbind();*/
+	}
+
+	Texture* Renderer::GetFramebufferTexture() const
+	{
+		return FinalPass.ColorTextures[0];
 	}
 
 	Renderer::~Renderer()
