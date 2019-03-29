@@ -80,6 +80,7 @@ namespace Columbus
 		float Exposure = 1.3f;
 		float Gamma = 1.5f;
 
+		bool BloomEnable = true;
 		float BloomTreshold = 0.8f;
 		float BloomIntensity = 0.5f;
 		float BloomRadius = 1.0f;

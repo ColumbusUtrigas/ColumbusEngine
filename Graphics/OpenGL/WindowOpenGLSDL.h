@@ -33,6 +33,9 @@ namespace Columbus
 
 		void PollEvent(SDL_Event& Event);
 
+		SDL_Window* GetWindowHandle() const;
+		SDL_GLContext GetContextHandle() const;
+
 		virtual ~WindowOpenGLSDL() final override;
 	};
 

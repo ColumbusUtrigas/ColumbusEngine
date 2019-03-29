@@ -250,6 +250,11 @@
     <ClInclude Include="GUI\VirtualInput.h" />
     <ClInclude Include="GUI\Widget.h" />
     <ClInclude Include="Input\Input.h" />
+    <ClInclude Include="Lib\imgui\examples\imgui_impl_opengl3.h" />
+    <ClInclude Include="Lib\imgui\examples\imgui_impl_sdl.h" />
+    <ClInclude Include="Lib\imgui\imconfig.h" />
+    <ClInclude Include="Lib\imgui\imgui.h" />
+    <ClInclude Include="Lib\imgui\imgui_internal.h" />
     <ClInclude Include="Lib\TinyXML2\tinyxml2.h" />
     <ClInclude Include="Math\Box.h" />
     <ClInclude Include="Math\Frustum.h" />
@@ -338,6 +343,11 @@
     <ClCompile Include="Graphics\Skybox.cpp" />
     <ClCompile Include="GUI\Button.cpp" />
     <ClCompile Include="Input\Input.cpp" />
+    <ClCompile Include="Lib\imgui\examples\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="Lib\imgui\examples\imgui_impl_sdl.cpp" />
+    <ClCompile Include="Lib\imgui\imgui.cpp" />
+    <ClCompile Include="Lib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Lib\TinyXML2\tinyxml2.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Physics\PhysicsWorld.cpp" />

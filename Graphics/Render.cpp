@@ -358,14 +358,20 @@ namespace Columbus
 
 		BaseEffect.Unbind();
 
-		RenderBloom();
+		Texture* Final = BaseEffect.ColorTextures[0];
+
+		if (BloomEnable)
+		{
+			RenderBloom();
+			Final = BloomFinalPass.ColorTextures[0];
+		}
 
 		Vector2 Origin = (Vector2)ViewportOrigin / (Vector2)ContextSize;
 		Vector2 Size = (Vector2)ViewportSize / (Vector2)ContextSize;
 		Vector2 Center = Size * 0.5f + Origin;
 
 		((ShaderProgramOpenGL*)NoneShader)->Bind();
-		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)BloomFinalPass.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)Final, 0);
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
 		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
 		Quad.Render(Center * 2.0f - 1.0f, Size);

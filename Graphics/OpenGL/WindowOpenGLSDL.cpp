@@ -245,6 +245,16 @@ namespace Columbus
 			}
 		}
 	}
+
+	SDL_Window* WindowOpenGLSDL::GetWindowHandle() const
+	{
+		return Window;
+	}
+
+	SDL_GLContext WindowOpenGLSDL::GetContextHandle() const
+	{
+		return Context;
+	}
 	
 	WindowOpenGLSDL::~WindowOpenGLSDL()
 	{
