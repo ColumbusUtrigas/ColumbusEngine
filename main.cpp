@@ -6,6 +6,10 @@
 
 using namespace Columbus;
 
+#include <Lib/imgui/imgui.h>
+#include <Lib/imgui/examples/imgui_impl_opengl3.h>
+#include <Lib/imgui/examples/imgui_impl_sdl.h>
+
 #ifdef COLUMBUS_PLATFORM_WINDOWS
 	//Hint to the driver to use discrete GPU
 	extern "C" 
@@ -44,7 +48,6 @@ int main(int argc, char** argv)
 	Input input;
 	AudioListener Listener;
 	Camera camera;
-	Timer timer;
 
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
@@ -106,6 +109,17 @@ int main(int argc, char** argv)
 	scene.SetCamera(camera);
 	scene.SetAudioListener(Listener);
 	scene.Audio.Play();
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.WantSaveIniSettings = false;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+
+	ImGui::StyleColorsDark();
+	
+	ImGui_ImplSDL2_InitForOpenGL(window.GetWindowHandle(), window.GetContextHandle());
+	ImGui_ImplOpenGL3_Init("#version 130");
 
 	while (window.IsOpen())
 	{
@@ -193,17 +207,35 @@ int main(int argc, char** argv)
 		scene.Update();
 		scene.Render();
 
-		window.Display();
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
+		ImGui::NewFrame();
 
-		if (timer.Elapsed() > 1.0)
-		{
-			printf("%i\n", window.GetFPS());
-			timer.Reset();
-		}
+		SDL_ShowCursor(cursor);
+
+		ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+		ImGui::Text("Redraw time: %.1f ms", RedrawTime * 1000);
+		ImGui::Text("FPS:         %.1f", 1.0f / RedrawTime);
+		ImGui::Separator();
+		ImGui::Checkbox("VSync", &VSync);
+		ImGui::Checkbox("Bloom", &scene.MainRender.BloomEnable);
+		ImGui::SliderFloat("Gamma", &scene.MainRender.Gamma, 0.0, 5.0);
+		ImGui::SliderFloat("Exposure", &scene.MainRender.Exposure, 0.0, 5.0);
+		ImGui::End();
+
+		ImGui::Render();
+		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		window.Display();
 	}
 
 	delete gDevice;
 	delete Sphere;
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
 
 	return 0;
 }
