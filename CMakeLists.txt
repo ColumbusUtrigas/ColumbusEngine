@@ -16,7 +16,9 @@ file(GLOB SRC_RENDER_API_OPENGL ./RenderAPIOpenGL/*.cpp)
 file(GLOB SRC_SCENE ./Scene/*.cpp)
 file(GLOB SRC_SYSTEM ./System/*.cpp)
 
-set(SRC ${SRC_AUDIO} ${SRC_COMMON} ${SRC_CORE} ${SRC_GRAPHICS} ${SRC_INPUT} ${SRC_PHYSICS} ${SRC_RENDER_API} ${SRC_RENDER_API_OPENGL} ${SRC_SCENE} ${SRC_SYSTEM} main.cpp)
+file(GLOB IMGUI ./Lib/imgui/*.cpp ./Lib/imgui/examples/imgui_impl_sdl.cpp ./Lib/imgui/examples/imgui_impl_opengl3.cpp)
+
+set(SRC ${SRC_AUDIO} ${SRC_COMMON} ${SRC_CORE} ${SRC_GRAPHICS} ${SRC_INPUT} ${SRC_PHYSICS} ${SRC_RENDER_API} ${SRC_RENDER_API_OPENGL} ${SRC_SCENE} ${SRC_SYSTEM} ${IMGUI} main.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall -Wno-strict-aliasing -fsanitize=address")
 

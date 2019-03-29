@@ -19,7 +19,6 @@ namespace Columbus
 	class Scene
 	{
 	private:
-		std::map<uint32, SmartPointer<GameObject>> Objects;
 		std::map<uint32, SmartPointer<Texture>> Textures;
 		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 
@@ -43,6 +42,8 @@ namespace Columbus
 		float TimeFactor = 1.0f;
 
 		Renderer MainRender;
+
+		std::map<uint32, SmartPointer<GameObject>> Objects;
 	public:
 		Scene();
 

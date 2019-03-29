@@ -19,7 +19,7 @@ namespace Columbus
 		{
 			if (Source != nullptr)
 			{
-				Source->Position = Trans.GetPos();
+				Source->Position = Trans.Position;
 			}
 		}
 

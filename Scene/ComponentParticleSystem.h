@@ -18,7 +18,7 @@ namespace Columbus
 
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
-			Emitter.Position = Trans.GetPos();
+			Emitter.Position = Trans.Position;
 			Emitter.Update(TimeTick);
 		}
 

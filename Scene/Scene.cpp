@@ -67,18 +67,9 @@ namespace Columbus
 
 		if (Serializer != nullptr)
 		{
-			Vector3 Position;
-			Vector3 Rotation;
-			Vector3 Scale(1, 1, 1);
-
-			if (Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, Position, { "X", "Y", "Z" }) &&
-			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, Rotation, { "X", "Y", "Z" }) &&
-			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" }, Scale, { "X", "Y", "Z" }))
-			{
-				Trans.SetPos(Position);
-				Trans.SetRot(Rotation);
-				Trans.SetScale(Scale);
-			}
+			Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, Trans.Position, { "X", "Y", "Z" });
+			Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, Trans.Rotation, { "X", "Y", "Z" });
+			Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" },    Trans.Scale,    { "X", "Y", "Z" });
 		}
 
 		return Trans;
@@ -415,7 +406,7 @@ namespace Columbus
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
-			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.GetPos());
+			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.Position);
 			ComponentRigidbody* Rigidbody = SceneGameObjectLoadComponentRigidbody(Serializer, Element, transform, SceneGameObjectLoadComponentRigidbodyShape(Serializer, Element, Meshes));
 			ComponentAudioSource* AudioSource = SceneGameObjectLoadComponentAudioSource(Serializer, Element, Sounds);
 
