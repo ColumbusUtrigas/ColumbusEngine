@@ -124,6 +124,8 @@ namespace Columbus
 		void SetSystemCursor(SystemCursor Cursor);
 		void SetColoredCursor(const void* Pixels, uint32 Width, uint32 Height, uint32 BPP, const iVector2& Hot);
 
+		bool IsMouseCursorShowed() const;
+
 		void WarpMouse(const iVector2& aPos);
 
 		void SetKeyboardFocus(bool Focus);

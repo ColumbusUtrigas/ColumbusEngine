@@ -159,6 +159,15 @@ namespace Columbus
 				return true;
 				break;
 			}
+			//Special
+			case TextureFormat::R11G11B10F:
+			{
+				InternalFormat = GL_R11F_G11F_B10F;
+				PixelFormat = GL_RGB;
+				PixelType = GL_FLOAT;
+				return true;
+				break;
+			}
 			//Compressed
 			case TextureFormat::DXT1:
 			{

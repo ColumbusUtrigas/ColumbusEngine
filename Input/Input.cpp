@@ -21,7 +21,6 @@ namespace Columbus
 	void Input::ShowMouseCursor(bool Show)
 	{
 		MouseEnabled = Show;
-		SDL_ShowCursor(Show ? SDL_ENABLE : SDL_DISABLE);
 	}
 
 	void Input::SetCursor(Cursor InCursor)
@@ -107,6 +106,11 @@ namespace Columbus
 		SDL_Cursor* cursor = SDL_CreateColorCursor(surf, Hot.X, Hot.Y);
 		SDL_SetCursor(cursor);
 	}
+
+	bool Input::IsMouseCursorShowed() const
+	{
+		return MouseEnabled;
+	}
 	
 	void Input::WarpMouse(const iVector2& Pos)
 	{
@@ -132,7 +136,7 @@ namespace Columbus
 		memset(Keyboard.KeysDown, 0, sizeof(Keyboard.KeysDown));
 		memset(Keyboard.KeysUp, 0, sizeof(Keyboard.KeysUp));
 
-		for (int i = 0; i < DeviceMouse::MaxButtons; i++) Mouse.Buttons[i].State = SDL_GetMouseState(nullptr, nullptr) & i;
+		for (int i = 0; i < DeviceMouse::MaxButtons; i++) Mouse.Buttons[i].State = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(i)) != 0;
 		memset(Mouse.ButtonsDown, 0, sizeof(Mouse.ButtonsDown));
 		memset(Mouse.ButtonsUp, 0, sizeof(Mouse.ButtonsUp));
 
@@ -141,6 +145,8 @@ namespace Columbus
 
 		Mouse.PreviousPosition = Mouse.CurrentPosition;
 		Mouse.Wheel = { 0, 0 };
+
+		SDL_ShowCursor(MouseEnabled ? SDL_ENABLE : SDL_DISABLE);
 	}
 
 	void Input::SetKeyDown(uint32 Key)
