@@ -27,26 +27,23 @@ namespace Columbus
 				Log::Fatal("No display");
 			}
 
-			SDL_DisplayMode* DisplayModes = new SDL_DisplayMode[SDL_GetNumVideoDisplays()];
-
 			Log::Initialization("SDL2 initialized");
 			Log::Initialization("Current video driver: %s", SDL_GetCurrentVideoDriver());
 			Log::Initialization("Display count: %i", SDL_GetNumVideoDisplays());
 
 			for (int32 i = 0; i < SDL_GetNumVideoDisplays(); i++)
 			{
-				if (SDL_GetDesktopDisplayMode(i, &DisplayModes[i]) != 0)
+				SDL_DisplayMode DisplayMode;
+				if (SDL_GetDesktopDisplayMode(i, &DisplayMode) != 0)
 				{
 					Log::Fatal("Can't get display info (%i)", i + 1);
 				}
 				else
 				{
-					Log::Initialization("Display resolution (%i): %ix%i", i + 1, DisplayModes[i].w, DisplayModes[i].h);
-					Log::Initialization("Display refresh rate (%i): %i", i + 1, DisplayModes[i].refresh_rate);
+					Log::Initialization("Display resolution (%i): %ix%i", i + 1, DisplayMode.w, DisplayMode.h);
+					Log::Initialization("Display refresh rate (%i): %i", i + 1, DisplayMode.refresh_rate);
 				}
 			}
-
-			delete[] DisplayModes;
 		}
 	}
 	

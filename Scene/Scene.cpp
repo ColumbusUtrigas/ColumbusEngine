@@ -464,16 +464,10 @@ namespace Columbus
 
 		if (serializer.GetSubString({ "Defaults", "Skybox" }, path))
 		{
-			Image ReflImage;
-
-			if (ReflImage.Load(path.c_str()))
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(path.c_str()))
 			{
-				Texture* Refl = gDevice->CreateTexture();
-				Refl->Create(ReflImage.GetType(), Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
-				Refl->Load(ReflImage);
-
-				Sky = new Skybox(Refl);
-
+				Sky = new Skybox(Tex.Get());
 				Log::Success("Default skybox loaded: %s", path.c_str());
 			}
 		}

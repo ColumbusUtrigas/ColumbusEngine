@@ -84,8 +84,10 @@ namespace Columbus
 
 	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, uint32 VAO, uint32 IBO)
 	{
+		iVector2 Resolution(1024);
+
 		Cubemap = new TextureOpenGL();
-		Cubemap->CreateCube(Texture::Properties(2048, 2048, 0, TextureFormat::RGB16F));
+		Cubemap->CreateCube(Texture::Properties(Resolution.X, Resolution.Y, 0, TextureFormat::R11G11B10F));
 		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 
 		if (SkyboxCubemapGenerationShader == nullptr)
@@ -109,7 +111,7 @@ namespace Columbus
 		for (int i = 0; i < 6; i++)
 		{
 			Frame->SetTextureCube(Framebuffer::Attachment::Color0, Cubemap, i);
-			Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, { 2048, 2048 });
+			Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, Resolution);
 			SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);

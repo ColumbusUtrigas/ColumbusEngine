@@ -48,6 +48,8 @@ namespace Columbus
 		RGB32F,
 		RGBA32F,
 
+		R11G11B10F,
+
 		DXT1,
 		DXT3,
 		DXT5,
