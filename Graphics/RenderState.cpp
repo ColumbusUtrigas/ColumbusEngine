@@ -60,6 +60,18 @@ namespace Columbus
 		}
 	}
 
+	void RenderState::SetBlending(bool Blending)
+	{
+		if (Blending)
+		{
+			glEnable(GL_BLEND);
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+		}
+	}
+
 	void RenderState::SetDepthTesting(Material::DepthTest DepthTesting)
 	{
 		switch (DepthTesting)

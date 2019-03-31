@@ -158,7 +158,7 @@ namespace Columbus
 	
 	void WindowOpenGLSDL::Update()
 	{
-		if (Window && Open)
+		/*if (Window && Open)
 		{
 			SDL_GetWindowSize(Window, &Size.X, &Size.Y);
 
@@ -168,7 +168,7 @@ namespace Columbus
 
 				PollEvent(TmpEvent);
 			}
-		}
+		}*/
 	}
 	
 	void WindowOpenGLSDL::Clear(const Vector4& Color)
@@ -177,6 +177,7 @@ namespace Columbus
 		{
 			SDL_GL_MakeCurrent(Window, Context);
 			SDL_GL_SetSwapInterval(VSync ? 1 : 0);
+			SDL_GetWindowSize(Window, &Size.X, &Size.Y);
 			glClearColor(Color.X, Color.Y, Color.Z, Color.W);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glViewport(0, 0, GetSize().X, GetSize().Y);

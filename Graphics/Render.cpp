@@ -8,6 +8,8 @@
 #include <GL/glew.h>
 #include <algorithm>
 
+#include <Profiling/Profiling.h>
+
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 
 namespace Columbus
@@ -39,7 +41,7 @@ namespace Columbus
 		BaseEffect.DepthTextureEnablement = true;
 		BaseEffect.ColorTexturesMipmaps[0] = false;
 
-		BaseEffect.ColorTexturesFormats[0] = TextureFormat::RGBA16F;
+		BaseEffect.ColorTexturesFormats[0] = TextureFormat::RGB16F;
 
 		BloomBrightPass.ColorTexturesEnablement[0] = true;
 		BloomBrightPass.ColorTexturesMipmaps[0] = false;
@@ -119,13 +121,10 @@ namespace Columbus
 
 	void Renderer::CompileLists()
 	{
+		PROFILE_CPU(ProfileModule::Culling);
+
 		OpaqueObjects.clear();
 		TransparentObjects.clear();
-
-		ComponentMeshRenderer* MeshRenderer;
-		ComponentParticleSystem* ParticleSystem;
-
-		Mesh* Mesh;
 
 		Frustum ViewFrustum(MainCamera.GetViewProjection());
 
@@ -133,12 +132,12 @@ namespace Columbus
 		{
 			for (auto& Object : *RenderList)
 			{
-				MeshRenderer = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
-				ParticleSystem = static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
+				auto MeshRenderer = Object.second->GetComponent<ComponentMeshRenderer>();
+				auto ParticleSystem = Object.second->GetComponent<ComponentParticleSystem>();
 
 				if (MeshRenderer != nullptr)
 				{
-					Mesh = MeshRenderer->GetMesh();
+					auto Mesh = MeshRenderer->GetMesh();
 
 					if (Mesh != nullptr)
 					{
@@ -148,11 +147,11 @@ namespace Columbus
 
 							if (Object.second->GetMaterial().Transparent)
 							{
-								TransparentObjects.push_back(TransparentRenderData(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial()));
+								TransparentObjects.emplace_back(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial());
 							}
 							else
 							{
-								OpaqueObjects.push_back(OpaqueRenderData(Mesh, Object.second->GetTransform(), Object.second->GetMaterial()));
+								OpaqueObjects.emplace_back(Mesh, Object.second->GetTransform(), Object.second->GetMaterial());
 							}
 						}
 					}
@@ -164,7 +163,7 @@ namespace Columbus
 
 					if (Emitter != nullptr)
 					{
-						TransparentObjects.push_back(TransparentRenderData(nullptr, Emitter, Object.second->GetTransform(), Object.second->GetMaterial()));
+						TransparentObjects.emplace_back(nullptr, Emitter, Object.second->GetTransform(), Object.second->GetMaterial());
 					}
 				}
 			}
@@ -189,9 +188,11 @@ namespace Columbus
 
 	void Renderer::RenderOpaqueStage()
 	{
+		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
+
 		State.Clear();
 
-		glDisable(GL_BLEND);
+		State.SetBlending(false);
 
 		for (auto& Object : OpaqueObjects)
 		{
@@ -215,6 +216,8 @@ namespace Columbus
 
 	void Renderer::RenderSkyStage()
 	{
+		PROFILE_GPU(ProfileModuleGPU::SkyStage);
+
 		if (Sky != nullptr)
 		{
 			Sky->Render();
@@ -223,10 +226,12 @@ namespace Columbus
 
 	void Renderer::RenderTransparentStage()
 	{
+		PROFILE_GPU(ProfileModuleGPU::TransparentStage);
+
 		if (RenderList != nullptr && TransparentObjects.size() != 0)
 		{
 			State.Clear();
-			glEnable(GL_BLEND);
+			State.SetBlending(true);
 			glBlendEquation(GL_FUNC_ADD);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -308,6 +313,8 @@ namespace Columbus
 
 	void Renderer::RenderBloom()
 	{
+		PROFILE_GPU(ProfileModuleGPU::BloomStage);
+
 		static int BrightShaderTexture = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
 		static int BrightShaderTreshold = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("Treshold");
 
@@ -370,6 +377,8 @@ namespace Columbus
 
 	void Renderer::Render()
 	{
+		PROFILE_GPU(ProfileModuleGPU::GPU);
+
 		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
 		static int NoneShaderGamma = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Gamma");
 		static int NoneShaderExposure = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Exposure");
@@ -401,16 +410,21 @@ namespace Columbus
 		Vector2 Size = (Vector2)ViewportSize / (Vector2)ContextSize;
 		Vector2 Center = Size * 0.5f + Origin;
 
-		FinalPass.Bind({}, {}, ContextSize);
+		// Final stage
+		{
+			PROFILE_GPU(ProfileModuleGPU::FinalStage);
 
-		((ShaderProgramOpenGL*)NoneShader)->Bind();
-		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)Final, 0);
-		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
-		((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
-		//Quad.Render(Center * 2.0f - 1.0f, Size);
-		Quad.Render();
+			FinalPass.Bind({}, {}, ContextSize);
 
-		FinalPass.Unbind();
+			((ShaderProgramOpenGL*)NoneShader)->Bind();
+			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)Final, 0);
+			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
+			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
+			//Quad.Render(Center * 2.0f - 1.0f, Size);
+			Quad.Render();
+
+			FinalPass.Unbind();
+		}
 
 		// Lens flare rendering test, I will use it in the future
 

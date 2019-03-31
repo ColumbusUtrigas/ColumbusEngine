@@ -28,6 +28,7 @@ namespace Columbus
 		void Clear();
 
 		void SetCulling(Material::Cull Culling);
+		void SetBlending(bool Blending);
 		void SetDepthTesting(Material::DepthTest DepthTesting);
 		void SetDepthWriting(bool DepthWriting);
 		void SetMainCamera(const Camera& InMainCamera);

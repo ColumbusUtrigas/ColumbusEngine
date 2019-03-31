@@ -6,6 +6,7 @@
 #include <Graphics/OpenGL/TextureOpenGL.h>
 
 #include <Editor/Editor.h>
+#include <Profiling/Profiling.h>
 
 using namespace Columbus;
 
@@ -23,31 +24,6 @@ using namespace Columbus;
 		__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 	}
 #endif
-
-void DrawDebugWindow(const ImVec2& MainMenuSize, Scene& scene, float RedrawTime)
-{
-	float Framerate = 1.0f / RedrawTime;
-
-	ImVec4 TextColor(0.0, 1.0, 0.0, 1.0);
-	if (Framerate > 0.0f && Framerate < 60.0f)
-	{
-		InterpolationCurve<Vector3> Curve;
-		Curve.AddPoint(Vector3(1, 0, 0), 0.0f);
-		Curve.AddPoint(Vector3(0, 1, 0), 60.0f);
-		Vector3 Color = Curve.Interpolate(Framerate);
-		TextColor = ImVec4(Color.X, Color.Y, Color.Z, 1.0);
-	}
-
-	ImGui::SetNextWindowBgAlpha(0.4);
-	ImGui::SetNextWindowPos(ImVec2(0, MainMenuSize.y));
-	ImGui::Begin("Debug", nullptr, ImVec2(200, 120), -1.0f, ImGuiWindowFlags_NoDecoration);
-	ImGui::TextColored(TextColor, "Redraw time: %.1f ms", RedrawTime * 1000);
-	ImGui::Text("FPS:         %.1f", 1.0f / RedrawTime);
-	ImGui::Separator();
-	ImGui::Text("Rendered polygons: %i", scene.MainRender.GetPolygonsRendered());
-	ImGui::Text("Rendered objects:  %i", scene.MainRender.GetOpaqueObjectsRendered() + scene.MainRender.GetTransparentObjectsRendered());
-	ImGui::End();
-}
 
 int main(int argc, char** argv)
 {
@@ -87,12 +63,14 @@ int main(int argc, char** argv)
 
 	Editor Editor;
 
-	iVector2 SizeOfRenderWindow;
+	iVector2 SizeOfRenderWindow(1);
 
 	SDL_Event Event;
 
 	while (window.IsOpen())
 	{
+		ResetProfiling();
+		PROFILE_CPU(ProfileModule::CPU);
 		float RedrawTime = window.GetRedrawTime();
 
 		input.Update();
@@ -129,7 +107,6 @@ int main(int argc, char** argv)
 		camera.Perspective(60, (float)SizeOfRenderWindow.X / (float)SizeOfRenderWindow.Y, 0.1f, 1000);
 
 		VSync = input.GetKeyDown(SDL_SCANCODE_V) ? !VSync : VSync;
-		VSync = input.GetGamepadButtonDown(Input::GamepadButton::DPadDown) ? !VSync : VSync;
 		window.SetVSync(VSync);
 
 		if (Editor.PanelScene.IsHover())
@@ -158,16 +135,13 @@ int main(int argc, char** argv)
 
 			Vector2 deltaMouse = input.GetMouseMovement();
 			camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
-			window.SetMousePosition(window.GetSize() / 2);
-			input.SetMousePosition (window.GetSize() / 2);
+
+			iVector2 PosOfRenderWindow = Editor.PanelScene.GetPosition();
+			iVector2 MousePos = PosOfRenderWindow + (SizeOfRenderWindow / 2);
+
+			window.SetMousePosition(MousePos);
+			input.SetMousePosition (MousePos);
 		}
-
-		float SpeedMultiplier = input.GetGamepadAxis(Input::GamepadAxis::RTrigger) + 1;
-		scene.TimeFactor = 1.0f - input.GetGamepadAxis(Input::GamepadAxis::LTrigger);
-
-		camera.Pos += input.GetGamepadStick(Input::GamepadStick::Left).X * camera.Right() * RedrawTime * CameraSpeed * SpeedMultiplier;
-		camera.Pos -= input.GetGamepadStick(Input::GamepadStick::Left).Y * camera.Direction() * RedrawTime * CameraSpeed * SpeedMultiplier;
-		camera.Rot += Vector3(input.GetGamepadStick(Input::GamepadStick::Right).YX() * Vector2 { 1, -1 } * RedrawTime * 60, 0);
 
 		camera.Rot.Clamp({ -89.9f, -360.0f, -360.0f }, { 89.9f, 360.0f, 360.0f });
 		camera.Update();
