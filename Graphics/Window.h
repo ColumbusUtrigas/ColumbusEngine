@@ -3,6 +3,7 @@
 #include <Math/Vector2.h>
 #include <Math/Vector4.h>
 #include <System/Timer.h>
+#include <Input/Events.h>
 
 namespace Columbus
 {
@@ -39,6 +40,8 @@ namespace Columbus
 
 		virtual bool Create(const iVector2& InSize, const char* Title, Flags F) = 0;
 		virtual void Close() { Open = false; }
+
+		virtual void PollEvent(const Event& E) = 0;
 
 		virtual void Update() = 0;
 		virtual void Clear(const Vector4& Color) = 0;

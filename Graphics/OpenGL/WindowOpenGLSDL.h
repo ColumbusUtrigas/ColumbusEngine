@@ -29,7 +29,9 @@ namespace Columbus
 		virtual void Display() final override;
 
 		virtual void SetSize(const iVector2& Size) final override;
-		virtual void SetMousePosition(const iVector2& Pos) override;
+		virtual void SetMousePosition(const iVector2& Pos) final override;
+
+		virtual void PollEvent(const Event& E) final override;
 
 		void PollEvent(SDL_Event& Event);
 

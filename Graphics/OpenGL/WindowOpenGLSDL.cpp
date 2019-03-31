@@ -158,17 +158,7 @@ namespace Columbus
 	
 	void WindowOpenGLSDL::Update()
 	{
-		/*if (Window && Open)
-		{
-			SDL_GetWindowSize(Window, &Size.X, &Size.Y);
-
-			while (SDL_PollEvent(&TmpEvent))
-			{
-				if (TmpEvent.type == SDL_QUIT) Open = false;
-
-				PollEvent(TmpEvent);
-			}
-		}*/
+		
 	}
 	
 	void WindowOpenGLSDL::Clear(const Vector4& Color)
@@ -177,7 +167,6 @@ namespace Columbus
 		{
 			SDL_GL_MakeCurrent(Window, Context);
 			SDL_GL_SetSwapInterval(VSync ? 1 : 0);
-			SDL_GetWindowSize(Window, &Size.X, &Size.Y);
 			glClearColor(Color.X, Color.Y, Color.Z, Color.W);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glViewport(0, 0, GetSize().X, GetSize().Y);
@@ -239,6 +228,40 @@ namespace Columbus
 				case SDL_WINDOWEVENT_LEAVE:        MouseFocus = false; break;
 				case SDL_WINDOWEVENT_FOCUS_GAINED: KeyFocus = true;  break;
 				case SDL_WINDOWEVENT_FOCUS_LOST:   KeyFocus = false; break;
+				}
+			}
+		}
+	}
+
+	void WindowOpenGLSDL::PollEvent(const Event& E)
+	{
+		if (Window && Open)
+		{
+			if (Window == E.Window.Window)
+			{
+				switch (E.Window.Type)
+				{
+				case WindowEvent::Type_None: break;
+				case WindowEvent::Type_Close:
+					SDL_HideWindow(Window);
+					SDL_LockAudio();
+					Open = false;
+					break;
+				case WindowEvent::Type_Shown:  Shown = true;  break;
+				case WindowEvent::Type_Hidden: Shown = false; break;
+				case WindowEvent::Type_Minimized:
+					Minimized = true;
+					Maximized = false;
+					break;
+				case WindowEvent::Type_Maximized:
+					Minimized = false;
+					Maximized = true;
+					break;
+				case WindowEvent::Type_MouseEnter:        MouseFocus = true;  break;
+				case WindowEvent::Type_MouseLeave:        MouseFocus = false; break;
+				case WindowEvent::Type_KeyboardFocusGained: KeyFocus = true;  break;
+				case WindowEvent::Type_KeyboardFocusLost:   KeyFocus = false; break;
+				case WindowEvent::Type_Resize: Size = { E.Window.Data1, E.Window.Data2 }; break;
 				}
 			}
 		}

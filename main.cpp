@@ -8,6 +8,8 @@
 #include <Editor/Editor.h>
 #include <Profiling/Profiling.h>
 
+#include <Input/EventSystem.h>
+
 using namespace Columbus;
 
 #include <Lib/imgui/imgui.h>
@@ -29,8 +31,10 @@ int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window({ 640, 480 }, "Columbus Engine", Window::Flags::Resizable);
 	gDevice = new DeviceOpenGL();
+	gDevice->Initialize();
 	Scene scene;
 	Input input;
+	EventSystem eventSystem;
 	AudioListener Listener;
 	Camera camera;
 
@@ -65,39 +69,25 @@ int main(int argc, char** argv)
 
 	iVector2 SizeOfRenderWindow(1);
 
-	SDL_Event Event;
+	bool Running = true;
 
-	while (window.IsOpen())
+	eventSystem.QuitFunction = [&](const Event&) { Running = false; };
+	eventSystem.InputFunction = [&](const Event& E) { input.PollEvent(E); };
+	eventSystem.WindowFunction = [&](const Event& E) { window.PollEvent(E); };
+	eventSystem.RawFunction = [&](void* Raw) { ImGui_ImplSDL2_ProcessEvent((SDL_Event*)Raw); };
+
+	window.SetVSync(true);
+
+	while (Running && window.IsOpen())
 	{
+		input.Update();
+		eventSystem.Update();
+
+		if (!Running) break;
+
 		ResetProfiling();
 		PROFILE_CPU(ProfileModule::CPU);
 		float RedrawTime = window.GetRedrawTime();
-
-		input.Update();
-
-		bool Exit = false;
-
-		while (SDL_PollEvent(&Event))
-		{
-			switch (Event.type)
-			{
-			case SDL_QUIT: window.Close(); Exit = true; break;
-			case SDL_KEYDOWN: input.SetKeyDown(Event.key.keysym.scancode); break;
-			case SDL_KEYUP:   input.SetKeyUp  (Event.key.keysym.scancode); break;
-			case SDL_MOUSEMOTION: input.SetMousePosition({ Event.motion.x, Event.motion.y }); break;
-			case SDL_MOUSEBUTTONDOWN: input.SetMouseButtonDown(Event.button.button, Event.button.clicks); break;
-			case SDL_MOUSEBUTTONUP:   input.SetMouseButtonUp  (Event.button.button, Event.button.clicks); break;
-			case SDL_MOUSEWHEEL: input.SetMouseWheel({ Event.wheel.x, Event.wheel.y }); break;
-			case SDL_CONTROLLERAXISMOTION: input.SetGamepadAxis(Event.caxis.axis, (float)(Event.caxis.value) / 32768.0f); break;
-			case SDL_CONTROLLERBUTTONDOWN: input.SetGamepadButtonDown(Event.cbutton.button); break;
-			case SDL_CONTROLLERBUTTONUP:   input.SetGamepadButtonUp  (Event.cbutton.button); break;
-			}
-
-			ImGui_ImplSDL2_ProcessEvent(&Event);
-			window.PollEvent(Event);
-		}
-
-		if (Exit) break;
 
 		window.Clear({ 0.06f, 0.06f, 0.06f, 1 });
 
@@ -171,12 +161,12 @@ int main(int argc, char** argv)
 		window.Display();
 	}
 
-	delete gDevice;
-
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
-	SDL_Quit();
+
+	gDevice->Shutdown();
+	delete gDevice;
 
 	return 0;
 }

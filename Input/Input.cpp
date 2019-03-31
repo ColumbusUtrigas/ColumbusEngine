@@ -7,15 +7,6 @@ namespace Columbus
 	Input::Input()
 	{
 		Keyboard.KeyboardState = (uint8*)SDL_GetKeyboardState(&Keyboard.KeysNum);
-
-		for (int Joystick = 0; Joystick < SDL_NumJoysticks(); Joystick++)
-		{
-			if (SDL_IsGameController(Joystick))
-			{
-				Gamepad.Internal = SDL_GameControllerOpen(Joystick);
-				break;
-			}
-		}
 	}
 	
 	void Input::ShowMouseCursor(bool Show)
@@ -140,8 +131,11 @@ namespace Columbus
 		memset(Mouse.ButtonsDown, 0, sizeof(Mouse.ButtonsDown));
 		memset(Mouse.ButtonsUp, 0, sizeof(Mouse.ButtonsUp));
 
-		memset(Gamepad.ButtonsDown, 0, sizeof(Gamepad.ButtonsDown));
-		memset(Gamepad.ButtonsUp, 0, sizeof(Gamepad.ButtonsUp));
+		for (int i = 0; i < MaxGamepads; i++)
+		{
+			memset(Gamepads[i].ButtonsDown, 0, sizeof(Gamepads[i].ButtonsDown));
+			memset(Gamepads[i].ButtonsUp, 0, sizeof(Gamepads[i].ButtonsUp));
+		}
 
 		Mouse.PreviousPosition = Mouse.CurrentPosition;
 		Mouse.Wheel = { 0, 0 };
@@ -149,14 +143,145 @@ namespace Columbus
 		SDL_ShowCursor(MouseEnabled ? SDL_ENABLE : SDL_DISABLE);
 	}
 
-	void Input::SetKeyDown(uint32 Key)
+	void Input::PollEvent(const Event& E)
 	{
-		Keyboard.KeysDown[Key] = true;
-	}
+		switch (E.Type)
+		{
+		default: break;
+		case Event::Type_Key:
+			if (!E.Key.Repeat)
+			{
+				if ( E.Key.Pressed) Keyboard.KeysDown[E.Key.Code] = true;
+				if (!E.Key.Pressed) Keyboard.KeysUp  [E.Key.Code] = true;
+			}
+			break;
 
-	void Input::SetKeyUp(uint32 Key)
-	{
-		Keyboard.KeysUp[Key] = true;
+		case Event::Type_Mouse:
+			Mouse.CurrentPosition = { E.Mouse.X, E.Mouse.Y };
+			break;
+
+		case Event::Type_MouseButton:
+			if (E.MouseButton.Pressed)
+			{
+				Mouse.ButtonsDown[E.MouseButton.Code].State = true;
+				Mouse.ButtonsDown[E.MouseButton.Code].Clicks = E.MouseButton.Clicks;
+			} else
+			{
+				Mouse.ButtonsUp[E.MouseButton.Code].State = true;
+				Mouse.ButtonsUp[E.MouseButton.Code].Clicks = E.MouseButton.Clicks;
+			}
+			break;
+
+		case Event::Type_MouseWheel:
+			Mouse.Wheel = { E.MouseWheel.X, E.MouseWheel.Y };
+			break;
+
+		case Event::Type_ControllerAxis:
+		{
+			if (E.ControllerAxis.Controller != nullptr)
+			{
+				int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerAxis.Controller)));
+				if (Index != -1)
+				{
+					if (E.ControllerAxis.Controller == Gamepads[Index].Internal)
+					{
+						Gamepads[Index].Axes[E.ControllerAxis.Code] = E.ControllerAxis.Value;
+					}
+				}
+			}
+			break;
+		}
+
+		case Event::Type_ControllerButton:
+		{
+			if (E.ControllerButton.Controller != nullptr)
+			{
+				int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerButton.Controller)));
+				if (Index != -1)
+				{
+					if (E.ControllerButton.Controller == Gamepads[Index].Internal)
+					{
+						if (E.ControllerButton.Pressed)
+						{
+							Gamepads[Index].Buttons[E.ControllerButton.Code] = true;
+							Gamepads[Index].ButtonsDown[E.ControllerButton.Code] = true;
+						} else
+						{
+							Gamepads[Index].Buttons[E.ControllerButton.Code] = false;
+							Gamepads[Index].ButtonsUp[E.ControllerButton.Code] = true;
+						}
+					}
+				}
+			}
+
+			break;
+		}
+
+		case Event::Type_ControllerDevice:
+		{
+			switch (E.ControllerDevice.Type)
+			{
+			case ControllerDeviceEvent::Type_None: break;
+			case ControllerDeviceEvent::Type_Added:
+			{
+				const char* JName = SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerDevice.Controller));
+
+				if (E.ControllerDevice.Controller != nullptr && JName != nullptr)
+				{
+					// Check if controller is currently in the list
+					bool Exit = false;
+					for (int i = 0; i < MaxGamepads; i++)
+					{
+						if (Gamepads[i].Name != nullptr)
+						{
+							if (strcmp(Gamepads[i].Name, JName) == 0)
+							{
+								Exit = true;
+								break;
+							}
+						}
+					}
+					if (Exit) break;
+
+					int FreeID = -1;
+					for (int i = 0; i < MaxGamepads; i++)
+					{
+						if (Gamepads[i].Internal == nullptr)
+						{
+							FreeID = i;
+							break;
+						}
+					}
+
+					if (FreeID >= 0 && FreeID < MaxGamepads)
+					{
+						Gamepads[FreeID].Internal = E.ControllerDevice.Controller;
+						Gamepads[FreeID].Name = JName;
+					}
+				}
+
+				break;
+			}
+
+			case ControllerDeviceEvent::Type_Removed:
+			{
+				if (E.ControllerDevice.Controller != nullptr)
+				{
+					int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerDevice.Controller)));
+					if (Index != -1)
+					{
+						if (Gamepads[Index].Internal != nullptr)
+						{
+							Gamepads[Index] = DeviceGamepad();
+						}
+					}
+				}
+
+				break;
+			}
+			}
+		}
+		}
 	}
 
 	void Input::SetMousePosition(const iVector2& Position)
@@ -164,40 +289,6 @@ namespace Columbus
 		Mouse.CurrentPosition = Position;
 	}
 
-	void Input::SetMouseButtonDown(uint32 Button, uint8 Clicks)
-	{
-		Mouse.ButtonsDown[Button].State = true;
-		Mouse.ButtonsDown[Button].Clicks = Clicks;
-	}
-
-	void Input::SetMouseButtonUp(uint32 Button, uint8 Clicks)
-	{
-		Mouse.ButtonsUp[Button].State = true;
-		Mouse.ButtonsUp[Button].Clicks = Clicks;
-	}
-
-	void Input::SetMouseWheel(const iVector2& State)
-	{
-		Mouse.Wheel = State;
-	}
-
-	void Input::SetGamepadAxis(uint32 Axis, float Value)
-	{
-		Gamepad.Axes[Axis] = Value;
-	}
-
-	void Input::SetGamepadButtonDown(uint32 Button)
-	{
-		Gamepad.Buttons[Button] = true;
-		Gamepad.ButtonsDown[Button] = true;
-	}
-
-	void Input::SetGamepadButtonUp(uint32 Button)
-	{
-		Gamepad.Buttons[Button] = false;
-		Gamepad.ButtonsUp[Button] = true;
-	}
-	
 	bool Input::GetKey(uint32 Key) const
 	{
 		return Keyboard.Keys[Key] && KeyboardFocus;
@@ -243,43 +334,77 @@ namespace Columbus
 		return Mouse.Wheel;
 	}
 
-	float Input::GetGamepadAxis(GamepadAxis Axis) const
+	int Input::GetGamepadIndexByName(const char* Name) const
 	{
-		float Ax = Gamepad.Axes[static_cast<uint8>(Axis)];
+		for (int i = 0; i < MaxGamepads; i++)
+		{
+			if (Gamepads[i].Name != nullptr)
+			{
+				if (strcmp(Gamepads[i].Name, Name) == 0)
+				{
+					return i;
+				}
+			}
+		}
+
+		return -1;
+	}
+
+	bool Input::IsGamepadAttached(int Index) const
+	{
+		if (Index < 0 || Index >= MaxGamepads) return false;
+		if (Gamepads[Index].Internal == nullptr) return false;
+
+		//printf("suka\n");
+
+		return SDL_JoystickGetAttached(SDL_GameControllerGetJoystick((SDL_GameController*)Gamepads[Index].Internal)) == SDL_TRUE;
+	}
+
+	float Input::GetGamepadAxis(uint32 Index, GamepadAxis Axis) const
+	{
+		float Ax = Gamepads[Index].Axes[static_cast<uint8>(Axis)];
 		return fabs(Ax) > GamepadDead ? Ax : 0.0f;
 	}
 
-	Vector2 Input::GetGamepadStick(GamepadStick Stick) const
+	Vector2 Input::GetGamepadStick(uint32 Index, GamepadStick Stick) const
 	{
 		switch (Stick)
 		{
-		case GamepadStick::Left:  return { GetGamepadAxis(GamepadAxis::LStickX), GetGamepadAxis(GamepadAxis::LStickY) }; break;
-		case GamepadStick::Right: return { GetGamepadAxis(GamepadAxis::RStickX), GetGamepadAxis(GamepadAxis::RStickY) }; break;
+		case GamepadStick::Left:  return { GetGamepadAxis(Index, GamepadAxis::LStickX), GetGamepadAxis(Index, GamepadAxis::LStickY) }; break;
+		case GamepadStick::Right: return { GetGamepadAxis(Index, GamepadAxis::RStickX), GetGamepadAxis(Index, GamepadAxis::RStickY) }; break;
 		}
 
 		return {};
 	}
 
-	bool Input::GetGamepadButton(GamepadButton Button) const
+	bool Input::GetGamepadButton(uint32 Index, GamepadButton Button) const
 	{
-		return Gamepad.Buttons[static_cast<uint8>(Button)];
+		return Gamepads[Index].Buttons[static_cast<uint8>(Button)];
 	}
 
-	bool Input::GetGamepadButtonDown(GamepadButton Button) const
+	bool Input::GetGamepadButtonDown(uint32 Index, GamepadButton Button) const
 	{
-		return Gamepad.ButtonsDown[static_cast<uint8>(Button)];
+		return Gamepads[Index].ButtonsDown[static_cast<uint8>(Button)];
 	}
 
-	bool Input::GetGamepadButtonUp(GamepadButton Button) const
+	bool Input::GetGamepadButtonUp(uint32 Index, GamepadButton Button) const
 	{
-		return Gamepad.ButtonsUp[static_cast<uint8>(Button)];
+		return Gamepads[Index].ButtonsUp[static_cast<uint8>(Button)];
+	}
+
+	const char* Input::GetGamepadName(uint32 Index) const
+	{
+		return Gamepads[Index].Name;
 	}
 	
 	Input::~Input()
 	{
-		if (Gamepad.Internal != nullptr)
+		for (int i = 0; i < MaxGamepads; i++)
 		{
-			SDL_GameControllerClose((SDL_GameController*)Gamepad.Internal);
+			if (Gamepads[i].Internal != nullptr)
+			{
+				SDL_GameControllerClose((SDL_GameController*)Gamepads[i].Internal);
+			}
 		}
 	}
 

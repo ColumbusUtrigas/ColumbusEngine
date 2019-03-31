@@ -32,6 +32,18 @@ namespace Columbus
 		virtual ~ShaderProgram() {}
 	};
 
+	struct DefaultShaders
+	{
+		ShaderProgram* Skybox = nullptr;
+		ShaderProgram* SkyboxCubemapGeneration = nullptr;
+		ShaderProgram* IrradianceGeneration = nullptr;
+		ShaderProgram* PrefilterGeneration = nullptr;
+		ShaderProgram* IntegrationGeneration = nullptr;
+
+		DefaultShaders();
+		~DefaultShaders();
+	};
+
 }
 
 
