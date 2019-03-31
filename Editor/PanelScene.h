@@ -11,6 +11,7 @@ namespace Columbus
 	{
 	private:
 		Texture* FramebufferTexture = nullptr;
+		iVector2 Position;
 		iVector2 SizeOfRenderWindow;
 		bool Stats = false;
 		bool Selected = false;
@@ -21,6 +22,11 @@ namespace Columbus
 		void SetFramebufferTexture(Texture* Tex)
 		{
 			FramebufferTexture = Tex;
+		}
+
+		iVector2 GetPosition() const
+		{
+			return Position;
 		}
 
 		iVector2 GetSize() const

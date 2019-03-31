@@ -11,7 +11,7 @@ namespace Columbus
 	{
 		if (Opened)
 		{
-			if (ImGui::Begin(Name.c_str(), &Opened))
+			if (ImGui::Begin(Name.c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				if (Inspectable != nullptr)
 				{

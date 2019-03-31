@@ -1,5 +1,6 @@
 #include <Graphics/Particles/ParticleEmitterCPU.h>
 #include <Core/Platform/Platform.h>
+#include <Profiling/Profiling.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 	#include <intrin.h>
@@ -27,6 +28,8 @@ namespace Columbus
 
 	void ParticleEmitterCPU::Update(float TimeTick)
 	{
+		PROFILE_CPU(ProfileModule::Particles);
+
 		if (PreviousMaxParticles != MaxParticles)
 		{
 			PreviousMaxParticles = MaxParticles;

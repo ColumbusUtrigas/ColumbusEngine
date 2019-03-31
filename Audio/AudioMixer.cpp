@@ -1,5 +1,6 @@
 #include <Audio/AudioMixer.h>
 #include <Common/Sound/Sound.h>
+#include <Profiling/Profiling.h>
 #include <cstring>
 
 namespace Columbus
@@ -57,6 +58,8 @@ namespace Columbus
 
 	void AudioMixer::Update(Sound::Frame* Frames, uint32 Count)
 	{
+		PROFILE_CPU(ProfileModule::Audio);
+
 		if (!BufferInitialized)
 		{
 			Data = new Sound::Frame[Count];

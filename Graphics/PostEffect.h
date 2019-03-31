@@ -23,16 +23,21 @@ namespace Columbus
 
 		bool DepthTextureEnablement = false;
 		bool DepthTextureMipmaps = false;
+		Texture::Flags DepthTextureFlags;
 
 		Texture* ColorTextures[TexturesCount];
 		bool ColorTexturesEnablement[TexturesCount];
 		bool ColorTexturesMipmaps[TexturesCount];
 		TextureFormat ColorTexturesFormats[TexturesCount];
+		Texture::Flags ColorTextureFlags[TexturesCount];
 	public:
 		PostEffect()
 		{
+			Texture::Flags Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Clamp);
+
 			FB = gDevice->CreateFramebuffer();
 			DepthTexture = nullptr;
+			DepthTextureFlags = Flags;
 
 			for (int i = 0; i < TexturesCount; i++)
 			{
@@ -40,6 +45,7 @@ namespace Columbus
 				ColorTexturesEnablement[i] = false;
 				ColorTexturesMipmaps[i] = false;
 				ColorTexturesFormats[i] = TextureFormat::RGBA8;
+				ColorTextureFlags[i] = Flags;
 			}
 		}
 
@@ -51,8 +57,6 @@ namespace Columbus
 			  Framebuffer::Attachment::Color2,
 			  Framebuffer::Attachment::Color3 };
 
-			Texture::Flags Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat);
-
 			for (int i = 0; i < TexturesCount; i++)
 			{
 				if (ColorTexturesEnablement[i])
@@ -63,7 +67,7 @@ namespace Columbus
 					}
 
 					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
-					ColorTextures[i]->SetFlags(Flags);
+					ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
 					FB->SetTexture2D(Attachments[i], ColorTextures[i]);
 				}
 			}
@@ -76,7 +80,7 @@ namespace Columbus
 				}
 
 				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, TextureFormat::Depth24));
-				DepthTexture->SetFlags(Flags);
+				DepthTexture->SetFlags(DepthTextureFlags);
 				FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
 			}
 
