@@ -2,6 +2,7 @@
 
 #include <Math/Vector2.h>
 #include <Common/Cursor/Cursor.h>
+#include <Input/Events.h>
 
 namespace Columbus
 {
@@ -28,7 +29,7 @@ namespace Columbus
 		struct MouseButton
 		{
 			bool State = false;
-			uint8 Clicks = 0;
+			uint32 Clicks = 0;
 		};
 
 		enum class GamepadAxis : uint8
@@ -103,6 +104,8 @@ namespace Columbus
 			bool ButtonsDown[MaxButtons] = { false };
 			bool ButtonsUp[MaxButtons] = { false };
 			void* Internal = nullptr;
+
+			const char* Name = nullptr;
 		};
 	private:
 		static constexpr int MaxGamepads = 4;
@@ -110,7 +113,7 @@ namespace Columbus
 
 		DeviceKeyboard Keyboard;
 		DeviceMouse Mouse;
-		DeviceGamepad Gamepad;
+		DeviceGamepad Gamepads[MaxGamepads];
 
 		bool MouseEnabled = true;
 		bool KeyboardFocus;
@@ -130,18 +133,10 @@ namespace Columbus
 
 		void SetKeyboardFocus(bool Focus);
 		void SetMouseFocus(bool Focus);
+		void SetMousePosition(const iVector2& Position);
 
 		void Update();
-
-		void SetKeyDown(uint32 Key);
-		void SetKeyUp(uint32 Key);
-		void SetMousePosition(const iVector2& Position);
-		void SetMouseButtonDown(uint32 Button, uint8 Clicks);
-		void SetMouseButtonUp(uint32 Button, uint8 Clicks);
-		void SetMouseWheel(const iVector2& State);
-		void SetGamepadAxis(uint32, float Value);
-		void SetGamepadButtonDown(uint32 Button);
-		void SetGamepadButtonUp(uint32 Button);
+		void PollEvent(const Event& E);
 
 		bool GetKey(uint32 Key) const;
 		bool GetKeyDown(uint32 Key) const;
@@ -155,11 +150,15 @@ namespace Columbus
 		iVector2 GetMouseMovement() const;
 		iVector2 GetMouseWheel() const;
 
-		float GetGamepadAxis(GamepadAxis Axis) const;
-		Vector2 GetGamepadStick(GamepadStick Stick) const;
-		bool GetGamepadButton(GamepadButton Button) const;
-		bool GetGamepadButtonDown(GamepadButton Button) const;
-		bool GetGamepadButtonUp(GamepadButton Button) const;
+		int GetGamepadIndexByName(const char* Name) const;
+		bool IsGamepadAttached(int Index) const;
+
+		float GetGamepadAxis(uint32 Index, GamepadAxis Axis) const;
+		Vector2 GetGamepadStick(uint32 Index, GamepadStick Stick) const;
+		bool GetGamepadButton(uint32 Index, GamepadButton Button) const;
+		bool GetGamepadButtonDown(uint32 Index, GamepadButton Button) const;
+		bool GetGamepadButtonUp(uint32 Index, GamepadButton Button) const;
+		const char* GetGamepadName(uint32 Index) const;
 
 		~Input();
 	};

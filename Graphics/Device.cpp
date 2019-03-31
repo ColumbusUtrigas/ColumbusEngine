@@ -7,6 +7,16 @@ namespace Columbus
 
 	Device::Device() {}
 
+	void Device::Initialize()
+	{
+		gDefaultShaders = new DefaultShaders();
+	}
+
+	void Device::Shutdown()
+	{
+		delete gDefaultShaders;
+	}
+
 	ShaderProgram* Device::CreateShaderProgram() const
 	{
 		return new ShaderProgram();
@@ -30,12 +40,5 @@ namespace Columbus
 	Device::~Device() {}
 
 }
-
-
-
-
-
-
-
 
 

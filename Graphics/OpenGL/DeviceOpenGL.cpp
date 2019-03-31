@@ -9,7 +9,7 @@ namespace Columbus
 
 	DeviceOpenGL::DeviceOpenGL()
 	{
-
+		
 	}
 
 	ShaderProgram* DeviceOpenGL::CreateShaderProgram() const
