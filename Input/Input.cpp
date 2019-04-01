@@ -4,10 +4,7 @@
 namespace Columbus
 {
 
-	Input::Input()
-	{
-		Keyboard.KeyboardState = (uint8*)SDL_GetKeyboardState(&Keyboard.KeysNum);
-	}
+	Input::Input() {}
 	
 	void Input::ShowMouseCursor(bool Show)
 	{
@@ -123,11 +120,9 @@ namespace Columbus
 	{
 		SDL_PumpEvents();
 
-		for (int i = 0; i < Keyboard.KeysNum && i < DeviceKeyboard::MaxKeys; i++) Keyboard.Keys[i] = Keyboard.KeyboardState[i] != 0;
 		memset(Keyboard.KeysDown, 0, sizeof(Keyboard.KeysDown));
 		memset(Keyboard.KeysUp, 0, sizeof(Keyboard.KeysUp));
 
-		for (int i = 0; i < DeviceMouse::MaxButtons; i++) Mouse.Buttons[i].State = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(i)) != 0;
 		memset(Mouse.ButtonsDown, 0, sizeof(Mouse.ButtonsDown));
 		memset(Mouse.ButtonsUp, 0, sizeof(Mouse.ButtonsUp));
 
@@ -143,144 +138,157 @@ namespace Columbus
 		SDL_ShowCursor(MouseEnabled ? SDL_ENABLE : SDL_DISABLE);
 	}
 
+	void Input::PollKeyEvent(const KeyEvent& E)
+	{
+		if (E.Repeat)
+		{
+			Keyboard.KeysRepeated[E.Code] = E.Pressed;
+		} else
+		{
+			Keyboard.Keys[E.Code] = E.Pressed;
+			Keyboard.KeysRepeated[E.Code] = false;
+
+			if ( E.Pressed) Keyboard.KeysDown[E.Code] = true;
+			if (!E.Pressed) Keyboard.KeysUp  [E.Code] = true;
+		} 
+	}
+
+	void Input::PollMouseEvent(const MouseEvent& E)
+	{
+		Mouse.CurrentPosition = { E.X, E.Y };
+	}
+
+	void Input::PollMouseButtonEvent(const MouseButtonEvent& E)
+	{
+		Mouse.Buttons[E.Code].State = E.Pressed;
+
+		if (E.Pressed)
+		{
+			Mouse.ButtonsDown[E.Code].State = true;
+			Mouse.ButtonsDown[E.Code].Clicks = E.Clicks;
+		} else
+		{
+			Mouse.ButtonsUp[E.Code].State = true;
+			Mouse.ButtonsUp[E.Code].Clicks = E.Clicks;
+		}
+	}
+
+	void Input::PollMouseWheelEvent(const MouseWheelEvent& E)
+	{
+		Mouse.Wheel = { E.X, E.Y };
+	}
+
+	void Input::PollControllerAxisEvent(const ControllerAxisEvent& E)
+	{
+		if (E.Controller != nullptr)
+		{
+			int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.Controller)));
+			if (Index != -1)
+			{
+				if (E.Controller == Gamepads[Index].Internal)
+				{
+					Gamepads[Index].Axes[E.Code] = E.Value;
+				}
+			}
+		}
+	}
+
+	void Input::PollControllerButtonEvent(const ControllerButtonEvent& E)
+	{
+		if (E.Controller != nullptr)
+		{
+			int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.Controller)));
+			if (Index != -1)
+			{
+				if (E.Controller == Gamepads[Index].Internal)
+				{
+					if (E.Pressed)
+					{
+						Gamepads[Index].Buttons[E.Code] = true;
+						Gamepads[Index].ButtonsDown[E.Code] = true;
+					} else
+					{
+						Gamepads[Index].Buttons[E.Code] = false;
+						Gamepads[Index].ButtonsUp[E.Code] = true;
+					}
+				}
+			}
+		}
+	}
+
+	void Input::ControllerAdded(const ControllerDeviceEvent& E)
+	{
+		const char* JName = SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.Controller));
+
+		if (E.Controller != nullptr && JName != nullptr)
+		{
+			// Check if controller is currently in the list
+			for (int i = 0; i < MaxGamepads; i++)
+			{
+				if (Gamepads[i].Name != nullptr)
+				{
+					if (strcmp(Gamepads[i].Name, JName) == 0)
+					{
+						return;
+					}
+				}
+			}
+
+			int FreeID = -1;
+			for (int i = 0; i < MaxGamepads; i++)
+			{
+				if (Gamepads[i].Internal == nullptr)
+				{
+					FreeID = i;
+					break;
+				}
+			}
+
+			if (FreeID >= 0 && FreeID < MaxGamepads)
+			{
+				Gamepads[FreeID].Internal = E.Controller;
+				Gamepads[FreeID].Name = JName;
+			}
+		}
+	}
+
+	void Input::ControllerRemoved(const ControllerDeviceEvent& E)
+	{
+		if (E.Controller != nullptr)
+		{
+			int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.Controller)));
+			if (Index != -1)
+			{
+				if (Gamepads[Index].Internal != nullptr)
+				{
+					Gamepads[Index] = DeviceGamepad();
+				}
+			}
+		}
+	}
+
+	void Input::PollControllerDeviceEvent(const ControllerDeviceEvent& E)
+	{
+		switch (E.Type)
+		{
+		case ControllerDeviceEvent::Type_None: break;
+		case ControllerDeviceEvent::Type_Added: ControllerAdded(E); break;
+		case ControllerDeviceEvent::Type_Removed: ControllerRemoved(E); break;
+		}
+	}
+
 	void Input::PollEvent(const Event& E)
 	{
 		switch (E.Type)
 		{
 		default: break;
-		case Event::Type_Key:
-			if (!E.Key.Repeat)
-			{
-				if ( E.Key.Pressed) Keyboard.KeysDown[E.Key.Code] = true;
-				if (!E.Key.Pressed) Keyboard.KeysUp  [E.Key.Code] = true;
-			}
-			break;
-
-		case Event::Type_Mouse:
-			Mouse.CurrentPosition = { E.Mouse.X, E.Mouse.Y };
-			break;
-
-		case Event::Type_MouseButton:
-			if (E.MouseButton.Pressed)
-			{
-				Mouse.ButtonsDown[E.MouseButton.Code].State = true;
-				Mouse.ButtonsDown[E.MouseButton.Code].Clicks = E.MouseButton.Clicks;
-			} else
-			{
-				Mouse.ButtonsUp[E.MouseButton.Code].State = true;
-				Mouse.ButtonsUp[E.MouseButton.Code].Clicks = E.MouseButton.Clicks;
-			}
-			break;
-
-		case Event::Type_MouseWheel:
-			Mouse.Wheel = { E.MouseWheel.X, E.MouseWheel.Y };
-			break;
-
-		case Event::Type_ControllerAxis:
-		{
-			if (E.ControllerAxis.Controller != nullptr)
-			{
-				int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerAxis.Controller)));
-				if (Index != -1)
-				{
-					if (E.ControllerAxis.Controller == Gamepads[Index].Internal)
-					{
-						Gamepads[Index].Axes[E.ControllerAxis.Code] = E.ControllerAxis.Value;
-					}
-				}
-			}
-			break;
-		}
-
-		case Event::Type_ControllerButton:
-		{
-			if (E.ControllerButton.Controller != nullptr)
-			{
-				int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerButton.Controller)));
-				if (Index != -1)
-				{
-					if (E.ControllerButton.Controller == Gamepads[Index].Internal)
-					{
-						if (E.ControllerButton.Pressed)
-						{
-							Gamepads[Index].Buttons[E.ControllerButton.Code] = true;
-							Gamepads[Index].ButtonsDown[E.ControllerButton.Code] = true;
-						} else
-						{
-							Gamepads[Index].Buttons[E.ControllerButton.Code] = false;
-							Gamepads[Index].ButtonsUp[E.ControllerButton.Code] = true;
-						}
-					}
-				}
-			}
-
-			break;
-		}
-
-		case Event::Type_ControllerDevice:
-		{
-			switch (E.ControllerDevice.Type)
-			{
-			case ControllerDeviceEvent::Type_None: break;
-			case ControllerDeviceEvent::Type_Added:
-			{
-				const char* JName = SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerDevice.Controller));
-
-				if (E.ControllerDevice.Controller != nullptr && JName != nullptr)
-				{
-					// Check if controller is currently in the list
-					bool Exit = false;
-					for (int i = 0; i < MaxGamepads; i++)
-					{
-						if (Gamepads[i].Name != nullptr)
-						{
-							if (strcmp(Gamepads[i].Name, JName) == 0)
-							{
-								Exit = true;
-								break;
-							}
-						}
-					}
-					if (Exit) break;
-
-					int FreeID = -1;
-					for (int i = 0; i < MaxGamepads; i++)
-					{
-						if (Gamepads[i].Internal == nullptr)
-						{
-							FreeID = i;
-							break;
-						}
-					}
-
-					if (FreeID >= 0 && FreeID < MaxGamepads)
-					{
-						Gamepads[FreeID].Internal = E.ControllerDevice.Controller;
-						Gamepads[FreeID].Name = JName;
-					}
-				}
-
-				break;
-			}
-
-			case ControllerDeviceEvent::Type_Removed:
-			{
-				if (E.ControllerDevice.Controller != nullptr)
-				{
-					int Index = GetGamepadIndexByName(SDL_JoystickName(SDL_GameControllerGetJoystick((SDL_GameController*)E.ControllerDevice.Controller)));
-					if (Index != -1)
-					{
-						if (Gamepads[Index].Internal != nullptr)
-						{
-							Gamepads[Index] = DeviceGamepad();
-						}
-					}
-				}
-
-				break;
-			}
-			}
-		}
+		case Event::Type_Key: PollKeyEvent(E.Key); break;
+		case Event::Type_Mouse: PollMouseEvent(E.Mouse); break;
+		case Event::Type_MouseButton: PollMouseButtonEvent(E.MouseButton); break;
+		case Event::Type_MouseWheel: PollMouseWheelEvent(E.MouseWheel); break;
+		case Event::Type_ControllerAxis: PollControllerAxisEvent(E.ControllerAxis); break;
+		case Event::Type_ControllerButton: PollControllerButtonEvent(E.ControllerButton); break;
+		case Event::Type_ControllerDevice: PollControllerDeviceEvent(E.ControllerDevice); break;
 		}
 	}
 
@@ -289,9 +297,9 @@ namespace Columbus
 		Mouse.CurrentPosition = Position;
 	}
 
-	bool Input::GetKey(uint32 Key) const
+	bool Input::GetKey(uint32 Key, bool Repeat) const
 	{
-		return Keyboard.Keys[Key] && KeyboardFocus;
+		return (Repeat ? Keyboard.KeysRepeated[Key] : Keyboard.Keys[Key]) && KeyboardFocus;
 	}
 	
 	bool Input::GetKeyDown(uint32 Key) const
@@ -354,8 +362,6 @@ namespace Columbus
 	{
 		if (Index < 0 || Index >= MaxGamepads) return false;
 		if (Gamepads[Index].Internal == nullptr) return false;
-
-		//printf("suka\n");
 
 		return SDL_JoystickGetAttached(SDL_GameControllerGetJoystick((SDL_GameController*)Gamepads[Index].Internal)) == SDL_TRUE;
 	}

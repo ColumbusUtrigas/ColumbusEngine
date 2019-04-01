@@ -73,12 +73,10 @@ namespace Columbus
 		{
 			static constexpr int MaxKeys = 512;
 
-			uint8* KeyboardState = nullptr;
-			int KeysNum = 0;
-
-			bool Keys[MaxKeys];
-			bool KeysDown[MaxKeys];
-			bool KeysUp[MaxKeys];
+			bool Keys[MaxKeys] = { false };
+			bool KeysRepeated[MaxKeys] = { false };
+			bool KeysDown[MaxKeys] = { false };
+			bool KeysUp[MaxKeys] = { false };
 		};
 
 		struct DeviceMouse
@@ -107,6 +105,17 @@ namespace Columbus
 
 			const char* Name = nullptr;
 		};
+	private:
+		void ControllerAdded(const ControllerDeviceEvent& E);
+		void ControllerRemoved(const ControllerDeviceEvent& E);
+
+		void PollKeyEvent(const KeyEvent& E);
+		void PollMouseEvent(const MouseEvent& E);
+		void PollMouseButtonEvent(const MouseButtonEvent& E);
+		void PollMouseWheelEvent(const MouseWheelEvent& E);
+		void PollControllerAxisEvent(const ControllerAxisEvent& E);
+		void PollControllerButtonEvent(const ControllerButtonEvent& E);
+		void PollControllerDeviceEvent(const ControllerDeviceEvent& E);
 	private:
 		static constexpr int MaxGamepads = 4;
 		static constexpr float GamepadDead = 0.05f;
@@ -138,7 +147,7 @@ namespace Columbus
 		void Update();
 		void PollEvent(const Event& E);
 
-		bool GetKey(uint32 Key) const;
+		bool GetKey(uint32 Key, bool Repeat = false) const;
 		bool GetKeyDown(uint32 Key) const;
 		bool GetKeyUp(uint32 Key) const;
 
