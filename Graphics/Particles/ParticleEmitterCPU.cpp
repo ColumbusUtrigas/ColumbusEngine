@@ -2,9 +2,9 @@
 #include <Core/Platform/Platform.h>
 #include <Profiling/Profiling.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(PLATFORM_WINDOWS)
 	#include <intrin.h>
-#elif defined(__unix)
+#elif defined(PLATFORM_LINUX)
 	#include <x86intrin.h>
 #endif
 
