@@ -4,7 +4,7 @@
 #include <utility>
 #include <cstring>
 
-#if defined(COLUMBUS_PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
 	#define FSeek64 _fseeki64
 	#define FTell64 _ftelli64
 #else
