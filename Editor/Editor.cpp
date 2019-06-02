@@ -81,6 +81,7 @@ namespace Columbus
 			if (ImGui::BeginMenu("View"))
 			{
 				ImGui::MenuItem("Scene", nullptr, &PanelScene.Opened);
+				ImGui::MenuItem("Hierarchy", nullptr, &PanelHierarchy.Opened);
 				ImGui::MenuItem("Render Settings", nullptr, &PanelRenderSettings.Opened);
 				ImGui::MenuItem("Inspector", nullptr, &PanelInspector.Opened);
 				ImGui::MenuItem("Profiler", nullptr, &PanelProfiler.Opened);
@@ -130,12 +131,14 @@ namespace Columbus
 		DrawDockSpace(scene);
 
 		PanelScene.SetFramebufferTexture(scene.MainRender.GetFramebufferTexture());
+		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
 		PanelRenderSettings.SetRenderer(&scene.MainRender);
-		PanelInspector.SetInspectableObject(scene.GetGameObject("Hercules"));
+		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
 		PanelScene.Draw();
+		PanelHierarchy.Draw();
 		PanelRenderSettings.Draw();
 		PanelInspector.Draw();
 		PanelProfiler.Draw();
