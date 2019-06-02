@@ -2,6 +2,7 @@
 
 #include <Scene/Scene.h>
 #include <Editor/PanelScene.h>
+#include <Editor/PanelHierarchy.h>
 #include <Editor/PanelRenderSettings.h>
 #include <Editor/PanelInspector.h>
 #include <Editor/PanelProfiler.h>
@@ -19,6 +20,7 @@ namespace Columbus
 		void DrawDockSpace(Scene& scene);
 	public:
 		EditorPanelScene PanelScene;
+		EditorPanelHierarchy PanelHierarchy;
 		EditorPanelRenderSettings PanelRenderSettings;
 		EditorPanelInspector PanelInspector;
 		EditorPanelProfiler PanelProfiler;

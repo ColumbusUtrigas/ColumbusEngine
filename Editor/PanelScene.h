@@ -39,7 +39,7 @@ namespace Columbus
 
 		virtual void Draw() final override;
 
-		virtual ~EditorPanelScene() {}
+		virtual ~EditorPanelScene() final override {}
 	};
 
 }

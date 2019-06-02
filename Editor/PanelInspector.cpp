@@ -1,5 +1,6 @@
 #include <Editor/PanelInspector.h>
 #include <Lib/imgui/imgui.h>
+#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 
 namespace Columbus
 {
@@ -15,7 +16,7 @@ namespace Columbus
 			{
 				if (Inspectable != nullptr)
 				{
-					ImGui::Text(Inspectable->Name.c_str());
+					ImGui::InputText(" ", &Inspectable->Name);
 					ImGui::Separator();
 
 					if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
