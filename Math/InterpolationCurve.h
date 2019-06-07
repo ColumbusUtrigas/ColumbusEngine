@@ -1,6 +1,8 @@
 #pragma once
 
 #include <map>
+#include <vector>
+#include <algorithm>
 
 namespace Columbus
 {
@@ -8,14 +10,26 @@ namespace Columbus
 	template <typename PointType>
 	class InterpolationCurve
 	{
-	private:
-		std::map<float, PointType> Points;
+	public:
+		std::vector<std::pair<float, PointType>> Points;
 	public:
 		InterpolationCurve() {}
 
 		void AddPoint(PointType Point, float Position)
 		{
-			Points[Position] = Point;
+			Points.emplace_back(Position, Point);
+			Sort();
+		}
+
+		void RemovePoint(size_t Point)
+		{
+			Points.erase(Points.begin() + Point);
+		}
+
+		void Sort()
+		{
+			std::sort(Points.begin(), Points.end(), [](const auto& a, const auto& b)
+				{ return a.first < b.first; });
 		}
 		/*
 		* Interpolate curve
@@ -65,21 +79,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

@@ -30,7 +30,7 @@ namespace Columbus
 	{
 		PROFILE_CPU(ProfileModule::Particles);
 
-		if (PreviousMaxParticles != MaxParticles)
+		if (MaxParticles > PreviousMaxParticles)
 		{
 			PreviousMaxParticles = MaxParticles;
 			Particles.Allocate(MaxParticles);

@@ -22,6 +22,11 @@ namespace Columbus
 			Emitter.Update(TimeTick);
 		}
 
+		ParticleEmitterCPU& GetEmitter()
+		{
+			return Emitter;
+		}
+
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::ParticleSystem; }
 
