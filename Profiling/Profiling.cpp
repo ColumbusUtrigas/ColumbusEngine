@@ -67,7 +67,18 @@ namespace Columbus
 
 	void ResetProfiling()
 	{
-		CPU.ParticlesTime = 0.0f;
+		//CPU.CPUTime = 0.0;
+		//CPU.AudioTime = 0.0;
+		CPU.PhysicsTime = 0.0;
+		CPU.ParticlesTime = 0.0;
+		CPU.CullingTime = 0.0;
+
+		GPU.GPUTime = 0.0;
+		GPU.OpaqueStageTime = 0.0;
+		GPU.SkyStageTime = 0.0;
+		GPU.TransparentStageTime = 0.0;
+		GPU.BloomStageTime = 0.0;
+		GPU.FinalStageTime = 0.0;
 	}
 
 	double GetProfileTime(ProfileModule Module)

@@ -19,6 +19,8 @@ namespace Columbus
 	class Scene
 	{
 	private:
+		friend class Editor;
+
 		std::map<uint32, SmartPointer<Texture>> Textures;
 		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 
@@ -52,6 +54,22 @@ namespace Columbus
 		void Add(uint32 ID, GameObject&& InObject)
 		{
 			Objects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
+		}
+
+		void AddEmpty()
+		{
+			GameObject GO;
+			std::string Name = "Object ";
+			for (uint32 i = 0;; i++)
+			{
+				if (GetGameObject(Name + std::to_string(i)) == nullptr)
+				{
+					Name += std::to_string(i);
+					break;
+				}
+			}
+			GO.Name = Name;
+			Add(Objects.size(), std::move(GO));
 		}
 
 		void SetSkybox(Skybox* InSky) { Sky = InSky; }

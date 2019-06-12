@@ -26,14 +26,8 @@
 
 		<Shaders>
 			<Count>2</Count>
-
-			<Shader0>
-				<Program>Data/Shaders/Standart.glsl</Program>
-			</Shader0>
-
-			<Shader1>
-				<Program>Data/Shaders/Particles.glsl</Program>
-			</Shader1>
+			<Shader0> <Program>Data/Shaders/Standart.glsl</Program> </Shader0>
+			<Shader1> <Program>Data/Shaders/Particles.glsl</Program> </Shader1>
 		</Shaders>
 
 		<Meshes>

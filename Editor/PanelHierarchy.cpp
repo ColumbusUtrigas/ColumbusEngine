@@ -1,4 +1,5 @@
 #include <Editor/PanelHierarchy.h>
+#include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
 
 namespace Columbus
@@ -8,7 +9,7 @@ namespace Columbus
 	{
 		if (Opened && scene != nullptr)
 		{
-			if (ImGui::Begin(Name.c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin((ICON_FA_LIST_UL" " + Name + "##PanelHierarchy").c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				for (auto& Obj : scene->Objects)
 				{

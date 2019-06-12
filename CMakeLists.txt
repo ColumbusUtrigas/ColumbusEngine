@@ -37,7 +37,7 @@ include_directories(/usr/include/AL/)
 
 add_executable(${TARGET} ${SRC})
 
-target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics pthread zstd)
+target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics pthread zstd assimp)
 
 
 

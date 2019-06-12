@@ -1,4 +1,5 @@
 #include <Editor/PanelProfiler.h>
+#include <Editor/FontAwesome.h>
 #include <Profiling/Profiling.h>
 #include <Lib/imgui/imgui.h>
 #include <Math/MathUtil.h>
@@ -30,7 +31,7 @@ namespace Columbus
 	{
 		if (Opened)
 		{
-			if (ImGui::Begin(Name.c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin((ICON_FA_BAR_CHART" " + Name + "##PanelProfiler").c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				Vector3 Color(0, 1, 0);
 				float Framerate = RedrawTime != 0.0f ? (1.0 / RedrawTime) : 0.0f;
