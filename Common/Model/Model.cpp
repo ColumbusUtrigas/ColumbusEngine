@@ -1,6 +1,10 @@
 #include <Common/Model/Model.h>
 #include <Common/Model/CMF/ModelCMF.h>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 namespace Columbus
 {
 
@@ -72,6 +76,7 @@ namespace Columbus
 				*/
 			}
 
+			// Calculate tangent space
 			if (Positions != nullptr && UVs != nullptr && Normals != nullptr && Tangents == nullptr)
 			{
 				Tangents = new Vector3[VerticesCount];
@@ -129,6 +134,39 @@ namespace Columbus
 
 			delete Loader;
 			return true;
+		}
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(File,
+			aiProcess_CalcTangentSpace |
+			aiProcess_Triangulate);
+
+		if (scene != nullptr)
+		{
+			if (scene->HasMeshes())
+			{
+				Exist         = true;
+				Indexed       = false;
+				VerticesCount = scene->mMeshes[0]->mNumVertices;
+				IndicesCount  = 0;
+				IndexSize     = 0;
+
+				Positions = new Vector3[VerticesCount];
+				UVs       = new Vector2[VerticesCount];
+				Normals   = new Vector3[VerticesCount];
+				Tangents  = new Vector3[VerticesCount];
+
+				memcpy(Positions, scene->mMeshes[0]->mVertices, VerticesCount * sizeof(Vector3));
+				memcpy(Normals, scene->mMeshes[0]->mNormals, VerticesCount * sizeof(Vector3));
+				memcpy(Tangents, scene->mMeshes[0]->mTangents, VerticesCount * sizeof(Vector3));
+
+				for (uint32 i = 0; i < VerticesCount; i++)
+					UVs[i] = Vector2(scene->mMeshes[0]->mTextureCoords[0][i].x, scene->mMeshes[0]->mTextureCoords[0][i].y);
+
+				BoundingBox = Box({-1000}, {1000});
+
+				return true;
+			}
 		}
 
 		return false;

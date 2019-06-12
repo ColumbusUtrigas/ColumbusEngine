@@ -1,8 +1,13 @@
 #include <Editor/Editor.h>
 #include <Lib/imgui/imgui.h>
+#include <Editor/FileDialog.h>
+#include <Editor/FontAwesome.h>
+#include <Core/Platform/PlatformFilesystem.h>
 
 namespace Columbus
 {
+
+	EditorFileDialog SkyboxLoader("./Data/Skyboxes/");
 
 	void Editor::ApplyDarkTheme()
 	{
@@ -71,7 +76,7 @@ namespace Columbus
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("Open")) scene.Load("Data/2.scene");
+				if (ImGui::MenuItem("Open")) scene.Load("Data/3.scene");
 				ImGui::MenuItem("Save");
 				ImGui::MenuItem("Save As");
 				ImGui::MenuItem("Quit");
@@ -85,6 +90,18 @@ namespace Columbus
 				ImGui::MenuItem("Render Settings", nullptr, &PanelRenderSettings.Opened);
 				ImGui::MenuItem("Inspector", nullptr, &PanelInspector.Opened);
 				ImGui::MenuItem("Profiler", nullptr, &PanelProfiler.Opened);
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("GameObject"))
+			{
+				if (ImGui::MenuItem("Empty")) scene.AddEmpty();
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Scene"))
+			{
+				if (ImGui::MenuItem("Skybox")) SkyboxLoader.Open();//SkyboxWindow = true;
 				ImGui::EndMenu();
 			}
 
@@ -124,6 +141,12 @@ namespace Columbus
 	Editor::Editor()
 	{
 		ApplyDarkTheme();
+
+		ImGuiIO& io = ImGui::GetIO();
+	 	io.Fonts->AddFontDefault();
+		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
+		io.Fonts->AddFontFromFileTTF("./Data/Font.ttf", 12.0f, &icons_config, icons_ranges);	
 	}
 
 	void Editor::Draw(Scene& scene, iVector2& Size, float RedrawTime)
@@ -142,6 +165,19 @@ namespace Columbus
 		PanelRenderSettings.Draw();
 		PanelInspector.Draw();
 		PanelProfiler.Draw();
+
+		if (SkyboxLoader.Draw("Load Skybox"))
+		{
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(SkyboxLoader.GetSelected().Path.c_str()))
+			{
+				delete scene.Sky;
+				scene.Sky = new Skybox(Tex.Get());
+				Log::Success("Skybox loaded: %s", SkyboxLoader.GetSelected().Path.c_str());
+			}
+
+			SkyboxLoader.Close();
+		}
 	}
 
 	Editor::~Editor() {}

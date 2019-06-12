@@ -1,4 +1,5 @@
 #include <Editor/PanelScene.h>
+#include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 
@@ -12,7 +13,7 @@ namespace Columbus
 		if (Opened)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-			if (ImGui::Begin(Name.c_str(), &Opened, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin((ICON_FA_GLOBE" " + Name).c_str(), &Opened, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
 			{
 				if (ImGui::BeginMenuBar())
 				{

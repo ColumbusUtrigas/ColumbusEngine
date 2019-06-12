@@ -2,12 +2,10 @@
 #include <Core/Platform/PlatformFilesystem.h>
 #include <cstdio>
 
-#if defined(COLUMBUS_PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
 	#include <Core/Windows/PlatformWindowsFilesystem.h>
-#elif defined(COLUMBUS_PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX)
 	#include <Core/Linux/PlatformLinuxFilesystem.h>
-#elif defined(COLUMBUS_PLATFORM_APPLE)
-
 #endif
 
 namespace Columbus
@@ -15,12 +13,21 @@ namespace Columbus
 
 	const char* Filesystem::GetCurrent()
 	{
-		#if defined(COLUMBUS_PLATFORM_WINDOWS)
+		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::GetCurrent();
-		#elif defined(COLUMBUS_PLATFORM_LINUX)
+		#elif defined(PLATFORM_LINUX)
 			return FilesystemLinux::GetCurrent();
-		#elif defined(COLUMBUS_PLATFORM_APPLE)
+		#endif
 
+		return "";
+	}
+
+	const char* Filesystem::AbsolutePath(const char* Path)
+	{
+		#if defined(PLATFORM_WINDOWS)
+			return FilesystemWindows::AbsolutePath(Path);
+		#elif defined(PLATFORM_LINUX)
+			return FilesystemLinux::AbsolutePath(Path);
 		#endif
 
 		return "";
@@ -36,12 +43,10 @@ namespace Columbus
 
 	bool Filesystem::DirCreate(const char* Path)
 	{
-		#if defined(COLUMBUS_PLATFORM_WINDOWS)
+		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::DirCreate(Path);
-		#elif defined(COLUMBUS_PLATFORM_LINUX)
+		#elif defined(PLATFORM_LINUX)
 			return FilesystemLinux::DirCreate(Path);
-		#elif defined(COLUMBUS_PLATFORM_APPLE)
-
 		#endif
 
 		return false;
@@ -59,27 +64,26 @@ namespace Columbus
 
 	bool Filesystem::DirRemove(const char* Path)
 	{
-		#if defined(COLUMBUS_PLATFORM_WINDOWS)
+		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::DirRemove(Path);
-		#elif defined(COLUMBUS_PLATFORM_LINUX)
+		#elif defined(PLATFORM_LINUX)
 			return FilesystemLinux::DirRemove(Path);
-		#elif defined(COLUMBUS_PLATFORM_APPLE)
-
 		#endif
 
 		return false;
 	}
 
+	std::vector<FileInfo> Filesystem::Read(const std::string& Path)
+	{
+		#if defined(PLATFORM_WINDOWS)
+			return FilesystemWindows::Read(Path);
+		#elif defined(PLATFORM_LINUX)
+			return FilesystemLinux::Read(Path);
+		#endif
+		
+		return {};
+	}
+
 }
-
-
-
-
-
-
-
-
-
-
 
 

@@ -1,4 +1,5 @@
 #include <Editor/PanelInspector.h>
+#include <Editor/FontAwesome.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Lib/imgui/imgui.h>
@@ -18,26 +19,32 @@ namespace Columbus
 	{
 		if (Opened)
 		{
-			if (ImGui::Begin(Name.c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin((ICON_FA_INFO" " + Name + "##PanelInspector").c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				if (Inspectable != nullptr)
 				{
-					ImGui::InputText(" ", &Inspectable->Name);
+					ImGui::InputText("##PanelInspector_Name", &Inspectable->Name);
 					ImGui::Separator();
 
-					if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+					if (ImGui::CollapsingHeader(ICON_FA_ARROWS" Transform##PanelInspector_Transform", ImGuiTreeNodeFlags_DefaultOpen))
 					{
 						DrawTransformEditor(Inspectable);
 						ImGui::Separator();
 					}
 
-					if (ImGui::CollapsingHeader("Material"))
+					if (ImGui::CollapsingHeader(ICON_FA_CIRCLE" Material##PanelInspector_Material"))
 					{
 						DrawMaterialEditor(Inspectable);
 						ImGui::Separator();
 					}
 
 					DrawComponentsEditor(Inspectable);
+
+					ImGui::Separator();
+					if (ImGui::Button("Add##PanelInspector_AddComponent"))
+					{
+						
+					}
 				}
 			}
 			ImGui::End();
@@ -91,7 +98,7 @@ namespace Columbus
 	{
 		if (Co != nullptr)
 		{
-			if (ImGui::CollapsingHeader("Light"))
+			if (ImGui::CollapsingHeader(ICON_FA_LIGHTBULB_O" Light##PanelInspector_Light"))
 			{
 				auto Light = Co->GetLight();
 				if (Light != nullptr)
@@ -118,7 +125,7 @@ namespace Columbus
 	{
 		if (Co != nullptr)
 		{
-			if (ImGui::CollapsingHeader("Particle System"))
+			if (ImGui::CollapsingHeader(ICON_FA_CERTIFICATE" Particle System##PanelInspector_ParticleSystem"))
 			{
 				const char* BlendModes[] = { "Default", "Add", "Subtract", "Multiply" };
 				const char* BillboardModes[] = { "None", "Vertical", "Horizontal", "Face to camera" };

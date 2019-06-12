@@ -25,6 +25,11 @@ namespace Columbus
 		return RemoveDirectory(Path);
 	}
 
+	std::vector<FileInfo> FilesystemWindows::Read(const std::string& Path)
+	{
+		#error "Not implemented"
+	}
+
 }
 
 

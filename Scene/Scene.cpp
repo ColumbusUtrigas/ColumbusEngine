@@ -21,6 +21,8 @@
 
 #include <unordered_set>
 
+#include <Common/JSON/JSON.h>
+
 namespace Columbus
 {
 
@@ -448,6 +450,53 @@ namespace Columbus
 	{
 		if (!gDevice)
 		{ Log::Error("Can't load Scene: %s: Device is missing", FileName); return false; }
+
+		JSON J;
+		if (!J.Load(FileName)) { Log::Error("Can't load Scene: %s", FileName); return false; }
+
+		// Load skybox
+		{
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(J["Skybox"].GetString().c_str()))
+			{
+				Sky = new Skybox(Tex.Get());
+				Log::Success("Skybox loaded: %s", J["Skybox"].GetString().c_str());
+			}
+		}
+
+		// Load textures
+		for (uint32 i = 0; i < J["Textures"].GetElementsCount(); i++)
+		{
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(J["Textures"][i].GetString().c_str()))
+			{
+				Textures[i] = std::move(Tex);
+				Log::Success("Texture loaded: %s", J["Textures"][i].GetString().c_str());
+			}
+		}
+
+		// Load shaders
+		for (uint32 i = 0; i < J["Shaders"].GetElementsCount(); i++)
+		{
+			SmartPointer<ShaderProgram> Shader(gDevice->CreateShaderProgram());
+			if (Shader->Load(J["Shaders"][i].GetString().c_str()))
+			{
+				ShaderPrograms[i] = std::move(Shader);
+			}
+		}
+
+		// Load meshes
+		for (uint32 i = 0; i < J["Meshes"].GetElementsCount(); i++)
+		{
+			SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
+			if (tMesh->Load(J["Meshes"][i].GetString().c_str()))
+			{
+				Meshes[i] = std::move(tMesh);
+				Log::Success("Mesh loaded: %s", J["Meshes"][i].GetString().c_str());
+			}
+		}
+
+		return true;
 
 		Serializer::SerializerXML serializer;
 

@@ -16,6 +16,11 @@ namespace Columbus
 		return dir;
 	}
 
+	const char* FilesystemLinux::AbsolutePath(const char* Path)
+	{
+		return realpath(Path, NULL);
+	}
+
 	bool FilesystemLinux::DirCreate(const char* Path)
 	{
 		return mkdir(Path, 0777) == 0;
@@ -26,13 +31,43 @@ namespace Columbus
 		return rmdir(Path) == 0;
 	}
 
+	std::vector<FileInfo> FilesystemLinux::Read(const std::string& Path)
+	{
+		std::vector<FileInfo> Result;
+
+		DIR* dir = opendir(Path.c_str());
+		if (dir == NULL) return Result;
+
+		dirent* dptr = NULL;
+
+		while ((dptr = readdir(dir)) != NULL)
+		{
+			FileInfo Info;
+
+			std::string Name = dptr->d_name;
+			unsigned char Type = dptr->d_type;
+
+			auto Pos = Name.rfind('.');
+
+			Info.Name = Name;
+			Info.Ext = (Pos != std::string::npos && Pos != 0) ? Name.substr(Pos + 1) : "";
+			Info.Path = Path[Path.length() - 1] == '/' ? Path + Name : Path + '/' + Name;
+
+			switch (Type)
+			{
+			case DT_DIR: Info.Type = 'd'; break;
+			case DT_LNK: Info.Type = 'l'; break;
+			case DT_REG: Info.Type = 'f'; break;
+			}
+			
+			Result.push_back(Info);
+		}
+
+		closedir(dir);
+
+		return Result;
+	}
+
 }
-
-
-
-
-
-
-
 
 
