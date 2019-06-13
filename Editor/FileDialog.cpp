@@ -67,9 +67,13 @@ namespace Columbus
 
 		if (Opened)
 		{
+			ImGui::OpenPopup(Name.c_str());
 			ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
-			if (ImGui::Begin(Name.c_str(), &Opened, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse))
+			ImGui::SetNextWindowSizeConstraints(ImVec2(450, 250), ImVec2(FLT_MAX, FLT_MAX));
+			if (ImGui::BeginPopupModal(Name.c_str(), &Opened, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse))
 			{
+				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Close();
+
 				std::string Absolute = Filesystem::AbsolutePath(Path.c_str());
 				auto Decomposition = SplitString(Absolute, "/");
 
@@ -169,8 +173,8 @@ namespace Columbus
 					ImGui::Checkbox(("Show hidden##Checkbox_" + Name).c_str(), &Hidden);
 				}
 				ImGui::EndChild();
+				ImGui::EndPopup();
 			}
-			ImGui::End();
 		}
 
 		return res;

@@ -152,9 +152,13 @@ namespace Columbus
 		if (mRigidbody != nullptr)
 		{
 			Mass = InMass;
-			btVector3 Inertia;
-			mRigidbody->getCollisionShape()->calculateLocalInertia(InMass, Inertia);
-			mRigidbody->setMassProps(InMass, Inertia);
+			
+			if (!Static)
+			{
+				btVector3 Inertia;
+				mRigidbody->getCollisionShape()->calculateLocalInertia(InMass, Inertia);
+				mRigidbody->setMassProps(InMass, Inertia);
+			}
 		}
 	}
 
