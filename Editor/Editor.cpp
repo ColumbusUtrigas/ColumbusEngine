@@ -67,7 +67,7 @@ namespace Columbus
 		colors[ImGuiCol_NavHighlight]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
 		colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 		colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-		colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+		colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.00f, 0.00f, 0.00f, 0.60f);
 	}
 
 	void Editor::DrawMainMenu(Scene& scene)
@@ -147,6 +147,7 @@ namespace Columbus
 		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 		ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
 		io.Fonts->AddFontFromFileTTF("./Data/Font.ttf", 12.0f, &icons_config, icons_ranges);	
+		io.Fonts->Build();
 	}
 
 	void Editor::Draw(Scene& scene, iVector2& Size, float RedrawTime)
