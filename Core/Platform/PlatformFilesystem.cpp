@@ -1,6 +1,7 @@
 #include <Core/Platform/Platform.h>
 #include <Core/Platform/PlatformFilesystem.h>
 #include <cstdio>
+#include <cstring>
 
 #if defined(PLATFORM_WINDOWS)
 	#include <Core/Windows/PlatformWindowsFilesystem.h>
@@ -31,6 +32,42 @@ namespace Columbus
 		#endif
 
 		return "";
+	}
+
+	std::string Filesystem::RelativePath(const std::string& Absolute, const std::string& RelativeTo)
+	{
+		std::string Abs = Absolute;
+		std::string Rel = RelativeTo;
+		for (auto& Ch : Abs) if (Ch == '\\') Ch = '/';
+		for (auto& Ch : Rel) if (Ch == '\\') Ch = '/';
+
+		auto AbsDecompose = Split(Abs);
+		auto RelDecompose = Split(Rel);
+
+		std::string Result;
+
+		if (AbsDecompose.size() >= RelDecompose.size())
+		{
+			std::vector<std::string> ResDecompose = AbsDecompose;
+			for (auto _ : RelDecompose) ResDecompose.erase(ResDecompose.begin());
+
+			for (const auto& Elem : ResDecompose)
+			{
+				Result += Elem + "/";
+			}
+
+			Result.pop_back();
+		} else
+		{
+			for (size_t i = 0; i <= (RelDecompose.size() - AbsDecompose.size()); i++)
+			{
+				Result += "../";
+			}
+
+			Result += AbsDecompose[AbsDecompose.size() - 1];
+		}
+
+		return Result;
 	}
 
 	bool Filesystem::FileCreate(const char* Path)
@@ -82,6 +119,29 @@ namespace Columbus
 		#endif
 		
 		return {};
+	}
+
+	std::vector<std::string> Filesystem::Split(const std::string& Path)
+	{
+		std::vector<std::string> Result;
+
+		size_t Start = 0;
+		size_t Pos = 0;
+		std::string Token;
+		while ((Pos = Path.find("/", Start)) != std::string::npos)
+		{
+			Token = Path.substr(Start, Pos - Start);
+			if (Token.empty())
+				Result.push_back("/");
+			else
+				Result.push_back(Token);
+			Start = Pos + 1;
+		}
+
+		if (!Path.substr(Start).empty())
+			Result.push_back(Path.substr(Start));
+
+		return Result;
 	}
 
 }
