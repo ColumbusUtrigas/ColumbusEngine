@@ -40,14 +40,14 @@ namespace Columbus
 		int EmissionMapID = -1;
 		int DetailAlbedoMapID = -1;
 		int DetailNormalMapID = -1;
-	protected:
-		ShaderProgram* ShaderProg = nullptr;
 	public:
 		Cull Culling = Cull::Back;
 		DepthTest DepthTesting = DepthTest::LEqual;
 		bool DepthWriting = true;
 		bool Transparent = false;
 		bool Lighting = true;
+
+		ShaderProgram* ShaderProg = nullptr;
 
 		Texture* AlbedoMap = nullptr;
 		Texture* NormalMap = nullptr;

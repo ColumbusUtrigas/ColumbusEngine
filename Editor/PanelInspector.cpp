@@ -1,11 +1,13 @@
 #include <Editor/PanelInspector.h>
 #include <Editor/FontAwesome.h>
+#include <Editor/ResourcesViewerTexture.h>
 #include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/ComponentRigidbody.h>
 #include <Graphics/Device.h>
+#include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <climits>
@@ -190,6 +192,30 @@ namespace Columbus
 		ImGui::SliderFloat("Roughness##Inspector_MaterialEditor",            &GO->GetMaterial().Roughness,        0.00f, 1.0f);
 		ImGui::SliderFloat("Metallic##Inspector_MaterialEditor",             &GO->GetMaterial().Metallic,         0.00f, 1.0f);
 		ImGui::DragFloat("Emission Strength##Inspector_MaterialEditor",      &GO->GetMaterial().EmissionStrength, 0.01f);
+		ImGui::Spacing();
+
+		#define TEXID(a) a == nullptr ? 0 : (void*)(uintptr_t)(((TextureOpenGL*)(a))->GetID())
+		#define TEXTURE_SELECTOR(a, text) \
+			ImGui::PushID(text"##Inspector_MaterialEditor_Textures"); \
+			if (ImGui::ImageButton(TEXID(a), TexSize)) \
+				ResourcesViewerTexture::Open(&a); \
+			ImGui::PopID(); \
+			ImGui::SameLine(); \
+			ImGui::Text(text);
+
+		ImVec2 TexSize(30, 10);
+
+		TEXTURE_SELECTOR(GO->GetMaterial().AlbedoMap,       "Albedo");
+		TEXTURE_SELECTOR(GO->GetMaterial().NormalMap,       "Normal");
+		TEXTURE_SELECTOR(GO->GetMaterial().RoughnessMap,    "Roughness");
+		TEXTURE_SELECTOR(GO->GetMaterial().MetallicMap,     "Metallic");
+		TEXTURE_SELECTOR(GO->GetMaterial().OcclusionMap,    "Occlusion");
+		TEXTURE_SELECTOR(GO->GetMaterial().EmissionMap,     "Emission");
+		TEXTURE_SELECTOR(GO->GetMaterial().DetailAlbedoMap, "Detail Albedo");
+		TEXTURE_SELECTOR(GO->GetMaterial().DetailNormalMap, "Detail Normal");
+
+		#undef TEXTURE_SELECTOR
+		#undef TEXID
 
 		ImGui::Unindent(10.0f);
 	}

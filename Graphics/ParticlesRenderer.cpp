@@ -90,43 +90,45 @@ namespace Columbus
 		glDepthMask(GL_FALSE);
 
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
+		if (Shader != nullptr)
+		{
+			glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
+			glm::mat4 M = glm::mat4_cast(Q);
 
-		glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
-		glm::mat4 M = glm::mat4_cast(Q);
+			Matrix Billboard;
+			memcpy(&Billboard.M[0][0], glm::value_ptr(M), 16 * sizeof(float));
 
-		Matrix Billboard;
-		memcpy(&Billboard.M[0][0], glm::value_ptr(M), 16 * sizeof(float));
+			Shader->SetUniform(Shader->GetFastUniform("View"), false, MainCamera.GetViewMatrix());
+			Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());
+			Shader->SetUniform(Shader->GetFastUniform("Billboard"), false, Billboard);
+			Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
+			Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
 
-		Shader->SetUniform(Shader->GetFastUniform("View"), false, MainCamera.GetViewMatrix());
-		Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());
-		Shader->SetUniform(Shader->GetFastUniform("Billboard"), false, Billboard);
-		Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
-		Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
+			Vector3* Positions = (Vector3*)PositionsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
+			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Positions[i * 6 + a] = Particles.Particles.Positions[i].XYZ();
+			PositionsBuffer.Unmap();
 
-		Vector3* Positions = (Vector3*)PositionsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Positions[i * 6 + a] = Particles.Particles.Positions[i].XYZ();
-		PositionsBuffer.Unmap();
+			Vector3* Sizes = (Vector3*)SizesBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
+			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Sizes[i * 6 + a] = Particles.Particles.Sizes[i];
+			SizesBuffer.Unmap();
 
-		Vector3* Sizes = (Vector3*)SizesBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Sizes[i * 6 + a] = Particles.Particles.Sizes[i];
-		SizesBuffer.Unmap();
+			Vector4* Colors = (Vector4*)ColorsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
+			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Colors[i * 6 + a] = Particles.Particles.Colors[i];
+			ColorsBuffer.Unmap();
 
-		Vector4* Colors = (Vector4*)ColorsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Colors[i * 6 + a] = Particles.Particles.Colors[i];
-		ColorsBuffer.Unmap();
+			Vector2* OtherData = (Vector2*)OtherDataBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
+			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) OtherData[i * 6 + a] = Vector2(Particles.Particles.Rotations[i], (float)Particles.Particles.Frames[i]);
+			OtherDataBuffer.Unmap();
 
-		Vector2* OtherData = (Vector2*)OtherDataBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-		for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) OtherData[i * 6 + a] = Vector2(Particles.Particles.Rotations[i], (float)Particles.Particles.Frames[i]);
-		OtherDataBuffer.Unmap();
+			 VerticesBuffer.VertexAttribute<float>(0, 3, false, 0, nullptr);
+			TexcoordsBuffer.VertexAttribute<float>(1, 2, false, 0, nullptr);
+			PositionsBuffer.VertexAttribute<float>(2, 3, false, 0, nullptr);
+			    SizesBuffer.VertexAttribute<float>(3, 3, false, 0, nullptr);
+			   ColorsBuffer.VertexAttribute<float>(4, 4, false, 0, nullptr);
+			OtherDataBuffer.VertexAttribute<float>(5, 2, false, 0, nullptr);
 
-		 VerticesBuffer.VertexAttribute<float>(0, 3, false, 0, nullptr);
-		TexcoordsBuffer.VertexAttribute<float>(1, 2, false, 0, nullptr);
-		PositionsBuffer.VertexAttribute<float>(2, 3, false, 0, nullptr);
-		    SizesBuffer.VertexAttribute<float>(3, 3, false, 0, nullptr);
-		   ColorsBuffer.VertexAttribute<float>(4, 4, false, 0, nullptr);
-		OtherDataBuffer.VertexAttribute<float>(5, 2, false, 0, nullptr);
-
-		glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
+			glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
+		}
 
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

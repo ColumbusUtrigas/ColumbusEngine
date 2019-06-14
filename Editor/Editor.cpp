@@ -3,6 +3,7 @@
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
 #include <Core/Platform/PlatformFilesystem.h>
+#include <Editor/ResourcesViewerTexture.h>
 
 namespace Columbus
 {
@@ -99,6 +100,16 @@ namespace Columbus
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Resources"))
+			{
+				if (ImGui::MenuItem("Textures"))
+				{
+					ResourcesViewerTexture::Open(nullptr);
+				}
+
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Scene"))
 			{
 				if (ImGui::MenuItem("Skybox")) SkyboxLoader.Open();//SkyboxWindow = true;
@@ -166,18 +177,23 @@ namespace Columbus
 		PanelRenderSettings.Draw();
 		PanelInspector.Draw();
 		PanelProfiler.Draw();
+		ResourcesViewerTexture::Draw(&scene);
 
 		if (SkyboxLoader.Draw("Load Skybox"))
 		{
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
-			if (Tex->Load(SkyboxLoader.GetSelected().Path.c_str()))
+			auto Selected = SkyboxLoader.GetSelected();
+			if (Selected.size() == 1)
 			{
-				delete scene.Sky;
-				scene.Sky = new Skybox(Tex.Get());
-				Log::Success("Skybox loaded: %s", SkyboxLoader.GetSelected().Path.c_str());
-			}
+				if (Tex->Load(Selected[0].Path.c_str()))
+				{
+					delete scene.Sky;
+					scene.Sky = new Skybox(Tex.Get());
+					Log::Success("Skybox loaded: %s", Selected[0].Path.c_str());
+				}
 
-			SkyboxLoader.Close();
+				SkyboxLoader.Close();
+			}
 		}
 	}
 

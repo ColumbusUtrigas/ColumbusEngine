@@ -7,29 +7,6 @@
 namespace Columbus
 {
 
-	static std::vector<std::string> SplitString(const std::string& Str, const std::string& Delim)
-	{
-		std::vector<std::string> Result;
-
-		size_t Start = 0;
-		size_t Pos = 0;
-		std::string Token;
-		while ((Pos = Str.find(Delim, Start)) != std::string::npos)
-		{
-			Token = Str.substr(Start, Pos - Start);
-			if (Token.empty())
-				Result.push_back("/");
-			else
-				Result.push_back(Token);
-			Start = Pos + Delim.length();
-		}
-
-		if (!Str.substr(Start).empty())
-			Result.push_back(Str.substr(Start));
-
-		return Result;
-	}
-
 	static std::string Recompose(const std::vector<std::string>& Decomposed, size_t Index)
 	{
 		std::string Result;
@@ -75,7 +52,7 @@ namespace Columbus
 				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Close();
 
 				std::string Absolute = Filesystem::AbsolutePath(Path.c_str());
-				auto Decomposition = SplitString(Absolute, "/");
+				auto Decomposition = Filesystem::Split(Absolute);
 
 				size_t i = 0;
 				for (const auto& Elem : Decomposition)
@@ -141,9 +118,14 @@ namespace Columbus
 
 						Text += " " + Elem.Name;
 
-						if (ImGui::Selectable(Text.c_str(), Elem == SelectedFile, ImGuiSelectableFlags_AllowDoubleClick))
+						bool Contains = std::find(SelectedFiles.begin(), SelectedFiles.end(), Elem) != SelectedFiles.end();
+						if (ImGui::Selectable(Text.c_str(), Contains, ImGuiSelectableFlags_AllowDoubleClick))
 						{
-							SelectedFile = Elem;
+							if (!ImGui::GetIO().KeyCtrl || !Multiple) SelectedFiles.clear();
+							if (ImGui::GetIO().KeyCtrl && Contains)
+								SelectedFiles.erase(std::remove(SelectedFiles.begin(), SelectedFiles.end(), Elem), SelectedFiles.end());
+							else
+								SelectedFiles.push_back(Elem);
 
 							if (Elem.Type == 'd' || Elem.Type == 'l')
 							{
@@ -163,8 +145,12 @@ namespace Columbus
 
 				if (ImGui::BeginChild((Name + "##Buttons").c_str()))
 				{
-					ImGui::Text("File:"); ImGui::SameLine();
-					ImGui::Text(SelectedFile.Name.c_str());
+					ImGui::Text("File:");
+					for (const auto& Elem : SelectedFiles)
+					{
+						ImGui::SameLine();
+						ImGui::Text(Elem.Name.c_str());
+					}
 
 					if (ImGui::Button("Cancel")) Close();
 					ImGui::SameLine();
@@ -173,6 +159,12 @@ namespace Columbus
 					ImGui::Checkbox(("Show hidden##Checkbox_" + Name).c_str(), &Hidden);
 				}
 				ImGui::EndChild();
+
+				if (Message != nullptr)
+				{
+					Message->Draw();
+				}
+
 				ImGui::EndPopup();
 			}
 		}

@@ -16,10 +16,47 @@
 namespace Columbus
 {
 
+	template <typename T>
+	struct ResourceManager
+	{
+		// Resources map countains pairs of [resource_name; index in Resources]
+		std::vector<SmartPointer<T>> Resources;
+		std::map<std::string, uint32> ResourcesMap;
+
+		bool IsNameFree(const std::string& Name)
+		{
+			return ResourcesMap.find(Name) == ResourcesMap.end();
+		}
+
+		bool Add(SmartPointer<T>&& Resource, const std::string& Name, bool Replace = false)
+		{
+			bool NameFree = IsNameFree(Name);
+
+			if (NameFree || Replace)
+			{
+				if (NameFree)
+				{
+					Resources.emplace_back(std::move(Resource));
+					ResourcesMap[Name] = Resources.size() - 1;
+				} else
+				{
+					Resources[ResourcesMap[Name]] = (SmartPointer<T>&&)std::move(Resource);
+				}
+
+				return true;
+			}
+
+			return false;
+		}
+	};
+
 	class Scene
 	{
 	private:
 		friend class Editor;
+		friend class ResourcesViewerTexture;
+
+		ResourceManager<Texture> TexturesManager;
 
 		std::map<uint32, SmartPointer<Texture>> Textures;
 		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
