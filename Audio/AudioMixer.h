@@ -10,6 +10,8 @@ namespace Columbus
 	class AudioMixer
 	{
 	private:
+		friend class Renderer;
+		
 		AudioListener Listener;
 		Vector<AudioSource*> Sources;
 

@@ -9,6 +9,8 @@ namespace Columbus
 	class AudioSystem
 	{
 	private:
+		friend class Renderer;
+
 		AudioPlayer* Player;
 		AudioMixer Mixer;
 	public:

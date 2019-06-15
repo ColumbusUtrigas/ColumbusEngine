@@ -1,6 +1,8 @@
 #include <Editor/PanelInspector.h>
 #include <Editor/FontAwesome.h>
 #include <Editor/ResourcesViewerTexture.h>
+#include <Editor/ResourcesViewerShader.h>
+#include <Editor/ResourcesViewerMesh.h>
 #include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentMeshRenderer.h>
@@ -12,6 +14,7 @@
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <climits>
 
+// Icons for editor
 #define TRANSFORM_ICON ICON_FA_ARROWS
 #define MATERIAL_ICON ICON_FA_CIRCLE
 #define AUDIO_ICON ICON_FA_MUSIC
@@ -32,6 +35,8 @@ namespace Columbus
 	static void DrawComponentEditor(ComponentMeshRenderer* Co);
 	static void DrawComponentEditor(ComponentParticleSystem* Co);
 	static void DrawComponentEditor(ComponentRigidbody* Co);
+
+
 
 	void EditorPanelInspector::Draw()
 	{
@@ -67,7 +72,11 @@ namespace Columbus
 		}
 	}
 
+
+
 	EditorPanelInspector::~EditorPanelInspector() {}
+
+
 
 	void DrawAddComponent(GameObject* GO)
 	{
@@ -113,6 +122,7 @@ namespace Columbus
 			Close();
 		};
 
+		// Draw selectable for "Add component"
 		auto Selectable = [&](const char* Name, int ID, bool Enable)
 		{
 			if (ImGui::Selectable(Name, Selected == ID, Flags | (Enable ? ImGuiSelectableFlags_Disabled : 0), Size))
@@ -161,6 +171,8 @@ namespace Columbus
 		}
 	}
 
+
+
 	void DrawTransformEditor(GameObject* GO)
 	{
 		ImGui::Indent(10.0f);
@@ -169,6 +181,8 @@ namespace Columbus
 		ImGui::DragFloat3("Scale##Inspector_TransformEditor",    (float*)&GO->transform.Scale,    0.1f);
 		ImGui::Unindent(10.0f);
 	}
+
+
 
 	void DrawMaterialEditor(GameObject* GO)
 	{
@@ -194,6 +208,11 @@ namespace Columbus
 		ImGui::DragFloat("Emission Strength##Inspector_MaterialEditor",      &GO->GetMaterial().EmissionStrength, 0.01f);
 		ImGui::Spacing();
 
+		if (ImGui::Button("Shader##Inspector_MaterialEditor_Shader", ImVec2(ImGui::GetContentRegionAvail().x, 25)))
+		{
+			ResourcesViewerShader::Open(&GO->GetMaterial().ShaderProg);
+		}
+
 		#define TEXID(a) a == nullptr ? 0 : (void*)(uintptr_t)(((TextureOpenGL*)(a))->GetID())
 		#define TEXTURE_SELECTOR(a, text) \
 			ImGui::PushID(text"##Inspector_MaterialEditor_Textures"); \
@@ -205,6 +224,8 @@ namespace Columbus
 
 		ImVec2 TexSize(30, 10);
 
+		// This is a block of texture selectors, which are: ImageButton which activates
+		// texture viewer and name of the texture
 		TEXTURE_SELECTOR(GO->GetMaterial().AlbedoMap,       "Albedo");
 		TEXTURE_SELECTOR(GO->GetMaterial().NormalMap,       "Normal");
 		TEXTURE_SELECTOR(GO->GetMaterial().RoughnessMap,    "Roughness");
@@ -220,6 +241,9 @@ namespace Columbus
 		ImGui::Unindent(10.0f);
 	}
 
+
+	// Draw all of the component editors. Component editors are drawing
+	// (if exist) in collapsing header.
 	void DrawComponentsEditor(GameObject* GO)
 	{
 		DrawComponentEditor(GO->GetComponent<ComponentAudioSource>());
@@ -228,6 +252,8 @@ namespace Columbus
 		DrawComponentEditor(GO->GetComponent<ComponentParticleSystem>());
 		DrawComponentEditor(GO->GetComponent<ComponentRigidbody>());
 	}
+
+
 
 	void DrawComponentEditor(ComponentAudioSource* Co)
 	{
@@ -259,6 +285,8 @@ namespace Columbus
 		}
 	}
 
+
+
 	void DrawComponentEditor(ComponentLight* Co)
 	{
 		if (Co != nullptr)
@@ -286,69 +314,84 @@ namespace Columbus
 		}
 	}
 
+
+
 	void DrawComponentEditor(ComponentMeshRenderer* Co)
 	{
-
+		if (Co != nullptr)
+		{
+			if (ImGui::CollapsingHeader(MESH_ICON" Mesh Renderer##PanelInspector"))
+			{
+				if (ImGui::Button("Mesh##PanelInspector_MeshRenderer", ImVec2(ImGui::GetContentRegionAvail().x, 25)))
+				{
+					ResourcesViewerMesh::Open(&Co->GetMesh());
+				}
+			}
+		}
 	}
+
+
 
 	void DrawComponentEditor(ComponentParticleSystem* Co)
 	{
 		if (Co != nullptr)
 		{
-			if (ImGui::CollapsingHeader(PARTICLES_ICON" Particle System##PanelInspector_ParticleSystem"))
+			if (ImGui::CollapsingHeader(PARTICLES_ICON" Particle System##PanelInspector"))
 			{
 				const char* BlendModes[] = { "Default", "Add", "Subtract", "Multiply" };
 				const char* BillboardModes[] = { "None", "Vertical", "Horizontal", "Face to camera" };
 				const char* TransformationModes[] = { "World", "Local" };
 				const char* SortModes[] = { "None", "Young first", "Old first", "Nearest first" };
 
+				#define NAME(a)    a"##PanelInspector_ParticleSystem"
+
 				auto Emitter = &Co->GetEmitter();
 
 				ImGui::Indent(10.0f);
 				
-				ImGui::SliderInt("Max Particles##PanelInspector_ParticleSystem", (int*)&Emitter->MaxParticles, 0, 1024);
-				ImGui::DragFloat("Emit Rate##PanelInspector_ParticleSystem", &Emitter->EmitRate, 0.1f, 0.0f, FLT_MAX);
-				ImGui::Checkbox("Emit##PanelInspector_ParticleSystem", &Emitter->Emit);
-				ImGui::Checkbox("Visible##PanelInspector_ParticleSystem", &Emitter->Visible);
+				ImGui::DragInt  (NAME("Max Particles"), (int*)&Emitter->MaxParticles, 1, 0, 1024);
+				ImGui::DragFloat(NAME("Emit Rate"), &Emitter->EmitRate, 0.1f, 0.0f, FLT_MAX);
+				ImGui::Checkbox (NAME("Emit"),      &Emitter->Emit);
+				ImGui::Checkbox (NAME("Visible"),   &Emitter->Visible);
 
-				ImGui::Combo("Blend mode##PanelInspector_ParticleSystem", (int*)&Emitter->Blend, BlendModes, 4);
-				ImGui::Combo("Billboard mode##PanelInspector_ParticleSystem", (int*)&Emitter->Billboard, BillboardModes, 4);
-				ImGui::Combo("Transformation mode##PanelInspector_ParticleSystem", (int*)&Emitter->Transformation, TransformationModes, 2);
-				ImGui::Combo("Sort mode##PanelInspector_ParticleSystem", (int*)&Emitter->Sort, SortModes, 4);
+				ImGui::Combo(NAME("Blend mode"),          (int*)&Emitter->Blend, BlendModes, 4);
+				ImGui::Combo(NAME("Billboard mode"),      (int*)&Emitter->Billboard, BillboardModes, 4);
+				ImGui::Combo(NAME("Transformation mode"), (int*)&Emitter->Transformation, TransformationModes, 2);
+				ImGui::Combo(NAME("Sort mode"),           (int*)&Emitter->Sort, SortModes, 4);
 
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader("Lifetime##PanelInspector_ParticleSystem"))
+				if (ImGui::CollapsingHeader(NAME("Lifetime")))
 				{
 					ImGui::Indent(10.0f);
-					ImGui::DragFloatRange2("Lifetime##PanelInspector_ParticleSystem_Lifetime", &Emitter->ModuleLifetime.Min, &Emitter->ModuleLifetime.Max, 0.1f);
+					ImGui::DragFloatRange2(NAME("Lifetime##Lifetime"), &Emitter->ModuleLifetime.Min, &Emitter->ModuleLifetime.Max, 0.1f);
 					ImGui::Unindent(10.0f);
 					ImGui::Separator();
 				}
 
-				if (ImGui::CollapsingHeader("Location##PanelInspector_ParticleSystem"))
+				if (ImGui::CollapsingHeader(NAME("Location")))
 				{
 					const char* Shapes[] = { "Point", "Box", "Circle", "Sphere" };
 
 					ImGui::Indent(10.0f);
-					ImGui::DragFloat3("Size##PanelInspector_ParticleSystem_Location", (float*)&Emitter->ModuleLocation.Size, 0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat("Radius##PanelInspector_ParticleSystem_Location", &Emitter->ModuleLocation.Radius, 0.1f, 0.0f, FLT_MAX);
-					ImGui::Combo("Shape##PanelInspector_ParticleSystem_Location", (int*)&Emitter->ModuleLocation.Shape, Shapes, 4);
-					ImGui::Checkbox("Emit from shell##PanelInspector_ParticleSystem_Location", &Emitter->ModuleLocation.EmitFromShell);
+					ImGui::DragFloat3(NAME("Size##Location"),  (float*)&Emitter->ModuleLocation.Size, 0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Radius##Location"),         &Emitter->ModuleLocation.Radius, 0.1f, 0.0f, FLT_MAX);
+					ImGui::Combo(NAME("Shape##Location"),        (int*)&Emitter->ModuleLocation.Shape, Shapes, 4);
+					ImGui::Checkbox(NAME("Emit from shell##Location"), &Emitter->ModuleLocation.EmitFromShell);
 					ImGui::Unindent(10.0f);
 					ImGui::Separator();
 				}
 
-				if (ImGui::CollapsingHeader("Velocity##PanelInspector_ParticleSystem"))
+				if (ImGui::CollapsingHeader(NAME("Velocity")))
 				{
 					ImGui::Indent(10.0f);
-					ImGui::DragFloat3("Min##PanelInspector_ParticleSystem_Velocity", (float*)&Emitter->ModuleVelocity.Min, 0.1f);
-					ImGui::DragFloat3("Max##PanelInspector_ParticleSystem_Velocity", (float*)&Emitter->ModuleVelocity.Max, 0.1f);
+					ImGui::DragFloat3(NAME("Min##Velocity"), (float*)&Emitter->ModuleVelocity.Min, 0.1f);
+					ImGui::DragFloat3(NAME("Max##Velocity"), (float*)&Emitter->ModuleVelocity.Max, 0.1f);
 					ImGui::Unindent(10.0f);
 					ImGui::Separator();
 				}
 
-				if (ImGui::CollapsingHeader("Rotation"))
+				if (ImGui::CollapsingHeader(NAME("Rotation")))
 				{
 					ImGui::Indent(10.0f);
 					ImGui::DragFloatRange2("Initial##PanelInspector_ParticleSystem_Rotation", &Emitter->ModuleRotation.Min, &Emitter->ModuleRotation.Max, 0.1f);
@@ -357,22 +400,23 @@ namespace Columbus
 					ImGui::Separator();
 				}
 
-				if (ImGui::CollapsingHeader("Color"))
+				if (ImGui::CollapsingHeader(NAME("Color")))
 				{
 					const char* Modes[] = { "Initial", "Over life" };
 
 					ImGui::Indent(10.0f);
 					
-					ImGui::Combo("Mode##PanelInspector_ParticleSystem_Color", (int*)&Emitter->ModuleColor.Mode, Modes, 2);
+					ImGui::Combo(NAME("Mode##Color"), (int*)&Emitter->ModuleColor.Mode, Modes, 2);
 
 					if (Emitter->ModuleColor.Mode == ParticleModuleColor::UpdateMode::Initial)
 					{
-						ImGui::DragFloat4("Min##PanelInspector_ParticleSystem_Color", (float*)&Emitter->ModuleColor.Min);
-						ImGui::DragFloat4("Max##PanelInspector_ParticleSystem_Color", (float*)&Emitter->ModuleColor.Max);
+						ImGui::DragFloat4(NAME("Min##Color"), (float*)&Emitter->ModuleColor.Min);
+						ImGui::DragFloat4(NAME("Max##Color"), (float*)&Emitter->ModuleColor.Max);
 					}
 
 					if (Emitter->ModuleColor.Mode == ParticleModuleColor::UpdateMode::OverLife)
 					{
+						bool Editing = false;
 						size_t Counter = 1;
 						for (auto& Node : Emitter->ModuleColor.Curve.Points)
 						{
@@ -381,16 +425,21 @@ namespace Columbus
 							float Min = Counter == 1 ? 0.0f : Emitter->ModuleColor.Curve.Points[Counter - 2].first;
 							float Max = Counter == Emitter->ModuleColor.Curve.Points.size() ? 1.0f : Emitter->ModuleColor.Curve.Points[Counter].first;
 
-							if (ImGui::CollapsingHeader((str + "##PanelInspector_ParticleSystem_ColorOverLife_Point").c_str()))
+							if (ImGui::CollapsingHeader((str + NAME("##ColorOverLife_Point")).c_str()))
 							{
-								auto p = "Value##PanelInspector_ParticleSystem_ColorOverLife_" + str;
-								auto c = "Color##PanelInspector_ParticleSystem_ColorOverLife_" + str;
-								auto r = "Remove##PanelInspector_ParticleSystem_ColorOverLife_" + str;
+								auto p = NAME("Value##ColorOverLife") + str;
+								auto c = NAME("Color##ColorOverLife") + str;
+								auto r = NAME("Remove##ColorOverLife") + str;
 
 								ImGui::Indent(10.0f);
 								ImGui::SetNextItemWidth(50.0f);
+
 								ImGui::DragFloat(p.c_str(), &Node.first, 0.05f, Min, Max);
+								if (ImGui::IsItemActive())
+									Editing = true;
+
 								ImGui::ColorEdit4(c.c_str(), (float*)&Node.second);
+
 								if (ImGui::Button(r.c_str())) Emitter->ModuleColor.Curve.RemovePoint(Counter - 1);
 								ImGui::Unindent(10.0f);
 							}
@@ -398,9 +447,12 @@ namespace Columbus
 							Counter++;
 						}
 
-						Emitter->ModuleColor.Curve.Sort();
+						if (!Editing)
+						{
+							Emitter->ModuleColor.Curve.Sort();
+						}
 
-						if (ImGui::Button("Add##PanelInspector_ParticleSystem_ColorOverLife"))
+						if (ImGui::Button(NAME("Add##ColorOverLife")))
 						{
 							Emitter->ModuleColor.Curve.AddPoint(Vector4(1), 1.0f);
 						}
@@ -410,22 +462,23 @@ namespace Columbus
 					ImGui::Separator();
 				}
 
-				if (ImGui::CollapsingHeader("Size##PanelInspector_ParticleSystem"))
+				if (ImGui::CollapsingHeader(NAME("Size")))
 				{
 					const char* Modes[] = { "Initial", "Over life" };
 
 					ImGui::Indent(10.0f);
 
-					ImGui::Combo("Mode##PanelInspector_ParticleSystem_Size", (int*)&Emitter->ModuleSize.Mode, Modes, 2);
+					ImGui::Combo(NAME("Mode##Size"), (int*)&Emitter->ModuleSize.Mode, Modes, 2);
 
 					if (Emitter->ModuleSize.Mode == ParticleModuleSize::UpdateMode::Initial)
 					{
-						ImGui::DragFloat3("Min##PanelInspector_ParticleSystem_Size", (float*)&Emitter->ModuleSize.Min);
-						ImGui::DragFloat3("Max##PanelInspector_ParticleSystem_Size", (float*)&Emitter->ModuleSize.Max);
+						ImGui::DragFloat3(NAME("Min##Size"), (float*)&Emitter->ModuleSize.Min);
+						ImGui::DragFloat3(NAME("Max##Size"), (float*)&Emitter->ModuleSize.Max);
 					}
 
 					if (Emitter->ModuleSize.Mode == ParticleModuleSize::UpdateMode::OverLife)
 					{
+						bool Editing = false;
 						size_t Counter = 1;
 						for (auto& Node : Emitter->ModuleSize.Curve.Points)
 						{
@@ -434,15 +487,19 @@ namespace Columbus
 							float Min = Counter == 1 ? 0.0f : Emitter->ModuleSize.Curve.Points[Counter - 2].first;
 							float Max = Counter == Emitter->ModuleSize.Curve.Points.size() ? 1.0f : Emitter->ModuleSize.Curve.Points[Counter].first;
 
-							if (ImGui::CollapsingHeader((str + "##PanelInspector_ParticleSystem_SizeOverLife_Point").c_str()))
+							if (ImGui::CollapsingHeader((str + NAME("##SizeOverLife_Point")).c_str()))
 							{
-								auto p = "Value##PanelInspector_ParticleSystem_SizeOverLife_" + str;
-								auto c = "Size##PanelInspector_ParticleSystem_SizeOverLife_" + str;
-								auto r = "Remove##PanelInspector_ParticleSystem_SizeOverLife_" + str;
+								auto p = NAME("Value##SizeOverLife") + str;
+								auto c = NAME("Size##SizeOverLife") + str;
+								auto r = NAME("Remove##SizeOverLife") + str;
 
 								ImGui::Indent(10.0f);
 								ImGui::SetNextItemWidth(50.0f);
+
 								ImGui::DragFloat(p.c_str(), &Node.first, 0.05f, Min, Max);
+								if (ImGui::IsItemActive())
+									Editing = true;
+
 								ImGui::DragFloat3(c.c_str(), (float*)&Node.second, 0.1f, 0.0f, FLT_MAX);
 								if (ImGui::Button(r.c_str())) Emitter->ModuleSize.Curve.RemovePoint(Counter - 1);
 								ImGui::Unindent(10.0f);
@@ -451,9 +508,12 @@ namespace Columbus
 							Counter++;
 						}
 
-						Emitter->ModuleSize.Curve.Sort();
+						if (!Editing)
+						{
+							Emitter->ModuleSize.Curve.Sort();
+						}
 
-						if (ImGui::Button("Add##PanelInspector_ParticleSystem_SizeOverLife"))
+						if (ImGui::Button(NAME("Add##SizeOverLife")))
 						{
 							Emitter->ModuleSize.Curve.AddPoint(Vector3(1), 1.0f);
 						}
@@ -463,36 +523,38 @@ namespace Columbus
 					ImGui::Separator();
 				}
 
-				if (ImGui::CollapsingHeader("Noise##PanelInspector_ParticleSystem"))
+				if (ImGui::CollapsingHeader(NAME("Noise")))
 				{
 					ImGui::Indent(10.0f);
 
-					ImGui::DragFloat("Strength##PanelInspector_ParticleSystem_Noise",    &Emitter->ModuleNoise.Strength,    0.1f, 0.0f, FLT_MAX);
-					ImGui::SliderInt("Octaves##PanelInspector_ParticleSystem_Noise",     &Emitter->ModuleNoise.Octaves,        1,    8);
-					ImGui::DragFloat("Lacunarity##PanelInspector_ParticleSystem_Noise",  &Emitter->ModuleNoise.Lacunarity,  0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat("Persistence##PanelInspector_ParticleSystem_Noise", &Emitter->ModuleNoise.Persistence, 0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat("Frequency##PanelInspector_ParticleSystem_Noise",   &Emitter->ModuleNoise.Frequency,   0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat("Amplitude##PanelInspector_ParticleSystem_Noise",   &Emitter->ModuleNoise.Amplitude,   0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Strength##Noise"),    &Emitter->ModuleNoise.Strength,    0.1f, 0.0f, FLT_MAX);
+					ImGui::SliderInt(NAME("Octaves##Noise"),     &Emitter->ModuleNoise.Octaves,        1,    8);
+					ImGui::DragFloat(NAME("Lacunarity##Noise"),  &Emitter->ModuleNoise.Lacunarity,  0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Persistence##Noise"), &Emitter->ModuleNoise.Persistence, 0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Frequency##Noise"),   &Emitter->ModuleNoise.Frequency,   0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Amplitude##Noise"),   &Emitter->ModuleNoise.Amplitude,   0.1f, 0.0f, FLT_MAX);
 
 					ImGui::Unindent(10.0f);
 				}
 
-				if (ImGui::CollapsingHeader("SubUV##PanelInspector_ParticleSystem"))
+				if (ImGui::CollapsingHeader(NAME("SubUV")))
 				{
 					const char* Modes[] =  { "Linear", "Random" };
 
 					ImGui::Indent(10.0f);
 
-					ImGui::Combo("Mode##PanelInspector_ParticleSystem_SubUV",   (int*)&Emitter->ModuleSubUV.Mode, Modes, 2);
-					ImGui::DragInt("Horizontal##PanelInspector_ParticleSystem_SubUV", &Emitter->ModuleSubUV.Horizontal, 1,    0, INT_MAX);
-					ImGui::DragInt("Vertical##PanelInspector_ParticleSystem_SubUV",   &Emitter->ModuleSubUV.Vertical,   1,    0, INT_MAX);
-					ImGui::DragFloat("Cycles##PanelInspector_ParticleSystem_SubUV",   &Emitter->ModuleSubUV.Cycles,  0.1f, 0.0f, FLT_MAX);
+					ImGui::Combo(NAME("Mode##SubUV"),   (int*)&Emitter->ModuleSubUV.Mode, Modes, 2);
+					ImGui::DragInt(NAME("Horizontal##SubUV"), &Emitter->ModuleSubUV.Horizontal, 1,    0, INT_MAX);
+					ImGui::DragInt(NAME("Vertical##SubUV"),   &Emitter->ModuleSubUV.Vertical,   1,    0, INT_MAX);
+					ImGui::DragFloat(NAME("Cycles##SubUV"),   &Emitter->ModuleSubUV.Cycles,  0.1f, 0.0f, FLT_MAX);
 
 					ImGui::Unindent(10.0f);
 				}
 
 				ImGui::Unindent(10.0f);
 				ImGui::Separator();
+
+				#undef NAME
 			}
 		}
 	}

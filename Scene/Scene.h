@@ -3,12 +3,15 @@
 #include <Audio/AudioSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
-#include <Graphics/Render.h>
 #include <Physics/PhysicsWorld.h>
 #include <Scene/GameObject.h>
 #include <System/Timer.h>
 #include <Core/SmartPointer.h>
 #include <Core/Types.h>
+
+#include <Graphics/Texture.h>
+#include <Graphics/Shader.h>
+#include <Graphics/Mesh.h>
 
 #include <vector>
 #include <map>
@@ -53,10 +56,15 @@ namespace Columbus
 	class Scene
 	{
 	private:
+		friend class Renderer;
 		friend class Editor;
 		friend class ResourcesViewerTexture;
+		friend class ResourcesViewerShader;
+		friend class ResourcesViewerMesh;
 
 		ResourceManager<Texture> TexturesManager;
+		ResourceManager<ShaderProgram> ShadersManager;
+		ResourceManager<Mesh> MeshesManager;
 
 		std::map<uint32, SmartPointer<Texture>> Textures;
 		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
@@ -70,17 +78,15 @@ namespace Columbus
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 
-		Skybox* Sky = nullptr;
-		Camera* MainCamera = nullptr;
-		AudioListener* Listener = nullptr;
-
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
 	public:
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
 
-		Renderer MainRender;
+		Skybox* Sky = nullptr;
+		Camera* MainCamera = nullptr;
+		AudioListener* Listener = nullptr;
 
 		std::map<uint32, SmartPointer<GameObject>> Objects;
 	public:

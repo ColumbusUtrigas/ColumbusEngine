@@ -62,7 +62,7 @@ namespace Columbus
 		Vector2 Tiling = Vector2(1, 1);
 		Vector2 DetailTiling = Vector2(4, 4);
 
-		Vector4 Albedo;
+		Vector4 Albedo = Vector4(1);
 
 		float Roughness = 1.0f;
 		float Metallic = 0.1f;

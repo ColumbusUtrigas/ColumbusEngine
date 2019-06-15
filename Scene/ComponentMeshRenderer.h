@@ -17,7 +17,7 @@ namespace Columbus
 
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::MeshRenderer; }
-		Mesh* GetMesh() const { return Object; }
+		Mesh*& GetMesh() { return Object; }
 		void SetLights(std::vector<Light*> Lights) { Object->SetLights(Lights); }
 
 		virtual ~ComponentMeshRenderer() override {}

@@ -37,6 +37,7 @@ int main(int argc, char** argv)
 	EventSystem eventSystem;
 	AudioListener Listener;
 	Camera camera;
+	Renderer MainRender;
 
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
@@ -141,10 +142,14 @@ int main(int argc, char** argv)
 		Listener.Up = camera.Up();
 		Listener.Forward = camera.Direction();
 
-		scene.MainRender.ContextSize = SizeOfRenderWindow;
-		scene.MainRender.SetViewport({0}, SizeOfRenderWindow);
+		MainRender.ContextSize = SizeOfRenderWindow;
+		MainRender.SetViewport({0}, SizeOfRenderWindow);
 		scene.Update();
-		scene.Render();
+		MainRender.SetMainCamera(camera);
+		MainRender.SetSky(scene.Sky);
+		MainRender.SetScene(&scene);
+		MainRender.SetRenderList(&scene.Objects);
+		MainRender.Render();
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
@@ -152,7 +157,7 @@ int main(int argc, char** argv)
 
 		SDL_ShowCursor(input.IsMouseCursorShowed());
 
-		Editor.Draw(scene, SizeOfRenderWindow, RedrawTime);
+		Editor.Draw(scene, MainRender, SizeOfRenderWindow, RedrawTime);
 
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);

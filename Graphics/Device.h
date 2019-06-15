@@ -12,6 +12,7 @@ namespace Columbus
 	{
 	private:
 		DefaultShaders* gDefaultShaders = nullptr;
+		DefaultTextures* gDefaultTextures = nullptr;
 	public:
 		Device();
 
@@ -24,6 +25,7 @@ namespace Columbus
 		virtual Framebuffer* CreateFramebuffer() const;
 
 		DefaultShaders* GetDefaultShaders() { return gDefaultShaders; }
+		DefaultTextures* GetDefaultTextures()  { return gDefaultTextures; };
 
 		virtual ~Device();
 	};
