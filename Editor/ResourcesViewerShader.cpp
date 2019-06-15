@@ -32,6 +32,7 @@ namespace Columbus
 
 				auto LoadMore = [&]() { ShaderLoader.Open(); };
 				auto Button = [&](const char* Name, void* _) { return ImGui::Button(Name, ImVec2(100, 100)); };
+				auto DoubleClick = [&]() { Close(); };
 
 				auto Load = [&](const char* Path, ShaderProgram* S) { return S->Load(Path); };
 				auto Success = [&](const char* _) { ShaderLoader.Close(); };
@@ -39,7 +40,7 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateShaderProgram(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_ShadersViewer", LoadMore);
-				ResourceViewerDrawList<ShaderProgram>("ShadersList_ShadersViewer", Tmp, Scn->ShadersManager, Button);
+				ResourceViewerDrawList<ShaderProgram>("ShadersList_ShadersViewer", Tmp, Scn->ShadersManager, Button, DoubleClick);
 				ResourceViewerDrawButtons("Buttons_ShadersViewer", Destination, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<ShaderProgram>("Load Shader", ShaderLoader,
 					Scn->ShadersManager, ShaderBruteLoader,

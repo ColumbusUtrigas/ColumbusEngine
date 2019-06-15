@@ -43,8 +43,10 @@ namespace Columbus
 				auto LoadMore = [&]() { TextureLoader.Open(); };
 				auto Button = [&](const char* Name, Texture* Tex)
 				{
-					return ImGui::ImageButton(Tex == nullptr ? 0 : TEXID(Tex), ImVec2(100, 100));
+					bool Result = ImGui::ImageButton(Tex == nullptr ? 0 : TEXID(Tex), ImVec2(100, 100));
+					return Result;
 				};
+				auto DoubleClick = [&]() { Close(); };
 
 				#undef TEXID
 
@@ -54,7 +56,7 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateTexture(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_TexturesViewer", LoadMore);
-				ResourceViewerDrawList<Texture>("TexturesList_ShadersViewer", Tmp, Scn->TexturesManager, Button);
+				ResourceViewerDrawList<Texture>("TexturesList_ShadersViewer", Tmp, Scn->TexturesManager, Button, DoubleClick);
 				ResourceViewerDrawButtons("Buttons_TexturesViewer", Destination, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<Texture>("Load Texture", TextureLoader,
 					Scn->TexturesManager, BruteLoader,
