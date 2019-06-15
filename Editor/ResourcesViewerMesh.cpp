@@ -32,6 +32,7 @@ namespace Columbus
 
 				auto LoadMore = [&]() { MeshLoader.Open(); };
 				auto Button = [&](const char* Name, void* _) { return ImGui::Button(Name, ImVec2(100, 100)); };
+				auto DoubleClick = [&]() { Close(); };
 
 				auto Load = [&](const char* Path, Mesh* S) { return S->Load(Path); };
 				auto Success = [&](const char* _) { MeshLoader.Close(); };
@@ -39,7 +40,7 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateMesh(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_MeshesViewer", LoadMore);
-				ResourceViewerDrawList<Mesh>("MeshesList_MeshesViewer", Tmp, Scn->MeshesManager, Button);
+				ResourceViewerDrawList<Mesh>("MeshesList_MeshesViewer", Tmp, Scn->MeshesManager, Button, DoubleClick);
 				ResourceViewerDrawButtons("Buttons_MeshesViewer", Destination, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<Mesh>("Load Mesh", MeshLoader,
 					Scn->MeshesManager, MeshBruteLoader,

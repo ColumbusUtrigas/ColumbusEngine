@@ -13,10 +13,12 @@ namespace Columbus
 	static void ResourceViewerDrawLoadMore(const char* Name, std::function<void()> LoadMore);
 
 	template <typename T>
-	static void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width, std::function<bool(const char*, T*)> Button);
+	static void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width,
+		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick);
 
 	template <typename T>
-	static void ResourceViewerDrawList(const char* Name, T*& Tmp, const ResourceManager<T>& Manager, std::function<bool(const char*, T*)> Button);
+	static void ResourceViewerDrawList(const char* Name, T*& Tmp, const ResourceManager<T>& Manager,
+		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick);
 
 	static void ResourceViewerDrawButtons(const char* Name, const void* Dst, std::function<void()> Close, bool& Opened);
 
@@ -48,7 +50,8 @@ namespace Columbus
 	}
 
 	template <typename T>
-	void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width, std::function<bool(const char*, T*)> Button)
+	void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width,
+		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick)
 	{
 		bool Pushed = false;
 
@@ -64,7 +67,12 @@ namespace Columbus
 
 		// Draw a tooltip with the name of object
 		if (ImGui::IsItemHovered())
+		{
 			ImGui::SetTooltip(Name);
+
+			if (ImGui::IsMouseDoubleClicked(0))
+				DoubleClick();
+		}
 
 		// Set color to normal if this object was selected
 		if (Pushed) ImGui::PopStyleColor();
@@ -80,19 +88,19 @@ namespace Columbus
 	}
 
 	template <typename T>
-	void ResourceViewerDrawList(const char* Name, T*& Tmp, const ResourceManager<T>& Manager, std::function<bool(const char*, T*)> Button)
+	void ResourceViewerDrawList(const char* Name, T*& Tmp, const ResourceManager<T>& Manager,
+		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick)
 	{
 		if (ImGui::BeginChild(Name, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 30)))
 		{
 			uint32 Width = ImGui::GetWindowContentRegionWidth();
 
-			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, Button);
+			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, Button, DoubleClick);
 
 			for (const auto& Elem : Manager.ResourcesMap)
 			{
 				T* Object = Manager.Resources[Elem.second].Get();
-				ResourceViewerDrawSelectable<T>(Elem.first.c_str(), Object, Tmp, Width, Button);
-				
+				ResourceViewerDrawSelectable<T>(Elem.first.c_str(), Object, Tmp, Width, Button, DoubleClick);
 			}
 		}
 		ImGui::EndChild();
