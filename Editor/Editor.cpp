@@ -59,7 +59,7 @@ namespace Columbus
 		colors[ImGuiCol_TabActive]              = ImVec4(0.42f, 0.42f, 0.42f, 1.00f);
 		colors[ImGuiCol_TabUnfocused]           = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
 		colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.44f, 0.44f, 0.44f, 0.40f);
-		colors[ImGuiCol_DockingPreview]         = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
+		colors[ImGuiCol_DockingPreview]         = ImVec4(0.75f, 0.75f, 0.75f, 0.70f);
 		colors[ImGuiCol_DockingEmptyBg]         = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 		colors[ImGuiCol_PlotLines]              = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
 		colors[ImGuiCol_PlotLinesHovered]       = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
@@ -79,52 +79,74 @@ namespace Columbus
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("Open")) scene.Load("Data/3.scene");
-				ImGui::MenuItem("Save");
-				ImGui::MenuItem("Save As");
-				ImGui::MenuItem("Quit");
+				ImGui::Spacing();
+				if (ImGui::MenuItem(" Open")) scene.Load("Data/3.scene");
+				ImGui::Spacing();
+				ImGui::MenuItem(" Save");
+				ImGui::Spacing();
+				ImGui::MenuItem(" Save As");
+				ImGui::Spacing();
+				ImGui::MenuItem(" Quit");
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("View"))
+			if (ImGui::BeginMenu(" View"))
 			{
-				ImGui::MenuItem("Scene", nullptr, &PanelScene.Opened);
-				ImGui::MenuItem("Hierarchy", nullptr, &PanelHierarchy.Opened);
-				ImGui::MenuItem("Render Settings", nullptr, &PanelRenderSettings.Opened);
-				ImGui::MenuItem("Inspector", nullptr, &PanelInspector.Opened);
-				ImGui::MenuItem("Profiler", nullptr, &PanelProfiler.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem(" Scene", nullptr, &PanelScene.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem(" Hierarchy", nullptr, &PanelHierarchy.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem(" Render Settings", nullptr, &PanelRenderSettings.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem(" Inspector", nullptr, &PanelInspector.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem(" Profiler", nullptr, &PanelProfiler.Opened);
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("GameObject"))
+			if (ImGui::BeginMenu(" GameObject"))
 			{
-				if (ImGui::MenuItem("Empty")) scene.AddEmpty();
+				ImGui::Spacing();
+				if (ImGui::MenuItem(" Empty")) scene.AddEmpty();
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Resources"))
+			if (ImGui::BeginMenu(" Resources"))
 			{
-				if (ImGui::MenuItem("Textures"))
+				ImGui::Spacing();
+				if (ImGui::MenuItem(" Textures"))
 				{
 					ResourcesViewerTexture::Open(nullptr);
 				}
 
-				if (ImGui::MenuItem("Shaders"))
+				ImGui::Spacing();
+
+				if (ImGui::MenuItem(" Shaders"))
 				{
 					ResourcesViewerShader::Open(nullptr);
 				}
 
-				if (ImGui::MenuItem("Meshes"))
+				ImGui::Spacing();
+
+				if (ImGui::MenuItem(" Meshes"))
 				{
 					ResourcesViewerMesh::Open(nullptr);
 				}
 
+				ImGui::Spacing();
+
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Scene"))
+			if (ImGui::BeginMenu(" Scene"))
 			{
-				if (ImGui::MenuItem("Skybox")) SkyboxLoader.Open();//SkyboxWindow = true;
+				ImGui::Spacing();
+				if (ImGui::MenuItem(" Skybox")) SkyboxLoader.Open();
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
