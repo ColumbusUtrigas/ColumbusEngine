@@ -4,6 +4,8 @@
 #include <Editor/FontAwesome.h>
 #include <Core/Platform/PlatformFilesystem.h>
 #include <Editor/ResourcesViewerTexture.h>
+#include <Editor/ResourcesViewerShader.h>
+#include <Editor/ResourcesViewerMesh.h>
 
 namespace Columbus
 {
@@ -107,6 +109,16 @@ namespace Columbus
 					ResourcesViewerTexture::Open(nullptr);
 				}
 
+				if (ImGui::MenuItem("Shaders"))
+				{
+					ResourcesViewerShader::Open(nullptr);
+				}
+
+				if (ImGui::MenuItem("Meshes"))
+				{
+					ResourcesViewerMesh::Open(nullptr);
+				}
+
 				ImGui::EndMenu();
 			}
 
@@ -161,14 +173,16 @@ namespace Columbus
 		io.Fonts->Build();
 	}
 
-	void Editor::Draw(Scene& scene, iVector2& Size, float RedrawTime)
+	void Editor::Draw(Scene& scene, Renderer& Render, iVector2& Size, float RedrawTime)
 	{
 		DrawDockSpace(scene);
 
-		PanelScene.SetFramebufferTexture(scene.MainRender.GetFramebufferTexture());
+		Render.EditMode = true;
+
+		PanelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
 		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
-		PanelRenderSettings.SetRenderer(&scene.MainRender);
+		PanelRenderSettings.SetRenderer(&Render);
 		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
@@ -178,6 +192,8 @@ namespace Columbus
 		PanelInspector.Draw();
 		PanelProfiler.Draw();
 		ResourcesViewerTexture::Draw(&scene);
+		ResourcesViewerShader::Draw(&scene);
+		ResourcesViewerMesh::Draw(&scene);
 
 		if (SkyboxLoader.Draw("Load Skybox"))
 		{

@@ -1,6 +1,7 @@
 #include <Graphics/ParticlesRenderer.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/Device.h>
 #include <GL/glew.h>
 
 #include <glm/gtc/type_ptr.hpp>
@@ -102,7 +103,11 @@ namespace Columbus
 			Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());
 			Shader->SetUniform(Shader->GetFastUniform("Billboard"), false, Billboard);
 			Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
-			Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
+
+			if (Mat.AlbedoMap == nullptr)
+				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(gDevice->GetDefaultTextures()->White), 0);
+			else
+				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
 
 			Vector3* Positions = (Vector3*)PositionsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
 			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Positions[i * 6 + a] = Particles.Particles.Positions[i].XYZ();

@@ -6,6 +6,7 @@
 #include <Editor/PanelRenderSettings.h>
 #include <Editor/PanelInspector.h>
 #include <Editor/PanelProfiler.h>
+#include <Graphics/Render.h>
 
 #include <Math/Vector2.h>
 
@@ -27,7 +28,7 @@ namespace Columbus
 	public:
 		Editor();
 
-		void Draw(Scene& scene, iVector2& Size, float RedrawTime);
+		void Draw(Scene& scene, Renderer& Render, iVector2& Size, float RedrawTime);
 
 		~Editor();
 	};

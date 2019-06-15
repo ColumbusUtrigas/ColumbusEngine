@@ -14,8 +14,12 @@
 
 namespace Columbus
 {
-	Texture* BlackTexture;
 	Texture* Blob;
+	Texture* EditorIconSun;
+	Texture* EditorIconLamp;
+	Texture* EditorIconFlashlight;
+	Texture* EditorIconAudio;
+	Texture* EditorIconParticles;
 
 	ShaderProgram* NoneShader;
 	ShaderProgram* BloomBrightShader;
@@ -27,14 +31,19 @@ namespace Columbus
 
 	Renderer::Renderer()
 	{
-		BlackTexture = gDevice->CreateTexture();
 		Blob = gDevice->CreateTexture();
-
-		uint8 Zero = 0;
-		BlackTexture->Create2D(Texture::Properties(1, 1, 0, TextureFormat::R8));
-		BlackTexture->Load(&Zero, Texture::Properties(1, 1, 0, TextureFormat::R8));
+		EditorIconSun = gDevice->CreateTexture();
+		EditorIconLamp = gDevice->CreateTexture();
+		EditorIconAudio = gDevice->CreateTexture();
+		EditorIconFlashlight = gDevice->CreateTexture();
+		EditorIconParticles = gDevice->CreateTexture();
 
 		Blob->Load("Data/Textures/blob.png");
+		EditorIconSun->Load("Data/Icons/Sun.png");
+		EditorIconLamp->Load("Data/Icons/Lamp.png");
+		EditorIconFlashlight->Load("Data/Icons/Flashlight.png");
+		EditorIconAudio->Load("Data/Icons/Audio.png");
+		EditorIconParticles->Load("Data/Icons/Particles.png");
 
 		BaseEffect.ColorTexturesEnablement[0] = true;
 		BaseEffect.ColorTexturesEnablement[1] = true;
@@ -92,6 +101,11 @@ namespace Columbus
 	void Renderer::SetSky(Skybox* InSky)
 	{
 		Sky = InSky;
+	}
+
+	void Renderer::SetScene(Scene* InScn)
+	{
+		Scn = InScn;
 	}
 
 	uint32 Renderer::GetPolygonsRendered() const
@@ -375,6 +389,70 @@ namespace Columbus
 		BloomFinalPass.Unbind();
 	}
 
+	void Renderer::RenderIcons()
+	{
+		auto DrawIcon = [&](Vector4 Coords)
+		{
+			Coords = MainCamera.GetViewProjection() * Coords;
+
+			if (Coords.W > 0.0f)
+			{
+				Coords /= Coords.W;
+
+				float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
+
+				Quad.Render(Coords.XY(),  0.1f / Vector2(Aspect, 1));
+			}
+		};
+
+		static int LensFlareShaderTextureID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Texture");
+		((ShaderProgramOpenGL*)(LensFlareShader))->Bind();
+
+		State.SetBlending(true);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconSun, 0);
+		for (const auto& Elem : Scn->Lights)
+		{
+			if (Elem != nullptr)
+				if (Elem->Type == 0)
+					DrawIcon(Vector4(Elem->Pos, 1));
+		}
+
+		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconLamp, 0);
+		for (const auto& Elem : Scn->Lights)
+		{
+			if (Elem != nullptr)
+				if (Elem->Type == 1)
+					DrawIcon(Vector4(Elem->Pos, 1));
+		}
+
+		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconFlashlight, 0);
+		for (const auto& Elem : Scn->Lights)
+		{
+			if (Elem != nullptr)
+				if (Elem->Type == 2)
+					DrawIcon(Vector4(Elem->Pos, 1));
+		}
+
+		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconAudio, 0);
+		for (const auto& Elem : Scn->Audio.Mixer.Sources)
+		{
+			if (Elem != nullptr)
+				DrawIcon(Vector4(Elem->Position, 1));
+		}
+
+		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconParticles, 0);
+		for (const auto& Elem : TransparentObjects)
+		{
+			if (Elem.Particles != nullptr)
+				DrawIcon(Vector4(Elem.ObjectTransform.Position, 1));
+		}
+
+		((ShaderProgramOpenGL*)(LensFlareShader))->Unbind();
+	}
+
 	void Renderer::Render()
 	{
 		PROFILE_GPU(ProfileModuleGPU::GPU);
@@ -423,6 +501,11 @@ namespace Columbus
 			//Quad.Render(Center * 2.0f - 1.0f, Size);
 			Quad.Render();
 
+			if (EditMode)
+			{
+				RenderIcons();
+			}
+
 			FinalPass.Unbind();
 		}
 
@@ -451,8 +534,8 @@ namespace Columbus
 
 	Renderer::~Renderer()
 	{
-		delete BlackTexture;
 		delete Blob;
+		delete EditorIconLamp;
 		delete NoneShader;
 		delete BloomBrightShader;
 		delete GaussBlurShader;

@@ -10,6 +10,7 @@ namespace Columbus
 	void Device::Initialize()
 	{
 		gDefaultShaders = new DefaultShaders();
+		gDefaultTextures = new DefaultTextures();
 	}
 
 	void Device::Shutdown()

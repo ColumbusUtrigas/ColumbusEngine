@@ -8,6 +8,7 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/PostEffect.h>
 #include <Scene/GameObject.h>
+#include <Scene/Scene.h>
 
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/ParticlesRenderer.h>
@@ -58,6 +59,7 @@ namespace Columbus
 
 		Camera MainCamera;
 		Skybox* Sky = nullptr;
+		Scene* Scn = nullptr;
 
 		PostEffect BaseEffect;
 		PostEffect BloomBrightPass;
@@ -88,6 +90,7 @@ namespace Columbus
 		};
 	public:
 		iVector2 ContextSize;
+		bool EditMode = false;
 
 		float Exposure = 1.3f;
 		float Gamma = 1.5f;
@@ -100,12 +103,14 @@ namespace Columbus
 		PostEffectResolution BloomResolution = PostEffectResolution::Quad;
 	private:
 		void RenderBloom();
+		void RenderIcons();
 	public:
 		Renderer();
 		
 		void SetViewport(const iVector2& Origin, const iVector2& Size);
 		void SetMainCamera(const Camera& InCamera);
 		void SetSky(Skybox* InSky);
+		void SetScene(Scene* InScn);
 
 		uint32 GetPolygonsRendered() const;
 		uint32 GetOpaqueObjectsRendered() const;

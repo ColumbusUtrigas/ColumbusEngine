@@ -114,6 +114,15 @@ namespace Columbus
 		Flags TextureFlags;
 	};
 
+	struct DefaultTextures
+	{
+		Texture* Black = nullptr;
+		Texture* White = nullptr;
+
+		DefaultTextures();
+		~DefaultTextures();
+	};
+
 }
 
 

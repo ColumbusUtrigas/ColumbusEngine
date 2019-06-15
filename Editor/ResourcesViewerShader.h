@@ -1,19 +1,19 @@
 #pragma once
 
 #include <Scene/Scene.h>
-#include <Graphics/Texture.h>
+#include <Graphics/Shader.h>
 
 namespace Columbus
 {
 
-	class ResourcesViewerTexture
+	class ResourcesViewerShader
 	{
 	private:
 		static bool Opened;
-		static Texture** Destination;
-		static Texture* Tmp;
+		static ShaderProgram** Destination;
+		static ShaderProgram* Tmp;
 	public:
-		static void Open(Texture** Dst)
+		static void Open(ShaderProgram** Dst)
 		{
 			Opened = true;
 			Destination = Dst;
@@ -34,7 +34,6 @@ namespace Columbus
 
 		static void Draw(Scene* Scn);
 	};
-
 }
 
 

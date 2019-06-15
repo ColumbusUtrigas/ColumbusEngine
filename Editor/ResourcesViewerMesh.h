@@ -1,19 +1,19 @@
 #pragma once
 
 #include <Scene/Scene.h>
-#include <Graphics/Texture.h>
+#include <Graphics/Mesh.h>
 
 namespace Columbus
 {
 
-	class ResourcesViewerTexture
+	class ResourcesViewerMesh
 	{
 	private:
 		static bool Opened;
-		static Texture** Destination;
-		static Texture* Tmp;
+		static Mesh** Destination;
+		static Mesh* Tmp;
 	public:
-		static void Open(Texture** Dst)
+		static void Open(Mesh** Dst)
 		{
 			Opened = true;
 			Destination = Dst;

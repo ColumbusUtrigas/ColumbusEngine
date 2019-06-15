@@ -676,10 +676,11 @@ namespace Columbus
 	
 	void Scene::Render()
 	{
-		MainRender.SetMainCamera(*MainCamera);
+		/*MainRender.SetMainCamera(*MainCamera);
 		MainRender.SetSky(Sky);
+		MainRender.SetScene(this);
 		MainRender.SetRenderList(&Objects);
-		MainRender.Render();
+		MainRender.Render();*/
 	}
 	
 	Scene::~Scene()
