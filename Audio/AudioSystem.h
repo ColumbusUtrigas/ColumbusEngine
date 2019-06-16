@@ -6,6 +6,9 @@
 namespace Columbus
 {
 
+	/**
+	* @brief Wrapper aroung AudioPlayer and AudioMixer.
+	*/
 	class AudioSystem
 	{
 	private:
@@ -32,17 +35,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 

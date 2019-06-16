@@ -286,6 +286,8 @@ namespace Columbus
 
 			case ShaderProgram::StandartProgram::IntegrationGeneration:
 			{
+				Data.Attributes.emplace_back("Position", 0);
+				Data.Attributes.emplace_back("Texcoord", 1);
 				Data.VertexSource = gIntegrationGenerationVertexShader;
 				Data.FragmentSource = gIntegrationGenerationFragmentShader;
 

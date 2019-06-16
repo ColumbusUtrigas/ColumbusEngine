@@ -3,6 +3,9 @@
 namespace Columbus
 {
 
+	/**
+	* Simple smart pointer realization, analogue of std::unique_ptr.
+	*/
 	template <class Type>
 	class SmartPointer
 	{

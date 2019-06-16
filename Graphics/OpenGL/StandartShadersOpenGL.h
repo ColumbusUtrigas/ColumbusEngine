@@ -236,10 +236,13 @@ namespace Columbus
 	#version 130
 	out vec2 TexCoords;
 
+	in vec2 Position;
+	in vec2 Texcoord;
+
 	void main()
 	{
-		gl_Position = ftransform();
-		TexCoords = gl_MultiTexCoord0.xy;
+		gl_Position = vec4(Position, 0, 1);
+		TexCoords = Texcoord;
 	}
 	)";
 
