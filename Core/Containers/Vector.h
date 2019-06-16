@@ -8,6 +8,10 @@
 namespace Columbus
 {
 
+	/**
+	* @brief Simple basic allocator.
+	* It directly uses malloc/realloc/free functions.
+	*/
 	template <typename ValueType>
 	class DefaultAllocator
 	{
@@ -31,6 +35,9 @@ namespace Columbus
 		}
 	};
 
+	/**
+	* @brief Simple basic iterator.
+	*/
 	template <typename ValueType>
 	class RandomAccessIterator
 	{
@@ -45,6 +52,9 @@ namespace Columbus
 		bool operator!=(const RandomAccessIterator& Other) const { return _Values != Other._Values; }
 	};
 
+	/**
+	* @brief Simple dynamic array, analogue of std::vector.
+	*/
 	template <typename ValueType, typename Allocator = DefaultAllocator<ValueType>>
 	class Vector
 	{
@@ -54,6 +64,9 @@ namespace Columbus
 		uint32 _Size = 0;
 		uint32 _Capacity = 10;
 	public:
+		/**
+		* @brief Allocates 10 elements (default capacity).
+		*/
 		Vector()
 		{
 			_Data = _Allocator.Allocate(_Capacity);
@@ -69,12 +82,19 @@ namespace Columbus
 			return _Data;
 		}
 
+		/**
+		* @brief Sets size of the vector to 0.
+		* @note It doesn't affect capacity of the vector.
+		*/
 		void Clear()
 		{
 			//_Data = _Allocator.Reallocate(_Data, _Capacity);
 			_Size = 0;
 		}
 
+		/**
+		* @brief Reserves NewCapacity elements. It doesn't affect content of the vector.
+		*/
 		void Reserve(uint32 NewCapacity)
 		{
 			if (NewCapacity > _Capacity)

@@ -391,6 +391,10 @@ namespace Columbus
 
 	void Renderer::RenderIcons()
 	{
+		static int LensFlareShaderTextureID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Texture");
+		static int LensFlareShaderPosID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Pos");
+		static int LensFlareShaderSizeID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Size");
+
 		auto DrawIcon = [&](Vector4 Coords)
 		{
 			Coords = MainCamera.GetViewProjection() * Coords;
@@ -401,11 +405,13 @@ namespace Columbus
 
 				float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
 
-				Quad.Render(Coords.XY(),  0.1f / Vector2(Aspect, 1));
+
+				((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderPosID, Coords.XY());
+				((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderSizeID, 0.1f / Vector2(Aspect, 1));
+				Quad.Render();
 			}
 		};
 
-		static int LensFlareShaderTextureID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Texture");
 		((ShaderProgramOpenGL*)(LensFlareShader))->Bind();
 
 		State.SetBlending(true);
@@ -476,6 +482,8 @@ namespace Columbus
 
 		BaseEffect.Unbind();
 
+		State.Clear();
+
 		Texture* Final = BaseEffect.ColorTextures[0];
 
 		if (BloomEnable)
@@ -483,10 +491,6 @@ namespace Columbus
 			RenderBloom();
 			Final = BloomFinalPass.ColorTextures[0];
 		}
-
-		Vector2 Origin = (Vector2)ViewportOrigin / (Vector2)ContextSize;
-		Vector2 Size = (Vector2)ViewportSize / (Vector2)ContextSize;
-		Vector2 Center = Size * 0.5f + Origin;
 
 		// Final stage
 		{
@@ -498,8 +502,8 @@ namespace Columbus
 			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)Final, 0);
 			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
 			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
-			//Quad.Render(Center * 2.0f - 1.0f, Size);
 			Quad.Render();
+			((ShaderProgramOpenGL*)NoneShader)->Unbind();
 
 			if (EditMode)
 			{

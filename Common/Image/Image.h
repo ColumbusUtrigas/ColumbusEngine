@@ -14,6 +14,9 @@ namespace Columbus
 		FlipXY
 	};
 
+	/**
+	* @brief Format of stored on disk image.
+	*/
 	enum class ImageFormat
 	{
 		BMP,
@@ -26,6 +29,9 @@ namespace Columbus
 		Unknown
 	};
 
+	/**
+	* @brief GPU texture format.
+	*/
 	enum class TextureFormat
 	{
 		R8,
@@ -63,6 +69,9 @@ namespace Columbus
 		Unknown
 	};
 
+	/**
+	* @brief Helper class to load image from the disk.
+	*/
 	class ImageLoader
 	{
 	public:
@@ -92,6 +101,8 @@ namespace Columbus
 		virtual ~ImageLoader() {}
 	};
 
+
+
 	ImageFormat ImageGetFormat(const char* FileName);
 	uint32 GetBPPFromFormat(TextureFormat Format);
 	uint32 GetBlockSizeFromFormat(TextureFormat Format);
@@ -112,6 +123,10 @@ namespace Columbus
 	bool ImageFlipY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
 	bool ImageFlipXY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
 
+
+	/**
+	* @brief CPU-side image.
+	*/
 	class Image
 	{
 	public:
