@@ -24,32 +24,44 @@ namespace Columbus
 		struct OpaqueRenderData
 		{
 			Mesh* Object;
-			Transform ObjectTransform;
-			Material ObjectMaterial;
+			uint32 Index; // Index of GameObject in array
+			int32 Lights[4] = { -1, -1, -1, -1 };
 
-			OpaqueRenderData(Mesh* InObject, const Transform& InTransform, const Material& InMaterial) :
+			OpaqueRenderData(Mesh* InObject, uint32 InIndex) :
 				Object(InObject),
-				ObjectTransform(InTransform),
-				ObjectMaterial(InMaterial) {}
+				Index(InIndex) {}
 		};
 
 		struct TransparentRenderData
 		{
 			Mesh* MeshObject;
 			ParticleEmitterCPU* Particles;
+			uint32 Index; // Index of GameObject in array
+			int32 Lights[4] = { -1, -1, -1, -1 };
 
-			Transform ObjectTransform;
-			Material ObjectMaterial;
+			//Transform ObjectTransform;
+			//Material ObjectMaterial;
 
-			TransparentRenderData(Mesh* InMesh, ParticleEmitterCPU* CPU, const Transform& InTransform, const Material& InMaterial) :
+			TransparentRenderData(Mesh* InMesh, uint32 InIndex) :
+				MeshObject(InMesh),
+				Particles(nullptr),
+				Index(InIndex) {}
+
+			TransparentRenderData(ParticleEmitterCPU* CPU, uint32 InIndex) :
+				MeshObject(nullptr),
+				Particles(CPU),
+				Index(InIndex) {}
+
+			/*TransparentRenderData(Mesh* InMesh, ParticleEmitterCPU* CPU, const Transform& InTransform, const Material& InMaterial) :
 				MeshObject(InMesh),
 				Particles(CPU),
 				ObjectTransform(InTransform),
-				ObjectMaterial(InMaterial) {}
+				ObjectMaterial(InMaterial) {}*/
 		};
 	protected:
-		std::map<uint32, SmartPointer<GameObject>>* RenderList;
+		std::vector<SmartPointer<GameObject>>* RenderList;
 		std::vector<Light*>* LightsList;
+		std::vector<std::pair<uint32, Light*>> LightsPairs;
 
 		std::vector<OpaqueRenderData> OpaqueObjects;
 		std::vector<TransparentRenderData> TransparentObjects;
@@ -102,6 +114,8 @@ namespace Columbus
 		int BloomIterations = 2;
 		PostEffectResolution BloomResolution = PostEffectResolution::Quad;
 	private:
+		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
+
 		void RenderBloom();
 		void RenderIcons();
 	public:
@@ -116,7 +130,7 @@ namespace Columbus
 		uint32 GetOpaqueObjectsRendered() const;
 		uint32 GetTransparentObjectsRendered() const;
 
-		virtual void SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List);
+		virtual void SetRenderList(std::vector<SmartPointer<GameObject>>* List);
 		virtual void SetLightsList(std::vector<Light*>* List);
 		virtual void CompileLists();
 		virtual void SortLists();

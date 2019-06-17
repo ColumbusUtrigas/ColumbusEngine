@@ -7,14 +7,12 @@
 namespace Columbus
 {
 
-	static ComponentMeshRenderer* CopyComponent(ComponentMeshRenderer* Co)
+	static void CopyComponent(ComponentMeshRenderer* Co, GameObject& GO)
 	{
 		if (Co != nullptr)
 		{
-			return new ComponentMeshRenderer(Co->GetMesh());
+			GO.AddComponent(new ComponentMeshRenderer(Co->GetMesh()));
 		}
-
-		return nullptr;
 	}
 
 	void EditorPanelHierarchy::Draw()
@@ -23,11 +21,14 @@ namespace Columbus
 		{
 			if (ImGui::Begin((ICON_FA_LIST_UL" " + Name + "##PanelHierarchy").c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
 			{
-				for (auto& Obj : scene->Objects)
+				bool Delete = false;
+				std::string DeleteName;
+
+				for (auto& Obj : scene->Objects.Resources)
 				{
-					if (ImGui::Selectable(Obj.second->Name.c_str(), object == Obj.second.Get()))
+					if (ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get()))
 					{
-						object = Obj.second.Get();
+						object = Obj.Get();
 					}
 
 					// if (ctr+c)
@@ -35,6 +36,25 @@ namespace Columbus
 					{
 						buffer = object;
 					}
+
+					// if (delete)
+					if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)) && !Delete)
+					{
+						if (object != nullptr)
+						{
+							Delete = true;
+							DeleteName = object->Name;
+						}
+					}
+				}
+
+				if (Delete)
+				{
+					if (object == buffer)
+						buffer = nullptr;
+
+					object = nullptr;
+					scene->Objects.Delete(DeleteName);
 				}
 			}
 			ImGui::End();
@@ -50,23 +70,27 @@ namespace Columbus
 						tmp.transform = buffer->transform;
 						tmp.transform.Position = Vector3::Random({-10}, {10});
 						tmp.Name = buffer->Name + " ";
-						tmp.SetMaterial(buffer->GetMaterial());
-						tmp.GetMaterial().Albedo = Vector4(Vector3::Random({0.0f}, {1.0f}), 1);
-						tmp.GetMaterial().Roughness = Random::Range(0.0f, 1.0f);
-						tmp.GetMaterial().Metallic = Random::Range(0.0f, 1.0f);
+						tmp.Enable = buffer->Enable;
+						tmp.material = buffer->material;
+						tmp.material.Albedo = Vector4(Vector3::Random({0.0f}, {1.0f}), 1);
+						tmp.material.Roughness = Random::Range(0.0f, 1.0f);
+						tmp.material.Metallic = Random::Range(0.0f, 1.0f);
 
-						tmp.AddComponent(CopyComponent(buffer->GetComponent<ComponentMeshRenderer>()));
+						CopyComponent(buffer->GetComponent<ComponentMeshRenderer>(), tmp);
+
+						std::string Name;
 
 						for (uint32 i = 0;; i++)
 						{
-							if (scene->GetGameObject(tmp.Name + std::to_string(i)) == nullptr)
+							Name = tmp.Name + std::to_string(i);
+							if (scene->Objects.Find(Name) == nullptr)
 							{
-								tmp.Name += std::to_string(i);
+								tmp.Name = Name;
 								break;
 							}
 						}
 
-						scene->Add(scene->Objects.size(), std::move(tmp));
+						scene->Add(std::move(tmp));
 					}
 				}
 			}

@@ -1,6 +1,8 @@
 #include <Scene/Scene.h>
 #include <Graphics/Device.h>
-#include <System/Serializer.h>
+#include <Common/JSON/JSON.h>
+#include <Profiling/Profiling.h>
+//#include <System/Serializer.h>
 
 #include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentLight.h>
@@ -19,10 +21,6 @@
 
 #include <Graphics/Particles/ParticleEmitterLoader.h>
 
-#include <unordered_set>
-
-#include <Common/JSON/JSON.h>
-
 namespace Columbus
 {
 
@@ -33,26 +31,32 @@ namespace Columbus
 
 	void Scene::RigidbodyWorkflow()
 	{
-		for (auto& Object : Objects)
+		for (auto& Object : Objects.Resources)
 		{
-			ComponentRigidbody* rb = static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
-
-			if (rb != nullptr)
+			if (Object->Enable)
 			{
-				rb->GetRigidbody()->SetTransform(Object.second->transform);
+				ComponentRigidbody* rb = Object->GetComponent<ComponentRigidbody>();
+
+				if (rb != nullptr)
+				{
+					rb->GetRigidbody()->SetTransform(Object->transform);
+				}
 			}
 		}
 	}
 
 	void Scene::RigidbodyPostWorkflow()
 	{
-		for (auto& Object : Objects)
+		for (auto& Object : Objects.Resources)
 		{
-			ComponentRigidbody* rb = static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
-
-			if (rb != nullptr)
+			if (Object->Enable)
 			{
-				Object.second->SetTransform(rb->GetRigidbody()->GetTransform());
+				ComponentRigidbody* rb = Object->GetComponent<ComponentRigidbody>();
+
+				if (rb != nullptr)
+				{
+					Object->transform = rb->GetRigidbody()->GetTransform();
+				}
 			}
 		}
 	}
@@ -63,7 +67,7 @@ namespace Columbus
 	*
 	*/
 
-	static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, const std::string& Element)
+	/*static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, const std::string& Element)
 	{
 		Transform Trans;
 
@@ -75,9 +79,9 @@ namespace Columbus
 		}
 
 		return Trans;
-	}
+	}*/
 
-	static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, const std::string& Element)
+	/*static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, const std::string& Element)
 	{
 		Material* Mat = new Material();
 
@@ -95,9 +99,9 @@ namespace Columbus
 		} else return nullptr;
 
 		return Mat;
-	}
+	}*/
 
-	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
+	/*static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		ComponentMeshRenderer* MeshRenderer = nullptr;
 
@@ -120,9 +124,9 @@ namespace Columbus
 		}
 
 		return MeshRenderer;
-	}
+	}*/
 
-	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat)
+	/*static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat)
 	{
 		ComponentParticleSystem* ParticleSystem = nullptr;
 
@@ -142,9 +146,9 @@ namespace Columbus
 		}
 
 		return ParticleSystem;
-	}
+	}*/
 
-	static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, const std::string& Element, Vector3 Position)
+	/*static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, const std::string& Element, Vector3 Position)
 	{
 		ComponentLight* CLight = nullptr;
 
@@ -162,9 +166,9 @@ namespace Columbus
 		}
 
 		return CLight;
-	}
+	}*/
 
-	static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, const std::string& Element, Transform Trans, PhysicsShape* Shape)
+	/*static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, const std::string& Element, Transform Trans, PhysicsShape* Shape)
 	{
 		ComponentRigidbody* CRigidbody = nullptr;
 
@@ -211,9 +215,9 @@ namespace Columbus
 		}
 
 		return CRigidbody;
-	}
+	}*/
 
-	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Mesh>>* Meshes)
+	/*static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		PhysicsShape* Shape = nullptr;
 
@@ -291,9 +295,9 @@ namespace Columbus
 		}
 
 		return Shape;
-	}
+	}*/
 
-	static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Sound>>* Sounds)
+	/*static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Sound>>* Sounds)
 	{
 		ComponentAudioSource* CAudioSource = nullptr;
 
@@ -360,13 +364,13 @@ namespace Columbus
 		}
 
 		return CAudioSource;
-	}
+	}*/
 	/*
 	*
 	* End of additional functions for loading GameObject
 	*
 	*/
-	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, const std::string& Element,
+	/*static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, const std::string& Element,
 		std::map<uint32, SmartPointer<Mesh>>* Meshes, std::map<uint32, SmartPointer<Texture>>* Textures, std::map<uint32, SmartPointer<ShaderProgram>>* Shaders,
 		std::map<uint32, SmartPointer<Sound>>* Sounds, PhysicsWorld* PhysWorld)
 	{
@@ -444,7 +448,7 @@ namespace Columbus
 		}
 
 		return true;
-	}
+	}*/
 	
 	bool Scene::Load(const char* FileName)
 	{
@@ -498,7 +502,7 @@ namespace Columbus
 
 		return true;
 
-		Serializer::SerializerXML serializer;
+		/*Serializer::SerializerXML serializer;
 
 		if (!serializer.Read(FileName, "Scene"))
 		{ Log::Error("Can't load Scene: %s", FileName); return false; }
@@ -604,32 +608,21 @@ namespace Columbus
 				Add(i, std::move(Object));
 			}
 		}
-		return true;
+		return true;*/
 	}
 	
-	GameObject* Scene::GetGameObject(uint32 ID) const
+	/*GameObject* Scene::GetGameObject(const std::string& Name) const
 	{
-		return Objects.at(ID).Get();
-	}
-	
-	GameObject* Scene::GetGameObject(const std::string& Name) const
-	{
-		for (auto& Object : Objects)
-		{
-			if (Object.second != nullptr)
-			{
-				if (Object.second->Name == Name)
-				{
-					return Object.second.Get();
-				}
-			}
-		}
 
-		return nullptr;
-	}
+		//auto It = ObjectMap.find(Name);
+		//return It != ObjectMap.end() ? Objects[It->second].Get() : nullptr;
+	}*/
 	
+	// This function is fucking slow, I am stupid
 	void Scene::Update()
 	{
+		PROFILE_CPU(ProfileModule::Update);
+
 		float Time = (float)DeltaTime.Elapsed() * TimeFactor;
 		DeltaTime.Reset();
 
@@ -638,24 +631,21 @@ namespace Columbus
 		Audio.Clear();
 		Lights.clear();
 
-		for (auto& Object : Objects)
+		for (auto& Object : Objects.Resources)
 		{
-			Object.second->Update(Time);
+			if (Object->Enable)
+			{
+				// TODO: DOD
+				Object->Update(Time);
 
-			auto AudioSource = Object.second->GetComponent<ComponentAudioSource>();
-			auto Light = Object.second->GetComponent<ComponentLight>();
-			auto PS = Object.second->GetComponent<ComponentParticleSystem>();
+				auto AudioSource = Object->GetComponent<ComponentAudioSource>();
+				auto Light = Object->GetComponent<ComponentLight>();
+				auto PS = Object->GetComponent<ComponentParticleSystem>();
 
-			if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
-			if (Light != nullptr) Lights.emplace_back(Light->LightSource);
-			if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
-		}
-
-		for (auto& Object : Objects)
-		{
-			auto Mesh = Object.second->GetComponent<ComponentMeshRenderer>();
-
-			if (Mesh != nullptr) Mesh->SetLights(Lights);
+				if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
+				if (Light != nullptr) Lights.emplace_back(Light->LightSource);
+				if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
+			}
 		}
 
 		PhysWorld.Step(Time, 10);
@@ -672,15 +662,6 @@ namespace Columbus
 		{
 			Sky->SetCamera(*MainCamera);
 		}
-	}
-	
-	void Scene::Render()
-	{
-		/*MainRender.SetMainCamera(*MainCamera);
-		MainRender.SetSky(Sky);
-		MainRender.SetScene(this);
-		MainRender.SetRenderList(&Objects);
-		MainRender.Render();*/
 	}
 	
 	Scene::~Scene()

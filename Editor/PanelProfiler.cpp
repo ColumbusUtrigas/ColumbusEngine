@@ -51,6 +51,7 @@ namespace Columbus
 				double PhysicsTime   = GetProfileTime(ProfileModule::Physics);
 				double ParticlesTime = GetProfileTime(ProfileModule::Particles);
 				double CullingTime   = GetProfileTime(ProfileModule::Culling);
+				double UpdateTime    = GetProfileTime(ProfileModule::Update);
 
 				ImGui::Dummy(ImVec2(0.0f, 10.0f));
 				ImGui::Text("CPU Profiling"); ImGui::SameLine();
@@ -60,6 +61,7 @@ namespace Columbus
 				ImGui::Text("Physics:   %.3f ms", PhysicsTime);
 				ImGui::Text("Particles: %.3f ms", ParticlesTime);
 				ImGui::Text("Culling:   %.3f ms", CullingTime);
+				ImGui::Text("Update:    %.3f ms", UpdateTime);
 				ImGui::Unindent(10.0f);
 
 				double GPUTime             = GetProfileTimeGPU(ProfileModuleGPU::GPU);

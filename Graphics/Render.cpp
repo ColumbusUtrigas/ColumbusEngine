@@ -123,7 +123,7 @@ namespace Columbus
 		return TransparentObjectsRendered;
 	}
 
-	void Renderer::SetRenderList(std::map<uint32, SmartPointer<GameObject>>* List)
+	void Renderer::SetRenderList(std::vector<SmartPointer<GameObject>>* List)
 	{
 		RenderList = List;
 	}
@@ -140,45 +140,62 @@ namespace Columbus
 		OpaqueObjects.clear();
 		TransparentObjects.clear();
 
+		LightsPairs.clear();
+
 		Frustum ViewFrustum(MainCamera.GetViewProjection());
+
+		for (uint32 i = 0; i < Scn->Lights.size(); i++)
+		{
+			LightsPairs.emplace_back(i, Scn->Lights[i]);
+		}
 
 		if (RenderList != nullptr)
 		{
+			uint32 Counter = 0;
 			for (auto& Object : *RenderList)
 			{
-				auto MeshRenderer = Object.second->GetComponent<ComponentMeshRenderer>();
-				auto ParticleSystem = Object.second->GetComponent<ComponentParticleSystem>();
-
-				if (MeshRenderer != nullptr)
+				if (Object->Enable)
 				{
-					auto Mesh = MeshRenderer->GetMesh();
+					auto MeshRenderer = Object->GetComponent<ComponentMeshRenderer>();
+					auto ParticleSystem = Object->GetComponent<ComponentParticleSystem>();
 
-					if (Mesh != nullptr)
+					if (MeshRenderer != nullptr)
 					{
-						if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object.second->GetTransform().GetMatrix()))
-						{
-							Object.second->GetMaterial().ReflectionMap = Sky->GetIrradianceMap();
+						auto Mesh = MeshRenderer->GetMesh();
 
-							if (Object.second->GetMaterial().Transparent)
+						if (Mesh != nullptr)
+						{
+							if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 							{
-								TransparentObjects.emplace_back(Mesh, nullptr, Object.second->GetTransform(), Object.second->GetMaterial());
-							}
-							else
-							{
-								OpaqueObjects.emplace_back(Mesh, Object.second->GetTransform(), Object.second->GetMaterial());
+								Object->material.ReflectionMap = Sky->GetIrradianceMap();
+
+								if (Object->material.Transparent)
+								{
+									//TransparentObjects.emplace_back(Mesh, nullptr, Object->transform, Object->material);
+									TransparentObjects.emplace_back(Mesh, Counter);
+									CalculateLights(Object->transform.Position, TransparentObjects.back().Lights);
+								}
+								else
+								{
+									OpaqueObjects.emplace_back(Mesh, Counter);
+									CalculateLights(Object->transform.Position, OpaqueObjects.back().Lights);
+								}
 							}
 						}
 					}
-				}
 
-				if (ParticleSystem != nullptr)
-				{
-					auto Emitter = &ParticleSystem->Emitter;
-
-					if (Emitter != nullptr)
+					if (ParticleSystem != nullptr)
 					{
-						TransparentObjects.emplace_back(nullptr, Emitter, Object.second->GetTransform(), Object.second->GetMaterial());
+						auto Emitter = &ParticleSystem->Emitter;
+
+						if (Emitter != nullptr)
+						{
+							//TransparentObjects.emplace_back(nullptr, Emitter, Object->transform, Object->material);
+							TransparentObjects.emplace_back(Emitter, Counter);
+						}
 					}
+
+					Counter++;
 				}
 			}
 		}
@@ -188,12 +205,12 @@ namespace Columbus
 	{
 		auto OpaqueSorter = [&](const OpaqueRenderData& A, const OpaqueRenderData& B)->bool
 		{
-			return MainCamera.Pos.LengthSquare(A.ObjectTransform.Position) < MainCamera.Pos.LengthSquare(B.ObjectTransform.Position);
+			return MainCamera.Pos.LengthSquare(Scn->Objects[A.Index]->transform.Position) < MainCamera.Pos.LengthSquare(Scn->Objects[B.Index]->transform.Position);
 		};
 
 		auto TransparentSorter = [&](const TransparentRenderData& A, const TransparentRenderData& B)->bool
 		{
-			return MainCamera.Pos.LengthSquare(A.ObjectTransform.Position) > MainCamera.Pos.LengthSquare(B.ObjectTransform.Position);
+			return MainCamera.Pos.LengthSquare(Scn->Objects[A.Index]->transform.Position) > MainCamera.Pos.LengthSquare(Scn->Objects[B.Index]->transform.Position);
 		};
 
 		std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
@@ -210,16 +227,19 @@ namespace Columbus
 
 		for (auto& Object : OpaqueObjects)
 		{
-			ShaderProgram* CurrentShader = Object.ObjectMaterial.GetShader();
+			SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
+			Material& Mat = GO->material;
+			ShaderProgram* CurrentShader = Mat.ShaderProg;
+			std::vector<Light*>& Lights = Scn->Lights;
 				
 			if (CurrentShader != nullptr)
 			{
-				State.SetCulling(Object.ObjectMaterial.Culling);
-				State.SetDepthTesting(Object.ObjectMaterial.DepthTesting);
-				State.SetDepthWriting(Object.ObjectMaterial.DepthWriting);
-				State.SetShaderProgram(Object.ObjectMaterial.GetShader());
-				State.SetMaterial(Object.ObjectMaterial, Object.ObjectTransform.GetMatrix(), Sky);
-				State.SetLights(Object.Object->Lights);
+				State.SetCulling(Mat.Culling);
+				State.SetDepthTesting(Mat.DepthTesting);
+				State.SetDepthWriting(Mat.DepthWriting);
+				State.SetShaderProgram(Mat.GetShader());
+				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
+				State.SetLights(Lights, Object.Lights);
 				State.SetMesh(Object.Object);
 
 				PolygonsRendered += Object.Object->Render();
@@ -251,22 +271,27 @@ namespace Columbus
 
 			for (auto& Object : TransparentObjects)
 			{
+				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
+				Material& Mat = GO->material;
+
+				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
+				Mesh* CurrentMesh = Object.MeshObject;
+
+				std::vector<Light*>& Lights = Scn->Lights;
+
 				if (Object.MeshObject != nullptr)
 				{
-					ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Object.ObjectMaterial.GetShader();
-					Mesh* CurrentMesh = Object.MeshObject;
-
 					if (CurrentShader != nullptr)
 					{
-						State.SetDepthTesting(Object.ObjectMaterial.DepthTesting);
-						State.SetShaderProgram(Object.ObjectMaterial.GetShader());
-						State.SetMaterial(Object.ObjectMaterial, Object.ObjectTransform.GetMatrix(), Sky);
-						State.SetLights(Object.MeshObject->Lights);
+						State.SetDepthTesting(Mat.DepthTesting);
+						State.SetShaderProgram(CurrentShader);
+						State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
+						State.SetLights(Lights, Object.Lights);
 						CurrentMesh->Bind();
 
 						int32 Transparent = CurrentShader->GetFastUniform("Transparent");
 
-						if (Object.ObjectMaterial.Culling == Material::Cull::No)
+						if (Mat.Culling == Material::Cull::No)
 						{
 							State.SetDepthWriting(true);
 							CurrentShader->SetUniform(Transparent, 0);
@@ -282,7 +307,7 @@ namespace Columbus
 						}
 						else
 						{
-							State.SetCulling(Object.ObjectMaterial.Culling);
+							State.SetCulling(Mat.Culling);
 
 							State.SetDepthWriting(true);
 							CurrentShader->SetUniform(Transparent, 0);
@@ -301,8 +326,8 @@ namespace Columbus
 
 				if (Object.Particles != nullptr)
 				{
-					State.SetShaderProgram(Object.ObjectMaterial.GetShader());
-					ParticlesRender.Render(*Object.Particles, MainCamera, Object.ObjectMaterial);
+					State.SetShaderProgram(CurrentShader);
+					ParticlesRender.Render(*Object.Particles, MainCamera, Mat);
 				}
 			}
 		}
@@ -323,6 +348,26 @@ namespace Columbus
 		}
 
 		State.SetCulling(Material::Cull::No);
+	}
+
+	void Renderer::CalculateLights(const Vector3& Position, int32(&Lights)[4])
+	{
+		static auto func = [&Position](const auto& A, const auto& B) -> bool
+		{
+			double ADistance = Math::Sqr(A.second->Pos.X - Position.X) + Math::Sqr(A.second->Pos.Y - Position.Y) + Math::Sqr(A.second->Pos.Z - Position.Z);
+			double BDistance = Math::Sqr(B.second->Pos.X - Position.X) + Math::Sqr(B.second->Pos.Y - Position.Y) + Math::Sqr(B.second->Pos.Z - Position.Z);
+			return ADistance < BDistance;
+		};
+
+		if (LightsPairs.size() >= 4)
+		{
+			std::sort(LightsPairs.begin(), LightsPairs.end(), func);
+		}
+
+		for (uint32 i = 0; i < 4 && i < LightsPairs.size(); i++)
+		{
+			Lights[i] = LightsPairs[i].first;
+		}
 	}
 
 	void Renderer::RenderBloom()
@@ -453,7 +498,7 @@ namespace Columbus
 		for (const auto& Elem : TransparentObjects)
 		{
 			if (Elem.Particles != nullptr)
-				DrawIcon(Vector4(Elem.ObjectTransform.Position, 1));
+				DrawIcon(Vector4(Scn->Objects[Elem.Index]->transform.Position, 1));
 		}
 
 		((ShaderProgramOpenGL*)(LensFlareShader))->Unbind();
@@ -461,8 +506,6 @@ namespace Columbus
 
 	void Renderer::Render()
 	{
-		PROFILE_GPU(ProfileModuleGPU::GPU);
-
 		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
 		static int NoneShaderGamma = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Gamma");
 		static int NoneShaderExposure = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Exposure");
@@ -473,6 +516,8 @@ namespace Columbus
 
 		CompileLists();
 		SortLists();
+
+		PROFILE_GPU(ProfileModuleGPU::GPU);
 
 		BaseEffect.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 

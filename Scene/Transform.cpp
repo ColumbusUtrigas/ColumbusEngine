@@ -6,19 +6,10 @@
 namespace Columbus
 {
 
-	Transform::Transform() :
-		ModelMatrix(1.0f) {}
-
-	Transform::Transform(Vector3 Pos) :
-		Position(Pos),
-		ModelMatrix(1.0f) {}
-
-	Transform::Transform(Vector3 Pos, Vector3 Rot) :
-		Position(Pos),
-		Rotation(Rot),
-		ModelMatrix(1.0f) {}
-
-	Transform::Transform(Vector3 Pos, Vector3 Rot, Vector3 Scale) :
+	Transform::Transform(const Vector3& Pos, const Vector3& Rot, const Vector3& Scale) :
+		LastPosition(Pos + Vector3{1}),
+		LastRotation(Rot + Vector3{1}),
+		LastScale(Scale + Vector3{1}),
 		Position(Pos),
 		Rotation(Rot),
 		Scale(Scale),
@@ -26,23 +17,27 @@ namespace Columbus
 	
 	void Transform::Update()
 	{
-		RotationQuaternion = glm::quat(glm::vec3(Math::Radians(Rotation.X), Math::Radians(Rotation.Y), Math::Radians(Rotation.Z)));
-		glm::mat4 RotationMatrix = glm::mat4_cast(RotationQuaternion);
-		float* Value = glm::value_ptr(RotationMatrix);
+		if (LastPosition != Position || LastRotation != Rotation || LastScale != Scale)
+		{
+			RotationQuaternion = glm::quat(glm::vec3(Math::Radians(Rotation.X), Math::Radians(Rotation.Y), Math::Radians(Rotation.Z)));
+			glm::mat4 RotationMatrix = glm::mat4_cast(RotationQuaternion);
+			float* Value = glm::value_ptr(RotationMatrix);
 
-		Matrix tRotationMatrix;
-		memcpy(&tRotationMatrix.M[0][0], Value, 64);
+			Matrix tRotationMatrix;
+			memcpy(&tRotationMatrix.M[0][0], Value, 64);
 
-		ModelMatrix.SetIdentity();
-		ModelMatrix.Scale(Scale);
-		//ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.X);
-		//ModelMatrix.Rotate(Vector3(0, 1, 0), Rotation.Y);
-		//ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.Z);
-		ModelMatrix = ModelMatrix * tRotationMatrix;
-		ModelMatrix.Translate(Position);
+			ModelMatrix.SetIdentity();
+			ModelMatrix.Scale(Scale);
+			ModelMatrix = ModelMatrix * tRotationMatrix;
+			ModelMatrix.Translate(Position);
+
+			LastPosition = Position;
+			LastRotation = Rotation;
+			LastScale = Scale;
+		}
 	}
 	
-	void Transform::SetMatrix(Matrix InMatrix)
+	void Transform::SetMatrix(const Matrix& InMatrix)
 	{
 		this->ModelMatrix = InMatrix;
 	}

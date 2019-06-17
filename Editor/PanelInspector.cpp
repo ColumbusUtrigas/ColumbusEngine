@@ -30,11 +30,11 @@ namespace Columbus
 	static void DrawTransformEditor(GameObject* GO);
 	static void DrawMaterialEditor(GameObject* GO);
 	static void DrawComponentsEditor(GameObject* GO);
-	static void DrawComponentEditor(ComponentAudioSource* Co);
-	static void DrawComponentEditor(ComponentLight* Co);
-	static void DrawComponentEditor(ComponentMeshRenderer* Co);
-	static void DrawComponentEditor(ComponentParticleSystem* Co);
-	static void DrawComponentEditor(ComponentRigidbody* Co);
+	static void DrawComponentEditor(ComponentAudioSource* Co, GameObject& GO);
+	static void DrawComponentEditor(ComponentLight* Co, GameObject& GO);
+	static void DrawComponentEditor(ComponentMeshRenderer* Co, GameObject& GO);
+	static void DrawComponentEditor(ComponentParticleSystem* Co, GameObject& GO);
+	static void DrawComponentEditor(ComponentRigidbody* Co, GameObject& GO);
 
 
 
@@ -46,6 +46,8 @@ namespace Columbus
 			{
 				if (Inspectable != nullptr)
 				{
+					ImGui::Checkbox("##PanelInspector_Enable", &Inspectable->Enable);
+					ImGui::SameLine();
 					ImGui::InputText("##PanelInspector_Name", &Inspectable->Name);
 					ImGui::Separator();
 
@@ -113,7 +115,7 @@ namespace Columbus
 			{
 			case 1: GO->AddComponent(new ComponentAudioSource(new AudioSource())); break;
 			case 2: GO->AddComponent(new ComponentLight(new Light())); break;
-			case 3: GO->AddComponent(new ComponentMeshRenderer(gDevice->CreateMesh())); break;
+			case 3: GO->AddComponent(new ComponentMeshRenderer(nullptr)); break;
 			case 4: GO->AddComponent(new ComponentParticleSystem(ParticleEmitterCPU())); break;
 			case 5: GO->AddComponent(new ComponentRigidbody(new Rigidbody())); break;
 			default: break;
@@ -191,26 +193,26 @@ namespace Columbus
 
 		ImGui::Indent(10.0f);
 
-		ImGui::Combo("Culling##Inspector_MaterialEditor",    (int*)&GO->GetMaterial().Culling,      CullItems,  4);
-		ImGui::Combo("Depth test##Inspector_MaterialEditor", (int*)&GO->GetMaterial().DepthTesting, DepthItems, 8);
+		ImGui::Combo("Culling##Inspector_MaterialEditor",    (int*)&GO->material.Culling,      CullItems,  4);
+		ImGui::Combo("Depth test##Inspector_MaterialEditor", (int*)&GO->material.DepthTesting, DepthItems, 8);
 		ImGui::Spacing();
 
-		ImGui::Checkbox("Depth writing##Inspector_MaterialEditor", &GO->GetMaterial().DepthWriting);
-		ImGui::Checkbox("Transparent##Inspector_MaterialEditor",   &GO->GetMaterial().Transparent);
-		ImGui::Checkbox("Lighting##Inspector_MaterialEditor",      &GO->GetMaterial().Lighting);
+		ImGui::Checkbox("Depth writing##Inspector_MaterialEditor", &GO->material.DepthWriting);
+		ImGui::Checkbox("Transparent##Inspector_MaterialEditor",   &GO->material.Transparent);
+		ImGui::Checkbox("Lighting##Inspector_MaterialEditor",      &GO->material.Lighting);
 		ImGui::Spacing();
 		
-		ImGui::DragFloat2("Tiling##Inspector_MaterialEditor",        (float*)&GO->GetMaterial().Tiling,           0.01f);
-		ImGui::DragFloat2("Detail Tiling##Inspector_MaterialEditor", (float*)&GO->GetMaterial().DetailTiling,     0.01f);
-		ImGui::ColorEdit4("Albedo##Inspector_MaterialEditor",        (float*)&GO->GetMaterial().Albedo);
-		ImGui::SliderFloat("Roughness##Inspector_MaterialEditor",            &GO->GetMaterial().Roughness,        0.00f, 1.0f);
-		ImGui::SliderFloat("Metallic##Inspector_MaterialEditor",             &GO->GetMaterial().Metallic,         0.00f, 1.0f);
-		ImGui::DragFloat("Emission Strength##Inspector_MaterialEditor",      &GO->GetMaterial().EmissionStrength, 0.01f);
+		ImGui::DragFloat2("Tiling##Inspector_MaterialEditor",        (float*)&GO->material.Tiling,           0.01f);
+		ImGui::DragFloat2("Detail Tiling##Inspector_MaterialEditor", (float*)&GO->material.DetailTiling,     0.01f);
+		ImGui::ColorEdit4("Albedo##Inspector_MaterialEditor",        (float*)&GO->material.Albedo);
+		ImGui::SliderFloat("Roughness##Inspector_MaterialEditor",            &GO->material.Roughness,        0.00f, 1.0f);
+		ImGui::SliderFloat("Metallic##Inspector_MaterialEditor",             &GO->material.Metallic,         0.00f, 1.0f);
+		ImGui::DragFloat("Emission Strength##Inspector_MaterialEditor",      &GO->material.EmissionStrength, 0.01f);
 		ImGui::Spacing();
 
 		if (ImGui::Button("Shader##Inspector_MaterialEditor_Shader", ImVec2(ImGui::GetContentRegionAvail().x, 25)))
 		{
-			ResourcesViewerShader::Open(&GO->GetMaterial().ShaderProg);
+			ResourcesViewerShader::Open(&GO->material.ShaderProg);
 		}
 
 		#define TEXID(a) a == nullptr ? 0 : (void*)(uintptr_t)(((TextureOpenGL*)(a))->GetID())
@@ -226,14 +228,14 @@ namespace Columbus
 
 		// This is a block of texture selectors, which are: ImageButton which activates
 		// texture viewer and name of the texture
-		TEXTURE_SELECTOR(GO->GetMaterial().AlbedoMap,       "Albedo");
-		TEXTURE_SELECTOR(GO->GetMaterial().NormalMap,       "Normal");
-		TEXTURE_SELECTOR(GO->GetMaterial().RoughnessMap,    "Roughness");
-		TEXTURE_SELECTOR(GO->GetMaterial().MetallicMap,     "Metallic");
-		TEXTURE_SELECTOR(GO->GetMaterial().OcclusionMap,    "Occlusion");
-		TEXTURE_SELECTOR(GO->GetMaterial().EmissionMap,     "Emission");
-		TEXTURE_SELECTOR(GO->GetMaterial().DetailAlbedoMap, "Detail Albedo");
-		TEXTURE_SELECTOR(GO->GetMaterial().DetailNormalMap, "Detail Normal");
+		TEXTURE_SELECTOR(GO->material.AlbedoMap,       "Albedo");
+		TEXTURE_SELECTOR(GO->material.NormalMap,       "Normal");
+		TEXTURE_SELECTOR(GO->material.RoughnessMap,    "Roughness");
+		TEXTURE_SELECTOR(GO->material.MetallicMap,     "Metallic");
+		TEXTURE_SELECTOR(GO->material.OcclusionMap,    "Occlusion");
+		TEXTURE_SELECTOR(GO->material.EmissionMap,     "Emission");
+		TEXTURE_SELECTOR(GO->material.DetailAlbedoMap, "Detail Albedo");
+		TEXTURE_SELECTOR(GO->material.DetailNormalMap, "Detail Normal");
 
 		#undef TEXTURE_SELECTOR
 		#undef TEXID
@@ -246,21 +248,29 @@ namespace Columbus
 	// (if exist) in collapsing header.
 	void DrawComponentsEditor(GameObject* GO)
 	{
-		DrawComponentEditor(GO->GetComponent<ComponentAudioSource>());
-		DrawComponentEditor(GO->GetComponent<ComponentLight>());
-		DrawComponentEditor(GO->GetComponent<ComponentMeshRenderer>());
-		DrawComponentEditor(GO->GetComponent<ComponentParticleSystem>());
-		DrawComponentEditor(GO->GetComponent<ComponentRigidbody>());
+		DrawComponentEditor(GO->GetComponent<ComponentAudioSource>(), *GO);
+		DrawComponentEditor(GO->GetComponent<ComponentLight>(), *GO);
+		DrawComponentEditor(GO->GetComponent<ComponentMeshRenderer>(), *GO);
+		DrawComponentEditor(GO->GetComponent<ComponentParticleSystem>(), *GO);
+		DrawComponentEditor(GO->GetComponent<ComponentRigidbody>(), *GO);
 	}
 
 
 
-	void DrawComponentEditor(ComponentAudioSource* Co)
+	void DrawComponentEditor(ComponentAudioSource* Co, GameObject& GO)
 	{
 		if (Co != nullptr)
 		{
-			if (ImGui::CollapsingHeader(AUDIO_ICON" Audio Source##PanelInspector_Audio"))
+			bool Shown = ImGui::CollapsingHeader(AUDIO_ICON" Audio Source##PanelInspector_Audio");
+			/*if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Space)))
 			{
+				GO.DeleteComponent<ComponentAudioSource>();
+				return;
+			}*/
+
+			if (Shown)
+			{
+
 				auto Source = Co->GetSource();
 				if (Source != nullptr)
 				{
@@ -287,7 +297,7 @@ namespace Columbus
 
 
 
-	void DrawComponentEditor(ComponentLight* Co)
+	void DrawComponentEditor(ComponentLight* Co, GameObject& GO)
 	{
 		if (Co != nullptr)
 		{
@@ -302,7 +312,8 @@ namespace Columbus
 
 					ImGui::Combo("Type##PanelInspector_Light",               &Light->Type, Types, 3);
 					ImGui::ColorEdit3("Color##PanelInspector_Light", (float*)&Light->Color);
-					ImGui::DragFloat("Range##PanelInspector_Light",          &Light->Range, 0.1f);
+					ImGui::DragFloat("Energy##PanelInspector_Light",         &Light->Energy, 0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat("Range##PanelInspector_Light",          &Light->Range,  0.1f);
 					ImGui::DragFloat("Inner Cutoff##PanelInspector_Light",   &Light->InnerCutoff, 0.01f);
 					ImGui::DragFloat("Outer Cutoff##PanelInspector_Light",   &Light->OuterCutoff, 0.01f);
 
@@ -316,7 +327,7 @@ namespace Columbus
 
 
 
-	void DrawComponentEditor(ComponentMeshRenderer* Co)
+	void DrawComponentEditor(ComponentMeshRenderer* Co, GameObject& GO)
 	{
 		if (Co != nullptr)
 		{
@@ -332,7 +343,7 @@ namespace Columbus
 
 
 
-	void DrawComponentEditor(ComponentParticleSystem* Co)
+	void DrawComponentEditor(ComponentParticleSystem* Co, GameObject& GO)
 	{
 		if (Co != nullptr)
 		{
@@ -559,7 +570,7 @@ namespace Columbus
 		}
 	}
 
-	void DrawComponentEditor(ComponentRigidbody* Co)
+	void DrawComponentEditor(ComponentRigidbody* Co, GameObject& GO)
 	{
 		if (Co != nullptr)
 		{

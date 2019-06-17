@@ -69,7 +69,6 @@ namespace Columbus
 
 	void MeshOpenGL::Bind()
 	{
-		SortLights();
 		glBindVertexArray(VAO);
 	}
 	
@@ -94,28 +93,6 @@ namespace Columbus
 	void MeshOpenGL::Unbind()
 	{
 		glBindVertexArray(0);
-	}
-	
-	void MeshOpenGL::SortLights()
-	{
-		if (!LightsSorted)
-		{
-			Lights.erase(std::remove(Lights.begin(), Lights.end(), nullptr), Lights.end());
-
-			static auto func = [&](const Light* A, const Light* B) -> bool
-			{
-				double ADistance = Math::Sqr(A->Pos.X - Position.X) + Math::Sqr(A->Pos.Y - Position.Y) + Math::Sqr(A->Pos.Z - Position.Z);
-				double BDistance = Math::Sqr(B->Pos.X - Position.X) + Math::Sqr(B->Pos.Y - Position.Y) + Math::Sqr(B->Pos.Z - Position.Z);
-				return ADistance < BDistance;
-			};
-
-			if (Lights.size() >= 4)
-			{
-				std::sort(Lights.begin(), Lights.end(), func);
-			}
-
-			LightsSorted = true;
-		}
 	}
 	
 	MeshOpenGL::~MeshOpenGL()

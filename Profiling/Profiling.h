@@ -12,7 +12,8 @@ namespace Columbus
 		Audio,
 		Physics,
 		Particles,
-		Culling
+		Culling,
+		Update
 	};
 
 	enum class ProfileModuleGPU

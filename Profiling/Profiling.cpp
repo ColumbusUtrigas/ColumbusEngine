@@ -13,6 +13,7 @@ namespace Columbus
 		double PhysicsTime;
 		double ParticlesTime;
 		double CullingTime;
+		double UpdateTime;
 	} CPU;
 
 	struct
@@ -41,6 +42,7 @@ namespace Columbus
 		case ProfileModule::Physics:   CPU.PhysicsTime    = Time; break;
 		case ProfileModule::Particles: CPU.ParticlesTime += Time; break;
 		case ProfileModule::Culling:   CPU.CullingTime    = Time; break;
+		case ProfileModule::Update:    CPU.UpdateTime     = Time; break;
 		}
 	}
 
@@ -72,6 +74,7 @@ namespace Columbus
 		CPU.PhysicsTime = 0.0;
 		CPU.ParticlesTime = 0.0;
 		CPU.CullingTime = 0.0;
+		CPU.UpdateTime = 0.0;
 
 		GPU.GPUTime = 0.0;
 		GPU.OpaqueStageTime = 0.0;
@@ -90,6 +93,7 @@ namespace Columbus
 		case ProfileModule::Physics:   return CPU.PhysicsTime;   break;
 		case ProfileModule::Particles: return CPU.ParticlesTime; break;
 		case ProfileModule::Culling:   return CPU.CullingTime;   break;
+		case ProfileModule::Update:    return CPU.UpdateTime;    break;
 		}
 
 		return 0.0;
