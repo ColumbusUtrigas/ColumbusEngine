@@ -148,7 +148,7 @@ int main(int argc, char** argv)
 		MainRender.SetMainCamera(camera);
 		MainRender.SetSky(scene.Sky);
 		MainRender.SetScene(&scene);
-		MainRender.SetRenderList(&scene.Objects);
+		MainRender.SetRenderList(&scene.Objects.Resources);
 		MainRender.Render();
 
 		ImGui_ImplOpenGL3_NewFrame();

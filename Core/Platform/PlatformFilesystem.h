@@ -9,8 +9,8 @@ namespace Columbus
 	
 	struct Filesystem
 	{
-		static const char* GetCurrent();
-		static const char* AbsolutePath(const char* Path);
+		static std::string GetCurrent();
+		static std::string AbsolutePath(const std::string& Path);
 		static std::string RelativePath(const std::string& Absolute, const std::string& RelativeTo);
 		static bool FileCreate(const char* Path);
 		static bool DirCreate(const char* Path);

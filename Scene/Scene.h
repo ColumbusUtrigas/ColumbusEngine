@@ -13,51 +13,21 @@
 #include <Graphics/Shader.h>
 #include <Graphics/Mesh.h>
 
+#include <Resources/ResourceManager.h>
+
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 namespace Columbus
 {
-
-	template <typename T>
-	struct ResourceManager
-	{
-		// Resources map countains pairs of [resource_name; index in Resources]
-		std::vector<SmartPointer<T>> Resources;
-		std::map<std::string, uint32> ResourcesMap;
-
-		bool IsNameFree(const std::string& Name)
-		{
-			return ResourcesMap.find(Name) == ResourcesMap.end();
-		}
-
-		bool Add(SmartPointer<T>&& Resource, const std::string& Name, bool Replace = false)
-		{
-			bool NameFree = IsNameFree(Name);
-
-			if (NameFree || Replace)
-			{
-				if (NameFree)
-				{
-					Resources.emplace_back(std::move(Resource));
-					ResourcesMap[Name] = Resources.size() - 1;
-				} else
-				{
-					Resources[ResourcesMap[Name]] = (SmartPointer<T>&&)std::move(Resource);
-				}
-
-				return true;
-			}
-
-			return false;
-		}
-	};
 
 	class Scene
 	{
 	private:
 		friend class Renderer;
 		friend class Editor;
+		friend class EditorPanelInspector;
 		friend class ResourcesViewerTexture;
 		friend class ResourcesViewerShader;
 		friend class ResourcesViewerMesh;
@@ -84,19 +54,23 @@ namespace Columbus
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
 
+		///
+		/// TODO: SmartPointers
+		///
 		Skybox* Sky = nullptr;
 		Camera* MainCamera = nullptr;
 		AudioListener* Listener = nullptr;
 
-		std::map<uint32, SmartPointer<GameObject>> Objects;
+		ResourceManager<GameObject> Objects;
 	public:
 		Scene();
 
 		bool Load(const char* FileName);
 
-		void Add(uint32 ID, GameObject&& InObject)
+		void Add(GameObject&& InObject)
 		{
-			Objects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
+			GameObject* New = new GameObject(std::move(InObject));
+			Objects.Add(SmartPointer<GameObject>(New), New->Name);
 		}
 
 		void AddEmpty()
@@ -105,22 +79,19 @@ namespace Columbus
 			std::string Name = "Object ";
 			for (uint32 i = 0;; i++)
 			{
-				if (GetGameObject(Name + std::to_string(i)) == nullptr)
+				if (Objects.Find(Name + std::to_string(i)) == nullptr)
 				{
 					Name += std::to_string(i);
 					break;
 				}
 			}
 			GO.Name = Name;
-			Add(Objects.size(), std::move(GO));
+			Add(std::move(GO));
 		}
 
 		void SetSkybox(Skybox* InSky) { Sky = InSky; }
 		void SetCamera(Camera& InMainCamera) { MainCamera = &InMainCamera; }
 		void SetAudioListener(AudioListener& InListener) { Listener = &InListener; }
-
-		GameObject* GetGameObject(uint32 ID) const;
-		GameObject* GetGameObject(const std::string& Name) const;
 
 		void Update();
 		void Render();

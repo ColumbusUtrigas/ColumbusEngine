@@ -209,9 +209,9 @@ namespace Columbus
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
 		PanelScene.Draw();
-		PanelHierarchy.Draw();
+		PanelInspector.Draw(); // Inspector should be before hierarchy
+		PanelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		PanelRenderSettings.Draw();
-		PanelInspector.Draw();
 		PanelProfiler.Draw();
 		ResourcesViewerTexture::Draw(&scene);
 		ResourcesViewerShader::Draw(&scene);

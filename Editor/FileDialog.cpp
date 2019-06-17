@@ -51,7 +51,7 @@ namespace Columbus
 			{
 				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Close();
 
-				std::string Absolute = Filesystem::AbsolutePath(Path.c_str());
+				std::string Absolute = Filesystem::AbsolutePath(Path);
 				auto Decomposition = Filesystem::Split(Absolute);
 
 				size_t i = 0;

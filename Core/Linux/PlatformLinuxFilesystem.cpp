@@ -9,16 +9,17 @@
 namespace Columbus
 {
 
-	const char* FilesystemLinux::GetCurrent()
+	std::string FilesystemLinux::GetCurrent()
 	{
-		char* dir = new char[4096];
+		char dir[4096];
 		if (getcwd(dir, 4096) == NULL) return "";
 		return dir;
 	}
 
-	const char* FilesystemLinux::AbsolutePath(const char* Path)
+	std::string FilesystemLinux::AbsolutePath(const std::string& Path)
 	{
-		return realpath(Path, NULL);
+		char dir[PATH_MAX];
+		return realpath(Path.c_str(), dir);
 	}
 
 	bool FilesystemLinux::DirCreate(const char* Path)

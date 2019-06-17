@@ -12,7 +12,7 @@
 namespace Columbus
 {
 
-	const char* Filesystem::GetCurrent()
+	std::string Filesystem::GetCurrent()
 	{
 		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::GetCurrent();
@@ -23,7 +23,7 @@ namespace Columbus
 		return "";
 	}
 
-	const char* Filesystem::AbsolutePath(const char* Path)
+	std::string Filesystem::AbsolutePath(const std::string& Path)
 	{
 		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::AbsolutePath(Path);

@@ -18,8 +18,6 @@ namespace Columbus
 		uint32 VerticesCount = 0;
 		bool LightsSorted = false;
 	public:
-		std::vector<Light*> Lights;
-	public:
 		Mesh() {}
 
 		bool Load(const char* FileName)
@@ -38,8 +36,6 @@ namespace Columbus
 		virtual void Bind() = 0;
 		virtual uint32 Render() = 0;
 		virtual void Unbind() = 0;
-
-		void SetLights(const std::vector<Light*>& InLights) { Lights = InLights; }
 
 		Box GetBoundingBox() const { return BoundingBox; }
 

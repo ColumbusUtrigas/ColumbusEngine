@@ -20,8 +20,6 @@ namespace Columbus
 		bool Indexed = false;
 		uint32 IndicesCount = 0;
 		uint32 IndicesType = 0;
-
-		void SortLights();
 	public:
 		MeshOpenGL();
 

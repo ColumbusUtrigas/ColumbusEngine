@@ -9,8 +9,8 @@ namespace Columbus
 
 	struct FilesystemLinux
 	{
-		static const char* GetCurrent();
-		static const char* AbsolutePath(const char* Path);
+		static std::string GetCurrent();
+		static std::string AbsolutePath(const std::string& Path);
 		static bool DirCreate(const char* Path);
 		static bool DirRemove(const char* Path);
 		static std::vector<FileInfo> Read(const std::string& Path);

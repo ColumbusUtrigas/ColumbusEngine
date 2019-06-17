@@ -200,29 +200,38 @@ namespace Columbus
 		}
 	}
 
-	void RenderState::SetLights(const std::vector<Light*>& InLights)
+	void RenderState::SetLights(const std::vector<Light*>& InLights, const int32 LightIndices[4])
 	{
 		static constexpr int LightsCount = 4;
 		static float Lights[13 * LightsCount];
+
+		static Vector3 Color;
 
 		if (CurrentShader != nullptr)
 		{
 			uint32 Counter = 0;
 
-			for (auto& L : InLights)
+			for (uint32 i = 0; i < LightsCount; i++)
 			{
-				uint32 Offset = Counter * 13;
+				if (LightIndices[i] >= 0)
+				{
+					auto L = InLights[LightIndices[i]];
 
-				memcpy(Lights + Offset + 0, &L->Color, sizeof(L->Color));
-				memcpy(Lights + Offset + 3, &L->Pos,   sizeof(L->Pos));
-				memcpy(Lights + Offset + 6, &L->Dir,   sizeof(L->Dir));
+					uint32 Offset = Counter * 13;
 
-				Lights[Offset + 9] = (float)L->Type;
-				Lights[Offset + 10] = L->Range;
-				Lights[Offset + 11] = L->InnerCutoff;
-				Lights[Offset + 12] = L->OuterCutoff;
+					Color = L->Color * L->Energy;
 
-				Counter++;
+					memcpy(Lights + Offset + 0, &Color,    sizeof(Color));
+					memcpy(Lights + Offset + 3, &L->Pos,   sizeof(L->Pos));
+					memcpy(Lights + Offset + 6, &L->Dir,   sizeof(L->Dir));
+
+					Lights[Offset + 9] = (float)L->Type;
+					Lights[Offset + 10] = L->Range;
+					Lights[Offset + 11] = L->InnerCutoff;
+					Lights[Offset + 12] = L->OuterCutoff;
+
+					Counter++;
+				}
 			}
 
 			for (; Counter < LightsCount; Counter++)
