@@ -1,6 +1,7 @@
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
+#include <System/Log.h>
 
 namespace Columbus
 {
@@ -84,6 +85,15 @@ namespace Columbus
 		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 		int ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		switch (ret)
+		{
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: Log::Error("Frambuffer Incomplete Attachment"); break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: Log::Error("Framebuffer Incomplete Dimensions"); break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: Log::Error("Framebuffer Missing Attachment"); break;
+		case GL_FRAMEBUFFER_UNSUPPORTED: Log::Error("Framebuffer Unsupported"); break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: Log::Error("Framebuffer Incomplete Draw Buffer"); break;
+		}
 
 		return ret == GL_FRAMEBUFFER_COMPLETE;
 	}

@@ -64,6 +64,7 @@ namespace Columbus
 		BloomFinalPass.ColorTexturesEnablement[0] = true;
 
 		FinalPass.ColorTexturesEnablement[0] = true;
+		//FinalPass.ColorTexturesMipmaps[0] = false;
 
 		NoneShader = gDevice->CreateShaderProgram();
 		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
@@ -406,6 +407,9 @@ namespace Columbus
 		case PostEffectResolution::Quad: Resolution = ContextSize / 4; break;
 		}
 
+		if (Resolution.X == 0) Resolution.X = 1;
+		if (Resolution.Y == 0) Resolution.Y = 1;
+
 		for (int i = 0; i < BloomIterations; i++)
 		{
 			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
@@ -509,6 +513,9 @@ namespace Columbus
 		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
 		static int NoneShaderGamma = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Gamma");
 		static int NoneShaderExposure = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Exposure");
+
+		if (ContextSize.X == 0) ContextSize.X = 1;
+		if (ContextSize.Y == 0) ContextSize.Y = 1;
 
 		PolygonsRendered = 0;
 		OpaqueObjectsRendered = 0;
