@@ -23,7 +23,7 @@ namespace Columbus
 		#error Unsupported compiler.
 	#endif
 
-	#if defined(COLUMBUS_PLATFORM_WINDOWS)
+	#if defined(PLATFORM_WINDOWS)
 		#define FORCEINLINE __forceinline
 	#else
 		#define FORCEINLINE __attribute__((always_inline))

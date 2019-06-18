@@ -1,9 +1,9 @@
 #include <Common/Model/Model.h>
 #include <Common/Model/CMF/ModelCMF.h>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+//#include <assimp/Importer.hpp>
+//#include <assimp/scene.h>
+//#include <assimp/postprocess.h>
 
 namespace Columbus
 {
@@ -136,7 +136,7 @@ namespace Columbus
 			return true;
 		}
 
-		Assimp::Importer importer;
+		/*Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(File,
 			aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate);
@@ -167,7 +167,7 @@ namespace Columbus
 
 				return true;
 			}
-		}
+		}*/
 
 		return false;
 	}

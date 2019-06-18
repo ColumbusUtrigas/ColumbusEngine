@@ -2,7 +2,7 @@
 
 #include <Core/Platform/Platform.h>
 
-#ifdef COLUMBUS_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
 	#include <windows.h>
 #else
 	#include <sys/time.h>
@@ -11,7 +11,7 @@
 namespace Columbus
 {
 
-#ifdef COLUMBUS_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
 	class Timer
 	{
 	private:
