@@ -1,8 +1,5 @@
 #include <Scene/Transform.h>
 
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-
 namespace Columbus
 {
 
@@ -19,16 +16,13 @@ namespace Columbus
 	{
 		if (LastPosition != Position || LastRotation != Rotation || LastScale != Scale)
 		{
-			RotationQuaternion = glm::quat(glm::vec3(Math::Radians(Rotation.X), Math::Radians(Rotation.Y), Math::Radians(Rotation.Z)));
-			glm::mat4 RotationMatrix = glm::mat4_cast(RotationQuaternion);
-			float* Value = glm::value_ptr(RotationMatrix);
-
-			Matrix tRotationMatrix;
-			memcpy(&tRotationMatrix.M[0][0], Value, 64);
+			Q = Quaternion({ Math::Radians(Rotation.X),
+			                 Math::Radians(Rotation.Y),
+			                 Math::Radians(Rotation.Z) });
 
 			ModelMatrix.SetIdentity();
 			ModelMatrix.Scale(Scale);
-			ModelMatrix = ModelMatrix * tRotationMatrix;
+			ModelMatrix = ModelMatrix * Q.ToMatrix();
 			ModelMatrix.Translate(Position);
 
 			LastPosition = Position;
