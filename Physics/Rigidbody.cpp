@@ -136,8 +136,8 @@ namespace Columbus
 			Vector3 pos = InTransform.Position;
 			//Vector3 scale = InTransform.Scale;
 
-			glm::quat tQuat = InTransform.RotationQuaternion;
-			btQuaternion bQuat(-tQuat.z, -tQuat.w, tQuat.x, -tQuat.y);
+			Quaternion& Q = InTransform.Q;
+			btQuaternion bQuat(-Q.Z, -Q.W, Q.X, -Q.Y);
 
 			bTrans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
 			bTrans.setRotation(bQuat);
@@ -302,12 +302,12 @@ namespace Columbus
 			//mRigidbody->getMotionState()->getWorldTransform(bTrans);
 
 			Result.Position = Vector3(bTrans.getOrigin().getX(), bTrans.getOrigin().getY(), bTrans.getOrigin().getZ());
-			Result.RotationQuaternion = glm::quat(-bTrans.getRotation().getZ(), -bTrans.getRotation().getY(), -bTrans.getRotation().getX(), bTrans.getRotation().getW());
+			Result.Q = Quaternion(-bTrans.getRotation().getZ(), -bTrans.getRotation().getY(), -bTrans.getRotation().getX(), bTrans.getRotation().getW());
 			Result.Scale = Trans.Scale;
 			Result.Update(); //Hmmm
 
-			glm::vec3 rot(-3.141592653, 0, 0);
-			Result.RotationQuaternion = glm::normalize(Result.RotationQuaternion * glm::quat(rot));
+			Vector3 rot(-3.141592653, 0, 0);
+			Result.Q = (Result.Q * Quaternion(rot)).Normalized();
 
 			(Transform)this->Trans = Result;
 		}
