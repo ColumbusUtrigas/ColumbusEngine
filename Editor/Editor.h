@@ -4,7 +4,7 @@
 #include <Editor/PanelScene.h>
 #include <Editor/PanelHierarchy.h>
 #include <Editor/PanelRenderSettings.h>
-#include <Editor/PanelInspector.h>
+#include <Editor/Inspector/PanelInspector.h>
 #include <Editor/PanelProfiler.h>
 #include <Graphics/Render.h>
 

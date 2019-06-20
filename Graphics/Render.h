@@ -39,9 +39,6 @@ namespace Columbus
 			uint32 Index; // Index of GameObject in array
 			int32 Lights[4] = { -1, -1, -1, -1 };
 
-			//Transform ObjectTransform;
-			//Material ObjectMaterial;
-
 			TransparentRenderData(Mesh* InMesh, uint32 InIndex) :
 				MeshObject(InMesh),
 				Particles(nullptr),
@@ -51,12 +48,6 @@ namespace Columbus
 				MeshObject(nullptr),
 				Particles(CPU),
 				Index(InIndex) {}
-
-			/*TransparentRenderData(Mesh* InMesh, ParticleEmitterCPU* CPU, const Transform& InTransform, const Material& InMaterial) :
-				MeshObject(InMesh),
-				Particles(CPU),
-				ObjectTransform(InTransform),
-				ObjectMaterial(InMaterial) {}*/
 		};
 	protected:
 		std::vector<SmartPointer<GameObject>>* RenderList;

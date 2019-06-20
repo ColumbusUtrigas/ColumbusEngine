@@ -21,11 +21,11 @@ namespace Columbus
 	Texture* EditorIconAudio;
 	Texture* EditorIconParticles;
 
-	ShaderProgram* NoneShader;
-	ShaderProgram* BloomBrightShader;
-	ShaderProgram* GaussBlurShader;
-	ShaderProgram* BloomShader;
-	ShaderProgram* LensFlareShader;
+	//ShaderProgram* NoneShader;
+	//ShaderProgram* BloomBrightShader;
+	//ShaderProgram* GaussBlurShader;
+	//ShaderProgram* BloomShader;
+	//ShaderProgram* LensFlareShader;
 
 	RenderState State;
 
@@ -66,25 +66,25 @@ namespace Columbus
 		FinalPass.ColorTexturesEnablement[0] = true;
 		//FinalPass.ColorTexturesMipmaps[0] = false;
 
-		NoneShader = gDevice->CreateShaderProgram();
+		/*NoneShader = gDevice->CreateShaderProgram();
 		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
-		NoneShader->Compile();
+		NoneShader->Compile();*/
 
-		BloomBrightShader = gDevice->CreateShaderProgram();
-		BloomBrightShader->Load("Data/Shaders/Bright.glsl");
-		BloomBrightShader->Compile();
+		//BloomBrightShader = gDevice->CreateShaderProgram();
+		//BloomBrightShader->Load("Data/Shaders/Bright.glsl");
+		//BloomBrightShader->Compile();
 
-		GaussBlurShader = gDevice->CreateShaderProgram();
+		/*GaussBlurShader = gDevice->CreateShaderProgram();
 		GaussBlurShader->Load("Data/Shaders/GaussBlur.glsl");
-		GaussBlurShader->Compile();
+		GaussBlurShader->Compile();*/
 
-		BloomShader = gDevice->CreateShaderProgram();
+		/*BloomShader = gDevice->CreateShaderProgram();
 		BloomShader->Load("Data/Shaders/Bloom.glsl");
-		BloomShader->Compile();
+		BloomShader->Compile();*/
 
-		LensFlareShader = gDevice->CreateShaderProgram();
+		/*LensFlareShader = gDevice->CreateShaderProgram();
 		LensFlareShader->Load("Data/Shaders/LensFlare.glsl");
-		LensFlareShader->Compile();
+		LensFlareShader->Compile();*/
 	}
 
 	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
@@ -157,8 +157,8 @@ namespace Columbus
 			{
 				if (Object->Enable)
 				{
-					auto MeshRenderer = Object->GetComponent<ComponentMeshRenderer>();
-					auto ParticleSystem = Object->GetComponent<ComponentParticleSystem>();
+					ComponentMeshRenderer* MeshRenderer = (ComponentMeshRenderer*)Object->GetComponent(Component::Type::MeshRenderer);
+					ComponentParticleSystem* ParticleSystem = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
 
 					if (MeshRenderer != nullptr)
 					{
@@ -375,16 +375,20 @@ namespace Columbus
 	{
 		PROFILE_GPU(ProfileModuleGPU::BloomStage);
 
+		auto BloomBrightShader = gDevice->GetDefaultShaders()->BloomBright;
+		auto Blur = gDevice->GetDefaultShaders()->GaussBlur;
+		auto Bloom = gDevice->GetDefaultShaders()->Bloom;
+
 		static int BrightShaderTexture = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
 		static int BrightShaderTreshold = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("Treshold");
 
-		static int BloomBlurTexture = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("BaseTexture");
-		static int BloomBlurHorizontal = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("Horizontal");
-		static int BloomBlurRadius = ((ShaderProgramOpenGL*)GaussBlurShader)->GetFastUniform("Radius");
+		static int BloomBlurTexture = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("BaseTexture");
+		static int BloomBlurHorizontal = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("Horizontal");
+		static int BloomBlurRadius = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("Radius");
 
-		static int BloomFinalPassBaseTexture = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("BaseTexture");
-		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Blur");
-		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)BloomShader)->GetFastUniform("Intensity");
+		static int BloomFinalPassBaseTexture = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("BaseTexture");
+		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Blur");
+		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Intensity");
 
 		BloomBrightPass.Bind({}, {0}, ContextSize);
 
@@ -395,8 +399,8 @@ namespace Columbus
 
 		BloomBrightPass.Unbind();
 
-		((ShaderProgramOpenGL*)GaussBlurShader)->Bind();
-		((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurRadius, BloomRadius);
+		((ShaderProgramOpenGL*)Blur)->Bind();
+		((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurRadius, BloomRadius);
 
 		iVector2 Resolution;
 
@@ -415,24 +419,24 @@ namespace Columbus
 			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
 
 			BloomHorizontalBlurPass.Bind({}, {0}, Resolution);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 1);
+			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
+			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 1);
 			Quad.Render();
 			BloomHorizontalBlurPass.Unbind();
 
 			BloomVerticalBlurPass.Bind({}, {0}, Resolution);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
-			((ShaderProgramOpenGL*)GaussBlurShader)->SetUniform(BloomBlurHorizontal, 0);
+			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
+			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 0);
 			Quad.Render();
 			BloomVerticalBlurPass.Unbind();
 		}
 
 		BloomFinalPass.Bind({}, {0}, ContextSize);
 
-		((ShaderProgramOpenGL*)BloomShader)->Bind();
-		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)BloomVerticalBlurPass.ColorTextures[0], 1);
-		((ShaderProgramOpenGL*)BloomShader)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
+		((ShaderProgramOpenGL*)Bloom)->Bind();
+		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)BloomVerticalBlurPass.ColorTextures[0], 1);
+		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
 		Quad.Render();
 
 		BloomFinalPass.Unbind();
@@ -440,9 +444,11 @@ namespace Columbus
 
 	void Renderer::RenderIcons()
 	{
-		static int LensFlareShaderTextureID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Texture");
-		static int LensFlareShaderPosID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Pos");
-		static int LensFlareShaderSizeID = ((ShaderProgramOpenGL*)(LensFlareShader))->GetFastUniform("Size");
+		auto Icon = gDevice->GetDefaultShaders()->Icon;
+
+		static int IconTextureID = ((ShaderProgramOpenGL*)(Icon))->GetFastUniform("Texture");
+		static int IconPosID = ((ShaderProgramOpenGL*)(Icon))->GetFastUniform("Pos");
+		static int IconSizeID = ((ShaderProgramOpenGL*)(Icon))->GetFastUniform("Size");
 
 		auto DrawIcon = [&](Vector4 Coords)
 		{
@@ -455,19 +461,19 @@ namespace Columbus
 				float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
 
 
-				((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderPosID, Coords.XY());
-				((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderSizeID, 0.1f / Vector2(Aspect, 1));
+				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconPosID, Coords.XY());
+				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconSizeID, 0.1f / Vector2(Aspect, 1));
 				Quad.Render();
 			}
 		};
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->Bind();
+		((ShaderProgramOpenGL*)(Icon))->Bind();
 
 		State.SetBlending(true);
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconSun, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconSun, 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -475,7 +481,7 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconLamp, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconLamp, 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -483,7 +489,7 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconFlashlight, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconFlashlight, 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -491,28 +497,29 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconAudio, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconAudio, 0);
 		for (const auto& Elem : Scn->Audio.Mixer.Sources)
 		{
 			if (Elem != nullptr)
 				DrawIcon(Vector4(Elem->Position, 1));
 		}
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->SetUniform(LensFlareShaderTextureID, (TextureOpenGL*)EditorIconParticles, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconParticles, 0);
 		for (const auto& Elem : TransparentObjects)
 		{
 			if (Elem.Particles != nullptr)
 				DrawIcon(Vector4(Scn->Objects[Elem.Index]->transform.Position, 1));
 		}
 
-		((ShaderProgramOpenGL*)(LensFlareShader))->Unbind();
+		((ShaderProgramOpenGL*)(Icon))->Unbind();
 	}
 
 	void Renderer::Render()
 	{
-		static int NoneShaderBaseTextureID = ((ShaderProgramOpenGL*)(NoneShader))->GetFastUniform("BaseTexture");
-		static int NoneShaderGamma = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Gamma");
-		static int NoneShaderExposure = ((ShaderProgramOpenGL*)NoneShader)->GetFastUniform("Exposure");
+		auto FinalPassShader = gDevice->GetDefaultShaders()->Final;
+		static int FinalBaseTextureID = ((ShaderProgramOpenGL*)(FinalPassShader))->GetFastUniform("BaseTexture");
+		static int FinalGamma = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Gamma");
+		static int FinalExposure = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Exposure");
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;
@@ -550,12 +557,12 @@ namespace Columbus
 
 			FinalPass.Bind({}, {}, ContextSize);
 
-			((ShaderProgramOpenGL*)NoneShader)->Bind();
-			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderBaseTextureID, (TextureOpenGL*)Final, 0);
-			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderExposure, Exposure);
-			((ShaderProgramOpenGL*)NoneShader)->SetUniform(NoneShaderGamma, Gamma);
+			((ShaderProgramOpenGL*)FinalPassShader)->Bind();
+			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalBaseTextureID, (TextureOpenGL*)Final, 0);
+			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalExposure, Exposure);
+			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalGamma, Gamma);
 			Quad.Render();
-			((ShaderProgramOpenGL*)NoneShader)->Unbind();
+			((ShaderProgramOpenGL*)FinalPassShader)->Unbind();
 
 			if (EditMode)
 			{
@@ -592,11 +599,11 @@ namespace Columbus
 	{
 		delete Blob;
 		delete EditorIconLamp;
-		delete NoneShader;
-		delete BloomBrightShader;
-		delete GaussBlurShader;
-		delete BloomShader;
-		delete LensFlareShader;
+		//delete NoneShader;
+		//delete BloomBrightShader;
+		//delete GaussBlurShader;
+		//delete BloomShader;
+		//delete LensFlareShader;
 	}
 
 }
