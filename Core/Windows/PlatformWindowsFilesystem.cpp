@@ -23,6 +23,11 @@ namespace Columbus
 		char Result[MAX_PATH] = { '\0' };
 		memset(Result, 0, MAX_PATH);
 		GetFullPathName(Path.c_str(), MAX_PATH, Result, NULL);
+
+		for (int i = 0; i < MAX_PATH; i++)
+			if (Result[i] == '\\')
+				Result[i] = '/';
+
 		return Result;
 	}
 
@@ -41,7 +46,9 @@ namespace Columbus
 		std::vector<FileInfo> Result;
 
 		WIN32_FIND_DATA FFD;
-		HANDLE hFind = FindFirstFile(Path.c_str(), &FFD);
+		HANDLE hFind = FindFirstFile((Path + "*.*").c_str(), &FFD);
+
+		if (hFind == INVALID_HANDLE_VALUE) printf("Invalid\n");
 
 		do
 		{
@@ -54,11 +61,15 @@ namespace Columbus
 			Info.Ext = (Pos != std::string::npos && Pos != 0) ? Name.substr(Pos + 1) : "";
 			Info.Path = Path[Path.length() - 1] == '/' ? Path + Name : Path + '/' + Name;
 
-			if (FFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) Info.Type = 'd';
-			if (FFD.dwFileAttributes & FILE_ATTRIBUTE_NORMAL)    Info.Type = 'f';
+			if (FFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				Info.Type = 'd';
+			else
+				Info.Type = 'f';
 
 			Result.push_back(Info);
 		} while (FindNextFile(hFind, &FFD) != 0);
+
+		FindClose(hFind);
 
 		return Result;
 	}
