@@ -35,7 +35,7 @@ namespace Columbus
 		{
 			if (Object->Enable)
 			{
-				ComponentRigidbody* rb = Object->GetComponent<ComponentRigidbody>();
+				ComponentRigidbody* rb = (ComponentRigidbody*)Object->GetComponent(Component::Type::Rigidbody);
 
 				if (rb != nullptr)
 				{
@@ -51,7 +51,7 @@ namespace Columbus
 		{
 			if (Object->Enable)
 			{
-				ComponentRigidbody* rb = Object->GetComponent<ComponentRigidbody>();
+				ComponentRigidbody* rb = (ComponentRigidbody*)Object->GetComponent(Component::Type::Rigidbody);
 
 				if (rb != nullptr)
 				{
@@ -638,9 +638,9 @@ namespace Columbus
 				// TODO: DOD
 				Object->Update(Time);
 
-				auto AudioSource = Object->GetComponent<ComponentAudioSource>();
-				auto Light = Object->GetComponent<ComponentLight>();
-				auto PS = Object->GetComponent<ComponentParticleSystem>();
+				auto AudioSource = (ComponentAudioSource*)Object->GetComponent(Component::Type::AudioSource);
+				auto Light = (ComponentLight*)Object->GetComponent(Component::Type::Light);
+				auto PS = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
 
 				if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
 				if (Light != nullptr) Lights.emplace_back(Light->LightSource);

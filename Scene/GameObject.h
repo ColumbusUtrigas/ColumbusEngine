@@ -5,6 +5,7 @@
 #include <Scene/Component.h>
 #include <Core/SmartPointer.h>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 
 namespace Columbus
@@ -31,7 +32,7 @@ namespace Columbus
 		void Update(float DeltaTime);
 		void Render();
 
-		template <typename T>
+		/*template <typename T>
 		T* GetComponent()
 		{
 			for (const auto& Comp : Components)
@@ -59,7 +60,7 @@ namespace Columbus
 			}
 
 			return false;
-		}
+		}*/
 
 		bool HasComponent(Component::Type Type);
 		Component* GetComponent(Component::Type Type);

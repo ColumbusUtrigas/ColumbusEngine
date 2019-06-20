@@ -1,6 +1,160 @@
 namespace Columbus
 {
 
+	const char* gScreenSpaceVertexShader = 
+	R"(
+	#version 130
+	in vec2 Pos;
+	in vec2 UV;
+
+	out vec2 Texcoord;
+
+	void main(void)
+	{
+		gl_Position = vec4(Pos, 0, 1);
+		Texcoord = UV;
+	}
+	)";
+
+	const char* gFinalFragmentShader = 
+	R"(
+	#version 130
+	out vec4 FragColor;
+	in vec2 Texcoord;
+
+	uniform sampler2D BaseTexture;
+	uniform float Exposure;
+	uniform float Gamma;
+
+	void main(void)
+	{
+		vec3 HDR = texture(BaseTexture, Texcoord).rgb;
+		vec3 Mapped = vec3(1.0) - exp(-HDR * Exposure);
+		Mapped = pow(Mapped, vec3(1.0 / Gamma));
+
+		FragColor = vec4(Mapped, 1.0);
+	}
+	)";
+
+	const char* gGaussBlurFragmentShader = 
+	R"(
+	#version 130
+
+	out vec4 FragColor;
+
+	uniform sampler2D BaseTexture;
+	uniform bool Horizontal;
+	uniform float Radius;
+
+	in vec2 Texcoord;
+
+	uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+
+	void main()
+	{
+		vec2 tex_offset = 1.0 / textureSize(BaseTexture, 0) * Radius;
+		vec3 result = texture(BaseTexture, Texcoord).rgb * weight[0];
+
+		if (Horizontal)
+		{
+			for (int i = 1; i < 5; ++i)
+			{
+				result += texture(BaseTexture, Texcoord + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+				result += texture(BaseTexture, Texcoord - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+			}
+		}
+		else
+		{
+			for (int i = 1; i < 5; ++i)
+			{
+				result += texture(BaseTexture, Texcoord + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+				result += texture(BaseTexture, Texcoord - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+			}
+		}
+
+		FragColor = vec4(result, 1.0);
+	}
+	)";
+
+	const char* gBloomBrightFragmentShader =
+	R"(
+	#version 130
+
+	out vec4 FragColor;
+
+	uniform sampler2D BaseTexture;
+	uniform float Treshold;
+
+	in vec2 Texcoord;
+
+	float luma(vec3 color)
+	{
+		return dot(color, vec3(0.299, 0.587, 0.114));
+	}
+
+	void main(void)
+	{
+		vec4 color = texture(BaseTexture, Texcoord);
+		FragColor = luma(color.rgb) > Treshold ? color : vec4(0, 0, 0, 1);
+	}
+	)";
+
+	const char* gBloomFragmentShader = 
+	R"(
+	#version 130
+
+	out vec4 FragColor;
+
+	uniform sampler2D BaseTexture;
+	uniform sampler2D Blur;
+	uniform float Intensity;
+
+	in vec2 Texcoord;
+
+	void main()
+	{
+		vec3 hdrColor = texture(BaseTexture, Texcoord).rgb;
+		vec3 bloomColor = texture(Blur, Texcoord).rgb * Intensity;
+		hdrColor += bloomColor;
+		FragColor = vec4(hdrColor, 1.0);
+	}
+	)";
+
+	const char* gIconVertexShader =
+	R"(
+	#version 130
+
+	in vec2 Position;
+	in vec2 UV;
+
+	uniform vec2 Pos;
+	uniform vec2 Size;
+
+	out vec2 Texcoord;
+
+	void main(void)
+	{
+		gl_Position = vec4(Position * Size + Pos, 0, 1);
+		Texcoord = UV;
+	}
+	)";
+
+	const char* gIconFragmentShader =
+	R"(
+	#version 130
+
+	out vec4 FragColor;
+
+	uniform sampler2D Texture;
+
+	in vec2 Texcoord;
+
+	void main(void)
+	{
+		FragColor = texture(Texture, Texcoord);
+	}
+	)";
+
 	const char* gSkyboxVertexShader = 
 	R"(
 	#version 130

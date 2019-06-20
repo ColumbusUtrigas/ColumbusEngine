@@ -176,7 +176,7 @@ namespace Columbus
 			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
 			Error = new char[Length];
 			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::Error("%s shader: %s: %s", GetStringFromShaderType(Type), ShaderPath,  Error);
+			Log::Error("%s shader (%s): %s: %s", GetStringFromShaderType(Type), ShaderPath, ShaderPath,  Error);
 
 			delete[] Error;
 			return true;
@@ -230,6 +230,90 @@ namespace Columbus
 	{
 		switch (Program)
 		{
+			case ShaderProgram::StandartProgram::Final:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gFinalFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Exposure");
+				Data.Uniforms.emplace_back("Gamma");
+
+				Path = "Final";
+
+				Log::Success("Default shader program loaded: Final");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::GaussBlur:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gGaussBlurFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Horizontal");
+				Data.Uniforms.emplace_back("Radius");
+
+				Path = "GaussBlur";
+
+				Log::Success("Default shader program loaded: GaussBlur");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::BloomBright:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gBloomBrightFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Treshold");
+
+				Path = "BloomBright";
+
+				Log::Success("Default shader program loaded: BloomBright");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::Bloom:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gBloomFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Blur");
+				Data.Uniforms.emplace_back("Intensity");
+
+				Path = "Bloom";
+
+				Log::Success("Default shader program loaded: Bloom");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::Icon:
+			{
+				Data.VertexSource = gIconVertexShader;
+				Data.FragmentSource = gIconFragmentShader;
+
+				Data.Attributes.emplace_back("Position", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("Pos");
+				Data.Uniforms.emplace_back("Size");
+				Data.Uniforms.emplace_back("Texture");
+
+				Path = "Icon";
+
+				Log::Success("Default shader program loaded: Icon");
+				break;
+			}
+
 			case ShaderProgram::StandartProgram::Skybox:
 			{
 				Data.VertexSource = gSkyboxVertexShader;
@@ -237,6 +321,8 @@ namespace Columbus
 
 				Data.Uniforms.emplace_back("ViewProjection");
 				Data.Uniforms.emplace_back("Skybox");
+
+				Path = "Skybox";
 
 				Log::Success("Default shader program loaded: Skybox");
 				break;
@@ -251,6 +337,8 @@ namespace Columbus
 				Data.Uniforms.emplace_back("View");
 				Data.Uniforms.emplace_back("BaseMap");
 
+				Path = "SkyboxCubemapGeneration";
+
 				Log::Success("Default shader program loaded: SkyboxCubemapGeneration");
 				break;
 			}
@@ -264,6 +352,8 @@ namespace Columbus
 				Data.Uniforms.emplace_back("Projection");
 				Data.Uniforms.emplace_back("View");
 				Data.Uniforms.emplace_back("EnvironmentMap");
+
+				Path = "IrradianceGeneration";
 
 				Log::Success("Default shader program loaded: IrradianceGeneration");
 				break;
@@ -280,6 +370,8 @@ namespace Columbus
 				Data.Uniforms.emplace_back("Roughness");
 				Data.Uniforms.emplace_back("EnvironmentMap");
 
+				Path = "PrefilterGeneration";
+
 				Log::Success("Default shader program loaded: PrefilterGeneration");
 				break;
 			}
@@ -290,6 +382,8 @@ namespace Columbus
 				Data.Attributes.emplace_back("Texcoord", 1);
 				Data.VertexSource = gIntegrationGenerationVertexShader;
 				Data.FragmentSource = gIntegrationGenerationFragmentShader;
+
+				Path = "IntegrationGeneration";
 
 				Log::Success("Default shader program loaded: IntegrationGeneration");
 				break;
@@ -318,6 +412,9 @@ namespace Columbus
 		char Name[256];
 		int NameLength;
 
+		//
+		//
+		// SHIT. I WILL DELETE IT SOON.
 		while (!ShaderFile.IsEOF())
 		{
 			ShaderFile.ReadLine(Line, MaxCount);
@@ -350,8 +447,11 @@ namespace Columbus
 		}
 
 		delete[] Line;
+		// SHIT. I WILL DELETE IT SOON.
+		//
+		//
 
-		Log::Success("Shader program loaded: %s", FileName);
+		Log::Success("Shader program loaded:   %s", FileName);
 
 		Loaded = true;
 		return true;
@@ -405,7 +505,7 @@ namespace Columbus
 
 		Compiled = true;
 		Error = false;
-		Log::Success("Shader program compiled");
+		Log::Success("Shader program compiled: %s", Path.c_str());
 
 		return true;
 	}

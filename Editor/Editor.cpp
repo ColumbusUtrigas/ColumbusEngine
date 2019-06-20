@@ -209,7 +209,7 @@ namespace Columbus
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
 		PanelScene.Draw();
-		PanelInspector.Draw(); // Inspector should be before hierarchy
+		PanelInspector.Draw(scene); // Inspector should be before hierarchy
 		PanelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		PanelRenderSettings.Draw();
 		PanelProfiler.Draw();

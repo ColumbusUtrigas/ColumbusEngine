@@ -12,6 +12,11 @@ namespace Columbus
 	public:
 		enum class StandartProgram
 		{
+			Final,
+			GaussBlur,
+			BloomBright,
+			Bloom,
+			Icon,
 			Skybox,
 			SkyboxCubemapGeneration,
 			IrradianceGeneration,
@@ -34,6 +39,11 @@ namespace Columbus
 
 	struct DefaultShaders
 	{
+		ShaderProgram* Final = nullptr;
+		ShaderProgram* GaussBlur = nullptr;
+		ShaderProgram* BloomBright = nullptr;
+		ShaderProgram* Bloom = nullptr;
+		ShaderProgram* Icon = nullptr;
 		ShaderProgram* Skybox = nullptr;
 		ShaderProgram* SkyboxCubemapGeneration = nullptr;
 		ShaderProgram* IrradianceGeneration = nullptr;

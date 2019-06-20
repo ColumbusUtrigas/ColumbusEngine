@@ -16,6 +16,7 @@ namespace Columbus
 	void Device::Shutdown()
 	{
 		delete gDefaultShaders;
+		delete gDefaultTextures;
 	}
 
 	ShaderProgram* Device::CreateShaderProgram() const

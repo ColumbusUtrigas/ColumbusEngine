@@ -3,6 +3,7 @@
 #include <Lib/imgui/imgui.h>
 
 #include <Scene/ComponentMeshRenderer.h>
+#include <Scene/ComponentLight.h>
 
 namespace Columbus
 {
@@ -12,6 +13,14 @@ namespace Columbus
 		if (Co != nullptr)
 		{
 			GO.AddComponent(new ComponentMeshRenderer(Co->GetMesh()));
+		}
+	}
+
+	static void CopyComponent(ComponentLight* Co, GameObject& GO)
+	{
+		if (Co != nullptr)
+		{
+			GO.AddComponent(new ComponentLight(new Light(*Co->GetLight())));
 		}
 	}
 
@@ -76,7 +85,8 @@ namespace Columbus
 						tmp.material.Roughness = Random::Range(0.0f, 1.0f);
 						tmp.material.Metallic = Random::Range(0.0f, 1.0f);
 
-						CopyComponent(buffer->GetComponent<ComponentMeshRenderer>(), tmp);
+						CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
+						CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
 
 						std::string Name;
 
