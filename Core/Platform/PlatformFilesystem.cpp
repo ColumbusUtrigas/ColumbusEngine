@@ -123,14 +123,19 @@ namespace Columbus
 
 	std::vector<std::string> Filesystem::Split(const std::string& Path)
 	{
+		std::string MPath = Path;
 		std::vector<std::string> Result;
+
+		for (auto& Ch : MPath)
+			if (Ch == '\\')
+				Ch = '/';
 
 		size_t Start = 0;
 		size_t Pos = 0;
 		std::string Token;
-		while ((Pos = Path.find("/", Start)) != std::string::npos)
+		while ((Pos = MPath.find("/", Start)) != std::string::npos)
 		{
-			Token = Path.substr(Start, Pos - Start);
+			Token = MPath.substr(Start, Pos - Start);
 			if (Token.empty())
 				Result.push_back("/");
 			else

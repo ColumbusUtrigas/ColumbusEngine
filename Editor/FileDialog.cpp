@@ -89,7 +89,7 @@ namespace Columbus
 						return a.Type == 'f';
 					};
 
-					auto Files = Filesystem::Read(Absolute + "/");
+					auto Files = Filesystem::Read(Absolute);
 					std::sort(Files.begin(), Files.end(), Pred);
 					auto Limit = std::find_if(Files.begin(), Files.end(), Finder);
 					std::sort(Files.begin(), Limit, Pred2);
@@ -107,7 +107,7 @@ namespace Columbus
 							}
 						}
 
-						std::string Text = "";
+						std::string Text;
 
 						switch (Elem.Type)
 						{
