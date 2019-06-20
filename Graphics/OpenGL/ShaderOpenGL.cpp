@@ -81,13 +81,15 @@ namespace Columbus
 			{
 				auto substr = line.substr(line.find("#uniform") + 8);
 				size_t pos = 0;
-				std::string type, name;
+				std::string type, name, brackets;
 				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
 				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
 				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) name += substr[pos++];
+				while (!isspace(substr[pos]) && pos < substr.size() && substr[pos] != '[') name += substr[pos++];
+				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
+				while (substr[pos] != '\n' && pos < substr.size()) brackets += substr[pos++];
 
-				streams[CurrentMode] << "uniform " << type << ' ' << name << ';' << '\n';
+				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ';' << '\n';
 
 				Data.Uniforms.emplace_back(std::move(name));
 			}
@@ -405,51 +407,6 @@ namespace Columbus
 
 		Data = ParseShader(FileName);
 		Path = FileName;
-
-		constexpr int MaxCount = 4096;
-		char* Line = new char[MaxCount];
-		int Offset;
-		char Name[256];
-		int NameLength;
-
-		//
-		//
-		// SHIT. I WILL DELETE IT SOON.
-		while (!ShaderFile.IsEOF())
-		{
-			ShaderFile.ReadLine(Line, MaxCount);
-			Offset = 0;
-
-			while (isblank(*Line)) { Line++; Offset++; }
-
-			if (strncmp(Line, "//@", 3) == 0)
-			{
-				Line += 3; Offset += 3;
-				while (isblank(*Line)) { Line++; Offset++; }
-
-				if (strncmp(Line, "Uniform", 7) == 0)
-				{
-					Line += 7; Offset += 7;
-					memset(Name, 0, sizeof(Name));
-					NameLength = 0;
-					while (isblank(*Line)) { Line++; Offset++; }
-					while (isalpha(*Line) || isdigit(*Line) || *Line == '.') { Name[NameLength++] = *Line; Line++; Offset++; }
-					Name[NameLength] = '\0';
-
-					if (NameLength > 0)
-					{
-						Data.Uniforms.emplace_back(Name);
-					}
-				}
-			}
-
-			Line -= Offset;
-		}
-
-		delete[] Line;
-		// SHIT. I WILL DELETE IT SOON.
-		//
-		//
 
 		Log::Success("Shader program loaded:   %s", FileName);
 
