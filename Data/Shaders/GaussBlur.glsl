@@ -1,11 +1,14 @@
 #shader vertex
 
+#attribute vec2 aPos 0
+#attribute vec2 aUV  1
+
 out vec2 UV;
 
 void main(void)
 {
-	Position = ftransform();
-	UV = gl_MultiTexCoord0.xy;
+	Position = vec4(aPos, 0, 1);
+	UV = aUV;
 }
 
 #shader fragment
