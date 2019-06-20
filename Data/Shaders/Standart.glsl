@@ -71,9 +71,7 @@ in mat3 varTBN;
 #uniform float EmissionStrength
 #uniform bool  Transparent
 
-//@Uniform uLighting
-
-uniform float uLighting[13 * LIGHT_NUM];
+#uniform float uLighting [13 * LIGHT_NUM]
 
 vec2 _TiledUV;
 vec2 _TiledDetailUV;
