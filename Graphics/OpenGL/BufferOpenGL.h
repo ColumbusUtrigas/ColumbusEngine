@@ -2,9 +2,51 @@
 
 #include <Core/Types.h>
 #include <GL/glew.h>
+#include <string>
+#include <vector>
 
 namespace Columbus
 {
+
+	enum class InputLayoutSemantic
+	{
+		Position,
+		UV,
+		Normal,
+		Tangent
+	};
+
+	enum class InputLayoutFormat
+	{
+		None = 0,
+		Float,
+		Float2,
+		Float3,
+		Float4
+	};
+
+	enum class InputLayoutClassification
+	{
+		PerVertex,
+		PerInstance
+	};
+
+	struct InputLayoutElement
+	{
+		InputLayoutSemantic Semantic; // Semantic
+		InputLayoutFormat Type; // Type of the element
+		uint32 Index; // Index of the attribute (in DirectX that also index of the buffer slot)
+		uint32 Offset; // Offset from the beginning of the current vertex
+		InputLayoutClassification Classification; // PerVertex or PerInstance
+	};
+	
+	struct InputLayout
+	{
+		std::vector<InputLayoutElement> Elements;
+
+		InputLayout(const std::initializer_list<InputLayoutElement> Elements) :
+			Elements(Elements) {}
+	};
 
 	class BufferOpenGL
 	{
