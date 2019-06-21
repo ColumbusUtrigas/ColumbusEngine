@@ -28,9 +28,10 @@ namespace Columbus
 		Texture* ColorTextures[TexturesCount];
 		bool ColorTexturesEnablement[TexturesCount];
 		bool ColorTexturesMipmaps[TexturesCount];
-		uint32 ColorTexturesMultisampling[TexturesCount];
 		TextureFormat ColorTexturesFormats[TexturesCount];
 		Texture::Flags ColorTextureFlags[TexturesCount];
+
+		uint32 Multisampling = 0;
 	public:
 		PostEffect()
 		{
@@ -45,7 +46,6 @@ namespace Columbus
 				ColorTextures[i] = nullptr;
 				ColorTexturesEnablement[i] = false;
 				ColorTexturesMipmaps[i] = false;
-				ColorTexturesMultisampling[i] = 0;
 				ColorTexturesFormats[i] = TextureFormat::RGBA8;
 				ColorTextureFlags[i] = Flags;
 			}
@@ -68,7 +68,7 @@ namespace Columbus
 						ColorTextures[i] = gDevice->CreateTexture();
 					}
 
-					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesMultisampling[i], ColorTexturesFormats[i]));
+					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, Multisampling, ColorTexturesFormats[i]));
 					ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
 					FB->SetTexture2D(Attachments[i], ColorTextures[i]);
 				}
@@ -81,7 +81,7 @@ namespace Columbus
 					DepthTexture = gDevice->CreateTexture();
 				}
 
-				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, 0, TextureFormat::Depth24));
+				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, Multisampling, TextureFormat::Depth24));
 				DepthTexture->SetFlags(DepthTextureFlags);
 				FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
 			}

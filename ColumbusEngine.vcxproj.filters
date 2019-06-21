@@ -289,6 +289,12 @@
     <Filter Include="Исходные файлы\Lib\imgui\misc\cpp">
       <UniqueIdentifier>{aa2b7a38-b24b-42c1-9a18-6eb4a62e8bb8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Editor\Inspector">
+      <UniqueIdentifier>{883d8ad7-9f05-4667-bbdb-53ded1195065}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Editor\Inspector">
+      <UniqueIdentifier>{d7730abb-7601-4d98-af9d-a9b4fb3c72be}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animation\Animation.h">
@@ -690,9 +696,6 @@
     <ClInclude Include="Editor\PanelHierarchy.h">
       <Filter>Файлы заголовков\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\PanelInspector.h">
-      <Filter>Файлы заголовков\Editor</Filter>
-    </ClInclude>
     <ClInclude Include="Editor\PanelProfiler.h">
       <Filter>Файлы заголовков\Editor</Filter>
     </ClInclude>
@@ -722,6 +725,9 @@
     </ClInclude>
     <ClInclude Include="Input\EventSystem.h">
       <Filter>Файлы заголовков\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Inspector\PanelInspector.h">
+      <Filter>Файлы заголовков\Editor\Inspector</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -938,9 +944,6 @@
     <ClCompile Include="Editor\PanelHierarchy.cpp">
       <Filter>Исходные файлы\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\PanelInspector.cpp">
-      <Filter>Исходные файлы\Editor</Filter>
-    </ClCompile>
     <ClCompile Include="Editor\PanelProfiler.cpp">
       <Filter>Исходные файлы\Editor</Filter>
     </ClCompile>
@@ -970,6 +973,27 @@
     </ClCompile>
     <ClCompile Include="Input\EventSystem.cpp">
       <Filter>Исходные файлы\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentAudioEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentLightEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentMeshRendererEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentParticleSystemEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentRigidbodyEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\PanelInspector.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\TransformMaterialEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
