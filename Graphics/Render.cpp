@@ -45,7 +45,7 @@ namespace Columbus
 		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::RGB16F;
 		BaseMSAA.ColorTexturesMipmaps[0] = false;
 		BaseMSAA.DepthTextureEnablement = true;
-		BaseMSAA.Multisampling = 4;
+		//BaseMSAA.Multisampling = 8;
 
 		Base.ColorTexturesEnablement[0] = true;
 		Base.ColorTexturesEnablement[1] = true;
@@ -514,23 +514,45 @@ namespace Columbus
 
 		PROFILE_GPU(ProfileModuleGPU::GPU);
 
-		BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+		glEnable(GL_MULTISAMPLE);
+
+		bool IsMSAA = false;
+
+		switch (AntiAliasing)
+		{
+		case AntiAliasingType::No: break;
+		case AntiAliasingType::MSAA_2X:  BaseMSAA.Multisampling = 2;  IsMSAA = true; break;
+		case AntiAliasingType::MSAA_4X:  BaseMSAA.Multisampling = 4;  IsMSAA = true; break;
+		case AntiAliasingType::MSAA_8X:  BaseMSAA.Multisampling = 8;  IsMSAA = true; break;
+		case AntiAliasingType::MSAA_16X: BaseMSAA.Multisampling = 16; IsMSAA = true; break;
+		}
+
+		if (IsMSAA)
+			BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+		else
+			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
 		RenderOpaqueStage();
 		RenderSkyStage();
 		RenderTransparentStage();
 
-		BaseMSAA.Unbind();
+		if (IsMSAA)
+			BaseMSAA.Unbind();
+		else
+			Base.Unbind();
 
-		State.Clear();
+		if (IsMSAA)
+		{
+			State.Clear();
 
-		Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
-		glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-		Base.Unbind();
+			Base.Unbind();
+		}
 
 		Texture* Final = Base.ColorTextures[0];
 
