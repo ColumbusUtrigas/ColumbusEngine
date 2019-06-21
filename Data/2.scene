@@ -1,6 +1,6 @@
 <Scene>
 	<Defaults>
-		<Skybox>Data/Skyboxes/Sky.dds</Skybox>
+		<Skybox>Data/Skyboxes/Ruins.hdr</Skybox>
 	</Defaults>
 
 	<Resources>
@@ -26,14 +26,8 @@
 
 		<Shaders>
 			<Count>2</Count>
-
-			<Shader0>
-				<Program>Data/Shaders/Standart.glsl</Program>
-			</Shader0>
-
-			<Shader1>
-				<Program>Data/Shaders/Particle.glsl</Program>
-			</Shader1>
+			<Shader0> <Program>Data/Shaders/Standart.glsl</Program> </Shader0>
+			<Shader1> <Program>Data/Shaders/Particles.glsl</Program> </Shader1>
 		</Shaders>
 
 		<Meshes>
@@ -161,7 +155,7 @@
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/FireplaceEmbers.par</Particles>
+					<Particles>Data/Particles/Embers.par</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject4>
@@ -180,7 +174,7 @@
 
 			<Components>
 				<ParticleSystem>
-					<Particles>Data/Particles/FireplaceSmoke.par</Particles>
+					<Particles>Data/Particles/Smoke.par</Particles>
 				</ParticleSystem>
 			</Components>
 		</GameObject5>

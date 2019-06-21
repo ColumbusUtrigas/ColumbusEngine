@@ -10,6 +10,7 @@ namespace Columbus
 	{
 		Random() { srand((unsigned int)time(NULL)); }
 
+		/// Generates random number in range [Min, Max]
 		template <typename Type>
 		static Type Range(const Type Min, const Type Max)
 		{

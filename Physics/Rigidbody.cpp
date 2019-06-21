@@ -133,11 +133,11 @@ namespace Columbus
 		if (mRigidbody != nullptr)
 		{
 			btTransform bTrans;
-			Vector3 pos = InTransform.GetPos();
-			//Vector3 scale = InTransform.GetScale();
+			Vector3 pos = InTransform.Position;
+			//Vector3 scale = InTransform.Scale;
 
-			glm::quat tQuat = InTransform.RotationQuaternion;
-			btQuaternion bQuat(-tQuat.z, -tQuat.w, tQuat.x, -tQuat.y);
+			Quaternion& Q = InTransform.Q;
+			btQuaternion bQuat(-Q.Z, -Q.W, Q.X, -Q.Y);
 
 			bTrans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
 			bTrans.setRotation(bQuat);
@@ -152,9 +152,13 @@ namespace Columbus
 		if (mRigidbody != nullptr)
 		{
 			Mass = InMass;
-			btVector3 Inertia;
-			mRigidbody->getCollisionShape()->calculateLocalInertia(InMass, Inertia);
-			mRigidbody->setMassProps(InMass, Inertia);
+			
+			if (!Static)
+			{
+				btVector3 Inertia;
+				mRigidbody->getCollisionShape()->calculateLocalInertia(InMass, Inertia);
+				mRigidbody->setMassProps(InMass, Inertia);
+			}
 		}
 	}
 
@@ -297,13 +301,13 @@ namespace Columbus
 			bTrans = mRigidbody->getWorldTransform();
 			//mRigidbody->getMotionState()->getWorldTransform(bTrans);
 
-			Result.SetPos(Vector3(bTrans.getOrigin().getX(), bTrans.getOrigin().getY(), bTrans.getOrigin().getZ()));
-			Result.SetRot(glm::quat(-bTrans.getRotation().getZ(), -bTrans.getRotation().getY(), -bTrans.getRotation().getX(), bTrans.getRotation().getW()));
-			Result.SetScale(Trans.GetScale());
+			Result.Position = Vector3(bTrans.getOrigin().getX(), bTrans.getOrigin().getY(), bTrans.getOrigin().getZ());
+			Result.Q = Quaternion(-bTrans.getRotation().getZ(), -bTrans.getRotation().getY(), -bTrans.getRotation().getX(), bTrans.getRotation().getW());
+			Result.Scale = Trans.Scale;
 			Result.Update(); //Hmmm
 
-			glm::vec3 rot(-3.141592653, 0, 0);
-			Result.RotationQuaternion = glm::normalize(Result.RotationQuaternion * glm::quat(rot));
+			Vector3 rot(-3.141592653, 0, 0);
+			Result.Q = (Result.Q * Quaternion(rot)).Normalized();
 
 			(Transform)this->Trans = Result;
 		}

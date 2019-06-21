@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Graphics/Buffer.h>
 #include <Graphics/Shader.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Mesh.h>
@@ -11,19 +10,22 @@ namespace Columbus
 
 	class Device
 	{
+	private:
+		DefaultShaders* gDefaultShaders = nullptr;
+		DefaultTextures* gDefaultTextures = nullptr;
 	public:
 		Device();
 
-		virtual Buffer* CreateBuffer() const;
+		void Initialize();
+		void Shutdown();
 
-		virtual ShaderStage* CreateShaderStage() const;
 		virtual ShaderProgram* CreateShaderProgram() const;
-		
 		virtual Texture* CreateTexture() const;
-
 		virtual Mesh* CreateMesh() const;
+		virtual Framebuffer* CreateFramebuffer() const;
 
-		virtual Framebuffer* createFramebuffer() const;
+		DefaultShaders* GetDefaultShaders() { return gDefaultShaders; }
+		DefaultTextures* GetDefaultTextures()  { return gDefaultTextures; };
 
 		virtual ~Device();
 	};
@@ -31,13 +33,5 @@ namespace Columbus
 	extern Device* gDevice;
 
 }
-
-
-
-
-
-
-
-
 
 

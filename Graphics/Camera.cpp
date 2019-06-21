@@ -1,5 +1,8 @@
 #include <Graphics/Camera.h>
 
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 namespace Columbus
 {
 
@@ -22,20 +25,9 @@ namespace Columbus
 	
 	void Camera::Update()
 	{
-		while (Rot.X >= 360.0f || Rot.X <= -360.0f)
-		{
-			Rot.X -= 360.0f * Math::Sign(Rot.X);
-		}
-
-		while (Rot.Y >= 360.0f || Rot.Y <= -360.0f)
-		{
-			Rot.Y -= 360.0f * Math::Sign(Rot.Y);
-		}
-
-		while (Rot.Z >= 360.0f || Rot.Z <= -360.0f)
-		{
-			Rot.Z -= 360.0f * Math::Sign(Rot.Z);
-		}
+		while (Rot.X >= 360.0f || Rot.X <= -360.0f) { Rot.X -= 360.0f * Math::Sign(Rot.X); }
+		while (Rot.Y >= 360.0f || Rot.Y <= -360.0f) { Rot.Y -= 360.0f * Math::Sign(Rot.Y); }
+		while (Rot.Z >= 360.0f || Rot.Z <= -360.0f) { Rot.Z -= 360.0f * Math::Sign(Rot.Z); }
 
 		CameraDirection.Z = Math::Cos(Math::Radians(Rot.X)) * Math::Cos(Math::Radians(Rot.Y));
 		CameraDirection.Y = Math::Sin(Math::Radians(Rot.X));
@@ -44,7 +36,6 @@ namespace Columbus
 
 		Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 		CameraRight = Vector3::Cross(up, CameraDirection).Normalize();
-
 		CameraUp = Vector3::Cross(CameraDirection, CameraRight);
 
 		ViewMatrix.LookAt(Pos, CameraDirection + Pos, CameraUp);

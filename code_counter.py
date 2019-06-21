@@ -4,7 +4,7 @@ cpp_lines = int(0)
 cpp_header_lines = int(0)
 glsl_lines = int(0)
 
-for root, dirs, files in os.walk(os.path.dirname(sys.argv[0])):
+for root, dirs, files in os.walk("./"):	
 	dirs[:] = [d for d in dirs if d not in 'Lib']
 
 	for file in files:

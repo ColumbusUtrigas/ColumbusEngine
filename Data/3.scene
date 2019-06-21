@@ -1,0 +1,35 @@
+{
+	"Skybox": "Data/Skyboxes/Ruins.hdr",
+
+	"Textures": [
+		"Data/Textures/Hercules.dds",
+		"Data/Textures/Detail.dds",
+		"Data/Textures/Detail-Normal.dds",
+		"Data/Textures/statue_d.dds",
+		"Data/Textures/statue_e.dds",
+		"Data/Textures/Fireplace.dds",
+		"Data/Textures/Fireplace-E.dds",
+		"Data/Textures/spark.dds",
+		"Data/Textures/smoke.dds",
+
+		"Data/Textures/chest_AO.dds",
+		"Data/Textures/chest_Albedo.dds",
+		"Data/Textures/chest_Metallic.dds",
+		"Data/Textures/chest_Normal.dds",
+		"Data/Textures/chest_Roughness.dds"
+	],
+
+	"Shaders": [
+		"Data/Shaders/Standart.glsl",
+		"Data/Shaders/Particles.glsl"
+	],
+
+	"Meshes": [
+		"Data/Models/Hercules.cmf",
+		"Data/Models/Statue.cmf",
+		"Data/Models/Fireplace.cmf",
+		"Data/Models/Chest.cmf"
+	],
+}
+
+

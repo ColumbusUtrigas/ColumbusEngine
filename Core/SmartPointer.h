@@ -3,6 +3,9 @@
 namespace Columbus
 {
 
+	/**
+	* Simple smart pointer realization, analogue of std::unique_ptr.
+	*/
 	template <class Type>
 	class SmartPointer
 	{
@@ -14,15 +17,17 @@ namespace Columbus
 		SmartPointer(const SmartPointer&) = delete;
 		SmartPointer(SmartPointer&& Other)
 		{
+			Type* Tmp = Obj;
 			Obj = Other.Obj;
-			Other.Obj = nullptr;
+			Other.Obj = Tmp;
 		}
 
 		SmartPointer& operator=(const SmartPointer&) = delete;
 		SmartPointer& operator=(SmartPointer&& Other)
 		{
+			Type* Tmp = Obj;
 			Obj = Other.Obj;
-			Other.Obj = nullptr;
+			Other.Obj = Tmp;
 			return *this;
 		}
 

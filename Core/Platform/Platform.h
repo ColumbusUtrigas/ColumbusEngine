@@ -3,45 +3,32 @@
 namespace Columbus
 {
 
-	#undef COLUMBUS_PLATFORM_WINDOWS
-	#undef COLUMBUS_PLATFORM_LINUX
-	#undef COLUMBUS_PLATFORM_APPLE
-	#undef FORCEINLINE
+	#define USE_SIMD_EXTENSIONS 1
 
 	#if defined(_WIN32)
-		#define COLUMBUS_PLATFORM_WINDOWS
-		#define COLUMBUS_PLATFORM COLUMBUS_PLATFORM_WINDOWS
-	#elif defined(_WIN64)
-		#define COLUMBUS_PLATFORM_WINDOWS
-		#define COLUMBUS_PLATFORM COLUMBUS_PLATFORM_WINDOWS
+		#define PLATFORM_WINDOWS 1
 	#elif defined(__linux)
-		#define COLUMBUS_PLATFORM_LINUX
-		#define COLUMBUS_PLATFORM COLUMBUS_PLATFORM_LINUX
-	#elif defined(__APPLE__)
-		#define COLUMBUS_PLATFORM_APPLE
-		#define COLUMBUS_PLATFORM COLUMBUS_PLATFORM_APPLE
+		#define PLATFORM_LINUX 1
 	#else
-		#error Unsupported platform
+		#error Unsupported platform.
 	#endif
 
-	#if defined(COLUMBUS_PLATFORM_WINDOWS)
+	#if defined(_MSC_VER)
+		#define COMPLLER_MSVC 1
+	#elif defined(__GNUC__)
+		#define COMPILER_GCC 1
+	#elif defined(__clang__)
+		#define COMPILER_CLANG 1
+	#else
+		#error Unsupported compiler.
+	#endif
+
+	#if defined(PLATFORM_WINDOWS)
 		#define FORCEINLINE __forceinline
 	#else
-		#define FORCEINLINE inline
+		#define FORCEINLINE __attribute__((always_inline))
 	#endif
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 

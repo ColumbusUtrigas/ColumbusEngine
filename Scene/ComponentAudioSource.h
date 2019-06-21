@@ -10,15 +10,16 @@ namespace Columbus
 	{
 	private:
 		AudioSource* Source;
+
+		friend class Scene;
 	public:
 		ComponentAudioSource(AudioSource* InSource) : Source(InSource) {}
 
-		virtual void Render(Transform& Trans) override {}
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
 			if (Source != nullptr)
 			{
-				Source->Position = Trans.GetPos();
+				Source->Position = Trans.Position;
 			}
 		}
 
@@ -30,15 +31,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
 
 

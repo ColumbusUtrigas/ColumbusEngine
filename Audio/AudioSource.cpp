@@ -55,76 +55,73 @@ namespace Columbus
 
 	void AudioSource::PrepareBuffer(Sound::Frame* Frames, uint32 Count)
 	{
-		if (Frames != nullptr && Count != 0)
+		if (Frames != nullptr && Count != 0 && Playing && SoundClip != nullptr)
 		{
-			if (Playing)
+			if (SoundClip->IsStreaming())
 			{
-				if (SoundClip != nullptr)
+				// Streaming sound means reading and decoding audio file "on fly".
+				// It should read and decode slice of frames with fixed size (it may be 4KB).
+				
+				if (SoundClip->GetFrequency()     != 0 &&
+				    SoundClip->GetChannelsCount() != 0)
 				{
-					if (SoundClip->IsStreaming())
+					uint32 Decoded = SoundClip->Decode(Frames, Count);
+
+					Offset += Count * SoundClip->GetChannelsCount();
+					Played += 1.0 / SoundClip->GetFrequency() * Count;
+
+					if (Decoded < Count)
 					{
-						if (SoundClip->GetFrequency() != 0 &&
-						    SoundClip->GetChannelsCount() != 0)
-						{
-							uint32 Decoded = SoundClip->Decode(Frames, Count);
+						SoundClip->Seek(0);
+						Offset = 0;
+						Played = 0.0;
+					}
+				}
+			}
+			else
+			{
+				if (SoundClip->GetBufferSize() != 0 &&
+				    SoundClip->GetFrequency() != 0 &&
+				    SoundClip->GetChannelsCount() != 0 &&
+				    SoundClip->GetBuffer() != nullptr)
+				{
+					uint32 FramesCount = 0;
 
-							Offset += Count * SoundClip->GetChannelsCount();
-							Played += 1.0 / SoundClip->GetFrequency() * Count;
-
-							if (Decoded < Count)
-							{
-								SoundClip->Seek(0);
-								Offset = 0;
-								Played = 0.0;
-							}
-						}
+					if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
+					{
+						uint32 BufferSize = Offset - (SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame));
+						FramesCount = BufferSize / sizeof(Sound::Frame);
 					}
 					else
 					{
-						if (SoundClip->GetBufferSize() != 0 &&
-						    SoundClip->GetFrequency() != 0 &&
-						    SoundClip->GetChannelsCount() != 0 &&
-						    SoundClip->GetBuffer() != nullptr)
+						FramesCount = Count;
+					}
+
+					const double TimeStep = 1.0 / SoundClip->GetFrequency();
+
+					for (uint32 i = 0; i < FramesCount; i++)
+					{
+						if (SoundClip->GetChannelsCount() == 1)
 						{
-							uint32 FramesCount = 0;
+							Frames[i].L = Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+						}
+						else
+						{
+							Frames[i].L = *(SoundClip->GetBuffer() + Offset++);
+							Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
+						}
 
-							if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
-							{
-								uint32 BufferSize = Offset - (SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame));
-								FramesCount = BufferSize / sizeof(Sound::Frame);
-							}
-							else
-							{
-								FramesCount = Count;
-							}
+						Played += TimeStep;
+					}
 
-							const double TimeStep = 1.0 / SoundClip->GetFrequency();
+					if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
+					{
+						Offset = 0;
+						Played = 0.0;
 
-							for (uint32 i = 0; i < FramesCount; i++)
-							{
-								if (SoundClip->GetChannelsCount() == 1)
-								{
-									Frames[i].L = Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
-								}
-								else
-								{
-									Frames[i].L = *(SoundClip->GetBuffer() + Offset++);
-									Frames[i].R = *(SoundClip->GetBuffer() + Offset++);
-								}
-
-								Played += TimeStep;
-							}
-
-							if (Offset >= SoundClip->GetBufferSize() / sizeof(int16) - Count * sizeof(Sound::Frame))
-							{
-								Offset = 0;
-								Played = 0.0;
-
-								if (!Looping)
-								{
-									Playing = false;
-								}
-							}
+						if (!Looping)
+						{
+							Playing = false;
 						}
 					}
 				}
@@ -132,17 +129,8 @@ namespace Columbus
 		}
 	}
 
-	AudioSource::~AudioSource() {}
+	AudioSource::~AudioSource() { delete SoundClip; }
 
 }
-
-
-
-
-
-
-
-
-
 
 

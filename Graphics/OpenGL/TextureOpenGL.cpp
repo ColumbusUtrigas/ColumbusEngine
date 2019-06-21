@@ -92,7 +92,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_R16F;
 				PixelFormat = GL_RED;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -101,7 +101,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_RG16F;
 				PixelFormat = GL_RG;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -110,7 +110,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_RGB16F;
 				PixelFormat = GL_RGB;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -119,7 +119,7 @@ namespace Columbus
 			{
 				InternalFormat = GL_RGBA16F;
 				PixelFormat = GL_RGBA;
-				PixelType = GL_UNSIGNED_SHORT;
+				PixelType = GL_FLOAT;
 				return true;
 				break;
 			}
@@ -155,6 +155,15 @@ namespace Columbus
 			{
 				InternalFormat = GL_RGBA32F;
 				PixelFormat = GL_RGBA;
+				PixelType = GL_FLOAT;
+				return true;
+				break;
+			}
+			//Special
+			case TextureFormat::R11G11B10F:
+			{
+				InternalFormat = GL_R11F_G11F_B10F;
+				PixelFormat = GL_RGB;
 				PixelType = GL_FLOAT;
 				return true;
 				break;
@@ -380,37 +389,51 @@ namespace Columbus
 
 	bool TextureOpenGL::Load(const char* File)
 	{
-		if (!mImage.Load(File))
+		Image TmpImage;
+
+		if (!TmpImage.Load(File))
 		{
 			return false;
 		}
 
-		bool Result = Load(mImage);
+		bool Result = Create(TmpImage.GetType(), Properties(TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat()));
 
-		mImage.FreeData();
-		return Result;
+		if (Result)
+		{
+			return Load(TmpImage);
+		}
+
+		return false;
 	}
 
-	void TextureOpenGL::Clear()
+	bool TextureOpenGL::Create(Image::Type InType, Texture::Properties Props)
 	{
-		Width = 0;
-		Height = 0;
-		MipmapsCount = 0;
-		MipmapLevel = 0;
+		switch (InType)
+		{
+		case Image::Type::Image2D: return Create2D(Props); break;
+		case Image::Type::Image3D: break;
+		case Image::Type::ImageCube: return CreateCube(Props); break;
+		case Image::Type::Image2DArray: break;
+		}
 
-		Format = TextureFormat::Unknown;
-		TextureType = Type::Texture2D;
+		return false;
+	}
 
-		Target = 0;
-		InternalFormat = 0;
-		PixelFormat = 0;
-		PixelType = 0;
+	bool TextureOpenGL::Create(Texture::Type InType, Texture::Properties Props)
+	{
+		switch (InType)
+		{
+		case Texture::Type::Texture2D: return Create2D(Props); break;
+		case Texture::Type::Texture3D: break;
+		case Texture::Type::TextureCube: return CreateCube(Props); break;
+		case Texture::Type::Texture2DArray: break;
+		}
+
+		return false;
 	}
 	
 	bool TextureOpenGL::Create2D(Texture::Properties Props)
 	{
-		Clear();
-
 		TextureType = Texture::Type::Texture2D;
 
 		Target = GL_TEXTURE_2D;
@@ -441,8 +464,6 @@ namespace Columbus
 
 	bool TextureOpenGL::CreateCube(Texture::Properties Props)
 	{
-		Clear();
-
 		TextureType = Texture::Type::TextureCube;
 
 		Target = GL_TEXTURE_CUBE_MAP;
@@ -573,28 +594,12 @@ namespace Columbus
 		glActiveTexture(GL_TEXTURE0 + Unit);
 		glBindTexture(Target, 0);
 	}
-
-	void TextureOpenGL::bind()
+	
+	void TextureOpenGL::GenerateMipmap()
 	{
 		glBindTexture(Target, ID);
-	}
-	
-	void TextureOpenGL::unbind()
-	{
-		glBindTexture(Target, 0);
-	}
-
-	void TextureOpenGL::sampler2D(int a)
-	{
-		glActiveTexture(GL_TEXTURE0 + a);
-		bind();
-	}
-	
-	void TextureOpenGL::generateMipmap()
-	{
-		bind();
 		glGenerateMipmap(Target);
-		unbind();
+		glBindTexture(Target, 0);
 	}
 
 	uint32 TextureOpenGL::GetID() const
@@ -628,7 +633,5 @@ namespace Columbus
 	}
 
 }
-
-
 
 

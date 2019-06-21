@@ -6,7 +6,7 @@ namespace Columbus
 {
 
 	Light::Light() {}
-	Light::Light(int Type, const Vector3& Pos) : Type(Type), Pos(Pos) {}
+	Light::Light(int Type, const Vector3& Pos) : Pos(Pos), Type(Type) {}
 	Light::Light(const char* File, const Vector3& Pos) : Pos(Pos)
 	{
 		Load(File);
@@ -22,8 +22,15 @@ namespace Columbus
 		Type = (int)J["Type"].GetInt();
 		Color = J["Color"].GetVector3<float>();
 
+		Energy = (float)J["Energy"].GetFloat();
+
 		if (Type == 0) Dir = J["Directional"]["Direction"].GetVector3<float>();
 		if (Type == 1) Range = (float)J["Point"]["Range"].GetFloat();
+		if (Type == 2)
+		{
+			InnerCutoff = (float)J["Spot"]["Inner"].GetFloat();
+			OuterCutoff = (float)J["Spot"]["Outer"].GetFloat();
+		}
 
 		Log::Success("Light has been loaded: %s", FileName);
 

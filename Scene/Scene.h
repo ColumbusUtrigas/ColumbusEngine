@@ -3,15 +3,21 @@
 #include <Audio/AudioSystem.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Camera.h>
-#include <Graphics/Render.h>
 #include <Physics/PhysicsWorld.h>
 #include <Scene/GameObject.h>
 #include <System/Timer.h>
 #include <Core/SmartPointer.h>
 #include <Core/Types.h>
 
+#include <Graphics/Texture.h>
+#include <Graphics/Shader.h>
+#include <Graphics/Mesh.h>
+
+#include <Resources/ResourceManager.h>
+
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 namespace Columbus
 {
@@ -19,50 +25,73 @@ namespace Columbus
 	class Scene
 	{
 	private:
-		std::map<uint32, SmartPointer<GameObject>> Objects;
-		std::vector<Light*> Lights;
+		friend class Renderer;
+		friend class Editor;
+		friend class EditorPanelInspector;
+		friend class ResourcesViewerTexture;
+		friend class ResourcesViewerShader;
+		friend class ResourcesViewerMesh;
+
+		ResourceManager<Texture> TexturesManager;
+		ResourceManager<ShaderProgram> ShadersManager;
+		ResourceManager<Mesh> MeshesManager;
+
 		std::map<uint32, SmartPointer<Texture>> Textures;
 		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 
 		std::map<uint32, SmartPointer<Mesh>> Meshes;
 		std::map<uint32, SmartPointer<Sound>> Sounds;
 
-		Renderer MainRender;
+		Vector<AudioSource*> AudioSources;
+		std::vector<Light*> Lights;
 
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 
-		Skybox* Sky = nullptr;
-		Camera* MainCamera = nullptr;
-		AudioListener* Listener = nullptr;
-
-		iVector2 ContextSize = iVector2(640, 480);
-
-		void AudioWorkflow();
-		void LightWorkflow();
-		void MeshWorkflow();
-		void ParticlesWorkflow();
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
 	public:
 		AudioSystem Audio;
+		float TimeFactor = 1.0f;
+
+		///
+		/// TODO: SmartPointers
+		///
+		Skybox* Sky = nullptr;
+		Camera* MainCamera = nullptr;
+		AudioListener* Listener = nullptr;
+
+		ResourceManager<GameObject> Objects;
 	public:
 		Scene();
 
 		bool Load(const char* FileName);
 
-		void Add(uint32 ID, GameObject&& InObject)
+		void Add(GameObject&& InObject)
 		{
-			Objects.insert(std::make_pair(ID, SmartPointer<GameObject>(new GameObject(std::move(InObject)))));
+			GameObject* New = new GameObject(std::move(InObject));
+			Objects.Add(SmartPointer<GameObject>(New), New->Name);
+		}
+
+		void AddEmpty()
+		{
+			GameObject GO;
+			std::string Name = "Object ";
+			for (uint32 i = 0;; i++)
+			{
+				if (Objects.Find(Name + std::to_string(i)) == nullptr)
+				{
+					Name += std::to_string(i);
+					break;
+				}
+			}
+			GO.Name = Name;
+			Add(std::move(GO));
 		}
 
 		void SetSkybox(Skybox* InSky) { Sky = InSky; }
-		void SetCamera(Camera* InMainCamera) { MainCamera = InMainCamera; }
-		void SetAudioListener(AudioListener* InListener) { Listener = InListener; }
-		void SetContextSize(const iVector2& InContextSize) { ContextSize = InContextSize; }
-
-		GameObject* GetGameObject(uint32 ID) const;
-		GameObject* GetGameObject(const std::string& Name) const;
+		void SetCamera(Camera& InMainCamera) { MainCamera = &InMainCamera; }
+		void SetAudioListener(AudioListener& InListener) { Listener = &InListener; }
 
 		void Update();
 		void Render();

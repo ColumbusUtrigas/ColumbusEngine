@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Core/Types.h>
 #include <Graphics/Framebuffer.h>
 
 namespace Columbus
@@ -8,23 +9,22 @@ namespace Columbus
 	class FramebufferOpenGL : public Framebuffer
 	{
 	private:
-		unsigned int mID = 0;
+		uint32 ID = 0;
 	public:
 		FramebufferOpenGL();
 
-		virtual void bind() override;
-		virtual void unbind() override;
+		virtual void Bind() override;
+		virtual void Unbind() override;
 
-		virtual bool setTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) override;
+		virtual bool SetTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) override;
 		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level = 0) override;
-		virtual bool prepare(const Vector4& aClear, const Vector2& WindowSize) override;
-		virtual bool check() override;
+		virtual bool Prepare(const Vector4& Color, const iVector2& Origin, const iVector2& Size) override;
+		virtual bool Check() override;
 
 		virtual ~FramebufferOpenGL() override;
 	};
 
 }
-
 
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    

@@ -4,6 +4,8 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/PostEffect.h>
 #include <Graphics/ScreenQuad.h>
+#include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -31,20 +33,18 @@ namespace Columbus
 		0, 1, 4, 4, 1, 5
 	};
 
-	ShaderProgram* IrradianceShader = nullptr;
-	ShaderProgram* PrefilterShader = nullptr;
-	ShaderProgram* IntegrationShader = nullptr;
+	Matrix CaptureProjection;
+	Matrix CaptureViews[6];
 
-	static ShaderProgram* CreateSkyboxShader()
+	static void PrepareMatrices()
 	{
-		ShaderProgram* tShader = gDevice->CreateShaderProgram();
-		tShader->Load(ShaderProgram::StandartProgram::Skybox);
-		tShader->Compile();
-
-		tShader->AddUniform("uViewProjection");
-		tShader->AddUniform("uSkybox");
-
-		return tShader;
+		CaptureProjection.Perspective(90.0f, 1.0f, 0.1f, 10.0f);
+		CaptureViews[0].LookAt({ 0, 0, 0 }, { +1, 0, 0 }, { 0, -1,  0 });
+		CaptureViews[1].LookAt({ 0, 0, 0 }, { -1, 0, 0 }, { 0, -1,  0 });
+		CaptureViews[2].LookAt({ 0, 0, 0 }, { 0, +1, 0 }, { 0,  0, +1 });
+		CaptureViews[3].LookAt({ 0, 0, 0 }, { 0, -1, 0 }, { 0,  0, -1 });
+		CaptureViews[4].LookAt({ 0, 0, 0 }, { 0, 0, +1 }, { 0, -1,  0 });
+		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
 	}
 
 	static void CreateSkyboxBuffer(uint32& VBO, uint32& IBO, uint32& VAO)
@@ -68,50 +68,32 @@ namespace Columbus
 		glBindVertexArray(0);
 	}
 
-	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO, uint32 IBO)
+	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, uint32 VAO, uint32 IBO)
 	{
-		Matrix CaptureProjection;
-		Matrix CaptureViews[6];
+		auto SkyboxCubemapGenerationShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->SkyboxCubemapGeneration;
 
-		CaptureProjection.Perspective(90.0f, 1.0f, 0.1f, 10.0f);
-		CaptureViews[0].LookAt({ 0, 0, 0 }, { +1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[1].LookAt({ 0, 0, 0 }, { -1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[2].LookAt({ 0, 0, 0 }, { 0, +1, 0 }, { 0,  0, +1 });
-		CaptureViews[3].LookAt({ 0, 0, 0 }, { 0, -1, 0 }, { 0,  0, -1 });
-		CaptureViews[4].LookAt({ 0, 0, 0 }, { 0, 0, +1 }, { 0, -1,  0 });
-		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
+		iVector2 Resolution(1024);
 
-		if (IrradianceShader == nullptr)
-		{
-			IrradianceShader = gDevice->CreateShaderProgram();
-			IrradianceShader->Load("Data/Shaders/IrradianceGeneration.glsl");
-			IrradianceShader->Compile();
-		}
+		Cubemap = new TextureOpenGL();
+		Cubemap->CreateCube(Texture::Properties(Resolution.X, Resolution.Y, 0, TextureFormat::R11G11B10F));
+		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 
-		if (IrradianceMap == nullptr)
-		{
-			IrradianceMap = gDevice->CreateTexture();
-			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGBA8 });
-		}
-
-		Framebuffer* Frame = gDevice->createFramebuffer();
+		Framebuffer* Frame = gDevice->CreateFramebuffer();
 
 		glDepthMask(GL_FALSE);
 
-		IrradianceShader->Bind();
-		IrradianceShader->SetUniformMatrix("Projection", &CaptureProjection.M[0][0]);
-		IrradianceShader->SetUniform1i("EnvironmentMap", 0);
-		glActiveTexture(GL_TEXTURE0);
-		BaseMap->bind();
+		SkyboxCubemapGenerationShader->Bind();
+		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("Projection"), false, CaptureProjection);
+		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("BaseMap"), (TextureOpenGL*)BaseMap, 0);
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 
 		for (int i = 0; i < 6; i++)
 		{
-			Frame->SetTextureCube(Framebuffer::Attachment::Color0, IrradianceMap, i);
-			Frame->prepare({ 0, 0, 0, 0 }, { 32, 32 });
-			IrradianceShader->SetUniformMatrix("View", &CaptureViews[i].M[0][0]);
+			Frame->SetTextureCube(Framebuffer::Attachment::Color0, Cubemap, i);
+			Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, Resolution);
+			SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 		}
@@ -119,34 +101,59 @@ namespace Columbus
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 
-		Frame->unbind();
-		IrradianceShader->Unbind();
+		Frame->Unbind();
+		SkyboxCubemapGenerationShader->Unbind();
 		glDepthMask(GL_TRUE);
 
-		IrradianceMap->generateMipmap();
+		Cubemap->GenerateMipmap();
+
+		delete Frame;
+	}
+
+	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO, uint32 IBO)
+	{
+		auto IrradianceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->IrradianceGeneration;
+
+		if (IrradianceMap == nullptr)
+		{
+			IrradianceMap = gDevice->CreateTexture();
+			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGB16F });
+			IrradianceMap->SetFlags(Texture::Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
+		}
+
+		Framebuffer* Frame = gDevice->CreateFramebuffer();
+
+		glDepthMask(GL_FALSE);
+
+		IrradianceShader->Bind();
+		IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("Projection"), false, CaptureProjection);
+		IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+		for (int i = 0; i < 6; i++)
+		{
+			Frame->SetTextureCube(Framebuffer::Attachment::Color0, IrradianceMap, i);
+			Frame->Prepare({ 0, 0, 0, 0 }, { 0 }, { 32, 32 });
+			IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("View"), false, CaptureViews[i]);
+
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+		Frame->Unbind();
+		IrradianceShader->Unbind();
+		glDepthMask(GL_TRUE);
 
 		delete Frame;
 	}
 
 	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, uint32 VAO, uint32 IBO)
 	{
-		Matrix CaptureProjection;
-		Matrix CaptureViews[6];
-
-		CaptureProjection.Perspective(90.0f, 1.0f, 0.1f, 10.0f);
-		CaptureViews[0].LookAt({ 0, 0, 0 }, { +1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[1].LookAt({ 0, 0, 0 }, { -1, 0, 0 }, { 0, -1,  0 });
-		CaptureViews[2].LookAt({ 0, 0, 0 }, { 0, +1, 0 }, { 0,  0, +1 });
-		CaptureViews[3].LookAt({ 0, 0, 0 }, { 0, -1, 0 }, { 0,  0, -1 });
-		CaptureViews[4].LookAt({ 0, 0, 0 }, { 0, 0, +1 }, { 0, -1,  0 });
-		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
-
-		if (PrefilterShader == nullptr)
-		{
-			PrefilterShader = gDevice->CreateShaderProgram();
-			PrefilterShader->Load("Data/Shaders/PrefilterGeneration.glsl");
-			PrefilterShader->Compile();
-		}
+		auto PrefilterShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->PrefilterGeneration;
 
 		if (PrefilterMap == nullptr)
 		{
@@ -156,31 +163,29 @@ namespace Columbus
 			Flags.Wrapping = Texture::Wrap::ClampToEdge;
 
 			PrefilterMap = gDevice->CreateTexture();
-			PrefilterMap->CreateCube(Texture::Properties{ 128, 128, 0, TextureFormat::RGBA16F });
-			PrefilterMap->generateMipmap();
+			PrefilterMap->CreateCube(Texture::Properties{ 128, 128, 0, TextureFormat::RGB16F });
+			PrefilterMap->GenerateMipmap();
 			PrefilterMap->SetFlags(Flags);
-			BaseMap->SetFlags(Flags);
 		}
 
-		Framebuffer* Frame = gDevice->createFramebuffer();
+		Framebuffer* Frame = gDevice->CreateFramebuffer();
 
 		glDepthMask(GL_FALSE);
 		PrefilterShader->Bind();
-		PrefilterShader->SetUniformMatrix("Projection", &CaptureProjection.M[0][0]);
-		PrefilterShader->SetUniform1i("EnvironmentMap", 0);
-		glActiveTexture(GL_TEXTURE0);
-		BaseMap->bind();
+		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("Projection"), false, CaptureProjection);
+		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
 
 		uint32 MaxMips = 8;
+		uint32 Resolution = 128;
 
 		for (uint32 Mip = 0; Mip < MaxMips; Mip++)
 		{
-			uint32 Width = 128 >> Mip;
-			uint32 Height = 128 >> Mip;
+			uint32 Width  = Resolution >> Mip;
+			uint32 Height = Resolution >> Mip;
 
 			float Roughness = (float)Mip / (float)(MaxMips - 1);
 
-			PrefilterShader->SetUniform1f("Roughness", Roughness);
+			PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("Roughness"), Roughness);
 
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -188,8 +193,8 @@ namespace Columbus
 			for (uint32 i = 0; i < 6; i++)
 			{
 				Frame->SetTextureCube(Framebuffer::Attachment::Color0, PrefilterMap, i, Mip);
-				Frame->prepare({ 0, 0, 0, 0 }, { (float)Width, (float)Height });
-				PrefilterShader->SetUniformMatrix("View", &CaptureViews[i].M[0][0]);
+				Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, { (int)Width, (int)Height });
+				PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("View"), false, CaptureViews[i]);
 
 				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 			}
@@ -198,7 +203,7 @@ namespace Columbus
 			glBindVertexArray(0);
 		}
 
-		Frame->unbind();
+		Frame->Unbind();
 		PrefilterShader->Unbind();
 		glDepthMask(GL_TRUE);
 
@@ -207,12 +212,7 @@ namespace Columbus
 
 	static void CreateIntegrationMap(Texture*& IntegrationMap)
 	{
-		if (IntegrationShader == nullptr)
-		{
-			IntegrationShader = gDevice->CreateShaderProgram();
-			IntegrationShader->Load("Data/Shaders/IntegrationGeneration.glsl");
-			IntegrationShader->Compile();
-		}
+		auto IntegrationShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->IntegrationGeneration;
 
 		if (IntegrationMap == nullptr)
 		{
@@ -231,12 +231,12 @@ namespace Columbus
 		Frame.ColorTexturesEnablement[0] = true;
 		Frame.ColorTexturesFormats[0] = TextureFormat::RG16F;
 
-		Frame.Bind({ 0 }, { 1, 1 });
+		Frame.Bind({ 0 }, { 0, 0 }, { 1, 1 });
 
 		auto Tmp = Frame.ColorTextures[0];
 		Frame.ColorTextures[0] = IntegrationMap;
 
-		Frame.Bind({ 0 }, { 512, 512 });
+		Frame.Bind({ 0 }, { 0, 0}, { 512, 512 });
 		IntegrationShader->Bind();
 		Quad.Render();
 		IntegrationShader->Unbind();
@@ -245,20 +245,19 @@ namespace Columbus
 		Frame.ColorTextures[0] = Tmp;
 	}
 
-	Skybox::Skybox() :
-		Tex(nullptr),
-		Shader(nullptr)
+	Skybox::Skybox()
 	{
-		Shader = CreateSkyboxShader();
+		PrepareMatrices();
+		Shader = gDevice->GetDefaultShaders()->Skybox;
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 	}
 
-	Skybox::Skybox(Texture* InTexture) :
-		Tex(InTexture),
-		Shader(nullptr)
+	Skybox::Skybox(Texture* InTexture)
 	{
-		Shader = CreateSkyboxShader();
+		PrepareMatrices();
+		Shader = gDevice->GetDefaultShaders()->Skybox;
 		CreateSkyboxBuffer(VBO, IBO, VAO);
+		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VAO, IBO);
 		CreateIrradianceMap(Tex, IrradianceMap, VAO, IBO);
 		CreatePrefilterMap(Tex, PrefilterMap, VAO, IBO);
 		CreateIntegrationMap(IntegrationMap);
@@ -268,19 +267,18 @@ namespace Columbus
 	{
 		if (Shader != nullptr && Tex != nullptr)
 		{
+			auto ShaderOpenGL = (ShaderProgramOpenGL*)Shader;
+
 			glDepthMask(GL_FALSE);
 
-			Shader->Bind();
+			ShaderOpenGL->Bind();
 
 			auto View = ViewCamera.GetViewMatrix();
 			View.SetRow(3, Vector4(0, 0, 0, 1));
 			View.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			Shader->SetUniformMatrix("uViewProjection", &(View * ViewCamera.GetProjectionMatrix()).M[0][0]);
-
-			glActiveTexture(GL_TEXTURE0);
-			Shader->SetUniform1i("uSkybox", 0);
-			Tex->bind();
+			ShaderOpenGL->SetUniform(ShaderOpenGL->GetFastUniform("ViewProjection"), false, View * ViewCamera.GetProjectionMatrix());
+			ShaderOpenGL->SetUniform(ShaderOpenGL->GetFastUniform("Skybox"), (TextureOpenGL*)Tex, 0);
 
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -288,8 +286,8 @@ namespace Columbus
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
 
-			Shader->Unbind();
-			Tex->unbind();
+			ShaderOpenGL->Unbind();
+			((TextureOpenGL*)Tex)->Unbind();
 
 			glDepthMask(GL_TRUE);
 		}
@@ -302,7 +300,6 @@ namespace Columbus
 
 	Skybox::~Skybox()
 	{
-		delete Shader;
 		delete Tex;
 		delete IrradianceMap;
 		delete PrefilterMap;

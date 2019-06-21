@@ -1,6 +1,7 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/BMP/ImageBMP.h>
 #include <Common/Image/DDS/ImageDDS.h>
+#include <Common/Image/HDR/ImageHDR.h>
 #include <Common/Image/JPG/ImageJPG.h>
 #include <Common/Image/PNG/ImagePNG.h>
 #include <Common/Image/TGA/ImageTGA.h>
@@ -36,7 +37,7 @@ namespace Columbus
 
 			case TextureFormat::Unknown: return 0;  break;
 
-			default:                     return 0;  break;
+			default: break;
 		}
 
 		return 0;
@@ -49,6 +50,7 @@ namespace Columbus
 		case TextureFormat::DXT1: return 8;  break;
 		case TextureFormat::DXT3:
 		case TextureFormat::DXT5: return 16; break;
+		default: break;
 		}
 
 		return 0;
@@ -58,6 +60,7 @@ namespace Columbus
 	{
 		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
 		if (ImageLoaderDDS::IsDDS(FileName)) return ImageFormat::DDS;
+		if (ImageLoaderHDR::IsHDR(FileName)) return ImageFormat::HDR;
 		if (ImageLoaderPNG::IsPNG(FileName)) return ImageFormat::PNG;
 		if (ImageLoaderTIF::IsTIF(FileName)) return ImageFormat::TIF;
 		if (ImageLoaderJPG::IsJPG(FileName)) return ImageFormat::JPG;
@@ -200,15 +203,7 @@ namespace Columbus
 	/*
 	* Image class
 	*/
-	Image::Image() :
-		Width(0),
-		Height(0),
-		Depth(0),
-		Size(0),
-		MipMaps(0),
-		Format(TextureFormat::RGBA8),
-		Data(nullptr),
-		Exist(false) {}
+	Image::Image() {}
 	/*
 	* Load image from file
 	* @param std::string InFileName: Name of image file to load
@@ -224,6 +219,7 @@ namespace Columbus
 		{
 			case ImageFormat::BMP: Loader = new ImageLoaderBMP(); break;
 			case ImageFormat::DDS: Loader = new ImageLoaderDDS(); break;
+			case ImageFormat::HDR: Loader = new ImageLoaderHDR(); break;
 			case ImageFormat::PNG: Loader = new ImageLoaderPNG(); break;
 			case ImageFormat::TIF: Loader = new ImageLoaderTIF(); break;
 			case ImageFormat::JPG: Loader = new ImageLoaderJPG(); break;
@@ -296,6 +292,7 @@ namespace Columbus
 		case ImageFormat::PNG: return ImageSavePNG(InFileName, Width, Height, Format, Data);          break;
 		case ImageFormat::TGA: return ImageSaveTGA(InFileName, Width, Height, Format, Data);          break;
 		case ImageFormat::TIF: return ImageSaveTIF(InFileName, Width, Height, Format, Data);          break;
+		default: break;
 		}
 		
 		return false;

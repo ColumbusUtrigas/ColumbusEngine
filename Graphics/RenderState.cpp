@@ -60,16 +60,30 @@ namespace Columbus
 		}
 	}
 
+	void RenderState::SetBlending(bool Blending)
+	{
+		if (Blending)
+		{
+			glEnable(GL_BLEND);
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+		}
+	}
+
 	void RenderState::SetDepthTesting(Material::DepthTest DepthTesting)
 	{
 		switch (DepthTesting)
 		{
-		case Material::DepthTest::Less:    glDepthFunc(GL_LESS);    break;
-		case Material::DepthTest::Greater: glDepthFunc(GL_GREATER); break;
-		case Material::DepthTest::LEqual:  glDepthFunc(GL_LEQUAL);  break;
-		case Material::DepthTest::GEqual:  glDepthFunc(GL_GEQUAL);  break;
-		case Material::DepthTest::Never:   glDepthFunc(GL_NEVER);   break;
-		case Material::DepthTest::Always:  glDepthFunc(GL_ALWAYS);  break;
+		case Material::DepthTest::Less:     glDepthFunc(GL_LESS);     break;
+		case Material::DepthTest::Greater:  glDepthFunc(GL_GREATER);  break;
+		case Material::DepthTest::LEqual:   glDepthFunc(GL_LEQUAL);   break;
+		case Material::DepthTest::GEqual:   glDepthFunc(GL_GEQUAL);   break;
+		case Material::DepthTest::Equal:    glDepthFunc(GL_EQUAL);    break;
+		case Material::DepthTest::NotEqual: glDepthFunc(GL_NOTEQUAL); break;
+		case Material::DepthTest::Never:    glDepthFunc(GL_NEVER);    break;
+		case Material::DepthTest::Always:   glDepthFunc(GL_ALWAYS);   break;
 		}
 	}
 
@@ -96,18 +110,18 @@ namespace Columbus
 			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), Sky->GetIntegrationMap() };
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
-			static constexpr char* const Names[11] =
-			{ "uMaterial.AlbedoMap",
-			  "uMaterial.NormalMap",
-			  "uMaterial.RoughnessMap",
-			  "uMaterial.MetallicMap",
-			  "uMaterial.OcclusionMap",
-			  "uMaterial.EmissionMap",
-			  "uMaterial.DetailAlbedoMap",
-			  "uMaterial.DetailNormalMap",
-			  "uMaterial.IrradianceMap",
-			  "uMaterial.EnvironmentMap",
-			  "uMaterial.IntegrationMap" };
+			static constexpr const char* Names[11] =
+			{ "AlbedoMap",
+			  "NormalMap",
+			  "RoughnessMap",
+			  "MetallicMap",
+			  "OcclusionMap",
+			  "EmissionMap",
+			  "DetailAlbedoMap",
+			  "DetailNormalMap",
+			  "IrradianceMap",
+			  "EnvironmentMap",
+			  "IntegrationMap" };
 
 			ShaderProgramOpenGL* Shader = (ShaderProgramOpenGL*)CurrentMaterial.GetShader();
 			MaterialRenderData* RenderData = (MaterialRenderData*)Shader->RenderData;
@@ -124,23 +138,23 @@ namespace Columbus
 				NewRenderData->Model          = Shader->GetFastUniform("uModel");
 				NewRenderData->ViewProjection = Shader->GetFastUniform("uViewProjection");
 
-				NewRenderData->HasAlbedoMap       = Shader->GetFastUniform("uMaterial.HasAlbedoMap");
-				NewRenderData->HasNormalMap       = Shader->GetFastUniform("uMaterial.HasNormalMap");
-				NewRenderData->HasRoughnessMap    = Shader->GetFastUniform("uMaterial.HasRoughnessMap");
-				NewRenderData->HasMetallicMap     = Shader->GetFastUniform("uMaterial.HasMetallicMap");
-				NewRenderData->HasOcclusionMap    = Shader->GetFastUniform("uMaterial.HasOcclusionMap");
-				NewRenderData->HasDetailAlbedoMap = Shader->GetFastUniform("uMaterial.HasDetailAlbedoMap");
-				NewRenderData->HasDetailNormalMap = Shader->GetFastUniform("uMaterial.HasDetailNormalMap");
+				NewRenderData->HasAlbedoMap       = Shader->GetFastUniform("HasAlbedoMap");
+				NewRenderData->HasNormalMap       = Shader->GetFastUniform("HasNormalMap");
+				NewRenderData->HasRoughnessMap    = Shader->GetFastUniform("HasRoughnessMap");
+				NewRenderData->HasMetallicMap     = Shader->GetFastUniform("HasMetallicMap");
+				NewRenderData->HasOcclusionMap    = Shader->GetFastUniform("HasOcclusionMap");
+				NewRenderData->HasDetailAlbedoMap = Shader->GetFastUniform("HasDetailAlbedoMap");
+				NewRenderData->HasDetailNormalMap = Shader->GetFastUniform("HasDetailNormalMap");
 
-				NewRenderData->Tiling           = Shader->GetFastUniform("uMaterial.Tiling");
-				NewRenderData->DetailTiling     = Shader->GetFastUniform("uMaterial.DetailTiling");
-				NewRenderData->Albedo           = Shader->GetFastUniform("uMaterial.Albedo");
-				NewRenderData->Roughness        = Shader->GetFastUniform("uMaterial.Roughness");
-				NewRenderData->Metallic         = Shader->GetFastUniform("uMaterial.Metallic");
-				NewRenderData->EmissionStrength = Shader->GetFastUniform("uMaterial.EmissionStrength");
-				NewRenderData->Transparent      = Shader->GetFastUniform("uMaterial.Transparent");
+				NewRenderData->Tiling           = Shader->GetFastUniform("Tiling");
+				NewRenderData->DetailTiling     = Shader->GetFastUniform("DetailTiling");
+				NewRenderData->Albedo           = Shader->GetFastUniform("Albedo");
+				NewRenderData->Roughness        = Shader->GetFastUniform("Roughness");
+				NewRenderData->Metallic         = Shader->GetFastUniform("Metallic");
+				NewRenderData->EmissionStrength = Shader->GetFastUniform("EmissionStrength");
+				NewRenderData->Transparent      = Shader->GetFastUniform("Transparent");
 
-				NewRenderData->CameraPosition = Shader->GetFastUniform("uCamera.Position");
+				NewRenderData->CameraPosition = Shader->GetFastUniform("uCameraPosition");
 				NewRenderData->Lighting       = Shader->GetFastUniform("uLighting");
 
 				Shader->RenderData = NewRenderData;
@@ -186,29 +200,38 @@ namespace Columbus
 		}
 	}
 
-	void RenderState::SetLights(const std::vector<Light*>& InLights)
+	void RenderState::SetLights(const std::vector<Light*>& InLights, const int32 LightIndices[4])
 	{
 		static constexpr int LightsCount = 4;
 		static float Lights[13 * LightsCount];
+
+		static Vector3 Color;
 
 		if (CurrentShader != nullptr)
 		{
 			uint32 Counter = 0;
 
-			for (auto& L : InLights)
+			for (uint32 i = 0; i < LightsCount; i++)
 			{
-				uint32 Offset = Counter * 13;
+				if (LightIndices[i] >= 0)
+				{
+					auto L = InLights[LightIndices[i]];
 
-				memcpy(Lights + Offset + 0, &L->Color, sizeof(L->Color));
-				memcpy(Lights + Offset + 3, &L->Pos,   sizeof(L->Pos));
-				memcpy(Lights + Offset + 6, &L->Dir,   sizeof(L->Dir));
+					uint32 Offset = Counter * 13;
 
-				Lights[Offset + 9] = (float)L->Type;
-				Lights[Offset + 10] = L->Range;
-				Lights[Offset + 11] = L->InnerCutoff;
-				Lights[Offset + 12] = L->OuterCutoff;
+					Color = L->Color * L->Energy;
 
-				Counter++;
+					memcpy(Lights + Offset + 0, &Color,    sizeof(Color));
+					memcpy(Lights + Offset + 3, &L->Pos,   sizeof(L->Pos));
+					memcpy(Lights + Offset + 6, &L->Dir,   sizeof(L->Dir));
+
+					Lights[Offset + 9] = (float)L->Type;
+					Lights[Offset + 10] = L->Range;
+					Lights[Offset + 11] = L->InnerCutoff;
+					Lights[Offset + 12] = L->OuterCutoff;
+
+					Counter++;
+				}
 			}
 
 			for (; Counter < LightsCount; Counter++)
@@ -239,7 +262,7 @@ namespace Columbus
 				}
 			}
 
-			CurrentShader->Bind();
+			((ShaderProgramOpenGL*)CurrentShader)->Bind();
 		}
 	}
 

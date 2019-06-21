@@ -1,5 +1,4 @@
 #include <Graphics/OpenGL/DeviceOpenGL.h>
-#include <Graphics/OpenGL/BufferOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/MeshOpenGL.h>
@@ -10,17 +9,7 @@ namespace Columbus
 
 	DeviceOpenGL::DeviceOpenGL()
 	{
-
-	}
-
-	Buffer* DeviceOpenGL::CreateBuffer() const
-	{
-		return new BufferOpenGL();
-	}
-
-	ShaderStage* DeviceOpenGL::CreateShaderStage() const
-	{
-		return new ShaderStageOpenGL();
+		
 	}
 
 	ShaderProgram* DeviceOpenGL::CreateShaderProgram() const
@@ -38,7 +27,7 @@ namespace Columbus
 		return new MeshOpenGL();
 	}
 	
-	Framebuffer* DeviceOpenGL::createFramebuffer() const
+	Framebuffer* DeviceOpenGL::CreateFramebuffer() const
 	{
 		return new FramebufferOpenGL();
 	}
@@ -49,11 +38,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
 
 

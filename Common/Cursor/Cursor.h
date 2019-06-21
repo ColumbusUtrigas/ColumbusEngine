@@ -31,8 +31,8 @@ namespace Columbus
 
 			uint64 Size = InImage.GetWidth() * InImage.GetHeight() * InImage.GetBytesPerPixel();
 
-			Frames[0].PixelData = new uint8[Size];
-			memcpy(Frames[0].PixelData, InImage.GetData(), Size);
+			Frames[0].PixelData = new uint8[(size_t)Size];
+			memcpy(Frames[0].PixelData, InImage.GetData(), (size_t)Size);
 		}
 	};
 
