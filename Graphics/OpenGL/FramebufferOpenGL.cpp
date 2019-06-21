@@ -42,12 +42,13 @@ namespace Columbus
 
 		uint32 TextureID = ((TextureOpenGL*)InTexture)->GetID();
 		uint32 Attachment = ConvertAttachment(Attach);
+		uint32 Target = ((TextureOpenGL*)InTexture)->GetTarget();
 
 		if (Attachment == GL_INVALID_ENUM) return false;
 		if (!glIsTexture(TextureID)) return false;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, ID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, GL_TEXTURE_2D, TextureID, Level);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, Target, TextureID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;

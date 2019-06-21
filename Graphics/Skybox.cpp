@@ -75,7 +75,7 @@ namespace Columbus
 		iVector2 Resolution(1024);
 
 		Cubemap = new TextureOpenGL();
-		Cubemap->CreateCube(Texture::Properties(Resolution.X, Resolution.Y, 0, TextureFormat::R11G11B10F));
+		Cubemap->CreateCube(Texture::Properties(Resolution.X, Resolution.Y, 0, 0, TextureFormat::R11G11B10F));
 		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 
 		Framebuffer* Frame = gDevice->CreateFramebuffer();
@@ -117,7 +117,7 @@ namespace Columbus
 		if (IrradianceMap == nullptr)
 		{
 			IrradianceMap = gDevice->CreateTexture();
-			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGB16F });
+			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, 0, TextureFormat::RGB16F });
 			IrradianceMap->SetFlags(Texture::Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 		}
 
@@ -166,7 +166,7 @@ namespace Columbus
 			Flags.Wrapping = Texture::Wrap::ClampToEdge;
 
 			PrefilterMap = gDevice->CreateTexture();
-			PrefilterMap->CreateCube(Texture::Properties{ Resolution, Resolution, 0, TextureFormat::RGB16F });
+			PrefilterMap->CreateCube(Texture::Properties{ Resolution, Resolution, 0, 0, TextureFormat::RGB16F });
 			PrefilterMap->GenerateMipmap();
 			PrefilterMap->SetFlags(Flags);
 		}

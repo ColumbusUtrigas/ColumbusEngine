@@ -11,6 +11,7 @@
 #include <Profiling/Profiling.h>
 
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/OpenGL/FramebufferOpenGL.h>
 
 namespace Columbus
 {
@@ -20,12 +21,6 @@ namespace Columbus
 	Texture* EditorIconFlashlight;
 	Texture* EditorIconAudio;
 	Texture* EditorIconParticles;
-
-	//ShaderProgram* NoneShader;
-	//ShaderProgram* BloomBrightShader;
-	//ShaderProgram* GaussBlurShader;
-	//ShaderProgram* BloomShader;
-	//ShaderProgram* LensFlareShader;
 
 	RenderState State;
 
@@ -45,12 +40,18 @@ namespace Columbus
 		EditorIconAudio->Load("Data/Icons/Audio.png");
 		EditorIconParticles->Load("Data/Icons/Particles.png");
 
-		BaseEffect.ColorTexturesEnablement[0] = true;
-		BaseEffect.ColorTexturesEnablement[1] = true;
-		BaseEffect.DepthTextureEnablement = true;
-		BaseEffect.ColorTexturesMipmaps[0] = false;
+		BaseMSAA.ColorTexturesEnablement[0] = true;
+		BaseMSAA.ColorTexturesEnablement[1] = true;
+		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		BaseMSAA.ColorTexturesMipmaps[0] = false;
+		BaseMSAA.ColorTexturesMultisampling[0] = 4;
+		BaseMSAA.DepthTextureEnablement = true;
 
-		BaseEffect.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		Base.ColorTexturesEnablement[0] = true;
+		Base.ColorTexturesEnablement[1] = true;
+		Base.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		Base.ColorTexturesMipmaps[0] = false;
+		Base.DepthTextureEnablement = true;
 
 		BloomBrightPass.ColorTexturesEnablement[0] = true;
 		BloomBrightPass.ColorTexturesMipmaps[0] = false;
@@ -65,26 +66,6 @@ namespace Columbus
 
 		FinalPass.ColorTexturesEnablement[0] = true;
 		//FinalPass.ColorTexturesMipmaps[0] = false;
-
-		/*NoneShader = gDevice->CreateShaderProgram();
-		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
-		NoneShader->Compile();*/
-
-		//BloomBrightShader = gDevice->CreateShaderProgram();
-		//BloomBrightShader->Load("Data/Shaders/Bright.glsl");
-		//BloomBrightShader->Compile();
-
-		/*GaussBlurShader = gDevice->CreateShaderProgram();
-		GaussBlurShader->Load("Data/Shaders/GaussBlur.glsl");
-		GaussBlurShader->Compile();*/
-
-		/*BloomShader = gDevice->CreateShaderProgram();
-		BloomShader->Load("Data/Shaders/Bloom.glsl");
-		BloomShader->Compile();*/
-
-		/*LensFlareShader = gDevice->CreateShaderProgram();
-		LensFlareShader->Load("Data/Shaders/LensFlare.glsl");
-		LensFlareShader->Compile();*/
 	}
 
 	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
@@ -393,7 +374,7 @@ namespace Columbus
 		BloomBrightPass.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
-		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
 		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTreshold, BloomTreshold);
 		Quad.Render();
 
@@ -434,7 +415,7 @@ namespace Columbus
 		BloomFinalPass.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)Bloom)->Bind();
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
+		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
 		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)BloomVerticalBlurPass.ColorTextures[0], 1);
 		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
 		Quad.Render();
@@ -533,17 +514,27 @@ namespace Columbus
 
 		PROFILE_GPU(ProfileModuleGPU::GPU);
 
-		BaseEffect.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+		Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
 		RenderOpaqueStage();
 		RenderSkyStage();
 		RenderTransparentStage();
 
-		BaseEffect.Unbind();
+		Base.Unbind();
 
 		State.Clear();
 
-		Texture* Final = BaseEffect.ColorTextures[0];
+		//Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+		//Base.Unbind();
+
+		//FinalPass.Bind({}, {}, ContextSize);
+		//FinalPass.Unbind();
+
+		//glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
+		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		//glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		Texture* Final = Base.ColorTextures[0];
 
 		if (BloomEnable)
 		{
