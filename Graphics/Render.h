@@ -92,12 +92,23 @@ namespace Columbus
 			Half,
 			Quad
 		};
+
+		enum class AntiAliasingType
+		{
+			No,
+			MSAA_2X,
+			MSAA_4X,
+			MSAA_8X,
+			MSAA_16X
+		};
 	public:
 		iVector2 ContextSize;
 		bool EditMode = false;
 
 		float Exposure = 1.3f;
 		float Gamma = 1.5f;
+
+		AntiAliasingType AntiAliasing = AntiAliasingType::No;
 
 		bool BloomEnable = true;
 		float BloomTreshold = 0.8f;
