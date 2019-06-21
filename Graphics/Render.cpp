@@ -44,8 +44,8 @@ namespace Columbus
 		BaseMSAA.ColorTexturesEnablement[1] = true;
 		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::RGB16F;
 		BaseMSAA.ColorTexturesMipmaps[0] = false;
-		BaseMSAA.ColorTexturesMultisampling[0] = 4;
 		BaseMSAA.DepthTextureEnablement = true;
+		BaseMSAA.Multisampling = 4;
 
 		Base.ColorTexturesEnablement[0] = true;
 		Base.ColorTexturesEnablement[1] = true;
@@ -514,25 +514,23 @@ namespace Columbus
 
 		PROFILE_GPU(ProfileModuleGPU::GPU);
 
-		Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+		BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
 		RenderOpaqueStage();
 		RenderSkyStage();
 		RenderTransparentStage();
 
-		Base.Unbind();
+		BaseMSAA.Unbind();
 
 		State.Clear();
 
-		//Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
-		//Base.Unbind();
+		Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
-		//FinalPass.Bind({}, {}, ContextSize);
-		//FinalPass.Unbind();
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
+		glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-		//glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		//glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		Base.Unbind();
 
 		Texture* Final = Base.ColorTextures[0];
 

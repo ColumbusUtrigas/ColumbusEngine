@@ -467,7 +467,7 @@ namespace Columbus
 			}
 		} else
 		{
-			glTexImage2DMultisample(Target, Multisampling, PixelFormat, Width, Height, GL_TRUE);
+			glTexImage2DMultisample(Target, Multisampling, InternalFormat, Width, Height, GL_TRUE);
 		}
 
 		glBindTexture(Target, 0);
@@ -516,10 +516,12 @@ namespace Columbus
 	{
 		TextureFlags = F;
 
-		glBindTexture(Target, ID);
-
-		switch (TextureFlags.Filtering)
+		if (Multisampling == 0)
 		{
+			glBindTexture(Target, ID);
+
+			switch (TextureFlags.Filtering)
+			{
 			case Texture::Filter::Point:
 			{
 				glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -547,34 +549,35 @@ namespace Columbus
 				glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				break;
 			}
+			}
+
+			switch (TextureFlags.AnisotropyFilter)
+			{
+			case Texture::Anisotropy::Anisotropy1:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
+			case Texture::Anisotropy::Anisotropy2:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 2);  break;
+			case Texture::Anisotropy::Anisotropy4:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4);  break;
+			case Texture::Anisotropy::Anisotropy8:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8);  break;
+			case Texture::Anisotropy::Anisotropy16: glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16); break;
+			default:                                glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
+			}
+
+			GLuint ClampMode = GL_CLAMP_TO_EDGE;
+
+			switch (TextureFlags.Wrapping)
+			{
+			case Texture::Wrap::Clamp:               ClampMode = GL_CLAMP;                break;
+			case Texture::Wrap::ClampToEdge:         ClampMode = GL_CLAMP_TO_EDGE;        break;
+			case Texture::Wrap::Repeat:              ClampMode = GL_REPEAT;               break;
+			case Texture::Wrap::MirroredRepeat:      ClampMode = GL_MIRRORED_REPEAT;      break;
+			case Texture::Wrap::MirroredClampToEdge: ClampMode = GL_MIRROR_CLAMP_TO_EDGE; break;
+			}
+
+			glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);
+			glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
+			glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
+
+			glBindTexture(Target, 0);
 		}
-
-		switch (TextureFlags.AnisotropyFilter)
-		{
-		case Texture::Anisotropy::Anisotropy1:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
-		case Texture::Anisotropy::Anisotropy2:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 2);  break;
-		case Texture::Anisotropy::Anisotropy4:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4);  break;
-		case Texture::Anisotropy::Anisotropy8:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8);  break;
-		case Texture::Anisotropy::Anisotropy16: glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16); break;
-		default:                                glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
-		}
-
-		GLuint ClampMode = GL_CLAMP_TO_EDGE;
-
-		switch (TextureFlags.Wrapping)
-		{
-		case Texture::Wrap::Clamp:               ClampMode = GL_CLAMP;                break;
-		case Texture::Wrap::ClampToEdge:         ClampMode = GL_CLAMP_TO_EDGE;        break;
-		case Texture::Wrap::Repeat:              ClampMode = GL_REPEAT;               break;
-		case Texture::Wrap::MirroredRepeat:      ClampMode = GL_MIRRORED_REPEAT;      break;
-		case Texture::Wrap::MirroredClampToEdge: ClampMode = GL_MIRROR_CLAMP_TO_EDGE; break;
-		}
-
-		glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);
-		glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
-		glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
-
-		glBindTexture(Target, 0);
 	}
 
 	void TextureOpenGL::SetMipmapLevel(uint32 Level)

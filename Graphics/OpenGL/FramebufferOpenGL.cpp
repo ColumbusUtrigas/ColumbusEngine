@@ -51,6 +51,8 @@ namespace Columbus
 		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, Target, TextureID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		Check();
+
 		return true;
 	}
 
@@ -89,11 +91,14 @@ namespace Columbus
 
 		switch (ret)
 		{
+		case GL_FRAMEBUFFER_COMPLETE: break;
 		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: Log::Error("Frambuffer Incomplete Attachment"); break;
 		case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT: Log::Error("Framebuffer Incomplete Dimensions"); break;
 		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: Log::Error("Framebuffer Missing Attachment"); break;
 		case GL_FRAMEBUFFER_UNSUPPORTED: Log::Error("Framebuffer Unsupported"); break;
 		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: Log::Error("Framebuffer Incomplete Draw Buffer"); break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: Log::Error("Incomplete Multisample"); break;
+		default: Log::Error("I don't know that error\n");  break;
 		}
 
 		return ret == GL_FRAMEBUFFER_COMPLETE;
