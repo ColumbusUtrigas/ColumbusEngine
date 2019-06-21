@@ -1,5 +1,6 @@
 #include <Graphics/RenderState.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/Device.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -107,7 +108,7 @@ namespace Columbus
 
 		if (CurrentShader != nullptr)
 		{
-			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), Sky->GetIntegrationMap() };
+			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), gDevice->GetDefaultTextures()->IntegrationLUT };
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
 			static constexpr const char* Names[11] =
