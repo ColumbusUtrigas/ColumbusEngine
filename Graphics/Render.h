@@ -64,7 +64,8 @@ namespace Columbus
 		Skybox* Sky = nullptr;
 		Scene* Scn = nullptr;
 
-		PostEffect BaseEffect;
+		PostEffect BaseMSAA;
+		PostEffect Base;
 		PostEffect BloomBrightPass;
 		PostEffect BloomHorizontalBlurPass;
 		PostEffect BloomVerticalBlurPass;

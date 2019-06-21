@@ -281,6 +281,7 @@ namespace Columbus
 			bool Compressed;
 
 			UpdateFormat(Format, Compressed);
+			Multisampling = 0;
 
 			glBindTexture(Target, ID);
 
@@ -310,6 +311,7 @@ namespace Columbus
 		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
+		Multisampling = 0;
 
 		glBindTexture(Target, ID);
 
@@ -396,7 +398,7 @@ namespace Columbus
 			return false;
 		}
 
-		bool Result = Create(TmpImage.GetType(), Properties(TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat()));
+		bool Result = Create(TmpImage.GetType(), Properties(TmpImage.GetWidth(), TmpImage.GetHeight(), 0, 0, TmpImage.GetFormat()));
 
 		if (Result)
 		{
@@ -440,21 +442,32 @@ namespace Columbus
 		Width = Props.Width;
 		Height = Props.Height;
 		Format = Props.Format;
+		Multisampling = Props.Multisampling;
 
 		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
 
+		if (Multisampling != 0)
+		{
+			Target = GL_TEXTURE_2D_MULTISAMPLE;
+		}
+
 		glBindTexture(Target, ID);
 
-		if (Compressed)
+		if (Multisampling == 0)
 		{
-			int Block = GetBlockSizeFromFormat(Format);
-			glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
-		}
-		else
+			if (Compressed)
+			{
+				int Block = GetBlockSizeFromFormat(Format);
+				glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
+			} else
+			{
+				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+			}
+		} else
 		{
-			glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+			glTexImage2DMultisample(Target, Multisampling, PixelFormat, Width, Height, GL_TRUE);
 		}
 
 		glBindTexture(Target, 0);

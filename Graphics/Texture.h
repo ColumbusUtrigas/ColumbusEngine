@@ -21,8 +21,8 @@ namespace Columbus
 		uint32 MipmapsCount;
 		uint32 MipmapLevel;
 
+		uint32 Multisampling = 0;
 		TextureFormat Format;
-
 		Type TextureType;
 	public:
 		enum class Filter
@@ -77,13 +77,15 @@ namespace Columbus
 			uint32 Width = 0;
 			uint32 Height = 0;
 			uint32 LOD = 0;
+			uint32 Multisampling = 0;
 			TextureFormat Format;
 
-			Properties(uint32 InWidth, uint32 InHeight, uint32 InLOD, TextureFormat InFormat) :
-				Width(InWidth),
-				Height(InHeight),
-				LOD(InLOD),
-				Format(InFormat) {}
+			Properties(uint32 Width, uint32 Height, uint32 LOD, uint32 MS, TextureFormat Format) :
+				Width(Width),
+				Height(Height),
+				LOD(LOD),
+				Multisampling(MS),
+				Format(Format) {}
 		};
 	public:
 		Texture() {}
@@ -101,6 +103,7 @@ namespace Columbus
 
 		virtual void SetFlags(Flags F) = 0;
 
+		uint32 GetMultisampling() const { return Multisampling; }
 		TextureFormat GetFormat() const { return Format; }
 		Type GetType() const { return TextureType; }
 
