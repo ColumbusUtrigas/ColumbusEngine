@@ -118,6 +118,7 @@ namespace Columbus
 	{
 		Texture* Black = nullptr;
 		Texture* White = nullptr;
+		Texture* IntegrationLUT = nullptr;
 
 		DefaultTextures();
 		~DefaultTextures();
