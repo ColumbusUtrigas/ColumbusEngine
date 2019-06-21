@@ -21,6 +21,8 @@ namespace Columbus
 	{
 		ShaderLoader.MultipleSelect(true);
 
+		static std::string Find;
+
 		if (Scn != nullptr && Opened)
 		{
 			ImGui::OpenPopup("Shaders Viewer");
@@ -40,8 +42,8 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateShaderProgram(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_ShadersViewer", LoadMore);
-				ResourceViewerDrawList<ShaderProgram>("ShadersList_ShadersViewer", Tmp, Scn->ShadersManager, Button, DoubleClick);
-				ResourceViewerDrawButtons("Buttons_ShadersViewer", Destination, [&](){ Close(); }, Opened);
+				ResourceViewerDrawList<ShaderProgram>("ShadersList_ShadersViewer", Tmp, Scn->ShadersManager, Find, Button, DoubleClick);
+				ResourceViewerDrawButtons("Buttons_ShadersViewer", Destination, Find, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<ShaderProgram>("Load Shader", ShaderLoader,
 					Scn->ShadersManager, ShaderBruteLoader,
 					Load, Success, Failure, New);

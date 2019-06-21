@@ -29,6 +29,8 @@ namespace Columbus
 	{
 		TextureLoader.MultipleSelect(true);
 
+		static std::string Find;
+
 		if (Scn != nullptr && Opened)
 		{
 			ImGui::OpenPopup("Textures Viewer");
@@ -56,8 +58,8 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateTexture(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_TexturesViewer", LoadMore);
-				ResourceViewerDrawList<Texture>("TexturesList_ShadersViewer", Tmp, Scn->TexturesManager, Button, DoubleClick);
-				ResourceViewerDrawButtons("Buttons_TexturesViewer", Destination, [&](){ Close(); }, Opened);
+				ResourceViewerDrawList<Texture>("TexturesList_ShadersViewer", Tmp, Scn->TexturesManager, Find, Button, DoubleClick);
+				ResourceViewerDrawButtons("Buttons_TexturesViewer", Destination, Find, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<Texture>("Load Texture", TextureLoader,
 					Scn->TexturesManager, BruteLoader,
 					Load, Success, Failure, New);
