@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
-
 #include <Graphics/Light.h>
 #include <Common/Model/Model.h>
 #include <Math/Box.h>
+
+#include <vector>
 
 namespace Columbus
 {
@@ -15,28 +15,35 @@ namespace Columbus
 		Vector3 Position;
 		Box BoundingBox;
 
-		uint32 VerticesCount;
+		uint32 VerticesCount = 0;
 		bool LightsSorted = false;
 	public:
-		std::vector<Light*> Lights;
-	public:
-		Mesh() : VerticesCount(0) { }
-		Mesh(const std::vector<Vertex>& Vertices) : VerticesCount(0) { SetVertices(Vertices); LightsSorted = false; }
+		Mesh() {}
 
-		virtual void SetVertices(const std::vector<Vertex>& InVertices) {}
-		virtual void Load(const Model& InModel) {}
-		virtual void Bind() {}
-		virtual uint32 Render() { return 0; }
-		virtual void Unbind() {}
-		virtual uint64 GetMemoryUsage() const { return 0;  }
+		bool Load(const char* FileName)
+		{
+			Model TmpModel;
 
-		void SetLights(const std::vector<Light*>& InLights) { Lights = InLights; }
+			if (!TmpModel.Load(FileName))
+			{
+				return false;
+			}
+
+			return Load(TmpModel);
+		}
+
+		virtual bool Load(const Model& InModel) = 0;
+		virtual void Bind() = 0;
+		virtual uint32 Render() = 0;
+		virtual void Unbind() = 0;
 
 		Box GetBoundingBox() const { return BoundingBox; }
 
 		void Clear() {}
 
-		virtual ~Mesh() {}
+		virtual ~Mesh() {};
 	};
 
 }
+
+

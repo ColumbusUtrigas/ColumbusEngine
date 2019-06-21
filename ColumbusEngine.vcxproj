@@ -94,13 +94,13 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -111,13 +111,13 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -130,15 +130,17 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -151,15 +153,17 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Lib\Bullet\include;$(SolutionDir)Lib\GLEW\include;$(SolutionDir)Lib\GLM;$(SolutionDir)Lib\LibJPEG\Include;$(SolutionDir)Lib\LibPNG\Include;$(SolutionDir)Lib\LibTIFF\Include;$(SolutionDir)Lib\MiniMP3;$(SolutionDir)Lib\SDL2\include;$(SolutionDir)Lib\STB\;$(SolutionDir)Lib\TinyXML2\;$(SolutionDir)Lib\ZSTD\Include\</AdditionalIncludeDirectories>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)Lib\Bullet\lib;$(SolutionDir)Lib\GLEW\lib\Release\Win32;$(SolutionDir)Lib\LibJPEG\Lib\x86;$(SolutionDir)Lib\LibPNG\Lib\Windows\x86;$(SolutionDir)Lib\LibTIFF\Lib\x86;$(SolutionDir)Lib\SDL2\lib\x86;$(SolutionDir)Lib\ZLib\Lib\Windows\x86;$(SolutionDir)Lib\ZSTD\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;BulletCollision.lib;BulletDynamics.lib;BulletLinearMath.lib;glew32s.lib;jpeg.lib;png.lib;libtiff.lib;SDL2.lib;SDL2main.lib;ZLib.lib;ZSTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -173,6 +177,7 @@
     <ClInclude Include="Common\Cursor\Cursor.h" />
     <ClInclude Include="Common\Image\BMP\ImageBMP.h" />
     <ClInclude Include="Common\Image\DDS\ImageDDS.h" />
+    <ClInclude Include="Common\Image\HDR\ImageHDR.h" />
     <ClInclude Include="Common\Image\Image.h" />
     <ClInclude Include="Common\Image\JPG\ImageJPG.h" />
     <ClInclude Include="Common\Image\PNG\ImagePNG.h" />
@@ -201,8 +206,21 @@
     <ClInclude Include="Core\Types.h" />
     <ClInclude Include="Core\Windows\PlatformWindowsClipboard.h" />
     <ClInclude Include="Core\Windows\PlatformWindowsFilesystem.h" />
+    <ClInclude Include="Editor\Editor.h" />
+    <ClInclude Include="Editor\FileDialog.h" />
+    <ClInclude Include="Editor\FontAwesome.h" />
+    <ClInclude Include="Editor\MessageBox.h" />
+    <ClInclude Include="Editor\Panel.h" />
+    <ClInclude Include="Editor\PanelHierarchy.h" />
+    <ClInclude Include="Editor\PanelInspector.h" />
+    <ClInclude Include="Editor\PanelProfiler.h" />
+    <ClInclude Include="Editor\PanelRenderSettings.h" />
+    <ClInclude Include="Editor\PanelScene.h" />
+    <ClInclude Include="Editor\ResourcesViewerFunctions.h" />
+    <ClInclude Include="Editor\ResourcesViewerMesh.h" />
+    <ClInclude Include="Editor\ResourcesViewerShader.h" />
+    <ClInclude Include="Editor\ResourcesViewerTexture.h" />
     <ClInclude Include="Engine.h" />
-    <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\Camera.h" />
     <ClInclude Include="Graphics\Device.h" />
     <ClInclude Include="Graphics\Framebuffer.h" />
@@ -217,24 +235,17 @@
     <ClInclude Include="Graphics\OpenGL\StandartShadersOpenGL.h" />
     <ClInclude Include="Graphics\OpenGL\TextureOpenGL.h" />
     <ClInclude Include="Graphics\OpenGL\WindowOpenGLSDL.h" />
+    <ClInclude Include="Graphics\ParticlesRenderer.h" />
     <ClInclude Include="Graphics\Particles\Acceleration\ParticleModuleAcceleration.h" />
     <ClInclude Include="Graphics\Particles\Color\ParticleModuleColor.h" />
-    <ClInclude Include="Graphics\Particles\Color\ParticleModuleColorOverLife.h" />
-    <ClInclude Include="Graphics\Particles\Emit\ParticleModuleEmit.h" />
     <ClInclude Include="Graphics\Particles\Lifetime\ParticleModuleLifetime.h" />
-    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationBase.h" />
-    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationBox.h" />
-    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationCircle.h" />
-    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocationSphere.h" />
+    <ClInclude Include="Graphics\Particles\Location\ParticleModuleLocation.h" />
     <ClInclude Include="Graphics\Particles\Noise\ParticleModuleNoise.h" />
-    <ClInclude Include="Graphics\Particles\Particle.h" />
-    <ClInclude Include="Graphics\Particles\ParticleEffect.h" />
-    <ClInclude Include="Graphics\Particles\ParticleEmitter.h" />
-    <ClInclude Include="Graphics\Particles\ParticleModule.h" />
-    <ClInclude Include="Graphics\Particles\Required\ParticleModuleRequired.h" />
+    <ClInclude Include="Graphics\Particles\ParticleContainer.h" />
+    <ClInclude Include="Graphics\Particles\ParticleEmitterCPU.h" />
+    <ClInclude Include="Graphics\Particles\ParticleEmitterLoader.h" />
     <ClInclude Include="Graphics\Particles\Rotation\ParticleModuleRotation.h" />
     <ClInclude Include="Graphics\Particles\Size\ParticleModuleSize.h" />
-    <ClInclude Include="Graphics\Particles\Size\ParticleModuleSizeOverLife.h" />
     <ClInclude Include="Graphics\Particles\SubUV\ParticleModuleSubUV.h" />
     <ClInclude Include="Graphics\Particles\Velocity\ParticleModuleVelocity.h" />
     <ClInclude Include="Graphics\PostEffect.h" />
@@ -252,7 +263,15 @@
     <ClInclude Include="GUI\GUI.h" />
     <ClInclude Include="GUI\VirtualInput.h" />
     <ClInclude Include="GUI\Widget.h" />
+    <ClInclude Include="Input\Events.h" />
+    <ClInclude Include="Input\EventSystem.h" />
     <ClInclude Include="Input\Input.h" />
+    <ClInclude Include="Lib\imgui\examples\imgui_impl_opengl3.h" />
+    <ClInclude Include="Lib\imgui\examples\imgui_impl_sdl.h" />
+    <ClInclude Include="Lib\imgui\imconfig.h" />
+    <ClInclude Include="Lib\imgui\imgui.h" />
+    <ClInclude Include="Lib\imgui\imgui_internal.h" />
+    <ClInclude Include="Lib\imgui\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="Lib\TinyXML2\tinyxml2.h" />
     <ClInclude Include="Math\Box.h" />
     <ClInclude Include="Math\Frustum.h" />
@@ -275,8 +294,10 @@
     <ClInclude Include="Physics\PhysicsShapeSphere.h" />
     <ClInclude Include="Physics\PhysicsWorld.h" />
     <ClInclude Include="Physics\Rigidbody.h" />
+    <ClInclude Include="Profiling\Profiling.h" />
     <ClInclude Include="RenderAPIOpenGL\OpenGL.h" />
     <ClInclude Include="RenderAPI\RenderAPI.h" />
+    <ClInclude Include="Resources\ResourceManager.h" />
     <ClInclude Include="Scene\Component.h" />
     <ClInclude Include="Scene\ComponentAudioSource.h" />
     <ClInclude Include="Scene\ComponentLight.h" />
@@ -299,6 +320,7 @@
     <ClCompile Include="Audio\AudioSystem.cpp" />
     <ClCompile Include="Common\Image\BMP\ImageBMP.cpp" />
     <ClCompile Include="Common\Image\DDS\ImageDDS.cpp" />
+    <ClCompile Include="Common\Image\HDR\ImageHDR.cpp" />
     <ClCompile Include="Common\Image\Image.cpp" />
     <ClCompile Include="Common\Image\JPG\ImageJPG.cpp" />
     <ClCompile Include="Common\Image\PNG\ImagePNG.cpp" />
@@ -315,6 +337,18 @@
     <ClCompile Include="Core\Platform\PlatformFilesystem.cpp" />
     <ClCompile Include="Core\Windows\PlatformWindowsClipboard.cpp" />
     <ClCompile Include="Core\Windows\PlatformWindowsFilesystem.cpp" />
+    <ClCompile Include="Editor\Editor.cpp" />
+    <ClCompile Include="Editor\FileDialog.cpp" />
+    <ClCompile Include="Editor\MessageBox.cpp" />
+    <ClCompile Include="Editor\Panel.cpp" />
+    <ClCompile Include="Editor\PanelHierarchy.cpp" />
+    <ClCompile Include="Editor\PanelInspector.cpp" />
+    <ClCompile Include="Editor\PanelProfiler.cpp" />
+    <ClCompile Include="Editor\PanelRenderSettings.cpp" />
+    <ClCompile Include="Editor\PanelScene.cpp" />
+    <ClCompile Include="Editor\ResourcesViewerMesh.cpp" />
+    <ClCompile Include="Editor\ResourcesViewerShader.cpp" />
+    <ClCompile Include="Editor\ResourcesViewerTexture.cpp" />
     <ClCompile Include="Graphics\Camera.cpp" />
     <ClCompile Include="Graphics\Device.cpp" />
     <ClCompile Include="Graphics\Light.cpp" />
@@ -326,19 +360,35 @@
     <ClCompile Include="Graphics\OpenGL\ShaderOpenGL.cpp" />
     <ClCompile Include="Graphics\OpenGL\TextureOpenGL.cpp" />
     <ClCompile Include="Graphics\OpenGL\WindowOpenGLSDL.cpp" />
-    <ClCompile Include="Graphics\Particles\ParticleEffect.cpp" />
-    <ClCompile Include="Graphics\Particles\ParticleEmitter.cpp" />
+    <ClCompile Include="Graphics\ParticlesRenderer.cpp" />
+    <ClCompile Include="Graphics\Particles\Lifetime\ParticleModuleLifetime.cpp" />
+    <ClCompile Include="Graphics\Particles\Location\ParticleModuleLocation.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEmitterCPU.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEmitterLoader.cpp" />
+    <ClCompile Include="Graphics\Particles\Rotation\ParticleModuleRotation.cpp" />
+    <ClCompile Include="Graphics\Particles\SubUV\ParticleModuleSubUV.cpp" />
     <ClCompile Include="Graphics\Primitives.cpp" />
     <ClCompile Include="Graphics\Render.cpp" />
     <ClCompile Include="Graphics\RenderState.cpp" />
+    <ClCompile Include="Graphics\Shader.cpp" />
     <ClCompile Include="Graphics\ShaderBuilder.cpp" />
     <ClCompile Include="Graphics\Skybox.cpp" />
+    <ClCompile Include="Graphics\Texture.cpp" />
     <ClCompile Include="GUI\Button.cpp" />
+    <ClCompile Include="Input\EventSystem.cpp" />
     <ClCompile Include="Input\Input.cpp" />
+    <ClCompile Include="Lib\imgui\examples\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="Lib\imgui\examples\imgui_impl_sdl.cpp" />
+    <ClCompile Include="Lib\imgui\imgui.cpp" />
+    <ClCompile Include="Lib\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Lib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Lib\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Lib\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="Lib\TinyXML2\tinyxml2.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Physics\PhysicsWorld.cpp" />
     <ClCompile Include="Physics\Rigidbody.cpp" />
+    <ClCompile Include="Profiling\Profiling.cpp" />
     <ClCompile Include="RenderAPIOpenGL\OpenGL.cpp" />
     <ClCompile Include="Scene\GameObject.cpp" />
     <ClCompile Include="Scene\Scene.cpp" />

@@ -39,8 +39,8 @@ namespace Columbus
 		Frequency(0),
 		Channels(0),
 		Buffer(nullptr),
-		Decoder(nullptr)
-	{ }
+		Streaming(false),
+		Decoder(nullptr) {}
 	
 	bool Sound::Load(const char* FileName, bool Stream)
 	{

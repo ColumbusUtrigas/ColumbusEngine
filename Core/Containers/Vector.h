@@ -8,6 +8,10 @@
 namespace Columbus
 {
 
+	/**
+	* @brief Simple basic allocator.
+	* It directly uses malloc/realloc/free functions.
+	*/
 	template <typename ValueType>
 	class DefaultAllocator
 	{
@@ -31,6 +35,9 @@ namespace Columbus
 		}
 	};
 
+	/**
+	* @brief Simple basic iterator.
+	*/
 	template <typename ValueType>
 	class RandomAccessIterator
 	{
@@ -45,37 +52,55 @@ namespace Columbus
 		bool operator!=(const RandomAccessIterator& Other) const { return _Values != Other._Values; }
 	};
 
+	/**
+	* @brief Simple dynamic array, analogue of std::vector.
+	*/
 	template <typename ValueType, typename Allocator = DefaultAllocator<ValueType>>
 	class Vector
 	{
 	private:
-		ValueType* Data = nullptr;
+		ValueType* _Data = nullptr;
 		Allocator _Allocator;
 		uint32 _Size = 0;
 		uint32 _Capacity = 10;
 	public:
+		/**
+		* @brief Allocates 10 elements (default capacity).
+		*/
 		Vector()
 		{
-			Data = _Allocator.Allocate(_Capacity);
+			_Data = _Allocator.Allocate(_Capacity);
 		}
 		Vector(const Vector& Base) { *this = Base; }
-		Vector(Vector&& Base)      { *this = Base; }
+		Vector(Vector&& Base)      { *this = (Vector&&)Base; }
 
 		uint32 Size()     const { return _Size;     }
 		uint32 Capacity() const { return _Capacity; }
 
+		ValueType* Data() const
+		{
+			return _Data;
+		}
+
+		/**
+		* @brief Sets size of the vector to 0.
+		* @note It doesn't affect capacity of the vector.
+		*/
 		void Clear()
 		{
-			Data = _Allocator.Reallocate(Data, _Capacity);
+			//_Data = _Allocator.Reallocate(_Data, _Capacity);
 			_Size = 0;
 		}
 
+		/**
+		* @brief Reserves NewCapacity elements. It doesn't affect content of the vector.
+		*/
 		void Reserve(uint32 NewCapacity)
 		{
 			if (NewCapacity > _Capacity)
 			{
 				_Capacity = NewCapacity;
-				Data = _Allocator.Reallocate(Data, _Capacity);
+				_Data = _Allocator.Reallocate(_Data, _Capacity);
 			}
 		}
 
@@ -97,36 +122,40 @@ namespace Columbus
 				Reserve(_Capacity * 2);
 			}
 
-			new(&Data[_Size++]) ValueType(std::forward<Args>(Arguments)...);
+			new(&_Data[_Size++]) ValueType(std::forward<Args>(Arguments)...);
 		}
 
-		RandomAccessIterator<ValueType> begin() { return RandomAccessIterator<ValueType>(Data); }
-		RandomAccessIterator<ValueType> end() { return RandomAccessIterator<ValueType>(Data + _Size); }
+		RandomAccessIterator<ValueType> begin() { return RandomAccessIterator<ValueType>(_Data); }
+		RandomAccessIterator<ValueType> end() { return RandomAccessIterator<ValueType>(_Data + _Size); }
 
-		const RandomAccessIterator<const ValueType> begin() const { return RandomAccessIterator<const ValueType>(Data); }
-		const RandomAccessIterator<const ValueType> end() const { return RandomAccessIterator<const ValueType>(Data + _Size); }
+		const RandomAccessIterator<const ValueType> begin() const { return RandomAccessIterator<const ValueType>(_Data); }
+		const RandomAccessIterator<const ValueType> end() const { return RandomAccessIterator<const ValueType>(_Data + _Size); }
 
 		Vector& operator=(const Vector& Other)
 		{
-			if (Data != nullptr) free(Data);
 			_Size = Other._Size;
 			_Capacity = Other._Capacity;
-			Data = (ValueType*)malloc(_Capacity * sizeof(ValueType));
-			memcpy(Data, Other.Data, _Size * sizeof(ValueType));
+			_Allocator.Reallocate(_Data, _Capacity);
+			memcpy(_Data, Other._Data, _Size * sizeof(ValueType)); // TODO
+			return *this;
+		}
+
+		Vector& operator=(Vector&& Other)
+		{
+			_Size = Other._Size;         Other._Size = 0;
+			_Capacity = Other._Capacity; Other._Capacity = 0;
+			_Data = Other._Data;         Other._Data = nullptr;
 			return *this;
 		}
 
 		ValueType& operator[](uint32 Index) const
 		{
-			return Data[Index];
+			return _Data[Index];
 		}
 
 		~Vector()
 		{
-			if (Data != nullptr)
-			{
-				free(Data);
-			}
+			_Allocator.Deallocate(_Data);
 		}
 	};
 

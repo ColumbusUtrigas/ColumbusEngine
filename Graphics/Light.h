@@ -14,6 +14,7 @@ namespace Columbus
 
 		int Type = 0;
 
+		float Energy = 1.0f;
 		float Range = 10.0f;
 		float InnerCutoff = 12.5f;
 		float OuterCutoff = 17.5f;

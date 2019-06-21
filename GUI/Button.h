@@ -17,22 +17,7 @@ namespace Columbus
 
 		virtual void Prepare() override
 		{
-			if (Shader != nullptr)
-			{
-				Shader->SetUniform4f("uColor", Color);
-
-				if (MainTexture != nullptr)
-				{
-					glActiveTexture(GL_TEXTURE0);
-					Shader->SetUniform1i("uTexture", 0);
-					MainTexture->bind();
-				}
-				else
-				{
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, 0);
-				}
-			}
+			
 		}
 
 		virtual void Render() override

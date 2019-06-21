@@ -1,101 +1,37 @@
 #include <Scene/Transform.h>
 
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-
 namespace Columbus
 {
 
-	Transform::Transform() :
-		ModelMatrix(1.0f) {}
-
-	Transform::Transform(Vector3 Pos) :
-		Position(Pos),
-		ModelMatrix(1.0f) {}
-
-	Transform::Transform(Vector3 Pos, Vector3 Rot) :
-		Position(Pos),
-		Rotation(Rot),
-		ModelMatrix(1.0f) {}
-
-	Transform::Transform(Vector3 Pos, Vector3 Rot, Vector3 Scale) :
+	Transform::Transform(const Vector3& Pos, const Vector3& Rot, const Vector3& Scale) :
+		LastPosition(Pos + Vector3{1}),
+		LastRotation(Rot + Vector3{1}),
+		LastScale(Scale + Vector3{1}),
 		Position(Pos),
 		Rotation(Rot),
 		Scale(Scale),
-		ModelMatrix(1.0f)
-	{
-		SetRot(Rot);
-	}
-
-	void Transform::SetPos(Vector3 Pos)
-	{
-		this->Position = Pos;
-	}
-	
-	void Transform::AddPos(Vector3 Pos)
-	{
-		this->Position += Pos;
-	}
-	
-	Vector3 Transform::GetPos() const
-	{
-		return Position;
-	}
-	
-	void Transform::SetRot(Vector3 Rot)
-	{
-		this->Rotation = Rot;
-		SetRot(glm::quat(glm::vec3(Math::Radians(Rot.X), Math::Radians(Rot.Y), Math::Radians(Rot.Z))));
-	}
-
-	void Transform::SetRot(glm::quat InRotation)
-	{
-		RotationQuaternion = InRotation;
-	}
-	
-	void Transform::AddRot(Vector3 Rot)
-	{
-		this->Rotation += Rot;
-	}
-	
-	Vector3 Transform::GetRot() const
-	{
-		return Rotation;
-	}
-	
-	void Transform::SetScale(Vector3 Scale)
-	{
-		this->Scale = Scale;
-	}
-	
-	void Transform::AddScale(Vector3 Scale)
-	{
-		this->Scale += Scale;
-	}
-	
-	Vector3 Transform::GetScale() const
-	{
-		return Scale;
-	}
+		ModelMatrix(1.0f) {}
 	
 	void Transform::Update()
 	{
-		glm::mat4 RotationMatrix = glm::mat4_cast(RotationQuaternion);
-		float* Value = glm::value_ptr(RotationMatrix);
+		if (LastPosition != Position || LastRotation != Rotation || LastScale != Scale)
+		{
+			Q = Quaternion({ Math::Radians(Rotation.X),
+			                 Math::Radians(Rotation.Y),
+			                 Math::Radians(Rotation.Z) });
 
-		Matrix tRotationMatrix;
-		memcpy(&tRotationMatrix.M[0][0], Value, 64);
+			ModelMatrix.SetIdentity();
+			ModelMatrix.Scale(Scale);
+			ModelMatrix = ModelMatrix * Q.ToMatrix();
+			ModelMatrix.Translate(Position);
 
-		ModelMatrix.SetIdentity();
-		ModelMatrix.Scale(Scale);
-		//ModelMatrix.Rotate(Vector3(1, 0, 0), Rotation.X);
-		//ModelMatrix.Rotate(Vector3(0, 1, 0), Rotation.Y);
-		//ModelMatrix.Rotate(Vector3(0, 0, 1), Rotation.Z);
-		ModelMatrix = ModelMatrix * tRotationMatrix;
-		ModelMatrix.Translate(Position);
+			LastPosition = Position;
+			LastRotation = Rotation;
+			LastScale = Scale;
+		}
 	}
 	
-	void Transform::SetMatrix(Matrix InMatrix)
+	void Transform::SetMatrix(const Matrix& InMatrix)
 	{
 		this->ModelMatrix = InMatrix;
 	}

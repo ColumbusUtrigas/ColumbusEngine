@@ -1,4 +1,5 @@
 #include <Physics/PhysicsWorld.h>
+#include <Profiling/Profiling.h>
 
 namespace Columbus
 {
@@ -35,6 +36,7 @@ namespace Columbus
 
 	void PhysicsWorld::Step(float aDeltaTime, int aSubSteps)
 	{
+		PROFILE_CPU(ProfileModule::Physics);
 		mWorld->stepSimulation(aDeltaTime, aSubSteps);
 	}
 
@@ -48,9 +50,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
 
 

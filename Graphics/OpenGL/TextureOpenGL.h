@@ -25,8 +25,8 @@ namespace Columbus
 		bool Load(Image& InImage) override;
 		bool Load(const char* File) override;
 
-		void Clear() override;
-
+		bool Create(Image::Type InType, Properties Props) override;
+		bool Create(Texture::Type InType, Properties Props) override;
 		bool Create2D(Texture::Properties Props) override;
 		bool CreateCube(Texture::Properties Props) override;
 
@@ -39,25 +39,18 @@ namespace Columbus
 		void Bind(uint32 Unit);
 		void Unbind(uint32 Unit);
 
-		void bind() override;
-		void unbind() override;
+		void GenerateMipmap() override;
 
-		void sampler2D(int a) override;
-		void generateMipmap() override;
-
-		uint32 GetID() const; //Get OpenGL-specified texture ID
-		uint32 GetTarget() const; //Get OpenGL-specified texture target
-		uint32 GetInternalFormat() const; //Get OpenGL-specified texture internal format
-		uint32 GetPixelFormat() const; //Get OpenGL-specified texture pixel format
-		uint32 GetPixelType() const; //Get OpenGL-specified pixel type
+		//OpenGL specific
+		uint32 GetID() const;
+		uint32 GetTarget() const;
+		uint32 GetInternalFormat() const;
+		uint32 GetPixelFormat() const;
+		uint32 GetPixelType() const;
 
 		~TextureOpenGL() override;
 	};
 
 }
-
-
-
-
 
 

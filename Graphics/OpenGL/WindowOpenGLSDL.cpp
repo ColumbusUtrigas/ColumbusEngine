@@ -27,26 +27,23 @@ namespace Columbus
 				Log::Fatal("No display");
 			}
 
-			SDL_DisplayMode* DisplayModes = new SDL_DisplayMode[SDL_GetNumVideoDisplays()];
-
 			Log::Initialization("SDL2 initialized");
 			Log::Initialization("Current video driver: %s", SDL_GetCurrentVideoDriver());
 			Log::Initialization("Display count: %i", SDL_GetNumVideoDisplays());
 
 			for (int32 i = 0; i < SDL_GetNumVideoDisplays(); i++)
 			{
-				if (SDL_GetDesktopDisplayMode(i, &DisplayModes[i]) != 0)
+				SDL_DisplayMode DisplayMode;
+				if (SDL_GetDesktopDisplayMode(i, &DisplayMode) != 0)
 				{
 					Log::Fatal("Can't get display info (%i)", i + 1);
 				}
 				else
 				{
-					Log::Initialization("Display resolution (%i): %ix%i", i + 1, DisplayModes[i].w, DisplayModes[i].h);
-					Log::Initialization("Display refresh rate (%i): %i", i + 1, DisplayModes[i].refresh_rate);
+					Log::Initialization("Display resolution (%i): %ix%i", i + 1, DisplayMode.w, DisplayMode.h);
+					Log::Initialization("Display refresh rate (%i): %i", i + 1, DisplayMode.refresh_rate);
 				}
 			}
-
-			delete[] DisplayModes;
 		}
 	}
 	
@@ -161,17 +158,7 @@ namespace Columbus
 	
 	void WindowOpenGLSDL::Update()
 	{
-		if (Window && Open)
-		{
-			SDL_GetWindowSize(Window, &Size.X, &Size.Y);
-
-			while (SDL_PollEvent(&TmpEvent))
-			{
-				if (TmpEvent.type == SDL_QUIT) Open = false;
-
-				PollEvent(TmpEvent);
-			}
-		}
+		
 	}
 	
 	void WindowOpenGLSDL::Clear(const Vector4& Color)
@@ -244,6 +231,50 @@ namespace Columbus
 				}
 			}
 		}
+	}
+
+	void WindowOpenGLSDL::PollEvent(const Event& E)
+	{
+		if (Window && Open)
+		{
+			if (Window == E.Window.Window)
+			{
+				switch (E.Window.Type)
+				{
+				case WindowEvent::Type_None: break;
+				case WindowEvent::Type_Close:
+					SDL_HideWindow(Window);
+					SDL_LockAudio();
+					Open = false;
+					break;
+				case WindowEvent::Type_Shown:  Shown = true;  break;
+				case WindowEvent::Type_Hidden: Shown = false; break;
+				case WindowEvent::Type_Minimized:
+					Minimized = true;
+					Maximized = false;
+					break;
+				case WindowEvent::Type_Maximized:
+					Minimized = false;
+					Maximized = true;
+					break;
+				case WindowEvent::Type_MouseEnter:        MouseFocus = true;  break;
+				case WindowEvent::Type_MouseLeave:        MouseFocus = false; break;
+				case WindowEvent::Type_KeyboardFocusGained: KeyFocus = true;  break;
+				case WindowEvent::Type_KeyboardFocusLost:   KeyFocus = false; break;
+				case WindowEvent::Type_Resize: Size = { E.Window.Data1, E.Window.Data2 }; break;
+				}
+			}
+		}
+	}
+
+	SDL_Window* WindowOpenGLSDL::GetWindowHandle() const
+	{
+		return Window;
+	}
+
+	SDL_GLContext WindowOpenGLSDL::GetContextHandle() const
+	{
+		return Context;
 	}
 	
 	WindowOpenGLSDL::~WindowOpenGLSDL()

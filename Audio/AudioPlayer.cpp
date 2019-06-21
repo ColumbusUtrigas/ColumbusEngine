@@ -11,12 +11,38 @@ namespace Columbus
 	{
 		if (UserData != nullptr)
 		{
-			((AudioMixer*)(UserData))->Update((Sound::Frame*)Stream, StreamSize / sizeof(Sound::Frame));
+			float Speed = ((AudioMixer*)(UserData))->GetSpeed();
+
+			if (Speed != 0.0f)
+			{
+				uint32 Size = StreamSize / sizeof(Sound::Frame);
+				static Sound::Frame* Frames = new Sound::Frame[Size];
+				Sound::Frame* Data = (Sound::Frame*)Stream;
+
+				if (Speed == 1.0f)
+				{
+					((AudioMixer*)(UserData))->Update((Sound::Frame*)Stream, StreamSize / sizeof(Sound::Frame));
+					return;
+				}
+
+				((AudioMixer*)(UserData))->Update(Frames, Size * Speed);
+
+				float Step = 1.0 / Speed;
+
+				for (uint32 i = 0; i < Size; i++)
+				{
+					uint32 Left = (uint32)(i * Speed);
+					uint32 Right = (uint32)(i * Speed + 1);
+					float S = fmodf(Step * i, Speed);
+					Data[i].L = (int32)(Math::Mix((float)Frames[Left].L, (float)Frames[Right].L, S));
+					Data[i].R = (int32)(Math::Mix((float)Frames[Left].R, (float)Frames[Right].R, S));
+				}
+
+				return;
+			}
 		}
-		else
-		{
-			memset(Stream, 0, StreamSize);
-		}
+		
+		memset(Stream, 0, StreamSize);
 	}
 
 	AudioPlayer::AudioPlayer(uint16 Channels, uint32 Frequency, AudioMixer* Mixer)

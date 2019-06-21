@@ -68,7 +68,7 @@ namespace Columbus
 		/**
 		* Return absolute value.
 		*/
-		template <class T>
+		template <typename T>
 		static constexpr inline T Abs(const T Value) noexcept
 		{
 			return (Value >= (T)0) ? Value : -Value;
@@ -76,7 +76,7 @@ namespace Columbus
 		/**
 		* Returns 1, 0, or -1 depending on relation of T to 0.
 		*/
-		template <class T>
+		template <typename T>
 		static constexpr inline T Sign(const T A) noexcept
 		{
 			return (A > (T)0) ? (T)1 : ((A < (T)0) ? (T)-1 : (T)0);
@@ -84,7 +84,7 @@ namespace Columbus
 		/**
 		* Return lower value.
 		*/
-		template <class T>
+		template <typename T>
 		static constexpr inline T Min(const T A, const T B) noexcept
 		{
 			return A < B ? A : B;
@@ -92,7 +92,7 @@ namespace Columbus
 		/**
 		* Return heigher value.
 		*/
-		template <class T>
+		template <typename T>
 		static constexpr inline T Max(const T A, const T B) noexcept
 		{
 			return A > B ? A : B;
@@ -100,10 +100,18 @@ namespace Columbus
 		/*
 		* Constrain a value to lie between two further values
 		*/
-		template <class T>
+		template <typename T>
 		static constexpr inline T Clamp(const T A, const T MinValue, const T MaxValue) noexcept
 		{
 			return Min(Max(A, MinValue), MaxValue);
+		}
+		/*
+		* Linearly interpolate between two values.
+		*/
+		template <typename T, typename U>
+		static constexpr inline T Mix(const T X, const T Y, U A) noexcept
+		{
+			return (T)(X * (1.0f - A) + Y * A);
 		}
 		/*
 		* Converts degrees to radians.

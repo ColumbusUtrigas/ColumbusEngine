@@ -4,7 +4,7 @@
 #include <utility>
 #include <cstring>
 
-#if defined(COLUMBUS_PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
 	#define FSeek64 _fseeki64
 	#define FTell64 _ftelli64
 #else
@@ -114,23 +114,28 @@ namespace Columbus
 
 	bool File::SeekSet(uint64 Offset) const
 	{
+		CurrentOffset = Offset;
 		return (FSeek64(Handle, Offset, SEEK_SET) == 0);
 	}
 	
 	bool File::SeekEnd(uint64 Offset) const
 	{
+		CurrentOffset = FileSize - Offset;
 		return (FSeek64(Handle, Offset, SEEK_END) == 0);
 	}
 	
 	bool File::SeekCur(uint64 Offset) const
 	{
+		CurrentOffset += Offset;
 		return (FSeek64(Handle, Offset, SEEK_CUR) == 0);
 	}
 	
 	uint64 File::Tell() const
 	{
 		if (Handle == nullptr) return 0;
-		return FTell64(Handle);
+		// FTell64 is MUCH slower than offset variable
+		//return FTell64(Handle);
+		return CurrentOffset;
 	}
 	
 	bool File::Flush() const
@@ -148,18 +153,21 @@ namespace Columbus
 	{
 		if (Handle == nullptr) return nullptr;
 		fgets(Buf, MaxCount, Handle);
+		CurrentOffset = FTell64(Handle);
 		return Buf;
 	}
 	
 	size_t File::Read(void* Data, size_t Size, size_t Packs) const
 	{
 		if (Handle == nullptr) return 0;
+		CurrentOffset += Size * Packs;
 		return fread(Data, Size, Packs, Handle);
 	}
 
 	size_t File::Write(const void* Data, size_t Size, size_t Packs) const
 	{
 		if (Handle == nullptr) return 0;
+		CurrentOffset += Size * Packs;
 		return fwrite(Data, Size, Packs, Handle);
 	}
 
@@ -167,6 +175,7 @@ namespace Columbus
 	{
 		if (!Data) return false;
 		if (Handle == nullptr) return false;
+		CurrentOffset += Size;
 		if (fread(Data, Size, 1, Handle) != 1) return false;
 		else return true;
 	}
@@ -175,6 +184,7 @@ namespace Columbus
 	{
 		if (!Data) return false;
 		if (Handle == nullptr) return false;
+		CurrentOffset += Size;
 		if (fwrite(Data, Size, 1, Handle) != 1) return false;
 		else return true;
 	}
@@ -185,7 +195,5 @@ namespace Columbus
 	}
 
 }
-
-
 
 

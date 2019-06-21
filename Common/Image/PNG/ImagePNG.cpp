@@ -1,7 +1,8 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/PNG/ImagePNG.h>
-#include <Core/Memory.h>
 #include <System/File.h>
+#include <cstdlib>
+#include <cstring>
 #include <png.h>
 
 namespace Columbus
@@ -40,9 +41,13 @@ namespace Columbus
 		int rowbytes;
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
-		if (color_type == PNG_COLOR_TYPE_GRAY) bpp = 1;
-		if (color_type == PNG_COLOR_TYPE_RGB) bpp = 3;
-		if (color_type == PNG_COLOR_TYPE_RGBA) bpp = 4;
+		switch (color_type)
+		{
+		case PNG_COLOR_TYPE_GRAY: bpp = 1; break;
+		case PNG_COLOR_TYPE_RGB:  bpp = 3; break;
+		case PNG_COLOR_TYPE_RGBA: bpp = 4; break;
+		default: bpp = 0; break;
+		}
 
 		OutWidth = width;
 		OutHeight = height;
@@ -50,17 +55,18 @@ namespace Columbus
 
 		switch (bpp)
 		{
-		case 1: OutFormat = TextureFormat::R8;    break;
-		case 3: OutFormat = TextureFormat::RGB8;  break;
-		case 4: OutFormat = TextureFormat::RGBA8; break;
+		case 1:  OutFormat = TextureFormat::R8;      break;
+		case 3:  OutFormat = TextureFormat::RGB8;    break;
+		case 4:  OutFormat = TextureFormat::RGBA8;   break;
+		default: OutFormat = TextureFormat::Unknown; break;
 		}
 
-		uint8* data = (uint8*)Memory::Malloc(width * height * bpp);
+		uint8* data = new uint8[width * height * bpp];
 
 		//Copying row data into byte buffer with reversed vertical
 		for (size_t i = 0; i < height; i++)
 		{
-			Memory::Memcpy(&data[rowbytes * i], rows[height - i - 1], rowbytes);
+			memcpy(&data[rowbytes * i], rows[height - i - 1], rowbytes);
 		}
 		
 		if (png_ptr && info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
@@ -110,8 +116,8 @@ namespace Columbus
 		int rowbytes = Width * BPP;
 		for (size_t i = 0; i < Height; i++)
 		{
-			rows[i] = (png_bytep)Memory::Malloc(rowbytes);
-			Memory::Memcpy(rows[i], Data + (Height - i - 1) * rowbytes, rowbytes);
+			rows[i] = (png_bytep)malloc(rowbytes);
+			memcpy(rows[i], Data + (Height - i - 1) * rowbytes, rowbytes);
 		}
 
 		png_write_image(png, rows);
@@ -122,7 +128,7 @@ namespace Columbus
 
 		for (size_t i = 0; i < Height; i++)
 		{
-			Memory::Free(rows[i]);
+			free(rows[i]);
 		}
 
 		return true;
@@ -154,6 +160,7 @@ namespace Columbus
 		uint64 Size = 0;
 
 		Data = ImageLoadPNG(FileName, Width, Height, Size, Format);
+		ImageType = ImageLoader::Type::Image2D;
 
 		return (Data != nullptr);
 	}

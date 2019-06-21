@@ -1,6 +1,8 @@
 #include <Scene/Scene.h>
 #include <Graphics/Device.h>
-#include <System/Serializer.h>
+#include <Common/JSON/JSON.h>
+#include <Profiling/Profiling.h>
+//#include <System/Serializer.h>
 
 #include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentLight.h>
@@ -17,7 +19,7 @@
 #include <Physics/PhysicsShapeMultiSphere.h>
 #include <Physics/PhysicsShapeSphere.h>
 
-#include <Graphics/Primitives.h>
+#include <Graphics/Particles/ParticleEmitterLoader.h>
 
 namespace Columbus
 {
@@ -27,94 +29,34 @@ namespace Columbus
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
 	}
 
-	void Scene::AudioWorkflow()
-	{
-		for (auto& Object : Objects)
-		{
-			ComponentAudioSource* audio = static_cast<ComponentAudioSource*>(Object.second->GetComponent(Component::Type::AudioSource));
-
-			if (audio != nullptr)
-			{
-				if (!Audio.HasSource(audio->GetSource()))
-				{
-					Audio.AddSource(audio->GetSource());
-				}
-			}
-		}
-	}
-
-	void Scene::LightWorkflow()
-	{
-		Lights.clear();
-		
-		for (auto& Object : Objects)
-		{
-			ComponentLight* light = static_cast<ComponentLight*>(Object.second->GetComponent(Component::Type::Light));
-
-			if (light != nullptr)
-			{
-				light->Render(Object.second->transform);
-				Lights.push_back(light->GetLight());
-			}
-		}
-	}
-
-	void Scene::MeshWorkflow()
-	{
-		for (auto& Object : Objects)
-		{
-			ComponentMeshRenderer* mesh = static_cast<ComponentMeshRenderer*>(Object.second->GetComponent(Component::Type::MeshRenderer));
-
-			if (mesh != nullptr)
-			{
-				mesh->SetLights(Lights);
-			}
-		}
-	}
-	
-	void Scene::ParticlesWorkflow()
-	{
-		for (auto& Object : Objects)
-		{
-			ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(Object.second->GetComponent(Component::Type::ParticleSystem));
-
-			if (ps != nullptr)
-			{
-				if (ps->GetEmitter() != nullptr)
-				{
-					if(ps->GetEmitter()->GetParticleEffect() != nullptr)
-					{
-						ps->GetEmitter()->GetParticleEffect()->Position = Object.second->transform.GetPos();
-					}
-				}
-
-				if (MainCamera != nullptr) ps->SetCamera(*MainCamera);
-			}
-		}
-	}
-
 	void Scene::RigidbodyWorkflow()
 	{
-		for (auto& Object : Objects)
+		for (auto& Object : Objects.Resources)
 		{
-			ComponentRigidbody* rb = static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
-
-			if (rb != nullptr)
+			if (Object->Enable)
 			{
-				rb->GetRigidbody()->SetTransform(Object.second->transform);
+				ComponentRigidbody* rb = (ComponentRigidbody*)Object->GetComponent(Component::Type::Rigidbody);
+
+				if (rb != nullptr)
+				{
+					rb->GetRigidbody()->SetTransform(Object->transform);
+				}
 			}
 		}
 	}
 
 	void Scene::RigidbodyPostWorkflow()
 	{
-		for (auto& Object : Objects)
+		for (auto& Object : Objects.Resources)
 		{
-			ComponentRigidbody* rb = static_cast<ComponentRigidbody*>(Object.second->GetComponent(Component::Type::Rigidbody));
-
-			if (rb != nullptr)
+			if (Object->Enable)
 			{
-				Object.second->SetTransform(rb->GetRigidbody()->GetTransform());
+				ComponentRigidbody* rb = (ComponentRigidbody*)Object->GetComponent(Component::Type::Rigidbody);
+
+				if (rb != nullptr)
+				{
+					Object->transform = rb->GetRigidbody()->GetTransform();
+				}
 			}
 		}
 	}
@@ -125,30 +67,21 @@ namespace Columbus
 	*
 	*/
 
-	static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, const std::string& Element)
+	/*static Transform SceneGameObjectLoadTransform(Serializer::SerializerXML* Serializer, const std::string& Element)
 	{
 		Transform Trans;
 
 		if (Serializer != nullptr)
 		{
-			Vector3 Position;
-			Vector3 Rotation;
-			Vector3 Scale(1, 1, 1);
-
-			if (Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, Position, { "X", "Y", "Z" }) &&
-			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, Rotation, { "X", "Y", "Z" }) &&
-			    Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" }, Scale, { "X", "Y", "Z" }))
-			{
-				Trans.SetPos(Position);
-				Trans.SetRot(Rotation);
-				Trans.SetScale(Scale);
-			}
+			Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Position" }, Trans.Position, { "X", "Y", "Z" });
+			Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Rotation" }, Trans.Rotation, { "X", "Y", "Z" });
+			Serializer->GetSubVector3({ "GameObjects", Element, "Transform", "Scale" },    Trans.Scale,    { "X", "Y", "Z" });
 		}
 
 		return Trans;
-	}
+	}*/
 
-	static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, const std::string& Element)
+	/*static Material* SceneGameObjectLoadMaterial(Serializer::SerializerXML* Serializer, const std::string& Element)
 	{
 		Material* Mat = new Material();
 
@@ -166,9 +99,9 @@ namespace Columbus
 		} else return nullptr;
 
 		return Mat;
-	}
+	}*/
 
-	static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
+	/*static ComponentMeshRenderer* SceneGameObjectLoadComponentMeshRenderer(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat, std::map <uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		ComponentMeshRenderer* MeshRenderer = nullptr;
 
@@ -178,57 +111,22 @@ namespace Columbus
 
 			if (Serializer->GetSubString({ "GameObjects", Element, "Components", "MeshRenderer", "Mesh" }, MeshPath))
 			{
-				if (MeshPath == "Plane")
+				if (atoi(MeshPath.c_str()) >= 0)
 				{
-					Mesh* Mesh = gDevice->CreateMesh();
-					Mesh->SetVertices(PrimitivePlane());
-
-					if (Mesh != nullptr)
+					Mesh* tMesh = Meshes->at(atoi(MeshPath.c_str())).Get();
+					
+					if (tMesh != nullptr)
 					{
-						MeshRenderer = new ComponentMeshRenderer(Mesh);
-					}
-				}
-				else if (MeshPath == "Cube")
-				{
-					Mesh* Mesh = gDevice->CreateMesh();
-					Mesh->SetVertices(PrimitiveBox());
-
-					if (Mesh != nullptr)
-					{
-						MeshRenderer = new ComponentMeshRenderer(Mesh);
-					}
-				}
-				else if (MeshPath == "Sphere")
-				{
-					Mesh* Mesh = gDevice->CreateMesh();
-					Mesh->SetVertices(PrimitiveSphere(1, 50, 50));
-
-					if (Mesh != nullptr)
-					{
-						MeshRenderer = new ComponentMeshRenderer(Mesh);
-					}
-				}
-				else
-				{
-					if (atoi(MeshPath.c_str()) >= 0)
-					{
-						//Mesh* Mesh = gDevice->CreateMesh();
-						//Mesh->SetVertices(Meshes->at(atoi(MeshPath.c_str())));
-						Mesh* tMesh = Meshes->at(atoi(MeshPath.c_str())).Get();
-
-						if (tMesh != nullptr)
-						{
-							MeshRenderer = new ComponentMeshRenderer(tMesh);
-						}
+						MeshRenderer = new ComponentMeshRenderer(tMesh);
 					}
 				}
 			}
 		}
 
 		return MeshRenderer;
-	}
+	}*/
 
-	static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat)
+	/*static ComponentParticleSystem* SceneGameObjectLoadComponentParticleSystem(Serializer::SerializerXML* Serializer, const std::string& Element, Material* Mat)
 	{
 		ComponentParticleSystem* ParticleSystem = nullptr;
 
@@ -240,19 +138,17 @@ namespace Columbus
 			{
 				if (ParticleSystemPath != "None")
 				{
-					ParticleEffect* Effect = new ParticleEffect();
-					if (!Effect->Load(ParticleSystemPath.c_str())) return nullptr;
-					Effect->Material = *Mat;
-					ParticleEmitter* Emitter = new ParticleEmitter(Effect);
-					ParticleSystem = new ComponentParticleSystem(Emitter);
+					ParticleEmitterCPU Emitter;
+					ParticleEmitterLoader::Load(Emitter, ParticleSystemPath.c_str());
+					ParticleSystem = new ComponentParticleSystem(std::move(Emitter));
 				}
 			}
 		}
 
 		return ParticleSystem;
-	}
+	}*/
 
-	static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, const std::string& Element, Vector3 Position)
+	/*static ComponentLight* SceneGameObjectLoadComponentLight(Serializer::SerializerXML* Serializer, const std::string& Element, Vector3 Position)
 	{
 		ComponentLight* CLight = nullptr;
 
@@ -270,9 +166,9 @@ namespace Columbus
 		}
 
 		return CLight;
-	}
+	}*/
 
-	static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, const std::string& Element, Transform Trans, PhysicsShape* Shape)
+	/*static ComponentRigidbody* SceneGameObjectLoadComponentRigidbody(Serializer::SerializerXML* Serializer, const std::string& Element, Transform Trans, PhysicsShape* Shape)
 	{
 		ComponentRigidbody* CRigidbody = nullptr;
 
@@ -319,9 +215,9 @@ namespace Columbus
 		}
 
 		return CRigidbody;
-	}
+	}*/
 
-	static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Mesh>>* Meshes)
+	/*static PhysicsShape* SceneGameObjectLoadComponentRigidbodyShape(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Mesh>>* Meshes)
 	{
 		PhysicsShape* Shape = nullptr;
 
@@ -399,9 +295,9 @@ namespace Columbus
 		}
 
 		return Shape;
-	}
+	}*/
 
-	static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Sound>>* Sounds)
+	/*static ComponentAudioSource* SceneGameObjectLoadComponentAudioSource(Serializer::SerializerXML* Serializer, const std::string& Element, std::map<uint32, SmartPointer<Sound>>* Sounds)
 	{
 		ComponentAudioSource* CAudioSource = nullptr;
 
@@ -468,13 +364,13 @@ namespace Columbus
 		}
 
 		return CAudioSource;
-	}
+	}*/
 	/*
 	*
 	* End of additional functions for loading GameObject
 	*
 	*/
-	static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, const std::string& Element,
+	/*static bool SceneLoadGameObject(GameObject& OutObject, Serializer::SerializerXML* Serializer, const std::string& Element,
 		std::map<uint32, SmartPointer<Mesh>>* Meshes, std::map<uint32, SmartPointer<Texture>>* Textures, std::map<uint32, SmartPointer<ShaderProgram>>* Shaders,
 		std::map<uint32, SmartPointer<Sound>>* Sounds, PhysicsWorld* PhysWorld)
 	{
@@ -516,7 +412,7 @@ namespace Columbus
 
 			ComponentMeshRenderer* MeshRenderer = SceneGameObjectLoadComponentMeshRenderer(Serializer, Element, material, Meshes);
 			ComponentParticleSystem* ParticleSystem = SceneGameObjectLoadComponentParticleSystem(Serializer, Element, material);
-			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.GetPos());
+			ComponentLight* Light = SceneGameObjectLoadComponentLight(Serializer, Element, transform.Position);
 			ComponentRigidbody* Rigidbody = SceneGameObjectLoadComponentRigidbody(Serializer, Element, transform, SceneGameObjectLoadComponentRigidbodyShape(Serializer, Element, Meshes));
 			ComponentAudioSource* AudioSource = SceneGameObjectLoadComponentAudioSource(Serializer, Element, Sounds);
 
@@ -552,14 +448,61 @@ namespace Columbus
 		}
 
 		return true;
-	}
+	}*/
 	
 	bool Scene::Load(const char* FileName)
 	{
 		if (!gDevice)
 		{ Log::Error("Can't load Scene: %s: Device is missing", FileName); return false; }
 
-		Serializer::SerializerXML serializer;
+		JSON J;
+		if (!J.Load(FileName)) { Log::Error("Can't load Scene: %s", FileName); return false; }
+
+		// Load skybox
+		{
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(J["Skybox"].GetString().c_str()))
+			{
+				Sky = new Skybox(Tex.Get());
+				Log::Success("Skybox loaded: %s", J["Skybox"].GetString().c_str());
+			}
+		}
+
+		// Load textures
+		for (uint32 i = 0; i < J["Textures"].GetElementsCount(); i++)
+		{
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(J["Textures"][i].GetString().c_str()))
+			{
+				Textures[i] = std::move(Tex);
+				Log::Success("Texture loaded: %s", J["Textures"][i].GetString().c_str());
+			}
+		}
+
+		// Load shaders
+		for (uint32 i = 0; i < J["Shaders"].GetElementsCount(); i++)
+		{
+			SmartPointer<ShaderProgram> Shader(gDevice->CreateShaderProgram());
+			if (Shader->Load(J["Shaders"][i].GetString().c_str()))
+			{
+				ShaderPrograms[i] = std::move(Shader);
+			}
+		}
+
+		// Load meshes
+		for (uint32 i = 0; i < J["Meshes"].GetElementsCount(); i++)
+		{
+			SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
+			if (tMesh->Load(J["Meshes"][i].GetString().c_str()))
+			{
+				Meshes[i] = std::move(tMesh);
+				Log::Success("Mesh loaded: %s", J["Meshes"][i].GetString().c_str());
+			}
+		}
+
+		return true;
+
+		/*Serializer::SerializerXML serializer;
 
 		if (!serializer.Read(FileName, "Scene"))
 		{ Log::Error("Can't load Scene: %s", FileName); return false; }
@@ -574,15 +517,10 @@ namespace Columbus
 
 		if (serializer.GetSubString({ "Defaults", "Skybox" }, path))
 		{
-			Image ReflImage;
-
-			if (ReflImage.Load(path.c_str()))
+			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+			if (Tex->Load(path.c_str()))
 			{
-				Texture* Refl = gDevice->CreateTexture();
-				Refl->CreateCube(Texture::Properties(ReflImage.GetWidth(), ReflImage.GetHeight(), 0, ReflImage.GetFormat()));
-				Refl->Load(ReflImage);
-				Sky = new Skybox(Refl);
-
+				Sky = new Skybox(Tex.Get());
 				Log::Success("Default skybox loaded: %s", path.c_str());
 			}
 		}
@@ -594,16 +532,11 @@ namespace Columbus
 				elem = std::string("Texture") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Textures", elem }, path))
 				{
-					Image Img;
-
-					if (Img.Load(path.c_str()))
+					SmartPointer<Texture> Tex(gDevice->CreateTexture());
+					if (Tex->Load(path.c_str()))
 					{
-						auto Tex = gDevice->CreateTexture();
-						Tex->Create2D(Texture::Properties(Img.GetWidth(), Img.GetHeight(), 0, Img.GetFormat()));
-						Tex->Load(Img);
-
 						Log::Success("Texture loaded: %s", path.c_str());
-						Textures.insert(std::make_pair(i, SmartPointer<Texture>(Tex)));
+						Textures[i] = std::move(Tex);
 					}
 				}
 			}
@@ -631,22 +564,11 @@ namespace Columbus
 				elem = std::string("Mesh") + std::to_string(i);
 				if (serializer.GetSubString({ "Resources", "Meshes", elem }, path))
 				{
-					Model M;
-
-					if (M.Load(path.c_str()))
+					SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
+					if (tMesh->Load(path.c_str()))
 					{
-						Mesh* tMesh = gDevice->CreateMesh();
-
-						if (tMesh != nullptr)
-						{
-							tMesh->Load(M);
-							Meshes.insert(std::make_pair(i, SmartPointer<Mesh>(tMesh)));
-						}
-					}
-					else
-					{
-						Log::Error("Couldn't load mesh: %s", path.c_str());
-						continue;
+						Log::Success("Mesh loaded: %s", path.c_str());
+						Meshes[i] = std::move(tMesh);
 					}
 				}
 			}
@@ -662,17 +584,11 @@ namespace Columbus
 				if (serializer.GetSubString({ "Resources", "Sounds", elem, "Path" }, path) &&
 				    serializer.GetSubBool({ "Resources", "Sounds", elem, "Streaming" }, streaming))
 				{
-					Sound* tSound = new Sound();
-
+					SmartPointer<Sound> tSound(new Sound());
 					if (tSound->Load(path.c_str(), streaming))
 					{
-						Sounds.insert(std::make_pair(i, SmartPointer<Sound>(tSound)));
 						Log::Success("Sound loaded: %s", path.c_str());
-					}
-					else
-					{
-						delete tSound;
-						continue;
+						Sounds[i] = std::move(tSound);
 					}
 				}
 			}
@@ -692,42 +608,48 @@ namespace Columbus
 				Add(i, std::move(Object));
 			}
 		}
-		return true;
+		return true;*/
 	}
 	
-	GameObject* Scene::GetGameObject(uint32 ID) const
+	/*GameObject* Scene::GetGameObject(const std::string& Name) const
 	{
-		return Objects.at(ID).Get();
-	}
+
+		//auto It = ObjectMap.find(Name);
+		//return It != ObjectMap.end() ? Objects[It->second].Get() : nullptr;
+	}*/
 	
-	GameObject* Scene::GetGameObject(const std::string& Name) const
+	// This function is fucking slow, I am stupid
+	void Scene::Update()
 	{
-		for (auto& Object : Objects)
+		PROFILE_CPU(ProfileModule::Update);
+
+		float Time = (float)DeltaTime.Elapsed() * TimeFactor;
+		DeltaTime.Reset();
+
+		RigidbodyWorkflow();
+
+		Audio.Clear();
+		Lights.clear();
+
+		for (auto& Object : Objects.Resources)
 		{
-			if (Object.second != nullptr)
+			if (Object->Enable)
 			{
-				if (Object.second->Name == Name)
-				{
-					return Object.second.Get();
-				}
+				// TODO: DOD
+				Object->Update(Time);
+
+				auto AudioSource = (ComponentAudioSource*)Object->GetComponent(Component::Type::AudioSource);
+				auto Light = (ComponentLight*)Object->GetComponent(Component::Type::Light);
+				auto PS = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
+
+				if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
+				if (Light != nullptr) Lights.emplace_back(Light->LightSource);
+				if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
 			}
 		}
 
-		return nullptr;
-	}
-	
-	void Scene::Update()
-	{
-		AudioWorkflow();
-		LightWorkflow();
-		MeshWorkflow();
-		ParticlesWorkflow();
-		RigidbodyWorkflow();
-
-		float Time = (float)DeltaTime.Elapsed();
-
 		PhysWorld.Step(Time, 10);
-		DeltaTime.Reset();
+		Audio.SetSpeed(TimeFactor);
 
 		RigidbodyPostWorkflow();
 
@@ -740,28 +662,10 @@ namespace Columbus
 		{
 			Sky->SetCamera(*MainCamera);
 		}
-
-		for (auto& Object : Objects)
-		{
-			if (Object.second != nullptr)
-			{
-				Object.second->Update(Time);
-			}
-		}
-	}
-	
-	void Scene::Render()
-	{
-		MainRender.SetContextSize(ContextSize);
-		MainRender.SetMainCamera(*MainCamera);
-		MainRender.SetSky(Sky);
-		MainRender.SetRenderList(&Objects);
-		MainRender.Render();
 	}
 	
 	Scene::~Scene()
 	{
-		Objects.clear();
 		delete Sky;
 	}
 

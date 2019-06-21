@@ -13,18 +13,15 @@ namespace Columbus
 	public:
 		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh) {}
 
-		virtual void Render(Transform& Transform) override {}
 		virtual void Update(float TimeTick, Transform& Trans) override {}
 
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::MeshRenderer; }
-		Mesh* GetMesh() const { return Object; }
-		void SetLights(std::vector<Light*> Lights) { Object->SetLights(Lights); }
+		Mesh*& GetMesh() { return Object; }
 
 		virtual ~ComponentMeshRenderer() override {}
 	};
 
 }
-
 
 

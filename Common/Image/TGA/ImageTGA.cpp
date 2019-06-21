@@ -403,6 +403,7 @@ namespace Columbus
 	{
 		uint64 Size;
 		Data = ImageLoadTGA(FileName, Width, Height, Size, Format);
+		ImageType = ImageLoader::Type::Image2D;
 		return (Data != nullptr);
 	}
 

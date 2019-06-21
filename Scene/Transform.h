@@ -2,8 +2,7 @@
 
 #include <Math/Vector3.h>
 #include <Math/Matrix.h>
-
-#include <glm/gtc/quaternion.hpp>
+#include <Math/Quaternion.h>
 
 namespace Columbus
 {
@@ -11,34 +10,21 @@ namespace Columbus
 	class Transform
 	{
 	private:
+		Vector3 LastPosition;
+		Vector3 LastRotation;
+		Vector3 LastScale;
+	public:
 		Vector3 Position;
 		Vector3 Rotation;
-		Vector3 Scale = Vector3(1, 1, 1);
+		Vector3 Scale;
 		Matrix ModelMatrix;
+		Quaternion Q;
 	public:
-		glm::quat RotationQuaternion;
-
-		Transform();
-		Transform(Vector3 Pos);
-		Transform(Vector3 Pos, Vector3 Rot);
-		Transform(Vector3 Pos, Vector3 Rot, Vector3 Scale);
-
-		void SetPos(Vector3 Pos);
-		void AddPos(Vector3 Pos);
-		Vector3 GetPos() const;
-
-		void SetRot(Vector3 Rot);
-		void SetRot(glm::quat InRotation);
-		void AddRot(Vector3 Rot);
-		Vector3 GetRot() const;
-
-		void SetScale(Vector3 Scale);
-		void AddScale(Vector3 Scale);
-		Vector3 GetScale() const;
+		Transform(const Vector3& Pos = {0}, const Vector3& Rot = {0}, const Vector3& Scale = {1});
 
 		void Update();
 
-		void SetMatrix(Matrix InMatrix);
+		void SetMatrix(const Matrix& InMatrix);
 		const Matrix& GetMatrix() const;
 
 		~Transform();

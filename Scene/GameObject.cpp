@@ -15,51 +15,21 @@ namespace Columbus
 		Components.push_back(SmartPointer<Component>(InComponent));
 	}
 	
-	void GameObject::SetTransform(Transform Transform)
-	{
-		transform = Transform;
-	}
-	
-	Transform& GameObject::GetTransform()
-	{
-		return transform;
-	}
-
-	void GameObject::SetMaterial(Material InMaterial)
-	{
-		ObjectMaterial = InMaterial;
-	}
-
-	Material& GameObject::GetMaterial()
-	{
-		return ObjectMaterial;
-	}
-	
 	void GameObject::Update(float DeltaTime)
 	{
-		for (auto& Comp : Components)
+		if (Enable)
 		{
-			Comp->Update(DeltaTime, transform);
-		}
+			for (auto& Comp : Components)
+			{
+				Comp->Update(DeltaTime, transform);
+			}
 
-		transform.Update();
+			transform.Update();
 
-		for (auto& Child : Children)
-		{
-			Child->Update(DeltaTime);
-		}
-	}
-	
-	void GameObject::Render()
-	{
-		for (auto& Comp : Components)
-		{
-			Comp->Render(transform);
-		}
-
-		for (auto& Child : Children)
-		{
-			Child->Render();
+			for (auto& Child : Children)
+			{
+				Child->Update(DeltaTime);
+			}
 		}
 	}
 	

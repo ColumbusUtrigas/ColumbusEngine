@@ -15,8 +15,6 @@ namespace Columbus
 		struct Flags;
 		struct Properties;
 	protected:
-		Image mImage;
-
 		uint32 Width;
 		uint32 Height;
 
@@ -66,6 +64,12 @@ namespace Columbus
 			Filter Filtering = Filter::Trilinear;
 			Anisotropy AnisotropyFilter = Anisotropy::Anisotropy8;
 			Wrap Wrapping = Wrap::Repeat;
+
+			Flags() {}
+			Flags(Filter Filt, Anisotropy Anis, Wrap Wr) :
+				Filtering(Filt),
+				AnisotropyFilter(Anis),
+				Wrapping(Wr) {}
 		};
 
 		struct Properties
@@ -90,29 +94,35 @@ namespace Columbus
 		virtual bool Load(Image& InImage) = 0;
 		virtual bool Load(const char* File) = 0;
 
-		virtual void Clear() = 0;
-
+		virtual bool Create(Image::Type InType, Properties Props) = 0;
+		virtual bool Create(Type InType, Properties Props) = 0;
 		virtual bool Create2D(Properties Props) = 0;
 		virtual bool CreateCube(Properties Props) = 0;
 
 		virtual void SetFlags(Flags F) = 0;
 
+		TextureFormat GetFormat() const { return Format; }
+		Type GetType() const { return TextureType; }
+
 		virtual void SetMipmapLevel(uint32 Level) = 0;
 		uint32 GetMipmapLevel() const { return MipmapLevel; }
-		
-		virtual void bind() = 0;
-		virtual void unbind() = 0;
 
-		virtual void sampler2D(int a) = 0;
-		virtual void generateMipmap() = 0;
+		virtual void GenerateMipmap() = 0;
 		
 		virtual ~Texture() {}
 	protected:
 		Flags TextureFlags;
 	};
 
+	struct DefaultTextures
+	{
+		Texture* Black = nullptr;
+		Texture* White = nullptr;
+
+		DefaultTextures();
+		~DefaultTextures();
+	};
+
 }
-
-
 
 
