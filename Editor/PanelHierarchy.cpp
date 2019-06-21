@@ -1,9 +1,12 @@
 #include <Editor/PanelHierarchy.h>
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
+#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentLight.h>
+#include <algorithm>
+#include <string>
 
 namespace Columbus
 {
@@ -26,36 +29,60 @@ namespace Columbus
 
 	void EditorPanelHierarchy::Draw()
 	{
+		static std::string Find;
+
 		if (Opened && scene != nullptr)
 		{
-			if (ImGui::Begin((ICON_FA_LIST_UL" " + Name + "##PanelHierarchy").c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin(ICON_FA_LIST_UL" Hierarchy##PanelHierarchy", &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				bool Delete = false;
 				std::string DeleteName;
 
-				for (auto& Obj : scene->Objects.Resources)
+				if (ImGui::BeginChild("##Find_PanelHierarchy", ImVec2(ImGui::GetWindowContentRegionWidth(), 20)))
 				{
-					if (ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get()))
-					{
-						object = Obj.Get();
-					}
+					ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth());
+					ImGui::InputText("##Find_PanelHierarchy_Find", &Find);
+				}
+				ImGui::EndChild();
 
-					// if (ctr+c)
-					if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C), false))
-					{
-						buffer = object;
-					}
 
-					// if (delete)
-					if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)) && !Delete)
+				if (ImGui::BeginChild("##List_PanelHierarchy"))
+				{
+					std::string MFind = Find;
+					std::string MName;
+					std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
+
+					for (auto& Obj : scene->Objects.Resources)
 					{
-						if (object != nullptr)
+						MName = Obj->Name;
+						std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
+
+						if (MName.find(MFind) != std::string::npos)
 						{
-							Delete = true;
-							DeleteName = object->Name;
+							if (ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get()))
+							{
+								object = Obj.Get();
+							}
+
+							// if (ctr+c)
+							if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C), false))
+							{
+								buffer = object;
+							}
+
+							// if (delete)
+							if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)) && !Delete)
+							{
+								if (object != nullptr)
+								{
+									Delete = true;
+									DeleteName = object->Name;
+								}
+							}
 						}
 					}
 				}
+				ImGui::EndChild();
 
 				if (Delete)
 				{
