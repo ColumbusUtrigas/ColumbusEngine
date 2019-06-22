@@ -35,6 +35,8 @@ namespace Columbus
 			case TextureFormat::RGB32F:  return 12; break;
 			case TextureFormat::RGBA32F: return 16; break;
 
+			case TextureFormat::R11G11B10F: return 4; break;
+
 			case TextureFormat::Unknown: return 0;  break;
 
 			default: break;
@@ -448,6 +450,7 @@ namespace Columbus
 			case TextureFormat::RG32F:
 			case TextureFormat::RGB32F:
 			case TextureFormat::RGBA32F:
+			case TextureFormat::R11G11B10F: break;
 			case TextureFormat::Depth:
 			case TextureFormat::Depth16:
 			case TextureFormat::Depth24:

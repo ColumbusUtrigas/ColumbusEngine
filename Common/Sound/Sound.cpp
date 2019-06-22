@@ -1,7 +1,7 @@
 #include <Common/Sound/Sound.h>
 #include <Common/Sound/OGG/SoundOGG.h>
 #include <Common/Sound/WAV/SoundWAV.h>
-#include <Core/Memory.h>
+#include <cstdlib>
 
 namespace Columbus
 {
@@ -89,7 +89,7 @@ namespace Columbus
 		Frequency = 0;
 		Channels = 0;
 		//delete[] Buffer;
-		if (Buffer != nullptr) Memory::Free(Buffer);
+		if (Buffer != nullptr) free(Buffer);
 		Streaming = false;
 		if (Decoder != nullptr) delete Decoder;
 		Decoder = nullptr;

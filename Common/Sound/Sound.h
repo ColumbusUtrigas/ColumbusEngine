@@ -73,7 +73,7 @@ namespace Columbus
 	{
 	protected:
 		uint64 Size;
-		uint64 BeginOffset;
+		 int64 BeginOffset;
 		uint32 Frequency;
 		uint16 Channels;
 	public:

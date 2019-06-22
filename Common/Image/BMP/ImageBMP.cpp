@@ -53,7 +53,7 @@ namespace Columbus
 		BMPImageFile.Read(Header.Offset);
 		BMPImageFile.Read(Info);
 
-		uint32 Masks[4];
+		int32 Masks[4];
 		int Shifts[4];
 
 		if (Info.Compression == 3)

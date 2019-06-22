@@ -190,7 +190,7 @@ namespace Columbus
 		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
 	}
 
-	void Renderer::RenderOpaqueStage()
+	void Renderer::RenderOpaque()
 	{
 		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
 
@@ -221,7 +221,7 @@ namespace Columbus
 		}
 	}
 
-	void Renderer::RenderSkyStage()
+	void Renderer::RenderSky()
 	{
 		PROFILE_GPU(ProfileModuleGPU::SkyStage);
 
@@ -231,7 +231,7 @@ namespace Columbus
 		}
 	}
 
-	void Renderer::RenderTransparentStage()
+	void Renderer::RenderTransparent()
 	{
 		PROFILE_GPU(ProfileModuleGPU::TransparentStage);
 
@@ -308,15 +308,21 @@ namespace Columbus
 		State.SetDepthWriting(true);
 	}
 
-	void Renderer::Render(Renderer::Stage RenderStage)
+	void Renderer::RenderPostprocess()
+	{
+
+	}
+
+	void Renderer::Render(RenderPass Pass)
 	{
 		if (RenderList != nullptr)
 		{
-			switch (RenderStage)
+			switch (Pass)
 			{
-			case Renderer::Stage::Opaque:      RenderOpaqueStage();      break;
-			case Renderer::Stage::Sky:         RenderSkyStage();         break;
-			case Renderer::Stage::Transparent: RenderTransparentStage(); break;
+			case RenderPass::Opaque:      RenderOpaque();      break;
+			case RenderPass::Sky:         RenderSky();         break;
+			case RenderPass::Transparent: RenderTransparent(); break;
+			case RenderPass::Postprocess: RenderPostprocess(); break;
 			}
 		}
 
@@ -376,9 +382,9 @@ namespace Columbus
 
 		switch (BloomResolution)
 		{
-		case PostEffectResolution::Full: Resolution = ContextSize;     break;
-		case PostEffectResolution::Half: Resolution = ContextSize / 2; break;
-		case PostEffectResolution::Quad: Resolution = ContextSize / 4; break;
+		case BloomResolutionType::Quad: Resolution = ContextSize / 2; break;
+		case BloomResolutionType::Half: Resolution = iVector2(Vector2(ContextSize) / sqrtf(2.0)); break;
+		case BloomResolutionType::Full: Resolution = ContextSize; break;
 		}
 
 		if (Resolution.X == 0) Resolution.X = 1;
@@ -524,31 +530,32 @@ namespace Columbus
 		bool IsFXAA = false;
 		bool IsMSAA = false;
 
-		switch (AntiAliasing)
+		switch (Antialiasing)
 		{
-		case AntiAliasingType::No: break;
-		case AntiAliasingType::FXAA: IsFXAA = true; break;
-		case AntiAliasingType::MSAA_2X:  BaseMSAA.Multisampling = 2;  IsMSAA = true; break;
-		case AntiAliasingType::MSAA_4X:  BaseMSAA.Multisampling = 4;  IsMSAA = true; break;
-		case AntiAliasingType::MSAA_8X:  BaseMSAA.Multisampling = 8;  IsMSAA = true; break;
-		case AntiAliasingType::MSAA_16X: BaseMSAA.Multisampling = 16; IsMSAA = true; break;
-		case AntiAliasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
+		case AntialiasingType::No: break;
+		case AntialiasingType::FXAA: IsFXAA = true; break;
+		case AntialiasingType::MSAA_2X:  BaseMSAA.Multisampling = 2;  IsMSAA = true; break;
+		case AntialiasingType::MSAA_4X:  BaseMSAA.Multisampling = 4;  IsMSAA = true; break;
+		case AntialiasingType::MSAA_8X:  BaseMSAA.Multisampling = 8;  IsMSAA = true; break;
+		case AntialiasingType::MSAA_16X: BaseMSAA.Multisampling = 16; IsMSAA = true; break;
+		case AntialiasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
 		}
 
+		// RENDERING
+		//
+		//
+		// Render to the MSAA buffer or not
 		if (IsMSAA)
 			BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 		else
 			Base.Bind({ 1, 1, 1, 0 }, { 0 }, ContextSize);
 
-		RenderOpaqueStage();
-		RenderSkyStage();
-		RenderTransparentStage();
-
-		if (IsMSAA)
-			BaseMSAA.Unbind();
-		else
-			Base.Unbind();
-		Base.Mipmaps();
+		RenderOpaque();
+		RenderSky();
+		RenderTransparent();
+		//
+		//
+		// RENDERING
 
 		State.Clear();
 
