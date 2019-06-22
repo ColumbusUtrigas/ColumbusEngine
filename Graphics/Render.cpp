@@ -47,6 +47,8 @@ namespace Columbus
 		BaseMSAA.DepthTextureEnablement = true;
 		//BaseMSAA.Multisampling = 8;
 
+		TonemapMSAA.ColorTexturesEnablement[0] = true;
+
 		Base.ColorTexturesEnablement[0] = true;
 		Base.ColorTexturesEnablement[1] = true;
 		Base.ColorTexturesFormats[0] = TextureFormat::RGB16F;
@@ -498,6 +500,7 @@ namespace Columbus
 	void Renderer::Render()
 	{
 		auto FinalPassShader = gDevice->GetDefaultShaders()->Final;
+
 		static int FinalBaseTextureID = ((ShaderProgramOpenGL*)(FinalPassShader))->GetFastUniform("BaseTexture");
 		static int FinalGamma = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Gamma");
 		static int FinalExposure = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Exposure");
@@ -530,7 +533,7 @@ namespace Columbus
 		if (IsMSAA)
 			BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 		else
-			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+			Base.Bind({ 1, 1, 1, 0 }, { 0 }, ContextSize);
 
 		RenderOpaqueStage();
 		RenderSkyStage();
@@ -541,10 +544,10 @@ namespace Columbus
 		else
 			Base.Unbind();
 
+		State.Clear();
+
 		if (IsMSAA)
 		{
-			State.Clear();
-
 			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);

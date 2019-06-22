@@ -65,6 +65,7 @@ namespace Columbus
 		Scene* Scn = nullptr;
 
 		PostEffect BaseMSAA;
+		PostEffect TonemapMSAA;
 		PostEffect Base;
 		PostEffect BloomBrightPass;
 		PostEffect BloomHorizontalBlurPass;
