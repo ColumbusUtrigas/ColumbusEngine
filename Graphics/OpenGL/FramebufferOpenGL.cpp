@@ -47,9 +47,9 @@ namespace Columbus
 		if (Attachment == GL_INVALID_ENUM) return false;
 		if (!glIsTexture(TextureID)) return false;
 
-		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		//glBindFramebuffer(GL_FRAMEBUFFER, ID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, Target, TextureID, Level);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		return true;
 	}

@@ -71,6 +71,7 @@ namespace Columbus
 		((ShaderProgramOpenGL*)IntegrationShader)->Bind();
 		Quad.Render();
 		((ShaderProgramOpenGL*)IntegrationShader)->Unbind();
+		Frame.Mipmaps();
 		Frame.Unbind();
 
 		Frame.ColorTextures[0] = Tmp;

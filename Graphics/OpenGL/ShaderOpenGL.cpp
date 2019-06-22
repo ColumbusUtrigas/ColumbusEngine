@@ -232,10 +232,25 @@ namespace Columbus
 	{
 		switch (Program)
 		{
-			case ShaderProgram::StandartProgram::Final:
+			case ShaderProgram::StandartProgram::ScreenSpace:
 			{
 				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gFinalFragmentShader;
+				Data.FragmentSource = gScreenSpaceFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+
+				Path = "ScreenSpace";
+
+				Log::Success("Default shader program loaded: ScreenSpace");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::Tonemap:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gTonemapFragmentShader;
 
 				Data.Attributes.emplace_back("Pos", 0);
 				Data.Attributes.emplace_back("UV", 1);
@@ -243,9 +258,9 @@ namespace Columbus
 				Data.Uniforms.emplace_back("Exposure");
 				Data.Uniforms.emplace_back("Gamma");
 
-				Path = "Final";
+				Path = "Tonemap";
 
-				Log::Success("Default shader program loaded: Final");
+				Log::Success("Default shader program loaded: Tonemap");
 				break;
 			}
 
@@ -296,6 +311,22 @@ namespace Columbus
 				Path = "Bloom";
 
 				Log::Success("Default shader program loaded: Bloom");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::FXAA:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gFXAAFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Resolution");
+
+				Path = "FXAA";
+
+				Log::Success("Default shader program loaded: FXAA");
 				break;
 			}
 
