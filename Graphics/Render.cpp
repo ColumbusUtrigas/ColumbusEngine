@@ -42,32 +42,21 @@ namespace Columbus
 
 		BaseMSAA.ColorTexturesEnablement[0] = true;
 		BaseMSAA.ColorTexturesEnablement[1] = true;
-		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
+		BaseMSAA.ColorTexturesFormats[1] = TextureFormat::RGB8;
 		BaseMSAA.ColorTexturesMipmaps[0] = false;
+		BaseMSAA.ColorTexturesMipmaps[1] = false;
 		BaseMSAA.DepthTextureEnablement = true;
-		//BaseMSAA.Multisampling = 8;
-
-		TonemapMSAA.ColorTexturesEnablement[0] = true;
 
 		Base.ColorTexturesEnablement[0] = true;
 		Base.ColorTexturesEnablement[1] = true;
-		Base.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		Base.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
+		Base.ColorTexturesFormats[1] = TextureFormat::RGB8;
 		Base.ColorTexturesMipmaps[0] = false;
+		Base.ColorTexturesMipmaps[1] = false;
 		Base.DepthTextureEnablement = true;
 
-		BloomBrightPass.ColorTexturesEnablement[0] = true;
-		BloomBrightPass.ColorTexturesMipmaps[0] = false;
-
-		BloomHorizontalBlurPass.ColorTexturesEnablement[0] = true;
-		BloomVerticalBlurPass.ColorTexturesEnablement[0] = true;
-
-		BloomHorizontalBlurPass.ColorTexturesMipmaps[0] = false;
-		BloomVerticalBlurPass.ColorTexturesMipmaps[0] = false;
-
-		BloomFinalPass.ColorTexturesEnablement[0] = true;
-
-		FinalPass.ColorTexturesEnablement[0] = true;
-		//FinalPass.ColorTexturesMipmaps[0] = false;
+		Final.ColorTexturesEnablement[0] = true;
 	}
 
 	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
@@ -373,17 +362,15 @@ namespace Columbus
 		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Blur");
 		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Intensity");
 
-		BloomBrightPass.Bind({}, {0}, ContextSize);
+		// Bloom bright pass
+		Post1.ColorTexturesEnablement[0] = true;
+		Post1.ColorTexturesMipmaps[0] = false;
+		Post1.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
 		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
 		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTreshold, BloomTreshold);
 		Quad.Render();
-
-		BloomBrightPass.Unbind();
-
-		((ShaderProgramOpenGL*)Blur)->Bind();
-		((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurRadius, BloomRadius);
 
 		iVector2 Resolution;
 
@@ -397,32 +384,40 @@ namespace Columbus
 		if (Resolution.X == 0) Resolution.X = 1;
 		if (Resolution.Y == 0) Resolution.Y = 1;
 
+		// Blur pass
+		Post2.ColorTexturesEnablement[0] = true;
+		Post2.ColorTexturesEnablement[1] = true;
+		Post2.Bind({}, {0}, Resolution);
+
+		((ShaderProgramOpenGL*)Blur)->Bind();
+		((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurRadius, BloomRadius);
+
 		for (int i = 0; i < BloomIterations; i++)
 		{
-			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
+			auto Horiz = i == 0 ? Post1.ColorTextures[0] : Post2.ColorTextures[1];
 
-			BloomHorizontalBlurPass.Bind({}, {0}, Resolution);
+			GLenum First[] = { GL_COLOR_ATTACHMENT0 };
+			GLenum Second[] = { GL_COLOR_ATTACHMENT1 };
+			
+			glDrawBuffers(1, First);
 			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
 			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 1);
 			Quad.Render();
-			BloomHorizontalBlurPass.Unbind();
 
-			BloomVerticalBlurPass.Bind({}, {0}, Resolution);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
+			glDrawBuffers(1, Second);
+			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Post2.ColorTextures[0], 0);
 			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 0);
 			Quad.Render();
-			BloomVerticalBlurPass.Unbind();
 		}
 
-		BloomFinalPass.Bind({}, {0}, ContextSize);
+		// Bloom final
+		Post1.Bind({}, {}, ContextSize);
 
 		((ShaderProgramOpenGL*)Bloom)->Bind();
 		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)BloomVerticalBlurPass.ColorTextures[0], 1);
+		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)Post2.ColorTextures[1], 1);
 		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
 		Quad.Render();
-
-		BloomFinalPass.Unbind();
 	}
 
 	void Renderer::RenderIcons()
@@ -499,11 +494,18 @@ namespace Columbus
 
 	void Renderer::Render()
 	{
-		auto FinalPassShader = gDevice->GetDefaultShaders()->Final;
+		auto ScreenSpaceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ScreenSpace;
+		auto TonemapShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Tonemap;
+		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
 
-		static int FinalBaseTextureID = ((ShaderProgramOpenGL*)(FinalPassShader))->GetFastUniform("BaseTexture");
-		static int FinalGamma = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Gamma");
-		static int FinalExposure = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Exposure");
+		static int ScreenSpaceTexture = ScreenSpaceShader->GetFastUniform("BaseTexture");
+
+		static int TonemapBaseTexture = TonemapShader->GetFastUniform("BaseTexture");
+		static int TonemapGamma = TonemapShader->GetFastUniform("Gamma");
+		static int TonemapExposure = TonemapShader->GetFastUniform("Exposure");
+
+		static int FXAABaseTexture = FXAAShader->GetFastUniform("BaseTexture");
+		static int FXAAResolution  = FXAAShader->GetFastUniform("Resolution");
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;
@@ -519,15 +521,18 @@ namespace Columbus
 
 		glEnable(GL_MULTISAMPLE);
 
+		bool IsFXAA = false;
 		bool IsMSAA = false;
 
 		switch (AntiAliasing)
 		{
 		case AntiAliasingType::No: break;
+		case AntiAliasingType::FXAA: IsFXAA = true; break;
 		case AntiAliasingType::MSAA_2X:  BaseMSAA.Multisampling = 2;  IsMSAA = true; break;
 		case AntiAliasingType::MSAA_4X:  BaseMSAA.Multisampling = 4;  IsMSAA = true; break;
 		case AntiAliasingType::MSAA_8X:  BaseMSAA.Multisampling = 8;  IsMSAA = true; break;
 		case AntiAliasingType::MSAA_16X: BaseMSAA.Multisampling = 16; IsMSAA = true; break;
+		case AntiAliasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
 		}
 
 		if (IsMSAA)
@@ -543,6 +548,7 @@ namespace Columbus
 			BaseMSAA.Unbind();
 		else
 			Base.Unbind();
+		Base.Mipmaps();
 
 		State.Clear();
 
@@ -557,33 +563,51 @@ namespace Columbus
 			Base.Unbind();
 		}
 
-		Texture* Final = Base.ColorTextures[0];
+		Texture* FinalTex = Base.ColorTextures[0];
 
 		if (BloomEnable)
 		{
 			RenderBloom();
-			Final = BloomFinalPass.ColorTextures[0];
+			FinalTex = Post1.ColorTextures[0];
 		}
 
 		// Final stage
 		{
 			PROFILE_GPU(ProfileModuleGPU::FinalStage);
 
-			FinalPass.Bind({}, {}, ContextSize);
+			Final.Bind({}, {}, ContextSize);
 
-			((ShaderProgramOpenGL*)FinalPassShader)->Bind();
-			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalBaseTextureID, (TextureOpenGL*)Final, 0);
-			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalExposure, Exposure);
-			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalGamma, Gamma);
+			TonemapShader->Bind();
+			TonemapShader->SetUniform(TonemapBaseTexture, (TextureOpenGL*)FinalTex, 0);
+			TonemapShader->SetUniform(TonemapExposure, Exposure);
+			TonemapShader->SetUniform(TonemapGamma, Gamma);
 			Quad.Render();
-			((ShaderProgramOpenGL*)FinalPassShader)->Unbind();
+			TonemapShader->Unbind();
+
+			if (IsFXAA)
+			{
+				Post1.ColorTexturesEnablement[0] = true;
+				Post1.ColorTexturesMipmaps[0] = false;
+				Post1.Bind({}, {}, ContextSize);
+
+				FXAAShader->Bind();
+				FXAAShader->SetUniform(FXAABaseTexture, (TextureOpenGL*)Final.ColorTextures[0], 0);
+				FXAAShader->SetUniform(FXAAResolution, (Vector2)ContextSize);
+				Quad.Render();
+
+				Final.FB->Bind();
+
+				ScreenSpaceShader->Bind();
+				ScreenSpaceShader->SetUniform(ScreenSpaceTexture, (TextureOpenGL*)Post1.ColorTextures[0], 0);
+				Quad.Render();
+			}
 
 			if (EditMode)
 			{
 				RenderIcons();
 			}
 
-			FinalPass.Unbind();
+			Final.Unbind();
 		}
 
 		// Lens flare rendering test, I will use it in the future
@@ -606,18 +630,13 @@ namespace Columbus
 
 	Texture* Renderer::GetFramebufferTexture() const
 	{
-		return FinalPass.ColorTextures[0];
+		return Final.ColorTextures[0];
 	}
 
 	Renderer::~Renderer()
 	{
 		delete Blob;
 		delete EditorIconLamp;
-		//delete NoneShader;
-		//delete BloomBrightShader;
-		//delete GaussBlurShader;
-		//delete BloomShader;
-		//delete LensFlareShader;
 	}
 
 }

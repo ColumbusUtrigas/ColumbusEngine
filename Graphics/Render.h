@@ -64,14 +64,9 @@ namespace Columbus
 		Skybox* Sky = nullptr;
 		Scene* Scn = nullptr;
 
-		PostEffect BaseMSAA;
-		PostEffect TonemapMSAA;
-		PostEffect Base;
-		PostEffect BloomBrightPass;
-		PostEffect BloomHorizontalBlurPass;
-		PostEffect BloomVerticalBlurPass;
-		PostEffect BloomFinalPass;
-		PostEffect FinalPass;
+		PostEffect Base, BaseMSAA;
+		PostEffect Post1, Post2;
+		PostEffect Final;
 
 		ScreenQuad Quad;
 		ParticlesRenderer ParticlesRender;
@@ -97,10 +92,12 @@ namespace Columbus
 		enum class AntiAliasingType
 		{
 			No,
+			FXAA,
 			MSAA_2X,
 			MSAA_4X,
 			MSAA_8X,
-			MSAA_16X
+			MSAA_16X,
+			MSAA_32X,
 		};
 	public:
 		iVector2 ContextSize;

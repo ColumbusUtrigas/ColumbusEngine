@@ -3,6 +3,7 @@
 #include <Graphics/Device.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Texture.h>
+#include <RenderAPIOpenGL/OpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -59,6 +60,20 @@ namespace Columbus
 			  Framebuffer::Attachment::Color2,
 			  Framebuffer::Attachment::Color3 };
 
+			FB->Bind();
+
+			int32 ColorMS = OpenGL::GetMaxDepthTextureSamples();
+			int32 DepthMS = OpenGL::GetMaxDepthTextureSamples();
+
+			if ((int32)Multisampling < ColorMS) ColorMS = (int32)Multisampling;
+			if ((int32)Multisampling < DepthMS) DepthMS = (int32)Multisampling;
+
+			if (Multisampling == 0)
+			{
+				ColorMS = 0;
+				DepthMS = 0;
+			}
+
 			for (int i = 0; i < TexturesCount; i++)
 			{
 				if (ColorTexturesEnablement[i])
@@ -68,7 +83,7 @@ namespace Columbus
 						ColorTextures[i] = gDevice->CreateTexture();
 					}
 
-					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, Multisampling, ColorTexturesFormats[i]));
+					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
 					ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
 					FB->SetTexture2D(Attachments[i], ColorTextures[i]);
 				}
@@ -81,7 +96,7 @@ namespace Columbus
 					DepthTexture = gDevice->CreateTexture();
 				}
 
-				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, Multisampling, TextureFormat::Depth24));
+				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
 				DepthTexture->SetFlags(DepthTextureFlags);
 				FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
 			}
@@ -103,7 +118,7 @@ namespace Columbus
 			glDrawBuffers(DrawBuffersNum, DrawBuffers);
 		}
 
-		void Unbind()
+		void Mipmaps()
 		{
 			for (int i = 0; i < TexturesCount; i++)
 			{
@@ -117,7 +132,10 @@ namespace Columbus
 			{
 				DepthTexture->GenerateMipmap();
 			}
+		}
 
+		void Unbind()
+		{
 			FB->Unbind();
 		}
 

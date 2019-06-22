@@ -31,11 +31,11 @@ namespace Columbus
 					}
 
 
-					const char* AA[] = { "No", "MSAA 2x", "MSAA 4x", "MSAA 8x", "MSAA 16x" };
+					const char* AA[] = { "No", "FXAA", "MSAA 2x", "MSAA 4x", "MSAA 8x", "MSAA 16x", "MSAA 32x" };
 
 					ImGui::SliderFloat("Gamma##PanelRenderSettings", &Render->Gamma, 0.0, 5.0);
 					ImGui::SliderFloat("Exposure##PanelRenderSettings", &Render->Exposure, 0.0, 5.0);
-					ImGui::Combo("Anti Aliasing##PanelRenderSettings", (int*)&Render->AntiAliasing, AA, 5);
+					ImGui::Combo("Anti Aliasing##PanelRenderSettings", (int*)&Render->AntiAliasing, AA, 7);
 				}
 			}
 			ImGui::End();

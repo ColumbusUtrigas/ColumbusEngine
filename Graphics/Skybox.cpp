@@ -2,7 +2,6 @@
 #include <Graphics/Device.h>
 
 #include <Graphics/Framebuffer.h>
-#include <Graphics/PostEffect.h>
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
