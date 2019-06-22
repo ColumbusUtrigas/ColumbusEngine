@@ -1,6 +1,5 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/TGA/ImageTGA.h>
-#include <Core/Memory.h>
 #include <System/Assert.h>
 #include <System/File.h>
 #include <algorithm>
@@ -217,7 +216,7 @@ namespace Columbus
 		}
 	}
 
-	static void RGBACompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
+	/*static void RGBACompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
 		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGBA compressed: invalid input");
 		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGBA compressed: invalid output");
@@ -254,7 +253,7 @@ namespace Columbus
 				i += pixelcount;
 			}
 		}
-	}
+	}*/
 
 	static uint8* ImageLoadTGA(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
@@ -283,7 +282,7 @@ namespace Columbus
 		file.Read(buffer, dSize, 1);
 
 		uint8* data = new uint8[size];
-		Memory::Memset(data, 0, size);
+		memset(data, 0, size);
 
 		switch (tga.image_type)
 		{
@@ -350,6 +349,7 @@ namespace Columbus
 					RGBCompressedTGA(buffer, data, tga.width * tga.height);
 				} else
 				{
+					COLUMBUS_ASSERT_MESSAGE(false, "RGBACompressedTGA() didn't implemented");
 					// TODO
 					//RGBACompressedTGA(buffer, data, tga.width * tga.height);
 				}
@@ -425,8 +425,8 @@ namespace Columbus
 
 		size_t size = Width * Height * BPP;
 
-		uint8* buffer = (uint8*)Memory::Malloc(size);
-		Memory::Memcpy(buffer, Data, size);
+		uint8* buffer = (uint8*)malloc(size);
+		memcpy(buffer, Data, size);
 
 		switch (tga.bits)
 		{
@@ -437,7 +437,7 @@ namespace Columbus
 		WriteHeader(tga, &file);
 		file.Write(buffer, size, 1);
 
-		Memory::Free(buffer);
+		free(buffer);
 		return true;
 	}
 
@@ -449,9 +449,5 @@ namespace Columbus
 #undef WRITEPIXEL32
 
 }
-
-
-
-
 
 

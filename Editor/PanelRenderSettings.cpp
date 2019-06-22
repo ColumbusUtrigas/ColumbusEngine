@@ -15,7 +15,7 @@ namespace Columbus
 				{
 					if (ImGui::CollapsingHeader("Bloom"))
 					{
-						const char* Resolutions[] = { "Full", "Half", "Quad" };
+						const char* Resolutions[] = { "Quad", "Half", "Full" };
 
 						ImGui::Indent(10.0f);
 						ImGui::Checkbox("Enable##PanelRenderSettings_Bloom",        &Render->BloomEnable);
@@ -35,7 +35,7 @@ namespace Columbus
 
 					ImGui::SliderFloat("Gamma##PanelRenderSettings", &Render->Gamma, 0.0, 5.0);
 					ImGui::SliderFloat("Exposure##PanelRenderSettings", &Render->Exposure, 0.0, 5.0);
-					ImGui::Combo("Anti Aliasing##PanelRenderSettings", (int*)&Render->AntiAliasing, AA, 7);
+					ImGui::Combo("Anti Aliasing##PanelRenderSettings", (int*)&Render->Antialiasing, AA, 7);
 				}
 			}
 			ImGui::End();

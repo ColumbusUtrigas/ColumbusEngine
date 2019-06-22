@@ -1,9 +1,7 @@
 #pragma once
 
-#include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <utility>
 
 namespace Columbus
 {
@@ -16,12 +14,20 @@ namespace Columbus
 		private:
 			T* Allocation = nullptr;
 			T* Data = nullptr;
+
+			DataWrapper& SwapData(T*& New)
+			{
+				T* Tmp = Data;
+				Data = New;
+				New = Tmp;
+				return *this;
+			}
 		public:
 			DataWrapper() {}
 			DataWrapper(const DataWrapper&) = delete;
-			DataWrapper(DataWrapper&& Base) noexcept { *this = std::move(Base); }
+			DataWrapper(DataWrapper&& Base) noexcept { SwapData(Base.Data); }
 			DataWrapper& operator=(const DataWrapper&) = delete;
-			DataWrapper& operator=(DataWrapper&& Base) noexcept { std::swap(Data, Base.Data); return *this; }
+			DataWrapper& operator=(DataWrapper&& Base) noexcept { return SwapData(Base.Data); }
 			T& operator[](size_t Index) const { return Data[Index]; }
 
 			void Allocate(size_t Size)
@@ -29,6 +35,13 @@ namespace Columbus
 				Allocation = (T*)realloc((void*)Allocation, Size * sizeof(T) + 16);
 				Data = Allocation;
 				Data = (T*)(((uintptr_t)Data + 15) & ~((uintptr_t)15));
+			}
+
+			void Swap(size_t A, size_t B)
+			{
+				T& Tmp = Data[A];
+				Data[A] = Data[B];
+				Data[B] = Tmp;
 			}
 
 			~DataWrapper() { if (Allocation != nullptr) free(Allocation); }
@@ -80,17 +93,17 @@ namespace Columbus
 
 		void Swap(size_t A, size_t B)
 		{
-			std::swap(Ages[A], Ages[B]);
-			std::swap(Lifetimes[A], Lifetimes[B]);
-			std::swap(Percents[A], Percents[B]);
-			std::swap(Rotations[A], Rotations[B]);
-			std::swap(RotationVelocities[A], RotationVelocities[B]);
-			std::swap(Distances[A], Distances[B]);
-			std::swap(Frames[A], Frames[B]);
-			std::swap(Positions[A], Positions[B]);
-			std::swap(Velocities[A], Velocities[B]);
-			std::swap(Sizes[A], Sizes[B]);
-			std::swap(Colors[A], Colors[B]);
+			Ages.Swap(A, B);
+			Lifetimes.Swap(A, B);
+			Percents.Swap(A, B);
+			Rotations.Swap(A, B);
+			RotationVelocities.Swap(A, B);
+			Distances.Swap(A, B);
+			Frames.Swap(A, B);
+			Positions.Swap(A, B);
+			Velocities.Swap(A, B);
+			Sizes.Swap(A, B);
+			Colors.Swap(A, B);
 		}
 	};
 

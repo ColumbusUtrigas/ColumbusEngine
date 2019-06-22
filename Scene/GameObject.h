@@ -5,8 +5,7 @@
 #include <Scene/Component.h>
 #include <Core/SmartPointer.h>
 #include <vector>
-#include <unordered_map>
-#include <algorithm>
+#include <string>
 
 namespace Columbus
 {
