@@ -86,7 +86,7 @@ namespace Columbus
 			Width -= 120;
 			ImGui::SameLine();
 		} else {
-			Width = ImGui::GetWindowContentRegionWidth();
+			Width = (uint32)ImGui::GetWindowContentRegionWidth();
 		}
 	}
 
@@ -97,7 +97,7 @@ namespace Columbus
 	{
 		if (ImGui::BeginChild(Name, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 30)))
 		{
-			uint32 Width = ImGui::GetWindowContentRegionWidth();
+			uint32 Width = (uint32)ImGui::GetWindowContentRegionWidth();
 
 			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, Button, DoubleClick);
 

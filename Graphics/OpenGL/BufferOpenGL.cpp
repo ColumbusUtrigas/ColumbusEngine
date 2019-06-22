@@ -109,7 +109,7 @@ namespace Columbus
 	void BufferOpenGL::Load(const void* Data)
 	{
 		glBindBuffer(Target, ID);
-		glBufferData(Target, Size, Data, Usage);
+		glBufferData(Target, (GLsizeiptr)Size, Data, Usage);
 		glBindBuffer(Target, 0);
 	}
 
@@ -119,7 +119,7 @@ namespace Columbus
 		Usage = DecodeUsage(Props.Usage, Props.Frequency);
 
 		glBindBuffer(Target, ID);
-		glBufferData(Target, Size, Data, Usage);
+		glBufferData(Target, (GLsizeiptr)Size, Data, Usage);
 		glBindBuffer(Target, 0);
 	}
 

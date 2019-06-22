@@ -402,9 +402,6 @@
     <ClInclude Include="Graphics\PostEffect.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\Primitives.h">
-      <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\Render.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
@@ -577,9 +574,6 @@
       <Filter>Файлы заголовков\System</Filter>
     </ClInclude>
     <ClInclude Include="Core\Core.h">
-      <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Memory.h">
       <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\Random.h">
@@ -783,9 +777,6 @@
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Material.cpp">
-      <Filter>Исходные файлы\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphics\Primitives.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Render.cpp">

@@ -59,7 +59,7 @@ namespace Columbus
 
 		do
 		{
-			uint32 Samples = mp3dec_decode_frame(&MP3Decoder, Buffer, MP3Size, PCM, &MP3FrameInfo);
+			uint32 Samples = mp3dec_decode_frame(&MP3Decoder, Buffer, (int)MP3Size, PCM, &MP3FrameInfo);
 			TotalSamples += Samples;
 
 			if (Samples != 0)
