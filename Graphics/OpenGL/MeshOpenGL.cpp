@@ -37,10 +37,10 @@ namespace Columbus
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, Size, nullptr, GL_STATIC_DRAW);
 
-		glBufferSubData(GL_ARRAY_BUFFER, VOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetPositions());
-		glBufferSubData(GL_ARRAY_BUFFER, UOffset, InModel.GetVerticesCount() * sizeof(Vector2), InModel.GetUVs());
-		glBufferSubData(GL_ARRAY_BUFFER, NOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetNormals());
-		glBufferSubData(GL_ARRAY_BUFFER, TOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetTangents());
+		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)VOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetPositions());
+		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)UOffset, InModel.GetVerticesCount() * sizeof(Vector2), InModel.GetUVs());
+		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)NOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetNormals());
+		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)TOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetTangents());
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 

@@ -187,9 +187,9 @@ namespace Columbus
 				uint8* FileData = new uint8[Model.GetSize()];
 				Model.ReadBytes(FileData, Model.GetSize());
 
-				uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, Model.GetSize() - 26);
+				uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, (size_t)Model.GetSize() - 26);
 				uint8* Decompressed = new uint8[DecompressedSize];
-				ZSTD_decompress(Decompressed, DecompressedSize, FileData, Model.GetSize() - 26);
+				ZSTD_decompress(Decompressed, DecompressedSize, FileData, (size_t)Model.GetSize() - 26);
 
 				memcpy((void*)Positions, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
 				memcpy((void*)UVs, Decompressed, Header.Count * sizeof(float) * 3 * 2); Decompressed += Header.Count * sizeof(float) * 3 * 2;
