@@ -110,11 +110,18 @@ namespace Columbus
 		AntialiasingType Antialiasing = AntialiasingType::No;
 
 		bool BloomEnable = true;
-		float BloomTreshold = 0.8f;
+		float BloomTreshold = 1.0f;
 		float BloomIntensity = 0.5f;
 		float BloomRadius = 1.0f;
 		int BloomIterations = 2;
 		BloomResolutionType BloomResolution = BloomResolutionType::Quad;
+
+		bool VignetteEnable = false;
+		Vector3 VignetteColor;
+		Vector2 VignetteCenter = Vector2(0.5f);
+		float VignetteIntensity = 1.0f;
+		float VignetteSmoothness = 0.2f;
+		float VignetteRadius = 0.6f;
 	private:
 		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
 

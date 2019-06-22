@@ -26,6 +26,28 @@ namespace Columbus
 						ImGui::Combo("Resolution##PanelRenderSettings_Bloom", (int*)&Render->BloomResolution, Resolutions, 3);
 						ImGui::Unindent(10.0f);
 
+						Render->BloomIterations = Math::Clamp(Render->BloomIterations, 1, 4);
+
+						ImGui::Separator();
+						ImGui::Spacing();
+					}
+
+					if (ImGui::CollapsingHeader("Vignette"))
+					{
+						ImGui::Indent(10.0f);
+						ImGui::Checkbox("Enable##PanelRenderSettings_Vignette",           &Render->VignetteEnable);
+						ImGui::ColorEdit3("Color##PanelRenderSettings_Vignette",  (float*)&Render->VignetteColor);
+						ImGui::DragFloat2("Center##PanelRenderSettings_Vignette", (float*)&Render->VignetteCenter, 0.01f);
+						ImGui::SliderFloat("Intensity##PanelRenderSettings_Vignette",     &Render->VignetteIntensity,  0.0f, 1.0f);
+						ImGui::SliderFloat("Smoothness##PanelRenderSettings_Vignette",    &Render->VignetteSmoothness, 0.0f, 1.0f);
+						ImGui::SliderFloat("Radius##PanelRenderSettings_Vignette",        &Render->VignetteRadius,     0.0f, 1.0f);
+						ImGui::Unindent(10.0f);
+
+						Render->VignetteColor.Clamp({0.0f}, {1.0f});
+						Render->VignetteIntensity  = Math::Clamp(Render->VignetteIntensity,  {0.0f}, {1.0f});
+						Render->VignetteSmoothness = Math::Clamp(Render->VignetteSmoothness, {0.0f}, {1.0f});
+						Render->VignetteRadius     = Math::Clamp(Render->VignetteRadius,     {0.0f}, {1.0f});
+
 						ImGui::Separator();
 						ImGui::Spacing();
 					}

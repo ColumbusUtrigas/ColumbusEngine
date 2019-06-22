@@ -136,6 +136,27 @@ namespace Columbus
 	}
 	)";
 
+	const char* gVignetteFragmentShader =
+	R"(
+	#version 130
+
+	in vec2 Texcoord;
+	out vec4 FragColor;
+
+	uniform vec3 Color;
+	uniform vec2 Center;
+	uniform float Intensity;
+	uniform float Smoothness;
+	uniform float Radius;
+
+	void main(void)
+	{
+		float Diff = Radius - distance(Texcoord, Center);
+		float Value = smoothstep(-Smoothness, Smoothness, Diff);
+		FragColor = vec4(Color, (1.0 - clamp(Value, 0.0, 1.0)) * Intensity);
+	}
+	)";
+
 	const char* gFXAAFragmentShader = 
 	R"(
 	#version 130

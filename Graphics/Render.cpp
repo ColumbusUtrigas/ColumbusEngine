@@ -503,6 +503,7 @@ namespace Columbus
 		auto ScreenSpaceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ScreenSpace;
 		auto TonemapShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Tonemap;
 		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
+		auto VignetteShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Vignette;
 
 		static int ScreenSpaceTexture = ScreenSpaceShader->GetFastUniform("BaseTexture");
 
@@ -512,6 +513,12 @@ namespace Columbus
 
 		static int FXAABaseTexture = FXAAShader->GetFastUniform("BaseTexture");
 		static int FXAAResolution  = FXAAShader->GetFastUniform("Resolution");
+
+		static int VignetteColorID = VignetteShader->GetFastUniform("Color");
+		static int VignetteCenterID = VignetteShader->GetFastUniform("Center");
+		static int VignetteIntensityID = VignetteShader->GetFastUniform("Intensity");
+		static int VignetteSmoothnessID = VignetteShader->GetFastUniform("Smoothness");
+		static int VignetteRadiusID = VignetteShader->GetFastUniform("Radius");
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;
@@ -612,6 +619,18 @@ namespace Columbus
 			if (EditMode)
 			{
 				RenderIcons();
+			}
+
+			if (VignetteEnable)
+			{
+				VignetteShader->Bind();
+				VignetteShader->SetUniform(VignetteColorID, VignetteColor);
+				VignetteShader->SetUniform(VignetteCenterID, VignetteCenter);
+				VignetteShader->SetUniform(VignetteIntensityID, VignetteIntensity);
+				VignetteShader->SetUniform(VignetteSmoothnessID, VignetteSmoothness);
+				VignetteShader->SetUniform(VignetteRadiusID, VignetteRadius);
+				Quad.Render();
+				VignetteShader->Unbind();
 			}
 
 			Final.Unbind();

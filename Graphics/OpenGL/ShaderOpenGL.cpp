@@ -314,6 +314,25 @@ namespace Columbus
 				break;
 			}
 
+			case ShaderProgram::StandartProgram::Vignette:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gVignetteFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("Color");
+				Data.Uniforms.emplace_back("Center");
+				Data.Uniforms.emplace_back("Intensity");
+				Data.Uniforms.emplace_back("Smoothness");
+				Data.Uniforms.emplace_back("Radius");
+
+				Path = "Vignette";
+
+				Log::Success("Default shader program loaded: Vignette");
+				break;
+			}
+
 			case ShaderProgram::StandartProgram::FXAA:
 			{
 				Data.VertexSource = gScreenSpaceVertexShader;

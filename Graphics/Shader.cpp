@@ -12,6 +12,7 @@ namespace Columbus
 		GaussBlur = gDevice->CreateShaderProgram();
 		BloomBright = gDevice->CreateShaderProgram();
 		Bloom = gDevice->CreateShaderProgram();
+		Vignette = gDevice->CreateShaderProgram();
 		FXAA = gDevice->CreateShaderProgram();
 		Icon = gDevice->CreateShaderProgram();
 		Skybox = gDevice->CreateShaderProgram();
@@ -28,6 +29,7 @@ namespace Columbus
 		GaussBlur->Load(ShaderProgram::StandartProgram::GaussBlur);
 		BloomBright->Load(ShaderProgram::StandartProgram::BloomBright);
 		Bloom->Load(ShaderProgram::StandartProgram::Bloom);
+		Vignette->Load(ShaderProgram::StandartProgram::Vignette);
 		FXAA->Load(ShaderProgram::StandartProgram::FXAA);
 		Icon->Load(ShaderProgram::StandartProgram::Icon);
 		Skybox->Load(ShaderProgram::StandartProgram::Skybox);
@@ -44,6 +46,7 @@ namespace Columbus
 		GaussBlur->Compile();
 		BloomBright->Compile();
 		Bloom->Compile();
+		Vignette->Compile();
 		FXAA->Compile();
 		Icon->Compile();
 		Skybox->Compile();
@@ -62,6 +65,7 @@ namespace Columbus
 		delete GaussBlur;
 		delete BloomBright;
 		delete Bloom;
+		delete Vignette;
 		delete FXAA;
 		delete Icon;
 		delete Skybox;
