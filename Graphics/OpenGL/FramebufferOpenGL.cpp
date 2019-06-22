@@ -51,8 +51,6 @@ namespace Columbus
 		glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, Target, TextureID, Level);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		Check();
-
 		return true;
 	}
 

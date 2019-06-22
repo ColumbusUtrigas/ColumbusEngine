@@ -613,9 +613,12 @@ namespace Columbus
 	
 	void TextureOpenGL::GenerateMipmap()
 	{
-		glBindTexture(Target, ID);
-		glGenerateMipmap(Target);
-		glBindTexture(Target, 0);
+		if (Multisampling == 0)
+		{
+			glBindTexture(Target, ID);
+			glGenerateMipmap(Target);
+			glBindTexture(Target, 0);
+		}
 	}
 
 	uint32 TextureOpenGL::GetID() const
