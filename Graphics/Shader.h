@@ -17,6 +17,7 @@ namespace Columbus
 			GaussBlur,
 			BloomBright,
 			Bloom,
+			Vignette,
 			FXAA,
 			Icon,
 			Skybox,
@@ -46,6 +47,7 @@ namespace Columbus
 		ShaderProgram* GaussBlur = nullptr;
 		ShaderProgram* BloomBright = nullptr;
 		ShaderProgram* Bloom = nullptr;
+		ShaderProgram* Vignette = nullptr;
 		ShaderProgram* FXAA = nullptr;
 		ShaderProgram* Icon = nullptr;
 		ShaderProgram* Skybox = nullptr;
