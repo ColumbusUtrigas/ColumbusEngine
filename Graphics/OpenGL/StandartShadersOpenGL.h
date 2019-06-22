@@ -42,10 +42,33 @@ namespace Columbus
 	uniform float Exposure;
 	uniform float Gamma;
 
+	#define lum(color) dot(color, vec3(0.2125, 0.7154, 0.0721))
+	#define lightAdjust(a, b) ((1.0 - b) * (pow(1.0 - a, vec3(b + 1.0)) - 1.0) + a) / b
+	#define reinhard(c, l) c * (l / (1.0 + l) / l)
+
+	vec3 jt_tonemap(vec3 x)
+	{
+		float l = lum(x);
+		x = reinhard(x, l);
+		float m = max(x.r, max(x.g, x.b));
+		return min(lightAdjust(x / m, m), x);
+	}
+
+	vec3 filmic(vec3 color)
+	{
+		vec3 x = max(vec3(0.0), color - 0.004);
+		return (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
+	}
+
 	void main(void)
 	{
 		vec3 HDR = texture(BaseTexture, Texcoord).rgb;
-		vec3 Mapped = vec3(1.0) - exp(-HDR * Exposure);
+		//vec3 Mapped = vec3(1.0) - exp(-HDR * Exposure);
+		HDR *= Exposure;
+		vec3 Mapped = jt_tonemap(HDR);
+		//vec3 Mapped = HDR / (1.0 + HDR);
+		//vec3 Mapped = filmic(HDR);
+
 		Mapped = pow(Mapped, vec3(1.0 / Gamma));
 
 		FragColor = vec4(Mapped, 1.0);
@@ -105,7 +128,7 @@ namespace Columbus
 
 	float luma(vec3 color)
 	{
-		return dot(color, vec3(0.299, 0.587, 0.114));
+		return dot(color, vec3(0.2125, 0.7154, 0.0721));
 	}
 
 	void main(void)

@@ -371,6 +371,7 @@ namespace Columbus
 		// Bloom bright pass
 		Post1.ColorTexturesEnablement[0] = true;
 		Post1.ColorTexturesMipmaps[0] = false;
+		Post1.ColorTexturesFormats[0] = TextureFormat::RGB16F;
 		Post1.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
@@ -393,6 +394,8 @@ namespace Columbus
 		// Blur pass
 		Post2.ColorTexturesEnablement[0] = true;
 		Post2.ColorTexturesEnablement[1] = true;
+		Post2.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		Post2.ColorTexturesFormats[1] = TextureFormat::RGB16F;
 		Post2.Bind({}, {0}, Resolution);
 
 		((ShaderProgramOpenGL*)Blur)->Bind();
