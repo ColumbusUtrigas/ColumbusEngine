@@ -53,8 +53,10 @@ namespace Columbus
 					}
 
 
+					const char* Tonemaps[] = { "Simple", "Filmic", "ACES", "RomBinDaHouse", "Uncharted" };
 					const char* AA[] = { "No", "FXAA", "MSAA 2x", "MSAA 4x", "MSAA 8x", "MSAA 16x", "MSAA 32x" };
 
+					ImGui::Combo("Tonemapping##", (int*)&Render->Tonemapping, Tonemaps, 5);
 					ImGui::SliderFloat("Gamma##PanelRenderSettings", &Render->Gamma, 0.0, 5.0);
 					ImGui::SliderFloat("Exposure##PanelRenderSettings", &Render->Exposure, 0.0, 5.0);
 					ImGui::Combo("Anti Aliasing##PanelRenderSettings", (int*)&Render->Antialiasing, AA, 7);

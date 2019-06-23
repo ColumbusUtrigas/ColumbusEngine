@@ -257,6 +257,7 @@ namespace Columbus
 				Data.Uniforms.emplace_back("BaseTexture");
 				Data.Uniforms.emplace_back("Exposure");
 				Data.Uniforms.emplace_back("Gamma");
+				Data.Uniforms.emplace_back("Type");
 
 				Path = "Tonemap";
 
