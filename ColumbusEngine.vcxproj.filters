@@ -295,6 +295,12 @@
     <Filter Include="Исходные файлы\Editor\Inspector">
       <UniqueIdentifier>{d7730abb-7601-4d98-af9d-a9b4fb3c72be}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Common\Image\EXR">
+      <UniqueIdentifier>{65254fbe-9c4f-410c-8573-823fa6d7d7e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Common\Image\EXR">
+      <UniqueIdentifier>{175066cb-d51d-4155-939a-65ac9ace2d2e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animation\Animation.h">
@@ -723,6 +729,9 @@
     <ClInclude Include="Editor\Inspector\PanelInspector.h">
       <Filter>Файлы заголовков\Editor\Inspector</Filter>
     </ClInclude>
+    <ClInclude Include="Common\Image\EXR\ImageEXR.h">
+      <Filter>Файлы заголовков\Common\Image\EXR</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioMixer.cpp">
@@ -985,6 +994,9 @@
     </ClCompile>
     <ClCompile Include="Editor\Inspector\TransformMaterialEditor.cpp">
       <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Image\EXR\ImageEXR.cpp">
+      <Filter>Исходные файлы\Common\Image\EXR</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

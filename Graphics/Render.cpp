@@ -42,19 +42,24 @@ namespace Columbus
 
 		BaseMSAA.ColorTexturesEnablement[0] = true;
 		BaseMSAA.ColorTexturesEnablement[1] = true;
-		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
-		BaseMSAA.ColorTexturesFormats[1] = TextureFormat::RGB8;
+		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::R11G11B10F; // Color texture
+		BaseMSAA.ColorTexturesFormats[1] = TextureFormat::RGB8; // Normal texture
 		BaseMSAA.ColorTexturesMipmaps[0] = false;
 		BaseMSAA.ColorTexturesMipmaps[1] = false;
 		BaseMSAA.DepthTextureEnablement = true;
 
 		Base.ColorTexturesEnablement[0] = true;
 		Base.ColorTexturesEnablement[1] = true;
-		Base.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
-		Base.ColorTexturesFormats[1] = TextureFormat::RGB8;
+		Base.ColorTexturesFormats[0] = TextureFormat::R11G11B10F; // Color texture
+		Base.ColorTexturesFormats[1] = TextureFormat::RGB8; // Normal texture
 		Base.ColorTexturesMipmaps[0] = false;
 		Base.ColorTexturesMipmaps[1] = false;
 		Base.DepthTextureEnablement = true;
+
+		Post1.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
+		Post1.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
+		Post2.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
+		Post2.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
 
 		Final.ColorTexturesEnablement[0] = true;
 	}
@@ -370,8 +375,6 @@ namespace Columbus
 
 		// Bloom bright pass
 		Post1.ColorTexturesEnablement[0] = true;
-		Post1.ColorTexturesMipmaps[0] = false;
-		Post1.ColorTexturesFormats[0] = TextureFormat::RGB16F;
 		Post1.Bind({}, {0}, ContextSize);
 
 		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
@@ -394,8 +397,6 @@ namespace Columbus
 		// Blur pass
 		Post2.ColorTexturesEnablement[0] = true;
 		Post2.ColorTexturesEnablement[1] = true;
-		Post2.ColorTexturesFormats[0] = TextureFormat::RGB16F;
-		Post2.ColorTexturesFormats[1] = TextureFormat::RGB16F;
 		Post2.Bind({}, {0}, Resolution);
 
 		((ShaderProgramOpenGL*)Blur)->Bind();
@@ -513,6 +514,7 @@ namespace Columbus
 		static int TonemapBaseTexture = TonemapShader->GetFastUniform("BaseTexture");
 		static int TonemapGamma = TonemapShader->GetFastUniform("Gamma");
 		static int TonemapExposure = TonemapShader->GetFastUniform("Exposure");
+		static int TonemapType = TonemapShader->GetFastUniform("Type");
 
 		static int FXAABaseTexture = FXAAShader->GetFastUniform("BaseTexture");
 		static int FXAAResolution  = FXAAShader->GetFastUniform("Resolution");
@@ -573,9 +575,20 @@ namespace Columbus
 		{
 			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
+			GLenum bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
-			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			glReadBuffer(GL_COLOR_ATTACHMENT1);
+			glDrawBuffer(GL_COLOR_ATTACHMENT1);
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
 			Base.Unbind();
 		}
@@ -594,7 +607,10 @@ namespace Columbus
 
 			Final.Bind({}, {}, ContextSize);
 
+			int TonemapValue = 0;
+
 			TonemapShader->Bind();
+			TonemapShader->SetUniform(TonemapType, (int)Tonemapping);
 			TonemapShader->SetUniform(TonemapBaseTexture, (TextureOpenGL*)FinalTex, 0);
 			TonemapShader->SetUniform(TonemapExposure, Exposure);
 			TonemapShader->SetUniform(TonemapGamma, Gamma);
@@ -604,7 +620,6 @@ namespace Columbus
 			if (IsFXAA)
 			{
 				Post1.ColorTexturesEnablement[0] = true;
-				Post1.ColorTexturesMipmaps[0] = false;
 				Post1.Bind({}, {}, ContextSize);
 
 				FXAAShader->Bind();

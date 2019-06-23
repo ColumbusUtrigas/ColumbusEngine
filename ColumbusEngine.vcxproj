@@ -177,6 +177,7 @@
     <ClInclude Include="Common\Cursor\Cursor.h" />
     <ClInclude Include="Common\Image\BMP\ImageBMP.h" />
     <ClInclude Include="Common\Image\DDS\ImageDDS.h" />
+    <ClInclude Include="Common\Image\EXR\ImageEXR.h" />
     <ClInclude Include="Common\Image\HDR\ImageHDR.h" />
     <ClInclude Include="Common\Image\Image.h" />
     <ClInclude Include="Common\Image\JPG\ImageJPG.h" />
@@ -318,6 +319,7 @@
     <ClCompile Include="Audio\AudioSystem.cpp" />
     <ClCompile Include="Common\Image\BMP\ImageBMP.cpp" />
     <ClCompile Include="Common\Image\DDS\ImageDDS.cpp" />
+    <ClCompile Include="Common\Image\EXR\ImageEXR.cpp" />
     <ClCompile Include="Common\Image\HDR\ImageHDR.cpp" />
     <ClCompile Include="Common\Image\Image.cpp" />
     <ClCompile Include="Common\Image\JPG\ImageJPG.cpp" />

@@ -27,7 +27,7 @@ namespace Columbus
 		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE_O;
 		if (e == "wav" || e == "mp3" || e == "ogg") return ICON_FA_MUSIC;
 		if (e == "json" || e == "glsl" || e == "hlsl" || e == "csl") return ICON_FA_CODE;
-		if (e == "hdr") return ICON_FA_PICTURE_O;
+		if (e == "hdr" || e == "exr") return ICON_FA_PICTURE_O;
 		if (e == "scene") return ICON_FA_STRIKETHROUGH;
 		if (e == "lig") return ICON_FA_LIGHTBULB_O;
 		if (e == "mat") return ICON_FA_CIRCLE;

@@ -26,6 +26,15 @@ namespace Columbus
 		Postprocess
 	};
 
+	enum class TonemappingType
+	{
+		Simple = 0,
+		Filmic,
+		ACES,
+		RomBinDaHouse,
+		Uncharted
+	};
+
 	enum class AntialiasingType
 	{
 		No = 0,
@@ -106,6 +115,7 @@ namespace Columbus
 
 		float Exposure = 1.3f;
 		float Gamma = 1.5f;
+		TonemappingType Tonemapping = TonemappingType::Simple;
 
 		AntialiasingType Antialiasing = AntialiasingType::No;
 

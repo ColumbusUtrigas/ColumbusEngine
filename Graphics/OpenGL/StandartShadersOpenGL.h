@@ -41,35 +41,69 @@ namespace Columbus
 	uniform sampler2D BaseTexture;
 	uniform float Exposure;
 	uniform float Gamma;
+	uniform int Type;
 
-	#define lum(color) dot(color, vec3(0.2125, 0.7154, 0.0721))
-	#define lightAdjust(a, b) ((1.0 - b) * (pow(1.0 - a, vec3(b + 1.0)) - 1.0) + a) / b
-	#define reinhard(c, l) c * (l / (1.0 + l) / l)
-
-	vec3 jt_tonemap(vec3 x)
+	vec3 TonemapSimple(vec3 HDR)
 	{
-		float l = lum(x);
-		x = reinhard(x, l);
-		float m = max(x.r, max(x.g, x.b));
-		return min(lightAdjust(x / m, m), x);
+		HDR = HDR / (1.0 + HDR);
+		return pow(HDR, vec3(1.0 / Gamma));
 	}
 
-	vec3 filmic(vec3 color)
+	vec3 TonemapFilmic(vec3 HDR)
 	{
-		vec3 x = max(vec3(0.0), color - 0.004);
-		return (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
+		HDR = max(vec3(0.0), HDR - 0.004);
+		return (HDR * (6.2 * HDR + 0.5)) / (HDR * (6.2 * HDR + 1.7) + 0.06);
+	}
+
+	vec3 TonemapACES(vec3 HDR)
+	{
+		const float a = 2.51f;
+		const float b = 0.03f;
+		const float c = 2.43f;
+		const float d = 0.59f;
+		const float e = 0.14f;
+
+		return (HDR * (a * HDR + b))  /
+		       (HDR * (c * HDR + d) + e);
+	}
+
+	vec3 TonemapRomBinDaHouse(vec3 HDR)
+	{
+		HDR = exp(-1.0 / (2.72 * HDR + 0.15));
+		return pow(HDR, vec3(1.0 / Gamma));
+	}
+
+	vec3 TonemapUncharted(vec3 HDR)
+	{
+		float A = 0.15;
+		float B = 0.50;
+		float C = 0.10;
+		float D = 0.20;
+		float E = 0.02;
+		float F = 0.30;
+		float W = 11.2;
+
+		HDR *= Exposure;
+		HDR = ((HDR * (A * HDR + C * B) + D * E) / (HDR * (A * HDR + B) + D * F)) - E / F;
+		float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
+		HDR /= white;
+		HDR = pow(HDR, vec3(1.0 / Gamma));
+		return HDR;
 	}
 
 	void main(void)
 	{
 		vec3 HDR = texture(BaseTexture, Texcoord).rgb;
-		//vec3 Mapped = vec3(1.0) - exp(-HDR * Exposure);
-		HDR *= Exposure;
-		vec3 Mapped = jt_tonemap(HDR);
-		//vec3 Mapped = HDR / (1.0 + HDR);
-		//vec3 Mapped = filmic(HDR);
+		vec3 Mapped = vec3(0.0);
 
-		Mapped = pow(Mapped, vec3(1.0 / Gamma));
+		switch (Type)
+		{
+		case 0: Mapped = TonemapSimple(HDR); break;
+		case 1: Mapped = TonemapFilmic(HDR); break;
+		case 2: Mapped = TonemapACES(HDR); break;
+		case 3: Mapped = TonemapRomBinDaHouse(HDR); break;
+		case 4: Mapped = TonemapUncharted(HDR); break;
+		}
 
 		FragColor = vec4(Mapped, 1.0);
 	}
@@ -221,7 +255,7 @@ namespace Columbus
 		dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
 
 		float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
-		          (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
+				  (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
 
 		float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
 		dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX),
@@ -330,8 +364,9 @@ namespace Columbus
 
 	void main(void)
 	{
-		//FragColor = vec4(pow(textureCube(Skybox, Texcoord).rgb, vec3(1.5)), 1);
-		FragColor = texture(Skybox, Texcoord);
+		//FragColor = vec4(pow(texture(Skybox, Texcoord).rgb, vec3(1.5)), 1);
+		FragColor = vec4(texture(Skybox, Texcoord).rgb, 1.0);
+
 		gl_FragDepth = 0x7FFFFFFF;
 	}
 	)";
@@ -620,7 +655,7 @@ namespace Columbus
 
 	vec2 Hammersley(uint i, uint N)
 	{
-	    return vec2(float(i) / float(N), RadicalInverse(i, 2u));
+		return vec2(float(i) / float(N), RadicalInverse(i, 2u));
 	}
 
 	vec2 IntegrateBRDF(float NdotV, float roughness)
