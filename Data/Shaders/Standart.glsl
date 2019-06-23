@@ -205,8 +205,8 @@ void Final(void)
 
 	Color.rgb += Sample2D(EmissionMap, _TiledUV).rgb * EmissionStrength;
 
-	FragData[0] = Color;
-	FragData[1] = vec4(_Normal, 1);
+	RT0 = Color;
+	RT1 = vec4(_Normal, 1);
 
 	if (!Transparent && Color.a < 1.0) discard;
 	if (Transparent && Color.a == 1.0) discard;

@@ -537,8 +537,6 @@ namespace Columbus
 
 		PROFILE_GPU(ProfileModuleGPU::GPU);
 
-		glEnable(GL_MULTISAMPLE);
-
 		bool IsFXAA = false;
 		bool IsMSAA = false;
 

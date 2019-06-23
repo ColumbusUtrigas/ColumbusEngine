@@ -3,6 +3,9 @@
 #include <System/Log.h>
 #include <GL/glew.h>
 
+#define CONTEXT_MAJOR_VERSION 3
+#define CONTEXT_MINOR_VERSION 3
+
 namespace Columbus
 {
 
@@ -55,10 +58,11 @@ namespace Columbus
 		if ((uint32)F & (uint32)Window::Flags::Resizable)  flags |= SDL_WINDOW_RESIZABLE;
 		if ((uint32)F & (uint32)Window::Flags::Fullscreen) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, CONTEXT_MAJOR_VERSION);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, CONTEXT_MINOR_VERSION);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+		SDL_GL_SetSwapInterval(1);
 
 		Window = SDL_CreateWindow(Title, pos, pos, InSize.X, InSize.Y, flags);
 		Context = SDL_GL_CreateContext(Window);
@@ -66,25 +70,11 @@ namespace Columbus
 	
 	void WindowOpenGLSDL::InitializeOpenGL()
 	{
-		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-
-		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-
-		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
-		int MajorVersion = 3;
-		int MinorVersion = 0;
+		int MajorVersion = CONTEXT_MAJOR_VERSION;
+		int MinorVersion = CONTEXT_MINOR_VERSION;
 
 		glGetIntegerv(GL_MAJOR_VERSION, &MajorVersion);
 		glGetIntegerv(GL_MINOR_VERSION, &MinorVersion);
-
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, MajorVersion);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, MinorVersion);
-		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_PROFILE_CORE);
 
 		SDL_GL_SetSwapInterval(1);
 
@@ -97,6 +87,7 @@ namespace Columbus
 			Log::Initialization("Initialized OpenGL %i.%i", MajorVersion, MinorVersion);
 		}
 
+		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -181,7 +172,7 @@ namespace Columbus
 		if (Window && Open)
 		{
 			SDL_GL_SwapWindow(Window);
-			glFinish();
+			//glFinish();
 			RedrawTime = (float)RedrawTimer.Elapsed();
 			RedrawTimer.Reset();
 			Frames++;

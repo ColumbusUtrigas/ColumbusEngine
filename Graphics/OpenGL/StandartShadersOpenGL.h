@@ -63,8 +63,10 @@ namespace Columbus
 		const float d = 0.59f;
 		const float e = 0.14f;
 
-		return (HDR * (a * HDR + b))  /
-		       (HDR * (c * HDR + d) + e);
+		HDR = (HDR * (a * HDR + b))  /
+		      (HDR * (c * HDR + d) + e);
+		HDR = pow(HDR, 1.0 / vec3(Gamma));
+		return HDR;
 	}
 
 	vec3 TonemapRomBinDaHouse(vec3 HDR)
@@ -83,7 +85,6 @@ namespace Columbus
 		float F = 0.30;
 		float W = 11.2;
 
-		HDR *= Exposure;
 		HDR = ((HDR * (A * HDR + C * B) + D * E) / (HDR * (A * HDR + B) + D * F)) - E / F;
 		float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
 		HDR /= white;
@@ -93,7 +94,7 @@ namespace Columbus
 
 	void main(void)
 	{
-		vec3 HDR = texture(BaseTexture, Texcoord).rgb;
+		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * Exposure, 0, 1000);
 		vec3 Mapped = vec3(0.0);
 
 		switch (Type)
@@ -410,7 +411,7 @@ namespace Columbus
 		vec2 uv = SampleSphericalMap(normalize(Pos)); 
 		vec3 color = texture(BaseMap, uv).rgb;
 
-		FragColor = vec4(color, 1.0);
+		FragColor = vec4(clamp(color, 0, 1000), 1.0);
 	}
 	)";
 
