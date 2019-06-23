@@ -575,8 +575,6 @@ namespace Columbus
 		{
 			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
-			GLenum bufs[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
 
@@ -606,8 +604,6 @@ namespace Columbus
 			PROFILE_GPU(ProfileModuleGPU::FinalStage);
 
 			Final.Bind({}, {}, ContextSize);
-
-			int TonemapValue = 0;
 
 			TonemapShader->Bind();
 			TonemapShader->SetUniform(TonemapType, (int)Tonemapping);
