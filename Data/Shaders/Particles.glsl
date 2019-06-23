@@ -50,7 +50,7 @@ in vec2 UV;
 
 void main(void)
 {
-	FragColor = Sample2D(Texture, UV) * Color;
+	RT0 = Sample2D(Texture, UV) * Color;
 }
 
 

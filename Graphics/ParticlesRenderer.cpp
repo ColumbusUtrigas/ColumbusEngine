@@ -30,6 +30,8 @@ namespace Columbus
 		1, 1
 	};
 
+	static GLuint Particles_VAO = 0;
+
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
 		MaxSize = NewSize;
@@ -64,6 +66,10 @@ namespace Columbus
 		OtherDataBuffer.CreateArray(BufferOpenGL::Properties());
 
 		Allocate(MaxSize);
+
+		glGenVertexArrays(1, &Particles_VAO);
+		glBindVertexArray(Particles_VAO);
+		glBindVertexArray(0);
 	}
 
 	void ParticlesRenderer::Render(const ParticleEmitterCPU& Particles, const Camera& MainCamera, const Material& Mat)
@@ -125,6 +131,8 @@ namespace Columbus
 			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) OtherData[i * 6 + a] = Vector2(Particles.Particles.Rotations[i], (float)Particles.Particles.Frames[i]);
 			OtherDataBuffer.Unmap();
 
+			glBindVertexArray(Particles_VAO);
+
 			 VerticesBuffer.VertexAttribute<float>(0, 3, false, 0, nullptr);
 			TexcoordsBuffer.VertexAttribute<float>(1, 2, false, 0, nullptr);
 			PositionsBuffer.VertexAttribute<float>(2, 3, false, 0, nullptr);
@@ -133,6 +141,7 @@ namespace Columbus
 			OtherDataBuffer.VertexAttribute<float>(5, 2, false, 0, nullptr);
 
 			glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
+			glBindVertexArray(0);
 		}
 
 		glBlendEquation(GL_FUNC_ADD);
@@ -140,8 +149,10 @@ namespace Columbus
 	}
 
 	ParticlesRenderer::~ParticlesRenderer()
-	{
+	{		
 		delete[] Data;
+
+		glDeleteVertexArrays(1, &Particles_VAO);
 	}
 
 }

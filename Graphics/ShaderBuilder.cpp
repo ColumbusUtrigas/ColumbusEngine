@@ -6,7 +6,7 @@ namespace Columbus
 
 	const char* gCommonShaderHeader = 
 	R"(
-	#version 130
+	#version 330 core
 	#define Texture2D sampler2D
 	#define Texture3D sampler3D
 	#define TextureCube samplerCube
@@ -38,9 +38,11 @@ namespace Columbus
 
 	const char* gFragmentShaderHeader = 
 	R"(
-	#define FragData gl_FragData
 	#define FragmentShader
-	out vec4 FragColor;
+	layout(location = 0) out vec4 RT0;
+	layout(location = 1) out vec4 RT1;
+	layout(location = 2) out vec4 RT2;
+	layout(location = 3) out vec4 RT3;
 
 	)";
 

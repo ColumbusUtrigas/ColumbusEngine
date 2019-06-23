@@ -113,8 +113,8 @@ namespace Columbus
 		iVector2 ContextSize;
 		bool EditMode = false;
 
-		float Exposure = 1.3f;
-		float Gamma = 1.5f;
+		float Gamma = 2.2f;
+		float Exposure = 1.0f;
 		TonemappingType Tonemapping = TonemappingType::Simple;
 
 		AntialiasingType Antialiasing = AntialiasingType::No;
