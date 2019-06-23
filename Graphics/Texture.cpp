@@ -13,7 +13,7 @@ namespace Columbus
 
 	DefaultTextures::DefaultTextures()
 	{
-		uint32 Zero = 0x000000FF;
+		uint32 Zero = 0xFF000000;
 		uint32 One  = 0xFFFFFFFF;
 
 		Black = gDevice->CreateTexture();

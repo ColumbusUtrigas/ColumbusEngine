@@ -384,6 +384,7 @@ namespace Columbus
 	{
 		gl_Position = Projection * View * vec4(Position, 1);
 		Pos = Position;
+		Pos .y = -Pos.y;
 	}
 	)";
 

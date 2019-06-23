@@ -23,7 +23,6 @@ namespace Columbus
 	bool ImageLoaderHDR::Load(const char* FileName)
 	{
 		int x, y, comp;
-		stbi_set_flip_vertically_on_load(true);
 		Data = (uint8*)stbi_loadf(FileName, &x, &y, &comp, 0);
 		Width = x;
 		Height = y;

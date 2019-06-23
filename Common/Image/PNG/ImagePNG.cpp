@@ -24,8 +24,6 @@ namespace Columbus
 		int compression_method;
 		int filter_method;
 
-		png_bytepp rows;
-
 		png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 		if (!png_ptr) { fclose(fp); return nullptr; }
 
@@ -36,10 +34,6 @@ namespace Columbus
 		png_read_png(png_ptr, info_ptr, 0, 0);
 		png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth,
 			&color_type, &interlace_method, &compression_method, &filter_method);
-
-		rows = png_get_rows(png_ptr, info_ptr);
-		int rowbytes;
-		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
 		switch (color_type)
 		{
@@ -61,12 +55,13 @@ namespace Columbus
 		default: OutFormat = TextureFormat::Unknown; break;
 		}
 
-		uint8* data = new uint8[width * height * bpp];
+		png_bytepp rows = png_get_rows(png_ptr, info_ptr);
+		int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+		uint8* data = new uint8[OutSize];
 
-		//Copying row data into byte buffer with reversed vertical
 		for (size_t i = 0; i < height; i++)
 		{
-			memcpy(&data[rowbytes * i], rows[height - i - 1], rowbytes);
+			memcpy(&data[rowbytes * i], rows[i], rowbytes);
 		}
 		
 		if (png_ptr && info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
@@ -112,24 +107,11 @@ namespace Columbus
 		png_write_info(png, info);
 		png_set_packing(png);
 
-		png_bytepp rows = (png_bytepp)png_malloc(png, Height * sizeof(png_bytep));
-		int rowbytes = Width * BPP;
-		for (size_t i = 0; i < Height; i++)
-		{
-			rows[i] = (png_bytep)malloc(rowbytes);
-			memcpy(rows[i], Data + (Height - i - 1) * rowbytes, rowbytes);
-		}
-
-		png_write_image(png, rows);
+		png_write_image(png, &Data);
 		png_write_end(png, info);
 		png_free(png, palette);
 		png_destroy_write_struct(&png, &info);
 		fclose(fp);
-
-		for (size_t i = 0; i < Height; i++)
-		{
-			free(rows[i]);
-		}
 
 		return true;
 	}

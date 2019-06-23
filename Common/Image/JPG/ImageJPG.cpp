@@ -68,7 +68,7 @@ namespace Columbus
 		while (cinfo.output_scanline < cinfo.output_height)
 		{
 			jpeg_read_scanlines(&cinfo, buffer, 1);
-			memcpy(data + (maxsize - counter - row_stride), buffer[0], row_stride);
+			memcpy(data + counter, buffer[0], row_stride);
 			counter += row_stride;
 		}
 

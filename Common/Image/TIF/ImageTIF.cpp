@@ -53,6 +53,8 @@ namespace Columbus
 
 		TIFFClose(tif);
 
+		ImageFlipY(data, width, height, bpp);
+
 		return data;
 	}
 	

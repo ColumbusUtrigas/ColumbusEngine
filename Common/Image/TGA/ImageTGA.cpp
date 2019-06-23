@@ -10,28 +10,28 @@ namespace Columbus
 {
 
 #define READPIXEL8(a) \
-        red = *a++;
+		red = *a++;
 
 #define READPIXEL24(a) \
-        blue = *a++;   \
-        green = *a++;  \
-        red = *a++;
+		blue = *a++;   \
+		green = *a++;  \
+		red = *a++;
 
 #define READPIXEL32(a) \
-        READPIXEL24(a) \
-        alpha = *a++;
+		READPIXEL24(a) \
+		alpha = *a++;
 
 #define WRITEPIXEL8(a) \
-        *a++ = red;
+		*a++ = red;
 
 #define WRITEPIXEL24(a) \
-        *a++ = red;     \
-        *a++ = green;   \
-        *a++ = blue;
+		*a++ = red;     \
+		*a++ = green;   \
+		*a++ = blue;
 
 #define WRITEPIXEL32(a) \
-        WRITEPIXEL24(a) \
-        *a++ = alpha;
+		WRITEPIXEL24(a) \
+		*a++ = alpha;
 
 
 	typedef struct
@@ -366,8 +366,8 @@ namespace Columbus
 			}
 		}
 
-		if (tga.x_origin != 0) ImageFlipX(buffer, tga.width, tga.height, PixelSize);
-		if (tga.y_origin != 0) ImageFlipY(buffer, tga.width, tga.height, PixelSize);
+		if (tga.x_origin != 0) ImageFlipX(data, tga.width, tga.height, PixelSize);
+		if (tga.y_origin == 0) ImageFlipY(data, tga.width, tga.height, PixelSize);
 
 		file.Close();
 
