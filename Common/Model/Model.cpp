@@ -133,6 +133,15 @@ namespace Columbus
 			}
 
 			delete Loader;
+
+			if (UVs != nullptr)
+			{
+				for (uint32 i = 0; i < VerticesCount; i++)
+				{
+					UVs[i].Y = 1.0f - UVs[i].Y;
+				}
+			}
+
 			return true;
 		}
 
@@ -165,6 +174,7 @@ namespace Columbus
 
 				BoundingBox = Box({-1000}, {1000});
 
+				#error "Flip UVs"
 				return true;
 			}
 		}*/
