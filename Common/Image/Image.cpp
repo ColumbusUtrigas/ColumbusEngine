@@ -1,6 +1,7 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/BMP/ImageBMP.h>
 #include <Common/Image/DDS/ImageDDS.h>
+#include <Common/Image/EXR/ImageEXR.h>
 #include <Common/Image/HDR/ImageHDR.h>
 #include <Common/Image/JPG/ImageJPG.h>
 #include <Common/Image/PNG/ImagePNG.h>
@@ -62,6 +63,7 @@ namespace Columbus
 	{
 		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
 		if (ImageLoaderDDS::IsDDS(FileName)) return ImageFormat::DDS;
+		if (ImageLoaderEXR::IsEXR(FileName)) return ImageFormat::EXR;
 		if (ImageLoaderHDR::IsHDR(FileName)) return ImageFormat::HDR;
 		if (ImageLoaderPNG::IsPNG(FileName)) return ImageFormat::PNG;
 		if (ImageLoaderTIF::IsTIF(FileName)) return ImageFormat::TIF;
@@ -221,6 +223,7 @@ namespace Columbus
 		{
 			case ImageFormat::BMP: Loader = new ImageLoaderBMP(); break;
 			case ImageFormat::DDS: Loader = new ImageLoaderDDS(); break;
+			case ImageFormat::EXR: Loader = new ImageLoaderEXR(); break;
 			case ImageFormat::HDR: Loader = new ImageLoaderHDR(); break;
 			case ImageFormat::PNG: Loader = new ImageLoaderPNG(); break;
 			case ImageFormat::TIF: Loader = new ImageLoaderTIF(); break;

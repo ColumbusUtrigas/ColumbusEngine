@@ -14,7 +14,7 @@ namespace Columbus
 	bool ImageLoaderHDR::IsHDR(const char* FileName)
 	{
 		File ImageFile(FileName, "rb");
-		const char* Cmp = "#?RADIANCE\n";
+		const char Cmp[] = "#?RADIANCE\n";
 		char Magic[11];
 		ImageFile.Read(Magic);
 		return memcmp(Magic, Cmp, 11) == 0;

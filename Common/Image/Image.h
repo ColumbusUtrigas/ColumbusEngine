@@ -21,6 +21,7 @@ namespace Columbus
 	{
 		BMP,
 		DDS,
+		EXR,
 		PNG,
 		TIF,
 		JPG,
