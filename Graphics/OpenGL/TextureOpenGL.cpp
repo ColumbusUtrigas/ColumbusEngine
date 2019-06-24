@@ -565,11 +565,9 @@ namespace Columbus
 
 			switch (TextureFlags.Wrapping)
 			{
-			case Texture::Wrap::Clamp:               ClampMode = GL_CLAMP;                break;
-			case Texture::Wrap::ClampToEdge:         ClampMode = GL_CLAMP_TO_EDGE;        break;
-			case Texture::Wrap::Repeat:              ClampMode = GL_REPEAT;               break;
-			case Texture::Wrap::MirroredRepeat:      ClampMode = GL_MIRRORED_REPEAT;      break;
-			case Texture::Wrap::MirroredClampToEdge: ClampMode = GL_MIRROR_CLAMP_TO_EDGE; break;
+			case Texture::Wrap::Clamp:          ClampMode = GL_CLAMP_TO_EDGE;   break;
+			case Texture::Wrap::Repeat:         ClampMode = GL_REPEAT;          break;
+			case Texture::Wrap::MirroredRepeat: ClampMode = GL_MIRRORED_REPEAT; break;
 			}
 
 			glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);

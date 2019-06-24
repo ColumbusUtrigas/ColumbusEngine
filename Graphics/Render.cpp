@@ -16,29 +16,29 @@
 namespace Columbus
 {
 	Texture* Blob;
-	Texture* EditorIconSun;
+	/*Texture* EditorIconSun;
 	Texture* EditorIconLamp;
 	Texture* EditorIconFlashlight;
 	Texture* EditorIconAudio;
-	Texture* EditorIconParticles;
+	Texture* EditorIconParticles;*/
 
 	RenderState State;
 
 	Renderer::Renderer()
 	{
 		Blob = gDevice->CreateTexture();
-		EditorIconSun = gDevice->CreateTexture();
+		/*EditorIconSun = gDevice->CreateTexture();
 		EditorIconLamp = gDevice->CreateTexture();
 		EditorIconAudio = gDevice->CreateTexture();
 		EditorIconFlashlight = gDevice->CreateTexture();
-		EditorIconParticles = gDevice->CreateTexture();
+		EditorIconParticles = gDevice->CreateTexture();*/
 
 		Blob->Load("Data/Textures/blob.png");
-		EditorIconSun->Load("Data/Icons/Sun.png");
+		/*EditorIconSun->Load("Data/Icons/Sun.png");
 		EditorIconLamp->Load("Data/Icons/Lamp.png");
 		EditorIconFlashlight->Load("Data/Icons/Flashlight.png");
 		EditorIconAudio->Load("Data/Icons/Audio.png");
-		EditorIconParticles->Load("Data/Icons/Particles.png");
+		EditorIconParticles->Load("Data/Icons/Particles.png");*/
 
 		BaseMSAA.ColorTexturesEnablement[0] = true;
 		BaseMSAA.ColorTexturesEnablement[1] = true;
@@ -461,7 +461,7 @@ namespace Columbus
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconSun, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun, 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -469,7 +469,7 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconLamp, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp, 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -477,7 +477,7 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconFlashlight, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight, 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -485,14 +485,14 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconAudio, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio, 0);
 		for (const auto& Elem : Scn->Audio.Mixer.Sources)
 		{
 			if (Elem != nullptr)
 				DrawIcon(Vector4(Elem->Position, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconParticles, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles, 0);
 		for (const auto& Elem : TransparentObjects)
 		{
 			if (Elem.Particles != nullptr)
@@ -674,7 +674,7 @@ namespace Columbus
 	Renderer::~Renderer()
 	{
 		delete Blob;
-		delete EditorIconLamp;
+		//delete EditorIconLamp;
 	}
 
 }

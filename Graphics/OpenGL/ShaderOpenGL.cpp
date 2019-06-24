@@ -172,19 +172,20 @@ namespace Columbus
 		char* Error = nullptr;
 
 		glGetShaderiv(ShaderID, GL_COMPILE_STATUS, &Status);
+		glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
+		Error = new char[Length];
+		glGetShaderInfoLog(ShaderID, Length, &Length, Error);
 
 		if (Status == GL_FALSE)
 		{
-			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
-			Error = new char[Length];
-			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::Error("%s shader (%s): %s: %s", GetStringFromShaderType(Type), ShaderPath, ShaderPath,  Error);
-
-			delete[] Error;
-			return true;
+			Log::Error("%s shader (%s): %s", GetStringFromShaderType(Type), ShaderPath, Error);
+		} else if (Length > 1)
+		{
+			Log::Warning("%s shader (%s): %s", GetStringFromShaderType(Type), ShaderPath, Error);
 		}
 
-		return false;
+		delete[] Error;
+		return Status == GL_FALSE;
 	}
 
 	static bool ShaderCompile(const char* ShaderPath, const char* ShaderSource, int32 ShaderID, ShaderType Type)

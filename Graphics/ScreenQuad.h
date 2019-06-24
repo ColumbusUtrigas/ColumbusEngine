@@ -9,12 +9,14 @@ namespace Columbus
 	class ScreenQuad
 	{
 	private:
-		void Init(uint32& VAO, uint32& IBO)
-		{
-			uint32 VBO;
+		uint32 VAO = 0;
+		uint32 VBO = 0;
+		uint32 IBO = 0;
 
+		void Init()
+		{
 			float Vertices[] = { -1, 1, 1, 1, 1, -1, -1, -1 };
-			float UV[] = { 0, 1, 1, 1, 1, 0, 0, 0  };
+			float UV[] = { 0, 1, 1, 1, 1, 0, 0, 0 };
 			uint32 Indices[] = { 0, 1, 2, 3, 0, 2 };
 
 			glGenBuffers(1, &VBO);
@@ -41,16 +43,13 @@ namespace Columbus
 			glBindVertexArray(0);
 		}
 	public:
+		ScreenQuad()
+		{
+			Init();
+		}
+
 		void Render()
 		{
-			static uint32 VAO = 0;
-			static uint32 IBO = 0;
-
-			if (VAO == 0)
-			{
-				Init(VAO, IBO);
-			}
-
 			glDisable(GL_CULL_FACE);
 			glDepthMask(GL_FALSE);
 
@@ -61,6 +60,13 @@ namespace Columbus
 			glBindVertexArray(0);
 
 			glDepthMask(GL_TRUE);
+		}
+
+		~ScreenQuad()
+		{
+			glDeleteBuffers(1, &VBO);
+			glDeleteBuffers(1, &IBO);
+			glDeleteVertexArrays(1, &VAO);
 		}
 	};
 

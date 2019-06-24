@@ -162,7 +162,7 @@ namespace Columbus
 			Texture::Flags Flags;
 			Flags.AnisotropyFilter = Texture::Anisotropy::Anisotropy1;
 			Flags.Filtering = Texture::Filter::Trilinear;
-			Flags.Wrapping = Texture::Wrap::ClampToEdge;
+			Flags.Wrapping = Texture::Wrap::Clamp;
 
 			PrefilterMap = gDevice->CreateTexture();
 			PrefilterMap->CreateCube(Texture::Properties{ Resolution, Resolution, 0, 0, TextureFormat::RGB16F });

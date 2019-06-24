@@ -45,10 +45,8 @@ namespace Columbus
 		enum class Wrap
 		{
 			Clamp,
-			ClampToEdge,
 			Repeat,
-			MirroredRepeat,
-			MirroredClampToEdge
+			MirroredRepeat
 		};
 
 		enum class Type
@@ -122,6 +120,14 @@ namespace Columbus
 		Texture* Black = nullptr;
 		Texture* White = nullptr;
 		Texture* IntegrationLUT = nullptr;
+
+
+		// TODO: Load this textures only if EditorMode is enabled.
+		Texture* IconSun = nullptr;
+		Texture* IconLamp = nullptr;
+		Texture* IconFlashlight = nullptr;
+		Texture* IconAudio = nullptr;
+		Texture* IconParticles = nullptr;
 
 		DefaultTextures();
 		~DefaultTextures();
