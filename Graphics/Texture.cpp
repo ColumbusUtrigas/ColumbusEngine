@@ -30,6 +30,22 @@ namespace Columbus
 		White->Load(&One,  Props);
 
 		CreateIntegrationMap(IntegrationLUT);
+
+		// TODO: EDITOR MODE
+		if (true)
+		{
+			IconSun = gDevice->CreateTexture();
+			IconLamp = gDevice->CreateTexture();
+			IconAudio = gDevice->CreateTexture();
+			IconFlashlight = gDevice->CreateTexture();
+			IconParticles = gDevice->CreateTexture();
+
+			IconSun->Load("Data/Icons/Sun.png");
+			IconLamp->Load("Data/Icons/Lamp.png");
+			IconFlashlight->Load("Data/Icons/Flashlight.png");
+			IconAudio->Load("Data/Icons/Audio.png");
+			IconParticles->Load("Data/Icons/Particles.png");
+		}
 	}
 
 	DefaultTextures::~DefaultTextures()
@@ -37,6 +53,12 @@ namespace Columbus
 		delete Black;
 		delete White;
 		delete IntegrationLUT;
+
+		delete IconSun;
+		delete IconLamp;
+		delete IconFlashlight;
+		delete IconAudio;
+		delete IconParticles;
 	}
 
 	void CreateIntegrationMap(Texture*& IntegrationMap)
@@ -50,7 +72,7 @@ namespace Columbus
 			Texture::Flags Flags;
 			Flags.AnisotropyFilter = Texture::Anisotropy::Anisotropy1;
 			Flags.Filtering = Texture::Filter::Linear;
-			Flags.Wrapping = Texture::Wrap::ClampToEdge;
+			Flags.Wrapping = Texture::Wrap::Clamp;
 
 			IntegrationMap = gDevice->CreateTexture();
 			IntegrationMap->Create2D(Texture::Properties{ Resolution, Resolution, 0, 0, Format });

@@ -319,7 +319,8 @@ namespace Columbus
 	void main(void)
 	{
 		gl_Position = vec4(Position * Size + Pos, 0, 1);
-		Texcoord = UV;
+		Texcoord.x = UV.x;
+		Texcoord.y = -UV.y;
 	}
 	)";
 
