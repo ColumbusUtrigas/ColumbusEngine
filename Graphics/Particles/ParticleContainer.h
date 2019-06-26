@@ -39,7 +39,7 @@ namespace Columbus
 
 			void Swap(size_t A, size_t B)
 			{
-				T& Tmp = Data[A];
+				T Tmp = Data[A];
 				Data[A] = Data[B];
 				Data[B] = Tmp;
 			}
