@@ -16,7 +16,6 @@ namespace Columbus
 	bool OpenGL::bSupportsUniformBuffer = false;
 	bool OpenGL::bSupportsInstancing = false;
 	bool OpenGL::bSupportsTransformFeedback = false;
-	bool OpenGL::bSupportsShader = false;
 	bool OpenGL::bSupportsGeometryShader = false;
 	bool OpenGL::bSupportsTesselation = false;
 	bool OpenGL::bSupportsComputeShader = false;
@@ -25,16 +24,12 @@ namespace Columbus
 	bool OpenGL::bSupportsShaderStorageBuffer = false;
 	bool OpenGL::bSupportsShaderImageLoadStore = false;
 	bool OpenGL::bSupportsMultiBind = false;
-	bool OpenGL::bSupportsBaseInstance = false;
-	bool OpenGL::bSupportsDrawIndirect = false;
-	bool OpenGL::bSupportsMultiDrawIndirect = false;
 
 	void OpenGL::Init()
 	{
 		bSupportsUniformBuffer        = glewGetExtension("GL_ARB_uniform_buffer_object");
-		bSupportsInstancing           = glewGetExtension("GL_ARB_instanced_arrays") && (glewGetExtension("GL_ARB_draw_instanced") || glewGetExtension("GL_EXT_draw_instanced"));
+		bSupportsInstancing           = glewGetExtension("GW_ARB_instanced_arrays") && (glewGetExtension("GL_ARB_draw_instanced") || glewGetExtension("GL_EXT_draw_instanced"));
 		bSupportsTransformFeedback    = glewGetExtension("GL_ARB_transform_feedback2");
-		bSupportsShader               = glewGetExtension("GL_ARB_vertex_program") && glewGetExtension("GL_ARB_fragment_program");
 		bSupportsGeometryShader       = glewGetExtension("GL_ARB_geometry_shader4");
 		bSupportsTesselation          = glewGetExtension("GL_ARB_tessellation_shader");
 		bSupportsComputeShader        = glewGetExtension("GL_ARB_compute_shader");
@@ -43,9 +38,6 @@ namespace Columbus
 		bSupportsShaderStorageBuffer  = glewGetExtension("GL_ARB_shader_storage_buffer_object");
 		bSupportsShaderImageLoadStore = glewGetExtension("GL_ARB_shader_image_load_store") || glewGetExtension("GL_EXT_shader_image_load_store");
 		bSupportsMultiBind            = glewGetExtension("GL_ARB_multi_bind");
-		bSupportsBaseInstance         = glewGetExtension("GL_ARB_base_instance");
-		bSupportsDrawIndirect         = glewGetExtension("GL_ARB_draw_indirect");
-		bSupportsMultiDrawIndirect    = glewGetExtension("GL_ARB_multi_draw_indirect");
 
 		glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE, &MaxCubemapTextureSize);
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE,          &MaxTextureSize);
@@ -65,7 +57,6 @@ namespace Columbus
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &MaxComputeWorkGroupCount.Y);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &MaxComputeWorkGroupCount.Z);
 		}
-
 
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_BLEND);

@@ -21,7 +21,6 @@ namespace Columbus
 		static bool bSupportsUniformBuffer;
 		static bool bSupportsInstancing;
 		static bool bSupportsTransformFeedback;
-		static bool bSupportsShader;
 		static bool bSupportsGeometryShader;
 		static bool bSupportsTesselation;
 		static bool bSupportsComputeShader;
@@ -30,9 +29,6 @@ namespace Columbus
 		static bool bSupportsShaderStorageBuffer;
 		static bool bSupportsShaderImageLoadStore;
 		static bool bSupportsMultiBind;
-		static bool bSupportsBaseInstance;
-		static bool bSupportsDrawIndirect;
-		static bool bSupportsMultiDrawIndirect;
 	public:
 		static void Init();
 
@@ -51,7 +47,6 @@ namespace Columbus
 		static inline bool SupportsUniformBuffer() { return bSupportsUniformBuffer; }
 		static inline bool SupportsInstancing() { return bSupportsInstancing; }
 		static inline bool SupportsTransformFeedback() { return bSupportsTransformFeedback; }
-		static inline bool SupportsShader() { return bSupportsShader; }
 		static inline bool SupportsGeometryShader() { return bSupportsGeometryShader; }
 		static inline bool SupportsTesselation() { return bSupportsTesselation; }
 		static inline bool SupportsComputeShader() { return bSupportsComputeShader; }
@@ -60,20 +55,8 @@ namespace Columbus
 		static inline bool SupportsShaderStorageBuffer() { return bSupportsShaderStorageBuffer; }
 		static inline bool SupportsShaderImageLoadStore() { return bSupportsShaderImageLoadStore; }
 		static inline bool SupportsMultiBind() { return bSupportsMultiBind; }
-		static inline bool SupportsBaseInstance() { return bSupportsBaseInstance; }
-		static inline bool SupportsDrawIndirect() { return bSupportsDrawIndirect; }
-		static inline bool SupportsMultiDrawIndirect() { return bSupportsMultiDrawIndirect; }
 	};
 
 }
-
-
-
-
-
-
-
-
-
 
 

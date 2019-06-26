@@ -16,29 +16,13 @@
 namespace Columbus
 {
 	Texture* Blob;
-	/*Texture* EditorIconSun;
-	Texture* EditorIconLamp;
-	Texture* EditorIconFlashlight;
-	Texture* EditorIconAudio;
-	Texture* EditorIconParticles;*/
 
 	RenderState State;
 
 	Renderer::Renderer()
 	{
 		Blob = gDevice->CreateTexture();
-		/*EditorIconSun = gDevice->CreateTexture();
-		EditorIconLamp = gDevice->CreateTexture();
-		EditorIconAudio = gDevice->CreateTexture();
-		EditorIconFlashlight = gDevice->CreateTexture();
-		EditorIconParticles = gDevice->CreateTexture();*/
-
 		Blob->Load("Data/Textures/blob.png");
-		/*EditorIconSun->Load("Data/Icons/Sun.png");
-		EditorIconLamp->Load("Data/Icons/Lamp.png");
-		EditorIconFlashlight->Load("Data/Icons/Flashlight.png");
-		EditorIconAudio->Load("Data/Icons/Audio.png");
-		EditorIconParticles->Load("Data/Icons/Particles.png");*/
 
 		BaseMSAA.ColorTexturesEnablement[0] = true;
 		BaseMSAA.ColorTexturesEnablement[1] = true;
@@ -395,37 +379,33 @@ namespace Columbus
 		if (Resolution.Y == 0) Resolution.Y = 1;
 
 		// Blur pass
-		Post2.ColorTexturesEnablement[0] = true;
-		Post2.ColorTexturesEnablement[1] = true;
-		Post2.Bind({}, {0}, Resolution);
-
 		((ShaderProgramOpenGL*)Blur)->Bind();
 		((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurRadius, BloomRadius);
 
 		for (int i = 0; i < BloomIterations; i++)
-		{
-			auto Horiz = i == 0 ? Post1.ColorTextures[0] : Post2.ColorTextures[1];
+		{			
+			Post2.ColorTexturesEnablement[0] = true;
+			Post2.Bind({}, { 0 }, Resolution);
 
-			GLenum First[] = { GL_COLOR_ATTACHMENT0 };
-			GLenum Second[] = { GL_COLOR_ATTACHMENT1 };
-			
-			glDrawBuffers(1, First);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
+			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Post1.ColorTextures[0], 0);
 			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 1);
 			Quad.Render();
 
-			glDrawBuffers(1, Second);
+			Post1.ColorTexturesEnablement[0] = true;
+			Post1.Bind({}, { 0 }, Resolution);
+
 			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Post2.ColorTextures[0], 0);
 			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 0);
 			Quad.Render();
 		}
 
 		// Bloom final
-		Post1.Bind({}, {}, ContextSize);
+		Post2.ColorTexturesEnablement[0] = true;
+		Post2.Bind({}, {}, ContextSize);
 
 		((ShaderProgramOpenGL*)Bloom)->Bind();
 		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)Post2.ColorTextures[1], 1);
+		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)Post1.ColorTextures[0], 1);
 		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
 		Quad.Render();
 	}
@@ -447,7 +427,6 @@ namespace Columbus
 				Coords /= Coords.W;
 
 				float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
-
 
 				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconPosID, Coords.XY());
 				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconSizeID, 0.1f / Vector2(Aspect, 1));
@@ -594,7 +573,7 @@ namespace Columbus
 		if (BloomEnable)
 		{
 			RenderBloom();
-			FinalTex = Post1.ColorTextures[0];
+			FinalTex = Post2.ColorTextures[0];
 		}
 
 		// Final stage
