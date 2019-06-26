@@ -78,6 +78,7 @@ namespace Columbus
 
 		SDL_GL_SetSwapInterval(1);
 
+		glewExperimental = GL_TRUE;
 		if (glewInit() != GLEW_OK)
 		{
 			Log::Fatal("Can't initialize GLEW");
