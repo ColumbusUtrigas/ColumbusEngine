@@ -112,7 +112,7 @@ namespace Columbus
 
 	const char* gResolveMSAAFragmentShader =
 	R"(
-	#version 140
+	#version 150
 
 	out vec4 FragColor;
 
@@ -121,16 +121,28 @@ namespace Columbus
 
 	in vec2 Texcoord;
 
+	vec3 Tonemap(vec3 HDR)
+	{
+		return HDR / (1.0 + HDR);
+	}
+
+	vec3 InverseTonemap(vec3 LDR)
+	{
+		return LDR / (1.0 - LDR);
+	}
+
 	void main(void)
 	{
 		vec3 Color = vec3(0);
 
 		for (int i = 0; i < Samples; i++)
 		{
-			Color += texelFetch(BaseTexture, ivec2(gl_FragCoord.xy), i).rgb;
+			Color += Tonemap(texelFetch(BaseTexture, ivec2(gl_FragCoord.xy), i).rgb);
 		}
 
-		FragColor = vec4(Color / Samples, 1.0);
+		Color = InverseTonemap(Color / Samples);
+
+		FragColor = vec4(Color, 1.0);
 	}
 	)";
 
