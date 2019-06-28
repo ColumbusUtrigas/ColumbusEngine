@@ -9,6 +9,7 @@ namespace Columbus
 	{
 		ScreenSpace = gDevice->CreateShaderProgram();
 		Tonemap = gDevice->CreateShaderProgram();
+		ResolveMSAA = gDevice->CreateShaderProgram();
 		GaussBlur = gDevice->CreateShaderProgram();
 		BloomBright = gDevice->CreateShaderProgram();
 		Bloom = gDevice->CreateShaderProgram();
@@ -26,6 +27,7 @@ namespace Columbus
 
 		ScreenSpace->Load(ShaderProgram::StandartProgram::ScreenSpace);
 		Tonemap->Load(ShaderProgram::StandartProgram::Tonemap);
+		ResolveMSAA->Load(ShaderProgram::StandartProgram::ResolveMSAA);
 		GaussBlur->Load(ShaderProgram::StandartProgram::GaussBlur);
 		BloomBright->Load(ShaderProgram::StandartProgram::BloomBright);
 		Bloom->Load(ShaderProgram::StandartProgram::Bloom);
@@ -43,6 +45,7 @@ namespace Columbus
 
 		ScreenSpace->Compile();
 		Tonemap->Compile();
+		ResolveMSAA->Compile();
 		GaussBlur->Compile();
 		BloomBright->Compile();
 		Bloom->Compile();
@@ -62,6 +65,7 @@ namespace Columbus
 	{
 		delete ScreenSpace;
 		delete Tonemap;
+		delete ResolveMSAA;
 		delete GaussBlur;
 		delete BloomBright;
 		delete Bloom;

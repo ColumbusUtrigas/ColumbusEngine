@@ -266,6 +266,22 @@ namespace Columbus
 				break;
 			}
 
+			case ShaderProgram::StandartProgram::ResolveMSAA:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gResolveMSAAFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Samples");
+
+				Path = "ResolveMSAA";
+
+				Log::Success("Default shader program loaded: ResolveMSAA");
+				break;
+			}
+
 			case ShaderProgram::StandartProgram::GaussBlur:
 			{
 				Data.VertexSource = gScreenSpaceVertexShader;
