@@ -5,6 +5,7 @@
 #include <Graphics/Camera.h>
 #include <Physics/PhysicsWorld.h>
 #include <Scene/GameObject.h>
+#include <Scene/GameObjectsHolder.h>
 #include <System/Timer.h>
 #include <Core/SmartPointer.h>
 #include <Core/Types.h>
@@ -15,9 +16,7 @@
 
 #include <Resources/ResourceManager.h>
 
-#include <vector>
 #include <map>
-#include <unordered_map>
 
 namespace Columbus
 {
@@ -61,7 +60,7 @@ namespace Columbus
 		Camera* MainCamera = nullptr;
 		AudioListener* Listener = nullptr;
 
-		ResourceManager<GameObject> Objects;
+		GameObjectsHolder Objects;
 	public:
 		Scene();
 

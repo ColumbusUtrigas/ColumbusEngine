@@ -21,9 +21,9 @@ namespace Columbus
 		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick);
 
 	template <typename T>
-	static void ResourceViewerDrawList(const char* Name, T*& Tmp,
+	static void ResourceViewerDrawList(const char* Name, T*& Tmp, T*& PopupObject,
 		ResourceManager<T>& Manager, const std::string& Find,
-		std::function<bool(const char*, T*)> Button, std::function<void()> RightClick,
+		std::function<bool(const char*, T*)> Button, std::function<void(T*)> RightClick,
 		std::function<void()> DoubleClick);
 
 	static void ResourceViewerDrawButtons(const char* Name, const void* Dst, std::string& Find, std::function<void()> Close, bool& Opened);
@@ -98,9 +98,9 @@ namespace Columbus
 	}
 
 	template <typename T>
-	void ResourceViewerDrawList(const char* Name, T*& Tmp,
+	void ResourceViewerDrawList(const char* Name, T*& Tmp, T*& PopupObject,
 		ResourceManager<T>& Manager, const std::string& Find,
-		std::function<bool(const char*, T*)> Button, std::function<void()> RightClick,
+		std::function<bool(const char*, T*)> Button, std::function<void(T*)> RightClick,
 		std::function<void()> DoubleClick)
 	{
 		std::string PopupStr;
@@ -116,15 +116,23 @@ namespace Columbus
 
 			std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
 
-			for (const auto& Elem : Manager.ResourcesMap)
+			bool PopupSet = false;
+
+			for (const auto& Elem : Manager.Resources)
 			{
 				MName = Elem.first;
 				std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
 				
 				if (MName.find(MFind) != std::string::npos)
 				{
-					T* Object = Manager.Resources[Elem.second].Get();
+					T* Object = Elem.second.Get();
 					ResourceViewerDrawSelectable<T>(Elem.first.c_str(), Object, Tmp, Width, PopupStr, Button, DoubleClick);
+
+					if (!PopupStr.empty() && !PopupSet)
+					{
+						PopupObject = Object;
+						PopupSet = true;
+					}
 				}
 			}
 		}
@@ -139,7 +147,7 @@ namespace Columbus
 		{
 			if (ImGui::BeginPopup("##ResourceViewer_Popup"))
 			{
-				RightClick();
+				RightClick(PopupObject);
 				ImGui::EndPopup();
 			}
 		}

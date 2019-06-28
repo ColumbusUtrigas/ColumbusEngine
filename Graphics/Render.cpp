@@ -542,9 +542,9 @@ namespace Columbus
 		//
 		// Render to the MSAA buffer or not
 		if (IsMSAA)
-			BaseMSAA.Bind({ 1, 1, 1, 1 }, {0}, ContextSize);
+			BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 		else
-			Base.Bind({ 1, 1, 1, 1 }, { 0 }, ContextSize);
+			Base.Bind({ 1, 1, 1, 0 }, { 0 }, ContextSize);
 
 		RenderOpaque();
 		RenderSky();
@@ -555,7 +555,7 @@ namespace Columbus
 
 		if (IsMSAA)
 		{
-			Base.Bind({ 1, 1, 1, 1 }, {0}, ContextSize);
+			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
 			MSAAShader->Bind();
 			MSAAShader->SetUniform(MSAABaseTexture, (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
@@ -610,6 +610,7 @@ namespace Columbus
 
 			if (VignetteEnable)
 			{
+				State.SetBlending(true);
 				VignetteShader->Bind();
 				VignetteShader->SetUniform(VignetteColorID, VignetteColor);
 				VignetteShader->SetUniform(VignetteCenterID, VignetteCenter);

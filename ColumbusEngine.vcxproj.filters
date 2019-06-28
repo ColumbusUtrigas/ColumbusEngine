@@ -732,6 +732,9 @@
     <ClInclude Include="Common\Image\EXR\ImageEXR.h">
       <Filter>Файлы заголовков\Common\Image\EXR</Filter>
     </ClInclude>
+    <ClInclude Include="Scene\GameObjectsHolder.h">
+      <Filter>Файлы заголовков\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioMixer.cpp">
