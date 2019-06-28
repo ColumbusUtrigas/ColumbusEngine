@@ -111,7 +111,7 @@ namespace Columbus
 		uint32 TransparentObjectsRendered = 0;
 	public:
 		iVector2 ContextSize;
-		bool EditMode = false;
+		bool DrawIcons = false;
 
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;

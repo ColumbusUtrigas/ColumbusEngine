@@ -420,6 +420,8 @@ namespace Columbus
 
 		auto DrawIcon = [&](Vector4 Coords)
 		{
+			float InvDistance = 1.0f / Coords.XYZ().Length(MainCamera.Pos) * 0.5f;
+			InvDistance = Math::Clamp(InvDistance, 0.05f, 0.5f);
 			Coords = MainCamera.GetViewProjection() * Coords;
 
 			if (Coords.W > 0.0f)
@@ -427,9 +429,10 @@ namespace Columbus
 				Coords /= Coords.W;
 
 				float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
+				Vector2 Size = InvDistance / Vector2(Aspect, 1);
 
 				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconPosID, Coords.XY());
-				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconSizeID, 0.1f / Vector2(Aspect, 1));
+				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconSizeID, Size);
 				Quad.Render();
 			}
 		};
@@ -600,7 +603,7 @@ namespace Columbus
 				Quad.Render();
 			}
 
-			if (EditMode)
+			if (DrawIcons)
 			{
 				RenderIcons();
 			}

@@ -8,16 +8,16 @@
 namespace Columbus
 {
 
-	void EditorPanelScene::Draw()
+	void EditorPanelScene::Draw(Renderer& Render)
 	{
 		if (Opened)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-			if (ImGui::Begin((ICON_FA_GLOBE" " + Name).c_str(), &Opened, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin(ICON_FA_GLOBE" Scene", &Opened, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
 			{
 				if (ImGui::BeginMenuBar())
 				{
-					ImGui::Checkbox("Stats", &Stats);
+					ImGui::Checkbox("Icons##PanelScene", &Render.DrawIcons);
 					ImGui::EndMenuBar();
 				}
 

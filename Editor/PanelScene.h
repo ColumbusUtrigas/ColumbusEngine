@@ -2,6 +2,7 @@
 
 #include <Editor/Panel.h>
 #include <Graphics/Texture.h>
+#include <Graphics/Render.h>
 #include <Math/Vector2.h>
 
 namespace Columbus
@@ -17,7 +18,7 @@ namespace Columbus
 		bool Selected = false;
 		bool Hover = false;
 	public:
-		EditorPanelScene() : EditorPanel("Scene") {}
+		EditorPanelScene() {}
 
 		void SetFramebufferTexture(Texture* Tex)
 		{
@@ -37,7 +38,7 @@ namespace Columbus
 		bool IsSelected() const { return Selected; }
 		bool IsHover() const { return Hover; }
 
-		virtual void Draw() final override;
+		void Draw(Renderer& Render);
 
 		virtual ~EditorPanelScene() final override {}
 	};
