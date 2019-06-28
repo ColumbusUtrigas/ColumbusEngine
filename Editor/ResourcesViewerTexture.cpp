@@ -48,6 +48,10 @@ namespace Columbus
 					bool Result = ImGui::ImageButton(Tex == nullptr ? 0 : TEXID(Tex), ImVec2(100, 100));
 					return Result;
 				};
+				auto RightClick = [&]()
+				{
+					
+				};
 				auto DoubleClick = [&]() { Close(); };
 
 				#undef TEXID
@@ -58,7 +62,7 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateTexture(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_TexturesViewer", LoadMore);
-				ResourceViewerDrawList<Texture>("TexturesList_ShadersViewer", Tmp, Scn->TexturesManager, Find, Button, DoubleClick);
+				ResourceViewerDrawList<Texture>("TexturesList_ShadersViewer", Tmp, Scn->TexturesManager, Find, Button, RightClick, DoubleClick);
 				ResourceViewerDrawButtons("Buttons_TexturesViewer", Destination, Find, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<Texture>("Load Texture", TextureLoader,
 					Scn->TexturesManager, BruteLoader,

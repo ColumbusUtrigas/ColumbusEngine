@@ -41,22 +41,19 @@ namespace Columbus
 			return false;
 		}
 
-		bool Delete(const std::string& Index)
+		bool Delete(const std::string& Name)
 		{
-			auto It = ResourcesMap.find(Index);
+			auto It = ResourcesMap.find(Name);
 			if (It != ResourcesMap.end())
 			{
 				size_t Index = It->second;
-				std::string DeleteName = Resources[Index]->Name;
+				auto Ptr = Resources[Index].Get();
 
-				//ResourcesMap[Resources[Index]->Name] = 0;
-				//Resources[Index] = SmartPointer<T>();
-
-				auto Pred = [&](const SmartPointer<GameObject>& A){ return A->Name == DeleteName; };
+				auto Pred = [&](const SmartPointer<T>& A){ return A.Get() == Ptr; };
 				auto Removed = std::remove_if(Resources.begin(), Resources.end(), Pred);
 
 				Resources.erase(Removed, Resources.end());
-				ResourcesMap.erase(DeleteName);
+				ResourcesMap.erase(Name);
 
 				for (auto& Elem : ResourcesMap)
 				{
