@@ -199,8 +199,6 @@ namespace Columbus
 	{
 		DrawDockSpace(scene);
 
-		Render.EditMode = true;
-
 		PanelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
 		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
@@ -208,7 +206,7 @@ namespace Columbus
 		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
-		PanelScene.Draw();
+		PanelScene.Draw(Render);
 		PanelInspector.Draw(scene); // Inspector should be before hierarchy
 		PanelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		PanelRenderSettings.Draw();
