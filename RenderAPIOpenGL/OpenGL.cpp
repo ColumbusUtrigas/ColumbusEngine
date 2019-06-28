@@ -66,7 +66,7 @@ namespace Columbus
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glEnable(GL_PROGRAM_POINT_SIZE);
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS_ARB);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
 }

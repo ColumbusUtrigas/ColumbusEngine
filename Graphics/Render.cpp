@@ -550,8 +550,6 @@ namespace Columbus
 		//
 		// RENDERING
 
-		//State.Clear();
-
 		if (IsMSAA)
 		{
 			Base.Bind({ 1, 1, 1, 1 }, {0}, ContextSize);
@@ -561,21 +559,6 @@ namespace Columbus
 			MSAAShader->SetUniform(MSAASamples, (int)BaseMSAA.Multisampling);
 			Quad.Render();
 			MSAAShader->Unbind();
-
-			/*glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
-
-			glReadBuffer(GL_COLOR_ATTACHMENT0);
-			glDrawBuffer(GL_COLOR_ATTACHMENT0);
-			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-			glReadBuffer(GL_COLOR_ATTACHMENT1);
-			glDrawBuffer(GL_COLOR_ATTACHMENT1);
-			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);*/
-
-			Base.Unbind();
 		}
 
 		Texture* FinalTex = Base.ColorTextures[0];
