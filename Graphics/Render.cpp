@@ -485,6 +485,7 @@ namespace Columbus
 	{
 		auto ScreenSpaceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ScreenSpace;
 		auto TonemapShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Tonemap;
+		auto MSAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ResolveMSAA;
 		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
 		auto VignetteShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Vignette;
 
@@ -494,6 +495,9 @@ namespace Columbus
 		static int TonemapGamma = TonemapShader->GetFastUniform("Gamma");
 		static int TonemapExposure = TonemapShader->GetFastUniform("Exposure");
 		static int TonemapType = TonemapShader->GetFastUniform("Type");
+
+		static int MSAABaseTexture = MSAAShader->GetFastUniform("BaseTexture");
+		static int MSAASamples = MSAAShader->GetFastUniform("Samples");
 
 		static int FXAABaseTexture = FXAAShader->GetFastUniform("BaseTexture");
 		static int FXAAResolution  = FXAAShader->GetFastUniform("Resolution");
@@ -535,9 +539,9 @@ namespace Columbus
 		//
 		// Render to the MSAA buffer or not
 		if (IsMSAA)
-			BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+			BaseMSAA.Bind({ 1, 1, 1, 1 }, {0}, ContextSize);
 		else
-			Base.Bind({ 1, 1, 1, 0 }, { 0 }, ContextSize);
+			Base.Bind({ 1, 1, 1, 1 }, { 0 }, ContextSize);
 
 		RenderOpaque();
 		RenderSky();
@@ -546,13 +550,19 @@ namespace Columbus
 		//
 		// RENDERING
 
-		State.Clear();
+		//State.Clear();
 
 		if (IsMSAA)
 		{
-			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+			Base.Bind({ 1, 1, 1, 1 }, {0}, ContextSize);
 
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
+			MSAAShader->Bind();
+			MSAAShader->SetUniform(MSAABaseTexture, (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
+			MSAAShader->SetUniform(MSAASamples, (int)BaseMSAA.Multisampling);
+			Quad.Render();
+			MSAAShader->Unbind();
+
+			/*glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
 
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -563,7 +573,7 @@ namespace Columbus
 			glDrawBuffer(GL_COLOR_ATTACHMENT1);
 			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);*/
 
 			Base.Unbind();
 		}

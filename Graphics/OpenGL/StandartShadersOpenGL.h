@@ -110,6 +110,30 @@ namespace Columbus
 	}
 	)";
 
+	const char* gResolveMSAAFragmentShader =
+	R"(
+	#version 140
+
+	out vec4 FragColor;
+
+	uniform sampler2DMS BaseTexture;
+	uniform int Samples;
+
+	in vec2 Texcoord;
+
+	void main(void)
+	{
+		vec3 Color = vec3(0);
+
+		for (int i = 0; i < Samples; i++)
+		{
+			Color += texelFetch(BaseTexture, ivec2(gl_FragCoord.xy), i).rgb;
+		}
+
+		FragColor = vec4(Color / Samples, 1.0);
+	}
+	)";
+
 	const char* gGaussBlurFragmentShader = 
 	R"(
 	#version 130

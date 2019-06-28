@@ -14,6 +14,7 @@ namespace Columbus
 		{
 			ScreenSpace,
 			Tonemap,
+			ResolveMSAA,
 			GaussBlur,
 			BloomBright,
 			Bloom,
@@ -44,6 +45,7 @@ namespace Columbus
 	{
 		ShaderProgram* ScreenSpace = nullptr;
 		ShaderProgram* Tonemap = nullptr;
+		ShaderProgram* ResolveMSAA = nullptr;
 		ShaderProgram* GaussBlur = nullptr;
 		ShaderProgram* BloomBright = nullptr;
 		ShaderProgram* Bloom = nullptr;
