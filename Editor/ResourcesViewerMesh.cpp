@@ -22,6 +22,7 @@ namespace Columbus
 		MeshLoader.MultipleSelect(true);
 
 		static std::string Find;
+		static Mesh* PopupObject = nullptr;
 
 		if (Scn != nullptr && Opened)
 		{
@@ -34,7 +35,7 @@ namespace Columbus
 
 				auto LoadMore = [&]() { MeshLoader.Open(); };
 				auto Button = [&](const char* Name, void* _) { return ImGui::Button(Name, ImVec2(100, 100)); };
-				auto RightClick = [&]() {};
+				auto RightClick = [&](Mesh* PopupObject) {};
 				auto DoubleClick = [&]() { Close(); };
 
 				auto Load = [&](const char* Path, Mesh* S) { return S->Load(Path); };
@@ -43,7 +44,7 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateMesh(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_MeshesViewer", LoadMore);
-				ResourceViewerDrawList<Mesh>("MeshesList_MeshesViewer", Tmp, Scn->MeshesManager, Find, Button, RightClick, DoubleClick);
+				ResourceViewerDrawList<Mesh>("MeshesList_MeshesViewer", Tmp, PopupObject, Scn->MeshesManager, Find, Button, RightClick, DoubleClick);
 				ResourceViewerDrawButtons("Buttons_MeshesViewer", Destination, Find, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<Mesh>("Load Mesh", MeshLoader,
 					Scn->MeshesManager, MeshBruteLoader,

@@ -304,6 +304,7 @@
     <ClInclude Include="Scene\ComponentParticleSystem.h" />
     <ClInclude Include="Scene\ComponentRigidbody.h" />
     <ClInclude Include="Scene\GameObject.h" />
+    <ClInclude Include="Scene\GameObjectsHolder.h" />
     <ClInclude Include="Scene\Scene.h" />
     <ClInclude Include="Scene\Transform.h" />
     <ClInclude Include="System\Assert.h" />
