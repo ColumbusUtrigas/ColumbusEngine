@@ -13,11 +13,6 @@ namespace Columbus
 	{
 	public:
 		static constexpr int TexturesCount = 4;
-		/*static constexpr Framebuffer::Attachment Attachments[TexturesCount] =
-		{ Framebuffer::Attachment::Color0,
-		  Framebuffer::Attachment::Color1,
-		  Framebuffer::Attachment::Color2,
-		  Framebuffer::Attachment::Color3 };*/
 
 		Framebuffer* FB = nullptr;
 		Texture* DepthTexture = nullptr;
@@ -33,6 +28,12 @@ namespace Columbus
 		Texture::Flags ColorTextureFlags[TexturesCount];
 
 		uint32 Multisampling = 0;
+	private:
+		Texture* PrevColorTextures[TexturesCount];
+		Texture* PrevDepthTexture = nullptr;
+		bool ColorTexturesAttached[TexturesCount];
+		bool DepthTextureAttached = false;
+		Texture::Flags PrevColorTextureFlags[TexturesCount];
 	public:
 		PostEffect()
 		{
@@ -49,6 +50,9 @@ namespace Columbus
 				ColorTexturesMipmaps[i] = false;
 				ColorTexturesFormats[i] = TextureFormat::RGBA8;
 				ColorTextureFlags[i] = Flags;
+
+				PrevColorTextures[i] = nullptr;
+				ColorTexturesAttached[i] = false;
 			}
 		}
 
@@ -84,8 +88,19 @@ namespace Columbus
 					}
 
 					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
-					ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
-					FB->SetTexture2D(Attachments[i], ColorTextures[i]);
+
+					if (!ColorTexturesAttached[i] || ColorTextureFlags[i] != PrevColorTextureFlags[i] || PrevColorTextures[i] != ColorTextures[i])
+					{
+						ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
+					}
+
+					if (!ColorTexturesAttached[i] || PrevColorTextures[i] != ColorTextures[i])
+					{
+						FB->SetTexture2D(Attachments[i], ColorTextures[i]);
+						ColorTexturesAttached[i] = true;
+					}
+
+					PrevColorTextureFlags[i] = ColorTextureFlags[i];
 				}
 			}
 
@@ -98,7 +113,14 @@ namespace Columbus
 
 				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
 				DepthTexture->SetFlags(DepthTextureFlags);
-				FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+
+				if (!DepthTextureAttached || PrevDepthTexture != DepthTexture)
+				{
+					FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+					DepthTextureAttached = true;
+				}
+
+				PrevDepthTexture = DepthTexture;
 			}
 
 			FB->Prepare(Color, Origin, Size);
@@ -149,6 +171,5 @@ namespace Columbus
 	};
 
 }
-
 
 

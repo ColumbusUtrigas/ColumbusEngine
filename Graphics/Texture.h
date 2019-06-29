@@ -68,6 +68,18 @@ namespace Columbus
 				Filtering(Filt),
 				AnisotropyFilter(Anis),
 				Wrapping(Wr) {}
+
+			bool operator==(const Flags& Other) const
+			{
+				return Filtering == Other.Filtering &&
+				       AnisotropyFilter == Other.AnisotropyFilter &&
+				       Wrapping == Other.Wrapping;
+			}
+
+			bool operator!=(const Flags& Other) const
+			{
+				return !(*this == Other);
+			}
 		};
 
 		struct Properties

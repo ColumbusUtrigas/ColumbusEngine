@@ -36,9 +36,14 @@ namespace Columbus
 
 	void RenderState::Clear()
 	{
-		SetCulling(Material::Cull::No);
-		SetDepthTesting(Material::DepthTest::LEqual);
-		SetDepthWriting(false);
+		//SetCulling(Material::Cull::No);
+		//SetBlending(true);
+		//SetDepthTesting(Material::DepthTest::LEqual);
+		//SetDepthWriting(false);
+		glDisable(GL_CULL_FACE);
+		glEnable(GL_BLEND);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_FALSE);
 
 		PreviousMaterial = Material();
 		CurrentMaterial  = Material();
@@ -48,6 +53,11 @@ namespace Columbus
 
 		PreviousMesh = nullptr;
 		CurrentMesh  = nullptr;
+
+		PreviousCulling = Material::Cull::No;
+		PreviousBlending = true;
+		PreviousDepthTesting = Material::DepthTest::LEqual;
+		PreviousDepthWriting = false;
 	}
 
 	void RenderState::SetCulling(Material::Cull Culling)

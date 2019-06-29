@@ -92,6 +92,11 @@ namespace Columbus
 		return HDR;
 	}
 
+	float luma(vec3 color)
+	{
+		return dot(color, vec3(0.2125, 0.7154, 0.0721));
+	}
+
 	void main(void)
 	{
 		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * Exposure, 0, 1000);

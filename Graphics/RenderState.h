@@ -22,6 +22,11 @@ namespace Columbus
 
 		Mesh* PreviousMesh;
 		Mesh*  CurrentMesh;
+
+		Material::Cull PreviousCulling;
+		bool PreviousBlending;
+		Material::DepthTest PreviousDepthTesting;
+		bool PreviousDepthWriting;
 	public:
 		RenderState() { Clear(); }
 

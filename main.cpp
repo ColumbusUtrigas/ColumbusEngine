@@ -89,6 +89,7 @@ int main(int argc, char** argv)
 		ResetProfiling();
 		PROFILE_CPU(ProfileModule::CPU);
 		float RedrawTime = window.GetRedrawTime();
+		MainRender.SetDeltaTime(RedrawTime);
 
 		window.Clear({ 0.06f, 0.06f, 0.06f, 1 });
 

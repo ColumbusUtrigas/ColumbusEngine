@@ -52,6 +52,25 @@ namespace Columbus
 						ImGui::Spacing();
 					}
 
+					if (ImGui::CollapsingHeader("Eye adaptation"))
+					{
+						ImGui::Indent(10.0f);
+						ImGui::Checkbox("Enable##PanelRenderSettings_EyeAdaptation",      &Render->EyeAdaptationEnable);
+						ImGui::SliderFloat("Min##PanelRenderSettings_EyeAdaptation",      &Render->EyeAdaptationMin, 0.000f, 5.0f);
+						ImGui::SliderFloat("Max##PanelRenderSettings_EyeAdaptation",      &Render->EyeAdaptationMax, 0.000f, 5.0f);
+						ImGui::DragFloat("Speed Up##PanelRenderSettings_EyeAdaptation",   &Render->EyeAdaptationSpeedUp,   0.1f, 0.001f, FLT_MAX);
+						ImGui::DragFloat("Speed Down##PanelRenderSettings_EyeAdaptation", &Render->EyeAdaptationSpeedDown, 0.1f, 0.001f, FLT_MAX);
+						ImGui::Unindent(10.0f);
+
+						Render->VignetteColor.Clamp({0.0f}, {1.0f});
+						Render->VignetteIntensity  = Math::Clamp(Render->VignetteIntensity,  {0.0f}, {1.0f});
+						Render->VignetteSmoothness = Math::Clamp(Render->VignetteSmoothness, {0.0f}, {1.0f});
+						Render->VignetteRadius     = Math::Clamp(Render->VignetteRadius,     {0.0f}, {1.0f});
+
+						ImGui::Separator();
+						ImGui::Spacing();
+					}
+
 
 					const char* Tonemaps[] = { "Simple", "Filmic", "ACES", "RomBinDaHouse", "Uncharted" };
 					const char* AA[] = { "No", "FXAA", "MSAA 2x", "MSAA 4x", "MSAA 8x", "MSAA 16x", "MSAA 32x" };
