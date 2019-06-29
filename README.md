@@ -13,7 +13,7 @@
 * Scene manager
 * Advanced Particle Effect System
 * Advanced Math Lib (Vector, Matrices, Quaternions)
-* Postprocessing (Bloom, Vignette, Different Tonemapping techinques)
+* Postprocessing (Bloom, Vignette, Eye adaptation, Different Tonemapping techinques)
 * Antialiasing (FXAA, MSAA)
 * Integrated CPU and GPU profiler
 * Editor based on ImGui
