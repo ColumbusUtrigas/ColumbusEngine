@@ -583,7 +583,7 @@ namespace Columbus
 		MipmapLevel = Level;
 
 		glBindTexture(Target, ID);
-		glTexParameteri(Target, GL_TEXTURE_MIN_LOD, Level);
+		glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, Level);
 	}
 
 

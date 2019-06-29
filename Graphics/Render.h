@@ -101,6 +101,7 @@ namespace Columbus
 
 		PostEffect Base, BaseMSAA;
 		PostEffect Post1, Post2;
+		PostEffect Eyes[2]; int CurrentEye = 0;
 		PostEffect Final;
 
 		ScreenQuad Quad;
@@ -109,6 +110,8 @@ namespace Columbus
 		uint32 PolygonsRendered = 0;
 		uint32 OpaqueObjectsRendered = 0;
 		uint32 TransparentObjectsRendered = 0;
+
+		float DeltaTime = 0.0f;
 	public:
 		iVector2 ContextSize;
 		bool DrawIcons = false;
@@ -132,6 +135,12 @@ namespace Columbus
 		float VignetteIntensity = 1.0f;
 		float VignetteSmoothness = 0.2f;
 		float VignetteRadius = 0.6f;
+
+		bool EyeAdaptationEnable = false;
+		float EyeAdaptationMin = 0.1f;
+		float EyeAdaptationMax = 1.0f;
+		float EyeAdaptationSpeedUp = 2.0f;
+		float EyeAdaptationSpeedDown = 1.0f;
 	private:
 		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
 
@@ -144,6 +153,7 @@ namespace Columbus
 		void SetMainCamera(const Camera& InCamera);
 		void SetSky(Skybox* InSky);
 		void SetScene(Scene* InScn);
+		void SetDeltaTime(float Delta);
 
 		uint32 GetPolygonsRendered() const;
 		uint32 GetOpaqueObjectsRendered() const;

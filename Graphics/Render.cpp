@@ -46,6 +46,16 @@ namespace Columbus
 		Post2.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
 
 		Final.ColorTexturesEnablement[0] = true;
+
+		Eyes[0].ColorTexturesEnablement[0] = true;
+		Eyes[0].ColorTexturesFormats[0] = TextureFormat::RGBA32F;
+
+		Eyes[1].ColorTexturesEnablement[0] = true;
+		Eyes[1].ColorTexturesFormats[0] = TextureFormat::RGBA32F;
+
+		Eyes[0].Bind({0}, {0}, {1});
+		Eyes[1].Bind({0}, {0}, {1});
+		Eyes[0].Unbind();
 	}
 
 	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
@@ -68,6 +78,11 @@ namespace Columbus
 	void Renderer::SetScene(Scene* InScn)
 	{
 		Scn = InScn;
+	}
+
+	void Renderer::SetDeltaTime(float Delta)
+	{
+		DeltaTime = Delta;
 	}
 
 	uint32 Renderer::GetPolygonsRendered() const
@@ -564,6 +579,27 @@ namespace Columbus
 			MSAAShader->Unbind();
 		}
 
+		Base.ColorTexturesMipmaps[0] = true;
+		Base.Mipmaps();
+
+		State.SetDepthWriting(false);
+		State.SetCulling(Material::Cull::No);
+
+		if (EyeAdaptationEnable)
+		{
+			Eyes[CurrentEye].Bind({0}, {0}, {1});
+
+			int Count = floor(log2(Math::Max(ContextSize.X, ContextSize.Y)));
+
+			Base.ColorTextures[0]->SetMipmapLevel(Count);
+			ScreenSpaceShader->Bind();
+			ScreenSpaceShader->SetUniform(ScreenSpaceTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
+			Quad.Render();
+			Base.ColorTextures[0]->SetMipmapLevel(0);
+
+			CurrentEye = CurrentEye == 0 ? 1 : 0;
+		}
+
 		Texture* FinalTex = Base.ColorTextures[0];
 
 		if (BloomEnable)
@@ -578,10 +614,34 @@ namespace Columbus
 
 			Final.Bind({}, {}, ContextSize);
 
+			static float E = 1.0f;
+
+			if (EyeAdaptationEnable)
+			{
+				int PrevEye = CurrentEye == 0 ? 1 : 0;
+
+				Vector4 Curr;
+				float CurrLuma;
+
+				((TextureOpenGL*)Eyes[PrevEye].ColorTextures[0])->Bind();
+				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, (void*)&Curr);
+
+				CurrLuma = Vector3::Dot(Curr.XYZ(), Vector3(0.2125, 0.7154, 0.0721));
+				float Adapted = 0.5f / Math::Clamp(CurrLuma, EyeAdaptationMin, EyeAdaptationMax);
+
+				if (Adapted >= E)
+					E += (Adapted - E) * DeltaTime * EyeAdaptationSpeedUp;
+				else
+					E += (Adapted - E) * DeltaTime * EyeAdaptationSpeedDown;
+			} else
+			{
+				E = 1.0f;
+			}
+
 			TonemapShader->Bind();
 			TonemapShader->SetUniform(TonemapType, (int)Tonemapping);
 			TonemapShader->SetUniform(TonemapBaseTexture, (TextureOpenGL*)FinalTex, 0);
-			TonemapShader->SetUniform(TonemapExposure, Exposure);
+			TonemapShader->SetUniform(TonemapExposure, Exposure * E);
 			TonemapShader->SetUniform(TonemapGamma, Gamma);
 			Quad.Render();
 			TonemapShader->Unbind();
