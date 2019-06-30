@@ -34,12 +34,12 @@ namespace Columbus
 		ResourceManager<Texture> TexturesManager;
 		ResourceManager<ShaderProgram> ShadersManager;
 		ResourceManager<Mesh> MeshesManager;
+		ResourceManager<Sound> SoundsManager;
 
-		std::map<uint32, SmartPointer<Texture>> Textures;
-		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
-
-		std::map<uint32, SmartPointer<Mesh>> Meshes;
-		std::map<uint32, SmartPointer<Sound>> Sounds;
+		//std::map<uint32, SmartPointer<Texture>> Textures;
+		//std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
+		//std::map<uint32, SmartPointer<Mesh>> Meshes;
+		//std::map<uint32, SmartPointer<Sound>> Sounds;
 
 		Vector<AudioSource*> AudioSources;
 		std::vector<Light*> Lights;
@@ -53,9 +53,7 @@ namespace Columbus
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
 
-		///
-		/// TODO: SmartPointers
-		///
+		std::string SkyPath;
 		Skybox* Sky = nullptr;
 		Camera* MainCamera = nullptr;
 		AudioListener* Listener = nullptr;
