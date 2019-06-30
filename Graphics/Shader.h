@@ -3,6 +3,12 @@
 namespace Columbus
 {
 
+	enum class ShaderType
+	{
+		Vertex,
+		Fragment
+	};
+
 	class ShaderProgram
 	{
 	protected:

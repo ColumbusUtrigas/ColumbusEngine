@@ -474,7 +474,8 @@ namespace Columbus
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
 			if (Tex->Load(J["Textures"][i].GetString().c_str()))
 			{
-				Textures[i] = std::move(Tex);
+				//Textures[i] = std::move(Tex);
+				TexturesManager.Add(std::move(Tex), J["Textures"][i].GetString());
 				Log::Success("Texture loaded: %s", J["Textures"][i].GetString().c_str());
 			}
 		}
@@ -485,7 +486,8 @@ namespace Columbus
 			SmartPointer<ShaderProgram> Shader(gDevice->CreateShaderProgram());
 			if (Shader->Load(J["Shaders"][i].GetString().c_str()))
 			{
-				ShaderPrograms[i] = std::move(Shader);
+				//ShaderPrograms[i] = std::move(Shader);
+				ShadersManager.Add(std::move(Shader), J["Shaders"][i].GetString());
 			}
 		}
 
@@ -495,7 +497,8 @@ namespace Columbus
 			SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
 			if (tMesh->Load(J["Meshes"][i].GetString().c_str()))
 			{
-				Meshes[i] = std::move(tMesh);
+				//Meshes[i] = std::move(tMesh);
+				MeshesManager.Add(std::move(tMesh), J["Meshes"][i].GetString());
 				Log::Success("Mesh loaded: %s", J["Meshes"][i].GetString().c_str());
 			}
 		}
@@ -610,13 +613,36 @@ namespace Columbus
 		}
 		return true;*/
 	}
-	
-	/*GameObject* Scene::GetGameObject(const std::string& Name) const
-	{
 
-		//auto It = ObjectMap.find(Name);
-		//return It != ObjectMap.end() ? Objects[It->second].Get() : nullptr;
-	}*/
+	bool Scene::Save(const char* FileName)
+	{
+		JSON J;
+
+		uint32 Counter = 0;
+
+		for (const auto& Elem : TexturesManager.Resources)
+		{		
+			J["Textures"][Counter++] = Elem.first;
+		}
+
+		Counter = 0;
+
+		for (const auto& Elem : ShadersManager.Resources)
+		{
+			J["Shaders"][Counter++] = Elem.first;
+		}
+
+		Counter = 0;
+
+		for (const auto& Elem : MeshesManager.Resources)
+		{
+			J["Meshes"][Counter++] = Elem.first;
+		}
+
+		if (!J.Save(FileName)) { Log::Error("Can't save scene: %s", FileName); return false; }
+
+		return true;
+	}
 	
 	// This function is fucking slow, I am stupid
 	void Scene::Update()

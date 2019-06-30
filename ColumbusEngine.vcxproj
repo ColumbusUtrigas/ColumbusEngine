@@ -253,15 +253,9 @@
     <ClInclude Include="Graphics\RenderState.h" />
     <ClInclude Include="Graphics\ScreenQuad.h" />
     <ClInclude Include="Graphics\Shader.h" />
-    <ClInclude Include="Graphics\ShaderBuilder.h" />
     <ClInclude Include="Graphics\Skybox.h" />
     <ClInclude Include="Graphics\Texture.h" />
-    <ClInclude Include="Graphics\UIRender.h" />
     <ClInclude Include="Graphics\Window.h" />
-    <ClInclude Include="GUI\Button.h" />
-    <ClInclude Include="GUI\GUI.h" />
-    <ClInclude Include="GUI\VirtualInput.h" />
-    <ClInclude Include="GUI\Widget.h" />
     <ClInclude Include="Input\Events.h" />
     <ClInclude Include="Input\EventSystem.h" />
     <ClInclude Include="Input\Input.h" />
@@ -295,7 +289,6 @@
     <ClInclude Include="Physics\Rigidbody.h" />
     <ClInclude Include="Profiling\Profiling.h" />
     <ClInclude Include="RenderAPIOpenGL\OpenGL.h" />
-    <ClInclude Include="RenderAPI\RenderAPI.h" />
     <ClInclude Include="Resources\ResourceManager.h" />
     <ClInclude Include="Scene\Component.h" />
     <ClInclude Include="Scene\ComponentAudioSource.h" />
@@ -377,10 +370,8 @@
     <ClCompile Include="Graphics\Render.cpp" />
     <ClCompile Include="Graphics\RenderState.cpp" />
     <ClCompile Include="Graphics\Shader.cpp" />
-    <ClCompile Include="Graphics\ShaderBuilder.cpp" />
     <ClCompile Include="Graphics\Skybox.cpp" />
     <ClCompile Include="Graphics\Texture.cpp" />
-    <ClCompile Include="GUI\Button.cpp" />
     <ClCompile Include="Input\EventSystem.cpp" />
     <ClCompile Include="Input\Input.cpp" />
     <ClCompile Include="Lib\imgui\examples\imgui_impl_opengl3.cpp" />

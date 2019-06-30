@@ -1,6 +1,5 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
-#include <Graphics/ShaderBuilder.h>
 #include <GL/glew.h>
 
 #include <System/File.h>
@@ -11,6 +10,48 @@
 
 namespace Columbus
 {
+
+const char* CommonShaderHeader =
+R"(
+#version 330 core
+#define Texture2D sampler2D
+#define Texture3D sampler3D
+#define TextureCube samplerCube
+#if __VERSION__ < 130
+	#define Sample2D(tex, uv) texture2D(tex, uv)
+	#define Sample3D(tex, uv) texture3D(tex, uv)
+	#define SampleCube(tex, uv) textureCube(tex, uv)
+
+	#define Sample2DLod(tex, uv, lod) texture2DLod(tex, uv, lod)
+	#define Sample3DLod(tex, uv, lod) texture3DLod(tex, uv, lod)
+	#define SampleCubeLod(tex, uv, lod) textureCubeLod(tex, uv, lod)
+#else
+	#define Sample2D(tex, uv) texture(tex, uv)
+	#define Sample3D(tex, uv) texture(tex, uv)
+	#define SampleCube(tex, uv) texture(tex, uv)
+
+	#define Sample2DLod(tex, uv, lod) textureLod(tex, uv, lod)
+	#define Sample3DLod(tex, uv, lod) textureLod(tex, uv, lod)
+	#define SampleCubeLod(tex, uv, lod) textureLod(tex, uv, lod)
+#endif
+)";
+
+const char* VertexShaderHeader =
+R"(
+#define Position gl_Position
+#define VertexShader
+
+)";
+
+const char* FragmentShaderHeader =
+R"(
+#define FragmentShader
+layout(location = 0) out vec4 RT0;
+layout(location = 1) out vec4 RT1;
+layout(location = 2) out vec4 RT2;
+layout(location = 3) out vec4 RT3;
+
+)";
 
 	static const char* GetStringFromShaderType(ShaderType Type)
 	{
@@ -144,13 +185,8 @@ namespace Columbus
 			}
 		}
 
-		ShaderBuilder Builder;
-
-		Builder.Build(streams[0].str().c_str(), ShaderType::Vertex);
-		Data.VertexSource   = Builder.ShaderSource;
-
-		Builder.Build(streams[1].str().c_str(), ShaderType::Fragment);
-		Data.FragmentSource = Builder.ShaderSource;
+		Data.VertexSource = CommonShaderHeader + std::string(VertexShaderHeader) + streams[0].str();
+		Data.FragmentSource = CommonShaderHeader + std::string(FragmentShaderHeader) + streams[1].str();
 
 		return Data;
 	}

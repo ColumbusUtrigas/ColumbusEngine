@@ -65,6 +65,7 @@ namespace Columbus
 		Scene();
 
 		bool Load(const char* FileName);
+		bool Save(const char* FileName);
 
 		void Add(GameObject&& InObject)
 		{
