@@ -4,6 +4,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Core/Types.h>
+#include <System/File.h>
 #include <vector>
 #include <string>
 //#include <unordered_map>
@@ -32,7 +33,7 @@ namespace Columbus
 		double FloatValue = 0;
 		std::vector<JSON> ArrayValue;
 		std::map<std::string, JSON> ObjectValue;
-		Type ValueType;
+		Type ValueType = Type::Object;
 
 		bool _ParseString(char*& Text, bool& Error);
 		bool _ParseBool(char*& Text);
@@ -41,9 +42,21 @@ namespace Columbus
 		bool _ParseArray(char*& Text, bool& Error);
 		bool _ParseObject(char*& Text, bool& Error);
 		bool _Parse(char*& Text);
+		void _WriteString(File& F) const;
+		void _WriteBool(File& F) const;
+		void _WriteNull(File& F) const;
+		void _WriteInt(File& F) const;
+		void _WriteFloat(File& F) const;
+		void _WriteArray(File& F, uint32 Tabs) const;
+		void _WriteObject(File& F, uint32 Tabs) const;
+		void _Write(File& F, uint32 Tabs = 0) const;
 	public:
+		JSON() {}
+		JSON(const std::string& String) : StringValue(String), ValueType(Type::String) {}
+
 		bool Parse(const char* Text);
 		bool Load(const char* FileName);
+		bool Save(const char* FileName);
 
 		const std::string& GetString() const { return StringValue; }
 		bool GetBool() const { return BoolValue; }

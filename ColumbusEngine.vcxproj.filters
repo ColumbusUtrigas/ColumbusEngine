@@ -31,9 +31,6 @@
     <Filter Include="Файлы заголовков\Graphics">
       <UniqueIdentifier>{197601aa-b086-4df4-9aac-ba14d200f240}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\GUI">
-      <UniqueIdentifier>{01acaa1e-e574-47a0-9404-6707792d67de}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы заголовков\Input">
       <UniqueIdentifier>{1aa8d723-3b14-41db-be5a-e8dd3c40f0dc}</UniqueIdentifier>
     </Filter>
@@ -48,9 +45,6 @@
     </Filter>
     <Filter Include="Файлы заголовков\RenderAPIOpenGL">
       <UniqueIdentifier>{98a911d0-e9d7-4412-8d8f-cece0803e2c1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы заголовков\RenderAPI">
-      <UniqueIdentifier>{51a2efae-36ca-40c2-b94d-5e388945591f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Файлы заголовков\Physics">
       <UniqueIdentifier>{b0ab2dba-f065-4cf2-9446-790359a20c6a}</UniqueIdentifier>
@@ -144,9 +138,6 @@
     </Filter>
     <Filter Include="Исходные файлы\Graphics">
       <UniqueIdentifier>{70a73fb6-1ce4-4ce5-83c2-b713888d489a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Исходные файлы\GUI">
-      <UniqueIdentifier>{da897f69-36fe-4050-80ad-454c0b38d767}</UniqueIdentifier>
     </Filter>
     <Filter Include="Исходные файлы\Input">
       <UniqueIdentifier>{9783e4d9-b382-462d-8718-8aaac1be5837}</UniqueIdentifier>
@@ -414,16 +405,10 @@
     <ClInclude Include="Graphics\Shader.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\ShaderBuilder.h">
-      <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\Skybox.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\Texture.h">
-      <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Graphics\UIRender.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\Window.h">
@@ -452,18 +437,6 @@
     </ClInclude>
     <ClInclude Include="Graphics\Particles\Velocity\ParticleModuleVelocity.h">
       <Filter>Файлы заголовков\Graphics\Particles\Velocity</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Button.h">
-      <Filter>Файлы заголовков\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\GUI.h">
-      <Filter>Файлы заголовков\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\VirtualInput.h">
-      <Filter>Файлы заголовков\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Widget.h">
-      <Filter>Файлы заголовков\GUI</Filter>
     </ClInclude>
     <ClInclude Include="Input\Input.h">
       <Filter>Файлы заголовков\Input</Filter>
@@ -530,9 +503,6 @@
     </ClInclude>
     <ClInclude Include="Physics\Rigidbody.h">
       <Filter>Файлы заголовков\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderAPI\RenderAPI.h">
-      <Filter>Файлы заголовков\RenderAPI</Filter>
     </ClInclude>
     <ClInclude Include="RenderAPIOpenGL\OpenGL.h">
       <Filter>Файлы заголовков\RenderAPIOpenGL</Filter>
@@ -776,9 +746,6 @@
     <ClCompile Include="System\Serializer.cpp">
       <Filter>Исходные файлы\System</Filter>
     </ClCompile>
-    <ClCompile Include="GUI\Button.cpp">
-      <Filter>Исходные файлы\GUI</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Camera.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
@@ -792,9 +759,6 @@
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Render.cpp">
-      <Filter>Исходные файлы\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphics\ShaderBuilder.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Skybox.cpp">

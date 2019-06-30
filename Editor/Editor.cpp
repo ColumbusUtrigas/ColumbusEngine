@@ -82,7 +82,7 @@ namespace Columbus
 				ImGui::Spacing();
 				if (ImGui::MenuItem(" Open")) scene.Load("Data/3.scene");
 				ImGui::Spacing();
-				ImGui::MenuItem(" Save");
+				if (ImGui::MenuItem(" Save")) scene.Save("Data/4.scene");
 				ImGui::Spacing();
 				ImGui::MenuItem(" Save As");
 				ImGui::Spacing();

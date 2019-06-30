@@ -572,11 +572,22 @@ namespace Columbus
 		{
 			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
 
+			// Resolve RT0 (HDR Color)
 			MSAAShader->Bind();
 			MSAAShader->SetUniform(MSAABaseTexture, (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
 			MSAAShader->SetUniform(MSAASamples, (int)BaseMSAA.Multisampling);
 			Quad.Render();
 			MSAAShader->Unbind();
+
+			// Resolve RT1 (Normals) and Depth
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
+
+			glReadBuffer(GL_COLOR_ATTACHMENT1);
+			glDrawBuffer(GL_COLOR_ATTACHMENT1);
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 		}
 
 		Base.ColorTexturesMipmaps[0] = true;
