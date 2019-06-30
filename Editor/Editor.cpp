@@ -224,8 +224,9 @@ namespace Columbus
 				if (Tex->Load(Selected[0].Path.c_str()))
 				{
 					delete scene.Sky;
-					scene.Sky = new Skybox(Tex.Get());
 					auto Name = Filesystem::RelativePath(Selected[0].Path, Filesystem::GetCurrent());
+					scene.SkyPath = Name;
+					scene.Sky = new Skybox(Tex.Get());
 					Log::Success("Skybox loaded: %s", Name.c_str());
 				}
 

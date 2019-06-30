@@ -461,10 +461,11 @@ namespace Columbus
 		// Load skybox
 		{
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
-			if (Tex->Load(J["Skybox"].GetString().c_str()))
+			if (Tex->Load(J["Defaults"]["Skybox"].GetString().c_str()))
 			{
+				SkyPath = J["Defaults"]["Skybox"].GetString();
 				Sky = new Skybox(Tex.Get());
-				Log::Success("Skybox loaded: %s", J["Skybox"].GetString().c_str());
+				Log::Success("Skybox loaded: %s", J["Defaults"]["Skybox"].GetString().c_str());
 			}
 		}
 
@@ -474,7 +475,6 @@ namespace Columbus
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
 			if (Tex->Load(J["Textures"][i].GetString().c_str()))
 			{
-				//Textures[i] = std::move(Tex);
 				TexturesManager.Add(std::move(Tex), J["Textures"][i].GetString());
 				Log::Success("Texture loaded: %s", J["Textures"][i].GetString().c_str());
 			}
@@ -486,7 +486,6 @@ namespace Columbus
 			SmartPointer<ShaderProgram> Shader(gDevice->CreateShaderProgram());
 			if (Shader->Load(J["Shaders"][i].GetString().c_str()))
 			{
-				//ShaderPrograms[i] = std::move(Shader);
 				ShadersManager.Add(std::move(Shader), J["Shaders"][i].GetString());
 			}
 		}
@@ -497,9 +496,19 @@ namespace Columbus
 			SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
 			if (tMesh->Load(J["Meshes"][i].GetString().c_str()))
 			{
-				//Meshes[i] = std::move(tMesh);
 				MeshesManager.Add(std::move(tMesh), J["Meshes"][i].GetString());
 				Log::Success("Mesh loaded: %s", J["Meshes"][i].GetString().c_str());
+			}
+		}
+
+		// Load sounds
+		for (uint32 i = 0; i < J["Sounds"].GetElementsCount(); i++)
+		{
+			SmartPointer<Sound> Snd(new Sound());
+			if (Snd->Load(J["Sounds"][i]["Name"].GetString().c_str(), J["Sounds"][i]["Streaming"].GetBool()))
+			{
+				SoundsManager.Add(std::move(Snd), J["Sounds"][i]["Name"].GetString());
+				Log::Success("Sound loaded: %s", J["Sounds"][i]["Name"].GetString().c_str());
 			}
 		}
 
@@ -620,6 +629,8 @@ namespace Columbus
 
 		uint32 Counter = 0;
 
+		J["Defaults"]["Skybox"] = SkyPath;
+
 		for (const auto& Elem : TexturesManager.Resources)
 		{		
 			J["Textures"][Counter++] = Elem.first;
@@ -639,8 +650,31 @@ namespace Columbus
 			J["Meshes"][Counter++] = Elem.first;
 		}
 
-		if (!J.Save(FileName)) { Log::Error("Can't save scene: %s", FileName); return false; }
+		Counter = 0;
 
+		for (const auto& Elem : SoundsManager.Resources)
+		{
+			J["Sounds"][Counter]["Name"] = Elem.first;
+			J["Sounds"][Counter]["Streaming"] = Elem.second->IsStreaming();
+			Counter++;
+		}
+
+		Counter = 0;
+
+		for (const auto& Elem : Objects.ResourcesMap)
+		{
+			auto& Obj = Objects.Resources[Elem.second];
+
+			J["Objects"][Counter]["Name"] = Elem.first;
+			J["Objects"][Counter]["Static"] = false;
+			J["Objects"][Counter]["Transform"]["Position"] = Obj->transform.Position;
+			J["Objects"][Counter]["Transform"]["Rotation"] = Obj->transform.Rotation;
+			J["Objects"][Counter]["Transform"]["Scale"] = Obj->transform.Scale;
+			Counter++;
+		}
+
+		if (!J.Save(FileName)) { Log::Error("Can't save scene: %s", FileName); return false; }
+		
 		return true;
 	}
 	

@@ -1,5 +1,7 @@
 {
-	"Skybox": "Data/Skyboxes/Ruins.hdr",
+	"Defaults": {
+		"Skybox": "Data/Skyboxes/Ruins.hdr",
+	},
 
 	"Textures": [
 		"Data/Textures/Hercules.dds",
@@ -29,7 +31,7 @@
 		"Data/Models/Statue.cmf",
 		"Data/Models/Fireplace.cmf",
 		"Data/Models/Chest.cmf"
-	],
+	]
 }
 
 
