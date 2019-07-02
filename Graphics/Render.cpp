@@ -27,7 +27,7 @@ namespace Columbus
 		BaseMSAA.ColorTexturesEnablement[0] = true;
 		BaseMSAA.ColorTexturesEnablement[1] = true;
 		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::R11G11B10F; // Color texture
-		BaseMSAA.ColorTexturesFormats[1] = TextureFormat::RGB8; // Normal texture
+		BaseMSAA.ColorTexturesFormats[1] = TextureFormat::R11G11B10F; // Normal texture
 		BaseMSAA.ColorTexturesMipmaps[0] = false;
 		BaseMSAA.ColorTexturesMipmaps[1] = false;
 		BaseMSAA.DepthTextureEnablement = true;
@@ -35,7 +35,7 @@ namespace Columbus
 		Base.ColorTexturesEnablement[0] = true;
 		Base.ColorTexturesEnablement[1] = true;
 		Base.ColorTexturesFormats[0] = TextureFormat::R11G11B10F; // Color texture
-		Base.ColorTexturesFormats[1] = TextureFormat::RGB8; // Normal texture
+		Base.ColorTexturesFormats[1] = TextureFormat::R11G11B10F; // Normal texture
 		Base.ColorTexturesMipmaps[0] = false;
 		Base.ColorTexturesMipmaps[1] = false;
 		Base.DepthTextureEnablement = true;
@@ -552,17 +552,22 @@ namespace Columbus
 		case AntialiasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
 		}
 
+		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
+
 		// RENDERING
 		//
 		//
 		// Render to the MSAA buffer or not
 		if (IsMSAA)
-			BaseMSAA.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+			BaseMSAA.Bind({0}, {0}, ContextSize);
 		else
-			Base.Bind({ 1, 1, 1, 0 }, { 0 }, ContextSize);
+			Base.Bind({0}, {0}, ContextSize);
 
 		RenderOpaque();
+		glDrawBuffers(1, BuffersFirst);
 		RenderSky();
+		glDrawBuffers(2, BuffersAll);
 		RenderTransparent();
 		//
 		//
@@ -570,7 +575,7 @@ namespace Columbus
 
 		if (IsMSAA)
 		{
-			Base.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+			Base.Bind({0}, {0}, ContextSize);
 
 			// Resolve RT0 (HDR Color)
 			MSAAShader->Bind();

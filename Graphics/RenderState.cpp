@@ -254,7 +254,7 @@ namespace Columbus
 			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
 			MaterialRenderData* RenderData = (MaterialRenderData*)ShaderOGL->RenderData;
 
-			ShaderOGL->SetUniform(RenderData->Lighting, sizeof(Lights), Lights);
+			ShaderOGL->SetUniform(RenderData->Lighting, sizeof(Lights) / sizeof(float), Lights);
 		}
 	}
 
