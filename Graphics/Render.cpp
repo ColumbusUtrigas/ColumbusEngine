@@ -462,7 +462,7 @@ namespace Columbus
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
-				if (Elem->Type == 0)
+				if (Elem->Type == Light::Directional)
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
@@ -470,7 +470,7 @@ namespace Columbus
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
-				if (Elem->Type == 1)
+				if (Elem->Type == Light::Point)
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
@@ -478,7 +478,7 @@ namespace Columbus
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
-				if (Elem->Type == 2)
+				if (Elem->Type == Light::Spot)
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
