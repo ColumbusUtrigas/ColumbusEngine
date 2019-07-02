@@ -703,7 +703,17 @@ namespace Columbus
 				auto PS = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
 
 				if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
-				if (Light != nullptr) Lights.emplace_back(Light->LightSource);
+				if (Light != nullptr)
+				{
+					Lights.emplace_back(Light->LightSource);
+
+					if (Light->LightSource->Type == 0) //Directional light
+					{
+						Vector4 BaseDirection(1, 0, 0, 1);
+						Vector4 Direction = BaseDirection * Object->transform.Q.ToMatrix();
+						Light->LightSource->Dir = Direction.XYZ().Normalize();
+					}
+				}
 				if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
 			}
 		}
