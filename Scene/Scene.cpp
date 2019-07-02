@@ -707,7 +707,7 @@ namespace Columbus
 				{
 					Lights.emplace_back(Light->LightSource);
 
-					if (Light->LightSource->Type == 0) //Directional light
+					if (Light->LightSource->Type == Light::Directional)
 					{
 						Vector4 BaseDirection(1, 0, 0, 1);
 						Vector4 Direction = BaseDirection * Object->transform.Q.ToMatrix();

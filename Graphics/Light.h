@@ -8,11 +8,18 @@ namespace Columbus
 	class Light
 	{
 	public:
+		enum
+		{
+			Directional = 0,
+			Point = 1,
+			Spot = 2
+		};
+	public:
 		Vector3 Color = Vector3(1, 1, 1);
 		Vector3 Pos = Vector3(0, 0, 0);
-		Vector3 Dir = Vector3(-0.5f, -0.4f, -0.3f);
+		Vector3 Dir = Vector3(1, 0, 0);
 
-		int Type = 0;
+		int Type = Directional;
 
 		float Energy = 1.0f;
 		float Range = 10.0f;
