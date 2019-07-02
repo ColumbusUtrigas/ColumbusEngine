@@ -616,9 +616,24 @@ layout(location = 3) out vec4 RT3;
 		glUniform4f(FastUniforms[FastID], Value.X, Value.Y, Value.Z, Value.W);
 	}
 
-	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Size, const float* Value) const
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const float* Value) const
 	{
-		glUniform1fv(FastUniforms[FastID], Size, Value);
+		glUniform1fv(FastUniforms[FastID], Count, Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector2* Value) const
+	{
+		glUniform2fv(FastUniforms[FastID], Count, (const float*)Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector3* Value) const
+	{
+		glUniform3fv(FastUniforms[FastID], Count, (const float*)Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector4* Value) const
+	{
+		glUniform4fv(FastUniforms[FastID], Count, (const float*)Value);
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const

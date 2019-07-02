@@ -122,9 +122,9 @@ namespace Columbus
 
 		AntialiasingType Antialiasing = AntialiasingType::No;
 
-		bool BloomEnable = true;
-		float BloomTreshold = 1.0f;
-		float BloomIntensity = 0.5f;
+		bool BloomEnable = false;
+		float BloomTreshold = 3.0f;
+		float BloomIntensity = 0.1f;
 		float BloomRadius = 1.0f;
 		int BloomIterations = 2;
 		BloomResolutionType BloomResolution = BloomResolutionType::Quad;
@@ -139,7 +139,7 @@ namespace Columbus
 		bool EyeAdaptationEnable = false;
 		float EyeAdaptationMin = 0.1f;
 		float EyeAdaptationMax = 1.0f;
-		float EyeAdaptationSpeedUp = 2.0f;
+		float EyeAdaptationSpeedUp = 1.0f;
 		float EyeAdaptationSpeedDown = 1.0f;
 	private:
 		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
