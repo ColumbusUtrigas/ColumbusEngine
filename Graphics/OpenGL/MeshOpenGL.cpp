@@ -6,14 +6,6 @@
 namespace Columbus
 {
 
-	/*InputLayout layout =
-	{
-			{ InputLayoutSemantic::Position, InputLayoutFormat::Float3, 0, 0, InputLayoutClassification::PerVertex },
-			{ InputLayoutSemantic::UV, InputLayoutFormat::Float2, 0, 0, InputLayoutClassification::PerVertex },
-			{ InputLayoutSemantic::Normal, InputLayoutFormat::Float3, 0, 0, InputLayoutClassification::PerVertex },
-			{ InputLayoutSemantic::Tangent, InputLayoutFormat::Float3, 0, 0, InputLayoutClassification::PerVertex },
-	};*/
-
 	MeshOpenGL::MeshOpenGL()
 	{
 		glGenBuffers(1, &VBO);

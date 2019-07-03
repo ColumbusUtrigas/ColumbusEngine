@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Math/Vector2.h>
+#include <Graphics/OpenGL/BufferOpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -9,9 +10,10 @@ namespace Columbus
 	class ScreenQuad
 	{
 	private:
+		BufferOpenGL VB;
+		BufferOpenGL IB;
+
 		uint32 VAO = 0;
-		uint32 VBO = 0;
-		uint32 IBO = 0;
 
 		void Init()
 		{
@@ -19,26 +21,19 @@ namespace Columbus
 			float UV[] = { 0, 1, 1, 1, 1, 0, 0, 0 };
 			uint32 Indices[] = { 0, 1, 2, 3, 0, 2 };
 
-			glGenBuffers(1, &VBO);
-			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices) + sizeof(UV), nullptr, GL_STATIC_DRAW);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
-			glBufferSubData(GL_ARRAY_BUFFER, sizeof(Vertices), sizeof(UV), UV);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			VB.CreateArray(BufferDesc(sizeof(Vertices) + sizeof(UV)));
+			IB.CreateIndex(BufferDesc(sizeof(Indices)));
 
-			glGenBuffers(1, &IBO);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			VB.SubLoad(Vertices, 0, sizeof(Vertices));
+			VB.SubLoad(UV, sizeof(Vertices), sizeof(UV));
+
+			IB.Load(Indices);
 
 			glGenVertexArrays(1, &VAO);
 			glBindVertexArray(VAO);
-			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, GL_FALSE, nullptr);
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, GL_FALSE, (void*)(sizeof(Vertices)));
-			glEnableVertexAttribArray(1);
+			VB.VertexAttribute<float>(0, 2, false, 0, 0);
+			VB.VertexAttribute<float>(1, 2, false, 0, sizeof(Vertices));
 
 			glBindVertexArray(0);
 		}
@@ -54,9 +49,9 @@ namespace Columbus
 			glDepthMask(GL_FALSE);
 
 			glBindVertexArray(VAO);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			IB.Bind();
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			IB.Unbind();
 			glBindVertexArray(0);
 
 			glDepthMask(GL_TRUE);
@@ -64,8 +59,6 @@ namespace Columbus
 
 		~ScreenQuad()
 		{
-			glDeleteBuffers(1, &VBO);
-			glDeleteBuffers(1, &IBO);
 			glDeleteVertexArrays(1, &VAO);
 		}
 	};

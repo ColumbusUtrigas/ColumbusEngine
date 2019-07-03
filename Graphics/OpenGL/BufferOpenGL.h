@@ -7,98 +7,58 @@
 namespace Columbus
 {
 
-	enum class InputLayoutSemantic
+	enum class BufferType
 	{
-		Position,
-		UV,
-		Normal,
-		Tangent
+		Array,
+		Index
 	};
 
-	enum class InputLayoutFormat
+	enum class BufferMapAccess
 	{
-		None = 0,
-		Float,
-		Float2,
-		Float3,
-		Float4
+		Read,
+		Write,
+		ReadWrite
 	};
 
-	enum class InputLayoutClassification
+	enum class BufferUsage
 	{
-		PerVertex,
-		PerInstance
+		Read,
+		Write,
+		Copy
 	};
 
-	struct InputLayoutElement
+	enum class BufferCpuAccess
 	{
-		InputLayoutSemantic Semantic; // Semantic
-		InputLayoutFormat Type; // Type of the element
-		uint32 Index; // Index of the attribute (in DirectX that also index of the buffer slot)
-		uint32 Offset; // Offset from the beginning of the current vertex
-		InputLayoutClassification Classification; // PerVertex or PerInstance
+		Static,
+		Dynamic,
+		Stream
 	};
-	
-	struct InputLayout
-	{
-		std::vector<InputLayoutElement> Elements;
 
-		InputLayout(const std::initializer_list<InputLayoutElement> Elements) :
-			Elements(Elements) {}
+	struct BufferDesc
+	{
+		uint64 Size;
+		BufferUsage Usage;
+		BufferCpuAccess CpuAccess;
+
+		BufferDesc(uint64 Size = 0, BufferUsage Usage = BufferUsage::Write,
+			BufferCpuAccess CpuAccess = BufferCpuAccess::Static)
+		: Size(Size), Usage(Usage), CpuAccess(CpuAccess) {}
 	};
 
 	class BufferOpenGL
 	{
-	public:
-		enum class AccessType
-		{
-			ReadOnly,
-			WriteOnly,
-			ReadWrite
-		};
-
-		enum class UsageType
-		{
-			Read,
-			Write,
-			Copy
-		};
-
-		enum class FrequencyType
-		{
-			Static,
-			Dynamic,
-			Stream
-		};
-
-		enum class Type
-		{
-			Array,
-			Index
-		};
-
-		struct Properties
-		{
-			uint64 Size;
-			UsageType Usage;
-			FrequencyType Frequency;
-
-			Properties(uint64 Size = 0, UsageType Usage = UsageType::Write,
-				FrequencyType Frequency = FrequencyType::Static) :
-				Size(Size), Usage(Usage), Frequency(Frequency) {}
-		};
 	private:
 		uint64 Size;
 		uint32 ID;
 		uint32 Target;
 		uint32 Usage;
 
-		Type BufferType;
+		BufferType Type;
 	public:
 		BufferOpenGL();
-		BufferOpenGL(Type Type);
-		BufferOpenGL(Type Type, Properties Props);
-		BufferOpenGL(Type Type, Properties Props, const void* Data);
+		BufferOpenGL(BufferType NewType);
+		BufferOpenGL(BufferType NewType, BufferDesc Desc);
+		BufferOpenGL(BufferType NewType, BufferDesc Desc, const void* Data);
 		BufferOpenGL(const BufferOpenGL&) = delete;
 		BufferOpenGL(BufferOpenGL&& Base) { *this = static_cast<BufferOpenGL&&>(Base); }
 		BufferOpenGL& operator=(const BufferOpenGL&) = delete;
@@ -111,32 +71,34 @@ namespace Columbus
 			return *this;
 		}
 
-		void Create(Type Type, const Properties& Props);
-		void CreateArray(const Properties& Props);
-		void CreateIndex(const Properties& Props);
+		void Create(BufferType NewType, const BufferDesc& Desc);
+		void CreateArray(const BufferDesc& Desc);
+		void CreateIndex(const BufferDesc& Desc);
 
 		void Load(const void* Data);
-		void Load(const void* Data, const Properties& Props);
+		void SubLoad(const void* Data, uint32 SubdataSize, uint32 Offset);
 
 		void Bind() const;
 		void Unbind() const;
 
-		void* Map(AccessType Access) const;
+		void  Map(void*& Dst, BufferMapAccess Access) const;
+		void* Map(BufferMapAccess Access) const;
 		void Unmap() const;
 
-		template <typename Type>
+		template <typename T>
 		void VertexAttribute(uint32 Index, uint32 Components, bool Normalized,
-				uint32 Stride, const void* Pointer) const;
+				uint32 Stride, uint32 Offset) const;
 
 		~BufferOpenGL();
 	};
 
 	template <>
 	inline void BufferOpenGL::VertexAttribute<float>(uint32 Index, uint32 Components,
-	bool Normalized, uint32 Stride, const void* Pointer) const
+			bool Normalized, uint32 Stride, uint32 Offset) const
 	{
 		glBindBuffer(Target, ID);
-		glVertexAttribPointer(Index, Components, GL_FLOAT, Normalized, Stride, Pointer);
+		glVertexAttribPointer(Index, Components, GL_FLOAT, Normalized,
+			Stride, (void*)(uintptr_t)Offset);
 		glEnableVertexAttribArray(Index);
 	}
 
