@@ -100,35 +100,29 @@ namespace Columbus
 			{
 				if (buffer != nullptr)
 				{
-					for (int i = 0; i < 100; i++)
+					GameObject tmp;
+					tmp.transform = buffer->transform;
+					tmp.transform.Position = Vector3::Random({-10}, {10});
+					tmp.Name = buffer->Name + " ";
+					tmp.Enable = buffer->Enable;
+					tmp.materialID = buffer->materialID;
+
+					CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
+					CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
+
+					std::string Name;
+
+					for (uint32 i = 0;; i++)
 					{
-						GameObject tmp;
-						tmp.transform = buffer->transform;
-						tmp.transform.Position = Vector3::Random({-10}, {10});
-						tmp.Name = buffer->Name + " ";
-						tmp.Enable = buffer->Enable;
-						tmp.material = buffer->material;
-						tmp.material.Albedo = Vector4(Vector3::Random({0.0f}, {1.0f}), 1);
-						tmp.material.Roughness = Random::Range(0.0f, 1.0f);
-						tmp.material.Metallic = Random::Range(0.0f, 1.0f);
-
-						CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
-						CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
-
-						std::string Name;
-
-						for (uint32 i = 0;; i++)
+						Name = tmp.Name + std::to_string(i);
+						if (scene->Objects.Find(Name) == nullptr)
 						{
-							Name = tmp.Name + std::to_string(i);
-							if (scene->Objects.Find(Name) == nullptr)
-							{
-								tmp.Name = Name;
-								break;
-							}
+							tmp.Name = Name;
+							break;
 						}
-
-						scene->Add(std::move(tmp));
 					}
+
+					scene->Add(std::move(tmp));
 				}
 			}
 		}

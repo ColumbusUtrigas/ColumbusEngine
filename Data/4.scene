@@ -3,52 +3,46 @@
 		"Skybox": "Data/Skyboxes/Ruins.hdr"
 	},
 	"Meshes": [
-		"Data/Models/Fireplace.cmf",
-		"Data/Models/Hercules.cmf",
 		"Data/Models/Statue.cmf",
-		"Data/Models/Chest.cmf"
+		"Data/Models/Hercules.cmf",
+		"Data/Models/Chest.cmf",
+		"Data/Models/Fireplace.cmf"
 	],
 	"Objects": [
 		{
 			"Name": "Object 0",
 			"Static": false,
 			"Transform": {
-				"Position": [
-					0.000000,
-					0.000000,
-					0.000000
-				],
-				"Rotation": [
-					0.000000,
-					0.000000,
-					0.000000
-				],
-				"Scale": [
-					1.000000,
-					1.000000,
-					1.000000
-				]
+				"Position": [0.000000, 0.000000, 0.000000],
+				"Rotation": [0.000000, 0.000000, 0.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
 			}
 		},
 		{
 			"Name": "Object 1",
 			"Static": false,
 			"Transform": {
-				"Position": [
-					0.000000,
-					0.000000,
-					0.000000
-				],
-				"Rotation": [
-					0.000000,
-					0.000000,
-					0.000000
-				],
-				"Scale": [
-					1.000000,
-					1.000000,
-					1.000000
-				]
+				"Position": [0.000000, 0.000000, 0.000000],
+				"Rotation": [0.000000, 0.000000, 0.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Name": "Object 2",
+			"Static": false,
+			"Transform": {
+				"Position": [0.000000, 0.000000, 0.000000],
+				"Rotation": [0.000000, 0.000000, 0.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Name": "Object 3",
+			"Static": false,
+			"Transform": {
+				"Position": [0.000000, 0.000000, 0.000000],
+				"Rotation": [0.000000, 0.000000, 0.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
 			}
 		}
 	],
@@ -57,18 +51,18 @@
 		"Data/Shaders/Particles.glsl"
 	],
 	"Textures": [
-		"Data/Textures/Detail-Normal.dds",
-		"Data/Textures/Detail.dds",
-		"Data/Textures/Hercules.dds",
 		"Data/Textures/chest_Metallic.dds",
+		"Data/Textures/chest_Albedo.dds",
 		"Data/Textures/spark.dds",
 		"Data/Textures/statue_d.dds",
-		"Data/Textures/Fireplace.dds",
-		"Data/Textures/Fireplace-E.dds",
-		"Data/Textures/smoke.dds",
 		"Data/Textures/chest_AO.dds",
-		"Data/Textures/chest_Albedo.dds",
+		"Data/Textures/Hercules.dds",
+		"Data/Textures/Fireplace.dds",
 		"Data/Textures/chest_Normal.dds",
-		"Data/Textures/chest_Roughness.dds"
+		"Data/Textures/Detail-Normal.dds",
+		"Data/Textures/smoke.dds",
+		"Data/Textures/chest_Roughness.dds",
+		"Data/Textures/Detail.dds",
+		"Data/Textures/Fireplace-E.dds"
 	]
 }

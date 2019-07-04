@@ -6,6 +6,8 @@
 #include <Graphics/Texture.h>
 #include <Graphics/Shader.h>
 
+#include <Resources/ResourceManager.h>
+
 namespace Columbus
 {
 
@@ -31,15 +33,6 @@ namespace Columbus
 			Never,
 			Always
 		};
-	private:
-		int AlbedoMapID = -1;
-		int NormalMapID = -1;
-		int RoughnessMapID = -1;
-		int MetallicMapID = -1;
-		int OcclusionMapID = -1;
-		int EmissionMapID = -1;
-		int DetailAlbedoMapID = -1;
-		int DetailNormalMapID = -1;
 	public:
 		Cull Culling = Cull::Back;
 		DepthTest DepthTesting = DepthTest::LEqual;
@@ -69,23 +62,15 @@ namespace Columbus
 		float EmissionStrength = 0.5f;
 	public:
 		Material();
-		Material(const char* FileName);
 
 		bool Prepare();
 
 		void SetShader(ShaderProgram* InShader);
 		ShaderProgram* GetShader() const;
 
-		int GetAlbedoMapID() const;
-		int GetNormalMapID() const;
-		int GetRoughnessMapID() const;
-		int GetMetallicMapID() const;
-		int GetOcclusionMapID() const;
-		int GetEmissionMapID() const;
-		int GetDetailAlbedoMapID() const;
-		int GetDetailNormalMapID() const;
-
-		bool Load(const char* FileName);
+		bool Load(const char* FileName,
+			ResourceManager<ShaderProgram>& ShadersManager,
+			ResourceManager<Texture>& TexturesManager);
 
 		bool operator==(const Material& Other) const;
 		bool operator!=(const Material& Other) const;

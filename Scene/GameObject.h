@@ -17,7 +17,8 @@ namespace Columbus
 		std::vector<SmartPointer<Component>> Components;
 	public:
 		Transform transform;
-		Material material;
+		size_t materialID = 0;
+
 		std::string Name;
 		bool Enable = true;
 	public:

@@ -36,6 +36,9 @@ namespace Columbus
 		ResourceManager<Mesh> MeshesManager;
 		ResourceManager<Sound> SoundsManager;
 
+		std::vector<Material> Materials;
+		std::unordered_map<std::string, size_t> MaterialsMap;
+
 		//std::map<uint32, SmartPointer<Texture>> Textures;
 		//std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
 		//std::map<uint32, SmartPointer<Mesh>> Meshes;
