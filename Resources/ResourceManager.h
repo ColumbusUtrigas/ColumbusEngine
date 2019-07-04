@@ -33,7 +33,7 @@ namespace Columbus
 		T* Find(const std::string& Key)
 		{
 			auto It = Resources.find(Key);
-			return It != Resources.end() ? *It : nullptr;
+			return It != Resources.end() ? It->second.Get() : nullptr;
 		}
 
 		SmartPointer<T>& operator[](const std::string& Key)

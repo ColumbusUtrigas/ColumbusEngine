@@ -34,7 +34,7 @@ namespace Columbus
 					//Draw material editor
 					if (ImGui::CollapsingHeader(MATERIAL_ICON" Material##PanelInspector_Material"))
 					{
-						DrawMaterialEditor();
+						DrawMaterialEditor(Scn);
 						ImGui::Separator();
 					}
 

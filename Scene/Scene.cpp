@@ -490,6 +490,19 @@ namespace Columbus
 			}
 		}
 
+		Materials.push_back(Material()); // Default material
+
+		// Load materials
+		for (uint32 i = 0; i < J["Materials"].GetElementsCount(); i++)
+		{
+			Material Mat;
+			if (Mat.Load(J["Materials"][i].GetString().c_str(), ShadersManager, TexturesManager))
+			{
+				MaterialsMap[J["Materials"][i].GetString()] = Materials.size();
+				Materials.push_back(Mat);
+			}
+		}
+
 		// Load meshes
 		for (uint32 i = 0; i < J["Meshes"].GetElementsCount(); i++)
 		{
@@ -520,6 +533,27 @@ namespace Columbus
 			GO->transform.Position = J["Objects"][i]["Transform"]["Position"].GetVector3<float>();
 			GO->transform.Rotation = J["Objects"][i]["Transform"]["Rotation"].GetVector3<float>();
 			GO->transform.Scale = J["Objects"][i]["Transform"]["Scale"].GetVector3<float>();
+
+			if (J["Objects"][i]["Material"].IsNull())
+			{
+				GO->materialID = 0;
+			} else
+			{
+				auto It = MaterialsMap.find(J["Objects"][i]["Material"].GetString());
+				GO->materialID = It != MaterialsMap.end() ? It->second : 0;
+			}
+
+			if (J["Objects"][i].HasChild("MeshRenderer"))
+			{
+				auto M = MeshesManager.Find(J["Objects"][i]["MeshRenderer"].GetString());
+				if (M != nullptr)
+				{
+					GO->AddComponent(new ComponentMeshRenderer(M));
+				} else
+				{
+					Log::Warning("%s: Cannot load MeshRenderer", GO->Name.c_str());
+				}
+			}
 
 			Objects.Add(std::move(GO), GO->Name);
 		}

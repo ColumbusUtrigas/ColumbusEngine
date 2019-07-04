@@ -90,6 +90,7 @@ namespace Columbus
 
 		uint32 GetElementsCount() const { return  ArrayValue.size(); }
 		uint32 GetChildrenCount() const { return ObjectValue.size(); }
+		bool HasChild(const std::string& Key) { return ObjectValue.find(Key) != ObjectValue.end(); }
 
 		JSON& operator[](uint32 Index)
 		{

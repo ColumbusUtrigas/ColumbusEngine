@@ -144,11 +144,11 @@ namespace Columbus
 						{
 							if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 							{
-								Object->material.ReflectionMap = Sky->GetIrradianceMap();
+								Material& Mat = Scn->Materials[Object->materialID];
+								Mat.ReflectionMap = Sky->GetIrradianceMap();
 
-								if (Object->material.Transparent)
+								if (Mat.Transparent)
 								{
-									//TransparentObjects.emplace_back(Mesh, nullptr, Object->transform, Object->material);
 									TransparentObjects.emplace_back(Mesh, Counter);
 									CalculateLights(Object->transform.Position, TransparentObjects.back().Lights);
 								}
@@ -205,7 +205,7 @@ namespace Columbus
 		for (auto& Object : OpaqueObjects)
 		{
 			SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-			Material& Mat = GO->material;
+			Material& Mat = Scn->Materials[GO->materialID];
 			ShaderProgram* CurrentShader = Mat.ShaderProg;
 			std::vector<Light*>& Lights = Scn->Lights;
 				
@@ -249,7 +249,7 @@ namespace Columbus
 			for (auto& Object : TransparentObjects)
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-				Material& Mat = GO->material;
+				Material& Mat = Scn->Materials[GO->materialID];
 
 				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
 				Mesh* CurrentMesh = Object.MeshObject;
