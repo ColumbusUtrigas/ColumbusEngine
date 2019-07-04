@@ -4,9 +4,6 @@
 namespace Columbus
 {
 
-	template <typename T> void foo() {}
-	template <> void foo<float>() {}
-
 	static uint32 DecodeUsage(BufferUsage Usage, BufferCpuAccess CpuAccess)
 	{
 		switch (Usage)

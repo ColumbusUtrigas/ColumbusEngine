@@ -274,8 +274,6 @@ layout(location = 3) out vec4 RT3;
 				Data.VertexSource = gScreenSpaceVertexShader;
 				Data.FragmentSource = gScreenSpaceFragmentShader;
 
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
 				Data.Uniforms.emplace_back("BaseTexture");
 
 				Path = "ScreenSpace";
@@ -484,9 +482,7 @@ layout(location = 3) out vec4 RT3;
 
 			case ShaderProgram::StandartProgram::IntegrationGeneration:
 			{
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Attributes.emplace_back("Texcoord", 1);
-				Data.VertexSource = gIntegrationGenerationVertexShader;
+				Data.VertexSource = gScreenSpaceVertexShader;
 				Data.FragmentSource = gIntegrationGenerationFragmentShader;
 
 				Path = "IntegrationGeneration";
