@@ -267,24 +267,39 @@ namespace Columbus
 			return;
 		}
 
-		F << "[\n";
+		F << '[';
+		if (!IsVector) F << '\n';
 		Tabs++;
 
 		uint32 Counter = 0;
+		bool IsLast = false;
 
 		for (const auto& Elem : ArrayValue)
 		{
-			WriteTabs(F, Tabs);
+			if (!IsVector) WriteTabs(F, Tabs);
+
 			Elem._Write(F, Tabs);
 
-			if (++Counter != ArrayValue.size())
+			IsLast = ++Counter == ArrayValue.size();
+
+			if (!IsLast)
 				F << ',';
 
-			F << '\n';
+			if (IsVector)
+			{
+				if (!IsLast)
+				{
+					F << ' ';
+				}
+			}
+			else
+			{
+				F << '\n';
+			}
 		}
 
 		Tabs--;
-		WriteTabs(F, Tabs);
+		if (!IsVector) WriteTabs(F, Tabs);
 		F << ']';
 	}
 

@@ -512,6 +512,18 @@ namespace Columbus
 			}
 		}
 
+		// Load objects
+		for (uint32 i = 0; i < J["Objects"].GetElementsCount(); i++)
+		{
+			SmartPointer<GameObject> GO(new GameObject());
+			GO->Name = J["Objects"][i]["Name"].GetString();
+			GO->transform.Position = J["Objects"][i]["Transform"]["Position"].GetVector3<float>();
+			GO->transform.Rotation = J["Objects"][i]["Transform"]["Rotation"].GetVector3<float>();
+			GO->transform.Scale = J["Objects"][i]["Transform"]["Scale"].GetVector3<float>();
+
+			Objects.Add(std::move(GO), GO->Name);
+		}
+
 		return true;
 
 		/*Serializer::SerializerXML serializer;
@@ -661,7 +673,14 @@ namespace Columbus
 
 		Counter = 0;
 
+		std::map<std::string, size_t> SaveObjects;
+
 		for (const auto& Elem : Objects.ResourcesMap)
+		{
+			SaveObjects[Elem.first] = Elem.second;
+		}
+
+		for (const auto& Elem : SaveObjects)
 		{
 			auto& Obj = Objects.Resources[Elem.second];
 

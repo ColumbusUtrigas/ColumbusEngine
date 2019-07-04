@@ -35,6 +35,8 @@ namespace Columbus
 		std::map<std::string, JSON> ObjectValue;
 		Type ValueType = Type::Object;
 
+		bool IsVector = false;
+
 		bool _ParseString(char*& Text, bool& Error);
 		bool _ParseBool(char*& Text);
 		bool _ParseNull(char*& Text);
@@ -59,6 +61,7 @@ namespace Columbus
 		JSON(double Float) : FloatValue(Float), ValueType(Type::Float) {}
 		JSON(const Vector3& Vec)
 		{
+			IsVector = true;
 			(*this)[0] = Vec.X;
 			(*this)[1] = Vec.Y;
 			(*this)[2] = Vec.Z;

@@ -6,15 +6,31 @@ namespace Columbus
 	const char* gScreenSpaceVertexShader = 
 	R"(
 	#version 130
-	in vec2 Pos;
-	in vec2 UV;
+
+	const vec2 Coord[6] = vec2[](
+		vec2(-1, +1),
+		vec2(+1, +1),
+		vec2(+1, -1),
+		vec2(-1, -1),
+		vec2(-1, +1),
+		vec2(+1, -1)
+	);
+
+	const vec2 TC[6] = vec2[](
+		vec2(0, 1),
+		vec2(1, 1),
+		vec2(1, 0),
+		vec2(0, 0),
+		vec2(0, 1),
+		vec2(1, 0)
+	);
 
 	out vec2 Texcoord;
 
 	void main(void)
 	{
-		gl_Position = vec4(Pos, 0, 1);
-		Texcoord = UV;
+		gl_Position = vec4(Coord[gl_VertexID], 0, 1);
+		Texcoord = TC[gl_VertexID];
 	}
 	)";
 
@@ -613,26 +629,12 @@ namespace Columbus
 	}
 	)";
 
-	const char* gIntegrationGenerationVertexShader = 
-	R"(
-	#version 130
-	out vec2 TexCoords;
-
-	in vec2 Position;
-	in vec2 Texcoord;
-
-	void main()
-	{
-		gl_Position = vec4(Position, 0, 1);
-		TexCoords = Texcoord;
-	}
-	)";
-
 	const char* gIntegrationGenerationFragmentShader = 
 	R"(
 	#version 130
+	
 	out vec4 FragColor;
-	in vec2 TexCoords;
+	in vec2 Texcoord;
 
 	const float PI = 3.14159265359;
 
@@ -742,7 +744,7 @@ namespace Columbus
 
 	void main() 
 	{
-		vec2 IntegratedBRDF = IntegrateBRDF(TexCoords.x, TexCoords.y);
+		vec2 IntegratedBRDF = IntegrateBRDF(Texcoord.x, Texcoord.y);
 		FragColor = vec4(IntegratedBRDF, 1, 1);
 	}
 	)";
