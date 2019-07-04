@@ -238,8 +238,8 @@ namespace Columbus
 
 					Lights[Offset + 9] = (float)L->Type;
 					Lights[Offset + 10] = L->Range;
-					Lights[Offset + 11] = L->InnerCutoff;
-					Lights[Offset + 12] = L->OuterCutoff;
+					Lights[Offset + 11] = Math::Radians(L->InnerCutoff);
+					Lights[Offset + 12] = Math::Radians(L->OuterCutoff);
 
 					Counter++;
 				}
