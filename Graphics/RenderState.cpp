@@ -128,17 +128,14 @@ namespace Columbus
 
 	void RenderState::SetMaterial(const Material& InMaterial, const Matrix& ModelMatrix, Skybox* Sky)
 	{
-		PreviousMaterial = CurrentMaterial;
-		CurrentMaterial = InMaterial;
-
-		bool MaterialChanged = CurrentMaterial != PreviousMaterial;
-
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
-		#define CheckHasParameter(x) MaterialChanged || CheckParameter(x)
 
 		if (CurrentShader != nullptr)
 		{
+			PreviousMaterial = CurrentMaterial;
+			CurrentMaterial = InMaterial;
+
 			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), gDevice->GetDefaultTextures()->IntegrationLUT };
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
@@ -198,19 +195,24 @@ namespace Columbus
 				if ((Textures[i] != LastTextures[i] || CheckShader()) && Textures[i] != nullptr)
 				{
 					Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
+				} else if (Textures[i] == nullptr)
+				{
+					glActiveTexture(GL_TEXTURE0 + i);
+					Shader->SetUniform(RenderData->TexturesIDs[i], i);
+					glBindTexture(GL_TEXTURE_2D, 0);
 				}
 			}
 
-			                   Shader->SetUniform(RenderData->Model, false, ModelMatrix);
-			if (CheckShader()) Shader->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
+			Shader->SetUniform(RenderData->Model, false, ModelMatrix);
+			Shader->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
 
-			if (CheckHasParameter(AlbedoMap))       Shader->SetUniform(RenderData->HasAlbedoMap,       CurrentMaterial.AlbedoMap != nullptr);
-			if (CheckHasParameter(NormalMap))       Shader->SetUniform(RenderData->HasNormalMap,       CurrentMaterial.NormalMap != nullptr);
-			if (CheckHasParameter(RoughnessMap))    Shader->SetUniform(RenderData->HasRoughnessMap,    CurrentMaterial.RoughnessMap != nullptr);
-			if (CheckHasParameter(MetallicMap))     Shader->SetUniform(RenderData->HasMetallicMap,     CurrentMaterial.MetallicMap != nullptr);
-			if (CheckHasParameter(OcclusionMap))    Shader->SetUniform(RenderData->HasOcclusionMap,    CurrentMaterial.OcclusionMap != nullptr);
-			if (CheckHasParameter(DetailAlbedoMap)) Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
-			if (CheckHasParameter(DetailNormalMap)) Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
+			Shader->SetUniform(RenderData->HasAlbedoMap,       CurrentMaterial.AlbedoMap != nullptr);
+			Shader->SetUniform(RenderData->HasNormalMap,       CurrentMaterial.NormalMap != nullptr);
+			Shader->SetUniform(RenderData->HasRoughnessMap,    CurrentMaterial.RoughnessMap != nullptr);
+			Shader->SetUniform(RenderData->HasMetallicMap,     CurrentMaterial.MetallicMap != nullptr);
+			Shader->SetUniform(RenderData->HasOcclusionMap,    CurrentMaterial.OcclusionMap != nullptr);
+			Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
+			Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
 
 			if (CheckParameter(Tiling))           Shader->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);
 			if (CheckParameter(DetailTiling))     Shader->SetUniform(RenderData->DetailTiling,     CurrentMaterial.DetailTiling);

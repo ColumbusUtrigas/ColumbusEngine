@@ -36,6 +36,19 @@ namespace Columbus
 			return It != Resources.end() ? It->second.Get() : nullptr;
 		}
 
+		std::string Find(const T* Value)
+		{
+			for (const auto& Elem : Resources)
+			{
+				if (Elem.second.Get() == Value)
+				{
+					return Elem.first;
+				}
+			}
+
+			return "";
+		}
+
 		SmartPointer<T>& operator[](const std::string& Key)
 		{
 			return Resources[Key];
