@@ -3,13 +3,15 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
-#include <Graphics/Texture.h>
-#include <Graphics/Shader.h>
-
-#include <Resources/ResourceManager.h>
 
 namespace Columbus
 {
+
+	class ShaderProgram;
+	class Texture;
+
+	template <typename T>
+	class ResourceManager;
 
 	class Material
 	{

@@ -491,6 +491,7 @@ namespace Columbus
 		}
 
 		Materials.push_back(Material()); // Default material
+		MaterialsNames.emplace_back("Default");
 
 		// Load materials
 		for (uint32 i = 0; i < J["Materials"].GetElementsCount(); i++)
@@ -499,6 +500,7 @@ namespace Columbus
 			if (Mat.Load(J["Materials"][i].GetString().c_str(), ShadersManager, TexturesManager))
 			{
 				MaterialsMap[J["Materials"][i].GetString()] = Materials.size();
+				MaterialsNames.push_back(J["Materials"][i].GetString());
 				Materials.push_back(Mat);
 			}
 		}
