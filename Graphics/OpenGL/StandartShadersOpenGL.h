@@ -365,8 +365,23 @@ namespace Columbus
 	R"(
 	#version 130
 
-	in vec2 Position;
-	in vec2 UV;
+	const vec2 Coord[6] = vec2[](
+		vec2(-1, +1),
+		vec2(+1, +1),
+		vec2(+1, -1),
+		vec2(-1, -1),
+		vec2(-1, +1),
+		vec2(+1, -1)
+	);
+
+	const vec2 TC[6] = vec2[](
+		vec2(0, 1),
+		vec2(1, 1),
+		vec2(1, 0),
+		vec2(0, 0),
+		vec2(0, 1),
+		vec2(1, 0)
+	);
 
 	uniform vec2 Pos;
 	uniform vec2 Size;
@@ -375,9 +390,9 @@ namespace Columbus
 
 	void main(void)
 	{
-		gl_Position = vec4(Position * Size + Pos, 0, 1);
-		Texcoord.x = UV.x;
-		Texcoord.y = -UV.y;
+		gl_Position = vec4(Coord[gl_VertexID] * Size + Pos, 0, 1);
+		Texcoord.x = TC[gl_VertexID].x;
+		Texcoord.y = -TC[gl_VertexID].y;
 	}
 	)";
 

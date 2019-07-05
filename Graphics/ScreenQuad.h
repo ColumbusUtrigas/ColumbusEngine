@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Math/Vector2.h>
-#include <Graphics/OpenGL/BufferOpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -10,7 +8,7 @@ namespace Columbus
 	class ScreenQuad
 	{
 	private:
-		uint32 VAO = 0;
+		GLuint VAO = 0;
 	public:
 		ScreenQuad()
 		{

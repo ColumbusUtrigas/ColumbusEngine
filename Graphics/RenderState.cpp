@@ -62,45 +62,63 @@ namespace Columbus
 
 	void RenderState::SetCulling(Material::Cull Culling)
 	{
-		switch (Culling)
+		if (Culling != PreviousCulling)
 		{
-		case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
-		case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT);          break;
-		case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK);           break;
-		case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
+			switch (Culling)
+			{
+			case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
+			case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT);          break;
+			case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK);           break;
+			case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
+			}
+
+			PreviousCulling = Culling;
 		}
 	}
 
 	void RenderState::SetBlending(bool Blending)
 	{
-		if (Blending)
+		if (Blending != PreviousBlending)
 		{
-			glEnable(GL_BLEND);
-		}
-		else
-		{
-			glDisable(GL_BLEND);
+			if (Blending)
+			{
+				glEnable(GL_BLEND);
+			} else
+			{
+				glDisable(GL_BLEND);
+			}
+
+			PreviousBlending = Blending;
 		}
 	}
 
 	void RenderState::SetDepthTesting(Material::DepthTest DepthTesting)
 	{
-		switch (DepthTesting)
+		if (DepthTesting != PreviousDepthTesting)
 		{
-		case Material::DepthTest::Less:     glDepthFunc(GL_LESS);     break;
-		case Material::DepthTest::Greater:  glDepthFunc(GL_GREATER);  break;
-		case Material::DepthTest::LEqual:   glDepthFunc(GL_LEQUAL);   break;
-		case Material::DepthTest::GEqual:   glDepthFunc(GL_GEQUAL);   break;
-		case Material::DepthTest::Equal:    glDepthFunc(GL_EQUAL);    break;
-		case Material::DepthTest::NotEqual: glDepthFunc(GL_NOTEQUAL); break;
-		case Material::DepthTest::Never:    glDepthFunc(GL_NEVER);    break;
-		case Material::DepthTest::Always:   glDepthFunc(GL_ALWAYS);   break;
+			switch (DepthTesting)
+			{
+			case Material::DepthTest::Less:     glDepthFunc(GL_LESS);     break;
+			case Material::DepthTest::Greater:  glDepthFunc(GL_GREATER);  break;
+			case Material::DepthTest::LEqual:   glDepthFunc(GL_LEQUAL);   break;
+			case Material::DepthTest::GEqual:   glDepthFunc(GL_GEQUAL);   break;
+			case Material::DepthTest::Equal:    glDepthFunc(GL_EQUAL);    break;
+			case Material::DepthTest::NotEqual: glDepthFunc(GL_NOTEQUAL); break;
+			case Material::DepthTest::Never:    glDepthFunc(GL_NEVER);    break;
+			case Material::DepthTest::Always:   glDepthFunc(GL_ALWAYS);   break;
+			}
+
+			PreviousDepthTesting = DepthTesting;
 		}
 	}
 
 	void RenderState::SetDepthWriting(bool DepthWriting)
 	{
-		glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
+		if (DepthWriting != PreviousDepthWriting)
+		{
+			glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
+			PreviousDepthWriting = DepthWriting;
+		}
 	}
 
 	void RenderState::SetMainCamera(const Camera& InMainCamera)
@@ -113,8 +131,11 @@ namespace Columbus
 		PreviousMaterial = CurrentMaterial;
 		CurrentMaterial = InMaterial;
 
+		bool MaterialChanged = CurrentMaterial != PreviousMaterial;
+
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
+		#define CheckHasParameter(x) MaterialChanged || CheckParameter(x)
 
 		if (CurrentShader != nullptr)
 		{
@@ -174,31 +195,22 @@ namespace Columbus
 
 			for (int32 i = 0; i < 11; i++)
 			{
-				if (Textures[i] != LastTextures[i] || CheckShader())
+				if ((Textures[i] != LastTextures[i] || CheckShader()) && Textures[i] != nullptr)
 				{
-					if (Textures[i] != nullptr)
-					{
-						Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
-					}
-					else
-					{
-						glActiveTexture(GL_TEXTURE0 + i);
-						Shader->SetUniform(RenderData->TexturesIDs[i], i);
-						glBindTexture(GL_TEXTURE_2D, 0);
-					}
+					Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
 				}
 			}
 
-			Shader->SetUniform(RenderData->Model, false, ModelMatrix);
-			Shader->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
+			                   Shader->SetUniform(RenderData->Model, false, ModelMatrix);
+			if (CheckShader()) Shader->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
 
-			Shader->SetUniform(RenderData->HasAlbedoMap,       CurrentMaterial.AlbedoMap != nullptr);
-			Shader->SetUniform(RenderData->HasNormalMap,       CurrentMaterial.NormalMap != nullptr);
-			Shader->SetUniform(RenderData->HasRoughnessMap,    CurrentMaterial.RoughnessMap != nullptr);
-			Shader->SetUniform(RenderData->HasMetallicMap,     CurrentMaterial.MetallicMap != nullptr);
-			Shader->SetUniform(RenderData->HasOcclusionMap,    CurrentMaterial.OcclusionMap != nullptr);
-			Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
-			Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
+			if (CheckHasParameter(AlbedoMap))       Shader->SetUniform(RenderData->HasAlbedoMap,       CurrentMaterial.AlbedoMap != nullptr);
+			if (CheckHasParameter(NormalMap))       Shader->SetUniform(RenderData->HasNormalMap,       CurrentMaterial.NormalMap != nullptr);
+			if (CheckHasParameter(RoughnessMap))    Shader->SetUniform(RenderData->HasRoughnessMap,    CurrentMaterial.RoughnessMap != nullptr);
+			if (CheckHasParameter(MetallicMap))     Shader->SetUniform(RenderData->HasMetallicMap,     CurrentMaterial.MetallicMap != nullptr);
+			if (CheckHasParameter(OcclusionMap))    Shader->SetUniform(RenderData->HasOcclusionMap,    CurrentMaterial.OcclusionMap != nullptr);
+			if (CheckHasParameter(DetailAlbedoMap)) Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
+			if (CheckHasParameter(DetailNormalMap)) Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
 
 			if (CheckParameter(Tiling))           Shader->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);
 			if (CheckParameter(DetailTiling))     Shader->SetUniform(RenderData->DetailTiling,     CurrentMaterial.DetailTiling);

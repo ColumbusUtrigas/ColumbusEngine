@@ -3,6 +3,10 @@
 #include <Common/JSON/JSON.h>
 #include <System/Log.h>
 
+#include <Graphics/Texture.h>
+#include <Graphics/Shader.h>
+#include <Resources/ResourceManager.h>
+
 namespace Columbus
 {
 

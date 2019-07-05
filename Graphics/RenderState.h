@@ -28,7 +28,7 @@ namespace Columbus
 		Material::DepthTest PreviousDepthTesting;
 		bool PreviousDepthWriting;
 	public:
-		RenderState() { Clear(); }
+		RenderState() { /*Clear();*/ }
 
 		void Clear();
 

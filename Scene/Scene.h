@@ -37,6 +37,7 @@ namespace Columbus
 		ResourceManager<Sound> SoundsManager;
 
 		std::vector<Material> Materials;
+		std::vector<std::string> MaterialsNames;
 		std::unordered_map<std::string, size_t> MaterialsMap;
 
 		//std::map<uint32, SmartPointer<Texture>> Textures;
