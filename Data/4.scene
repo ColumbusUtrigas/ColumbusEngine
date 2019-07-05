@@ -1,16 +1,22 @@
 {
 	"Defaults": {
-		"Skybox": "Data/Skyboxes/Ruins.hdr"
+		"Skybox": "Data/Skyboxes/Pier.exr"
 	},
+	"Materials": [
+		"Data/Materials/Hercules.mat"
+	],
 	"Meshes": [
 		"Data/Models/Statue.cmf",
+		"Data/Models/Sphere.cmf",
 		"Data/Models/Hercules.cmf",
 		"Data/Models/Chest.cmf",
 		"Data/Models/Fireplace.cmf"
 	],
 	"Objects": [
 		{
-			"Name": "Object 0",
+			"Material": "Data/Materials/Hercules.mat",
+			"MeshRenderer": "Data/Models/Hercules.cmf",
+			"Name": "Hercules",
 			"Static": false,
 			"Transform": {
 				"Position": [0.000000, 0.000000, 0.000000],
@@ -19,25 +25,8 @@
 			}
 		},
 		{
+			"Material": null,
 			"Name": "Object 1",
-			"Static": false,
-			"Transform": {
-				"Position": [0.000000, 0.000000, 0.000000],
-				"Rotation": [0.000000, 0.000000, 0.000000],
-				"Scale": [1.000000, 1.000000, 1.000000]
-			}
-		},
-		{
-			"Name": "Object 2",
-			"Static": false,
-			"Transform": {
-				"Position": [0.000000, 0.000000, 0.000000],
-				"Rotation": [0.000000, 0.000000, 0.000000],
-				"Scale": [1.000000, 1.000000, 1.000000]
-			}
-		},
-		{
-			"Name": "Object 3",
 			"Static": false,
 			"Transform": {
 				"Position": [0.000000, 0.000000, 0.000000],

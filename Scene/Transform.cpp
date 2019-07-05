@@ -22,7 +22,7 @@ namespace Columbus
 
 			ModelMatrix.SetIdentity();
 			ModelMatrix.Scale(Scale);
-			ModelMatrix = ModelMatrix * Q.ToMatrix();
+			ModelMatrix = Q.ToMatrix() * ModelMatrix;
 			ModelMatrix.Translate(Position);
 
 			LastPosition = Position;

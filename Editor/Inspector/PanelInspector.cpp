@@ -32,11 +32,7 @@ namespace Columbus
 					}
 
 					//Draw material editor
-					if (ImGui::CollapsingHeader(MATERIAL_ICON" Material##PanelInspector_Material"))
-					{
-						DrawMaterialEditor(Scn);
-						ImGui::Separator();
-					}
+					DrawMaterialEditor(Scn);
 
 					// Draw components editor and "Add component" button
 					DrawComponentsEditor(Scn);

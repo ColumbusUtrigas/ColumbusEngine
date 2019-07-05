@@ -80,7 +80,7 @@ namespace Columbus
 			if (ImGui::BeginMenu("File"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Open")) scene.Load("Data/3.scene");
+				if (ImGui::MenuItem(" Open")) scene.Load("Data/4.scene");
 				ImGui::Spacing();
 				if (ImGui::MenuItem(" Save")) scene.Save("Data/4.scene");
 				ImGui::Spacing();
