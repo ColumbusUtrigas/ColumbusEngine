@@ -26,6 +26,8 @@ namespace Columbus
 	Scene::Scene()
 	{
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
+
+		MaterialsManager.Add(SmartPointer<Material>(new Material()), "Default");
 	}
 
 	void Scene::RigidbodyWorkflow()
@@ -100,18 +102,13 @@ namespace Columbus
 			}
 		}
 
-		Materials.push_back(Material()); // Default material
-		MaterialsNames.emplace_back("Default");
-
 		// Load materials
 		for (uint32 i = 0; i < J["Materials"].GetElementsCount(); i++)
 		{
-			Material Mat;
-			if (Mat.Load(J["Materials"][i].GetString().c_str(), ShadersManager, TexturesManager))
+			SmartPointer<Material> Mat(new Material());
+			if (Mat->Load(J["Materials"][i].GetString().c_str(), ShadersManager, TexturesManager))
 			{
-				MaterialsMap[J["Materials"][i].GetString()] = Materials.size();
-				MaterialsNames.push_back(J["Materials"][i].GetString());
-				Materials.push_back(Mat);
+				MaterialsManager.Add(std::move(Mat), J["Materials"][i].GetString());
 			}
 		}
 
@@ -148,11 +145,13 @@ namespace Columbus
 
 			if (J["Objects"][i]["Material"].IsNull())
 			{
-				GO->materialID = 0;
+				GO->material = nullptr;
 			} else
 			{
-				auto It = MaterialsMap.find(J["Objects"][i]["Material"].GetString());
-				GO->materialID = It != MaterialsMap.end() ? It->second : 0;
+				GO->material = MaterialsManager.Find(J["Objects"][i]["Material"].GetString());
+				//GO->materialID = MaterialsManager.FindID(J["Objects"][i]["Material"].GetString());
+				//auto It = MaterialsMap.find(J["Objects"][i]["Material"].GetString());
+				//GO->materialID = It != MaterialsMap.end() ? It->second : 0;
 			}
 
 			if (J["Objects"][i].HasChild("MeshRenderer"))
@@ -181,36 +180,36 @@ namespace Columbus
 
 		J["Defaults"]["Skybox"] = SkyPath;
 
-		for (const auto& Elem : TexturesManager.Resources)
+		for (const auto& Elem : TexturesManager.Names)
 		{		
-			J["Textures"][Counter++] = Elem.first;
+			J["Textures"][Counter++] = Elem.second;
 		}
 
 		Counter = 0;
 
-		for (const auto& Elem : ShadersManager.Resources)
+		for (const auto& Elem : ShadersManager.Names)
 		{
-			J["Shaders"][Counter++] = Elem.first;
+			J["Shaders"][Counter++] = Elem.second;
 		}
 
 		Counter = 0;
 
-		for (uint32 i = 1; i < MaterialsNames.size(); i++)
+		for (uint32 i = 1; i < MaterialsManager.Names.size(); i++)
 		{
-			J["Materials"][i - 1] = MaterialsNames[i];
+			J["Materials"][i - 1] = MaterialsManager.Names[i];
 		}
 
-		for (const auto& Elem : MeshesManager.Resources)
+		for (const auto& Elem : MeshesManager.Names)
 		{
-			J["Meshes"][Counter++] = Elem.first;
+			J["Meshes"][Counter++] = Elem.second;
 		}
 
 		Counter = 0;
 
-		for (const auto& Elem : SoundsManager.Resources)
+		for (const auto& Elem : SoundsManager.Names)
 		{
-			J["Sounds"][Counter]["Name"] = Elem.first;
-			J["Sounds"][Counter]["Streaming"] = Elem.second->IsStreaming();
+			J["Sounds"][Counter]["Name"] = Elem.second;
+			J["Sounds"][Counter]["Streaming"] = SoundsManager[Elem.first]->IsStreaming();
 			Counter++;
 		}
 
@@ -232,10 +231,10 @@ namespace Columbus
 			J["Objects"][Counter]["Transform"]["Position"] = Obj->transform.Position;
 			J["Objects"][Counter]["Transform"]["Rotation"] = Obj->transform.Rotation;
 			J["Objects"][Counter]["Transform"]["Scale"] = Obj->transform.Scale;
-			if (Obj->materialID == 0)
+			if (Obj->material == nullptr)
 				J["Objects"][Counter]["Material"] = nullptr;
 			else
-				J["Objects"][Counter]["Material"] = MaterialsNames[Obj->materialID];
+				J["Objects"][Counter]["Material"] = MaterialsManager.Find(Obj->material);
 
 			auto MeshRenderer = (ComponentMeshRenderer*)Obj->GetComponent(Component::Type::MeshRenderer);
 

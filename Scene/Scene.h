@@ -16,8 +16,6 @@
 
 #include <Resources/ResourceManager.h>
 
-#include <map>
-
 namespace Columbus
 {
 
@@ -29,21 +27,18 @@ namespace Columbus
 		friend class EditorPanelInspector;
 		friend class ResourcesViewerTexture;
 		friend class ResourcesViewerShader;
+		friend class ResourcesViewerMaterial;
 		friend class ResourcesViewerMesh;
 
 		ResourceManager<Texture> TexturesManager;
 		ResourceManager<ShaderProgram> ShadersManager;
+		ResourceManager<Material> MaterialsManager;
 		ResourceManager<Mesh> MeshesManager;
 		ResourceManager<Sound> SoundsManager;
 
-		std::vector<Material> Materials;
-		std::vector<std::string> MaterialsNames;
-		std::unordered_map<std::string, size_t> MaterialsMap;
-
-		//std::map<uint32, SmartPointer<Texture>> Textures;
-		//std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
-		//std::map<uint32, SmartPointer<Mesh>> Meshes;
-		//std::map<uint32, SmartPointer<Sound>> Sounds;
+		//std::vector<Material> Materials;
+		//std::vector<std::string> MaterialsNames;
+		//std::unordered_map<std::string, size_t> MaterialsMap;
 
 		Vector<AudioSource*> AudioSources;
 		std::vector<Light*> Lights;

@@ -5,6 +5,7 @@
 #include <Core/Platform/PlatformFilesystem.h>
 #include <Editor/ResourcesViewerTexture.h>
 #include <Editor/ResourcesViewerShader.h>
+#include <Editor/ResourcesViewerMaterial.h>
 #include <Editor/ResourcesViewerMesh.h>
 
 namespace Columbus
@@ -132,6 +133,13 @@ namespace Columbus
 
 				ImGui::Spacing();
 
+				if (ImGui::MenuItem(" Materials"))
+				{
+					ResourcesViewerMaterial::Open(nullptr);
+				}
+
+				ImGui::Spacing();
+
 				if (ImGui::MenuItem(" Meshes"))
 				{
 					ResourcesViewerMesh::Open(nullptr);
@@ -213,6 +221,7 @@ namespace Columbus
 		PanelProfiler.Draw();
 		ResourcesViewerTexture::Draw(&scene);
 		ResourcesViewerShader::Draw(&scene);
+		ResourcesViewerMaterial::Draw(scene);
 		ResourcesViewerMesh::Draw(&scene);
 
 		if (SkyboxLoader.Draw("Load Skybox"))

@@ -126,7 +126,7 @@ namespace Columbus
 				if (MName.find(MFind) != std::string::npos)
 				{
 					T* Object = Elem.second.Get();
-					ResourceViewerDrawSelectable<T>(Elem.first.c_str(), Object, Tmp, Width, PopupStr, Button, DoubleClick);
+					ResourceViewerDrawSelectable<T>(Manager.Names[Elem.first].c_str(), Object, Tmp, Width, PopupStr, Button, DoubleClick);
 
 					if (!PopupStr.empty() && !PopupSet)
 					{
