@@ -105,7 +105,7 @@ namespace Columbus
 					tmp.transform.Position = Vector3::Random({-10}, {10});
 					tmp.Name = buffer->Name + " ";
 					tmp.Enable = buffer->Enable;
-					tmp.materialID = buffer->materialID;
+					tmp.material = buffer->material;
 
 					CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
 					CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
