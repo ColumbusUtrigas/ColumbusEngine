@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 	camera.Rot = Vector3(0, 180, 0);
 
 	input.ShowMouseCursor(true);
-	input.SetSystemCursor(SystemCursor::Crosshair);
+	input.SetSystemCursor(SystemCursor::Arrow);
 
 	float wheel = 0.0f;
 	const int CameraSpeed = 5;
@@ -156,14 +156,11 @@ int main(int argc, char** argv)
 		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
 		ImGui::NewFrame();
 
-		SDL_ShowCursor(input.IsMouseCursorShowed());
-
 		Editor.Draw(scene, MainRender, SizeOfRenderWindow, RedrawTime);
 
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 		window.Display();
 	}
 
