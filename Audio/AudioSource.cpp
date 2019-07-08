@@ -1,4 +1,5 @@
 #include <Audio/AudioSource.h>
+#include <cstring>
 
 namespace Columbus
 {
@@ -125,6 +126,9 @@ namespace Columbus
 					}
 				}
 			}
+		} else
+		{
+			memset(Frames, 0, Count * sizeof(Sound::Frame));
 		}
 	}
 
