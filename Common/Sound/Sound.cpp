@@ -1,9 +1,8 @@
 #include <Common/Sound/Sound.h>
 #include <Common/Sound/OGG/SoundOGG.h>
 #include <Common/Sound/WAV/SoundWAV.h>
-#include <System/Assert.h>
+#include <Common/Sound/SoundUtil.h>
 #include <cstdlib>
-#include <cstring>
 
 namespace Columbus
 {
@@ -108,65 +107,50 @@ namespace Columbus
 		}
 	}
 
-	static void ResampleAudio(Sound::Frame* src, Sound::Frame* dst, int from_samples, int from_freq, int to_freq)
-	{
-		if (from_freq == to_freq)
-		{
-			// so, there is nothing to do, just copy samples
-			memcpy(dst, src, from_samples * sizeof(Sound::Frame));
-			return;
-		}
-
-		if (from_freq * 2 == to_freq)
-		{
-			// 11025->22050 or 22050 to 44100
-			for (int i = 0; i < from_samples; i++)
-			{
-				dst[i * 2 + 0] = src[i];
-				dst[i * 2 + 1] = src[i];
-			}
-
-			return;
-		}
-
-		if (from_freq * 4 == to_freq)
-		{
-			// 11025->44100
-			for (int i = 0; i < from_samples; i++)
-			{
-				dst[i * 4 + 0] = src[i];
-				dst[i * 4 + 1] = src[i];
-				dst[i * 4 + 2] = src[i];
-				dst[i * 4 + 3] = src[i];
-			}
-
-			return;
-		}
-
-		COLUMBUS_ASSERT_MESSAGE(false, "Sound module: ResampleAudio(): invalid conversion");
-	}
-
-	uint32 Sound::Decode(Frame* Frames, uint32 Count)
+	uint32 Sound::Decode(Frame* Frames, uint32 Count, uint64& Offset)
 	{
 		if (Frames != nullptr)
 		{
+			static constexpr int MaxSamples = 2048;
+			uint32 Divider = 44100 / GetFrequency();
+			Frame Tmp[MaxSamples];
+
+			int from_freq = GetFrequency();
+			int to_freq = 44100;
+
 			if (Streaming)
 			{
 				if (Decoder != nullptr)
 				{
-					static constexpr int MaxSamples = 2048;
-
-					uint32 Divider = 44100 / Decoder->GetFrequency();
-					Frame Tmp[MaxSamples];
-
-					int from_freq = Decoder->GetFrequency();
-					int to_freq = 44100;
-
 					uint32 Decoded = Decoder->Decode(Tmp, Count / Divider);
-					ResampleAudio(Tmp, Frames, Decoded, from_freq, to_freq);
+					SoundUtil::Resample(Tmp, Frames, Decoded, from_freq, to_freq);
+
+					Offset += Count * Channels;
 
 					return Decoded * Divider;
 				}
+			} else
+			{
+				uint32 RealCount = Count / Divider;
+
+				if (Channels == 1)
+				{
+					for (uint32 i = 0; i < RealCount; i++)
+					{
+						Tmp[i].L = Tmp[i].R = Buffer[Offset++ % BufferSize];
+					}
+				} else if (Channels == 2)
+				{
+					for (uint32 i = 0; i < RealCount; i++)
+					{
+						Tmp[i].L = Buffer[Offset++ % BufferSize];
+						Tmp[i].R = Buffer[Offset++ % BufferSize];
+					}
+				}
+
+				SoundUtil::Resample(Tmp, Frames, RealCount, from_freq, to_freq);
+
+				return Count;
 			}
 		}
 
@@ -245,12 +229,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
 
 

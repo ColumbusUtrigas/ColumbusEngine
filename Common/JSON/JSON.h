@@ -55,9 +55,11 @@ namespace Columbus
 	public:
 		JSON() {}
 		JSON(const std::string& String) : StringValue(String), ValueType(Type::String) {}
+		JSON(const char* String) : StringValue(String), ValueType(Type::String) {}
 		JSON(bool Bool) : BoolValue(Bool), ValueType(Type::Bool) {}
 		JSON(std::nullptr_t Nullptr) : ValueType(Type::Null) {}
 		JSON(int64 Int) : IntValue(Int), ValueType(Type::Int) {}
+		JSON(float Float) : FloatValue(Float), ValueType(Type::Float) {}
 		JSON(double Float) : FloatValue(Float), ValueType(Type::Float) {}
 		JSON(const Vector3& Vec)
 		{

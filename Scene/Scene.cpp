@@ -149,9 +149,34 @@ namespace Columbus
 			} else
 			{
 				GO->material = MaterialsManager.Find(J["Objects"][i]["Material"].GetString());
-				//GO->materialID = MaterialsManager.FindID(J["Objects"][i]["Material"].GetString());
-				//auto It = MaterialsMap.find(J["Objects"][i]["Material"].GetString());
-				//GO->materialID = It != MaterialsMap.end() ? It->second : 0;
+			}
+
+			if (J["Objects"][i].HasChild("AudioSource"))
+			{
+				auto Clip = SoundsManager.Find(J["Objects"][i]["AudioSource"]["Clip"].GetString());
+
+				if (Clip != nullptr)
+				{
+					AudioSource* Source = new AudioSource();
+					Source->Gain = (float)J["Objects"][i]["AudioSource"]["Gain"].GetFloat();
+					Source->Pitch = (float)J["Objects"][i]["AudioSource"]["Pitch"].GetFloat();
+					Source->MinDistance = (float)J["Objects"][i]["AudioSource"]["MinDistance"].GetFloat();
+					Source->MaxDistance = (float)J["Objects"][i]["AudioSource"]["MaxDistance"].GetFloat();
+					Source->Rolloff = (float)J["Objects"][i]["AudioSource"]["Rolloff"].GetFloat();
+					Source->Playing = J["Objects"][i]["AudioSource"]["Playing"].GetBool();
+					Source->Looping = J["Objects"][i]["AudioSource"]["Looping"].GetBool();
+
+					if (J["Objects"][i]["AudioSource"]["Mode"].GetString() == "2D")
+						Source->SoundMode = AudioSource::Mode::Sound2D;
+					else if (J["Objects"][i]["AudioSource"]["Mode"].GetString() == "3D")
+						Source->SoundMode = AudioSource::Mode::Sound3D;
+
+					Source->SetSound(Clip);
+					GO->AddComponent(new ComponentAudioSource(Source));
+				} else
+				{
+					Log::Warning("%s: Cannot load AudioSource", GO->Name.c_str());
+				}
 			}
 
 			if (J["Objects"][i].HasChild("MeshRenderer"))
@@ -236,7 +261,30 @@ namespace Columbus
 			else
 				J["Objects"][Counter]["Material"] = MaterialsManager.Find(Obj->material);
 
+			auto Source = (ComponentAudioSource*)Obj->GetComponent(Component::Type::AudioSource);
 			auto MeshRenderer = (ComponentMeshRenderer*)Obj->GetComponent(Component::Type::MeshRenderer);
+
+			if (Source != nullptr)
+			{
+				auto S = Source->GetSource();
+				if (S != nullptr)
+				{
+					J["Objects"][Counter]["AudioSource"]["Clip"] = SoundsManager.Find(S->GetSound());
+					J["Objects"][Counter]["AudioSource"]["Gain"] = S->Gain;
+					J["Objects"][Counter]["AudioSource"]["Pitch"] = S->Pitch;
+					J["Objects"][Counter]["AudioSource"]["MinDistance"] = S->MinDistance;
+					J["Objects"][Counter]["AudioSource"]["MaxDistance"] = S->MaxDistance;
+					J["Objects"][Counter]["AudioSource"]["Rolloff"] = S->Rolloff;
+					J["Objects"][Counter]["AudioSource"]["Playing"] = S->Playing;
+					J["Objects"][Counter]["AudioSource"]["Looping"] = S->Looping;
+
+					if (S->SoundMode == AudioSource::Mode::Sound2D)
+						J["Objects"][Counter]["AudioSource"]["Mode"] = "2D";
+
+					if (S->SoundMode == AudioSource::Mode::Sound3D)
+						J["Objects"][Counter]["AudioSource"]["Mode"] = "3D";
+				}
+			}
 
 			if (MeshRenderer != nullptr)
 			{
