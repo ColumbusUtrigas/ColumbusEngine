@@ -7,7 +7,7 @@ file(GLOB SRC_COMMON_SOUND ./Common/Sound/*.cpp ./Common/Sound/*/*.cpp)
 
 file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/*/*.cpp ${SRC_COMMON_SOUND} ./Common/*/*.cpp)
 
-file(GLOB SRC_CORE ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
+file(GLOB SRC_CORE ./Core/*.cpp ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
 file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp ./Graphics/Particles/*/*.cpp)
 file(GLOB SRC_INPUT ./Input/*.cpp)
 file(GLOB SRC_PHYSICS ./Physics/*.cpp)
@@ -22,7 +22,7 @@ file(GLOB IMGUI ./Lib/imgui/*.cpp ./Lib/imgui/misc/cpp/*.cpp ./Lib/imgui/example
 
 set(SRC ${SRC_AUDIO} ${SRC_COMMON} ${SRC_CORE} ${SRC_GRAPHICS} ${SRC_INPUT} ${SRC_PHYSICS} ${SRC_RENDER_API} ${SRC_RENDER_API_OPENGL} ${SRC_SCENE} ${SRC_SYSTEM} ${IMGUI} ${SRC_EDITOR} ${SRC_PROFILING} main.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall -Wno-strict-aliasing -g -ggdb3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall")
 
 set(TARGET ColumbusEngine)
 

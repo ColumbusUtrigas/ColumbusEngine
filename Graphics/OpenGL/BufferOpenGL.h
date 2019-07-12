@@ -2,7 +2,6 @@
 
 #include <Core/Types.h>
 #include <GL/glew.h>
-#include <vector>
 
 namespace Columbus
 {

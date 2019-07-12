@@ -36,9 +36,19 @@ namespace Columbus
 		ResourceManager<Mesh> MeshesManager;
 		ResourceManager<Sound> SoundsManager;
 
-		//std::vector<Material> Materials;
-		//std::vector<std::string> MaterialsNames;
-		//std::unordered_map<std::string, size_t> MaterialsMap;
+		void SerializeTexturesManager(JSON& J);
+		void SerializeShadersManager(JSON& J);
+		void SerializeMaterialsManager(JSON& J);
+		void SerializeMeshesManager(JSON& J);
+		void SerializeSoundsManager(JSON& J);
+		void SerializeObjects(JSON& J);
+
+		void DeserializeTexturesManager(JSON& J);
+		void DeserializeShadersManager(JSON& J);
+		void DeserializeMaterialsManager(JSON& J);
+		void DeserializeMeshesManager(JSON& J);
+		void DeserializeSoundsManager(JSON& J);
+		void DeserializeObjects(JSON& J);
 
 		Vector<AudioSource*> AudioSources;
 		std::vector<Light*> Lights;
@@ -52,7 +62,7 @@ namespace Columbus
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
 
-		std::string SkyPath;
+		String SkyPath;
 		Skybox* Sky = nullptr;
 		Camera* MainCamera = nullptr;
 		AudioListener* Listener = nullptr;
@@ -73,12 +83,12 @@ namespace Columbus
 		void AddEmpty()
 		{
 			GameObject GO;
-			std::string Name = "Object ";
+			String Name = "Object ";
 			for (uint32 i = 0;; i++)
 			{
-				if (Objects.Find(Name + std::to_string(i)) == nullptr)
+				if (Objects.Find(Name + std::to_string(i).c_str()) == nullptr)
 				{
-					Name += std::to_string(i);
+					Name += std::to_string(i).c_str();
 					break;
 				}
 			}

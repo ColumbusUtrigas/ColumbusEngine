@@ -13,8 +13,6 @@
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/ParticlesRenderer.h>
 
-#include <map>
-
 namespace Columbus
 {
 

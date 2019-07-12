@@ -87,7 +87,7 @@ namespace Columbus
 						ColorTextures[i] = gDevice->CreateTexture();
 					}
 
-					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
+					ColorTextures[i]->Create2D(TextureDesc(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
 
 					if (!ColorTexturesAttached[i] || ColorTextureFlags[i] != PrevColorTextureFlags[i] || PrevColorTextures[i] != ColorTextures[i])
 					{
@@ -111,7 +111,7 @@ namespace Columbus
 					DepthTexture = gDevice->CreateTexture();
 				}
 
-				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
+				DepthTexture->Create2D(TextureDesc(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
 				DepthTexture->SetFlags(DepthTextureFlags);
 
 				if (!DepthTextureAttached || PrevDepthTexture != DepthTexture)

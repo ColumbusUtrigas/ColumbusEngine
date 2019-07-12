@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Core/Types.h>
-#include <utility>
 
 namespace Columbus
 {
@@ -155,19 +154,26 @@ namespace Columbus
 		Image();
 		Image(const char* FileName) { if (!Load(FileName)) { Data = nullptr; Exist = false; } }
 		Image(const Image&) = delete;
-		Image(Image&& Base) noexcept { *this = std::move(Base); }
+		Image(Image&& Base) noexcept { *this = (Image&&)(Base); }
 
 		Image& operator=(const Image&) = delete;
 		Image& operator=(Image&& Base) noexcept
 		{
-			std::swap(Width, Base.Width);
-			std::swap(Height, Base.Height);
-			std::swap(Depth, Base.Depth);
-			std::swap(MipMaps, Base.MipMaps);
-			std::swap(Size, Base.Size);
-			std::swap(Format, Base.Format);
-			std::swap(Data, Base.Data);
-			std::swap(Exist, Base.Exist);
+			auto swap = [](auto& a, auto& b)
+			{
+				auto tmp = a;
+				a = b;
+				b = tmp;
+			};
+
+			swap(Width, Base.Width);
+			swap(Height, Base.Height);
+			swap(Depth, Base.Depth);
+			swap(MipMaps, Base.MipMaps);
+			swap(Size, Base.Size);
+			swap(Format, Base.Format);
+			swap(Data, Base.Data);
+			swap(Exist, Base.Exist);
 			return *this;
 		}
 

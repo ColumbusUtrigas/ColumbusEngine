@@ -5,6 +5,7 @@
 #include <Graphics/Shader.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Mesh.h>
+#include <vector>
 
 namespace Columbus
 {

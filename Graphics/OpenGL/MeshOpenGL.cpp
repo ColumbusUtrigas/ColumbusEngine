@@ -1,7 +1,6 @@
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <Graphics/OpenGL/BufferOpenGL.h>
 #include <GL/glew.h>
-#include <algorithm>
 
 namespace Columbus
 {

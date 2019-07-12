@@ -3,8 +3,6 @@
 #include <Lib/imgui/imgui.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 
-#include <cstdio>
-
 namespace Columbus
 {
 

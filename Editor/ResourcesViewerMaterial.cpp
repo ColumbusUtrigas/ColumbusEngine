@@ -19,7 +19,7 @@ namespace Columbus
 	{
 		MaterialLoader.MultipleSelect(true);
 
-		static std::string Find;
+		static String Find;
 		static Material* PopupObject = nullptr;
 
 		if (Opened)

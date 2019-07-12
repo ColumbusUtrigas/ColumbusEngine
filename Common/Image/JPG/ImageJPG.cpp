@@ -63,7 +63,6 @@ namespace Columbus
 
 		uint8* data = new uint8[cinfo.image_width * cinfo.image_height * bpp];
 		uint64 counter = 0;
-		uint64 maxsize = row_stride * cinfo.image_height;
 
 		while (cinfo.output_scanline < cinfo.output_height)
 		{

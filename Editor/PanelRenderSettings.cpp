@@ -9,7 +9,7 @@ namespace Columbus
 	{
 		if (Opened)
 		{
-			if (ImGui::Begin((ICON_FA_COG" " + Name + "##PanelRenderSettings").c_str(), &Opened, ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin(ICON_FA_COG" Render Settings##PanelRenderSettings", &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				if (Render != nullptr)
 				{

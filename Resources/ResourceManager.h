@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Core/SmartPointer.h>
-#include <string>
+#include <Core/String.h>
 #include <unordered_map>
 
 namespace Columbus
@@ -13,15 +13,15 @@ namespace Columbus
 		uint32 CurrentID = 0;
 
 		std::unordered_map<size_t, SmartPointer<T>> Resources;
-		std::unordered_map<size_t, std::string> Names;
-		std::unordered_map<std::string, size_t> IDs;
+		std::unordered_map<size_t, String> Names;
+		std::unordered_map<String, size_t> IDs;
 
-		bool IsNameFree(const std::string& Name)
+		bool IsNameFree(const String& Name)
 		{
 			return IDs.find(Name) == IDs.end();
 		}
 
-		bool Add(SmartPointer<T>&& Resource, const std::string& Name, bool Replace = false)
+		bool Add(SmartPointer<T>&& Resource, const String& Name, bool Replace = false)
 		{
 			bool NameFree = IsNameFree(Name);
 
@@ -43,13 +43,13 @@ namespace Columbus
 			return It != Resources.end() ? It->second.Get() : nullptr;
 		}
 		
-		T* Find(const std::string& Key)
+		T* Find(const String& Key)
 		{
 			auto It = IDs.find(Key);
 			return It != IDs.end() ? Resources[It->second].Get() : nullptr;
 		}
 
-		std::string Find(const T* Value)
+		String Find(const T* Value)
 		{
 			for (const auto& Elem : Resources)
 			{
@@ -62,13 +62,13 @@ namespace Columbus
 			return "";
 		}
 
-		size_t FindID(const std::string& Name)
+		size_t FindID(const String& Name)
 		{
 			auto It = IDs.find(Name);
 			return It != IDs.end() ? It->second : 0;
 		}
 
-		SmartPointer<T>& operator[](const std::string& Key)
+		SmartPointer<T>& operator[](const String& Key)
 		{
 			return Resources[IDs[Key]];
 		}

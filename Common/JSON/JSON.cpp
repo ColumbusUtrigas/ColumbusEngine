@@ -15,7 +15,7 @@ namespace Columbus
 		}
 	}
 
-	static bool ExtractString(char*& Text, std::string& Result)
+	static bool ExtractString(char*& Text, String& Result)
 	{
 		while (*Text != '"')
 		{
@@ -189,7 +189,7 @@ namespace Columbus
 				if (*Text == '"')
 				{
 					Text++;
-					std::string Name;
+					String Name;
 					if (!ExtractString(Text, Name)) { Error = true; return true; }
 
 					if (*Text != '"') { Error = true; return true; }
@@ -256,7 +256,19 @@ namespace Columbus
 
 	void JSON::_WriteFloat(File& F) const
 	{
-		F << std::to_string(FloatValue).c_str();
+		String str = std::to_string(FloatValue).c_str();
+
+		if (str.length() != 0)
+		{
+			// remove zeroes from back
+			while (str[str.length() - 1] == '0')
+				str.pop_back();
+
+			if (str[str.length() - 1] == '.')
+				str.pop_back();
+		}
+
+		F << str.c_str();
 	}
 
 	void JSON::_WriteArray(File& F, uint32 Tabs) const
@@ -375,6 +387,33 @@ namespace Columbus
 		F << '\n';
 
 		return true;
+	}
+
+	JSON& JSON::operator[](uint32 Index)
+	{
+		if (ValueType != Type::Array)
+		{
+			ObjectValue.clear();
+			ValueType = Type::Array;
+		}
+
+		while (Index >= ArrayValue.size())
+		{
+			ArrayValue.push_back(JSON());
+		}
+
+		return ArrayValue[Index];
+	}
+
+	JSON& JSON::operator[](const String& Key)
+	{
+		if (ValueType != Type::Object)
+		{
+			ArrayValue.clear();
+			ValueType = Type::Object;
+		}
+
+		return ObjectValue[Key];
 	}
 
 }

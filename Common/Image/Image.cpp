@@ -210,7 +210,7 @@ namespace Columbus
 	Image::Image() {}
 	/*
 	* Load image from file
-	* @param std::string InFileName: Name of image file to load
+	* @param const char* InFileName: Name of image file to load
 	* @param int Flags: Loading flags
 	*/
 	bool Image::Load(const char* InFileName, ImageLoading Flags)
@@ -277,7 +277,7 @@ namespace Columbus
 	}
 	/*
 	* Save image to file
-	* @param std::string InFileName: Name of image file to save
+	* @param const char* InFileName: Name of image file to save
 	* @param Format: Image format
 	* @param Quality: Compression level
 	*/

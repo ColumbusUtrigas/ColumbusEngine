@@ -4,8 +4,8 @@
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <Core/SmartPointer.h>
+#include <Core/String.h>
 #include <vector>
-#include <string>
 
 namespace Columbus
 {
@@ -19,7 +19,7 @@ namespace Columbus
 		Transform transform;
 		Material* material = nullptr;
 
-		std::string Name;
+		String Name;
 		bool Enable = true;
 	public:
 		GameObject();
