@@ -21,13 +21,13 @@ namespace Columbus
 
 		Log::Initialization("Default textures loading");
 
-		Texture::Properties Props = Texture::Properties(1, 1, 0, 0, TextureFormat::RGBA8);
+		TextureDesc Desc(1, 1, 0, 0, TextureFormat::RGBA8);
 
-		Black->Create2D(Props);
-		White->Create2D(Props);
+		Black->Create2D(Desc);
+		White->Create2D(Desc);
 
-		Black->Load(&Zero, Props);
-		White->Load(&One,  Props);
+		Black->Load(&Zero, Desc);
+		White->Load(&One,  Desc);
 
 		CreateIntegrationMap(IntegrationLUT);
 
@@ -75,7 +75,7 @@ namespace Columbus
 			Flags.Wrapping = Texture::Wrap::Clamp;
 
 			IntegrationMap = gDevice->CreateTexture();
-			IntegrationMap->Create2D(Texture::Properties{ Resolution, Resolution, 0, 0, Format });
+			IntegrationMap->Create2D(TextureDesc(Resolution, Resolution, 0, 0, Format));
 			IntegrationMap->SetFlags(Flags);
 		}
 

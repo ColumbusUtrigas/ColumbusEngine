@@ -88,7 +88,7 @@ namespace Columbus
 
 				if (Indexed)
 				{
-					uint32 CurrentIndices[3];
+					uint32 CurrentIndices[3] = { 0 };
 
 					for (uint32 i = 0; i < IndicesCount; i += 3)
 					{

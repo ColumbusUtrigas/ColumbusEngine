@@ -172,9 +172,9 @@ namespace Columbus
 							TransparentObjects.emplace_back(Emitter, Counter);
 						}
 					}
-
-					Counter++;
 				}
+
+				Counter++;
 			}
 		}
 	}

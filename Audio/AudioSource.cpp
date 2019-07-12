@@ -21,7 +21,7 @@ namespace Columbus
 		Looping(false),
 		SoundMode(AudioSource::Mode::Sound3D)
 	{
-		SoundClip = new Sound();
+		SoundClip = nullptr;
 	}
 
 	void AudioSource::Play() { Playing = true; }
@@ -74,7 +74,7 @@ namespace Columbus
 		}
 	}
 
-	AudioSource::~AudioSource() { delete SoundClip; }
+	AudioSource::~AudioSource() {}
 
 }
 

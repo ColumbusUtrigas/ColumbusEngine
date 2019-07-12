@@ -21,7 +21,7 @@ namespace Columbus
 	{
 		ShaderLoader.MultipleSelect(true);
 
-		static std::string Find;
+		static String Find;
 		static ShaderProgram* PopupObject = nullptr;
 
 		if (Scn != nullptr && Opened)

@@ -1,5 +1,4 @@
 #include <Graphics/Material.h>
-#include <System/Serializer.h>
 #include <Common/JSON/JSON.h>
 #include <System/Log.h>
 

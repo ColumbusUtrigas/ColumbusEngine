@@ -27,7 +27,10 @@ namespace Columbus
 		virtual Type GetType() const override { return Component::Type::Light; }
 		Light* GetLight() const { return LightSource; }
 
-		virtual ~ComponentLight() override {}
+		virtual ~ComponentLight() override
+		{
+			delete LightSource;
+		}
 	};
 
 }

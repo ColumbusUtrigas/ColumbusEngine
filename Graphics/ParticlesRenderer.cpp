@@ -2,10 +2,8 @@
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/Device.h>
+#include <Math/Quaternion.h>
 #include <GL/glew.h>
-
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 namespace Columbus
 {
@@ -99,11 +97,8 @@ namespace Columbus
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)
 		{
-			glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
-			glm::mat4 M = glm::mat4_cast(Q);
-
-			Matrix Billboard;
-			memcpy(&Billboard.M[0][0], glm::value_ptr(M), 16 * sizeof(float));
+			Quaternion Q(Vector3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
+			Matrix Billboard = Q.ToMatrix();
 
 			Shader->SetUniform(Shader->GetFastUniform("View"), false, MainCamera.GetViewMatrix());
 			Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());

@@ -29,7 +29,7 @@ namespace Columbus
 	{
 		TextureLoader.MultipleSelect(true);
 
-		static std::string Find;
+		static String Find;
 		static Texture* PopupObject = nullptr;
 
 		if (Scn != nullptr && Opened)

@@ -1,14 +1,12 @@
 #pragma once
 
 #include <Core/Types.h>
-#include <Scene/Scene.h>
+#include <Core/String.h>
+#include <Core/Platform/PlatformFilesystem.h>
 #include <Editor/FileDialog.h>
 #include <Editor/Icons.h>
-#include <Core/Platform/PlatformFilesystem.h>
 #include <Lib/imgui/imgui.h>
-#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <functional>
-#include <string>
 
 namespace Columbus
 {
@@ -17,16 +15,16 @@ namespace Columbus
 
 	template <typename T>
 	static void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width,
-		std::string& SelectedPopup,
+		String& SelectedPopup,
 		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick);
 
 	template <typename T>
 	static void ResourceViewerDrawList(const char* Name, T*& Tmp, T*& PopupObject,
-		ResourceManager<T>& Manager, const std::string& Find,
+		ResourceManager<T>& Manager, const String& Find,
 		std::function<bool(const char*, T*)> Button, std::function<void(T*)> RightClick,
 		std::function<void()> DoubleClick);
 
-	static void ResourceViewerDrawButtons(const char* Name, const void* Dst, std::string& Find, std::function<void()> Close, bool& Opened);
+	static void ResourceViewerDrawButtons(const char* Name, const void* Dst, String& Find, std::function<void()> Close, bool& Opened);
 
 	template <typename T>
 	static void ResourceViewerLoadNew(T* New, ResourceManager<T>& Manager, const char* Path, bool Force,
@@ -47,7 +45,7 @@ namespace Columbus
 	{
 		if (ImGui::BeginChild(Name, ImVec2(ImGui::GetWindowContentRegionWidth(), 30)))
 		{
-			if (ImGui::Button((std::string("Load More##") + Name).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 30)))
+			if (ImGui::Button((String("Load More##") + Name).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 30)))
 			{
 				LoadMore();
 			}
@@ -57,7 +55,7 @@ namespace Columbus
 
 	template <typename T>
 	void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width,
-		std::string& SelectedPopup,
+		String& SelectedPopup,
 		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick)
 	{
 		bool Pushed = false;
@@ -99,11 +97,11 @@ namespace Columbus
 
 	template <typename T>
 	void ResourceViewerDrawList(const char* Name, T*& Tmp, T*& PopupObject,
-		ResourceManager<T>& Manager, const std::string& Find,
+		ResourceManager<T>& Manager, const String& Find,
 		std::function<bool(const char*, T*)> Button, std::function<void(T*)> RightClick,
 		std::function<void()> DoubleClick)
 	{
-		std::string PopupStr;
+		String PopupStr;
 
 		if (ImGui::BeginChild(Name, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 30)))
 		{
@@ -111,8 +109,8 @@ namespace Columbus
 
 			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, PopupStr, Button, DoubleClick);
 
-			std::string MFind = Find;
-			std::string MName;
+			String MFind = Find;
+			String MName;
 
 			std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
 
@@ -123,7 +121,7 @@ namespace Columbus
 				MName = Elem.first;
 				std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
 				
-				if (MName.find(MFind) != std::string::npos)
+				if (MName.find(MFind) != String::npos)
 				{
 					T* Object = Elem.second.Get();
 					ResourceViewerDrawSelectable<T>(Manager.Names[Elem.first].c_str(), Object, Tmp, Width, PopupStr, Button, DoubleClick);
@@ -153,7 +151,7 @@ namespace Columbus
 		}
 	}
 
-	void ResourceViewerDrawButtons(const char* Name, const void* Dst, std::string& Find, std::function<void()> Close, bool& Opened)
+	void ResourceViewerDrawButtons(const char* Name, const void* Dst, String& Find, std::function<void()> Close, bool& Opened)
 	{
 		if (ImGui::BeginChild(Name))
 		{
@@ -165,7 +163,10 @@ namespace Columbus
 				ImGui::SameLine();
 			}
 
-			ImGui::InputText("Find##ResourceViewerButtons", &Find);
+			char Tmp[1024];
+			memcpy(Tmp, Find.data(), Find.size() + 1);
+			ImGui::InputText("Find##ResourceViewerButtons", Tmp, 1024);
+			Find = Tmp;
 		}
 		ImGui::EndChild();
 	}

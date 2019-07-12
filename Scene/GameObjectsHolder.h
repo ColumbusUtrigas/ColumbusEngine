@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Core/SmartPointer.h>
+#include <Core/String.h>
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
@@ -10,14 +12,14 @@ namespace Columbus
 	struct GameObjectsHolder
 	{
 		std::vector<SmartPointer<GameObject>> Resources;
-		std::unordered_map<std::string, uint32> ResourcesMap;
+		std::unordered_map<String, uint32> ResourcesMap;
 
-		bool IsNameFree(const std::string& Name)
+		bool IsNameFree(const String& Name)
 		{
 			return ResourcesMap.find(Name) == ResourcesMap.end();
 		}
 
-		bool Add(SmartPointer<GameObject>&& Resource, const std::string& Name, bool Replace = false)
+		bool Add(SmartPointer<GameObject>&& Resource, const String& Name, bool Replace = false)
 		{
 			bool NameFree = IsNameFree(Name);
 
@@ -39,7 +41,7 @@ namespace Columbus
 			return false;
 		}
 
-		bool Delete(const std::string& Name)
+		bool Delete(const String& Name)
 		{
 			auto It = ResourcesMap.find(Name);
 			if (It != ResourcesMap.end())
@@ -65,7 +67,7 @@ namespace Columbus
 			return false;
 		}
 
-		GameObject* Find(const std::string& Index)
+		GameObject* Find(const String& Index)
 		{
 			auto It = ResourcesMap.find(Index);
 			return It != ResourcesMap.end() ? Resources[It->second].Get() : nullptr;
@@ -76,7 +78,7 @@ namespace Columbus
 			return Resources[Index];
 		}
 
-		SmartPointer<GameObject>& operator[](const std::string& Index)
+		SmartPointer<GameObject>& operator[](const String& Index)
 		{
 			return Resources[ResourcesMap[Index]];
 		}

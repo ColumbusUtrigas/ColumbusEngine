@@ -153,9 +153,9 @@ namespace Columbus
 					if (Selected == 2)
 					{
 						SmartPointer<Material> Mat(new Material());
-						if (MaterialsManager.Add(std::move(Mat), Name))
+						if (MaterialsManager.Add(std::move(Mat), Name.c_str()))
 						{
-							*CreateNewMaterialMat = MaterialsManager[Name].Get();
+							*CreateNewMaterialMat = MaterialsManager[Name.c_str()].Get();
 						}
 					}
 

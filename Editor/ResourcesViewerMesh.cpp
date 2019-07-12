@@ -21,7 +21,7 @@ namespace Columbus
 	{
 		MeshLoader.MultipleSelect(true);
 
-		static std::string Find;
+		static String Find;
 		static Mesh* PopupObject = nullptr;
 
 		if (Scn != nullptr && Opened)

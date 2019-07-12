@@ -16,11 +16,11 @@ namespace Columbus
 		int Index = 0;
 		int ZeroIndex = 0;
 	public:
-		EditorPanelProfiler() : EditorPanel("Profiler") {}
+		EditorPanelProfiler() {}
 
 		void SetRedrawTime(float Time);
-
-		virtual void Draw() final override;
+		void Draw();
+		
 		virtual ~EditorPanelProfiler() final override;
 	};
 

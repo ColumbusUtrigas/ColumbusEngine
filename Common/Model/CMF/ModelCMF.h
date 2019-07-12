@@ -10,6 +10,7 @@ namespace Columbus
 	public:
 		virtual bool  Load(const char* FileName) final override;
 		static  bool IsCMF(const char* FileName);
+		virtual ~ModelLoaderCMF() final override {}
 	};
 
 }

@@ -5,6 +5,22 @@
 namespace Columbus
 {
 
+	struct TextureDesc
+	{
+		uint32 Width;
+		uint32 Height;
+		uint32 LOD;
+		uint32 Multisampling;
+		TextureFormat Format;
+
+		TextureDesc(uint32 Width, uint32 Height, uint32 LOD, uint32 Multisampling, TextureFormat Format) :
+			Width(Width),
+			Height(Height),
+			LOD(LOD),
+			Multisampling(Multisampling),
+			Format(Format) {}
+	};
+
 	class Texture
 	{
 	public:
@@ -81,35 +97,19 @@ namespace Columbus
 				return !(*this == Other);
 			}
 		};
-
-		struct Properties
-		{
-			uint32 Width = 0;
-			uint32 Height = 0;
-			uint32 LOD = 0;
-			uint32 Multisampling = 0;
-			TextureFormat Format;
-
-			Properties(uint32 Width, uint32 Height, uint32 LOD, uint32 MS, TextureFormat Format) :
-				Width(Width),
-				Height(Height),
-				LOD(LOD),
-				Multisampling(MS),
-				Format(Format) {}
-		};
 	public:
 		Texture() {}
 		Texture(const Texture&) = delete;
 		Texture(Texture&&) = delete;
 
-		virtual bool Load(const void* Data, Properties Props) = 0;
+		virtual bool Load(const void* Data, TextureDesc Desc) = 0;
 		virtual bool Load(Image& InImage) = 0;
 		virtual bool Load(const char* File) = 0;
 
-		virtual bool Create(Image::Type InType, Properties Props) = 0;
-		virtual bool Create(Type InType, Properties Props) = 0;
-		virtual bool Create2D(Properties Props) = 0;
-		virtual bool CreateCube(Properties Props) = 0;
+		virtual bool Create(Image::Type InType, TextureDesc Desc) = 0;
+		virtual bool Create(Type InType, TextureDesc Desc) = 0;
+		virtual bool Create2D(TextureDesc Desc) = 0;
+		virtual bool CreateCube(TextureDesc Desc) = 0;
 
 		virtual void SetFlags(Flags F) = 0;
 

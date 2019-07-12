@@ -1,11 +1,12 @@
 #pragma once
 
 #include <Math/Vector3.h>
+#include <Core/ISerializable.h>
 
 namespace Columbus
 {
 
-	struct Light
+	struct Light : public ISerializable
 	{
 		enum
 		{
@@ -24,6 +25,11 @@ namespace Columbus
 		float Range = 10.0f;
 		float InnerCutoff = 12.5f;
 		float OuterCutoff = 17.5f;
+
+		virtual void Serialize(JSON& J) const final override;
+		virtual void Deserialize(JSON& J) final override;
+
+		virtual ~Light() {}
 	};
 
 }

@@ -4,8 +4,6 @@
 #include <Common/Model/Model.h>
 #include <Math/Box.h>
 
-#include <vector>
-
 namespace Columbus
 {
 

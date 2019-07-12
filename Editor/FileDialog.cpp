@@ -7,9 +7,9 @@
 namespace Columbus
 {
 
-	static std::string Recompose(const std::vector<std::string>& Decomposed, size_t Index)
+	static String Recompose(const std::vector<String>& Decomposed, size_t Index)
 	{
-		std::string Result;
+		String Result;
 
 		for (size_t i = 0; i <= Index; i++)
 		{
@@ -19,10 +19,10 @@ namespace Columbus
 		return Result.empty() ? Decomposed[0] : Result;
 	}
 
-	static const char* GetFileIcon(const std::string& Ext)
+	static const char* GetFileIcon(const String& Ext)
 	{
-		auto e = Ext;
-		std::transform(e.begin(), e.end(), e.begin(), ::tolower);
+		auto e = Ext.tolower();
+
 		if (e == "tga" || e == "bmp" || e == "dds" || e == "tif" || e == "tiff" ||
 		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE_O;
 		if (e == "wav" || e == "mp3" || e == "ogg") return ICON_FA_MUSIC;
@@ -38,7 +38,7 @@ namespace Columbus
 		return ICON_FA_FILE_O;
 	}
 
-	bool EditorFileDialog::Draw(const std::string& Name)
+	bool EditorFileDialog::Draw(const String& Name)
 	{
 		bool res = false;
 
@@ -51,14 +51,14 @@ namespace Columbus
 			{
 				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Close();
 
-				std::string Absolute = Filesystem::AbsolutePath(Path);
+				String Absolute = Filesystem::AbsolutePath(Path);
 				auto Decomposition = Filesystem::Split(Absolute);
 
 				size_t i = 0;
 				for (const auto& Elem : Decomposition)
 				{
 					ImGui::SameLine();
-					if (ImGui::Button((Elem + "##" + std::to_string(i)).c_str()))
+					if (ImGui::Button((Elem + "##" + std::to_string(i).c_str()).c_str()))
 					{
 						Path = Recompose(Decomposition, i);
 					}
@@ -107,7 +107,7 @@ namespace Columbus
 							}
 						}
 
-						std::string Text;
+						String Text;
 
 						switch (Elem.Type)
 						{

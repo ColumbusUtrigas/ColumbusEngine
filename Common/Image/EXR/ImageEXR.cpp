@@ -21,8 +21,17 @@ namespace Columbus
 	bool ImageLoaderEXR::Load(const char* Filename)
 	{
 		const char* Error = nullptr;
+		float* tmp = nullptr;
 		int w, h;
-		int Result = LoadEXR((float**)&Data, &w, &h, Filename, &Error);
+		int Result = LoadEXR(&tmp, &w, &h, Filename, &Error);
+
+		// copy with 'new', because tinyexr allocates memory with 'malloc',
+		// my code frees data with delete, that's undefined behavour, so
+		// I wrote that shit, lol
+		size_t size = w * h * 4 * sizeof(float);
+		Data = new uint8[size];
+		memcpy(Data, tmp, size);
+		free(tmp);
 
 		if (Error != nullptr)
 		{
