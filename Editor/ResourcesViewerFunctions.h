@@ -73,7 +73,7 @@ namespace Columbus
 		// Draw a tooltip with the name of object
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip(Name);
+			ImGui::SetTooltip("%s", Name);
 
 			if (ImGui::IsMouseClicked(1))
 				SelectedPopup = Name;

@@ -2,6 +2,7 @@
 #include <Common/Image/DDS/ImageDDS.h>
 #include <System/File.h>
 #include <System/Log.h>
+#include <System/Assert.h>
 #include <cstring>
 
 namespace Columbus
@@ -171,8 +172,9 @@ namespace Columbus
 
 		if (Header.PixelFormat.FourCC == ('D' | ('X' << 8) | ('1' << 16) | ('0' << 24)))
 		{
-			Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
-			return nullptr;
+			COLUMBUS_ASSERT_MESSAGE(false, "I don't support DX10 DDS textures :c");
+			//Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
+			//return nullptr;
 		}
 
 		if ((Header.PixelFormat.Flags & DDSFourCC) == 0x00 &&
@@ -183,14 +185,15 @@ namespace Columbus
 			return nullptr;
 		}
 
-		if (Header.Caps2 & 0x200) //Check for cubemap
+		if (Header.Caps2 & DDSCubemap) //Check for cubemap
 		{
-			if ((Header.Caps2 & 0x0400) == 0 ||  //Check cubemap for complexity
-			    (Header.Caps2 & 0x0800) == 0 ||
-			    (Header.Caps2 & 0x1000) == 0 ||
-			    (Header.Caps2 & 0x2000) == 0 ||
-			    (Header.Caps2 & 0x4000) == 0 ||
-			    (Header.Caps2 & 0x8000) == 0)
+			if ((Header.Caps2 & DDSCubemapPositiveX) == 0 ||  //Check cubemap for complexity
+			    (Header.Caps2 & DDSCubemapNegativeX) == 0 ||
+			    (Header.Caps2 & DDSCubemapPositiveY) == 0 ||
+			    (Header.Caps2 & DDSCubemapNegativeY) == 0 ||
+			    (Header.Caps2 & DDSCubemapPositiveZ) == 0 ||
+			    (Header.Caps2 & DDSCubemapNegativeZ) == 0 ||
+			    (Header.Caps2 & DDSCubemapAllFaces)  == 0)
 			{
 				Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: cubemap is not complex");
 				return nullptr;
@@ -207,9 +210,12 @@ namespace Columbus
 
 			uint32 BlockSize = GetBlockSizeFromFormat(OutFormat);
 
-			for (uint32 i = 0; i < Header.MipMapCount; i++)
+			if ((Header.Caps1 & DDSMipMap) != 0)
 			{
-				DataSize += (((Header.Width >> i) + 3) / 4) * (((Header.Height >> i) + 3) / 4) * BlockSize;
+				for (uint32 i = 0; i < Header.MipMapCount; i++)
+				{
+					DataSize += (((Header.Width >> i) + 3) / 4) * (((Header.Height >> i) + 3) / 4) * BlockSize;
+				}
 			}
 		}
 		else if (Header.PixelFormat.Flags & DDSRGBA ||
@@ -225,15 +231,22 @@ namespace Columbus
 
 			uint32 BPP = GetBPPFromFormat(OutFormat);
 
-			for (uint32 i = 0; i < Header.MipMapCount; i++)
+			if ((Header.Caps1 & DDSMipMap) != 0)
 			{
-				DataSize += (Header.Width >> i) * (Header.Height >> i) * BPP;
+				for (uint32 i = 0; i < Header.MipMapCount; i++)
+				{
+					DataSize += (Header.Width >> i) * (Header.Height >> i) * BPP;
+				}
 			}
 		}
 
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
-		OutMipMaps = Header.MipMapCount;
+
+		if ((Header.Caps1 & DDSMipMap) != 0)
+			OutMipMaps = Header.MipMapCount;
+		else
+			OutMipMaps = 1;
 
 		if (OutImageType == ImageLoader::Type::ImageCube) DataSize *= 6;
 
@@ -281,12 +294,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
 
 

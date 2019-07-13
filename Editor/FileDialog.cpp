@@ -149,7 +149,7 @@ namespace Columbus
 					for (const auto& Elem : SelectedFiles)
 					{
 						ImGui::SameLine();
-						ImGui::Text(Elem.Name.c_str());
+						ImGui::Text("%s", Elem.Name.c_str());
 					}
 
 					if (ImGui::Button("Cancel")) Close();
