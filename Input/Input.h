@@ -127,7 +127,6 @@ namespace Columbus
 		bool MouseEnabled = true;
 		bool KeyboardFocus;
 		bool MouseFocus;
-		bool KeyRepeat;
 	public:
 		Input();
 

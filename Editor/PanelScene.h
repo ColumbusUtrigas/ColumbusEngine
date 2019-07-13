@@ -14,7 +14,6 @@ namespace Columbus
 		Texture* FramebufferTexture = nullptr;
 		iVector2 Position;
 		iVector2 SizeOfRenderWindow;
-		bool Stats = false;
 		bool Selected = false;
 		bool Hover = false;
 	public:

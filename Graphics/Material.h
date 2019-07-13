@@ -11,7 +11,7 @@ namespace Columbus
 	class Texture;
 
 	template <typename T>
-	class ResourceManager;
+	struct ResourceManager;
 
 	class Material
 	{

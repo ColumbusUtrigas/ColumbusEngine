@@ -10,29 +10,11 @@ namespace Columbus
 
 		static bool IsJPG(const char* FileName);
 
-		virtual bool Load(const char* FileName);
+		virtual bool Load(const char* FileName) override;
 
 		virtual ~ImageLoaderJPG() override {}
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

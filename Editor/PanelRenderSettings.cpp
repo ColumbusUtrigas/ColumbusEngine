@@ -44,9 +44,9 @@ namespace Columbus
 						ImGui::Unindent(10.0f);
 
 						Render->VignetteColor.Clamp({0.0f}, {1.0f});
-						Render->VignetteIntensity  = Math::Clamp(Render->VignetteIntensity,  {0.0f}, {1.0f});
-						Render->VignetteSmoothness = Math::Clamp(Render->VignetteSmoothness, {0.0f}, {1.0f});
-						Render->VignetteRadius     = Math::Clamp(Render->VignetteRadius,     {0.0f}, {1.0f});
+						Render->VignetteIntensity  = Math::Clamp(Render->VignetteIntensity,  0.0f, 1.0f);
+						Render->VignetteSmoothness = Math::Clamp(Render->VignetteSmoothness, 0.0f, 1.0f);
+						Render->VignetteRadius     = Math::Clamp(Render->VignetteRadius,     0.0f, 1.0f);
 
 						ImGui::Separator();
 						ImGui::Spacing();
@@ -63,9 +63,9 @@ namespace Columbus
 						ImGui::Unindent(10.0f);
 
 						Render->VignetteColor.Clamp({0.0f}, {1.0f});
-						Render->VignetteIntensity  = Math::Clamp(Render->VignetteIntensity,  {0.0f}, {1.0f});
-						Render->VignetteSmoothness = Math::Clamp(Render->VignetteSmoothness, {0.0f}, {1.0f});
-						Render->VignetteRadius     = Math::Clamp(Render->VignetteRadius,     {0.0f}, {1.0f});
+						Render->VignetteIntensity  = Math::Clamp(Render->VignetteIntensity,  0.0f, 1.0f);
+						Render->VignetteSmoothness = Math::Clamp(Render->VignetteSmoothness, 0.0f, 1.0f);
+						Render->VignetteRadius     = Math::Clamp(Render->VignetteRadius,     0.0f, 1.0f);
 
 						ImGui::Separator();
 						ImGui::Spacing();
