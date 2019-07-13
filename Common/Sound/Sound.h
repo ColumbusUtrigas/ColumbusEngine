@@ -79,10 +79,10 @@ namespace Columbus
 	public:
 		SoundDecoder() {}
 
-		virtual bool Load(const char* FileName) { return false; }
-		virtual void Free() {}
-		virtual void Seek(uint64 Offset) {}
-		virtual uint32 Decode(Sound::Frame* Frames, uint32 Count) { return 0; }
+		virtual bool Load(const char* FileName) = 0;
+		virtual void Free() = 0;
+		virtual void Seek(uint64 Offset) = 0;
+		virtual uint32 Decode(Sound::Frame* Frames, uint32 Count) = 0;
 
 		uint64 GetSize() const { return Size; }
 		uint32 GetFrequency() const { return Frequency; }

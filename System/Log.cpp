@@ -1,9 +1,9 @@
 #include <System/Log.h>
 #include <Core/Platform/Platform.h>
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef PLATFORM_WINDOWS
 	#include <Windows.h>

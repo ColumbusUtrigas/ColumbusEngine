@@ -6,7 +6,7 @@
 #define STBI_REALLOC(p,newsz) realloc(p,newsz)
 #define STBI_FREE(p) (delete[] ((char*)p))
 
-#include <Lib/STB/stb_image.h>
+#include <stb_image.h>
 
 namespace Columbus
 {
