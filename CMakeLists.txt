@@ -22,18 +22,16 @@ file(GLOB IMGUI ./Lib/imgui/*.cpp ./Lib/imgui/misc/cpp/*.cpp ./Lib/imgui/example
 
 set(SRC ${SRC_AUDIO} ${SRC_COMMON} ${SRC_CORE} ${SRC_GRAPHICS} ${SRC_INPUT} ${SRC_PHYSICS} ${SRC_RENDER_API} ${SRC_RENDER_API_OPENGL} ${SRC_SCENE} ${SRC_SYSTEM} ${IMGUI} ${SRC_EDITOR} ${SRC_PROFILING} main.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall -Wextra -Wno-unused-parameter")
 
 set(TARGET ColumbusEngine)
 
 include_directories(./)
-include_directories(./Lib/JSON/)
 include_directories(./Lib/MiniMP3)
-include_directories(./Lib/STB/)
+include_directories(SYSTEM ./Lib/STB/)
 include_directories(./Lib/ZSTD/Include/)
 include_directories(/usr/include/SDL2/)
 include_directories(/usr/include/bullet/)
-include_directories(/usr/include/AL/)
 
 add_executable(${TARGET} ${SRC})
 

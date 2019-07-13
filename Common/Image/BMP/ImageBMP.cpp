@@ -105,11 +105,11 @@ namespace Columbus
 
 		return Data != nullptr;
 	}
-
+	/*
 	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		return false;
-	}
+	}*/
 
 }
 

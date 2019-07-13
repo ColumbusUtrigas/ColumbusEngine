@@ -96,7 +96,7 @@ namespace Columbus
 	public:
 		ImageLoader() {}
 
-		virtual bool Load(const char* FileName) { return false; }
+		virtual bool Load(const char* FileName) = 0;
 
 		virtual ~ImageLoader() {}
 	};

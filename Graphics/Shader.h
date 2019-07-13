@@ -40,9 +40,9 @@ namespace Columbus
 		bool IsCompiled() const { return Compiled; }
 		bool IsError()    const { return Error; }
 
-		virtual bool Load(const char* FileName) { return false; }
-		virtual bool Load(StandartProgram Program) { return false; }
-		virtual bool Compile() { return false; }
+		virtual bool Load(const char* FileName) = 0;
+		virtual bool Load(StandartProgram Program) = 0;
+		virtual bool Compile() = 0;
 
 		virtual ~ShaderProgram() {}
 	};

@@ -174,7 +174,14 @@ namespace Columbus
 		}
 	}
 	
-	void WindowOpenGLSDL::SetSize(const iVector2& Size) {}
+	void WindowOpenGLSDL::SetSize(const iVector2& Size)
+	{
+		if (Window && Open)
+		{
+			SDL_SetWindowSize(Window, Size.X, Size.Y);
+		}
+	}
+
 	void WindowOpenGLSDL::SetMousePosition(const iVector2& Pos)
 	{
 		if (Window && Open)
