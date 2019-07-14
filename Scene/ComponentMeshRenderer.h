@@ -12,10 +12,7 @@ namespace Columbus
 	private:
 		Mesh* Object = nullptr;
 	public:
-		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh)
-		{
-			COLUMBUS_ASSERT(Object != nullptr);
-		}
+		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh) {}
 
 		virtual void Update(float TimeTick, Transform& Trans) override {}
 

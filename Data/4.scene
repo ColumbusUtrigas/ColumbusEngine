@@ -6,11 +6,11 @@
 		"Data/Materials/Hercules.mat"
 	],
 	"Meshes": [
-		"Data/Models/Statue.cmf",
 		"Data/Models/Sphere.cmf",
+		"Data/Models/Statue.cmf",
 		"Data/Models/Hercules.cmf",
-		"Data/Models/Chest.cmf",
-		"Data/Models/Fireplace.cmf"
+		"Data/Models/Fireplace.cmf",
+		"Data/Models/Chest.cmf"
 	],
 	"Objects": [
 		{
@@ -19,25 +19,21 @@
 			"Name": "Hercules",
 			"Static": false,
 			"Transform": {
-				"Position": [0.000000, 0.000000, 0.000000],
-				"Rotation": [0.000000, 0.000000, 0.000000],
-				"Scale": [1.000000, 1.000000, 1.000000]
-			}
-		},
-		{
-			"Material": null,
-			"Name": "Object 1",
-			"Static": false,
-			"Transform": {
-				"Position": [0.000000, 0.000000, 0.000000],
-				"Rotation": [0.000000, 0.000000, 0.000000],
-				"Scale": [1.000000, 1.000000, 1.000000]
+				"Position": [0, 0, 0],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
 			}
 		}
 	],
 	"Shaders": [
 		"Data/Shaders/Standart.glsl",
 		"Data/Shaders/Particles.glsl"
+	],
+	"Sounds": [
+		{
+			"Name": "Data/Sounds/Fire.wav",
+			"Streaming": true
+		}
 	],
 	"Textures": [
 		"Data/Textures/chest_Metallic.dds",

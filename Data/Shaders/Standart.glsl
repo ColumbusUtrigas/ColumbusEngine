@@ -203,7 +203,7 @@ vec3 Lights(void)
 	vec3 Ambient = SampleCube(IrradianceMap, _Normal).rgb;
 	float AO = HasOcclusionMap ? Sample2D(OcclusionMap, _TiledUV).r : 1.0;
 
-	BRDF += (1.0 - _Metallic) * Ambient * 0.1 * AO;
+	BRDF += (1.0 - _Metallic) * Ambient * AO;
 	BRDF += Specular * AO;
 
 	return BRDF * Albedo.rgb;
