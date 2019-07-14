@@ -172,9 +172,8 @@ namespace Columbus
 
 		if (Header.PixelFormat.FourCC == ('D' | ('X' << 8) | ('1' << 16) | ('0' << 24)))
 		{
-			COLUMBUS_ASSERT_MESSAGE(false, "I don't support DX10 DDS textures :c");
-			//Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
-			//return nullptr;
+			Log::Error("ImageLoadDDSMemory() error: Couldn't load DDS: It is a DX10 DDS texture");
+			return nullptr;
 		}
 
 		if ((Header.PixelFormat.Flags & DDSFourCC) == 0x00 &&

@@ -73,6 +73,8 @@ namespace Columbus
 
 		iVector2 Resolution(1024);
 
+		BaseMap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy16, Texture::Wrap::Clamp));
+
 		Cubemap = new TextureOpenGL();
 		Cubemap->CreateCube(TextureDesc(Resolution.X, Resolution.Y, 0, 0, TextureFormat::R11G11B10F));
 		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
