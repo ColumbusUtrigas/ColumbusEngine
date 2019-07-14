@@ -2,6 +2,7 @@
 
 #include <Scene/Component.h>
 #include <Graphics/Mesh.h>
+#include <System/Assert.h>
 
 namespace Columbus
 {
@@ -11,7 +12,10 @@ namespace Columbus
 	private:
 		Mesh* Object = nullptr;
 	public:
-		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh) {}
+		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh)
+		{
+			COLUMBUS_ASSERT(Object != nullptr);
+		}
 
 		virtual void Update(float TimeTick, Transform& Trans) override {}
 

@@ -2,6 +2,7 @@
 
 #include <Scene/Component.h>
 #include <Audio/AudioSource.h>
+#include <System/Assert.h>
 
 namespace Columbus
 {
@@ -13,14 +14,15 @@ namespace Columbus
 
 		friend class Scene;
 	public:
-		ComponentAudioSource(AudioSource* InSource) : Source(InSource) {}
+		ComponentAudioSource(AudioSource* InSource) : Source(InSource)
+		{
+			COLUMBUS_ASSERT(Source != nullptr);
+		}
 
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
-			if (Source != nullptr)
-			{
-				Source->Position = Trans.Position;
-			}
+			COLUMBUS_ASSERT(Source != nullptr);
+			Source->Position = Trans.Position;
 		}
 
 		//This component methods

@@ -81,7 +81,7 @@ namespace Columbus
 
 					auto Pred2 = [](const auto& a, const auto& b)
 					{
-						return a.Name < b.Name;
+						return a.Name.tolower() < b.Name.tolower();
 					};
 
 					auto Finder = [](const auto& a)

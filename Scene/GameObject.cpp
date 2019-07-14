@@ -1,4 +1,5 @@
 #include <Scene/GameObject.h>
+#include <System/Assert.h>
 
 namespace Columbus
 {
@@ -7,11 +8,13 @@ namespace Columbus
 	
 	void GameObject::AddChild(GameObject* Child)
 	{
+		COLUMBUS_ASSERT(Child != nullptr);
 		Children.push_back(SmartPointer<GameObject>(Child));
 	}
 	
 	void GameObject::AddComponent(Component* InComponent)
 	{
+		COLUMBUS_ASSERT(InComponent != nullptr);
 		Components.push_back(SmartPointer<Component>(InComponent));
 	}
 	
