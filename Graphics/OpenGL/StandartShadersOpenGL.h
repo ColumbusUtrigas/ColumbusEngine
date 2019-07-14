@@ -115,7 +115,7 @@ namespace Columbus
 
 	void main(void)
 	{
-		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * Exposure, 0, 1000);
+		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * Exposure, 0, 50000);
 		vec3 Mapped = vec3(0.0);
 
 		switch (Type)
@@ -484,7 +484,7 @@ namespace Columbus
 		vec2 uv = SampleSphericalMap(normalize(Pos)); 
 		vec3 color = texture(BaseMap, uv).rgb;
 
-		FragColor = vec4(clamp(color, 0, 1000), 1.0);
+		FragColor = vec4(clamp(color, 0, 50000), 1.0);
 	}
 	)";
 
