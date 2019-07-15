@@ -31,7 +31,11 @@ namespace Columbus
 			ImGui::SetNextWindowSize(ImVec2(600, 370));
 			if (ImGui::BeginPopupModal("Shaders Viewer", &Opened, ImGuiWindowFlags_NoResize))
 			{
-				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Opened = false;
+				if (ImGui::IsWindowFocused() &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+				{
+					Opened = false;
+				}
 
 				auto LoadMore = [&]() { ShaderLoader.Open(); };
 				auto Button = [&](const char* Name, void* _) { return ImGui::Button(Name, ImVec2(100, 100)); };

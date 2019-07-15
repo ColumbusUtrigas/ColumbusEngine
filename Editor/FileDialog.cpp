@@ -44,12 +44,26 @@ namespace Columbus
 
 		if (Opened)
 		{
-			ImGui::OpenPopup(Name.c_str());
+			if (!ImGui::IsPopupOpen(Name.c_str()))
+				ImGui::OpenPopup(Name.c_str());
+
 			ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
 			ImGui::SetNextWindowSizeConstraints(ImVec2(450, 250), ImVec2(FLT_MAX, FLT_MAX));
 			if (ImGui::BeginPopupModal(Name.c_str(), &Opened, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse))
 			{
-				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Close();
+				if (ImGui::IsWindowFocused() &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+				{
+					Close();
+				}
+
+				// CloseFlag is set via Close() function
+				if (CloseFlag)
+				{
+					ImGui::CloseCurrentPopup();
+					Opened = false;
+					CloseFlag = false;
+				}
 
 				String Absolute = Filesystem::AbsolutePath(Path);
 				auto Decomposition = Filesystem::Split(Absolute);

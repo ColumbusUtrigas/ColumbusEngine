@@ -12,6 +12,7 @@ namespace Columbus
 	{
 	private:
 		bool Opened = false;
+		bool CloseFlag = false;
 		bool Hidden = false;
 		bool Multiple = false;
 		
@@ -24,7 +25,7 @@ namespace Columbus
 		EditorFileDialog(const String& Path) : Path(Path) {}
 
 		void Open() { Opened = true; }
-		void Close() { Opened = false; }
+		void Close() { CloseFlag = true; }
 		void ShowHidden(bool Show) { Hidden = Show; }
 		void MultipleSelect(bool Select) { Multiple = Select; }
 		void SetMessageBox(MessageBox* Box) { Message = Box; }
