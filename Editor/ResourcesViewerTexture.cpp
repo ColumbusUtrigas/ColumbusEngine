@@ -39,7 +39,11 @@ namespace Columbus
 			ImGui::SetNextWindowSize(ImVec2(600, 370));
 			if (ImGui::BeginPopupModal("Textures Viewer", &Opened, ImGuiWindowFlags_NoResize))
 			{
-				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Opened = false;
+				if (ImGui::IsWindowFocused() &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+				{
+					Opened = false;
+				}
 
 				#define TEXID(a) (void*)(uintptr_t)((TextureOpenGL*)(a))->GetID()
 
