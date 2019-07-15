@@ -20,7 +20,7 @@ namespace Columbus
 	void _ColumbusAssert_Internal(const char* file, long int line, const char* msg)
 	{
 		char line_str[16] = { 0 };
-		sprintf(line_str, "%ld", line);
+		snprintf(line_str, 16, "%ld", line);
 
 		const char* file_str = strstr(file, "ColumbusEngine");
 
