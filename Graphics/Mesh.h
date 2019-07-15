@@ -4,19 +4,13 @@
 #include <Common/Model/Model.h>
 #include <Math/Box.h>
 
-#include <vector>
-
 namespace Columbus
 {
 
 	class Mesh
 	{
 	protected:
-		Vector3 Position;
 		Box BoundingBox;
-
-		uint32 VerticesCount = 0;
-		bool LightsSorted = false;
 	public:
 		Mesh() {}
 

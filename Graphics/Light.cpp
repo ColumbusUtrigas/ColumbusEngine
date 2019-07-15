@@ -1,44 +1,40 @@
 #include <Graphics/Light.h>
 #include <Common/JSON/JSON.h>
-#include <System/Log.h>
 
 namespace Columbus
 {
 
-	Light::Light() {}
-	Light::Light(int Type, const Vector3& Pos) : Pos(Pos), Type(Type) {}
-	Light::Light(const char* File, const Vector3& Pos) : Pos(Pos)
+	void Light::Serialize(JSON& J) const
 	{
-		Load(File);
-	}
+		J["Color"] = Color;
+		J["Energy"] = Energy;
+		J["Range"] = Range;
+		J["InnerCutoff"] = InnerCutoff;
+		J["OuterCutoff"] = OuterCutoff;
 
-	bool Light::Load(const char* FileName)
-	{
-		auto Error = [FileName]() { Log::Error("Light has not been loaded: %s", FileName); };
-
-		JSON J;
-		if (!J.Load(FileName)) { Error(); return false; }
-
-		Type = (int)J["Type"].GetInt();
-		Color = J["Color"].GetVector3<float>();
-
-		Energy = (float)J["Energy"].GetFloat();
-
-		if (Type == 0) Dir = J["Directional"]["Direction"].GetVector3<float>();
-		if (Type == 1) Range = (float)J["Point"]["Range"].GetFloat();
-		if (Type == 2)
+		switch (Type)
 		{
-			InnerCutoff = (float)J["Spot"]["Inner"].GetFloat();
-			OuterCutoff = (float)J["Spot"]["Outer"].GetFloat();
+		case Light::Directional: J["Type"] = "Directional"; break;
+		case Light::Point:       J["Type"] = "Point";       break;
+		case Light::Spot:        J["Type"] = "Spot";        break;
 		}
-
-		Log::Success("Light has been loaded: %s", FileName);
-
-		return true;
 	}
-	
-	Light::~Light() {}
+
+	void Light::Deserialize(JSON& J)
+	{
+		Color = J["Color"].GetVector3<float>();
+		Energy = (float)J["Energy"].GetFloat();
+		Range = (float)J["Range"].GetFloat();
+		InnerCutoff = (float)J["InnerCutoff"].GetFloat();
+		OuterCutoff = (float)J["OuterCutoff"].GetFloat();
+
+		if (J["Type"].GetString() == "Directional")
+			Type = Light::Directional;
+		else if (J["Type"].GetString() == "Point")
+			Type = Light::Point;
+		else if (J["Type"].GetString() == "Spot")
+			Type = Light::Spot;
+	}
 
 }
-
 

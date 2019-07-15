@@ -19,10 +19,14 @@ namespace Columbus
 			{
 				if (Inspectable != nullptr)
 				{
+					std::string Tmp = Inspectable->Name.c_str();
+
 					ImGui::Checkbox("##PanelInspector_Enable", &Inspectable->Enable);
 					ImGui::SameLine();
-					ImGui::InputText("##PanelInspector_Name", &Inspectable->Name);
+					ImGui::InputText("##PanelInspector_Name", &Tmp);
 					ImGui::Separator();
+
+					Inspectable->Name = Tmp.c_str();
 
 					// Draw transform editor
 					if (ImGui::CollapsingHeader(TRANSFORM_ICON" Transform##PanelInspector_Transform", ImGuiTreeNodeFlags_DefaultOpen))
@@ -32,11 +36,7 @@ namespace Columbus
 					}
 
 					//Draw material editor
-					if (ImGui::CollapsingHeader(MATERIAL_ICON" Material##PanelInspector_Material"))
-					{
-						DrawMaterialEditor();
-						ImGui::Separator();
-					}
+					DrawMaterialEditor(Scn);
 
 					// Draw components editor and "Add component" button
 					DrawComponentsEditor(Scn);

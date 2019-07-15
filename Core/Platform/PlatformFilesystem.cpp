@@ -12,7 +12,7 @@
 namespace Columbus
 {
 
-	std::string Filesystem::GetCurrent()
+	String Filesystem::GetCurrent()
 	{
 		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::GetCurrent();
@@ -23,7 +23,7 @@ namespace Columbus
 		return "";
 	}
 
-	std::string Filesystem::AbsolutePath(const std::string& Path)
+	String Filesystem::AbsolutePath(const String& Path)
 	{
 		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::AbsolutePath(Path);
@@ -34,21 +34,21 @@ namespace Columbus
 		return "";
 	}
 
-	std::string Filesystem::RelativePath(const std::string& Absolute, const std::string& RelativeTo)
+	String Filesystem::RelativePath(const String& Absolute, const String& RelativeTo)
 	{
-		std::string Abs = Absolute;
-		std::string Rel = RelativeTo;
+		String Abs = Absolute;
+		String Rel = RelativeTo;
 		for (auto& Ch : Abs) if (Ch == '\\') Ch = '/';
 		for (auto& Ch : Rel) if (Ch == '\\') Ch = '/';
 
 		auto AbsDecompose = Split(Abs);
 		auto RelDecompose = Split(Rel);
 
-		std::string Result;
+		String Result;
 
 		if (AbsDecompose.size() >= RelDecompose.size())
 		{
-			std::vector<std::string> ResDecompose = AbsDecompose;
+			std::vector<String> ResDecompose = AbsDecompose;
 			for (auto _ : RelDecompose) ResDecompose.erase(ResDecompose.begin());
 
 			for (const auto& Elem : ResDecompose)
@@ -110,7 +110,7 @@ namespace Columbus
 		return false;
 	}
 
-	std::vector<FileInfo> Filesystem::Read(const std::string& Path)
+	std::vector<FileInfo> Filesystem::Read(const String& Path)
 	{
 		#if defined(PLATFORM_WINDOWS)
 			return FilesystemWindows::Read(Path);
@@ -121,10 +121,10 @@ namespace Columbus
 		return {};
 	}
 
-	std::vector<std::string> Filesystem::Split(const std::string& Path)
+	std::vector<String> Filesystem::Split(const String& Path)
 	{
-		std::string MPath = Path;
-		std::vector<std::string> Result;
+		String MPath = Path;
+		std::vector<String> Result;
 
 		for (auto& Ch : MPath)
 			if (Ch == '\\')
@@ -132,8 +132,8 @@ namespace Columbus
 
 		size_t Start = 0;
 		size_t Pos = 0;
-		std::string Token;
-		while ((Pos = MPath.find("/", Start)) != std::string::npos)
+		String Token;
+		while ((Pos = MPath.find('/', Start)) != String::npos)
 		{
 			Token = MPath.substr(Start, Pos - Start);
 			if (Token.empty())

@@ -141,8 +141,8 @@ vec3 LightCalc(int id, vec3 F, vec3 N, vec3 V, float NdotV)
 	vec3 LightDir = vec3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
 	float LightType = uLighting[Offset + 9];
 	float LightRange = uLighting[Offset + 10];
-	//float LightInnerCutoff = uLighting[Offset + 11];
-	//float LightOuterCutoff = uLighting[Offset + 12];
+	float LightInnerCutoff = uLighting[Offset + 11];
+	float LightOuterCutoff = uLighting[Offset + 12];
 
 	if (LightColor == vec3(0)) return vec3(0);
 
@@ -154,6 +154,21 @@ vec3 LightCalc(int id, vec3 F, vec3 N, vec3 V, float NdotV)
 	vec3 H = normalize(V + L);
 
 	float NdotL = max(0, dot(N, L));
+
+	if (int(LightType) == 2) // spotlight
+	{
+		float angle;
+		angle = dot(LightDir, -L);
+		angle = max(angle, 0);
+		angle = acos(angle);
+
+		if (angle < LightInnerCutoff)
+			Attenuation *= 1.0;
+		else if (angle < LightOuterCutoff)
+			Attenuation *= (1.0 - smoothstep(LightInnerCutoff, LightOuterCutoff, angle));
+		else
+			Attenuation = 0.0;
+	}
 
 	vec3 DiffuseBRDF = LambertDiffuseBRDF(Albedo.rgb) * AO;
 	vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, H, F, NdotV, _Roughness);
@@ -188,7 +203,7 @@ vec3 Lights(void)
 	vec3 Ambient = SampleCube(IrradianceMap, _Normal).rgb;
 	float AO = HasOcclusionMap ? Sample2D(OcclusionMap, _TiledUV).r : 1.0;
 
-	BRDF += (1.0 - _Metallic) * Ambient * 0.1 * AO;
+	BRDF += (1.0 - _Metallic) * Ambient * AO;
 	BRDF += Specular * AO;
 
 	return BRDF * Albedo.rgb;
@@ -205,8 +220,8 @@ void Final(void)
 
 	Color.rgb += Sample2D(EmissionMap, _TiledUV).rgb * EmissionStrength;
 
-	FragData[0] = Color;
-	FragData[1] = vec4(_Normal, 1);
+	RT0 = Color;
+	RT1 = vec4(_Normal, 1);
 
 	if (!Transparent && Color.a < 1.0) discard;
 	if (Transparent && Color.a == 1.0) discard;

@@ -12,10 +12,12 @@
 #include <Graphics/Particles/Noise/ParticleModuleNoise.h>
 #include <Graphics/Particles/SubUV/ParticleModuleSubUV.h>
 
+#include <Core/ISerializable.h>
+
 namespace Columbus
 {
 
-	class ParticleEmitterCPU
+	class ParticleEmitterCPU : public ISerializable 
 	{
 	public:
 		enum class BlendMode
@@ -84,6 +86,9 @@ namespace Columbus
 		void SortParticles();
 	public:
 		void Update(float TimeTick);
+
+		virtual void Serialize(JSON& J) const final override;
+		virtual void Deserialize(JSON& J) final override;
 	};
 
 }

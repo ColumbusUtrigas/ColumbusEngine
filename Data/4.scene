@@ -1,0 +1,53 @@
+{
+	"Defaults": {
+		"Skybox": "Data/Skyboxes/Pier.exr"
+	},
+	"Materials": [
+		"Data/Materials/Hercules.mat"
+	],
+	"Meshes": [
+		"Data/Models/Sphere.cmf",
+		"Data/Models/Statue.cmf",
+		"Data/Models/Hercules.cmf",
+		"Data/Models/Fireplace.cmf",
+		"Data/Models/Chest.cmf"
+	],
+	"Objects": [
+		{
+			"Material": "Data/Materials/Hercules.mat",
+			"MeshRenderer": "Data/Models/Hercules.cmf",
+			"Name": "Hercules",
+			"Static": false,
+			"Transform": {
+				"Position": [0, 0, 0],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		}
+	],
+	"Shaders": [
+		"Data/Shaders/Standart.glsl",
+		"Data/Shaders/Particles.glsl"
+	],
+	"Sounds": [
+		{
+			"Name": "Data/Sounds/Fire.wav",
+			"Streaming": true
+		}
+	],
+	"Textures": [
+		"Data/Textures/chest_Metallic.dds",
+		"Data/Textures/chest_Albedo.dds",
+		"Data/Textures/spark.dds",
+		"Data/Textures/statue_d.dds",
+		"Data/Textures/chest_AO.dds",
+		"Data/Textures/Hercules.dds",
+		"Data/Textures/Fireplace.dds",
+		"Data/Textures/chest_Normal.dds",
+		"Data/Textures/Detail-Normal.dds",
+		"Data/Textures/smoke.dds",
+		"Data/Textures/chest_Roughness.dds",
+		"Data/Textures/Detail.dds",
+		"Data/Textures/Fireplace-E.dds"
+	]
+}

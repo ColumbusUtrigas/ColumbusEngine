@@ -7,10 +7,14 @@ namespace Columbus
 
 	DefaultShaders::DefaultShaders()
 	{
-		Final = gDevice->CreateShaderProgram();
+		ScreenSpace = gDevice->CreateShaderProgram();
+		Tonemap = gDevice->CreateShaderProgram();
+		ResolveMSAA = gDevice->CreateShaderProgram();
 		GaussBlur = gDevice->CreateShaderProgram();
 		BloomBright = gDevice->CreateShaderProgram();
 		Bloom = gDevice->CreateShaderProgram();
+		Vignette = gDevice->CreateShaderProgram();
+		FXAA = gDevice->CreateShaderProgram();
 		Icon = gDevice->CreateShaderProgram();
 		Skybox = gDevice->CreateShaderProgram();
 		SkyboxCubemapGeneration = gDevice->CreateShaderProgram();
@@ -21,10 +25,14 @@ namespace Columbus
 		printf("\n");
 		Log::Initialization("Default shaders loading");
 
-		Final->Load(ShaderProgram::StandartProgram::Final);
+		ScreenSpace->Load(ShaderProgram::StandartProgram::ScreenSpace);
+		Tonemap->Load(ShaderProgram::StandartProgram::Tonemap);
+		ResolveMSAA->Load(ShaderProgram::StandartProgram::ResolveMSAA);
 		GaussBlur->Load(ShaderProgram::StandartProgram::GaussBlur);
 		BloomBright->Load(ShaderProgram::StandartProgram::BloomBright);
 		Bloom->Load(ShaderProgram::StandartProgram::Bloom);
+		Vignette->Load(ShaderProgram::StandartProgram::Vignette);
+		FXAA->Load(ShaderProgram::StandartProgram::FXAA);
 		Icon->Load(ShaderProgram::StandartProgram::Icon);
 		Skybox->Load(ShaderProgram::StandartProgram::Skybox);
 		SkyboxCubemapGeneration->Load(ShaderProgram::StandartProgram::SkyboxCubemapGeneration);
@@ -35,10 +43,14 @@ namespace Columbus
 		printf("\n");
 		Log::Initialization("Default shaders compiling");
 
-		Final->Compile();
+		ScreenSpace->Compile();
+		Tonemap->Compile();
+		ResolveMSAA->Compile();
 		GaussBlur->Compile();
 		BloomBright->Compile();
 		Bloom->Compile();
+		Vignette->Compile();
+		FXAA->Compile();
 		Icon->Compile();
 		Skybox->Compile();
 		SkyboxCubemapGeneration->Compile();
@@ -51,10 +63,14 @@ namespace Columbus
 
 	DefaultShaders::~DefaultShaders()
 	{
-		delete Final;
+		delete ScreenSpace;
+		delete Tonemap;
+		delete ResolveMSAA;
 		delete GaussBlur;
 		delete BloomBright;
 		delete Bloom;
+		delete Vignette;
+		delete FXAA;
 		delete Icon;
 		delete Skybox;
 		delete SkyboxCubemapGeneration;

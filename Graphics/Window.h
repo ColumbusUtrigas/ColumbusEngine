@@ -36,7 +36,7 @@ namespace Columbus
 		iVector2 Size = iVector2(640, 480);
 	public:
 		Window() {}
-		Window(const iVector2& InSize, const char* Title, Flags F) {}
+		//Window(const iVector2& InSize, const char* Title, Flags F) {};
 
 		virtual bool Create(const iVector2& InSize, const char* Title, Flags F) = 0;
 		virtual void Close() { Open = false; }

@@ -2,6 +2,7 @@
 
 #include <Scene/Component.h>
 #include <Graphics/Mesh.h>
+#include <System/Assert.h>
 
 namespace Columbus
 {

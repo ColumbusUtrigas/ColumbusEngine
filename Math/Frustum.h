@@ -83,19 +83,14 @@ namespace Columbus
 			return true;
 		}
 
-		bool Check(const Box& BoundingBox, const Matrix& ModelMatrix)
+		/*bool Check(const Box& BoundingBox, const Matrix& ModelMatrix)
 		{
 			return true;
-		}
+		}*/
 
 		~Frustum() {}
 	};
 
 }
-
-
-
-
-
 
 

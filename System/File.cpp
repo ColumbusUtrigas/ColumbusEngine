@@ -3,6 +3,7 @@
 #include <System/Assert.h>
 #include <utility>
 #include <cstring>
+#include <cstdio>
 
 #if defined(PLATFORM_WINDOWS)
 	#define FSeek64 _fseeki64
@@ -124,7 +125,7 @@ namespace Columbus
 		return (FSeek64(Handle, Offset, SEEK_END) == 0);
 	}
 	
-	bool File::SeekCur(uint64 Offset) const
+	bool File::SeekCur(int64 Offset) const
 	{
 		CurrentOffset += Offset;
 		return (FSeek64(Handle, Offset, SEEK_CUR) == 0);

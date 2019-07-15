@@ -1,6 +1,5 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
-#include <Graphics/ShaderBuilder.h>
 #include <GL/glew.h>
 
 #include <System/File.h>
@@ -11,6 +10,48 @@
 
 namespace Columbus
 {
+
+const char* CommonShaderHeader =
+R"(
+#version 330 core
+#define Texture2D sampler2D
+#define Texture3D sampler3D
+#define TextureCube samplerCube
+#if __VERSION__ < 130
+	#define Sample2D(tex, uv) texture2D(tex, uv)
+	#define Sample3D(tex, uv) texture3D(tex, uv)
+	#define SampleCube(tex, uv) textureCube(tex, uv)
+
+	#define Sample2DLod(tex, uv, lod) texture2DLod(tex, uv, lod)
+	#define Sample3DLod(tex, uv, lod) texture3DLod(tex, uv, lod)
+	#define SampleCubeLod(tex, uv, lod) textureCubeLod(tex, uv, lod)
+#else
+	#define Sample2D(tex, uv) texture(tex, uv)
+	#define Sample3D(tex, uv) texture(tex, uv)
+	#define SampleCube(tex, uv) texture(tex, uv)
+
+	#define Sample2DLod(tex, uv, lod) textureLod(tex, uv, lod)
+	#define Sample3DLod(tex, uv, lod) textureLod(tex, uv, lod)
+	#define SampleCubeLod(tex, uv, lod) textureLod(tex, uv, lod)
+#endif
+)";
+
+const char* VertexShaderHeader =
+R"(
+#define Position gl_Position
+#define VertexShader
+
+)";
+
+const char* FragmentShaderHeader =
+R"(
+#define FragmentShader
+layout(location = 0) out vec4 RT0;
+layout(location = 1) out vec4 RT1;
+layout(location = 2) out vec4 RT2;
+layout(location = 3) out vec4 RT3;
+
+)";
 
 	static const char* GetStringFromShaderType(ShaderType Type)
 	{
@@ -144,13 +185,8 @@ namespace Columbus
 			}
 		}
 
-		ShaderBuilder Builder;
-
-		Builder.Build(streams[0].str().c_str(), ShaderType::Vertex);
-		Data.VertexSource   = Builder.ShaderSource;
-
-		Builder.Build(streams[1].str().c_str(), ShaderType::Fragment);
-		Data.FragmentSource = Builder.ShaderSource;
+		Data.VertexSource = CommonShaderHeader + std::string(VertexShaderHeader) + streams[0].str();
+		Data.FragmentSource = CommonShaderHeader + std::string(FragmentShaderHeader) + streams[1].str();
 
 		return Data;
 	}
@@ -172,19 +208,20 @@ namespace Columbus
 		char* Error = nullptr;
 
 		glGetShaderiv(ShaderID, GL_COMPILE_STATUS, &Status);
+		glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
+		Error = new char[Length];
+		glGetShaderInfoLog(ShaderID, Length, &Length, Error);
 
 		if (Status == GL_FALSE)
 		{
-			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
-			Error = new char[Length];
-			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::Error("%s shader (%s): %s: %s", GetStringFromShaderType(Type), ShaderPath, ShaderPath,  Error);
-
-			delete[] Error;
-			return true;
+			Log::Error("%s shader (%s): %s", GetStringFromShaderType(Type), ShaderPath, Error);
+		} else if (Length > 1)
+		{
+			Log::Warning("%s shader (%s): %s", GetStringFromShaderType(Type), ShaderPath, Error);
 		}
 
-		return false;
+		delete[] Error;
+		return Status == GL_FALSE;
 	}
 
 	static bool ShaderCompile(const char* ShaderPath, const char* ShaderSource, int32 ShaderID, ShaderType Type)
@@ -232,20 +269,50 @@ namespace Columbus
 	{
 		switch (Program)
 		{
-			case ShaderProgram::StandartProgram::Final:
+			case ShaderProgram::StandartProgram::ScreenSpace:
 			{
 				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gFinalFragmentShader;
+				Data.FragmentSource = gScreenSpaceFragmentShader;
+
+				Data.Uniforms.emplace_back("BaseTexture");
+
+				Path = "ScreenSpace";
+
+				Log::Success("Default shader program loaded: ScreenSpace");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::Tonemap:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gTonemapFragmentShader;
 
 				Data.Attributes.emplace_back("Pos", 0);
 				Data.Attributes.emplace_back("UV", 1);
 				Data.Uniforms.emplace_back("BaseTexture");
 				Data.Uniforms.emplace_back("Exposure");
 				Data.Uniforms.emplace_back("Gamma");
+				Data.Uniforms.emplace_back("Type");
 
-				Path = "Final";
+				Path = "Tonemap";
 
-				Log::Success("Default shader program loaded: Final");
+				Log::Success("Default shader program loaded: Tonemap");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::ResolveMSAA:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gResolveMSAAFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Samples");
+
+				Path = "ResolveMSAA";
+
+				Log::Success("Default shader program loaded: ResolveMSAA");
 				break;
 			}
 
@@ -296,6 +363,41 @@ namespace Columbus
 				Path = "Bloom";
 
 				Log::Success("Default shader program loaded: Bloom");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::Vignette:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gVignetteFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("Color");
+				Data.Uniforms.emplace_back("Center");
+				Data.Uniforms.emplace_back("Intensity");
+				Data.Uniforms.emplace_back("Smoothness");
+				Data.Uniforms.emplace_back("Radius");
+
+				Path = "Vignette";
+
+				Log::Success("Default shader program loaded: Vignette");
+				break;
+			}
+
+			case ShaderProgram::StandartProgram::FXAA:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gFXAAFragmentShader;
+
+				Data.Attributes.emplace_back("Pos", 0);
+				Data.Attributes.emplace_back("UV", 1);
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Resolution");
+
+				Path = "FXAA";
+
+				Log::Success("Default shader program loaded: FXAA");
 				break;
 			}
 
@@ -380,9 +482,7 @@ namespace Columbus
 
 			case ShaderProgram::StandartProgram::IntegrationGeneration:
 			{
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Attributes.emplace_back("Texcoord", 1);
-				Data.VertexSource = gIntegrationGenerationVertexShader;
+				Data.VertexSource = gScreenSpaceVertexShader;
 				Data.FragmentSource = gIntegrationGenerationFragmentShader;
 
 				Path = "IntegrationGeneration";
@@ -512,9 +612,24 @@ namespace Columbus
 		glUniform4f(FastUniforms[FastID], Value.X, Value.Y, Value.Z, Value.W);
 	}
 
-	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Size, const float* Value) const
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const float* Value) const
 	{
-		glUniform1fv(FastUniforms[FastID], Size, Value);
+		glUniform1fv(FastUniforms[FastID], Count, Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector2* Value) const
+	{
+		glUniform2fv(FastUniforms[FastID], Count, (const float*)Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector3* Value) const
+	{
+		glUniform3fv(FastUniforms[FastID], Count, (const float*)Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector4* Value) const
+	{
+		glUniform4fv(FastUniforms[FastID], Count, (const float*)Value);
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const

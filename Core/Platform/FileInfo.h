@@ -1,15 +1,15 @@
 #pragma once
 
-#include <string>
+#include <Core/String.h>
 
 namespace Columbus
 {
 
 	struct FileInfo
 	{
-		std::string Name;
-		std::string Ext;
-		std::string Path;
+		String Name;
+		String Ext;
+		String Path;
 		char Type;
 
 		bool operator==(const FileInfo& Other) const

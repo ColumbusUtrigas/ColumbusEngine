@@ -18,7 +18,6 @@ namespace Columbus
 		Texture* Tex = nullptr;
 		Texture* IrradianceMap = nullptr;
 		Texture* PrefilterMap = nullptr;
-		Texture* IntegrationMap = nullptr;
 
 		Camera ViewCamera;
 	public:
@@ -31,7 +30,6 @@ namespace Columbus
 		Texture* GetCubemap() const { return Tex; }
 		Texture* GetIrradianceMap() const { return IrradianceMap; }
 		Texture* GetPrefilterMap() const { return PrefilterMap; }
-		Texture* GetIntegrationMap() const { return IntegrationMap; }
 
 		~Skybox();
 	};

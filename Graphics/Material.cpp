@@ -1,16 +1,15 @@
 #include <Graphics/Material.h>
-#include <System/Serializer.h>
 #include <Common/JSON/JSON.h>
 #include <System/Log.h>
+
+#include <Graphics/Texture.h>
+#include <Graphics/Shader.h>
+#include <Resources/ResourceManager.h>
 
 namespace Columbus
 {
 
 	Material::Material() {}
-	Material::Material(const char* FileName)
-	{
-		Load(FileName);
-	}
 
 	bool Material::Prepare()
 	{
@@ -38,48 +37,10 @@ namespace Columbus
 	{
 		return ShaderProg;
 	}
-	
-	int Material::GetAlbedoMapID() const
-	{
-		return AlbedoMapID;
-	}
 
-	int Material::GetNormalMapID() const
-	{
-		return NormalMapID;
-	}
-
-	int Material::GetRoughnessMapID() const
-	{
-		return RoughnessMapID;
-	}
-
-	int Material::GetMetallicMapID() const
-	{
-		return MetallicMapID;
-	}
-
-	int Material::GetOcclusionMapID() const
-	{
-		return OcclusionMapID;
-	}
-
-	int Material::GetEmissionMapID() const
-	{
-		return EmissionMapID;
-	}
-
-	int Material::GetDetailAlbedoMapID() const
-	{
-		return DetailAlbedoMapID;
-	}
-
-	int Material::GetDetailNormalMapID() const
-	{
-		return DetailNormalMapID;
-	}
-
-	bool Material::Load(const char* FileName)
+	bool Material::Load(const char* FileName,
+		ResourceManager<ShaderProgram>& ShadersManager,
+		ResourceManager<Texture>& TexturesManager)
 	{
 		JSON J;
 		if (!J.Load(FileName)) return false;
@@ -107,14 +68,16 @@ namespace Columbus
 		Metallic         = (float)J["Metallic"]        .GetFloat();
 		EmissionStrength = (float)J["EmissionStrength"].GetFloat();
 
-		AlbedoMapID       = J["Textures"]["Albedo"]      .IsInt() ? (int)J["Textures"]["Albedo"]      .GetInt() : -1;
-		NormalMapID       = J["Textures"]["Normal"]      .IsInt() ? (int)J["Textures"]["Normal"]      .GetInt() : -1;
-		RoughnessMapID    = J["Textures"]["Roughness"]   .IsInt() ? (int)J["Textures"]["Roughness"]   .GetInt() : -1;
-		MetallicMapID     = J["Textures"]["Metallic"]    .IsInt() ? (int)J["Textures"]["Metallic"]    .GetInt() : -1;
-		OcclusionMapID    = J["Textures"]["Occlusion"]   .IsInt() ? (int)J["Textures"]["Occlusion"]   .GetInt() : -1;
-		EmissionMapID     = J["Textures"]["Emission"]    .IsInt() ? (int)J["Textures"]["Emission"]    .GetInt() : -1;
-		DetailAlbedoMapID = J["Textures"]["DetailAlbedo"].IsInt() ? (int)J["Textures"]["DetailAlbedo"].GetInt() : -1;
-		DetailNormalMapID = J["Textures"]["DetailNormal"].IsInt() ? (int)J["Textures"]["DetailNormal"].GetInt() : -1;
+		ShaderProg = ShadersManager.Find(J["Shader"].IsString() ? J["Shader"].GetString() : "");
+
+		AlbedoMap       = TexturesManager.Find(J["Textures"]["Albedo"]      .IsString() ? J["Textures"]["Albedo"]      .GetString() : "");
+		NormalMap       = TexturesManager.Find(J["Textures"]["Normal"]      .IsString() ? J["Textures"]["Normal"]      .GetString() : "");
+		RoughnessMap    = TexturesManager.Find(J["Textures"]["Roughness"]   .IsString() ? J["Textures"]["Roughness"]   .GetString() : "");
+		MetallicMap     = TexturesManager.Find(J["Textures"]["Metallic"]    .IsString() ? J["Textures"]["Metallic"]    .GetString() : "");
+		OcclusionMap    = TexturesManager.Find(J["Textures"]["Occlusion"]   .IsString() ? J["Textures"]["Occlusion"]   .GetString() : "");
+		EmissionMap     = TexturesManager.Find(J["Textures"]["Emission"]    .IsString() ? J["Textures"]["Emission"]    .GetString() : "");
+		DetailAlbedoMap = TexturesManager.Find(J["Textures"]["DetailAlbedo"].IsString() ? J["Textures"]["DetailAlbedo"].GetString() : "");
+		DetailNormalMap = TexturesManager.Find(J["Textures"]["DetailNormal"].IsString() ? J["Textures"]["DetailNormal"].GetString() : "");
 
 		Log::Success("Material loaded: %s", FileName);
 

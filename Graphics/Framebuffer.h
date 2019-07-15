@@ -25,10 +25,10 @@ namespace Columbus
 		virtual void Bind() {}
 		virtual void Unbind() {}
 
-		virtual bool SetTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) { return false; }
-		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level = 0) { return false; };
-		virtual bool Prepare(const Vector4& Color, const iVector2& Origin, const iVector2& Size) { return false; }
-		virtual bool Check() { return false; }
+		virtual bool SetTexture2D(Attachment Attach, Texture* InTexture, uint32 Level = 0) = 0;
+		virtual bool SetTextureCube(Attachment Attach, Texture* InTexture, uint32 Face, uint32 Level = 0) = 0;
+		virtual bool Prepare(const Vector4& Color, const iVector2& Origin, const iVector2& Size) = 0;
+		virtual bool Check() = 0;
 
 		virtual ~Framebuffer() {}
 	};

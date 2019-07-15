@@ -18,6 +18,7 @@ namespace Columbus
 		uint64 TOffset = 0;
 
 		bool Indexed = false;
+		uint32 VerticesCount = 0;
 		uint32 IndicesCount = 0;
 		uint32 IndicesType = 0;
 	public:

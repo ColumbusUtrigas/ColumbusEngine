@@ -40,7 +40,7 @@ namespace Columbus
 		
 		void SetRow(uint32 Index, const Vector4& Row)
 		{
-			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetRow(): Index >= 4");
+			//COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetRow(): Index >= 4");
 
 			M[Index][0] = Row.X;
 			M[Index][1] = Row.Y;
@@ -50,7 +50,7 @@ namespace Columbus
 		
 		void SetColumn(uint32 Index, const Vector4& Column)
 		{
-			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetColumn(): Index >= 4");
+			//COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::SetColumn(): Index >= 4");
 
 			M[0][Index] = Column.X;
 			M[1][Index] = Column.Y;
@@ -60,14 +60,14 @@ namespace Columbus
 		
 		Vector4 GetRow(uint32 Index) const
 		{
-			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetRow(): Index >= 4")
+			//COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetRow(): Index >= 4")
 
 			return Vector4(M[Index][0], M[Index][1], M[Index][2], M[Index][3]);
 		}
 		
 		Vector4 GetColumn(uint32 Index) const
 		{
-			COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetColumn(): Index >= 4")
+			//COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetColumn(): Index >= 4")
 
 			return Vector4(M[0][Index], M[1][Index], M[2][Index], M[3][Index]);
 		}

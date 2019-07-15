@@ -13,10 +13,43 @@
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/ParticlesRenderer.h>
 
-#include <map>
-
 namespace Columbus
 {
+
+	enum class RenderPass
+	{
+		Opaque = 0,
+		Sky,
+		Transparent,
+		Postprocess
+	};
+
+	enum class TonemappingType
+	{
+		Simple = 0,
+		Filmic,
+		ACES,
+		RomBinDaHouse,
+		Uncharted
+	};
+
+	enum class AntialiasingType
+	{
+		No = 0,
+		FXAA,
+		MSAA_2X,
+		MSAA_4X,
+		MSAA_8X,
+		MSAA_16X,
+		MSAA_32X
+	};
+
+	enum class BloomResolutionType
+	{
+		Quad = 0,
+		Half,
+		Full
+	};
 
 	class Renderer
 	{
@@ -64,12 +97,10 @@ namespace Columbus
 		Skybox* Sky = nullptr;
 		Scene* Scn = nullptr;
 
-		PostEffect BaseEffect;
-		PostEffect BloomBrightPass;
-		PostEffect BloomHorizontalBlurPass;
-		PostEffect BloomVerticalBlurPass;
-		PostEffect BloomFinalPass;
-		PostEffect FinalPass;
+		PostEffect Base, BaseMSAA;
+		PostEffect Post1, Post2;
+		PostEffect Eyes[2]; int CurrentEye = 0;
+		PostEffect Final;
 
 		ScreenQuad Quad;
 		ParticlesRenderer ParticlesRender;
@@ -77,33 +108,37 @@ namespace Columbus
 		uint32 PolygonsRendered = 0;
 		uint32 OpaqueObjectsRendered = 0;
 		uint32 TransparentObjectsRendered = 0;
-	public:
-		enum class Stage
-		{
-			Opaque,
-			Sky,
-			Transparent
-		};
 
-		enum class PostEffectResolution
-		{
-			Full,
-			Half,
-			Quad
-		};
+		float DeltaTime = 0.0f;
 	public:
 		iVector2 ContextSize;
-		bool EditMode = false;
+		bool DrawIcons = false;
 
-		float Exposure = 1.3f;
-		float Gamma = 1.5f;
+		float Gamma = 2.2f;
+		float Exposure = 1.0f;
+		TonemappingType Tonemapping = TonemappingType::Simple;
 
-		bool BloomEnable = true;
-		float BloomTreshold = 0.8f;
-		float BloomIntensity = 0.5f;
+		AntialiasingType Antialiasing = AntialiasingType::No;
+
+		bool BloomEnable = false;
+		float BloomTreshold = 3.0f;
+		float BloomIntensity = 0.1f;
 		float BloomRadius = 1.0f;
 		int BloomIterations = 2;
-		PostEffectResolution BloomResolution = PostEffectResolution::Quad;
+		BloomResolutionType BloomResolution = BloomResolutionType::Quad;
+
+		bool VignetteEnable = false;
+		Vector3 VignetteColor;
+		Vector2 VignetteCenter = Vector2(0.5f);
+		float VignetteIntensity = 1.0f;
+		float VignetteSmoothness = 0.2f;
+		float VignetteRadius = 0.6f;
+
+		bool EyeAdaptationEnable = false;
+		float EyeAdaptationMin = 0.1f;
+		float EyeAdaptationMax = 1.0f;
+		float EyeAdaptationSpeedUp = 1.0f;
+		float EyeAdaptationSpeedDown = 1.0f;
 	private:
 		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
 
@@ -116,21 +151,23 @@ namespace Columbus
 		void SetMainCamera(const Camera& InCamera);
 		void SetSky(Skybox* InSky);
 		void SetScene(Scene* InScn);
+		void SetDeltaTime(float Delta);
 
 		uint32 GetPolygonsRendered() const;
 		uint32 GetOpaqueObjectsRendered() const;
 		uint32 GetTransparentObjectsRendered() const;
 
-		virtual void SetRenderList(std::vector<SmartPointer<GameObject>>* List);
-		virtual void SetLightsList(std::vector<Light*>* List);
-		virtual void CompileLists();
-		virtual void SortLists();
+		void SetRenderList(std::vector<SmartPointer<GameObject>>* List);
+		void SetLightsList(std::vector<Light*>* List);
+		void CompileLists();
+		void SortLists();
 
-		virtual void RenderOpaqueStage();
-		virtual void RenderSkyStage();
-		virtual void RenderTransparentStage();
-		virtual void Render(Stage RenderStage);
-		virtual void Render();
+		void RenderOpaque();
+		void RenderSky();
+		void RenderTransparent();
+		void RenderPostprocess();
+		void Render(RenderPass Pass);
+		void Render();
 
 		Texture* GetFramebufferTexture() const;
 
