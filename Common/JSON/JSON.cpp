@@ -123,7 +123,7 @@ namespace Columbus
 			{
 				Text++;
 				bool NegativeExponent = *Text == '-';
-				if (NegativeExponent) Text++;
+				if (*Text == '-' || *Text == '+') Text++;
 				if (!ExtractInteger(Text, Exponent)) { Error = true; return true; }
 				if (NegativeExponent) Exponent *= -1;
 			}
@@ -251,24 +251,16 @@ namespace Columbus
 
 	void JSON::_WriteInt(File& F) const
 	{
-		F << std::to_string(IntValue).c_str();
+		char tmp[32];
+		snprintf(tmp, 32, "%ld", IntValue);
+		F << tmp;
 	}
 
 	void JSON::_WriteFloat(File& F) const
 	{
-		String str = std::to_string(FloatValue).c_str();
-
-		if (str.length() != 0)
-		{
-			// remove zeroes from back
-			while (str[str.length() - 1] == '0')
-				str.pop_back();
-
-			if (str[str.length() - 1] == '.')
-				str.pop_back();
-		}
-
-		F << str.c_str();
+		char tmp[32];
+		snprintf(tmp, 32, "%g", FloatValue);
+		F << tmp;
 	}
 
 	void JSON::_WriteArray(File& F, uint32 Tabs) const

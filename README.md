@@ -29,4 +29,3 @@
 ![Optional Text](./Tests/5.png)
 ![Optional Text](./Tests/6.png)
 ![Optional Text](./Tests/7.png)
-![Optional Text](./Tests/8.png)
