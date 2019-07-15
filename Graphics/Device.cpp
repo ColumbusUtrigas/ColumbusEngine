@@ -21,7 +21,7 @@ namespace Columbus
 
 	ShaderProgram* Device::CreateShaderProgram() const
 	{
-		return new ShaderProgram();
+		return nullptr;
 	}
 
 	Texture* Device::CreateTexture() const
@@ -36,7 +36,7 @@ namespace Columbus
 	
 	Framebuffer* Device::CreateFramebuffer() const
 	{
-		return new Framebuffer();
+		return nullptr;
 	}
 	
 	Device::~Device() {}

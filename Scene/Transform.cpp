@@ -1,4 +1,5 @@
 #include <Scene/Transform.h>
+#include <Common/JSON/JSON.h>
 
 namespace Columbus
 {
@@ -22,7 +23,7 @@ namespace Columbus
 
 			ModelMatrix.SetIdentity();
 			ModelMatrix.Scale(Scale);
-			ModelMatrix = ModelMatrix * Q.ToMatrix();
+			ModelMatrix = Q.ToMatrix() * ModelMatrix;
 			ModelMatrix.Translate(Position);
 
 			LastPosition = Position;
@@ -39,6 +40,20 @@ namespace Columbus
 	const Matrix& Transform::GetMatrix() const
 	{
 		return ModelMatrix;
+	}
+
+	void Transform::Serialize(JSON& J) const
+	{
+		J["Position"] = Position;
+		J["Rotation"] = Rotation;
+		J["Scale"] = Scale;
+	}
+
+	void Transform::Deserialize(JSON& J)
+	{
+		Position = J["Position"].GetVector3<float>();
+		Rotation = J["Rotation"].GetVector3<float>();
+		Scale = J["Scale"].GetVector3<float>();
 	}
 	
 	Transform::~Transform()

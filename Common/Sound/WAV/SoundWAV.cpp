@@ -2,7 +2,6 @@
 #include <Common/Sound/WAV/SoundWAV.h>
 #include <System/File.h>
 #include <Math/MathUtil.h>
-#include <Core/Memory.h>
 #include <vector>
 
 namespace Columbus
@@ -96,7 +95,7 @@ namespace Columbus
 		uint16 Channels;
 		uint32 Freq;
 		uint16 Block;
-		uint64 BeginOffset;
+		 int64 BeginOffset;
 
 		if ((BeginOffset = GetWAVFormat(FileName, Size, Format, Channels, Freq, Block)) == -1)
 		{

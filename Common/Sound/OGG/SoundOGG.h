@@ -24,20 +24,3 @@ namespace Columbus
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

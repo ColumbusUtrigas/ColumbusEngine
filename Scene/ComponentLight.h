@@ -2,6 +2,7 @@
 
 #include <Scene/Component.h>
 #include <Graphics/Light.h>
+#include <System/Assert.h>
 
 namespace Columbus
 {
@@ -13,21 +14,25 @@ namespace Columbus
 
 		friend class Scene;
 	public:
-		ComponentLight(Light* InLight) : LightSource(InLight) {}
+		ComponentLight(Light* InLight) : LightSource(InLight)
+		{
+			COLUMBUS_ASSERT(LightSource != nullptr);
+		}
 
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
-			if (LightSource != nullptr)
-			{
-				LightSource->Pos = Trans.Position;
-			}
+			COLUMBUS_ASSERT(LightSource != nullptr);
+			LightSource->Pos = Trans.Position;
 		}
 
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::Light; }
 		Light* GetLight() const { return LightSource; }
 
-		virtual ~ComponentLight() override {}
+		virtual ~ComponentLight() override
+		{
+			delete LightSource;
+		}
 	};
 
 }

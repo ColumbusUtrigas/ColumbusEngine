@@ -5,6 +5,7 @@
 #include <Core/Platform/PlatformFilesystem.h>
 #include <Editor/ResourcesViewerTexture.h>
 #include <Editor/ResourcesViewerShader.h>
+#include <Editor/ResourcesViewerMaterial.h>
 #include <Editor/ResourcesViewerMesh.h>
 
 namespace Columbus
@@ -80,9 +81,9 @@ namespace Columbus
 			if (ImGui::BeginMenu("File"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Open")) scene.Load("Data/3.scene");
+				if (ImGui::MenuItem(" Open")) scene.Load("Data/4.scene");
 				ImGui::Spacing();
-				ImGui::MenuItem(" Save");
+				if (ImGui::MenuItem(" Save")) scene.Save("Data/4.scene");
 				ImGui::Spacing();
 				ImGui::MenuItem(" Save As");
 				ImGui::Spacing();
@@ -128,6 +129,13 @@ namespace Columbus
 				if (ImGui::MenuItem(" Shaders"))
 				{
 					ResourcesViewerShader::Open(nullptr);
+				}
+
+				ImGui::Spacing();
+
+				if (ImGui::MenuItem(" Materials"))
+				{
+					ResourcesViewerMaterial::Open(nullptr);
 				}
 
 				ImGui::Spacing();
@@ -199,8 +207,6 @@ namespace Columbus
 	{
 		DrawDockSpace(scene);
 
-		Render.EditMode = true;
-
 		PanelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
 		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
@@ -208,13 +214,14 @@ namespace Columbus
 		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
-		PanelScene.Draw();
+		PanelScene.Draw(Render);
 		PanelInspector.Draw(scene); // Inspector should be before hierarchy
 		PanelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		PanelRenderSettings.Draw();
 		PanelProfiler.Draw();
 		ResourcesViewerTexture::Draw(&scene);
 		ResourcesViewerShader::Draw(&scene);
+		ResourcesViewerMaterial::Draw(scene);
 		ResourcesViewerMesh::Draw(&scene);
 
 		if (SkyboxLoader.Draw("Load Skybox"))
@@ -226,8 +233,9 @@ namespace Columbus
 				if (Tex->Load(Selected[0].Path.c_str()))
 				{
 					delete scene.Sky;
-					scene.Sky = new Skybox(Tex.Get());
 					auto Name = Filesystem::RelativePath(Selected[0].Path, Filesystem::GetCurrent());
+					scene.SkyPath = Name;
+					scene.Sky = new Skybox(Tex.Get());
 					Log::Success("Skybox loaded: %s", Name.c_str());
 				}
 

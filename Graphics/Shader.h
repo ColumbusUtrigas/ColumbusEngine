@@ -3,6 +3,12 @@
 namespace Columbus
 {
 
+	enum class ShaderType
+	{
+		Vertex,
+		Fragment
+	};
+
 	class ShaderProgram
 	{
 	protected:
@@ -12,10 +18,14 @@ namespace Columbus
 	public:
 		enum class StandartProgram
 		{
-			Final,
+			ScreenSpace,
+			Tonemap,
+			ResolveMSAA,
 			GaussBlur,
 			BloomBright,
 			Bloom,
+			Vignette,
+			FXAA,
 			Icon,
 			Skybox,
 			SkyboxCubemapGeneration,
@@ -30,19 +40,23 @@ namespace Columbus
 		bool IsCompiled() const { return Compiled; }
 		bool IsError()    const { return Error; }
 
-		virtual bool Load(const char* FileName) { return false; }
-		virtual bool Load(StandartProgram Program) { return false; }
-		virtual bool Compile() { return false; }
+		virtual bool Load(const char* FileName) = 0;
+		virtual bool Load(StandartProgram Program) = 0;
+		virtual bool Compile() = 0;
 
 		virtual ~ShaderProgram() {}
 	};
 
 	struct DefaultShaders
 	{
-		ShaderProgram* Final = nullptr;
+		ShaderProgram* ScreenSpace = nullptr;
+		ShaderProgram* Tonemap = nullptr;
+		ShaderProgram* ResolveMSAA = nullptr;
 		ShaderProgram* GaussBlur = nullptr;
 		ShaderProgram* BloomBright = nullptr;
 		ShaderProgram* Bloom = nullptr;
+		ShaderProgram* Vignette = nullptr;
+		ShaderProgram* FXAA = nullptr;
 		ShaderProgram* Icon = nullptr;
 		ShaderProgram* Skybox = nullptr;
 		ShaderProgram* SkyboxCubemapGeneration = nullptr;

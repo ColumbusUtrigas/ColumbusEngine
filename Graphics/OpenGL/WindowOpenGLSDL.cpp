@@ -3,6 +3,9 @@
 #include <System/Log.h>
 #include <GL/glew.h>
 
+#define CONTEXT_MAJOR_VERSION 3
+#define CONTEXT_MINOR_VERSION 3
+
 namespace Columbus
 {
 
@@ -55,8 +58,11 @@ namespace Columbus
 		if ((uint32)F & (uint32)Window::Flags::Resizable)  flags |= SDL_WINDOW_RESIZABLE;
 		if ((uint32)F & (uint32)Window::Flags::Fullscreen) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-		//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, CONTEXT_MAJOR_VERSION);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, CONTEXT_MINOR_VERSION);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+		SDL_GL_SetSwapInterval(1);
 
 		Window = SDL_CreateWindow(Title, pos, pos, InSize.X, InSize.Y, flags);
 		Context = SDL_GL_CreateContext(Window);
@@ -64,27 +70,15 @@ namespace Columbus
 	
 	void WindowOpenGLSDL::InitializeOpenGL()
 	{
-		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-
-		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-
-		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
-		int MajorVersion = 3;
-		int MinorVersion = 0;
+		int MajorVersion = CONTEXT_MAJOR_VERSION;
+		int MinorVersion = CONTEXT_MINOR_VERSION;
 
 		glGetIntegerv(GL_MAJOR_VERSION, &MajorVersion);
 		glGetIntegerv(GL_MINOR_VERSION, &MinorVersion);
 
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, MajorVersion);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, MinorVersion);
-		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
 		SDL_GL_SetSwapInterval(1);
 
+		glewExperimental = GL_TRUE;
 		if (glewInit() != GLEW_OK)
 		{
 			Log::Fatal("Can't initialize GLEW");
@@ -93,18 +87,6 @@ namespace Columbus
 			Log::Initialization("GLEW initialized");
 			Log::Initialization("Initialized OpenGL %i.%i", MajorVersion, MinorVersion);
 		}
-
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-		glEnable(GL_TEXTURE_CUBE_MAP_ARB);
-		glEnable(GL_ALPHA_TEST);
-		glEnable(GL_PROGRAM_POINT_SIZE);
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 		OpenGL::Init();
 	}
@@ -178,7 +160,7 @@ namespace Columbus
 		if (Window && Open)
 		{
 			SDL_GL_SwapWindow(Window);
-			glFinish();
+			//glFinish();
 			RedrawTime = (float)RedrawTimer.Elapsed();
 			RedrawTimer.Reset();
 			Frames++;
@@ -192,7 +174,14 @@ namespace Columbus
 		}
 	}
 	
-	void WindowOpenGLSDL::SetSize(const iVector2& Size) {}
+	void WindowOpenGLSDL::SetSize(const iVector2& Size)
+	{
+		if (Window && Open)
+		{
+			SDL_SetWindowSize(Window, Size.X, Size.Y);
+		}
+	}
+
 	void WindowOpenGLSDL::SetMousePosition(const iVector2& Pos)
 	{
 		if (Window && Open)

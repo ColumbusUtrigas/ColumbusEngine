@@ -1,6 +1,5 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/TGA/ImageTGA.h>
-#include <Core/Memory.h>
 #include <System/Assert.h>
 #include <System/File.h>
 #include <algorithm>
@@ -11,28 +10,28 @@ namespace Columbus
 {
 
 #define READPIXEL8(a) \
-        red = *a++;
+		red = *a++;
 
 #define READPIXEL24(a) \
-        blue = *a++;   \
-        green = *a++;  \
-        red = *a++;
+		blue = *a++;   \
+		green = *a++;  \
+		red = *a++;
 
 #define READPIXEL32(a) \
-        READPIXEL24(a) \
-        alpha = *a++;
+		READPIXEL24(a) \
+		alpha = *a++;
 
 #define WRITEPIXEL8(a) \
-        *a++ = red;
+		*a++ = red;
 
 #define WRITEPIXEL24(a) \
-        *a++ = red;     \
-        *a++ = green;   \
-        *a++ = blue;
+		*a++ = red;     \
+		*a++ = green;   \
+		*a++ = blue;
 
 #define WRITEPIXEL32(a) \
-        WRITEPIXEL24(a) \
-        *a++ = alpha;
+		WRITEPIXEL24(a) \
+		*a++ = alpha;
 
 
 	typedef struct
@@ -217,7 +216,7 @@ namespace Columbus
 		}
 	}
 
-	static void RGBACompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
+	/*static void RGBACompressedTGA(uint8* InBuffer, uint8* OutBuffer, size_t Size)
 	{
 		COLUMBUS_ASSERT_MESSAGE(InBuffer, "TGA RGBA compressed: invalid input");
 		COLUMBUS_ASSERT_MESSAGE(OutBuffer, "TGA RGBA compressed: invalid output");
@@ -254,7 +253,7 @@ namespace Columbus
 				i += pixelcount;
 			}
 		}
-	}
+	}*/
 
 	static uint8* ImageLoadTGA(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
@@ -283,7 +282,7 @@ namespace Columbus
 		file.Read(buffer, dSize, 1);
 
 		uint8* data = new uint8[size];
-		Memory::Memset(data, 0, size);
+		memset(data, 0, size);
 
 		switch (tga.image_type)
 		{
@@ -350,6 +349,7 @@ namespace Columbus
 					RGBCompressedTGA(buffer, data, tga.width * tga.height);
 				} else
 				{
+					COLUMBUS_ASSERT_MESSAGE(false, "RGBACompressedTGA() didn't implemented");
 					// TODO
 					//RGBACompressedTGA(buffer, data, tga.width * tga.height);
 				}
@@ -366,8 +366,8 @@ namespace Columbus
 			}
 		}
 
-		if (tga.x_origin != 0) ImageFlipX(buffer, tga.width, tga.height, PixelSize);
-		if (tga.y_origin != 0) ImageFlipY(buffer, tga.width, tga.height, PixelSize);
+		if (tga.x_origin != 0) ImageFlipX(data, tga.width, tga.height, PixelSize);
+		if (tga.y_origin == 0) ImageFlipY(data, tga.width, tga.height, PixelSize);
 
 		file.Close();
 
@@ -425,8 +425,8 @@ namespace Columbus
 
 		size_t size = Width * Height * BPP;
 
-		uint8* buffer = (uint8*)Memory::Malloc(size);
-		Memory::Memcpy(buffer, Data, size);
+		uint8* buffer = (uint8*)malloc(size);
+		memcpy(buffer, Data, size);
 
 		switch (tga.bits)
 		{
@@ -437,7 +437,7 @@ namespace Columbus
 		WriteHeader(tga, &file);
 		file.Write(buffer, size, 1);
 
-		Memory::Free(buffer);
+		free(buffer);
 		return true;
 	}
 
@@ -449,9 +449,5 @@ namespace Columbus
 #undef WRITEPIXEL32
 
 }
-
-
-
-
 
 

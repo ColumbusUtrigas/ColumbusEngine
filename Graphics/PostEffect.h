@@ -3,6 +3,7 @@
 #include <Graphics/Device.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/Texture.h>
+#include <RenderAPIOpenGL/OpenGL.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -12,11 +13,6 @@ namespace Columbus
 	{
 	public:
 		static constexpr int TexturesCount = 4;
-		/*static constexpr Framebuffer::Attachment Attachments[TexturesCount] =
-		{ Framebuffer::Attachment::Color0,
-		  Framebuffer::Attachment::Color1,
-		  Framebuffer::Attachment::Color2,
-		  Framebuffer::Attachment::Color3 };*/
 
 		Framebuffer* FB = nullptr;
 		Texture* DepthTexture = nullptr;
@@ -30,6 +26,14 @@ namespace Columbus
 		bool ColorTexturesMipmaps[TexturesCount];
 		TextureFormat ColorTexturesFormats[TexturesCount];
 		Texture::Flags ColorTextureFlags[TexturesCount];
+
+		uint32 Multisampling = 0;
+	private:
+		Texture* PrevColorTextures[TexturesCount];
+		Texture* PrevDepthTexture = nullptr;
+		bool ColorTexturesAttached[TexturesCount];
+		bool DepthTextureAttached = false;
+		Texture::Flags PrevColorTextureFlags[TexturesCount];
 	public:
 		PostEffect()
 		{
@@ -46,6 +50,9 @@ namespace Columbus
 				ColorTexturesMipmaps[i] = false;
 				ColorTexturesFormats[i] = TextureFormat::RGBA8;
 				ColorTextureFlags[i] = Flags;
+
+				PrevColorTextures[i] = nullptr;
+				ColorTexturesAttached[i] = false;
 			}
 		}
 
@@ -57,6 +64,20 @@ namespace Columbus
 			  Framebuffer::Attachment::Color2,
 			  Framebuffer::Attachment::Color3 };
 
+			FB->Bind();
+
+			int32 ColorMS = OpenGL::GetMaxDepthTextureSamples();
+			int32 DepthMS = OpenGL::GetMaxDepthTextureSamples();
+
+			if ((int32)Multisampling < ColorMS) ColorMS = (int32)Multisampling;
+			if ((int32)Multisampling < DepthMS) DepthMS = (int32)Multisampling;
+
+			if (Multisampling == 0)
+			{
+				ColorMS = 0;
+				DepthMS = 0;
+			}
+
 			for (int i = 0; i < TexturesCount; i++)
 			{
 				if (ColorTexturesEnablement[i])
@@ -66,9 +87,20 @@ namespace Columbus
 						ColorTextures[i] = gDevice->CreateTexture();
 					}
 
-					ColorTextures[i]->Create2D(Texture::Properties(Size.X, Size.Y, 0, ColorTexturesFormats[i]));
-					ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
-					FB->SetTexture2D(Attachments[i], ColorTextures[i]);
+					ColorTextures[i]->Create2D(TextureDesc(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
+
+					if (!ColorTexturesAttached[i] || ColorTextureFlags[i] != PrevColorTextureFlags[i] || PrevColorTextures[i] != ColorTextures[i])
+					{
+						ColorTextures[i]->SetFlags(ColorTextureFlags[i]);
+					}
+
+					if (!ColorTexturesAttached[i] || PrevColorTextures[i] != ColorTextures[i])
+					{
+						FB->SetTexture2D(Attachments[i], ColorTextures[i]);
+						ColorTexturesAttached[i] = true;
+					}
+
+					PrevColorTextureFlags[i] = ColorTextureFlags[i];
 				}
 			}
 
@@ -79,9 +111,16 @@ namespace Columbus
 					DepthTexture = gDevice->CreateTexture();
 				}
 
-				DepthTexture->Create2D(Texture::Properties(Size.X, Size.Y, 0, TextureFormat::Depth24));
+				DepthTexture->Create2D(TextureDesc(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
 				DepthTexture->SetFlags(DepthTextureFlags);
-				FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+
+				if (!DepthTextureAttached || PrevDepthTexture != DepthTexture)
+				{
+					FB->SetTexture2D(Framebuffer::Attachment::Depth, DepthTexture);
+					DepthTextureAttached = true;
+				}
+
+				PrevDepthTexture = DepthTexture;
 			}
 
 			FB->Prepare(Color, Origin, Size);
@@ -101,7 +140,7 @@ namespace Columbus
 			glDrawBuffers(DrawBuffersNum, DrawBuffers);
 		}
 
-		void Unbind()
+		void Mipmaps()
 		{
 			for (int i = 0; i < TexturesCount; i++)
 			{
@@ -115,7 +154,10 @@ namespace Columbus
 			{
 				DepthTexture->GenerateMipmap();
 			}
+		}
 
+		void Unbind()
+		{
 			FB->Unbind();
 		}
 
@@ -129,6 +171,5 @@ namespace Columbus
 	};
 
 }
-
 
 

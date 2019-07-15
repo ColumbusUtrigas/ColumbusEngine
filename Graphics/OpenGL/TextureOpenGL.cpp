@@ -270,17 +270,18 @@ namespace Columbus
 	}
 
 
-	bool TextureOpenGL::Load(const void* Data, Texture::Properties Props)
+	bool TextureOpenGL::Load(const void* Data, TextureDesc Desc)
 	{
 		if (Target == GL_TEXTURE_2D)
 		{
-			Width = Props.Width;
-			Height = Props.Height;
-			Format = Props.Format;
+			Width = Desc.Width;
+			Height = Desc.Height;
+			Format = Desc.Format;
 
 			bool Compressed;
 
 			UpdateFormat(Format, Compressed);
+			Multisampling = 0;
 
 			glBindTexture(Target, ID);
 
@@ -291,6 +292,7 @@ namespace Columbus
 			}
 			else
 			{
+				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, Data);
 			}
 			
@@ -310,6 +312,7 @@ namespace Columbus
 		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
+		Multisampling = 0;
 
 		glBindTexture(Target, ID);
 
@@ -396,7 +399,7 @@ namespace Columbus
 			return false;
 		}
 
-		bool Result = Create(TmpImage.GetType(), Properties(TmpImage.GetWidth(), TmpImage.GetHeight(), 0, TmpImage.GetFormat()));
+		bool Result = Create(TmpImage.GetType(), TextureDesc(TmpImage.GetWidth(), TmpImage.GetHeight(), 0, 0, TmpImage.GetFormat()));
 
 		if (Result)
 		{
@@ -406,55 +409,66 @@ namespace Columbus
 		return false;
 	}
 
-	bool TextureOpenGL::Create(Image::Type InType, Texture::Properties Props)
+	bool TextureOpenGL::Create(Image::Type InType, TextureDesc Desc)
 	{
 		switch (InType)
 		{
-		case Image::Type::Image2D: return Create2D(Props); break;
+		case Image::Type::Image2D: return Create2D(Desc); break;
 		case Image::Type::Image3D: break;
-		case Image::Type::ImageCube: return CreateCube(Props); break;
+		case Image::Type::ImageCube: return CreateCube(Desc); break;
 		case Image::Type::Image2DArray: break;
 		}
 
 		return false;
 	}
 
-	bool TextureOpenGL::Create(Texture::Type InType, Texture::Properties Props)
+	bool TextureOpenGL::Create(Texture::Type InType, TextureDesc Desc)
 	{
 		switch (InType)
 		{
-		case Texture::Type::Texture2D: return Create2D(Props); break;
+		case Texture::Type::Texture2D: return Create2D(Desc); break;
 		case Texture::Type::Texture3D: break;
-		case Texture::Type::TextureCube: return CreateCube(Props); break;
+		case Texture::Type::TextureCube: return CreateCube(Desc); break;
 		case Texture::Type::Texture2DArray: break;
 		}
 
 		return false;
 	}
 	
-	bool TextureOpenGL::Create2D(Texture::Properties Props)
+	bool TextureOpenGL::Create2D(TextureDesc Desc)
 	{
 		TextureType = Texture::Type::Texture2D;
 
 		Target = GL_TEXTURE_2D;
-		Width = Props.Width;
-		Height = Props.Height;
-		Format = Props.Format;
+		Width = Desc.Width;
+		Height = Desc.Height;
+		Format = Desc.Format;
+		Multisampling = Desc.Multisampling;
 
 		bool Compressed = false;
 
 		UpdateFormat(Format, Compressed);
 
+		if (Multisampling != 0)
+		{
+			Target = GL_TEXTURE_2D_MULTISAMPLE;
+		}
+
 		glBindTexture(Target, ID);
 
-		if (Compressed)
+		if (Multisampling == 0)
 		{
-			int Block = GetBlockSizeFromFormat(Format);
-			glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
-		}
-		else
+			if (Compressed)
+			{
+				int Block = GetBlockSizeFromFormat(Format);
+				glCompressedTexImage2D(Target, 0, InternalFormat, Width, Height, 0, Width * Height * Block, 0);
+			} else
+			{
+				glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+			}
+		} else
 		{
-			glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, 0);
+			glTexImage2DMultisample(Target, Multisampling, InternalFormat, Width, Height, GL_TRUE);
 		}
 
 		glBindTexture(Target, 0);
@@ -462,14 +476,14 @@ namespace Columbus
 		return true;
 	}
 
-	bool TextureOpenGL::CreateCube(Texture::Properties Props)
+	bool TextureOpenGL::CreateCube(TextureDesc Desc)
 	{
 		TextureType = Texture::Type::TextureCube;
 
 		Target = GL_TEXTURE_CUBE_MAP;
-		Width = Props.Width;
-		Height = Props.Height;
-		Format = Props.Format;
+		Width = Desc.Width;
+		Height = Desc.Height;
+		Format = Desc.Format;
 
 		bool Compressed = false;
 
@@ -503,10 +517,12 @@ namespace Columbus
 	{
 		TextureFlags = F;
 
-		glBindTexture(Target, ID);
-
-		switch (TextureFlags.Filtering)
+		if (Multisampling == 0)
 		{
+			glBindTexture(Target, ID);
+
+			switch (TextureFlags.Filtering)
+			{
 			case Texture::Filter::Point:
 			{
 				glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -534,34 +550,33 @@ namespace Columbus
 				glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				break;
 			}
+			}
+
+			switch (TextureFlags.AnisotropyFilter)
+			{
+			case Texture::Anisotropy::Anisotropy1:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
+			case Texture::Anisotropy::Anisotropy2:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 2);  break;
+			case Texture::Anisotropy::Anisotropy4:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4);  break;
+			case Texture::Anisotropy::Anisotropy8:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8);  break;
+			case Texture::Anisotropy::Anisotropy16: glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16); break;
+			default:                                glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
+			}
+
+			GLuint ClampMode = GL_CLAMP_TO_EDGE;
+
+			switch (TextureFlags.Wrapping)
+			{
+			case Texture::Wrap::Clamp:          ClampMode = GL_CLAMP_TO_EDGE;   break;
+			case Texture::Wrap::Repeat:         ClampMode = GL_REPEAT;          break;
+			case Texture::Wrap::MirroredRepeat: ClampMode = GL_MIRRORED_REPEAT; break;
+			}
+
+			glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);
+			glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
+			glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
+
+			glBindTexture(Target, 0);
 		}
-
-		switch (TextureFlags.AnisotropyFilter)
-		{
-		case Texture::Anisotropy::Anisotropy1:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
-		case Texture::Anisotropy::Anisotropy2:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 2);  break;
-		case Texture::Anisotropy::Anisotropy4:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4);  break;
-		case Texture::Anisotropy::Anisotropy8:  glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8);  break;
-		case Texture::Anisotropy::Anisotropy16: glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16); break;
-		default:                                glTexParameteri(Target, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);  break;
-		}
-
-		GLuint ClampMode = GL_CLAMP_TO_EDGE;
-
-		switch (TextureFlags.Wrapping)
-		{
-		case Texture::Wrap::Clamp:               ClampMode = GL_CLAMP;                break;
-		case Texture::Wrap::ClampToEdge:         ClampMode = GL_CLAMP_TO_EDGE;        break;
-		case Texture::Wrap::Repeat:              ClampMode = GL_REPEAT;               break;
-		case Texture::Wrap::MirroredRepeat:      ClampMode = GL_MIRRORED_REPEAT;      break;
-		case Texture::Wrap::MirroredClampToEdge: ClampMode = GL_MIRROR_CLAMP_TO_EDGE; break;
-		}
-
-		glTexParameteri(Target, GL_TEXTURE_WRAP_S, ClampMode);
-		glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
-		glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
-
-		glBindTexture(Target, 0);
 	}
 
 	void TextureOpenGL::SetMipmapLevel(uint32 Level)
@@ -569,7 +584,7 @@ namespace Columbus
 		MipmapLevel = Level;
 
 		glBindTexture(Target, ID);
-		glTexParameteri(Target, GL_TEXTURE_MIN_LOD, Level);
+		glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, Level);
 	}
 
 
@@ -597,9 +612,12 @@ namespace Columbus
 	
 	void TextureOpenGL::GenerateMipmap()
 	{
-		glBindTexture(Target, ID);
-		glGenerateMipmap(Target);
-		glBindTexture(Target, 0);
+		if (Multisampling == 0)
+		{
+			glBindTexture(Target, ID);
+			glGenerateMipmap(Target);
+			glBindTexture(Target, 0);
+		}
 	}
 
 	uint32 TextureOpenGL::GetID() const

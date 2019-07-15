@@ -15,7 +15,7 @@ namespace Columbus
 		}
 	}
 
-	static bool ExtractString(char*& Text, std::string& Result)
+	static bool ExtractString(char*& Text, String& Result)
 	{
 		while (*Text != '"')
 		{
@@ -50,6 +50,12 @@ namespace Columbus
 		}
 
 		return true;
+	}
+
+	static void WriteTabs(File& F, uint32 Tabs)
+	{
+		for (uint32 i = 0; i < Tabs; i++)
+			F << '\t';
 	}
 
 	bool JSON::_ParseString(char*& Text, bool& Error)
@@ -117,7 +123,7 @@ namespace Columbus
 			{
 				Text++;
 				bool NegativeExponent = *Text == '-';
-				if (NegativeExponent) Text++;
+				if (*Text == '-' || *Text == '+') Text++;
 				if (!ExtractInteger(Text, Exponent)) { Error = true; return true; }
 				if (NegativeExponent) Exponent *= -1;
 			}
@@ -130,7 +136,7 @@ namespace Columbus
 			}
 			else
 			{
-				FloatValue = ((double)(IntValue) + Fract) * (Negative ? -1 : 1) * pow(10.0, Exponent);
+				FloatValue = ((double)(IntValue)+Fract) * (Negative ? -1 : 1) * pow(10.0, Exponent);
 				IntValue = (int64)FloatValue;
 				ValueType = Type::Float;
 			}
@@ -183,7 +189,7 @@ namespace Columbus
 				if (*Text == '"')
 				{
 					Text++;
-					std::string Name;
+					String Name;
 					if (!ExtractString(Text, Name)) { Error = true; return true; }
 
 					if (*Text != '"') { Error = true; return true; }
@@ -222,10 +228,127 @@ namespace Columbus
 		if (_ParseBool(Text)) return true;
 		if (_ParseNull(Text)) return true;
 		if (_ParseNumber(Text, Error)) return !Error;
-		if (_ParseArray(Text, Error))  { if (Error) ArrayValue.clear();  return !Error; }
+		if (_ParseArray(Text, Error)) { if (Error) ArrayValue.clear();  return !Error; }
 		if (_ParseObject(Text, Error)) { if (Error) ObjectValue.clear(); return !Error; }
 
 		return false;
+	}
+
+	void JSON::_WriteString(File& F) const
+	{
+		F << '"' << StringValue.c_str() << '"';
+	}
+
+	void JSON::_WriteBool(File& F) const
+	{
+		F << (BoolValue ? "true" : "false");
+	}
+
+	void JSON::_WriteNull(File& F) const
+	{
+		F << "null";
+	}
+
+	void JSON::_WriteInt(File& F) const
+	{
+		char tmp[32];
+		snprintf(tmp, 32, "%ld", IntValue);
+		F << tmp;
+	}
+
+	void JSON::_WriteFloat(File& F) const
+	{
+		char tmp[32];
+		snprintf(tmp, 32, "%g", FloatValue);
+		F << tmp;
+	}
+
+	void JSON::_WriteArray(File& F, uint32 Tabs) const
+	{
+		if (ArrayValue.empty())
+		{
+			F << "[]";
+			return;
+		}
+
+		F << '[';
+		if (!IsVector) F << '\n';
+		Tabs++;
+
+		uint32 Counter = 0;
+		bool IsLast = false;
+
+		for (const auto& Elem : ArrayValue)
+		{
+			if (!IsVector) WriteTabs(F, Tabs);
+
+			Elem._Write(F, Tabs);
+
+			IsLast = ++Counter == ArrayValue.size();
+
+			if (!IsLast)
+				F << ',';
+
+			if (IsVector)
+			{
+				if (!IsLast)
+				{
+					F << ' ';
+				}
+			}
+			else
+			{
+				F << '\n';
+			}
+		}
+
+		Tabs--;
+		if (!IsVector) WriteTabs(F, Tabs);
+		F << ']';
+	}
+
+	void JSON::_WriteObject(File& F, uint32 Tabs) const
+	{
+		if (ObjectValue.empty())
+		{
+			F << "{}";
+			return;
+		}
+
+		F << "{\n";
+		Tabs++;
+
+		uint32 Counter = 0;
+
+		for (const auto& Elem : ObjectValue)
+		{
+			WriteTabs(F, Tabs);
+			F << '"' << Elem.first.c_str() << "\": ";
+			Elem.second._Write(F, Tabs);
+
+			if (++Counter != ObjectValue.size())
+				F << ',';
+
+			F << '\n';
+		}
+
+		Tabs--;
+		WriteTabs(F, Tabs);
+		F << "}";
+	}
+
+	void JSON::_Write(File& F, uint32 Tabs) const
+	{
+		switch (ValueType)
+		{
+		case Type::String: _WriteString(F); break;
+		case Type::Bool: _WriteBool(F); break;
+		case Type::Null: _WriteNull(F); break;
+		case Type::Int: _WriteInt(F); break;
+		case Type::Float: _WriteFloat(F); break;
+		case Type::Array: _WriteArray(F, Tabs); break;
+		case Type::Object: _WriteObject(F, Tabs); break;
+		}
 	}
 
 	bool JSON::Parse(const char* Text)
@@ -245,6 +368,44 @@ namespace Columbus
 		bool Result = Parse(Text);
 		delete[] Text;
 		return Result;
+	}
+
+	bool JSON::Save(const char* FileName)
+	{
+		File F(FileName, "wt");
+		if (!F.IsOpened()) return false;
+
+		_Write(F);
+		F << '\n';
+
+		return true;
+	}
+
+	JSON& JSON::operator[](uint32 Index)
+	{
+		if (ValueType != Type::Array)
+		{
+			ObjectValue.clear();
+			ValueType = Type::Array;
+		}
+
+		while (Index >= ArrayValue.size())
+		{
+			ArrayValue.push_back(JSON());
+		}
+
+		return ArrayValue[Index];
+	}
+
+	JSON& JSON::operator[](const String& Key)
+	{
+		if (ValueType != Type::Object)
+		{
+			ArrayValue.clear();
+			ValueType = Type::Object;
+		}
+
+		return ObjectValue[Key];
 	}
 
 }

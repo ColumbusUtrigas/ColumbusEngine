@@ -4,9 +4,8 @@
 #include <Scene/Transform.h>
 #include <Scene/Component.h>
 #include <Core/SmartPointer.h>
+#include <Core/String.h>
 #include <vector>
-#include <unordered_map>
-#include <algorithm>
 
 namespace Columbus
 {
@@ -18,8 +17,9 @@ namespace Columbus
 		std::vector<SmartPointer<Component>> Components;
 	public:
 		Transform transform;
-		Material material;
-		std::string Name;
+		Material* material = nullptr;
+
+		String Name;
 		bool Enable = true;
 	public:
 		GameObject();

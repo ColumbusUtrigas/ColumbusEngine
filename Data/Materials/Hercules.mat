@@ -9,11 +9,12 @@
 	"Roughness": 1,
 	"Metallic": 0,
 	"EmissionStrength": 0,
+	"Shader": "Data/Shaders/Standart.glsl",
 
 	"Textures":
 	{
-		"Albedo": 0,
-		"DetailAlbedo": 1,
-		"DetailNormal": 2
+		"Albedo": "Data/Textures/Hercules.dds",
+		"DetailAlbedo": "Data/Textures/Detail.dds",
+		"DetailNormal": "Data/Textures/Detail-Normal.dds"
 	}
 }

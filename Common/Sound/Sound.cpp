@@ -1,7 +1,8 @@
 #include <Common/Sound/Sound.h>
 #include <Common/Sound/OGG/SoundOGG.h>
 #include <Common/Sound/WAV/SoundWAV.h>
-#include <Core/Memory.h>
+#include <Common/Sound/SoundUtil.h>
+#include <cstdlib>
 
 namespace Columbus
 {
@@ -89,7 +90,7 @@ namespace Columbus
 		Frequency = 0;
 		Channels = 0;
 		//delete[] Buffer;
-		if (Buffer != nullptr) Memory::Free(Buffer);
+		if (Buffer != nullptr) free(Buffer);
 		Streaming = false;
 		if (Decoder != nullptr) delete Decoder;
 		Decoder = nullptr;
@@ -106,16 +107,50 @@ namespace Columbus
 		}
 	}
 
-	uint32 Sound::Decode(Frame* Frames, uint32 Count)
+	uint32 Sound::Decode(Frame* Frames, uint32 Count, uint64& Offset)
 	{
 		if (Frames != nullptr)
 		{
+			static constexpr int MaxSamples = 2048;
+			uint32 Divider = 44100 / GetFrequency();
+			Frame Tmp[MaxSamples];
+
+			int from_freq = GetFrequency();
+			int to_freq = 44100;
+
 			if (Streaming)
 			{
 				if (Decoder != nullptr)
 				{
-					return Decoder->Decode(Frames, Count);
+					uint32 Decoded = Decoder->Decode(Tmp, Count / Divider);
+					SoundUtil::Resample(Tmp, Frames, Decoded, from_freq, to_freq);
+
+					Offset += Count * Channels;
+
+					return Decoded * Divider;
 				}
+			} else
+			{
+				uint32 RealCount = Count / Divider;
+
+				if (Channels == 1)
+				{
+					for (uint32 i = 0; i < RealCount; i++)
+					{
+						Tmp[i].L = Tmp[i].R = Buffer[Offset++ % BufferSize];
+					}
+				} else if (Channels == 2)
+				{
+					for (uint32 i = 0; i < RealCount; i++)
+					{
+						Tmp[i].L = Buffer[Offset++ % BufferSize];
+						Tmp[i].R = Buffer[Offset++ % BufferSize];
+					}
+				}
+
+				SoundUtil::Resample(Tmp, Frames, RealCount, from_freq, to_freq);
+
+				return Count;
 			}
 		}
 
@@ -194,12 +229,5 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
 
 

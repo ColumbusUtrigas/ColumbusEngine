@@ -21,14 +21,14 @@ namespace Columbus
 		TextureOpenGL(const TextureOpenGL&) = delete;
 		TextureOpenGL(TextureOpenGL&&) = delete;
 
-		bool Load(const void* Data, Texture::Properties Props) override;
+		bool Load(const void* Data, TextureDesc Desc) override;
 		bool Load(Image& InImage) override;
 		bool Load(const char* File) override;
 
-		bool Create(Image::Type InType, Properties Props) override;
-		bool Create(Texture::Type InType, Properties Props) override;
-		bool Create2D(Texture::Properties Props) override;
-		bool CreateCube(Texture::Properties Props) override;
+		bool Create(Image::Type InType, TextureDesc Desc) override;
+		bool Create(Texture::Type InType, TextureDesc Desc) override;
+		bool Create2D(TextureDesc Desc) override;
+		bool CreateCube(TextureDesc Desc) override;
 
 		void SetFlags(Texture::Flags F) override;
 

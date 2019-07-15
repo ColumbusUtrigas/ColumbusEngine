@@ -1,9 +1,8 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include <Core/SmartPointer.h>
+#include <Core/String.h>
 #include <unordered_map>
-#include <algorithm>
 
 namespace Columbus
 {
@@ -11,79 +10,72 @@ namespace Columbus
 	template <typename T>
 	struct ResourceManager
 	{
-		// Resources map countains pairs of [resource_name; index in Resources]
-		std::vector<SmartPointer<T>> Resources;
-		std::unordered_map<std::string, size_t> ResourcesMap;
+		uint32 CurrentID = 0;
 
-		bool IsNameFree(const std::string& Name)
+		std::unordered_map<size_t, SmartPointer<T>> Resources;
+		std::unordered_map<size_t, String> Names;
+		std::unordered_map<String, size_t> IDs;
+
+		bool IsNameFree(const String& Name)
 		{
-			return ResourcesMap.find(Name) == ResourcesMap.end();
+			return IDs.find(Name) == IDs.end();
 		}
 
-		bool Add(SmartPointer<T>&& Resource, const std::string& Name, bool Replace = false)
+		bool Add(SmartPointer<T>&& Resource, const String& Name, bool Replace = false)
 		{
 			bool NameFree = IsNameFree(Name);
 
 			if (NameFree || Replace)
 			{
-				if (NameFree)
-				{
-					Resources.emplace_back(std::move(Resource));
-					ResourcesMap[Name] = Resources.size() - 1;
-				} else
-				{
-					Resources[ResourcesMap[Name]] = (SmartPointer<T>&&)std::move(Resource);
-				}
-
+				Resources[CurrentID] = (SmartPointer<T>&&)std::move(Resource);
+				Names[CurrentID] = Name;
+				IDs[Name] = CurrentID;
+				CurrentID++;
 				return true;
 			}
 
 			return false;
 		}
 
-		bool Delete(const std::string& Index)
+		T* Find(size_t ID)
 		{
-			auto It = ResourcesMap.find(Index);
-			if (It != ResourcesMap.end())
+			auto It = Resources.find(ID);
+			return It != Resources.end() ? It->second.Get() : nullptr;
+		}
+		
+		T* Find(const String& Key)
+		{
+			auto It = IDs.find(Key);
+			return It != IDs.end() ? Resources[It->second].Get() : nullptr;
+		}
+
+		String Find(const T* Value)
+		{
+			for (const auto& Elem : Resources)
 			{
-				size_t Index = It->second;
-				std::string DeleteName = Resources[Index]->Name;
-
-				//ResourcesMap[Resources[Index]->Name] = 0;
-				//Resources[Index] = SmartPointer<T>();
-
-				auto Pred = [&](const SmartPointer<GameObject>& A){ return A->Name == DeleteName; };
-				auto Removed = std::remove_if(Resources.begin(), Resources.end(), Pred);
-
-				Resources.erase(Removed, Resources.end());
-				ResourcesMap.erase(DeleteName);
-
-				for (auto& Elem : ResourcesMap)
+				if (Elem.second.Get() == Value)
 				{
-					if (Elem.second > Index)
-						Elem.second--;
+					return Names[Elem.first];
 				}
-
-				return true;
 			}
 
-			return false;
+			return "";
 		}
 
-		T* Find(const std::string& Index)
+		size_t FindID(const String& Name)
 		{
-			auto It = ResourcesMap.find(Index);
-			return It != ResourcesMap.end() ? Resources[It->second].Get() : nullptr;
+			auto It = IDs.find(Name);
+			return It != IDs.end() ? It->second : 0;
 		}
 
-		SmartPointer<T>& operator[](size_t Index)
+		SmartPointer<T>& operator[](const String& Key)
 		{
-			return Resources[Index];
+			return Resources[IDs[Key]];
 		}
 
-		SmartPointer<T>& operator[](const std::string& Index)
+		SmartPointer<T>& operator[](size_t ID)
 		{
-			return Resources[ResourcesMap[Index]];
+			return Resources[ID];
 		}
 	};
 

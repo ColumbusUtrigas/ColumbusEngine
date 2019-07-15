@@ -53,7 +53,7 @@ namespace Columbus
 		BMPImageFile.Read(Header.Offset);
 		BMPImageFile.Read(Info);
 
-		uint32 Masks[4];
+		int32 Masks[4];
 		int Shifts[4];
 
 		if (Info.Compression == 3)
@@ -105,11 +105,11 @@ namespace Columbus
 
 		return Data != nullptr;
 	}
-
+	/*
 	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
 		return false;
-	}
+	}*/
 
 }
 

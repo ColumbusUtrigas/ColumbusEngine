@@ -1,22 +1,54 @@
+#pragma once
+
 namespace Columbus
 {
 
 	const char* gScreenSpaceVertexShader = 
 	R"(
 	#version 130
-	in vec2 Pos;
-	in vec2 UV;
+
+	const vec2 Coord[6] = vec2[](
+		vec2(-1, +1),
+		vec2(+1, +1),
+		vec2(+1, -1),
+		vec2(-1, -1),
+		vec2(-1, +1),
+		vec2(+1, -1)
+	);
+
+	const vec2 TC[6] = vec2[](
+		vec2(0, 1),
+		vec2(1, 1),
+		vec2(1, 0),
+		vec2(0, 0),
+		vec2(0, 1),
+		vec2(1, 0)
+	);
 
 	out vec2 Texcoord;
 
 	void main(void)
 	{
-		gl_Position = vec4(Pos, 0, 1);
-		Texcoord = UV;
+		gl_Position = vec4(Coord[gl_VertexID], 0, 1);
+		Texcoord = TC[gl_VertexID];
 	}
 	)";
 
-	const char* gFinalFragmentShader = 
+	const char* gScreenSpaceFragmentShader =
+	R"(
+	#version 130
+	out vec4 FragColor;
+	in vec2 Texcoord;
+
+	uniform sampler2D BaseTexture;
+
+	void main(void)
+	{
+		FragColor = texture(BaseTexture, Texcoord);
+	}
+	)";
+
+	const char* gTonemapFragmentShader = 
 	R"(
 	#version 130
 	out vec4 FragColor;
@@ -25,14 +57,113 @@ namespace Columbus
 	uniform sampler2D BaseTexture;
 	uniform float Exposure;
 	uniform float Gamma;
+	uniform int Type;
+
+	vec3 TonemapSimple(vec3 HDR)
+	{
+		HDR = HDR / (1.0 + HDR);
+		return pow(HDR, vec3(1.0 / Gamma));
+	}
+
+	vec3 TonemapFilmic(vec3 HDR)
+	{
+		HDR = max(vec3(0.0), HDR - 0.004);
+		return (HDR * (6.2 * HDR + 0.5)) / (HDR * (6.2 * HDR + 1.7) + 0.06);
+	}
+
+	vec3 TonemapACES(vec3 HDR)
+	{
+		const float a = 2.51f;
+		const float b = 0.03f;
+		const float c = 2.43f;
+		const float d = 0.59f;
+		const float e = 0.14f;
+
+		HDR = (HDR * (a * HDR + b))  /
+		      (HDR * (c * HDR + d) + e);
+		HDR = pow(HDR, 1.0 / vec3(Gamma));
+		return HDR;
+	}
+
+	vec3 TonemapRomBinDaHouse(vec3 HDR)
+	{
+		HDR = exp(-1.0 / (2.72 * HDR + 0.15));
+		return pow(HDR, vec3(1.0 / Gamma));
+	}
+
+	vec3 TonemapUncharted(vec3 HDR)
+	{
+		float A = 0.15;
+		float B = 0.50;
+		float C = 0.10;
+		float D = 0.20;
+		float E = 0.02;
+		float F = 0.30;
+		float W = 11.2;
+
+		HDR = ((HDR * (A * HDR + C * B) + D * E) / (HDR * (A * HDR + B) + D * F)) - E / F;
+		float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
+		HDR /= white;
+		HDR = pow(HDR, vec3(1.0 / Gamma));
+		return HDR;
+	}
+
+	float luma(vec3 color)
+	{
+		return dot(color, vec3(0.2125, 0.7154, 0.0721));
+	}
 
 	void main(void)
 	{
-		vec3 HDR = texture(BaseTexture, Texcoord).rgb;
-		vec3 Mapped = vec3(1.0) - exp(-HDR * Exposure);
-		Mapped = pow(Mapped, vec3(1.0 / Gamma));
+		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * Exposure, 0, 50000);
+		vec3 Mapped = vec3(0.0);
+
+		switch (Type)
+		{
+		case 0: Mapped = TonemapSimple(HDR); break;
+		case 1: Mapped = TonemapFilmic(HDR); break;
+		case 2: Mapped = TonemapACES(HDR); break;
+		case 3: Mapped = TonemapRomBinDaHouse(HDR); break;
+		case 4: Mapped = TonemapUncharted(HDR); break;
+		}
 
 		FragColor = vec4(Mapped, 1.0);
+	}
+	)";
+
+	const char* gResolveMSAAFragmentShader =
+	R"(
+	#version 150
+
+	out vec4 FragColor;
+
+	uniform sampler2DMS BaseTexture;
+	uniform int Samples;
+
+	in vec2 Texcoord;
+
+	vec3 Tonemap(vec3 HDR)
+	{
+		return HDR / (1.0 + HDR);
+	}
+
+	vec3 InverseTonemap(vec3 LDR)
+	{
+		return LDR / (1.0 - LDR);
+	}
+
+	void main(void)
+	{
+		vec3 Color = vec3(0);
+
+		for (int i = 0; i < Samples; i++)
+		{
+			Color += Tonemap(texelFetch(BaseTexture, ivec2(gl_FragCoord.xy), i).rgb);
+		}
+
+		Color = InverseTonemap(Color / Samples);
+
+		FragColor = vec4(Color, 1.0);
 	}
 	)";
 
@@ -89,7 +220,7 @@ namespace Columbus
 
 	float luma(vec3 color)
 	{
-		return dot(color, vec3(0.299, 0.587, 0.114));
+		return dot(color, vec3(0.2125, 0.7154, 0.0721));
 	}
 
 	void main(void)
@@ -120,12 +251,137 @@ namespace Columbus
 	}
 	)";
 
+	const char* gVignetteFragmentShader =
+	R"(
+	#version 130
+
+	in vec2 Texcoord;
+	out vec4 FragColor;
+
+	uniform vec3 Color;
+	uniform vec2 Center;
+	uniform float Intensity;
+	uniform float Smoothness;
+	uniform float Radius;
+
+	void main(void)
+	{
+		float Diff = Radius - distance(Texcoord, Center);
+		float Value = smoothstep(-Smoothness, Smoothness, Diff);
+		FragColor = vec4(Color, (1.0 - clamp(Value, 0.0, 1.0)) * Intensity);
+	}
+	)";
+
+	const char* gFXAAFragmentShader = 
+	R"(
+	#version 130
+
+	out vec4 FragColor;
+
+	uniform sampler2D BaseTexture;
+	uniform vec2 Resolution;
+
+	#define FXAA_SPAN_MAX 8.0
+	#define FXAA_REDUCE_MUL   (1.0/FXAA_SPAN_MAX)
+	#define FXAA_REDUCE_MIN   (1.0/128.0)
+	#define FXAA_SUBPIX_SHIFT (1.0/4.0)
+
+	vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
+		vec2 v_rgbNW, vec2 v_rgbNE, 
+		vec2 v_rgbSW, vec2 v_rgbSE, 
+		vec2 v_rgbM)
+	{
+		vec4 color;
+		mediump vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
+		vec3 rgbNW = texture(tex, v_rgbNW).xyz;
+		vec3 rgbNE = texture(tex, v_rgbNE).xyz;
+		vec3 rgbSW = texture(tex, v_rgbSW).xyz;
+		vec3 rgbSE = texture(tex, v_rgbSE).xyz;
+		vec4 texColor = texture(tex, v_rgbM);
+		vec3 rgbM  = texColor.xyz;
+		vec3 luma = vec3(0.299, 0.587, 0.114);
+		float lumaNW = dot(rgbNW, luma);
+		float lumaNE = dot(rgbNE, luma);
+		float lumaSW = dot(rgbSW, luma);
+		float lumaSE = dot(rgbSE, luma);
+		float lumaM  = dot(rgbM,  luma);
+		float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+		float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+
+		mediump vec2 dir;
+		dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+		dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+
+		float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
+				  (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
+
+		float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+		dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX),
+		max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX),
+		dir * rcpDirMin)) * inverseVP;
+
+		vec3 rgbA = 0.5 * (
+		texture(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
+		texture(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
+		vec3 rgbB = rgbA * 0.5 + 0.25 * (
+		texture(tex, fragCoord * inverseVP + dir * -0.5).xyz +
+		texture(tex, fragCoord * inverseVP + dir * 0.5).xyz);
+
+		float lumaB = dot(rgbB, luma);
+		if ((lumaB < lumaMin) || (lumaB > lumaMax))
+		color = vec4(rgbA, texColor.a);
+		else
+		color = vec4(rgbB, texColor.a);
+		return color;
+	}
+
+	void texcoords(vec2 fragCoord, vec2 resolution,
+			out vec2 v_rgbNW, out vec2 v_rgbNE,
+			out vec2 v_rgbSW, out vec2 v_rgbSE,
+			out vec2 v_rgbM)
+	{
+		vec2 inverseVP = 1.0 / resolution.xy;
+		v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
+		v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
+		v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
+		v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
+		v_rgbM = vec2(fragCoord * inverseVP);
+	}
+
+	void main(void)
+	{
+		vec2 v_rgbNW;
+		vec2 v_rgbNE;
+		vec2 v_rgbSW;
+		vec2 v_rgbSE;
+		vec2 v_rgbM;
+
+		texcoords(gl_FragCoord.xy, Resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+		FragColor =  fxaa(BaseTexture, gl_FragCoord.xy, Resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+	}
+	)";
+
 	const char* gIconVertexShader =
 	R"(
 	#version 130
 
-	in vec2 Position;
-	in vec2 UV;
+	const vec2 Coord[6] = vec2[](
+		vec2(-1, +1),
+		vec2(+1, +1),
+		vec2(+1, -1),
+		vec2(-1, -1),
+		vec2(-1, +1),
+		vec2(+1, -1)
+	);
+
+	const vec2 TC[6] = vec2[](
+		vec2(0, 1),
+		vec2(1, 1),
+		vec2(1, 0),
+		vec2(0, 0),
+		vec2(0, 1),
+		vec2(1, 0)
+	);
 
 	uniform vec2 Pos;
 	uniform vec2 Size;
@@ -134,8 +390,9 @@ namespace Columbus
 
 	void main(void)
 	{
-		gl_Position = vec4(Position * Size + Pos, 0, 1);
-		Texcoord = UV;
+		gl_Position = vec4(Coord[gl_VertexID] * Size + Pos, 0, 1);
+		Texcoord.x = TC[gl_VertexID].x;
+		Texcoord.y = -TC[gl_VertexID].y;
 	}
 	)";
 
@@ -181,8 +438,9 @@ namespace Columbus
 
 	void main(void)
 	{
-		//FragColor = vec4(pow(textureCube(Skybox, Texcoord).rgb, vec3(1.5)), 1);
-		FragColor = texture(Skybox, Texcoord);
+		//FragColor = vec4(pow(texture(Skybox, Texcoord).rgb, vec3(1.5)), 1);
+		FragColor = vec4(texture(Skybox, Texcoord).rgb, 1.0);
+
 		gl_FragDepth = 0x7FFFFFFF;
 	}
 	)";
@@ -200,6 +458,7 @@ namespace Columbus
 	{
 		gl_Position = Projection * View * vec4(Position, 1);
 		Pos = Position;
+		Pos .y = -Pos.y;
 	}
 	)";
 
@@ -225,7 +484,7 @@ namespace Columbus
 		vec2 uv = SampleSphericalMap(normalize(Pos)); 
 		vec3 color = texture(BaseMap, uv).rgb;
 
-		FragColor = vec4(color, 1.0);
+		FragColor = vec4(clamp(color, 0, 50000), 1.0);
 	}
 	)";
 
@@ -275,7 +534,7 @@ namespace Columbus
 				vec3 TangentSample = vec3(sin(Theta) * cos(Phi), sin(Theta) * sin(Phi), cos(Theta));
 				vec3 SampleVec = TangentSample.x * Right + TangentSample.y * Up + TangentSample.z * Normal; 
 
-				Irradiance += textureCube(EnvironmentMap, SampleVec).rgb * cos(Theta) * sin(Theta);
+				Irradiance += texture(EnvironmentMap, SampleVec).rgb * cos(Theta) * sin(Theta);
 				NumSamples += 1.0;
 			}
 		}
@@ -376,7 +635,7 @@ namespace Columbus
 
 			if(NdotL > 0.0)
 			{
-				PrefilteredColor += textureCube(EnvironmentMap, L).rgb * NdotL;
+				PrefilteredColor += texture(EnvironmentMap, L).rgb * NdotL;
 				TotalWeight      += NdotL;
 			}
 		}
@@ -385,26 +644,12 @@ namespace Columbus
 	}
 	)";
 
-	const char* gIntegrationGenerationVertexShader = 
-	R"(
-	#version 130
-	out vec2 TexCoords;
-
-	in vec2 Position;
-	in vec2 Texcoord;
-
-	void main()
-	{
-		gl_Position = vec4(Position, 0, 1);
-		TexCoords = Texcoord;
-	}
-	)";
-
 	const char* gIntegrationGenerationFragmentShader = 
 	R"(
 	#version 130
+	
 	out vec4 FragColor;
-	in vec2 TexCoords;
+	in vec2 Texcoord;
 
 	const float PI = 3.14159265359;
 
@@ -471,7 +716,7 @@ namespace Columbus
 
 	vec2 Hammersley(uint i, uint N)
 	{
-	    return vec2(float(i) / float(N), RadicalInverse(i, 2u));
+		return vec2(float(i) / float(N), RadicalInverse(i, 2u));
 	}
 
 	vec2 IntegrateBRDF(float NdotV, float roughness)
@@ -514,7 +759,7 @@ namespace Columbus
 
 	void main() 
 	{
-		vec2 IntegratedBRDF = IntegrateBRDF(TexCoords.x, TexCoords.y);
+		vec2 IntegratedBRDF = IntegrateBRDF(Texcoord.x, Texcoord.y);
 		FragColor = vec4(IntegratedBRDF, 1, 1);
 	}
 	)";

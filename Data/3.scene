@@ -1,35 +1,57 @@
 {
-	"Skybox": "Data/Skyboxes/Ruins.hdr",
-
-	"Textures": [
-		"Data/Textures/Hercules.dds",
-		"Data/Textures/Detail.dds",
-		"Data/Textures/Detail-Normal.dds",
-		"Data/Textures/statue_d.dds",
-		"Data/Textures/statue_e.dds",
-		"Data/Textures/Fireplace.dds",
-		"Data/Textures/Fireplace-E.dds",
-		"Data/Textures/spark.dds",
-		"Data/Textures/smoke.dds",
-
-		"Data/Textures/chest_AO.dds",
-		"Data/Textures/chest_Albedo.dds",
-		"Data/Textures/chest_Metallic.dds",
-		"Data/Textures/chest_Normal.dds",
-		"Data/Textures/chest_Roughness.dds"
+	"Defaults": {
+		"Skybox": "Data/Skyboxes/Pier.exr"
+	},
+	"Materials": [
+		"Data/Materials/Hercules.mat"
 	],
-
-	"Shaders": [
-		"Data/Shaders/Standart.glsl",
-		"Data/Shaders/Particles.glsl"
-	],
-
 	"Meshes": [
+		"Data/Models/Chest.cmf",
+		"Data/Models/Fireplace.cmf",
 		"Data/Models/Hercules.cmf",
 		"Data/Models/Statue.cmf",
-		"Data/Models/Fireplace.cmf",
-		"Data/Models/Chest.cmf"
+		"Data/Models/Sphere.cmf"
 	],
+	"Objects": [
+		{
+			"Name": "Hercules",
+			"Static": false,
+			"Transform": {
+				"Position": [0.000000, 0.000000, 0.000000],
+				"Rotation": [0.000000, 0.000000, 0.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			},
+			"Material": "Data/Materials/Hercules.mat",
+			"MeshRenderer": "Data/Models/Hercules.cmf"
+		},
+		{
+			"Name": "Object 1",
+			"Static": false,
+			"Transform": {
+				"Position": [0.000000, 0.000000, 0.000000],
+				"Rotation": [0.000000, 0.000000, 0.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			},
+			"Material": null
+		}
+	],
+	"Shaders": [
+		"Data/Shaders/Particles.glsl",
+		"Data/Shaders/Standart.glsl"
+	],
+	"Textures": [
+		"Data/Textures/chest_Normal.dds",
+		"Data/Textures/Fireplace.dds",
+		"Data/Textures/Hercules.dds",
+		"Data/Textures/statue_d.dds",
+		"Data/Textures/spark.dds",
+		"Data/Textures/chest_AO.dds",
+		"Data/Textures/Detail-Normal.dds",
+		"Data/Textures/chest_Roughness.dds",
+		"Data/Textures/Detail.dds",
+		"Data/Textures/Fireplace-E.dds",
+		"Data/Textures/smoke.dds",
+		"Data/Textures/chest_Albedo.dds",
+		"Data/Textures/chest_Metallic.dds"
+	]
 }
-
-

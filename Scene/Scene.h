@@ -5,6 +5,7 @@
 #include <Graphics/Camera.h>
 #include <Physics/PhysicsWorld.h>
 #include <Scene/GameObject.h>
+#include <Scene/GameObjectsHolder.h>
 #include <System/Timer.h>
 #include <Core/SmartPointer.h>
 #include <Core/Types.h>
@@ -14,10 +15,6 @@
 #include <Graphics/Mesh.h>
 
 #include <Resources/ResourceManager.h>
-
-#include <vector>
-#include <map>
-#include <unordered_map>
 
 namespace Columbus
 {
@@ -30,17 +27,28 @@ namespace Columbus
 		friend class EditorPanelInspector;
 		friend class ResourcesViewerTexture;
 		friend class ResourcesViewerShader;
+		friend class ResourcesViewerMaterial;
 		friend class ResourcesViewerMesh;
 
 		ResourceManager<Texture> TexturesManager;
 		ResourceManager<ShaderProgram> ShadersManager;
+		ResourceManager<Material> MaterialsManager;
 		ResourceManager<Mesh> MeshesManager;
+		ResourceManager<Sound> SoundsManager;
 
-		std::map<uint32, SmartPointer<Texture>> Textures;
-		std::map<uint32, SmartPointer<ShaderProgram>> ShaderPrograms;
+		void SerializeTexturesManager(JSON& J);
+		void SerializeShadersManager(JSON& J);
+		void SerializeMaterialsManager(JSON& J);
+		void SerializeMeshesManager(JSON& J);
+		void SerializeSoundsManager(JSON& J);
+		void SerializeObjects(JSON& J);
 
-		std::map<uint32, SmartPointer<Mesh>> Meshes;
-		std::map<uint32, SmartPointer<Sound>> Sounds;
+		void DeserializeTexturesManager(JSON& J);
+		void DeserializeShadersManager(JSON& J);
+		void DeserializeMaterialsManager(JSON& J);
+		void DeserializeMeshesManager(JSON& J);
+		void DeserializeSoundsManager(JSON& J);
+		void DeserializeObjects(JSON& J);
 
 		Vector<AudioSource*> AudioSources;
 		std::vector<Light*> Lights;
@@ -54,18 +62,17 @@ namespace Columbus
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
 
-		///
-		/// TODO: SmartPointers
-		///
+		String SkyPath;
 		Skybox* Sky = nullptr;
 		Camera* MainCamera = nullptr;
 		AudioListener* Listener = nullptr;
 
-		ResourceManager<GameObject> Objects;
+		GameObjectsHolder Objects;
 	public:
 		Scene();
 
 		bool Load(const char* FileName);
+		bool Save(const char* FileName);
 
 		void Add(GameObject&& InObject)
 		{
@@ -76,12 +83,12 @@ namespace Columbus
 		void AddEmpty()
 		{
 			GameObject GO;
-			std::string Name = "Object ";
+			String Name = "Object ";
 			for (uint32 i = 0;; i++)
 			{
-				if (Objects.Find(Name + std::to_string(i)) == nullptr)
+				if (Objects.Find(Name + std::to_string(i).c_str()) == nullptr)
 				{
-					Name += std::to_string(i);
+					Name += std::to_string(i).c_str();
 					break;
 				}
 			}

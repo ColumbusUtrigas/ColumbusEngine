@@ -67,7 +67,10 @@ namespace Columbus
 		void SetUniform(int FastID, const Vector2& Value) const;
 		void SetUniform(int FastID, const Vector3& Value) const;
 		void SetUniform(int FastID, const Vector4& Value) const;
-		void SetUniform(int FastID, uint32 Size, const float* Value) const;
+		void SetUniform(int FastID, uint32 Count, const float* Value) const;
+		void SetUniform(int FastID, uint32 Count, const Vector2* Value) const;
+		void SetUniform(int FastID, uint32 Count, const Vector3* Value) const;
+		void SetUniform(int FastID, uint32 Count, const Vector4* Value) const;
 		void SetUniform(int FastID, bool Transpose, const Matrix& Mat) const;
 		void SetUniform(int FastID, TextureOpenGL* Tex, uint32 Sampler) const;
 
