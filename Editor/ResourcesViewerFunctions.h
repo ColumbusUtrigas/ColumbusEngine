@@ -109,17 +109,14 @@ namespace Columbus
 
 			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, PopupStr, Button, DoubleClick);
 
-			String MFind = Find;
+			String MFind = Find.tolower();
 			String MName;
-
-			std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
 
 			bool PopupSet = false;
 
 			for (const auto& Elem : Manager.Resources)
 			{
-				MName = Elem.first;
-				std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
+				MName = Manager.Names[Elem.first].tolower();
 				
 				if (MName.find(MFind) != String::npos)
 				{

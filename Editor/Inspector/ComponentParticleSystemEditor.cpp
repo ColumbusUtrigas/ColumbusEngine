@@ -2,7 +2,7 @@
 #include <Editor/Icons.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Lib/imgui/imgui.h>
-#include <climits>
+#include <limits.h>
 
 namespace Columbus
 {
@@ -96,7 +96,7 @@ namespace Columbus
 						size_t Counter = 1;
 						for (auto& Node : Emitter->ModuleColor.Curve.Points)
 						{
-							auto str = std::to_string(Counter);
+							auto str = String::from(Counter);
 
 							float Min = Counter == 1 ? 0.0f : Emitter->ModuleColor.Curve.Points[Counter - 2].Key;
 							float Max = Counter == Emitter->ModuleColor.Curve.Points.size() ? 1.0f : Emitter->ModuleColor.Curve.Points[Counter].Key;
@@ -158,7 +158,7 @@ namespace Columbus
 						size_t Counter = 1;
 						for (auto& Node : Emitter->ModuleSize.Curve.Points)
 						{
-							auto str = std::to_string(Counter);
+							auto str = String::from(Counter);
 
 							float Min = Counter == 1 ? 0.0f : Emitter->ModuleSize.Curve.Points[Counter - 2].Key;
 							float Max = Counter == Emitter->ModuleSize.Curve.Points.size() ? 1.0f : Emitter->ModuleSize.Curve.Points[Counter].Key;

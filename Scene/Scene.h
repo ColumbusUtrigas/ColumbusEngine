@@ -86,9 +86,9 @@ namespace Columbus
 			String Name = "Object ";
 			for (uint32 i = 0;; i++)
 			{
-				if (Objects.Find(Name + std::to_string(i).c_str()) == nullptr)
+				if (Objects.Find(Name + String::from(i)) == nullptr)
 				{
-					Name += std::to_string(i).c_str();
+					Name += String::from(i);
 					break;
 				}
 			}

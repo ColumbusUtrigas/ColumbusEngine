@@ -543,9 +543,6 @@
     <ClInclude Include="System\Log.h">
       <Filter>Файлы заголовков\System</Filter>
     </ClInclude>
-    <ClInclude Include="System\Serializer.h">
-      <Filter>Файлы заголовков\System</Filter>
-    </ClInclude>
     <ClInclude Include="System\Timer.h">
       <Filter>Файлы заголовков\System</Filter>
     </ClInclude>
@@ -705,6 +702,18 @@
     <ClInclude Include="Scene\GameObjectsHolder.h">
       <Filter>Файлы заголовков\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Core\ISerializable.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\String.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\ResourcesViewerMaterial.h">
+      <Filter>Файлы заголовков\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Sound\SoundUtil.h">
+      <Filter>Файлы заголовков\Common\Sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio\AudioMixer.cpp">
@@ -741,9 +750,6 @@
       <Filter>Исходные файлы\System</Filter>
     </ClCompile>
     <ClCompile Include="System\Log.cpp">
-      <Filter>Исходные файлы\System</Filter>
-    </ClCompile>
-    <ClCompile Include="System\Serializer.cpp">
       <Filter>Исходные файлы\System</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Camera.cpp">
@@ -857,9 +863,6 @@
     <ClCompile Include="Graphics\ParticlesRenderer.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\Particles\ParticleEmitterLoader.cpp">
-      <Filter>Исходные файлы\Graphics\Particles</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Particles\Rotation\ParticleModuleRotation.cpp">
       <Filter>Исходные файлы\Graphics\Particles\Rotation</Filter>
     </ClCompile>
@@ -903,9 +906,6 @@
       <Filter>Исходные файлы\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Editor\MessageBox.cpp">
-      <Filter>Исходные файлы\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\Panel.cpp">
       <Filter>Исходные файлы\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Editor\PanelHierarchy.cpp">
@@ -964,6 +964,24 @@
     </ClCompile>
     <ClCompile Include="Common\Image\EXR\ImageEXR.cpp">
       <Filter>Исходные файлы\Common\Image\EXR</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\SceneIO.cpp">
+      <Filter>Исходные файлы\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Assert.cpp">
+      <Filter>Исходные файлы\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\String.cpp">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\Particles\ParticleEmitterIO.cpp">
+      <Filter>Исходные файлы\Graphics\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\ResourcesViewerMaterial.cpp">
+      <Filter>Исходные файлы\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Sound\SoundUtil.cpp">
+      <Filter>Исходные файлы\Common\Sound</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
