@@ -60,7 +60,9 @@ namespace Columbus
 		static String from(int val);
 		static String from(long val);
 		static String from(long long val);
-		static String from(size_t val);
+		static String from(unsigned int val);
+		static String from(unsigned long val);
+		static String from(unsigned long long val);
 		static String from(float val);
 		static String from(double val);
 
