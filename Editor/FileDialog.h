@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Core/Platform/FileInfo.h>
 #include <Editor/MessageBox.h>
+#include <Core/FileInfo.h>
 #include <Core/String.h>
 #include <vector>
 

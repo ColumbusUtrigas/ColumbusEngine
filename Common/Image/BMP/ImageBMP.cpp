@@ -1,5 +1,5 @@
 #include <Common/Image/BMP/ImageBMP.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 #include <System/File.h>
 
 namespace Columbus

@@ -1,5 +1,5 @@
 #include <Scene/GameObject.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 
 namespace Columbus
 {

@@ -1,12 +1,12 @@
 #include <System/Log.h>
-#include <Core/Platform/Platform.h>
+#include <Core/Platform.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef PLATFORM_WINDOWS
-	#include <Windows.h>
+	#include <windows.h>
 #endif
 
 namespace Columbus

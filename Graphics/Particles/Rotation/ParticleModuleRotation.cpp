@@ -1,5 +1,5 @@
 #include <Graphics/Particles/Rotation/ParticleModuleRotation.h>
-#include <Core/Platform/Platform.h>
+#include <Core/Platform.h>
 
 #if defined(PLATFORM_WINDOWS)
 	#include <intrin.h>

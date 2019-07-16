@@ -1,6 +1,6 @@
 #include <System/File.h>
-#include <Core/Platform/Platform.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
+#include <Core/Platform.h>
 #include <utility>
 #include <cstring>
 #include <cstdio>

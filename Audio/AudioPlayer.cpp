@@ -1,6 +1,6 @@
 #include <Audio/AudioPlayer.h>
 #include <System/Log.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 #include <SDL.h>
 #include <cstring>
 

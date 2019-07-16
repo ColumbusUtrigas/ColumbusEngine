@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/Platform/Platform.h>
+#include <Core/Platform.h>
 
 #ifdef PLATFORM_WINDOWS
 	#include <windows.h>

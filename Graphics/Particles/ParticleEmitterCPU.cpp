@@ -1,6 +1,6 @@
 #include <Graphics/Particles/ParticleEmitterCPU.h>
-#include <Core/Platform/Platform.h>
 #include <Profiling/Profiling.h>
+#include <Core/Platform.h>
 
 #if defined(PLATFORM_WINDOWS)
 	#include <intrin.h>

@@ -1,7 +1,7 @@
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
-#include <Core/Platform/PlatformFilesystem.h>
+#include <Core/Filesystem.h>
 #include <algorithm>
 
 namespace Columbus
@@ -72,7 +72,7 @@ namespace Columbus
 				for (const auto& Elem : Decomposition)
 				{
 					ImGui::SameLine();
-					if (ImGui::Button((Elem + "##" + std::to_string(i).c_str()).c_str()))
+					if (ImGui::Button((Elem + "##" + String::from(i)).c_str()))
 					{
 						Path = Recompose(Decomposition, i);
 					}

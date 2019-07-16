@@ -1,6 +1,6 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/TGA/ImageTGA.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 #include <System/File.h>
 #include <algorithm>
 #include <utility>

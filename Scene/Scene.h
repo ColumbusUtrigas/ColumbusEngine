@@ -6,8 +6,8 @@
 #include <Physics/PhysicsWorld.h>
 #include <Scene/GameObject.h>
 #include <Scene/GameObjectsHolder.h>
-#include <System/Timer.h>
 #include <Core/SmartPointer.h>
+#include <Core/Timer.h>
 #include <Core/Types.h>
 
 #include <Graphics/Texture.h>
