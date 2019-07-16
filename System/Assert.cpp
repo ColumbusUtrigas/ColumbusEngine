@@ -4,7 +4,8 @@
 #include <stdio.h>
 
 #ifdef PLATFORM_WINDOWS
-	#error "assert is not implemented"
+	#include <windows.h>
+	#define MESSAGE_BOX(message) MessageBox(NULL, message, "Fatal Error", MB_APPLMODAL | MB_ICONERROR | MB_OK);
 #else
 	#include <SDL.h>
 	#define MESSAGE_BOX(message) \
@@ -19,23 +20,13 @@ namespace Columbus
 
 	void _ColumbusAssert_Internal(const char* file, long int line, const char* msg)
 	{
-		char line_str[16] = { 0 };
-		snprintf(line_str, 16, "%ld", line);
-
-		const char* file_str = strstr(file, "ColumbusEngine");
-
-		char message[4096] = { 0 };
-
-		strcat(message, "Assertation at ");
-		strcat(message, file_str);
-		strcat(message, ":");
-		strcat(message, line_str);
-		strcat(message, "\n\n");
-		strcat(message, msg);
+		constexpr int buf_size = 4096;
+		char message[buf_size] = { 0 };
+		snprintf(message, buf_size, "Assertation at %s:%li\n\n%s", file, line, msg);
 
 		MESSAGE_BOX(message);
 
-		Log::Fatal("Assertation at %s:%d:   %s", file_str, line, msg);
+		Log::Fatal("Assertation at %s:%d:   %s", file, line, msg);
 	}
 
 }

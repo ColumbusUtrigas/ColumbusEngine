@@ -1,4 +1,5 @@
 #include <Common/Image/BMP/ImageBMP.h>
+#include <System/Assert.h>
 #include <System/File.h>
 
 namespace Columbus
@@ -105,11 +106,13 @@ namespace Columbus
 
 		return Data != nullptr;
 	}
-	/*
-	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	
+	//bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveBMP(const char*, uint32, uint32, TextureFormat, uint8*)
 	{
+		COLUMBUS_ASSERT_MESSAGE(false, "Not implemented!");
 		return false;
-	}*/
+	}
 
 }
 

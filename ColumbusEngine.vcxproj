@@ -191,11 +191,13 @@
     <ClInclude Include="Common\Noise\PerlinNoise.h" />
     <ClInclude Include="Common\Sound\OGG\SoundOGG.h" />
     <ClInclude Include="Common\Sound\Sound.h" />
+    <ClInclude Include="Common\Sound\SoundUtil.h" />
     <ClInclude Include="Common\Sound\WAV\SoundWAV.h" />
     <ClInclude Include="Core\Containers\Array.h" />
     <ClInclude Include="Core\Containers\String.h" />
     <ClInclude Include="Core\Containers\Vector.h" />
     <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\ISerializable.h" />
     <ClInclude Include="Core\Linux\PlatformLinuxClipboard.h" />
     <ClInclude Include="Core\Linux\PlatformLinuxFilesystem.h" />
     <ClInclude Include="Core\Platform\Platform.h" />
@@ -203,6 +205,7 @@
     <ClInclude Include="Core\Platform\PlatformFilesystem.h" />
     <ClInclude Include="Core\Random.h" />
     <ClInclude Include="Core\SmartPointer.h" />
+    <ClInclude Include="Core\String.h" />
     <ClInclude Include="Core\Types.h" />
     <ClInclude Include="Core\Windows\PlatformWindowsClipboard.h" />
     <ClInclude Include="Core\Windows\PlatformWindowsFilesystem.h" />
@@ -217,6 +220,7 @@
     <ClInclude Include="Editor\PanelRenderSettings.h" />
     <ClInclude Include="Editor\PanelScene.h" />
     <ClInclude Include="Editor\ResourcesViewerFunctions.h" />
+    <ClInclude Include="Editor\ResourcesViewerMaterial.h" />
     <ClInclude Include="Editor\ResourcesViewerMesh.h" />
     <ClInclude Include="Editor\ResourcesViewerShader.h" />
     <ClInclude Include="Editor\ResourcesViewerTexture.h" />
@@ -303,7 +307,6 @@
     <ClInclude Include="System\Assert.h" />
     <ClInclude Include="System\File.h" />
     <ClInclude Include="System\Log.h" />
-    <ClInclude Include="System\Serializer.h" />
     <ClInclude Include="System\Timer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -326,9 +329,11 @@
     <ClCompile Include="Common\Sound\MP3\SoundMP3.cpp" />
     <ClCompile Include="Common\Sound\OGG\SoundOGG.cpp" />
     <ClCompile Include="Common\Sound\Sound.cpp" />
+    <ClCompile Include="Common\Sound\SoundUtil.cpp" />
     <ClCompile Include="Common\Sound\WAV\SoundWAV.cpp" />
     <ClCompile Include="Core\Platform\PlatformClipboard.cpp" />
     <ClCompile Include="Core\Platform\PlatformFilesystem.cpp" />
+    <ClCompile Include="Core\String.cpp" />
     <ClCompile Include="Core\Windows\PlatformWindowsClipboard.cpp" />
     <ClCompile Include="Core\Windows\PlatformWindowsFilesystem.cpp" />
     <ClCompile Include="Editor\Editor.cpp" />
@@ -341,11 +346,11 @@
     <ClCompile Include="Editor\Inspector\PanelInspector.cpp" />
     <ClCompile Include="Editor\Inspector\TransformMaterialEditor.cpp" />
     <ClCompile Include="Editor\MessageBox.cpp" />
-    <ClCompile Include="Editor\Panel.cpp" />
     <ClCompile Include="Editor\PanelHierarchy.cpp" />
     <ClCompile Include="Editor\PanelProfiler.cpp" />
     <ClCompile Include="Editor\PanelRenderSettings.cpp" />
     <ClCompile Include="Editor\PanelScene.cpp" />
+    <ClCompile Include="Editor\ResourcesViewerMaterial.cpp" />
     <ClCompile Include="Editor\ResourcesViewerMesh.cpp" />
     <ClCompile Include="Editor\ResourcesViewerShader.cpp" />
     <ClCompile Include="Editor\ResourcesViewerTexture.cpp" />
@@ -364,7 +369,7 @@
     <ClCompile Include="Graphics\Particles\Lifetime\ParticleModuleLifetime.cpp" />
     <ClCompile Include="Graphics\Particles\Location\ParticleModuleLocation.cpp" />
     <ClCompile Include="Graphics\Particles\ParticleEmitterCPU.cpp" />
-    <ClCompile Include="Graphics\Particles\ParticleEmitterLoader.cpp" />
+    <ClCompile Include="Graphics\Particles\ParticleEmitterIO.cpp" />
     <ClCompile Include="Graphics\Particles\Rotation\ParticleModuleRotation.cpp" />
     <ClCompile Include="Graphics\Particles\SubUV\ParticleModuleSubUV.cpp" />
     <ClCompile Include="Graphics\Render.cpp" />
@@ -389,10 +394,11 @@
     <ClCompile Include="RenderAPIOpenGL\OpenGL.cpp" />
     <ClCompile Include="Scene\GameObject.cpp" />
     <ClCompile Include="Scene\Scene.cpp" />
+    <ClCompile Include="Scene\SceneIO.cpp" />
     <ClCompile Include="Scene\Transform.cpp" />
+    <ClCompile Include="System\Assert.cpp" />
     <ClCompile Include="System\File.cpp" />
     <ClCompile Include="System\Log.cpp" />
-    <ClCompile Include="System\Serializer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

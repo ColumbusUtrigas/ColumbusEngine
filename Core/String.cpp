@@ -1,5 +1,7 @@
 #include <Core/String.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <limits.h>
 
 namespace Columbus
 {
@@ -61,6 +63,18 @@ namespace Columbus
 			memcpy(_data, str.data(), _length);
 		return *this;
 	}
+
+	#define STRING_FROM(fmt, val) \
+		String ret(32, '\0'); \
+		snprintf(ret._data, 32, fmt, val); \
+		return ret;
+
+	String String::from(int val)       { STRING_FROM("%d",   val); }
+	String String::from(long val)      { STRING_FROM("%li",  val); }
+	String String::from(long long val) { STRING_FROM("%lli", val); }
+	String String::from(size_t val)    { STRING_FROM("%ull", val); }
+	String String::from(float val)     { STRING_FROM("%g",   val); }
+	String String::from(double val)    { STRING_FROM("%g",   val); }
 
 	void String::reserve(size_t n)
 	{

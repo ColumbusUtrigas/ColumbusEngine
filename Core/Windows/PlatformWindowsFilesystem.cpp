@@ -1,11 +1,11 @@
 #include <Core/Windows/PlatformWindowsFilesystem.h>
 #include <windows.h>
-#include <cstring>
+#include <string.h>
 
 namespace Columbus
 {
 
-	std::string FilesystemWindows::GetCurrent()
+	String FilesystemWindows::GetCurrent()
 	{
 		char Buffer[MAX_PATH];
 		DWORD Size = GetModuleFileName(NULL, Buffer, MAX_PATH);
@@ -13,12 +13,12 @@ namespace Columbus
 		char* Result = (char*)malloc(Length);
 		Result[0] = '\0';
 		strncpy(Result, Buffer, Length);
-		std::string Ret = Result;
+		String Ret = Result;
 		free(Result);
 		return Ret;
 	}
 
-	std::string FilesystemWindows::AbsolutePath(const std::string& Path)
+	String FilesystemWindows::AbsolutePath(const String& Path)
 	{
 		char Result[MAX_PATH] = { '\0' };
 		memset(Result, 0, MAX_PATH);
@@ -41,7 +41,7 @@ namespace Columbus
 		return RemoveDirectory(Path);
 	}
 
-	std::vector<FileInfo> FilesystemWindows::Read(const std::string& Path)
+	std::vector<FileInfo> FilesystemWindows::Read(const String& Path)
 	{
 		std::vector<FileInfo> Result;
 
@@ -54,7 +54,7 @@ namespace Columbus
 		{
 			FileInfo Info;
 
-			std::string Name = FFD.cFileName;
+			String Name = FFD.cFileName;
 			auto Pos = Name.rfind('.');
 
 			Info.Name = Name;

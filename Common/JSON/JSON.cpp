@@ -251,16 +251,12 @@ namespace Columbus
 
 	void JSON::_WriteInt(File& F) const
 	{
-		char tmp[32];
-		snprintf(tmp, 32, "%ld", IntValue);
-		F << tmp;
+		F << String::from(IntValue).c_str();
 	}
 
 	void JSON::_WriteFloat(File& F) const
 	{
-		char tmp[32];
-		snprintf(tmp, 32, "%g", FloatValue);
-		F << tmp;
+		F << String::from(FloatValue).c_str();
 	}
 
 	void JSON::_WriteArray(File& F, uint32 Tabs) const

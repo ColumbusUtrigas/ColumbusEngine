@@ -57,6 +57,13 @@ namespace Columbus
 		String& operator=(const char* str);
 		String& operator=(const String& str);
 
+		static String from(int val);
+		static String from(long val);
+		static String from(long long val);
+		static String from(size_t val);
+		static String from(float val);
+		static String from(double val);
+
 		void reserve(size_t n = 0);
 		void resize(size_t n, char c = 0);
 

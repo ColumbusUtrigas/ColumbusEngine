@@ -114,7 +114,7 @@ namespace Columbus
 
 					for (uint32 i = 0;; i++)
 					{
-						Name = tmp.Name + std::to_string(i).c_str();
+						Name = tmp.Name + String::from(i);
 						if (scene->Objects.Find(Name) == nullptr)
 						{
 							tmp.Name = Name;

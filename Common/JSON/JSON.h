@@ -59,7 +59,6 @@ namespace Columbus
 		JSON(bool Bool) : BoolValue(Bool), ValueType(Type::Bool) {}
 		JSON(std::nullptr_t) : ValueType(Type::Null) {}
 		JSON(int Int) : IntValue(Int), ValueType(Type::Int) {}
-		JSON(size_t Int) : IntValue(Int), ValueType(Type::Int) {}
 		JSON(uint32 Int) : IntValue(Int), ValueType(Type::Int) {}
 		JSON(int64 Int) : IntValue(Int), ValueType(Type::Int) {}
 		JSON(float Float) : FloatValue(Float), ValueType(Type::Float) {}
