@@ -72,7 +72,7 @@ namespace Columbus
 	String String::from(int val)       { STRING_FROM("%d",   val); }
 	String String::from(long val)      { STRING_FROM("%li",  val); }
 	String String::from(long long val) { STRING_FROM("%lli", val); }
-	String String::from(size_t val)    { STRING_FROM("%ull", val); }
+	String String::from(size_t val)    { STRING_FROM("%zu",  val); }
 	String String::from(float val)     { STRING_FROM("%g",   val); }
 	String String::from(double val)    { STRING_FROM("%g",   val); }
 
