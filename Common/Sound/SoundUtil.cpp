@@ -1,5 +1,5 @@
 #include <Common/Sound/SoundUtil.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 #include <cstring>
 
 namespace Columbus

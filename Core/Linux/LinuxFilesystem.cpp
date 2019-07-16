@@ -1,38 +1,24 @@
-#include <Core/Linux/PlatformLinuxFilesystem.h>
-#include <cstdio>
+#include <Core/Filesystem.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 namespace Columbus
 {
 
-	String FilesystemLinux::GetCurrent()
+	String Filesystem::GetCurrent()
 	{
 		char dir[4096];
 		if (getcwd(dir, 4096) == NULL) return "";
 		return dir;
 	}
 
-	String FilesystemLinux::AbsolutePath(const String& Path)
+	String Filesystem::AbsolutePath(const String& Path)
 	{
 		char dir[PATH_MAX];
 		return realpath(Path.c_str(), dir);
 	}
 
-	bool FilesystemLinux::DirCreate(const char* Path)
-	{
-		return mkdir(Path, 0777) == 0;
-	}
-
-	bool FilesystemLinux::DirRemove(const char* Path)
-	{
-		return rmdir(Path) == 0;
-	}
-
-	std::vector<FileInfo> FilesystemLinux::Read(const String& Path)
+	std::vector<FileInfo> Filesystem::Read(const String& Path)
 	{
 		std::vector<FileInfo> Result;
 

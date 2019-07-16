@@ -2,7 +2,7 @@
 
 #include <Core/Types.h>
 #include <Core/String.h>
-#include <Core/Platform/PlatformFilesystem.h>
+#include <Core/Filesystem.h>
 #include <Editor/FileDialog.h>
 #include <Editor/Icons.h>
 #include <Lib/imgui/imgui.h>

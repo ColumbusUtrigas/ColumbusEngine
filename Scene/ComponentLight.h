@@ -2,7 +2,7 @@
 
 #include <Scene/Component.h>
 #include <Graphics/Light.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 
 namespace Columbus
 {

@@ -4,7 +4,6 @@
 #include <Editor/MessageBox.h>
 #include <Lib/imgui/imgui.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
-#include <Core/Platform/PlatformFilesystem.h>
 #include <Graphics/Device.h>
 
 namespace Columbus

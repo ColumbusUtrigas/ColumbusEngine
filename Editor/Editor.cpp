@@ -2,7 +2,7 @@
 #include <Lib/imgui/imgui.h>
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
-#include <Core/Platform/PlatformFilesystem.h>
+#include <Core/Filesystem.h>
 #include <Editor/ResourcesViewerTexture.h>
 #include <Editor/ResourcesViewerShader.h>
 #include <Editor/ResourcesViewerMaterial.h>
