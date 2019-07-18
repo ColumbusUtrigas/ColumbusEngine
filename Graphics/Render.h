@@ -13,6 +13,9 @@
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/ParticlesRenderer.h>
 
+#include <Editor/Grid.h>
+#include <Editor/Gizmo.h>
+
 namespace Columbus
 {
 
@@ -105,6 +108,9 @@ namespace Columbus
 		ScreenQuad Quad;
 		ParticlesRenderer ParticlesRender;
 
+		Grid _Grid;
+		//Gizmo _Gizmo;
+
 		uint32 PolygonsRendered = 0;
 		uint32 OpaqueObjectsRendered = 0;
 		uint32 TransparentObjectsRendered = 0;
@@ -113,6 +119,7 @@ namespace Columbus
 	public:
 		iVector2 ContextSize;
 		bool DrawIcons = false;
+		bool DrawGrid = false;
 
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;

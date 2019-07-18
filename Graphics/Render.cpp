@@ -509,6 +509,7 @@ namespace Columbus
 		auto MSAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ResolveMSAA;
 		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
 		auto VignetteShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Vignette;
+		auto EditorToolsShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->EditorTools;
 
 		static int ScreenSpaceTexture = ScreenSpaceShader->GetFastUniform("BaseTexture");
 
@@ -528,6 +529,10 @@ namespace Columbus
 		static int VignetteIntensityID = VignetteShader->GetFastUniform("Intensity");
 		static int VignetteSmoothnessID = VignetteShader->GetFastUniform("Smoothness");
 		static int VignetteRadiusID = VignetteShader->GetFastUniform("Radius");
+
+		static int EditorToolsViewProjection = EditorToolsShader->GetFastUniform("ViewProjection");
+		static int EditorToolsColor = EditorToolsShader->GetFastUniform("Color");
+		static int EditorToolsCameraPos = EditorToolsShader->GetFastUniform("CameraPos");
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;
@@ -572,6 +577,24 @@ namespace Columbus
 		RenderSky();
 		glDrawBuffers(2, BuffersAll);
 		RenderTransparent();
+
+		if (DrawGrid)
+		{
+			glDrawBuffers(1, BuffersFirst);
+			glLineWidth(3.0f);
+
+			State.SetBlending(true);
+			State.SetDepthWriting(true);
+			State.SetDepthTesting(Material::DepthTest::LEqual);
+
+			EditorToolsShader->Bind();
+			EditorToolsShader->SetUniform(EditorToolsViewProjection, false, MainCamera.GetViewProjection());
+			EditorToolsShader->SetUniform(EditorToolsColor, Vector4(Vector3(0.5f), 1.0f));
+			EditorToolsShader->SetUniform(EditorToolsCameraPos, MainCamera.Pos);
+			_Grid.Draw();
+			EditorToolsShader->Unbind();
+		}
+
 		//
 		//
 		// RENDERING
