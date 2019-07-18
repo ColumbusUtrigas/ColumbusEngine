@@ -412,6 +412,42 @@ namespace Columbus
 	}
 	)";
 
+	const char* gEditorToolsVertexShader =
+	R"(
+	#version 130
+	in vec3 Position;
+
+	uniform mat4 ViewProjection;
+
+	out vec3 varPos;
+
+	void main()
+	{
+		gl_Position = ViewProjection * vec4(Position, 1.0);
+		varPos = Position;
+	}
+	)";
+
+	const char* gEditorToolsFragmentShader =
+	R"(
+	#version 130
+
+	out vec4 FragColor;
+
+	uniform vec4 Color;
+	uniform vec3 CameraPos;
+
+	in vec3 varPos;
+
+	void main()
+	{
+		vec3 view_ray = normalize(CameraPos - varPos);
+		float alpha = Color.a * abs(dot(view_ray, vec3(0, 1, 0)));
+		alpha *= 1.0 - smoothstep(0.0, 100.0, distance(varPos, CameraPos));
+		FragColor = vec4(Color.rgb, alpha);
+	}
+	)";
+
 	const char* gSkyboxVertexShader = 
 	R"(
 	#version 130

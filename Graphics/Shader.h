@@ -27,6 +27,7 @@ namespace Columbus
 			Vignette,
 			FXAA,
 			Icon,
+			EditorTools, // Grid, Gizmo
 			Skybox,
 			SkyboxCubemapGeneration,
 			IrradianceGeneration,
@@ -58,6 +59,7 @@ namespace Columbus
 		ShaderProgram* Vignette = nullptr;
 		ShaderProgram* FXAA = nullptr;
 		ShaderProgram* Icon = nullptr;
+		ShaderProgram* EditorTools = nullptr;
 		ShaderProgram* Skybox = nullptr;
 		ShaderProgram* SkyboxCubemapGeneration = nullptr;
 		ShaderProgram* IrradianceGeneration = nullptr;

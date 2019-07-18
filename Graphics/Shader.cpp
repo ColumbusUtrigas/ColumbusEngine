@@ -16,6 +16,7 @@ namespace Columbus
 		Vignette = gDevice->CreateShaderProgram();
 		FXAA = gDevice->CreateShaderProgram();
 		Icon = gDevice->CreateShaderProgram();
+		EditorTools = gDevice->CreateShaderProgram();
 		Skybox = gDevice->CreateShaderProgram();
 		SkyboxCubemapGeneration = gDevice->CreateShaderProgram();
 		IrradianceGeneration = gDevice->CreateShaderProgram();
@@ -34,6 +35,7 @@ namespace Columbus
 		Vignette->Load(ShaderProgram::StandartProgram::Vignette);
 		FXAA->Load(ShaderProgram::StandartProgram::FXAA);
 		Icon->Load(ShaderProgram::StandartProgram::Icon);
+		EditorTools->Load(ShaderProgram::StandartProgram::EditorTools);
 		Skybox->Load(ShaderProgram::StandartProgram::Skybox);
 		SkyboxCubemapGeneration->Load(ShaderProgram::StandartProgram::SkyboxCubemapGeneration);
 		IrradianceGeneration->Load(ShaderProgram::StandartProgram::IrradianceGeneration);
@@ -52,6 +54,7 @@ namespace Columbus
 		Vignette->Compile();
 		FXAA->Compile();
 		Icon->Compile();
+		EditorTools->Compile();
 		Skybox->Compile();
 		SkyboxCubemapGeneration->Compile();
 		IrradianceGeneration->Compile();
@@ -72,6 +75,7 @@ namespace Columbus
 		delete Vignette;
 		delete FXAA;
 		delete Icon;
+		delete EditorTools;
 		delete Skybox;
 		delete SkyboxCubemapGeneration;
 		delete IrradianceGeneration;

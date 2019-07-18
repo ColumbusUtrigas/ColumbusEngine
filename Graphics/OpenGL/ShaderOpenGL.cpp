@@ -418,6 +418,22 @@ layout(location = 3) out vec4 RT3;
 				break;
 			}
 
+			case ShaderProgram::StandartProgram::EditorTools:
+			{
+				Data.VertexSource = gEditorToolsVertexShader;
+				Data.FragmentSource = gEditorToolsFragmentShader;
+
+				Data.Attributes.emplace_back("Position", 0);
+				Data.Uniforms.emplace_back("ViewProjection");
+				Data.Uniforms.emplace_back("Color");
+				Data.Uniforms.emplace_back("CameraPos");
+
+				Path = "EditorTools";
+
+				Log::Success("Default shader program loaded: EditorTools");
+				break;
+			};
+
 			case ShaderProgram::StandartProgram::Skybox:
 			{
 				Data.VertexSource = gSkyboxVertexShader;
