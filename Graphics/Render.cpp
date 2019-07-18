@@ -581,7 +581,6 @@ namespace Columbus
 		if (DrawGrid)
 		{
 			glDrawBuffers(1, BuffersFirst);
-			glLineWidth(3.0f);
 
 			State.SetBlending(true);
 			State.SetDepthWriting(true);
