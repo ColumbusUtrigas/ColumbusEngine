@@ -74,6 +74,10 @@ namespace Columbus
 			ResourceManager<ShaderProgram>& ShadersManager,
 			ResourceManager<Texture>& TexturesManager);
 
+		bool Save(const char* FileName,
+			ResourceManager<ShaderProgram>& ShadersManager,
+			ResourceManager<Texture>& TexturesManager);
+
 		bool operator==(const Material& Other) const;
 		bool operator!=(const Material& Other) const;
 

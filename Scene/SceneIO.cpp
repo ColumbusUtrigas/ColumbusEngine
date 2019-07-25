@@ -33,6 +33,8 @@ namespace Columbus
 		for (size_t i = 0; i < MaterialsManager.Names.size(); i++)
 		{
 			J[i] = MaterialsManager.Names[i];
+			MaterialsManager.Resources[i]->Save(MaterialsManager.Names[i].c_str(),
+				ShadersManager, TexturesManager);
 		}
 	}
 
