@@ -19,6 +19,7 @@ namespace Columbus
 		enum class StandartProgram
 		{
 			ScreenSpace,
+			AutoExposure,
 			Tonemap,
 			ResolveMSAA,
 			GaussBlur,
@@ -51,6 +52,7 @@ namespace Columbus
 	struct DefaultShaders
 	{
 		ShaderProgram* ScreenSpace = nullptr;
+		ShaderProgram* AutoExposure = nullptr;
 		ShaderProgram* Tonemap = nullptr;
 		ShaderProgram* ResolveMSAA = nullptr;
 		ShaderProgram* GaussBlur = nullptr;

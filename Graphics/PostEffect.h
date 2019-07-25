@@ -28,6 +28,7 @@ namespace Columbus
 		Texture::Flags ColorTextureFlags[TexturesCount];
 
 		uint32 Multisampling = 0;
+		bool Clear = true;
 	private:
 		Texture* PrevColorTextures[TexturesCount];
 		Texture* PrevDepthTexture = nullptr;
@@ -123,7 +124,14 @@ namespace Columbus
 				PrevDepthTexture = DepthTexture;
 			}
 
-			FB->Prepare(Color, Origin, Size);
+			FB->Bind();
+			
+			glViewport(Origin.X, Origin.Y, Size.X, Size.Y);
+			if (Clear)
+			{
+				glClearColor(Color.X, Color.Y, Color.Z, Color.W);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			}
 
 			GLenum DrawBuffers[TexturesCount];
 			int DrawBuffersNum = 0;
