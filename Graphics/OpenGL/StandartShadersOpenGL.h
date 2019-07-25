@@ -71,7 +71,7 @@ namespace Columbus
 	{
 		float prev_exp = texture(Previous, vec2(0.5)).r;
 		float curr_luma = luma(texture(BaseTexture, vec2(0.5)).rgb);
-		float adapted = 0.5f / clamp(curr_luma, Min, Max);
+		float adapted = 0.5 / clamp(curr_luma, Min, Max);
 		float exp = prev_exp;
 
 		if (adapted >= prev_exp)
