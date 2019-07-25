@@ -505,6 +505,7 @@ namespace Columbus
 	void Renderer::Render()
 	{
 		auto ScreenSpaceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ScreenSpace;
+		auto AutoExposureShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->AutoExposure;
 		auto TonemapShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Tonemap;
 		auto MSAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ResolveMSAA;
 		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
@@ -513,10 +514,20 @@ namespace Columbus
 
 		static int ScreenSpaceTexture = ScreenSpaceShader->GetFastUniform("BaseTexture");
 
+		static int AutoExposureTexture = AutoExposureShader->GetFastUniform("BaseTexture");
+		static int AutoExposurePrevious = AutoExposureShader->GetFastUniform("Previous");
+		static int AutoExposureMin = AutoExposureShader->GetFastUniform("Min");
+		static int AutoExposureMax = AutoExposureShader->GetFastUniform("Max");
+		static int AutoExposureSpeedUp = AutoExposureShader->GetFastUniform("SpeedUp");
+		static int AutoExposureSpeedDown = AutoExposureShader->GetFastUniform("SpeedDown");
+		static int AutoExposureDeltaTime = AutoExposureShader->GetFastUniform("DeltaTime");
+
 		static int TonemapBaseTexture = TonemapShader->GetFastUniform("BaseTexture");
 		static int TonemapGamma = TonemapShader->GetFastUniform("Gamma");
 		static int TonemapExposure = TonemapShader->GetFastUniform("Exposure");
 		static int TonemapType = TonemapShader->GetFastUniform("Type");
+		static int TonemapAutoExposureTexture = TonemapShader->GetFastUniform("AutoExposureTexture");
+		static int TonemapAutoExposureEnable = TonemapShader->GetFastUniform("AutoExposureEnable");
 
 		static int MSAABaseTexture = MSAAShader->GetFastUniform("BaseTexture");
 		static int MSAASamples = MSAAShader->GetFastUniform("Samples");
@@ -621,24 +632,50 @@ namespace Columbus
 		}
 
 		Base.ColorTexturesMipmaps[0] = true;
-		Base.Mipmaps();
+
+		// !!!!!!!!!!!
+		if (EyeAdaptationEnable)
+		{
+			Base.Mipmaps();
+		}
+
+		static bool EyeAdaptationDirty = false;
 
 		State.SetDepthWriting(false);
 		State.SetCulling(Material::Cull::No);
 
 		if (EyeAdaptationEnable)
 		{
+			int ae_prev = CurrentEye == 0 ? 1 : 0;
+
+			if (!EyeAdaptationDirty)
+			{
+				// Fill previous eye with exposure
+				Eyes[ae_prev].Bind({Exposure}, {0}, {1});
+				EyeAdaptationDirty = true;
+			}
+
 			Eyes[CurrentEye].Bind({0}, {0}, {1});
 
 			int Count = floor(log2(Math::Max(ContextSize.X, ContextSize.Y)));
 
 			Base.ColorTextures[0]->SetMipmapLevel(Count);
-			ScreenSpaceShader->Bind();
-			ScreenSpaceShader->SetUniform(ScreenSpaceTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
+			AutoExposureShader->Bind();
+			AutoExposureShader->SetUniform(AutoExposureTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
+			AutoExposureShader->SetUniform(AutoExposurePrevious, (TextureOpenGL*)Eyes[ae_prev].ColorTextures[0], 1);
+			AutoExposureShader->SetUniform(AutoExposureMin, EyeAdaptationMin);
+			AutoExposureShader->SetUniform(AutoExposureMax, EyeAdaptationMax);
+			AutoExposureShader->SetUniform(AutoExposureSpeedUp, EyeAdaptationSpeedUp);
+			AutoExposureShader->SetUniform(AutoExposureSpeedDown, EyeAdaptationSpeedDown);
+			AutoExposureShader->SetUniform(AutoExposureDeltaTime, DeltaTime);
+
 			Quad.Render();
 			Base.ColorTextures[0]->SetMipmapLevel(0);
 
 			CurrentEye = CurrentEye == 0 ? 1 : 0;
+		} else
+		{
+			EyeAdaptationDirty = false;
 		}
 
 		Texture* FinalTex = Base.ColorTextures[0];
@@ -655,34 +692,12 @@ namespace Columbus
 
 			Final.Bind({}, {}, ContextSize);
 
-			static float E = 1.0f;
-
-			if (EyeAdaptationEnable)
-			{
-				int PrevEye = CurrentEye == 0 ? 1 : 0;
-
-				Vector4 Curr;
-				float CurrLuma;
-
-				((TextureOpenGL*)Eyes[PrevEye].ColorTextures[0])->Bind();
-				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, (void*)&Curr);
-
-				CurrLuma = Vector3::Dot(Curr.XYZ(), Vector3(0.2125, 0.7154, 0.0721));
-				float Adapted = 0.5f / Math::Clamp(CurrLuma, EyeAdaptationMin, EyeAdaptationMax);
-
-				if (Adapted >= E)
-					E += (Adapted - E) * DeltaTime * EyeAdaptationSpeedUp;
-				else
-					E += (Adapted - E) * DeltaTime * EyeAdaptationSpeedDown;
-			} else
-			{
-				E = 1.0f;
-			}
-
 			TonemapShader->Bind();
 			TonemapShader->SetUniform(TonemapType, (int)Tonemapping);
 			TonemapShader->SetUniform(TonemapBaseTexture, (TextureOpenGL*)FinalTex, 0);
-			TonemapShader->SetUniform(TonemapExposure, Exposure * E);
+			TonemapShader->SetUniform(TonemapExposure, Exposure);
+			TonemapShader->SetUniform(TonemapAutoExposureTexture, ((TextureOpenGL*)Eyes[CurrentEye].ColorTextures[0]), 1);
+			TonemapShader->SetUniform(TonemapAutoExposureEnable, (int)EyeAdaptationEnable);
 			TonemapShader->SetUniform(TonemapGamma, Gamma);
 			Quad.Render();
 			TonemapShader->Unbind();

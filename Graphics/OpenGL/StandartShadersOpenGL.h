@@ -48,6 +48,41 @@ namespace Columbus
 	}
 	)";
 
+	const char* gAutoExposureFragmentShader =
+	R"(
+	#version 130
+	out vec4 FragColor;
+	in vec2 Texcoord;
+
+	uniform sampler2D BaseTexture;
+	uniform sampler2D Previous;
+	uniform float Min;
+	uniform float Max;
+	uniform float SpeedUp;
+	uniform float SpeedDown;
+	uniform float DeltaTime;
+
+	float luma(vec3 color)
+	{
+		return dot(color, vec3(0.2125, 0.7154, 0.0721));
+	}
+
+	void main(void)
+	{
+		float prev_exp = texture(Previous, vec2(0.5)).r;
+		float curr_luma = luma(texture(BaseTexture, vec2(0.5)).rgb);
+		float adapted = 0.5f / clamp(curr_luma, Min, Max);
+		float exp = prev_exp;
+
+		if (adapted >= prev_exp)
+			exp += (adapted - prev_exp) * DeltaTime * SpeedUp;
+		else
+			exp += (adapted - prev_exp) * DeltaTime * SpeedDown;
+
+		FragColor = vec4(exp);
+	}
+	)";
+
 	const char* gTonemapFragmentShader = 
 	R"(
 	#version 130
@@ -55,9 +90,11 @@ namespace Columbus
 	in vec2 Texcoord;
 
 	uniform sampler2D BaseTexture;
+	uniform sampler2D AutoExposureTexture;
 	uniform float Exposure;
 	uniform float Gamma;
 	uniform int Type;
+	uniform int AutoExposureEnable;
 
 	vec3 TonemapSimple(vec3 HDR)
 	{
@@ -108,14 +145,16 @@ namespace Columbus
 		return HDR;
 	}
 
-	float luma(vec3 color)
-	{
-		return dot(color, vec3(0.2125, 0.7154, 0.0721));
-	}
-
 	void main(void)
 	{
-		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * Exposure, 0, 50000);
+		float E = Exposure;
+
+		if (AutoExposureEnable == 1)
+		{
+			E = texture(AutoExposureTexture, vec2(0.5)).r;
+		}
+
+		vec3 HDR = clamp(texture(BaseTexture, Texcoord).rgb * E, 0, 50000);
 		vec3 Mapped = vec3(0.0);
 
 		switch (Type)

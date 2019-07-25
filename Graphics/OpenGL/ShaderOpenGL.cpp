@@ -282,6 +282,25 @@ layout(location = 3) out vec4 RT3;
 				break;
 			}
 
+			case ShaderProgram::StandartProgram::AutoExposure:
+			{
+				Data.VertexSource = gScreenSpaceVertexShader;
+				Data.FragmentSource = gAutoExposureFragmentShader;
+
+				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("Previous");
+				Data.Uniforms.emplace_back("Min");
+				Data.Uniforms.emplace_back("Max");
+				Data.Uniforms.emplace_back("SpeedUp");
+				Data.Uniforms.emplace_back("SpeedDown");
+				Data.Uniforms.emplace_back("DeltaTime");
+
+				Path = "AutoExposure";
+
+				Log::Success("Default shader program loaded: AutoExposure");
+				break;
+			}
+
 			case ShaderProgram::StandartProgram::Tonemap:
 			{
 				Data.VertexSource = gScreenSpaceVertexShader;
@@ -290,9 +309,11 @@ layout(location = 3) out vec4 RT3;
 				Data.Attributes.emplace_back("Pos", 0);
 				Data.Attributes.emplace_back("UV", 1);
 				Data.Uniforms.emplace_back("BaseTexture");
+				Data.Uniforms.emplace_back("AutoExposureTexture");
 				Data.Uniforms.emplace_back("Exposure");
 				Data.Uniforms.emplace_back("Gamma");
 				Data.Uniforms.emplace_back("Type");
+				Data.Uniforms.emplace_back("AutoExposureEnable");
 
 				Path = "Tonemap";
 

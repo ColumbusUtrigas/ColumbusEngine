@@ -8,6 +8,7 @@ namespace Columbus
 	DefaultShaders::DefaultShaders()
 	{
 		ScreenSpace = gDevice->CreateShaderProgram();
+		AutoExposure = gDevice->CreateShaderProgram();
 		Tonemap = gDevice->CreateShaderProgram();
 		ResolveMSAA = gDevice->CreateShaderProgram();
 		GaussBlur = gDevice->CreateShaderProgram();
@@ -27,6 +28,7 @@ namespace Columbus
 		Log::Initialization("Default shaders loading");
 
 		ScreenSpace->Load(ShaderProgram::StandartProgram::ScreenSpace);
+		AutoExposure->Load(ShaderProgram::StandartProgram::AutoExposure);
 		Tonemap->Load(ShaderProgram::StandartProgram::Tonemap);
 		ResolveMSAA->Load(ShaderProgram::StandartProgram::ResolveMSAA);
 		GaussBlur->Load(ShaderProgram::StandartProgram::GaussBlur);
@@ -46,6 +48,7 @@ namespace Columbus
 		Log::Initialization("Default shaders compiling");
 
 		ScreenSpace->Compile();
+		AutoExposure->Compile();
 		Tonemap->Compile();
 		ResolveMSAA->Compile();
 		GaussBlur->Compile();
@@ -67,6 +70,7 @@ namespace Columbus
 	DefaultShaders::~DefaultShaders()
 	{
 		delete ScreenSpace;
+		delete AutoExposure;
 		delete Tonemap;
 		delete ResolveMSAA;
 		delete GaussBlur;
