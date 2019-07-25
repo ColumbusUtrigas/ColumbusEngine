@@ -67,6 +67,16 @@ namespace Columbus
 			return false;
 		}
 
+		bool Rename(const String& Old, const String& New)
+		{
+			uint32 Index = ResourcesMap[Old];
+
+			ResourcesMap.erase(Old);
+			ResourcesMap[New] = Index;
+
+			return true;
+		}
+
 		GameObject* Find(const String& Index)
 		{
 			auto It = ResourcesMap.find(Index);
