@@ -641,6 +641,7 @@ namespace Columbus
 
 		static bool EyeAdaptationDirty = false;
 
+		State.SetBlending(false);
 		State.SetDepthWriting(false);
 		State.SetCulling(Material::Cull::No);
 
