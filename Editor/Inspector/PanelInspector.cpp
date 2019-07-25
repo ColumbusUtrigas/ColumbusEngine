@@ -26,7 +26,11 @@ namespace Columbus
 					ImGui::InputText("##PanelInspector_Name", &Tmp);
 					ImGui::Separator();
 
-					Inspectable->Name = Tmp.c_str();
+					if (Inspectable->Name != Tmp.c_str())
+					{
+						Scn.Objects.Rename(Inspectable->Name, Tmp.c_str());
+						Inspectable->Name = Tmp.c_str();
+					}
 
 					// Draw transform editor
 					if (ImGui::CollapsingHeader(TRANSFORM_ICON" Transform##PanelInspector_Transform", ImGuiTreeNodeFlags_DefaultOpen))

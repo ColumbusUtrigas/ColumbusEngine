@@ -37,6 +37,23 @@ namespace Columbus
 			return false;
 		}
 
+		bool Rename(const String& Old, const String& New)
+		{
+			size_t ID = FindID(Old);
+
+			if (ID != 0)
+			{
+				Names[ID] = New;
+
+				IDs.erase(Old);
+				IDs[New] = ID;
+
+				return true;
+			}
+
+			return false;
+		}
+
 		T* Find(size_t ID)
 		{
 			auto It = Resources.find(ID);
