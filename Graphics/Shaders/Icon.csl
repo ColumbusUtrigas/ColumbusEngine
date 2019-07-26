@@ -1,0 +1,42 @@
+R"(
+#shader vertex
+#uniform vec2 Pos
+#uniform vec2 Size
+
+out vec2 var_UV;
+
+const vec2 Coord[6] = vec2[](
+	vec2(-1, +1),
+	vec2(+1, +1),
+	vec2(+1, -1),
+	vec2(-1, -1),
+	vec2(-1, +1),
+	vec2(+1, -1)
+);
+
+const vec2 UV[6] = vec2[](
+	vec2(0, 1),
+	vec2(1, 1),
+	vec2(1, 0),
+	vec2(0, 0),
+	vec2(0, 1),
+	vec2(1, 0)
+);
+
+void main(void)
+{
+	SV_Position = vec4(Coord[SV_VertexID] * Size + Pos, 0, 1);
+	var_UV.x = UV[SV_VertexID].x;
+	var_UV.y = -UV[SV_VertexID].y;
+}
+
+#shader fragment
+#uniform Texture2D Texture
+
+in vec2 var_UV;
+
+void main(void)
+{
+	RT0 = Sample2D(Texture, var_UV);
+}
+)"

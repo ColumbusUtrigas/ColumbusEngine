@@ -42,6 +42,7 @@ namespace Columbus
 		bool IsCompiled() const { return Compiled; }
 		bool IsError()    const { return Error; }
 
+		virtual bool LoadFromMemory(const char* Source, const char* FilePath = "") = 0;
 		virtual bool Load(const char* FileName) = 0;
 		virtual bool Load(StandartProgram Program) = 0;
 		virtual bool Compile() = 0;

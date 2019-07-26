@@ -1,0 +1,12 @@
+R"(
+#shader vertex = screen_space
+#shader fragment
+#uniform Texture2D BaseTexture
+
+in vec2 var_UV;
+
+void main(void)
+{
+	RT0 = Sample2D(BaseTexture, var_UV);
+}
+)"

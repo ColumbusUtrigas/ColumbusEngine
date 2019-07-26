@@ -1,0 +1,36 @@
+R"(
+#shader vertex = screen_space
+#shader fragment
+#uniform Texture2D BaseTexture
+#uniform bool Horizontal
+#uniform float Radius
+
+const float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+
+in vec2 var_UV;
+
+void main()
+{
+	vec2 tex_offset = 1.0 / textureSize(BaseTexture, 0) * Radius;
+	vec3 result = Sample2D(BaseTexture, var_UV).rgb * weight[0];
+
+	if (Horizontal)
+	{
+		for (int i = 1; i < 5; ++i)
+		{
+			result += Sample2D(BaseTexture, var_UV + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+			result += Sample2D(BaseTexture, var_UV - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+		}
+	}
+	else
+	{
+		for (int i = 1; i < 5; ++i)
+		{
+			result += Sample2D(BaseTexture, var_UV + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+			result += Sample2D(BaseTexture, var_UV - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
+		}
+	}
+
+	RT0 = vec4(result, 1.0);
+}
+)"
