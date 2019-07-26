@@ -55,6 +55,7 @@ namespace Columbus
 		void Bind() const;
 		void Unbind() const;
 
+		bool LoadFromMemory(const char* Source, const char* FilePath = "") override;
 		bool Load(const char* FileName) override;
 		bool Load(StandartProgram Program) override;
 		bool Compile() override;

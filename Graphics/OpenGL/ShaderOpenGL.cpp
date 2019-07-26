@@ -17,6 +17,11 @@ R"(
 #define Texture2D sampler2D
 #define Texture3D sampler3D
 #define TextureCube samplerCube
+
+#define Texture2DMS sampler2DMS
+
+#define saturate(x) clamp(x, 0, 1)
+
 #if __VERSION__ < 130
 	#define Sample2D(tex, uv) texture2D(tex, uv)
 	#define Sample3D(tex, uv) texture3D(tex, uv)
@@ -33,24 +38,58 @@ R"(
 	#define Sample2DLod(tex, uv, lod) textureLod(tex, uv, lod)
 	#define Sample3DLod(tex, uv, lod) textureLod(tex, uv, lod)
 	#define SampleCubeLod(tex, uv, lod) textureLod(tex, uv, lod)
+
+	#define Sample2DMS(tex, uv, lod) texelFetch(tex, uv, lod)
 #endif
 )";
 
 const char* VertexShaderHeader =
 R"(
-#define Position gl_Position
 #define VertexShader
-
+#define SV_Position gl_Position
+#define SV_VertexID gl_VertexID
+#line 1
 )";
 
 const char* FragmentShaderHeader =
 R"(
 #define FragmentShader
+#define SV_Depth gl_FragDepth
+#define SV_Position gl_FragCoord
 layout(location = 0) out vec4 RT0;
 layout(location = 1) out vec4 RT1;
 layout(location = 2) out vec4 RT2;
 layout(location = 3) out vec4 RT3;
+#line 1
+)";
 
+const char* ScreenSpaceVertexShader =
+R"(
+out vec2 var_UV;
+
+const vec2 Coord[6] = vec2[](
+	vec2(-1, +1),
+	vec2(+1, +1),
+	vec2(+1, -1),
+	vec2(-1, -1),
+	vec2(-1, +1),
+	vec2(+1, -1)
+);
+
+const vec2 UV[6] = vec2[](
+	vec2(0, 1),
+	vec2(1, 1),
+	vec2(1, 0),
+	vec2(0, 0),
+	vec2(0, 1),
+	vec2(1, 0)
+);
+
+void main(void)
+{
+	SV_Position = vec4(Coord[SV_VertexID], 0, 1);
+	var_UV = UV[SV_VertexID];
+}
 )";
 
 	static const char* GetStringFromShaderType(ShaderType Type)
@@ -101,11 +140,29 @@ layout(location = 3) out vec4 RT3;
 		return stream.str();
 	}
 
-	ShaderProgramOpenGL::ShaderData ParseShader(const char* FileName)
+	static std::vector<std::string> TokenizeString(const std::string& str, const char* delims)
+	{
+		std::vector<std::string> tokens;
+		size_t pos = 0;
+
+		while (pos < str.length())
+		{
+			size_t offset = strcspn(str.c_str() + pos, delims);
+			if (offset != 0)
+			{
+				tokens.push_back(str.substr(pos, offset));
+			}
+			pos += offset + 1;
+		}
+
+		return tokens;
+	}
+
+	ShaderProgramOpenGL::ShaderData ParseShader(const char* Source)
 	{
 		ShaderProgramOpenGL::ShaderData Data;
 
-		std::ifstream f(FileName);
+		std::stringstream f(Source);
 		std::string line;
 
 		int CurrentMode = -1;
@@ -115,61 +172,60 @@ layout(location = 3) out vec4 RT3;
 		{
 			if (line.find("#shader") != std::string::npos)
 			{
-				if (line.find("vertex")   != std::string::npos) CurrentMode = 0;
-				if (line.find("fragment") != std::string::npos) CurrentMode = 1;
+				auto tokens = TokenizeString(line, " \t");
+
+				if (tokens[1] == "vertex")
+				{
+					CurrentMode = 0;
+					if (tokens.size() == 4 && tokens[2] == "=")
+					{
+						if (tokens[3] == "screen_space")
+						{
+							streams[CurrentMode] << ScreenSpaceVertexShader;
+						}
+					}
+				}
+
+				if (tokens[1] == "fragment")
+				{
+					CurrentMode = 1;
+				}
 			}
 			else if (line.find("#uniform") != std::string::npos)
 			{
-				auto substr = line.substr(line.find("#uniform") + 8);
-				size_t pos = 0;
-				std::string type, name, brackets;
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size() && substr[pos] != '[') name += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (substr[pos] != '\n' && pos < substr.size()) brackets += substr[pos++];
+				auto bracket = line.find('[');
+				auto tokens = TokenizeString(line.substr(0, bracket), " \t");
 
-				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ';' << '\n';
+				auto&& type = std::move(tokens[1]);
+				auto&& name = std::move(tokens[2]);
+				auto brackets = bracket != std::string::npos ? line.substr(bracket) : "";
 
+				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ";\n";
 				Data.Uniforms.emplace_back(std::move(name));
 			}
 			else if (line.find("#attribute") != std::string::npos)
 			{
-				auto substr = line.substr(line.find("#attribute") + 10);
-				size_t pos = 0;
-				std::string type, name, slot;
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) name += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) slot += substr[pos++];
+				auto tokens = TokenizeString(line, " \t");
 
-				streams[CurrentMode] << "in " << type << ' ' << name << ';' << '\n';
+				auto&& type = std::move(tokens[1]);
+				auto&& name = std::move(tokens[2]);
+				auto&& slot = std::move(tokens[3]);
 
+				streams[CurrentMode] << "in " << type << ' ' << name << ";\n";
 				Data.Attributes.emplace_back(std::move(name), atoi(slot.c_str()));
 			}
 			else if (line.find("#include") != std::string::npos)
 			{
-				auto substr = line.substr(line.find("#include") + 8);
-				size_t pos = 0;
-				std::string path;
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size())
-				{
-					if (substr[pos] != '"') path += substr[pos];
-					pos++;
-				}
+				auto tokens = TokenizeString(line, " <>\"\t");
 
 				if (CurrentMode == -1)
 				{
-					auto Included = ReadFile(path.c_str());
+					auto Included = ReadFile(tokens[1].c_str());
 					for (auto& stream : streams) stream << Included << '\n';
 				}
 				else
 				{
-					streams[CurrentMode] << ReadFile(path.c_str()) << '\n';
+					streams[CurrentMode] << ReadFile(tokens[1].c_str()) << '\n';
 				}
 			}
 			else
@@ -267,267 +323,41 @@ layout(location = 3) out vec4 RT3;
 
 	bool ShaderProgramOpenGL::Load(ShaderProgram::StandartProgram Program)
 	{
+		#define STD_PROG_CASE(x) \
+			case ShaderProgram::StandartProgram::x: \
+				LoadFromMemory(g##x##Shader, #x); \
+				break;
+
 		switch (Program)
 		{
-			case ShaderProgram::StandartProgram::ScreenSpace:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gScreenSpaceFragmentShader;
-
-				Data.Uniforms.emplace_back("BaseTexture");
-
-				Path = "ScreenSpace";
-
-				Log::Success("Default shader program loaded: ScreenSpace");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::AutoExposure:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gAutoExposureFragmentShader;
-
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Previous");
-				Data.Uniforms.emplace_back("Min");
-				Data.Uniforms.emplace_back("Max");
-				Data.Uniforms.emplace_back("SpeedUp");
-				Data.Uniforms.emplace_back("SpeedDown");
-				Data.Uniforms.emplace_back("DeltaTime");
-
-				Path = "AutoExposure";
-
-				Log::Success("Default shader program loaded: AutoExposure");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Tonemap:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gTonemapFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("AutoExposureTexture");
-				Data.Uniforms.emplace_back("Exposure");
-				Data.Uniforms.emplace_back("Gamma");
-				Data.Uniforms.emplace_back("Type");
-				Data.Uniforms.emplace_back("AutoExposureEnable");
-
-				Path = "Tonemap";
-
-				Log::Success("Default shader program loaded: Tonemap");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::ResolveMSAA:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gResolveMSAAFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Samples");
-
-				Path = "ResolveMSAA";
-
-				Log::Success("Default shader program loaded: ResolveMSAA");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::GaussBlur:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gGaussBlurFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Horizontal");
-				Data.Uniforms.emplace_back("Radius");
-
-				Path = "GaussBlur";
-
-				Log::Success("Default shader program loaded: GaussBlur");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::BloomBright:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gBloomBrightFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Treshold");
-
-				Path = "BloomBright";
-
-				Log::Success("Default shader program loaded: BloomBright");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Bloom:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gBloomFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Blur");
-				Data.Uniforms.emplace_back("Intensity");
-
-				Path = "Bloom";
-
-				Log::Success("Default shader program loaded: Bloom");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Vignette:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gVignetteFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("Color");
-				Data.Uniforms.emplace_back("Center");
-				Data.Uniforms.emplace_back("Intensity");
-				Data.Uniforms.emplace_back("Smoothness");
-				Data.Uniforms.emplace_back("Radius");
-
-				Path = "Vignette";
-
-				Log::Success("Default shader program loaded: Vignette");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::FXAA:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gFXAAFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Resolution");
-
-				Path = "FXAA";
-
-				Log::Success("Default shader program loaded: FXAA");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Icon:
-			{
-				Data.VertexSource = gIconVertexShader;
-				Data.FragmentSource = gIconFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("Pos");
-				Data.Uniforms.emplace_back("Size");
-				Data.Uniforms.emplace_back("Texture");
-
-				Path = "Icon";
-
-				Log::Success("Default shader program loaded: Icon");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::EditorTools:
-			{
-				Data.VertexSource = gEditorToolsVertexShader;
-				Data.FragmentSource = gEditorToolsFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Uniforms.emplace_back("ViewProjection");
-				Data.Uniforms.emplace_back("Color");
-				Data.Uniforms.emplace_back("CameraPos");
-
-				Path = "EditorTools";
-
-				Log::Success("Default shader program loaded: EditorTools");
-				break;
-			};
-
-			case ShaderProgram::StandartProgram::Skybox:
-			{
-				Data.VertexSource = gSkyboxVertexShader;
-				Data.FragmentSource = gSkyboxFragmentShader;
-
-				Data.Uniforms.emplace_back("ViewProjection");
-				Data.Uniforms.emplace_back("Skybox");
-
-				Path = "Skybox";
-
-				Log::Success("Default shader program loaded: Skybox");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::SkyboxCubemapGeneration:
-			{
-				Data.VertexSource = gSkyboxCubemapGenerationVertexShader;
-				Data.FragmentSource = gSkyboxCubemapGenerationFragmentShader;
-
-				Data.Uniforms.emplace_back("Projection");
-				Data.Uniforms.emplace_back("View");
-				Data.Uniforms.emplace_back("BaseMap");
-
-				Path = "SkyboxCubemapGeneration";
-
-				Log::Success("Default shader program loaded: SkyboxCubemapGeneration");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::IrradianceGeneration:
-			{
-				Data.VertexSource = gIrradianceGenerationVertexShader;
-				Data.FragmentSource = gIrradianceGenerationFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Uniforms.emplace_back("Projection");
-				Data.Uniforms.emplace_back("View");
-				Data.Uniforms.emplace_back("EnvironmentMap");
-
-				Path = "IrradianceGeneration";
-
-				Log::Success("Default shader program loaded: IrradianceGeneration");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::PrefilterGeneration:
-			{
-				Data.VertexSource = gPrefilterGenerationVertexShader;
-				Data.FragmentSource = gPrefilterGenerationFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Uniforms.emplace_back("Projection");
-				Data.Uniforms.emplace_back("View");
-				Data.Uniforms.emplace_back("Roughness");
-				Data.Uniforms.emplace_back("EnvironmentMap");
-
-				Path = "PrefilterGeneration";
-
-				Log::Success("Default shader program loaded: PrefilterGeneration");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::IntegrationGeneration:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gIntegrationGenerationFragmentShader;
-
-				Path = "IntegrationGeneration";
-
-				Log::Success("Default shader program loaded: IntegrationGeneration");
-				break;
-			}
+		STD_PROG_CASE(ScreenSpace);
+		STD_PROG_CASE(AutoExposure);
+		STD_PROG_CASE(Tonemap);
+		STD_PROG_CASE(ResolveMSAA);
+		STD_PROG_CASE(GaussBlur);
+		STD_PROG_CASE(BloomBright);
+		STD_PROG_CASE(Bloom);
+		STD_PROG_CASE(Vignette);
+		STD_PROG_CASE(FXAA);
+		STD_PROG_CASE(Icon);
+		STD_PROG_CASE(EditorTools);
+		STD_PROG_CASE(Skybox);
+		STD_PROG_CASE(SkyboxCubemapGeneration);
+		STD_PROG_CASE(IrradianceGeneration);
+		STD_PROG_CASE(PrefilterGeneration);
+		STD_PROG_CASE(IntegrationGeneration);
 		}
+
+		Log::Success("Default shader program loaded: %s", Path.c_str());
+
+		Loaded = true;
+		return true;
+	}
+
+	bool ShaderProgramOpenGL::LoadFromMemory(const char* Source, const char* FilePath)
+	{
+		Data = ParseShader(Source);
+		Path = FilePath;
 
 		Loaded = true;
 		return true;
@@ -542,8 +372,14 @@ layout(location = 3) out vec4 RT3;
 			return false;
 		}
 
-		Data = ParseShader(FileName);
+		char* _data = (char*)malloc(ShaderFile.GetSize() + 1);
+		ShaderFile.ReadBytes(_data, ShaderFile.GetSize());
+		_data[ShaderFile.GetSize()] = '\0';
+
+		LoadFromMemory(_data);
 		Path = FileName;
+
+		free(_data);
 
 		Log::Success("Shader program loaded:   %s", FileName);
 
