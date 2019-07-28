@@ -8,21 +8,21 @@ R"(
 #uniform int Type
 #uniform int AutoExposureEnable
 
-in vec2 var_UV;
+in float2 var_UV;
 
-vec3 TonemapSimple(vec3 HDR)
+float3 TonemapSimple(float3 HDR)
 {
 	HDR = HDR / (1.0 + HDR);
-	return pow(HDR, vec3(1.0 / Gamma));
+	return pow(HDR, float3(1.0 / Gamma));
 }
 
-vec3 TonemapFilmic(vec3 HDR)
+float3 TonemapFilmic(float3 HDR)
 {
-	HDR = max(vec3(0.0), HDR - 0.004);
+	HDR = max(float3(0.0), HDR - 0.004);
 	return (HDR * (6.2 * HDR + 0.5)) / (HDR * (6.2 * HDR + 1.7) + 0.06);
 }
 
-vec3 TonemapACES(vec3 HDR)
+float3 TonemapACES(float3 HDR)
 {
 	const float a = 2.51f;
 	const float b = 0.03f;
@@ -32,17 +32,17 @@ vec3 TonemapACES(vec3 HDR)
 
 	HDR = (HDR * (a * HDR + b))  /
 	      (HDR * (c * HDR + d) + e);
-	HDR = pow(HDR, 1.0 / vec3(Gamma));
+	HDR = pow(HDR, 1.0 / float3(Gamma));
 	return HDR;
 }
 
-vec3 TonemapRomBinDaHouse(vec3 HDR)
+float3 TonemapRomBinDaHouse(float3 HDR)
 {
 	HDR = exp(-1.0 / (2.72 * HDR + 0.15));
-	return pow(HDR, vec3(1.0 / Gamma));
+	return pow(HDR, float3(1.0 / Gamma));
 }
 
-vec3 TonemapUncharted(vec3 HDR)
+float3 TonemapUncharted(float3 HDR)
 {
 	float A = 0.15;
 	float B = 0.50;
@@ -55,7 +55,7 @@ vec3 TonemapUncharted(vec3 HDR)
 	HDR = ((HDR * (A * HDR + C * B) + D * E) / (HDR * (A * HDR + B) + D * F)) - E / F;
 	float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
 	HDR /= white;
-	HDR = pow(HDR, vec3(1.0 / Gamma));
+	HDR = pow(HDR, float3(1.0 / Gamma));
 	return HDR;
 }
 
@@ -65,11 +65,11 @@ void main(void)
 
 	if (AutoExposureEnable == 1)
 	{
-		E = Sample2D(AutoExposureTexture, vec2(0.5)).r;
+		E = Sample2D(AutoExposureTexture, float2(0.5)).r;
 	}
 
-	vec3 HDR = clamp(Sample2D(BaseTexture, var_UV).rgb * E, 0, 50000);
-	vec3 Mapped = vec3(0.0);
+	float3 HDR = clamp(Sample2D(BaseTexture, var_UV).rgb * E, 0, 50000);
+	float3 Mapped = float3(0.0);
 
 	switch (Type)
 	{
@@ -80,6 +80,6 @@ void main(void)
 	case 4: Mapped = TonemapUncharted(HDR); break;
 	}
 
-	RT0 = vec4(Mapped, 1.0);
+	RT0 = float4(Mapped, 1.0);
 }
 )"

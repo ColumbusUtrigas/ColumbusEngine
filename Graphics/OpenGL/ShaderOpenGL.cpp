@@ -22,6 +22,24 @@ R"(
 
 #define saturate(x) clamp(x, 0, 1)
 
+#define float2 vec2
+#define float3 vec3
+#define float4 vec4
+
+#define int2 ivec2
+#define int3 ivec3
+#define int4 ivec4
+
+#define float2x2 mat2x2
+#define float2x3 mat2x3
+#define float2x4 mat2x4
+#define float3x2 mat3x2
+#define float3x3 mat3x3
+#define float3x4 mat3x4
+#define float4x2 mat4x2
+#define float4x3 mat4x3
+#define float4x4 mat4x4
+
 #if __VERSION__ < 130
 	#define Sample2D(tex, uv) texture2D(tex, uv)
 	#define Sample3D(tex, uv) texture3D(tex, uv)
@@ -56,38 +74,38 @@ R"(
 #define FragmentShader
 #define SV_Depth gl_FragDepth
 #define SV_Position gl_FragCoord
-layout(location = 0) out vec4 RT0;
-layout(location = 1) out vec4 RT1;
-layout(location = 2) out vec4 RT2;
-layout(location = 3) out vec4 RT3;
+layout(location = 0) out float4 RT0;
+layout(location = 1) out float4 RT1;
+layout(location = 2) out float4 RT2;
+layout(location = 3) out float4 RT3;
 #line 1
 )";
 
 const char* ScreenSpaceVertexShader =
 R"(
-out vec2 var_UV;
+out float2 var_UV;
 
-const vec2 Coord[6] = vec2[](
-	vec2(-1, +1),
-	vec2(+1, +1),
-	vec2(+1, -1),
-	vec2(-1, -1),
-	vec2(-1, +1),
-	vec2(+1, -1)
+const float2 Coord[6] = float2[](
+	float2(-1, +1),
+	float2(+1, +1),
+	float2(+1, -1),
+	float2(-1, -1),
+	float2(-1, +1),
+	float2(+1, -1)
 );
 
-const vec2 UV[6] = vec2[](
-	vec2(0, 1),
-	vec2(1, 1),
-	vec2(1, 0),
-	vec2(0, 0),
-	vec2(0, 1),
-	vec2(1, 0)
+const float2 UV[6] = float2[](
+	float2(0, 1),
+	float2(1, 1),
+	float2(1, 0),
+	float2(0, 0),
+	float2(0, 1),
+	float2(1, 0)
 );
 
 void main(void)
 {
-	SV_Position = vec4(Coord[SV_VertexID], 0, 1);
+	SV_Position = float4(Coord[SV_VertexID], 0, 1);
 	var_UV = UV[SV_VertexID];
 }
 )";

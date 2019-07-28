@@ -1,27 +1,27 @@
 R"(
 #shader vertex
-#attribute vec3 a_Pos 0
-#uniform mat4 ViewProjection
+#attribute float3 a_Pos 0
+#uniform float4x4 ViewProjection
 
-out vec3 var_Pos;
+out float3 var_Pos;
 
 void main(void)
 {
-	SV_Position = ViewProjection * vec4(a_Pos, 1.0);
+	SV_Position = ViewProjection * float4(a_Pos, 1.0);
 	var_Pos = a_Pos;
 }
 
 #shader fragment
-#uniform vec4 Color
-#uniform vec3 CameraPos
+#uniform float4 Color
+#uniform float3 CameraPos
 
-in vec3 var_Pos;
+in float3 var_Pos;
 
 void main(void)
 {
-	vec3 view_ray = normalize(CameraPos - var_Pos);
-	float alpha = Color.a * abs(dot(view_ray, vec3(0, 1, 0)));
+	float3 view_ray = normalize(CameraPos - var_Pos);
+	float alpha = Color.a * abs(dot(view_ray, float3(0, 1, 0)));
 	alpha *= 1.0 - smoothstep(0.0, 100.0, distance(var_Pos, CameraPos));
-	RT0 = vec4(Color.rgb, alpha);
+	RT0 = float4(Color.rgb, alpha);
 }
 )"

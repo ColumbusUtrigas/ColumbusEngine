@@ -1,31 +1,31 @@
 R"(
 #shader vertex
-#attribute vec3 a_Pos 0
-#uniform mat4 Projection
-#uniform mat4 View
+#attribute float3 a_Pos 0
+#uniform float4x4 Projection
+#uniform float4x4 View
 
-out vec3 var_Pos;
+out float3 var_Pos;
 
 void main(void)
 {
-	SV_Position = Projection * View * vec4(a_Pos, 1);
+	SV_Position = Projection * View * float4(a_Pos, 1);
 	var_Pos = a_Pos;
 }
 
 #shader fragment
 #uniform TextureCube EnvironmentMap
 
-in vec3 var_Pos;
+in float3 var_Pos;
 
 const float PI = 3.14159265359;
 
 void main(void)
 {
-	vec3 Normal = normalize(var_Pos);
-	vec3 Irradiance = vec3(0.0);
+	float3 Normal = normalize(var_Pos);
+	float3 Irradiance = float3(0.0);
 
-	vec3 Up    = vec3(0.0, 1.0, 0.0);
-	vec3 Right = cross(Up, Normal);
+	float3 Up    = float3(0.0, 1.0, 0.0);
+	float3 Right = cross(Up, Normal);
 	Up         = cross(Normal, Right);
 
 	float SampleDelta = 0.025;
@@ -35,14 +35,14 @@ void main(void)
 	{
 		for(float Theta = 0.0; Theta < 0.5 * PI; Theta += SampleDelta)
 		{
-			vec3 TangentSample = vec3(sin(Theta) * cos(Phi), sin(Theta) * sin(Phi), cos(Theta));
-			vec3 SampleVec = TangentSample.x * Right + TangentSample.y * Up + TangentSample.z * Normal; 
+			float3 TangentSample = float3(sin(Theta) * cos(Phi), sin(Theta) * sin(Phi), cos(Theta));
+			float3 Samplefloat = TangentSample.x * Right + TangentSample.y * Up + TangentSample.z * Normal; 
 
-			Irradiance += SampleCube(EnvironmentMap, SampleVec).rgb * cos(Theta) * sin(Theta);
+			Irradiance += SampleCube(EnvironmentMap, Samplefloat).rgb * cos(Theta) * sin(Theta);
 			NumSamples += 1.0;
 		}
 	}
 
-	RT0 = vec4(PI * Irradiance * (1.0 / NumSamples), 1.0);
+	RT0 = float4(PI * Irradiance * (1.0 / NumSamples), 1.0);
 }
 )"

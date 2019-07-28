@@ -4,29 +4,29 @@ R"(
 #uniform Texture2DMS BaseTexture
 #uniform int Samples
 
-in vec2 var_UV;
+in float2 var_UV;
 
-vec3 Tonemap(vec3 HDR)
+float3 Tonemap(float3 HDR)
 {
 	return HDR / (1.0 + HDR);
 }
 
-vec3 InverseTonemap(vec3 LDR)
+float3 InverseTonemap(float3 LDR)
 {
 	return LDR / (1.0 - LDR);
 }
 
 void main(void)
 {
-	vec3 Color = vec3(0);
+	float3 Color = float3(0);
 
 	for (int i = 0; i < Samples; i++)
 	{
-		Color += Tonemap(Sample2DMS(BaseTexture, ivec2(SV_Position.xy), i).rgb);
+		Color += Tonemap(Sample2DMS(BaseTexture, int2(SV_Position.xy), i).rgb);
 	}
 
 	Color = InverseTonemap(Color / Samples);
 
-	RT0 = vec4(Color, 1.0);
+	RT0 = float4(Color, 1.0);
 }
 )"

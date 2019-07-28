@@ -1,44 +1,44 @@
-#include "Data/Shaders/Common.glsl"
+#include "Data/Shaders/Common.csl"
 
 #shader vertex
 
-#attribute vec3 aPos  0
-#attribute vec2 aUV   1
-#attribute vec3 aNorm 2
-#attribute vec3 aTang 3
+#attribute float3 aPos  0
+#attribute float2 aUV   1
+#attribute float3 aNorm 2
+#attribute float3 aTang 3
 
-#uniform mat4 uModel
-#uniform mat4 uViewProjection
+#uniform float4x4 uModel
+#uniform float4x4 uViewProjection
 
-out vec3 varPos;
-out vec2 varUV;
-out vec3 varNormal;
-out mat3 varTBN;
+out float3 varPos;
+out float2 varUV;
+out float3 varNormal;
+out float3x3 varTBN;
 
 void main()
 {
-	vec3 Normal = normalize(vec3(vec4(aNorm, 0.0) * uModel));
-	vec3 Tangent = normalize(vec3(vec4(aTang, 0.0) * uModel));
-	vec3 Bitangent = cross(Normal, Tangent);
+	float3 Normal = normalize(float3(float4(aNorm, 0.0) * uModel));
+	float3 Tangent = normalize(float3(float4(aTang, 0.0) * uModel));
+	float3 Bitangent = cross(Normal, Tangent);
 
-	varPos = vec3(vec4(aPos, 1.0) * uModel);
+	varPos = float3(float4(aPos, 1.0) * uModel);
 	varUV = aUV;
 	varNormal = Normal;
-	varTBN = transpose(mat3(Tangent, Bitangent, Normal));
+	varTBN = transpose(float3x3(Tangent, Bitangent, Normal));
 
-	SV_Position = uViewProjection * vec4(varPos, 1);
+	SV_Position = uViewProjection * float4(varPos, 1);
 }
 
 #shader fragment
 
-#include "Data/Shaders/BRDF.glsl"
+#include "Data/Shaders/BRDF.csl"
 
 #define LIGHT_NUM 4
 
-in vec3 varPos;
-in vec2 varUV;
-in vec3 varNormal;
-in mat3 varTBN;
+in float3 varPos;
+in float2 varUV;
+in float3 varNormal;
+in float3x3 varTBN;
 
 #uniform Texture2D   AlbedoMap
 #uniform Texture2D   NormalMap
@@ -60,12 +60,12 @@ in mat3 varTBN;
 #uniform bool HasDetailAlbedoMap
 #uniform bool HasDetailNormalMap
 
-#uniform vec2 Tiling
-#uniform vec2 DetailTiling
+#uniform float2 Tiling
+#uniform float2 DetailTiling
 
-#uniform vec3 uCameraPosition
+#uniform float3 uCameraPosition
 
-#uniform vec4  Albedo
+#uniform float4  Albedo
 #uniform float Roughness
 #uniform float Metallic
 #uniform float EmissionStrength
@@ -73,11 +73,11 @@ in mat3 varTBN;
 
 #uniform float uLighting [13 * LIGHT_NUM]
 
-vec2 _TiledUV;
-vec2 _TiledDetailUV;
+float2 _TiledUV;
+float2 _TiledDetailUV;
 
-vec4 _Albedo;
-vec3 _Normal;
+float4 _Albedo;
+float3 _Normal;
 float _Roughness;
 float _Metallic;
 
@@ -97,10 +97,10 @@ void Init(void)
 
 	if (HasAlbedoMap)
 	{
-		vec4 AlbedoSample = Sample2D(AlbedoMap, _TiledUV);
+		float4 AlbedoSample = Sample2D(AlbedoMap, _TiledUV);
 
 		if (HasDetailAlbedoMap)
-			_Albedo = vec4(AlbedoSample.rgb * Sample2D(DetailAlbedoMap, _TiledDetailUV).rgb * 1.8f, AlbedoSample.a);
+			_Albedo = float4(AlbedoSample.rgb * Sample2D(DetailAlbedoMap, _TiledDetailUV).rgb * 1.8f, AlbedoSample.a);
 		else
 			_Albedo = AlbedoSample;
 	}
@@ -108,7 +108,7 @@ void Init(void)
 		if (HasDetailAlbedoMap)
 			_Albedo = Sample2D(DetailAlbedoMap, _TiledDetailUV);
 		else
-			_Albedo = vec4(1);
+			_Albedo = float4(1);
 
 	if (HasNormalMap)
 		if (HasDetailNormalMap)
@@ -132,26 +132,26 @@ void Init(void)
 		_Metallic = Metallic;
 }
 
-vec3 LightCalc(int id, vec3 F, vec3 N, vec3 V, float NdotV)
+float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 {
 	int Offset = id * 13;
 
-	vec3 LightColor = vec3(uLighting[Offset + 0], uLighting[Offset + 1], uLighting[Offset + 2]);
-	vec3 LightPos = vec3(uLighting[Offset + 3], uLighting[Offset + 4], uLighting[Offset + 5]);
-	vec3 LightDir = vec3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
+	float3 LightColor = float3(uLighting[Offset + 0], uLighting[Offset + 1], uLighting[Offset + 2]);
+	float3 LightPos = float3(uLighting[Offset + 3], uLighting[Offset + 4], uLighting[Offset + 5]);
+	float3 LightDir = float3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
 	float LightType = uLighting[Offset + 9];
 	float LightRange = uLighting[Offset + 10];
 	float LightInnerCutoff = uLighting[Offset + 11];
 	float LightOuterCutoff = uLighting[Offset + 12];
 
-	if (LightColor == vec3(0)) return vec3(0);
+	if (LightColor == float3(0)) return float3(0);
 
 	float AO = HasOcclusionMap ? Sample2D(OcclusionMap, _TiledUV).r : 1.0;
 	float Distance = length(LightPos - varPos);
 	float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
 
-	vec3 L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
-	vec3 H = normalize(V + L);
+	float3 L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
+	float3 H = normalize(V + L);
 
 	float NdotL = max(0, dot(N, L));
 
@@ -170,26 +170,26 @@ vec3 LightCalc(int id, vec3 F, vec3 N, vec3 V, float NdotV)
 			Attenuation = 0.0;
 	}
 
-	vec3 DiffuseBRDF = LambertDiffuseBRDF(Albedo.rgb) * AO;
-	vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, H, F, NdotV, _Roughness);
+	float3 DiffuseBRDF = LambertDiffuseBRDF(Albedo.rgb) * AO;
+	float3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, H, F, NdotV, _Roughness);
 
 	float Factor = 1.0 - _Metallic;
 
 	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * LightColor * Attenuation;
 }
 
-vec3 Lights(void)
+float3 Lights(void)
 {
-	vec3 N = normalize(_Normal);
-	vec3 V = normalize(uCameraPosition - varPos);
-	vec3 R = reflect(-V, _Normal);
+	float3 N = normalize(_Normal);
+	float3 V = normalize(uCameraPosition - varPos);
+	float3 R = reflect(-V, _Normal);
 	float NdotV = max(0.0, dot(N, V));
 
-	vec3 F0 = vec3(0.04); 
-	F0 = mix(F0, vec3(1), _Metallic);
+	float3 F0 = float3(0.04); 
+	F0 = mix(F0, float3(1), _Metallic);
 
-	vec3 BRDF = vec3(0.0);
-	vec3 F = FresnelRoughness(NdotV, F0, _Roughness);
+	float3 BRDF = float3(0.0);
+	float3 F = FresnelRoughness(NdotV, F0, _Roughness);
 
 	BRDF += LightCalc(0, F, N, V, NdotV);
 	BRDF += LightCalc(1, F, N, V, NdotV);
@@ -197,10 +197,10 @@ vec3 Lights(void)
 	BRDF += LightCalc(3, F, N, V, NdotV);
 
 	const float MAX_REFLECTION_LOD = 7.0; // TODO
-	vec3 prefilteredColor = SampleCubeLod(EnvironmentMap, R,  _Roughness * MAX_REFLECTION_LOD).rgb;
-	vec2 envBRDF  = Sample2D(IntegrationMap, vec2(max(dot(_Normal, V), 0.0), _Roughness)).rg;
-	vec3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-	vec3 Ambient = SampleCube(IrradianceMap, _Normal).rgb;
+	float3 prefilteredColor = SampleCubeLod(EnvironmentMap, R,  _Roughness * MAX_REFLECTION_LOD).rgb;
+	float2 envBRDF  = Sample2D(IntegrationMap, float2(max(dot(_Normal, V), 0.0), _Roughness)).rg;
+	float3 Specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+	float3 Ambient = SampleCube(IrradianceMap, _Normal).rgb;
 	float AO = HasOcclusionMap ? Sample2D(OcclusionMap, _TiledUV).r : 1.0;
 
 	BRDF += (1.0 - _Metallic) * Ambient * AO;
@@ -209,19 +209,19 @@ vec3 Lights(void)
 	return BRDF * Albedo.rgb;
 }
 
-vec2 EncodeNormal(in vec3 n)
+float2 EncodeNormal(in float3 n)
 {
-	return vec2(n.xy / sqrt(8.0 * n.z + 8.0) + 0.5);
+	return float2(n.xy / sqrt(8.0 * n.z + 8.0) + 0.5);
 }
 
 void Final(void)
 {
-	vec4 Color = vec4(Lights(), Albedo.a) * _Albedo;
+	float4 Color = float4(Lights(), Albedo.a) * _Albedo;
 
 	Color.rgb += Sample2D(EmissionMap, _TiledUV).rgb * EmissionStrength;
 
 	RT0 = Color;
-	RT1 = vec4(_Normal, 1);
+	RT1 = float4(_Normal, 1);
 
 	if (!Transparent && Color.a < 1.0) discard;
 	if (Transparent && Color.a == 1.0) discard;
