@@ -1,20 +1,24 @@
 {
-	"Culling": "Back",
-	"DepthWriting": true,
-	"Transparent": false,
-	"Lighting": true,
-	"Tiling": [1, 1],
-	"DetailTiling": [16, 16],
 	"Albedo": [1, 1, 1, 1],
-	"Roughness": 1,
-	"Metallic": 0,
+	"Culling": "Back",
+	"DepthTesting": "LEqual",
+	"DepthWriting": true,
+	"DetailTiling": [16, 16],
 	"EmissionStrength": 0,
+	"Lighting": true,
+	"Metallic": 0,
+	"Roughness": 1,
 	"Shader": "Data/Shaders/Standart.glsl",
-
-	"Textures":
-	{
+	"Textures": {
 		"Albedo": "Data/Textures/Hercules.dds",
 		"DetailAlbedo": "Data/Textures/Detail.dds",
-		"DetailNormal": "Data/Textures/Detail-Normal.dds"
-	}
+		"DetailNormal": "Data/Textures/Detail-Normal.dds",
+		"Emission": null,
+		"Metallic": null,
+		"Normal": null,
+		"Occlusion": null,
+		"Roughness": null
+	},
+	"Tiling": [1, 1],
+	"Transparent": false
 }
