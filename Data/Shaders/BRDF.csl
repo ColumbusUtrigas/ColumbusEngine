@@ -1,11 +1,11 @@
 #define LAMBERTIAN 0.318310 // 1.0 / PI
 
-vec3 LambertDiffuseBRDF(vec3 color)
+float3 LambertDiffuseBRDF(float3 color)
 {
 	return color * LAMBERTIAN;
 }
 
-float DistributionGGX(vec3 N, vec3 H, float roughness)
+float DistributionGGX(float3 N, float3 H, float roughness)
 {
 	float a      = roughness * roughness;
 	float a2     = a * a;
@@ -29,17 +29,17 @@ float GeometryGGX(float a, float ndotl, float ndotv)
 	return 0.5f / max(gv + gl, 0.001f);
 }
 
-vec3 Fresnel(float cosTheta, vec3 F0)
+float3 Fresnel(float cosTheta, float3 F0)
 {
 	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-vec3 FresnelRoughness(float cosTheta, vec3 F0, float roughness)
+float3 FresnelRoughness(float cosTheta, float3 F0, float roughness)
 {
-	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+	return F0 + (max(float3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-vec3 CookTorranceSpecularBRDF(vec3 N, vec3 L, vec3 H, vec3 F, float NdotV, float Roughness)
+float3 CookTorranceSpecularBRDF(float3 N, float3 L, float3 H, float3 F, float NdotV, float Roughness)
 {
 	float NdotL = max(0.0, dot(N, L));
 

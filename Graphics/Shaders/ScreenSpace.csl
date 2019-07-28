@@ -3,7 +3,7 @@ R"(
 #shader fragment
 #uniform Texture2D BaseTexture
 
-in vec2 var_UV;
+in float2 var_UV;
 
 void main(void)
 {

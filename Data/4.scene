@@ -26,8 +26,8 @@
 		}
 	],
 	"Shaders": [
-		"Data/Shaders/Standart.glsl",
-		"Data/Shaders/Particles.glsl"
+		"Data/Shaders/Standart.csl",
+		"Data/Shaders/Particles.csl"
 	],
 	"Sounds": [
 		{

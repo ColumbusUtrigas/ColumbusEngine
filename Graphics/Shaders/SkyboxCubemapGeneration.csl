@@ -1,14 +1,14 @@
 R"(
 #shader vertex
-#attribute vec3 a_Pos 0
-#uniform mat4 Projection
-#uniform mat4 View
+#attribute float3 a_Pos 0
+#uniform float4x4 Projection
+#uniform float4x4 View
 
-out vec3 var_Pos;
+out float3 var_Pos;
 
 void main(void)
 {
-	SV_Position = Projection * View * vec4(a_Pos, 1.0);
+	SV_Position = Projection * View * float4(a_Pos, 1.0);
 	var_Pos = a_Pos;
 	var_Pos.y = -var_Pos.y;
 }
@@ -16,12 +16,12 @@ void main(void)
 #shader fragment
 #uniform Texture2D BaseMap
 
-in vec3 var_Pos;
+in float3 var_Pos;
 
-const vec2 invAtan = vec2(0.1591, 0.3183);
-vec2 SampleSphericalMap(vec3 v)
+const float2 invAtan = float2(0.1591, 0.3183);
+float2 SampleSphericalMap(float3 v)
 {
-	vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+	float2 uv = float2(atan(v.z, v.x), asin(v.y));
 	uv *= invAtan;
 	uv += 0.5;
 	return uv;
@@ -29,8 +29,8 @@ vec2 SampleSphericalMap(vec3 v)
 
 void main(void)
 {		
-	vec2 uv = SampleSphericalMap(normalize(var_Pos));
-	vec3 color = Sample2D(BaseMap, uv).rgb;
-	RT0 = vec4(clamp(color, 0, 50000), 1.0);
+	float2 uv = SampleSphericalMap(normalize(var_Pos));
+	float3 color = Sample2D(BaseMap, uv).rgb;
+	RT0 = float4(clamp(color, 0, 50000), 1.0);
 }
 )"

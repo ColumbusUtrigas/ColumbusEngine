@@ -9,17 +9,17 @@ R"(
 #uniform float SpeedDown
 #uniform float DeltaTime
 
-in vec2 var_UV;
+in float2 var_UV;
 
-float luma(vec3 color)
+float luma(float3 color)
 {
-	return dot(color, vec3(0.2125, 0.7154, 0.0721));
+	return dot(color, float3(0.2125, 0.7154, 0.0721));
 }
 
 void main(void)
 {
-	float prev_exp = Sample2D(Previous, vec2(0.5)).r;
-	float curr_luma = luma(Sample2D(BaseTexture, vec2(0.5)).rgb);
+	float prev_exp = Sample2D(Previous, float2(0.5)).r;
+	float curr_luma = luma(Sample2D(BaseTexture, float2(0.5)).rgb);
 	float adapted = 0.5 / clamp(curr_luma, Min, Max);
 	float exp = prev_exp;
 
@@ -28,6 +28,6 @@ void main(void)
 	else
 		exp += (adapted - prev_exp) * DeltaTime * SpeedDown;
 
-	RT0 = vec4(exp);
+	RT0 = float4(exp);
 }
 )"
