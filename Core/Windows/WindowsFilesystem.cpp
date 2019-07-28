@@ -1,11 +1,11 @@
-#include <Core/Windows/PlatformWindowsFilesystem.h>
+#include <Core/Filesystem.h>
 #include <windows.h>
 #include <string.h>
 
 namespace Columbus
 {
 
-	String FilesystemWindows::GetCurrent()
+	String Filesystem::GetCurrent()
 	{
 		char Buffer[MAX_PATH];
 		DWORD Size = GetModuleFileName(NULL, Buffer, MAX_PATH);
@@ -18,7 +18,7 @@ namespace Columbus
 		return Ret;
 	}
 
-	String FilesystemWindows::AbsolutePath(const String& Path)
+	String Filesystem::AbsolutePath(const String& Path)
 	{
 		char Result[MAX_PATH] = { '\0' };
 		memset(Result, 0, MAX_PATH);
@@ -31,17 +31,7 @@ namespace Columbus
 		return Result;
 	}
 
-	bool FilesystemWindows::DirCreate(const char* Path)
-	{
-		return CreateDirectory(Path, NULL);
-	}
-
-	bool FilesystemWindows::DirRemove(const char* Path)
-	{
-		return RemoveDirectory(Path);
-	}
-
-	std::vector<FileInfo> FilesystemWindows::Read(const String& Path)
+	std::vector<FileInfo> Filesystem::Read(const String& Path)
 	{
 		std::vector<FileInfo> Result;
 
