@@ -36,7 +36,7 @@ void main(void)
 	vec4 VertexPosition = vec4(Vertices * Sizes, 1);
 	vec4 WorldPosition = vec4(Positions, 0);
 
-	Position = Projection * (View * (Billboard * (VertexPosition * Rotation) + WorldPosition));
+	SV_Position = Projection * (View * (Billboard * (VertexPosition * Rotation) + WorldPosition));
 	UV = ExtractSubUV(int(OtherData.y), Texcoords, Frame);
 	Color = Colors;
 }

@@ -26,7 +26,7 @@ void main()
 	varNormal = Normal;
 	varTBN = transpose(mat3(Tangent, Bitangent, Normal));
 
-	Position = uViewProjection * vec4(varPos, 1);
+	SV_Position = uViewProjection * vec4(varPos, 1);
 }
 
 #shader fragment
