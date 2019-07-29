@@ -12,7 +12,7 @@ void main(void)
 	var_Pos = a_Pos;
 }
 
-#shader fragment
+#shader pixel
 #uniform TextureCube EnvironmentMap
 
 in float3 var_Pos;

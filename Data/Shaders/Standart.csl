@@ -29,7 +29,7 @@ void main()
 	SV_Position = uViewProjection * float4(varPos, 1);
 }
 
-#shader fragment
+#shader pixel
 
 #include "Data/Shaders/BRDF.csl"
 

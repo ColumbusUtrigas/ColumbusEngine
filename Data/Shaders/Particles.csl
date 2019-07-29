@@ -41,7 +41,7 @@ void main(void)
 	Color = Colors;
 }
 
-#shader fragment
+#shader pixel
 
 #uniform Texture2D Texture
 

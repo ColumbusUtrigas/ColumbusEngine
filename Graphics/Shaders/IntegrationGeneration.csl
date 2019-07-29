@@ -1,6 +1,6 @@
 R"(
 #shader vertex = screen_space
-#shader fragment
+#shader pixel
 in float2 var_UV;
 
 const float PI = 3.14159265359;

@@ -1,6 +1,6 @@
 R"(
 #shader vertex = screen_space
-#shader fragment
+#shader pixel
 #uniform Texture2D BaseTexture
 #uniform float Treshold
 
