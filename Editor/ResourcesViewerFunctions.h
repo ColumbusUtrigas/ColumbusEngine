@@ -173,15 +173,16 @@ namespace Columbus
 		std::function<bool(const char*, T*)> Load, std::function<void(const char*)> Success,
 		std::function<void()> Failure)
 	{
-		auto CodeName = Filesystem::RelativePath(Path, Filesystem::GetCurrent());
+		auto pt = String(Path);
+		auto name = pt.substr(pt.rfind('/') + 1);
 
-		if (Manager.IsNameFree(CodeName) || Force)
+		if (Manager.IsNameFree(name) || Force)
 		{
 			SmartPointer<T> Object(New);
 			if (Load(Path, New))
 			{
-				Manager.Add(std::move(Object), CodeName, Force);
-				Success(CodeName.c_str());
+				Manager.Add(std::move(Object), name, Force);
+				Success(name.c_str());
 			}
 		} else
 		{

@@ -32,8 +32,11 @@ namespace Columbus
 	{
 		for (size_t i = 0; i < MaterialsManager.Names.size(); i++)
 		{
-			J[i] = MaterialsManager.Names[i];
-			MaterialsManager.Resources[i]->Save(MaterialsManager.Names[i].c_str(),
+			auto name = MaterialsManager.Names[i];
+			auto path = "Data/Materials/" + name;
+
+			J[i] = name;
+			MaterialsManager.Resources[i]->Save(path.c_str(),
 				ShadersManager, TexturesManager);
 		}
 	}
@@ -131,11 +134,14 @@ namespace Columbus
 	{
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
+			auto name = J[i].GetString();
+			auto path = "Data/Textures/" + name;
+
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
-			if (Tex->Load(J[i].GetString().c_str()))
+			if (Tex->Load(path.c_str()))
 			{
-				TexturesManager.Add(std::move(Tex), J[i].GetString());
-				Log::Success("Texture loaded: %s", J[i].GetString().c_str());
+				TexturesManager.Add(std::move(Tex), name);
+				Log::Success("Texture loaded: %s", name.c_str());
 			}
 		}
 	}
@@ -144,10 +150,13 @@ namespace Columbus
 	{
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
+			auto name = J[i].GetString();
+			auto path = "Data/Shaders/" + name;
+
 			SmartPointer<ShaderProgram> Shader(gDevice->CreateShaderProgram());
-			if (Shader->Load(J[i].GetString().c_str()))
+			if (Shader->Load(path.c_str()))
 			{
-				ShadersManager.Add(std::move(Shader), J[i].GetString());
+				ShadersManager.Add(std::move(Shader), name);
 			}
 		}
 	}
@@ -156,10 +165,13 @@ namespace Columbus
 	{
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
+			auto name = J[i].GetString();
+			auto path = "Data/Materials/" + name;
+
 			SmartPointer<Material> Mat(new Material());
-			if (Mat->Load(J[i].GetString().c_str(), ShadersManager, TexturesManager))
+			if (Mat->Load(path.c_str(), ShadersManager, TexturesManager))
 			{
-				MaterialsManager.Add(std::move(Mat), J[i].GetString());
+				MaterialsManager.Add(std::move(Mat), name);
 			}
 		}
 	}
@@ -168,11 +180,14 @@ namespace Columbus
 	{
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
+			auto name = J[i].GetString();
+			auto path = "Data/Meshes/" + name;
+
 			SmartPointer<Mesh> tMesh(gDevice->CreateMesh());
-			if (tMesh->Load(J[i].GetString().c_str()))
+			if (tMesh->Load(path.c_str()))
 			{
-				MeshesManager.Add(std::move(tMesh), J[i].GetString());
-				Log::Success("Mesh loaded: %s", J[i].GetString().c_str());
+				MeshesManager.Add(std::move(tMesh), name);
+				Log::Success("Mesh loaded: %s", name.c_str());
 			}
 		}
 	}
@@ -181,11 +196,14 @@ namespace Columbus
 	{
 		for (uint32 i = 0; i < J.GetElementsCount(); i++)
 		{
+			auto name = J[i]["Name"].GetString();
+			auto path = "Data/Sounds/" + name;
+
 			SmartPointer<Sound> Snd(new Sound());
-			if (Snd->Load(J[i]["Name"].GetString().c_str(), J[i]["Streaming"].GetBool()))
+			if (Snd->Load(path.c_str(), J[i]["Streaming"].GetBool()))
 			{
-				SoundsManager.Add(std::move(Snd), J[i]["Name"].GetString());
-				Log::Success("Sound loaded: %s", J[i]["Name"].GetString().c_str());
+				SoundsManager.Add(std::move(Snd), name);
+				Log::Success("Sound loaded: %s", name.c_str());
 			}
 		}
 	}

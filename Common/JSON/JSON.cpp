@@ -156,7 +156,12 @@ namespace Columbus
 			while (*Text != '\0')
 			{
 				SkipSpace(Text);
-				if (*Text == ']' && ArrayValue.size() == 0) { ValueType = Type::Array; return true; }
+				if (*Text == ']' && ArrayValue.size() == 0)
+				{
+					Text++;
+					ValueType = Type::Array;
+					return true;
+				}
 
 				JSON New;
 				if (!New._Parse(Text)) { Error = true; return true; }
@@ -184,7 +189,12 @@ namespace Columbus
 			while (*Text != '\0')
 			{
 				SkipSpace(Text);
-				if (*Text == '}' && ObjectValue.size() == 0) { ValueType = Type::Object; return true; }
+				if (*Text == '}' && ObjectValue.size() == 0)
+				{
+					Text++;
+					ValueType = Type::Object;
+					return true;
+				}
 
 				if (*Text == '"')
 				{

@@ -404,8 +404,6 @@ void main(void)
 		STD_PROG_CASE(IntegrationGeneration);
 		}
 
-		Log::Success("Default shader program loaded: %s", Path.c_str());
-
 		Loaded = true;
 		return true;
 	}
