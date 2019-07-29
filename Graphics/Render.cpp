@@ -522,12 +522,12 @@ namespace Columbus
 		static int AutoExposureSpeedDown = AutoExposureShader->GetFastUniform("SpeedDown");
 		static int AutoExposureDeltaTime = AutoExposureShader->GetFastUniform("DeltaTime");
 
-		static int TonemapBaseTexture = TonemapShader->GetFastUniform("BaseTexture");
-		static int TonemapGamma = TonemapShader->GetFastUniform("Gamma");
-		static int TonemapExposure = TonemapShader->GetFastUniform("Exposure");
-		static int TonemapType = TonemapShader->GetFastUniform("Type");
-		static int TonemapAutoExposureTexture = TonemapShader->GetFastUniform("AutoExposureTexture");
-		static int TonemapAutoExposureEnable = TonemapShader->GetFastUniform("AutoExposureEnable");
+		static int TonemapBaseTexture = TonemapShader->GetFastUniform("u_BaseTexture");
+		static int TonemapGamma = TonemapShader->GetFastUniform("u_Gamma");
+		static int TonemapExposure = TonemapShader->GetFastUniform("u_Exposure");
+		static int TonemapType = TonemapShader->GetFastUniform("u_Type");
+		static int TonemapAutoExposureTexture = TonemapShader->GetFastUniform("u_AETexture");
+		static int TonemapAutoExposureEnable = TonemapShader->GetFastUniform("u_AEEnable");
 
 		static int MSAABaseTexture = MSAAShader->GetFastUniform("BaseTexture");
 		static int MSAASamples = MSAAShader->GetFastUniform("Samples");

@@ -1,19 +1,19 @@
 R"(
 #shader vertex = screen_space
-#shader fragment
-#uniform Texture2D BaseTexture
-#uniform Texture2D AutoExposureTexture
-#uniform float Exposure
-#uniform float Gamma
-#uniform int Type
-#uniform int AutoExposureEnable
+#shader pixel
+#uniform Texture2D u_BaseTexture
+#uniform Texture2D u_AETexture
+#uniform float u_Exposure
+#uniform float u_Gamma
+#uniform int u_Type
+#uniform int u_AEEnable
 
 in float2 var_UV;
 
 float3 TonemapSimple(float3 HDR)
 {
 	HDR = HDR / (1.0 + HDR);
-	return pow(HDR, float3(1.0 / Gamma));
+	return pow(HDR, float3(1.0 / u_Gamma));
 }
 
 float3 TonemapFilmic(float3 HDR)
@@ -32,14 +32,14 @@ float3 TonemapACES(float3 HDR)
 
 	HDR = (HDR * (a * HDR + b))  /
 	      (HDR * (c * HDR + d) + e);
-	HDR = pow(HDR, 1.0 / float3(Gamma));
+	HDR = pow(HDR, 1.0 / float3(u_Gamma));
 	return HDR;
 }
 
 float3 TonemapRomBinDaHouse(float3 HDR)
 {
 	HDR = exp(-1.0 / (2.72 * HDR + 0.15));
-	return pow(HDR, float3(1.0 / Gamma));
+	return pow(HDR, float3(1.0 / u_Gamma));
 }
 
 float3 TonemapUncharted(float3 HDR)
@@ -55,23 +55,23 @@ float3 TonemapUncharted(float3 HDR)
 	HDR = ((HDR * (A * HDR + C * B) + D * E) / (HDR * (A * HDR + B) + D * F)) - E / F;
 	float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
 	HDR /= white;
-	HDR = pow(HDR, float3(1.0 / Gamma));
+	HDR = pow(HDR, float3(1.0 / u_Gamma));
 	return HDR;
 }
 
 void main(void)
 {
-	float E = Exposure;
+	float E = u_Exposure;
 
-	if (AutoExposureEnable == 1)
+	if (u_AEEnable == 1)
 	{
-		E = Sample2D(AutoExposureTexture, float2(0.5)).r;
+		E = Sample2D(u_AETexture, float2(0.5)).r;
 	}
 
-	float3 HDR = clamp(Sample2D(BaseTexture, var_UV).rgb * E, 0, 50000);
+	float3 HDR = clamp(Sample2D(u_BaseTexture, var_UV).rgb * E, 0, 50000);
 	float3 Mapped = float3(0.0);
 
-	switch (Type)
+	switch (u_Type)
 	{
 	case 0: Mapped = TonemapSimple(HDR); break;
 	case 1: Mapped = TonemapFilmic(HDR); break;

@@ -30,7 +30,7 @@ void main(void)
 	var_UV.y = -UV[SV_VertexID].y;
 }
 
-#shader fragment
+#shader pixel
 #uniform Texture2D Texture
 
 in float2 var_UV;

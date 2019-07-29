@@ -1,6 +1,6 @@
 R"(
 #shader vertex = screen_space
-#shader fragment
+#shader pixel
 #uniform float3 Color
 #uniform float2 Center
 #uniform float Intensity

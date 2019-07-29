@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <regex>
 
 namespace Columbus
 {
@@ -69,7 +70,7 @@ R"(
 #line 1
 )";
 
-const char* FragmentShaderHeader =
+const char* PixelShaderHeader =
 R"(
 #define FragmentShader
 #define SV_Depth gl_FragDepth
@@ -115,7 +116,7 @@ void main(void)
 		switch (Type)
 		{
 		case ShaderType::Vertex:   return "Vertex";
-		case ShaderType::Fragment: return "Fragment";
+		case ShaderType::Fragment: return "Pixel";
 		}
 
 		return "";
@@ -158,23 +159,34 @@ void main(void)
 		return stream.str();
 	}
 
-	static std::vector<std::string> TokenizeString(const std::string& str, const char* delims)
-	{
-		std::vector<std::string> tokens;
-		size_t pos = 0;
-
-		while (pos < str.length())
-		{
-			size_t offset = strcspn(str.c_str() + pos, delims);
-			if (offset != 0)
-			{
-				tokens.push_back(str.substr(pos, offset));
-			}
-			pos += offset + 1;
+	#define CHECK_ERROR(exp, pos, fmt, first_param) \
+		if (exp) { \
+			char err_msg[512] = {}; \
+			snprintf(err_msg, 512, fmt, first_param); \
+			Data.Errors.emplace_back(line_num, pos, err_msg); \
+			err_occured = true; \
 		}
 
-		return tokens;
-	}
+	#define CHECK_UNIFORM_ERRORS() \
+		CHECK_ERROR(!std::regex_match(type, regex_uniform_types), \
+			match_uniform.position(1) + 1, \
+			"Invalid uniform type '%s'", \
+			type.c_str());
+
+	#define CHECK_ATTRIBUTE_ERRORS() \
+		CHECK_ERROR(CurrentMode != MODE_VERTEX, \
+			line.find("#attribute") + 1, \
+			"Vertex attributes available only in vertex shader", ""); \
+		\
+		CHECK_ERROR(!std::regex_match(type, regex_attribute_types), \
+			match_attribute.position(1) + 1, \
+			"Invalid attribute type '%s'", \
+			type.c_str()); \
+		\
+		CHECK_ERROR(slot_num < 0 || slot_num > 15, \
+			match_attribute.position(3) + 1, \
+			"Invalid slot '%s': It should be a number in range [0;15]", \
+			slot.c_str()); \
 
 	ShaderProgramOpenGL::ShaderData ParseShader(const char* Source)
 	{
@@ -182,73 +194,97 @@ void main(void)
 
 		std::stringstream f(Source);
 		std::string line;
+		size_t line_num = 0;
+		bool err_occured = false;
 
-		int CurrentMode = -1;
+		enum
+		{
+			MODE_NONE = -1,
+			MODE_VERTEX = 0,
+			MODE_PIXEL = 1
+		} CurrentMode = MODE_NONE;
+
 		std::stringstream streams[2];
+
+		std::regex regex_uniform_types("\\b((bool|int|float)[2-4]?(x[2-4])?|Texture(2D|3D|Cube|2DMS))\\b");
+		std::regex regex_attribute_types("\\b(float[2-4]?)\\b");
+
+		std::regex regex_shader("\\s*#shader\\s+(vertex|pixel)\\s*(=\\s*(.+))?\\s*");
+		std::regex regex_uniform("\\s*#uniform\\s+(\\w[\\w\\d_]*)\\s+(\\w[\\w\\d_]*)\\s*(\\[(.+)\\])?\\s*");
+		std::regex regex_attribute("\\s*#attribute\\s+(\\w[\\w\\d_]*)\\s+(\\w[\\w\\d_]*)\\s+(\\d+)\\s*");
+		std::regex regex_include("\\s*(#include)\\s*(\"(.*)\"|<(.*)>)\\s*");
 
 		while (std::getline(f, line))
 		{
-			if (line.find("#shader") != std::string::npos)
-			{
-				auto tokens = TokenizeString(line, " \t");
+			std::smatch match_shader,
+			            match_uniform,
+			            match_attribute,
+			            match_include;
 
-				if (tokens[1] == "vertex")
+			line_num++;
+
+			if (std::regex_match(line, match_shader, regex_shader))
+			{
+				if (match_shader.str(1) == "vertex")
 				{
-					CurrentMode = 0;
-					if (tokens.size() == 4 && tokens[2] == "=")
+					CurrentMode = MODE_VERTEX;
+					if (!match_shader.str(3).empty())
 					{
-						if (tokens[3] == "screen_space")
+						if (match_shader.str(3) == "screen_space")
 						{
 							streams[CurrentMode] << ScreenSpaceVertexShader;
 						}
+						else
+						{
+							CHECK_ERROR(false,
+								match_shader.position(3) + 1,
+								"Invalid default vertex shader", "");
+						}
 					}
 				}
-
-				if (tokens[1] == "fragment")
+				else if (match_shader.str(1) == "pixel")
 				{
-					CurrentMode = 1;
+					CurrentMode = MODE_PIXEL;
 				}
 			}
-			else if (line.find("#uniform") != std::string::npos)
+			else if (std::regex_match(line, match_uniform, regex_uniform))
 			{
-				auto bracket = line.find('[');
-				auto tokens = TokenizeString(line.substr(0, bracket), " \t");
+				auto type = match_uniform.str(1);
+				auto name = match_uniform.str(2);
+				auto brackets = match_uniform.str(3);
 
-				auto&& type = std::move(tokens[1]);
-				auto&& name = std::move(tokens[2]);
-				auto brackets = bracket != std::string::npos ? line.substr(bracket) : "";
+				CHECK_UNIFORM_ERRORS();
 
 				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ";\n";
 				Data.Uniforms.emplace_back(std::move(name));
 			}
-			else if (line.find("#attribute") != std::string::npos)
+			else if (std::regex_match(line, match_attribute, regex_attribute))
 			{
-				auto tokens = TokenizeString(line, " \t");
+				auto type = match_attribute.str(1);
+				auto name = match_attribute.str(2);
+				auto slot = match_attribute.str(3);
+				int slot_num = atoi(slot.c_str());
 
-				auto&& type = std::move(tokens[1]);
-				auto&& name = std::move(tokens[2]);
-				auto&& slot = std::move(tokens[3]);
+				CHECK_ATTRIBUTE_ERRORS();
 
 				streams[CurrentMode] << "in " << type << ' ' << name << ";\n";
-				Data.Attributes.emplace_back(std::move(name), atoi(slot.c_str()));
+				Data.Attributes.emplace_back(std::move(name), slot_num);
 			}
-			else if (line.find("#include") != std::string::npos)
+			else if (std::regex_match(line, match_include, regex_include))
 			{
-				auto tokens = TokenizeString(line, " <>\"\t");
-
-				if (CurrentMode == -1)
+				if (CurrentMode == MODE_NONE)
 				{
-					auto Included = ReadFile(tokens[1].c_str());
+					auto Included = ReadFile(match_include.str(3).c_str());
 					for (auto& stream : streams) stream << Included << '\n';
 				}
 				else
 				{
-					streams[CurrentMode] << ReadFile(tokens[1].c_str()) << '\n';
+					streams[CurrentMode] << ReadFile(match_include.str(3).c_str()) << '\n';
 				}
 			}
 			else
 			{
-				if (CurrentMode == -1)
+				if (CurrentMode == MODE_NONE)
 				{
 					for (auto& stream : streams) stream << line << '\n';
 				}
@@ -259,8 +295,10 @@ void main(void)
 			}
 		}
 
-		Data.VertexSource = CommonShaderHeader + std::string(VertexShaderHeader) + streams[0].str();
-		Data.FragmentSource = CommonShaderHeader + std::string(FragmentShaderHeader) + streams[1].str();
+		if (err_occured) return Data;
+
+		Data.VertexSource = CommonShaderHeader + std::string(VertexShaderHeader) + streams[MODE_VERTEX].str();
+		Data.FragmentSource = CommonShaderHeader + std::string(PixelShaderHeader) + streams[MODE_PIXEL].str();
 
 		return Data;
 	}
@@ -377,6 +415,16 @@ void main(void)
 		Data = ParseShader(Source);
 		Path = FilePath;
 
+		if (!Data.Errors.empty())
+		{
+			for (const auto& err : Data.Errors)
+				Log::Error("%s:%zu:%zu: %s", FilePath, err.Line, err.Position, err.Message.c_str());
+
+			Loaded = false;
+			return false;
+		}
+
+		Log::Success("Shader program loaded:   %s", FilePath);
 		Loaded = true;
 		return true;
 	}
@@ -394,15 +442,10 @@ void main(void)
 		ShaderFile.ReadBytes(_data, ShaderFile.GetSize());
 		_data[ShaderFile.GetSize()] = '\0';
 
-		LoadFromMemory(_data);
-		Path = FileName;
+		bool result = LoadFromMemory(_data, FileName);
 
 		free(_data);
-
-		Log::Success("Shader program loaded:   %s", FileName);
-
-		Loaded = true;
-		return true;
+		return result;
 	}
 
 	bool ShaderProgramOpenGL::Compile()

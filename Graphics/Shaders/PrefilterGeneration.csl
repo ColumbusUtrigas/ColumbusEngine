@@ -12,7 +12,7 @@ void main()
 	var_Pos = a_Pos;
 }
 
-#shader fragment
+#shader pixel
 #uniform float Roughness
 #uniform TextureCube EnvironmentMap
 

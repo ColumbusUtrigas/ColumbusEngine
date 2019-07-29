@@ -21,6 +21,16 @@ namespace Columbus
 			Attribute(std::string&& Name, uint32 Slot) : Name(std::move(Name)), Slot(Slot) {}
 		};
 
+		struct ParseError
+		{
+			size_t Line;
+			size_t Position;
+			std::string Message;
+
+			ParseError(size_t Line, size_t Position, std::string&& Message) :
+				Line(Line), Position(Position), Message(std::move(Message)) {}
+		};
+
 		struct ShaderData
 		{
 			std::string NoneSource;
@@ -29,6 +39,8 @@ namespace Columbus
 
 			std::vector<std::string> Uniforms;
 			std::vector<Attribute> Attributes;
+
+			std::vector<ParseError> Errors;
 		};
 
 		friend ShaderData ParseShader(const char* FileName);
