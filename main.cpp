@@ -10,6 +10,8 @@
 
 #include <Input/EventSystem.h>
 
+#include <Graphics/Vulkan/InstanceVulkan.h>
+
 using namespace Columbus;
 
 #include <Lib/imgui/imgui.h>
@@ -38,6 +40,10 @@ int main(int argc, char** argv)
 	AudioListener Listener;
 	Camera camera;
 	Renderer MainRender;
+
+	// Veeeeery experimental
+	GAPIVulkan vk;
+	vk._test();
 
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
