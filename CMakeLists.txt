@@ -72,5 +72,5 @@ add_custom_target(builtin_shaders DEPENDS ${builtin_shaders_files})
 add_dependencies(${TARGET} builtin_shaders)
 
 target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
-	LinearMath BulletCollision BulletDynamics pthread zstd)
+	LinearMath BulletCollision BulletDynamics pthread zstd vulkan)
 target_link_libraries(${TARGET} imgui)
