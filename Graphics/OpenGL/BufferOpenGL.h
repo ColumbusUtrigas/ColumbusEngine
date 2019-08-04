@@ -9,7 +9,8 @@ namespace Columbus
 	enum class BufferType
 	{
 		Array,
-		Index
+		Index,
+		Uniform
 	};
 
 	enum class BufferMapAccess
@@ -73,11 +74,14 @@ namespace Columbus
 		void Create(BufferType NewType, const BufferDesc& Desc);
 		void CreateArray(const BufferDesc& Desc);
 		void CreateIndex(const BufferDesc& Desc);
+		void CreateUniform(const BufferDesc& Desc);
 
 		void Load(const void* Data);
 		void SubLoad(const void* Data, uint32 SubdataSize, uint32 Offset);
 
 		void Bind() const;
+		void BindBase(uint32 Index) const;
+		void BindRange(uint32 Index, uint32 Offset, uint32 Size) const;
 		void Unbind() const;
 
 		void  Map(void*& Dst, BufferMapAccess Access) const;

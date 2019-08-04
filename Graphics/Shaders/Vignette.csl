@@ -1,18 +1,22 @@
 R"(
 #shader vertex = screen_space
 #shader pixel
-#uniform float3 Color
-#uniform float2 Center
-#uniform float Intensity
-#uniform float Smoothness
-#uniform float Radius
+
+layout(std140) uniform ib_Data
+{
+	float3 u_Color;
+	float u_Intensity;
+	float2 u_Center;
+	float u_Smoothness;
+	float u_Radius;
+};
 
 in float2 var_UV;
 
 void main(void)
 {
-	float Diff = Radius - distance(var_UV, Center);
-	float Value = smoothstep(-Smoothness, Smoothness, Diff);
-	RT0 = float4(Color, (1.0 - saturate(Value)) * Intensity);
+	float Diff = u_Radius - distance(var_UV, u_Center);
+	float Value = smoothstep(-u_Smoothness, u_Smoothness, Diff);
+	RT0 = float4(u_Color, (1.0 - saturate(Value)) * u_Intensity);
 }
 )"

@@ -7,6 +7,7 @@
 #include <Math/Frustum.h>
 #include <GL/glew.h>
 #include <algorithm>
+#include <cstddef>
 
 #include <Profiling/Profiling.h>
 
@@ -40,22 +41,13 @@ namespace Columbus
 		Base.ColorTexturesMipmaps[1] = false;
 		Base.DepthTextureEnablement = true;
 
-		Post1.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
-		Post1.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
-		Post2.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
-		Post2.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
+		for (auto& post : Post)
+		{
+			post.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
+			post.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
+		}
 
 		Final.ColorTexturesEnablement[0] = true;
-
-		Eyes[0].ColorTexturesEnablement[0] = true;
-		Eyes[0].ColorTexturesFormats[0] = TextureFormat::RGBA32F;
-
-		Eyes[1].ColorTexturesEnablement[0] = true;
-		Eyes[1].ColorTexturesFormats[0] = TextureFormat::RGBA32F;
-
-		Eyes[0].Bind({0}, {0}, {1});
-		Eyes[1].Bind({0}, {0}, {1});
-		Eyes[0].Unbind();
 	}
 
 	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
@@ -356,78 +348,6 @@ namespace Columbus
 		}
 	}
 
-	void Renderer::RenderBloom()
-	{
-		PROFILE_GPU(ProfileModuleGPU::BloomStage);
-
-		auto BloomBrightShader = gDevice->GetDefaultShaders()->BloomBright;
-		auto Blur = gDevice->GetDefaultShaders()->GaussBlur;
-		auto Bloom = gDevice->GetDefaultShaders()->Bloom;
-
-		static int BrightShaderTexture = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
-		static int BrightShaderTreshold = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("Treshold");
-
-		static int BloomBlurTexture = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("BaseTexture");
-		static int BloomBlurHorizontal = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("Horizontal");
-		static int BloomBlurRadius = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("Radius");
-
-		static int BloomFinalPassBaseTexture = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("BaseTexture");
-		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Blur");
-		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Intensity");
-
-		// Bloom bright pass
-		Post1.ColorTexturesEnablement[0] = true;
-		Post1.Bind({}, {0}, ContextSize);
-
-		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
-		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTreshold, BloomTreshold);
-		Quad.Render();
-
-		iVector2 Resolution;
-
-		switch (BloomResolution)
-		{
-		case BloomResolutionType::Quad: Resolution = ContextSize / 2; break;
-		case BloomResolutionType::Half: Resolution = iVector2(Vector2(ContextSize) / sqrtf(2.0)); break;
-		case BloomResolutionType::Full: Resolution = ContextSize; break;
-		}
-
-		if (Resolution.X == 0) Resolution.X = 1;
-		if (Resolution.Y == 0) Resolution.Y = 1;
-
-		// Blur pass
-		((ShaderProgramOpenGL*)Blur)->Bind();
-		((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurRadius, BloomRadius);
-
-		for (int i = 0; i < BloomIterations; i++)
-		{			
-			Post2.ColorTexturesEnablement[0] = true;
-			Post2.Bind({}, { 0 }, Resolution);
-
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Post1.ColorTextures[0], 0);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 1);
-			Quad.Render();
-
-			Post1.ColorTexturesEnablement[0] = true;
-			Post1.Bind({}, { 0 }, Resolution);
-
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Post2.ColorTextures[0], 0);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 0);
-			Quad.Render();
-		}
-
-		// Bloom final
-		Post2.ColorTexturesEnablement[0] = true;
-		Post2.Bind({}, {}, ContextSize);
-
-		((ShaderProgramOpenGL*)Bloom)->Bind();
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)Post1.ColorTextures[0], 1);
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
-		Quad.Render();
-	}
-
 	void Renderer::RenderIcons()
 	{
 		auto Icon = gDevice->GetDefaultShaders()->Icon;
@@ -504,42 +424,76 @@ namespace Columbus
 
 	void Renderer::Render()
 	{
+		struct _UBO_Data
+		{
+			struct
+			{
+				float min, max;
+				float speedUp, speedDown;
+				float deltaTime;
+				float pad[59]; // because nvidia requires 256-byte alignment
+			} autoExposure;
+
+			struct
+			{
+				float exposure, gamma;
+				int type;
+				int ae_enable;
+				float pad[60];
+			} tonemap;
+
+			struct
+			{
+				Vector3 color;
+				float intensity;
+				Vector2 center;
+				float smoothness;
+				float radius;
+				float pad[56];
+			} vignette;
+		} uboData;
+
+		uboData.autoExposure.min = AutoExposure.Min;
+		uboData.autoExposure.max = AutoExposure.Max;
+		uboData.autoExposure.speedUp = AutoExposure.SpeedUp;
+		uboData.autoExposure.speedDown = AutoExposure.SpeedDown;
+		uboData.autoExposure.deltaTime = DeltaTime;
+
+		uboData.tonemap.exposure = Exposure;
+		uboData.tonemap.gamma = Gamma;
+		uboData.tonemap.type = (int)Tonemapping;
+		uboData.tonemap.ae_enable = AutoExposure.Enabled;
+
+		uboData.vignette.color = Vignette.Color;
+		uboData.vignette.intensity = Vignette.Intensity;
+		uboData.vignette.center = Vignette.Center;
+		uboData.vignette.smoothness = Vignette.Smoothness;
+		uboData.vignette.radius = Vignette.Radius;
+
+		static BufferOpenGL UBO(BufferType::Uniform, {
+			sizeof(uboData),
+			BufferUsage::Write,
+			BufferCpuAccess::Stream
+		});
+
+		UBO.Load(&uboData);
+
 		auto ScreenSpaceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ScreenSpace;
-		auto AutoExposureShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->AutoExposure;
 		auto TonemapShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Tonemap;
 		auto MSAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ResolveMSAA;
 		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
-		auto VignetteShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Vignette;
 		auto EditorToolsShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->EditorTools;
 
 		static int ScreenSpaceTexture = ScreenSpaceShader->GetFastUniform("BaseTexture");
 
-		static int AutoExposureTexture = AutoExposureShader->GetFastUniform("BaseTexture");
-		static int AutoExposurePrevious = AutoExposureShader->GetFastUniform("Previous");
-		static int AutoExposureMin = AutoExposureShader->GetFastUniform("Min");
-		static int AutoExposureMax = AutoExposureShader->GetFastUniform("Max");
-		static int AutoExposureSpeedUp = AutoExposureShader->GetFastUniform("SpeedUp");
-		static int AutoExposureSpeedDown = AutoExposureShader->GetFastUniform("SpeedDown");
-		static int AutoExposureDeltaTime = AutoExposureShader->GetFastUniform("DeltaTime");
-
 		static int TonemapBaseTexture = TonemapShader->GetFastUniform("u_BaseTexture");
-		static int TonemapGamma = TonemapShader->GetFastUniform("u_Gamma");
-		static int TonemapExposure = TonemapShader->GetFastUniform("u_Exposure");
-		static int TonemapType = TonemapShader->GetFastUniform("u_Type");
 		static int TonemapAutoExposureTexture = TonemapShader->GetFastUniform("u_AETexture");
-		static int TonemapAutoExposureEnable = TonemapShader->GetFastUniform("u_AEEnable");
 
 		static int MSAABaseTexture = MSAAShader->GetFastUniform("BaseTexture");
 		static int MSAASamples = MSAAShader->GetFastUniform("Samples");
 
 		static int FXAABaseTexture = FXAAShader->GetFastUniform("BaseTexture");
 		static int FXAAResolution  = FXAAShader->GetFastUniform("Resolution");
-
-		static int VignetteColorID = VignetteShader->GetFastUniform("Color");
-		static int VignetteCenterID = VignetteShader->GetFastUniform("Center");
-		static int VignetteIntensityID = VignetteShader->GetFastUniform("Intensity");
-		static int VignetteSmoothnessID = VignetteShader->GetFastUniform("Smoothness");
-		static int VignetteRadiusID = VignetteShader->GetFastUniform("Radius");
 
 		static int EditorToolsViewProjection = EditorToolsShader->GetFastUniform("ViewProjection");
 		static int EditorToolsColor = EditorToolsShader->GetFastUniform("Color");
@@ -634,58 +588,22 @@ namespace Columbus
 		Base.ColorTexturesMipmaps[0] = true;
 
 		// !!!!!!!!!!!
-		if (EyeAdaptationEnable)
+		if (AutoExposure.Enabled)
 		{
 			Base.Mipmaps();
 		}
-
-		static bool EyeAdaptationDirty = false;
 
 		State.SetBlending(false);
 		State.SetDepthWriting(false);
 		State.SetCulling(Material::Cull::No);
 
-		if (EyeAdaptationEnable)
-		{
-			int ae_prev = CurrentEye == 0 ? 1 : 0;
-
-			if (!EyeAdaptationDirty)
-			{
-				// Fill previous eye with exposure
-				Eyes[ae_prev].Bind({Exposure}, {0}, {1});
-				EyeAdaptationDirty = true;
-			}
-
-			Eyes[CurrentEye].Bind({0}, {0}, {1});
-
-			int Count = floor(log2(Math::Max(ContextSize.X, ContextSize.Y)));
-
-			Base.ColorTextures[0]->SetMipmapLevel(Count);
-			AutoExposureShader->Bind();
-			AutoExposureShader->SetUniform(AutoExposureTexture, (TextureOpenGL*)Base.ColorTextures[0], 0);
-			AutoExposureShader->SetUniform(AutoExposurePrevious, (TextureOpenGL*)Eyes[ae_prev].ColorTextures[0], 1);
-			AutoExposureShader->SetUniform(AutoExposureMin, EyeAdaptationMin);
-			AutoExposureShader->SetUniform(AutoExposureMax, EyeAdaptationMax);
-			AutoExposureShader->SetUniform(AutoExposureSpeedUp, EyeAdaptationSpeedUp);
-			AutoExposureShader->SetUniform(AutoExposureSpeedDown, EyeAdaptationSpeedDown);
-			AutoExposureShader->SetUniform(AutoExposureDeltaTime, DeltaTime);
-
-			Quad.Render();
-			Base.ColorTextures[0]->SetMipmapLevel(0);
-
-			CurrentEye = CurrentEye == 0 ? 1 : 0;
-		} else
-		{
-			EyeAdaptationDirty = false;
-		}
-
 		Texture* FinalTex = Base.ColorTextures[0];
 
-		if (BloomEnable)
-		{
-			RenderBloom();
-			FinalTex = Post2.ColorTextures[0];
-		}
+		auto autoExposureTexture = AutoExposure.Draw(Exposure,
+			Base.ColorTextures[0], ContextSize,
+			UBO, offsetof(_UBO_Data, autoExposure), sizeof(uboData.autoExposure));
+
+		Bloom.Draw(FinalTex, ContextSize, Post);
 
 		// Final stage
 		{
@@ -694,19 +612,16 @@ namespace Columbus
 			Final.Bind({}, {}, ContextSize);
 
 			TonemapShader->Bind();
-			TonemapShader->SetUniform(TonemapType, (int)Tonemapping);
 			TonemapShader->SetUniform(TonemapBaseTexture, (TextureOpenGL*)FinalTex, 0);
-			TonemapShader->SetUniform(TonemapExposure, Exposure);
-			TonemapShader->SetUniform(TonemapAutoExposureTexture, ((TextureOpenGL*)Eyes[CurrentEye].ColorTextures[0]), 1);
-			TonemapShader->SetUniform(TonemapAutoExposureEnable, (int)EyeAdaptationEnable);
-			TonemapShader->SetUniform(TonemapGamma, Gamma);
+			TonemapShader->SetUniform(TonemapAutoExposureTexture, (TextureOpenGL*)autoExposureTexture, 1);
+			UBO.BindRange(0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
 			Quad.Render();
 			TonemapShader->Unbind();
 
 			if (IsFXAA)
 			{
-				Post1.ColorTexturesEnablement[0] = true;
-				Post1.Bind({}, {}, ContextSize);
+				Post[0].ColorTexturesEnablement[0] = true;
+				Post[0].Bind({}, {}, ContextSize);
 
 				FXAAShader->Bind();
 				FXAAShader->SetUniform(FXAABaseTexture, (TextureOpenGL*)Final.ColorTextures[0], 0);
@@ -716,7 +631,7 @@ namespace Columbus
 				Final.FB->Bind();
 
 				ScreenSpaceShader->Bind();
-				ScreenSpaceShader->SetUniform(ScreenSpaceTexture, (TextureOpenGL*)Post1.ColorTextures[0], 0);
+				ScreenSpaceShader->SetUniform(ScreenSpaceTexture, (TextureOpenGL*)Post[0].ColorTextures[0], 0);
 				Quad.Render();
 			}
 
@@ -725,17 +640,10 @@ namespace Columbus
 				RenderIcons();
 			}
 
-			if (VignetteEnable)
+			if (Vignette.Enabled)
 			{
 				State.SetBlending(true);
-				VignetteShader->Bind();
-				VignetteShader->SetUniform(VignetteColorID, VignetteColor);
-				VignetteShader->SetUniform(VignetteCenterID, VignetteCenter);
-				VignetteShader->SetUniform(VignetteIntensityID, VignetteIntensity);
-				VignetteShader->SetUniform(VignetteSmoothnessID, VignetteSmoothness);
-				VignetteShader->SetUniform(VignetteRadiusID, VignetteRadius);
-				Quad.Render();
-				VignetteShader->Unbind();
+				Vignette.Draw(UBO, offsetof(_UBO_Data, vignette), sizeof(uboData.vignette));
 			}
 
 			Final.Unbind();

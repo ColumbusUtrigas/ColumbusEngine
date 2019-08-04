@@ -13,8 +13,14 @@
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/ParticlesRenderer.h>
 
+#include <Graphics/Postprocess/AutoExposure.h>
+#include <Graphics/Postprocess/Bloom.h>
+#include <Graphics/Postprocess/Vignette.h>
+
 #include <Editor/Grid.h>
 #include <Editor/Gizmo.h>
+
+#include <array>
 
 namespace Columbus
 {
@@ -45,13 +51,6 @@ namespace Columbus
 		MSAA_8X,
 		MSAA_16X,
 		MSAA_32X
-	};
-
-	enum class BloomResolutionType
-	{
-		Quad = 0,
-		Half,
-		Full
 	};
 
 	class Renderer
@@ -101,8 +100,7 @@ namespace Columbus
 		Scene* Scn = nullptr;
 
 		PostEffect Base, BaseMSAA;
-		PostEffect Post1, Post2;
-		PostEffect Eyes[2]; int CurrentEye = 0;
+		std::array<PostEffect, 2> Post;
 		PostEffect Final;
 
 		ScreenQuad Quad;
@@ -127,29 +125,12 @@ namespace Columbus
 
 		AntialiasingType Antialiasing = AntialiasingType::No;
 
-		bool BloomEnable = false;
-		float BloomTreshold = 3.0f;
-		float BloomIntensity = 0.1f;
-		float BloomRadius = 1.0f;
-		int BloomIterations = 2;
-		BloomResolutionType BloomResolution = BloomResolutionType::Quad;
-
-		bool VignetteEnable = false;
-		Vector3 VignetteColor;
-		Vector2 VignetteCenter = Vector2(0.5f);
-		float VignetteIntensity = 1.0f;
-		float VignetteSmoothness = 0.2f;
-		float VignetteRadius = 0.6f;
-
-		bool EyeAdaptationEnable = false;
-		float EyeAdaptationMin = 0.1f;
-		float EyeAdaptationMax = 1.0f;
-		float EyeAdaptationSpeedUp = 1.0f;
-		float EyeAdaptationSpeedDown = 1.0f;
+		PostprocessAutoExposure AutoExposure{Quad};
+		PostprocessBloom Bloom{Quad};
+		PostprocessVignette Vignette{Quad};
 	private:
 		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
 
-		void RenderBloom();
 		void RenderIcons();
 	public:
 		Renderer();
