@@ -82,8 +82,9 @@ namespace Columbus
 
 		switch (Type)
 		{
-		case BufferType::Array: CreateArray(Desc); break;
-		case BufferType::Index: CreateIndex(Desc); break;
+		case BufferType::Array:   CreateArray(Desc);   break;
+		case BufferType::Index:   CreateIndex(Desc);   break;
+		case BufferType::Uniform: CreateUniform(Desc); break;
 		}
 	}
 
@@ -105,6 +106,15 @@ namespace Columbus
 		Load(nullptr);
 	}
 
+	void BufferOpenGL::CreateUniform(const BufferDesc& Desc)
+	{
+		Size = Desc.Size;
+		Usage = DecodeUsage(Desc.Usage, Desc.CpuAccess);
+		Target = GL_UNIFORM_BUFFER;
+		Type = BufferType::Uniform;
+		Load(nullptr);
+	}
+
 	void BufferOpenGL::Load(const void* Data)
 	{
 		glBindBuffer(Target, ID);
@@ -122,6 +132,16 @@ namespace Columbus
 	void BufferOpenGL::Bind() const
 	{
 		glBindBuffer(Target, ID);
+	}
+
+	void BufferOpenGL::BindBase(uint32 Index) const
+	{
+		glBindBufferBase(Target, Index, ID);
+	}
+
+	void BufferOpenGL::BindRange(uint32 Index, uint32 Offset, uint32 Size) const
+	{
+		glBindBufferRange(Target, Index, ID, Offset, Size);
 	}
 
 	void BufferOpenGL::Unbind() const

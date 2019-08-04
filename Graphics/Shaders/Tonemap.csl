@@ -3,10 +3,14 @@ R"(
 #shader pixel
 #uniform Texture2D u_BaseTexture
 #uniform Texture2D u_AETexture
-#uniform float u_Exposure
-#uniform float u_Gamma
-#uniform int u_Type
-#uniform int u_AEEnable
+
+layout(std140) uniform _Data
+{
+	float u_Exposure;
+	float u_Gamma;
+	int u_Type;
+	int u_AEEnable;
+};
 
 in float2 var_UV;
 

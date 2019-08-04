@@ -3,11 +3,13 @@ R"(
 #shader pixel
 #uniform Texture2D BaseTexture
 #uniform Texture2D Previous
-#uniform float Min
-#uniform float Max
-#uniform float SpeedUp
-#uniform float SpeedDown
-#uniform float DeltaTime
+
+layout(std140) uniform _Data
+{
+	float Min, Max;
+	float SpeedUp, SpeedDown;
+	float DeltaTime;
+};
 
 in float2 var_UV;
 
