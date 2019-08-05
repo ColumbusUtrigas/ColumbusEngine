@@ -478,26 +478,13 @@ namespace Columbus
 
 		UBO.Load(&uboData);
 
-		auto ScreenSpaceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ScreenSpace;
-		auto TonemapShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Tonemap;
-		auto MSAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->ResolveMSAA;
-		auto FXAAShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->FXAA;
-		auto EditorToolsShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->EditorTools;
+		auto defaultShaders = gDevice->GetDefaultShaders();
 
-		static int ScreenSpaceTexture = ScreenSpaceShader->GetFastUniform("BaseTexture");
-
-		static int TonemapBaseTexture = TonemapShader->GetFastUniform("u_BaseTexture");
-		static int TonemapAutoExposureTexture = TonemapShader->GetFastUniform("u_AETexture");
-
-		static int MSAABaseTexture = MSAAShader->GetFastUniform("BaseTexture");
-		static int MSAASamples = MSAAShader->GetFastUniform("Samples");
-
-		static int FXAABaseTexture = FXAAShader->GetFastUniform("BaseTexture");
-		static int FXAAResolution  = FXAAShader->GetFastUniform("Resolution");
-
-		static int EditorToolsViewProjection = EditorToolsShader->GetFastUniform("ViewProjection");
-		static int EditorToolsColor = EditorToolsShader->GetFastUniform("Color");
-		static int EditorToolsCameraPos = EditorToolsShader->GetFastUniform("CameraPos");
+		auto ScreenSpaceShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->ScreenSpace);
+		auto TonemapShader     = static_cast<ShaderProgramOpenGL*>(defaultShaders->Tonemap);
+		auto MSAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->ResolveMSAA);
+		auto FXAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->FXAA);
+		auto EditorToolsShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->EditorTools);
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;
@@ -552,9 +539,9 @@ namespace Columbus
 			State.SetDepthTesting(Material::DepthTest::LEqual);
 
 			EditorToolsShader->Bind();
-			EditorToolsShader->SetUniform(EditorToolsViewProjection, false, MainCamera.GetViewProjection());
-			EditorToolsShader->SetUniform(EditorToolsColor, Vector4(Vector3(0.5f), 1.0f));
-			EditorToolsShader->SetUniform(EditorToolsCameraPos, MainCamera.Pos);
+			EditorToolsShader->SetUniform("ViewProjection", false, MainCamera.GetViewProjection());
+			EditorToolsShader->SetUniform("Color", Vector4(Vector3(0.5f), 1.0f));
+			EditorToolsShader->SetUniform("CameraPos", MainCamera.Pos);
 			_Grid.Draw();
 			EditorToolsShader->Unbind();
 		}
@@ -569,8 +556,8 @@ namespace Columbus
 
 			// Resolve RT0 (HDR Color)
 			MSAAShader->Bind();
-			MSAAShader->SetUniform(MSAABaseTexture, (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
-			MSAAShader->SetUniform(MSAASamples, (int)BaseMSAA.Multisampling);
+			MSAAShader->SetUniform("BaseTexture", (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
+			MSAAShader->SetUniform("Samples", (int)BaseMSAA.Multisampling);
 			Quad.Render();
 			MSAAShader->Unbind();
 
@@ -612,8 +599,8 @@ namespace Columbus
 			Final.Bind({}, {}, ContextSize);
 
 			TonemapShader->Bind();
-			TonemapShader->SetUniform(TonemapBaseTexture, (TextureOpenGL*)FinalTex, 0);
-			TonemapShader->SetUniform(TonemapAutoExposureTexture, (TextureOpenGL*)autoExposureTexture, 1);
+			TonemapShader->SetUniform("u_BaseTexture", (TextureOpenGL*)FinalTex, 0);
+			TonemapShader->SetUniform("u_AETexture", (TextureOpenGL*)autoExposureTexture, 1);
 			UBO.BindRange(0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
 			Quad.Render();
 			TonemapShader->Unbind();
@@ -624,14 +611,14 @@ namespace Columbus
 				Post[0].Bind({}, {}, ContextSize);
 
 				FXAAShader->Bind();
-				FXAAShader->SetUniform(FXAABaseTexture, (TextureOpenGL*)Final.ColorTextures[0], 0);
-				FXAAShader->SetUniform(FXAAResolution, (Vector2)ContextSize);
+				FXAAShader->SetUniform("BaseTexture", (TextureOpenGL*)Final.ColorTextures[0], 0);
+				FXAAShader->SetUniform("Resolution", (Vector2)ContextSize);
 				Quad.Render();
 
 				Final.FB->Bind();
 
 				ScreenSpaceShader->Bind();
-				ScreenSpaceShader->SetUniform(ScreenSpaceTexture, (TextureOpenGL*)Post[0].ColorTextures[0], 0);
+				ScreenSpaceShader->SetUniform("BaseTexture", (TextureOpenGL*)Post[0].ColorTextures[0], 0);
 				Quad.Render();
 			}
 

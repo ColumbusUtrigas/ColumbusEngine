@@ -59,6 +59,8 @@ namespace Columbus
 		int32 FastUniforms[MaxUniforms];
 
 		uint32 ID = 0;
+	private:
+		uint32 _GetUniformID(const std::string& Name);
 	public:
 		void* RenderData = nullptr;
 	public:
@@ -67,15 +69,27 @@ namespace Columbus
 		void Bind() const;
 		void Unbind() const;
 
-		uint32 _GetID() const { return ID; }
+		int32 _GetID() const { return ID; }
 
 		bool LoadFromMemory(const char* Source, const char* FilePath = "") override;
 		bool Load(const char* FileName) override;
 		bool Load(StandartProgram Program) override;
 		bool Compile() override;
 
-		bool AddUniform(const char* Name);
-		int GetFastUniform(const char* Name) const;
+		bool AddUniform(const std::string& Name);
+		int GetFastUniform(const std::string& Name) const;
+
+		bool SetUniform(const std::string& Name, int Value) const;
+		bool SetUniform(const std::string& Name, float Value) const;
+		bool SetUniform(const std::string& Name, const Vector2& Value) const;
+		bool SetUniform(const std::string& Name, const Vector3& Value) const;
+		bool SetUniform(const std::string& Name, const Vector4& Value) const;
+		bool SetUniform(const std::string& Name, uint32 Count, const float* Value) const;
+		bool SetUniform(const std::string& Name, uint32 Count, const Vector2* Value) const;
+		bool SetUniform(const std::string& Name, uint32 Count, const Vector3* Value) const;
+		bool SetUniform(const std::string& Name, uint32 Count, const Vector4* Value) const;
+		bool SetUniform(const std::string& Name, bool Transpose, const Matrix& Mat) const;
+		bool SetUniform(const std::string& Name, Texture* Tex, uint32 Sampler) const;
 
 		void SetUniform(int FastID, int Value) const;
 		void SetUniform(int FastID, float Value) const;
