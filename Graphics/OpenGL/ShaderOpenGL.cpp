@@ -499,9 +499,9 @@ void main(void)
 		return true;
 	}
 
-	bool ShaderProgramOpenGL::AddUniform(const char* Name)
+	bool ShaderProgramOpenGL::AddUniform(const std::string& Name)
 	{
-		int32 Value = glGetUniformLocation(ID, Name);
+		int32 Value = glGetUniformLocation(ID, Name.c_str());
 
 		if (Value != -1)
 		{
@@ -513,10 +513,77 @@ void main(void)
 		return false;
 	}
 
-	int32 ShaderProgramOpenGL::GetFastUniform(const char* Name) const
+	int32 ShaderProgramOpenGL::GetFastUniform(const std::string& Name) const
 	{
 		auto Fast = FastUniformsMap.find(Name);
 		return Fast != FastUniformsMap.end() ? Fast->second : -1;
+	}
+
+	#define _SET_UNIFORM(func) \
+		auto id = GetFastUniform(Name); \
+		COLUMBUS_ASSERT_MESSAGE(id != -1, ("Invalid uniform: " + Name \
+			+ "\n" + "in shader: " + Path).c_str()); \
+		if (id != -1) \
+		{ \
+			func; \
+			return true; \
+		} \
+		return false; \
+
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, int Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, float Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, const Vector2& Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, const Vector3& Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, const Vector4& Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const float* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const Vector2* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const Vector3* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const Vector4* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, bool Transpose, const Matrix& Mat) const
+	{
+		_SET_UNIFORM(SetUniform(id, Transpose, Mat));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, Texture* Tex, uint32 Sampler) const
+	{
+		_SET_UNIFORM(SetUniform(id, static_cast<TextureOpenGL*>(Tex), Sampler));
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, int Value) const

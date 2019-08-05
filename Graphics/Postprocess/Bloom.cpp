@@ -17,24 +17,13 @@ namespace Columbus
 			auto blurShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->GaussBlur;
 			auto bloomShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Bloom;
 
-			static int brightParamTexture = brightShader->GetFastUniform("BaseTexture");
-			static int brightParamTreshold = brightShader->GetFastUniform("Treshold");
-
-			static int blurParamTexture = blurShader->GetFastUniform("BaseTexture");
-			static int blurParamHorizontal = blurShader->GetFastUniform("Horizontal");
-			static int blurParamRadius = blurShader->GetFastUniform("Radius");
-
-			static int bloomParamTexture = bloomShader->GetFastUniform("BaseTexture");
-			static int bloomParamBlur = bloomShader->GetFastUniform("Blur");
-			static int bloomParamIntensity = bloomShader->GetFastUniform("Intensity");
-
 			// bloom bright pass
 			Post[0].ColorTexturesEnablement[0] = true;
 			Post[0].Bind({}, {0}, FrameSize);
 
 			brightShader->Bind();
-			brightShader->SetUniform(brightParamTexture, (TextureOpenGL*)Frame, 0);
-			brightShader->SetUniform(brightParamTreshold, Treshold);
+			brightShader->SetUniform("BaseTexture", (TextureOpenGL*)Frame, 0);
+			brightShader->SetUniform("Treshold", Treshold);
 			_Quad.Render();
 
 			iVector2 resolution;
@@ -51,22 +40,22 @@ namespace Columbus
 			
 			// bloom blur pass
 			blurShader->Bind();
-			blurShader->SetUniform(blurParamRadius, Radius);
+			blurShader->SetUniform("Radius", Radius);
 
 			for (int i = 0; i < Iterations; i++)
 			{			
 				Post[1].ColorTexturesEnablement[0] = true;
 				Post[1].Bind({}, { 0 }, resolution);
 
-				blurShader->SetUniform(blurParamTexture, (TextureOpenGL*)Post[0].ColorTextures[0], 0);
-				blurShader->SetUniform(blurParamHorizontal, 1);
+				blurShader->SetUniform("BaseTexture", (TextureOpenGL*)Post[0].ColorTextures[0], 0);
+				blurShader->SetUniform("Horizontal", 1);
 				_Quad.Render();
 
 				Post[0].ColorTexturesEnablement[0] = true;
 				Post[0].Bind({}, { 0 }, resolution);
 
-				blurShader->SetUniform(blurParamTexture, (TextureOpenGL*)Post[1].ColorTextures[0], 0);
-				blurShader->SetUniform(blurParamHorizontal, 0);
+				blurShader->SetUniform("BaseTexture", (TextureOpenGL*)Post[1].ColorTextures[0], 0);
+				blurShader->SetUniform("Horizontal", 0);
 				_Quad.Render();
 			}
 
@@ -75,9 +64,9 @@ namespace Columbus
 			Post[1].Bind({}, {}, FrameSize);
 
 			bloomShader->Bind();
-			bloomShader->SetUniform(bloomParamTexture, (TextureOpenGL*)Frame, 0);
-			bloomShader->SetUniform(bloomParamBlur, (TextureOpenGL*)Post[0].ColorTextures[0], 1);
-			bloomShader->SetUniform(bloomParamIntensity, Intensity);
+			bloomShader->SetUniform("BaseTexture", (TextureOpenGL*)Frame, 0);
+			bloomShader->SetUniform("Blur", (TextureOpenGL*)Post[0].ColorTextures[0], 1);
+			bloomShader->SetUniform("Intensity", Intensity);
 			_Quad.Render();
 
 			// output

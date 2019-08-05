@@ -26,9 +26,6 @@ namespace Columbus
 			auto prev = (_CurrentBuf + (_BufSize - 1)) % _BufSize;
 			auto shader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->AutoExposure;
 
-			static int paramTexture = shader->GetFastUniform("BaseTexture");
-			static int paramPrevious = shader->GetFastUniform("Previous");
-
 			if (_FirstDraw)
 			{
 				// fill previous buffer with Exposure
@@ -41,8 +38,8 @@ namespace Columbus
 
 			_Bufs[_CurrentBuf].Bind({0}, {0}, {1});
 			shader->Bind();
-			shader->SetUniform(paramTexture, (TextureOpenGL*)Frame, 0);
-			shader->SetUniform(paramPrevious, (TextureOpenGL*)_Bufs[prev].ColorTextures[0], 1);
+			shader->SetUniform("BaseTexture", (TextureOpenGL*)Frame, 0);
+			shader->SetUniform("Previous", (TextureOpenGL*)_Bufs[prev].ColorTextures[0], 1);
 			UBO.BindRange(0, Offset, Size);
 			_Quad.Render();
 
