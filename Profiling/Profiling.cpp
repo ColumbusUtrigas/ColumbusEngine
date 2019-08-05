@@ -47,14 +47,12 @@ namespace Columbus
 
 	ProfileMarkerGPU::ProfileMarkerGPU(ProfileModuleGPU Module) : Module(Module)
 	{
-		Start = 0;
-		//glGetInteger64v(GL_TIMESTAMP, &Start);
+		glGetInteger64v(GL_TIMESTAMP, &Start);
 	}
 
 	ProfileMarkerGPU::~ProfileMarkerGPU()
 	{
-		End = 0;
-		//glGetInteger64v(GL_TIMESTAMP, &End);
+		glGetInteger64v(GL_TIMESTAMP, &End);
 		double Time = (End - Start) * 0.000001;
 
 		switch (Module)
