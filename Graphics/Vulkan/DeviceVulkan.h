@@ -12,6 +12,20 @@
 namespace Columbus
 {
 
+	struct BindingVulkan
+	{
+		VkDescriptorSetLayoutBinding _Binding;
+
+		BindingVulkan(uint32_t Binding, VkDescriptorType Type, uint32_t Count)
+		{
+			_Binding.binding = Binding;
+			_Binding.descriptorType = Type;
+			_Binding.descriptorCount = Count;
+			_Binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT; // TODO
+			_Binding.pImmutableSamplers = nullptr;
+		}
+	};
+
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
 	{
@@ -134,21 +148,21 @@ namespace Columbus
 			return result;
 		}
 
-		VkDescriptorSetLayout CreateDescriptorSetLayout()
+		VkDescriptorSetLayout CreateDescriptorSetLayout(const BindingVulkan& Binding)
 		{
-			VkDescriptorSetLayoutBinding binding;
+			/*VkDescriptorSetLayoutBinding binding;
 			binding.binding = 0;
 			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			binding.descriptorCount = 1;
 			binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-			binding.pImmutableSamplers = nullptr;
+			binding.pImmutableSamplers = nullptr;*/
 
 			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
 			descriptorSetLayoutInfo.sType;
 			descriptorSetLayoutInfo.pNext = nullptr;
 			descriptorSetLayoutInfo.flags = 0;
 			descriptorSetLayoutInfo.bindingCount = 1;
-			descriptorSetLayoutInfo.pBindings = &binding;
+			descriptorSetLayoutInfo.pBindings = &Binding._Binding;
 
 			VkDescriptorSetLayout descriptorSetLayout;
 			if (vkCreateDescriptorSetLayout(_Device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)

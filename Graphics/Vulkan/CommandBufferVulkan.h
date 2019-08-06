@@ -17,8 +17,9 @@ namespace Columbus
 		void Begin();
 		void End();
 
-		//void BindDescriptorSets();
-		//void BindPipeline();
+		 // only compute for now
+		void BindDescriptorSet(VkDescriptorSet Set, VkPipelineLayout Layout);
+		void BindPipeline(VkPipeline Pipeline);
 		void Dispatch(uint32 X, uint32 Y, uint32 Z);
 
 		const VkCommandBuffer& _GetHandle() const { return _CmdBuf; }

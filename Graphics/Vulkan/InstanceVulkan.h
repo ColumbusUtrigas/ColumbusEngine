@@ -111,7 +111,7 @@ namespace Columbus
 				if(vk_vkCreateDebugReportCallbackEXT(*_Instance,
 					&debug_callback_info,
 					nullptr,
-					&debug_callback) != VkResult::VK_SUCCESS)
+					&debug_callback) != VK_SUCCESS)
 				{
 					COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan debug callback");
 				}
@@ -141,17 +141,20 @@ namespace Columbus
 
 			printf("Data before: %u\n", cpuBuffer[0]);
 
-			CommandBufferVulkan cmdBuf = _Device->CreateCommandBuffer();
-			VkDescriptorSetLayout setLayout = _Device->CreateDescriptorSetLayout();
+			VkDescriptorSetLayout setLayout = _Device->CreateDescriptorSetLayout({
+				0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1
+			});
 			VkPipelineLayout pipelineLayout = _Device->CreatePipelineLayout(setLayout);
 			VkPipeline pipeline = _Device->CreateComputePipeline(pipelineLayout);
 			VkDescriptorSet set = _Device->CreateDescriptorSet(setLayout);
 
+			CommandBufferVulkan cmdBuf = _Device->CreateCommandBuffer();
+
 			_Device->UpdateDescriptorSet(set, gpuBuffer, sizeof(cpuBuffer));
 
 			cmdBuf.Begin();
-			vkCmdBindDescriptorSets(cmdBuf._GetHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &set, 0, nullptr);
-			vkCmdBindPipeline(cmdBuf._GetHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+			cmdBuf.BindDescriptorSet(set, pipelineLayout);
+			cmdBuf.BindPipeline(pipeline);
 			cmdBuf.Dispatch(1, 1, 1);
 			cmdBuf.End();
 			_Device->Submit(cmdBuf);
