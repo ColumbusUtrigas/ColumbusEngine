@@ -26,6 +26,17 @@ namespace Columbus
 		}
 	}
 
+	void CommandBufferVulkan::BindDescriptorSet(VkDescriptorSet Set, VkPipelineLayout Layout)
+	{
+		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE,
+			Layout, 0, 1, &Set, 0, nullptr);
+	}
+
+	void CommandBufferVulkan::BindPipeline(VkPipeline Pipeline)
+	{
+		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, Pipeline);
+	}
+
 	void CommandBufferVulkan::Dispatch(uint32 X, uint32 Y, uint32 Z)
 	{
 		vkCmdDispatch(_CmdBuf, X, Y, Z);
