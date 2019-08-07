@@ -8,52 +8,21 @@
 namespace Columbus
 {
 
-	static float Vertices[18] =
-	{
-		+1, +1, 0,
-		-1, +1, 0,
-		-1, -1, 0,
-		-1, -1, 0,
-		+1, -1, 0,
-		+1, +1, 0
-	};
-
-	static float Texcoords[12] =
-	{
-		1, 1,
-		0, 1,
-		0, 0,
-		0, 0,
-		1, 0,
-		1, 1
-	};
-
 	static GLuint Particles_VAO = 0;
 
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
 		MaxSize = NewSize;
 
-		delete[] Data;
-		Data = new char[MaxSize * sizeof(Vector4) * 6];
-
 		auto Write = BufferUsage::Write;
-		auto Static = BufferCpuAccess::Static;
 		auto Dynamic = BufferCpuAccess::Dynamic;
 
 		size_t VerticesCount = MaxSize * 6;
 
-		 VerticesBuffer.CreateArray(BufferDesc(MaxSize * sizeof(Vertices),  Write, Static));
-		TexcoordsBuffer.CreateArray(BufferDesc(MaxSize * sizeof(Texcoords), Write, Static));
 		PositionsBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector3), Write, Dynamic));
 		    SizesBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector3), Write, Dynamic));
 		   ColorsBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector4), Write, Dynamic));
 		OtherDataBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector2), Write, Dynamic));
-
-		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Vertices), Vertices, sizeof(Vertices));
-		VerticesBuffer.Load(Data);
-		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Texcoords), Texcoords, sizeof(Texcoords));
-		TexcoordsBuffer.Load(Data);
 
 		PositionsBuffer.Load(nullptr);
 		    SizesBuffer.Load(nullptr);
@@ -139,12 +108,10 @@ namespace Columbus
 
 			glBindVertexArray(Particles_VAO);
 
-			 VerticesBuffer.VertexAttribute<float>(0, 3, false, 0, 0);
-			TexcoordsBuffer.VertexAttribute<float>(1, 2, false, 0, 0);
-			PositionsBuffer.VertexAttribute<float>(2, 3, false, 0, 0);
-			    SizesBuffer.VertexAttribute<float>(3, 3, false, 0, 0);
-			   ColorsBuffer.VertexAttribute<float>(4, 4, false, 0, 0);
-			OtherDataBuffer.VertexAttribute<float>(5, 2, false, 0, 0);
+			PositionsBuffer.VertexAttribute<float>(0, 3, false, 0, 0);
+			    SizesBuffer.VertexAttribute<float>(1, 3, false, 0, 0);
+			   ColorsBuffer.VertexAttribute<float>(2, 4, false, 0, 0);
+			OtherDataBuffer.VertexAttribute<float>(3, 2, false, 0, 0);
 
 			glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
 			glBindVertexArray(0);
@@ -156,8 +123,6 @@ namespace Columbus
 
 	ParticlesRenderer::~ParticlesRenderer()
 	{		
-		delete[] Data;
-
 		glDeleteVertexArrays(1, &Particles_VAO);
 	}
 

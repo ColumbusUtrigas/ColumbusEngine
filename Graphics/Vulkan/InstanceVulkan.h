@@ -142,7 +142,7 @@ namespace Columbus
 			printf("Data before: %u\n", cpuBuffer[0]);
 
 			VkDescriptorSetLayout setLayout = _Device->CreateDescriptorSetLayout({
-				0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1
+				{ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 }
 			});
 			VkPipelineLayout pipelineLayout = _Device->CreatePipelineLayout(setLayout);
 			VkPipeline pipeline = _Device->CreateComputePipeline(pipelineLayout);

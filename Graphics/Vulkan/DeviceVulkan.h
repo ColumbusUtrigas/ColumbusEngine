@@ -24,6 +24,11 @@ namespace Columbus
 			_Binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT; // TODO
 			_Binding.pImmutableSamplers = nullptr;
 		}
+
+		operator VkDescriptorSetLayoutBinding() const
+		{
+			return _Binding;
+		}
 	};
 
 	/**Represents device (GPU) on which Vulkan is executed.*/
@@ -42,8 +47,6 @@ namespace Columbus
 
 		VkCommandPool _CmdPool;
 		VkDescriptorPool _DescriptorPool;
-
-		VkCommandBuffer _CmdBuf;
 	public:
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice) :
 			_PhysicalDevice(PhysicalDevice)
@@ -148,21 +151,16 @@ namespace Columbus
 			return result;
 		}
 
-		VkDescriptorSetLayout CreateDescriptorSetLayout(const BindingVulkan& Binding)
+		VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<BindingVulkan>& Bindings)
 		{
-			/*VkDescriptorSetLayoutBinding binding;
-			binding.binding = 0;
-			binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			binding.descriptorCount = 1;
-			binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-			binding.pImmutableSamplers = nullptr;*/
+			std::vector<VkDescriptorSetLayoutBinding> bindings(Bindings.begin(), Bindings.end());
 
 			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
 			descriptorSetLayoutInfo.sType;
 			descriptorSetLayoutInfo.pNext = nullptr;
 			descriptorSetLayoutInfo.flags = 0;
-			descriptorSetLayoutInfo.bindingCount = 1;
-			descriptorSetLayoutInfo.pBindings = &Binding._Binding;
+			descriptorSetLayoutInfo.bindingCount = bindings.size();
+			descriptorSetLayoutInfo.pBindings = bindings.data();
 
 			VkDescriptorSetLayout descriptorSetLayout;
 			if (vkCreateDescriptorSetLayout(_Device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
@@ -193,11 +191,13 @@ namespace Columbus
 
 		VkPipeline CreateComputePipeline(VkPipelineLayout PipelineLayout)
 		{
+			// read file
 			std::ifstream f("vkCompute.spv");
 			std::vector<char> code;
 			std::copy(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>(),
 				std::back_inserter(code));
 
+			// create shader module
 			VkShaderModuleCreateInfo moduleInfo;
 			moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			moduleInfo.pNext = nullptr;
@@ -211,6 +211,7 @@ namespace Columbus
 				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan shader module");
 			}
 
+			// shader stage info
 			VkPipelineShaderStageCreateInfo stage;
 			stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			stage.pNext = nullptr;
@@ -220,6 +221,7 @@ namespace Columbus
 			stage.pName = "main";
 			stage.pSpecializationInfo = nullptr;
 
+			// create pipeline
 			VkComputePipelineCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 			info.pNext = nullptr;

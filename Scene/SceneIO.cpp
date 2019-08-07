@@ -71,6 +71,8 @@ namespace Columbus
 
 		size_t Counter = 0;
 
+		printf("%zu\n", SaveObjects.size());
+
 		for (const auto& Elem : SaveObjects)
 		{
 			auto& Obj = Objects.Resources[Elem.second];

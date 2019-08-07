@@ -73,6 +73,23 @@ in float3x3 varTBN;
 
 #uniform float uLighting [13 * LIGHT_NUM]
 
+#define MAX_LIGHTS_COUNT 128
+
+struct Light
+{
+	float3 color; float range;
+	float3 pos; float innerCutoff;
+	float3 dir; float outerCutoff;
+	int type;
+};
+
+// TODO: cbuffer abstraction, binding number
+layout(std140) uniform cb_Lighting
+{
+	Light lights[MAX_LIGHTS_COUNT];
+	int count;
+} u_Lights;
+
 float2 _TiledUV;
 float2 _TiledDetailUV;
 
@@ -134,28 +151,23 @@ void Init(void)
 
 float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 {
-	int Offset = id * 13;
-
-	float3 LightColor = float3(uLighting[Offset + 0], uLighting[Offset + 1], uLighting[Offset + 2]);
-	float3 LightPos = float3(uLighting[Offset + 3], uLighting[Offset + 4], uLighting[Offset + 5]);
-	float3 LightDir = float3(uLighting[Offset + 6], uLighting[Offset + 7], uLighting[Offset + 8]);
-	float LightType = uLighting[Offset + 9];
-	float LightRange = uLighting[Offset + 10];
-	float LightInnerCutoff = uLighting[Offset + 11];
-	float LightOuterCutoff = uLighting[Offset + 12];
-
-	if (LightColor == float3(0)) return float3(0);
+	float3 LightPos = u_Lights.lights[id].pos;
+	float3 LightDir = u_Lights.lights[id].dir;
+	int LightType = u_Lights.lights[id].type;
+	float LightRange = u_Lights.lights[id].range;
+	float LightInnerCutoff = u_Lights.lights[id].innerCutoff;
+	float LightOuterCutoff = u_Lights.lights[id].outerCutoff;
 
 	float AO = HasOcclusionMap ? Sample2D(OcclusionMap, _TiledUV).r : 1.0;
 	float Distance = length(LightPos - varPos);
-	float Attenuation = 1.0; if (int(LightType) != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
+	float Attenuation = 1.0; if (LightType != 0) Attenuation = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0); Attenuation *= Attenuation;
 
-	float3 L = normalize(LightPos - varPos); if (int(LightType) == 0) L = normalize(-LightDir);
+	float3 L = normalize(LightPos - varPos); if (LightType == 0) L = normalize(-LightDir);
 	float3 H = normalize(V + L);
 
 	float NdotL = max(0, dot(N, L));
 
-	if (int(LightType) == 2) // spotlight
+	if (LightType == 2) // spotlight
 	{
 		float angle;
 		angle = dot(LightDir, -L);
@@ -175,7 +187,7 @@ float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 
 	float Factor = 1.0 - _Metallic;
 
-	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * LightColor * Attenuation;
+	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation;
 }
 
 float3 Lights(void)
@@ -191,10 +203,10 @@ float3 Lights(void)
 	float3 BRDF = float3(0.0);
 	float3 F = FresnelRoughness(NdotV, F0, _Roughness);
 
-	BRDF += LightCalc(0, F, N, V, NdotV);
-	BRDF += LightCalc(1, F, N, V, NdotV);
-	BRDF += LightCalc(2, F, N, V, NdotV);
-	BRDF += LightCalc(3, F, N, V, NdotV);
+	for (int i = 0; i < u_Lights.count; ++i)
+	{
+		BRDF += LightCalc(i, F, N, V, NdotV);
+	}
 
 	const float MAX_REFLECTION_LOD = 7.0; // TODO
 	float3 prefilteredColor = SampleCubeLod(EnvironmentMap, R,  _Roughness * MAX_REFLECTION_LOD).rgb;
