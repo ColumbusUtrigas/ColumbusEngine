@@ -141,15 +141,9 @@ namespace Columbus
 								Mat.ReflectionMap = Sky->GetIrradianceMap();
 
 								if (Mat.Transparent)
-								{
 									TransparentObjects.emplace_back(Mesh, Counter);
-									CalculateLights(Object->transform.Position, TransparentObjects.back().Lights);
-								}
 								else
-								{
 									OpaqueObjects.emplace_back(Mesh, Counter);
-									CalculateLights(Object->transform.Position, OpaqueObjects.back().Lights);
-								}
 							}
 						}
 					}
@@ -160,7 +154,6 @@ namespace Columbus
 
 						if (Emitter != nullptr)
 						{
-							//TransparentObjects.emplace_back(nullptr, Emitter, Object->transform, Object->material);
 							TransparentObjects.emplace_back(Emitter, Counter);
 						}
 					}
@@ -201,7 +194,6 @@ namespace Columbus
 			if (GO->material == nullptr) continue;
 			Material& Mat = *GO->material;
 			ShaderProgram* CurrentShader = Mat.ShaderProg;
-			std::vector<Light*>& Lights = Scn->Lights;
 				
 			if (CurrentShader != nullptr)
 			{
@@ -210,7 +202,6 @@ namespace Columbus
 				State.SetDepthWriting(Mat.DepthWriting);
 				State.SetShaderProgram(Mat.GetShader());
 				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
-				State.SetLights(Lights, Object.Lights);
 				State.SetMesh(Object.Object);
 
 				PolygonsRendered += Object.Object->Render();
@@ -249,8 +240,6 @@ namespace Columbus
 				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
 				Mesh* CurrentMesh = Object.MeshObject;
 
-				std::vector<Light*>& Lights = Scn->Lights;
-
 				if (Object.MeshObject != nullptr)
 				{
 					if (CurrentShader != nullptr)
@@ -258,7 +247,6 @@ namespace Columbus
 						State.SetDepthTesting(Mat.DepthTesting);
 						State.SetShaderProgram(CurrentShader);
 						State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
-						State.SetLights(Lights, Object.Lights);
 						CurrentMesh->Bind();
 
 						int32 Transparent = CurrentShader->GetFastUniform("Transparent");
@@ -511,6 +499,50 @@ namespace Columbus
 		case AntialiasingType::MSAA_16X: BaseMSAA.Multisampling = 16; IsMSAA = true; break;
 		case AntialiasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
 		}
+
+		struct
+		{
+			struct
+			{
+				Vector3 color; float range;
+				Vector3 pos; float innerCutoff;
+				Vector3 dir; float outerCutoff;
+				int type;
+				float pad[3];
+			} lights[128];
+
+			int count;
+		} lightingUboData;
+
+		lightingUboData.count = 0;
+		for (auto Light : Scn->Lights)
+		{
+			if (Light != nullptr)
+			{
+				auto id = lightingUboData.count;
+
+				lightingUboData.lights[id].color = Light->Color;
+				lightingUboData.lights[id].pos = Light->Pos;
+				lightingUboData.lights[id].dir = Light->Dir;
+
+				lightingUboData.lights[id].range = Light->Range;
+				lightingUboData.lights[id].innerCutoff = Light->InnerCutoff;
+				lightingUboData.lights[id].outerCutoff = Light->OuterCutoff;
+
+				lightingUboData.lights[id].type = Light->Type;
+
+				lightingUboData.count++;
+			}
+		}
+
+		static BufferOpenGL lightingUBO(BufferType::Uniform, {
+			sizeof(lightingUboData),
+			BufferUsage::Write,
+			BufferCpuAccess::Stream
+		});
+
+		lightingUBO.Load(&lightingUboData);
+		lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
 
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };

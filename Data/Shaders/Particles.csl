@@ -2,20 +2,36 @@
 
 #shader vertex
 
-#attribute float3 Vertices  0
-#attribute float2 Texcoords 1
-#attribute float3 Positions 2
-#attribute float3 Sizes     3
-#attribute float4 Colors    4
-#attribute float2 OtherData 5
+#attribute float3 Positions 0
+#attribute float3 Sizes     1
+#attribute float4 Colors    2
+#attribute float2 OtherData 3
 
 #uniform float4x4 View
 #uniform float4x4 Projection
 #uniform float4x4 Billboard
 #uniform float2 Frame
 
-out float4 Color;
-out float2 UV;
+out float4 var_Color;
+out float2 var_UV;
+
+const float2 Coord[6] = float2[](
+	float2(-1, +1),
+	float2(+1, +1),
+	float2(+1, -1),
+	float2(-1, -1),
+	float2(-1, +1),
+	float2(+1, -1)
+);
+
+const float2 UV[6] = float2[](
+	float2(0, 1),
+	float2(1, 1),
+	float2(1, 0),
+	float2(0, 0),
+	float2(0, 1),
+	float2(1, 0)
+);
 
 float4x4 RotationMatrix(float3 axis, float angle)
 {
@@ -32,25 +48,27 @@ float4x4 RotationMatrix(float3 axis, float angle)
 
 void main(void)
 {
+	int v_id = SV_VertexID % 6;
+
 	float4x4 Rotation = RotationMatrix(float3(0, 0, 1), 0.011111 * OtherData.x);
-	float4 VertexPosition = float4(Vertices * Sizes, 1);
+	float4 VertexPosition = float4(vec3(Coord[v_id], 0) * Sizes, 1);
 	float4 WorldPosition = float4(Positions, 0);
 
 	SV_Position = Projection * (View * (Billboard * (VertexPosition * Rotation) + WorldPosition));
-	UV = ExtractSubUV(int(OtherData.y), Texcoords, Frame);
-	Color = Colors;
+	var_UV = ExtractSubUV(int(OtherData.y), UV[v_id], Frame);
+	var_Color = Colors;
 }
 
 #shader pixel
 
 #uniform Texture2D Texture
 
-in float4 Color;
-in float2 UV;
+in float4 var_Color;
+in float2 var_UV;
 
 void main(void)
 {
-	RT0 = Sample2D(Texture, UV) * Color;
+	RT0 = Sample2D(Texture, var_UV) * var_Color;
 }
 
 
