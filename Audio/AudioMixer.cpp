@@ -2,6 +2,7 @@
 #include <Common/Sound/Sound.h>
 #include <Profiling/Profiling.h>
 #include <cstring>
+#include <cstdio>
 
 namespace Columbus
 {
@@ -85,8 +86,8 @@ namespace Columbus
 
 			for (uint32 i = 0; i < Count; i++)
 			{
-				Mixed[i].L += (int32)(Data[i].L * Gain * LVolume);
-				Mixed[i].R += (int32)(Data[i].R * Gain * RVolume);
+				Mixed[i].L += static_cast<int32>(Data[i].L * Gain * LVolume);
+				Mixed[i].R += static_cast<int32>(Data[i].R * Gain * RVolume);
 			}
 		}
 
@@ -94,8 +95,8 @@ namespace Columbus
 
 		for (uint32 i = 0; i < Count; i++)
 		{
-			Frames[i].L = (int16)Mixed[i].L;
-			Frames[i].R = (int16)Mixed[i].R;
+			Frames[i].L = static_cast<int16>(Mixed[i].L);
+			Frames[i].R = static_cast<int16>(Mixed[i].R);
 		}
 	}
 

@@ -66,9 +66,9 @@ namespace Columbus
 		DetailTiling = J["DetailTiling"].GetVector2<float>();
 		Albedo       = J["Albedo"]      .GetVector4<float>();
 
-		Roughness        = (float)J["Roughness"]       .GetFloat();
-		Metallic         = (float)J["Metallic"]        .GetFloat();
-		EmissionStrength = (float)J["EmissionStrength"].GetFloat();
+		Roughness        = static_cast<float>(J["Roughness"]       .GetFloat());
+		Metallic         = static_cast<float>(J["Metallic"]        .GetFloat());
+		EmissionStrength = static_cast<float>(J["EmissionStrength"].GetFloat());
 
 		ShaderProg = ShadersManager.Find(J["Shader"].IsString() ? J["Shader"].GetString() : "");
 
