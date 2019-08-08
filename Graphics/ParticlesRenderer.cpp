@@ -91,7 +91,7 @@ namespace Columbus
 
 			for (size_t i = 0; i < Particles.Particles.Count; i++)
 			{
-				for (int a = 0; a < 6; a++)
+				for (size_t a = 0; a < 6; a++)
 				{
 					Positions[i * 6 + a]   = Particles.Particles.Positions[i].XYZ();
 					    Sizes[i * 6 + a]   = Particles.Particles.Sizes[i];

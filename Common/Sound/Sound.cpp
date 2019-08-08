@@ -23,11 +23,11 @@ namespace Columbus
 
 		switch (Format)
 		{
-		case SoundFormat::Unknown:   return nullptr; break;
+		case SoundFormat::Unknown:   return nullptr;
 		case SoundFormat::WAV_PCM:
-		case SoundFormat::WAV_ADPCM: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels); break;
-		case SoundFormat::OGG:       return SoundLoadOGG(FileName, OutSize, OutFrequency, OutChannels); break;
-		case SoundFormat::MP3:       return SoundLoadMP3(FileName, OutSize, OutFrequency, OutChannels); break;
+		case SoundFormat::WAV_ADPCM: return SoundLoadWAV(FileName, OutSize, OutFrequency, OutChannels);
+		case SoundFormat::OGG:       return SoundLoadOGG(FileName, OutSize, OutFrequency, OutChannels);
+		case SoundFormat::MP3:       return SoundLoadMP3(FileName, OutSize, OutFrequency, OutChannels);
 		}
 
 		return nullptr;
@@ -69,15 +69,12 @@ namespace Columbus
 				Decoder = new SoundDecoderOGG();
 				Streaming = true;
 				return Decoder->Load(FileName);
-				break;
 			case SoundFormat::MP3:
 				Streaming = false;
 				return false;
-				break;
 			case SoundFormat::Unknown:
 				Streaming = false;
 				return false;
-				break;
 			}
 		}
 

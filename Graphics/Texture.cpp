@@ -63,7 +63,7 @@ namespace Columbus
 
 	void CreateIntegrationMap(Texture*& IntegrationMap)
 	{
-		auto IntegrationShader = gDevice->GetDefaultShaders()->IntegrationGeneration;
+		auto IntegrationShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->IntegrationGeneration);
 		uint32 Resolution = 256;
 		TextureFormat Format = TextureFormat::RG16F;
 
@@ -89,10 +89,10 @@ namespace Columbus
 		auto Tmp = Frame.ColorTextures[0];
 		Frame.ColorTextures[0] = IntegrationMap;
 
-		Frame.Bind({ 0 }, { 0, 0}, { (int)Resolution, (int)Resolution });
-		((ShaderProgramOpenGL*)IntegrationShader)->Bind();
+		Frame.Bind({ 0 }, { 0, 0}, { static_cast<int>(Resolution), static_cast<int>(Resolution) });
+		IntegrationShader->Bind();
 		Quad.Render();
-		((ShaderProgramOpenGL*)IntegrationShader)->Unbind();
+		IntegrationShader->Unbind();
 		Frame.Mipmaps();
 		Frame.Unbind();
 

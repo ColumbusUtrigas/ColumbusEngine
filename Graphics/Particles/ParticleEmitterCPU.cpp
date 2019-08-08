@@ -85,7 +85,7 @@ namespace Columbus
 				_mm_store_ps(&Particles.Ages[id], FourAges);
 				_mm_store_ps(&Particles.Percents[id], FourPercents);
 
-				for (int j = 0; j < 4; j++)
+				for (size_t j = 0; j < 4; j++)
 				{
 					Particles.Positions[id + j] += Particles.Velocities[id + j] * TimeTick;
 					Particles.Distances[id + j] = Particles.Positions[id + j].LengthSquare(CameraPosition);

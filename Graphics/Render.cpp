@@ -449,7 +449,7 @@ namespace Columbus
 
 		uboData.tonemap.exposure = Exposure;
 		uboData.tonemap.gamma = Gamma;
-		uboData.tonemap.type = (int)Tonemapping;
+		uboData.tonemap.type = static_cast<int>(Tonemapping);
 		uboData.tonemap.ae_enable = AutoExposure.Enabled;
 
 		uboData.vignette.color = Vignette.Color;
@@ -589,13 +589,13 @@ namespace Columbus
 			// Resolve RT0 (HDR Color)
 			MSAAShader->Bind();
 			MSAAShader->SetUniform("BaseTexture", (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
-			MSAAShader->SetUniform("Samples", (int)BaseMSAA.Multisampling);
+			MSAAShader->SetUniform("Samples", static_cast<int>(BaseMSAA.Multisampling));
 			Quad.Render();
 			MSAAShader->Unbind();
 
 			// Resolve RT1 (Normals) and Depth
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, ((FramebufferOpenGL*)BaseMSAA.FB)->ID);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ((FramebufferOpenGL*)Base.FB)->ID);
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(BaseMSAA.FB)->ID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(BaseMSAA.FB)->ID);
 
 			glReadBuffer(GL_COLOR_ATTACHMENT1);
 			glDrawBuffer(GL_COLOR_ATTACHMENT1);
