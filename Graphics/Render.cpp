@@ -521,7 +521,7 @@ namespace Columbus
 			{
 				auto id = lightingUboData.count;
 
-				lightingUboData.lights[id].color = Light->Color;
+				lightingUboData.lights[id].color = Light->Color * Light->Energy;
 				lightingUboData.lights[id].pos = Light->Pos;
 				lightingUboData.lights[id].dir = Light->Dir;
 
