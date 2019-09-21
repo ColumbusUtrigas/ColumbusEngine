@@ -216,7 +216,10 @@ namespace Columbus
 
 		if (Sky != nullptr)
 		{
+			State.SetCulling(Material::Cull::Back);
+			State.SetDepthWriting(false);
 			Sky->Render();
+			State.SetDepthWriting(true);
 		}
 	}
 
