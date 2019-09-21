@@ -235,8 +235,6 @@ namespace Columbus
 		{
 			auto ShaderOpenGL = (ShaderProgramOpenGL*)Shader;
 
-			glDepthMask(GL_FALSE);
-
 			ShaderOpenGL->Bind();
 
 			auto View = ViewCamera.GetViewMatrix();
@@ -254,8 +252,6 @@ namespace Columbus
 
 			ShaderOpenGL->Unbind();
 			((TextureOpenGL*)Tex)->Unbind();
-
-			glDepthMask(GL_TRUE);
 		}
 	}
 
