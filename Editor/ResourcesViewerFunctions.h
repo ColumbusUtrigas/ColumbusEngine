@@ -15,7 +15,7 @@ namespace Columbus
 
 	template <typename T>
 	static void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width,
-		String& SelectedPopup,
+		String& SelectedPopup, bool& IsRight,
 		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick);
 
 	template <typename T>
@@ -55,7 +55,7 @@ namespace Columbus
 
 	template <typename T>
 	void ResourceViewerDrawSelectable(const char* Name, T* Object, T*& Tmp, uint32& Width,
-		String& SelectedPopup,
+		String& SelectedPopup, bool& IsRight,
 		std::function<bool(const char*, T*)> Button, std::function<void()> DoubleClick)
 	{
 		bool Pushed = false;
@@ -75,8 +75,14 @@ namespace Columbus
 		{
 			ImGui::SetTooltip("%s", Name);
 
-			if (ImGui::IsMouseClicked(1))
+			if (ImGui::IsMouseClicked(0))
 				SelectedPopup = Name;
+
+			if (ImGui::IsMouseClicked(1))
+			{
+				SelectedPopup = Name;
+				IsRight = true;
+			}
 
 			if (ImGui::IsMouseDoubleClicked(0))
 				DoubleClick();
@@ -102,12 +108,13 @@ namespace Columbus
 		std::function<void()> DoubleClick)
 	{
 		String PopupStr;
+		bool IsRight;
 
 		if (ImGui::BeginChild(Name, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 30)))
 		{
 			uint32 Width = (uint32)ImGui::GetWindowContentRegionWidth();
 
-			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, PopupStr, Button, DoubleClick);
+			ResourceViewerDrawSelectable<T>("None", nullptr, Tmp, Width, PopupStr, IsRight, Button, DoubleClick);
 
 			String MFind = Find.tolower();
 			String MName;
@@ -121,7 +128,7 @@ namespace Columbus
 				if (MName.find(MFind) != String::npos)
 				{
 					T* Object = Elem.second.Get();
-					ResourceViewerDrawSelectable<T>(Manager.Names[Elem.first].c_str(), Object, Tmp, Width, PopupStr, Button, DoubleClick);
+					ResourceViewerDrawSelectable<T>(Manager.Names[Elem.first].c_str(), Object, Tmp, Width, PopupStr, IsRight, Button, DoubleClick);
 
 					if (!PopupStr.empty() && !PopupSet)
 					{
@@ -133,7 +140,7 @@ namespace Columbus
 		}
 		ImGui::EndChild();
 
-		if (!PopupStr.empty() && PopupStr != "None")
+		if (!PopupStr.empty() && PopupStr != "None" && IsRight)
 		{
 			ImGui::OpenPopup("##ResourceViewer_Popup");
 		}

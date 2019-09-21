@@ -112,6 +112,7 @@ namespace Columbus
 		virtual bool CreateCube(TextureDesc Desc) = 0;
 
 		virtual void SetFlags(Flags F) = 0;
+		Flags GetFlags() const { return TextureFlags; }
 
 		uint32 GetMultisampling() const { return Multisampling; }
 		TextureFormat GetFormat() const { return Format; }
