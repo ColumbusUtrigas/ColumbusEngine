@@ -12,6 +12,8 @@
 namespace Columbus
 {
 
+	std::vector<Log::Msg> g_LogBuffer;
+
 	enum Color
 	{
 		Color_White,
@@ -53,45 +55,60 @@ namespace Columbus
 		#endif
 	}
 
-#define Log(Text, AColor, BColor) \
-	va_list Args; \
+#define AddToBuffer(Type) \
+	Msg m; \
+	m.type = Type; \
+	m.text = msg; \
+	g_LogBuffer.push_back(m);
+
+#define Log(Text, AColor, BColor, Type) \
+	va_list Args, ArgsCopy; \
 	va_start(Args, Fmt); \
+	va_copy(ArgsCopy, Args); \
 	SetConsoleColor(AColor); \
 	printf(Text); \
 	SetConsoleColor(BColor); \
-	vprintf(Fmt, Args); \
-	printf("\n"); \
+	auto size = vsnprintf(nullptr, 0, Fmt, Args) + 1; \
+	std::string msg(size, ' '); \
+	vsnprintf(&msg.front(), size, Fmt, ArgsCopy); \
+	printf("%s\n", msg.c_str()); \
+	AddToBuffer(Type); \
 	va_end(Args);
 	
 	void Log::Initialization(const char* Fmt, ...)
 	{
-		Log("[INITIALIZATION]: ", Color_Cyan, Color_White);
+		Log("[INITIALIZATION]: ", Color_Cyan, Color_White, Type_Initialization);
 	}
 	
 	void Log::Success(const char* Fmt, ...)
 	{
-		Log("[SUCCESS]: ", Color_Green, Color_White);
+		Log("[SUCCESS]: ", Color_Green, Color_White, Type_Success);
 	}
 	
 	void Log::Message(const char* Fmt, ...)
 	{
-		Log("[INFO]: ", Color_White, Color_White);
+		Log("[INFO]: ", Color_White, Color_White, Type_Message);
 	}
 	
 	void Log::Warning(const char* Fmt, ...)
 	{
-		Log("[WARNING]: ", Color_Yellow, Color_White);
+		Log("[WARNING]: ", Color_Yellow, Color_White, Type_Warning);
 	}
 	
 	void Log::Error(const char* Fmt, ...)
 	{
-		Log("[ERROR]: ", Color_Red, Color_White);
+		Log("[ERROR]: ", Color_Red, Color_White, Type_Error);
 	}
 	
 	void Log::Fatal(const char* Fmt, ...)
 	{
-		Log("[FATAL]: ", Color_Purple, Color_White);
+		Log("[FATAL]: ", Color_Purple, Color_White, Type_Fatal);
 		exit(1);
+	}
+
+	std::vector<Log::Msg>& Log::GetData()
+	{
+		return g_LogBuffer;
 	}
 
 }
