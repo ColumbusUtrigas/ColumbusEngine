@@ -105,6 +105,8 @@ namespace Columbus
 				ImGui::Spacing();
 				ImGui::MenuItem(" Profiler", nullptr, &PanelProfiler.Opened);
 				ImGui::Spacing();
+				ImGui::MenuItem(" Console", nullptr, &PanelConsole.Opened);
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
@@ -219,6 +221,7 @@ namespace Columbus
 		PanelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		PanelRenderSettings.Draw();
 		PanelProfiler.Draw();
+		PanelConsole.Draw();
 		ResourcesViewerTexture::Draw(&scene);
 		ResourcesViewerShader::Draw(&scene);
 		ResourcesViewerMaterial::Draw(scene);
