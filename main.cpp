@@ -116,9 +116,9 @@ int main(int argc, char** argv)
 		wheel -= wheel * 3 * RedrawTime;
 		if (abs(wheel) <= 0.2) wheel = 0.0f;
 
-		input.ShowMouseCursor(true);
 		if (input.GetMouseButton(SDL_BUTTON_RIGHT).State && Editor.PanelScene.IsHover())
 		{
+			SDL_SetRelativeMouseMode(SDL_TRUE);
 			input.ShowMouseCursor(false);
 
 			camera.Pos += camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_W);
@@ -138,7 +138,10 @@ int main(int argc, char** argv)
 			iVector2 MousePos = PosOfRenderWindow + (SizeOfRenderWindow / 2);
 
 			window.SetMousePosition(MousePos);
-			input.SetMousePosition (MousePos);
+		} else
+		{
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+			input.ShowMouseCursor(true);
 		}
 
 		camera.Rot.Clamp({ -89.9f, -360.0f, -360.0f }, { 89.9f, 360.0f, 360.0f });
