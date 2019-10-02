@@ -35,6 +35,9 @@ namespace Columbus
 		bool ColorTexturesAttached[TexturesCount];
 		bool DepthTextureAttached = false;
 		Texture::Flags PrevColorTextureFlags[TexturesCount];
+
+		iVector2 _PrevSize;
+		int32 _PrevMSAA;
 	public:
 		PostEffect()
 		{
@@ -88,7 +91,10 @@ namespace Columbus
 						ColorTextures[i] = gDevice->CreateTexture();
 					}
 
-					ColorTextures[i]->Create2D(TextureDesc(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
+					if (_PrevSize != (Size - Origin) || _PrevMSAA != ColorMS || _PrevMSAA != DepthMS)
+					{
+						ColorTextures[i]->Create2D(TextureDesc(Size.X, Size.Y, 0, ColorMS, ColorTexturesFormats[i]));
+					}
 
 					if (!ColorTexturesAttached[i] || ColorTextureFlags[i] != PrevColorTextureFlags[i] || PrevColorTextures[i] != ColorTextures[i])
 					{
@@ -112,7 +118,11 @@ namespace Columbus
 					DepthTexture = gDevice->CreateTexture();
 				}
 
-				DepthTexture->Create2D(TextureDesc(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
+				if (_PrevSize != (Size - Origin) || _PrevMSAA != ColorMS || _PrevMSAA != DepthMS)
+				{
+					DepthTexture->Create2D(TextureDesc(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
+				}
+
 				DepthTexture->SetFlags(DepthTextureFlags);
 
 				if (!DepthTextureAttached || PrevDepthTexture != DepthTexture)
@@ -144,6 +154,9 @@ namespace Columbus
 					DrawBuffersNum++;
 				}
 			}
+
+			_PrevSize = (Size - Origin);
+			_PrevMSAA = ColorMS;
 
 			glDrawBuffers(DrawBuffersNum, DrawBuffers);
 		}
