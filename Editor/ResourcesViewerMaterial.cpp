@@ -7,7 +7,7 @@
 namespace Columbus
 {
 
-	EditorFileDialog MaterialLoader("./Data/Materials/");
+	EditorFileDialog MaterialLoader("./Data/Materials/", {"mat"});
 	MessageBox MaterialBruteLoader("One or more materials are already exist",
 		"Do you realy want to load it against the already loaded ones?", { 300, 120 });
 
