@@ -1,6 +1,7 @@
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
+#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <Core/Filesystem.h>
 #include <algorithm>
 
@@ -140,9 +141,16 @@ namespace Columbus
 
 						Text += " " + Elem.Name;
 
-						bool Contains = std::find(SelectedFiles.begin(), SelectedFiles.end(), Elem) != SelectedFiles.end();
+						bool Contains = std::find(SelectedFiles.begin(), SelectedFiles.end(), Elem) != SelectedFiles.end()
+							|| Elem.Name == SaveFile.Name;
 						if (ImGui::Selectable(Text.c_str(), Contains, ImGuiSelectableFlags_AllowDoubleClick))
 						{
+							if (_Type == Type_Save)
+							{
+								SelectedFiles.clear();
+								SaveFile = Elem;
+							}
+
 							if (!ImGui::GetIO().KeyCtrl || !Multiple) SelectedFiles.clear();
 							if (ImGui::GetIO().KeyCtrl && Contains)
 								SelectedFiles.erase(std::remove(SelectedFiles.begin(), SelectedFiles.end(), Elem), SelectedFiles.end());
@@ -167,16 +175,40 @@ namespace Columbus
 
 				if (ImGui::BeginChild((Name + "##Buttons").c_str()))
 				{
-					ImGui::Text("File:");
-					for (const auto& Elem : SelectedFiles)
+					if (_Type == Type_Open)
 					{
+						ImGui::Text("File:");
+						for (const auto& Elem : SelectedFiles)
+						{
+							ImGui::SameLine();
+							ImGui::Text("%s", Elem.Name.c_str());
+						}
+					}
+					else
+					{
+						ImGui::Text("File:");
 						ImGui::SameLine();
-						ImGui::Text("%s", Elem.Name.c_str());
+						std::string Tmp = SaveFile.Name.c_str();
+						ImGui::InputText(("##FileDialog_File_" + Name).c_str(), &Tmp);
+
+						SelectedFiles.clear();
+
+						SaveFile.Name = Tmp.c_str();
+						SaveFile.Path = Path + '/' + SaveFile.Name;
+						SaveFile.Type = 'f';
 					}
 
 					if (ImGui::Button("Cancel")) Close();
 					ImGui::SameLine();
-					if (ImGui::Button("Ok")) res = true;
+					if (ImGui::Button("Ok"))
+					{
+						res = true;
+						if (_Type == Type_Save)
+						{
+							SelectedFiles.clear();
+							SelectedFiles.push_back(SaveFile);
+						}
+					}
 					ImGui::SameLine();
 					ImGui::Checkbox(("Show hidden##Checkbox_" + Name).c_str(), &Hidden);
 				}
