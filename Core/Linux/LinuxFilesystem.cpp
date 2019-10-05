@@ -37,7 +37,7 @@ namespace Columbus
 			auto Pos = Name.rfind('.');
 
 			Info.Name = Name;
-			Info.Ext = (Pos != String::npos && Pos != 0) ? Name.substr(Pos + 1) : "";
+			Info.Ext = (Pos != String::npos && Pos != 0) ? Name.substr(Pos + 1).tolower() : "";
 			Info.Path = Path[Path.length() - 1] == '/' ? Path + Name : Path + '/' + Name;
 
 			switch (Type)

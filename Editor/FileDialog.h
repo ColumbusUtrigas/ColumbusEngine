@@ -4,6 +4,7 @@
 #include <Core/FileInfo.h>
 #include <Core/String.h>
 #include <vector>
+#include <string>
 
 namespace Columbus
 {
@@ -17,12 +18,14 @@ namespace Columbus
 		bool Multiple = false;
 		
 		String Path;
+		std::vector<std::string> _Filter;
 		std::vector<FileInfo> SelectedFiles;
 
 		MessageBox* Message = nullptr;
 	public:
 		EditorFileDialog() : Path("./") {}
-		EditorFileDialog(const String& Path) : Path(Path) {}
+		EditorFileDialog(const String& Path, const std::vector<std::string>& Filter = {})
+			: Path(Path), _Filter(Filter) {}
 
 		void Open() { Opened = true; }
 		void Close() { CloseFlag = true; }
