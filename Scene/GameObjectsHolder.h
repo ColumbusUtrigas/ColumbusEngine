@@ -14,6 +14,12 @@ namespace Columbus
 		std::vector<SmartPointer<GameObject>> Resources;
 		std::unordered_map<String, uint32> ResourcesMap;
 
+		void Clear()
+		{
+			Resources.clear();
+			ResourcesMap.clear();
+		}
+
 		bool IsNameFree(const String& Name)
 		{
 			return ResourcesMap.find(Name) == ResourcesMap.end();
