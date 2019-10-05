@@ -372,7 +372,7 @@ namespace Columbus
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun.get(), 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -380,7 +380,7 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp.get(), 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -388,7 +388,7 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight.get(), 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
@@ -396,14 +396,14 @@ namespace Columbus
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio.get(), 0);
 		for (const auto& Elem : Scn->Audio.Mixer.Sources)
 		{
 			if (Elem != nullptr)
 				DrawIcon(Vector4(Elem->Position, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles.get(), 0);
 		for (const auto& Elem : TransparentObjects)
 		{
 			if (Elem.Particles != nullptr)

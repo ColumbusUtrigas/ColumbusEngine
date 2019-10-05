@@ -9,15 +9,15 @@
 namespace Columbus
 {
 
-	static void CreateIntegrationMap(Texture*& IntegrationMap);
+	static void CreateIntegrationMap(std::unique_ptr<Texture>& IntegrationMap);
 
 	DefaultTextures::DefaultTextures()
 	{
 		uint32 Zero = 0xFF000000;
 		uint32 One  = 0xFFFFFFFF;
 
-		Black = gDevice->CreateTexture();
-		White = gDevice->CreateTexture();
+		Black = std::unique_ptr<Texture>(gDevice->CreateTexture());
+		White = std::unique_ptr<Texture>(gDevice->CreateTexture());
 
 		Log::Initialization("Default textures loading");
 
@@ -34,11 +34,11 @@ namespace Columbus
 		// TODO: EDITOR MODE
 		if (true)
 		{
-			IconSun = gDevice->CreateTexture();
-			IconLamp = gDevice->CreateTexture();
-			IconAudio = gDevice->CreateTexture();
-			IconFlashlight = gDevice->CreateTexture();
-			IconParticles = gDevice->CreateTexture();
+			IconSun = std::unique_ptr<Texture>(gDevice->CreateTexture());
+			IconLamp = std::unique_ptr<Texture>(gDevice->CreateTexture());
+			IconAudio = std::unique_ptr<Texture>(gDevice->CreateTexture());
+			IconFlashlight = std::unique_ptr<Texture>(gDevice->CreateTexture());
+			IconParticles = std::unique_ptr<Texture>(gDevice->CreateTexture());
 
 			IconSun->Load("Data/Icons/Sun.png");
 			IconLamp->Load("Data/Icons/Lamp.png");
@@ -48,36 +48,20 @@ namespace Columbus
 		}
 	}
 
-	DefaultTextures::~DefaultTextures()
-	{
-		delete Black;
-		delete White;
-		delete IntegrationLUT;
-
-		delete IconSun;
-		delete IconLamp;
-		delete IconFlashlight;
-		delete IconAudio;
-		delete IconParticles;
-	}
-
-	void CreateIntegrationMap(Texture*& IntegrationMap)
+	void CreateIntegrationMap(std::unique_ptr<Texture>& IntegrationMap)
 	{
 		auto IntegrationShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->IntegrationGeneration);
 		uint32 Resolution = 256;
 		TextureFormat Format = TextureFormat::RG16F;
 
-		if (IntegrationMap == nullptr)
-		{
-			Texture::Flags Flags;
-			Flags.AnisotropyFilter = Texture::Anisotropy::Anisotropy1;
-			Flags.Filtering = Texture::Filter::Linear;
-			Flags.Wrapping = Texture::Wrap::Clamp;
+		Texture::Flags Flags;
+		Flags.AnisotropyFilter = Texture::Anisotropy::Anisotropy1;
+		Flags.Filtering = Texture::Filter::Linear;
+		Flags.Wrapping = Texture::Wrap::Clamp;
 
-			IntegrationMap = gDevice->CreateTexture();
-			IntegrationMap->Create2D(TextureDesc(Resolution, Resolution, 0, 0, Format));
-			IntegrationMap->SetFlags(Flags);
-		}
+		IntegrationMap = std::unique_ptr<Texture>(gDevice->CreateTexture());
+		IntegrationMap->Create2D(TextureDesc(Resolution, Resolution, 0, 0, Format));
+		IntegrationMap->SetFlags(Flags);
 
 		PostEffect Frame;
 		ScreenQuad Quad;
@@ -87,7 +71,7 @@ namespace Columbus
 		Frame.Bind({ 0 }, { 0, 0 }, { 1, 1 });
 
 		auto Tmp = Frame.ColorTextures[0];
-		Frame.ColorTextures[0] = IntegrationMap;
+		Frame.ColorTextures[0] = IntegrationMap.get();
 
 		Frame.Bind({ 0 }, { 0, 0}, { static_cast<int>(Resolution), static_cast<int>(Resolution) });
 		IntegrationShader->Bind();
