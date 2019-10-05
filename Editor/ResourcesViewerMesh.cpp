@@ -9,7 +9,7 @@
 namespace Columbus
 {
 
-	EditorFileDialog MeshLoader("./Data/Meshes/");
+	EditorFileDialog MeshLoader("./Data/Meshes/", {"cmf"});
 	MessageBox MeshBruteLoader("One or more meshes are already exist",
 		"Do you realy want to load it against the already loaded ones?", { 300, 120 });
 

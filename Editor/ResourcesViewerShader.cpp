@@ -9,7 +9,7 @@
 namespace Columbus
 {
 
-	EditorFileDialog ShaderLoader("./Data/Shaders/");
+	EditorFileDialog ShaderLoader("./Data/Shaders/", {"csl"});
 	MessageBox ShaderBruteLoader("One or more shaders are already exist",
 		"Do you realy want to load it against the already loaded ones?", { 300, 120 });
 
