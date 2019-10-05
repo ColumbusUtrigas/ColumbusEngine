@@ -72,6 +72,7 @@ namespace Columbus
 			if (Tex->Load(J["Defaults"]["Skybox"].GetString().c_str()))
 			{
 				SkyPath = J["Defaults"]["Skybox"].GetString();
+				delete Sky;
 				Sky = new Skybox(Tex.Get());
 				Log::Success("Skybox loaded: %s", J["Defaults"]["Skybox"].GetString().c_str());
 			}
@@ -83,6 +84,9 @@ namespace Columbus
 		DeserializeMeshesManager(J["Meshes"]);
 		DeserializeSoundsManager(J["Sounds"]);
 		DeserializeObjects(J["Objects"]);
+
+		Audio.Clear();
+		Lights.clear();
 
 		_CurrentScene = FileName;
 

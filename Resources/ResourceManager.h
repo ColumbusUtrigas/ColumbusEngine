@@ -16,6 +16,14 @@ namespace Columbus
 		std::unordered_map<size_t, String> Names;
 		std::unordered_map<String, size_t> IDs;
 
+		void Clear()
+		{
+			Resources.clear();
+			Names.clear();
+			IDs.clear();
+			CurrentID = 0;
+		}
+
 		bool IsNameFree(const String& Name)
 		{
 			return IDs.find(Name) == IDs.end();
