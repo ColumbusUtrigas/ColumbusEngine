@@ -73,6 +73,8 @@ namespace Columbus
 	public:
 		Scene();
 
+		auto GetCurrentSceneFilename() const { return _CurrentScene; }
+
 		bool Load(const std::string& FileName);
 		bool Save(const std::string& FileName = "");
 
