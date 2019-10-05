@@ -11,7 +11,8 @@
 namespace Columbus
 {
 
-	EditorFileDialog SkyboxLoader("./Data/Skyboxes/");
+	EditorFileDialog SceneLoader("./Data/", {"scene"});
+	EditorFileDialog SkyboxLoader("./Data/Skyboxes/", {"hdr", "exr"});
 
 	void Editor::ApplyDarkTheme()
 	{
@@ -81,11 +82,11 @@ namespace Columbus
 			if (ImGui::BeginMenu("File"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Open")) scene.Load("Data/4.scene");
+				if (ImGui::MenuItem(" Open")) SceneLoader.Open();
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Save")) scene.Save("Data/4.scene");
+				if (ImGui::MenuItem(" Save")) scene.Save();
 				ImGui::Spacing();
-				ImGui::MenuItem(" Save As");
+				if (ImGui::MenuItem(" Save As"));
 				ImGui::Spacing();
 				ImGui::MenuItem(" Quit");
 				ImGui::Spacing();
@@ -244,6 +245,16 @@ namespace Columbus
 
 				SkyboxLoader.Close();
 			}
+		}
+
+		if (SceneLoader.Draw("Load Scene"))
+		{
+			auto Selected = SceneLoader.GetSelected();
+			if (Selected.size() == 1)
+			{
+				scene.Load(Selected[0].Path.c_str());
+			}
+			SceneLoader.Close();
 		}
 	}
 

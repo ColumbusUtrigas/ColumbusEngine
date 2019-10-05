@@ -58,13 +58,13 @@ namespace Columbus
 		}
 	}
 
-	bool Scene::Load(const char* FileName)
+	bool Scene::Load(const std::string& FileName)
 	{
 		if (!gDevice)
-		{ Log::Error("Can't load Scene: %s: Device is missing", FileName); return false; }
+		{ Log::Error("Can't load Scene: %s: Device is missing", FileName.c_str()); return false; }
 
 		JSON J;
-		if (!J.Load(FileName)) { Log::Error("Can't load Scene: %s", FileName); return false; }
+		if (!J.Load(FileName.c_str())) { Log::Error("Can't load Scene: %s", FileName.c_str()); return false; }
 
 		// Load skybox
 		{
@@ -84,10 +84,12 @@ namespace Columbus
 		DeserializeSoundsManager(J["Sounds"]);
 		DeserializeObjects(J["Objects"]);
 
+		_CurrentScene = FileName;
+
 		return true;
 	}
 
-	bool Scene::Save(const char* FileName)
+	bool Scene::Save(const std::string& FileName)
 	{
 		JSON J;
 
@@ -100,7 +102,9 @@ namespace Columbus
 		SerializeSoundsManager(J["Sounds"]);
 		SerializeObjects(J["Objects"]);
 
-		if (!J.Save(FileName)) { Log::Error("Can't save scene: %s", FileName); return false; }
+		auto nameStr = FileName.empty() ? _CurrentScene : FileName;
+
+		if (!J.Save(nameStr.c_str())) { Log::Error("Can't save scene: %s", nameStr.c_str()); return false; }
 		
 		return true;
 	}

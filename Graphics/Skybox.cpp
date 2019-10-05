@@ -214,14 +214,12 @@ namespace Columbus
 	Skybox::Skybox()
 	{
 		PrepareMatrices();
-		Shader = gDevice->GetDefaultShaders()->Skybox;
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 	}
 
 	Skybox::Skybox(Texture* InTexture)
 	{
 		PrepareMatrices();
-		Shader = gDevice->GetDefaultShaders()->Skybox;
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 
 		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VAO, IBO);
@@ -231,9 +229,9 @@ namespace Columbus
 
 	void Skybox::Render()
 	{
-		if (Shader != nullptr && Tex != nullptr)
+		if (Tex != nullptr)
 		{
-			auto ShaderOpenGL = (ShaderProgramOpenGL*)Shader;
+			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox);
 
 			ShaderOpenGL->Bind();
 

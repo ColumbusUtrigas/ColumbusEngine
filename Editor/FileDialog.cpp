@@ -104,6 +104,14 @@ namespace Columbus
 					};
 
 					auto Files = Filesystem::Read(Absolute);
+					if (!_Filter.empty())
+					{
+						Files.erase(std::remove_if(Files.begin(), Files.end(), [&](auto& a){
+							if (a.Type == 'f')
+								return std::find(_Filter.begin(), _Filter.end(), a.Ext.c_str()) == _Filter.end();
+							else return false;
+						}), Files.end());
+					}
 					std::sort(Files.begin(), Files.end(), Pred);
 					auto Limit = std::find_if(Files.begin(), Files.end(), Finder);
 					std::sort(Files.begin(), Limit, Pred2);

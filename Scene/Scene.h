@@ -58,6 +58,8 @@ namespace Columbus
 
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
+	private:
+		std::string _CurrentScene;
 	public:
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
@@ -71,8 +73,8 @@ namespace Columbus
 	public:
 		Scene();
 
-		bool Load(const char* FileName);
-		bool Save(const char* FileName);
+		bool Load(const std::string& FileName);
+		bool Save(const std::string& FileName = "");
 
 		void Add(GameObject&& InObject)
 		{

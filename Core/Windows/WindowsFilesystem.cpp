@@ -48,7 +48,7 @@ namespace Columbus
 			auto Pos = Name.rfind('.');
 
 			Info.Name = Name;
-			Info.Ext = (Pos != std::string::npos && Pos != 0) ? Name.substr(Pos + 1) : "";
+			Info.Ext = (Pos != std::string::npos && Pos != 0) ? Name.substr(Pos + 1).tolower() : "";
 			Info.Path = Path[Path.length() - 1] == '/' ? Path + Name : Path + '/' + Name;
 
 			if (FFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
