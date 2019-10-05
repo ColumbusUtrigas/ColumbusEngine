@@ -151,12 +151,37 @@ namespace Columbus
 								SaveFile = Elem;
 							}
 
-							if (!ImGui::GetIO().KeyCtrl || !Multiple) SelectedFiles.clear();
-							if (ImGui::GetIO().KeyCtrl && Contains)
-								SelectedFiles.erase(std::remove(SelectedFiles.begin(), SelectedFiles.end(), Elem), SelectedFiles.end());
-							else
-								SelectedFiles.push_back(Elem);
+							// click + shift, multiple selection
+							if (ImGui::GetIO().KeyShift && _Type == Type_Open && Multiple && !SelectedFiles.empty())
+							{
+								auto firstIt = std::find(Files.begin(), Files.end(), SelectedFiles.back());
+								auto secondIt = std::find(Files.begin(), Files.end(), Elem);
 
+								if (firstIt > secondIt) std::swap(firstIt, secondIt);
+
+								for (; firstIt <= secondIt; ++firstIt)
+								{
+									// if there is no this elem in selected files
+									if (std::find(SelectedFiles.begin(), SelectedFiles.end(), *firstIt) == SelectedFiles.end())
+										SelectedFiles.push_back(*firstIt);
+								}
+							}
+							// click + ctrl, multiple selection
+							else if (ImGui::GetIO().KeyCtrl && _Type == Type_Open && Multiple)
+							{
+								if (ImGui::GetIO().KeyCtrl && Contains)
+									SelectedFiles.erase(std::remove(SelectedFiles.begin(), SelectedFiles.end(), Elem), SelectedFiles.end());
+								else
+									SelectedFiles.push_back(Elem);
+							}
+							// no modifier and/or no multiple selection
+							else
+							{
+								SelectedFiles.clear();
+								SelectedFiles.push_back(Elem);
+							}
+
+							// double-click on directory
 							if (Elem.Type == 'd' || Elem.Type == 'l')
 							{
 								if (ImGui::IsMouseDoubleClicked(0))
