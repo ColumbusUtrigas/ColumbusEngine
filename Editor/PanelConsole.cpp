@@ -76,6 +76,14 @@ namespace Columbus
 							ImGui::SetTooltip("%s", elem.text.c_str());
 					}
 				}
+
+				if (_lastWasEnd && _lastWheel <= 0.0f && _lastCount < list.size())
+					ImGui::SetScrollHereY(1.0f);
+
+				_lastWasEnd = ImGui::GetScrollMaxY() == ImGui::GetScrollY();
+				_lastWheel = ImGui::GetIO().MouseWheel;
+				_lastCount = list.size();
+
 				ImGui::EndChild();
 			}
 			ImGui::End();

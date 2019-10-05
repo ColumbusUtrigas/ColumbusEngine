@@ -448,6 +448,12 @@ void main(void)
 
 	bool ShaderProgramOpenGL::Compile()
 	{
+		if (Loaded && Compiled)
+		{
+			Log::Warning("Shader program already compiled, aborting: %s", Path.c_str());
+			return false;
+		}
+
 		bool VertexShaderExists = !Data.VertexSource.empty();
 		bool FragmentShaderExists = !Data.FragmentSource.empty();
 
