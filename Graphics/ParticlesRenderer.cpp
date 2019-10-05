@@ -75,7 +75,7 @@ namespace Columbus
 			Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
 
 			if (Mat.AlbedoMap == nullptr)
-				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(gDevice->GetDefaultTextures()->White), 0);
+				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(gDevice->GetDefaultTextures()->White.get()), 0);
 			else
 				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
 
