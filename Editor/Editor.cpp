@@ -84,9 +84,12 @@ namespace Columbus
 				ImGui::Spacing();
 				if (ImGui::MenuItem(" Open")) SceneLoader.Open();
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Save")) scene.Save();
+				if (ImGui::MenuItem(" Save"))
+					{
+						scene.Save();
+					}
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Save As"));
+				if (ImGui::MenuItem(" Save As")) SceneLoader.Open(EditorFileDialog::Type_Save);
 				ImGui::Spacing();
 				ImGui::MenuItem(" Quit");
 				ImGui::Spacing();
@@ -252,7 +255,11 @@ namespace Columbus
 			auto Selected = SceneLoader.GetSelected();
 			if (Selected.size() == 1)
 			{
-				scene.Load(Selected[0].Path.c_str());
+				if (SceneLoader.GetType() == EditorFileDialog::Type_Open)
+					scene.Load(Selected[0].Path.c_str());
+
+				if (SceneLoader.GetType() == EditorFileDialog::Type_Save)
+					scene.Save(Selected[0].Path.c_str());
 			}
 			SceneLoader.Close();
 		}

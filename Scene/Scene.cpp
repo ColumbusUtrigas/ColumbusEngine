@@ -105,7 +105,8 @@ namespace Columbus
 		auto nameStr = FileName.empty() ? _CurrentScene : FileName;
 
 		if (!J.Save(nameStr.c_str())) { Log::Error("Can't save scene: %s", nameStr.c_str()); return false; }
-		
+
+		_CurrentScene = nameStr;
 		return true;
 	}
 	
