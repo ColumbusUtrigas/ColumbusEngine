@@ -81,8 +81,6 @@ namespace Columbus
 
 		Framebuffer* Frame = gDevice->CreateFramebuffer();
 
-		glDepthMask(GL_FALSE);
-
 		SkyboxCubemapGenerationShader->Bind();
 		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("Projection"), false, CaptureProjection);
 		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("BaseMap"), (TextureOpenGL*)BaseMap, 0);
@@ -104,7 +102,6 @@ namespace Columbus
 
 		Frame->Unbind();
 		SkyboxCubemapGenerationShader->Unbind();
-		glDepthMask(GL_TRUE);
 
 		Cubemap->GenerateMipmap();
 

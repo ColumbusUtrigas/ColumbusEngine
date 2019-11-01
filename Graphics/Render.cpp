@@ -598,7 +598,7 @@ namespace Columbus
 
 			// Resolve RT1 (Normals) and Depth
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(BaseMSAA.FB)->ID);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(BaseMSAA.FB)->ID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(Base.FB)->ID);
 
 			glReadBuffer(GL_COLOR_ATTACHMENT1);
 			glDrawBuffer(GL_COLOR_ATTACHMENT1);
@@ -670,6 +670,7 @@ namespace Columbus
 
 			Final.Unbind();
 		}
+
 
 		// Lens flare rendering test, I will use it in the future
 
