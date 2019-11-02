@@ -107,7 +107,7 @@ namespace Columbus
 		ParticlesRenderer ParticlesRender;
 
 		Grid _Grid;
-		//Gizmo _Gizmo;
+		Gizmo _Gizmo;
 
 		uint32 PolygonsRendered = 0;
 		uint32 OpaqueObjectsRendered = 0;
@@ -115,6 +115,10 @@ namespace Columbus
 
 		float DeltaTime = 0.0f;
 	public:
+		bool EnableMousePicking = false;
+		Vector2 MousePickingPosition;
+		GameObject* PickedObject = nullptr;
+
 		iVector2 ContextSize;
 		bool DrawIcons = false;
 		bool DrawGrid = false;
