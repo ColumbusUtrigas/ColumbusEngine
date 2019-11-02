@@ -21,7 +21,6 @@ namespace Columbus
 				}
 
 				Selected = ImGui::IsWindowFocused();
-				Hover = ImGui::IsWindowHovered();
 
 				Position = iVector2((int)ImGui::GetCursorScreenPos().x, (int)ImGui::GetCursorScreenPos().y);
 
@@ -30,7 +29,22 @@ namespace Columbus
 				auto Size = ImGui::GetWindowSize();
 				Size.y -= Cursor.y;
 				ImGui::Image((void*)(intptr_t)Tex, ImVec2(Size.x, Size.y), ImVec2(0, 1), ImVec2(1, 0));
+				Hover = ImGui::IsItemHovered();
 				SizeOfRenderWindow = { (int)Size.x, (int)Size.y };
+
+				Render.EnableMousePicking = false;
+				auto mousePos = ImGui::GetMousePos();
+				if (mousePos.x > Position.X && mousePos.x < Position.X + Size.x &&
+				    mousePos.y > Position.Y && mousePos.y < Position.Y + Size.y)
+				{
+					Vector2 pickPos;
+					pickPos.X = mousePos.x - Position.X;
+					pickPos.Y = mousePos.y - Position.Y;
+					pickPos = pickPos / Vector2(SizeOfRenderWindow) * 2 - 1;
+
+					Render.EnableMousePicking = true;
+					Render.MousePickingPosition = pickPos;
+				}
 			}
 			ImGui::End();
 			ImGui::PopStyleVar(1);

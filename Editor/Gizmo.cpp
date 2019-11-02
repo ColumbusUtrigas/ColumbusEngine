@@ -1,16 +1,142 @@
 #include <Editor/Gizmo.h>
+#include <Graphics/Device.h>
+#include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Math/Frustum.h>
+#include <algorithm>
+#include <iterator>
+#include <tuple>
+
+#include <Lib/imgui/imgui.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Columbus
 {
 
-	Gizmo::Gizmo()
+namespace
+{
+	template <typename T>
+	void RenderGizmo(const T& transforms, const std::unique_ptr<Mesh>& mesh, ShaderProgramOpenGL* shader)
 	{
+		mesh->Bind();
+		for (const auto& trans : transforms)
+		{
+			auto model = Matrix(1.0f).Scale(trans.scale).Translate(trans.pos);
 
+			shader->SetUniform("Color", trans.color);
+			shader->SetUniform("Model", false, model);
+			mesh->Render();
+		}
+		mesh->Unbind();
 	}
 
-	Gizmo::~Gizmo()
+	Vector3 MouseRayDir(const Matrix& ViewProjection, const Vector2& MousePos)
 	{
-		
+		auto vp = glm::make_mat4(&ViewProjection.M[0][0]);
+		auto ivp = glm::inverse(vp);
+		auto screenPos = glm::vec4(MousePos.X, -MousePos.Y, 1, 1);
+		auto worldPos = ivp * screenPos;
+		auto rayDir = glm::normalize(glm::vec3(worldPos));
+
+		return {rayDir.x, rayDir.y, rayDir.z};
+	}
+
+	Vector3 RayPlaneIntersect(const Vector3& RayOrigin, const Vector3& RayDir,
+		const Vector3& PlaneOrigin, const Vector3& Normal)
+	{
+		auto dist = Normal.Dot(PlaneOrigin - RayOrigin) / Normal.Dot(RayDir);
+		return RayOrigin + (RayDir * dist);
+	}
+}
+
+	Gizmo::Gizmo()
+	{
+		_Box = std::unique_ptr<Mesh>(gDevice->CreateMesh());
+		_Box->Load("Data/Meshes/Box.cmf");
+	}
+
+	struct GizmoTransform
+	{
+		Vector3 pos;
+		Vector3 scale;
+		Vector4 color;
+		Vector3 directions;
+		Vector3 normal;
+	};
+
+	Vector3 PickedPosition;
+	GizmoTransform Picked;
+	bool WasPressed = false;
+
+	void Gizmo::Draw()
+	{
+		if (!ImGui::IsMouseDown(0)) WasPressed = false;
+		if (PickedObject == nullptr) return;
+
+		auto shader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->EditorTools);
+		Frustum ViewFrustum(_Camera.GetViewProjection());
+		auto origin = _Camera.Pos;
+		auto dir = MouseRayDir(_Camera.GetViewProjection(), MousePickingPosition);
+
+		GizmoTransform transforms[] = {
+			{{1.5f,0,0}, {1,0.2f,0.2f}, {0.5f,0,0,1}, {1,0,0}, {0,0,1}}, // X
+			{{0,1.5f,0}, {0.2f,1,0.2f}, {0,0.5f,0,1}, {0,1,0}, {1,0,0}}, // Y
+			{{0,0,1.5f}, {0.2f,0.2f,1}, {0,0,0.5f,1}, {0,0,1}, {0,1,0}}  // Z
+		};
+
+		// translate gizmo to object position
+		for (auto& trans : transforms)
+		{
+			trans.pos += PickedObject->transform.Position;
+		}
+
+		if (WasPressed)
+		{
+			auto pos = RayPlaneIntersect(origin, dir, PickedPosition, Picked.normal);
+			PickedObject->transform.Position += (pos - PickedPosition) * Picked.directions;
+			PickedPosition = pos;
+		}
+
+		if (EnableMousePicking)
+		{
+			// sort from near to far because we want to get only the first bounding box intersection.
+			std::sort(std::begin(transforms), std::end(transforms), [&](const auto& a, const auto& b){
+				return _Camera.Pos.LengthSquare(a.pos) < _Camera.Pos.LengthSquare(b.pos);
+			});
+
+			// get the first intersection and highlight that mesh.
+			for (auto& trans : transforms)
+			{
+				if ((_Box->GetBoundingBox() * trans.scale + trans.pos).Intersects(origin, dir))
+				{
+					if (ImGui::IsMouseDown(0))
+					{
+						if (!WasPressed)
+						{
+							Picked = trans;
+							PickedPosition = RayPlaneIntersect(origin, dir, trans.pos, trans.normal);
+						}
+
+						WasPressed = true;
+					}
+
+					trans.color *= Vector4(2,2,2,1);
+					break;
+				}
+			}
+		}
+
+		// sort from far to near to render it the right way.
+		std::sort(std::begin(transforms), std::end(transforms), [&](const auto& a, const auto& b){
+			return _Camera.Pos.LengthSquare(a.pos) > _Camera.Pos.LengthSquare(b.pos);
+		});
+
+		shader->Bind();
+		shader->SetUniform("ViewProjection", false, _Camera.GetViewProjection());
+		shader->SetUniform("CameraPos", _Camera.Pos);
+		shader->SetUniform("UseDistanceFade", 0);
+		RenderGizmo(transforms, _Box, shader);
+		shader->Unbind();
 	}
 
 }

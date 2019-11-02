@@ -7,6 +7,7 @@
 #include <Math/Frustum.h>
 #include <GL/glew.h>
 #include <algorithm>
+#include <tuple>
 #include <cstddef>
 
 #include <Profiling/Profiling.h>
@@ -577,6 +578,8 @@ namespace Columbus
 			EditorToolsShader->SetUniform("ViewProjection", false, MainCamera.GetViewProjection());
 			EditorToolsShader->SetUniform("Color", Vector4(Vector3(0.5f), 1.0f));
 			EditorToolsShader->SetUniform("CameraPos", MainCamera.Pos);
+			EditorToolsShader->SetUniform("Model", false, Matrix(1.0f));
+			EditorToolsShader->SetUniform("UseDistanceFade", 1);
 			_Grid.Draw();
 			EditorToolsShader->Unbind();
 		}
@@ -660,6 +663,20 @@ namespace Columbus
 			if (DrawIcons)
 			{
 				RenderIcons();
+			}
+
+			/// Draw Gizmo
+			{
+				State.SetBlending(false);
+				State.SetDepthWriting(false);
+				State.SetDepthTesting(Material::DepthTest::Always);
+				State.SetCulling(Material::Cull::Back);
+
+				_Gizmo.EnableMousePicking = EnableMousePicking;
+				_Gizmo.MousePickingPosition = MousePickingPosition;
+				_Gizmo.PickedObject = PickedObject;
+				_Gizmo.SetCamera(MainCamera);
+				_Gizmo.Draw();
 			}
 
 			if (Vignette.Enabled)
