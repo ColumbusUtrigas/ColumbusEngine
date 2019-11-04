@@ -12,6 +12,7 @@ namespace Columbus
 		Scene* scene = nullptr;
 		GameObject* object = nullptr;
 		GameObject* buffer = nullptr;
+		GameObject* buffer2 = nullptr;
 	public:
 		EditorPanelHierarchy() {}
 
