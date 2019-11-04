@@ -52,7 +52,6 @@ namespace Columbus
 		Texture* EmissionMap = nullptr;
 		Texture* DetailAlbedoMap = nullptr;
 		Texture* DetailNormalMap = nullptr;
-		Texture* ReflectionMap = nullptr;
 
 		Vector2 Tiling = Vector2(1, 1);
 		Vector2 DetailTiling = Vector2(4, 4);

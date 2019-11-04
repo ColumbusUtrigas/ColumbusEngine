@@ -136,7 +136,7 @@ namespace Columbus
 			PreviousMaterial = CurrentMaterial;
 			CurrentMaterial = InMaterial;
 
-			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), gDevice->GetDefaultTextures()->IntegrationLUT.get() };
+			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky ? Sky->GetIrradianceMap() : nullptr, Sky ? Sky->GetPrefilterMap() : nullptr, gDevice->GetDefaultTextures()->IntegrationLUT.get() };
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
 			static constexpr const char* Names[11] =

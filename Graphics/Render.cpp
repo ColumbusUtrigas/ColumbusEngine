@@ -139,7 +139,6 @@ namespace Columbus
 							{
 								if (Object->material == nullptr) continue;
 								Material& Mat = *Object->material;
-								Mat.ReflectionMap = Sky->GetIrradianceMap();
 
 								if (Mat.Transparent)
 									TransparentObjects.emplace_back(Mesh, Counter);
