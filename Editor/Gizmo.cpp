@@ -58,9 +58,11 @@ namespace
 
 	struct GizmoTransform
 	{
+		int index;
 		Vector3 pos;
 		Vector3 scale;
 		Vector4 color;
+		Vector4 color2;
 		Vector3 directions;
 		Vector3 normal;
 	};
@@ -80,14 +82,21 @@ namespace
 		auto dir = MouseRayDir(_Camera.GetViewMatrix(), _Camera.GetProjectionMatrix(), MousePickingPosition);
 
 		GizmoTransform transforms[] = {
-			{{1.5f,0,0}, {1,0.2f,0.2f}, {0.5f,0,0,1}, {1,0,0}, {0,0,1}}, // X
-			{{0,1.5f,0}, {0.2f,1,0.2f}, {0,0.5f,0,1}, {0,1,0}, {1,0,0}}, // Y
-			{{0,0,1.5f}, {0.2f,0.2f,1}, {0,0,0.5f,1}, {0,0,1}, {0,1,0}}  // Z
+			{0, {1.5f,0,0}, {1,0.2f,0.2f}, {0.5f,0,0,1}, {1,0,0,1}, {1,0,0}, {0,0,1}}, // X
+			{1, {0,1.5f,0}, {0.2f,1,0.2f}, {0,0.5f,0,1}, {0,1,0,1}, {0,1,0}, {1,0,0}}, // Y
+			{2, {0,0,1.5f}, {0.2f,0.2f,1}, {0,0,0.5f,1}, {0,0,1,1}, {0,0,1}, {0,1,0}}, // Z
+
+			{3, {1,1,0}, {0.4f, 0.4f, 0.05f}, {0,0.5f,0,1}, {0,1,0,1}, {1,1,0}, {0,0,1}}, // XY
+			{4, {0,1,1}, {0.05f, 0.4f, 0.4f}, {0.5f,0,0,1}, {1,0,0,1}, {0,1,1}, {1,0,0}}, // YZ
+			{5, {1,0,1}, {0.4f, 0.05f, 0.4f}, {0,0,0.5f,1}, {0,0,1,1}, {1,0,1}, {0,1,0}}, // XZ
 		};
 
-		// translate gizmo to object position
+		// translate gizmo to object position and scale it
 		for (auto& trans : transforms)
 		{
+			float factor = PickedObject->transform.Position.Length(_Camera.Pos) / 15;
+			trans.scale *= factor;
+			trans.pos *= factor;
 			trans.pos += PickedObject->transform.Position;
 		}
 
@@ -96,6 +105,12 @@ namespace
 			auto pos = RayPlaneIntersect(origin, dir, PickedPosition, Picked.normal);
 			PickedObject->transform.Position += (pos - PickedPosition) * Picked.directions;
 			PickedPosition = pos;
+
+			auto trans = std::find_if(
+				std::begin(transforms), std::end(transforms),
+				[&](const auto& a){ return a.index == Picked.index; }
+			);
+			trans->color = trans->color2;
 		}
 
 		if (EnableMousePicking)
@@ -110,6 +125,11 @@ namespace
 			{
 				if ((_Box->GetBoundingBox() * trans.scale + trans.pos).Intersects(origin, dir))
 				{
+					if (!WasPressed)
+					{
+						trans.color = trans.color2;
+					}
+
 					if (ImGui::IsMouseDown(0))
 					{
 						if (!WasPressed)
@@ -121,7 +141,6 @@ namespace
 						WasPressed = true;
 					}
 
-					trans.color *= Vector4(2,2,2,1);
 					break;
 				}
 			}
