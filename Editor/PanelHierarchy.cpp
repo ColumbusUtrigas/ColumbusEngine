@@ -5,6 +5,8 @@
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentLight.h>
 
+#include <SDL2/SDL.h>
+
 namespace Columbus
 {
 
@@ -64,10 +66,16 @@ namespace Columbus
 								object = Obj.Get();
 							}
 
-							// if (ctr+c)
+							// if (ctrl+c)
 							if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C), false))
 							{
 								buffer = object;
+							}
+
+							// if (ctrl+d)
+							if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(SDL_SCANCODE_D, false))
+							{
+								buffer2 = object;
 							}
 
 							// if (delete)
@@ -95,19 +103,22 @@ namespace Columbus
 			}
 			ImGui::End();
 
-			// if(ctrl+v)
-			if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V), true))
+			bool ctrlD = ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(SDL_SCANCODE_D, false);
+
+			// if(ctrl+v || ctrl+d)
+			if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V), true) || ctrlD)
 			{
-				if (buffer != nullptr)
+				auto buf = ctrlD ? buffer2 : buffer;
+				if (buf != nullptr)
 				{
 					GameObject tmp;
-					tmp.transform = buffer->transform;
-					tmp.Name = buffer->Name + " ";
-					tmp.Enable = buffer->Enable;
-					tmp.material = buffer->material;
+					tmp.transform = buf->transform;
+					tmp.Name = buf->Name + " ";
+					tmp.Enable = buf->Enable;
+					tmp.material = buf->material;
 
-					CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
-					CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
+					CopyComponent((ComponentMeshRenderer*)buf->GetComponent(Component::Type::MeshRenderer), tmp);
+					CopyComponent((ComponentLight*)buf->GetComponent(Component::Type::Light), tmp);
 
 					String Name;
 
