@@ -665,7 +665,7 @@ namespace Columbus
 				RenderIcons();
 			}
 
-			/// Draw Gizmo
+			if (DrawGizmo)
 			{
 				State.SetBlending(false);
 				State.SetDepthWriting(false);

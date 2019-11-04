@@ -17,6 +17,7 @@ namespace Columbus
 				{
 					ImGui::Checkbox("Icons##PanelScene", &Render.DrawIcons);
 					ImGui::Checkbox("Grid##PanelScene", &Render.DrawGrid);
+					ImGui::Checkbox("Gizmo##PanelScene", &Render.DrawGizmo);
 					ImGui::EndMenuBar();
 				}
 
