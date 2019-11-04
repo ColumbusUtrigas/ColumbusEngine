@@ -75,6 +75,7 @@ namespace Columbus
 
 		auto GetCurrentSceneFilename() const { return _CurrentScene; }
 
+		void Clear();
 		bool Load(const std::string& FileName);
 		bool Save(const std::string& FileName = "");
 

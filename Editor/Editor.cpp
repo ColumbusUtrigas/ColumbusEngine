@@ -84,6 +84,8 @@ namespace Columbus
 				ImGui::Spacing();
 				if (ImGui::MenuItem(" Open")) SceneLoader.Open();
 				ImGui::Spacing();
+				if (ImGui::MenuItem(" New")) scene.Clear();
+				ImGui::Spacing();
 				if (ImGui::MenuItem(" Save"))
 					{
 						if (scene.GetCurrentSceneFilename().empty())
