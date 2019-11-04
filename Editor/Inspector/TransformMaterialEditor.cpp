@@ -131,10 +131,26 @@ namespace Columbus
 			ImGui::SetNextWindowSize(ImVec2(Size.X, Size.Y));
 			if (ImGui::BeginPopupModal("Create New Material", &CreateNewMaterialOpen, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize))
 			{
+				bool appearing = ImGui::IsWindowAppearing();
+
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+				{
+					CreateNewMaterialOpen = false;
+					CreateNewMaterialMat = nullptr;
+					Name.clear();
+				}
+
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Enter)))
+				{
+					Selected = 2;
+				}
+
 				ImVec2 Size = ImGui::GetContentRegionAvail();
 				if (ImGui::BeginChild("TextField##CreateNewMaterial", ImVec2(Size.x, Size.y - 30)))
 				{
-					//ImGui::TextWrapped(Text.c_str());
+					if (appearing) ImGui::SetKeyboardFocusHere();
 					ImGui::InputText("Name", &Name);
 				}
 				ImGui::EndChild();
@@ -152,7 +168,7 @@ namespace Columbus
 				{
 					if (Selected == 2)
 					{
-						SmartPointer<Material> Mat(new Material());
+						SmartPointer<Material> Mat(new Material(**CreateNewMaterialMat));
 						if (MaterialsManager.Add(std::move(Mat), Name.c_str()))
 						{
 							*CreateNewMaterialMat = MaterialsManager[Name.c_str()].Get();
