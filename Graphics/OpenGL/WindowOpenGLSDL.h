@@ -11,7 +11,6 @@ namespace Columbus
 	private:
 		SDL_Window* Window;
 		SDL_GLContext Context;
-		SDL_Event TmpEvent;
 
 		void InitializeSDL();
 		void InitializeWindow(const iVector2& InSize, const char* Title, Window::Flags F);
@@ -42,11 +41,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
 
 

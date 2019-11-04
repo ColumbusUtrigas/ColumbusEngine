@@ -13,7 +13,7 @@ namespace Columbus
 		GameObject* object = nullptr;
 		GameObject* buffer = nullptr;
 	public:
-		EditorPanelHierarchy() : EditorPanel("Hierarchy") {}
+		EditorPanelHierarchy() {}
 
 		void SetScene(Scene* Scn)
 		{
@@ -25,7 +25,7 @@ namespace Columbus
 			return object;
 		}
 
-		virtual void Draw() final override;
+		void Draw();
 
 		virtual ~EditorPanelHierarchy() final override {}
 	};

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <map>
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 namespace Columbus
 {
@@ -11,7 +10,16 @@ namespace Columbus
 	class InterpolationCurve
 	{
 	public:
-		std::vector<std::pair<float, PointType>> Points;
+		struct Node
+		{
+			float Key;
+			PointType Value;
+
+			Node(float Key, const PointType& Value) :
+				Key(Key), Value(Value) {}
+		};
+
+		std::vector<Node> Points;
 	public:
 		InterpolationCurve() {}
 
@@ -29,7 +37,7 @@ namespace Columbus
 		void Sort()
 		{
 			std::sort(Points.begin(), Points.end(), [](const auto& a, const auto& b)
-				{ return a.first < b.first; });
+				{ return a.Key < b.Key; });
 		}
 		/*
 		* Interpolate curve
@@ -49,10 +57,10 @@ namespace Columbus
 				{
 					DownPos = UpPos;
 					Down = Up;
-					UpPos = Point.first;
-					Up = Point.second;
+					UpPos = Point.Key;
+					Up = Point.Value;
 
-					if (Position < Point.first)
+					if (Position < Point.Key)
 					{
 						break;
 					}
@@ -69,7 +77,7 @@ namespace Columbus
 			}
 			else if(Points.size() == 1)
 			{
-				return Points.begin()->second;
+				return Points.begin()->Value;
 			}
 
 			return Result;

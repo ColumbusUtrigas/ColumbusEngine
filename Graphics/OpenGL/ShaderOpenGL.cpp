@@ -1,6 +1,5 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/StandartShadersOpenGL.h>
-#include <Graphics/ShaderBuilder.h>
 #include <GL/glew.h>
 
 #include <System/File.h>
@@ -8,16 +7,116 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <regex>
 
 namespace Columbus
 {
+
+const char* CommonShaderHeader =
+R"(
+#version 330 core
+#define Texture2D sampler2D
+#define Texture3D sampler3D
+#define TextureCube samplerCube
+
+#define Texture2DMS sampler2DMS
+
+#define saturate(x) clamp(x, 0, 1)
+
+#define float2 vec2
+#define float3 vec3
+#define float4 vec4
+
+#define int2 ivec2
+#define int3 ivec3
+#define int4 ivec4
+
+#define float2x2 mat2x2
+#define float2x3 mat2x3
+#define float2x4 mat2x4
+#define float3x2 mat3x2
+#define float3x3 mat3x3
+#define float3x4 mat3x4
+#define float4x2 mat4x2
+#define float4x3 mat4x3
+#define float4x4 mat4x4
+
+#if __VERSION__ < 130
+	#define Sample2D(tex, uv) texture2D(tex, uv)
+	#define Sample3D(tex, uv) texture3D(tex, uv)
+	#define SampleCube(tex, uv) textureCube(tex, uv)
+
+	#define Sample2DLod(tex, uv, lod) texture2DLod(tex, uv, lod)
+	#define Sample3DLod(tex, uv, lod) texture3DLod(tex, uv, lod)
+	#define SampleCubeLod(tex, uv, lod) textureCubeLod(tex, uv, lod)
+#else
+	#define Sample2D(tex, uv) texture(tex, uv)
+	#define Sample3D(tex, uv) texture(tex, uv)
+	#define SampleCube(tex, uv) texture(tex, uv)
+
+	#define Sample2DLod(tex, uv, lod) textureLod(tex, uv, lod)
+	#define Sample3DLod(tex, uv, lod) textureLod(tex, uv, lod)
+	#define SampleCubeLod(tex, uv, lod) textureLod(tex, uv, lod)
+
+	#define Sample2DMS(tex, uv, lod) texelFetch(tex, uv, lod)
+#endif
+)";
+
+const char* VertexShaderHeader =
+R"(
+#define VertexShader
+#define SV_Position gl_Position
+#define SV_VertexID gl_VertexID
+#line 1
+)";
+
+const char* PixelShaderHeader =
+R"(
+#define FragmentShader
+#define SV_Depth gl_FragDepth
+#define SV_Position gl_FragCoord
+layout(location = 0) out float4 RT0;
+layout(location = 1) out float4 RT1;
+layout(location = 2) out float4 RT2;
+layout(location = 3) out float4 RT3;
+#line 1
+)";
+
+const char* ScreenSpaceVertexShader =
+R"(
+out float2 var_UV;
+
+const float2 Coord[6] = float2[](
+	float2(-1, +1),
+	float2(+1, +1),
+	float2(+1, -1),
+	float2(-1, -1),
+	float2(-1, +1),
+	float2(+1, -1)
+);
+
+const float2 UV[6] = float2[](
+	float2(0, 1),
+	float2(1, 1),
+	float2(1, 0),
+	float2(0, 0),
+	float2(0, 1),
+	float2(1, 0)
+);
+
+void main(void)
+{
+	SV_Position = float4(Coord[SV_VertexID], 0, 1);
+	var_UV = UV[SV_VertexID];
+}
+)";
 
 	static const char* GetStringFromShaderType(ShaderType Type)
 	{
 		switch (Type)
 		{
 		case ShaderType::Vertex:   return "Vertex";
-		case ShaderType::Fragment: return "Fragment";
+		case ShaderType::Fragment: return "Pixel";
 		}
 
 		return "";
@@ -60,80 +159,132 @@ namespace Columbus
 		return stream.str();
 	}
 
-	ShaderProgramOpenGL::ShaderData ParseShader(const char* FileName)
+	#define CHECK_ERROR(exp, pos, fmt, first_param) \
+		if (exp) { \
+			char err_msg[512] = {}; \
+			snprintf(err_msg, 512, fmt, first_param); \
+			Data.Errors.emplace_back(line_num, pos, err_msg); \
+			err_occured = true; \
+		}
+
+	#define CHECK_UNIFORM_ERRORS() \
+		CHECK_ERROR(!std::regex_match(type, regex_uniform_types), \
+			match_uniform.position(1) + 1, \
+			"Invalid uniform type '%s'", \
+			type.c_str());
+
+	#define CHECK_ATTRIBUTE_ERRORS() \
+		CHECK_ERROR(CurrentMode != MODE_VERTEX, \
+			line.find("#attribute") + 1, \
+			"Vertex attributes available only in vertex shader", ""); \
+		\
+		CHECK_ERROR(!std::regex_match(type, regex_attribute_types), \
+			match_attribute.position(1) + 1, \
+			"Invalid attribute type '%s'", \
+			type.c_str()); \
+		\
+		CHECK_ERROR(slot_num < 0 || slot_num > 15, \
+			match_attribute.position(3) + 1, \
+			"Invalid slot '%s': It should be a number in range [0;15]", \
+			slot.c_str()); \
+
+	ShaderProgramOpenGL::ShaderData ParseShader(const char* Source)
 	{
 		ShaderProgramOpenGL::ShaderData Data;
 
-		std::ifstream f(FileName);
+		std::stringstream f(Source);
 		std::string line;
+		size_t line_num = 0;
+		bool err_occured = false;
 
-		int CurrentMode = -1;
+		enum
+		{
+			MODE_NONE = -1,
+			MODE_VERTEX = 0,
+			MODE_PIXEL = 1
+		} CurrentMode = MODE_NONE;
+
 		std::stringstream streams[2];
+
+		std::regex regex_uniform_types("\\b((bool|int|float)[2-4]?(x[2-4])?|Texture(2D|3D|Cube|2DMS))\\b");
+		std::regex regex_attribute_types("\\b(float[2-4]?)\\b");
+
+		std::regex regex_shader("\\s*#shader\\s+(vertex|pixel)\\s*(=\\s*(.+))?\\s*");
+		std::regex regex_uniform("\\s*#uniform\\s+(\\w[\\w\\d_]*)\\s+(\\w[\\w\\d_]*)\\s*(\\[(.+)\\])?\\s*");
+		std::regex regex_attribute("\\s*#attribute\\s+(\\w[\\w\\d_]*)\\s+(\\w[\\w\\d_]*)\\s+(\\d+)\\s*");
+		std::regex regex_include("\\s*(#include)\\s*(\"(.*)\"|<(.*)>)\\s*");
 
 		while (std::getline(f, line))
 		{
-			if (line.find("#shader") != std::string::npos)
+			std::smatch match_shader,
+			            match_uniform,
+			            match_attribute,
+			            match_include;
+
+			line_num++;
+
+			if (std::regex_match(line, match_shader, regex_shader))
 			{
-				if (line.find("vertex")   != std::string::npos) CurrentMode = 0;
-				if (line.find("fragment") != std::string::npos) CurrentMode = 1;
+				if (match_shader.str(1) == "vertex")
+				{
+					CurrentMode = MODE_VERTEX;
+					if (!match_shader.str(3).empty())
+					{
+						if (match_shader.str(3) == "screen_space")
+						{
+							streams[CurrentMode] << ScreenSpaceVertexShader;
+						}
+						else
+						{
+							CHECK_ERROR(false,
+								match_shader.position(3) + 1,
+								"Invalid default vertex shader", "");
+						}
+					}
+				}
+				else if (match_shader.str(1) == "pixel")
+				{
+					CurrentMode = MODE_PIXEL;
+				}
 			}
-			else if (line.find("#uniform") != std::string::npos)
+			else if (std::regex_match(line, match_uniform, regex_uniform))
 			{
-				auto substr = line.substr(line.find("#uniform") + 8);
-				size_t pos = 0;
-				std::string type, name, brackets;
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size() && substr[pos] != '[') name += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (substr[pos] != '\n' && pos < substr.size()) brackets += substr[pos++];
+				auto type = match_uniform.str(1);
+				auto name = match_uniform.str(2);
+				auto brackets = match_uniform.str(3);
 
-				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ';' << '\n';
+				CHECK_UNIFORM_ERRORS();
 
+				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ";\n";
 				Data.Uniforms.emplace_back(std::move(name));
 			}
-			else if (line.find("#attribute") != std::string::npos)
+			else if (std::regex_match(line, match_attribute, regex_attribute))
 			{
-				auto substr = line.substr(line.find("#attribute") + 10);
-				size_t pos = 0;
-				std::string type, name, slot;
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) type += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) name += substr[pos++];
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size()) slot += substr[pos++];
+				auto type = match_attribute.str(1);
+				auto name = match_attribute.str(2);
+				auto slot = match_attribute.str(3);
+				int slot_num = atoi(slot.c_str());
 
-				streams[CurrentMode] << "in " << type << ' ' << name << ';' << '\n';
+				CHECK_ATTRIBUTE_ERRORS();
 
-				Data.Attributes.emplace_back(std::move(name), atoi(slot.c_str()));
+				streams[CurrentMode] << "in " << type << ' ' << name << ";\n";
+				Data.Attributes.emplace_back(std::move(name), slot_num);
 			}
-			else if (line.find("#include") != std::string::npos)
+			else if (std::regex_match(line, match_include, regex_include))
 			{
-				auto substr = line.substr(line.find("#include") + 8);
-				size_t pos = 0;
-				std::string path;
-				while  (isspace(substr[pos]) && pos < substr.size()) pos++;
-				while (!isspace(substr[pos]) && pos < substr.size())
+				if (CurrentMode == MODE_NONE)
 				{
-					if (substr[pos] != '"') path += substr[pos];
-					pos++;
-				}
-
-				if (CurrentMode == -1)
-				{
-					auto Included = ReadFile(path.c_str());
+					auto Included = ReadFile(match_include.str(3).c_str());
 					for (auto& stream : streams) stream << Included << '\n';
 				}
 				else
 				{
-					streams[CurrentMode] << ReadFile(path.c_str()) << '\n';
+					streams[CurrentMode] << ReadFile(match_include.str(3).c_str()) << '\n';
 				}
 			}
 			else
 			{
-				if (CurrentMode == -1)
+				if (CurrentMode == MODE_NONE)
 				{
 					for (auto& stream : streams) stream << line << '\n';
 				}
@@ -144,13 +295,10 @@ namespace Columbus
 			}
 		}
 
-		ShaderBuilder Builder;
+		if (err_occured) return Data;
 
-		Builder.Build(streams[0].str().c_str(), ShaderType::Vertex);
-		Data.VertexSource   = Builder.ShaderSource;
-
-		Builder.Build(streams[1].str().c_str(), ShaderType::Fragment);
-		Data.FragmentSource = Builder.ShaderSource;
+		Data.VertexSource = CommonShaderHeader + std::string(VertexShaderHeader) + streams[MODE_VERTEX].str();
+		Data.FragmentSource = CommonShaderHeader + std::string(PixelShaderHeader) + streams[MODE_PIXEL].str();
 
 		return Data;
 	}
@@ -172,19 +320,20 @@ namespace Columbus
 		char* Error = nullptr;
 
 		glGetShaderiv(ShaderID, GL_COMPILE_STATUS, &Status);
+		glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
+		Error = new char[Length];
+		glGetShaderInfoLog(ShaderID, Length, &Length, Error);
 
 		if (Status == GL_FALSE)
 		{
-			glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &Length);
-			Error = new char[Length];
-			glGetShaderInfoLog(ShaderID, Length, &Length, Error);
-			Log::Error("%s shader (%s): %s: %s", GetStringFromShaderType(Type), ShaderPath, ShaderPath,  Error);
-
-			delete[] Error;
-			return true;
+			Log::Error("%s shader (%s): %s", GetStringFromShaderType(Type), ShaderPath, Error);
+		} else if (Length > 1)
+		{
+			Log::Warning("%s shader (%s): %s", GetStringFromShaderType(Type), ShaderPath, Error);
 		}
 
-		return false;
+		delete[] Error;
+		return Status == GL_FALSE;
 	}
 
 	static bool ShaderCompile(const char* ShaderPath, const char* ShaderSource, int32 ShaderID, ShaderType Type)
@@ -230,168 +379,50 @@ namespace Columbus
 
 	bool ShaderProgramOpenGL::Load(ShaderProgram::StandartProgram Program)
 	{
+		#define STD_PROG_CASE(x) \
+			case ShaderProgram::StandartProgram::x: \
+				LoadFromMemory(g##x##Shader, #x); \
+				break;
+
 		switch (Program)
 		{
-			case ShaderProgram::StandartProgram::Final:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gFinalFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Exposure");
-				Data.Uniforms.emplace_back("Gamma");
-
-				Path = "Final";
-
-				Log::Success("Default shader program loaded: Final");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::GaussBlur:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gGaussBlurFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Horizontal");
-				Data.Uniforms.emplace_back("Radius");
-
-				Path = "GaussBlur";
-
-				Log::Success("Default shader program loaded: GaussBlur");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::BloomBright:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gBloomBrightFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Treshold");
-
-				Path = "BloomBright";
-
-				Log::Success("Default shader program loaded: BloomBright");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Bloom:
-			{
-				Data.VertexSource = gScreenSpaceVertexShader;
-				Data.FragmentSource = gBloomFragmentShader;
-
-				Data.Attributes.emplace_back("Pos", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("BaseTexture");
-				Data.Uniforms.emplace_back("Blur");
-				Data.Uniforms.emplace_back("Intensity");
-
-				Path = "Bloom";
-
-				Log::Success("Default shader program loaded: Bloom");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Icon:
-			{
-				Data.VertexSource = gIconVertexShader;
-				Data.FragmentSource = gIconFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Attributes.emplace_back("UV", 1);
-				Data.Uniforms.emplace_back("Pos");
-				Data.Uniforms.emplace_back("Size");
-				Data.Uniforms.emplace_back("Texture");
-
-				Path = "Icon";
-
-				Log::Success("Default shader program loaded: Icon");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::Skybox:
-			{
-				Data.VertexSource = gSkyboxVertexShader;
-				Data.FragmentSource = gSkyboxFragmentShader;
-
-				Data.Uniforms.emplace_back("ViewProjection");
-				Data.Uniforms.emplace_back("Skybox");
-
-				Path = "Skybox";
-
-				Log::Success("Default shader program loaded: Skybox");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::SkyboxCubemapGeneration:
-			{
-				Data.VertexSource = gSkyboxCubemapGenerationVertexShader;
-				Data.FragmentSource = gSkyboxCubemapGenerationFragmentShader;
-
-				Data.Uniforms.emplace_back("Projection");
-				Data.Uniforms.emplace_back("View");
-				Data.Uniforms.emplace_back("BaseMap");
-
-				Path = "SkyboxCubemapGeneration";
-
-				Log::Success("Default shader program loaded: SkyboxCubemapGeneration");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::IrradianceGeneration:
-			{
-				Data.VertexSource = gIrradianceGenerationVertexShader;
-				Data.FragmentSource = gIrradianceGenerationFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Uniforms.emplace_back("Projection");
-				Data.Uniforms.emplace_back("View");
-				Data.Uniforms.emplace_back("EnvironmentMap");
-
-				Path = "IrradianceGeneration";
-
-				Log::Success("Default shader program loaded: IrradianceGeneration");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::PrefilterGeneration:
-			{
-				Data.VertexSource = gPrefilterGenerationVertexShader;
-				Data.FragmentSource = gPrefilterGenerationFragmentShader;
-
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Uniforms.emplace_back("Projection");
-				Data.Uniforms.emplace_back("View");
-				Data.Uniforms.emplace_back("Roughness");
-				Data.Uniforms.emplace_back("EnvironmentMap");
-
-				Path = "PrefilterGeneration";
-
-				Log::Success("Default shader program loaded: PrefilterGeneration");
-				break;
-			}
-
-			case ShaderProgram::StandartProgram::IntegrationGeneration:
-			{
-				Data.Attributes.emplace_back("Position", 0);
-				Data.Attributes.emplace_back("Texcoord", 1);
-				Data.VertexSource = gIntegrationGenerationVertexShader;
-				Data.FragmentSource = gIntegrationGenerationFragmentShader;
-
-				Path = "IntegrationGeneration";
-
-				Log::Success("Default shader program loaded: IntegrationGeneration");
-				break;
-			}
+		STD_PROG_CASE(ScreenSpace);
+		STD_PROG_CASE(AutoExposure);
+		STD_PROG_CASE(Tonemap);
+		STD_PROG_CASE(ResolveMSAA);
+		STD_PROG_CASE(GaussBlur);
+		STD_PROG_CASE(BloomBright);
+		STD_PROG_CASE(Bloom);
+		STD_PROG_CASE(Vignette);
+		STD_PROG_CASE(FXAA);
+		STD_PROG_CASE(Icon);
+		STD_PROG_CASE(EditorTools);
+		STD_PROG_CASE(Skybox);
+		STD_PROG_CASE(SkyboxCubemapGeneration);
+		STD_PROG_CASE(IrradianceGeneration);
+		STD_PROG_CASE(PrefilterGeneration);
+		STD_PROG_CASE(IntegrationGeneration);
 		}
 
+		Loaded = true;
+		return true;
+	}
+
+	bool ShaderProgramOpenGL::LoadFromMemory(const char* Source, const char* FilePath)
+	{
+		Data = ParseShader(Source);
+		Path = FilePath;
+
+		if (!Data.Errors.empty())
+		{
+			for (const auto& err : Data.Errors)
+				Log::Error("%s:%zu:%zu: %s", FilePath, err.Line, err.Position, err.Message.c_str());
+
+			Loaded = false;
+			return false;
+		}
+
+		Log::Success("Shader program loaded:   %s", FilePath);
 		Loaded = true;
 		return true;
 	}
@@ -405,17 +436,24 @@ namespace Columbus
 			return false;
 		}
 
-		Data = ParseShader(FileName);
-		Path = FileName;
+		char* _data = (char*)malloc(ShaderFile.GetSize() + 1);
+		ShaderFile.ReadBytes(_data, ShaderFile.GetSize());
+		_data[ShaderFile.GetSize()] = '\0';
 
-		Log::Success("Shader program loaded:   %s", FileName);
+		bool result = LoadFromMemory(_data, FileName);
 
-		Loaded = true;
-		return true;
+		free(_data);
+		return result;
 	}
 
 	bool ShaderProgramOpenGL::Compile()
 	{
+		if (Loaded && Compiled)
+		{
+			Log::Warning("Shader program already compiled, aborting: %s", Path.c_str());
+			return false;
+		}
+
 		bool VertexShaderExists = !Data.VertexSource.empty();
 		bool FragmentShaderExists = !Data.FragmentSource.empty();
 
@@ -467,9 +505,9 @@ namespace Columbus
 		return true;
 	}
 
-	bool ShaderProgramOpenGL::AddUniform(const char* Name)
+	bool ShaderProgramOpenGL::AddUniform(const std::string& Name)
 	{
-		int32 Value = glGetUniformLocation(ID, Name);
+		int32 Value = glGetUniformLocation(ID, Name.c_str());
 
 		if (Value != -1)
 		{
@@ -481,10 +519,77 @@ namespace Columbus
 		return false;
 	}
 
-	int32 ShaderProgramOpenGL::GetFastUniform(const char* Name) const
+	int32 ShaderProgramOpenGL::GetFastUniform(const std::string& Name) const
 	{
 		auto Fast = FastUniformsMap.find(Name);
 		return Fast != FastUniformsMap.end() ? Fast->second : -1;
+	}
+
+	#define _SET_UNIFORM(func) \
+		auto id = GetFastUniform(Name); \
+		COLUMBUS_ASSERT_MESSAGE(id != -1, ("Invalid uniform: " + Name \
+			+ "\n" + "in shader: " + Path).c_str()); \
+		if (id != -1) \
+		{ \
+			func; \
+			return true; \
+		} \
+		return false; \
+
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, int Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, float Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, const Vector2& Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, const Vector3& Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, const Vector4& Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const float* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const Vector2* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const Vector3* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, uint32 Count, const Vector4* Value) const
+	{
+		_SET_UNIFORM(SetUniform(id, Count, Value));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, bool Transpose, const Matrix& Mat) const
+	{
+		_SET_UNIFORM(SetUniform(id, Transpose, Mat));
+	}
+
+	bool ShaderProgramOpenGL::SetUniform(const std::string& Name, Texture* Tex, uint32 Sampler) const
+	{
+		_SET_UNIFORM(SetUniform(id, static_cast<TextureOpenGL*>(Tex), Sampler));
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, int Value) const
@@ -512,9 +617,24 @@ namespace Columbus
 		glUniform4f(FastUniforms[FastID], Value.X, Value.Y, Value.Z, Value.W);
 	}
 
-	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Size, const float* Value) const
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const float* Value) const
 	{
-		glUniform1fv(FastUniforms[FastID], Size, Value);
+		glUniform1fv(FastUniforms[FastID], Count, Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector2* Value) const
+	{
+		glUniform2fv(FastUniforms[FastID], Count, (const float*)Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector3* Value) const
+	{
+		glUniform3fv(FastUniforms[FastID], Count, (const float*)Value);
+	}
+
+	void ShaderProgramOpenGL::SetUniform(int FastID, uint32 Count, const Vector4* Value) const
+	{
+		glUniform4fv(FastUniforms[FastID], Count, (const float*)Value);
 	}
 
 	void ShaderProgramOpenGL::SetUniform(int FastID, bool Transpose, const Matrix& Mat) const

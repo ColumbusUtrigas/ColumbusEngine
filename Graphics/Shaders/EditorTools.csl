@@ -1,0 +1,35 @@
+R"(
+#shader vertex
+#attribute float3 a_Pos 0
+#uniform float4x4 ViewProjection
+#uniform float4x4 Model
+
+out float3 var_Pos;
+
+void main(void)
+{
+	SV_Position = ViewProjection * (float4(a_Pos, 1.0) * Model);
+	var_Pos = a_Pos;
+}
+
+#shader pixel
+#uniform float4 Color
+#uniform float3 CameraPos
+#uniform bool UseDistanceFade
+
+in float3 var_Pos;
+
+void main(void)
+{
+	float3 view_ray = normalize(CameraPos - var_Pos);
+
+	float alpha = Color.a;
+	if (UseDistanceFade)
+	{
+		alpha = Color.a * abs(dot(view_ray, float3(0, 1, 0)));
+		alpha *= 1.0 - smoothstep(0.0, 100.0, distance(var_Pos, CameraPos));
+	}
+
+	RT0 = float4(Color.rgb, alpha);
+}
+)"

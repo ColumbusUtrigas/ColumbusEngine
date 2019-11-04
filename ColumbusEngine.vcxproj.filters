@@ -31,9 +31,6 @@
     <Filter Include="Файлы заголовков\Graphics">
       <UniqueIdentifier>{197601aa-b086-4df4-9aac-ba14d200f240}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\GUI">
-      <UniqueIdentifier>{01acaa1e-e574-47a0-9404-6707792d67de}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы заголовков\Input">
       <UniqueIdentifier>{1aa8d723-3b14-41db-be5a-e8dd3c40f0dc}</UniqueIdentifier>
     </Filter>
@@ -48,9 +45,6 @@
     </Filter>
     <Filter Include="Файлы заголовков\RenderAPIOpenGL">
       <UniqueIdentifier>{98a911d0-e9d7-4412-8d8f-cece0803e2c1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы заголовков\RenderAPI">
-      <UniqueIdentifier>{51a2efae-36ca-40c2-b94d-5e388945591f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Файлы заголовков\Physics">
       <UniqueIdentifier>{b0ab2dba-f065-4cf2-9446-790359a20c6a}</UniqueIdentifier>
@@ -127,15 +121,6 @@
     <Filter Include="Файлы заголовков\Core\Containers">
       <UniqueIdentifier>{c4b260f9-5a54-4044-b9c1-21f03dfa0b61}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\Core\Linux">
-      <UniqueIdentifier>{45da7224-f361-4672-9997-d7312f55e9a2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы заголовков\Core\Platform">
-      <UniqueIdentifier>{95b3eb9e-f7b1-4bc8-a146-d8f9106bc285}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы заголовков\Core\Windows">
-      <UniqueIdentifier>{e17bd21f-4a4f-4692-9fc8-31361aa3d569}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Исходные файлы\Common">
       <UniqueIdentifier>{24d99c7e-4c94-4be1-846b-2422fc7111b9}</UniqueIdentifier>
     </Filter>
@@ -144,9 +129,6 @@
     </Filter>
     <Filter Include="Исходные файлы\Graphics">
       <UniqueIdentifier>{70a73fb6-1ce4-4ce5-83c2-b713888d489a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Исходные файлы\GUI">
-      <UniqueIdentifier>{da897f69-36fe-4050-80ad-454c0b38d767}</UniqueIdentifier>
     </Filter>
     <Filter Include="Исходные файлы\Input">
       <UniqueIdentifier>{9783e4d9-b382-462d-8718-8aaac1be5837}</UniqueIdentifier>
@@ -171,9 +153,6 @@
     </Filter>
     <Filter Include="Исходные файлы\Core\Windows">
       <UniqueIdentifier>{988c8026-4207-4818-a3cc-fc16f1c3a283}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Исходные файлы\Core\Platform">
-      <UniqueIdentifier>{b10e3b35-46c3-42fe-b338-676e703842fc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Исходные файлы\Common\Image">
       <UniqueIdentifier>{9d45e963-5b4b-49fc-a5b9-5c60a41009a8}</UniqueIdentifier>
@@ -289,6 +268,24 @@
     <Filter Include="Исходные файлы\Lib\imgui\misc\cpp">
       <UniqueIdentifier>{aa2b7a38-b24b-42c1-9a18-6eb4a62e8bb8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Editor\Inspector">
+      <UniqueIdentifier>{883d8ad7-9f05-4667-bbdb-53ded1195065}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Editor\Inspector">
+      <UniqueIdentifier>{d7730abb-7601-4d98-af9d-a9b4fb3c72be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Common\Image\EXR">
+      <UniqueIdentifier>{65254fbe-9c4f-410c-8573-823fa6d7d7e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\Common\Image\EXR">
+      <UniqueIdentifier>{175066cb-d51d-4155-939a-65ac9ace2d2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы ресурсов\Graphics">
+      <UniqueIdentifier>{bf9f6e39-9c21-4875-b281-8bb832de4c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы ресурсов\Graphics\Shaders">
+      <UniqueIdentifier>{811dcf41-0c55-482f-beb0-de79e04b463b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animation\Animation.h">
@@ -396,25 +393,16 @@
     <ClInclude Include="Graphics\PostEffect.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\Primitives.h">
-      <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\Render.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\Shader.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\ShaderBuilder.h">
-      <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\Skybox.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\Texture.h">
-      <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Graphics\UIRender.h">
       <Filter>Файлы заголовков\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\Window.h">
@@ -443,18 +431,6 @@
     </ClInclude>
     <ClInclude Include="Graphics\Particles\Velocity\ParticleModuleVelocity.h">
       <Filter>Файлы заголовков\Graphics\Particles\Velocity</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Button.h">
-      <Filter>Файлы заголовков\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\GUI.h">
-      <Filter>Файлы заголовков\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\VirtualInput.h">
-      <Filter>Файлы заголовков\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Widget.h">
-      <Filter>Файлы заголовков\GUI</Filter>
     </ClInclude>
     <ClInclude Include="Input\Input.h">
       <Filter>Файлы заголовков\Input</Filter>
@@ -522,9 +498,6 @@
     <ClInclude Include="Physics\Rigidbody.h">
       <Filter>Файлы заголовков\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="RenderAPI\RenderAPI.h">
-      <Filter>Файлы заголовков\RenderAPI</Filter>
-    </ClInclude>
     <ClInclude Include="RenderAPIOpenGL\OpenGL.h">
       <Filter>Файлы заголовков\RenderAPIOpenGL</Filter>
     </ClInclude>
@@ -555,25 +528,16 @@
     <ClInclude Include="Scene\Transform.h">
       <Filter>Файлы заголовков\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="System\Assert.h">
-      <Filter>Файлы заголовков\System</Filter>
-    </ClInclude>
     <ClInclude Include="System\File.h">
       <Filter>Файлы заголовков\System</Filter>
     </ClInclude>
     <ClInclude Include="System\Log.h">
       <Filter>Файлы заголовков\System</Filter>
     </ClInclude>
-    <ClInclude Include="System\Serializer.h">
-      <Filter>Файлы заголовков\System</Filter>
-    </ClInclude>
     <ClInclude Include="System\Timer.h">
       <Filter>Файлы заголовков\System</Filter>
     </ClInclude>
     <ClInclude Include="Core\Core.h">
-      <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Memory.h">
       <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\Random.h">
@@ -591,24 +555,6 @@
     <ClInclude Include="Core\Containers\String.h">
       <Filter>Файлы заголовков\Core\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Linux\PlatformLinuxClipboard.h">
-      <Filter>Файлы заголовков\Core\Linux</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Linux\PlatformLinuxFilesystem.h">
-      <Filter>Файлы заголовков\Core\Linux</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Platform\Platform.h">
-      <Filter>Файлы заголовков\Core\Platform</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Platform\PlatformClipboard.h">
-      <Filter>Файлы заголовков\Core\Platform</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Platform\PlatformFilesystem.h">
-      <Filter>Файлы заголовков\Core\Platform</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Windows\PlatformWindowsClipboard.h">
-      <Filter>Файлы заголовков\Core\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="Engine.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
@@ -620,9 +566,6 @@
     </ClInclude>
     <ClInclude Include="Graphics\ScreenQuad.h">
       <Filter>Файлы заголовков\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Windows\PlatformWindowsFilesystem.h">
-      <Filter>Файлы заголовков\Core\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Common\JSON\JSON.h">
       <Filter>Файлы заголовков\Common\JSON</Filter>
@@ -690,9 +633,6 @@
     <ClInclude Include="Editor\PanelHierarchy.h">
       <Filter>Файлы заголовков\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\PanelInspector.h">
-      <Filter>Файлы заголовков\Editor</Filter>
-    </ClInclude>
     <ClInclude Include="Editor\PanelProfiler.h">
       <Filter>Файлы заголовков\Editor</Filter>
     </ClInclude>
@@ -722,6 +662,51 @@
     </ClInclude>
     <ClInclude Include="Input\EventSystem.h">
       <Filter>Файлы заголовков\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Inspector\PanelInspector.h">
+      <Filter>Файлы заголовков\Editor\Inspector</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Image\EXR\ImageEXR.h">
+      <Filter>Файлы заголовков\Common\Image\EXR</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\GameObjectsHolder.h">
+      <Filter>Файлы заголовков\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\ISerializable.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\String.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\ResourcesViewerMaterial.h">
+      <Filter>Файлы заголовков\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Sound\SoundUtil.h">
+      <Filter>Файлы заголовков\Common\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Assert.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\FileInfo.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Filesystem.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Platform.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Timer.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Gizmo.h">
+      <Filter>Файлы заголовков\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Grid.h">
+      <Filter>Файлы заголовков\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Icons.h">
+      <Filter>Файлы заголовков\Editor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -761,12 +746,6 @@
     <ClCompile Include="System\Log.cpp">
       <Filter>Исходные файлы\System</Filter>
     </ClCompile>
-    <ClCompile Include="System\Serializer.cpp">
-      <Filter>Исходные файлы\System</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Button.cpp">
-      <Filter>Исходные файлы\GUI</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Camera.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
@@ -779,13 +758,7 @@
     <ClCompile Include="Graphics\Material.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\Primitives.cpp">
-      <Filter>Исходные файлы\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Render.cpp">
-      <Filter>Исходные файлы\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphics\ShaderBuilder.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Skybox.cpp">
@@ -811,15 +784,6 @@
     </ClCompile>
     <ClCompile Include="Graphics\OpenGL\WindowOpenGLSDL.cpp">
       <Filter>Исходные файлы\Graphics\OpenGL</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Platform\PlatformClipboard.cpp">
-      <Filter>Исходные файлы\Core\Platform</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Platform\PlatformFilesystem.cpp">
-      <Filter>Исходные файлы\Core\Platform</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Windows\PlatformWindowsClipboard.cpp">
-      <Filter>Исходные файлы\Core\Windows</Filter>
     </ClCompile>
     <ClCompile Include="Common\Model\Model.cpp">
       <Filter>Исходные файлы\Common\Model</Filter>
@@ -866,9 +830,6 @@
     <ClCompile Include="Common\Model\CMF\ModelCMF.cpp">
       <Filter>Исходные файлы\Common\Model\CMF</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Windows\PlatformWindowsFilesystem.cpp">
-      <Filter>Исходные файлы\Core\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="Audio\AudioPlayer.cpp">
       <Filter>Исходные файлы\Audio</Filter>
     </ClCompile>
@@ -883,9 +844,6 @@
     </ClCompile>
     <ClCompile Include="Graphics\ParticlesRenderer.cpp">
       <Filter>Исходные файлы\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphics\Particles\ParticleEmitterLoader.cpp">
-      <Filter>Исходные файлы\Graphics\Particles</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Particles\Rotation\ParticleModuleRotation.cpp">
       <Filter>Исходные файлы\Graphics\Particles\Rotation</Filter>
@@ -932,13 +890,7 @@
     <ClCompile Include="Editor\MessageBox.cpp">
       <Filter>Исходные файлы\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Panel.cpp">
-      <Filter>Исходные файлы\Editor</Filter>
-    </ClCompile>
     <ClCompile Include="Editor\PanelHierarchy.cpp">
-      <Filter>Исходные файлы\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Editor\PanelInspector.cpp">
       <Filter>Исходные файлы\Editor</Filter>
     </ClCompile>
     <ClCompile Include="Editor\PanelProfiler.cpp">
@@ -971,5 +923,109 @@
     <ClCompile Include="Input\EventSystem.cpp">
       <Filter>Исходные файлы\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentAudioEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentLightEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentMeshRendererEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentParticleSystemEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\ComponentRigidbodyEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\PanelInspector.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\TransformMaterialEditor.cpp">
+      <Filter>Исходные файлы\Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Image\EXR\ImageEXR.cpp">
+      <Filter>Исходные файлы\Common\Image\EXR</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\SceneIO.cpp">
+      <Filter>Исходные файлы\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\String.cpp">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\Particles\ParticleEmitterIO.cpp">
+      <Filter>Исходные файлы\Graphics\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\ResourcesViewerMaterial.cpp">
+      <Filter>Исходные файлы\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Sound\SoundUtil.cpp">
+      <Filter>Исходные файлы\Common\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Windows\WindowsFilesystem.cpp">
+      <Filter>Исходные файлы\Core\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Assert.cpp">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Filesystem.cpp">
+      <Filter>Исходные файлы\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Gizmo.cpp">
+      <Filter>Исходные файлы\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Grid.cpp">
+      <Filter>Исходные файлы\Editor</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Graphics\Shaders\AutoExposure.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\Bloom.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\BloomBright.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\EditorTools.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\FXAA.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\GaussBlur.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\Icon.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\IntegrationGeneration.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\IrradianceGeneration.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\PrefilterGeneration.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\ResolveMSAA.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\ScreenSpace.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\Skybox.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\SkyboxCubemapGeneration.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\Tonemap.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
+    <None Include="Graphics\Shaders\Vignette.csl">
+      <Filter>Файлы ресурсов\Graphics\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

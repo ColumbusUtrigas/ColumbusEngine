@@ -42,7 +42,7 @@
 //  2017-08-25: Inputs: MousePos set to -FLT_MAX,-FLT_MAX when mouse is unavailable/missing (instead of -1,-1).
 //  2016-10-15: Misc: Added a void* user_data parameter to Clipboard function handlers.
 
-#include "Lib/imgui/imgui.h"
+#include "../imgui.h"
 #include "imgui_impl_sdl.h"
 
 // SDL
@@ -312,17 +312,21 @@ static void ImGui_ImplSDL2_UpdateMouseCursor()
     if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
         return;
 
+    int cursor_state = SDL_ShowCursor(SDL_QUERY);
+
     ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
     if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None)
     {
         // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
-        SDL_ShowCursor(SDL_FALSE);
+        if (cursor_state != SDL_FALSE)
+            SDL_ShowCursor(SDL_FALSE);
     }
     else
     {
         // Show OS mouse cursor
         SDL_SetCursor(g_MouseCursors[imgui_cursor] ? g_MouseCursors[imgui_cursor] : g_MouseCursors[ImGuiMouseCursor_Arrow]);
-        SDL_ShowCursor(SDL_TRUE);
+        if (cursor_state != SDL_TRUE)
+            SDL_ShowCursor(SDL_TRUE);
     }
 }
 

@@ -10,6 +10,8 @@
 
 #include <Input/EventSystem.h>
 
+#include <Graphics/Vulkan/InstanceVulkan.h>
+
 using namespace Columbus;
 
 #include <Lib/imgui/imgui.h>
@@ -39,11 +41,15 @@ int main(int argc, char** argv)
 	Camera camera;
 	Renderer MainRender;
 
+	// Veeeeery experimental
+	GAPIVulkan vk;
+	vk._test();
+
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
 
 	input.ShowMouseCursor(true);
-	input.SetSystemCursor(SystemCursor::Crosshair);
+	input.SetSystemCursor(SystemCursor::Arrow);
 
 	float wheel = 0.0f;
 	const int CameraSpeed = 5;
@@ -79,6 +85,8 @@ int main(int argc, char** argv)
 
 	window.SetVSync(true);
 
+	bool wasLooking = false;
+
 	while (Running && window.IsOpen())
 	{
 		input.Update();
@@ -89,6 +97,7 @@ int main(int argc, char** argv)
 		ResetProfiling();
 		PROFILE_CPU(ProfileModule::CPU);
 		float RedrawTime = window.GetRedrawTime();
+		MainRender.SetDeltaTime(RedrawTime);
 
 		window.Clear({ 0.06f, 0.06f, 0.06f, 1 });
 
@@ -109,29 +118,31 @@ int main(int argc, char** argv)
 		wheel -= wheel * 3 * RedrawTime;
 		if (abs(wheel) <= 0.2) wheel = 0.0f;
 
-		input.ShowMouseCursor(true);
-		if (input.GetMouseButton(SDL_BUTTON_RIGHT).State && Editor.PanelScene.IsHover())
+		if (input.GetMouseButton(SDL_BUTTON_RIGHT).State)
 		{
-			input.ShowMouseCursor(false);
+			if (Editor.PanelScene.IsHover())
+			{
+				wasLooking = true;
+			}
 
-			camera.Pos += camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_W);
-			camera.Pos -= camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_S);
-			camera.Pos -= camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_A);
-			camera.Pos += camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_D);
-			camera.Pos -= camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_LSHIFT);
-			camera.Pos += camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_SPACE);
+			if (wasLooking)
+			{
+				camera.Pos += camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_W);
+				camera.Pos -= camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_S);
+				camera.Pos -= camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_A);
+				camera.Pos += camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_D);
+				camera.Pos -= camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_LSHIFT);
+				camera.Pos += camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_SPACE);
 
-			camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_Q);
-			camera.Rot += Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_E);
+				camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_Q);
+				camera.Rot += Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_E);
 
-			Vector2 deltaMouse = input.GetMouseMovement();
-			camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
-
-			iVector2 PosOfRenderWindow = Editor.PanelScene.GetPosition();
-			iVector2 MousePos = PosOfRenderWindow + (SizeOfRenderWindow / 2);
-
-			window.SetMousePosition(MousePos);
-			input.SetMousePosition (MousePos);
+				Vector2 deltaMouse = input.GetMouseMovement();
+				camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
+			}
+		} else
+		{
+			wasLooking = false;
 		}
 
 		camera.Rot.Clamp({ -89.9f, -360.0f, -360.0f }, { 89.9f, 360.0f, 360.0f });
@@ -155,14 +166,11 @@ int main(int argc, char** argv)
 		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
 		ImGui::NewFrame();
 
-		SDL_ShowCursor(input.IsMouseCursorShowed());
-
 		Editor.Draw(scene, MainRender, SizeOfRenderWindow, RedrawTime);
 
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 		window.Display();
 	}
 

@@ -101,9 +101,10 @@ namespace Columbus
 		* Constrain a value to lie between two further values
 		*/
 		template <typename T>
-		static constexpr inline T Clamp(const T A, const T MinValue, const T MaxValue) noexcept
+		static constexpr inline T Clamp(const T X, const T MinValue, const T MaxValue) noexcept
 		{
-			return Min(Max(A, MinValue), MaxValue);
+			//return Min(Max(X, MinValue), MaxValue);
+			return X < MinValue ? MinValue : X > MaxValue ? MaxValue : X;
 		}
 		/*
 		* Linearly interpolate between two values.

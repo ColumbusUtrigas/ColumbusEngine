@@ -1,6 +1,5 @@
 #include <Common/Sound/Sound.h>
 #include <Common/Sound/OGG/SoundOGG.h>
-#include <Core/Memory.h>
 #include <System/File.h>
 #include <stb_vorbis.h>
 
@@ -31,7 +30,7 @@ namespace Columbus
 		OGGSoundFile.Read(Magic, sizeof(Magic), 1);
 		OGGSoundFile.Close();
 
-		if (Memory::Memcmp(Magic, "OggS", 4) == 0)
+		if (memcmp(Magic, "OggS", 4) == 0)
 		{
 			return true;
 		}

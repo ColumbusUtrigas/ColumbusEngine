@@ -6,6 +6,7 @@
 #include <Editor/PanelRenderSettings.h>
 #include <Editor/Inspector/PanelInspector.h>
 #include <Editor/PanelProfiler.h>
+#include <Editor/PanelConsole.h>
 #include <Graphics/Render.h>
 
 #include <Math/Vector2.h>
@@ -25,6 +26,7 @@ namespace Columbus
 		EditorPanelRenderSettings PanelRenderSettings;
 		EditorPanelInspector PanelInspector;
 		EditorPanelProfiler PanelProfiler;
+		EditorPanelConsole PanelConsole;
 	public:
 		Editor();
 

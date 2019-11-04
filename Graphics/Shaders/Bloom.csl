@@ -1,0 +1,17 @@
+R"(
+#shader vertex = screen_space
+#shader pixel
+#uniform Texture2D BaseTexture
+#uniform Texture2D Blur
+#uniform float Intensity
+
+in float2 var_UV;
+
+void main()
+{
+	float3 hdrColor = Sample2D(BaseTexture, var_UV).rgb;
+	float3 bloomColor = Sample2D(Blur, var_UV).rgb * Intensity;
+	hdrColor += bloomColor;
+	RT0 = float4(hdrColor, 1.0);
+}
+)"

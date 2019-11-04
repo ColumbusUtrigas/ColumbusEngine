@@ -1,9 +1,9 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/JPG/ImageJPG.h>
-#include <Core/Memory.h>
 #include <System/File.h>
 #include <jpeglib.h>
 #include <setjmp.h>
+#include <cstring>
 
 namespace Columbus
 {
@@ -61,15 +61,13 @@ namespace Columbus
 		row_stride = cinfo.output_width * cinfo.output_components;
 		buffer = (*cinfo.mem->alloc_sarray) ((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
 
-		//uint8* data = (uint8*)Memory::Malloc(cinfo.image_width * cinfo.image_height * bpp);
 		uint8* data = new uint8[cinfo.image_width * cinfo.image_height * bpp];
 		uint64 counter = 0;
-		uint64 maxsize = row_stride * cinfo.image_height;
 
 		while (cinfo.output_scanline < cinfo.output_height)
 		{
 			jpeg_read_scanlines(&cinfo, buffer, 1);
-			Memory::Memcpy(data + (maxsize - counter - row_stride), buffer[0], row_stride);
+			memcpy(data + counter, buffer[0], row_stride);
 			counter += row_stride;
 		}
 

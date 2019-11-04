@@ -1,0 +1,35 @@
+R"(
+#shader vertex = screen_space
+#shader pixel
+#uniform Texture2D BaseTexture
+#uniform Texture2D Previous
+
+layout(std140) uniform _Data
+{
+	float Min, Max;
+	float SpeedUp, SpeedDown;
+	float DeltaTime;
+};
+
+in float2 var_UV;
+
+float luma(float3 color)
+{
+	return dot(color, float3(0.2125, 0.7154, 0.0721));
+}
+
+void main(void)
+{
+	float prev_exp = Sample2D(Previous, float2(0.5)).r;
+	float curr_luma = luma(Sample2D(BaseTexture, float2(0.5)).rgb);
+	float adapted = 0.5 / clamp(curr_luma, Min, Max);
+	float exp = prev_exp;
+
+	if (adapted >= prev_exp)
+		exp += (adapted - prev_exp) * DeltaTime * SpeedUp;
+	else
+		exp += (adapted - prev_exp) * DeltaTime * SpeedDown;
+
+	RT0 = float4(exp);
+}
+)"

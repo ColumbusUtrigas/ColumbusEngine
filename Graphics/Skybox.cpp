@@ -2,7 +2,6 @@
 #include <Graphics/Device.h>
 
 #include <Graphics/Framebuffer.h>
-#include <Graphics/PostEffect.h>
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
@@ -23,7 +22,7 @@ namespace Columbus
 		+1, +1, +1
 	};
 
-	static unsigned char Indices[36] = 
+	static uint32 Indices[36] = 
 	{
 		2, 0, 4, 4, 6, 2,
 		1, 0, 2, 2, 3, 1,
@@ -74,13 +73,13 @@ namespace Columbus
 
 		iVector2 Resolution(1024);
 
+		BaseMap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy16, Texture::Wrap::Clamp));
+
 		Cubemap = new TextureOpenGL();
-		Cubemap->CreateCube(Texture::Properties(Resolution.X, Resolution.Y, 0, TextureFormat::R11G11B10F));
+		Cubemap->CreateCube(TextureDesc(Resolution.X, Resolution.Y, 0, 0, TextureFormat::R11G11B10F));
 		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 
 		Framebuffer* Frame = gDevice->CreateFramebuffer();
-
-		glDepthMask(GL_FALSE);
 
 		SkyboxCubemapGenerationShader->Bind();
 		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("Projection"), false, CaptureProjection);
@@ -95,7 +94,7 @@ namespace Columbus
 			Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, Resolution);
 			SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("View"), false, CaptureViews[i]);
 
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -103,7 +102,6 @@ namespace Columbus
 
 		Frame->Unbind();
 		SkyboxCubemapGenerationShader->Unbind();
-		glDepthMask(GL_TRUE);
 
 		Cubemap->GenerateMipmap();
 
@@ -117,7 +115,7 @@ namespace Columbus
 		if (IrradianceMap == nullptr)
 		{
 			IrradianceMap = gDevice->CreateTexture();
-			IrradianceMap->CreateCube(Texture::Properties{ 32, 32, 0, TextureFormat::RGB16F });
+			IrradianceMap->CreateCube(TextureDesc{ 32, 32, 0, 0, TextureFormat::RGB16F });
 			IrradianceMap->SetFlags(Texture::Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 		}
 
@@ -138,7 +136,7 @@ namespace Columbus
 			Frame->Prepare({ 0, 0, 0, 0 }, { 0 }, { 32, 32 });
 			IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("View"), false, CaptureViews[i]);
 
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -155,15 +153,18 @@ namespace Columbus
 	{
 		auto PrefilterShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->PrefilterGeneration;
 
+		uint32 MaxMips = 8;
+		uint32 Resolution = 128;
+
 		if (PrefilterMap == nullptr)
 		{
 			Texture::Flags Flags;
 			Flags.AnisotropyFilter = Texture::Anisotropy::Anisotropy1;
 			Flags.Filtering = Texture::Filter::Trilinear;
-			Flags.Wrapping = Texture::Wrap::ClampToEdge;
+			Flags.Wrapping = Texture::Wrap::Clamp;
 
 			PrefilterMap = gDevice->CreateTexture();
-			PrefilterMap->CreateCube(Texture::Properties{ 128, 128, 0, TextureFormat::RGB16F });
+			PrefilterMap->CreateCube(TextureDesc{ Resolution, Resolution, 0, 0, TextureFormat::RGB16F });
 			PrefilterMap->GenerateMipmap();
 			PrefilterMap->SetFlags(Flags);
 		}
@@ -174,9 +175,6 @@ namespace Columbus
 		PrefilterShader->Bind();
 		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("Projection"), false, CaptureProjection);
 		PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
-
-		uint32 MaxMips = 8;
-		uint32 Resolution = 128;
 
 		for (uint32 Mip = 0; Mip < MaxMips; Mip++)
 		{
@@ -196,7 +194,7 @@ namespace Columbus
 				Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, { (int)Width, (int)Height });
 				PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("View"), false, CaptureViews[i]);
 
-				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 			}
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -210,66 +208,27 @@ namespace Columbus
 		delete Frame;
 	}
 
-	static void CreateIntegrationMap(Texture*& IntegrationMap)
-	{
-		auto IntegrationShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->IntegrationGeneration;
-
-		if (IntegrationMap == nullptr)
-		{
-			Texture::Flags Flags;
-			Flags.AnisotropyFilter = Texture::Anisotropy::Anisotropy1;
-			Flags.Filtering = Texture::Filter::Linear;
-			Flags.Wrapping = Texture::Wrap::ClampToEdge;
-
-			IntegrationMap = gDevice->CreateTexture();
-			IntegrationMap->Create2D(Texture::Properties{ 512, 512, 0, TextureFormat::RG16F });
-			IntegrationMap->SetFlags(Flags);
-		}
-
-		PostEffect Frame;
-		ScreenQuad Quad;
-		Frame.ColorTexturesEnablement[0] = true;
-		Frame.ColorTexturesFormats[0] = TextureFormat::RG16F;
-
-		Frame.Bind({ 0 }, { 0, 0 }, { 1, 1 });
-
-		auto Tmp = Frame.ColorTextures[0];
-		Frame.ColorTextures[0] = IntegrationMap;
-
-		Frame.Bind({ 0 }, { 0, 0}, { 512, 512 });
-		IntegrationShader->Bind();
-		Quad.Render();
-		IntegrationShader->Unbind();
-		Frame.Unbind();
-
-		Frame.ColorTextures[0] = Tmp;
-	}
-
 	Skybox::Skybox()
 	{
 		PrepareMatrices();
-		Shader = gDevice->GetDefaultShaders()->Skybox;
 		CreateSkyboxBuffer(VBO, IBO, VAO);
 	}
 
 	Skybox::Skybox(Texture* InTexture)
 	{
 		PrepareMatrices();
-		Shader = gDevice->GetDefaultShaders()->Skybox;
 		CreateSkyboxBuffer(VBO, IBO, VAO);
+
 		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VAO, IBO);
 		CreateIrradianceMap(Tex, IrradianceMap, VAO, IBO);
 		CreatePrefilterMap(Tex, PrefilterMap, VAO, IBO);
-		CreateIntegrationMap(IntegrationMap);
 	}
 
 	void Skybox::Render()
 	{
-		if (Shader != nullptr && Tex != nullptr)
+		if (Tex != nullptr)
 		{
-			auto ShaderOpenGL = (ShaderProgramOpenGL*)Shader;
-
-			glDepthMask(GL_FALSE);
+			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox);
 
 			ShaderOpenGL->Bind();
 
@@ -282,14 +241,12 @@ namespace Columbus
 
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);
 
 			ShaderOpenGL->Unbind();
 			((TextureOpenGL*)Tex)->Unbind();
-
-			glDepthMask(GL_TRUE);
 		}
 	}
 
@@ -303,7 +260,6 @@ namespace Columbus
 		delete Tex;
 		delete IrradianceMap;
 		delete PrefilterMap;
-		delete IntegrationMap;
 		glDeleteBuffers(1, &VBO);
 		glDeleteBuffers(1, &IBO);
 		glDeleteVertexArrays(1, &VAO);

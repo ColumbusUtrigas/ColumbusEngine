@@ -11,14 +11,14 @@ namespace Columbus
 	private:
 		Renderer* Render = nullptr;
 	public:
-		EditorPanelRenderSettings() : EditorPanel("Render Settings") {}
+		EditorPanelRenderSettings() {}
 
 		void SetRenderer(Renderer* Rend)
 		{
 			Render = Rend;
 		}
 
-		virtual void Draw() final override;
+		void Draw();
 
 		virtual ~EditorPanelRenderSettings() final override;
 	};

@@ -1,44 +1,76 @@
-cmake_minimum_required(VERSION 2.8)
-project(CLMBSEngine)
+cmake_minimum_required(VERSION 3.8)
+project(ColumbusEngine)
 
-file(GLOB SRC_AUDIO ./Audio/*.cpp)
-file(GLOB SRC_COMMON_IMAGE ./Common/Image/*.cpp ./Common/Image/*/*.cpp)
-file(GLOB SRC_COMMON_SOUND ./Common/Sound/*.cpp ./Common/Sound/*/*.cpp)
+function(add_dir_to_target TARGET PATH)
+	file(GLOB TMP_SRC ${PATH}/*.cpp)
+	target_sources(${TARGET} PUBLIC ${TMP_SRC})
+endfunction()
 
-file(GLOB SRC_COMMON ${SRC_COMMON_IMAGE} ./Common/Model/*.cpp ./Common/Model/*/*.cpp ${SRC_COMMON_SOUND} ./Common/*/*.cpp)
+function(add_dir_to_target_recurse TARGET PATH)
+	file(GLOB_RECURSE TMP_SRC ${PATH}/*.cpp)
+	target_sources(${TARGET} PUBLIC ${TMP_SRC})
+endfunction()
 
-file(GLOB SRC_CORE ./Core/Linux/*.cpp ./Core/Platform/*.cpp)
-file(GLOB SRC_GRAPHICS ./Graphics/*.cpp ./Graphics/OpenGL/*.cpp ./Graphics/Particles/*.cpp ./Graphics/Particles/*/*.cpp)
-file(GLOB SRC_INPUT ./Input/*.cpp)
-file(GLOB SRC_PHYSICS ./Physics/*.cpp)
-file(GLOB SRC_RENDER_API ./RenderAPI/*.cpp)
-file(GLOB SRC_RENDER_API_OPENGL ./RenderAPIOpenGL/*.cpp)
-file(GLOB SRC_SCENE ./Scene/*.cpp)
-file(GLOB SRC_SYSTEM ./System/*.cpp)
-file(GLOB SRC_EDITOR ./Editor/*.cpp ./Editor/*/*.cpp)
-file(GLOB SRC_PROFILING ./Profiling/*.cpp)
+####################################################################
 
-file(GLOB IMGUI ./Lib/imgui/*.cpp ./Lib/imgui/misc/cpp/*.cpp ./Lib/imgui/examples/imgui_impl_sdl.cpp ./Lib/imgui/examples/imgui_impl_opengl3.cpp)
-
-set(SRC ${SRC_AUDIO} ${SRC_COMMON} ${SRC_CORE} ${SRC_GRAPHICS} ${SRC_INPUT} ${SRC_PHYSICS} ${SRC_RENDER_API} ${SRC_RENDER_API_OPENGL} ${SRC_SCENE} ${SRC_SYSTEM} ${IMGUI} ${SRC_EDITOR} ${SRC_PROFILING} main.cpp)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -Wall -Wno-strict-aliasing -g -ggdb3")
+if (UNIX AND NOT APPLE)
+	set(LINUX TRUE)
+endif()
 
 set(TARGET ColumbusEngine)
 
-include_directories(./)
-include_directories(./Lib/JSON/)
-include_directories(./Lib/MiniMP3)
-include_directories(./Lib/STB/)
-include_directories(./Lib/ZSTD/Include/)
-include_directories(/usr/include/SDL2/)
-include_directories(/usr/include/bullet/)
-include_directories(/usr/include/AL/)
+########## IMGUI OPENGL3 SDL2 ##########
+file(GLOB IMGUI_SRC
+	./Lib/imgui/*.cpp
+	./Lib/imgui/misc/cpp/*.cpp
+	./Lib/imgui/examples/imgui_impl_sdl.cpp
+	./Lib/imgui/examples/imgui_impl_opengl3.cpp)
 
-add_executable(${TARGET} ${SRC})
+add_library(imgui STATIC ${IMGUI_SRC})
+target_include_directories(imgui PUBLIC /usr/include/SDL2/)
+########################################
 
-target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW tinyxml2 png tiff jpeg LinearMath BulletCollision BulletDynamics pthread zstd assimp)
+add_executable(${TARGET} main.cpp)
+set_target_properties(${TARGET} PROPERTIES
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED YES
+	CXX_EXTENSIONS NO
+)
 
+target_include_directories(${TARGET} PUBLIC ./)
+target_include_directories(${TARGET} PUBLIC ./Lib/MiniMP3)
+target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/STB/)
+target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/Include/)
 
+if(LINUX)
+	target_include_directories(${TARGET} PUBLIC /usr/include/SDL2/)
+	target_include_directories(${TARGET} PUBLIC /usr/include/bullet/)
+elseif(WIN32)
+	target_include_directories(${TARGET} PUBLIC ./Lib/SDL2/include)
+	target_include_directories(${TARGET} PUBLIC ./Lib/Bullet/include)
+endif()
 
+add_dir_to_target(${TARGET} Audio)
+add_dir_to_target_recurse(${TARGET} Common)
+add_dir_to_target(${TARGET} Core)
+if(LINUX)
+	add_dir_to_target(${TARGET} Core/Linux)
+elseif(WIN32)
+	add_dir_to_target(${TARGET} Core/Windows)
+endif()
+add_dir_to_target_recurse(${TARGET} Editor)
+add_dir_to_target_recurse(${TARGET} Graphics) #OpenGL is included
+add_dir_to_target(${TARGET} Input)
+add_dir_to_target(${TARGET} Physics)
+add_dir_to_target(${TARGET} Profiling)
+add_dir_to_target(${TARGET} RenderAPIOpenGL)
+add_dir_to_target(${TARGET} Scene)
+add_dir_to_target(${TARGET} System)
 
+file(GLOB builtin_shaders_files Graphics/Shaders/*.csl)
+add_custom_target(builtin_shaders DEPENDS ${builtin_shaders_files})
+add_dependencies(${TARGET} builtin_shaders)
+
+target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
+	LinearMath BulletCollision BulletDynamics pthread zstd vulkan)
+target_link_libraries(${TARGET} imgui)

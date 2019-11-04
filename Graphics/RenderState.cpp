@@ -1,5 +1,6 @@
 #include <Graphics/RenderState.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/Device.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -35,9 +36,14 @@ namespace Columbus
 
 	void RenderState::Clear()
 	{
-		SetCulling(Material::Cull::No);
-		SetDepthTesting(Material::DepthTest::LEqual);
-		SetDepthWriting(false);
+		//SetCulling(Material::Cull::No);
+		//SetBlending(true);
+		//SetDepthTesting(Material::DepthTest::LEqual);
+		//SetDepthWriting(false);
+		glDisable(GL_CULL_FACE);
+		glEnable(GL_BLEND);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_FALSE);
 
 		PreviousMaterial = Material();
 		CurrentMaterial  = Material();
@@ -47,49 +53,72 @@ namespace Columbus
 
 		PreviousMesh = nullptr;
 		CurrentMesh  = nullptr;
+
+		PreviousCulling = Material::Cull::No;
+		PreviousBlending = true;
+		PreviousDepthTesting = Material::DepthTest::LEqual;
+		PreviousDepthWriting = false;
 	}
 
 	void RenderState::SetCulling(Material::Cull Culling)
 	{
-		switch (Culling)
+		if (Culling != PreviousCulling)
 		{
-		case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
-		case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT);          break;
-		case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK);           break;
-		case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
+			switch (Culling)
+			{
+			case Material::Cull::No:           glDisable(GL_CULL_FACE); break;
+			case Material::Cull::Front:        glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT);          break;
+			case Material::Cull::Back:         glEnable(GL_CULL_FACE);  glCullFace(GL_BACK);           break;
+			case Material::Cull::FrontAndBack: glEnable(GL_CULL_FACE);  glCullFace(GL_FRONT_AND_BACK); break;
+			}
+
+			PreviousCulling = Culling;
 		}
 	}
 
 	void RenderState::SetBlending(bool Blending)
 	{
-		if (Blending)
+		if (Blending != PreviousBlending)
 		{
-			glEnable(GL_BLEND);
-		}
-		else
-		{
-			glDisable(GL_BLEND);
+			if (Blending)
+			{
+				glEnable(GL_BLEND);
+			} else
+			{
+				glDisable(GL_BLEND);
+			}
+
+			PreviousBlending = Blending;
 		}
 	}
 
 	void RenderState::SetDepthTesting(Material::DepthTest DepthTesting)
 	{
-		switch (DepthTesting)
+		if (DepthTesting != PreviousDepthTesting)
 		{
-		case Material::DepthTest::Less:     glDepthFunc(GL_LESS);     break;
-		case Material::DepthTest::Greater:  glDepthFunc(GL_GREATER);  break;
-		case Material::DepthTest::LEqual:   glDepthFunc(GL_LEQUAL);   break;
-		case Material::DepthTest::GEqual:   glDepthFunc(GL_GEQUAL);   break;
-		case Material::DepthTest::Equal:    glDepthFunc(GL_EQUAL);    break;
-		case Material::DepthTest::NotEqual: glDepthFunc(GL_NOTEQUAL); break;
-		case Material::DepthTest::Never:    glDepthFunc(GL_NEVER);    break;
-		case Material::DepthTest::Always:   glDepthFunc(GL_ALWAYS);   break;
+			switch (DepthTesting)
+			{
+			case Material::DepthTest::Less:     glDepthFunc(GL_LESS);     break;
+			case Material::DepthTest::Greater:  glDepthFunc(GL_GREATER);  break;
+			case Material::DepthTest::LEqual:   glDepthFunc(GL_LEQUAL);   break;
+			case Material::DepthTest::GEqual:   glDepthFunc(GL_GEQUAL);   break;
+			case Material::DepthTest::Equal:    glDepthFunc(GL_EQUAL);    break;
+			case Material::DepthTest::NotEqual: glDepthFunc(GL_NOTEQUAL); break;
+			case Material::DepthTest::Never:    glDepthFunc(GL_NEVER);    break;
+			case Material::DepthTest::Always:   glDepthFunc(GL_ALWAYS);   break;
+			}
+
+			PreviousDepthTesting = DepthTesting;
 		}
 	}
 
 	void RenderState::SetDepthWriting(bool DepthWriting)
 	{
-		glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
+		if (DepthWriting != PreviousDepthWriting)
+		{
+			glDepthMask(DepthWriting ? GL_TRUE : GL_FALSE);
+			PreviousDepthWriting = DepthWriting;
+		}
 	}
 
 	void RenderState::SetMainCamera(const Camera& InMainCamera)
@@ -99,15 +128,15 @@ namespace Columbus
 
 	void RenderState::SetMaterial(const Material& InMaterial, const Matrix& ModelMatrix, Skybox* Sky)
 	{
-		PreviousMaterial = CurrentMaterial;
-		CurrentMaterial = InMaterial;
-
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
 
 		if (CurrentShader != nullptr)
 		{
-			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), Sky->GetIntegrationMap() };
+			PreviousMaterial = CurrentMaterial;
+			CurrentMaterial = InMaterial;
+
+			Texture* Textures[11] =     { CurrentMaterial .AlbedoMap, CurrentMaterial .NormalMap, CurrentMaterial .RoughnessMap, CurrentMaterial .MetallicMap, CurrentMaterial .OcclusionMap, CurrentMaterial .EmissionMap, CurrentMaterial .DetailAlbedoMap, CurrentMaterial .DetailNormalMap, Sky->GetIrradianceMap(), Sky->GetPrefilterMap(), gDevice->GetDefaultTextures()->IntegrationLUT.get() };
 			Texture* LastTextures[11] = { PreviousMaterial.AlbedoMap, PreviousMaterial.NormalMap, PreviousMaterial.RoughnessMap, PreviousMaterial.MetallicMap, PreviousMaterial.OcclusionMap, PreviousMaterial.EmissionMap, PreviousMaterial.DetailAlbedoMap, PreviousMaterial.DetailNormalMap, nullptr, nullptr, nullptr };
 
 			static constexpr const char* Names[11] =
@@ -163,18 +192,14 @@ namespace Columbus
 
 			for (int32 i = 0; i < 11; i++)
 			{
-				if (Textures[i] != LastTextures[i] || CheckShader())
+				if ((Textures[i] != LastTextures[i] || CheckShader()) && Textures[i] != nullptr)
 				{
-					if (Textures[i] != nullptr)
-					{
-						Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
-					}
-					else
-					{
-						glActiveTexture(GL_TEXTURE0 + i);
-						Shader->SetUniform(RenderData->TexturesIDs[i], i);
-						glBindTexture(GL_TEXTURE_2D, 0);
-					}
+					Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
+				} else if (Textures[i] == nullptr)
+				{
+					glActiveTexture(GL_TEXTURE0 + i);
+					Shader->SetUniform(RenderData->TexturesIDs[i], i);
+					glBindTexture(GL_TEXTURE_2D, 0);
 				}
 			}
 
@@ -227,8 +252,8 @@ namespace Columbus
 
 					Lights[Offset + 9] = (float)L->Type;
 					Lights[Offset + 10] = L->Range;
-					Lights[Offset + 11] = L->InnerCutoff;
-					Lights[Offset + 12] = L->OuterCutoff;
+					Lights[Offset + 11] = Math::Radians(L->InnerCutoff);
+					Lights[Offset + 12] = Math::Radians(L->OuterCutoff);
 
 					Counter++;
 				}
@@ -243,7 +268,7 @@ namespace Columbus
 			ShaderProgramOpenGL* ShaderOGL = (ShaderProgramOpenGL*)CurrentShader;
 			MaterialRenderData* RenderData = (MaterialRenderData*)ShaderOGL->RenderData;
 
-			ShaderOGL->SetUniform(RenderData->Lighting, sizeof(Lights), Lights);
+			ShaderOGL->SetUniform(RenderData->Lighting, sizeof(Lights) / sizeof(float), Lights);
 		}
 	}
 

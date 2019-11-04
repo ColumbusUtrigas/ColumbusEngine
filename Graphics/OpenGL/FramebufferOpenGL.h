@@ -9,6 +9,8 @@ namespace Columbus
 	class FramebufferOpenGL : public Framebuffer
 	{
 	private:
+		friend class Renderer;
+
 		uint32 ID = 0;
 	public:
 		FramebufferOpenGL();

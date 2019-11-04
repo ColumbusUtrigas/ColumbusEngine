@@ -2,15 +2,17 @@
 #include <Lib/imgui/imgui.h>
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
-#include <Core/Platform/PlatformFilesystem.h>
+#include <Core/Filesystem.h>
 #include <Editor/ResourcesViewerTexture.h>
 #include <Editor/ResourcesViewerShader.h>
+#include <Editor/ResourcesViewerMaterial.h>
 #include <Editor/ResourcesViewerMesh.h>
 
 namespace Columbus
 {
 
-	EditorFileDialog SkyboxLoader("./Data/Skyboxes/");
+	EditorFileDialog SceneLoader("./Data/", {"scene"});
+	EditorFileDialog SkyboxLoader("./Data/Skyboxes/", {"hdr", "exr"});
 
 	void Editor::ApplyDarkTheme()
 	{
@@ -80,11 +82,17 @@ namespace Columbus
 			if (ImGui::BeginMenu("File"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Open")) scene.Load("Data/3.scene");
+				if (ImGui::MenuItem(" Open")) SceneLoader.Open();
 				ImGui::Spacing();
-				ImGui::MenuItem(" Save");
+				if (ImGui::MenuItem(" Save"))
+					{
+						if (scene.GetCurrentSceneFilename().empty())
+							SceneLoader.Open(EditorFileDialog::Type_Save);
+						else
+							scene.Save();
+					}
 				ImGui::Spacing();
-				ImGui::MenuItem(" Save As");
+				if (ImGui::MenuItem(" Save As")) SceneLoader.Open(EditorFileDialog::Type_Save);
 				ImGui::Spacing();
 				ImGui::MenuItem(" Quit");
 				ImGui::Spacing();
@@ -103,6 +111,8 @@ namespace Columbus
 				ImGui::MenuItem(" Inspector", nullptr, &PanelInspector.Opened);
 				ImGui::Spacing();
 				ImGui::MenuItem(" Profiler", nullptr, &PanelProfiler.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem(" Console", nullptr, &PanelConsole.Opened);
 				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
@@ -128,6 +138,13 @@ namespace Columbus
 				if (ImGui::MenuItem(" Shaders"))
 				{
 					ResourcesViewerShader::Open(nullptr);
+				}
+
+				ImGui::Spacing();
+
+				if (ImGui::MenuItem(" Materials"))
+				{
+					ResourcesViewerMaterial::Open(nullptr);
 				}
 
 				ImGui::Spacing();
@@ -199,22 +216,23 @@ namespace Columbus
 	{
 		DrawDockSpace(scene);
 
-		Render.EditMode = true;
-
 		PanelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
 		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
 		PanelRenderSettings.SetRenderer(&Render);
 		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
+		Render.PickedObject = PanelHierarchy.GetObject();
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
-		PanelScene.Draw();
+		PanelScene.Draw(Render);
 		PanelInspector.Draw(scene); // Inspector should be before hierarchy
 		PanelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		PanelRenderSettings.Draw();
 		PanelProfiler.Draw();
+		PanelConsole.Draw();
 		ResourcesViewerTexture::Draw(&scene);
 		ResourcesViewerShader::Draw(&scene);
+		ResourcesViewerMaterial::Draw(scene);
 		ResourcesViewerMesh::Draw(&scene);
 
 		if (SkyboxLoader.Draw("Load Skybox"))
@@ -226,13 +244,28 @@ namespace Columbus
 				if (Tex->Load(Selected[0].Path.c_str()))
 				{
 					delete scene.Sky;
-					scene.Sky = new Skybox(Tex.Get());
 					auto Name = Filesystem::RelativePath(Selected[0].Path, Filesystem::GetCurrent());
+					scene.SkyPath = Name;
+					scene.Sky = new Skybox(Tex.Get());
 					Log::Success("Skybox loaded: %s", Name.c_str());
 				}
 
 				SkyboxLoader.Close();
 			}
+		}
+
+		if (SceneLoader.Draw("Load Scene"))
+		{
+			auto Selected = SceneLoader.GetSelected();
+			if (Selected.size() == 1)
+			{
+				if (SceneLoader.GetType() == EditorFileDialog::Type_Open)
+					scene.Load(Selected[0].Path.c_str());
+
+				if (SceneLoader.GetType() == EditorFileDialog::Type_Save)
+					scene.Save(Selected[0].Path.c_str());
+			}
+			SceneLoader.Close();
 		}
 	}
 

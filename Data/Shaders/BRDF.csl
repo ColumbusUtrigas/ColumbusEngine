@@ -1,0 +1,50 @@
+#define LAMBERTIAN 0.318310 // 1.0 / PI
+
+float3 LambertDiffuseBRDF(float3 color)
+{
+	return color * LAMBERTIAN;
+}
+
+float DistributionGGX(float3 N, float3 H, float roughness)
+{
+	float a      = roughness * roughness;
+	float a2     = a * a;
+	float NdotH  = max(dot(N, H), 0.0);
+	float NdotH2 = NdotH * NdotH;
+
+	float num   = a2;
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = PI * denom * denom;
+
+	return num / denom;
+}
+
+float GeometryGGX(float a, float ndotl, float ndotv)
+{
+	float a2 = max(a * a, 0.001f);
+
+	float gv = ndotl * sqrt(a2 + (1.0f - a2) * ndotv * ndotv);
+	float gl = ndotv * sqrt(a2 + (1.0f - a2) * ndotl * ndotl);
+
+	return 0.5f / max(gv + gl, 0.001f);
+}
+
+float3 Fresnel(float cosTheta, float3 F0)
+{
+	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float3 FresnelRoughness(float cosTheta, float3 F0, float roughness)
+{
+	return F0 + (max(float3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float3 CookTorranceSpecularBRDF(float3 N, float3 L, float3 H, float3 F, float NdotV, float Roughness)
+{
+	float NdotL = max(0.0, dot(N, L));
+
+	float D = DistributionGGX(N, H, Roughness);
+	float G = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
+
+	return D * F * G * LAMBERTIAN * NdotL;
+}

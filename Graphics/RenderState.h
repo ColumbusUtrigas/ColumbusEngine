@@ -5,6 +5,7 @@
 #include <Graphics/Shader.h>
 #include <Graphics/Skybox.h>
 #include <Graphics/Mesh.h>
+#include <vector>
 
 namespace Columbus
 {
@@ -22,8 +23,13 @@ namespace Columbus
 
 		Mesh* PreviousMesh;
 		Mesh*  CurrentMesh;
+
+		Material::Cull PreviousCulling;
+		bool PreviousBlending;
+		Material::DepthTest PreviousDepthTesting;
+		bool PreviousDepthWriting;
 	public:
-		RenderState() { Clear(); }
+		RenderState() { /*Clear();*/ }
 
 		void Clear();
 

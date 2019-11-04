@@ -1,6 +1,6 @@
 #include <Audio/AudioPlayer.h>
 #include <System/Log.h>
-#include <System/Assert.h>
+#include <Core/Assert.h>
 #include <SDL.h>
 #include <cstring>
 
@@ -11,38 +11,39 @@ namespace Columbus
 	{
 		if (UserData != nullptr)
 		{
-			float Speed = ((AudioMixer*)(UserData))->GetSpeed();
+			auto Mixer = static_cast<AudioMixer*>(UserData);
+			float Speed = Mixer->GetSpeed();
 
 			if (Speed != 0.0f)
 			{
-				uint32 Size = StreamSize / sizeof(Sound::Frame);
+				uint32 Size = static_cast<uint32>(StreamSize) / sizeof(Sound::Frame);
 				static Sound::Frame* Frames = new Sound::Frame[Size];
-				Sound::Frame* Data = (Sound::Frame*)Stream;
+				Sound::Frame* Data = reinterpret_cast<Sound::Frame*>(Stream);
 
 				if (Speed == 1.0f)
 				{
-					((AudioMixer*)(UserData))->Update((Sound::Frame*)Stream, StreamSize / sizeof(Sound::Frame));
+					Mixer->Update(Data, Size);
 					return;
 				}
 
-				((AudioMixer*)(UserData))->Update(Frames, Size * Speed);
+				Mixer->Update(Frames, static_cast<uint32>(Size * Speed));
 
-				float Step = 1.0 / Speed;
+				float Step = 1.0f / Speed;
 
 				for (uint32 i = 0; i < Size; i++)
 				{
-					uint32 Left = (uint32)(i * Speed);
-					uint32 Right = (uint32)(i * Speed + 1);
+					uint32 Left  = static_cast<uint32>(i * Speed);
+					uint32 Right = static_cast<uint32>(i * Speed + 1);
 					float S = fmodf(Step * i, Speed);
-					Data[i].L = (int32)(Math::Mix((float)Frames[Left].L, (float)Frames[Right].L, S));
-					Data[i].R = (int32)(Math::Mix((float)Frames[Left].R, (float)Frames[Right].R, S));
+					Data[i].L = int16(Math::Mix(float(Frames[Left].L), float(Frames[Right].L), S));
+					Data[i].R = int16(Math::Mix(float(Frames[Left].R), float(Frames[Right].R), S));
 				}
 
 				return;
 			}
 		}
 		
-		memset(Stream, 0, StreamSize);
+		memset(Stream, 0, static_cast<size_t>(StreamSize));
 	}
 
 	AudioPlayer::AudioPlayer(uint16 Channels, uint32 Frequency, AudioMixer* Mixer)
@@ -54,9 +55,9 @@ namespace Columbus
 
 		SDL_AudioSpec Spec;
 
-		Spec.freq = Frequency;
+		Spec.freq = static_cast<int>(Frequency);
 		Spec.format = AUDIO_S16;
-		Spec.channels = (Uint8)Channels;
+		Spec.channels = static_cast<Uint8>(Channels);
 		Spec.userdata = Mixer;
 		Spec.callback = AudioCallback;
 
@@ -77,15 +78,15 @@ namespace Columbus
 			Spec.samples = 2048;
 		}
 
-		if (SDL_OpenAudio(&Spec, NULL) < 0)
+		if (SDL_OpenAudio(&Spec, nullptr) < 0)
 		{
 			Log::Error("%s\n", SDL_GetError());
 			COLUMBUS_ASSERT_MESSAGE(0, "AudioPlayer::AudioPlayer(): Couldn't initialize audio stream")
 		}
 
-		uint32 AudioDriversCount = SDL_GetNumAudioDrivers();
-		uint32 AudioPlaybackDevicesCount = SDL_GetNumAudioDevices(0);
-		uint32 AudioRecordingDevicesCount = SDL_GetNumAudioDevices(1);
+		int AudioDriversCount = SDL_GetNumAudioDrivers();
+		int AudioPlaybackDevicesCount = SDL_GetNumAudioDevices(0);
+		int AudioRecordingDevicesCount = SDL_GetNumAudioDevices(1);
 
 		if (AudioDriversCount == 0)
 		{
@@ -104,7 +105,7 @@ namespace Columbus
 
 		Log::Initialization("Audio drivers count: %i", AudioDriversCount);
 
-		for (uint32 i = 0; i < AudioDriversCount; i++)
+		for (int i = 0; i < AudioDriversCount; i++)
 		{
 			Log::Initialization("Audio driver (%i): %s", i + 1, SDL_GetAudioDriver(i));
 		}
@@ -112,7 +113,7 @@ namespace Columbus
 		Log::Initialization("Current audio driver: %s", SDL_GetCurrentAudioDriver());
 		Log::Initialization("Audio playback devices count: %i", AudioPlaybackDevicesCount);
 
-		for (uint32 i = 0; i < AudioPlaybackDevicesCount; i++)
+		for (int i = 0; i < AudioPlaybackDevicesCount; i++)
 		{
 			const char* Name = SDL_GetAudioDeviceName(i, 0);
 			Log::Initialization("Audio playback device name (%i): %s", i + 1, Name != nullptr ? Name : "");
@@ -120,7 +121,7 @@ namespace Columbus
 
 		Log::Initialization("Audio recording devices count: %i", AudioRecordingDevicesCount);
 
-		for (uint32 i = 0; i < AudioRecordingDevicesCount; i++)
+		for (int i = 0; i < AudioRecordingDevicesCount; i++)
 		{
 			const char* Name = SDL_GetAudioDeviceName(i, 1);
 			Log::Initialization("Audio recording device name (%i): %s", i + 1, Name != nullptr ? Name : "");

@@ -1,12 +1,9 @@
 #include <Editor/PanelHierarchy.h>
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
-#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentLight.h>
-#include <algorithm>
-#include <string>
 
 namespace Columbus
 {
@@ -29,35 +26,38 @@ namespace Columbus
 
 	void EditorPanelHierarchy::Draw()
 	{
-		static std::string Find;
+		static String Find;
 
 		if (Opened && scene != nullptr)
 		{
 			if (ImGui::Begin(ICON_FA_LIST_UL" Hierarchy##PanelHierarchy", &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				bool Delete = false;
-				std::string DeleteName;
+				String DeleteName;
 
 				if (ImGui::BeginChild("##Find_PanelHierarchy", ImVec2(ImGui::GetWindowContentRegionWidth(), 20)))
 				{
 					ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth());
-					ImGui::InputText("##Find_PanelHierarchy_Find", &Find);
+					char tmp[1024];
+					memcpy(tmp, Find.data(), Find.size() + 1);
+					ImGui::InputText("##Find_PanelHierarchy_Find", tmp, 1024);
+					Find = tmp;
 				}
 				ImGui::EndChild();
 
 
 				if (ImGui::BeginChild("##List_PanelHierarchy"))
 				{
-					std::string MFind = Find;
-					std::string MName;
-					std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
+					String MFind = Find.tolower();
+					String MName;
+					//std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
 
 					for (auto& Obj : scene->Objects.Resources)
 					{
-						MName = Obj->Name;
-						std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
+						MName = Obj->Name.tolower();
+						//std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
 
-						if (MName.find(MFind) != std::string::npos)
+						if (MName.find(MFind) != String::npos)
 						{
 							if (ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get()))
 							{
@@ -100,35 +100,29 @@ namespace Columbus
 			{
 				if (buffer != nullptr)
 				{
-					for (int i = 0; i < 100; i++)
+					GameObject tmp;
+					tmp.transform = buffer->transform;
+					tmp.transform.Position = Vector3::Random({-10}, {10});
+					tmp.Name = buffer->Name + " ";
+					tmp.Enable = buffer->Enable;
+					tmp.material = buffer->material;
+
+					CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
+					CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
+
+					String Name;
+
+					for (uint32 i = 0;; i++)
 					{
-						GameObject tmp;
-						tmp.transform = buffer->transform;
-						tmp.transform.Position = Vector3::Random({-10}, {10});
-						tmp.Name = buffer->Name + " ";
-						tmp.Enable = buffer->Enable;
-						tmp.material = buffer->material;
-						tmp.material.Albedo = Vector4(Vector3::Random({0.0f}, {1.0f}), 1);
-						tmp.material.Roughness = Random::Range(0.0f, 1.0f);
-						tmp.material.Metallic = Random::Range(0.0f, 1.0f);
-
-						CopyComponent((ComponentMeshRenderer*)buffer->GetComponent(Component::Type::MeshRenderer), tmp);
-						CopyComponent((ComponentLight*)buffer->GetComponent(Component::Type::Light), tmp);
-
-						std::string Name;
-
-						for (uint32 i = 0;; i++)
+						Name = tmp.Name + String::from(i);
+						if (scene->Objects.Find(Name) == nullptr)
 						{
-							Name = tmp.Name + std::to_string(i);
-							if (scene->Objects.Find(Name) == nullptr)
-							{
-								tmp.Name = Name;
-								break;
-							}
+							tmp.Name = Name;
+							break;
 						}
-
-						scene->Add(std::move(tmp));
 					}
+
+					scene->Add(std::move(tmp));
 				}
 			}
 		}

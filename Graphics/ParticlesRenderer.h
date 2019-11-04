@@ -12,10 +12,6 @@ namespace Columbus
 	private:
 		size_t MaxSize = 0;
 
-		char* Data = nullptr;
-
-		BufferOpenGL VerticesBuffer;
-		BufferOpenGL TexcoordsBuffer;
 		BufferOpenGL PositionsBuffer;
 		BufferOpenGL SizesBuffer;
 		BufferOpenGL ColorsBuffer;

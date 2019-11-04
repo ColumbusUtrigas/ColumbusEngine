@@ -32,7 +32,7 @@ namespace Columbus
 		Vector2_t<Type> YY() const { return Vector2_t<Type>(Y, Y); }
 
 		template <typename T>
-		operator Vector2_t<T>() { return Vector2_t<T>((T)X, (T)Y); }
+		operator Vector2_t<T>() const { return Vector2_t<T>((T)X, (T)Y); }
 
 		Vector2_t& operator=(const Vector2_t& Other)
 		{

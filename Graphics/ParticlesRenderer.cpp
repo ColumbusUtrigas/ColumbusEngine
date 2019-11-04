@@ -2,68 +2,41 @@
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/Device.h>
+#include <Math/Quaternion.h>
 #include <GL/glew.h>
-
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 namespace Columbus
 {
 
-	static float Vertices[18] =
-	{
-		+1, +1, 0,
-		-1, +1, 0,
-		-1, -1, 0,
-		-1, -1, 0,
-		+1, -1, 0,
-		+1, +1, 0
-	};
-
-	static float Texcoords[12] =
-	{
-		1, 1,
-		0, 1,
-		0, 0,
-		0, 0,
-		1, 0,
-		1, 1
-	};
+	static GLuint Particles_VAO = 0;
 
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
 		MaxSize = NewSize;
 
-		delete[] Data;
-		Data = new char[MaxSize * sizeof(Vector4) * 6];
-
-		auto Write = BufferOpenGL::UsageType::Write;
-		auto Static = BufferOpenGL::FrequencyType::Static;
-		auto Dynamic = BufferOpenGL::FrequencyType::Dynamic;
+		auto Write = BufferUsage::Write;
+		auto Dynamic = BufferCpuAccess::Dynamic;
 
 		size_t VerticesCount = MaxSize * 6;
 
-		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Vertices), Vertices, sizeof(Vertices));
-		VerticesBuffer.Load(Data, BufferOpenGL::Properties(MaxSize * sizeof(Vertices), Write, Static));
-		for (size_t i = 0; i < MaxSize; i++) memcpy(Data + i * sizeof(Texcoords), Texcoords, sizeof(Texcoords));
-		TexcoordsBuffer.Load(Data, BufferOpenGL::Properties(MaxSize * sizeof(Texcoords), Write, Static));
+		PositionsBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector3), Write, Dynamic));
+		    SizesBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector3), Write, Dynamic));
+		   ColorsBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector4), Write, Dynamic));
+		OtherDataBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector2), Write, Dynamic));
 
-		PositionsBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector3), Write, Dynamic));
-		SizesBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector3), Write, Dynamic));
-		ColorsBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector4), Write, Dynamic));
-		OtherDataBuffer.Load(nullptr, BufferOpenGL::Properties(VerticesCount * sizeof(Vector2), Write, Dynamic));
+		PositionsBuffer.Load(nullptr);
+		    SizesBuffer.Load(nullptr);
+		   ColorsBuffer.Load(nullptr);
+		OtherDataBuffer.Load(nullptr);
 	}
 
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
 	{
-		VerticesBuffer.CreateArray(BufferOpenGL::Properties());
-		TexcoordsBuffer.CreateArray(BufferOpenGL::Properties());
-		PositionsBuffer.CreateArray(BufferOpenGL::Properties());
-		SizesBuffer.CreateArray(BufferOpenGL::Properties());
-		ColorsBuffer.CreateArray(BufferOpenGL::Properties());
-		OtherDataBuffer.CreateArray(BufferOpenGL::Properties());
-
 		Allocate(MaxSize);
+
+		glGenVertexArrays(1, &Particles_VAO);
+		glBindVertexArray(Particles_VAO);
+		glBindVertexArray(0);
 	}
 
 	void ParticlesRenderer::Render(const ParticleEmitterCPU& Particles, const Camera& MainCamera, const Material& Mat)
@@ -93,11 +66,8 @@ namespace Columbus
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)
 		{
-			glm::quat Q(glm::vec3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
-			glm::mat4 M = glm::mat4_cast(Q);
-
-			Matrix Billboard;
-			memcpy(&Billboard.M[0][0], glm::value_ptr(M), 16 * sizeof(float));
+			Quaternion Q(Vector3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
+			Matrix Billboard = Q.ToMatrix();
 
 			Shader->SetUniform(Shader->GetFastUniform("View"), false, MainCamera.GetViewMatrix());
 			Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());
@@ -105,34 +75,46 @@ namespace Columbus
 			Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
 
 			if (Mat.AlbedoMap == nullptr)
-				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(gDevice->GetDefaultTextures()->White), 0);
+				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(gDevice->GetDefaultTextures()->White.get()), 0);
 			else
 				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
 
-			Vector3* Positions = (Vector3*)PositionsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Positions[i * 6 + a] = Particles.Particles.Positions[i].XYZ();
+			Vector3* Positions;
+			Vector3* Sizes;
+			Vector4* Colors;
+			Vector2* OtherData;
+
+			PositionsBuffer.Map((void*&)Positions, BufferMapAccess::Write);
+			    SizesBuffer.Map((void*&)Sizes,     BufferMapAccess::Write);
+			   ColorsBuffer.Map((void*&)Colors,    BufferMapAccess::Write);
+			OtherDataBuffer.Map((void*&)OtherData, BufferMapAccess::Write);
+
+			for (size_t i = 0; i < Particles.Particles.Count; i++)
+			{
+				for (size_t a = 0; a < 6; a++)
+				{
+					Positions[i * 6 + a]   = Particles.Particles.Positions[i].XYZ();
+					    Sizes[i * 6 + a]   = Particles.Particles.Sizes[i];
+					   Colors[i * 6 + a]   = Particles.Particles.Colors[i];
+					OtherData[i * 6 + a].X = Particles.Particles.Rotations[i];
+					OtherData[i * 6 + a].Y = Particles.Particles.Frames[i];
+				}
+			}
+
 			PositionsBuffer.Unmap();
-
-			Vector3* Sizes = (Vector3*)SizesBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Sizes[i * 6 + a] = Particles.Particles.Sizes[i];
-			SizesBuffer.Unmap();
-
-			Vector4* Colors = (Vector4*)ColorsBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) Colors[i * 6 + a] = Particles.Particles.Colors[i];
-			ColorsBuffer.Unmap();
-
-			Vector2* OtherData = (Vector2*)OtherDataBuffer.Map(BufferOpenGL::AccessType::WriteOnly);
-			for (size_t i = 0; i < Particles.Particles.Count; i++) for (int a = 0; a < 6; a++) OtherData[i * 6 + a] = Vector2(Particles.Particles.Rotations[i], (float)Particles.Particles.Frames[i]);
+			    SizesBuffer.Unmap();
+			   ColorsBuffer.Unmap();
 			OtherDataBuffer.Unmap();
 
-			 VerticesBuffer.VertexAttribute<float>(0, 3, false, 0, nullptr);
-			TexcoordsBuffer.VertexAttribute<float>(1, 2, false, 0, nullptr);
-			PositionsBuffer.VertexAttribute<float>(2, 3, false, 0, nullptr);
-			    SizesBuffer.VertexAttribute<float>(3, 3, false, 0, nullptr);
-			   ColorsBuffer.VertexAttribute<float>(4, 4, false, 0, nullptr);
-			OtherDataBuffer.VertexAttribute<float>(5, 2, false, 0, nullptr);
+			glBindVertexArray(Particles_VAO);
+
+			PositionsBuffer.VertexAttribute<float>(0, 3, false, 0, 0);
+			    SizesBuffer.VertexAttribute<float>(1, 3, false, 0, 0);
+			   ColorsBuffer.VertexAttribute<float>(2, 4, false, 0, 0);
+			OtherDataBuffer.VertexAttribute<float>(3, 2, false, 0, 0);
 
 			glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
+			glBindVertexArray(0);
 		}
 
 		glBlendEquation(GL_FUNC_ADD);
@@ -140,8 +122,8 @@ namespace Columbus
 	}
 
 	ParticlesRenderer::~ParticlesRenderer()
-	{
-		delete[] Data;
+	{		
+		glDeleteVertexArrays(1, &Particles_VAO);
 	}
 
 }

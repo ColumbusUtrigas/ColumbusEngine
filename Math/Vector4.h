@@ -376,7 +376,7 @@ namespace Columbus
 		Vector4_t<Type> WWWW() const { return Vector4_t<Type>(W, W, W, W); }
 
 		template <typename T>
-		operator Vector4_t<T>() { return Vector4_t<T>((T)X, (T)Y, (T)Z, (T)W); }
+		operator Vector4_t<T>() const { return Vector4_t<T>((T)X, (T)Y, (T)Z, (T)W); }
 
 		Vector4_t& operator=(const Vector4_t& Other)
 		{
