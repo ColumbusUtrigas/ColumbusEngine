@@ -133,6 +133,7 @@ namespace Columbus
 					}
 
 					scene->Add(std::move(tmp));
+					object = scene->Objects.Find(Name);
 				}
 			}
 		}
