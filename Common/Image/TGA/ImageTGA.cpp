@@ -390,8 +390,11 @@ namespace Columbus
 
 	bool ImageLoaderTGA::IsTGA(const char* FileName)
 	{
+		auto len = strlen(FileName);
+		if (len < 4) return false;
+		
 		char ext[5] = { '\0' };
-		strncpy(ext, &FileName[strlen(FileName) - 4], 4);
+		strncpy(ext, &FileName[len - 4], 4);
 
 		if (strcmp(ext, ".tga") == 0 || strcmp(ext, ".vda") == 0 ||
 		    strcmp(ext, ".icb") == 0 || strcmp(ext, ".vst") == 0) return true;

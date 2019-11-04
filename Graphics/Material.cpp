@@ -165,7 +165,6 @@ namespace Columbus
 		        EmissionMap == Other.EmissionMap &&
 		        DetailAlbedoMap == Other.DetailAlbedoMap &&
 		        DetailNormalMap == Other.DetailNormalMap &&
-		        ReflectionMap == Other.ReflectionMap &&
 		        ShaderProg == Other.ShaderProg &&
 		        Roughness == Other.Roughness &&
 		        Metallic == Other.Metallic &&
