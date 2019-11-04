@@ -102,7 +102,6 @@ namespace Columbus
 				{
 					GameObject tmp;
 					tmp.transform = buffer->transform;
-					tmp.transform.Position = Vector3::Random({-10}, {10});
 					tmp.Name = buffer->Name + " ";
 					tmp.Enable = buffer->Enable;
 					tmp.material = buffer->material;
