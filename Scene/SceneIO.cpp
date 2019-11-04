@@ -134,7 +134,6 @@ namespace Columbus
 
 	void Scene::DeserializeTexturesManager(JSON& J)
 	{
-		TexturesManager.Clear();
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
@@ -151,7 +150,6 @@ namespace Columbus
 
 	void Scene::DeserializeShadersManager(JSON& J)
 	{
-		ShadersManager.Clear();
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
@@ -167,7 +165,6 @@ namespace Columbus
 
 	void Scene::DeserializeMaterialsManager(JSON& J)
 	{
-		MaterialsManager.Clear();
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
@@ -183,7 +180,6 @@ namespace Columbus
 
 	void Scene::DeserializeMeshesManager(JSON& J)
 	{
-		MeshesManager.Clear();
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
@@ -200,7 +196,6 @@ namespace Columbus
 
 	void Scene::DeserializeSoundsManager(JSON& J)
 	{
-		SoundsManager.Clear();
 		for (uint32 i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i]["Name"].GetString();
@@ -217,7 +212,6 @@ namespace Columbus
 
 	void Scene::DeserializeObjects(JSON& J)
 	{
-		Objects.Clear();
 		for (uint32 i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto& JObj = J[i];

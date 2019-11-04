@@ -58,6 +58,23 @@ namespace Columbus
 		}
 	}
 
+	void Scene::Clear()
+	{
+		TexturesManager.Clear();
+		ShadersManager.Clear();
+		MaterialsManager.Clear();
+		MeshesManager.Clear();
+		SoundsManager.Clear();
+		Objects.Clear();
+		Audio.Clear();
+		Lights.clear();
+
+		_CurrentScene = "";
+		SkyPath = "";
+		delete Sky;
+		Sky = nullptr;
+	}
+
 	bool Scene::Load(const std::string& FileName)
 	{
 		if (!gDevice)
@@ -65,6 +82,8 @@ namespace Columbus
 
 		JSON J;
 		if (!J.Load(FileName.c_str())) { Log::Error("Can't load Scene: %s", FileName.c_str()); return false; }
+
+		Clear();
 
 		// Load skybox
 		{
@@ -84,9 +103,6 @@ namespace Columbus
 		DeserializeMeshesManager(J["Meshes"]);
 		DeserializeSoundsManager(J["Sounds"]);
 		DeserializeObjects(J["Objects"]);
-
-		Audio.Clear();
-		Lights.clear();
 
 		_CurrentScene = FileName;
 
