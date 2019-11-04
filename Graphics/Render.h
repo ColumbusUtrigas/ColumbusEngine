@@ -122,6 +122,7 @@ namespace Columbus
 		iVector2 ContextSize;
 		bool DrawIcons = false;
 		bool DrawGrid = false;
+		bool DrawGizmo = false;
 
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;
