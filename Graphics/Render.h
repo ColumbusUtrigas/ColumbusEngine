@@ -13,10 +13,45 @@
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/ParticlesRenderer.h>
 
-#include <map>
+#include <Graphics/Postprocess/AutoExposure.h>
+#include <Graphics/Postprocess/Bloom.h>
+#include <Graphics/Postprocess/Vignette.h>
+
+#include <Editor/Grid.h>
+#include <Editor/Gizmo.h>
+
+#include <array>
 
 namespace Columbus
 {
+
+	enum class RenderPass
+	{
+		Opaque = 0,
+		Sky,
+		Transparent,
+		Postprocess
+	};
+
+	enum class TonemappingType
+	{
+		Simple = 0,
+		Filmic,
+		ACES,
+		RomBinDaHouse,
+		Uncharted
+	};
+
+	enum class AntialiasingType
+	{
+		No = 0,
+		FXAA,
+		MSAA_2X,
+		MSAA_4X,
+		MSAA_8X,
+		MSAA_16X,
+		MSAA_32X
+	};
 
 	class Renderer
 	{
@@ -64,50 +99,43 @@ namespace Columbus
 		Skybox* Sky = nullptr;
 		Scene* Scn = nullptr;
 
-		PostEffect BaseEffect;
-		PostEffect BloomBrightPass;
-		PostEffect BloomHorizontalBlurPass;
-		PostEffect BloomVerticalBlurPass;
-		PostEffect BloomFinalPass;
-		PostEffect FinalPass;
+		PostEffect Base, BaseMSAA;
+		std::array<PostEffect, 2> Post;
+		PostEffect Final;
 
 		ScreenQuad Quad;
 		ParticlesRenderer ParticlesRender;
 
+		Grid _Grid;
+		Gizmo _Gizmo;
+
 		uint32 PolygonsRendered = 0;
 		uint32 OpaqueObjectsRendered = 0;
 		uint32 TransparentObjectsRendered = 0;
-	public:
-		enum class Stage
-		{
-			Opaque,
-			Sky,
-			Transparent
-		};
 
-		enum class PostEffectResolution
-		{
-			Full,
-			Half,
-			Quad
-		};
+		float DeltaTime = 0.0f;
 	public:
+		bool EnableMousePicking = false;
+		Vector2 MousePickingPosition;
+		GameObject* PickedObject = nullptr;
+
 		iVector2 ContextSize;
-		bool EditMode = false;
+		bool DrawIcons = false;
+		bool DrawGrid = false;
+		bool DrawGizmo = false;
 
-		float Exposure = 1.3f;
-		float Gamma = 1.5f;
+		float Gamma = 2.2f;
+		float Exposure = 1.0f;
+		TonemappingType Tonemapping = TonemappingType::Simple;
 
-		bool BloomEnable = true;
-		float BloomTreshold = 0.8f;
-		float BloomIntensity = 0.5f;
-		float BloomRadius = 1.0f;
-		int BloomIterations = 2;
-		PostEffectResolution BloomResolution = PostEffectResolution::Quad;
+		AntialiasingType Antialiasing = AntialiasingType::No;
+
+		PostprocessAutoExposure AutoExposure{Quad};
+		PostprocessBloom Bloom{Quad};
+		PostprocessVignette Vignette{Quad};
 	private:
 		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
 
-		void RenderBloom();
 		void RenderIcons();
 	public:
 		Renderer();
@@ -116,21 +144,23 @@ namespace Columbus
 		void SetMainCamera(const Camera& InCamera);
 		void SetSky(Skybox* InSky);
 		void SetScene(Scene* InScn);
+		void SetDeltaTime(float Delta);
 
 		uint32 GetPolygonsRendered() const;
 		uint32 GetOpaqueObjectsRendered() const;
 		uint32 GetTransparentObjectsRendered() const;
 
-		virtual void SetRenderList(std::vector<SmartPointer<GameObject>>* List);
-		virtual void SetLightsList(std::vector<Light*>* List);
-		virtual void CompileLists();
-		virtual void SortLists();
+		void SetRenderList(std::vector<SmartPointer<GameObject>>* List);
+		void SetLightsList(std::vector<Light*>* List);
+		void CompileLists();
+		void SortLists();
 
-		virtual void RenderOpaqueStage();
-		virtual void RenderSkyStage();
-		virtual void RenderTransparentStage();
-		virtual void Render(Stage RenderStage);
-		virtual void Render();
+		void RenderOpaque();
+		void RenderSky();
+		void RenderTransparent();
+		void RenderPostprocess();
+		void Render(RenderPass Pass);
+		void Render();
 
 		Texture* GetFramebufferTexture() const;
 

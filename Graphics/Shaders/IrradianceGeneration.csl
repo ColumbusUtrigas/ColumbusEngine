@@ -1,0 +1,48 @@
+R"(
+#shader vertex
+#attribute float3 a_Pos 0
+#uniform float4x4 Projection
+#uniform float4x4 View
+
+out float3 var_Pos;
+
+void main(void)
+{
+	SV_Position = Projection * View * float4(a_Pos, 1);
+	var_Pos = a_Pos;
+}
+
+#shader pixel
+#uniform TextureCube EnvironmentMap
+
+in float3 var_Pos;
+
+const float PI = 3.14159265359;
+
+void main(void)
+{
+	float3 Normal = normalize(var_Pos);
+	float3 Irradiance = float3(0.0);
+
+	float3 Up    = float3(0.0, 1.0, 0.0);
+	float3 Right = cross(Up, Normal);
+	Up         = cross(Normal, Right);
+
+	float SampleDelta = 0.025;
+	float NumSamples = 0.0;
+
+	for(float Phi = 0.0; Phi < 2.0 * PI; Phi += SampleDelta)
+	{
+		for(float Theta = 0.0; Theta < 0.5 * PI; Theta += SampleDelta)
+		{
+			float3 TangentSample = float3(sin(Theta) * cos(Phi), sin(Theta) * sin(Phi), cos(Theta));
+			float3 Samplefloat = TangentSample.x * Right + TangentSample.y * Up + TangentSample.z * Normal; 
+
+			Irradiance += SampleCube(EnvironmentMap, Samplefloat).rgb * cos(Theta) * sin(Theta);
+			NumSamples += 1.0;
+		}
+	}
+
+	RT0 = float4(PI * Irradiance * (1.0 / NumSamples), 1.0);
+}
+)"

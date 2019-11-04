@@ -9,7 +9,7 @@
 namespace Columbus
 {
 
-	EditorFileDialog MeshLoader("./Data/Models/");
+	EditorFileDialog MeshLoader("./Data/Meshes/", {"cmf"});
 	MessageBox MeshBruteLoader("One or more meshes are already exist",
 		"Do you realy want to load it against the already loaded ones?", { 300, 120 });
 
@@ -21,7 +21,8 @@ namespace Columbus
 	{
 		MeshLoader.MultipleSelect(true);
 
-		static std::string Find;
+		static String Find;
+		static Mesh* PopupObject = nullptr;
 
 		if (Scn != nullptr && Opened)
 		{
@@ -30,10 +31,15 @@ namespace Columbus
 			ImGui::SetNextWindowSize(ImVec2(600, 370));
 			if (ImGui::BeginPopupModal("Meshes Viewer", &Opened, ImGuiWindowFlags_NoResize))
 			{
-				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Opened = false;
+				if (ImGui::IsWindowFocused() &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+				{
+					Opened = false;
+				}
 
 				auto LoadMore = [&]() { MeshLoader.Open(); };
 				auto Button = [&](const char* Name, void* _) { return ImGui::Button(Name, ImVec2(100, 100)); };
+				auto RightClick = [&](Mesh* PopupObject) {};
 				auto DoubleClick = [&]() { Close(); };
 
 				auto Load = [&](const char* Path, Mesh* S) { return S->Load(Path); };
@@ -42,7 +48,7 @@ namespace Columbus
 				auto New = [&]() { return gDevice->CreateMesh(); };
 
 				ResourceViewerDrawLoadMore("LoadMore_MeshesViewer", LoadMore);
-				ResourceViewerDrawList<Mesh>("MeshesList_MeshesViewer", Tmp, Scn->MeshesManager, Find, Button, DoubleClick);
+				ResourceViewerDrawList<Mesh>("MeshesList_MeshesViewer", Tmp, PopupObject, Scn->MeshesManager, Find, Button, RightClick, DoubleClick);
 				ResourceViewerDrawButtons("Buttons_MeshesViewer", Destination, Find, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<Mesh>("Load Mesh", MeshLoader,
 					Scn->MeshesManager, MeshBruteLoader,

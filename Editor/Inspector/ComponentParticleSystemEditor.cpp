@@ -2,7 +2,7 @@
 #include <Editor/Icons.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Lib/imgui/imgui.h>
-#include <climits>
+#include <limits.h>
 
 namespace Columbus
 {
@@ -96,10 +96,10 @@ namespace Columbus
 						size_t Counter = 1;
 						for (auto& Node : Emitter->ModuleColor.Curve.Points)
 						{
-							auto str = std::to_string(Counter);
+							auto str = String::from(Counter);
 
-							float Min = Counter == 1 ? 0.0f : Emitter->ModuleColor.Curve.Points[Counter - 2].first;
-							float Max = Counter == Emitter->ModuleColor.Curve.Points.size() ? 1.0f : Emitter->ModuleColor.Curve.Points[Counter].first;
+							float Min = Counter == 1 ? 0.0f : Emitter->ModuleColor.Curve.Points[Counter - 2].Key;
+							float Max = Counter == Emitter->ModuleColor.Curve.Points.size() ? 1.0f : Emitter->ModuleColor.Curve.Points[Counter].Key;
 
 							if (ImGui::CollapsingHeader((str + NAME("##ColorOverLife_Point")).c_str()))
 							{
@@ -110,11 +110,11 @@ namespace Columbus
 								ImGui::Indent(10.0f);
 								ImGui::SetNextItemWidth(50.0f);
 
-								ImGui::DragFloat(p.c_str(), &Node.first, 0.05f, Min, Max);
+								ImGui::DragFloat(p.c_str(), &Node.Key, 0.05f, Min, Max);
 								if (ImGui::IsItemActive())
 									Editing = true;
 
-								ImGui::ColorEdit4(c.c_str(), (float*)&Node.second);
+								ImGui::ColorEdit4(c.c_str(), (float*)&Node.Value);
 
 								if (ImGui::Button(r.c_str())) Emitter->ModuleColor.Curve.RemovePoint(Counter - 1);
 								ImGui::Unindent(10.0f);
@@ -158,10 +158,10 @@ namespace Columbus
 						size_t Counter = 1;
 						for (auto& Node : Emitter->ModuleSize.Curve.Points)
 						{
-							auto str = std::to_string(Counter);
+							auto str = String::from(Counter);
 
-							float Min = Counter == 1 ? 0.0f : Emitter->ModuleSize.Curve.Points[Counter - 2].first;
-							float Max = Counter == Emitter->ModuleSize.Curve.Points.size() ? 1.0f : Emitter->ModuleSize.Curve.Points[Counter].first;
+							float Min = Counter == 1 ? 0.0f : Emitter->ModuleSize.Curve.Points[Counter - 2].Key;
+							float Max = Counter == Emitter->ModuleSize.Curve.Points.size() ? 1.0f : Emitter->ModuleSize.Curve.Points[Counter].Key;
 
 							if (ImGui::CollapsingHeader((str + NAME("##SizeOverLife_Point")).c_str()))
 							{
@@ -172,11 +172,11 @@ namespace Columbus
 								ImGui::Indent(10.0f);
 								ImGui::SetNextItemWidth(50.0f);
 
-								ImGui::DragFloat(p.c_str(), &Node.first, 0.05f, Min, Max);
+								ImGui::DragFloat(p.c_str(), &Node.Key, 0.05f, Min, Max);
 								if (ImGui::IsItemActive())
 									Editing = true;
 
-								ImGui::DragFloat3(c.c_str(), (float*)&Node.second, 0.1f, 0.0f, FLT_MAX);
+								ImGui::DragFloat3(c.c_str(), (float*)&Node.Value, 0.1f, 0.0f, FLT_MAX);
 								if (ImGui::Button(r.c_str())) Emitter->ModuleSize.Curve.RemovePoint(Counter - 1);
 								ImGui::Unindent(10.0f);
 							}

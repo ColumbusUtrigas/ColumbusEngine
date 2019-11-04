@@ -32,7 +32,7 @@ namespace Columbus
 		int Getc() const;
 		bool SeekSet(uint64 Offset) const;
 		bool SeekEnd(uint64 Offset) const;
-		bool SeekCur(uint64 Offset) const;
+		bool SeekCur( int64 Offset) const;
 		uint64 Tell() const;
 		bool Flush() const;
 
@@ -62,10 +62,5 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
 
 

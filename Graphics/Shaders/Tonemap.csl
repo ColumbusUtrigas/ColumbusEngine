@@ -1,0 +1,89 @@
+R"(
+#shader vertex = screen_space
+#shader pixel
+#uniform Texture2D u_BaseTexture
+#uniform Texture2D u_AETexture
+
+layout(std140) uniform _Data
+{
+	float u_Exposure;
+	float u_Gamma;
+	int u_Type;
+	int u_AEEnable;
+};
+
+in float2 var_UV;
+
+float3 TonemapSimple(float3 HDR)
+{
+	HDR = HDR / (1.0 + HDR);
+	return pow(HDR, float3(1.0 / u_Gamma));
+}
+
+float3 TonemapFilmic(float3 HDR)
+{
+	HDR = max(float3(0.0), HDR - 0.004);
+	return (HDR * (6.2 * HDR + 0.5)) / (HDR * (6.2 * HDR + 1.7) + 0.06);
+}
+
+float3 TonemapACES(float3 HDR)
+{
+	const float a = 2.51f;
+	const float b = 0.03f;
+	const float c = 2.43f;
+	const float d = 0.59f;
+	const float e = 0.14f;
+
+	HDR = (HDR * (a * HDR + b))  /
+	      (HDR * (c * HDR + d) + e);
+	HDR = pow(HDR, 1.0 / float3(u_Gamma));
+	return HDR;
+}
+
+float3 TonemapRomBinDaHouse(float3 HDR)
+{
+	HDR = exp(-1.0 / (2.72 * HDR + 0.15));
+	return pow(HDR, float3(1.0 / u_Gamma));
+}
+
+float3 TonemapUncharted(float3 HDR)
+{
+	float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+	float W = 11.2;
+
+	HDR = ((HDR * (A * HDR + C * B) + D * E) / (HDR * (A * HDR + B) + D * F)) - E / F;
+	float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
+	HDR /= white;
+	HDR = pow(HDR, float3(1.0 / u_Gamma));
+	return HDR;
+}
+
+void main(void)
+{
+	float E = u_Exposure;
+
+	if (u_AEEnable == 1)
+	{
+		E = Sample2D(u_AETexture, float2(0.5)).r;
+	}
+
+	float3 HDR = clamp(Sample2D(u_BaseTexture, var_UV).rgb * E, 0, 50000);
+	float3 Mapped = float3(0.0);
+
+	switch (u_Type)
+	{
+	case 0: Mapped = TonemapSimple(HDR); break;
+	case 1: Mapped = TonemapFilmic(HDR); break;
+	case 2: Mapped = TonemapACES(HDR); break;
+	case 3: Mapped = TonemapRomBinDaHouse(HDR); break;
+	case 4: Mapped = TonemapUncharted(HDR); break;
+	}
+
+	RT0 = float4(Mapped, 1.0);
+}
+)"

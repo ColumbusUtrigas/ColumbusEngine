@@ -1,0 +1,19 @@
+R"(
+#shader vertex = screen_space
+#shader pixel
+#uniform Texture2D BaseTexture
+#uniform float Treshold
+
+in float2 var_UV;
+
+float luma(float3 color)
+{
+	return dot(color, float3(0.2125, 0.7154, 0.0721));
+}
+
+void main(void)
+{
+	float4 color = Sample2D(BaseTexture, var_UV);
+	RT0 = luma(color.rgb) > Treshold ? color : float4(0, 0, 0, 1);
+}
+)"

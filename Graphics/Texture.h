@@ -1,9 +1,26 @@
 #pragma once
 
 #include <Common/Image/Image.h>
+#include <memory>
 
 namespace Columbus
 {
+
+	struct TextureDesc
+	{
+		uint32 Width;
+		uint32 Height;
+		uint32 LOD;
+		uint32 Multisampling;
+		TextureFormat Format;
+
+		TextureDesc(uint32 Width, uint32 Height, uint32 LOD, uint32 Multisampling, TextureFormat Format) :
+			Width(Width),
+			Height(Height),
+			LOD(LOD),
+			Multisampling(Multisampling),
+			Format(Format) {}
+	};
 
 	class Texture
 	{
@@ -21,8 +38,8 @@ namespace Columbus
 		uint32 MipmapsCount;
 		uint32 MipmapLevel;
 
+		uint32 Multisampling = 0;
 		TextureFormat Format;
-
 		Type TextureType;
 	public:
 		enum class Filter
@@ -45,10 +62,8 @@ namespace Columbus
 		enum class Wrap
 		{
 			Clamp,
-			ClampToEdge,
 			Repeat,
-			MirroredRepeat,
-			MirroredClampToEdge
+			MirroredRepeat
 		};
 
 		enum class Type
@@ -70,37 +85,37 @@ namespace Columbus
 				Filtering(Filt),
 				AnisotropyFilter(Anis),
 				Wrapping(Wr) {}
-		};
 
-		struct Properties
-		{
-			uint32 Width = 0;
-			uint32 Height = 0;
-			uint32 LOD = 0;
-			TextureFormat Format;
+			bool operator==(const Flags& Other) const
+			{
+				return Filtering == Other.Filtering &&
+				       AnisotropyFilter == Other.AnisotropyFilter &&
+				       Wrapping == Other.Wrapping;
+			}
 
-			Properties(uint32 InWidth, uint32 InHeight, uint32 InLOD, TextureFormat InFormat) :
-				Width(InWidth),
-				Height(InHeight),
-				LOD(InLOD),
-				Format(InFormat) {}
+			bool operator!=(const Flags& Other) const
+			{
+				return !(*this == Other);
+			}
 		};
 	public:
 		Texture() {}
 		Texture(const Texture&) = delete;
 		Texture(Texture&&) = delete;
 
-		virtual bool Load(const void* Data, Properties Props) = 0;
+		virtual bool Load(const void* Data, TextureDesc Desc) = 0;
 		virtual bool Load(Image& InImage) = 0;
 		virtual bool Load(const char* File) = 0;
 
-		virtual bool Create(Image::Type InType, Properties Props) = 0;
-		virtual bool Create(Type InType, Properties Props) = 0;
-		virtual bool Create2D(Properties Props) = 0;
-		virtual bool CreateCube(Properties Props) = 0;
+		virtual bool Create(Image::Type InType, TextureDesc Desc) = 0;
+		virtual bool Create(Type InType, TextureDesc Desc) = 0;
+		virtual bool Create2D(TextureDesc Desc) = 0;
+		virtual bool CreateCube(TextureDesc Desc) = 0;
 
 		virtual void SetFlags(Flags F) = 0;
+		Flags GetFlags() const { return TextureFlags; }
 
+		uint32 GetMultisampling() const { return Multisampling; }
 		TextureFormat GetFormat() const { return Format; }
 		Type GetType() const { return TextureType; }
 
@@ -116,11 +131,18 @@ namespace Columbus
 
 	struct DefaultTextures
 	{
-		Texture* Black = nullptr;
-		Texture* White = nullptr;
+		std::unique_ptr<Texture> Black;
+		std::unique_ptr<Texture> White;
+		std::unique_ptr<Texture> IntegrationLUT;
+
+		// TODO: Load this textures only if EditorMode is enabled.
+		std::unique_ptr<Texture> IconSun;
+		std::unique_ptr<Texture> IconLamp;
+		std::unique_ptr<Texture> IconFlashlight;
+		std::unique_ptr<Texture> IconAudio;
+		std::unique_ptr<Texture> IconParticles;
 
 		DefaultTextures();
-		~DefaultTextures();
 	};
 
 }

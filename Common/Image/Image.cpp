@@ -1,6 +1,7 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/BMP/ImageBMP.h>
 #include <Common/Image/DDS/ImageDDS.h>
+#include <Common/Image/EXR/ImageEXR.h>
 #include <Common/Image/HDR/ImageHDR.h>
 #include <Common/Image/JPG/ImageJPG.h>
 #include <Common/Image/PNG/ImagePNG.h>
@@ -35,6 +36,8 @@ namespace Columbus
 			case TextureFormat::RGB32F:  return 12; break;
 			case TextureFormat::RGBA32F: return 16; break;
 
+			case TextureFormat::R11G11B10F: return 4; break;
+
 			case TextureFormat::Unknown: return 0;  break;
 
 			default: break;
@@ -60,6 +63,7 @@ namespace Columbus
 	{
 		if (ImageLoaderBMP::IsBMP(FileName)) return ImageFormat::BMP;
 		if (ImageLoaderDDS::IsDDS(FileName)) return ImageFormat::DDS;
+		if (ImageLoaderEXR::IsEXR(FileName)) return ImageFormat::EXR;
 		if (ImageLoaderHDR::IsHDR(FileName)) return ImageFormat::HDR;
 		if (ImageLoaderPNG::IsPNG(FileName)) return ImageFormat::PNG;
 		if (ImageLoaderTIF::IsTIF(FileName)) return ImageFormat::TIF;
@@ -206,7 +210,7 @@ namespace Columbus
 	Image::Image() {}
 	/*
 	* Load image from file
-	* @param std::string InFileName: Name of image file to load
+	* @param const char* InFileName: Name of image file to load
 	* @param int Flags: Loading flags
 	*/
 	bool Image::Load(const char* InFileName, ImageLoading Flags)
@@ -219,6 +223,7 @@ namespace Columbus
 		{
 			case ImageFormat::BMP: Loader = new ImageLoaderBMP(); break;
 			case ImageFormat::DDS: Loader = new ImageLoaderDDS(); break;
+			case ImageFormat::EXR: Loader = new ImageLoaderEXR(); break;
 			case ImageFormat::HDR: Loader = new ImageLoaderHDR(); break;
 			case ImageFormat::PNG: Loader = new ImageLoaderPNG(); break;
 			case ImageFormat::TIF: Loader = new ImageLoaderTIF(); break;
@@ -272,7 +277,7 @@ namespace Columbus
 	}
 	/*
 	* Save image to file
-	* @param std::string InFileName: Name of image file to save
+	* @param const char* InFileName: Name of image file to save
 	* @param Format: Image format
 	* @param Quality: Compression level
 	*/
@@ -448,6 +453,7 @@ namespace Columbus
 			case TextureFormat::RG32F:
 			case TextureFormat::RGB32F:
 			case TextureFormat::RGBA32F:
+			case TextureFormat::R11G11B10F: break;
 			case TextureFormat::Depth:
 			case TextureFormat::Depth16:
 			case TextureFormat::Depth24:

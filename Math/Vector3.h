@@ -69,7 +69,7 @@ namespace Columbus
 		Vector3_t<Type> ZZZ() const { return Vector3_t<Type>(Z, Z, Z); }
 
 		template <typename T>
-		operator Vector3_t<T>() { return Vector3_t<T>((T)X, (T)Y, (T)Z); }
+		operator Vector3_t<T>() const { return Vector3_t<T>((T)X, (T)Y, (T)Z); }
 
 		Vector3_t& operator=(const Vector3_t& Other)
 		{

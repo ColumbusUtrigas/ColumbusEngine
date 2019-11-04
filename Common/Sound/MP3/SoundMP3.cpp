@@ -1,5 +1,4 @@
 #include <Common/Sound/Sound.h>
-#include <Core/Memory.h>
 #include <System/File.h>
 #define MINIMP3_IMPLEMENTATION
 #include <minimp3.h>
@@ -53,14 +52,14 @@ namespace Columbus
 		mp3dec_frame_info_t MP3FrameInfo;
 
 		mp3dec_init(&MP3Decoder);
-		Memory::Memset(&MP3FrameInfo, 0, sizeof(mp3dec_frame_info_t));
+		memset(&MP3FrameInfo, 0, sizeof(mp3dec_frame_info_t));
 
 		uint64 TotalSamples = 0;
 		uint64 Offset = 0;
 
 		do
 		{
-			uint32 Samples = mp3dec_decode_frame(&MP3Decoder, Buffer, MP3Size, PCM, &MP3FrameInfo);
+			uint32 Samples = mp3dec_decode_frame(&MP3Decoder, Buffer, (int)MP3Size, PCM, &MP3FrameInfo);
 			TotalSamples += Samples;
 
 			if (Samples != 0)

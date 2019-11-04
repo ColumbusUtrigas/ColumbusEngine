@@ -1,0 +1,107 @@
+{
+	"Defaults": {
+		"Skybox": "Data/Skyboxes/Pier.exr"
+	},
+	"Materials": [
+		"Hercules.mat"
+	],
+	"Meshes": [
+		"Sphere.cmf",
+		"Statue.cmf",
+		"Hercules.cmf",
+		"Fireplace.cmf",
+		"Chest.cmf"
+	],
+	"Objects": [
+		{
+			"Material": "Hercules.mat",
+			"MeshRenderer": "Hercules.cmf",
+			"Name": "Hercules",
+			"Static": false,
+			"Transform": {
+				"Position": [0, 0, 0],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Light": {
+				"Color": [0.0294118, 0, 1],
+				"Energy": 4.5,
+				"InnerCutoff": 12.5,
+				"OuterCutoff": 17.5,
+				"Range": 10,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "Light",
+			"Static": false,
+			"Transform": {
+				"Position": [5.9, 13.2, 3.4],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Light": {
+				"Color": [0, 1, 0.0294116],
+				"Energy": 4.5,
+				"InnerCutoff": 12.5,
+				"OuterCutoff": 17.5,
+				"Range": 10,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "Light 1",
+			"Static": false,
+			"Transform": {
+				"Position": [-4.234, 16.361, 7.865],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1, 0, 0],
+				"Energy": 4.5,
+				"InnerCutoff": 12.5,
+				"OuterCutoff": 17.5,
+				"Range": 10,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "Light 2",
+			"Static": false,
+			"Transform": {
+				"Position": [4.765, 4.085, 6.051],
+				"Rotation": [0, 0.1, 0],
+				"Scale": [1, 1, 1]
+			}
+		}
+	],
+	"Shaders": [
+		"Standart.csl",
+		"Particles.csl"
+	],
+	"Sounds": [
+		{
+			"Name": "Fire.wav",
+			"Streaming": true
+		}
+	],
+	"Textures": [
+		"chest_Metallic.dds",
+		"chest_Albedo.dds",
+		"spark.dds",
+		"statue_d.dds",
+		"chest_AO.dds",
+		"Hercules.dds",
+		"Fireplace.dds",
+		"chest_Normal.dds",
+		"Detail-Normal.dds",
+		"smoke.dds",
+		"chest_Roughness.dds",
+		"Detail.dds",
+		"Fireplace-E.dds"
+	]
+}

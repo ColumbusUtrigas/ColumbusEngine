@@ -7,84 +7,48 @@
 #include <Math/Frustum.h>
 #include <GL/glew.h>
 #include <algorithm>
+#include <tuple>
+#include <cstddef>
 
 #include <Profiling/Profiling.h>
 
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/OpenGL/FramebufferOpenGL.h>
 
 namespace Columbus
 {
 	Texture* Blob;
-	Texture* EditorIconSun;
-	Texture* EditorIconLamp;
-	Texture* EditorIconFlashlight;
-	Texture* EditorIconAudio;
-	Texture* EditorIconParticles;
-
-	//ShaderProgram* NoneShader;
-	//ShaderProgram* BloomBrightShader;
-	//ShaderProgram* GaussBlurShader;
-	//ShaderProgram* BloomShader;
-	//ShaderProgram* LensFlareShader;
 
 	RenderState State;
 
 	Renderer::Renderer()
 	{
 		Blob = gDevice->CreateTexture();
-		EditorIconSun = gDevice->CreateTexture();
-		EditorIconLamp = gDevice->CreateTexture();
-		EditorIconAudio = gDevice->CreateTexture();
-		EditorIconFlashlight = gDevice->CreateTexture();
-		EditorIconParticles = gDevice->CreateTexture();
-
 		Blob->Load("Data/Textures/blob.png");
-		EditorIconSun->Load("Data/Icons/Sun.png");
-		EditorIconLamp->Load("Data/Icons/Lamp.png");
-		EditorIconFlashlight->Load("Data/Icons/Flashlight.png");
-		EditorIconAudio->Load("Data/Icons/Audio.png");
-		EditorIconParticles->Load("Data/Icons/Particles.png");
 
-		BaseEffect.ColorTexturesEnablement[0] = true;
-		BaseEffect.ColorTexturesEnablement[1] = true;
-		BaseEffect.DepthTextureEnablement = true;
-		BaseEffect.ColorTexturesMipmaps[0] = false;
+		BaseMSAA.ColorTexturesEnablement[0] = true;
+		BaseMSAA.ColorTexturesEnablement[1] = true;
+		BaseMSAA.ColorTexturesFormats[0] = TextureFormat::R11G11B10F; // Color texture
+		BaseMSAA.ColorTexturesFormats[1] = TextureFormat::R11G11B10F; // Normal texture
+		BaseMSAA.ColorTexturesMipmaps[0] = false;
+		BaseMSAA.ColorTexturesMipmaps[1] = false;
+		BaseMSAA.DepthTextureEnablement = true;
 
-		BaseEffect.ColorTexturesFormats[0] = TextureFormat::RGB16F;
+		Base.ColorTexturesEnablement[0] = true;
+		Base.ColorTexturesEnablement[1] = true;
+		Base.ColorTexturesFormats[0] = TextureFormat::R11G11B10F; // Color texture
+		Base.ColorTexturesFormats[1] = TextureFormat::R11G11B10F; // Normal texture
+		Base.ColorTexturesMipmaps[0] = false;
+		Base.ColorTexturesMipmaps[1] = false;
+		Base.DepthTextureEnablement = true;
 
-		BloomBrightPass.ColorTexturesEnablement[0] = true;
-		BloomBrightPass.ColorTexturesMipmaps[0] = false;
+		for (auto& post : Post)
+		{
+			post.ColorTexturesFormats[0] = TextureFormat::R11G11B10F;
+			post.ColorTexturesFormats[1] = TextureFormat::R11G11B10F;
+		}
 
-		BloomHorizontalBlurPass.ColorTexturesEnablement[0] = true;
-		BloomVerticalBlurPass.ColorTexturesEnablement[0] = true;
-
-		BloomHorizontalBlurPass.ColorTexturesMipmaps[0] = false;
-		BloomVerticalBlurPass.ColorTexturesMipmaps[0] = false;
-
-		BloomFinalPass.ColorTexturesEnablement[0] = true;
-
-		FinalPass.ColorTexturesEnablement[0] = true;
-		//FinalPass.ColorTexturesMipmaps[0] = false;
-
-		/*NoneShader = gDevice->CreateShaderProgram();
-		NoneShader->Load("Data/Shaders/PostProcessing.glsl");
-		NoneShader->Compile();*/
-
-		//BloomBrightShader = gDevice->CreateShaderProgram();
-		//BloomBrightShader->Load("Data/Shaders/Bright.glsl");
-		//BloomBrightShader->Compile();
-
-		/*GaussBlurShader = gDevice->CreateShaderProgram();
-		GaussBlurShader->Load("Data/Shaders/GaussBlur.glsl");
-		GaussBlurShader->Compile();*/
-
-		/*BloomShader = gDevice->CreateShaderProgram();
-		BloomShader->Load("Data/Shaders/Bloom.glsl");
-		BloomShader->Compile();*/
-
-		/*LensFlareShader = gDevice->CreateShaderProgram();
-		LensFlareShader->Load("Data/Shaders/LensFlare.glsl");
-		LensFlareShader->Compile();*/
+		Final.ColorTexturesEnablement[0] = true;
 	}
 
 	void Renderer::SetViewport(const iVector2& Origin, const iVector2& Size)
@@ -107,6 +71,11 @@ namespace Columbus
 	void Renderer::SetScene(Scene* InScn)
 	{
 		Scn = InScn;
+	}
+
+	void Renderer::SetDeltaTime(float Delta)
+	{
+		DeltaTime = Delta;
 	}
 
 	uint32 Renderer::GetPolygonsRendered() const
@@ -168,19 +137,14 @@ namespace Columbus
 						{
 							if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 							{
-								Object->material.ReflectionMap = Sky->GetIrradianceMap();
+								if (Object->material == nullptr) continue;
+								Material& Mat = *Object->material;
+								Mat.ReflectionMap = Sky->GetIrradianceMap();
 
-								if (Object->material.Transparent)
-								{
-									//TransparentObjects.emplace_back(Mesh, nullptr, Object->transform, Object->material);
+								if (Mat.Transparent)
 									TransparentObjects.emplace_back(Mesh, Counter);
-									CalculateLights(Object->transform.Position, TransparentObjects.back().Lights);
-								}
 								else
-								{
 									OpaqueObjects.emplace_back(Mesh, Counter);
-									CalculateLights(Object->transform.Position, OpaqueObjects.back().Lights);
-								}
 							}
 						}
 					}
@@ -191,13 +155,12 @@ namespace Columbus
 
 						if (Emitter != nullptr)
 						{
-							//TransparentObjects.emplace_back(nullptr, Emitter, Object->transform, Object->material);
 							TransparentObjects.emplace_back(Emitter, Counter);
 						}
 					}
-
-					Counter++;
 				}
+
+				Counter++;
 			}
 		}
 	}
@@ -218,7 +181,7 @@ namespace Columbus
 		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
 	}
 
-	void Renderer::RenderOpaqueStage()
+	void Renderer::RenderOpaque()
 	{
 		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
 
@@ -229,9 +192,9 @@ namespace Columbus
 		for (auto& Object : OpaqueObjects)
 		{
 			SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-			Material& Mat = GO->material;
+			if (GO->material == nullptr) continue;
+			Material& Mat = *GO->material;
 			ShaderProgram* CurrentShader = Mat.ShaderProg;
-			std::vector<Light*>& Lights = Scn->Lights;
 				
 			if (CurrentShader != nullptr)
 			{
@@ -240,7 +203,6 @@ namespace Columbus
 				State.SetDepthWriting(Mat.DepthWriting);
 				State.SetShaderProgram(Mat.GetShader());
 				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
-				State.SetLights(Lights, Object.Lights);
 				State.SetMesh(Object.Object);
 
 				PolygonsRendered += Object.Object->Render();
@@ -249,17 +211,20 @@ namespace Columbus
 		}
 	}
 
-	void Renderer::RenderSkyStage()
+	void Renderer::RenderSky()
 	{
 		PROFILE_GPU(ProfileModuleGPU::SkyStage);
 
 		if (Sky != nullptr)
 		{
+			State.SetCulling(Material::Cull::Back);
+			State.SetDepthWriting(false);
 			Sky->Render();
+			State.SetDepthWriting(true);
 		}
 	}
 
-	void Renderer::RenderTransparentStage()
+	void Renderer::RenderTransparent()
 	{
 		PROFILE_GPU(ProfileModuleGPU::TransparentStage);
 
@@ -273,12 +238,11 @@ namespace Columbus
 			for (auto& Object : TransparentObjects)
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-				Material& Mat = GO->material;
+				if (GO->material == nullptr) continue;
+				Material& Mat = *GO->material;
 
 				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
 				Mesh* CurrentMesh = Object.MeshObject;
-
-				std::vector<Light*>& Lights = Scn->Lights;
 
 				if (Object.MeshObject != nullptr)
 				{
@@ -287,7 +251,6 @@ namespace Columbus
 						State.SetDepthTesting(Mat.DepthTesting);
 						State.SetShaderProgram(CurrentShader);
 						State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
-						State.SetLights(Lights, Object.Lights);
 						CurrentMesh->Bind();
 
 						int32 Transparent = CurrentShader->GetFastUniform("Transparent");
@@ -336,15 +299,21 @@ namespace Columbus
 		State.SetDepthWriting(true);
 	}
 
-	void Renderer::Render(Renderer::Stage RenderStage)
+	void Renderer::RenderPostprocess()
+	{
+
+	}
+
+	void Renderer::Render(RenderPass Pass)
 	{
 		if (RenderList != nullptr)
 		{
-			switch (RenderStage)
+			switch (Pass)
 			{
-			case Renderer::Stage::Opaque:      RenderOpaqueStage();      break;
-			case Renderer::Stage::Sky:         RenderSkyStage();         break;
-			case Renderer::Stage::Transparent: RenderTransparentStage(); break;
+			case RenderPass::Opaque:      RenderOpaque();      break;
+			case RenderPass::Sky:         RenderSky();         break;
+			case RenderPass::Transparent: RenderTransparent(); break;
+			case RenderPass::Postprocess: RenderPostprocess(); break;
 			}
 		}
 
@@ -371,77 +340,6 @@ namespace Columbus
 		}
 	}
 
-	void Renderer::RenderBloom()
-	{
-		PROFILE_GPU(ProfileModuleGPU::BloomStage);
-
-		auto BloomBrightShader = gDevice->GetDefaultShaders()->BloomBright;
-		auto Blur = gDevice->GetDefaultShaders()->GaussBlur;
-		auto Bloom = gDevice->GetDefaultShaders()->Bloom;
-
-		static int BrightShaderTexture = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("BaseTexture");
-		static int BrightShaderTreshold = ((ShaderProgramOpenGL*)BloomBrightShader)->GetFastUniform("Treshold");
-
-		static int BloomBlurTexture = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("BaseTexture");
-		static int BloomBlurHorizontal = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("Horizontal");
-		static int BloomBlurRadius = ((ShaderProgramOpenGL*)Blur)->GetFastUniform("Radius");
-
-		static int BloomFinalPassBaseTexture = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("BaseTexture");
-		static int BloomFinalPassVerticalBlur = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Blur");
-		static int BloomFinalPassIntensity = ((ShaderProgramOpenGL*)Bloom)->GetFastUniform("Intensity");
-
-		BloomBrightPass.Bind({}, {0}, ContextSize);
-
-		((ShaderProgramOpenGL*)BloomBrightShader)->Bind();
-		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)BloomBrightShader)->SetUniform(BrightShaderTreshold, BloomTreshold);
-		Quad.Render();
-
-		BloomBrightPass.Unbind();
-
-		((ShaderProgramOpenGL*)Blur)->Bind();
-		((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurRadius, BloomRadius);
-
-		iVector2 Resolution;
-
-		switch (BloomResolution)
-		{
-		case PostEffectResolution::Full: Resolution = ContextSize;     break;
-		case PostEffectResolution::Half: Resolution = ContextSize / 2; break;
-		case PostEffectResolution::Quad: Resolution = ContextSize / 4; break;
-		}
-
-		if (Resolution.X == 0) Resolution.X = 1;
-		if (Resolution.Y == 0) Resolution.Y = 1;
-
-		for (int i = 0; i < BloomIterations; i++)
-		{
-			auto Horiz = i == 0 ? BloomBrightPass.ColorTextures[0] : BloomVerticalBlurPass.ColorTextures[0];
-
-			BloomHorizontalBlurPass.Bind({}, {0}, Resolution);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)Horiz, 0);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 1);
-			Quad.Render();
-			BloomHorizontalBlurPass.Unbind();
-
-			BloomVerticalBlurPass.Bind({}, {0}, Resolution);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurTexture, (TextureOpenGL*)BloomHorizontalBlurPass.ColorTextures[0], 0);
-			((ShaderProgramOpenGL*)Blur)->SetUniform(BloomBlurHorizontal, 0);
-			Quad.Render();
-			BloomVerticalBlurPass.Unbind();
-		}
-
-		BloomFinalPass.Bind({}, {0}, ContextSize);
-
-		((ShaderProgramOpenGL*)Bloom)->Bind();
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassBaseTexture, (TextureOpenGL*)BaseEffect.ColorTextures[0], 0);
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassVerticalBlur, (TextureOpenGL*)BloomVerticalBlurPass.ColorTextures[0], 1);
-		((ShaderProgramOpenGL*)Bloom)->SetUniform(BloomFinalPassIntensity, BloomIntensity);
-		Quad.Render();
-
-		BloomFinalPass.Unbind();
-	}
-
 	void Renderer::RenderIcons()
 	{
 		auto Icon = gDevice->GetDefaultShaders()->Icon;
@@ -452,6 +350,8 @@ namespace Columbus
 
 		auto DrawIcon = [&](Vector4 Coords)
 		{
+			float InvDistance = 1.0f / Coords.XYZ().Length(MainCamera.Pos) * 0.5f;
+			InvDistance = Math::Clamp(InvDistance, 0.05f, 0.5f);
 			Coords = MainCamera.GetViewProjection() * Coords;
 
 			if (Coords.W > 0.0f)
@@ -459,10 +359,10 @@ namespace Columbus
 				Coords /= Coords.W;
 
 				float Aspect = (float)ContextSize.X / (float)ContextSize.Y;
-
+				Vector2 Size = InvDistance / Vector2(Aspect, 1);
 
 				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconPosID, Coords.XY());
-				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconSizeID, 0.1f / Vector2(Aspect, 1));
+				((ShaderProgramOpenGL*)(Icon))->SetUniform(IconSizeID, Size);
 				Quad.Render();
 			}
 		};
@@ -473,38 +373,38 @@ namespace Columbus
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconSun, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun.get(), 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
-				if (Elem->Type == 0)
+				if (Elem->Type == Light::Directional)
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconLamp, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp.get(), 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
-				if (Elem->Type == 1)
+				if (Elem->Type == Light::Point)
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconFlashlight, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight.get(), 0);
 		for (const auto& Elem : Scn->Lights)
 		{
 			if (Elem != nullptr)
-				if (Elem->Type == 2)
+				if (Elem->Type == Light::Spot)
 					DrawIcon(Vector4(Elem->Pos, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconAudio, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio.get(), 0);
 		for (const auto& Elem : Scn->Audio.Mixer.Sources)
 		{
 			if (Elem != nullptr)
 				DrawIcon(Vector4(Elem->Position, 1));
 		}
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)EditorIconParticles, 0);
+		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles.get(), 0);
 		for (const auto& Elem : TransparentObjects)
 		{
 			if (Elem.Particles != nullptr)
@@ -516,10 +416,67 @@ namespace Columbus
 
 	void Renderer::Render()
 	{
-		auto FinalPassShader = gDevice->GetDefaultShaders()->Final;
-		static int FinalBaseTextureID = ((ShaderProgramOpenGL*)(FinalPassShader))->GetFastUniform("BaseTexture");
-		static int FinalGamma = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Gamma");
-		static int FinalExposure = ((ShaderProgramOpenGL*)FinalPassShader)->GetFastUniform("Exposure");
+		struct _UBO_Data
+		{
+			struct
+			{
+				float min, max;
+				float speedUp, speedDown;
+				float deltaTime;
+				float pad[59]; // because nvidia requires 256-byte alignment
+			} autoExposure;
+
+			struct
+			{
+				float exposure, gamma;
+				int type;
+				int ae_enable;
+				float pad[60];
+			} tonemap;
+
+			struct
+			{
+				Vector3 color;
+				float intensity;
+				Vector2 center;
+				float smoothness;
+				float radius;
+				float pad[56];
+			} vignette;
+		} uboData;
+
+		uboData.autoExposure.min = AutoExposure.Min;
+		uboData.autoExposure.max = AutoExposure.Max;
+		uboData.autoExposure.speedUp = AutoExposure.SpeedUp;
+		uboData.autoExposure.speedDown = AutoExposure.SpeedDown;
+		uboData.autoExposure.deltaTime = DeltaTime;
+
+		uboData.tonemap.exposure = Exposure;
+		uboData.tonemap.gamma = Gamma;
+		uboData.tonemap.type = static_cast<int>(Tonemapping);
+		uboData.tonemap.ae_enable = AutoExposure.Enabled;
+
+		uboData.vignette.color = Vignette.Color;
+		uboData.vignette.intensity = Vignette.Intensity;
+		uboData.vignette.center = Vignette.Center;
+		uboData.vignette.smoothness = Vignette.Smoothness;
+		uboData.vignette.radius = Vignette.Radius;
+
+		static BufferOpenGL UBO(BufferType::Uniform, {
+			sizeof(uboData),
+			BufferUsage::Write,
+			BufferCpuAccess::Stream
+		});
+
+		UBO.Load(&uboData);
+
+		auto defaultShaders = gDevice->GetDefaultShaders();
+
+		auto ScreenSpaceShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->ScreenSpace);
+		auto TonemapShader     = static_cast<ShaderProgramOpenGL*>(defaultShaders->Tonemap);
+		auto MSAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->ResolveMSAA);
+		auto FXAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->FXAA);
+		auto EditorToolsShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->EditorTools);
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;
@@ -533,44 +490,204 @@ namespace Columbus
 
 		PROFILE_GPU(ProfileModuleGPU::GPU);
 
-		BaseEffect.Bind({ 1, 1, 1, 0 }, {0}, ContextSize);
+		bool IsFXAA = false;
+		bool IsMSAA = false;
 
-		RenderOpaqueStage();
-		RenderSkyStage();
-		RenderTransparentStage();
-
-		BaseEffect.Unbind();
-
-		State.Clear();
-
-		Texture* Final = BaseEffect.ColorTextures[0];
-
-		if (BloomEnable)
+		switch (Antialiasing)
 		{
-			RenderBloom();
-			Final = BloomFinalPass.ColorTextures[0];
+		case AntialiasingType::No: break;
+		case AntialiasingType::FXAA: IsFXAA = true; break;
+		case AntialiasingType::MSAA_2X:  BaseMSAA.Multisampling = 2;  IsMSAA = true; break;
+		case AntialiasingType::MSAA_4X:  BaseMSAA.Multisampling = 4;  IsMSAA = true; break;
+		case AntialiasingType::MSAA_8X:  BaseMSAA.Multisampling = 8;  IsMSAA = true; break;
+		case AntialiasingType::MSAA_16X: BaseMSAA.Multisampling = 16; IsMSAA = true; break;
+		case AntialiasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
 		}
+
+		struct
+		{
+			struct
+			{
+				Vector3 color; float range;
+				Vector3 pos; float innerCutoff;
+				Vector3 dir; float outerCutoff;
+				int type;
+				float pad[3];
+			} lights[128];
+
+			int count;
+		} lightingUboData;
+
+		lightingUboData.count = 0;
+		for (auto Light : Scn->Lights)
+		{
+			if (Light != nullptr)
+			{
+				auto id = lightingUboData.count;
+
+				lightingUboData.lights[id].color = Light->Color * Light->Energy;
+				lightingUboData.lights[id].pos = Light->Pos;
+				lightingUboData.lights[id].dir = Light->Dir;
+
+				lightingUboData.lights[id].range = Light->Range;
+				lightingUboData.lights[id].innerCutoff = Light->InnerCutoff;
+				lightingUboData.lights[id].outerCutoff = Light->OuterCutoff;
+
+				lightingUboData.lights[id].type = Light->Type;
+
+				lightingUboData.count++;
+			}
+		}
+
+		static BufferOpenGL lightingUBO(BufferType::Uniform, {
+			sizeof(lightingUboData),
+			BufferUsage::Write,
+			BufferCpuAccess::Stream
+		});
+
+		lightingUBO.Load(&lightingUboData);
+		lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
+
+		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
+
+		// RENDERING
+		//
+		//
+		// Render to the MSAA buffer or not
+		if (IsMSAA)
+			BaseMSAA.Bind({0}, {0}, ContextSize);
+		else
+			Base.Bind({0}, {0}, ContextSize);
+
+		RenderOpaque();
+		glDrawBuffers(1, BuffersFirst);
+		RenderSky();
+		glDrawBuffers(2, BuffersAll);
+		RenderTransparent();
+
+		if (DrawGrid)
+		{
+			glDrawBuffers(1, BuffersFirst);
+
+			State.SetBlending(true);
+			State.SetDepthWriting(true);
+			State.SetDepthTesting(Material::DepthTest::LEqual);
+
+			EditorToolsShader->Bind();
+			EditorToolsShader->SetUniform("ViewProjection", false, MainCamera.GetViewProjection());
+			EditorToolsShader->SetUniform("Color", Vector4(Vector3(0.5f), 1.0f));
+			EditorToolsShader->SetUniform("CameraPos", MainCamera.Pos);
+			EditorToolsShader->SetUniform("Model", false, Matrix(1.0f));
+			EditorToolsShader->SetUniform("UseDistanceFade", 1);
+			_Grid.Draw();
+			EditorToolsShader->Unbind();
+		}
+
+		//
+		//
+		// RENDERING
+
+		if (IsMSAA)
+		{
+			Base.Bind({0}, {0}, ContextSize);
+
+			// Resolve RT0 (HDR Color)
+			MSAAShader->Bind();
+			MSAAShader->SetUniform("BaseTexture", (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
+			MSAAShader->SetUniform("Samples", static_cast<int>(BaseMSAA.Multisampling));
+			Quad.Render();
+			MSAAShader->Unbind();
+
+			// Resolve RT1 (Normals) and Depth
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(BaseMSAA.FB)->ID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<FramebufferOpenGL*>(Base.FB)->ID);
+
+			glReadBuffer(GL_COLOR_ATTACHMENT1);
+			glDrawBuffer(GL_COLOR_ATTACHMENT1);
+
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		}
+
+		Base.ColorTexturesMipmaps[0] = true;
+
+		// !!!!!!!!!!!
+		if (AutoExposure.Enabled)
+		{
+			Base.Mipmaps();
+		}
+
+		State.SetBlending(false);
+		State.SetDepthWriting(false);
+		State.SetCulling(Material::Cull::No);
+
+		Texture* FinalTex = Base.ColorTextures[0];
+
+		auto autoExposureTexture = AutoExposure.Draw(Exposure,
+			Base.ColorTextures[0], ContextSize,
+			UBO, offsetof(_UBO_Data, autoExposure), sizeof(uboData.autoExposure));
+
+		Bloom.Draw(FinalTex, ContextSize, Post);
 
 		// Final stage
 		{
 			PROFILE_GPU(ProfileModuleGPU::FinalStage);
 
-			FinalPass.Bind({}, {}, ContextSize);
+			Final.Bind({}, {}, ContextSize);
 
-			((ShaderProgramOpenGL*)FinalPassShader)->Bind();
-			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalBaseTextureID, (TextureOpenGL*)Final, 0);
-			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalExposure, Exposure);
-			((ShaderProgramOpenGL*)FinalPassShader)->SetUniform(FinalGamma, Gamma);
+			TonemapShader->Bind();
+			TonemapShader->SetUniform("u_BaseTexture", (TextureOpenGL*)FinalTex, 0);
+			TonemapShader->SetUniform("u_AETexture", (TextureOpenGL*)autoExposureTexture, 1);
+			UBO.BindRange(0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
 			Quad.Render();
-			((ShaderProgramOpenGL*)FinalPassShader)->Unbind();
+			TonemapShader->Unbind();
 
-			if (EditMode)
+			if (IsFXAA)
+			{
+				Post[0].ColorTexturesEnablement[0] = true;
+				Post[0].Bind({}, {}, ContextSize);
+
+				FXAAShader->Bind();
+				FXAAShader->SetUniform("BaseTexture", (TextureOpenGL*)Final.ColorTextures[0], 0);
+				FXAAShader->SetUniform("Resolution", (Vector2)ContextSize);
+				Quad.Render();
+
+				Final.FB->Bind();
+
+				ScreenSpaceShader->Bind();
+				ScreenSpaceShader->SetUniform("BaseTexture", (TextureOpenGL*)Post[0].ColorTextures[0], 0);
+				Quad.Render();
+			}
+
+			if (DrawIcons)
 			{
 				RenderIcons();
 			}
 
-			FinalPass.Unbind();
+			if (DrawGizmo)
+			{
+				State.SetBlending(false);
+				State.SetDepthWriting(false);
+				State.SetDepthTesting(Material::DepthTest::Always);
+				State.SetCulling(Material::Cull::Back);
+
+				_Gizmo.EnableMousePicking = EnableMousePicking;
+				_Gizmo.MousePickingPosition = MousePickingPosition;
+				_Gizmo.PickedObject = PickedObject;
+				_Gizmo.SetCamera(MainCamera);
+				_Gizmo.Draw();
+			}
+
+			if (Vignette.Enabled)
+			{
+				State.SetBlending(true);
+				Vignette.Draw(UBO, offsetof(_UBO_Data, vignette), sizeof(uboData.vignette));
+			}
+
+			Final.Unbind();
 		}
+
 
 		// Lens flare rendering test, I will use it in the future
 
@@ -592,18 +709,13 @@ namespace Columbus
 
 	Texture* Renderer::GetFramebufferTexture() const
 	{
-		return FinalPass.ColorTextures[0];
+		return Final.ColorTextures[0];
 	}
 
 	Renderer::~Renderer()
 	{
 		delete Blob;
-		delete EditorIconLamp;
-		//delete NoneShader;
-		//delete BloomBrightShader;
-		//delete GaussBlurShader;
-		//delete BloomShader;
-		//delete LensFlareShader;
+		//delete EditorIconLamp;
 	}
 
 }

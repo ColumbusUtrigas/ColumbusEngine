@@ -3,11 +3,12 @@
 #include <Math/Vector3.h>
 #include <Math/Matrix.h>
 #include <Math/Quaternion.h>
+#include <Core/ISerializable.h>
 
 namespace Columbus
 {
 
-	class Transform
+	class Transform : public ISerializable
 	{
 	private:
 		Vector3 LastPosition;
@@ -26,6 +27,9 @@ namespace Columbus
 
 		void SetMatrix(const Matrix& InMatrix);
 		const Matrix& GetMatrix() const;
+
+		virtual void Serialize(JSON& J) const final override;
+		virtual void Deserialize(JSON& J) final override;
 
 		~Transform();
 	};

@@ -1,8 +1,5 @@
 #include <Graphics/Camera.h>
 
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 namespace Columbus
 {
 

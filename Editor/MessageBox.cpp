@@ -16,7 +16,7 @@ namespace Columbus
 				ImVec2 Size = ImGui::GetContentRegionAvail();
 				if (ImGui::BeginChild("TextField##MessageBox", ImVec2(Size.x, Size.y - 30)))
 				{
-					ImGui::TextWrapped(Text.c_str());
+					ImGui::TextWrapped("%s", Text.c_str());
 				}
 				ImGui::EndChild();
 

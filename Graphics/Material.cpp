@@ -1,16 +1,15 @@
 #include <Graphics/Material.h>
-#include <System/Serializer.h>
 #include <Common/JSON/JSON.h>
 #include <System/Log.h>
+
+#include <Graphics/Texture.h>
+#include <Graphics/Shader.h>
+#include <Resources/ResourceManager.h>
 
 namespace Columbus
 {
 
 	Material::Material() {}
-	Material::Material(const char* FileName)
-	{
-		Load(FileName);
-	}
 
 	bool Material::Prepare()
 	{
@@ -38,48 +37,10 @@ namespace Columbus
 	{
 		return ShaderProg;
 	}
-	
-	int Material::GetAlbedoMapID() const
-	{
-		return AlbedoMapID;
-	}
 
-	int Material::GetNormalMapID() const
-	{
-		return NormalMapID;
-	}
-
-	int Material::GetRoughnessMapID() const
-	{
-		return RoughnessMapID;
-	}
-
-	int Material::GetMetallicMapID() const
-	{
-		return MetallicMapID;
-	}
-
-	int Material::GetOcclusionMapID() const
-	{
-		return OcclusionMapID;
-	}
-
-	int Material::GetEmissionMapID() const
-	{
-		return EmissionMapID;
-	}
-
-	int Material::GetDetailAlbedoMapID() const
-	{
-		return DetailAlbedoMapID;
-	}
-
-	int Material::GetDetailNormalMapID() const
-	{
-		return DetailNormalMapID;
-	}
-
-	bool Material::Load(const char* FileName)
+	bool Material::Load(const char* FileName,
+		ResourceManager<ShaderProgram>& ShadersManager,
+		ResourceManager<Texture>& TexturesManager)
 	{
 		JSON J;
 		if (!J.Load(FileName)) return false;
@@ -89,12 +50,14 @@ namespace Columbus
 		if (J["Culling"].GetString() == "Back")         Culling = Cull::Back;
 		if (J["Culling"].GetString() == "FrontAndBack") Culling = Cull::FrontAndBack;
 		
-		if (J["DepthTesting"].GetString() == "Less")    DepthTesting = DepthTest::Less;
-		if (J["DepthTesting"].GetString() == "Greater") DepthTesting = DepthTest::Greater;
-		if (J["DepthTesting"].GetString() == "LEqual")  DepthTesting = DepthTest::LEqual;
-		if (J["DepthTesting"].GetString() == "GEqual")  DepthTesting = DepthTest::GEqual;
-		if (J["DepthTesting"].GetString() == "Never")   DepthTesting = DepthTest::Never;
-		if (J["DepthTesting"].GetString() == "Always")  DepthTesting = DepthTest::Always;
+		if (J["DepthTesting"].GetString() == "Less")      DepthTesting = DepthTest::Less;
+		if (J["DepthTesting"].GetString() == "Greater")   DepthTesting = DepthTest::Greater;
+		if (J["DepthTesting"].GetString() == "LEqual")    DepthTesting = DepthTest::LEqual;
+		if (J["DepthTesting"].GetString() == "GEqual")    DepthTesting = DepthTest::GEqual;
+		if (J["DepthTesting"].GetString() == "Equal")     DepthTesting = DepthTest::Equal;
+		if (J["DepthTesting"].GetString() == "NotEqual")  DepthTesting = DepthTest::NotEqual;
+		if (J["DepthTesting"].GetString() == "Never")     DepthTesting = DepthTest::Never;
+		if (J["DepthTesting"].GetString() == "Always")    DepthTesting = DepthTest::Always;
 
 		DepthWriting = J["DepthWriting"].GetBool();
 		Transparent  = J["Transparent"] .GetBool();
@@ -103,20 +66,90 @@ namespace Columbus
 		DetailTiling = J["DetailTiling"].GetVector2<float>();
 		Albedo       = J["Albedo"]      .GetVector4<float>();
 
-		Roughness        = (float)J["Roughness"]       .GetFloat();
-		Metallic         = (float)J["Metallic"]        .GetFloat();
-		EmissionStrength = (float)J["EmissionStrength"].GetFloat();
+		Roughness        = static_cast<float>(J["Roughness"]       .GetFloat());
+		Metallic         = static_cast<float>(J["Metallic"]        .GetFloat());
+		EmissionStrength = static_cast<float>(J["EmissionStrength"].GetFloat());
 
-		AlbedoMapID       = J["Textures"]["Albedo"]      .IsInt() ? (int)J["Textures"]["Albedo"]      .GetInt() : -1;
-		NormalMapID       = J["Textures"]["Normal"]      .IsInt() ? (int)J["Textures"]["Normal"]      .GetInt() : -1;
-		RoughnessMapID    = J["Textures"]["Roughness"]   .IsInt() ? (int)J["Textures"]["Roughness"]   .GetInt() : -1;
-		MetallicMapID     = J["Textures"]["Metallic"]    .IsInt() ? (int)J["Textures"]["Metallic"]    .GetInt() : -1;
-		OcclusionMapID    = J["Textures"]["Occlusion"]   .IsInt() ? (int)J["Textures"]["Occlusion"]   .GetInt() : -1;
-		EmissionMapID     = J["Textures"]["Emission"]    .IsInt() ? (int)J["Textures"]["Emission"]    .GetInt() : -1;
-		DetailAlbedoMapID = J["Textures"]["DetailAlbedo"].IsInt() ? (int)J["Textures"]["DetailAlbedo"].GetInt() : -1;
-		DetailNormalMapID = J["Textures"]["DetailNormal"].IsInt() ? (int)J["Textures"]["DetailNormal"].GetInt() : -1;
+		ShaderProg = ShadersManager.Find(J["Shader"].IsString() ? J["Shader"].GetString() : "");
+
+		#define DESERIALIZE_TEXTURE(tex, name) \
+			tex = J["Textures"][name].IsString() ? TexturesManager.Find(J["Textures"][name].GetString()) : nullptr;
+
+		DESERIALIZE_TEXTURE(AlbedoMap, "Albedo");
+		DESERIALIZE_TEXTURE(NormalMap, "Normal");
+		DESERIALIZE_TEXTURE(RoughnessMap, "Roughness");
+		DESERIALIZE_TEXTURE(MetallicMap, "Metallic");
+		DESERIALIZE_TEXTURE(OcclusionMap, "Occlusion");
+		DESERIALIZE_TEXTURE(EmissionMap, "Emission");
+		DESERIALIZE_TEXTURE(DetailAlbedoMap, "DetailAlbedo");
+		DESERIALIZE_TEXTURE(DetailNormalMap, "DetailNormal");
 
 		Log::Success("Material loaded: %s", FileName);
+
+		return true;
+	}
+
+	bool Material::Save(const char* FileName,
+		ResourceManager<ShaderProgram>& ShadersManager,
+		ResourceManager<Texture>& TexturesManager)
+	{
+		JSON J;
+
+		switch (Culling)
+		{
+		case Cull::No:           J["Culling"] = "No";           break;
+		case Cull::Front:        J["Culling"] = "Front";        break;
+		case Cull::Back:         J["Culling"] = "Back";         break;
+		case Cull::FrontAndBack: J["Culling"] = "FrontAndBack"; break;
+		}
+
+		switch (DepthTesting)
+		{
+		case DepthTest::Less:      J["DepthTesting"] = "Less";      break;
+		case DepthTest::Greater:   J["DepthTesting"] = "Greater";   break;
+		case DepthTest::LEqual:    J["DepthTesting"] = "LEqual";    break;
+		case DepthTest::GEqual:    J["DepthTesting"] = "GEqual";    break;
+		case DepthTest::Equal:     J["DepthTesting"] = "Equal";     break;
+		case DepthTest::NotEqual:  J["DepthTesting"] = "NotEqual";  break;
+		case DepthTest::Never:     J["DepthTesting"] = "Never";     break;
+		case DepthTest::Always:    J["DepthTesting"] = "Always";    break;
+		}
+
+		J["DepthWriting"] = DepthWriting;
+		J["Transparent"]  = Transparent;
+		J["Lighting"]     = Lighting;
+		J["Tiling"]       = Tiling;
+		J["DetailTiling"] = DetailTiling;
+		J["Albedo"]       = Albedo;
+
+		J["Roughness"]        = Roughness;
+		J["Metallic"]         = Metallic;
+		J["EmissionStrength"] = EmissionStrength;
+
+		if (ShaderProg)
+			J["Shader"] = ShadersManager.Find(ShaderProg);
+		else
+			J["Shader"] = nullptr;
+
+		#define SERIALIZE_TEXTURE(tex, name) \
+			if (tex) \
+				J["Textures"][name] = TexturesManager.Find(tex); \
+			else \
+				J["Textures"][name] = nullptr;
+
+		SERIALIZE_TEXTURE(AlbedoMap, "Albedo");
+		SERIALIZE_TEXTURE(NormalMap, "Normal");
+		SERIALIZE_TEXTURE(RoughnessMap, "Roughness");
+		SERIALIZE_TEXTURE(MetallicMap, "Metallic");
+		SERIALIZE_TEXTURE(OcclusionMap, "Occlusion");
+		SERIALIZE_TEXTURE(EmissionMap, "Emission");
+		SERIALIZE_TEXTURE(DetailAlbedoMap, "DetailAlbedo");
+		SERIALIZE_TEXTURE(DetailNormalMap, "DetailNormal");
+
+		if (J.Save(FileName))
+			Log::Success("Material saved: %s", FileName);
+		else
+			return false;
 
 		return true;
 	}

@@ -1,15 +1,16 @@
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
-#include <Core/Platform/PlatformFilesystem.h>
+#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
+#include <Core/Filesystem.h>
 #include <algorithm>
 
 namespace Columbus
 {
 
-	static std::string Recompose(const std::vector<std::string>& Decomposed, size_t Index)
+	static String Recompose(const std::vector<String>& Decomposed, size_t Index)
 	{
-		std::string Result;
+		String Result;
 
 		for (size_t i = 0; i <= Index; i++)
 		{
@@ -19,15 +20,15 @@ namespace Columbus
 		return Result.empty() ? Decomposed[0] : Result;
 	}
 
-	static const char* GetFileIcon(const std::string& Ext)
+	static const char* GetFileIcon(const String& Ext)
 	{
-		auto e = Ext;
-		std::transform(e.begin(), e.end(), e.begin(), ::tolower);
+		auto e = Ext.tolower();
+
 		if (e == "tga" || e == "bmp" || e == "dds" || e == "tif" || e == "tiff" ||
 		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE_O;
 		if (e == "wav" || e == "mp3" || e == "ogg") return ICON_FA_MUSIC;
 		if (e == "json" || e == "glsl" || e == "hlsl" || e == "csl") return ICON_FA_CODE;
-		if (e == "hdr") return ICON_FA_PICTURE_O;
+		if (e == "hdr" || e == "exr") return ICON_FA_PICTURE_O;
 		if (e == "scene") return ICON_FA_STRIKETHROUGH;
 		if (e == "lig") return ICON_FA_LIGHTBULB_O;
 		if (e == "mat") return ICON_FA_CIRCLE;
@@ -38,27 +39,41 @@ namespace Columbus
 		return ICON_FA_FILE_O;
 	}
 
-	bool EditorFileDialog::Draw(const std::string& Name)
+	bool EditorFileDialog::Draw(const String& Name)
 	{
 		bool res = false;
 
 		if (Opened)
 		{
-			ImGui::OpenPopup(Name.c_str());
+			if (!ImGui::IsPopupOpen(Name.c_str()))
+				ImGui::OpenPopup(Name.c_str());
+
 			ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
 			ImGui::SetNextWindowSizeConstraints(ImVec2(450, 250), ImVec2(FLT_MAX, FLT_MAX));
 			if (ImGui::BeginPopupModal(Name.c_str(), &Opened, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse))
 			{
-				if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape))) Close();
+				if (ImGui::IsWindowFocused() &&
+				    ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+				{
+					Close();
+				}
 
-				std::string Absolute = Filesystem::AbsolutePath(Path);
+				// CloseFlag is set via Close() function
+				if (CloseFlag)
+				{
+					ImGui::CloseCurrentPopup();
+					Opened = false;
+					CloseFlag = false;
+				}
+
+				String Absolute = Filesystem::AbsolutePath(Path);
 				auto Decomposition = Filesystem::Split(Absolute);
 
 				size_t i = 0;
 				for (const auto& Elem : Decomposition)
 				{
 					ImGui::SameLine();
-					if (ImGui::Button((Elem + "##" + std::to_string(i)).c_str()))
+					if (ImGui::Button((Elem + "##" + String::from(i)).c_str()))
 					{
 						Path = Recompose(Decomposition, i);
 					}
@@ -81,7 +96,7 @@ namespace Columbus
 
 					auto Pred2 = [](const auto& a, const auto& b)
 					{
-						return a.Name < b.Name;
+						return a.Name.tolower() < b.Name.tolower();
 					};
 
 					auto Finder = [](const auto& a)
@@ -90,6 +105,14 @@ namespace Columbus
 					};
 
 					auto Files = Filesystem::Read(Absolute);
+					if (!_Filter.empty())
+					{
+						Files.erase(std::remove_if(Files.begin(), Files.end(), [&](auto& a){
+							if (a.Type == 'f')
+								return std::find(_Filter.begin(), _Filter.end(), a.Ext.c_str()) == _Filter.end();
+							else return false;
+						}), Files.end());
+					}
 					std::sort(Files.begin(), Files.end(), Pred);
 					auto Limit = std::find_if(Files.begin(), Files.end(), Finder);
 					std::sort(Files.begin(), Limit, Pred2);
@@ -107,7 +130,7 @@ namespace Columbus
 							}
 						}
 
-						std::string Text;
+						String Text;
 
 						switch (Elem.Type)
 						{
@@ -118,15 +141,47 @@ namespace Columbus
 
 						Text += " " + Elem.Name;
 
-						bool Contains = std::find(SelectedFiles.begin(), SelectedFiles.end(), Elem) != SelectedFiles.end();
+						bool Contains = std::find(SelectedFiles.begin(), SelectedFiles.end(), Elem) != SelectedFiles.end()
+							|| Elem.Name == SaveFile.Name;
 						if (ImGui::Selectable(Text.c_str(), Contains, ImGuiSelectableFlags_AllowDoubleClick))
 						{
-							if (!ImGui::GetIO().KeyCtrl || !Multiple) SelectedFiles.clear();
-							if (ImGui::GetIO().KeyCtrl && Contains)
-								SelectedFiles.erase(std::remove(SelectedFiles.begin(), SelectedFiles.end(), Elem), SelectedFiles.end());
-							else
-								SelectedFiles.push_back(Elem);
+							if (_Type == Type_Save)
+							{
+								SelectedFiles.clear();
+								SaveFile = Elem;
+							}
 
+							// click + shift, multiple selection
+							if (ImGui::GetIO().KeyShift && _Type == Type_Open && Multiple && !SelectedFiles.empty())
+							{
+								auto firstIt = std::find(Files.begin(), Files.end(), SelectedFiles.back());
+								auto secondIt = std::find(Files.begin(), Files.end(), Elem);
+
+								if (firstIt > secondIt) std::swap(firstIt, secondIt);
+
+								for (; firstIt <= secondIt; ++firstIt)
+								{
+									// if there is no this elem in selected files
+									if (std::find(SelectedFiles.begin(), SelectedFiles.end(), *firstIt) == SelectedFiles.end())
+										SelectedFiles.push_back(*firstIt);
+								}
+							}
+							// click + ctrl, multiple selection
+							else if (ImGui::GetIO().KeyCtrl && _Type == Type_Open && Multiple)
+							{
+								if (ImGui::GetIO().KeyCtrl && Contains)
+									SelectedFiles.erase(std::remove(SelectedFiles.begin(), SelectedFiles.end(), Elem), SelectedFiles.end());
+								else
+									SelectedFiles.push_back(Elem);
+							}
+							// no modifier and/or no multiple selection
+							else
+							{
+								SelectedFiles.clear();
+								SelectedFiles.push_back(Elem);
+							}
+
+							// double-click on directory
 							if (Elem.Type == 'd' || Elem.Type == 'l')
 							{
 								if (ImGui::IsMouseDoubleClicked(0))
@@ -145,16 +200,40 @@ namespace Columbus
 
 				if (ImGui::BeginChild((Name + "##Buttons").c_str()))
 				{
-					ImGui::Text("File:");
-					for (const auto& Elem : SelectedFiles)
+					if (_Type == Type_Open)
 					{
+						ImGui::Text("File:");
+						for (const auto& Elem : SelectedFiles)
+						{
+							ImGui::SameLine();
+							ImGui::Text("%s", Elem.Name.c_str());
+						}
+					}
+					else
+					{
+						ImGui::Text("File:");
 						ImGui::SameLine();
-						ImGui::Text(Elem.Name.c_str());
+						std::string Tmp = SaveFile.Name.c_str();
+						ImGui::InputText(("##FileDialog_File_" + Name).c_str(), &Tmp);
+
+						SelectedFiles.clear();
+
+						SaveFile.Name = Tmp.c_str();
+						SaveFile.Path = Path + '/' + SaveFile.Name;
+						SaveFile.Type = 'f';
 					}
 
 					if (ImGui::Button("Cancel")) Close();
 					ImGui::SameLine();
-					if (ImGui::Button("Ok")) res = true;
+					if (ImGui::Button("Ok"))
+					{
+						res = true;
+						if (_Type == Type_Save)
+						{
+							SelectedFiles.clear();
+							SelectedFiles.push_back(SaveFile);
+						}
+					}
 					ImGui::SameLine();
 					ImGui::Checkbox(("Show hidden##Checkbox_" + Name).c_str(), &Hidden);
 				}

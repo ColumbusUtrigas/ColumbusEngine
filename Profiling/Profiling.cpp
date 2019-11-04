@@ -1,5 +1,4 @@
 #include <Profiling/Profiling.h>
-#include <System/Timer.h>
 
 #include <GL/glew.h>
 

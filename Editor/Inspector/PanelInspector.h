@@ -17,7 +17,7 @@ namespace Columbus
 
 		void DrawAddComponent(Scene& Scn);
 		void DrawTransformEditor();
-		void DrawMaterialEditor();
+		void DrawMaterialEditor(Scene& Scn);
 		void DrawComponentsEditor(Scene& Scn);
 		void DrawComponentAudioEditor(Scene& Scn);
 		void DrawComponentLightEditor(Scene& Scn);

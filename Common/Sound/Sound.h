@@ -57,7 +57,7 @@ namespace Columbus
 		void Free();
 
 		void Seek(uint64 Offset);
-		uint32 Decode(Frame* Frames, uint32 Count);
+		uint32 Decode(Frame* Frames, uint32 Count, uint64& Offset);
 
 		uint64 GetBufferSize() const;
 		uint32 GetFrequency() const;
@@ -73,16 +73,16 @@ namespace Columbus
 	{
 	protected:
 		uint64 Size;
-		uint64 BeginOffset;
+		 int64 BeginOffset;
 		uint32 Frequency;
 		uint16 Channels;
 	public:
 		SoundDecoder() {}
 
-		virtual bool Load(const char* FileName) { return false; }
-		virtual void Free() {}
-		virtual void Seek(uint64 Offset) {}
-		virtual uint32 Decode(Sound::Frame* Frames, uint32 Count) { return 0; }
+		virtual bool Load(const char* FileName) = 0;
+		virtual void Free() = 0;
+		virtual void Seek(uint64 Offset) = 0;
+		virtual uint32 Decode(Sound::Frame* Frames, uint32 Count) = 0;
 
 		uint64 GetSize() const { return Size; }
 		uint32 GetFrequency() const { return Frequency; }
@@ -94,16 +94,5 @@ namespace Columbus
 	
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 

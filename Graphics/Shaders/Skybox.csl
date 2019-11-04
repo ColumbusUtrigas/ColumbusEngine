@@ -1,0 +1,24 @@
+R"(
+#shader vertex
+#attribute float3 Pos 0
+#uniform float4x4 ViewProjection
+
+out float3 Texcoord;
+
+void main(void)
+{
+	SV_Position = ViewProjection * float4(Pos, 1.0);
+	Texcoord = Pos;
+}
+
+#shader pixel
+#uniform TextureCube Skybox
+
+in float3 Texcoord;
+
+void main(void)
+{
+	RT0 = float4(SampleCube(Skybox, Texcoord).rgb, 1.0);
+	SV_Depth = 0x7FFFFFFF;
+}
+)"

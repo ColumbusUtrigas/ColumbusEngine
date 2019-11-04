@@ -1,0 +1,42 @@
+R"(
+#shader vertex
+#uniform float2 Pos
+#uniform float2 Size
+
+out float2 var_UV;
+
+const float2 Coord[6] = float2[](
+	float2(-1, +1),
+	float2(+1, +1),
+	float2(+1, -1),
+	float2(-1, -1),
+	float2(-1, +1),
+	float2(+1, -1)
+);
+
+const float2 UV[6] = float2[](
+	float2(0, 1),
+	float2(1, 1),
+	float2(1, 0),
+	float2(0, 0),
+	float2(0, 1),
+	float2(1, 0)
+);
+
+void main(void)
+{
+	SV_Position = float4(Coord[SV_VertexID] * Size + Pos, 0, 1);
+	var_UV.x = UV[SV_VertexID].x;
+	var_UV.y = -UV[SV_VertexID].y;
+}
+
+#shader pixel
+#uniform Texture2D Texture
+
+in float2 var_UV;
+
+void main(void)
+{
+	RT0 = Sample2D(Texture, var_UV);
+}
+)"
