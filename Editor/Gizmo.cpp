@@ -30,15 +30,16 @@ namespace
 		mesh->Unbind();
 	}
 
-	Vector3 MouseRayDir(const Matrix& ViewProjection, const Vector2& MousePos)
+	Vector3 MouseRayDir(const Matrix& View, const Matrix& Projection, const Vector2& MousePos)
 	{
-		auto vp = glm::make_mat4(&ViewProjection.M[0][0]);
-		auto ivp = glm::inverse(vp);
-		auto screenPos = glm::vec4(MousePos.X, -MousePos.Y, 1, 1);
-		auto worldPos = ivp * screenPos;
-		auto rayDir = glm::normalize(glm::vec3(worldPos));
-
-		return {rayDir.x, rayDir.y, rayDir.z};
+		using namespace glm;
+		auto invertedView = inverse(make_mat4(&View.M[0][0]));
+		auto invertedProjection = inverse(make_mat4(&Projection.M[0][0]));
+		auto clipCoords = vec4(MousePos.X, -MousePos.Y, -1.0f, 0.0f);
+		auto eyeCoords = invertedProjection * clipCoords;
+		eyeCoords = {eyeCoords.x, eyeCoords.y, -1, 0};
+		auto rayWorld = invertedView * eyeCoords;
+		return Vector3(rayWorld.x, rayWorld.y, rayWorld.z).Normalized();
 	}
 
 	Vector3 RayPlaneIntersect(const Vector3& RayOrigin, const Vector3& RayDir,
@@ -76,7 +77,7 @@ namespace
 		auto shader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->EditorTools);
 		Frustum ViewFrustum(_Camera.GetViewProjection());
 		auto origin = _Camera.Pos;
-		auto dir = MouseRayDir(_Camera.GetViewProjection(), MousePickingPosition);
+		auto dir = MouseRayDir(_Camera.GetViewMatrix(), _Camera.GetProjectionMatrix(), MousePickingPosition);
 
 		GizmoTransform transforms[] = {
 			{{1.5f,0,0}, {1,0.2f,0.2f}, {0.5f,0,0,1}, {1,0,0}, {0,0,1}}, // X
