@@ -130,7 +130,7 @@ namespace
 						trans.color = trans.color2;
 					}
 
-					if (ImGui::IsMouseDown(0))
+					if (ImGui::IsMouseClicked(0))
 					{
 						if (!WasPressed)
 						{
