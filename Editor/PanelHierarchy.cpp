@@ -114,12 +114,20 @@ namespace Columbus
 				{
 					GameObject tmp;
 					tmp.transform = buf->transform;
-					tmp.Name = buf->Name + " ";
+					tmp.Name = buf->Name;
 					tmp.Enable = buf->Enable;
 					tmp.material = buf->material;
 
 					CopyComponent((ComponentMeshRenderer*)buf->GetComponent(Component::Type::MeshRenderer), tmp);
 					CopyComponent((ComponentLight*)buf->GetComponent(Component::Type::Light), tmp);
+
+					for (int i = tmp.Name.size() - 1; i >= 0; i--)
+					{
+						if (!isdigit(tmp.Name[i]) && !isspace(tmp.Name[i])) break;
+						tmp.Name.pop_back();
+					}
+
+					tmp.Name += ' ';
 
 					String Name;
 
