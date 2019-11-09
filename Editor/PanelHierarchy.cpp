@@ -61,7 +61,8 @@ namespace Columbus
 
 						if (MName.find(MFind) != String::npos)
 						{
-							if (ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get()))
+							auto selected = ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get());
+							if (selected || ImGui::IsItemFocused())
 							{
 								object = Obj.Get();
 							}

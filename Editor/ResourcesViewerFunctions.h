@@ -68,7 +68,17 @@ namespace Columbus
 		}
 
 		if (Button(Name, Object))
+		{
 			Tmp = Object;
+		}
+
+		if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)))
+		{
+			Tmp = Object;
+			SelectedPopup = Name;
+			IsRight = false;
+			DoubleClick();
+		}
 
 		// Draw a tooltip with the name of object
 		if (ImGui::IsItemHovered())
@@ -76,7 +86,10 @@ namespace Columbus
 			ImGui::SetTooltip("%s", Name);
 
 			if (ImGui::IsMouseClicked(0))
+			{
 				SelectedPopup = Name;
+				IsRight = false;
+			}
 
 			if (ImGui::IsMouseClicked(1))
 			{
@@ -96,7 +109,8 @@ namespace Columbus
 		{
 			Width -= 120;
 			ImGui::SameLine();
-		} else {
+		} else
+		{
 			Width = (uint32)ImGui::GetWindowContentRegionWidth();
 		}
 	}
@@ -108,7 +122,7 @@ namespace Columbus
 		std::function<void()> DoubleClick)
 	{
 		String PopupStr;
-		bool IsRight;
+		bool IsRight = false;
 
 		if (ImGui::BeginChild(Name, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - 30)))
 		{
