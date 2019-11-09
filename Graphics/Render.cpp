@@ -529,8 +529,8 @@ namespace Columbus
 				lightingUboData.lights[id].dir = Light->Dir;
 
 				lightingUboData.lights[id].range = Light->Range;
-				lightingUboData.lights[id].innerCutoff = Light->InnerCutoff;
-				lightingUboData.lights[id].outerCutoff = Light->OuterCutoff;
+				lightingUboData.lights[id].innerCutoff = Math::Radians(Light->InnerCutoff);
+				lightingUboData.lights[id].outerCutoff = Math::Radians(Light->OuterCutoff);
 
 				lightingUboData.lights[id].type = Light->Type;
 
