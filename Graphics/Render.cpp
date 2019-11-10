@@ -591,10 +591,12 @@ namespace Columbus
 		{
 			Base.Bind({0}, {0}, ContextSize);
 
+			auto msaaSamples = Math::Min<int>(BaseMSAA.Multisampling, OpenGL::GetMaxColorTextureSamples());
+
 			// Resolve RT0 (HDR Color)
 			MSAAShader->Bind();
 			MSAAShader->SetUniform("BaseTexture", (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
-			MSAAShader->SetUniform("Samples", static_cast<int>(BaseMSAA.Multisampling));
+			MSAAShader->SetUniform("Samples", msaaSamples);
 			Quad.Render();
 			MSAAShader->Unbind();
 

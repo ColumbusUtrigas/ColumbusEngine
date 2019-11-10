@@ -28,10 +28,10 @@ namespace Columbus
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, Size, nullptr, GL_STATIC_DRAW);
 
-		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)VOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetPositions());
-		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)UOffset, InModel.GetVerticesCount() * sizeof(Vector2), InModel.GetUVs());
-		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)NOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetNormals());
-		glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)TOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetTangents());
+		if (InModel.HasPositions()) glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)VOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetPositions());
+		if (InModel.HasUVs())       glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)UOffset, InModel.GetVerticesCount() * sizeof(Vector2), InModel.GetUVs());
+		if (InModel.HasNormals())   glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)NOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetNormals());
+		if (InModel.HasTangents())  glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)TOffset, InModel.GetVerticesCount() * sizeof(Vector3), InModel.GetTangents());
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
