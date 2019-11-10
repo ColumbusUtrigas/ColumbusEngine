@@ -4,7 +4,7 @@ R"(
 #uniform Texture2D BaseTexture
 #uniform float2 Resolution
 
-in float3 var_UV;
+in float2 var_UV;
 
 #define FXAA_SPAN_MAX 8.0
 #define FXAA_REDUCE_MUL   (1.0/FXAA_SPAN_MAX)
