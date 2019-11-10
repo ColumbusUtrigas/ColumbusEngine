@@ -70,7 +70,7 @@ namespace Columbus
 
 			FB->Bind();
 
-			int32 ColorMS = OpenGL::GetMaxDepthTextureSamples();
+			int32 ColorMS = OpenGL::GetMaxColorTextureSamples();
 			int32 DepthMS = OpenGL::GetMaxDepthTextureSamples();
 
 			if ((int32)Multisampling < ColorMS) ColorMS = (int32)Multisampling;
