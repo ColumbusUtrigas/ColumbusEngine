@@ -154,7 +154,8 @@ namespace Columbus
 				auto Light = (ComponentLight*)Object->GetComponent(Component::Type::Light);
 				auto PS = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
 
-				if (AudioSource != nullptr) if (!Audio.HasSource(AudioSource->Source)) Audio.AddSource(AudioSource->Source);
+				if (AudioSource != nullptr) Audio.AddSource(AudioSource->Source);
+
 				if (Light != nullptr)
 				{
 					Lights.emplace_back(Light->LightSource);

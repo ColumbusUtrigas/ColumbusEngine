@@ -21,10 +21,9 @@ namespace Columbus
 
 		void Clear();
 
-		void AddSource(AudioSource* Source);
+		void AddSource(std::shared_ptr<AudioSource> Source);
 		void SetListener(AudioListener Listener);
 
-		bool HasSource(AudioSource* Source);
 		void SetSpeed(float Speed);
 		float GetSpeed() const;
 

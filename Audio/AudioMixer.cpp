@@ -73,21 +73,26 @@ namespace Columbus
 
 		for (auto& Source : Sources)
 		{
-			float Attenuation = CalculateSourceAttenuation(Source, Listener.Position);
-			float Pan = CalculateSourcePan(Source, Listener);
-
-			float LVolume = Math::Min(1.0f, 1.0f - Pan);
-			float RVolume = Math::Min(1.0f, 1.0f + Pan);
-
-			float Gain = Source->Gain * Attenuation;
-			Gain = 1.0f - Math::Sqrt(1.0f - Gain * Gain);
-
-			Source->PrepareBuffer(Data, Count);
-
-			for (uint32 i = 0; i < Count; i++)
+			if ((bool)Source)
 			{
-				Mixed[i].L += static_cast<int32>(Data[i].L * Gain * LVolume);
-				Mixed[i].R += static_cast<int32>(Data[i].R * Gain * RVolume);
+				auto src = Source;
+				
+				float Attenuation = CalculateSourceAttenuation(src.get(), Listener.Position);
+				float Pan = CalculateSourcePan(src.get(), Listener);
+
+				float LVolume = Math::Min(1.0f, 1.0f - Pan);
+				float RVolume = Math::Min(1.0f, 1.0f + Pan);
+
+				float Gain = src->Gain * Attenuation;
+				Gain = 1.0f - Math::Sqrt(1.0f - Gain * Gain);
+
+				src->PrepareBuffer(Data, Count);
+
+				for (uint32 i = 0; i < Count; i++)
+				{
+					Mixed[i].L += static_cast<int32>(Data[i].L * Gain * LVolume);
+					Mixed[i].R += static_cast<int32>(Data[i].R * Gain * RVolume);
+				}
 			}
 		}
 

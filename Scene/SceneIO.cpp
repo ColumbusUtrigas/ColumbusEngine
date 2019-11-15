@@ -247,7 +247,7 @@ namespace Columbus
 						Source->SoundMode = AudioSource::Mode::Sound3D;
 
 					Source->SetSound(Clip);
-					GO->AddComponent(new ComponentAudioSource(Source));
+					GO->AddComponent(new ComponentAudioSource(std::shared_ptr<AudioSource>(Source)));
 				} else
 				{
 					Log::Warning("%s: Cannot load AudioSource", GO->Name.c_str());
