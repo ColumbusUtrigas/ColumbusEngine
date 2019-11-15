@@ -2,6 +2,7 @@
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
 
+#include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentLight.h>
 
@@ -9,6 +10,16 @@
 
 namespace Columbus
 {
+
+	static void CopyComponent(ComponentAudioSource* Co, GameObject& GO)
+	{
+		if (Co != nullptr)
+		{
+			auto src = std::make_shared<AudioSource>();
+			*src = *Co->GetSource();
+			GO.AddComponent(new ComponentAudioSource(src));
+		}
+	}
 
 	static void CopyComponent(ComponentMeshRenderer* Co, GameObject& GO)
 	{
@@ -118,6 +129,7 @@ namespace Columbus
 					tmp.Enable = buf->Enable;
 					tmp.material = buf->material;
 
+					CopyComponent((ComponentAudioSource*)buf->GetComponent(Component::Type::AudioSource), tmp);
 					CopyComponent((ComponentMeshRenderer*)buf->GetComponent(Component::Type::MeshRenderer), tmp);
 					CopyComponent((ComponentLight*)buf->GetComponent(Component::Type::Light), tmp);
 
