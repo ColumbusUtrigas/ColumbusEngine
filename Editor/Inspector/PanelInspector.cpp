@@ -91,7 +91,7 @@ namespace Columbus
 		{
 			switch (Selected)
 			{
-			case 1: GO->AddComponent(new ComponentAudioSource(new AudioSource())); break;
+			case 1: GO->AddComponent(new ComponentAudioSource(std::make_shared<AudioSource>())); break;
 			case 2:
 				GO->AddComponent(new ComponentLight(new Light));
 				//GO->LightIndex = Scn.Lights.size();

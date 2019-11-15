@@ -10,24 +10,24 @@ namespace Columbus
 	class ComponentAudioSource : public Component
 	{
 	private:
-		AudioSource* Source;
+		std::shared_ptr<AudioSource> Source;
 
 		friend class Scene;
 	public:
-		ComponentAudioSource(AudioSource* InSource) : Source(InSource)
+		ComponentAudioSource(std::shared_ptr<AudioSource> InSource) : Source(InSource)
 		{
-			COLUMBUS_ASSERT(Source != nullptr);
+			COLUMBUS_ASSERT((bool)Source);
 		}
 
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
-			COLUMBUS_ASSERT(Source != nullptr);
+			COLUMBUS_ASSERT((bool)Source);
 			Source->Position = Trans.Position;
 		}
 
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::AudioSource; }
-		AudioSource* GetSource() const { return Source; }
+		auto GetSource() const { return Source; }
 
 		virtual ~ComponentAudioSource() override {}
 	};

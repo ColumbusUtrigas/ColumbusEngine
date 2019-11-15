@@ -13,7 +13,7 @@ namespace Columbus
 		Mixer.Clear();
 	}
 
-	void AudioSystem::AddSource(AudioSource* Source)
+	void AudioSystem::AddSource(std::shared_ptr<AudioSource> Source)
 	{
 		Mixer.AddSource(Source);
 	}
@@ -21,11 +21,6 @@ namespace Columbus
 	void AudioSystem::SetListener(AudioListener Listener)
 	{
 		Mixer.SetListener(Listener);
-	}
-
-	bool AudioSystem::HasSource(AudioSource* Source)
-	{
-		return Mixer.HasSource(Source);
 	}
 
 	void AudioSystem::SetSpeed(float Speed)

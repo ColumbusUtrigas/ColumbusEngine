@@ -50,7 +50,6 @@ namespace Columbus
 		void DeserializeSoundsManager(JSON& J);
 		void DeserializeObjects(JSON& J);
 
-		Vector<AudioSource*> AudioSources;
 		std::vector<Light*> Lights;
 
 		Timer DeltaTime;

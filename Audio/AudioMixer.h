@@ -2,7 +2,8 @@
 
 #include <Audio/AudioSource.h>
 #include <Audio/AudioListener.h>
-#include <Core/Containers/Vector.h>
+#include <vector>
+#include <memory>
 
 namespace Columbus
 {
@@ -10,10 +11,12 @@ namespace Columbus
 	class AudioMixer
 	{
 	private:
+		using SourcesList = std::vector<std::shared_ptr<AudioSource>>;
+
 		friend class Renderer;
 		
 		AudioListener Listener;
-		Vector<AudioSource*> Sources;
+		SourcesList Sources;
 
 		Sound::Frame* Data = nullptr;
 		Sound::FrameHight* Mixed = nullptr;
@@ -25,12 +28,12 @@ namespace Columbus
 
 		void Clear()
 		{
-			Sources.Clear();
+			Sources.clear();
 		}
 
-		void AddSource(AudioSource* Source)
+		void AddSource(std::shared_ptr<AudioSource> Source)
 		{
-			Sources.Add(Source);
+			Sources.push_back(Source);
 		}
 
 		void SetListener(AudioListener InListener)
@@ -40,19 +43,6 @@ namespace Columbus
 
 		void SetSpeed(float InSpeed) { Speed = InSpeed; }
 		float GetSpeed() const { return Speed; }
-
-		bool HasSource(AudioSource* Source)
-		{
-			for (const auto& Audio : Sources)
-			{
-				if (Audio == Source)
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
 
 		void Update(Sound::Frame* Frames, uint32 Count);
 
