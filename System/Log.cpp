@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef PLATFORM_WINDOWS
 	#include <windows.h>
@@ -13,6 +14,7 @@ namespace Columbus
 {
 
 	std::vector<Log::Msg> g_LogBuffer;
+	FILE* g_LogFile = nullptr;
 
 	enum Color
 	{
@@ -61,6 +63,16 @@ namespace Columbus
 	m.text = msg; \
 	g_LogBuffer.push_back(m);
 
+#define LogToFile() \
+	if (g_LogFile == nullptr) \
+	{ \
+		g_LogFile = fopen("EngineLog.txt", "wt"); \
+		time_t curtime = time(NULL); \
+		fprintf(g_LogFile, "ColumbusEngine Log, %s\n", ctime(&curtime)); \
+	} \
+	fprintf(g_LogFile, "%s\n", msg.c_str()); \
+	fflush(g_LogFile);
+
 #define Log(Text, AColor, BColor, Type) \
 	va_list Args, ArgsCopy; \
 	va_start(Args, Fmt); \
@@ -73,6 +85,7 @@ namespace Columbus
 	vsnprintf(&msg.front(), size, Fmt, ArgsCopy); \
 	printf("%s\n", msg.c_str()); \
 	AddToBuffer(Type); \
+	LogToFile(); \
 	va_end(Args);
 	
 	void Log::Initialization(const char* Fmt, ...)
