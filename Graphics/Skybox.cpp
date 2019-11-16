@@ -154,7 +154,7 @@ namespace Columbus
 		auto PrefilterShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->PrefilterGeneration;
 
 		uint32 MaxMips = 8;
-		uint32 Resolution = 128;
+		uint32 Resolution = 256;
 
 		if (PrefilterMap == nullptr)
 		{
