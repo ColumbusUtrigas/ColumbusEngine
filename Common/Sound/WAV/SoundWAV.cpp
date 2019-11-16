@@ -65,27 +65,19 @@ namespace Columbus
 		return BeginOffset;
 	}
 
-	static int16* LoadWAV_PCM(File* WAVSoundFile)
+	static int16* LoadWAV_PCM(File& WAVSoundFile)
 	{
-		if (WAVSoundFile != nullptr)
+		uint64 Size = WAVSoundFile.GetSize() - WAVSoundFile.Tell();
+
+		int16* WAVSoundData = new int16[Size / sizeof(int16)];
+
+		if (!WAVSoundFile.ReadBytes(WAVSoundData, Size))
 		{
-			if (WAVSoundFile->IsOpened())
-			{
-				uint64 Size = WAVSoundFile->GetSize() - WAVSoundFile->Tell();
-
-				int16* WAVSoundData = new int16[Size / sizeof(int16)];
-
-				if (!WAVSoundFile->ReadBytes(WAVSoundData, Size))
-				{
-					delete[] WAVSoundData;
-					return nullptr;
-				}
-
-				return WAVSoundData;
-			}
+			delete[] WAVSoundData;
+			return nullptr;
 		}
 
-		return nullptr;
+		return WAVSoundData;
 	}
 
 	int16* SoundLoadWAV(const char* FileName, uint64& OutSize, uint32& OutFrequency, uint16& OutChannels)
@@ -114,7 +106,7 @@ namespace Columbus
 		{
 			case 1: /*Microsoft PCM*/
 			{
-				int16* Data = LoadWAV_PCM(&WAVSoundFile);
+				int16* Data = LoadWAV_PCM(WAVSoundFile);
 				OutSize = Size;
 				OutFrequency = Freq;
 				OutChannels = Channels;
@@ -132,10 +124,10 @@ namespace Columbus
 					return nullptr;
 				}
 
-				std::vector<int16> TmpBuffer;
+				constexpr uint32 Count = 512;
+				Sound::Frame Frames[Count];
 
-				uint32 Count = 512;
-				Sound::Frame* Frames = new Sound::Frame[512];
+				std::vector<int16> TmpBuffer(Count * Channels);
 
 				uint64 TotalSamples = 0;
 
@@ -167,7 +159,6 @@ namespace Columbus
 				OutFrequency = Freq;
 				OutChannels = Channels;
 
-				delete[] Frames;
 				return Data;
 			}
 		}
@@ -378,6 +369,11 @@ namespace Columbus
 					uint8 Index;
 					WAVSoundFile.Read(Index);
 
+					if (WAVSoundFile.IsEOF())
+					{
+						break;
+					}
+
 					Chans[i].C1 = AdaptCoeff1[Index];
 					Chans[i].C2 = AdaptCoeff2[Index];
 				}
@@ -403,6 +399,11 @@ namespace Columbus
 			{
 				uint8 Value;
 				WAVSoundFile.Read(Value);
+
+				if (WAVSoundFile.IsEOF())
+				{
+					break;
+				}
 
 				uint8 N1 = Value >> 4;
 				uint8 N2 = Value & 0xF;
@@ -432,14 +433,5 @@ namespace Columbus
 	#undef FOURCC
 
 }
-
-
-
-
-
-
-
-
-
 
 

@@ -33,13 +33,9 @@ namespace Columbus
 
 	static float CalculateSourcePan(AudioSource* Source, const AudioListener& Listener)
 	{
-		if (Source != nullptr)
+		if (Source->SoundMode == AudioSource::Mode::Sound3D)
 		{
-			if (Source->SoundMode == AudioSource::Mode::Sound3D)
-			{
-
-				return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->Position - Listener.Position));
-			}
+			return Vector3::Dot(Vector3::Normalize(Vector3::Cross(Listener.Forward, Listener.Up)), Vector3::Normalize(Source->Position - Listener.Position));
 		}
 
 		return 0.0f;
@@ -47,13 +43,10 @@ namespace Columbus
 
 	static void AudioBufferClip(Sound::FrameHight* Buffer, uint32 Count)
 	{
-		if (Buffer != nullptr)
+		for (uint32 i = 0; i < Count; i++)
 		{
-			for (uint32 i = 0; i < Count; i++)
-			{
-				Buffer[i].L = Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
-				Buffer[i].R = Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
-			}
+			Buffer[i].L = Math::Clamp(Buffer[i].L, -0x7FFF, 0x7FFF);
+			Buffer[i].R = Math::Clamp(Buffer[i].R, -0x7FFF, 0x7FFF);
 		}
 	}
 
@@ -71,22 +64,20 @@ namespace Columbus
 		
 		memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
 
-		for (auto& Source : Sources)
+		for (auto Source : Sources)
 		{
 			if ((bool)Source)
 			{
-				auto src = Source;
-				
-				float Attenuation = CalculateSourceAttenuation(src.get(), Listener.Position);
-				float Pan = CalculateSourcePan(src.get(), Listener);
+				float Attenuation = CalculateSourceAttenuation(Source.get(), Listener.Position);
+				float Pan = CalculateSourcePan(Source.get(), Listener);
 
 				float LVolume = Math::Min(1.0f, 1.0f - Pan);
 				float RVolume = Math::Min(1.0f, 1.0f + Pan);
 
-				float Gain = src->Gain * Attenuation;
+				float Gain = Source->Gain * Attenuation;
 				Gain = 1.0f - Math::Sqrt(1.0f - Gain * Gain);
 
-				src->PrepareBuffer(Data, Count);
+				Source->PrepareBuffer(Data, Count);
 
 				for (uint32 i = 0; i < Count; i++)
 				{
