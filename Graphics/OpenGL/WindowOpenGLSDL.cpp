@@ -3,6 +3,8 @@
 #include <System/Log.h>
 #include <GL/glew.h>
 
+#include <Lib/corinfo/corinfo.h> // my own library to get system info
+
 #define CONTEXT_MAJOR_VERSION 3
 #define CONTEXT_MINOR_VERSION 3
 
@@ -25,6 +27,40 @@ namespace Columbus
 		}
 		else
 		{
+			struct corinfo info;
+			if (corinfo_GetInfo(&info) == -1)
+			{
+				Log::Error("Could not get system info");
+			}
+
+			#define CPU_FEATURE_YESNO(feature) info.Cpu.feature ? "yes" : "no"
+
+			Log::Initialization("CPU info: %i cores, %i MHz\n%s\n"
+				"MMX: %s\n"
+				"SSE: %s\n"
+				"SSE2: %s\n"
+				"SSE3: %s\n"
+				"SSE41: %s\n"
+				"SSE42: %s\n"
+				"AVX: %s\n",
+				info.Cpu.Count, info.Cpu.Frequency,
+				info.Cpu.Name,
+				CPU_FEATURE_YESNO(MMX),
+				CPU_FEATURE_YESNO(SSE),
+				CPU_FEATURE_YESNO(SSE2),
+				CPU_FEATURE_YESNO(SSE3),
+				CPU_FEATURE_YESNO(SSE41),
+				CPU_FEATURE_YESNO(SSE42),
+				CPU_FEATURE_YESNO(AVX)
+			);
+
+			Log::Initialization("RAM info:\nTotal: %i KB\nFree: %i KB\nUsage: %i%%\n",
+				info.Ram.Total, info.Ram.Free, info.Ram.Usage
+			);
+			Log::Initialization("HDD info:\nTotal: %i KB\nFree: %i KB\nUsage: %i%%\n",
+				info.Hdd.Total, info.Hdd.Free, info.Hdd.Usage
+			);
+
 			if (SDL_GetNumVideoDisplays() < 0)
 			{
 				Log::Fatal("No display");

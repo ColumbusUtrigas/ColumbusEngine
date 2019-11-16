@@ -85,6 +85,7 @@ namespace Columbus
 	vsnprintf(&msg.front(), size, Fmt, ArgsCopy); \
 	printf("%s\n", msg.c_str()); \
 	AddToBuffer(Type); \
+	msg = Text + msg; \
 	LogToFile(); \
 	va_end(Args);
 	
