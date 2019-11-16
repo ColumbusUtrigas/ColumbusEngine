@@ -1,3 +1,9 @@
 [submodule "Lib/tinyexr"]
 	path = Lib/tinyexr
 	url = https://github.com/syoyo/tinyexr.git
+[submodule "corinfo"]
+	path = corinfo
+	url = https://github.com/ColumbusUtrigas/corinfo.git
+[submodule "Lib/corinfo"]
+	path = Lib/corinfo
+	url = https://github.com/ColumbusUtrigas/corinfo.git
