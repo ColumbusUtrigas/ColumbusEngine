@@ -397,9 +397,9 @@ namespace Columbus
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio.get(), 0);
-		for (const auto& Elem : Scn->Audio.Mixer.Sources)
+		for (auto Elem : Scn->Audio.Mixer.Sources)
 		{
-			if (Elem != nullptr)
+			if ((bool)Elem)
 				DrawIcon(Vector4(Elem->Position, 1));
 		}
 
