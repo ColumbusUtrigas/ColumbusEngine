@@ -29,6 +29,9 @@ namespace Columbus
 		Material::DepthTest PreviousDepthTesting;
 		bool PreviousDepthWriting;
 	public:
+		Texture* ShadowTexture = nullptr;
+		Matrix LightSpace;
+	public:
 		RenderState() { /*Clear();*/ }
 
 		void Clear();

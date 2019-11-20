@@ -214,6 +214,12 @@ namespace Columbus
 			Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
 			Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
 
+			if (ShadowTexture != nullptr)
+			{
+				Shader->SetUniform("Shadow", (TextureOpenGL*)ShadowTexture, 14);
+				Shader->SetUniform("uLightSpace", false, LightSpace);
+			}
+
 			if (CheckParameter(Tiling))           Shader->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);
 			if (CheckParameter(DetailTiling))     Shader->SetUniform(RenderData->DetailTiling,     CurrentMaterial.DetailTiling);
 			if (CheckParameter(Albedo))           Shader->SetUniform(RenderData->Albedo,           CurrentMaterial.Albedo);

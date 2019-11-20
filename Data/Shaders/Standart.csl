@@ -9,11 +9,14 @@
 
 #uniform float4x4 uModel
 #uniform float4x4 uViewProjection
+#uniform float4x4 uLightSpace
 
 out float3 varPos;
 out float2 varUV;
 out float3 varNormal;
 out float3x3 varTBN;
+
+out vec4 FragPosLightSpace;
 
 void main()
 {
@@ -25,6 +28,8 @@ void main()
 	varUV = aUV;
 	varNormal = Normal;
 	varTBN = transpose(float3x3(Tangent, Bitangent, Normal));
+
+	FragPosLightSpace = uLightSpace * float4(varPos, 1);
 
 	SV_Position = uViewProjection * float4(varPos, 1);
 }
@@ -40,6 +45,8 @@ in float2 varUV;
 in float3 varNormal;
 in float3x3 varTBN;
 
+in vec4 FragPosLightSpace;
+
 #uniform Texture2D   AlbedoMap
 #uniform Texture2D   NormalMap
 #uniform Texture2D   RoughnessMap
@@ -51,6 +58,8 @@ in float3x3 varTBN;
 #uniform TextureCube IrradianceMap
 #uniform TextureCube EnvironmentMap
 #uniform Texture2D   IntegrationMap
+
+#uniform Texture2D Shadow
 
 #uniform bool HasAlbedoMap
 #uniform bool HasNormalMap
@@ -149,6 +158,35 @@ void Init(void)
 		_Metallic = Metallic;
 }
 
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(Shadow, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+	float bias = 0.0002;
+	//float shadow = (currentDepth - bias) > closestDepth && currentDepth < 1.0 ? 0.4 : 1.0;
+
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(Shadow, 0);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcfDepth = texture(Shadow, projCoords.xy + vec2(x, y) * texelSize).r;
+			shadow += currentDepth - bias > pcfDepth ? 0.4 : 1.0;
+		}
+	}
+	shadow /= 9.0;
+
+    return shadow;
+}
+
 float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 {
 	float3 LightPos = u_Lights.lights[id].pos;
@@ -218,7 +256,7 @@ float3 Lights(void)
 	BRDF += (1.0 - _Metallic) * Ambient * AO;
 	BRDF += Specular * AO;
 
-	return BRDF * Albedo.rgb;
+	return BRDF * Albedo.rgb * ShadowCalculation(FragPosLightSpace);
 }
 
 float2 EncodeNormal(in float3 n)
