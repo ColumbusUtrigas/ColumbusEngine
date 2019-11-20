@@ -15,6 +15,8 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 
+#include <Lib/imgui/imgui.h>
+
 namespace Columbus
 {
 	Texture* Blob;
@@ -178,6 +180,55 @@ namespace Columbus
 
 		std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
 		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
+	}
+
+	void Renderer::RenderShadows()
+	{
+		State.Clear();
+		State.SetBlending(false);
+
+		static Camera lightCam;
+
+		if (ImGui::GetIO().KeyCtrl) lightCam = MainCamera;
+
+		lightCam.Ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.01f, 500.0f);
+		State.LightSpace = lightCam.GetViewProjection();
+
+		for (auto L : Scn->Lights)
+		{
+			if (L == nullptr) continue;
+
+			/*lightCam.Pos = -L->Dir * 30;
+			lightCam.Rot = rot;
+			lightCam.Perspective(60, 1, 0.1f, 100);*/
+			//lightCam.Ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.01f, 500.0f);
+			lightCam.Update();
+			State.SetMainCamera(lightCam);
+
+			for (auto& Object : OpaqueObjects)
+			{
+				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
+				if (GO->material == nullptr) continue;
+				Material& Mat = *GO->material;
+				ShaderProgram* CurrentShader = Mat.ShaderProg;
+					
+				if (CurrentShader != nullptr)
+				{
+					//State.SetCulling(Mat.Culling);
+					State.SetCulling(Material::Cull::Front);
+					State.SetDepthTesting(Mat.DepthTesting);
+					State.SetDepthWriting(Mat.DepthWriting);
+					State.SetShaderProgram(Mat.GetShader());
+					State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
+					State.SetMesh(Object.Object);
+
+					PolygonsRendered += Object.Object->Render();
+					OpaqueObjectsRendered++;
+				}
+			}
+
+			break;
+		}
 	}
 
 	void Renderer::RenderOpaque()
@@ -550,6 +601,12 @@ namespace Columbus
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
 
+		static PostEffect shadowEffect;
+		shadowEffect.DepthTextureEnablement = true;
+
+		shadowEffect.Bind({0}, {0}, {1024, 1024});
+		RenderShadows();
+
 		// RENDERING
 		//
 		//
@@ -559,6 +616,9 @@ namespace Columbus
 		else
 			Base.Bind({0}, {0}, ContextSize);
 
+		State.ShadowTexture = shadowEffect.DepthTexture;
+
+		State.SetMainCamera(MainCamera);
 		RenderOpaque();
 		glDrawBuffers(1, BuffersFirst);
 		RenderSky();

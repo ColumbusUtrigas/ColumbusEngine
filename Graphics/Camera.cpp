@@ -1,5 +1,8 @@
 #include <Graphics/Camera.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 namespace Columbus
 {
 
@@ -44,6 +47,12 @@ namespace Columbus
 	void Camera::Perspective(float FOV, float Aspect, float Near, float Far)
 	{
 		ProjectionMatrix.Perspective(FOV, Aspect, Near, Far);
+	}
+
+	void Camera::Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far)
+	{
+		auto mat = glm::ortho(Left, Right, Bottom, Top, Near, Far);
+		memcpy(&ProjectionMatrix.M[0][0], glm::value_ptr(mat), 64);
 	}
 
 	const Matrix& Camera::GetViewProjection() const

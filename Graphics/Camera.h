@@ -32,7 +32,7 @@ namespace Columbus
 		Vector3 Up() const;
 
 		void Perspective(float FOV, float Aspect, float Near, float Far);
-		//void ortho();
+		void Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far);
 
 		const Matrix& GetViewProjection() const;
 		const Matrix& GetProjectionMatrix() const;

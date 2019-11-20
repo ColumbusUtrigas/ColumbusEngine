@@ -155,6 +155,7 @@ namespace Columbus
 		void CompileLists();
 		void SortLists();
 
+		void RenderShadows();
 		void RenderOpaque();
 		void RenderSky();
 		void RenderTransparent();
