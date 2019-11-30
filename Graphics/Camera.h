@@ -18,10 +18,16 @@ namespace Columbus
 		Matrix ViewProjection;
 		
 		bool PreTargeted = false;
+		Vector3 Target = Vector3(0, 0, 4);
 	public:
 		Vector3 Pos = Vector3(0, 0, 5);
 		Vector3 Rot = Vector3(0, 0, 0);
-		Vector3 Target = Vector3(0, 0, 4);
+
+		void SetTarget(const Vector3& NewTarget)
+		{
+			Target = NewTarget;
+			PreTargeted = true;
+		}
 	public:
 		Camera();
 		

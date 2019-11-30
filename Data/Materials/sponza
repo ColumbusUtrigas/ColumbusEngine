@@ -1,0 +1,24 @@
+{
+	"Albedo": [1, 1, 1, 1],
+	"Culling": "Back",
+	"DepthTesting": "LEqual",
+	"DepthWriting": true,
+	"DetailTiling": [4, 4],
+	"EmissionStrength": 0.5,
+	"Lighting": true,
+	"Metallic": 0.1,
+	"Roughness": 1,
+	"Shader": "Standart.csl",
+	"Textures": {
+		"Albedo": null,
+		"DetailAlbedo": null,
+		"DetailNormal": null,
+		"Emission": null,
+		"Metallic": null,
+		"Normal": null,
+		"Occlusion": null,
+		"Roughness": null
+	},
+	"Tiling": [1, 1],
+	"Transparent": false
+}

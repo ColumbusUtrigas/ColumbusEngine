@@ -189,20 +189,20 @@ namespace Columbus
 
 		static Camera lightCam;
 
-		if (ImGui::GetIO().KeyCtrl) lightCam = MainCamera;
-
-		lightCam.Ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.01f, 500.0f);
-		State.LightSpace = lightCam.GetViewProjection();
+		//if (ImGui::GetIO().KeyCtrl) lightCam = MainCamera;
 
 		for (auto L : Scn->Lights)
 		{
 			if (L == nullptr) continue;
+			if (L->Type != Light::Spot) continue;
 
-			/*lightCam.Pos = -L->Dir * 30;
-			lightCam.Rot = rot;
-			lightCam.Perspective(60, 1, 0.1f, 100);*/
 			//lightCam.Ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.01f, 500.0f);
+
+			lightCam.Pos = L->Pos;
+			lightCam.SetTarget(L->Dir);
+			lightCam.Perspective(L->OuterCutoff, 1, 0.1f, 1000);
 			lightCam.Update();
+			State.LightSpace = lightCam.GetViewProjection();
 			State.SetMainCamera(lightCam);
 
 			for (auto& Object : OpaqueObjects)
@@ -211,11 +211,12 @@ namespace Columbus
 				if (GO->material == nullptr) continue;
 				Material& Mat = *GO->material;
 				ShaderProgram* CurrentShader = Mat.ShaderProg;
-					
+
 				if (CurrentShader != nullptr)
 				{
 					//State.SetCulling(Mat.Culling);
-					State.SetCulling(Material::Cull::Front);
+					//State.SetCulling(Material::Cull::Front);
+					State.SetCulling(Material::Cull::No);
 					State.SetDepthTesting(Mat.DepthTesting);
 					State.SetDepthWriting(Mat.DepthWriting);
 					State.SetShaderProgram(Mat.GetShader());
@@ -580,8 +581,8 @@ namespace Columbus
 				lightingUboData.lights[id].dir = Light->Dir;
 
 				lightingUboData.lights[id].range = Light->Range;
-				lightingUboData.lights[id].innerCutoff = Math::Radians(Light->InnerCutoff);
-				lightingUboData.lights[id].outerCutoff = Math::Radians(Light->OuterCutoff);
+				lightingUboData.lights[id].innerCutoff = Math::Radians(Light->InnerCutoff) / 2;
+				lightingUboData.lights[id].outerCutoff = Math::Radians(Light->OuterCutoff) / 2;
 
 				lightingUboData.lights[id].type = Light->Type;
 

@@ -158,18 +158,18 @@ void Init(void)
 		_Metallic = Metallic;
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
 {
-    // perform perspective divide
+	if (fragPosLightSpace.w == 0)
+		return 1;
+
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closestDepth = texture(Shadow, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-	float bias = 0.0002;
+	float bias = 0.00001;
+	//bias = max(bias * (1.0 - NdotL), bias);
+
 	//float shadow = (currentDepth - bias) > closestDepth && currentDepth < 1.0 ? 0.4 : 1.0;
 
 	float shadow = 0.0;
@@ -184,7 +184,10 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 	}
 	shadow /= 9.0;
 
-    return shadow;
+	if(projCoords.z > 1.0)
+		shadow = 1.0;
+
+    return shadow * NdotL;
 }
 
 float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
@@ -225,7 +228,7 @@ float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 
 	float Factor = 1.0 - _Metallic;
 
-	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation;
+	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation * ShadowCalculation(FragPosLightSpace, NdotL);
 }
 
 float3 Lights(void)
@@ -256,7 +259,7 @@ float3 Lights(void)
 	BRDF += (1.0 - _Metallic) * Ambient * AO;
 	BRDF += Specular * AO;
 
-	return BRDF * Albedo.rgb * ShadowCalculation(FragPosLightSpace);
+	return BRDF * Albedo.rgb;
 }
 
 float2 EncodeNormal(in float3 n)
