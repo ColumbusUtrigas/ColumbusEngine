@@ -10,7 +10,7 @@
 
 #include <Input/EventSystem.h>
 
-#include <Graphics/Vulkan/InstanceVulkan.h>
+//#include <Graphics/Vulkan/InstanceVulkan.h>
 
 using namespace Columbus;
 
@@ -42,8 +42,8 @@ int main(int argc, char** argv)
 	Renderer MainRender;
 
 	// Veeeeery experimental
-	GAPIVulkan vk;
-	vk._test();
+	//GAPIVulkan vk;
+	//vk._test();
 
 	camera.Pos = Vector3(10, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
