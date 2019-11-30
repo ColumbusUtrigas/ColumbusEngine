@@ -4,13 +4,29 @@
 #include <cstdlib>
 #include <cstring>
 #include <png.h>
+#include <stb_image.h>
 
 namespace Columbus
 {
 
 	static uint8* ImageLoadPNG(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
-		FILE* fp = fopen(FileName, "rb");
+		int x, y, chans;
+		auto data = stbi_load(FileName, &x, &y, &chans, 0);
+		OutWidth = x;
+		OutHeight = y;
+		OutSize = (int64)x * y * chans;
+
+		switch (chans)
+		{
+		case 1: OutFormat = TextureFormat::R8; break;
+		case 3: OutFormat = TextureFormat::RGB8; break;
+		case 4: OutFormat = TextureFormat::RGBA8; break;
+		}
+
+		return data;
+
+		/*FILE* fp = fopen(FileName, "rb");
 		if (fp == nullptr) return nullptr;
 
 		png_structp png_ptr;
@@ -67,12 +83,13 @@ namespace Columbus
 		if (png_ptr && info_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 		fclose(fp);
 
-		return data;
+		return data;*/
 	}
 
 	bool ImageSavePNG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
 	{
-		FILE* fp = fopen(FileName, "wb");
+		return false;
+		/*FILE* fp = fopen(FileName, "wb");
 		if (fp == nullptr) return false;
 
 		png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -113,7 +130,7 @@ namespace Columbus
 		png_destroy_write_struct(&png, &info);
 		fclose(fp);
 
-		return true;
+		return true;*/
 	}
 
 	bool ImageLoaderPNG::IsPNG(const char* FileName)
