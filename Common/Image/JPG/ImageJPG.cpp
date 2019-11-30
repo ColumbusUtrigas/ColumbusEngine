@@ -1,8 +1,8 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/JPG/ImageJPG.h>
 #include <System/File.h>
-#include <jpeglib.h>
-#include <setjmp.h>
+//#include <jpeglib.h>
+//#include <setjmp.h>
 #include <cstring>
 #include <stb_image.h>
 

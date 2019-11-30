@@ -56,8 +56,6 @@ elseif(WIN32)
 	target_include_directories(${TARGET} PUBLIC ./Lib/SDL2/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/Bullet/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/GLEW/include)
-	target_include_directories(${TARGET} PUBLIC ./Lib/LibJPEG/include)
-	target_include_directories(${TARGET} PUBLIC ./Lib/LibPNG/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/LibTIFF/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/GLM)
 endif()
@@ -98,11 +96,9 @@ elseif(WIN32)
 		./Lib/GLEW/lib/Release/x64
 		./Lib/SDL2/lib/x64
 		./Lib/ZSTD/lib
-		./Lib/LibJPEG/lib
-		./Lib/LibPNG/lib
 		./Lib/LibTIFF/lib/x64
 	)
-	target_link_libraries(${TARGET} opengl32 SDL2 SDL2main glew32 glew32 zstd jpeg png tiff
+	target_link_libraries(${TARGET} opengl32 SDL2 SDL2main glew32 glew32 zstd tiff
 		BulletLinearMath BulletCollision BulletDynamics
 	)
 endif()
