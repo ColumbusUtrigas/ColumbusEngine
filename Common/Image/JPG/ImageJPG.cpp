@@ -1,16 +1,28 @@
 #include <Common/Image/Image.h>
 #include <Common/Image/JPG/ImageJPG.h>
 #include <System/File.h>
-#include <jpeglib.h>
-#include <setjmp.h>
+//#include <jpeglib.h>
+//#include <setjmp.h>
 #include <cstring>
+#include <stb_image.h>
 
 namespace Columbus
 {
 
 	static uint8* ImageLoadJPG(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
 	{
-		struct jpeg_decompress_struct cinfo;
+		int x, y, chans;
+		auto data = stbi_load(FileName, &x, &y, &chans, 0);
+		OutWidth = x;
+		OutHeight = y;
+		OutSize = (int64)x * y * chans;
+
+		if (chans == 1) OutFormat = TextureFormat::R8;
+		if (chans == 3) OutFormat = TextureFormat::RGB8;
+
+		return data;
+
+		/*struct jpeg_decompress_struct cinfo;
 
 		struct jpeg_error_mgr pub;
 		jmp_buf setjmp_buffer;
@@ -76,12 +88,13 @@ namespace Columbus
 
 		fclose(file);
 
-		return data;
+		return data;*/
 	}
 
 	bool ImageSaveJPG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality)
 	{
-		if (Data == nullptr) return false;
+		return false;
+		/*if (Data == nullptr) return false;
 
 		struct jpeg_compress_struct cinfo;
 		struct jpeg_error_mgr jerr;
@@ -122,7 +135,7 @@ namespace Columbus
 		fclose(file);
 		jpeg_destroy_compress(&cinfo);
 
-		return true;
+		return true;*/
 	}
 
 	bool ImageLoaderJPG::IsJPG(const char* FileName)

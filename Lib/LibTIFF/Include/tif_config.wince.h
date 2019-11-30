@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * TIFF library configuration header for Windows CE platform.
  */

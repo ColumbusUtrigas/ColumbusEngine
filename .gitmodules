@@ -7,3 +7,6 @@
 [submodule "Lib/corinfo"]
 	path = Lib/corinfo
 	url = https://github.com/ColumbusUtrigas/corinfo.git
+[submodule "Lib/stb"]
+	path = Lib/stb
+	url = https://github.com/nothings/stb.git
