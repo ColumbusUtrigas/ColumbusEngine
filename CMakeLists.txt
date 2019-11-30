@@ -46,7 +46,7 @@ set_target_properties(${TARGET} PROPERTIES
 target_include_directories(${TARGET} PUBLIC ./)
 target_include_directories(${TARGET} PUBLIC ./Lib/)
 target_include_directories(${TARGET} PUBLIC ./Lib/MiniMP3)
-target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/STB/)
+target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/stb/)
 target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/include/)
 
 if(LINUX)
@@ -91,8 +91,14 @@ if (LINUX)
 	target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
 		LinearMath BulletCollision BulletDynamics pthread zstd vulkan)
 elseif(WIN32)
+	if (CMAKE_BUILD_TYPE MATCHES Debug)
+		set(BULLET_LIB_PATH ./Lib/Bullet/lib/Debug)
+	else()
+		set(BULLET_LIB_PATH ./Lib/Bullet/lib/Release)
+	endif()
+
 	target_link_directories(${TARGET} PUBLIC
-		./Lib/Bullet/lib/Debug
+		${BULLET_LIB_PATH}
 		./Lib/GLEW/lib/Release/x64
 		./Lib/SDL2/lib/x64
 		./Lib/ZSTD/lib
