@@ -6,7 +6,7 @@
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentLight.h>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 namespace Columbus
 {

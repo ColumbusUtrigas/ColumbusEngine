@@ -1,6 +1,7 @@
 #include <Core/Filesystem.h>
 #include <windows.h>
 #include <string.h>
+#include <string>
 
 namespace Columbus
 {

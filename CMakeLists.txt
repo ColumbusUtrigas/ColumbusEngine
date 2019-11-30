@@ -27,7 +27,13 @@ file(GLOB IMGUI_SRC
 	./Lib/imgui/examples/imgui_impl_opengl3.cpp)
 
 add_library(imgui STATIC ${IMGUI_SRC})
-target_include_directories(imgui PUBLIC /usr/include/SDL2/)
+if(LINUX)
+	target_include_directories(imgui PUBLIC /usr/include/SDL2/)
+elseif(WIN32)
+	target_include_directories(imgui PUBLIC ./Lib/GLEW/include)
+	target_include_directories(imgui PUBLIC ./Lib/SDL2/include)
+endif()
+
 ########################################
 
 add_executable(${TARGET} main.cpp)
@@ -38,9 +44,10 @@ set_target_properties(${TARGET} PROPERTIES
 )
 
 target_include_directories(${TARGET} PUBLIC ./)
+target_include_directories(${TARGET} PUBLIC ./Lib/)
 target_include_directories(${TARGET} PUBLIC ./Lib/MiniMP3)
-target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/STB/)
-target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/Include/)
+target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/stb/)
+target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/include/)
 
 if(LINUX)
 	target_include_directories(${TARGET} PUBLIC /usr/include/SDL2/)
@@ -48,6 +55,9 @@ if(LINUX)
 elseif(WIN32)
 	target_include_directories(${TARGET} PUBLIC ./Lib/SDL2/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/Bullet/include)
+	target_include_directories(${TARGET} PUBLIC ./Lib/GLEW/include)
+	target_include_directories(${TARGET} PUBLIC ./Lib/LibTIFF/include)
+	target_include_directories(${TARGET} PUBLIC ./Lib/GLM)
 endif()
 
 add_dir_to_target(${TARGET} Audio)
@@ -59,7 +69,13 @@ elseif(WIN32)
 	add_dir_to_target(${TARGET} Core/Windows)
 endif()
 add_dir_to_target_recurse(${TARGET} Editor)
-add_dir_to_target_recurse(${TARGET} Graphics) #OpenGL is included
+
+#add_dir_to_target_recurse(${TARGET} Graphics) #OpenGL is included
+add_dir_to_target(${TARGET} Graphics)
+add_dir_to_target(${TARGET} Graphics/OpenGL)
+add_dir_to_target_recurse(${TARGET} Graphics/Particles)
+add_dir_to_target(${TARGET} Graphics/Postprocess)
+
 add_dir_to_target(${TARGET} Input)
 add_dir_to_target(${TARGET} Physics)
 add_dir_to_target(${TARGET} Profiling)
@@ -71,6 +87,26 @@ file(GLOB builtin_shaders_files Graphics/Shaders/*.csl)
 add_custom_target(builtin_shaders DEPENDS ${builtin_shaders_files})
 add_dependencies(${TARGET} builtin_shaders)
 
-target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
-	LinearMath BulletCollision BulletDynamics pthread zstd vulkan)
+if (LINUX)
+	target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
+		LinearMath BulletCollision BulletDynamics pthread zstd vulkan)
+elseif(WIN32)
+	if (CMAKE_BUILD_TYPE MATCHES Debug)
+		set(BULLET_LIB_PATH ./Lib/Bullet/lib/Debug)
+	else()
+		set(BULLET_LIB_PATH ./Lib/Bullet/lib/Release)
+	endif()
+
+	target_link_directories(${TARGET} PUBLIC
+		${BULLET_LIB_PATH}
+		./Lib/GLEW/lib/Release/x64
+		./Lib/SDL2/lib/x64
+		./Lib/ZSTD/lib
+		./Lib/LibTIFF/lib/x64
+	)
+	target_link_libraries(${TARGET} opengl32 SDL2 SDL2main glew32 glew32 zstd tiff
+		BulletLinearMath BulletCollision BulletDynamics
+	)
+endif()
+
 target_link_libraries(${TARGET} imgui)

@@ -1,7 +1,7 @@
 #include <Common/Sound/Sound.h>
 #include <Common/Sound/OGG/SoundOGG.h>
 #include <System/File.h>
-#include <stb_vorbis.h>
+#include <stb_vorbis.c>
 
 namespace Columbus
 {
