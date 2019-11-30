@@ -3,7 +3,7 @@
 #include <System/File.h>
 #include <cstdlib>
 #include <cstring>
-#include <png.h>
+//#include <png.h>
 #include <stb_image.h>
 
 namespace Columbus
