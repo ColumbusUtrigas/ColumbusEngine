@@ -88,7 +88,7 @@ namespace Columbus
 		// Load skybox
 		{
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
-			if (Tex->Load(J["Defaults"]["Skybox"].GetString().c_str()))
+			if (Tex->Load(("Data/" + J["Defaults"]["Skybox"].GetString()).c_str()))
 			{
 				SkyPath = J["Defaults"]["Skybox"].GetString();
 				delete Sky;

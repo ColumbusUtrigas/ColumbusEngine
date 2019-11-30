@@ -1,0 +1,47 @@
+{
+	"Defaults": {
+		"Skybox": "Skyboxes/Pier.exr"
+	},
+	"Materials": [
+		"sponza"
+	],
+	"Meshes": [
+		"Sponza.cmf"
+	],
+	"Objects": [
+		{
+			"Light": {
+				"Color": [1, 1, 1],
+				"Energy": 20,
+				"InnerCutoff": 30,
+				"OuterCutoff": 90,
+				"Range": 300,
+				"Type": "Spot"
+			},
+			"Material": null,
+			"Name": "Light",
+			"Static": false,
+			"Transform": {
+				"Position": [-28.8559, 17.3071, 0],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Material": "sponza",
+			"MeshRenderer": "Sponza.cmf",
+			"Name": "Sponza",
+			"Static": false,
+			"Transform": {
+				"Position": [0, 3.4, 0],
+				"Rotation": [90, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		}
+	],
+	"Shaders": [
+		"Standart.csl"
+	],
+	"Sounds": {},
+	"Textures": {}
+}
