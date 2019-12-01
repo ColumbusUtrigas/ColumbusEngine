@@ -23,6 +23,7 @@ namespace Columbus
 					ImGui::Indent(10.0f);
 
 					ImGui::Combo("Type##PanelInspector_Light",               &Light->Type, Types, 3);
+					ImGui::Checkbox("Shadows##PanelInspector_Light",         &Light->Shadows);
 					ImGui::ColorEdit3("Color##PanelInspector_Light", (float*)&Light->Color);
 					ImGui::DragFloat("Energy##PanelInspector_Light",         &Light->Energy, 0.1f, 0.0f, FLT_MAX);
 					ImGui::DragFloat("Range##PanelInspector_Light",          &Light->Range,  0.1f);

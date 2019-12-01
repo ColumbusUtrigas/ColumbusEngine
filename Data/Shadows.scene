@@ -29,6 +29,7 @@
 				"InnerCutoff": 30,
 				"OuterCutoff": 90,
 				"Range": 300,
+				"Shadows": true,
 				"Type": "Spot"
 			},
 			"Material": null,
@@ -47,6 +48,7 @@
 				"InnerCutoff": 30,
 				"OuterCutoff": 90,
 				"Range": 300,
+				"Shadows": true,
 				"Type": "Spot"
 			},
 			"Material": null,
@@ -65,6 +67,7 @@
 				"InnerCutoff": 30,
 				"OuterCutoff": 90,
 				"Range": 300,
+				"Shadows": true,
 				"Type": "Spot"
 			},
 			"Material": null,
@@ -83,6 +86,7 @@
 				"InnerCutoff": 30,
 				"OuterCutoff": 90,
 				"Range": 300,
+				"Shadows": true,
 				"Type": "Spot"
 			},
 			"Material": null,

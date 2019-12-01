@@ -34,7 +34,7 @@ namespace Columbus
 			Vector3 pos; float innerCutoff;
 			Vector3 dir; float outerCutoff;
 			int type;
-			int shadowIndex;
+			int hasShadow;
 			float pad[2];
 
 			Matrix lightView;
@@ -207,19 +207,24 @@ namespace Columbus
 	{
 		State.Clear();
 		State.SetBlending(false);
+		State.SetDepthWriting(true);
 
 		stbrp_context context;
-		int num_rects = lightingUboData.count;
+		int num_rects = 0;
 		stbrp_rect rects[128];
 
 		constexpr int num_nodes = 128;
 		stbrp_node nodes[num_nodes];
 
-		for (int i = 0; i < num_rects; i++)
+		for (int i = 0; i < lightingUboData.count; i++)
 		{
-			rects[i].id = i;
-			rects[i].w = 512;
-			rects[i].h = 512;
+			if (lightingUboData.lights[i].hasShadow)
+			{
+				rects[num_rects].id = i;
+				rects[num_rects].w = 512;
+				rects[num_rects].h = 512;
+				num_rects++;
+			}
 		}
 
 		float fw = 1.0f / ShadowMapSize.X;
@@ -610,6 +615,7 @@ namespace Columbus
 				lightingUboData.lights[id].outerCutoff = Math::Radians(Light->OuterCutoff) / 2;
 
 				lightingUboData.lights[id].type = Light->Type;
+				lightingUboData.lights[id].hasShadow = (int)Light->Shadows;
 
 				lightingUboData.count++;
 			}
