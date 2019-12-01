@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <tuple>
 #include <cstddef>
+
+#define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>
 
 #include <Profiling/Profiling.h>
@@ -206,22 +208,41 @@ namespace Columbus
 		State.Clear();
 		State.SetBlending(false);
 
-		static Camera lightCam;
+		stbrp_context context;
+		int num_rects = lightingUboData.count;
+		stbrp_rect rects[128];
 
-		for (int i = 0; i < lightingUboData.count; i++)
+		constexpr int num_nodes = 128;
+		stbrp_node nodes[num_nodes];
+
+		for (int i = 0; i < num_rects; i++)
 		{
-			/*if (L->Type != Light::Spot) continue;*/
+			rects[i].id = i;
+			rects[i].w = 512;
+			rects[i].h = 512;
+		}
 
-			float fov = Math::Degrees(lightingUboData.lights[i].outerCutoff * 2);
+		float fw = 1.0f / ShadowMapSize.X;
+		float fh = 1.0f / ShadowMapSize.Y;
 
-			glViewport(1024 * i, 0, 1024, 1024);
-			lightCam.Pos = lightingUboData.lights[i].pos;
-			lightCam.SetTarget(lightingUboData.lights[i].dir + lightingUboData.lights[i].pos);
+		stbrp_init_target(&context, ShadowMapSize.X, ShadowMapSize.Y, nodes, num_nodes);
+		stbrp_pack_rects(&context, rects, num_rects);
+
+		for (int i = 0; i < num_rects; i++)
+		{
+			int id = rects[i].id;
+
+			float fov = Math::Degrees(lightingUboData.lights[id].outerCutoff * 2);
+
+			glViewport(rects[i].x, rects[i].y, rects[i].w, rects[i].h);
+			Camera lightCam;
+			lightCam.Pos = lightingUboData.lights[id].pos;
+			lightCam.SetTarget(lightingUboData.lights[id].dir + lightingUboData.lights[id].pos);
 			lightCam.Perspective(fov, 1, 0.1f, 1000);
 			lightCam.Update();
 
-			lightingUboData.lights[i].lightView = lightCam.GetViewProjection();
-			lightingUboData.lights[i].shadowRect = Vector4(0.5f * i, 0, 0.5f, 1);
+			lightingUboData.lights[id].lightView = lightCam.GetViewProjection();
+			lightingUboData.lights[id].shadowRect = Vector4(rects[i].x * fw, rects[i].y * fh, rects[i].w * fw, rects[i].h * fh);
 
 			State.SetMainCamera(lightCam);
 
@@ -609,7 +630,7 @@ namespace Columbus
 		static PostEffect shadowEffect;
 		shadowEffect.DepthTextureEnablement = true;
 
-		iVector2 shadowSize = { 2048, 1024 };
+		iVector2 shadowSize = { 2048, 2048 };
 		shadowEffect.Bind({0}, {0}, shadowSize);
 		RenderShadows(shadowSize);
 
