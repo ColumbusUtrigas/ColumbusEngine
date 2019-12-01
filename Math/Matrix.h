@@ -364,8 +364,6 @@ namespace Columbus
 
 			printf("---------------------------\n");
 		}
-		
-		virtual ~Matrix() {}
 	};
 
 }

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <tuple>
 #include <cstddef>
+#include <stb_rect_pack.h>
 
 #include <Profiling/Profiling.h>
 
@@ -22,6 +23,24 @@ namespace Columbus
 	Texture* Blob;
 
 	RenderState State;
+
+	struct
+	{
+		struct
+		{
+			Vector3 color; float range;
+			Vector3 pos; float innerCutoff;
+			Vector3 dir; float outerCutoff;
+			int type;
+			int shadowIndex;
+			float pad[2];
+
+			Matrix lightView;
+			Vector4 shadowRect;
+		} lights[128];
+
+		int count;
+	} lightingUboData;
 
 	Renderer::Renderer()
 	{
@@ -182,27 +201,28 @@ namespace Columbus
 		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
 	}
 
-	void Renderer::RenderShadows()
+	void Renderer::RenderShadows(const iVector2& ShadowMapSize)
 	{
 		State.Clear();
 		State.SetBlending(false);
 
 		static Camera lightCam;
 
-		//if (ImGui::GetIO().KeyCtrl) lightCam = MainCamera;
-
-		for (auto L : Scn->Lights)
+		for (int i = 0; i < lightingUboData.count; i++)
 		{
-			if (L == nullptr) continue;
-			if (L->Type != Light::Spot) continue;
+			/*if (L->Type != Light::Spot) continue;*/
 
-			//lightCam.Ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.01f, 500.0f);
+			float fov = Math::Degrees(lightingUboData.lights[i].outerCutoff * 2);
 
-			lightCam.Pos = L->Pos;
-			lightCam.SetTarget(L->Dir);
-			lightCam.Perspective(L->OuterCutoff, 1, 0.1f, 1000);
+			glViewport(1024 * i, 0, 1024, 1024);
+			lightCam.Pos = lightingUboData.lights[i].pos;
+			lightCam.SetTarget(lightingUboData.lights[i].dir + lightingUboData.lights[i].pos);
+			lightCam.Perspective(fov, 1, 0.1f, 1000);
 			lightCam.Update();
-			State.LightSpace = lightCam.GetViewProjection();
+
+			lightingUboData.lights[i].lightView = lightCam.GetViewProjection();
+			lightingUboData.lights[i].shadowRect = Vector4(0.5f * i, 0, 0.5f, 1);
+
 			State.SetMainCamera(lightCam);
 
 			for (auto& Object : OpaqueObjects)
@@ -227,8 +247,6 @@ namespace Columbus
 					OpaqueObjectsRendered++;
 				}
 			}
-
-			break;
 		}
 	}
 
@@ -555,20 +573,6 @@ namespace Columbus
 		case AntialiasingType::MSAA_32X: BaseMSAA.Multisampling = 32; IsMSAA = true; break;
 		}
 
-		struct
-		{
-			struct
-			{
-				Vector3 color; float range;
-				Vector3 pos; float innerCutoff;
-				Vector3 dir; float outerCutoff;
-				int type;
-				float pad[3];
-			} lights[128];
-
-			int count;
-		} lightingUboData;
-
 		lightingUboData.count = 0;
 		for (auto Light : Scn->Lights)
 		{
@@ -605,8 +609,9 @@ namespace Columbus
 		static PostEffect shadowEffect;
 		shadowEffect.DepthTextureEnablement = true;
 
-		shadowEffect.Bind({0}, {0}, {1024, 1024});
-		RenderShadows();
+		iVector2 shadowSize = { 2048, 1024 };
+		shadowEffect.Bind({0}, {0}, shadowSize);
+		RenderShadows(shadowSize);
 
 		// RENDERING
 		//

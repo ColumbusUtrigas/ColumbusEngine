@@ -30,7 +30,6 @@ namespace Columbus
 		bool PreviousDepthWriting;
 	public:
 		Texture* ShadowTexture = nullptr;
-		Matrix LightSpace;
 	public:
 		RenderState() { /*Clear();*/ }
 
