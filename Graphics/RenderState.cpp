@@ -217,7 +217,6 @@ namespace Columbus
 			if (ShadowTexture != nullptr)
 			{
 				Shader->SetUniform("Shadow", (TextureOpenGL*)ShadowTexture, 14);
-				Shader->SetUniform("uLightSpace", false, LightSpace);
 			}
 
 			if (CheckParameter(Tiling))           Shader->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);

@@ -155,7 +155,7 @@ namespace Columbus
 		void CompileLists();
 		void SortLists();
 
-		void RenderShadows();
+		void RenderShadows(const iVector2& ShadowMapSize);
 		void RenderOpaque();
 		void RenderSky();
 		void RenderTransparent();

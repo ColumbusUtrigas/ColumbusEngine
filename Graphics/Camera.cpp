@@ -32,7 +32,7 @@ namespace Columbus
 
 		if (PreTargeted)
 		{
-			CameraDirection = Target;
+			CameraDirection = Target - Pos;
 		}
 		else
 		{
