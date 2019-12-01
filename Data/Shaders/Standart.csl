@@ -83,6 +83,7 @@ struct Light
 	float3 pos; float innerCutoff;
 	float3 dir; float outerCutoff;
 	int type;
+	int hasShadow;
 	float4x4 lightView;
 	float4 shadowRect;
 };
@@ -155,6 +156,9 @@ void Init(void)
 
 float ShadowCalculation(int id, float NdotL)
 {
+	if (u_Lights.lights[id].hasShadow == 0)
+		return 1;
+
 	float4 lightSpace = u_Lights.lights[id].lightView * float4(varPos, 1);
 
 	if (lightSpace.w == 0)

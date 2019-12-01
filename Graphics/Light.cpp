@@ -18,6 +18,8 @@ namespace Columbus
 		case Light::Point:       J["Type"] = "Point";       break;
 		case Light::Spot:        J["Type"] = "Spot";        break;
 		}
+
+		J["Shadows"] = Shadows;
 	}
 
 	void Light::Deserialize(JSON& J)
@@ -34,6 +36,8 @@ namespace Columbus
 			Type = Light::Point;
 		else if (J["Type"].GetString() == "Spot")
 			Type = Light::Spot;
+
+		Shadows = J["Shadows"].GetBool();
 	}
 
 }

@@ -20,6 +20,7 @@ namespace Columbus
 		Vector3 Dir = Vector3(1, 0, 0);
 
 		int Type = Directional;
+		bool Shadows = false;
 
 		float Energy = 1.0f;
 		float Range = 10.0f;
