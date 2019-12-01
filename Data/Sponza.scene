@@ -28,6 +28,24 @@
 			}
 		},
 		{
+			"Light": {
+				"Color": [1, 1, 1],
+				"Energy": 20,
+				"InnerCutoff": 30,
+				"OuterCutoff": 90,
+				"Range": 300,
+				"Type": "Spot"
+			},
+			"Material": null,
+			"Name": "Light 0",
+			"Static": false,
+			"Transform": {
+				"Position": [68.244, 17.3071, 0],
+				"Rotation": [-36.3, 180, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
 			"Material": "sponza",
 			"MeshRenderer": "Sponza.cmf",
 			"Name": "Sponza",

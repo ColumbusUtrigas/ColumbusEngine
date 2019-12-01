@@ -1,0 +1,125 @@
+{
+	"Defaults": {
+		"Skybox": "Skyboxes/Pier.exr"
+	},
+	"Materials": [
+		"sponza"
+	],
+	"Meshes": [
+		"Sponza.cmf",
+		"Box.cmf",
+		"Sphere.cmf"
+	],
+	"Objects": [
+		{
+			"Material": "sponza",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Floor",
+			"Static": false,
+			"Transform": {
+				"Position": [0, 3.4, 0],
+				"Rotation": [0, 0, 0],
+				"Scale": [100, 1, 100]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1, 1, 1],
+				"Energy": 7.6,
+				"InnerCutoff": 30,
+				"OuterCutoff": 90,
+				"Range": 300,
+				"Type": "Spot"
+			},
+			"Material": null,
+			"Name": "Light",
+			"Static": false,
+			"Transform": {
+				"Position": [-4.73083, 17.3071, -11.4594],
+				"Rotation": [0, 52.3, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1, 1, 1],
+				"Energy": 5.4,
+				"InnerCutoff": 30,
+				"OuterCutoff": 90,
+				"Range": 300,
+				"Type": "Spot"
+			},
+			"Material": null,
+			"Name": "Light 0",
+			"Static": false,
+			"Transform": {
+				"Position": [62.9264, 17.3071, -10.9669],
+				"Rotation": [-36.3, 116.5, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1, 1, 1],
+				"Energy": 7.6,
+				"InnerCutoff": 30,
+				"OuterCutoff": 90,
+				"Range": 300,
+				"Type": "Spot"
+			},
+			"Material": null,
+			"Name": "Light 1",
+			"Static": false,
+			"Transform": {
+				"Position": [53.4601, 14.6158, 40.8475],
+				"Rotation": [-36.3, 178.8, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1, 1, 1],
+				"Energy": 4.8,
+				"InnerCutoff": 30,
+				"OuterCutoff": 90,
+				"Range": 300,
+				"Type": "Spot"
+			},
+			"Material": null,
+			"Name": "Light 2",
+			"Static": false,
+			"Transform": {
+				"Position": [27.2192, 14.0917, 91.9915],
+				"Rotation": [0, -107.7, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Material": "sponza",
+			"MeshRenderer": "Sphere.cmf",
+			"Name": "Sphere",
+			"Static": false,
+			"Transform": {
+				"Position": [19.6887, 5.42136, 22.6954],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 1, 1]
+			}
+		},
+		{
+			"Material": "sponza",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Sphere 0",
+			"Static": false,
+			"Transform": {
+				"Position": [19.8645, 8.89947, 33.1921],
+				"Rotation": [0, 0, 0],
+				"Scale": [1, 7.1, 1]
+			}
+		}
+	],
+	"Shaders": [
+		"Standart.csl"
+	],
+	"Sounds": {},
+	"Textures": {}
+}

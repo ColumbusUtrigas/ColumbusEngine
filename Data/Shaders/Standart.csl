@@ -9,14 +9,11 @@
 
 #uniform float4x4 uModel
 #uniform float4x4 uViewProjection
-#uniform float4x4 uLightSpace
 
 out float3 varPos;
 out float2 varUV;
 out float3 varNormal;
 out float3x3 varTBN;
-
-out vec4 FragPosLightSpace;
 
 void main()
 {
@@ -28,8 +25,6 @@ void main()
 	varUV = aUV;
 	varNormal = Normal;
 	varTBN = transpose(float3x3(Tangent, Bitangent, Normal));
-
-	FragPosLightSpace = uLightSpace * float4(varPos, 1);
 
 	SV_Position = uViewProjection * float4(varPos, 1);
 }
@@ -44,8 +39,6 @@ in float3 varPos;
 in float2 varUV;
 in float3 varNormal;
 in float3x3 varTBN;
-
-in vec4 FragPosLightSpace;
 
 #uniform Texture2D   AlbedoMap
 #uniform Texture2D   NormalMap
@@ -90,6 +83,8 @@ struct Light
 	float3 pos; float innerCutoff;
 	float3 dir; float outerCutoff;
 	int type;
+	float4x4 lightView;
+	float4 shadowRect;
 };
 
 // TODO: cbuffer abstraction, binding number
@@ -158,17 +153,21 @@ void Init(void)
 		_Metallic = Metallic;
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace, float NdotL)
+float ShadowCalculation(int id, float NdotL)
 {
-	if (fragPosLightSpace.w == 0)
+	float4 lightSpace = u_Lights.lights[id].lightView * float4(varPos, 1);
+
+	if (lightSpace.w == 0)
 		return 1;
 
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    float3 projCoords = lightSpace.xyz / lightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
+	projCoords.xy *= u_Lights.lights[id].shadowRect.zw;
+	projCoords.xy += u_Lights.lights[id].shadowRect.xy;
     float closestDepth = texture(Shadow, projCoords.xy).r; 
     float currentDepth = projCoords.z;
 	float bias = 0.00001;
-	//bias = max(bias * (1.0 - NdotL), bias);
+	//bias = min(bias * (1.0 - NdotL), bias);
 
 	//float shadow = (currentDepth - bias) > closestDepth && currentDepth < 1.0 ? 0.4 : 1.0;
 
@@ -228,7 +227,7 @@ float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 
 	float Factor = 1.0 - _Metallic;
 
-	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation * ShadowCalculation(FragPosLightSpace, NdotL);
+	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation * ShadowCalculation(id, NdotL);
 }
 
 float3 Lights(void)
