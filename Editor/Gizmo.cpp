@@ -6,7 +6,8 @@
 #include <iterator>
 #include <tuple>
 
-#include <Lib/imgui/imgui.h>
+#include <imgui/imgui.h>
+#include <ImGuizmo/ImGuizmo.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -71,9 +72,24 @@ namespace
 	GizmoTransform Picked;
 	bool WasPressed = false;
 
-	void Gizmo::Draw()
+	void Gizmo::Draw(Transform& transform, const Vector4& rect)
 	{
-		if (!ImGui::IsMouseDown(0)) WasPressed = false;
+		auto mat = transform.GetMatrix().GetTransposed();
+		auto view = _Camera.GetViewMatrix();
+		auto proj = _Camera.GetProjectionMatrix();
+
+		float t[3], r[3], s[3];
+
+		ImGuizmo::SetRect(rect.X, rect.Y, rect.Z, rect.W);
+		ImGuizmo::Manipulate(&view.M[0][0], &proj.M[0][0], (ImGuizmo::OPERATION)_Operation, ImGuizmo::MODE::LOCAL, &mat.M[0][0]);
+		ImGuizmo::DecomposeMatrixToComponents(&mat.M[0][0], t, r, s);
+
+		transform.Position = { t[0], t[1], t[2] };
+		//transform.Rotation = { r[0], r[1], r[2] };
+		transform.Scale = { s[0], s[1], s[2] };
+		transform.Update();
+
+		/*if (!ImGui::IsMouseDown(0)) WasPressed = false;
 		if (PickedObject == nullptr) return;
 
 		auto shader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->EditorTools);
@@ -156,7 +172,7 @@ namespace
 		shader->SetUniform("CameraPos", _Camera.Pos);
 		shader->SetUniform("UseDistanceFade", 0);
 		RenderGizmo(transforms, _Box, shader);
-		shader->Unbind();
+		shader->Unbind();*/
 	}
 
 }

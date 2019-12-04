@@ -14,9 +14,10 @@
 
 using namespace Columbus;
 
-#include <Lib/imgui/imgui.h>
-#include <Lib/imgui/examples/imgui_impl_opengl3.h>
-#include <Lib/imgui/examples/imgui_impl_sdl.h>
+#include <imgui/imgui.h>
+#include <imgui/examples/imgui_impl_opengl3.h>
+#include <imgui/examples/imgui_impl_sdl.h>
+#include <ImGuizmo/ImGuizmo.h>
 
 #ifdef COLUMBUS_PLATFORM_WINDOWS
 	//Hint to the driver to use discrete GPU
@@ -165,6 +166,7 @@ int main(int argc, char** argv)
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 
 		Editor.Draw(scene, MainRender, SizeOfRenderWindow, RedrawTime);
 

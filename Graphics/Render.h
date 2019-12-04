@@ -142,6 +142,7 @@ namespace Columbus
 		
 		void SetViewport(const iVector2& Origin, const iVector2& Size);
 		void SetMainCamera(const Camera& InCamera);
+		Camera GetMainCamera() const { return MainCamera; }
 		void SetSky(Skybox* InSky);
 		void SetScene(Scene* InScn);
 		void SetDeltaTime(float Delta);
