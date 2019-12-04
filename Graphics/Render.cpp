@@ -759,7 +759,7 @@ namespace Columbus
 				RenderIcons();
 			}
 
-			if (DrawGizmo)
+			/*if (DrawGizmo)
 			{
 				State.SetBlending(false);
 				State.SetDepthWriting(false);
@@ -771,7 +771,7 @@ namespace Columbus
 				_Gizmo.PickedObject = PickedObject;
 				_Gizmo.SetCamera(MainCamera);
 				_Gizmo.Draw();
-			}
+			}*/
 
 			if (Vignette.Enabled)
 			{

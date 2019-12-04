@@ -14,14 +14,23 @@ namespace Columbus
 		std::unique_ptr<Mesh> _Box;
 		Camera _Camera;
 	public:
+		bool Enable = false;
 		bool EnableMousePicking = false;
 		Vector2 MousePickingPosition;
 		GameObject* PickedObject = nullptr;
+
+		enum Operation
+		{
+			Translate,
+			Rotate,
+			Scale,
+			Bounds
+		} _Operation = Translate;
 	public:
 		Gizmo();
 
 		void SetCamera(const Camera& C) { _Camera = C; }
-		void Draw();
+		void Draw(Transform& transform, const Vector4& rect);
 	};
 
 }

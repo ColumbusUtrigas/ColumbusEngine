@@ -10,3 +10,6 @@
 [submodule "Lib/stb"]
 	path = Lib/stb
 	url = https://github.com/nothings/stb.git
+[submodule "Lib/ImGuizmo"]
+	path = Lib/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

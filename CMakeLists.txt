@@ -24,9 +24,11 @@ file(GLOB IMGUI_SRC
 	./Lib/imgui/*.cpp
 	./Lib/imgui/misc/cpp/*.cpp
 	./Lib/imgui/examples/imgui_impl_sdl.cpp
-	./Lib/imgui/examples/imgui_impl_opengl3.cpp)
+	./Lib/imgui/examples/imgui_impl_opengl3.cpp
+	./Lib/ImGuizmo/*.cpp)
 
 add_library(imgui STATIC ${IMGUI_SRC})
+target_include_directories(imgui PUBLIC ./Lib/imgui)
 if(LINUX)
 	target_include_directories(imgui PUBLIC /usr/include/SDL2/)
 elseif(WIN32)

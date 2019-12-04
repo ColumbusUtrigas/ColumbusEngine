@@ -1,6 +1,8 @@
 #include <Editor/PanelScene.h>
 #include <Editor/FontAwesome.h>
+#include <Editor/CommonUI.h>
 #include <Lib/imgui/imgui.h>
+#include <ImGuizmo/ImGuizmo.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 
 namespace Columbus
@@ -17,7 +19,12 @@ namespace Columbus
 				{
 					ImGui::Checkbox("Icons##PanelScene", &Render.DrawIcons);
 					ImGui::Checkbox("Grid##PanelScene", &Render.DrawGrid);
-					ImGui::Checkbox("Gizmo##PanelScene", &Render.DrawGizmo);
+					ImGui::Checkbox("Gizmo##PanelScene", &_Gizmo.Enable);
+
+					ImGui::RadioButton("T", (int*)&_Gizmo._Operation, Gizmo::Operation::Translate);
+					ImGui::RadioButton("R", (int*)&_Gizmo._Operation, Gizmo::Operation::Rotate);
+					ImGui::RadioButton("S", (int*)&_Gizmo._Operation, Gizmo::Operation::Scale);
+
 					ImGui::EndMenuBar();
 				}
 
@@ -33,18 +40,12 @@ namespace Columbus
 				Hover = ImGui::IsItemHovered();
 				SizeOfRenderWindow = { (int)Size.x, (int)Size.y };
 
-				Render.EnableMousePicking = false;
-				auto mousePos = ImGui::GetMousePos();
-				if (mousePos.x > Position.X && mousePos.x < Position.X + Size.x &&
-				    mousePos.y > Position.Y && mousePos.y < Position.Y + Size.y)
-				{
-					Vector2 pickPos;
-					pickPos.X = mousePos.x - Position.X;
-					pickPos.Y = mousePos.y - Position.Y;
-					pickPos = pickPos / Vector2(SizeOfRenderWindow) * 2 - 1;
 
-					Render.EnableMousePicking = true;
-					Render.MousePickingPosition = pickPos;
+				if (Render.PickedObject != nullptr)
+				{ 
+					Vector4 rect(Position.X, Position.Y, Size.x, Size.y);
+					_Gizmo.SetCamera(Render.GetMainCamera());
+					_Gizmo.Draw(Render.PickedObject->transform, rect);
 				}
 			}
 			ImGui::End();

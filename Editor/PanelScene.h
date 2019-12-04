@@ -16,6 +16,8 @@ namespace Columbus
 		iVector2 SizeOfRenderWindow;
 		bool Selected = false;
 		bool Hover = false;
+
+		Gizmo _Gizmo;
 	public:
 		EditorPanelScene() {}
 
