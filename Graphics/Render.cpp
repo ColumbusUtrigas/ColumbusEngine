@@ -627,9 +627,6 @@ namespace Columbus
 			BufferCpuAccess::Stream
 		});
 
-		lightingUBO.Load(&lightingUboData);
-		lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
-
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
 
@@ -639,6 +636,9 @@ namespace Columbus
 		iVector2 shadowSize = { 2048, 2048 };
 		shadowEffect.Bind({0}, {0}, shadowSize);
 		RenderShadows(shadowSize);
+
+		lightingUBO.Load(&lightingUboData);
+		lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
 
 		// RENDERING
 		//
