@@ -80,8 +80,9 @@ namespace
 
 		float t[3], r[3], s[3];
 
+		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(rect.X, rect.Y, rect.Z, rect.W);
-		ImGuizmo::Manipulate(&view.M[0][0], &proj.M[0][0], (ImGuizmo::OPERATION)_Operation, ImGuizmo::MODE::LOCAL, &mat.M[0][0]);
+		ImGuizmo::Manipulate(&view.M[0][0], &proj.M[0][0], (ImGuizmo::OPERATION)_Operation, ImGuizmo::MODE::WORLD, &mat.M[0][0]);
 		ImGuizmo::DecomposeMatrixToComponents(&mat.M[0][0], t, r, s);
 
 		transform.Position = { t[0], t[1], t[2] };
