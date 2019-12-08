@@ -131,6 +131,7 @@ namespace Columbus
 		PROFILE_CPU(ProfileModule::Culling);
 
 		OpaqueObjects.clear();
+		ShadowsObjects.clear();
 		TransparentObjects.clear();
 
 		LightsPairs.clear();
@@ -158,16 +159,19 @@ namespace Columbus
 
 						if (Mesh != nullptr)
 						{
+							if (Object->material == nullptr) continue;
+							Material& Mat = *Object->material;
+
 							if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 							{
-								if (Object->material == nullptr) continue;
-								Material& Mat = *Object->material;
-
 								if (Mat.Transparent)
 									TransparentObjects.emplace_back(Mesh, Counter);
 								else
 									OpaqueObjects.emplace_back(Mesh, Counter);
 							}
+
+							if (!Mat.Transparent)
+								ShadowsObjects.emplace_back(Mesh, Counter);
 						}
 					}
 
@@ -251,7 +255,7 @@ namespace Columbus
 
 			State.SetMainCamera(lightCam);
 
-			for (auto& Object : OpaqueObjects)
+			for (auto& Object : ShadowsObjects)
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
 				if (GO->material == nullptr) continue;
