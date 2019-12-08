@@ -60,7 +60,7 @@ namespace Columbus
 		{
 			Mesh* Object;
 			uint32 Index; // Index of GameObject in array
-			int32 Lights[4] = { -1, -1, -1, -1 };
+			//int32 Lights[4] = { -1, -1, -1, -1 };
 
 			OpaqueRenderData(Mesh* InObject, uint32 InIndex) :
 				Object(InObject),
@@ -72,7 +72,7 @@ namespace Columbus
 			Mesh* MeshObject;
 			ParticleEmitterCPU* Particles;
 			uint32 Index; // Index of GameObject in array
-			int32 Lights[4] = { -1, -1, -1, -1 };
+			//int32 Lights[4] = { -1, -1, -1, -1 };
 
 			TransparentRenderData(Mesh* InMesh, uint32 InIndex) :
 				MeshObject(InMesh),
@@ -90,6 +90,7 @@ namespace Columbus
 		std::vector<std::pair<uint32, Light*>> LightsPairs;
 
 		std::vector<OpaqueRenderData> OpaqueObjects;
+		std::vector<OpaqueRenderData> ShadowsObjects;
 		std::vector<TransparentRenderData> TransparentObjects;
 		
 		iVector2 ViewportOrigin;
