@@ -77,18 +77,27 @@ namespace
 		auto mat = transform.GetMatrix().GetTransposed();
 		auto view = _Camera.GetViewMatrix();
 		auto proj = _Camera.GetProjectionMatrix();
+		auto mode = (_Operation == Operation::Scale) ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD;
+		//mode = ImGuizmo::MODE::LOCAL;
 
 		float t[3], r[3], s[3];
+		float dt[3], dr[3], ds[3];
+		float delta[16];
 
 		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(rect.X, rect.Y, rect.Z, rect.W);
-		ImGuizmo::Manipulate(&view.M[0][0], &proj.M[0][0], (ImGuizmo::OPERATION)_Operation, ImGuizmo::MODE::WORLD, &mat.M[0][0]);
+
+		ImGuizmo::Manipulate(&view.M[0][0], &proj.M[0][0], (ImGuizmo::OPERATION)_Operation, mode, &mat.M[0][0], delta);
 		ImGuizmo::DecomposeMatrixToComponents(&mat.M[0][0], t, r, s);
+		ImGuizmo::DecomposeMatrixToComponents(delta, dt, dr, ds);
 
 		transform.Position = { t[0], t[1], t[2] };
-		//transform.Rotation = { r[0], r[1], r[2] };
+		transform.Rotation -= { dr[0], dr[1], dr[2] };
 		transform.Scale = { s[0], s[1], s[2] };
 		transform.Update();
+
+		printf("D: %f %f %f\n", dr[0], dr[1], dr[2]);
+		printf("%f %f %f\n", r[0], r[1], r[2]);
 
 		/*if (!ImGui::IsMouseDown(0)) WasPressed = false;
 		if (PickedObject == nullptr) return;
