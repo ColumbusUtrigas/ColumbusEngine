@@ -59,12 +59,14 @@ namespace Columbus
 		struct OpaqueRenderData
 		{
 			Mesh* Object;
+			Material* Mat;
 			uint32 Index; // Index of GameObject in array
 			//int32 Lights[4] = { -1, -1, -1, -1 };
 
-			OpaqueRenderData(Mesh* InObject, uint32 InIndex) :
+			OpaqueRenderData(Mesh* InObject, uint32 InIndex, Material* InMat) :
 				Object(InObject),
-				Index(InIndex) {}
+				Index(InIndex),
+				Mat(InMat) {}
 		};
 
 		struct TransparentRenderData

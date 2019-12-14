@@ -18,6 +18,7 @@ namespace Columbus
 	public:
 		Transform transform;
 		Material* material = nullptr;
+		std::vector<Material*> materials;
 
 		String Name;
 		bool Enable = true;
