@@ -159,35 +159,27 @@ namespace Columbus
 
 						if (Mesh != nullptr)
 						{
-							if (Object->material == nullptr) continue;
-							Material& Mat = *Object->material;
+							if (Object->materials.empty()) continue;
+							//Material& Mat = *Object->material;
 
-							for (auto& mesh : Mesh->SubMeshes)
+							for (int i = 0; i < Mesh->SubMeshes.size(); i++)
 							{
-								if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
+								auto& mesh = Mesh->SubMeshes[i];
+								if (Object->materials.size() > i && Object->materials[i] != nullptr)
 								{
-									if (Mat.Transparent)
-										TransparentObjects.emplace_back(mesh, Counter);
-									else
-										OpaqueObjects.emplace_back(mesh, Counter);
+									auto& mat = *Object->materials[i];
+
+									if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
+									{
+										if (mat.Transparent)
+											TransparentObjects.emplace_back(mesh, Counter);
+										else
+											OpaqueObjects.emplace_back(mesh, Counter, &mat);
+									}
+
+									if (!mat.Transparent)
+										ShadowsObjects.emplace_back(mesh, Counter, &mat);
 								}
-
-								if (!Mat.Transparent)
-									ShadowsObjects.emplace_back(mesh, Counter);
-							}
-
-							if (Mesh->SubMeshes.empty())
-							{
-								if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
-								{
-									if (Mat.Transparent)
-										TransparentObjects.emplace_back(Mesh, Counter);
-									else
-										OpaqueObjects.emplace_back(Mesh, Counter);
-								}
-
-								if (!Mat.Transparent)
-									ShadowsObjects.emplace_back(Mesh, Counter);
 							}
 						}
 					}
@@ -275,8 +267,9 @@ namespace Columbus
 			for (auto& Object : ShadowsObjects)
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-				if (GO->material == nullptr) continue;
-				Material& Mat = *GO->material;
+				//if (GO->material == nullptr) continue;
+				//Material& Mat = *GO->material;
+				Material& Mat = *Object.Mat;
 				ShaderProgram* CurrentShader = Mat.ShaderProg;
 
 				if (CurrentShader != nullptr)
@@ -309,7 +302,8 @@ namespace Columbus
 		{
 			SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
 			if (GO->material == nullptr) continue;
-			Material& Mat = *GO->material;
+			//Material& Mat = *GO->material;
+			Material& Mat = *Object.Mat;
 			ShaderProgram* CurrentShader = Mat.ShaderProg;
 				
 			if (CurrentShader != nullptr)

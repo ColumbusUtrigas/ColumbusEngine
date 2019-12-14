@@ -16,6 +16,8 @@ namespace Columbus
 	{
 		COLUMBUS_ASSERT(InComponent != nullptr);
 		Components.push_back(SmartPointer<Component>(InComponent));
+		Components.back()->gameObject = this;
+		Components.back()->OnComponentAdd();
 	}
 	
 	void GameObject::Update(float DeltaTime)
