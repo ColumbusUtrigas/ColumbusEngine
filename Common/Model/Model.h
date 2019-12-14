@@ -17,22 +17,43 @@ namespace Columbus
 		Vector3 bitangent;
 	};
 
-	class ModelLoader
+	struct SubModel
 	{
-	public:
 		bool Indexed = false;
-
 		uint32 VerticesCount = 0;
 		uint32 IndicesCount = 0;
-		uint32 IndexSize = 0;
 
 		Vector3* Positions = nullptr;
 		Vector2* UVs = nullptr;
 		Vector3* Normals = nullptr;
 		Vector3* Tangents = nullptr;
-		void*    Indices = nullptr;
+		int*     Indices = nullptr;
+		int IndexSize = 4;
 
 		Box BoundingBox;
+		bool Bounded = false;
+
+		void FreeData()
+		{
+			Indexed = false;
+			VerticesCount = 0;
+			IndicesCount = 0;
+			delete[] Positions;
+			delete[] UVs;
+			delete[] Normals;
+			delete[] Tangents;
+			delete[] Indices;
+			IndexSize = 4;
+			BoundingBox = {};
+			Bounded = false;
+		}
+	};
+
+	class ModelLoader
+	{
+	public:
+		SubModel* SubModels = nullptr;
+		uint32 SubModelsCount = 0;
 	public:
 		virtual bool Load(const char* File) = 0;
 		virtual ~ModelLoader() {}
@@ -41,49 +62,21 @@ namespace Columbus
 	class Model
 	{
 	private:
-		bool Indexed = false;
-		bool Exist = false;
-
-		uint32 VerticesCount = 0;
-		uint32 IndicesCount  = 0;
-		uint32 IndexSize = 0;
-
-		Vector3* Positions = nullptr;
-		Vector2* UVs = nullptr;
-		Vector3* Normals = nullptr;
-		Vector3* Tangents = nullptr;
-
-		Vertex* Vertices = nullptr;
-		void* Indices = nullptr;
-
 		Box BoundingBox;
+
+		SubModel* SubModels = nullptr;
+		uint32 SubModelsCount = 0;
 	public:
 		Model();
 
 		bool Load(const char* File);
 		void FreeData();
+		void RecalculateBounds();
+		void RecalculateTangents();
 
-		bool IsIndexed() const { return Indexed; }
-		bool IsExist()   const { return Exist;   }
-
-		uint32 GetVerticesCount() const { return VerticesCount; }
-		uint32 GetIndicesCount()  const { return IndicesCount;  }
-		uint32 GetIndexSize()     const { return IndexSize;     }
-
-		bool HasPositions() const { return Positions != nullptr; }
-		bool HasUVs()       const { return UVs       != nullptr; }
-		bool HasNormals()   const { return Normals   != nullptr; }
-		bool HasTangents()  const { return Tangents  != nullptr; }
-		bool HasVertices()  const { return Vertices  != nullptr; }
-		bool HasIndices()   const { return Indices   != nullptr; }
-
-		const Vector3* GetPositions() const { return Positions; }
-		const Vector2* GetUVs()       const { return UVs;       }
-		const Vector3* GetNormals()   const { return Normals;   }
-		const Vector3* GetTangents()  const { return Tangents;  }
-		const Vertex*  GetVertices()  const { return Vertices;  }
-		const void*    GetIndices()   const { return Indices;   }
-
+		uint32 GetSubModelsCount() const { return SubModelsCount;  }
+		bool HasSubMeshes() const { return SubModelsCount != 0; }
+		const SubModel& GetSubModel(int index) const { return SubModels[index]; }
 		Box GetBoundingBox() const { return BoundingBox; }
 		
 		~Model();

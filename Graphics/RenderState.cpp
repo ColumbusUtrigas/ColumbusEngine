@@ -126,7 +126,7 @@ namespace Columbus
 		MainCamera = InMainCamera;
 	}
 
-	void RenderState::SetMaterial(const Material& InMaterial, const Matrix& ModelMatrix, Skybox* Sky)
+	void RenderState::SetMaterial(const Material& InMaterial, const Matrix& ModelMatrix, Skybox* Sky, bool UsePixelShader)
 	{
 		#define CheckShader() (CurrentShader != PreviousShader)
 		#define CheckParameter(x) (CurrentMaterial.x != PreviousMaterial.x) || CheckShader()
@@ -190,43 +190,50 @@ namespace Columbus
 				RenderData = NewRenderData;
 			}
 
-			for (int32 i = 0; i < 11; i++)
+			if (UsePixelShader)
 			{
-				if ((Textures[i] != LastTextures[i] || CheckShader()) && Textures[i] != nullptr)
+				for (int32 i = 0; i < 11; i++)
 				{
-					Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
-				} else if (Textures[i] == nullptr)
-				{
-					glActiveTexture(GL_TEXTURE0 + i);
-					Shader->SetUniform(RenderData->TexturesIDs[i], i);
-					glBindTexture(GL_TEXTURE_2D, 0);
+					if ((Textures[i] != LastTextures[i] || CheckShader()) && Textures[i] != nullptr)
+					{
+						Shader->SetUniform(RenderData->TexturesIDs[i], (TextureOpenGL*)Textures[i], i);
+					}
+					else if (Textures[i] == nullptr)
+					{
+						glActiveTexture(GL_TEXTURE0 + i);
+						Shader->SetUniform(RenderData->TexturesIDs[i], i);
+						glBindTexture(GL_TEXTURE_2D, 0);
+					}
 				}
 			}
 
 			Shader->SetUniform(RenderData->Model, false, ModelMatrix);
 			Shader->SetUniform(RenderData->ViewProjection, false, MainCamera.GetViewProjection());
 
-			Shader->SetUniform(RenderData->HasAlbedoMap,       CurrentMaterial.AlbedoMap != nullptr);
-			Shader->SetUniform(RenderData->HasNormalMap,       CurrentMaterial.NormalMap != nullptr);
-			Shader->SetUniform(RenderData->HasRoughnessMap,    CurrentMaterial.RoughnessMap != nullptr);
-			Shader->SetUniform(RenderData->HasMetallicMap,     CurrentMaterial.MetallicMap != nullptr);
-			Shader->SetUniform(RenderData->HasOcclusionMap,    CurrentMaterial.OcclusionMap != nullptr);
-			Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
-			Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
-
-			if (ShadowTexture != nullptr)
+			if (UsePixelShader)
 			{
-				Shader->SetUniform("Shadow", (TextureOpenGL*)ShadowTexture, 14);
-			}
+				Shader->SetUniform(RenderData->HasAlbedoMap, CurrentMaterial.AlbedoMap != nullptr);
+				Shader->SetUniform(RenderData->HasNormalMap, CurrentMaterial.NormalMap != nullptr);
+				Shader->SetUniform(RenderData->HasRoughnessMap, CurrentMaterial.RoughnessMap != nullptr);
+				Shader->SetUniform(RenderData->HasMetallicMap, CurrentMaterial.MetallicMap != nullptr);
+				Shader->SetUniform(RenderData->HasOcclusionMap, CurrentMaterial.OcclusionMap != nullptr);
+				Shader->SetUniform(RenderData->HasDetailAlbedoMap, CurrentMaterial.DetailAlbedoMap != nullptr);
+				Shader->SetUniform(RenderData->HasDetailNormalMap, CurrentMaterial.DetailNormalMap != nullptr);
 
-			if (CheckParameter(Tiling))           Shader->SetUniform(RenderData->Tiling,           CurrentMaterial.Tiling);
-			if (CheckParameter(DetailTiling))     Shader->SetUniform(RenderData->DetailTiling,     CurrentMaterial.DetailTiling);
-			if (CheckParameter(Albedo))           Shader->SetUniform(RenderData->Albedo,           CurrentMaterial.Albedo);
-			if (CheckParameter(Roughness))        Shader->SetUniform(RenderData->Roughness,        CurrentMaterial.Roughness);
-			if (CheckParameter(Metallic))         Shader->SetUniform(RenderData->Metallic,         CurrentMaterial.Metallic);
-			if (CheckParameter(EmissionStrength)) Shader->SetUniform(RenderData->EmissionStrength, CurrentMaterial.EmissionStrength);
-			if (CheckParameter(Transparent))      Shader->SetUniform(RenderData->Transparent,      CurrentMaterial.Transparent);
-			if (CheckShader())                    Shader->SetUniform(RenderData->CameraPosition,   MainCamera.Pos);
+				if (ShadowTexture != nullptr)
+				{
+					Shader->SetUniform("Shadow", (TextureOpenGL*)ShadowTexture, 14);
+				}
+
+				if (CheckParameter(Tiling))           Shader->SetUniform(RenderData->Tiling, CurrentMaterial.Tiling);
+				if (CheckParameter(DetailTiling))     Shader->SetUniform(RenderData->DetailTiling, CurrentMaterial.DetailTiling);
+				if (CheckParameter(Albedo))           Shader->SetUniform(RenderData->Albedo, CurrentMaterial.Albedo);
+				if (CheckParameter(Roughness))        Shader->SetUniform(RenderData->Roughness, CurrentMaterial.Roughness);
+				if (CheckParameter(Metallic))         Shader->SetUniform(RenderData->Metallic, CurrentMaterial.Metallic);
+				if (CheckParameter(EmissionStrength)) Shader->SetUniform(RenderData->EmissionStrength, CurrentMaterial.EmissionStrength);
+				if (CheckParameter(Transparent))      Shader->SetUniform(RenderData->Transparent, CurrentMaterial.Transparent);
+				if (CheckShader())                    Shader->SetUniform(RenderData->CameraPosition, MainCamera.Pos);
+			}
 		}
 	}
 

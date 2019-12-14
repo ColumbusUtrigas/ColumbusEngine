@@ -25,6 +25,7 @@ namespace Columbus
 		MeshOpenGL();
 
 		virtual bool Load(const Model& InModel) final override;
+		bool Load(const SubModel& InModel);
 
 		virtual void Bind()     final override;
 		virtual uint32 Render() final override;

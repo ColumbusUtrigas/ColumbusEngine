@@ -13,3 +13,6 @@
 [submodule "Lib/ImGuizmo"]
 	path = Lib/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "Lib/tinyobjloader"]
+	path = Lib/tinyobjloader
+	url = https://github.com/syoyo/tinyobjloader.git

@@ -12,6 +12,8 @@ namespace Columbus
 	protected:
 		Box BoundingBox;
 	public:
+		std::vector<Mesh*> SubMeshes;
+	public:
 		Mesh() {}
 
 		bool Load(const char* FileName)
