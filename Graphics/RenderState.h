@@ -40,7 +40,7 @@ namespace Columbus
 		void SetDepthTesting(Material::DepthTest DepthTesting);
 		void SetDepthWriting(bool DepthWriting);
 		void SetMainCamera(const Camera& InMainCamera);
-		void SetMaterial(const Material& InMaterial, const Matrix& ModelMatrix, Skybox* Sky);
+		void SetMaterial(const Material& InMaterial, const Matrix& ModelMatrix, Skybox* Sky, bool UsePixelShader = true);
 		void SetLights(const std::vector<Light*>& InLights, const int32 LightIndices[4]);
 		void SetShaderProgram(ShaderProgram* InShaderProgram);
 		void SetMesh(Mesh* InMesh);

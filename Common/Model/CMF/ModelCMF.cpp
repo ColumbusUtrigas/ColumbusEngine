@@ -94,7 +94,10 @@ namespace Columbus
 
 			if (Data == nullptr) return false;
 
-			VerticesCount = Header.NumVertices;
+			SubModelsCount = 1;
+			SubModels = new SubModel[SubModelsCount];
+
+			SubModels[0].VerticesCount = Header.NumVertices;
 
 			for (uint32 i = 0; i < Header.NumArrays; i++)
 			{
@@ -110,32 +113,32 @@ namespace Columbus
 
 				switch (ArrayHeader.Type)
 				{
-				case CMF_TYPE_POSITION: Positions = CreateAndFill<Vector3>(VerticesCount, Data + Offset, ArrayHeader.Size); break;
-				case CMF_TYPE_TEXCOORD: UVs       = CreateAndFill<Vector2>(VerticesCount, Data + Offset, ArrayHeader.Size); break;
-				case CMF_TYPE_NORMAL:   Normals   = CreateAndFill<Vector3>(VerticesCount, Data + Offset, ArrayHeader.Size); break;
-				case CMF_TYPE_TANGENT:  Tangents  = CreateAndFill<Vector3>(VerticesCount, Data + Offset, ArrayHeader.Size); break;
+				case CMF_TYPE_POSITION: SubModels[0].Positions = CreateAndFill<Vector3>(SubModels[0].VerticesCount, Data + Offset, ArrayHeader.Size); break;
+				case CMF_TYPE_TEXCOORD: SubModels[0].UVs       = CreateAndFill<Vector2>(SubModels[0].VerticesCount, Data + Offset, ArrayHeader.Size); break;
+				case CMF_TYPE_NORMAL:   SubModels[0].Normals   = CreateAndFill<Vector3>(SubModels[0].VerticesCount, Data + Offset, ArrayHeader.Size); break;
+				case CMF_TYPE_TANGENT:  SubModels[0].Tangents  = CreateAndFill<Vector3>(SubModels[0].VerticesCount, Data + Offset, ArrayHeader.Size); break;
 				case CMF_TYPE_COLOR: break;
 				case CMF_TYPE_INDICES:
 					switch (ArrayHeader.Format)
 					{
 					case CMF_FORMAT_BYTE:
-					case CMF_FORMAT_UBYTE: IndexSize = 1; break;
+					case CMF_FORMAT_UBYTE: SubModels[0].IndexSize = 1; break;
 
 					case CMF_FORMAT_SHORT:
-					case CMF_FORMAT_USHORT: IndexSize = 2; break;
+					case CMF_FORMAT_USHORT: SubModels[0].IndexSize = 2; break;
 
 					case CMF_FORMAT_INT:
-					case CMF_FORMAT_UINT: IndexSize = 4; break;
+					case CMF_FORMAT_UINT: SubModels[0].IndexSize = 4; break;
 					}
 
-					IndicesCount = ArrayHeader.Size / IndexSize;
-					Indexed = true;
+					SubModels[0].IndicesCount = ArrayHeader.Size / SubModels[0].IndexSize;
+					SubModels[0].Indexed = true;
 
-					switch (IndexSize)
+					switch (SubModels[0].IndexSize)
 					{
-					case 1: Indices = CreateAndFill<uint8> (IndicesCount, Data + Offset, ArrayHeader.Size); break;
-					case 2: Indices = CreateAndFill<uint16>(IndicesCount, Data + Offset, ArrayHeader.Size); break;
-					case 4: Indices = CreateAndFill<uint32>(IndicesCount, Data + Offset, ArrayHeader.Size); break;
+					case 1: SubModels[0].Indices = (int*)CreateAndFill<uint8> (SubModels[0].IndicesCount, Data + Offset, ArrayHeader.Size); break;
+					case 2: SubModels[0].Indices = (int*)CreateAndFill<uint16>(SubModels[0].IndicesCount, Data + Offset, ArrayHeader.Size); break;
+					case 4: SubModels[0].Indices = (int*)CreateAndFill<uint32>(SubModels[0].IndicesCount, Data + Offset, ArrayHeader.Size); break;
 					}
 
 					break;
@@ -146,73 +149,10 @@ namespace Columbus
 
 			delete[] Data;
 
-			for (uint32 i = 0; i < VerticesCount; i++)
-			{
-				if (Positions[i].X < BoundingBox.Min.X) BoundingBox.Min.X = Positions[i].X;
-				if (Positions[i].X > BoundingBox.Max.X) BoundingBox.Max.X = Positions[i].X;
-				if (Positions[i].Y < BoundingBox.Min.Y) BoundingBox.Min.Y = Positions[i].Y;
-				if (Positions[i].Y > BoundingBox.Max.Y) BoundingBox.Max.Y = Positions[i].Y;
-				if (Positions[i].Z < BoundingBox.Min.Z) BoundingBox.Min.Z = Positions[i].Z;
-				if (Positions[i].Z > BoundingBox.Max.Z) BoundingBox.Max.Z = Positions[i].Z;
-			}
-
 			return true;
 		}
-		else
-		{
-			File Model(FileName, "rb");
-			if (!Model.IsOpened()) return false;
 
-			HeaderCMF Header;
-			Model.Read(Header.Magic);
-			Model.Read(Header.Count);
-			Model.Read(Header.Compression);
-
-			Positions = new Vector3[Header.Count * 3];
-			UVs = new Vector2[Header.Count * 3];
-			Normals = new Vector3[Header.Count * 3];
-
-			Indexed = false;
-			VerticesCount = Header.Count * 3;
-			IndicesCount = 0;
-
-			if (Header.Compression == 0x00)
-			{
-				Model.ReadBytes(Positions, Header.Count * 3 * 3 * sizeof(float));
-				Model.ReadBytes(UVs, Header.Count * 3 * 2 * sizeof(float));
-				Model.ReadBytes(Normals, Header.Count * 3 * 3 * sizeof(float));
-			}
-			else if (Header.Compression == 0xFF)
-			{
-				uint8* FileData = new uint8[Model.GetSize()];
-				Model.ReadBytes(FileData, Model.GetSize());
-
-				uint64 DecompressedSize = ZSTD_getDecompressedSize(FileData, (size_t)Model.GetSize() - 26);
-				uint8* Decompressed = new uint8[DecompressedSize];
-				ZSTD_decompress(Decompressed, DecompressedSize, FileData, (size_t)Model.GetSize() - 26);
-
-				memcpy((void*)Positions, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
-				memcpy((void*)UVs, Decompressed, Header.Count * sizeof(float) * 3 * 2); Decompressed += Header.Count * sizeof(float) * 3 * 2;
-				memcpy((void*)Normals, Decompressed, Header.Count * sizeof(float) * 3 * 3); Decompressed += Header.Count * sizeof(float) * 3 * 3;
-
-				Decompressed -= DecompressedSize;
-
-				delete[] Decompressed;
-				delete[] FileData;
-			}
-
-			for (uint32 i = 0; i < Header.Count; i++)
-			{
-				if (Positions[i].X < BoundingBox.Min.X) BoundingBox.Min.X = Positions[i].X;
-				if (Positions[i].X > BoundingBox.Max.X) BoundingBox.Max.X = Positions[i].X;
-				if (Positions[i].Y < BoundingBox.Min.Y) BoundingBox.Min.Y = Positions[i].Y;
-				if (Positions[i].Y > BoundingBox.Max.Y) BoundingBox.Max.Y = Positions[i].Y;
-				if (Positions[i].Z < BoundingBox.Min.Z) BoundingBox.Min.Z = Positions[i].Z;
-				if (Positions[i].Z > BoundingBox.Max.Z) BoundingBox.Max.Z = Positions[i].Z;
-			}
-		}
-
-		return true;
+		return false;
 	}
 
 	bool ModelLoaderCMF::IsCMF(const char* FileName)

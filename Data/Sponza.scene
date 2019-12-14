@@ -6,7 +6,7 @@
 		"sponza"
 	],
 	"Meshes": [
-		"Sponza.cmf"
+		"sponza.obj"
 	],
 	"Objects": [
 		{
@@ -16,6 +16,7 @@
 				"InnerCutoff": 30,
 				"OuterCutoff": 90,
 				"Range": 300,
+				"Shadows": true,
 				"Type": "Spot"
 			},
 			"Material": null,
@@ -34,6 +35,7 @@
 				"InnerCutoff": 30,
 				"OuterCutoff": 90,
 				"Range": 300,
+				"Shadows": true,
 				"Type": "Spot"
 			},
 			"Material": null,
@@ -47,13 +49,13 @@
 		},
 		{
 			"Material": "sponza",
-			"MeshRenderer": "Sponza.cmf",
+			"MeshRenderer": "sponza.obj",
 			"Name": "Sponza",
 			"Static": false,
 			"Transform": {
 				"Position": [0, 3.4, 0],
-				"Rotation": [90, 0, 0],
-				"Scale": [1, 1, 1]
+				"Rotation": [0, 0, 0],
+				"Scale": [0.1, 0.1, 0.1]
 			}
 		}
 	],

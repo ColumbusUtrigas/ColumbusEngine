@@ -162,16 +162,33 @@ namespace Columbus
 							if (Object->material == nullptr) continue;
 							Material& Mat = *Object->material;
 
-							if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
+							for (auto& mesh : Mesh->SubMeshes)
 							{
-								if (Mat.Transparent)
-									TransparentObjects.emplace_back(Mesh, Counter);
-								else
-									OpaqueObjects.emplace_back(Mesh, Counter);
+								if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
+								{
+									if (Mat.Transparent)
+										TransparentObjects.emplace_back(mesh, Counter);
+									else
+										OpaqueObjects.emplace_back(mesh, Counter);
+								}
+
+								if (!Mat.Transparent)
+									ShadowsObjects.emplace_back(mesh, Counter);
 							}
 
-							if (!Mat.Transparent)
-								ShadowsObjects.emplace_back(Mesh, Counter);
+							if (Mesh->SubMeshes.empty())
+							{
+								if (ViewFrustum.Check(Mesh->GetBoundingBox() * Object->transform.GetMatrix()))
+								{
+									if (Mat.Transparent)
+										TransparentObjects.emplace_back(Mesh, Counter);
+									else
+										OpaqueObjects.emplace_back(Mesh, Counter);
+								}
+
+								if (!Mat.Transparent)
+									ShadowsObjects.emplace_back(Mesh, Counter);
+							}
 						}
 					}
 
@@ -270,7 +287,7 @@ namespace Columbus
 					State.SetDepthTesting(Mat.DepthTesting);
 					State.SetDepthWriting(Mat.DepthWriting);
 					State.SetShaderProgram(Mat.GetShader());
-					State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
+					State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky, false);
 					State.SetMesh(Object.Object);
 
 					PolygonsRendered += Object.Object->Render();
