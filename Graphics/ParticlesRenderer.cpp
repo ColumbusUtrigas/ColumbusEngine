@@ -14,20 +14,16 @@ namespace Columbus
 	{
 		MaxSize = NewSize;
 
+		auto Array = BufferType::Array;
 		auto Write = BufferUsage::Write;
 		auto Dynamic = BufferCpuAccess::Dynamic;
 
 		size_t VerticesCount = MaxSize * 6;
 
-		PositionsBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector3), Write, Dynamic));
-		    SizesBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector3), Write, Dynamic));
-		   ColorsBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector4), Write, Dynamic));
-		OtherDataBuffer.CreateArray(BufferDesc(VerticesCount * sizeof(Vector2), Write, Dynamic));
-
-		PositionsBuffer.Load(nullptr);
-		    SizesBuffer.Load(nullptr);
-		   ColorsBuffer.Load(nullptr);
-		OtherDataBuffer.Load(nullptr);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Write, Dynamic), &PositionsBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Write, Dynamic), &SizesBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector4), Array, Write, Dynamic), &ColorsBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector2), Array, Write, Dynamic), &OtherDataBuffer);
 	}
 
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
@@ -84,10 +80,10 @@ namespace Columbus
 			Vector4* Colors;
 			Vector2* OtherData;
 
-			PositionsBuffer.Map((void*&)Positions, BufferMapAccess::Write);
-			    SizesBuffer.Map((void*&)Sizes,     BufferMapAccess::Write);
-			   ColorsBuffer.Map((void*&)Colors,    BufferMapAccess::Write);
-			OtherDataBuffer.Map((void*&)OtherData, BufferMapAccess::Write);
+			gDevice->MapBuffer(PositionsBuffer, BufferMapAccess::Write, (void*&)Positions);
+			gDevice->MapBuffer(SizesBuffer,     BufferMapAccess::Write, (void*&)Sizes);
+			gDevice->MapBuffer(ColorsBuffer,    BufferMapAccess::Write, (void*&)Colors);
+			gDevice->MapBuffer(OtherDataBuffer, BufferMapAccess::Write, (void*&)OtherData);
 
 			for (size_t i = 0; i < Particles.Particles.Count; i++)
 			{
@@ -101,19 +97,26 @@ namespace Columbus
 				}
 			}
 
-			PositionsBuffer.Unmap();
-			    SizesBuffer.Unmap();
-			   ColorsBuffer.Unmap();
-			OtherDataBuffer.Unmap();
+			gDevice->UnmapBuffer(PositionsBuffer);
+			gDevice->UnmapBuffer(SizesBuffer);
+			gDevice->UnmapBuffer(ColorsBuffer);
+			gDevice->UnmapBuffer(OtherDataBuffer);
 
 			glBindVertexArray(Particles_VAO);
 
-			PositionsBuffer.VertexAttribute<float>(0, 3, false, 0, 0);
-			    SizesBuffer.VertexAttribute<float>(1, 3, false, 0, 0);
-			   ColorsBuffer.VertexAttribute<float>(2, 4, false, 0, 0);
-			OtherDataBuffer.VertexAttribute<float>(3, 2, false, 0, 0);
+			InputLayout layout;
+			layout.NumElements = 4;
+			layout.Elements[0] = InputLayoutElement{ 0, 3 };
+			layout.Elements[1] = InputLayoutElement{ 1, 3 };
+			layout.Elements[2] = InputLayoutElement{ 2, 4 };
+			layout.Elements[3] = InputLayoutElement{ 3, 2 };
 
-			glDrawArrays(GL_TRIANGLES, 0, Particles.Particles.Count * 6);
+			Buffer* ppBuffers[] = { PositionsBuffer, SizesBuffer, ColorsBuffer, OtherDataBuffer };
+			gDevice->IASetInputLayout(&layout);
+			gDevice->IASetVertexBuffers(0, 4, ppBuffers);
+			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+			gDevice->Draw(Particles.Particles.Count * 6, 0);
+
 			glBindVertexArray(0);
 		}
 
