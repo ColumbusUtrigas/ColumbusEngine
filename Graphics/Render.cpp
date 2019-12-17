@@ -636,11 +636,27 @@ namespace Columbus
 			}
 		}
 
-		static BufferOpenGL lightingUBO(BufferType::Uniform, {
+		static Buffer* buf;
+		static bool ludbufres =
+		gDevice->CreateBuffer(BufferDesc{
+			sizeof(lightingUboData),
+			BufferType::Uniform,
+			BufferUsage::Write,
+			BufferCpuAccess::Stream
+		}, &buf);
+
+		void* data;
+		gDevice->MapBuffer(buf, BufferMapAccess::Write, data);
+		memcpy(data, &lightingUboData, sizeof(lightingUboData));
+		gDevice->UnmapBuffer(buf);
+
+
+
+		/*static BufferOpenGL lightingUBO(BufferType::Uniform, {
 			sizeof(lightingUboData),
 			BufferUsage::Write,
 			BufferCpuAccess::Stream
-		});
+		});*/
 
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
@@ -652,8 +668,9 @@ namespace Columbus
 		shadowEffect.Bind({0}, {0}, shadowSize);
 		RenderShadows(shadowSize);
 
-		lightingUBO.Load(&lightingUboData);
-		lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
+		//lightingUBO.Load(&lightingUboData);
+		//lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
+		gDevice->BindBufferRange(buf, 0, 0, sizeof(lightingUboData));
 
 		// RENDERING
 		//

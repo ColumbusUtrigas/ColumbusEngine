@@ -2,7 +2,7 @@
 
 #include <Graphics/Particles/ParticleEmitterCPU.h>
 #include <Graphics/Material.h>
-#include <Graphics/OpenGL/BufferOpenGL.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -12,10 +12,10 @@ namespace Columbus
 	private:
 		size_t MaxSize = 0;
 
-		BufferOpenGL PositionsBuffer;
-		BufferOpenGL SizesBuffer;
-		BufferOpenGL ColorsBuffer;
-		BufferOpenGL OtherDataBuffer;
+		Buffer* PositionsBuffer;
+		Buffer* SizesBuffer;
+		Buffer* ColorsBuffer;
+		Buffer* OtherDataBuffer;
 	private:
 		void Allocate(size_t NewSize);
 	public:

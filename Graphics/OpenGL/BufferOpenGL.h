@@ -1,48 +1,26 @@
 #pragma once
 
 #include <Core/Types.h>
+#include <Graphics/Buffer.h>
 #include <GL/glew.h>
 
 namespace Columbus
 {
 
-	enum class BufferType
+	class BufferOpenGL2 : public Buffer
 	{
-		Array,
-		Index,
-		Uniform
-	};
+	private:
+		GLuint gl_Handle;
+	public:
+		BufferOpenGL2(const BufferDesc& Desc)
+		{
+			this->Desc = Desc;
+		}
 
-	enum class BufferMapAccess
-	{
-		Read,
-		Write,
-		ReadWrite
-	};
-
-	enum class BufferUsage
-	{
-		Read,
-		Write,
-		Copy
-	};
-
-	enum class BufferCpuAccess
-	{
-		Static,
-		Dynamic,
-		Stream
-	};
-
-	struct BufferDesc
-	{
-		uint64 Size;
-		BufferUsage Usage;
-		BufferCpuAccess CpuAccess;
-
-		BufferDesc(uint64 Size = 0, BufferUsage Usage = BufferUsage::Write,
-			BufferCpuAccess CpuAccess = BufferCpuAccess::Static)
-		: Size(Size), Usage(Usage), CpuAccess(CpuAccess) {}
+		void* GetHandle() final override
+		{
+			return static_cast<void*>(&gl_Handle);
+		}
 	};
 
 	class BufferOpenGL
