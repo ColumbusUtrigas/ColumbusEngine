@@ -4,6 +4,7 @@
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
+#include <Graphics/OpenGL/TypeConversions.h>
 
 namespace Columbus
 {
@@ -33,6 +34,16 @@ namespace Columbus
 		return new FramebufferOpenGL();
 	}
 
+	void DeviceOpenGL::IASetPrimitiveTopology(PrimitiveTopology Topology)
+	{
+		_currentTopology = Topology;
+	}
+
+	void DeviceOpenGL::IASetInputLayout(InputLayout* Layout)
+	{
+		_currentLayout = *Layout;
+	}
+
 	void DeviceOpenGL::IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers)
 	{
 		for (int i = 0; i < NumBuffers; i++)
@@ -45,13 +56,26 @@ namespace Columbus
 		}
 	}
 
+	void DeviceOpenGL::OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef)
+	{
+		_currentDepthStencil = pDepthStencilState->Desc;
+
+		if (pDepthStencilState->Desc.DepthEnable)
+			glEnable(GL_DEPTH_TEST);
+		else
+			glDisable(GL_DEPTH_TEST);
+
+		glDepthMask(pDepthStencilState->Desc.DepthWriteMask ? GL_TRUE : GL_FALSE);
+		glDepthFunc(ComparisonFuncToGL(pDepthStencilState->Desc.DepthFunc));
+	}
+
 	bool DeviceOpenGL::CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer)
 	{
 		*ppBuffer = new BufferOpenGL2(Desc);
 		auto pBuffer = *ppBuffer;
-		auto type = _GetBufferTypeGL(Desc.BindFlags);
+		auto type = BufferTypeToGL(Desc.BindFlags);
 		auto phandle = static_cast<GLuint*>(pBuffer->GetHandle());
-		auto cpuAccess = _GetBufferCpuAccessGL(Desc.Usage, Desc.CpuAccess);
+		auto cpuAccess = BufferUsageAndAccessToGL(Desc.Usage, Desc.CpuAccess);
 
 		glCreateBuffers(1, static_cast<GLuint*>(pBuffer->GetHandle()));
 		glBindBuffer(type, *phandle);
@@ -62,7 +86,7 @@ namespace Columbus
 
 	void DeviceOpenGL::BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size)
 	{
-		auto type = _GetBufferTypeGL(pBuffer->GetDesc().BindFlags);
+		auto type = BufferTypeToGL(pBuffer->GetDesc().BindFlags);
 		auto glhandle = *static_cast<GLuint*>(pBuffer->GetHandle());
 		glBindBufferRange(type, Index, glhandle, Offset, Size);
 	}
@@ -77,7 +101,7 @@ namespace Columbus
 		case BufferMapAccess::ReadWrite: A = GL_READ_WRITE; break;
 		}
 
-		auto type = _GetBufferTypeGL(pBuffer->GetDesc().BindFlags);
+		auto type = BufferTypeToGL(pBuffer->GetDesc().BindFlags);
 		auto glhandle = *static_cast<GLuint*>(pBuffer->GetHandle());
 
 		glBindBuffer(type, glhandle);
@@ -86,7 +110,7 @@ namespace Columbus
 
 	void DeviceOpenGL::UnmapBuffer(Buffer* pBuffer)
 	{
-		auto type = _GetBufferTypeGL(pBuffer->GetDesc().BindFlags);
+		auto type = BufferTypeToGL(pBuffer->GetDesc().BindFlags);
 		auto glhandle = *static_cast<GLuint*>(pBuffer->GetHandle());
 		glBindBuffer(type, glhandle);
 		glUnmapBuffer(type);
@@ -94,7 +118,7 @@ namespace Columbus
 
 	void DeviceOpenGL::Draw(uint32 VertexCount, uint32 StartVertexLocation)
 	{
-		auto mode = _GetPrimitiveTopologyGL(_currentTopology);
+		auto mode = PrimitiveTopologyToGL(_currentTopology);
 		glDrawArrays(mode, StartVertexLocation, VertexCount);
 	}
 	

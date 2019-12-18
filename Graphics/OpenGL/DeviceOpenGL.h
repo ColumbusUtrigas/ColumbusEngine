@@ -7,6 +7,11 @@ namespace Columbus
 
 	class DeviceOpenGL : public Device
 	{
+	private:
+		PrimitiveTopology _currentTopology;
+		InputLayout _currentLayout;
+		DepthStencilStateDesc _currentDepthStencil;
+		uint32 _currentStencilRef;
 	public:
 		DeviceOpenGL();
 
@@ -15,7 +20,11 @@ namespace Columbus
 		virtual Mesh* CreateMesh() const override;
 		virtual Framebuffer* CreateFramebuffer() const override;
 
+		virtual void IASetPrimitiveTopology(PrimitiveTopology Topology) final override;
+		virtual void IASetInputLayout(InputLayout* Layout) final override;
 		virtual void IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers) final override;
+
+		virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) final override;
 
 		virtual bool CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer) final override;
 		virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) final override;
