@@ -56,8 +56,15 @@ namespace Columbus
 		case ParticleEmitterCPU::BlendMode::Multiply: break; // TODO
 		}
 
-		glDisable(GL_CULL_FACE);
-		glDepthMask(GL_FALSE);
+		DepthStencilStateDesc DSDesc;
+		DSDesc.DepthEnable = true;
+		DSDesc.DepthWriteMask = false;
+		DSDesc.StencilEnable = false;
+
+		DepthStencilState DSState;
+		DSState.Desc = DSDesc;
+
+		gDevice->OMSetDepthStencilState(&DSState, 0);
 
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)
@@ -106,10 +113,10 @@ namespace Columbus
 
 			InputLayout layout;
 			layout.NumElements = 4;
-			layout.Elements[0] = InputLayoutElement{ 0, 3 };
-			layout.Elements[1] = InputLayoutElement{ 1, 3 };
-			layout.Elements[2] = InputLayoutElement{ 2, 4 };
-			layout.Elements[3] = InputLayoutElement{ 3, 2 };
+			layout.Elements[0] = InputLayoutElementDesc{ 0, 3 };
+			layout.Elements[1] = InputLayoutElementDesc{ 1, 3 };
+			layout.Elements[2] = InputLayoutElementDesc{ 2, 4 };
+			layout.Elements[3] = InputLayoutElementDesc{ 3, 2 };
 
 			Buffer* ppBuffers[] = { PositionsBuffer, SizesBuffer, ColorsBuffer, OtherDataBuffer };
 			gDevice->IASetInputLayout(&layout);

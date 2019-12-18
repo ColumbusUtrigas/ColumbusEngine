@@ -16,9 +16,11 @@ namespace Columbus
 		virtual void Update(float TimeTick, Transform& Trans) override {}
 		virtual void OnComponentAdd() override
 		{
+			bool first = true;
 			for (auto& mat : Object->SubMeshes)
 			{
-				gameObject->materials.push_back(nullptr);
+				gameObject->materials.push_back(first ? gameObject->material : nullptr);
+				first = false;
 			}
 		}
 

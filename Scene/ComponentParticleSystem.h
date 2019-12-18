@@ -16,6 +16,11 @@ namespace Columbus
 	public:
 		ComponentParticleSystem(ParticleEmitterCPU&& Particles) : Emitter(std::move(Particles)) {}
 
+		virtual void OnComponentAdd() override
+		{
+			gameObject->materials.push_back(gameObject->material);
+		}
+
 		virtual void Update(float TimeTick, Transform& Trans) override
 		{
 			Emitter.Position = Trans.Position;
