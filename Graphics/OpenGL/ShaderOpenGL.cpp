@@ -1,5 +1,4 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
-#include <Graphics/OpenGL/StandartShadersOpenGL.h>
 #include <GL/glew.h>
 
 #include <System/File.h>
@@ -375,37 +374,6 @@ void main(void)
 	void ShaderProgramOpenGL::Unbind() const
 	{
 		glUseProgram(0);
-	}
-
-	bool ShaderProgramOpenGL::Load(ShaderProgram::StandartProgram Program)
-	{
-		#define STD_PROG_CASE(x) \
-			case ShaderProgram::StandartProgram::x: \
-				LoadFromMemory(g##x##Shader, #x); \
-				break;
-
-		switch (Program)
-		{
-		STD_PROG_CASE(ScreenSpace);
-		STD_PROG_CASE(AutoExposure);
-		STD_PROG_CASE(Tonemap);
-		STD_PROG_CASE(ResolveMSAA);
-		STD_PROG_CASE(GaussBlur);
-		STD_PROG_CASE(BloomBright);
-		STD_PROG_CASE(Bloom);
-		STD_PROG_CASE(Vignette);
-		STD_PROG_CASE(FXAA);
-		STD_PROG_CASE(Icon);
-		STD_PROG_CASE(EditorTools);
-		STD_PROG_CASE(Skybox);
-		STD_PROG_CASE(SkyboxCubemapGeneration);
-		STD_PROG_CASE(IrradianceGeneration);
-		STD_PROG_CASE(PrefilterGeneration);
-		STD_PROG_CASE(IntegrationGeneration);
-		}
-
-		Loaded = true;
-		return true;
 	}
 
 	bool ShaderProgramOpenGL::LoadFromMemory(const char* Source, const char* FilePath)

@@ -61,10 +61,9 @@ namespace Columbus
 		DSDesc.DepthWriteMask = false;
 		DSDesc.StencilEnable = false;
 
-		DepthStencilState DSState;
-		DSState.Desc = DSDesc;
-
-		gDevice->OMSetDepthStencilState(&DSState, 0);
+		DepthStencilState* DSState;
+		gDevice->CreateDepthStencilState(DSDesc, &DSState);
+		gDevice->OMSetDepthStencilState(DSState, 0);
 
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)

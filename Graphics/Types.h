@@ -32,4 +32,55 @@ namespace Columbus
 		Decr
 	};
 
+	enum class Blend
+	{
+		Zero,
+		One,
+		SrcColor,
+		InvSrcColor,
+		SrcAlpha,
+		InvSrcAlph,
+		DestAlpha,
+		InvDestAlpha,
+		DestColor,
+		InvDestColor,
+		SrcAlphaSat,
+		BlendFactor,
+		InvBlendFactor,
+		Src1Color,
+		InvSrc1Color,
+		Src1Alpha,
+		InvSrc1Alpha
+	};
+
+	enum class BlendOp
+	{
+		Add,
+		Subtract,
+		RevSubtract,
+		Min,
+		Max
+	};
+
+	enum class FillMode
+	{
+		Wireframe,
+		Solid
+	};
+
+	enum class CullMode
+	{
+		No,
+		Front,
+		Back
+	};
+
+	enum COLOR_MASK
+	{
+		COLOR_MASK_RED = 1,
+		COLOR_MASK_GREEN = 2,
+		COLOR_MASK_BLUE = 4,
+		COLOR_MASK_ALPHA = 8,
+		COLOR_MASK_ALL = COLOR_MASK_RED | COLOR_MASK_GREEN | COLOR_MASK_BLUE | COLOR_MASK_ALPHA
+	};
 }

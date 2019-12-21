@@ -69,7 +69,7 @@ namespace Columbus
 
 	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, uint32 VAO, uint32 IBO)
 	{
-		auto SkyboxCubemapGenerationShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->SkyboxCubemapGeneration;
+		auto SkyboxCubemapGenerationShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->SkyboxCubemapGeneration.get();
 
 		iVector2 Resolution(1024);
 
@@ -110,7 +110,7 @@ namespace Columbus
 
 	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO, uint32 IBO)
 	{
-		auto IrradianceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->IrradianceGeneration;
+		auto IrradianceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->IrradianceGeneration.get();
 
 		if (IrradianceMap == nullptr)
 		{
@@ -151,7 +151,7 @@ namespace Columbus
 
 	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, uint32 VAO, uint32 IBO)
 	{
-		auto PrefilterShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->PrefilterGeneration;
+		auto PrefilterShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->PrefilterGeneration.get();
 
 		uint32 MaxMips = 8;
 		uint32 Resolution = 256;
@@ -228,7 +228,7 @@ namespace Columbus
 	{
 		if (Tex != nullptr)
 		{
-			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox);
+			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox.get());
 
 			ShaderOpenGL->Bind();
 

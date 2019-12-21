@@ -172,7 +172,7 @@ namespace Columbus
 									if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 									{
 										if (mat.Transparent)
-											TransparentObjects.emplace_back(mesh, Counter);
+											TransparentObjects.emplace_back(mesh, &mat, Counter);
 										else
 											OpaqueObjects.emplace_back(mesh, Counter, &mat);
 									}
@@ -190,7 +190,7 @@ namespace Columbus
 
 						if (Emitter != nullptr)
 						{
-							TransparentObjects.emplace_back(Emitter, Counter);
+							TransparentObjects.emplace_back(Emitter, Object->materials[0], Counter);
 						}
 					}
 				}
@@ -295,22 +295,31 @@ namespace Columbus
 		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
 
 		State.Clear();
-
-		State.SetBlending(false);
+		//State.SetBlending(false);
 
 		for (auto& Object : OpaqueObjects)
 		{
-			SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-			if (GO->material == nullptr) continue;
-			//Material& Mat = *GO->material;
+			auto& GO = Scn->Objects[Object.Index];
+			if (Object.Mat == nullptr) continue;
 			Material& Mat = *Object.Mat;
 			ShaderProgram* CurrentShader = Mat.ShaderProg;
+
+			DepthStencilStateDesc DSD;
+			DSD.DepthEnable = true;
+			DSD.DepthWriteMask = true;
+			DSD.DepthFunc = (ComparisonFunc)Mat.DepthTesting;
+			DepthStencilState* DS;
+			gDevice->CreateDepthStencilState(DSD, &DS);
 				
 			if (CurrentShader != nullptr)
 			{
-				State.SetCulling(Mat.Culling);
-				State.SetDepthTesting(Mat.DepthTesting);
-				State.SetDepthWriting(Mat.DepthWriting);
+				gDevice->OMSetDepthStencilState(DS, 0);
+				//gDevice->OMSetBlendState();
+				//gDevice->RSSetState();
+
+				//State.SetCulling(Mat.Culling);
+				//State.SetDepthTesting(Mat.DepthTesting);
+				//State.SetDepthWriting(Mat.DepthWriting);
 				State.SetShaderProgram(Mat.GetShader());
 				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
 				State.SetMesh(Object.Object);
@@ -349,7 +358,7 @@ namespace Columbus
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
 				if (GO->material == nullptr) continue;
-				Material& Mat = *GO->material;
+				Material& Mat = *Object.Mat;
 
 				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
 				Mesh* CurrentMesh = Object.MeshObject;
@@ -452,7 +461,7 @@ namespace Columbus
 
 	void Renderer::RenderIcons()
 	{
-		auto Icon = gDevice->GetDefaultShaders()->Icon;
+		auto Icon = gDevice->GetDefaultShaders()->Icon.get();
 
 		static int IconTextureID = ((ShaderProgramOpenGL*)(Icon))->GetFastUniform("Texture");
 		static int IconPosID = ((ShaderProgramOpenGL*)(Icon))->GetFastUniform("Pos");
@@ -582,11 +591,11 @@ namespace Columbus
 
 		auto defaultShaders = gDevice->GetDefaultShaders();
 
-		auto ScreenSpaceShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->ScreenSpace);
-		auto TonemapShader     = static_cast<ShaderProgramOpenGL*>(defaultShaders->Tonemap);
-		auto MSAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->ResolveMSAA);
-		auto FXAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->FXAA);
-		auto EditorToolsShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->EditorTools);
+		auto ScreenSpaceShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->ScreenSpace.get());
+		auto TonemapShader     = static_cast<ShaderProgramOpenGL*>(defaultShaders->Tonemap.get());
+		auto MSAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->ResolveMSAA.get());
+		auto FXAAShader        = static_cast<ShaderProgramOpenGL*>(defaultShaders->FXAA.get());
+		auto EditorToolsShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->EditorTools.get());
 
 		if (ContextSize.X == 0) ContextSize.X = 1;
 		if (ContextSize.Y == 0) ContextSize.Y = 1;

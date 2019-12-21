@@ -73,17 +73,20 @@ namespace Columbus
 		{
 			Mesh* MeshObject;
 			ParticleEmitterCPU* Particles;
+			Material* Mat;
 			uint32 Index; // Index of GameObject in array
 			//int32 Lights[4] = { -1, -1, -1, -1 };
 
-			TransparentRenderData(Mesh* InMesh, uint32 InIndex) :
+			TransparentRenderData(Mesh* InMesh, Material* Mat, uint32 InIndex) :
 				MeshObject(InMesh),
 				Particles(nullptr),
+				Mat(Mat),
 				Index(InIndex) {}
 
-			TransparentRenderData(ParticleEmitterCPU* CPU, uint32 InIndex) :
+			TransparentRenderData(ParticleEmitterCPU* CPU, Material* Mat, uint32 InIndex) :
 				MeshObject(nullptr),
 				Particles(CPU),
+				Mat(Mat),
 				Index(InIndex) {}
 		};
 	protected:

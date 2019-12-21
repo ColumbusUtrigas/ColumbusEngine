@@ -50,7 +50,7 @@ namespace Columbus
 
 	void CreateIntegrationMap(std::unique_ptr<Texture>& IntegrationMap)
 	{
-		auto IntegrationShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->IntegrationGeneration);
+		auto IntegrationShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->IntegrationGeneration.get());
 		uint32 Resolution = 256;
 		TextureFormat Format = TextureFormat::RG16F;
 
