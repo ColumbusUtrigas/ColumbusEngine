@@ -13,9 +13,9 @@ namespace Columbus
 		{
 			PROFILE_GPU(ProfileModuleGPU::BloomStage);
 			
-			auto brightShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->BloomBright;
-			auto blurShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->GaussBlur;
-			auto bloomShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Bloom;
+			auto brightShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->BloomBright.get();
+			auto blurShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->GaussBlur.get();
+			auto bloomShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->Bloom.get();
 
 			// bloom bright pass
 			Post[0].ColorTexturesEnablement[0] = true;

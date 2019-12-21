@@ -5,86 +5,100 @@
 namespace Columbus
 {
 
+	static const char* gScreenSpaceShader =
+		#include <Graphics/Shaders/ScreenSpace.csl>
+	;
+
+	static const char* gAutoExposureShader =
+		#include <Graphics/Shaders/AutoExposure.csl>
+	;
+
+	static const char* gTonemapShader =
+		#include <Graphics/Shaders/Tonemap.csl>
+	;
+
+	static const char* gResolveMSAAShader =
+		#include <Graphics/Shaders/ResolveMSAA.csl>
+	;
+
+	static const char* gGaussBlurShader =
+		#include <Graphics/Shaders/GaussBlur.csl>
+	;
+
+	static const char* gBloomBrightShader =
+		#include <Graphics/Shaders/BloomBright.csl>
+	;
+
+	static const char* gBloomShader =
+		#include <Graphics/Shaders/Bloom.csl>
+	;
+
+	static const char* gVignetteShader =
+		#include <Graphics/Shaders/Vignette.csl>
+	;
+
+	static const char* gFXAAShader =
+		#include <Graphics/Shaders/FXAA.csl>
+	;
+
+	static const char* gIconShader =
+		#include <Graphics/Shaders/Icon.csl>
+	;
+
+	static const char* gEditorToolsShader =
+		#include <Graphics/Shaders/EditorTools.csl>
+	;
+
+	static const char* gSkyboxShader =
+		#include <Graphics/Shaders/Skybox.csl>
+	;
+
+	static const char* gSkyboxCubemapGenerationShader =
+		#include <Graphics/Shaders/SkyboxCubemapGeneration.csl>
+	;
+
+	static const char* gIrradianceGenerationShader =
+		#include <Graphics/Shaders/IrradianceGeneration.csl>
+	;
+
+	static const char* gPrefilterGenerationShader =
+		#include <Graphics/Shaders/PrefilterGeneration.csl>
+	;
+
+	static const char* gIntegrationGenerationShader =
+		#include <Graphics/Shaders/IntegrationGeneration.csl>
+	;
+
 	DefaultShaders::DefaultShaders()
 	{
-		ScreenSpace = gDevice->CreateShaderProgram();
-		AutoExposure = gDevice->CreateShaderProgram();
-		Tonemap = gDevice->CreateShaderProgram();
-		ResolveMSAA = gDevice->CreateShaderProgram();
-		GaussBlur = gDevice->CreateShaderProgram();
-		BloomBright = gDevice->CreateShaderProgram();
-		Bloom = gDevice->CreateShaderProgram();
-		Vignette = gDevice->CreateShaderProgram();
-		FXAA = gDevice->CreateShaderProgram();
-		Icon = gDevice->CreateShaderProgram();
-		EditorTools = gDevice->CreateShaderProgram();
-		Skybox = gDevice->CreateShaderProgram();
-		SkyboxCubemapGeneration = gDevice->CreateShaderProgram();
-		IrradianceGeneration = gDevice->CreateShaderProgram();
-		PrefilterGeneration = gDevice->CreateShaderProgram();
-		IntegrationGeneration = gDevice->CreateShaderProgram();
+#define LOAD_SHADER(name) \
+name = std::unique_ptr<ShaderProgram>(gDevice->CreateShaderProgram()); \
+name->LoadFromMemory(g##name##Shader, #name); \
+name->Compile();
 
 		printf("\n");
-		Log::Initialization("Default shaders loading");
+		Log::Initialization("Default shaders loading\n");
 
-		ScreenSpace->Load(ShaderProgram::StandartProgram::ScreenSpace);
-		AutoExposure->Load(ShaderProgram::StandartProgram::AutoExposure);
-		Tonemap->Load(ShaderProgram::StandartProgram::Tonemap);
-		ResolveMSAA->Load(ShaderProgram::StandartProgram::ResolveMSAA);
-		GaussBlur->Load(ShaderProgram::StandartProgram::GaussBlur);
-		BloomBright->Load(ShaderProgram::StandartProgram::BloomBright);
-		Bloom->Load(ShaderProgram::StandartProgram::Bloom);
-		Vignette->Load(ShaderProgram::StandartProgram::Vignette);
-		FXAA->Load(ShaderProgram::StandartProgram::FXAA);
-		Icon->Load(ShaderProgram::StandartProgram::Icon);
-		EditorTools->Load(ShaderProgram::StandartProgram::EditorTools);
-		Skybox->Load(ShaderProgram::StandartProgram::Skybox);
-		SkyboxCubemapGeneration->Load(ShaderProgram::StandartProgram::SkyboxCubemapGeneration);
-		IrradianceGeneration->Load(ShaderProgram::StandartProgram::IrradianceGeneration);
-		PrefilterGeneration->Load(ShaderProgram::StandartProgram::PrefilterGeneration);
-		IntegrationGeneration->Load(ShaderProgram::StandartProgram::IntegrationGeneration);
-
-		printf("\n");
-		Log::Initialization("Default shaders compiling");
-
-		ScreenSpace->Compile();
-		AutoExposure->Compile();
-		Tonemap->Compile();
-		ResolveMSAA->Compile();
-		GaussBlur->Compile();
-		BloomBright->Compile();
-		Bloom->Compile();
-		Vignette->Compile();
-		FXAA->Compile();
-		Icon->Compile();
-		EditorTools->Compile();
-		Skybox->Compile();
-		SkyboxCubemapGeneration->Compile();
-		IrradianceGeneration->Compile();
-		PrefilterGeneration->Compile();
-		IntegrationGeneration->Compile();
-
-		printf("\n");
+		LOAD_SHADER(ScreenSpace);
+		LOAD_SHADER(AutoExposure);
+		LOAD_SHADER(Tonemap);
+		LOAD_SHADER(ResolveMSAA);
+		LOAD_SHADER(GaussBlur);
+		LOAD_SHADER(BloomBright);
+		LOAD_SHADER(Bloom);
+		LOAD_SHADER(Vignette);
+		LOAD_SHADER(FXAA);
+		LOAD_SHADER(Icon);
+		LOAD_SHADER(EditorTools);
+		LOAD_SHADER(Skybox);
+		LOAD_SHADER(SkyboxCubemapGeneration);
+		LOAD_SHADER(IrradianceGeneration);
+		LOAD_SHADER(PrefilterGeneration);
+		LOAD_SHADER(IntegrationGeneration);
 	}
 
 	DefaultShaders::~DefaultShaders()
 	{
-		delete ScreenSpace;
-		delete AutoExposure;
-		delete Tonemap;
-		delete ResolveMSAA;
-		delete GaussBlur;
-		delete BloomBright;
-		delete Bloom;
-		delete Vignette;
-		delete FXAA;
-		delete Icon;
-		delete EditorTools;
-		delete Skybox;
-		delete SkyboxCubemapGeneration;
-		delete IrradianceGeneration;
-		delete PrefilterGeneration;
-		delete IntegrationGeneration;
 	}
 
 }

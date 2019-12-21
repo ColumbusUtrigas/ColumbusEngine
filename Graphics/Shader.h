@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 namespace Columbus
 {
 
@@ -16,26 +18,6 @@ namespace Columbus
 		bool Compiled;
 		bool Error;
 	public:
-		enum class StandartProgram
-		{
-			ScreenSpace,
-			AutoExposure,
-			Tonemap,
-			ResolveMSAA,
-			GaussBlur,
-			BloomBright,
-			Bloom,
-			Vignette,
-			FXAA,
-			Icon,
-			EditorTools, // Grid, Gizmo
-			Skybox,
-			SkyboxCubemapGeneration,
-			IrradianceGeneration,
-			PrefilterGeneration,
-			IntegrationGeneration
-		};
-	public:
 		ShaderProgram() {}
 
 		bool IsLoaded()   const { return Loaded; }
@@ -44,7 +26,6 @@ namespace Columbus
 
 		virtual bool LoadFromMemory(const char* Source, const char* FilePath = "") = 0;
 		virtual bool Load(const char* FileName) = 0;
-		virtual bool Load(StandartProgram Program) = 0;
 		virtual bool Compile() = 0;
 
 		virtual ~ShaderProgram() {}
@@ -52,22 +33,22 @@ namespace Columbus
 
 	struct DefaultShaders
 	{
-		ShaderProgram* ScreenSpace = nullptr;
-		ShaderProgram* AutoExposure = nullptr;
-		ShaderProgram* Tonemap = nullptr;
-		ShaderProgram* ResolveMSAA = nullptr;
-		ShaderProgram* GaussBlur = nullptr;
-		ShaderProgram* BloomBright = nullptr;
-		ShaderProgram* Bloom = nullptr;
-		ShaderProgram* Vignette = nullptr;
-		ShaderProgram* FXAA = nullptr;
-		ShaderProgram* Icon = nullptr;
-		ShaderProgram* EditorTools = nullptr;
-		ShaderProgram* Skybox = nullptr;
-		ShaderProgram* SkyboxCubemapGeneration = nullptr;
-		ShaderProgram* IrradianceGeneration = nullptr;
-		ShaderProgram* PrefilterGeneration = nullptr;
-		ShaderProgram* IntegrationGeneration = nullptr;
+		std::unique_ptr<ShaderProgram> ScreenSpace;
+		std::unique_ptr<ShaderProgram> AutoExposure;
+		std::unique_ptr<ShaderProgram> Tonemap;
+		std::unique_ptr<ShaderProgram> ResolveMSAA;
+		std::unique_ptr<ShaderProgram> GaussBlur;
+		std::unique_ptr<ShaderProgram> BloomBright;
+		std::unique_ptr<ShaderProgram> Bloom;
+		std::unique_ptr<ShaderProgram> Vignette;
+		std::unique_ptr<ShaderProgram> FXAA;
+		std::unique_ptr<ShaderProgram> Icon;
+		std::unique_ptr<ShaderProgram> EditorTools;
+		std::unique_ptr<ShaderProgram> Skybox;
+		std::unique_ptr<ShaderProgram> SkyboxCubemapGeneration;
+		std::unique_ptr<ShaderProgram> IrradianceGeneration;
+		std::unique_ptr<ShaderProgram> PrefilterGeneration;
+		std::unique_ptr<ShaderProgram> IntegrationGeneration;
 
 		DefaultShaders();
 		~DefaultShaders();

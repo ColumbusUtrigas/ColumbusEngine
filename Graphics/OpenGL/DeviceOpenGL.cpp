@@ -56,10 +56,13 @@ namespace Columbus
 		}
 	}
 
+	void DeviceOpenGL::OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask)
+	{
+		
+	}
+
 	void DeviceOpenGL::OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef)
 	{
-		_currentDepthStencil = pDepthStencilState->Desc;
-
 		if (pDepthStencilState->Desc.DepthEnable)
 			glEnable(GL_DEPTH_TEST);
 		else
@@ -67,6 +70,20 @@ namespace Columbus
 
 		glDepthMask(pDepthStencilState->Desc.DepthWriteMask ? GL_TRUE : GL_FALSE);
 		glDepthFunc(ComparisonFuncToGL(pDepthStencilState->Desc.DepthFunc));
+	}
+
+	bool DeviceOpenGL::CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState)
+	{
+		*ppBlendState = new BlendState();
+		(*ppBlendState)->Desc = Desc;
+		return true;
+	}
+
+	bool DeviceOpenGL::CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState)
+	{
+		*ppDepthStencilState = new DepthStencilState();
+		(*ppDepthStencilState)->Desc = Desc;
+		return true;
 	}
 
 	bool DeviceOpenGL::CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer)

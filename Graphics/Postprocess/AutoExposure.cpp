@@ -24,7 +24,7 @@ namespace Columbus
 		if (Enabled)
 		{
 			auto prev = (_CurrentBuf + (_BufSize - 1)) % _BufSize;
-			auto shader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->AutoExposure;
+			auto shader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->AutoExposure.get();
 
 			if (_FirstDraw)
 			{
