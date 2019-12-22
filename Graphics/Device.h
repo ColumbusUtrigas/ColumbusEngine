@@ -43,7 +43,7 @@ namespace Columbus
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) = 0;
 		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) = 0;
 
-		virtual bool CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer) = 0;
+		virtual bool CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer) = 0;
 		virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) = 0;
 		virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) = 0;
 		virtual void UnmapBuffer(Buffer* pBuffer) = 0;

@@ -37,7 +37,7 @@ namespace Columbus
 			std::string VertexSource;
 			std::string FragmentSource;
 
-			std::vector<std::string> Uniforms;
+			std::vector<ShaderProperty> Uniforms;
 			std::vector<Attribute> Attributes;
 
 			std::vector<ParseError> Errors;

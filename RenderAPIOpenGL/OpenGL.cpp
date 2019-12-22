@@ -13,6 +13,7 @@ namespace Columbus
 	iVector3 OpenGL::MaxComputeWorkGroupSize = iVector3(-1);
 	iVector3 OpenGL::MaxComputeWorkGroupCount = iVector3(-1);
 
+	bool OpenGL::bSupportsBufferStorage = false;
 	bool OpenGL::bSupportsUniformBuffer = false;
 	bool OpenGL::bSupportsInstancing = false;
 	bool OpenGL::bSupportsTransformFeedback = false;
@@ -27,6 +28,7 @@ namespace Columbus
 
 	void OpenGL::Init()
 	{
+		bSupportsBufferStorage        = glewGetExtension("GL_ARB_buffer_storage");
 		bSupportsUniformBuffer        = glewGetExtension("GL_ARB_uniform_buffer_object");
 		bSupportsInstancing           = glewGetExtension("GW_ARB_instanced_arrays") && (glewGetExtension("GL_ARB_draw_instanced") || glewGetExtension("GL_EXT_draw_instanced"));
 		bSupportsTransformFeedback    = glewGetExtension("GL_ARB_transform_feedback2");

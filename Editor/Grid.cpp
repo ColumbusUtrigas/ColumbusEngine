@@ -25,16 +25,15 @@ namespace Columbus
 
 		VerticesCount = vertices.size();
 
+		SubresourceData data;
+		data.pSysMem = vertices.data();
 		gDevice->CreateBuffer(BufferDesc(
 			vertices.size() * sizeof(Vector3),
 			BufferType::Array,
-			BufferUsage::Write,
-			BufferCpuAccess::Static),
+			BufferUsage::Static,
+			BufferCpuAccess::Write),
+		&data,
 		&GridVertices);
-		void* map;
-		gDevice->MapBuffer(GridVertices, BufferMapAccess::Write, map);
-		memcpy(map, vertices.data(), vertices.size() * sizeof(Vector3));
-		gDevice->UnmapBuffer(GridVertices);
 
 		Layout.NumElements = 1;
 		Layout.Elements[0] = InputLayoutElementDesc{ 0, 3 };

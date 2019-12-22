@@ -264,7 +264,7 @@ namespace Columbus
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
 				Material& Mat = *Object.Mat;
-				ShaderProgram* CurrentShader = Mat.ShaderProg;
+				ShaderProgram* CurrentShader = Mat.GetShader();
 
 				if (CurrentShader != nullptr)
 				{
@@ -303,7 +303,7 @@ namespace Columbus
 			auto& GO = Scn->Objects[Object.Index];
 			if (Object.Mat == nullptr) continue;
 			Material& Mat = *Object.Mat;
-			ShaderProgram* CurrentShader = Mat.ShaderProg;
+			ShaderProgram* CurrentShader = Mat.GetShader();
 
 			BlendStateDesc BSD;
 			BlendState* BS;
@@ -392,9 +392,6 @@ namespace Columbus
 
 			gDevice->CreateBlendState(BSD, &BS);
 			gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
-			//State.SetBlending(true);
-			//glBlendEquation(GL_FUNC_ADD);
-			//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			for (auto& Object : TransparentObjects)
 			{
@@ -402,7 +399,7 @@ namespace Columbus
 				if (Object.Mat == nullptr) continue;
 				Material& Mat = *Object.Mat;
 
-				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
+				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.GetShader();
 				Mesh* CurrentMesh = Object.MeshObject;
 
 				if (Object.MeshObject != nullptr)
@@ -631,9 +628,9 @@ namespace Columbus
 		static bool uboresult = gDevice->CreateBuffer(BufferDesc(
 			sizeof(uboData),
 			BufferType::Uniform,
-			BufferUsage::Write,
-			BufferCpuAccess::Stream
-		), &UBO);
+			BufferUsage::Dynamic,
+			BufferCpuAccess::Write
+		), nullptr, &UBO);
 
 		void* ubomap;
 		gDevice->MapBuffer(UBO, BufferMapAccess::Write, ubomap);
@@ -701,9 +698,9 @@ namespace Columbus
 		gDevice->CreateBuffer(BufferDesc{
 			sizeof(lightingUboData),
 			BufferType::Uniform,
-			BufferUsage::Write,
-			BufferCpuAccess::Stream
-		}, &buf);
+			BufferUsage::Dynamic,
+			BufferCpuAccess::Write
+		}, nullptr, &buf);
 
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
@@ -769,7 +766,7 @@ namespace Columbus
 
 			// Resolve RT0 (HDR Color)
 			MSAAShader->Bind();
-			MSAAShader->SetUniform("BaseTexture", (TextureOpenGL*)BaseMSAA.ColorTextures[0], 0);
+			MSAAShader->SetUniform("BaseTexture", BaseMSAA.ColorTextures[0], 0);
 			MSAAShader->SetUniform("Samples", msaaSamples);
 			Quad.Render();
 			MSAAShader->Unbind();
@@ -812,8 +809,8 @@ namespace Columbus
 			Final.Bind({}, {}, ContextSize);
 
 			TonemapShader->Bind();
-			TonemapShader->SetUniform("u_BaseTexture", (TextureOpenGL*)FinalTex, 0);
-			TonemapShader->SetUniform("u_AETexture", (TextureOpenGL*)autoExposureTexture, 1);
+			TonemapShader->SetUniform("u_BaseTexture", FinalTex, 0);
+			TonemapShader->SetUniform("u_AETexture", autoExposureTexture, 1);
 			gDevice->BindBufferRange(UBO, 0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
 			Quad.Render();
 			TonemapShader->Unbind();
@@ -824,14 +821,14 @@ namespace Columbus
 				Post[0].Bind({}, {}, ContextSize);
 
 				FXAAShader->Bind();
-				FXAAShader->SetUniform("BaseTexture", (TextureOpenGL*)Final.ColorTextures[0], 0);
+				FXAAShader->SetUniform("BaseTexture", Final.ColorTextures[0], 0);
 				FXAAShader->SetUniform("Resolution", (Vector2)ContextSize);
 				Quad.Render();
 
 				Final.FB->Bind();
 
 				ScreenSpaceShader->Bind();
-				ScreenSpaceShader->SetUniform("BaseTexture", (TextureOpenGL*)Post[0].ColorTextures[0], 0);
+				ScreenSpaceShader->SetUniform("BaseTexture", Post[0].ColorTextures[0], 0);
 				Quad.Render();
 			}
 

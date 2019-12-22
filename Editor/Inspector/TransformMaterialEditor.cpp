@@ -82,6 +82,11 @@ namespace Columbus
 				{
 					Material& material = *mat;
 
+					for (const auto& prop : material._Properties)
+					{
+						ImGui::Text((prop.Name + " : " +  std::to_string((int)prop.Type)).c_str());
+					}
+
 					ImGui::Spacing();
 
 					ImGui::Combo(FORMAT_IME("Culling"), (int*)&material.Culling, CullItems, 4);
@@ -103,7 +108,7 @@ namespace Columbus
 
 					if (ImGui::Button(FORMAT_IME("Shader"), ImVec2(ImGui::GetContentRegionAvail().x, 25)))
 					{
-						ResourcesViewerShader::Open(&material.ShaderProg);
+						ResourcesViewerShader::Open(&material);
 					}
 
 					#define TEXID(a) a == nullptr ? 0 : (void*)(uintptr_t)(((TextureOpenGL*)(a))->GetID())

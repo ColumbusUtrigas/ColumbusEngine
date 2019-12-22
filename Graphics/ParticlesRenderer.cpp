@@ -15,15 +15,15 @@ namespace Columbus
 		MaxSize = NewSize;
 
 		auto Array = BufferType::Array;
-		auto Write = BufferUsage::Write;
-		auto Dynamic = BufferCpuAccess::Dynamic;
+		auto Dynamic = BufferUsage::Dynamic;
+		auto Write = BufferCpuAccess::Write;
 
 		size_t VerticesCount = MaxSize * 6;
 
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Write, Dynamic), &PositionsBuffer);
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Write, Dynamic), &SizesBuffer);
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector4), Array, Write, Dynamic), &ColorsBuffer);
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector2), Array, Write, Dynamic), &OtherDataBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Dynamic, Write), nullptr, &PositionsBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Dynamic, Write), nullptr, &SizesBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector4), Array, Dynamic, Write), nullptr, &ColorsBuffer);
+		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector2), Array, Dynamic, Write), nullptr, &OtherDataBuffer);
 	}
 
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
@@ -86,15 +86,15 @@ namespace Columbus
 			Quaternion Q(Vector3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
 			Matrix Billboard = Q.ToMatrix();
 
-			Shader->SetUniform(Shader->GetFastUniform("View"), false, MainCamera.GetViewMatrix());
-			Shader->SetUniform(Shader->GetFastUniform("Projection"), false, MainCamera.GetProjectionMatrix());
-			Shader->SetUniform(Shader->GetFastUniform("Billboard"), false, Billboard);
-			Shader->SetUniform(Shader->GetFastUniform("Frame"), iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
+			Shader->SetUniform("View", false, MainCamera.GetViewMatrix());
+			Shader->SetUniform("Projection", false, MainCamera.GetProjectionMatrix());
+			Shader->SetUniform("Billboard", false, Billboard);
+			Shader->SetUniform("Frame", iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
 
 			if (Mat.AlbedoMap == nullptr)
-				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(gDevice->GetDefaultTextures()->White.get()), 0);
+				Shader->SetUniform("Texture", gDevice->GetDefaultTextures()->White.get(), 0);
 			else
-				Shader->SetUniform(Shader->GetFastUniform("Texture"), static_cast<TextureOpenGL*>(Mat.AlbedoMap), 0);
+				Shader->SetUniform("Texture", Mat.AlbedoMap, 0);
 
 			Vector3* Positions;
 			Vector3* Sizes;
@@ -146,5 +146,3 @@ namespace Columbus
 	}
 
 }
-
-

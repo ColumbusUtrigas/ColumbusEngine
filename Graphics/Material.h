@@ -3,6 +3,10 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
+#include <Graphics/Shader.h>
+#include <vector>
+#include <string>
+#include <unordered_map>
 
 namespace Columbus
 {
@@ -15,6 +19,10 @@ namespace Columbus
 
 	class Material
 	{
+	private:
+		ShaderProgram* ShaderProg = nullptr;
+	public:
+		std::vector<ShaderProperty> _Properties;
 	public:
 		enum class Cull
 		{
@@ -41,8 +49,6 @@ namespace Columbus
 		bool DepthWriting = true;
 		bool Transparent = false;
 		bool Lighting = true;
-
-		ShaderProgram* ShaderProg = nullptr;
 
 		Texture* AlbedoMap = nullptr;
 		Texture* NormalMap = nullptr;

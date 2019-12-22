@@ -3,6 +3,13 @@
 namespace Columbus
 {
 
+	struct SubresourceData
+	{
+		const void* pSysMem;
+		size_t SysMemPitch;
+		size_t SysMemSlicePitch;
+	};
+
 	enum class PrimitiveTopology
 	{
 		PointList,

@@ -14,8 +14,8 @@ namespace Columbus
 		"Do you realy want to load it against the already loaded ones?", { 300, 120 });
 
 	bool ResourcesViewerShader::Opened = false;
-	ShaderProgram** ResourcesViewerShader::Destination = nullptr;
 	ShaderProgram* ResourcesViewerShader::Tmp = nullptr;
+	Material* ResourcesViewerShader::Mat = nullptr;
 
 	void ResourcesViewerShader::Draw(Scene* Scn)
 	{
@@ -56,7 +56,7 @@ namespace Columbus
 
 				ResourceViewerDrawLoadMore("LoadMore_ShadersViewer", LoadMore);
 				ResourceViewerDrawList<ShaderProgram>("ShadersList_ShadersViewer", Tmp, PopupObject, Scn->ShadersManager, Find, Button, RightClick, DoubleClick);
-				ResourceViewerDrawButtons("Buttons_ShadersViewer", Destination, Find, [&](){ Close(); }, Opened);
+				ResourceViewerDrawButtons("Buttons_ShadersViewer", Mat, Find, [&](){ Close(); }, Opened);
 				ResourceViewerLoad<ShaderProgram>("Load Shader", ShaderLoader,
 					Scn->ShadersManager, ShaderBruteLoader,
 					Load, Success, Failure, New);

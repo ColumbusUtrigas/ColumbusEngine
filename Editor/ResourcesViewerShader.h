@@ -10,25 +10,25 @@ namespace Columbus
 	{
 	private:
 		static bool Opened;
-		static ShaderProgram** Destination;
 		static ShaderProgram* Tmp;
+		static Material* Mat;
 	public:
-		static void Open(ShaderProgram** Dst)
+		static void Open(Material* Dst)
 		{
 			Opened = true;
-			Destination = Dst;
+			Mat = Dst;
 			if (Dst != nullptr)
 			{
-				Tmp = *Dst;
+				Tmp = Dst->GetShader();
 			}
 		}
 
 		static void Close()
 		{
 			Opened = false;
-			if (Destination != nullptr)
+			if (Mat != nullptr)
 			{
-				*Destination = Tmp;
+				Mat->SetShader(Tmp);
 			}
 		}
 
