@@ -1,9 +1,8 @@
 #pragma once
 
 #include <Math/Vector3.h>
-
-#include <Graphics/OpenGL/BufferOpenGL.h>
 #include <Graphics/ScreenQuad.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -12,6 +11,7 @@ namespace Columbus
 	{
 	private:
 		ScreenQuad& _Quad;
+		BlendState* BS;
 	public:
 		bool Enabled = false;
 		Vector3 Color;
@@ -20,13 +20,10 @@ namespace Columbus
 		float Smoothness = 0.2f;
 		float Radius = 0.6f;
 	public:
-		PostprocessVignette(ScreenQuad& Quad) :
-			_Quad(Quad) {}
+		PostprocessVignette(ScreenQuad& Quad);
 
 		// Offset and Size are values in the UBO
 		void Draw(Buffer* UBO, size_t Offset, size_t Size);
 	};
 
 }
-
-

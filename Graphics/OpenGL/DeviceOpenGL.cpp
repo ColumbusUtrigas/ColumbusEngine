@@ -124,12 +124,55 @@ namespace Columbus
 		glDepthFunc(ComparisonFuncToGL(pDepthStencilState->Desc.DepthFunc));
 	}
 
+	void DeviceOpenGL::RSSetState(RasterizerState* pRasterizerState)
+	{
+		const auto& desc = pRasterizerState->GetDesc();
+		switch (desc.Cull)
+		{
+		case CullMode::No:
+			glDisable(GL_CULL_FACE);
+			break;
+		case CullMode::Front:
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_FRONT);
+			glFrontFace(desc.FrontCounterClockwise ? GL_CCW : GL_CW);
+			break;
+		case CullMode::Back:
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			glFrontFace(desc.FrontCounterClockwise ? GL_CCW : GL_CW);
+			break;
+		}
+
+		switch (desc.Fill)
+		{
+		case FillMode::Wireframe:
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			break;
+		case FillMode::Solid:
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			break;
+		}
+	}
+
 	void DeviceOpenGL::SetShader(ShaderProgram* Prog)
 	{
 		if (Prog != nullptr)
+		{
+			if (!Prog->IsError())
+			{
+				if (!Prog->IsCompiled())
+				{
+					Prog->Compile();
+				}
+			}
+
 			static_cast<ShaderProgramOpenGL*>(Prog)->Bind();
+		}
 		else
+		{
 			glUseProgram(0);
+		}
 	}
 
 	bool DeviceOpenGL::CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState)
@@ -146,9 +189,16 @@ namespace Columbus
 		return true;
 	}
 
+	bool DeviceOpenGL::CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState)
+	{
+		*ppRasterizerState = new RasterizerState();
+		(*ppRasterizerState)->Desc = Desc;
+		return true;
+	}
+
 	bool DeviceOpenGL::CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer)
 	{
-		*ppBuffer = new BufferOpenGL2(Desc);
+		*ppBuffer = new BufferOpenGL(Desc);
 		auto pBuffer = *ppBuffer;
 		auto type = BufferTypeToGL(Desc.BindFlags);
 		auto phandle = static_cast<GLuint*>(pBuffer->GetHandle());
@@ -205,5 +255,3 @@ namespace Columbus
 	}
 
 }
-
-

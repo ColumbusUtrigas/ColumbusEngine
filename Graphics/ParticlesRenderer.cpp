@@ -70,9 +70,15 @@ namespace Columbus
 		DSDesc.StencilEnable = false;
 		gDevice->CreateDepthStencilState(DSDesc, &DSState);
 
+		RasterizerStateDesc RSD;
+		RasterizerState* RS;
+		RSD.Cull = CullMode::No;
+		gDevice->CreateRasterizerState(RSD, &RS);
+
 		float blendFactor[] = { 0, 0, 0, 0 };
 		gDevice->OMSetDepthStencilState(DSState, 0);
 		gDevice->OMSetBlendState(BState, blendFactor, 0xFFFFFFFF);
+		gDevice->RSSetState(RS);
 		 
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)
@@ -131,12 +137,7 @@ namespace Columbus
 			gDevice->IASetVertexBuffers(0, 4, ppBuffers);
 			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 			gDevice->Draw(Particles.Particles.Count * 6, 0);
-
-			glBindVertexArray(0);
 		}
-
-		//glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	ParticlesRenderer::~ParticlesRenderer()

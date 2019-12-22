@@ -19,7 +19,7 @@ namespace Columbus
 	}
 
 	Texture* PostprocessAutoExposure::Draw(float Exposure, Texture* Frame, iVector2 FrameSize,
-			const BufferOpenGL& UBO, size_t Offset, size_t Size)
+			Buffer* UBO, size_t Offset, size_t Size)
 	{
 		if (Enabled)
 		{
@@ -40,7 +40,7 @@ namespace Columbus
 			shader->Bind();
 			shader->SetUniform("BaseTexture", (TextureOpenGL*)Frame, 0);
 			shader->SetUniform("Previous", (TextureOpenGL*)_Bufs[prev].ColorTextures[0], 1);
-			UBO.BindRange(0, Offset, Size);
+			gDevice->BindBufferRange(UBO, 0, Offset, Size);
 			_Quad.Render();
 
 			Frame->SetMipmapLevel(0);

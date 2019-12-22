@@ -614,7 +614,14 @@ void main(void)
 	{
 		glActiveTexture(GL_TEXTURE0 + Sampler);
 		glUniform1i(FastUniforms[FastID], Sampler);
-		Tex->Bind();
+		if (Tex != nullptr)
+		{
+			Tex->Bind();
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 	}
 
 	ShaderProgramOpenGL::~ShaderProgramOpenGL()

@@ -25,24 +25,30 @@ namespace Columbus
 
 		VerticesCount = vertices.size();
 
-		GridVertices.CreateArray(BufferDesc(vertices.size() * sizeof(Vector3),
-			BufferUsage::Write, BufferCpuAccess::Static));
+		gDevice->CreateBuffer(BufferDesc(
+			vertices.size() * sizeof(Vector3),
+			BufferType::Array,
+			BufferUsage::Write,
+			BufferCpuAccess::Static),
+		&GridVertices);
+		void* map;
+		gDevice->MapBuffer(GridVertices, BufferMapAccess::Write, map);
+		memcpy(map, vertices.data(), vertices.size() * sizeof(Vector3));
+		gDevice->UnmapBuffer(GridVertices);
 
-		GridVertices.Load(vertices.data());
+		Layout.NumElements = 1;
+		Layout.Elements[0] = InputLayoutElementDesc{ 0, 3 };
 
 		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
-		GridVertices.VertexAttribute<float>(0, 3, false, 0, 0);
-		glBindVertexArray(0);
 	}
 
 	void Grid::Draw()
 	{
-		glDisable(GL_CULL_FACE);
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINES, 0, VerticesCount);
-		glBindVertexArray(0);
-		glEnable(GL_CULL_FACE);
+		gDevice->IASetInputLayout(&Layout);
+		gDevice->IASetVertexBuffers(0, 1, &GridVertices);
+		gDevice->IASetPrimitiveTopology(PrimitiveTopology::LineList);
+		gDevice->Draw(VerticesCount, 0);
 	}
 
 	Grid::~Grid()
@@ -51,5 +57,3 @@ namespace Columbus
 	}
 
 }
-
-
