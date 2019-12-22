@@ -18,6 +18,7 @@ namespace Columbus
 		static iVector3 MaxComputeWorkGroupSize;
 		static iVector3 MaxComputeWorkGroupCount;
 
+		static bool bSupportsBufferStorage;
 		static bool bSupportsUniformBuffer;
 		static bool bSupportsInstancing;
 		static bool bSupportsTransformFeedback;
@@ -44,6 +45,7 @@ namespace Columbus
 		static inline uint64 GetVideoMemorySize() { return 0; }
 		static inline uint64 GetFreeVideoMemorySize() { return 0; }
 
+		static inline bool SupportsBufferStorage() { return bSupportsBufferStorage; }
 		static inline bool SupportsUniformBuffer() { return bSupportsUniformBuffer; }
 		static inline bool SupportsInstancing() { return bSupportsInstancing; }
 		static inline bool SupportsTransformFeedback() { return bSupportsTransformFeedback; }

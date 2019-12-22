@@ -21,31 +21,33 @@ namespace Columbus
 
 	enum class BufferUsage
 	{
-		Read,
-		Write,
-		Copy
-	};
-
-	enum class BufferCpuAccess
-	{
 		Static,
 		Dynamic,
 		Stream
 	};
 
+	enum class BufferCpuAccess
+	{
+		Read,
+		Write,
+		Copy
+	};
+
 	struct BufferDesc
 	{
 		uint64 Size = 0;
+		BufferUsage Usage = BufferUsage::Static;
 		BufferType BindFlags = BufferType::Array;
-		BufferUsage Usage = BufferUsage::Write;
-		BufferCpuAccess CpuAccess = BufferCpuAccess::Static;
+		BufferCpuAccess CpuAccess = BufferCpuAccess::Write;
+		uint32 MiscFlags;
+		uint32 StructureByteStride;
 
 		BufferDesc() {}
 		BufferDesc(
 			uint64 Size,
 			BufferType BindFlags,
 			BufferUsage Usage,
-			BufferCpuAccess CpuAccess 
+			BufferCpuAccess CpuAccess
 		) :
 			Size(Size),
 			BindFlags(BindFlags),

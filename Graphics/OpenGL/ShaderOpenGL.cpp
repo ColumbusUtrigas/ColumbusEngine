@@ -213,6 +213,13 @@ void main(void)
 		std::regex regex_attribute("\\s*#attribute\\s+(\\w[\\w\\d_]*)\\s+(\\w[\\w\\d_]*)\\s+(\\d+)\\s*");
 		std::regex regex_include("\\s*(#include)\\s*(\"(.*)\"|<(.*)>)\\s*");
 
+		std::unordered_map<std::string, ShaderPropertyType> type_map{
+			{ "float", ShaderPropertyType::Float },
+			{ "float2", ShaderPropertyType::Float2 },
+			{ "float3", ShaderPropertyType::Float3 },
+			{ "float4", ShaderPropertyType::Float4 }
+		};
+
 		while (std::getline(f, line))
 		{
 			std::smatch match_shader,
@@ -254,8 +261,15 @@ void main(void)
 
 				CHECK_UNIFORM_ERRORS();
 
+				auto prop_type = ShaderPropertyType::Float;
+				auto t = type_map.find(type);
+				if (t != type_map.end())
+				{
+					prop_type = t->second;
+				}
+
 				streams[CurrentMode] << "uniform " << type << ' ' << name << brackets << ";\n";
-				Data.Uniforms.emplace_back(std::move(name));
+				Data.Uniforms.emplace_back(std::move(name), "", prop_type);
 			}
 			else if (std::regex_match(line, match_attribute, regex_attribute))
 			{
@@ -392,6 +406,7 @@ void main(void)
 
 		Log::Success("Shader program loaded:   %s", FilePath);
 		Loaded = true;
+		_Properties = Data.Uniforms;
 		return true;
 	}
 
@@ -460,7 +475,7 @@ void main(void)
 
 		for (const auto& Uniform : Data.Uniforms)
 		{
-			AddUniform(Uniform.c_str());
+			AddUniform(Uniform.Name.c_str());
 		}
 
 		glDeleteShader(VertexShader);

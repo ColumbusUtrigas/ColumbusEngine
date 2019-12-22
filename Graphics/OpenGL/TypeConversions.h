@@ -18,39 +18,39 @@ namespace Columbus
 
 	static GLenum BufferUsageAndAccessToGL(BufferUsage Usage, BufferCpuAccess CpuAccess)
 	{
-		switch (Usage)
+		switch (CpuAccess)
 		{
-		case BufferUsage::Write:
+		case BufferCpuAccess::Write:
 		{
-			switch (CpuAccess)
+			switch (Usage)
 			{
-			case BufferCpuAccess::Static:  return GL_STATIC_DRAW;  break;
-			case BufferCpuAccess::Dynamic: return GL_DYNAMIC_DRAW; break;
-			case BufferCpuAccess::Stream:  return GL_STREAM_DRAW;  break;
+			case BufferUsage::Static:  return GL_STATIC_DRAW;  break;
+			case BufferUsage::Dynamic: return GL_DYNAMIC_DRAW; break;
+			case BufferUsage::Stream:  return GL_STREAM_DRAW;  break;
 			}
 
 			break;
 		}
 
-		case BufferUsage::Read:
+		case BufferCpuAccess::Read:
 		{
-			switch (CpuAccess)
+			switch (Usage)
 			{
-			case BufferCpuAccess::Static:  return GL_STATIC_READ;  break;
-			case BufferCpuAccess::Dynamic: return GL_DYNAMIC_READ; break;
-			case BufferCpuAccess::Stream:  return GL_STREAM_READ;  break;
+			case BufferUsage::Static:  return GL_STATIC_READ;  break;
+			case BufferUsage::Dynamic: return GL_DYNAMIC_READ; break;
+			case BufferUsage::Stream:  return GL_STREAM_READ;  break;
 			}
 
 			break;
 		}
 
-		case BufferUsage::Copy:
+		case BufferCpuAccess::Copy:
 		{
-			switch (CpuAccess)
+			switch (Usage)
 			{
-			case BufferCpuAccess::Static:  return GL_STATIC_COPY;  break;
-			case BufferCpuAccess::Dynamic: return GL_DYNAMIC_COPY; break;
-			case BufferCpuAccess::Stream:  return GL_STREAM_COPY;  break;
+			case BufferUsage::Static:  return GL_STATIC_COPY;  break;
+			case BufferUsage::Dynamic: return GL_DYNAMIC_COPY; break;
+			case BufferUsage::Stream:  return GL_STREAM_COPY;  break;
 			}
 
 			break;

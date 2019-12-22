@@ -31,6 +31,7 @@ namespace Columbus
 	void Material::SetShader(ShaderProgram* InShader)
 	{
 		ShaderProg = InShader;
+		_Properties = ShaderProg->GetProperties();
 	}
 
 	ShaderProgram* Material::GetShader() const
@@ -70,7 +71,7 @@ namespace Columbus
 		Metallic         = static_cast<float>(J["Metallic"]        .GetFloat());
 		EmissionStrength = static_cast<float>(J["EmissionStrength"].GetFloat());
 
-		ShaderProg = ShadersManager.Find(J["Shader"].IsString() ? J["Shader"].GetString() : "");
+		SetShader(ShadersManager.Find(J["Shader"].IsString() ? J["Shader"].GetString() : ""));
 
 		#define DESERIALIZE_TEXTURE(tex, name) \
 			tex = J["Textures"][name].IsString() ? TexturesManager.Find(J["Textures"][name].GetString()) : nullptr;

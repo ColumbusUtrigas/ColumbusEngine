@@ -5,6 +5,7 @@
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TypeConversions.h>
+#include <RenderAPIOpenGL/OpenGL.h>
 
 namespace Columbus
 {
@@ -196,7 +197,7 @@ namespace Columbus
 		return true;
 	}
 
-	bool DeviceOpenGL::CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer)
+	bool DeviceOpenGL::CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer)
 	{
 		*ppBuffer = new BufferOpenGL(Desc);
 		auto pBuffer = *ppBuffer;
@@ -204,9 +205,14 @@ namespace Columbus
 		auto phandle = static_cast<GLuint*>(pBuffer->GetHandle());
 		auto cpuAccess = BufferUsageAndAccessToGL(Desc.Usage, Desc.CpuAccess);
 
+		const void* initialData = pInitialData != nullptr ? pInitialData->pSysMem : nullptr;
+
 		glCreateBuffers(1, static_cast<GLuint*>(pBuffer->GetHandle()));
 		glBindBuffer(type, *phandle);
-		glBufferData(type, Desc.Size, nullptr, cpuAccess);
+		if (OpenGL::SupportsBufferStorage())
+			glBufferStorage(type, Desc.Size, initialData, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_DYNAMIC_STORAGE_BIT);
+		else
+			glBufferData(type, Desc.Size, initialData, cpuAccess);
 		glBindBuffer(type, 0);
 		return true;
 	}
