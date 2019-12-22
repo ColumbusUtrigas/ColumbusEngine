@@ -18,9 +18,26 @@ namespace Columbus
 	void EditorPanelInspector::DrawTransformEditor()
 	{
 		ImGui::Indent(10.0f);
+
+		if (ImGui::Button("Reset##Inspector_TransformEditor"))
+		{
+			Inspectable->transform.Position = {};
+			Inspectable->transform.Rotation = {};
+			Inspectable->transform.Scale = { 1,1,1 };
+		}
+
+		if (ImGui::Button("P##Inspector_TransformEditor")) Inspectable->transform.Position = {};
+		ImGui::SameLine();
 		ImGui::DragFloat3("Position##Inspector_TransformEditor", (float*)&Inspectable->transform.Position, 0.1f);
+
+		if (ImGui::Button("R##Inspector_TransformEditor")) Inspectable->transform.Rotation = {};
+		ImGui::SameLine();
 		ImGui::DragFloat3("Rotation##Inspector_TransformEditor", (float*)&Inspectable->transform.Rotation, 0.1f);
+
+		if (ImGui::Button("S##Inspector_TransformEditor")) Inspectable->transform.Scale = { 1,1,1 };
+		ImGui::SameLine();
 		ImGui::DragFloat3("Scale##Inspector_TransformEditor",    (float*)&Inspectable->transform.Scale,    0.1f);
+
 		ImGui::Unindent(10.0f);
 	}
 

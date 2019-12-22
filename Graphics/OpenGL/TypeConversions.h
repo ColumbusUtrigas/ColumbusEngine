@@ -82,5 +82,56 @@ namespace Columbus
 		case ComparisonFunc::Always:   return GL_ALWAYS;
 		}
 	}
+	
+	static GLenum StencilOpToGL(StencilOp op)
+	{
+		switch (op)
+		{
+		case StencilOp::Keep:    return GL_KEEP;
+		case StencilOp::Zero:    return GL_ZERO;
+		case StencilOp::Replace: return GL_REPLACE;
+		case StencilOp::IncrSat: return GL_INCR;
+		case StencilOp::DecrSat: return GL_DECR;
+		case StencilOp::Invert:  return GL_INVERT;
+		case StencilOp::Incr:    return GL_INCR_WRAP;
+		case StencilOp::Decr:    return GL_DECR_WRAP;
+		}
+	}
+
+	static GLenum BlendToGL(Blend blend)
+	{
+		switch (blend)
+		{
+		case Blend::Zero:           return GL_ZERO;
+		case Blend::One:            return GL_ONE;
+		case Blend::SrcColor:       return GL_SRC_COLOR;
+		case Blend::InvSrcColor:    return GL_ONE_MINUS_SRC_COLOR;
+		case Blend::SrcAlpha:       return GL_SRC_ALPHA;
+		case Blend::InvSrcAlpha:    return GL_ONE_MINUS_SRC_ALPHA;
+		case Blend::DestAlpha:      return GL_DST_ALPHA;
+		case Blend::InvDestAlpha:   return GL_ONE_MINUS_DST_ALPHA;
+		case Blend::DestColor:      return GL_DST_COLOR;
+		case Blend::InvDestColor:   return GL_ONE_MINUS_SRC_COLOR;
+		case Blend::SrcAlphaSat:    return GL_SRC_ALPHA_SATURATE;
+		case Blend::BlendFactor:    return GL_CONSTANT_COLOR;
+		case Blend::InvBlendFactor: return GL_ONE_MINUS_CONSTANT_COLOR;
+		case Blend::Src1Color:      return GL_SRC1_COLOR;
+		case Blend::InvSrc1Color:   return GL_ONE_MINUS_SRC1_COLOR;
+		case Blend::Src1Alpha:      return GL_SRC1_ALPHA;
+		case Blend::InvSrc1Alpha:   return GL_ONE_MINUS_SRC1_ALPHA;
+		}
+	}
+
+	static GLenum BlendOpToGL(BlendOp op)
+	{
+		switch (op)
+		{
+		case BlendOp::Add:         return GL_FUNC_ADD;
+		case BlendOp::Subtract:    return GL_FUNC_SUBTRACT;
+		case BlendOp::RevSubtract: return GL_FUNC_REVERSE_SUBTRACT;
+		case BlendOp::Min:         return GL_MIN;
+		case BlendOp::Max:         return GL_MAX;
+		}
+	}
 
 }

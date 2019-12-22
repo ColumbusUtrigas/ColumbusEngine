@@ -42,7 +42,14 @@ namespace Columbus
 			Allocate(Particles.MaxParticles);
 		}
 
-		switch (Particles.Blend)
+		BlendStateDesc BSDesc;
+		BlendState* BState;
+		BSDesc.RenderTarget[0].BlendEnable = true;
+		BSDesc.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+		BSDesc.RenderTarget[0].DestBlend = Blend::One;
+		gDevice->CreateBlendState(BSDesc, &BState);
+
+		/*switch (Particles.Blend)
 		{
 		case ParticleEmitterCPU::BlendMode::Default: // src_alpha * src + (1 - src_alpha) * dst
 			glBlendEquation(GL_FUNC_ADD);
@@ -54,17 +61,19 @@ namespace Columbus
 			break;
 		case ParticleEmitterCPU::BlendMode::Subtract: break; // TODO
 		case ParticleEmitterCPU::BlendMode::Multiply: break; // TODO
-		}
+		}*/
 
 		DepthStencilStateDesc DSDesc;
+		DepthStencilState* DSState;
 		DSDesc.DepthEnable = true;
 		DSDesc.DepthWriteMask = false;
 		DSDesc.StencilEnable = false;
-
-		DepthStencilState* DSState;
 		gDevice->CreateDepthStencilState(DSDesc, &DSState);
-		gDevice->OMSetDepthStencilState(DSState, 0);
 
+		float blendFactor[] = { 0, 0, 0, 0 };
+		gDevice->OMSetDepthStencilState(DSState, 0);
+		gDevice->OMSetBlendState(BState, blendFactor, 0xFFFFFFFF);
+		 
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)
 		{
@@ -126,8 +135,8 @@ namespace Columbus
 			glBindVertexArray(0);
 		}
 
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glBlendEquation(GL_FUNC_ADD);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	ParticlesRenderer::~ParticlesRenderer()

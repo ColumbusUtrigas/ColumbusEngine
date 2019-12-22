@@ -24,7 +24,7 @@ namespace Columbus
 			_Quad(Quad) {}
 
 		// Offset and Size are values in the UBO
-		void Draw(const BufferOpenGL& UBO, size_t Offset, size_t Size);
+		void Draw(Buffer* UBO, size_t Offset, size_t Size);
 	};
 
 }

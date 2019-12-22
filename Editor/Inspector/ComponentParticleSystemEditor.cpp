@@ -86,8 +86,8 @@ namespace Columbus
 
 					if (Emitter->ModuleColor.Mode == ParticleModuleColor::UpdateMode::Initial)
 					{
-						ImGui::DragFloat4(NAME("Min##Color"), (float*)&Emitter->ModuleColor.Min);
-						ImGui::DragFloat4(NAME("Max##Color"), (float*)&Emitter->ModuleColor.Max);
+						ImGui::ColorEdit4(NAME("Min##Color"), (float*)&Emitter->ModuleColor.Min);
+						ImGui::ColorEdit4(NAME("Max##Color"), (float*)&Emitter->ModuleColor.Max);
 					}
 
 					if (Emitter->ModuleColor.Mode == ParticleModuleColor::UpdateMode::OverLife)

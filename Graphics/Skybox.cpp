@@ -230,23 +230,24 @@ namespace Columbus
 		{
 			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox.get());
 
-			ShaderOpenGL->Bind();
+			//ShaderOpenGL->Bind();
+			gDevice->SetShader(gDevice->GetDefaultShaders()->Skybox.get());
 
 			auto View = ViewCamera.GetViewMatrix();
 			View.SetRow(3, Vector4(0, 0, 0, 1));
 			View.SetColumn(3, Vector4(0, 0, 0, 1));
 
-			ShaderOpenGL->SetUniform(ShaderOpenGL->GetFastUniform("ViewProjection"), false, View * ViewCamera.GetProjectionMatrix());
-			ShaderOpenGL->SetUniform(ShaderOpenGL->GetFastUniform("Skybox"), (TextureOpenGL*)Tex, 0);
+			ShaderOpenGL->SetUniform("ViewProjection", false, View * ViewCamera.GetProjectionMatrix());
+			ShaderOpenGL->SetUniform("Skybox", (TextureOpenGL*)Tex, 0);
 
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
+			//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			//glBindVertexArray(0);
 
-			ShaderOpenGL->Unbind();
-			((TextureOpenGL*)Tex)->Unbind();
+			//ShaderOpenGL->Unbind();
+			//((TextureOpenGL*)Tex)->Unbind();
 		}
 	}
 

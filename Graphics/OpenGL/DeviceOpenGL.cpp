@@ -58,7 +58,59 @@ namespace Columbus
 
 	void DeviceOpenGL::OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask)
 	{
-		
+		const auto& Desc = pBlendState->GetDesc();
+
+		if (Desc.AlphaToCoverageEnable)
+		{
+			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		}
+		else
+		{
+			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		}
+
+		bool bBlendEnable = false;
+		for (int i = 0; i < Desc.NumRenderTargets; i++)
+		{
+			if (Desc.RenderTarget[i].BlendEnable)
+				bBlendEnable = true;
+		}
+
+		if (bBlendEnable)
+			glEnable(GL_BLEND);
+		else
+			glDisable(GL_BLEND);
+
+		if (Desc.IndependentBlendEnable)
+		{
+			for (int i = 0; i < Desc.NumRenderTargets; i++)
+			{
+				const auto& RTi = Desc.RenderTarget[i];
+				if (RTi.BlendEnable)
+				{
+					glEnablei(GL_BLEND, i);
+					glBlendFuncSeparatei(i, BlendToGL(RTi.SrcBlend), BlendToGL(RTi.DestBlend), BlendToGL(RTi.SrcBlendAlpha), BlendToGL(RTi.DestBlendAlpha));
+					glBlendEquationSeparatei(i, BlendOpToGL(RTi.Op), BlendOpToGL(RTi.OpAlpha));
+				}
+				else
+				{
+					glDisablei(GL_BLEND, i);
+				}
+			}
+		}
+		else
+		{
+			const auto& RT0 = Desc.RenderTarget[0];
+			if (RT0.BlendEnable)
+			{
+				glBlendFuncSeparate(BlendToGL(RT0.SrcBlend), BlendToGL(RT0.DestBlend), BlendToGL(RT0.SrcBlendAlpha), BlendToGL(RT0.DestBlendAlpha));
+				glBlendEquationSeparate(BlendOpToGL(RT0.Op), BlendOpToGL(RT0.OpAlpha));
+			}
+			else
+			{
+				glDisable(GL_BLEND);
+			}
+		}
 	}
 
 	void DeviceOpenGL::OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef)
@@ -70,6 +122,14 @@ namespace Columbus
 
 		glDepthMask(pDepthStencilState->Desc.DepthWriteMask ? GL_TRUE : GL_FALSE);
 		glDepthFunc(ComparisonFuncToGL(pDepthStencilState->Desc.DepthFunc));
+	}
+
+	void DeviceOpenGL::SetShader(ShaderProgram* Prog)
+	{
+		if (Prog != nullptr)
+			static_cast<ShaderProgramOpenGL*>(Prog)->Bind();
+		else
+			glUseProgram(0);
 	}
 
 	bool DeviceOpenGL::CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState)

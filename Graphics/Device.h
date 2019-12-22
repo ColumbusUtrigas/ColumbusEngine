@@ -36,6 +36,8 @@ namespace Columbus
 		//virtual void RSSetViewports() = 0;
 		//virtual void RSSetScissorRects() = 0;
 
+		virtual void SetShader(ShaderProgram* Prog) = 0;
+
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) = 0;
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) = 0;
 

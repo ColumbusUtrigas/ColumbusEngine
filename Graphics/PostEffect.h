@@ -35,6 +35,7 @@ namespace Columbus
 		bool ColorTexturesAttached[TexturesCount];
 		bool DepthTextureAttached = false;
 		Texture::Flags PrevColorTextureFlags[TexturesCount];
+		Texture::Flags PrevDepthTextureFlags;
 
 		iVector2 _PrevSize;
 		int32 _PrevMSAA;
@@ -108,6 +109,7 @@ namespace Columbus
 					}
 
 					PrevColorTextureFlags[i] = ColorTextureFlags[i];
+					PrevColorTextures[i] = ColorTextures[i];
 				}
 			}
 
@@ -123,7 +125,10 @@ namespace Columbus
 					DepthTexture->Create2D(TextureDesc(Size.X, Size.Y, 0, DepthMS, TextureFormat::Depth24));
 				}
 
-				DepthTexture->SetFlags(DepthTextureFlags);
+				if (!DepthTextureAttached || DepthTexture != PrevDepthTexture || PrevDepthTextureFlags != DepthTextureFlags)
+				{
+					DepthTexture->SetFlags(DepthTextureFlags);
+				}
 
 				if (!DepthTextureAttached || PrevDepthTexture != DepthTexture)
 				{
@@ -132,9 +137,8 @@ namespace Columbus
 				}
 
 				PrevDepthTexture = DepthTexture;
+				PrevDepthTextureFlags = DepthTextureFlags;
 			}
-
-			FB->Bind();
 			
 			glViewport(Origin.X, Origin.Y, Size.X, Size.Y);
 			if (Clear)
