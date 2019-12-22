@@ -22,7 +22,8 @@ namespace Columbus
 	{
 		bool AlphaToCoverageEnable = false;
 		bool IndependentBlendEnable = false;
-		RenderTargetBlendDesc RenderTarget[8];
+		static constexpr int NumRenderTargets = 8;
+		RenderTargetBlendDesc RenderTarget[NumRenderTargets];
 	};
 
 	class BlendState

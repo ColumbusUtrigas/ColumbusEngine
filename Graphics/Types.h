@@ -39,7 +39,7 @@ namespace Columbus
 		SrcColor,
 		InvSrcColor,
 		SrcAlpha,
-		InvSrcAlph,
+		InvSrcAlpha,
 		DestAlpha,
 		InvDestAlpha,
 		DestColor,

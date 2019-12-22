@@ -218,6 +218,7 @@ namespace Columbus
 
 	void Renderer::RenderShadows(const iVector2& ShadowMapSize)
 	{
+		if (ShadowsObjects.empty()) return;
 		State.Clear();
 		State.SetBlending(false);
 		State.SetDepthWriting(true);
@@ -293,6 +294,7 @@ namespace Columbus
 	void Renderer::RenderOpaque()
 	{
 		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
+		if (OpaqueObjects.empty()) return;
 
 		State.Clear();
 		//State.SetBlending(false);
@@ -339,13 +341,13 @@ namespace Columbus
 			State.SetCulling(Material::Cull::Back);
 			State.SetDepthWriting(false);
 			Sky->Render();
-			State.SetDepthWriting(true);
 		}
 	}
 
 	void Renderer::RenderTransparent()
 	{
 		PROFILE_GPU(ProfileModuleGPU::TransparentStage);
+		if (TransparentObjects.empty()) return;
 
 		if (RenderList != nullptr && TransparentObjects.size() != 0)
 		{
@@ -357,7 +359,7 @@ namespace Columbus
 			for (auto& Object : TransparentObjects)
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-				if (GO->material == nullptr) continue;
+				if (Object.Mat == nullptr) continue;
 				Material& Mat = *Object.Mat;
 
 				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.ShaderProg;
@@ -589,6 +591,19 @@ namespace Columbus
 
 		UBO.Load(&uboData);
 
+		static Buffer* UBO2;
+		static bool ubo2result = gDevice->CreateBuffer(BufferDesc(
+			sizeof(uboData),
+			BufferType::Uniform,
+			BufferUsage::Write,
+			BufferCpuAccess::Stream
+		), &UBO2);
+
+		void* ubo2map;
+		gDevice->MapBuffer(UBO2, BufferMapAccess::Write, ubo2map);
+		memcpy(ubo2map, &uboData, sizeof(uboData));
+		gDevice->UnmapBuffer(UBO2);
+
 		auto defaultShaders = gDevice->GetDefaultShaders();
 
 		auto ScreenSpaceShader = static_cast<ShaderProgramOpenGL*>(defaultShaders->ScreenSpace.get());
@@ -659,14 +674,6 @@ namespace Columbus
 		memcpy(data, &lightingUboData, sizeof(lightingUboData));
 		gDevice->UnmapBuffer(buf);
 
-
-
-		/*static BufferOpenGL lightingUBO(BufferType::Uniform, {
-			sizeof(lightingUboData),
-			BufferUsage::Write,
-			BufferCpuAccess::Stream
-		});*/
-
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
 
@@ -677,8 +684,6 @@ namespace Columbus
 		shadowEffect.Bind({0}, {0}, shadowSize);
 		RenderShadows(shadowSize);
 
-		//lightingUBO.Load(&lightingUboData);
-		//lightingUBO.BindRange(0, 0, sizeof(lightingUboData));
 		gDevice->BindBufferRange(buf, 0, 0, sizeof(lightingUboData));
 
 		// RENDERING
@@ -817,7 +822,7 @@ namespace Columbus
 			if (Vignette.Enabled)
 			{
 				State.SetBlending(true);
-				Vignette.Draw(UBO, offsetof(_UBO_Data, vignette), sizeof(uboData.vignette));
+				Vignette.Draw(UBO2, offsetof(_UBO_Data, vignette), sizeof(uboData.vignette));
 			}
 
 			Final.Unbind();
