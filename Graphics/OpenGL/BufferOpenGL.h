@@ -1,18 +1,17 @@
 #pragma once
 
-#include <Core/Types.h>
 #include <Graphics/Buffer.h>
 #include <GL/glew.h>
 
 namespace Columbus
 {
 
-	class BufferOpenGL2 : public Buffer
+	class BufferOpenGL : public Buffer
 	{
 	private:
-		GLuint gl_Handle;
+		GLuint gl_Handle = 0;
 	public:
-		BufferOpenGL2(const BufferDesc& Desc)
+		BufferOpenGL(const BufferDesc& Desc)
 		{
 			this->Desc = Desc;
 		}
@@ -23,66 +22,4 @@ namespace Columbus
 		}
 	};
 
-	class BufferOpenGL
-	{
-	private:
-		uint64 Size;
-		uint32 ID;
-		uint32 Target;
-		uint32 Usage;
-
-		BufferType Type;
-	public:
-		BufferOpenGL();
-		BufferOpenGL(BufferType NewType);
-		BufferOpenGL(BufferType NewType, BufferDesc Desc);
-		BufferOpenGL(BufferType NewType, BufferDesc Desc, const void* Data);
-		BufferOpenGL(const BufferOpenGL&) = delete;
-		BufferOpenGL(BufferOpenGL&& Base) { *this = static_cast<BufferOpenGL&&>(Base); }
-		BufferOpenGL& operator=(const BufferOpenGL&) = delete;
-		BufferOpenGL& operator=(BufferOpenGL&& Other)
-		{
-			ID = Other.ID;         Other.ID = 0;
-			Target = Other.Target; Other.Target = 0;
-			Usage = Other.Usage;   Other.Usage = 0;
-
-			return *this;
-		}
-
-		void Create(BufferType NewType, const BufferDesc& Desc);
-		void CreateArray(const BufferDesc& Desc);
-		void CreateIndex(const BufferDesc& Desc);
-		void CreateUniform(const BufferDesc& Desc);
-
-		void Load(const void* Data);
-		void SubLoad(const void* Data, uint32 SubdataSize, uint32 Offset);
-
-		void Bind() const;
-		void BindBase(uint32 Index) const;
-		void BindRange(uint32 Index, uint32 Offset, uint32 Size) const;
-		void Unbind() const;
-
-		void  Map(void*& Dst, BufferMapAccess Access) const;
-		void* Map(BufferMapAccess Access) const;
-		void Unmap() const;
-
-		template <typename T>
-		void VertexAttribute(uint32 Index, uint32 Components, bool Normalized,
-				uint32 Stride, uint32 Offset) const;
-
-		~BufferOpenGL();
-	};
-
-	template <>
-	inline void BufferOpenGL::VertexAttribute<float>(uint32 Index, uint32 Components,
-			bool Normalized, uint32 Stride, uint32 Offset) const
-	{
-		glBindBuffer(Target, ID);
-		glVertexAttribPointer(Index, Components, GL_FLOAT, Normalized,
-			Stride, (void*)(uintptr_t)Offset);
-		glEnableVertexAttribArray(Index);
-	}
-
 }
-
-

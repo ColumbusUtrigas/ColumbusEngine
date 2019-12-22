@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Core/Types.h>
+
 namespace Columbus
 {
 
@@ -33,20 +35,12 @@ namespace Columbus
 
 	struct BufferDesc
 	{
-		uint64 Size;
-		BufferType BindFlags;
-		BufferUsage Usage;
-		BufferCpuAccess CpuAccess;
+		uint64 Size = 0;
+		BufferType BindFlags = BufferType::Array;
+		BufferUsage Usage = BufferUsage::Write;
+		BufferCpuAccess CpuAccess = BufferCpuAccess::Static;
 
-		BufferDesc(
-			uint64 Size = 0,
-			BufferUsage Usage = BufferUsage::Write,
-			BufferCpuAccess CpuAccess = BufferCpuAccess::Static
-		) :
-			Size(Size),
-			Usage(Usage),
-			CpuAccess(CpuAccess) {}
-
+		BufferDesc() {}
 		BufferDesc(
 			uint64 Size,
 			BufferType BindFlags,

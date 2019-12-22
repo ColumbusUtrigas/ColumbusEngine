@@ -64,6 +64,8 @@ namespace Columbus
 	{
 		switch (topology)
 		{
+		case PrimitiveTopology::PointList:    return GL_POINTS;
+		case PrimitiveTopology::LineList:     return GL_LINES;
 		case PrimitiveTopology::TriangleList: return GL_TRIANGLES;
 		}
 	}

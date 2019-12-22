@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/OpenGL/BufferOpenGL.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -8,17 +8,14 @@ namespace Columbus
 	class Grid
 	{
 	private:
-		BufferOpenGL GridVertices;
+		Buffer* GridVertices;
+		InputLayout Layout;
 		uint32 VAO;
 		uint32 VerticesCount;
 	public:
 		Grid();
-
 		void Draw();
-
 		~Grid();
 	};
 
 }
-
-

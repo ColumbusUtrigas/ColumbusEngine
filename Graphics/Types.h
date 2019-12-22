@@ -5,6 +5,8 @@ namespace Columbus
 
 	enum class PrimitiveTopology
 	{
+		PointList,
+		LineList,
 		TriangleList
 	};
 

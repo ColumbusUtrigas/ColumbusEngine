@@ -3,6 +3,7 @@
 #include <Graphics/OpenGL/BufferOpenGL.h>
 #include <Graphics/ScreenQuad.h>
 #include <Graphics/PostEffect.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -27,7 +28,7 @@ namespace Columbus
 		~PostprocessAutoExposure() = default;
 
 		Texture* Draw(float Exposure, Texture* Frame, iVector2 FrameSize,
-			const BufferOpenGL& UBO, size_t Offset, size_t Size);
+			Buffer* UBO, size_t Offset, size_t Size);
 	};
 
 }

@@ -18,8 +18,6 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 
-#include <Lib/imgui/imgui.h>
-
 namespace Columbus
 {
 	Texture* Blob;
@@ -219,9 +217,6 @@ namespace Columbus
 	void Renderer::RenderShadows(const iVector2& ShadowMapSize)
 	{
 		if (ShadowsObjects.empty()) return;
-		State.Clear();
-		State.SetBlending(false);
-		State.SetDepthWriting(true);
 
 		stbrp_context context;
 		int num_rects = 0;
@@ -268,21 +263,28 @@ namespace Columbus
 			for (auto& Object : ShadowsObjects)
 			{
 				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-				//if (GO->material == nullptr) continue;
-				//Material& Mat = *GO->material;
 				Material& Mat = *Object.Mat;
 				ShaderProgram* CurrentShader = Mat.ShaderProg;
 
 				if (CurrentShader != nullptr)
 				{
-					//State.SetCulling(Mat.Culling);
-					//State.SetCulling(Material::Cull::Front);
+					DepthStencilStateDesc DSSD;
+					DepthStencilState* DS;
+					DSSD.DepthEnable = true;
+					DSSD.DepthWriteMask = Mat.DepthWriting;
+					DSSD.DepthFunc = (ComparisonFunc)Mat.DepthTesting;
+
+					gDevice->CreateDepthStencilState(DSSD, &DS);
+
+					gDevice->SetShader(Mat.GetShader());
+					gDevice->OMSetDepthStencilState(DS, 0);
+
 					State.SetCulling(Material::Cull::No);
-					State.SetDepthTesting(Mat.DepthTesting);
-					State.SetDepthWriting(Mat.DepthWriting);
-					State.SetShaderProgram(Mat.GetShader());
+					//State.SetDepthTesting(Mat.DepthTesting);
+					//State.SetDepthWriting(Mat.DepthWriting);
 					State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky, false);
-					State.SetMesh(Object.Object);
+
+					Object.Object->Bind();
 
 					PolygonsRendered += Object.Object->Render();
 					OpaqueObjectsRendered++;
@@ -296,9 +298,6 @@ namespace Columbus
 		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
 		if (OpaqueObjects.empty()) return;
 
-		State.Clear();
-		//State.SetBlending(false);
-
 		for (auto& Object : OpaqueObjects)
 		{
 			auto& GO = Scn->Objects[Object.Index];
@@ -306,25 +305,33 @@ namespace Columbus
 			Material& Mat = *Object.Mat;
 			ShaderProgram* CurrentShader = Mat.ShaderProg;
 
+			BlendStateDesc BSD;
+			BlendState* BS;
+			gDevice->CreateBlendState(BSD, &BS);
+
 			DepthStencilStateDesc DSD;
+			DepthStencilState* DS;
 			DSD.DepthEnable = true;
 			DSD.DepthWriteMask = true;
 			DSD.DepthFunc = (ComparisonFunc)Mat.DepthTesting;
-			DepthStencilState* DS;
 			gDevice->CreateDepthStencilState(DSD, &DS);
-				
+
+			RasterizerStateDesc RSD;
+			RasterizerState* RS;
+			RSD.Cull = (CullMode)Mat.Culling;
+			RSD.Fill = FillMode::Solid;
+			RSD.FrontCounterClockwise = true;
+			gDevice->CreateRasterizerState(RSD, &RS);
+
 			if (CurrentShader != nullptr)
 			{
 				gDevice->OMSetDepthStencilState(DS, 0);
-				//gDevice->OMSetBlendState();
-				//gDevice->RSSetState();
+				gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
+				gDevice->RSSetState(RS);
+				gDevice->SetShader(Mat.GetShader());
 
-				//State.SetCulling(Mat.Culling);
-				//State.SetDepthTesting(Mat.DepthTesting);
-				//State.SetDepthWriting(Mat.DepthWriting);
-				State.SetShaderProgram(Mat.GetShader());
 				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
-				State.SetMesh(Object.Object);
+				Object.Object->Bind();
 
 				PolygonsRendered += Object.Object->Render();
 				OpaqueObjectsRendered++;
@@ -338,8 +345,32 @@ namespace Columbus
 
 		if (Sky != nullptr)
 		{
-			State.SetCulling(Material::Cull::Back);
-			State.SetDepthWriting(false);
+			BlendStateDesc BSD;
+			DepthStencilStateDesc DSSD;
+			RasterizerStateDesc RSD;
+
+			BSD.RenderTarget[0].BlendEnable = false;
+
+			DSSD.DepthEnable = true;
+			DSSD.DepthWriteMask = true;
+			DSSD.DepthFunc = ComparisonFunc::LEqual;
+
+			RSD.Cull = CullMode::Back;
+			RSD.FrontCounterClockwise = true;
+			RSD.Fill = FillMode::Solid;
+
+			static BlendState* BS;
+			static DepthStencilState* DSS;
+			static RasterizerState* RS;
+
+			static bool bsr = gDevice->CreateBlendState(BSD, &BS);
+			static bool dssr = gDevice->CreateDepthStencilState(DSSD, &DSS);
+			static bool rsr = gDevice->CreateRasterizerState(RSD, &RS);
+
+			gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
+			gDevice->OMSetDepthStencilState(DSS, 0);
+			gDevice->RSSetState(RS);
+
 			Sky->Render();
 		}
 	}
@@ -351,10 +382,19 @@ namespace Columbus
 
 		if (RenderList != nullptr && TransparentObjects.size() != 0)
 		{
-			State.Clear();
-			State.SetBlending(true);
-			glBlendEquation(GL_FUNC_ADD);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			BlendStateDesc BSD;
+			BlendState* BS;
+			BSD.RenderTarget[0].BlendEnable = true;
+			BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+			BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+			BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+			BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+
+			gDevice->CreateBlendState(BSD, &BS);
+			gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
+			//State.SetBlending(true);
+			//glBlendEquation(GL_FUNC_ADD);
+			//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			for (auto& Object : TransparentObjects)
 			{
@@ -369,8 +409,9 @@ namespace Columbus
 				{
 					if (CurrentShader != nullptr)
 					{
+						gDevice->SetShader(CurrentShader);
+
 						State.SetDepthTesting(Mat.DepthTesting);
-						State.SetShaderProgram(CurrentShader);
 						State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
 						CurrentMesh->Bind();
 
@@ -411,13 +452,11 @@ namespace Columbus
 
 				if (Object.Particles != nullptr)
 				{
-					State.SetShaderProgram(CurrentShader);
+					gDevice->SetShader(CurrentShader);
 					ParticlesRender.Render(*Object.Particles, MainCamera, Mat);
 				}
 			}
 		}
-
-		State.SetDepthWriting(true);
 	}
 
 	void Renderer::RenderPostprocess()
@@ -437,8 +476,6 @@ namespace Columbus
 			case RenderPass::Postprocess: RenderPostprocess(); break;
 			}
 		}
-
-		State.SetCulling(Material::Cull::No);
 	}
 
 	void Renderer::CalculateLights(const Vector3& Position, int32(&Lights)[4])
@@ -490,9 +527,16 @@ namespace Columbus
 
 		((ShaderProgramOpenGL*)(Icon))->Bind();
 
-		State.SetBlending(true);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		static BlendStateDesc BSD;
+		static BlendState* BS;
+		BSD.RenderTarget[0].BlendEnable = true;
+		BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+		BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+		BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+		BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+
+		static bool bsr = gDevice->CreateBlendState(BSD, &BS);
+		gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun.get(), 0);
 		for (const auto& Elem : Scn->Lights)
@@ -583,26 +627,18 @@ namespace Columbus
 		uboData.vignette.smoothness = Vignette.Smoothness;
 		uboData.vignette.radius = Vignette.Radius;
 
-		static BufferOpenGL UBO(BufferType::Uniform, {
-			sizeof(uboData),
-			BufferUsage::Write,
-			BufferCpuAccess::Stream
-		});
-
-		UBO.Load(&uboData);
-
-		static Buffer* UBO2;
-		static bool ubo2result = gDevice->CreateBuffer(BufferDesc(
+		static Buffer* UBO;
+		static bool uboresult = gDevice->CreateBuffer(BufferDesc(
 			sizeof(uboData),
 			BufferType::Uniform,
 			BufferUsage::Write,
 			BufferCpuAccess::Stream
-		), &UBO2);
+		), &UBO);
 
-		void* ubo2map;
-		gDevice->MapBuffer(UBO2, BufferMapAccess::Write, ubo2map);
-		memcpy(ubo2map, &uboData, sizeof(uboData));
-		gDevice->UnmapBuffer(UBO2);
+		void* ubomap;
+		gDevice->MapBuffer(UBO, BufferMapAccess::Write, ubomap);
+		memcpy(ubomap, &uboData, sizeof(uboData));
+		gDevice->UnmapBuffer(UBO);
 
 		auto defaultShaders = gDevice->GetDefaultShaders();
 
@@ -669,11 +705,6 @@ namespace Columbus
 			BufferCpuAccess::Stream
 		}, &buf);
 
-		void* data;
-		gDevice->MapBuffer(buf, BufferMapAccess::Write, data);
-		memcpy(data, &lightingUboData, sizeof(lightingUboData));
-		gDevice->UnmapBuffer(buf);
-
 		GLuint BuffersAll[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		GLuint BuffersFirst[] = { GL_COLOR_ATTACHMENT0 };
 
@@ -684,6 +715,10 @@ namespace Columbus
 		shadowEffect.Bind({0}, {0}, shadowSize);
 		RenderShadows(shadowSize);
 
+		void* data;
+		gDevice->MapBuffer(buf, BufferMapAccess::Write, data);
+		memcpy(data, &lightingUboData, sizeof(lightingUboData));
+		gDevice->UnmapBuffer(buf);
 		gDevice->BindBufferRange(buf, 0, 0, sizeof(lightingUboData));
 
 		// RENDERING
@@ -696,12 +731,12 @@ namespace Columbus
 			Base.Bind({0}, {0}, ContextSize);
 
 		State.ShadowTexture = shadowEffect.DepthTexture;
-
 		State.SetMainCamera(MainCamera);
+
 		RenderOpaque();
-		glDrawBuffers(1, BuffersFirst);
+		//glDrawBuffers(1, BuffersFirst);
 		RenderSky();
-		glDrawBuffers(2, BuffersAll);
+		//glDrawBuffers(2, BuffersAll);
 		RenderTransparent();
 
 		if (DrawGrid)
@@ -779,7 +814,7 @@ namespace Columbus
 			TonemapShader->Bind();
 			TonemapShader->SetUniform("u_BaseTexture", (TextureOpenGL*)FinalTex, 0);
 			TonemapShader->SetUniform("u_AETexture", (TextureOpenGL*)autoExposureTexture, 1);
-			UBO.BindRange(0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
+			gDevice->BindBufferRange(UBO, 0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
 			Quad.Render();
 			TonemapShader->Unbind();
 
@@ -805,24 +840,9 @@ namespace Columbus
 				RenderIcons();
 			}
 
-			/*if (DrawGizmo)
-			{
-				State.SetBlending(false);
-				State.SetDepthWriting(false);
-				State.SetDepthTesting(Material::DepthTest::Always);
-				State.SetCulling(Material::Cull::Back);
-
-				_Gizmo.EnableMousePicking = EnableMousePicking;
-				_Gizmo.MousePickingPosition = MousePickingPosition;
-				_Gizmo.PickedObject = PickedObject;
-				_Gizmo.SetCamera(MainCamera);
-				_Gizmo.Draw();
-			}*/
-
 			if (Vignette.Enabled)
 			{
-				State.SetBlending(true);
-				Vignette.Draw(UBO2, offsetof(_UBO_Data, vignette), sizeof(uboData.vignette));
+				Vignette.Draw(UBO, offsetof(_UBO_Data, vignette), sizeof(uboData.vignette));
 			}
 
 			Final.Unbind();

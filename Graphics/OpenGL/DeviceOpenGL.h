@@ -25,10 +25,13 @@ namespace Columbus
 		virtual void OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask) final override;
 		virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) final override;
 
+		virtual void RSSetState(RasterizerState* pRasterizerState) final override;
+
 		virtual void SetShader(ShaderProgram* Prog) final override;
 
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) final override;
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) final override;
+		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) final override;
 
 		virtual bool CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer) final override;
 		virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) final override;

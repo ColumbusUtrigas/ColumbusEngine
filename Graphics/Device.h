@@ -8,6 +8,7 @@
 #include <Graphics/Buffer.h>
 #include <Graphics/DepthStencilState.h>
 #include <Graphics/BlendState.h>
+#include <Graphics/RasterizerState.h>
 #include <Graphics/InputLayout.h>
 #include <Graphics/Types.h>
 
@@ -32,7 +33,7 @@ namespace Columbus
 		virtual void OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask) = 0;
 		virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) = 0;
 
-		//virtual void RSSetState() = 0;
+		virtual void RSSetState(RasterizerState* pRasterizerState) = 0;
 		//virtual void RSSetViewports() = 0;
 		//virtual void RSSetScissorRects() = 0;
 
@@ -40,6 +41,7 @@ namespace Columbus
 
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) = 0;
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) = 0;
+		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) = 0;
 
 		virtual bool CreateBuffer(const BufferDesc& Desc, Buffer** ppBuffer) = 0;
 		virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) = 0;
