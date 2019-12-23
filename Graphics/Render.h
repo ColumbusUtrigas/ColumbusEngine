@@ -121,10 +121,6 @@ namespace Columbus
 
 		float DeltaTime = 0.0f;
 	public:
-		bool EnableMousePicking = false;
-		Vector2 MousePickingPosition;
-		GameObject* PickedObject = nullptr;
-
 		iVector2 ContextSize;
 		bool DrawIcons = false;
 		bool DrawGrid = false;

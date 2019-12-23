@@ -5,7 +5,7 @@ namespace Columbus
 
 	AudioSystem::AudioSystem()
 	{
-		Player = new AudioPlayer(2, 44100, &Mixer);
+		Player = std::make_unique<AudioPlayer>(2, 44100, &Mixer);
 	}
 
 	void AudioSystem::Clear()
@@ -45,9 +45,6 @@ namespace Columbus
 
 	AudioSystem::~AudioSystem()
 	{
-		delete Player;
 	}
 
 }
-
-

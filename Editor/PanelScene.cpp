@@ -41,11 +41,11 @@ namespace Columbus
 				SizeOfRenderWindow = { (int)Size.x, (int)Size.y };
 
 
-				if (Render.PickedObject != nullptr)
+				if (_PickedObject != nullptr)
 				{ 
 					Vector4 rect(Position.X, Position.Y, Size.x, Size.y);
 					_Gizmo.SetCamera(Render.GetMainCamera());
-					_Gizmo.Draw(Render.PickedObject->transform, rect);
+					_Gizmo.Draw(_PickedObject->transform, rect);
 				}
 			}
 			ImGui::End();

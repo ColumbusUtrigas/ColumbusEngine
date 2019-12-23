@@ -18,8 +18,14 @@ namespace Columbus
 		bool Hover = false;
 
 		Gizmo _Gizmo;
+		GameObject* _PickedObject = nullptr;
 	public:
 		EditorPanelScene() {}
+
+		void SetPickedObject(GameObject* Obj)
+		{
+			_PickedObject = Obj;
+		}
 
 		void SetFramebufferTexture(Texture* Tex)
 		{

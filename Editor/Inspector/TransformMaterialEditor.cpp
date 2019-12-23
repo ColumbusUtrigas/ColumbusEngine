@@ -82,11 +82,6 @@ namespace Columbus
 				{
 					Material& material = *mat;
 
-					for (const auto& prop : material._Properties)
-					{
-						ImGui::Text((prop.Name + " : " +  std::to_string((int)prop.Type)).c_str());
-					}
-
 					ImGui::Spacing();
 
 					ImGui::Combo(FORMAT_IME("Culling"), (int*)&material.Culling, CullItems, 4);
