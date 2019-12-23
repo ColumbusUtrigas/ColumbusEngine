@@ -2,6 +2,7 @@
 
 #include <Audio/AudioPlayer.h>
 #include <Audio/AudioMixer.h>
+#include <memory>
 
 namespace Columbus
 {
@@ -14,7 +15,7 @@ namespace Columbus
 	private:
 		friend class Renderer;
 
-		AudioPlayer* Player;
+		std::unique_ptr<AudioPlayer> Player;
 		AudioMixer Mixer;
 	public:
 		AudioSystem();
@@ -34,5 +35,3 @@ namespace Columbus
 	};
 
 }
-
-
