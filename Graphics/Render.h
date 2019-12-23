@@ -120,6 +120,7 @@ namespace Columbus
 		uint32 TransparentObjectsRendered = 0;
 
 		float DeltaTime = 0.0f;
+		bool IsEditor = false;
 	public:
 		iVector2 ContextSize;
 		bool DrawIcons = false;
@@ -142,6 +143,7 @@ namespace Columbus
 	public:
 		Renderer();
 		
+		void SetIsEditor(bool b) { IsEditor = b; }
 		void SetViewport(const iVector2& Origin, const iVector2& Size);
 		void SetMainCamera(const Camera& InCamera);
 		Camera GetMainCamera() const { return MainCamera; }

@@ -843,6 +843,13 @@ namespace Columbus
 			}
 
 			Final.Unbind();
+
+			if (!IsEditor)
+			{
+				ScreenSpaceShader->Bind();
+				ScreenSpaceShader->SetUniform("BaseTexture", Final.ColorTextures[0], 0);
+				Quad.Render();
+			}
 		}
 
 
