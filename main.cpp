@@ -30,6 +30,8 @@ using namespace Columbus;
 	}
 #endif
 
+#define COLUMBUS_EDITOR
+
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window({ 640, 480 }, "Columbus Engine", Window::Flags::Resizable);
@@ -70,8 +72,10 @@ int main(int argc, char** argv)
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	
+#ifdef COLUMBUS_EDITOR
 	ImGui_ImplSDL2_InitForOpenGL(window.GetWindowHandle(), window.GetContextHandle());
 	ImGui_ImplOpenGL3_Init("#version 130");
+#endif
 
 	Editor Editor;
 
@@ -88,10 +92,15 @@ int main(int argc, char** argv)
 
 	bool wasLooking = false;
 
+	scene.Load("Data/Shadows.scene");
+
 	while (Running && window.IsOpen())
 	{
 		input.Update();
 		eventSystem.Update();
+#ifndef COLUMBUS_EDITOR
+		SizeOfRenderWindow = window.GetSize();
+#endif
 
 		if (!Running) break;
 
@@ -121,10 +130,14 @@ int main(int argc, char** argv)
 
 		if (input.GetMouseButton(SDL_BUTTON_RIGHT).State)
 		{
+#ifdef COLUMBUS_EDITOR
 			if (Editor.PanelScene.IsHover())
 			{
 				wasLooking = true;
 			}
+#else`
+			wasLooking = true;
+#endif
 
 			if (wasLooking)
 			{
@@ -154,6 +167,12 @@ int main(int argc, char** argv)
 		Listener.Up = camera.Up();
 		Listener.Forward = camera.Direction();
 
+#ifdef COLUMBUS_EDITOR
+		MainRender.SetIsEditor(true);
+#else
+		MainRender.SetIsEditor(false);
+#endif
+
 		MainRender.ContextSize = SizeOfRenderWindow;
 		MainRender.SetViewport({0}, SizeOfRenderWindow);
 		scene.Update();
@@ -163,6 +182,7 @@ int main(int argc, char** argv)
 		MainRender.SetRenderList(&scene.Objects.Resources);
 		MainRender.Render();
 
+#ifdef COLUMBUS_EDITOR
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
 		ImGui::NewFrame();
@@ -173,12 +193,16 @@ int main(int argc, char** argv)
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
+
 		window.Display();
 	}
 
+#ifdef COLUMBUS_EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
+#endif
 
 	gDevice->Shutdown();
 	delete gDevice;
