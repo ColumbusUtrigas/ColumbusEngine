@@ -135,6 +135,10 @@ namespace Columbus
 	{
 		PROFILE_CPU(ProfileModule::Update);
 
+		if (FirstFrame)
+			DeltaTime.Reset();
+		FirstFrame = false;
+
 		float Time = (float)DeltaTime.Elapsed() * TimeFactor;
 		DeltaTime.Reset();
 

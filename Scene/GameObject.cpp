@@ -26,7 +26,7 @@ namespace Columbus
 		{
 			for (auto& Comp : Components)
 			{
-				Comp->Update(DeltaTime, transform);
+				Comp->Update(DeltaTime);
 			}
 
 			transform.Update();

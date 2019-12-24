@@ -103,6 +103,7 @@ namespace Columbus
 
 		Window = SDL_CreateWindow(Title, pos, pos, InSize.X, InSize.Y, flags);
 		Context = SDL_GL_CreateContext(Window);
+		Size = InSize;
 	}
 	
 	void WindowOpenGLSDL::InitializeOpenGL()
@@ -196,8 +197,12 @@ namespace Columbus
 	{
 		if (Window && Open)
 		{
+			if (FirstFrame)
+				RedrawTimer.Reset();
+			FirstFrame = false;
+
 			SDL_GL_SwapWindow(Window);
-			//glFinish();
+
 			RedrawTime = (float)RedrawTimer.Elapsed();
 			RedrawTimer.Reset();
 			Frames++;
@@ -216,6 +221,7 @@ namespace Columbus
 		if (Window && Open)
 		{
 			SDL_SetWindowSize(Window, Size.X, Size.Y);
+			this->Size = Size;
 		}
 	}
 
@@ -287,7 +293,9 @@ namespace Columbus
 				case WindowEvent::Type_MouseLeave:        MouseFocus = false; break;
 				case WindowEvent::Type_KeyboardFocusGained: KeyFocus = true;  break;
 				case WindowEvent::Type_KeyboardFocusLost:   KeyFocus = false; break;
-				case WindowEvent::Type_Resize: Size = { E.Window.Data1, E.Window.Data2 }; break;
+				case WindowEvent::Type_Resize:
+					Size = { E.Window.Data1, E.Window.Data2 };
+					break;
 				}
 			}
 		}

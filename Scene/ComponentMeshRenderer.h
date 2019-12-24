@@ -13,7 +13,7 @@ namespace Columbus
 	public:
 		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh) {}
 
-		virtual void Update(float TimeTick, Transform& Trans) override {}
+		virtual void Update(float TimeTick) override {}
 		virtual void OnComponentAdd() override
 		{
 			if (Object != nullptr)

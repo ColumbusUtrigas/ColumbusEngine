@@ -55,6 +55,8 @@ namespace Columbus
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 
+		bool FirstFrame = true;
+
 		void RigidbodyWorkflow();
 		void RigidbodyPostWorkflow();
 	private:

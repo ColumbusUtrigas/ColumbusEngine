@@ -11,6 +11,7 @@ namespace Columbus
 	private:
 		SDL_Window* Window;
 		SDL_GLContext Context;
+		bool FirstFrame = true;
 
 		void InitializeSDL();
 		void InitializeWindow(const iVector2& InSize, const char* Title, Window::Flags F);

@@ -24,7 +24,7 @@ namespace Columbus
 	public:
 		Component() {}
 
-		virtual void Update(float TimeTick, Transform& Trans) = 0;
+		virtual void Update(float TimeTick) = 0;
 		virtual void OnComponentAdd() {}
 
 		virtual Type GetType() const { return Type::Component; }

@@ -9,10 +9,11 @@ namespace Columbus
 		SDL_Event E;
 
 		Event internal;
+		memset(&internal, 0, sizeof(internal));
 
 		while (SDL_PollEvent(&E))
 		{
-			RawFunction(&E);
+			if (RawFunction) RawFunction(&E);
 
 			switch (E.type)
 			{
@@ -109,9 +110,11 @@ namespace Columbus
 				case SDL_WINDOWEVENT_FOCUS_LOST:
 					internal.Window.Type = WindowEvent::Type_KeyboardFocusLost;
 					break;
-				case SDL_WINDOWEVENT_RESIZED:
+				case SDL_WINDOWEVENT_SIZE_CHANGED:
 					internal.Window.Type = WindowEvent::Type_Resize;
 					break;
+				default:
+					internal.Type = Event::Type_None;
 				}
 				break;
 			}
@@ -120,7 +123,7 @@ namespace Columbus
 			switch (internal.Type)
 			{
 			case Event::Type_None: break;
-			case Event::Type_Quit: QuitFunction(internal); break;
+			case Event::Type_Quit: if (QuitFunction) QuitFunction(internal); break;
 			case Event::Type_Key:
 			case Event::Type_Mouse:
 			case Event::Type_MouseButton:
@@ -128,9 +131,11 @@ namespace Columbus
 			case Event::Type_ControllerAxis:
 			case Event::Type_ControllerButton:
 			case Event::Type_ControllerDevice:
-				InputFunction(internal);
+				if (InputFunction) InputFunction(internal);
 				break;
-			case Event::Type_Window: WindowFunction(internal); break;
+			case Event::Type_Window:
+				if (WindowFunction) WindowFunction(internal);
+				break;
 			}
 		}
 	}
