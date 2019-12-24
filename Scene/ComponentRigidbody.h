@@ -13,7 +13,7 @@ namespace Columbus
 	public:
 		ComponentRigidbody(Rigidbody* RB) : RB(RB) {}
 
-		virtual void Update(float TimeTick, Transform& Trans) override {}
+		virtual void Update(float TimeTick) override {}
 
 		//This component methods
 		virtual Component::Type GetType() const override { return Component::Type::Rigidbody; }

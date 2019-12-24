@@ -3,7 +3,6 @@
 #include <Scene/ComponentMeshRenderer.h>
 #include <Graphics/OpenGL/DeviceOpenGL.h>
 #include <Graphics/OpenGL/WindowOpenGLSDL.h>
-#include <Graphics/OpenGL/TextureOpenGL.h>
 
 #include <Editor/Editor.h>
 #include <Profiling/Profiling.h>
@@ -19,7 +18,7 @@ using namespace Columbus;
 #include <imgui/examples/imgui_impl_sdl.h>
 #include <ImGuizmo/ImGuizmo.h>
 
-#ifdef COLUMBUS_PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS
 	//Hint to the driver to use discrete GPU
 	extern "C" 
 	{
@@ -31,7 +30,178 @@ using namespace Columbus;
 #endif
 
 #define COLUMBUS_EDITOR
+//#define FLAPPY_BIRD_GAME
 
+#ifdef FLAPPY_BIRD_GAME
+class BirdComponent : public Component
+{
+private:
+	float jump = 2;
+	float gravity = 4.8;
+	float speed = jump;
+	float xspeed = 0.5;
+	Camera& _camera;
+	Input& input;
+	Scene& scene;
+public:
+	BirdComponent(Camera& camera, Input& input, Scene& scene) : _camera(camera), input(input), scene(scene) {}
+
+	void Update(float DeltaTime) final override
+	{
+		if (input.GetKeyDown(SDL_SCANCODE_SPACE))
+		{
+			speed = jump;
+		}
+
+		float angle = -speed * 30;
+		gameObject->transform.Position.X += xspeed * DeltaTime;
+		gameObject->transform.Position.Y += speed * DeltaTime;
+		gameObject->transform.Rotation.X = -90;
+		gameObject->transform.Rotation.Y = Math::Clamp<float>(angle, -80, 80) + 90;
+		speed -= gravity * DeltaTime;
+		_camera.Pos.X += xspeed * DeltaTime;
+	}
+
+	~BirdComponent() final override {}
+};
+
+class ColumnsComponent : public Component
+{
+private:
+	std::vector<GameObject*> columns;
+	int n = 10;
+	ShaderProgram* shader;
+	Mesh* mesh;
+	Scene& scene;
+
+	void generate(int i)
+	{
+		columns[i]->transform.Position = Random::Range<float>(-1, -0.5);
+	}
+public:
+	ColumnsComponent(ShaderProgram* shader, Mesh* mesh, Scene& scene) : shader(shader), mesh(mesh), scene(scene) {}
+	void OnComponentAdd() final override
+	{
+		for (int i = 0; i < n; i++)
+		{
+			GameObject obj;
+			obj.Name = String::from(i);
+			obj.material = new Material();
+			obj.material->SetShader(shader);
+			obj.material->EmissionMap = gDevice->GetDefaultTextures()->White.get();
+			obj.transform.Rotation = { -90, 0, 0 };
+			obj.transform.Scale = { 0.1, 0.1, 1 };
+			obj.AddComponent(new ComponentMeshRenderer(mesh));
+			scene.Add(std::move(obj));
+			columns.push_back(scene.Objects.Find(String::from(i)));
+			generate(i);
+		}
+	}
+
+	void Update(float DeltaTime) final override
+	{
+	}
+	~ColumnsComponent() final override {}
+};
+
+int main(int argc, char** argv)
+{
+	WindowOpenGLSDL window({ 640, 480 }, "Flappy Bird (Columbus Engine)", Window::Flags::Resizable);
+	gDevice = new DeviceOpenGL();
+	gDevice->Initialize();
+	Scene scene;
+	Input input;
+	EventSystem eventSystem;
+	Camera camera;
+	Renderer render;
+
+	bool run = true;
+
+	eventSystem.QuitFunction = [&](const Event&) { run = false; };
+	eventSystem.InputFunction = [&](const Event& E) { input.PollEvent(E); };
+	eventSystem.WindowFunction = [&](const Event& E) { window.PollEvent(E); };
+	eventSystem.RawFunction = [&](void* Raw) {};
+
+	window.SetVSync(true);
+
+	ShaderProgram* shader = gDevice->CreateShaderProgram();
+	shader->Load("Data/Shaders/Standart.csl");
+	shader->Compile();
+
+	Texture* tex = gDevice->CreateTexture();
+	Texture::Flags flags;
+	flags.Filtering = Texture::Filter::Point;
+	tex->Load("Data/FlappyBird/bird.png");
+	tex->SetFlags(flags);
+
+	Mesh* plane = gDevice->CreateMesh();
+	plane->Load("Data/Meshes/Plane.obj");
+
+	{
+		GameObject obj;
+		obj.Name = "Bird";
+		obj.material = new Material();
+		obj.material->AlbedoMap = tex;
+		obj.material->EmissionMap = tex;
+		obj.material->SetShader(shader);
+		obj.transform.Scale = { 0.07 };
+		scene.Add(std::move(obj));
+	}
+	GameObject* bird = scene.Objects.Find("Bird");
+	bird->AddComponent(new ComponentMeshRenderer(plane));
+	bird->AddComponent(new BirdComponent(camera, input, scene));
+
+	//for (int i = 0; i < 10; i++)
+	{
+		GameObject obj;
+		//obj.Name = String::from(i);
+		obj.Name = "Columns";
+		//obj.material = new Material();
+		//obj.material->SetShader(shader);
+		//obj.material->EmissionMap = gDevice->GetDefaultTextures()->White.get();
+		//obj.AddComponent(new ComponentMeshRenderer(plane));
+		//obj.transform.Position = { i * 0.5f + 1, -1, -0.1 };
+		//obj.transform.Rotation = { -90, 0, 0 };
+		//obj.transform.Scale = { 0.1, 0.1, 1 };
+		scene.Add(std::move(obj));
+		scene.Objects.Find("Columns")->AddComponent(new ColumnsComponent(shader, plane, scene));
+	}
+
+	while (run && window.IsOpen())
+	{
+		float deltaTime = window.GetRedrawTime();
+		input.Update();
+		eventSystem.Update();
+		input.SetKeyboardFocus(window.HasKeyFocus());
+		input.SetMouseFocus(window.HasMouseFocus());
+		window.Clear({ 1, 0, 0, 1 });
+
+		scene.Update();
+
+		camera.Ortho(-window.GetAspect(), window.GetAspect(), -1, 1, 0.001, 10);
+		camera.Update();
+
+		render.ContextSize = window.GetSize();
+		render.SetDeltaTime(deltaTime);
+		render.SetViewport({ 0 }, window.GetSize());
+		render.SetMainCamera(camera);
+		render.SetSky(scene.Sky);
+		render.SetScene(&scene);
+		render.SetRenderList(&scene.Objects.Resources);
+		render.SetIsEditor(false);
+		render.Render();
+
+		window.Display();
+	}
+
+	gDevice->Shutdown();
+	delete gDevice;
+
+	return 0;
+}
+#endif
+
+#ifndef FLAPPY_BIRD_GAME
 int main(int argc, char** argv)
 {
 	WindowOpenGLSDL window({ 640, 480 }, "Columbus Engine", Window::Flags::Resizable);
@@ -209,5 +379,6 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+#endif //FLAPPY_BIRD_GAME
 
 

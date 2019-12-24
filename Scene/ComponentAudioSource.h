@@ -19,10 +19,10 @@ namespace Columbus
 			COLUMBUS_ASSERT((bool)Source);
 		}
 
-		virtual void Update(float TimeTick, Transform& Trans) override
+		virtual void Update(float TimeTick) override
 		{
 			COLUMBUS_ASSERT((bool)Source);
-			Source->Position = Trans.Position;
+			Source->Position = gameObject->transform.Position;
 		}
 
 		//This component methods

@@ -19,10 +19,10 @@ namespace Columbus
 			COLUMBUS_ASSERT(LightSource != nullptr);
 		}
 
-		virtual void Update(float TimeTick, Transform& Trans) override
+		virtual void Update(float TimeTick) override
 		{
 			COLUMBUS_ASSERT(LightSource != nullptr);
-			LightSource->Pos = Trans.Position;
+			LightSource->Pos = gameObject->transform.Position;
 		}
 
 		//This component methods

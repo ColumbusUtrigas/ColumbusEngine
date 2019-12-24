@@ -21,9 +21,9 @@ namespace Columbus
 			gameObject->materials.push_back(gameObject->material);
 		}
 
-		virtual void Update(float TimeTick, Transform& Trans) override
+		virtual void Update(float TimeTick) override
 		{
-			Emitter.Position = Trans.Position;
+			Emitter.Position = gameObject->transform.Position;
 			Emitter.Update(TimeTick);
 		}
 
