@@ -33,75 +33,184 @@ using namespace Columbus;
 //#define FLAPPY_BIRD_GAME
 
 #ifdef FLAPPY_BIRD_GAME
+#include <Scene/ComponentParticleSystem.h>
 class BirdComponent : public Component
 {
-private:
-	float jump = 2;
-	float gravity = 4.8;
-	float speed = jump;
-	float xspeed = 0.5;
-	Camera& _camera;
-	Input& input;
-	Scene& scene;
 public:
-	BirdComponent(Camera& camera, Input& input, Scene& scene) : _camera(camera), input(input), scene(scene) {}
-
-	void Update(float DeltaTime) final override
+	const float Jump = 2;
+	const float Gravity = 4.8;
+	const float XSpeed = 0.5;
+	float Speed = Jump;
+public:
+	void Respawn()
 	{
-		if (input.GetKeyDown(SDL_SCANCODE_SPACE))
-		{
-			speed = jump;
-		}
-
-		float angle = -speed * 30;
-		gameObject->transform.Position.X += xspeed * DeltaTime;
-		gameObject->transform.Position.Y += speed * DeltaTime;
-		gameObject->transform.Rotation.X = -90;
-		gameObject->transform.Rotation.Y = Math::Clamp<float>(angle, -80, 80) + 90;
-		speed -= gravity * DeltaTime;
-		_camera.Pos.X += xspeed * DeltaTime;
+		gameObject->transform.Position = {};
+		gameObject->transform.Rotation = {};
+		Speed = Jump;
 	}
 
+	void Update(float DeltaTime) final override {}
 	~BirdComponent() final override {}
 };
 
-class ColumnsComponent : public Component
+class FlappyBirdGameComponent : public Component
 {
 private:
 	std::vector<GameObject*> columns;
 	int n = 10;
-	ShaderProgram* shader;
-	Mesh* mesh;
 	Scene& scene;
+	Camera& camera;
+	Input& input;
+	BirdComponent* bird;
+	GameObject* particles;
 
-	void generate(int i)
+	void generate(int i, int add)
 	{
-		columns[i]->transform.Position = Random::Range<float>(-1, -0.5);
+		columns[i]->transform.Position.X += add;
+		columns[i]->transform.Position.Y = Random::Range<float>(-1, -0.5);
+	}
+
+	void respawn()
+	{
+		camera.Pos.X = 0;
+		bird->Respawn();
+		for (int i = 0; i < n; i++)
+		{
+			columns[i]->transform.Position.X = 0;
+			generate(i, i + 1);
+		}
 	}
 public:
-	ColumnsComponent(ShaderProgram* shader, Mesh* mesh, Scene& scene) : shader(shader), mesh(mesh), scene(scene) {}
+	FlappyBirdGameComponent(Scene& scene, Camera& camera, Input& input) :
+		scene(scene), camera(camera), input(input) {}
+
 	void OnComponentAdd() final override
 	{
+		ShaderProgram* shader = gDevice->CreateShaderProgram();
+		shader->Load("Data/Shaders/Standart.csl");
+		shader->Compile();
+
+		Mesh* plane = gDevice->CreateMesh();
+		plane->Load("Data/Meshes/Plane.obj");
+
+		Texture* tex = gDevice->CreateTexture();
+		tex->Load("Data/FlappyBird/bird.png");
+
+		Texture* pipe = gDevice->CreateTexture();
+		pipe->Load("Data/FlappyBird/pipe.png");
+
+		// create bird
+		GameObject bobj;
+		bobj.material = new Material();
+		bobj.Name = "Bird";
+		bobj.material->SetShader(shader);
+		bobj.material->AlbedoMap = tex;
+		bobj.material->EmissionMap = tex;
+		bobj.material->EmissionStrength = 1;
+		bobj.material->SetShader(shader);
+		bobj.transform.Scale = { 0.07 };
+		bobj.AddComponent(new ComponentMeshRenderer(plane));
+		scene.Add(std::move(bobj));
+
+		bird = new BirdComponent();
+		scene.Objects.Find("Bird")->AddComponent(bird);
+
+		// generate columns
 		for (int i = 0; i < n; i++)
 		{
 			GameObject obj;
 			obj.Name = String::from(i);
 			obj.material = new Material();
 			obj.material->SetShader(shader);
-			obj.material->EmissionMap = gDevice->GetDefaultTextures()->White.get();
+			obj.material->AlbedoMap = pipe;
+			obj.material->EmissionMap = pipe;
+			obj.material->EmissionStrength = 0.7;
+			obj.transform.Position.X = i;
 			obj.transform.Rotation = { -90, 0, 0 };
 			obj.transform.Scale = { 0.1, 0.1, 1 };
-			obj.AddComponent(new ComponentMeshRenderer(mesh));
+			obj.AddComponent(new ComponentMeshRenderer(plane));
 			scene.Add(std::move(obj));
 			columns.push_back(scene.Objects.Find(String::from(i)));
-			generate(i);
+			generate(i, 1);
 		}
+
+		auto parShader = gDevice->CreateShaderProgram();
+		parShader->Load("Data/Shaders/Particles.csl");
+		parShader->Compile();
+
+		// create particles
+		GameObject par;
+		par.Name = "Particles";
+		par.material = new Material();
+		par.material->SetShader(parShader);
+		scene.Add(std::move(par));
+		ParticleEmitterCPU ps;
+		ps.MaxParticles = 100;
+		ps.EmitRate = 40;
+		ps.ModuleSize.Mode = ParticleModuleSize::UpdateMode::Initial;
+		ps.ModuleSize.Min = { 0.005f };
+		ps.ModuleSize.Max = { 0.005f };
+		ps.ModuleVelocity.Min = { -1, -1, 0 };
+		ps.ModuleVelocity.Max = { -0.5, 1, 0 };
+		particles = scene.Objects.Find("Particles");
+		particles->AddComponent(new ComponentParticleSystem(std::move(ps)));
 	}
 
 	void Update(float DeltaTime) final override
 	{
+		// update columns
+		for (int i = 0; i < n; i++)
+		{
+			auto& tr = columns[i]->transform;
+			if (tr.Position.X - camera.Pos.X + 0.2 < -3)
+			{
+				generate(i, n);
+			}
+		}
+
+		// update bird
+		if (input.GetKeyDown(SDL_SCANCODE_SPACE))
+		{
+			bird->Speed = bird->Jump;
+		}
+		float angle = -bird->Speed * 30;
+		bird->gameObject->transform.Position.X += bird->XSpeed * DeltaTime;
+		bird->gameObject->transform.Position.Y += bird->Speed * DeltaTime;
+		bird->gameObject->transform.Rotation.X = -90;
+		bird->gameObject->transform.Rotation.Y = Math::Clamp<float>(angle, -80, 80) + 90;
+		bird->Speed -= bird->Gravity * DeltaTime;
+		camera.Pos.X += bird->XSpeed * DeltaTime;
+		particles->transform.Position = bird->gameObject->transform.Position;
+
+		if (bird->gameObject->transform.Position.Y > 1 || bird->gameObject->transform.Position.Y < -1)
+		{
+			respawn();
+		}
+
+		auto intersect = [](Vector2 a, Vector2 b)->bool
+		{
+			return (a.X > b.X && a.X < b.Y) || (a.Y > b.X && a.Y < b.Y) || (b.X > a.X&& b.X < a.Y) || (b.Y > a.X&& b.Y < a.Y);
+		};
+
+		// collision detection with columns
+		for (const auto& column : columns)
+		{
+			const auto& ctp = column->transform.Position;
+			const auto& cts = column->transform.Scale.XZY();
+			const auto& btp = bird->gameObject->transform.Position;
+			const auto& bts = bird->gameObject->transform.Scale.XZY();
+			Vector2 cx = { ctp.X - cts.X, ctp.X + cts.X };
+			Vector2 bx = { btp.X - bts.X, btp.X + bts.X };
+			Vector2 cy = { ctp.Y - cts.Y, ctp.Y + cts.Y };
+			Vector2 by = { btp.Y - bts.Y, btp.Y + bts.Y };
+
+			if (intersect(cx, bx) && intersect(cy, by))
+			{
+				respawn();
+			}
+		}
 	}
-	~ColumnsComponent() final override {}
+	~FlappyBirdGameComponent() final override {}
 };
 
 int main(int argc, char** argv)
@@ -122,50 +231,15 @@ int main(int argc, char** argv)
 	eventSystem.WindowFunction = [&](const Event& E) { window.PollEvent(E); };
 	eventSystem.RawFunction = [&](void* Raw) {};
 
-	window.SetVSync(true);
-
-	ShaderProgram* shader = gDevice->CreateShaderProgram();
-	shader->Load("Data/Shaders/Standart.csl");
-	shader->Compile();
-
-	Texture* tex = gDevice->CreateTexture();
-	Texture::Flags flags;
-	flags.Filtering = Texture::Filter::Point;
-	tex->Load("Data/FlappyBird/bird.png");
-	tex->SetFlags(flags);
-
-	Mesh* plane = gDevice->CreateMesh();
-	plane->Load("Data/Meshes/Plane.obj");
+	window.SetVSync(false);
 
 	{
 		GameObject obj;
-		obj.Name = "Bird";
-		obj.material = new Material();
-		obj.material->AlbedoMap = tex;
-		obj.material->EmissionMap = tex;
-		obj.material->SetShader(shader);
-		obj.transform.Scale = { 0.07 };
+		obj.Name = "Game";
 		scene.Add(std::move(obj));
+		scene.Objects.Find("Game")->AddComponent(new FlappyBirdGameComponent(scene, camera, input));
 	}
-	GameObject* bird = scene.Objects.Find("Bird");
-	bird->AddComponent(new ComponentMeshRenderer(plane));
-	bird->AddComponent(new BirdComponent(camera, input, scene));
-
-	//for (int i = 0; i < 10; i++)
-	{
-		GameObject obj;
-		//obj.Name = String::from(i);
-		obj.Name = "Columns";
-		//obj.material = new Material();
-		//obj.material->SetShader(shader);
-		//obj.material->EmissionMap = gDevice->GetDefaultTextures()->White.get();
-		//obj.AddComponent(new ComponentMeshRenderer(plane));
-		//obj.transform.Position = { i * 0.5f + 1, -1, -0.1 };
-		//obj.transform.Rotation = { -90, 0, 0 };
-		//obj.transform.Scale = { 0.1, 0.1, 1 };
-		scene.Add(std::move(obj));
-		scene.Objects.Find("Columns")->AddComponent(new ColumnsComponent(shader, plane, scene));
-	}
+	scene.SetCamera(camera);
 
 	while (run && window.IsOpen())
 	{
@@ -181,6 +255,7 @@ int main(int argc, char** argv)
 		camera.Ortho(-window.GetAspect(), window.GetAspect(), -1, 1, 0.001, 10);
 		camera.Update();
 
+		render.Tonemapping = TonemappingType::ACES;
 		render.ContextSize = window.GetSize();
 		render.SetDeltaTime(deltaTime);
 		render.SetViewport({ 0 }, window.GetSize());

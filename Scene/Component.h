@@ -7,8 +7,7 @@ namespace Columbus
 	class GameObject;
 	class Component
 	{
-	protected:
-		friend class GameObject;
+	public:
 		GameObject* gameObject = nullptr;
 	public:
 		enum class Type
