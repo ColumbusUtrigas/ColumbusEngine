@@ -104,9 +104,19 @@
 			"Name": "Sphere",
 			"Static": false,
 			"Transform": {
-				"Position": [19.6887, 5.42136, 22.6954],
-				"Rotation": [0, 0, 0],
-				"Scale": [1, 1, 1]
+				"Position": [ 19.6887, 5.42136, 22.6954 ],
+				"Rotation": [ 0, 0, 0 ],
+				"Scale": [ 1, 1, 1 ]
+			},
+			"AudioSource": {
+				"Clip": "Fire.wav",
+				"Gain": 1,
+				"Pitch": 1,
+				"MinDistance": 1,
+				"MaxDistance": 100,
+				"Rolloff": 1,
+				"Playing": true,
+				"Looping": true
 			}
 		},
 		{
@@ -124,6 +134,11 @@
 	"Shaders": [
 		"Standart.csl"
 	],
-	"Sounds": {},
+	"Sounds": [
+		{
+			"Name": "Fire.wav",
+			"Streaming": true
+		}
+	],
 	"Textures": {}
 }
