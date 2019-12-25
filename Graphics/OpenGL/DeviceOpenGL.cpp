@@ -45,8 +45,12 @@ namespace Columbus
 		_currentLayout = *Layout;
 	}
 
+	static GLuint __vao = 0;
 	void DeviceOpenGL::IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers)
 	{
+		if (__vao == 0) glGenVertexArrays(1, &__vao);
+
+		glBindVertexArray(__vao);
 		for (int i = 0; i < NumBuffers; i++)
 		{
 			auto slot = _currentLayout.Elements[i].Slot;

@@ -1,14 +1,10 @@
 #include <Graphics/ParticlesRenderer.h>
-#include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/Device.h>
 #include <Math/Quaternion.h>
-#include <GL/glew.h>
 
 namespace Columbus
 {
-
-	static GLuint Particles_VAO = 0;
 
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
@@ -29,10 +25,6 @@ namespace Columbus
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
 	{
 		Allocate(MaxSize);
-
-		glGenVertexArrays(1, &Particles_VAO);
-		glBindVertexArray(Particles_VAO);
-		glBindVertexArray(0);
 	}
 
 	void ParticlesRenderer::Render(const ParticleEmitterCPU& Particles, const Camera& MainCamera, const Material& Mat)
@@ -123,8 +115,6 @@ namespace Columbus
 			gDevice->UnmapBuffer(ColorsBuffer);
 			gDevice->UnmapBuffer(OtherDataBuffer);
 
-			glBindVertexArray(Particles_VAO);
-
 			InputLayout layout;
 			layout.NumElements = 4;
 			layout.Elements[0] = InputLayoutElementDesc{ 0, 3 };
@@ -142,7 +132,6 @@ namespace Columbus
 
 	ParticlesRenderer::~ParticlesRenderer()
 	{		
-		glDeleteVertexArrays(1, &Particles_VAO);
 	}
 
 }
