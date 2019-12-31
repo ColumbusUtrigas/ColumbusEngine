@@ -82,10 +82,10 @@ namespace Columbus
 			JObj["Static"] = false;
 			Obj->transform.Serialize(JObj["Transform"]);
 			
-			if (Obj->material == nullptr)
-				JObj["Material"] = nullptr;
+			if (!Obj->materials.empty() && Obj->materials[0] != nullptr)
+				JObj["Material"] = MaterialsManager.Find(Obj->materials[0]);
 			else
-				JObj["Material"] = MaterialsManager.Find(Obj->material);
+				JObj["Material"] = nullptr;
 
 			auto Lig = (ComponentLight*)Obj->GetComponent(Component::Type::Light);
 			auto Source = (ComponentAudioSource*)Obj->GetComponent(Component::Type::AudioSource);
