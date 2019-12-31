@@ -51,15 +51,14 @@ namespace Columbus
 		for (int i = 0; i < Inspectable->materials.size(); i++)
 		{
 			auto& mat = Inspectable->materials[i];
-			bool IsStandart = mat == Scn.MaterialsManager.Find("Default");
 			bool Collapsing = false;
 
 			#define FORMAT_IME(str) (std::string(str) + "##Inspector_MaterialEditor_" + Inspectable->Name.c_str() + "_" + std::to_string(i)).c_str()
 
-			if (IsStandart)
-				Collapsing = ImGui::CollapsingHeader(FORMAT_IME(MATERIAL_ICON" Material (Default)##_Material"));
+			if (mat == nullptr)
+				Collapsing = ImGui::CollapsingHeader(FORMAT_IME(MATERIAL_ICON" Null Material##_Material"));
 			else
-				Collapsing = ImGui::CollapsingHeader(FORMAT_IME(MATERIAL_ICON" Material##_Material"));
+				Collapsing = ImGui::CollapsingHeader(FORMAT_IME(MATERIAL_ICON" " + mat->Name + " ##_Material"));
 
 			if (Collapsing)
 			{

@@ -173,6 +173,7 @@ namespace Columbus
 			SmartPointer<Material> Mat(new Material());
 			if (Mat->Load(path.c_str(), ShadersManager, TexturesManager))
 			{
+				Mat->Name = name.c_str();
 				MaterialsManager.Add(std::move(Mat), name);
 			}
 		}

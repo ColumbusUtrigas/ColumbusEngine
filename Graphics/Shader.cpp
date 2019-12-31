@@ -5,6 +5,10 @@
 namespace Columbus
 {
 
+	static const char* gErrorShader =
+		#include <Graphics/Shaders/Error.csl>
+	;
+
 	static const char* gScreenSpaceShader =
 		#include <Graphics/Shaders/ScreenSpace.csl>
 	;
@@ -79,6 +83,7 @@ name->Compile();
 		printf("\n");
 		Log::Initialization("Default shaders loading\n");
 
+		LOAD_SHADER(Error);
 		LOAD_SHADER(ScreenSpace);
 		LOAD_SHADER(AutoExposure);
 		LOAD_SHADER(Tonemap);

@@ -33,8 +33,6 @@ void main()
 
 #include "Data/Shaders/BRDF.csl"
 
-#define LIGHT_NUM 4
-
 in float3 varPos;
 in float2 varUV;
 in float3 varNormal;
@@ -72,8 +70,6 @@ in float3x3 varTBN;
 #uniform float Metallic
 #uniform float EmissionStrength
 #uniform bool  Transparent
-
-#uniform float uLighting [13 * LIGHT_NUM]
 
 #define MAX_LIGHTS_COUNT 128
 
@@ -154,45 +150,6 @@ void Init(void)
 		_Metallic = Metallic;
 }
 
-float ShadowCalculation(int id, float NdotL)
-{
-	if (u_Lights.lights[id].hasShadow == 0)
-		return 1;
-
-	float4 lightSpace = u_Lights.lights[id].lightView * float4(varPos, 1);
-
-	if (lightSpace.w == 0)
-		return 1;
-
-    float3 projCoords = lightSpace.xyz / lightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
-	projCoords.xy *= u_Lights.lights[id].shadowRect.zw;
-	projCoords.xy += u_Lights.lights[id].shadowRect.xy;
-    float closestDepth = texture(Shadow, projCoords.xy).r; 
-    float currentDepth = projCoords.z;
-	float bias = 0.00001;
-	//bias = min(bias * (1.0 - NdotL), bias);
-
-	//float shadow = (currentDepth - bias) > closestDepth && currentDepth < 1.0 ? 0.4 : 1.0;
-
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / textureSize(Shadow, 0);
-	for(int x = -1; x <= 1; ++x)
-	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			float pcfDepth = texture(Shadow, projCoords.xy + vec2(x, y) * texelSize).r;
-			shadow += currentDepth - bias > pcfDepth ? 0.4 : 1.0;
-		}
-	}
-	shadow /= 9.0;
-
-	if(projCoords.z > 1.0)
-		shadow = 1.0;
-
-    return shadow * NdotL;
-}
-
 float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 {
 	float3 LightPos = u_Lights.lights[id].pos;
@@ -230,8 +187,9 @@ float3 LightCalc(int id, float3 F, float3 N, float3 V, float NdotV)
 	float3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, H, F, NdotV, _Roughness);
 
 	float Factor = 1.0 - _Metallic;
+	float shadow = CalculateShadow(NdotL, u_Lights.lights[id].hasShadow, u_Lights.lights[id].lightView, varPos, u_Lights.lights[id].shadowRect, Shadow);
 
-	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation * ShadowCalculation(id, NdotL);
+	return (Factor * DiffuseBRDF + SpecularBRDF) * NdotL * u_Lights.lights[id].color * Attenuation * shadow;
 }
 
 float3 Lights(void)
@@ -263,11 +221,6 @@ float3 Lights(void)
 	BRDF += Specular * AO;
 
 	return BRDF * Albedo.rgb;
-}
-
-float2 EncodeNormal(in float3 n)
-{
-	return float2(n.xy / sqrt(8.0 * n.z + 8.0) + 0.5);
 }
 
 void Final(void)

@@ -59,6 +59,7 @@ namespace Columbus
 
 	struct DefaultShaders
 	{
+		std::unique_ptr<ShaderProgram> Error;
 		std::unique_ptr<ShaderProgram> ScreenSpace;
 		std::unique_ptr<ShaderProgram> AutoExposure;
 		std::unique_ptr<ShaderProgram> Tonemap;

@@ -48,3 +48,35 @@ float3 CookTorranceSpecularBRDF(float3 N, float3 L, float3 H, float3 F, float Nd
 
 	return D * F * G * LAMBERTIAN * NdotL;
 }
+
+float CalculateShadow(float NdotL, int hasShadow, float4x4 lightView, float3 vertPos, float4 rect, Texture2D shadowTex)
+{
+	if (hasShadow == 0) return 1;
+	float4 lightSpace = lightView * float4(vertPos, 1);
+	if (lightSpace.w == 0) return 1;
+
+	float3 projCoords = lightSpace.xyz / lightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+	projCoords.xy *= rect.zw;
+	projCoords.xy += rect.xy;
+    float closestDepth = texture(shadowTex, projCoords.xy).r; 
+    float currentDepth = projCoords.z;
+	float bias = 0.00001;
+
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(shadowTex, 0);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcfDepth = texture(shadowTex, projCoords.xy + vec2(x, y) * texelSize).r;
+			shadow += currentDepth - bias > pcfDepth ? 0.4 : 1.0;
+		}
+	}
+	shadow /= 9.0;
+
+	if(projCoords.z > 1.0)
+		shadow = 1.0;
+
+    return shadow * NdotL;
+}
