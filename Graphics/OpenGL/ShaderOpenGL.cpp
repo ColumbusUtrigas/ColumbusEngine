@@ -510,8 +510,8 @@ void main(void)
 
 	#define _SET_UNIFORM(func) \
 		auto id = GetFastUniform(Name); \
-		COLUMBUS_ASSERT_MESSAGE(id != -1, ("Invalid uniform: " + Name \
-			+ "\n" + "in shader: " + Path).c_str()); \
+		/*COLUMBUS_ASSERT_MESSAGE(id != -1, ("Invalid uniform: " + Name \
+			+ "\n" + "in shader: " + Path).c_str());*/ \
 		if (id != -1) \
 		{ \
 			func; \

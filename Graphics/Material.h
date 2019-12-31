@@ -44,6 +44,8 @@ namespace Columbus
 			Always
 		};
 	public:
+		std::string Name = "None";
+
 		Cull Culling = Cull::Back;
 		DepthTest DepthTesting = DepthTest::LEqual;
 		bool DepthWriting = true;

@@ -163,20 +163,25 @@ namespace Columbus
 							for (int i = 0; i < Mesh->SubMeshes.size(); i++)
 							{
 								auto& mesh = Mesh->SubMeshes[i];
-								if (Object->materials.size() > i && Object->materials[i] != nullptr)
+								if (Object->materials.size() > i/* && Object->materials[i] != nullptr*/)
 								{
-									auto& mat = *Object->materials[i];
+									auto mat = Object->materials[i];
+									static Material* defaultMat = new Material();
+									defaultMat->SetShader(gDevice->GetDefaultShaders()->Error.get());
+									defaultMat->Name = "Error";
+									if (mat == nullptr)
+										mat = defaultMat;
 
 									if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 									{
-										if (mat.Transparent)
-											TransparentObjects.emplace_back(mesh, &mat, Counter);
+										if (mat->Transparent)
+											TransparentObjects.emplace_back(mesh, mat, Counter);
 										else
-											OpaqueObjects.emplace_back(mesh, Counter, &mat);
+											OpaqueObjects.emplace_back(mesh, Counter, mat);
 									}
 
-									if (!mat.Transparent)
-										ShadowsObjects.emplace_back(mesh, Counter, &mat);
+									if (!mat->Transparent)
+										ShadowsObjects.emplace_back(mesh, Counter, mat);
 								}
 							}
 						}
@@ -323,6 +328,9 @@ namespace Columbus
 			RSD.FrontCounterClockwise = true;
 			gDevice->CreateRasterizerState(RSD, &RS);
 
+			if (CurrentShader == nullptr)
+				CurrentShader = gDevice->GetDefaultShaders()->Error.get();
+
 			if (CurrentShader != nullptr)
 			{
 				gDevice->OMSetDepthStencilState(DS, 0);
@@ -399,11 +407,14 @@ namespace Columbus
 				if (Object.Mat == nullptr) continue;
 				Material& Mat = *Object.Mat;
 
-				ShaderProgramOpenGL* CurrentShader = (ShaderProgramOpenGL*)Mat.GetShader();
+				ShaderProgramOpenGL* CurrentShader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 				Mesh* CurrentMesh = Object.MeshObject;
 
 				if (Object.MeshObject != nullptr)
 				{
+					if (CurrentShader == nullptr)
+						CurrentShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Error.get());
+
 					if (CurrentShader != nullptr)
 					{
 						gDevice->SetShader(CurrentShader);

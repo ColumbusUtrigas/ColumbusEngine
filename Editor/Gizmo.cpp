@@ -96,9 +96,6 @@ namespace
 		transform.Scale = { s[0], s[1], s[2] };
 		transform.Update();
 
-		printf("D: %f %f %f\n", dr[0], dr[1], dr[2]);
-		printf("%f %f %f\n", r[0], r[1], r[2]);
-
 		/*if (!ImGui::IsMouseDown(0)) WasPressed = false;
 		if (PickedObject == nullptr) return;
 

@@ -1,0 +1,16 @@
+R"(#shader vertex
+#attribute float3 aPos 0
+#uniform float4x4 uModel
+#uniform float4x4 uViewProjection
+
+void main(void)
+{
+	SV_Position = uViewProjection * (float4(aPos, 1) * uModel);
+}
+
+#shader pixel
+void main(void)
+{
+	RT0 = float4(1, 0, 1, 1);
+}
+)"

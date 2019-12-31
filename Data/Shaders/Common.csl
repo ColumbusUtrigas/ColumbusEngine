@@ -20,3 +20,8 @@ float2 ExtractSubUV(int FrameNumber, float2 Texcoords, float2 Frame)
 	return float2(Texcoords.x * Begin.x + Begin.x * FrameHorizontal,
 	              Texcoords.y * Begin.y + Begin.y * FrameVertical);
 }
+
+float2 EncodeNormal(in float3 n)
+{
+	return float2(n.xy / sqrt(8.0 * n.z + 8.0) + 0.5);
+}

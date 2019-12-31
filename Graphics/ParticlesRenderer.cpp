@@ -37,8 +37,17 @@ namespace Columbus
 		BlendStateDesc BSDesc;
 		BlendState* BState;
 		BSDesc.RenderTarget[0].BlendEnable = true;
-		BSDesc.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
-		BSDesc.RenderTarget[0].DestBlend = Blend::One;
+		switch (Particles.Blend)
+		{
+		case ParticleEmitterCPU::BlendMode::Default:
+			BSDesc.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+			BSDesc.RenderTarget[0].DestBlend = Blend::One;
+			break;
+		case ParticleEmitterCPU::BlendMode::Add:
+			BSDesc.RenderTarget[0].SrcBlend = Blend::One;
+			BSDesc.RenderTarget[0].DestBlend = Blend::One;
+			break;
+		}
 		gDevice->CreateBlendState(BSDesc, &BState);
 
 		/*switch (Particles.Blend)
