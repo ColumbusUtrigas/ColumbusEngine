@@ -48,8 +48,8 @@ set_target_properties(${TARGET} PROPERTIES
 target_include_directories(${TARGET} PUBLIC ./)
 target_include_directories(${TARGET} PUBLIC ./Lib/)
 target_include_directories(${TARGET} PUBLIC ./Lib/MiniMP3)
-target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/stb/)
-target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/include/)
+target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/STB/)
+target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/Include/)
 
 if(LINUX)
 	target_include_directories(${TARGET} PUBLIC /usr/include/SDL2/)
@@ -58,7 +58,7 @@ elseif(WIN32)
 	target_include_directories(${TARGET} PUBLIC ./Lib/SDL2/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/Bullet/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/GLEW/include)
-	target_include_directories(${TARGET} PUBLIC ./Lib/LibTIFF/include)
+	target_include_directories(${TARGET} PUBLIC ./Lib/LibTIFF/Include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/GLM)
 endif()
 
@@ -112,3 +112,7 @@ elseif(WIN32)
 endif()
 
 target_link_libraries(${TARGET} imgui)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "${CMAKE_CURRENT_BINARY_DIR}/Data")
+
