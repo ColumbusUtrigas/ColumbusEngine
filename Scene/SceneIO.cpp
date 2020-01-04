@@ -8,6 +8,7 @@
 #include <Graphics/Device.h>
 #include <Common/JSON/JSON.h>
 #include <System/Log.h>
+#include <thread>
 
 namespace Columbus
 {
@@ -132,18 +133,52 @@ namespace Columbus
 		}
 	}
 
+	void func() {}
+
 	void Scene::DeserializeTexturesManager(JSON& J)
 	{
+		// Asynchonous textures loading.
+		struct LoadTexPair
+		{
+			std::string name;
+			std::string path;
+			SmartPointer<Texture> tex;
+			Image img;
+			bool result = false;
+
+			LoadTexPair(const std::string& name, const std::string& path, SmartPointer<Texture>&& tex) :
+				name(name), path(path), tex(std::move(tex)) {}
+		};
+
+		std::vector<LoadTexPair> loadingTexturesQueue;
+		std::vector<std::thread> loadingThreads;
+
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
 			auto path = "Data/Textures/" + name;
+			loadingTexturesQueue.emplace_back(name.c_str(), path.c_str(), SmartPointer<Texture>(gDevice->CreateTexture()));
+		}
 
-			SmartPointer<Texture> Tex(gDevice->CreateTexture());
-			if (Tex->Load(path.c_str()))
+		auto loadFunc = [](LoadTexPair& pair)
+		{
+			pair.result = pair.img.Load(pair.path.c_str());
+		};
+
+		for (auto& load : loadingTexturesQueue)
+		{
+			loadingThreads.emplace_back(std::thread(loadFunc, std::ref(load)));
+		}
+
+		for (int i = 0; i < loadingThreads.size(); i++)
+		{
+			auto& pair = loadingTexturesQueue[i];
+
+			loadingThreads[i].join();
+			if (pair.result && pair.tex->CreateAndLoad(pair.img))
 			{
-				TexturesManager.Add(std::move(Tex), name);
-				Log::Success("Texture loaded: %s", name.c_str());
+				TexturesManager.Add(std::move(pair.tex), pair.name.c_str());
+				Log::Success("Texture loaded: %s", pair.path.c_str());
 			}
 		}
 	}

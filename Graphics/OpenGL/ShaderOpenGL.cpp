@@ -19,6 +19,7 @@ R"(
 #define TextureCube samplerCube
 
 #define Texture2DMS sampler2DMS
+#define Texture2DShadow sampler2DShadow
 
 #define saturate(x) clamp(x, 0, 1)
 
@@ -48,6 +49,7 @@ R"(
 	#define Sample2DLod(tex, uv, lod) texture2DLod(tex, uv, lod)
 	#define Sample3DLod(tex, uv, lod) texture3DLod(tex, uv, lod)
 	#define SampleCubeLod(tex, uv, lod) textureCubeLod(tex, uv, lod)
+	#define Sample2DShadow(tex, uvc) shadow2D(tex, uvc)
 #else
 	#define Sample2D(tex, uv) texture(tex, uv)
 	#define Sample3D(tex, uv) texture(tex, uv)
@@ -58,6 +60,7 @@ R"(
 	#define SampleCubeLod(tex, uv, lod) textureLod(tex, uv, lod)
 
 	#define Sample2DMS(tex, uv, lod) texelFetch(tex, uv, lod)
+	#define Sample2DShadow(tex, uvc) texture(tex, uvc)
 #endif
 )";
 
@@ -205,7 +208,7 @@ void main(void)
 
 		std::stringstream streams[2];
 
-		std::regex regex_uniform_types("\\b((bool|int|float)[2-4]?(x[2-4])?|Texture(2D|3D|Cube|2DMS))\\b");
+		std::regex regex_uniform_types("\\b((bool|int|float)[2-4]?(x[2-4])?|Texture(2D|3D|Cube|2DMS|2DShadow))\\b");
 		std::regex regex_attribute_types("\\b(float[2-4]?)\\b");
 
 		std::regex regex_shader("\\s*#shader\\s+(vertex|pixel)\\s*(=\\s*(.+))?\\s*");

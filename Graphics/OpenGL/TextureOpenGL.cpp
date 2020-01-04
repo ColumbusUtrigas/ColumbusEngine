@@ -575,6 +575,9 @@ namespace Columbus
 			glTexParameteri(Target, GL_TEXTURE_WRAP_T, ClampMode);
 			glTexParameteri(Target, GL_TEXTURE_WRAP_R, ClampMode);
 
+			glTexParameteri(Target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTexParameteri(Target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
 			glBindTexture(Target, 0);
 		}
 	}

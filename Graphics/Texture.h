@@ -112,6 +112,16 @@ namespace Columbus
 		virtual bool Create2D(TextureDesc Desc) = 0;
 		virtual bool CreateCube(TextureDesc Desc) = 0;
 
+		bool CreateAndLoad(Image& Img, int LOD = 0)
+		{
+			if (Create(Img.GetType(), TextureDesc(Img.GetWidth(), Img.GetHeight(), LOD, 0, Img.GetFormat())))
+			{
+				return Load(Img);
+			}
+
+			return false;
+		}
+
 		virtual void SetFlags(Flags F) = 0;
 		Flags GetFlags() const { return TextureFlags; }
 

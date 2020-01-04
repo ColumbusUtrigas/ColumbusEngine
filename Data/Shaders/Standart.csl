@@ -50,7 +50,7 @@ in float3x3 varTBN;
 #uniform TextureCube EnvironmentMap
 #uniform Texture2D   IntegrationMap
 
-#uniform Texture2D Shadow
+#uniform Texture2DShadow Shadow
 
 #uniform bool HasAlbedoMap
 #uniform bool HasNormalMap

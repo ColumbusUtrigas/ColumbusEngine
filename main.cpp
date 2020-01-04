@@ -293,7 +293,7 @@ int main(int argc, char** argv)
 	//GAPIVulkan vk;
 	//vk._test();
 
-	camera.Pos = Vector3(10, 10, 0);
+	camera.Pos = Vector3(0, 10, 0);
 	camera.Rot = Vector3(0, 180, 0);
 
 	input.ShowMouseCursor(true);
@@ -320,6 +320,8 @@ int main(int argc, char** argv)
 #ifdef COLUMBUS_EDITOR
 	ImGui_ImplSDL2_InitForOpenGL(window.GetWindowHandle(), window.GetContextHandle());
 	ImGui_ImplOpenGL3_Init("#version 130");
+#else
+	MainRender.Tonemapping = TonemappingType::RomBinDaHouse;
 #endif
 
 	Editor Editor;
