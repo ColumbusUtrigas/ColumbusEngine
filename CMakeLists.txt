@@ -82,6 +82,7 @@ add_dir_to_target(${TARGET} Input)
 add_dir_to_target(${TARGET} Physics)
 add_dir_to_target(${TARGET} Profiling)
 add_dir_to_target(${TARGET} RenderAPIOpenGL)
+add_dir_to_target(${TARGET} Resources)
 add_dir_to_target(${TARGET} Scene)
 add_dir_to_target(${TARGET} System)
 

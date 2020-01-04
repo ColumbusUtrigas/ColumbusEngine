@@ -158,7 +158,6 @@ namespace Columbus
 						if (Mesh != nullptr)
 						{
 							if (Object->materials.empty()) continue;
-							//Material& Mat = *Object->material;
 
 							for (int i = 0; i < Mesh->SubMeshes.size(); i++)
 							{
@@ -235,8 +234,8 @@ namespace Columbus
 			if (lightingUboData.lights[i].hasShadow)
 			{
 				rects[num_rects].id = i;
-				rects[num_rects].w = 512;
-				rects[num_rects].h = 512;
+				rects[num_rects].w = 1024;
+				rects[num_rects].h = 1024;
 				num_rects++;
 			}
 		}
@@ -273,16 +272,8 @@ namespace Columbus
 
 				if (CurrentShader != nullptr)
 				{
-					DepthStencilStateDesc DSSD;
-					DepthStencilState* DS;
-					DSSD.DepthEnable = true;
-					DSSD.DepthWriteMask = Mat.DepthWriting;
-					DSSD.DepthFunc = (ComparisonFunc)Mat.DepthTesting;
-
-					gDevice->CreateDepthStencilState(DSSD, &DS);
-
 					gDevice->SetShader(Mat.GetShader());
-					gDevice->OMSetDepthStencilState(DS, 0);
+					gDevice->OMSetDepthStencilState(Mat.DSS.get(), 0);
 
 					State.SetCulling(Material::Cull::No);
 					//State.SetDepthTesting(Mat.DepthTesting);
@@ -310,32 +301,14 @@ namespace Columbus
 			Material& Mat = *Object.Mat;
 			ShaderProgram* CurrentShader = Mat.GetShader();
 
-			BlendStateDesc BSD;
-			BlendState* BS;
-			gDevice->CreateBlendState(BSD, &BS);
-
-			DepthStencilStateDesc DSD;
-			DepthStencilState* DS;
-			DSD.DepthEnable = true;
-			DSD.DepthWriteMask = true;
-			DSD.DepthFunc = (ComparisonFunc)Mat.DepthTesting;
-			gDevice->CreateDepthStencilState(DSD, &DS);
-
-			RasterizerStateDesc RSD;
-			RasterizerState* RS;
-			RSD.Cull = (CullMode)Mat.Culling;
-			RSD.Fill = FillMode::Solid;
-			RSD.FrontCounterClockwise = true;
-			gDevice->CreateRasterizerState(RSD, &RS);
-
 			if (CurrentShader == nullptr)
 				CurrentShader = gDevice->GetDefaultShaders()->Error.get();
 
 			if (CurrentShader != nullptr)
 			{
-				gDevice->OMSetDepthStencilState(DS, 0);
-				gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
-				gDevice->RSSetState(RS);
+				gDevice->OMSetDepthStencilState(Mat.DSS.get(), 0);
+				gDevice->OMSetBlendState(Mat.BS.get(), nullptr, 0xFFFFFFFF);
+				gDevice->RSSetState(Mat.RS.get());
 				gDevice->SetShader(Mat.GetShader());
 
 				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
@@ -399,7 +372,6 @@ namespace Columbus
 			BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
 
 			gDevice->CreateBlendState(BSD, &BS);
-			gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
 
 			for (auto& Object : TransparentObjects)
 			{
@@ -418,8 +390,9 @@ namespace Columbus
 					if (CurrentShader != nullptr)
 					{
 						gDevice->SetShader(CurrentShader);
-
-						State.SetDepthTesting(Mat.DepthTesting);
+						gDevice->OMSetDepthStencilState(Mat.DSS.get(), 0);
+						gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
+						gDevice->RSSetState(Mat.RS.get());
 						State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
 						CurrentMesh->Bind();
 
@@ -453,8 +426,6 @@ namespace Columbus
 						}
 
 						TransparentObjectsRendered++;
-
-						CurrentMesh->Unbind();
 					}
 				}
 
@@ -718,6 +689,7 @@ namespace Columbus
 
 		static PostEffect shadowEffect;
 		shadowEffect.DepthTextureEnablement = true;
+		shadowEffect.DepthTextureFlags.Filtering = Texture::Filter::Linear;
 
 		iVector2 shadowSize = { 2048, 2048 };
 		shadowEffect.Bind({0}, {0}, shadowSize);
@@ -742,9 +714,9 @@ namespace Columbus
 		State.SetMainCamera(MainCamera);
 
 		RenderOpaque();
-		//glDrawBuffers(1, BuffersFirst);
+		glDrawBuffers(1, BuffersFirst);
 		RenderSky();
-		//glDrawBuffers(2, BuffersAll);
+		glDrawBuffers(2, BuffersAll);
 		RenderTransparent();
 
 		if (DrawGrid)
@@ -788,9 +760,14 @@ namespace Columbus
 
 			glReadBuffer(GL_COLOR_ATTACHMENT1);
 			glDrawBuffer(GL_COLOR_ATTACHMENT1);
-
 			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			glReadBuffer(GL_DEPTH_ATTACHMENT);
+			glDrawBuffer(GL_DEPTH_ATTACHMENT);
 			glBlitFramebuffer(0, 0, ContextSize.X, ContextSize.Y, 0, 0, ContextSize.X, ContextSize.Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		}
 
 		Base.ColorTexturesMipmaps[0] = true;

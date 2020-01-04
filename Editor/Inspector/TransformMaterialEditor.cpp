@@ -194,6 +194,7 @@ namespace Columbus
 						if (MaterialsManager.Add(std::move(Mat), Name.c_str()))
 						{
 							*CreateNewMaterialMat = MaterialsManager[Name.c_str()].Get();
+							(*CreateNewMaterialMat)->Name = Name;
 						}
 					}
 

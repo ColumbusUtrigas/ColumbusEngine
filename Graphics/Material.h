@@ -4,6 +4,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Graphics/Shader.h>
+#include <Graphics/Device.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -45,6 +46,10 @@ namespace Columbus
 		};
 	public:
 		std::string Name = "None";
+
+		std::shared_ptr<DepthStencilState> DSS;
+		std::shared_ptr<BlendState> BS;
+		std::shared_ptr<RasterizerState> RS;
 
 		Cull Culling = Cull::Back;
 		DepthTest DepthTesting = DepthTest::LEqual;

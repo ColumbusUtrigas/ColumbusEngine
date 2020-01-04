@@ -9,7 +9,30 @@
 namespace Columbus
 {
 
-	Material::Material() {}
+	Material::Material()
+	{
+		DepthStencilState* dss;
+		DepthStencilStateDesc dssd;
+		dssd.DepthEnable = true;
+		dssd.DepthWriteMask = true;
+		dssd.DepthFunc = ComparisonFunc::LEqual;
+		gDevice->CreateDepthStencilState(dssd, &dss);
+
+		BlendState* bs;
+		BlendStateDesc bsd;
+		gDevice->CreateBlendState(bsd, &bs);
+
+		RasterizerState* rs;
+		RasterizerStateDesc rsd;
+		rsd.Cull = CullMode::Back;
+		rsd.Fill = FillMode::Solid;
+		rsd.FrontCounterClockwise = true;
+		gDevice->CreateRasterizerState(rsd, &rs);
+
+		DSS = std::shared_ptr<DepthStencilState>(dss);
+		BS = std::shared_ptr<BlendState>(bs);
+		RS = std::shared_ptr<RasterizerState>(rs);
+	}
 
 	bool Material::Prepare()
 	{

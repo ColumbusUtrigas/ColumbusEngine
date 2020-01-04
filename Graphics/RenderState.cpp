@@ -117,6 +117,11 @@ namespace Columbus
 				Shader->SetUniform("Transparent", InMaterial.Transparent);
 				Shader->SetUniform("uCameraPosition", MainCamera.Pos);
 			}
+			else
+			{
+				Shader->SetUniform("Albedo", {1,1,1,1});
+				Shader->SetUniform("Transparent", false);
+			}
 		}
 	}
 

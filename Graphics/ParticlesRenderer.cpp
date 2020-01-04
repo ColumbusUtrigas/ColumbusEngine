@@ -50,20 +50,6 @@ namespace Columbus
 		}
 		gDevice->CreateBlendState(BSDesc, &BState);
 
-		/*switch (Particles.Blend)
-		{
-		case ParticleEmitterCPU::BlendMode::Default: // src_alpha * src + (1 - src_alpha) * dst
-			glBlendEquation(GL_FUNC_ADD);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			break;
-		case ParticleEmitterCPU::BlendMode::Add: // (src_alpha) * src + 1 * dst
-			glBlendEquation(GL_FUNC_ADD);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-			break;
-		case ParticleEmitterCPU::BlendMode::Subtract: break; // TODO
-		case ParticleEmitterCPU::BlendMode::Multiply: break; // TODO
-		}*/
-
 		DepthStencilStateDesc DSDesc;
 		DepthStencilState* DSState;
 		DSDesc.DepthEnable = true;
