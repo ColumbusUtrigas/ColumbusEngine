@@ -5,6 +5,7 @@
 #include <Graphics/Skybox.h>
 #include <Graphics/Light.h>
 #include <Graphics/Particles/ParticleEmitterCPU.h>
+#include <Graphics/Billboard.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/PostEffect.h>
 #include <Scene/GameObject.h>
@@ -53,6 +54,18 @@ namespace Columbus
 		MSAA_32X
 	};
 
+	struct RenderEntity
+	{
+		Material* Mat;
+		Transform& Tran;
+		Mesh* MeshObj;
+		ParticleEmitterCPU* ParticlesCPU;
+		Billboard* Bill;
+
+		RenderEntity(Material* Mat, Transform& Tran, Mesh* Mesh, ParticleEmitterCPU* ParticlesCPU, Billboard* Bill) :
+			Mat(Mat), Tran(Tran), MeshObj(Mesh), ParticlesCPU(ParticlesCPU), Bill(Bill) {}
+	};
+
 	class Renderer
 	{
 	protected:
@@ -73,6 +86,8 @@ namespace Columbus
 		{
 			Mesh* MeshObject;
 			ParticleEmitterCPU* Particles;
+			Billboard* Billboard;
+
 			Material* Mat;
 			uint32 Index; // Index of GameObject in array
 			//int32 Lights[4] = { -1, -1, -1, -1 };
@@ -94,9 +109,12 @@ namespace Columbus
 		std::vector<Light*>* LightsList;
 		std::vector<std::pair<uint32, Light*>> LightsPairs;
 
-		std::vector<OpaqueRenderData> OpaqueObjects;
+		std::vector<RenderEntity> OpaqueEntities;
+		std::vector<RenderEntity> TransparentEntities;
+
+		//std::vector<OpaqueRenderData> OpaqueObjects;
 		std::vector<OpaqueRenderData> ShadowsObjects;
-		std::vector<TransparentRenderData> TransparentObjects;
+		//std::vector<TransparentRenderData> TransparentObjects;
 		
 		iVector2 ViewportOrigin;
 		iVector2 ViewportSize;

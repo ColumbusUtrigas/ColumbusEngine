@@ -9,7 +9,8 @@ namespace Columbus
 	{
 		Array,
 		Index,
-		Uniform
+		Uniform,
+		UAV
 	};
 
 	enum class BufferMapAccess

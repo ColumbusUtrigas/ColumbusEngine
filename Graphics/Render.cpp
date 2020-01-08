@@ -3,6 +3,7 @@
 #include <Graphics/RenderState.h>
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
+#include <Scene/ComponentBillboard.h>
 #include <Scene/Component.h>
 #include <Math/Frustum.h>
 #include <GL/glew.h>
@@ -128,9 +129,11 @@ namespace Columbus
 	{
 		PROFILE_CPU(ProfileModule::Culling);
 
-		OpaqueObjects.clear();
+		OpaqueEntities.clear();
+		TransparentEntities.clear();
+		//OpaqueObjects.clear();
 		ShadowsObjects.clear();
-		TransparentObjects.clear();
+		//TransparentObjects.clear();
 
 		LightsPairs.clear();
 
@@ -150,6 +153,7 @@ namespace Columbus
 				{
 					ComponentMeshRenderer* MeshRenderer = (ComponentMeshRenderer*)Object->GetComponent(Component::Type::MeshRenderer);
 					ComponentParticleSystem* ParticleSystem = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
+					auto Bill = Object->GetComponent<ComponentBillboard>();
 
 					if (MeshRenderer != nullptr)
 					{
@@ -174,9 +178,13 @@ namespace Columbus
 									if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 									{
 										if (mat->Transparent)
-											TransparentObjects.emplace_back(mesh, mat, Counter);
+											//TransparentObjects.emplace_back(mesh, mat, Counter);
+											TransparentEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
 										else
-											OpaqueObjects.emplace_back(mesh, Counter, mat);
+										{
+											//OpaqueObjects.emplace_back(mesh, Counter, mat);
+											OpaqueEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
+										}
 									}
 
 									if (!mat->Transparent)
@@ -192,8 +200,15 @@ namespace Columbus
 
 						if (Emitter != nullptr)
 						{
-							TransparentObjects.emplace_back(Emitter, Object->materials[0], Counter);
+							TransparentEntities.emplace_back(Object->materials[0], Object->transform, nullptr, Emitter, nullptr);
+							//TransparentObjects.emplace_back(Emitter, Object->materials[0], Counter);
 						}
+					}
+
+					if (Bill != nullptr)
+					{
+						auto mat = Object->materials.empty() ? nullptr : Object->materials[0];
+						TransparentEntities.emplace_back(mat, Object->transform, nullptr, nullptr, &Bill->GetBillboard());
 					}
 				}
 
@@ -214,8 +229,8 @@ namespace Columbus
 			return MainCamera.Pos.LengthSquare(Scn->Objects[A.Index]->transform.Position) > MainCamera.Pos.LengthSquare(Scn->Objects[B.Index]->transform.Position);
 		};
 
-		std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
-		std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
+		//std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
+		//std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
 	}
 
 	void Renderer::RenderShadows(const iVector2& ShadowMapSize)
@@ -246,6 +261,7 @@ namespace Columbus
 		stbrp_init_target(&context, ShadowMapSize.X, ShadowMapSize.Y, nodes, num_nodes);
 		stbrp_pack_rects(&context, rects, num_rects);
 
+		gDevice->BeginMarker("Shadows Render");
 		for (int i = 0; i < num_rects; i++)
 		{
 			int id = rects[i].id;
@@ -287,18 +303,18 @@ namespace Columbus
 				}
 			}
 		}
+		gDevice->EndMarker();
 	}
 
 	void Renderer::RenderOpaque()
 	{
 		PROFILE_GPU(ProfileModuleGPU::OpaqueStage);
-		if (OpaqueObjects.empty()) return;
+		gDevice->BeginMarker("Opaque Render");
 
-		for (auto& Object : OpaqueObjects)
+		for (auto& Ent : OpaqueEntities)
 		{
-			auto& GO = Scn->Objects[Object.Index];
-			if (Object.Mat == nullptr) continue;
-			Material& Mat = *Object.Mat;
+			if (Ent.Mat == nullptr) continue;
+			Material& Mat = *Ent.Mat;
 			ShaderProgram* CurrentShader = Mat.GetShader();
 
 			if (CurrentShader == nullptr)
@@ -311,21 +327,22 @@ namespace Columbus
 				gDevice->RSSetState(Mat.RS.get());
 				gDevice->SetShader(Mat.GetShader());
 
-				State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
-				Object.Object->Bind();
+				State.SetMaterial(Mat, Ent.Tran.GetMatrix(), Sky);
+				Ent.MeshObj->Bind();
 
-				PolygonsRendered += Object.Object->Render();
+				PolygonsRendered += Ent.MeshObj->Render();
 				OpaqueObjectsRendered++;
 			}
 		}
+		gDevice->EndMarker();
 	}
 
 	void Renderer::RenderSky()
 	{
-		PROFILE_GPU(ProfileModuleGPU::SkyStage);
-
 		if (Sky != nullptr)
 		{
+			PROFILE_GPU(ProfileModuleGPU::SkyStage);
+			gDevice->BeginMarker("Sky Render");
 			BlendStateDesc BSD;
 			DepthStencilStateDesc DSSD;
 			RasterizerStateDesc RSD;
@@ -353,16 +370,82 @@ namespace Columbus
 			gDevice->RSSetState(RS);
 
 			Sky->Render();
+			gDevice->EndMarker();
 		}
+	}
+
+	std::string billboard =
+		R"(
+#shader vertex
+#attribute float3 aPos 0
+#uniform float4x4 uViewProjection
+#uniform float4x4 uModel
+#uniform float4x4 uRot
+
+out float3 varPos;
+
+void main(void)
+{
+	varPos = float3(float4(aPos, 1.0) * uModel);
+	SV_Position = uViewProjection * float4(varPos, 1);
+}
+
+#shader pixel
+in float3 varPos;
+
+void main(void)
+{
+	RT0 = float4(1,1,1,1);
+}
+)";
+
+	void RenderBillboard(Camera Cam, const Billboard& Bill, const Transform& Tran)
+	{
+		static ShaderProgram* prog;
+		static Mesh* plane;
+		static bool first = true;
+		if (first)
+		{
+			prog = gDevice->CreateShaderProgram();
+			prog->LoadFromMemory(billboard.c_str());
+			prog->Compile();
+
+			plane = gDevice->CreateMesh();
+			plane->Load("Data/Meshes/Plane.obj");
+			first = false;
+		}
+
+		Matrix model;
+		Matrix rot;
+
+		switch (Bill.Rotate)
+		{
+		//case Billboard::LocalX: rot.LookAt(Tran.Position, { 0,Cam.Pos.Y,Cam.Pos.Z }, { 1,0,0 }); break;
+		case Billboard::LocalY: rot.LookAt(Tran.Position, { Cam.Pos.X,0,Cam.Pos.Z }, { 0,1,0 }); break;
+		//case Billboard::LocalZ: rot.LookAt(Tran.Position, { Cam.Pos.X,0,Cam.Pos.Z }, { 0,1,0 }); break;
+		}
+
+		model.Scale(Tran.Scale);
+		model = rot * model;
+		model = Tran.Q.ToMatrix() * model;
+		model.Translate(Tran.Position);
+
+		gDevice->SetShader(prog);
+		static_cast<ShaderProgramOpenGL*>(prog)->SetUniform("uViewProjection", false, Cam.GetViewProjection());
+		static_cast<ShaderProgramOpenGL*>(prog)->SetUniform("uModel", false, model);
+		static_cast<ShaderProgramOpenGL*>(prog)->SetUniform("uRot", false, rot);
+
+		plane->SubMeshes[0]->Bind();
+		plane->SubMeshes[0]->Render();
 	}
 
 	void Renderer::RenderTransparent()
 	{
 		PROFILE_GPU(ProfileModuleGPU::TransparentStage);
-		if (TransparentObjects.empty()) return;
 
-		if (RenderList != nullptr && TransparentObjects.size() != 0)
+		if (TransparentEntities.size() != 0)
 		{
+			gDevice->BeginMarker("Transparent Render");
 			BlendStateDesc BSD;
 			BlendState* BS;
 			BSD.RenderTarget[0].BlendEnable = true;
@@ -373,32 +456,31 @@ namespace Columbus
 
 			gDevice->CreateBlendState(BSD, &BS);
 
-			for (auto& Object : TransparentObjects)
+			for (auto& Object : TransparentEntities)
 			{
-				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
-				if (Object.Mat == nullptr) continue;
-				Material& Mat = *Object.Mat;
+				auto Mat = Object.Mat;
+				ShaderProgramOpenGL* CurrentShader = static_cast<ShaderProgramOpenGL*>(Mat != nullptr ? Mat->GetShader() : nullptr);
+				Mesh* CurrentMesh = Object.MeshObj;
 
-				ShaderProgramOpenGL* CurrentShader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
-				Mesh* CurrentMesh = Object.MeshObject;
-
-				if (Object.MeshObject != nullptr)
+				if (CurrentMesh != nullptr)
 				{
+					if (Mat == nullptr) continue;
+
 					if (CurrentShader == nullptr)
 						CurrentShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Error.get());
 
 					if (CurrentShader != nullptr)
 					{
 						gDevice->SetShader(CurrentShader);
-						gDevice->OMSetDepthStencilState(Mat.DSS.get(), 0);
+						gDevice->OMSetDepthStencilState(Mat->DSS.get(), 0);
 						gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
-						gDevice->RSSetState(Mat.RS.get());
-						State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky);
+						gDevice->RSSetState(Mat->RS.get());
+						State.SetMaterial(*Mat, Object.Tran.GetMatrix(), Sky);
 						CurrentMesh->Bind();
 
 						int32 Transparent = CurrentShader->GetFastUniform("Transparent");
 
-						if (Mat.Culling == Material::Cull::No)
+						if (Mat->Culling == Material::Cull::No)
 						{
 							State.SetDepthWriting(true);
 							CurrentShader->SetUniform(Transparent, 0);
@@ -414,7 +496,7 @@ namespace Columbus
 						}
 						else
 						{
-							State.SetCulling(Mat.Culling);
+							State.SetCulling(Mat->Culling);
 
 							State.SetDepthWriting(true);
 							CurrentShader->SetUniform(Transparent, 0);
@@ -429,12 +511,21 @@ namespace Columbus
 					}
 				}
 
-				if (Object.Particles != nullptr)
+				if (Object.ParticlesCPU != nullptr)
 				{
+					if (Mat == nullptr) continue;
+
 					gDevice->SetShader(CurrentShader);
-					ParticlesRender.Render(*Object.Particles, MainCamera, Mat);
+					ParticlesRender.SetDepthBuffer(Base.DepthTexture);
+					ParticlesRender.Render(*Object.ParticlesCPU, MainCamera, *Mat);
+				}
+
+				if (Object.Bill != nullptr)
+				{
+					RenderBillboard(MainCamera, *Object.Bill, Object.Tran);
 				}
 			}
+			gDevice->EndMarker();
 		}
 	}
 
@@ -549,17 +640,61 @@ namespace Columbus
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles.get(), 0);
-		for (const auto& Elem : TransparentObjects)
+		for (const auto& Elem : TransparentEntities)
 		{
-			if (Elem.Particles != nullptr)
-				DrawIcon(Vector4(Scn->Objects[Elem.Index]->transform.Position, 1));
+			if (Elem.ParticlesCPU != nullptr)
+				DrawIcon(Vector4(Elem.Tran.Position, 1));
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->Unbind();
 	}
 
+std::string computeprog =
+R"(#version 430 core
+layout(local_size_x = 1, local_size_y = 1) in;
+
+layout(std430, binding = 0) buffer destBuffer
+{
+	int data[];
+} outBuffer;
+
+void main(void)
+{
+	outBuffer.data[0] = 12345;
+}
+)";
+
 	void Renderer::Render()
 	{
+		static bool first = true;
+		static ComputePipelineState* CPS;
+		static Buffer* SSBO;
+		if (first)
+		{
+			ComputePipelineStateDesc CPSD;
+			CPSD.CS = computeprog;
+			gDevice->CreateComputePipelineState(CPSD, &CPS);
+
+			BufferDesc SSBOD;
+			SSBOD.BindFlags = BufferType::UAV;
+			SSBOD.Size = 4;
+			SSBOD.CpuAccess = BufferCpuAccess::Write;
+			SSBOD.Usage = BufferUsage::Dynamic;
+			gDevice->CreateBuffer(SSBOD, nullptr, &SSBO);
+
+			first = false;
+		}
+
+		glUseProgram(CPS->progid);
+		gDevice->BindBufferBase(SSBO, 0);
+		glDispatchCompute(1, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		void* ptr;
+		gDevice->MapBuffer(SSBO, BufferMapAccess::Read, ptr);
+		printf("%i\n", *((int*)ptr));
+		gDevice->UnmapBuffer(SSBO);
+
 		struct _UBO_Data
 		{
 			struct

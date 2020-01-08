@@ -5,6 +5,7 @@
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/ComponentRigidbody.h>
+#include <Scene/ComponentBillboard.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 
@@ -74,6 +75,7 @@ namespace Columbus
 		const char* NameMesh = MESH_ICON" Mesh Renderer##PanelInspector_ModalWindow_AddComponent_Mesh";
 		const char* NameParticles = PARTICLES_ICON" Particle Emitter##PanelInspector_ModalWindow_AddComponent_Particles";
 		const char* NameRigidbody = RIGIDBODY_ICON" Rigidbody##PanelInspector_ModalWindow_AddComponent_Rigidbody";
+		const char* NameBillboard = "Billboard##PanelInspector_ModalWindow_AddComponent_Billboard";
 
 		GameObject*& GO = Inspectable;
 
@@ -100,6 +102,7 @@ namespace Columbus
 			case 3: GO->AddComponent(new ComponentMeshRenderer(nullptr)); break;
 			case 4: GO->AddComponent(new ComponentParticleSystem(ParticleEmitterCPU())); break;
 			case 5: GO->AddComponent(new ComponentRigidbody(new Rigidbody())); break;
+			case 6: GO->AddComponent(new ComponentBillboard(Billboard())); break;
 			default: break;
 			}
 
@@ -122,6 +125,7 @@ namespace Columbus
 		bool IsMesh = GO->HasComponent(Component::Type::MeshRenderer);
 		bool IsParticles = GO->HasComponent(Component::Type::ParticleSystem);
 		bool IsRigidbody = GO->HasComponent(Component::Type::Rigidbody);
+		bool IsBillboard = GO->HasComponent(Component::Type::Billboard);
 
 		if (AddComponentEnable)
 		{
@@ -140,6 +144,7 @@ namespace Columbus
 					Selectable(NameMesh, 3, IsMesh);
 					Selectable(NameParticles, 4, IsParticles);
 					Selectable(NameRigidbody, 5, IsRigidbody);
+					Selectable(NameBillboard, 6, IsBillboard);
 				}
 				ImGui::EndChild();
 
@@ -164,6 +169,7 @@ namespace Columbus
 		DrawComponentMeshRendererEditor(Scn);
 		DrawComponentParticleSystemEditor(Scn);
 		DrawComponentRigidbodyEditor(Scn);
+		DrawComponentBillboardEditor(Scn);
 	}
 
 }

@@ -430,6 +430,7 @@ int main(int argc, char** argv)
 		MainRender.Render();
 
 #ifdef COLUMBUS_EDITOR
+		gDevice->BeginMarker("IMGUI");
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window.GetWindowHandle());
 		ImGui::NewFrame();
@@ -440,6 +441,7 @@ int main(int argc, char** argv)
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		gDevice->EndMarker();
 #endif
 
 		window.Display();

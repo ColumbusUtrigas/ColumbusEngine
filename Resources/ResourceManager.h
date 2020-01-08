@@ -3,6 +3,8 @@
 #include <Core/SmartPointer.h>
 #include <Core/String.h>
 #include <unordered_map>
+#include <memory>
+#include <string>
 
 namespace Columbus
 {
@@ -10,7 +12,7 @@ namespace Columbus
 	template <typename T>
 	struct ResourceManager
 	{
-		uint32 CurrentID = 0;
+		int CurrentID = 0;
 
 		std::unordered_map<size_t, SmartPointer<T>> Resources;
 		std::unordered_map<size_t, String> Names;
@@ -101,6 +103,32 @@ namespace Columbus
 		SmartPointer<T>& operator[](size_t ID)
 		{
 			return Resources[ID];
+		}
+	};
+
+	template <typename T>
+	class ResourceManager2
+	{
+	private:
+		std::unordered_map<std::string, std::shared_ptr<T>> _Resources;
+		std::shared_ptr<T> CreateResource(const std::string& Name);
+	public:
+		std::weak_ptr<T> Request(const std::string& Name)
+		{
+			return RequestShared(Name);
+		}
+
+		std::shared_ptr<T> RequestShared(const std::string& Name)
+		{
+			auto it = _Resources.find(Name);
+			if (it == _Resources.end())
+			{
+				auto res = CreateResource(Name);
+				_Resources[Name] = res;
+				return res;
+			}
+
+			return it->second;
 		}
 	};
 

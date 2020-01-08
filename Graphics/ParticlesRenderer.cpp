@@ -10,16 +10,14 @@ namespace Columbus
 	{
 		MaxSize = NewSize;
 
-		auto Array = BufferType::Array;
+		auto UAV = BufferType::UAV;
 		auto Dynamic = BufferUsage::Dynamic;
 		auto Write = BufferCpuAccess::Write;
 
-		size_t VerticesCount = MaxSize * 6;
-
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Dynamic, Write), nullptr, &PositionsBuffer);
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector3), Array, Dynamic, Write), nullptr, &SizesBuffer);
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector4), Array, Dynamic, Write), nullptr, &ColorsBuffer);
-		gDevice->CreateBuffer(BufferDesc(VerticesCount * sizeof(Vector2), Array, Dynamic, Write), nullptr, &OtherDataBuffer);
+		gDevice->CreateBuffer(BufferDesc(MaxSize * sizeof(Vector4), UAV, Dynamic, Write), nullptr, &PositionsUAV);
+		gDevice->CreateBuffer(BufferDesc(MaxSize * sizeof(Vector4), UAV, Dynamic, Write), nullptr, &SizesUAV);
+		gDevice->CreateBuffer(BufferDesc(MaxSize * sizeof(Vector4), UAV, Dynamic, Write), nullptr, &ColorsUAV);
+		gDevice->CreateBuffer(BufferDesc(MaxSize * sizeof(Vector2), UAV, Dynamic, Write), nullptr, &OtherUAV);
 	}
 
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
@@ -66,11 +64,26 @@ namespace Columbus
 		gDevice->OMSetDepthStencilState(DSState, 0);
 		gDevice->OMSetBlendState(BState, blendFactor, 0xFFFFFFFF);
 		gDevice->RSSetState(RS);
-		 
+
 		ShaderProgramOpenGL* Shader = static_cast<ShaderProgramOpenGL*>(Mat.GetShader());
 		if (Shader != nullptr)
 		{
-			Quaternion Q(Vector3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
+			Quaternion Q;
+
+			switch (Particles.Billboard)
+			{
+			case ParticleEmitterCPU::BillboardMode::Vertical:
+				Q = Quaternion(Vector3(0, Math::Radians(MainCamera.Rot.Y), 0));
+				break;
+			case ParticleEmitterCPU::BillboardMode::Horizontal:
+			case ParticleEmitterCPU::BillboardMode::FaceToCamera:
+				Q = Quaternion(Vector3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
+				break;
+			case ParticleEmitterCPU::BillboardMode::None:
+			default:
+				Q = Quaternion(Vector3(0,0,0));
+			}
+
 			Matrix Billboard = Q.ToMatrix();
 
 			Shader->SetUniform("View", false, MainCamera.GetViewMatrix());
@@ -78,49 +91,41 @@ namespace Columbus
 			Shader->SetUniform("Billboard", false, Billboard);
 			Shader->SetUniform("Frame", iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
 
-			if (Mat.AlbedoMap == nullptr)
-				Shader->SetUniform("Texture", gDevice->GetDefaultTextures()->White.get(), 0);
-			else
-				Shader->SetUniform("Texture", Mat.AlbedoMap, 0);
+			Shader->SetUniform("Texture", Mat.AlbedoMap != nullptr ? Mat.AlbedoMap : gDevice->GetDefaultTextures()->White.get(), 0);
+			Shader->SetUniform("DepthTexture", Depth != nullptr ? Depth : gDevice->GetDefaultTextures()->Black.get(), 1);
 
-			Vector3* Positions;
-			Vector3* Sizes;
-			Vector4* Colors;
-			Vector2* OtherData;
+			Vector4* PositionsNEW;
+			Vector4* SizesNEW;
+			Vector4* ColorsNEW;
+			Vector2* OtherNEW;
 
-			gDevice->MapBuffer(PositionsBuffer, BufferMapAccess::Write, (void*&)Positions);
-			gDevice->MapBuffer(SizesBuffer,     BufferMapAccess::Write, (void*&)Sizes);
-			gDevice->MapBuffer(ColorsBuffer,    BufferMapAccess::Write, (void*&)Colors);
-			gDevice->MapBuffer(OtherDataBuffer, BufferMapAccess::Write, (void*&)OtherData);
+			gDevice->MapBuffer(PositionsUAV, BufferMapAccess::Write, (void*&)PositionsNEW);
+			gDevice->MapBuffer(SizesUAV, BufferMapAccess::Write, (void*&)SizesNEW);
+			gDevice->MapBuffer(ColorsUAV, BufferMapAccess::Write, (void*&)ColorsNEW);
+			gDevice->MapBuffer(OtherUAV, BufferMapAccess::Write, (void*&)OtherNEW);
 
 			for (size_t i = 0; i < Particles.Particles.Count; i++)
 			{
-				for (size_t a = 0; a < 6; a++)
-				{
-					Positions[i * 6 + a]   = Particles.Particles.Positions[i].XYZ();
-					    Sizes[i * 6 + a]   = Particles.Particles.Sizes[i];
-					   Colors[i * 6 + a]   = Particles.Particles.Colors[i];
-					OtherData[i * 6 + a].X = Particles.Particles.Rotations[i];
-					OtherData[i * 6 + a].Y = Particles.Particles.Frames[i];
-				}
+				PositionsNEW[i] = Vector4(Particles.Particles.Positions[i], 0);
+				SizesNEW[i] = Vector4(Particles.Particles.Sizes[i], 0);
+				ColorsNEW[i] = Particles.Particles.Colors[i];
+				OtherNEW[i].X = Particles.Particles.Rotations[i];
+				OtherNEW[i].Y = Particles.Particles.Frames[i];
 			}
 
-			gDevice->UnmapBuffer(PositionsBuffer);
-			gDevice->UnmapBuffer(SizesBuffer);
-			gDevice->UnmapBuffer(ColorsBuffer);
-			gDevice->UnmapBuffer(OtherDataBuffer);
+			gDevice->UnmapBuffer(PositionsUAV);
+			gDevice->UnmapBuffer(SizesUAV);
+			gDevice->UnmapBuffer(ColorsUAV);
+			gDevice->UnmapBuffer(OtherUAV);
 
-			InputLayout layout;
-			layout.NumElements = 4;
-			layout.Elements[0] = InputLayoutElementDesc{ 0, 3 };
-			layout.Elements[1] = InputLayoutElementDesc{ 1, 3 };
-			layout.Elements[2] = InputLayoutElementDesc{ 2, 4 };
-			layout.Elements[3] = InputLayoutElementDesc{ 3, 2 };
-
-			Buffer* ppBuffers[] = { PositionsBuffer, SizesBuffer, ColorsBuffer, OtherDataBuffer };
-			gDevice->IASetInputLayout(&layout);
-			gDevice->IASetVertexBuffers(0, 4, ppBuffers);
+			gDevice->IASetVertexBuffers(0, 0, nullptr);
 			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+
+			gDevice->BindBufferBase(PositionsUAV, 0);
+			gDevice->BindBufferBase(SizesUAV, 1);
+			gDevice->BindBufferBase(ColorsUAV, 2);
+			gDevice->BindBufferBase(OtherUAV, 3);
+
 			gDevice->Draw(Particles.Particles.Count * 6, 0);
 		}
 	}

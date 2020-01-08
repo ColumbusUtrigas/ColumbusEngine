@@ -44,13 +44,17 @@ namespace Columbus
 		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) = 0;
 
 		virtual bool CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer) = 0;
+		virtual void BindBufferBase(Buffer* pBuffer, uint32 Index) = 0;
 		virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) = 0;
 		virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) = 0;
 		virtual void UnmapBuffer(Buffer* pBuffer) = 0;
 
-		//virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) = 0;
+		virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) = 0;
 
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) = 0;
+
+		virtual void BeginMarker(const char* Str) = 0;
+		virtual void EndMarker() = 0;
 
 		virtual ShaderProgram* CreateShaderProgram() const;
 		virtual Texture* CreateTexture() const;

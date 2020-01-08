@@ -5,7 +5,7 @@
 
 #include <Lib/corinfo/corinfo.h> // my own library to get system info
 
-#define CONTEXT_MAJOR_VERSION 3
+#define CONTEXT_MAJOR_VERSION 4
 #define CONTEXT_MINOR_VERSION 3
 
 namespace Columbus
