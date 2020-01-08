@@ -2,10 +2,10 @@
 
 #shader vertex
 
-#attribute float3 Positions 0
-#attribute float3 Sizes     1
-#attribute float4 Colors    2
-#attribute float2 OtherData 3
+layout (std430, binding = 0) buffer PosesBuf { float4 PositionsUAV[]; };
+layout (std430, binding = 1) buffer SizesBuf { float4 SizesUAV[]; };
+layout (std430, binding = 2) buffer ColorBuf { float4 ColorsUAV[]; };
+layout (std430, binding = 3) buffer OtherBuf { float2 OtherUAV[]; };
 
 #uniform float4x4 View
 #uniform float4x4 Projection
@@ -49,14 +49,15 @@ float4x4 RotationMatrix(float3 axis, float angle)
 void main(void)
 {
 	int v_id = SV_VertexID % 6;
+	int p_id = SV_VertexID / 6;
 
-	float4x4 Rotation = RotationMatrix(float3(0, 0, 1), 0.011111 * OtherData.x);
-	float4 VertexPosition = float4(vec3(Coord[v_id], 0) * Sizes, 1);
-	float4 WorldPosition = float4(Positions, 0);
+	float4x4 Rotation = RotationMatrix(float3(0, 0, 1), 0.011111 * OtherUAV[p_id].x);
+	float4 VertexPosition = float4(vec3(Coord[v_id], 0) * SizesUAV[p_id].xyz, 1);
+	float4 WorldPosition = PositionsUAV[p_id];
 
 	SV_Position = Projection * (View * (Billboard * (VertexPosition * Rotation) + WorldPosition));
-	var_UV = ExtractSubUV(int(OtherData.y), UV[v_id], Frame);
-	var_Color = Colors;
+	var_UV = ExtractSubUV(int(OtherUAV[p_id].y), UV[v_id], Frame);
+	var_Color = ColorsUAV[p_id];
 }
 
 #shader pixel

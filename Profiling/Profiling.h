@@ -13,7 +13,8 @@ namespace Columbus
 		Physics,
 		Particles,
 		Culling,
-		Update
+		Update,
+		Count
 	};
 
 	enum class ProfileModuleGPU
@@ -23,7 +24,8 @@ namespace Columbus
 		SkyStage,
 		TransparentStage,
 		BloomStage,
-		FinalStage
+		FinalStage,
+		Count
 	};
 
 	struct ProfileMarker
@@ -38,7 +40,7 @@ namespace Columbus
 	struct ProfileMarkerGPU
 	{
 		ProfileModuleGPU Module;
-		int64 Start, End;
+		uint32 ID;
 
 		ProfileMarkerGPU(ProfileModuleGPU Module);
 		~ProfileMarkerGPU();

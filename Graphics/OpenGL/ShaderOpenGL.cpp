@@ -13,7 +13,7 @@ namespace Columbus
 
 const char* CommonShaderHeader =
 R"(
-#version 330 core
+#version 430 core
 #define Texture2D sampler2D
 #define Texture3D sampler3D
 #define TextureCube samplerCube

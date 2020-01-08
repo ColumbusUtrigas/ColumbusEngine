@@ -33,7 +33,7 @@ namespace Columbus
 		void Update(float DeltaTime);
 		void Render();
 
-		/*template <typename T>
+		template <typename T>
 		T* GetComponent()
 		{
 			for (const auto& Comp : Components)
@@ -45,7 +45,7 @@ namespace Columbus
 			return nullptr;
 		}
 
-		template <typename T>
+		/*template <typename T>
 		bool DeleteComponent()
 		{
 			if (GetComponent<T>() != nullptr)

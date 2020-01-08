@@ -34,11 +34,17 @@ namespace Columbus
 		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) final override;
 
 		virtual bool CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer) final override;
+		virtual void BindBufferBase(Buffer* pBuffer, uint32 Index) final override;
 		virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) final override;
 		virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) final override;
 		virtual void UnmapBuffer(Buffer* pBuffer) final override;
 
+		virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) final override;
+
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) final override;
+
+		virtual void BeginMarker(const char* Str) final override;
+		virtual void EndMarker() final override;
 
 		virtual ~DeviceOpenGL() override;
 	};

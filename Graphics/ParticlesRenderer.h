@@ -12,14 +12,21 @@ namespace Columbus
 	private:
 		size_t MaxSize = 0;
 
-		Buffer* PositionsBuffer;
-		Buffer* SizesBuffer;
-		Buffer* ColorsBuffer;
-		Buffer* OtherDataBuffer;
+		Buffer* PositionsUAV;
+		Buffer* SizesUAV;
+		Buffer* ColorsUAV;
+		Buffer* OtherUAV;
+
+		Texture* Depth = nullptr;
 	private:
 		void Allocate(size_t NewSize);
 	public:
 		ParticlesRenderer(size_t MaxSize = 1024);
+
+		void SetDepthBuffer(Texture* depth)
+		{
+			Depth = depth;
+		}
 
 		void Render(const ParticleEmitterCPU& Particles, const Camera& MainCamera, const Material& Mat);
 

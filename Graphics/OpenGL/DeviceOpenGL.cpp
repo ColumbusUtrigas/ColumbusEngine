@@ -221,6 +221,13 @@ namespace Columbus
 		return true;
 	}
 
+	void DeviceOpenGL::BindBufferBase(Buffer* pBuffer, uint32 Index)
+	{
+		auto type = BufferTypeToGL(pBuffer->GetDesc().BindFlags);
+		auto glhandle = *static_cast<GLuint*>(pBuffer->GetHandle());
+		glBindBufferBase(type, Index, glhandle);
+	}
+
 	void DeviceOpenGL::BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size)
 	{
 		auto type = BufferTypeToGL(pBuffer->GetDesc().BindFlags);
@@ -253,10 +260,56 @@ namespace Columbus
 		glUnmapBuffer(type);
 	}
 
+	bool DeviceOpenGL::CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState)
+	{
+		*ppComputePipelineState = new ComputePipelineState(Desc);
+		auto pComputePipelineState = *ppComputePipelineState;
+
+		GLint len = Desc.CS.length();
+		const GLchar* str = Desc.CS.c_str();
+
+		pComputePipelineState->shadid = glCreateShader(GL_COMPUTE_SHADER);
+		glShaderSource(pComputePipelineState->shadid, 1, &str, &len);
+		glCompileShader(pComputePipelineState->shadid);
+
+		int32 Status = GL_TRUE;
+		int32 Length = 0;
+		char* Error = nullptr;
+
+		glGetShaderiv(pComputePipelineState->shadid, GL_COMPILE_STATUS, &Status);
+		glGetShaderiv(pComputePipelineState->shadid, GL_INFO_LOG_LENGTH, &Length);
+		Error = new char[Length];
+		glGetShaderInfoLog(pComputePipelineState->shadid, Length, &Length, Error);
+
+		if (Status == GL_FALSE)
+		{
+			Log::Error("%s shader (%s): %s", "Compute", "IDK", Error);
+		}
+		else if (Length > 1)
+		{
+			Log::Warning("%s shader (%s): %s", "Compute", "IDK", Error);
+		}
+
+		pComputePipelineState->progid = glCreateProgram();
+		glAttachShader(pComputePipelineState->progid, pComputePipelineState->shadid);
+		glLinkProgram(pComputePipelineState->progid);
+		return true;
+	}
+
 	void DeviceOpenGL::Draw(uint32 VertexCount, uint32 StartVertexLocation)
 	{
 		auto mode = PrimitiveTopologyToGL(_currentTopology);
 		glDrawArrays(mode, StartVertexLocation, VertexCount);
+	}
+
+	void DeviceOpenGL::BeginMarker(const char* Str)
+	{
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, strlen(Str), Str);
+	}
+
+	void DeviceOpenGL::EndMarker()
+	{
+		glPopDebugGroup();
 	}
 	
 	DeviceOpenGL::~DeviceOpenGL()

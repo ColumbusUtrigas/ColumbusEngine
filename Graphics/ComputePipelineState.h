@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <GL/glew.h>
+
 namespace Columbus
 {
 
@@ -12,9 +14,13 @@ namespace Columbus
 
 	class ComputePipelineState
 	{
-	public:
+	private:
 		ComputePipelineStateDesc Desc;
 	public:
+		GLuint progid;
+		GLuint shadid;
+	public:
+		ComputePipelineState(const ComputePipelineStateDesc& Desc) : Desc(Desc) {}
 		const ComputePipelineStateDesc& GetDesc() const { return Desc; }
 	};
 
