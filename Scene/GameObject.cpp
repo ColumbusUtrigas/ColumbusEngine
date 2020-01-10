@@ -12,12 +12,13 @@ namespace Columbus
 		Children.push_back(SmartPointer<GameObject>(Child));
 	}
 	
-	void GameObject::AddComponent(Component* InComponent)
+	Component* GameObject::AddComponent(Component* InComponent)
 	{
 		COLUMBUS_ASSERT(InComponent != nullptr);
 		Components.push_back(SmartPointer<Component>(InComponent));
 		Components.back()->gameObject = this;
 		Components.back()->OnComponentAdd();
+		return Components.back().Get();
 	}
 	
 	void GameObject::Update(float DeltaTime)

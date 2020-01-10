@@ -8,9 +8,38 @@
 #include <Scene/ComponentBillboard.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
+#include <unordered_map>
+#include <functional>
+#include <tuple>
+
+using namespace std;
 
 namespace Columbus
 {
+
+	int gTypeId = 0;
+	template <typename T>
+	int type_id()
+	{
+		static int id = ++gTypeId;
+		return id;
+	}
+
+#define ELEM(t, n, ...) { type_id<t>(), { \
+	n"##PanelInspector_ModalWindow_AddComponent", \
+	[](GameObject* GO) { GO->AddComponent<t>(__VA_ARGS__); }, \
+	[](GameObject* GO) { return GO->HasComponent<t>(); } \
+}}
+
+	unordered_map<int, tuple<string, function<void(GameObject*)>, function<bool(GameObject*)>>> names
+	{
+		ELEM(ComponentAudioSource, AUDIO_ICON" Audio Source", make_shared<AudioSource>()),
+		ELEM(ComponentLight, LIGHT_ICON" Light", new Light()),
+		ELEM(ComponentMeshRenderer, MESH_ICON" Mesh Renderer", nullptr),
+		ELEM(ComponentParticleSystem, PARTICLES_ICON" Particle System", ParticleEmitterCPU{}),
+		ELEM(ComponentRigidbody, RIGIDBODY_ICON" Rigidbody", new Rigidbody()),
+		ELEM(ComponentBillboard, "Billboard")
+	};
 
 	void EditorPanelInspector::Draw(Scene& Scn)
 	{
@@ -20,7 +49,7 @@ namespace Columbus
 			{
 				if (Inspectable != nullptr)
 				{
-					std::string Tmp = Inspectable->Name.c_str();
+					string Tmp = Inspectable->Name.c_str();
 
 					ImGui::Checkbox("##PanelInspector_Enable", &Inspectable->Enable);
 					ImGui::SameLine();
@@ -52,11 +81,20 @@ namespace Columbus
 		}
 	}
 
-
-
 	EditorPanelInspector::~EditorPanelInspector() {}
 
+	void Sel(GameObject* GO, int id, int& Selected, std::function<void()> Close)
+	{
+		ImGuiSelectableFlags Flags = ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_DontClosePopups;
+		ImVec2 Size = ImVec2(0, 50);
 
+		if (ImGui::Selectable(get<0>(names[id]).c_str(), Selected == id, Flags | (get<2>(names[id])(GO) ? ImGuiSelectableFlags_Disabled : 0), Size))
+		{
+			Selected = id;
+			if (ImGui::IsMouseDoubleClicked(0)) { get<1>(names[id])(GO); Close(); }
+		}
+		ImGui::Separator();
+	}
 
 	void EditorPanelInspector::DrawAddComponent(Scene& Scn)
 	{
@@ -70,62 +108,12 @@ namespace Columbus
 		}
 
 		const char* Name = "Add Component##PanelInspector_ModalWindow_AddComponent";
-		const char* NameAudio = AUDIO_ICON" Audio Source##PanelInspector_ModalWindow_AddComponent_Audio";
-		const char* NameLight = LIGHT_ICON" Light##PanelInspector_ModalWindow_AddComponent_Light";
-		const char* NameMesh = MESH_ICON" Mesh Renderer##PanelInspector_ModalWindow_AddComponent_Mesh";
-		const char* NameParticles = PARTICLES_ICON" Particle Emitter##PanelInspector_ModalWindow_AddComponent_Particles";
-		const char* NameRigidbody = RIGIDBODY_ICON" Rigidbody##PanelInspector_ModalWindow_AddComponent_Rigidbody";
-		const char* NameBillboard = "Billboard##PanelInspector_ModalWindow_AddComponent_Billboard";
-
 		GameObject*& GO = Inspectable;
 
-		// Flags for components' selectables and its size
-		ImGuiSelectableFlags Flags = ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_DontClosePopups;
-		ImVec2 Size = ImVec2(0, 50);
-
-		auto Close = [&]()
-		{
+		auto Close = [&]() {
 			AddComponentEnable = false;
 			Selected = 0;
 		};
-
-		auto Add = [&]()
-		{
-			switch (Selected)
-			{
-			case 1: GO->AddComponent(new ComponentAudioSource(std::make_shared<AudioSource>())); break;
-			case 2:
-				GO->AddComponent(new ComponentLight(new Light));
-				//GO->LightIndex = Scn.Lights.size();
-				//Scn.Lights.push_back(new Light());
-				break;
-			case 3: GO->AddComponent(new ComponentMeshRenderer(nullptr)); break;
-			case 4: GO->AddComponent(new ComponentParticleSystem(ParticleEmitterCPU())); break;
-			case 5: GO->AddComponent(new ComponentRigidbody(new Rigidbody())); break;
-			case 6: GO->AddComponent(new ComponentBillboard(Billboard())); break;
-			default: break;
-			}
-
-			Close();
-		};
-
-		// Draw selectable for "Add component"
-		auto Selectable = [&](const char* Name, int ID, bool Enable)
-		{
-			if (ImGui::Selectable(Name, Selected == ID, Flags | (Enable ? ImGuiSelectableFlags_Disabled : 0), Size))
-			{
-				Selected = ID;
-				if (ImGui::IsMouseDoubleClicked(0)) Add();
-			}
-			ImGui::Separator();
-		};
-
-		bool IsAudio = GO->HasComponent(Component::Type::AudioSource);
-		bool IsLight = GO->HasComponent(Component::Type::Light);
-		bool IsMesh = GO->HasComponent(Component::Type::MeshRenderer);
-		bool IsParticles = GO->HasComponent(Component::Type::ParticleSystem);
-		bool IsRigidbody = GO->HasComponent(Component::Type::Rigidbody);
-		bool IsBillboard = GO->HasComponent(Component::Type::Billboard);
 
 		if (AddComponentEnable)
 		{
@@ -139,12 +127,8 @@ namespace Columbus
 				ImVec2 size = ImVec2(ImGui::GetContentRegionMax().x, ImGui::GetContentRegionMax().y - 50.0f);
 				if (ImGui::BeginChild("Components List##PanelInspector_ModalWindow_List", size))
 				{
-					Selectable(NameAudio, 1, IsAudio);
-					Selectable(NameLight, 2, IsLight);
-					Selectable(NameMesh, 3, IsMesh);
-					Selectable(NameParticles, 4, IsParticles);
-					Selectable(NameRigidbody, 5, IsRigidbody);
-					Selectable(NameBillboard, 6, IsBillboard);
+					for (const auto& tup : names)
+						Sel(GO, tup.first, Selected, Close);
 				}
 				ImGui::EndChild();
 
@@ -152,7 +136,7 @@ namespace Columbus
 				{
 					if (ImGui::Button("Cancel##PanelInspector_ModalWindow_Cancel")) Close();
 					ImGui::SameLine();
-					if (ImGui::Button("Add##PanelInspector_ModalWindow_AddComponent_Add")) Add();
+					if (ImGui::Button("Add##PanelInspector_ModalWindow_AddComponent_Add")) get<1>(names[Selected])(GO);
 				}
 				ImGui::EndChild();
 				ImGui::EndPopup();
@@ -173,5 +157,3 @@ namespace Columbus
 	}
 
 }
-
-
