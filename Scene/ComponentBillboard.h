@@ -11,7 +11,6 @@ namespace Columbus
 	private:
 		Billboard Bill;
 	public:
-		ComponentBillboard(Billboard&& Bill) : Bill(std::move(Bill)) {}
 		virtual void Update(float TimeTick) final override {}
 
 		virtual Type GetType() const final override { return Component::Type::Billboard; }

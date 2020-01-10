@@ -28,7 +28,13 @@ namespace Columbus
 		GameObject(GameObject&&) = default;
 
 		void AddChild(GameObject* Child);
-		void AddComponent(Component* Component);
+		Component* AddComponent(Component* Component);
+
+		template <typename T, typename...Args>
+		T* AddComponent(Args&&...args)
+		{
+			return static_cast<T*>(AddComponent(new T(std::forward<Args>(args)...)));
+		}
 
 		void Update(float DeltaTime);
 		void Render();
@@ -43,6 +49,12 @@ namespace Columbus
 			}
 
 			return nullptr;
+		}
+
+		template <typename T>
+		bool HasComponent()
+		{
+			return GetComponent<T>() != nullptr;
 		}
 
 		/*template <typename T>
