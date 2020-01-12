@@ -50,8 +50,6 @@ namespace Columbus
 		void DeserializeSoundsManager(JSON& J);
 		void DeserializeObjects(JSON& J);
 
-		std::vector<Light*> Lights;
-
 		Timer DeltaTime;
 		PhysicsWorld PhysWorld;
 
@@ -107,7 +105,6 @@ namespace Columbus
 		void SetAudioListener(AudioListener& InListener) { Listener = &InListener; }
 
 		void Update();
-		void Render();
 
 		~Scene();
 	};

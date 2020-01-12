@@ -13,6 +13,13 @@ namespace Columbus
 	public:
 		virtual void Update(float TimeTick) final override {}
 
+		Component* Clone() const final override
+		{
+			auto n = new ComponentBillboard();
+			n->Bill = Bill;
+			return n;
+		}
+
 		virtual Type GetType() const final override { return Component::Type::Billboard; }
 		Billboard& GetBillboard() { return Bill; }
 

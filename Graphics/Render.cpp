@@ -4,6 +4,7 @@
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
 #include <Scene/ComponentBillboard.h>
+#include <Scene/ComponentLight.h>
 #include <Scene/Component.h>
 #include <Math/Frustum.h>
 #include <GL/glew.h>
@@ -120,29 +121,16 @@ namespace Columbus
 		RenderList = List;
 	}
 
-	void Renderer::SetLightsList(std::vector<Light*>* List)
-	{
-		LightsList = List;
-	}
-
 	void Renderer::CompileLists()
 	{
 		PROFILE_CPU(ProfileModule::Culling);
 
 		OpaqueEntities.clear();
 		TransparentEntities.clear();
-		//OpaqueObjects.clear();
 		ShadowsObjects.clear();
-		//TransparentObjects.clear();
-
-		LightsPairs.clear();
+		LightsList.clear();
 
 		Frustum ViewFrustum(MainCamera.GetViewProjection());
-
-		for (uint32 i = 0; i < Scn->Lights.size(); i++)
-		{
-			LightsPairs.emplace_back(i, Scn->Lights[i]);
-		}
 
 		if (RenderList != nullptr)
 		{
@@ -151,9 +139,15 @@ namespace Columbus
 			{
 				if (Object->Enable)
 				{
-					ComponentMeshRenderer* MeshRenderer = (ComponentMeshRenderer*)Object->GetComponent(Component::Type::MeshRenderer);
-					ComponentParticleSystem* ParticleSystem = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
+					auto MeshRenderer = (ComponentMeshRenderer*)Object->GetComponent(Component::Type::MeshRenderer);
+					auto ParticleSystem = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
 					auto Bill = Object->GetComponent<ComponentBillboard>();
+					auto Light = Object->GetComponent<ComponentLight>();
+
+					if (Light != nullptr)
+					{
+						LightsList.push_back(Light->GetLight());
+					}
 
 					if (MeshRenderer != nullptr)
 					{
@@ -178,17 +172,13 @@ namespace Columbus
 									if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
 									{
 										if (mat->Transparent)
-											//TransparentObjects.emplace_back(mesh, mat, Counter);
 											TransparentEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
 										else
-										{
-											//OpaqueObjects.emplace_back(mesh, Counter, mat);
 											OpaqueEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
-										}
 									}
 
 									if (!mat->Transparent)
-										ShadowsObjects.emplace_back(mesh, Counter, mat);
+										ShadowsObjects.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
 								}
 							}
 						}
@@ -196,13 +186,7 @@ namespace Columbus
 
 					if (ParticleSystem != nullptr)
 					{
-						auto Emitter = &ParticleSystem->Emitter;
-
-						if (Emitter != nullptr)
-						{
-							TransparentEntities.emplace_back(Object->materials[0], Object->transform, nullptr, Emitter, nullptr);
-							//TransparentObjects.emplace_back(Emitter, Object->materials[0], Counter);
-						}
+						TransparentEntities.emplace_back(Object->materials[0], Object->transform, nullptr, &ParticleSystem->Emitter, nullptr);
 					}
 
 					if (Bill != nullptr)
@@ -219,18 +203,16 @@ namespace Columbus
 
 	void Renderer::SortLists()
 	{
-		auto OpaqueSorter = [&](const OpaqueRenderData& A, const OpaqueRenderData& B)->bool
-		{
-			return MainCamera.Pos.LengthSquare(Scn->Objects[A.Index]->transform.Position) < MainCamera.Pos.LengthSquare(Scn->Objects[B.Index]->transform.Position);
+		auto opaque_sort = [&](const RenderEntity& A, const RenderEntity& B)->bool {
+			return MainCamera.Pos.LengthSquare(A.Tran->Position) < MainCamera.Pos.LengthSquare(B.Tran->Position);
 		};
 
-		auto TransparentSorter = [&](const TransparentRenderData& A, const TransparentRenderData& B)->bool
-		{
-			return MainCamera.Pos.LengthSquare(Scn->Objects[A.Index]->transform.Position) > MainCamera.Pos.LengthSquare(Scn->Objects[B.Index]->transform.Position);
+		auto transparent_sort = [&](const RenderEntity& A, const RenderEntity& B)->bool {
+			return MainCamera.Pos.LengthSquare(A.Tran->Position) > MainCamera.Pos.LengthSquare(B.Tran->Position);
 		};
 
-		//std::sort(OpaqueObjects.begin(), OpaqueObjects.end(), OpaqueSorter);
-		//std::sort(TransparentObjects.begin(), TransparentObjects.end(), TransparentSorter);
+		std::sort(OpaqueEntities.begin(), OpaqueEntities.end(), opaque_sort);
+		std::sort(OpaqueEntities.begin(), OpaqueEntities.end(), transparent_sort);
 	}
 
 	void Renderer::RenderShadows(const iVector2& ShadowMapSize)
@@ -282,7 +264,6 @@ namespace Columbus
 
 			for (auto& Object : ShadowsObjects)
 			{
-				SmartPointer<GameObject>& GO = Scn->Objects[Object.Index];
 				Material& Mat = *Object.Mat;
 				ShaderProgram* CurrentShader = Mat.GetShader();
 
@@ -294,11 +275,11 @@ namespace Columbus
 					State.SetCulling(Material::Cull::No);
 					//State.SetDepthTesting(Mat.DepthTesting);
 					//State.SetDepthWriting(Mat.DepthWriting);
-					State.SetMaterial(Mat, GO->transform.GetMatrix(), Sky, false);
+					State.SetMaterial(Mat, Object.Tran->GetMatrix(), Sky, false);
 
-					Object.Object->Bind();
+					Object.MeshObj->Bind();
 
-					PolygonsRendered += Object.Object->Render();
+					PolygonsRendered += Object.MeshObj->Render();
 					OpaqueObjectsRendered++;
 				}
 			}
@@ -327,7 +308,7 @@ namespace Columbus
 				gDevice->RSSetState(Mat.RS.get());
 				gDevice->SetShader(Mat.GetShader());
 
-				State.SetMaterial(Mat, Ent.Tran.GetMatrix(), Sky);
+				State.SetMaterial(Mat, Ent.Tran->GetMatrix(), Sky);
 				Ent.MeshObj->Bind();
 
 				PolygonsRendered += Ent.MeshObj->Render();
@@ -475,7 +456,7 @@ void main(void)
 						gDevice->OMSetDepthStencilState(Mat->DSS.get(), 0);
 						gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
 						gDevice->RSSetState(Mat->RS.get());
-						State.SetMaterial(*Mat, Object.Tran.GetMatrix(), Sky);
+						State.SetMaterial(*Mat, Object.Tran->GetMatrix(), Sky);
 						CurrentMesh->Bind();
 
 						int32 Transparent = CurrentShader->GetFastUniform("Transparent");
@@ -522,7 +503,7 @@ void main(void)
 
 				if (Object.Bill != nullptr)
 				{
-					RenderBillboard(MainCamera, *Object.Bill, Object.Tran);
+					RenderBillboard(MainCamera, *Object.Bill, *Object.Tran);
 				}
 			}
 			gDevice->EndMarker();
@@ -545,26 +526,6 @@ void main(void)
 			case RenderPass::Transparent: RenderTransparent(); break;
 			case RenderPass::Postprocess: RenderPostprocess(); break;
 			}
-		}
-	}
-
-	void Renderer::CalculateLights(const Vector3& Position, int32(&Lights)[4])
-	{
-		static auto func = [&Position](const auto& A, const auto& B) -> bool
-		{
-			double ADistance = Math::Sqr(A.second->Pos.X - Position.X) + Math::Sqr(A.second->Pos.Y - Position.Y) + Math::Sqr(A.second->Pos.Z - Position.Z);
-			double BDistance = Math::Sqr(B.second->Pos.X - Position.X) + Math::Sqr(B.second->Pos.Y - Position.Y) + Math::Sqr(B.second->Pos.Z - Position.Z);
-			return ADistance < BDistance;
-		};
-
-		if (LightsPairs.size() >= 4)
-		{
-			std::sort(LightsPairs.begin(), LightsPairs.end(), func);
-		}
-
-		for (uint32 i = 0; i < 4 && i < LightsPairs.size(); i++)
-		{
-			Lights[i] = LightsPairs[i].first;
 		}
 	}
 
@@ -609,27 +570,24 @@ void main(void)
 		gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun.get(), 0);
-		for (const auto& Elem : Scn->Lights)
+		for (const auto& Elem : LightsList)
 		{
-			if (Elem != nullptr)
-				if (Elem->Type == Light::Directional)
-					DrawIcon(Vector4(Elem->Pos, 1));
+			if (Elem.Type == Light::Directional)
+				DrawIcon(Vector4(Elem.Pos, 1));
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp.get(), 0);
-		for (const auto& Elem : Scn->Lights)
+		for (const auto& Elem : LightsList)
 		{
-			if (Elem != nullptr)
-				if (Elem->Type == Light::Point)
-					DrawIcon(Vector4(Elem->Pos, 1));
+			if (Elem.Type == Light::Point)
+				DrawIcon(Vector4(Elem.Pos, 1));
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight.get(), 0);
-		for (const auto& Elem : Scn->Lights)
+		for (const auto& Elem : LightsList)
 		{
-			if (Elem != nullptr)
-				if (Elem->Type == Light::Spot)
-					DrawIcon(Vector4(Elem->Pos, 1));
+			if (Elem.Type == Light::Spot)
+				DrawIcon(Vector4(Elem.Pos, 1));
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio.get(), 0);
@@ -643,7 +601,7 @@ void main(void)
 		for (const auto& Elem : TransparentEntities)
 		{
 			if (Elem.ParticlesCPU != nullptr)
-				DrawIcon(Vector4(Elem.Tran.Position, 1));
+				DrawIcon(Vector4(Elem.Tran->Position, 1));
 		}
 
 		((ShaderProgramOpenGL*)(Icon))->Unbind();
@@ -789,25 +747,22 @@ void main(void)
 		}
 
 		lightingUboData.count = 0;
-		for (auto Light : Scn->Lights)
+		for (const auto& Light : LightsList)
 		{
-			if (Light != nullptr)
-			{
-				auto id = lightingUboData.count;
+			auto id = lightingUboData.count;
 
-				lightingUboData.lights[id].color = Light->Color * Light->Energy;
-				lightingUboData.lights[id].pos = Light->Pos;
-				lightingUboData.lights[id].dir = Light->Dir;
+			lightingUboData.lights[id].color = Light.Color * Light.Energy;
+			lightingUboData.lights[id].pos = Light.Pos;
+			lightingUboData.lights[id].dir = Light.Dir;
 
-				lightingUboData.lights[id].range = Light->Range;
-				lightingUboData.lights[id].innerCutoff = Math::Radians(Light->InnerCutoff) / 2;
-				lightingUboData.lights[id].outerCutoff = Math::Radians(Light->OuterCutoff) / 2;
+			lightingUboData.lights[id].range = Light.Range;
+			lightingUboData.lights[id].innerCutoff = Math::Radians(Light.InnerCutoff) / 2;
+			lightingUboData.lights[id].outerCutoff = Math::Radians(Light.OuterCutoff) / 2;
 
-				lightingUboData.lights[id].type = Light->Type;
-				lightingUboData.lights[id].hasShadow = (int)Light->Shadows;
+			lightingUboData.lights[id].type = Light.Type;
+			lightingUboData.lights[id].hasShadow = (int)Light.Shadows;
 
-				lightingUboData.count++;
-			}
+			lightingUboData.count++;
 		}
 
 		static Buffer* buf;

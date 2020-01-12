@@ -57,64 +57,24 @@ namespace Columbus
 	struct RenderEntity
 	{
 		Material* Mat;
-		Transform& Tran;
+		Transform* Tran;
 		Mesh* MeshObj;
 		ParticleEmitterCPU* ParticlesCPU;
 		Billboard* Bill;
 
 		RenderEntity(Material* Mat, Transform& Tran, Mesh* Mesh, ParticleEmitterCPU* ParticlesCPU, Billboard* Bill) :
-			Mat(Mat), Tran(Tran), MeshObj(Mesh), ParticlesCPU(ParticlesCPU), Bill(Bill) {}
+			Mat(Mat), Tran(&Tran), MeshObj(Mesh), ParticlesCPU(ParticlesCPU), Bill(Bill) {}
 	};
 
 	class Renderer
 	{
 	protected:
-		struct OpaqueRenderData
-		{
-			Mesh* Object;
-			Material* Mat;
-			uint32 Index; // Index of GameObject in array
-			//int32 Lights[4] = { -1, -1, -1, -1 };
-
-			OpaqueRenderData(Mesh* InObject, uint32 InIndex, Material* InMat) :
-				Object(InObject),
-				Index(InIndex),
-				Mat(InMat) {}
-		};
-
-		struct TransparentRenderData
-		{
-			Mesh* MeshObject;
-			ParticleEmitterCPU* Particles;
-			Billboard* Billboard;
-
-			Material* Mat;
-			uint32 Index; // Index of GameObject in array
-			//int32 Lights[4] = { -1, -1, -1, -1 };
-
-			TransparentRenderData(Mesh* InMesh, Material* Mat, uint32 InIndex) :
-				MeshObject(InMesh),
-				Particles(nullptr),
-				Mat(Mat),
-				Index(InIndex) {}
-
-			TransparentRenderData(ParticleEmitterCPU* CPU, Material* Mat, uint32 InIndex) :
-				MeshObject(nullptr),
-				Particles(CPU),
-				Mat(Mat),
-				Index(InIndex) {}
-		};
-	protected:
 		std::vector<SmartPointer<GameObject>>* RenderList;
-		std::vector<Light*>* LightsList;
-		std::vector<std::pair<uint32, Light*>> LightsPairs;
+		std::vector<Light> LightsList;
 
 		std::vector<RenderEntity> OpaqueEntities;
 		std::vector<RenderEntity> TransparentEntities;
-
-		//std::vector<OpaqueRenderData> OpaqueObjects;
-		std::vector<OpaqueRenderData> ShadowsObjects;
-		//std::vector<TransparentRenderData> TransparentObjects;
+		std::vector<RenderEntity> ShadowsObjects;
 		
 		iVector2 ViewportOrigin;
 		iVector2 ViewportSize;
@@ -155,8 +115,6 @@ namespace Columbus
 		PostprocessBloom Bloom{Quad};
 		PostprocessVignette Vignette{Quad};
 	private:
-		void CalculateLights(const Vector3& Position, int32(&Lights)[4]);
-
 		void RenderIcons();
 	public:
 		Renderer();
@@ -174,7 +132,6 @@ namespace Columbus
 		uint32 GetTransparentObjectsRendered() const;
 
 		void SetRenderList(std::vector<SmartPointer<GameObject>>* List);
-		void SetLightsList(std::vector<Light*>* List);
 		void CompileLists();
 		void SortLists();
 

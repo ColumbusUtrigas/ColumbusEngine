@@ -34,7 +34,7 @@ namespace Columbus
 	unordered_map<int, tuple<string, function<void(GameObject*)>, function<bool(GameObject*)>>> names
 	{
 		ELEM(ComponentAudioSource, AUDIO_ICON" Audio Source", make_shared<AudioSource>()),
-		ELEM(ComponentLight, LIGHT_ICON" Light", new Light()),
+		ELEM(ComponentLight, LIGHT_ICON" Light"),
 		ELEM(ComponentMeshRenderer, MESH_ICON" Mesh Renderer", nullptr),
 		ELEM(ComponentParticleSystem, PARTICLES_ICON" Particle System", ParticleEmitterCPU{}),
 		ELEM(ComponentRigidbody, RIGIDBODY_ICON" Rigidbody", new Rigidbody()),

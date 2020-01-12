@@ -13,6 +13,11 @@ namespace Columbus
 	public:
 		ComponentMeshRenderer(Mesh* InMesh) : Object(InMesh) {}
 
+		Component* Clone() const final override
+		{
+			return new ComponentMeshRenderer(Object);
+		}
+
 		virtual void Update(float TimeTick) override {}
 		virtual void OnComponentAdd() override
 		{
