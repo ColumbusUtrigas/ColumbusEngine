@@ -13,6 +13,11 @@ namespace Columbus
 	public:
 		ComponentRigidbody(Rigidbody* RB) : RB(RB) {}
 
+		Component* Clone() const final override
+		{
+			return new ComponentRigidbody(RB);
+		}
+
 		virtual void Update(float TimeTick) override {}
 
 		//This component methods

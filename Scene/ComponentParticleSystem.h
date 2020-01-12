@@ -16,6 +16,11 @@ namespace Columbus
 	public:
 		ComponentParticleSystem(ParticleEmitterCPU&& Particles) : Emitter(std::move(Particles)) {}
 
+		Component* Clone() const final override
+		{
+			return new ComponentParticleSystem({});
+		}
+
 		virtual void OnComponentAdd() override
 		{
 			gameObject->materials.push_back(gameObject->material);

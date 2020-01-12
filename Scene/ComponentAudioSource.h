@@ -25,6 +25,11 @@ namespace Columbus
 			Source->Position = gameObject->transform.Position;
 		}
 
+		Component* Clone() const final override
+		{
+			return new ComponentAudioSource(Source);
+		}
+
 		//This component methods
 		virtual Type GetType() const override { return Component::Type::AudioSource; }
 		auto GetSource() const { return Source; }

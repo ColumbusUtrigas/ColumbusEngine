@@ -67,7 +67,6 @@ namespace Columbus
 		SoundsManager.Clear();
 		Objects.Clear();
 		Audio.Clear();
-		Lights.clear();
 
 		_CurrentScene = "";
 		SkyPath = "";
@@ -145,7 +144,6 @@ namespace Columbus
 		RigidbodyWorkflow();
 
 		Audio.Clear();
-		Lights.clear();
 
 		for (auto& Object : Objects.Resources)
 		{
@@ -154,22 +152,20 @@ namespace Columbus
 				// TODO: DOD
 				Object->Update(Time);
 
-				auto AudioSource = (ComponentAudioSource*)Object->GetComponent(Component::Type::AudioSource);
-				auto Light = (ComponentLight*)Object->GetComponent(Component::Type::Light);
-				auto PS = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
+				auto AudioSource = Object->GetComponent<ComponentAudioSource>();
+				auto Light = Object->GetComponent<ComponentLight>();
+				auto PS = Object->GetComponent<ComponentParticleSystem>();
 
 				if (AudioSource != nullptr) Audio.AddSource(AudioSource->Source);
 
 				if (Light != nullptr)
 				{
-					Lights.emplace_back(Light->LightSource);
-
-					if (Light->LightSource->Type == Light::Directional ||
-					    Light->LightSource->Type == Light::Spot)
+					if (Light->GetLight().Type == Light::Directional ||
+					    Light->GetLight().Type == Light::Spot)
 					{
 						Vector4 BaseDirection(1, 0, 0, 1);
 						Vector4 Direction = BaseDirection * Object->transform.Q.ToMatrix();
-						Light->LightSource->Dir = Direction.XYZ().Normalize();
+						Light->GetLight().Dir = Direction.XYZ().Normalize();
 					}
 				}
 				if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;

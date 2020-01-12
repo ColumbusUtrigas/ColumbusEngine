@@ -27,6 +27,8 @@ namespace Columbus
 		virtual void Update(float TimeTick) = 0;
 		virtual void OnComponentAdd() {}
 
+		virtual Component* Clone() const = 0;
+
 		virtual Type GetType() const { return Type::Component; }
 		virtual void Destroy() {}
 

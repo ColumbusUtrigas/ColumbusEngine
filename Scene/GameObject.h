@@ -36,6 +36,22 @@ namespace Columbus
 			return static_cast<T*>(AddComponent(new T(std::forward<Args>(args)...)));
 		}
 
+		GameObject* Clone() const
+		{
+			auto n = new GameObject();
+			n->transform = transform;
+			n->Name = Name;
+			n->Enable = Enable;
+
+			for (const auto& comp : Components)
+				n->AddComponent(comp->Clone());
+
+			n->material = material;
+			n->materials = materials;
+
+			return n;
+		}
+
 		void Update(float DeltaTime);
 		void Render();
 

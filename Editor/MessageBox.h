@@ -1,7 +1,8 @@
 #pragma once
 
 #include <Math/Vector2.h>
-#include <Core/String.h>
+#include <string>
+#include <vector>
 
 namespace Columbus
 {
@@ -13,14 +14,13 @@ namespace Columbus
 		// 1 - Cancel, 2 - No, 3 - Yes
 		int Selected = 0;
 
-		String Name;
-		String Text;
+		std::string _name;
+		std::string _text;
 
 		Vector2 Size;
 	public:
-		MessageBox(const Vector2& Size = Vector2()) : Name(" "), Text(""), Size(Size) {}
-		MessageBox(const String& Name, const String& Text, const Vector2& Size = Vector2()) :
-			Name(Name), Text(Text), Size(Size) {}
+		MessageBox(std::string Name, std::string Text, const Vector2& Size) :
+			_name(std::move(Name)), _text(std::move(Text)), Size(Size) {}
 
 		void Open() { Opened = true; Selected = 0; }
 		void Close() { Opened = false; }
@@ -30,5 +30,3 @@ namespace Columbus
 	};
 
 }
-
-

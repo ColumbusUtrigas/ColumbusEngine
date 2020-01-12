@@ -96,7 +96,7 @@ namespace Columbus
 			// save light component
 			if (Lig != nullptr)
 			{
-				Lig->GetLight()->Serialize(JObj["Light"]);
+				Lig->GetLight().Serialize(JObj["Light"]);
 			}
 
 			if (Source != nullptr)
@@ -293,9 +293,9 @@ namespace Columbus
 			// load light component
 			if (JObj.HasChild("Light"))
 			{
-				Light* L = new Light();
-				L->Deserialize(JObj["Light"]);
-				GO->AddComponent(new ComponentLight(L));
+				Light L;
+				L.Deserialize(JObj["Light"]);
+				GO->AddComponent<ComponentLight>()->GetLight() = L;
 			}
 
 			if (JObj.HasChild("MeshRenderer"))
