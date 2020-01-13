@@ -48,6 +48,10 @@ public:
 		gameObject->transform.Rotation = {};
 		Speed = Jump;
 	}
+	Component* Clone() const final override
+	{
+		return new BirdComponent();
+	}
 
 	void Update(float DeltaTime) final override {}
 	~BirdComponent() final override {}
@@ -83,6 +87,11 @@ private:
 public:
 	FlappyBirdGameComponent(Scene& scene, Camera& camera, Input& input) :
 		scene(scene), camera(camera), input(input) {}
+
+	Component* Clone() const final override
+	{
+		return new FlappyBirdGameComponent(scene, camera, input);
+	}
 
 	void OnComponentAdd() final override
 	{

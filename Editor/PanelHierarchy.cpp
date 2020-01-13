@@ -31,14 +31,12 @@ namespace Columbus
 
 				if (ImGui::BeginChild("##List_PanelHierarchy"))
 				{
-					String MFind = Find.tolower();
+					String MFind = str_tolower(Find);
 					String MName;
-					//std::transform(MFind.begin(), MFind.end(), MFind.begin(), ::tolower);
 
 					for (auto& Obj : scene->Objects.Resources)
 					{
-						MName = Obj->Name.tolower();
-						//std::transform(MName.begin(), MName.end(), MName.begin(), ::tolower);
+						MName = str_tolower(Obj->Name);
 
 						if (MName.find(MFind) != String::npos)
 						{
@@ -107,7 +105,7 @@ namespace Columbus
 
 					for (uint32 i = 0;; i++)
 					{
-						Name = tmp.Name + String::from(i);
+						Name = tmp.Name + std::to_string(i);
 						if (scene->Objects.Find(Name) == nullptr)
 						{
 							tmp.Name = Name;

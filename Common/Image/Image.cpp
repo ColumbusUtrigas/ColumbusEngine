@@ -213,13 +213,13 @@ namespace Columbus
 	* @param const char* InFileName: Name of image file to load
 	* @param int Flags: Loading flags
 	*/
-	bool Image::Load(const char* InFileName, ImageLoading Flags)
+	bool Image::Load(std::string_view InFileName, ImageLoading Flags)
 	{
 		FreeData();
 
 		ImageLoader* Loader = nullptr;
 
-		switch (ImageGetFormat(InFileName))
+		switch (ImageGetFormat(InFileName.data()))
 		{
 			case ImageFormat::BMP: Loader = new ImageLoaderBMP(); break;
 			case ImageFormat::DDS: Loader = new ImageLoaderDDS(); break;
@@ -235,7 +235,7 @@ namespace Columbus
 
 		if (Loader != nullptr)
 		{
-			if (!Loader->Load(InFileName))
+			if (!Loader->Load(InFileName.data()))
 			{
 				delete Loader;
 				return false;

@@ -643,7 +643,7 @@ void main(void)
 			first = false;
 		}
 
-		glUseProgram(CPS->progid);
+		/*glUseProgram(CPS->progid);
 		gDevice->BindBufferBase(SSBO, 0);
 		glDispatchCompute(1, 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -651,7 +651,7 @@ void main(void)
 		void* ptr;
 		gDevice->MapBuffer(SSBO, BufferMapAccess::Read, ptr);
 		printf("%i\n", *((int*)ptr));
-		gDevice->UnmapBuffer(SSBO);
+		gDevice->UnmapBuffer(SSBO);*/
 
 		struct _UBO_Data
 		{

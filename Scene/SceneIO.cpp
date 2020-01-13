@@ -8,7 +8,7 @@
 #include <Graphics/Device.h>
 #include <Common/JSON/JSON.h>
 #include <System/Log.h>
-#include <thread>
+#include <Core/ThreadPool.h>
 
 namespace Columbus
 {
@@ -133,52 +133,35 @@ namespace Columbus
 		}
 	}
 
-	void func() {}
-
 	void Scene::DeserializeTexturesManager(JSON& J)
 	{
-		// Asynchonous textures loading.
-		struct LoadTexPair
-		{
-			std::string name;
-			std::string path;
-			SmartPointer<Texture> tex;
+		using namespace std;
+		using job_type = tuple<bool, Image, string, string>;
+
+		thread_pool pool(std::thread::hardware_concurrency());
+		vector<future<job_type>> load;
+		
+		auto job = [](string path, string name) -> job_type {
 			Image img;
-			bool result = false;
-
-			LoadTexPair(const std::string& name, const std::string& path, SmartPointer<Texture>&& tex) :
-				name(name), path(path), tex(std::move(tex)) {}
+			bool res = img.Load(path);
+			return make_tuple(res, move(img), move(path), move(name));
 		};
-
-		std::vector<LoadTexPair> loadingTexturesQueue;
-		std::vector<std::thread> loadingThreads;
 
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
 			auto path = "Data/Textures/" + name;
-			loadingTexturesQueue.emplace_back(name.c_str(), path.c_str(), SmartPointer<Texture>(gDevice->CreateTexture()));
+			load.push_back(pool.submit(job, move(path), move(name)));
 		}
 
-		auto loadFunc = [](LoadTexPair& pair)
+		for (auto& thr : load)
 		{
-			pair.result = pair.img.Load(pair.path.c_str());
-		};
-
-		for (auto& load : loadingTexturesQueue)
-		{
-			loadingThreads.emplace_back(std::thread(loadFunc, std::ref(load)));
-		}
-
-		for (int i = 0; i < loadingThreads.size(); i++)
-		{
-			auto& pair = loadingTexturesQueue[i];
-
-			loadingThreads[i].join();
-			if (pair.result && pair.tex->CreateAndLoad(pair.img))
+			auto pair = move(thr.get());
+			auto tex = SmartPointer<Texture>(gDevice->CreateTexture());
+			if (get<0>(pair) && tex->CreateAndLoad(get<1>(pair)))
 			{
-				TexturesManager.Add(std::move(pair.tex), pair.name.c_str());
-				Log::Success("Texture loaded: %s", pair.path.c_str());
+				TexturesManager.Add(move(tex), get<3>(pair).c_str());
+				Log::Success("Texture loaded: %s", get<2>(pair).c_str());
 			}
 		}
 	}
