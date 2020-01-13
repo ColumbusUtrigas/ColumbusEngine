@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Types.h>
+#include <string_view>
 
 namespace Columbus
 {
@@ -152,7 +153,7 @@ namespace Columbus
 		};
 	public:
 		Image();
-		Image(const char* FileName) { if (!Load(FileName)) { Data = nullptr; Exist = false; } }
+		Image(std::string_view FileName) { if (!Load(FileName)) { Data = nullptr; Exist = false; } }
 		Image(const Image&) = delete;
 		Image(Image&& Base) noexcept { *this = (Image&&)(Base); }
 
@@ -174,10 +175,11 @@ namespace Columbus
 			swap(Format, Base.Format);
 			swap(Data, Base.Data);
 			swap(Exist, Base.Exist);
+			swap(ImageType, Base.ImageType);
 			return *this;
 		}
 
-		bool Load(const char* FileName, ImageLoading Flags = ImageLoading::None);
+		bool Load(std::string_view FileName, ImageLoading Flags = ImageLoading::None);
 		bool Save(const char* FileName, ImageFormat Format, uint32 Quality = 100) const;
 		bool IsExist() const;
 		void FreeData();

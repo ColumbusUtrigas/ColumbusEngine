@@ -22,7 +22,7 @@ namespace Columbus
 
 	static const char* GetFileIcon(const String& Ext)
 	{
-		auto e = Ext.tolower();
+		std::string e = str_tolower(Ext);
 
 		if (e == "tga" || e == "bmp" || e == "dds" || e == "tif" || e == "tiff" ||
 		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE_O;
@@ -73,7 +73,7 @@ namespace Columbus
 				for (const auto& Elem : Decomposition)
 				{
 					ImGui::SameLine();
-					if (ImGui::Button((Elem + "##" + String::from(i)).c_str()))
+					if (ImGui::Button((Elem + "##" + std::to_string(i)).c_str()))
 					{
 						Path = Recompose(Decomposition, i);
 					}
@@ -96,7 +96,7 @@ namespace Columbus
 
 					auto Pred2 = [](const auto& a, const auto& b)
 					{
-						return a.Name.tolower() < b.Name.tolower();
+						return str_tolower(a.Name) < str_tolower(b.Name);
 					};
 
 					auto Finder = [](const auto& a)

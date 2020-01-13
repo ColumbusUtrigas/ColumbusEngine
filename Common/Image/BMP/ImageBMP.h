@@ -16,20 +16,3 @@ namespace Columbus
 	};
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
