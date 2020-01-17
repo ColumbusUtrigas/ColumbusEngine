@@ -8,6 +8,7 @@ namespace Columbus
 
 	class ComponentParticleSystem : public Component
 	{
+		DECLARE_COMPONENT(ComponentParticleSystem, ParticleEmitterCPU{});
 	private:
 		ParticleEmitterCPU Emitter;
 

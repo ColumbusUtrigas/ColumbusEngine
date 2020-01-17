@@ -8,6 +8,7 @@ namespace Columbus
 
 	class ComponentRigidbody : public Component
 	{
+		DECLARE_COMPONENT(ComponentRigidbody, nullptr);
 	private:
 		Rigidbody* RB;
 	public:

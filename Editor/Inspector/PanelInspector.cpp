@@ -1,45 +1,39 @@
 #include <Editor/Inspector/PanelInspector.h>
+#include <Editor/Inspector/ComponentEditor.h>
+#include <Editor/Inspector/ComponentEditorAudio.h>
+#include <Editor/Inspector/ComponentEditorBillboard.h>
+#include <Editor/Inspector/ComponentEditorLight.h>
+#include <Editor/Inspector/ComponentEditorMeshRenderer.h>
+#include <Editor/Inspector/ComponentEditorParticleSystem.h>
+#include <Editor/Inspector/ComponentEditorRigidbody.h>
 #include <Editor/Icons.h>
-#include <Scene/ComponentAudioSource.h>
-#include <Scene/ComponentLight.h>
-#include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentParticleSystem.h>
-#include <Scene/ComponentRigidbody.h>
-#include <Scene/ComponentBillboard.h>
+#include <Scene/Component.h>
 #include <Lib/imgui/imgui.h>
+#include <Lib/imgui/imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <unordered_map>
 #include <functional>
 #include <tuple>
+#include <map>
 
 using namespace std;
 
 namespace Columbus
 {
 
-	int gTypeId = 0;
-	template <typename T>
-	int type_id()
-	{
-		static int id = ++gTypeId;
-		return id;
+	static auto InspectorComponentNameRelocate(string_view str) {
+		static unordered_map<string_view, string_view> reloc {
+			{ "ComponentAudioSource", AUDIO_ICON" Audio Source" },
+			{ "ComponentLight", LIGHT_ICON" Light" },
+			{ "ComponentMeshRenderer", MESH_ICON" Mesh Renderer" },
+			{ "ComponentParticleSystem", PARTICLES_ICON" Particle System" },
+			{ "ComponentRigidbody", RIGIDBODY_ICON" Rigidbody" }
+		};
+
+		auto it = reloc.find(str);
+		if (it != reloc.end()) return it->second;
+		return str;
 	}
-
-#define ELEM(t, n, ...) { type_id<t>(), { \
-	n"##PanelInspector_ModalWindow_AddComponent", \
-	[](GameObject* GO) { GO->AddComponent<t>(__VA_ARGS__); }, \
-	[](GameObject* GO) { return GO->HasComponent<t>(); } \
-}}
-
-	unordered_map<int, tuple<string, function<void(GameObject*)>, function<bool(GameObject*)>>> names
-	{
-		ELEM(ComponentAudioSource, AUDIO_ICON" Audio Source", make_shared<AudioSource>()),
-		ELEM(ComponentLight, LIGHT_ICON" Light"),
-		ELEM(ComponentMeshRenderer, MESH_ICON" Mesh Renderer", nullptr),
-		ELEM(ComponentParticleSystem, PARTICLES_ICON" Particle System", ParticleEmitterCPU{}),
-		ELEM(ComponentRigidbody, RIGIDBODY_ICON" Rigidbody", new Rigidbody()),
-		ELEM(ComponentBillboard, "Billboard")
-	};
 
 	void EditorPanelInspector::Draw(Scene& Scn)
 	{
@@ -83,22 +77,23 @@ namespace Columbus
 
 	EditorPanelInspector::~EditorPanelInspector() {}
 
-	void Sel(GameObject* GO, int id, int& Selected, std::function<void()> Close)
+	void Select(GameObject* GO, string_view Name, Component* Comp, Component*& Selected, function<void()> Close)
 	{
-		ImGuiSelectableFlags Flags = ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_DontClosePopups;
-		ImVec2 Size = ImVec2(0, 50);
+		ImGuiSelectableFlags flags = ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_DontClosePopups;
+		ImVec2 size = ImVec2(0, 50);
+		if (GO->HasComponent(Comp->GetType())) flags |= ImGuiSelectableFlags_Disabled;
 
-		if (ImGui::Selectable(get<0>(names[id]).c_str(), Selected == id, Flags | (get<2>(names[id])(GO) ? ImGuiSelectableFlags_Disabled : 0), Size))
+		if (ImGui::Selectable(Name.data(), Comp == Selected, flags, size))
 		{
-			Selected = id;
-			if (ImGui::IsMouseDoubleClicked(0)) { get<1>(names[id])(GO); Close(); }
+			Selected = Comp;
+			if (ImGui::IsMouseDoubleClicked(0)) { GO->AddComponent(Comp->Clone()); Close(); }
 		}
 		ImGui::Separator();
 	}
 
 	void EditorPanelInspector::DrawAddComponent(Scene& Scn)
 	{
-		static int Selected = 0;
+		static Component* selected = nullptr;
 		static bool AddComponentEnable = false;
 
 		ImGui::Dummy(ImVec2(0, 10));
@@ -112,7 +107,7 @@ namespace Columbus
 
 		auto Close = [&]() {
 			AddComponentEnable = false;
-			Selected = 0;
+			selected = nullptr;
 		};
 
 		if (AddComponentEnable)
@@ -127,8 +122,13 @@ namespace Columbus
 				ImVec2 size = ImVec2(ImGui::GetContentRegionMax().x, ImGui::GetContentRegionMax().y - 50.0f);
 				if (ImGui::BeginChild("Components List##PanelInspector_ModalWindow_List", size))
 				{
-					for (const auto& tup : names)
-						Sel(GO, tup.first, Selected, Close);
+					auto builders = ComponentFactory::Instance().GetBuilders();
+					std::map<std::string, Component*> components(builders.begin(), builders.end());
+
+					for (const auto& comp : components)
+					{
+						Select(GO, InspectorComponentNameRelocate(comp.first), comp.second, selected, Close);
+					}
 				}
 				ImGui::EndChild();
 
@@ -136,7 +136,11 @@ namespace Columbus
 				{
 					if (ImGui::Button("Cancel##PanelInspector_ModalWindow_Cancel")) Close();
 					ImGui::SameLine();
-					if (ImGui::Button("Add##PanelInspector_ModalWindow_AddComponent_Add")) get<1>(names[Selected])(GO);
+
+					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, selected == nullptr);
+					if (ImGui::Button("Add##PanelInspector_ModalWindow_AddComponent_Add") && selected)
+						GO->AddComponent(selected->Clone());
+					ImGui::PopItemFlag();
 				}
 				ImGui::EndChild();
 				ImGui::EndPopup();
@@ -145,15 +149,16 @@ namespace Columbus
 	}
 
 
-
 	void EditorPanelInspector::DrawComponentsEditor(Scene& Scn)
 	{
-		DrawComponentAudioEditor(Scn);
-		DrawComponentLightEditor(Scn);
-		DrawComponentMeshRendererEditor(Scn);
-		DrawComponentParticleSystemEditor(Scn);
-		DrawComponentRigidbodyEditor(Scn);
-		DrawComponentBillboardEditor(Scn);
+		for (const auto& comp : Inspectable->GetComponents()) {
+			auto name = InspectorComponentNameRelocate(comp->GetTypename()).data();
+			if (ImGui::CollapsingHeader(name)) {
+				auto& ed = ComponentEditorDatabase::Instance().GetFromTypename(comp->GetTypename());
+				ed.Target = comp.Get();
+				ed.OnInspectorGUI();
+			}
+		}
 	}
 
 }

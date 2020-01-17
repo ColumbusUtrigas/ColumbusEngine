@@ -1,6 +1,7 @@
 #include <Editor/PanelHierarchy.h>
 #include <Editor/FontAwesome.h>
 #include <Lib/imgui/imgui.h>
+#include <functional>
 
 #include <SDL.h>
 
@@ -9,14 +10,14 @@ namespace Columbus
 
 	void EditorPanelHierarchy::Draw()
 	{
-		static String Find;
+		static std::string Find;
 
 		if (Opened && scene != nullptr)
 		{
 			if (ImGui::Begin(ICON_FA_LIST_UL" Hierarchy##PanelHierarchy", &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				bool Delete = false;
-				String DeleteName;
+				std::string DeleteName;
 
 				if (ImGui::BeginChild("##Find_PanelHierarchy", ImVec2(ImGui::GetWindowContentRegionWidth(), 20)))
 				{
@@ -31,10 +32,67 @@ namespace Columbus
 
 				if (ImGui::BeginChild("##List_PanelHierarchy"))
 				{
-					String MFind = str_tolower(Find);
-					String MName;
+					std::string MFind = str_tolower(Find);
+					std::string MName;
+
+					auto src_dragndrop = [](GameObject* obj) {
+						if (ImGui::BeginDragDropSource()) {
+							ImGui::SetDragDropPayload("ptr", obj, sizeof(obj));
+							ImGui::Text(obj->Name.c_str());
+							ImGui::EndDragDropSource();
+						}
+					};
+					auto dst_dragndrop = [&](GameObject* obj) {
+						if (ImGui::BeginDragDropTarget()) {
+							if (auto ptr = ImGui::AcceptDragDropPayload("ptr"))
+							{
+								auto c = obj->AddChild(object);
+							}
+
+							ImGui::EndDragDropTarget();
+						}
+					};
+
+					std::function<void(GameObject* obj)> draw_object_leaf;
+					draw_object_leaf = [&](GameObject* obj) {
+						int flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+						if (object == obj) flags |= ImGuiTreeNodeFlags_Selected;
+						if (obj->GetChildren().empty()) flags |= ImGuiTreeNodeFlags_Leaf;
+
+						bool open = ImGui::TreeNodeEx(obj->Name.c_str(), flags);
+						if (ImGui::IsItemClicked() || ImGui::IsItemFocused()) object = obj;
+						src_dragndrop(obj);
+						dst_dragndrop(obj);
+						if (open) {
+							for (const auto& child : obj->GetChildren())
+								draw_object_leaf(child);
+							ImGui::TreePop();
+						}
+
+						// if (ctrl+c)
+						if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C), false)) {
+							buffer = object;
+						}
+
+						// if (ctrl+d)
+						if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(SDL_SCANCODE_D, false)) {
+							buffer2 = object;
+						}
+
+						// if (delete)
+						if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)) && !Delete && object != nullptr) {
+							Delete = true;
+							DeleteName = object->Name;
+						}
+					};
 
 					for (auto& Obj : scene->Objects.Resources)
+					{
+						if (Obj->GetParent() != nullptr) continue;
+						draw_object_leaf(Obj.Get());
+					}
+
+					/*for (auto& Obj : scene->Objects.Resources)
 					{
 						MName = str_tolower(Obj->Name);
 
@@ -68,7 +126,7 @@ namespace Columbus
 								}
 							}
 						}
-					}
+					}*/
 				}
 				ImGui::EndChild();
 

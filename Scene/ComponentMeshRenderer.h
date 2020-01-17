@@ -8,6 +8,7 @@ namespace Columbus
 
 	class ComponentMeshRenderer : public Component
 	{
+		DECLARE_COMPONENT(ComponentMeshRenderer, nullptr);
 	private:
 		Mesh* Object = nullptr;
 	public:
