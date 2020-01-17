@@ -9,6 +9,7 @@ namespace Columbus
 
 	class ComponentAudioSource : public Component
 	{
+		DECLARE_COMPONENT(ComponentAudioSource, std::make_shared<AudioSource>());
 	private:
 		std::shared_ptr<AudioSource> Source;
 

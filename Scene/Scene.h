@@ -78,6 +78,11 @@ namespace Columbus
 		bool Load(const std::string& FileName);
 		bool Save(const std::string& FileName = "");
 
+		void Add(GameObject* obj)
+		{
+			Objects.Add(SmartPointer<GameObject>(obj), obj->Name);
+		}
+
 		void Add(GameObject&& InObject)
 		{
 			GameObject* New = new GameObject(std::move(InObject));

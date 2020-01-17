@@ -19,12 +19,6 @@ namespace Columbus
 		void DrawTransformEditor();
 		void DrawMaterialEditor(Scene& Scn);
 		void DrawComponentsEditor(Scene& Scn);
-		void DrawComponentAudioEditor(Scene& Scn);
-		void DrawComponentLightEditor(Scene& Scn);
-		void DrawComponentMeshRendererEditor(Scene& Scn);
-		void DrawComponentParticleSystemEditor(Scene& Scn);
-		void DrawComponentRigidbodyEditor(Scene& Scn);
-		void DrawComponentBillboardEditor(Scene& Scn);
 	public:
 		void SetInspectableObject(GameObject* Object)
 		{

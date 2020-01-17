@@ -4,6 +4,7 @@
 #include <Profiling/Profiling.h>
 
 #include <Scene/ComponentAudioSource.h>
+#include <Scene/ComponentBillboard.h>
 #include <Scene/ComponentLight.h>
 #include <Scene/ComponentMeshRenderer.h>
 #include <Scene/ComponentParticleSystem.h>
@@ -20,6 +21,13 @@
 
 namespace Columbus
 {
+
+	IMPLEMENT_COMPONENT(ComponentAudioSource);
+	IMPLEMENT_COMPONENT(ComponentBillboard);
+	IMPLEMENT_COMPONENT(ComponentLight);
+	IMPLEMENT_COMPONENT(ComponentMeshRenderer);
+	IMPLEMENT_COMPONENT(ComponentParticleSystem);
+	IMPLEMENT_COMPONENT(ComponentRigidbody);
 
 	Scene::Scene()
 	{

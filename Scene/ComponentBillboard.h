@@ -8,6 +8,7 @@ namespace Columbus
 
 	class ComponentBillboard : public Component
 	{
+		DECLARE_COMPONENT(ComponentBillboard);
 	private:
 		Billboard Bill;
 	public:

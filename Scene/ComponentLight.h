@@ -8,6 +8,7 @@ namespace Columbus
 
 	class ComponentLight : public Component
 	{
+		DECLARE_COMPONENT(ComponentLight);
 	private:
 		Light LightSource;
 	public:

@@ -6,10 +6,19 @@ namespace Columbus
 
 	GameObject::GameObject() {}
 	
-	void GameObject::AddChild(GameObject* Child)
+	GameObject* GameObject::AddChild(GameObject* Child)
 	{
 		COLUMBUS_ASSERT(Child != nullptr);
-		Children.push_back(SmartPointer<GameObject>(Child));
+		if (Child->parent != nullptr)
+			Child->parent->RemoveChild(Child);
+		Child->parent = this;
+		Children.push_back(Child);
+		return Child;
+	}
+
+	void GameObject::RemoveChild(GameObject* Child)
+	{
+		Children.erase(std::remove(Children.begin(), Children.end(), Child));
 	}
 	
 	Component* GameObject::AddComponent(Component* InComponent)
@@ -67,7 +76,11 @@ namespace Columbus
 	
 	GameObject::~GameObject()
 	{
+		if (parent)
+			parent->RemoveChild(this);
 
+		for (auto& child : Children)
+			delete child;
 	}
 
 }

@@ -1,39 +1,39 @@
-#include <Editor/Inspector/PanelInspector.h>
-#include <Editor/Icons.h>
+#include <Editor/Inspector/ComponentEditor.h>
 #include <Scene/ComponentParticleSystem.h>
-#include <Lib/imgui/imgui.h>
-#include <limits.h>
+#include <imgui/imgui.h>
 
 namespace Columbus
 {
 
-	void EditorPanelInspector::DrawComponentParticleSystemEditor(Scene& Scn)
+	class ComponentEditorParticleSystem : public ComponentEditor
 	{
-		auto Co = (ComponentParticleSystem*)Inspectable->GetComponent(Component::Type::ParticleSystem);
-		if (Co != nullptr)
+		DECLARE_COMPONENT_EDITOR(ComponentParticleSystem, ComponentEditorParticleSystem);
+	public:
+		void OnInspectorGUI() final override
 		{
-			if (ImGui::CollapsingHeader(PARTICLES_ICON" Particle System##PanelInspector"))
+			auto Co = static_cast<ComponentParticleSystem*>(Target);
+			if (Co != nullptr)
 			{
 				const char* BlendModes[] = { "Default", "Add", "Subtract", "Multiply" };
 				const char* BillboardModes[] = { "None", "Vertical", "Horizontal", "Face to camera" };
 				const char* TransformationModes[] = { "World", "Local" };
 				const char* SortModes[] = { "None", "Young first", "Old first", "Nearest first" };
 
-				#define NAME(a)    a"##PanelInspector_ParticleSystem"
+#define NAME(a)    a"##PanelInspector_ParticleSystem"
 
 				auto Emitter = &Co->GetEmitter();
 
 				ImGui::Indent(10.0f);
-				
+
 				ImGui::DragInt  (NAME("Max Particles"), (int*)&Emitter->MaxParticles, 1, 0, 1024);
 				ImGui::DragFloat(NAME("Emit Rate"), &Emitter->EmitRate, 0.1f, 0.0f, FLT_MAX);
-				ImGui::Checkbox (NAME("Emit"),      &Emitter->Emit);
-				ImGui::Checkbox (NAME("Visible"),   &Emitter->Visible);
+				ImGui::Checkbox (NAME("Emit"), &Emitter->Emit);
+				ImGui::Checkbox (NAME("Visible"), &Emitter->Visible);
 
-				ImGui::Combo(NAME("Blend mode"),          (int*)&Emitter->Blend, BlendModes, 4);
-				ImGui::Combo(NAME("Billboard mode"),      (int*)&Emitter->Billboard, BillboardModes, 4);
+				ImGui::Combo(NAME("Blend mode"), (int*)&Emitter->Blend, BlendModes, 4);
+				ImGui::Combo(NAME("Billboard mode"), (int*)&Emitter->Billboard, BillboardModes, 4);
 				ImGui::Combo(NAME("Transformation mode"), (int*)&Emitter->Transformation, TransformationModes, 2);
-				ImGui::Combo(NAME("Sort mode"),           (int*)&Emitter->Sort, SortModes, 4);
+				ImGui::Combo(NAME("Sort mode"), (int*)&Emitter->Sort, SortModes, 4);
 
 				ImGui::Separator();
 
@@ -50,9 +50,9 @@ namespace Columbus
 					const char* Shapes[] = { "Point", "Box", "Circle", "Sphere" };
 
 					ImGui::Indent(10.0f);
-					ImGui::DragFloat3(NAME("Size##Location"),  (float*)&Emitter->ModuleLocation.Size, 0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat(NAME("Radius##Location"),         &Emitter->ModuleLocation.Radius, 0.1f, 0.0f, FLT_MAX);
-					ImGui::Combo(NAME("Shape##Location"),        (int*)&Emitter->ModuleLocation.Shape, Shapes, 4);
+					ImGui::DragFloat3(NAME("Size##Location"), (float*)&Emitter->ModuleLocation.Size, 0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Radius##Location"), &Emitter->ModuleLocation.Radius, 0.1f, 0.0f, FLT_MAX);
+					ImGui::Combo(NAME("Shape##Location"), (int*)&Emitter->ModuleLocation.Shape, Shapes, 4);
 					ImGui::Checkbox(NAME("Emit from shell##Location"), &Emitter->ModuleLocation.EmitFromShell);
 					ImGui::Unindent(10.0f);
 					ImGui::Separator();
@@ -81,7 +81,7 @@ namespace Columbus
 					const char* Modes[] = { "Initial", "Over life" };
 
 					ImGui::Indent(10.0f);
-					
+
 					ImGui::Combo(NAME("Mode##Color"), (int*)&Emitter->ModuleColor.Mode, Modes, 2);
 
 					if (Emitter->ModuleColor.Mode == ParticleModuleColor::UpdateMode::Initial)
@@ -203,26 +203,26 @@ namespace Columbus
 				{
 					ImGui::Indent(10.0f);
 
-					ImGui::DragFloat(NAME("Strength##Noise"),    &Emitter->ModuleNoise.Strength,    0.1f, 0.0f, FLT_MAX);
-					ImGui::SliderInt(NAME("Octaves##Noise"),     &Emitter->ModuleNoise.Octaves,        1,    8);
-					ImGui::DragFloat(NAME("Lacunarity##Noise"),  &Emitter->ModuleNoise.Lacunarity,  0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Strength##Noise"), &Emitter->ModuleNoise.Strength, 0.1f, 0.0f, FLT_MAX);
+					ImGui::SliderInt(NAME("Octaves##Noise"), &Emitter->ModuleNoise.Octaves, 1, 8);
+					ImGui::DragFloat(NAME("Lacunarity##Noise"), &Emitter->ModuleNoise.Lacunarity, 0.1f, 0.0f, FLT_MAX);
 					ImGui::DragFloat(NAME("Persistence##Noise"), &Emitter->ModuleNoise.Persistence, 0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat(NAME("Frequency##Noise"),   &Emitter->ModuleNoise.Frequency,   0.1f, 0.0f, FLT_MAX);
-					ImGui::DragFloat(NAME("Amplitude##Noise"),   &Emitter->ModuleNoise.Amplitude,   0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Frequency##Noise"), &Emitter->ModuleNoise.Frequency, 0.1f, 0.0f, FLT_MAX);
+					ImGui::DragFloat(NAME("Amplitude##Noise"), &Emitter->ModuleNoise.Amplitude, 0.1f, 0.0f, FLT_MAX);
 
 					ImGui::Unindent(10.0f);
 				}
 
 				if (ImGui::CollapsingHeader(NAME("SubUV")))
 				{
-					const char* Modes[] =  { "Linear", "Random" };
+					const char* Modes[] = { "Linear", "Random" };
 
 					ImGui::Indent(10.0f);
 
-					ImGui::Combo(NAME("Mode##SubUV"),   (int*)&Emitter->ModuleSubUV.Mode, Modes, 2);
-					ImGui::DragInt(NAME("Horizontal##SubUV"), &Emitter->ModuleSubUV.Horizontal, 1,    0, INT_MAX);
-					ImGui::DragInt(NAME("Vertical##SubUV"),   &Emitter->ModuleSubUV.Vertical,   1,    0, INT_MAX);
-					ImGui::DragFloat(NAME("Cycles##SubUV"),   &Emitter->ModuleSubUV.Cycles,  0.1f, 0.0f, FLT_MAX);
+					ImGui::Combo(NAME("Mode##SubUV"), (int*)&Emitter->ModuleSubUV.Mode, Modes, 2);
+					ImGui::DragInt(NAME("Horizontal##SubUV"), &Emitter->ModuleSubUV.Horizontal, 1, 0, INT_MAX);
+					ImGui::DragInt(NAME("Vertical##SubUV"), &Emitter->ModuleSubUV.Vertical, 1, 0, INT_MAX);
+					ImGui::DragFloat(NAME("Cycles##SubUV"), &Emitter->ModuleSubUV.Cycles, 0.1f, 0.0f, FLT_MAX);
 
 					ImGui::Unindent(10.0f);
 				}
@@ -230,11 +230,10 @@ namespace Columbus
 				ImGui::Unindent(10.0f);
 				ImGui::Separator();
 
-				#undef NAME
+#undef NAME
 			}
 		}
-	}
+	};
+	IMPLEMENT_COMPONENT_EDITOR(ComponentParticleSystem, ComponentEditorParticleSystem);
 
 }
-
-

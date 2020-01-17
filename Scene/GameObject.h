@@ -13,7 +13,8 @@ namespace Columbus
 	class GameObject
 	{
 	protected:
-		std::vector<SmartPointer<GameObject>> Children;
+		GameObject* parent = nullptr;
+		std::vector<GameObject*> Children;
 		std::vector<SmartPointer<Component>> Components;
 	public:
 		Transform transform;
@@ -27,7 +28,8 @@ namespace Columbus
 		GameObject(const GameObject&) = delete;
 		GameObject(GameObject&&) = default;
 
-		void AddChild(GameObject* Child);
+		GameObject* AddChild(GameObject* Child);
+		void RemoveChild(GameObject* Child);
 		Component* AddComponent(Component* Component);
 
 		template <typename T, typename...Args>
@@ -45,6 +47,9 @@ namespace Columbus
 
 			for (const auto& comp : Components)
 				n->AddComponent(comp->Clone());
+
+			for (const auto& child : Children)
+				n->AddChild(child->Clone());
 
 			n->material = material;
 			n->materials = materials;
@@ -67,11 +72,17 @@ namespace Columbus
 			return nullptr;
 		}
 
+		const auto& GetComponents() const { return Components; }
+
 		template <typename T>
 		bool HasComponent()
 		{
 			return GetComponent<T>() != nullptr;
 		}
+
+		const auto& GetChildren() const { return Children; }
+
+		GameObject* GetParent() const { return parent; }
 
 		/*template <typename T>
 		bool DeleteComponent()
