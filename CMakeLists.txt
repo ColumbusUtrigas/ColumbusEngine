@@ -24,6 +24,7 @@ file(GLOB IMGUI_SRC
 	./Lib/imgui/*.cpp
 	./Lib/imgui/misc/cpp/*.cpp
 	./Lib/imgui/examples/imgui_impl_sdl.cpp
+	./Lib/imgui/examples/imgui_impl_win32.cpp
 	./Lib/imgui/examples/imgui_impl_opengl3.cpp
 	./Lib/ImGuizmo/*.cpp)
 
@@ -107,7 +108,7 @@ elseif(WIN32)
 		./Lib/ZSTD/lib
 		./Lib/LibTIFF/lib/x64
 	)
-	target_link_libraries(${TARGET} opengl32 SDL2 SDL2main glew32 glew32 zstd tiff
+	target_link_libraries(${TARGET} opengl32 SDL2 glew32 glew32 zstd tiff
 		BulletLinearMath BulletCollision BulletDynamics
 	)
 endif()
