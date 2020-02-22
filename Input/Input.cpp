@@ -118,7 +118,7 @@ namespace Columbus
 	
 	void Input::Update()
 	{
-		SDL_PumpEvents();
+		//SDL_PumpEvents();
 
 		memset(Keyboard.KeysDown, 0, sizeof(Keyboard.KeysDown));
 		memset(Keyboard.KeysUp, 0, sizeof(Keyboard.KeysUp));
@@ -135,7 +135,7 @@ namespace Columbus
 		Mouse.PreviousPosition = Mouse.CurrentPosition;
 		Mouse.Wheel = { 0, 0 };
 
-		SDL_ShowCursor(MouseEnabled ? SDL_ENABLE : SDL_DISABLE);
+		//SDL_ShowCursor(MouseEnabled ? SDL_ENABLE : SDL_DISABLE);
 	}
 
 	void Input::PollKeyEvent(const KeyEvent& E)

@@ -1,3 +1,13 @@
+#include <Core/Game.h>
+
+using namespace Columbus;
+
+void Game::Update()
+{
+
+}
+
+#if 0
 #include <Scene/Scene.h>
 #include <Input/Input.h>
 #include <Scene/ComponentMeshRenderer.h>
@@ -469,4 +479,4 @@ int main(int argc, char** argv)
 }
 #endif //FLAPPY_BIRD_GAME
 
-
+#endif
