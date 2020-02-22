@@ -6,6 +6,7 @@
 
 #include <Graphics/OpenGL/DeviceOpenGL.h>
 //#include <Graphics/Vulkan/InstanceVulkan.h>
+#include <GLEW/include/GL/wglew.h>
 
 using namespace Columbus;
 
@@ -105,6 +106,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		e.MouseWheel = { HIWORD(lparam), 0 };
 		e.Type = Event::Type_MouseWheel;
 		break;
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		e.Type = Event::Type_Key;
+		e.Key.Code = wparam;
+		e.Key.Pressed = true;
+		e.Key.Repeat = lparam & 0x40000000 ? true : false;
+		break;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		e.Type = Event::Type_Key;
+		e.Key.Code = wparam;
+		e.Key.Pressed = false;
+		e.Key.Repeat = false;
+		break;
 	default:
 		return DefWindowProc(hWnd, msg, wparam, lparam);
 	}
@@ -161,6 +176,9 @@ void InitWindowAndContext()
 	OpenGL::Init();
 	gDevice = new DeviceOpenGL();
 	gDevice->Initialize();
+
+	PFNWGLSWAPINTERVALEXTPROC wglSwapInterval = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	wglSwapInterval(1);
 }
 
 void ShutdownWindowAndContext()
@@ -245,14 +263,25 @@ int main(int argc, char** argv)
 
 	scene.SetCamera(camera);
 	scene.SetAudioListener(Listener);
+	scene.Audio.Play();
 
 	MSG msg;
 	float wheel = 0;
-	float RedrawTime = 0.016f;
+	float RedrawTime = 0;
 	bool wasLooking = false;
+	const int CameraSpeed = 5;
+
+	Timer RedrawTimer;
+
 	while (!quit)
 	{
+		ResetProfiling();
+		PROFILE_CPU(ProfileModule::CPU);
+		RedrawTime = RedrawTimer.Elapsed();
+		RedrawTimer.Reset();
+
 		input.Update();
+		input.SetKeyboardFocus(true);
 
 		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
@@ -280,15 +309,15 @@ int main(int argc, char** argv)
 
 				if (wasLooking)
 				{
-					/*camera.Pos += camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_W);
-					camera.Pos -= camera.Direction() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_S);
-					camera.Pos -= camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_A);
-					camera.Pos += camera.Right() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_D);
-					camera.Pos -= camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_LSHIFT);
-					camera.Pos += camera.Up() * RedrawTime * CameraSpeed * input.GetKey(SDL_SCANCODE_SPACE);
+					camera.Pos += camera.Direction() * RedrawTime * CameraSpeed * input.GetKey('W');
+					camera.Pos -= camera.Direction() * RedrawTime * CameraSpeed * input.GetKey('S');
+					camera.Pos -= camera.Right() * RedrawTime * CameraSpeed * input.GetKey('A');
+					camera.Pos += camera.Right() * RedrawTime * CameraSpeed * input.GetKey('D');
+					camera.Pos -= camera.Up() * RedrawTime * CameraSpeed * input.GetKey(VK_SHIFT);
+					camera.Pos += camera.Up() * RedrawTime * CameraSpeed * input.GetKey(VK_SPACE);
 
-					camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_Q);
-					camera.Rot += Vector3(0, 0, 120 * RedrawTime) * input.GetKey(SDL_SCANCODE_E);*/
+					camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * input.GetKey('Q');
+					camera.Rot += Vector3(0, 0, 120 * RedrawTime) * input.GetKey('E');
 
 					Vector2 deltaMouse = input.GetMouseMovement();
 					camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
@@ -311,6 +340,7 @@ int main(int argc, char** argv)
 			Listener.Up = camera.Up();
 			Listener.Forward = camera.Direction();
 
+
 #ifdef COLUMBUS_EDITOR
 			MainRender.SetIsEditor(true);
 #else
@@ -330,7 +360,7 @@ int main(int argc, char** argv)
 			MainRender.Render();
 
 			RenderBeginGUI();
-			Editor.Draw(scene, MainRender, wnd_size, 0.016f);
+			Editor.Draw(scene, MainRender, wnd_size, RedrawTime);
 			RenderEndGUI();
 
 			SwapBuffers(hdc);

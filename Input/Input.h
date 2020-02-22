@@ -124,18 +124,10 @@ namespace Columbus
 		DeviceMouse Mouse;
 		DeviceGamepad Gamepads[MaxGamepads];
 
-		bool MouseEnabled = true;
 		bool KeyboardFocus;
 		bool MouseFocus;
 	public:
 		Input();
-
-		void ShowMouseCursor(bool Show);
-		void SetCursor(Cursor InCursor);
-		void SetSystemCursor(SystemCursor Cursor);
-		void SetColoredCursor(const void* Pixels, uint32 Width, uint32 Height, uint32 BPP, const iVector2& Hot);
-
-		bool IsMouseCursorShowed() const;
 
 		void WarpMouse(const iVector2& aPos);
 
