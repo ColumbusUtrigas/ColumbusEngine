@@ -32,20 +32,22 @@ namespace Columbus
 
 				Position = iVector2((int)ImGui::GetCursorScreenPos().x, (int)ImGui::GetCursorScreenPos().y);
 
-				auto Tex = ((TextureOpenGL*)FramebufferTexture)->GetID();
-				auto Cursor = ImGui::GetCursorPos();
-				auto Size = ImGui::GetWindowSize();
-				Size.y -= Cursor.y;
-				ImGui::Image((void*)(intptr_t)Tex, ImVec2(Size.x, Size.y), ImVec2(0, 1), ImVec2(1, 0));
-				Hover = ImGui::IsItemHovered();
-				SizeOfRenderWindow = { (int)Size.x, (int)Size.y };
+				if (FramebufferTexture != nullptr)
+				{
+					auto Tex = ((TextureOpenGL*)FramebufferTexture)->GetID();
+					auto Cursor = ImGui::GetCursorPos();
+					auto Size = ImGui::GetWindowSize();
+					Size.y -= Cursor.y;
+					ImGui::Image((void*)(intptr_t)Tex, ImVec2(Size.x, Size.y), ImVec2(0, 1), ImVec2(1, 0));
+					Hover = ImGui::IsItemHovered();
+					SizeOfRenderWindow = { (int)Size.x, (int)Size.y };
 
-
-				if (_PickedObject != nullptr)
-				{ 
-					Vector4 rect(Position.X, Position.Y, Size.x, Size.y);
-					_Gizmo.SetCamera(Render.GetMainCamera());
-					_Gizmo.Draw(_PickedObject->transform, rect);
+					if (_PickedObject != nullptr)
+					{
+						Vector4 rect(Position.X, Position.Y, Size.x, Size.y);
+						_Gizmo.SetCamera(Render.GetMainCamera());
+						_Gizmo.Draw(_PickedObject->transform, rect);
+					}
 				}
 			}
 			ImGui::End();
