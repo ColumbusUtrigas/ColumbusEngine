@@ -22,18 +22,18 @@ namespace Columbus
 
 	ProfileMarkerGPU::ProfileMarkerGPU(ProfileModuleGPU Module) : Module(Module)
 	{
-		glGenQueries(1, &ID);
-		glBeginQuery(GL_TIME_ELAPSED, ID);
+		//glGenQueries(1, &ID);
+		//glBeginQuery(GL_TIME_ELAPSED, ID);
 	}
 
 	ProfileMarkerGPU::~ProfileMarkerGPU()
 	{
 		GLint result;
-		glEndQuery(GL_TIME_ELAPSED);
-		glGetQueryObjectiv(ID, GL_QUERY_RESULT, &result);
-		glDeleteQueries(1, &ID);
+		//glEndQuery(GL_TIME_ELAPSED);
+		//glGetQueryObjectiv(ID, GL_QUERY_RESULT, &result);
+		//glDeleteQueries(1, &ID);
 
-		GPU[int(Module)] = result * 0.000001;
+		//GPU[int(Module)] = result * 0.000001;
 	}
 
 	void ResetProfiling()
