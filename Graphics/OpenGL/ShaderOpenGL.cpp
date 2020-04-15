@@ -150,7 +150,7 @@ void main(void)
 					pos++;
 				}
 
-				stream << ReadFile(path.c_str()) << '\n';
+				stream << ReadFile(path.c_str()) << std::endl;
 			}
 			else
 			{

@@ -802,6 +802,7 @@ void main(void)
 
 		State.ShadowTexture = shadowEffect.DepthTexture;
 		State.SetMainCamera(MainCamera);
+		ParticlesRender.UBO = buf;
 
 		RenderOpaque();
 		glDrawBuffers(1, BuffersFirst);
