@@ -49,9 +49,10 @@ void main(void)
 	vec3 lighting = vec3(0,0,0);
 	for (int i = 0; i < u_Lights.count; ++i)
 	{
-		vec3 L = normalize(LIGHT.pos - inPositions.pos[id].xyz);
+		vec3 L = normalize(LIGHT.pos - inPositions.pos[id].xyz); if (LIGHT.type == 0) L = normalize(-LIGHT.dir);
 		float distance = length(LIGHT.pos - inPositions.pos[id].xyz);
-		float attenuation = clamp(1.0 - distance * distance / (LIGHT.range * LIGHT.range), 0.0, 1.0);
+		float attenuation = 1.0f;
+		if (LIGHT.type != 0) attenuation = clamp(1.0 - distance * distance / (LIGHT.range * LIGHT.range), 0.0, 1.0);
 		attenuation *= attenuation;
 
 		if (LIGHT.type == 2) // spotlight
