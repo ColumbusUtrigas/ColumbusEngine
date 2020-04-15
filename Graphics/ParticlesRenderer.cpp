@@ -6,6 +6,78 @@
 namespace Columbus
 {
 
+std::string acomputeprog =
+R"(#version 430 core
+layout(local_size_x = 1, local_size_y = 1) in;
+
+#define MAX_LIGHTS_COUNT 128
+
+struct Light
+{
+	vec3 color; float range;
+	vec3 pos; float innerCutoff;
+	vec3 dir; float outerCutoff;
+	int type;
+	int hasShadow;
+	mat4 lightView;
+	vec4 shadowRect;
+};
+
+// TODO: cbuffer abstraction, binding number
+layout(std140, binding = 0) uniform cb_Lighting
+{
+	Light lights[MAX_LIGHTS_COUNT];
+	int count;
+} u_Lights;
+
+layout(std430, binding = 1) buffer colors
+{
+	vec4 color[];
+} outColors;
+
+layout(std430, binding = 2) buffer positions
+{
+	vec4 pos[];
+} inPositions;
+
+#define LIGHT u_Lights.lights[i]
+
+void main(void)
+{
+	uint id = gl_GlobalInvocationID.x;
+
+	vec3 lighting = vec3(0,0,0);
+	for (int i = 0; i < u_Lights.count; ++i)
+	{
+		vec3 L = normalize(LIGHT.pos - inPositions.pos[id].xyz);
+		float distance = length(LIGHT.pos - inPositions.pos[id].xyz);
+		float attenuation = clamp(1.0 - distance * distance / (LIGHT.range * LIGHT.range), 0.0, 1.0);
+		attenuation *= attenuation;
+
+		if (LIGHT.type == 2) // spotlight
+		{
+			float angle;
+			angle = dot(LIGHT.dir, -L);
+			angle = max(angle, 0);
+			angle = acos(angle);
+
+			if (angle < LIGHT.innerCutoff)
+				attenuation *= 1.0;
+			else if (angle < LIGHT.outerCutoff)
+				attenuation *= (1.0 - smoothstep(LIGHT.innerCutoff, LIGHT.outerCutoff, angle));
+			else
+				attenuation = 0.0;
+		}
+
+		lighting += LIGHT.color * attenuation;
+	}
+
+	outColors.color[id] *= vec4(lighting, 1);
+}
+)";
+
+	ComputePipelineState* CPS;
+
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
 		MaxSize = NewSize;
@@ -23,6 +95,10 @@ namespace Columbus
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
 	{
 		Allocate(MaxSize);
+
+		ComputePipelineStateDesc CPSD;
+		CPSD.CS = acomputeprog;
+		gDevice->CreateComputePipelineState(CPSD, &CPS);
 	}
 
 	void ParticlesRenderer::Render(const ParticleEmitterCPU& Particles, const Camera& MainCamera, const Material& Mat)
@@ -84,16 +160,6 @@ namespace Columbus
 				Q = Quaternion(Vector3(0,0,0));
 			}
 
-			Matrix Billboard = Q.ToMatrix();
-
-			Shader->SetUniform("View", false, MainCamera.GetViewMatrix());
-			Shader->SetUniform("Projection", false, MainCamera.GetProjectionMatrix());
-			Shader->SetUniform("Billboard", false, Billboard);
-			Shader->SetUniform("Frame", iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
-
-			Shader->SetUniform("Texture", Mat.AlbedoMap != nullptr ? Mat.AlbedoMap : gDevice->GetDefaultTextures()->White.get(), 0);
-			Shader->SetUniform("DepthTexture", Depth != nullptr ? Depth : gDevice->GetDefaultTextures()->Black.get(), 1);
-
 			Vector4* PositionsNEW;
 			Vector4* SizesNEW;
 			Vector4* ColorsNEW;
@@ -117,6 +183,25 @@ namespace Columbus
 			gDevice->UnmapBuffer(SizesUAV);
 			gDevice->UnmapBuffer(ColorsUAV);
 			gDevice->UnmapBuffer(OtherUAV);
+
+			gDevice->BindBufferBase(UBO, 0);
+			gDevice->BindBufferBase(ColorsUAV, 1);
+			gDevice->BindBufferBase(PositionsUAV, 2);
+			glUseProgram(CPS->progid);
+			glDispatchCompute(Particles.Particles.Count, 1, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+			Shader->Bind();
+
+			Matrix Billboard = Q.ToMatrix();
+
+			Shader->SetUniform("View", false, MainCamera.GetViewMatrix());
+			Shader->SetUniform("Projection", false, MainCamera.GetProjectionMatrix());
+			Shader->SetUniform("Billboard", false, Billboard);
+			Shader->SetUniform("Frame", iVector2(Particles.ModuleSubUV.Horizontal, Particles.ModuleSubUV.Vertical));
+
+			Shader->SetUniform("Texture", Mat.AlbedoMap != nullptr ? Mat.AlbedoMap : gDevice->GetDefaultTextures()->White.get(), 0);
+			Shader->SetUniform("DepthTexture", Depth != nullptr ? Depth : gDevice->GetDefaultTextures()->Black.get(), 1);
 
 			gDevice->IASetVertexBuffers(0, 0, nullptr);
 			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);

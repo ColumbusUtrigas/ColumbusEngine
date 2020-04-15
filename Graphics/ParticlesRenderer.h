@@ -18,6 +18,9 @@ namespace Columbus
 		Buffer* OtherUAV;
 
 		Texture* Depth = nullptr;
+
+		friend class Renderer;
+		Buffer* UBO;
 	private:
 		void Allocate(size_t NewSize);
 	public:
