@@ -178,7 +178,7 @@ void InitWindowAndContext()
 	gDevice->Initialize();
 
 	PFNWGLSWAPINTERVALEXTPROC wglSwapInterval = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-	wglSwapInterval(1);
+	wglSwapInterval(0);
 }
 
 void ShutdownWindowAndContext()
