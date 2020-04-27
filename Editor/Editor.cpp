@@ -206,11 +206,16 @@ namespace Columbus
 	{
 		ApplyDarkTheme();
 
+		ImFontConfig lat, cyr, icons;
+		cyr.MergeMode = true;
+		icons.MergeMode = true;
+
+		const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
 		ImGuiIO& io = ImGui::GetIO();
-	 	io.Fonts->AddFontDefault();
-		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-		ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
-		io.Fonts->AddFontFromFileTTF("./Data/Font.ttf", 12.0f, &icons_config, icons_ranges);	
+		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &lat);
+		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
+		io.Fonts->AddFontFromFileTTF("./Data/Font.ttf", 12.0f, &icons, icons_ranges);
 		io.Fonts->Build();
 	}
 
