@@ -5,9 +5,6 @@ namespace Columbus
 {
 
 	Transform::Transform(const Vector3& Pos, const Vector3& Rot, const Vector3& Scale) :
-		LastPosition(Pos + Vector3{1}),
-		LastRotation(Rot + Vector3{1}),
-		LastScale(Scale + Vector3{1}),
 		Position(Pos),
 		Rotation(Rot),
 		Scale(Scale),
@@ -15,20 +12,12 @@ namespace Columbus
 	
 	void Transform::Update()
 	{
-		if (LastPosition != Position || LastRotation != Rotation || LastScale != Scale)
+		//if (Dirty)
 		{
-			Q = Quaternion({ Math::Radians(Rotation.X),
-			                 Math::Radians(Rotation.Y),
-			                 Math::Radians(Rotation.Z) });
-
 			ModelMatrix.SetIdentity();
 			ModelMatrix.Scale(Scale);
-			ModelMatrix = Q.ToMatrix() * ModelMatrix;
+			ModelMatrix = Rotation.ToMatrix() * ModelMatrix;
 			ModelMatrix.Translate(Position);
-
-			LastPosition = Position;
-			LastRotation = Rotation;
-			LastScale = Scale;
 		}
 	}
 	
@@ -52,7 +41,7 @@ namespace Columbus
 	void Transform::Deserialize(JSON& J)
 	{
 		Position = J["Position"].GetVector3<float>();
-		Rotation = J["Rotation"].GetVector3<float>();
+		Rotation = J["Rotation"].GetQuaternion();
 		Scale = J["Scale"].GetVector3<float>();
 	}
 	

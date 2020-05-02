@@ -1,4 +1,5 @@
 #include <Physics/Rigidbody.h>
+#include <Common/JSON/JSON.h>
 
 namespace Columbus
 {
@@ -136,8 +137,8 @@ namespace Columbus
 			Vector3 pos = InTransform.Position;
 			//Vector3 scale = InTransform.Scale;
 
-			Quaternion& Q = InTransform.Q;
-			btQuaternion bQuat(-Q.Z, -Q.W, Q.X, -Q.Y);
+			Quaternion Q = InTransform.Rotation;
+			btQuaternion bQuat(-Q.X, -Q.Y, -Q.Z, Q.W);
 
 			bTrans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
 			bTrans.setRotation(bQuat);
@@ -274,13 +275,10 @@ namespace Columbus
 	{
 		if (mRigidbody != nullptr)
 		{
-			if (InShape != nullptr)
+			if (InShape != nullptr && InShape->mShape != nullptr)
 			{
-				if (InShape->mShape != nullptr)
-				{
-					Shape = InShape;
-					mRigidbody->setCollisionShape(InShape->mShape);
-				}
+				Shape = InShape;
+				mRigidbody->setCollisionShape(InShape->mShape);
 			}
 		}
 	}
@@ -302,12 +300,9 @@ namespace Columbus
 			//mRigidbody->getMotionState()->getWorldTransform(bTrans);
 
 			Result.Position = Vector3(bTrans.getOrigin().getX(), bTrans.getOrigin().getY(), bTrans.getOrigin().getZ());
-			Result.Q = Quaternion(-bTrans.getRotation().getZ(), -bTrans.getRotation().getY(), -bTrans.getRotation().getX(), bTrans.getRotation().getW());
+			Result.Rotation = Quaternion(-bTrans.getRotation().getX(), -bTrans.getRotation().getY(), -bTrans.getRotation().getZ(), bTrans.getRotation().getW());
 			Result.Scale = Trans.Scale;
-			Result.Update(); //Hmmm
-
-			Vector3 rot(-3.141592653, 0, 0);
-			Result.Q = (Result.Q * Quaternion(rot)).Normalized();
+			Result.Update();
 
 			(Transform)this->Trans = Result;
 		}
@@ -403,6 +398,36 @@ namespace Columbus
 		return this->Shape;
 	}
 
+	void Rigidbody::Serialize(JSON& J) const
+	{
+		J["Static"] = Static;
+		J["Mass"] = Mass;
+		J["Restitution"] = Restitution;
+		J["Friction"] = Friction;
+		J["RollingFriction"] = RollingFriction;
+		J["AngularDamping"] = AngularDamping;
+		J["AngularTreshold"] = AngularTreshold;
+		J["AngularFactor"] = AngularFactor;
+		J["LinearTreshold"] = LinearTreshold;
+		J["LinearDamping"] = LinearDamping;
+		J["LinearFactor"] = LinearFactor;
+	}
+
+	void Rigidbody::Deserialize(JSON& J)
+	{
+		Static = J["Static"].GetBool();
+		Mass = J["Mass"].GetFloat();
+		Restitution = J["Restitution"].GetFloat();
+		Friction = J["Friction"].GetFloat();
+		RollingFriction = J["RollingFriction"].GetFloat();
+		AngularDamping = J["AngularDamping"].GetFloat();
+		AngularTreshold = J["AngularTreshold"].GetFloat();
+		AngularFactor = J["AngularFactor"].GetVector3<float>();
+		LinearTreshold = J["LinearTreshold"].GetFloat();
+		LinearDamping = J["LinearDamping"].GetFloat();
+		LinearFactor = J["LinearFactor"].GetVector3<float>();
+	}
+
 	Rigidbody::~Rigidbody()
 	{
 		delete mRigidbody->getMotionState();
@@ -410,11 +435,3 @@ namespace Columbus
 	}
 
 }
-
-
-
-
-
-
-
-

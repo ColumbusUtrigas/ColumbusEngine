@@ -92,7 +92,7 @@ namespace
 		ImGuizmo::DecomposeMatrixToComponents(delta, dt, dr, ds);
 
 		transform.Position = { t[0], t[1], t[2] };
-		transform.Rotation -= { dr[0], dr[1], dr[2] };
+		transform.Rotation /= Quaternion({ dr[0], dr[1], dr[2] });
 		transform.Scale = { s[0], s[1], s[2] };
 		transform.Update();
 

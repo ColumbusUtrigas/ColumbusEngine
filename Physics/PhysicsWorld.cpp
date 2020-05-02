@@ -40,6 +40,11 @@ namespace Columbus
 		mWorld->stepSimulation(aDeltaTime, aSubSteps);
 	}
 
+	void PhysicsWorld::ClearForces()
+	{
+		mWorld->clearForces();
+	}
+
 	PhysicsWorld::~PhysicsWorld()
 	{
 		delete mWorld;

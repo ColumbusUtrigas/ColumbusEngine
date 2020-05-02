@@ -8,7 +8,7 @@
 namespace Columbus
 {
 
-	void EditorPanelScene::Draw(Renderer& Render)
+	void EditorPanelScene::Draw(Scene& Scene, Renderer& Render)
 	{
 		if (Opened)
 		{
@@ -24,6 +24,9 @@ namespace Columbus
 					ImGui::RadioButton("T", (int*)&_Gizmo._Operation, Gizmo::Operation::Translate);
 					ImGui::RadioButton("R", (int*)&_Gizmo._Operation, Gizmo::Operation::Rotate);
 					ImGui::RadioButton("S", (int*)&_Gizmo._Operation, Gizmo::Operation::Scale);
+
+					FlagButton(ICON_FA_PLAY, Scene.EnablePhysicsSimulation);
+					ShowTooltipDelayed(CommonUISettings::TooltipDelay, Scene.EnablePhysicsSimulation ? "Disable physics simulation" : "Enable physics simulation");
 
 					ImGui::EndMenuBar();
 				}

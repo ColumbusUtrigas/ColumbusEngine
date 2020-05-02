@@ -3,6 +3,7 @@
 #include <Math/Vector2.h>
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
+#include <Math/Quaternion.h>
 #include <Core/String.h>
 #include <Core/Types.h>
 #include <vector>
@@ -91,6 +92,15 @@ namespace Columbus
 			(*this)[3] = Vec.W;
 		}
 
+		JSON(const Quaternion& Quat)
+		{
+			IsVector = true;
+			(*this)[0] = Quat.X;
+			(*this)[1] = Quat.Y;
+			(*this)[2] = Quat.Z;
+			(*this)[3] = Quat.W;
+		}
+
 		bool Parse(const char* Text);
 		bool Load(const char* FileName);
 		bool Save(const char* FileName);
@@ -102,6 +112,7 @@ namespace Columbus
 		template <typename T> Vector2_t<T> GetVector2() { return Vector2_t<T>((T)operator[](0).GetFloat(), (T)operator[](1).GetFloat()); }
 		template <typename T> Vector3_t<T> GetVector3() { return Vector3_t<T>((T)operator[](0).GetFloat(), (T)operator[](1).GetFloat(), (T)operator[](2).GetFloat()); }
 		template <typename T> Vector4_t<T> GetVector4() { return Vector4_t<T>((T)operator[](0).GetFloat(), (T)operator[](1).GetFloat(), (T)operator[](2).GetFloat(), (T)operator[](3).GetFloat()); }
+		Quaternion GetQuaternion() { return Quaternion(operator[](0).GetFloat(), operator[](1).GetFloat(), operator[](2).GetFloat(), operator[](3).GetFloat()); }
 
 		bool IsString() const { return ValueType == Type::String; }
 		bool IsBool()   const { return ValueType == Type::Bool;   }

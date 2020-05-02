@@ -32,7 +32,9 @@ namespace Columbus
 
 		if (ImGui::Button("R##Inspector_TransformEditor")) Inspectable->transform.Rotation = {};
 		ImGui::SameLine();
-		ImGui::DragFloat3("Rotation##Inspector_TransformEditor", (float*)&Inspectable->transform.Rotation, 0.1f);
+		auto euler = Inspectable->transform.Rotation.Euler();
+		ImGui::DragFloat3("Rotation##Inspector_TransformEditor", (float*)&euler, 0.5f);
+		Inspectable->transform.Rotation = Quaternion(euler);
 
 		if (ImGui::Button("S##Inspector_TransformEditor")) Inspectable->transform.Scale = { 1,1,1 };
 		ImGui::SameLine();

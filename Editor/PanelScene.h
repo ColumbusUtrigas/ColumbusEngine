@@ -45,7 +45,7 @@ namespace Columbus
 		bool IsSelected() const { return Selected; }
 		bool IsHover() const { return Hover; }
 
-		void Draw(Renderer& Render);
+		void Draw(Scene& Scene, Renderer& Render);
 
 		virtual ~EditorPanelScene() final override {}
 	};

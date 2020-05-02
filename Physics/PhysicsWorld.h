@@ -21,6 +21,7 @@ namespace Columbus
 		virtual void AddRigidbody(Rigidbody* aRigidbody);
 		virtual void RemoveRigidbody(Rigidbody* aRigidbody);
 		virtual void Step(float aDeltaTime, int aSubSteps);
+		virtual void ClearForces();
 
 		~PhysicsWorld();
 	};

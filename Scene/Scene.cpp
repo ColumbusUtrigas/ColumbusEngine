@@ -29,9 +29,16 @@ namespace Columbus
 	IMPLEMENT_COMPONENT(ComponentParticleSystem);
 	IMPLEMENT_COMPONENT(ComponentRigidbody);
 
+	std::function<void(Rigidbody * RB)> ComponentRigidbody::OnAdd = [](Rigidbody* RB) {};
+
 	Scene::Scene()
 	{
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
+
+		ComponentRigidbody::OnAdd = [&](Rigidbody* RB)
+		{
+			PhysWorld.AddRigidbody(RB);
+		};
 	}
 
 	void Scene::RigidbodyWorkflow()
@@ -40,9 +47,9 @@ namespace Columbus
 		{
 			if (Object->Enable)
 			{
-				ComponentRigidbody* rb = (ComponentRigidbody*)Object->GetComponent(Component::Type::Rigidbody);
+				auto rb = Object->GetComponent<ComponentRigidbody>();
 
-				if (rb != nullptr)
+				if (rb != nullptr && rb->GetRigidbody() != nullptr)
 				{
 					rb->GetRigidbody()->SetTransform(Object->transform);
 				}
@@ -56,9 +63,9 @@ namespace Columbus
 		{
 			if (Object->Enable)
 			{
-				ComponentRigidbody* rb = (ComponentRigidbody*)Object->GetComponent(Component::Type::Rigidbody);
+				auto rb = Object->GetComponent<ComponentRigidbody>();
 
-				if (rb != nullptr)
+				if (rb != nullptr && rb->GetRigidbody() != nullptr)
 				{
 					Object->transform = rb->GetRigidbody()->GetTransform();
 				}
@@ -149,7 +156,10 @@ namespace Columbus
 		float Time = (float)DeltaTime.Elapsed() * TimeFactor;
 		DeltaTime.Reset();
 
-		RigidbodyWorkflow();
+		if (EnablePhysicsSimulation)
+		{
+			RigidbodyWorkflow();
+		}
 
 		Audio.Clear();
 
@@ -172,7 +182,7 @@ namespace Columbus
 					    Light->GetLight().Type == Light::Spot)
 					{
 						Vector4 BaseDirection(1, 0, 0, 1);
-						Vector4 Direction = BaseDirection * Object->transform.Q.ToMatrix();
+						Vector4 Direction = BaseDirection * Object->transform.Rotation.ToMatrix();
 						Light->GetLight().Dir = Direction.XYZ().Normalize();
 					}
 				}
@@ -180,10 +190,21 @@ namespace Columbus
 			}
 		}
 
-		PhysWorld.Step(Time, 10);
+		if (EnablePhysicsSimulation)
+		{
+			PhysWorld.Step(Time, 10);
+		}
+		else
+		{
+			PhysWorld.ClearForces();
+		}
+
 		Audio.SetSpeed(TimeFactor);
 
-		RigidbodyPostWorkflow();
+		if (EnablePhysicsSimulation)
+		{
+			RigidbodyPostWorkflow();
+		}
 
 		if (Listener != nullptr)
 		{

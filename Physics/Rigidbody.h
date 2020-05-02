@@ -5,11 +5,12 @@
 #include <Math/Vector3.h>
 #include <Scene/Transform.h>
 #include <Core/Types.h>
+#include <Core/ISerializable.h>
 
 namespace Columbus
 {
 
-	class Rigidbody
+	class Rigidbody : public ISerializable
 	{
 	protected:
 		bool Static;
@@ -72,6 +73,9 @@ namespace Columbus
 		virtual Vector3 GetLinearVelocity() const;
 		virtual Vector3 GetGravity() const;
 		virtual PhysicsShape* GetCollisionShape() const;
+
+		virtual void Serialize(JSON& J) const override;
+		virtual void Deserialize(JSON& J) override;
 
 		~Rigidbody();
 	};
