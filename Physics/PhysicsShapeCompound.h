@@ -27,21 +27,11 @@ namespace Columbus
 				if (Shape->IsExist())
 				{
 					btTransform bTransform;
-					Vector3 Pos = LocalTransform.GetPos();
-					Vector3 Rot = LocalTransform.GetRot();
+					const auto& Pos = LocalTransform.Position;
+					const auto& Rot = LocalTransform.Rotation;
 
-					if (Rot.x > 180) Rot.x -= 360;
-					if (Rot.y > 180) Rot.y -= 360;
-					if (Rot.z > 180) Rot.z -= 360;
-
-					Rot.x = Radians(Rot.x);
-					Rot.y = Radians(Rot.y);
-					Rot.z = Radians(Rot.z);
-
-					btQuaternion bRot; bRot.setEulerZYX(Rot.z, Rot.y, Rot.x);
-
-					bTransform.setOrigin(btVector3(Pos.x, Pos.y, Pos.z));
-					bTransform.setRotation(bRot);
+					bTransform.setOrigin(btVector3(Pos.X, Pos.Y, Pos.Z));
+					bTransform.setRotation(btQuaternion(Rot.X, Rot.Y, Rot.Z, Rot.W));
 
 					static_cast<btCompoundShape*>(mShape)->addChildShape(bTransform, Shape->mShape);
 

@@ -2,7 +2,8 @@
 
 #include <Math/Vector3.h>
 #include <Math/Matrix.h>
-#include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 namespace Columbus
 {
@@ -19,7 +20,7 @@ namespace Columbus
 			X(0.0f),
 			Y(0.0f),
 			Z(0.0f),
-			W(0.0f)
+			W(1.0f)
 		{}
 
 		Quaternion(float X, float Y, float Z, float W) :
@@ -29,9 +30,16 @@ namespace Columbus
 			W(W)
 		{}
 
+		/*
+		* Convert Euler angles (in degrees) to quaternion
+		*/
 		Quaternion(const Vector3& Euler)
 		{
-			Vector3 E = Euler * 0.5f;
+			Vector3 E = Euler;
+			E.X = Math::Radians(E.X);
+			E.Y = Math::Radians(E.Y);
+			E.Z = Math::Radians(E.Z);
+			E *= 0.5f;
 			Vector3 C(cosf(E.X), cosf(E.Y), cosf(E.Z));
 			Vector3 S(sinf(E.X), sinf(E.Y), sinf(E.Z));
 
@@ -61,7 +69,9 @@ namespace Columbus
 			return *this;
 		}
 
-		// Negative quaternion, this also named "quaternion conjugation"
+		/*
+		* Negative quaternion, this also named "quaternion conjugation"
+		*/
 		Quaternion operator-() const
 		{
 			return Quaternion(-X, -Y, -Z, W);
@@ -99,6 +109,21 @@ namespace Columbus
 		Quaternion& operator*=(float Other)
 		{
 			return *this = *this * Other;
+		}
+
+		Quaternion operator/(const Quaternion& Other) const
+		{
+			return (*this) * Other.Inversed();
+		}
+
+		Quaternion& operator/=(const Quaternion& Other)
+		{
+			return *this = *this / Other;
+		}
+
+		float LengthSqr() const
+		{
+			return X*X + Y*Y + Z*Z + W*W;
 		}
 
 		float Length() const
@@ -147,9 +172,45 @@ namespace Columbus
 		}
 
 		/*
-		* Convert Quaternion into Euler angle (in degrees)
+		* Convert quaternion into Euler angles (in degrees)
 		*/
-		Vector3 Euler() const;
+		Vector3 Euler() const
+		{
+			Vector3 angles;
+
+			// roll (x-axis rotation)
+			float sinr_cosp = 2 * (W * X + Y * Z);
+			float cosr_cosp = 1 - 2 * (X * X + Y * Y);
+			angles.X = std::atan2(sinr_cosp, cosr_cosp);
+
+			// pitch (y-axis rotation)
+			double sinp = 2 * (W * Y - Z * X);
+			if (std::abs(sinp) >= 1)
+				angles.Y = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+			else
+				angles.Y = std::asin(sinp);
+
+			// yaw (z-axis rotation)
+			float siny_cosp = 2 * (W * Z + X * Y);
+			float cosy_cosp = 1 - 2 * (Y * Y + Z * Z);
+			angles.Z = std::atan2(siny_cosp, cosy_cosp);
+
+			angles.X = Math::Degrees(angles.X);
+			angles.Y = Math::Degrees(angles.Y);
+			angles.Z = Math::Degrees(angles.Z);
+
+			return angles;
+		}
+
+		Quaternion Inversed() const
+		{
+			return -(*this) * (1 / LengthSqr());
+		}
+
+		Quaternion& Inverse()
+		{
+			return *this = Inversed();
+		}
 
 		~Quaternion() {}
 	};

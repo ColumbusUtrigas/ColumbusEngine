@@ -10,16 +10,11 @@ namespace Columbus
 
 	class Transform : public ISerializable
 	{
-	private:
-		Vector3 LastPosition;
-		Vector3 LastRotation;
-		Vector3 LastScale;
 	public:
 		Vector3 Position;
-		Vector3 Rotation;
+		Quaternion Rotation;
 		Vector3 Scale;
 		Matrix ModelMatrix;
-		Quaternion Q;
 	public:
 		Transform(const Vector3& Pos = {0}, const Vector3& Rot = {0}, const Vector3& Scale = {1});
 

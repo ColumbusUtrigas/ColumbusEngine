@@ -92,6 +92,7 @@ namespace Columbus
 			auto Source = (ComponentAudioSource*)Obj->GetComponent(Component::Type::AudioSource);
 			auto MeshRenderer = (ComponentMeshRenderer*)Obj->GetComponent(Component::Type::MeshRenderer);
 			auto ParticleSystem = (ComponentParticleSystem*)Obj->GetComponent(Component::Type::ParticleSystem);
+			auto Rigidbody = (ComponentRigidbody*)Obj->GetComponent(Component::Type::Rigidbody);
 
 			// save light component
 			if (Lig != nullptr)
@@ -129,6 +130,11 @@ namespace Columbus
 			if (ParticleSystem != nullptr)
 			{
 				ParticleSystem->GetEmitter().Serialize(JObj["ParticleSystem"]);
+			}
+
+			if (Rigidbody != nullptr)
+			{
+				Rigidbody->GetRigidbody()->Serialize(JObj["Rigidbody"]);
 			}
 		}
 	}

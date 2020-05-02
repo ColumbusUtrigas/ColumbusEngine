@@ -60,6 +60,8 @@ namespace Columbus
 	private:
 		std::string _CurrentScene;
 	public:
+		bool EnablePhysicsSimulation = true;
+
 		AudioSystem Audio;
 		float TimeFactor = 1.0f;
 

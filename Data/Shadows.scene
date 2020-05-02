@@ -3,32 +3,717 @@
 		"Skybox": "Skyboxes/Pier.exr"
 	},
 	"Materials": [
-		"sponza"
+		"sponza",
+		"smoke",
+		"fireplace",
+		"sparks",
+		"table_long",
+		"candle_cup",
+		"candle",
+		"wall",
+		"chest",
+		"oak_floor",
+		"stone_wall",
+		"chandelier",
+		"dust",
+		"chair_simple",
+		"bench",
+		"firepit",
+		"rug_bear",
+		"rug_cow",
+		"rug_wolf",
+		"cheese",
+		"rack",
+		"pantry",
+		"barrel"
 	],
 	"Meshes": [
 		"Sponza.cmf",
 		"Box.cmf",
-		"Sphere.cmf"
+		"Sphere.cmf",
+		"Fireplace.obj",
+		"TableLong.obj",
+		"CandleCup.obj",
+		"CandleFull.obj",
+		"Chest.cmf",
+		"Chandelier.obj",
+		"ChairSimple.obj",
+		"Bench.obj",
+		"Firepit.obj",
+		"AnimalRug.obj",
+		"Cheese.obj",
+		"Rack.obj",
+		"Pantry.obj",
+		"Barrel.obj"
 	],
 	"Objects": [
 		{
-			"Material": "sponza",
-			"MeshRenderer": "Box.cmf",
-			"Name": "Floor",
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel",
 			"Static": false,
 			"Transform": {
-				"Position": [0, 3.4, 0],
-				"Rotation": [0, 0, 0],
-				"Scale": [100, 1, 100]
+				"Position": [27.053400, 4.365820, 35.174801],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 0",
+			"Static": false,
+			"Transform": {
+				"Position": [27.139299, 4.365820, 31.838499],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 1",
+			"Static": false,
+			"Transform": {
+				"Position": [31.249599, 4.365820, 33.719700],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 2",
+			"Static": false,
+			"Transform": {
+				"Position": [31.540100, 5.742080, 23.065001],
+				"Rotation": [0.707107, 0.000000, 0.000000, 0.707107],
+				"Scale": [3.000000, 2.999470, 2.999470]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 3",
+			"Static": false,
+			"Transform": {
+				"Position": [34.477699, 5.742080, 23.065001],
+				"Rotation": [0.707107, 0.000000, 0.000000, 0.707107],
+				"Scale": [3.000000, 2.999320, 2.999320]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 4",
+			"Static": false,
+			"Transform": {
+				"Position": [37.692200, 5.742080, 23.065001],
+				"Rotation": [0.707107, 0.000000, 0.000000, 0.707107],
+				"Scale": [3.000000, 2.999210, 2.999210]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 5",
+			"Static": false,
+			"Transform": {
+				"Position": [36.245399, 8.001560, 23.065001],
+				"Rotation": [0.707107, 0.000000, 0.000000, 0.707107],
+				"Scale": [3.000000, 2.998980, 2.998980]
+			}
+		},
+		{
+			"Material": "barrel",
+			"MeshRenderer": "Barrel.obj",
+			"Name": "Barrel 6",
+			"Static": false,
+			"Transform": {
+				"Position": [33.121700, 8.001560, 23.065001],
+				"Rotation": [0.707107, 0.000000, 0.000000, 0.707107],
+				"Scale": [3.000000, 2.998410, 2.998410]
+			}
+		},
+		{
+			"Material": "rug_bear",
+			"MeshRenderer": "AnimalRug.obj",
+			"Name": "Bear Rug",
+			"Static": false,
+			"Transform": {
+				"Position": [29.155800, 13.288500, 20.145300],
+				"Rotation": [-0.707107, 0.000000, 0.000000, 0.707107],
+				"Scale": [4.000000, 3.995790, 3.995910]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 0",
+			"Static": false,
+			"Transform": {
+				"Position": [23.550200, 7.896670, 32.692600],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 1",
+			"Static": false,
+			"Transform": {
+				"Position": [18.067499, 7.896670, 33.550201],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 10",
+			"Static": false,
+			"Transform": {
+				"Position": [34.569901, 7.896670, 32.698299],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 2",
+			"Static": false,
+			"Transform": {
+				"Position": [34.958199, 12.571500, 33.868801],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 3",
+			"Static": false,
+			"Transform": {
+				"Position": [36.364201, 12.563400, 32.511002],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 4",
+			"Static": false,
+			"Transform": {
+				"Position": [37.737099, 12.569200, 33.902100],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 5",
+			"Static": false,
+			"Transform": {
+				"Position": [36.330700, 12.570600, 35.273499],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 6",
+			"Static": false,
+			"Transform": {
+				"Position": [18.700199, 12.673000, 35.039398],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 7",
+			"Static": false,
+			"Transform": {
+				"Position": [17.289499, 12.685600, 33.732700],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 8",
+			"Static": false,
+			"Transform": {
+				"Position": [18.726200, 12.691800, 32.389400],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle",
+			"MeshRenderer": "CandleFull.obj",
+			"Name": "Candle 9",
+			"Static": false,
+			"Transform": {
+				"Position": [20.060499, 12.679100, 33.730400],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle_cup",
+			"MeshRenderer": "CandleCup.obj",
+			"Name": "CandleCup 0",
+			"Static": false,
+			"Transform": {
+				"Position": [18.070400, 7.740300, 33.554699],
+				"Rotation": [0.000000, 0.487291, 0.000000, 0.873239],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle_cup",
+			"MeshRenderer": "CandleCup.obj",
+			"Name": "CandleCup 1",
+			"Static": false,
+			"Transform": {
+				"Position": [23.539000, 7.740300, 32.692902],
+				"Rotation": [0.000000, 0.924090, 0.000000, 0.382175],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "candle_cup",
+			"MeshRenderer": "CandleCup.obj",
+			"Name": "CandleCup 2",
+			"Static": false,
+			"Transform": {
+				"Position": [34.565300, 7.740300, 32.692902],
+				"Rotation": [0.000000, 0.924090, 0.000000, 0.382175],
+				"Scale": [3.000000, 3.000000, 3.000000]
 			}
 		},
 		{
 			"Light": {
-				"Color": [1, 1, 1],
-				"Energy": 7.6,
-				"InnerCutoff": 30,
-				"OuterCutoff": 90,
-				"Range": 300,
+				"Color": [1.000000, 0.529762, 0.000000],
+				"Energy": 1.000000,
+				"InnerCutoff": 12.500000,
+				"OuterCutoff": 17.500000,
+				"Range": 5.000000,
+				"Shadows": false,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "CandleLight 0",
+			"Static": false,
+			"Transform": {
+				"Position": [18.077101, 8.866020, 33.557499],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1.000000, 0.470588, 0.000000],
+				"Energy": 1.000000,
+				"InnerCutoff": 12.500000,
+				"OuterCutoff": 17.500000,
+				"Range": 5.000000,
+				"Shadows": false,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "CandleLight 1",
+			"Static": false,
+			"Transform": {
+				"Position": [23.533501, 8.791320, 32.721199],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair",
+			"Static": false,
+			"Transform": {
+				"Position": [17.310400, 4.415510, 37.180000],
+				"Rotation": [0.000000, -0.586832, 0.000000, 0.809709],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 0",
+			"Static": false,
+			"Transform": {
+				"Position": [23.249300, 4.415510, 37.499901],
+				"Rotation": [0.000000, -0.706659, 0.000000, 0.707555],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 1",
+			"Static": false,
+			"Transform": {
+				"Position": [20.833599, 4.357710, 36.718700],
+				"Rotation": [0.000000, -0.756292, 0.000000, 0.654235],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 2",
+			"Static": false,
+			"Transform": {
+				"Position": [22.470501, 4.357710, 30.711100],
+				"Rotation": [0.000000, 0.769026, 0.000000, 0.639218],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 3",
+			"Static": false,
+			"Transform": {
+				"Position": [18.786301, 4.357710, 30.293100],
+				"Rotation": [0.000000, 0.703462, 0.000000, 0.710733],
+				"Scale": [3.000010, 3.000000, 3.000010]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 4",
+			"Static": false,
+			"Transform": {
+				"Position": [35.250198, 4.415510, 36.927601],
+				"Rotation": [0.000000, -0.706659, 0.000000, 0.707555],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 5",
+			"Static": false,
+			"Transform": {
+				"Position": [39.891998, 4.415510, 36.781700],
+				"Rotation": [0.000000, -0.796361, 0.000000, 0.604822],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 6",
+			"Static": false,
+			"Transform": {
+				"Position": [35.382198, 4.415510, 30.873600],
+				"Rotation": [0.000000, 0.701772, 0.000000, 0.712402],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chair_simple",
+			"MeshRenderer": "ChairSimple.obj",
+			"Name": "Chair 7",
+			"Static": false,
+			"Transform": {
+				"Position": [40.536201, 4.415510, 30.887199],
+				"Rotation": [0.000000, 0.803634, 0.000000, 0.595124],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "bench",
+			"MeshRenderer": "Bench.obj",
+			"Name": "Chair 8",
+			"Static": false,
+			"Transform": {
+				"Position": [25.265800, 4.415510, 20.839399],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "bench",
+			"MeshRenderer": "Bench.obj",
+			"Name": "Chair 9",
+			"Static": false,
+			"Transform": {
+				"Position": [45.257500, 4.415510, 20.839399],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Material": "chandelier",
+			"MeshRenderer": "Chandelier.obj",
+			"Name": "Chandelier",
+			"Static": false,
+			"Transform": {
+				"Position": [18.698799, 15.428600, 33.714298],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [5.000000, 4.000000, 5.000000]
+			}
+		},
+		{
+			"Material": "chandelier",
+			"MeshRenderer": "Chandelier.obj",
+			"Name": "Chandelier 0",
+			"Static": false,
+			"Transform": {
+				"Position": [36.334202, 15.310900, 33.896801],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [5.000000, 4.000000, 5.000000]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1.000000, 0.440476, 0.000000],
+				"Energy": 1.300000,
+				"InnerCutoff": 12.500000,
+				"OuterCutoff": 17.500000,
+				"Range": 20.000000,
+				"Shadows": false,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "ChandlierLight",
+			"Static": false,
+			"Transform": {
+				"Position": [36.251801, 11.098800, 33.866600],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1.000000, 0.264706, 0.000000],
+				"Energy": 1.300000,
+				"InnerCutoff": 12.500000,
+				"OuterCutoff": 17.500000,
+				"Range": 20.000000,
+				"Shadows": false,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "ChandlierLight 0",
+			"Static": false,
+			"Transform": {
+				"Position": [18.569000, 11.410000, 33.730400],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "cheese",
+			"MeshRenderer": "Cheese.obj",
+			"Name": "Cheese",
+			"Static": false,
+			"Transform": {
+				"Position": [23.849899, 7.708090, 34.205700],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [2.000000, 2.000000, 2.000000]
+			}
+		},
+		{
+			"Material": "cheese",
+			"MeshRenderer": "Cheese.obj",
+			"Name": "Cheese 0",
+			"Static": false,
+			"Transform": {
+				"Position": [37.947102, 7.740300, 33.558399],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [2.000000, 2.000000, 2.000000]
+			}
+		},
+		{
+			"Material": "cheese",
+			"MeshRenderer": "Cheese.obj",
+			"Name": "Cheese 1",
+			"Static": false,
+			"Transform": {
+				"Position": [34.197701, 11.060000, 20.836800],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [2.000000, 2.000000, 2.000000]
+			}
+		},
+		{
+			"Material": "cheese",
+			"MeshRenderer": "Cheese.obj",
+			"Name": "Cheese 2",
+			"Static": false,
+			"Transform": {
+				"Position": [35.799000, 11.022900, 20.797100],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [2.000000, 2.000000, 2.000000]
+			}
+		},
+		{
+			"Material": "chest",
+			"MeshRenderer": "Chest.cmf",
+			"Name": "Chest",
+			"Static": false,
+			"Transform": {
+				"Position": [20.828699, 8.611420, 33.723202],
+				"Rotation": [-0.000000, 0.998185, -0.000000, -0.060221],
+				"Scale": [1.999990, 2.000000, 1.999990]
+			}
+		},
+		{
+			"Material": "rug_cow",
+			"MeshRenderer": "AnimalRug.obj",
+			"Name": "Cow Rug",
+			"Static": false,
+			"Transform": {
+				"Position": [19.510799, 10.166500, 43.377300],
+				"Rotation": [0.000000, -0.707107, 0.707107, -0.000000],
+				"Scale": [3.998120, 3.997900, 3.998040]
+			}
+		},
+		{
+			"Material": "dust",
+			"Name": "Dust",
+			"ParticleSystem": {
+				"Billboard": "FaceToCamera",
+				"Blend": "Default",
+				"Color": {
+					"Curve": [
+						{
+							"Color": [1.000000, 0.706815, 0.230392, 0.000000],
+							"Key": 0.000000
+						},
+						{
+							"Color": [1.000000, 0.749764, 0.343137, 1.000000],
+							"Key": 0.500000
+						},
+						{
+							"Color": [1.000000, 0.607785, 0.299020, 0.000000],
+							"Key": 1.000000
+						}
+					],
+					"Max": [1.000000, 1.000000, 1.000000, 1.000000],
+					"Min": [1.000000, 1.000000, 1.000000, 1.000000],
+					"Mode": "OverLife"
+				},
+				"Emit": true,
+				"EmitRate": 5.000000,
+				"Lifetime": {
+					"Max": 20.000000,
+					"Min": 10.000000
+				},
+				"Location": {
+					"EmitFromShell": false,
+					"Radius": 1.000000,
+					"Shape": "Box",
+					"Size": [30.000000, 10.000000, 20.000000]
+				},
+				"MaxCount": 100,
+				"Rotation": {
+					"Max": 0.000000,
+					"MaxVelocity": 0.000000,
+					"Min": 0.000000,
+					"MinVelocity": 0.000000
+				},
+				"Size": {
+					"Max": [0.100000, 0.100000, 0.100000],
+					"Min": [0.100000, 0.100000, 0.100000],
+					"Mode": "Initial"
+				},
+				"Sort": "None",
+				"SubUV": {
+					"Cycles": 1.000000,
+					"Horizontal": 1,
+					"Mode": "Linear",
+					"Vertical": 1
+				},
+				"Transformation": "World",
+				"Velocity": {
+					"Max": [1.000000, 1.000000, 1.000000],
+					"Min": [-1.000000, -1.000000, -1.000000]
+				},
+				"Visible": true
+			},
+			"Static": false,
+			"Transform": {
+				"Position": [27.787901, 13.821800, 34.040798],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "fireplace",
+			"MeshRenderer": "Fireplace.obj",
+			"Name": "Fireplace",
+			"Static": false,
+			"Transform": {
+				"Position": [19.694000, 4.423500, 22.902201],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 3.000000, 3.000000]
+			}
+		},
+		{
+			"Light": {
+				"Color": [0.696078, 0.327323, 0.000000],
+				"Energy": 4.000000,
+				"InnerCutoff": 12.500000,
+				"OuterCutoff": 17.500000,
+				"Range": 5.000000,
+				"Shadows": false,
+				"Type": "Point"
+			},
+			"Material": null,
+			"Name": "FireplaceLight",
+			"Static": false,
+			"Transform": {
+				"Position": [19.652500, 7.006010, 23.047701],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "oak_floor",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Floor",
+			"Static": false,
+			"Transform": {
+				"Position": [29.192600, 3.400000, 40.014500],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [20.000000, 1.000000, 20.000000]
+			}
+		},
+		{
+			"Material": "oak_floor",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Floor 0",
+			"Static": false,
+			"Transform": {
+				"Position": [29.192600, 16.332600, 40.014500],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [20.000000, 1.000000, 20.000000]
+			}
+		},
+		{
+			"Light": {
+				"Color": [1.000000, 0.500000, 0.000000],
+				"Energy": 7.600000,
+				"InnerCutoff": 30.000000,
+				"OuterCutoff": 100.000000,
+				"Range": 50.000000,
 				"Shadows": true,
 				"Type": "Spot"
 			},
@@ -36,103 +721,297 @@
 			"Name": "Light",
 			"Static": false,
 			"Transform": {
-				"Position": [-4.73083, 17.3071, -11.4594],
-				"Rotation": [0, 52.3, 0],
-				"Scale": [1, 1, 1]
+				"Position": [19.385401, 7.556800, 21.657499],
+				"Rotation": [0.000000, 0.707107, 0.000000, 0.707107],
+				"Scale": [0.998355, 1.000000, 0.998355]
 			}
 		},
 		{
-			"Light": {
-				"Color": [1, 1, 1],
-				"Energy": 5.4,
-				"InnerCutoff": 30,
-				"OuterCutoff": 90,
-				"Range": 300,
-				"Shadows": true,
-				"Type": "Spot"
-			},
-			"Material": null,
-			"Name": "Light 0",
+			"Material": "pantry",
+			"MeshRenderer": "Pantry.obj",
+			"Name": "Pantry",
 			"Static": false,
 			"Transform": {
-				"Position": [62.9264, 17.3071, -10.9669],
-				"Rotation": [-36.3, 116.5, 0],
-				"Scale": [1, 1, 1]
+				"Position": [47.028400, 4.336990, 32.794498],
+				"Rotation": [0.000000, 0.707107, 0.000000, 0.707107],
+				"Scale": [3.996650, 5.000000, 2.996650]
 			}
 		},
 		{
-			"Light": {
-				"Color": [1, 1, 1],
-				"Energy": 7.6,
-				"InnerCutoff": 30,
-				"OuterCutoff": 90,
-				"Range": 300,
-				"Shadows": true,
-				"Type": "Spot"
-			},
-			"Material": null,
-			"Name": "Light 1",
+			"Material": "pantry",
+			"MeshRenderer": "Pantry.obj",
+			"Name": "Pantry 0",
 			"Static": false,
 			"Transform": {
-				"Position": [53.4601, 14.6158, 40.8475],
-				"Rotation": [-36.3, 178.8, 0],
-				"Scale": [1, 1, 1]
+				"Position": [47.028400, 4.336990, 38.668999],
+				"Rotation": [0.000000, 0.707107, 0.000000, 0.707107],
+				"Scale": [3.999600, 5.000000, 2.999600]
 			}
 		},
 		{
-			"Light": {
-				"Color": [1, 1, 1],
-				"Energy": 4.8,
-				"InnerCutoff": 30,
-				"OuterCutoff": 90,
-				"Range": 300,
-				"Shadows": true,
-				"Type": "Spot"
-			},
-			"Material": null,
-			"Name": "Light 2",
+			"Material": "rack",
+			"MeshRenderer": "Rack.obj",
+			"Name": "Rack",
 			"Static": false,
 			"Transform": {
-				"Position": [27.2192, 14.0917, 91.9915],
-				"Rotation": [0, -107.7, 0],
-				"Scale": [1, 1, 1]
+				"Position": [35.405899, 10.939800, 20.137600],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 2.000000, 2.000000]
 			}
 		},
 		{
-			"Material": "sponza",
-			"MeshRenderer": "Sphere.cmf",
-			"Name": "Sphere",
+			"Material": "rack",
+			"MeshRenderer": "Rack.obj",
+			"Name": "Rack 0",
 			"Static": false,
 			"Transform": {
-				"Position": [ 19.6887, 5.42136, 22.6954 ],
-				"Rotation": [ 0, 0, 0 ],
-				"Scale": [ 1, 1, 1 ]
-			},
-			"AudioSource": {
-				"Clip": "Fire.wav",
-				"Gain": 1,
-				"Pitch": 1,
-				"MinDistance": 1,
-				"MaxDistance": 100,
-				"Rolloff": 1,
-				"Playing": true,
-				"Looping": true
+				"Position": [41.326801, 10.939800, 20.137600],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 2.000000, 2.000000]
 			}
 		},
 		{
-			"Material": "sponza",
+			"Material": "rack",
+			"MeshRenderer": "Rack.obj",
+			"Name": "Rack 1",
+			"Static": false,
+			"Transform": {
+				"Position": [36.205799, 12.786400, 20.137600],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [3.000000, 2.000000, 2.000000]
+			}
+		},
+		{
+			"Material": "smoke",
+			"Name": "Smoke",
+			"ParticleSystem": {
+				"Billboard": "FaceToCamera",
+				"Blend": "Default",
+				"Color": {
+					"Curve": [
+						{
+							"Color": [1.000000, 0.637605, 0.117647, 0.000000],
+							"Key": 0.000000
+						},
+						{
+							"Color": [0.803922, 0.586238, 0.232507, 0.300000],
+							"Key": 0.500000
+						},
+						{
+							"Color": [0.808824, 0.570934, 0.333045, 0.000000],
+							"Key": 1.000000
+						}
+					],
+					"Max": [1.000000, 1.000000, 1.000000, 1.000000],
+					"Min": [1.000000, 1.000000, 1.000000, 1.000000],
+					"Mode": "OverLife"
+				},
+				"Emit": true,
+				"EmitRate": 3.000000,
+				"Lifetime": {
+					"Max": 6.000000,
+					"Min": 5.000000
+				},
+				"Location": {
+					"EmitFromShell": false,
+					"Radius": 1.000000,
+					"Shape": "Point",
+					"Size": [1.000000, 1.000000, 1.000000]
+				},
+				"MaxCount": 245,
+				"Rotation": {
+					"Max": 180.000000,
+					"MaxVelocity": 50.000000,
+					"Min": -180.000000,
+					"MinVelocity": -50.000000
+				},
+				"Size": {
+					"Curve": [
+						{
+							"Key": 0.000000,
+							"Size": [1.000000, 1.000000, 1.000000]
+						},
+						{
+							"Key": 1.000000,
+							"Size": [3.000000, 3.000000, 3.000000]
+						}
+					],
+					"Max": [1.000000, 1.000000, 1.000000],
+					"Min": [1.000000, 1.000000, 1.000000],
+					"Mode": "OverLife"
+				},
+				"Sort": "None",
+				"SubUV": {
+					"Cycles": 1.000000,
+					"Horizontal": 4,
+					"Mode": "Random",
+					"Vertical": 4
+				},
+				"Transformation": "World",
+				"Velocity": {
+					"Max": [0.300000, 2.000000, 0.300000],
+					"Min": [-0.300000, 1.000000, -0.300000]
+				},
+				"Visible": true
+			},
+			"Static": false,
+			"Transform": {
+				"Position": [19.335899, 10.222800, 21.624300],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "sparks",
+			"Name": "Sparks",
+			"ParticleSystem": {
+				"Billboard": "FaceToCamera",
+				"Blend": "Default",
+				"Color": {
+					"Curve": [
+						{
+							"Color": [10.000000, 5.000000, 0.000000, 0.000000],
+							"Key": 0.000000
+						},
+						{
+							"Color": [10.000000, 4.000000, 0.000000, 1.000000],
+							"Key": 0.500000
+						},
+						{
+							"Color": [10.000000, 3.000000, 1.000000, 0.000000],
+							"Key": 1.000000
+						}
+					],
+					"Max": [10.000000, 5.000000, 0.000000, 1.000000],
+					"Min": [10.000000, 5.000000, 0.000000, 1.000000],
+					"Mode": "OverLife"
+				},
+				"Emit": true,
+				"EmitRate": 32.299999,
+				"Lifetime": {
+					"Max": 1.000000,
+					"Min": 1.000000
+				},
+				"Location": {
+					"EmitFromShell": false,
+					"Radius": 1.000000,
+					"Shape": "Sphere",
+					"Size": [1.000000, 1.000000, 1.000000]
+				},
+				"MaxCount": 196,
+				"Rotation": {
+					"Max": 0.000000,
+					"MaxVelocity": 0.000000,
+					"Min": 0.000000,
+					"MinVelocity": 0.000000
+				},
+				"Size": {
+					"Max": [0.050000, 0.050000, 0.050000],
+					"Min": [0.050000, 0.050000, 0.050000],
+					"Mode": "Initial"
+				},
+				"Sort": "YoungFirst",
+				"SubUV": {
+					"Cycles": 1.000000,
+					"Horizontal": 1,
+					"Mode": "Linear",
+					"Vertical": 1
+				},
+				"Transformation": "World",
+				"Velocity": {
+					"Max": [2.000000, 2.000000, 2.000000],
+					"Min": [-1.000000, 0.000000, -2.000000]
+				},
+				"Visible": true
+			},
+			"Static": false,
+			"Transform": {
+				"Position": [19.738899, 5.646580, 23.025801],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [1.000000, 1.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "table_long",
+			"MeshRenderer": "TableLong.obj",
+			"Name": "Table",
+			"Static": false,
+			"Transform": {
+				"Position": [20.670799, 4.345050, 33.724499],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [4.000000, 4.000000, 4.000000]
+			}
+		},
+		{
+			"Material": "table_long",
+			"MeshRenderer": "TableLong.obj",
+			"Name": "Table 0",
+			"Static": false,
+			"Transform": {
+				"Position": [37.822498, 4.345050, 33.867699],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [4.000000, 4.000000, 4.000000]
+			}
+		},
+		{
+			"Material": "stone_wall",
 			"MeshRenderer": "Box.cmf",
-			"Name": "Sphere 0",
+			"Name": "Wall",
 			"Static": false,
 			"Transform": {
-				"Position": [19.8645, 8.89947, 33.1921],
-				"Rotation": [0, 0, 0],
-				"Scale": [1, 7.1, 1]
+				"Position": [28.444500, 5.948260, 44.349098],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [20.000000, 20.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "stone_wall",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Wall 0",
+			"Static": false,
+			"Transform": {
+				"Position": [8.914090, 5.948250, 33.537201],
+				"Rotation": [0.000000, 0.707107, 0.000000, 0.707107],
+				"Scale": [19.930500, 20.000000, 0.997415]
+			}
+		},
+		{
+			"Material": "stone_wall",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Wall 1",
+			"Static": false,
+			"Transform": {
+				"Position": [28.899200, 5.948260, 19.144800],
+				"Rotation": [0.000000, 0.000000, 0.000000, 1.000000],
+				"Scale": [20.000000, 20.000000, 1.000000]
+			}
+		},
+		{
+			"Material": "stone_wall",
+			"MeshRenderer": "Box.cmf",
+			"Name": "Wall 2",
+			"Static": false,
+			"Transform": {
+				"Position": [48.719002, 5.948250, 32.698399],
+				"Rotation": [0.000000, 0.707107, 0.000000, 0.707107],
+				"Scale": [19.996700, 20.000000, 0.998786]
+			}
+		},
+		{
+			"Material": "rug_wolf",
+			"MeshRenderer": "AnimalRug.obj",
+			"Name": "Wolf Rug",
+			"Static": false,
+			"Transform": {
+				"Position": [38.154301, 10.090000, 43.324799],
+				"Rotation": [0.000000, -0.707107, 0.707107, -0.000000],
+				"Scale": [3.987830, 3.992750, 3.992890]
 			}
 		}
 	],
 	"Shaders": [
-		"Standart.csl"
+		"Standart.csl",
+		"Particles.csl"
 	],
 	"Sounds": [
 		{
@@ -140,5 +1019,54 @@
 			"Streaming": true
 		}
 	],
-	"Textures": {}
+	"Textures": [
+		"smoke.dds",
+		"trn_Fireplace_AlbedoTransparency.png",
+		"trn_Fireplace_Normal.png",
+		"spark.dds",
+		"trn_TableLong_AlbedoTransparency.png",
+		"trn_TableLong_Normal.png",
+		"trn_CandleCup_Normal.png",
+		"trn_CandleCup_AlbedoTransparency.png",
+		"trn_Candle_AlbedoTransparency.png",
+		"trn_Candle_Emission.png",
+		"trn_Candle_Normal.png",
+		"chest_Albedo.dds",
+		"chest_AO.dds",
+		"chest_Metallic.dds",
+		"chest_Normal.dds",
+		"chest_Roughness.dds",
+		"Detail.dds",
+		"Detail-Normal.dds",
+		"oakfloor_AO.png",
+		"oakfloor_basecolor.png",
+		"oakfloor_normal.png",
+		"oakfloor_roughness.png",
+		"Stone_Wall_ambientOcclusion.jpg",
+		"Stone_Wall_basecolor.jpg",
+		"Stone_Wall_normal.jpg",
+		"Stone_Wall_roughness.jpg",
+		"trn_Chandelier_AlbedoTransparency.png",
+		"trn_Chandelier_Normal.png",
+		"trn_ChairSimple_AlbedoTransparency.png",
+		"trn_ChairSimple_Normal.png",
+		"trn_Bench_AlbedoTransparency.png",
+		"trn_Bench_Normal.png",
+		"trn_Firepit_AlbedoTransparency.png",
+		"trn_Firepit_Normal.png",
+		"trn_AnimalRug_Bear_AlbedoTransparency.png",
+		"trn_AnimalRug_Cow_AlbedoTransparency.png",
+		"trn_AnimalRug_Normal.png",
+		"trn_AnimalRug_Wolf_AlbedoTransparency.png",
+		"trn_Cheese_AlbedoTransparency.png",
+		"trn_Cheese_Normal.png",
+		"trn_Rack_AlbedoTransparency.png",
+		"trn_Rack_Normal.png",
+		"trn_pantry_AlbedoTransparency.png",
+		"trn_pantry_Normal.png",
+		"trn_Barrel_AlbedoTransparency.png",
+		"trn_Barrel_Normal.png",
+		"trn_Barrel_Metallic.png",
+		"trn_Barrel_Roughness.png"
+	]
 }

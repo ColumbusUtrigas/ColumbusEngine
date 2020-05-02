@@ -408,7 +408,7 @@ void main(void)
 
 		model.Scale(Tran.Scale);
 		model = rot * model;
-		model = Tran.Q.ToMatrix() * model;
+		model = Tran.Rotation.ToMatrix() * model;
 		model.Translate(Tran.Position);
 
 		gDevice->SetShader(prog);
