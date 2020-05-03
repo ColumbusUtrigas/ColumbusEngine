@@ -10,14 +10,13 @@ namespace Columbus
 	private:
 		float Radius;
 		float Height;
+		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeCapsule, "PhysicsShapeCapsule", 0.5f, 2.0f)
 	public:
 		PhysicsShapeCapsule(float Radius, float Height) :
-			Radius(0.0f),
-			Height(0.0f)
+			Radius(Radius),
+			Height(Height)
 		{
 			mShape = new btCapsuleShape(Radius, Height); 
-			this->Radius = Radius;
-			this->Height = Height;
 		}
 		/*
 		* Returns radius of capsule collision shape
@@ -35,12 +34,16 @@ namespace Columbus
 		{
 			return Height;
 		}
+
+		PhysicsShape* Clone() const override
+		{
+			auto shape = new PhysicsShapeCapsule(Radius, Height);
+			shape->SetMargin(Margin);
+			return shape;
+		}
+
+		void Serialize(JSON& J) const override;
+		void Deserialize(JSON& J) override;
 	};
 
 }
-
-
-
-
-
-

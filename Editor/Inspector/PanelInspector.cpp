@@ -43,6 +43,12 @@ namespace Columbus
 			{
 				if (Inspectable != nullptr)
 				{
+					auto RB = (ComponentRigidbody*)Inspectable->GetComponent(Component::Type::Rigidbody);
+					if (RB != nullptr && RB->GetRigidbody() != nullptr)
+					{
+						RB->GetRigidbody()->Activate();
+					}
+
 					string Tmp = Inspectable->Name.c_str();
 
 					ImGui::Checkbox("##PanelInspector_Enable", &Inspectable->Enable);
@@ -122,7 +128,7 @@ namespace Columbus
 				ImVec2 size = ImVec2(ImGui::GetContentRegionMax().x, ImGui::GetContentRegionMax().y - 50.0f);
 				if (ImGui::BeginChild("Components List##PanelInspector_ModalWindow_List", size))
 				{
-					auto builders = ComponentFactory::Instance().GetBuilders();
+					auto builders = PrototypeFactory<Component>::Instance().GetBuilders();
 					std::map<std::string, Component*> components(builders.begin(), builders.end());
 
 					for (const auto& comp : components)
@@ -154,7 +160,7 @@ namespace Columbus
 		for (const auto& comp : Inspectable->GetComponents()) {
 			auto name = InspectorComponentNameRelocate(comp->GetTypename()).data();
 			if (ImGui::CollapsingHeader(name)) {
-				auto& ed = ComponentEditorDatabase::Instance().GetFromTypename(comp->GetTypename());
+				auto& ed = PrototypeFactory<ComponentEditor>::Instance().GetFromTypename(comp->GetTypename());
 				ed.Target = comp.Get();
 				ed.OnInspectorGUI();
 			}

@@ -4,6 +4,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Math/Quaternion.h>
+#include <Core/ISerializable.h>
 #include <Core/String.h>
 #include <Core/Types.h>
 #include <vector>
@@ -64,6 +65,23 @@ namespace Columbus
 		JSON(int64 Int) : IntValue(Int), ValueType(Type::Int) {}
 		JSON(float Float) : FloatValue(Float), ValueType(Type::Float) {}
 		JSON(double Float) : FloatValue(Float), ValueType(Type::Float) {}
+
+		JSON(const ISerializable* Ser)
+		{
+			if (Ser == nullptr)
+			{
+				*this = nullptr;
+			}
+			else
+			{
+				Ser->Serialize(*this);
+			}
+		}
+
+		JSON(const ISerializable& Ser)
+		{
+			Ser.Serialize(*this);
+		}
 
 		template <typename T>
 		JSON(const Vector2_t<T>& Vec)

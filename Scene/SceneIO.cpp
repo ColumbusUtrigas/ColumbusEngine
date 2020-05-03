@@ -303,6 +303,13 @@ namespace Columbus
 				GO->AddComponent(new ComponentParticleSystem(std::move(Emitter)));
 			}
 
+			if (JObj.HasChild("Rigidbody"))
+			{
+				auto RB = new Rigidbody();
+				RB->Deserialize(JObj["Rigidbody"]);
+				GO->AddComponent(new ComponentRigidbody(RB));
+			}
+
 			Objects.Add(std::move(GO), GO->Name);
 		}
 	}

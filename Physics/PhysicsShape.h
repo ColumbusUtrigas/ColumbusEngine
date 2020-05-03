@@ -1,14 +1,20 @@
 #pragma once
 
 #include <btBulletDynamicsCommon.h>
+#include <Core/PrototypeFactory.h>
+#include <Core/ISerializable.h>
+#include <Core/ICloneable.h>
 
 namespace Columbus
 {
 
-	class PhysicsShape
+	class PhysicsShape : public ISerializable, public ICloneable
 	{
 	protected:
 		float Margin;
+
+		void BaseSerialize(JSON& J) const;
+		void BaseDeserialize(JSON& J);
 	public:
 		btCollisionShape* mShape;
 	public:
@@ -47,11 +53,11 @@ namespace Columbus
 			return 0.0f;
 		}
 
+		virtual std::string_view GetTypename() const = 0;
+
+		virtual void Serialize(JSON& J) const override = 0;
+		virtual void Deserialize(JSON& J) override = 0;
+
 		virtual ~PhysicsShape() { delete mShape; }
 	};
-
 }
-
-
-
-

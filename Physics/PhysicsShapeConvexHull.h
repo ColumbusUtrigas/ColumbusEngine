@@ -11,6 +11,7 @@ namespace Columbus
 	{
 	private:
 		uint32 Count; //Count of points
+		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeConvexHull, "PhysicsShapeConvexHull", nullptr, 0)
 	public:
 		PhysicsShapeConvexHull(float* Points, uint32 Count) :
 			Count(0)
@@ -22,7 +23,7 @@ namespace Columbus
 			}
 		}
 
-		PhysicsShapeConvexHull(std::vector<Vertex> Vertices) :
+		PhysicsShapeConvexHull(const std::vector<Vertex>& Vertices) :
 			Count(0)
 		{
 			if (Vertices.size() != 0)
@@ -50,14 +51,17 @@ namespace Columbus
 			return Count;
 		}
 
+		PhysicsShape* Clone() const override
+		{
+			auto shape = new PhysicsShapeConvexHull(nullptr, 0);
+			shape->SetMargin(Margin);
+			return shape;
+		}
+
+		void Serialize(JSON& J) const override;
+		void Deserialize(JSON& J) override;
+
 		~PhysicsShapeConvexHull() { }
 	};
 
 }
-
-
-
-
-
-
-

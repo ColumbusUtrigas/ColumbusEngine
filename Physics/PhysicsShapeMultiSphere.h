@@ -13,8 +13,9 @@ namespace Columbus
 		uint32 Count;
 		std::vector<Vector3> Positions;
 		std::vector<float> Radiuses;
+		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeMultiSphere, "PhysicsShapeMultiSphere", new Vector3(0,0,0), new float(0.5f), 1)
 	public:
-		PhysicsShapeMultiSphere(Vector3* Positions, float* Radiuses, uint32 NumSpheres) :
+		PhysicsShapeMultiSphere(const Vector3* Positions, const float* Radiuses, uint32 NumSpheres) :
 			Count(0)
 		{
 			if (Positions != nullptr && Radiuses != nullptr && NumSpheres != 0)
@@ -75,12 +76,19 @@ namespace Columbus
 
 			return 0.0f;
 		}
+
+		auto GetPositions() const { return Positions; }
+		auto GetRadiuses() const { return Radiuses; }
+
+		PhysicsShape* Clone() const override
+		{
+			auto shape = new PhysicsShapeMultiSphere(Positions.data(), Radiuses.data(), Count);
+			shape->SetMargin(Margin);
+			return shape;
+		}
+
+		void Serialize(JSON& J) const override;
+		void Deserialize(JSON& J) override;
 	};
 
 }
-
-
-
-
-
-

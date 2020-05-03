@@ -31,7 +31,7 @@ namespace Columbus
 	{
 		if (Opened)
 		{
-			if (ImGui::Begin(ICON_FA_BAR_CHART" Profiler##PanelProfiler", &Opened, ImGuiWindowFlags_NoCollapse))
+			if (ImGui::Begin(ICON_FA_CHART_BAR" Profiler##PanelProfiler", &Opened, ImGuiWindowFlags_NoCollapse))
 			{
 				Vector3 Color(0, 1, 0);
 				float Framerate = RedrawTime != 0.0f ? (1.0 / RedrawTime) : 0.0f;
