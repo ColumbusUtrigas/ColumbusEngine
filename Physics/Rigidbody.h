@@ -33,6 +33,7 @@ namespace Columbus
 		Rigidbody(PhysicsShape* InShape = nullptr);
 		Rigidbody(Transform InTransform, PhysicsShape* INShape = nullptr);
 
+		virtual void Activate();
 		virtual void ApplyCentralForce(Vector3 Force);
 		virtual void ApplyCentralImpulse(Vector3 Impulse);
 		virtual void ApplyForce(Vector3 Force, Vector3 RelPos);

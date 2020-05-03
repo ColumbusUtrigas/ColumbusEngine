@@ -25,18 +25,18 @@ namespace Columbus
 		std::string e = str_tolower(Ext);
 
 		if (e == "tga" || e == "bmp" || e == "dds" || e == "tif" || e == "tiff" ||
-		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE_O;
+		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE;
 		if (e == "wav" || e == "mp3" || e == "ogg") return ICON_FA_MUSIC;
 		if (e == "json" || e == "glsl" || e == "hlsl" || e == "csl") return ICON_FA_CODE;
-		if (e == "hdr" || e == "exr") return ICON_FA_PICTURE_O;
+		if (e == "hdr" || e == "exr") return ICON_FA_FILE_IMAGE;
 		if (e == "scene") return ICON_FA_STRIKETHROUGH;
-		if (e == "lig") return ICON_FA_LIGHTBULB_O;
+		if (e == "lig") return ICON_FA_LIGHTBULB;
 		if (e == "mat") return ICON_FA_CIRCLE;
 		if (e == "par") return ICON_FA_CERTIFICATE;
 		if (e == "cmf" || e == "obj" || e == "dae" || e == "fbx") return ICON_FA_SPACE_SHUTTLE;
 		if (e == "ttf") return ICON_FA_FONT;
 
-		return ICON_FA_FILE_O;
+		return ICON_FA_FILE;
 	}
 
 	bool EditorFileDialog::Draw(const String& Name)
@@ -134,7 +134,7 @@ namespace Columbus
 
 						switch (Elem.Type)
 						{
-						case 'd': Text = ICON_FA_FOLDER_O;      break;
+						case 'd': Text = ICON_FA_FOLDER;        break;
 						case 'l': Text = ICON_FA_LINK;          break;
 						case 'f': Text = GetFileIcon(Elem.Ext); break;
 						}

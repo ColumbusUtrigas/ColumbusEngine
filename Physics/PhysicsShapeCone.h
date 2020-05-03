@@ -10,14 +10,13 @@ namespace Columbus
 	private:
 		float Radius;
 		float Height;
+		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeCone, "PhysicsShapeCone", 0.5f, 1.0f)
 	public:
 		PhysicsShapeCone(float Radius, float Height) :
-			Radius(0.0f),
-			Height(0.0f)
+			Radius(Radius),
+			Height(Height)
 		{
 			mShape = new btConeShape(Radius, Height);
-			this->Radius = Radius;
-			this->Height = Height;
 		}
 		/*
 		* Returns radius of cone collision shape
@@ -35,10 +34,16 @@ namespace Columbus
 		{
 			return Height;
 		}
+
+		PhysicsShape* Clone() const override
+		{
+			auto shape = new PhysicsShapeCone(Radius, Height);
+			shape->SetMargin(Margin);
+			return shape;
+		}
+
+		void Serialize(JSON& J) const override;
+		void Deserialize(JSON& J) override;
 	};
 
 }
-
-
-
-

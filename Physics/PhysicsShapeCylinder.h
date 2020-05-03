@@ -10,6 +10,7 @@ namespace Columbus
 	{
 	private:
 		Vector3 Size;
+		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeCylinder, "PhysicsShapeCylinder", Vector3{ 1, 1, 1 })
 	public:
 		PhysicsShapeCylinder(Vector3 Size)
 		{
@@ -24,8 +25,16 @@ namespace Columbus
 		{
 			return Size;
 		}
+
+		PhysicsShape* Clone() const override
+		{
+			auto shape = new PhysicsShapeCylinder(Size);
+			shape->SetMargin(Margin);
+			return shape;
+		}
+
+		void Serialize(JSON& J) const override;
+		void Deserialize(JSON& J) override;
 	};
 
 }
-
-

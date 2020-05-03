@@ -57,6 +57,14 @@ namespace Columbus
 		SetLinearTreshold(LinearTreshold);
 	}
 
+	void Rigidbody::Activate()
+	{
+		if (mRigidbody != nullptr)
+		{
+			mRigidbody->activate();
+		}
+	}
+
 	void Rigidbody::ApplyCentralForce(Vector3 Force)
 	{
 		if (mRigidbody != nullptr)
@@ -279,6 +287,10 @@ namespace Columbus
 			{
 				Shape = InShape;
 				mRigidbody->setCollisionShape(InShape->mShape);
+
+				btVector3 Inertia;
+				mRigidbody->getCollisionShape()->calculateLocalInertia(Mass, Inertia);
+				mRigidbody->setMassProps(Mass, Inertia);
 			}
 		}
 	}
@@ -411,6 +423,7 @@ namespace Columbus
 		J["LinearTreshold"] = LinearTreshold;
 		J["LinearDamping"] = LinearDamping;
 		J["LinearFactor"] = LinearFactor;
+		J["Shape"] = Shape;
 	}
 
 	void Rigidbody::Deserialize(JSON& J)
@@ -426,6 +439,26 @@ namespace Columbus
 		LinearTreshold = J["LinearTreshold"].GetFloat();
 		LinearDamping = J["LinearDamping"].GetFloat();
 		LinearFactor = J["LinearFactor"].GetVector3<float>();
+
+		if (J.HasChild("Shape") && !J["Shape"].IsNull())
+		{
+			auto type = J["Shape"]["Type"].GetString();
+			auto shape = PrototypeFactory<PhysicsShape>::Instance().CreateFromTypename(type);
+			if (shape != nullptr)
+			{
+				shape->Deserialize(J["Shape"]);
+				SetCollisionShape(static_cast<PhysicsShape*>(shape->Clone()));
+			}
+			else
+			{
+				Shape = nullptr;
+			}
+		}
+		else
+		{
+			//mRigidbody->setCollisionShape();
+			Shape = nullptr;
+		}
 	}
 
 	Rigidbody::~Rigidbody()

@@ -9,6 +9,7 @@ namespace Columbus
 	{
 	private:
 		float Radius;
+		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeSphere, "PhysicsShapeSphere", 0.5f)
 	public:
 		PhysicsShapeSphere(float Radius)
 		{
@@ -26,10 +27,16 @@ namespace Columbus
 		{
 			return Radius;
 		}
+
+		PhysicsShape* Clone() const override
+		{
+			auto shape = new PhysicsShapeSphere(Radius);
+			shape->SetMargin(Margin);
+			return shape;
+		}
+
+		void Serialize(JSON& J) const override;
+		void Deserialize(JSON& J) override;
 	};
 
 }
-
-
-
-
