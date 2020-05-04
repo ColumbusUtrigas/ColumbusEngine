@@ -3,7 +3,7 @@
 
 namespace Columbus
 {
-	float CommonUISettings::TooltipDelay = 0.4f;
+	_CommonUISettings CommonUISettings;
 
 	void FlagButton(const char* name, bool& enabled)
 	{
@@ -27,5 +27,43 @@ namespace Columbus
 		}
 
 		va_end(args);
+	}
+}
+
+namespace ImGui
+{
+	void SetNextWindowPosCenter(ImGuiCond cond)
+	{
+		auto DisplaySize = ImGui::GetIO().DisplaySize;
+		auto Center = ImVec2(DisplaySize.x / 2, DisplaySize.y / 2);
+		ImGui::SetNextWindowPos(Center, cond, ImVec2(0.5f, 0.5f));
+	}
+
+	bool TreeNodeSized(const char* label, ImVec2 size, ImGuiTreeNodeFlags flags)
+	{
+		ImGuiWindow* window = GetCurrentWindow();
+		float LineSizeY = window->DC.CurrLineSize.y;
+		float LineBaseOffset = window->DC.CurrLineTextBaseOffset;
+
+		ImVec2 Size = size;
+
+		if (Size.x == 0) Size.x = Columbus::CommonUISettings.TreeNodeSize.x;
+		if (Size.y == 0) Size.y = Columbus::CommonUISettings.TreeNodeSize.y;
+
+		if (Size.x < 0) Size.x += GetContentRegionAvail().x;
+		if (Size.y < 0) Size.y += GetContentRegionAvail().y;
+
+		bool Open = false;
+		if (ImGui::BeginChild("TreeNode", Size))
+		{
+			window = GetCurrentWindow();
+			window->DC.CurrLineSize.y = LineSizeY;
+			window->DC.CurrLineTextBaseOffset = LineBaseOffset;
+
+			Open = ImGui::TreeNodeEx(label, flags);
+		}
+		ImGui::EndChild();
+
+		return Open;
 	}
 }

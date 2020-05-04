@@ -18,18 +18,13 @@ namespace Columbus
 
 			const char* Types[] = { "Directional", "Point", "Spot" };
 
-			ImGui::Indent(10.0f);
-
-			ImGui::Combo("Type##PanelInspector_Light",               &l.Type, Types, 3);
-			ImGui::Checkbox("Shadows##PanelInspector_Light",         &l.Shadows);
-			ImGui::ColorEdit3("Color##PanelInspector_Light", (float*)&l.Color);
-			ImGui::DragFloat("Energy##PanelInspector_Light",         &l.Energy, 0.1f, 0.0f, FLT_MAX);
-			ImGui::DragFloat("Range##PanelInspector_Light",          &l.Range, 0.1f);
-			ImGui::DragFloat("Inner Cutoff##PanelInspector_Light",   &l.InnerCutoff, 0.01f);
-			ImGui::DragFloat("Outer Cutoff##PanelInspector_Light",   &l.OuterCutoff, 0.01f);
-
-			ImGui::Unindent(10.0f);
-			ImGui::Separator();
+			ImGui::Combo("Type",               &l.Type, Types, 3);
+			ImGui::Checkbox("Shadows",         &l.Shadows);
+			ImGui::ColorEdit3("Color", (float*)&l.Color);
+			ImGui::DragFloat("Energy",         &l.Energy, 0.1f, 0.0f, FLT_MAX);
+			ImGui::DragFloat("Range",          &l.Range, 0.1f);
+			ImGui::DragFloat("Inner Cutoff",   &l.InnerCutoff, 0.01f);
+			ImGui::DragFloat("Outer Cutoff",   &l.OuterCutoff, 0.01f);
 		}
 	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentLight, ComponentEditorLight);

@@ -1,5 +1,6 @@
 #include <Editor/FileDialog.h>
-#include <Editor/FontAwesome.h>
+#include <Editor/Icons.h>
+#include <Editor/CommonUI.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <Core/Filesystem.h>
@@ -30,10 +31,10 @@ namespace Columbus
 		if (e == "json" || e == "glsl" || e == "hlsl" || e == "csl") return ICON_FA_CODE;
 		if (e == "hdr" || e == "exr") return ICON_FA_FILE_IMAGE;
 		if (e == "scene") return ICON_FA_STRIKETHROUGH;
-		if (e == "lig") return ICON_FA_LIGHTBULB;
-		if (e == "mat") return ICON_FA_CIRCLE;
-		if (e == "par") return ICON_FA_CERTIFICATE;
-		if (e == "cmf" || e == "obj" || e == "dae" || e == "fbx") return ICON_FA_SPACE_SHUTTLE;
+		if (e == "lig") return LIGHT_ICON;
+		if (e == "mat") return MATERIAL_ICON;
+		if (e == "par") return PARTICLES_ICON;
+		if (e == "cmf" || e == "obj" || e == "dae" || e == "fbx") return MESH_ICON;
 		if (e == "ttf") return ICON_FA_FONT;
 
 		return ICON_FA_FILE;

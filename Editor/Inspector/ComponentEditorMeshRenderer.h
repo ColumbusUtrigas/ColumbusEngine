@@ -15,7 +15,7 @@ namespace Columbus
 		void OnInspectorGUI() final override
 		{
 			auto comp = static_cast<ComponentMeshRenderer*>(Target);
-			if (ImGui::Button("Mesh##PanelInspector_MeshRenderer", ImVec2(ImGui::GetContentRegionAvail().x, 25)))
+			if (ImGui::Button("Mesh", ImVec2(ImGui::GetContentRegionAvail().x, 25)))
 			{
 				ResourcesViewerMesh::Open(&comp->GetMesh());
 			}

@@ -1,11 +1,11 @@
 # imgui_freetype
 
-Build font atlases using FreeType instead of stb_truetype (the default imgui's font rasterizer).
+Build font atlases using FreeType instead of stb_truetype (which is the default font rasterizer in Dear ImGui).
 <br>by @vuhdo, @mikesart, @ocornut.
 
 ### Usage
 
-1. Get latest FreeType binaries or build yourself (under Windows you may use vcpkg with `vcpkg install freetype`).
+1. Get latest FreeType binaries or build yourself (under Windows you may use vcpkg with `vcpkg install freetype`, `vcpkg integrate install`).
 2. Add imgui_freetype.h/cpp alongside your imgui sources.
 3. Include imgui_freetype.h after imgui.h.
 4. Call `ImGuiFreeType::BuildFontAtlas()` *BEFORE* calling `ImFontAtlas::GetTexDataAsRGBA32()` or `ImFontAtlas::Build()` (so normal Build() won't be called):
@@ -22,7 +22,7 @@ io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 FreeType assumes blending in linear space rather than gamma space.
 See FreeType note for [FT_Render_Glyph](https://www.freetype.org/freetype2/docs/reference/ft2-base_interface.html#FT_Render_Glyph).
 For correct results you need to be using sRGB and convert to linear space in the pixel shader output.
-The default imgui styles will be impacted by this change (alpha values will need tweaking).
+The default Dear ImGui styles will be impacted by this change (alpha values will need tweaking).
 
 ### Test code Usage
 ```cpp

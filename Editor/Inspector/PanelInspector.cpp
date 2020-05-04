@@ -7,6 +7,7 @@
 #include <Editor/Inspector/ComponentEditorParticleSystem.h>
 #include <Editor/Inspector/ComponentEditorRigidbody.h>
 #include <Editor/Icons.h>
+#include <Editor/CommonUI.h>
 #include <Scene/Component.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/imgui_internal.h>
@@ -162,7 +163,13 @@ namespace Columbus
 			if (ImGui::CollapsingHeader(name)) {
 				auto& ed = PrototypeFactory<ComponentEditor>::Instance().GetFromTypename(comp->GetTypename());
 				ed.Target = comp.Get();
+				
+				ImGui::Indent(10);
+				ImGui::PushID(ed.GetTypename().data());
 				ed.OnInspectorGUI();
+				ImGui::PopID();
+				ImGui::Unindent(10);
+				ImGui::Separator();
 			}
 		}
 	}

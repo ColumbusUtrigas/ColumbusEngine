@@ -70,6 +70,34 @@ namespace Columbus
 	void PhysicsShapeCompound::Deserialize(JSON& J)
 	{
 		BaseDeserialize(J);
+		if (J["Children"].IsArray())
+		{
+			Transforms.clear();
+			Shapes.clear();
+			Count = 0;
+
+			for (int i = 0; i < J["Children"].GetElementsCount(); i++)
+			{
+				Transform trans;
+				trans.Deserialize(J["Children"][i]["LocalTransform"]);
+
+				auto Type = J["Children"][i]["Shape"]["Type"].GetString();
+				auto Shape = PrototypeFactory<PhysicsShape>::Instance().CreateFromTypename(Type);
+
+				if (Shape != nullptr)
+				{
+					Shape->Deserialize(J["Children"][i]["Shape"]);
+				}
+				else
+				{
+					Shape = nullptr;
+				}
+
+				Transforms.push_back(trans);
+				Shapes.push_back(Shape);
+				Count++;
+			}
+		}
 	}
 
 	void PhysicsShapeCone::Serialize(JSON& J) const

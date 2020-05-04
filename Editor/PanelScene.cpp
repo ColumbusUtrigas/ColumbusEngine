@@ -15,6 +15,7 @@ namespace Columbus
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 			if (ImGui::Begin(ICON_FA_GLOBE" Scene", &Opened, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
 			{
+				ImGui::PopStyleVar();
 				if (ImGui::BeginMenuBar())
 				{
 					ImGui::Checkbox("Icons##PanelScene", &Render.DrawIcons);
@@ -26,10 +27,11 @@ namespace Columbus
 					ImGui::RadioButton("S", (int*)&_Gizmo._Operation, Gizmo::Operation::Scale);
 
 					FlagButton(ICON_FA_PLAY, Scene.EnablePhysicsSimulation);
-					ShowTooltipDelayed(CommonUISettings::TooltipDelay, Scene.EnablePhysicsSimulation ? "Disable physics simulation" : "Enable physics simulation");
+					ShowTooltipDelayed(CommonUISettings.TooltipDelay, Scene.EnablePhysicsSimulation ? "Disable physics simulation" : "Enable physics simulation");
 
 					ImGui::EndMenuBar();
 				}
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 				Selected = ImGui::IsWindowFocused();
 
