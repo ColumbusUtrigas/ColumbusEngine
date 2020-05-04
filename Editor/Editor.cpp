@@ -82,11 +82,11 @@ namespace Columbus
 			if (ImGui::BeginMenu("File"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Open")) SceneLoader.Open();
+				if (ImGui::MenuItem("Open")) SceneLoader.Open();
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" New")) scene.Clear();
+				if (ImGui::MenuItem("New")) scene.Clear();
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Save"))
+				if (ImGui::MenuItem("Save"))
 					{
 						if (scene.GetCurrentSceneFilename().empty())
 							SceneLoader.Open(EditorFileDialog::Type_Save);
@@ -94,64 +94,64 @@ namespace Columbus
 							scene.Save();
 					}
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Save As")) SceneLoader.Open(EditorFileDialog::Type_Save);
+				if (ImGui::MenuItem("Save As")) SceneLoader.Open(EditorFileDialog::Type_Save);
 				ImGui::Spacing();
-				ImGui::MenuItem(" Quit");
-				ImGui::Spacing();
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu(" View"))
-			{
-				ImGui::Spacing();
-				ImGui::MenuItem(" Scene", nullptr, &PanelScene.Opened);
-				ImGui::Spacing();
-				ImGui::MenuItem(" Hierarchy", nullptr, &PanelHierarchy.Opened);
-				ImGui::Spacing();
-				ImGui::MenuItem(" Render Settings", nullptr, &PanelRenderSettings.Opened);
-				ImGui::Spacing();
-				ImGui::MenuItem(" Inspector", nullptr, &PanelInspector.Opened);
-				ImGui::Spacing();
-				ImGui::MenuItem(" Profiler", nullptr, &PanelProfiler.Opened);
-				ImGui::Spacing();
-				ImGui::MenuItem(" Console", nullptr, &PanelConsole.Opened);
+				ImGui::MenuItem("Quit");
 				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu(" GameObject"))
+			if (ImGui::BeginMenu("View"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Empty")) scene.AddEmpty();
+				ImGui::MenuItem("Scene", nullptr, &PanelScene.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem("Hierarchy", nullptr, &PanelHierarchy.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem("Render Settings", nullptr, &PanelRenderSettings.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem("Inspector", nullptr, &PanelInspector.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem("Profiler", nullptr, &PanelProfiler.Opened);
+				ImGui::Spacing();
+				ImGui::MenuItem("Console", nullptr, &PanelConsole.Opened);
 				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu(" Resources"))
+			if (ImGui::BeginMenu("GameObject"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Textures"))
+				if (ImGui::MenuItem("Empty")) scene.AddEmpty();
+				ImGui::Spacing();
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Resources"))
+			{
+				ImGui::Spacing();
+				if (ImGui::MenuItem("Textures"))
 				{
 					ResourcesViewerTexture::Open(nullptr);
 				}
 
 				ImGui::Spacing();
 
-				if (ImGui::MenuItem(" Shaders"))
+				if (ImGui::MenuItem("Shaders"))
 				{
 					ResourcesViewerShader::Open(nullptr);
 				}
 
 				ImGui::Spacing();
 
-				if (ImGui::MenuItem(" Materials"))
+				if (ImGui::MenuItem("Materials"))
 				{
 					ResourcesViewerMaterial::Open(nullptr);
 				}
 
 				ImGui::Spacing();
 
-				if (ImGui::MenuItem(" Meshes"))
+				if (ImGui::MenuItem("Meshes"))
 				{
 					ResourcesViewerMesh::Open(nullptr);
 				}
@@ -161,10 +161,10 @@ namespace Columbus
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu(" Scene"))
+			if (ImGui::BeginMenu("Scene"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem(" Skybox")) SkyboxLoader.Open();
+				if (ImGui::MenuItem("Skybox")) SkyboxLoader.Open();
 				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
@@ -195,7 +195,11 @@ namespace Columbus
 			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
+			ImGui::PopStyleVar(3);
 			DrawMainMenu(scene);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		}
 		ImGui::End();
 

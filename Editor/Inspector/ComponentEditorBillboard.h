@@ -15,11 +15,7 @@ namespace Columbus
 
 			const char* Types[] = { "Local X", "Local Y", "Local Z" };
 
-			ImGui::Indent(10.0f);
-			ImGui::Combo("Rotation##PanelInspector_Billboard", (int*)&Bill, Types, 3);
-			ImGui::Unindent(10.0f);
-
-			ImGui::Separator();
+			ImGui::Combo("Rotation", (int*)&Bill, Types, 3);
 		}
 	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentBillboard, ComponentEditorBillboard);

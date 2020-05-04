@@ -288,9 +288,7 @@ namespace Columbus
 				Shape = InShape;
 				mRigidbody->setCollisionShape(InShape->mShape);
 
-				btVector3 Inertia;
-				mRigidbody->getCollisionShape()->calculateLocalInertia(Mass, Inertia);
-				mRigidbody->setMassProps(Mass, Inertia);
+				SetStatic(Static);
 			}
 		}
 	}
@@ -447,7 +445,8 @@ namespace Columbus
 			if (shape != nullptr)
 			{
 				shape->Deserialize(J["Shape"]);
-				SetCollisionShape(static_cast<PhysicsShape*>(shape->Clone()));
+				auto clone = shape->Clone();
+				SetCollisionShape(static_cast<PhysicsShape*>(clone));
 			}
 			else
 			{

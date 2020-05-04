@@ -55,7 +55,7 @@ namespace Columbus
 
 					std::function<void(GameObject* obj)> draw_object_leaf;
 					draw_object_leaf = [&](GameObject* obj) {
-						int flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+						int flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 						if (object == obj) flags |= ImGuiTreeNodeFlags_Selected;
 						if (obj->GetChildren().empty()) flags |= ImGuiTreeNodeFlags_Leaf;
 

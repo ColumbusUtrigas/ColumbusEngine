@@ -5,6 +5,7 @@
 #include <Core/Filesystem.h>
 #include <Editor/FileDialog.h>
 #include <Editor/Icons.h>
+#include <Editor/CommonUI.h>
 #include <Lib/imgui/imgui.h>
 #include <functional>
 

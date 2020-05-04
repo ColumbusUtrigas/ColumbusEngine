@@ -3,6 +3,7 @@
 #include <Editor/FileDialog.h>
 #include <Editor/MessageBox.h>
 #include <Lib/imgui/imgui.h>
+#include <Editor/CommonUI.h>
 
 namespace Columbus
 {

@@ -2,6 +2,7 @@
 
 #include <Scene/Component.h>
 #include <Graphics/Particles/ParticleEmitterCPU.h>
+#include <Scene/GameObject.h>
 
 namespace Columbus
 {
