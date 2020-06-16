@@ -150,11 +150,11 @@ void main(void)
 			switch (Particles.Billboard)
 			{
 			case ParticleEmitterCPU::BillboardMode::Vertical:
-				Q = Quaternion(Vector3(0, Math::Radians(MainCamera.Rot.Y), 0));
+				Q = Quaternion(Vector3(0, MainCamera.Rot.Y, 0));
 				break;
 			case ParticleEmitterCPU::BillboardMode::Horizontal:
 			case ParticleEmitterCPU::BillboardMode::FaceToCamera:
-				Q = Quaternion(Vector3(Math::Radians(-MainCamera.Rot.X), Math::Radians(MainCamera.Rot.Y), 0));
+				Q = Quaternion(Vector3(-MainCamera.Rot.X, MainCamera.Rot.Y, 0));
 				break;
 			case ParticleEmitterCPU::BillboardMode::None:
 			default:
@@ -188,11 +188,15 @@ void main(void)
 			gDevice->BindBufferBase(UBO, 0);
 			gDevice->BindBufferBase(ColorsUAV, 1);
 			gDevice->BindBufferBase(PositionsUAV, 2);
-			glUseProgram(CPS->progid);
-			glDispatchCompute(Particles.Particles.Count, 1, 1);
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-			Shader->Bind();
+			if (Particles.Light)
+			{
+				gDevice->SetComputePipelineState(CPS);
+				gDevice->Dispatch(Particles.Particles.Count, 1, 1);
+				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+			}
+
+			gDevice->SetShader(Shader);
 
 			Matrix Billboard = Q.ToMatrix();
 

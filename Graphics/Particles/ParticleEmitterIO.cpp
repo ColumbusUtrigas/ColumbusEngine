@@ -246,6 +246,7 @@ namespace Columbus
 	{
 		J["Visible"] = Visible;
 		J["Emit"] = Emit;
+		J["Light"] = Light;
 		J["MaxCount"] = MaxParticles;
 		J["EmitRate"] = EmitRate;
 		J << Blend;
@@ -267,6 +268,7 @@ namespace Columbus
 	{
 		Visible = J["Visible"].GetBool();
 		Emit = J["Emit"].GetBool();
+		Light = J["Light"].GetBool();
 		MaxParticles = (uint32)J["MaxCount"].GetInt();
 		EmitRate = (float)J["EmitRate"].GetFloat();
 
