@@ -271,11 +271,12 @@ namespace Columbus
 				{
 					gDevice->SetShader(Mat.GetShader());
 					gDevice->OMSetDepthStencilState(Mat.DSS.get(), 0);
+					gDevice->OMSetBlendState(Mat.BS.get(), nullptr, 0xFFFFFFFF);
 
 					State.SetCulling(Material::Cull::No);
 					//State.SetDepthTesting(Mat.DepthTesting);
 					//State.SetDepthWriting(Mat.DepthWriting);
-					State.SetMaterial(Mat, Object.Tran->GetMatrix(), Sky, false);
+					State.SetMaterial(Mat, Object.Tran->GetMatrix(), Sky, true);
 
 					Object.MeshObj->Bind();
 
