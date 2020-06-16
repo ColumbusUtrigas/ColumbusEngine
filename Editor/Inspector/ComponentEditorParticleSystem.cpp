@@ -213,6 +213,7 @@ namespace Columbus
 			ImGui::DragFloat("Emit Rate", &Emitter.EmitRate, 0.1f, 0.0f, FLT_MAX);
 			ImGui::Checkbox("Emit", &Emitter.Emit);
 			ImGui::Checkbox("Visible", &Emitter.Visible);
+			ImGui::Checkbox("Light", &Emitter.Light);
 
 			ImGui::Combo("Blend mode", (int*)&Emitter.Blend, BlendModes, 4);
 			ImGui::Combo("Billboard mode", (int*)&Emitter.Billboard, BillboardModes, 4);
