@@ -415,20 +415,18 @@ void main(void)
 
 	bool ShaderProgramOpenGL::Load(const char* FileName)
 	{
-		File ShaderFile(FileName, "rt");
-		if (!ShaderFile.IsOpened())
+		std::ifstream t(FileName);
+		if (!t.is_open())
 		{
 			Log::Error("Shader not loaded: %s", FileName);
 			return false;
 		}
 
-		char* _data = (char*)malloc(ShaderFile.GetSize() + 1);
-		ShaderFile.ReadBytes(_data, ShaderFile.GetSize());
-		_data[ShaderFile.GetSize()] = '\0';
+		std::string str((std::istreambuf_iterator<char>(t)),
+			             std::istreambuf_iterator<char>());
 
-		bool result = LoadFromMemory(_data, FileName);
+		bool result = LoadFromMemory(str.c_str(), FileName);
 
-		free(_data);
 		return result;
 	}
 
