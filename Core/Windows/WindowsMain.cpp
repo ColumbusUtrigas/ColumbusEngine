@@ -122,6 +122,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		e.Key.Pressed = false;
 		e.Key.Repeat = false;
 		break;
+	case WM_SETCURSOR:
+		break;
 	default:
 		return DefWindowProc(hWnd, msg, wparam, lparam);
 	}
@@ -362,6 +364,14 @@ int main(int argc, char** argv)
 			else
 			{
 				wasLooking = false;
+			}
+
+			if (Editor.PanelScene.IsHover() && input.GetMouseButton(2).State)
+			{
+				auto deltaMouse = input.GetMouseMovement();
+				camera.Pos -= camera.Right() * deltaMouse.X * 0.1f;
+				camera.Pos += camera.Up() * deltaMouse.Y * 0.1f;
+				ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
 			}
 
 			camera.Pos += camera.Direction() * wheel * RedrawTime;
