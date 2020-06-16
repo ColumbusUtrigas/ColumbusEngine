@@ -1,3 +1,5 @@
+#if 1
+
 #include <Scene/Scene.h>
 #include <Input/Input.h>
 #include <Editor/Editor.h>
@@ -148,16 +150,27 @@ void InitWindowAndContext()
 
 	hwnd = CreateWindow(class_name, "Columbus Engine", WS_OVERLAPPEDWINDOW, 6, 12, wnd_size.X, wnd_size.Y, 0, 0, hInstance, 0);
 
-	PIXELFORMATDESCRIPTOR pfd;
-	memset(&pfd, 0, sizeof(pfd));
-	pfd.nSize = sizeof(pfd);
-	pfd.nVersion = 1;
-	pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.cColorBits = 32;
-	pfd.cDepthBits = 24;
-	pfd.cStencilBits = 8;
-	pfd.iLayerType = PFD_MAIN_PLANE;
+	PIXELFORMATDESCRIPTOR pfd =
+	{
+		sizeof(PIXELFORMATDESCRIPTOR), // Size Of This Pixel Format Descriptor
+		1,
+		PFD_DRAW_TO_WINDOW | // Format Must Support Window
+			PFD_SUPPORT_OPENGL | // Format Must Support OpenGL
+			PFD_DOUBLEBUFFER,
+		(BYTE)PFD_TYPE_RGBA,
+		(BYTE)24,
+		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Color Bits Ignored
+		(BYTE)0, // Alpha Buffer
+		(BYTE)0, // Shift Bit Ignored
+		(BYTE)0, // No Accumulation Buffer
+		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Accumulation Bits Ignored
+		(BYTE)24, // 24Bit Z-Buffer (Depth Buffer)
+		(BYTE)0, // No Stencil Buffer
+		(BYTE)0, // No Auxiliary Buffer
+		(BYTE)PFD_MAIN_PLANE, // Main Drawing Layer
+		(BYTE)0, // Reserved
+		0, 0, 0 // Layer Masks Ignored
+	};
 
 	hdc = GetDC(hwnd);
 
@@ -167,6 +180,29 @@ void InitWindowAndContext()
 
 	hrc = wglCreateContext(hdc);
 	wglMakeCurrent(hdc, hrc);
+
+	if (true)
+	{
+		// OpenGL3+ init
+
+		int attribs[] = {
+			WGL_CONTEXT_MAJOR_VERSION_ARB, 4, //we want a 4.3 context
+			WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+			//and it shall be forward compatible so that we can only use up to date functionality
+			WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+			WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB /*| _WGL_CONTEXT_DEBUG_BIT_ARB*/,
+			0
+		}; //zero indicates the end of the array
+
+		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr; //pointer to the method
+		wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+		HGLRC new_hrc = wglCreateContextAttribsARB(hdc, 0, attribs);
+		wglMakeCurrent(hdc, nullptr);
+		wglDeleteContext(hrc);
+		hrc = new_hrc;
+
+		wglMakeCurrent(hdc, hrc);
+	}
 
 	printf("%s\n", glGetString(GL_VERSION));
 
@@ -242,7 +278,7 @@ void ShutdownGUI()
 #endif
 }
 
-#define main main
+#undef main
 int main(int argc, char** argv)
 {
 	InitGUI();
@@ -372,3 +408,5 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+#endif
