@@ -180,6 +180,11 @@ namespace Columbus
 		}
 	}
 
+	void DeviceOpenGL::SetComputePipelineState(ComputePipelineState* State)
+	{
+		glUseProgram(State->progid);
+	}
+
 	bool DeviceOpenGL::CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState)
 	{
 		*ppBlendState = new BlendState();
@@ -294,6 +299,11 @@ namespace Columbus
 		glAttachShader(pComputePipelineState->progid, pComputePipelineState->shadid);
 		glLinkProgram(pComputePipelineState->progid);
 		return true;
+	}
+
+	void DeviceOpenGL::Dispatch(uint32 X, uint32 Y, uint32 Z)
+	{
+		glDispatchCompute(X, Y, Z);
 	}
 
 	void DeviceOpenGL::Draw(uint32 VertexCount, uint32 StartVertexLocation)

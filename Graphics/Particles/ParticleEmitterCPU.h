@@ -59,6 +59,7 @@ namespace Columbus
 		float EmitRate = 0;
 		bool Emit = true;
 		bool Visible = true;
+		bool Light = false;
 
 		Vector3 Position = Vector3(10, 5, 10);
 

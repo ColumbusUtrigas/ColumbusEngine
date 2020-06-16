@@ -29,6 +29,8 @@ namespace Columbus
 
 		virtual void SetShader(ShaderProgram* Prog) final override;
 
+		virtual void SetComputePipelineState(ComputePipelineState* State) final override;
+
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) final override;
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) final override;
 		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) final override;
@@ -41,6 +43,7 @@ namespace Columbus
 
 		virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) final override;
 
+		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) final override;
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) final override;
 
 		virtual void BeginMarker(const char* Str) final override;

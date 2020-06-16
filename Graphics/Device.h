@@ -39,6 +39,9 @@ namespace Columbus
 
 		virtual void SetShader(ShaderProgram* Prog) = 0;
 
+		virtual void SetComputePipelineState(ComputePipelineState* State) = 0;
+		//virtual void SetGraphicsPipelineState(GraphicsPipelineState* State) = 0;
+
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) = 0;
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) = 0;
 		virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) = 0;
@@ -51,6 +54,7 @@ namespace Columbus
 
 		virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) = 0;
 
+		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) = 0;
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) = 0;
 
 		virtual void BeginMarker(const char* Str) = 0;
