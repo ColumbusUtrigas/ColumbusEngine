@@ -891,6 +891,12 @@ void main(void)
 			TonemapShader->Bind();
 			TonemapShader->SetUniform("u_BaseTexture", FinalTex, 0);
 			TonemapShader->SetUniform("u_AETexture", autoExposureTexture, 1);
+			TonemapShader->SetUniform("u_Saturation", Saturation);
+			TonemapShader->SetUniform("u_Hue", Hue);
+			TonemapShader->SetUniform("u_Temperature", Temperature);
+			TonemapShader->SetUniform("u_Lift", Lift);
+			TonemapShader->SetUniform("u_Gain", Gain);
+			TonemapShader->SetUniform("u_Offset", Offset);
 			gDevice->BindBufferRange(UBO, 0, offsetof(_UBO_Data, tonemap), sizeof(uboData.tonemap));
 			Quad.Render();
 			TonemapShader->Unbind();

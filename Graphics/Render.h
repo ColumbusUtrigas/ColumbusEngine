@@ -107,6 +107,12 @@ namespace Columbus
 
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;
+		float Saturation = 1.0f;
+		float Hue = 0.0f;
+		float Temperature = 66.0f;
+		Vector3 Lift;
+		Vector3 Gain;
+		Vector3 Offset;
 		TonemappingType Tonemapping = TonemappingType::Simple;
 
 		AntialiasingType Antialiasing = AntialiasingType::No;

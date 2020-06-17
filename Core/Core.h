@@ -6,8 +6,9 @@
 
 #include <Core/Containers/Vector.h>
 
-#include <Core/Platform/Platform.h>
-#include <Core/Platform/PlatformClipboard.h>
-#include <Core/Platform/PlatformFilesystem.h>
+#include <Core/Platform.h>
+#include <Core/Filesystem.h>
+
+#define sizeofarray(a) (sizeof(a) / sizeof(a[0]))
 
 
