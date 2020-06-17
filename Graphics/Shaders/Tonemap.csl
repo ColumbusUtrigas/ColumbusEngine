@@ -4,6 +4,14 @@ R"(
 #uniform Texture2D u_BaseTexture
 #uniform Texture2D u_AETexture
 
+#uniform float u_Saturation
+#uniform float u_Hue
+#uniform float u_Temperature
+
+#uniform float3 u_Lift
+#uniform float3 u_Gain
+#uniform float3 u_Offset
+
 layout(std140) uniform _Data
 {
 	float u_Exposure;
@@ -13,6 +21,40 @@ layout(std140) uniform _Data
 };
 
 in float2 var_UV;
+
+float Luma(float3 color) { return dot(color, float3(0.2126, 0.7152, 0.0722)); }
+vec3 rgb2hsv(vec3 c)
+{
+    vec4 K=vec4(0,-1/3.,2/3.,-1),
+    p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g)),
+    q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));
+    float d=q.x-min(q.w,q.y),e=1.0e-10;
+    return vec3(abs(q.z+(q.w-q.y)/(6*d+e)),d/(q.x+e),q.x);
+}
+vec3 hsv2rgb(vec3 c){return c.z*mix(vec3(1),saturate(abs(fract(vec3(1,2/3.,1/3.)+c.x)*6-3)-1),c.y);}
+vec3 rgb2hsv(float r,float g,float b){return rgb2hsv(vec3(r,g,b));}
+vec3 hsv2rgb(float h,float s,float v){return hsv2rgb(vec3(h,s,v));}
+
+vec3 colorFromKelvin(float temperature) // photographic temperature values are between 15 to 150
+{
+    float r, g, b;
+    if(temperature <= 66.0)
+    {
+        r = 1.0;
+        g = saturate((99.4708025861 * log(temperature) - 161.1195681661) / 255.0);
+        if(temperature < 19.0)
+            b = 0.0;
+        else
+            b = saturate((138.5177312231 * log(temperature - 10.0) - 305.0447927307) / 255.0);
+    }
+    else
+    {
+        r = saturate((329.698727446 / 255.0) * pow(temperature - 60.0, -0.1332047592));
+        g = saturate((288.1221695283  / 255.0) * pow(temperature - 60.0, -0.0755148492));
+        b = 1.0;
+    }
+    return vec3(r, g, b);
+}
 
 float3 TonemapSimple(float3 HDR)
 {
@@ -73,6 +115,20 @@ void main(void)
 	}
 
 	float3 HDR = clamp(Sample2D(u_BaseTexture, var_UV).rgb * E, 0, 50000);
+
+	// saturation
+	float luma = Luma(HDR);
+	HDR = mix(float3(luma), HDR, u_Saturation);
+
+	// hue shift
+	HDR = hsv2rgb(rgb2hsv(HDR) + float3(fract(u_Hue / 6.0), 0.0, 0.0));
+
+	// temperature
+	HDR *= float3(1.0) / colorFromKelvin(u_Temperature);
+
+	// color corrector
+	HDR = max(float3(0.0), HDR * (1.0 + u_Gain - u_Lift) + u_Lift + u_Offset);
+
 	float3 Mapped = float3(0.0);
 
 	switch (u_Type)
