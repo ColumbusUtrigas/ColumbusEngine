@@ -70,19 +70,12 @@ namespace Columbus
 			SaveObjects[Elem.first] = Elem.second;
 		}
 
-		size_t Counter = 0;
-
-		printf("%zu\n", SaveObjects.size());
-
-		for (const auto& Elem : SaveObjects)
-		{
-			auto& Obj = Objects.Resources[Elem.second];
-			auto& JObj = J[Counter++];
-
-			JObj["Name"] = Elem.first;
+		std::function<void(GameObject * Obj, JSON & JObj)> save_object;
+		save_object = [&](GameObject* Obj, JSON& JObj) {
+			JObj["Name"] = Obj->Name;
 			JObj["Static"] = false;
 			Obj->transform.Serialize(JObj["Transform"]);
-			
+
 			if (!Obj->materials.empty() && Obj->materials[0] != nullptr)
 				JObj["Material"] = MaterialsManager.Find(Obj->materials[0]);
 			else
@@ -135,6 +128,26 @@ namespace Columbus
 			if (Rigidbody != nullptr)
 			{
 				Rigidbody->GetRigidbody()->Serialize(JObj["Rigidbody"]);
+			}
+
+			int counter = 0;
+			for (auto& child : Obj->GetChildren())
+			{
+				save_object(child, JObj["Children"][counter++]);
+			}
+		};
+
+		size_t Counter = 0;
+
+		for (const auto& Elem : SaveObjects)
+		{
+			auto& Obj = Objects.Resources[Elem.second];
+			auto& JObj = J[Counter];
+
+			if (Obj->GetParent() == nullptr)
+			{
+				save_object(Obj.Get(), JObj);
+				Counter++;
 			}
 		}
 	}
@@ -237,10 +250,8 @@ namespace Columbus
 
 	void Scene::DeserializeObjects(JSON& J)
 	{
-		for (uint32 i = 0; i < J.GetElementsCount(); i++)
-		{
-			auto& JObj = J[i];
-
+		std::function<GameObject*(JSON&)> load_object;
+		load_object = [&](JSON& JObj) {
 			SmartPointer<GameObject> GO(new GameObject());
 			GO->Name = JObj["Name"].GetString();
 			GO->transform.Deserialize(JObj["Transform"]);
@@ -273,7 +284,8 @@ namespace Columbus
 
 					Source->SetSound(Clip);
 					GO->AddComponent(new ComponentAudioSource(std::shared_ptr<AudioSource>(Source)));
-				} else
+				}
+				else
 				{
 					Log::Warning("%s: Cannot load AudioSource", GO->Name.c_str());
 				}
@@ -310,7 +322,24 @@ namespace Columbus
 				GO->AddComponent(new ComponentRigidbody(RB));
 			}
 
+			auto goptr = GO.Get();
 			Objects.Add(std::move(GO), GO->Name);
+
+			if (JObj.HasChild("Children") && JObj["Children"].IsArray())
+			{
+				for (int i = 0; i < JObj["Children"].GetElementsCount(); i++)
+				{
+					auto child = load_object(JObj["Children"][i]);
+					goptr->AddChild(child);
+				}
+			}
+
+			return goptr;
+		};
+
+		for (uint32 i = 0; i < J.GetElementsCount(); i++)
+		{
+			load_object(J[i]);
 		}
 	}
 

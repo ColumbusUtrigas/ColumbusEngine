@@ -32,7 +32,7 @@ namespace Columbus
 
 		void SetFlags(Texture::Flags F) override;
 
-		void SetMipmapLevel(uint32 Level) override;
+		void SetMipmapLevel(uint32 Level, uint32 MaxLevel) override;
 
 		void Bind();
 		void Unbind();

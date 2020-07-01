@@ -11,23 +11,23 @@ in float2 var_UV;
 
 void main()
 {
-	float2 tex_offset = 1.0 / textureSize(BaseTexture, 0) * Radius;
-	float3 result = Sample2D(BaseTexture, var_UV).rgb * weight[0];
+	float2 tex_offset = 1.0 / textureSize(BaseTexture, int(Radius));
+	float3 result = Sample2DLod(BaseTexture, var_UV, Radius).rgb * weight[0];
 
 	if (Horizontal)
 	{
 		for (int i = 1; i < 5; ++i)
 		{
-			result += Sample2D(BaseTexture, var_UV + float2(tex_offset.x * i, 0.0)).rgb * weight[i];
-			result += Sample2D(BaseTexture, var_UV - float2(tex_offset.x * i, 0.0)).rgb * weight[i];
+			result += Sample2DLod(BaseTexture, var_UV + float2(tex_offset.x * i, 0.0), Radius).rgb * weight[i];
+			result += Sample2DLod(BaseTexture, var_UV - float2(tex_offset.x * i, 0.0), Radius).rgb * weight[i];
 		}
 	}
 	else
 	{
 		for (int i = 1; i < 5; ++i)
 		{
-			result += Sample2D(BaseTexture, var_UV + float2(0.0, tex_offset.y * i)).rgb * weight[i];
-			result += Sample2D(BaseTexture, var_UV - float2(0.0, tex_offset.y * i)).rgb * weight[i];
+			result += Sample2DLod(BaseTexture, var_UV + float2(0.0, tex_offset.y * i), Radius).rgb * weight[i];
+			result += Sample2DLod(BaseTexture, var_UV - float2(0.0, tex_offset.y * i), Radius).rgb * weight[i];
 		}
 	}
 

@@ -582,12 +582,13 @@ namespace Columbus
 		}
 	}
 
-	void TextureOpenGL::SetMipmapLevel(uint32 Level)
+	void TextureOpenGL::SetMipmapLevel(uint32 Level, uint32 MaxLevel)
 	{
 		MipmapLevel = Level;
 
 		glBindTexture(Target, ID);
 		glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, Level);
+		glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, MaxLevel);
 	}
 
 

@@ -145,6 +145,7 @@ namespace Columbus
 		void RenderOpaque();
 		void RenderSky();
 		void RenderTransparent();
+		void RenderFlares();
 		void RenderPostprocess();
 		void Render(RenderPass Pass);
 		void Render();

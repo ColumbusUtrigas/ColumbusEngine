@@ -4,6 +4,7 @@
 #include <Editor/ResourcesViewerShader.h>
 #include <Editor/CommonUI.h>
 #include <Editor/Icons.h>
+#include <Core/Core.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
@@ -50,6 +51,7 @@ namespace Columbus
 	{
 		const char* CullItems[] = { "No", "Front", "Back", "Front and back"};
 		const char* DepthItems[] = { "Less", "Greater", "LEqual", "GEqual", "Equal", "Not equal", "Never", "Always" };
+		const char* EnvMapItems[] = { "None", "Sky", "Auto" };
 
 		for (int i = 0; i < Inspectable->materials.size(); i++)
 		{
@@ -86,8 +88,9 @@ namespace Columbus
 
 					ImGui::Spacing();
 
-					ImGui::Combo("Culling", (int*)&material.Culling, CullItems, 4);
-					ImGui::Combo("Depth test", (int*)&material.DepthTesting, DepthItems, 8);
+					ImGui::Combo("Culling", (int*)&material.Culling, CullItems, sizeofarray(CullItems));
+					ImGui::Combo("Depth test", (int*)&material.DepthTesting, DepthItems, sizeofarray(DepthItems));
+					ImGui::Combo("Env map mode", (int*)&material.EnvMapMode, EnvMapItems, sizeofarray(EnvMapItems));
 					ImGui::Spacing();
 
 					ImGui::Checkbox("Depth writing", &material.DepthWriting);
