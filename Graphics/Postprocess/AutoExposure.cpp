@@ -34,7 +34,7 @@ namespace Columbus
 			}
 
 			int lastMip = floor(log2(Math::Max(FrameSize.X, FrameSize.Y)));
-			Frame->SetMipmapLevel(lastMip);
+			Frame->SetMipmapLevel(lastMip, 1000);
 
 			_Bufs[_CurrentBuf].Bind({0}, {0}, {1});
 			shader->Bind();
@@ -43,7 +43,7 @@ namespace Columbus
 			gDevice->BindBufferRange(UBO, 0, Offset, Size);
 			_Quad.Render();
 
-			Frame->SetMipmapLevel(0);
+			Frame->SetMipmapLevel(0, 1000);
 			_CurrentBuf = (_CurrentBuf + 1) % _BufSize;
 		} else
 		{

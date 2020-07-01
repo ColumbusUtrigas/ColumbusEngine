@@ -83,6 +83,10 @@ namespace Columbus
 		if (J["DepthTesting"].GetString() == "Never")     DepthTesting = DepthTest::Never;
 		if (J["DepthTesting"].GetString() == "Always")    DepthTesting = DepthTest::Always;
 
+		if (J["EnvMapMode"].GetString() == "None") EnvMapMode = EnvMap::None;
+		if (J["EnvMapMode"].GetString() == "Sky")  EnvMapMode = EnvMap::Sky;
+		if (J["EnvMapMode"].GetString() == "Auto") EnvMapMode = EnvMap::Auto;
+
 		DepthWriting = J["DepthWriting"].GetBool();
 		Transparent  = J["Transparent"] .GetBool();
 		Lighting     = J["Lighting"]    .GetBool();
@@ -137,6 +141,13 @@ namespace Columbus
 		case DepthTest::NotEqual:  J["DepthTesting"] = "NotEqual";  break;
 		case DepthTest::Never:     J["DepthTesting"] = "Never";     break;
 		case DepthTest::Always:    J["DepthTesting"] = "Always";    break;
+		}
+
+		switch (EnvMapMode)
+		{
+		case EnvMap::None: J["EnvMapMode"] = "None"; break;
+		case EnvMap::Sky:  J["EnvMapMode"] = "Sky";  break;
+		case EnvMap::Auto: J["EnvMapMode"] = "Auto"; break;
 		}
 
 		J["DepthWriting"] = DepthWriting;

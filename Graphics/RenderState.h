@@ -16,6 +16,8 @@ namespace Columbus
 		Camera MainCamera;
 	public:
 		Texture* ShadowTexture = nullptr;
+		Texture* TranslucentTex = nullptr;
+		iVector2 ContextSize{ 1 };
 	public:
 		void SetCulling(Material::Cull Culling);
 		void SetBlending(bool Blending);

@@ -129,7 +129,7 @@ namespace Columbus
 		TextureFormat GetFormat() const { return Format; }
 		Type GetType() const { return TextureType; }
 
-		virtual void SetMipmapLevel(uint32 Level) = 0;
+		virtual void SetMipmapLevel(uint32 Level, uint32 MaxLevel) = 0;
 		uint32 GetMipmapLevel() const { return MipmapLevel; }
 
 		virtual void GenerateMipmap() = 0;

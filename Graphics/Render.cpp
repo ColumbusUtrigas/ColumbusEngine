@@ -20,9 +20,12 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 
+#include <Graphics/Postprocess/GaussBlur.h>
+
 namespace Columbus
 {
 	Texture* Blob;
+	ShaderProgram* Prefilter;
 
 	RenderState State;
 
@@ -48,6 +51,8 @@ namespace Columbus
 	{
 		Blob = gDevice->CreateTexture();
 		Blob->Load("Data/Textures/blob.png");
+
+		Prefilter = gDevice->GetDefaultShaders()->GaussBlur.get();
 
 		BaseMSAA.ColorTexturesEnablement[0] = true;
 		BaseMSAA.ColorTexturesEnablement[1] = true;
@@ -511,6 +516,11 @@ void main(void)
 		}
 	}
 
+	void Renderer::RenderFlares()
+	{
+
+	}
+
 	void Renderer::RenderPostprocess()
 	{
 
@@ -608,52 +618,8 @@ void main(void)
 		((ShaderProgramOpenGL*)(Icon))->Unbind();
 	}
 
-std::string computeprog =
-R"(#version 430 core
-layout(local_size_x = 1, local_size_y = 1) in;
-
-layout(std430, binding = 0) buffer destBuffer
-{
-	int data[];
-} outBuffer;
-
-void main(void)
-{
-	outBuffer.data[0] = 12345;
-}
-)";
-
 	void Renderer::Render()
 	{
-		static bool first = true;
-		static ComputePipelineState* CPS;
-		static Buffer* SSBO;
-		if (first)
-		{
-			ComputePipelineStateDesc CPSD;
-			CPSD.CS = computeprog;
-			gDevice->CreateComputePipelineState(CPSD, &CPS);
-
-			BufferDesc SSBOD;
-			SSBOD.BindFlags = BufferType::UAV;
-			SSBOD.Size = 4;
-			SSBOD.CpuAccess = BufferCpuAccess::Write;
-			SSBOD.Usage = BufferUsage::Dynamic;
-			gDevice->CreateBuffer(SSBOD, nullptr, &SSBO);
-
-			first = false;
-		}
-
-		/*glUseProgram(CPS->progid);
-		gDevice->BindBufferBase(SSBO, 0);
-		glDispatchCompute(1, 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-		void* ptr;
-		gDevice->MapBuffer(SSBO, BufferMapAccess::Read, ptr);
-		printf("%i\n", *((int*)ptr));
-		gDevice->UnmapBuffer(SSBO);*/
-
 		struct _UBO_Data
 		{
 			struct
@@ -809,7 +775,7 @@ void main(void)
 		glDrawBuffers(1, BuffersFirst);
 		RenderSky();
 		glDrawBuffers(2, BuffersAll);
-		RenderTransparent();
+		//RenderTransparent();
 
 		if (DrawGrid)
 		{
@@ -874,6 +840,19 @@ void main(void)
 		State.SetDepthWriting(false);
 		State.SetCulling(Material::Cull::No);
 
+		State.TranslucentTex = GaussBlur(Base.ColorTextures[0], ContextSize, 6);
+
+		Base.Clear = false;
+		Base.Bind({}, {}, ContextSize);
+		State.ContextSize = ContextSize;
+		RenderTransparent();
+		Base.Clear = true;
+		Base.Unbind();
+
+		State.SetBlending(false);
+		State.SetDepthWriting(false);
+		State.SetCulling(Material::Cull::No);
+
 		Texture* FinalTex = Base.ColorTextures[0];
 
 		auto autoExposureTexture = AutoExposure.Draw(Exposure,
@@ -887,6 +866,7 @@ void main(void)
 			PROFILE_GPU(ProfileModuleGPU::FinalStage);
 
 			Final.Bind({}, {}, ContextSize);
+			Final.ColorTextures[0]->SetMipmapLevel(0, 0);
 
 			TonemapShader->Bind();
 			TonemapShader->SetUniform("u_BaseTexture", FinalTex, 0);
@@ -917,6 +897,8 @@ void main(void)
 				ScreenSpaceShader->SetUniform("BaseTexture", Post[0].ColorTextures[0], 0);
 				Quad.Render();
 			}
+
+			RenderFlares();
 
 			if (DrawIcons)
 			{

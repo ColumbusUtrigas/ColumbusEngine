@@ -53,22 +53,7 @@ namespace Columbus
 						}
 					};
 
-					std::function<void(GameObject* obj)> draw_object_leaf;
-					draw_object_leaf = [&](GameObject* obj) {
-						int flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-						if (object == obj) flags |= ImGuiTreeNodeFlags_Selected;
-						if (obj->GetChildren().empty()) flags |= ImGuiTreeNodeFlags_Leaf;
-
-						bool open = ImGui::TreeNodeEx(obj->Name.c_str(), flags);
-						if (ImGui::IsItemClicked() || ImGui::IsItemFocused()) object = obj;
-						src_dragndrop(obj);
-						dst_dragndrop(obj);
-						if (open) {
-							for (const auto& child : obj->GetChildren())
-								draw_object_leaf(child);
-							ImGui::TreePop();
-						}
-
+					auto do_object_logic = [&](GameObject* obj) {
 						// if (ctrl+c)
 						if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C), false)) {
 							buffer = object;
@@ -86,10 +71,50 @@ namespace Columbus
 						}
 					};
 
-					for (auto& Obj : scene->Objects.Resources)
+					std::function<void(GameObject* obj, bool drawLeafs)> draw_object_leaf;
+					draw_object_leaf = [&](GameObject* obj, bool drawLeafs) {
+						int flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+						if (object == obj) flags |= ImGuiTreeNodeFlags_Selected;
+						if (obj->GetChildren().empty()) flags |= ImGuiTreeNodeFlags_Leaf;
+
+						bool open = ImGui::TreeNodeEx(obj->Name.c_str(), flags);
+						if (ImGui::IsItemClicked() || ImGui::IsItemFocused()) object = obj;
+						src_dragndrop(obj);
+						dst_dragndrop(obj);
+						if (open) {
+							for (const auto& child : obj->GetChildren())
+								draw_object_leaf(child, drawLeafs);
+							ImGui::TreePop();
+						}
+
+						do_object_logic(obj);
+					};
+
+					if (MFind.empty())
 					{
-						if (Obj->GetParent() != nullptr) continue;
-						draw_object_leaf(Obj.Get());
+						for (auto& Obj : scene->Objects.Resources)
+						{
+							if (Obj->GetParent() != nullptr) continue;
+							draw_object_leaf(Obj.Get(), true);
+						}
+					}
+					else
+					{
+						for (auto& Obj : scene->Objects.Resources)
+						{
+							MName = str_tolower(Obj->Name);
+
+							if (MName.find(MFind) != String::npos)
+							{
+								auto selected = ImGui::Selectable(Obj->Name.c_str(), object == Obj.Get());
+								if (selected || ImGui::IsItemFocused())
+								{
+									object = Obj.Get();
+								}
+
+								do_object_logic(object);
+							}
+						}
 					}
 
 					/*for (auto& Obj : scene->Objects.Resources)

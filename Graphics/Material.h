@@ -44,6 +44,13 @@ namespace Columbus
 			Never,
 			Always
 		};
+
+		enum class EnvMap
+		{
+			None,
+			Sky,
+			Auto
+		};
 	public:
 		std::string Name = "None";
 
@@ -53,6 +60,7 @@ namespace Columbus
 
 		Cull Culling = Cull::Back;
 		DepthTest DepthTesting = DepthTest::LEqual;
+		EnvMap EnvMapMode = EnvMap::Auto;
 		bool DepthWriting = true;
 		bool Transparent = false;
 		bool Lighting = true;

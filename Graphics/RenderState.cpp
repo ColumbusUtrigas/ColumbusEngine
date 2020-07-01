@@ -55,6 +55,19 @@ namespace Columbus
 		auto CurrentShader = InMaterial.GetShader();
 		if (CurrentShader != nullptr)
 		{
+			Texture* envMaps[2];
+			switch (InMaterial.EnvMapMode)
+			{
+			case Material::EnvMap::None:
+				envMaps[0] = envMaps[1] = nullptr;
+				break;
+			case Material::EnvMap::Sky:
+			case Material::EnvMap::Auto:
+				envMaps[0] = Sky ? Sky->GetIrradianceMap() : nullptr;
+				envMaps[1] = Sky ? Sky->GetPrefilterMap() : nullptr;
+				break;
+			}
+
 			Texture* Textures[11] =
 			{
 				InMaterial.AlbedoMap,
@@ -65,8 +78,8 @@ namespace Columbus
 				InMaterial.EmissionMap,
 				InMaterial.DetailAlbedoMap,
 				InMaterial.DetailNormalMap,
-				Sky ? Sky->GetIrradianceMap() : nullptr,
-				Sky ? Sky->GetPrefilterMap() : nullptr,
+				envMaps[0],
+				envMaps[1],
 				gDevice->GetDefaultTextures()->IntegrationLUT.get()
 			};
 
@@ -102,6 +115,12 @@ namespace Columbus
 				Shader->SetUniform("HasOcclusionMap", InMaterial.OcclusionMap != nullptr);
 				Shader->SetUniform("HasDetailAlbedoMap", InMaterial.DetailAlbedoMap != nullptr);
 				Shader->SetUniform("HasDetailNormalMap", InMaterial.DetailNormalMap != nullptr);
+
+				Shader->SetUniform("Resolution", ContextSize);
+				if (TranslucentTex != nullptr)
+				{
+					Shader->SetUniform("Translucent", (TextureOpenGL*)TranslucentTex, 13);
+				}
 
 				if (ShadowTexture != nullptr)
 				{
