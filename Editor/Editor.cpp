@@ -231,8 +231,8 @@ namespace Columbus
 		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
 		PanelRenderSettings.SetRenderer(&Render);
-		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
-		PanelScene.SetPickedObject(PanelHierarchy.GetObject());
+		PanelInspector.SetInspectableObject(PanelHierarchy.GetCurrentObject());
+		PanelScene.SetPickedObject(PanelHierarchy.GetCurrentObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
 		PanelScene.Draw(scene, Render);
