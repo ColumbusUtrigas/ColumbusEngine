@@ -43,6 +43,9 @@ namespace Columbus
 				for (int j = 0; j < SubModels[i].VerticesCount; j++)
 				{
 					auto vid = shapes[i].mesh.indices[j].texcoord_index;
+					if (vid == -1)
+						vid = j;
+
 					SubModels[i].UVs[j].X = attrib.texcoords[2.0 * vid + 0];
 					SubModels[i].UVs[j].Y = attrib.texcoords[2.0 * vid + 1];
 				}
