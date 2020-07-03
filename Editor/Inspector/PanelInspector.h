@@ -7,12 +7,9 @@
 namespace Columbus
 {
 
-	class EditorPanelInspector
+	class EditorPanelInspector : public EditorPanel
 	{
 	private:
-		friend class Editor;
-
-		bool Opened = true;
 		GameObject* Inspectable = nullptr;
 
 		void DrawAddComponent(Scene& Scn);
