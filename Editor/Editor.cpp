@@ -219,7 +219,7 @@ namespace Columbus
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &lat);
 		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
-		io.Fonts->AddFontFromFileTTF("./Data/FontAwesome5.ttf", 12.0f, &icons, icons_ranges);
+		io.Fonts->AddFontFromFileTTF("./Data/Font.ttf", 12.0f, &icons, icons_ranges);
 		io.Fonts->Build();
 	}
 
