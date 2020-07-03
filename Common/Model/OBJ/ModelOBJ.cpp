@@ -22,8 +22,7 @@ namespace Columbus
 
 		if (!res) return false;
 
-		SubModelsCount = shapes.size();
-		SubModels = new SubModel[SubModelsCount];
+		SubModels.resize(shapes.size());
 
 		for (int i = 0; i < shapes.size(); i++)
 		{
