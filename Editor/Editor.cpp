@@ -219,7 +219,7 @@ namespace Columbus
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &lat);
 		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
-		io.Fonts->AddFontFromFileTTF("./Data/FontAwesome5.ttf", 12.0f, &icons, icons_ranges);
+		io.Fonts->AddFontFromFileTTF("./Data/Font.ttf", 12.0f, &icons, icons_ranges);
 		io.Fonts->Build();
 	}
 
@@ -231,8 +231,8 @@ namespace Columbus
 		PanelHierarchy.SetScene(&scene);
 		Size = PanelScene.GetSize();
 		PanelRenderSettings.SetRenderer(&Render);
-		PanelInspector.SetInspectableObject(PanelHierarchy.GetObject());
-		PanelScene.SetPickedObject(PanelHierarchy.GetObject());
+		PanelInspector.SetInspectableObject(PanelHierarchy.GetCurrentObject());
+		PanelScene.SetPickedObject(PanelHierarchy.GetCurrentObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
 
 		PanelScene.Draw(scene, Render);

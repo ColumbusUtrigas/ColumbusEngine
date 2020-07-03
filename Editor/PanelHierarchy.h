@@ -21,7 +21,7 @@ namespace Columbus
 			scene = Scn;
 		}
 
-		GameObject* GetObject() const
+		GameObject* GetCurrentObject() const
 		{
 			return object;
 		}
