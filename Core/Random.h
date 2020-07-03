@@ -14,7 +14,7 @@ namespace Columbus
 		template <typename Type>
 		static Type Range(const Type Min, const Type Max)
 		{
-			return (Type)((double)rand() / RAND_MAX * (Max - Min) + Min);
+			return ((Type)rand() / RAND_MAX * (Max - Min) + Min);
 		}
 	};
 
