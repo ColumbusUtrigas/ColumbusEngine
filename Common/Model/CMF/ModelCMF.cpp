@@ -94,8 +94,7 @@ namespace Columbus
 
 			if (Data == nullptr) return false;
 
-			SubModelsCount = 1;
-			SubModels = new SubModel[SubModelsCount];
+			SubModels.resize(1);
 
 			SubModels[0].VerticesCount = Header.NumVertices;
 
