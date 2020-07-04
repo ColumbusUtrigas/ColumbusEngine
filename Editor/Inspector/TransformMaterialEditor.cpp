@@ -193,7 +193,6 @@ namespace Columbus
 					if (ImGui::Button("Create")) Selected = 2;
 				}
 				ImGui::EndChild();
-				ImGui::EndPopup();
 
 				if (Selected != 0)
 				{
@@ -212,6 +211,7 @@ namespace Columbus
 				}
 				ImGui::PopID();
 			}
+			ImGui::EndPopup();
 		}
 	}
 

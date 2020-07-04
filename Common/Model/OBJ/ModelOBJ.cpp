@@ -22,8 +22,7 @@ namespace Columbus
 
 		if (!res) return false;
 
-		SubModelsCount = shapes.size();
-		SubModels = new SubModel[SubModelsCount];
+		SubModels.resize(shapes.size());
 
 		for (int i = 0; i < shapes.size(); i++)
 		{
@@ -44,6 +43,9 @@ namespace Columbus
 				for (int j = 0; j < SubModels[i].VerticesCount; j++)
 				{
 					auto vid = shapes[i].mesh.indices[j].texcoord_index;
+					if (vid == -1)
+						vid = j;
+
 					SubModels[i].UVs[j].X = attrib.texcoords[2.0 * vid + 0];
 					SubModels[i].UVs[j].Y = attrib.texcoords[2.0 * vid + 1];
 				}
@@ -55,6 +57,8 @@ namespace Columbus
 				for (int j = 0; j < SubModels[i].VerticesCount; j++)
 				{
 					auto vid = shapes[i].mesh.indices[j].normal_index;
+					if (vid == -1)
+						vid = j;
 					SubModels[i].Normals[j].X = attrib.normals[3.0 * vid + 0];
 					SubModels[i].Normals[j].Y = attrib.normals[3.0 * vid + 1];
 					SubModels[i].Normals[j].Z = attrib.normals[3.0 * vid + 2];

@@ -25,19 +25,18 @@ namespace Columbus
 			}
 
 			SubModels = Loader->SubModels;
-			SubModelsCount = Loader->SubModelsCount;
 			RecalculateBounds();
 			RecalculateTangents();
 
 			delete Loader;
 
-			for (int a = 0; a < SubModelsCount; a++)
+			for (auto& model : SubModels)
 			{
-				if (SubModels[a].UVs != nullptr)
+				if (model.UVs != nullptr)
 				{
-					for (uint32 i = 0; i < SubModels[a].VerticesCount; i++)
+					for (uint32 i = 0; i < model.VerticesCount; i++)
 					{
-						SubModels[a].UVs[i].Y = 1.0f - SubModels[a].UVs[i].Y;
+						model.UVs[i].Y = 1.0f - model.UVs[i].Y;
 					}
 				}
 			}
@@ -54,25 +53,22 @@ namespace Columbus
 		{
 			SubModels[i].FreeData();
 		}
-
-		delete[] SubModels;
-		SubModelsCount = 0;
 	}
 
 	void Model::RecalculateBounds()
 	{
-		for (int a = 0; a < GetSubModelsCount(); a++)
+		for (auto& model : SubModels)
 		{
-			if (SubModels[a].Positions != nullptr)
+			if (model.Positions != nullptr)
 			{
-				for (uint32 i = 0; i < SubModels[a].VerticesCount; i++)
+				for (uint32 i = 0; i < model.VerticesCount; i++)
 				{
-					if (SubModels[a].Positions[i].X < SubModels[a].BoundingBox.Min.X) SubModels[a].BoundingBox.Min.X = SubModels[a].Positions[i].X;
-					if (SubModels[a].Positions[i].X > SubModels[a].BoundingBox.Max.X) SubModels[a].BoundingBox.Max.X = SubModels[a].Positions[i].X;
-					if (SubModels[a].Positions[i].Y < SubModels[a].BoundingBox.Min.Y) SubModels[a].BoundingBox.Min.Y = SubModels[a].Positions[i].Y;
-					if (SubModels[a].Positions[i].Y > SubModels[a].BoundingBox.Max.Y) SubModels[a].BoundingBox.Max.Y = SubModels[a].Positions[i].Y;
-					if (SubModels[a].Positions[i].Z < SubModels[a].BoundingBox.Min.Z) SubModels[a].BoundingBox.Min.Z = SubModels[a].Positions[i].Z;
-					if (SubModels[a].Positions[i].Z > SubModels[a].BoundingBox.Max.Z) SubModels[a].BoundingBox.Max.Z = SubModels[a].Positions[i].Z;
+					if (model.Positions[i].X < model.BoundingBox.Min.X) model.BoundingBox.Min.X = model.Positions[i].X;
+					if (model.Positions[i].X > model.BoundingBox.Max.X) model.BoundingBox.Max.X = model.Positions[i].X;
+					if (model.Positions[i].Y < model.BoundingBox.Min.Y) model.BoundingBox.Min.Y = model.Positions[i].Y;
+					if (model.Positions[i].Y > model.BoundingBox.Max.Y) model.BoundingBox.Max.Y = model.Positions[i].Y;
+					if (model.Positions[i].Z < model.BoundingBox.Min.Z) model.BoundingBox.Min.Z = model.Positions[i].Z;
+					if (model.Positions[i].Z > model.BoundingBox.Max.Z) model.BoundingBox.Max.Z = model.Positions[i].Z;
 				}
 			}
 		}
@@ -85,25 +81,25 @@ namespace Columbus
 		Vector3 Tangent;
 		float R;
 
-		for (int a = 0; a < SubModelsCount; a++)
+		for (auto& model : SubModels)
 		{
-			if (SubModels[a].Positions != nullptr && SubModels[a].UVs != nullptr && SubModels[a].Normals != nullptr)
+			if (model.Positions != nullptr && model.UVs != nullptr && model.Normals != nullptr)
 			{
-				delete[] SubModels[a].Tangents;
-				SubModels[a].Tangents = new Vector3[SubModels[a].VerticesCount];
+				delete[] model.Tangents;
+				model.Tangents = new Vector3[model.VerticesCount];
 
-				for (uint32 i = 0; i < SubModels[a].VerticesCount; i += 3)
+				for (uint32 i = 0; i < model.VerticesCount; i += 3)
 				{
-					DeltaPos[0] = SubModels[a].Positions[i + 1] - SubModels[a].Positions[i];
-					DeltaPos[1] = SubModels[a].Positions[i + 2] - SubModels[a].Positions[i];
+					DeltaPos[0] = model.Positions[i + 1] - model.Positions[i];
+					DeltaPos[1] = model.Positions[i + 2] - model.Positions[i];
 
-					DeltaUV[0] = SubModels[a].UVs[i + 1] - SubModels[a].UVs[i];
-					DeltaUV[1] = SubModels[a].UVs[i + 2] - SubModels[a].UVs[i];
+					DeltaUV[0] = model.UVs[i + 1] - model.UVs[i];
+					DeltaUV[1] = model.UVs[i + 2] - model.UVs[i];
 
 					R = 1.0f / (DeltaUV[0].X * DeltaUV[1].Y - DeltaUV[0].Y * DeltaUV[1].X);
 					Tangent = R * (DeltaPos[0] * DeltaUV[1].Y - DeltaPos[1] * DeltaUV[0].Y);
 
-					for (int j = 0; j < 3; j++) SubModels[a].Tangents[i + j] = Tangent;
+					for (int j = 0; j < 3; j++) model.Tangents[i + j] = Tangent;
 				}
 			}
 		}

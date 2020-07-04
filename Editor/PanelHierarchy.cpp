@@ -29,6 +29,8 @@ namespace Columbus
 				}
 				ImGui::EndChild();
 
+				if (ImGui::Button("Add Empty"))
+					scene->AddEmpty();
 
 				if (ImGui::BeginChild("##List_PanelHierarchy"))
 				{

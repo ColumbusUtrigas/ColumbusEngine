@@ -52,8 +52,7 @@ namespace Columbus
 	class ModelLoader
 	{
 	public:
-		SubModel* SubModels = nullptr;
-		uint32 SubModelsCount = 0;
+		std::vector<SubModel> SubModels;
 	public:
 		virtual bool Load(const char* File) = 0;
 		virtual ~ModelLoader() {}
@@ -64,8 +63,7 @@ namespace Columbus
 	private:
 		Box BoundingBox;
 
-		SubModel* SubModels = nullptr;
-		uint32 SubModelsCount = 0;
+		std::vector<SubModel> SubModels;
 	public:
 		Model();
 
@@ -74,8 +72,8 @@ namespace Columbus
 		void RecalculateBounds();
 		void RecalculateTangents();
 
-		uint32 GetSubModelsCount() const { return SubModelsCount;  }
-		bool HasSubMeshes() const { return SubModelsCount != 0; }
+		uint32 GetSubModelsCount() const { return SubModels.size();  }
+		bool HasSubMeshes() const { return SubModels.empty(); }
 		const SubModel& GetSubModel(int index) const { return SubModels[index]; }
 		Box GetBoundingBox() const { return BoundingBox; }
 		
