@@ -91,19 +91,24 @@ namespace Columbus
 			Objects.Add(SmartPointer<GameObject>(New), New->Name);
 		}
 
-		void AddEmpty()
+		void AddEmpty(const String& Name = "")
 		{
 			GameObject GO;
-			String Name = "Object ";
-			for (uint32 i = 0;; i++)
+			String ResName = Name;
+			if (Name.empty())
 			{
-				if (Objects.Find(Name + std::to_string(i)) == nullptr)
+				ResName = "Object ";
+				for (uint32 i = 0;; i++)
 				{
-					Name += std::to_string(i);
-					break;
+					if (Objects.Find(ResName + std::to_string(i)) == nullptr)
+					{
+						ResName += std::to_string(i);
+						break;
+					}
 				}
 			}
-			GO.Name = Name;
+
+			GO.Name = ResName;
 			Add(std::move(GO));
 		}
 
