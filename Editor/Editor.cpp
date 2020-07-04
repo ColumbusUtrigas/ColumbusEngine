@@ -122,7 +122,7 @@ namespace Columbus
 			if (ImGui::BeginMenu("GameObject"))
 			{
 				ImGui::Spacing();
-				if (ImGui::MenuItem("Empty")) scene.AddEmpty();
+				if (ImGui::MenuItem("Add Empty")) scene.AddEmpty();
 				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
