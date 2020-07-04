@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui/imgui.h>
+#include <Core/String.h>
 
 namespace Columbus
 {
@@ -13,6 +14,8 @@ namespace Columbus
 
 	void FlagButton(const char* name, bool& enabled);
 	void ShowTooltipDelayed(float delay, const char* fmt, ...);
+
+	const char* GetFileIcon(const std::string& ext);
 
 }
 

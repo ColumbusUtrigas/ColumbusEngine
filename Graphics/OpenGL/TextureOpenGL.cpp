@@ -1,4 +1,5 @@
 #include <Graphics/OpenGL/TextureOpenGL.h>
+#include <Math/MathUtil.h>
 #include <GL/glew.h>
 
 namespace Columbus
@@ -326,6 +327,7 @@ namespace Columbus
 					{
 						glCompressedTexImage2D(Target, Level, InternalFormat, Width >> Level, Height >> Level, 0, InImage.GetSize(Level), InImage.Get2DData(Level));
 					}
+					MipmapsCount = InImage.GetMipmapsCount();
 
 					break;
 				}
@@ -342,6 +344,8 @@ namespace Columbus
 						}
 					}
 
+					MipmapsCount = InImage.GetMipmapsCount();
+
 					break;
 				}
 
@@ -357,6 +361,7 @@ namespace Columbus
 					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 					glTexImage2D(Target, 0, InternalFormat, Width, Height, 0, PixelFormat, PixelType, InImage.Get2DData(0));
 					glGenerateMipmap(Target);
+					MipmapsCount = 1 + floor(log2(Math::Max(Width, Height)));
 
 					break;
 				}
@@ -373,6 +378,7 @@ namespace Columbus
 					}
 
 					glGenerateMipmap(Target);
+					MipmapsCount = 1 + floor(log2(Math::Max(Width, Height)));
 
 					break;
 				}
@@ -444,6 +450,7 @@ namespace Columbus
 		Height = Desc.Height;
 		Format = Desc.Format;
 		Multisampling = Desc.Multisampling;
+		MipmapsCount = 1;
 
 		bool Compressed = false;
 
@@ -484,6 +491,7 @@ namespace Columbus
 		Width = Desc.Width;
 		Height = Desc.Height;
 		Format = Desc.Format;
+		MipmapsCount = 1;
 
 		bool Compressed = false;
 

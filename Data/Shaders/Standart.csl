@@ -50,6 +50,8 @@ in float3x3 varTBN;
 #uniform TextureCube EnvironmentMap
 #uniform Texture2D   IntegrationMap
 
+#uniform float2 Resolution
+#uniform Texture2D Translucent
 #uniform Texture2DShadow Shadow
 
 #uniform bool HasAlbedoMap
@@ -232,8 +234,14 @@ void Final(void)
 	RT0 = Color;
 	RT1 = float4(_Normal, 1);
 
-	if (!Transparent && Color.a < 1.0) discard;
 	if (Transparent && Color.a == 1.0) discard;
+	if (Transparent)
+	{
+		RT0.rgb = mix(BicubicSample2DLod(Translucent, SV_Position.xy / Resolution, _Roughness * 5).rgb, Color.rgb, Color.a);
+		RT0.a = 1;
+	}
+
+	if (!Transparent && Color.a < 1.0) discard;
 }
 
 

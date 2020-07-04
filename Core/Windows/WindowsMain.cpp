@@ -18,6 +18,8 @@ using namespace Columbus;
 #include <imgui/examples/imgui_impl_win32.h>
 #include <Windows.h>
 
+#include <Core/FileDialog.h>
+
 #ifdef PLATFORM_WINDOWS
 //Hint to the driver to use discrete GPU
 extern "C"
@@ -372,6 +374,11 @@ int main(int argc, char** argv)
 				camera.Pos -= camera.Right() * deltaMouse.X * 0.1f;
 				camera.Pos += camera.Up() * deltaMouse.Y * 0.1f;
 				ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+			}
+
+			if (input.GetKeyDown('O'))
+			{
+				EngineOpenFileDialog();
 			}
 
 			camera.Pos += camera.Direction() * wheel * RedrawTime;

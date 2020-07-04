@@ -1,4 +1,5 @@
 #include <Core/Filesystem.h>
+#include <filesystem>
 #include <stdio.h>
 
 namespace Columbus
@@ -66,6 +67,28 @@ namespace Columbus
 			Result.push_back(Path.substr(Start));
 
 		return Result;
+	}
+
+	bool Filesystem::Exists(const std::string& path)
+	{
+		return std::filesystem::exists(path);
+	}
+
+	bool Filesystem::CreateDirectory(const std::string& path)
+	{
+		return std::filesystem::create_directory(path);
+	}
+
+	bool Filesystem::CreateDirectories(const std::string& path)
+	{
+		return std::filesystem::create_directories(path);
+	}
+
+	bool Filesystem::IsImage(const std::string& ext)
+	{
+		std::string e = str_tolower(ext);
+		if (e == "tga" || e == "bmp" || e == "dds" || e == "tif" || e == "tiff" ||
+			e == "jpg" || e == "jpeg" || e == "png") return true;
 	}
 
 }

@@ -72,6 +72,69 @@ namespace Columbus
 
 		return ImageFormat::Unknown;
 	}
+
+	uint64 ImageGetSize(uint32 Width, uint32 Height, uint32 Depth, uint32 Mips, TextureFormat Format)
+	{
+		uint64 Size = 0;
+
+		if (ImageIsCompressedFormat(Format))
+		{
+			uint32 BlockSize = GetBlockSizeFromFormat(Format);
+			for (int Level = 0; Level < Mips; Level++)
+			{
+				Size += (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
+			}
+		}
+		else
+		{
+			uint32 BPP = GetBPPFromFormat(Format);
+			for (int Level = 0; Level < Mips; Level++)
+			{
+				Size += (Width >> Level) * (Height >> Level) * BPP;
+			}
+		}
+
+		return Size * Depth;
+	}
+
+	bool ImageIsRawFormat(TextureFormat Format)
+	{
+		return (Format == TextureFormat::R8 ||
+		        Format == TextureFormat::RG8 ||
+		        Format == TextureFormat::RGB8 ||
+		        Format == TextureFormat::RGBA8);
+	}
+
+	bool ImageIsUnsignedShortFormat(TextureFormat Format)
+	{
+		return (Format == TextureFormat::R16 ||
+		        Format == TextureFormat::RG16 ||
+		        Format == TextureFormat::RGB16 ||
+		        Format == TextureFormat::RGBA16);
+	}
+
+	bool ImageIsHalfFormat(TextureFormat Format)
+	{
+		return (Format == TextureFormat::R16F ||
+		        Format == TextureFormat::RG16F ||
+		        Format == TextureFormat::RGB16F ||
+		        Format == TextureFormat::RGBA16F);
+	}
+
+	bool ImageIsFloatFormat(TextureFormat Format)
+	{
+		return (Format == TextureFormat::R32F ||
+		        Format == TextureFormat::RG32F ||
+		        Format == TextureFormat::RGB32F ||
+		        Format == TextureFormat::RGBA32F);
+	}
+
+	bool ImageIsCompressedFormat(TextureFormat Format)
+	{
+		return (Format == TextureFormat::DXT1 ||
+		        Format == TextureFormat::DXT3 ||
+		        Format == TextureFormat::DXT5);
+	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
@@ -362,41 +425,27 @@ namespace Columbus
 
 	bool Image::IsRawFormat() const
 	{
-		return (Format == TextureFormat::R8 ||
-		        Format == TextureFormat::RG8 ||
-		        Format == TextureFormat::RGB8 ||
-		        Format == TextureFormat::RGBA8);
+		return ImageIsRawFormat(Format);
 	}
 
 	bool Image::IsUnsignedShortFormat() const
 	{
-		return (Format == TextureFormat::R16 ||
-		        Format == TextureFormat::RG16 ||
-		        Format == TextureFormat::RGB16 ||
-		        Format == TextureFormat::RGBA16);
+		return ImageIsUnsignedShortFormat(Format);
 	}
 
 	bool Image::IsHalfFormat() const
 	{
-		return (Format == TextureFormat::R16F ||
-		        Format == TextureFormat::RG16F ||
-		        Format == TextureFormat::RGB16F ||
-		        Format == TextureFormat::RGBA16F);
+		return ImageIsHalfFormat(Format);
 	}
 
 	bool Image::IsFloatFormat() const
 	{
-		return (Format == TextureFormat::R32F ||
-		        Format == TextureFormat::RG32F ||
-		        Format == TextureFormat::RGB32F ||
-		        Format == TextureFormat::RGBA32F);
+		return ImageIsFloatFormat(Format);
 	}
 
 	bool Image::IsCompressedFormat() const
 	{
-		return (Format == TextureFormat::DXT1 ||
-		        Format == TextureFormat::DXT3 ||
-		        Format == TextureFormat::DXT5);
+		return ImageIsCompressedFormat(Format);
 	}
 
 	Image::Type Image::GetType() const
@@ -431,39 +480,7 @@ namespace Columbus
 
 	uint32 Image::GetBytesPerBlock() const
 	{
-		switch (Format)
-		{
-			case TextureFormat::DXT1: return 8;  break;
-			case TextureFormat::DXT3: return 16; break;
-			case TextureFormat::DXT5: return 16; break;
-
-			case TextureFormat::R8:
-			case TextureFormat::RG8:
-			case TextureFormat::RGB8:
-			case TextureFormat::RGBA8:
-			case TextureFormat::R16:
-			case TextureFormat::RG16:
-			case TextureFormat::RGB16:
-			case TextureFormat::RGBA16:
-			case TextureFormat::R16F:
-			case TextureFormat::RG16F:
-			case TextureFormat::RGB16F:
-			case TextureFormat::RGBA16F:
-			case TextureFormat::R32F:
-			case TextureFormat::RG32F:
-			case TextureFormat::RGB32F:
-			case TextureFormat::RGBA32F:
-			case TextureFormat::R11G11B10F: break;
-			case TextureFormat::Depth:
-			case TextureFormat::Depth16:
-			case TextureFormat::Depth24:
-			case TextureFormat::Depth24Stencil8:
-			case TextureFormat::Depth32F:
-			case TextureFormat::Depth32FStencil8:
-			case TextureFormat::Unknown: return 0; break;
-		}
-
-		return 0;
+		return GetBlockSizeFromFormat(Format);
 	}
 
 	uint64 Image::GetOffset(uint32 Level) const

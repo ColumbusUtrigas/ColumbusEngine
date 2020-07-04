@@ -125,6 +125,9 @@ namespace Columbus
 		virtual void SetFlags(Flags F) = 0;
 		Flags GetFlags() const { return TextureFlags; }
 
+		uint32 GetMipmapsCount() const { return MipmapsCount; }
+		uint32 GetWidth() const { return Width; }
+		uint32 GetHeight() const { return Height; }
 		uint32 GetMultisampling() const { return Multisampling; }
 		TextureFormat GetFormat() const { return Format; }
 		Type GetType() const { return TextureType; }

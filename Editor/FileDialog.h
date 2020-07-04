@@ -30,6 +30,7 @@ namespace Columbus
 		std::vector<FileInfo> SelectedFiles;
 
 		MessageBox* Message = nullptr;
+		void _Open();
 	public:
 		EditorFileDialog() : Path("./") {}
 		EditorFileDialog(const String& Path, const std::vector<std::string>& Filter = {})
@@ -41,6 +42,7 @@ namespace Columbus
 			_Type = type;
 			SelectedFiles.clear();
 			SaveFile = FileInfo();
+			_Open();
 		}
 		void Close() { CloseFlag = true; }
 		void ShowHidden(bool Show) { Hidden = Show; }

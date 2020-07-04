@@ -21,23 +21,9 @@ namespace Columbus
 		return Result.empty() ? Decomposed[0] : Result;
 	}
 
-	static const char* GetFileIcon(const String& Ext)
+	void EditorFileDialog::_Open()
 	{
-		std::string e = str_tolower(Ext);
-
-		if (e == "tga" || e == "bmp" || e == "dds" || e == "tif" || e == "tiff" ||
-		    e == "jpg" || e == "jpeg" || e == "png") return ICON_FA_FILE_IMAGE;
-		if (e == "wav" || e == "mp3" || e == "ogg") return ICON_FA_MUSIC;
-		if (e == "json" || e == "glsl" || e == "hlsl" || e == "csl") return ICON_FA_CODE;
-		if (e == "hdr" || e == "exr") return ICON_FA_FILE_IMAGE;
-		if (e == "scene") return ICON_FA_STRIKETHROUGH;
-		if (e == "lig") return LIGHT_ICON;
-		if (e == "mat") return MATERIAL_ICON;
-		if (e == "par") return PARTICLES_ICON;
-		if (e == "cmf" || e == "obj" || e == "dae" || e == "fbx") return MESH_ICON;
-		if (e == "ttf") return ICON_FA_FONT;
-
-		return ICON_FA_FILE;
+		
 	}
 
 	bool EditorFileDialog::Draw(const String& Name)

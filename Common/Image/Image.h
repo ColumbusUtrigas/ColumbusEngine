@@ -107,6 +107,13 @@ namespace Columbus
 	ImageFormat ImageGetFormat(const char* FileName);
 	uint32 GetBPPFromFormat(TextureFormat Format);
 	uint32 GetBlockSizeFromFormat(TextureFormat Format);
+	uint64 ImageGetSize(uint32 Width, uint32 Height, uint32 Depth, uint32 Mips, TextureFormat Format);
+
+	bool ImageIsRawFormat(TextureFormat Format);
+	bool ImageIsUnsignedShortFormat(TextureFormat Format);
+	bool ImageIsHalfFormat(TextureFormat Format);
+	bool ImageIsFloatFormat(TextureFormat Format);
+	bool ImageIsCompressedFormat(TextureFormat Format);
 
 	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
