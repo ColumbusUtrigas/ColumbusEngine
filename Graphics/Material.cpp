@@ -53,6 +53,9 @@ namespace Columbus
 	
 	void Material::SetShader(ShaderProgram* InShader)
 	{
+		if (!InShader)
+			return;
+
 		ShaderProg = InShader;
 		_Properties = ShaderProg->GetProperties();
 	}
