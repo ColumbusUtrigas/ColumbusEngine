@@ -7,6 +7,11 @@ namespace Columbus
 
 	Device::Device() {}
 
+	GraphicsAPI Device::GetCurrentAPI()
+	{
+		return _currentApi;
+	}
+
 	void Device::Initialize()
 	{
 		gDefaultShaders = new DefaultShaders();

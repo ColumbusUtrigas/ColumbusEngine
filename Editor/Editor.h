@@ -8,9 +8,11 @@
 #include <Editor/PanelProfiler.h>
 #include <Editor/PanelConsole.h>
 #include <Editor/PanelAssets.h>
+#include <Editor/PanelTexture.h>
 #include <Graphics/Render.h>
 
 #include <Math/Vector2.h>
+#include <memory>
 
 namespace Columbus
 {
@@ -29,6 +31,7 @@ namespace Columbus
 		EditorPanelProfiler PanelProfiler;
 		EditorPanelConsole PanelConsole;
 		EditorPanelAssets PanelAssets;
+		std::shared_ptr<EditorPanelTexture> PanelTexture { new EditorPanelTexture() };
 	public:
 		Editor();
 

@@ -20,8 +20,12 @@ namespace Columbus
 	private:
 		DefaultShaders* gDefaultShaders = nullptr;
 		DefaultTextures* gDefaultTextures = nullptr;
+	protected:
+		GraphicsAPI _currentApi = GraphicsAPI::None;
 	public:
 		Device();
+
+		GraphicsAPI GetCurrentAPI();
 
 		void Initialize();
 		void Shutdown();

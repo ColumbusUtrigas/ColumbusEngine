@@ -1,7 +1,10 @@
 #include <Editor/CommonUI.h>
 #include <Editor/Icons.h>
+#include <Graphics/Device.h>
 #include <Core/Filesystem.h>
 #include <imgui_internal.h>
+
+#include <Graphics/OpenGL/TextureOpenGL.h>
 
 namespace Columbus
 {
@@ -85,5 +88,22 @@ namespace ImGui
 		ImGui::EndChild();
 
 		return Open;
+	}
+
+	void Image(Columbus::Texture* texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col)
+	{
+		switch (Columbus::gDevice->GetCurrentAPI())
+		{
+			case Columbus::GraphicsAPI::None: break;
+			case Columbus::GraphicsAPI::OpenGL:
+			{
+				ImTextureID id = nullptr;
+				if (texture)
+					id = (ImTextureID)static_cast<Columbus::TextureOpenGL*>(texture)->GetID();
+
+				Image(id, size, uv0, uv1, tint_col, border_col);
+				break;
+			}
+		}
 	}
 }

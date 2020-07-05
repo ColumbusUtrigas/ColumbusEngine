@@ -108,6 +108,9 @@ namespace Columbus
 	uint32 GetBPPFromFormat(TextureFormat Format);
 	uint32 GetBlockSizeFromFormat(TextureFormat Format);
 	uint64 ImageGetSize(uint32 Width, uint32 Height, uint32 Depth, uint32 Mips, TextureFormat Format);
+	size_t ImageGetNumChannelsFromFormat(TextureFormat format);
+
+	const char* TextureFormatToString(TextureFormat format);
 
 	bool ImageIsRawFormat(TextureFormat Format);
 	bool ImageIsUnsignedShortFormat(TextureFormat Format);
@@ -212,6 +215,7 @@ namespace Columbus
 
 		uint64 GetOffset(uint32 Level) const;
 		uint64 GetSize(uint32 Level) const;
+		size_t GetNumChannels() const;
 
 		uint8* Get2DData(uint32 Level = 0) const;
 		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;

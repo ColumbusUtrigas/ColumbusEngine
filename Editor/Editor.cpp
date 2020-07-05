@@ -118,6 +118,8 @@ namespace Columbus
 				ImGui::Spacing();
 				ImGui::MenuItem("Assets", nullptr, &PanelAssets.Opened);
 				ImGui::Spacing();
+				ImGui::MenuItem("Texture", nullptr, &PanelTexture->Opened);
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
@@ -236,6 +238,7 @@ namespace Columbus
 		PanelInspector.SetInspectableObject(PanelHierarchy.GetCurrentObject());
 		PanelScene.SetPickedObject(PanelHierarchy.GetCurrentObject());
 		PanelProfiler.SetRedrawTime(RedrawTime);
+		PanelAssets.SetTexturePreview(PanelTexture);
 
 		PanelScene.Draw(scene, Render);
 		PanelInspector.Draw(scene); // Inspector should be before hierarchy
@@ -244,6 +247,8 @@ namespace Columbus
 		PanelProfiler.Draw();
 		PanelConsole.Draw();
 		PanelAssets.Draw();
+		PanelTexture->Draw();
+
 		ResourcesViewerTexture::Draw(&scene);
 		ResourcesViewerShader::Draw(&scene);
 		ResourcesViewerMaterial::Draw(scene);

@@ -97,6 +97,82 @@ namespace Columbus
 		return Size * Depth;
 	}
 
+	size_t ImageGetNumChannelsFromFormat(TextureFormat format)
+	{
+		switch (format)
+		{
+		case TextureFormat::R8:
+		case TextureFormat::R16:
+		case TextureFormat::R16F:
+		case TextureFormat::R32F: return 1;
+
+		case TextureFormat::RG8:
+		case TextureFormat::RG16:
+		case TextureFormat::RG16F:
+		case TextureFormat::RG32F: return 2;
+
+		case TextureFormat::RGB8:
+		case TextureFormat::RGB16:
+		case TextureFormat::RGB16F:
+		case TextureFormat::RGB32F:
+		case TextureFormat::R11G11B10F: return 3;
+
+		case TextureFormat::RGBA8:
+		case TextureFormat::RGBA16:
+		case TextureFormat::RGBA16F:
+		case TextureFormat::RGBA32F:
+		case TextureFormat::DXT1:
+		case TextureFormat::DXT3:
+		case TextureFormat::DXT5: return 4;
+		}
+
+		return 0;
+	}
+
+	const char* TextureFormatToString(TextureFormat format)
+	{
+		switch (format)
+		{
+		case TextureFormat::R8:      return "R8";  break;
+		case TextureFormat::RG8:     return "RG8";  break;
+		case TextureFormat::RGB8:    return "RGB8";  break;
+		case TextureFormat::RGBA8:   return "RGBA8";  break;
+
+		case TextureFormat::R16:     return "R16"; break;
+		case TextureFormat::R16F:    return "R16F";  break;
+		case TextureFormat::RG16:    return "RG16"; break;
+		case TextureFormat::RG16F:   return "RG16F";  break;
+		case TextureFormat::RGB16:   return "RGB16"; break;
+		case TextureFormat::RGB16F:  return "RGB16F";  break;
+		case TextureFormat::RGBA16:  return "RGBA16"; break;
+		case TextureFormat::RGBA16F: return "RGBA16F";  break;
+
+		case TextureFormat::R32F:    return "R32F";  break;
+		case TextureFormat::RG32F:   return "RG32F";  break;
+		case TextureFormat::RGB32F:  return "RGB32F"; break;
+		case TextureFormat::RGBA32F: return "RGBA32F"; break;
+
+		case TextureFormat::R11G11B10F: return "R11G11B10F"; break;
+
+		case TextureFormat::DXT1: return "DXT1"; break;
+		case TextureFormat::DXT3: return "DXT3"; break;
+		case TextureFormat::DXT5: return "DXT5"; break;
+
+		case TextureFormat::Depth: return "Depth"; break;
+		case TextureFormat::Depth16: return "Depth16"; break;
+		case TextureFormat::Depth24: return "Depth24"; break;
+		case TextureFormat::Depth24Stencil8: return "Depth24Stencil8"; break;
+		case TextureFormat::Depth32F: return "Depth32F"; break;
+		case TextureFormat::Depth32FStencil8: return "Depth32FStencil8"; break;
+
+		case TextureFormat::Unknown: return "Unknwon";  break;
+
+		default: break;
+		}
+
+		return "Unknown";
+	}
+
 	bool ImageIsRawFormat(TextureFormat Format)
 	{
 		return (Format == TextureFormat::R8 ||
@@ -536,6 +612,11 @@ namespace Columbus
 		}
 
 		return 0;
+	}
+
+	size_t Image::GetNumChannels() const
+	{
+		return ImageGetNumChannelsFromFormat(Format);
 	}
 
 	uint8* Image::Get2DData(uint32 Level) const

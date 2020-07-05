@@ -8,16 +8,19 @@
 #include <Common/base64/base64.h>
 #include <Core/Filesystem.h>
 #include <Core/FileDialog.h>
-#include <Core/Util.h>
 
+#include <fstream>
 #include <unordered_map>
-#include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/Device.h>
 #include <Graphics/ScreenQuad.h>
 
+#include <Lib/stb/stb_dxt.h>
+#include <Lib/stb/stb_image_resize.h>
+
 namespace Columbus
 {
+
 	struct IconCache
 	{
 		std::unordered_map<std::string, Texture*> _cache;
@@ -126,14 +129,6 @@ namespace Columbus
 
 			return nullptr;
 		}
-
-		ImTextureID GetImGui(const std::string& path)
-		{
-			if (Has(path))
-				return (ImTextureID)static_cast<TextureOpenGL*>(_cache[path])->GetID();
-
-			return nullptr;
-		}
 	};
 
 
@@ -144,14 +139,17 @@ namespace Columbus
 	}
 
 	IconCache gIconCache;
-	Texture* showtex = nullptr;
-	bool openprev = false;
+	std::string textpath;
+	bool textprev = false;
 	bool loaded = false;
+
+	void EditorPanelAssets::SetTexturePreview(std::weak_ptr<EditorPanelTexture> preview)
+	{
+		_texturePreview = preview;
+	}
 
 	void EditorPanelAssets::Draw()
 	{
-		const char* const popupname = "ItemPopup";
-
 		if (Opened)
 		{
 			_goneTo = false;
@@ -162,98 +160,104 @@ namespace Columbus
 			{
 				auto files = Filesystem::Read(_current.path);
 
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoBack());
-				if (ImGui::Button(ICON_FA_ARROW_LEFT))
-					_GoBack();
-				ImGui::PopItemFlag();
-
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoForward());
-				ImGui::SameLine();
-				if (ImGui::Button(ICON_FA_ARROW_RIGHT))
-					_GoForward();
-				ImGui::PopItemFlag();
-
-				for (auto& file : files)
+				if (ImGui::BeginChild("AssetsToolbar", ImVec2(ImGui::GetWindowContentRegionWidth(), 25)))
 				{
-					if (file.Name == "." || file.Name == "..") continue;
+					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoBack());
+					if (ImGui::Button(ICON_FA_ARROW_LEFT))
+						_GoBack();
+					ImGui::PopItemFlag();
 
-					std::string icon;
-					
-					switch (file.Type)
-					{
-					case 'd': icon = ICON_FA_FOLDER; break;
-					case 'f': icon = GetFileIcon(file.Ext); break;
-					}
-					icon += ' ';
+					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoForward());
+					ImGui::SameLine();
+					if (ImGui::Button(ICON_FA_ARROW_RIGHT))
+						_GoForward();
+					ImGui::PopItemFlag();
 
-					if (Filesystem::IsImage(file.Ext))
+					static char buf[1024] = { 0 };
+					ImGui::SameLine();
+					ImGui::InputText("##Find", buf, 1024);
+				}
+				ImGui::EndChild();
+
+				if (ImGui::BeginChild("AssetsList"))
+				{
+					for (auto& file : files)
 					{
-						if (!gIconCache.Has(file.Path))
+						if (file.Name == "." || file.Name == "..") continue;
+
+						std::string icon;
+
+						switch (file.Type)
 						{
-							if (!loaded)
+						case 'd': icon = ICON_FA_FOLDER; break;
+						case 'f': icon = GetFileIcon(file.Ext); break;
+						}
+						icon += ' ';
+
+						if (Filesystem::IsImage(file.Ext))
+						{
+							if (!gIconCache.Has(file.Path))
 							{
-								gIconCache.Load(file.Path);
-								loaded = true;
+								if (!loaded)
+								{
+									gIconCache.Load(file.Path);
+									loaded = true;
+								}
+							}
+							else
+							{
+								icon = "";
+								ImGui::Image(gIconCache.Get(file.Path), ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()));
+								ImGui::SameLine();
 							}
 						}
-						else
+
+						ImGui::Selectable((icon + file.Name).c_str());
+
+						if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
 						{
-							icon = "";
-							ImGui::Image(gIconCache.GetImGui(file.Path), ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()));
-							ImGui::SameLine();
+							if (file.Type == 'd')
+								_GoTo(file.Name);
+
+							if (file.Type == 'f')
+							{
+								if (Filesystem::IsImage(file.Ext))
+								{
+									if (!_texturePreview.expired())
+									{
+										auto _preview = _texturePreview.lock();
+										_preview->Load(file.Path);
+									}
+								}
+								else
+								{
+									std::ifstream f(file.Path.c_str());
+									textpath = std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+									textprev = true;
+								}
+							}
+						}
+
+						if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+						{
+							_OpenPopup(file);
 						}
 					}
-
-					ImGui::Selectable((icon + file.Name).c_str());
-
-					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
-					{
-						if (file.Type == 'd')
-							_GoTo(file.Name);
-
-						if (file.Type == 'f' && Filesystem::IsImage(file.Ext))
-						{
-							delete showtex;
-							showtex = gDevice->CreateTexture();
-							showtex->Load(file.Path.c_str());
-							openprev = true;
-						}
-					}
-
-					if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
-					{
-						ImGui::OpenPopup(popupname);
-						_popupElement = file;
-					}
-				}
-			}
-
-			if (ImGui::BeginPopup(popupname))
-			{
-				ImGui::PushID(popupname);
-				if (ImGui::Selectable("Show in File Explorer"))
-				{
-					EngineShowInFileExplorer(_popupElement.Path.c_str(), ShowInExplorerType::Select);
 				}
 
-				ImGui::EndPopup();
-				ImGui::PopID();
+				_DrawPopup();
+				ImGui::EndChild();
 			}
 
 			ImGui::End();
 			ImGui::PopID();
 		}
 
-		if (openprev)
+		if (textprev)
 		{
-			if (ImGui::Begin("Tex Preview", &openprev))
+			if (ImGui::Begin("File Preview", &textprev))
 			{
-				uint64 size = ImageGetSize(showtex->GetWidth(), showtex->GetHeight(), 1, showtex->GetMipmapsCount(), showtex->GetFormat());
-				double dsize;
-				const char* ssize = HumanizeBytes(size, dsize);
-
-				ImGui::Text("%ix%i, %.1f %s", showtex->GetWidth(), showtex->GetHeight(), dsize, ssize);
-				ImGui::Image((void*)static_cast<TextureOpenGL*>(showtex)->GetID(), ImGui::GetWindowSize());
+				ImGui::TextUnformatted(textpath.c_str());
 			}
 			ImGui::End();
 		}
@@ -299,6 +303,27 @@ namespace Columbus
 			auto it = _history.begin();
 			std::advance(it, pointer);
 			_current = *it;
+		}
+	}
+
+	void EditorPanelAssets::_OpenPopup(const FileInfo& info)
+	{
+		ImGui::OpenPopup(_popupName);
+		_popupElement = info;
+	}
+
+	void EditorPanelAssets::_DrawPopup()
+	{
+		if (ImGui::BeginPopup(_popupName))
+		{
+			ImGui::PushID(_popupName);
+			if (ImGui::Selectable("Show in File Explorer"))
+			{
+				EngineShowInFileExplorer(_popupElement.Path.c_str(), ShowInExplorerType::Select);
+			}
+
+			ImGui::EndPopup();
+			ImGui::PopID();
 		}
 	}
 

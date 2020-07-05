@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Editor/Panel.h>
+#include <Editor/PanelTexture.h>
 #include <Core/FileInfo.h>
 #include <list>
 #include <string>
@@ -10,7 +11,21 @@ namespace Columbus
 
 	class EditorPanelAssets : public EditorPanel
 	{
+	public:
+		EditorPanelAssets();
+
+		void SetTexturePreview(std::weak_ptr<EditorPanelTexture> preview);
+		void Draw();
+
+		virtual ~EditorPanelAssets() final override;
+
 	private:
+		std::weak_ptr<EditorPanelTexture> _texturePreview;
+
+	private:
+		const char* const _popupName = "ItemPopup";
+		FileInfo _popupElement;
+
 		struct State
 		{
 			std::string path;
@@ -19,12 +34,11 @@ namespace Columbus
 		};
 
 		std::list<State> _history;
-		int pointer = 0;
-		
 		State _current;
-		FileInfo _popupElement;
-
+		int pointer = 0;
 		bool _goneTo = false;
+
+	private:
 		void _GoTo(const std::string& name);
 
 		bool _CanGoBack();
@@ -32,10 +46,9 @@ namespace Columbus
 
 		void _GoBack();
 		void _GoForward();
-	public:
-		EditorPanelAssets();
-		void Draw();
-		virtual ~EditorPanelAssets() final override;
+
+		void _OpenPopup(const FileInfo& info);
+		void _DrawPopup();
 	};
 
 }

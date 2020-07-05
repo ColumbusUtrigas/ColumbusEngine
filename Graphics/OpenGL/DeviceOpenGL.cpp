@@ -12,7 +12,7 @@ namespace Columbus
 
 	DeviceOpenGL::DeviceOpenGL()
 	{
-
+		_currentApi = GraphicsAPI::OpenGL;
 	}
 
 	ShaderProgram* DeviceOpenGL::CreateShaderProgram() const

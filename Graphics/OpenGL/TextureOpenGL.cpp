@@ -278,6 +278,7 @@ namespace Columbus
 			Width = Desc.Width;
 			Height = Desc.Height;
 			Format = Desc.Format;
+			MipmapsCount = 1;
 
 			bool Compressed;
 
@@ -629,6 +630,8 @@ namespace Columbus
 			glBindTexture(Target, ID);
 			glGenerateMipmap(Target);
 			glBindTexture(Target, 0);
+
+			MipmapsCount = 1 + floor(log2(Math::Max(Width, Height)));
 		}
 	}
 

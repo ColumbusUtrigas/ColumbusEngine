@@ -8,9 +8,10 @@ namespace Columbus
 		const char* const sizes[] = { "bytes", "KB", "MB", "GB", "TB", "PB" };
 		int sindex = 0;
 		dsize = bytes;
-		while (dsize > 1024.0)
+		while (bytes >= 1024)
 		{
 			dsize /= 1024.0;
+			bytes = dsize + 1;
 			sindex++;
 		}
 

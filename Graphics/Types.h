@@ -3,6 +3,12 @@
 namespace Columbus
 {
 
+	enum class GraphicsAPI
+	{
+		None,
+		OpenGL
+	};
+
 	struct SubresourceData
 	{
 		const void* pSysMem;
