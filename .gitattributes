@@ -1,0 +1,2 @@
+*.scene linguist-language=json
+*.csl linguist-language=hlsl
