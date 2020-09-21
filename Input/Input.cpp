@@ -77,7 +77,7 @@ namespace Columbus
 
 	void Input::PollMouseWheelEvent(const MouseWheelEvent& E)
 	{
-		Mouse.Wheel = { E.X, E.Y };
+		Mouse.Wheel += { E.X, E.Y };
 	}
 
 	void Input::PollControllerAxisEvent(const ControllerAxisEvent& E)
@@ -239,7 +239,7 @@ namespace Columbus
 		return Mouse.CurrentPosition - Mouse.PreviousPosition;
 	}
 
-	iVector2 Input::GetMouseWheel() const
+	Vector2 Input::GetMouseWheel() const
 	{
 		return Mouse.Wheel;
 	}

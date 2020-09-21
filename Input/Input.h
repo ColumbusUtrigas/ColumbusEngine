@@ -89,7 +89,7 @@ namespace Columbus
 
 			iVector2 CurrentPosition;
 			iVector2 PreviousPosition;
-			iVector2 Wheel;
+			Vector2 Wheel;
 		};
 		
 		struct DeviceGamepad
@@ -148,7 +148,7 @@ namespace Columbus
 
 		iVector2 GetMousePosition() const;
 		iVector2 GetMouseMovement() const;
-		iVector2 GetMouseWheel() const;
+		Vector2 GetMouseWheel() const;
 
 		int GetGamepadIndexByName(const char* Name) const;
 		bool IsGamepadAttached(int Index) const;

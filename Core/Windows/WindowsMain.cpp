@@ -103,11 +103,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		e.Type = Event::Type_Mouse;
 		break;
 	case WM_MOUSEWHEEL:
-		e.MouseWheel = { 0, GET_WHEEL_DELTA_WPARAM(wparam) / WHEEL_DELTA };
+		e.MouseWheel.Y =(float)GET_WHEEL_DELTA_WPARAM(wparam) / (float)WHEEL_DELTA;
 		e.Type = Event::Type_MouseWheel;
 		break;
 	case WM_MOUSEHWHEEL:
-		e.MouseWheel = { HIWORD(lparam), 0 };
+		e.MouseWheel.X = (float)HIWORD(lparam);
 		e.Type = Event::Type_MouseWheel;
 		break;
 	case WM_KEYDOWN:
@@ -333,7 +333,7 @@ int main(int argc, char** argv)
 		{
 			if (Editor.PanelScene.IsHover())
 			{
-				wheel += input.GetMouseWheel().Y * 5;
+				wheel = input.GetMouseWheel().Y * 5;
 			}
 
 			if (input.GetMouseButton(1).State)
@@ -376,14 +376,9 @@ int main(int argc, char** argv)
 				ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
 			}
 
-			if (input.GetKeyDown('O'))
-			{
-				EngineOpenFileDialog();
-			}
-
-			camera.Pos += camera.Direction() * wheel * RedrawTime;
-			wheel -= wheel * 3 * RedrawTime;
-			if (abs(wheel) <= 0.2) wheel = 0.0f;
+			camera.Pos += camera.Direction() * wheel;
+			//wheel -= wheel * 3 * RedrawTime;
+			//if (abs(wheel) <= 0.2) wheel = 0.0f;
 
 			camera.Perspective(60, (float)wnd_size.X / (float)wnd_size.Y, 0.1, 1000);
 			camera.Update();

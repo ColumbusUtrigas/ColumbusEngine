@@ -26,7 +26,7 @@ namespace Columbus
 
 	struct MouseWheelEvent
 	{
-		int32 X, Y;
+		float X, Y;
 	};
 
 	struct ControllerAxisEvent
