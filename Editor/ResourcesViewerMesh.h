@@ -3,7 +3,7 @@
 #include <Scene/Scene.h>
 #include <Graphics/Mesh.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ResourcesViewerMesh

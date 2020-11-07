@@ -5,10 +5,10 @@
 
 #include <SDL.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	void EditorPanelHierarchy::Draw()
+	void PanelHierarchy::Draw()
 	{
 		static std::string Find;
 

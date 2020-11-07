@@ -23,6 +23,12 @@ namespace Columbus
 		TriangleList
 	};
 
+	enum class IndexFormat
+	{
+		Uint16,
+		Uint32
+	};
+
 	enum class ComparisonFunc
 	{
 		Less,

@@ -90,8 +90,8 @@ namespace Columbus
 		ScreenQuad Quad;
 		ParticlesRenderer ParticlesRender;
 
-		Grid _Grid;
-		Gizmo _Gizmo;
+		Editor::Grid _Grid;
+		Editor::Gizmo _Gizmo;
 
 		uint32 PolygonsRendered = 0;
 		uint32 OpaqueObjectsRendered = 0;

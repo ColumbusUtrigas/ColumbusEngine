@@ -4,7 +4,7 @@
 #include <System/Log.h>
 #include <Lib/imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	static ImVec4 GetColor(Log::Type type)
@@ -22,7 +22,7 @@ namespace Columbus
 		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	void EditorPanelConsole::Draw()
+	void PanelConsole::Draw()
 	{
 		if (Opened)
 		{

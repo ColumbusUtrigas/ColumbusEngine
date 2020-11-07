@@ -6,7 +6,7 @@
 #include <Core/Filesystem.h>
 #include <algorithm>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	static String Recompose(const std::vector<String>& Decomposed, size_t Index)

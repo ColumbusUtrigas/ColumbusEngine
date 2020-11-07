@@ -6,7 +6,7 @@
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/Device.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	EditorFileDialog TextureLoader("./Data/Textures/");

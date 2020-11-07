@@ -2,7 +2,7 @@
 
 #include <Graphics/Device.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class Grid

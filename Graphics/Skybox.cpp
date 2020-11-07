@@ -22,7 +22,7 @@ namespace Columbus
 		+1, +1, +1
 	};
 
-	static uint32 Indices[36] = 
+	static uint16 Indices[36] = 
 	{
 		2, 0, 4, 4, 6, 2,
 		1, 0, 2, 2, 3, 1,
@@ -46,28 +46,37 @@ namespace Columbus
 		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
 	}
 
-	static void CreateSkyboxBuffer(uint32& VBO, uint32& IBO, uint32& VAO)
+	static void CreateSkyboxBuffer(Buffer*& VertexBuffer, Buffer*& IndexBuffer, std::shared_ptr<InputLayout>& Layout)
 	{
-		glGenBuffers(1, &VBO);
-		glGenBuffers(1, &IBO);
-		glGenVertexArrays(1, &VAO);
+		BufferDesc vertexDesc;
+		SubresourceData vertexData;
+		vertexDesc.BindFlags = BufferType::Array;
+		vertexDesc.CpuAccess = BufferCpuAccess::Write;
+		vertexDesc.MiscFlags = 0;
+		vertexDesc.Size = sizeof(Vertices);
+		vertexDesc.StructureByteStride = sizeof(Vertices[0]) * 3;
+		vertexDesc.Usage = BufferUsage::Static;
+		vertexData.pSysMem = Vertices;
+		gDevice->CreateBuffer(vertexDesc, &vertexData, &VertexBuffer);
 
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(0);
-		glBindVertexArray(0);
+		BufferDesc indexDesc;
+		SubresourceData indexData;
+		indexDesc.BindFlags = BufferType::Index;
+		indexDesc.CpuAccess = BufferCpuAccess::Write;
+		indexDesc.MiscFlags = 0;
+		indexDesc.Size = sizeof(Indices);
+		indexDesc.StructureByteStride = sizeof(Indices[0]);
+		indexDesc.Usage = BufferUsage::Static;
+		indexData.pSysMem = Indices;
+		gDevice->CreateBuffer(indexDesc, &indexData, &IndexBuffer);
+	
+		Layout = std::make_shared<InputLayout>();
+		Layout->NumElements = 1;
+		Layout->Elements[0].Slot = 0;
+		Layout->Elements[0].Components = 3;
 	}
 
-	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, uint32 VAO, uint32 IBO)
+	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, Buffer* VertexBuffer, Buffer* IndexBuffer, std::shared_ptr<InputLayout> Layout)
 	{
 		auto SkyboxCubemapGenerationShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->SkyboxCubemapGeneration.get();
 
@@ -75,7 +84,7 @@ namespace Columbus
 
 		BaseMap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy16, Texture::Wrap::Clamp));
 
-		Cubemap = new TextureOpenGL();
+		Cubemap = gDevice->CreateTexture();
 		Cubemap->CreateCube(TextureDesc(Resolution.X, Resolution.Y, 0, 0, TextureFormat::R11G11B10F));
 		Cubemap->SetFlags(Texture::Flags(Texture::Filter::Trilinear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Repeat));
 
@@ -85,8 +94,10 @@ namespace Columbus
 		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("Projection"), false, CaptureProjection);
 		SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("BaseMap"), (TextureOpenGL*)BaseMap, 0);
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+		gDevice->IASetInputLayout(Layout.get());
+		gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
+		gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
+		gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -94,11 +105,8 @@ namespace Columbus
 			Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, Resolution);
 			SkyboxCubemapGenerationShader->SetUniform(SkyboxCubemapGenerationShader->GetFastUniform("View"), false, CaptureViews[i]);
 
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+			gDevice->DrawIndexed(36, 0, 0);
 		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
 
 		Frame->Unbind();
 		SkyboxCubemapGenerationShader->Unbind();
@@ -108,7 +116,7 @@ namespace Columbus
 		delete Frame;
 	}
 
-	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, uint32 VAO, uint32 IBO)
+	static void CreateIrradianceMap(Texture* BaseMap, Texture*& IrradianceMap, Buffer* VertexBuffer, Buffer* IndexBuffer, std::shared_ptr<InputLayout> Layout)
 	{
 		auto IrradianceShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->IrradianceGeneration.get();
 
@@ -127,8 +135,10 @@ namespace Columbus
 		IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("Projection"), false, CaptureProjection);
 		IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("EnvironmentMap"), (TextureOpenGL*)BaseMap, 0);
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+		gDevice->IASetInputLayout(Layout.get());
+		gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
+		gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
+		gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -136,11 +146,8 @@ namespace Columbus
 			Frame->Prepare({ 0, 0, 0, 0 }, { 0 }, { 32, 32 });
 			IrradianceShader->SetUniform(IrradianceShader->GetFastUniform("View"), false, CaptureViews[i]);
 
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+			gDevice->DrawIndexed(36, 0, 0);
 		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
 
 		Frame->Unbind();
 		IrradianceShader->Unbind();
@@ -149,7 +156,7 @@ namespace Columbus
 		delete Frame;
 	}
 
-	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, uint32 VAO, uint32 IBO)
+	static void CreatePrefilterMap(Texture* BaseMap, Texture*& PrefilterMap, Buffer* VertexBuffer, Buffer* IndexBuffer, std::shared_ptr<InputLayout> Layout)
 	{
 		auto PrefilterShader = (ShaderProgramOpenGL*)gDevice->GetDefaultShaders()->PrefilterGeneration.get();
 
@@ -185,8 +192,10 @@ namespace Columbus
 
 			PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("Roughness"), Roughness);
 
-			glBindVertexArray(VAO);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+			gDevice->IASetInputLayout(Layout.get());
+			gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
+			gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
+			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 			for (uint32 i = 0; i < 6; i++)
 			{
@@ -194,11 +203,8 @@ namespace Columbus
 				Frame->Prepare({ 0, 0, 0, 0 }, { 0, 0 }, { (int)Width, (int)Height });
 				PrefilterShader->SetUniform(PrefilterShader->GetFastUniform("View"), false, CaptureViews[i]);
 
-				glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+				gDevice->DrawIndexed(36, 0, 0);
 			}
-
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
 		}
 
 		Frame->Unbind();
@@ -211,17 +217,17 @@ namespace Columbus
 	Skybox::Skybox()
 	{
 		PrepareMatrices();
-		CreateSkyboxBuffer(VBO, IBO, VAO);
+		CreateSkyboxBuffer(VertexBuffer, IndexBuffer, Layout);
 	}
 
 	Skybox::Skybox(Texture* InTexture)
 	{
 		PrepareMatrices();
-		CreateSkyboxBuffer(VBO, IBO, VAO);
+		CreateSkyboxBuffer(VertexBuffer, IndexBuffer, Layout);
 
-		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VAO, IBO);
-		CreateIrradianceMap(Tex, IrradianceMap, VAO, IBO);
-		CreatePrefilterMap(Tex, PrefilterMap, VAO, IBO);
+		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VertexBuffer, IndexBuffer, Layout);
+		CreateIrradianceMap(Tex, IrradianceMap, VertexBuffer, IndexBuffer, Layout);
+		CreatePrefilterMap(Tex, PrefilterMap, VertexBuffer, IndexBuffer, Layout);
 	}
 
 	void Skybox::Render()
@@ -238,9 +244,11 @@ namespace Columbus
 			ShaderOpenGL->SetUniform("ViewProjection", false, View * ViewCamera.GetProjectionMatrix());
 			ShaderOpenGL->SetUniform("Skybox", (TextureOpenGL*)Tex, 0);
 
-			glBindVertexArray(VAO);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+			gDevice->IASetInputLayout(Layout.get());
+			gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
+			gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
+			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+			gDevice->DrawIndexed(36, 0,  0);
 		}
 	}
 
@@ -254,9 +262,6 @@ namespace Columbus
 		delete Tex;
 		delete IrradianceMap;
 		delete PrefilterMap;
-		glDeleteBuffers(1, &VBO);
-		glDeleteBuffers(1, &IBO);
-		glDeleteVertexArrays(1, &VAO);
 	}
 
 }

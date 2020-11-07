@@ -4,7 +4,7 @@
 #include <Scene/ComponentLight.h>
 #include <imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ComponentEditorLight : public ComponentEditor

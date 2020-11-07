@@ -1,8 +1,10 @@
 #pragma once
 
 #include <Scene/Component.h>
+#include <Scene/GameObject.h>
 #include <Audio/AudioSource.h>
 #include <Core/Assert.h>
+#include <memory>
 
 namespace Columbus
 {

@@ -6,7 +6,7 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/Device.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	EditorFileDialog ShaderLoader("./Data/Shaders/", {"csl"});

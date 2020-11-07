@@ -34,7 +34,7 @@ namespace Columbus
 		for (size_t i = 0; i < MaterialsManager.Names.size(); i++)
 		{
 			auto name = MaterialsManager.Names[i];
-			auto path = "Data/Materials/" + name;
+			auto path = "Data/Materials/" + name + ".mat";
 
 			J[i] = name;
 			MaterialsManager.Resources[i]->Save(path.c_str(),
@@ -205,7 +205,7 @@ namespace Columbus
 		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i].GetString();
-			auto path = "Data/Materials/" + name;
+			auto path = "Data/Materials/" + name + ".mat";
 
 			SmartPointer<Material> Mat(new Material());
 			if (Mat->Load(path.c_str(), ShadersManager, TexturesManager))

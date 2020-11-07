@@ -1,7 +1,8 @@
-#include <Editor/Inspector/ComponentEditorRigidbody.h>
-#include <imgui/imgui.h>
+#include <Editor/Inspector/ComponentEditor.h>
 #include <Editor/Icons.h>
 #include <Editor/CommonUI.h>
+#include <Scene/ComponentRigidbody.h>
+#include <Scene/GameObject.h>
 #include <Physics/PhysicsShapeBox.h>
 #include <Physics/PhysicsShapeCapsule.h>
 #include <Physics/PhysicsShapeCompound.h>
@@ -10,11 +11,17 @@
 #include <Physics/PhysicsShapeCylinder.h>
 #include <Physics/PhysicsShapeMultiSphere.h>
 #include <Physics/PhysicsShapeSphere.h>
-#include <Scene/GameObject.h>
+#include <imgui/imgui.h>
 #include <functional>
 
-namespace Columbus
+namespace Columbus::Editor
 {
+	class ComponentEditorRigidbody : public ComponentEditor
+	{
+		DECLARE_COMPONENT_EDITOR(ComponentRigidbody, ComponentEditorRigidbody);
+	public:
+		void OnInspectorGUI() final override;
+	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentRigidbody, ComponentEditorRigidbody);
 
 	static PhysicsShape* DrawShapesEditor(GameObject* Object, PhysicsShape* Shape, bool IsChild);

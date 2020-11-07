@@ -10,28 +10,26 @@
 #include <Editor/PanelAssets.h>
 #include <Editor/PanelTexture.h>
 #include <Graphics/Render.h>
-
 #include <Math/Vector2.h>
 #include <memory>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class Editor
 	{
 	private:
-		void ApplyDarkTheme();
 		void DrawMainMenu(Scene& scene);
 		void DrawDockSpace(Scene& scene);
 	public:
-		EditorPanelScene PanelScene;
-		EditorPanelHierarchy PanelHierarchy;
-		EditorPanelRenderSettings PanelRenderSettings;
-		EditorPanelInspector PanelInspector;
-		EditorPanelProfiler PanelProfiler;
-		EditorPanelConsole PanelConsole;
-		EditorPanelAssets PanelAssets;
-		std::shared_ptr<EditorPanelTexture> PanelTexture { new EditorPanelTexture() };
+		PanelScene panelScene;
+		PanelHierarchy panelHierarchy;
+		PanelRenderSettings panelRenderSettings;
+		PanelInspector panelInspector;
+		PanelProfiler panelProfiler;
+		PanelConsole panelConsole;
+		PanelAssets panelAssets;
+		std::shared_ptr<PanelTexture> panelTexture { new PanelTexture() };
 	public:
 		Editor();
 
@@ -41,5 +39,3 @@ namespace Columbus
 	};
 
 }
-
-

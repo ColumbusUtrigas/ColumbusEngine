@@ -2,7 +2,7 @@
 #include <Scene/ComponentBillboard.h>
 #include <imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ComponentEditorBillboard : public ComponentEditor

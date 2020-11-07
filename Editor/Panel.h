@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class EditorPanel

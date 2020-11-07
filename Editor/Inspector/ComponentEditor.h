@@ -4,13 +4,13 @@
 #include <Core/ICloneable.h>
 #include <Core/PrototypeFactory.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ComponentEditor : public ICloneable
 	{
 	protected:
-		friend class EditorPanelInspector;
+		friend class PanelInspector;
 		Component* Target;
 	public:
 		virtual void OnInspectorGUI() {}

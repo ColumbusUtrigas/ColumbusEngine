@@ -4,10 +4,10 @@
 #include <Editor/CommonUI.h>
 #include <Core/Core.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	void EditorPanelRenderSettings::Draw()
+	void PanelRenderSettings::Draw()
 	{
 
 		if (Opened)
@@ -114,7 +114,7 @@ namespace Columbus
 		}
 	}
 
-	EditorPanelRenderSettings::~EditorPanelRenderSettings() {}
+	PanelRenderSettings::~PanelRenderSettings() {}
 
 }
 

@@ -1,11 +1,19 @@
-#include <Editor/Inspector/ComponentEditorParticleSystem.h>
+#include <Editor/Inspector/ComponentEditor.h>
 #include <Editor/CommonUI.h>
 #include <Editor/Icons.h>
+#include <Scene/ComponentParticleSystem.h>
+#include <imgui/imgui.h>
 #include <functional>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
+	class ComponentEditorParticleSystem : public ComponentEditor
+	{
+		DECLARE_COMPONENT_EDITOR(ComponentParticleSystem, ComponentEditorParticleSystem);
+	public:
+		void OnInspectorGUI() final override;
+	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentParticleSystem, ComponentEditorParticleSystem);
 
 	static void DrawModuleEditor(std::function<void(ParticleEmitterCPU&)> func, const char* name, ParticleEmitterCPU& Emitter)

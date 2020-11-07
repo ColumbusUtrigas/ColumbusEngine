@@ -33,6 +33,7 @@ namespace Columbus
 		virtual void IASetPrimitiveTopology(PrimitiveTopology Topology) = 0;
 		virtual void IASetInputLayout(InputLayout* Layout) = 0;
 		virtual void IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers) = 0;
+		virtual void IASetIndexBuffer(Buffer* pIndexBuffer, IndexFormat Format, uint32 Offset) = 0;
 
 		virtual void OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask) = 0;
 		virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) = 0;
@@ -60,6 +61,7 @@ namespace Columbus
 
 		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) = 0;
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) = 0;
+		virtual void DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, int BaseVertexLocation) = 0;
 
 		virtual void BeginMarker(const char* Str) = 0;
 		virtual void EndMarker() = 0;

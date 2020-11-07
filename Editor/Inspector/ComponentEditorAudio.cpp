@@ -2,7 +2,7 @@
 #include <Scene/ComponentAudioSource.h>
 #include <imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ComponentEditorAudio : public ComponentEditor

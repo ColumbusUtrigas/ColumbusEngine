@@ -5,7 +5,7 @@
 #include <Scene/GameObject.h>
 #include <memory>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class Gizmo

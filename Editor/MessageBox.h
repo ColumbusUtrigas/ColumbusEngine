@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class MessageBox

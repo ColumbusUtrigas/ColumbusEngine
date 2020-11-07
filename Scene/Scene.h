@@ -19,16 +19,26 @@
 namespace Columbus
 {
 
+	namespace Editor
+	{
+		class Editor;
+		class PanelInspector;
+		class ResourcesViewerTexture;
+		class ResourcesViewerShader;
+		class ResourcesViewerMaterial;
+		class ResourcesViewerMesh;
+	}
+
 	class Scene
 	{
 	private:
 		friend class Renderer;
-		friend class Editor;
-		friend class EditorPanelInspector;
-		friend class ResourcesViewerTexture;
-		friend class ResourcesViewerShader;
-		friend class ResourcesViewerMaterial;
-		friend class ResourcesViewerMesh;
+		friend class Editor::Editor;
+		friend class Editor::PanelInspector;
+		friend class Editor::ResourcesViewerTexture;
+		friend class Editor::ResourcesViewerShader;
+		friend class Editor::ResourcesViewerMaterial;
+		friend class Editor::ResourcesViewerMesh;
 
 		ResourceManager<Texture> TexturesManager;
 		ResourceManager<ShaderProgram> ShadersManager;
@@ -122,5 +132,3 @@ namespace Columbus
 	};
 
 }
-
-

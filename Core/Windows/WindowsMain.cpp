@@ -50,6 +50,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	ImGui_ImplWin32_WndProcHandler(hWnd, msg, wparam, lparam);
 
+	LRESULT result = 0;
 	Event e;
 	memset(&e, 0, sizeof(e));
 
@@ -125,14 +126,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		e.Key.Repeat = false;
 		break;
 	case WM_SETCURSOR:
+		if (ImGui::GetMouseCursor() == ImGuiMouseCursor_None || ImGui::GetMouseCursor() == ImGuiMouseCursor_Arrow)
+			DefWindowProc(hWnd, msg, wparam, lparam);
 		break;
 	default:
-		return DefWindowProc(hWnd, msg, wparam, lparam);
+		result = DefWindowProc(hWnd, msg, wparam, lparam);
+		break;
 	}
 
 	input.PollEvent(e);
 
-	return 0;
+	return result;
 }
 
 void InitWindowAndContext()
@@ -293,7 +297,7 @@ int main(int argc, char** argv)
 	AudioListener Listener;
 	Camera camera;
 	Renderer MainRender;
-	Editor Editor;
+	Editor::Editor Editor;
 
 	scene.Load("Data/Shadows.scene");
 
@@ -331,7 +335,7 @@ int main(int argc, char** argv)
 		}
 		
 		{
-			if (Editor.PanelScene.IsHover())
+			if (Editor.panelScene.IsHover())
 			{
 				wheel = input.GetMouseWheel().Y * 5;
 			}
@@ -339,7 +343,7 @@ int main(int argc, char** argv)
 			if (input.GetMouseButton(1).State)
 			{
 #ifdef COLUMBUS_EDITOR
-				if (Editor.PanelScene.IsHover())
+				if (Editor.panelScene.IsHover())
 				{
 					wasLooking = true;
 				}
@@ -368,7 +372,7 @@ int main(int argc, char** argv)
 				wasLooking = false;
 			}
 
-			if (Editor.PanelScene.IsHover() && input.GetMouseButton(2).State)
+			if (Editor.panelScene.IsHover() && input.GetMouseButton(2).State)
 			{
 				auto deltaMouse = input.GetMouseMovement();
 				camera.Pos -= camera.Right() * deltaMouse.X * 0.1f;

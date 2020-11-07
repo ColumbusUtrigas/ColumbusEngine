@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Scene/Component.h>
+#include <Scene/GameObject.h>
 #include <Graphics/Light.h>
 
 namespace Columbus

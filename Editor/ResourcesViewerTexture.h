@@ -3,7 +3,7 @@
 #include <Scene/Scene.h>
 #include <Graphics/Texture.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ResourcesViewerTexture

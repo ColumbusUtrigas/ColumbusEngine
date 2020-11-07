@@ -6,21 +6,21 @@
 #include <list>
 #include <string>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelAssets : public EditorPanel
+	class PanelAssets : public EditorPanel
 	{
 	public:
-		EditorPanelAssets();
+		PanelAssets();
 
-		void SetTexturePreview(std::weak_ptr<EditorPanelTexture> preview);
+		void SetTexturePreview(std::weak_ptr<PanelTexture> preview);
 		void Draw();
 
-		virtual ~EditorPanelAssets() final override;
+		virtual ~PanelAssets() final override;
 
 	private:
-		std::weak_ptr<EditorPanelTexture> _texturePreview;
+		std::weak_ptr<PanelTexture> _texturePreview;
 
 	private:
 		const char* const _popupName = "ItemPopup";

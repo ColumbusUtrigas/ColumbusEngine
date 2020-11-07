@@ -3,15 +3,15 @@
 #include <Editor/Panel.h>
 #include <Graphics/Render.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelRenderSettings : public EditorPanel
+	class PanelRenderSettings : public EditorPanel
 	{
 	private:
 		Renderer* Render = nullptr;
 	public:
-		EditorPanelRenderSettings() {}
+		PanelRenderSettings() {}
 
 		void SetRenderer(Renderer* Rend)
 		{
@@ -20,7 +20,7 @@ namespace Columbus
 
 		void Draw();
 
-		virtual ~EditorPanelRenderSettings() final override;
+		virtual ~PanelRenderSettings() final override;
 	};
 
 }

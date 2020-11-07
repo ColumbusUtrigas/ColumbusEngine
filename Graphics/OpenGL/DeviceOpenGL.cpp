@@ -61,6 +61,13 @@ namespace Columbus
 		}
 	}
 
+	void DeviceOpenGL::IASetIndexBuffer(Buffer* pIndexBuffer, IndexFormat Format, uint32 Offset)
+	{
+		_currentIndexFormat = Format;
+		_currentIndexOffset = Offset;
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *static_cast<GLuint*>(pIndexBuffer->GetHandle()));
+	}
+
 	void DeviceOpenGL::OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask)
 	{
 		const auto& Desc = pBlendState->GetDesc();
@@ -310,6 +317,13 @@ namespace Columbus
 	{
 		auto mode = PrimitiveTopologyToGL(_currentTopology);
 		glDrawArrays(mode, StartVertexLocation, VertexCount);
+	}
+
+	void DeviceOpenGL::DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, int BaseVertexLocation)
+	{
+		auto mode = PrimitiveTopologyToGL(_currentTopology);
+		auto type = IndexFormatToGL(_currentIndexFormat);
+		glDrawElements(mode, IndexCount, type, nullptr);
 	}
 
 	void DeviceOpenGL::BeginMarker(const char* Str)

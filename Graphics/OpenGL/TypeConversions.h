@@ -71,6 +71,15 @@ namespace Columbus
 		}
 	}
 
+	static GLenum IndexFormatToGL(IndexFormat format)
+	{
+		switch (format)
+		{
+		case IndexFormat::Uint16: return GL_UNSIGNED_SHORT;
+		case IndexFormat::Uint32: return GL_UNSIGNED_INT;
+		}
+	}
+
 	static GLenum ComparisonFuncToGL(ComparisonFunc func)
 	{
 		switch (func)

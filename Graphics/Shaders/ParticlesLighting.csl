@@ -1,0 +1,63 @@
+R"(layout (local_size_x = 1, local_size_y = 1) in;
+
+#define MAX_LIGHTS_COUNT 128
+#define LIGHT u_Lights.lights[i]
+
+struct Light
+{
+	float3 color; float range;
+	float3 pos; float innerCutoff;
+	float3 dir; float outerCutoff;
+	int type;
+	int hasShadow;
+	float4x4 lightView;
+	float4 shadowRect;
+};
+
+begin_cbuffer(cb_Lighting, 0)
+    Light lights[MAX_LIGHTS_COUNT];
+	int count;
+end_cbuffer(u_Lights)
+
+begin_uav(colors, 1)
+	float4 color[];
+end_uav(outColors);
+
+begin_uav(positions, 2)
+    float4 pos[];
+end_uav(inPositions)
+
+void main(void)
+{
+	uint id = gl_GlobalInvocationID.x;
+
+	float3 lighting = float3(0,0,0);
+	for (int i = 0; i < u_Lights.count; ++i)
+	{
+		float3 L = normalize(LIGHT.pos - inPositions.pos[id].xyz); if (LIGHT.type == 0) L = normalize(-LIGHT.dir);
+		float distance = length(LIGHT.pos - inPositions.pos[id].xyz);
+		float attenuation = 1.0f;
+		if (LIGHT.type != 0) attenuation = clamp(1.0 - distance * distance / (LIGHT.range * LIGHT.range), 0.0, 1.0);
+		attenuation *= attenuation;
+
+		if (LIGHT.type == 2) // spotlight
+		{
+			float angle;
+			angle = dot(LIGHT.dir, -L);
+			angle = max(angle, 0);
+			angle = acos(angle);
+
+			if (angle < LIGHT.innerCutoff)
+				attenuation *= 1.0;
+			else if (angle < LIGHT.outerCutoff)
+				attenuation *= (1.0 - smoothstep(LIGHT.innerCutoff, LIGHT.outerCutoff, angle));
+			else
+				attenuation = 0.0;
+		}
+
+		lighting += LIGHT.color * attenuation;
+	}
+
+	outColors.color[id] *= float4(lighting, 1);
+}
+)"

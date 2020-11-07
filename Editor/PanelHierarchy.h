@@ -3,10 +3,10 @@
 #include <Editor/Panel.h>
 #include <Scene/Scene.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelHierarchy : public EditorPanel
+	class PanelHierarchy : public EditorPanel
 	{
 	private:
 		Scene* scene = nullptr;
@@ -14,7 +14,7 @@ namespace Columbus
 		GameObject* buffer = nullptr;
 		GameObject* buffer2 = nullptr;
 	public:
-		EditorPanelHierarchy() {}
+		PanelHierarchy() {}
 
 		void SetScene(Scene* Scn)
 		{
@@ -28,7 +28,7 @@ namespace Columbus
 
 		void Draw();
 
-		virtual ~EditorPanelHierarchy() final override {}
+		virtual ~PanelHierarchy() final override {}
 	};
 
 }

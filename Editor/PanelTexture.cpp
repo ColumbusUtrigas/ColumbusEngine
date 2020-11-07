@@ -4,15 +4,15 @@
 #include <Core/Util.h>
 #include <Lib/imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	EditorPanelTexture::EditorPanelTexture()
+	PanelTexture::PanelTexture()
 	{
 
 	}
 
-	void EditorPanelTexture::Load(const std::string_view path)
+	void PanelTexture::Load(const std::string_view path)
 	{
 		_path = path;
 		if (!_texture)
@@ -23,7 +23,7 @@ namespace Columbus
 		_texture->Load(_path.c_str());
 	}
 
-	void EditorPanelTexture::Draw()
+	void PanelTexture::Draw()
 	{
 		if (Opened)
 		{
@@ -68,7 +68,7 @@ namespace Columbus
 		}
 	}
 
-	EditorPanelTexture::~EditorPanelTexture()
+	PanelTexture::~PanelTexture()
 	{
 
 	}

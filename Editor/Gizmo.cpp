@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 namespace

@@ -4,10 +4,10 @@
 #include <Scene/GameObject.h>
 #include <Scene/Scene.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelInspector : public EditorPanel
+	class PanelInspector : public EditorPanel
 	{
 	private:
 		GameObject* Inspectable = nullptr;
@@ -23,7 +23,7 @@ namespace Columbus
 		}
 
 		void Draw(Scene& Scn);
-		~EditorPanelInspector();
+		~PanelInspector();
 	};
 
 }

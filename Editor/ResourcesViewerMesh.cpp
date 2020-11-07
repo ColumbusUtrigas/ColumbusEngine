@@ -6,7 +6,7 @@
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <Graphics/Device.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	EditorFileDialog MeshLoader("./Data/Meshes/", {"cmf", "obj"});

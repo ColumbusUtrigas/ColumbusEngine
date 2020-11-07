@@ -18,7 +18,7 @@
 #include <Lib/stb/stb_dxt.h>
 #include <Lib/stb/stb_image_resize.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	struct IconCache
@@ -132,7 +132,7 @@ namespace Columbus
 	};
 
 
-	EditorPanelAssets::EditorPanelAssets() :
+	PanelAssets::PanelAssets() :
 		_current("Data/")
 	{
 		_history.push_back(_current);
@@ -143,12 +143,12 @@ namespace Columbus
 	bool textprev = false;
 	bool loaded = false;
 
-	void EditorPanelAssets::SetTexturePreview(std::weak_ptr<EditorPanelTexture> preview)
+	void PanelAssets::SetTexturePreview(std::weak_ptr<PanelTexture> preview)
 	{
 		_texturePreview = preview;
 	}
 
-	void EditorPanelAssets::Draw()
+	void PanelAssets::Draw()
 	{
 		if (Opened)
 		{
@@ -263,7 +263,7 @@ namespace Columbus
 		}
 	}
 
-	void EditorPanelAssets::_GoTo(const std::string& name)
+	void PanelAssets::_GoTo(const std::string& name)
 	{
 		if (!_goneTo)
 		{
@@ -274,17 +274,17 @@ namespace Columbus
 		}
 	}
 
-	bool EditorPanelAssets::_CanGoBack()
+	bool PanelAssets::_CanGoBack()
 	{
 		return pointer > 0;
 	}
 
-	bool EditorPanelAssets::_CanGoForward()
+	bool PanelAssets::_CanGoForward()
 	{
 		return pointer < (_history.size() - 1);
 	}
 
-	void EditorPanelAssets::_GoBack()
+	void PanelAssets::_GoBack()
 	{
 		if (_CanGoBack())
 		{
@@ -295,7 +295,7 @@ namespace Columbus
 		}
 	}
 
-	void EditorPanelAssets::_GoForward()
+	void PanelAssets::_GoForward()
 	{
 		if (_CanGoForward())
 		{
@@ -306,13 +306,13 @@ namespace Columbus
 		}
 	}
 
-	void EditorPanelAssets::_OpenPopup(const FileInfo& info)
+	void PanelAssets::_OpenPopup(const FileInfo& info)
 	{
 		ImGui::OpenPopup(_popupName);
 		_popupElement = info;
 	}
 
-	void EditorPanelAssets::_DrawPopup()
+	void PanelAssets::_DrawPopup()
 	{
 		if (ImGui::BeginPopup(_popupName))
 		{
@@ -327,7 +327,7 @@ namespace Columbus
 		}
 	}
 
-	EditorPanelAssets::~EditorPanelAssets()
+	PanelAssets::~PanelAssets()
 	{
 
 	}

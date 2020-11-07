@@ -5,7 +5,7 @@
 #include <Lib/imgui/imgui.h>
 #include <Editor/CommonUI.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	EditorFileDialog MaterialLoader("./Data/Materials/", {"mat"});

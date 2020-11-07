@@ -3,10 +3,10 @@
 #include <Editor/Panel.h>
 #include <cstddef>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelConsole : public EditorPanel
+	class PanelConsole : public EditorPanel
 	{
 	private:
 		bool _EnableInit = false;
@@ -20,11 +20,11 @@ namespace Columbus
 		float _lastWheel = 0.0f;
 		size_t _lastCount = 0;
 	public:
-		EditorPanelConsole() {}
+		PanelConsole() {}
 
 		void Draw();
 		
-		virtual ~EditorPanelConsole() final override {}
+		virtual ~PanelConsole() final override {}
 	};
 
 }

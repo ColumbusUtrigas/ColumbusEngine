@@ -1,14 +1,9 @@
 #include <Editor/Inspector/PanelInspector.h>
 #include <Editor/Inspector/ComponentEditor.h>
-#include <Editor/Inspector/ComponentEditorAudio.h>
-#include <Editor/Inspector/ComponentEditorBillboard.h>
-#include <Editor/Inspector/ComponentEditorLight.h>
-#include <Editor/Inspector/ComponentEditorMeshRenderer.h>
-#include <Editor/Inspector/ComponentEditorParticleSystem.h>
-#include <Editor/Inspector/ComponentEditorRigidbody.h>
 #include <Editor/Icons.h>
 #include <Editor/CommonUI.h>
 #include <Scene/Component.h>
+#include <Scene/ComponentRigidbody.h>
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
@@ -19,7 +14,7 @@
 
 using namespace std;
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	static auto InspectorComponentNameRelocate(string_view str) {
@@ -36,7 +31,7 @@ namespace Columbus
 		return str;
 	}
 
-	void EditorPanelInspector::Draw(Scene& Scn)
+	void PanelInspector::Draw(Scene& Scn)
 	{
 		if (Opened)
 		{
@@ -82,7 +77,7 @@ namespace Columbus
 		}
 	}
 
-	EditorPanelInspector::~EditorPanelInspector() {}
+	PanelInspector::~PanelInspector() {}
 
 	void Select(GameObject* GO, string_view Name, Component* Comp, Component*& Selected, function<void()> Close)
 	{
@@ -98,7 +93,7 @@ namespace Columbus
 		ImGui::Separator();
 	}
 
-	void EditorPanelInspector::DrawAddComponent(Scene& Scn)
+	void PanelInspector::DrawAddComponent(Scene& Scn)
 	{
 		static Component* selected = nullptr;
 		static bool AddComponentEnable = false;
@@ -156,7 +151,7 @@ namespace Columbus
 	}
 
 
-	void EditorPanelInspector::DrawComponentsEditor(Scene& Scn)
+	void PanelInspector::DrawComponentsEditor(Scene& Scn)
 	{
 		for (const auto& comp : Inspectable->GetComponents()) {
 			auto name = InspectorComponentNameRelocate(comp->GetTypename()).data();

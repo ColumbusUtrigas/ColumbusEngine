@@ -2,6 +2,8 @@
 
 #include <Graphics/Texture.h>
 #include <Graphics/Camera.h>
+#include <Graphics/Device.h>
+#include <memory>
 
 namespace Columbus
 {
@@ -9,9 +11,9 @@ namespace Columbus
 	class Skybox
 	{
 	private:
-		uint32 VBO = 0;
-		uint32 IBO = 0;
-		uint32 VAO = 0;
+		Buffer* VertexBuffer;
+		Buffer* IndexBuffer;
+		std::shared_ptr<InputLayout> Layout;
 
 		Texture* Tex = nullptr;
 		Texture* IrradianceMap = nullptr;

@@ -2,7 +2,7 @@
 
 #include <Editor/FontAwesome.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	// Icons for editor

@@ -2,7 +2,7 @@
 #include <Editor/CommonUI.h>
 #include <Lib/imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	int MessageBox::Draw()

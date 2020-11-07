@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class EditorFileDialog

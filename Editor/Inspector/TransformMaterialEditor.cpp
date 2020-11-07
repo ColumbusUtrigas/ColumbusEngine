@@ -9,7 +9,7 @@
 #include <Lib/imgui/imgui.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	bool CreateNewMaterialOpen = false;
@@ -17,7 +17,7 @@ namespace Columbus
 
 	static void CreateNewMaterialDraw(ResourceManager<Material>& MaterialsManager);
 
-	void EditorPanelInspector::DrawTransformEditor()
+	void PanelInspector::DrawTransformEditor()
 	{
 		ImGui::Indent(10.0f);
 
@@ -47,7 +47,7 @@ namespace Columbus
 
 
 
-	void EditorPanelInspector::DrawMaterialEditor(Scene& Scn)
+	void PanelInspector::DrawMaterialEditor(Scene& Scn)
 	{
 		const char* CullItems[] = { "No", "Front", "Back", "Front and back"};
 		const char* DepthItems[] = { "Less", "Greater", "LEqual", "GEqual", "Equal", "Not equal", "Never", "Always" };
@@ -216,5 +216,3 @@ namespace Columbus
 	}
 
 }
-
-

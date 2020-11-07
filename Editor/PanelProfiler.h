@@ -2,10 +2,10 @@
 
 #include <Editor/Panel.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelProfiler : public EditorPanel
+	class PanelProfiler : public EditorPanel
 	{
 	private:
 		static constexpr int GraphCount = 600;
@@ -16,12 +16,12 @@ namespace Columbus
 		int Index = 0;
 		int ZeroIndex = 0;
 	public:
-		EditorPanelProfiler() {}
+		PanelProfiler() {}
 
 		void SetRedrawTime(float Time);
 		void Draw();
 		
-		virtual ~EditorPanelProfiler() final override;
+		virtual ~PanelProfiler() final override;
 	};
 
 }

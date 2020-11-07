@@ -9,7 +9,7 @@
 #include <Lib/imgui/imgui.h>
 #include <functional>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	static void ResourceViewerDrawLoadMore(const char* Name, std::function<void()> LoadMore);

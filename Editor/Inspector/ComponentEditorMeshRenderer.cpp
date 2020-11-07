@@ -5,7 +5,7 @@
 #include <Scene/ComponentMeshRenderer.h>
 #include <imgui/imgui.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ComponentEditorMeshRenderer : public ComponentEditor

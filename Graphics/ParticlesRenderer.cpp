@@ -1,81 +1,85 @@
 #include <Graphics/ParticlesRenderer.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
+#include <Graphics/ShaderCompiler.h>
 #include <Graphics/Device.h>
 #include <Math/Quaternion.h>
 
 namespace Columbus
 {
 
-std::string acomputeprog =
-R"(#version 430 core
-layout(local_size_x = 1, local_size_y = 1) in;
-
-#define MAX_LIGHTS_COUNT 128
-
-struct Light
-{
-	vec3 color; float range;
-	vec3 pos; float innerCutoff;
-	vec3 dir; float outerCutoff;
-	int type;
-	int hasShadow;
-	mat4 lightView;
-	vec4 shadowRect;
-};
-
-// TODO: cbuffer abstraction, binding number
-layout(std140, binding = 0) uniform cb_Lighting
-{
-	Light lights[MAX_LIGHTS_COUNT];
-	int count;
-} u_Lights;
-
-layout(std430, binding = 1) buffer colors
-{
-	vec4 color[];
-} outColors;
-
-layout(std430, binding = 2) buffer positions
-{
-	vec4 pos[];
-} inPositions;
-
-#define LIGHT u_Lights.lights[i]
-
-void main(void)
-{
-	uint id = gl_GlobalInvocationID.x;
-
-	vec3 lighting = vec3(0,0,0);
-	for (int i = 0; i < u_Lights.count; ++i)
-	{
-		vec3 L = normalize(LIGHT.pos - inPositions.pos[id].xyz); if (LIGHT.type == 0) L = normalize(-LIGHT.dir);
-		float distance = length(LIGHT.pos - inPositions.pos[id].xyz);
-		float attenuation = 1.0f;
-		if (LIGHT.type != 0) attenuation = clamp(1.0 - distance * distance / (LIGHT.range * LIGHT.range), 0.0, 1.0);
-		attenuation *= attenuation;
-
-		if (LIGHT.type == 2) // spotlight
-		{
-			float angle;
-			angle = dot(LIGHT.dir, -L);
-			angle = max(angle, 0);
-			angle = acos(angle);
-
-			if (angle < LIGHT.innerCutoff)
-				attenuation *= 1.0;
-			else if (angle < LIGHT.outerCutoff)
-				attenuation *= (1.0 - smoothstep(LIGHT.innerCutoff, LIGHT.outerCutoff, angle));
-			else
-				attenuation = 0.0;
-		}
-
-		lighting += LIGHT.color * attenuation;
-	}
-
-	outColors.color[id] *= vec4(lighting, 1);
-}
-)";
+	auto ParticlesLightingProg =
+		#include <Graphics/Shaders/ParticlesLighting.csl>
+		;
+//std::string acomputeprog =
+//R"(#version 430 core
+//layout(local_size_x = 1, local_size_y = 1) in;
+//
+//#define MAX_LIGHTS_COUNT 128
+//
+//struct Light
+//{
+//	vec3 color; float range;
+//	vec3 pos; float innerCutoff;
+//	vec3 dir; float outerCutoff;
+//	int type;
+//	int hasShadow;
+//	mat4 lightView;
+//	vec4 shadowRect;
+//};
+//
+//// TODO: cbuffer abstraction, binding number
+//layout(std140, binding = 0) uniform cb_Lighting
+//{
+//	Light lights[MAX_LIGHTS_COUNT];
+//	int count;
+//} u_Lights;
+//
+//layout(std430, binding = 1) buffer colors
+//{
+//	vec4 color[];
+//} outColors;
+//
+//layout(std430, binding = 2) buffer positions
+//{
+//	vec4 pos[];
+//} inPositions;
+//
+//#define LIGHT u_Lights.lights[i]
+//
+//void main(void)
+//{
+//	uint id = gl_GlobalInvocationID.x;
+//
+//	vec3 lighting = vec3(0,0,0);
+//	for (int i = 0; i < u_Lights.count; ++i)
+//	{
+//		vec3 L = normalize(LIGHT.pos - inPositions.pos[id].xyz); if (LIGHT.type == 0) L = normalize(-LIGHT.dir);
+//		float distance = length(LIGHT.pos - inPositions.pos[id].xyz);
+//		float attenuation = 1.0f;
+//		if (LIGHT.type != 0) attenuation = clamp(1.0 - distance * distance / (LIGHT.range * LIGHT.range), 0.0, 1.0);
+//		attenuation *= attenuation;
+//
+//		if (LIGHT.type == 2) // spotlight
+//		{
+//			float angle;
+//			angle = dot(LIGHT.dir, -L);
+//			angle = max(angle, 0);
+//			angle = acos(angle);
+//
+//			if (angle < LIGHT.innerCutoff)
+//				attenuation *= 1.0;
+//			else if (angle < LIGHT.outerCutoff)
+//				attenuation *= (1.0 - smoothstep(LIGHT.innerCutoff, LIGHT.outerCutoff, angle));
+//			else
+//				attenuation = 0.0;
+//		}
+//
+//		lighting += LIGHT.color * attenuation;
+//	}
+//
+//	outColors.color[id] *= vec4(lighting, 1);
+//}
+//)";
 
 	ComputePipelineState* CPS;
 
@@ -98,7 +102,7 @@ void main(void)
 		Allocate(MaxSize);
 
 		ComputePipelineStateDesc CPSD;
-		CPSD.CS = acomputeprog;
+		CPSD.CS = ShaderCompiler::Compile(ParticlesLightingProg, {}).shaders[0].source;
 		gDevice->CreateComputePipelineState(CPSD, &CPS);
 	}
 

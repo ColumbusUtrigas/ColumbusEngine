@@ -5,10 +5,10 @@
 #include <Graphics/Render.h>
 #include <Math/Vector2.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelScene : public EditorPanel
+	class PanelScene : public EditorPanel
 	{
 	private:
 		Texture* FramebufferTexture = nullptr;
@@ -20,7 +20,7 @@ namespace Columbus
 		Gizmo _Gizmo;
 		GameObject* _PickedObject = nullptr;
 	public:
-		EditorPanelScene() {}
+		PanelScene() {}
 
 		void SetPickedObject(GameObject* Obj)
 		{
@@ -47,7 +47,7 @@ namespace Columbus
 
 		void Draw(Scene& Scene, Renderer& Render);
 
-		virtual ~EditorPanelScene() final override {}
+		virtual ~PanelScene() final override {}
 	};
 
 }

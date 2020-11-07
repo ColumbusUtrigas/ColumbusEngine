@@ -5,10 +5,10 @@
 #include <ImGuizmo/ImGuizmo.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	void EditorPanelScene::Draw(Scene& Scene, Renderer& Render)
+	void PanelScene::Draw(Scene& Scene, Renderer& Render)
 	{
 		if (Opened)
 		{

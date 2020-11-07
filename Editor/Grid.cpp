@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <vector>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	Grid::Grid()

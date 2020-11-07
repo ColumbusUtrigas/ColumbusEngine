@@ -3,7 +3,7 @@
 #include <Scene/Scene.h>
 #include <Graphics/Shader.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	class ResourcesViewerShader

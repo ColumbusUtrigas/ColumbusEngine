@@ -3,7 +3,7 @@
 #include <Graphics/Texture.h>
 #include <Core/String.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
 	struct _CommonUISettings
@@ -13,6 +13,7 @@ namespace Columbus
 	};
 	extern _CommonUISettings CommonUISettings;
 
+	void ApplyDarkTheme();
 	void FlagButton(const char* name, bool& enabled);
 	void ShowTooltipDelayed(float delay, const char* fmt, ...);
 

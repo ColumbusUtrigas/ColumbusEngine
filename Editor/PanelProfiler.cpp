@@ -5,10 +5,10 @@
 #include <Math/MathUtil.h>
 #include <Math/Vector4.h>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	void EditorPanelProfiler::SetRedrawTime(float Time)
+	void PanelProfiler::SetRedrawTime(float Time)
 	{
 		RedrawTime = Time;
 		T += Time;
@@ -27,7 +27,7 @@ namespace Columbus
 		}
 	}
 
-	void EditorPanelProfiler::Draw()
+	void PanelProfiler::Draw()
 	{
 		if (Opened)
 		{
@@ -86,7 +86,7 @@ namespace Columbus
 		}
 	}
 
-	EditorPanelProfiler::~EditorPanelProfiler() {}
+	PanelProfiler::~PanelProfiler() {}
 
 }
 

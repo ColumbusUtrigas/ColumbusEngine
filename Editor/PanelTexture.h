@@ -6,10 +6,10 @@
 #include <string_view>
 #include <memory>
 
-namespace Columbus
+namespace Columbus::Editor
 {
 
-	class EditorPanelTexture : public EditorPanel
+	class PanelTexture : public EditorPanel
 	{
 	private:
 		std::unique_ptr<Texture> _texture;
@@ -17,12 +17,12 @@ namespace Columbus
 		bool _renable = true, _genable = true, _benable = true;
 		int _mip = 0;
 	public:
-		EditorPanelTexture();
+		PanelTexture();
 
 		void Load(const std::string_view path);
 		void Draw();
 
-		virtual ~EditorPanelTexture() final override;
+		virtual ~PanelTexture() final override;
 	};
 
 }
