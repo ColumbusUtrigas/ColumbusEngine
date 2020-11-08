@@ -260,6 +260,7 @@ void RenderBeginGUI()
 #ifdef COLUMBUS_EDITOR
 	gDevice->BeginMarker("IMGUI");
 	ImGui_ImplOpenGL3_NewFrame();
+	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	ImGuizmo::BeginFrame();

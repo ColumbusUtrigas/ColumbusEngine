@@ -22,9 +22,9 @@ namespace Columbus::Editor
 					ImGui::Checkbox("Grid##PanelScene", &Render.DrawGrid);
 					ImGui::Checkbox("Gizmo##PanelScene", &_Gizmo.Enable);
 
-					ImGui::RadioButton("T", (int*)&_Gizmo._Operation, Gizmo::Operation::Translate);
-					ImGui::RadioButton("R", (int*)&_Gizmo._Operation, Gizmo::Operation::Rotate);
-					ImGui::RadioButton("S", (int*)&_Gizmo._Operation, Gizmo::Operation::Scale);
+					ToolButton(ICON_FA_EXPAND_ARROWS_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Translate);
+					ToolButton(ICON_FA_SYNC_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Rotate);
+					ToolButton(ICON_FA_EXTERNAL_LINK_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Scale);
 
 					FlagButton(ICON_FA_PLAY, Scene.EnablePhysicsSimulation);
 					ShowTooltipDelayed(CommonUISettings.TooltipDelay, Scene.EnablePhysicsSimulation ? "Disable physics simulation" : "Enable physics simulation");

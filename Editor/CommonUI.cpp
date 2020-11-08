@@ -73,13 +73,50 @@ namespace Columbus::Editor
 
 	void FlagButton(const char* name, bool& enabled)
 	{
-		auto active = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
-		auto passive = ImGui::GetStyle().Colors[ImGuiCol_Button];
+		if (ImGui::Button(name, enabled))
+			enabled = !enabled;
+	}
 
-		ImGui::PushStyleColor(ImGuiCol_Button, enabled ? active : passive);
-		ImGui::SameLine();
-		if (ImGui::Button(name)) enabled = !enabled;
-		ImGui::PopStyleColor();
+	bool ToolButton(const char* label, int* v, int v_button)
+	{
+		const bool pressed = ImGui::Button(label, *v == v_button);
+		if (pressed)
+			*v = v_button;
+
+		return pressed;
+	}
+
+	void ToggleButton(const char* label, bool* v)
+	{
+		ImVec2 p = ImGui::GetCursorScreenPos();
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+		float height = ImGui::GetFrameHeight();
+		float width = height * 1.55f;
+		float radius = height * 0.50f;
+
+		ImGui::InvisibleButton(label, ImVec2(width, height));
+		if (ImGui::IsItemClicked())
+			*v = !*v;
+
+		float t = *v ? 1.0f : 0.0f;
+
+		ImGuiContext& g = *GImGui;
+		float ANIM_SPEED = 0.08f;
+		if (g.LastActiveId == g.CurrentWindow->GetID(label))// && g.LastActiveIdTimer < ANIM_SPEED)
+		{
+			float t_anim = ImSaturate(g.LastActiveIdTimer / ANIM_SPEED);
+			t = *v ? (t_anim) : (1.0f - t_anim);
+		}
+
+		ImU32 col_bg;
+		if (ImGui::IsItemHovered())
+			col_bg = ImGui::GetColorU32(ImLerp(ImVec4(0.78f, 0.78f, 0.78f, 1.0f), ImVec4(0.64f, 0.83f, 0.34f, 1.0f), t));
+		else
+			col_bg = ImGui::GetColorU32(ImLerp(ImVec4(0.85f, 0.85f, 0.85f, 1.0f), ImVec4(0.56f, 0.83f, 0.26f, 1.0f), t));
+
+		draw_list->AddRectFilled(p, ImVec2(p.x + width, p.y + height), col_bg, height * 0.5f);
+		draw_list->AddCircleFilled(ImVec2(p.x + radius + t * (width - radius * 2.0f), p.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
 	}
 
 	void ShowTooltipDelayed(float delay, const char* fmt, ...)
@@ -149,6 +186,18 @@ namespace ImGui
 		ImGui::EndChild();
 
 		return Open;
+	}
+
+	bool Button(const char* label, bool activated, const ImVec2& size)
+	{
+		auto active = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+		auto passive = ImGui::GetStyle().Colors[ImGuiCol_Button];
+
+		ImGui::PushStyleColor(ImGuiCol_Button, activated ? active : passive);
+		bool result = ImGui::Button(label, size);
+		ImGui::PopStyleColor();
+
+		return result;
 	}
 
 	void Image(Columbus::Texture* texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col)

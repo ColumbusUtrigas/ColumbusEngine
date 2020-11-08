@@ -1,5 +1,6 @@
 #include <Editor/PanelHierarchy.h>
 #include <Editor/FontAwesome.h>
+#include <Editor/Icons.h>
 #include <Lib/imgui/imgui.h>
 #include <functional>
 
@@ -21,10 +22,13 @@ namespace Columbus::Editor
 
 				if (ImGui::BeginChild("##Find_PanelHierarchy", ImVec2(ImGui::GetWindowContentRegionWidth(), 20)))
 				{
-					ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth());
+					ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth()-30);
 					char tmp[1024];
 					memcpy(tmp, Find.data(), Find.size() + 1);
 					ImGui::InputText("##Find_PanelHierarchy_Find", tmp, 1024);
+					ImGui::SameLine();
+					if (ImGui::Button(DELETE_ICON))
+						memset(tmp, 0, 1024);
 					Find = tmp;
 				}
 				ImGui::EndChild();
