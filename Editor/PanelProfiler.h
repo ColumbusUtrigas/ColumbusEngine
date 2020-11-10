@@ -5,7 +5,7 @@
 namespace Columbus::Editor
 {
 
-	class PanelProfiler : public EditorPanel
+	class PanelProfiler : public Panel
 	{
 	private:
 		static constexpr int GraphCount = 600;
@@ -15,15 +15,14 @@ namespace Columbus::Editor
 		float RedrawTimeCurve[GraphCount] = { 0.0f };
 		int Index = 0;
 		int ZeroIndex = 0;
+
+		void DrawInternal() final override;
 	public:
-		PanelProfiler() {}
+		PanelProfiler();
 
 		void SetRedrawTime(float Time);
-		void Draw();
 		
 		virtual ~PanelProfiler() final override;
 	};
 
 }
-
-

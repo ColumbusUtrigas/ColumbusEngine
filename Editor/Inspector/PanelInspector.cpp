@@ -31,52 +31,46 @@ namespace Columbus::Editor
 		return str;
 	}
 
-	void PanelInspector::Draw(Scene& Scn)
+	void PanelInspector::DrawInternal()
 	{
-		if (Opened)
+		if (Inspectable != nullptr)
 		{
-			if (ImGui::Begin(ICON_FA_INFO" Inspector##PanelInspector", &Opened, ImGuiWindowFlags_NoCollapse))
+			auto RB = (ComponentRigidbody*)Inspectable->GetComponent(Component::Type::Rigidbody);
+			if (RB != nullptr && RB->GetRigidbody() != nullptr)
 			{
-				if (Inspectable != nullptr)
-				{
-					auto RB = (ComponentRigidbody*)Inspectable->GetComponent(Component::Type::Rigidbody);
-					if (RB != nullptr && RB->GetRigidbody() != nullptr)
-					{
-						RB->GetRigidbody()->Activate();
-					}
-
-					string Tmp = Inspectable->Name.c_str();
-
-					ImGui::Checkbox("##PanelInspector_Enable", &Inspectable->Enable);
-					ImGui::SameLine();
-					ImGui::InputText("##PanelInspector_Name", &Tmp);
-					ImGui::Separator();
-
-					if (Inspectable->Name != Tmp.c_str())
-					{
-						Scn.Objects.Rename(Inspectable->Name, Tmp.c_str());
-						Inspectable->Name = Tmp.c_str();
-					}
-
-					// Draw transform editor
-					if (ImGui::CollapsingHeader(TRANSFORM_ICON" Transform##PanelInspector_Transform", ImGuiTreeNodeFlags_DefaultOpen))
-					{
-						DrawTransformEditor();
-						ImGui::Separator();
-					}
-
-					//Draw material editor
-					DrawMaterialEditor(Scn);
-
-					// Draw components editor and "Add component" button
-					DrawComponentsEditor(Scn);
-					DrawAddComponent(Scn);
-				}
+				RB->GetRigidbody()->Activate();
 			}
-			ImGui::End();
+
+			string Tmp = Inspectable->Name.c_str();
+
+			ImGui::Checkbox("##PanelInspector_Enable", &Inspectable->Enable);
+			ImGui::SameLine();
+			ImGui::InputText("##PanelInspector_Name", &Tmp);
+			ImGui::Separator();
+
+			if (Inspectable->Name != Tmp.c_str())
+			{
+				_Scene->Objects.Rename(Inspectable->Name, Tmp.c_str());
+				Inspectable->Name = Tmp.c_str();
+			}
+
+			// Draw transform editor
+			if (ImGui::CollapsingHeader(TRANSFORM_ICON" Transform##PanelInspector_Transform", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				DrawTransformEditor();
+				ImGui::Separator();
+			}
+
+			//Draw material editor
+			DrawMaterialEditor(*_Scene);
+
+			// Draw components editor and "Add component" button
+			DrawComponentsEditor(*_Scene);
+			DrawAddComponent(*_Scene);
 		}
 	}
 
+	PanelInspector::PanelInspector() : Panel(ICON_FA_INFO" Inspector") {}
 	PanelInspector::~PanelInspector() {}
 
 	void Select(GameObject* GO, string_view Name, Component* Comp, Component*& Selected, function<void()> Close)

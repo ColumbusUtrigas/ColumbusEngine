@@ -71,22 +71,28 @@ namespace Columbus::Editor
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.60f);
 	}
 
-	void FlagButton(const char* name, bool& enabled)
+	void FlagButton(const char* name, bool& enabled, const char* tooltip)
 	{
 		if (ImGui::Button(name, enabled))
 			enabled = !enabled;
+
+		if (tooltip != NULL)
+			ShowTooltipDelayed(CommonUISettings.TooltipDelay, tooltip);
 	}
 
-	bool ToolButton(const char* label, int* v, int v_button)
+	bool ToolButton(const char* label, int* v, int v_button, const char* tooltip)
 	{
 		const bool pressed = ImGui::Button(label, *v == v_button);
 		if (pressed)
 			*v = v_button;
 
+		if (tooltip != NULL)
+			ShowTooltipDelayed(CommonUISettings.TooltipDelay, tooltip);
+
 		return pressed;
 	}
 
-	void ToggleButton(const char* label, bool* v)
+	void ToggleButton(const char* label, bool* v, const char* tooltip)
 	{
 		ImVec2 p = ImGui::GetCursorScreenPos();
 		ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -98,6 +104,9 @@ namespace Columbus::Editor
 		ImGui::InvisibleButton(label, ImVec2(width, height));
 		if (ImGui::IsItemClicked())
 			*v = !*v;
+
+		if (tooltip != NULL)
+			ShowTooltipDelayed(CommonUISettings.TooltipDelay, tooltip);
 
 		float t = *v ? 1.0f : 0.0f;
 
@@ -188,14 +197,21 @@ namespace ImGui
 		return Open;
 	}
 
-	bool Button(const char* label, bool activated, const ImVec2& size)
+	bool Button(const char* label, bool activated, bool hover_col_change, const ImVec2& size)
 	{
 		auto active = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
 		auto passive = ImGui::GetStyle().Colors[ImGuiCol_Button];
+		auto current = activated ? active : passive;
 
-		ImGui::PushStyleColor(ImGuiCol_Button, activated ? active : passive);
+		if (!hover_col_change)
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, current);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, current);
 		bool result = ImGui::Button(label, size);
 		ImGui::PopStyleColor();
+
+		if (!hover_col_change)
+			ImGui::PopStyleColor();
 
 		return result;
 	}

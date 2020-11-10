@@ -6,7 +6,7 @@
 namespace Columbus::Editor
 {
 
-	class PanelConsole : public EditorPanel
+	class PanelConsole : public Panel
 	{
 	private:
 		bool _EnableInit = false;
@@ -19,14 +19,11 @@ namespace Columbus::Editor
 		bool _lastWasEnd = false;
 		float _lastWheel = 0.0f;
 		size_t _lastCount = 0;
-	public:
-		PanelConsole() {}
 
-		void Draw();
-		
-		virtual ~PanelConsole() final override {}
+		void DrawInternal() final override;
+	public:
+		PanelConsole();
+		virtual ~PanelConsole() final override;
 	};
 
 }
-
-

@@ -6,15 +6,17 @@
 namespace Columbus::Editor
 {
 
-	class PanelHierarchy : public EditorPanel
+	class PanelHierarchy : public Panel
 	{
 	private:
 		Scene* scene = nullptr;
 		GameObject* object = nullptr;
 		GameObject* buffer = nullptr;
 		GameObject* buffer2 = nullptr;
+
+		void DrawInternal() final override;
 	public:
-		PanelHierarchy() {}
+		PanelHierarchy();
 
 		void SetScene(Scene* Scn)
 		{
@@ -26,11 +28,7 @@ namespace Columbus::Editor
 			return object;
 		}
 
-		void Draw();
-
-		virtual ~PanelHierarchy() final override {}
+		virtual ~PanelHierarchy() final override;
 	};
 
 }
-
-

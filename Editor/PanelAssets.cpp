@@ -133,6 +133,7 @@ namespace Columbus::Editor
 
 
 	PanelAssets::PanelAssets() :
+		Panel(ICON_FA_FOLDER" Assets"),
 		_current("Data/")
 	{
 		_history.push_back(_current);
@@ -148,110 +149,100 @@ namespace Columbus::Editor
 		_texturePreview = preview;
 	}
 
-	void PanelAssets::Draw()
+	void PanelAssets::DrawInternal()
 	{
-		if (Opened)
+		_goneTo = false;
+		loaded = false;
+
+		auto files = Filesystem::Read(_current.path);
+
+		if (ImGui::BeginChild("AssetsToolbar", ImVec2(ImGui::GetWindowContentRegionWidth(), 25)))
 		{
-			_goneTo = false;
-			loaded = false;
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoBack());
+			if (ImGui::Button(ICON_FA_ARROW_LEFT))
+				_GoBack();
+			ImGui::PopItemFlag();
 
-			ImGui::PushID("EditorPanelAssets");
-			if (ImGui::Begin(ICON_FA_FOLDER" Assets", &Opened, ImGuiWindowFlags_NoCollapse))
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoForward());
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_ARROW_RIGHT))
+				_GoForward();
+			ImGui::PopItemFlag();
+
+			static char buf[1024] = { 0 };
+			ImGui::SameLine();
+			ImGui::InputText("##Find", buf, 1024);
+		}
+		ImGui::EndChild();
+
+		if (ImGui::BeginChild("AssetsList"))
+		{
+			for (auto& file : files)
 			{
-				auto files = Filesystem::Read(_current.path);
+				if (file.Name == "." || file.Name == "..") continue;
 
-				if (ImGui::BeginChild("AssetsToolbar", ImVec2(ImGui::GetWindowContentRegionWidth(), 25)))
+				std::string icon;
+
+				switch (file.Type)
 				{
-					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoBack());
-					if (ImGui::Button(ICON_FA_ARROW_LEFT))
-						_GoBack();
-					ImGui::PopItemFlag();
-
-					ImGui::PushItemFlag(ImGuiItemFlags_Disabled, !_CanGoForward());
-					ImGui::SameLine();
-					if (ImGui::Button(ICON_FA_ARROW_RIGHT))
-						_GoForward();
-					ImGui::PopItemFlag();
-
-					static char buf[1024] = { 0 };
-					ImGui::SameLine();
-					ImGui::InputText("##Find", buf, 1024);
+				case 'd': icon = ICON_FA_FOLDER; break;
+				case 'f': icon = GetFileIcon(file.Ext); break;
 				}
-				ImGui::EndChild();
+				icon += ' ';
 
-				if (ImGui::BeginChild("AssetsList"))
+				if (Filesystem::IsImage(file.Ext))
 				{
-					for (auto& file : files)
+					if (!gIconCache.Has(file.Path))
 					{
-						if (file.Name == "." || file.Name == "..") continue;
-
-						std::string icon;
-
-						switch (file.Type)
+						if (!loaded)
 						{
-						case 'd': icon = ICON_FA_FOLDER; break;
-						case 'f': icon = GetFileIcon(file.Ext); break;
+							gIconCache.Load(file.Path);
+							loaded = true;
 						}
-						icon += ' ';
+					}
+					else
+					{
+						icon = "";
+						ImGui::Image(gIconCache.Get(file.Path), ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()));
+						ImGui::SameLine();
+					}
+				}
 
+				ImGui::Selectable((icon + file.Name).c_str());
+
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+				{
+					if (file.Type == 'd')
+						_GoTo(file.Name);
+
+					if (file.Type == 'f')
+					{
 						if (Filesystem::IsImage(file.Ext))
 						{
-							if (!gIconCache.Has(file.Path))
+							if (!_texturePreview.expired())
 							{
-								if (!loaded)
-								{
-									gIconCache.Load(file.Path);
-									loaded = true;
-								}
-							}
-							else
-							{
-								icon = "";
-								ImGui::Image(gIconCache.Get(file.Path), ImVec2(ImGui::GetFontSize(), ImGui::GetFontSize()));
-								ImGui::SameLine();
+								auto _preview = _texturePreview.lock();
+								_preview->Load(file.Path);
 							}
 						}
-
-						ImGui::Selectable((icon + file.Name).c_str());
-
-						if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+						else
 						{
-							if (file.Type == 'd')
-								_GoTo(file.Name);
-
-							if (file.Type == 'f')
-							{
-								if (Filesystem::IsImage(file.Ext))
-								{
-									if (!_texturePreview.expired())
-									{
-										auto _preview = _texturePreview.lock();
-										_preview->Load(file.Path);
-									}
-								}
-								else
-								{
-									std::ifstream f(file.Path.c_str());
-									textpath = std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-									textprev = true;
-								}
-							}
-						}
-
-						if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
-						{
-							_OpenPopup(file);
+							std::ifstream f(file.Path.c_str());
+							textpath = std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+							textprev = true;
 						}
 					}
 				}
 
-				_DrawPopup();
-				ImGui::EndChild();
+				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+				{
+					_OpenPopup(file);
+				}
 			}
-
-			ImGui::End();
-			ImGui::PopID();
 		}
+
+		_DrawPopup();
+		ImGui::EndChild();
 
 		if (textprev)
 		{

@@ -7,25 +7,32 @@
 namespace Columbus::Editor
 {
 
-	class PanelInspector : public EditorPanel
+	class PanelInspector : public Panel
 	{
 	private:
+		Scene* _Scene = nullptr;
 		GameObject* Inspectable = nullptr;
+
+		void DrawInternal() final override;
 
 		void DrawAddComponent(Scene& Scn);
 		void DrawTransformEditor();
 		void DrawMaterialEditor(Scene& Scn);
 		void DrawComponentsEditor(Scene& Scn);
 	public:
+		PanelInspector();
+
+		void SetScene(Scene* scene)
+		{
+			_Scene = scene;
+		}
+
 		void SetInspectableObject(GameObject* Object)
 		{
 			Inspectable = Object;
 		}
 
-		void Draw(Scene& Scn);
-		~PanelInspector();
+		~PanelInspector() final override;
 	};
 
 }
-
-

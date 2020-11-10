@@ -9,13 +9,12 @@
 namespace Columbus::Editor
 {
 
-	class PanelAssets : public EditorPanel
+	class PanelAssets : public Panel
 	{
 	public:
 		PanelAssets();
 
 		void SetTexturePreview(std::weak_ptr<PanelTexture> preview);
-		void Draw();
 
 		virtual ~PanelAssets() final override;
 
@@ -39,6 +38,8 @@ namespace Columbus::Editor
 		bool _goneTo = false;
 
 	private:
+		void DrawInternal() final override;
+
 		void _GoTo(const std::string& name);
 
 		bool _CanGoBack();

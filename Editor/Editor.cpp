@@ -22,7 +22,7 @@ namespace Columbus::Editor
 	std::map<std::string_view, MenuItem> MenuItems;
 	std::vector<MenuItem> StaticMenuItems =
 	{
-		MenuItem("File", {},
+		MenuItem(ICON_FA_FILE" File", {},
 		{
 			{ "Open", MenuItem("Open", []() { SceneLoader.Open(); }, {}).Shortcut("Ctrl+O") },
 			{ "New",  MenuItem("New").Shortcut("Ctrl+N") },
@@ -30,7 +30,7 @@ namespace Columbus::Editor
 			{ "Save As", MenuItem("Save As").Shortcut("Ctrl+Shift+S") },
 			{ "Quit", MenuItem("Quit") }
 		}),
-		MenuItem("View", {},
+		MenuItem(ICON_FA_LIST_UL" View", {},
 		{
 			{ "Scene", MenuItem("Scene") },
 			{ "Hierarchy", MenuItem("Hierarchy") },
@@ -41,18 +41,18 @@ namespace Columbus::Editor
 			{ "Assets", MenuItem("Assets") },
 			{ "Texture", MenuItem("Texture") }
 		}),
-		MenuItem("GameObject", {},
+		MenuItem(ICON_FA_CUBE" GameObject", {},
 		{
 			{ "Add Empty", MenuItem("Add Empty") }
 		}),
-		MenuItem("Resources", {},
+		MenuItem(ICON_FA_BOXES" Resources", {},
 		{
 			{ "Textures",  MenuItem("Textures",  []() { ResourcesViewerTexture::Open(nullptr); }, {}) },
 			{ "Shaders",   MenuItem("Shaders",   []() { ResourcesViewerShader::Open(nullptr); }, {}) },
 			{ "Materials", MenuItem("Materials", []() { ResourcesViewerMaterial::Open(nullptr); }, {}) },
 			{ "Meshes",    MenuItem("Meshes",    []() { ResourcesViewerMesh::Open(nullptr); }, {}) }
 		}),
-		MenuItem("Scene", {},
+		MenuItem(ICON_FA_GLOBE" Scene", {},
 		{
 			{ "Skybox", MenuItem("Skybox", []() { SkyboxLoader.Open(); }, {}) }
 		})
@@ -175,17 +175,20 @@ namespace Columbus::Editor
 	{
 		DrawDockSpace(scene);
 
+		panelScene.SetScene(&scene);
+		panelScene.SetRenderer(&Render);
 		panelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
 		panelHierarchy.SetScene(&scene);
 		Size = panelScene.GetSize();
 		panelRenderSettings.SetRenderer(&Render);
+		panelInspector.SetScene(&scene);
 		panelInspector.SetInspectableObject(panelHierarchy.GetCurrentObject());
 		panelScene.SetPickedObject(panelHierarchy.GetCurrentObject());
 		panelProfiler.SetRedrawTime(RedrawTime);
 		panelAssets.SetTexturePreview(panelTexture);
 
-		panelScene.Draw(scene, Render);
-		panelInspector.Draw(scene); // Inspector should be before hierarchy
+		panelScene.Draw();
+		panelInspector.Draw(); // Inspector should be before hierarchy
 		panelHierarchy.Draw(); // because in hierarchy there are deleting objects
 		panelRenderSettings.Draw();
 		panelProfiler.Draw();
