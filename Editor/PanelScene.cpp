@@ -26,9 +26,9 @@ namespace Columbus::Editor
 
 			ImGui::Dummy({ 10,0 });
 
-			ToolButton(ICON_FA_ARROWS_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Translate, "Translate");
-			ToolButton(ICON_FA_SYNC_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Rotate, "Rotate");
-			ToolButton(ICON_FA_EXTERNAL_LINK_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Scale, "Scale");
+			ToolButton(ICON_FA_ARROWS_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Translate, {}, "Translate");
+			ToolButton(ICON_FA_SYNC_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Rotate, {}, "Rotate");
+			ToolButton(ICON_FA_EXTERNAL_LINK_ALT, (int*)&_Gizmo._Operation, Gizmo::Operation::Scale, {}, "Scale");
 
 			ImGui::Dummy({ 10,0 });
 

@@ -90,16 +90,16 @@ namespace Columbus
 		if (J["EnvMapMode"].GetString() == "Sky")  EnvMapMode = EnvMap::Sky;
 		if (J["EnvMapMode"].GetString() == "Auto") EnvMapMode = EnvMap::Auto;
 
-		DepthWriting = J["DepthWriting"].GetBool();
-		Transparent  = J["Transparent"] .GetBool();
-		Lighting     = J["Lighting"]    .GetBool();
-		Tiling       = J["Tiling"]      .GetVector2<float>();
-		DetailTiling = J["DetailTiling"].GetVector2<float>();
-		Albedo       = J["Albedo"]      .GetVector4<float>();
+		DepthWriting = (bool)J["DepthWriting"];
+		Transparent  = (bool)J["Transparent"];
+		Lighting     = (bool)J["Lighting"];
+		Tiling       = J["Tiling"];
+		DetailTiling = J["DetailTiling"];
+		Albedo       = J["Albedo"];
 
-		Roughness        = static_cast<float>(J["Roughness"]       .GetFloat());
-		Metallic         = static_cast<float>(J["Metallic"]        .GetFloat());
-		EmissionStrength = static_cast<float>(J["EmissionStrength"].GetFloat());
+		Roughness        = static_cast<float>(J["Roughness"]);
+		Metallic         = static_cast<float>(J["Metallic"]);
+		EmissionStrength = static_cast<float>(J["EmissionStrength"]);
 
 		SetShader(ShadersManager.Find(J["Shader"].IsString() ? J["Shader"].GetString() : ""));
 
@@ -118,6 +118,12 @@ namespace Columbus
 		Log::Success("Material loaded: %s", FileName);
 
 		return true;
+	}
+
+	Vector2 operator+(const Vector2& v1, const Vector2& v2)
+	{
+		Vector2 ans;
+		return ans;
 	}
 
 	bool Material::Save(const char* FileName,

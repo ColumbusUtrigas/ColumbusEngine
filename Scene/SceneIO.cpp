@@ -234,7 +234,7 @@ namespace Columbus
 
 	void Scene::DeserializeSoundsManager(JSON& J)
 	{
-		for (uint32 i = 0; i < J.GetElementsCount(); i++)
+		for (size_t i = 0; i < J.GetElementsCount(); i++)
 		{
 			auto name = J[i]["Name"].GetString();
 			auto path = "Data/Sounds/" + name;
@@ -327,7 +327,7 @@ namespace Columbus
 
 			if (JObj.HasChild("Children") && JObj["Children"].IsArray())
 			{
-				for (int i = 0; i < JObj["Children"].GetElementsCount(); i++)
+				for (size_t i = 0; i < JObj["Children"].GetElementsCount(); i++)
 				{
 					auto child = load_object(JObj["Children"][i]);
 					goptr->AddChild(child);

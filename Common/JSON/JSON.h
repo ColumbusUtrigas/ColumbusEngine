@@ -7,6 +7,7 @@
 #include <Core/ISerializable.h>
 #include <Core/String.h>
 #include <Core/Types.h>
+#include <string_view>
 #include <vector>
 #include <map>
 
@@ -141,14 +142,49 @@ namespace Columbus
 		bool IsArray()  const { return ValueType == Type::Array;  }
 		bool IsObject() const { return ValueType == Type::Object; }
 
-		uint32 GetElementsCount() const { return  ArrayValue.size(); }
-		uint32 GetChildrenCount() const { return ObjectValue.size(); }
+		size_t GetElementsCount() const { return  ArrayValue.size(); }
+		size_t GetChildrenCount() const { return ObjectValue.size(); }
 		bool HasChild(const String& Key) { return ObjectValue.find(Key) != ObjectValue.end(); }
 
-		JSON& operator[](uint32 Index);
-		JSON& operator[](const String& Key);
+		explicit operator bool() const { return GetBool(); }
+		explicit operator int64() const { return GetInt(); }
+		explicit operator int() const { return static_cast<int>(GetInt()); }
+		explicit operator uint32() const { return static_cast<uint32>(GetInt()); }
+		explicit operator double() const { return GetFloat(); }
+		explicit operator float() const { return static_cast<float>(GetFloat()); }
+		template <typename T> operator Vector2_t<T>() { return GetVector2<T>(); }
+		template <typename T> operator Vector3_t<T>() { return GetVector3<T>(); }
+		template <typename T> operator Vector4_t<T>() { return GetVector4<T>(); }
+		operator Quaternion() { return GetQuaternion(); }
+
+		JSON& operator[](size_t Index);
+		JSON& operator[](std::string_view Key);
+
+		bool operator==(const JSON& other) const;
+		bool operator!=(const JSON& other) const;
 	};
 
+
+#define JSON_SERIALIZE_ENUM(ENUM, ...) \
+	static void operator>>(JSON& j, ENUM& e) { \
+		static_assert(std::is_enum<ENUM>::value, #ENUM " must be an enum!"); \
+		static const std::pair<ENUM, JSON> m[] = __VA_ARGS__; \
+		for (const auto& ej : m) { \
+			if (ej.second == j) { \
+				e = ej.first; \
+				break; \
+			} \
+		} \
+	} \
+	static void operator<<(JSON& j, const ENUM e) {	\
+		static_assert(std::is_enum<ENUM>::value, #ENUM " must be an enum!"); \
+		static const std::pair<ENUM, JSON> m[] = __VA_ARGS__; \
+		for (const auto& ej : m) { \
+			if (ej.first == e) { \
+				j = ej.second; \
+				break; \
+			} \
+		} \
+	}
+
 }
-
-

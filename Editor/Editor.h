@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Scene/Scene.h>
+#include <Editor/Settings.h>
 #include <Editor/PanelScene.h>
 #include <Editor/PanelHierarchy.h>
 #include <Editor/PanelRenderSettings.h>
@@ -20,8 +21,11 @@ namespace Columbus::Editor
 	{
 	private:
 		void DrawMainMenu(Scene& scene);
-		void DrawDockSpace(Scene& scene);
+		void DrawToolbar();
+		void DrawMainLayout(Scene& scene);
 	public:
+		Settings settings;
+
 		PanelScene panelScene;
 		PanelHierarchy panelHierarchy;
 		PanelRenderSettings panelRenderSettings;

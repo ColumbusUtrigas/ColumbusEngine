@@ -83,7 +83,7 @@ namespace Columbus
 		uint32 Mipmaps = 0;
 
 		TextureFormat Format = TextureFormat::RGBA8;
-		Type ImageType;
+		Type ImageType = Type::Image2D;
 
 		uint8* Data = nullptr;
 	public:

@@ -387,7 +387,7 @@ namespace Columbus
 		return true;
 	}
 
-	JSON& JSON::operator[](uint32 Index)
+	JSON& JSON::operator[](size_t Index)
 	{
 		if (ValueType != Type::Array)
 		{
@@ -403,7 +403,7 @@ namespace Columbus
 		return ArrayValue[Index];
 	}
 
-	JSON& JSON::operator[](const String& Key)
+	JSON& JSON::operator[](std::string_view key)
 	{
 		if (ValueType != Type::Object)
 		{
@@ -411,9 +411,31 @@ namespace Columbus
 			ValueType = Type::Object;
 		}
 
-		return ObjectValue[Key];
+		return ObjectValue[key.data()];
+	}
+
+	bool JSON::operator==(const JSON& other) const
+	{
+		bool result = ValueType == other.ValueType;
+		if (result)
+		{
+			switch (ValueType)
+			{
+			case Type::String: return StringValue == other.StringValue;
+			case Type::Bool:   return BoolValue == other.BoolValue;
+			case Type::Null:   return true;
+			case Type::Int:    return IntValue == other.IntValue;
+			case Type::Float:  return FloatValue == other.FloatValue;
+			case Type::Array:  return std::equal(ArrayValue.begin(), ArrayValue.end(), other.ArrayValue.begin());
+			case Type::Object: return std::equal(ObjectValue.begin(), ObjectValue.end(), other.ObjectValue.begin());
+			}
+		}
+		return result;
+	}
+
+	bool JSON::operator!=(const JSON& other) const
+	{
+		return !(*this == other);
 	}
 
 }
-
-

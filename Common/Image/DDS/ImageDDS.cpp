@@ -57,7 +57,7 @@ namespace Columbus
 	* DDS Image pixel format struct
 	* @see: https://msdn.microsoft.com/en-us/library/windows/desktop/bb943984(v=vs.85).aspx
 	*/
-	typedef struct
+	struct DDS_PIXELFORMAT
 	{
 		uint32 Size;
 		uint32 Flags;
@@ -67,13 +67,13 @@ namespace Columbus
 		uint32 GBitMask;
 		uint32 BBitMask;
 		uint32 ABitMask;
-	} DDS_PIXELFORMAT;
+	};
 
 	/*
 	* DDS Image header struct
 	* @see: https://msdn.microsoft.com/en-us/library/windows/desktop/bb943982(v=vs.85).aspx
 	*/
-	typedef struct
+	struct DDS_HEADER
 	{
 		uint8 Magic[4]; //"DDS " bytes
 		uint32 Size;
@@ -90,9 +90,9 @@ namespace Columbus
 		uint32 Caps3;
 		uint32 Caps4;
 		uint32 Reserved2;
-	} DDS_HEADER;
+	};
 
-	typedef struct
+	struct DDS_HEADER_FLAGS
 	{
 		bool Caps;
 		bool Height;
@@ -122,7 +122,7 @@ namespace Columbus
 			Mipmap = Flags & DDSFlagMipMapCount;
 			Volume = Flags & DDSFlagDepth;
 		}
-	} DDS_HEADER_FLAGS;
+	};
 
 	static TextureFormat FourCCDecode(uint32 FourCC)
 	{

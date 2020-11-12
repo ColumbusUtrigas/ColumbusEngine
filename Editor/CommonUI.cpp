@@ -80,9 +80,9 @@ namespace Columbus::Editor
 			ShowTooltipDelayed(CommonUISettings.TooltipDelay, tooltip);
 	}
 
-	bool ToolButton(const char* label, int* v, int v_button, const char* tooltip)
+	bool ToolButton(const char* label, int* v, int v_button, const ImVec2& size, const char* tooltip)
 	{
-		const bool pressed = ImGui::Button(label, *v == v_button);
+		const bool pressed = ImGui::Button(label, *v == v_button, false, size);
 		if (pressed)
 			*v = v_button;
 

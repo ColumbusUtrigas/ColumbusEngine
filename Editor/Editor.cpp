@@ -1,15 +1,15 @@
 #include <Editor/Editor.h>
-#include <Lib/imgui/imgui.h>
 #include <Editor/FileDialog.h>
 #include <Editor/FontAwesome.h>
 #include <Editor/CommonUI.h>
 #include <Editor/Menu.h>
-#include <Core/Filesystem.h>
 #include <Editor/ResourcesViewerTexture.h>
 #include <Editor/ResourcesViewerShader.h>
 #include <Editor/ResourcesViewerMaterial.h>
 #include <Editor/ResourcesViewerMesh.h>
 #include <Editor/Extension.h>
+#include <Common/JSON/JSON.h>
+#include <Core/Filesystem.h>
 #include <imgui.h>
 #include <map>
 #include <functional>
@@ -120,13 +120,32 @@ namespace Columbus::Editor
 		}
 	}
 
-	void Editor::DrawDockSpace(Scene& scene)
+	void Editor::DrawToolbar()
+	{
+		if (ImGui::BeginChild("Toolbar", ImVec2(ImGui::GetContentRegionAvailWidth(), 30)))
+		{
+			static Gizmo::Operation op;
+
+			ImVec2 size{ 30,30 };
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0);
+
+			ToolButton(ICON_FA_ARROWS_ALT, (int*)&op, Gizmo::Operation::Translate, size, "Translate"); ImGui::SameLine();
+			ToolButton(ICON_FA_SYNC_ALT, (int*)&op, Gizmo::Operation::Rotate, size, "Rotate"); ImGui::SameLine();
+			ToolButton(ICON_FA_EXTERNAL_LINK_ALT, (int*)&op, Gizmo::Operation::Scale, size, "Scale");
+
+			ImGui::PopStyleVar(2);
+		}
+		ImGui::EndChild();
+	}
+
+	void Editor::DrawMainLayout(Scene& scene)
 	{
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->Pos);
 		ImGui::SetNextWindowSize(viewport->Size);
 		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::SetNextWindowBgAlpha(0.0f);
 
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
@@ -136,9 +155,11 @@ namespace Columbus::Editor
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-		if (ImGui::Begin("DockSpace", nullptr, window_flags))
+		if (ImGui::Begin("MainLayout", nullptr, window_flags))
 		{
-			ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
+			DrawToolbar();
+
+			ImGuiID dockspace_id = ImGui::GetID("MainDockspace");
 			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
@@ -173,7 +194,7 @@ namespace Columbus::Editor
 
 	void Editor::Draw(Scene& scene, Renderer& Render, iVector2& Size, float RedrawTime)
 	{
-		DrawDockSpace(scene);
+		DrawMainLayout(scene);
 
 		panelScene.SetScene(&scene);
 		panelScene.SetRenderer(&Render);

@@ -15,7 +15,7 @@ namespace Columbus::Editor
 
 	void ApplyDarkTheme();
 	void FlagButton(const char* name, bool& enabled, const char* tooltip = NULL);
-	bool ToolButton(const char* label, int* v, int v_button, const char* tooltip = NULL);
+	bool ToolButton(const char* label, int* v, int v_button, const ImVec2& size = {0,0}, const char* tooltip = NULL);
 	void ToggleButton(const char* label, bool* v, const char* tooltip = NULL);
 	void ShowTooltipDelayed(float delay, const char* fmt, ...);
 

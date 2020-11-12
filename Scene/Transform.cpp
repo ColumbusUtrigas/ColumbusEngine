@@ -40,11 +40,11 @@ namespace Columbus
 
 	void Transform::Deserialize(JSON& J)
 	{
-		Position = J["Position"].GetVector3<float>();
-		Rotation = J["Rotation"].GetQuaternion();
-		Scale = J["Scale"].GetVector3<float>();
+		Position = J["Position"];
+		Rotation = J["Rotation"];
+		Scale = J["Scale"];
 	}
-	
+
 	Transform::~Transform()
 	{
 

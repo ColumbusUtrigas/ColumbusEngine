@@ -186,9 +186,9 @@ namespace Columbus
 			// pitch (y-axis rotation)
 			double sinp = 2 * (W * Y - Z * X);
 			if (std::abs(sinp) >= 1)
-				angles.Y = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+				angles.Y = std::copysignf(M_PI / 2, sinp); // use 90 degrees if out of range
 			else
-				angles.Y = std::asin(sinp);
+				angles.Y = std::asinf(sinp);
 
 			// yaw (z-axis rotation)
 			float siny_cosp = 2 * (W * Z + X * Y);

@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.8)
 project(ColumbusEngine)
 
 function(add_dir_to_target TARGET PATH)
-	file(GLOB TMP_SRC ${PATH}/*.cpp)
+	file(GLOB TMP_SRC ${PATH}/*.cpp ${PATH}/*.c)
 	target_sources(${TARGET} PUBLIC ${TMP_SRC})
 endfunction()
 
 function(add_dir_to_target_recurse TARGET PATH)
-	file(GLOB_RECURSE TMP_SRC ${PATH}/*.cpp)
+	file(GLOB_RECURSE TMP_SRC ${PATH}/*.cpp ${PATH}/*.c)
 	target_sources(${TARGET} PUBLIC ${TMP_SRC})
 endfunction()
 

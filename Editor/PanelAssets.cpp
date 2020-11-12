@@ -2,15 +2,18 @@
 #include <Editor/FontAwesome.h>
 #include <Editor/Icons.h>
 #include <Editor/CommonUI.h>
-#include <Lib/imgui/imgui.h>
-#include <Lib/imgui/imgui_internal.h>
+
 #include <Common/JSON/JSON.h>
 #include <Common/base64/base64.h>
 #include <Core/Filesystem.h>
 #include <Core/FileDialog.h>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
+
 #include <fstream>
 #include <unordered_map>
+
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/Device.h>
 #include <Graphics/ScreenQuad.h>

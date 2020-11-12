@@ -34,12 +34,12 @@ namespace Columbus::Editor
 			if (ImGui::Button("Clear##PanelConsole"))
 				list.clear();
 
-			FlagButton(ICON_FA_INFO_CIRCLE"##PanelConsole", _EnableInit); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Init");
-			FlagButton(ICON_FA_CHECK_CIRCLE"##PanelConsole", _EnableSuccess); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Success");
-			FlagButton(ICON_FA_COMMENT"##PanelConsole", _EnableMessage); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Message");
-			FlagButton(ICON_FA_EXCLAMATION_TRIANGLE"##PanelConsole", _EnableWarning); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Warning");
-			FlagButton(ICON_FA_EXCLAMATION_CIRCLE"##PanelConsole", _EnableError); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Error");
-			FlagButton(ICON_FA_CROSSHAIRS"##PanelConsole", _EnableFatal); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Fatal");
+			ImGui::SameLine(); FlagButton(ICON_FA_INFO_CIRCLE"##PanelConsole", _EnableInit); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Init");
+			ImGui::SameLine(); FlagButton(ICON_FA_CHECK_CIRCLE"##PanelConsole", _EnableSuccess); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Success");
+			ImGui::SameLine(); FlagButton(ICON_FA_COMMENT"##PanelConsole", _EnableMessage); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Message");
+			ImGui::SameLine(); FlagButton(ICON_FA_EXCLAMATION_TRIANGLE"##PanelConsole", _EnableWarning); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Warning");
+			ImGui::SameLine(); FlagButton(ICON_FA_EXCLAMATION_CIRCLE"##PanelConsole", _EnableError); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Error");
+			ImGui::SameLine(); FlagButton(ICON_FA_CROSSHAIRS"##PanelConsole", _EnableFatal); ShowTooltipDelayed(CommonUISettings.TooltipDelay, "Fatal");
 		}
 		ImGui::EndChild();
 

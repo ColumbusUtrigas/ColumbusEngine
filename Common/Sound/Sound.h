@@ -72,10 +72,10 @@ namespace Columbus
 	class SoundDecoder
 	{
 	protected:
-		uint64 Size;
-		 int64 BeginOffset;
-		uint32 Frequency;
-		uint16 Channels;
+		uint64 Size = 0;
+		 int64 BeginOffset = 0;
+		uint32 Frequency = 0;
+		uint16 Channels = 0;
 	public:
 		SoundDecoder() {}
 

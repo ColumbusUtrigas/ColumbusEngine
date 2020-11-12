@@ -17,6 +17,9 @@ namespace Columbus::Editor
 			if (!pad)
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
+			// default window size
+			ImGui::SetNextWindowSize(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+
 			ImGui::PushID(_name.data());
 			if (ImGui::Begin(_name.data(), &Opened, flags))
 			{

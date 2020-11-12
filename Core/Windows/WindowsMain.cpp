@@ -19,6 +19,7 @@ using namespace Columbus;
 #include <Windows.h>
 
 #include <Core/FileDialog.h>
+#include <Common/JSON/JSON.h>
 
 #ifdef PLATFORM_WINDOWS
 //Hint to the driver to use discrete GPU
@@ -43,6 +44,7 @@ Input input;
 bool quit = false;
 const char* class_name = "Columbus Engine Window Class";
 iVector2 wnd_size = { 640, 480 };
+bool wnd_max = false;
 
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -214,8 +216,6 @@ void InitWindowAndContext()
 
 	printf("%s\n", glGetString(GL_VERSION));
 
-	ShowWindow(hwnd, SW_SHOWNORMAL);
-
 	glewInit();
 	OpenGL::Init();
 	gDevice = new DeviceOpenGL();
@@ -231,6 +231,27 @@ void ShutdownWindowAndContext()
 	wglDeleteContext(hrc);
 	ReleaseDC(hwnd, hdc);
 	DestroyWindow(hwnd);
+}
+
+void InitEditorConfigs()
+{
+#ifdef COLUMBUS_EDITOR
+	Editor::Settings settings;
+
+	JSON j;
+	if (j.Load("editor_settings.json"))
+	{
+		settings.Deserialize(j);
+	}
+	else
+	{
+		settings.Serialize(j);
+		j.Save("editor_settings.json");
+	}
+
+	wnd_size = settings.windowSize;
+	wnd_max = settings.windowMaximized;
+#endif
 }
 
 void InitGUI()
@@ -253,6 +274,11 @@ void InitRenderGUI(HWND hwnd)
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplOpenGL3_Init("#version 130");
 #endif
+}
+
+void ShowWindow()
+{
+	ShowWindow(hwnd, wnd_max ? SW_MAXIMIZE : SW_SHOWNORMAL);
 }
 
 void RenderBeginGUI()
@@ -290,9 +316,11 @@ void ShutdownGUI()
 #undef main
 int main(int argc, char** argv)
 {
+	InitEditorConfigs();
 	InitGUI();
 	InitWindowAndContext();
 	InitRenderGUI(hwnd);
+	ShowWindow();
 
 	Scene scene;
 	AudioListener Listener;
@@ -300,7 +328,7 @@ int main(int argc, char** argv)
 	Renderer MainRender;
 	Editor::Editor Editor;
 
-	scene.Load("Data/Shadows.scene");
+	//scene.Load("Data/Shadows.scene");
 
 	MainRender.SetMainCamera(camera);
 	camera.Pos = Vector3(0, 10, 0);
