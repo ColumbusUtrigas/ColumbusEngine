@@ -157,7 +157,26 @@ namespace Columbus::Editor
 		_goneTo = false;
 		loaded = false;
 
+		auto Pred = [](const auto& a, const auto& b)
+		{
+			return (a.Type != 'f' && b.Type == 'f');
+		};
+
+		auto Pred2 = [](const auto& a, const auto& b)
+		{
+			return str_tolower(a.Name) < str_tolower(b.Name);
+		};
+
+		auto Finder = [](const auto& a)
+		{
+			return a.Type == 'f';
+		};
+
 		auto files = Filesystem::Read(_current.path);
+		std::sort(files.begin(), files.end(), Pred);
+		auto Limit = std::find_if(files.begin(), files.end(), Finder);
+		std::sort(files.begin(), Limit, Pred2);
+		std::sort(Limit, files.end(), Pred2);
 
 		if (ImGui::BeginChild("AssetsToolbar", ImVec2(ImGui::GetWindowContentRegionWidth(), 25)))
 		{

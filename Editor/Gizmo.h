@@ -14,7 +14,6 @@ namespace Columbus::Editor
 		std::unique_ptr<Mesh> _Box;
 		Camera _Camera;
 	public:
-		bool Enable = false;
 		bool EnableMousePicking = false;
 		Vector2 MousePickingPosition;
 		GameObject* PickedObject = nullptr;

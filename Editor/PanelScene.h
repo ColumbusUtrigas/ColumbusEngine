@@ -4,6 +4,7 @@
 #include <Graphics/Texture.h>
 #include <Graphics/Render.h>
 #include <Math/Vector2.h>
+#include <Editor/Settings.h>
 
 namespace Columbus::Editor
 {
@@ -11,6 +12,8 @@ namespace Columbus::Editor
 	class PanelScene : public Panel
 	{
 	private:
+		Settings& settings;
+
 		Texture* FramebufferTexture = nullptr;
 		iVector2 Position;
 		iVector2 SizeOfRenderWindow;
@@ -24,7 +27,7 @@ namespace Columbus::Editor
 
 		void DrawInternal() final override;
 	public:
-		PanelScene();
+		PanelScene(Settings& settings);
 
 		void SetPickedObject(GameObject* Obj)
 		{

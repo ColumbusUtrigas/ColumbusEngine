@@ -8,8 +8,9 @@
 namespace Columbus::Editor
 {
 
-	PanelScene::PanelScene() :
-		Panel(ICON_FA_GLOBE" Scene")
+	PanelScene::PanelScene(Settings& settings) :
+		Panel(ICON_FA_GLOBE" Scene"),
+		settings(settings)
 	{
 		SetMenuBar(true);
 		SetPadding(false);
@@ -20,9 +21,9 @@ namespace Columbus::Editor
 		if (ImGui::BeginMenuBar())
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-			FlagButton(ICON_FA_IMAGE, _Renderer->DrawIcons, "Icons");
-			FlagButton(ICON_FA_BORDER_ALL, _Renderer->DrawGrid, "Grid");
-			FlagButton(ICON_FA_DICE_D6, _Gizmo.Enable, "Gizmo");
+			FlagButton(ICON_FA_IMAGE, settings.sceneView.icons, "Icons");
+			FlagButton(ICON_FA_BORDER_ALL, settings.sceneView.grid, "Grid");
+			FlagButton(ICON_FA_DICE_D6, settings.sceneView.gizmo, "Gizmo");
 
 			ImGui::Dummy({ 10,0 });
 
@@ -35,6 +36,10 @@ namespace Columbus::Editor
 			FlagButton(_Scene->EnablePhysicsSimulation ? ICON_FA_PAUSE : ICON_FA_PLAY, _Scene->EnablePhysicsSimulation);
 			ShowTooltipDelayed(CommonUISettings.TooltipDelay, _Scene->EnablePhysicsSimulation ? "Disable physics simulation" : "Enable physics simulation");
 			ImGui::PopStyleVar();
+
+			ImGui::Dummy({ 10,0 });
+			ImGui::SetNextItemWidth(150);
+			ImGui::SliderFloat("Speed", &settings.sceneView.timeFactor, 0, 1, "%.2f");
 
 			ImGui::EndMenuBar();
 		}
@@ -54,7 +59,7 @@ namespace Columbus::Editor
 			SizeOfRenderWindow = { (int)Size.x, (int)Size.y };
 
 			if (_PickedObject != nullptr)
-			if (_PickedObject != nullptr)
+			if (_PickedObject != nullptr && settings.sceneView.gizmo)
 			{
 				Vector4 rect(Position.X, Position.Y, Size.x, Size.y);
 				_Gizmo.SetCamera(_Renderer->GetMainCamera());

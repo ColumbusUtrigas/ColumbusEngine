@@ -13,6 +13,7 @@
 #include <Graphics/Render.h>
 #include <Math/Vector2.h>
 #include <memory>
+#include <functional>
 
 namespace Columbus::Editor
 {
@@ -26,7 +27,7 @@ namespace Columbus::Editor
 	public:
 		Settings settings;
 
-		PanelScene panelScene;
+		PanelScene panelScene{ settings };
 		PanelHierarchy panelHierarchy;
 		PanelRenderSettings panelRenderSettings;
 		PanelInspector panelInspector;

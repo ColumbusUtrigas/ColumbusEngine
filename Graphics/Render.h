@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/DebugRender.h>
 #include <Graphics/Mesh.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Skybox.h>
@@ -145,6 +146,7 @@ namespace Columbus
 		void RenderOpaque();
 		void RenderSky();
 		void RenderTransparent();
+		void RenderDebug();
 		void RenderFlares();
 		void RenderPostprocess();
 		void Render(RenderPass Pass);

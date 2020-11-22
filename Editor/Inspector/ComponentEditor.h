@@ -14,6 +14,7 @@ namespace Columbus::Editor
 		Component* Target;
 	public:
 		virtual void OnInspectorGUI() {}
+		virtual void OnGizmos() {}
 		virtual std::string_view GetTypename() const { return "ComponentEditor"; }
 
 		ComponentEditor* Clone() const override { return nullptr; }

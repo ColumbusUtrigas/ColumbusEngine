@@ -8,7 +8,10 @@ namespace Columbus
 		Position(Pos),
 		Rotation(Rot),
 		Scale(Scale),
-		ModelMatrix(1.0f) {}
+		ModelMatrix(1.0f)
+	{
+		Update();
+	}
 	
 	void Transform::Update()
 	{

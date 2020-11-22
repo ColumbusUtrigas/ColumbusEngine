@@ -46,6 +46,27 @@ namespace Columbus
 		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
 	}
 
+	static void PrepareStates(BlendState*& BS, DepthStencilState*& DSS, RasterizerState*& RS)
+	{
+		BlendStateDesc bsd;
+		DepthStencilStateDesc dssd;
+		RasterizerStateDesc rsd;
+
+		bsd.IndependentBlendEnable = false;
+		bsd.RenderTarget[0].BlendEnable = false;
+
+		dssd.DepthEnable = true;
+		dssd.DepthFunc = ComparisonFunc::LEqual;
+		dssd.DepthWriteMask = false;
+
+		rsd.Cull = CullMode::Front;
+		rsd.Fill = FillMode::Solid;
+
+		gDevice->CreateBlendState(bsd, &BS);
+		gDevice->CreateDepthStencilState(dssd, &DSS);
+		gDevice->CreateRasterizerState(rsd, &RS);
+	}
+
 	static void CreateSkyboxBuffer(Buffer*& VertexBuffer, Buffer*& IndexBuffer, std::shared_ptr<InputLayout>& Layout)
 	{
 		BufferDesc vertexDesc;
@@ -217,12 +238,14 @@ namespace Columbus
 	Skybox::Skybox()
 	{
 		PrepareMatrices();
+		PrepareStates(BS, DSS, RS);
 		CreateSkyboxBuffer(VertexBuffer, IndexBuffer, Layout);
 	}
 
 	Skybox::Skybox(Texture* InTexture)
 	{
 		PrepareMatrices();
+		PrepareStates(BS, DSS, RS);
 		CreateSkyboxBuffer(VertexBuffer, IndexBuffer, Layout);
 
 		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VertexBuffer, IndexBuffer, Layout);
@@ -242,7 +265,11 @@ namespace Columbus
 
 			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox.get());
 			ShaderOpenGL->SetUniform("ViewProjection", false, View * ViewCamera.GetProjectionMatrix());
-			ShaderOpenGL->SetUniform("Skybox", (TextureOpenGL*)Tex, 0);
+			ShaderOpenGL->SetUniform("Skybox", Tex, 0);
+
+			gDevice->OMSetDepthStencilState(DSS, 0);
+			gDevice->OMSetBlendState(BS, nullptr, RGBA_MASK(255, 255, 255, 255));
+			gDevice->RSSetState(RS);
 
 			gDevice->IASetInputLayout(Layout.get());
 			gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
@@ -265,5 +292,3 @@ namespace Columbus
 	}
 
 }
-
-

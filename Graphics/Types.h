@@ -3,6 +3,8 @@
 namespace Columbus
 {
 
+	#define RGBA_MASK(r, g, b, a) (r << 24| g << 16| b << 8 | a)
+
 	enum class GraphicsAPI
 	{
 		None,

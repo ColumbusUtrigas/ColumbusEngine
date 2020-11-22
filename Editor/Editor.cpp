@@ -222,6 +222,12 @@ namespace Columbus::Editor
 		ResourcesViewerMaterial::Draw(scene);
 		ResourcesViewerMesh::Draw(&scene);
 
+		Render.DrawGrid = settings.sceneView.grid;
+		Render.DrawIcons = settings.sceneView.icons;
+		Render.DrawGizmo = settings.sceneView.gizmo;
+		Graphics::gDebugRender._enabled = settings.sceneView.gizmo;
+		scene.TimeFactor = settings.sceneView.timeFactor;
+
 		if (SkyboxLoader.Draw("Load Skybox"))
 		{
 			SmartPointer<Texture> Tex(gDevice->CreateTexture());

@@ -12,6 +12,14 @@ namespace Columbus::Editor
 		iVector2 windowSize = { 640, 480 };
 		bool windowMaximized = false;
 
+		struct
+		{
+			bool icons = true;
+			bool grid = true;
+			bool gizmo = true;
+			float timeFactor = 1.0f;
+		} sceneView;
+
 		void Serialize(JSON& J) const override;
 		void Deserialize(JSON& J) override;
 	};

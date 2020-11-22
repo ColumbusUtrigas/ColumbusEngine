@@ -516,6 +516,34 @@ void main(void)
 		}
 	}
 
+	void Renderer::RenderDebug()
+	{
+		auto EditorToolsShader = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->EditorTools.get());
+
+		if (!Graphics::gDebugRender.objects.empty())
+		{
+			gDevice->BeginMarker("Debug Draw");
+
+			EditorToolsShader->Bind();
+			EditorToolsShader->SetUniform("ViewProjection", false, MainCamera.GetViewProjection());
+			EditorToolsShader->SetUniform("CameraPos", MainCamera.Pos);
+			EditorToolsShader->SetUniform("UseDistanceFade", 0);
+
+			for (auto& obj : Graphics::gDebugRender.objects)
+			{
+				gDevice->RSSetState(obj.rs);
+
+				EditorToolsShader->SetUniform("Color", obj.color);
+				EditorToolsShader->SetUniform("Model", false, obj.transform);
+				obj.mesh->SubMeshes[0]->Bind();
+				obj.mesh->SubMeshes[0]->Render();
+			}
+
+			EditorToolsShader->Unbind();
+			gDevice->EndMarker();
+		}
+	}
+
 	void Renderer::RenderFlares()
 	{
 
@@ -779,11 +807,8 @@ void main(void)
 
 		if (DrawGrid)
 		{
+			gDevice->BeginMarker("Grid Draw");
 			glDrawBuffers(1, BuffersFirst);
-
-			State.SetBlending(true);
-			State.SetDepthWriting(true);
-			State.SetDepthTesting(Material::DepthTest::LEqual);
 
 			EditorToolsShader->Bind();
 			EditorToolsShader->SetUniform("ViewProjection", false, MainCamera.GetViewProjection());
@@ -793,7 +818,15 @@ void main(void)
 			EditorToolsShader->SetUniform("UseDistanceFade", 1);
 			_Grid.Draw();
 			EditorToolsShader->Unbind();
+			gDevice->EndMarker();
 		}
+
+		// Debug draw
+		glDrawBuffers(1, BuffersFirst);
+		RenderDebug();
+
+		// TODO
+		gDevice->RSSetState(Graphics::gDebugRender.RS_solid);
 
 		//
 		//

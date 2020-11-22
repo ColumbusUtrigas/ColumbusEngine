@@ -1,6 +1,7 @@
 #include <Editor/Inspector/ComponentEditor.h>
 #include <Editor/Icons.h>
 #include <Editor/CommonUI.h>
+#include <Graphics/DebugRender.h>
 #include <Scene/ComponentRigidbody.h>
 #include <Scene/GameObject.h>
 #include <Physics/PhysicsShapeBox.h>
@@ -21,10 +22,12 @@ namespace Columbus::Editor
 		DECLARE_COMPONENT_EDITOR(ComponentRigidbody, ComponentEditorRigidbody);
 	public:
 		void OnInspectorGUI() final override;
+		void OnGizmos() final override;
 	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentRigidbody, ComponentEditorRigidbody);
 
 	static PhysicsShape* DrawShapesEditor(GameObject* Object, PhysicsShape* Shape, bool IsChild);
+	static void _DrawShapesGizmo(const Transform& transform, PhysicsShape* Shape);
 
 	static PhysicsShape* NewShape(PhysicsShape* OldShape, PhysicsShape* NewShape)
 	{
@@ -370,6 +373,83 @@ namespace Columbus::Editor
 
 			//_EditShape(Target->gameObject, RB, Shape, 0);
 		}
+	}
+
+	Vector4 GizmoColor{ 0.0, 1.0, 0.0, 1.0 };
+
+	void _DrawBoxGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+		const auto& t = transform;
+		auto box = static_cast<PhysicsShapeBox*>(Shape);
+		Graphics::gDebugRender.RenderBox(Transform(t.Position, t.Rotation.Euler(), box->GetSize()/2 + box->GetMargin()).GetMatrix(), GizmoColor, true);
+	}
+
+	void _DrawCapsuleGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+
+	}
+
+	void _DrawCompoundGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+		auto compound = static_cast<PhysicsShapeCompound*>(Shape);
+		for (size_t i = 0; i < compound->GetCount(); i++)
+		{
+			auto t = compound->GetTransform(i);
+			Transform rt{ transform };
+			rt.Position += t.Position;
+			rt.Rotation *= t.Rotation;
+			rt.Scale *= t.Scale;
+
+			_DrawShapesGizmo(rt, compound->GetShape(i));
+		}
+	}
+
+	void _DrawConeGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+
+	}
+
+	void _DrawCylinderGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+
+	}
+
+	void _DrawMultiSphereGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+		auto spheres = static_cast<PhysicsShapeMultiSphere*>(Shape);
+		for (size_t i = 0; i < spheres->GetCount(); i++)
+		{
+			auto pos = spheres->GetPosition(i);
+			auto rad = spheres->GetRadius(i) + spheres->GetMargin();
+			Graphics::gDebugRender.RenderSphere(transform.Position + pos, rad, GizmoColor, true);
+		}
+	}
+
+	void _DrawSphereGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+		auto sphere = static_cast<PhysicsShapeSphere*>(Shape);
+		Graphics::gDebugRender.RenderSphere(transform.Position, sphere->GetRadius() + sphere->GetMargin(), GizmoColor, true);
+	}
+
+	void _DrawShapesGizmo(const Transform& transform, PhysicsShape* Shape)
+	{
+		#define IS(x) dynamic_cast<x*>(Shape) != nullptr
+
+		if (IS(PhysicsShapeBox)) _DrawBoxGizmo(transform, Shape);
+		if (IS(PhysicsShapeCapsule)) _DrawCapsuleGizmo(transform, Shape);
+		if (IS(PhysicsShapeCompound)) _DrawCompoundGizmo(transform, Shape);
+		if (IS(PhysicsShapeCone)) _DrawConeGizmo(transform, Shape);
+		//if (IS(PhysicsShapeConvexHull)) _DrawBoxGizmo(obj, Shape);
+		if (IS(PhysicsShapeCylinder)) _DrawCylinderGizmo(transform, Shape);
+		if (IS(PhysicsShapeMultiSphere)) _DrawMultiSphereGizmo(transform, Shape);
+		if (IS(PhysicsShapeSphere)) _DrawSphereGizmo(transform, Shape);
+	}
+
+	void ComponentEditorRigidbody::OnGizmos()
+	{
+		auto rb = static_cast<ComponentRigidbody*>(Target)->GetRigidbody();
+		auto shape = rb->GetCollisionShape();
+		_DrawShapesGizmo(Target->gameObject->transform, shape);
 	}
 
 }

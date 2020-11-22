@@ -11,6 +11,10 @@ namespace Columbus
 	class Skybox
 	{
 	private:
+		BlendState* BS;
+		DepthStencilState* DSS;
+		RasterizerState* RS;
+
 		Buffer* VertexBuffer;
 		Buffer* IndexBuffer;
 		std::shared_ptr<InputLayout> Layout;
@@ -35,5 +39,3 @@ namespace Columbus
 	};
 
 }
-
-

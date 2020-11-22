@@ -147,12 +147,15 @@ namespace Columbus::Editor
 
 	void PanelInspector::DrawComponentsEditor(Scene& Scn)
 	{
-		for (const auto& comp : Inspectable->GetComponents()) {
+		for (const auto& comp : Inspectable->GetComponents())
+		{
 			auto name = InspectorComponentNameRelocate(comp->GetTypename()).data();
-			if (ImGui::CollapsingHeader(name)) {
-				auto& ed = PrototypeFactory<ComponentEditor>::Instance().GetFromTypename(comp->GetTypename());
-				ed.Target = comp.Get();
-				
+			auto& ed = PrototypeFactory<ComponentEditor>::Instance().GetFromTypename(comp->GetTypename());
+			ed.Target = comp.Get();
+			ed.OnGizmos();
+
+			if (ImGui::CollapsingHeader(name))
+			{
 				ImGui::Indent(10);
 				ImGui::PushID(ed.GetTypename().data());
 				ed.OnInspectorGUI();

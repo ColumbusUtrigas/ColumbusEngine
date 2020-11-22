@@ -5,6 +5,8 @@
 #include <Editor/Editor.h>
 #include <Profiling/Profiling.h>
 #include <Core/Game.h>
+#include <Core/FileDialog.h>
+#include <Common/JSON/JSON.h>
 
 #include <Graphics/OpenGL/DeviceOpenGL.h>
 //#include <Graphics/Vulkan/InstanceVulkan.h>
@@ -16,10 +18,13 @@ using namespace Columbus;
 #include <ImGuizmo/ImGuizmo.h>
 #include <imgui/examples/imgui_impl_opengl3.h>
 #include <imgui/examples/imgui_impl_win32.h>
-#include <Windows.h>
 
-#include <Core/FileDialog.h>
-#include <Common/JSON/JSON.h>
+#include <Windows.h>
+#include <uxtheme.h>
+#include <dwmapi.h>
+
+#pragma comment(lib, "UxTheme.lib")
+#pragma comment(lib, "Dwmapi.lib")
 
 #ifdef PLATFORM_WINDOWS
 //Hint to the driver to use discrete GPU
@@ -32,6 +37,7 @@ extern "C"
 }
 #endif
 
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 19
 #define COLUMBUS_EDITOR
 
 HWND hwnd;
@@ -56,8 +62,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	Event e;
 	memset(&e, 0, sizeof(e));
 
+	BOOL attrubute = TRUE;
 	switch (msg)
 	{
+	case WM_NCCREATE:
+		SetWindowTheme(hWnd, L"DarkMode_Explorer", NULL);
+		DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &attrubute, sizeof(BOOL));
+		return DefWindowProc(hWnd, msg, wparam, lparam);
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -233,11 +244,9 @@ void ShutdownWindowAndContext()
 	DestroyWindow(hwnd);
 }
 
-void InitEditorConfigs()
+void InitEditorConfigs(Editor::Settings& settings)
 {
 #ifdef COLUMBUS_EDITOR
-	Editor::Settings settings;
-
 	JSON j;
 	if (j.Load("editor_settings.json"))
 	{
@@ -251,6 +260,15 @@ void InitEditorConfigs()
 
 	wnd_size = settings.windowSize;
 	wnd_max = settings.windowMaximized;
+#endif
+}
+
+void SaveEditorConfigs(const Editor::Settings& settings)
+{
+#ifdef COLUMBUS_EDITOR
+	JSON j;
+	settings.Serialize(j);
+	j.Save("editor_settings.json");
 #endif
 }
 
@@ -273,11 +291,13 @@ void InitRenderGUI(HWND hwnd)
 
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplOpenGL3_Init("#version 130");
+	Graphics::gDebugRender.Initialize();
 #endif
 }
 
 void ShowWindow()
 {
+	//SetWindowTheme(hwnd, L"DarkMode_Explorer", NULL);
 	ShowWindow(hwnd, wnd_max ? SW_MAXIMIZE : SW_SHOWNORMAL);
 }
 
@@ -310,13 +330,16 @@ void ShutdownGUI()
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+	Graphics::gDebugRender.Shutdown();
 #endif
 }
 
 #undef main
 int main(int argc, char** argv)
 {
-	InitEditorConfigs();
+	Editor::Settings settings;
+
+	InitEditorConfigs(settings);
 	InitGUI();
 	InitWindowAndContext();
 	InitRenderGUI(hwnd);
@@ -327,6 +350,7 @@ int main(int argc, char** argv)
 	Camera camera;
 	Renderer MainRender;
 	Editor::Editor Editor;
+	Editor.settings = settings;
 
 	//scene.Load("Data/Shadows.scene");
 
@@ -428,6 +452,9 @@ int main(int argc, char** argv)
 			MainRender.SetIsEditor(false);
 #endif
 
+			//Graphics::gDebugRender.RenderBox(Transform({}, { 45 }, { 1 }).GetMatrix(), { 0.8, 0.5, 0.5, 1 }, true);
+			//Graphics::gDebugRender.RenderSphere({5,0,0}, 1, { 0.8, 0.5, 0.5, 1 }, true);
+
 			game.Update();
 
 			MainRender.SetDeltaTime(RedrawTime);
@@ -440,6 +467,7 @@ int main(int argc, char** argv)
 			MainRender.SetRenderList(&scene.Objects.Resources);
 			MainRender.Render();
 
+			Graphics::gDebugRender.NewFrame();
 			RenderBeginGUI();
 			Editor.Draw(scene, MainRender, wnd_size, RedrawTime);
 			RenderEndGUI();
@@ -450,6 +478,7 @@ int main(int argc, char** argv)
 
 	ShutdownGUI();
 	ShutdownWindowAndContext();
+	SaveEditorConfigs(Editor.settings);
 
 	return 0;
 }

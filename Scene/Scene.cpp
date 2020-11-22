@@ -2,6 +2,7 @@
 #include <Graphics/Device.h>
 #include <Common/JSON/JSON.h>
 #include <Profiling/Profiling.h>
+#include <Graphics/DebugRender.h>
 
 #include <Scene/ComponentAudioSource.h>
 #include <Scene/ComponentBillboard.h>

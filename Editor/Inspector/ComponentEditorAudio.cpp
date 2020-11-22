@@ -1,5 +1,6 @@
 #include <Editor/Inspector/ComponentEditor.h>
 #include <Scene/ComponentAudioSource.h>
+#include <Graphics/DebugRender.h>
 #include <imgui/imgui.h>
 
 namespace Columbus::Editor
@@ -25,6 +26,17 @@ namespace Columbus::Editor
 				ImGui::Checkbox("Play",          &Source->Playing);
 				ImGui::Checkbox("Loop",          &Source->Looping);
 			}
+		}
+
+		void OnGizmos() final override
+		{
+			auto Source = static_cast<ComponentAudioSource*>(Target)->GetSource();
+
+			Vector4 minColor{ 0.0, 0.3, 0.7, 0.1 };
+			Vector4 maxColor{ 0.0, 0.8, 0.7, 0.1 };
+
+			Graphics::gDebugRender.RenderSphere(Source->Position, Source->MinDistance, minColor, true);
+			Graphics::gDebugRender.RenderSphere(Source->Position, Source->MaxDistance, maxColor, true);
 		}
 	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentAudioSource, ComponentEditorAudio);

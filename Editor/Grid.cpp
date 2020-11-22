@@ -39,10 +39,32 @@ namespace Columbus::Editor
 		Layout.Elements[0] = InputLayoutElementDesc{ 0, 3 };
 
 		glGenVertexArrays(1, &VAO);
+
+		BlendStateDesc bsd;
+		DepthStencilStateDesc dssd;
+		RasterizerStateDesc rsd;
+
+		bsd.RenderTarget[0].BlendEnable = true;
+		bsd.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+		bsd.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+		bsd.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+		bsd.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+
+		dssd.DepthEnable = true;
+		dssd.DepthFunc = ComparisonFunc::LEqual;
+		dssd.DepthWriteMask = false;
+
+		gDevice->CreateBlendState(bsd, &BS);
+		gDevice->CreateDepthStencilState(dssd, &DSS);
+		gDevice->CreateRasterizerState(rsd, &RS);
 	}
 
 	void Grid::Draw()
 	{
+		gDevice->OMSetBlendState(BS, nullptr, RGBA_MASK(255, 255, 255, 255));
+		gDevice->OMSetDepthStencilState(DSS, 0);
+		gDevice->RSSetState(RS);
+
 		glBindVertexArray(VAO);
 		gDevice->IASetInputLayout(&Layout);
 		gDevice->IASetVertexBuffers(0, 1, &GridVertices);

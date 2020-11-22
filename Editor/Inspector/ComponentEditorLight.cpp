@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Editor/Inspector/ComponentEditor.h>
+#include <Graphics/DebugRender.h>
 #include <Scene/ComponentLight.h>
 #include <imgui/imgui.h>
 
@@ -25,6 +26,13 @@ namespace Columbus::Editor
 			ImGui::DragFloat("Range",          &l.Range, 0.1f);
 			ImGui::DragFloat("Inner Cutoff",   &l.InnerCutoff, 0.01f);
 			ImGui::DragFloat("Outer Cutoff",   &l.OuterCutoff, 0.01f);
+		}
+
+		void OnGizmos() final override
+		{
+			auto comp = static_cast<ComponentLight*>(Target);
+			auto& l = comp->GetLight();
+			Graphics::gDebugRender.RenderSphere(l.Pos, l.Range, Vector4(l.Color, 0.3), true);
 		}
 	};
 	IMPLEMENT_COMPONENT_EDITOR(ComponentLight, ComponentEditorLight);
