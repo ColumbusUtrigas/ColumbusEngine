@@ -1,0 +1,21 @@
+#shader vertex VS
+#input(float2, pos, POSITION, 0)
+#output(float4, pos, SV_POSITION, 0)
+
+VS_OUTPUT VS(VS_INPUT i)
+{
+	VS_OUTPUT o;
+	o.pos = float4(i.pos, 0, 1);
+	return o;
+}
+
+#shader pixel PS
+#input(float4, pos, SV_POSITION, 0)
+#output(float4, rt0, SV_TARGET, 0)
+
+PS_OUTPUT PS(PS_INPUT i)
+{
+    PS_OUTPUT o;
+    o.rt0 = float4(1, 0, 0, 1);
+    return o;
+}

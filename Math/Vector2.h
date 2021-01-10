@@ -215,7 +215,3 @@ namespace Columbus
 	};
 
 }
-
-
-
-

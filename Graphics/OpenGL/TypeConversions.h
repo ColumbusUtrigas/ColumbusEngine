@@ -61,13 +61,46 @@ namespace Columbus
 		return 0;
 	}
 
-	static GLenum PrimitiveTopologyToGL(PrimitiveTopology topology)
+	static std::pair<GLenum, int> PrimitiveTopologyToGL(PrimitiveTopology topology)
 	{
 		switch (topology)
 		{
-		case PrimitiveTopology::PointList:    return GL_POINTS;
-		case PrimitiveTopology::LineList:     return GL_LINES;
-		case PrimitiveTopology::TriangleList: return GL_TRIANGLES;
+		case PrimitiveTopology::Undefined:    return std::make_pair(GL_NONE, 0);
+		case PrimitiveTopology::PointList:    return std::make_pair(GL_POINTS, 0);
+		case PrimitiveTopology::LineList:     return std::make_pair(GL_LINES, 0);
+		case PrimitiveTopology::TriangleList: return std::make_pair(GL_TRIANGLES, 0);
+		case PrimitiveTopology::PatchList_1:  return std::make_pair(GL_PATCHES, 1);
+		case PrimitiveTopology::PatchList_2:  return std::make_pair(GL_PATCHES, 2);
+		case PrimitiveTopology::PatchList_3:  return std::make_pair(GL_PATCHES, 3);
+		case PrimitiveTopology::PatchList_4:  return std::make_pair(GL_PATCHES, 4);
+		case PrimitiveTopology::PatchList_5:  return std::make_pair(GL_PATCHES, 5);
+		case PrimitiveTopology::PatchList_6:  return std::make_pair(GL_PATCHES, 6);
+		case PrimitiveTopology::PatchList_7:  return std::make_pair(GL_PATCHES, 7);
+		case PrimitiveTopology::PatchList_8:  return std::make_pair(GL_PATCHES, 8);
+		case PrimitiveTopology::PatchList_9:  return std::make_pair(GL_PATCHES, 9);
+		case PrimitiveTopology::PatchList_10: return std::make_pair(GL_PATCHES, 10);
+		case PrimitiveTopology::PatchList_11: return std::make_pair(GL_PATCHES, 11);
+		case PrimitiveTopology::PatchList_12: return std::make_pair(GL_PATCHES, 12);
+		case PrimitiveTopology::PatchList_13: return std::make_pair(GL_PATCHES, 13);
+		case PrimitiveTopology::PatchList_14: return std::make_pair(GL_PATCHES, 14);
+		case PrimitiveTopology::PatchList_15: return std::make_pair(GL_PATCHES, 15);
+		case PrimitiveTopology::PatchList_16: return std::make_pair(GL_PATCHES, 16);
+		case PrimitiveTopology::PatchList_17: return std::make_pair(GL_PATCHES, 17);
+		case PrimitiveTopology::PatchList_18: return std::make_pair(GL_PATCHES, 18);
+		case PrimitiveTopology::PatchList_19: return std::make_pair(GL_PATCHES, 19);
+		case PrimitiveTopology::PatchList_20: return std::make_pair(GL_PATCHES, 20);
+		case PrimitiveTopology::PatchList_21: return std::make_pair(GL_PATCHES, 21);
+		case PrimitiveTopology::PatchList_22: return std::make_pair(GL_PATCHES, 22);
+		case PrimitiveTopology::PatchList_23: return std::make_pair(GL_PATCHES, 23);
+		case PrimitiveTopology::PatchList_24: return std::make_pair(GL_PATCHES, 24);
+		case PrimitiveTopology::PatchList_25: return std::make_pair(GL_PATCHES, 25);
+		case PrimitiveTopology::PatchList_26: return std::make_pair(GL_PATCHES, 26);
+		case PrimitiveTopology::PatchList_27: return std::make_pair(GL_PATCHES, 27);
+		case PrimitiveTopology::PatchList_28: return std::make_pair(GL_PATCHES, 28);
+		case PrimitiveTopology::PatchList_29: return std::make_pair(GL_PATCHES, 29);
+		case PrimitiveTopology::PatchList_30: return std::make_pair(GL_PATCHES, 30);
+		case PrimitiveTopology::PatchList_31: return std::make_pair(GL_PATCHES, 31);
+		case PrimitiveTopology::PatchList_32: return std::make_pair(GL_PATCHES, 32);
 		}
 	}
 

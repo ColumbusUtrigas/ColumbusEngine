@@ -21,7 +21,7 @@ namespace Columbus
 		bool DepthTextureMipmaps = false;
 		Texture::Flags DepthTextureFlags;
 
-		Texture* ColorTextures[TexturesCount];
+		Texture* ColorTextures[TexturesCount] = { nullptr };
 		bool ColorTexturesEnablement[TexturesCount];
 		bool ColorTexturesMipmaps[TexturesCount];
 		TextureFormat ColorTexturesFormats[TexturesCount];
@@ -42,22 +42,25 @@ namespace Columbus
 	public:
 		PostEffect()
 		{
-			Texture::Flags Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Clamp);
-
-			FB = gDevice->CreateFramebuffer();
-			DepthTexture = nullptr;
-			DepthTextureFlags = Flags;
-
-			for (int i = 0; i < TexturesCount; i++)
+			if (gDevice != nullptr)
 			{
-				ColorTextures[i] = nullptr;
-				ColorTexturesEnablement[i] = false;
-				ColorTexturesMipmaps[i] = false;
-				ColorTexturesFormats[i] = TextureFormat::RGBA8;
-				ColorTextureFlags[i] = Flags;
+				Texture::Flags Flags(Texture::Filter::Linear, Texture::Anisotropy::Anisotropy1, Texture::Wrap::Clamp);
 
-				PrevColorTextures[i] = nullptr;
-				ColorTexturesAttached[i] = false;
+				FB = gDevice->CreateFramebuffer();
+				DepthTexture = nullptr;
+				DepthTextureFlags = Flags;
+
+				for (int i = 0; i < TexturesCount; i++)
+				{
+					ColorTextures[i] = nullptr;
+					ColorTexturesEnablement[i] = false;
+					ColorTexturesMipmaps[i] = false;
+					ColorTexturesFormats[i] = TextureFormat::RGBA8;
+					ColorTextureFlags[i] = Flags;
+
+					PrevColorTextures[i] = nullptr;
+					ColorTexturesAttached[i] = false;
+				}
 			}
 		}
 

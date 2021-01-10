@@ -49,6 +49,8 @@ namespace Columbus
 
 	Renderer::Renderer()
 	{
+		if (gDevice == nullptr) return;
+
 		Blob = gDevice->CreateTexture();
 		Blob->Load("Data/Textures/blob.png");
 

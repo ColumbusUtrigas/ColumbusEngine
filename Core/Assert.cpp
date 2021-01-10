@@ -15,20 +15,14 @@
 			NULL);
 #endif
 
-namespace Columbus
+void _ColumbusAssert_Internal(const char* file, long int line, const char* msg)
 {
+	constexpr int buf_size = 4096;
+	char message[buf_size] = { 0 };
+	snprintf(message, buf_size, "Assertation at %s:%li\n\n%s", file, line, msg);
 
-	void _ColumbusAssert_Internal(const char* file, long int line, const char* msg)
-	{
-		constexpr int buf_size = 4096;
-		char message[buf_size] = { 0 };
-		snprintf(message, buf_size, "Assertation at %s:%li\n\n%s", file, line, msg);
+	MESSAGE_BOX(message);
 
-		MESSAGE_BOX(message);
-
-		Log::Fatal("Assertation at %s:%d:   %s", file, line, msg);
-	}
-
+	Columbus::Log::Fatal("Assertation at %s:%d:   %s", file, line, msg);
 }
-
 

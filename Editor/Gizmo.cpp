@@ -53,8 +53,8 @@ namespace
 
 	Gizmo::Gizmo()
 	{
-		_Box = std::unique_ptr<Mesh>(gDevice->CreateMesh());
-		_Box->Load("Data/Meshes/Box.cmf");
+		//_Box = std::unique_ptr<Mesh>(gDevice->CreateMesh());
+		//_Box->Load("Data/Meshes/Box.cmf");
 	}
 
 	struct GizmoTransform

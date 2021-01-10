@@ -117,8 +117,8 @@ void main(void)
 	{
 		switch (Type)
 		{
-		case ShaderType::Vertex:   return "Vertex";
-		case ShaderType::Fragment: return "Pixel";
+		case ShaderType::Vertex: return "Vertex";
+		case ShaderType::Pixel:  return "Pixel";
 		}
 
 		return "";
@@ -453,7 +453,7 @@ void main(void)
 		FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
 		bool VertexCompilation   = ShaderCompile(Path.c_str(), Data.VertexSource.c_str(), VertexShader, ShaderType::Vertex);
-		bool FragmentCompilation = ShaderCompile(Path.c_str(), Data.FragmentSource.c_str(), FragmentShader, ShaderType::Fragment);
+		bool FragmentCompilation = ShaderCompile(Path.c_str(), Data.FragmentSource.c_str(), FragmentShader, ShaderType::Pixel);
 
 		if (!VertexCompilation || !FragmentCompilation)
 		{

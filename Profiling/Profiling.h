@@ -46,8 +46,8 @@ namespace Columbus
 		~ProfileMarkerGPU();
 	};
 
-	#define PROFILE_CPU(module) ProfileMarker MarkerCPU(module);
-	#define PROFILE_GPU(module) ProfileMarkerGPU MarkerGPU(module);
+	#define PROFILE_CPU(module) Columbus::ProfileMarker MarkerCPU(module);
+	#define PROFILE_GPU(module) Columbus::ProfileMarkerGPU MarkerGPU(module);
 
 	void ResetProfiling();	
 	double GetProfileTime(ProfileModule Module);

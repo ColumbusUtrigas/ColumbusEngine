@@ -2,6 +2,7 @@
 
 #include <Core/FileInfo.h>
 #include <Core/String.h>
+#include <Core/Core.h>
 #include <vector>
 
 namespace Columbus

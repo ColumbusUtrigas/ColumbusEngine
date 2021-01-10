@@ -4,24 +4,31 @@
 namespace Columbus::Editor
 {
 
-	void Settings::Serialize(JSON& J) const
+	void Settings::TryLoad()
 	{
-		J["windowSize"] = windowSize;
-		J["windowMaximized"] = windowMaximized;
-		J["sceneView"]["icons"] = sceneView.icons;
-		J["sceneView"]["grid"] = sceneView.grid;
-		J["sceneView"]["gizmo"] = sceneView.gizmo;
-		J["sceneView"]["timeFactor"] = sceneView.timeFactor;
+		JSON j;
+		j.Load("editor_settings.json");
+
+		windowSize = j["windowSize"];
+		windowMaximized = (bool)j["windowMaximized"];
+		sceneView.icons = (bool)j["sceneView"]["icons"];
+		sceneView.grid = (bool)j["sceneView"]["grid"];
+		sceneView.gizmo = (bool)j["sceneView"]["gizmo"];
+		sceneView.timeFactor = (float)j["sceneView"]["timeFactor"];
 	}
 
-	void Settings::Deserialize(JSON& J)
+	void Settings::TrySave() const
 	{
-		windowSize = J["windowSize"];
-		windowMaximized = (bool)J["windowMaximized"];
-		sceneView.icons = (bool)J["sceneView"]["icons"];
-		sceneView.grid = (bool)J["sceneView"]["grid"];
-		sceneView.gizmo = (bool)J["sceneView"]["gizmo"];
-		sceneView.timeFactor = (float)J["sceneView"]["timeFactor"];
+		JSON j;
+
+		j["windowSize"] = windowSize;
+		j["windowMaximized"] = windowMaximized;
+		j["sceneView"]["icons"] = sceneView.icons;
+		j["sceneView"]["grid"] = sceneView.grid;
+		j["sceneView"]["gizmo"] = sceneView.gizmo;
+		j["sceneView"]["timeFactor"] = sceneView.timeFactor;
+
+		j.Save("editor_settings.json");
 	}
 
 }

@@ -1,14 +1,18 @@
 #include <Graphics/OpenGL/DeviceOpenGL.h>
 #include <Graphics/OpenGL/BufferOpenGL.h>
+#include <Graphics/OpenGL/GraphicsPipelineGL.h>
+#include <Graphics/OpenGL/ComputePipeline.h>
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <Graphics/OpenGL/MeshOpenGL.h>
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TypeConversions.h>
+#include <Graphics/OpenGL/ShaderCompile.h>
 #include <RenderAPIOpenGL/OpenGL.h>
 
 namespace Columbus
 {
+	using namespace Graphics;
 
 	DeviceOpenGL::DeviceOpenGL()
 	{
@@ -33,11 +37,6 @@ namespace Columbus
 	Framebuffer* DeviceOpenGL::CreateFramebuffer() const
 	{
 		return new FramebufferOpenGL();
-	}
-
-	void DeviceOpenGL::IASetPrimitiveTopology(PrimitiveTopology Topology)
-	{
-		_currentTopology = Topology;
 	}
 
 	void DeviceOpenGL::IASetInputLayout(InputLayout* Layout)
@@ -167,6 +166,29 @@ namespace Columbus
 		}
 	}
 
+	void DeviceOpenGL::RSSetViewports(uint32 Num, Viewport* pViewports)
+	{
+		//TODO
+		//GL_ARB_viewport_array
+		if (Num > 1)
+			Log::Fatal("Multiple viewports are not supported");
+
+		auto& vp = pViewports[0];
+		glViewport(vp.TopLeftX, vp.TopLeftY, vp.Width, vp.Height);
+		glDepthRange(vp.MinDepth, vp.MaxDepth);
+	}
+
+	void DeviceOpenGL::RSSetScissorRects(uint32 Num, ScissorRect* pScissors)
+	{
+		//TODO
+		//GL_ARB_viewport_array
+		if (Num > 1)
+			Log::Fatal("Multiple scissors are not supported");
+
+		auto& s = pScissors[0];
+		glScissor(s.Left, s.Top, s.Right - s.Left, s.Bottom - s.Top);
+	}
+
 	void DeviceOpenGL::SetShader(ShaderProgram* Prog)
 	{
 		if (Prog != nullptr)
@@ -187,9 +209,16 @@ namespace Columbus
 		}
 	}
 
-	void DeviceOpenGL::SetComputePipelineState(ComputePipelineState* State)
+	void DeviceOpenGL::SetGraphicsPipeline(Graphics::GraphicsPipeline* pPipeline)
 	{
-		glUseProgram(State->progid);
+		_currentLayout = pPipeline->GetDesc().layout;
+		_currentTopology = pPipeline->GetDesc().topology;
+		glUseProgram(static_cast<Graphics::GL::GraphicsPipelineGL*>(pPipeline)->_prog);
+	}
+
+	void DeviceOpenGL::SetComputePipelineState(ComputePipeline* State)
+	{
+		glUseProgram(static_cast<Graphics::GL::ComputePipeline*>(State)->progid);
 	}
 
 	bool DeviceOpenGL::CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState)
@@ -272,13 +301,35 @@ namespace Columbus
 		glUnmapBuffer(type);
 	}
 
-	bool DeviceOpenGL::CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState)
+	bool DeviceOpenGL::CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, GraphicsPipeline** ppGraphicsPipeline)
 	{
-		*ppComputePipelineState = new ComputePipelineState(Desc);
-		auto pComputePipelineState = *ppComputePipelineState;
+		auto pipeline = new Graphics::GL::GraphicsPipelineGL(Desc);
+		*ppGraphicsPipeline = pipeline;
 
-		GLint len = Desc.CS.length();
-		const GLchar* str = Desc.CS.c_str();
+		auto vs = GL::CompileShaderStage_GL(Desc.VS);
+		auto hs = GL::CompileShaderStage_GL(Desc.HS);
+		auto ds = GL::CompileShaderStage_GL(Desc.DS);
+		auto gs = GL::CompileShaderStage_GL(Desc.GS);
+		auto ps = GL::CompileShaderStage_GL(Desc.PS);
+
+		pipeline->_prog = glCreateProgram();
+		if (vs) glAttachShader(pipeline->_prog, vs);
+		if (hs) glAttachShader(pipeline->_prog, hs);
+		if (ds) glAttachShader(pipeline->_prog, ds);
+		if (gs) glAttachShader(pipeline->_prog, gs);
+		if (ps) glAttachShader(pipeline->_prog, ps);
+		glLinkProgram(pipeline->_prog);
+
+		return true;
+	}
+
+	bool DeviceOpenGL::CreateComputePipelineState(const ComputePipelineDesc& Desc, ComputePipeline** ppComputePipelineState)
+	{
+		*ppComputePipelineState = new ComputePipeline(Desc);
+		auto pComputePipelineState = static_cast<Graphics::GL::ComputePipeline*>(*ppComputePipelineState);
+
+		GLint len = Desc.CS->Source.size();
+		const GLchar* str = Desc.CS->Source.data();
 
 		pComputePipelineState->shadid = glCreateShader(GL_COMPUTE_SHADER);
 		glShaderSource(pComputePipelineState->shadid, 1, &str, &len);
@@ -316,14 +367,21 @@ namespace Columbus
 	void DeviceOpenGL::Draw(uint32 VertexCount, uint32 StartVertexLocation)
 	{
 		auto mode = PrimitiveTopologyToGL(_currentTopology);
-		glDrawArrays(mode, StartVertexLocation, VertexCount);
+		if (mode.first == GL_PATCHES)
+			glPatchParameteri(GL_PATCH_VERTICES, mode.second);
+
+		glDrawArrays(mode.first, StartVertexLocation, VertexCount);
 	}
 
 	void DeviceOpenGL::DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, int BaseVertexLocation)
 	{
 		auto mode = PrimitiveTopologyToGL(_currentTopology);
 		auto type = IndexFormatToGL(_currentIndexFormat);
-		glDrawElements(mode, IndexCount, type, nullptr);
+
+		if (mode.first == GL_PATCHES)
+			glPatchParameteri(GL_PATCH_VERTICES, mode.second);
+
+		glDrawElements(mode.first, IndexCount, type, nullptr);
 	}
 
 	void DeviceOpenGL::BeginMarker(const char* Str)

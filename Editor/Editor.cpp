@@ -9,6 +9,7 @@
 #include <Editor/ResourcesViewerMesh.h>
 #include <Editor/Extension.h>
 #include <Common/JSON/JSON.h>
+#include <Input/Input.h>
 #include <Core/Filesystem.h>
 #include <imgui.h>
 #include <map>
@@ -194,11 +195,62 @@ namespace Columbus::Editor
 
 	void Editor::Draw(Scene& scene, Renderer& Render, iVector2& Size, float RedrawTime)
 	{
+		Render.SetIsEditor(true);
+
+		if (panelScene.IsHover())
+		{
+			wheel = gInput.GetMouseWheel().Y * 5;
+		}
+
+		if (gInput.GetMouseButton(1).State)
+		{
+#if COLUMBUS_EDITOR
+			if (panelScene.IsHover())
+			{
+				wasLooking = true;
+			}
+#else`
+			wasLooking = true;
+#endif
+
+			if (wasLooking)
+			{
+				camera.Pos += camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('W');
+				camera.Pos -= camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('S');
+				camera.Pos -= camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('A');
+				camera.Pos += camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('D');
+				camera.Pos -= camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SHIFT);
+				camera.Pos += camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SPACE);
+
+				camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('Q');
+				camera.Rot += Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('E');
+
+				Vector2 deltaMouse = gInput.GetMouseMovement();
+				camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
+			}
+		}
+		else
+		{
+			wasLooking = false;
+		}
+
+		if (panelScene.IsHover() && gInput.GetMouseButton(2).State)
+		{
+			auto deltaMouse = gInput.GetMouseMovement();
+			camera.Pos -= camera.Right() * deltaMouse.X * 0.1f;
+			camera.Pos += camera.Up() * deltaMouse.Y * 0.1f;
+			ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+		}
+
+		camera.Pos += camera.Direction() * wheel;
+		//wheel -= wheel * 3 * RedrawTime;
+		//if (abs(wheel) <= 0.2) wheel = 0.0f;
+
 		DrawMainLayout(scene);
 
 		panelScene.SetScene(&scene);
 		panelScene.SetRenderer(&Render);
-		panelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
+		//panelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
 		panelHierarchy.SetScene(&scene);
 		Size = panelScene.GetSize();
 		panelRenderSettings.SetRenderer(&Render);

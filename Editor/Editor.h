@@ -24,6 +24,10 @@ namespace Columbus::Editor
 		void DrawMainMenu(Scene& scene);
 		void DrawToolbar();
 		void DrawMainLayout(Scene& scene);
+
+		float wheel = 0.0f;
+		float cameraSpeed = 5.0f;
+		bool wasLooking = false;
 	public:
 		Settings settings;
 
@@ -35,6 +39,8 @@ namespace Columbus::Editor
 		PanelConsole panelConsole;
 		PanelAssets panelAssets;
 		std::shared_ptr<PanelTexture> panelTexture { new PanelTexture() };
+
+		Camera camera;
 	public:
 		Editor();
 

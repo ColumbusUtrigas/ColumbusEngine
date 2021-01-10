@@ -7,6 +7,9 @@
 namespace Columbus
 {
 
+	class Input;
+	extern Input gInput;
+
 	enum class SystemCursor
 	{
 		Arrow,

@@ -10,5 +10,4 @@
 #include <Core/Filesystem.h>
 
 #define sizeofarray(a) (sizeof(a) / sizeof(a[0]))
-
-
+#define COLUMBUS_EDITOR 1

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <Graphics/Device.h>
 
 namespace Columbus
 {
@@ -12,7 +13,10 @@ namespace Columbus
 	public:
 		ScreenQuad()
 		{
-			glGenVertexArrays(1, &VAO);
+			if (gDevice != nullptr)
+			{
+				glGenVertexArrays(1, &VAO);
+			}
 		}
 
 		void Render()
@@ -27,7 +31,10 @@ namespace Columbus
 
 		~ScreenQuad()
 		{
-			glDeleteVertexArrays(1, &VAO);
+			if (gDevice != nullptr)
+			{
+				glDeleteVertexArrays(1, &VAO);
+			}
 		}
 	};
 

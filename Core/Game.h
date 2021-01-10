@@ -1,12 +1,8 @@
 #pragma once
 
-namespace Columbus
+struct Game
 {
-
-class Game
-{
-public:
+	void EngineStarted();
 	void Update();
+	void Shutdown();
 };
-
-}

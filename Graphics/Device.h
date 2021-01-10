@@ -1,7 +1,8 @@
 #pragma once
 
 #include <Graphics/Shader.h>
-#include <Graphics/ComputePipelineState.h>
+#include <Graphics/GraphicsPipeline.h>
+#include <Graphics/ComputePipeline.h>
 #include <Graphics/Texture.h>
 #include <Graphics/Mesh.h>
 #include <Graphics/Framebuffer.h>
@@ -30,7 +31,6 @@ namespace Columbus
 		void Initialize();
 		void Shutdown();
 
-		virtual void IASetPrimitiveTopology(PrimitiveTopology Topology) = 0;
 		virtual void IASetInputLayout(InputLayout* Layout) = 0;
 		virtual void IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers) = 0;
 		virtual void IASetIndexBuffer(Buffer* pIndexBuffer, IndexFormat Format, uint32 Offset) = 0;
@@ -39,12 +39,13 @@ namespace Columbus
 		virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) = 0;
 
 		virtual void RSSetState(RasterizerState* pRasterizerState) = 0;
-		//virtual void RSSetViewports() = 0;
-		//virtual void RSSetScissorRects() = 0;
+		virtual void RSSetViewports(uint32 Num, Viewport* pViewports) = 0;
+		virtual void RSSetScissorRects(uint32 Num, ScissorRect* pScissors) = 0;
 
 		virtual void SetShader(ShaderProgram* Prog) = 0;
 
-		virtual void SetComputePipelineState(ComputePipelineState* State) = 0;
+		virtual void SetGraphicsPipeline(Columbus::Graphics::GraphicsPipeline* pPipeline) {}
+		virtual void SetComputePipelineState(ComputePipeline* State) = 0;
 		//virtual void SetGraphicsPipelineState(GraphicsPipelineState* State) = 0;
 
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) = 0;
@@ -57,7 +58,8 @@ namespace Columbus
 		virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) = 0;
 		virtual void UnmapBuffer(Buffer* pBuffer) = 0;
 
-		virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) = 0;
+		virtual bool CreateGraphicsPipeline(const Columbus::Graphics::GraphicsPipelineDesc& Desc, Columbus::Graphics::GraphicsPipeline** ppPipeline) = 0;
+		virtual bool CreateComputePipelineState(const ComputePipelineDesc& Desc, ComputePipeline** ppComputePipelineState) = 0;
 
 		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) = 0;
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) = 0;

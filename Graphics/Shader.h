@@ -3,15 +3,10 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <Graphics/Types.h>
 
 namespace Columbus
 {
-
-	enum class ShaderType
-	{
-		Vertex,
-		Fragment
-	};
 
 	enum class ShaderPropertyType
 	{

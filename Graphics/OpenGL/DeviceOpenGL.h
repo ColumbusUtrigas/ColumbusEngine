@@ -21,7 +21,6 @@ namespace Columbus
 		virtual Mesh* CreateMesh() const override;
 		virtual Framebuffer* CreateFramebuffer() const override;
 
-		virtual void IASetPrimitiveTopology(PrimitiveTopology Topology) final override;
 		virtual void IASetInputLayout(InputLayout* Layout) final override;
 		virtual void IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers) final override;
 		virtual void IASetIndexBuffer(Buffer* pIndexBuffer, IndexFormat Format, uint32 Offset) final override;
@@ -30,10 +29,13 @@ namespace Columbus
 		virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) final override;
 
 		virtual void RSSetState(RasterizerState* pRasterizerState) final override;
+		virtual void RSSetViewports(uint32 Num, Viewport* pViewports) final override;
+		virtual void RSSetScissorRects(uint32 Num, ScissorRect* pScissors) final override;
 
 		virtual void SetShader(ShaderProgram* Prog) final override;
 
-		virtual void SetComputePipelineState(ComputePipelineState* State) final override;
+		virtual void SetGraphicsPipeline(Columbus::Graphics::GraphicsPipeline* pPipeline) final override;
+		virtual void SetComputePipelineState(ComputePipeline* State) final override;
 
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) final override;
 		virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) final override;
@@ -45,7 +47,8 @@ namespace Columbus
 		virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) final override;
 		virtual void UnmapBuffer(Buffer* pBuffer) final override;
 
-		virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) final override;
+		virtual bool CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& Desc, Graphics::GraphicsPipeline** ppGraphicsPipeline) final override;
+		virtual bool CreateComputePipelineState(const ComputePipelineDesc& Desc, ComputePipeline** ppComputePipelineState) final override;
 
 		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) final override;
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) final override;

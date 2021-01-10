@@ -4,6 +4,8 @@
 namespace Columbus
 {
 
+	Input gInput;
+
 	Input::Input() {}
 	
 	void Input::WarpMouse(const iVector2& Pos)

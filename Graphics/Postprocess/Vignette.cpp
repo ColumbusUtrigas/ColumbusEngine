@@ -6,6 +6,8 @@ namespace Columbus
 
 	PostprocessVignette::PostprocessVignette(ScreenQuad& Quad) : _Quad(Quad)
 	{
+		if (gDevice == nullptr) return;
+
 		BlendStateDesc BSD;
 		BSD.RenderTarget[0].BlendEnable = true;
 		BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;

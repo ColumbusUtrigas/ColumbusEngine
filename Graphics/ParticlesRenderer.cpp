@@ -4,6 +4,8 @@
 #include <Graphics/Device.h>
 #include <Math/Quaternion.h>
 
+#include <GL/glew.h>
+
 namespace Columbus
 {
 
@@ -81,7 +83,7 @@ namespace Columbus
 //}
 //)";
 
-	ComputePipelineState* CPS;
+	ComputePipeline* CPS;
 
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
@@ -99,11 +101,14 @@ namespace Columbus
 
 	ParticlesRenderer::ParticlesRenderer(size_t MaxSize)
 	{
-		Allocate(MaxSize);
+		if (gDevice != nullptr)
+		{
+			Allocate(MaxSize);
 
-		ComputePipelineStateDesc CPSD;
-		CPSD.CS = ShaderCompiler::Compile(ParticlesLightingProg, {}).shaders[0].source;
-		gDevice->CreateComputePipelineState(CPSD, &CPS);
+			ComputePipelineDesc CPD;
+			CPD.CS = Graphics::ShaderCompiler::Compile(ParticlesLightingProg, ShaderLanguage::GLSL, {}).CS;
+			gDevice->CreateComputePipelineState(CPD, &CPS);
+		}
 	}
 
 	void ParticlesRenderer::Render(const ParticleEmitterCPU& Particles, const Camera& MainCamera, const Material& Mat)
@@ -213,7 +218,8 @@ namespace Columbus
 			Shader->SetUniform("DepthTexture", Depth != nullptr ? Depth : gDevice->GetDefaultTextures()->Black.get(), 1);
 
 			gDevice->IASetVertexBuffers(0, 0, nullptr);
-			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+			COLUMBUS_ASSERT(false);
+			//gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 			gDevice->BindBufferBase(PositionsUAV, 0);
 			gDevice->BindBufferBase(SizesUAV, 1);

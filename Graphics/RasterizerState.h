@@ -17,6 +17,7 @@ namespace Columbus
         bool ScissorEnable = false;
         bool MultisampleEnable = false;
         bool AntialiasedLineEnable = false;
+        bool ConservativeEnable = false;
 	};
 
     class RasterizerState

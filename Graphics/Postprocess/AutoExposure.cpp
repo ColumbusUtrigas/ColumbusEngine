@@ -9,6 +9,8 @@ namespace Columbus
 	PostprocessAutoExposure::PostprocessAutoExposure(ScreenQuad& Quad) :
 		_Quad(Quad)
 	{
+		if (gDevice == nullptr) return;
+
 		for (auto& buf : _Bufs)
 		{
 			buf.ColorTexturesEnablement[0] = true;

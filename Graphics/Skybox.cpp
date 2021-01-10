@@ -92,9 +92,7 @@ namespace Columbus
 		gDevice->CreateBuffer(indexDesc, &indexData, &IndexBuffer);
 	
 		Layout = std::make_shared<InputLayout>();
-		Layout->NumElements = 1;
-		Layout->Elements[0].Slot = 0;
-		Layout->Elements[0].Components = 3;
+		Layout->Elements = { InputLayoutElementDesc{ "POSITION", 0, 0, 3 } };
 	}
 
 	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, Buffer* VertexBuffer, Buffer* IndexBuffer, std::shared_ptr<InputLayout> Layout)
@@ -118,7 +116,8 @@ namespace Columbus
 		gDevice->IASetInputLayout(Layout.get());
 		gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
 		gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
-		gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+		COLUMBUS_ASSERT_MESSAGE(false, "TODO");
+		//gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -159,7 +158,8 @@ namespace Columbus
 		gDevice->IASetInputLayout(Layout.get());
 		gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
 		gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
-		gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+		COLUMBUS_ASSERT_MESSAGE(false, "TODO");
+		//gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -216,7 +216,8 @@ namespace Columbus
 			gDevice->IASetInputLayout(Layout.get());
 			gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
 			gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
-			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+			COLUMBUS_ASSERT_MESSAGE(false, "TODO");
+			//gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 
 			for (uint32 i = 0; i < 6; i++)
 			{
@@ -274,7 +275,8 @@ namespace Columbus
 			gDevice->IASetInputLayout(Layout.get());
 			gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
 			gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
-			gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
+			COLUMBUS_ASSERT_MESSAGE(false, "TODO");
+			//gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
 			gDevice->DrawIndexed(36, 0,  0);
 		}
 	}
