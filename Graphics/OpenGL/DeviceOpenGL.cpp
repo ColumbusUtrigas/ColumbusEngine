@@ -8,6 +8,7 @@
 #include <Graphics/OpenGL/FramebufferOpenGL.h>
 #include <Graphics/OpenGL/TypeConversions.h>
 #include <Graphics/OpenGL/ShaderCompile.h>
+#include <Graphics/OpenGL/GL_internal.h>
 #include <RenderAPIOpenGL/OpenGL.h>
 
 namespace Columbus
@@ -215,6 +216,10 @@ namespace Columbus
 		_currentLayout = pPipeline->GetDesc().layout;
 		_currentTopology = pPipeline->GetDesc().topology;
 		glUseProgram(static_cast<Graphics::GL::GraphicsPipelineGL*>(pPipeline)->_prog);
+
+		GL_set_depth_stencil_state(pPipeline->GetDesc().depthStencilState);
+		GL_set_rasterizer_state(pPipeline->GetDesc().rasterizerState);
+		GL_set_blend_state(pPipeline->GetDesc().blendState);
 	}
 
 	void DeviceOpenGL::SetGraphicsCBV(uint32 slot, Columbus::Buffer* pBuf)

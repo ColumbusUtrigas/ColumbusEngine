@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Graphics/Buffer.h>
 #include <Graphics/Types.h>
 #include <GL/glew.h>
 
