@@ -15,6 +15,9 @@
 #include <Graphics/ShaderCompiler.h>
 #include <fstream>
 #include <iostream>
+#include <Graphics\OpenGL\TextureOpenGL.h>
+#include <Graphics\OpenGL\DeviceOpenGL.h>
+#include <Graphics\OpenGL\GraphicsPipelineGL.h>
 
 //Hint to the driver to use discrete GPU
 extern "C"
@@ -32,10 +35,17 @@ HINSTANCE hinstance;
 
 bool Running = true;
 
+Columbus::Camera cam;
+Columbus::Transform trans;
+
 Columbus::GraphicsAPI chosen_api = Columbus::GraphicsAPI::None;
 Columbus::Buffer* vbuf;
 Columbus::Buffer* cbuf;
+Columbus::Buffer* tbuf;
 Columbus::Buffer* ibuf;
+Columbus::Buffer* cbv;
+Columbus::Texture* tex;
+Columbus::Texture* tex2;
 Columbus::Graphics::GraphicsPipeline* pipeline;
 
 // legacy
@@ -52,73 +62,104 @@ void TriangleInit()
 {
 	using namespace Columbus;
 
-	Vector2 vList[] = {
-			{ 0.0f, 0.5f },
-			{ 0.5f, -0.5f },
-			{ -0.5f, -0.5f },
-	};
-
-	Vector4 cList[] = {
-		{ 1, 0, 0, 1 },
-		{ 0, 1, 0, 1 },
-		{ 0, 0, 1, 1}
-	};
+	Columbus::Model model;
+	model.Load("Data/Meshes/Box.cmf");
+	const auto& mesh = model.GetSubModel(0);
 
 	// vertex
 	{
 		BufferDesc desc;
-		desc.Size = sizeof(vList);
+		desc.Size = mesh.VerticesCount * sizeof(Vector3);
 		desc.BindFlags = BufferType::Array;
 		desc.Usage = BufferUsage::Static;
 		desc.CpuAccess = BufferCpuAccess::Write;
 
 		SubresourceData initial;
-		initial.pSysMem = vList;
-		initial.SysMemPitch = sizeof(vList);
+		initial.pSysMem = mesh.Positions;
+		initial.SysMemPitch = desc.Size;
 
-		auto device = gDevice;
-		device->CreateBuffer(desc, &initial, &vbuf);
+		Columbus::gDevice->CreateBuffer(desc, &initial, &vbuf);
 	}
 
-	// color
+	// normal
 	{
 		BufferDesc desc;
-		desc.Size = sizeof(cList);
+		desc.Size = mesh.VerticesCount * sizeof(Vector3);
 		desc.BindFlags = BufferType::Array;
 		desc.Usage = BufferUsage::Static;
 		desc.CpuAccess = BufferCpuAccess::Write;
 
 		SubresourceData initial;
-		initial.pSysMem = cList;
-		initial.SysMemPitch = sizeof(cList);
+		initial.pSysMem = mesh.Normals;
+		initial.SysMemPitch = desc.Size;
 
-		gDevice->CreateBuffer(desc, &initial, &cbuf);
+		Columbus::gDevice->CreateBuffer(desc, &initial, &cbuf);
+	}
+
+	// texcoord
+	{
+		BufferDesc desc;
+		desc.Size = mesh.VerticesCount * sizeof(Vector2);
+		desc.BindFlags = BufferType::Array;
+		desc.Usage = BufferUsage::Static;
+		desc.CpuAccess = BufferCpuAccess::Write;
+
+		SubresourceData initial;
+		initial.pSysMem = mesh.UVs;
+		initial.SysMemPitch = desc.Size;
+
+		Columbus::gDevice->CreateBuffer(desc, &initial, &tbuf);
 	}
 
 	// index
 	{
-		int indices[] = { 0, 1, 2 };
-
 		BufferDesc desc;
-		desc.Size = sizeof(indices);
+		desc.Size = mesh.IndicesCount * mesh.IndexSize;
 		desc.BindFlags = BufferType::Index;
 		desc.Usage = BufferUsage::Static;
 		desc.CpuAccess = BufferCpuAccess::Write;
 
 		SubresourceData initial;
-		initial.pSysMem = indices;
-		initial.SysMemPitch = sizeof(indices);
+		initial.pSysMem = mesh.Indices;
+		initial.SysMemPitch = desc.Size;
 
-		gDevice->CreateBuffer(desc, &initial, &ibuf);
+		Columbus::gDevice->CreateBuffer(desc, &initial, &ibuf);
+	}
+
+	// tex
+	{
+		/*tex = gDevice->CreateTexture();
+		tex->Load("Data/Textures/Detail.dds");
+
+		tex2 = gDevice->CreateTexture();
+		tex2->Load("Data/Textures/bark 02d.jpg");*/
+	}
+
+	// cbv
+	{
+		BufferDesc desc;
+		desc.Size = sizeof(Matrix) * 2;
+		desc.BindFlags = BufferType::Uniform;
+		desc.Usage = BufferUsage::Static;
+		desc.CpuAccess = BufferCpuAccess::Write;
+
+		Columbus::gDevice->CreateBuffer(desc, nullptr, &cbv);
 	}
 
 	// graphics pipeline
 	{
 		Graphics::GraphicsPipelineDesc desc;
 		desc.layout.Elements = {
-			InputLayoutElementDesc{ "POSITION", 0, 0, 2 },
-			InputLayoutElementDesc{ "COLOR", 0, 1, 4 },
+			InputLayoutElementDesc{ "POSITION", 0, 0, 3 },
+			InputLayoutElementDesc{ "NORMAL", 0, 1, 3 },
 			InputLayoutElementDesc{ "TEXCOORD", 0, 2, 2 },
+		};
+		desc.textures = {
+			Graphics::ShaderResourceTex2D{ "tex", 0 },
+			Graphics::ShaderResourceTex2D{ "tex2", 2 }
+		};
+		desc.cbs = {
+			Graphics::ShaderResourceDesc{ "Params", 0 }
 		};
 		desc.rasterizerState.Cull = CullMode::No;
 		desc.topology = PrimitiveTopology::TriangleList;
@@ -129,20 +170,10 @@ void TriangleInit()
 		{
 		case GraphicsAPI::DX12:
 			lang = ShaderLanguage::HLSL;
-			//desc.VS = std::make_shared<ShaderStage>(ReadFile("vertex.hlsl"), "main", ShaderType::Vertex, ShaderLanguage::HLSL);
-			//desc.HS = std::make_shared<ShaderStage>(ReadFile("hull.hlsl"), "main", ShaderType::Hull, ShaderLanguage::HLSL);
-			//desc.DS = std::make_shared<ShaderStage>(ReadFile("domain.hlsl"), "main", ShaderType::Domain, ShaderLanguage::HLSL);
-			//desc.GS = std::make_shared<ShaderStage>(ReadFile("geometry.hlsl"), "main", ShaderType::Geometry, ShaderLanguage::HLSL);
-			//desc.PS = std::make_shared<ShaderStage>(ReadFile("pixel.hlsl"), "main", ShaderType::Pixel, ShaderLanguage::HLSL);
 			break;
 
 		case GraphicsAPI::OpenGL:
 			lang = ShaderLanguage::GLSL;
-			//desc.VS = std::make_shared<ShaderStage>(ReadFile("vertex.glsl"), "main", ShaderType::Vertex, ShaderLanguage::GLSL);
-			//desc.HS = std::make_shared<ShaderStage>(ReadFile("hull.glsl"), "main", ShaderType::Hull, ShaderLanguage::GLSL);
-			//desc.DS = std::make_shared<ShaderStage>(ReadFile("domain.glsl"), "main", ShaderType::Domain, ShaderLanguage::GLSL);
-			//desc.GS = std::make_shared<ShaderStage>(ReadFile("geometry.glsl"), "main", ShaderType::Geometry, ShaderLanguage::GLSL);
-			//desc.PS = std::make_shared<ShaderStage>(ReadFile("pixel.glsl"), "main", ShaderType::Pixel, ShaderLanguage::GLSL);
 			break;
 		}
 
@@ -150,7 +181,7 @@ void TriangleInit()
 		desc.VS = prog.VS;
 		desc.PS = prog.PS;
 
-		gDevice->CreateGraphicsPipeline(desc, &pipeline);
+		Columbus::gDevice->CreateGraphicsPipeline(desc, &pipeline);
 	}
 }
 
@@ -172,12 +203,12 @@ int main()
 	game.EngineStarted();
 
 	#if COLUMBUS_EDITOR
-		Columbus::Editor::Editor editor;
+		/*Columbus::Editor::Editor editor;
 		Columbus::Scene scene;
 		Columbus::Renderer render;
 		Columbus::AudioListener listener;
 
-		editor.settings = settings;
+		editor.settings = settings;*/
 
 		//scene.SetCamera(editor.camera);
 		//scene.SetAudioListener(listener);
@@ -235,22 +266,36 @@ int main()
 		//render.Render();
 
 		NewFrameImGUI();
-		Columbus::Graphics::gDebugRender.NewFrame();
+		//Columbus::Graphics::gDebugRender.NewFrame();
 
-		editor.Draw(scene, render, viewport_size, RedrawTime);
+		//editor.Draw(scene, render, viewport_size, RedrawTime);
 
-		/*Columbus::Buffer* bufs[] = { vbuf, cbuf };
+		Columbus::Buffer* bufs[] = { vbuf, cbuf, tbuf };
+		Columbus::Texture* texs[] = { tex, tex2 };
 		Columbus::Viewport viewport{ 0, 0, (float)viewport_size.X, (float)viewport_size.Y, 0, 1 };
 		Columbus::ScissorRect scissor{ 0, 0, (Columbus::uint32)viewport_size.X, (Columbus::uint32)viewport_size.Y };
+
+		trans.Rotation *= Columbus::Quaternion({ 0, 30 * RedrawTime, 0 });
+
+		cam.Perspective(50, 1, 0.1f, 100);
+		cam.Update();
+		trans.Update();
+
+		void* map;
+		Columbus::gDevice->MapBuffer(cbv, Columbus::BufferMapAccess::Write, map);
+		((Columbus::Matrix*)map)[0] = trans.GetMatrix();
+		((Columbus::Matrix*)map)[1] = cam.GetViewProjection();
+		Columbus::gDevice->UnmapBuffer(cbv);
 
 		Columbus::gDevice->BeginMarker("Draw");
 		Columbus::gDevice->SetGraphicsPipeline(pipeline);
 		Columbus::gDevice->RSSetViewports(1, &viewport);
 		Columbus::gDevice->RSSetScissorRects(1, &scissor);
-		Columbus::gDevice->IASetVertexBuffers(0, 1, bufs);
-		Columbus::gDevice->IASetIndexBuffer(ibuf, Columbus::IndexFormat::Uint32, 0);
-		Columbus::gDevice->Draw(3, 0);
-		Columbus::gDevice->EndMarker();*/
+		Columbus::gDevice->IASetVertexBuffers(0, 3, bufs);
+		//Columbus::gDevice->IASetIndexBuffer(ibuf, Columbus::IndexFormat::Uint16, 0);
+		Columbus::gDevice->SetGraphicsCBV(0, cbv);
+		Columbus::gDevice->Draw(36, 0);
+		Columbus::gDevice->EndMarker();
 
 		Render();
 	}
@@ -338,7 +383,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		break;
 	case WM_MOUSEWHEEL:
 		e.MouseWheel.Y = (float)GET_WHEEL_DELTA_WPARAM(wparam) / (float)WHEEL_DELTA;
-		printf("%f\n", e.MouseWheel.Y);
 		e.Type = Event::Type_MouseWheel;
 		break;
 	case WM_MOUSEHWHEEL:

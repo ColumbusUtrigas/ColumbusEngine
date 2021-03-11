@@ -18,6 +18,10 @@ HGLRC hrc;
 
 bool InitializeWindowAndContext_GL()
 {
+	//we want a 4.3 context
+	const int major = 4;
+	const int minor = 3;
+
 	WNDCLASS wc = { 0 };
 	wc.style = CS_OWNDC;
 	wc.lpfnWndProc = WndProc;
@@ -31,7 +35,10 @@ bool InitializeWindowAndContext_GL()
 	if (!RegisterClass(&wc))
 		COLUMBUS_ASSERT(false);
 
-	auto title = std::string(window_title) + " <GL>";
+	char versionstr[64] = {0};
+	snprintf(versionstr, 64, " <GL %i.%i>", major, minor);
+
+	auto title = std::string(window_title) + versionstr;
 
 	hwnd = CreateWindow(window_class, title.c_str(), WS_OVERLAPPEDWINDOW, 6, 12, 800, 600, 0, 0, hinstance, 0);
 
@@ -71,8 +78,8 @@ bool InitializeWindowAndContext_GL()
 		// OpenGL3+ init
 
 		int attribs[] = {
-			WGL_CONTEXT_MAJOR_VERSION_ARB, 4, //we want a 4.3 context
-			WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+			WGL_CONTEXT_MAJOR_VERSION_ARB, major,
+			WGL_CONTEXT_MINOR_VERSION_ARB, minor,
 			//and it shall be forward compatible so that we can only use up to date functionality
 			WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 			WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB /*| _WGL_CONTEXT_DEBUG_BIT_ARB*/,

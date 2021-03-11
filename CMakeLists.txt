@@ -163,7 +163,7 @@ if(LINUX)
 elseif(WIN32)
 	add_dir_to_target(${TARGET} Core/Windows)
 	add_dir_to_target(${TARGET} Graphics/DX12)
-	add_dir_to_target(${TARGET} Graphics/Vulkan)
+	#add_dir_to_target(${TARGET} Graphics/Vulkan)
 endif()
 add_dir_to_target_recurse(${TARGET} Editor)
 add_dir_to_target_recurse(${TARGET} Game)
@@ -198,7 +198,8 @@ elseif(WIN32)
 		./Lib/WinPixEVentRuntime/bin/x64
 		$ENV{VULKAN_SDK}/Lib
 	)
-	target_link_libraries(${TARGET} opengl32 SDL2 glew32 zstd tiff ${BULLET_LIB} vulkan-1 WinPixEventRuntime)
+	target_link_libraries(${TARGET} opengl32 SDL2 glew32 zstd tiff ${BULLET_LIB} WinPixEventRuntime)
+	#target_link_libraries(${TARGET} vulkan-1)
 endif()
 
 target_link_libraries(${TARGET} imgui)

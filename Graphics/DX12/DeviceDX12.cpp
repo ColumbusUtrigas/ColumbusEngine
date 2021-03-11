@@ -49,14 +49,14 @@ namespace Columbus::Graphics::DX12
 
 	void tmpDeviceDX12::IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers)
 	{
-		uint32 stides[] = { 2 * sizeof(float), 4 * sizeof(float) };
+		uint32 strides[] = { 3 * sizeof(float), 3 * sizeof(float), 2 * sizeof(float) };
 
 		static D3D12_VERTEX_BUFFER_VIEW views[16];
 		for (size_t i = 0; i < NumBuffers; i++)
 		{
 			views[i].BufferLocation = static_cast<BufferDX12*>(ppBuffers[i])->_resource->GetGPUVirtualAddress();
 			views[i].SizeInBytes = ppBuffers[i]->GetDesc().Size;
-			views[i].StrideInBytes = stides[i];
+			views[i].StrideInBytes = strides[i];
 		}
 
 		_cmdList->IASetVertexBuffers(StartSlot, NumBuffers, views);
@@ -120,6 +120,11 @@ namespace Columbus::Graphics::DX12
 		_cmdList->IASetPrimitiveTopology(PrimitiveTopologyToDX12(pipe->GetDesc().topology));
 	}
 
+	void tmpDeviceDX12::SetGraphicsCBV(uint32 slot, Buffer* pBuf)
+	{
+		_cmdList->SetGraphicsRootConstantBufferView(slot, static_cast<BufferDX12*>(pBuf)->_resource->GetGPUVirtualAddress());
+	}
+
 	bool tmpDeviceDX12::CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer)
 	{
 		*ppBuffer = new BufferDX12(Desc);
@@ -179,16 +184,13 @@ namespace Columbus::Graphics::DX12
 
 		// root signature
 		{
-			D3D12_ROOT_PARAMETER param[1] = {};
+			D3D12_ROOT_PARAMETER param[3] = {};
 
-			param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-			param[0].Constants.ShaderRegister = 0;
-			param[0].Constants.RegisterSpace = 0;
-			param[0].Constants.Num32BitValues = 4;
-			param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+			param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 			D3D12_ROOT_SIGNATURE_DESC desc;
-			desc.NumParameters = 0;
+			desc.NumParameters = 1;
 			desc.pParameters = param;
 			desc.NumStaticSamplers = 0;
 			desc.pStaticSamplers = nullptr;

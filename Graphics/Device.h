@@ -44,7 +44,9 @@ namespace Columbus
 
 		virtual void SetShader(ShaderProgram* Prog) = 0;
 
-		virtual void SetGraphicsPipeline(Columbus::Graphics::GraphicsPipeline* pPipeline) {}
+		virtual void SetGraphicsPipeline(Columbus::Graphics::GraphicsPipeline* pPipeline) = 0;
+		virtual void SetGraphicsCBV(uint32 slot, Columbus::Buffer* pBuf) = 0;
+
 		virtual void SetComputePipelineState(ComputePipeline* State) = 0;
 		//virtual void SetGraphicsPipelineState(GraphicsPipelineState* State) = 0;
 

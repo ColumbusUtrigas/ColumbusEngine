@@ -39,6 +39,12 @@ R"(#define Texture2D sampler2D
 #define float4x3 mat4x3
 #define float4x4 mat4x4
 
+#define begin_cbv(name) layout(std140) uniform name {
+#define end_cbv };
+
+#define begin_uav(name,  slot) layout(std430, binding = slot) buffer name {
+#define end_uav(name) };
+
 #if __VERSION__ < 130
 	#define Sample2D(tex, uv) texture2D(tex, uv)
 	#define Sample3D(tex, uv) texture3D(tex, uv)
@@ -64,14 +70,12 @@ R"(#define Texture2D sampler2D
 
 const std::string CommonShaderHeader_DX12 =
 R"(
+#define begin_cbv(name) cbuffer name {
+#define end_cbv }
 )";
 
 const std::string ComputeShaderHeader_GL =
 R"(
-#define begin_cbv(name, slot) layout(std140, binding = slot) uniform name {
-#define end_cbv(name) } name;
-#define begin_uav(name,  slot) layout(std430, binding = slot) buffer name {
-#define end_uav(name) } name;
 )";
 
 	enum class SemanticType
@@ -82,6 +86,11 @@ R"(
 		Float4
 	};
 
+	enum class ShaderResourceType
+	{
+		Texture2D
+	};
+
 	struct Semantic
 	{
 		SemanticType type;
@@ -90,14 +99,23 @@ R"(
 		int slot;
 	};
 
+	struct ShaderResource
+	{
+		ShaderResourceType type;
+		std::string name;
+		int slot;
+	};
+
 	using ShaderInput  = fixed_vector<Semantic, 16>;
 	using ShaderOutput = fixed_vector<Semantic, 16>;
+	using ShaderResources = fixed_vector<ShaderResource, 32>;
 
 	struct CompilerShaderStageData
 	{
 		ShaderType type;
 		ShaderInput input;
 		ShaderOutput output;
+		ShaderResources resources;
 		std::string source;
 		std::string entry;
 	};
@@ -221,6 +239,7 @@ R"(
 	const std::regex re_shader(R"(#shader (vertex|pixel|compute) (.+))");
 	const std::regex re_input(R"(#input\((.+), (.+), (.+), (.+)\))");
 	const std::regex re_output(R"(#output\((.+), (.+), (.+), (.+)\))");
+	const std::regex re_texture(R"(#texture\((.+), (.+), (.+)\))");
 
 	void Preprocess(SPtr<CompilerShaderData> data, const std::string& src)
 	{
@@ -263,12 +282,16 @@ R"(
 			else if (std::regex_match(line, match, re_input))
 			{
 				auto type = SemanticTypeFromHlsl(match.str(1));
-				current->input.push_back(Semantic{type, match.str(2), match.str(3), std::stoi(match.str(4))});
+				current->input.push_back(Semantic{ type, match.str(2), match.str(3), std::stoi(match.str(4)) });
 			}
 			else if (std::regex_match(line, match, re_output))
 			{
 				auto type = SemanticTypeFromHlsl(match.str(1));
 				current->output.push_back(Semantic{ type, match.str(2), match.str(3), std::stoi(match.str(4)) });
+			}
+			else if (std::regex_match(line, match, re_texture))
+			{
+				
 			}
 			else
 			{
@@ -305,6 +328,7 @@ R"(
 		result->Language = ShaderLanguage::HLSL;
 		result->EntryPoint = stage->entry;
 		result->Type = stage->type;
+		result->Source += CommonShaderHeader_DX12;
 
 		if (stage->type != ShaderType::Compute)
 		{

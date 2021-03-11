@@ -43,6 +43,11 @@ namespace Columbus
 			delete[] Normals;
 			delete[] Tangents;
 			delete[] Indices;
+			Positions = nullptr;
+			UVs = nullptr;
+			Normals = nullptr;
+			Tangents = nullptr;
+			Indices = nullptr;
 			IndexSize = 4;
 			BoundingBox = {};
 			Bounded = false;

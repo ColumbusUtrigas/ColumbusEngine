@@ -34,6 +34,8 @@ namespace Columbus::Graphics::DX12
 		virtual void SetShader(ShaderProgram* Prog) {}
 
 		void SetGraphicsPipeline(GraphicsPipeline* pPipeline) override;
+		void SetGraphicsCBV(uint32 slot, Buffer* pBuf) override;
+
 		virtual void SetComputePipelineState(ComputePipeline* State) {}
 
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) { return false; }

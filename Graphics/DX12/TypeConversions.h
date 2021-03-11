@@ -196,12 +196,10 @@ namespace Columbus::Graphics::DX12
 			DXGI_FORMAT format;
 			switch (layout.Elements[i].Components)
 			{
-			case 2:
-				format = DXGI_FORMAT_R32G32_FLOAT;
-				break;
-			case 4:
-				format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-				break;
+			case 1: format = DXGI_FORMAT_R32_FLOAT; break;
+			case 2: format = DXGI_FORMAT_R32G32_FLOAT; break;
+			case 3: format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+			case 4: format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
 			}
 
 			elements[i] = {

@@ -3,7 +3,7 @@
 #include <dxgi1_4.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
-#include "d3dx12.h"
+//#include "d3dx12.h"
 
 #include <Graphics/DX12/DeviceDX12.h>
 #include <Math/Vector4.h>

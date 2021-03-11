@@ -11,6 +11,7 @@ namespace Columbus
 		PrimitiveTopology _currentTopology;
 		IndexFormat _currentIndexFormat;
 		InputLayout _currentLayout;
+		Graphics::GraphicsPipeline* _currentPipeline = nullptr;
 
 		uint32 _currentIndexOffset;
 	public:
@@ -35,6 +36,8 @@ namespace Columbus
 		virtual void SetShader(ShaderProgram* Prog) final override;
 
 		virtual void SetGraphicsPipeline(Columbus::Graphics::GraphicsPipeline* pPipeline) final override;
+		virtual void SetGraphicsCBV(uint32 slot, Columbus::Buffer* pBuf) final override;
+
 		virtual void SetComputePipelineState(ComputePipeline* State) final override;
 
 		virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) final override;
@@ -58,6 +61,9 @@ namespace Columbus
 		virtual void EndMarker() final override;
 
 		virtual ~DeviceOpenGL() override;
+
+		//TEST
+		void SetTextures(Texture** ppTextures, int num);
 	};
 
 }
