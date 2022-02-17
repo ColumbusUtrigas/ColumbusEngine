@@ -4,8 +4,6 @@
 #include <Core/Random.h>
 #include <Core/SmartPointer.h>
 
-#include <Core/Containers/Vector.h>
-
 #include <Core/Platform.h>
 #include <Core/Filesystem.h>
 

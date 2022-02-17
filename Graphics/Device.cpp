@@ -12,6 +12,19 @@ namespace Columbus
 		return _currentApi;
 	}
 
+	ShaderLanguage Device::GetCslBackendLang()
+	{
+		switch (_currentApi)
+		{
+		case GraphicsAPI::OpenGL:
+			return ShaderLanguage::GLSL;
+		case GraphicsAPI::DX12:
+			return ShaderLanguage::HLSL;
+		default:
+			return ShaderLanguage::Undefined;
+		}
+	}
+
 	void Device::Initialize()
 	{
 		gDefaultShaders = new DefaultShaders();
@@ -22,6 +35,13 @@ namespace Columbus
 	{
 		delete gDefaultShaders;
 		delete gDefaultTextures;
+	}
+
+	SPtr<Buffer> Device::CreateBufferShared(const BufferDesc& desc, SubresourceData* pInitialData)
+	{
+		Buffer* buf;
+		CreateBuffer(desc, pInitialData, &buf);
+		return SPtr<Buffer>(buf);
 	}
 
 	ShaderProgram* Device::CreateShaderProgram() const

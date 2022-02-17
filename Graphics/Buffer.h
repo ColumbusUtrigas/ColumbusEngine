@@ -9,7 +9,7 @@ namespace Columbus
 	{
 		Array,
 		Index,
-		Uniform,
+		Constant,
 		UAV
 	};
 

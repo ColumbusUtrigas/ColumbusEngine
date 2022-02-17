@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <string_view>
 #include <Core/ICloneable.h>
-#include <Core/Serialization.h>
 #include <Core/PrototypeFactory.h>
 
 namespace Columbus

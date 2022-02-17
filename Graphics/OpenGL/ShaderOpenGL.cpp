@@ -474,9 +474,9 @@ void main(void)
 		glLinkProgram(ID);
 		glValidateProgram(ID);
 
-		for (const auto& Uniform : Data.Uniforms)
+		for (const auto& Constant : Data.Uniforms)
 		{
-			AddUniform(Uniform.Name.c_str());
+			AddUniform(Constant.Name.c_str());
 		}
 
 		glDeleteShader(VertexShader);

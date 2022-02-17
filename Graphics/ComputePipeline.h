@@ -3,7 +3,7 @@
 #include <Graphics/Types.h>
 #include <Core/SmartPointer.h>
 
-namespace Columbus
+namespace Columbus::Graphics
 {
 
 	struct ComputePipelineDesc

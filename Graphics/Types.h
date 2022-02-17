@@ -15,7 +15,7 @@ namespace Columbus
 		None,
 		OpenGL,
 		DX12,
-		//Vulkan,
+		Vulkan,
 		//Metal
 	};
 

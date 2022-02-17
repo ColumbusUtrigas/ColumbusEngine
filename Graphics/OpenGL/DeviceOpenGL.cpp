@@ -229,9 +229,9 @@ namespace Columbus
 		glBindBufferBase(type, slot, glhandle);
 	}
 
-	void DeviceOpenGL::SetComputePipelineState(ComputePipeline* State)
+	void DeviceOpenGL::SetComputePipeline(Graphics::ComputePipeline* State)
 	{
-		glUseProgram(static_cast<Graphics::GL::ComputePipeline*>(State)->progid);
+		glUseProgram(static_cast<Graphics::GL::ComputePipelineGL*>(State)->progid);
 	}
 
 	bool DeviceOpenGL::CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState)
@@ -342,13 +342,13 @@ namespace Columbus
 		return true;
 	}
 
-	bool DeviceOpenGL::CreateComputePipelineState(const ComputePipelineDesc& Desc, ComputePipeline** ppComputePipelineState)
+	bool DeviceOpenGL::CreateComputePipeline(const ComputePipelineDesc& desc, ComputePipeline** ppComputePipelineState)
 	{
-		*ppComputePipelineState = new ComputePipeline(Desc);
-		auto pComputePipelineState = static_cast<Graphics::GL::ComputePipeline*>(*ppComputePipelineState);
+		*ppComputePipelineState = new ComputePipeline(desc);
+		auto pComputePipelineState = static_cast<Graphics::GL::ComputePipelineGL*>(*ppComputePipelineState);
 
-		GLint len = Desc.CS->Source.size();
-		const GLchar* str = Desc.CS->Source.data();
+		GLint len = desc.CS->Source.size();
+		const GLchar* str = desc.CS->Source.data();
 
 		pComputePipelineState->shadid = glCreateShader(GL_COMPUTE_SHADER);
 		glShaderSource(pComputePipelineState->shadid, 1, &str, &len);

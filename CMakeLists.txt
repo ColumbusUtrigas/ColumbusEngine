@@ -199,7 +199,7 @@ elseif(WIN32)
 		$ENV{VULKAN_SDK}/Lib
 	)
 	target_link_libraries(${TARGET} opengl32 SDL2 glew32 zstd tiff ${BULLET_LIB} WinPixEventRuntime)
-	#target_link_libraries(${TARGET} vulkan-1)
+	target_link_libraries(${TARGET} vulkan-1 shaderc_shared)
 endif()
 
 target_link_libraries(${TARGET} imgui)

@@ -101,6 +101,8 @@ public:
 		return *this;
 	}
 
+	T* data() { return _internal.data(); }
+
 	size_t size() const noexcept { return _used; }
 	constexpr size_t capacity() const noexcept{ return Size; }
 

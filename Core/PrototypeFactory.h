@@ -5,7 +5,6 @@
 #include <utility>
 #include <type_traits>
 #include <System/Log.h>
-#include <Core/Serialization.h>
 
 namespace Columbus
 {

@@ -77,7 +77,7 @@ namespace Columbus
 		void RecalculateBounds();
 		void RecalculateTangents();
 
-		uint32 GetSubModelsCount() const { return SubModels.size();  }
+		size_t GetSubModelsCount() const { return SubModels.size();  }
 		bool HasSubMeshes() const { return SubModels.empty(); }
 		const SubModel& GetSubModel(int index) const { return SubModels[index]; }
 		Box GetBoundingBox() const { return BoundingBox; }

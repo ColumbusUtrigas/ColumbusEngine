@@ -83,7 +83,7 @@ namespace Columbus
 //}
 //)";
 
-	ComputePipeline* CPS;
+	Graphics::ComputePipeline* CPS;
 
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
@@ -105,9 +105,9 @@ namespace Columbus
 		{
 			Allocate(MaxSize);
 
-			ComputePipelineDesc CPD;
+			Graphics::ComputePipelineDesc CPD;
 			CPD.CS = Graphics::ShaderCompiler::Compile(ParticlesLightingProg, ShaderLanguage::GLSL, {}).CS;
-			gDevice->CreateComputePipelineState(CPD, &CPS);
+			gDevice->CreateComputePipeline(CPD, &CPS);
 		}
 	}
 
@@ -200,7 +200,7 @@ namespace Columbus
 
 			if (Particles.Light)
 			{
-				gDevice->SetComputePipelineState(CPS);
+				gDevice->SetComputePipeline(CPS);
 				gDevice->Dispatch(Particles.Particles.Count, 1, 1);
 				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 			}

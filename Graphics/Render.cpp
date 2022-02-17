@@ -699,7 +699,7 @@ void main(void)
 		static Buffer* UBO;
 		static bool uboresult = gDevice->CreateBuffer(BufferDesc(
 			sizeof(uboData),
-			BufferType::Uniform,
+			BufferType::Constant,
 			BufferUsage::Dynamic,
 			BufferCpuAccess::Write
 		), nullptr, &UBO);
@@ -766,7 +766,7 @@ void main(void)
 		static bool ludbufres =
 		gDevice->CreateBuffer(BufferDesc{
 			sizeof(lightingUboData),
-			BufferType::Uniform,
+			BufferType::Constant,
 			BufferUsage::Dynamic,
 			BufferCpuAccess::Write
 		}, nullptr, &buf);

@@ -6,6 +6,10 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
+#include <d3d12.h>
+#include <Graphics/DX12/DeviceDX12.h>
+
+#include <Graphics/ShaderCompiler.h>
 
 namespace Columbus
 {
@@ -34,6 +38,47 @@ namespace Columbus
 
 	Matrix CaptureProjection;
 	Matrix CaptureViews[6];
+	Graphics::GraphicsPipeline* SkyboxPipeline;
+	ID3D12Resource* texture;
+
+	const char* SkyboxShaderCode =
+R"(
+#shader vertex VS
+#input(float3, pos, POSITION, 0)
+#output(float4, pos, SV_POSITION, 0)
+#output(float3, wpos, TEXCOORD0, 1)
+
+begin_cbv(Params)
+	float4x4 viewproj;
+end_cbv
+
+VS_OUTPUT VS(VS_INPUT i)
+{
+	VS_OUTPUT o;
+	o.pos = mul(viewproj, float4(i.pos, 1));
+	o.wpos = i.pos;
+	return o;
+}
+
+#shader pixel PS
+#input(float4, pos, SV_POSITION, 0)
+#input(float3, wpos, TEXCOORD0, 1)
+#output(float4, rt0, SV_TARGET, 0)
+
+Texture2D t1 : register(t0);
+SamplerState s1 : register(s0);
+
+PS_OUTPUT PS(PS_INPUT i)
+{
+    PS_OUTPUT o;
+    //o.rt0 = float4(i.wpos.xyz, 1);
+
+	float4 col = t1.Sample(s1, i.wpos.xy);
+	o.rt0 = col;
+
+    return o;
+}
+)";
 
 	static void PrepareMatrices()
 	{
@@ -46,53 +91,80 @@ namespace Columbus
 		CaptureViews[5].LookAt({ 0, 0, 0 }, { 0, 0, -1 }, { 0, -1,  0 });
 	}
 
-	static void PrepareStates(BlendState*& BS, DepthStencilState*& DSS, RasterizerState*& RS)
+	static void PrepareGraphicsPipeline()
 	{
-		BlendStateDesc bsd;
-		DepthStencilStateDesc dssd;
-		RasterizerStateDesc rsd;
+		Graphics::GraphicsPipelineDesc desc;
 
-		bsd.IndependentBlendEnable = false;
-		bsd.RenderTarget[0].BlendEnable = false;
+		desc.layout.Elements = {
+			InputLayoutElementDesc{ "POSITION", 0, 0, 3 }
+		};
+		desc.textures = {
+		};
+		desc.cbs = {
+			Graphics::ShaderResourceDesc{ "Params", 0 }
+		};
 
-		dssd.DepthEnable = true;
-		dssd.DepthFunc = ComparisonFunc::LEqual;
-		dssd.DepthWriteMask = false;
+		desc.blendState.IndependentBlendEnable = false;
+		desc.blendState.RenderTarget[0].BlendEnable = false;
 
-		rsd.Cull = CullMode::Front;
-		rsd.Fill = FillMode::Solid;
+		desc.depthStencilState.DepthEnable = true;
+		desc.depthStencilState.DepthFunc = ComparisonFunc::LEqual;
+		desc.depthStencilState.DepthWriteMask = false;
 
-		gDevice->CreateBlendState(bsd, &BS);
-		gDevice->CreateDepthStencilState(dssd, &DSS);
-		gDevice->CreateRasterizerState(rsd, &RS);
+		desc.rasterizerState.Cull = CullMode::Front;
+		desc.rasterizerState.Fill = FillMode::Solid;
+		desc.topology = PrimitiveTopology::TriangleList;
+
+		auto prog = Graphics::ShaderCompiler::Compile(SkyboxShaderCode, gDevice->GetCslBackendLang(), {});
+		desc.VS = prog.VS;
+		desc.PS = prog.PS;
+
+		gDevice->CreateGraphicsPipeline(desc, &SkyboxPipeline);
 	}
 
-	static void CreateSkyboxBuffer(Buffer*& VertexBuffer, Buffer*& IndexBuffer, std::shared_ptr<InputLayout>& Layout)
+	static void CreateSkyboxBuffer(SPtr<Buffer>& vbuf, SPtr<Buffer>& ibuf, SPtr<Buffer>& cbuf)
 	{
-		BufferDesc vertexDesc;
-		SubresourceData vertexData;
-		vertexDesc.BindFlags = BufferType::Array;
-		vertexDesc.CpuAccess = BufferCpuAccess::Write;
-		vertexDesc.MiscFlags = 0;
-		vertexDesc.Size = sizeof(Vertices);
-		vertexDesc.StructureByteStride = sizeof(Vertices[0]) * 3;
-		vertexDesc.Usage = BufferUsage::Static;
-		vertexData.pSysMem = Vertices;
-		gDevice->CreateBuffer(vertexDesc, &vertexData, &VertexBuffer);
+		{
+			BufferDesc vertexDesc;
+			vertexDesc.BindFlags = BufferType::Array;
+			vertexDesc.CpuAccess = BufferCpuAccess::Write;
+			vertexDesc.MiscFlags = 0;
+			vertexDesc.Size = sizeof(Vertices);
+			vertexDesc.StructureByteStride = sizeof(Vertices[0]) * 3;
+			vertexDesc.Usage = BufferUsage::Static;
 
-		BufferDesc indexDesc;
-		SubresourceData indexData;
-		indexDesc.BindFlags = BufferType::Index;
-		indexDesc.CpuAccess = BufferCpuAccess::Write;
-		indexDesc.MiscFlags = 0;
-		indexDesc.Size = sizeof(Indices);
-		indexDesc.StructureByteStride = sizeof(Indices[0]);
-		indexDesc.Usage = BufferUsage::Static;
-		indexData.pSysMem = Indices;
-		gDevice->CreateBuffer(indexDesc, &indexData, &IndexBuffer);
-	
-		Layout = std::make_shared<InputLayout>();
-		Layout->Elements = { InputLayoutElementDesc{ "POSITION", 0, 0, 3 } };
+			SubresourceData vertexData;
+			vertexData.pSysMem = Vertices;
+			vertexData.SysMemPitch = sizeof(Vertices);
+
+			vbuf = gDevice->CreateBufferShared(vertexDesc, &vertexData);
+		}
+
+		{
+			BufferDesc indexDesc;
+			indexDesc.BindFlags = BufferType::Index;
+			indexDesc.CpuAccess = BufferCpuAccess::Write;
+			indexDesc.MiscFlags = 0;
+			indexDesc.Size = sizeof(Indices);
+			indexDesc.StructureByteStride = sizeof(Indices[0]);
+			indexDesc.Usage = BufferUsage::Static;
+
+			SubresourceData indexData;
+			indexData.pSysMem = Indices;
+			indexData.SysMemPitch = sizeof(Indices);
+
+			ibuf = gDevice->CreateBufferShared(indexDesc, &indexData);
+		}
+
+		{
+			BufferDesc desc;
+			desc.BindFlags = BufferType::Constant;
+			desc.Usage = BufferUsage::Static;
+			desc.CpuAccess = BufferCpuAccess::Write;
+			desc.Size = sizeof(Matrix);
+
+			cbuf = gDevice->CreateBufferShared(desc, nullptr);
+		}
 	}
 
 	static void CreateCubemap(Texture* BaseMap, Texture*& Cubemap, Buffer* VertexBuffer, Buffer* IndexBuffer, std::shared_ptr<InputLayout> Layout)
@@ -239,46 +311,55 @@ namespace Columbus
 	Skybox::Skybox()
 	{
 		PrepareMatrices();
-		PrepareStates(BS, DSS, RS);
-		CreateSkyboxBuffer(VertexBuffer, IndexBuffer, Layout);
+		CreateSkyboxBuffer(vbuffer, ibuffer, cbuffer);
+		PrepareGraphicsPipeline();
 	}
 
-	Skybox::Skybox(Texture* InTexture)
+	Skybox::Skybox(SPtr<Texture> hdri) : Skybox()
 	{
-		PrepareMatrices();
-		PrepareStates(BS, DSS, RS);
-		CreateSkyboxBuffer(VertexBuffer, IndexBuffer, Layout);
+		if (hdri->GetType() == Texture::Type::Texture2D)
+		{
 
-		if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VertexBuffer, IndexBuffer, Layout);
-		CreateIrradianceMap(Tex, IrradianceMap, VertexBuffer, IndexBuffer, Layout);
-		CreatePrefilterMap(Tex, PrefilterMap, VertexBuffer, IndexBuffer, Layout);
+		}
+	}
+
+	Skybox::Skybox(Texture* InTexture) : Skybox()
+	{
+		//PrepareMatrices();
+		//CreateSkyboxBuffer(vbuffer, ibuffer, cbuffer);
+		//PrepareGraphicsPipeline();
+
+		//if (InTexture->GetType() == Texture::Type::Texture2D) CreateCubemap(InTexture, Tex, VertexBuffer, IndexBuffer, Layout);
+		//CreateIrradianceMap(Tex, IrradianceMap, VertexBuffer, IndexBuffer, Layout);
+		//CreatePrefilterMap(Tex, PrefilterMap, VertexBuffer, IndexBuffer, Layout);
 	}
 
 	void Skybox::Render()
 	{
-		if (Tex != nullptr)
+		if (texture != nullptr)
 		{
-			gDevice->SetShader(gDevice->GetDefaultShaders()->Skybox.get());
-
-			auto View = ViewCamera.GetViewMatrix();
-			View.SetRow(3, Vector4(0, 0, 0, 1));
-			View.SetColumn(3, Vector4(0, 0, 0, 1));
-
-			auto ShaderOpenGL = static_cast<ShaderProgramOpenGL*>(gDevice->GetDefaultShaders()->Skybox.get());
-			ShaderOpenGL->SetUniform("ViewProjection", false, View * ViewCamera.GetProjectionMatrix());
-			ShaderOpenGL->SetUniform("Skybox", Tex, 0);
-
-			gDevice->OMSetDepthStencilState(DSS, 0);
-			gDevice->OMSetBlendState(BS, nullptr, RGBA_MASK(255, 255, 255, 255));
-			gDevice->RSSetState(RS);
-
-			gDevice->IASetInputLayout(Layout.get());
-			gDevice->IASetVertexBuffers(0, 1, &VertexBuffer);
-			gDevice->IASetIndexBuffer(IndexBuffer, IndexFormat::Uint16, 0);
-			COLUMBUS_ASSERT_MESSAGE(false, "TODO");
-			//gDevice->IASetPrimitiveTopology(PrimitiveTopology::TriangleList);
-			gDevice->DrawIndexed(36, 0,  0);
+			texture = ((Graphics::DX12::DeviceDX12*)gDevice)->CreateTextureDx();
 		}
+
+		auto view = ViewCamera.GetViewMatrix();
+		view.SetRow(3, Vector4(0, 0, 0, 1));
+		view.SetColumn(3, Vector4(0, 0, 0, 1));
+
+		gDevice->BeginMarker("Skybox");
+
+		void* map;
+		gDevice->MapBuffer(cbuffer.get(), BufferMapAccess::Write, map);
+		((Matrix*)map)[0] = view * ViewCamera.GetProjectionMatrix();
+		gDevice->UnmapBuffer(cbuffer.get());
+
+		Buffer* vbufs[] = { vbuffer.get() };
+		gDevice->SetGraphicsPipeline(SkyboxPipeline);
+		gDevice->IASetVertexBuffers(0, 1, vbufs);
+		gDevice->IASetIndexBuffer(ibuffer.get(), IndexFormat::Uint16, 0);
+		gDevice->SetGraphicsCBV(0, cbuffer.get());
+		gDevice->DrawIndexed(36, 0, 0);
+
+		gDevice->EndMarker();
 	}
 
 	void Skybox::SetCamera(const Camera& Cam)

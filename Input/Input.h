@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Math/Vector2.h>
-#include <Common/Cursor/Cursor.h>
 #include <Input/Events.h>
 
 namespace Columbus

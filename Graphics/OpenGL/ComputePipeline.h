@@ -6,14 +6,14 @@
 namespace Columbus::Graphics::GL
 {
 
-	class ComputePipeline : public Columbus::ComputePipeline
+	class ComputePipelineGL : public ComputePipeline
 	{
 	public:
 		GLuint progid;
 		GLuint shadid;
 
-		ComputePipeline(const ComputePipelineDesc& Desc) :
-			Columbus::ComputePipeline(Desc) {}
+		ComputePipelineGL(const ComputePipelineDesc& desc) :
+			ComputePipeline(desc) {}
 	};
 
 }

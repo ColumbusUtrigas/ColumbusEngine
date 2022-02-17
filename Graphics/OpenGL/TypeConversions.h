@@ -13,7 +13,7 @@ namespace Columbus
 		{
 		case BufferType::Array:   return GL_ARRAY_BUFFER;
 		case BufferType::Index:   return GL_ELEMENT_ARRAY_BUFFER;
-		case BufferType::Uniform: return GL_UNIFORM_BUFFER;
+		case BufferType::Constant: return GL_UNIFORM_BUFFER;
 		case BufferType::UAV:     return GL_SHADER_STORAGE_BUFFER;
 		}
 	}

@@ -11,7 +11,6 @@
 
 #if COLUMBUS_EDITOR
 	#include <Editor/Settings.h>
-	#include "EditorMain.h"
 #endif
 
 #include <Graphics/Types.h>
@@ -53,16 +52,20 @@ void InitializeCommon();
 
 bool InititalizeWindowAndContext_DX12();
 bool InitializeWindowAndContext_GL();
+bool InitializeWindowAndContext_VK();
 
 void ResizeSwapchain_DX12(HWND hwnd, WPARAM wparam, LPARAM lparam);
 
 void BeginFrame_DX12();
 void BeginFrame_GL();
+void BeginFrame_VK();
 
 void Present_DX12();
 void Present_GL();
+void Present_VK();
 
 void ShutdownWindowAndContext_DX12();
 void ShutdownWindowAndContext_GL();
+void ShutdownWindowAndContext_VK();
 
 #endif
