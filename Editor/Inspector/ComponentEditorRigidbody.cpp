@@ -107,7 +107,8 @@ namespace Columbus::Editor
 			ImGui::PushID(i);
 
 			ImGui::AlignTextToFramePadding();
-			bool Open = ImGui::TreeNodeSized(itoa(i + 1, buf, 10), {}, ImGuiTreeNodeFlags_SpanAvailWidth);
+			snprintf(buf, 10, "%d", i+1);
+			bool Open = ImGui::TreeNodeSized(buf, {}, ImGuiTreeNodeFlags_SpanAvailWidth);
 
 			ImGui::SameLine();
 			if (ImGui::Button(DELETE_ICON))
@@ -190,7 +191,8 @@ namespace Columbus::Editor
 			ImGui::PushID(i);
 
 			ImGui::AlignTextToFramePadding();
-			bool Open = ImGui::TreeNodeSized(itoa(i + 1, buf, 10), {}, ImGuiTreeNodeFlags_SpanAvailWidth);
+			snprintf(buf, 10, "%d", i+1);
+			bool Open = ImGui::TreeNodeSized(buf, {}, ImGuiTreeNodeFlags_SpanAvailWidth);
 
 			if (Positions.size() > 1)
 			{

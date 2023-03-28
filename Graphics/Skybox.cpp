@@ -6,8 +6,6 @@
 #include <Graphics/OpenGL/ShaderOpenGL.h>
 #include <Graphics/OpenGL/TextureOpenGL.h>
 #include <GL/glew.h>
-#include <d3d12.h>
-#include <Graphics/DX12/DeviceDX12.h>
 
 #include <Graphics/ShaderCompiler.h>
 
@@ -39,7 +37,6 @@ namespace Columbus
 	Matrix CaptureProjection;
 	Matrix CaptureViews[6];
 	Graphics::GraphicsPipeline* SkyboxPipeline;
-	ID3D12Resource* texture;
 
 	const char* SkyboxShaderCode =
 R"(
@@ -336,11 +333,6 @@ PS_OUTPUT PS(PS_INPUT i)
 
 	void Skybox::Render()
 	{
-		if (texture != nullptr)
-		{
-			texture = ((Graphics::DX12::DeviceDX12*)gDevice)->CreateTextureDx();
-		}
-
 		auto view = ViewCamera.GetViewMatrix();
 		view.SetRow(3, Vector4(0, 0, 0, 1));
 		view.SetColumn(3, Vector4(0, 0, 0, 1));

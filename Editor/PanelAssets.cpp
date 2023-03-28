@@ -18,8 +18,8 @@
 #include <Graphics/Device.h>
 #include <Graphics/ScreenQuad.h>
 
-#include <Lib/stb/stb_dxt.h>
-#include <Lib/stb/stb_image_resize.h>
+#include <Lib/STB/stb_dxt.h>
+#include <Lib/STB/stb_image_resize.h>
 
 namespace Columbus::Editor
 {

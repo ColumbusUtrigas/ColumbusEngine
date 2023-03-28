@@ -2,6 +2,7 @@
 #include <Math/MathUtil.h>
 
 #include <GL/glew.h>
+#include <string.h>
 
 namespace Columbus
 {

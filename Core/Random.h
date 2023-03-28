@@ -1,42 +1,16 @@
 #pragma once
 
-#include <random>
+#include <stdlib.h>
 
 namespace Columbus
 {
-	/// Helper templates to decide on the <random>-provided distribution to use
-	template<class T, bool IsIntegral, bool IsFloat>
-	struct RandomDistribution;
-
-	template<class T>
-	struct RandomDistribution<T, true, false>
-	{
-		using DistrType = std::uniform_int_distribution<T>;
-	};
-
-	template<class T>
-	struct RandomDistribution<T, false, true>
-	{
-		using DistrType = std::uniform_real_distribution<T>;
-	};
-
-	template<class T>
-	using RandomDistributionType = typename RandomDistribution<T, std::is_integral_v<T>, std::is_floating_point_v<T>>::DistrType;
-
 	class Random
 	{
 	public:
-
 		/// Generates a random value in range Min...Max
-		template <typename Type>
-		inline static Type Range(const Type Min, const Type Max)
+		inline static float Range(const float Min, const float Max)
 		{
-			typename RandomDistributionType<Type> dist{ Min, Max };
-			return dist(engine);
+			return Min + rand() / static_cast<float>(RAND_MAX) / (Max - Min);
 		}
-
-	private:
-		inline static std::random_device hwRandom_;
-		inline static std::default_random_engine engine{ hwRandom_() };
 	};
 }

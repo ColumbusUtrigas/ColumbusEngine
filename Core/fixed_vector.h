@@ -4,6 +4,7 @@
 #include <array>
 #include <type_traits>
 #include <cassert>
+#include <stddef.h>
 
 #define _fixed_vector_type_check(otherType) static_assert(std::is_same<otherType, T>::value, "fixed_vector types are incopatible");
 #define _fixed_vector_static_check(otherType, otherSize) \

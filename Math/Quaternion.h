@@ -3,7 +3,8 @@
 #include <Math/Vector3.h>
 #include <Math/Matrix.h>
 #define _USE_MATH_DEFINES
-#include <math.h>
+//#include <math.h>
+#include <cmath>
 
 namespace Columbus
 {
@@ -188,7 +189,7 @@ namespace Columbus
 			if (std::abs(sinp) >= 1)
 				angles.Y = std::copysignf(M_PI / 2, sinp); // use 90 degrees if out of range
 			else
-				angles.Y = std::asinf(sinp);
+				angles.Y = std::asin(sinp);
 
 			// yaw (z-axis rotation)
 			float siny_cosp = 2 * (W * Z + X * Y);

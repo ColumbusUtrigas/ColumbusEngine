@@ -70,9 +70,10 @@ file(GLOB IMGUI_SRC
 	./Lib/imgui/*.cpp
 	./Lib/imgui/misc/cpp/*.cpp
 	./Lib/imgui/examples/imgui_impl_sdl.cpp
-	./Lib/imgui/examples/imgui_impl_win32.cpp
+	#./Lib/imgui/examples/imgui_impl_win32.cpp
 	./Lib/imgui/examples/imgui_impl_opengl3.cpp
-	./Lib/imgui/examples/imgui_impl_dx12.cpp
+	#./Lib/imgui/examples/imgui_impl_dx12.cpp
+	./Lib/imgui/examples/imgui_impl_vk.cpp
 	./Lib/ImGuizmo/*.cpp)
 
 add_library(imgui STATIC ${IMGUI_SRC})
@@ -124,7 +125,8 @@ set(BULLET_LIB bullet)
 #set_target_properties(BulletSoftBody      PROPERTIES FOLDER Bullet)
 
 ########## COLUMBUS ENGINE ############
-add_executable(${TARGET} main.cpp)
+#add_executable(${TARGET} main.cpp)
+add_executable(${TARGET} Core/Windows/WindowsMain2.cpp)
 set_target_properties(${TARGET} PROPERTIES
 	CXX_STANDARD 17
 	CXX_STANDARD_REQUIRED YES
@@ -143,7 +145,8 @@ target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/Include/)
 
 if(LINUX)
 	target_include_directories(${TARGET} PUBLIC /usr/include/SDL2/)
-	target_include_directories(${TARGET} PUBLIC /usr/include/bullet/)
+	#	target_include_directories(${TARGET} PUBLIC /usr/include/bullet/)
+	target_include_directories(${TARGET} PUBLIC ./Lib/bullet3/src)
 elseif(WIN32)
 	target_include_directories(${TARGET} PUBLIC ./Lib/SDL2/include)
 	target_include_directories(${TARGET} PUBLIC ./Lib/bullet3/src)
@@ -171,6 +174,7 @@ add_dir_to_target_recurse(${TARGET} Game)
 #add_dir_to_target_recurse(${TARGET} Graphics) #OpenGL is included
 add_dir_to_target(${TARGET} Graphics)
 add_dir_to_target(${TARGET} Graphics/OpenGL)
+add_dir_to_target(${TARGET} Graphics/Vulkan)
 add_dir_to_target_recurse(${TARGET} Graphics/Particles)
 add_dir_to_target(${TARGET} Graphics/Postprocess)
 
@@ -187,8 +191,11 @@ add_dir_to_target(${TARGET} System)
 #add_dependencies(${TARGET} builtin_shaders)
 
 if (LINUX)
+	# target_compile_options(${TARGET} PUBLIC -fsanitize=address)
+	# target_link_libraries(${TARGET} asan)
+
 	target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
-		LinearMath BulletCollision BulletDynamics pthread zstd vulkan)
+		${BULLET_LIB} pthread zstd vulkan shaderc_shared)
 elseif(WIN32)
 	target_link_directories(${TARGET} PUBLIC
 		./Lib/GLEW/lib/Release/x64

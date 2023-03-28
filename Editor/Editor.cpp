@@ -219,8 +219,8 @@ namespace Columbus::Editor
 				camera.Pos -= camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('S');
 				camera.Pos -= camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('A');
 				camera.Pos += camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('D');
-				camera.Pos -= camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SHIFT);
-				camera.Pos += camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SPACE);
+//				camera.Pos -= camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SHIFT);
+//				camera.Pos += camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SPACE);
 
 				camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('Q');
 				camera.Rot += Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('E');

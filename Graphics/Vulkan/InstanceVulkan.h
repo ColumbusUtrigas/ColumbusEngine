@@ -4,41 +4,25 @@
 #include <Graphics/Vulkan/DeviceVulkan.h>
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
+#include <Core/Platform.h>
 #include <vector>
-#include <memory>
 #include <iostream>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
 
-	class GAPIVulkan // : public GAPI or smth like that
+	class InstanceVulkan
 	{
-	private:
-		// Wrapper around VkInstance to call destructors in a right way.
-		struct __Instance
-		{
-			VkInstance internal;
-
-			operator VkInstance() const
-			{
-				return internal;
-			}
-
-			~__Instance()
-			{
-				vkDestroyInstance(internal, nullptr);
-			}
-		};
-
-		SmartPointer<__Instance> _Instance;
-		SmartPointer<DeviceVulkan> _Device;
 	public:
-		GAPIVulkan()
+		VkInstance instance;
+	public:
+		InstanceVulkan()
 		{
 			VkApplicationInfo appInfo;
 			appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 			appInfo.pNext = nullptr;
-			appInfo.pApplicationName = "Vulkan test";
+			appInfo.pApplicationName = "Engine";
 			appInfo.applicationVersion = 001;
 			appInfo.pEngineName = "Columbus Engine";
 			appInfo.engineVersion = 030;
@@ -48,8 +32,17 @@ namespace Columbus
 			std::vector<const char*> extensions;
 
 			#if 1 // ENGINE_DEBUG, my engine is in permanent debug :D
-				validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+				//validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+				validationLayers.push_back("VK_LAYER_KHRONOS_validation");
 				extensions.push_back("VK_EXT_debug_report");
+			#endif
+
+			extensions.push_back("VK_KHR_surface");
+
+			#ifdef PLATFORM_LINUX
+			extensions.push_back("VK_KHR_xlib_surface");
+			#elif PLATFORM_WINDOWS
+			extensions.push_back("VK_KHR_win32_surface");
 			#endif
 
 			VkInstanceCreateInfo info;
@@ -62,8 +55,7 @@ namespace Columbus
 			info.enabledExtensionCount = extensions.size();
 			info.ppEnabledExtensionNames = extensions.data();
 
-			_Instance = SmartPointer<__Instance>(new __Instance());
-			if (vkCreateInstance(&info, nullptr, &_Instance->internal) != VK_SUCCESS)
+			if (vkCreateInstance(&info, nullptr, &instance) != VK_SUCCESS)
 			{
 				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan instance");
 			}
@@ -71,7 +63,7 @@ namespace Columbus
 			// setup validation layers
 			#if 1 // ENGINE_DEBUG
 				auto vk_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)
-  					vkGetInstanceProcAddr(*_Instance, "vkCreateDebugReportCallbackEXT");
+  					vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
 
   				VkDebugReportCallbackEXT debug_callback;
 				VkDebugReportCallbackCreateInfoEXT debug_callback_info;
@@ -108,7 +100,7 @@ namespace Columbus
 
 				debug_callback_info.pUserData = nullptr;
 
-				if(vk_vkCreateDebugReportCallbackEXT(*_Instance,
+				if(vk_vkCreateDebugReportCallbackEXT(instance,
 					&debug_callback_info,
 					nullptr,
 					&debug_callback) != VK_SUCCESS)
@@ -116,53 +108,57 @@ namespace Columbus
 					COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan debug callback");
 				}
 			#endif
+		}
 
+		SPtr<DeviceVulkan> CreateDevice()
+		{
 			// enumerate physical devices
 			uint32_t count;
-			if (vkEnumeratePhysicalDevices(*_Instance, &count, nullptr) != VK_SUCCESS)
+			if (vkEnumeratePhysicalDevices(instance, &count, nullptr) != VK_SUCCESS)
 			{
 				COLUMBUS_ASSERT_MESSAGE(false, "Failed to enumerate Vulkan physical devices");
 			}
 
 			std::vector<VkPhysicalDevice> devices(count);
-			if (vkEnumeratePhysicalDevices(*_Instance, &count, devices.data()) != VK_SUCCESS)
+			if (vkEnumeratePhysicalDevices(instance, &count, devices.data()) != VK_SUCCESS)
 			{
 				COLUMBUS_ASSERT_MESSAGE(false, "Failed to enumerate Vulkan physical devices");
 			}
 
 			// TODO: choose the most powerful device
-			_Device = SmartPointer<DeviceVulkan>(new DeviceVulkan(devices[0]));
+			return SPtr<DeviceVulkan>(new DeviceVulkan(devices[0], instance));
 		}
 
-		void _test()
+		// void _test()
+		// {
+		// 	uint cpuBuffer[1] = {2};
+		// 	VkBuffer gpuBuffer = _Device->CreateBuffer(sizeof(cpuBuffer), cpuBuffer);
+
+		// 	printf("Data before: %u\n", cpuBuffer[0]);
+
+		// 	VkDescriptorSetLayout setLayout = _Device->CreateDescriptorSetLayout({
+		// 		{ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 }
+		// 	});
+		// 	VkPipelineLayout pipelineLayout = _Device->CreatePipelineLayout(setLayout);
+		// 	VkPipeline pipeline = _Device->CreateComputePipeline(pipelineLayout);
+		// 	VkDescriptorSet set = _Device->CreateDescriptorSet(setLayout);
+
+		// 	CommandBufferVulkan cmdBuf = _Device->CreateCommandBuffer();
+
+		// 	_Device->UpdateDescriptorSet(set, gpuBuffer, sizeof(cpuBuffer));
+
+		// 	cmdBuf.Begin();
+		// 	cmdBuf.BindDescriptorSet(set, pipelineLayout);
+		// 	cmdBuf.BindPipeline(pipeline);
+		// 	cmdBuf.Dispatch(1, 1, 1);
+		// 	cmdBuf.End();
+		// 	_Device->Submit(cmdBuf);
+		// }
+
+		~InstanceVulkan()
 		{
-			uint cpuBuffer[1] = {2};
-			VkBuffer gpuBuffer = _Device->CreateBuffer(sizeof(cpuBuffer), cpuBuffer);
-
-			printf("Data before: %u\n", cpuBuffer[0]);
-
-			VkDescriptorSetLayout setLayout = _Device->CreateDescriptorSetLayout({
-				{ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 }
-			});
-			VkPipelineLayout pipelineLayout = _Device->CreatePipelineLayout(setLayout);
-			VkPipeline pipeline = _Device->CreateComputePipeline(pipelineLayout);
-			VkDescriptorSet set = _Device->CreateDescriptorSet(setLayout);
-
-			CommandBufferVulkan cmdBuf = _Device->CreateCommandBuffer();
-
-			_Device->UpdateDescriptorSet(set, gpuBuffer, sizeof(cpuBuffer));
-
-			cmdBuf.Begin();
-			cmdBuf.BindDescriptorSet(set, pipelineLayout);
-			cmdBuf.BindPipeline(pipeline);
-			cmdBuf.Dispatch(1, 1, 1);
-			cmdBuf.End();
-			_Device->Submit(cmdBuf);
+			vkDestroyInstance(instance, nullptr);
 		}
-
-		~GAPIVulkan() = default;
 	};
 
 }
-
-

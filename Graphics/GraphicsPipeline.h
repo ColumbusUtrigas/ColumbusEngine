@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Core/fixed_vector.h"
 #include <Graphics/InputLayout.h>
 #include <Graphics/DepthStencilState.h>
 #include <Graphics/RasterizerState.h>
 #include <Graphics/BlendState.h>
 #include <Core/SmartPointer.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus::Graphics
 {
@@ -28,6 +30,8 @@ namespace Columbus::Graphics
 		RasterizerStateDesc rasterizerState;
 		BlendStateDesc blendState;
 		PrimitiveTopology topology = PrimitiveTopology::Undefined;
+
+		fixed_vector<VkPushConstantRange, 16> pushConstantRanges;
 
 		fixed_vector<ShaderResourceTex2D, 16> textures;
 		fixed_vector<ShaderResourceDesc, 16> cbs;

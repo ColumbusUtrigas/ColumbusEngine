@@ -22,3 +22,6 @@
 [submodule "Lib/bullet3"]
 	path = Lib/bullet3
 	url = https://github.com/bulletphysics/bullet3.git
+[submodule "Lib/VulkanMemoryAllocator"]
+	path = Lib/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
