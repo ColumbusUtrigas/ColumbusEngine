@@ -104,7 +104,7 @@ namespace Columbus
 		vmaallocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 		vmaallocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
-		vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo,
+		auto asd = vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo,
 			&buffer.Buffer,
 			&buffer.Allocation,
 			nullptr);
@@ -123,7 +123,7 @@ namespace Columbus
 	void TransitionImageLayout(VkCommandBuffer cmdbuf, VkImage image,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags srcAccessMaks, VkAccessFlags dstAccessMask,
-		VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask)
+		VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, int layers)
 	{
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -136,7 +136,7 @@ namespace Columbus
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = 1;
 		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.layerCount = layers;
 		barrier.srcAccessMask = srcAccessMaks;
 		barrier.dstAccessMask = dstAccessMask;
 		vkCmdPipelineBarrier(
@@ -200,19 +200,24 @@ namespace Columbus
 	{
 		TextureVulkan texture;
 
-		auto staging = CreateStagingBufferVulkanInternal(_Allocator, image.GetSize(0), image.Get2DData(0));
+		bool isCube = image.GetType() == Columbus::Image::Type::ImageCube;
+		int size = isCube ? 6 : 1;
+
+		BufferVulkan staging;
+
+		staging = CreateStagingBufferVulkanInternal(_Allocator, image.GetSize(0) * size, image.GetData());
 
 		VkImageCreateInfo imageInfo = {};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.pNext = NULL;
-		imageInfo.flags = 0;
+		imageInfo.flags = isCube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageInfo.format = TextureFormatToVK(image.GetFormat());
 		imageInfo.extent.width = image.GetWidth();
 		imageInfo.extent.height = image.GetHeight();
 		imageInfo.extent.depth = 1;
 		imageInfo.mipLevels = 1;
-		imageInfo.arrayLayers = 1;
+		imageInfo.arrayLayers = size;
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -238,25 +243,31 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+			size
 		);
 
-		VkBufferImageCopy region{};
-		region.bufferOffset = 0;
-		region.bufferRowLength = 0;
-		region.bufferImageHeight = 0;
-		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		region.imageSubresource.mipLevel = 0;
-		region.imageSubresource.baseArrayLayer = 0;
-		region.imageSubresource.layerCount = 1;
-		region.imageOffset = {0, 0, 0};
-		region.imageExtent = { image.GetWidth(), image.GetHeight(), 1 };
+		VkBufferImageCopy regions[6];
+
+		for (int i = 0; i < size; i++)
+		{
+			regions[i].bufferOffset = image.GetOffset(i, 0);
+			regions[i].bufferRowLength = 0;
+			regions[i].bufferImageHeight = 0;
+			regions[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			regions[i].imageSubresource.mipLevel = 0;
+			regions[i].imageSubresource.baseArrayLayer = i;
+			regions[i].imageSubresource.layerCount = 1;
+			regions[i].imageOffset = {0, 0, 0};
+			regions[i].imageExtent = { image.GetWidth(), image.GetHeight(), 1 };
+		}
+
 		vkCmdCopyBufferToImage(copyCmdBuf._CmdBuf,
 			staging.Buffer,
 			texture.image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			1,
-			&region
+			size,
+			regions
 		);
 
 		TransitionImageLayout(copyCmdBuf._CmdBuf,
@@ -264,7 +275,8 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+			size
 		);
 
 		copyCmdBuf.End();
@@ -289,7 +301,7 @@ namespace Columbus
 		viewInfo.pNext = nullptr;
 		viewInfo.flags = 0;
 		viewInfo.image = texture.image;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.viewType = isCube ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 		viewInfo.format = TextureFormatToVK(image.GetFormat());
 		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -299,7 +311,7 @@ namespace Columbus
 		viewInfo.subresourceRange.baseMipLevel = 0;
 		viewInfo.subresourceRange.levelCount = 1;
 		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
+		viewInfo.subresourceRange.layerCount = size;
 		vkCreateImageView(_Device, &viewInfo, nullptr, &texture.view);
 
 		VkSamplerCreateInfo samplerInfo;

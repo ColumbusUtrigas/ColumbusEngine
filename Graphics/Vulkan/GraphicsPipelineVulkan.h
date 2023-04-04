@@ -12,7 +12,7 @@ namespace Columbus::Graphics
     public:
         VkPipeline pipeline;
         VkPipelineLayout layout;
-        VkDescriptorSetLayout setLayout; // TODO
+        VkDescriptorSetLayout setLayouts[16]; // TODO
 
     public:
         GraphicsPipelineVulkan(const GraphicsPipelineDesc& desc) : GraphicsPipeline(desc) {}

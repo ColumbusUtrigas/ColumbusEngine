@@ -34,7 +34,7 @@ namespace Columbus
 		{
 			case TextureFormat::RGB8: return VK_FORMAT_R8G8B8_SRGB;
 			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_SRGB;
-			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
 		}
 	}
 

@@ -213,7 +213,7 @@ namespace Columbus
 		uint32 GetBytesPerPixel() const;
 		uint32 GetBytesPerBlock() const;
 
-		uint64 GetOffset(uint32 Level) const;
+		uint64 GetOffset(uint32 Layer, uint32 Level) const;
 		uint64 GetSize(uint32 Level) const;
 		size_t GetNumChannels() const;
 

@@ -230,13 +230,13 @@ namespace Columbus
 
 			uint32 BPP = GetBPPFromFormat(OutFormat);
 
-			if ((Header.Caps1 & DDSMipMap) != 0)
+			// if ((Header.Caps1 & DDSMipMap) != 0)
+			// {
+			for (uint32 i = 0; i < Header.MipMapCount; i++)
 			{
-				for (uint32 i = 0; i < Header.MipMapCount; i++)
-				{
-					DataSize += (Header.Width >> i) * (Header.Height >> i) * BPP;
-				}
+				DataSize += (Header.Width >> i) * (Header.Height >> i) * BPP;
 			}
+			// }
 		}
 
 		OutWidth = Header.Width;

@@ -73,7 +73,7 @@ file(GLOB IMGUI_SRC
 	#./Lib/imgui/examples/imgui_impl_win32.cpp
 	./Lib/imgui/examples/imgui_impl_opengl3.cpp
 	#./Lib/imgui/examples/imgui_impl_dx12.cpp
-	./Lib/imgui/examples/imgui_impl_vk.cpp
+	./Lib/imgui/examples/imgui_impl_vulkan.cpp
 	./Lib/ImGuizmo/*.cpp)
 
 add_library(imgui STATIC ${IMGUI_SRC})
@@ -123,6 +123,14 @@ set(BULLET_LIB bullet)
 #set_target_properties(Bullet3Common      PROPERTIES FOLDER Bullet)
 #set_target_properties(BulletInverseDynamics      PROPERTIES FOLDER Bullet)
 #set_target_properties(BulletSoftBody      PROPERTIES FOLDER Bullet)
+
+########## SPIRV-REFLECT ############
+file(GLOB SPIRV_REFLECT_SRC
+	Lib/SPIRV-Reflect/spirv_reflect.h
+	Lib/SPIRV-Reflect/spirv_reflect.c)
+
+add_library(spirv_reflect STATIC ${SPIRV_REFLECT_SRC})
+target_include_directories(spirv_reflect PUBLIC ./Lib/SPIRV-Reflect)
 
 ########## COLUMBUS ENGINE ############
 #add_executable(${TARGET} main.cpp)
@@ -191,7 +199,7 @@ add_dir_to_target(${TARGET} System)
 #add_dependencies(${TARGET} builtin_shaders)
 
 if (LINUX)
-	# target_compile_options(${TARGET} PUBLIC -fsanitize=address)
+	# target_compile_options(${TARGET} PUBLIC -fsanitize=address -O0 -g)
 	# target_link_libraries(${TARGET} asan)
 
 	target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
@@ -210,6 +218,7 @@ elseif(WIN32)
 endif()
 
 target_link_libraries(${TARGET} imgui)
+target_link_libraries(${TARGET} spirv_reflect)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")

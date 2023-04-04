@@ -24,6 +24,9 @@ namespace Columbus
         std::vector<VkImageView> swapChainImageViews;
         std::vector<VkFramebuffer> swapChainFramebuffers;
 
+		uint32_t minImageCount;
+		uint32_t imageCount;
+
     public:
         SwapchainVulkan(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
         {
@@ -32,7 +35,8 @@ namespace Columbus
 			auto presentMode = ChooseSwapPresentMode(supportDetails.presentModes);
 			auto extent = ChooseSwapExtent(supportDetails.capabilities);
 
-			uint32_t imageCount = supportDetails.capabilities.minImageCount + 1;
+			minImageCount = supportDetails.capabilities.minImageCount;
+			imageCount = supportDetails.capabilities.minImageCount + 1;
 			if (supportDetails.capabilities.maxImageCount > 0 && imageCount > supportDetails.capabilities.maxImageCount) {
 				imageCount = supportDetails.capabilities.maxImageCount;
 			}

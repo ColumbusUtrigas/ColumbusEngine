@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Core/fixed_vector.h"
 #include "Graphics/GraphicsPipeline.h"
 #include "Graphics/Types.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "VulkanMemoryAllocator/include/vk_mem_alloc.h"
+#include "include/spirv/unified1/spirv.h"
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
 
@@ -16,6 +18,7 @@
 
 #include <shaderc/shaderc.h>
 #include <shaderc/shaderc.hpp>
+#include <Lib/SPIRV-Reflect/spirv_reflect.h>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <fstream>
@@ -101,7 +104,7 @@ namespace Columbus
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
 	{
-	private:
+	public:
 		VkPhysicalDevice _PhysicalDevice;
 		VkDevice _Device;
 
@@ -256,25 +259,6 @@ namespace Columbus
 			return descriptorSetLayout;
 		}
 
-		VkPipelineLayout CreatePipelineLayout(VkDescriptorSetLayout DescriptorSetLayout)
-		{
-			VkPipelineLayoutCreateInfo layoutInfo;
-			layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			layoutInfo.pNext = nullptr;
-			layoutInfo.flags = 0;
-			layoutInfo.setLayoutCount = 1;
-			layoutInfo.pSetLayouts = &DescriptorSetLayout;
-			layoutInfo.pushConstantRangeCount = 0;
-			layoutInfo.pPushConstantRanges = nullptr;
-
-			VkPipelineLayout layout;
-			if (vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &layout) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan pipeline layout");
-			}
-			return layout;
-		}
-
 		VkPipeline CreateComputePipeline(VkPipelineLayout PipelineLayout)
 		{
 			// read file
@@ -325,8 +309,16 @@ namespace Columbus
 			return result;
 		}
 
-		VkPipelineShaderStageCreateInfo BuildShaderStage(SPtr<Columbus::ShaderStage> stage)
+		struct ShaderStageCompilationResult
 		{
+			VkPipelineShaderStageCreateInfo shaderStageInfo;
+			fixed_vector<VkPushConstantRange, 16> pushConstants; // TODO
+			fixed_vector<VkDescriptorSetLayoutCreateInfo, 16> descriptorSets; // TODO
+		};
+
+		ShaderStageCompilationResult BuildShaderStage(SPtr<Columbus::ShaderStage> stage)
+		{
+			ShaderStageCompilationResult result;
 			shaderc::Compiler compiler;
 			shaderc_shader_kind kind;
 			shaderc::CompileOptions options;
@@ -346,76 +338,175 @@ namespace Columbus
 					vkstage = VK_SHADER_STAGE_FRAGMENT_BIT;
 					break;
 
+				case ShaderType::Compute:
+					kind = shaderc_compute_shader;
+					options.AddMacroDefinition("COMPUTE_SHADER");
+					vkstage = VK_SHADER_STAGE_COMPUTE_BIT;
+					break;
+
 				default: break;
 			}
 
-			auto result = compiler.CompileGlslToSpv(stage->Source, kind, "name", options);
-			printf("Compilation error: %s\n", result.GetErrorMessage().c_str());
+			auto spirv = compiler.CompileGlslToSpv(stage->Source, kind, "name", options);
+			printf("Compilation error: %s\n", spirv.GetErrorMessage().c_str());
+
+			// Generate reflection data for a shader
+			SpvReflectShaderModule spv_module;
+			SpvReflectResult reflect_result = spvReflectCreateShaderModule((spirv.end() - spirv.begin()) * 4, spirv.begin(), &spv_module);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			// Enumerate and extract shader's input variables
+			uint32_t input_count = 0;
+			SpvReflectInterfaceVariable* inputs[128];
+
+			reflect_result = spvReflectEnumerateInputVariables(&spv_module, &input_count, NULL);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			reflect_result = spvReflectEnumerateInputVariables(&spv_module, &input_count, inputs);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			// Enumerate and extract shader's push constants
+			uint32_t push_constant_num = 0;
+			SpvReflectBlockVariable* push_constants[128];
+
+			reflect_result = spvReflectEnumeratePushConstantBlocks(&spv_module, &push_constant_num, NULL);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			reflect_result = spvReflectEnumeratePushConstantBlocks(&spv_module, &push_constant_num, push_constants);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			// Enumerate and extract shader's descriptor sets
+			uint32_t sets_num = 0;
+			SpvReflectDescriptorSet* sets[128];
+
+			spvReflectEnumerateDescriptorSets(&spv_module, &sets_num, NULL);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			spvReflectEnumerateDescriptorSets(&spv_module, &sets_num, sets);
+			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
+
+			// for (int i = 0; i < input_count; i++)
+			// {
+			// 	SpvReflectInterfaceVariable* input = inputs[i];
+			// 	printf("%s, location(%i), storage(%i), decoration(%x), type(vec%i)\n", var->name, var->location, var->storage_class, var->decoration_flags, var->numeric.vector.component_count);
+			// }
+
+			for (int i = 0; i < push_constant_num; i++)
+			{
+				assert(stage->Type == ShaderType::Vertex);
+
+				VkPushConstantRange push;
+				push.stageFlags = vkstage;
+				push.offset = push_constants[i]->offset;
+				push.size = push_constants[i]->size;
+
+				result.pushConstants.push_back(push);
+			}			
+
+			for (int i = 0; i < sets_num; i++)
+			{
+				auto bindings = new fixed_vector<VkDescriptorSetLayoutBinding, 16>(); // TODO, MEMORY LEAK
+				for (int b = 0; b < sets[i]->binding_count; b++)
+				{
+					auto binding = sets[i]->bindings[b];
+					assert(stage->Type == ShaderType::Pixel);
+					assert(binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+					VkDescriptorSetLayoutBinding bindingInfo;
+					bindingInfo.binding = binding->binding;
+					bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					bindingInfo.descriptorCount = binding->count;
+					bindingInfo.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+					bindingInfo.pImmutableSamplers = nullptr;
+
+					bindings->push_back(bindingInfo);
+				}
+
+				VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
+				descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+				descriptorSetLayoutInfo.pNext = nullptr;
+				descriptorSetLayoutInfo.flags = 0;
+				descriptorSetLayoutInfo.bindingCount = bindings->size();
+				descriptorSetLayoutInfo.pBindings = bindings->data();
+
+				result.descriptorSets.push_back(descriptorSetLayoutInfo);
+			}
+
+			spvReflectDestroyShaderModule(&spv_module);
 
 			VkShaderModuleCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			info.pNext = nullptr;
 			info.flags = 0;
-			info.codeSize = (result.end() - result.begin()) * 4;
-			info.pCode = result.begin();
+			info.codeSize = (spirv.end() - spirv.begin()) * 4;
+			info.pCode = spirv.begin();
 
 			VkShaderModule module;
 
 			vkCreateShaderModule(_Device, &info, nullptr, &module);
 
-			VkPipelineShaderStageCreateInfo shaderStageInfo;
-			shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			shaderStageInfo.pNext = nullptr;
-		    shaderStageInfo.flags = 0;
-			shaderStageInfo.stage = vkstage;
-			shaderStageInfo.module = module;
-			shaderStageInfo.pName = stage->EntryPoint.c_str();
-			shaderStageInfo.pSpecializationInfo = nullptr;
+			result.shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			result.shaderStageInfo.pNext = nullptr;
+		    result.shaderStageInfo.flags = 0;
+			result.shaderStageInfo.stage = vkstage;
+			result.shaderStageInfo.module = module;
+			result.shaderStageInfo.pName = stage->EntryPoint.c_str();
+			result.shaderStageInfo.pSpecializationInfo = nullptr;
 
-			return shaderStageInfo;
+			return result;
 		}
 
 		Graphics::GraphicsPipeline* CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& desc, VkRenderPass renderPass)
 		{
 			auto vs = BuildShaderStage(desc.VS);
 			auto ps = BuildShaderStage(desc.PS);
-			VkPipelineShaderStageCreateInfo stages[] = { vs, ps };
+			VkPipelineShaderStageCreateInfo stages[] = { vs.shaderStageInfo, ps.shaderStageInfo };
 
 			auto pipeline = new Graphics::GraphicsPipelineVulkan(desc);
 
-			VkVertexInputBindingDescription vertexInputBinding;
-			vertexInputBinding.binding = 0;
-			vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-			vertexInputBinding.stride =  sizeof(float) * 3;
+			fixed_vector<VkVertexInputBindingDescription, 16> inputBindings;
+			for (int i = 0; i < desc.layout.Elements.size(); i++)
+			{
+				auto element = desc.layout.Elements[i];
 
-			VkVertexInputBindingDescription uvBinding;
-			uvBinding.binding = 1;
-			uvBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-			uvBinding.stride =  sizeof(float) * 2;
+				VkVertexInputBindingDescription vertexInputBinding;
+				vertexInputBinding.binding = element.Slot;
+				vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // TODO
+				vertexInputBinding.stride = sizeof(float) * element.Components; // TODO
 
-			VkVertexInputAttributeDescription vertexInputAttribute;
-			vertexInputAttribute.binding = 0;
-			vertexInputAttribute.location = 0;
-			vertexInputAttribute.offset = 0;
-			vertexInputAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+				inputBindings.push_back(vertexInputBinding);
+			}
 
-			VkVertexInputAttributeDescription uvInputAttribute;
-			uvInputAttribute.binding = 1;
-			uvInputAttribute.location = 1;
-			uvInputAttribute.offset = 0;
-			uvInputAttribute.format = VK_FORMAT_R32G32_SFLOAT;
+			// TODO
+			fixed_vector<VkVertexInputAttributeDescription, 16> inputAttribute;
+			for (int i = 0; i < desc.layout.Elements.size(); i++)
+			{
+				auto element = desc.layout.Elements[i];
 
-			VkVertexInputBindingDescription inputBindings[] = { vertexInputBinding, uvBinding };
-			VkVertexInputAttributeDescription inputAttributes[] = { vertexInputAttribute, uvInputAttribute };
+				VkVertexInputAttributeDescription attribute;
+
+				attribute.binding = element.Slot;
+				attribute.location = element.SemanticIndex;
+				attribute.offset = 0;
+
+				// TODO
+				switch (element.Components)
+				{
+				case 2: attribute.format = VK_FORMAT_R32G32_SFLOAT;    break;
+				case 3: attribute.format = VK_FORMAT_R32G32B32_SFLOAT; break;
+				}
+
+				inputAttribute.push_back(attribute);
+			}
 
 			VkPipelineVertexInputStateCreateInfo vertexInputState;
 			vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 			vertexInputState.pNext = nullptr;
 			vertexInputState.flags = 0;
-			vertexInputState.vertexBindingDescriptionCount = 2;
-			vertexInputState.pVertexBindingDescriptions = inputBindings;
-			vertexInputState.vertexAttributeDescriptionCount = 2;
-			vertexInputState.pVertexAttributeDescriptions = inputAttributes;
+			vertexInputState.vertexBindingDescriptionCount = inputBindings.size();
+			vertexInputState.pVertexBindingDescriptions = inputBindings.data();
+			vertexInputState.vertexAttributeDescriptionCount = inputAttribute.size();
+			vertexInputState.pVertexAttributeDescriptions = inputAttribute.data();
 
 			VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
 			inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -522,32 +613,33 @@ namespace Columbus
 			dynamicState.dynamicStateCount = 0;
 			dynamicState.pDynamicStates = nullptr;
 
-			auto pushConstantRanges = desc.pushConstantRanges;
+			// VkDescriptorSetLayoutBinding textureBinding;
+			// textureBinding.binding = 0;
+			// textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			// textureBinding.descriptorCount = 1;
+			// textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			// textureBinding.pImmutableSamplers = nullptr;
 
-			VkDescriptorSetLayoutBinding textureBinding;
-			textureBinding.binding = 0;
-			textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			textureBinding.descriptorCount = 1;
-			textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			textureBinding.pImmutableSamplers = nullptr;
+			// VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
+			// descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			// descriptorSetLayoutInfo.pNext = nullptr;
+			// descriptorSetLayoutInfo.flags = 0;
+			// descriptorSetLayoutInfo.bindingCount = 1;
+			// descriptorSetLayoutInfo.pBindings = &textureBinding;
 
-			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
-			descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			descriptorSetLayoutInfo.pNext = nullptr;
-			descriptorSetLayoutInfo.flags = 0;
-			descriptorSetLayoutInfo.bindingCount = 1;
-			descriptorSetLayoutInfo.pBindings = &textureBinding;
-
-			vkCreateDescriptorSetLayout(_Device, &descriptorSetLayoutInfo, nullptr, &pipeline->setLayout);
+			for (int i = 0; i < ps.descriptorSets.size(); i++)
+			{
+				vkCreateDescriptorSetLayout(_Device, &ps.descriptorSets[i], nullptr, &pipeline->setLayouts[i]);
+			}
 
 			VkPipelineLayoutCreateInfo layoutInfo;
 			layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			layoutInfo.pNext = nullptr;
 			layoutInfo.flags = 0;
-			layoutInfo.setLayoutCount = 1;
-			layoutInfo.pSetLayouts = &pipeline->setLayout;
-			layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
-			layoutInfo.pPushConstantRanges = pushConstantRanges.data();
+			layoutInfo.setLayoutCount = ps.descriptorSets.size();
+			layoutInfo.pSetLayouts = pipeline->setLayouts;
+			layoutInfo.pushConstantRangeCount = vs.pushConstants.size();
+			layoutInfo.pPushConstantRanges = vs.pushConstants.data();
 
 			if (vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &pipeline->layout) != VK_SUCCESS)
 			{
@@ -675,17 +767,6 @@ namespace Columbus
 
 		void Submit(CommandBufferVulkan Buffer, VkFence fence, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore)
 		{
-			// VkFenceCreateInfo fenceInfo;
-			// fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-			// fenceInfo.pNext = nullptr;
-			// fenceInfo.flags = 0;
-
-			// VkFence fence;
-			// if (vkCreateFence(_Device, &fenceInfo, nullptr, &fence) != VK_SUCCESS)
-			// {
-			// 	COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan fence");
-			// }
-
 			VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
 			VkSubmitInfo submit_info;
@@ -700,22 +781,6 @@ namespace Columbus
 			submit_info.pSignalSemaphores = &signalSemaphore;
 
 			vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence);
-
-			// if (vkWaitForFences(_Device, 1, &fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
-			// {
-			// 	COLUMBUS_ASSERT_MESSAGE(false, "Failed to wait Vulkan fence");
-			// }
-
-			// uint32 data[1];
-			// void* mapped;
-			// if(vkMapMemory(_Device, mem, 0, sizeof(data), 0, &mapped) != VK_SUCCESS)
-			// {
-			// 	COLUMBUS_ASSERT_MESSAGE(false, "Failed to map Vulkan memory");
-			// }
-			// memcpy(data, mapped, sizeof(data));
-			// vkUnmapMemory(_Device, mem);
-
-			// printf("Data after: %u\n", data[0]);
 		}
 
 		void Present(SwapchainVulkan* swapchain, uint32_t imageIndex, VkSemaphore waitSemaphore)
@@ -737,72 +802,6 @@ namespace Columbus
 
 		BufferVulkan CreateBuffer(size_t Size, const void* Data, BufferType type);
 		TextureVulkan CreateTexture(const Image& image);
-
-		// VkDeviceMemory mem;
-
-		// VkBuffer CreateBuffer(size_t Size, const void* Data)
-		// {
-		// 	VkBufferCreateInfo info;
-		// 	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		// 	info.pNext = nullptr;
-		// 	info.flags = 0;
-		// 	info.size = Size;
-		// 	info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-		// 	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		// 	info.queueFamilyIndexCount = 0;
-		// 	info.pQueueFamilyIndices = nullptr;
-
-		// 	VkBuffer result;
-		// 	if (vkCreateBuffer(_Device, &info, nullptr, &result) != VK_SUCCESS)
-		// 	{
-		// 		COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan buffer");
-		// 	}
-
-		// 	VkMemoryRequirements mem_req;
-		// 	vkGetBufferMemoryRequirements(_Device, result, &mem_req);
-
-		// 	VkMemoryAllocateInfo alloc_info;
-		// 	alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		// 	alloc_info.pNext = nullptr;
-		// 	alloc_info.allocationSize = Size;
-		// 	alloc_info.memoryTypeIndex = [&]() {
-		// 		for(size_t i = 0; i < _MemoryProperties.memoryTypeCount; ++i)
-		// 		{
-		// 			auto bit = ((uint32_t)1 << i);
-		// 			if((mem_req.memoryTypeBits & bit) != 0)
-		// 			{
-		// 				if (_MemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-		// 				{
-		// 					return i;
-		// 				}
-		// 			}
-		// 		}
-
-		// 		COLUMBUS_ASSERT_MESSAGE(false, "Failed to get correct memory type");
-		// 		return size_t(-1);
-		// 	}();
-
-			
-		// 	if (vkAllocateMemory(_Device, &alloc_info, nullptr, &mem) != VK_SUCCESS)
-		// 	{
-		// 		COLUMBUS_ASSERT_MESSAGE(false, "Failed to allocate Vulkan memory");
-		// 	}
-
-		// 	void* mapped;
-		// 	if(vkMapMemory(_Device, mem, 0, Size, 0, &mapped) != VK_SUCCESS)
-		// 	{
-		// 		COLUMBUS_ASSERT_MESSAGE(false, "Failed to map Vulkan memory");
-		// 	}
-		// 	memcpy(mapped, Data, Size);
-		// 	vkUnmapMemory(_Device, mem);
-
-		// 	if (vkBindBufferMemory(_Device, result, mem, 0) != VK_SUCCESS)
-		// 	{
-		// 		COLUMBUS_ASSERT_MESSAGE(false, "Failed to fill Vulkan buffer");
-		// 	}
-
-		// 	return result;
-		// }
 
 		// ~DeviceVulkan()
 		// {

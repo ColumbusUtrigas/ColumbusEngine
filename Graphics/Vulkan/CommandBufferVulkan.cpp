@@ -69,9 +69,11 @@ namespace Columbus
 		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline)->pipeline);
 	}
 
-	void CommandBufferVulkan::PushConstants(VkPipelineLayout layout, uint32_t offset, uint32_t size, const void* pValues)
+	void CommandBufferVulkan::PushConstants(const Graphics::GraphicsPipeline* pipeline, uint32_t offset, uint32_t size, const void* pValues)
 	{
-		vkCmdPushConstants(_CmdBuf, layout, VK_SHADER_STAGE_ALL, offset, size, pValues);
+		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
+
+		vkCmdPushConstants(_CmdBuf, vkpipe->layout, VK_SHADER_STAGE_VERTEX_BIT, offset, size, pValues);
 	}
 
 	void CommandBufferVulkan::BindDescriptorSets(const Graphics::GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)

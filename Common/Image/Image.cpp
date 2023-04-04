@@ -461,6 +461,7 @@ namespace Columbus
 		Exist = false;
 
 		delete[] Data;
+		Data = nullptr;
 	}
 	/*
 	* Horizontal image flipping
@@ -559,31 +560,24 @@ namespace Columbus
 		return GetBlockSizeFromFormat(Format);
 	}
 
-	uint64 Image::GetOffset(uint32 Level) const
+	uint64 Image::GetOffset(uint32 Layer, uint32 Level) const
 	{
-		if (IsCompressedFormat())
+		if (Level < MipMaps)
 		{
-			if (Level < MipMaps)
+			uint64 Offset = 0;
+			uint64 LayerSize = 0;
+
+			for (uint32 i = 0; i < Level; i++)
 			{
-				uint64 Offset = 0;
-				uint32 BlockSize = 0;
-
-				if (Format == TextureFormat::DXT1)
-				{
-					BlockSize = 8;
-				}
-				else
-				{
-					BlockSize = 16;
-				}
-
-				for (uint32 i = 0; i < Level; i++)
-				{
-					Offset += (((Width >> i) + 3) / 4) * (((Height >> i) + 3) / 4) * BlockSize;
-				}
-
-				return Offset;
+				Offset += GetSize(i);
 			}
+
+			for (uint32 i = 0; i < MipMaps; i++)
+			{
+				LayerSize += GetSize(i);
+			}
+
+			return Layer * LayerSize + Offset;
 		}
 
 		return 0;
@@ -625,7 +619,7 @@ namespace Columbus
 		{
 			if (Data != nullptr)
 			{
-				return &Data[0] + GetOffset(Level);
+				return &Data[0] + GetOffset(0, Level);
 			}
 		}
 
@@ -638,9 +632,7 @@ namespace Columbus
 		{
 			if (Data != nullptr)
 			{
-				uint64 FaceSize = 0;
-				for (uint32 i = 0; i < MipMaps; i++) FaceSize += GetSize(i);
-				return &Data[0] + Face * FaceSize + GetOffset(Level);
+				return &Data[0] + GetOffset(Face, Level);
 			}
 		}
 
@@ -662,9 +654,3 @@ namespace Columbus
 		FreeData();
 	}
 }
-
-
-
-
-
-

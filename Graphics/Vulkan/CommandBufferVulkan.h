@@ -27,7 +27,7 @@ namespace Columbus
 		void BindComputePipeline(VkPipeline Pipeline);
 		void BindGraphicsPipeline(const Graphics::GraphicsPipeline* Pipeline);
 
-		void PushConstants(VkPipelineLayout layout, uint32_t offset, uint32_t size, const void* pValues);
+		void PushConstants(const Graphics::GraphicsPipeline* pipeline, uint32_t offset, uint32_t size, const void* pValues);
 		void BindDescriptorSets(const Graphics::GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets);
 
 		void BindVertexBuffers(uint32_t first, uint32_t count, const BufferVulkan* buffers, const VkDeviceSize* offsets);
