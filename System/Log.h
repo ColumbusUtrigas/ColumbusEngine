@@ -31,6 +31,7 @@ namespace Columbus
 		static void Warning(const char* Fmt, ...);
 		static void Error(const char* Fmt, ...);
 		static void Fatal(const char* Fmt, ...);
+		static void _InternalStack(const char* Fmt, ...);
 
 		static std::vector<Msg>& GetData();
 	};

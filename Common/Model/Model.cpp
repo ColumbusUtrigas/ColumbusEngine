@@ -26,7 +26,7 @@ namespace Columbus
 
 			SubModels = Loader->SubModels;
 			RecalculateBounds();
-			RecalculateTangents();
+			// RecalculateTangents(); TODO
 
 			delete Loader;
 

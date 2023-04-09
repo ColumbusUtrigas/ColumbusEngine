@@ -31,6 +31,8 @@ namespace Columbus::Graphics
 		BlendStateDesc blendState;
 		PrimitiveTopology topology = PrimitiveTopology::Undefined;
 
+		std::string Name;
+
 		fixed_vector<VkPushConstantRange, 16> pushConstantRanges;
 
 		fixed_vector<ShaderResourceTex2D, 16> textures;

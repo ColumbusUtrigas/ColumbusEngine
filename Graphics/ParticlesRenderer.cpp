@@ -83,7 +83,7 @@ namespace Columbus
 //}
 //)";
 
-	Graphics::ComputePipeline* CPS;
+	ComputePipeline* CPS;
 
 	void ParticlesRenderer::Allocate(size_t NewSize)
 	{
@@ -105,7 +105,7 @@ namespace Columbus
 		{
 			Allocate(MaxSize);
 
-			Graphics::ComputePipelineDesc CPD;
+			ComputePipelineDesc CPD;
 			CPD.CS = Graphics::ShaderCompiler::Compile(ParticlesLightingProg, ShaderLanguage::GLSL, {}).CS;
 			gDevice->CreateComputePipeline(CPD, &CPS);
 		}

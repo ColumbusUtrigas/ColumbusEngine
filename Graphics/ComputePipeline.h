@@ -3,7 +3,7 @@
 #include <Graphics/Types.h>
 #include <Core/SmartPointer.h>
 
-namespace Columbus::Graphics
+namespace Columbus
 {
 
 	struct ComputePipelineDesc
@@ -14,10 +14,10 @@ namespace Columbus::Graphics
 	class ComputePipeline
 	{
 	private:
-		ComputePipelineDesc Desc;
+		ComputePipelineDesc _Desc;
 	public:
-		ComputePipeline(const ComputePipelineDesc& Desc) : Desc(Desc) {}
-		const ComputePipelineDesc& GetDesc() const { return Desc; }
+		ComputePipeline(const ComputePipelineDesc& Desc) : _Desc(Desc) {}
+		const ComputePipelineDesc& GetDesc() const { return _Desc; }
 	};
 
 }

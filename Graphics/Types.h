@@ -59,13 +59,26 @@ namespace Columbus
 
 	enum class ShaderType
 	{
-		Vertex,
-		Pixel,
-		Hull,
-		Domain,
-		Geometry,
-		Compute
+		Vertex   = 1,
+		Pixel    = 2,
+		Hull     = 4,
+		Domain   = 8,
+		Geometry = 16,
+		AllGraphics = Vertex | Pixel | Hull | Domain | Geometry,
+
+		Compute  = 32,
+
+		Raygen       = 64,
+		Miss         = 128,
+		Anyhit       = 256,
+		ClosestHit   = 512,
+		Intersection = 1024,
+		AllRayTracing = Raygen | Miss | Anyhit | ClosestHit | Intersection,
 	};
+
+	inline constexpr bool operator!=(ShaderType x, uint64_t y) { return static_cast<uint64_t>(x) != y; }
+	inline constexpr ShaderType operator|(ShaderType x, ShaderType y) { return static_cast<ShaderType>(static_cast<uint64_t>(x) | static_cast<uint64_t>(y)); }
+	inline constexpr ShaderType operator&(ShaderType x, ShaderType y) { return static_cast<ShaderType>(static_cast<uint64_t>(x) & static_cast<uint64_t>(y)); }
 
 	enum class ShaderLanguage
 	{

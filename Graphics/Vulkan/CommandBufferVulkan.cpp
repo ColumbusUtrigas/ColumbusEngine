@@ -1,7 +1,12 @@
-#include "Graphics/GraphicsPipeline.h"
 #include <Graphics/Vulkan/CommandBufferVulkan.h>
-#include <Graphics/Vulkan/GraphicsPipelineVulkan.h>
-#include <Core/Assert.h>
+
+#include "Common.h"
+#include "ComputePipelineVulkan.h"
+#include "Graphics/Vulkan/TypeConversions.h"
+#include "GraphicsPipelineVulkan.h"
+#include "RayTracingPipelineVulkan.h"
+
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
 namespace Columbus
@@ -9,7 +14,7 @@ namespace Columbus
 
 	void CommandBufferVulkan::Reset()
 	{
-		vkResetCommandBuffer(_CmdBuf, 0);
+		VK_CHECK(vkResetCommandBuffer(_CmdBuf, 0));
 	}
 
 	void CommandBufferVulkan::Begin()
@@ -20,18 +25,12 @@ namespace Columbus
 		info.flags = 0;
 		info.pInheritanceInfo = nullptr; // TODO: secondary buffers
 
-		if (vkBeginCommandBuffer(_CmdBuf, &info) != VK_SUCCESS)
-		{
-			COLUMBUS_ASSERT_MESSAGE(false, "Failed to begin Vulkan command buffer");
-		}
+		VK_CHECK(vkBeginCommandBuffer(_CmdBuf, &info));
 	}
 
 	void CommandBufferVulkan::End()
 	{
-		if (vkEndCommandBuffer(_CmdBuf) != VK_SUCCESS)
-		{
-			COLUMBUS_ASSERT_MESSAGE(false, "Failed to end Vulkan command buffer");
-		}
+		VK_CHECK(vkEndCommandBuffer(_CmdBuf));
 	}
 
 	void CommandBufferVulkan::BeginRenderPass(VkRenderPass renderPass, VkRect2D renderArea, VkFramebuffer framebuffer, uint32_t clearValuesCount, VkClearValue* clearValues)
@@ -53,34 +52,59 @@ namespace Columbus
 		vkCmdEndRenderPass(_CmdBuf);
 	}
 
-	void CommandBufferVulkan::BindDescriptorSet(VkDescriptorSet Set, VkPipelineLayout Layout)
+	void CommandBufferVulkan::BindComputePipeline(const ComputePipeline* Pipeline)
 	{
-		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE,
-			Layout, 0, 1, &Set, 0, nullptr);
-	}
+		auto vkpipe = static_cast<const ComputePipelineVulkan*>(Pipeline);
 
-	void CommandBufferVulkan::BindComputePipeline(VkPipeline Pipeline)
-	{
-		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, Pipeline);
+		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, vkpipe->pipeline);
 	}
 
 	void CommandBufferVulkan::BindGraphicsPipeline(const Graphics::GraphicsPipeline* Pipeline)
 	{
-		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline)->pipeline);
+		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline);
+
+		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkpipe->pipeline);
 	}
 
-	void CommandBufferVulkan::PushConstants(const Graphics::GraphicsPipeline* pipeline, uint32_t offset, uint32_t size, const void* pValues)
+	void CommandBufferVulkan::BindRayTracingPipeline(const RayTracingPipeline* Pipeline)
 	{
-		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
+		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(Pipeline);
 
-		vkCmdPushConstants(_CmdBuf, vkpipe->layout, VK_SHADER_STAGE_VERTEX_BIT, offset, size, pValues);
+		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkpipe->pipeline);
 	}
 
-	void CommandBufferVulkan::BindDescriptorSets(const Graphics::GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)
+	void CommandBufferVulkan::PushConstantsGraphics(const Graphics::GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues)
+	{
+		COLUMBUS_ASSERT((stages | ShaderType::AllGraphics) == ShaderType::AllGraphics);
+
+		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
+		auto stageFlags = ShaderTypeToVk(stages);
+
+		vkCmdPushConstants(_CmdBuf, vkpipe->layout, stageFlags, offset, size, pValues);
+	}
+
+	void CommandBufferVulkan::BindDescriptorSetsGraphics(const Graphics::GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)
 	{
 		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
 		
 		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkpipe->layout, firstSet, setCount, sets, 0, nullptr);
+	}
+
+	void CommandBufferVulkan::PushConstantsRayTracing(const RayTracingPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues)
+	{
+		COLUMBUS_ASSERT((stages | ShaderType::AllRayTracing) == ShaderType::AllRayTracing);
+
+		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(pipeline);
+		auto stageFlags = ShaderTypeToVk(stages);
+		
+		vkCmdPushConstants(_CmdBuf, vkpipe->layout, stageFlags, offset, size, pValues);
+	}
+
+	void CommandBufferVulkan::BindDescriptorSetsRayTracing(const RayTracingPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)
+	{
+		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(pipeline);
+
+		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkpipe->layout, firstSet, setCount, sets, 0, nullptr);
 	}
 
 	void CommandBufferVulkan::BindVertexBuffers(uint32_t first, uint32_t count, const BufferVulkan* buffers, const VkDeviceSize* offsets)
@@ -110,6 +134,23 @@ namespace Columbus
 	void CommandBufferVulkan::DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance)
 	{
 		vkCmdDrawIndexed(_CmdBuf, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	}
+
+	void CommandBufferVulkan::TraceRays(const RayTracingPipeline* pipeline, uint32_t x, uint32_t y, uint32_t depth)
+	{
+		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(pipeline);
+
+		_Functions.vkCmdTraceRays(_CmdBuf,
+			&vkpipe->RayGenRegionSBT,
+			&vkpipe->MissRegionSBT,
+			&vkpipe->HitRegionSBT,
+			&vkpipe->CallableRegionSBT,
+			x, y, depth);
+	}
+
+	CommandBufferVulkan::~CommandBufferVulkan()
+	{
+		vkFreeCommandBuffers(_Device, _Pool, 1, &_CmdBuf);
 	}
 
 }

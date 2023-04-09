@@ -43,14 +43,14 @@ namespace Columbus
 		void SetGraphicsPipeline(Graphics::GraphicsPipeline* pPipeline) final override;
 		void SetGraphicsCBV(uint32 slot, Buffer* pBuf) final override;
 
-		void SetComputePipeline(Graphics::ComputePipeline* pPipeline) override;
+		void SetComputePipeline(ComputePipeline* pPipeline) override;
 
 		bool CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer) final override;
 		void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) final override;
 		void UnmapBuffer(Buffer* pBuffer) final override;
 
 		bool CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& Desc, Graphics::GraphicsPipeline** ppGraphicsPipeline) final override;
-		bool CreateComputePipeline(const Graphics::ComputePipelineDesc& desc, Graphics::ComputePipeline** ppComputePipelineState) final override;
+		bool CreateComputePipeline(const ComputePipelineDesc& desc, ComputePipeline** ppComputePipelineState) final override;
 
 		void Dispatch(uint32 X, uint32 Y, uint32 Z) final override;
 		void Draw(uint32 VertexCount, uint32 StartVertexLocation) final override;

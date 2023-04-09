@@ -199,11 +199,15 @@ add_dir_to_target(${TARGET} System)
 #add_dependencies(${TARGET} builtin_shaders)
 
 if (LINUX)
-	# target_compile_options(${TARGET} PUBLIC -fsanitize=address -O0 -g)
+	target_compile_options(${TARGET} PUBLIC -O0 -g)
+
+	# target_compile_options(${TARGET} PUBLIC -fsanitize=address)
 	# target_link_libraries(${TARGET} asan)
+
 
 	target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
 		${BULLET_LIB} pthread zstd vulkan shaderc_shared)
+	target_link_libraries(${TARGET} unwind dw)
 elseif(WIN32)
 	target_link_directories(${TARGET} PUBLIC
 		./Lib/GLEW/lib/Release/x64

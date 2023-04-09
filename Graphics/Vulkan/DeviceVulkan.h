@@ -1,11 +1,16 @@
 #pragma once
 
 #include "Core/fixed_vector.h"
+#include "Graphics/ComputePipeline.h"
 #include "Graphics/GraphicsPipeline.h"
+#include "Graphics/RayTracingPipeline.h"
 #include "Graphics/Types.h"
+#include "Graphics/Vulkan/AccelerationStructureVulkan.h"
+#include "Graphics/Vulkan/DeviceVulkanFunctions.h"
+#include "Graphics/Vulkan/FenceVulkan.h"
 #include "Graphics/Vulkan/TypeConversions.h"
+#include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "VulkanMemoryAllocator/include/vk_mem_alloc.h"
-#include "include/spirv/unified1/spirv.h"
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
 
@@ -16,12 +21,8 @@
 #include <Graphics/Vulkan/BufferVulkan.h>
 #include <Core/Types.h>
 
-#include <shaderc/shaderc.h>
-#include <shaderc/shaderc.hpp>
-#include <Lib/SPIRV-Reflect/spirv_reflect.h>
 #include <vulkan/vulkan.h>
 #include <vector>
-#include <fstream>
 #include <cassert>
 
 #include <Common/Image/Image.h>
@@ -30,76 +31,21 @@
 namespace Columbus
 {
 
-	struct BindingVulkan
-	{
-		VkDescriptorSetLayoutBinding _Binding;
-
-		BindingVulkan(uint32_t Binding, VkDescriptorType Type, uint32_t Count)
-		{
-			_Binding.binding = Binding;
-			_Binding.descriptorType = Type;
-			_Binding.descriptorCount = Count;
-			_Binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT; // TODO
-			_Binding.pImmutableSamplers = nullptr;
-		}
-
-		operator VkDescriptorSetLayoutBinding() const
-		{
-			return _Binding;
-		}
-	};
-
 	struct TextureVulkan
 	{
+		VkDevice _Device;
 		VkImage image;
 		VkImageView view;
 		VkSampler sampler;
 		VmaAllocation allocation;
-	};
 
-	/*namespace Graphics::Vulkan
-	{
-		class DeviceVulkan : public Device
+		~TextureVulkan()
 		{
-			virtual ShaderProgram* CreateShaderProgram() const override;
-			virtual Texture* CreateTexture() const override;
-			virtual Mesh* CreateMesh() const override;
-			virtual Framebuffer* CreateFramebuffer() const override;
-
-			virtual void IASetPrimitiveTopology(PrimitiveTopology Topology) final override;
-			virtual void IASetInputLayout(InputLayout* Layout) final override;
-			virtual void IASetVertexBuffers(uint32 StartSlot, uint32 NumBuffers, Buffer** ppBuffers) final override;
-			virtual void IASetIndexBuffer(Buffer* pIndexBuffer, IndexFormat Format, uint32 Offset) final override;
-
-			virtual void OMSetBlendState(BlendState* pBlendState, const float BlendFactor[4], uint32 SampleMask) final override;
-			virtual void OMSetDepthStencilState(DepthStencilState* pDepthStencilState, uint32 StencilRef) final override;
-
-			virtual void RSSetState(RasterizerState* pRasterizerState) final override;
-
-			virtual void SetShader(ShaderProgram* Prog) final override;
-
-			virtual void SetComputePipelineState(ComputePipelineState* State) final override;
-
-			virtual bool CreateBlendState(const BlendStateDesc& Desc, BlendState** ppBlendState) final override;
-			virtual bool CreateDepthStencilState(const DepthStencilStateDesc& Desc, DepthStencilState** ppDepthStencilState) final override;
-			virtual bool CreateRasterizerState(const RasterizerStateDesc& Desc, RasterizerState** ppRasterizerState) final override;
-
-			virtual bool CreateBuffer(const BufferDesc& Desc, SubresourceData* pInitialData, Buffer** ppBuffer) final override;
-			virtual void BindBufferBase(Buffer* pBuffer, uint32 Index) final override;
-			virtual void BindBufferRange(Buffer* pBuffer, uint32 Index, uint32 Offset, uint32 Size) final override;
-			virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) final override;
-			virtual void UnmapBuffer(Buffer* pBuffer) final override;
-
-			virtual bool CreateComputePipelineState(const ComputePipelineStateDesc& Desc, ComputePipelineState** ppComputePipelineState) final override;
-
-			virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) final override;
-			virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) final override;
-			virtual void DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, int BaseVertexLocation) final override;
-
-			virtual void BeginMarker(const char* Str) final override;
-			virtual void EndMarker() final override;
-		};
-	}*/
+			vkDestroyImageView(_Device, view, nullptr);
+			vkDestroySampler(_Device, sampler, nullptr);
+			vkDestroyImage(_Device, image, nullptr);
+		}
+	};
 
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
@@ -108,8 +54,17 @@ namespace Columbus
 		VkPhysicalDevice _PhysicalDevice;
 		VkDevice _Device;
 
-		VkPhysicalDeviceProperties _DeviceProperties;
-		VkPhysicalDeviceFeatures _DeviceFeatures;
+		VkPhysicalDeviceVulkan12Properties _Vulkan12Properties;
+		VkPhysicalDeviceVulkan12Features _Vulkan12Features;
+
+		VkPhysicalDeviceAccelerationStructurePropertiesKHR _AccelerationStructureProperties;
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR _AccelerationStructureFeatures;
+
+		VkPhysicalDeviceRayTracingPipelinePropertiesKHR _RayTracingProperties;
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR _RayTracingFeatures;
+
+		VkPhysicalDeviceProperties2 _DeviceProperties;
+		VkPhysicalDeviceFeatures2 _DeviceFeatures;
 		VkPhysicalDeviceMemoryProperties _MemoryProperties;
 
 		uint32 _FamilyIndex; // TODO: multiple families, now supports only graphics
@@ -119,13 +74,38 @@ namespace Columbus
 		VkDescriptorPool _DescriptorPool;
 
 		VmaAllocator _Allocator;
+
+		VulkanFunctions VkFunctions;
 	public:
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 			_PhysicalDevice(PhysicalDevice)
 		{
-			vkGetPhysicalDeviceProperties(PhysicalDevice, &_DeviceProperties);
-			vkGetPhysicalDeviceFeatures(PhysicalDevice, &_DeviceFeatures);
+			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+			_Vulkan12Features.pNext = nullptr;
+			_AccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+			_AccelerationStructureFeatures.pNext = &_Vulkan12Features;
+			_RayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+			_RayTracingFeatures.pNext = &_AccelerationStructureFeatures;
+			_DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+			_DeviceFeatures.pNext = &_RayTracingFeatures;
+
+			vkGetPhysicalDeviceFeatures2(PhysicalDevice, &_DeviceFeatures);
+
+			_RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+			_RayTracingProperties.pNext = nullptr;
+			_DeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			_DeviceProperties.pNext = &_RayTracingProperties;
+
+			vkGetPhysicalDeviceProperties2(PhysicalDevice, &_DeviceProperties);
 			vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, &_MemoryProperties);
+
+			// logic if features are enabled/disabled
+			COLUMBUS_ASSERT(_Vulkan12Features.descriptorIndexing); // non-uniform descriptor indexing
+			COLUMBUS_ASSERT(_Vulkan12Features.descriptorBindingPartiallyBound);
+			COLUMBUS_ASSERT(_Vulkan12Features.bufferDeviceAddress);
+			COLUMBUS_ASSERT(_RayTracingFeatures.rayTracingPipeline);
+
+			Log::Message("Creating Vulkan logical device on %s", _DeviceProperties.properties.deviceName);
 
 			// enumerate queue families
 			uint32_t queueFamilyCount;
@@ -152,16 +132,21 @@ namespace Columbus
 			queueCreateInfo.pNext = nullptr;
 			queueCreateInfo.flags = 0;
 			queueCreateInfo.queueFamilyIndex = _FamilyIndex;
-			queueCreateInfo.queueCount = 1; // I don't really know what it actually is and how it to use
+			queueCreateInfo.queueCount = 1;
 			queueCreateInfo.pQueuePriorities = &queuePriorities;
 
 			std::vector<const char*> extensions = {
-				VK_KHR_SWAPCHAIN_EXTENSION_NAME
+				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+
+				VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+				VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+				VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+				VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 			};
 
 			VkDeviceCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-			info.pNext = nullptr;
+			info.pNext = &_DeviceFeatures;
 			info.flags = 0;
 			info.queueCreateInfoCount = 1;
 			info.pQueueCreateInfos = &queueCreateInfo;
@@ -171,10 +156,7 @@ namespace Columbus
 			info.ppEnabledExtensionNames = extensions.data();
 			info.pEnabledFeatures = nullptr;
 
-			if (vkCreateDevice(PhysicalDevice, &info, nullptr, &_Device) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan logical device");
-			}
+			VK_CHECK(vkCreateDevice(PhysicalDevice, &info, nullptr, &_Device));
 
 			_ComputeQueue = SmartPointer<VkQueue>(new VkQueue);
 			vkGetDeviceQueue(_Device, _FamilyIndex, 0, _ComputeQueue.Get());
@@ -186,17 +168,20 @@ namespace Columbus
 			commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 			commandPoolInfo.queueFamilyIndex = _FamilyIndex;
 
-			if (vkCreateCommandPool(_Device, &commandPoolInfo, nullptr, &_CmdPool) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan command pool");
-			}
+			VK_CHECK(vkCreateCommandPool(_Device, &commandPoolInfo, nullptr, &_CmdPool));
 
 			// create descriptor pool
-			VkDescriptorPoolSize poolSizes[2];
+			VkDescriptorPoolSize poolSizes[5];
 			poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			poolSizes[0].descriptorCount = 100;
 			poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			poolSizes[1].descriptorCount = 100;
+			poolSizes[2].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			poolSizes[2].descriptorCount = 10;
+			poolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			poolSizes[3].descriptorCount = 10;
+			poolSizes[4].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			poolSizes[4].descriptorCount = 10;
 
 			VkDescriptorPoolCreateInfo descriptorPoolInfo;
 			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -206,16 +191,14 @@ namespace Columbus
 			descriptorPoolInfo.poolSizeCount = sizeof(poolSizes) / sizeof(poolSizes[0]);
 			descriptorPoolInfo.pPoolSizes = poolSizes;
 
-			if (vkCreateDescriptorPool(_Device, &descriptorPoolInfo, nullptr, &_DescriptorPool) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan descriptor pool");
-			}
+			VK_CHECK(vkCreateDescriptorPool(_Device, &descriptorPoolInfo, nullptr, &_DescriptorPool));
 
 			// initialize VMA
 			VmaAllocatorCreateInfo allocatorInfo = {};
 			allocatorInfo.physicalDevice = PhysicalDevice;
 			allocatorInfo.device = _Device;
 			allocatorInfo.instance = Instance;
+			allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 			vmaCreateAllocator(&allocatorInfo, &_Allocator);
 		}
 
@@ -223,244 +206,59 @@ namespace Columbus
 		VkRenderPass CreateRenderPass(VkFormat format);
 		void CreateFramebuffers(SwapchainVulkan* swapchain, VkRenderPass renderpass);
 
-		CommandBufferVulkan CreateCommandBuffer()
+		CommandBufferVulkan CreateCommandBuffer();
+
+		uint64_t GetBufferDeviceAddress(BufferVulkan Buffer)
 		{
-			VkCommandBufferAllocateInfo commandBufferInfo;
-			commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			commandBufferInfo.pNext = nullptr;
-			commandBufferInfo.commandPool = _CmdPool;
-			commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-			commandBufferInfo.commandBufferCount = 1;
-
-			VkCommandBuffer result;
-			if (vkAllocateCommandBuffers(_Device, &commandBufferInfo, &result) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to allocate Vulkan command buffer");
-			}
-			return result;
-		}
-
-		VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<BindingVulkan>& Bindings)
-		{
-			std::vector<VkDescriptorSetLayoutBinding> bindings(Bindings.begin(), Bindings.end());
-
-			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
-			descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			descriptorSetLayoutInfo.pNext = nullptr;
-			descriptorSetLayoutInfo.flags = 0;
-			descriptorSetLayoutInfo.bindingCount = bindings.size();
-			descriptorSetLayoutInfo.pBindings = bindings.data();
-
-			VkDescriptorSetLayout descriptorSetLayout;
-			if (vkCreateDescriptorSetLayout(_Device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan descriptor set layout");
-			}
-			return descriptorSetLayout;
-		}
-
-		VkPipeline CreateComputePipeline(VkPipelineLayout PipelineLayout)
-		{
-			// read file
-			std::ifstream f("vkCompute.spv");
-			std::vector<char> code;
-			std::copy(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>(),
-				std::back_inserter(code));
-
-			// create shader module
-			VkShaderModuleCreateInfo moduleInfo;
-			moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			moduleInfo.pNext = nullptr;
-			moduleInfo.flags = 0;
-			moduleInfo.codeSize = code.size();
-			moduleInfo.pCode = (uint32*)code.data();
-			
-			VkShaderModule module;
-			if (vkCreateShaderModule(_Device, &moduleInfo, nullptr, &module) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan shader module");
-			}
-
-			// shader stage info
-			VkPipelineShaderStageCreateInfo stage;
-			stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			stage.pNext = nullptr;
-			stage.flags = 0;
-			stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-			stage.module = module;
-			stage.pName = "main";
-			stage.pSpecializationInfo = nullptr;
-
-			// create pipeline
-			VkComputePipelineCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+			VkBufferDeviceAddressInfo info;
+			info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 			info.pNext = nullptr;
-			info.flags = 0;
-			info.stage = stage;
-			info.layout = PipelineLayout;
-			info.basePipelineHandle = nullptr;
-			info.basePipelineIndex = -1;
+			info.buffer = Buffer.Buffer;
 
-			VkPipeline result;
-			if (vkCreateComputePipelines(_Device, nullptr, 1, &info, nullptr, &result) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan compute pipeline");
-			}
-			return result;
+			return vkGetBufferDeviceAddress(_Device, &info);
 		}
 
 		struct ShaderStageCompilationResult
 		{
-			VkPipelineShaderStageCreateInfo shaderStageInfo;
-			fixed_vector<VkPushConstantRange, 16> pushConstants; // TODO
-			fixed_vector<VkDescriptorSetLayoutCreateInfo, 16> descriptorSets; // TODO
+			VkPipelineShaderStageCreateInfo ShaderStageInfo;
+			CompiledSpirv Spirv;
 		};
 
-		ShaderStageCompilationResult BuildShaderStage(SPtr<Columbus::ShaderStage> stage)
+		ShaderStageCompilationResult BuildShaderStage(SPtr<Columbus::ShaderStage> stage, const std::string& name)
 		{
 			ShaderStageCompilationResult result;
-			shaderc::Compiler compiler;
-			shaderc_shader_kind kind;
-			shaderc::CompileOptions options;
-			VkShaderStageFlagBits vkstage;
-
-			switch (stage->Type)
-			{
-				case ShaderType::Vertex:
-					kind = shaderc_vertex_shader;
-					options.AddMacroDefinition("VERTEX_SHADER");
-					vkstage = VK_SHADER_STAGE_VERTEX_BIT;
-					break;
-
-				case ShaderType::Pixel:
-					kind = shaderc_fragment_shader;
-					options.AddMacroDefinition("PIXEL_SHADER");
-					vkstage = VK_SHADER_STAGE_FRAGMENT_BIT;
-					break;
-
-				case ShaderType::Compute:
-					kind = shaderc_compute_shader;
-					options.AddMacroDefinition("COMPUTE_SHADER");
-					vkstage = VK_SHADER_STAGE_COMPUTE_BIT;
-					break;
-
-				default: break;
-			}
-
-			auto spirv = compiler.CompileGlslToSpv(stage->Source, kind, "name", options);
-			printf("Compilation error: %s\n", spirv.GetErrorMessage().c_str());
-
-			// Generate reflection data for a shader
-			SpvReflectShaderModule spv_module;
-			SpvReflectResult reflect_result = spvReflectCreateShaderModule((spirv.end() - spirv.begin()) * 4, spirv.begin(), &spv_module);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			// Enumerate and extract shader's input variables
-			uint32_t input_count = 0;
-			SpvReflectInterfaceVariable* inputs[128];
-
-			reflect_result = spvReflectEnumerateInputVariables(&spv_module, &input_count, NULL);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			reflect_result = spvReflectEnumerateInputVariables(&spv_module, &input_count, inputs);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			// Enumerate and extract shader's push constants
-			uint32_t push_constant_num = 0;
-			SpvReflectBlockVariable* push_constants[128];
-
-			reflect_result = spvReflectEnumeratePushConstantBlocks(&spv_module, &push_constant_num, NULL);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			reflect_result = spvReflectEnumeratePushConstantBlocks(&spv_module, &push_constant_num, push_constants);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			// Enumerate and extract shader's descriptor sets
-			uint32_t sets_num = 0;
-			SpvReflectDescriptorSet* sets[128];
-
-			spvReflectEnumerateDescriptorSets(&spv_module, &sets_num, NULL);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			spvReflectEnumerateDescriptorSets(&spv_module, &sets_num, sets);
-			assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
-
-			// for (int i = 0; i < input_count; i++)
-			// {
-			// 	SpvReflectInterfaceVariable* input = inputs[i];
-			// 	printf("%s, location(%i), storage(%i), decoration(%x), type(vec%i)\n", var->name, var->location, var->storage_class, var->decoration_flags, var->numeric.vector.component_count);
-			// }
-
-			for (int i = 0; i < push_constant_num; i++)
-			{
-				assert(stage->Type == ShaderType::Vertex);
-
-				VkPushConstantRange push;
-				push.stageFlags = vkstage;
-				push.offset = push_constants[i]->offset;
-				push.size = push_constants[i]->size;
-
-				result.pushConstants.push_back(push);
-			}			
-
-			for (int i = 0; i < sets_num; i++)
-			{
-				auto bindings = new fixed_vector<VkDescriptorSetLayoutBinding, 16>(); // TODO, MEMORY LEAK
-				for (int b = 0; b < sets[i]->binding_count; b++)
-				{
-					auto binding = sets[i]->bindings[b];
-					assert(stage->Type == ShaderType::Pixel);
-					assert(binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-					VkDescriptorSetLayoutBinding bindingInfo;
-					bindingInfo.binding = binding->binding;
-					bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-					bindingInfo.descriptorCount = binding->count;
-					bindingInfo.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-					bindingInfo.pImmutableSamplers = nullptr;
-
-					bindings->push_back(bindingInfo);
-				}
-
-				VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
-				descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-				descriptorSetLayoutInfo.pNext = nullptr;
-				descriptorSetLayoutInfo.flags = 0;
-				descriptorSetLayoutInfo.bindingCount = bindings->size();
-				descriptorSetLayoutInfo.pBindings = bindings->data();
-
-				result.descriptorSets.push_back(descriptorSetLayoutInfo);
-			}
-
-			spvReflectDestroyShaderModule(&spv_module);
+			result.Spirv = CompileShaderStage_VK(stage, name);
 
 			VkShaderModuleCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			info.pNext = nullptr;
 			info.flags = 0;
-			info.codeSize = (spirv.end() - spirv.begin()) * 4;
-			info.pCode = spirv.begin();
+			info.codeSize = result.Spirv.Bytecode.size() * sizeof(uint32_t);
+			info.pCode = result.Spirv.Bytecode.data();
 
 			VkShaderModule module;
 
-			vkCreateShaderModule(_Device, &info, nullptr, &module);
+			VK_CHECK(vkCreateShaderModule(_Device, &info, nullptr, &module));
 
-			result.shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			result.shaderStageInfo.pNext = nullptr;
-		    result.shaderStageInfo.flags = 0;
-			result.shaderStageInfo.stage = vkstage;
-			result.shaderStageInfo.module = module;
-			result.shaderStageInfo.pName = stage->EntryPoint.c_str();
-			result.shaderStageInfo.pSpecializationInfo = nullptr;
-
+			result.ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			result.ShaderStageInfo.pNext = nullptr;
+		    result.ShaderStageInfo.flags = 0;
+			result.ShaderStageInfo.stage = ShaderTypeToVk(stage->Type);
+			result.ShaderStageInfo.module = module;
+			result.ShaderStageInfo.pName = stage->EntryPoint.c_str();
+			result.ShaderStageInfo.pSpecializationInfo = nullptr;
 			return result;
 		}
 
+		ComputePipeline* CreateComputePipeline(const ComputePipelineDesc& Desc);
+
 		Graphics::GraphicsPipeline* CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& desc, VkRenderPass renderPass)
 		{
-			auto vs = BuildShaderStage(desc.VS);
-			auto ps = BuildShaderStage(desc.PS);
-			VkPipelineShaderStageCreateInfo stages[] = { vs.shaderStageInfo, ps.shaderStageInfo };
+			auto vs = BuildShaderStage(desc.VS, desc.Name);
+			auto ps = BuildShaderStage(desc.PS, desc.Name);
+
+			std::vector<ShaderStageCompilationResult> compiledStages = { vs, ps };
+			VkPipelineShaderStageCreateInfo stages[] = { vs.ShaderStageInfo, ps.ShaderStageInfo };
 
 			auto pipeline = new Graphics::GraphicsPipelineVulkan(desc);
 
@@ -613,38 +411,38 @@ namespace Columbus
 			dynamicState.dynamicStateCount = 0;
 			dynamicState.pDynamicStates = nullptr;
 
-			// VkDescriptorSetLayoutBinding textureBinding;
-			// textureBinding.binding = 0;
-			// textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			// textureBinding.descriptorCount = 1;
-			// textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			// textureBinding.pImmutableSamplers = nullptr;
+			// Concat all push constants and descriptor sets
+			std::vector<VkPushConstantRange> pushConstants;
+			std::vector<VkDescriptorSetLayoutCreateInfo> descriptorSets;
 
-			// VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
-			// descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			// descriptorSetLayoutInfo.pNext = nullptr;
-			// descriptorSetLayoutInfo.flags = 0;
-			// descriptorSetLayoutInfo.bindingCount = 1;
-			// descriptorSetLayoutInfo.pBindings = &textureBinding;
-
-			for (int i = 0; i < ps.descriptorSets.size(); i++)
+			for (auto& stage : compiledStages)
 			{
-				vkCreateDescriptorSetLayout(_Device, &ps.descriptorSets[i], nullptr, &pipeline->setLayouts[i]);
+				for (auto& pushConstant : stage.Spirv.pushConstants)
+				{
+					pushConstants.push_back(pushConstant);
+				}
+
+				for (auto& descriptorSet : stage.Spirv.descriptorSets)
+				{
+					descriptorSets.push_back(descriptorSet);
+				}
+			}
+
+			for (int i = 0; i < descriptorSets.size(); i++)
+			{
+				VK_CHECK(vkCreateDescriptorSetLayout(_Device, &descriptorSets[i], nullptr, &pipeline->setLayouts[i]));
 			}
 
 			VkPipelineLayoutCreateInfo layoutInfo;
 			layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 			layoutInfo.pNext = nullptr;
 			layoutInfo.flags = 0;
-			layoutInfo.setLayoutCount = ps.descriptorSets.size();
+			layoutInfo.setLayoutCount = descriptorSets.size();
 			layoutInfo.pSetLayouts = pipeline->setLayouts;
-			layoutInfo.pushConstantRangeCount = vs.pushConstants.size();
-			layoutInfo.pPushConstantRanges = vs.pushConstants.data();
+			layoutInfo.pushConstantRangeCount = pushConstants.size();
+			layoutInfo.pPushConstantRanges = pushConstants.data();
 
-			if (vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &pipeline->layout) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan pipeline layout")
-			}
+			VK_CHECK(vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &pipeline->layout));
 
 			VkGraphicsPipelineCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -667,19 +465,36 @@ namespace Columbus
 			info.basePipelineHandle = nullptr;
 			info.basePipelineIndex = 0;
 
-			if (vkCreateGraphicsPipelines(_Device, nullptr, 1, &info, nullptr, &pipeline->pipeline) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan graphics pipeline")
-			}
+			VK_CHECK(vkCreateGraphicsPipelines(_Device, nullptr, 1, &info, nullptr, &pipeline->pipeline));
 
 			return pipeline;
 		}
 
-		VkDescriptorSet CreateDescriptorSet(VkDescriptorSetLayout DescriptorSetLayout)
+		RayTracingPipeline* CreateRayTracingPipeline(const RayTracingPipelineDesc& Desc);
+
+		uint32_t alignedSize(uint32_t value, uint32_t alignment)
+        {
+	        return (value + alignment - 1) & ~(alignment - 1);
+        }
+
+		uint32_t getHandleSizeAligned()
 		{
+			return alignedSize(_RayTracingProperties.shaderGroupHandleSize, _RayTracingProperties.shaderGroupHandleAlignment);
+		}
+
+		VkDescriptorSet CreateDescriptorSet(VkDescriptorSetLayout DescriptorSetLayout, bool variableCount = false)
+		{
+			uint32_t counts[] = { 100 }; // TODO
+
+			VkDescriptorSetVariableDescriptorCountAllocateInfo descriptorSetCounts;
+			descriptorSetCounts.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+			descriptorSetCounts.pNext = nullptr;
+			descriptorSetCounts.descriptorSetCount = 1;
+			descriptorSetCounts.pDescriptorCounts = counts;
+
 			VkDescriptorSetAllocateInfo descriptorSetInfo;
 			descriptorSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			descriptorSetInfo.pNext = nullptr;
+			descriptorSetInfo.pNext = variableCount ? &descriptorSetCounts : nullptr;
 			descriptorSetInfo.descriptorPool = _DescriptorPool;
 			descriptorSetInfo.descriptorSetCount = 1;
 			descriptorSetInfo.pSetLayouts = &DescriptorSetLayout;
@@ -692,19 +507,9 @@ namespace Columbus
 			return descriptorSet;
 		}
 
-		VkFence CreateFence(bool signaled)
+		SPtr<FenceVulkan> CreateFence(bool signaled)
 		{
-			VkFenceCreateInfo fenceInfo;
-			fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-			fenceInfo.flags = signaled  ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
-			fenceInfo.pNext = nullptr;
-
-			VkFence fence;
-			if (vkCreateFence(_Device, &fenceInfo, nullptr, &fence) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan Fence");
-			}
-			return fence;
+			return std::make_shared<FenceVulkan>(_Device, signaled);
 		}
 
 		VkSemaphore CreateSemaphore()
@@ -723,22 +528,22 @@ namespace Columbus
 			return semaphore;
 		}
 
-		void WaitForFences(uint32_t fenceCount, const VkFence* pFences, bool waitAll, uint64_t timeout)
+		void WaitForFence(SPtr<FenceVulkan> fence, uint64_t timeout)
 		{
-			vkWaitForFences(_Device, fenceCount, pFences, waitAll, timeout);
+			vkWaitForFences(_Device, 1, &fence->_Fence, true, timeout);
 		}
 
-		void ResetFences(uint32_t fenceCount, const VkFence* pFences)
+		void ResetFence(SPtr<FenceVulkan> fence)
 		{
-			vkResetFences(_Device, fenceCount, pFences);
+			vkResetFences(_Device, 1, &fence->_Fence);
 		}
 
-		void UpdateDescriptorSet(VkDescriptorSet DescriptorSet, TextureVulkan texture)
+		void UpdateDescriptorSet(VkDescriptorSet DescriptorSet, SPtr<TextureVulkan> texture, bool storage = false)
 		{
 			VkDescriptorImageInfo imageInfo;
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = texture.view;
-			imageInfo.sampler = texture.sampler;
+			imageInfo.imageLayout = storage ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = texture->view;
+			imageInfo.sampler = texture->sampler;
 
 			// VkDescriptorBufferInfo bufferInfo;
 			// bufferInfo.buffer = Buffer;
@@ -752,7 +557,7 @@ namespace Columbus
 			write.dstBinding = 0;
 			write.dstArrayElement = 0;
 			write.descriptorCount = 1;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			write.descriptorType = storage ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			write.pImageInfo = &imageInfo;
 			write.pBufferInfo = nullptr;
 			write.pTexelBufferView = nullptr;
@@ -760,27 +565,128 @@ namespace Columbus
 			vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
 		}
 
+		void UpdateRtDescriptorSet(VkDescriptorSet set, VkAccelerationStructureKHR tlas, VkImageView image)
+		{
+			VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo{};
+			descriptorAccelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+			descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
+			descriptorAccelerationStructureInfo.pAccelerationStructures = &tlas;
+
+			VkWriteDescriptorSet accelerationStructureWrite{};
+			accelerationStructureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			// The specialized acceleration structure descriptor has to be chained
+			accelerationStructureWrite.pNext = &descriptorAccelerationStructureInfo;
+			accelerationStructureWrite.dstSet = set;
+			accelerationStructureWrite.dstBinding = 0;
+			accelerationStructureWrite.descriptorCount = 1;
+			accelerationStructureWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+
+			VkDescriptorImageInfo storageImageDescriptor{};
+			storageImageDescriptor.imageView = image;
+			storageImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+			VkWriteDescriptorSet resultImageWrite{};
+			resultImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			resultImageWrite.pNext = nullptr;
+			resultImageWrite.dstSet = set;
+			resultImageWrite.dstBinding = 1;
+			resultImageWrite.descriptorCount = 1;
+			resultImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			resultImageWrite.pImageInfo = &storageImageDescriptor;
+
+			std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+				accelerationStructureWrite,
+				resultImageWrite
+			};
+
+			vkUpdateDescriptorSets(_Device, 2, writeDescriptorSets.data(), 0, nullptr);
+		}
+
+		void UpdateArrayDescriptorSet(VkDescriptorSet set, uint32_t start, VkBuffer buffer)
+		{
+			VkDescriptorBufferInfo bufferInfo;
+			bufferInfo.buffer = buffer;
+			bufferInfo.offset = 0;
+			bufferInfo.range = VK_WHOLE_SIZE;
+
+			VkWriteDescriptorSet write{};
+			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			write.dstSet = set;
+			write.dstBinding = 0;
+			write.descriptorCount = 1;
+			write.dstArrayElement = start;
+			write.pBufferInfo = &bufferInfo;
+
+			vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+		}
+
+		void UpdateArrayDescriptorSet(VkDescriptorSet set, uint32_t start, VkImageView image, VkSampler sampler)
+		{
+			VkDescriptorImageInfo imageDescriptor{};
+			imageDescriptor.imageView = image;
+			imageDescriptor.sampler = sampler;
+			imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+			VkWriteDescriptorSet write{};
+			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			write.dstSet = set;
+			write.dstBinding = 0;
+			write.descriptorCount = 1;
+			write.dstArrayElement = start;
+			write.pImageInfo = &imageDescriptor;
+
+			vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+		}
+
+
 		void AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex)
 		{
 			vkAcquireNextImageKHR(_Device, swapchain->swapChain, UINT64_MAX, signalSemaphore, nullptr, &imageIndex);
 		}
 
-		void Submit(CommandBufferVulkan Buffer, VkFence fence, VkSemaphore waitSemaphore, VkSemaphore signalSemaphore)
+		void Submit(const CommandBufferVulkan& Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores)
 		{
-			VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+			VkPipelineStageFlags waitStages[] = {
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+			};
 
 			VkSubmitInfo submit_info;
 			submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submit_info.pNext = nullptr;
-			submit_info.waitSemaphoreCount = 1;
-			submit_info.pWaitSemaphores = &waitSemaphore;
+			submit_info.waitSemaphoreCount = waitSemaphoresCount;
+			submit_info.pWaitSemaphores = waitSemaphores;
 			submit_info.pWaitDstStageMask = waitStages;
 			submit_info.commandBufferCount = 1;
 			submit_info.pCommandBuffers = &Buffer._GetHandle();
-			submit_info.signalSemaphoreCount = 1;
-			submit_info.pSignalSemaphores = &signalSemaphore;
+			submit_info.signalSemaphoreCount = signalSemaphoresCount;
+			submit_info.pSignalSemaphores = signalSemaphores;
 
-			vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence);
+			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
+		}
+
+		void Submit(const CommandBufferVulkan& Buffer)
+		{
+			VkSubmitInfo submit_info;
+			submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submit_info.pNext = nullptr;
+			submit_info.waitSemaphoreCount = 0;
+			submit_info.pWaitSemaphores = nullptr;
+			submit_info.pWaitDstStageMask = nullptr;
+			submit_info.commandBufferCount = 1;
+			submit_info.pCommandBuffers = &Buffer._CmdBuf;
+			submit_info.signalSemaphoreCount = 0;
+			submit_info.pSignalSemaphores = nullptr;
+
+			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
+		}
+
+		void QueueWaitIdle()
+		{
+			VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
 		}
 
 		void Present(SwapchainVulkan* swapchain, uint32_t imageIndex, VkSemaphore waitSemaphore)
@@ -800,16 +706,26 @@ namespace Columbus
 			vkQueuePresentKHR(*_ComputeQueue, &presentInfo);
 		}
 
-		BufferVulkan CreateBuffer(size_t Size, const void* Data, BufferType type);
-		TextureVulkan CreateTexture(const Image& image);
+		BufferVulkan CreateBuffer(size_t Size, const void* Data, BufferType type, bool deviceAddress = false, bool asInput = false);
+		SPtr<TextureVulkan> CreateTexture(const Image& image);
+		SPtr<TextureVulkan> CreateStorageImage();
 
-		// ~DeviceVulkan()
-		// {
-		// 	VkResult result = vkDeviceWaitIdle(_Device);
-		// 	assert(result == VK_SUCCESS);
+		AccelerationStructureVulkan* CreateAccelerationStructure(const AccelerationStructureDesc& Desc);
 
-		// 	vkDestroyDevice(_Device, nullptr);
-		// }
+		void DestroyBuffer(BufferVulkan buffer)
+		{
+			vmaDestroyBuffer(_Allocator, buffer.Buffer, buffer.Allocation);
+		}
+
+		~DeviceVulkan()
+		{
+			// VK_CHECK(vkDeviceWaitIdle(_Device));
+
+			// vmaDestroyAllocator(_Allocator);
+			// vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
+			// vkDestroyCommandPool(_Device, _CmdPool, nullptr);
+			// vkDestroyDevice(_Device, nullptr);
+		}
 	};
 
 }

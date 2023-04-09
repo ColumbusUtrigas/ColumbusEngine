@@ -58,7 +58,7 @@ namespace Columbus
 		virtual void SetGraphicsPipeline(Graphics::GraphicsPipeline* pPipeline) = 0;
 		virtual void SetGraphicsCBV(uint32 slot, Columbus::Buffer* pBuf) = 0;
 
-		virtual void SetComputePipeline(Graphics::ComputePipeline* pPipeline) = 0;
+		virtual void SetComputePipeline(ComputePipeline* pPipeline) = 0;
 		//virtual void SetComputeCBV(uint32 slot, Buffer* pBuf) = 0;
 
 		SPtr<Buffer> CreateBufferShared(const BufferDesc& desc, SubresourceData* pInitialData);
@@ -67,7 +67,7 @@ namespace Columbus
 		virtual void UnmapBuffer(Buffer* pBuffer) = 0;
 
 		virtual bool CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& Desc, Graphics::GraphicsPipeline** ppPipeline) = 0;
-		virtual bool CreateComputePipeline(const Graphics::ComputePipelineDesc& Desc, Graphics::ComputePipeline** ppComputePipelineState) = 0;
+		virtual bool CreateComputePipeline(const ComputePipelineDesc& Desc, ComputePipeline** ppComputePipelineState) = 0;
 
 		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) = 0;
 		virtual void Draw(uint32 VertexCount, uint32 StartVertexLocation) = 0;

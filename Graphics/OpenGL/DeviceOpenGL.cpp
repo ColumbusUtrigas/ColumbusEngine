@@ -229,7 +229,7 @@ namespace Columbus
 		glBindBufferBase(type, slot, glhandle);
 	}
 
-	void DeviceOpenGL::SetComputePipeline(Graphics::ComputePipeline* State)
+	void DeviceOpenGL::SetComputePipeline(ComputePipeline* State)
 	{
 		glUseProgram(static_cast<Graphics::GL::ComputePipelineGL*>(State)->progid);
 	}

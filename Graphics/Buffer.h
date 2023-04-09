@@ -10,7 +10,10 @@ namespace Columbus
 		Array,
 		Index,
 		Constant,
-		UAV
+		UAV,
+		AccelerationStructureStorage,
+		AccelerationStructureInput,
+		ShaderBindingTable
 	};
 
 	enum class BufferMapAccess
