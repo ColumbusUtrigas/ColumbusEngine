@@ -69,11 +69,11 @@ file(GLOB IMGUI_SRC
 	Lib/imgui/imgui.h
 	./Lib/imgui/*.cpp
 	./Lib/imgui/misc/cpp/*.cpp
-	./Lib/imgui/examples/imgui_impl_sdl.cpp
+	./Lib/imgui/backends/imgui_impl_sdl2.cpp
 	#./Lib/imgui/examples/imgui_impl_win32.cpp
-	./Lib/imgui/examples/imgui_impl_opengl3.cpp
+	./Lib/imgui/backends/imgui_impl_opengl3.cpp
 	#./Lib/imgui/examples/imgui_impl_dx12.cpp
-	./Lib/imgui/examples/imgui_impl_vulkan.cpp
+	./Lib/imgui/backends/imgui_impl_vulkan.cpp
 	./Lib/ImGuizmo/*.cpp)
 
 add_library(imgui STATIC ${IMGUI_SRC})

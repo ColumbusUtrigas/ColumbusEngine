@@ -123,7 +123,7 @@ namespace Columbus::Editor
 
 	void Editor::DrawToolbar()
 	{
-		if (ImGui::BeginChild("Toolbar", ImVec2(ImGui::GetContentRegionAvailWidth(), 30)))
+		if (ImGui::BeginChild("Toolbar", ImVec2(ImGui::GetContentRegionAvail().x, 30)))
 		{
 			static Gizmo::Operation op;
 

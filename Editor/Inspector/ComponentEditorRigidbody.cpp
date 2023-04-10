@@ -119,7 +119,7 @@ namespace Columbus::Editor
 
 			if (Open)
 			{
-				ImGui::TreePush();
+				ImGui::TreePush("INSPECTOR_RIGIDBODY_MODULE_EDIT_COMPOUND");
 				auto NewShape = DrawShapesEditor(Object, CompoundShape->GetShape(i), true);
 				if (NewShape != CompoundShape->GetShape(i))
 				{
@@ -206,7 +206,7 @@ namespace Columbus::Editor
 
 			if (Open)
 			{
-				ImGui::TreePush();
+				ImGui::TreePush("INSPECTOR_RIGIDBODY_MODULE_EDIT_MULTI_SPHERE");
 				auto Position = Positions[i];
 				auto Radius = Radiuses[i];
 

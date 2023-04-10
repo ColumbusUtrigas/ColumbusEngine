@@ -67,7 +67,7 @@ namespace Columbus::Editor
 					}
 
 					// if (ctrl+d)
-					if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(SDL_SCANCODE_D, false)) {
+					if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
 						buffer2 = object;
 					}
 
@@ -172,7 +172,7 @@ namespace Columbus::Editor
 			}
 		}
 
-		bool ctrlD = ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(SDL_SCANCODE_D, false);
+		bool ctrlD = ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false);
 
 		// if(ctrl+v || ctrl+d)
 		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V), true) || ctrlD)

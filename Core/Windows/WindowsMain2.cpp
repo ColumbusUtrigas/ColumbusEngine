@@ -2,6 +2,7 @@
 #include "Common/Model/Model.h"
 #include "Core/Stacktrace.h"
 #include "Core/Timer.h"
+#include "Editor/CommonUI.h"
 #include "Graphics/Buffer.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Device.h"
@@ -22,8 +23,8 @@
 #include "SDL_scancode.h"
 #include "Scene/Transform.h"
 #include "Lib/imgui/imgui.h"
-#include "Lib/imgui/examples/imgui_impl_vulkan.h"
-#include "examples/imgui_impl_sdl.h"
+#include "Lib/imgui/backends/imgui_impl_vulkan.h"
+#include "Lib/imgui/backends/imgui_impl_sdl2.h"
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -496,6 +497,7 @@ int main()
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+    Editor::ApplyDarkTheme();
 
     // init imgui
     ImGui_ImplSDL2_InitForVulkan(window);

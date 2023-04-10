@@ -102,7 +102,7 @@ namespace Columbus::Editor
 
 				if (Open)
 				{
-					ImGui::TreePush();
+					ImGui::TreePush("INSPECTOR_PARTICLE_SYSTEM_MODULE_COLOR_TREE");
 					ImGui::SetNextItemWidth(50);
 
 					ImGui::DragFloat("Value", &Node.Key, 0.05f, Min, Max);
@@ -168,7 +168,7 @@ namespace Columbus::Editor
 
 				if (Open)
 				{
-					ImGui::TreePush();
+					ImGui::TreePush("INSPECTOR_PARTICLE_SYSTEM_MODULE_SIZE_TREE");
 					ImGui::SetNextItemWidth(50.0f);
 
 					ImGui::DragFloat("Value", &Node.Key, 0.05f, Min, Max);
