@@ -36,7 +36,7 @@ namespace Columbus
 
 	Matrix CaptureProjection;
 	Matrix CaptureViews[6];
-	Graphics::GraphicsPipeline* SkyboxPipeline;
+	GraphicsPipeline* SkyboxPipeline;
 
 	const char* SkyboxShaderCode =
 R"(
@@ -90,16 +90,17 @@ PS_OUTPUT PS(PS_INPUT i)
 
 	static void PrepareGraphicsPipeline()
 	{
-		Graphics::GraphicsPipelineDesc desc;
+		GraphicsPipelineDesc desc;
 
-		desc.layout.Elements = {
-			InputLayoutElementDesc{ "POSITION", 0, 0, 3 }
-		};
-		desc.textures = {
-		};
-		desc.cbs = {
-			Graphics::ShaderResourceDesc{ "Params", 0 }
-		};
+		// TODO
+		// desc.layout.Elements = {
+		// 	InputLayoutElementDesc{ "POSITION", 0, 0, 3 }
+		// };
+		// desc.textures = {
+		// };
+		// desc.cbs = {
+		// 	ShaderResourceDesc{ "Params", 0 }
+		// };
 
 		desc.blendState.IndependentBlendEnable = false;
 		desc.blendState.RenderTarget[0].BlendEnable = false;

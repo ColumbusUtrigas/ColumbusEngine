@@ -11,7 +11,7 @@ namespace Columbus
 		PrimitiveTopology _currentTopology;
 		IndexFormat _currentIndexFormat;
 		InputLayout _currentLayout;
-		Graphics::GraphicsPipeline* _currentPipeline = nullptr;
+		GraphicsPipeline* _currentPipeline = nullptr;
 
 		uint32 _currentIndexOffset;
 	public:
@@ -40,7 +40,7 @@ namespace Columbus
 		void RSSetViewports(uint32 Num, Viewport* pViewports) final override;
 		void RSSetScissorRects(uint32 Num, ScissorRect* pScissors) final override;
 
-		void SetGraphicsPipeline(Graphics::GraphicsPipeline* pPipeline) final override;
+		void SetGraphicsPipeline(GraphicsPipeline* pPipeline) final override;
 		void SetGraphicsCBV(uint32 slot, Buffer* pBuf) final override;
 
 		void SetComputePipeline(ComputePipeline* pPipeline) override;
@@ -49,7 +49,7 @@ namespace Columbus
 		void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) final override;
 		void UnmapBuffer(Buffer* pBuffer) final override;
 
-		bool CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& Desc, Graphics::GraphicsPipeline** ppGraphicsPipeline) final override;
+		bool CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, GraphicsPipeline** ppGraphicsPipeline) final override;
 		bool CreateComputePipeline(const ComputePipelineDesc& desc, ComputePipeline** ppComputePipelineState) final override;
 
 		void Dispatch(uint32 X, uint32 Y, uint32 Z) final override;

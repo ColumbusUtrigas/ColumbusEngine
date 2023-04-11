@@ -32,17 +32,17 @@ namespace Columbus
 		void EndRenderPass();
 
 		void BindComputePipeline(const ComputePipeline* Pipeline);
-		void BindGraphicsPipeline(const Graphics::GraphicsPipeline* Pipeline);
+		void BindGraphicsPipeline(const GraphicsPipeline* Pipeline);
 		void BindRayTracingPipeline(const RayTracingPipeline* Pipeline);
 
-		void PushConstantsGraphics(const Graphics::GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues);
-		void BindDescriptorSetsGraphics(const Graphics::GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets);
+		void PushConstantsGraphics(const GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues);
+		void BindDescriptorSetsGraphics(const GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets);
 
 		void PushConstantsRayTracing(const RayTracingPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues);
 		void BindDescriptorSetsRayTracing(const RayTracingPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets);
 
-		void BindVertexBuffers(uint32_t first, uint32_t count, const BufferVulkan* buffers, const VkDeviceSize* offsets);
-		void BindIndexBuffer(const BufferVulkan buffer, const VkDeviceSize offset);
+		void BindVertexBuffers(uint32_t first, uint32_t count, const Buffer** buffers, const VkDeviceSize* offsets);
+		void BindIndexBuffer(const Buffer* buffer, const VkDeviceSize offset);
 
 		void Dispatch(uint32 X, uint32 Y, uint32 Z);
 		void Draw(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance);

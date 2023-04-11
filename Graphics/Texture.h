@@ -22,6 +22,17 @@ namespace Columbus
 			Format(Format) {}
 	};
 
+	enum class TextureType
+	{
+		Texture1D,
+		Texture2D,
+		Texture3D,
+		TextureCube,
+		Texture1DArray,
+		Texture2DArray,
+		TextureCubeArray,
+	};
+
 	class Texture
 	{
 	public:

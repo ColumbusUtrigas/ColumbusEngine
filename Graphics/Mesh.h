@@ -29,6 +29,8 @@ namespace Columbus
 		}
 
 		virtual bool Load(const Model& InModel) = 0;
+
+		// TODO: REMOVE
 		virtual void Bind() = 0;
 		virtual uint32 Render() = 0;
 		virtual void Unbind() = 0;
@@ -41,5 +43,3 @@ namespace Columbus
 	};
 
 }
-
-

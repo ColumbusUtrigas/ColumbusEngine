@@ -45,8 +45,11 @@ namespace Columbus
 		BufferCpuAccess CpuAccess = BufferCpuAccess::Write;
 		uint32 MiscFlags;
 		uint32 StructureByteStride;
+		bool UsedInAccelerationStructure = false;
 
 		BufferDesc() {}
+		BufferDesc(uint64 Size, BufferType BindFlags, bool UsedInAccelerationStructure = false) :
+			Size(Size), BindFlags(BindFlags), UsedInAccelerationStructure(UsedInAccelerationStructure) {}
 		BufferDesc(
 			uint64 Size,
 			BufferType BindFlags,
@@ -63,6 +66,8 @@ namespace Columbus
 	{
 	protected:
 		BufferDesc Desc;
+
+		Buffer(const BufferDesc& Desc) : Desc(Desc) {}
 	public:
 		const BufferDesc& GetDesc() const { return Desc; }
 		virtual void* GetHandle() = 0;

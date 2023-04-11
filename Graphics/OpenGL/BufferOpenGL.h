@@ -11,10 +11,7 @@ namespace Columbus
 	private:
 		GLuint gl_Handle = 0;
 	public:
-		BufferOpenGL(const BufferDesc& Desc)
-		{
-			this->Desc = Desc;
-		}
+		BufferOpenGL(const BufferDesc& Desc) : Buffer(Desc) {}
 
 		void* GetHandle() final override
 		{

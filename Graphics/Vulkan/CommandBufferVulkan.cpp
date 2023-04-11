@@ -1,13 +1,13 @@
 #include <Graphics/Vulkan/CommandBufferVulkan.h>
 
 #include "Common.h"
+#include "BufferVulkan.h"
 #include "ComputePipelineVulkan.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "GraphicsPipelineVulkan.h"
 #include "RayTracingPipelineVulkan.h"
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -59,7 +59,7 @@ namespace Columbus
 		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, vkpipe->pipeline);
 	}
 
-	void CommandBufferVulkan::BindGraphicsPipeline(const Graphics::GraphicsPipeline* Pipeline)
+	void CommandBufferVulkan::BindGraphicsPipeline(const GraphicsPipeline* Pipeline)
 	{
 		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline);
 
@@ -73,7 +73,7 @@ namespace Columbus
 		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkpipe->pipeline);
 	}
 
-	void CommandBufferVulkan::PushConstantsGraphics(const Graphics::GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues)
+	void CommandBufferVulkan::PushConstantsGraphics(const GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues)
 	{
 		COLUMBUS_ASSERT((stages | ShaderType::AllGraphics) == ShaderType::AllGraphics);
 
@@ -83,7 +83,7 @@ namespace Columbus
 		vkCmdPushConstants(_CmdBuf, vkpipe->layout, stageFlags, offset, size, pValues);
 	}
 
-	void CommandBufferVulkan::BindDescriptorSetsGraphics(const Graphics::GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)
+	void CommandBufferVulkan::BindDescriptorSetsGraphics(const GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)
 	{
 		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
 		
@@ -107,18 +107,18 @@ namespace Columbus
 		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkpipe->layout, firstSet, setCount, sets, 0, nullptr);
 	}
 
-	void CommandBufferVulkan::BindVertexBuffers(uint32_t first, uint32_t count, const BufferVulkan* buffers, const VkDeviceSize* offsets)
+	void CommandBufferVulkan::BindVertexBuffers(uint32_t first, uint32_t count, const Buffer** buffers, const VkDeviceSize* offsets)
 	{
 		VkBuffer bufs[128];
 		for (uint32_t i = 0; i < count; i++)
-			bufs[i] = buffers[i].Buffer;
+			bufs[i] = static_cast<const BufferVulkan*>(buffers[i])->_Buffer;
 
 		vkCmdBindVertexBuffers(_CmdBuf, first, count, bufs, offsets);
 	}
 
-	void CommandBufferVulkan::BindIndexBuffer(const BufferVulkan buffer, const VkDeviceSize offset)
+	void CommandBufferVulkan::BindIndexBuffer(const Buffer* buffer, const VkDeviceSize offset)
 	{
-		vkCmdBindIndexBuffer(_CmdBuf, buffer.Buffer, offset, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(_CmdBuf, static_cast<const BufferVulkan*>(buffer)->_Buffer, offset, VK_INDEX_TYPE_UINT32);
 	}
 
 	void CommandBufferVulkan::Dispatch(uint32 X, uint32 Y, uint32 Z)

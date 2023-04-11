@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Assert.h"
+#include <Graphics/Texture.h>
 #include <Graphics/Buffer.h>
 #include <Graphics/Types.h>
 #include <Common/Image/Image.h>
@@ -29,12 +30,46 @@ namespace Columbus
 		}
 	}
 
+	static VkImageType TextureTypeToImageTypeVk(TextureType type)
+	{
+		switch (type)
+		{
+			case TextureType::Texture1DArray:
+			case TextureType::Texture1D: return VK_IMAGE_TYPE_1D;
+
+			case TextureType::Texture2DArray:
+			case TextureType::Texture2D: return VK_IMAGE_TYPE_2D;
+
+			case TextureType::Texture3D: return VK_IMAGE_TYPE_3D;
+
+			case TextureType::TextureCubeArray:
+			case TextureType::TextureCube: return VK_IMAGE_TYPE_2D;
+
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkImageViewType TextureTypeToViewTypeVk(TextureType type)
+	{
+		switch (type)
+		{
+			case TextureType::Texture1D:        return VK_IMAGE_VIEW_TYPE_1D;
+			case TextureType::Texture2D:        return VK_IMAGE_VIEW_TYPE_2D;
+			case TextureType::Texture3D:        return VK_IMAGE_VIEW_TYPE_3D;
+			case TextureType::TextureCube:      return VK_IMAGE_VIEW_TYPE_CUBE;
+			case TextureType::Texture1DArray:   return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+			case TextureType::Texture2DArray:   return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+			case TextureType::TextureCubeArray: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
 	static VkFormat TextureFormatToVK(TextureFormat format)
 	{
 		switch (format)
 		{
-			case TextureFormat::RGB8: return VK_FORMAT_R8G8B8_SRGB;
-			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_SRGB;
+			case TextureFormat::RGB8: return VK_FORMAT_R8G8B8_UNORM;
+			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_UNORM;
 			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
 			case TextureFormat::DXT5: return VK_FORMAT_BC5_UNORM_BLOCK;
 		}

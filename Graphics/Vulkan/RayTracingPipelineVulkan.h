@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/RayTracingPipeline.h>
+#include "PipelineDescriptorSetLayoutVulkan.h"
 #include <vulkan/vulkan.h>
 
 #include "BufferVulkan.h"
@@ -13,12 +14,13 @@ namespace Columbus
 	public:
 		VkPipeline pipeline;
 		VkPipelineLayout layout;
-		VkDescriptorSetLayout setLayouts[16]; // TODO
+		
+		PipelineDescriptorSetLayoutsVulkan SetLayouts;
 
-		BufferVulkan RayGenSBT;
-		BufferVulkan MissSBT;
-		BufferVulkan HitSBT;
-		BufferVulkan CallableSBT;
+		Buffer* RayGenSBT;
+		Buffer* MissSBT;
+		Buffer* HitSBT;
+		Buffer* CallableSBT;
 
 		VkStridedDeviceAddressRegionKHR RayGenRegionSBT;
 		VkStridedDeviceAddressRegionKHR MissRegionSBT;

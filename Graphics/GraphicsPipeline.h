@@ -1,27 +1,13 @@
 #pragma once
 
-#include "Core/fixed_vector.h"
 #include <Graphics/InputLayout.h>
 #include <Graphics/DepthStencilState.h>
 #include <Graphics/RasterizerState.h>
 #include <Graphics/BlendState.h>
 #include <Core/SmartPointer.h>
-#include <vulkan/vulkan_core.h>
 
-namespace Columbus::Graphics
+namespace Columbus
 {
-
-	struct ShaderResourceTex2D
-	{
-		std::string name;
-		int slot;
-	};
-
-	struct ShaderResourceDesc
-	{
-		const char* name;
-		int slot;
-	};
 
 	struct GraphicsPipelineDesc
 	{
@@ -29,14 +15,9 @@ namespace Columbus::Graphics
 		DepthStencilStateDesc depthStencilState;
 		RasterizerStateDesc rasterizerState;
 		BlendStateDesc blendState;
-		PrimitiveTopology topology = PrimitiveTopology::Undefined;
+		PrimitiveTopology topology = PrimitiveTopology::TriangleList;
 
 		std::string Name;
-
-		fixed_vector<VkPushConstantRange, 16> pushConstantRanges;
-
-		fixed_vector<ShaderResourceTex2D, 16> textures;
-		fixed_vector<ShaderResourceDesc, 16> cbs;
 
 		SPtr<ShaderStage> VS;
 		SPtr<ShaderStage> HS;

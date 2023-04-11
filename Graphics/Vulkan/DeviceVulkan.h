@@ -1,13 +1,17 @@
 #pragma once
 
 #include "Core/fixed_vector.h"
+#include "Graphics/AccelerationStructure.h"
+#include "Graphics/Buffer.h"
 #include "Graphics/ComputePipeline.h"
 #include "Graphics/GraphicsPipeline.h"
 #include "Graphics/RayTracingPipeline.h"
+#include "Graphics/Texture.h"
 #include "Graphics/Types.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/DeviceVulkanFunctions.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
+#include "Graphics/Vulkan/PipelineDescriptorSetLayoutVulkan.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "VulkanMemoryAllocator/include/vk_mem_alloc.h"
@@ -31,13 +35,36 @@
 namespace Columbus
 {
 
+	enum TextureVulkanUsage
+	{
+		TextureVulkanUsageSampled                = VK_IMAGE_USAGE_SAMPLED_BIT,
+		TextureVulkanUsageStorage                = VK_IMAGE_USAGE_STORAGE_BIT,
+		TextureVulkanUsageColorAttachment        = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		TextureVulkanUsageDepthStencilAttachment = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+	};
+
+	struct TextureVulkanDesc
+	{
+		TextureType Type = TextureType::Texture2D;
+		uint32_t Width = 1, Height = 1, Depth = 1;
+		uint32_t Mips = 1;
+		uint32_t ArrayLayers = 1;
+		uint32_t Samples = 1;
+		TextureVulkanUsage Usage {}; // TODO
+		TextureFormat Format {};
+	};
+
 	struct TextureVulkan
 	{
+		TextureVulkanDesc _Desc;
 		VkDevice _Device;
 		VkImage image;
 		VkImageView view;
 		VkSampler sampler;
+		VkImageLayout layout;
 		VmaAllocation allocation;
+
+		TextureVulkan(const TextureVulkanDesc& Desc) : _Desc(Desc) {}
 
 		~TextureVulkan()
 		{
@@ -76,6 +103,9 @@ namespace Columbus
 		VmaAllocator _Allocator;
 
 		VulkanFunctions VkFunctions;
+	private:
+		VkPipelineLayout _CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts);
+		VkDescriptorSet _CreateDescriptorSet(VkPipeline Pipeline, const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
 	public:
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 			_PhysicalDevice(PhysicalDevice)
@@ -202,275 +232,34 @@ namespace Columbus
 			vmaCreateAllocator(&allocatorInfo, &_Allocator);
 		}
 
+		// Low-level API abstraction
+
 		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface);
 		VkRenderPass CreateRenderPass(VkFormat format);
 		void CreateFramebuffers(SwapchainVulkan* swapchain, VkRenderPass renderpass);
 
 		CommandBufferVulkan CreateCommandBuffer();
 
-		uint64_t GetBufferDeviceAddress(BufferVulkan Buffer)
-		{
-			VkBufferDeviceAddressInfo info;
-			info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-			info.pNext = nullptr;
-			info.buffer = Buffer.Buffer;
-
-			return vkGetBufferDeviceAddress(_Device, &info);
-		}
-
-		struct ShaderStageCompilationResult
-		{
-			VkPipelineShaderStageCreateInfo ShaderStageInfo;
-			CompiledSpirv Spirv;
-		};
-
-		ShaderStageCompilationResult BuildShaderStage(SPtr<Columbus::ShaderStage> stage, const std::string& name)
-		{
-			ShaderStageCompilationResult result;
-			result.Spirv = CompileShaderStage_VK(stage, name);
-
-			VkShaderModuleCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			info.pNext = nullptr;
-			info.flags = 0;
-			info.codeSize = result.Spirv.Bytecode.size() * sizeof(uint32_t);
-			info.pCode = result.Spirv.Bytecode.data();
-
-			VkShaderModule module;
-
-			VK_CHECK(vkCreateShaderModule(_Device, &info, nullptr, &module));
-
-			result.ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			result.ShaderStageInfo.pNext = nullptr;
-		    result.ShaderStageInfo.flags = 0;
-			result.ShaderStageInfo.stage = ShaderTypeToVk(stage->Type);
-			result.ShaderStageInfo.module = module;
-			result.ShaderStageInfo.pName = stage->EntryPoint.c_str();
-			result.ShaderStageInfo.pSpecializationInfo = nullptr;
-			return result;
-		}
-
 		ComputePipeline* CreateComputePipeline(const ComputePipelineDesc& Desc);
-
-		Graphics::GraphicsPipeline* CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& desc, VkRenderPass renderPass)
-		{
-			auto vs = BuildShaderStage(desc.VS, desc.Name);
-			auto ps = BuildShaderStage(desc.PS, desc.Name);
-
-			std::vector<ShaderStageCompilationResult> compiledStages = { vs, ps };
-			VkPipelineShaderStageCreateInfo stages[] = { vs.ShaderStageInfo, ps.ShaderStageInfo };
-
-			auto pipeline = new Graphics::GraphicsPipelineVulkan(desc);
-
-			fixed_vector<VkVertexInputBindingDescription, 16> inputBindings;
-			for (int i = 0; i < desc.layout.Elements.size(); i++)
-			{
-				auto element = desc.layout.Elements[i];
-
-				VkVertexInputBindingDescription vertexInputBinding;
-				vertexInputBinding.binding = element.Slot;
-				vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // TODO
-				vertexInputBinding.stride = sizeof(float) * element.Components; // TODO
-
-				inputBindings.push_back(vertexInputBinding);
-			}
-
-			// TODO
-			fixed_vector<VkVertexInputAttributeDescription, 16> inputAttribute;
-			for (int i = 0; i < desc.layout.Elements.size(); i++)
-			{
-				auto element = desc.layout.Elements[i];
-
-				VkVertexInputAttributeDescription attribute;
-
-				attribute.binding = element.Slot;
-				attribute.location = element.SemanticIndex;
-				attribute.offset = 0;
-
-				// TODO
-				switch (element.Components)
-				{
-				case 2: attribute.format = VK_FORMAT_R32G32_SFLOAT;    break;
-				case 3: attribute.format = VK_FORMAT_R32G32B32_SFLOAT; break;
-				}
-
-				inputAttribute.push_back(attribute);
-			}
-
-			VkPipelineVertexInputStateCreateInfo vertexInputState;
-			vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-			vertexInputState.pNext = nullptr;
-			vertexInputState.flags = 0;
-			vertexInputState.vertexBindingDescriptionCount = inputBindings.size();
-			vertexInputState.pVertexBindingDescriptions = inputBindings.data();
-			vertexInputState.vertexAttributeDescriptionCount = inputAttribute.size();
-			vertexInputState.pVertexAttributeDescriptions = inputAttribute.data();
-
-			VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
-			inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-			inputAssemblyState.pNext = nullptr;
-			inputAssemblyState.flags = 0;
-			inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-			inputAssemblyState.primitiveRestartEnable = false;
-
-			VkPipelineTessellationStateCreateInfo tesselationState;
-			tesselationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-			tesselationState.pNext = nullptr;
-			tesselationState.flags = 0;
-			tesselationState.patchControlPoints = 1;
-
-			VkViewport viewport;
-			viewport.x = 0;
-			viewport.y = 0;
-			viewport.width = 1280;
-			viewport.height = 720;
-			viewport.minDepth = 0;
-			viewport.maxDepth = 1;
-
-			VkRect2D scissor;
-			scissor.offset.x = 0;
-			scissor.offset.y = 0;
-			scissor.extent.width = 1280;
-			scissor.extent.height = 720;
-
-			VkPipelineViewportStateCreateInfo viewportState;
-			viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-			viewportState.pNext = nullptr;
-			viewportState.flags = 0;
-			viewportState.viewportCount = 1;
-			viewportState.pViewports = &viewport;
-			viewportState.scissorCount = 1;
-			viewportState.pScissors = &scissor;
-
-			VkPipelineRasterizationStateCreateInfo rasterState;
-			rasterState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-			rasterState.pNext = nullptr;
-			rasterState.flags = 0;
-			rasterState.depthClampEnable = false;
-			rasterState.rasterizerDiscardEnable =  false;
-			rasterState.polygonMode = FillModeToVK(desc.rasterizerState.Fill);
-			rasterState.cullMode = CullModeToVK(desc.rasterizerState.Cull);
-			rasterState.frontFace = desc.rasterizerState.FrontCounterClockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
-			rasterState.depthBiasEnable = false;
-			rasterState.depthBiasConstantFactor = desc.rasterizerState.DepthBias;
-			rasterState.depthBiasClamp = desc.rasterizerState.DepthBiasClamp;
-			rasterState.depthBiasSlopeFactor = desc.rasterizerState.SlopeScaledDepthBias;
-			rasterState.lineWidth = 1;
-
-			VkPipelineMultisampleStateCreateInfo multisampleState;
-			multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-			multisampleState.pNext = nullptr;
-			multisampleState.flags = 0;
-			multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-			multisampleState.sampleShadingEnable = false;
-			multisampleState.minSampleShading = 0;
-			multisampleState.pSampleMask = nullptr;
-			multisampleState.alphaToCoverageEnable = false;
-			multisampleState.alphaToOneEnable = false;
-
-			VkPipelineDepthStencilStateCreateInfo depthStencilState;
-			depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-			depthStencilState.pNext = nullptr;
-			depthStencilState.flags = 0;
-			depthStencilState.depthTestEnable = false;
-			depthStencilState.depthWriteEnable = false;
-			depthStencilState.depthCompareOp = VK_COMPARE_OP_ALWAYS;
-			depthStencilState.stencilTestEnable = false;
-			depthStencilState.front = {};
-			depthStencilState.back = {};
-			depthStencilState.minDepthBounds = 0;
-			depthStencilState.maxDepthBounds = 0;
-
-			VkPipelineColorBlendAttachmentState attachment;
-			attachment.blendEnable = false;
-			attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-			attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-			attachment.colorBlendOp = VK_BLEND_OP_ADD;
-			attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-			attachment.alphaBlendOp = VK_BLEND_OP_ADD;
-			attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-			VkPipelineColorBlendStateCreateInfo blendState;
-			blendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-			blendState.pNext = nullptr;
-			blendState.flags = 0;
-			blendState.logicOpEnable = false;
-			blendState.logicOp = VK_LOGIC_OP_COPY;
-			blendState.attachmentCount = 1;
-			blendState.pAttachments = &attachment;
-			blendState.blendConstants[0] = 0;
-			blendState.blendConstants[1] = 0;
-			blendState.blendConstants[2] = 0;
-			blendState.blendConstants[3] = 0;
-
-			VkPipelineDynamicStateCreateInfo dynamicState;
-			dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-			dynamicState.pNext = nullptr;
-			dynamicState.flags = 0;
-			dynamicState.dynamicStateCount = 0;
-			dynamicState.pDynamicStates = nullptr;
-
-			// Concat all push constants and descriptor sets
-			std::vector<VkPushConstantRange> pushConstants;
-			std::vector<VkDescriptorSetLayoutCreateInfo> descriptorSets;
-
-			for (auto& stage : compiledStages)
-			{
-				for (auto& pushConstant : stage.Spirv.pushConstants)
-				{
-					pushConstants.push_back(pushConstant);
-				}
-
-				for (auto& descriptorSet : stage.Spirv.descriptorSets)
-				{
-					descriptorSets.push_back(descriptorSet);
-				}
-			}
-
-			for (int i = 0; i < descriptorSets.size(); i++)
-			{
-				VK_CHECK(vkCreateDescriptorSetLayout(_Device, &descriptorSets[i], nullptr, &pipeline->setLayouts[i]));
-			}
-
-			VkPipelineLayoutCreateInfo layoutInfo;
-			layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			layoutInfo.pNext = nullptr;
-			layoutInfo.flags = 0;
-			layoutInfo.setLayoutCount = descriptorSets.size();
-			layoutInfo.pSetLayouts = pipeline->setLayouts;
-			layoutInfo.pushConstantRangeCount = pushConstants.size();
-			layoutInfo.pPushConstantRanges = pushConstants.data();
-
-			VK_CHECK(vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &pipeline->layout));
-
-			VkGraphicsPipelineCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-			info.pNext = nullptr;
-			info.flags = 0;
-			info.stageCount = 2;
-			info.pStages = stages;
-			info.pVertexInputState = &vertexInputState;
-			info.pInputAssemblyState = &inputAssemblyState;
-			info.pTessellationState = &tesselationState;
-			info.pViewportState = &viewportState;
-			info.pRasterizationState = &rasterState;
-			info.pMultisampleState = &multisampleState;
-			info.pDepthStencilState = &depthStencilState;
-			info.pColorBlendState = &blendState;
-			info.pDynamicState = &dynamicState;
-			info.layout = pipeline->layout;
-			info.renderPass = renderPass;
-			info.subpass = 0;
-			info.basePipelineHandle = nullptr;
-			info.basePipelineIndex = 0;
-
-			VK_CHECK(vkCreateGraphicsPipelines(_Device, nullptr, 1, &info, nullptr, &pipeline->pipeline));
-
-			return pipeline;
-		}
-
+		GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, VkRenderPass RenderPass);
 		RayTracingPipeline* CreateRayTracingPipeline(const RayTracingPipelineDesc& Desc);
+
+		VkDescriptorSet CreateDescriptorSet(const ComputePipeline* Pipeline, int Index);
+		VkDescriptorSet CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
+		VkDescriptorSet CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
+
+		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer);
+		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const TextureVulkan* Texture);
+		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const AccelerationStructure* TLAS);
+
+		Buffer* CreateBuffer(const BufferDesc& Desc, const void* InitialData);
+
+		TextureVulkan* CreateTexture(const TextureVulkanDesc& Desc);
+		SPtr<TextureVulkan> CreateTexture(const Image& image);
+
+		AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc& Desc);
+
+		// TODO: Higher-level API abstraction
 
 		uint32_t alignedSize(uint32_t value, uint32_t alignment)
         {
@@ -482,29 +271,14 @@ namespace Columbus
 			return alignedSize(_RayTracingProperties.shaderGroupHandleSize, _RayTracingProperties.shaderGroupHandleAlignment);
 		}
 
-		VkDescriptorSet CreateDescriptorSet(VkDescriptorSetLayout DescriptorSetLayout, bool variableCount = false)
+		uint64_t GetBufferDeviceAddress(const Buffer* Buffer)
 		{
-			uint32_t counts[] = { 100 }; // TODO
+			VkBufferDeviceAddressInfo info;
+			info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+			info.pNext = nullptr;
+			info.buffer = static_cast<const BufferVulkan*>(Buffer)->_Buffer;
 
-			VkDescriptorSetVariableDescriptorCountAllocateInfo descriptorSetCounts;
-			descriptorSetCounts.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
-			descriptorSetCounts.pNext = nullptr;
-			descriptorSetCounts.descriptorSetCount = 1;
-			descriptorSetCounts.pDescriptorCounts = counts;
-
-			VkDescriptorSetAllocateInfo descriptorSetInfo;
-			descriptorSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			descriptorSetInfo.pNext = variableCount ? &descriptorSetCounts : nullptr;
-			descriptorSetInfo.descriptorPool = _DescriptorPool;
-			descriptorSetInfo.descriptorSetCount = 1;
-			descriptorSetInfo.pSetLayouts = &DescriptorSetLayout;
-
-			VkDescriptorSet descriptorSet;
-			if (vkAllocateDescriptorSets(_Device, &descriptorSetInfo, &descriptorSet) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan descriptor set");
-			}
-			return descriptorSet;
+			return vkGetBufferDeviceAddress(_Device, &info);
 		}
 
 		SPtr<FenceVulkan> CreateFence(bool signaled)
@@ -537,109 +311,6 @@ namespace Columbus
 		{
 			vkResetFences(_Device, 1, &fence->_Fence);
 		}
-
-		void UpdateDescriptorSet(VkDescriptorSet DescriptorSet, SPtr<TextureVulkan> texture, bool storage = false)
-		{
-			VkDescriptorImageInfo imageInfo;
-			imageInfo.imageLayout = storage ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = texture->view;
-			imageInfo.sampler = texture->sampler;
-
-			// VkDescriptorBufferInfo bufferInfo;
-			// bufferInfo.buffer = Buffer;
-			// bufferInfo.offset = 0;
-			// bufferInfo.range = size;
-
-			VkWriteDescriptorSet write;
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.pNext = nullptr;
-			write.dstSet = DescriptorSet;
-			write.dstBinding = 0;
-			write.dstArrayElement = 0;
-			write.descriptorCount = 1;
-			write.descriptorType = storage ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			write.pImageInfo = &imageInfo;
-			write.pBufferInfo = nullptr;
-			write.pTexelBufferView = nullptr;
-
-			vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
-		}
-
-		void UpdateRtDescriptorSet(VkDescriptorSet set, VkAccelerationStructureKHR tlas, VkImageView image)
-		{
-			VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo{};
-			descriptorAccelerationStructureInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-			descriptorAccelerationStructureInfo.accelerationStructureCount = 1;
-			descriptorAccelerationStructureInfo.pAccelerationStructures = &tlas;
-
-			VkWriteDescriptorSet accelerationStructureWrite{};
-			accelerationStructureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			// The specialized acceleration structure descriptor has to be chained
-			accelerationStructureWrite.pNext = &descriptorAccelerationStructureInfo;
-			accelerationStructureWrite.dstSet = set;
-			accelerationStructureWrite.dstBinding = 0;
-			accelerationStructureWrite.descriptorCount = 1;
-			accelerationStructureWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-
-			VkDescriptorImageInfo storageImageDescriptor{};
-			storageImageDescriptor.imageView = image;
-			storageImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-			VkWriteDescriptorSet resultImageWrite{};
-			resultImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			resultImageWrite.pNext = nullptr;
-			resultImageWrite.dstSet = set;
-			resultImageWrite.dstBinding = 1;
-			resultImageWrite.descriptorCount = 1;
-			resultImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			resultImageWrite.pImageInfo = &storageImageDescriptor;
-
-			std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
-				accelerationStructureWrite,
-				resultImageWrite
-			};
-
-			vkUpdateDescriptorSets(_Device, 2, writeDescriptorSets.data(), 0, nullptr);
-		}
-
-		void UpdateArrayDescriptorSet(VkDescriptorSet set, uint32_t start, VkBuffer buffer)
-		{
-			VkDescriptorBufferInfo bufferInfo;
-			bufferInfo.buffer = buffer;
-			bufferInfo.offset = 0;
-			bufferInfo.range = VK_WHOLE_SIZE;
-
-			VkWriteDescriptorSet write{};
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			write.dstSet = set;
-			write.dstBinding = 0;
-			write.descriptorCount = 1;
-			write.dstArrayElement = start;
-			write.pBufferInfo = &bufferInfo;
-
-			vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
-		}
-
-		void UpdateArrayDescriptorSet(VkDescriptorSet set, uint32_t start, VkImageView image, VkSampler sampler)
-		{
-			VkDescriptorImageInfo imageDescriptor{};
-			imageDescriptor.imageView = image;
-			imageDescriptor.sampler = sampler;
-			imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-			VkWriteDescriptorSet write{};
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			write.dstSet = set;
-			write.dstBinding = 0;
-			write.descriptorCount = 1;
-			write.dstArrayElement = start;
-			write.pImageInfo = &imageDescriptor;
-
-			vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
-		}
-
 
 		void AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex)
 		{
@@ -704,17 +375,6 @@ namespace Columbus
 			presentInfo.pImageIndices = &imageIndex;
 
 			vkQueuePresentKHR(*_ComputeQueue, &presentInfo);
-		}
-
-		BufferVulkan CreateBuffer(size_t Size, const void* Data, BufferType type, bool deviceAddress = false, bool asInput = false);
-		SPtr<TextureVulkan> CreateTexture(const Image& image);
-		SPtr<TextureVulkan> CreateStorageImage();
-
-		AccelerationStructureVulkan* CreateAccelerationStructure(const AccelerationStructureDesc& Desc);
-
-		void DestroyBuffer(BufferVulkan buffer)
-		{
-			vmaDestroyBuffer(_Allocator, buffer.Buffer, buffer.Allocation);
 		}
 
 		~DeviceVulkan()

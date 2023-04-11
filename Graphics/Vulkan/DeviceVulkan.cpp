@@ -1,8 +1,16 @@
-#include "Graphics/Vulkan/CommandBufferVulkan.h"
-#include "Graphics/Vulkan/TypeConversions.h"
-#include <Graphics/Vulkan/DeviceVulkan.h>
+#include "CommandBufferVulkan.h"
+
+#include "TypeConversions.h"
+#include "DeviceVulkan.h"
+
+#include "ComputePipelineVulkan.h"
+#include "GraphicsPipelineVulkan.h"
+#include "RayTracingPipelineVulkan.h"
+#include "BufferVulkan.h"
+
 #include <cstring>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 
 #define VMA_IMPLEMENTATION
@@ -100,9 +108,100 @@ namespace Columbus
 		return CommandBufferVulkan(_Device, _CmdPool, result, VkFunctions);
 	}
 
-	BufferVulkan CreateStagingBufferVulkanInternal(VmaAllocator allocator, size_t size, const void* data)
+	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const ComputePipeline* Pipeline, int Index)
 	{
-		BufferVulkan buffer;
+		auto vkpipe = static_cast<const ComputePipelineVulkan*>(Pipeline);
+
+		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
+	}
+
+	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index)
+	{
+		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline);
+
+		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
+	}
+
+	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index)
+	{
+		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(Pipeline);
+
+		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
+	}
+
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer)
+	{
+		VkDescriptorBufferInfo bufferInfo;
+		bufferInfo.buffer = static_cast<const BufferVulkan*>(Buffer)->_Buffer;
+		bufferInfo.offset = 0;
+		bufferInfo.range = VK_WHOLE_SIZE;
+
+		VkWriteDescriptorSet write;
+		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		write.pNext = nullptr;
+		write.dstSet = Set;
+		write.dstBinding = BindingId;
+		write.dstArrayElement = ArrayId;
+		write.descriptorCount = 1;
+		write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		write.pImageInfo = nullptr;
+		write.pBufferInfo = &bufferInfo;
+		write.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+	}
+
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const TextureVulkan* Texture)
+	{
+		VkDescriptorImageInfo imageInfo;
+		imageInfo.imageLayout = Texture->layout;
+		imageInfo.imageView = Texture->view;
+		imageInfo.sampler = Texture->sampler;
+
+		VkWriteDescriptorSet write;
+		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		write.pNext = nullptr;
+		write.dstSet = Set;
+		write.dstBinding = BindingId;
+		write.dstArrayElement = ArrayId;
+		write.descriptorCount = 1;
+		write.descriptorType = (Texture->_Desc.Usage & TextureVulkanUsageStorage) ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		write.pImageInfo = &imageInfo;
+		write.pBufferInfo = nullptr;
+		write.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+	}
+
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const AccelerationStructure* TLAS)
+	{
+		VkWriteDescriptorSetAccelerationStructureKHR ASinfo{};
+		ASinfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+		ASinfo.accelerationStructureCount = 1;
+		ASinfo.pAccelerationStructures = &static_cast<const AccelerationStructureVulkan*>(TLAS)->_Handle;
+
+		VkWriteDescriptorSet write{};
+		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		// The specialized acceleration structure descriptor has to be chained
+		write.pNext = &ASinfo;
+		write.dstSet = Set;
+		write.dstBinding = 0;
+		write.descriptorCount = 1;
+		write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+
+		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+	}
+
+	// TODO: REMOVE
+	struct StagingBufferVulkan
+	{
+		VkBuffer Buffer;
+		VmaAllocation Allocation;
+	};
+
+	StagingBufferVulkan CreateStagingBufferVulkanInternal(VmaAllocator allocator, size_t size, const void* data)
+	{
+		StagingBufferVulkan buffer;
 
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -128,6 +227,57 @@ namespace Columbus
 		}
 
 		return buffer;
+	}
+
+	Buffer* DeviceVulkan::CreateBuffer(const BufferDesc& Desc, const void* InitialData)
+	{
+		// TODO: Enhance buffer creation
+		auto result = new BufferVulkan(Desc);
+		StagingBufferVulkan staging;
+
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = Desc.Size;
+		bufferInfo.usage = BufferTypeToVK(Desc.BindFlags);
+
+		if (InitialData != nullptr)
+		{
+			staging = CreateStagingBufferVulkanInternal(_Allocator, Desc.Size, InitialData);
+			bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		}
+
+		//if (deviceAddres.BindFlags)
+		{
+			bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+		}
+		if (Desc.UsedInAccelerationStructure)
+		{
+			bufferInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+		}
+
+		VmaAllocationCreateInfo vmaallocInfo = {};
+		vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		VK_CHECK(vmaCreateBuffer(_Allocator, &bufferInfo, &vmaallocInfo,
+			&result->_Buffer,
+			&result->_Allocation,
+			nullptr));
+
+		if (InitialData != nullptr)
+		{
+			auto copyCmdBuf = CreateCommandBuffer();
+			copyCmdBuf.Begin();
+			VkBufferCopy copy = vk::BufferCopy(0, 0, Desc.Size);
+			vkCmdCopyBuffer(copyCmdBuf._CmdBuf, staging.Buffer, result->_Buffer, 1, &copy);
+			copyCmdBuf.End();
+
+			Submit(copyCmdBuf);
+			QueueWaitIdle();
+
+			vmaDestroyBuffer(_Allocator, staging.Buffer, staging.Allocation);
+		}
+
+		return result;
 	}
 
 	void TransitionImageLayout(VkCommandBuffer cmdbuf, VkImage image,
@@ -159,71 +309,82 @@ namespace Columbus
 		);
 	}
 
-	BufferVulkan DeviceVulkan::CreateBuffer(size_t Size, const void* Data, BufferType type, bool deviceAddress, bool asInput)
+	TextureVulkan* DeviceVulkan::CreateTexture(const TextureVulkanDesc& Desc)
 	{
-		BufferVulkan buffer;
+		auto result = new TextureVulkan(Desc);
+		result->_Device = _Device;
 
-		auto staging = CreateStagingBufferVulkanInternal(_Allocator, Size, Data);
-
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = Size;
-		bufferInfo.usage = BufferTypeToVK(type) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		if (deviceAddress)
-		{
-			bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-		}
-		if (asInput)
-		{
-			bufferInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-		}
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.pNext = NULL;
+		imageInfo.flags = 0;
+		imageInfo.imageType = TextureTypeToImageTypeVk(Desc.Type);
+		imageInfo.format = TextureFormatToVK(Desc.Format);
+		imageInfo.extent.width = Desc.Width;
+		imageInfo.extent.height = Desc.Height;
+		imageInfo.extent.depth = Desc.Depth;
+		imageInfo.mipLevels = Desc.Mips;
+		imageInfo.arrayLayers = Desc.ArrayLayers;
+		imageInfo.samples = (VkSampleCountFlagBits)Desc.Samples; // TODO
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.usage = Desc.Usage;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.queueFamilyIndexCount = 1;
+		imageInfo.pQueueFamilyIndices = &_FamilyIndex;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-		VK_CHECK(vmaCreateBuffer(_Allocator, &bufferInfo, &vmaallocInfo,
-			&buffer.Buffer,
-			&buffer.Allocation,
-			nullptr));
+		vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+		VK_CHECK(vmaCreateImage(_Allocator, &imageInfo, &vmaallocInfo, &result->image, &result->allocation, nullptr));
 
 		auto copyCmdBuf = CreateCommandBuffer();
 		copyCmdBuf.Reset();
 		copyCmdBuf.Begin();
-		VkBufferCopy copy;
-		copy.srcOffset = 0;
-		copy.dstOffset = 0;
-		copy.size = Size;
-		vkCmdCopyBuffer(copyCmdBuf._CmdBuf, staging.Buffer, buffer.Buffer, 1, &copy);
+
+		TransitionImageLayout(copyCmdBuf._CmdBuf,
+			result->image,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_GENERAL,
+			0, VK_ACCESS_SHADER_READ_BIT,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+			1
+		);
+		result->layout = VK_IMAGE_LAYOUT_GENERAL;
+
 		copyCmdBuf.End();
+		Submit(copyCmdBuf);
+		QueueWaitIdle();
 
-		VkSubmitInfo submit_info;
-		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submit_info.pNext = nullptr;
-		submit_info.waitSemaphoreCount = 0;
-		submit_info.pWaitSemaphores = NULL;
-		submit_info.pWaitDstStageMask = 0;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &copyCmdBuf._CmdBuf;
-		submit_info.signalSemaphoreCount = 0;
-		submit_info.pSignalSemaphores = NULL;
+		VkImageViewCreateInfo viewInfo;
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.pNext = nullptr;
+		viewInfo.flags = 0;
+		viewInfo.image = result->image;
+		viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
+		viewInfo.format = TextureFormatToVK(Desc.Format);
+		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = Desc.Mips;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->view));
 
-		VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
-		VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
-
-		vmaDestroyBuffer(_Allocator, staging.Buffer, staging.Allocation);
-
-		return buffer;
+		return result;
 	}
 
 	SPtr<TextureVulkan> DeviceVulkan::CreateTexture(const Image& image)
 	{
-		auto texture = std::make_shared<TextureVulkan>();
+		auto texture = std::make_shared<TextureVulkan>(TextureVulkanDesc());
 		texture->_Device = _Device;
 
 		bool isCube = image.GetType() == Columbus::Image::Type::ImageCube;
 		int size = isCube ? 6 : 1;
 
-		BufferVulkan staging;
+		StagingBufferVulkan staging;
 
 		staging = CreateStagingBufferVulkanInternal(_Allocator, image.GetSize(0) * size, image.GetData());
 
@@ -298,6 +459,7 @@ namespace Columbus
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 			size
 		);
+		texture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		copyCmdBuf.End();
 		VkSubmitInfo submit_info;
@@ -361,83 +523,93 @@ namespace Columbus
 		return texture;
 	}
 
-	SPtr<TextureVulkan> DeviceVulkan::CreateStorageImage()
+	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts)
 	{
-		auto texture = std::make_shared<TextureVulkan>();
-		texture->_Device = _Device;
+		// Concat all push constants and descriptor sets
+		std::vector<VkPushConstantRange> pushConstants;
+		std::vector<DescriptorSetInfo> descriptorSets;
 
-		VkImageCreateInfo imageInfo = {};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.pNext = NULL;
-		imageInfo.flags = 0;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-		imageInfo.extent.width = 1280;
-		imageInfo.extent.height = 720;
-		imageInfo.extent.depth = 1;
-		imageInfo.mipLevels = 1;
-		imageInfo.arrayLayers = 1;
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		imageInfo.queueFamilyIndexCount = 1;
-		imageInfo.pQueueFamilyIndices = &_FamilyIndex;
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		for (auto& stage : Stages)
+		{
+			for (auto& pushConstant : stage.Spirv.pushConstants)
+			{
+				pushConstants.push_back(pushConstant);
+			}
 
-		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+			for (auto& descriptorSet : stage.Spirv.DescriptorSets)
+			{
+				descriptorSets.push_back(descriptorSet);
+			}
+		}
 
-		VK_CHECK(vmaCreateImage(_Allocator, &imageInfo, &vmaallocInfo, &texture->image, &texture->allocation, nullptr));
+		// TODO: Caching scheme
+		for (int i = 0; i < descriptorSets.size(); i++)
+		{
+			auto& setInfo = descriptorSets[i];
 
-		auto copyCmdBuf = CreateCommandBuffer();
-		copyCmdBuf.Reset();
-		copyCmdBuf.Begin();
+			VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
+			bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+			bindingFlagsInfo.pNext = nullptr;
+			bindingFlagsInfo.bindingCount = setInfo.BindingFlags.size();
+			bindingFlagsInfo.pBindingFlags = setInfo.BindingFlags.data();
 
-		TransitionImageLayout(copyCmdBuf._CmdBuf,
-			texture->image,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL,
-			0, VK_ACCESS_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-			1
-		);
+			VkDescriptorSetLayoutCreateInfo setLayoutInfo;
+			setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			setLayoutInfo.pNext = nullptr;
+			setLayoutInfo.flags = 0;
+			setLayoutInfo.bindingCount = setInfo.Bindings.size();
+			setLayoutInfo.pBindings = setInfo.Bindings.data();
 
-		copyCmdBuf.End();
+			SetLayouts.VariableCountMax[i] = setInfo.VariableCountMax;
+			if (setInfo.VariableCountMax > 0)
+			{
+				setLayoutInfo.pNext = &bindingFlagsInfo;
+			}
 
-		VkSubmitInfo submit_info;
-		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submit_info.pNext = nullptr;
-		submit_info.waitSemaphoreCount = 0;
-		submit_info.pWaitSemaphores = nullptr;
-		submit_info.pWaitDstStageMask = 0;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &copyCmdBuf._CmdBuf;
-		submit_info.signalSemaphoreCount = 0;
-		submit_info.pSignalSemaphores = nullptr;
+			SetLayouts.UsedLayouts++;
+			VK_CHECK(vkCreateDescriptorSetLayout(_Device, &setLayoutInfo, nullptr, &SetLayouts.Layouts[i]));
+		}
 
-		VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
-		VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
+		VkPipelineLayoutCreateInfo layoutInfo;
+		layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		layoutInfo.pNext = nullptr;
+		layoutInfo.flags = 0;
+		layoutInfo.setLayoutCount = descriptorSets.size();
+		layoutInfo.pSetLayouts = SetLayouts.Layouts;
+		layoutInfo.pushConstantRangeCount = pushConstants.size();
+		layoutInfo.pPushConstantRanges = pushConstants.data();
 
-		VkImageViewCreateInfo viewInfo;
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.pNext = nullptr;
-		viewInfo.flags = 0;
-		viewInfo.image = texture->image;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &texture->view));
+		VkPipelineLayout result;
+		VK_CHECK(vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &result));
+		return result;
+	}
 
-		return texture;
+	VkDescriptorSet DeviceVulkan::_CreateDescriptorSet(VkPipeline Pipeline, const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index)
+	{
+		// only for variable descriptor counts
+		VkDescriptorSetVariableDescriptorCountAllocateInfo descriptorSetCounts;
+		descriptorSetCounts.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
+		descriptorSetCounts.pNext = nullptr;
+		descriptorSetCounts.descriptorSetCount = 1;
+		descriptorSetCounts.pDescriptorCounts = &SetLayouts.VariableCountMax[Index];
+
+		VkDescriptorSetAllocateInfo descriptorSetInfo;
+		descriptorSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		descriptorSetInfo.pNext = nullptr;
+		descriptorSetInfo.descriptorPool = _DescriptorPool;
+		descriptorSetInfo.descriptorSetCount = 1;
+		descriptorSetInfo.pSetLayouts = &SetLayouts.Layouts[Index];
+
+		if (SetLayouts.VariableCountMax[Index] > 0)
+		{
+			descriptorSetInfo.pNext = &descriptorSetCounts;
+		}
+
+		VkDescriptorSet result;
+
+		VK_CHECK(vkAllocateDescriptorSets(_Device, &descriptorSetInfo, &result));
+
+		return result;
 	}
 
 }

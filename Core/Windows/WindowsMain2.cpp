@@ -452,11 +452,62 @@ std::string srcScreenFrag = R"(#version 460 core
 )";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
+using namespace Columbus;
 
-Columbus::Vector3 triVerts[] = {
-    { -1.5, -1, 0 },
-    { 1, 1.5, 0 },
-    { 1, -1, 0 },
+struct Mesh2
+{
+    Buffer* VertexBuffer;
+    Buffer* UvBuffer;
+    Buffer* NormalBuffer;
+    Buffer* IndexBuffer;
+    AccelerationStructure* BLAS;
+
+    Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
+    {
+        BufferDesc desc;
+        desc.BindFlags = BufferType::UAV;
+        desc.Size = size;
+        desc.UsedInAccelerationStructure = usedInAS;
+        return device->CreateBuffer(desc, data);
+    }
+
+    Mesh2(SPtr<DeviceVulkan> device, const char* filename)
+    {
+        Model model;
+        model.Load(filename);
+        const SubModel& submodel = model.GetSubModel(0);
+
+        std::vector<uint32_t> indices;
+
+        if (submodel.Indexed)
+        {
+            for (int i = 0; i < submodel.IndicesCount; i++)
+            {
+                auto indicesArray = (uint16_t*)submodel.Indices;
+                indices.push_back(indicesArray[i]);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < submodel.VerticesCount; i++)
+            {
+                indices.push_back(i);
+            }
+        }
+
+        VertexBuffer = CreateMeshBuffer(device, submodel.VerticesCount * sizeof(Vector3), true, submodel.Positions);
+        UvBuffer     = CreateMeshBuffer(device, submodel.VerticesCount * sizeof(Vector2), false, submodel.UVs);
+        NormalBuffer = CreateMeshBuffer(device, submodel.VerticesCount * sizeof(Vector3), false, submodel.Normals);
+        IndexBuffer  = CreateMeshBuffer(device, indices.size() * sizeof(uint32_t), true, indices.data());
+
+        Columbus::AccelerationStructureDesc blasDesc;
+        blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
+        blasDesc.Vertices = VertexBuffer;
+        blasDesc.Indices = IndexBuffer;
+        blasDesc.VerticesCount = submodel.VerticesCount;
+        blasDesc.IndicesCount = indices.size();
+        BLAS = device->CreateAccelerationStructure(blasDesc);
+    }
 };
 
 void CrashHandler(int signal)
@@ -468,8 +519,6 @@ void CrashHandler(int signal)
 int main()
 {
     std::signal(SIGSEGV, CrashHandler);
-
-    using namespace Columbus;
 
     VkSurfaceKHR surface;
 
@@ -528,90 +577,20 @@ int main()
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
-    Columbus::Model model;
-    model.Load("Data/Meshes/Box.cmf");
-    auto submodel = model.GetSubModel(0);
-
-    std::vector<uint32_t> indices;
-    for (int i = 0; i < submodel.VerticesCount; i++)
-    {
-        indices.push_back(i);
-    }
-
-    auto vbuf = device->CreateBuffer(submodel.VerticesCount * sizeof(Columbus::Vector3), submodel.Positions, Columbus::BufferType::Array, true, true);
-    auto ubuf = device->CreateBuffer(submodel.VerticesCount * sizeof(Columbus::Vector2), submodel.UVs, Columbus::BufferType::UAV);
-    auto nbuf = device->CreateBuffer(submodel.VerticesCount * sizeof(Columbus::Vector3), submodel.Normals, Columbus::BufferType::UAV);
-    auto ibuf = device->CreateBuffer(sizeof(uint32_t) * indices.size(), indices.data(), Columbus::BufferType::UAV, true, true);
-
-    Columbus::Model model2;
-    model2.Load("Data/Meshes/Statue.cmf");
-    auto submodel2 = model2.GetSubModel(0);
-
-    std::vector<uint32_t> indices2;
-    for (int i = 0; i < submodel2.IndicesCount; i++)
-    {
-        auto indicesArray = (uint16_t*)submodel2.Indices;
-        indices2.push_back(indicesArray[i]);
-    }
-
-    auto vbuf2 = device->CreateBuffer(submodel2.VerticesCount * sizeof(Columbus::Vector3), submodel2.Positions, Columbus::BufferType::Array, true, true);
-    auto ubuf2 = device->CreateBuffer(submodel2.VerticesCount * sizeof(Columbus::Vector2), submodel2.UVs, Columbus::BufferType::UAV);
-    auto nbuf2 = device->CreateBuffer(submodel2.VerticesCount * sizeof(Columbus::Vector3), submodel2.Normals, Columbus::BufferType::UAV);
-    auto ibuf2 = device->CreateBuffer(sizeof(uint32_t) * indices2.size(), indices2.data(), Columbus::BufferType::UAV, true, true);
-
-    Columbus::Model model3;
-    model3.Load("Data/Meshes/Sphere.cmf");
-    auto submodel3 = model3.GetSubModel(0);
-
-    std::vector<uint32_t> indices3;
-    for (int i = 0; i < submodel3.IndicesCount; i++)
-    {
-        auto indicesArray = (uint16_t*)submodel3.Indices;
-        indices3.push_back(indicesArray[i]);
-    }
-
-    auto vbuf3 = device->CreateBuffer(submodel3.VerticesCount * sizeof(Columbus::Vector3), submodel3.Positions, Columbus::BufferType::Array, true, true);
-    auto ubuf3 = device->CreateBuffer(submodel3.VerticesCount * sizeof(Columbus::Vector2), submodel3.UVs, Columbus::BufferType::UAV);
-    auto nbuf3 = device->CreateBuffer(submodel3.VerticesCount * sizeof(Columbus::Vector3), submodel3.Normals, Columbus::BufferType::UAV);
-    auto ibuf3 = device->CreateBuffer(sizeof(uint32_t) * indices3.size(), indices3.data(), Columbus::BufferType::UAV, true, true);
-
-    Columbus::AccelerationStructureDesc blasDesc;
-    blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
-    blasDesc.Geometry = vbuf;
-    blasDesc.Indices = ibuf;
-    blasDesc.VerticesCount = submodel.VerticesCount;
-    blasDesc.IndicesCount = indices.size();
-    blasDesc.Indexed = true;
-    auto blas = device->CreateAccelerationStructure(blasDesc);
-
-    Columbus::AccelerationStructureDesc blasDesc2;
-    blasDesc2.Type = Columbus::AccelerationStructureType::BLAS;
-    blasDesc2.Geometry = vbuf2;
-    blasDesc2.Indices = ibuf2;
-    blasDesc2.VerticesCount = submodel2.VerticesCount;
-    blasDesc2.IndicesCount = submodel2.IndicesCount;
-    blasDesc2.Indexed = true;
-    auto blas2 = device->CreateAccelerationStructure(blasDesc2);
-
-    Columbus::AccelerationStructureDesc blasDesc3;
-    blasDesc3.Type = Columbus::AccelerationStructureType::BLAS;
-    blasDesc3.Geometry = vbuf3;
-    blasDesc3.Indices = ibuf3;
-    blasDesc3.VerticesCount = submodel3.VerticesCount;
-    blasDesc3.IndicesCount = submodel3.IndicesCount;
-    blasDesc3.Indexed = true;
-    auto blas3 = device->CreateAccelerationStructure(blasDesc3);
+    Mesh2 box(device, "Data/Meshes/Box.cmf");
+    Mesh2 sphere(device, "Data/Meshes/Sphere.cmf");
+    Mesh2 statue(device, "Data/Meshes/Statue.cmf");
 
     Columbus::AccelerationStructureDesc tlasDesc;
     tlasDesc.Type = Columbus::AccelerationStructureType::TLAS;
     tlasDesc.Instances = {
-        { Columbus::Matrix().Scale({10,0.1,10}), blas },
-        { Columbus::Matrix().Translate({0,1,0}), blas3 },
-        { Columbus::Matrix().Translate({3,0,0}), blas2 }
+        { Columbus::Matrix().Scale({10,0.1,10}), box.BLAS },
+        { Columbus::Matrix().Translate({0,1,0}), sphere.BLAS },
+        { Columbus::Matrix().Translate({3,0,0}), statue.BLAS }
     };
     auto tlas = device->CreateAccelerationStructure(tlasDesc);
 
-    Columbus::Graphics::GraphicsPipelineDesc desc {};
+    GraphicsPipelineDesc desc {};
     desc.Name = "Geometry";
     desc.layout.Elements = {
       Columbus::InputLayoutElementDesc("pos", 0, 0, 3),
@@ -623,9 +602,8 @@ int main()
     desc.PS = std::make_shared<Columbus::ShaderStage>(shaderSrc, "main", Columbus::ShaderType::Pixel, Columbus::ShaderLanguage::GLSL);
 	auto pipeline = device->CreateGraphicsPipeline(desc, renderpass);
 
-    Columbus::Graphics::GraphicsPipelineDesc skyDesc {};
+    GraphicsPipelineDesc skyDesc {};
     skyDesc.Name = "Sky";
-    skyDesc.topology = Columbus::PrimitiveTopology::TriangleList;
     skyDesc.layout.Elements = {
       Columbus::InputLayoutElementDesc("pos", 0, 0, 3)
     };
@@ -634,9 +612,8 @@ int main()
     skyDesc.PS = std::make_shared<Columbus::ShaderStage>(skyboxSrc, "main", Columbus::ShaderType::Pixel, Columbus::ShaderLanguage::GLSL);
     auto skyPipeline = device->CreateGraphicsPipeline(skyDesc, renderpass);
 
-    Columbus::Graphics::GraphicsPipelineDesc screenDesc {};
+    GraphicsPipelineDesc screenDesc {};
     screenDesc.Name = "Screen";
-    screenDesc.topology = Columbus::PrimitiveTopology::TriangleList;
     screenDesc.rasterizerState.Cull = Columbus::CullMode::No;
     screenDesc.VS = std::make_shared<Columbus::ShaderStage>(srcScreenVert, "main", Columbus::ShaderType::Vertex, Columbus::ShaderLanguage::GLSL);
     screenDesc.PS = std::make_shared<Columbus::ShaderStage>(srcScreenFrag, "main", Columbus::ShaderType::Pixel, Columbus::ShaderLanguage::GLSL);
@@ -655,48 +632,54 @@ int main()
     statueImg.Load("./Data/Textures/statue_d.png");
     floorImg.Load("./Data/Textures/Detail.png");
 
+    TextureVulkanDesc rtImageDesc;
+    rtImageDesc.Width = 1280;
+    rtImageDesc.Height = 720;
+    rtImageDesc.Format = TextureFormat::RGBA8;
+    rtImageDesc.Usage = TextureVulkanUsageStorage;
+
     auto skyTexture = device->CreateTexture(skyImg);
 	auto texture = device->CreateTexture(img);
-    auto rtImage = device->CreateStorageImage();
+    auto rtImage = device->CreateTexture(rtImageDesc);
     auto statueImage = device->CreateTexture(statueImg);
     auto floorImage = device->CreateTexture(floorImg);
 
     Columbus::Camera camera;
-    Columbus::Transform transform;
 
     camera.Perspective(80, 1280.f/720.f, 0.01, 1000);
 
-    auto descriptorSet = device->CreateDescriptorSet(static_cast<Columbus::Graphics::GraphicsPipelineVulkan*>(pipeline)->setLayouts[0]);
-    device->UpdateDescriptorSet(descriptorSet, texture);
+    auto descriptorSet = device->CreateDescriptorSet(pipeline, 0);
+    device->UpdateDescriptorSet(descriptorSet, 0, 0, texture.get());
 
-    auto skyDescriptorSet = device->CreateDescriptorSet(static_cast<Columbus::Graphics::GraphicsPipelineVulkan*>(skyPipeline)->setLayouts[0]);
-    device->UpdateDescriptorSet(skyDescriptorSet, skyTexture);
+    auto skyDescriptorSet = device->CreateDescriptorSet(skyPipeline, 0);
+    device->UpdateDescriptorSet(skyDescriptorSet, 0, 0, skyTexture.get());
 
-    auto rtDescriptorSet = device->CreateDescriptorSet(static_cast<Columbus::RayTracingPipelineVulkan*>(rtPipeline)->setLayouts[0]);
-    device->UpdateRtDescriptorSet(rtDescriptorSet, tlas->_Handle, rtImage->view);
+    auto rtDescriptorSet = device->CreateDescriptorSet(rtPipeline, 0);
+    device->UpdateDescriptorSet(rtDescriptorSet, 0, 0, tlas);
+    device->UpdateDescriptorSet(rtDescriptorSet, 1, 0, rtImage);
 
-    auto rtIndicesSet = device->CreateDescriptorSet(static_cast<Columbus::RayTracingPipelineVulkan*>(rtPipeline)->setLayouts[1], true);
-    device->UpdateArrayDescriptorSet(rtIndicesSet, 0, ibuf.Buffer);
-    device->UpdateArrayDescriptorSet(rtIndicesSet, 1, ibuf3.Buffer);
-    device->UpdateArrayDescriptorSet(rtIndicesSet, 2, ibuf2.Buffer);
+    auto rtIndicesSet = device->CreateDescriptorSet(rtPipeline, 1);
+    device->UpdateDescriptorSet(rtIndicesSet, 0, 0, box.IndexBuffer);
+    device->UpdateDescriptorSet(rtIndicesSet, 0, 1, sphere.IndexBuffer);
+    device->UpdateDescriptorSet(rtIndicesSet, 0, 2, statue.IndexBuffer);
 
-    auto rtUvsSet = device->CreateDescriptorSet(static_cast<Columbus::RayTracingPipelineVulkan*>(rtPipeline)->setLayouts[2], true);
-    device->UpdateArrayDescriptorSet(rtUvsSet, 0, ubuf.Buffer);
-    device->UpdateArrayDescriptorSet(rtUvsSet, 1, ubuf3.Buffer);
-    device->UpdateArrayDescriptorSet(rtUvsSet,2, ubuf2.Buffer);
+    auto rtUvsSet = device->CreateDescriptorSet(rtPipeline, 2);
+    device->UpdateDescriptorSet(rtUvsSet, 0, 0, box.UvBuffer);
+    device->UpdateDescriptorSet(rtUvsSet, 0, 1, sphere.UvBuffer);
+    device->UpdateDescriptorSet(rtUvsSet,0, 2, statue.UvBuffer);
 
-    auto rtNormalsSet = device->CreateDescriptorSet(static_cast<Columbus::RayTracingPipelineVulkan*>(rtPipeline)->setLayouts[3], true);
-    device->UpdateArrayDescriptorSet(rtNormalsSet, 0, nbuf.Buffer);
-    device->UpdateArrayDescriptorSet(rtNormalsSet, 1, nbuf3.Buffer);
-    device->UpdateArrayDescriptorSet(rtNormalsSet, 2, nbuf2.Buffer);
+    auto rtNormalsSet = device->CreateDescriptorSet(rtPipeline, 3);
+    device->UpdateDescriptorSet(rtNormalsSet, 0, 0, box.NormalBuffer);
+    device->UpdateDescriptorSet(rtNormalsSet, 0, 1, sphere.NormalBuffer);
+    device->UpdateDescriptorSet(rtNormalsSet, 0, 2, statue.NormalBuffer);
 
-    auto rtTexturesSet = device->CreateDescriptorSet(static_cast<Columbus::RayTracingPipelineVulkan*>(rtPipeline)->setLayouts[4], true);
-    device->UpdateArrayDescriptorSet(rtTexturesSet, 0, floorImage->view, floorImage->sampler);
-    device->UpdateArrayDescriptorSet(rtTexturesSet, 1, floorImage->view, floorImage->sampler);
-    device->UpdateArrayDescriptorSet(rtTexturesSet, 2, statueImage->view, statueImage->sampler);
+    auto rtTexturesSet = device->CreateDescriptorSet(rtPipeline, 4);
+    device->UpdateDescriptorSet(rtTexturesSet, 0, 0, floorImage.get());
+    device->UpdateDescriptorSet(rtTexturesSet, 0, 1, floorImage.get());
+    device->UpdateDescriptorSet(rtTexturesSet, 0, 2, statueImage.get());
 
-    auto screenDescriptorSet = device->CreateDescriptorSet(static_cast<Columbus::Graphics::GraphicsPipelineVulkan*>(screenPipeline)->setLayouts[0]);
-    device->UpdateDescriptorSet(screenDescriptorSet, rtImage, true);
+    auto screenDescriptorSet = device->CreateDescriptorSet(screenPipeline, 0);
+    device->UpdateDescriptorSet(screenDescriptorSet, 0, 0, rtImage);
 
     io.DisplaySize = {1280,720};
 
@@ -764,14 +747,6 @@ int main()
 
         VkClearValue clearColor = {{{1, 0, 0, 1}}};
 
-        Columbus::BufferVulkan bufs[] = { vbuf, ubuf, nbuf };
-        uint64_t bufferOffsets[] = {0, 0, 0};
-
-        transform.Rotation *= Columbus::Quaternion({1,0,1});
-        transform.Scale = {1};
-        transform.Update();
-        auto matrix = transform.GetMatrix() * camera.GetViewProjection();
-
         struct
         {
             Vector4 camPos;
@@ -795,32 +770,12 @@ int main()
 
         cmdBuf.BeginRenderPass(renderpass, rect, swapchain->swapChainFramebuffers[imageIndex], 1, &clearColor);
 
-        auto view = camera.GetViewMatrix();
-		view.SetRow(3, Columbus::Vector4(0, 0, 0, 1));
-		view.SetColumn(3, Columbus::Vector4(0, 0, 0, 1));
-
-        // cmdBuf.BindGraphicsPipeline(skyPipeline);
-        // cmdBuf.PushConstantsGraphics(skyPipeline, 0, sizeof(view), (view * camera.GetProjectionMatrix()).M);
-        // cmdBuf.BindDescriptorSetsGraphics(skyPipeline, 0, 1, &skyDescriptorSet);
-        // cmdBuf.BindVertexBuffers(0, 1, bufs, bufferOffsets);
-        // cmdBuf.Draw(submodel.VerticesCount, 1, 0, 0);
-
-        Columbus::Matrix matrices[] = { transform.GetMatrix(), matrix };
-
-        // cmdBuf.BindGraphicsPipeline(pipeline);
-        // cmdBuf.PushConstantsGraphics(pipeline, 0, sizeof(matrices), matrices);
-        // cmdBuf.BindDescriptorSetsGraphics(pipeline, 0, 1, &descriptorSet);
-        // cmdBuf.BindVertexBuffers(0, 3, bufs, bufferOffsets);
-        // cmdBuf.Draw(submodel.VerticesCount, 1, 0, 0);
-
         cmdBuf.BindGraphicsPipeline(screenPipeline);
         cmdBuf.BindDescriptorSetsGraphics(screenPipeline, 0, 1, &screenDescriptorSet);
         cmdBuf.Draw(3, 1, 0, 0);
 
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf._CmdBuf);
         cmdBuf.EndRenderPass();
-
-        VkImageCopy info;
 
         cmdBuf.End();
 
@@ -837,10 +792,6 @@ int main()
 
     VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));
     VK_CHECK(vkDeviceWaitIdle(device->_Device));
-
-    device->DestroyBuffer(vbuf);
-    device->DestroyBuffer(ubuf);
-    device->DestroyBuffer(nbuf);
 
     vkDestroySwapchainKHR(device->_Device, swapchain->swapChain, nullptr);
     vkDestroySurfaceKHR(instance.instance, surface, nullptr);

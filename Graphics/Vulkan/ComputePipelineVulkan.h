@@ -1,18 +1,20 @@
 #include <Graphics/ComputePipeline.h>
+#include "PipelineDescriptorSetLayoutVulkan.h"
 #include <vulkan/vulkan.h>
 
 namespace Columbus
 {
 
-    class ComputePipelineVulkan : public ComputePipeline
-    {
-    public:
-        VkPipeline pipeline;
+	class ComputePipelineVulkan : public ComputePipeline
+	{
+	public:
+		VkPipeline pipeline;
 		VkPipelineLayout layout;
-		VkDescriptorSetLayout setLayouts[16]; // TODO
 
-    public:
-        ComputePipelineVulkan(const ComputePipelineDesc& Desc) : ComputePipeline(Desc) {}
-    };
+		PipelineDescriptorSetLayoutsVulkan SetLayouts;
+
+	public:
+		ComputePipelineVulkan(const ComputePipelineDesc& Desc) : ComputePipeline(Desc) {}
+	};
 
 }

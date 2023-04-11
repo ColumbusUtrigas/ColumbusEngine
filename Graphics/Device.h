@@ -55,7 +55,7 @@ namespace Columbus
 		virtual void RSSetViewports(uint32 Num, Viewport* pViewports) = 0;
 		virtual void RSSetScissorRects(uint32 Num, ScissorRect* pScissors) = 0;
 
-		virtual void SetGraphicsPipeline(Graphics::GraphicsPipeline* pPipeline) = 0;
+		virtual void SetGraphicsPipeline(GraphicsPipeline* pPipeline) = 0;
 		virtual void SetGraphicsCBV(uint32 slot, Columbus::Buffer* pBuf) = 0;
 
 		virtual void SetComputePipeline(ComputePipeline* pPipeline) = 0;
@@ -66,7 +66,7 @@ namespace Columbus
 		virtual void MapBuffer(Buffer* pBuffer, BufferMapAccess MapAccess, void*& MappedData) = 0;
 		virtual void UnmapBuffer(Buffer* pBuffer) = 0;
 
-		virtual bool CreateGraphicsPipeline(const Graphics::GraphicsPipelineDesc& Desc, Graphics::GraphicsPipeline** ppPipeline) = 0;
+		virtual bool CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, GraphicsPipeline** ppPipeline) = 0;
 		virtual bool CreateComputePipeline(const ComputePipelineDesc& Desc, ComputePipeline** ppComputePipelineState) = 0;
 
 		virtual void Dispatch(uint32 X, uint32 Y, uint32 Z) = 0;

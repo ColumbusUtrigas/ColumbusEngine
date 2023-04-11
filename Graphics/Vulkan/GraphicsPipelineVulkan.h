@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/GraphicsPipeline.h>
+#include "PipelineDescriptorSetLayoutVulkan.h"
 #include <vulkan/vulkan.h>
 
 namespace Columbus::Graphics
@@ -11,7 +12,7 @@ namespace Columbus::Graphics
 	public:
 		VkPipeline pipeline;
 		VkPipelineLayout layout;
-		VkDescriptorSetLayout setLayouts[16]; // TODO
+		PipelineDescriptorSetLayoutsVulkan SetLayouts;
 
 	public:
 		GraphicsPipelineVulkan(const GraphicsPipelineDesc& desc) : GraphicsPipeline(desc) {}

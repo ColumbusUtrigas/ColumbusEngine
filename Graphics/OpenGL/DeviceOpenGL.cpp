@@ -210,7 +210,7 @@ namespace Columbus
 		}
 	}
 
-	void DeviceOpenGL::SetGraphicsPipeline(Graphics::GraphicsPipeline* pPipeline)
+	void DeviceOpenGL::SetGraphicsPipeline(GraphicsPipeline* pPipeline)
 	{
 		_currentPipeline = pPipeline;
 		_currentLayout = pPipeline->GetDesc().layout;
@@ -333,11 +333,12 @@ namespace Columbus
 		if (ps) glAttachShader(pipeline->_prog, ps);
 		glLinkProgram(pipeline->_prog);
 
-		for (const auto& cb : Desc.cbs)
-		{
-			int id = glGetUniformBlockIndex(pipeline->_prog, cb.name);
-			glUniformBlockBinding(pipeline->_prog, id, cb.slot);
-		}
+		// TODO
+		// for (const auto& cb : Desc.cbs)
+		// {
+		// 	int id = glGetUniformBlockIndex(pipeline->_prog, cb.name);
+		// 	glUniformBlockBinding(pipeline->_prog, id, cb.slot);
+		// }
 
 		return true;
 	}
@@ -425,12 +426,13 @@ namespace Columbus
 
 		for (size_t i = 0; i < num; i++)
 		{
-			auto id = static_cast<Columbus::Graphics::GL::GraphicsPipelineGL*>(_currentPipeline)->_prog;
-			auto uniformId = glGetUniformLocation(id, desc.textures[i].name.c_str());
+			// TODO
+			// auto id = static_cast<Columbus::Graphics::GL::GraphicsPipelineGL*>(_currentPipeline)->_prog;
+			// auto uniformId = glGetUniformLocation(id, desc.textures[i].name.c_str());
 
-			glActiveTexture(GL_TEXTURE0 + desc.textures[i].slot);
-			glUniform1i(uniformId, desc.textures[i].slot);
-			static_cast<TextureOpenGL*>(ppTextures[i])->Bind();
+			// glActiveTexture(GL_TEXTURE0 + desc.textures[i].slot);
+			// glUniform1i(uniformId, desc.textures[i].slot);
+			// static_cast<TextureOpenGL*>(ppTextures[i])->Bind();
 		}
 	}
 

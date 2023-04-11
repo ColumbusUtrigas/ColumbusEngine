@@ -1,6 +1,9 @@
 #include "VulkanShaderCompiler.h"
-#include "Graphics/TypesCommon.h"
-#include "Graphics/Vulkan/TypeConversions.h"
+
+#include <Graphics/TypesCommon.h>
+#include "TypeConversions.h"
+#include "Common.h"
+
 #include <shaderc/shaderc.hpp>
 #include <Lib/SPIRV-Reflect/spirv_reflect.h>
 
@@ -107,8 +110,6 @@ namespace Columbus
 
 		for (int i = 0; i < push_constant_num; i++)
 		{
-			// assert(stage->Type == ShaderType::Vertex || stage->Type == ShaderType::Raygen);
-
 			VkPushConstantRange push;
 			push.stageFlags = vkstage;
 			push.offset = push_constants[i]->offset;
@@ -119,8 +120,7 @@ namespace Columbus
 
 		for (int i = 0; i < sets_num; i++)
 		{
-			auto bindings = new fixed_vector<VkDescriptorSetLayoutBinding, 16>(); // TODO, MEMORY LEAK
-			std::vector<VkDescriptorBindingFlags>* bindingFlags = new std::vector<VkDescriptorBindingFlags>(); // TODO: memory leaks
+			DescriptorSetInfo setInfo;
 
 			for (int b = 0; b < sets[i]->binding_count; b++)
 			{
@@ -163,32 +163,47 @@ namespace Columbus
 				// If it is an array of descriptors, we assume that it's size is variable and access is non-uniform
 				if (binding->array.dims_count > 0)
 				{
+					COLUMBUS_ASSERT(b == (sets[i]->binding_count - 1)); // Variable descriptor must be the last in the set
+
+					setInfo.VariableCountMax = binding->count;
+
 					bindingFlag |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 				}
 
-				bindings->push_back(bindingInfo);
-				bindingFlags->push_back(bindingFlag);
+				setInfo.Bindings.push_back(bindingInfo);
+				setInfo.BindingFlags.push_back(bindingFlag);
 			}
-
-			// TODO: memory leaks
-			VkDescriptorSetLayoutBindingFlagsCreateInfo* bindingFlagsInfo = new VkDescriptorSetLayoutBindingFlagsCreateInfo();
-			bindingFlagsInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-			bindingFlagsInfo->pNext = nullptr;
-			bindingFlagsInfo->bindingCount = bindingFlags->size();
-			bindingFlagsInfo->pBindingFlags = bindingFlags->data();
-
-			VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo;
-			descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			descriptorSetLayoutInfo.pNext = bindingFlagsInfo;
-			descriptorSetLayoutInfo.flags = 0;
-			descriptorSetLayoutInfo.bindingCount = bindings->size();
-			descriptorSetLayoutInfo.pBindings = bindings->data();
-
-			result.descriptorSets.push_back(descriptorSetLayoutInfo);
+			result.DescriptorSets.push_back(setInfo);
 		}
 
 		spvReflectDestroyShaderModule(&spv_module);
 
+		return result;
+	}
+
+	ShaderStageBuildResultVulkan ShaderStageBuild_VK(SPtr<ShaderStage> stage, const std::string& name, VkDevice device)
+	{
+		ShaderStageBuildResultVulkan result;
+		result.Spirv = CompileShaderStage_VK(stage, name);
+
+		VkShaderModuleCreateInfo info;
+		info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		info.pNext = nullptr;
+		info.flags = 0;
+		info.codeSize = result.Spirv.Bytecode.size() * sizeof(uint32_t);
+		info.pCode = result.Spirv.Bytecode.data();
+
+		VkShaderModule module;
+
+		VK_CHECK(vkCreateShaderModule(device, &info, nullptr, &module));
+
+		result.ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		result.ShaderStageInfo.pNext = nullptr;
+		result.ShaderStageInfo.flags = 0;
+		result.ShaderStageInfo.stage = ShaderTypeToVk(stage->Type);
+		result.ShaderStageInfo.module = module;
+		result.ShaderStageInfo.pName = stage->EntryPoint.c_str();
+		result.ShaderStageInfo.pSpecializationInfo = nullptr;
 		return result;
 	}
 
