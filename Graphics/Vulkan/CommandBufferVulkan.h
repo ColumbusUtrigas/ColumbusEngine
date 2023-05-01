@@ -28,6 +28,10 @@ namespace Columbus
 		void Begin();
 		void End();
 
+		void BeginDebugMarker(const char* Name);
+		void EndDebugMarker();
+		void InsertDebugLabel(const char* Name);
+
 		void BeginRenderPass(VkRenderPass renderPass, VkRect2D renderArea, VkFramebuffer framebuffer, uint32_t clearValuesCount, VkClearValue* clearValues);
 		void EndRenderPass();
 

@@ -6,6 +6,21 @@
 namespace Columbus
 {
 
+	enum class TextureFilter2
+	{
+		Nearest,
+		Linear,
+	};
+
+	enum class TextureAddressMode
+	{
+		Repeat,
+		MirroredRepeat,
+		ClampToEdge,
+		// ClampToBorder,
+	};
+
+	// TODO: REMOVE
 	struct TextureDesc
 	{
 		uint32 Width;
@@ -31,6 +46,43 @@ namespace Columbus
 		Texture1DArray,
 		Texture2DArray,
 		TextureCubeArray,
+	};
+
+	enum class TextureUsage
+	{
+		Sampled,
+		Storage,
+	};
+
+	struct TextureDesc2
+	{
+		// Image description
+		TextureType Type = TextureType::Texture2D;
+		TextureUsage Usage = TextureUsage::Sampled;
+		uint32 Width = 1, Height = 1, Depth = 1;
+		uint32 Mips = 1, ArrayLayers = 1;
+		uint32 Samples = 1; // MSAA samples count
+		TextureFormat Format {};
+
+		// Sampler description
+		uint32 Anisotropy = 1;
+		float MinLOD = 0.0f, MaxLOD = 1000.0f;
+		TextureAddressMode AddressU = TextureAddressMode::Repeat;
+		TextureAddressMode AddressV = TextureAddressMode::Repeat;
+		TextureAddressMode AddressW = TextureAddressMode::Repeat;
+		TextureFilter2 MinFilter = TextureFilter2::Linear;
+		TextureFilter2 MagFilter = TextureFilter2::Linear;
+		TextureFilter2 MipFilter = TextureFilter2::Linear;
+	};
+
+	class Texture2
+	{
+	private:
+		TextureDesc2 _Desc;
+	protected:
+		Texture2(const TextureDesc2& Desc) : _Desc(Desc) {}
+	public:
+		const TextureDesc2& GetDesc() const { return _Desc; }
 	};
 
 	class Texture

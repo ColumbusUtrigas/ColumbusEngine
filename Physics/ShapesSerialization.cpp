@@ -23,7 +23,7 @@ namespace Columbus
 	void PhysicsShape::BaseSerialize(JSON& J) const
 	{
 		J["Margin"] = Margin;
-		J["Type"] = std::string(GetTypename());
+		// J["Type"] = std::string(GetTypename());
 	}
 
 	void PhysicsShape::BaseDeserialize(JSON& J)

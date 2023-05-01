@@ -176,12 +176,12 @@ elseif(WIN32)
 	add_dir_to_target(${TARGET} Graphics/DX12)
 	#add_dir_to_target(${TARGET} Graphics/Vulkan)
 endif()
-add_dir_to_target_recurse(${TARGET} Editor)
+add_dir_to_target(${TARGET} Editor)
 add_dir_to_target_recurse(${TARGET} Game)
 
 #add_dir_to_target_recurse(${TARGET} Graphics) #OpenGL is included
 add_dir_to_target(${TARGET} Graphics)
-add_dir_to_target(${TARGET} Graphics/OpenGL)
+add_dir_to_target(${TARGET} Graphics/OpenGL) # goodbye my friend
 add_dir_to_target(${TARGET} Graphics/Vulkan)
 add_dir_to_target_recurse(${TARGET} Graphics/Particles)
 add_dir_to_target(${TARGET} Graphics/Postprocess)

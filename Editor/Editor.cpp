@@ -97,14 +97,14 @@ namespace Columbus::Editor
 					scene.Save();
 			};
 			StaticMenuItems[0]["Save As"].onExecute = []() { SceneLoader.Open(EditorFileDialog::Type_Save); };
-			StaticMenuItems[1]["Scene"].selected = &panelScene.Opened;
-			StaticMenuItems[1]["Hierarchy"].selected = &panelHierarchy.Opened;
-			StaticMenuItems[1]["Render Settings"].selected = &panelRenderSettings.Opened;
-			StaticMenuItems[1]["Inspector"].selected = &panelInspector.Opened;
-			StaticMenuItems[1]["Profiler"].selected = &panelProfiler.Opened;
-			StaticMenuItems[1]["Console"].selected = &panelConsole.Opened;
-			StaticMenuItems[1]["Assets"].selected = &panelAssets.Opened;
-			StaticMenuItems[1]["Texture"].selected = &panelTexture->Opened;
+			// StaticMenuItems[1]["Scene"].selected = &panelScene.Opened;
+			// StaticMenuItems[1]["Hierarchy"].selected = &panelHierarchy.Opened;
+			// StaticMenuItems[1]["Render Settings"].selected = &panelRenderSettings.Opened;
+			// StaticMenuItems[1]["Inspector"].selected = &panelInspector.Opened;
+			// StaticMenuItems[1]["Profiler"].selected = &panelProfiler.Opened;
+			// StaticMenuItems[1]["Console"].selected = &panelConsole.Opened;
+			// StaticMenuItems[1]["Assets"].selected = &panelAssets.Opened;
+			// StaticMenuItems[1]["Texture"].selected = &panelTexture->Opened;
 			StaticMenuItems[2]["Add Empty"].onExecute = [&scene]() { scene.AddEmpty(); };
 
 			for (auto& item : StaticMenuItems)
@@ -197,121 +197,121 @@ namespace Columbus::Editor
 	{
 		Render.SetIsEditor(true);
 
-		if (panelScene.IsHover())
-		{
-			wheel = gInput.GetMouseWheel().Y * 5;
-		}
+// 		if (panelScene.IsHover())
+// 		{
+// 			wheel = gInput.GetMouseWheel().Y * 5;
+// 		}
 
-		if (gInput.GetMouseButton(1).State)
-		{
-#if COLUMBUS_EDITOR
-			if (panelScene.IsHover())
-			{
-				wasLooking = true;
-			}
-#else`
-			wasLooking = true;
-#endif
+// 		if (gInput.GetMouseButton(1).State)
+// 		{
+// #if COLUMBUS_EDITOR
+// 			if (panelScene.IsHover())
+// 			{
+// 				wasLooking = true;
+// 			}
+// #else`
+// 			wasLooking = true;
+// #endif
 
-			if (wasLooking)
-			{
-				camera.Pos += camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('W');
-				camera.Pos -= camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('S');
-				camera.Pos -= camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('A');
-				camera.Pos += camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('D');
-//				camera.Pos -= camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SHIFT);
-//				camera.Pos += camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SPACE);
+// 			if (wasLooking)
+// 			{
+// 				camera.Pos += camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('W');
+// 				camera.Pos -= camera.Direction() * RedrawTime * cameraSpeed * gInput.GetKey('S');
+// 				camera.Pos -= camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('A');
+// 				camera.Pos += camera.Right() * RedrawTime * cameraSpeed * gInput.GetKey('D');
+// //				camera.Pos -= camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SHIFT);
+// //				camera.Pos += camera.Up() * RedrawTime * cameraSpeed * gInput.GetKey(VK_SPACE);
 
-				camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('Q');
-				camera.Rot += Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('E');
+// 				camera.Rot -= Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('Q');
+// 				camera.Rot += Vector3(0, 0, 120 * RedrawTime) * gInput.GetKey('E');
 
-				Vector2 deltaMouse = gInput.GetMouseMovement();
-				camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
-			}
-		}
-		else
-		{
-			wasLooking = false;
-		}
+// 				Vector2 deltaMouse = gInput.GetMouseMovement();
+// 				camera.Rot += Vector3(deltaMouse.Y, -deltaMouse.X, 0) * 0.3f;
+// 			}
+// 		}
+// 		else
+// 		{
+// 			wasLooking = false;
+// 		}
 
-		if (panelScene.IsHover() && gInput.GetMouseButton(2).State)
-		{
-			auto deltaMouse = gInput.GetMouseMovement();
-			camera.Pos -= camera.Right() * deltaMouse.X * 0.1f;
-			camera.Pos += camera.Up() * deltaMouse.Y * 0.1f;
-			ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
-		}
+// 		if (panelScene.IsHover() && gInput.GetMouseButton(2).State)
+// 		{
+// 			auto deltaMouse = gInput.GetMouseMovement();
+// 			camera.Pos -= camera.Right() * deltaMouse.X * 0.1f;
+// 			camera.Pos += camera.Up() * deltaMouse.Y * 0.1f;
+// 			ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+// 		}
 
-		camera.Pos += camera.Direction() * wheel;
-		//wheel -= wheel * 3 * RedrawTime;
-		//if (abs(wheel) <= 0.2) wheel = 0.0f;
+// 		camera.Pos += camera.Direction() * wheel;
+// 		//wheel -= wheel * 3 * RedrawTime;
+// 		//if (abs(wheel) <= 0.2) wheel = 0.0f;
 
-		DrawMainLayout(scene);
+// 		DrawMainLayout(scene);
 
-		panelScene.SetScene(&scene);
-		panelScene.SetRenderer(&Render);
-		//panelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
-		panelHierarchy.SetScene(&scene);
-		Size = panelScene.GetSize();
-		panelRenderSettings.SetRenderer(&Render);
-		panelInspector.SetScene(&scene);
-		panelInspector.SetInspectableObject(panelHierarchy.GetCurrentObject());
-		panelScene.SetPickedObject(panelHierarchy.GetCurrentObject());
-		panelProfiler.SetRedrawTime(RedrawTime);
-		panelAssets.SetTexturePreview(panelTexture);
+// 		panelScene.SetScene(&scene);
+// 		panelScene.SetRenderer(&Render);
+// 		//panelScene.SetFramebufferTexture(Render.GetFramebufferTexture());
+// 		panelHierarchy.SetScene(&scene);
+// 		Size = panelScene.GetSize();
+// 		panelRenderSettings.SetRenderer(&Render);
+// 		panelInspector.SetScene(&scene);
+// 		panelInspector.SetInspectableObject(panelHierarchy.GetCurrentObject());
+// 		panelScene.SetPickedObject(panelHierarchy.GetCurrentObject());
+// 		panelProfiler.SetRedrawTime(RedrawTime);
+// 		panelAssets.SetTexturePreview(panelTexture);
 
-		panelScene.Draw();
-		panelInspector.Draw(); // Inspector should be before hierarchy
-		panelHierarchy.Draw(); // because in hierarchy there are deleting objects
-		panelRenderSettings.Draw();
-		panelProfiler.Draw();
-		panelConsole.Draw();
-		panelAssets.Draw();
-		panelTexture->Draw();
+// 		panelScene.Draw();
+// 		panelInspector.Draw(); // Inspector should be before hierarchy
+// 		panelHierarchy.Draw(); // because in hierarchy there are deleting objects
+// 		panelRenderSettings.Draw();
+// 		panelProfiler.Draw();
+// 		panelConsole.Draw();
+// 		panelAssets.Draw();
+// 		panelTexture->Draw();
 
-		ResourcesViewerTexture::Draw(&scene);
-		ResourcesViewerShader::Draw(&scene);
-		ResourcesViewerMaterial::Draw(scene);
-		ResourcesViewerMesh::Draw(&scene);
+// 		ResourcesViewerTexture::Draw(&scene);
+// 		ResourcesViewerShader::Draw(&scene);
+// 		ResourcesViewerMaterial::Draw(scene);
+// 		ResourcesViewerMesh::Draw(&scene);
 
-		Render.DrawGrid = settings.sceneView.grid;
-		Render.DrawIcons = settings.sceneView.icons;
-		Render.DrawGizmo = settings.sceneView.gizmo;
-		Graphics::gDebugRender._enabled = settings.sceneView.gizmo;
-		scene.TimeFactor = settings.sceneView.timeFactor;
+// 		Render.DrawGrid = settings.sceneView.grid;
+// 		Render.DrawIcons = settings.sceneView.icons;
+// 		Render.DrawGizmo = settings.sceneView.gizmo;
+// 		Graphics::gDebugRender._enabled = settings.sceneView.gizmo;
+// 		scene.TimeFactor = settings.sceneView.timeFactor;
 
-		if (SkyboxLoader.Draw("Load Skybox"))
-		{
-			SmartPointer<Texture> Tex(gDevice->CreateTexture());
-			auto Selected = SkyboxLoader.GetSelected();
-			if (Selected.size() == 1)
-			{
-				if (Tex->Load(Selected[0].Path.c_str()))
-				{
-					delete scene.Sky;
-					auto Name = Filesystem::RelativePath(Selected[0].Path, Filesystem::GetCurrent());
-					scene.SkyPath = Name;
-					scene.Sky = new Skybox(Tex.Get());
-					Log::Success("Skybox loaded: %s", Name.c_str());
-				}
+// 		if (SkyboxLoader.Draw("Load Skybox"))
+// 		{
+// 			SmartPointer<Texture> Tex(gDevice->CreateTexture());
+// 			auto Selected = SkyboxLoader.GetSelected();
+// 			if (Selected.size() == 1)
+// 			{
+// 				if (Tex->Load(Selected[0].Path.c_str()))
+// 				{
+// 					delete scene.Sky;
+// 					auto Name = Filesystem::RelativePath(Selected[0].Path, Filesystem::GetCurrent());
+// 					scene.SkyPath = Name;
+// 					scene.Sky = new Skybox(Tex.Get());
+// 					Log::Success("Skybox loaded: %s", Name.c_str());
+// 				}
 
-				SkyboxLoader.Close();
-			}
-		}
+// 				SkyboxLoader.Close();
+// 			}
+// 		}
 
-		if (SceneLoader.Draw("Load Scene"))
-		{
-			auto Selected = SceneLoader.GetSelected();
-			if (Selected.size() == 1)
-			{
-				if (SceneLoader.GetType() == EditorFileDialog::Type_Open)
-					scene.Load(Selected[0].Path.c_str());
+// 		if (SceneLoader.Draw("Load Scene"))
+// 		{
+// 			auto Selected = SceneLoader.GetSelected();
+// 			if (Selected.size() == 1)
+// 			{
+// 				if (SceneLoader.GetType() == EditorFileDialog::Type_Open)
+// 					scene.Load(Selected[0].Path.c_str());
 
-				if (SceneLoader.GetType() == EditorFileDialog::Type_Save)
-					scene.Save(Selected[0].Path.c_str());
-			}
-			SceneLoader.Close();
-		}
+// 				if (SceneLoader.GetType() == EditorFileDialog::Type_Save)
+// 					scene.Save(Selected[0].Path.c_str());
+// 			}
+// 			SceneLoader.Close();
+// 		}
 	}
 
 	Editor::~Editor() {}

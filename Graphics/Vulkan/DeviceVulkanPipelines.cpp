@@ -13,7 +13,7 @@ namespace Columbus
 	{
 		auto result = new ComputePipelineVulkan(Desc);
 
-		ShaderStageBuildResultVulkan ComputeStage = ShaderStageBuild_VK(Desc.CS, "NONAME FIXME", _Device);
+		ShaderStageBuildResultVulkan ComputeStage = ShaderStageBuild_VK(Desc.CS, Desc.Name.c_str(), _Device);
 		std::vector<ShaderStageBuildResultVulkan> CompiledStages = { ComputeStage };
 
 		VkPipelineShaderStageCreateInfo stages[] = {
@@ -33,6 +33,11 @@ namespace Columbus
 
 		VK_CHECK(vkCreateComputePipelines(_Device, nullptr, 1, &info, nullptr, &result->pipeline));
 
+		if (!Desc.Name.empty())
+		{
+			SetDebugName(result, Desc.Name.c_str());
+		}
+
 		return result;
 	}
 
@@ -44,7 +49,7 @@ namespace Columbus
 		std::vector<ShaderStageBuildResultVulkan> compiledStages = { vs, ps };
 		VkPipelineShaderStageCreateInfo stages[] = { vs.ShaderStageInfo, ps.ShaderStageInfo };
 
-		auto pipeline = new Graphics::GraphicsPipelineVulkan(Desc);
+		auto pipeline = new GraphicsPipelineVulkan(Desc);
 
 		fixed_vector<VkVertexInputBindingDescription, 16> inputBindings;
 		for (int i = 0; i < Desc.layout.Elements.size(); i++)
@@ -220,6 +225,11 @@ namespace Columbus
 
 		VK_CHECK(vkCreateGraphicsPipelines(_Device, nullptr, 1, &info, nullptr, &pipeline->pipeline));
 
+		if (!Desc.Name.empty())
+		{
+			SetDebugName(pipeline, Desc.Name.c_str());
+		}
+
 		return pipeline;
 	}
 
@@ -227,9 +237,9 @@ namespace Columbus
 	{
 		auto result = new RayTracingPipelineVulkan(Desc);
 
-		ShaderStageBuildResultVulkan GenStage = ShaderStageBuild_VK(Desc.RayGen, "NONAME FIXME", _Device);
-		ShaderStageBuildResultVulkan MissStage = ShaderStageBuild_VK(Desc.Miss, "NONAME FIXME", _Device);
-		ShaderStageBuildResultVulkan ClosestHitStage = ShaderStageBuild_VK(Desc.ClosestHit, "NONAME FIXME", _Device);
+		ShaderStageBuildResultVulkan GenStage = ShaderStageBuild_VK(Desc.RayGen, Desc.Name.c_str(), _Device);
+		ShaderStageBuildResultVulkan MissStage = ShaderStageBuild_VK(Desc.Miss, Desc.Name.c_str(), _Device);
+		ShaderStageBuildResultVulkan ClosestHitStage = ShaderStageBuild_VK(Desc.ClosestHit, Desc.Name.c_str(), _Device);
 		std::vector<ShaderStageBuildResultVulkan> compiledStages = { GenStage, MissStage, ClosestHitStage };
 
 		VkPipelineShaderStageCreateInfo stages[] = {
@@ -327,6 +337,11 @@ namespace Columbus
 		result->MissRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(result->MissSBT), handleSizeAligned, handleSizeAligned);
 		result->HitRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(result->HitSBT), handleSizeAligned, handleSizeAligned);
 		result->CallableRegionSBT = {};
+
+		if (!Desc.Name.empty())
+		{
+			SetDebugName(result, Desc.Name.c_str());
+		}
 
 		return result;
 	}

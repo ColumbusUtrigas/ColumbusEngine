@@ -2,6 +2,7 @@
 
 #include <Graphics/Types.h>
 #include <Core/SmartPointer.h>
+#include <string>
 
 namespace Columbus
 {
@@ -9,6 +10,7 @@ namespace Columbus
 	struct ComputePipelineDesc
 	{
 		SPtr<ShaderStage> CS;
+		std::string Name;
 	};
 
 	class ComputePipeline

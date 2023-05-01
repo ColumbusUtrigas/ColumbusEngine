@@ -64,14 +64,99 @@ namespace Columbus
 		}
 	}
 
+	static VkImageCreateFlags TextureTypeToImageFlagsVk(TextureType type)
+	{
+		switch (type)
+		{
+			case TextureType::TextureCubeArray:
+			case TextureType::TextureCube: return VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+			case TextureType::Texture1D:
+			case TextureType::Texture2D:
+			case TextureType::Texture3D:
+			case TextureType::Texture1DArray:
+			case TextureType::Texture2DArray: return 0;
+
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
 	static VkFormat TextureFormatToVK(TextureFormat format)
 	{
 		switch (format)
 		{
 			case TextureFormat::RGB8: return VK_FORMAT_R8G8B8_UNORM;
 			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_UNORM;
+			case TextureFormat::RGBA16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
 			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
 			case TextureFormat::DXT5: return VK_FORMAT_BC5_UNORM_BLOCK;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkImageUsageFlags TextureUsageToImageUsageVk(TextureUsage usage)
+	{
+		switch (usage)
+		{
+			case TextureUsage::Sampled: return VK_IMAGE_USAGE_SAMPLED_BIT;
+			case TextureUsage::Storage: return VK_IMAGE_USAGE_STORAGE_BIT;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkDescriptorType TextureUsageToVkDescriptorType(TextureUsage usage)
+	{
+		switch (usage)
+		{
+			case TextureUsage::Sampled: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			case TextureUsage::Storage: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkSamplerAddressMode TextureAddressModeToVk(TextureAddressMode mode)
+	{
+		switch (mode)
+		{
+			case TextureAddressMode::Repeat:         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			case TextureAddressMode::MirroredRepeat: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+			case TextureAddressMode::ClampToEdge:    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkFilter TextureFilterToVk(TextureFilter2 filter)
+	{
+		switch (filter)
+		{
+			case TextureFilter2::Nearest: return VK_FILTER_NEAREST;
+			case TextureFilter2::Linear:  return VK_FILTER_LINEAR;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkSamplerMipmapMode TextureFilterMipToVk(TextureFilter2 filter)
+	{
+		switch (filter)
+		{
+			case TextureFilter2::Nearest: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+			case TextureFilter2::Linear:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkSampleCountFlagBits SampleCountToVk(uint32 samples)
+	{
+		switch (samples)
+		{
+			case 1:  return VK_SAMPLE_COUNT_1_BIT;
+			case 2:  return VK_SAMPLE_COUNT_2_BIT;
+			case 4:  return VK_SAMPLE_COUNT_4_BIT;
+			case 8:  return VK_SAMPLE_COUNT_8_BIT;
+			case 16: return VK_SAMPLE_COUNT_16_BIT;
+			case 32: return VK_SAMPLE_COUNT_32_BIT;
+			case 64: return VK_SAMPLE_COUNT_64_BIT;
+			default: COLUMBUS_ASSERT(false);
 		}
 	}
 
@@ -86,6 +171,7 @@ namespace Columbus
 			case BufferType::AccelerationStructureStorage: return VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
 			case BufferType::AccelerationStructureInput: return VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 			case BufferType::ShaderBindingTable: return VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+			default: COLUMBUS_ASSERT(false);
 		}
 	}
 

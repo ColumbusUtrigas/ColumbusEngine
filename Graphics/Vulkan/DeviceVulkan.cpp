@@ -1,5 +1,6 @@
 #include "CommandBufferVulkan.h"
 
+#include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
 
@@ -7,6 +8,7 @@
 #include "GraphicsPipelineVulkan.h"
 #include "RayTracingPipelineVulkan.h"
 #include "BufferVulkan.h"
+#include "TextureVulkan.h"
 
 #include <cstring>
 #include <vulkan/vulkan.h>
@@ -117,7 +119,7 @@ namespace Columbus
 
 	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index)
 	{
-		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline);
+		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(Pipeline);
 
 		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
 	}
@@ -151,12 +153,14 @@ namespace Columbus
 		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
 	}
 
-	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const TextureVulkan* Texture)
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture)
 	{
+		auto vktex = static_cast<const TextureVulkan*>(Texture);
+
 		VkDescriptorImageInfo imageInfo;
-		imageInfo.imageLayout = Texture->layout;
-		imageInfo.imageView = Texture->view;
-		imageInfo.sampler = Texture->sampler;
+		imageInfo.imageLayout = vktex->_Layout;
+		imageInfo.imageView = vktex->_View;
+		imageInfo.sampler = vktex->_Sampler;
 
 		VkWriteDescriptorSet write;
 		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -165,7 +169,7 @@ namespace Columbus
 		write.dstBinding = BindingId;
 		write.dstArrayElement = ArrayId;
 		write.descriptorCount = 1;
-		write.descriptorType = (Texture->_Desc.Usage & TextureVulkanUsageStorage) ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		write.descriptorType = TextureUsageToVkDescriptorType(Texture->GetDesc().Usage);
 		write.pImageInfo = &imageInfo;
 		write.pBufferInfo = nullptr;
 		write.pTexelBufferView = nullptr;
@@ -309,118 +313,65 @@ namespace Columbus
 		);
 	}
 
-	TextureVulkan* DeviceVulkan::CreateTexture(const TextureVulkanDesc& Desc)
+	Texture2* DeviceVulkan::CreateTexture(const TextureDesc2& Desc)
 	{
-		auto result = new TextureVulkan(Desc);
-		result->_Device = _Device;
-
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.pNext = NULL;
-		imageInfo.flags = 0;
-		imageInfo.imageType = TextureTypeToImageTypeVk(Desc.Type);
-		imageInfo.format = TextureFormatToVK(Desc.Format);
-		imageInfo.extent.width = Desc.Width;
-		imageInfo.extent.height = Desc.Height;
-		imageInfo.extent.depth = Desc.Depth;
-		imageInfo.mipLevels = Desc.Mips;
-		imageInfo.arrayLayers = Desc.ArrayLayers;
-		imageInfo.samples = (VkSampleCountFlagBits)Desc.Samples; // TODO
-		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.usage = Desc.Usage;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		imageInfo.queueFamilyIndexCount = 1;
-		imageInfo.pQueueFamilyIndices = &_FamilyIndex;
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-		VK_CHECK(vmaCreateImage(_Allocator, &imageInfo, &vmaallocInfo, &result->image, &result->allocation, nullptr));
+		auto result = _CreateTexture(Desc);
 
 		auto copyCmdBuf = CreateCommandBuffer();
 		copyCmdBuf.Reset();
 		copyCmdBuf.Begin();
 
+		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		if (Desc.Usage == TextureUsage::Sampled)
+		{
+			newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		} else if (Desc.Usage == TextureUsage::Storage)
+		{
+			newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		}
+
 		TransitionImageLayout(copyCmdBuf._CmdBuf,
-			result->image,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL,
-			0, VK_ACCESS_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+				result->_Image, result->_Layout, newLayout,
+			0, 0,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			1
 		);
-		result->layout = VK_IMAGE_LAYOUT_GENERAL;
+
+		result->_Layout = newLayout;
 
 		copyCmdBuf.End();
 		Submit(copyCmdBuf);
 		QueueWaitIdle();
 
-		VkImageViewCreateInfo viewInfo;
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.pNext = nullptr;
-		viewInfo.flags = 0;
-		viewInfo.image = result->image;
-		viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
-		viewInfo.format = TextureFormatToVK(Desc.Format);
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = Desc.Mips;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
-		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->view));
-
 		return result;
 	}
 
-	SPtr<TextureVulkan> DeviceVulkan::CreateTexture(const Image& image)
+	Texture2* DeviceVulkan::CreateTexture(const Image& Image)
 	{
-		auto texture = std::make_shared<TextureVulkan>(TextureVulkanDesc());
-		texture->_Device = _Device;
+		TextureDesc2 desc;
+		desc.Type = TextureType::Texture2D;
+		desc.Usage = TextureUsage::Sampled;
+		desc.Width = Image.GetWidth();
+		desc.Height = Image.GetHeight();
+		// desc.Depth = Image.GetDepth();
+		desc.Depth = 1;
+		desc.Mips = 1;
+		desc.Samples = 1;
+		desc.Format = Image.GetFormat();
+		auto result = _CreateTexture(desc);
 
-		bool isCube = image.GetType() == Columbus::Image::Type::ImageCube;
-		int size = isCube ? 6 : 1;
-
+		auto size = 1;
+		
 		StagingBufferVulkan staging;
-
-		staging = CreateStagingBufferVulkanInternal(_Allocator, image.GetSize(0) * size, image.GetData());
-
-		VkImageCreateInfo imageInfo = {};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.pNext = NULL;
-		imageInfo.flags = isCube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.format = TextureFormatToVK(image.GetFormat());
-		imageInfo.extent.width = image.GetWidth();
-		imageInfo.extent.height = image.GetHeight();
-		imageInfo.extent.depth = 1;
-		imageInfo.mipLevels = 1;
-		imageInfo.arrayLayers = size;
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		imageInfo.queueFamilyIndexCount = 1;
-		imageInfo.pQueueFamilyIndices = &_FamilyIndex;
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-
-		VK_CHECK(vmaCreateImage(_Allocator, &imageInfo, &vmaallocInfo,
-				&texture->image,
-				&texture->allocation,
-				nullptr));
+		staging = CreateStagingBufferVulkanInternal(_Allocator, Image.GetSize(0) * size, Image.GetData());
 
 		auto copyCmdBuf = CreateCommandBuffer();
 		copyCmdBuf.Reset();
 		copyCmdBuf.Begin();
 
 		TransitionImageLayout(copyCmdBuf._CmdBuf,
-			texture->image,
+			result->_Image,
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			0, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -432,7 +383,7 @@ namespace Columbus
 
 		for (int i = 0; i < size; i++)
 		{
-			regions[i].bufferOffset = image.GetOffset(i, 0);
+			regions[i].bufferOffset = Image.GetOffset(i, 0);
 			regions[i].bufferRowLength = 0;
 			regions[i].bufferImageHeight = 0;
 			regions[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -440,87 +391,64 @@ namespace Columbus
 			regions[i].imageSubresource.baseArrayLayer = i;
 			regions[i].imageSubresource.layerCount = 1;
 			regions[i].imageOffset = {0, 0, 0};
-			regions[i].imageExtent = { image.GetWidth(), image.GetHeight(), 1 };
+			regions[i].imageExtent = { Image.GetWidth(), Image.GetHeight(), 1 };
 		}
 
 		vkCmdCopyBufferToImage(copyCmdBuf._CmdBuf,
 			staging.Buffer,
-			texture->image,
+			result->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			size,
 			regions
 		);
 
 		TransitionImageLayout(copyCmdBuf._CmdBuf,
-			texture->image,
+			result->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 			size
 		);
-		texture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		result->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		copyCmdBuf.End();
-		VkSubmitInfo submit_info;
-		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submit_info.pNext = nullptr;
-		submit_info.waitSemaphoreCount = 0;
-		submit_info.pWaitSemaphores = nullptr;
-		submit_info.pWaitDstStageMask = 0;
-		submit_info.commandBufferCount = 1;
-		submit_info.pCommandBuffers = &copyCmdBuf._CmdBuf;
-		submit_info.signalSemaphoreCount = 0;
-		submit_info.pSignalSemaphores = nullptr;
+		Submit(copyCmdBuf);
+		QueueWaitIdle();
 
-		VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
-		VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
+		return result;
+	}
 
-		// vmaDestroyBuffer(_Allocator, staging.Buffer, staging.Allocation);
-
-		VkImageViewCreateInfo viewInfo;
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.pNext = nullptr;
-		viewInfo.flags = 0;
-		viewInfo.image = texture->image;
-		viewInfo.viewType = isCube ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = TextureFormatToVK(image.GetFormat());
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = size;
-		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &texture->view));
-
-		VkSamplerCreateInfo samplerInfo;
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.pNext = nullptr;
-		samplerInfo.flags = 0;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		// samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		// samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		// samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.mipLodBias = 0;
-		samplerInfo.anisotropyEnable = false;
-		samplerInfo.maxAnisotropy = 1;
-		samplerInfo.compareEnable = false;
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.minLod = 0;
-		samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
-		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-		samplerInfo.unnormalizedCoordinates = false;
-		VK_CHECK(vkCreateSampler(_Device, &samplerInfo, nullptr, &texture->sampler));
-
-		return texture;
+	void DeviceVulkan::SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name)
+	{
+		_SetDebugName((uint64_t)CmdBuf->_CmdBuf, VK_OBJECT_TYPE_COMMAND_BUFFER, Name);
+	}
+	void DeviceVulkan::SetDebugName(const ComputePipeline* Pipeline, const char* Name)
+	{
+		_SetDebugName((uint64_t)static_cast<const ComputePipelineVulkan*>(Pipeline)->pipeline, VK_OBJECT_TYPE_PIPELINE, Name);
+	}
+	void DeviceVulkan::SetDebugName(const GraphicsPipeline* Pipeline, const char* Name)
+	{
+		_SetDebugName((uint64_t)static_cast<const GraphicsPipelineVulkan*>(Pipeline)->pipeline, VK_OBJECT_TYPE_PIPELINE, Name);
+	}
+	void DeviceVulkan::SetDebugName(const RayTracingPipeline* Pipeline, const char* Name)
+	{
+		_SetDebugName((uint64_t)static_cast<const RayTracingPipelineVulkan*>(Pipeline)->pipeline, VK_OBJECT_TYPE_PIPELINE, Name);
+	}
+	void DeviceVulkan::SetDebugName(const Buffer* Buffer, const char* Name)
+	{
+		_SetDebugName((uint64_t)static_cast<const BufferVulkan*>(Buffer)->_Buffer, VK_OBJECT_TYPE_BUFFER, Name);
+	}
+	void DeviceVulkan::SetDebugName(const Texture2* Texture, const char* Name)
+	{
+		auto vktex = static_cast<const TextureVulkan*>(Texture);
+		_SetDebugName((uint64_t)vktex->_Image, VK_OBJECT_TYPE_IMAGE, Name);
+		_SetDebugName((uint64_t)vktex->_View, VK_OBJECT_TYPE_IMAGE_VIEW, Name);
+		_SetDebugName((uint64_t)vktex->_Sampler, VK_OBJECT_TYPE_SAMPLER, Name);
+	}
+	void DeviceVulkan::SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name)
+	{
+		_SetDebugName((uint64_t)static_cast<const AccelerationStructureVulkan*>(AccelerationStructure)->_Handle, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, Name);
 	}
 
 	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts)
@@ -608,6 +536,88 @@ namespace Columbus
 		VkDescriptorSet result;
 
 		VK_CHECK(vkAllocateDescriptorSets(_Device, &descriptorSetInfo, &result));
+
+		return result;
+	}
+
+	void DeviceVulkan::_SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name)
+	{
+		VkDebugUtilsObjectNameInfoEXT nameInfo;
+		nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+		nameInfo.pNext = nullptr;
+		nameInfo.objectType = Type;
+		nameInfo.objectHandle = ObjectHandle;
+		nameInfo.pObjectName = Name;
+		VK_CHECK(VkFunctions.vkSetDebugUtilsObjectName(_Device, &nameInfo));
+	}
+
+	TextureVulkan* DeviceVulkan::_CreateTexture(const TextureDesc2& Desc)
+	{
+		auto result = new TextureVulkan(Desc);
+
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.pNext = NULL;
+		imageInfo.flags = TextureTypeToImageFlagsVk(Desc.Type);
+		imageInfo.imageType = TextureTypeToImageTypeVk(Desc.Type);
+		imageInfo.format = TextureFormatToVK(Desc.Format);
+		imageInfo.extent.width = Desc.Width;
+		imageInfo.extent.height = Desc.Height;
+		imageInfo.extent.depth = Desc.Depth;
+		imageInfo.mipLevels = Desc.Mips;
+		imageInfo.arrayLayers = Desc.ArrayLayers;
+		imageInfo.samples = SampleCountToVk(Desc.Samples);
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.usage = TextureUsageToImageUsageVk(Desc.Usage) | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // TODO
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.queueFamilyIndexCount = 1;
+		imageInfo.pQueueFamilyIndices = &_FamilyIndex;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		VmaAllocationCreateInfo vmaallocInfo = {};
+		vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+		VK_CHECK(vmaCreateImage(_Allocator, &imageInfo, &vmaallocInfo, &result->_Image, &result->_Allocation, nullptr));
+
+		result->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		VkImageViewCreateInfo viewInfo;
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.pNext = nullptr;
+		viewInfo.flags = 0;
+		viewInfo.image = result->_Image;
+		viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
+		viewInfo.format = TextureFormatToVK(Desc.Format);
+		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // TODO
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = Desc.Mips;
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_View));
+
+		VkSamplerCreateInfo samplerInfo;
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.pNext = nullptr;
+		samplerInfo.flags = 0;
+		samplerInfo.magFilter = TextureFilterToVk(Desc.MagFilter);
+		samplerInfo.minFilter = TextureFilterToVk(Desc.MinFilter);
+		samplerInfo.mipmapMode = TextureFilterMipToVk(Desc.MipFilter);
+		samplerInfo.addressModeU = TextureAddressModeToVk(Desc.AddressU);
+		samplerInfo.addressModeV = TextureAddressModeToVk(Desc.AddressV);
+		samplerInfo.addressModeW = TextureAddressModeToVk(Desc.AddressW);
+		samplerInfo.mipLodBias = 0;
+		samplerInfo.anisotropyEnable = Desc.Anisotropy > 1;
+		samplerInfo.maxAnisotropy = Desc.Anisotropy;
+		samplerInfo.compareEnable = false; // TODO
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS; // TODO
+		samplerInfo.minLod = Desc.MinLOD;
+		samplerInfo.maxLod = Desc.MaxLOD;
+		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		samplerInfo.unnormalizedCoordinates = false;
+		VK_CHECK(vkCreateSampler(_Device, &samplerInfo, nullptr, &result->_Sampler));
 
 		return result;
 	}

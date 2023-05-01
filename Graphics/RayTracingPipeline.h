@@ -2,6 +2,7 @@
 
 #include <Graphics/Types.h>
 #include <Core/SmartPointer.h>
+#include <string>
 
 namespace Columbus
 {
@@ -13,6 +14,8 @@ namespace Columbus
         SPtr<ShaderStage> ClosestHit;
 
         uint32_t MaxRecursionDepth;
+
+        std::string Name;
     };
 
     class RayTracingPipeline

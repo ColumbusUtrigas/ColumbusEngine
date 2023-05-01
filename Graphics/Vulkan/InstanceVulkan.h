@@ -6,9 +6,8 @@
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
 #include <Core/Platform.h>
+#include <Core/Stacktrace.h>
 #include <vector>
-#include <iostream>
-#include <vulkan/vulkan_core.h>
 
 #define VULKAN_DEBUG 1
 
@@ -18,12 +17,13 @@ namespace Columbus
 	class InstanceVulkan
 	{
 	private:
-		PFN_vkCreateDebugReportCallbackEXT vk_vkCreateDebugReportCallbackEXT;
-		PFN_vkDestroyDebugReportCallbackEXT vk_vkDestroyDebugReportCallbackEXT;
+		PFN_vkCreateDebugUtilsMessengerEXT vk_vkCreateDebugUtilsMessengerEXT;
+		PFN_vkDestroyDebugUtilsMessengerEXT vk_vkDestroyDebugUtilsMessengerEXT;
+
+		VkDebugUtilsMessengerEXT _DebugUtilsMessenger;
 
 	public:
 		VkInstance instance;
-		VkDebugReportCallbackEXT _DebugCallback;
 	public:
 		InstanceVulkan()
 		{
@@ -40,9 +40,8 @@ namespace Columbus
 			std::vector<const char*> extensions;
 
 			#if 1 // ENGINE_DEBUG, my engine is in permanent debug :D
-				//validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 				validationLayers.push_back("VK_LAYER_KHRONOS_validation");
-				extensions.push_back("VK_EXT_debug_report");
+				extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 			#endif
 
 			extensions.push_back("VK_KHR_surface");
@@ -68,48 +67,56 @@ namespace Columbus
 				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan instance");
 			}
 
-			// setup validation layers
-			#if VULKAN_DEBUG // ENGINE_DEBUG
-				vk_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-				vk_vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+			// setup debug messages
+			#if VULKAN_DEBUG
+				vk_vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+				vk_vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 
-				VkDebugReportCallbackCreateInfoEXT debug_callback_info;
+				VkDebugUtilsMessengerCreateInfoEXT messengerInfo;
+				messengerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+				messengerInfo.pNext = nullptr;
+				messengerInfo.flags = 0;
+				messengerInfo.messageSeverity = 
+					VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+					VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+					VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+					VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+				messengerInfo.messageType = 
+					VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+					VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+					VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+					VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+				messengerInfo.pUserData = nullptr;
 
-				debug_callback_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-				debug_callback_info.pNext = nullptr;
-				debug_callback_info.flags =
-				//VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-				VK_DEBUG_REPORT_WARNING_BIT_EXT |
-				VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-				VK_DEBUG_REPORT_ERROR_BIT_EXT |
-				VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-
-				debug_callback_info.pfnCallback = [](
-					VkDebugReportFlagsEXT    flags,
-					VkDebugReportObjectTypeEXT    objectType,
-					uint64_t        object,
-					size_t          location,
-					int32_t         messageCode,
-					const char*     pLayerPrefix,
-					const char*     pMessage,
-					void*           pUserData) -> VkBool32
+				messengerInfo.pfnUserCallback = [](
+					VkDebugUtilsMessageSeverityFlagBitsEXT      severity,
+					VkDebugUtilsMessageTypeFlagsEXT             types,
+					const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+					void*                                       pUserData) -> VkBool32
 				{
-					if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) Log::Message("{%s} %s", pLayerPrefix, pMessage);
-					if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) Log::Warning("{%s} %s", pLayerPrefix, pMessage);
-					if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) Log::Warning("PERFORMANCE {%s} %s", pLayerPrefix, pMessage);
-					if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) Log::Message("DEBUG {%s} %s", pLayerPrefix, pMessage);
-					if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+					const char* prefix = "";
+					if (types & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) prefix = "GENERAL";
+					if (types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) prefix = "VALIDATION";
+					if (types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) prefix = "PERFORMANCE";
+					if (types & VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT) prefix = "DEVICE_ADDRESS_BINDING";
+
+					const char* message = pCallbackData->pMessage;
+					const char* messageId = pCallbackData->pMessageIdName;
+
+					if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) Log::Message("%s {%s} %s", prefix, messageId, message);
+					if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) Log::Message("%s {%s} %s", prefix, messageId, message);
+					if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) Log::Warning("%s {%s} %s", prefix, messageId, message);
+					if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 					{
-						Log::Error("{%s} %s", pLayerPrefix, pMessage);
+						Log::Error("%s {%s} %s", prefix, messageId, message);
+						WriteStacktraceToLog();
 						// __builtin_trap();
 					}
 
 					return VK_FALSE;
 				};
 
-				debug_callback_info.pUserData = nullptr;
-
-				VK_CHECK(vk_vkCreateDebugReportCallbackEXT(instance, &debug_callback_info, nullptr, &_DebugCallback));
+				VK_CHECK(vk_vkCreateDebugUtilsMessengerEXT(instance, &messengerInfo, nullptr, &_DebugUtilsMessenger));
 			#endif
 		}
 
@@ -135,7 +142,7 @@ namespace Columbus
 		~InstanceVulkan()
 		{
 			#ifdef VULKAN_DEBUG
-				vk_vkDestroyDebugReportCallbackEXT(instance, _DebugCallback, nullptr);
+				vk_vkDestroyDebugUtilsMessengerEXT(instance, _DebugUtilsMessenger, nullptr);
 			#endif
 
 			vkDestroyInstance(instance, nullptr);

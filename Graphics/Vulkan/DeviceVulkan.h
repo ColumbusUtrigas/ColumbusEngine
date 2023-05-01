@@ -23,6 +23,7 @@
 #include <Graphics/Vulkan/CommandBufferVulkan.h>
 #include <Graphics/Vulkan/GraphicsPipelineVulkan.h>
 #include <Graphics/Vulkan/BufferVulkan.h>
+#include <Graphics/Vulkan/TextureVulkan.h>
 #include <Core/Types.h>
 
 #include <vulkan/vulkan.h>
@@ -34,45 +35,6 @@
 
 namespace Columbus
 {
-
-	enum TextureVulkanUsage
-	{
-		TextureVulkanUsageSampled                = VK_IMAGE_USAGE_SAMPLED_BIT,
-		TextureVulkanUsageStorage                = VK_IMAGE_USAGE_STORAGE_BIT,
-		TextureVulkanUsageColorAttachment        = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		TextureVulkanUsageDepthStencilAttachment = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-	};
-
-	struct TextureVulkanDesc
-	{
-		TextureType Type = TextureType::Texture2D;
-		uint32_t Width = 1, Height = 1, Depth = 1;
-		uint32_t Mips = 1;
-		uint32_t ArrayLayers = 1;
-		uint32_t Samples = 1;
-		TextureVulkanUsage Usage {}; // TODO
-		TextureFormat Format {};
-	};
-
-	struct TextureVulkan
-	{
-		TextureVulkanDesc _Desc;
-		VkDevice _Device;
-		VkImage image;
-		VkImageView view;
-		VkSampler sampler;
-		VkImageLayout layout;
-		VmaAllocation allocation;
-
-		TextureVulkan(const TextureVulkanDesc& Desc) : _Desc(Desc) {}
-
-		~TextureVulkan()
-		{
-			vkDestroyImageView(_Device, view, nullptr);
-			vkDestroySampler(_Device, sampler, nullptr);
-			vkDestroyImage(_Device, image, nullptr);
-		}
-	};
 
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
@@ -106,6 +68,9 @@ namespace Columbus
 	private:
 		VkPipelineLayout _CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(VkPipeline Pipeline, const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
+		void _SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name);
+
+		TextureVulkan* _CreateTexture(const TextureDesc2& Desc);
 	public:
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 			_PhysicalDevice(PhysicalDevice)
@@ -240,6 +205,7 @@ namespace Columbus
 
 		CommandBufferVulkan CreateCommandBuffer();
 
+		// TODO: mesh shaders
 		ComputePipeline* CreateComputePipeline(const ComputePipelineDesc& Desc);
 		GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, VkRenderPass RenderPass);
 		RayTracingPipeline* CreateRayTracingPipeline(const RayTracingPipelineDesc& Desc);
@@ -249,15 +215,27 @@ namespace Columbus
 		VkDescriptorSet CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
 
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer);
-		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const TextureVulkan* Texture);
+		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture);
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const AccelerationStructure* TLAS);
 
+		// TODO: streaming
 		Buffer* CreateBuffer(const BufferDesc& Desc, const void* InitialData);
 
-		TextureVulkan* CreateTexture(const TextureVulkanDesc& Desc);
-		SPtr<TextureVulkan> CreateTexture(const Image& image);
+		// TODO: data change, streaming, layout transitions
+		Texture2* CreateTexture(const TextureDesc2& Desc);
+		Texture2* CreateTexture(const Image& Image);
+
+		// TODO: data sync, bariers
 
 		AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc& Desc);
+
+		void SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name);
+		void SetDebugName(const ComputePipeline* Pipeline, const char* Name);
+		void SetDebugName(const GraphicsPipeline* Pipeline, const char* Name);
+		void SetDebugName(const RayTracingPipeline* Pipeline, const char* Name);
+		void SetDebugName(const Buffer* Buffer, const char* Name);
+		void SetDebugName(const Texture2* Texture, const char* Name);
+		void SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name);
 
 		// TODO: Higher-level API abstraction
 

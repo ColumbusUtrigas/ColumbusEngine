@@ -8,6 +8,7 @@
 #include "Graphics/Device.h"
 #include "Graphics/GraphicsPipeline.h"
 #include "Graphics/RayTracingPipeline.h"
+#include "Graphics/Texture.h"
 #include "Graphics/Types.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/BufferVulkan.h"
@@ -25,6 +26,7 @@
 #include "Lib/imgui/imgui.h"
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 #include "Lib/imgui/backends/imgui_impl_sdl2.h"
+#include "System/File.h"
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -43,373 +45,9 @@
 #include <vector>
 #include <algorithm>
 
-std::string shaderSrc = R"(#version 450
-
-#ifdef VERTEX_SHADER
-layout(location = 0) in vec3 pos;
-layout(location = 1) in vec2 uv;
-layout(location = 2) in vec3 normal;
-
-layout(location = 0) out vec3 fragColor;
-layout(location = 1) out vec2 fragUv;
-layout(location = 2) out vec3 fragNormal;
-layout(location = 3) out vec3 fragWorldPos;
-
-layout(push_constant) uniform constants
-{
-    mat4 m;
-    mat4 mvp;
-} PushConstants;
-
-vec3 colors[3] = vec3[](
-    vec3(1.0, 0.0, 0.0),
-    vec3(0.0, 1.0, 0.0),
-    vec3(0.0, 0.0, 1.0)
-);
-
-void main() {
-    gl_Position = PushConstants.mvp * vec4(pos, 1.0);
-    fragColor = colors[gl_VertexIndex];
-    fragUv = uv;
-    fragNormal = (PushConstants.m * vec4(normal, 1)).xyz;
-    fragWorldPos = (PushConstants.m * vec4(pos, 1.0)).rgb;
-}
-#endif
-
-#ifdef PIXEL_SHADER
-layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec2 fragUv;
-layout(location = 2) in vec3 fragNormal;
-layout(location = 3) in vec3 fragWorldPos;
-
-layout(location = 0) out vec4 outColor;
-
-layout(binding = 0, set = 0) uniform sampler2D texSampler;
-
-void main() {
-    vec3 light = vec3(0, 0, 5);
-    vec3 L = normalize(light - fragWorldPos);
-    float ndotl = max(dot(fragNormal, L), 0);
-
-    outColor = texture(texSampler, fragUv) * ndotl;
-}
-#endif
-)";
-
-std::string skyboxSrc = R"(#version 450
-#ifdef VERTEX_SHADER
-    layout(location = 0) in vec3 pos;
-
-    layout(push_constant) uniform constants
-    {
-        mat4 viewProjection;
-    } PushConstants;
-
-    layout(location = 0) out vec3 fragPos;
-
-    void main() {
-        gl_Position = PushConstants.viewProjection * vec4(pos, 1.0);
-	    fragPos = pos;
-    }
-#endif
-
-#ifdef PIXEL_SHADER
-    layout(location = 0) in vec3 fragPos;
-
-    layout(location = 0) out vec4 RT0;
-
-    layout(binding = 0, set = 0) uniform samplerCube Skybox;
-
-    void main() {
-        RT0 = texture(Skybox, fragPos).bgra;
-	    gl_FragDepth = 0x7FFFFFFF;
-    }
-#endif
-)";
-
-std::string srcRaygen = R"(#version 460 core
-#extension GL_EXT_ray_tracing : enable
-
-struct RayPayload {
-    vec4 colorAndDist;
-    vec4 normalAndObjId;
-};
-
-layout(location = 0) rayPayloadEXT RayPayload payload;
-layout(location = 1) rayPayloadEXT RayPayload shadowPayload;
-
-layout(binding = 0, set = 0) uniform accelerationStructureEXT acc;
-layout(binding = 1, rgba32f) uniform image2D img;
-layout(push_constant) uniform params
-{
-    vec4 camPos;
-    vec4 camDir;
-    vec4 camUp;
-    vec4 camSide;
-    vec4 lightDir;
-    float lightSpread;
-    int frameNumber;
-} rayParams;
-
-// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
-uint hash( uint x ) {
-    x += ( x << 10u );
-    x ^= ( x >>  6u );
-    x += ( x <<  3u );
-    x ^= ( x >> 11u );
-    x += ( x << 15u );
-    return x;
-}
-
-// Construct a float with half-open range [0:1] using low 23 bits.
-// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
-float floatConstruct( uint m ) {
-    const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
-    const uint ieeeOne      = 0x3F800000u; // 1.0 in IEEE binary32
-
-    m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
-    m |= ieeeOne;                          // Add fractional part to 1.0
-
-    float  f = uintBitsToFloat( m );       // Range [1:2]
-    return f - 1.0;                        // Range [0:1]
-}
-
-
-// Pseudo-random value in half-open range [0:1].
-float rand(float x) { return floatConstruct(hash(floatBitsToUint(x))); }
-
-// float rand(float n){return fract(sin(n) * cos(n) * 43758.5453123);}
-
-void main() {
-    vec3 camPos = rayParams.camPos.xyz;
-    vec3 camDir = rayParams.camDir.xyz;
-    vec3 camUp = rayParams.camUp.xyz;
-    vec3 camSide = rayParams.camSide.xyz;
-
-    const float fov = 45;
-    const float aspect = float(gl_LaunchSizeEXT.x) / float(gl_LaunchSizeEXT.y);
-
-    const vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
-
-    vec3 u = camSide.xyz;
-    vec3 v = camUp.xyz;
-
-    const float planeWidth = tan(fov * 0.5f);
-    u *= (planeWidth * aspect);
-    v *= planeWidth;
-
-    const vec3 rayDir = normalize(camDir.xyz + (u * (uv.x*2-1)) - (v * (uv.y*2-1)));
-
-    const vec3 origin = camPos;
-    const vec3 direction = rayDir;
-
-    const uint cullMask = 0xFF;
-    const uint sbtRecordOffset = 0;
-    const uint sbtRecordStride = 0;
-    const uint missIndex = 0;
-    const float tmin = 0.0f;
-    const float tmax = 100.0f;
-    const int payloadLocation = 0;
-
-    traceRayEXT(acc,
-        gl_RayFlagsOpaqueEXT,
-        cullMask,
-        sbtRecordOffset,
-        sbtRecordStride,
-        missIndex,
-        origin,
-        tmin,
-        direction,
-        tmax,
-        payloadLocation);
-
-    vec3 hitColor = payload.colorAndDist.xyz;
-    float hitDistance = payload.colorAndDist.w;
-    vec3 normal = payload.normalAndObjId.xyz;
-    float objId = payload.normalAndObjId.w;
-    vec3 shadowOrigin = origin + direction * hitDistance;
-
-    float lighting = 1;
-    float samples = 0;
-    float ranges = 0.006;
-    vec3 lightDir = rayParams.lightDir.xyz;
-    float ndotl = max(dot(lightDir, normal), 0);
-
-    // if (ndotl > 0)
-    // {
-    //     for (float i = -ranges; i <=ranges; i += 0.01)
-    //     {
-    //         for (float j = -ranges; j <= ranges; j += 0.01)
-    //         {
-    //             vec2 rnd = fract(uv.xy) + rayParams.frameNumber % 100;
-    //             // vec2 shadowDirSpherical = vec2(1,0.5); // theta, phi
-    //             // shadowDirSpherical += vec2(rand(uv.x+uv.y-i*20), rand(uv.x-uv.y+j*20))/30.0;            
-
-    //             vec3 shadowDir = normalize(vec3(
-    //                 lightDir.x + rand(rnd.x+rnd.y-i*20) * rayParams.lightSpread,
-    //                 lightDir.y + rand(rnd.x+rnd.y+j*20) * rayParams.lightSpread,
-    //                 lightDir.z + rand(rnd.x-rnd.y-i*20) * rayParams.lightSpread
-    //             ));
-
-    //             // vec3 shadowDir = normalize(vec3(
-    //             //     sin(shadowDirSpherical.y) * cos(shadowDirSpherical.x),
-    //             //     sin(shadowDirSpherical.y) * sin(shadowDirSpherical.x),
-    //             //     cos(shadowDirSpherical.y)
-    //             // ));
-
-    //             traceRayEXT(acc,
-    //                 gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-    //                 cullMask,
-    //                 sbtRecordOffset,
-    //                 sbtRecordStride,
-    //                 missIndex,
-    //                 shadowOrigin,
-    //                 0.02,
-    //                 shadowDir,
-    //                 tmax,
-    //             1);
-
-    //             lighting += shadowPayload.colorAndDist.w != -1 ? 1 : 0;
-    //             samples += 1;
-    //         }
-    //     }
-
-    //     lighting /= samples;
-    // }
-
-    if (hitDistance > 0)
-    {
-        traceRayEXT(acc,
-            gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-            cullMask,
-            sbtRecordOffset,
-            sbtRecordStride,
-            missIndex,
-            shadowOrigin,
-            0.02,
-            lightDir,
-            tmax,
-            1
-        );
-
-        if (shadowPayload.colorAndDist.w > 0) {
-            lighting = 0.5;
-        } else {
-            lighting = max(0.5, ndotl);
-        }
-    }
-
-    if (objId == 1)
-    {
-        vec3 reflectedDir = reflect(direction, normal);
-        traceRayEXT(acc,
-            gl_RayFlagsOpaqueEXT,
-            cullMask,
-            sbtRecordOffset,
-            sbtRecordStride,
-            missIndex,
-            shadowOrigin,
-            0.02,
-            reflectedDir,
-            tmax,
-            0);
-        hitColor = payload.colorAndDist.xyz;
-        lighting = 1;
-    }
-    
-
-    // lighting = 1 - lighting;
-    hitColor *= lighting;
-
-    imageStore(img, ivec2(gl_LaunchIDEXT), vec4(hitColor, 1));
-    // imageStore(img, ivec2(gl_LaunchIDEXT), vec4(vec3(rand(uv.x+uv.y+rayParams.frameNumber % 50)),1));
-})";
-
-std::string srcClosestHit = R"(#version 460 core
-#extension GL_EXT_ray_tracing : enable
-#extension GL_EXT_nonuniform_qualifier : require
-
-struct RayPayload {
-    vec4 colorAndDist;
-    vec4 normalAndObjId;
-};
-
-layout(location = 0) rayPayloadInEXT RayPayload payload;
-
-vec2 BaryLerp(vec2 a, vec2 b, vec2 c, vec3 barycentrics) {
-    return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
-
-vec3 BaryLerp(vec3 a, vec3 b, vec3 c, vec3 barycentrics) {
-    return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
-
-layout(binding = 0, set = 1) readonly buffer IndexBuffer {
-    uint indices[];
-} IndexBuffers[100];
-
-layout(binding = 0, set = 2) readonly buffer UvsBuffer {
-    vec2 uvs[];
-} UvsBuffers[100];
-
-layout(binding = 0, set = 3) readonly buffer NormalsBuffer {
-    float normals[];
-} NormalsBuffers[100];
-
-layout(binding = 0, set = 4) uniform sampler2D Textures[100];
-
-#define NORMALBUF NormalsBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].normals
-
-hitAttributeEXT vec2 HitAttribs;
-
-void main() {
-    vec3 barycentrics = vec3(1.0f - HitAttribs.x - HitAttribs.y, HitAttribs.x, HitAttribs.y);
-
-    uint index0 = IndexBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].indices[gl_PrimitiveID * 3 + 0];
-    uint index1 = IndexBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].indices[gl_PrimitiveID * 3 + 1];
-    uint index2 = IndexBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].indices[gl_PrimitiveID * 3 + 2];
-
-    vec2 uv0 = UvsBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].uvs[index0];
-    vec2 uv1 = UvsBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].uvs[index1];
-    vec2 uv2 = UvsBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].uvs[index2];
-    vec2 uv = BaryLerp(uv0, uv1, uv2, barycentrics);
-
-    vec3 normal0 = vec3(NORMALBUF[index0*3+0], NORMALBUF[index0*3+1], NORMALBUF[index0*3+2]);
-    vec3 normal1 = vec3(NORMALBUF[index1*3+0], NORMALBUF[index1*3+1], NORMALBUF[index1*3+2]);
-    vec3 normal2 = vec3(NORMALBUF[index2*3+0], NORMALBUF[index2*3+1], NORMALBUF[index2*3+2]);
-    vec3 normal = BaryLerp(normal0, normal1, normal2, barycentrics);
-
-    switch (gl_InstanceCustomIndexEXT)
-    {
-    case 0:
-        uv *= 2;
-        break;
-    case 1:
-        break;
-    case 2:
-        break;
-    }
-
-    vec3 texel = textureLod(Textures[nonuniformEXT(gl_InstanceCustomIndexEXT)], uv, 0.0f).rgb;
-
-    payload.colorAndDist = vec4(texel, gl_HitTEXT);
-    payload.normalAndObjId = vec4(normal, gl_InstanceCustomIndexEXT);
-})";
-
-std::string srcRayMiss = R"(#version 460 core
-#extension GL_EXT_ray_tracing : enable
-
-struct RayPayload {
-    vec4 colorAndDist;
-    vec4 normalAndObjId;
-};
-
-layout(location = 0) rayPayloadInEXT RayPayload payload;
-
-void main() {
-    payload.colorAndDist = vec4(0.412f, 0.796f, 1.0f, -1);
-    payload.normalAndObjId = vec4(0,0,0,0);
-})";
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <Lib/tinygltf/tiny_gltf.h>
 
 std::string srcScreenVert = R"(#version 460 core
 layout (location = 0) out vec2 texcoords;
@@ -419,12 +57,6 @@ const vec3 verts[3] = vec3[](
     vec3(1, 3, 0),
     vec3(1, -1, 0)
 );
-
-layout(push_constant) uniform params
-{
-    vec4 asd;
-    vec3 dsa;
-} vertParams;
 
 void main() {
     gl_Position = vec4(verts[gl_VertexIndex], 1);
@@ -439,20 +71,24 @@ std::string srcScreenFrag = R"(#version 460 core
 
     layout(location = 0) out vec4 RT0;
 
-    layout(push_constant) uniform fragparams
+    layout(push_constant) uniform params
     {
-        vec4 asd;
-        vec3 dsa;
-        mat4 qwe;
-    } fragParams;
+        uint frameNumber;
+    } Parameters;
 
     void main() {
-        RT0 = imageLoad(img, ivec2(texcoords * vec2(1280,720)));
+        vec3 color = imageLoad(img, ivec2(texcoords * vec2(1280,720))).rgb / float(Parameters.frameNumber);
+        RT0 = vec4(color, 1.0);
     }
 )";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 using namespace Columbus;
+
+struct Material2
+{
+    int TextureId;
+};
 
 struct Mesh2
 {
@@ -460,9 +96,10 @@ struct Mesh2
     Buffer* UvBuffer;
     Buffer* NormalBuffer;
     Buffer* IndexBuffer;
+    Buffer* MaterialBuffer;
     AccelerationStructure* BLAS;
 
-    Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
+    static Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
     {
         BufferDesc desc;
         desc.BindFlags = BufferType::UAV;
@@ -470,6 +107,8 @@ struct Mesh2
         desc.UsedInAccelerationStructure = usedInAS;
         return device->CreateBuffer(desc, data);
     }
+
+    Mesh2() {}
 
     Mesh2(SPtr<DeviceVulkan> device, const char* filename)
     {
@@ -510,6 +149,43 @@ struct Mesh2
     }
 };
 
+// Engine structure that I find appropriate
+// 1. Engine is a library, editor, apps, games are made using it
+// 2. It uses it's own static code-generated reflection system
+// 3. Usage of it to setup an app is simple:
+//
+// IntiailizeEngine();
+// Window window = EngineCreateWindow();
+// RenderDevice device = EngineCreateDevice();
+// RenderGraph render = device.CreateRenderGraph();
+// render.AddRenderPass(...);
+//
+// TODO: think about extensions, non-game and non-editor scenarios
+// Scene scene = LoadScene(...); // uses ECS
+// Object object = scene.AddObject(...);
+// scene.AddComponent(object, ...);
+//
+// TODO: think about it
+// !!!! Integrate TaskFlow
+// TaskSystem taskSystem = EngineCreateTaskSystem();
+//
+// TODO: main loop, subsystems
+// while (window.IsOpen())
+// {
+//      EngineUpdate();
+//      scene.Update();
+//      render.Render();
+//      window.Present();
+// }
+
+// Task priorities
+// 1. RenderGraph
+// 2. UI system (basic)
+// 3. SceneGraph
+// 4. Static reflection
+// 5. ECS
+// 6. TaskGraph
+
 void CrashHandler(int signal)
 {
     WriteStacktraceToLog();
@@ -541,8 +217,6 @@ int main()
     auto imageSemaphore = device->CreateSemaphore();
     auto accelerationStructureSemaphore = device->CreateSemaphore();
     auto submitSemaphore = device->CreateSemaphore();
-
-    auto buildCmdBuf = device->CreateCommandBuffer();
 
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -577,41 +251,6 @@ int main()
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
-    Mesh2 box(device, "Data/Meshes/Box.cmf");
-    Mesh2 sphere(device, "Data/Meshes/Sphere.cmf");
-    Mesh2 statue(device, "Data/Meshes/Statue.cmf");
-
-    Columbus::AccelerationStructureDesc tlasDesc;
-    tlasDesc.Type = Columbus::AccelerationStructureType::TLAS;
-    tlasDesc.Instances = {
-        { Columbus::Matrix().Scale({10,0.1,10}), box.BLAS },
-        { Columbus::Matrix().Translate({0,1,0}), sphere.BLAS },
-        { Columbus::Matrix().Translate({3,0,0}), statue.BLAS }
-    };
-    auto tlas = device->CreateAccelerationStructure(tlasDesc);
-
-    GraphicsPipelineDesc desc {};
-    desc.Name = "Geometry";
-    desc.layout.Elements = {
-      Columbus::InputLayoutElementDesc("pos", 0, 0, 3),
-      Columbus::InputLayoutElementDesc("uv", 1, 1, 2),
-      Columbus::InputLayoutElementDesc("normal", 2, 2, 3),
-    };
-    desc.topology = Columbus::PrimitiveTopology::TriangleList;
-    desc.VS = std::make_shared<Columbus::ShaderStage>(shaderSrc, "main", Columbus::ShaderType::Vertex, Columbus::ShaderLanguage::GLSL);
-    desc.PS = std::make_shared<Columbus::ShaderStage>(shaderSrc, "main", Columbus::ShaderType::Pixel, Columbus::ShaderLanguage::GLSL);
-	auto pipeline = device->CreateGraphicsPipeline(desc, renderpass);
-
-    GraphicsPipelineDesc skyDesc {};
-    skyDesc.Name = "Sky";
-    skyDesc.layout.Elements = {
-      Columbus::InputLayoutElementDesc("pos", 0, 0, 3)
-    };
-    skyDesc.rasterizerState.Cull = Columbus::CullMode::No;
-    skyDesc.VS = std::make_shared<Columbus::ShaderStage>(skyboxSrc, "main", Columbus::ShaderType::Vertex, Columbus::ShaderLanguage::GLSL);
-    skyDesc.PS = std::make_shared<Columbus::ShaderStage>(skyboxSrc, "main", Columbus::ShaderType::Pixel, Columbus::ShaderLanguage::GLSL);
-    auto skyPipeline = device->CreateGraphicsPipeline(skyDesc, renderpass);
-
     GraphicsPipelineDesc screenDesc {};
     screenDesc.Name = "Screen";
     screenDesc.rasterizerState.Cull = Columbus::CullMode::No;
@@ -619,64 +258,201 @@ int main()
     screenDesc.PS = std::make_shared<Columbus::ShaderStage>(srcScreenFrag, "main", Columbus::ShaderType::Pixel, Columbus::ShaderLanguage::GLSL);
     auto screenPipeline = device->CreateGraphicsPipeline(screenDesc, renderpass);
 
+    File rtShaderFile("./Data/Shaders/Rays.glsl", "rt");
+    auto rtShaderSize = rtShaderFile.GetSize();
+    char* rtShaderSource = new char[rtShaderSize+1];
+    rtShaderSource[rtShaderSize] = '\0';
+    rtShaderFile.Read(rtShaderSource, rtShaderSize, 1);
+
     Columbus::RayTracingPipelineDesc rtDesc{};
-    rtDesc.RayGen = std::make_shared<Columbus::ShaderStage>(srcRaygen, "main", Columbus::ShaderType::Raygen, Columbus::ShaderLanguage::GLSL);
-    rtDesc.Miss = std::make_shared<Columbus::ShaderStage>(srcRayMiss, "main", Columbus::ShaderType::Miss, Columbus::ShaderLanguage::GLSL);
-    rtDesc.ClosestHit = std::make_shared<Columbus::ShaderStage>(srcClosestHit, "main", Columbus::ShaderType::ClosestHit, Columbus::ShaderLanguage::GLSL);
+    rtDesc.Name = "RTXON";
+    rtDesc.RayGen = std::make_shared<Columbus::ShaderStage>(rtShaderSource, "main", Columbus::ShaderType::Raygen, Columbus::ShaderLanguage::GLSL);
+    rtDesc.Miss = std::make_shared<Columbus::ShaderStage>(rtShaderSource, "main", Columbus::ShaderType::Miss, Columbus::ShaderLanguage::GLSL);
+    rtDesc.ClosestHit = std::make_shared<Columbus::ShaderStage>(rtShaderSource, "main", Columbus::ShaderType::ClosestHit, Columbus::ShaderLanguage::GLSL);
     rtDesc.MaxRecursionDepth = 1;
     auto rtPipeline = device->CreateRayTracingPipeline(rtDesc);
 
-	Columbus::Image img, skyImg, statueImg, floorImg;
-	img.Load("./Data/Textures/lantern_Albedo.png");
-    skyImg.Load("./Data/Sky.dds");
-    statueImg.Load("./Data/Textures/statue_d.png");
-    floorImg.Load("./Data/Textures/Detail.png");
+    tinygltf::Model model;
+    tinygltf::TinyGLTF loader;
+    std::string err, warn;
 
-    TextureVulkanDesc rtImageDesc;
+    loader.LoadASCIIFromFile(&model, &err, &warn, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+    // loader.LoadASCIIFromFile(&model, &err, &warn, "/home/columbus/assets/glTF-Sample-Models-master/2.0/SciFiHelmet/glTF/SciFiHelmet.gltf");
+    // loader.LoadASCIIFromFile(&model, &err, &warn, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+    // loader.LoadASCIIFromFile(&model, &err, &warn, "/home/columbus/assets/test.gltf");
+
+    std::vector<Texture2*> textures;
+    std::vector<Mesh2> meshes;
+
+    for (auto& texture : model.textures)
+    {
+        auto& image = model.images[texture.source];
+
+        Image img;
+        img.FromMemory(image.image.data(), image.image.size(), image.width, image.height);
+
+        auto tex = device->CreateTexture(img);
+        device->SetDebugName(tex, texture.name.c_str());
+        textures.push_back(tex);
+    }
+
+    // TODO
+    for (auto& mesh : model.meshes)
+    {
+        for (auto& primitive : mesh.primitives)
+        {
+            Buffer* indexBuffer = nullptr;
+            Buffer* vertexBuffer = nullptr;
+            Buffer* uvBuffer = nullptr;
+            Buffer* normalBuffer = nullptr;
+            Buffer* materialBuffer = nullptr;
+
+            int indicesCount = 0;
+            int verticesCount = 0;
+
+            {
+                auto accessor = model.accessors[primitive.indices];
+                auto view = model.bufferViews[accessor.bufferView];
+                auto buffer = model.buffers[view.buffer];
+                auto offset = accessor.byteOffset + view.byteOffset;
+                const void* data = buffer.data.data() + offset;
+                std::vector<uint32_t> indices(accessor.count);
+                indicesCount = accessor.count;
+
+                switch (accessor.componentType)
+                {
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        for (int i = 0; i < accessor.count; i++)
+                        {
+                            indices[i] = static_cast<const uint16_t*>(data)[i];
+                        }
+                        break;
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                    for (int i = 0; i < accessor.count; i++)
+                        {
+                            indices[i] = static_cast<const uint32_t*>(data)[i];
+                        }
+                        break;
+                    default: COLUMBUS_ASSERT(false);
+                }
+
+                indexBuffer = Mesh2::CreateMeshBuffer(device, indices.size() * sizeof(uint32_t), true, indices.data());
+                device->SetDebugName(indexBuffer, (mesh.name + " (Indices)").c_str());
+            }
+
+            {
+                auto accessor = model.accessors[primitive.attributes["POSITION"]];
+                auto view = model.bufferViews[accessor.bufferView];
+                auto buffer = model.buffers[view.buffer];
+                auto offset = accessor.byteOffset + view.byteOffset;
+                const void* data = buffer.data.data() + offset;
+                verticesCount = accessor.count;
+
+                vertexBuffer = Mesh2::CreateMeshBuffer(device, accessor.count * sizeof(Vector3), true, data);
+                device->SetDebugName(vertexBuffer, (mesh.name + " (Vertices)").c_str());
+            }
+
+            {
+                auto accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
+                auto view = model.bufferViews[accessor.bufferView];
+                auto buffer = model.buffers[view.buffer];
+                auto offset = accessor.byteOffset + view.byteOffset;
+                const void* data = buffer.data.data() + offset;
+                verticesCount = accessor.count;
+
+                uvBuffer = Mesh2::CreateMeshBuffer(device, accessor.count * sizeof(Vector2), true, data);
+                device->SetDebugName(uvBuffer, (mesh.name + " (UVs)").c_str());
+            }
+
+            {
+                auto accessor = model.accessors[primitive.attributes["NORMAL"]];
+                auto view = model.bufferViews[accessor.bufferView];
+                auto buffer = model.buffers[view.buffer];
+                auto offset = accessor.byteOffset + view.byteOffset;
+                const void* data = buffer.data.data() + offset;
+                verticesCount = accessor.count;
+
+                normalBuffer = Mesh2::CreateMeshBuffer(device, accessor.count * sizeof(Vector3), true, data);
+                device->SetDebugName(normalBuffer, (mesh.name + " (Normals)").c_str());
+            }
+
+            Columbus::AccelerationStructureDesc blasDesc;
+            blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
+            blasDesc.Vertices = vertexBuffer;
+            blasDesc.Indices = indexBuffer;
+            blasDesc.VerticesCount = verticesCount;
+            blasDesc.IndicesCount = indicesCount;
+            auto BLAS = device->CreateAccelerationStructure(blasDesc);
+            device->SetDebugName(BLAS, mesh.name.c_str());
+
+            int matid = -1;
+
+            if (primitive.material > -1)
+            {
+                auto mat = model.materials[primitive.material];
+                matid = mat.pbrMetallicRoughness.baseColorTexture.index;
+            }
+
+            {
+                materialBuffer = Mesh2::CreateMeshBuffer(device, sizeof(int), true, &matid);
+                device->SetDebugName(materialBuffer, (mesh.name + " (Material)").c_str());
+            }
+
+            Mesh2 mesh;
+            mesh.IndexBuffer = indexBuffer;
+            mesh.VertexBuffer = vertexBuffer;
+            mesh.UvBuffer = uvBuffer;
+            mesh.NormalBuffer = normalBuffer;
+            mesh.MaterialBuffer = materialBuffer;
+            mesh.BLAS = BLAS;
+
+            meshes.push_back(mesh);
+        }
+    }
+
+    Columbus::AccelerationStructureDesc tlasDesc2;
+    tlasDesc2.Type = Columbus::AccelerationStructureType::TLAS;
+    tlasDesc2.Instances = {};
+    for (auto& mesh : meshes)
+    {
+        tlasDesc2.Instances.push_back({ Columbus::Matrix(), mesh.BLAS });
+    }
+    auto tlas2 = device->CreateAccelerationStructure(tlasDesc2);
+
+    TextureDesc2 rtImageDesc;
+    rtImageDesc.Usage = TextureUsage::Storage;
     rtImageDesc.Width = 1280;
     rtImageDesc.Height = 720;
-    rtImageDesc.Format = TextureFormat::RGBA8;
-    rtImageDesc.Usage = TextureVulkanUsageStorage;
-
-    auto skyTexture = device->CreateTexture(skyImg);
-	auto texture = device->CreateTexture(img);
+    rtImageDesc.Format = TextureFormat::RGBA16F;
     auto rtImage = device->CreateTexture(rtImageDesc);
-    auto statueImage = device->CreateTexture(statueImg);
-    auto floorImage = device->CreateTexture(floorImg);
 
     Columbus::Camera camera;
 
     camera.Perspective(80, 1280.f/720.f, 0.01, 1000);
 
-    auto descriptorSet = device->CreateDescriptorSet(pipeline, 0);
-    device->UpdateDescriptorSet(descriptorSet, 0, 0, texture.get());
-
-    auto skyDescriptorSet = device->CreateDescriptorSet(skyPipeline, 0);
-    device->UpdateDescriptorSet(skyDescriptorSet, 0, 0, skyTexture.get());
-
     auto rtDescriptorSet = device->CreateDescriptorSet(rtPipeline, 0);
-    device->UpdateDescriptorSet(rtDescriptorSet, 0, 0, tlas);
+    device->UpdateDescriptorSet(rtDescriptorSet, 0, 0, tlas2);
     device->UpdateDescriptorSet(rtDescriptorSet, 1, 0, rtImage);
 
     auto rtIndicesSet = device->CreateDescriptorSet(rtPipeline, 1);
-    device->UpdateDescriptorSet(rtIndicesSet, 0, 0, box.IndexBuffer);
-    device->UpdateDescriptorSet(rtIndicesSet, 0, 1, sphere.IndexBuffer);
-    device->UpdateDescriptorSet(rtIndicesSet, 0, 2, statue.IndexBuffer);
-
     auto rtUvsSet = device->CreateDescriptorSet(rtPipeline, 2);
-    device->UpdateDescriptorSet(rtUvsSet, 0, 0, box.UvBuffer);
-    device->UpdateDescriptorSet(rtUvsSet, 0, 1, sphere.UvBuffer);
-    device->UpdateDescriptorSet(rtUvsSet,0, 2, statue.UvBuffer);
-
     auto rtNormalsSet = device->CreateDescriptorSet(rtPipeline, 3);
-    device->UpdateDescriptorSet(rtNormalsSet, 0, 0, box.NormalBuffer);
-    device->UpdateDescriptorSet(rtNormalsSet, 0, 1, sphere.NormalBuffer);
-    device->UpdateDescriptorSet(rtNormalsSet, 0, 2, statue.NormalBuffer);
-
     auto rtTexturesSet = device->CreateDescriptorSet(rtPipeline, 4);
-    device->UpdateDescriptorSet(rtTexturesSet, 0, 0, floorImage.get());
-    device->UpdateDescriptorSet(rtTexturesSet, 0, 1, floorImage.get());
-    device->UpdateDescriptorSet(rtTexturesSet, 0, 2, statueImage.get());
+    auto rtMaterialsSet = device->CreateDescriptorSet(rtPipeline, 5);
+
+    for (int i = 0; i < meshes.size(); i++)
+    {
+        const auto& mesh = meshes[i];
+        device->UpdateDescriptorSet(rtIndicesSet, 0, i, mesh.IndexBuffer);
+        device->UpdateDescriptorSet(rtUvsSet, 0, i, mesh.UvBuffer);
+        device->UpdateDescriptorSet(rtNormalsSet, 0, i, mesh.NormalBuffer);
+        device->UpdateDescriptorSet(rtMaterialsSet, 0, i, mesh.MaterialBuffer);
+    }
+
+    for (int i = 0; i < textures.size(); i++)
+    {
+        device->UpdateDescriptorSet(rtTexturesSet, 0, i, textures[i]);
+    }
 
     auto screenDescriptorSet = device->CreateDescriptorSet(screenPipeline, 0);
     device->UpdateDescriptorSet(screenDescriptorSet, 0, 0, rtImage);
@@ -688,14 +464,21 @@ int main()
     Vector3 lightDirection(1,1,1);
     float lightSpread = 1;
 
+    camera.Pos = { -1173, 602, 104 };
+    camera.Rot = { 0, -70, 0 };
+
     size_t currentFrame = 0;
     size_t frame = 0;
     bool running = true;
+    bool pauseRays = false;
+    bool reset = false;
+
     while (running)
     {
         float DeltaTime = timer.Elapsed();
         timer.Reset();
-        frame++;
+
+        if (!pauseRays) frame++;
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -711,12 +494,12 @@ int main()
         if (keyboard[SDL_SCANCODE_LEFT]) camera.Rot += Columbus::Vector3(0,5,0) * DeltaTime * 20;
         if (keyboard[SDL_SCANCODE_RIGHT]) camera.Rot += Columbus::Vector3(0,-5,0) * DeltaTime * 20;
 
-        if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * 20;
-        if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * 20;
-        if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * 20;
-        if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * 20;
-        if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * 20;
-        if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * 20;
+        if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * 50;
+        if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * 50;
+        if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * 50;
+        if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * 50;
+        if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * 50;
+        if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * 50;
 
         camera.Update();
 
@@ -730,10 +513,16 @@ int main()
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
 
+        auto camDir = camera.Direction();
+
         // ImGui::ShowDemoWindow();
         ImGui::Begin("Properties");
             ImGui::SliderFloat3("Light direction", (float*)&lightDirection, -1, 1, "%.1f");
             ImGui::SliderFloat("Light spread", &lightSpread, 0, 1);
+            ImGui::InputFloat3("Camera position", (float*)&camera.Pos);
+            ImGui::InputFloat3("Camera direction", (float*)&camDir);
+            ImGui::Checkbox("Pause rays", &pauseRays);
+            ImGui::Checkbox("Reset", &reset);
         ImGui::End();
 
         ImGui::Render();
@@ -747,6 +536,11 @@ int main()
 
         VkClearValue clearColor = {{{1, 0, 0, 1}}};
 
+        if (reset)
+        {
+            frame = 1;
+        }
+
         struct
         {
             Vector4 camPos;
@@ -756,26 +550,44 @@ int main()
             Vector4 lightDir;
             float lightSpread;
             int frameNumber;
+            int reset;
         } rayParams;
-        rayParams = { {camera.Pos,0}, {camera.Direction(),0}, {camera.Up(),0}, {camera.Right(),0}, {lightDirection,0}, lightSpread, (int)frame };
+        rayParams = { {camera.Pos,0}, {camera.Direction(),0}, {camera.Up(),0}, {camera.Right(),0}, {lightDirection,0}, lightSpread, (int)frame, (int)reset };
 
-        cmdBuf.BindRayTracingPipeline(rtPipeline);
-        cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 0, 1, &rtDescriptorSet);
-        cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 1, 1, &rtIndicesSet);
-        cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 2, 1, &rtUvsSet);
-        cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 3, 1, &rtNormalsSet);
-        cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 4, 1, &rtTexturesSet);
-        cmdBuf.PushConstantsRayTracing(rtPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
-        cmdBuf.TraceRays(rtPipeline, 1280, 720, 1);
+        if (!pauseRays)
+        {
+            cmdBuf.BeginDebugMarker("RayTracingPass");
 
+            cmdBuf.BindRayTracingPipeline(rtPipeline);
+            cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 0, 1, &rtDescriptorSet);
+            cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 1, 1, &rtIndicesSet);
+            cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 2, 1, &rtUvsSet);
+            cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 3, 1, &rtNormalsSet);
+            cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 4, 1, &rtTexturesSet);
+            cmdBuf.BindDescriptorSetsRayTracing(rtPipeline, 5, 1, &rtMaterialsSet);
+            cmdBuf.PushConstantsRayTracing(rtPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
+            cmdBuf.TraceRays(rtPipeline, 1280, 720, 1);
+
+            cmdBuf.EndDebugMarker();
+        }
+
+        cmdBuf.BeginDebugMarker("GUI Pass");
         cmdBuf.BeginRenderPass(renderpass, rect, swapchain->swapChainFramebuffers[imageIndex], 1, &clearColor);
+
+        struct
+        {
+            uint32_t frameNumber;
+        } pixelData;
+        pixelData.frameNumber = frame;
 
         cmdBuf.BindGraphicsPipeline(screenPipeline);
         cmdBuf.BindDescriptorSetsGraphics(screenPipeline, 0, 1, &screenDescriptorSet);
+        cmdBuf.PushConstantsGraphics(screenPipeline, ShaderType::Pixel, 0, sizeof(pixelData), &pixelData);
         cmdBuf.Draw(3, 1, 0, 0);
 
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf._CmdBuf);
         cmdBuf.EndRenderPass();
+        cmdBuf.EndDebugMarker();
 
         cmdBuf.End();
 

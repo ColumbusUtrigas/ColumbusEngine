@@ -35,3 +35,6 @@
 	path = Lib/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "Lib/tinygltf"]
+	path = Lib/tinygltf
+	url = https://github.com/syoyo/tinygltf.git

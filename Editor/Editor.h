@@ -31,13 +31,13 @@ namespace Columbus::Editor
 	public:
 		Settings settings;
 
-		PanelScene panelScene{ settings };
-		PanelHierarchy panelHierarchy;
-		PanelRenderSettings panelRenderSettings;
-		PanelInspector panelInspector;
-		PanelProfiler panelProfiler;
-		PanelConsole panelConsole;
-		PanelAssets panelAssets;
+		// PanelScene panelScene{ settings };
+		// PanelHierarchy panelHierarchy;
+		// PanelRenderSettings panelRenderSettings;
+		// PanelInspector panelInspector;
+		// PanelProfiler panelProfiler;
+		// PanelConsole panelConsole;
+		// PanelAssets panelAssets;
 		std::shared_ptr<PanelTexture> panelTexture { new PanelTexture() };
 
 		Camera camera;

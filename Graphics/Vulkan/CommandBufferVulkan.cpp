@@ -8,6 +8,7 @@
 #include "RayTracingPipelineVulkan.h"
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -31,6 +32,26 @@ namespace Columbus
 	void CommandBufferVulkan::End()
 	{
 		VK_CHECK(vkEndCommandBuffer(_CmdBuf));
+	}
+
+	void CommandBufferVulkan::BeginDebugMarker(const char* Name)
+	{
+		VkDebugUtilsLabelEXT label {};
+		label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+		label.pLabelName = Name;
+		_Functions.vkCmdBeginDebugUtilsLabel(_CmdBuf, &label);
+	}
+
+	void CommandBufferVulkan::EndDebugMarker()
+	{
+		_Functions.vkCmdEndDebugUtilsLabel(_CmdBuf);
+	}
+	void CommandBufferVulkan::InsertDebugLabel(const char* Name)
+	{
+		VkDebugUtilsLabelEXT label {};
+		label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+		label.pLabelName = Name;
+		_Functions.vkCmdInsertDebugUtilsLabel(_CmdBuf, &label);
 	}
 
 	void CommandBufferVulkan::BeginRenderPass(VkRenderPass renderPass, VkRect2D renderArea, VkFramebuffer framebuffer, uint32_t clearValuesCount, VkClearValue* clearValues)
@@ -61,7 +82,7 @@ namespace Columbus
 
 	void CommandBufferVulkan::BindGraphicsPipeline(const GraphicsPipeline* Pipeline)
 	{
-		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(Pipeline);
+		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(Pipeline);
 
 		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkpipe->pipeline);
 	}
@@ -77,7 +98,7 @@ namespace Columbus
 	{
 		COLUMBUS_ASSERT((stages | ShaderType::AllGraphics) == ShaderType::AllGraphics);
 
-		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
+		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(pipeline);
 		auto stageFlags = ShaderTypeToVk(stages);
 
 		vkCmdPushConstants(_CmdBuf, vkpipe->layout, stageFlags, offset, size, pValues);
@@ -85,7 +106,7 @@ namespace Columbus
 
 	void CommandBufferVulkan::BindDescriptorSetsGraphics(const GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets)
 	{
-		auto vkpipe = static_cast<const Graphics::GraphicsPipelineVulkan*>(pipeline);
+		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(pipeline);
 		
 		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, vkpipe->layout, firstSet, setCount, sets, 0, nullptr);
 	}

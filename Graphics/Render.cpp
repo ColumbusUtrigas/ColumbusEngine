@@ -1,18 +1,17 @@
 #include <Graphics/Render.h>
 #include <Graphics/Device.h>
 #include <Graphics/RenderState.h>
-#include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentParticleSystem.h>
-#include <Scene/ComponentBillboard.h>
-#include <Scene/ComponentLight.h>
-#include <Scene/Component.h>
+// #include <Scene/ComponentMeshRenderer.h>
+// #include <Scene/ComponentParticleSystem.h>
+// #include <Scene/ComponentBillboard.h>
+// #include <Scene/ComponentLight.h>
+// #include <Scene/Component.h>
 #include <Math/Frustum.h>
 #include <GL/glew.h>
 #include <algorithm>
 #include <tuple>
 #include <cstddef>
 
-#define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>
 
 #include <Profiling/Profiling.h>
@@ -139,73 +138,73 @@ namespace Columbus
 
 		Frustum ViewFrustum(MainCamera.GetViewProjection());
 
-		if (RenderList != nullptr)
-		{
-			uint32 Counter = 0;
-			for (auto& Object : *RenderList)
-			{
-				if (Object->Enable)
-				{
-					auto MeshRenderer = (ComponentMeshRenderer*)Object->GetComponent(Component::Type::MeshRenderer);
-					auto ParticleSystem = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
-					auto Bill = Object->GetComponent<ComponentBillboard>();
-					auto Light = Object->GetComponent<ComponentLight>();
+		// if (RenderList != nullptr)
+		// {
+		// 	uint32 Counter = 0;
+		// 	for (auto& Object : *RenderList)
+		// 	{
+		// 		if (Object->Enable)
+		// 		{
+		// 			auto MeshRenderer = (ComponentMeshRenderer*)Object->GetComponent(Component::Type::MeshRenderer);
+		// 			auto ParticleSystem = (ComponentParticleSystem*)Object->GetComponent(Component::Type::ParticleSystem);
+		// 			auto Bill = Object->GetComponent<ComponentBillboard>();
+		// 			auto Light = Object->GetComponent<ComponentLight>();
 
-					if (Light != nullptr)
-					{
-						LightsList.push_back(Light->GetLight());
-					}
+		// 			if (Light != nullptr)
+		// 			{
+		// 				LightsList.push_back(Light->GetLight());
+		// 			}
 
-					if (MeshRenderer != nullptr)
-					{
-						auto Mesh = MeshRenderer->GetMesh();
+		// 			if (MeshRenderer != nullptr)
+		// 			{
+		// 				auto Mesh = MeshRenderer->GetMesh();
 
-						if (Mesh != nullptr)
-						{
-							if (Object->materials.empty()) continue;
+		// 				if (Mesh != nullptr)
+		// 				{
+		// 					if (Object->materials.empty()) continue;
 
-							for (int i = 0; i < Mesh->SubMeshes.size(); i++)
-							{
-								auto& mesh = Mesh->SubMeshes[i];
-								if (Object->materials.size() > i/* && Object->materials[i] != nullptr*/)
-								{
-									auto mat = Object->materials[i];
-									static Material* defaultMat = new Material();
-									defaultMat->SetShader(gDevice->GetDefaultShaders()->Error.get());
-									defaultMat->Name = "Error";
-									if (mat == nullptr)
-										mat = defaultMat;
+		// 					for (int i = 0; i < Mesh->SubMeshes.size(); i++)
+		// 					{
+		// 						auto& mesh = Mesh->SubMeshes[i];
+		// 						if (Object->materials.size() > i/* && Object->materials[i] != nullptr*/)
+		// 						{
+		// 							auto mat = Object->materials[i];
+		// 							static Material* defaultMat = new Material();
+		// 							defaultMat->SetShader(gDevice->GetDefaultShaders()->Error.get());
+		// 							defaultMat->Name = "Error";
+		// 							if (mat == nullptr)
+		// 								mat = defaultMat;
 
-									if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
-									{
-										if (mat->Transparent)
-											TransparentEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
-										else
-											OpaqueEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
-									}
+		// 							if (ViewFrustum.Check(mesh->GetBoundingBox() * Object->transform.GetMatrix()))
+		// 							{
+		// 								if (mat->Transparent)
+		// 									TransparentEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
+		// 								else
+		// 									OpaqueEntities.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
+		// 							}
 
-									if (!mat->Transparent)
-										ShadowsObjects.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
-								}
-							}
-						}
-					}
+		// 							if (!mat->Transparent)
+		// 								ShadowsObjects.emplace_back(mat, Object->transform, mesh, nullptr, nullptr);
+		// 						}
+		// 					}
+		// 				}
+		// 			}
 
-					if (ParticleSystem != nullptr)
-					{
-						TransparentEntities.emplace_back(Object->materials[0], Object->transform, nullptr, &ParticleSystem->Emitter, nullptr);
-					}
+		// 			if (ParticleSystem != nullptr)
+		// 			{
+		// 				TransparentEntities.emplace_back(Object->materials[0], Object->transform, nullptr, &ParticleSystem->Emitter, nullptr);
+		// 			}
 
-					if (Bill != nullptr)
-					{
-						auto mat = Object->materials.empty() ? nullptr : Object->materials[0];
-						TransparentEntities.emplace_back(mat, Object->transform, nullptr, nullptr, &Bill->GetBillboard());
-					}
-				}
+		// 			if (Bill != nullptr)
+		// 			{
+		// 				auto mat = Object->materials.empty() ? nullptr : Object->materials[0];
+		// 				TransparentEntities.emplace_back(mat, Object->transform, nullptr, nullptr, &Bill->GetBillboard());
+		// 			}
+		// 		}
 
-				Counter++;
-			}
-		}
+		// 		Counter++;
+		// 	}
+		// }
 	}
 
 	void Renderer::SortLists()
@@ -597,55 +596,55 @@ void main(void)
 			}
 		};
 
-		((ShaderProgramOpenGL*)(Icon))->Bind();
+		// ((ShaderProgramOpenGL*)(Icon))->Bind();
 
-		static BlendStateDesc BSD;
-		static BlendState* BS;
-		BSD.RenderTarget[0].BlendEnable = true;
-		BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
-		BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
-		BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
-		BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+		// static BlendStateDesc BSD;
+		// static BlendState* BS;
+		// BSD.RenderTarget[0].BlendEnable = true;
+		// BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+		// BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+		// BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+		// BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
 
-		static bool bsr = gDevice->CreateBlendState(BSD, &BS);
-		gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
+		// static bool bsr = gDevice->CreateBlendState(BSD, &BS);
+		// gDevice->OMSetBlendState(BS, nullptr, 0xFFFFFFFF);
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun.get(), 0);
-		for (const auto& Elem : LightsList)
-		{
-			if (Elem.Type == Light::Directional)
-				DrawIcon(Vector4(Elem.Pos, 1));
-		}
+		// ((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconSun.get(), 0);
+		// for (const auto& Elem : LightsList)
+		// {
+		// 	if (Elem.Type == Light::Directional)
+		// 		DrawIcon(Vector4(Elem.Pos, 1));
+		// }
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp.get(), 0);
-		for (const auto& Elem : LightsList)
-		{
-			if (Elem.Type == Light::Point)
-				DrawIcon(Vector4(Elem.Pos, 1));
-		}
+		// ((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconLamp.get(), 0);
+		// for (const auto& Elem : LightsList)
+		// {
+		// 	if (Elem.Type == Light::Point)
+		// 		DrawIcon(Vector4(Elem.Pos, 1));
+		// }
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight.get(), 0);
-		for (const auto& Elem : LightsList)
-		{
-			if (Elem.Type == Light::Spot)
-				DrawIcon(Vector4(Elem.Pos, 1));
-		}
+		// ((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconFlashlight.get(), 0);
+		// for (const auto& Elem : LightsList)
+		// {
+		// 	if (Elem.Type == Light::Spot)
+		// 		DrawIcon(Vector4(Elem.Pos, 1));
+		// }
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio.get(), 0);
-		for (auto Elem : Scn->Audio.Mixer.Sources)
-		{
-			if ((bool)Elem)
-				DrawIcon(Vector4(Elem->Position, 1));
-		}
+		// ((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconAudio.get(), 0);
+		// for (auto Elem : Scn->Audio.Mixer.Sources)
+		// {
+		// 	if ((bool)Elem)
+		// 		DrawIcon(Vector4(Elem->Position, 1));
+		// }
 
-		((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles.get(), 0);
-		for (const auto& Elem : TransparentEntities)
-		{
-			if (Elem.ParticlesCPU != nullptr)
-				DrawIcon(Vector4(Elem.Tran->Position, 1));
-		}
+		// ((ShaderProgramOpenGL*)(Icon))->SetUniform(IconTextureID, (TextureOpenGL*)gDevice->GetDefaultTextures()->IconParticles.get(), 0);
+		// for (const auto& Elem : TransparentEntities)
+		// {
+		// 	if (Elem.ParticlesCPU != nullptr)
+		// 		DrawIcon(Vector4(Elem.Tran->Position, 1));
+		// }
 
-		((ShaderProgramOpenGL*)(Icon))->Unbind();
+		// ((ShaderProgramOpenGL*)(Icon))->Unbind();
 	}
 
 	void Renderer::Render()

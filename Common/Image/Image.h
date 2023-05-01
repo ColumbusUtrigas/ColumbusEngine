@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Types.h>
+#include <cstring>
 #include <string_view>
 
 namespace Columbus
@@ -187,6 +188,18 @@ namespace Columbus
 			swap(Exist, Base.Exist);
 			swap(ImageType, Base.ImageType);
 			return *this;
+		}
+
+		void FromMemory(const void* InData, int InSize, int W, int H)
+		{
+			Data = new uint8[InSize];
+			Size = InSize;
+			Width = W;
+			Height = H;
+			memcpy(this->Data, InData, Size);
+			ImageType = Type::Image2D;
+			Exist = true;
+			MipMaps = 1;
 		}
 
 		bool Load(std::string_view FileName, ImageLoading Flags = ImageLoading::None);

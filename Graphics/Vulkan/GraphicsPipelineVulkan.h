@@ -4,7 +4,7 @@
 #include "PipelineDescriptorSetLayoutVulkan.h"
 #include <vulkan/vulkan.h>
 
-namespace Columbus::Graphics
+namespace Columbus
 {
 
 	class GraphicsPipelineVulkan : public GraphicsPipeline

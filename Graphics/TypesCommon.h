@@ -5,6 +5,7 @@
 namespace Columbus
 {
 
+	// TODO: use code-generated metadata instead
 	static const char* ShaderTypeToString(ShaderType type)
 	{
 		switch (type)

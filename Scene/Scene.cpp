@@ -4,12 +4,12 @@
 #include <Profiling/Profiling.h>
 #include <Graphics/DebugRender.h>
 
-#include <Scene/ComponentAudioSource.h>
-#include <Scene/ComponentBillboard.h>
-#include <Scene/ComponentLight.h>
-#include <Scene/ComponentMeshRenderer.h>
-#include <Scene/ComponentParticleSystem.h>
-#include <Scene/ComponentRigidbody.h>
+// #include <Scene/ComponentAudioSource.h>
+// #include <Scene/ComponentBillboard.h>
+// #include <Scene/ComponentLight.h>
+// #include <Scene/ComponentMeshRenderer.h>
+// #include <Scene/ComponentParticleSystem.h>
+// #include <Scene/ComponentRigidbody.h>
 
 #include <Physics/PhysicsShape.h>
 #include <Physics/PhysicsShapeBox.h>
@@ -23,23 +23,23 @@
 namespace Columbus
 {
 
-	IMPLEMENT_COMPONENT(ComponentAudioSource);
-	IMPLEMENT_COMPONENT(ComponentBillboard);
-	IMPLEMENT_COMPONENT(ComponentLight);
-	IMPLEMENT_COMPONENT(ComponentMeshRenderer);
-	IMPLEMENT_COMPONENT(ComponentParticleSystem);
-	IMPLEMENT_COMPONENT(ComponentRigidbody);
+	// IMPLEMENT_COMPONENT(ComponentAudioSource);
+	// IMPLEMENT_COMPONENT(ComponentBillboard);
+	// IMPLEMENT_COMPONENT(ComponentLight);
+	// IMPLEMENT_COMPONENT(ComponentMeshRenderer);
+	// IMPLEMENT_COMPONENT(ComponentParticleSystem);
+	// IMPLEMENT_COMPONENT(ComponentRigidbody);
 
-	std::function<void(Rigidbody * RB)> ComponentRigidbody::OnAdd = [](Rigidbody* RB) {};
+	// std::function<void(Rigidbody * RB)> ComponentRigidbody::OnAdd = [](Rigidbody* RB) {};
 
 	Scene::Scene()
 	{
 		PhysWorld.SetGravity(Vector3(0, -9.81f, 0));
 
-		ComponentRigidbody::OnAdd = [&](Rigidbody* RB)
-		{
-			PhysWorld.AddRigidbody(RB);
-		};
+		// ComponentRigidbody::OnAdd = [&](Rigidbody* RB)
+		// {
+		// 	PhysWorld.AddRigidbody(RB);
+		// };
 	}
 
 	void Scene::RigidbodyWorkflow()
@@ -48,12 +48,12 @@ namespace Columbus
 		{
 			if (Object->Enable)
 			{
-				auto rb = Object->GetComponent<ComponentRigidbody>();
+				// auto rb = Object->GetComponent<ComponentRigidbody>();
 
-				if (rb != nullptr && rb->GetRigidbody() != nullptr)
-				{
-					rb->GetRigidbody()->SetTransform(Object->transform);
-				}
+				// if (rb != nullptr && rb->GetRigidbody() != nullptr)
+				// {
+				// 	rb->GetRigidbody()->SetTransform(Object->transform);
+				// }
 			}
 		}
 	}
@@ -64,12 +64,12 @@ namespace Columbus
 		{
 			if (Object->Enable)
 			{
-				auto rb = Object->GetComponent<ComponentRigidbody>();
+				// auto rb = Object->GetComponent<ComponentRigidbody>();
 
-				if (rb != nullptr && rb->GetRigidbody() != nullptr)
-				{
-					Object->transform = rb->GetRigidbody()->GetTransform();
-				}
+				// if (rb != nullptr && rb->GetRigidbody() != nullptr)
+				// {
+				// 	Object->transform = rb->GetRigidbody()->GetTransform();
+				// }
 			}
 		}
 	}
@@ -82,7 +82,7 @@ namespace Columbus
 		MeshesManager.Clear();
 		SoundsManager.Clear();
 		Objects.Clear();
-		Audio.Clear();
+		// Audio.Clear();
 
 		_CurrentScene = "";
 		SkyPath = "";
@@ -112,12 +112,12 @@ namespace Columbus
 			}
 		}
 
-		DeserializeTexturesManager(J["Textures"]);
-		DeserializeShadersManager(J["Shaders"]);
-		DeserializeMaterialsManager(J["Materials"]);
-		DeserializeMeshesManager(J["Meshes"]);
-		DeserializeSoundsManager(J["Sounds"]);
-		DeserializeObjects(J["Objects"]);
+		// DeserializeTexturesManager(J["Textures"]);
+		// DeserializeShadersManager(J["Shaders"]);
+		// DeserializeMaterialsManager(J["Materials"]);
+		// DeserializeMeshesManager(J["Meshes"]);
+		// DeserializeSoundsManager(J["Sounds"]);
+		// DeserializeObjects(J["Objects"]);
 
 		_CurrentScene = FileName;
 
@@ -126,22 +126,22 @@ namespace Columbus
 
 	bool Scene::Save(const std::string& FileName)
 	{
-		JSON J;
+		// JSON J;
 
-		J["Defaults"]["Skybox"] = SkyPath;
+		// J["Defaults"]["Skybox"] = SkyPath;
 
-		SerializeTexturesManager(J["Textures"]);
-		SerializeShadersManager(J["Shaders"]);
-		SerializeMaterialsManager(J["Materials"]);
-		SerializeMeshesManager(J["Meshes"]);
-		SerializeSoundsManager(J["Sounds"]);
-		SerializeObjects(J["Objects"]);
+		// SerializeTexturesManager(J["Textures"]);
+		// SerializeShadersManager(J["Shaders"]);
+		// SerializeMaterialsManager(J["Materials"]);
+		// SerializeMeshesManager(J["Meshes"]);
+		// SerializeSoundsManager(J["Sounds"]);
+		// SerializeObjects(J["Objects"]);
 
-		auto nameStr = FileName.empty() ? _CurrentScene : FileName;
+		// auto nameStr = FileName.empty() ? _CurrentScene : FileName;
 
-		if (!J.Save(nameStr.c_str())) { Log::Error("Can't save scene: %s", nameStr.c_str()); return false; }
+		// if (!J.Save(nameStr.c_str())) { Log::Error("Can't save scene: %s", nameStr.c_str()); return false; }
 
-		_CurrentScene = nameStr;
+		// _CurrentScene = nameStr;
 		return true;
 	}
 	
@@ -162,7 +162,7 @@ namespace Columbus
 			RigidbodyWorkflow();
 		}
 
-		Audio.Clear();
+		// Audio.Clear();
 
 		for (auto& Object : Objects.Resources)
 		{
@@ -171,23 +171,23 @@ namespace Columbus
 				// TODO: DOD
 				Object->Update(Time);
 
-				auto AudioSource = Object->GetComponent<ComponentAudioSource>();
-				auto Light = Object->GetComponent<ComponentLight>();
-				auto PS = Object->GetComponent<ComponentParticleSystem>();
+				// auto AudioSource = Object->GetComponent<ComponentAudioSource>();
+				// auto Light = Object->GetComponent<ComponentLight>();
+				// auto PS = Object->GetComponent<ComponentParticleSystem>();
 
-				if (AudioSource != nullptr) Audio.AddSource(AudioSource->Source);
+				// if (AudioSource != nullptr) Audio.AddSource(AudioSource->Source);
 
-				if (Light != nullptr)
-				{
-					if (Light->GetLight().Type == Light::Directional ||
-					    Light->GetLight().Type == Light::Spot)
-					{
-						Vector4 BaseDirection(1, 0, 0, 1);
-						Vector4 Direction = BaseDirection * Object->transform.Rotation.ToMatrix();
-						Light->GetLight().Dir = Direction.XYZ().Normalize();
-					}
-				}
-				if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
+				// if (Light != nullptr)
+				// {
+				// 	if (Light->GetLight().Type == Light::Directional ||
+				// 	    Light->GetLight().Type == Light::Spot)
+				// 	{
+				// 		Vector4 BaseDirection(1, 0, 0, 1);
+				// 		Vector4 Direction = BaseDirection * Object->transform.Rotation.ToMatrix();
+				// 		Light->GetLight().Dir = Direction.XYZ().Normalize();
+				// 	}
+				// }
+				// if (PS != nullptr) PS->Emitter.CameraPosition = MainCamera->Pos;
 			}
 		}
 
@@ -200,7 +200,7 @@ namespace Columbus
 			PhysWorld.ClearForces();
 		}
 
-		Audio.SetSpeed(TimeFactor);
+		// Audio.SetSpeed(TimeFactor);
 
 		if (EnablePhysicsSimulation)
 		{
@@ -209,7 +209,7 @@ namespace Columbus
 
 		if (Listener != nullptr)
 		{
-			Audio.SetListener(*Listener);
+			// Audio.SetListener(*Listener);
 		}
 
 		if (Sky != nullptr && MainCamera != nullptr)

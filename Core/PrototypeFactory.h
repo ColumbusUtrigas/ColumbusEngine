@@ -58,19 +58,22 @@ namespace Columbus
 		}
 	};
 
-	#define DECLARE_PROTOTYPE(BaseType, Type, Typename, ...) \
-		static struct Type##_PrototypeTypeRegistrator { \
-			Type##_PrototypeTypeRegistrator() { \
-				/*PrototypeFactory<BaseType>::Instance().Register<Type>(Typename, __VA_ARGS__);*/ \
-			} \
-		} Type##_PrototypeTypeRegistrator_Init; \
-		/*DECLARE_SERIALIZATION(Type);*/ \
-		public: \
-			std::string_view GetTypename() const override { return Typename; } \
-			static std::string_view GetTypenameStatic() { return Typename; }
+	#define DECLARE_PROTOTYPE(BaseType, Type, Typename, ...)
+	#define IMPLEMENT_PROTOTYPE(BaseType, Type)
 
-	#define IMPLEMENT_PROTOTYPE(BaseType, Type) \
-		Type::Type##_PrototypeTypeRegistrator Type::Type##_PrototypeTypeRegistrator_Init; \
+	// #define DECLARE_PROTOTYPE(BaseType, Type, Typename, ...) \
+	// 	static struct Type##_PrototypeTypeRegistrator { \
+	// 		Type##_PrototypeTypeRegistrator() { \
+	// 			/*PrototypeFactory<BaseType>::Instance().Register<Type>(Typename, __VA_ARGS__);*/ \
+	// 		} \
+	// 	} Type##_PrototypeTypeRegistrator_Init; \
+	// 	/*DECLARE_SERIALIZATION(Type);*/ \
+	// 	public: \
+	// 		std::string_view GetTypename() const override { return Typename; } \
+	// 		static std::string_view GetTypenameStatic() { return Typename; }
+
+	// #define IMPLEMENT_PROTOTYPE(BaseType, Type) \
+	// 	eType::Type##_PrototypeTypeRgistrator Type::Type##_PrototypeTypeRegistrator_Init; \
 		/*IMPLEMENT_SERIALIZATION(Type);*/
 
 }

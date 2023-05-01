@@ -72,7 +72,7 @@ namespace Columbus
 	public:
 		bool EnablePhysicsSimulation = true;
 
-		AudioSystem Audio;
+		// AudioSystem Audio;
 		float TimeFactor = 1.0f;
 
 		String SkyPath;
