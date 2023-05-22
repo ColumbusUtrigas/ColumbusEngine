@@ -136,11 +136,11 @@ namespace Columbus
 		std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = { &accelerationStructureBuildRangeInfo };
 
 		// Execute build
-		auto commandBuffer = CreateCommandBuffer();
-		commandBuffer.Begin();
-		VkFunctions.vkCmdBuildAccelerationStructures(commandBuffer._CmdBuf, 1, &accelerationStructureBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
-		commandBuffer.End();
-		Submit(commandBuffer);
+		auto commandBuffer = CreateCommandBufferShared();
+		commandBuffer->Begin();
+		VkFunctions.vkCmdBuildAccelerationStructures(commandBuffer->_CmdBuf, 1, &accelerationStructureBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
+		commandBuffer->End();
+		Submit(commandBuffer.get());
 		QueueWaitIdle();
 
 		// Get AS device memory address

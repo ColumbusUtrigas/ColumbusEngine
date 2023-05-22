@@ -1,0 +1,139 @@
+#pragma once
+
+#include <Core/Core.h>
+#include <Graphics/Vulkan/DeviceVulkan.h>
+#include "Core/fixed_vector.h"
+#include "GPUScene.h"
+#include "Graphics/Vulkan/CommandBufferVulkan.h"
+#include "Graphics/Vulkan/FenceVulkan.h"
+#include "Graphics/Vulkan/SwapchainVulkan.h"
+#include <memory>
+#include <vector>
+#include <unordered_map>
+
+#include <vulkan/vulkan.h>
+
+namespace Columbus
+{
+
+	class RenderGraph;
+
+	using RenderGraphResourceId = int;
+
+	constexpr int MaxFramesInFlight = 2;
+
+	struct RenderGraphData
+	{
+		std::unordered_map<std::string, Buffer*> Buffers; // TODO
+		std::unordered_map<std::string, Texture2*> Textures; // TODO
+
+		struct
+		{
+			SPtr<FenceVulkan> Fence;
+			VkSemaphore ImageSemaphore;
+			VkSemaphore SubmitSemaphore;
+
+			CommandBufferVulkan* CommandBuffer;
+		} PerFrameData[MaxFramesInFlight];
+
+		struct PipelineDescriptorSetData
+		{
+			VkDescriptorSet DescriptorSets[16] {0};
+		};
+
+		// TODO
+		struct
+		{
+			VkDescriptorSetLayout VerticesLayout;
+			VkDescriptorSetLayout IndicesLayout;
+			VkDescriptorSetLayout UVLayout;
+			VkDescriptorSetLayout NormalLayout;
+			VkDescriptorSetLayout TextureLayout;
+			VkDescriptorSetLayout MaterialLayout;
+		} GPUSceneLayout;
+
+		// TODO
+		struct
+		{
+			VkDescriptorSet VerticesSet;
+			VkDescriptorSet IndicesSet;
+			VkDescriptorSet UVSet;
+			VkDescriptorSet NormalSet;
+			VkDescriptorSet TextureSet;
+			VkDescriptorSet MaterialSet;
+		} GPUSceneData;
+
+		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];
+
+		int CurrentPerFrameData = 0;
+	};
+
+	// TODO: Separate build, setup and execution contexts?
+	struct RenderGraphContext
+	{
+		VkRenderPass VulkanRenderPass; // TODO: remove
+		SPtr<DeviceVulkan> Device;
+		SPtr<GPUScene> Scene;
+		CommandBufferVulkan* CommandBuffer;
+		RenderGraphData& RenderData;
+		// RenderGraph& Graph;
+
+		std::string LoadShader(const std::string& Filename);
+
+		// TODO: better system
+		Buffer* GetOutputBuffer(const std::string& Name, const BufferDesc& Desc);
+		Buffer* GetInputBuffer(const std::string& Name);
+
+		Texture2* GetRenderTarget(const std::string& Name, const TextureDesc2& Desc);
+		Texture2* GetInputTexture(const std::string& Name);
+
+		VkDescriptorSet GetDescriptorSet(const ComputePipeline* Pipeline, int Index);
+		VkDescriptorSet GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
+		VkDescriptorSet GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
+	};
+
+	class RenderPass
+	{
+	public:
+		std::string Name;
+		bool IsGraphicsPass = false;
+		bool ClearColor = true;
+	public:
+		RenderPass() {}
+		RenderPass(std::string_view Name) : Name(Name) {}
+
+		virtual void Setup(RenderGraphContext& Context) = 0;
+		virtual void PreExecute(RenderGraphContext& Context) {}
+		virtual void Execute(RenderGraphContext& Context) = 0;
+
+	private:
+		friend RenderGraph;
+
+		VkRenderPass VulkanRenderPass =  NULL;
+
+		std::vector<RenderGraphResourceId> Inputs;
+		std::vector<RenderGraphResourceId> Outputs;
+	};
+
+	class RenderGraph
+	{
+	public:
+		RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene);
+
+		void AddRenderPass(RenderPass* Pass);
+
+		void Build();
+		void Execute(SwapchainVulkan* Swapchain);
+
+	private:
+		std::vector<RenderPass*> RenderPasses;		
+
+		SPtr<DeviceVulkan> Device;
+		SPtr<GPUScene> Scene;
+
+		RenderGraphData RenderData;
+
+		VkRenderPass BlankPass; // TODO
+	};
+
+}

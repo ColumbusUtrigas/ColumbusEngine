@@ -11,6 +11,7 @@
 #include "TextureVulkan.h"
 
 #include <cstring>
+#include <memory>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
@@ -95,7 +96,7 @@ namespace Columbus
 		}
 	}
 
-	CommandBufferVulkan DeviceVulkan::CreateCommandBuffer()
+	CommandBufferVulkan* DeviceVulkan::CreateCommandBuffer()
 	{
 		VkCommandBufferAllocateInfo commandBufferInfo;
 		commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -107,28 +108,43 @@ namespace Columbus
 		VkCommandBuffer result;
 		VK_CHECK(vkAllocateCommandBuffers(_Device, &commandBufferInfo, &result));
 
-		return CommandBufferVulkan(_Device, _CmdPool, result, VkFunctions);
+		return new CommandBufferVulkan(_Device, _CmdPool, result, VkFunctions);
+	}
+
+	SPtr<CommandBufferVulkan> DeviceVulkan::CreateCommandBufferShared()
+	{
+		return std::shared_ptr<CommandBufferVulkan>(CreateCommandBuffer());
+	}
+
+	VkDescriptorSet DeviceVulkan::CreateDescriptorSetUnbounded(VkDescriptorSetLayout Layout, int MaxCount)
+	{
+		PipelineDescriptorSetLayoutsVulkan Layouts;
+		Layouts.Layouts[0] = Layout;
+		Layouts.VariableCountMax[0] = MaxCount;
+		Layouts.UsedLayouts = 1;
+
+		return _CreateDescriptorSet(Layouts, 0);
 	}
 
 	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const ComputePipeline* Pipeline, int Index)
 	{
 		auto vkpipe = static_cast<const ComputePipelineVulkan*>(Pipeline);
 
-		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
+		return _CreateDescriptorSet(vkpipe->SetLayouts, Index);
 	}
 
 	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index)
 	{
 		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(Pipeline);
 
-		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
+		return _CreateDescriptorSet(vkpipe->SetLayouts, Index);
 	}
 
 	VkDescriptorSet DeviceVulkan::CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index)
 	{
 		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(Pipeline);
 
-		return _CreateDescriptorSet(vkpipe->pipeline, vkpipe->SetLayouts, Index);
+		return _CreateDescriptorSet(vkpipe->SetLayouts, Index);
 	}
 
 	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer)
@@ -269,13 +285,13 @@ namespace Columbus
 
 		if (InitialData != nullptr)
 		{
-			auto copyCmdBuf = CreateCommandBuffer();
-			copyCmdBuf.Begin();
+			auto copyCmdBuf = CreateCommandBufferShared();
+			copyCmdBuf->Begin();
 			VkBufferCopy copy = vk::BufferCopy(0, 0, Desc.Size);
-			vkCmdCopyBuffer(copyCmdBuf._CmdBuf, staging.Buffer, result->_Buffer, 1, &copy);
-			copyCmdBuf.End();
+			vkCmdCopyBuffer(copyCmdBuf->_CmdBuf, staging.Buffer, result->_Buffer, 1, &copy);
+			copyCmdBuf->End();
 
-			Submit(copyCmdBuf);
+			Submit(copyCmdBuf.get());
 			QueueWaitIdle();
 
 			vmaDestroyBuffer(_Allocator, staging.Buffer, staging.Allocation);
@@ -317,9 +333,9 @@ namespace Columbus
 	{
 		auto result = _CreateTexture(Desc);
 
-		auto copyCmdBuf = CreateCommandBuffer();
-		copyCmdBuf.Reset();
-		copyCmdBuf.Begin();
+		auto copyCmdBuf = CreateCommandBufferShared();
+		copyCmdBuf->Reset();
+		copyCmdBuf->Begin();
 
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -331,7 +347,7 @@ namespace Columbus
 			newLayout = VK_IMAGE_LAYOUT_GENERAL;
 		}
 
-		TransitionImageLayout(copyCmdBuf._CmdBuf,
+		TransitionImageLayout(copyCmdBuf->_CmdBuf,
 				result->_Image, result->_Layout, newLayout,
 			0, 0,
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -340,8 +356,8 @@ namespace Columbus
 
 		result->_Layout = newLayout;
 
-		copyCmdBuf.End();
-		Submit(copyCmdBuf);
+		copyCmdBuf->End();
+		Submit(copyCmdBuf.get());
 		QueueWaitIdle();
 
 		return result;
@@ -366,11 +382,11 @@ namespace Columbus
 		StagingBufferVulkan staging;
 		staging = CreateStagingBufferVulkanInternal(_Allocator, Image.GetSize(0) * size, Image.GetData());
 
-		auto copyCmdBuf = CreateCommandBuffer();
-		copyCmdBuf.Reset();
-		copyCmdBuf.Begin();
+		auto copyCmdBuf = CreateCommandBufferShared();
+		copyCmdBuf->Reset();
+		copyCmdBuf->Begin();
 
-		TransitionImageLayout(copyCmdBuf._CmdBuf,
+		TransitionImageLayout(copyCmdBuf->_CmdBuf,
 			result->_Image,
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -394,7 +410,7 @@ namespace Columbus
 			regions[i].imageExtent = { Image.GetWidth(), Image.GetHeight(), 1 };
 		}
 
-		vkCmdCopyBufferToImage(copyCmdBuf._CmdBuf,
+		vkCmdCopyBufferToImage(copyCmdBuf->_CmdBuf,
 			staging.Buffer,
 			result->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -402,7 +418,7 @@ namespace Columbus
 			regions
 		);
 
-		TransitionImageLayout(copyCmdBuf._CmdBuf,
+		TransitionImageLayout(copyCmdBuf->_CmdBuf,
 			result->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -412,8 +428,8 @@ namespace Columbus
 		);
 		result->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		copyCmdBuf.End();
-		Submit(copyCmdBuf);
+		copyCmdBuf->End();
+		Submit(copyCmdBuf.get());
 		QueueWaitIdle();
 
 		return result;
@@ -512,7 +528,7 @@ namespace Columbus
 		return result;
 	}
 
-	VkDescriptorSet DeviceVulkan::_CreateDescriptorSet(VkPipeline Pipeline, const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index)
+	VkDescriptorSet DeviceVulkan::_CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index)
 	{
 		// only for variable descriptor counts
 		VkDescriptorSetVariableDescriptorCountAllocateInfo descriptorSetCounts;

@@ -14,6 +14,7 @@
 #include "Graphics/Vulkan/PipelineDescriptorSetLayoutVulkan.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Graphics/Vulkan/VulkanShaderCompiler.h"
+#include "Graphics/Vulkan/DescriptorCache.h"
 #include "VulkanMemoryAllocator/include/vk_mem_alloc.h"
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
@@ -67,7 +68,7 @@ namespace Columbus
 		VulkanFunctions VkFunctions;
 	private:
 		VkPipelineLayout _CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts);
-		VkDescriptorSet _CreateDescriptorSet(VkPipeline Pipeline, const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
+		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
 		void _SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name);
 
 		TextureVulkan* _CreateTexture(const TextureDesc2& Desc);
@@ -75,6 +76,8 @@ namespace Columbus
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 			_PhysicalDevice(PhysicalDevice)
 		{
+			VkFunctions.LoadFunctions(Instance);
+
 			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 			_Vulkan12Features.pNext = nullptr;
 			_AccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
@@ -203,13 +206,15 @@ namespace Columbus
 		VkRenderPass CreateRenderPass(VkFormat format);
 		void CreateFramebuffers(SwapchainVulkan* swapchain, VkRenderPass renderpass);
 
-		CommandBufferVulkan CreateCommandBuffer();
+		CommandBufferVulkan* CreateCommandBuffer();
+		SPtr<CommandBufferVulkan> CreateCommandBufferShared();
 
 		// TODO: mesh shaders
 		ComputePipeline* CreateComputePipeline(const ComputePipelineDesc& Desc);
 		GraphicsPipeline* CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, VkRenderPass RenderPass);
 		RayTracingPipeline* CreateRayTracingPipeline(const RayTracingPipelineDesc& Desc);
 
+		VkDescriptorSet CreateDescriptorSetUnbounded(VkDescriptorSetLayout Layout, int MaxCount);
 		VkDescriptorSet CreateDescriptorSet(const ComputePipeline* Pipeline, int Index);
 		VkDescriptorSet CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
@@ -238,6 +243,7 @@ namespace Columbus
 		void SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name);
 
 		// TODO: Higher-level API abstraction
+		// GPUScene* CreateGPUScene(const char* Name);
 
 		uint32_t alignedSize(uint32_t value, uint32_t alignment)
         {
@@ -295,7 +301,7 @@ namespace Columbus
 			vkAcquireNextImageKHR(_Device, swapchain->swapChain, UINT64_MAX, signalSemaphore, nullptr, &imageIndex);
 		}
 
-		void Submit(const CommandBufferVulkan& Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores)
+		void Submit(CommandBufferVulkan* Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores)
 		{
 			VkPipelineStageFlags waitStages[] = {
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -310,14 +316,14 @@ namespace Columbus
 			submit_info.pWaitSemaphores = waitSemaphores;
 			submit_info.pWaitDstStageMask = waitStages;
 			submit_info.commandBufferCount = 1;
-			submit_info.pCommandBuffers = &Buffer._GetHandle();
+			submit_info.pCommandBuffers = &Buffer->_GetHandle();
 			submit_info.signalSemaphoreCount = signalSemaphoresCount;
 			submit_info.pSignalSemaphores = signalSemaphores;
 
 			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
 		}
 
-		void Submit(const CommandBufferVulkan& Buffer)
+		void Submit(CommandBufferVulkan* Buffer)
 		{
 			VkSubmitInfo submit_info;
 			submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -326,7 +332,7 @@ namespace Columbus
 			submit_info.pWaitSemaphores = nullptr;
 			submit_info.pWaitDstStageMask = nullptr;
 			submit_info.commandBufferCount = 1;
-			submit_info.pCommandBuffers = &Buffer._CmdBuf;
+			submit_info.pCommandBuffers = &Buffer->_CmdBuf;
 			submit_info.signalSemaphoreCount = 0;
 			submit_info.pSignalSemaphores = nullptr;
 

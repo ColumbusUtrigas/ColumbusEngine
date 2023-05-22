@@ -94,6 +94,13 @@ namespace Columbus
 		vkCmdBindPipeline(_CmdBuf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkpipe->pipeline);
 	}
 
+	void CommandBufferVulkan::BindDescriptorSetsCompute(const ComputePipeline* Pipeline, uint32 First, uint32 Count, const VkDescriptorSet* Sets)
+	{
+		auto vkpipe = static_cast<const ComputePipelineVulkan*>(Pipeline);
+
+		vkCmdBindDescriptorSets(_CmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, vkpipe->layout, First, Count, Sets, 0, nullptr);
+	}
+
 	void CommandBufferVulkan::PushConstantsGraphics(const GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues)
 	{
 		COLUMBUS_ASSERT((stages | ShaderType::AllGraphics) == ShaderType::AllGraphics);

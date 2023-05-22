@@ -1,0 +1,297 @@
+#include "RenderGraph.h"
+#include "Graphics/Vulkan/CommandBufferVulkan.h"
+#include "Graphics/Vulkan/SwapchainVulkan.h"
+#include "Graphics/Vulkan/ComputePipelineVulkan.h"
+#include "Graphics/Vulkan/GraphicsPipelineVulkan.h"
+#include "Graphics/Vulkan/RayTracingPipelineVulkan.h"
+#include "Graphics/Vulkan/TextureVulkan.h"
+#include "System/File.h"
+
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan_handles.hpp>
+
+namespace Columbus
+{
+
+	std::string RenderGraphContext::LoadShader(const std::string& Filename)
+	{
+		File ShaderFile(Filename.c_str(), "rt");
+		auto ShaderSize = ShaderFile.GetSize();
+		char* ShaderSource = new char[ShaderSize+1];
+		ShaderSource[ShaderSize] = '\0';
+		ShaderFile.Read(ShaderSource, ShaderSize, 1);
+
+		return ShaderSource;
+	}
+
+	Buffer* RenderGraphContext::GetOutputBuffer(const std::string& Name, const BufferDesc &Desc)
+	{
+		if (RenderData.Buffers.find(Name) == RenderData.Buffers.end())
+		{
+			RenderData.Buffers[Name] = Device->CreateBuffer(Desc, nullptr);
+		}
+
+		return RenderData.Buffers[Name];
+	}
+
+	Buffer* RenderGraphContext::GetInputBuffer(const std::string& Name)
+	{
+		// TODO: sync
+		return RenderData.Buffers[Name];
+	}
+
+	Texture2* RenderGraphContext::GetRenderTarget(const std::string& Name, const TextureDesc2& Desc)
+	{
+		if (RenderData.Textures.find(Name) == RenderData.Textures.end())
+		{
+			RenderData.Textures[Name] = Device->CreateTexture(Desc);
+		}
+
+		return RenderData.Textures[Name];
+	}
+
+	Texture2* RenderGraphContext::GetInputTexture(const std::string& Name)
+	{
+		TextureVulkan* Texture = static_cast<TextureVulkan*>(RenderData.Textures[Name]);
+
+		VkImageMemoryBarrier Barrier{};
+		Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		Barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL; // TODO
+		Barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // TODO
+		Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		Barrier.image = Texture->_Image;
+		Barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // TODO
+		Barrier.subresourceRange.baseMipLevel = 0;
+		Barrier.subresourceRange.levelCount = 1;
+		Barrier.subresourceRange.baseArrayLayer = 0;
+		Barrier.subresourceRange.layerCount = 1;
+		Barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // TODO
+		Barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // TODO
+
+		vkCmdPipelineBarrier(CommandBuffer->_CmdBuf,
+			VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // TODO
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &Barrier);
+
+		return Texture;
+	}
+
+	// TODO: unify
+	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const ComputePipeline* Pipeline, int Index)
+	{
+		auto vkpipe = static_cast<const ComputePipelineVulkan*>(Pipeline);
+
+		auto& DescriptorSets = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
+		if (DescriptorSets.find(vkpipe->pipeline) == DescriptorSets.end())
+		{
+			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
+
+			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
+			{
+				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
+			}
+
+			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
+		}
+
+		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
+	}
+
+	// TODO: unify
+	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index)
+	{
+		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(Pipeline);
+
+		auto& DescriptorSets = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
+		if (DescriptorSets.find(vkpipe->pipeline) == DescriptorSets.end())
+		{
+			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
+
+			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
+			{
+				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
+			}
+
+			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
+		}
+
+		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
+	}
+
+	// TODO: unify
+	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index)
+	{
+		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(Pipeline);
+
+		auto& DescriptorSets = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
+		if (DescriptorSets.find(vkpipe->pipeline) == DescriptorSets.end())
+		{
+			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
+
+			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
+			{
+				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
+			}
+
+			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
+		}
+
+		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
+	}
+
+	RenderGraph::RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene) : Device(Device), Scene(Scene)
+	{
+		for (auto& PerFrameData : RenderData.PerFrameData)
+		{
+			PerFrameData.Fence = Device->CreateFence(true);
+			PerFrameData.ImageSemaphore = Device->CreateSemaphore();
+			PerFrameData.SubmitSemaphore = Device->CreateSemaphore();
+			PerFrameData.CommandBuffer = Device->CreateCommandBuffer();
+		}
+
+		// Assuming that GPUScene is completely static, fill it in
+
+		// brute-generate VkDescriptorSetLayout
+		auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type)
+		{
+			VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+
+			VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
+			bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+			bindingFlagsInfo.pNext = nullptr;
+			bindingFlagsInfo.bindingCount = 1;
+			bindingFlagsInfo.pBindingFlags = &bindingFlags;
+
+			VkDescriptorSetLayoutBinding binding;
+			binding.binding = bindingNum;
+			binding.descriptorType = type;
+			binding.descriptorCount = 1000;
+			binding.stageFlags = VK_SHADER_STAGE_ALL;
+			binding.pImmutableSamplers = nullptr;
+
+			VkDescriptorSetLayoutCreateInfo setLayoutInfo;
+			setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			setLayoutInfo.pNext = nullptr;
+			setLayoutInfo.flags = 0;
+			setLayoutInfo.bindingCount = 1;
+			setLayoutInfo.pBindings = &binding;
+			setLayoutInfo.pNext = &bindingFlagsInfo; // for unbounded array
+
+			VkDescriptorSetLayout layout;
+
+			VK_CHECK(vkCreateDescriptorSetLayout(Device->_Device, &setLayoutInfo, nullptr, &layout));
+
+			return layout;
+		};
+
+		// RenderData.GPUSceneLayout.VerticesLayout = CreateLayout();
+		RenderData.GPUSceneLayout.IndicesLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+		RenderData.GPUSceneLayout.UVLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+		RenderData.GPUSceneLayout.NormalLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+		RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		RenderData.GPUSceneLayout.MaterialLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+		RenderData.GPUSceneData.IndicesSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.IndicesLayout, 1000);
+		RenderData.GPUSceneData.UVSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.UVLayout, 1000);
+		RenderData.GPUSceneData.NormalSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.NormalLayout, 1000);
+		RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 1000);
+		RenderData.GPUSceneData.MaterialSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.MaterialLayout, 1000);
+
+		for (int i = 0; i < Scene->Meshes.size(); i++)
+		{
+			const auto& mesh = Scene->Meshes[i];
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.IndicesSet, 0, i, mesh.Indices);
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.UVSet, 0, i, mesh.UVs);
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.NormalSet, 0, i, mesh.Normals);
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.MaterialSet, 0, i, mesh.Material);
+		}
+
+		for (int i = 0; i < Scene->Textures.size(); i++)
+		{
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i]);
+		}
+	}
+
+	void RenderGraph::AddRenderPass(RenderPass* Pass)
+	{
+		RenderPasses.push_back(Pass);
+	}
+
+	void RenderGraph::Build()
+	{
+		for (auto Pass : RenderPasses)
+		{
+			if (Pass->IsGraphicsPass)
+			{
+				Pass->VulkanRenderPass = Device->CreateRenderPass(VK_FORMAT_B8G8R8A8_SRGB);
+			}
+		}
+
+		BlankPass = Device->CreateRenderPass(VK_FORMAT_B8G8R8A8_SRGB);
+	}
+
+	void RenderGraph::Execute(SwapchainVulkan* Swapchain)
+	{
+		static bool FirstTime = true;
+
+		RenderData.CurrentPerFrameData = (RenderData.CurrentPerFrameData + 1) % MaxFramesInFlight;
+		auto& PerFrameData = RenderData.PerFrameData[RenderData.CurrentPerFrameData];
+		auto CommandBuffer = PerFrameData.CommandBuffer;
+
+		Device->WaitForFence(PerFrameData.Fence, UINT64_MAX);
+		Device->ResetFence(PerFrameData.Fence);
+
+		uint32_t SwapchainImageIndex;
+		Device->AcqureNextImage(Swapchain, PerFrameData.ImageSemaphore, SwapchainImageIndex);
+
+		RenderGraphContext Context{BlankPass, Device, Scene, CommandBuffer, RenderData};
+		CommandBuffer->Reset();
+		CommandBuffer->Begin();
+
+		if (FirstTime)
+		{
+			Device->CreateFramebuffers(Swapchain, BlankPass); // TODO: better system
+
+			for (auto Pass : RenderPasses)
+			{
+				Context.VulkanRenderPass = Pass->VulkanRenderPass;
+				Pass->Setup(Context);
+			}
+			FirstTime = false;
+		}
+
+		for (auto Pass : RenderPasses)
+		{
+			Context.VulkanRenderPass = Pass->VulkanRenderPass;
+
+			CommandBuffer->BeginDebugMarker(Pass->Name.c_str());
+			Pass->PreExecute(Context);
+
+			if (Pass->IsGraphicsPass)
+			{
+				uint32_t clearValuesCount = 1; // TODO
+				VkClearValue clearValue{};
+				CommandBuffer->BeginRenderPass(Pass->VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Swapchain->swapChainFramebuffers[SwapchainImageIndex], clearValuesCount, &clearValue);
+			}
+
+			Pass->Execute(Context);
+
+			if (Pass->IsGraphicsPass)
+			{
+				CommandBuffer->EndRenderPass();
+			}
+
+			CommandBuffer->EndDebugMarker();
+		}
+
+		CommandBuffer->End();
+
+		Device->Submit(CommandBuffer, PerFrameData.Fence, 1, &PerFrameData.ImageSemaphore, 1, &PerFrameData.SubmitSemaphore);
+		Device->Present(Swapchain, SwapchainImageIndex, PerFrameData.SubmitSemaphore);
+	}
+
+}

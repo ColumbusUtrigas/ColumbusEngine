@@ -125,7 +125,7 @@ namespace Columbus
 			for (int b = 0; b < sets[i]->binding_count; b++)
 			{
 				auto binding = sets[i]->bindings[b];
-				assert(stage->Type == ShaderType::Pixel || stage->Type == ShaderType::Raygen || stage->Type == ShaderType::ClosestHit);
+				assert(stage->Type == ShaderType::Pixel || stage->Type == ShaderType::Raygen || stage->Type == ShaderType::ClosestHit || stage->Type == ShaderType::Compute);
 
 				VkDescriptorType descriptorType;
 				switch (binding->descriptor_type)
@@ -155,7 +155,8 @@ namespace Columbus
 				bindingInfo.binding = binding->binding;
 				bindingInfo.descriptorType = descriptorType;
 				bindingInfo.descriptorCount = binding->count;
-				bindingInfo.stageFlags = vkstage;
+				// bindingInfo.stageFlags = vkstage;
+				bindingInfo.stageFlags = VK_SHADER_STAGE_ALL;
 				bindingInfo.pImmutableSamplers = nullptr;
 
 				VkDescriptorBindingFlags bindingFlag = 0;

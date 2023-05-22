@@ -1,11 +1,16 @@
 #pragma once
 
-#include <Core/Types.h>
-#include <Core/Random.h>
-#include <Core/SmartPointer.h>
+#include "Types.h"
+#include "Random.h"
+#include "SmartPointer.h"
+#include "Timer.h"
+#include "Assert.h"
 
-#include <Core/Platform.h>
-#include <Core/Filesystem.h>
+#include "Platform.h"
+#include "Filesystem.h"
+#include "Stacktrace.h"
 
 #define sizeofarray(a) (sizeof(a) / sizeof(a[0]))
 #define COLUMBUS_EDITOR 1
+
+void InitializeEngine();

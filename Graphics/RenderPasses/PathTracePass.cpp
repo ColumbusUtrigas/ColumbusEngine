@@ -1,0 +1,146 @@
+#include "Graphics/GPUScene.h"
+#include "Graphics/RenderGraph.h"
+#include "RenderPasses.h"
+
+namespace Columbus
+{
+
+	std::string PathTraceDisplayVertexShader = R"(#version 460 core
+	layout (location = 0) out vec2 texcoords;
+
+	const vec3 verts[3] = vec3[](
+		vec3(-3, -1, 0),
+		vec3(1, 3, 0),
+		vec3(1, -1, 0)
+	);
+
+	void main() {
+		gl_Position = vec4(verts[gl_VertexIndex], 1);
+		texcoords = 0.5 * gl_Position.xy + vec2(0.5);
+	}
+	)";
+
+	std::string PathTraceDisplayPixelShader = R"(#version 460 core
+		layout(location = 0) in vec2 texcoords;
+
+		layout(binding = 0, set = 0, rgba32f) uniform image2D img;
+
+		layout(location = 0) out vec4 RT0;
+
+		layout(push_constant) uniform params
+		{
+			uint frameNumber;
+		} Parameters;
+
+		void main() {
+			vec3 color = imageLoad(img, ivec2(texcoords * vec2(1280,720))).rgb / float(Parameters.frameNumber);
+			RT0 = vec4(color, 1.0);
+		}
+	)";
+
+	// no need to GPUParametrize push constants?
+	struct PathTraceParameters
+	{
+		GPUCamera MainCamera;
+		Vector4 lightDir;
+		float lightSpread;
+		int frameNumber;
+		int reset;
+	};
+
+	struct PathTraceDisplayParameters
+	{
+		uint FrameNumber;
+	};
+
+	void PathTracePass::Setup(RenderGraphContext& Context)
+	{
+		auto ShaderSource = Context.LoadShader("./Data/Shaders/Rays.glsl");
+
+		RayTracingPipelineDesc Desc{};
+		Desc.Name = "RTXON";
+		Desc.RayGen = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Raygen, ShaderLanguage::GLSL);
+		Desc.Miss = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Miss, ShaderLanguage::GLSL);
+		Desc.ClosestHit = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::ClosestHit, ShaderLanguage::GLSL);
+		Desc.MaxRecursionDepth = 1;
+		PTPipeline = Context.Device->CreateRayTracingPipeline(Desc);
+	}
+
+	void PathTracePass::Execute(RenderGraphContext& Context)
+	{
+		TextureDesc2 RTDesc;
+		RTDesc.Usage = TextureUsage::Storage;
+		RTDesc.Width = 1280;
+		RTDesc.Height = 720;
+		RTDesc.Format = TextureFormat::RGBA16F;
+		auto RTImage = Context.GetRenderTarget(RenderTargetName, RTDesc);
+
+		auto RTSet = Context.GetDescriptorSet(PTPipeline, 0);
+		Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS);
+		Context.Device->UpdateDescriptorSet(RTSet, 1, 0, RTImage);
+
+		GPUCamera UpdatedCamera = GPUCamera(MainCamera);
+		Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
+		Context.Scene->MainCamera = UpdatedCamera;
+
+		Vector3 lightDirection(1,1,1);
+		float lightSpread = 1;
+		bool reset = Context.Scene->Dirty;
+		int frame = rand() % 2000;
+
+		PathTraceParameters rayParams = { UpdatedCamera, {lightDirection,0}, lightSpread, (int)frame, (int)reset };
+
+		Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 0, 1, &RTSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 1, 1, &Context.RenderData.GPUSceneData.IndicesSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 2, 1, &Context.RenderData.GPUSceneData.UVSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 3, 1, &Context.RenderData.GPUSceneData.NormalSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 4, 1, &Context.RenderData.GPUSceneData.TextureSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 5, 1, &Context.RenderData.GPUSceneData.MaterialSet);
+		Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
+		Context.CommandBuffer->TraceRays(PTPipeline, 1280, 720, 1);
+
+		// Context.BindGPUScene();
+		// Context.CommandBuffer.BindDescriptorSet(0, Context.GetOutputTexture("PathTraceResult")); // RenderGraph manages input/output resources
+		// auto rayParams = Context.GetParameters<Parameters>(); // RenderGraph manages descriptor sets for parameters
+		// Context.CommandBuffer.PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
+
+		// sync with global RenderTarget
+		// merge per-frame rendertarget to a global one
+		// then display it
+	}
+
+	void PathTraceDisplayPass::Setup(RenderGraphContext& Context)
+	{
+		GraphicsPipelineDesc Desc;
+		Desc.Name = "Path Trace Display Shader";
+		Desc.rasterizerState.Cull = CullMode::No;
+		Desc.VS = std::make_shared<ShaderStage>(PathTraceDisplayVertexShader, "main", ShaderType::Vertex, ShaderLanguage::GLSL);
+		Desc.PS = std::make_shared<ShaderStage>(PathTraceDisplayPixelShader, "main", ShaderType::Pixel, ShaderLanguage::GLSL);
+		Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+	}
+
+	void PathTraceDisplayPass::PreExecute(RenderGraphContext& Context)
+	{
+		TraceResult = Context.GetInputTexture(PathTracePass::RenderTargetName); // will synchronize with RT
+	}
+
+	void PathTraceDisplayPass::Execute(RenderGraphContext& Context)
+	{
+		if (Context.Scene->Dirty)
+		{
+			Frame = 1;
+		}
+
+		PathTraceDisplayParameters Params{Frame++};
+
+		auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+		Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, TraceResult);
+
+		Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+		Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
+		Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Params), &Params);
+		Context.CommandBuffer->Draw(3, 1, 0, 0);
+	}
+
+}

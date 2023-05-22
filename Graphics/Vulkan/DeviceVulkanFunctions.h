@@ -23,20 +23,20 @@ namespace Columbus
         PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabel;
         PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName;
 
-        void LoadFunctions(VkInstance instance, PFN_vkGetInstanceProcAddr vkInstanceGetProcAddr)
+        void LoadFunctions(VkInstance instance)
         {
-            vkCreateRayTracingPipelines = (PFN_vkCreateRayTracingPipelinesKHR)vkInstanceGetProcAddr(instance, "vkCreateRayTracingPipelinesKHR");
-            vkCmdBuildAccelerationStructures = (PFN_vkCmdBuildAccelerationStructuresKHR)vkInstanceGetProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
-            vkGetAccelerationStructureBuildSizes = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkInstanceGetProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
-            vkCreateAccelerationStructure = (PFN_vkCreateAccelerationStructureKHR)vkInstanceGetProcAddr(instance, "vkCreateAccelerationStructureKHR");
-            vkGetAccelerationStructureDeviceAddress = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkInstanceGetProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
-            vkGetRayTracingShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkInstanceGetProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
-            vkCmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkInstanceGetProcAddr(instance, "vkCmdTraceRaysKHR");
+            vkCreateRayTracingPipelines = (PFN_vkCreateRayTracingPipelinesKHR)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesKHR");
+            vkCmdBuildAccelerationStructures = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
+            vkGetAccelerationStructureBuildSizes = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
+            vkCreateAccelerationStructure = (PFN_vkCreateAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructureKHR");
+            vkGetAccelerationStructureDeviceAddress = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
+            vkGetRayTracingShaderGroupHandles = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
+            vkCmdTraceRays = (PFN_vkCmdTraceRaysKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysKHR");
 
-            vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkInstanceGetProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
-            vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkInstanceGetProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
-            vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkInstanceGetProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
-            vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkInstanceGetProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+            vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
+            vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
+            vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdInsertDebugUtilsLabelEXT");
+            vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
         }
     };
 

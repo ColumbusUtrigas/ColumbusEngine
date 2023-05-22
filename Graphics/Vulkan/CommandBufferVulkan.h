@@ -8,6 +8,7 @@
 #include "BufferVulkan.h"
 #include "DeviceVulkanFunctions.h"
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -38,6 +39,8 @@ namespace Columbus
 		void BindComputePipeline(const ComputePipeline* Pipeline);
 		void BindGraphicsPipeline(const GraphicsPipeline* Pipeline);
 		void BindRayTracingPipeline(const RayTracingPipeline* Pipeline);
+
+		void BindDescriptorSetsCompute(const ComputePipeline* Pipeline, uint32 First, uint32 Count, const VkDescriptorSet* Sets);
 
 		void PushConstantsGraphics(const GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues);
 		void BindDescriptorSetsGraphics(const GraphicsPipeline* pipeline, uint32 firstSet, uint32 setCount, const VkDescriptorSet* sets);

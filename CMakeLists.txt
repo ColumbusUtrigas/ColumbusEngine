@@ -185,6 +185,7 @@ add_dir_to_target(${TARGET} Graphics/OpenGL) # goodbye my friend
 add_dir_to_target(${TARGET} Graphics/Vulkan)
 add_dir_to_target_recurse(${TARGET} Graphics/Particles)
 add_dir_to_target(${TARGET} Graphics/Postprocess)
+add_dir_to_target(${TARGET} Graphics/RenderPasses)
 
 add_dir_to_target(${TARGET} Input)
 add_dir_to_target(${TARGET} Physics)
