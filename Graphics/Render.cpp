@@ -755,7 +755,7 @@ void main(void)
 			lightingUboData.lights[id].innerCutoff = Math::Radians(Light.InnerCutoff) / 2;
 			lightingUboData.lights[id].outerCutoff = Math::Radians(Light.OuterCutoff) / 2;
 
-			lightingUboData.lights[id].type = Light.Type;
+			lightingUboData.lights[id].type = (int)Light.Type;
 			lightingUboData.lights[id].hasShadow = (int)Light.Shadows;
 
 			lightingUboData.count++;

@@ -14,17 +14,6 @@
 namespace Columbus
 {
 
-	std::string RenderGraphContext::LoadShader(const std::string& Filename)
-	{
-		File ShaderFile(Filename.c_str(), "rt");
-		auto ShaderSize = ShaderFile.GetSize();
-		char* ShaderSource = new char[ShaderSize+1];
-		ShaderSource[ShaderSize] = '\0';
-		ShaderFile.Read(ShaderSource, ShaderSize, 1);
-
-		return ShaderSource;
-	}
-
 	Buffer* RenderGraphContext::GetOutputBuffer(const std::string& Name, const BufferDesc &Desc)
 	{
 		if (RenderData.Buffers.find(Name) == RenderData.Buffers.end())

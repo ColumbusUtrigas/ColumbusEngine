@@ -4,11 +4,58 @@
 #include "TypeConversions.h"
 #include "Common.h"
 
+#include <System/File.h>
+
 #include <shaderc/shaderc.hpp>
 #include <Lib/SPIRV-Reflect/spirv_reflect.h>
 
+#include <unordered_map>
+
 namespace Columbus
 {
+
+	class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
+	{
+	public:
+		virtual shaderc_include_result* GetInclude(const char* requested_source,
+		                                           shaderc_include_type type,
+		                                           const char* requesting_source,
+		                                           size_t include_depth) override
+		{
+			shaderc_include_result* result = nullptr;
+
+			std::string source = requested_source;
+
+			if (!source.ends_with(".glsl"))
+			{
+				source += ".glsl";
+			}
+
+			if (!LoadedIncludes.contains(source))
+			{
+				LoadedIncludes[source] = LoadShaderFile(source);
+			}
+
+			result = new shaderc_include_result();
+			result->content = LoadedIncludes[source].c_str();
+			result->content_length = LoadedIncludes[source].size();
+			result->source_name = requested_source;
+			result->source_name_length = strlen(requested_source);
+
+			return result;
+		}
+
+		virtual void ReleaseInclude(shaderc_include_result* data) override
+		{
+			delete data;
+		}
+
+		virtual ~ShaderIncluder() override = default;
+
+	private:
+		std::unordered_map<std::string, std::string> LoadedIncludes;
+	};
+
 
 	CompiledSpirv CompileShaderStage_VK(SPtr<ShaderStage> stage, const std::string& name)
 	{
@@ -16,7 +63,10 @@ namespace Columbus
 		shaderc::Compiler compiler;
 		shaderc_shader_kind kind;
 		shaderc::CompileOptions options;
+		auto includer = std::make_unique<ShaderIncluder>();
 		VkShaderStageFlagBits vkstage = ShaderTypeToVk(stage->Type);
+
+		options.SetIncluder(std::move(includer));
 
 		switch (stage->Type)
 		{

@@ -136,7 +136,7 @@ target_include_directories(spirv_reflect PUBLIC ./Lib/SPIRV-Reflect)
 #add_executable(${TARGET} main.cpp)
 add_executable(${TARGET} Core/Windows/WindowsMain2.cpp)
 set_target_properties(${TARGET} PROPERTIES
-	CXX_STANDARD 17
+	CXX_STANDARD 20
 	CXX_STANDARD_REQUIRED YES
 	CXX_EXTENSIONS NO
 )
@@ -225,8 +225,8 @@ endif()
 target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} spirv_reflect)
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")
+add_custom_command(TARGET ${PROJECT_NAME} COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Shaders" "$<TARGET_FILE_DIR:${TARGET}>/Data/Shaders")
 
 if (WIN32)
 	# copy required DLLs to build

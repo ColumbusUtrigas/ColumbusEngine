@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/Types.h>
+#include <Core/Core.h>
 #include <cstdio>
 
 namespace Columbus
@@ -21,6 +21,8 @@ namespace Columbus
 		File& operator=(File& Other);
 		File& operator<<(const char Char);
 		File& operator<<(const char* String);
+
+		static String ReadAllText(const char* Filename);
 
 		bool Open(const char* File, const char* Modes);
 		bool Close();
@@ -62,5 +64,3 @@ namespace Columbus
 	};
 
 }
-
-

@@ -1,3 +1,4 @@
+#include "Core/Core.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
@@ -55,7 +56,7 @@ namespace Columbus
 
 	void PathTracePass::Setup(RenderGraphContext& Context)
 	{
-		auto ShaderSource = Context.LoadShader("./Data/Shaders/Rays.glsl");
+		auto ShaderSource = LoadShaderFile("PathTrace.glsl");
 
 		RayTracingPipelineDesc Desc{};
 		Desc.Name = "RTXON";
@@ -70,7 +71,7 @@ namespace Columbus
 	{
 		TextureDesc2 RTDesc;
 		RTDesc.Usage = TextureUsage::Storage;
-		RTDesc.Width = 1280;
+		RTDesc.Width = 1280; // TODO: swapchain and RT resize
 		RTDesc.Height = 720;
 		RTDesc.Format = TextureFormat::RGBA16F;
 		auto RTImage = Context.GetRenderTarget(RenderTargetName, RTDesc);

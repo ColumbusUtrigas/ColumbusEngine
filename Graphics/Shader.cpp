@@ -6,71 +6,71 @@ namespace Columbus
 {
 
 	static const char* gErrorShader =
-		#include <Graphics/Shaders/Error.csl>
+		#include <Shaders/Error.csl>
 	;
 
 	static const char* gScreenSpaceShader =
-		#include <Graphics/Shaders/ScreenSpace.csl>
+		#include <Shaders/ScreenSpace.csl>
 	;
 
 	static const char* gAutoExposureShader =
-		#include <Graphics/Shaders/AutoExposure.csl>
+		#include <Shaders/AutoExposure.csl>
 	;
 
 	static const char* gTonemapShader =
-		#include <Graphics/Shaders/Tonemap.csl>
+		#include <Shaders/Tonemap.csl>
 	;
 
 	static const char* gResolveMSAAShader =
-		#include <Graphics/Shaders/ResolveMSAA.csl>
+		#include <Shaders/ResolveMSAA.csl>
 	;
 
 	static const char* gGaussBlurShader =
-		#include <Graphics/Shaders/GaussBlur.csl>
+		#include <Shaders/GaussBlur.csl>
 	;
 
 	static const char* gBloomBrightShader =
-		#include <Graphics/Shaders/BloomBright.csl>
+		#include <Shaders/BloomBright.csl>
 	;
 
 	static const char* gBloomShader =
-		#include <Graphics/Shaders/Bloom.csl>
+		#include <Shaders/Bloom.csl>
 	;
 
 	static const char* gVignetteShader =
-		#include <Graphics/Shaders/Vignette.csl>
+		#include <Shaders/Vignette.csl>
 	;
 
 	static const char* gFXAAShader =
-		#include <Graphics/Shaders/FXAA.csl>
+		#include <Shaders/FXAA.csl>
 	;
 
 	static const char* gIconShader =
-		#include <Graphics/Shaders/Icon.csl>
+		#include <Shaders/Icon.csl>
 	;
 
 	static const char* gEditorToolsShader =
-		#include <Graphics/Shaders/EditorTools.csl>
+		#include <Shaders/EditorTools.csl>
 	;
 
 	static const char* gSkyboxShader =
-		#include <Graphics/Shaders/Skybox.csl>
+		#include <Shaders/Skybox.csl>
 	;
 
 	static const char* gSkyboxCubemapGenerationShader =
-		#include <Graphics/Shaders/SkyboxCubemapGeneration.csl>
+		#include <Shaders/SkyboxCubemapGeneration.csl>
 	;
 
 	static const char* gIrradianceGenerationShader =
-		#include <Graphics/Shaders/IrradianceGeneration.csl>
+		#include <Shaders/IrradianceGeneration.csl>
 	;
 
 	static const char* gPrefilterGenerationShader =
-		#include <Graphics/Shaders/PrefilterGeneration.csl>
+		#include <Shaders/PrefilterGeneration.csl>
 	;
 
 	static const char* gIntegrationGenerationShader =
-		#include <Graphics/Shaders/IntegrationGeneration.csl>
+		#include <Shaders/IntegrationGeneration.csl>
 	;
 
 	DefaultShaders::DefaultShaders()

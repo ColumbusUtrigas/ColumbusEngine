@@ -57,6 +57,14 @@ namespace Columbus
 		return *this;
 	}
 
+	String File::ReadAllText(const char* Filename)
+	{
+		File F(Filename, "rt");
+		String Result(F.GetSize(), '\0');
+		F.Read(&Result[0], F.GetSize(), 1);
+		return Result;
+	}
+
 	bool File::Open(const char* File, const char* Modes)
 	{
 		Handle = fopen(File, Modes);

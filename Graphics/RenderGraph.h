@@ -78,8 +78,6 @@ namespace Columbus
 		RenderGraphData& RenderData;
 		// RenderGraph& Graph;
 
-		std::string LoadShader(const std::string& Filename);
-
 		// TODO: better system
 		Buffer* GetOutputBuffer(const std::string& Name, const BufferDesc& Desc);
 		Buffer* GetInputBuffer(const std::string& Name);

@@ -6,7 +6,7 @@
 #include <Graphics/Types.h>
 #include <Common/Image/Image.h>
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
+#include <cassert>
 
 namespace Columbus
 {
@@ -17,6 +17,8 @@ namespace Columbus
 		{
 			case FillMode::Solid:     return VK_POLYGON_MODE_FILL;
 			case FillMode::Wireframe: return VK_POLYGON_MODE_LINE;
+
+			default: COLUMBUS_ASSERT(false);
 		}
 	}
 
@@ -27,6 +29,8 @@ namespace Columbus
 			case CullMode::No:    return VK_CULL_MODE_NONE;
 			case CullMode::Front: return VK_CULL_MODE_FRONT_BIT;
 			case CullMode::Back:  return VK_CULL_MODE_BACK_BIT;
+
+			default: COLUMBUS_ASSERT(false);
 		}
 	}
 

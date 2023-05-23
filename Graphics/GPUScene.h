@@ -36,12 +36,8 @@ namespace Columbus
 			Side = Vector4(FromCamera.Right(), 0);
 		}
 
-		bool operator==(const GPUCamera& Other)
-		{
-			return Position == Other.Position && Direction == Other.Direction && Up == Other.Up && Side == Other.Side;
-		}
-
-		bool operator!=(const GPUCamera& Other) { return !(*this == Other); }
+		bool operator==(const GPUCamera&) const = default;
+		bool operator!=(const GPUCamera&) const = default;
 	};
 
 	struct GPULight

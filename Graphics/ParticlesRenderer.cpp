@@ -10,7 +10,7 @@ namespace Columbus
 {
 
 	auto ParticlesLightingProg =
-		#include <Graphics/Shaders/ParticlesLighting.csl>
+		#include <Shaders/ParticlesLighting.csl>
 		;
 //std::string acomputeprog =
 //R"(#version 430 core

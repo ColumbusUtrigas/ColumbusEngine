@@ -472,13 +472,16 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- ray-traced shadows with variable penumbra (ray-traced)
 //			- volumetrics and OpenVDB
 //			- DDGI+RT reflections
+//			- simple billboard particles render
 //		3. Common
 //			- PBR atmosphere rendering
 //			- filmic camera
-//			- filmic tonemapper
+//			- filmic HDR tonemapper
 //			- render image export
 //			- decals
 //			- subsurface scattering
+//			- IES light profiles
+//			+ shader include files
 //
 // Another high-level view of rendering system
 // There should be a convinient way to define CPU-GPU logic for pipelines
