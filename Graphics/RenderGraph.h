@@ -50,6 +50,7 @@ namespace Columbus
 			VkDescriptorSetLayout NormalLayout;
 			VkDescriptorSetLayout TextureLayout;
 			VkDescriptorSetLayout MaterialLayout;
+			VkDescriptorSetLayout LightLayout;
 		} GPUSceneLayout;
 
 		// TODO
@@ -61,6 +62,7 @@ namespace Columbus
 			VkDescriptorSet NormalSet;
 			VkDescriptorSet TextureSet;
 			VkDescriptorSet MaterialSet;
+			VkDescriptorSet LightSet;
 		} GPUSceneData;
 
 		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];

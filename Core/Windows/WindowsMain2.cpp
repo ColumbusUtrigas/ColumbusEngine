@@ -402,6 +402,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
 	Scene->MainCamera = GPUCamera(DefaultCamera);
 
+	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}});
+
 	return Scene;
 }
 
@@ -452,15 +454,21 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 // 4. Static reflection
 // 5. ECS
 // 6. TaskGraph
-// 7. CVar system
+// 7. CVar system (+console)
 // 8. Config system
 //
 // Rendering tasks:
 // 		1. Path Tracer (reference)
 //			+ automatic buffer reset on camera move
-//			- SPP setting
+//			+ Bounces setting
 //			- BRDF and simple material declaration
-//			- lights: point, directional, spot, stochastic area lights
+//			- lightweight shadow rays
+//			- lights:
+//				+ point
+//				+ directional
+//				- spot
+//				- rect
+//				- sphere/capsule
 //			- importance sampling
 //			- refractions
 //			- volumetrics and OpenVDB

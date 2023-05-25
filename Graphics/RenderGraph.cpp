@@ -7,6 +7,7 @@
 #include "Graphics/Vulkan/TextureVulkan.h"
 #include "System/File.h"
 
+#include <memory>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_handles.hpp>
@@ -143,9 +144,10 @@ namespace Columbus
 		}
 
 		// Assuming that GPUScene is completely static, fill it in
+		// TODO: fully refactor
 
 		// brute-generate VkDescriptorSetLayout
-		auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type)
+		auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type, uint32_t count, bool unbounded = true)
 		{
 			VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
@@ -158,17 +160,16 @@ namespace Columbus
 			VkDescriptorSetLayoutBinding binding;
 			binding.binding = bindingNum;
 			binding.descriptorType = type;
-			binding.descriptorCount = 1000;
+			binding.descriptorCount = count;
 			binding.stageFlags = VK_SHADER_STAGE_ALL;
 			binding.pImmutableSamplers = nullptr;
 
 			VkDescriptorSetLayoutCreateInfo setLayoutInfo;
 			setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			setLayoutInfo.pNext = nullptr;
+			setLayoutInfo.pNext = unbounded ? &bindingFlagsInfo : nullptr;
 			setLayoutInfo.flags = 0;
 			setLayoutInfo.bindingCount = 1;
 			setLayoutInfo.pBindings = &binding;
-			setLayoutInfo.pNext = &bindingFlagsInfo; // for unbounded array
 
 			VkDescriptorSetLayout layout;
 
@@ -178,17 +179,19 @@ namespace Columbus
 		};
 
 		// RenderData.GPUSceneLayout.VerticesLayout = CreateLayout();
-		RenderData.GPUSceneLayout.IndicesLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-		RenderData.GPUSceneLayout.UVLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-		RenderData.GPUSceneLayout.NormalLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-		RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-		RenderData.GPUSceneLayout.MaterialLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+		RenderData.GPUSceneLayout.IndicesLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
+		RenderData.GPUSceneLayout.UVLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
+		RenderData.GPUSceneLayout.NormalLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
+		RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
+		RenderData.GPUSceneLayout.MaterialLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
+		RenderData.GPUSceneLayout.LightLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false);
 
 		RenderData.GPUSceneData.IndicesSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.IndicesLayout, 1000);
 		RenderData.GPUSceneData.UVSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.UVLayout, 1000);
 		RenderData.GPUSceneData.NormalSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.NormalLayout, 1000);
 		RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 1000);
 		RenderData.GPUSceneData.MaterialSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.MaterialLayout, 1000);
+		RenderData.GPUSceneData.LightSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.LightLayout, 0);
 
 		for (int i = 0; i < Scene->Meshes.size(); i++)
 		{
@@ -203,6 +206,20 @@ namespace Columbus
 		{
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i]);
 		}
+
+		auto Lights = GPUArray<GPULight>::Allocate(Scene->Lights.size());
+		for (int i = 0; i < Scene->Lights.size(); i++)
+		{
+			(*Lights)[i] = Scene->Lights[i];
+		}
+
+		BufferDesc LightBufferDesc;
+		LightBufferDesc.Size = Lights->Bytesize();
+		LightBufferDesc.BindFlags = BufferType::UAV;
+		auto LightBuffer = Device->CreateBuffer(LightBufferDesc, Lights.get());
+		Device->SetDebugName(LightBuffer, "GPUScene.Lights");
+
+		Device->UpdateDescriptorSet(RenderData.GPUSceneData.LightSet, 0, 0, LightBuffer);
 	}
 
 	void RenderGraph::AddRenderPass(RenderPass* Pass)

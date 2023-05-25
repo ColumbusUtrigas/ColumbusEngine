@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "Texture.h"
 #include "Camera.h"
+#include <Core/Core.h>
 #include <vector>
 
 namespace Columbus
@@ -60,6 +61,39 @@ namespace Columbus
 		bool Dirty = false;
 
 		// TODO: camera, lights, decals, materials
+	};
+
+	// GPUArray is a helper type used to pack both
+	// Count and Data in one contiguous buffer
+	template <typename T>
+	struct GPUArray
+	{
+		uint32_t Count;
+		static constexpr int Padding = 12;
+
+		static size_t Bytesize(uint32_t InCount)
+		{
+			return sizeof(GPUArray::Count) + Padding + sizeof(T) * InCount;
+		}
+
+		size_t Bytesize()
+		{
+			return Bytesize(Count);
+		}
+
+		T& operator[](size_t Index)
+		{
+			return *(T*)(((char*)this) + sizeof(Count) + Padding + sizeof(T) * Index);
+		}
+
+		static SPtr<GPUArray<T>> Allocate(uint32_t InCount)
+		{
+			size_t Size = Bytesize(InCount);
+			GPUArray<T>* Result = static_cast<GPUArray<T>*>(::operator new(Size));
+			Result->Count = InCount;
+			// Result->Data = Result + offsetof(GPUArray, Data);
+			return SPtr<GPUArray<T>>(Result);
+		}
 	};
 
 }

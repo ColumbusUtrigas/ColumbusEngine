@@ -13,6 +13,8 @@ struct RayPayload {
     layout(binding = 0, set = 0) uniform accelerationStructureEXT acc;
     layout(binding = 1, rgba32f) uniform image2D img;
 
+	#include <GPUScene>
+
     layout(push_constant) uniform params
     {
         vec4 camPos;
@@ -23,6 +25,7 @@ struct RayPayload {
         float lightSpread;
         int frameNumber;
         int reset;
+		int bounces;
     } rayParams;
 
     // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
@@ -62,8 +65,47 @@ struct RayPayload {
         return float(word) / 4294967295.0f;
     }
 
+	vec3 SampleDirectionalLight(vec3 origin, vec3 direction, vec3 normal)
+	{
+		// sample shadow
+		traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
+			0xFF, 0, 0, 0, origin, 0, direction, 5000, 1);
+
+		// was shadow ray occluded?
+		if (shadowPayload.colorAndDist.w > 0)
+		{
+			return vec3(0);
+		}
+		else
+		{
+			return max(dot(normal, direction), 0) * vec3(1);
+		}
+	}
+
+	vec3 SamplePointLight(GPULight Light, vec3 origin, vec3 normal)
+	{
+		vec3 direction = normalize(Light.Position.xyz - origin);
+		float dist = distance(Light.Position.xyz, origin);
+		float attenuation = 1.0 / (1.0 + dist);
+
+		// sample shadow
+		traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
+			0xFF, 0, 0, 0, origin, 0, direction, dist, 1);
+
+		// was shadow ray occluded?
+		if (shadowPayload.colorAndDist.w > 0)
+		{
+			return vec3(0);
+		}
+		else
+		{
+			return max(dot(normal, direction), 0) * attenuation * Light.Color.rgb;
+		}
+	}
+
     vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface)
     {
+		// TODO
         traceRayEXT(acc,
             gl_RayFlagsOpaqueEXT,
             0xFF,
@@ -87,31 +129,16 @@ struct RayPayload {
             origin = hitPoint + normal * 0.001;
             direction = rayParams.lightDir.xyz;
 
-            // sample shadow
-            traceRayEXT(acc,
-                gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-                0xFF,
-                0,
-                0,
-                0,
-                origin,
-                0,
-                direction,
-                5000,
-                1);
+			vec3 AccumulatedLight = vec3(0);
+			AccumulatedLight += SampleDirectionalLight(origin, normalize(vec3(1)), normal); // TODO
 
-            // float ambientColor = 0.5;
-            float ambientColor = 0.0; // if there is no light, it should be black!
+			for (uint i = 0; i < GPUSceneLights.Count; i++)
+			{
+				GPULight Light = GPUSceneLights.Lights[i];
+				AccumulatedLight += SamplePointLight(Light, origin, normal);
+			}
 
-            // something is occluding the shadow ray
-            if (shadowPayload.colorAndDist.w > 0)
-            {
-                return surfaceColor * ambientColor;
-            }
-            else
-            {
-                return surfaceColor * max(dot(normal, direction), ambientColor); // ndotl
-            }
+			return AccumulatedLight * surfaceColor;
         }
         else // sky
         {
@@ -119,6 +146,19 @@ struct RayPayload {
             return payload.colorAndDist.rgb;
         }
     }
+
+	vec3 RandomDirectionHemisphere(inout uint rngState, vec3 normal)
+	{
+		// For a random diffuse bounce direction, we follow the approach of
+		// Ray Tracing in One Weekend, and generate a random point on a sphere
+		// of radius 1 centered at the normal. This uses the random_unit_vector
+		// function from chapter 8.5:
+		float theta    = 6.2831853 * stepAndOutputRNGFloat(rngState);  // Random in [0, 2pi]
+		float u        = 2.0 * stepAndOutputRNGFloat(rngState) - 1.0;  // Random in [-1, 1]
+		float r        = sqrt(1.0 - u * u);
+		vec3 direction = normal + vec3(r * cos(theta), r * sin(theta), u);
+		return normalize(direction);
+	}
 
     void main() {
         vec3 camPos = rayParams.camPos.xyz;
@@ -172,39 +212,23 @@ struct RayPayload {
         {
             for (int sampleIdx = 0; sampleIdx < NUM_SAMPLES; sampleIdx++)
             {
-                // For a random diffuse bounce direction, we follow the approach of
-                // Ray Tracing in One Weekend, and generate a random point on a sphere
-                // of radius 1 centered at the normal. This uses the random_unit_vector
-                // function from chapter 8.5:
-                float theta = 6.2831853 * stepAndOutputRNGFloat(rngState);  // Random in [0, 2pi]
-                float u     = 2.0 * stepAndOutputRNGFloat(rngState) - 1.0;  // Random in [-1, 1]
-                float r     = sqrt(1.0 - u * u);
-                direction      = normal + vec3(r * cos(theta), r * sin(theta), u);
-                direction = normalize(direction);
+				vec3 accumulatedIndirect = vec3(0);
+				vec3 normalBounce = normal;
+				vec3 colorBounce = vec3(0);
 
-                vec3 normalBounce1 = vec3(0);
-                vec3 colorBounce1 = vec3(0);
-                vec3 accumulatedIndirect = calculateLight(origin, direction, normalBounce1, colorBounce1, hitSurface);
+				for (int bounceIdx = 0; bounceIdx < rayParams.bounces; bounceIdx++)
+				{
+					direction = RandomDirectionHemisphere(rngState, normalBounce);
 
-                // second bounce
-                for (int sampleIdy = 0; sampleIdy < NUM_SAMPLES; sampleIdy++)
-                {
-                    theta = 6.2831853 * stepAndOutputRNGFloat(rngState);  // Random in [0, 2pi]
-                    u     = 2.0 * stepAndOutputRNGFloat(rngState) - 1.0;  // Random in [-1, 1]
-                    r     = sqrt(1.0 - u * u);
-                    direction      = normalBounce1 + vec3(r * cos(theta), r * sin(theta), u);
-                    direction = normalize(direction);
+					accumulatedIndirect += calculateLight(origin, direction, normalBounce, colorBounce, hitSurface);
+					if (hitSurface == 0) break;
+				}
 
-                    vec3 normalBounce2 = vec3(0);
-                    vec3 colorBounce2 = vec3(0);
-                    accumulatedIndirect += calculateLight(origin, direction, normalBounce2, colorBounce2, hitSurface);
-                }
-
-                indirectColor += accumulatedIndirect / float(NUM_SAMPLES);
+                indirectColor += accumulatedIndirect;
             }
         }
 
-        finalColor += indirectColor / float(NUM_SAMPLES) * surfaceColor;
+        finalColor += indirectColor * surfaceColor;
 
         if (rayParams.reset == 1)
         {

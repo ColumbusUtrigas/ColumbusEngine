@@ -47,6 +47,7 @@ namespace Columbus
 		float lightSpread;
 		int frameNumber;
 		int reset;
+		int bounces;
 	};
 
 	struct PathTraceDisplayParameters
@@ -88,8 +89,9 @@ namespace Columbus
 		float lightSpread = 1;
 		bool reset = Context.Scene->Dirty;
 		int frame = rand() % 2000;
+		int bounces = 2;
 
-		PathTraceParameters rayParams = { UpdatedCamera, {lightDirection,0}, lightSpread, (int)frame, (int)reset };
+		PathTraceParameters rayParams = { UpdatedCamera, {lightDirection,0}, lightSpread, (int)frame, (int)reset, bounces };
 
 		Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
 		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 0, 1, &RTSet);
@@ -98,6 +100,7 @@ namespace Columbus
 		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 3, 1, &Context.RenderData.GPUSceneData.NormalSet);
 		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 4, 1, &Context.RenderData.GPUSceneData.TextureSet);
 		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 5, 1, &Context.RenderData.GPUSceneData.MaterialSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 6, 1, &Context.RenderData.GPUSceneData.LightSet);
 		Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
 		Context.CommandBuffer->TraceRays(PTPipeline, 1280, 720, 1);
 
