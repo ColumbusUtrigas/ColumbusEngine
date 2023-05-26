@@ -26,7 +26,7 @@ extern Columbus::GraphicsAPI chosen_api;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // API-independent
-bool InitializeEngine();
+//bool InitializeEngine();
 void NewFrameImGUI();
 void BeginFrame();
 void Render();

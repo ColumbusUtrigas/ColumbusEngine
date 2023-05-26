@@ -46,8 +46,6 @@
 #include <vector>
 #include <algorithm>
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <Lib/tinygltf/tiny_gltf.h>
 
 std::string srcScreenFrag2 = R"(#version 460 core

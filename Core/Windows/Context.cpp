@@ -1,7 +1,7 @@
 #include "Main.h"
 #include <imgui/imgui.h>
 
-bool InitializeEngine()
+/*bool InitializeEngine()
 {
 	InitializeCommon();
 
@@ -148,4 +148,4 @@ void InitializeImGUI_Common()
 	io.IniFilename = "interface.ini";
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-}
+}*/

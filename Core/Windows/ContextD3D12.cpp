@@ -1,3 +1,4 @@
+#if 0
 #include <Core/Windows/Main.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
@@ -400,3 +401,4 @@ void ShutdownWindowAndContext_DX12()
 {
 
 }
+#endif

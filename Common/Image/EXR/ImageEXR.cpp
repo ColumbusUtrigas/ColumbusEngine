@@ -2,7 +2,6 @@
 #include <System/File.h>
 #include <System/Log.h>
 
-#define TINYEXR_IMPLEMENTATION
 #include <Lib/tinyexr/tinyexr.h>
 
 namespace Columbus

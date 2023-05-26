@@ -1,3 +1,4 @@
+#if 0
 #include "Main.h"
 
 #include <Core/Windows/WindowsDragDrop.h>
@@ -760,4 +761,5 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+#endif
 #endif

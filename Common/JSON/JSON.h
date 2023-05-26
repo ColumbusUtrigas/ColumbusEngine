@@ -131,7 +131,7 @@ namespace Columbus
 		template <typename T> Vector2_t<T> GetVector2() { return Vector2_t<T>((T)operator[](0).GetFloat(), (T)operator[](1).GetFloat()); }
 		template <typename T> Vector3_t<T> GetVector3() { return Vector3_t<T>((T)operator[](0).GetFloat(), (T)operator[](1).GetFloat(), (T)operator[](2).GetFloat()); }
 		template <typename T> Vector4_t<T> GetVector4() { return Vector4_t<T>((T)operator[](0).GetFloat(), (T)operator[](1).GetFloat(), (T)operator[](2).GetFloat(), (T)operator[](3).GetFloat()); }
-		Quaternion GetQuaternion() { return Quaternion(operator[](0).GetFloat(), operator[](1).GetFloat(), operator[](2).GetFloat(), operator[](3).GetFloat()); }
+		Quaternion GetQuaternion() { return Quaternion((float)operator[](0).GetFloat(), (float)operator[](1).GetFloat(), (float)operator[](2).GetFloat(), (float)operator[](3).GetFloat()); }
 
 		bool IsString() const { return ValueType == Type::String; }
 		bool IsBool()   const { return ValueType == Type::Bool;   }
