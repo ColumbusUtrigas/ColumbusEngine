@@ -175,7 +175,7 @@ namespace Columbus
 			for (int b = 0; b < sets[i]->binding_count; b++)
 			{
 				auto binding = sets[i]->bindings[b];
-				assert(stage->Type == ShaderType::Pixel || stage->Type == ShaderType::Raygen || stage->Type == ShaderType::ClosestHit || stage->Type == ShaderType::Compute);
+				assert(stage->Type == ShaderType::Vertex || stage->Type == ShaderType::Pixel || stage->Type == ShaderType::Raygen || stage->Type == ShaderType::ClosestHit || stage->Type == ShaderType::Compute);
 
 				VkDescriptorType descriptorType;
 				switch (binding->descriptor_type)

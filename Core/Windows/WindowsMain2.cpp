@@ -380,11 +380,13 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 			GPUSceneMesh Mesh;
 			Mesh.BLAS = BLAS;
+			Mesh.Transform = Matrix(1);
 			Mesh.Vertices = vertexBuffer;
 			Mesh.Indices = indexBuffer;
 			Mesh.UVs = uvBuffer;
 			Mesh.Normals = normalBuffer;
 			Mesh.Material = materialBuffer;
+			Mesh.VertexCount = verticesCount;
 
 			Scene->Meshes.push_back(Mesh);
 		}
@@ -402,7 +404,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
 	Scene->MainCamera = GPUCamera(DefaultCamera);
 
-	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}});
+	Scene->Lights.push_back(GPULight{{}, {1,1,1,0}, {1,1,1,0}, 0}); // directional
+	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1}); // point
 
 	return Scene;
 }
@@ -445,6 +448,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 // System tasks:
 // 1. RenderGraph
 //		+ very basic resource synchronization
+//		- RenderPass depth attachments
 //		- resource tracker and synchronization mechanism
 //		- swapchain resize (and pipeline dynamic parameters)
 //		- renderpass blending
@@ -468,7 +472,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //				+ directional
 //				- spot
 //				- rect
-//				- sphere/capsule
+//				- sphere
+//				- capsule
 //			- importance sampling
 //			- refractions
 //			- volumetrics and OpenVDB
@@ -485,11 +490,12 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- PBR atmosphere rendering
 //			- filmic camera
 //			- filmic HDR tonemapper
-//			- render image export
+//			- render image export (!!!)
 //			- decals
 //			- subsurface scattering
 //			- IES light profiles
 //			+ shader include files
+//			- fix descriptor set duplication
 //
 // Another high-level view of rendering system
 // There should be a convinient way to define CPU-GPU logic for pipelines
@@ -527,6 +533,7 @@ int main()
 	Columbus::Timer timer;
 	camera.Pos = { -1173, 602, 104 };
 	camera.Rot = { 0, -70, 0 };
+	camera.Perspective(45, 1280.f/720.f, 0.1f, 10000.f);
 
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
@@ -536,8 +543,12 @@ int main()
 
 	// renderGraph.AddRenderPass(new TestComputePass());
 	// renderGraph.AddRenderPass(new TestRenderPass());
-	renderGraph.AddRenderPass(new PathTracePass(camera));
-	renderGraph.AddRenderPass(new PathTraceDisplayPass());
+
+	// renderGraph.AddRenderPass(new PathTracePass(camera));
+	// renderGraph.AddRenderPass(new PathTraceDisplayPass());
+
+	renderGraph.AddRenderPass(new ForwardShadingPass(camera));
+
 	// renderGraph.AddRenderPass(new ImguiPass(Window));
 	renderGraph.Build();
 #if 0

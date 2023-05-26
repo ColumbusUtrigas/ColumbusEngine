@@ -133,6 +133,28 @@ namespace Columbus
 		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
 	}
 
+	void RenderGraphContext::BindGPUScene(const GraphicsPipeline* Pipeline)
+	{
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &RenderData.GPUSceneData.VerticesSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 1, 1, &RenderData.GPUSceneData.IndicesSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 2, 1, &RenderData.GPUSceneData.UVSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 3, 1, &RenderData.GPUSceneData.NormalSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 4, 1, &RenderData.GPUSceneData.TextureSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 5, 1, &RenderData.GPUSceneData.MaterialSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 6, 1, &RenderData.GPUSceneData.LightSet);
+	}
+
+	void RenderGraphContext::BindGPUScene(const RayTracingPipeline* Pipeline)
+	{
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 0, 1, &RenderData.GPUSceneData.VerticesSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 1, 1, &RenderData.GPUSceneData.IndicesSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &RenderData.GPUSceneData.UVSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 3, 1, &RenderData.GPUSceneData.NormalSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 4, 1, &RenderData.GPUSceneData.TextureSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 5, 1, &RenderData.GPUSceneData.MaterialSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &RenderData.GPUSceneData.LightSet);
+	}
+
 	RenderGraph::RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene) : Device(Device), Scene(Scene)
 	{
 		for (auto& PerFrameData : RenderData.PerFrameData)
@@ -178,7 +200,7 @@ namespace Columbus
 			return layout;
 		};
 
-		// RenderData.GPUSceneLayout.VerticesLayout = CreateLayout();
+		RenderData.GPUSceneLayout.VerticesLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
 		RenderData.GPUSceneLayout.IndicesLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
 		RenderData.GPUSceneLayout.UVLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
 		RenderData.GPUSceneLayout.NormalLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
@@ -186,6 +208,7 @@ namespace Columbus
 		RenderData.GPUSceneLayout.MaterialLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
 		RenderData.GPUSceneLayout.LightLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false);
 
+		RenderData.GPUSceneData.VerticesSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.IndicesLayout, 1000);
 		RenderData.GPUSceneData.IndicesSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.IndicesLayout, 1000);
 		RenderData.GPUSceneData.UVSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.UVLayout, 1000);
 		RenderData.GPUSceneData.NormalSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.NormalLayout, 1000);
@@ -196,6 +219,7 @@ namespace Columbus
 		for (int i = 0; i < Scene->Meshes.size(); i++)
 		{
 			const auto& mesh = Scene->Meshes[i];
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.VerticesSet, 0, i, mesh.Vertices);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.IndicesSet, 0, i, mesh.Indices);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.UVSet, 0, i, mesh.UVs);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.NormalSet, 0, i, mesh.Normals);
@@ -233,7 +257,7 @@ namespace Columbus
 		{
 			if (Pass->IsGraphicsPass)
 			{
-				Pass->VulkanRenderPass = Device->CreateRenderPass(VK_FORMAT_B8G8R8A8_SRGB);
+				Pass->VulkanRenderPass = Device->CreateRenderPass(VK_FORMAT_B8G8R8A8_SRGB); // TODO: better system
 			}
 		}
 

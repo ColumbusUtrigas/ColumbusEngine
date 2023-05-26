@@ -43,8 +43,6 @@ namespace Columbus
 	struct PathTraceParameters
 	{
 		GPUCamera MainCamera;
-		Vector4 lightDir;
-		float lightSpread;
 		int frameNumber;
 		int reset;
 		int bounces;
@@ -77,41 +75,26 @@ namespace Columbus
 		RTDesc.Format = TextureFormat::RGBA16F;
 		auto RTImage = Context.GetRenderTarget(RenderTargetName, RTDesc);
 
-		auto RTSet = Context.GetDescriptorSet(PTPipeline, 0);
-		Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS);
+		auto RTSet = Context.GetDescriptorSet(PTPipeline, 7);
+		Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 		Context.Device->UpdateDescriptorSet(RTSet, 1, 0, RTImage);
 
 		GPUCamera UpdatedCamera = GPUCamera(MainCamera);
 		Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 		Context.Scene->MainCamera = UpdatedCamera;
 
-		Vector3 lightDirection(1,1,1);
-		float lightSpread = 1;
 		bool reset = Context.Scene->Dirty;
 		int frame = rand() % 2000;
 		int bounces = 2;
 
-		PathTraceParameters rayParams = { UpdatedCamera, {lightDirection,0}, lightSpread, (int)frame, (int)reset, bounces };
+		PathTraceParameters rayParams = { UpdatedCamera, (int)frame, (int)reset, bounces };
 
 		Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 0, 1, &RTSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 1, 1, &Context.RenderData.GPUSceneData.IndicesSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 2, 1, &Context.RenderData.GPUSceneData.UVSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 3, 1, &Context.RenderData.GPUSceneData.NormalSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 4, 1, &Context.RenderData.GPUSceneData.TextureSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 5, 1, &Context.RenderData.GPUSceneData.MaterialSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 6, 1, &Context.RenderData.GPUSceneData.LightSet);
+		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 7, 1, &RTSet);
+		Context.BindGPUScene(PTPipeline);
+
 		Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
 		Context.CommandBuffer->TraceRays(PTPipeline, 1280, 720, 1);
-
-		// Context.BindGPUScene();
-		// Context.CommandBuffer.BindDescriptorSet(0, Context.GetOutputTexture("PathTraceResult")); // RenderGraph manages input/output resources
-		// auto rayParams = Context.GetParameters<Parameters>(); // RenderGraph manages descriptor sets for parameters
-		// Context.CommandBuffer.PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
-
-		// sync with global RenderTarget
-		// merge per-frame rendertarget to a global one
-		// then display it
 	}
 
 	void PathTraceDisplayPass::Setup(RenderGraphContext& Context)

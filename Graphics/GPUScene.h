@@ -13,11 +13,13 @@ namespace Columbus
 	struct GPUSceneMesh
 	{
 		AccelerationStructure* BLAS;
+		Matrix Transform;
 		Buffer* Vertices;
 		Buffer* Indices;
 		Buffer* UVs;
 		Buffer* Normals;
 		Buffer* Material; // TODO
+		uint32_t VertexCount;
 	};
 
 	struct GPUCamera
@@ -46,6 +48,8 @@ namespace Columbus
 		Vector4 Position;
 		Vector4 Direction;
 		Vector4 Color;
+		uint32_t Type;
+		uint32_t Padding[3];
 	};
 
 	// TODO: abstract as a GPU parameter struct?
@@ -60,7 +64,7 @@ namespace Columbus
 
 		bool Dirty = false;
 
-		// TODO: camera, lights, decals, materials
+		// TODO: camera, lights, decals, materials, per-object data
 	};
 
 	// GPUArray is a helper type used to pack both

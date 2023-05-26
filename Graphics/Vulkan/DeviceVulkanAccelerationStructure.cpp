@@ -49,8 +49,8 @@ namespace Columbus
 			*((Columbus::Vector4*)transformMatrix.matrix[2]) = Desc.Instances[i].Transform.GetRow(2);
 
 			instances[i].transform = transformMatrix;
-			instances[i].instanceCustomIndex = i;
-			instances[i].mask = 0xFF;
+			instances[i].instanceCustomIndex = i; // TODO
+			instances[i].mask = 0xFF; // TODO
 			instances[i].instanceShaderBindingTableRecordOffset = 0;
 			instances[i].flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 			instances[i].accelerationStructureReference = static_cast<AccelerationStructureVulkan*>(Desc.Instances[i].Blas)->_DeviceAddress; // TODO

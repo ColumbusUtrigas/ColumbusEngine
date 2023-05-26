@@ -10,8 +10,8 @@ struct RayPayload {
     layout(location = 0) rayPayloadEXT RayPayload payload;
     layout(location = 1) rayPayloadEXT RayPayload shadowPayload;
 
-    layout(binding = 0, set = 0) uniform accelerationStructureEXT acc;
-    layout(binding = 1, rgba32f) uniform image2D img;
+    layout(binding = 0, set = 7) uniform accelerationStructureEXT acc;
+    layout(binding = 1, set = 7, rgba32f) uniform image2D img;
 
 	#include <GPUScene>
 
@@ -21,8 +21,6 @@ struct RayPayload {
         vec4 camDir;
         vec4 camUp;
         vec4 camSide;
-        vec4 lightDir;
-        float lightSpread;
         int frameNumber;
         int reset;
 		int bounces;
@@ -65,8 +63,10 @@ struct RayPayload {
         return float(word) / 4294967295.0f;
     }
 
-	vec3 SampleDirectionalLight(vec3 origin, vec3 direction, vec3 normal)
+	vec3 SampleDirectionalLight(GPULight Light, vec3 origin, vec3 normal)
 	{
+		vec3 direction = normalize(Light.Direction.xyz);
+
 		// sample shadow
 		traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
 			0xFF, 0, 0, 0, origin, 0, direction, 5000, 1);
@@ -78,7 +78,7 @@ struct RayPayload {
 		}
 		else
 		{
-			return max(dot(normal, direction), 0) * vec3(1);
+			return max(dot(normal, direction), 0) * Light.Color.rgb;
 		}
 	}
 
@@ -127,15 +127,21 @@ struct RayPayload {
             vec3 hitPoint = payload.colorAndDist.w * direction + origin;
             normal = payload.normalAndObjId.xyz;
             origin = hitPoint + normal * 0.001;
-            direction = rayParams.lightDir.xyz;
 
 			vec3 AccumulatedLight = vec3(0);
-			AccumulatedLight += SampleDirectionalLight(origin, normalize(vec3(1)), normal); // TODO
 
 			for (uint i = 0; i < GPUSceneLights.Count; i++)
 			{
 				GPULight Light = GPUSceneLights.Lights[i];
-				AccumulatedLight += SamplePointLight(Light, origin, normal);
+				switch (Light.Type)
+				{
+				case GPULIGHT_DIRECTIONAL:
+					AccumulatedLight += SampleDirectionalLight(Light, origin, normal);
+					break;
+				case GPULIGHT_POINT:
+					AccumulatedLight += SamplePointLight(Light, origin, normal);
+					break;
+				}
 			}
 
 			return AccumulatedLight * surfaceColor;

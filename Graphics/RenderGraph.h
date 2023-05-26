@@ -4,6 +4,7 @@
 #include <Graphics/Vulkan/DeviceVulkan.h>
 #include "Core/fixed_vector.h"
 #include "GPUScene.h"
+#include "Graphics/RayTracingPipeline.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
@@ -90,6 +91,9 @@ namespace Columbus
 		VkDescriptorSet GetDescriptorSet(const ComputePipeline* Pipeline, int Index);
 		VkDescriptorSet GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
+
+		void BindGPUScene(const GraphicsPipeline* Pipeline);
+		void BindGPUScene(const RayTracingPipeline* Pipeline);
 	};
 
 	class RenderPass

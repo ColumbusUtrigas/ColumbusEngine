@@ -1,15 +1,34 @@
 #pragma once
 
+#include "Graphics/GraphicsPipeline.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>
 
 namespace Columbus
 {
 
-	class VisBufferPass : public RenderPass
-	{
+	// **********************************
+	// Real-time
+	//
 
+	class ForwardShadingPass : public RenderPass
+	{
+	public:
+		ForwardShadingPass(Camera& Camera) : MainCamera(Camera), RenderPass("Forward Shading Pass")
+		{
+			IsGraphicsPass = true;
+		}
+
+		virtual void Setup(RenderGraphContext& Context) override;
+		virtual void Execute(RenderGraphContext& Context) override;
+	private:
+		GraphicsPipeline* Pipeline;
+		Camera& MainCamera;
 	};
+
+	// **********************************
+	// Path-Tracing
+	//
 
 	class PathTracePass : public RenderPass
 	{
