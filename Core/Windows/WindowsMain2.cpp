@@ -361,7 +361,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			blasDesc.VerticesCount = verticesCount;
 			blasDesc.IndicesCount = indicesCount;
 			auto BLAS = Device->CreateAccelerationStructure(blasDesc);
-			Device->SetDebugName(BLAS, mesh.name.c_str());
+			 Device->SetDebugName(BLAS, mesh.name.c_str());
 
 			int matid = -1;
 
@@ -385,6 +385,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			Mesh.Normals = normalBuffer;
 			Mesh.Material = materialBuffer;
 			Mesh.VertexCount = verticesCount;
+			Mesh.IndicesCount = indicesCount;
 
 			Scene->Meshes.push_back(Mesh);
 		}
@@ -446,11 +447,11 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 // System tasks:
 // 1. RenderGraph
 //		+ very basic resource synchronization
-//		- RenderPass depth attachments
+//		+ RenderPass depth attachments
 //		- resource tracker and synchronization mechanism
-//		- swapchain resize (and pipeline dynamic parameters)
 //		- renderpass blending
 //		- global/frame-local resources
+//		- swapchain resize (and pipeline dynamic parameters)
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
 // 4. Static reflection
@@ -478,7 +479,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- spectral refraction
 //			- adaptive sampling
 //		2. Real Time
-//			- basic forward rendering
+//			+ basic forward rendering
 //			- ray-traced spherical harmonics (DDGI-ish solution)
 //			- ray-traced shadows with variable penumbra (ray-traced)
 //			- volumetrics and OpenVDB
@@ -531,11 +532,13 @@ int main()
 	Columbus::Timer timer;
 	camera.Pos = { -1173, 602, 104 };
 	camera.Rot = { 0, -70, 0 };
-	camera.Perspective(45, 1280.f/720.f, 0.1f, 10000.f);
+	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
 
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
 	auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
 
@@ -550,10 +553,6 @@ int main()
 	// renderGraph.AddRenderPass(new ImguiPass(Window));
 	renderGraph.Build();
 #if 0
-
-	//auto swapchain = device->CreateSwapchain(surface);
-	device->CreateFramebuffers(swapchain, renderpass);
-
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	Editor::ApplyDarkTheme();

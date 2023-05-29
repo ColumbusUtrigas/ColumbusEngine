@@ -1,4 +1,5 @@
 #include "Core/Core.h"
+#include "Graphics/Camera.h"
 #include "Graphics/Types.h"
 #include "RenderPasses.h"
 
@@ -14,7 +15,12 @@ namespace Columbus
 		Desc.rasterizerState.Cull = CullMode::No;
 		Desc.VS = std::make_shared<ShaderStage>(Source, "main", ShaderType::Vertex, ShaderLanguage::GLSL);
 		Desc.PS = std::make_shared<ShaderStage>(Source, "main", ShaderType::Pixel, ShaderLanguage::GLSL);
-		Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+		Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);	// TODO: create through context
+	}
+
+	void ForwardShadingPass::PreExecute(RenderGraphContext& Context)
+	{
+
 	}
 
 	void ForwardShadingPass::Execute(RenderGraphContext& Context)
@@ -24,18 +30,20 @@ namespace Columbus
 
 		struct
 		{
-			Matrix MVP;
+			Matrix M,V,P;
 			uint32_t ObjectId;
 		} Parameters;
 
 		for (int i = 0; i < Context.Scene->Meshes.size(); i++)
 		{
 			GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
-			Parameters.MVP = Mesh.Transform * MainCamera.GetViewProjection();
+			Parameters.M = Matrix(1);
+			Parameters.V = MainCamera.GetViewMatrix();
+			Parameters.P = MainCamera.GetProjectionMatrix();
 			Parameters.ObjectId = i;
 
 			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->Draw(Mesh.VertexCount, 1, 0, 0);
+			Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
 		}
 	}
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Assert.h"
+#include "TextureVulkan.h"
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -23,6 +24,7 @@ namespace Columbus
         VkExtent2D swapChainExtent;
         std::vector<VkImageView> swapChainImageViews;
         std::vector<VkFramebuffer> swapChainFramebuffers;
+		std::vector<Texture2*> Textures;
 
 		uint32_t minImageCount;
 		uint32_t imageCount;
@@ -183,6 +185,12 @@ namespace Columbus
                 {
                     COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan Image Views")
                 }
+
+				// Create Textures
+				auto TargetTexture = new TextureVulkan({});
+				TargetTexture->_Image = swapChainImages[i];
+				TargetTexture->_View = swapChainImageViews[i];
+				Textures.push_back(TargetTexture);
             }
         }
     };

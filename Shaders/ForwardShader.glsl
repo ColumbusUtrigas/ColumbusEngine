@@ -5,7 +5,7 @@
 #ifdef VERTEX_SHADER
 	layout(push_constant) uniform Params
 	{
-		mat4 MVP;
+		mat4 M,V,P;
 		uint ObjectId;
 	} Parameters;
 
@@ -26,7 +26,7 @@
 		normal.y = NormalsBuffers[Parameters.ObjectId].normals[index * 3 + 1];
 		normal.z = NormalsBuffers[Parameters.ObjectId].normals[index * 3 + 2];
 		
-		gl_Position = Parameters.MVP * vec4(vertex, 1);
+		gl_Position = Parameters.P * Parameters.V * vec4(vertex, 1) * vec4(1, -1, 1, 1);
 		OutNormal = normal;
 		OutUV = UvsBuffers[Parameters.ObjectId].uvs[index];
 		OutTextureId = MaterialsBuffers[Parameters.ObjectId].id;

@@ -92,10 +92,17 @@ namespace Columbus
 			case TextureFormat::RGB8: return VK_FORMAT_R8G8B8_UNORM;
 			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_UNORM;
 			case TextureFormat::RGBA16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
+			case TextureFormat::BGRA8SRGB: return VK_FORMAT_B8G8R8A8_SRGB;
+			case TextureFormat::Depth24: return VK_FORMAT_D24_UNORM_S8_UINT;
 			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
 			case TextureFormat::DXT5: return VK_FORMAT_BC5_UNORM_BLOCK;
 			default: COLUMBUS_ASSERT(false);
 		}
+	}
+
+	static VkImageAspectFlags TextureFormatToAspectMaskVk(TextureFormat format)
+	{
+		return ImageIsDepthFormat(format) ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
 	}
 
 	static VkImageUsageFlags TextureUsageToImageUsageVk(TextureUsage usage)
@@ -104,6 +111,8 @@ namespace Columbus
 		{
 			case TextureUsage::Sampled: return VK_IMAGE_USAGE_SAMPLED_BIT;
 			case TextureUsage::Storage: return VK_IMAGE_USAGE_STORAGE_BIT;
+			case TextureUsage::RenderTargetColor: return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+			case TextureUsage::RenderTargetDepth: return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 			default: COLUMBUS_ASSERT(false);
 		}
 	}

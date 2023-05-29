@@ -78,14 +78,14 @@ namespace Columbus
 		{
 			VkFunctions.LoadFunctions(Instance);
 
-			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			_Vulkan12Features.pNext = nullptr;
 			_AccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-			_AccelerationStructureFeatures.pNext = &_Vulkan12Features;
+			_AccelerationStructureFeatures.pNext = nullptr;
 			_RayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 			_RayTracingFeatures.pNext = &_AccelerationStructureFeatures;
+			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+			_Vulkan12Features.pNext = &_RayTracingFeatures;
 			_DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-			_DeviceFeatures.pNext = &_RayTracingFeatures;
+			_DeviceFeatures.pNext = &_Vulkan12Features;
 
 			vkGetPhysicalDeviceFeatures2(PhysicalDevice, &_DeviceFeatures);
 
@@ -174,11 +174,11 @@ namespace Columbus
 			poolSizes[0].descriptorCount = 100;
 			poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			poolSizes[1].descriptorCount = 100;
-			poolSizes[2].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 			poolSizes[2].descriptorCount = 10;
-			poolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			poolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			poolSizes[3].descriptorCount = 10;
-			poolSizes[4].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			poolSizes[4].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 			poolSizes[4].descriptorCount = 10;
 
 			VkDescriptorPoolCreateInfo descriptorPoolInfo;
@@ -203,8 +203,11 @@ namespace Columbus
 		// Low-level API abstraction
 
 		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface);
+
+		VkRenderPass CreateRenderPass(const std::vector<AttachmentDesc>& Attachments);
 		VkRenderPass CreateRenderPass(VkFormat format);
-		void CreateFramebuffers(SwapchainVulkan* swapchain, VkRenderPass renderpass);
+
+		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const std::vector<Texture2*>& Textures);
 
 		CommandBufferVulkan* CreateCommandBuffer();
 		SPtr<CommandBufferVulkan> CreateCommandBufferShared();

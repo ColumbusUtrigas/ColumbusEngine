@@ -52,6 +52,8 @@ namespace Columbus
 	{
 		Sampled,
 		Storage,
+		RenderTargetColor,
+		RenderTargetDepth,
 	};
 
 	struct TextureDesc2

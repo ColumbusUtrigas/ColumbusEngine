@@ -5,6 +5,7 @@
 #include "RayTracingPipelineVulkan.h"
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -111,16 +112,16 @@ namespace Columbus
 		VkViewport viewport;
 		viewport.x = 0;
 		viewport.y = 0;
-		viewport.width = 1280;
-		viewport.height = 720;
+		viewport.width = 1280; // TODO
+		viewport.height = 720; // TODO
 		viewport.minDepth = 0;
 		viewport.maxDepth = 1;
 
 		VkRect2D scissor;
 		scissor.offset.x = 0;
 		scissor.offset.y = 0;
-		scissor.extent.width = 1280;
-		scissor.extent.height = 720;
+		scissor.extent.width = 1280; // TODO
+		scissor.extent.height = 720; // TODO
 
 		VkPipelineViewportStateCreateInfo viewportState;
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -161,14 +162,15 @@ namespace Columbus
 		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencilState.pNext = nullptr;
 		depthStencilState.flags = 0;
-		depthStencilState.depthTestEnable = false;
-		depthStencilState.depthWriteEnable = false;
-		depthStencilState.depthCompareOp = VK_COMPARE_OP_ALWAYS;
-		depthStencilState.stencilTestEnable = false;
-		depthStencilState.front = {};
-		depthStencilState.back = {};
-		depthStencilState.minDepthBounds = 0;
-		depthStencilState.maxDepthBounds = 0;
+		depthStencilState.depthTestEnable = Desc.depthStencilState.DepthEnable;
+		depthStencilState.depthWriteEnable = Desc.depthStencilState.DepthWriteMask;
+		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS; // TODO
+		depthStencilState.depthBoundsTestEnable = false; // TODO
+		depthStencilState.stencilTestEnable = false; // TODO
+		depthStencilState.front = {}; // TODO
+		depthStencilState.back = {}; // TODO
+		depthStencilState.minDepthBounds = 0; // TODO
+		depthStencilState.maxDepthBounds = 1; // TODO
 
 		VkPipelineColorBlendAttachmentState attachment;
 		attachment.blendEnable = false;

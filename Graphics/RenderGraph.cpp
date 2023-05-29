@@ -1,4 +1,6 @@
 #include "RenderGraph.h"
+#include "Graphics/Texture.h"
+#include "Graphics/Types.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
 #include "Graphics/Vulkan/ComputePipelineVulkan.h"
@@ -257,7 +259,22 @@ namespace Columbus
 		{
 			if (Pass->IsGraphicsPass)
 			{
-				Pass->VulkanRenderPass = Device->CreateRenderPass(VK_FORMAT_B8G8R8A8_SRGB); // TODO: better system
+				Pass->VulkanRenderPass = Device->CreateRenderPass(Pass->RenderTargets);
+
+				// TODO
+				for (auto& Target : Pass->RenderTargets)
+				{
+					if (Target.Name != RenderPass::FinalColorOutput && !RenderData.Textures.contains(Target.Name))
+					{
+						TextureDesc2 RTDesc;
+						RTDesc.Width = 1280; // TODO
+						RTDesc.Height = 720; // TODO
+						RTDesc.Format = Target.Format;
+						RTDesc.Usage = Target.Type == AttachmentType::Color ? TextureUsage::RenderTargetColor : TextureUsage::RenderTargetDepth;
+						RenderData.Textures[Target.Name] = Device->CreateTexture(RTDesc);
+					}
+				}
+				// Device->CreateFramebuffer();
 			}
 		}
 
@@ -284,10 +301,32 @@ namespace Columbus
 
 		if (FirstTime)
 		{
-			Device->CreateFramebuffers(Swapchain, BlankPass); // TODO: better system
+			// Device->CreateFramebuffers(Swapchain, BlankPass); // TODO: better system
 
 			for (auto Pass : RenderPasses)
 			{
+				if (Pass->IsGraphicsPass)
+				{
+					// TODO: refactor, make swapchain images integration more seamless
+					for (int i = 0; i < Swapchain->imageCount; i++)
+					{
+						std::vector<Texture2*> TexturesForPass;
+						for (const AttachmentDesc& TargetDesc : Pass->RenderTargets)
+						{
+							if (TargetDesc.Name == RenderPass::FinalColorOutput)
+							{
+								TexturesForPass.push_back(Swapchain->Textures[i]);
+							}
+							else
+							{
+								TexturesForPass.push_back(RenderData.Textures[TargetDesc.Name]);
+							}
+						}
+
+						Pass->VulkanFramebuffers[i] = Device->CreateFramebuffer(Pass->VulkanRenderPass, TexturesForPass);
+					}
+				}
+
 				Context.VulkanRenderPass = Pass->VulkanRenderPass;
 				Pass->Setup(Context);
 			}
@@ -303,16 +342,22 @@ namespace Columbus
 
 			if (Pass->IsGraphicsPass)
 			{
-				uint32_t clearValuesCount = 1; // TODO
-				VkClearValue clearValue{};
-				CommandBuffer->BeginRenderPass(Pass->VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Swapchain->swapChainFramebuffers[SwapchainImageIndex], clearValuesCount, &clearValue);
-			}
+				fixed_vector<VkClearValue, 16> ClearValues;
+				for (const AttachmentDesc& Attachment : Pass->RenderTargets)
+				{
+					VkClearValue ClearValue;
+					ClearValue.color = {};
+					ClearValue.depthStencil = {1,0};
+					ClearValues.push_back(ClearValue); // TODO
+				}
 
-			Pass->Execute(Context);
-
-			if (Pass->IsGraphicsPass)
-			{
+				CommandBuffer->BeginRenderPass(Pass->VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Pass->VulkanFramebuffers[SwapchainImageIndex], ClearValues.size(), ClearValues.data());
+				Pass->Execute(Context);
 				CommandBuffer->EndRenderPass();
+			}
+			else
+			{
+				Pass->Execute(Context);
 			}
 
 			CommandBuffer->EndDebugMarker();

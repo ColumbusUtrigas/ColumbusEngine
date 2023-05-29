@@ -211,6 +211,22 @@ namespace Columbus
 		        Format == TextureFormat::DXT3 ||
 		        Format == TextureFormat::DXT5);
 	}
+
+	bool ImageIsDepthFormat(TextureFormat Format)
+	{
+		switch (Format)
+		{
+			case TextureFormat::Depth:
+			case TextureFormat::Depth16:
+			case TextureFormat::Depth24:
+			case TextureFormat::Depth24Stencil8:
+			case TextureFormat::Depth32FStencil8:
+			case TextureFormat::Depth32F:
+				return true;
+
+			default: return false;
+		}
+	}
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////

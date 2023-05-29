@@ -20,6 +20,7 @@ namespace Columbus
 		Buffer* Normals;
 		Buffer* Material; // TODO
 		uint32_t VertexCount;
+		uint32_t IndicesCount;
 	};
 
 	struct GPUCamera

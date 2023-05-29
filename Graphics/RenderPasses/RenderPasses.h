@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Common/Image/Image.h"
 #include "Graphics/GraphicsPipeline.h"
+#include "Graphics/Types.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>
 
@@ -17,9 +19,13 @@ namespace Columbus
 		ForwardShadingPass(Camera& Camera) : MainCamera(Camera), RenderPass("Forward Shading Pass")
 		{
 			IsGraphicsPass = true;
+
+			AddOutputRenderTarget(AttachmentDesc(FinalColorOutput, AttachmentType::Color, AttachmentLoadOp::Clear, TextureFormat::BGRA8SRGB));
+			AddOutputRenderTarget(AttachmentDesc("Depth", AttachmentType::DepthStencil, AttachmentLoadOp::Load, TextureFormat::Depth24));
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
+		virtual void PreExecute(RenderGraphContext& Context) override;
 		virtual void Execute(RenderGraphContext& Context) override;
 	private:
 		GraphicsPipeline* Pipeline;

@@ -56,6 +56,8 @@ namespace Columbus
 		RGB32F,
 		RGBA32F,
 
+		BGRA8SRGB,
+
 		R11G11B10F,
 
 		DXT1,
@@ -118,6 +120,7 @@ namespace Columbus
 	bool ImageIsHalfFormat(TextureFormat Format);
 	bool ImageIsFloatFormat(TextureFormat Format);
 	bool ImageIsCompressedFormat(TextureFormat Format);
+	bool ImageIsDepthFormat(TextureFormat Format); // depth + depth-stencil formats
 
 	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
 	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);

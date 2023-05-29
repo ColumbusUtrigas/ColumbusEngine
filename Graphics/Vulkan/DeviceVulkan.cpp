@@ -1,5 +1,8 @@
 #include "CommandBufferVulkan.h"
 
+#include "Common/Image/Image.h"
+#include "Core/fixed_vector.h"
+#include "Graphics/Types.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
@@ -25,6 +28,86 @@ namespace Columbus
 	SwapchainVulkan* DeviceVulkan::CreateSwapchain(VkSurfaceKHR surface)
 	{
 		return new SwapchainVulkan(_Device, _PhysicalDevice, surface);
+	}
+
+	VkRenderPass DeviceVulkan::CreateRenderPass(const std::vector<AttachmentDesc>& Attachments)
+	{
+		fixed_vector<VkAttachmentDescription, 16> VkAttachmentDescs;
+		fixed_vector<VkAttachmentReference, 16> VkColorAttachmentRefs;
+		VkAttachmentReference VkDepthStencilAttachmentRef;
+		VkAttachmentReference* pVkDepthStencilAttachmentRef = nullptr;
+
+		VkPipelineStageFlags SrcStageMask = 0;
+		VkPipelineStageFlags DstStageMask = 0;
+		VkAccessFlags DstAccessMask = 0;
+
+		for (size_t i = 0; i < Attachments.size(); i++)
+		{
+			VkAttachmentDescription Attachment{};
+			Attachment.format = TextureFormatToVK(Attachments[i].Format);
+			Attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+			// Attachment.loadOp = AttachmentLoadOpToVK(Attachments[i].LoadOp);
+			// Attachment.storeOp = AttachmentStoreOpToVK(Attachments[i].StoreOp);
+			Attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // TODO
+			Attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // TODO?
+			Attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; /// TODO
+			Attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // TODO
+			Attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // TODO
+			Attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
+
+			VkAttachmentReference Reference{};
+			Reference.attachment = i;
+
+			switch (Attachments[i].Type)
+			{
+			case AttachmentType::Color:
+				SrcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+				DstStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+				DstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				Reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				VkColorAttachmentRefs.push_back(Reference);
+				break;
+			case AttachmentType::DepthStencil:
+				SrcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+				DstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+				DstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				Reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				VkDepthStencilAttachmentRef = Reference;
+				pVkDepthStencilAttachmentRef = &VkDepthStencilAttachmentRef;
+				break;
+			}
+
+			VkAttachmentDescs.push_back(Attachment);
+		}
+
+		VkSubpassDescription subpass{};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = VkColorAttachmentRefs.size();
+		subpass.pColorAttachments = VkColorAttachmentRefs.data();
+		subpass.pDepthStencilAttachment = pVkDepthStencilAttachmentRef;
+
+		VkSubpassDependency dependency{};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = SrcStageMask;
+		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = DstStageMask;
+		dependency.dstAccessMask = DstAccessMask;
+
+		VkRenderPassCreateInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassInfo.attachmentCount = VkAttachmentDescs.size();
+		renderPassInfo.pAttachments = VkAttachmentDescs.data();
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 1;
+		renderPassInfo.pDependencies = &dependency;
+
+		VkRenderPass renderPass;
+
+		VK_CHECK(vkCreateRenderPass(_Device, &renderPassInfo, nullptr, &renderPass));
+
+		return renderPass;
 	}
 
 	VkRenderPass DeviceVulkan::CreateRenderPass(VkFormat format)
@@ -72,28 +155,28 @@ namespace Columbus
 		return renderPass;
 	}
 
-	void DeviceVulkan::CreateFramebuffers(SwapchainVulkan* swapchain, VkRenderPass renderpass)
+	VkFramebuffer DeviceVulkan::CreateFramebuffer(VkRenderPass Renderpass, const std::vector<Texture2*>& Textures)
 	{
-		swapchain->swapChainFramebuffers.resize(swapchain->swapChainImageViews.size());
-
-		for (size_t i = 0; i < swapchain->swapChainImageViews.size(); i++)
+		fixed_vector<VkImageView, 16> AttachmentViews;
+		for (Texture2* Attachment : Textures)
 		{
-			VkImageView attachments[] =
-			{
-				swapchain->swapChainImageViews[i]
-			};
-
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = renderpass;
-			framebufferInfo.attachmentCount = 1;
-			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = swapchain->swapChainExtent.width;
-			framebufferInfo.height = swapchain->swapChainExtent.height;
-			framebufferInfo.layers = 1;
-
-			VK_CHECK(vkCreateFramebuffer(_Device, &framebufferInfo, nullptr, &swapchain->swapChainFramebuffers[i]));
+			AttachmentViews.push_back(static_cast<TextureVulkan*>(Attachment)->_View);
 		}
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = Renderpass;
+		framebufferInfo.attachmentCount = AttachmentViews.size();
+		framebufferInfo.pAttachments = AttachmentViews.data();
+		framebufferInfo.width = 1280; // TODO
+		framebufferInfo.height = 720; // TODO
+		framebufferInfo.layers = 1;
+
+		VkFramebuffer Result;
+
+		VK_CHECK(vkCreateFramebuffer(_Device, &framebufferInfo, nullptr, &Result));
+
+		return Result;
 	}
 
 	CommandBufferVulkan* DeviceVulkan::CreateCommandBuffer()
@@ -303,7 +386,7 @@ namespace Columbus
 	void TransitionImageLayout(VkCommandBuffer cmdbuf, VkImage image,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags srcAccessMaks, VkAccessFlags dstAccessMask,
-		VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, int layers)
+		VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, int layers, TextureFormat format)
 	{
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -312,7 +395,7 @@ namespace Columbus
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.image = image;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(format);
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = 1;
 		barrier.subresourceRange.baseArrayLayer = 0;
@@ -339,19 +422,28 @@ namespace Columbus
 
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		if (Desc.Usage == TextureUsage::Sampled)
+		switch (Desc.Usage)
 		{
+		case TextureUsage::Sampled:
 			newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		} else if (Desc.Usage == TextureUsage::Storage)
-		{
+			break;
+		case TextureUsage::Storage:
 			newLayout = VK_IMAGE_LAYOUT_GENERAL;
-		}
+			break;
+		case TextureUsage::RenderTargetColor:
+			newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			break;
+		case TextureUsage::RenderTargetDepth:
+			newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			break;
+		default: COLUMBUS_ASSERT(false);
+		};
 
 		TransitionImageLayout(copyCmdBuf->_CmdBuf,
 				result->_Image, result->_Layout, newLayout,
 			0, 0,
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			1
+			1, Desc.Format
 		);
 
 		result->_Layout = newLayout;
@@ -392,7 +484,7 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			0, VK_ACCESS_TRANSFER_WRITE_BIT,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			size
+			size, desc.Format
 		);
 
 		VkBufferImageCopy regions[6];
@@ -424,7 +516,7 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			size
+			size, desc.Format
 		);
 		result->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -607,7 +699,7 @@ namespace Columbus
 		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // TODO
+		viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Desc.Format);
 		viewInfo.subresourceRange.baseMipLevel = 0;
 		viewInfo.subresourceRange.levelCount = Desc.Mips;
 		viewInfo.subresourceRange.baseArrayLayer = 0;

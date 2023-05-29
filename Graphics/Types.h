@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common/Image/Image.h"
 #include <Core/DataBlob.h>
 #include <Core/Types.h>
 #include <string>
@@ -100,6 +101,31 @@ namespace Columbus
 		ShaderStage() {}
 		ShaderStage(std::string_view source, std::string_view entry, ShaderType type, ShaderLanguage language) :
 			Source(source), EntryPoint(entry), Type(type), Language(language) {}
+	};
+
+	enum class AttachmentType
+	{
+		Color,
+		DepthStencil
+	};
+
+	enum class AttachmentLoadOp
+	{
+		Load,
+		Clear,
+		DontCare,
+	};
+
+	struct AttachmentDesc
+	{
+		std::string Name;
+		AttachmentType Type;
+		AttachmentLoadOp LoadOp;
+		TextureFormat Format;
+
+		AttachmentDesc() {}
+		AttachmentDesc(std::string Name, AttachmentType Type, AttachmentLoadOp LoadOp, TextureFormat Format) :
+			Name(Name), Type(Type), LoadOp(LoadOp), Format(Format) {}
 	};
 
 	enum class PrimitiveTopology

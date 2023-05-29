@@ -5,6 +5,7 @@
 #include "Core/fixed_vector.h"
 #include "GPUScene.h"
 #include "Graphics/RayTracingPipeline.h"
+#include "Graphics/Types.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
@@ -99,6 +100,8 @@ namespace Columbus
 	class RenderPass
 	{
 	public:
+		static constexpr const char* FinalColorOutput = "FinalColor";
+	public:
 		std::string Name;
 		bool IsGraphicsPass = false;
 		bool ClearColor = true;
@@ -106,6 +109,12 @@ namespace Columbus
 		RenderPass() {}
 		RenderPass(std::string_view Name) : Name(Name) {}
 
+		void AddOutputRenderTarget(const AttachmentDesc& Desc)
+		{
+			RenderTargets.push_back(Desc);
+		}
+
+		// TODO: reduce
 		virtual void Setup(RenderGraphContext& Context) = 0;
 		virtual void PreExecute(RenderGraphContext& Context) {}
 		virtual void Execute(RenderGraphContext& Context) = 0;
@@ -114,9 +123,10 @@ namespace Columbus
 		friend RenderGraph;
 
 		VkRenderPass VulkanRenderPass =  NULL;
+		VkFramebuffer VulkanFramebuffers[16]{}; // TODO
 
-		std::vector<RenderGraphResourceId> Inputs;
-		std::vector<RenderGraphResourceId> Outputs;
+		// std::vector<RenderGraphResourceId> Inputs;
+		std::vector<AttachmentDesc> RenderTargets;
 	};
 
 	class RenderGraph
