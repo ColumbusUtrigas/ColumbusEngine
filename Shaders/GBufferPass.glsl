@@ -2,13 +2,8 @@
 
 #include <GPUScene>
 
-#define IRRADIANCE_PROBES_SET 7
-#include <IrradianceProbeCommon.glsl>
-
 layout(push_constant) uniform Params
 {
-	IrradianceVolume Volume;
-
 	mat4 M,V,P;
 	uint ObjectId;
 } Parameters;
@@ -42,19 +37,22 @@ layout(push_constant) uniform Params
 #endif
 
 #ifdef PIXEL_SHADER
-	layout(location = 0) out vec4 RT0;
+	layout(location = 0) out vec3 RT0;
+	layout(location = 1) out vec3 RT1;
+	layout(location = 2) out vec3 RT2;
+	layout(location = 3) out vec2 RT3;
 
 	layout (location = 0) in vec3 InNormal;
 	layout (location = 1) in vec2 InUV;
 	layout (location = 2) in flat uint InTextureId;
 	layout (location = 3) in vec3 InWP;
 
-	layout (binding = 0, set = 8, rgba16f) uniform image2D ShadowsBuffer;
-
 	void main()
 	{
 		// RT0 = vec4(InNormal, 1);
-		RT0 = textureLod(Textures[InTextureId], InUV, 0.0f).rgba;
-		RT0 = vec4(SampleIrradianceProbes(Parameters.Volume, InWP, InNormal), 1);
+		RT0 = textureLod(Textures[InTextureId], InUV, 0.0f).rgb;
+		RT1 = InNormal;
+		RT2 = InWP;
+		RT3 = vec2(1, 0);
 	}
 #endif

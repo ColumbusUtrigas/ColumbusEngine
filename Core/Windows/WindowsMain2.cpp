@@ -7,6 +7,7 @@
 #include "Graphics/Device.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/GraphicsPipeline.h"
+#include "Graphics/IrradianceVolume.h"
 #include "Graphics/RayTracingPipeline.h"
 #include "Graphics/Texture.h"
 #include "Graphics/Types.h"
@@ -105,11 +106,11 @@ public:
 class ImguiPass : public RenderPass
 {
 public:
-	ImguiPass(WindowVulkan& Window) : Window(Window)
+	ImguiPass(WindowVulkan& Window) : Window(Window), RenderPass("ImGUI Pass")
 	{
 		IsGraphicsPass = true;
 		ClearColor = false;
-		Name = "ImGUI Pass";
+		AddOutputRenderTarget(AttachmentDesc(FinalColorOutput, AttachmentType::Color, AttachmentLoadOp::Load, TextureFormat::BGRA8SRGB));
 
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -150,13 +151,15 @@ public:
 		}
 	}
 
-	virtual void Execute(RenderGraphContext& Context) override
+	virtual void PreExecute(RenderGraphContext& Context) override
 	{
-		// TODO: obviously it shouldn't be in execute
 		ImGui::NewFrame();
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplSDL2_NewFrame(Window.Window);
+	}
 
+	virtual void Execute(RenderGraphContext& Context) override
+	{
 		ImGui::ShowDemoWindow();
 		ImGui::Render();
 
@@ -164,80 +167,6 @@ public:
 	}
 private:
 	WindowVulkan& Window;
-};
-
-class TestComputePass : public RenderPass
-{
-public:
-	TestComputePass()
-	{
-		Name = "Test Compute";
-		// AddOutputBuffer("Test");
-	}
-
-	virtual void Setup(RenderGraphContext& Context) override
-	{
-		ComputePipelineDesc Desc;
-		Desc.Name = "Test Compute Shader";
-		Desc.CS = std::make_shared<ShaderStage>(srcCompute, "main", ShaderType::Compute, ShaderLanguage::GLSL);
-		Pipeline = Context.Device->CreateComputePipeline(Desc);
-	}
-
-	virtual void Execute(RenderGraphContext& Context) override
-	{
-		BufferDesc Desc;
-		Desc.BindFlags = BufferType::UAV;
-		Desc.Size = sizeof(Vector4);
-
-		Buffer* Buf = Context.GetOutputBuffer("Test", Desc);
-		VkDescriptorSet DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-
-		Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Buf);
-
-		Context.CommandBuffer->BindComputePipeline(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-		Context.CommandBuffer->Dispatch(1, 1, 1);
-	}
-private:
-	ComputePipeline* Pipeline;
-};
-
-class TestRenderPass : public RenderPass
-{
-public:
-	TestRenderPass()
-	{
-		IsGraphicsPass = true;
-		Name = "Test";
-
-		TextureDesc2 desc;
-		// AddInputBuffer("Test");
-		// AddOutputFramebuffer("OUTPUT");
-	}
-
-	virtual void Setup(RenderGraphContext& Context) override
-	{
-		GraphicsPipelineDesc Desc;
-		Desc.Name = "Test Shader";
-		Desc.rasterizerState.Cull = Columbus::CullMode::No;
-		// Desc.VS = std::make_shared<ShaderStage>(srcScreenVert, "main", ShaderType::Vertex, ShaderLanguage::GLSL);
-		// Desc.PS = std::make_shared<ShaderStage>(srcScreenFrag2, "main", ShaderType::Pixel, ShaderLanguage::GLSL);
-		// Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-	}
-
-	virtual void Execute(RenderGraphContext& Context) override
-	{
-		Buffer* Buf = Context.GetInputBuffer("Test");
-		VkDescriptorSet DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-
-		Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Buf);
-
-		Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-		Context.CommandBuffer->Draw(3, 1, 0, 0);
-	}
-private:
-	GraphicsPipeline* Pipeline;
 };
 
 Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
@@ -361,7 +290,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			blasDesc.VerticesCount = verticesCount;
 			blasDesc.IndicesCount = indicesCount;
 			auto BLAS = Device->CreateAccelerationStructure(blasDesc);
-			 Device->SetDebugName(BLAS, mesh.name.c_str());
+			Device->SetDebugName(BLAS, mesh.name.c_str());
 
 			int matid = -1;
 
@@ -403,8 +332,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
 	Scene->MainCamera = GPUCamera(DefaultCamera);
 
-	Scene->Lights.push_back(GPULight{{}, {1,1,1,0}, {1,1,1,0}, 0}); // directional
-	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1}); // point
+	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, 0}); // directional
+	// Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1}); // point
 
 	return Scene;
 }
@@ -454,6 +383,11 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //		- swapchain resize (and pipeline dynamic parameters)
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
+//		+ GPUScene
+//		- SceneGraph representation
+//			- Static meshes
+//			- Materials
+//			- Lights
 // 4. Static reflection
 // 5. ECS
 // 6. TaskGraph
@@ -480,9 +414,13 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- adaptive sampling
 //		2. Real Time
 //			+ basic forward rendering
-//			- ray-traced spherical harmonics (DDGI-ish solution)
-//			- ray-traced shadows with variable penumbra (ray-traced)
+//			+ GBuffer pass
+//			- ray-traced shadows with variable penumbra
+//			- directional lighting pass (lights + shadows)
+//			- ray-traced spherical harmonics/ambient cubes (DDGI-ish solution)
+//			- RTAO?
 //			- volumetrics and OpenVDB
+//			- ray-traced translucency
 //			- DDGI+RT reflections
 //			- simple billboard particles render
 //		3. Common
@@ -495,6 +433,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- IES light profiles
 //			+ shader include files
 //			- fix descriptor set duplication
+//			- HLSL2021 instead of GLSL
+//			- make DebugRender work
 //
 // Another high-level view of rendering system
 // There should be a convinient way to define CPU-GPU logic for pipelines
@@ -530,9 +470,10 @@ int main()
 
 	Camera camera;
 	Columbus::Timer timer;
-	camera.Pos = { -1173, 602, 104 };
+	camera.Pos = { 0, 300, 104 };
 	camera.Rot = { 0, -70, 0 };
 	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
+	float CameraSpeed = 200;
 
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
@@ -542,53 +483,25 @@ int main()
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
 
-	// renderGraph.AddRenderPass(new TestComputePass());
-	// renderGraph.AddRenderPass(new TestRenderPass());
+	IrradianceVolume Volume;
+	Volume.Position = { 1000, 50, -250 };
+	Volume.ProbesCount = { 5, 4, 5 };
+	Volume.Extent = { 250, 320, 500 };
 
 	// renderGraph.AddRenderPass(new PathTracePass(camera));
 	// renderGraph.AddRenderPass(new PathTraceDisplayPass());
 
-	renderGraph.AddRenderPass(new ForwardShadingPass(camera));
+	renderGraph.AddRenderPass(new GBufferPass(camera));
+	renderGraph.AddRenderPass(new RayTracedShadowsPass());
+	renderGraph.AddRenderPass(new GBufferCompositePass());
 
-	// renderGraph.AddRenderPass(new ImguiPass(Window));
+	// renderGraph.AddRenderPass(new IrradianceProbeTracePass(Volume));
+	// renderGraph.AddRenderPass(new ForwardShadingPass(camera, Volume));
+
+	renderGraph.AddRenderPass(new ImguiPass(Window));
 	renderGraph.Build();
-#if 0
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	Editor::ApplyDarkTheme();
-
-	// init imgui
-	ImGui_ImplSDL2_InitForVulkan(window);
-	ImGui_ImplVulkan_InitInfo imguiVk{};
-	imguiVk.Instance = instance.instance;
-	imguiVk.PhysicalDevice = device->_PhysicalDevice;
-	imguiVk.Device = device->_Device;
-	imguiVk.QueueFamily = device->_FamilyIndex;
-	imguiVk.Queue = *device->_ComputeQueue;
-	imguiVk.DescriptorPool = device->_DescriptorPool;
-	imguiVk.MinImageCount = swapchain->minImageCount;
-	imguiVk.ImageCount = swapchain->imageCount;
-	ImGui_ImplVulkan_Init(&imguiVk, renderpass);
-
-	{
-		cmdBuf.Reset();
-		cmdBuf.Begin();
-		ImGui_ImplVulkan_CreateFontsTexture(cmdBuf._CmdBuf);
-
-		VkSubmitInfo end_info = {};
-		end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		end_info.commandBufferCount = 1;
-		end_info.pCommandBuffers = &cmdBuf._CmdBuf;
-		vkEndCommandBuffer(cmdBuf._CmdBuf);
-		vkQueueSubmit(*device->_ComputeQueue, 1, &end_info, VK_NULL_HANDLE);
-
-		vkDeviceWaitIdle(device->_Device);
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
-	}
-#endif
 
 	bool running = true;
-
 	while (running)
 	{
 		float DeltaTime = timer.Elapsed();
@@ -600,7 +513,7 @@ int main()
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			// ImGui_ImplSDL2_ProcessEvent(&event);
+			ImGui_ImplSDL2_ProcessEvent(&event);
 			if (event.type == SDL_QUIT) {
 				running = false;
 			}
@@ -612,39 +525,12 @@ int main()
 		if (keyboard[SDL_SCANCODE_LEFT]) camera.Rot += Columbus::Vector3(0,5,0) * DeltaTime * 20;
 		if (keyboard[SDL_SCANCODE_RIGHT]) camera.Rot += Columbus::Vector3(0,-5,0) * DeltaTime * 20;
 
-		if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * 50;
-		if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * 50;
-		if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * 50;
-		if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * 50;
-		if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * 50;
-		if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * 50;
-
-#if 0
-		ImGui::NewFrame();
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplSDL2_NewFrame(window);
-
-		auto camDir = camera.Direction();
-
-		// ImGui::ShowDemoWindow();
-		ImGui::Begin("Properties");
-			ImGui::SliderFloat3("Light direction", (float*)&lightDirection, -1, 1, "%.1f");
-			ImGui::SliderFloat("Light spread", &lightSpread, 0, 1);
-			ImGui::InputFloat3("Camera position", (float*)&camera.Pos);
-			ImGui::InputFloat3("Camera direction", (float*)&camDir);
-			ImGui::Checkbox("Pause rays", &pauseRays);
-		ImGui::End();
-
-		ImGui::Render();
-
-		// Everything 
-		cmdBuf.BeginDebugMarker("GUI Pass");
-		cmdBuf.BeginRenderPass(renderpass, rect, swapchain->swapChainFramebuffers[imageIndex], 1, &clearColor);
-
-		// ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuf._CmdBuf);
-		cmdBuf.EndRenderPass();
-		cmdBuf.EndDebugMarker();
-#endif
+		if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * CameraSpeed;
+		if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * CameraSpeed;
+		if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * CameraSpeed;
+		if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * CameraSpeed;
+		if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * CameraSpeed;
+		if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * CameraSpeed;
 	}
 
 	VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));

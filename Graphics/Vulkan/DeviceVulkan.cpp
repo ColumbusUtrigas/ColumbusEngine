@@ -48,11 +48,18 @@ namespace Columbus
 			Attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			// Attachment.loadOp = AttachmentLoadOpToVK(Attachments[i].LoadOp);
 			// Attachment.storeOp = AttachmentStoreOpToVK(Attachments[i].StoreOp);
-			Attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // TODO
+			Attachment.loadOp = AttachmentLoadOpToVk(Attachments[i].LoadOp);
 			Attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // TODO?
 			Attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; /// TODO
 			Attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // TODO
-			Attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // TODO
+
+			if (Attachments[i].LoadOp == AttachmentLoadOp::Load)
+			{
+				Attachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
+			} else
+			{
+				Attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // TODO
+			}
 			Attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
 
 			VkAttachmentReference Reference{};

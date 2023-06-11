@@ -83,7 +83,7 @@ namespace Columbus
 		// RenderGraph& Graph;
 
 		// TODO: better system
-		Buffer* GetOutputBuffer(const std::string& Name, const BufferDesc& Desc);
+		Buffer* GetOutputBuffer(const std::string& Name, const BufferDesc& Desc, void* InitialData = nullptr);
 		Buffer* GetInputBuffer(const std::string& Name);
 
 		Texture2* GetRenderTarget(const std::string& Name, const TextureDesc2& Desc);

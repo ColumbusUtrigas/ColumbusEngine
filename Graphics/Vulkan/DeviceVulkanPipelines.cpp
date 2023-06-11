@@ -172,15 +172,21 @@ namespace Columbus
 		depthStencilState.minDepthBounds = 0; // TODO
 		depthStencilState.maxDepthBounds = 1; // TODO
 
-		VkPipelineColorBlendAttachmentState attachment;
-		attachment.blendEnable = false;
-		attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		attachment.colorBlendOp = VK_BLEND_OP_ADD;
-		attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		attachment.alphaBlendOp = VK_BLEND_OP_ADD;
-		attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		fixed_vector<VkPipelineColorBlendAttachmentState, 16> Attachments;
+		for (int i = 0; i < Desc.blendState.RenderTargets.size(); i++)
+		{
+			VkPipelineColorBlendAttachmentState Attachment;
+			Attachment.blendEnable = Desc.blendState.RenderTargets[i].BlendEnable;
+			Attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
+			Attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
+			Attachment.colorBlendOp = VK_BLEND_OP_ADD; // TODO
+			Attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
+			Attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
+			Attachment.alphaBlendOp = VK_BLEND_OP_ADD; // TODO
+			Attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT; // TODO
+
+			Attachments.push_back(Attachment);
+		}
 
 		VkPipelineColorBlendStateCreateInfo blendState;
 		blendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -188,8 +194,8 @@ namespace Columbus
 		blendState.flags = 0;
 		blendState.logicOpEnable = false;
 		blendState.logicOp = VK_LOGIC_OP_COPY;
-		blendState.attachmentCount = 1;
-		blendState.pAttachments = &attachment;
+		blendState.attachmentCount = Attachments.size();
+		blendState.pAttachments = Attachments.data();
 		blendState.blendConstants[0] = 0;
 		blendState.blendConstants[1] = 0;
 		blendState.blendConstants[2] = 0;

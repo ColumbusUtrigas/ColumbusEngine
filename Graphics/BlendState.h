@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/fixed_vector.h"
 #include <Core/Types.h>
 #include <Graphics/Types.h>
 
@@ -22,8 +23,11 @@ namespace Columbus
 	{
 		bool AlphaToCoverageEnable = false;
 		bool IndependentBlendEnable = false;
-		static constexpr int NumRenderTargets = 8;
-		RenderTargetBlendDesc RenderTarget[NumRenderTargets];
+		// static constexpr int NumRenderTargets = 8;
+		fixed_vector<RenderTargetBlendDesc, 8> RenderTargets;
+
+		// int UsedRenderTargets = 0;
+		// RenderTargetBlendDesc RenderTarget[NumRenderTargets];
 	};
 
 	class BlendState

@@ -7,21 +7,20 @@
 #include "Graphics/Vulkan/GraphicsPipelineVulkan.h"
 #include "Graphics/Vulkan/RayTracingPipelineVulkan.h"
 #include "Graphics/Vulkan/TextureVulkan.h"
+#include "Graphics/Vulkan/TypeConversions.h"
 #include "System/File.h"
 
 #include <memory>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
-#include <vulkan/vulkan_handles.hpp>
 
 namespace Columbus
 {
 
-	Buffer* RenderGraphContext::GetOutputBuffer(const std::string& Name, const BufferDesc &Desc)
+	Buffer* RenderGraphContext::GetOutputBuffer(const std::string& Name, const BufferDesc &Desc, void* InitialData)
 	{
 		if (RenderData.Buffers.find(Name) == RenderData.Buffers.end())
 		{
-			RenderData.Buffers[Name] = Device->CreateBuffer(Desc, nullptr);
+			RenderData.Buffers[Name] = Device->CreateBuffer(Desc, InitialData);
 		}
 
 		return RenderData.Buffers[Name];
@@ -49,12 +48,12 @@ namespace Columbus
 
 		VkImageMemoryBarrier Barrier{};
 		Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		Barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL; // TODO
+		Barrier.oldLayout = Texture->_Layout; // TODO
 		Barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // TODO
 		Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		Barrier.image = Texture->_Image;
-		Barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // TODO
+		Barrier.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
 		Barrier.subresourceRange.baseMipLevel = 0;
 		Barrier.subresourceRange.levelCount = 1;
 		Barrier.subresourceRange.baseArrayLayer = 0;
@@ -68,6 +67,8 @@ namespace Columbus
 			0, nullptr,
 			0, nullptr,
 			1, &Barrier);
+
+		Texture->_Layout = VK_IMAGE_LAYOUT_GENERAL; // TODO
 
 		return Texture;
 	}
@@ -126,7 +127,7 @@ namespace Columbus
 
 			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
 			{
-				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
+				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
 			}
 
 			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
@@ -354,6 +355,15 @@ namespace Columbus
 				CommandBuffer->BeginRenderPass(Pass->VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Pass->VulkanFramebuffers[SwapchainImageIndex], ClearValues.size(), ClearValues.data());
 				Pass->Execute(Context);
 				CommandBuffer->EndRenderPass();
+
+				// state tracking, TODO: refactor
+				for (const AttachmentDesc& Attachment : Pass->RenderTargets)
+				{
+					if (Attachment.Name != RenderPass::FinalColorOutput) // TODO
+					{
+						static_cast<TextureVulkan*>(RenderData.Textures[Attachment.Name])->_Layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
+					}
+				}
 			}
 			else
 			{

@@ -7,6 +7,7 @@
 #include <Common/Image/Image.h>
 #include <vulkan/vulkan.h>
 #include <cassert>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -89,9 +90,15 @@ namespace Columbus
 	{
 		switch (format)
 		{
+			case TextureFormat::R8: return VK_FORMAT_R8_UNORM;
+			case TextureFormat::RG8: return VK_FORMAT_R8G8_UNORM;
 			case TextureFormat::RGB8: return VK_FORMAT_R8G8B8_UNORM;
 			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_UNORM;
+
+			case TextureFormat::RG16F: return VK_FORMAT_R16G16_SFLOAT;
+			case TextureFormat::RGB16F: return VK_FORMAT_R16G16B16_SFLOAT;
 			case TextureFormat::RGBA16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
+
 			case TextureFormat::BGRA8SRGB: return VK_FORMAT_B8G8R8A8_SRGB;
 			case TextureFormat::Depth24: return VK_FORMAT_D24_UNORM_S8_UINT;
 			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
@@ -111,8 +118,8 @@ namespace Columbus
 		{
 			case TextureUsage::Sampled: return VK_IMAGE_USAGE_SAMPLED_BIT;
 			case TextureUsage::Storage: return VK_IMAGE_USAGE_STORAGE_BIT;
-			case TextureUsage::RenderTargetColor: return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-			case TextureUsage::RenderTargetDepth: return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			case TextureUsage::RenderTargetColor: return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+			case TextureUsage::RenderTargetDepth: return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 			default: COLUMBUS_ASSERT(false);
 		}
 	}
@@ -123,6 +130,8 @@ namespace Columbus
 		{
 			case TextureUsage::Sampled: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			case TextureUsage::Storage: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			case TextureUsage::RenderTargetColor: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			case TextureUsage::RenderTargetDepth: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			default: COLUMBUS_ASSERT(false);
 		}
 	}
@@ -207,6 +216,17 @@ namespace Columbus
 		if ((type & ShaderType::Intersection) != 0) result |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
 
 		return static_cast<VkShaderStageFlagBits>(result);
+	}
+
+	static VkAttachmentLoadOp AttachmentLoadOpToVk(AttachmentLoadOp op)
+	{
+		switch (op)
+		{
+			case AttachmentLoadOp::Load:     return VK_ATTACHMENT_LOAD_OP_LOAD;
+			case AttachmentLoadOp::Clear:    return VK_ATTACHMENT_LOAD_OP_CLEAR;
+			case AttachmentLoadOp::DontCare: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			default: COLUMBUS_ASSERT(false);
+		}
 	}
 
 }

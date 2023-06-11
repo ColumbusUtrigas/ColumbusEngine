@@ -45,11 +45,11 @@ namespace Columbus::Editor
 			DepthStencilStateDesc dssd;
 			RasterizerStateDesc rsd;
 
-			bsd.RenderTarget[0].BlendEnable = true;
-			bsd.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
-			bsd.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
-			bsd.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
-			bsd.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+			// bsd.RenderTarget[0].BlendEnable = true;
+			// bsd.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+			// bsd.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+			// bsd.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+			// bsd.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
 
 			dssd.DepthEnable = true;
 			dssd.DepthFunc = ComparisonFunc::LEqual;

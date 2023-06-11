@@ -335,7 +335,7 @@ namespace Columbus
 			DepthStencilStateDesc DSSD;
 			RasterizerStateDesc RSD;
 
-			BSD.RenderTarget[0].BlendEnable = false;
+			// BSD.RenderTarget[0].BlendEnable = false;
 
 			DSSD.DepthEnable = true;
 			DSSD.DepthWriteMask = true;
@@ -436,11 +436,11 @@ void main(void)
 			gDevice->BeginMarker("Transparent Render");
 			BlendStateDesc BSD;
 			BlendState* BS;
-			BSD.RenderTarget[0].BlendEnable = true;
-			BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
-			BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
-			BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
-			BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+			// BSD.RenderTarget[0].BlendEnable = true;
+			// BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+			// BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+			// BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+			// BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
 
 			gDevice->CreateBlendState(BSD, &BS);
 

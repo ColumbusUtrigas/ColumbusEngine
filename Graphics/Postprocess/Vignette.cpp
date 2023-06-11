@@ -9,11 +9,11 @@ namespace Columbus
 		if (gDevice == nullptr) return;
 
 		BlendStateDesc BSD;
-		BSD.RenderTarget[0].BlendEnable = true;
-		BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
-		BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
-		BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
-		BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
+		// BSD.RenderTarget[0].BlendEnable = true;
+		// BSD.RenderTarget[0].SrcBlend = Blend::SrcAlpha;
+		// BSD.RenderTarget[0].DestBlend = Blend::InvSrcAlpha;
+		// BSD.RenderTarget[0].SrcBlendAlpha = Blend::SrcAlpha;
+		// BSD.RenderTarget[0].DestBlendAlpha = Blend::InvSrcAlpha;
 
 		gDevice->CreateBlendState(BSD, &BS);
 	}

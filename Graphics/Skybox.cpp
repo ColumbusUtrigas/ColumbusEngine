@@ -103,7 +103,7 @@ PS_OUTPUT PS(PS_INPUT i)
 		// };
 
 		desc.blendState.IndependentBlendEnable = false;
-		desc.blendState.RenderTarget[0].BlendEnable = false;
+		// desc.blendState.RenderTarget[0].BlendEnable = false;
 
 		desc.depthStencilState.DepthEnable = true;
 		desc.depthStencilState.DepthFunc = ComparisonFunc::LEqual;

@@ -82,11 +82,11 @@ namespace Columbus
 		}
 
 		bool bBlendEnable = false;
-		for (int i = 0; i < Desc.NumRenderTargets; i++)
-		{
-			if (Desc.RenderTarget[i].BlendEnable)
-				bBlendEnable = true;
-		}
+		// for (int i = 0; i < Desc.NumRenderTargets; i++)
+		// {
+		// 	if (Desc.RenderTarget[i].BlendEnable)
+		// 		bBlendEnable = true;
+		// }
 
 		if (bBlendEnable)
 			glEnable(GL_BLEND);
@@ -95,33 +95,33 @@ namespace Columbus
 
 		if (Desc.IndependentBlendEnable)
 		{
-			for (int i = 0; i < Desc.NumRenderTargets; i++)
-			{
-				const auto& RTi = Desc.RenderTarget[i];
-				if (RTi.BlendEnable)
-				{
-					glEnablei(GL_BLEND, i);
-					glBlendFuncSeparatei(i, BlendToGL(RTi.SrcBlend), BlendToGL(RTi.DestBlend), BlendToGL(RTi.SrcBlendAlpha), BlendToGL(RTi.DestBlendAlpha));
-					glBlendEquationSeparatei(i, BlendOpToGL(RTi.Op), BlendOpToGL(RTi.OpAlpha));
-				}
-				else
-				{
-					glDisablei(GL_BLEND, i);
-				}
-			}
+			// for (int i = 0; i < Desc.NumRenderTargets; i++)
+			// {
+			// 	const auto& RTi = Desc.RenderTarget[i];
+			// 	if (RTi.BlendEnable)
+			// 	{
+			// 		glEnablei(GL_BLEND, i);
+			// 		glBlendFuncSeparatei(i, BlendToGL(RTi.SrcBlend), BlendToGL(RTi.DestBlend), BlendToGL(RTi.SrcBlendAlpha), BlendToGL(RTi.DestBlendAlpha));
+			// 		glBlendEquationSeparatei(i, BlendOpToGL(RTi.Op), BlendOpToGL(RTi.OpAlpha));
+			// 	}
+			// 	else
+			// 	{
+			// 		glDisablei(GL_BLEND, i);
+			// 	}
+			// }
 		}
 		else
 		{
-			const auto& RT0 = Desc.RenderTarget[0];
-			if (RT0.BlendEnable)
-			{
-				glBlendFuncSeparate(BlendToGL(RT0.SrcBlend), BlendToGL(RT0.DestBlend), BlendToGL(RT0.SrcBlendAlpha), BlendToGL(RT0.DestBlendAlpha));
-				glBlendEquationSeparate(BlendOpToGL(RT0.Op), BlendOpToGL(RT0.OpAlpha));
-			}
-			else
-			{
-				glDisable(GL_BLEND);
-			}
+			// const auto& RT0 = Desc.RenderTarget[0];
+			// if (RT0.BlendEnable)
+			// {
+			// 	glBlendFuncSeparate(BlendToGL(RT0.SrcBlend), BlendToGL(RT0.DestBlend), BlendToGL(RT0.SrcBlendAlpha), BlendToGL(RT0.DestBlendAlpha));
+			// 	glBlendEquationSeparate(BlendOpToGL(RT0.Op), BlendOpToGL(RT0.OpAlpha));
+			// }
+			// else
+			// {
+			// 	glDisable(GL_BLEND);
+			// }
 		}
 	}
 
