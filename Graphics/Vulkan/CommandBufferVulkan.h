@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Graphics/ComputePipeline.h>
-#include <Graphics/GraphicsPipeline.h>
-#include <Graphics/RayTracingPipeline.h>
+#include <Graphics/Core/Pipelines.h>
 #include <Core/Types.h>
 
 #include "BufferVulkan.h"

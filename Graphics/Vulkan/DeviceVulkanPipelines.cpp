@@ -1,11 +1,7 @@
 #include "DeviceVulkan.h"
-
-#include "ComputePipelineVulkan.h"
-#include "GraphicsPipelineVulkan.h"
-#include "RayTracingPipelineVulkan.h"
+#include "PipelinesVulkan.h"
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {

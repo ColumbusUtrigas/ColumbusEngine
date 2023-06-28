@@ -87,6 +87,7 @@ namespace Columbus
 		const TextureDesc2& GetDesc() const { return _Desc; }
 	};
 
+	// TODO: legacy
 	class Texture
 	{
 	public:
@@ -207,22 +208,4 @@ namespace Columbus
 		Flags TextureFlags;
 	};
 
-	struct DefaultTextures
-	{
-		std::unique_ptr<Texture> Black;
-		std::unique_ptr<Texture> White;
-		std::unique_ptr<Texture> IntegrationLUT;
-
-		// TODO: Load this textures only if EditorMode is enabled.
-		std::unique_ptr<Texture> IconSun;
-		std::unique_ptr<Texture> IconLamp;
-		std::unique_ptr<Texture> IconFlashlight;
-		std::unique_ptr<Texture> IconAudio;
-		std::unique_ptr<Texture> IconParticles;
-
-		DefaultTextures();
-	};
-
 }
-
-

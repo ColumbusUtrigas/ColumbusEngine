@@ -1,14 +1,10 @@
-#include <Graphics/Vulkan/CommandBufferVulkan.h>
-
+#include "CommandBufferVulkan.h"
 #include "Common.h"
 #include "BufferVulkan.h"
-#include "ComputePipelineVulkan.h"
-#include "Graphics/Vulkan/TypeConversions.h"
-#include "GraphicsPipelineVulkan.h"
-#include "RayTracingPipelineVulkan.h"
+#include "PipelinesVulkan.h"
+#include "TypeConversions.h"
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {

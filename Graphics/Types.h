@@ -3,6 +3,7 @@
 #include "Common/Image/Image.h"
 #include <Core/DataBlob.h>
 #include <Core/Types.h>
+#include <Core/fixed_vector.h>
 #include <string>
 #include <string_view>
 
@@ -248,5 +249,60 @@ namespace Columbus
 		COLOR_MASK_BLUE = 4,
 		COLOR_MASK_ALPHA = 8,
 		COLOR_MASK_ALL = COLOR_MASK_RED | COLOR_MASK_GREEN | COLOR_MASK_BLUE | COLOR_MASK_ALPHA
+	};
+
+	struct RenderTargetBlendDesc
+	{
+		bool BlendEnable = false;
+		Blend SrcBlend = Blend::One;
+		Blend DestBlend = Blend::Zero;
+		BlendOp Op = BlendOp::Add;
+		Blend SrcBlendAlpha = Blend::One;
+		Blend DestBlendAlpha = Blend::Zero;
+		BlendOp OpAlpha = BlendOp::Add;
+		uint8 RenderTargetWriteMask = COLOR_MASK_ALL;
+	};
+
+	struct BlendStateDesc
+	{
+		bool AlphaToCoverageEnable = false;
+		bool IndependentBlendEnable = false;
+		fixed_vector<RenderTargetBlendDesc, 8> RenderTargets;
+	};
+
+	struct RasterizerStateDesc
+	{
+		FillMode Fill = FillMode::Solid;
+		CullMode Cull = CullMode::Back;
+		bool FrontCounterClockwise = false;
+		int DepthBias = 0;
+		float DepthBiasClamp = 0;
+		float SlopeScaledDepthBias = 0;
+		bool DepthClipEnable = true;
+		bool ScissorEnable = false;
+		bool MultisampleEnable = false;
+		bool AntialiasedLineEnable = false;
+		bool ConservativeEnable = false;
+	};
+
+	struct DepthStencilOpDesc
+	{
+		StencilOp StencilFailOp = StencilOp::Keep;
+		StencilOp StencilDepthFailOp = StencilOp::Keep;
+		StencilOp StencilPassOp = StencilOp::Keep;
+		ComparisonFunc StencilFunc = ComparisonFunc::Always;
+	};
+
+	struct DepthStencilStateDesc
+	{
+		bool DepthEnable = true;
+		bool DepthWriteMask = true;
+		ComparisonFunc DepthFunc = ComparisonFunc::Less;
+
+		bool StencilEnable = false;
+		uint8 StencilReadMask = 0xFF;
+		uint8 StencilWriteMask = 0xFF;
+		DepthStencilOpDesc FrontFace;
+		DepthStencilOpDesc BackFace;
 	};
 }

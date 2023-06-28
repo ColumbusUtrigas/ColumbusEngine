@@ -7,9 +7,7 @@
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
 
-#include "ComputePipelineVulkan.h"
-#include "GraphicsPipelineVulkan.h"
-#include "RayTracingPipelineVulkan.h"
+#include "PipelinesVulkan.h"
 #include "BufferVulkan.h"
 #include "TextureVulkan.h"
 
@@ -17,7 +15,6 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
 
 #define VMA_IMPLEMENTATION
 #include <Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h>

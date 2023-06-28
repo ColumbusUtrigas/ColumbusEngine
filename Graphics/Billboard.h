@@ -3,6 +3,7 @@
 namespace Columbus
 {
 
+	// TODO: LEGACY
 	struct Billboard
 	{
 		enum RotateMode

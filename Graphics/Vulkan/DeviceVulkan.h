@@ -3,9 +3,7 @@
 #include "Core/fixed_vector.h"
 #include "Graphics/AccelerationStructure.h"
 #include "Graphics/Buffer.h"
-#include "Graphics/ComputePipeline.h"
-#include "Graphics/GraphicsPipeline.h"
-#include "Graphics/RayTracingPipeline.h"
+#include "Graphics/Core/Pipelines.h"
 #include "Graphics/Texture.h"
 #include "Graphics/Types.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
@@ -19,10 +17,8 @@
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
 
-#include <Graphics/Device.h>
 #include <Graphics/Vulkan/SwapchainVulkan.h>
 #include <Graphics/Vulkan/CommandBufferVulkan.h>
-#include <Graphics/Vulkan/GraphicsPipelineVulkan.h>
 #include <Graphics/Vulkan/BufferVulkan.h>
 #include <Graphics/Vulkan/TextureVulkan.h>
 #include <Core/Types.h>

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <Graphics/Shader.h>
+#include <Graphics/Types.h>
 #include <Core/fixed_vector.h>
 #include <Core/SmartPointer.h>
 #include <string>
+#include <vector>
 #include <vulkan/vulkan.h>
 
 namespace Columbus

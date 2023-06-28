@@ -6,6 +6,7 @@
 namespace Columbus
 {
 
+	// TODO: LEGACY
 	struct InputLayoutElementDesc
 	{
 		const char* SemanticName;
@@ -22,6 +23,7 @@ namespace Columbus
 			SemanticName(semanticName), SemanticIndex(semanticIndex), Slot(slot), Components(components) {}
 	};
 
+	// TODO: LEGACY
 	struct InputLayout
 	{
 		fixed_vector<InputLayoutElementDesc, 16> Elements;

@@ -3,17 +3,12 @@
 #include "Editor/CommonUI.h"
 #include "Graphics/Buffer.h"
 #include "Graphics/Camera.h"
-#include "Graphics/ComputePipeline.h"
-#include "Graphics/Device.h"
 #include "Graphics/GPUScene.h"
-#include "Graphics/GraphicsPipeline.h"
 #include "Graphics/IrradianceVolume.h"
-#include "Graphics/RayTracingPipeline.h"
 #include "Graphics/Texture.h"
 #include "Graphics/Types.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/BufferVulkan.h"
-#include "Graphics/Vulkan/RayTracingPipelineVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
 #include "Input/Events.h"
 #include "Input/Input.h"
@@ -35,7 +30,6 @@
 #include <Core/Core.h>
 #include <Graphics/RenderGraph.h>
 #include <Graphics/RenderPasses/RenderPasses.h>
-#include <vulkan/vulkan_core.h>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -114,7 +108,7 @@ public:
 
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		Editor::ApplyDarkTheme();
+		// Editor::ApplyDarkTheme();
 		io.DisplaySize = {1280,720};
 	}
 
@@ -381,6 +375,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //		- renderpass blending
 //		- global/frame-local resources
 //		- swapchain resize (and pipeline dynamic parameters)
+//		- resource aliasing
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
 //		+ GPUScene
@@ -435,6 +430,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- fix descriptor set duplication
 //			- HLSL2021 instead of GLSL
 //			- make DebugRender work
+//			- shader caching system
 //
 // Another high-level view of rendering system
 // There should be a convinient way to define CPU-GPU logic for pipelines

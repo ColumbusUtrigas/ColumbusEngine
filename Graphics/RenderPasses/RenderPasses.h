@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Common/Image/Image.h"
-#include "Graphics/GraphicsPipeline.h"
-#include "Graphics/RayTracingPipeline.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Types.h"
 #include "Graphics/IrradianceVolume.h"
 #include <Graphics/RenderGraph.h>
@@ -30,7 +29,7 @@ namespace Columbus
 
 			AddOutputRenderTarget(AttachmentDesc(RTAlbedo, AttachmentType::Color, AttachmentLoadOp::Clear, TextureFormat::RGBA8));
 			AddOutputRenderTarget(AttachmentDesc(RTNormal, AttachmentType::Color, AttachmentLoadOp::Clear, TextureFormat::RGBA16F));
-			AddOutputRenderTarget(AttachmentDesc(RTWorldPosition, AttachmentType::Color, AttachmentLoadOp::Clear, TextureFormat::RGBA16F));
+			AddOutputRenderTarget(AttachmentDesc(RTWorldPosition, AttachmentType::Color, AttachmentLoadOp::Clear, TextureFormat::RGBA32F));
 			AddOutputRenderTarget(AttachmentDesc(RTRoughnessMetallness, AttachmentType::Color, AttachmentLoadOp::Clear, TextureFormat::RG16F));
 			AddOutputRenderTarget(AttachmentDesc(RTDepth, AttachmentType::DepthStencil, AttachmentLoadOp::Clear, TextureFormat::Depth24));
 		}

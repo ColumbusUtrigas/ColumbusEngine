@@ -1,5 +1,4 @@
 #include "Common/Image/Image.h"
-#include "Graphics/RayTracingPipeline.h"
 #include "Graphics/Texture.h"
 #include "RenderPasses.h"
 

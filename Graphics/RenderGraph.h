@@ -4,7 +4,6 @@
 #include <Graphics/Vulkan/DeviceVulkan.h>
 #include "Core/fixed_vector.h"
 #include "GPUScene.h"
-#include "Graphics/RayTracingPipeline.h"
 #include "Graphics/Types.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/FenceVulkan.h"

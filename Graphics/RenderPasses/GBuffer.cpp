@@ -1,6 +1,4 @@
 #include "Core/Core.h"
-#include "Graphics/GraphicsPipeline.h"
-#include "Graphics/Types.h"
 #include "RenderPasses.h"
 
 namespace Columbus
