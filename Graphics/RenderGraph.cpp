@@ -1,6 +1,5 @@
 #include "RenderGraph.h"
-#include "Graphics/Texture.h"
-#include "Graphics/Types.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
 #include "Graphics/Vulkan/PipelinesVulkan.h"

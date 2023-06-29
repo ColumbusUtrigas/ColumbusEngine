@@ -1,5 +1,5 @@
 #include "Core/Core.h"
-#include "Graphics/Buffer.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"

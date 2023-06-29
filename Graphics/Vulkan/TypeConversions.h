@@ -1,13 +1,10 @@
 #pragma once
 
 #include "Core/Assert.h"
-#include <Graphics/Texture.h>
-#include <Graphics/Buffer.h>
-#include <Graphics/Types.h>
+#include "Graphics/Core/GraphicsCore.h"
 #include <Common/Image/Image.h>
 #include <vulkan/vulkan.h>
 #include <cassert>
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {

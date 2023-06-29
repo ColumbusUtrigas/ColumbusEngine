@@ -1,10 +1,10 @@
 #pragma once
 
 #include <Core/Core.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <Graphics/Vulkan/DeviceVulkan.h>
 #include "Core/fixed_vector.h"
 #include "GPUScene.h"
-#include "Graphics/Types.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"

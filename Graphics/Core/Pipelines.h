@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Graphics/InputLayout.h>
-#include <Graphics/Types.h>
+#include <Graphics/Core/Types.h>
+#include <Graphics/Core/InputLayout.h>
 #include <Core/Core.h>
 
 namespace Columbus

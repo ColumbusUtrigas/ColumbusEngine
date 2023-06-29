@@ -1,11 +1,7 @@
 #pragma once
 
 #include "Core/fixed_vector.h"
-#include "Graphics/AccelerationStructure.h"
-#include "Graphics/Buffer.h"
-#include "Graphics/Core/Pipelines.h"
-#include "Graphics/Texture.h"
-#include "Graphics/Types.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/DeviceVulkanFunctions.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
@@ -28,7 +24,6 @@
 #include <cassert>
 
 #include <Common/Image/Image.h>
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {

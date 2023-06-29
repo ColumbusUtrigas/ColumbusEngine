@@ -1,12 +1,11 @@
 #pragma once
 
-#include <Graphics/Core/Pipelines.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <Core/Types.h>
 
 #include "BufferVulkan.h"
 #include "DeviceVulkanFunctions.h"
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {

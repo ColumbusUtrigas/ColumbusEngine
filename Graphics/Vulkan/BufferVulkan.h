@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Buffer.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 

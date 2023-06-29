@@ -1,22 +1,16 @@
 #include "Common/Image/Image.h"
 #include "Common/Model/Model.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Editor/CommonUI.h"
-#include "Graphics/Buffer.h"
 #include "Graphics/Camera.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/IrradianceVolume.h"
-#include "Graphics/Texture.h"
-#include "Graphics/Types.h"
-#include "Graphics/Vulkan/AccelerationStructureVulkan.h"
-#include "Graphics/Vulkan/BufferVulkan.h"
-#include "Graphics/Vulkan/SwapchainVulkan.h"
 #include "Input/Events.h"
 #include "Input/Input.h"
 #include "Math/Matrix.h"
 #include "Math/Plane.h"
 #include "Math/Quaternion.h"
 #include "Math/Vector3.h"
-#include "SDL_video.h"
 #include "Scene/Transform.h"
 #include "Lib/imgui/imgui.h"
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
@@ -473,7 +467,8 @@ int main()
 
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
-	auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+	auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+	//auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
 	auto renderGraph = RenderGraph(device, scene);

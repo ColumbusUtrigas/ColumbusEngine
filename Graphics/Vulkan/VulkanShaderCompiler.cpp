@@ -1,6 +1,6 @@
 #include "VulkanShaderCompiler.h"
 
-#include <Graphics/TypesCommon.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include "TypeConversions.h"
 #include "Common.h"
 

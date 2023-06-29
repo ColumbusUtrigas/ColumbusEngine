@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Graphics/AccelerationStructure.h>
-#include <Graphics/Buffer.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <vulkan/vulkan.h>
 
 namespace Columbus

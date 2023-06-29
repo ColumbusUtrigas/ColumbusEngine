@@ -1,6 +1,6 @@
 #pragma once
 #include <imgui/imgui.h>
-#include <Graphics/Texture.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <Core/String.h>
 
 namespace Columbus::Editor

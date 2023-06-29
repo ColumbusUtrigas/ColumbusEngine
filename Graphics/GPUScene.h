@@ -1,8 +1,6 @@
 #pragma once
 
-#include "AccelerationStructure.h"
-#include "Buffer.h"
-#include "Texture.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Camera.h"
 #include <Core/Core.h>
 #include <vector>

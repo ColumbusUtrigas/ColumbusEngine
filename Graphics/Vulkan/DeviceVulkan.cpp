@@ -2,7 +2,7 @@
 
 #include "Common/Image/Image.h"
 #include "Core/fixed_vector.h"
-#include "Graphics/Types.h"
+#include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"

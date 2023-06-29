@@ -1,7 +1,6 @@
 #include "Core/Core.h"
 #include "Graphics/Camera.h"
 #include "Graphics/IrradianceVolume.h"
-#include "Graphics/Types.h"
 #include "RenderPasses.h"
 
 namespace Columbus

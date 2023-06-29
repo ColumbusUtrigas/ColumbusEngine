@@ -2,7 +2,6 @@
 
 #include "Common/Image/Image.h"
 #include "Graphics/Core/GraphicsCore.h"
-#include "Graphics/Types.h"
 #include "Graphics/IrradianceVolume.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>

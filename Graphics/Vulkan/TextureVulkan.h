@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Texture.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 

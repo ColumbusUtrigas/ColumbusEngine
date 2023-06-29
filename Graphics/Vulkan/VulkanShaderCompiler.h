@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Types.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <Core/fixed_vector.h>
 #include <Core/SmartPointer.h>
 #include <string>

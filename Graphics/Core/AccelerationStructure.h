@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Buffer.h>
+#include <Graphics/Core/Buffer.h>
 #include <Math/Matrix.h>
 #include <vector>
 

@@ -13,7 +13,7 @@
 	#include <Editor/Settings.h>
 #endif
 
-#include <Graphics/Types.h>
+#include <Graphics/Core/GraphicsCore.h>
 #include <Core/Assert.h>
 #include <windows.h>
 
