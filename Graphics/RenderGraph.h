@@ -3,7 +3,6 @@
 #include <Core/Core.h>
 #include <Graphics/Core/GraphicsCore.h>
 #include <Graphics/Vulkan/DeviceVulkan.h>
-#include "Core/fixed_vector.h"
 #include "GPUScene.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
@@ -11,6 +10,8 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <functional>
+#include <optional>
 
 #include <vulkan/vulkan.h>
 
@@ -19,14 +20,12 @@ namespace Columbus
 
 	class RenderGraph;
 
-	using RenderGraphResourceId = int;
-
-	constexpr int MaxFramesInFlight = 2;
+	constexpr int MaxFramesInFlight = 3;
 
 	struct RenderGraphData
 	{
-		std::unordered_map<std::string, Buffer*> Buffers; // TODO
-		std::unordered_map<std::string, Texture2*> Textures; // TODO
+		std::unordered_map<std::string, Buffer*> Buffers; // TODO: remove legacy
+		std::unordered_map<std::string, Texture2*> Textures; // TODO: remove legacy
 
 		struct
 		{
@@ -69,6 +68,8 @@ namespace Columbus
 		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];
 
 		int CurrentPerFrameData = 0;
+		uint32_t CurrentSwapchainImageIndex = 0;
+		iVector2 CurrentSwapchainSize{-1};
 	};
 
 	// TODO: Separate build, setup and execution contexts?
@@ -81,13 +82,15 @@ namespace Columbus
 		RenderGraphData& RenderData;
 		// RenderGraph& Graph;
 
-		// TODO: better system
+		// TODO: REMOVE LEGACY
 		Buffer* GetOutputBuffer(const std::string& Name, const BufferDesc& Desc, void* InitialData = nullptr);
 		Buffer* GetInputBuffer(const std::string& Name);
 
+		// TODO: REMOVE LEGACY
 		Texture2* GetRenderTarget(const std::string& Name, const TextureDesc2& Desc);
 		Texture2* GetInputTexture(const std::string& Name);
 
+		// TODO: separate shader binding system?
 		VkDescriptorSet GetDescriptorSet(const ComputePipeline* Pipeline, int Index);
 		VkDescriptorSet GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
@@ -96,10 +99,40 @@ namespace Columbus
 		void BindGPUScene(const RayTracingPipeline* Pipeline);
 	};
 
+	using RenderGraphExecutionFunc = std::function<void(RenderGraphContext&)>;
+	using RenderGraphTextureRef = SPtr<Texture2>;
+
+	struct RenderPassAttachment
+	{
+		AttachmentLoadOp LoadOp;
+		Texture2* Texture;
+		AttachmentClearValue ClearValue;
+
+		bool operator==(const RenderPassAttachment&) const = default;
+	};
+
+	struct RenderPassParameters
+	{
+		static constexpr int ColorAttachmentsCount = 8;
+
+		std::optional<RenderPassAttachment> ColorAttachments[ColorAttachmentsCount];
+		std::optional<RenderPassAttachment> DepthStencilAttachment;
+
+		bool operator==(const RenderPassParameters& Other) const = default;
+	};
+
+	struct HashRenderPassParameters
+	{
+		size_t operator()(const RenderPassParameters& Params) const;
+	};
+
+	// TODO: remove legacy
 	class RenderPass
 	{
 	public:
 		static constexpr const char* FinalColorOutput = "FinalColor";
+
+		using TExecutionFunc = std::function<void(RenderGraphContext&)>;
 	public:
 		std::string Name;
 		bool IsGraphicsPass = false;
@@ -115,8 +148,7 @@ namespace Columbus
 
 		// TODO: reduce
 		virtual void Setup(RenderGraphContext& Context) = 0;
-		virtual void PreExecute(RenderGraphContext& Context) {}
-		virtual void Execute(RenderGraphContext& Context) = 0;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) { return [](RenderGraphContext&){}; }
 
 	private:
 		friend RenderGraph;
@@ -128,25 +160,95 @@ namespace Columbus
 		std::vector<AttachmentDesc> RenderTargets;
 	};
 
+	enum class RenderGraphPassType
+	{
+		Raster,
+		Compute,
+		// TODO: AsyncCompute
+	};
+
+	struct RenderPassTextureDependency
+	{
+		RenderGraphTextureRef Texture;
+
+		// TODO?
+		VkAccessFlags Access;
+		VkPipelineStageFlags Stage;
+	};
+
+	struct RenderPassDependencies
+	{
+		void Write(RenderGraphTextureRef Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		{
+			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, Access, Stage });
+		}
+
+		void Read(RenderGraphTextureRef Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		{
+			TextureReadResources.push_back(RenderPassTextureDependency { Texture, Access, Stage });
+		}
+	private:
+		fixed_vector<RenderPassTextureDependency, 32> TextureWriteResources;
+		fixed_vector<RenderPassTextureDependency, 32> TextureReadResources;
+
+		friend class RenderGraph;
+	};
+
+	struct RenderPass2
+	{
+		std::string Name;
+		RenderGraphPassType Type;
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies;
+		RenderGraphExecutionFunc ExecutionFunc;
+
+		VkRenderPass VulkanRenderPass = NULL;
+		VkFramebuffer VulkanFramebuffer = NULL;
+	};
+
+	struct RenderGraphFramebufferVulkan
+	{
+		VkFramebuffer VulkanFramebuffer;
+		iVector2 Size;
+	};
+
 	class RenderGraph
 	{
 	public:
 		RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene);
 
+		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
+
+		// TODO: legacy
 		void AddRenderPass(RenderPass* Pass);
 
-		void Build();
+		Texture2* GetSwapchainTexture();
+
+		void AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
+
+		void Clear();
 		void Execute(SwapchainVulkan* Swapchain);
 
 	private:
-		std::vector<RenderPass*> RenderPasses;		
+		void Build(Texture2* SwapchainImage);
+
+		VkRenderPass GetOrCreateVulkanRenderPass(RenderPass2& Pass);
+		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderPass2& Pass, Texture2* SwapchainImage);
+
+	private:
+		std::vector<RenderPass*> RenderPasses;
+		std::vector<RenderPass2> Passes;
+
+		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
+		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];
+
+		// TODO: handles + array?
+		std::unordered_map<TextureDesc2, std::vector<RenderGraphTextureRef>, HashTextureDesc2> TextureResourceTable;
 
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
 
 		RenderGraphData RenderData;
-
-		VkRenderPass BlankPass; // TODO
 	};
 
 }

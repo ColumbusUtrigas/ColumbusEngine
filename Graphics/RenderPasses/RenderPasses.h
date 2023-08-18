@@ -13,6 +13,23 @@ namespace Columbus
 	// Real-time
 	//
 
+	struct SceneTextures
+	{
+		RenderGraphTextureRef GBufferAlbedo;
+		RenderGraphTextureRef GBufferNormal;
+		RenderGraphTextureRef GBufferWP; // World Position
+		RenderGraphTextureRef GBufferRM; // Roughness Metallic
+		RenderGraphTextureRef GBufferDS; // Depth Stencil
+	};
+
+	SceneTextures CreateSceneTextures(RenderGraph& Graph, const iVector2& WindowSize);
+	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures);
+	void RayTracedShadowsPass(RenderGraph& Graph);
+	void RenderDeferredLightingPass(RenderGraph& Graph);
+	void TonemapPass(RenderGraph& Graph);
+	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize);
+
+	// EVERYTHING BELOW IS LEGACY
 	class GBufferPass : public RenderPass
 	{
 	public:
@@ -34,8 +51,7 @@ namespace Columbus
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void PreExecute(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 
 	private:
 		GraphicsPipeline* Pipeline;
@@ -53,14 +69,9 @@ namespace Columbus
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void PreExecute(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 	private:
 		GraphicsPipeline* Pipeline;
-
-		Texture2* InputAlbedo;
-		Texture2* InputNormal;
-		Texture2* InputShadowBuffer;
 	};
 
 	class RayTracedShadowsPass : public RenderPass
@@ -73,14 +84,22 @@ namespace Columbus
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void PreExecute(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 	private:
 		RayTracingPipeline* Pipeline;
+	};
 
-		Texture2* InputNormal;
-		Texture2* InputDepth;
-		Texture2* InputWorldPosition;
+	class DenoiseRayTracedShadowsPass : public RenderPass
+	{
+	public:
+		static constexpr const char* DenoisedRTShadows = "DenoisedRayTracedShadowsBuffer";
+	public:
+		DenoiseRayTracedShadowsPass() : RenderPass("Denoise RT Shadows") {}
+
+		virtual void Setup(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
+	private:
+		ComputePipeline* Pipeline;
 	};
 
 	class ForwardShadingPass : public RenderPass
@@ -95,8 +114,7 @@ namespace Columbus
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void PreExecute(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 	private:
 		GraphicsPipeline* Pipeline;
 		GraphicsPipeline* ProbeVisPipeline;
@@ -115,8 +133,7 @@ namespace Columbus
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void PreExecute(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 	private:
 		RayTracingPipeline* Pipeline;
 		IrradianceVolume& Volume;
@@ -134,7 +151,7 @@ namespace Columbus
 		PathTracePass(Camera& Camera) : MainCamera(Camera), RenderPass("Path Tracing Pass") {}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 	private:
 		RayTracingPipeline* PTPipeline;
 		Camera& MainCamera;
@@ -150,8 +167,7 @@ namespace Columbus
 		}
 
 		virtual void Setup(RenderGraphContext& Context) override;
-		virtual void PreExecute(RenderGraphContext& Context) override;
-		virtual void Execute(RenderGraphContext& Context) override;
+		virtual TExecutionFunc Execute2(RenderGraphContext& Context) override;
 	private:
 		GraphicsPipeline* Pipeline;
 		Texture2* TraceResult;

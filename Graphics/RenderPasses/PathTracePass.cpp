@@ -66,35 +66,38 @@ namespace Columbus
 		PTPipeline = Context.Device->CreateRayTracingPipeline(Desc);
 	}
 
-	void PathTracePass::Execute(RenderGraphContext& Context)
+	RenderPass::TExecutionFunc PathTracePass::Execute2(RenderGraphContext& Context)
 	{
-		TextureDesc2 RTDesc;
-		RTDesc.Usage = TextureUsage::Storage;
-		RTDesc.Width = 1280; // TODO: swapchain and RT resize
-		RTDesc.Height = 720;
-		RTDesc.Format = TextureFormat::RGBA16F;
-		auto RTImage = Context.GetRenderTarget(RenderTargetName, RTDesc);
+		return [this](RenderGraphContext& Context)
+		{
+			TextureDesc2 RTDesc;
+			RTDesc.Usage = TextureUsage::Storage;
+			RTDesc.Width = 1280; // TODO: swapchain and RT resize
+			RTDesc.Height = 720;
+			RTDesc.Format = TextureFormat::RGBA16F;
+			auto RTImage = Context.GetRenderTarget(RenderTargetName, RTDesc);
 
-		auto RTSet = Context.GetDescriptorSet(PTPipeline, 7);
-		Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
-		Context.Device->UpdateDescriptorSet(RTSet, 1, 0, RTImage);
+			auto RTSet = Context.GetDescriptorSet(PTPipeline, 7);
+			Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
+			Context.Device->UpdateDescriptorSet(RTSet, 1, 0, RTImage);
 
-		GPUCamera UpdatedCamera = GPUCamera(MainCamera);
-		Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
-		Context.Scene->MainCamera = UpdatedCamera;
+			GPUCamera UpdatedCamera = GPUCamera(MainCamera);
+			Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
+			Context.Scene->MainCamera = UpdatedCamera;
 
-		bool reset = Context.Scene->Dirty;
-		int frame = rand() % 2000;
-		int bounces = 2;
+			bool reset = Context.Scene->Dirty;
+			int frame = rand() % 2000;
+			int bounces = 2;
 
-		PathTraceParameters rayParams = { UpdatedCamera, (int)frame, (int)reset, bounces };
+			PathTraceParameters rayParams = { UpdatedCamera, (int)frame, (int)reset, bounces };
 
-		Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 7, 1, &RTSet);
-		Context.BindGPUScene(PTPipeline);
+			Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 7, 1, &RTSet);
+			Context.BindGPUScene(PTPipeline);
 
-		Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
-		Context.CommandBuffer->TraceRays(PTPipeline, 1280, 720, 1);
+			Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
+			Context.CommandBuffer->TraceRays(PTPipeline, 1280, 720, 1);
+		};
 	}
 
 	void PathTraceDisplayPass::Setup(RenderGraphContext& Context)
@@ -107,27 +110,27 @@ namespace Columbus
 		Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 	}
 
-	void PathTraceDisplayPass::PreExecute(RenderGraphContext& Context)
+	RenderPass::TExecutionFunc PathTraceDisplayPass::Execute2(RenderGraphContext& Context)
 	{
 		TraceResult = Context.GetInputTexture(PathTracePass::RenderTargetName); // will synchronize with RT
-	}
 
-	void PathTraceDisplayPass::Execute(RenderGraphContext& Context)
-	{
-		if (Context.Scene->Dirty)
+		return [this](RenderGraphContext& Context)
 		{
-			Frame = 1;
-		}
+			if (Context.Scene->Dirty)
+			{
+				Frame = 1;
+			}
 
-		PathTraceDisplayParameters Params{Frame++};
+			PathTraceDisplayParameters Params{Frame++};
 
-		auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-		Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, TraceResult);
+			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, TraceResult);
 
-		Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-		Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Params), &Params);
-		Context.CommandBuffer->Draw(3, 1, 0, 0);
+			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
+			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Params), &Params);
+			Context.CommandBuffer->Draw(3, 1, 0, 0);
+		};
 	}
 
 }

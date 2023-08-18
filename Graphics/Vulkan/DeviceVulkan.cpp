@@ -22,9 +22,9 @@
 namespace Columbus
 {
 
-	SwapchainVulkan* DeviceVulkan::CreateSwapchain(VkSurfaceKHR surface)
+	SwapchainVulkan* DeviceVulkan::CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain)
 	{
-		return new SwapchainVulkan(_Device, _PhysicalDevice, surface);
+		return new SwapchainVulkan(_Device, _PhysicalDevice, surface, OldSwapchain);
 	}
 
 	VkRenderPass DeviceVulkan::CreateRenderPass(const std::vector<AttachmentDesc>& Attachments)
@@ -43,7 +43,6 @@ namespace Columbus
 			VkAttachmentDescription Attachment{};
 			Attachment.format = TextureFormatToVK(Attachments[i].Format);
 			Attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-			// Attachment.loadOp = AttachmentLoadOpToVK(Attachments[i].LoadOp);
 			// Attachment.storeOp = AttachmentStoreOpToVK(Attachments[i].StoreOp);
 			Attachment.loadOp = AttachmentLoadOpToVk(Attachments[i].LoadOp);
 			Attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // TODO?
@@ -159,7 +158,7 @@ namespace Columbus
 		return renderPass;
 	}
 
-	VkFramebuffer DeviceVulkan::CreateFramebuffer(VkRenderPass Renderpass, const std::vector<Texture2*>& Textures)
+	VkFramebuffer DeviceVulkan::CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, const std::vector<Texture2*>& Textures)
 	{
 		fixed_vector<VkImageView, 16> AttachmentViews;
 		for (Texture2* Attachment : Textures)
@@ -172,8 +171,8 @@ namespace Columbus
 		framebufferInfo.renderPass = Renderpass;
 		framebufferInfo.attachmentCount = AttachmentViews.size();
 		framebufferInfo.pAttachments = AttachmentViews.data();
-		framebufferInfo.width = 1280; // TODO
-		framebufferInfo.height = 720; // TODO
+		framebufferInfo.width = Size.X;
+		framebufferInfo.height = Size.Y;
 		framebufferInfo.layers = 1;
 
 		VkFramebuffer Result;

@@ -228,4 +228,20 @@ namespace Columbus
 		}
 	}
 
+	static VkClearValue AttachmentClearValueToVk(const AttachmentClearValue& Value, bool ForDepth)
+	{
+		VkClearValue Result;
+		if (ForDepth)
+		{
+			Result.depthStencil.depth = Value.Depth;
+			Result.depthStencil.stencil = Value.Stencil;
+		}
+		else
+		{
+			memcpy(Result.color.float32, &Value.Color, sizeof(Value.Color));
+		}
+
+		return Result;
+	}
+
 }

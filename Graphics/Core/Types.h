@@ -4,6 +4,7 @@
 #include <Core/DataBlob.h>
 #include <Core/Types.h>
 #include <Core/fixed_vector.h>
+#include <Math/Vector4.h>
 #include <string>
 #include <string_view>
 
@@ -117,6 +118,17 @@ namespace Columbus
 		DontCare,
 	};
 
+	struct AttachmentClearValue
+	{
+		Vector4 Color;
+
+		f32 Depth;
+		u32 Stencil;
+
+		bool operator==(const AttachmentClearValue&) const = default;
+	};
+
+	// LEGACY?
 	struct AttachmentDesc
 	{
 		std::string Name;

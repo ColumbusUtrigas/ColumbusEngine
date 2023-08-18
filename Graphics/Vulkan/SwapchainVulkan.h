@@ -2,38 +2,39 @@
 
 #include "Core/Assert.h"
 #include "TextureVulkan.h"
+#include "Common.h"
 #include <vulkan/vulkan.h>
 #include <vector>
 
 namespace Columbus
 {
 
-    struct SwapChainSupportDetails
+	struct SwapChainSupportDetails
 	{
 		VkSurfaceCapabilitiesKHR capabilities;
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-    class SwapchainVulkan
-    {
-    public:
-        VkSwapchainKHR swapChain;
-        std::vector<VkImage> swapChainImages;
-        VkFormat swapChainImageFormat;
-        VkExtent2D swapChainExtent;
-        std::vector<VkImageView> swapChainImageViews;
-        std::vector<VkFramebuffer> swapChainFramebuffers;
+	class SwapchainVulkan
+	{
+	public:
+		VkSwapchainKHR swapChain;
+		std::vector<VkImage> swapChainImages;
+		VkFormat swapChainImageFormat;
+		VkExtent2D swapChainExtent;
+		std::vector<VkImageView> swapChainImageViews;
+		std::vector<VkFramebuffer> swapChainFramebuffers;
 		std::vector<Texture2*> Textures;
 
 		uint32_t minImageCount;
 		uint32_t imageCount;
 
-    public:
-        SwapchainVulkan(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
-        {
-            auto supportDetails = QuerySwapChainSupport(physicalDevice, surface);
-            auto surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.formats);
+	public:
+		SwapchainVulkan(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain)
+		{
+			auto supportDetails = QuerySwapChainSupport(physicalDevice, surface);
+			auto surfaceFormat = ChooseSwapSurfaceFormat(supportDetails.formats);
 			auto presentMode = ChooseSwapPresentMode(supportDetails.presentModes);
 			auto extent = ChooseSwapExtent(supportDetails.capabilities);
 
@@ -71,12 +72,9 @@ namespace Columbus
 			createInfo.presentMode = presentMode;
 			createInfo.clipped = VK_TRUE;
 
-			createInfo.oldSwapchain = VK_NULL_HANDLE;
+			createInfo.oldSwapchain = OldSwapchain ? OldSwapchain->swapChain : VK_NULL_HANDLE;
 
-            if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
-            {
-                COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan Swapchain")
-			}
+			VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain));
 
 			vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
 			swapChainImages.resize(imageCount);
@@ -85,11 +83,11 @@ namespace Columbus
 			swapChainImageFormat = surfaceFormat.format;
 			swapChainExtent = extent;
 
-            CreateImageViews(device);
-        }
+			CreateImageViews(device);
+		}
 
-    private:
-        SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+	private:
+		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 		{
 			SwapChainSupportDetails details;
 
@@ -115,8 +113,8 @@ namespace Columbus
 			return details;
 		}
 
-        VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
-        {
+		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+		{
 			for (const auto& availableFormat : availableFormats) {
 				if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
 					return availableFormat;
@@ -127,7 +125,7 @@ namespace Columbus
 		}
 
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
-        {
+		{
 			for (const auto& availablePresentMode : availablePresentModes) {
 				if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 					return availablePresentMode;
@@ -137,8 +135,8 @@ namespace Columbus
 			return VK_PRESENT_MODE_FIFO_KHR;
 		}
 
-        VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
-        {
+		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+		{
 			return capabilities.currentExtent;
 
 			/*if (capabilities.currentExtent.width != UINT32_MAX) {
@@ -160,39 +158,39 @@ namespace Columbus
 			}*/
 		}
 
-        void CreateImageViews(VkDevice device)
-        {
-            swapChainImageViews.resize(swapChainImages.size());
+		void CreateImageViews(VkDevice device)
+		{
+			swapChainImageViews.resize(swapChainImages.size());
 
-            for (size_t i = 0; i < swapChainImages.size(); i++)
-            {
-                VkImageViewCreateInfo createInfo{};
-                createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                createInfo.image = swapChainImages[i];
-                createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                createInfo.format = swapChainImageFormat;
-                createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-                createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                createInfo.subresourceRange.baseMipLevel = 0;
-                createInfo.subresourceRange.levelCount = 1;
-                createInfo.subresourceRange.baseArrayLayer = 0;
-                createInfo.subresourceRange.layerCount = 1;
+			for (size_t i = 0; i < swapChainImages.size(); i++)
+			{
+				VkImageViewCreateInfo createInfo{};
+				createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				createInfo.image = swapChainImages[i];
+				createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+				createInfo.format = swapChainImageFormat;
+				createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+				createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+				createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+				createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+				createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				createInfo.subresourceRange.baseMipLevel = 0;
+				createInfo.subresourceRange.levelCount = 1;
+				createInfo.subresourceRange.baseArrayLayer = 0;
+				createInfo.subresourceRange.layerCount = 1;
 
-                if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
-                {
-                    COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan Image Views")
-                }
+				if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+				{
+					COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan Image Views")
+				}
 
 				// Create Textures
 				auto TargetTexture = new TextureVulkan({});
 				TargetTexture->_Image = swapChainImages[i];
 				TargetTexture->_View = swapChainImageViews[i];
 				Textures.push_back(TargetTexture);
-            }
-        }
-    };
+			}
+		}
+	};
 
 }

@@ -25,6 +25,9 @@
 
 #include <Common/Image/Image.h>
 
+// disable to make RenderDoc captures
+#define ENABLE_RAY_TRACING 0
+
 namespace Columbus
 {
 
@@ -73,8 +76,9 @@ namespace Columbus
 			_AccelerationStructureFeatures.pNext = nullptr;
 			_RayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 			_RayTracingFeatures.pNext = &_AccelerationStructureFeatures;
+
 			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			_Vulkan12Features.pNext = &_RayTracingFeatures;
+			_Vulkan12Features.pNext = ENABLE_RAY_TRACING ? &_RayTracingFeatures : nullptr;
 			_DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 			_DeviceFeatures.pNext = &_Vulkan12Features;
 
@@ -83,7 +87,7 @@ namespace Columbus
 			_RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 			_RayTracingProperties.pNext = nullptr;
 			_DeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			_DeviceProperties.pNext = &_RayTracingProperties;
+			_DeviceProperties.pNext = ENABLE_RAY_TRACING ? &_RayTracingProperties : nullptr;
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &_DeviceProperties);
 			vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, &_MemoryProperties);
@@ -91,8 +95,10 @@ namespace Columbus
 			// logic if features are enabled/disabled
 			COLUMBUS_ASSERT(_Vulkan12Features.descriptorIndexing); // non-uniform descriptor indexing
 			COLUMBUS_ASSERT(_Vulkan12Features.descriptorBindingPartiallyBound);
+#if ENABLE_RAY_TRACING
 			COLUMBUS_ASSERT(_Vulkan12Features.bufferDeviceAddress);
 			COLUMBUS_ASSERT(_RayTracingFeatures.rayTracingPipeline);
+#endif
 
 			Log::Message("Creating Vulkan logical device on %s", _DeviceProperties.properties.deviceName);
 
@@ -127,10 +133,12 @@ namespace Columbus
 			std::vector<const char*> extensions = {
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 
+#if ENABLE_RAY_TRACING
 				VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
 				VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
 				VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
 				VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+#endif
 			};
 
 			VkDeviceCreateInfo info;
@@ -159,26 +167,22 @@ namespace Columbus
 
 			VK_CHECK(vkCreateCommandPool(_Device, &commandPoolInfo, nullptr, &_CmdPool));
 
-			// create descriptor pool
-			VkDescriptorPoolSize poolSizes[5];
-			poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			poolSizes[0].descriptorCount = 100;
-			poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			poolSizes[1].descriptorCount = 100;
-			poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			poolSizes[2].descriptorCount = 10;
-			poolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			poolSizes[3].descriptorCount = 10;
-			poolSizes[4].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-			poolSizes[4].descriptorCount = 10;
+			fixed_vector<VkDescriptorPoolSize, 16> poolSizes;
+			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100});
+			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100});
+			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10});
+			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10});
+#if ENABLE_RAY_TRACING
+			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10});
+#endif
 
 			VkDescriptorPoolCreateInfo descriptorPoolInfo;
 			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 			descriptorPoolInfo.pNext = nullptr;
 			descriptorPoolInfo.flags = 0;
 			descriptorPoolInfo.maxSets = 1024;
-			descriptorPoolInfo.poolSizeCount = sizeof(poolSizes) / sizeof(poolSizes[0]);
-			descriptorPoolInfo.pPoolSizes = poolSizes;
+			descriptorPoolInfo.poolSizeCount = poolSizes.size();
+			descriptorPoolInfo.pPoolSizes = poolSizes.data();
 
 			VK_CHECK(vkCreateDescriptorPool(_Device, &descriptorPoolInfo, nullptr, &_DescriptorPool));
 
@@ -188,17 +192,17 @@ namespace Columbus
 			allocatorInfo.device = _Device;
 			allocatorInfo.instance = Instance;
 			allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-			vmaCreateAllocator(&allocatorInfo, &_Allocator);
+			VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_Allocator));
 		}
 
 		// Low-level API abstraction
 
-		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface);
+		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain);
 
 		VkRenderPass CreateRenderPass(const std::vector<AttachmentDesc>& Attachments);
 		VkRenderPass CreateRenderPass(VkFormat format);
 
-		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const std::vector<Texture2*>& Textures);
+		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, const std::vector<Texture2*>& Textures);
 
 		CommandBufferVulkan* CreateCommandBuffer();
 		SPtr<CommandBufferVulkan> CreateCommandBufferShared();
@@ -290,9 +294,17 @@ namespace Columbus
 			vkResetFences(_Device, 1, &fence->_Fence);
 		}
 
-		void AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex)
+		bool AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex)
 		{
-			vkAcquireNextImageKHR(_Device, swapchain->swapChain, UINT64_MAX, signalSemaphore, nullptr, &imageIndex);
+			VkResult Result = vkAcquireNextImageKHR(_Device, swapchain->swapChain, UINT64_MAX, signalSemaphore, nullptr, &imageIndex);
+
+			if (Result == VK_ERROR_OUT_OF_DATE_KHR)
+			{
+				return false;
+			}
+
+			VK_CHECK(Result);
+			return true;
 		}
 
 		void Submit(CommandBufferVulkan* Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores)
@@ -357,12 +369,12 @@ namespace Columbus
 
 		~DeviceVulkan()
 		{
-			// VK_CHECK(vkDeviceWaitIdle(_Device));
+			VK_CHECK(vkDeviceWaitIdle(_Device));
 
-			// vmaDestroyAllocator(_Allocator);
-			// vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
-			// vkDestroyCommandPool(_Device, _CmdPool, nullptr);
-			// vkDestroyDevice(_Device, nullptr);
+			vmaDestroyAllocator(_Allocator);
+			vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
+			vkDestroyCommandPool(_Device, _CmdPool, nullptr);
+			vkDestroyDevice(_Device, nullptr);
 		}
 	};
 

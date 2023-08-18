@@ -1,4 +1,5 @@
 #include "Common/Image/Image.h"
+#include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
 
 namespace Columbus
@@ -17,33 +18,33 @@ namespace Columbus
 		Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
 	}
 
-	void RayTracedShadowsPass::PreExecute(RenderGraphContext& Context)
+	RenderPass::TExecutionFunc RayTracedShadowsPass::Execute2(RenderGraphContext& Context)
 	{
-		InputNormal = Context.GetInputTexture(GBufferPass::RTNormal);
-		InputDepth = Context.GetInputTexture(GBufferPass::RTDepth);
-		InputWorldPosition = Context.GetInputTexture(GBufferPass::RTWorldPosition);
-	}
+		auto InputNormal = Context.GetInputTexture(GBufferPass::RTNormal);
+		auto InputDepth = Context.GetInputTexture(GBufferPass::RTDepth);
+		auto InputWorldPosition = Context.GetInputTexture(GBufferPass::RTWorldPosition);
 
-	void RayTracedShadowsPass::Execute(RenderGraphContext& Context)
-	{
-		TextureDesc2 ShadowsBufferDesc;
-		ShadowsBufferDesc.Width = 1280; // TODO
-		ShadowsBufferDesc.Height = 720; // TODO
-		ShadowsBufferDesc.Format = TextureFormat::RGBA16F;
-		ShadowsBufferDesc.Usage = TextureUsage::Storage;
-		auto ShadowsBuffer = Context.GetRenderTarget(RTShadows, ShadowsBufferDesc);
+		return [this, InputNormal, InputDepth, InputWorldPosition](RenderGraphContext& Context)
+		{
+			TextureDesc2 ShadowsBufferDesc;
+			ShadowsBufferDesc.Width = 1280; // TODO
+			ShadowsBufferDesc.Height = 720; // TODO
+			ShadowsBufferDesc.Format = TextureFormat::RGBA16F;
+			ShadowsBufferDesc.Usage = TextureUsage::Storage;
+			auto ShadowsBuffer = Context.GetRenderTarget(RTShadows, ShadowsBufferDesc);
 
-		auto ShadowsBufferSet = Context.GetDescriptorSet(Pipeline, 7);
-		Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
-		Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, ShadowsBuffer);
-		Context.Device->UpdateDescriptorSet(ShadowsBufferSet,2, 0, InputNormal);
-		Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, InputWorldPosition);
+			auto ShadowsBufferSet = Context.GetDescriptorSet(Pipeline, 7);
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, ShadowsBuffer);
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet,2, 0, InputNormal);
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, InputWorldPosition);
 
-		Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-		Context.BindGPUScene(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ShadowsBufferSet);
+			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
+			Context.BindGPUScene(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ShadowsBufferSet);
 
-		Context.CommandBuffer->TraceRays(Pipeline, 1280, 720, 1);
+			Context.CommandBuffer->TraceRays(Pipeline, 1280, 720, 1);
+		};
 	}
 
 }

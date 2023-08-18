@@ -10,13 +10,15 @@
 #include "Math/Matrix.h"
 #include "Math/Plane.h"
 #include "Math/Quaternion.h"
+#include "Math/Vector2.h"
 #include "Math/Vector3.h"
+#include "SDL_events.h"
+#include "SDL_video.h"
 #include "Scene/Transform.h"
 #include "Lib/imgui/imgui.h"
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 #include "Lib/imgui/backends/imgui_impl_sdl2.h"
 #include "System/File.h"
-#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <thread>
@@ -37,30 +39,6 @@
 
 #include <Lib/tinygltf/tiny_gltf.h>
 
-std::string srcScreenFrag2 = R"(#version 460 core
-	layout(location = 0) in vec2 texcoords;
-	layout(location = 0) out vec4 RT0;
-
-	layout(std430, binding = 0) buffer BufferLayout {
-		vec4 data[];
-	} Buffer;
-
-	void main() {
-		// RT0 = vec4(1, 0, 0, 1.0);
-		RT0 = Buffer.data[0];
-	}
-)";
-
-std::string srcCompute = R"(#version 460 core
-	layout(std430, binding = 0) buffer BufferLayout {
-		vec4 data[];
-	} Buffer;
-
-	void main() {
-		Buffer.data[0] = vec4(0,1,0,1);
-	}
-)";
-
 using namespace Columbus;
 
 class WindowVulkan
@@ -69,10 +47,22 @@ public:
 	WindowVulkan(InstanceVulkan& Instance, SPtr<DeviceVulkan> Device) : Instance(Instance), Device(Device)
 	{
 		SDL_Init(SDL_INIT_EVERYTHING);
-		Window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_VULKAN);
+		Window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Size.X, Size.Y, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 		SDL_Vulkan_CreateSurface(Window, Instance.instance, &Surface);
 
-		Swapchain = Device->CreateSwapchain(Surface);
+		Swapchain = Device->CreateSwapchain(Surface, nullptr);
+	}
+
+	void OnResize(iVector2 NewSize)
+	{
+		if (Size != NewSize)
+		{
+			SwapchainVulkan* newSwapchain = Device->CreateSwapchain(Surface, Swapchain);
+			delete Swapchain;
+			Swapchain = newSwapchain;
+
+			Size = NewSize;
+		}
 	}
 
 	~WindowVulkan()
@@ -89,6 +79,8 @@ public:
 
 	InstanceVulkan& Instance;
 	SPtr<DeviceVulkan> Device;
+
+	iVector2 Size{1280, 720};
 };
 
 class ImguiPass : public RenderPass
@@ -139,19 +131,18 @@ public:
 		}
 	}
 
-	virtual void PreExecute(RenderGraphContext& Context) override
+	virtual TExecutionFunc Execute2(RenderGraphContext& Context) override
 	{
 		ImGui::NewFrame();
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplSDL2_NewFrame(Window.Window);
-	}
 
-	virtual void Execute(RenderGraphContext& Context) override
-	{
-		ImGui::ShowDemoWindow();
-		ImGui::Render();
-
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
+		return [](RenderGraphContext& Context)
+		{
+			ImGui::ShowDemoWindow();
+			ImGui::Render();
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
+		};
 	}
 private:
 	WindowVulkan& Window;
@@ -366,7 +357,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //		+ very basic resource synchronization
 //		+ RenderPass depth attachments
 //		- resource tracker and synchronization mechanism
-//		- renderpass blending
+//		+ renderpass blending
 //		- global/frame-local resources
 //		- swapchain resize (and pipeline dynamic parameters)
 //		- resource aliasing
@@ -465,10 +456,12 @@ int main()
 	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
 	float CameraSpeed = 200;
 
+	SPtr<GPUScene> scene = std::make_shared<GPUScene>();
+
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
-	auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
-	//auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
 	auto renderGraph = RenderGraph(device, scene);
@@ -479,19 +472,6 @@ int main()
 	Volume.ProbesCount = { 5, 4, 5 };
 	Volume.Extent = { 250, 320, 500 };
 
-	// renderGraph.AddRenderPass(new PathTracePass(camera));
-	// renderGraph.AddRenderPass(new PathTraceDisplayPass());
-
-	renderGraph.AddRenderPass(new GBufferPass(camera));
-	renderGraph.AddRenderPass(new RayTracedShadowsPass());
-	renderGraph.AddRenderPass(new GBufferCompositePass());
-
-	// renderGraph.AddRenderPass(new IrradianceProbeTracePass(Volume));
-	// renderGraph.AddRenderPass(new ForwardShadingPass(camera, Volume));
-
-	renderGraph.AddRenderPass(new ImguiPass(Window));
-	renderGraph.Build();
-
 	bool running = true;
 	while (running)
 	{
@@ -500,15 +480,26 @@ int main()
 
 		camera.Update();
 
-		renderGraph.Execute(Window.Swapchain);
-
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			ImGui_ImplSDL2_ProcessEvent(&event);
+			// ImGui_ImplSDL2_ProcessEvent(&event);
 			if (event.type == SDL_QUIT) {
 				running = false;
 			}
+
+			if (event.type == SDL_WINDOWEVENT) {
+				if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+					device->QueueWaitIdle();
+					Window.OnResize(iVector2{event.window.data1, event.window.data2});
+
+					Log::Message("Window resized: %i %i", event.window.data1, event.window.data2);
+				}
+			}
 		}
+
+		renderGraph.Clear();
+		RenderDeferred(renderGraph, camera, Window.Size);
+		renderGraph.Execute(Window.Swapchain);
 
 		auto keyboard = SDL_GetKeyboardState(NULL);
 		if (keyboard[SDL_SCANCODE_DOWN]) camera.Rot += Columbus::Vector3(5,0,0) * DeltaTime * 20;

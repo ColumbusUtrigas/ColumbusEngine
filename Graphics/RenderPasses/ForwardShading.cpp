@@ -44,49 +44,49 @@ namespace Columbus
 		}
 	}
 
-	void ForwardShadingPass::PreExecute(RenderGraphContext& Context)
+	RenderPass::TExecutionFunc ForwardShadingPass::Execute2(RenderGraphContext& Context)
 	{
 		IrradianceProbeBuffer = Context.GetInputBuffer(IrradianceProbeTracePass::ProbeBufferName);
-	}
 
-	void ForwardShadingPass::Execute(RenderGraphContext& Context)
-	{
-		auto IrradianceProbeSet = Context.GetDescriptorSet(Pipeline, 7);
-		Context.Device->UpdateDescriptorSet(IrradianceProbeSet, 0, 0, IrradianceProbeBuffer);
-
-		Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-		Context.BindGPUScene(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 7, 1, &IrradianceProbeSet);
-
-		struct
+		return [this](RenderGraphContext& Context)
 		{
-			IrradianceVolume Volume;
+			auto IrradianceProbeSet = Context.GetDescriptorSet(Pipeline, 7);
+			Context.Device->UpdateDescriptorSet(IrradianceProbeSet, 0, 0, IrradianceProbeBuffer);
 
-			Matrix M,V,P;
-			uint32_t ObjectId;
-		} Parameters;
-		Parameters.Volume = Volume;
+			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.BindGPUScene(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 7, 1, &IrradianceProbeSet);
 
-		for (int i = 0; i < Context.Scene->Meshes.size(); i++)
-		{
-			GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
-			Parameters.M = Matrix(1);
-			Parameters.V = MainCamera.GetViewMatrix();
-			Parameters.P = MainCamera.GetProjectionMatrix();
-			Parameters.ObjectId = i;
+			struct
+			{
+				IrradianceVolume Volume;
 
-			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
-		}
+				Matrix M,V,P;
+				uint32_t ObjectId;
+			} Parameters;
+			Parameters.Volume = Volume;
 
-		IrradianceParameters IrradianceParams { MainCamera.GetViewMatrix(), MainCamera.GetProjectionMatrix() };
-		auto IrradianceProbeSetVisualize = Context.GetDescriptorSet(ProbeVisPipeline, 0);
-		Context.Device->UpdateDescriptorSet(IrradianceProbeSetVisualize, 0, 0, IrradianceProbeBuffer);
+			for (int i = 0; i < Context.Scene->Meshes.size(); i++)
+			{
+				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
+				Parameters.M = Matrix(1);
+				Parameters.V = MainCamera.GetViewMatrix();
+				Parameters.P = MainCamera.GetProjectionMatrix();
+				Parameters.ObjectId = i;
 
-		Context.CommandBuffer->BindGraphicsPipeline(ProbeVisPipeline);
-		Context.CommandBuffer->PushConstantsGraphics(ProbeVisPipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(IrradianceParams), &IrradianceParams);
-		Context.CommandBuffer->BindDescriptorSetsGraphics(ProbeVisPipeline, 0, 1, &IrradianceProbeSetVisualize);
-		Context.CommandBuffer->Draw(6*Volume.GetTotalProbes(), 1, 0, 0);
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+				Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
+			}
+
+			IrradianceParameters IrradianceParams { MainCamera.GetViewMatrix(), MainCamera.GetProjectionMatrix() };
+			auto IrradianceProbeSetVisualize = Context.GetDescriptorSet(ProbeVisPipeline, 0);
+			Context.Device->UpdateDescriptorSet(IrradianceProbeSetVisualize, 0, 0, IrradianceProbeBuffer);
+
+			Context.CommandBuffer->BindGraphicsPipeline(ProbeVisPipeline);
+			Context.CommandBuffer->PushConstantsGraphics(ProbeVisPipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(IrradianceParams), &IrradianceParams);
+			Context.CommandBuffer->BindDescriptorSetsGraphics(ProbeVisPipeline, 0, 1, &IrradianceProbeSetVisualize);
+			Context.CommandBuffer->Draw(6*Volume.GetTotalProbes(), 1, 0, 0);
+		};
 	}
 
 }

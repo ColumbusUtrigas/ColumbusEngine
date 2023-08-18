@@ -75,6 +75,13 @@ namespace Columbus
 		TextureFilter2 MinFilter = TextureFilter2::Linear;
 		TextureFilter2 MagFilter = TextureFilter2::Linear;
 		TextureFilter2 MipFilter = TextureFilter2::Linear;
+
+		bool operator==(const TextureDesc2&) const = default;
+	};
+
+	struct HashTextureDesc2
+	{
+		size_t operator()(const TextureDesc2&) const;
 	};
 
 	class Texture2

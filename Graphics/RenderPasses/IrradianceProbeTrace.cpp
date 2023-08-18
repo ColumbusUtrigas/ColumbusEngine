@@ -51,43 +51,41 @@ namespace Columbus
 		}
 	}
 
-	void IrradianceProbeTracePass::PreExecute(RenderGraphContext& Context)
-	{
-		
-	}
-
-	void IrradianceProbeTracePass::Execute(RenderGraphContext& Context)
+	RenderPass::TExecutionFunc IrradianceProbeTracePass::Execute2(RenderGraphContext& Context)
 	{
 		static int RaysPerProbe = 64;
 		static int Bounces = 1;
 		static int Frame = 0;
 
-		// ImGui::Begin("IrradianceProbeTrace Options");
-		// ImGui::SliderInt("Rays per probe", &RaysPerProbe, 16, 512);
-		// ImGui::SliderInt("Bounces", &Bounces, 0, 4);
-		// ImGui::End();
+		return [this](RenderGraphContext& Context)
+		{
+			// ImGui::Begin("IrradianceProbeTrace Options");
+			// ImGui::SliderInt("Rays per probe", &RaysPerProbe, 16, 512);
+			// ImGui::SliderInt("Bounces", &Bounces, 0, 4);
+			// ImGui::End();
 
-		BufferDesc ProbeBufferDesc;
-		ProbeBufferDesc.BindFlags = BufferType::UAV;
-		ProbeBufferDesc.Size = IrradianceProbes.size() * sizeof(GPUIrradianceProbe);
-		Buffer* IrradianceProbeBuffer = Context.GetOutputBuffer(ProbeBufferName, ProbeBufferDesc, IrradianceProbes.data());
+			BufferDesc ProbeBufferDesc;
+			ProbeBufferDesc.BindFlags = BufferType::UAV;
+			ProbeBufferDesc.Size = IrradianceProbes.size() * sizeof(GPUIrradianceProbe);
+			Buffer* IrradianceProbeBuffer = Context.GetOutputBuffer(ProbeBufferName, ProbeBufferDesc, IrradianceProbes.data());
 
-		auto RTSet = Context.GetDescriptorSet(Pipeline, 7);
-		Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
+			auto RTSet = Context.GetDescriptorSet(Pipeline, 7);
+			Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 
-		auto ProbeSet = Context.GetDescriptorSet(Pipeline, 8);
-		Context.Device->UpdateDescriptorSet(ProbeSet, 0, 0, IrradianceProbeBuffer);
+			auto ProbeSet = Context.GetDescriptorSet(Pipeline, 8);
+			Context.Device->UpdateDescriptorSet(ProbeSet, 0, 0, IrradianceProbeBuffer);
 
-		Parameters Params = { RaysPerProbe, Bounces, Frame % 100 };
-		// Frame++;
+			Parameters Params = { RaysPerProbe, Bounces, Frame % 100 };
+			// Frame++;
 
-		Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &RTSet);
-		Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 8, 1, &ProbeSet);
-		Context.BindGPUScene(Pipeline);
+			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &RTSet);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 8, 1, &ProbeSet);
+			Context.BindGPUScene(Pipeline);
 
-		Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
-		Context.CommandBuffer->TraceRays(Pipeline, IrradianceProbes.size(), 1, 1);
+			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
+			Context.CommandBuffer->TraceRays(Pipeline, IrradianceProbes.size(), 1, 1);
+		};
 	}
 
 }

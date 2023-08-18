@@ -7,6 +7,7 @@
 #include <Core/SmartPointer.h>
 #include <Core/Platform.h>
 #include <Core/Stacktrace.h>
+#include "Common.h"
 #include <vector>
 
 #define VULKAN_DEBUG 1
@@ -39,7 +40,7 @@ namespace Columbus
 			std::vector<const char*> validationLayers;
 			std::vector<const char*> extensions;
 
-			#if 1 // ENGINE_DEBUG, my engine is in permanent debug :D
+			#if VULKAN_DEBUG
 				validationLayers.push_back("VK_LAYER_KHRONOS_validation");
 				extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 			#endif
@@ -62,10 +63,7 @@ namespace Columbus
 			info.enabledExtensionCount = extensions.size();
 			info.ppEnabledExtensionNames = extensions.data();
 
-			if (vkCreateInstance(&info, nullptr, &instance) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan instance");
-			}
+			VK_CHECK(vkCreateInstance(&info, nullptr, &instance));
 
 			// setup debug messages
 			#if VULKAN_DEBUG
