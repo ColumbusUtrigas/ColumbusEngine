@@ -83,7 +83,7 @@ public:
 	iVector2 Size{1280, 720};
 };
 
-class ImguiPass : public RenderPass
+/*class ImguiPass : public RenderPass
 {
 public:
 	ImguiPass(WindowVulkan& Window) : Window(Window), RenderPass("ImGUI Pass")
@@ -146,7 +146,7 @@ public:
 	}
 private:
 	WindowVulkan& Window;
-};
+};*/
 
 Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
 {

@@ -5,7 +5,7 @@
 namespace Columbus
 {
 
-	void RayTracedShadowsPass::Setup(RenderGraphContext& Context)
+	/*void RayTracedShadowsPass::Setup(RenderGraphContext& Context)
 	{
 		auto ShaderSource = LoadShaderFile("RayTracedShadowsPass.glsl");
 
@@ -45,6 +45,6 @@ namespace Columbus
 
 			Context.CommandBuffer->TraceRays(Pipeline, 1280, 720, 1);
 		};
-	}
+	}*/
 
 }

@@ -53,7 +53,7 @@ namespace Columbus
 		uint FrameNumber;
 	};
 
-	void PathTracePass::Setup(RenderGraphContext& Context)
+	/*void PathTracePass::Setup(RenderGraphContext& Context)
 	{
 		auto ShaderSource = LoadShaderFile("PathTrace.glsl");
 
@@ -131,6 +131,6 @@ namespace Columbus
 			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Params), &Params);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		};
-	}
+	}*/
 
 }

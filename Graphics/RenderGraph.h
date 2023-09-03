@@ -24,9 +24,6 @@ namespace Columbus
 
 	struct RenderGraphData
 	{
-		std::unordered_map<std::string, Buffer*> Buffers; // TODO: remove legacy
-		std::unordered_map<std::string, Texture2*> Textures; // TODO: remove legacy
-
 		struct
 		{
 			SPtr<FenceVulkan> Fence;
@@ -68,11 +65,12 @@ namespace Columbus
 		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];
 
 		int CurrentPerFrameData = 0;
+
+		// TODO: View-related
 		uint32_t CurrentSwapchainImageIndex = 0;
 		iVector2 CurrentSwapchainSize{-1};
 	};
 
-	// TODO: Separate build, setup and execution contexts?
 	struct RenderGraphContext
 	{
 		VkRenderPass VulkanRenderPass; // TODO: remove
@@ -80,15 +78,6 @@ namespace Columbus
 		SPtr<GPUScene> Scene;
 		CommandBufferVulkan* CommandBuffer;
 		RenderGraphData& RenderData;
-		// RenderGraph& Graph;
-
-		// TODO: REMOVE LEGACY
-		Buffer* GetOutputBuffer(const std::string& Name, const BufferDesc& Desc, void* InitialData = nullptr);
-		Buffer* GetInputBuffer(const std::string& Name);
-
-		// TODO: REMOVE LEGACY
-		Texture2* GetRenderTarget(const std::string& Name, const TextureDesc2& Desc);
-		Texture2* GetInputTexture(const std::string& Name);
 
 		// TODO: separate shader binding system?
 		VkDescriptorSet GetDescriptorSet(const ComputePipeline* Pipeline, int Index);
@@ -126,40 +115,6 @@ namespace Columbus
 		size_t operator()(const RenderPassParameters& Params) const;
 	};
 
-	// TODO: remove legacy
-	class RenderPass
-	{
-	public:
-		static constexpr const char* FinalColorOutput = "FinalColor";
-
-		using TExecutionFunc = std::function<void(RenderGraphContext&)>;
-	public:
-		std::string Name;
-		bool IsGraphicsPass = false;
-		bool ClearColor = true;
-	public:
-		RenderPass() {}
-		RenderPass(std::string_view Name) : Name(Name) {}
-
-		void AddOutputRenderTarget(const AttachmentDesc& Desc)
-		{
-			RenderTargets.push_back(Desc);
-		}
-
-		// TODO: reduce
-		virtual void Setup(RenderGraphContext& Context) = 0;
-		virtual TExecutionFunc Execute2(RenderGraphContext& Context) { return [](RenderGraphContext&){}; }
-
-	private:
-		friend RenderGraph;
-
-		VkRenderPass VulkanRenderPass =  NULL;
-		VkFramebuffer VulkanFramebuffers[16]{}; // TODO
-
-		// std::vector<RenderGraphResourceId> Inputs;
-		std::vector<AttachmentDesc> RenderTargets;
-	};
-
 	enum class RenderGraphPassType
 	{
 		Raster,
@@ -170,6 +125,7 @@ namespace Columbus
 	struct RenderPassTextureDependency
 	{
 		RenderGraphTextureRef Texture;
+		// TODO: handles + array?
 
 		// TODO?
 		VkAccessFlags Access;
@@ -194,7 +150,7 @@ namespace Columbus
 		friend class RenderGraph;
 	};
 
-	struct RenderPass2
+	struct RenderPass
 	{
 		std::string Name;
 		RenderGraphPassType Type;
@@ -219,9 +175,6 @@ namespace Columbus
 
 		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
 
-		// TODO: legacy
-		void AddRenderPass(RenderPass* Pass);
-
 		Texture2* GetSwapchainTexture();
 
 		void AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
@@ -232,12 +185,11 @@ namespace Columbus
 	private:
 		void Build(Texture2* SwapchainImage);
 
-		VkRenderPass GetOrCreateVulkanRenderPass(RenderPass2& Pass);
-		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderPass2& Pass, Texture2* SwapchainImage);
+		VkRenderPass GetOrCreateVulkanRenderPass(RenderPass& Pass);
+		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderPass& Pass, Texture2* SwapchainImage);
 
 	private:
-		std::vector<RenderPass*> RenderPasses;
-		std::vector<RenderPass2> Passes;
+		std::vector<RenderPass> Passes;
 
 		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
 		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];

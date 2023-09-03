@@ -1,4 +1,5 @@
 #include "Core/Core.h"
+#include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
 
@@ -10,6 +11,7 @@ namespace Columbus
 	{
 		ACES,
 		AgX,
+		Flim
 	};
 
 	enum class TonemapOutputTransform : u32
@@ -87,6 +89,8 @@ namespace Columbus
 
 		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [PushConstants](RenderGraphContext& Context)
 		{
+			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
+
 			static GraphicsPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{

@@ -27,7 +27,7 @@ namespace Columbus
 		int Frame;
 	};
 
-	void IrradianceProbeTracePass::Setup(RenderGraphContext& Context)
+	/*void IrradianceProbeTracePass::Setup(RenderGraphContext& Context)
 	{
 		auto ShaderSource = LoadShaderFile("IrradianceProbesTrace.glsl");
 
@@ -86,6 +86,6 @@ namespace Columbus
 			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
 			Context.CommandBuffer->TraceRays(Pipeline, IrradianceProbes.size(), 1, 1);
 		};
-	}
+	}*/
 
 }

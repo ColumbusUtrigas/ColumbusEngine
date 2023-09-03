@@ -42,64 +42,6 @@ size_t Columbus::HashRenderPassParameters::operator()(const Columbus::RenderPass
 namespace Columbus
 {
 
-	// TODO: LEGACY
-	Buffer* RenderGraphContext::GetOutputBuffer(const std::string& Name, const BufferDesc &Desc, void* InitialData)
-	{
-		if (RenderData.Buffers.find(Name) == RenderData.Buffers.end())
-		{
-			RenderData.Buffers[Name] = Device->CreateBuffer(Desc, InitialData);
-		}
-
-		return RenderData.Buffers[Name];
-	}
-
-	Buffer* RenderGraphContext::GetInputBuffer(const std::string& Name)
-	{
-		// TODO: sync
-		return RenderData.Buffers[Name];
-	}
-
-	Texture2* RenderGraphContext::GetRenderTarget(const std::string& Name, const TextureDesc2& Desc)
-	{
-		if (RenderData.Textures.find(Name) == RenderData.Textures.end())
-		{
-			RenderData.Textures[Name] = Device->CreateTexture(Desc);
-		}
-
-		return RenderData.Textures[Name];
-	}
-
-	Texture2* RenderGraphContext::GetInputTexture(const std::string& Name)
-	{
-		TextureVulkan* Texture = static_cast<TextureVulkan*>(RenderData.Textures[Name]);
-
-		VkImageMemoryBarrier Barrier{};
-		Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		Barrier.oldLayout = Texture->_Layout; // TODO
-		Barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL; // TODO
-		Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		Barrier.image = Texture->_Image;
-		Barrier.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
-		Barrier.subresourceRange.baseMipLevel = 0;
-		Barrier.subresourceRange.levelCount = 1;
-		Barrier.subresourceRange.baseArrayLayer = 0;
-		Barrier.subresourceRange.layerCount = 1;
-		Barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; // TODO
-		Barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; // TODO
-
-		vkCmdPipelineBarrier(CommandBuffer->_CmdBuf,
-			VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // TODO
-			0,
-			0, nullptr,
-			0, nullptr,
-			1, &Barrier);
-
-		Texture->_Layout = VK_IMAGE_LAYOUT_GENERAL; // TODO
-
-		return Texture;
-	}
-
 	// TODO: unify
 	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const ComputePipeline* Pipeline, int Index)
 	{
@@ -313,14 +255,9 @@ namespace Columbus
 		return nullptr;
 	}
 
-	void RenderGraph::AddRenderPass(RenderPass* Pass)
-	{
-		RenderPasses.push_back(Pass);
-	}
-
 	void RenderGraph::AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback)
 	{
-		RenderPass2 Pass{ Name, Type, Parameters, Dependencies, ExecuteCallback };
+		RenderPass Pass{ Name, Type, Parameters, Dependencies, ExecuteCallback };
 		Passes.emplace_back(std::move(Pass));
 	}
 
@@ -442,7 +379,7 @@ namespace Columbus
 		Device->Present(Swapchain, RenderData.CurrentSwapchainImageIndex, PerFrameData.SubmitSemaphore);
 	}
 
-	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderPass2& Pass)
+	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderPass& Pass)
 	{
 		if (!MapOfVulkanRenderPasses.contains(Pass.Parameters))
 		{
@@ -473,7 +410,7 @@ namespace Columbus
 		return MapOfVulkanRenderPasses[Pass.Parameters];
 	}
 
-	VkFramebuffer RenderGraph::GetOrCreateVulkanFramebuffer(RenderPass2& Pass, Texture2* SwapchainImage)
+	VkFramebuffer RenderGraph::GetOrCreateVulkanFramebuffer(RenderPass& Pass, Texture2* SwapchainImage)
 	{
 		int MapIndex = RenderData.CurrentSwapchainImageIndex;
 
