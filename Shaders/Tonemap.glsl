@@ -21,6 +21,7 @@ layout(location=0) out vec4 RT0;
 
 layout(location=0) in vec2 UV;
 
+layout(binding = 0, set = 0) uniform sampler2D SceneTexture;
 
 // From BakingLab by MJP
 //
@@ -82,6 +83,7 @@ void main()
 	// Apply Output Transform (Rec709 or Rec2020-PQ)
 
 	vec3 Linear = vec3(UV*5, 0);
+	// Linear = texture(SceneTexture, UV).rgb;
 
 	RT0 = vec4(Tonemap(Linear),1);
 }

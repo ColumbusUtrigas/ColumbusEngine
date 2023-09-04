@@ -71,7 +71,7 @@ namespace Columbus
 		});
 	}
 
-	void TonemapPass(RenderGraph& Graph)
+	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture)
 	{
 		TonemapTextures Textures;
 		ComputeColourGradingLUT(Graph, Textures);
@@ -81,14 +81,16 @@ namespace Columbus
 
 		RenderPassDependencies Dependencies;
 		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 		TonemapParameters PushConstants {
 			.FilmCurve       = TonemapFilmCurve::ACES,
 			.OutputTransform = TonemapOutputTransform::Rec709
 		};
 
-		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [PushConstants](RenderGraphContext& Context)
+		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [PushConstants, SceneTexture](RenderGraphContext& Context)
 		{
+			// TODO:
 			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
 
 			static GraphicsPipeline* Pipeline = nullptr;
@@ -104,9 +106,14 @@ namespace Columbus
 				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 			}
 
-			// Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+			// Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, SceneTexture.get());
+
+			// TODO: pipeline viewport size
+			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			// Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
 			// Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
-			// Context.CommandBuffer->Draw(3, 1, 0, 0);
+			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		});
 	}
 

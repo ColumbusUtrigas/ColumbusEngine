@@ -24,9 +24,10 @@
 #include <cassert>
 
 #include <Common/Image/Image.h>
+#include <vulkan/vulkan_core.h>
 
 // disable to make RenderDoc captures
-#define ENABLE_RAY_TRACING 0
+#define ENABLE_RAY_TRACING 1
 
 namespace Columbus
 {
@@ -364,7 +365,10 @@ namespace Columbus
 
 			presentInfo.pImageIndices = &imageIndex;
 
-			vkQueuePresentKHR(*_ComputeQueue, &presentInfo);
+			if (vkQueuePresentKHR(*_ComputeQueue, &presentInfo) != VK_SUCCESS)
+			{
+				swapchain->IsOutdated = true;
+			}
 		}
 
 		~DeviceVulkan()

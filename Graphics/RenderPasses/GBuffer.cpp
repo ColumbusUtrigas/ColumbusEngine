@@ -2,6 +2,7 @@
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -49,6 +50,9 @@ namespace Columbus
 		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP.get() };
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM.get() };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS.get(), AttachmentClearValue{ {}, 1.0f, 0 } };
+
+		RenderPassDependencies Dependencies;
+		Dependencies.Write(Textures.GBufferAlbedo, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 		Graph.AddPass("GBuffer BasePass", RenderGraphPassType::Raster, Parameters, {}, [&MainCamera](RenderGraphContext& Context)
 		{
@@ -101,7 +105,7 @@ namespace Columbus
 	{
 		SceneTextures Textures = CreateSceneTextures(Graph, WindowSize);
 		RenderGBufferPass(Graph, MainCamera, Textures);
-		TonemapPass(Graph);
+		TonemapPass(Graph, Textures.GBufferAlbedo); // TODO: lighting pass
 
 		// RenderPassParameters Parameters;
 		// Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Graph.GetSwapchainTexture() };

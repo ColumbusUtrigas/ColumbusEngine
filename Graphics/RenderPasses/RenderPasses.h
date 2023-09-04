@@ -26,11 +26,12 @@ namespace Columbus
 	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures);
 	void RayTracedShadowsPass(RenderGraph& Graph);
 	void RenderDeferredLightingPass(RenderGraph& Graph);
-	void TonemapPass(RenderGraph& Graph);
-	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize);
+	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture);
+	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
 
 	// **********************************
 	// Path-Tracing
 	//
+	void RenderPathTraced(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
 
 }

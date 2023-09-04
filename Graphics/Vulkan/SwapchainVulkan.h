@@ -30,6 +30,8 @@ namespace Columbus
 		uint32_t minImageCount;
 		uint32_t imageCount;
 
+		bool IsOutdated = false;
+
 	public:
 		SwapchainVulkan(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain)
 		{

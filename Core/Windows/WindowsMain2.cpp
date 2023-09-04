@@ -57,12 +57,18 @@ public:
 	{
 		if (Size != NewSize)
 		{
-			SwapchainVulkan* newSwapchain = Device->CreateSwapchain(Surface, Swapchain);
-			delete Swapchain;
-			Swapchain = newSwapchain;
-
-			Size = NewSize;
+			RecreateSwapchain();
 		}
+	}
+
+	void RecreateSwapchain()
+	{
+		SwapchainVulkan* newSwapchain = Device->CreateSwapchain(Surface, Swapchain);
+		delete Swapchain;
+		Swapchain = newSwapchain;
+
+		// Size = NewSize;
+		Size = iVector2((int)Swapchain->swapChainExtent.width, (int)newSwapchain->swapChainExtent.height);
 	}
 
 	~WindowVulkan()
@@ -490,6 +496,7 @@ int main()
 			if (event.type == SDL_WINDOWEVENT) {
 				if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
 					device->QueueWaitIdle();
+					Window.Swapchain->IsOutdated = true;
 					Window.OnResize(iVector2{event.window.data1, event.window.data2});
 
 					Log::Message("Window resized: %i %i", event.window.data1, event.window.data2);
@@ -497,7 +504,14 @@ int main()
 			}
 		}
 
+		if (Window.Swapchain->IsOutdated)
+		{
+			device->QueueWaitIdle();
+			Window.RecreateSwapchain();
+		}
+
 		renderGraph.Clear();
+		// RenderPathTraced(renderGraph, camera, Window.Size);
 		RenderDeferred(renderGraph, camera, Window.Size);
 		renderGraph.Execute(Window.Swapchain);
 

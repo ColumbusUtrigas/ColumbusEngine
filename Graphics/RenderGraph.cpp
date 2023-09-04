@@ -241,7 +241,7 @@ namespace Columbus
 			TextureResourceTable[Desc] = std::vector<RenderGraphTextureRef>();
 		}
 
-		Log::Message("RenderGraph texture created: %s", Name);
+		Log::Message("RenderGraph texture created: %s (%ix%ix%i)", Name, Desc.Width, Desc.Height, Desc.Depth);
 
 		// No available texture with matching Desc found, create a new one
 		RenderGraphTextureRef Result = TextureResourceTable[Desc].emplace_back(RenderGraphTextureRef(Device->CreateTexture(Desc)));
@@ -297,6 +297,7 @@ namespace Columbus
 		}
 
 		{
+			// Log::Message("Swapchain size: %ux%u", Swapchain->swapChainExtent.width, Swapchain->swapChainExtent.height);
 			iVector2 SwapchainSize{ (int)Swapchain->swapChainExtent.width, (int)Swapchain->swapChainExtent.height };
 			RenderData.CurrentSwapchainSize = SwapchainSize;
 		}
