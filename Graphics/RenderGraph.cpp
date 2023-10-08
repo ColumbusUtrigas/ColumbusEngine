@@ -127,6 +127,11 @@ namespace Columbus
 		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &RenderData.GPUSceneData.LightSet);
 	}
 
+	SPtr<Texture2> RenderGraphContext::GetRenderGraphTexture(RenderGraphTextureRef Ref)
+	{
+		return Graph.Textures[Ref].Texture;
+	}
+
 	RenderGraph::RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene) : Device(Device), Scene(Scene)
 	{
 		for (auto& PerFrameData : RenderData.PerFrameData)
@@ -220,62 +225,196 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderGraph::CreateTexture(const TextureDesc2& Desc, const char* Name)
 	{
-		if (TextureResourceTable.contains(Desc))
-		{
-			// Search for the first unused texture with matching Desc
-			auto& TextureResources = TextureResourceTable[Desc];
-			auto FoundRef = std::find_if(TextureResources.begin(), TextureResources.end(), [](RenderGraphTextureRef& Ref) {
-				return Ref.use_count() == 1;
-			});
+		// on texture creation stage, we just create a description and a handle for it
+		// the actual texture will be allocated on graph build stage
 
-			if (FoundRef != TextureResources.end())
-			{
-				// Found
-				Device->SetDebugName(FoundRef->get(), Name);
-				return *FoundRef;
-			}
-		}
-		else
-		{
-			// No matching Desc, ensure that list exists
-			TextureResourceTable[Desc] = std::vector<RenderGraphTextureRef>();
-		}
-
-		Log::Message("RenderGraph texture created: %s (%ix%ix%i)", Name, Desc.Width, Desc.Height, Desc.Depth);
-
-		// No available texture with matching Desc found, create a new one
-		RenderGraphTextureRef Result = TextureResourceTable[Desc].emplace_back(RenderGraphTextureRef(Device->CreateTexture(Desc)));
-		Device->SetDebugName(Result.get(), Name);
-
-		return Result;
+		int Id = static_cast<int>(Textures.size());
+		Textures.push_back(RenderGraphTexture(Desc, Name, Id));
+		return Id;
 	}
 
-	Texture2* RenderGraph::GetSwapchainTexture()
+	void RenderGraph::AllocateTexture(RenderGraphTexture& Texture)
 	{
-		return nullptr;
+		const auto ApplyTextureFromPool = [&Texture, this](RenderGraphPooledTexture& PooledTexture) {
+			Texture.Texture = PooledTexture.Texture;
+			PooledTexture.Used = true;
+			Device->SetDebugName(Texture.Texture.get(), Texture.DebugName.c_str());
+		};
+
+		if (TextureResourcePool.contains(Texture.Desc))
+		{
+			auto& TextureResources = TextureResourcePool[Texture.Desc];
+
+			// Search for the first unused texture with matching Desc
+			auto FoundRef = std::find_if(TextureResources.begin(), TextureResources.end(), [](RenderGraphPooledTexture& Tex) {
+				return !Tex.Used;
+			});
+
+			if (FoundRef != TextureResources.end()) // Found
+			{
+				ApplyTextureFromPool(*FoundRef);
+				return;
+			}
+		} else
+		{
+			// No matching Desc, ensure that list exists
+			TextureResourcePool[Texture.Desc] = std::vector<RenderGraphPooledTexture>();
+		}
+
+		Log::Message("RenderGraph texture allocated: %s (%ix%ix%i)", Texture.DebugName.c_str(), Texture.Desc.Width, Texture.Desc.Height, Texture.Desc.Depth);
+
+		// No available texture with matching Desc found, create a new one
+		RenderGraphPooledTexture& Result = TextureResourcePool[Texture.Desc].emplace_back(
+			RenderGraphPooledTexture{ SPtr<Texture2>(Device->CreateTexture(Texture.Desc)), false }
+		);
+		ApplyTextureFromPool(Result);
+	}
+
+	RenderGraphTextureRef RenderGraph::GetSwapchainTexture()
+	{
+		return SwapchainId;
 	}
 
 	void RenderGraph::AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback)
 	{
-		RenderPass Pass{ Name, Type, Parameters, Dependencies, ExecuteCallback };
+		int PassId = static_cast<int>(Passes.size());
+		RenderPass Pass{ Name, PassId, Type, Parameters, Dependencies, ExecuteCallback };
+
+		// treat pass attachments as write dependencies
+		for (const auto& Attachment : Parameters.ColorAttachments)
+		{
+			if (Attachment)
+			{
+				Pass.Dependencies.Write(Attachment->Texture, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			}
+		}
+
+		if (Parameters.DepthStencilAttachment)
+		{
+			Pass.Dependencies.Write(Parameters.DepthStencilAttachment->Texture, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+		}
+
 		Passes.emplace_back(std::move(Pass));
 	}
 
 	void RenderGraph::Clear()
 	{
 		Passes.clear();
+		Textures.clear();
+
+		// TODO: cleanup unused textures from the previous frame
+
+		// TODO: inter-frame and global resource logic
+		for (auto& DescPool : TextureResourcePool)
+		{
+			for (auto& PooledTexture : DescPool.second)
+			{
+				PooledTexture.Clear();
+			}
+		}
 	}
 
 	void RenderGraph::Build(Texture2* SwapchainImage)
 	{
+		// TODO: topological sort and graph reordering
+
+		// TODO: virtual resources and allocation on build
+		for (auto& Texture : Textures)
+		{
+			AllocateTexture(Texture);
+		}
+
+		const auto UpdateTextureLifetime = [](RenderGraphTexture& Texture, RenderGraphPassId PassId) {
+			if (PassId < Texture.FirstUsage) Texture.FirstUsage = PassId;
+			if (PassId > Texture.LastUsage)  Texture.LastUsage  = PassId;
+		};
+
+		// derive lifetime information about resources
+		// assuming that Passes is topologically sorted
+		for (auto& Pass : Passes)
+		{
+			for (const auto& Read : Pass.Dependencies.TextureReadResources)
+			{
+				auto& GraphTexture = Textures[Read.Texture];
+
+				// update resource lifetime
+				UpdateTextureLifetime(GraphTexture, Pass.Id);
+
+				// update resource consumers
+				GraphTexture.Readers.push_back(GraphTexture.Id);
+			}
+
+			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
+			{
+				auto& GraphTexture = Textures[Write.Texture];
+
+				// update resource lifetime
+				UpdateTextureLifetime(GraphTexture, Pass.Id);
+
+				// update resource producer
+				if (GraphTexture.Writer == -1)
+				{
+					GraphTexture.Writer = Pass.Id;
+				}
+				else
+				{
+					// validation error, resource can have only one producer
+				}
+			}
+		}
+
+		// knowing resource adjacent passes (writer and readers), setup barriers for a pass
+		// needed only for reading passes
+		for (auto& Pass : Passes)
+		{
+			for (const auto& Read : Pass.Dependencies.TextureReadResources)
+			{
+				const auto& GraphTexture = Textures[Read.Texture];
+				const auto& WriterPass = Passes[GraphTexture.Writer];
+
+				// search for the writing dependency, TODO: better solution?
+				for (const auto& WriterPassWrite : WriterPass.Dependencies.TextureWriteResources)
+				{
+					if (WriterPassWrite.Texture == Read.Texture)
+					{
+						Pass.TextureBarriers.push_back(RenderGraphTextureBarrier { GraphTexture.Id, WriterPassWrite, Read });
+					}
+				}
+			}
+		}
+
+		// test: dump texture lifetime information, TODO: expose into debug dump
+		#if 0
+		for (auto& Texture : Textures)
+		{
+			printf("Texture lifetime: %s lives between %s and %s\n", Texture.DebugName.c_str(), Passes[Texture.FirstUsage].Name.c_str(), Passes[Texture.LastUsage].Name.c_str());
+		}
+		#endif
+
+		// test: dump scheduling and barriers information, TODO: expose into debug dump
+		#if 0
+		{
+			printf("RenderGraph Scheduling: ");
+			for (auto& Pass : Passes)
+			{
+				printf("%s (barriers:", Pass.Name.c_str());
+				for (auto& Barrier : Pass.TextureBarriers)
+				{
+					printf(" %s,", Textures[Barrier.Texture].DebugName.c_str());
+				}
+				printf("),");
+			}
+			printf("\n");
+		}
+		#endif
+
+		// some vulkan-specific stuff for renderpasses
 		for (auto& Pass : Passes)
 		{
 			if (Pass.Type == RenderGraphPassType::Raster)
 			{
 				Pass.VulkanRenderPass = GetOrCreateVulkanRenderPass(Pass);
 				Pass.VulkanFramebuffer = GetOrCreateVulkanFramebuffer(Pass, SwapchainImage);
-				// TODO: recycle
-				// TODO: setup barriers
 			}
 		}
 	}
@@ -305,7 +444,7 @@ namespace Columbus
 		Build(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
 
 		// TODO: multithreaded rendering
-		RenderGraphContext Context{NULL, Device, Scene, CommandBuffer, RenderData};
+		RenderGraphContext Context{NULL, Device, Scene, CommandBuffer, RenderData, *this};
 		CommandBuffer->Reset();
 		CommandBuffer->Begin();
 
@@ -314,31 +453,34 @@ namespace Columbus
 			// TODO: submarkers
 			CommandBuffer->BeginDebugMarker(Pass.Name.c_str());
 
-			// Where to store producer flags??
-			// Collect write-resources - to know resource producer flags
-			// Collect read-resources
-			// Validate resource usage
-			// Place barrier
-
-			// TODO: barriers
-			for (RenderPassTextureDependency& Dependency : Pass.Dependencies.TextureReadResources)
+			// issue barriers for this pass
+			for (const auto& Barrier : Pass.TextureBarriers)
 			{
-				// TODO: multithread/task concerns??
-				// TODO: check if resource needs sync
-				// TODO: refactor
-				// place barrier
-				TextureVulkan* Texture = static_cast<TextureVulkan*>(Dependency.Texture.get());
+				const RenderGraphTexture& GraphTexture = Textures[Barrier.Texture];
 
-				vk::ImageAspectFlags AspectFlags = (vk::ImageAspectFlags)TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
-				vk::ImageMemoryBarrier Barrier(vk::AccessFlagBits::eShaderWrite, (vk::AccessFlags)Dependency.Access,
-					vk::ImageLayout(Texture->_Layout), vk::ImageLayout::eGeneral, 0, 0, Texture->_Image,
-					vk::ImageSubresourceRange(AspectFlags, 0, 1, 0, 1));
+				TextureVulkan* Texture = static_cast<TextureVulkan*>(GraphTexture.Texture.get());
+				VkImageAspectFlags AspectFlags = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
 
-				// TODO: how to track write/read flags???
-				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, Dependency.Stage,
+				VkImageMemoryBarrier VkBarrier;
+				VkBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				VkBarrier.pNext = nullptr;
+				VkBarrier.srcAccessMask = Barrier.Writer.Access;
+				VkBarrier.dstAccessMask = Barrier.Reader.Access;
+				VkBarrier.oldLayout = Texture->_Layout;
+				VkBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+				VkBarrier.srcQueueFamilyIndex = 0;
+				VkBarrier.dstQueueFamilyIndex = 0;
+				VkBarrier.image = Texture->_Image;
+				VkBarrier.subresourceRange.aspectMask = AspectFlags;
+				VkBarrier.subresourceRange.baseMipLevel = 0;
+				VkBarrier.subresourceRange.levelCount = 1;
+				VkBarrier.subresourceRange.baseArrayLayer = 0;
+				VkBarrier.subresourceRange.layerCount = 1;
+
+				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, Barrier.Writer.Stage, Barrier.Reader.Stage,
 					0, 0, // memory barrier
 					0, 0, // buffer memory barrier
-					0, 1, (VkImageMemoryBarrier*)&Barrier);
+					0, 1, (VkImageMemoryBarrier*)&VkBarrier);
 
 				Texture->_Layout = VK_IMAGE_LAYOUT_GENERAL; // TODO: proper tracking system
 			}
@@ -365,6 +507,31 @@ namespace Columbus
 				CommandBuffer->BeginRenderPass(Pass.VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Pass.VulkanFramebuffer, ClearValues.size(), ClearValues.data());
 				Pass.ExecutionFunc(Context);
 				CommandBuffer->EndRenderPass();
+
+				{
+					// raster pass transitions attachments layouts
+					// TODO: better system?
+					for (auto& Attachment : Pass.Parameters.ColorAttachments)
+					{
+						if (Attachment && Textures[Attachment->Texture].Texture)
+						{
+							TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Attachment->Texture].Texture.get());
+							if (Texture != nullptr)
+							{
+								Texture->_Layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+							}
+						}
+					}
+
+					if (Pass.Parameters.DepthStencilAttachment)
+					{
+						TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Pass.Parameters.DepthStencilAttachment->Texture].Texture.get());
+						if (Texture != nullptr)
+						{
+							Texture->_Layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+						}
+					}
+				}
 			}
 			else
 			{
@@ -374,10 +541,69 @@ namespace Columbus
 			CommandBuffer->EndDebugMarker();
 		}
 
+		// swapchain barrier
+		{
+			TextureVulkan* Texture = static_cast<TextureVulkan*>(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
+
+			vk::ImageAspectFlags AspectFlags = (vk::ImageAspectFlags)TextureFormatToAspectMaskVk(TextureFormat::RGBA8);
+			vk::ImageMemoryBarrier Barrier(vk::AccessFlagBits::eNone, vk::AccessFlagBits::eNone,
+				vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, 0, 0, Texture->_Image,
+				vk::ImageSubresourceRange(AspectFlags, 0, 1, 0, 1));
+
+			vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				0, 0, // memory barrier
+				0, 0, // buffer memory barrier
+				0, 1, (VkImageMemoryBarrier*)&Barrier);
+		}
+
 		CommandBuffer->End();
 
 		Device->Submit(CommandBuffer, PerFrameData.Fence, 1, &PerFrameData.ImageSemaphore, 1, &PerFrameData.SubmitSemaphore);
 		Device->Present(Swapchain, RenderData.CurrentSwapchainImageIndex, PerFrameData.SubmitSemaphore);
+	}
+
+	std::string RenderGraph::ExportGraphviz()
+	{
+		// TODO: colour-mark nodes
+
+		std::string Result;
+
+		Result += "digraph G {\n";
+
+		for (const auto& Pass : Passes)
+		{
+			Result += Pass.Name + " [shape=circle]\n";
+		}
+
+		for (const auto& Texture : Textures)
+		{
+			Result += Texture.DebugName + " [shape=box]\n";
+		}
+
+		for (const auto& Pass : Passes)
+		{
+			for (const auto& Read : Pass.Dependencies.TextureReadResources)
+			{
+				Result += Textures[Read.Texture].DebugName + " -> " + Pass.Name + "\n";
+			}
+
+			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
+			{
+				if (Write.Texture)
+				{
+					Result += Pass.Name + " -> " + Textures[Write.Texture].DebugName + "\n";
+				}
+			}
+		}
+
+		Result += "}\n";
+
+		return Result;
+	}
+
+	void RenderGraph::PrintDebugInformation()
+	{
+
 	}
 
 	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderPass& Pass)
@@ -393,7 +619,7 @@ namespace Columbus
 				if (ColorAttachment)
 				{
 					// TODO: refactor + validation
-					TextureFormat Format = ColorAttachment->Texture ? ColorAttachment->Texture->GetDesc().Format : TextureFormat::BGRA8SRGB;
+					TextureFormat Format = ColorAttachment->Texture != SwapchainId ? Textures[ColorAttachment->Texture].Texture->GetDesc().Format : TextureFormat::BGRA8SRGB;
 					Attachments.push_back(AttachmentDesc("", AttachmentType::Color, ColorAttachment->LoadOp, Format));
 				}
 			}
@@ -402,7 +628,7 @@ namespace Columbus
 			{
 				// TODO: refactor + validation
 				auto Attachment = Pass.Parameters.DepthStencilAttachment;
-				Attachments.push_back(AttachmentDesc("", AttachmentType::DepthStencil, Attachment->LoadOp, Attachment->Texture->GetDesc().Format));
+				Attachments.push_back(AttachmentDesc("", AttachmentType::DepthStencil, Attachment->LoadOp, Textures[Attachment->Texture].Texture->GetDesc().Format));
 			}
 
 			MapOfVulkanRenderPasses[Pass.Parameters] = Device->CreateRenderPass(Attachments);
@@ -429,25 +655,25 @@ namespace Columbus
 			Log::Message("Call: CreateFramebuffer: %ix%i", Size.X, Size.Y);
 
 			// TODO: refactor + validation
-			std::vector<Texture2*> Textures;
+			std::vector<Texture2*> PassTextures;
 			for (auto& Color : Pass.Parameters.ColorAttachments)
 			{
 				if (Color)
 				{
 					// TODO: refactor + validation
-					Textures.push_back(Color->Texture != nullptr ? Color->Texture : SwapchainImage);
+					PassTextures.push_back(Color->Texture != SwapchainId ? Textures[Color->Texture].Texture.get() : SwapchainImage);
 				}
 			}
 
 			if (Pass.Parameters.DepthStencilAttachment)
 			{
 				// TODO: refactor + validation
-				Textures.push_back(Pass.Parameters.DepthStencilAttachment->Texture);
+				PassTextures.push_back(Textures[Pass.Parameters.DepthStencilAttachment->Texture].Texture.get());
 			}
 
 			// TODO: use size of renderpass
 			RenderGraphFramebufferVulkan FB;
-			FB.VulkanFramebuffer = Device->CreateFramebuffer(Pass.VulkanRenderPass, Size,Textures);
+			FB.VulkanFramebuffer = Device->CreateFramebuffer(Pass.VulkanRenderPass, Size, PassTextures);
 			FB.Size = Size;
 
 			MapOfVulkanFramebuffers[MapIndex][Pass.VulkanRenderPass] = FB;

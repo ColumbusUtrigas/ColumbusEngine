@@ -115,6 +115,7 @@ namespace Columbus
 
 	VkRenderPass DeviceVulkan::CreateRenderPass(VkFormat format)
 	{
+		// TODO: remove this function, it's not needed anymore
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = format;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;

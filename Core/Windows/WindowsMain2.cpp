@@ -362,11 +362,13 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 // 1. RenderGraph
 //		+ very basic resource synchronization
 //		+ RenderPass depth attachments
-//		- resource tracker and synchronization mechanism
+//		+ resource tracker and synchronization mechanism
 //		+ renderpass blending
 //		- global/frame-local resources
-//		- swapchain resize (and pipeline dynamic parameters)
+//		+ swapchain resize (and pipeline dynamic parameters)
 //		- resource aliasing
+//		- resource visualization
+//		- diagnostic information
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
 //		+ GPUScene
@@ -462,12 +464,12 @@ int main()
 	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
 	float CameraSpeed = 200;
 
-	SPtr<GPUScene> scene = std::make_shared<GPUScene>();
+	// SPtr<GPUScene> scene = std::make_shared<GPUScene>();
 
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
 	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
-	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+	auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
 	auto renderGraph = RenderGraph(device, scene);
@@ -514,6 +516,10 @@ int main()
 		// RenderPathTraced(renderGraph, camera, Window.Size);
 		RenderDeferred(renderGraph, camera, Window.Size);
 		renderGraph.Execute(Window.Swapchain);
+
+		// std::string graphviz = renderGraph.ExportGraphviz();
+		// printf("%s\n", graphviz.c_str());
+		// return 0;
 
 		auto keyboard = SDL_GetKeyboardState(NULL);
 		if (keyboard[SDL_SCANCODE_DOWN]) camera.Rot += Columbus::Vector3(5,0,0) * DeltaTime * 20;

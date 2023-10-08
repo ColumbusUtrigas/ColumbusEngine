@@ -63,7 +63,7 @@ namespace Columbus
 			}
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Textures.ColourGradingLUT.get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.ColourGradingLUT).get());
 
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
@@ -107,11 +107,11 @@ namespace Columbus
 			}
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			// Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, SceneTexture.get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(SceneTexture).get());
 
 			// TODO: pipeline viewport size
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			// Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
+			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
 			// Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		});

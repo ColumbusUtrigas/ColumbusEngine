@@ -18,7 +18,15 @@
 namespace Columbus
 {
 
+	// forward declarations
 	class RenderGraph;
+	class RenderGraphContext;
+	struct RenderGraphTexture;
+
+	using RenderGraphExecutionFunc = std::function<void(RenderGraphContext&)>;
+	using RenderGraphTextureRef = int; // TODO: unify with Id
+	using RenderGraphTextureId = int;
+	using RenderGraphPassId = int;
 
 	constexpr int MaxFramesInFlight = 3;
 
@@ -33,12 +41,13 @@ namespace Columbus
 			CommandBufferVulkan* CommandBuffer;
 		} PerFrameData[MaxFramesInFlight];
 
+		// TODO: move to shader caching system
 		struct PipelineDescriptorSetData
 		{
 			VkDescriptorSet DescriptorSets[16] {0};
 		};
 
-		// TODO
+		// TODO: move to GPUScene
 		struct
 		{
 			VkDescriptorSetLayout VerticesLayout;
@@ -50,7 +59,7 @@ namespace Columbus
 			VkDescriptorSetLayout LightLayout;
 		} GPUSceneLayout;
 
-		// TODO
+		// TODO: move to GPUScene
 		struct
 		{
 			VkDescriptorSet VerticesSet;
@@ -62,6 +71,7 @@ namespace Columbus
 			VkDescriptorSet LightSet;
 		} GPUSceneData;
 
+		// TODO: move to shader caching system
 		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];
 
 		int CurrentPerFrameData = 0;
@@ -78,6 +88,7 @@ namespace Columbus
 		SPtr<GPUScene> Scene;
 		CommandBufferVulkan* CommandBuffer;
 		RenderGraphData& RenderData;
+		RenderGraph& Graph;
 
 		// TODO: separate shader binding system?
 		VkDescriptorSet GetDescriptorSet(const ComputePipeline* Pipeline, int Index);
@@ -86,15 +97,14 @@ namespace Columbus
 
 		void BindGPUScene(const GraphicsPipeline* Pipeline);
 		void BindGPUScene(const RayTracingPipeline* Pipeline);
-	};
 
-	using RenderGraphExecutionFunc = std::function<void(RenderGraphContext&)>;
-	using RenderGraphTextureRef = SPtr<Texture2>;
+		SPtr<Texture2> GetRenderGraphTexture(RenderGraphTextureRef Ref);
+	};
 
 	struct RenderPassAttachment
 	{
 		AttachmentLoadOp LoadOp;
-		Texture2* Texture;
+		RenderGraphTextureRef Texture;
 		AttachmentClearValue ClearValue;
 
 		bool operator==(const RenderPassAttachment&) const = default;
@@ -122,10 +132,30 @@ namespace Columbus
 		// TODO: AsyncCompute
 	};
 
+	struct RenderGraphTexture
+	{
+		SPtr<Texture2> Texture;
+		TextureDesc2 Desc;
+
+		std::string DebugName;
+		RenderGraphTextureId Id;
+
+		// information about adjacent passes, needed to setup barriers
+		// TODO: better solution to get a specific dependency (edge)?
+		int Writer = -1; // can only be one writer
+		fixed_vector<int, 32> Readers;
+
+		// resource lifetime information
+		RenderGraphPassId FirstUsage = INT_MAX;
+		RenderGraphPassId LastUsage = INT_MIN;
+
+		RenderGraphTexture(const TextureDesc2& Desc, std::string_view Name, RenderGraphTextureId Id)
+			: Desc(Desc), DebugName(Name), Id(Id) {}
+	};
+
 	struct RenderPassTextureDependency
 	{
-		RenderGraphTextureRef Texture;
-		// TODO: handles + array?
+		RenderGraphTextureId Texture;
 
 		// TODO?
 		VkAccessFlags Access;
@@ -134,29 +164,39 @@ namespace Columbus
 
 	struct RenderPassDependencies
 	{
-		void Write(RenderGraphTextureRef Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		void Write(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{
 			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, Access, Stage });
 		}
 
-		void Read(RenderGraphTextureRef Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		void Read(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{
 			TextureReadResources.push_back(RenderPassTextureDependency { Texture, Access, Stage });
 		}
 	private:
-		fixed_vector<RenderPassTextureDependency, 32> TextureWriteResources;
-		fixed_vector<RenderPassTextureDependency, 32> TextureReadResources;
+		fixed_vector<RenderPassTextureDependency, 32> TextureWriteResources; // TODO: more efficient data storage
+		fixed_vector<RenderPassTextureDependency, 32> TextureReadResources;  // TODO: more efficient data storage
 
 		friend class RenderGraph;
+	};
+
+	struct RenderGraphTextureBarrier
+	{
+		RenderGraphTextureId Texture;
+		RenderPassTextureDependency Writer; // (to extract vk flags from)
+		RenderPassTextureDependency Reader; // (to extract vk flags from)
 	};
 
 	struct RenderPass
 	{
 		std::string Name;
+		RenderGraphPassId Id; // index to internal Passes array
 		RenderGraphPassType Type;
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies;
 		RenderGraphExecutionFunc ExecutionFunc;
+
+		fixed_vector<RenderGraphTextureBarrier, 64> TextureBarriers; // TODO: more efficient data storage
 
 		VkRenderPass VulkanRenderPass = NULL;
 		VkFramebuffer VulkanFramebuffer = NULL;
@@ -168,39 +208,62 @@ namespace Columbus
 		iVector2 Size;
 	};
 
+	struct RenderGraphPooledTexture
+	{
+		SPtr<Texture2> Texture;
+		bool Used = false;
+
+		void Clear()
+		{
+			Used = false;
+		}
+	};
+
 	class RenderGraph
 	{
 	public:
 		RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene);
 
 		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
+		// TODO: CreateBuffer
 
-		Texture2* GetSwapchainTexture();
+		RenderGraphTextureRef GetSwapchainTexture();
 
 		void AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
 
 		void Clear();
 		void Execute(SwapchainVulkan* Swapchain);
 
+		// These functions should be used after graph was built
+		std::string ExportGraphviz(); // exports graphviz dot format
+		void PrintDebugInformation();
+
 	private:
 		void Build(Texture2* SwapchainImage);
+
+		void AllocateTexture(RenderGraphTexture& Texture);
 
 		VkRenderPass GetOrCreateVulkanRenderPass(RenderPass& Pass);
 		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderPass& Pass, Texture2* SwapchainImage);
 
 	private:
 		std::vector<RenderPass> Passes;
+		std::vector<RenderGraphTexture> Textures; // textures that are used in the current graph
 
 		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
 		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];
 
-		// TODO: handles + array?
-		std::unordered_map<TextureDesc2, std::vector<RenderGraphTextureRef>, HashTextureDesc2> TextureResourceTable;
+		std::unordered_map<TextureDesc2, std::vector<RenderGraphPooledTexture>, HashTextureDesc2> TextureResourcePool;
 
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
 
 		RenderGraphData RenderData;
+
+	private:
+		static constexpr RenderGraphTextureRef SwapchainId = -1;
+
+		friend RenderGraphContext;
 	};
 
 }
