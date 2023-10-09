@@ -6,89 +6,9 @@
 #include <format>
 #include <fstream>
 
-// TODO: get it from the engine header, remove duplication
-enum class ShaderType
-{
-	Vertex = 1,
-	Pixel = 2,
-	Hull = 4,
-	Domain = 8,
-	Geometry = 16,
-	AllGraphics = Vertex | Pixel | Hull | Domain | Geometry,
+#include <ShaderBytecode/ShaderBytecode.h>
 
-	Compute = 32,
-
-	Raygen = 64,
-	Miss = 128,
-	Anyhit = 256,
-	ClosestHit = 512,
-	Intersection = 1024,
-	AllRayTracing = Raygen | Miss | Anyhit | ClosestHit | Intersection,
-};
-
-// TODO: better data layout?
-struct CompiledShaderBytecode
-{
-	ShaderType Stage;
-	std::string EntryPoint;
-	std::vector<uint8_t> Bytecode;
-	// reflection data
-};
-
-struct CompiledShaderData
-{
-	std::string Name;
-	std::vector<CompiledShaderBytecode> Bytecodes;
-	// reflection data
-};
-
-struct CompiledShaderDataHeader
-{
-	uint32_t MagicNumber; // CCSD = 0x44534343 LE
-	uint32_t Version;
-	uint32_t NameLength;
-	uint32_t NumBytecodes;
-	// Flags, Permutations, Reflection
-};
-
-struct CompiledShaderBytecodeHeader
-{
-	uint32_t Stage; // ShaderType 
-	uint32_t EntryPointNameLength;
-	uint32_t BytecodeLength;
-	uint32_t _Unused;
-};
-
-void SaveCompiledShaderData(const CompiledShaderData& Data, const std::string& Path)
-{
-	CompiledShaderDataHeader DataHeader {
-		.MagicNumber  = 0x44534343,
-		.Version      = 1,
-		.NameLength   = (uint32_t)Data.Name.size(),
-		.NumBytecodes = (uint32_t)Data.Bytecodes.size(),
-	};
-
-	FILE* f = fopen(Path.c_str(), "wb");
-
-	fwrite(&DataHeader, sizeof(DataHeader), 1, f);
-	fwrite(Data.Name.c_str(), sizeof(char), DataHeader.NameLength, f);
-
-	for (const auto& Bytecode : Data.Bytecodes)
-	{
-		CompiledShaderBytecodeHeader BytecodeHeader{
-			.Stage                = (uint32_t)Bytecode.Stage,
-			.EntryPointNameLength = (uint32_t)Bytecode.EntryPoint.size(),
-			.BytecodeLength       = (uint32_t)Bytecode.Bytecode.size(),
-			._Unused              = 0
-		};
-
-		fwrite(&BytecodeHeader, sizeof(BytecodeHeader), 1, f);
-		fwrite(Bytecode.EntryPoint.c_str(), sizeof(char), Bytecode.EntryPoint.size(), f);
-		fwrite(Bytecode.Bytecode.data(), sizeof(uint8_t), Bytecode.Bytecode.size(), f);
-	}
-
-	fclose(f);
-}
+using namespace Columbus;
 
 // supported shader types: vs, ps, gs, hs, ds, cs, rgen, rint, rahit, rchit, rmiss
 
@@ -117,7 +37,7 @@ std::string DefineForShaderStage(ShaderType Stage)
 	switch (Stage)
 	{
 		case ShaderType::Vertex:       return "VERTEX_SHADER";
-		case ShaderType::Pixel:	       return  "PIXEL_SHADER";
+		case ShaderType::Pixel:	       return "PIXEL_SHADER";
 		case ShaderType::Hull:         return "HULL_SHADER";
 		case ShaderType::Domain:       return "DOMAIN_SHADER";
 		case ShaderType::Geometry:     return "GEOMETRY_SHADER";
@@ -160,7 +80,8 @@ std::vector<std::string> DivideStringBy(std::string s, std::string delimiter)
 
 	size_t pos = 0;
 	std::string token;
-	while ((pos = s.find(delimiter)) != std::string::npos) {
+	while ((pos = s.find(delimiter)) != std::string::npos)
+	{
 		token = s.substr(0, pos);
 		result.push_back(token);
 		s.erase(0, pos + delimiter.length());
@@ -170,7 +91,7 @@ std::vector<std::string> DivideStringBy(std::string s, std::string delimiter)
 	return result;
 }
 
-CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& EntryPoint, const std::vector<std::string>& Defines, ShaderType Stage)
+CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& TmpOutput, const std::string& EntryPoint, const std::vector<std::string>& Defines, ShaderType Stage)
 {
 	std::string DefinesParameters;
 	for (const auto& Define : Defines)
@@ -178,10 +99,7 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		DefinesParameters += " -D" + Define;
 	}
 
-	char OutputFileName[2048]{0};
-	std::tmpnam(OutputFileName);
-
-	std::string CommandLine = std::format("glslangValidator {} -S {} --target-env vulkan1.2 -e {} -g -gVS -o {} {}", DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, OutputFileName, Path);
+	std::string CommandLine = std::format("glslangValidator {} -S {} --target-env vulkan1.2 -e {} -g -gVS -o {} {}", DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
 
 	printf("Compiling shader with CLI: %s\n", CommandLine.c_str());
 
@@ -191,8 +109,10 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		Result.Stage = Stage;
 		Result.EntryPoint = EntryPoint;
 
-		std::ifstream file(OutputFileName, std::ios::binary);
+		std::ifstream file(TmpOutput, std::ios::binary);
 		Result.Bytecode = std::vector<uint8_t>((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		file.close();
+		std::filesystem::remove(TmpOutput);
 
 		return Result;
 	}
@@ -224,7 +144,7 @@ int main(int argc, char** argv)
 		std::vector<std::string> Defines;
 		Defines.push_back(DefineForShaderStage(Stage));
 
-		Data.Bytecodes.push_back(CompileStage(InputPath.string(), "main", Defines, Stage));
+		Data.Bytecodes.push_back(CompileStage(InputPath.string(), OutputPath + ".tmp", "main", Defines, Stage));
 	}
 
 	printf("Compiled shader %s, it contains %i stages\n", InputFilename.string().c_str(), (int)StagesDivided.size());

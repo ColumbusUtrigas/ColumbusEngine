@@ -513,7 +513,7 @@ namespace Columbus
 					// TODO: better system?
 					for (auto& Attachment : Pass.Parameters.ColorAttachments)
 					{
-						if (Attachment && Textures[Attachment->Texture].Texture)
+						if (Attachment && Textures[Attachment->Texture].Texture && Attachment->Texture != SwapchainId)
 						{
 							TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Attachment->Texture].Texture.get());
 							if (Texture != nullptr)

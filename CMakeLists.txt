@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(ColumbusEngine)
 
+# TODO: engine as a library, game/app/editor as a target
+
+# TODO: separate these functions and create a module specification
 function(group_files_by_directory)
 	cmake_parse_arguments(GROUP_FILES "" "" "SRCS" ${ARGN})
 
@@ -64,7 +67,7 @@ endif()
 
 set(TARGET ColumbusEngine)
 
-########## IMGUI OPENGL3 SDL2 DX12 ##########
+########## IMGUI OPENGL3 SDL2 VK ##########
 file(GLOB IMGUI_SRC
 	Lib/imgui/imgui.h
 	./Lib/imgui/*.cpp
@@ -134,8 +137,9 @@ add_library(spirv_reflect STATIC ${SPIRV_REFLECT_SRC})
 target_include_directories(spirv_reflect PUBLIC ./Lib/SPIRV-Reflect)
 
 ########## COLUMBUS ENGINE ############
-#add_executable(${TARGET} main.cpp)
+# TODO: engine as a library
 add_executable(${TARGET} Core/Windows/WindowsMain2.cpp)
+# add_library(${TARGET} STATIC Core/Windows/WindowsMain2.cpp)
 set_target_properties(${TARGET} PROPERTIES
 	CXX_STANDARD 20
 	CXX_STANDARD_REQUIRED YES
@@ -225,7 +229,9 @@ endif()
 
 target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} spirv_reflect)
+target_link_libraries(${TARGET} ShaderBytecode)
 
+# TODO: separate this function somehow
 set(SPIRV_OUTPUT_DIR "${BINARIES_DIR}/PrecompiledShaders/")
 function(compile_shader_glsl shaderName stages binaryLocation)
 	get_filename_component(STEM ${shaderName} NAME_WLE)
@@ -247,10 +253,10 @@ function(compile_shader_glsl shaderName stages binaryLocation)
 
 endfunction(compile_shader_glsl)
 
+add_subdirectory(ShaderBytecode)
 add_subdirectory(ShaderCompiler)
 
 add_subdirectory(Shaders)
-# add_dependencies(${TARGET} Shaders)
 add_dependencies(Shaders ShaderCompiler)
 
 # add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")

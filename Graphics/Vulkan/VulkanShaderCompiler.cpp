@@ -104,7 +104,7 @@ namespace Columbus
 		}
 
 		options.SetTargetSpirv(shaderc_spirv_version_1_4);
-		auto spirv = compiler.CompileGlslToSpv(stage->Source, kind, "name", options);
+		auto spirv = compiler.CompileGlslToSpv(stage->Source, kind, name.c_str(), options);
 		uint64_t spirvByteSize = (spirv.end() - spirv.begin()) * 4;
 		result.Bytecode = { spirv.begin(), spirv.end() };
 

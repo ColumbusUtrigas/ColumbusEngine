@@ -60,7 +60,7 @@ namespace Columbus
 		DataBlob Instruction;
 	};
 
-	enum class ShaderType
+	enum class ShaderType : uint32_t
 	{
 		Vertex   = 1,
 		Pixel    = 2,

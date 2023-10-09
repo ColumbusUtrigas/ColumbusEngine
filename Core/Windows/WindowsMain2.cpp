@@ -369,6 +369,9 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //		- resource aliasing
 //		- resource visualization
 //		- diagnostic information
+//		- resource type validation
+//		- RW passes
+//		- storage/sampled images transitions
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
 //		+ GPUScene
@@ -513,8 +516,8 @@ int main()
 		}
 
 		renderGraph.Clear();
-		// RenderPathTraced(renderGraph, camera, Window.Size);
-		RenderDeferred(renderGraph, camera, Window.Size);
+		RenderPathTraced(renderGraph, camera, Window.Size);
+		// RenderDeferred(renderGraph, camera, Window.Size);
 		renderGraph.Execute(Window.Swapchain);
 
 		// std::string graphviz = renderGraph.ExportGraphviz();

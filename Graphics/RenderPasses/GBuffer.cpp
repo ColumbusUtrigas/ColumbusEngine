@@ -1,4 +1,5 @@
 #include "Core/Core.h"
+#include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
@@ -43,7 +44,6 @@ namespace Columbus
 
 	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures)
 	{
-		// TODO: TextureRef and sync?
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferAlbedo };
 		Parameters.ColorAttachments[1] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferNormal };
@@ -97,26 +97,61 @@ namespace Columbus
 	void RayTracedShadowsPass(RenderGraph& Graph)
 	{
 	}
-	void RenderDeferredLightingPass(RenderGraph& Graph)
+
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, const SceneTextures& Textures)
 	{
+		TextureDesc2 Desc {
+			.Usage = TextureUsage::Storage,
+			.Width = (uint32)WindowSize.X,
+			.Height = (uint32)WindowSize.Y,
+			.Format = TextureFormat::RGBA16F,
+		};
+
+		RenderGraphTextureRef LightingTexture = Graph.CreateTexture(Desc, "Lighting");
+
+		RenderPassParameters Parameters;
+
+		RenderPassDependencies Dependencies;
+		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+
+		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [WindowSize, LightingTexture, &Textures](RenderGraphContext& Context)
+		{
+			static ComputePipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				auto ShaderSource = LoadShaderFile("GBufferLightingPass.glsl");
+
+				ComputePipelineDesc Desc;
+				Desc.CS = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Compute, ShaderLanguage::GLSL);
+				Desc.Name = "DeferredLightingShader";
+
+				Pipeline = Context.Device->CreateComputePipeline(Desc);
+			}
+
+			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
+
+			Context.CommandBuffer->BindComputePipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
+
+			Context.CommandBuffer->Dispatch(WindowSize.X, WindowSize.Y, 1);
+		});
+
+		return LightingTexture;
 	}
 
 	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize)
 	{
 		SceneTextures Textures = CreateSceneTextures(Graph, WindowSize);
+
 		RenderGBufferPass(Graph, MainCamera, Textures);
-		TonemapPass(Graph, Textures.GBufferAlbedo); // TODO: lighting pass
 
-		// RenderPassParameters Parameters;
-		// Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Graph.GetSwapchainTexture() };
-
-		// RenderPassDependencies Dependencies;
-		// Dependencies.Add(Textures.GBufferAlbedo);
-
-		// Graph.AddPass("Final", RenderGraphPassType::Raster, Parameters, Dependencies, [](RenderGraphContext& Context)
-		// {
-
-		// });
+		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, WindowSize, Textures);
+		TonemapPass(Graph, LightingTexture);
 	}
 
 }

@@ -25,6 +25,8 @@ namespace Columbus
 	{
 		TonemapFilmCurve       FilmCurve;
 		TonemapOutputTransform OutputTransform;
+
+		iVector2 Resolution;
 	};
 
 	struct TonemapTextures
@@ -83,12 +85,7 @@ namespace Columbus
 		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-		TonemapParameters PushConstants {
-			.FilmCurve       = TonemapFilmCurve::ACES,
-			.OutputTransform = TonemapOutputTransform::Rec709
-		};
-
-		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [PushConstants, SceneTexture](RenderGraphContext& Context)
+		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture](RenderGraphContext& Context)
 		{
 			// TODO:
 			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
@@ -106,13 +103,21 @@ namespace Columbus
 				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 			}
 
+			SPtr<Texture2> Texture = Context.GetRenderGraphTexture(SceneTexture);
+
+			TonemapParameters PushConstants {
+				.FilmCurve       = TonemapFilmCurve::ACES,
+				.OutputTransform = TonemapOutputTransform::Rec709,
+				.Resolution      = iVector2(Texture->GetDesc().Width, Texture->GetDesc().Height),
+			};
+
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(SceneTexture).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get());
 
 			// TODO: pipeline viewport size
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-			// Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
+			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		});
 	}

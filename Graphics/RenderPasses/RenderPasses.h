@@ -25,7 +25,7 @@ namespace Columbus
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const iVector2& WindowSize);
 	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures);
 	void RayTracedShadowsPass(RenderGraph& Graph);
-	void RenderDeferredLightingPass(RenderGraph& Graph);
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, const SceneTextures& Textures);
 	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture);
 	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
 

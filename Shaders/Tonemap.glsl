@@ -21,7 +21,14 @@ layout(location=0) out vec4 RT0;
 
 layout(location=0) in vec2 UV;
 
-layout(binding = 0, set = 0) uniform sampler2D SceneTexture;
+layout(binding = 0, set = 0, rgba16f) uniform image2D SceneTexture;
+
+layout(push_constant) uniform params
+{
+	uint FilmCurve;
+	uint OutputTransform;
+	uvec2 Resolution;
+} Params;
 
 // From BakingLab by MJP
 //
@@ -83,7 +90,8 @@ void main()
 	// Apply Output Transform (Rec709 or Rec2020-PQ)
 
 	vec3 Linear = vec3(UV*5, 0);
-	Linear = texture(SceneTexture, UV).rgb;
+	// Linear = texture(SceneTexture, UV).rgb;
+	Linear = imageLoad(SceneTexture, ivec2(UV * Params.Resolution)).rgb;
 
 	RT0 = vec4(Tonemap(Linear),1);
 }
