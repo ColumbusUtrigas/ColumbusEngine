@@ -1,7 +1,7 @@
 #ifdef CLOSEST_HIT_SHADER
 	#extension GL_EXT_nonuniform_qualifier : require
 
-	#include <GPUScene>
+	#include "GPUScene.glsl"
 
 	vec2 BaryLerp(vec2 a, vec2 b, vec2 c, vec3 barycentrics) {
 		return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;

@@ -226,6 +226,33 @@ endif()
 target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} spirv_reflect)
 
+set(SPIRV_OUTPUT_DIR "${BINARIES_DIR}/PrecompiledShaders/")
+function(compile_shader_glsl shaderName stages binaryLocation)
+	get_filename_component(STEM ${shaderName} NAME_WLE)
+	get_filename_component(SHADER_PATH ${shaderName} ABSOLUTE)
+
+	set(SPIRV "${SPIRV_OUTPUT_DIR}${STEM}.csd")
+
+	add_custom_command(
+		OUTPUT ${SPIRV}
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
+		COMMAND "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
+		DEPENDS ${shaderName} ShaderCompiler
+	)
+
+	# just a weird way to append a value to a list in the parent scope
+	set(TMP_LIST ${${binaryLocation}})
+	list(APPEND TMP_LIST ${SPIRV})
+	set(${binaryLocation} "${TMP_LIST}" PARENT_SCOPE)
+
+endfunction(compile_shader_glsl)
+
+add_subdirectory(ShaderCompiler)
+
+add_subdirectory(Shaders)
+# add_dependencies(${TARGET} Shaders)
+add_dependencies(Shaders ShaderCompiler)
+
 # add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")
 # add_custom_command(TARGET ${PROJECT_NAME} COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Shaders" "$<TARGET_FILE_DIR:${TARGET}>/Data/Shaders")
 

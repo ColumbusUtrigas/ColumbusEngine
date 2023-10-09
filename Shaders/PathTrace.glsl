@@ -1,5 +1,6 @@
 #version 460 core
 #extension GL_EXT_ray_tracing : enable
+#extension GL_GOOGLE_include_directive : require
 
 struct RayPayload {
     vec4 colorAndDist;
@@ -13,8 +14,8 @@ struct RayPayload {
     layout(binding = 0, set = 7) uniform accelerationStructureEXT acc; // TODO
     layout(binding = 1, set = 7, rgba32f) uniform image2D img;
 
-	#include <GPUScene>
-	#include <CommonRayTracing.glsl>
+	#include "GPUScene.glsl"
+	#include "CommonRayTracing.glsl"
 
     layout(push_constant) uniform params
     {
@@ -90,10 +91,10 @@ struct RayPayload {
 
 // TODO: common miss shader
 #ifdef MISS_SHADER
-	#include <PathTraceMissing.glsl>
+	#include "PathTraceMissing.glsl"
 #endif
 
 // TODO: common closest hit shader
 #ifdef CLOSEST_HIT_SHADER
-	#include <PathTraceClosestHit.glsl>
+	#include "PathTraceClosestHit.glsl"
 #endif
