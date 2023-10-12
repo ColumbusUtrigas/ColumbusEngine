@@ -5,6 +5,7 @@
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
+#include "ShaderBytecode/ShaderBytecode.h"
 #include <vulkan/vulkan_core.h>
 
 namespace Columbus
@@ -44,14 +45,10 @@ namespace Columbus
 				static RayTracingPipeline* PTPipeline = nullptr;
 				if (PTPipeline == nullptr)
 				{
-					auto ShaderSource = LoadShaderFile("PathTrace.glsl");
-
 					RayTracingPipelineDesc Desc{};
 					Desc.Name = "RTXON";
-					Desc.RayGen = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Raygen, ShaderLanguage::GLSL);
-					Desc.Miss = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Miss, ShaderLanguage::GLSL);
-					Desc.ClosestHit = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::ClosestHit, ShaderLanguage::GLSL);
 					Desc.MaxRecursionDepth = 1;
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/PathTrace.csd");
 					PTPipeline = Context.Device->CreateRayTracingPipeline(Desc);
 				}
 

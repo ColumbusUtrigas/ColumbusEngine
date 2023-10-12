@@ -1,42 +1,22 @@
 #pragma once
 
+#include "Graphics/Core/Types.h"
 #include <Graphics/Core/GraphicsCore.h>
 #include <Core/fixed_vector.h>
 #include <Core/SmartPointer.h>
 #include <string>
 #include <vector>
+#include <span>
 #include <vulkan/vulkan.h>
+
+#include <ShaderBytecode/ShaderBytecode.h>
 
 namespace Columbus
 {
 
-	struct DescriptorSetInfo
-	{
-		uint32_t Index = 0;
-		uint32_t VariableCountMax = 0;
+	// TODO: refactor/remove, shaderc compilation must stay, but moved to ShaderCompiler
 
-		fixed_vector<VkDescriptorSetLayoutBinding, 16> Bindings;
-		fixed_vector<VkDescriptorBindingFlags, 16> BindingFlags;
-	};
-
-	// SPIR-V bytecode and reflection information
-	struct CompiledSpirv
-	{
-		std::vector<uint32_t> Bytecode;
-
-		fixed_vector<VkPushConstantRange, 16> pushConstants; // TODO
-		fixed_vector<DescriptorSetInfo, 16> DescriptorSets;
-	};
-
-	// Built shader module
-	struct ShaderStageBuildResultVulkan
-	{
-		VkPipelineShaderStageCreateInfo ShaderStageInfo;
-		CompiledSpirv Spirv;
-	};
-
-	CompiledSpirv CompileShaderStage_VK(SPtr<ShaderStage> stage, const std::string& name);
-
-	ShaderStageBuildResultVulkan ShaderStageBuild_VK(SPtr<ShaderStage> stage, const std::string& name, VkDevice device);
+	CompiledShaderBytecode CompileShaderStageFromSource_VK(const std::string& Source, const ShaderStageDesc& Stage, const std::string& Name, std::span<std::string> Defines);
+	CompiledShaderData     CompileShaderPipelineFromSource_VK(const std::string& Source, const std::string& Name, ShaderLanguage Lang, std::span<ShaderStageDesc> Stages, std::span<std::string> Defines);
 
 }

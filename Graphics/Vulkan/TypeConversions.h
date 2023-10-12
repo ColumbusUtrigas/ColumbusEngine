@@ -202,8 +202,10 @@ namespace Columbus
 
 		if ((type & ShaderType::Vertex) != 0)   result |= VK_SHADER_STAGE_VERTEX_BIT;
 		if ((type & ShaderType::Pixel) != 0)    result |= VK_SHADER_STAGE_FRAGMENT_BIT;
-		if ((type & ShaderType::Hull)   != 0)   COLUMBUS_ASSERT_MESSAGE(false, "Tesselation isn't supported");
-		if ((type & ShaderType::Domain) != 0)   COLUMBUS_ASSERT_MESSAGE(false, "Tesselation isn't supported");
+		// if ((type & ShaderType::Hull)   != 0)   COLUMBUS_ASSERT_MESSAGE(false, "Tesselation isn't supported"); // TODO:
+		// if ((type & ShaderType::Domain) != 0)   COLUMBUS_ASSERT_MESSAGE(false, "Tesselation isn't supported");
+		if ((type & ShaderType::Hull)   != 0)   assert(false && "Tesselation isn't supported");
+		if ((type & ShaderType::Domain) != 0)   assert(false && "Tesselation isn't supported");
 		if ((type & ShaderType::Geometry) != 0) result |= VK_SHADER_STAGE_GEOMETRY_BIT;
 
 		if ((type & ShaderType::Compute) != 0) result |= VK_SHADER_STAGE_COMPUTE_BIT;

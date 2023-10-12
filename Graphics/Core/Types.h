@@ -55,11 +55,6 @@ namespace Columbus
 			Left(left), Top(top), Right(right), Bottom(bottom) {}
 	};
 
-	struct ShaderStageBytecode
-	{
-		DataBlob Instruction;
-	};
-
 	enum class ShaderType : uint32_t
 	{
 		Vertex   = 1,
@@ -91,6 +86,7 @@ namespace Columbus
 		GLSL
 	};
 
+	// TODO: remove
 	struct ShaderStage
 	{
 		std::string Source;
@@ -103,6 +99,12 @@ namespace Columbus
 		ShaderStage() {}
 		ShaderStage(std::string_view source, std::string_view entry, ShaderType type, ShaderLanguage language) :
 			Source(source), EntryPoint(entry), Type(type), Language(language) {}
+	};
+
+	struct ShaderStageDesc
+	{
+		ShaderType Type;
+		std::string EntryPoint;
 	};
 
 	enum class AttachmentType

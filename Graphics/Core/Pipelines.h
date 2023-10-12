@@ -2,6 +2,7 @@
 
 #include <Graphics/Core/Types.h>
 #include <Graphics/Core/InputLayout.h>
+#include <ShaderBytecode/ShaderBytecode.h>
 #include <Core/Core.h>
 
 namespace Columbus
@@ -9,8 +10,8 @@ namespace Columbus
 
 	struct ComputePipelineDesc
 	{
-		SPtr<ShaderStage> CS;
-		std::string Name;
+		std::string Name; // Debug name
+		CompiledShaderData Bytecode;
 	};
 
 	struct GraphicsPipelineDesc
@@ -22,23 +23,17 @@ namespace Columbus
 		PrimitiveTopology topology = PrimitiveTopology::TriangleList;
 
 		std::string Name;
-
-		SPtr<ShaderStage> VS;
-		SPtr<ShaderStage> HS;
-		SPtr<ShaderStage> DS;
-		SPtr<ShaderStage> GS;
-		SPtr<ShaderStage> PS;
+		CompiledShaderData Bytecode;
 	};
 
 	struct RayTracingPipelineDesc
 	{
-		SPtr<ShaderStage> RayGen;
-		SPtr<ShaderStage> Miss;
-		SPtr<ShaderStage> ClosestHit;
+		// TODO: Shader Binding Table description
 
 		uint32_t MaxRecursionDepth;
 
 		std::string Name;
+		CompiledShaderData Bytecode;
 	};
 
 	class ComputePipeline

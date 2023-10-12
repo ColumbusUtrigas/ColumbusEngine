@@ -19,12 +19,13 @@
 #include <Graphics/Vulkan/TextureVulkan.h>
 #include <Core/Types.h>
 
+#include <ShaderBytecode/ShaderBytecode.h>
+
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <cassert>
 
 #include <Common/Image/Image.h>
-#include <vulkan/vulkan_core.h>
 
 // disable to make RenderDoc captures
 #define ENABLE_RAY_TRACING 1
@@ -62,7 +63,7 @@ namespace Columbus
 
 		VulkanFunctions VkFunctions;
 	private:
-		VkPipelineLayout _CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts);
+		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
 		void _SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name);
 

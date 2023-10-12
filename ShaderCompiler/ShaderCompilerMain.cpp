@@ -99,7 +99,8 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		DefinesParameters += " -D" + Define;
 	}
 
-	std::string CommandLine = std::format("glslangValidator {} -S {} --target-env vulkan1.2 -e {} -g -gVS -o {} {}", DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
+	// TODO: support for non-semantic debug data with -gVS
+	std::string CommandLine = std::format("glslangValidator {} -S {} --target-env vulkan1.2 -e {} -g -o {} {}", DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
 
 	printf("Compiling shader with CLI: %s\n", CommandLine.c_str());
 

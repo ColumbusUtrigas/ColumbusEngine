@@ -563,29 +563,12 @@ namespace Columbus
 		_SetDebugName((uint64_t)static_cast<const AccelerationStructureVulkan*>(AccelerationStructure)->_Handle, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, Name);
 	}
 
-	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const std::vector<ShaderStageBuildResultVulkan>& Stages, PipelineDescriptorSetLayoutsVulkan& SetLayouts)
+	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts)
 	{
-		// Concat all push constants and descriptor sets
-		std::vector<VkPushConstantRange> pushConstants;
-		std::vector<DescriptorSetInfo> descriptorSets;
-
-		for (auto& stage : Stages)
-		{
-			for (auto& pushConstant : stage.Spirv.pushConstants)
-			{
-				pushConstants.push_back(pushConstant);
-			}
-
-			for (auto& descriptorSet : stage.Spirv.DescriptorSets)
-			{
-				descriptorSets.push_back(descriptorSet);
-			}
-		}
-
 		// TODO: Caching scheme
-		for (int i = 0; i < descriptorSets.size(); i++)
+		for (int i = 0; i < Bytecode.Reflection->DescriptorSets.size(); i++)
 		{
-			auto& setInfo = descriptorSets[i];
+			auto& setInfo = Bytecode.Reflection->DescriptorSets[i];
 
 			VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
 			bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
@@ -600,28 +583,29 @@ namespace Columbus
 			setLayoutInfo.bindingCount = setInfo.Bindings.size();
 			setLayoutInfo.pBindings = setInfo.Bindings.data();
 
-			SetLayouts.VariableCountMax[i] = setInfo.VariableCountMax;
+			OutSetLayouts.VariableCountMax[i] = setInfo.VariableCountMax;
 			if (setInfo.VariableCountMax > 0)
 			{
 				setLayoutInfo.pNext = &bindingFlagsInfo;
 			}
 
-			SetLayouts.UsedLayouts++;
-			VK_CHECK(vkCreateDescriptorSetLayout(_Device, &setLayoutInfo, nullptr, &SetLayouts.Layouts[i]));
+			OutSetLayouts.UsedLayouts++;
+			VK_CHECK(vkCreateDescriptorSetLayout(_Device, &setLayoutInfo, nullptr, &OutSetLayouts.Layouts[i]));
 		}
 
 		VkPipelineLayoutCreateInfo layoutInfo;
 		layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		layoutInfo.pNext = nullptr;
 		layoutInfo.flags = 0;
-		layoutInfo.setLayoutCount = descriptorSets.size();
-		layoutInfo.pSetLayouts = SetLayouts.Layouts;
-		layoutInfo.pushConstantRangeCount = pushConstants.size();
-		layoutInfo.pPushConstantRanges = pushConstants.data();
+		layoutInfo.setLayoutCount = Bytecode.Reflection->DescriptorSets.size();
+		layoutInfo.pSetLayouts = OutSetLayouts.Layouts;
+		layoutInfo.pushConstantRangeCount = Bytecode.Reflection->PushConstants.size();
+		layoutInfo.pPushConstantRanges = Bytecode.Reflection->PushConstants.data();
 
-		VkPipelineLayout result;
-		VK_CHECK(vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &result));
-		return result;
+		VkPipelineLayout Layout;
+		VK_CHECK(vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &Layout));
+
+		return Layout;
 	}
 
 	VkDescriptorSet DeviceVulkan::_CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index)

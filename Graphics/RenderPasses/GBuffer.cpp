@@ -3,7 +3,7 @@
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
-#include <vulkan/vulkan_core.h>
+#include "ShaderBytecode/ShaderBytecode.h"
 
 namespace Columbus
 {
@@ -60,18 +60,17 @@ namespace Columbus
 			static GraphicsPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{
-				auto ShaderSource = LoadShaderFile("GBufferPass.glsl");
 				GraphicsPipelineDesc Desc;
 				Desc.Name = "GBufferPass";
 				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.VS = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Vertex, ShaderLanguage::GLSL);
-				Desc.PS = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Pixel, ShaderLanguage::GLSL);
 				Desc.blendState.RenderTargets = {
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 				};
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/GBufferPass.csd");
+
 				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 			}
 
@@ -118,14 +117,14 @@ namespace Columbus
 
 		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [WindowSize, LightingTexture, &Textures](RenderGraphContext& Context)
 		{
+			// TODO: shader system
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{
-				auto ShaderSource = LoadShaderFile("GBufferLightingPass.glsl");
-
 				ComputePipelineDesc Desc;
-				Desc.CS = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Compute, ShaderLanguage::GLSL);
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/GBufferLightingPass.csd");
 				Desc.Name = "DeferredLightingShader";
+				ReflectCompiledShaderData(Desc.Bytecode);
 
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}

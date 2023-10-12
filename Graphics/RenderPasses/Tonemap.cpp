@@ -1,7 +1,9 @@
 #include "Core/Core.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
+#include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "RenderPasses.h"
+#include "ShaderBytecode/ShaderBytecode.h"
 
 namespace Columbus
 {
@@ -57,10 +59,12 @@ namespace Columbus
 			if (Pipeline == nullptr)
 			{
 				auto ShaderSource = LoadShaderFile("ComputeColourGradingLUT.glsl");
-				ComputePipelineDesc Desc {
-					std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Compute, ShaderLanguage::GLSL),
-					"ComputeColourGradingLUT"
-				};
+				ComputePipelineDesc Desc;
+
+				ShaderStageDesc Stages[] = { ShaderStageDesc{ ShaderType::Compute, "main" } };
+				Desc.Bytecode = CompileShaderPipelineFromSource_VK(ShaderSource, "ComputeColourGradingLUT", ShaderLanguage::GLSL, Stages, {});
+				Desc.Name = "ComputeColourGradingLUT";
+
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}
 
@@ -93,13 +97,12 @@ namespace Columbus
 			static GraphicsPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{
-				auto ShaderSource = LoadShaderFile("Tonemap.glsl");
 				GraphicsPipelineDesc Desc;
 				Desc.Name = "Tonemap";
 				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.VS = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Vertex, ShaderLanguage::GLSL);
-				Desc.PS = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Pixel, ShaderLanguage::GLSL);
 				Desc.blendState.RenderTargets = { RenderTargetBlendDesc() };
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Tonemap.csd");
+
 				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 			}
 

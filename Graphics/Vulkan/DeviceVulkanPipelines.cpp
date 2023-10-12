@@ -6,29 +6,50 @@
 namespace Columbus
 {
 
+	static VkPipelineShaderStageCreateInfo _BuildShaderStageFromBytecode(VkDevice Device, const CompiledShaderBytecode& Bytecode)
+	{
+		VkShaderModuleCreateInfo moduleInfo;
+		moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		moduleInfo.pNext = nullptr;
+		moduleInfo.flags = 0;
+		moduleInfo.codeSize = Bytecode.Bytecode.size();
+		moduleInfo.pCode = (u32*)Bytecode.Bytecode.data();
+
+		VkShaderModule module;
+
+		VK_CHECK(vkCreateShaderModule(Device, &moduleInfo, nullptr, &module));
+
+		VkPipelineShaderStageCreateInfo ShaderStageInfo;
+		ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		ShaderStageInfo.pNext = nullptr;
+		ShaderStageInfo.flags = 0;
+		ShaderStageInfo.stage = ShaderTypeToVk(Bytecode.Stage);
+		ShaderStageInfo.module = module;
+		ShaderStageInfo.pName = Bytecode.EntryPoint.c_str();
+		ShaderStageInfo.pSpecializationInfo = nullptr;
+
+		return ShaderStageInfo;
+	}
+
 	ComputePipeline* DeviceVulkan::CreateComputePipeline(const ComputePipelineDesc &Desc)
 	{
 		auto result = new ComputePipelineVulkan(Desc);
 
-		ShaderStageBuildResultVulkan ComputeStage = ShaderStageBuild_VK(Desc.CS, Desc.Name.c_str(), _Device);
-		std::vector<ShaderStageBuildResultVulkan> CompiledStages = { ComputeStage };
+		result->layout = _CreatePipelineLayout(Desc.Bytecode, result->SetLayouts);
 
-		VkPipelineShaderStageCreateInfo stages[] = {
-			ComputeStage.ShaderStageInfo
-		};
+		VkPipelineShaderStageCreateInfo CS = _BuildShaderStageFromBytecode(_Device, Desc.Bytecode.Bytecodes[0]);
 
-		result->layout = _CreatePipelineLayout(CompiledStages, result->SetLayouts);
+		// The actual pipeline creation
+		VkComputePipelineCreateInfo pipelineInfo;
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		pipelineInfo.pNext = nullptr;
+		pipelineInfo.flags = 0;
+		pipelineInfo.stage = CS;
+		pipelineInfo.layout = result->layout;
+		pipelineInfo.basePipelineHandle = nullptr;
+		pipelineInfo.basePipelineIndex = -1;
 
-		VkComputePipelineCreateInfo info;
-		info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-		info.pNext = nullptr;
-		info.flags = 0;
-		info.stage = ComputeStage.ShaderStageInfo;
-		info.layout = result->layout;
-		info.basePipelineHandle = nullptr;
-		info.basePipelineIndex = -1;
-
-		VK_CHECK(vkCreateComputePipelines(_Device, nullptr, 1, &info, nullptr, &result->pipeline));
+		VK_CHECK(vkCreateComputePipelines(_Device, nullptr, 1, &pipelineInfo, nullptr, &result->pipeline));
 
 		if (!Desc.Name.empty())
 		{
@@ -40,12 +61,6 @@ namespace Columbus
 
 	GraphicsPipeline* DeviceVulkan::CreateGraphicsPipeline(const GraphicsPipelineDesc& Desc, VkRenderPass RenderPass)
 	{
-		auto vs = ShaderStageBuild_VK(Desc.VS, Desc.Name, _Device);
-		auto ps = ShaderStageBuild_VK(Desc.PS, Desc.Name, _Device);
-
-		std::vector<ShaderStageBuildResultVulkan> compiledStages = { vs, ps };
-		VkPipelineShaderStageCreateInfo stages[] = { vs.ShaderStageInfo, ps.ShaderStageInfo };
-
 		auto pipeline = new GraphicsPipelineVulkan(Desc);
 
 		fixed_vector<VkVertexInputBindingDescription, 16> inputBindings;
@@ -204,14 +219,20 @@ namespace Columbus
 		dynamicState.dynamicStateCount = 0;
 		dynamicState.pDynamicStates = nullptr;
 
-		pipeline->layout = _CreatePipelineLayout(compiledStages, pipeline->SetLayouts);
+		pipeline->layout = _CreatePipelineLayout(Desc.Bytecode, pipeline->SetLayouts);
+
+		std::vector<VkPipelineShaderStageCreateInfo> Stages;
+		for (const CompiledShaderBytecode& Bytecode : Desc.Bytecode.Bytecodes)
+		{
+			Stages.push_back(_BuildShaderStageFromBytecode(_Device, Bytecode));
+		}
 
 		VkGraphicsPipelineCreateInfo info;
 		info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		info.pNext = nullptr;
 		info.flags = 0;
-		info.stageCount = 2;
-		info.pStages = stages;
+		info.stageCount = Stages.size();
+		info.pStages = Stages.data();
 		info.pVertexInputState = &vertexInputState;
 		info.pInputAssemblyState = &inputAssemblyState;
 		info.pTessellationState = &tesselationState;
@@ -239,32 +260,25 @@ namespace Columbus
 
 	RayTracingPipeline* DeviceVulkan::CreateRayTracingPipeline(const RayTracingPipelineDesc &Desc)
 	{
-		auto result = new RayTracingPipelineVulkan(Desc);
+		auto Pipeline = new RayTracingPipelineVulkan(Desc);
 
-		ShaderStageBuildResultVulkan GenStage = ShaderStageBuild_VK(Desc.RayGen, Desc.Name.c_str(), _Device);
-		ShaderStageBuildResultVulkan MissStage = ShaderStageBuild_VK(Desc.Miss, Desc.Name.c_str(), _Device);
-		ShaderStageBuildResultVulkan ClosestHitStage = ShaderStageBuild_VK(Desc.ClosestHit, Desc.Name.c_str(), _Device);
-		std::vector<ShaderStageBuildResultVulkan> compiledStages = { GenStage, MissStage, ClosestHitStage };
+		Pipeline->layout = _CreatePipelineLayout(Desc.Bytecode, Pipeline->SetLayouts);
 
-		VkPipelineShaderStageCreateInfo stages[] = {
-			GenStage.ShaderStageInfo,
-			MissStage.ShaderStageInfo,
-			ClosestHitStage.ShaderStageInfo
-		};
+		std::vector<VkPipelineShaderStageCreateInfo> Stages;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> Groups;
 
-		result->layout = _CreatePipelineLayout(compiledStages, result->SetLayouts);
+		// TODO: support for multiple hit shaders
+		// TODO: support for intersection shaders
+		// TODO: support for callable shaders
 
-		VkPipelineDynamicStateCreateInfo dynamicState;
-		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.pNext = nullptr;
-		dynamicState.flags = 0;
-		dynamicState.dynamicStateCount = 0;
-		dynamicState.pDynamicStates = nullptr;
+		for (const CompiledShaderBytecode& Bytecode : Desc.Bytecode.Bytecodes)
+		{
+			Stages.push_back(_BuildShaderStageFromBytecode(_Device, Bytecode));
+		}
 
-		// Build shader groups
-		// TODO: build groups automatically based on used stages
-		std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
+		COLUMBUS_ASSERT_MESSAGE(Stages.size() == 3, "RayTracing support is too basic for this!");
 
+		// TODO: that's something that you want to define on a higher level
 		{
 			VkRayTracingShaderGroupCreateInfoKHR group;
 			group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -275,7 +289,7 @@ namespace Columbus
 			group.anyHitShader = VK_SHADER_UNUSED_KHR;
 			group.intersectionShader = VK_SHADER_UNUSED_KHR;
 			group.pShaderGroupCaptureReplayHandle = nullptr;
-			groups.push_back(group);
+			Groups.push_back(group);
 		}
 
 		{
@@ -288,7 +302,7 @@ namespace Columbus
 			group.anyHitShader = VK_SHADER_UNUSED_KHR;
 			group.intersectionShader = VK_SHADER_UNUSED_KHR;
 			group.pShaderGroupCaptureReplayHandle = nullptr;
-			groups.push_back(group);
+			Groups.push_back(group);
 		}
 
 		{
@@ -301,53 +315,62 @@ namespace Columbus
 			group.anyHitShader = VK_SHADER_UNUSED_KHR;
 			group.intersectionShader = VK_SHADER_UNUSED_KHR;
 			group.pShaderGroupCaptureReplayHandle = nullptr;
-			groups.push_back(group);
+			Groups.push_back(group);
 		}
+
+		VkPipelineDynamicStateCreateInfo dynamicState;
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.pNext = nullptr;
+		dynamicState.flags = 0;
+		dynamicState.dynamicStateCount = 0;
+		dynamicState.pDynamicStates = nullptr;
 
 		VkRayTracingPipelineCreateInfoKHR info;
 		info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 		info.pNext = nullptr;
 		info.flags = 0;
-		info.stageCount = 3;
-		info.pStages = stages;
-		info.groupCount = groups.size();
-		info.pGroups = groups.data();
+		info.stageCount = Stages.size();
+		info.pStages = Stages.data();
+		info.groupCount = Groups.size();
+		info.pGroups = Groups.data();
 		info.maxPipelineRayRecursionDepth = Desc.MaxRecursionDepth;
 		info.pLibraryInfo = nullptr;
 		info.pLibraryInterface = nullptr;
 		info.pDynamicState = &dynamicState;
-		info.layout = result->layout;
+		info.layout = Pipeline->layout;
 		info.basePipelineHandle = nullptr;
 		info.basePipelineIndex = -1;
 
-		VkFunctions.vkCreateRayTracingPipelines(_Device, NULL, NULL, 1, &info, nullptr, &result->pipeline);
+		// Create pipeline
+		VkFunctions.vkCreateRayTracingPipelines(_Device, NULL, NULL, 1, &info, nullptr, &Pipeline->pipeline);
 
 		// Build Shader Binding Table
 		const uint32_t handleSize = _RayTracingProperties.shaderGroupHandleSize;
 		const uint32_t handleSizeAligned = alignedSize(_RayTracingProperties.shaderGroupHandleSize, _RayTracingProperties.shaderGroupHandleAlignment);
-		const uint32_t groupCount = 3;
-		const uint32_t sbtSize = groupCount * handleSizeAligned;
+		const uint32_t sbtSize = Groups.size() * handleSizeAligned;
+
+		// TODO: is it correct?
 
 		std::vector<uint8_t> shaderHandleStorage(sbtSize);
-		VK_CHECK(VkFunctions.vkGetRayTracingShaderGroupHandles(_Device, result->pipeline, 0, groupCount, sbtSize, shaderHandleStorage.data()));
+		VK_CHECK(VkFunctions.vkGetRayTracingShaderGroupHandles(_Device, Pipeline->pipeline, 0, Groups.size(), sbtSize, shaderHandleStorage.data()));
 
-		result->RayGenSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data());
-		result->MissSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data() + handleSizeAligned);
-		result->HitSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data() + handleSizeAligned * 2);
+		Pipeline->RayGenSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data());
+		Pipeline->MissSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data() + handleSizeAligned);
+		Pipeline->HitSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data() + handleSizeAligned * 2);
 
 		vk::Device dev(_Device);
 
-		result->RayGenRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(result->RayGenSBT), handleSizeAligned, handleSizeAligned);
-		result->MissRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(result->MissSBT), handleSizeAligned, handleSizeAligned);
-		result->HitRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(result->HitSBT), handleSizeAligned, handleSizeAligned);
-		result->CallableRegionSBT = {};
+		Pipeline->RayGenRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->RayGenSBT), handleSizeAligned, handleSizeAligned);
+		Pipeline->MissRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->MissSBT), handleSizeAligned, handleSizeAligned);
+		Pipeline->HitRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->HitSBT), handleSizeAligned, handleSizeAligned);
+		Pipeline->CallableRegionSBT = {};
 
 		if (!Desc.Name.empty())
 		{
-			SetDebugName(result, Desc.Name.c_str());
+			SetDebugName(Pipeline, Desc.Name.c_str());
 		}
 
-		return result;
+		return Pipeline;
 	}
 
 }

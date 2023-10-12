@@ -17,6 +17,6 @@
 #define sizeofarray(a) (sizeof(a) / sizeof(a[0]))
 #define COLUMBUS_EDITOR 1
 
+// TODO: move it to somewhere else, it's not Core
 void InitializeEngine();
-
 std::string LoadShaderFile(const std::string& Name);
