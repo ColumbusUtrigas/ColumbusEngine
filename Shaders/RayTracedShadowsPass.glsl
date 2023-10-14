@@ -1,5 +1,6 @@
 #version 460 core
 #extension GL_EXT_ray_tracing : enable
+#extension GL_GOOGLE_include_directive : require
 
 struct RayPayload {
 	float Distance;
@@ -8,7 +9,7 @@ struct RayPayload {
 #ifdef RAYGEN_SHADER
 	layout(location = 0) rayPayloadEXT RayPayload Payload;
 
-	#include <GPUScene>
+	#include "GPUScene.glsl"
 
 	#define GOLDEN_RATIO 1.618033988749894
 	#define PI 3.14159265359
@@ -37,7 +38,7 @@ struct RayPayload {
 		vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
 
 		vec3 origin = texture(GBufferWorldPosition, uv).xyz;
-        vec3 direction = normalize(vec3(1,1,0));
+        vec3 direction = normalize(vec3(1,1,1));
 		// direction = normalize(SampleConeFibonacci(gl_LaunchIDEXT.x, gl_LaunchSizeEXT.x, 0.01));
 
 		// float phi = rand(uv) * PI * 0.03;

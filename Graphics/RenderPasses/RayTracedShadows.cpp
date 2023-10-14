@@ -5,46 +5,50 @@
 namespace Columbus
 {
 
-	/*void RayTracedShadowsPass::Setup(RenderGraphContext& Context)
+	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const SceneTextures& Textures, const iVector2& WindowSize)
 	{
-		auto ShaderSource = LoadShaderFile("RayTracedShadowsPass.glsl");
+		TextureDesc2 Desc {
+			.Usage = TextureUsage::Storage,
+			.Width = (u32)WindowSize.X,
+			.Height = (u32)WindowSize.Y,
+			.Format = TextureFormat::R8,
+		};
+		RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
 
-		RayTracingPipelineDesc Desc{};
-		Desc.Name = "RayTracedShadows Shader";
-		Desc.RayGen = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Raygen, ShaderLanguage::GLSL);
-		Desc.Miss = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::Miss, ShaderLanguage::GLSL);
-		Desc.ClosestHit = std::make_shared<ShaderStage>(ShaderSource, "main", ShaderType::ClosestHit, ShaderLanguage::GLSL);
-		Desc.MaxRecursionDepth = 1;
-		Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-	}
+		RenderPassParameters Parameters;
 
-	RenderPass::TExecutionFunc RayTracedShadowsPass::Execute2(RenderGraphContext& Context)
-	{
-		auto InputNormal = Context.GetInputTexture(GBufferPass::RTNormal);
-		auto InputDepth = Context.GetInputTexture(GBufferPass::RTDepth);
-		auto InputWorldPosition = Context.GetInputTexture(GBufferPass::RTWorldPosition);
+		RenderPassDependencies Dependencies;
+		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		Dependencies.Write(RTShadow, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-		return [this, InputNormal, InputDepth, InputWorldPosition](RenderGraphContext& Context)
+		Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, WindowSize](RenderGraphContext& Context)
 		{
-			TextureDesc2 ShadowsBufferDesc;
-			ShadowsBufferDesc.Width = 1280; // TODO
-			ShadowsBufferDesc.Height = 720; // TODO
-			ShadowsBufferDesc.Format = TextureFormat::RGBA16F;
-			ShadowsBufferDesc.Usage = TextureUsage::Storage;
-			auto ShadowsBuffer = Context.GetRenderTarget(RTShadows, ShadowsBufferDesc);
+			static RayTracingPipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				RayTracingPipelineDesc Desc;
+				Desc.Name = "RayTracedShadowsPass";
+				Desc.MaxRecursionDepth = 1;
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadowsPass.csd");
+
+				Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
+			}
 
 			auto ShadowsBufferSet = Context.GetDescriptorSet(Pipeline, 7);
 			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
-			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, ShadowsBuffer);
-			Context.Device->UpdateDescriptorSet(ShadowsBufferSet,2, 0, InputNormal);
-			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, InputWorldPosition);
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, Context.GetRenderGraphTexture(RTShadow).get());
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
+			Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
 			Context.BindGPUScene(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ShadowsBufferSet);
 
-			Context.CommandBuffer->TraceRays(Pipeline, 1280, 720, 1);
-		};
-	}*/
+			Context.CommandBuffer->TraceRays(Pipeline, WindowSize.X, WindowSize.Y, 1);
+		});
+
+		return RTShadow;
+	}
 
 }

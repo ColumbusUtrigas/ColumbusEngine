@@ -335,6 +335,9 @@ namespace Columbus
 		{
 			for (const auto& Read : Pass.Dependencies.TextureReadResources)
 			{
+				if (Read.Texture == SwapchainId)
+					continue;
+
 				auto& GraphTexture = Textures[Read.Texture];
 
 				// update resource lifetime
@@ -346,6 +349,9 @@ namespace Columbus
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
 			{
+				if (Write.Texture == SwapchainId)
+					continue;
+
 				auto& GraphTexture = Textures[Write.Texture];
 
 				// update resource lifetime
@@ -513,7 +519,7 @@ namespace Columbus
 					// TODO: better system?
 					for (auto& Attachment : Pass.Parameters.ColorAttachments)
 					{
-						if (Attachment && Textures[Attachment->Texture].Texture && Attachment->Texture != SwapchainId)
+						if (Attachment && Attachment->Texture != SwapchainId && Textures[Attachment->Texture].Texture && Attachment->Texture != SwapchainId)
 						{
 							TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Attachment->Texture].Texture.get());
 							if (Texture != nullptr)

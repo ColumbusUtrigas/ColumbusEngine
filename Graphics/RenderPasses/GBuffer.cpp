@@ -93,11 +93,7 @@ namespace Columbus
 		});
 	}
 
-	void RayTracedShadowsPass(RenderGraph& Graph)
-	{
-	}
-
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, const SceneTextures& Textures)
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures)
 	{
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::Storage,
@@ -115,7 +111,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 
-		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [WindowSize, LightingTexture, &Textures](RenderGraphContext& Context)
+		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [WindowSize, LightingTexture, ShadowTexture, Textures](RenderGraphContext& Context)
 		{
 			// TODO: shader system
 			static ComputePipeline* Pipeline = nullptr;
@@ -133,6 +129,7 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(ShadowTexture).get());
 
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
@@ -149,7 +146,8 @@ namespace Columbus
 
 		RenderGBufferPass(Graph, MainCamera, Textures);
 
-		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, WindowSize, Textures);
+		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, Textures, WindowSize);
+		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, WindowSize, ShadowTexture, Textures);
 		TonemapPass(Graph, LightingTexture);
 	}
 

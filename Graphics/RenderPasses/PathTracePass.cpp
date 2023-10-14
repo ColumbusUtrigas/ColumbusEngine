@@ -40,7 +40,7 @@ namespace Columbus
 			RenderPassDependencies Dependencies;
 			Dependencies.Write(RTImage, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-			Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [RTImage, &MainCamera](RenderGraphContext& Context)
+			Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [RTImage, &MainCamera, WindowSize](RenderGraphContext& Context)
 			{
 				static RayTracingPipeline* PTPipeline = nullptr;
 				if (PTPipeline == nullptr)
@@ -72,7 +72,7 @@ namespace Columbus
 				Context.BindGPUScene(PTPipeline);
 
 				Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
-				Context.CommandBuffer->TraceRays(PTPipeline, 1280, 720, 1);
+				Context.CommandBuffer->TraceRays(PTPipeline, WindowSize.X, WindowSize.Y, 1);
 			});
 		}
 

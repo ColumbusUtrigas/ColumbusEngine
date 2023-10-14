@@ -10,6 +10,12 @@ namespace Columbus
 {
 
 	// **********************************
+	// Common
+	//
+
+	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture);
+
+	// **********************************
 	// Real-time
 	//
 
@@ -24,10 +30,12 @@ namespace Columbus
 
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const iVector2& WindowSize);
 	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures);
-	void RayTracedShadowsPass(RenderGraph& Graph);
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, const SceneTextures& Textures);
-	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture);
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures);
 	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
+
+	// Real-time raytracing
+	//
+	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const SceneTextures& Textures, const iVector2& WindowSize);
 
 	// **********************************
 	// Path-Tracing
