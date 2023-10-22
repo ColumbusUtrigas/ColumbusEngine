@@ -1,7 +1,9 @@
+#include "Core/Core.h"
 #include "DeviceVulkan.h"
 #include "PipelinesVulkan.h"
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -138,10 +140,10 @@ namespace Columbus
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.pNext = nullptr;
 		viewportState.flags = 0;
-		viewportState.viewportCount = 1;
-		viewportState.pViewports = &viewport;
-		viewportState.scissorCount = 1;
-		viewportState.pScissors = &scissor;
+		viewportState.viewportCount = 1; // ignored in a dynamic state
+		viewportState.pViewports = &viewport; // ignored in a dynamic state
+		viewportState.scissorCount = 1; // ignored in a dynamic state
+		viewportState.pScissors = &scissor; // ignored in a dynamic state
 
 		VkPipelineRasterizationStateCreateInfo rasterState;
 		rasterState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -212,12 +214,17 @@ namespace Columbus
 		blendState.blendConstants[2] = 0;
 		blendState.blendConstants[3] = 0;
 
+		VkDynamicState DynamicStates[] = {
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR
+		};
+
 		VkPipelineDynamicStateCreateInfo dynamicState;
 		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		dynamicState.pNext = nullptr;
 		dynamicState.flags = 0;
-		dynamicState.dynamicStateCount = 0;
-		dynamicState.pDynamicStates = nullptr;
+		dynamicState.dynamicStateCount = sizeofarray(DynamicStates);
+		dynamicState.pDynamicStates = DynamicStates;
 
 		pipeline->layout = _CreatePipelineLayout(Desc.Bytecode, pipeline->SetLayouts);
 

@@ -129,6 +129,33 @@ namespace Columbus
 
 	SPtr<Texture2> RenderGraphContext::GetRenderGraphTexture(RenderGraphTextureRef Ref)
 	{
+		bool ValidUsage = false;
+
+		// TODO: optimize or give option to turn off validation
+		for (const auto& Read : Graph.Passes[CurrentPass].Dependencies.TextureReadResources)
+		{
+			if (Read.Texture == Ref)
+			{
+				ValidUsage = true;
+				break;
+			}
+		}
+
+		for (const auto& Write : Graph.Passes[CurrentPass].Dependencies.TextureWriteResources)
+		{
+			if (Write.Texture == Ref)
+			{
+				ValidUsage = true;
+				break;
+			}
+		}
+
+		if (!ValidUsage)
+		{
+			Log::Error("RenderGraph Validation: Texture %s isn't defined as a dependency of pass %s, but this pass tries to access it",
+				Graph.Textures[Ref].DebugName.c_str(), Graph.Passes[CurrentPass].Name.c_str());
+		}
+
 		return Graph.Textures[Ref].Texture;
 	}
 
@@ -317,8 +344,9 @@ namespace Columbus
 	void RenderGraph::Build(Texture2* SwapchainImage)
 	{
 		// TODO: topological sort and graph reordering
+		// TODO: resource versioning for R/W passes and mipmap generation
 
-		// TODO: virtual resources and allocation on build
+		// virtual resources allocation on build
 		for (auto& Texture : Textures)
 		{
 			AllocateTexture(Texture);
@@ -364,8 +392,19 @@ namespace Columbus
 				}
 				else
 				{
-					// validation error, resource can have only one producer
+					Log::Error("RenderGraph Validation: Texture %s can have only one producer, %s writes over it, was written in %s before",
+						GraphTexture.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphTexture.Writer].Name.c_str());
 				}
+			}
+		}
+
+		// Validate resources
+		for (auto& Texture : Textures)
+		{
+			// it is illegal to read from a resource that hasn't been written before
+			if (Texture.Readers.size() > 0 && Texture.Writer == -1)
+			{
+				Log::Error("RenderGraph Validation: Texture %s is being read but no passes have ever written to it", Texture.DebugName.c_str());
 			}
 		}
 
@@ -450,12 +489,13 @@ namespace Columbus
 		Build(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
 
 		// TODO: multithreaded rendering
-		RenderGraphContext Context{NULL, Device, Scene, CommandBuffer, RenderData, *this};
+		RenderGraphContext Context{NULL, -1, Device, Scene, CommandBuffer, RenderData, *this};
 		CommandBuffer->Reset();
 		CommandBuffer->Begin();
 
 		for (auto& Pass : Passes)
 		{
+			Context.CurrentPass = Pass.Id;
 			// TODO: submarkers
 			CommandBuffer->BeginDebugMarker(Pass.Name.c_str());
 
@@ -595,7 +635,7 @@ namespace Columbus
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
 			{
-				if (Write.Texture)
+				if (Write.Texture != SwapchainId)
 				{
 					Result += Pass.Name + " -> " + Textures[Write.Texture].DebugName + "\n";
 				}

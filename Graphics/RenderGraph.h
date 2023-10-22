@@ -84,6 +84,7 @@ namespace Columbus
 	struct RenderGraphContext
 	{
 		VkRenderPass VulkanRenderPass; // TODO: remove
+		RenderGraphPassId CurrentPass;
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
 		CommandBufferVulkan* CommandBuffer;
@@ -177,7 +178,8 @@ namespace Columbus
 		fixed_vector<RenderPassTextureDependency, 32> TextureWriteResources; // TODO: more efficient data storage
 		fixed_vector<RenderPassTextureDependency, 32> TextureReadResources;  // TODO: more efficient data storage
 
-		friend class RenderGraph;
+		friend RenderGraph;
+		friend RenderGraphContext;
 	};
 
 	struct RenderGraphTextureBarrier

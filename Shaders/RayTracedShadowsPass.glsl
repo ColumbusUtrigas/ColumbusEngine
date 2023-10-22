@@ -45,7 +45,7 @@ struct RayPayload {
 		// float theta = rand(uv+vec2(0.05)) * PI;
 		// direction = vec3(cos(phi) * cos(theta), sin(phi) * cos(theta), sin(theta));
 
-		direction = vec3(rand(uv)*0.01, 1, rand(uv)*0.01);
+		// direction = vec3(rand(uv)*0.01, 1, rand(uv)*0.01);
 		direction = normalize(direction);
 
 		// return [r * math.cos(phi) * math.cos(theta), r * math.sin(phi) * math.cos(theta) , r * math.sin(theta)]

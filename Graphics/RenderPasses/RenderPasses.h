@@ -9,11 +9,14 @@
 namespace Columbus
 {
 
+	// TODO: View, which contains size, swapchain
+
 	// **********************************
 	// Common
 	//
 
-	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture);
+	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture, const iVector2& WindowSize);
+	void DebugOverlayPass(RenderGraph& Graph, RenderGraphTextureRef Texture); // TODO: how to specify R/W resources in the render graph?
 
 	// **********************************
 	// Real-time
@@ -29,7 +32,7 @@ namespace Columbus
 	};
 
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const iVector2& WindowSize);
-	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures);
+	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures, const iVector2& WindowSize);
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures);
 	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
 

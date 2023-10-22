@@ -76,7 +76,7 @@ namespace Columbus
 			});
 		}
 
-		TonemapPass(Graph, RTImage);
+		TonemapPass(Graph, RTImage, WindowSize);
 	}
 
 }

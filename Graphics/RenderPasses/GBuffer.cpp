@@ -42,7 +42,7 @@ namespace Columbus
 		return Result;
 	}
 
-	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures)
+	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures, const iVector2& WindowSize)
 	{
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferAlbedo };
@@ -52,9 +52,8 @@ namespace Columbus
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 
 		RenderPassDependencies Dependencies;
-		Dependencies.Write(Textures.GBufferAlbedo, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, {}, [&MainCamera](RenderGraphContext& Context)
+		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, Dependencies, [&MainCamera, WindowSize](RenderGraphContext& Context)
 		{
 			// TODO: refactor, create a proper shader system
 			static GraphicsPipeline* Pipeline = nullptr;
@@ -75,6 +74,8 @@ namespace Columbus
 			}
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.CommandBuffer->SetViewport(0, 0, WindowSize.X, WindowSize.Y, 0.0f, 1.0f);
+			Context.CommandBuffer->SetScissor(0, 0, WindowSize.X, WindowSize.Y);
 			Context.BindGPUScene(Pipeline);
 
 			PerObjectParameters Parameters;
@@ -109,6 +110,7 @@ namespace Columbus
 		RenderPassDependencies Dependencies;
 		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(ShadowTexture, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 
 		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [WindowSize, LightingTexture, ShadowTexture, Textures](RenderGraphContext& Context)
@@ -144,11 +146,12 @@ namespace Columbus
 	{
 		SceneTextures Textures = CreateSceneTextures(Graph, WindowSize);
 
-		RenderGBufferPass(Graph, MainCamera, Textures);
+		RenderGBufferPass(Graph, MainCamera, Textures, WindowSize);
 
 		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, Textures, WindowSize);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, WindowSize, ShadowTexture, Textures);
-		TonemapPass(Graph, LightingTexture);
+		// DebugOverlayPass(Graph, LightingTexture);
+		TonemapPass(Graph, LightingTexture, WindowSize);
 	}
 
 }

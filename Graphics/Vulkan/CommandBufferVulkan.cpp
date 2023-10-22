@@ -5,6 +5,7 @@
 #include "TypeConversions.h"
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -143,6 +144,24 @@ namespace Columbus
 	void CommandBufferVulkan::BindIndexBuffer(const Buffer* buffer, const VkDeviceSize offset)
 	{
 		vkCmdBindIndexBuffer(_CmdBuf, static_cast<const BufferVulkan*>(buffer)->_Buffer, offset, VK_INDEX_TYPE_UINT32);
+	}
+
+	void CommandBufferVulkan::SetViewport(float X, float Y, float Width, float Height, float MinDepth, float MaxDepth)
+	{
+		VkViewport Viewport {
+			.x = X, .y = Y, .width = Width, .height = Height, .minDepth = MinDepth, .maxDepth = MaxDepth
+		};
+		vkCmdSetViewport(_CmdBuf, 0, 1, &Viewport);
+	}
+
+	void CommandBufferVulkan::SetScissor(i32 X, i32 Y, u32 Width, u32 Height)
+	{
+		VkRect2D Scissor {
+			.offset = VkOffset2D { .x = X, .y = Y },
+			.extent = VkExtent2D { .width = Width, .height = Height }
+
+		};
+		vkCmdSetScissor(_CmdBuf, 0, 1, &Scissor);
 	}
 
 	void CommandBufferVulkan::Dispatch(uint32 X, uint32 Y, uint32 Z)

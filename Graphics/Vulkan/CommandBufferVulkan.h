@@ -48,6 +48,9 @@ namespace Columbus
 		void BindVertexBuffers(uint32_t first, uint32_t count, const Buffer** buffers, const VkDeviceSize* offsets);
 		void BindIndexBuffer(const Buffer* buffer, const VkDeviceSize offset);
 
+		void SetViewport(float X, float Y, float Width, float Height, float MinDepth, float MaxDepth);
+		void SetScissor(i32 X, i32 Y, u32 Width, u32 Height);
+
 		void Dispatch(uint32 X, uint32 Y, uint32 Z);
 		void Draw(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance);
 		void DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);

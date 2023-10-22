@@ -5,6 +5,7 @@
 #include "Graphics/Camera.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/IrradianceVolume.h"
+#include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Input/Events.h"
 #include "Input/Input.h"
 #include "Math/Matrix.h"
@@ -24,6 +25,7 @@
 #include <thread>
 #include <vulkan/vulkan.h>
 #include <Core/Core.h>
+#include <Core/CVar.h>
 #include <Graphics/RenderGraph.h>
 #include <Graphics/RenderPasses/RenderPasses.h>
 
@@ -323,6 +325,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	return Scene;
 }
 
+ConsoleVariable<bool> test_flag("test.flag", "Description", true);
+
 // BEGIN_GPU_PARAMETERS(GPUSceneParameters)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Textures, GPU_PARAMETER_TEXTURE2D, 0)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Vertices, GPU_PARAMETER_BUFFER, 1)
@@ -413,7 +417,9 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- volumetrics and OpenVDB
 //			- ray-traced translucency
 //			- DDGI+RT reflections
+//			- GI1.0
 //			- simple billboard particles render
+//			- upscaling (simple and FSR)
 //		3. Common
 //			- PBR atmosphere rendering
 //			- filmic camera
@@ -423,7 +429,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //			- subsurface scattering
 //			- IES light profiles
 //			+ shader include files
-//			- fix descriptor set duplication
+//			+ fix descriptor set duplication
 //			- HLSL2021 instead of GLSL
 //			- make DebugRender work
 //			- shader caching system
@@ -458,6 +464,12 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 //	- solution 2 - simple - just create it in rendergraph
 int main()
 {
+	// auto Cvar = ConsoleVariableSystem::GetConsoleVariable("test.flag");
+
+	// printf("test.flag=%i\n", test_flag.GetValue());
+	// printf("test.flag=%f\n", Cvar->GetValue<float>());
+	// return 0;
+
 	InitializeEngine();
 
 	Camera camera;
@@ -516,8 +528,8 @@ int main()
 		}
 
 		renderGraph.Clear();
-		RenderPathTraced(renderGraph, camera, Window.Size);
-		// RenderDeferred(renderGraph, camera, Window.Size);
+		// RenderPathTraced(renderGraph, camera, Window.Size);
+		RenderDeferred(renderGraph, camera, Window.Size);
 		renderGraph.Execute(Window.Swapchain);
 
 		// std::string graphviz = renderGraph.ExportGraphviz();
