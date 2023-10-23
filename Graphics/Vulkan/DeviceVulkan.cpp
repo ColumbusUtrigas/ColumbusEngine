@@ -51,7 +51,8 @@ namespace Columbus
 
 			if (Attachments[i].LoadOp == AttachmentLoadOp::Load)
 			{
-				Attachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
+				// Attachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
+				Attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL; // TODO
 			} else
 			{
 				Attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // TODO
@@ -664,7 +665,7 @@ namespace Columbus
 		imageInfo.arrayLayers = Desc.ArrayLayers;
 		imageInfo.samples = SampleCountToVk(Desc.Samples);
 		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.usage = TextureUsageToImageUsageVk(Desc.Usage) | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // TODO
+		imageInfo.usage = TextureUsageToImageUsageVk(Desc.Usage) | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // TODO
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		imageInfo.queueFamilyIndexCount = 1;
 		imageInfo.pQueueFamilyIndices = &_FamilyIndex;

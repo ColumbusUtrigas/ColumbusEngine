@@ -108,7 +108,7 @@ namespace Columbus
 					{
 						Log::Error("%s {%s} %s", prefix, messageId, message);
 						WriteStacktraceToLog();
-						// __builtin_trap();
+						// DEBUGBREAK();
 					}
 
 					return VK_FALSE;

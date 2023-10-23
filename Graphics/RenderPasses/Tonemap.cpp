@@ -34,6 +34,7 @@ namespace Columbus
 	struct TonemapTextures
 	{
 		RenderGraphTextureRef ColourGradingLUT;
+		RenderGraphTextureRef TonemappedImage;
 	};
 
 	void ComputeColourGradingLUT(RenderGraph& Graph, TonemapTextures& Textures)
@@ -77,19 +78,27 @@ namespace Columbus
 		});
 	}
 
-	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture, const iVector2& WindowSize)
+	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture)
 	{
 		TonemapTextures Textures;
 		ComputeColourGradingLUT(Graph, Textures);
 
+		TextureDesc2 TonemapTextureDesc {
+			.Usage = TextureUsage::RenderTargetColor,
+			.Width = (u32)View.OutputSize.X, .Height = (u32)View.OutputSize.Y,
+			.Format = TextureFormat::BGRA8SRGB
+		};
+		Textures.TonemappedImage = Graph.CreateTexture(TonemapTextureDesc, "Tonemapped");
+
 		RenderPassParameters Parameters;
-		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Graph.GetSwapchainTexture() };
+		// Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Graph.GetSwapchainTexture() };
+		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.TonemappedImage };
 
 		RenderPassDependencies Dependencies;
 		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, WindowSize](RenderGraphContext& Context)
+		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View](RenderGraphContext& Context)
 		{
 			// TODO:
 			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
@@ -118,12 +127,14 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get());
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->SetViewport(0, 0, WindowSize.X, WindowSize.Y, 0, 1);
-			Context.CommandBuffer->SetScissor(0, 0, WindowSize.X, WindowSize.Y);
+			Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0, 1);
+			Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
 			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		});
+
+		return Textures.TonemappedImage;
 	}
 
 }

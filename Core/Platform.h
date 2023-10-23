@@ -15,10 +15,13 @@ namespace Columbus
 
 	#if defined(_MSC_VER)
 		#define COMPLLER_MSVC 1
+		#define DEBUGBREAK __debugbreak
 	#elif defined(__GNUC__)
 		#define COMPILER_GCC 1
+		#define DEBUGBREAK __builtin_trap
 	#elif defined(__clang__)
 		#define COMPILER_CLANG 1
+		#define DEBUGBREAK __builtin_trap
 	#else
 		#error Unsupported compiler.
 	#endif

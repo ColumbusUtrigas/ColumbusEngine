@@ -5,12 +5,12 @@
 namespace Columbus
 {
 
-	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const SceneTextures& Textures, const iVector2& WindowSize)
+	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures)
 	{
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::Storage,
-			.Width = (u32)WindowSize.X,
-			.Height = (u32)WindowSize.Y,
+			.Width = (u32)View.OutputSize.X,
+			.Height = (u32)View.OutputSize.Y,
 			.Format = TextureFormat::R8,
 		};
 		RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
@@ -22,7 +22,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Write(RTShadow, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-		Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, WindowSize](RenderGraphContext& Context)
+		Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, View](RenderGraphContext& Context)
 		{
 			static RayTracingPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
@@ -45,7 +45,7 @@ namespace Columbus
 			Context.BindGPUScene(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ShadowsBufferSet);
 
-			Context.CommandBuffer->TraceRays(Pipeline, WindowSize.X, WindowSize.Y, 1);
+			Context.CommandBuffer->TraceRays(Pipeline, View.OutputSize.X, View.OutputSize.Y, 1);
 		});
 
 		return RTShadow;

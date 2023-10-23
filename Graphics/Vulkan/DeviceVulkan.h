@@ -39,6 +39,7 @@ namespace Columbus
 	public:
 		VkPhysicalDevice _PhysicalDevice;
 		VkDevice _Device;
+		VkInstance _Instance;
 
 		VkPhysicalDeviceVulkan12Properties _Vulkan12Properties;
 		VkPhysicalDeviceVulkan12Features _Vulkan12Features;
@@ -70,7 +71,7 @@ namespace Columbus
 		TextureVulkan* _CreateTexture(const TextureDesc2& Desc);
 	public:
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
-			_PhysicalDevice(PhysicalDevice)
+			_PhysicalDevice(PhysicalDevice), _Instance(Instance)
 		{
 			VkFunctions.LoadFunctions(Instance);
 

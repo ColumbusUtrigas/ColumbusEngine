@@ -55,7 +55,7 @@ namespace Columbus
 			createInfo.imageColorSpace = surfaceFormat.colorSpace;
 			createInfo.imageExtent = extent;
 			createInfo.imageArrayLayers = 1;
-			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
 			/*auto indices = findQueueFamilies(physicalDevice);
 			uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -190,6 +190,7 @@ namespace Columbus
 				auto TargetTexture = new TextureVulkan({});
 				TargetTexture->_Image = swapChainImages[i];
 				TargetTexture->_View = swapChainImageViews[i];
+				TargetTexture->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 				Textures.push_back(TargetTexture);
 			}
 		}

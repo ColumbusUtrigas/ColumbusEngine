@@ -25,11 +25,11 @@ namespace Columbus
 		uint FrameNumber;
 	};
 
-	void RenderPathTraced(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize)
+	void RenderPathTraced(RenderGraph& Graph, const RenderView& View)
 	{
 		TextureDesc2 PTTextureDesc {
 			.Usage = TextureUsage::Storage,
-			.Width = (uint32)WindowSize.X, .Height = (uint32)WindowSize.Y,
+			.Width = (uint32)View.OutputSize.X, .Height = (uint32)View.OutputSize.Y,
 			.Format = TextureFormat::RGBA16F,
 		};
 		RenderGraphTextureRef RTImage = Graph.CreateTexture(PTTextureDesc, "PathTraceTexture");
@@ -40,7 +40,7 @@ namespace Columbus
 			RenderPassDependencies Dependencies;
 			Dependencies.Write(RTImage, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-			Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [RTImage, &MainCamera, WindowSize](RenderGraphContext& Context)
+			Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [RTImage, View](RenderGraphContext& Context)
 			{
 				static RayTracingPipeline* PTPipeline = nullptr;
 				if (PTPipeline == nullptr)
@@ -56,7 +56,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 				Context.Device->UpdateDescriptorSet(RTSet, 1, 0, Context.GetRenderGraphTexture(RTImage).get());
 
-				GPUCamera UpdatedCamera = GPUCamera(MainCamera);
+				GPUCamera UpdatedCamera = GPUCamera(View.Camera);
 				Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 				Context.Scene->MainCamera = UpdatedCamera;
 
@@ -72,11 +72,11 @@ namespace Columbus
 				Context.BindGPUScene(PTPipeline);
 
 				Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
-				Context.CommandBuffer->TraceRays(PTPipeline, WindowSize.X, WindowSize.Y, 1);
+				Context.CommandBuffer->TraceRays(PTPipeline, View.OutputSize.X, View.OutputSize.Y, 1);
 			});
 		}
 
-		TonemapPass(Graph, RTImage, WindowSize);
+		TonemapPass(Graph, View, RTImage);
 	}
 
 }

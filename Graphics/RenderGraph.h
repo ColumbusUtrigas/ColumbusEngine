@@ -79,6 +79,7 @@ namespace Columbus
 		// TODO: View-related
 		uint32_t CurrentSwapchainImageIndex = 0;
 		iVector2 CurrentSwapchainSize{-1};
+		Texture2* SwapchainImage;
 	};
 
 	struct RenderGraphContext
@@ -150,6 +151,9 @@ namespace Columbus
 		RenderGraphPassId FirstUsage = INT_MAX;
 		RenderGraphPassId LastUsage = INT_MIN;
 
+		// Passes can overwrite a texture, incrementing a version
+		int Version = -1;
+
 		RenderGraphTexture(const TextureDesc2& Desc, std::string_view Name, RenderGraphTextureId Id)
 			: Desc(Desc), DebugName(Name), Id(Id) {}
 	};
@@ -157,6 +161,7 @@ namespace Columbus
 	struct RenderPassTextureDependency
 	{
 		RenderGraphTextureId Texture;
+		int Version = -1;
 
 		// TODO?
 		VkAccessFlags Access;
@@ -167,12 +172,12 @@ namespace Columbus
 	{
 		void Write(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{
-			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, Access, Stage });
+			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage });
 		}
 
 		void Read(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{
-			TextureReadResources.push_back(RenderPassTextureDependency { Texture, Access, Stage });
+			TextureReadResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage });
 		}
 	private:
 		fixed_vector<RenderPassTextureDependency, 32> TextureWriteResources; // TODO: more efficient data storage

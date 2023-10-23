@@ -6,6 +6,7 @@
 #include "BufferVulkan.h"
 #include "DeviceVulkanFunctions.h"
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -55,6 +56,10 @@ namespace Columbus
 		void Draw(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance);
 		void DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
 		void TraceRays(const RayTracingPipeline* pipeline, uint32_t x, uint32_t y, uint32_t depth);
+
+		// TODO: layout api
+		void TransitionImageLayout(Texture2* Texture, VkImageLayout NewLayout);
+		void CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size);
 
 		const VkCommandBuffer& _GetHandle() const { return _CmdBuf; }
 

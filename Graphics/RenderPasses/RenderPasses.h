@@ -2,6 +2,7 @@
 
 #include "Common/Image/Image.h"
 #include "Graphics/Core/GraphicsCore.h"
+#include "Graphics/Core/View.h"
 #include "Graphics/IrradianceVolume.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>
@@ -15,8 +16,10 @@ namespace Columbus
 	// Common
 	//
 
-	void TonemapPass(RenderGraph& Graph, RenderGraphTextureRef SceneTexture, const iVector2& WindowSize);
-	void DebugOverlayPass(RenderGraph& Graph, RenderGraphTextureRef Texture); // TODO: how to specify R/W resources in the render graph?
+	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
+
+	void InitImguiRendering(SPtr<DeviceVulkan> Device, SwapchainVulkan* Swapchain);
+	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture);
 
 	// **********************************
 	// Real-time
@@ -31,18 +34,18 @@ namespace Columbus
 		RenderGraphTextureRef GBufferDS; // Depth Stencil
 	};
 
-	SceneTextures CreateSceneTextures(RenderGraph& Graph, const iVector2& WindowSize);
-	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures, const iVector2& WindowSize);
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures);
-	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
+	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View);
+	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures);
+	void RenderDeferred(RenderGraph& Graph, const RenderView& View);
 
 	// Real-time raytracing
 	//
-	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const SceneTextures& Textures, const iVector2& WindowSize);
+	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures);
 
 	// **********************************
 	// Path-Tracing
 	//
-	void RenderPathTraced(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize); // TODO: View instead of window/camera
+	void RenderPathTraced(RenderGraph& Graph, const RenderView& View);
 
 }

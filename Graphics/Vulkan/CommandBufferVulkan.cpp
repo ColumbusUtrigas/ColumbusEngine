@@ -1,6 +1,7 @@
 #include "CommandBufferVulkan.h"
 #include "Common.h"
 #include "BufferVulkan.h"
+#include "TextureVulkan.h"
 #include "PipelinesVulkan.h"
 #include "TypeConversions.h"
 
@@ -189,6 +190,61 @@ namespace Columbus
 			&vkpipe->HitRegionSBT,
 			&vkpipe->CallableRegionSBT,
 			x, y, depth);
+	}
+
+	void CommandBufferVulkan::TransitionImageLayout(Texture2* Texture, VkImageLayout NewLayout)
+	{
+		auto vktex = static_cast<TextureVulkan*>(Texture);
+		VkImageAspectFlags AspectFlags = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
+
+		VkImageMemoryBarrier Barrier;
+		Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		Barrier.pNext = nullptr;
+		Barrier.srcAccessMask = VK_ACCESS_NONE;
+		Barrier.dstAccessMask = VK_ACCESS_NONE;
+		Barrier.oldLayout = vktex->_Layout;
+		Barrier.newLayout = NewLayout;
+		Barrier.srcQueueFamilyIndex = 0;
+		Barrier.dstQueueFamilyIndex = 0;
+		Barrier.image = vktex->_Image;
+		Barrier.subresourceRange.aspectMask = AspectFlags;
+		Barrier.subresourceRange.baseArrayLayer = 0; // TODO:
+		Barrier.subresourceRange.levelCount = 1; // TODO:
+		Barrier.subresourceRange.baseMipLevel = 0; // TODO:
+		Barrier.subresourceRange.layerCount = 1; // TODO:
+
+		vkCmdPipelineBarrier(_CmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			0, 0, // memory barrier
+			0, 0, // buffer memory barrier
+			0, 1, &Barrier);
+
+		vktex->_Layout = NewLayout;
+	}
+
+	void CommandBufferVulkan::CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size)
+	{
+		auto srcvk = static_cast<const TextureVulkan*>(Src);
+		auto dstvk = static_cast<const TextureVulkan*>(Dst);
+
+		VkImageCopy Region {
+			.srcSubresource = VkImageSubresourceLayers{
+				.aspectMask = TextureFormatToAspectMaskVk(Src->GetDesc().Format),
+				.mipLevel = 0, // TODO:
+				.baseArrayLayer = 0, // TODO:
+				.layerCount = 1, // TODO:
+			},
+			.srcOffset = VkOffset3D{SrcOffset.X, SrcOffset.Y, SrcOffset.Z},
+			.dstSubresource = VkImageSubresourceLayers{
+				.aspectMask = TextureFormatToAspectMaskVk(Dst->GetDesc().Format),
+				.mipLevel = 0, // TODO:
+				.baseArrayLayer = 0, // TODO:
+				.layerCount = 1, // TODO:
+			},
+			.dstOffset = VkOffset3D{DstOffset.X, DstOffset.Y, DstOffset.Z},
+			.extent = VkExtent3D{(u32)Size.X, (u32)Size.Y, (u32)Size.Z}
+		};
+
+		vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Image, dstvk->_Layout, 1, &Region);
 	}
 
 	CommandBufferVulkan::~CommandBufferVulkan()

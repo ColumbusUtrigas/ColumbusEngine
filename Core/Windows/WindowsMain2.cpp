@@ -327,6 +327,60 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 ConsoleVariable<bool> test_flag("test.flag", "Description", true);
 
+void InitializeImgui(WindowVulkan& Window, SPtr<DeviceVulkan> Device)
+{
+	ImGui::CreateContext();
+	ImGui_ImplSDL2_InitForVulkan(Window.Window);
+	// InitImguiRendering(Device, Window.Swapchain);
+}
+
+void NewFrameImgui(WindowVulkan& Window)
+{
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	// Editor::ApplyDarkTheme();
+	io.DisplaySize = {(float)Window.Size.X, (float)Window.Size.Y};
+
+	if (io.Fonts->IsBuilt())
+	{
+		ImGui::NewFrame();
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplSDL2_NewFrame(Window.Window);
+	}
+}
+
+// 	virtual void Setup(RenderGraphContext& Context) override
+// 	{
+// 		// init imgui
+// 		ImGui_ImplSDL2_InitForVulkan(Window.Window);
+// 		ImGui_ImplVulkan_InitInfo imguiVk{};
+// 		imguiVk.Instance = Window.Instance.instance;
+// 		imguiVk.PhysicalDevice = Context.Device->_PhysicalDevice;
+// 		imguiVk.Device = Context.Device->_Device;
+// 		imguiVk.QueueFamily = Context.Device->_FamilyIndex;
+// 		imguiVk.Queue = *Context.Device->_ComputeQueue;
+// 		imguiVk.DescriptorPool = Context.Device->_DescriptorPool;
+// 		imguiVk.MinImageCount = Window.Swapchain->minImageCount;
+// 		imguiVk.ImageCount = Window.Swapchain->imageCount;
+// 		ImGui_ImplVulkan_Init(&imguiVk, Context.VulkanRenderPass);
+
+// 		{
+// 			auto CommandBuffer = Context.Device->CreateCommandBufferShared();
+// 			CommandBuffer->Reset();
+// 			CommandBuffer->Begin();
+// 			ImGui_ImplVulkan_CreateFontsTexture(CommandBuffer->_CmdBuf);
+
+// 			VkSubmitInfo end_info = {};
+// 			end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+// 			end_info.commandBufferCount = 1;
+// 			end_info.pCommandBuffers = &CommandBuffer->_CmdBuf;
+// 			vkEndCommandBuffer(CommandBuffer->_CmdBuf);
+// 			vkQueueSubmit(*Context.Device->_ComputeQueue, 1, &end_info, VK_NULL_HANDLE);
+
+// 			vkDeviceWaitIdle(Context.Device->_Device);
+// 			ImGui_ImplVulkan_DestroyFontUploadObjects();
+// 		}
+// 	}
+
 // BEGIN_GPU_PARAMETERS(GPUSceneParameters)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Textures, GPU_PARAMETER_TEXTURE2D, 0)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Vertices, GPU_PARAMETER_BUFFER, 1)
@@ -495,6 +549,8 @@ int main()
 	Volume.ProbesCount = { 5, 4, 5 };
 	Volume.Extent = { 250, 320, 500 };
 
+	InitializeImgui(Window, device);
+
 	bool running = true;
 	while (running)
 	{
@@ -503,9 +559,11 @@ int main()
 
 		camera.Update();
 
+		NewFrameImgui(Window);
+
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			// ImGui_ImplSDL2_ProcessEvent(&event);
+			ImGui_ImplSDL2_ProcessEvent(&event);
 			if (event.type == SDL_QUIT) {
 				running = false;
 			}
@@ -521,16 +579,26 @@ int main()
 			}
 		}
 
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.Fonts->IsBuilt()) // TODO:
+			ImGui::ShowDemoWindow();
+
 		if (Window.Swapchain->IsOutdated)
 		{
 			device->QueueWaitIdle();
 			Window.RecreateSwapchain();
 		}
 
+		RenderView View {
+			.Swapchain = Window.Swapchain,
+			.OutputSize = Window.Size,
+			.Camera = camera,
+		};
+
 		renderGraph.Clear();
-		// RenderPathTraced(renderGraph, camera, Window.Size);
-		RenderDeferred(renderGraph, camera, Window.Size);
-		renderGraph.Execute(Window.Swapchain);
+		// RenderPathTraced(renderGraph, View);
+		RenderDeferred(renderGraph, View);
+		renderGraph.Execute(Window.Swapchain); // TODO: move swapchain handling out of rendergraph
 
 		// std::string graphviz = renderGraph.ExportGraphviz();
 		// printf("%s\n", graphviz.c_str());

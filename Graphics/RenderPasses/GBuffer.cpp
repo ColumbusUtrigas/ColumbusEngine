@@ -1,7 +1,9 @@
 #include "Core/Core.h"
 #include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Types.h"
+#include "Graphics/Core/View.h"
 #include "Graphics/RenderGraph.h"
+#include "Graphics/Vulkan/TypeConversions.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 
@@ -14,12 +16,12 @@ namespace Columbus
 		uint32_t ObjectId;
 	};
 
-	SceneTextures CreateSceneTextures(RenderGraph& Graph, const iVector2& WindowSize)
+	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View)
 	{
 		TextureDesc2 CommonDesc;
 		CommonDesc.Usage = TextureUsage::RenderTargetColor;
-		CommonDesc.Width = WindowSize.X;
-		CommonDesc.Height = WindowSize.Y;
+		CommonDesc.Width = View.OutputSize.X;
+		CommonDesc.Height = View.OutputSize.Y;
 
 		TextureDesc2 AlbedoDesc = CommonDesc;
 		TextureDesc2 NormalDesc = CommonDesc;
@@ -42,7 +44,7 @@ namespace Columbus
 		return Result;
 	}
 
-	void RenderGBufferPass(RenderGraph& Graph, const Camera& MainCamera, SceneTextures& Textures, const iVector2& WindowSize)
+	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
 	{
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferAlbedo };
@@ -53,7 +55,7 @@ namespace Columbus
 
 		RenderPassDependencies Dependencies;
 
-		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, Dependencies, [&MainCamera, WindowSize](RenderGraphContext& Context)
+		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
 			// TODO: refactor, create a proper shader system
 			static GraphicsPipeline* Pipeline = nullptr;
@@ -74,8 +76,8 @@ namespace Columbus
 			}
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->SetViewport(0, 0, WindowSize.X, WindowSize.Y, 0.0f, 1.0f);
-			Context.CommandBuffer->SetScissor(0, 0, WindowSize.X, WindowSize.Y);
+			Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
+			Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 			Context.BindGPUScene(Pipeline);
 
 			PerObjectParameters Parameters;
@@ -84,8 +86,8 @@ namespace Columbus
 			{
 				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
 				Parameters.M = Matrix(1);
-				Parameters.V = MainCamera.GetViewMatrix();
-				Parameters.P = MainCamera.GetProjectionMatrix();
+				Parameters.V = View.Camera.GetViewMatrix();
+				Parameters.P = View.Camera.GetProjectionMatrix();
 				Parameters.ObjectId = i;
 
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
@@ -94,12 +96,12 @@ namespace Columbus
 		});
 	}
 
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const iVector2& WindowSize, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures)
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures)
 	{
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::Storage,
-			.Width = (uint32)WindowSize.X,
-			.Height = (uint32)WindowSize.Y,
+			.Width = (uint32)View.OutputSize.X,
+			.Height = (uint32)View.OutputSize.Y,
 			.Format = TextureFormat::RGBA16F,
 		};
 
@@ -113,7 +115,7 @@ namespace Columbus
 		Dependencies.Read(ShadowTexture, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 
-		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [WindowSize, LightingTexture, ShadowTexture, Textures](RenderGraphContext& Context)
+		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingTexture, ShadowTexture, Textures](RenderGraphContext& Context)
 		{
 			// TODO: shader system
 			static ComputePipeline* Pipeline = nullptr;
@@ -136,22 +138,40 @@ namespace Columbus
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
 
-			Context.CommandBuffer->Dispatch(WindowSize.X, WindowSize.Y, 1);
+			Context.CommandBuffer->Dispatch(View.OutputSize.X, View.OutputSize.Y, 1);
 		});
 
 		return LightingTexture;
 	}
 
-	void RenderDeferred(RenderGraph& Graph, const Camera& MainCamera, const iVector2& WindowSize)
+	void RenderDeferred(RenderGraph& Graph, const RenderView& View)
 	{
-		SceneTextures Textures = CreateSceneTextures(Graph, WindowSize);
+		SceneTextures Textures = CreateSceneTextures(Graph, View);
 
-		RenderGBufferPass(Graph, MainCamera, Textures, WindowSize);
+		RenderGBufferPass(Graph, View, Textures);
 
-		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, Textures, WindowSize);
-		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, WindowSize, ShadowTexture, Textures);
-		// DebugOverlayPass(Graph, LightingTexture);
-		TonemapPass(Graph, LightingTexture, WindowSize);
+		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, View, Textures);
+		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, ShadowTexture, Textures);
+		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
+		DebugOverlayPass(Graph, View, TonemappedImage);
+
+		// copy to swapchain
+		{
+			RenderPassParameters Parameters;
+			RenderPassDependencies Dependencies;
+			Dependencies.Read(TonemappedImage, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+			Dependencies.Write(Graph.GetSwapchainTexture(), VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+			Graph.AddPass("CopyToSwapchain", RenderGraphPassType::Compute, Parameters, Dependencies, [TonemappedImage, View](RenderGraphContext& Context)
+			{
+				SPtr<Texture2> Tonemapped = Context.GetRenderGraphTexture(TonemappedImage);
+				Texture2* Swapchain = Context.RenderData.SwapchainImage;
+
+				Context.CommandBuffer->TransitionImageLayout(Tonemapped.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+				Context.CommandBuffer->TransitionImageLayout(Swapchain, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+				Context.CommandBuffer->CopyImage(Tonemapped.get(), Swapchain, {0,0,0}, {0,0,0}, {View.OutputSize, 1});
+			});
+		}
 	}
 
 }

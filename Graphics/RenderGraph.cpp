@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace std {
 	template <> struct hash<Columbus::RenderPassAttachment>
@@ -321,6 +322,30 @@ namespace Columbus
 			Pass.Dependencies.Write(Parameters.DepthStencilAttachment->Texture, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 		}
 
+		// TODO: validate for duplicates
+
+		// versioning
+		for (auto& Read : Pass.Dependencies.TextureReadResources)
+		{
+			Read.Version = Textures[Read.Texture].Version;
+		}
+		
+		for (auto& Write : Pass.Dependencies.TextureWriteResources)
+		{
+			if (Write.Texture != SwapchainId)
+			{
+				// If there was a version of a texture before, we overwrite this texture and, therefore, depend on it
+				if (Textures[Write.Texture].Version >= 0)
+				{
+					Pass.Dependencies.Read(Write.Texture, Write.Access, Write.Stage);
+					Pass.Dependencies.TextureReadResources[Pass.Dependencies.TextureReadResources.size() - 1].Version = Textures[Write.Texture].Version;
+				}
+
+				Textures[Write.Texture].Version++;
+				Write.Version = Write.Texture != SwapchainId ? Textures[Write.Texture].Version : -1;
+			}
+		}
+
 		Passes.emplace_back(std::move(Pass));
 	}
 
@@ -445,7 +470,7 @@ namespace Columbus
 				printf("%s (barriers:", Pass.Name.c_str());
 				for (auto& Barrier : Pass.TextureBarriers)
 				{
-					printf(" %s,", Textures[Barrier.Texture].DebugName.c_str());
+					printf(" %s_v%i,", Textures[Barrier.Texture].DebugName.c_str(), Barrier.Reader.Version);
 				}
 				printf("),");
 			}
@@ -485,6 +510,8 @@ namespace Columbus
 			iVector2 SwapchainSize{ (int)Swapchain->swapChainExtent.width, (int)Swapchain->swapChainExtent.height };
 			RenderData.CurrentSwapchainSize = SwapchainSize;
 		}
+
+		RenderData.SwapchainImage = Swapchain->Textures[RenderData.CurrentSwapchainImageIndex];
 
 		Build(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
 
@@ -587,19 +614,11 @@ namespace Columbus
 			CommandBuffer->EndDebugMarker();
 		}
 
+		// TODO: remove swapchain logic and present from render graph, support for windowless rendering
+
 		// swapchain barrier
 		{
-			TextureVulkan* Texture = static_cast<TextureVulkan*>(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
-
-			vk::ImageAspectFlags AspectFlags = (vk::ImageAspectFlags)TextureFormatToAspectMaskVk(TextureFormat::RGBA8);
-			vk::ImageMemoryBarrier Barrier(vk::AccessFlagBits::eNone, vk::AccessFlagBits::eNone,
-				vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, 0, 0, Texture->_Image,
-				vk::ImageSubresourceRange(AspectFlags, 0, 1, 0, 1));
-
-			vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-				0, 0, // memory barrier
-				0, 0, // buffer memory barrier
-				0, 1, (VkImageMemoryBarrier*)&Barrier);
+			CommandBuffer->TransitionImageLayout(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		}
 
 		CommandBuffer->End();
@@ -623,21 +642,28 @@ namespace Columbus
 
 		for (const auto& Texture : Textures)
 		{
-			Result += Texture.DebugName + " [shape=box]\n";
+			for (int Version = 0; Version <= Texture.Version; Version++)
+			{
+				Result += Texture.DebugName + "_v" + std::to_string(Version) + " [shape=box]\n";
+			}
 		}
 
 		for (const auto& Pass : Passes)
 		{
 			for (const auto& Read : Pass.Dependencies.TextureReadResources)
 			{
-				Result += Textures[Read.Texture].DebugName + " -> " + Pass.Name + "\n";
+				Result += Textures[Read.Texture].DebugName + "_v" + std::to_string(Read.Version) + " -> " + Pass.Name + "\n";
 			}
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
 			{
 				if (Write.Texture != SwapchainId)
 				{
-					Result += Pass.Name + " -> " + Textures[Write.Texture].DebugName + "\n";
+					Result += Pass.Name + " -> " + Textures[Write.Texture].DebugName + "_v" + std::to_string(Write.Version) + "\n";
+				}
+				else
+				{
+					Result += Pass.Name + " -> " + "Swapchain\n";
 				}
 			}
 		}
