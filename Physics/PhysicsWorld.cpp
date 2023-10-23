@@ -36,7 +36,8 @@ namespace Columbus
 
 	void PhysicsWorld::Step(float aDeltaTime, int aSubSteps)
 	{
-		PROFILE_CPU(ProfileModule::Physics);
+		// TODO:
+		// PROFILE_CPU(ProfileModule::Physics);
 		mWorld->stepSimulation(aDeltaTime, aSubSteps);
 	}
 

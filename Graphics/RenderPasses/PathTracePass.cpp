@@ -1,4 +1,5 @@
 #include "Core/Core.h"
+#include "Core/CVar.h"
 #include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Texture.h"
 #include "Graphics/Core/Types.h"
@@ -6,10 +7,13 @@
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
+
+	// TODO: temporal accumulation, rays per pixel
+
+	ConsoleVariable<int> CVar_Bounces("r.PathTracing.Bounces", "Number of bounces for each path, default - 2", 2);
 
 	// no need to GPUParametrize push constants?
 	struct PathTraceParameters
@@ -65,7 +69,7 @@ namespace Columbus
 				int frame = rand() % 2000;
 				int bounces = 2;
 
-				PathTraceParameters rayParams = { UpdatedCamera, (int)frame, (int)reset, bounces };
+				PathTraceParameters rayParams = { UpdatedCamera, (int)frame, (int)reset, CVar_Bounces.GetValue() };
 
 				Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
 				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 7, 1, &RTSet);
@@ -76,7 +80,9 @@ namespace Columbus
 			});
 		}
 
-		TonemapPass(Graph, View, RTImage);
+		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, RTImage);
+		DebugOverlayPass(Graph, View, TonemappedImage);
+		CopyToSwapchain(Graph, View, TonemappedImage);
 	}
 
 }

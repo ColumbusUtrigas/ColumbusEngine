@@ -28,7 +28,8 @@ namespace Columbus
 
 	void ParticleEmitterCPU::Update(float TimeTick)
 	{
-		PROFILE_CPU(ProfileModule::Particles);
+		// TODO:
+		// PROFILE_CPU(ProfileModule::Particles);
 
 		if (MaxParticles > PreviousMaxParticles)
 		{

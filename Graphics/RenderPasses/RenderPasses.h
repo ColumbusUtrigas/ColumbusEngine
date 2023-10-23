@@ -10,7 +10,7 @@
 namespace Columbus
 {
 
-	// TODO: View, which contains size, swapchain
+	// TODO: internal render resolution, upscaling
 
 	// **********************************
 	// Common
@@ -19,7 +19,8 @@ namespace Columbus
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
 
 	void InitImguiRendering(SPtr<DeviceVulkan> Device, SwapchainVulkan* Swapchain);
-	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture);
+	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture); // TODO: be able to render debug overlay after render graph execution
+	void CopyToSwapchain(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture);
 
 	// **********************************
 	// Real-time

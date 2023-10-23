@@ -4,8 +4,6 @@
 
 // TODO: cvar flags (readonly)
 // TODO: variable history with links
-// TODO: command interpretation
-// TODO: command history
 // TODO: thread safety
 
 // usage:
@@ -53,9 +51,9 @@ struct CVarData
 		// TODO: thread safety
 		switch (Type)
 		{
-		case CVarDataType::Bool:  Bool  = (T)Value;
-		case CVarDataType::Int:   Int   = (T)Value;
-		case CVarDataType::Float: Float = (T)Value;
+		case CVarDataType::Bool:  Bool  = (T)Value; break;
+		case CVarDataType::Int:   Int   = (T)Value; break;
+		case CVarDataType::Float: Float = (T)Value; break;
 		default:
 			assert(false);
 		}
@@ -97,4 +95,5 @@ private:
 namespace ConsoleVariableSystem
 {
 	CVarData* GetConsoleVariable(const char* Name);
+	char*     RunConsoleCommand(const char* Command); // Allocates a string to return output
 }

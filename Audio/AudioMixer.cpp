@@ -52,7 +52,8 @@ namespace Columbus
 
 	void AudioMixer::Update(Sound::Frame* Frames, uint32 Count)
 	{
-		PROFILE_CPU(ProfileModule::Audio);
+		//TODO
+		//PROFILE_CPU(ProfileModule::Audio);
 
 		if (!BufferInitialized)
 		{

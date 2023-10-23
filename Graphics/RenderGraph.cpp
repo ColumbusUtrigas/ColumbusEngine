@@ -13,7 +13,10 @@
 #include <algorithm>
 #include <memory>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
+
+IMPLEMENT_CPU_PROFILING_COUNTER("RG Clear", "RenderGraph", Counter_RenderGraphClear);
+IMPLEMENT_CPU_PROFILING_COUNTER("RG Build", "RenderGraph", Counter_RenderGraphBuild);
+IMPLEMENT_CPU_PROFILING_COUNTER("RG Execute", "RenderGraph", Counter_RenderGraphExecute);
 
 namespace std {
 	template <> struct hash<Columbus::RenderPassAttachment>
@@ -351,6 +354,8 @@ namespace Columbus
 
 	void RenderGraph::Clear()
 	{
+		PROFILE_CPU(Counter_RenderGraphClear);
+
 		Passes.clear();
 		Textures.clear();
 
@@ -368,6 +373,7 @@ namespace Columbus
 
 	void RenderGraph::Build(Texture2* SwapchainImage)
 	{
+		PROFILE_CPU(Counter_RenderGraphBuild);
 		// TODO: topological sort and graph reordering
 		// TODO: resource versioning for R/W passes and mipmap generation
 
@@ -495,25 +501,30 @@ namespace Columbus
 		auto& PerFrameData = RenderData.PerFrameData[RenderData.CurrentPerFrameData];
 		auto CommandBuffer = PerFrameData.CommandBuffer;
 
-		Device->WaitForFence(PerFrameData.Fence, UINT64_MAX);
-		Device->ResetFence(PerFrameData.Fence);
-
-		if (!Device->AcqureNextImage(Swapchain, PerFrameData.ImageSemaphore, RenderData.CurrentSwapchainImageIndex))
 		{
-			// swapchain invalidated
-			// TODO: recreate swapchain
-			Log::Fatal("Swapchain Invalidated");
-		}
+			PROFILE_CPU(Counter_RenderGraphExecute);
+			Device->WaitForFence(PerFrameData.Fence, UINT64_MAX);
+			Device->ResetFence(PerFrameData.Fence);
 
-		{
-			// Log::Message("Swapchain size: %ux%u", Swapchain->swapChainExtent.width, Swapchain->swapChainExtent.height);
-			iVector2 SwapchainSize{ (int)Swapchain->swapChainExtent.width, (int)Swapchain->swapChainExtent.height };
-			RenderData.CurrentSwapchainSize = SwapchainSize;
-		}
+			if (!Device->AcqureNextImage(Swapchain, PerFrameData.ImageSemaphore, RenderData.CurrentSwapchainImageIndex))
+			{
+				// swapchain invalidated
+				// TODO: recreate swapchain
+				Log::Fatal("Swapchain Invalidated");
+			}
 
-		RenderData.SwapchainImage = Swapchain->Textures[RenderData.CurrentSwapchainImageIndex];
+			{
+				// Log::Message("Swapchain size: %ux%u", Swapchain->swapChainExtent.width, Swapchain->swapChainExtent.height);
+				iVector2 SwapchainSize{ (int)Swapchain->swapChainExtent.width, (int)Swapchain->swapChainExtent.height };
+				RenderData.CurrentSwapchainSize = SwapchainSize;
+			}
+
+			RenderData.SwapchainImage = Swapchain->Textures[RenderData.CurrentSwapchainImageIndex];
+		}
 
 		Build(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
+
+		PROFILE_CPU(Counter_RenderGraphExecute);
 
 		// TODO: multithreaded rendering
 		RenderGraphContext Context{NULL, -1, Device, Scene, CommandBuffer, RenderData, *this};

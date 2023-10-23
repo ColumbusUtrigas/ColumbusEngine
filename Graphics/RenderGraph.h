@@ -3,6 +3,7 @@
 #include <Core/Core.h>
 #include <Graphics/Core/GraphicsCore.h>
 #include <Graphics/Vulkan/DeviceVulkan.h>
+#include <Profiling/Profiling.h>
 #include "GPUScene.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
@@ -14,6 +15,10 @@
 #include <optional>
 
 #include <vulkan/vulkan.h>
+
+DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphClear);
+DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphBuild);
+DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphExecute);
 
 namespace Columbus
 {

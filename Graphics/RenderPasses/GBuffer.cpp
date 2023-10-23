@@ -144,6 +144,24 @@ namespace Columbus
 		return LightingTexture;
 	}
 
+	void CopyToSwapchain(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture)
+	{
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies;
+		Dependencies.Read(Texture, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+		Dependencies.Write(Graph.GetSwapchainTexture(), VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+		Graph.AddPass("CopyToSwapchain", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, View](RenderGraphContext& Context)
+		{
+			SPtr<Texture2> Tonemapped = Context.GetRenderGraphTexture(Texture);
+			Texture2* Swapchain = Context.RenderData.SwapchainImage;
+
+			Context.CommandBuffer->TransitionImageLayout(Tonemapped.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+			Context.CommandBuffer->TransitionImageLayout(Swapchain, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			Context.CommandBuffer->CopyImage(Tonemapped.get(), Swapchain, { 0,0,0 }, { 0,0,0 }, { View.OutputSize, 1 });
+		});
+	}
+
 	void RenderDeferred(RenderGraph& Graph, const RenderView& View)
 	{
 		SceneTextures Textures = CreateSceneTextures(Graph, View);
@@ -154,24 +172,7 @@ namespace Columbus
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, ShadowTexture, Textures);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		DebugOverlayPass(Graph, View, TonemappedImage);
-
-		// copy to swapchain
-		{
-			RenderPassParameters Parameters;
-			RenderPassDependencies Dependencies;
-			Dependencies.Read(TonemappedImage, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-			Dependencies.Write(Graph.GetSwapchainTexture(), VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-			Graph.AddPass("CopyToSwapchain", RenderGraphPassType::Compute, Parameters, Dependencies, [TonemappedImage, View](RenderGraphContext& Context)
-			{
-				SPtr<Texture2> Tonemapped = Context.GetRenderGraphTexture(TonemappedImage);
-				Texture2* Swapchain = Context.RenderData.SwapchainImage;
-
-				Context.CommandBuffer->TransitionImageLayout(Tonemapped.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-				Context.CommandBuffer->TransitionImageLayout(Swapchain, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-				Context.CommandBuffer->CopyImage(Tonemapped.get(), Swapchain, {0,0,0}, {0,0,0}, {View.OutputSize, 1});
-			});
-		}
+		CopyToSwapchain(Graph, View, TonemappedImage);
 	}
 
 }

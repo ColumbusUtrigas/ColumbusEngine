@@ -23,11 +23,13 @@
 #include <cstdint>
 #include <memory>
 #include <thread>
+#include <chrono>
 #include <vulkan/vulkan.h>
 #include <Core/Core.h>
 #include <Core/CVar.h>
 #include <Graphics/RenderGraph.h>
 #include <Graphics/RenderPasses/RenderPasses.h>
+#include <Profiling/Profiling.h>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -326,6 +328,10 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 }
 
 ConsoleVariable<bool> test_flag("test.flag", "Description", true);
+ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 1", 1);
+
+DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
+IMPLEMENT_CPU_PROFILING_COUNTER("Total CPU", "CPU", Counter_TotalCPU);
 
 void InitializeImgui(WindowVulkan& Window, SPtr<DeviceVulkan> Device)
 {
@@ -518,12 +524,6 @@ void NewFrameImgui(WindowVulkan& Window)
 //	- solution 2 - simple - just create it in rendergraph
 int main()
 {
-	// auto Cvar = ConsoleVariableSystem::GetConsoleVariable("test.flag");
-
-	// printf("test.flag=%i\n", test_flag.GetValue());
-	// printf("test.flag=%f\n", Cvar->GetValue<float>());
-	// return 0;
-
 	InitializeEngine();
 
 	Camera camera;
@@ -550,10 +550,19 @@ int main()
 	Volume.Extent = { 250, 320, 500 };
 
 	InitializeImgui(Window, device);
+	ResetProfiling();
 
 	bool running = true;
 	while (running)
 	{
+		//Log::Message("%s: %f", Counter_TotalCPU.Text, Counter_TotalCPU.Time);
+		//Log::Message("%s: %f", Counter_RenderGraphClear.Text, Counter_RenderGraphClear.Time);
+		//Log::Message("%s: %f", Counter_RenderGraphBuild.Text, Counter_RenderGraphBuild.Time);
+		//Log::Message("%s: %f", Counter_RenderGraphExecute.Text, Counter_RenderGraphExecute.Time);
+
+		ResetProfiling();
+		PROFILE_CPU(Counter_TotalCPU);
+
 		float DeltaTime = timer.Elapsed();
 		timer.Reset();
 
@@ -579,9 +588,52 @@ int main()
 			}
 		}
 
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.Fonts->IsBuilt()) // TODO:
-			ImGui::ShowDemoWindow();
+		bool ConsoleFocus = false;
+
+ 		ImGuiIO& io = ImGui::GetIO();
+ 		if (io.Fonts->IsBuilt()) // TODO:
+		{
+ 			ImGui::ShowDemoWindow();
+ 
+			static char buf[1024]{ 0 };
+			static std::vector<UPtr<char>> History;
+
+			// TODO: history
+			// TODO: autocomplete
+			// TODO: move to a proper place
+			// TODO: show/hide with `
+			// TODO: block input
+			if (ImGui::Begin("Console"))
+			{
+				ConsoleFocus = ImGui::IsWindowFocused();
+
+				if (ImGui::BeginChild("Scroll", ImVec2(0, -30)))
+				{
+					ConsoleFocus |= ImGui::IsWindowFocused();
+					for (const auto& Str : History)
+					{
+						ImGui::TextWrapped("%s", Str.get());
+					}
+					ImGui::EndChild();
+				}
+
+				ImGui::Separator();
+				
+				if (ConsoleFocus && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+					ImGui::SetKeyboardFocusHere();
+
+				if (ImGui::InputText("Input", buf, 1024, ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					char cmd[1024];
+					snprintf(cmd, 1024, ">>> %s <<<", buf);
+
+					History.emplace_back(strdup(cmd));
+					History.emplace_back(ConsoleVariableSystem::RunConsoleCommand(buf));
+					memset(buf, 0, 1024);
+				}
+				ImGui::End();
+			}
+		}
 
 		if (Window.Swapchain->IsOutdated)
 		{
@@ -596,27 +648,42 @@ int main()
 		};
 
 		renderGraph.Clear();
-		// RenderPathTraced(renderGraph, View);
-		RenderDeferred(renderGraph, View);
+
+		if (render_cvar.GetValue() == 0)
+		{
+			RenderDeferred(renderGraph, View);
+		}
+		else
+		{
+			RenderPathTraced(renderGraph, View);
+		}
+
 		renderGraph.Execute(Window.Swapchain); // TODO: move swapchain handling out of rendergraph
+		// TODO: allow debug overlay to be rendered afterwards
 
 		// std::string graphviz = renderGraph.ExportGraphviz();
 		// printf("%s\n", graphviz.c_str());
 		// return 0;
 
-		auto keyboard = SDL_GetKeyboardState(NULL);
-		if (keyboard[SDL_SCANCODE_DOWN]) camera.Rot += Columbus::Vector3(5,0,0) * DeltaTime * 20;
-		if (keyboard[SDL_SCANCODE_UP]) camera.Rot += Columbus::Vector3(-5,0,0) * DeltaTime * 20;
-		if (keyboard[SDL_SCANCODE_LEFT]) camera.Rot += Columbus::Vector3(0,5,0) * DeltaTime * 20;
-		if (keyboard[SDL_SCANCODE_RIGHT]) camera.Rot += Columbus::Vector3(0,-5,0) * DeltaTime * 20;
+		if (!ConsoleFocus)
+		{
+			auto keyboard = SDL_GetKeyboardState(NULL);
+			if (keyboard[SDL_SCANCODE_DOWN]) camera.Rot += Columbus::Vector3(5,0,0) * DeltaTime * 20;
+			if (keyboard[SDL_SCANCODE_UP]) camera.Rot += Columbus::Vector3(-5,0,0) * DeltaTime * 20;
+			if (keyboard[SDL_SCANCODE_LEFT]) camera.Rot += Columbus::Vector3(0,5,0) * DeltaTime * 20;
+			if (keyboard[SDL_SCANCODE_RIGHT]) camera.Rot += Columbus::Vector3(0,-5,0) * DeltaTime * 20;
 
-		if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * CameraSpeed;
-		if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * CameraSpeed;
-		if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * CameraSpeed;
-		if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * CameraSpeed;
-		if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * CameraSpeed;
-		if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * CameraSpeed;
+			if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * CameraSpeed;
+			if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * CameraSpeed;
+			if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * CameraSpeed;
+			if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * CameraSpeed;
+			if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * CameraSpeed;
+			if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * CameraSpeed;
+		}
 	}
+
+	// TODO:
+	std::this_thread::sleep_for(std::chrono::milliseconds(3));
 
 	VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));
 	VK_CHECK(vkDeviceWaitIdle(device->_Device));
