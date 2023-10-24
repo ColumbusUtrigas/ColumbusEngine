@@ -17,6 +17,11 @@ namespace Columbus
 		VmaAllocation _Allocation;
 	public:
 		TextureVulkan(const TextureDesc2& Desc) : Texture2(Desc) {}
+
+		void SetSize(size_t SizeBytes)
+		{
+			Size = SizeBytes;
+		}
 	};
 
 }

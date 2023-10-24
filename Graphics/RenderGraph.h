@@ -147,6 +147,8 @@ namespace Columbus
 		SPtr<Texture2> Texture;
 		TextureDesc2 Desc;
 
+		size_t AllocatedSize = 0;
+
 		std::string DebugName;
 		RenderGraphTextureId Id;
 

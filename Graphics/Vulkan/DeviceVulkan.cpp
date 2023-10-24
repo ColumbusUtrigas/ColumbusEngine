@@ -629,6 +629,10 @@ namespace Columbus
 		vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 		VK_CHECK(vmaCreateImage(_Allocator, &imageInfo, &vmaallocInfo, &result->_Image, &result->_Allocation, nullptr));
 
+		VmaAllocationInfo allocationInfo;
+		vmaGetAllocationInfo(_Allocator, result->_Allocation, &allocationInfo);
+		result->SetSize(allocationInfo.size);
+
 		result->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VkImageViewCreateInfo viewInfo;

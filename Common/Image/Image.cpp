@@ -13,6 +13,8 @@
 namespace Columbus
 {
 
+	// TODO: refactor enums into a big array of formats
+
 	uint32 GetBPPFromFormat(TextureFormat Format)
 	{
 		switch (Format)
@@ -151,6 +153,8 @@ namespace Columbus
 		case TextureFormat::RG32F:   return "RG32F";  break;
 		case TextureFormat::RGB32F:  return "RGB32F"; break;
 		case TextureFormat::RGBA32F: return "RGBA32F"; break;
+
+		case TextureFormat::BGRA8SRGB: return "BGRA8sRGB"; break;
 
 		case TextureFormat::R11G11B10F: return "R11G11B10F"; break;
 

@@ -269,6 +269,7 @@ namespace Columbus
 	{
 		const auto ApplyTextureFromPool = [&Texture, this](RenderGraphPooledTexture& PooledTexture) {
 			Texture.Texture = PooledTexture.Texture;
+			Texture.AllocatedSize = PooledTexture.Texture->GetSize();
 			PooledTexture.Used = true;
 			Device->SetDebugName(Texture.Texture.get(), Texture.DebugName.c_str());
 		};

@@ -56,6 +56,33 @@ namespace Columbus
 		RenderTargetDepth,
 	};
 
+	static const char* TextureTypeToString(TextureType Type)
+	{
+		switch (Type)
+		{
+		case TextureType::Texture1D:        return "Texture1D";
+		case TextureType::Texture2D:        return "Texture2D";
+		case TextureType::Texture3D:        return "Texture3D";
+		case TextureType::TextureCube:      return "TextureCube";
+		case TextureType::Texture1DArray:   return "Texture1DArray";
+		case TextureType::Texture2DArray:   return "Texture2DArray";
+		case TextureType::TextureCubeArray: return "TextureCubeArray";
+		default:                            return "Undefined";
+		}
+	}
+
+	static const char* TextureUsageToString(TextureUsage Usage)
+	{
+		switch (Usage)
+		{
+		case TextureUsage::Sampled:           return "Sampled";
+		case TextureUsage::Storage:           return "Storage";
+		case TextureUsage::RenderTargetColor: return "RenderTargetColor";
+		case TextureUsage::RenderTargetDepth: return "RenderTargetDepth";
+		default:                              return "Undefined";
+		}
+	}
+
 	struct TextureDesc2
 	{
 		// Image description
@@ -90,8 +117,11 @@ namespace Columbus
 		TextureDesc2 _Desc;
 	protected:
 		Texture2(const TextureDesc2& Desc) : _Desc(Desc) {}
+
+		size_t Size = 0;
 	public:
 		const TextureDesc2& GetDesc() const { return _Desc; }
+		const size_t GetSize() const { return Size; }
 	};
 
 	// TODO: legacy

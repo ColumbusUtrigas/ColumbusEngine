@@ -42,6 +42,7 @@ struct CVarData
 		case CVarDataType::Float: return (T)Float;
 		default:
 			assert(false);
+			return T();
 		}
 	}
 

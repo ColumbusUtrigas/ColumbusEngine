@@ -1,4 +1,5 @@
 #include "Core/CVar.h"
+#include "Core/Util.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
@@ -99,8 +100,8 @@ namespace Columbus
 				History.emplace_back(ConsoleVariableSystem::RunConsoleCommand(buf));
 				memset(buf, 0, 1024);
 			}
-			ImGui::End();
 		}
+		ImGui::End();
 	}
 
 	bool IsDebugConsoleFocused()
@@ -113,8 +114,8 @@ namespace Columbus
 		RenderGraphDebugInformation Info;
 		Graph.GetDebugInformation(Info);
 
-		// TODO: show all passes on the timeline
-		// TODO: show all resources and each one's lifetime between passes
+		// TODO: show how resource are used in passes
+		// TODO: barriers/transitions
 		if (ImGui::Begin("RenderGraph Viz"))
 		{
 			const float margin = 5;
@@ -133,6 +134,7 @@ namespace Columbus
 
 			const ImColor texture_colour(15, 150, 128, 255);
 			const ImColor texture_text_colour(255, 255, 255, 255);
+			const ImColor tooltip_header_colour(247, 217, 17, 255);
 
 			const ImVec2 window_size = ImGui::GetContentRegionAvail();
 			const ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -144,9 +146,16 @@ namespace Columbus
 			ImVec2 current_pos = current_line_pos;
 			for (const auto& Pass : Info.Passes)
 			{
-				draw_list->AddRectFilled(current_pos, current_pos + rect_size, pass_colours[(int)Pass.Type]);
+				const ImVec2 min = current_pos;
+				const ImVec2 max = current_pos + rect_size;
+				const ImVec2 middle = (min + max) / 2;
+				draw_list->AddRectFilled(min, max, pass_colours[(int)Pass.Type]);
 
-				ImVec2 middle = (current_pos + current_pos + rect_size) / 2;
+				bool hovered = ImGui::GetIO().MousePos.x > min.x && ImGui::GetIO().MousePos.y > min.y && ImGui::GetIO().MousePos.x < max.x && ImGui::GetIO().MousePos.y < max.y;
+
+				if (hovered)
+					ImGui::SetTooltip("%s\nId: %i\n", Pass.Name.c_str(), Pass.Id);
+
 				ImVec2 text_size = ImGui::CalcTextSize(Pass.Name.c_str());
 				ImVec2 text_pos = middle - text_size / 2;
 				draw_list->AddText(text_pos, pass_text_colours[(int)Pass.Type], Pass.Name.c_str());
@@ -156,10 +165,45 @@ namespace Columbus
 			for (const auto& Texture : Info.Textures)
 			{
 				current_line_pos.y += vertical_size + margin;
-				const ImVec2 start_life = ImVec2(Texture.FirstUsage * rect_size.x, 0) + current_line_pos;
-				const ImVec2 end_life = ImVec2((Texture.LastUsage + 1) * rect_size.x, vertical_size) + current_line_pos;
-				const ImVec2 middle = (start_life + end_life) / 2;
-				draw_list->AddRectFilled(start_life, end_life, texture_colour);
+				const ImVec2 min = ImVec2(Texture.FirstUsage * rect_size.x, 0) + current_line_pos;
+				const ImVec2 max = ImVec2((Texture.LastUsage + 1) * rect_size.x, vertical_size) + current_line_pos;
+				const ImVec2 middle = (min + max) / 2;
+				draw_list->AddRectFilled(min, max, texture_colour);
+
+				bool hovered = ImGui::GetIO().MousePos.x > min.x && ImGui::GetIO().MousePos.y > min.y && ImGui::GetIO().MousePos.x < max.x && ImGui::GetIO().MousePos.y < max.y;
+
+				if (hovered)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextColored(tooltip_header_colour, "%s", Texture.DebugName.c_str());
+					if (ImGui::BeginTable("tooltip", 2))
+					{
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Id:");
+						ImGui::TableNextColumn(); ImGui::Text("%i", Texture.Id);
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Type:");
+						ImGui::TableNextColumn(); ImGui::Text("%s", TextureTypeToString(Texture.Desc.Type));
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Usage:");
+						ImGui::TableNextColumn(); ImGui::Text("%s", TextureUsageToString(Texture.Desc.Usage));
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Format:");
+						ImGui::TableNextColumn(); ImGui::Text("%s", TextureFormatToString(Texture.Desc.Format));
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Versions:");
+						ImGui::TableNextColumn(); ImGui::Text("%i", Texture.Version + 1);
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Width:");
+						ImGui::TableNextColumn(); ImGui::Text("%i", Texture.Desc.Width);
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Height:");
+						ImGui::TableNextColumn(); ImGui::Text("%i", Texture.Desc.Height);
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Depth:");
+						ImGui::TableNextColumn(); ImGui::Text("%i", Texture.Desc.Depth);
+
+						double Size;
+						const char* SizePostfix = HumanizeBytes(Texture.AllocatedSize, Size);
+
+						ImGui::TableNextColumn(); ImGui::TextDisabled("Size:");
+						ImGui::TableNextColumn(); ImGui::Text("%.1f %s", Size, SizePostfix);
+						ImGui::EndTable();
+					}
+					ImGui::EndTooltip();
+				}
 
 				ImVec2 text_size = ImGui::CalcTextSize(Texture.DebugName.c_str());
 				ImVec2 text_pos = middle - text_size / 2;
@@ -168,8 +212,7 @@ namespace Columbus
 			current_line_pos.y += vertical_size + margin;
 
 			ImGui::SetCursorScreenPos(current_line_pos);
-
-			ImGui::End();
 		}
+		ImGui::End();
 	}
 }
