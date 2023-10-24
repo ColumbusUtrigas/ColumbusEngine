@@ -124,6 +124,9 @@ namespace Columbus
 		std::optional<RenderPassAttachment> ColorAttachments[ColorAttachmentsCount];
 		std::optional<RenderPassAttachment> DepthStencilAttachment;
 
+		// if you want to create render pass externally and use it in the graph
+		VkRenderPass ExternalRenderPass = NULL;
+
 		bool operator==(const RenderPassParameters& Other) const = default;
 	};
 
@@ -231,6 +234,13 @@ namespace Columbus
 		}
 	};
 
+	// valid only while render graph is valid
+	struct RenderGraphDebugInformation
+	{
+		std::span<RenderPass> Passes;
+		std::span<RenderGraphTexture> Textures;
+	};
+
 	class RenderGraph
 	{
 	public:
@@ -249,6 +259,7 @@ namespace Columbus
 		// These functions should be used after graph was built
 		std::string ExportGraphviz(); // exports graphviz dot format
 		void PrintDebugInformation();
+		void GetDebugInformation(RenderGraphDebugInformation& Info);
 
 	private:
 		void Build(Texture2* SwapchainImage);

@@ -201,11 +201,8 @@ namespace Columbus
 		// Low-level API abstraction
 
 		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain);
-
-		VkRenderPass CreateRenderPass(const std::vector<AttachmentDesc>& Attachments);
-		VkRenderPass CreateRenderPass(VkFormat format);
-
-		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, const std::vector<Texture2*>& Textures);
+		VkRenderPass CreateRenderPass(std::span<AttachmentDesc> Attachments);
+		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, std::span<Texture2*> Textures);
 
 		CommandBufferVulkan* CreateCommandBuffer();
 		SPtr<CommandBufferVulkan> CreateCommandBufferShared();

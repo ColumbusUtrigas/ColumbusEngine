@@ -11,6 +11,7 @@
 #include "Math/Vector2.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <vulkan/vulkan.hpp>
 
@@ -489,7 +490,7 @@ namespace Columbus
 		{
 			if (Pass.Type == RenderGraphPassType::Raster)
 			{
-				Pass.VulkanRenderPass = GetOrCreateVulkanRenderPass(Pass);
+				Pass.VulkanRenderPass = Pass.Parameters.ExternalRenderPass == NULL ? GetOrCreateVulkanRenderPass(Pass) : Pass.Parameters.ExternalRenderPass;
 				Pass.VulkanFramebuffer = GetOrCreateVulkanFramebuffer(Pass, SwapchainImage);
 			}
 		}
@@ -686,7 +687,13 @@ namespace Columbus
 
 	void RenderGraph::PrintDebugInformation()
 	{
+		// TODO
+	}
 
+	void RenderGraph::GetDebugInformation(RenderGraphDebugInformation& Info)
+	{
+		Info.Passes = Passes;
+		Info.Textures = Textures;
 	}
 
 	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderPass& Pass)

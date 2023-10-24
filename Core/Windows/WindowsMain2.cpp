@@ -93,71 +93,6 @@ public:
 	iVector2 Size{1280, 720};
 };
 
-/*class ImguiPass : public RenderPass
-{
-public:
-	ImguiPass(WindowVulkan& Window) : Window(Window), RenderPass("ImGUI Pass")
-	{
-		IsGraphicsPass = true;
-		ClearColor = false;
-		AddOutputRenderTarget(AttachmentDesc(FinalColorOutput, AttachmentType::Color, AttachmentLoadOp::Load, TextureFormat::BGRA8SRGB));
-
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		// Editor::ApplyDarkTheme();
-		io.DisplaySize = {1280,720};
-	}
-
-	virtual void Setup(RenderGraphContext& Context) override
-	{
-		// init imgui
-		ImGui_ImplSDL2_InitForVulkan(Window.Window);
-		ImGui_ImplVulkan_InitInfo imguiVk{};
-		imguiVk.Instance = Window.Instance.instance;
-		imguiVk.PhysicalDevice = Context.Device->_PhysicalDevice;
-		imguiVk.Device = Context.Device->_Device;
-		imguiVk.QueueFamily = Context.Device->_FamilyIndex;
-		imguiVk.Queue = *Context.Device->_ComputeQueue;
-		imguiVk.DescriptorPool = Context.Device->_DescriptorPool;
-		imguiVk.MinImageCount = Window.Swapchain->minImageCount;
-		imguiVk.ImageCount = Window.Swapchain->imageCount;
-		ImGui_ImplVulkan_Init(&imguiVk, Context.VulkanRenderPass);
-
-		{
-			auto CommandBuffer = Context.Device->CreateCommandBufferShared();
-			CommandBuffer->Reset();
-			CommandBuffer->Begin();
-			ImGui_ImplVulkan_CreateFontsTexture(CommandBuffer->_CmdBuf);
-
-			VkSubmitInfo end_info = {};
-			end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			end_info.commandBufferCount = 1;
-			end_info.pCommandBuffers = &CommandBuffer->_CmdBuf;
-			vkEndCommandBuffer(CommandBuffer->_CmdBuf);
-			vkQueueSubmit(*Context.Device->_ComputeQueue, 1, &end_info, VK_NULL_HANDLE);
-
-			vkDeviceWaitIdle(Context.Device->_Device);
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
-		}
-	}
-
-	virtual TExecutionFunc Execute2(RenderGraphContext& Context) override
-	{
-		ImGui::NewFrame();
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplSDL2_NewFrame(Window.Window);
-
-		return [](RenderGraphContext& Context)
-		{
-			ImGui::ShowDemoWindow();
-			ImGui::Render();
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
-		};
-	}
-private:
-	WindowVulkan& Window;
-};*/
-
 Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
 {
 	BufferDesc desc;
@@ -337,7 +272,7 @@ void InitializeImgui(WindowVulkan& Window, SPtr<DeviceVulkan> Device)
 {
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(Window.Window);
-	// InitImguiRendering(Device, Window.Swapchain);
+	SetupImguiForSwapchain(Device, Window.Swapchain);
 }
 
 void NewFrameImgui(WindowVulkan& Window)
@@ -353,39 +288,6 @@ void NewFrameImgui(WindowVulkan& Window)
 		ImGui_ImplSDL2_NewFrame(Window.Window);
 	}
 }
-
-// 	virtual void Setup(RenderGraphContext& Context) override
-// 	{
-// 		// init imgui
-// 		ImGui_ImplSDL2_InitForVulkan(Window.Window);
-// 		ImGui_ImplVulkan_InitInfo imguiVk{};
-// 		imguiVk.Instance = Window.Instance.instance;
-// 		imguiVk.PhysicalDevice = Context.Device->_PhysicalDevice;
-// 		imguiVk.Device = Context.Device->_Device;
-// 		imguiVk.QueueFamily = Context.Device->_FamilyIndex;
-// 		imguiVk.Queue = *Context.Device->_ComputeQueue;
-// 		imguiVk.DescriptorPool = Context.Device->_DescriptorPool;
-// 		imguiVk.MinImageCount = Window.Swapchain->minImageCount;
-// 		imguiVk.ImageCount = Window.Swapchain->imageCount;
-// 		ImGui_ImplVulkan_Init(&imguiVk, Context.VulkanRenderPass);
-
-// 		{
-// 			auto CommandBuffer = Context.Device->CreateCommandBufferShared();
-// 			CommandBuffer->Reset();
-// 			CommandBuffer->Begin();
-// 			ImGui_ImplVulkan_CreateFontsTexture(CommandBuffer->_CmdBuf);
-
-// 			VkSubmitInfo end_info = {};
-// 			end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-// 			end_info.commandBufferCount = 1;
-// 			end_info.pCommandBuffers = &CommandBuffer->_CmdBuf;
-// 			vkEndCommandBuffer(CommandBuffer->_CmdBuf);
-// 			vkQueueSubmit(*Context.Device->_ComputeQueue, 1, &end_info, VK_NULL_HANDLE);
-
-// 			vkDeviceWaitIdle(Context.Device->_Device);
-// 			ImGui_ImplVulkan_DestroyFontUploadObjects();
-// 		}
-// 	}
 
 // BEGIN_GPU_PARAMETERS(GPUSceneParameters)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Textures, GPU_PARAMETER_TEXTURE2D, 0)
@@ -588,51 +490,11 @@ int main()
 			}
 		}
 
-		bool ConsoleFocus = false;
-
- 		ImGuiIO& io = ImGui::GetIO();
- 		if (io.Fonts->IsBuilt()) // TODO:
+		// UI
 		{
- 			ImGui::ShowDemoWindow();
- 
-			static char buf[1024]{ 0 };
-			static std::vector<UPtr<char>> History;
-
-			// TODO: history
-			// TODO: autocomplete
-			// TODO: move to a proper place
-			// TODO: show/hide with `
-			// TODO: block input
-			if (ImGui::Begin("Console"))
-			{
-				ConsoleFocus = ImGui::IsWindowFocused();
-
-				if (ImGui::BeginChild("Scroll", ImVec2(0, -30)))
-				{
-					ConsoleFocus |= ImGui::IsWindowFocused();
-					for (const auto& Str : History)
-					{
-						ImGui::TextWrapped("%s", Str.get());
-					}
-					ImGui::EndChild();
-				}
-
-				ImGui::Separator();
-				
-				if (ConsoleFocus && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-					ImGui::SetKeyboardFocusHere();
-
-				if (ImGui::InputText("Input", buf, 1024, ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					char cmd[1024];
-					snprintf(cmd, 1024, ">>> %s <<<", buf);
-
-					History.emplace_back(strdup(cmd));
-					History.emplace_back(ConsoleVariableSystem::RunConsoleCommand(buf));
-					memset(buf, 0, 1024);
-				}
-				ImGui::End();
-			}
+			ImGui::ShowDemoWindow();
+			ShowDebugConsole();
+			ShowRenderGraphVisualiser(renderGraph);
 		}
 
 		if (Window.Swapchain->IsOutdated)
@@ -665,7 +527,7 @@ int main()
 		// printf("%s\n", graphviz.c_str());
 		// return 0;
 
-		if (!ConsoleFocus)
+		if (!IsDebugConsoleFocused())
 		{
 			auto keyboard = SDL_GetKeyboardState(NULL);
 			if (keyboard[SDL_SCANCODE_DOWN]) camera.Rot += Columbus::Vector3(5,0,0) * DeltaTime * 20;
@@ -680,10 +542,10 @@ int main()
 			if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * CameraSpeed;
 		}
-	}
 
-	// TODO:
-	std::this_thread::sleep_for(std::chrono::milliseconds(3));
+		// TODO:
+		std::this_thread::sleep_for(std::chrono::milliseconds(3));
+	}
 
 	VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));
 	VK_CHECK(vkDeviceWaitIdle(device->_Device));

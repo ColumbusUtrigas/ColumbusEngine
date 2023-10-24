@@ -18,7 +18,12 @@ namespace Columbus
 
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
 
-	void InitImguiRendering(SPtr<DeviceVulkan> Device, SwapchainVulkan* Swapchain);
+	void SetupImguiForSwapchain(SPtr<DeviceVulkan> Device, const SwapchainVulkan* Swapchain);
+	// TODO: shutdown/clear imgui
+	void ShowDebugConsole();
+	bool IsDebugConsoleFocused();
+	void ShowRenderGraphVisualiser(RenderGraph& Graph);
+
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture); // TODO: be able to render debug overlay after render graph execution
 	void CopyToSwapchain(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture);
 
