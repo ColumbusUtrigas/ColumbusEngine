@@ -77,7 +77,7 @@ public:
 
 	~WindowVulkan()
 	{
-		vkDestroySwapchainKHR(Device->_Device, Swapchain->swapChain, nullptr);
+		delete Swapchain;
 		vkDestroySurfaceKHR(Instance.instance, Surface, nullptr);
 		SDL_DestroyWindow(Window);
 	}
@@ -93,13 +93,25 @@ public:
 	iVector2 Size{1280, 720};
 };
 
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTextures);
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneBLAS);
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTLAS);
+
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Textures", "SceneMemory", MemoryCounter_SceneTextures);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Meshes", "SceneMemory", MemoryCounter_SceneMeshes);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("BLAS", "SceneMemory", MemoryCounter_SceneBLAS);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("TLAS", "SceneMemory", MemoryCounter_SceneTLAS);
+
 Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
 {
 	BufferDesc desc;
 	desc.BindFlags = BufferType::UAV;
 	desc.Size = size;
 	desc.UsedInAccelerationStructure = usedInAS;
-	return device->CreateBuffer(desc, data);
+	Buffer* result = device->CreateBuffer(desc, data);
+	AddProfilingMemory(MemoryCounter_SceneMeshes, result->GetSize());
+	return result;
 }
 
 SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename)
@@ -113,7 +125,25 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 		Log::Fatal("Couldn't load scene, %s", Filename.c_str());
 	}
 
-	SPtr<GPUScene> Scene = std::make_shared<GPUScene>();
+	SPtr<GPUScene> Scene = SPtr<GPUScene>(new GPUScene, [Device](GPUScene* Scene)
+	{
+		for (auto& Texture : Scene->Textures)
+		{
+			Device->DestroyTexture(Texture);
+		}
+
+		for (auto& Mesh : Scene->Meshes)
+		{
+			Device->DestroyBuffer(Mesh.Vertices);
+			Device->DestroyBuffer(Mesh.Indices);
+			Device->DestroyBuffer(Mesh.UVs);
+			Device->DestroyBuffer(Mesh.Normals);
+			Device->DestroyBuffer(Mesh.Material);
+			Device->DestroyAccelerationStructure(Mesh.BLAS);
+		}
+
+		Device->DestroyAccelerationStructure(Scene->TLAS);
+	});
 
 	for (auto& texture : model.textures)
 	{
@@ -124,6 +154,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 		auto tex = Device->CreateTexture(img);
 		Device->SetDebugName(tex, texture.name.c_str());
+		AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
 		Scene->Textures.push_back(tex);
 	}
 
@@ -215,6 +246,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			blasDesc.IndicesCount = indicesCount;
 			auto BLAS = Device->CreateAccelerationStructure(blasDesc);
 			Device->SetDebugName(BLAS, mesh.name.c_str());
+			AddProfilingMemory(MemoryCounter_SceneBLAS, BLAS->GetSize());
 
 			int matid = -1;
 
@@ -255,6 +287,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 	Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
 	Scene->MainCamera = GPUCamera(DefaultCamera);
+
+	AddProfilingMemory(MemoryCounter_SceneTLAS, Scene->TLAS->GetSize());
 
 	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, 0}); // directional
 	// Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1}); // point

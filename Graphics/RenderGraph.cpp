@@ -19,6 +19,8 @@ IMPLEMENT_CPU_PROFILING_COUNTER("RG Clear", "RenderGraph", Counter_RenderGraphCl
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Build", "RenderGraph", Counter_RenderGraphBuild);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Execute", "RenderGraph", Counter_RenderGraphExecute);
 
+IMPLEMENT_MEMORY_PROFILING_COUNTER("RG Textures", "RenderGraphMemory", MemoryCounter_RenderGraphTextures);
+
 namespace std {
 	template <> struct hash<Columbus::RenderPassAttachment>
 	{
@@ -57,7 +59,7 @@ namespace Columbus
 		{
 			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
 
-			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
+			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
 			{
 				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
 			}
@@ -78,7 +80,7 @@ namespace Columbus
 		{
 			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
 
-			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
+			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
 			{
 				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
 			}
@@ -99,7 +101,7 @@ namespace Columbus
 		{
 			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
 
-			for (int i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
+			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
 			{
 				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
 			}
@@ -240,7 +242,7 @@ namespace Columbus
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i]);
 		}
 
-		auto Lights = GPUArray<GPULight>::Allocate(Scene->Lights.size());
+		auto Lights = GPUArray<GPULight>::Allocate((u32)Scene->Lights.size());
 		for (int i = 0; i < Scene->Lights.size(); i++)
 		{
 			(*Lights)[i] = Scene->Lights[i];
@@ -301,6 +303,7 @@ namespace Columbus
 			RenderGraphPooledTexture{ SPtr<Texture2>(Device->CreateTexture(Texture.Desc)), false }
 		);
 		ApplyTextureFromPool(Result);
+		AddProfilingMemory(MemoryCounter_RenderGraphTextures, Result.Texture->GetSize());
 	}
 
 	RenderGraphTextureRef RenderGraph::GetSwapchainTexture()
@@ -590,7 +593,7 @@ namespace Columbus
 				Context.VulkanRenderPass = Pass.VulkanRenderPass;
 
 				// TODO: resize, extent
-				CommandBuffer->BeginRenderPass(Pass.VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Pass.VulkanFramebuffer, ClearValues.size(), ClearValues.data());
+				CommandBuffer->BeginRenderPass(Pass.VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Pass.VulkanFramebuffer, (u32)ClearValues.size(), ClearValues.data());
 				Pass.ExecutionFunc(Context);
 				CommandBuffer->EndRenderPass();
 

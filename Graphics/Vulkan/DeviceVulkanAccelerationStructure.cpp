@@ -5,22 +5,23 @@
 namespace Columbus
 {
 
-	static VkAccelerationStructureGeometryTrianglesDataKHR PrepareTrianglesBLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device)
+	static VkAccelerationStructureGeometryTrianglesDataKHR PrepareTrianglesBLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device, Buffer*& TransformBuffer)
 	{
+		// TODO: move somewhere else
 		// Setup identity transform matrix
 		VkTransformMatrixKHR transformMatrix = {
 			1.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 1.0f, 0.0f
 		};
-		auto transformBuffer = Device->CreateBuffer({sizeof(transformMatrix), BufferType::AccelerationStructureInput}, &transformMatrix);
+		TransformBuffer = Device->CreateBuffer({sizeof(transformMatrix), BufferType::AccelerationStructureInput}, &transformMatrix);
 
 		VkDeviceOrHostAddressConstKHR vertexBufferDeviceAddress{};
 		VkDeviceOrHostAddressConstKHR indexBufferDeviceAddress{};
 		VkDeviceOrHostAddressConstKHR transformBufferDeviceAddress{};
 
 		vertexBufferDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(Desc.Vertices);
-		transformBufferDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(transformBuffer);
+		transformBufferDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(TransformBuffer);
 		indexBufferDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(Desc.Indices);
 
 		VkAccelerationStructureGeometryTrianglesDataKHR result;
@@ -37,7 +38,7 @@ namespace Columbus
 		return result;
 	}
 
-	static VkAccelerationStructureGeometryInstancesDataKHR PrepareInstancesTLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device)
+	static VkAccelerationStructureGeometryInstancesDataKHR PrepareInstancesTLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device, Buffer*& InstancesBuffer)
 	{
 		std::vector<VkAccelerationStructureInstanceKHR> instances(Desc.Instances.size());
 
@@ -56,10 +57,10 @@ namespace Columbus
 			instances[i].accelerationStructureReference = static_cast<AccelerationStructureVulkan*>(Desc.Instances[i].Blas)->_DeviceAddress; // TODO
 		}
 
-		auto instancesBuffer = Device->CreateBuffer({instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput}, instances.data());
+		InstancesBuffer = Device->CreateBuffer({instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput}, instances.data());
 
 		VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
-		instanceDataDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(instancesBuffer);
+		instanceDataDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(InstancesBuffer);
 
 		VkAccelerationStructureGeometryInstancesDataKHR result;
 		result.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
@@ -82,16 +83,19 @@ namespace Columbus
 		accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 
+		// BLAS/TLAS build buffer
+		Buffer* TransformOrInstancesBuffer = nullptr;
+
 		if (Desc.Type == AccelerationStructureType::BLAS)
 		{
 			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-			accelerationStructureGeometry.geometry.triangles = PrepareTrianglesBLAS(Desc, this);
+			accelerationStructureGeometry.geometry.triangles = PrepareTrianglesBLAS(Desc, this, TransformOrInstancesBuffer);
 			type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 			numPrimitives = Desc.IndicesCount / 3;
 		} else
 		{
 			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-			accelerationStructureGeometry.geometry.instances = PrepareInstancesTLAS(Desc, this);
+			accelerationStructureGeometry.geometry.instances = PrepareInstancesTLAS(Desc, this, TransformOrInstancesBuffer);
 			type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			numPrimitives = Desc.Instances.size();
 		}
@@ -149,7 +153,20 @@ namespace Columbus
 		accelerationDeviceAddressInfo.accelerationStructure = result->_Handle;
 		result->_DeviceAddress = VkFunctions.vkGetAccelerationStructureDeviceAddress(_Device, &accelerationDeviceAddressInfo);
 
+		result->SetSize(result->_Buffer->GetSize());
+		DestroyBuffer(TransformOrInstancesBuffer);
+		DestroyBuffer(scratchBuffer);
+
 		return result;
+	}
+
+	void DeviceVulkan::DestroyAccelerationStructure(AccelerationStructure* AS)
+	{
+		auto vkas = static_cast<AccelerationStructureVulkan*>(AS);
+		COLUMBUS_ASSERT(vkas);
+
+		DestroyBuffer(vkas->_Buffer);
+		VkFunctions.vkDestroyAccelerationStructure(_Device, vkas->_Handle, nullptr);
 	}
 
 }

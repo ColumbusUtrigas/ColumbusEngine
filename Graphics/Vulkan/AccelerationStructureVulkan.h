@@ -15,6 +15,11 @@ namespace Columbus
 
 	public:
 		AccelerationStructureVulkan(const AccelerationStructureDesc& Desc) : AccelerationStructure(Desc) {}
+
+		void SetSize(u64 SizeBytes)
+		{
+			Size = SizeBytes;
+		}
 	};
 
 }

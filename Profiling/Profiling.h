@@ -43,10 +43,22 @@ namespace Columbus
 	{
 		int Id;
 		double Time;
+		double LastTime;
 		const char* Text;
 		const char* Category;
 
 		ProfileCounterCPU(const char* Text, const char* Category);
+	};
+
+	// to be used with a macro, should be statically initialised
+	struct ProfileCounterMemory
+	{
+		int Id;
+		u64 Memory;
+		const char* Text;
+		const char* Category;
+
+		ProfileCounterMemory(const char* Text, const char* Category);
 	};
 
 	struct ProfileMarkerScopedCPU
@@ -57,7 +69,6 @@ namespace Columbus
 		ProfileMarkerScopedCPU(ProfileCounterCPU& Marker);
 		~ProfileMarkerScopedCPU();
 	};
-
 
 	struct ProfileMarkerGPU
 	{
@@ -74,7 +85,13 @@ namespace Columbus
 	#define DECLARE_CPU_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterCPU counter;
 	#define IMPLEMENT_CPU_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterCPU counter (text, category);
 
+	#define DECLARE_MEMORY_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterMemory counter;
+	#define IMPLEMENT_MEMORY_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterMemory counter (text, category);
+
 	#define PROFILE_CPU(counter) Columbus::ProfileMarkerScopedCPU MarkerCPU(counter);
+
+	void AddProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
+	void RemoveProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 
  	void ResetProfiling();	
  	double GetProfileTime(ProfileModule Module);
@@ -83,10 +100,11 @@ namespace Columbus
 	std::span<const char*>        GetProfilerCategoryListCPU();
 	std::span<ProfileCounterCPU*> GetProfilerCategoryCPU(const char* Category);
 
+	std::span<const char*>           GetProfilerCategoryListMemory();
+	std::span<ProfileCounterMemory*> GetProfileCategoryMemory(const char* Category);
+
 	void ResetProfiling();	
 	double GetProfileTime(ProfileModule Module);
 	double GetProfileTimeGPU(ProfileModuleGPU Module);
 
 }
-
-

@@ -10,21 +10,24 @@
 namespace Columbus
 {
 
-	std::vector<ProfileCounterCPU*>& GetListCPU()
+	template <typename T>
+	std::vector<T*>& GetCounterList()
 	{
-		static std::vector<ProfileCounterCPU*> CPU;
-		return CPU;
+		static std::vector<T*> List;
+		return List;
 	}
 
-	std::vector<const char*>& GetCategoriesListCPU()
+	template <typename T>
+	std::vector<const char*>& GetCategoriesList()
 	{
 		static std::vector<const char*> List;
 		return List;
 	}
 
+	template <typename T>
 	void AddCategoryToCategoriesList(const char* Category)
 	{
-		auto& Categories = GetCategoriesListCPU();
+		auto& Categories = GetCategoriesList<T>();
 		for (const char* Cat : Categories)
 		{
 			if (strcmp(Category, Cat) == 0)
@@ -34,9 +37,10 @@ namespace Columbus
 		Categories.push_back(Category);
 	}
 
-	std::vector<ProfileCounterCPU*>& GetCategoryListCPU(const char* Category)
+	template <typename T>
+	std::vector<T*>& GetCategoryList(const char* Category)
 	{
-		static std::unordered_map<std::string_view, std::vector<ProfileCounterCPU*>> Map;
+		static std::unordered_map<std::string_view, std::vector<T*>> Map;
 		if (!Map.contains(Category))
 		{
 			Map[Category] = {};
@@ -52,11 +56,21 @@ namespace Columbus
 	ProfileCounterCPU::ProfileCounterCPU(const char* Text, const char* Category) : Text(Text), Category(Category)
 	{
 		Time = 0;
-		Id = (int)GetListCPU().size();
-		GetListCPU().push_back(this);
-		GetCategoryListCPU(Category).push_back(this);
-		AddCategoryToCategoriesList(Category);
+		LastTime = 0;
+		Id = (int)GetCounterList<ProfileCounterCPU>().size();
+		GetCounterList<ProfileCounterCPU>().push_back(this);
+		GetCategoryList<ProfileCounterCPU>(Category).push_back(this);
+		AddCategoryToCategoriesList<ProfileCounterCPU>(Category);
 	}
+
+	ProfileCounterMemory::ProfileCounterMemory(const char* Text, const char* Category) : Text(Text), Category(Category)
+	{
+		Memory = 0;
+		Id = (int)GetCounterList<ProfileCounterMemory>().size();
+		GetCounterList<ProfileCounterMemory>().push_back(this);
+		GetCategoryList<ProfileCounterMemory>(Category).push_back(this);
+		AddCategoryToCategoriesList<ProfileCounterMemory>(Category);
+ 	}
 
 	ProfileMarkerScopedCPU::ProfileMarkerScopedCPU(ProfileCounterCPU& Marker) : Marker(Marker)
 	{
@@ -88,7 +102,7 @@ namespace Columbus
 
 	ProfileMarkerGPU::~ProfileMarkerGPU()
 	{
-		GLint result;
+		// GLint result;
 		//glEndQuery(GL_TIME_ELAPSED);
 		//glGetQueryObjectiv(ID, GL_QUERY_RESULT, &result);
 		//glDeleteQueries(1, &ID);
@@ -98,12 +112,23 @@ namespace Columbus
 
 	void ResetProfiling()
 	{
-		for (ProfileCounterCPU* Counter : GetListCPU())
+		for (ProfileCounterCPU* Counter : GetCounterList<ProfileCounterCPU>())
 		{
+			Counter->LastTime = Counter->Time;
 			Counter->Time = 0.0;
 		}
 		// memset(CPU, 0, sizeof(CPU));
 		// memset(GPU, 0, sizeof(GPU));
+	}
+
+	void AddProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes)
+	{
+		Counter.Memory += Bytes;
+	}
+
+	void RemoveProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes)
+	{
+		Counter.Memory -= Bytes;
 	}
 
 	double GetProfileTime(ProfileModule Module)
@@ -119,12 +144,22 @@ namespace Columbus
 
 	std::span<const char*> GetProfilerCategoryListCPU()
 	{
-		return GetCategoriesListCPU();
+		return GetCategoriesList<ProfileCounterCPU>();
 	}
 
 	std::span<ProfileCounterCPU*> GetProfilerCategoryCPU(const char* Category)
 	{
-		return GetCategoryListCPU(Category);
+		return GetCategoryList<ProfileCounterCPU>(Category);
 	}
+
+	std::span<const char*> GetProfilerCategoryListMemory()
+	{
+		return GetCategoriesList<ProfileCounterMemory>();
+	}
+
+	std::span<ProfileCounterMemory*> GetProfileCategoryMemory(const char* Category)
+	{
+		return GetCategoryList<ProfileCounterMemory>(Category);
+ 	}
 
 }

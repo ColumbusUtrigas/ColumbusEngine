@@ -69,6 +69,54 @@ namespace Columbus
 		static char buf[1024]{ 0 };
 		static std::vector<UPtr<char>> History;
 
+		// TODO: move to a proper place
+		if (ImGui::Begin("Stats"))
+		{
+			auto rg_cpu = GetProfilerCategoryCPU("RenderGraph");
+			auto rg_mem = GetProfileCategoryMemory("RenderGraphMemory");
+			auto sc_mem = GetProfileCategoryMemory("SceneMemory");
+
+			if (ImGui::BeginTable("RG CPU", 2))
+			{
+				ImGui::TableHeader("RG CPU");
+				for (auto counter : rg_cpu)
+				{
+					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
+				}
+				ImGui::EndTable();
+			}
+
+			if (ImGui::BeginTable("RG Memory", 2))
+			{
+				ImGui::TableHeader("RG Memory");
+				for (auto counter : rg_mem)
+				{
+					double mem;
+					const char* postfix = HumanizeBytes(counter->Memory, mem);
+
+					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+				}
+				ImGui::EndTable();
+			}
+
+			if (ImGui::BeginTable("Scene Memory", 2))
+			{
+				ImGui::TableHeader("Scene Memory");
+				for (auto counter : sc_mem)
+				{
+					double mem;
+					const char* postfix = HumanizeBytes(counter->Memory, mem);
+
+					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+				}
+				ImGui::EndTable();
+			}
+		}
+		ImGui::End();
+
 		// TODO: history
 		// TODO: autocomplete
 		// TODO: show/hide with `

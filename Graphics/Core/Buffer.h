@@ -66,11 +66,14 @@ namespace Columbus
 	{
 	protected:
 		BufferDesc Desc;
+		u64 Size = 0;
 
 		Buffer(const BufferDesc& Desc) : Desc(Desc) {}
 	public:
 		const BufferDesc& GetDesc() const { return Desc; }
 		virtual void* GetHandle() = 0;
+
+		u64 GetSize() const { return Size; }
 	};
 
 }

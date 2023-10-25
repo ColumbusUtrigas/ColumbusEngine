@@ -104,9 +104,9 @@ namespace Columbus
 		vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputState.pNext = nullptr;
 		vertexInputState.flags = 0;
-		vertexInputState.vertexBindingDescriptionCount = inputBindings.size();
+		vertexInputState.vertexBindingDescriptionCount = (u32)inputBindings.size();
 		vertexInputState.pVertexBindingDescriptions = inputBindings.data();
-		vertexInputState.vertexAttributeDescriptionCount = inputAttribute.size();
+		vertexInputState.vertexAttributeDescriptionCount = (u32)inputAttribute.size();
 		vertexInputState.pVertexAttributeDescriptions = inputAttribute.data();
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;

@@ -17,6 +17,11 @@ namespace Columbus
 
 		// TODO: REMOVE
 		virtual void* GetHandle() override { return nullptr; }
+
+		void SetSize(u64 ByteSize)
+		{
+			Size = ByteSize;
+		}
 	};
 
 }

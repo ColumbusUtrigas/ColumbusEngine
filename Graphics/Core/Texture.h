@@ -118,10 +118,10 @@ namespace Columbus
 	protected:
 		Texture2(const TextureDesc2& Desc) : _Desc(Desc) {}
 
-		size_t Size = 0;
+		u64 Size = 0;
 	public:
 		const TextureDesc2& GetDesc() const { return _Desc; }
-		const size_t GetSize() const { return Size; }
+		u64 GetSize() const { return Size; }
 	};
 
 	// TODO: legacy

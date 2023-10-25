@@ -20,12 +20,14 @@ DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphClear);
 DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphBuild);
 DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphExecute);
 
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphTextures);
+
 namespace Columbus
 {
 
 	// forward declarations
 	class RenderGraph;
-	class RenderGraphContext;
+	struct RenderGraphContext;
 	struct RenderGraphTexture;
 
 	using RenderGraphExecutionFunc = std::function<void(RenderGraphContext&)>;

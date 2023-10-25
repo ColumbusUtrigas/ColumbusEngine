@@ -261,6 +261,7 @@ namespace Columbus
 		VmaAllocation Allocation;
 	};
 
+	// TODO: REMOVE
 	StagingBufferVulkan CreateStagingBufferVulkanInternal(VmaAllocator allocator, size_t size, const void* data)
 	{
 		StagingBufferVulkan buffer;
@@ -289,6 +290,12 @@ namespace Columbus
 		}
 
 		return buffer;
+	}
+
+	// TODO: REMOVE
+	void DestroyStagingBufferVulkanInternal(VmaAllocator allocator, StagingBufferVulkan& buf)
+	{
+		vmaDestroyBuffer(allocator, buf.Buffer, buf.Allocation);
 	}
 
 	Buffer* DeviceVulkan::CreateBuffer(const BufferDesc& Desc, const void* InitialData)
@@ -325,6 +332,11 @@ namespace Columbus
 			&result->_Allocation,
 			nullptr));
 
+		VmaAllocationInfo allocationInfo;
+		vmaGetAllocationInfo(_Allocator, result->_Allocation, &allocationInfo);
+
+		result->SetSize(allocationInfo.size);
+
 		if (InitialData != nullptr)
 		{
 			auto copyCmdBuf = CreateCommandBufferShared();
@@ -336,12 +348,21 @@ namespace Columbus
 			Submit(copyCmdBuf.get());
 			QueueWaitIdle();
 
-			vmaDestroyBuffer(_Allocator, staging.Buffer, staging.Allocation);
+			DestroyStagingBufferVulkanInternal(_Allocator, staging);
 		}
 
 		return result;
 	}
 
+	void DeviceVulkan::DestroyBuffer(Buffer* Buf)
+	{
+		auto vkbuf = static_cast<BufferVulkan*>(Buf);
+		COLUMBUS_ASSERT(vkbuf);
+
+		vmaDestroyBuffer(_Allocator, vkbuf->_Buffer, vkbuf->_Allocation);
+	}
+
+	// TODO: move all this logic to command buffer
 	void TransitionImageLayout(VkCommandBuffer cmdbuf, VkImage image,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags srcAccessMaks, VkAccessFlags dstAccessMask,
@@ -483,7 +504,19 @@ namespace Columbus
 		Submit(copyCmdBuf.get());
 		QueueWaitIdle();
 
+		DestroyStagingBufferVulkanInternal(_Allocator, staging);
+
 		return result;
+	}
+
+	void DeviceVulkan::DestroyTexture(Texture2* Tex)
+	{
+		auto vktex = static_cast<TextureVulkan*>(Tex);
+		COLUMBUS_ASSERT(vktex);
+
+		vkDestroySampler(_Device, vktex->_Sampler, nullptr);
+		vkDestroyImageView(_Device, vktex->_View, nullptr);
+		vmaDestroyImage(_Allocator, vktex->_Image, vktex->_Allocation);
 	}
 
 	void DeviceVulkan::SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name)

@@ -223,14 +223,17 @@ namespace Columbus
 
 		// TODO: streaming
 		Buffer* CreateBuffer(const BufferDesc& Desc, const void* InitialData);
+		void    DestroyBuffer(Buffer* Buf);
 
 		// TODO: data change, streaming, layout transitions
 		Texture2* CreateTexture(const TextureDesc2& Desc);
 		Texture2* CreateTexture(const Image& Image);
+		void      DestroyTexture(Texture2* Tex);
 
-		// TODO: data sync, bariers
+		// TODO: data sync, bariers, implement in command buffer
 
 		AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc& Desc);
+		void                   DestroyAccelerationStructure(AccelerationStructure* AS);
 
 		void SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name);
 		void SetDebugName(const ComputePipeline* Pipeline, const char* Name);

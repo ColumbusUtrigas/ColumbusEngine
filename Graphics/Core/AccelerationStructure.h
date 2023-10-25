@@ -40,8 +40,12 @@ namespace Columbus
 	protected:
 		AccelerationStructureDesc _Desc;
 		AccelerationStructure(const AccelerationStructureDesc& Desc) : _Desc(Desc) {}
+
+		u64 Size = 0;
 	public:
 		const AccelerationStructureDesc& GetDesc() const { return _Desc; }
+
+		u64 GetSize() const { return Size; }
 	};
 
 }

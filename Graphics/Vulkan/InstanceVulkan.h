@@ -58,9 +58,9 @@ namespace Columbus
 			info.pNext = nullptr;
 			info.flags = 0;
 			info.pApplicationInfo = &appInfo;
-			info.enabledLayerCount = validationLayers.size();
+			info.enabledLayerCount = (u32)validationLayers.size();
 			info.ppEnabledLayerNames = validationLayers.data();
-			info.enabledExtensionCount = extensions.size();
+			info.enabledExtensionCount = (u32)extensions.size();
 			info.ppEnabledExtensionNames = extensions.data();
 
 			VK_CHECK(vkCreateInstance(&info, nullptr, &instance));
