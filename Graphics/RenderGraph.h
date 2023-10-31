@@ -245,6 +245,12 @@ namespace Columbus
 		std::span<RenderGraphTexture> Textures;
 	};
 
+	struct RenderGraphTextureExtraction
+	{
+		RenderGraphTextureRef Src;
+		SPtr<Texture2>* Dst;
+	};
+
 	class RenderGraph
 	{
 	public:
@@ -256,6 +262,10 @@ namespace Columbus
 		RenderGraphTextureRef GetSwapchainTexture();
 
 		void AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
+
+		// copies Src graph texture into Dst after execution
+		// creates a new texture if doesn't exist
+		void ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst);
 
 		void Clear();
 		void Execute(SwapchainVulkan* Swapchain);
@@ -276,6 +286,7 @@ namespace Columbus
 	private:
 		std::vector<RenderPass> Passes;
 		std::vector<RenderGraphTexture> Textures; // textures that are used in the current graph
+		std::vector<RenderGraphTextureExtraction> Extractions;
 
 		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
 		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];

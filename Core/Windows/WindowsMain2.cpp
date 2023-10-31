@@ -297,7 +297,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 }
 
 ConsoleVariable<bool> test_flag("test.flag", "Description", true);
-ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 1", 1);
+ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 1", 0);
 
 DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
 IMPLEMENT_CPU_PROFILING_COUNTER("Total CPU", "CPU", Counter_TotalCPU);

@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Clear", "RenderGraph", Counter_RenderGraphClear);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Build", "RenderGraph", Counter_RenderGraphBuild);
@@ -357,12 +358,18 @@ namespace Columbus
 		Passes.emplace_back(std::move(Pass));
 	}
 
+	void RenderGraph::ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst)
+	{
+		Extractions.push_back(RenderGraphTextureExtraction{ .Src = Src, .Dst = Dst });
+	}
+
 	void RenderGraph::Clear()
 	{
 		PROFILE_CPU(Counter_RenderGraphClear);
 
 		Passes.clear();
 		Textures.clear();
+		Extractions.clear();
 
 		// TODO: cleanup unused textures from the previous frame
 
@@ -628,6 +635,29 @@ namespace Columbus
 			}
 
 			CommandBuffer->EndDebugMarker();
+		}
+
+		// extractions
+		for (RenderGraphTextureExtraction& Extraction : Extractions)
+		{
+			if (*Extraction.Dst == nullptr)
+			{
+				// TODO: move to allocation phase?
+				// TODO: resize invalidation
+				*Extraction.Dst = SPtr<Texture2>(Device->CreateTexture(Textures[Extraction.Src].Desc));
+			}
+
+			iVector3 Size = { Textures[Extraction.Src].Desc.Width, Textures[Extraction.Src].Desc.Height, Textures[Extraction.Src].Desc.Depth };
+
+			auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
+			auto DstLayout = static_cast<TextureVulkan*>(Extraction.Dst->get())->_Layout;
+
+			// TODO: layout management
+			CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+			CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			CommandBuffer->CopyImage(Textures[Extraction.Src].Texture.get(), Extraction.Dst->get(), {}, {}, Size);
+			CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), SrcLayout);
+			CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), DstLayout);
 		}
 
 		// TODO: remove swapchain logic and present from render graph, support for windowless rendering

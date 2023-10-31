@@ -171,7 +171,7 @@ namespace ConsoleVariableSystem
 					int   Int   = strtol(Value, &EndInt, 10);
 					float Float = strtof(Value, &EndFloat);
 
-					if (EndInt != Value)
+					if (EndInt != Value && EndFloat <= EndInt)
 					{
 						Cvar->SetValue(Int);
 						ConsoleCommandMessage("%s=%i", Cmd, Int);
