@@ -77,6 +77,7 @@ namespace Columbus
 		}
 
 		options.SetIncluder(std::move(includer));
+		options.SetSourceLanguage(shaderc_source_language_glsl);
 
 		switch (Stage.Type)
 		{

@@ -647,7 +647,7 @@ namespace Columbus
 				*Extraction.Dst = SPtr<Texture2>(Device->CreateTexture(Textures[Extraction.Src].Desc));
 			}
 
-			iVector3 Size = { Textures[Extraction.Src].Desc.Width, Textures[Extraction.Src].Desc.Height, Textures[Extraction.Src].Desc.Depth };
+			iVector3 Size = { (int)Textures[Extraction.Src].Desc.Width, (int)Textures[Extraction.Src].Desc.Height, (int)Textures[Extraction.Src].Desc.Depth };
 
 			auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
 			auto DstLayout = static_cast<TextureVulkan*>(Extraction.Dst->get())->_Layout;
