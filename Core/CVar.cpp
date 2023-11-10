@@ -7,6 +7,17 @@
 #include <unordered_map>
 #include <stdio.h>
 
+static void ToLower(const char* Src, char* Buf, size_t BufSize)
+{
+	size_t Len = strlen(Src);
+	assert(Len < BufSize);
+
+	for (size_t i = 0; i < Len; i++)
+	{
+		Buf[i] = (char)tolower(Src[i]);
+	}
+}
+
 static std::unordered_map<std::string, CVarData>& GetCvarMap()
 {
 	// TODO: thread safety
@@ -28,11 +39,14 @@ static void AddCvarToList(const char* Name)
 
 CVarData& GetOrCreateCvarData(const char* Name, const char* Description, bool Bool, int Int, float Float, CVarDataType Type)
 {
+	char LowercaseName[1024]{};
+	ToLower(Name, LowercaseName, 1024);
+
 	// TODO: thread safety
 	auto& CvarMap = GetCvarMap();
-	if (!CvarMap.contains(Name))
+	if (!CvarMap.contains(LowercaseName))
 	{
-		CvarMap[Name] = CVarData {
+		CvarMap[LowercaseName] = CVarData {
 			.Bool = Bool,
 			.Int = Int,
 			.Float = Float,
@@ -48,7 +62,7 @@ CVarData& GetOrCreateCvarData(const char* Name, const char* Description, bool Bo
 		Columbus::Log::Fatal("Duplicate initialisation of CVar: %s", Name);
 	}
 
-	return CvarMap[Name];
+	return CvarMap[LowercaseName];
 }
 
 template <>
@@ -67,11 +81,19 @@ namespace ConsoleVariableSystem
 {
 	CVarData* GetConsoleVariable(const char* Name)
 	{
+		char LowercaseName[1024]{};
+		ToLower(Name, LowercaseName, 1024);
+
 		// TODO: thread safety
 		auto& CvarMap = GetCvarMap();
-		if (!CvarMap.contains(Name))
+		if (!CvarMap.contains(LowercaseName))
 			return nullptr;
-		return &CvarMap[Name];
+		return &CvarMap[LowercaseName];
+	}
+
+	std::span<const char*> GetConsoleVariableList()
+	{
+		return GetCvarList();
 	}
 
 #define ConsoleCommandOutput(Fmt, ...) int size = snprintf(NULL, 0, Fmt, __VA_ARGS__); Result = new char[size+1]; snprintf(Result, size+1, Fmt, __VA_ARGS__); Result[size] = 0;

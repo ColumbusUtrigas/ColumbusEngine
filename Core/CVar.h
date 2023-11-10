@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include <span>
 
 // TODO: cvar flags (readonly)
 // TODO: variable history with links
@@ -95,6 +96,8 @@ private:
 
 namespace ConsoleVariableSystem
 {
-	CVarData* GetConsoleVariable(const char* Name);
+	CVarData* GetConsoleVariable(const char* Name); // case insensitive
 	char*     RunConsoleCommand(const char* Command); // Allocates a string to return output
+
+	std::span<const char*> GetConsoleVariableList();
 }

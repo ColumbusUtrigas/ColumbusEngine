@@ -3,9 +3,11 @@
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
+#include <algorithm>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
+#include "imgui_internal.h"
 
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 
@@ -67,6 +69,7 @@ namespace Columbus
 	void ShowDebugConsole()
 	{
 		static char buf[1024]{ 0 };
+		static std::vector<UPtr<char>> CommandHistory;
 		static std::vector<UPtr<char>> History;
 
 		// TODO: move to a proper place
@@ -117,7 +120,11 @@ namespace Columbus
 		}
 		ImGui::End();
 
-		// TODO: history
+		static bool isPopupVisible = false;
+		static bool isHistoryPopup = true;
+		static int popupIndex = 0;
+		ImVec2 PopupPos;
+
 		// TODO: autocomplete
 		// TODO: show/hide with `
 		if (ImGui::Begin("Console"))
@@ -135,21 +142,142 @@ namespace Columbus
 			}
 
 			ImGui::Separator();
-			
+
+			if (!DebugConsoleFocus)
+			{
+				isPopupVisible = false;
+				isHistoryPopup = true;
+			}
+
+			if (DebugConsoleFocus && isPopupVisible && ImGui::IsKeyPressed(ImGuiKey_Escape))
+			{
+				isPopupVisible = false;
+				isHistoryPopup = true;
+			}
+
 			if (DebugConsoleFocus && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
 				ImGui::SetKeyboardFocusHere();
 
-			if (ImGui::InputText("Input", buf, 1024, ImGuiInputTextFlags_EnterReturnsTrue))
+			PopupPos = ImGui::GetCursorScreenPos();
+
+			auto InputCallback = [](ImGuiInputTextCallbackData* data) -> int
+			{
+				if (data->EventFlag & ImGuiInputTextFlags_CallbackHistory)
+				{
+					if (data->EventKey == ImGuiKey_UpArrow) popupIndex--;
+					if (data->EventKey == ImGuiKey_DownArrow) popupIndex++;
+					
+					if (data->BufTextLen == 0 && !isPopupVisible)
+					{
+						isHistoryPopup = true;
+					}
+				
+					if (isHistoryPopup)
+					{
+						if (!CommandHistory.empty())
+						{
+							if (!isPopupVisible) popupIndex = CommandHistory.size() - 1;
+							isPopupVisible = true;
+
+							popupIndex = std::clamp(popupIndex, 0, (int)CommandHistory.size() - 1);
+
+							data->DeleteChars(0, data->BufTextLen);
+							data->InsertChars(0, CommandHistory[popupIndex].get());
+						}
+					} else
+					{
+						auto CvarList = ConsoleVariableSystem::GetConsoleVariableList();
+
+						if (!CvarList.empty())
+						{
+							if (!isPopupVisible) popupIndex = CvarList.size() - 1;
+							isPopupVisible = true;
+
+							popupIndex = std::clamp(popupIndex, 0, (int)CvarList.size() - 1);
+
+							data->DeleteChars(0, data->BufTextLen);
+							data->InsertChars(0, CvarList[popupIndex]);
+						}
+					}
+				}
+
+				if (data->EventFlag & ImGuiInputTextFlags_CallbackCompletion)
+				{
+					if (data->BufTextLen == 0)
+					{
+						isPopupVisible = true;
+						isHistoryPopup = false;
+					}
+				}
+
+				return 0;
+			};
+
+			if (ImGui::InputText("Input", buf, 1024, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackAlways, InputCallback)
+			    && strlen(buf) > 0)
 			{
 				char cmd[1024];
 				snprintf(cmd, 1024, ">>> %s <<<", buf);
 
+				CommandHistory.emplace_back(strdup(buf));
 				History.emplace_back(strdup(cmd));
 				History.emplace_back(ConsoleVariableSystem::RunConsoleCommand(buf));
 				memset(buf, 0, 1024);
+
+				isPopupVisible = false;
 			}
 		}
 		ImGui::End();
+
+		if (isPopupVisible)
+		{
+			ImGuiWindowFlags popupFlags = 
+				ImGuiWindowFlags_NoTitleBar            | 
+				ImGuiWindowFlags_NoResize              |
+				ImGuiWindowFlags_NoMove                |
+				ImGuiWindowFlags_HorizontalScrollbar   |
+				ImGuiWindowFlags_NoSavedSettings       |
+				// ImGuiWindowFlags_NoBringToFrontOnFocus |
+				ImGuiWindowFlags_NoFocusOnAppearing;
+
+			bool isOpenDummy = true;
+
+			ImVec2 popupSize = ImVec2(200, 100);
+			ImColor selectedColor = ImColor(252, 186, 3, 255);
+			ImColor notSelectedColor = ImColor(255, 255, 255, 255);
+
+			ImGui::SetNextWindowPos(PopupPos - ImVec2(0, popupSize.y));
+			ImGui::SetNextWindowSize(popupSize);
+			ImGui::Begin("console_hisory", &isOpenDummy, popupFlags);
+			ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+			ImGui::PushAllowKeyboardFocus(false);
+
+			if (isHistoryPopup)
+			{
+				for (size_t i = 0; i < CommandHistory.size(); i++)
+				{
+					if (i == popupIndex)
+						ImGui::SetScrollHereY();
+
+					const auto& Str = CommandHistory[i];
+					ImGui::TextColored(i == popupIndex ? selectedColor : notSelectedColor, "%s", Str.get());
+				}
+			} else
+			{
+				// autocomplete popup
+				auto CvarList = ConsoleVariableSystem::GetConsoleVariableList();
+				for (size_t i = 0; i < CvarList.size(); i++)
+				{
+					if (i == popupIndex)
+						ImGui::SetScrollHereY();
+
+					ImGui::TextColored(i == popupIndex ? selectedColor : notSelectedColor, "%s", CvarList[i]);
+				}
+			}
+
+			ImGui::PopAllowKeyboardFocus();
+			ImGui::End();
+		}
 	}
 
 	bool IsDebugConsoleFocused()

@@ -16,9 +16,16 @@ namespace Columbus
 		Plane(const Vector3& normal, float d) : normal(normal), d(d) {}
 		Plane(float x, float y, float z, float d) : normal(x,y,z), d(d) {}
 
-		float DistanceToPoint(const Vector3& point)
+		float DistanceToPoint(const Vector3& point) const
 		{
+			// projection of point onto normal line and getting distance
 			return normal.Dot(point) - d;
+		}
+
+		Vector3 ClosestPoint(const Vector3& point) const
+		{
+			// distance of point to plane multiplied by normal is an offset for point
+			return point - (normal.Dot(point) - d) * normal;
 		}
 	};
 
