@@ -1,34 +1,34 @@
-#version 460 core
-
-#ifdef VERTEX_SHADER
-const vec2 pos[3] = {
-	vec2(-1, -1),
-	vec2(-1, 3),
-	vec2(3, -1),
+struct VS_TO_PS
+{
+	float4 Pos : SV_POSITION;
+	float2 Uv  : TEXCOORD;
 };
 
-layout(location=0) out vec2 UV;
+#ifdef VERTEX_SHADER
+const float2 pos[3] = {
+	float2(-1, -1),
+	float2(-1, 3),
+	float2(3, -1),
+};
 
-void main()
+VS_TO_PS main(uint VertexID : SV_VertexID)
 {
-	UV = (pos[gl_VertexIndex] + 1) / 2;
-	gl_Position = vec4(pos[gl_VertexIndex], 0, 1);
+	VS_TO_PS Output;
+	Output.Pos = float4(pos[VertexID], 0, 1);
+	Output.Uv = (pos[VertexID] + 1) / 2;
+	return Output;
 }
 #endif
 
 #ifdef PIXEL_SHADER
-layout(location=0) out vec4 RT0;
+RWTexture2D<float4> SceneTexture;
 
-layout(location=0) in vec2 UV;
-
-layout(binding = 0, set = 0, rgba16f) uniform image2D SceneTexture;
-
-layout(push_constant) uniform params
-{
+[[vk::push_constant]]
+cbuffer Params {
 	uint FilmCurve;
 	uint OutputTransform;
-	uvec2 Resolution;
-} Params;
+	uint2 Resolution;
+};
 
 // From BakingLab by MJP
 //
@@ -36,7 +36,7 @@ layout(push_constant) uniform params
 // credit for coming up with this fit and implementing it. Buy him a beer next time you see him. :)
 
 // sRGB => XYZ => D65_2_D60 => AP1 => RRT_SAT
-const mat3 ACESInputMat =
+const float3x3 ACESInputMat =
 {
     {0.59719, 0.35458, 0.04823},
     {0.07600, 0.90834, 0.01566},
@@ -44,21 +44,21 @@ const mat3 ACESInputMat =
 };
 
 // ODT_SAT => XYZ => D60_2_D65 => sRGB
-const mat3 ACESOutputMat =
+const float3x3 ACESOutputMat =
 {
     { 1.60475, -0.53108, -0.07367},
     {-0.10208,  1.10813, -0.00605},
     {-0.00327, -0.07276,  1.07602}
 };
 
-vec3 RRTAndODTFit(vec3 v)
+float3 RRTAndODTFit(float3 v)
 {
-    vec3 a = v * (v + 0.0245786f) - 0.000090537f;
-    vec3 b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
+    float3 a = v * (v + 0.0245786f) - 0.000090537f;
+    float3 b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
     return a / b;
 }
 
-vec3 ACESFitted(vec3 color)
+float3 ACESFitted(float3 color)
 {
     color = ACESInputMat * color;
 
@@ -71,28 +71,28 @@ vec3 ACESFitted(vec3 color)
     color = clamp(color, 0, 1);
 
 	// sRGB output
-	color = pow(color, vec3(0.45));
+	color = pow(color, float3(0.45));
 
     return color;
 }
 
-vec3 Tonemap(vec3 Linear)
+float3 Tonemap(float3 Linear)
 {
 	return ACESFitted(Linear); // ACES RRT + sRGB ODT
 }
 
-void main()
+float4 main(VS_TO_PS Input) : SV_TARGET
 {
+
 	// ACES image formation recap:
 	// Apply Input Transform to convert footage from internal format (Linear sRGB D65) to ACES AP1 (D60)
 	// Modify colours
 	// Apply RRT
 	// Apply Output Transform (Rec709 or Rec2020-PQ)
 
-	vec3 Linear = vec3(UV*5, 0);
-	// Linear = texture(SceneTexture, UV).rgb;
-	Linear = imageLoad(SceneTexture, ivec2(UV * Params.Resolution)).rgb;
+	float3 Linear = float3(Input.Uv*5, 0);
+	Linear = SceneTexture[uint2(Input.Uv * Resolution)].rgb;
 
-	RT0 = vec4(Tonemap(Linear),1);
+	return float4(Tonemap(Linear),1);
 }
 #endif

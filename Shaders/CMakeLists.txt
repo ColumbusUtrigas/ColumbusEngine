@@ -1,6 +1,9 @@
 file(GLOB_RECURSE SHADER_SOURCES *.glsl)
+file(GLOB_RECURSE SHADER_SOURCES *.hlsl)
 
-compile_shader_glsl(Tonemap.glsl     vs,ps SHADER_BINARIES)
+compile_shader_hlsl(Tonemap.hlsl     vs,ps SHADER_BINARIES)
+compile_shader_hlsl(ComputeColourGradingLUT.hlsl cs SHADER_BINARIES)
+
 compile_shader_glsl(GBufferPass.glsl vs,ps SHADER_BINARIES)
 compile_shader_glsl(GBufferLightingPass.glsl cs SHADER_BINARIES)
 compile_shader_glsl(PathTrace.glsl   rgen,rmiss,rchit SHADER_BINARIES)

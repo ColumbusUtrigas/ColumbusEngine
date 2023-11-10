@@ -2,6 +2,7 @@
 
 #include <Graphics/Core/GraphicsCore.h>
 #include "Core/Assert.h"
+#include "Graphics/Core/Types.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 #include "TypeConversions.h"
 #include "Common.h"
@@ -58,7 +59,7 @@ namespace Columbus
 		std::unordered_map<std::string, std::string> LoadedIncludes;
 	};
 
-	CompiledShaderBytecode CompileShaderStageFromSource_VK(const std::string& Source, const ShaderStageDesc& Stage, const std::string& Name, std::span<std::string> Defines)
+	CompiledShaderBytecode CompileShaderStageFromSource_VK(const std::string& Source, ShaderLanguage Lang, const ShaderStageDesc& Stage, const std::string& Name, std::span<std::string> Defines)
 	{
 		CompiledShaderBytecode result;
 		result.EntryPoint = "main";
@@ -77,7 +78,13 @@ namespace Columbus
 		}
 
 		options.SetIncluder(std::move(includer));
-		options.SetSourceLanguage(shaderc_source_language_glsl);
+
+		switch (Lang)
+		{
+			case ShaderLanguage::GLSL: options.SetSourceLanguage(shaderc_source_language_glsl); break;
+			case ShaderLanguage::HLSL: options.SetSourceLanguage(shaderc_source_language_hlsl); break;
+			default: COLUMBUS_ASSERT_MESSAGE(false, "Unsupported shader language"); break;
+		}
 
 		switch (Stage.Type)
 		{
@@ -136,7 +143,7 @@ namespace Columbus
 	CompiledShaderData CompileShaderPipelineFromSource_VK(const std::string& Source, const std::string& Name,
 		ShaderLanguage Lang, std::span<ShaderStageDesc> Stages, std::span<std::string> Defines)
 	{
-		COLUMBUS_ASSERT_MESSAGE(Lang == ShaderLanguage::GLSL, "Other languages than GLSL are not supported");
+		//COLUMBUS_ASSERT_MESSAGE(Lang == ShaderLanguage::GLSL, "Other languages than GLSL are not supported");
 
 		CompiledShaderData Result;
 		Result.Name = Name;
@@ -144,7 +151,7 @@ namespace Columbus
 
 		for (const ShaderStageDesc& Stage : Stages)
 		{
-			Result.Bytecodes.push_back(CompileShaderStageFromSource_VK(Source, Stage, Name, Defines));
+			Result.Bytecodes.push_back(CompileShaderStageFromSource_VK(Source, Lang, Stage, Name, Defines));
 		}
 
 		ReflectCompiledShaderData(Result);

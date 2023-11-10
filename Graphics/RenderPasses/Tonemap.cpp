@@ -59,13 +59,9 @@ namespace Columbus
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{
-				auto ShaderSource = LoadShaderFile("ComputeColourGradingLUT.glsl");
 				ComputePipelineDesc Desc;
-
-				ShaderStageDesc Stages[] = { ShaderStageDesc{ ShaderType::Compute, "main" } };
-				Desc.Bytecode = CompileShaderPipelineFromSource_VK(ShaderSource, "ComputeColourGradingLUT", ShaderLanguage::GLSL, Stages, {});
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/ComputeColourGradingLUT.csd");
 				Desc.Name = "ComputeColourGradingLUT";
-
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}
 

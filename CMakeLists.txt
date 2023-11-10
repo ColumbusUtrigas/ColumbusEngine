@@ -253,6 +253,26 @@ function(compile_shader_glsl shaderName stages binaryLocation)
 
 endfunction(compile_shader_glsl)
 
+function(compile_shader_hlsl shaderName stages binaryLocation)
+	get_filename_component(STEM ${shaderName} NAME_WLE)
+	get_filename_component(SHADER_PATH ${shaderName} ABSOLUTE)
+
+	set(SPIRV "${SPIRV_OUTPUT_DIR}${STEM}.csd")
+
+	add_custom_command(
+		OUTPUT ${SPIRV}
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
+		COMMAND "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
+		DEPENDS ${shaderName} ShaderCompiler
+	)
+
+	# just a weird way to append a value to a list in the parent scope
+	set(TMP_LIST ${${binaryLocation}})
+	list(APPEND TMP_LIST ${SPIRV})
+	set(${binaryLocation} "${TMP_LIST}" PARENT_SCOPE)
+
+endfunction(compile_shader_hlsl)
+
 add_subdirectory(ShaderBytecode)
 add_subdirectory(ShaderCompiler)
 

@@ -99,8 +99,19 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		DefinesParameters += " -D" + Define;
 	}
 
+	std::string LanguageArgument = "";
+
+	if (Path.ends_with(".hlsl"))
+	{
+		printf("Compiling as HLSL\n");
+		LanguageArgument = "-D";
+	} else
+	{
+		printf("Compiling as GLSL\n");
+	}
+
 	// TODO: support for non-semantic debug data with -gVS
-	std::string CommandLine = std::format("glslangValidator {} -S {} --target-env vulkan1.2 -e {} -g -o {} {}", DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
+	std::string CommandLine = std::format("glslangValidator {} {} -S {} --target-env vulkan1.2 -e {} -g -o {} {}", LanguageArgument, DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
 
 	printf("Compiling shader with CLI: %s\n", CommandLine.c_str());
 
@@ -125,6 +136,13 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 
 int main(int argc, char** argv)
 {
+	if (argc < 4)
+	{
+		printf("Usage: ShaderCompiler [output] [input] [stages, comma-separated]\n");
+		printf("Supported stages: vs, ps, gs, hs, ds, cs, rgen, rint, rahit, rchit, rmiss\n");
+		return 0;
+	}
+
 	std::string OutputPath = argv[1];
 	std::filesystem::path InputPath = argv[2];
 	std::string Stages = argv[3];

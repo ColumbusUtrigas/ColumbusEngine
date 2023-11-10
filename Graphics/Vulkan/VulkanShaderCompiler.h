@@ -16,7 +16,7 @@ namespace Columbus
 
 	// TODO: refactor/remove, shaderc compilation must stay, but moved to ShaderCompiler
 
-	CompiledShaderBytecode CompileShaderStageFromSource_VK(const std::string& Source, const ShaderStageDesc& Stage, const std::string& Name, std::span<std::string> Defines);
+	CompiledShaderBytecode CompileShaderStageFromSource_VK(const std::string& Source, ShaderLanguage Lang, const ShaderStageDesc& Stage, const std::string& Name, std::span<std::string> Defines);
 	CompiledShaderData     CompileShaderPipelineFromSource_VK(const std::string& Source, const std::string& Name, ShaderLanguage Lang, std::span<ShaderStageDesc> Stages, std::span<std::string> Defines);
 
 }
