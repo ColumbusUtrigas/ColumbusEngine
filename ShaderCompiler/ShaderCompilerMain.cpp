@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -74,6 +75,29 @@ std::string ShaderStageToGlslangStage(ShaderType Stage)
 	}
 }
 
+std::string ShaderStageToDxcStage(ShaderType Stage)
+{
+	std::string profile_version = "6_2";
+
+	switch (Stage)
+	{
+	case ShaderType::Vertex:       return "vs_" + profile_version;
+	case ShaderType::Pixel:	       return "ps_" + profile_version;
+	case ShaderType::Hull:         return "hs_" + profile_version;
+	case ShaderType::Domain:       return "ds_" + profile_version;
+	case ShaderType::Geometry:     return "gs_" + profile_version;
+	case ShaderType::Compute:      return "cs_" + profile_version;
+	case ShaderType::Raygen:       return "lib_" + profile_version;
+	case ShaderType::Miss:         return "lib_" + profile_version;
+	case ShaderType::Anyhit:       return "lib_" + profile_version;
+	case ShaderType::ClosestHit:   return "lib_" + profile_version;
+	case ShaderType::Intersection: return "lib_" + profile_version;
+	default:
+		printf("Fatal error: unrecognised shader stage %i\n", int(Stage));
+		exit(1);
+	}
+}
+
 std::vector<std::string> DivideStringBy(std::string s, std::string delimiter)
 {
 	std::vector<std::string> result;
@@ -99,19 +123,37 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		DefinesParameters += " -D" + Define;
 	}
 
-	std::string LanguageArgument = "";
+	std::string CommandLine;
 
 	if (Path.ends_with(".hlsl"))
 	{
 		printf("Compiling as HLSL\n");
-		LanguageArgument = "-D";
+
+		const char* DxcPath = getenv("DXC_PATH");
+		printf("DXC_PATH is %s\n", DxcPath ? DxcPath : "not specified");
+
+		std::string SpvExtensions;
+		// -fspv-reflect requires these
+		// SpvExtensions += "-fspv-extension=SPV_GOOGLE_hlsl_functionality1 ";
+		// SpvExtensions += "-fspv-extension=SPV_GOOGLE_user_type ";
+
+		SpvExtensions += "-fspv-extension=SPV_KHR_ray_tracing ";
+		//SpvExtensions += "-fspv-extension=SPV_KHR_shader_draw_parameters ";
+		SpvExtensions += "-fspv-extension=SPV_EXT_descriptor_indexing ";
+		//SpvExtensions += "-fspv-extension=SPV_EXT_shader_viewport_index_layer ";
+
+		if (DxcPath == nullptr)
+			exit(1);
+
+		// ${DXC} -E main -DPIXEL_SHADER -spirv -T ps_6_3 -fspv-reflect -fspv-target-env=vulkan1.2 -Zi Tonemap.hlsl
+		CommandLine = std::format("{} {} -E {} -T {} {} -fspv-preserve-bindings -fspv-target-env=vulkan1.2 -spirv -Zi {} -Fo {}", DxcPath, DefinesParameters, EntryPoint, ShaderStageToDxcStage(Stage), SpvExtensions, Path, TmpOutput);
 	} else
 	{
 		printf("Compiling as GLSL\n");
-	}
 
-	// TODO: support for non-semantic debug data with -gVS
-	std::string CommandLine = std::format("glslangValidator {} {} -S {} --target-env vulkan1.2 -e {} -g -o {} {}", LanguageArgument, DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
+		// TODO: support for non-semantic debug data with -gVS
+		CommandLine = std::format("glslangValidator {} -S {} --target-env vulkan1.2 -e {} -g -o {} {}", DefinesParameters, ShaderStageToGlslangStage(Stage), EntryPoint, TmpOutput, Path);
+	}
 
 	printf("Compiling shader with CLI: %s\n", CommandLine.c_str());
 

@@ -31,6 +31,12 @@ namespace Columbus
 	// Real-time
 	//
 
+	// TODO: create a context for current RG, history and additional resources
+	struct HistorySceneTextures
+	{
+		SPtr<Texture2> Depth;
+	};
+
 	struct SceneTextures
 	{
 		RenderGraphTextureRef GBufferAlbedo;
@@ -38,12 +44,16 @@ namespace Columbus
 		RenderGraphTextureRef GBufferWP; // World Position
 		RenderGraphTextureRef GBufferRM; // Roughness Metallic
 		RenderGraphTextureRef GBufferDS; // Depth Stencil
+		RenderGraphTextureRef Velocity;
+
+		HistorySceneTextures& History;
 	};
 
-	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View);
+	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History);
+	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures);
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures);
-	void RenderDeferred(RenderGraph& Graph, const RenderView& View);
+	void RenderDeferred(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& HistoryTextures);
 
 	// Real-time raytracing
 	//

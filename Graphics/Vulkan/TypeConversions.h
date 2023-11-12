@@ -5,6 +5,7 @@
 #include <Common/Image/Image.h>
 #include <vulkan/vulkan.h>
 #include <cassert>
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -98,7 +99,12 @@ namespace Columbus
 
 			case TextureFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
 
+			case TextureFormat::R32UInt: return VK_FORMAT_R32_UINT;
+
 			case TextureFormat::BGRA8SRGB: return VK_FORMAT_B8G8R8A8_SRGB;
+
+			case TextureFormat::R11G11B10F: return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
+
 			case TextureFormat::Depth24: return VK_FORMAT_D24_UNORM_S8_UINT;
 			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
 			case TextureFormat::DXT5: return VK_FORMAT_BC5_UNORM_BLOCK;

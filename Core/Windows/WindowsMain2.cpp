@@ -460,14 +460,34 @@ void NewFrameImgui(WindowVulkan& Window)
 //	- solution 2 - simple - just create it in rendergraph
 int main()
 {
+	// Matrix testMatrix(
+	// 	{4,3,2,2},
+	// 	{0,1,-3,3},
+	// 	{0,-1,3,3},
+	// 	{0,3,1,1});
+
+	// Matrix3x3 minor00 = testMatrix.GetMinorMatrix(0, 0);
+	// Matrix3x3 minor01 = testMatrix.GetMinorMatrix(0, 1);
+	// Matrix3x3 minor02 = testMatrix.GetMinorMatrix(0, 2);
+
+	// testMatrix.DebugPrint();
+	// Matrix inverse = testMatrix.GetInverted();
+
+	// printf("%f\n", testMatrix.GetDeterminant());
+	// inverse.DebugPrint();
+	// (testMatrix * inverse).DebugPrint();
+	// return 0;
 	InitializeEngine();
 
-	Camera camera;
+	Camera camera, cameraPrev;
 	Columbus::Timer timer;
 	camera.Pos = { 0, 300, 104 };
 	camera.Rot = { 0, -70, 0 };
 	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
 	float CameraSpeed = 200;
+
+	camera.Update();
+	cameraPrev = camera;
 
 	// SPtr<GPUScene> scene = std::make_shared<GPUScene>();
 
@@ -480,6 +500,7 @@ int main()
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
+	HistorySceneTextures HistoryTextures; // for deferred
 
 	IrradianceVolume Volume;
 	Volume.Position = { 1000, 50, -250 };
@@ -541,14 +562,17 @@ int main()
 		RenderView View {
 			.Swapchain = Window.Swapchain,
 			.OutputSize = Window.Size,
-			.Camera = camera,
+			.CameraCur = camera,
+			.CameraPrev = cameraPrev
 		};
+
+		cameraPrev = camera;
 
 		renderGraph.Clear();
 
 		if (render_cvar.GetValue() == 0)
 		{
-			RenderDeferred(renderGraph, View);
+			RenderDeferred(renderGraph, View, HistoryTextures);
 		}
 		else
 		{

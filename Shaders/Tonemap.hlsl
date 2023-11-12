@@ -5,7 +5,7 @@ struct VS_TO_PS
 };
 
 #ifdef VERTEX_SHADER
-const float2 pos[3] = {
+static const float2 pos[3] = {
 	float2(-1, -1),
 	float2(-1, 3),
 	float2(3, -1),
@@ -24,11 +24,11 @@ VS_TO_PS main(uint VertexID : SV_VertexID)
 RWTexture2D<float4> SceneTexture;
 
 [[vk::push_constant]]
-cbuffer Params {
+struct _Params {
 	uint FilmCurve;
 	uint OutputTransform;
 	uint2 Resolution;
-};
+} Params;
 
 // From BakingLab by MJP
 //
@@ -36,7 +36,7 @@ cbuffer Params {
 // credit for coming up with this fit and implementing it. Buy him a beer next time you see him. :)
 
 // sRGB => XYZ => D65_2_D60 => AP1 => RRT_SAT
-const float3x3 ACESInputMat =
+static const float3x3 ACESInputMat =
 {
     {0.59719, 0.35458, 0.04823},
     {0.07600, 0.90834, 0.01566},
@@ -44,7 +44,7 @@ const float3x3 ACESInputMat =
 };
 
 // ODT_SAT => XYZ => D60_2_D65 => sRGB
-const float3x3 ACESOutputMat =
+static const float3x3 ACESOutputMat =
 {
     { 1.60475, -0.53108, -0.07367},
     {-0.10208,  1.10813, -0.00605},
@@ -60,18 +60,18 @@ float3 RRTAndODTFit(float3 v)
 
 float3 ACESFitted(float3 color)
 {
-    color = ACESInputMat * color;
+    color = mul(ACESInputMat, color);
 
     // Apply RRT and ODT
     color = RRTAndODTFit(color);
 
-    color = ACESOutputMat * color;
+    color = mul(ACESOutputMat, color);
 
     // Clamp to [0, 1]
     color = clamp(color, 0, 1);
 
 	// sRGB output
-	color = pow(color, float3(0.45));
+	color = pow(color, float3(0.45, 0.45, 0.45));
 
     return color;
 }
@@ -91,7 +91,7 @@ float4 main(VS_TO_PS Input) : SV_TARGET
 	// Apply Output Transform (Rec709 or Rec2020-PQ)
 
 	float3 Linear = float3(Input.Uv*5, 0);
-	Linear = SceneTexture[uint2(Input.Uv * Resolution)].rgb;
+	Linear = SceneTexture[uint2(Input.Uv * Params.Resolution)].rgb;
 
 	return float4(Tonemap(Linear),1);
 }

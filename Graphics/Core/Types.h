@@ -256,6 +256,18 @@ namespace Columbus
 		Back
 	};
 
+	// TODO: binding system
+	enum class TextureBindingFlags : u32
+	{
+		AspectDepth   = 1,
+		AspectStencil = 2,
+		AspectColour  = 4,
+	};
+
+	inline constexpr bool operator!=(TextureBindingFlags x, u64 y) { return static_cast<uint64_t>(x) != y; }
+	inline constexpr TextureBindingFlags operator|(TextureBindingFlags x, TextureBindingFlags y) { return static_cast<TextureBindingFlags>(static_cast<uint64_t>(x) | static_cast<uint64_t>(y)); }
+	inline constexpr TextureBindingFlags operator&(TextureBindingFlags x, TextureBindingFlags y) { return static_cast<TextureBindingFlags>(static_cast<uint64_t>(x) & static_cast<uint64_t>(y)); }
+
 	enum COLOR_MASK
 	{
 		COLOR_MASK_RED = 1,

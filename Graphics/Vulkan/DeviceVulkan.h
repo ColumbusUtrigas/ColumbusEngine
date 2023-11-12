@@ -2,6 +2,7 @@
 
 #include "Core/fixed_vector.h"
 #include "Graphics/Core/GraphicsCore.h"
+#include "Graphics/Core/Types.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/DeviceVulkanFunctions.h"
 #include "Graphics/Vulkan/FenceVulkan.h"
@@ -217,8 +218,9 @@ namespace Columbus
 		VkDescriptorSet CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
 
+		// TODO: refactor binding system
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer);
-		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture);
+		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture, TextureBindingFlags Flags = TextureBindingFlags::AspectColour, VkDescriptorType DescriptorType = VK_DESCRIPTOR_TYPE_MAX_ENUM);
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const AccelerationStructure* TLAS);
 
 		// TODO: streaming

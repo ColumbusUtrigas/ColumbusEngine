@@ -38,6 +38,7 @@ namespace Columbus
 		void BindGraphicsPipeline(const GraphicsPipeline* Pipeline);
 		void BindRayTracingPipeline(const RayTracingPipeline* Pipeline);
 
+		void PushConstantsCompute(const ComputePipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues);
 		void BindDescriptorSetsCompute(const ComputePipeline* Pipeline, uint32 First, uint32 Count, const VkDescriptorSet* Sets);
 
 		void PushConstantsGraphics(const GraphicsPipeline* pipeline, ShaderType stages, uint32_t offset, uint32_t size, const void* pValues);

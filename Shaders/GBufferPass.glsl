@@ -5,7 +5,7 @@
 
 layout(push_constant) uniform Params
 {
-	mat4 M,V,P;
+	mat4 M,VP,VPPrev;
 	uint ObjectId;
 } Parameters;
 
@@ -14,6 +14,9 @@ layout(push_constant) uniform Params
 	layout (location = 1) out vec2 OutUV;
 	layout (location = 2) out uint OutTextureId;
 	layout (location = 3) out vec3 OutWP;
+
+	layout (location = 4) out vec4 OutClipspacePos;
+	layout (location = 5) out vec4 OutClipspacePosPrev;
 
 	void main()
 	{
@@ -30,7 +33,12 @@ layout(push_constant) uniform Params
 
 		OutWP = vertex;
 		
-		gl_Position = Parameters.P * Parameters.V * vec4(vertex, 1) * vec4(1, -1, 1, 1);
+		vec4 ClipspacePos = Parameters.VP * vec4(vertex, 1) * vec4(1, -1, 1, 1);
+		vec4 ClipspacePosPrev = Parameters.VPPrev * vec4(vertex, 1) * vec4(1, -1, 1, 1);
+		OutClipspacePos = ClipspacePos;
+		OutClipspacePosPrev = ClipspacePosPrev;
+
+		gl_Position = ClipspacePos;
 		OutNormal = normal;
 		OutUV = UvsBuffers[Parameters.ObjectId].uvs[index];
 		OutTextureId = MaterialsBuffers[Parameters.ObjectId].id;
@@ -42,11 +50,14 @@ layout(push_constant) uniform Params
 	layout(location = 1) out vec3 RT1;
 	layout(location = 2) out vec3 RT2;
 	layout(location = 3) out vec2 RT3;
+	layout(location = 4) out vec2 RT4;
 
 	layout (location = 0) in vec3 InNormal;
 	layout (location = 1) in vec2 InUV;
 	layout (location = 2) in flat uint InTextureId;
 	layout (location = 3) in vec3 InWP;
+	layout (location = 4) in vec4 InClipspacePos;
+	layout (location = 5) in vec4 InClipspacePosPrev;
 
 	void main()
 	{
@@ -55,5 +66,6 @@ layout(push_constant) uniform Params
 		RT1 = InNormal;
 		RT2 = InWP;
 		RT3 = vec2(1, 0);
+		RT4 =  vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);
 	}
 #endif

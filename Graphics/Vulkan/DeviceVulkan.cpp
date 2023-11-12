@@ -1,6 +1,7 @@
 #include "CommandBufferVulkan.h"
 
 #include "Common/Image/Image.h"
+#include "Core/Assert.h"
 #include "Core/fixed_vector.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
@@ -211,7 +212,7 @@ namespace Columbus
 		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
 	}
 
-	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture)
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture, TextureBindingFlags Flags, VkDescriptorType DescriptorType)
 	{
 		auto vktex = static_cast<const TextureVulkan*>(Texture);
 
@@ -220,6 +221,26 @@ namespace Columbus
 		imageInfo.imageView = vktex->_View;
 		imageInfo.sampler = vktex->_Sampler;
 
+		if ((Flags & TextureBindingFlags::AspectColour) != 0)
+		{
+			imageInfo.imageView = vktex->_View;
+		}
+		else if ((Flags & TextureBindingFlags::AspectDepth) != 0 && (Flags & TextureBindingFlags::AspectStencil) != 0)
+		{
+			imageInfo.imageView = vktex->_View;
+		}
+		else if ((Flags & TextureBindingFlags::AspectDepth) != 0)
+		{
+			imageInfo.imageView = vktex->_DepthView;
+		}
+		else if ((Flags & TextureBindingFlags::AspectStencil) != 0)
+		{
+			imageInfo.imageView = vktex->_StencilView;
+		} else
+		{
+			COLUMBUS_ASSERT_MESSAGE(false, "Wrong aspects for texture binding");
+		}
+
 		VkWriteDescriptorSet write;
 		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		write.pNext = nullptr;
@@ -227,7 +248,13 @@ namespace Columbus
 		write.dstBinding = BindingId;
 		write.dstArrayElement = ArrayId;
 		write.descriptorCount = 1;
-		write.descriptorType = TextureUsageToVkDescriptorType(Texture->GetDesc().Usage);
+
+		// TODO: refactor binding system
+		if (DescriptorType == VK_DESCRIPTOR_TYPE_MAX_ENUM)
+			write.descriptorType = TextureUsageToVkDescriptorType(Texture->GetDesc().Usage);
+		else
+			write.descriptorType = DescriptorType;
+
 		write.pImageInfo = &imageInfo;
 		write.pBufferInfo = nullptr;
 		write.pTexelBufferView = nullptr;
@@ -516,6 +543,8 @@ namespace Columbus
 
 		vkDestroySampler(_Device, vktex->_Sampler, nullptr);
 		vkDestroyImageView(_Device, vktex->_View, nullptr);
+		if (vktex->_DepthView != NULL) vkDestroyImageView(_Device, vktex->_DepthView, nullptr);
+		if (vktex->_StencilView != NULL) vkDestroyImageView(_Device, vktex->_StencilView, nullptr);
 		vmaDestroyImage(_Allocator, vktex->_Image, vktex->_Allocation);
 	}
 
@@ -668,23 +697,72 @@ namespace Columbus
 
 		result->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		VkImageViewCreateInfo viewInfo;
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.pNext = nullptr;
-		viewInfo.flags = 0;
-		viewInfo.image = result->_Image;
-		viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
-		viewInfo.format = TextureFormatToVK(Desc.Format);
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-		viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Desc.Format);
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = Desc.Mips;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
-		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_View));
+		// colour or depth-stencil view
+		{
+			VkImageViewCreateInfo viewInfo;
+			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			viewInfo.pNext = nullptr;
+			viewInfo.flags = 0;
+			viewInfo.image = result->_Image;
+			viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
+			viewInfo.format = TextureFormatToVK(Desc.Format);
+			viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+			viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+			viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+			viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+			viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Desc.Format); // colour or depth-stencil
+			viewInfo.subresourceRange.baseMipLevel = 0;
+			viewInfo.subresourceRange.levelCount = Desc.Mips;
+			viewInfo.subresourceRange.baseArrayLayer = 0;
+			viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+			VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_View));
+		}
+
+		if (ImageIsDepthFormat(Desc.Format))
+		{
+			// depth-only view
+			{
+				VkImageViewCreateInfo viewInfo;
+				viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				viewInfo.pNext = nullptr;
+				viewInfo.flags = 0;
+				viewInfo.image = result->_Image;
+				viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
+				viewInfo.format = TextureFormatToVK(Desc.Format);
+				viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+				viewInfo.subresourceRange.baseMipLevel = 0;
+				viewInfo.subresourceRange.levelCount = Desc.Mips;
+				viewInfo.subresourceRange.baseArrayLayer = 0;
+				viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_DepthView));
+			}
+
+			if (ImageIsStencilFormat(Desc.Format))
+			{
+				// stencil-only view
+				VkImageViewCreateInfo viewInfo;
+				viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				viewInfo.pNext = nullptr;
+				viewInfo.flags = 0;
+				viewInfo.image = result->_Image;
+				viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
+				viewInfo.format = TextureFormatToVK(Desc.Format);
+				viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
+				viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+				viewInfo.subresourceRange.baseMipLevel = 0;
+				viewInfo.subresourceRange.levelCount = Desc.Mips;
+				viewInfo.subresourceRange.baseArrayLayer = 0;
+				viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_StencilView));
+			}
+		}
 
 		VkSamplerCreateInfo samplerInfo;
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

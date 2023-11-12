@@ -12,11 +12,12 @@ namespace Columbus
 
 	struct PerObjectParameters
 	{
-		Matrix M,V,P;
+		Matrix M,VP,VPPrev;
+		// Matrix VPrev, PPrev;
 		uint32_t ObjectId;
 	};
 
-	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View)
+	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History)
 	{
 		TextureDesc2 CommonDesc;
 		CommonDesc.Usage = TextureUsage::RenderTargetColor;
@@ -28,19 +29,22 @@ namespace Columbus
 		TextureDesc2 WPDesc = CommonDesc;
 		TextureDesc2 RMDesc = CommonDesc;
 		TextureDesc2 DSDesc = CommonDesc;
+		TextureDesc2 VelocityDesc = CommonDesc;
 		AlbedoDesc.Format = TextureFormat::RGBA8;
 		NormalDesc.Format = TextureFormat::RGBA16F;
 		WPDesc.Format = TextureFormat::RGBA32F;
 		RMDesc.Format = TextureFormat::RG8;
 		DSDesc.Format = TextureFormat::Depth24;
 		DSDesc.Usage = TextureUsage::RenderTargetDepth;
+		VelocityDesc.Format = TextureFormat::RG16F;
 
-		SceneTextures Result;
+		SceneTextures Result { .History = History };
 		Result.GBufferAlbedo = Graph.CreateTexture(AlbedoDesc, "GBufferAlbedo");
 		Result.GBufferNormal = Graph.CreateTexture(NormalDesc, "GBufferNormal");
 		Result.GBufferWP = Graph.CreateTexture(WPDesc, "GBufferWP");
 		Result.GBufferRM = Graph.CreateTexture(RMDesc, "GBufferRM");
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
+		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
 		return Result;
 	}
 
@@ -51,6 +55,7 @@ namespace Columbus
 		Parameters.ColorAttachments[1] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferNormal };
 		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP };
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
+		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 
 		RenderPassDependencies Dependencies;
@@ -65,6 +70,7 @@ namespace Columbus
 				Desc.Name = "GBufferPass";
 				Desc.rasterizerState.Cull = CullMode::No;
 				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
@@ -86,8 +92,10 @@ namespace Columbus
 			{
 				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
 				Parameters.M = Matrix(1);
-				Parameters.V = View.Camera.GetViewMatrix();
-				Parameters.P = View.Camera.GetProjectionMatrix();
+				Parameters.VP = View.CameraCur.GetViewProjection();
+				// Parameters.P = View.CameraCur.GetProjectionMatrix();
+				Parameters.VPPrev = View.CameraPrev.GetViewProjection();
+				// Parameters.PPrev = View.CameraPrev.GetProjectionMatrix();
 				Parameters.ObjectId = i;
 
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
@@ -162,9 +170,14 @@ namespace Columbus
 		});
 	}
 
-	void RenderDeferred(RenderGraph& Graph, const RenderView& View)
+	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures)
 	{
-		SceneTextures Textures = CreateSceneTextures(Graph, View);
+		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
+	}
+
+	void RenderDeferred(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& HistoryTextures)
+	{
+		SceneTextures Textures = CreateSceneTextures(Graph, View, HistoryTextures);
 
 		RenderGBufferPass(Graph, View, Textures);
 
@@ -173,6 +186,7 @@ namespace Columbus
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		DebugOverlayPass(Graph, View, TonemappedImage);
 		CopyToSwapchain(Graph, View, TonemappedImage);
+		ExtractHistorySceneTextures(Graph, View, Textures, HistoryTextures);
 	}
 
 }

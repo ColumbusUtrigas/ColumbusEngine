@@ -9,6 +9,32 @@
 namespace Columbus
 {
 
+	struct Matrix3x3
+	{
+	public:
+		float M[3][3];
+	public:
+		float GetDeterminant() const
+		{
+			return
+				M[0][0] * (M[1][1]*M[2][2] - M[1][2]*M[2][1]) - // cofactor of M[0][0]
+				M[1][0] * (M[0][1]*M[2][2] - M[0][2]*M[2][1]) + // cofactor of M[1][0]
+				M[2][0] * (M[0][1]*M[1][2] - M[0][2]*M[1][1]);  // cofactor of M[2][0]
+		}
+
+		void DebugPrint()
+		{
+			printf("---------------------------\n");
+
+			for (int i = 0; i < 3; i++)
+			{
+				printf("%f %f %f\n", M[i][0], M[i][1], M[i][2]);
+			}
+
+			printf("---------------------------\n");
+		}
+	};
+
 	class Matrix
 	{
 	public:
@@ -104,6 +130,110 @@ namespace Columbus
 		Matrix& Transpose()
 		{
 			return *this = GetTransposed();
+		}
+
+		// determinant of a basis, first 3 rows/columns
+		float GetDeterminant3x3Basis() const
+		{
+			return
+				M[0][0] * (M[1][1]*M[2][2] - M[1][2]*M[2][1]) - // cofactor of M[0][0]
+				M[1][0] * (M[0][1]*M[2][2] - M[0][2]*M[2][1]) + // cofactor of M[1][0]
+				M[2][0] * (M[0][1]*M[1][2] - M[0][2]*M[1][1]);  // cofactor of M[2][0]
+		}
+
+		// minor matrix of element M[Y][X], 3x3 matrix with X column and Y row excluded
+		Matrix3x3 GetMinorMatrix(int X, int Y) const
+		{
+			Matrix3x3 Minor;
+			int CurX = 0;
+			int CurY = 0;
+
+			for (int i = 0; i < 4; i++)
+			{
+				if (i != Y) // exclude Y row
+				{
+					CurX = 0;
+					for (int j = 0; j < 4; j++)
+					{
+						if (j != X) // exclude X column
+						{
+							Minor.M[CurY][CurX] = M[i][j];
+							CurX++;
+						}
+					}
+					CurY++;
+				}
+			}
+
+			return Minor;
+		}
+
+		// minor of element M[Y][X], determinant of a 3x3 matrix with X column and Y row excluded
+		float GetMinor(int X, int Y) const
+		{
+			return GetMinorMatrix(X, Y).GetDeterminant();
+		}
+
+		float GetDeterminant() const
+		{
+			float det_00 = // determinant of minor M[0][0]
+				M[1][1] * (M[2][2]*M[3][3] - M[2][3]*M[3][2]) - // cofactor of M[1][1]
+				M[2][1] * (M[1][2]*M[3][3] - M[1][3]*M[3][2]) + // cofactor of M[2][1]
+				M[3][1] * (M[1][2]*M[2][3] - M[1][3]*M[2][2]);  // cofactor of M[3][1]
+
+			float det_10 = // determinant of minor M[1][0]
+				M[0][1] * (M[2][2]*M[3][3] - M[2][3]*M[3][2]) - // cofactor of M[0][1]
+				M[2][1] * (M[0][2]*M[3][3] - M[0][3]*M[3][2]) + // cofactor of M[2][1]
+				M[3][1] * (M[0][2]*M[2][3] - M[0][3]*M[2][2]);  // cofactor of M[3][1]
+
+			float det_20 = // determinant of minor M[2][0]
+				M[0][1] * (M[1][2]*M[3][3] - M[1][3]*M[3][2]) - // cofactor of M[0][1]
+				M[1][1] * (M[0][2]*M[3][3] - M[0][3]*M[3][2]) + // cofactor of M[1][1]
+				M[3][1] * (M[0][2]*M[1][3] - M[0][3]*M[1][2]);  // cofactor of M[3][1]
+
+			float det_30 = // determinant of minor M[3][0]
+				M[0][1] * (M[1][2]*M[2][3] - M[1][3]*M[2][2]) - // cofactor of M[0][1]
+				M[1][1] * (M[0][2]*M[2][3] - M[0][3]*M[3][1]) + // cofactor of M[1][1]
+				M[2][1] * (M[0][2]*M[1][3] - M[0][3]*M[1][2]);  // cofactor of M[2][1]
+
+			return
+				M[0][0] * det_00 - // cofactor of M[0][0]
+				M[1][0] * det_10 + // cofactor of M[1][0]
+				M[2][0] * det_20 - // cofactor of M[2][0]
+				M[3][0] * det_30;  // cofactor of M[3][0]
+		}
+
+		Matrix GetInverted() const
+		{
+			float det = GetDeterminant();
+
+			if (abs(det) < 0.0001f)
+			{
+				return Matrix(1);
+			}
+
+			Matrix Result(0);
+
+			// Compute matrix of cofactors
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					float mul = pow(-1, i+j); // "checkerboard" of signs for cofactors
+					float minor = GetMinor(j, i) * mul;
+					Result.M[i][j] = minor;
+				}
+			}
+
+			// Convert it to an adjoint matrix
+			Result.Transpose();
+
+			return Result * (1.0f / det);
+		}
+
+		Matrix& Invert()
+		{
+			return *this = GetInverted();
 		}
 		
 		inline Matrix& Translate(const Vector3& Position)
@@ -249,6 +379,21 @@ namespace Columbus
 			M[3][1] = -Vector3::Dot(u, Position);
 			M[3][2] = Vector3::Dot(f, Position);
 			return *this;
+		}
+
+		Matrix operator*(const float Other) const
+		{
+			Matrix Result = *this;
+
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					Result.M[i][j] *= Other;
+				}
+			}
+
+			return Result;
 		}
 		
 		Matrix operator*(const Matrix& Other) const

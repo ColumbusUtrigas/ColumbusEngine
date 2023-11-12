@@ -231,18 +231,28 @@ target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} spirv_reflect)
 target_link_libraries(${TARGET} ShaderBytecode)
 
+if (LINUX)
+	set(DXC_PATH "${CMAKE_SOURCE_DIR}/Lib/dxc/linux/bin/dxc")
+elseif (WIN32)
+	set(DXC_PATH "${CMAKE_SOURCE_DIR}/Lib/dxc/windows/bin/x64/dxc.exe")
+endif()
+
 # TODO: separate this function somehow
 set(SPIRV_OUTPUT_DIR "${BINARIES_DIR}/PrecompiledShaders/")
 function(compile_shader_glsl shaderName stages binaryLocation)
 	get_filename_component(STEM ${shaderName} NAME_WLE)
 	get_filename_component(SHADER_PATH ${shaderName} ABSOLUTE)
+	get_filename_component(DIR ${shaderName} DIRECTORY)
+	file(RELATIVE_PATH SHADER_PATH_REL ${CMAKE_CURRENT_SOURCE_DIR} ${SHADER_PATH})
 
-	set(SPIRV "${SPIRV_OUTPUT_DIR}${STEM}.csd")
+	set(SPIRV "${SPIRV_OUTPUT_DIR}${DIR}/${STEM}.csd")
+	cmake_path(GET SPIRV PARENT_PATH SPIRV_DIR)
 
 	add_custom_command(
 		OUTPUT ${SPIRV}
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
-		COMMAND "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
+		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
 		DEPENDS ${shaderName} ShaderCompiler
 	)
 
@@ -256,13 +266,17 @@ endfunction(compile_shader_glsl)
 function(compile_shader_hlsl shaderName stages binaryLocation)
 	get_filename_component(STEM ${shaderName} NAME_WLE)
 	get_filename_component(SHADER_PATH ${shaderName} ABSOLUTE)
+	get_filename_component(DIR ${shaderName} DIRECTORY)
+	file(RELATIVE_PATH SHADER_PATH_REL ${CMAKE_CURRENT_SOURCE_DIR} ${SHADER_PATH})
 
-	set(SPIRV "${SPIRV_OUTPUT_DIR}${STEM}.csd")
+	set(SPIRV "${SPIRV_OUTPUT_DIR}${DIR}/${STEM}.csd")
+	cmake_path(GET SPIRV PARENT_PATH SPIRV_DIR)
 
 	add_custom_command(
 		OUTPUT ${SPIRV}
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
-		COMMAND "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
+		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
 		DEPENDS ${shaderName} ShaderCompiler
 	)
 

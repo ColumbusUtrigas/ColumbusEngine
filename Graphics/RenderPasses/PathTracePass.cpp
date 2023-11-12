@@ -60,7 +60,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 				Context.Device->UpdateDescriptorSet(RTSet, 1, 0, Context.GetRenderGraphTexture(RTImage).get());
 
-				GPUCamera UpdatedCamera = GPUCamera(View.Camera);
+				GPUCamera UpdatedCamera = GPUCamera(View.CameraCur);
 				Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 				Context.Scene->MainCamera = UpdatedCamera;
 

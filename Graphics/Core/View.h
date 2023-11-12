@@ -12,7 +12,8 @@ namespace Columbus
 	{
 		SwapchainVulkan* Swapchain;
 		iVector2 OutputSize;
-		Camera Camera;
+		Camera CameraCur;
+		Camera CameraPrev;
 	};
 
 }

@@ -12,7 +12,9 @@ namespace Columbus
 	public:
 		VkImageLayout _Layout;
 		VkImage _Image;
-		VkImageView _View;
+		VkImageView _View; // colour or depth-stencil view
+		VkImageView _DepthView = NULL; // TODO?
+		VkImageView _StencilView = NULL; // TODO?
 		VkSampler _Sampler;
 		VmaAllocation _Allocation;
 	public:

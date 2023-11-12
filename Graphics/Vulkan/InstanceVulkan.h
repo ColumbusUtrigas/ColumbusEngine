@@ -107,8 +107,8 @@ namespace Columbus
 					if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 					{
 						Log::Error("%s {%s} %s", prefix, messageId, message);
-						WriteStacktraceToLog();
-						// DEBUGBREAK();
+						//WriteStacktraceToLog();
+						DEBUGBREAK();
 					}
 
 					return VK_FALSE;

@@ -38,6 +38,8 @@ namespace Columbus
 			case TextureFormat::RGB32F:  return 12; break;
 			case TextureFormat::RGBA32F: return 16; break;
 
+			case TextureFormat::R32UInt: return 4; break;
+
 			case TextureFormat::R11G11B10F: return 4; break;
 
 			case TextureFormat::Unknown: return 0;  break;
@@ -105,6 +107,7 @@ namespace Columbus
 		{
 		case TextureFormat::R8:
 		case TextureFormat::R16:
+		case TextureFormat::R32UInt:
 		case TextureFormat::R16F:
 		case TextureFormat::R32F: return 1;
 
@@ -153,6 +156,8 @@ namespace Columbus
 		case TextureFormat::RG32F:   return "RG32F";  break;
 		case TextureFormat::RGB32F:  return "RGB32F"; break;
 		case TextureFormat::RGBA32F: return "RGBA32F"; break;
+
+		case TextureFormat::R32UInt: return "R32Uint"; break;
 
 		case TextureFormat::BGRA8SRGB: return "BGRA8sRGB"; break;
 
@@ -226,6 +231,18 @@ namespace Columbus
 			case TextureFormat::Depth24Stencil8:
 			case TextureFormat::Depth32FStencil8:
 			case TextureFormat::Depth32F:
+				return true;
+
+			default: return false;
+		}
+	}
+
+	bool ImageIsStencilFormat(TextureFormat Format)
+	{
+		switch (Format)
+		{
+			case TextureFormat::Depth24Stencil8:
+			case TextureFormat::Depth32FStencil8:
 				return true;
 
 			default: return false;

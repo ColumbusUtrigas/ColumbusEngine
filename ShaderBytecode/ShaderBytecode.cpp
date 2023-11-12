@@ -185,57 +185,76 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 	{
 		DescriptorSetReflectionData setInfo;
 
+		SpvReflectDescriptorType UsedDescriptorTypesCache[32]{(SpvReflectDescriptorType)-1};
+
 		for (int b = 0; b < sets[i]->binding_count; b++)
 		{
 			auto binding = sets[i]->bindings[b];
 			assert(Bytecode.Stage == ShaderType::Vertex || Bytecode.Stage == ShaderType::Pixel || Bytecode.Stage == ShaderType::Raygen || Bytecode.Stage == ShaderType::ClosestHit || Bytecode.Stage == ShaderType::Compute);
 
-			VkDescriptorType descriptorType;
-			switch (binding->descriptor_type)
+			bool skipBinding = false;
+
+			// we don't need a designated sampler if we already have a combined image sampler for this binding
+			if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER && UsedDescriptorTypesCache[binding->binding] == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 			{
-				case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-					descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-					break;
-
-				case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-					descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-					break;
-
-				case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-					descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-					break;
-
-				case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-					descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-					break;
-
-				default:
-					assert(false && "Descriptor type is not supported");
-					break;
+				skipBinding = true;
 			}
 
-			VkDescriptorSetLayoutBinding bindingInfo;
-			bindingInfo.binding = binding->binding;
-			bindingInfo.descriptorType = descriptorType;
-			bindingInfo.descriptorCount = binding->count;
-			// bindingInfo.stageFlags = vkstage;
-			bindingInfo.stageFlags = VK_SHADER_STAGE_ALL;
-			bindingInfo.pImmutableSamplers = nullptr;
-
-			VkDescriptorBindingFlags bindingFlag = 0;
-
-			// If it is an array of descriptors, we assume that it's size is variable and access is non-uniform
-			if (binding->array.dims_count > 0)
+			if (!skipBinding)
 			{
-				assert(b == (sets[i]->binding_count - 1)); // Variable descriptor must be the last in the set
+				UsedDescriptorTypesCache[binding->binding] = binding->descriptor_type;
 
-				setInfo.VariableCountMax = binding->count;
+				VkDescriptorType descriptorType;
+				switch (binding->descriptor_type)
+				{
+					case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+						descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+						break;
 
-				bindingFlag |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+					case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+						descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+						break;
+
+					case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+						descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+						break;
+
+					case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+						descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+						break;
+
+					case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+						descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+						break;
+
+					default:
+						assert(false && "Descriptor type is not supported");
+						break;
+				}
+
+				VkDescriptorSetLayoutBinding bindingInfo;
+				bindingInfo.binding = binding->binding;
+				bindingInfo.descriptorType = descriptorType;
+				bindingInfo.descriptorCount = binding->count;
+				// bindingInfo.stageFlags = vkstage;
+				bindingInfo.stageFlags = VK_SHADER_STAGE_ALL;
+				bindingInfo.pImmutableSamplers = nullptr;
+
+				VkDescriptorBindingFlags bindingFlag = 0;
+
+				// If it is an array of descriptors, we assume that it's size is variable and access is non-uniform
+				if (binding->array.dims_count > 0)
+				{
+					assert(b == (sets[i]->binding_count - 1)); // Variable descriptor must be the last in the set
+
+					setInfo.VariableCountMax = binding->count;
+
+					bindingFlag |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+				}
+
+				setInfo.Bindings.push_back(bindingInfo);
+				setInfo.BindingFlags.push_back(bindingFlag);
 			}
-
-			setInfo.Bindings.push_back(bindingInfo);
-			setInfo.BindingFlags.push_back(bindingFlag);
 		}
 
 		Reflection->DescriptorSets.push_back(setInfo);
