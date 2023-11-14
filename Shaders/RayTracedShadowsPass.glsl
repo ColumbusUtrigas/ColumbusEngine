@@ -18,14 +18,12 @@ struct RayPayload {
 	layout(binding = 1, set = 7, rgba16f) uniform image2D ShadowsBuffer;
 	layout(binding = 2, set = 7) uniform sampler2D GBufferNormals;
 	layout(binding = 3, set = 7) uniform sampler2D GBufferWorldPosition;
-	layout(binding = 4, set = 7, rgba16f) uniform image2D HistoryBuffer;
 
 	layout(push_constant) uniform params
 	{
 		vec3 Direction;
 		float Angle;
 		float Random;
-		bool ValidHistory;
 	} Params;
 
 	// 0 < angle < 2pi
@@ -79,12 +77,6 @@ struct RayPayload {
 		} else
 		{
 			Result = 1;
-		}
-
-		if (Params.ValidHistory)
-		{
-			float HistoryResult = imageLoad(ShadowsBuffer, ivec2(gl_LaunchIDEXT)).r;
-			Result = mix(HistoryResult, Result, 0.3);
 		}
 
 		imageStore(ShadowsBuffer, ivec2(gl_LaunchIDEXT), vec4(Result));

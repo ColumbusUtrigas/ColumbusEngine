@@ -5,19 +5,17 @@
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
 #include "imgui.h"
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
 
-	ConsoleVariable<float> Cvar_Angle("r.RTShadows.Angle", "Controls angle of randomisation of shadow rays", 0.0f);
+	ConsoleVariable<bool> Cvar_Denoiser("r.RTShadows.Denoiser", "Controls whether shadow denoiser is active or not", true);
 
 	struct RTShadowParams
 	{
 		Vector3 Direction;
 		float Angle;
 		float Random;
-		bool ValidHistory;
 	};
 
 	struct RTShadowDenoiserPrepareParams
@@ -46,6 +44,7 @@ namespace Columbus
 		u32 StepSize;
 	};
 
+	// implements AMD FidelityFX Shadow Denoiser
 	RenderGraphTextureRef DenoiseRayTracedShadow(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, RenderGraphTextureRef Shadow)
 	{
 		iVector2 ShadowSize = View.OutputSize;
@@ -108,11 +107,9 @@ namespace Columbus
 
 		// Tile classification
 		{
-			TextureDesc2 MomentsDesc { .Usage = TextureUsage::Storage, .Width = (u32)TilesSize.X, .Height = (u32)TilesSize.Y, .Format = TextureFormat::R11G11B10F, };
+			TextureDesc2 MomentsDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R11G11B10F, };
 			TextureDesc2 MetadataDesc { .Usage = TextureUsage::Storage, .Width = (u32)TilesSize.X, .Height = (u32)TilesSize.Y, .Format = TextureFormat::R32UInt, };
 			TextureDesc2 ReprojectionResultDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
-			// TODO: moments history
-			// TODO: shadow history
 			// TODO: move history textures to context
 
 			Moments = Graph.CreateTexture(MomentsDesc, "RayTracedShadowsMoments");
@@ -189,46 +186,62 @@ namespace Columbus
 			TextureDesc2 ResultDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R8, };
 			DenoisedResult = Graph.CreateTexture(ResultDesc, "ShadowDenoised");
 
-			RenderPassParameters Parameters;
+			TextureDesc2 TmpHistoryDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
+			RenderGraphTextureRef TmpHistory = Graph.CreateTexture(TmpHistoryDesc, "ShadowDenoiserFilterTmpHistory");
 
-			RenderPassDependencies Dependencies;
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(ReprojectionResult, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Metadata, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(DenoisedResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			RenderGraphTextureRef CurrentFilterInput = ReprojectionResult;
+			const int NumPasses = 3;
 
-			Graph.AddPass("ShadowDenoiseFilter", RenderGraphPassType::Compute, Parameters, Dependencies, [View, Textures, ReprojectionResult, Metadata, DenoisedResult, ShadowSize](RenderGraphContext& Context)
+			for (int i = 0; i < NumPasses; i++)
 			{
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
+				RenderPassParameters Parameters;
+
+				RenderPassDependencies Dependencies;
+				Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				Dependencies.Read(CurrentFilterInput, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				Dependencies.Read(Metadata, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				Dependencies.Write(DenoisedResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				if (i == 0)
+					Dependencies.Write(TmpHistory, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+				Graph.AddPass("ShadowDenoiseFilter", RenderGraphPassType::Compute, Parameters, Dependencies, [i, View, Textures, CurrentFilterInput, TmpHistory, Metadata, DenoisedResult, ShadowSize](RenderGraphContext& Context)
 				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "DenoiserShadowsFilter";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/DenoiserShadowsFilter.csd");
+					static ComputePipeline* Pipelines[NumPasses] {nullptr};
+					if (Pipelines[i] == nullptr)
+					{
+						ComputePipelineDesc Desc;
+						Desc.Name = "DenoiserShadowsFilter";
+						Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/DenoiserShadowsFilter.csd");
 
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
+						Pipelines[i] = Context.Device->CreateComputePipeline(Desc);
+					}
 
-				RTShadowDenoiserFilterParams Params {
-					.InvProjectionMatrix = View.CameraCur.GetProjectionMatrix().GetInverted(),
-					.BufferDimensions = ShadowSize,
-					.PassIndex = 0,
-					.StepSize = 5, // ????
-				};
+					const u32 StepSizes[] = { 1, 2, 4 };
 
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(ReprojectionResult).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Metadata).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DenoisedResult).get());
+					RTShadowDenoiserFilterParams Params {
+						.InvProjectionMatrix = View.CameraCur.GetProjectionMatrix().GetInverted(),
+						.BufferDimensions = ShadowSize,
+						.PassIndex = (u32)i,
+						.StepSize = StepSizes[i],
+					};
 
-				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->Dispatch((u32)ShadowSize.X, (u32)ShadowSize.Y, 1);
-			});
+					auto DescriptorSet = Context.GetDescriptorSet(Pipelines[i], 0);
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(CurrentFilterInput).get());
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Metadata).get());
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DenoisedResult).get());
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(TmpHistory).get());
+
+					Context.CommandBuffer->BindComputePipeline(Pipelines[i]);
+					Context.CommandBuffer->PushConstantsCompute(Pipelines[i], ShaderType::Compute, 0, sizeof(Params), &Params);
+					Context.CommandBuffer->BindDescriptorSetsCompute(Pipelines[i], 0, 1, &DescriptorSet);
+					Context.CommandBuffer->Dispatch((u32)ShadowSize.X, (u32)ShadowSize.Y, 1);
+				});
+
+				CurrentFilterInput = TmpHistory;
+			}
 		}
 
 		Graph.ExtractTexture(Moments, &MomentsHistory);
@@ -239,8 +252,7 @@ namespace Columbus
 
 	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures)
 	{
-		// TODO: denoising with history
-
+		// TODO: move to a more appropriate place
 		static Vector3 LightDirection(1,1,1);
 		static float LightRadius = 1;
 
@@ -259,12 +271,6 @@ namespace Columbus
 		};
 		RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
 
-		// shouldn't be static, lifetime must be defined
-		static SPtr<Texture2> History;
-
-		// fallback?
-		// RenderGraphTextureRef RTShadowHistory = Graph.RegisterExternalTexture(History, "RayTracedShadowHistory");
-
 		{
 			RenderPassParameters Parameters;
 
@@ -272,7 +278,6 @@ namespace Columbus
 			Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTShadow, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			// Dependencies.Write(RTShadowHistory);
 
 			Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, View](RenderGraphContext& Context)
 			{
@@ -297,14 +302,9 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
 
-				if (History)
-					Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 4, 0, History.get());
-
-				// RTShadowParams Params { .Angle = Cvar_Angle.GetValue() };
 				RTShadowParams Params {
 					.Direction = LightDirection, .Angle = LightRadius,
-					.Random = (rand() % 2000) / 2000.0f,
-					.ValidHistory = History != nullptr && !Context.Scene->Dirty && false // TODO: remove history from here
+					.Random = (rand() % 2000) / 2000.0f
 				};
 
 				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
@@ -316,10 +316,10 @@ namespace Columbus
 			});
 		}
 
-		RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow);
-
-		// creates/recreates image and copies it to be used in the next frame
-		Graph.ExtractTexture(RTShadow, &History);
+		if (Cvar_Denoiser.GetValue())
+		{
+			RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow);
+		}
 
 		return RTShadow;
 	}

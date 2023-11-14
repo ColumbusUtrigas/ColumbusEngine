@@ -640,7 +640,8 @@ namespace Columbus
 		// extractions
 		for (RenderGraphTextureExtraction& Extraction : Extractions)
 		{
-			if (*Extraction.Dst == nullptr)
+			if (*Extraction.Dst == nullptr ||
+			   (*Extraction.Dst != nullptr && Extraction.Dst->get()->GetDesc() != Textures[Extraction.Src].Desc))
 			{
 				// TODO: move to allocation phase?
 				// TODO: resize invalidation

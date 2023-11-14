@@ -35,8 +35,8 @@ Texture2D<float> Depth : register(t1);
 
 [[vk::image_format("rg16f")]] RWTexture2D<float16_t2> Input : register(u2);
 [[vk::image_format("r32ui")]] RWTexture2D<uint> Metadata : register(u3);
-// RWTexture2D<float2> History : register(u4);
-[[vk::image_format("r8")]] RWTexture2D<unorm float> Output : register(u4);
+[[vk::image_format("r8")]]    RWTexture2D<unorm float> Output : register(u4);
+[[vk::image_format("rg16f")]] RWTexture2D<float2> History : register(u5);
 
 [[vk::push_constant]]
 struct _Params {
@@ -350,14 +350,14 @@ void main(uint3 gid : SV_GroupID, uint2 gtid : SV_GroupThreadID, uint2 did : SV_
 	bool bWriteOutput = false;
 	float2 const results = FFX_DNSR_Shadows_FilterSoftShadowsPass(gid.xy, gtid, did, bWriteOutput, PASS_INDEX, STEP_SIZE);
 
-	// if (PASS_INDEX < 2)
-	// {
-	// 	if (bWriteOutput)
-	// 	{
-	// 		History[did] = results;
-	// 	}
-	// }
-	// else
+	if (PASS_INDEX < 2)
+	{
+		if (bWriteOutput)
+		{
+			History[did] = results;
+		}
+	}
+	else
 	{
 		// final pass:
 		// Recover some of the contrast lost during denoising
