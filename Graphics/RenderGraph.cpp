@@ -583,7 +583,7 @@ namespace Columbus
 		{
 			Context.CurrentPass = Pass.Id;
 
-			while (MarkersStack.front().PassId == Pass.Id)
+			while (!MarkersStack.empty() && MarkersStack.front().PassId == Pass.Id)
 			{
 				EvaluateMarker();
 			}

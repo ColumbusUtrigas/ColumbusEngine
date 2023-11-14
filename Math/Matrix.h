@@ -193,7 +193,7 @@ namespace Columbus
 
 			float det_30 = // determinant of minor M[3][0]
 				M[0][1] * (M[1][2]*M[2][3] - M[1][3]*M[2][2]) - // cofactor of M[0][1]
-				M[1][1] * (M[0][2]*M[2][3] - M[0][3]*M[3][1]) + // cofactor of M[1][1]
+				M[1][1] * (M[0][2]*M[2][3] - M[0][3]*M[2][2]) + // cofactor of M[1][1]
 				M[2][1] * (M[0][2]*M[1][3] - M[0][3]*M[1][2]);  // cofactor of M[2][1]
 
 			return

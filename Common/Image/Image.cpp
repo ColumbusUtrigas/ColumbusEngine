@@ -38,6 +38,7 @@ namespace Columbus
 			case TextureFormat::RGB32F:  return 12; break;
 			case TextureFormat::RGBA32F: return 16; break;
 
+			case TextureFormat::R8UInt:  return 1; break;
 			case TextureFormat::R32UInt: return 4; break;
 
 			case TextureFormat::R11G11B10F: return 4; break;
@@ -157,6 +158,7 @@ namespace Columbus
 		case TextureFormat::RGB32F:  return "RGB32F"; break;
 		case TextureFormat::RGBA32F: return "RGBA32F"; break;
 
+		case TextureFormat::R8UInt:  return "R8Uint"; break;
 		case TextureFormat::R32UInt: return "R32Uint"; break;
 
 		case TextureFormat::BGRA8SRGB: return "BGRA8sRGB"; break;

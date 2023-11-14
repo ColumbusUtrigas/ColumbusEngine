@@ -40,12 +40,15 @@ namespace Columbus
 	void ComputeColourGradingLUT(RenderGraph& Graph, TonemapTextures& Textures)
 	{
 		// TODO: external LUTs
+		
+		static const iVector3 LutResolution { 32, 32, 32 };
+		static const iVector3 GroupSize { 8, 8, 8 };
 
 		{
 			TextureDesc2 Desc {
 				.Type   = TextureType::Texture3D,
 				.Usage  = TextureUsage::Storage,
-				.Width  = 32, .Height = 32, .Depth = 32,
+				.Width  = (u32)LutResolution.X, .Height = (u32)LutResolution.Y, .Depth = (u32)LutResolution.Z,
 				.Format = TextureFormat::RGBA16F
 			};
 			Textures.ColourGradingLUT = Graph.CreateTexture(Desc, "ColourGradingLUT");
@@ -68,9 +71,11 @@ namespace Columbus
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.ColourGradingLUT).get());
 
+			const iVector3 GroupCount = LutResolution / GroupSize;;
+
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-			Context.CommandBuffer->Dispatch(32, 32, 32);
+			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, (u32)GroupCount.Z);
 		});
 	}
 

@@ -113,6 +113,8 @@ namespace Columbus
 			.Format = TextureFormat::RGBA16F,
 		};
 
+		static const iVector2 GroupSize { 8, 8 };
+
 		RenderGraphTextureRef LightingTexture = Graph.CreateTexture(Desc, "Lighting");
 
 		RenderPassParameters Parameters;
@@ -146,7 +148,8 @@ namespace Columbus
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
 
-			Context.CommandBuffer->Dispatch(View.OutputSize.X, View.OutputSize.Y, 1);
+			const iVector2 GroupCount = (View.OutputSize + (GroupSize - 1)) / GroupSize;
+			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
 		});
 
 		return LightingTexture;

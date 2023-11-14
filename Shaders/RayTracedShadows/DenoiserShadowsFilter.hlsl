@@ -34,7 +34,7 @@ Texture2D<float3> Normals : register(t0);
 Texture2D<float> Depth : register(t1);
 
 [[vk::image_format("rg16f")]] RWTexture2D<float16_t2> Input : register(u2);
-[[vk::image_format("r32ui")]] RWTexture2D<uint> Metadata : register(u3);
+[[vk::image_format("r8ui")]]  RWTexture2D<uint> Metadata : register(u3);
 [[vk::image_format("r8")]]    RWTexture2D<unorm float> Output : register(u4);
 [[vk::image_format("rg16f")]] RWTexture2D<float2> History : register(u5);
 

@@ -25,49 +25,30 @@ THE SOFTWARE.
 
 #include "DenoiserShadowsUtil.hlsli"
 
-// user code
-
-[[vk::push_constant]]
-struct _Params {
-	int2 BufferDimensions;
-	int2 PackedBufferDimensions;
-} Params;
-
 [[vk::image_format("r8")]]    RWTexture2D<float> InputBuffer : register(u0);
 [[vk::image_format("r32ui")]] RWTexture2D<uint>  PackedOutputBuffer : register(u1);
 
 #if 1
-groupshared uint collected[8][4];
-
 [numthreads(8, 4, 1)]
 void main(uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID, uint3 did : SV_DispatchThreadID)
 {
 	uint2 pixel = gid.xy * uint2(8, 4) + gtid.xy;
 	const bool hit_light = InputBuffer[pixel] > 0.01; // true if not shadow
 	const uint lane_mask = hit_light ? FFX_DNSR_Shadows_GetBitMaskFromPixelPosition(pixel) : 0;
-	collected[gtid.x][gtid.y] = lane_mask;
 	GroupMemoryBarrierWithGroupSync();
-	const uint mask = WaveActiveBitOr(lane_mask); // TODO: why doesn't it work?
-
-	// if (gtid.x == 0 && gtid.y == 0) // only first thread in the group writes to global memory
-	// TODO: use wave intrinsics instead of this mess
-	if (gtid.x == 0 && gtid.y == 0)
-	{
-		uint result = 0;
-		for (int i = 0; i < 8; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				result |= collected[i][j];
-			}
-		}
-
-		PackedOutputBuffer[gid.xy] = result;
-	}
+	PackedOutputBuffer[gid.xy] = WaveActiveBitOr(lane_mask);
 }
 #endif
 
 #if 0
+
+// begin user code
+
+[[vk::push_constant]]
+struct _Params {
+	int2 BufferDimensions;
+	int2 PackedBufferDimensions;
+} Params;
 
 uint2 FFX_DNSR_Shadows_GetBufferDimensions()
 {

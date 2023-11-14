@@ -48,7 +48,7 @@ Texture2D<float2> Velocity : register(t4);
 [[vk::image_format("rg16f")]]      RWTexture2D<float2> ReprojectionResult : register(u5);
 [[vk::image_format("r11g11b10f")]] RWTexture2D<float3> Moments : register(u6);
 [[vk::image_format("r11g11b10f")]] RWTexture2D<float3> MomentsHistory : register(u7);
-[[vk::image_format("r32ui")]]      RWTexture2D<uint> Metadata : register(u8);
+[[vk::image_format("r8ui")]]       RWTexture2D<uint> Metadata : register(u8);
 RWTexture2D<float> History : register(u9);
 
 uint2 FFX_DNSR_Shadows_GetBufferDimensions()

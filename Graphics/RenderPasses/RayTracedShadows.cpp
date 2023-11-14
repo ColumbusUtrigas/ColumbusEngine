@@ -52,6 +52,8 @@ namespace Columbus
 		iVector2 ShadowSize = View.OutputSize;
 		// 8x4 tiles
 		iVector2 TilesSize = iVector2((View.OutputSize.X + 7) / 8, (View.OutputSize.Y + 3) / 4);
+		// 8x8 tiles
+		iVector2 FilterTilesSize = iVector2((View.OutputSize.X + 7) / 8, (View.OutputSize.Y + 7) / 8);
 
 		RenderGraphTextureRef RTShadowTiles;
 		RenderGraphTextureRef Moments;
@@ -103,14 +105,14 @@ namespace Columbus
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
 				//Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
-				Context.CommandBuffer->Dispatch((u32)ShadowSize.X, (u32)ShadowSize.Y, 1);
+				Context.CommandBuffer->Dispatch((u32)TilesSize.X, (u32)TilesSize.Y, 1);
 			});
 		}
 
 		// Tile classification
 		{
 			TextureDesc2 MomentsDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R11G11B10F, };
-			TextureDesc2 MetadataDesc { .Usage = TextureUsage::Storage, .Width = (u32)TilesSize.X, .Height = (u32)TilesSize.Y, .Format = TextureFormat::R32UInt, };
+			TextureDesc2 MetadataDesc { .Usage = TextureUsage::Storage, .Width = (u32)FilterTilesSize.X, .Height = (u32)FilterTilesSize.Y, .Format = TextureFormat::R8UInt, };
 			TextureDesc2 ReprojectionResultDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
 			// TODO: move history textures to context
 
@@ -131,7 +133,7 @@ namespace Columbus
 			Dependencies.Write(ReprojectionResult, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 			Graph.AddPass("ShadowDenoiseTileClassification", RenderGraphPassType::Compute, Parameters, Dependencies,
-			[RTShadowTiles, Textures, ShadowSize, TilesSize, View, Moments, Metadata, ReprojectionResult](RenderGraphContext& Context)
+			[RTShadowTiles, Textures, ShadowSize, FilterTilesSize, View, Moments, Metadata, ReprojectionResult](RenderGraphContext& Context)
 			{
 				static ComputePipeline* Pipeline = nullptr;
 				if (Pipeline == nullptr)
@@ -169,17 +171,17 @@ namespace Columbus
 				RTShadowDenoiserTileClassificationParams Params {
 					.InvViewProjectionMatrix = InvViewProjection,
 					.InvProjectionMatrix = InvProjection,
-					.ReprojectionMatrix = InvViewProjection * View.CameraPrev.GetViewProjection(),
+					.ReprojectionMatrix = View.CameraPrev.GetViewProjection() * InvViewProjection,
 					.CameraPosition = View.CameraCur.Pos,
 					.BufferDimensions = ShadowSize,
-					.PackedBufferDimensions = TilesSize,
-					.FirstFrame = ShadowHistory == nullptr,
+					.PackedBufferDimensions = FilterTilesSize,
+					.FirstFrame = ShadowHistory == nullptr && false,
 				};
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
 				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
-				Context.CommandBuffer->Dispatch((u32)ShadowSize.X, (u32)ShadowSize.Y, 1);
+				Context.CommandBuffer->Dispatch((u32)FilterTilesSize.X, (u32)FilterTilesSize.Y, 1);
 			});			
 		}
 
@@ -209,7 +211,8 @@ namespace Columbus
 				if (i == 0)
 					Dependencies.Write(TmpHistory, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-				Graph.AddPass("ShadowDenoiseFilter", RenderGraphPassType::Compute, Parameters, Dependencies, [i, View, Textures, CurrentFilterInput, TmpHistory, Metadata, DenoisedResult, ShadowSize](RenderGraphContext& Context)
+				Graph.AddPass("ShadowDenoiseFilter", RenderGraphPassType::Compute, Parameters, Dependencies,
+				[i, View, Textures, CurrentFilterInput, TmpHistory, Metadata, DenoisedResult, ShadowSize, FilterTilesSize](RenderGraphContext& Context)
 				{
 					static ComputePipeline* Pipelines[NumPasses] {nullptr};
 					if (Pipelines[i] == nullptr)
@@ -241,7 +244,7 @@ namespace Columbus
 					Context.CommandBuffer->BindComputePipeline(Pipelines[i]);
 					Context.CommandBuffer->PushConstantsCompute(Pipelines[i], ShaderType::Compute, 0, sizeof(Params), &Params);
 					Context.CommandBuffer->BindDescriptorSetsCompute(Pipelines[i], 0, 1, &DescriptorSet);
-					Context.CommandBuffer->Dispatch((u32)ShadowSize.X, (u32)ShadowSize.Y, 1);
+					Context.CommandBuffer->Dispatch((u32)FilterTilesSize.X, (u32)FilterTilesSize.Y, 1);
 				});
 
 				CurrentFilterInput = TmpHistory;

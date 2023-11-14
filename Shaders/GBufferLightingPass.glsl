@@ -6,9 +6,14 @@
 	layout(binding = 2, set = 0, rgba16f) uniform image2D LightingOutput;
 	layout(binding = 3, set = 0, r8) uniform image2D ShadowBuffer;
 
+	layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
 	void main()
 	{
-		vec2 UV = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy);
+		vec2 UV = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy) / vec2(gl_WorkGroupSize.xy);
+		if (UV.x >= 1 && UV.y >= 1)
+			return;
+
 		float Shadow = imageLoad(ShadowBuffer, ivec2(gl_GlobalInvocationID.xy)).r;
 		vec3 LightDir = normalize(vec3(1,1,1));
 
