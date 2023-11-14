@@ -10,6 +10,7 @@
 #include "Graphics/Vulkan/SwapchainVulkan.h"
 #include <memory>
 #include <vector>
+#include <queue>
 #include <unordered_map>
 #include <functional>
 #include <optional>
@@ -251,6 +252,30 @@ namespace Columbus
 		SPtr<Texture2>* Dst;
 	};
 
+	// for internal use
+	struct RenderGraphMarker
+	{
+		enum MarkerType
+		{
+			TypePush,
+			TypePop,
+		};
+
+		std::string Marker;
+		RenderGraphPassId PassId;
+		MarkerType Type;
+	};
+
+	struct RenderGraphScopedMarker
+	{
+		RenderGraphScopedMarker(RenderGraph& Graph, const std::string& Marker);
+		~RenderGraphScopedMarker();
+
+		RenderGraph& Graph;
+	};
+
+	#define RENDER_GRAPH_SCOPED_MARKER(Graph, Marker) RenderGraphScopedMarker _RG_ScopedMarker_##LINE(Graph, Marker);
+
 	class RenderGraph
 	{
 	public:
@@ -262,6 +287,10 @@ namespace Columbus
 		RenderGraphTextureRef GetSwapchainTexture();
 
 		void AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
+
+		// Use with scoped marker
+		void PushMarker(const std::string& Marker);
+		void PopMarker();
 
 		// copies Src graph texture into Dst after execution
 		// creates a new texture if doesn't exist
@@ -287,6 +316,7 @@ namespace Columbus
 		std::vector<RenderPass> Passes;
 		std::vector<RenderGraphTexture> Textures; // textures that are used in the current graph
 		std::vector<RenderGraphTextureExtraction> Extractions;
+		std::queue<RenderGraphMarker> MarkersStack;
 
 		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
 		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];

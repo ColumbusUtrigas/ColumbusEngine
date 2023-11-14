@@ -47,6 +47,8 @@ namespace Columbus
 	// implements AMD FidelityFX Shadow Denoiser
 	RenderGraphTextureRef DenoiseRayTracedShadow(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, RenderGraphTextureRef Shadow)
 	{
+		RENDER_GRAPH_SCOPED_MARKER(Graph, "ShadowsDenoise");
+
 		iVector2 ShadowSize = View.OutputSize;
 		// 8x4 tiles
 		iVector2 TilesSize = iVector2((View.OutputSize.X + 7) / 8, (View.OutputSize.Y + 3) / 4);
@@ -183,6 +185,8 @@ namespace Columbus
 
 		// Filter
 		{
+			RENDER_GRAPH_SCOPED_MARKER(Graph, "FilterDenoise");
+
 			TextureDesc2 ResultDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R8, };
 			DenoisedResult = Graph.CreateTexture(ResultDesc, "ShadowDenoised");
 
@@ -252,6 +256,8 @@ namespace Columbus
 
 	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures)
 	{
+		RENDER_GRAPH_SCOPED_MARKER(Graph, "RayTracedShadows");
+
 		// TODO: move to a more appropriate place
 		static Vector3 LightDirection(1,1,1);
 		static float LightRadius = 1;

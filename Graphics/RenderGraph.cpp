@@ -167,6 +167,16 @@ namespace Columbus
 		return Graph.Textures[Ref].Texture;
 	}
 
+	RenderGraphScopedMarker::RenderGraphScopedMarker(RenderGraph& Graph, const std::string& Marker) : Graph(Graph)
+	{
+		Graph.PushMarker(Marker);
+	}
+
+	RenderGraphScopedMarker::~RenderGraphScopedMarker()
+	{
+		Graph.PopMarker();
+	}
+
 	RenderGraph::RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene) : Device(Device), Scene(Scene)
 	{
 		for (auto& PerFrameData : RenderData.PerFrameData)
@@ -358,6 +368,20 @@ namespace Columbus
 		Passes.emplace_back(std::move(Pass));
 	}
 
+	void RenderGraph::PushMarker(const std::string& Marker)
+	{
+		MarkersStack.push(RenderGraphMarker{
+			.Marker = Marker, .PassId = (RenderGraphPassId)Passes.size(), .Type = RenderGraphMarker::TypePush
+		});
+	}
+
+	void RenderGraph::PopMarker()
+	{
+		MarkersStack.push(RenderGraphMarker{
+			.Marker = "", .PassId = (RenderGraphPassId)Passes.size(), .Type = RenderGraphMarker::TypePop
+		});
+	}
+
 	void RenderGraph::ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst)
 	{
 		Extractions.push_back(RenderGraphTextureExtraction{ .Src = Src, .Dst = Dst });
@@ -543,10 +567,28 @@ namespace Columbus
 		CommandBuffer->Reset();
 		CommandBuffer->Begin();
 
+		auto EvaluateMarker = [this, &CommandBuffer]()
+		{
+			RenderGraphMarker Marker = MarkersStack.front();
+			switch (Marker.Type)
+			{
+				case RenderGraphMarker::TypePush: CommandBuffer->BeginDebugMarker(Marker.Marker.c_str()); break;
+				case RenderGraphMarker::TypePop:  CommandBuffer->EndDebugMarker(); break;
+				default: COLUMBUS_ASSERT_MESSAGE(false, "Invalid marker"); break;
+			}
+			MarkersStack.pop();
+		};
+
 		for (auto& Pass : Passes)
 		{
 			Context.CurrentPass = Pass.Id;
-			// TODO: submarkers
+
+			while (MarkersStack.front().PassId == Pass.Id)
+			{
+				EvaluateMarker();
+			}
+
+			// pass marker
 			CommandBuffer->BeginDebugMarker(Pass.Name.c_str());
 
 			// issue barriers for this pass
@@ -634,7 +676,14 @@ namespace Columbus
 				Pass.ExecutionFunc(Context);
 			}
 
+			// pass marker
 			CommandBuffer->EndDebugMarker();
+		}
+
+		// evaluate all last markers
+		while (!MarkersStack.empty())
+		{
+			EvaluateMarker();
 		}
 
 		// extractions
