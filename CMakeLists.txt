@@ -253,6 +253,7 @@ function(compile_shader_glsl shaderName stages binaryLocation)
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
+		COMMAND ${CMAKE_COMMAND} -E copy ${SPIRV} "$<TARGET_FILE_DIR:${TARGET}>${DIR}/${STEM}.csd"
 		DEPENDS ${shaderName} ShaderCompiler
 	)
 
@@ -277,6 +278,7 @@ function(compile_shader_hlsl shaderName stages binaryLocation)
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
+		COMMAND ${CMAKE_COMMAND} -E copy ${SPIRV} "$<TARGET_FILE_DIR:${TARGET}>${DIR}/${STEM}.csd"
 		DEPENDS ${shaderName} ShaderCompiler
 	)
 

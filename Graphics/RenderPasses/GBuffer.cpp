@@ -1,5 +1,6 @@
 #include "Core/Core.h"
 #include "Graphics/Core/Pipelines.h"
+#include "Graphics/Core/Texture.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/Core/View.h"
 #include "Graphics/RenderGraph.h"
@@ -23,6 +24,12 @@ namespace Columbus
 		CommonDesc.Usage = TextureUsage::RenderTargetColor;
 		CommonDesc.Width = View.OutputSize.X;
 		CommonDesc.Height = View.OutputSize.Y;
+		CommonDesc.AddressU = TextureAddressMode::ClampToEdge;
+		CommonDesc.AddressV = TextureAddressMode::ClampToEdge;
+		CommonDesc.AddressW = TextureAddressMode::ClampToEdge;
+		CommonDesc.MagFilter = TextureFilter2::Nearest;
+		CommonDesc.MinFilter = TextureFilter2::Nearest;
+		CommonDesc.MipFilter = TextureFilter2::Nearest;
 
 		TextureDesc2 AlbedoDesc = CommonDesc;
 		TextureDesc2 NormalDesc = CommonDesc;
@@ -30,14 +37,14 @@ namespace Columbus
 		TextureDesc2 RMDesc = CommonDesc;
 		TextureDesc2 DSDesc = CommonDesc;
 		TextureDesc2 VelocityDesc = CommonDesc;
-		AlbedoDesc.Format = TextureFormat::RGBA8;
+				AlbedoDesc.Format = TextureFormat::RGBA8;
 		NormalDesc.Format = TextureFormat::RGBA16F;
 		WPDesc.Format = TextureFormat::RGBA32F;
 		RMDesc.Format = TextureFormat::RG8;
 		DSDesc.Format = TextureFormat::Depth24;
 		DSDesc.Usage = TextureUsage::RenderTargetDepth;
 		VelocityDesc.Format = TextureFormat::RG16F;
-
+		
 		SceneTextures Result { .History = History };
 		Result.GBufferAlbedo = Graph.CreateTexture(AlbedoDesc, "GBufferAlbedo");
 		Result.GBufferNormal = Graph.CreateTexture(NormalDesc, "GBufferNormal");
@@ -45,7 +52,7 @@ namespace Columbus
 		Result.GBufferRM = Graph.CreateTexture(RMDesc, "GBufferRM");
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
 		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
-		return Result;
+				return Result;
 	}
 
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
@@ -56,7 +63,7 @@ namespace Columbus
 		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP };
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
 		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+				Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 
 		RenderPassDependencies Dependencies;
 

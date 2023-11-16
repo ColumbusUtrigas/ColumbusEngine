@@ -45,7 +45,7 @@ namespace Columbus
 		RenderGraphTextureRef GBufferRM; // Roughness Metallic
 		RenderGraphTextureRef GBufferDS; // Depth Stencil
 		RenderGraphTextureRef Velocity;
-
+		
 		HistorySceneTextures& History;
 	};
 

@@ -10,7 +10,7 @@
 
 	void main()
 	{
-		vec2 UV = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy) / vec2(gl_WorkGroupSize.xy);
+		vec2 UV = (vec2(gl_GlobalInvocationID.xy) + 0.5) / vec2(gl_NumWorkGroups.xy) / vec2(gl_WorkGroupSize.xy);
 		if (UV.x >= 1 && UV.y >= 1)
 			return;
 

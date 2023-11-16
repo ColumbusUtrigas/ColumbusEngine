@@ -84,7 +84,7 @@ float3 FFX_DNSR_Shadows_GetEye()
 float FFX_DNSR_Shadows_ReadHistory(float2 history_uv)
 {
 	// return history.SampleLevel(sampler_linear_clamp, history_uv, 0);
-	return History[uint2(history_uv * Params.BufferDimensions)];
+	return History[uint2(history_uv * Params.BufferDimensions + 0.5)];
 }
 
 float FFX_DNSR_Shadows_ReadDepth(uint2 did)
@@ -100,7 +100,6 @@ float FFX_DNSR_Shadows_ReadPreviousDepth(int2 idx)
 float3 FFX_DNSR_Shadows_ReadNormals(uint2 did)
 {
 	return Normals[did];
-	// return Normals.Sample(NormalSampler, float2(did) / BufferDimensions);
 }
 
 float2 FFX_DNSR_Shadows_ReadVelocity(uint2 did)
@@ -110,7 +109,6 @@ float2 FFX_DNSR_Shadows_ReadVelocity(uint2 did)
 
 uint FFX_DNSR_Shadows_ReadRaytracedShadowMask(uint linear_tile_index)
 {
-	//linear_tile_index
 	uint width = Params.PackedBufferDimensions.x;
 	uint2 coords = uint2(linear_tile_index % width, (linear_tile_index + width - 1) / width);
 	return PackedTilesBuffer[coords];
@@ -211,7 +209,7 @@ float FFX_DNSR_Shadows_GetLinearDepth(uint2 did, float depth)
 {
 	const float2 uv = (did + 0.5f) * FFX_DNSR_Shadows_GetInvBufferDimensions();
 	const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
-
+   
 	float4 projected = mul(FFX_DNSR_Shadows_GetProjectionInverse(), float4(ndc, depth, 1));
 	return abs(projected.z / projected.w);
 }

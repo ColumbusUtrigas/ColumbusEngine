@@ -102,10 +102,12 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Shadow).get());
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTShadowTiles).get());
 
+				iVector2 GroupCount = TilesSize / 4; // prepare shader iterates over 4x4 tiles
+
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				//Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
-				Context.CommandBuffer->Dispatch((u32)TilesSize.X, (u32)TilesSize.Y, 1);
+				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+				Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
 			});
 		}
 
@@ -163,7 +165,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(Metadata).get());
 				if (ShadowHistory)
 					Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, ShadowHistory.get());
-
+				
 
 				Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
 				Matrix InvProjection = View.CameraCur.GetProjectionMatrix().GetInverted();
@@ -175,7 +177,7 @@ namespace Columbus
 					.CameraPosition = View.CameraCur.Pos,
 					.BufferDimensions = ShadowSize,
 					.PackedBufferDimensions = FilterTilesSize,
-					.FirstFrame = ShadowHistory == nullptr && false,
+					.FirstFrame = ShadowHistory == nullptr,
 				};
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);

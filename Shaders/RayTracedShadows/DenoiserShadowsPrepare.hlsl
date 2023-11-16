@@ -28,7 +28,7 @@ THE SOFTWARE.
 [[vk::image_format("r8")]]    RWTexture2D<float> InputBuffer : register(u0);
 [[vk::image_format("r32ui")]] RWTexture2D<uint>  PackedOutputBuffer : register(u1);
 
-#if 1
+#if 0
 [numthreads(8, 4, 1)]
 void main(uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID, uint3 did : SV_DispatchThreadID)
 {
@@ -40,7 +40,7 @@ void main(uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID, uint3 did : SV_
 }
 #endif
 
-#if 0
+#if 1
 
 // begin user code
 
@@ -57,7 +57,6 @@ uint2 FFX_DNSR_Shadows_GetBufferDimensions()
 
 bool FFX_DNSR_Shadows_HitsLight(uint2 did, uint2 gtid, uint2 gid)
 {
-	// did is a pixel position?
 	return InputBuffer[did] > 0.01;
 }
 
