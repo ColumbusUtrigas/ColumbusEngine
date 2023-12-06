@@ -10,7 +10,7 @@
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "Graphics/Vulkan/DescriptorCache.h"
-#include "VulkanMemoryAllocator/include/vk_mem_alloc.h"
+#include "Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h"
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
 
@@ -226,6 +226,8 @@ namespace Columbus
 		// TODO: streaming
 		Buffer* CreateBuffer(const BufferDesc& Desc, const void* InitialData);
 		void    DestroyBuffer(Buffer* Buf);
+		void*   MapBuffer(const Buffer* Buf);
+		void    UnmapBuffer(const Buffer* Buf);
 
 		// TODO: data change, streaming, layout transitions
 		Texture2* CreateTexture(const TextureDesc2& Desc);

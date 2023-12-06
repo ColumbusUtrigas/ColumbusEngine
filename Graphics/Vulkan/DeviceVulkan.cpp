@@ -5,6 +5,7 @@
 #include "Core/fixed_vector.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
+#include "Graphics/Vulkan/Common.h"
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
 
@@ -334,11 +335,23 @@ namespace Columbus
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = Desc.Size;
-		bufferInfo.usage = BufferTypeToVK(Desc.BindFlags);
+
+		// TODO: enhance
+		if (Desc.HostVisible)
+		{
+			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		}
+		else
+		{
+			// TODO
+			bufferInfo.usage = BufferTypeToVK(Desc.BindFlags) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		}
 
 		if (InitialData != nullptr)
 		{
-			staging = CreateStagingBufferVulkanInternal(_Allocator, Desc.Size, InitialData);
+			if (!Desc.HostVisible)
+				staging = CreateStagingBufferVulkanInternal(_Allocator, Desc.Size, InitialData);
+
 			bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		}
 
@@ -352,7 +365,17 @@ namespace Columbus
 		}
 
 		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		if (Desc.HostVisible)
+		{
+			vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+			vmaallocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+			vmaallocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+		}
+		else
+		{
+			vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		}
 
 		VK_CHECK(vmaCreateBuffer(_Allocator, &bufferInfo, &vmaallocInfo,
 			&result->_Buffer,
@@ -366,16 +389,23 @@ namespace Columbus
 
 		if (InitialData != nullptr)
 		{
-			auto copyCmdBuf = CreateCommandBufferShared();
-			copyCmdBuf->Begin();
-			VkBufferCopy copy = vk::BufferCopy(0, 0, Desc.Size);
-			vkCmdCopyBuffer(copyCmdBuf->_CmdBuf, staging.Buffer, result->_Buffer, 1, &copy);
-			copyCmdBuf->End();
+			if (Desc.HostVisible)
+			{
+				COLUMBUS_ASSERT_MESSAGE(false, "Host-visible buffer creation with initial data isn't supported");
+			}
+			else
+			{
+				auto copyCmdBuf = CreateCommandBufferShared();
+				copyCmdBuf->Begin();
+				VkBufferCopy copy = vk::BufferCopy(0, 0, Desc.Size);
+				vkCmdCopyBuffer(copyCmdBuf->_CmdBuf, staging.Buffer, result->_Buffer, 1, &copy);
+				copyCmdBuf->End();
 
-			Submit(copyCmdBuf.get());
-			QueueWaitIdle();
+				Submit(copyCmdBuf.get());
+				QueueWaitIdle();
 
-			DestroyStagingBufferVulkanInternal(_Allocator, staging);
+				DestroyStagingBufferVulkanInternal(_Allocator, staging);
+			}
 		}
 
 		return result;
@@ -387,6 +417,24 @@ namespace Columbus
 		COLUMBUS_ASSERT(vkbuf);
 
 		vmaDestroyBuffer(_Allocator, vkbuf->_Buffer, vkbuf->_Allocation);
+	}
+
+	void* DeviceVulkan::MapBuffer(const Buffer* Buf)
+	{
+		COLUMBUS_ASSERT_MESSAGE(Buf->GetDesc().HostVisible, "MapBuffer is available only for host-visible buffers");
+
+		const BufferVulkan* vkbuf = static_cast<const BufferVulkan*>(Buf);
+		void* Memory = nullptr;
+		VK_CHECK(vmaMapMemory(_Allocator, vkbuf->_Allocation, &Memory));
+		return Memory;
+	}
+
+	void DeviceVulkan::UnmapBuffer(const Buffer* Buf)
+	{
+		COLUMBUS_ASSERT_MESSAGE(Buf->GetDesc().HostVisible, "UnmapBuffer is available only for host-visible buffers");
+
+		const BufferVulkan* vkbuf = static_cast<const BufferVulkan*>(Buf);
+		vmaUnmapMemory(_Allocator, vkbuf->_Allocation);
 	}
 
 	// TODO: move all this logic to command buffer

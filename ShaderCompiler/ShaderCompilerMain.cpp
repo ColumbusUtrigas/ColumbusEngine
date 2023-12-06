@@ -77,7 +77,7 @@ std::string ShaderStageToGlslangStage(ShaderType Stage)
 
 std::string ShaderStageToDxcStage(ShaderType Stage)
 {
-	std::string profile_version = "6_2";
+	std::string profile_version = "6_3";
 
 	switch (Stage)
 	{
@@ -138,6 +138,7 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		// SpvExtensions += "-fspv-extension=SPV_GOOGLE_user_type ";
 
 		SpvExtensions += "-fspv-extension=SPV_KHR_ray_tracing ";
+		SpvExtensions += "-fspv-extension=SPV_KHR_ray_query ";
 		//SpvExtensions += "-fspv-extension=SPV_KHR_shader_draw_parameters ";
 		SpvExtensions += "-fspv-extension=SPV_EXT_descriptor_indexing ";
 		//SpvExtensions += "-fspv-extension=SPV_EXT_shader_viewport_index_layer ";
@@ -180,9 +181,10 @@ int main(int argc, char** argv)
 {
 	if (argc < 4)
 	{
-		printf("Usage: ShaderCompiler [output] [input] [stages, comma-separated]\n");
+		printf("Usage: ShaderCompiler [output] [input] [stages, comma-separated, with entrypoints]\n");
+		printf("Stage syntax: entry1:stage1,entry2:stage2\n");
 		printf("Supported stages: vs, ps, gs, hs, ds, cs, rgen, rint, rahit, rchit, rmiss\n");
-		return 0;
+		return 1;
 	}
 
 	std::string OutputPath = argv[1];
@@ -198,14 +200,24 @@ int main(int argc, char** argv)
 
 	printf("I am a shader compiler, generating %s, from %s with stages %s\n", argv[1], argv[2], argv[3]);
 
-	for (const auto& StageString : StagesDivided)
+	for (const auto& StageStringFormatted : StagesDivided)
 	{
+		std::vector<std::string> EntryStageDivided = DivideStringBy(StageStringFormatted, ":");
+		if (EntryStageDivided.size() != 2)
+		{
+			printf("Invalid stage syntax: %s\n, required format: [ENTRY]:[STAGE]", StageStringFormatted.c_str());
+			return 1;
+		}
+
+		const auto& EntryPoint = EntryStageDivided[0];
+		const auto& StageString = EntryStageDivided[1];
+
 		ShaderType Stage = StringToShaderType(StageString);
 
 		std::vector<std::string> Defines;
 		Defines.push_back(DefineForShaderStage(Stage));
 
-		Data.Bytecodes.push_back(CompileStage(InputPath.string(), OutputPath + ".tmp", "main", Defines, Stage));
+		Data.Bytecodes.push_back(CompileStage(InputPath.string(), OutputPath + ".tmp", EntryPoint, Defines, Stage));
 	}
 
 	printf("Compiled shader %s, it contains %i stages\n", InputFilename.string().c_str(), (int)StagesDivided.size());

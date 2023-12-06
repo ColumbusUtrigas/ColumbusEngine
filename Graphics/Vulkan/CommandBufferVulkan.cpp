@@ -257,6 +257,19 @@ namespace Columbus
 		vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Image, dstvk->_Layout, 1, &Region);
 	}
 
+	void CommandBufferVulkan::CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size)
+	{
+		auto srcvk = static_cast<const BufferVulkan*>(Src);
+		auto dstvk = static_cast<const BufferVulkan*>(Dst);
+		VkBufferCopy Region {
+			.srcOffset = SrcOffset,
+			.dstOffset = DstOffset,
+			.size = Size
+		};
+
+		vkCmdCopyBuffer(_CmdBuf, srcvk->_Buffer, dstvk->_Buffer, 1, &Region);
+	}
+
 	CommandBufferVulkan::~CommandBufferVulkan()
 	{
 		vkFreeCommandBuffers(_Device, _Pool, 1, &_CmdBuf);

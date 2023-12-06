@@ -155,6 +155,7 @@ target_include_directories(${TARGET} PUBLIC ./Lib/json/single_include/nlohmann/)
 target_include_directories(${TARGET} PUBLIC ./Lib/MiniMP3)
 target_include_directories(${TARGET} PUBLIC SYSTEM ./Lib/STB/)
 target_include_directories(${TARGET} PUBLIC ./Lib/ZSTD/Include/)
+target_include_directories(${TARGET} PUBLIC ./DDGI/SDK/include/) # RTXGI SDK
 
 if(LINUX)
 	target_include_directories(${TARGET} PUBLIC /usr/include/SDL2/)
@@ -189,7 +190,7 @@ add_dir_to_target(${TARGET} Graphics)
 # add_dir_to_target(${TARGET} Graphics/OpenGL) # goodbye my friend
 add_dir_to_target(${TARGET} Graphics/Vulkan)
 add_dir_to_target_recurse(${TARGET} Graphics/Particles)
-add_dir_to_target(${TARGET} Graphics/RenderPasses)
+add_dir_to_target_recurse(${TARGET} Graphics/RenderPasses)
 add_dir_to_target(${TARGET} Graphics/Core)
 
 add_dir_to_target(${TARGET} Input)
@@ -230,6 +231,7 @@ endif()
 target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} spirv_reflect)
 target_link_libraries(${TARGET} ShaderBytecode)
+target_link_libraries(${TARGET} DDGI)
 
 if (LINUX)
 	set(DXC_PATH "${CMAKE_SOURCE_DIR}/Lib/dxc/linux/bin/dxc")
@@ -253,7 +255,7 @@ function(compile_shader_glsl shaderName stages binaryLocation)
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
-		COMMAND ${CMAKE_COMMAND} -E copy ${SPIRV} "$<TARGET_FILE_DIR:${TARGET}>${DIR}/${STEM}.csd"
+		# COMMAND ${CMAKE_COMMAND} -E copy ${SPIRV} "$<TARGET_FILE_DIR:${TARGET}>${DIR}/${STEM}.csd"
 		DEPENDS ${shaderName} ShaderCompiler
 	)
 
@@ -278,7 +280,7 @@ function(compile_shader_hlsl shaderName stages binaryLocation)
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "$<TARGET_FILE_DIR:${TARGET}>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} 
-		COMMAND ${CMAKE_COMMAND} -E copy ${SPIRV} "$<TARGET_FILE_DIR:${TARGET}>${DIR}/${STEM}.csd"
+		# COMMAND ${CMAKE_COMMAND} -E copy ${SPIRV} "$<TARGET_FILE_DIR:${TARGET}>${DIR}/${STEM}.csd"
 		DEPENDS ${shaderName} ShaderCompiler
 	)
 
@@ -291,6 +293,7 @@ endfunction(compile_shader_hlsl)
 
 add_subdirectory(ShaderBytecode)
 add_subdirectory(ShaderCompiler)
+add_subdirectory(DDGI)
 
 add_subdirectory(Shaders)
 add_dependencies(Shaders ShaderCompiler)

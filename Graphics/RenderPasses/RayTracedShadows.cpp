@@ -9,7 +9,7 @@
 namespace Columbus
 {
 
-	ConsoleVariable<bool> Cvar_Denoiser("r.RTShadows.Denoiser", "Controls whether shadow denoiser is active or not", true);
+	ConsoleVariable<bool> Cvar_Denoiser("r.RTShadows.Denoiser", "Controls whether shadow denoiser is active or not", false);
 
 	struct RTShadowParams
 	{

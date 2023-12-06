@@ -192,6 +192,7 @@ namespace Columbus
 		RenderGBufferPass(Graph, View, Textures);
 
 		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, View, Textures);
+		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, ShadowTexture, Textures);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		DebugOverlayPass(Graph, View, TonemappedImage);

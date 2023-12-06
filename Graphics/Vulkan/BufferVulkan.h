@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Graphics/Core/GraphicsCore.h>
-#include <VulkanMemoryAllocator/include/vk_mem_alloc.h>
+#include <Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 namespace Columbus

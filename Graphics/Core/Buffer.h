@@ -46,6 +46,7 @@ namespace Columbus
 		uint32 MiscFlags;
 		uint32 StructureByteStride;
 		bool UsedInAccelerationStructure = false;
+		bool HostVisible = false; // TODO: should this be separated into a buffer type?
 
 		BufferDesc() {}
 		BufferDesc(uint64 Size, BufferType BindFlags, bool UsedInAccelerationStructure = false) :

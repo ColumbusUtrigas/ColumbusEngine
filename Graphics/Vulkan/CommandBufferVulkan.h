@@ -61,6 +61,7 @@ namespace Columbus
 		// TODO: layout api
 		void TransitionImageLayout(Texture2* Texture, VkImageLayout NewLayout);
 		void CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size);
+		void CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size);
 
 		const VkCommandBuffer& _GetHandle() const { return _CmdBuf; }
 

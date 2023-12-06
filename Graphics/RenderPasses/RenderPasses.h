@@ -59,6 +59,10 @@ namespace Columbus
 	//
 	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures);
 
+	// Global illumination
+	//
+	void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View);
+
 	// **********************************
 	// Path-Tracing
 	//
