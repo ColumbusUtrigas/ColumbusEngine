@@ -59,6 +59,8 @@ namespace Columbus
 		std::vector<Texture2*> Textures;
 		std::vector<GPULight> Lights;
 
+		Buffer* LightsBuffer = nullptr;
+
 		GPUCamera MainCamera;
 
 		bool Dirty = false;

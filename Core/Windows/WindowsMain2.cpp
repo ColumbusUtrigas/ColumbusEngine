@@ -483,7 +483,7 @@ int main()
 	Columbus::Timer timer;
 	camera.Pos = { 0, 300, 104 };
 	camera.Rot = { 0, -70, 0 };
-	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
+	camera.Perspective(45, 1280.f/720.f, 10.f, 5000.f);
 	float CameraSpeed = 200;
 
 	camera.Update();

@@ -61,6 +61,13 @@ namespace Columbus
 			BindFlags(BindFlags),
 			Usage(Usage),
 			CpuAccess(CpuAccess) {}
+
+		bool operator==(const BufferDesc&) const = default;
+	};
+
+	struct HashBufferDesc
+	{
+		size_t operator()(const BufferDesc&) const;
 	};
 
 	class Buffer

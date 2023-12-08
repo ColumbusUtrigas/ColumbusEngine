@@ -189,6 +189,7 @@ namespace Columbus
 	{
 		SceneTextures Textures = CreateSceneTextures(Graph, View, HistoryTextures);
 
+		PrepareTiledLights(Graph, View);
 		RenderGBufferPass(Graph, View, Textures);
 
 		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, View, Textures);

@@ -131,6 +131,11 @@ namespace Columbus
 		Counter.Memory -= Bytes;
 	}
 
+	void SetProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes)
+	{
+		Counter.Memory = Bytes;
+	}
+
 	double GetProfileTime(ProfileModule Module)
 	{
 		return 0.0;

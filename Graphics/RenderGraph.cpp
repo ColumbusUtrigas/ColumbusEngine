@@ -1,7 +1,10 @@
 #include "RenderGraph.h"
 #include "Common/Image/Image.h"
+#include "Core/Util.h"
+#include "Graphics/Core/Buffer.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Core/Types.h"
+#include "Graphics/Vulkan/BufferVulkan.h"
 #include "Graphics/Vulkan/CommandBufferVulkan.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
 #include "Graphics/Vulkan/PipelinesVulkan.h"
@@ -9,18 +12,20 @@
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Core/Hash.h"
 #include "Math/Vector2.h"
+#include "Profiling/Profiling.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
 
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Clear", "RenderGraph", Counter_RenderGraphClear);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Build", "RenderGraph", Counter_RenderGraphBuild);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Execute", "RenderGraph", Counter_RenderGraphExecute);
 
 IMPLEMENT_MEMORY_PROFILING_COUNTER("RG Textures", "RenderGraphMemory", MemoryCounter_RenderGraphTextures);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("RG Buffers", "RenderGraphMemory", MemoryCounter_RenderGraphBuffers);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("RG CPU Side", "RenderGraphMemory", MemoryCounter_RenderGraphCPU);
 
 namespace std {
 	template <> struct hash<Columbus::RenderPassAttachment>
@@ -167,6 +172,38 @@ namespace Columbus
 		return Graph.Textures[Ref].Texture;
 	}
 
+	SPtr<Buffer> RenderGraphContext::GetRenderGraphBuffer(RenderGraphBufferRef Ref)
+	{
+		bool ValidUsage = false;
+
+		// TODO: optimize or give option to turn off validation
+		for (const auto& Read : Graph.Passes[CurrentPass].Dependencies.BufferReadResources)
+		{
+			if (Read.Buffer == Ref)
+			{
+				ValidUsage = true;
+				break;
+			}
+		}
+
+		for (const auto& Write : Graph.Passes[CurrentPass].Dependencies.BufferWriteResources)
+		{
+			if (Write.Buffer == Ref)
+			{
+				ValidUsage = true;
+				break;
+			}
+		}
+
+		if (!ValidUsage)
+		{
+			Log::Error("RenderGraph Validation: Buffer %s isn't defined as a dependency of pass %s, but this pass tries to access it",
+				Graph.Buffers[Ref].DebugName.c_str(), Graph.Passes[CurrentPass].Name.c_str());
+		}
+
+		return Graph.Buffers[Ref].Buffer;
+	}
+
 	RenderGraphScopedMarker::RenderGraphScopedMarker(RenderGraph& Graph, const std::string& Marker) : Graph(Graph)
 	{
 		Graph.PushMarker(Marker);
@@ -262,10 +299,10 @@ namespace Columbus
 		BufferDesc LightBufferDesc;
 		LightBufferDesc.Size = Lights->Bytesize();
 		LightBufferDesc.BindFlags = BufferType::UAV;
-		auto LightBuffer = Device->CreateBuffer(LightBufferDesc, Lights.get());
-		Device->SetDebugName(LightBuffer, "GPUScene.Lights");
+		Scene->LightsBuffer = Device->CreateBuffer(LightBufferDesc, Lights.get());
+		Device->SetDebugName(Scene->LightsBuffer, "GPUScene.Lights");
 
-		Device->UpdateDescriptorSet(RenderData.GPUSceneData.LightSet, 0, 0, LightBuffer);
+		Device->UpdateDescriptorSet(RenderData.GPUSceneData.LightSet, 0, 0, Scene->LightsBuffer);
 	}
 
 	RenderGraphTextureRef RenderGraph::CreateTexture(const TextureDesc2& Desc, const char* Name)
@@ -278,6 +315,14 @@ namespace Columbus
 		return Id;
 	}
 
+	RenderGraphBufferRef RenderGraph::CreateBuffer(const BufferDesc& Desc, const char* Name)
+	{
+		int Id = static_cast<int>(Buffers.size());
+		Buffers.push_back(RenderGraphBuffer(Desc, Name, Id));
+		return Id;
+	}
+
+	// TODO: unify allocation logic for textures and buffers?
 	void RenderGraph::AllocateTexture(RenderGraphTexture& Texture)
 	{
 		const auto ApplyTextureFromPool = [&Texture, this](RenderGraphPooledTexture& PooledTexture) {
@@ -317,6 +362,48 @@ namespace Columbus
 		AddProfilingMemory(MemoryCounter_RenderGraphTextures, Result.Texture->GetSize());
 	}
 
+	// TODO: unify allocation logic for textures and buffers?
+	void RenderGraph::AllocateBuffer(RenderGraphBuffer& Buffer)
+	{
+		const auto ApplyBufferFromPool = [&Buffer, this](RenderGraphPooledBuffer& PooledBuffer) {
+			Buffer.Buffer = PooledBuffer.Buffer;
+			Buffer.AllocatedSize = PooledBuffer.Buffer->GetSize();
+			PooledBuffer.Used = true;
+			Device->SetDebugName(Buffer.Buffer.get(), Buffer.DebugName.c_str());
+		};
+
+		if (BufferResourcePool.contains(Buffer.Desc))
+		{
+			auto& BufferResources = BufferResourcePool[Buffer.Desc];
+
+			// Search for the first unused buffer with matching Desc
+			auto FoundRef = std::find_if(BufferResources.begin(), BufferResources.end(), [](RenderGraphPooledBuffer& Buf) {
+				return !Buf.Used;
+			});
+
+			if (FoundRef != BufferResources.end()) // Found
+			{
+				ApplyBufferFromPool(*FoundRef);
+				return;
+			}
+		} else
+		{
+			// No matching Desc, ensure that list exists
+			BufferResourcePool[Buffer.Desc] = std::vector<RenderGraphPooledBuffer>();
+		}
+
+		double Size = 0;
+		const char* HumanizedSize = HumanizeBytes(Buffer.Desc.Size, Size);
+		Log::Message("RenderGraph buffer allocated: %s (%.2f %s)", Buffer.DebugName.c_str(), Size, HumanizedSize);
+
+		// No available buffer with matching Desc found, create a new one
+		RenderGraphPooledBuffer& Result = BufferResourcePool[Buffer.Desc].emplace_back(
+			RenderGraphPooledBuffer{ SPtr<Columbus::Buffer>(Device->CreateBuffer(Buffer.Desc, nullptr)), false }
+		);
+		ApplyBufferFromPool(Result);
+		AddProfilingMemory(MemoryCounter_RenderGraphBuffers, Result.Buffer->GetSize());
+	}
+
 	RenderGraphTextureRef RenderGraph::GetSwapchainTexture()
 	{
 		return SwapchainId;
@@ -348,6 +435,11 @@ namespace Columbus
 		{
 			Read.Version = Textures[Read.Texture].Version;
 		}
+
+		for (auto& Read : Pass.Dependencies.BufferReadResources)
+		{
+			Read.Version = Buffers[Read.Buffer].Version;
+		}
 		
 		for (auto& Write : Pass.Dependencies.TextureWriteResources)
 		{
@@ -363,6 +455,19 @@ namespace Columbus
 				Textures[Write.Texture].Version++;
 				Write.Version = Write.Texture != SwapchainId ? Textures[Write.Texture].Version : -1;
 			}
+		}
+
+		for (auto& Write : Pass.Dependencies.BufferWriteResources)
+		{
+			// If there was a version of a buffer before, we overwrite this texture and, therefore, depend on it
+			if (Buffers[Write.Buffer].Version >= 0)
+			{
+				Pass.Dependencies.ReadBuffer(Write.Buffer, Write.Access, Write.Stage);
+				Pass.Dependencies.BufferReadResources[Pass.Dependencies.BufferReadResources.size() - 1].Version = Buffers[Write.Buffer].Version;
+			}
+
+			Buffers[Write.Buffer].Version++;
+			Write.Version = Buffers[Write.Buffer].Version;
 		}
 
 		Passes.emplace_back(std::move(Pass));
@@ -393,6 +498,7 @@ namespace Columbus
 
 		Passes.clear();
 		Textures.clear();
+		Buffers.clear();
 		Extractions.clear();
 
 		// TODO: cleanup unused textures from the previous frame
@@ -403,6 +509,14 @@ namespace Columbus
 			for (auto& PooledTexture : DescPool.second)
 			{
 				PooledTexture.Clear();
+			}
+		}
+
+		for (auto& DescPool : BufferResourcePool)
+		{
+			for (auto& PooledBuffer : DescPool.second)
+			{
+				PooledBuffer.Clear();
 			}
 		}
 	}
@@ -419,9 +533,19 @@ namespace Columbus
 			AllocateTexture(Texture);
 		}
 
+		for (auto& Buffer : Buffers)
+		{
+			AllocateBuffer(Buffer);
+		}
+
 		const auto UpdateTextureLifetime = [](RenderGraphTexture& Texture, RenderGraphPassId PassId) {
 			if (PassId < Texture.FirstUsage) Texture.FirstUsage = PassId;
 			if (PassId > Texture.LastUsage)  Texture.LastUsage  = PassId;
+		};
+
+		const auto UpdateBufferLifetime = [](RenderGraphBuffer& Buffer, RenderGraphPassId PassId) {
+			if (PassId < Buffer.FirstUsage) Buffer.FirstUsage = PassId;
+			if (PassId > Buffer.LastUsage)  Buffer.LastUsage  = PassId;
 		};
 
 		// derive lifetime information about resources
@@ -440,6 +564,17 @@ namespace Columbus
 
 				// update resource consumers
 				GraphTexture.Readers.push_back(GraphTexture.Id);
+			}
+
+			for (const auto& Read : Pass.Dependencies.BufferReadResources)
+			{
+				auto& GraphBuffer = Buffers[Read.Buffer];
+
+				// update resource lifetime
+				UpdateBufferLifetime(GraphBuffer, Pass.Id);
+
+				// update resource consumers
+				GraphBuffer.Readers.push_back(GraphBuffer.Id);
 			}
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
@@ -463,6 +598,25 @@ namespace Columbus
 						GraphTexture.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphTexture.Writer].Name.c_str());
 				}
 			}
+
+			for (const auto& Write : Pass.Dependencies.BufferWriteResources)
+			{
+				auto& GraphBuffer = Buffers[Write.Buffer];
+
+				// update resource lifetime
+				UpdateBufferLifetime(GraphBuffer, Pass.Id);
+
+				// update resource producer
+				if (GraphBuffer.Writer == -1)
+				{
+					GraphBuffer.Writer = Pass.Id;
+				}
+				else
+				{
+					Log::Error("RenderGraph Validation: Buffer %s can have only one producer, %s writes over it, was written in %s before",
+						GraphBuffer.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphBuffer.Writer].Name.c_str());
+				}
+			}
 		}
 
 		// Validate resources
@@ -472,6 +626,15 @@ namespace Columbus
 			if (Texture.Readers.size() > 0 && Texture.Writer == -1)
 			{
 				Log::Error("RenderGraph Validation: Texture %s is being read but no passes have ever written to it", Texture.DebugName.c_str());
+			}
+		}
+
+		for (auto& Buffer : Buffers)
+		{
+			// it is illegal to read from a resource that hasn't been written before
+			if (Buffer.Readers.size() > 0 && Buffer.Writer == -1)
+			{
+				Log::Error("RenderGraph Validation: Buffer %s is being read but no passes have ever written to it", Buffer.DebugName.c_str());
 			}
 		}
 
@@ -493,13 +656,33 @@ namespace Columbus
 					}
 				}
 			}
+
+			for (const auto& Read : Pass.Dependencies.BufferReadResources)
+			{
+				const auto& GraphBuffer = Textures[Read.Buffer];
+				const auto& WriterPass = Passes[GraphBuffer.Writer];
+
+				// search for the writing dependency, TODO: better solution?
+				for (const auto& WriterPassWrite : WriterPass.Dependencies.BufferWriteResources)
+				{
+					if (WriterPassWrite.Buffer == Read.Buffer)
+					{
+						Pass.BufferBarriers.push_back(RenderGraphBufferBarrier { GraphBuffer.Id, WriterPassWrite, Read });
+					}
+				}
+			}
 		}
 
-		// test: dump texture lifetime information, TODO: expose into debug dump
+		// test: dump resources lifetime information, TODO: expose into debug dump
 		#if 0
 		for (auto& Texture : Textures)
 		{
 			printf("Texture lifetime: %s lives between %s and %s\n", Texture.DebugName.c_str(), Passes[Texture.FirstUsage].Name.c_str(), Passes[Texture.LastUsage].Name.c_str());
+		}
+
+		for (auto& Buffer : Buffers)
+		{
+			printf("Buffer lifetime: %s lives between %s and %s\n", Buffer.DebugName.c_str(), Passes[Buffer.FirstUsage].Name.c_str(), Passes[Buffer.LastUsage].Name.c_str());
 		}
 		#endif
 
@@ -509,10 +692,17 @@ namespace Columbus
 			printf("RenderGraph Scheduling: ");
 			for (auto& Pass : Passes)
 			{
-				printf("%s (barriers:", Pass.Name.c_str());
+				printf("%s (texture barriers:", Pass.Name.c_str());
 				for (auto& Barrier : Pass.TextureBarriers)
 				{
 					printf(" %s_v%i,", Textures[Barrier.Texture].DebugName.c_str(), Barrier.Reader.Version);
+				}
+				printf("),");
+
+				printf(" (buffer barriers:");
+				for (auto& Barrier : Pass.BufferBarriers)
+				{
+					printf(" %s_v%i,", Buffers[Barrier.Buffer].DebugName.c_str(), Barrier.Reader.Version);
 				}
 				printf("),");
 			}
@@ -529,6 +719,15 @@ namespace Columbus
 				Pass.VulkanFramebuffer = GetOrCreateVulkanFramebuffer(Pass, SwapchainImage);
 			}
 		}
+
+		// update CPU memory stats
+		SetProfilingMemory(MemoryCounter_RenderGraphCPU, 0);
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Passes.size() * sizeof(RenderPass));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Textures.size() * sizeof(RenderGraphTexture));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Buffers.size() * sizeof(RenderGraphBuffer));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Extractions.size() * sizeof(RenderGraphTextureExtraction));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, MarkersStack.size() * sizeof(RenderGraphMarker));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, sizeof(RenderGraphData));
 	}
 
 	void RenderGraph::Execute(SwapchainVulkan* Swapchain)
@@ -615,12 +814,36 @@ namespace Columbus
 				VkBarrier.subresourceRange.baseArrayLayer = 0;
 				VkBarrier.subresourceRange.layerCount = 1;
 
-				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, Barrier.Writer.Stage, Barrier.Reader.Stage,
+				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, Barrier.Writer.Stage, Barrier.Reader.Stage, 0,
 					0, 0, // memory barrier
 					0, 0, // buffer memory barrier
-					0, 1, (VkImageMemoryBarrier*)&VkBarrier);
+					1, (VkImageMemoryBarrier*)&VkBarrier);
 
 				Texture->_Layout = VK_IMAGE_LAYOUT_GENERAL; // TODO: proper tracking system
+			}
+
+			for (const auto& Barrier : Pass.BufferBarriers)
+			{
+				const RenderGraphBuffer& GraphBuffer = Buffers[Barrier.Buffer];
+
+				BufferVulkan* Buffer = static_cast<BufferVulkan*>(GraphBuffer.Buffer.get());
+
+				VkBufferMemoryBarrier VkBarrier;
+				VkBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+				VkBarrier.pNext = nullptr;
+				VkBarrier.srcAccessMask = Barrier.Writer.Access;
+				VkBarrier.dstAccessMask = Barrier.Reader.Access;
+				VkBarrier.srcQueueFamilyIndex = 0;
+				VkBarrier.dstQueueFamilyIndex = 0;
+				VkBarrier.buffer = Buffer->_Buffer;
+				VkBarrier.offset = 0; // TODO?
+				VkBarrier.size = GraphBuffer.Desc.Size;
+
+				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, Barrier.Writer.Stage, Barrier.Reader.Stage, 0,
+					0, 0, // memory barrier
+					1, &VkBarrier, // buffer memory barrier
+					0, 0  // image memory barrier
+				);
 			}
 
 			if (Pass.Type == RenderGraphPassType::Raster)
@@ -744,11 +967,24 @@ namespace Columbus
 			}
 		}
 
+		for (const auto& Buffer : Buffers)
+		{
+			for (int Version = 0; Version <= Buffer.Version; Version++)
+			{
+				Result += Buffer.DebugName + + "_v" + std::to_string(Version) + " [shape=box]\n";
+			}
+		}
+
 		for (const auto& Pass : Passes)
 		{
 			for (const auto& Read : Pass.Dependencies.TextureReadResources)
 			{
 				Result += Textures[Read.Texture].DebugName + "_v" + std::to_string(Read.Version) + " -> " + Pass.Name + "\n";
+			}
+
+			for (const auto& Read : Pass.Dependencies.BufferReadResources)
+			{
+				Result += Buffers[Read.Buffer].DebugName + "_v" + std::to_string(Read.Version) + " -> " + Pass.Name + "\n";
 			}
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
@@ -761,6 +997,11 @@ namespace Columbus
 				{
 					Result += Pass.Name + " -> " + "Swapchain\n";
 				}
+			}
+
+			for (const auto& Write : Pass.Dependencies.BufferWriteResources)
+			{
+				Result += Pass.Name + " -> " + Buffers[Write.Buffer].DebugName + "_v" + std::to_string(Write.Version) + "\n";
 			}
 		}
 
@@ -778,6 +1019,7 @@ namespace Columbus
 	{
 		Info.Passes = Passes;
 		Info.Textures = Textures;
+		Info.Buffers = Buffers;
 	}
 
 	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderPass& Pass)

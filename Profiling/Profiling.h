@@ -92,6 +92,7 @@ namespace Columbus
 
 	void AddProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 	void RemoveProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
+	void SetProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 
  	void ResetProfiling();	
  	double GetProfileTime(ProfileModule Module);
