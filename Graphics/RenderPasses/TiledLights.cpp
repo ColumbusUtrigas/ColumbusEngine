@@ -19,6 +19,7 @@ namespace Columbus
 
 	void PrepareTiledLights(RenderGraph& Graph, const RenderView& View)
 	{
+		return;
 		// divide screen into tiles of some size and create RG buffer for them
 		iVector2 TilesCount2d = (View.OutputSize + (LightTileSize - 1)) / LightTileSize;
 		int TilesCount = TilesCount2d.X * TilesCount2d.Y;

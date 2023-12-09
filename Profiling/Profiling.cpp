@@ -72,6 +72,16 @@ namespace Columbus
 		AddCategoryToCategoriesList<ProfileCounterMemory>(Category);
  	}
 
+	ProfileCounterGPU::ProfileCounterGPU(const char* Text, const char* Category) : Text(Text), Category(Category)
+	{
+		Time = 0;
+		LastTime = 0;
+		Id = (int)GetCounterList<ProfileCounterGPU>().size();
+		GetCounterList<ProfileCounterGPU>().push_back(this);
+		GetCategoryList<ProfileCounterGPU>(Category).push_back(this);
+		AddCategoryToCategoriesList<ProfileCounterGPU>(Category);
+	}
+
 	ProfileMarkerScopedCPU::ProfileMarkerScopedCPU(ProfileCounterCPU& Marker) : Marker(Marker)
 	{
 		Prof.Reset();
@@ -94,25 +104,15 @@ namespace Columbus
 		// CPU[int(Module)] += Time;
 	}
 
-	ProfileMarkerGPU::ProfileMarkerGPU(ProfileModuleGPU Module) : Module(Module)
-	{
-		//glGenQueries(1, &ID);
-		//glBeginQuery(GL_TIME_ELAPSED, ID);
-	}
-
-	ProfileMarkerGPU::~ProfileMarkerGPU()
-	{
-		// GLint result;
-		//glEndQuery(GL_TIME_ELAPSED);
-		//glGetQueryObjectiv(ID, GL_QUERY_RESULT, &result);
-		//glDeleteQueries(1, &ID);
-
-		//GPU[int(Module)] = result * 0.000001;
-	}
-
 	void ResetProfiling()
 	{
 		for (ProfileCounterCPU* Counter : GetCounterList<ProfileCounterCPU>())
+		{
+			Counter->LastTime = Counter->Time;
+			Counter->Time = 0.0;
+		}
+
+		for (ProfileCounterGPU* Counter : GetCounterList<ProfileCounterGPU>())
 		{
 			Counter->LastTime = Counter->Time;
 			Counter->Time = 0.0;
@@ -162,9 +162,19 @@ namespace Columbus
 		return GetCategoriesList<ProfileCounterMemory>();
 	}
 
-	std::span<ProfileCounterMemory*> GetProfileCategoryMemory(const char* Category)
+	std::span<ProfileCounterMemory*> GetProfilerCategoryMemory(const char* Category)
 	{
 		return GetCategoryList<ProfileCounterMemory>(Category);
  	}
+
+	std::span<const char*> GetProfilerCategoryListGPU()
+	{
+		return GetCategoriesList<ProfileCounterGPU>();
+	}
+
+	std::span<ProfileCounterGPU*> GetProfilerCategoryGPU(const char* Category)
+	{
+		return GetCategoryList<ProfileCounterGPU>(Category);
+	}
 
 }

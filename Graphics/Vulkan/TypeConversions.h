@@ -2,6 +2,7 @@
 
 #include "Core/Assert.h"
 #include "Graphics/Core/GraphicsCore.h"
+#include "Graphics/Core/QueryPool.h"
 #include <Common/Image/Image.h>
 #include <vulkan/vulkan.h>
 #include <cassert>
@@ -251,6 +252,15 @@ namespace Columbus
 		}
 
 		return Result;
+	}
+
+	static VkQueryType QueryPoolTypeToVk(QueryPoolType Type)
+	{
+		switch (Type)
+		{
+			case QueryPoolType::Timestamp: return VK_QUERY_TYPE_TIMESTAMP;
+			default: COLUMBUS_ASSERT(false);
+		}
 	}
 
 }

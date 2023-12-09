@@ -76,8 +76,9 @@ namespace Columbus
 		if (ImGui::Begin("Stats"))
 		{
 			auto rg_cpu = GetProfilerCategoryCPU("RenderGraph");
-			auto rg_mem = GetProfileCategoryMemory("RenderGraphMemory");
-			auto sc_mem = GetProfileCategoryMemory("SceneMemory");
+			auto rg_mem = GetProfilerCategoryMemory("RenderGraphMemory");
+			auto rg_gpu = GetProfilerCategoryGPU("RenderGraphGPU");
+			auto sc_mem = GetProfilerCategoryMemory("SceneMemory");
 
 			if (ImGui::BeginTable("RG CPU", 2))
 			{
@@ -100,6 +101,17 @@ namespace Columbus
 
 					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
 					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+				}
+				ImGui::EndTable();
+			}
+
+			if (ImGui::BeginTable("RG GPU", 2))
+			{
+				ImGui::TableHeader("RG GPU");
+				for (auto counter : rg_gpu)
+				{
+					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
 				}
 				ImGui::EndTable();
 			}

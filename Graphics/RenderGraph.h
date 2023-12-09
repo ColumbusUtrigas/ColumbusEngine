@@ -17,6 +17,9 @@
 
 #include <vulkan/vulkan.h>
 
+// to be used inside of a pass executor
+#define RENDER_GRAPH_PROFILE_GPU_SCOPED(counter, context) PROFILE_GPU(counter, &context.Device->_Profiler, context.CommandBuffer);
+
 DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphClear);
 DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphBuild);
 DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphExecute);
@@ -24,6 +27,8 @@ DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphExecute);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphTextures);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphBuffers);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphCPU);
+
+DECLARE_GPU_PROFILING_COUNTER(GpuCounter_RenderGraphFrame);
 
 namespace Columbus
 {
@@ -39,8 +44,6 @@ namespace Columbus
 	using RenderGraphBufferRef = int; // TODO: unify with Id
 	using RenderGraphBufferId = int;
 	using RenderGraphPassId = int;
-
-	constexpr int MaxFramesInFlight = 3;
 
 	struct RenderGraphData
 	{

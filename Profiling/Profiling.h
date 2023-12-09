@@ -7,6 +7,7 @@
 namespace Columbus
 {
 
+	// TODO: legacy
 	enum class ProfileModule
 	{
 		CPU,
@@ -18,6 +19,7 @@ namespace Columbus
 		Count
 	};
 
+	// TODO: legacy
 	enum class ProfileModuleGPU
 	{
 		GPU,
@@ -29,6 +31,7 @@ namespace Columbus
 		Count
 	};
 
+	// TODO: legacy
 	struct ProfileMarker
 	{
 		ProfileModule Module;
@@ -61,6 +64,20 @@ namespace Columbus
 		ProfileCounterMemory(const char* Text, const char* Category);
 	};
 
+	// to be used with a macro, should be statically initialised
+	// doesn't measure GPU time by itself
+	// it's just a data holder, data is written to here from GPUProfiler
+	struct ProfileCounterGPU
+	{
+		int Id;
+		double Time;
+		double LastTime;
+		const char* Text;
+		const char* Category;
+
+		ProfileCounterGPU(const char* Text, const char* Category);
+	};
+
 	struct ProfileMarkerScopedCPU
 	{
 		ProfileCounterCPU& Marker;
@@ -70,17 +87,9 @@ namespace Columbus
 		~ProfileMarkerScopedCPU();
 	};
 
-	struct ProfileMarkerGPU
-	{
-		ProfileModuleGPU Module;
-		uint32 ID;
-
-		ProfileMarkerGPU(ProfileModuleGPU Module);
-		~ProfileMarkerGPU();
-	};
-
+	// TODO: legacy
 	//#define PROFILE_CPU(module) Columbus::ProfileMarker MarkerCPU(module);
- 	#define PROFILE_GPU(module) Columbus::ProfileMarkerGPU MarkerGPU(module);
+ 	// #define PROFILE_GPU(module) Columbus::ProfileMarkerGPU MarkerGPU(module);
  
 	#define DECLARE_CPU_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterCPU counter;
 	#define IMPLEMENT_CPU_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterCPU counter (text, category);
@@ -88,13 +97,20 @@ namespace Columbus
 	#define DECLARE_MEMORY_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterMemory counter;
 	#define IMPLEMENT_MEMORY_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterMemory counter (text, category);
 
+	#define DECLARE_GPU_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterGPU counter;
+	#define IMPLEMENT_GPU_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterGPU counter (text, category);
+
 	#define PROFILE_CPU(counter) Columbus::ProfileMarkerScopedCPU MarkerCPU(counter);
+	// #define PROFILE_GPU(counter) // TODO: use ProfileMarkerScopedGPU
 
 	void AddProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 	void RemoveProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 	void SetProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 
- 	void ResetProfiling();	
+	// call it once per frame
+ 	void ResetProfiling();
+
+	// TODO: legacy
  	double GetProfileTime(ProfileModule Module);
  	double GetProfileTimeGPU(ProfileModuleGPU Module);
  
@@ -102,8 +118,12 @@ namespace Columbus
 	std::span<ProfileCounterCPU*> GetProfilerCategoryCPU(const char* Category);
 
 	std::span<const char*>           GetProfilerCategoryListMemory();
-	std::span<ProfileCounterMemory*> GetProfileCategoryMemory(const char* Category);
+	std::span<ProfileCounterMemory*> GetProfilerCategoryMemory(const char* Category);
 
+	std::span<const char*>        GetProfilerCategoryListGPU();
+	std::span<ProfileCounterGPU*> GetProfilerCategoryGPU(const char* Category);
+
+	// TODO: legacy
 	void ResetProfiling();	
 	double GetProfileTime(ProfileModule Module);
 	double GetProfileTimeGPU(ProfileModuleGPU Module);

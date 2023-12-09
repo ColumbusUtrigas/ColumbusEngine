@@ -5,11 +5,18 @@
 #include "Graphics/Core/View.h"
 #include "Graphics/RenderGraph.h"
 #include "Graphics/Vulkan/TypeConversions.h"
+#include "Profiling/Profiling.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 
 namespace Columbus
 {
+
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterGBufferPass);
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterLightingPass);
+
+	IMPLEMENT_GPU_PROFILING_COUNTER("GBuffer", "RenderGraphGPU", GpuCounterGBufferPass);
+	IMPLEMENT_GPU_PROFILING_COUNTER("Lighting pass", "RenderGraphGPU", GpuCounterLightingPass);
 
 	struct PerObjectParameters
 	{
@@ -69,6 +76,8 @@ namespace Columbus
 
 		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterGBufferPass, Context);
+
 			// TODO: refactor, create a proper shader system
 			static GraphicsPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
@@ -134,6 +143,8 @@ namespace Columbus
 
 		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingTexture, ShadowTexture, Textures](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterLightingPass, Context);
+
 			// TODO: shader system
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)

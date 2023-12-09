@@ -27,6 +27,8 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("RG Textures", "RenderGraphMemory", MemoryCou
 IMPLEMENT_MEMORY_PROFILING_COUNTER("RG Buffers", "RenderGraphMemory", MemoryCounter_RenderGraphBuffers);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("RG CPU Side", "RenderGraphMemory", MemoryCounter_RenderGraphCPU);
 
+IMPLEMENT_GPU_PROFILING_COUNTER("RG GPU Frame", "RenderGraphGPU", GpuCounter_RenderGraphFrame);
+
 namespace std {
 	template <> struct hash<Columbus::RenderPassAttachment>
 	{
@@ -766,6 +768,11 @@ namespace Columbus
 		CommandBuffer->Reset();
 		CommandBuffer->Begin();
 
+		// TODO: move profiler calls out from rendergraph
+		ProfileMarkerGPU GpuTimeMarker(&GpuCounter_RenderGraphFrame);
+		Context.Device->_Profiler.Reset(CommandBuffer);
+		Context.Device->_Profiler.BeginProfileCounter(GpuTimeMarker, CommandBuffer);
+
 		auto EvaluateMarker = [this, &CommandBuffer]()
 		{
 			RenderGraphMarker Marker = MarkersStack.front();
@@ -940,6 +947,7 @@ namespace Columbus
 			CommandBuffer->TransitionImageLayout(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		}
 
+		Context.Device->_Profiler.EndProfileConter(GpuTimeMarker, CommandBuffer);
 		CommandBuffer->End();
 
 		Device->Submit(CommandBuffer, PerFrameData.Fence, 1, &PerFrameData.ImageSemaphore, 1, &PerFrameData.SubmitSemaphore);

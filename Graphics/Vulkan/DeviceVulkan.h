@@ -11,6 +11,7 @@
 #include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "Graphics/Vulkan/DescriptorCache.h"
 #include "Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h"
+#include "Profiling/Profiling.h"
 #include <Core/Assert.h>
 #include <Core/SmartPointer.h>
 
@@ -31,8 +32,66 @@
 // disable to make RenderDoc captures
 #define ENABLE_RAY_TRACING 1
 
+constexpr int MaxFramesInFlight = 3;
+
 namespace Columbus
 {
+
+	class DeviceVulkan;
+	struct ProfileMarkerGPU;
+	struct ProfileMarkerScopedGPU;
+
+	class GPUProfilerVulkan
+	{
+	public:
+		static constexpr int TimestampQueryCount = 8192;
+		QueryPool* Pools[MaxFramesInFlight];
+
+		DeviceVulkan* Device = nullptr;
+
+		int CurrentTimestampQuery[MaxFramesInFlight]{0};
+		int CurrentMeasurement[MaxFramesInFlight]{0};
+		int CurrentFrame = 0;
+
+		struct Measurement
+		{
+			ProfileCounterGPU* Counter;
+			int StartTimestampId;
+			int EndTimestampId;
+		};
+
+		Measurement Measurements[MaxFramesInFlight][TimestampQueryCount];
+
+	public:
+		void Init();
+		void Shutdown();
+
+		void BeginFrame();
+		void EndFrame();
+
+		void Reset(CommandBufferVulkan* CommandBuffer);
+		void BeginProfileCounter(ProfileMarkerGPU& Scoped, CommandBufferVulkan* CommandBuffer);
+		void EndProfileConter(ProfileMarkerGPU& Scoped, CommandBufferVulkan* CommandBuffer);
+	};
+
+	struct ProfileMarkerGPU
+	{
+		int Id; // measurement id
+		ProfileCounterGPU* Counter;
+
+		ProfileMarkerGPU(ProfileCounterGPU* Counter) : Counter(Counter) {}
+	};
+
+	struct ProfileMarkerScopedGPU : public ProfileMarkerGPU
+	{
+		GPUProfilerVulkan* Profiler;
+		CommandBufferVulkan* CommandBuffer;
+
+		ProfileMarkerScopedGPU(ProfileCounterGPU* Counter, GPUProfilerVulkan* Profiler, CommandBufferVulkan* CommandBuffer);
+		~ProfileMarkerScopedGPU();
+	};
+
+	#define PROFILE_GPU(counter, profiler, commandbuffer) Columbus::ProfileMarkerScopedGPU MarkerGPU ## __LINE__ (&counter, profiler, commandbuffer);
 
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
@@ -64,6 +123,8 @@ namespace Columbus
 		VmaAllocator _Allocator;
 
 		VulkanFunctions VkFunctions;
+
+		GPUProfilerVulkan _Profiler;
 	private:
 		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
@@ -197,6 +258,10 @@ namespace Columbus
 			allocatorInfo.instance = Instance;
 			allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 			VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_Allocator));
+
+			// initialize profiling
+			_Profiler.Device = this;
+			_Profiler.Init();
 		}
 
 		// Low-level API abstraction
@@ -247,8 +312,17 @@ namespace Columbus
 		void SetDebugName(const Texture2* Texture, const char* Name);
 		void SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name);
 
-		// TODO: Higher-level API abstraction
+		QueryPool* CreateQueryPool(const QueryPoolDesc& Desc);
+		void       DestroyQueryPool(QueryPool* Pool);
+		// void       ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount);
+		// that call is blocking
+		void       ReadQueryPoolTimestamps(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount, u64* Data, u32 DataSize);
+
+		// Higher-level API abstraction
 		// GPUScene* CreateGPUScene(const char* Name);
+
+		void BeginFrame();
+		void EndFrame();
 
 		uint32_t alignedSize(uint32_t value, uint32_t alignment)
         {
@@ -380,6 +454,8 @@ namespace Columbus
 		~DeviceVulkan()
 		{
 			VK_CHECK(vkDeviceWaitIdle(_Device));
+
+			_Profiler.Shutdown();
 
 			vmaDestroyAllocator(_Allocator);
 			vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);

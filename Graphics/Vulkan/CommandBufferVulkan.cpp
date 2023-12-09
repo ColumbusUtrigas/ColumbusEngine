@@ -3,6 +3,7 @@
 #include "BufferVulkan.h"
 #include "TextureVulkan.h"
 #include "PipelinesVulkan.h"
+#include "QueryPoolVulkan.h"
 #include "TypeConversions.h"
 
 #include <vulkan/vulkan.h>
@@ -268,6 +269,20 @@ namespace Columbus
 		};
 
 		vkCmdCopyBuffer(_CmdBuf, srcvk->_Buffer, dstvk->_Buffer, 1, &Region);
+	}
+
+	void CommandBufferVulkan::ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount)
+	{
+		const QueryPoolVulkan* vkPool = static_cast<const QueryPoolVulkan*>(Pool);
+
+		vkCmdResetQueryPool(_CmdBuf, vkPool->_Pool, FirstQuery, QueryCount);
+	}
+
+	void CommandBufferVulkan::WriteTimestamp(const QueryPool* Pool, u32 Id)
+	{
+		const QueryPoolVulkan* vkPool = static_cast<const QueryPoolVulkan*>(Pool);
+
+		vkCmdWriteTimestamp(_CmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, vkPool->_Pool, Id);
 	}
 
 	CommandBufferVulkan::~CommandBufferVulkan()

@@ -6,17 +6,20 @@
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/Common.h"
+#include "Profiling/Profiling.h"
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
 
 #include "PipelinesVulkan.h"
 #include "BufferVulkan.h"
 #include "TextureVulkan.h"
+#include "QueryPoolVulkan.h"
 
 #include <cstring>
 #include <memory>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 #define VMA_IMPLEMENTATION
 #include <Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h>
@@ -626,6 +629,54 @@ namespace Columbus
 	void DeviceVulkan::SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name)
 	{
 		_SetDebugName((uint64_t)static_cast<const AccelerationStructureVulkan*>(AccelerationStructure)->_Handle, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, Name);
+	}
+
+	QueryPool* DeviceVulkan::CreateQueryPool(const QueryPoolDesc& Desc)
+	{
+		QueryPoolVulkan* Pool = new QueryPoolVulkan(Desc);
+
+		VkQueryPoolCreateInfo Info;
+		Info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+		Info.pNext = nullptr;
+		Info.flags = 0;
+		Info.queryType = QueryPoolTypeToVk(Desc.Type);
+		Info.queryCount = Desc.Count;
+		Info.pipelineStatistics = 0;
+
+		VK_CHECK(vkCreateQueryPool(_Device, &Info, nullptr, &Pool->_Pool));
+
+		return Pool;
+	}
+
+	void DeviceVulkan::DestroyQueryPool(QueryPool* Pool)
+	{
+		vkDestroyQueryPool(_Device, static_cast<QueryPoolVulkan*>(Pool)->_Pool, nullptr);
+
+		delete Pool;
+	}
+
+	// void DeviceVulkan::ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount)
+	// {
+	// 	const QueryPoolVulkan* vkPool = static_cast<const QueryPoolVulkan*>(Pool);
+
+	// 	vkResetQueryPool(_Device, vkPool->_Pool, FirstQuery, QueryCount);
+	// }
+
+	void DeviceVulkan::ReadQueryPoolTimestamps(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount, u64* Data, u32 DataSize)
+	{
+		const QueryPoolVulkan* vkPool = static_cast<const QueryPoolVulkan*>(Pool);
+
+		VK_CHECK(vkGetQueryPoolResults(_Device, vkPool->_Pool, FirstQuery, QueryCount, DataSize, Data, sizeof(u64), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
+	}
+
+	void DeviceVulkan::BeginFrame()
+	{
+		_Profiler.BeginFrame();
+	}
+
+	void DeviceVulkan::EndFrame()
+	{
+		_Profiler.EndFrame();
 	}
 
 	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts)

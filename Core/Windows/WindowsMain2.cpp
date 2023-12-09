@@ -460,23 +460,6 @@ void NewFrameImgui(WindowVulkan& Window)
 //	- solution 2 - simple - just create it in rendergraph
 int main()
 {
-	// Matrix testMatrix(
-	// 	{4,3,2,2},
-	// 	{0,1,-3,3},
-	// 	{0,-1,3,3},
-	// 	{0,3,1,1});
-
-	// Matrix3x3 minor00 = testMatrix.GetMinorMatrix(0, 0);
-	// Matrix3x3 minor01 = testMatrix.GetMinorMatrix(0, 1);
-	// Matrix3x3 minor02 = testMatrix.GetMinorMatrix(0, 2);
-
-	// testMatrix.DebugPrint();
-	// Matrix inverse = testMatrix.GetInverted();
-
-	// printf("%f\n", testMatrix.GetDeterminant());
-	// inverse.DebugPrint();
-	// (testMatrix * inverse).DebugPrint();
-	// return 0;
 	InitializeEngine();
 
 	Camera camera, cameraPrev;
@@ -508,17 +491,12 @@ int main()
 	Volume.Extent = { 250, 320, 500 };
 
 	InitializeImgui(Window, device);
-	ResetProfiling();
 
 	bool running = true;
 	while (running)
 	{
-		//Log::Message("%s: %f", Counter_TotalCPU.Text, Counter_TotalCPU.Time);
-		//Log::Message("%s: %f", Counter_RenderGraphClear.Text, Counter_RenderGraphClear.Time);
-		//Log::Message("%s: %f", Counter_RenderGraphBuild.Text, Counter_RenderGraphBuild.Time);
-		//Log::Message("%s: %f", Counter_RenderGraphExecute.Text, Counter_RenderGraphExecute.Time);
-
 		ResetProfiling();
+		device->BeginFrame();
 		PROFILE_CPU(Counter_TotalCPU);
 
 		float DeltaTime = timer.Elapsed();
@@ -604,13 +582,13 @@ int main()
 
 		// TODO:
 		std::this_thread::sleep_for(std::chrono::milliseconds(3));
+
+		device->EndFrame();
 	}
 
 	VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));
 	VK_CHECK(vkDeviceWaitIdle(device->_Device));
 
-	//vkDestroySwapchainKHR(device->_Device, swapchain->swapChain, nullptr);
-	//vkDestroySurfaceKHR(instance.instance, surface, nullptr);
 	//SDL_DestroyWindow(window);
 	SDL_Quit();
 

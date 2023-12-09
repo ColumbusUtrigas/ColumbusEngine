@@ -11,6 +11,12 @@ namespace Columbus
 
 	ConsoleVariable<bool> Cvar_Denoiser("r.RTShadows.Denoiser", "Controls whether shadow denoiser is active or not", false);
 
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedShadows);
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedShadowsDenoise);
+
+	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Shadows", "RenderGraphGPU", GpuCounterRayTracedShadows);
+	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Shadows Denoise", "RenderGraphGPU", GpuCounterRayTracedShadowsDenoise);
+
 	struct RTShadowParams
 	{
 		Vector3 Direction;
@@ -83,6 +89,8 @@ namespace Columbus
 
 			Graph.AddPass("ShadowDenoisePrepare", RenderGraphPassType::Compute, Parameters, Dependencies, [TilesSize, Shadow, RTShadowTiles, ShadowSize](RenderGraphContext& Context)
 			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadowsDenoise, Context);
+
 				static ComputePipeline* Pipeline = nullptr;
 				if (Pipeline == nullptr)
 				{
@@ -137,6 +145,8 @@ namespace Columbus
 			Graph.AddPass("ShadowDenoiseTileClassification", RenderGraphPassType::Compute, Parameters, Dependencies,
 			[RTShadowTiles, Textures, ShadowSize, FilterTilesSize, View, Moments, Metadata, ReprojectionResult](RenderGraphContext& Context)
 			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadowsDenoise, Context);
+
 				static ComputePipeline* Pipeline = nullptr;
 				if (Pipeline == nullptr)
 				{
@@ -216,6 +226,8 @@ namespace Columbus
 				Graph.AddPass("ShadowDenoiseFilter", RenderGraphPassType::Compute, Parameters, Dependencies,
 				[i, View, Textures, CurrentFilterInput, TmpHistory, Metadata, DenoisedResult, ShadowSize, FilterTilesSize](RenderGraphContext& Context)
 				{
+					RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadowsDenoise, Context);
+
 					static ComputePipeline* Pipelines[NumPasses] {nullptr};
 					if (Pipelines[i] == nullptr)
 					{
@@ -292,6 +304,8 @@ namespace Columbus
 
 			Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, View](RenderGraphContext& Context)
 			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadows, Context);
+
 				static RayTracingPipeline* Pipeline = nullptr;
 				if (Pipeline == nullptr)
 				{
