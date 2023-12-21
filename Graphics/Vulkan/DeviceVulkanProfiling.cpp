@@ -42,8 +42,7 @@ namespace Columbus
 			u64 Data[TimestampQueryCount];
 			Device->ReadQueryPoolTimestamps(Pools[LastFrame], 0, CurrentTimestampQuery[LastFrame], Data, TimestampQueryCount * sizeof(u64));
 
-			// TODO: readback results, populate profiler with data
-
+			// update counters
 			for (int i = 0; i < CurrentMeasurement[LastFrame]; i++)
 			{
 				Measurement& Sample = Measurements[LastFrame][i];

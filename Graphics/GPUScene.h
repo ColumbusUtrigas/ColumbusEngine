@@ -2,11 +2,22 @@
 
 #include "Graphics/Core/GraphicsCore.h"
 #include "Camera.h"
+#include "Graphics/Vulkan/DeviceVulkan.h"
 #include <Core/Core.h>
 #include <vector>
 
 namespace Columbus
 {
+
+	// design idea:
+	// the GPU scene is immutable during the rendering and is created as a "proxy" from
+	// the CPU representation.
+	// after update/upload of a GPU scene, it can be used during rendering in render graph
+	// Similar concept as Unreal's RenderProxy, but simple
+
+	// TODO: define GPUScene upload routine, which uploads data to the GPU via Device
+	// TODO: define GPUScene update/populate routine, which converts CPU entities to GPU representation
+	// TODO: implement Lights buffer upload first
 
 	struct GPUSceneMesh
 	{
@@ -47,26 +58,65 @@ namespace Columbus
 		Vector4 Position;
 		Vector4 Direction;
 		Vector4 Color;
-		uint32_t Type;
-		uint32_t Padding[3];
+		u32 Type;
+		float Range;
+		u32 Padding[2];
 	};
 
-	// TODO: abstract as a GPU parameter struct?
 	struct GPUScene
 	{
-		AccelerationStructure* TLAS;
+		static constexpr int MaxGPULights = 8192;
+
+		AccelerationStructure* TLAS = nullptr;
 		std::vector<GPUSceneMesh> Meshes;
 		std::vector<Texture2*> Textures;
 		std::vector<GPULight> Lights;
 
-		Buffer* LightsBuffer = nullptr;
-
 		GPUCamera MainCamera;
-
 		bool Dirty = false;
 
+		// GPUScene also owns GPU-specific resources
+		Buffer* LightsBuffer = nullptr;
+		Buffer* LightUploadBuffers[MaxFramesInFlight] {nullptr};
+
 		// TODO: camera, lights, decals, materials, per-object data
+
+		static GPUScene* CreateGPUScene(SPtr<DeviceVulkan> Device)
+		{
+			GPUScene* Result = new GPUScene();
+
+			BufferDesc LightBufferDesc;
+			LightBufferDesc.Size = GPUScene::MaxGPULights * sizeof(GPULight);
+			LightBufferDesc.BindFlags = BufferType::UAV;
+			Result->LightsBuffer = Device->CreateBuffer(LightBufferDesc, nullptr);
+			Device->SetDebugName(Result->LightsBuffer, "GPUScene.Lights");
+
+			for (Buffer*& UploadBuffer : Result->LightUploadBuffers)
+			{
+				BufferDesc UploadBufferDesc(GPUScene::MaxGPULights * sizeof(GPULight), BufferType::UAV);
+				UploadBufferDesc.HostVisible = true;
+				UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
+				Device->SetDebugName(UploadBuffer, "GPUScene.Lights (upload buffer)");
+			}
+
+			return Result;
+		}
+
+		static void DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device)
+		{
+			Device->DestroyBuffer(Scene->LightsBuffer);
+
+			for (Buffer*& UploadBuffer : Scene->LightUploadBuffers)
+			{
+				Device->DestroyBuffer(UploadBuffer);
+			}
+		}
 	};
+
+	// it's split up in two functions because populating/updating of a GPUScene might be done in different ways
+	// and can be split up in different stages
+	// void UpdateGPUScene(SPtr<DeviceVulkan> Device, CPUScene* cpuScene, GPUScene* gpuScene);
+	// void UploadGPUScene();
 
 	// GPUArray is a helper type used to pack both
 	// Count and Data in one contiguous buffer

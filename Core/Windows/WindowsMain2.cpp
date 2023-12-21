@@ -125,7 +125,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 		Log::Fatal("Couldn't load scene, %s", Filename.c_str());
 	}
 
-	SPtr<GPUScene> Scene = SPtr<GPUScene>(new GPUScene, [Device](GPUScene* Scene)
+	SPtr<GPUScene> Scene = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [Device](GPUScene* Scene)
 	{
 		for (auto& Texture : Scene->Textures)
 		{
@@ -143,6 +143,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 		}
 
 		Device->DestroyAccelerationStructure(Scene->TLAS);
+
+		GPUScene::DestroyGPUScene(Scene, Device);
 	});
 
 	for (auto& texture : model.textures)
@@ -291,9 +293,28 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	AddProfilingMemory(MemoryCounter_SceneTLAS, Scene->TLAS->GetSize());
 
 	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, 0}); // directional
-	// Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1}); // point
+	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1, 500}); // point
 
 	return Scene;
+}
+
+void UploadGPUSceneRG(RenderGraph& Graph)
+{
+	RenderPassParameters Parameters;
+	RenderPassDependencies Dependencies;
+	Graph.AddPass("UploadGPUScene", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
+	{
+		// TODO: create UploadBuffer wrapper? have CurrentFrame as a constant in Context?
+		static int CurrentFrame = 0;
+		CurrentFrame = ++CurrentFrame % MaxFramesInFlight;
+		Buffer*& UploadBuffer = Context.Scene->LightUploadBuffers[CurrentFrame];
+
+		void* Ptr = Context.Device->MapBuffer(UploadBuffer);
+		memcpy(Ptr, Context.Scene->Lights.data(), sizeof(GPULight) * Context.Scene->Lights.size());
+		Context.Device->UnmapBuffer(UploadBuffer);
+
+		Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->LightsBuffer, 0, 0, sizeof(GPULight) * Context.Scene->Lights.size());
+	});
 }
 
 ConsoleVariable<bool> test_flag("test.flag", "Description", true);
@@ -323,6 +344,7 @@ void NewFrameImgui(WindowVulkan& Window)
 	}
 }
 
+// TODO: think about it, is it REALLY needed? sounds like an overengineered system for nothing
 // BEGIN_GPU_PARAMETERS(GPUSceneParameters)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Textures, GPU_PARAMETER_TEXTURE2D, 0)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Vertices, GPU_PARAMETER_BUFFER, 1)
@@ -364,14 +386,14 @@ void NewFrameImgui(WindowVulkan& Window)
 //		+ RenderPass depth attachments
 //		+ resource tracker and synchronization mechanism
 //		+ renderpass blending
-//		- global/frame-local resources
+//		+ global/frame-local resources
 //		+ swapchain resize (and pipeline dynamic parameters)
 //		- resource aliasing
 //		- resource visualization
-//		- diagnostic information
+//		+ diagnostic information
 //		- resource type validation
-//		- RW passes
-//		- storage/sampled images transitions
+//		+ RW passes
+//		+ storage/sampled images transitions
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
 //		+ GPUScene
@@ -485,6 +507,7 @@ int main()
 	WindowVulkan Window(instance, device);
 	HistorySceneTextures HistoryTextures; // for deferred
 
+	// TODO: DDGI, that's a CPU-side representation, needs to be updated during GPUScene update stage and then used in a rendergraph
 	IrradianceVolume Volume;
 	Volume.Position = { 1000, 50, -250 };
 	Volume.ProbesCount = { 5, 4, 5 };
@@ -547,6 +570,8 @@ int main()
 		cameraPrev = camera;
 
 		renderGraph.Clear();
+
+		UploadGPUSceneRG(renderGraph);
 
 		if (render_cvar.GetValue() == 0)
 		{

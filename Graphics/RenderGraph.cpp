@@ -292,18 +292,6 @@ namespace Columbus
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i]);
 		}
 
-		auto Lights = GPUArray<GPULight>::Allocate((u32)Scene->Lights.size());
-		for (int i = 0; i < Scene->Lights.size(); i++)
-		{
-			(*Lights)[i] = Scene->Lights[i];
-		}
-
-		BufferDesc LightBufferDesc;
-		LightBufferDesc.Size = Lights->Bytesize();
-		LightBufferDesc.BindFlags = BufferType::UAV;
-		Scene->LightsBuffer = Device->CreateBuffer(LightBufferDesc, Lights.get());
-		Device->SetDebugName(Scene->LightsBuffer, "GPUScene.Lights");
-
 		Device->UpdateDescriptorSet(RenderData.GPUSceneData.LightSet, 0, 0, Scene->LightsBuffer);
 	}
 

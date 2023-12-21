@@ -22,6 +22,7 @@ namespace Columbus
 		int frameNumber;
 		int reset;
 		int bounces;
+		int lightsCount;
 	};
 
 	struct PathTraceDisplayParameters
@@ -69,7 +70,12 @@ namespace Columbus
 				int frame = rand() % 2000;
 				int bounces = 2;
 
-				PathTraceParameters rayParams = { UpdatedCamera, (int)frame, (int)reset, CVar_Bounces.GetValue() };
+				PathTraceParameters rayParams = {
+					UpdatedCamera,
+					(int)frame, (int)reset,
+					CVar_Bounces.GetValue(),
+					(int)Context.Scene->Lights.size()
+				};
 
 				Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
 				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 7, 1, &RTSet);

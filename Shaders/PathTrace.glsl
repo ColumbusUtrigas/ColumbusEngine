@@ -17,6 +17,7 @@ struct RayPayload {
 	#include "GPUScene.glsl"
 	#include "CommonRayTracing.glsl"
 
+	// TODO: move to a global GPUScene/View cbuffer
     layout(push_constant) uniform params
     {
         vec4 camPos;
@@ -26,6 +27,7 @@ struct RayPayload {
         int frameNumber;
         int reset;
 		int bounces;
+		int lightsCount;
     } rayParams;
 
     void main() {
@@ -69,7 +71,7 @@ struct RayPayload {
         // Define the field of view by the vertical slope of the topmost rays:
         // const float fovVerticalSlope = 1.0 / 5.0;
 
-		vec3 finalColor = PathTrace(origin, direction, rayParams.bounces, rngState);
+		vec3 finalColor = PathTrace(origin, direction, rayParams.bounces, rngState, rayParams.lightsCount);
 
         if (rayParams.reset == 1)
         {

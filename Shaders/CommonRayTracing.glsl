@@ -57,7 +57,9 @@ vec3 SamplePointLight(GPULight Light, vec3 origin, vec3 normal)
 {
 	vec3 direction = normalize(Light.Position.xyz - origin);
 	float dist = distance(Light.Position.xyz, origin);
-	float attenuation = 1.0 / (1.0 + dist);
+	// float attenuation = 1.0 / (1.0 + dist);
+	float attenuation = clamp(1.0 - dist * dist / (Light.Range * Light.Range), 0.0, 1.0);
+	attenuation *= attenuation;
 
 	// sample shadow
 	traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
@@ -98,7 +100,7 @@ vec3 RandomDirectionSphere(inout uint rngState)
 }
 
 // TODO
-vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface)
+vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface, int lightsCount)
 {
 	// TODO
 	traceRayEXT(acc, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, origin, 0, direction, 5000, 0);
@@ -115,7 +117,7 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 
 		vec3 AccumulatedLight = vec3(0);
 
-		for (uint i = 0; i < GPUSceneLights.Count; i++)
+		for (uint i = 0; i < lightsCount; i++)
 		{
 			GPULight Light = GPUSceneLights.Lights[i];
 			switch (Light.Type)
@@ -138,13 +140,13 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 	}
 }
 
-vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
+vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState, int LightsCount)
 {
 	// First ray is always calculated
 	int HitSurface = 0;
 	vec3 SurfaceColor = vec3(0);
 	vec3 Normal = vec3(0);
-	vec3 Color = calculateLight(Origin, Direction, Normal, SurfaceColor, HitSurface);
+	vec3 Color = calculateLight(Origin, Direction, Normal, SurfaceColor, HitSurface, LightsCount);
 
 	vec3 BounceColor = vec3(0);
 	for (int i = 0; i < MaxBounces; i++)
@@ -152,7 +154,7 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 		vec3 BounceSurfaceColor = vec3(0);
 		Direction = RandomDirectionHemisphere(RngState, Normal);
 
-		BounceColor += calculateLight(Origin, Direction, Normal, BounceSurfaceColor, HitSurface);
+		BounceColor += calculateLight(Origin, Direction, Normal, BounceSurfaceColor, HitSurface, LightsCount);
 		if (HitSurface == 0) break;
 	}
 

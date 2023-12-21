@@ -25,6 +25,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <atomic>
 #include <cassert>
 
 #include <Common/Image/Image.h>
@@ -49,8 +50,8 @@ namespace Columbus
 
 		DeviceVulkan* Device = nullptr;
 
-		int CurrentTimestampQuery[MaxFramesInFlight]{0};
-		int CurrentMeasurement[MaxFramesInFlight]{0};
+		std::atomic<int> CurrentTimestampQuery[MaxFramesInFlight]{0};
+		std::atomic<int> CurrentMeasurement[MaxFramesInFlight]{0};
 		int CurrentFrame = 0;
 
 		struct Measurement

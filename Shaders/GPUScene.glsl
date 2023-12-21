@@ -4,6 +4,7 @@ struct GPULight
 	vec4 Direction;
 	vec4 Color;
 	uint Type;
+	float Range;
 };
 
 #define GPULIGHT_DIRECTIONAL 0
@@ -35,7 +36,7 @@ layout(binding = 0, set = 5) readonly buffer MaterialsBuffer {
 } MaterialsBuffers[1000];
 
 layout(binding = 0, set = 6) readonly buffer LightsBuffer {
-	uint Count;
+	// uint Count;
 	GPULight Lights[];
 } GPUSceneLights;
 

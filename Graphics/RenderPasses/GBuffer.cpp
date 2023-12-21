@@ -25,6 +25,11 @@ namespace Columbus
 		uint32_t ObjectId;
 	};
 
+	struct GBufferLightingParameters
+	{
+		u32 LightsCount;
+	};
+
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History)
 	{
 		TextureDesc2 CommonDesc;
@@ -138,6 +143,7 @@ namespace Columbus
 		RenderPassDependencies Dependencies;
 		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(ShadowTexture, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 
@@ -157,14 +163,21 @@ namespace Columbus
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}
 
+			GBufferLightingParameters Params {
+				.LightsCount = (u32)Context.Scene->Lights.size()
+			};
+
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(ShadowTexture).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.Scene->LightsBuffer);
 
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
+			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
 
 			const iVector2 GroupCount = (View.OutputSize + (GroupSize - 1)) / GroupSize;
 			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
