@@ -66,6 +66,6 @@ layout(push_constant) uniform Params
 		RT1 = InNormal;
 		RT2 = InWP;
 		RT3 = vec2(1, 0);
-		RT4 =  vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);
+		RT4 = vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);
 	}
 #endif

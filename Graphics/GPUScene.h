@@ -3,6 +3,7 @@
 #include "Graphics/Core/GraphicsCore.h"
 #include "Camera.h"
 #include "Graphics/Vulkan/DeviceVulkan.h"
+#include "Profiling/Profiling.h"
 #include <Core/Core.h>
 #include <vector>
 
@@ -63,14 +64,25 @@ namespace Columbus
 		u32 Padding[2];
 	};
 
+	struct GPUDecal
+	{
+		Matrix Model;
+		Matrix ModelInverse;
+		Texture2* Texture;
+
+		VkDescriptorSet _DescriptorSets[MaxFramesInFlight]{NULL};
+	};
+
 	struct GPUScene
 	{
 		static constexpr int MaxGPULights = 8192;
+		static constexpr int MaxDecals = 8192;
 
 		AccelerationStructure* TLAS = nullptr;
 		std::vector<GPUSceneMesh> Meshes;
 		std::vector<Texture2*> Textures;
 		std::vector<GPULight> Lights;
+		std::vector<GPUDecal> Decals;
 
 		GPUCamera MainCamera;
 		bool Dirty = false;
@@ -79,24 +91,47 @@ namespace Columbus
 		Buffer* LightsBuffer = nullptr;
 		Buffer* LightUploadBuffers[MaxFramesInFlight] {nullptr};
 
+		Buffer* DecalsBuffers = nullptr;
+		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
+
 		// TODO: camera, lights, decals, materials, per-object data
 
 		static GPUScene* CreateGPUScene(SPtr<DeviceVulkan> Device)
 		{
 			GPUScene* Result = new GPUScene();
 
-			BufferDesc LightBufferDesc;
-			LightBufferDesc.Size = GPUScene::MaxGPULights * sizeof(GPULight);
-			LightBufferDesc.BindFlags = BufferType::UAV;
-			Result->LightsBuffer = Device->CreateBuffer(LightBufferDesc, nullptr);
-			Device->SetDebugName(Result->LightsBuffer, "GPUScene.Lights");
-
-			for (Buffer*& UploadBuffer : Result->LightUploadBuffers)
+			// lights
 			{
-				BufferDesc UploadBufferDesc(GPUScene::MaxGPULights * sizeof(GPULight), BufferType::UAV);
-				UploadBufferDesc.HostVisible = true;
-				UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
-				Device->SetDebugName(UploadBuffer, "GPUScene.Lights (upload buffer)");
+				BufferDesc LightBufferDesc;
+				LightBufferDesc.Size = GPUScene::MaxGPULights * sizeof(GPULight);
+				LightBufferDesc.BindFlags = BufferType::UAV;
+				Result->LightsBuffer = Device->CreateBuffer(LightBufferDesc, nullptr);
+				Device->SetDebugName(Result->LightsBuffer, "GPUScene.Lights");
+
+				for (Buffer*& UploadBuffer : Result->LightUploadBuffers)
+				{
+					BufferDesc UploadBufferDesc(GPUScene::MaxGPULights * sizeof(GPULight), BufferType::UAV);
+					UploadBufferDesc.HostVisible = true;
+					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
+					Device->SetDebugName(UploadBuffer, "GPUScene.Lights (upload buffer)");
+				}
+			}
+
+			// decals
+			{
+				BufferDesc DecalsBufferDesc;
+				DecalsBufferDesc.Size = GPUScene::MaxDecals * sizeof(GPUDecal);
+				DecalsBufferDesc.BindFlags = BufferType::UAV;
+				Result->DecalsBuffers = Device->CreateBuffer(DecalsBufferDesc, nullptr);
+				Device->SetDebugName(Result->DecalsBuffers, "GPUScene.Decals");
+
+				for (Buffer*& UploadBuffer : Result->DecalsUploadBuffers)
+				{
+					BufferDesc UploadBufferDesc(GPUScene::MaxDecals * sizeof(GPUDecal), BufferType::UAV);
+					UploadBufferDesc.HostVisible = true;
+					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
+					Device->SetDebugName(UploadBuffer, "GPUScene.Decals (upload buffer)");
+				}
 			}
 
 			return Result;
@@ -107,6 +142,13 @@ namespace Columbus
 			Device->DestroyBuffer(Scene->LightsBuffer);
 
 			for (Buffer*& UploadBuffer : Scene->LightUploadBuffers)
+			{
+				Device->DestroyBuffer(UploadBuffer);
+			}
+
+			Device->DestroyBuffer(Scene->DecalsBuffers);
+
+			for (Buffer*& UploadBuffer : Scene->DecalsUploadBuffers)
 			{
 				Device->DestroyBuffer(UploadBuffer);
 			}

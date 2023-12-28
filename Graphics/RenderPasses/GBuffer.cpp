@@ -1,13 +1,16 @@
+#include "Common/Image/Image.h"
 #include "Core/Core.h"
 #include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Texture.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/Core/View.h"
+#include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Profiling/Profiling.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
+#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -23,6 +26,12 @@ namespace Columbus
 		Matrix M,VP,VPPrev;
 		// Matrix VPrev, PPrev;
 		uint32_t ObjectId;
+	};
+
+	struct PerDecalParameters
+	{
+		Matrix Model, ModelInverse;
+		Matrix VP;
 	};
 
 	struct GBufferLightingParameters
@@ -75,7 +84,7 @@ namespace Columbus
 		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP };
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
 		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
-				Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 
 		RenderPassDependencies Dependencies;
 
@@ -121,6 +130,72 @@ namespace Columbus
 
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
 				Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
+			}
+		});
+	}
+
+	void RenderGBufferDecals(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures)
+	{
+		RenderPassParameters Parameters;
+		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferAlbedo };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+
+		RenderPassDependencies Dependencies;
+		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		Graph.AddPass("GBufferDecals", RenderGraphPassType::Raster, Parameters, Dependencies, [View, Textures](RenderGraphContext& Context)
+		{
+			static GraphicsPipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				GraphicsPipelineDesc Desc;
+				Desc.Name = "Decals";
+				Desc.rasterizerState.Cull = CullMode::No;
+				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc(),
+					RenderTargetBlendDesc(),
+					RenderTargetBlendDesc(),
+					RenderTargetBlendDesc(),
+					RenderTargetBlendDesc(),
+				};
+
+				Desc.depthStencilState.DepthEnable = false;
+				Desc.depthStencilState.DepthWriteMask = false;
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Decals.csd");
+
+				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+			}
+
+			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+
+			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
+			Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
+			Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
+
+			PerDecalParameters Parameters;
+
+			for (int i = 0; i < Context.Scene->Decals.size(); i++)
+			{
+				GPUDecal& Decal = Context.Scene->Decals[i];
+				Parameters.Model = Decal.Model;
+				Parameters.ModelInverse = Decal.ModelInverse;
+				Parameters.VP = View.CameraCur.GetViewProjection();
+
+				auto& DecalDescriptorSet = Decal._DescriptorSets[Context.RenderData.CurrentPerFrameData];
+
+				if (DecalDescriptorSet == NULL)
+				{
+					DecalDescriptorSet = Context.Device->CreateDescriptorSet(Pipeline, 1);
+				}
+
+				Context.Device->UpdateDescriptorSet(DecalDescriptorSet, 0, 0, Decal.Texture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DecalDescriptorSet, 1, 0, Decal.Texture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLER);
+
+				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 1, 1, &DecalDescriptorSet);
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+				Context.CommandBuffer->Draw(36, 1, 0, 0);
 			}
 		});
 	}
@@ -215,12 +290,14 @@ namespace Columbus
 
 		PrepareTiledLights(Graph, View);
 		RenderGBufferPass(Graph, View, Textures);
+		RenderGBufferDecals(Graph, View, Textures);
 
 		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, View, Textures);
 		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, ShadowTexture, Textures);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
-		DebugOverlayPass(Graph, View, TonemappedImage);
+		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
+		DebugUIPass(Graph, View, TonemappedImage);
 		CopyToSwapchain(Graph, View, TonemappedImage);
 		ExtractHistorySceneTextures(Graph, View, Textures, HistoryTextures);
 	}

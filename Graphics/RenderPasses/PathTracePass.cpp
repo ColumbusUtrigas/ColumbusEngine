@@ -87,7 +87,7 @@ namespace Columbus
 		}
 
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, RTImage);
-		DebugOverlayPass(Graph, View, TonemappedImage);
+		DebugUIPass(Graph, View, TonemappedImage);
 		CopyToSwapchain(Graph, View, TonemappedImage);
 	}
 

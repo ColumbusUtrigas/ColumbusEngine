@@ -238,6 +238,48 @@ namespace Columbus
 		}
 	}
 
+	static VkBlendFactor BlendToVkBlendFactor(Blend blend)
+	{
+		switch (blend)
+		{
+		case Blend::Zero:         return VK_BLEND_FACTOR_ZERO;
+		case Blend::One:          return VK_BLEND_FACTOR_ONE;
+		case Blend::SrcColor:     return VK_BLEND_FACTOR_SRC_COLOR;
+		case Blend::InvSrcColor:  return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+		case Blend::SrcAlpha:     return VK_BLEND_FACTOR_SRC_ALPHA;
+		case Blend::InvSrcAlpha:  return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		case Blend::DestAlpha:    return VK_BLEND_FACTOR_DST_ALPHA;
+		case Blend::InvDestAlpha: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		case Blend::DestColor:    return VK_BLEND_FACTOR_DST_COLOR;
+		case Blend::InvDestColor: return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+		case Blend::SrcAlphaSat:  return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+
+		// wtf is this
+		case Blend::BlendFactor:
+		case Blend::InvBlendFactor:
+			COLUMBUS_ASSERT(false);
+
+		case Blend::Src1Color:    return  VK_BLEND_FACTOR_SRC1_COLOR;
+		case Blend::InvSrc1Color: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+		case Blend::Src1Alpha:    return VK_BLEND_FACTOR_SRC1_ALPHA;
+		case Blend::InvSrc1Alpha: return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+		default: COLUMBUS_ASSERT(false);
+		}
+	}
+
+	static VkBlendOp BlendOpToVk(BlendOp op)
+	{
+		switch (op)
+		{
+		case BlendOp::Add:         return VK_BLEND_OP_ADD;
+		case BlendOp::Subtract:    return VK_BLEND_OP_SUBTRACT;
+		case BlendOp::RevSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
+		case BlendOp::Min:         return VK_BLEND_OP_MIN;
+		case BlendOp::Max:         return VK_BLEND_OP_MAX;
+		default: COLUMBUS_ASSERT(false);
+        }
+	}
+
 	static VkClearValue AttachmentClearValueToVk(const AttachmentClearValue& Value, bool ForDepth)
 	{
 		VkClearValue Result;

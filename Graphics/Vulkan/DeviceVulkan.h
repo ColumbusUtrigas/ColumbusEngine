@@ -29,6 +29,7 @@
 #include <cassert>
 
 #include <Common/Image/Image.h>
+#include <vulkan/vulkan_core.h>
 
 // disable to make RenderDoc captures
 #define ENABLE_RAY_TRACING 1
@@ -236,6 +237,7 @@ namespace Columbus
 			fixed_vector<VkDescriptorPoolSize, 16> poolSizes;
 			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100});
 			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100});
+			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, 100});
 			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10});
 			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10});
 #if ENABLE_RAY_TRACING

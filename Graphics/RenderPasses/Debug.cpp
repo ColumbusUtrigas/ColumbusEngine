@@ -11,6 +11,8 @@
 
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 
+ConsoleVariable<bool> CVar_DebugOverlay("r.DebugOverlay", "Enable using debug overlay", true);
+
 namespace Columbus
 {
 	VkRenderPass ImGuiRenderPass = NULL;
@@ -52,17 +54,81 @@ namespace Columbus
 		}
 	}
 
-	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture)
+	void DebugUIPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture)
 	{
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Texture, {} };
 		Parameters.ExternalRenderPass = ImGuiRenderPass;
 		RenderPassDependencies Dependencies;
 
-		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
+		Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
 			ImGui::Render();
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
+		});
+	}
+
+	struct DebugObjectParameters
+	{
+		Matrix Model;
+		Matrix VP;
+		Vector4 Colour;
+	};
+
+	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture)
+	{
+		if (!CVar_DebugOverlay.GetValue())
+		{
+			return;
+		}
+
+		RenderPassParameters Parameters;
+		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, OverlayTexture, {} };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+
+		RenderPassDependencies Dependencies;
+
+		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
+		{
+			// TODO: normal shader system please
+			static GraphicsPipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				GraphicsPipelineDesc Desc;
+				Desc.Name = "Debug";
+				Desc.rasterizerState.Cull = CullMode::No;
+				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc {
+						.BlendEnable = true,
+						.SrcBlend = Blend::SrcAlpha,
+						.DestBlend = Blend::InvSrcAlpha,
+					},
+					RenderTargetBlendDesc {},
+					RenderTargetBlendDesc {},
+				};
+				// Desc.rasterizerState.Fill = FillMode::Wireframe;
+
+				Desc.depthStencilState.DepthEnable = true; // TODO: use flag, so generate two permutations
+				Desc.depthStencilState.DepthWriteMask = false;
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Debug.csd");
+
+				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+			}
+
+			for (DebugRenderObject& Object : View.DebugRender->Objects)
+			{
+				DebugObjectParameters Parameters {
+					.Model = Object.Transform,
+					.VP = View.CameraCur.GetViewProjection(),
+					.Colour = Object.Colour,
+				};
+
+				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+				Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
+				Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+				Context.CommandBuffer->Draw(36, 1, 0, 0);
+			}
 		});
 	}
 

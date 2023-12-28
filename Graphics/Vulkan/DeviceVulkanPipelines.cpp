@@ -188,14 +188,16 @@ namespace Columbus
 		fixed_vector<VkPipelineColorBlendAttachmentState, 16> Attachments;
 		for (int i = 0; i < Desc.blendState.RenderTargets.size(); i++)
 		{
+			const RenderTargetBlendDesc& RTDesc = Desc.blendState.RenderTargets[i];
+
 			VkPipelineColorBlendAttachmentState Attachment;
-			Attachment.blendEnable = Desc.blendState.RenderTargets[i].BlendEnable;
-			Attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
-			Attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
-			Attachment.colorBlendOp = VK_BLEND_OP_ADD; // TODO
-			Attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
-			Attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // TODO
-			Attachment.alphaBlendOp = VK_BLEND_OP_ADD; // TODO
+			Attachment.blendEnable = RTDesc.BlendEnable;
+			Attachment.srcColorBlendFactor = BlendToVkBlendFactor(RTDesc.SrcBlend);
+			Attachment.dstColorBlendFactor = BlendToVkBlendFactor(RTDesc.DestBlend);
+			Attachment.colorBlendOp = BlendOpToVk(RTDesc.Op);
+			Attachment.srcAlphaBlendFactor = BlendToVkBlendFactor(RTDesc.SrcBlendAlpha);
+			Attachment.dstAlphaBlendFactor = BlendToVkBlendFactor(RTDesc.DestBlendAlpha);
+			Attachment.alphaBlendOp = BlendOpToVk(RTDesc.OpAlpha);
 			Attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT; // TODO
 
 			Attachments.push_back(Attachment);

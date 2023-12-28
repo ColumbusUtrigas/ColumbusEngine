@@ -142,6 +142,11 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			Device->DestroyAccelerationStructure(Mesh.BLAS);
 		}
 
+		for (auto& Decal : Scene->Decals)
+		{
+			Device->DestroyTexture(Decal.Texture);
+		}
+
 		Device->DestroyAccelerationStructure(Scene->TLAS);
 
 		GPUScene::DestroyGPUScene(Scene, Device);
@@ -294,6 +299,20 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, 0}); // directional
 	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1, 500}); // point
+
+	{
+		Image DecalImage;
+		if (!DecalImage.Load("./Data/Textures/Detail.dds"))
+		{
+			Log::Error("Couldn't load decal image");
+		}
+
+		Texture2* DecalTexture = Device->CreateTexture(DecalImage);
+
+		Matrix Decal;
+		Decal.Scale({100});
+		Scene->Decals.push_back(GPUDecal{Decal, Decal.GetInverted(), DecalTexture});
+	}
 
 	return Scene;
 }
@@ -513,6 +532,8 @@ int main()
 	Volume.ProbesCount = { 5, 4, 5 };
 	Volume.Extent = { 250, 320, 500 };
 
+	DebugRender debugRender;
+
 	InitializeImgui(Window, device);
 
 	bool running = true;
@@ -526,6 +547,7 @@ int main()
 		timer.Reset();
 
 		camera.Update();
+		debugRender.Clear();
 
 		NewFrameImgui(Window);
 
@@ -552,6 +574,30 @@ int main()
 			ImGui::ShowDemoWindow();
 			ShowDebugConsole();
 			ShowRenderGraphVisualiser(renderGraph);
+
+			// TODO: move to appropriate place
+			// TODO: object properties editor
+			// decal editor
+			{
+				if (ImGui::Begin("Decal"))
+				{
+					static Vector3 Pos{0};
+					static Vector3 Scale{100};
+
+					ImGui::SliderFloat3("Position", (float*)&Pos, -500, +500);
+					ImGui::SliderFloat3("Scale", (float*)&Scale, 1, 500);
+
+					Matrix Model;
+					Model.Scale(Scale);
+					Model.Translate(Pos);
+
+					scene->Decals[0].Model = Model;
+					scene->Decals[0].ModelInverse = Model.GetInverted();
+
+					debugRender.AddBox(Model, Vector4(1, 1, 1, 0.1f));
+				}
+				ImGui::End();
+			}
 		}
 
 		if (Window.Swapchain->IsOutdated)
@@ -564,7 +610,8 @@ int main()
 			.Swapchain = Window.Swapchain,
 			.OutputSize = Window.Size,
 			.CameraCur = camera,
-			.CameraPrev = cameraPrev
+			.CameraPrev = cameraPrev,
+			.DebugRender = &debugRender,
 		};
 
 		cameraPrev = camera;

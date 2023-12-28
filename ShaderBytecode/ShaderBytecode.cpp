@@ -5,6 +5,7 @@
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <Lib/SPIRV-Reflect/spirv_reflect.h>
+#include <vulkan/vulkan_core.h>
 
 using namespace Columbus;
 
@@ -209,6 +210,10 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 				{
 					case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
 						descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+						break;
+
+					case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:
+						descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 						break;
 
 					case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
