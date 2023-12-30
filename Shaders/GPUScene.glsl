@@ -5,6 +5,8 @@ struct GPULight
 	vec4 Color;
 	uint Type;
 	float Range;
+	float SourceRadius;
+	uint _pad; // 64
 };
 
 #define GPULIGHT_DIRECTIONAL 0

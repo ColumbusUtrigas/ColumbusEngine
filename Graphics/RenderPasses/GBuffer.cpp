@@ -153,10 +153,6 @@ namespace Columbus
 				Desc.rasterizerState.Cull = CullMode::No;
 				Desc.blendState.RenderTargets = {
 					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
 				};
 
 				Desc.depthStencilState.DepthEnable = false;
@@ -200,7 +196,7 @@ namespace Columbus
 		});
 	}
 
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures)
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::Storage,
@@ -219,10 +215,13 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(ShadowTexture, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
+		{
+			Dependencies.Read(LightInfo.RTShadow, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		}
 		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 
-		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingTexture, ShadowTexture, Textures](RenderGraphContext& Context)
+		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingTexture, Textures, &DeferredContext](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterLightingPass, Context);
 
@@ -246,12 +245,18 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(ShadowTexture).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.Scene->LightsBuffer);
+
+			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
+			for (int i = 0; i < DeferredContext.LightRenderInfos.size(); i++)
+			{
+				Context.Device->UpdateDescriptorSet(ShadowsSet, 0, i, Context.GetRenderGraphTexture(DeferredContext.LightRenderInfos[i].RTShadow).get());
+			}
 
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
+			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &ShadowsSet);
 			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
 
 			const iVector2 GroupCount = (View.OutputSize + (GroupSize - 1)) / GroupSize;
@@ -284,22 +289,24 @@ namespace Columbus
 		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
 	}
 
-	void RenderDeferred(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& HistoryTextures)
+	void RenderDeferred(RenderGraph& Graph, const RenderView& View, DeferredRenderContext& DeferredContext)
 	{
-		SceneTextures Textures = CreateSceneTextures(Graph, View, HistoryTextures);
+		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);
+
+		DeferredContext.LightRenderInfos.clear();
 
 		PrepareTiledLights(Graph, View);
 		RenderGBufferPass(Graph, View, Textures);
 		RenderGBufferDecals(Graph, View, Textures);
 
-		RenderGraphTextureRef ShadowTexture = RayTracedShadowsPass(Graph, View, Textures);
+		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
 		RenderIndirectLightingDDGI(Graph, View);
-		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, ShadowTexture, Textures);
+		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
 		DebugUIPass(Graph, View, TonemappedImage);
 		CopyToSwapchain(Graph, View, TonemappedImage);
-		ExtractHistorySceneTextures(Graph, View, Textures, HistoryTextures);
+		ExtractHistorySceneTextures(Graph, View, Textures, DeferredContext.History);
 	}
 
 }

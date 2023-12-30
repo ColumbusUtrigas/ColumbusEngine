@@ -410,6 +410,7 @@ namespace Columbus
 		std::unordered_map<TextureDesc2, std::vector<RenderGraphPooledTexture>, HashTextureDesc2> TextureResourcePool;
 		std::unordered_map<BufferDesc, std::vector<RenderGraphPooledBuffer>, HashBufferDesc> BufferResourcePool;
 
+	public:
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
 

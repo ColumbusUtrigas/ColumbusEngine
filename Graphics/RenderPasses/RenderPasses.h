@@ -6,6 +6,7 @@
 #include "Graphics/IrradianceVolume.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>
+#include <vector>
 
 namespace Columbus
 {
@@ -31,10 +32,21 @@ namespace Columbus
 	// Real-time
 	//
 
-	// TODO: create a context for current RG, history and additional resources
+	struct GPULightRenderInfo
+	{
+		RenderGraphTextureRef RTShadow;
+	};
+
 	struct HistorySceneTextures
 	{
 		SPtr<Texture2> Depth;
+	};
+
+	struct DeferredRenderContext
+	{
+		std::vector<GPULightRenderInfo> LightRenderInfos;
+
+		HistorySceneTextures History;
 	};
 
 	struct SceneTextures
@@ -53,13 +65,13 @@ namespace Columbus
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures);
 	void PrepareTiledLights(RenderGraph& Graph, const RenderView& View);
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef ShadowTexture, const SceneTextures& Textures);
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture); // only for DebugRender objects
-	void RenderDeferred(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& HistoryTextures);
+	void RenderDeferred(RenderGraph& Graph, const RenderView& View, DeferredRenderContext& HistoryTextures);
 
 	// Real-time raytracing
 	//
-	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures);
+	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 
 	// Global illumination
 	//

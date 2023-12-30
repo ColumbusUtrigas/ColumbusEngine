@@ -21,9 +21,8 @@ struct RayPayload {
 
 	layout(push_constant) uniform params
 	{
-		vec3 Direction;
-		float Angle;
 		float Random;
+		uint LightId;
 	} Params;
 
 	// 0 < angle < 2pi
@@ -64,11 +63,32 @@ struct RayPayload {
 
 		vec3 origin = texture(GBufferWorldPosition, uv).xyz;
 
-		vec3 direction = SampleConeRay(Params.Direction, Params.Angle, vec2(rand(uv + Params.Random), rand(uv + Params.Random)));
+		GPULight Light = GPUSceneLights.Lights[Params.LightId];
+		vec3 LightDirection = normalize(Light.Direction.xyz);
+		float MaxDistance = 5000;
+
+		switch (Light.Type)
+		{
+			case GPULIGHT_DIRECTIONAL: break;
+			case GPULIGHT_POINT:
+				LightDirection = normalize(Light.Position.xyz - origin);
+				MaxDistance = distance(Light.Position.xyz, origin);
+
+				if (MaxDistance > Light.Range)
+				{
+					imageStore(ShadowsBuffer, ivec2(gl_LaunchIDEXT), vec4(0));
+					return;
+				}
+
+				break;
+			default: break; // TODO: other light types
+		}
+
+		vec3 direction = SampleConeRay(LightDirection, Light.SourceRadius, vec2(rand(uv + Params.Random), rand(uv + Params.Random)));
 		direction = normalize(direction);
 
 		traceRayEXT(AccelerationStructure, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-			0xFF, 0, 0, 0, origin, 1, direction, 5000, 0);
+			0xFF, 0, 0, 0, origin, 1, direction, MaxDistance, 0);
 
 		float Result = 0;
 		if (Payload.Distance > 0)

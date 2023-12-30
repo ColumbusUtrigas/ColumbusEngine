@@ -69,7 +69,7 @@ namespace Columbus
 
 			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
 			{
-				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
+				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
 			}
 
 			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
@@ -90,7 +90,7 @@ namespace Columbus
 
 			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
 			{
-				DescriptorSetData.DescriptorSets[Index] = Device->CreateDescriptorSet(Pipeline, Index);
+				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
 			}
 
 			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;

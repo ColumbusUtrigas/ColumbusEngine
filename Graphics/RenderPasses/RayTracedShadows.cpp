@@ -3,6 +3,7 @@
 #include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
+#include "Graphics/Vulkan/DeviceVulkan.h"
 #include "RenderPasses.h"
 #include "imgui.h"
 
@@ -19,9 +20,8 @@ namespace Columbus
 
 	struct RTShadowParams
 	{
-		Vector3 Direction;
-		float Angle;
 		float Random;
+		u32 LightId;
 	};
 
 	struct RTShadowDenoiserPrepareParams
@@ -271,20 +271,9 @@ namespace Columbus
 		return DenoisedResult;
 	}
 
-	RenderGraphTextureRef RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures)
+	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		RENDER_GRAPH_SCOPED_MARKER(Graph, "RayTracedShadows");
-
-		// TODO: move to a more appropriate place
-		static Vector3 LightDirection(1,1,1);
-		static float LightRadius = 1;
-
-		if (ImGui::Begin("Light"))
-		{
-			ImGui::SliderFloat3("Direction", (float*)&LightDirection, -1, 1);
-			ImGui::SliderFloat("Radius", &LightRadius, 0, 5);
-		}
-		ImGui::End();
 
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::Storage,
@@ -292,9 +281,16 @@ namespace Columbus
 			.Height = (u32)View.OutputSize.Y,
 			.Format = TextureFormat::R8,
 		};
-		RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
 
+		// TODO:
+		static VkDescriptorSet RayDescriptorSets[MaxFramesInFlight][64]{NULL};
+
+		for (int i = 0; i < Graph.Scene->Lights.size(); i++)
 		{
+			GPULight& Light = Graph.Scene->Lights[i];
+
+			RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
+
 			RenderPassParameters Parameters;
 
 			RenderPassDependencies Dependencies;
@@ -302,7 +298,10 @@ namespace Columbus
 			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTShadow, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-			Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, View](RenderGraphContext& Context)
+			char PassName[256]{0};
+			snprintf(PassName, 256, "RayTraceShadow %i (%s)", i, LightTypeToString(Light.Type));
+
+			Graph.AddPass(PassName, RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, View, i](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadows, Context);
 
@@ -321,15 +320,20 @@ namespace Columbus
 				Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 				Context.Scene->MainCamera = UpdatedCamera;
 
-				auto ShadowsBufferSet = Context.GetDescriptorSet(Pipeline, 7);
+				if (RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] == NULL)
+				{
+					RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] = Context.Device->CreateDescriptorSet(Pipeline, 7);
+				}
+
+				auto ShadowsBufferSet = RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i];
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, Context.GetRenderGraphTexture(RTShadow).get());
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
 
 				RTShadowParams Params {
-					.Direction = LightDirection, .Angle = LightRadius,
-					.Random = (rand() % 2000) / 2000.0f
+					.Random = (rand() % 2000) / 2000.0f,
+					.LightId = (u32)i
 				};
 
 				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
@@ -339,14 +343,18 @@ namespace Columbus
 
 				Context.CommandBuffer->TraceRays(Pipeline, View.OutputSize.X, View.OutputSize.Y, 1);
 			});
-		}
 
-		if (Cvar_Denoiser.GetValue())
-		{
-			RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow);
-		}
+			// TODO: improve that mechanism
+			GPULightRenderInfo LightInfo {
+				.RTShadow = RTShadow
+			};
+			DeferredContext.LightRenderInfos.push_back(LightInfo);
 
-		return RTShadow;
+			if (Cvar_Denoiser.GetValue())
+			{
+				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow);
+			}
+		}
 	}
 
 }

@@ -6,7 +6,7 @@
 namespace Columbus
 {
 
-	enum class LightType : uint8_t
+	enum class LightType : u32
 	{
 		Directional	= 0,
 		Point		= 1,
@@ -15,6 +15,19 @@ namespace Columbus
 		Rectangle	= 3,
 		Sphere		= 4,
 	};
+
+	static const char* LightTypeToString(LightType type)
+	{
+		switch (type)
+		{
+		case LightType::Directional: return "Directional";
+		case LightType::Point:       return "Point";
+		case LightType::Spot:        return "Spot";
+		case LightType::Rectangle:   return "Rectangle";
+		case LightType::Sphere:      return "Sphere";
+		default: return "Unkown";
+		}
+	}
 
 	// TODO: make parameters more physical
 	// TODO: support for IES profiles

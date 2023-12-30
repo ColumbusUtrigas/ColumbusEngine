@@ -103,8 +103,6 @@ namespace Columbus
 						.SrcBlend = Blend::SrcAlpha,
 						.DestBlend = Blend::InvSrcAlpha,
 					},
-					RenderTargetBlendDesc {},
-					RenderTargetBlendDesc {},
 				};
 				// Desc.rasterizerState.Fill = FillMode::Wireframe;
 

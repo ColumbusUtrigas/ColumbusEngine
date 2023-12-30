@@ -297,8 +297,8 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 	AddProfilingMemory(MemoryCounter_SceneTLAS, Scene->TLAS->GetSize());
 
-	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, 0}); // directional
-	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, 1, 500}); // point
+	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, LightType::Directional, 0, 0.1f});
+	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, LightType::Point, 500, 0});
 
 	{
 		Image DecalImage;
@@ -524,7 +524,7 @@ int main()
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
-	HistorySceneTextures HistoryTextures; // for deferred
+	DeferredRenderContext DeferredContext; // for deferred
 
 	// TODO: DDGI, that's a CPU-side representation, needs to be updated during GPUScene update stage and then used in a rendergraph
 	IrradianceVolume Volume;
@@ -598,6 +598,50 @@ int main()
 				}
 				ImGui::End();
 			}
+
+			// TODO: move to appropriate place
+			// TODO: object properties editor
+			// light editor
+			{
+				if (ImGui::Begin("Light"))
+				{
+					fixed_vector<int, 16> LightsToDelete;
+
+					for (int i = 0; i < scene->Lights.size(); i++)
+					{
+						GPULight& Light = scene->Lights[i];
+
+						char Label[256]{0};
+						snprintf(Label, 256, "%i", i);
+						if (ImGui::CollapsingHeader(Label))
+						{
+							ImGui::SliderFloat3("Position", (float*)&Light.Position, -500, +500);
+							ImGui::SliderFloat3("Direction", (float*)&Light.Direction, -1, +1);
+							ImGui::ColorPicker3("Colour", (float*)&Light.Color, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+							ImGui::SliderFloat("Range", (float*)&Light.Range, 1, 1000);
+							ImGui::SliderFloat("Source Radius", (float*)&Light.SourceRadius, 0, 5);
+
+							if (ImGui::Button("-"))
+							{
+								LightsToDelete.push_back(i);
+							}
+						}
+					}
+
+					for (int LightId : LightsToDelete)
+					{
+						// TODO: think about cleaning up render resources for light source
+						scene->Lights.erase(scene->Lights.begin() + LightId);
+					}
+
+					if (ImGui::Button("+"))
+					{
+						GPULight NewLight{{}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0};
+						scene->Lights.push_back(NewLight);
+					}
+				}
+				ImGui::End();
+			}
 		}
 
 		if (Window.Swapchain->IsOutdated)
@@ -622,7 +666,7 @@ int main()
 
 		if (render_cvar.GetValue() == 0)
 		{
-			RenderDeferred(renderGraph, View, HistoryTextures);
+			RenderDeferred(renderGraph, View, DeferredContext);
 		}
 		else
 		{

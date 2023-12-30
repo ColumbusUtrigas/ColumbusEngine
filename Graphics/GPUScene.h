@@ -2,6 +2,7 @@
 
 #include "Graphics/Core/GraphicsCore.h"
 #include "Camera.h"
+#include "Graphics/Light.h"
 #include "Graphics/Vulkan/DeviceVulkan.h"
 #include "Profiling/Profiling.h"
 #include <Core/Core.h>
@@ -59,9 +60,10 @@ namespace Columbus
 		Vector4 Position;
 		Vector4 Direction;
 		Vector4 Color;
-		u32 Type;
+		LightType Type;
 		float Range;
-		u32 Padding[2];
+		float SourceRadius;
+		u32 Padding[1];
 	};
 
 	struct GPUDecal

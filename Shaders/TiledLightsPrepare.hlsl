@@ -15,6 +15,9 @@ struct GPULight
 	float4 Direction;
 	float4 Color;
 	uint Type;
+	float Range;
+	float SourceRadius;
+	uint _pad; // 64
 };
 #define SizeofGPULight 52
 
