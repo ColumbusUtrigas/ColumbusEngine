@@ -18,39 +18,38 @@ layout(push_constant) uniform Params
 	layout (location = 4) out vec4 OutClipspacePos;
 	layout (location = 5) out vec4 OutClipspacePosPrev;
 
+	layout (location = 6) out uint OutLightmapId;
+
 	void main()
 	{
-		uint index = IndexBuffers[Parameters.ObjectId].indices[gl_VertexIndex];
-		vec3 vertex = vec3(0);
-		vertex.x = VertexBuffers[Parameters.ObjectId].vertices[index * 3 + 0];
-		vertex.y = VertexBuffers[Parameters.ObjectId].vertices[index * 3 + 1];
-		vertex.z = VertexBuffers[Parameters.ObjectId].vertices[index * 3 + 2];
+		GPUSceneMeshCompact Mesh = GPUSceneMeshes.Meshes[Parameters.ObjectId];
 
-		vec3 normal = vec3(0);
-		normal.x = NormalsBuffers[Parameters.ObjectId].normals[index * 3 + 0];
-		normal.y = NormalsBuffers[Parameters.ObjectId].normals[index * 3 + 1];
-		normal.z = NormalsBuffers[Parameters.ObjectId].normals[index * 3 + 2];
+		// index is being read from index buffer by gl_VertexIndex
+		GPUScene_Vertex Vertex = GPUScene_FetchVertex(Parameters.ObjectId, gl_VertexIndex);
 
-		OutWP = vertex;
+		// TODO: model transformation
+		OutWP = Vertex.Position;
 		
-		vec4 ClipspacePos = Parameters.VP * vec4(vertex, 1) * vec4(1, -1, 1, 1);
-		vec4 ClipspacePosPrev = Parameters.VPPrev * vec4(vertex, 1) * vec4(1, -1, 1, 1);
+		vec4 ClipspacePos = Parameters.VP * vec4(Vertex.Position, 1) * vec4(1, -1, 1, 1);
+		vec4 ClipspacePosPrev = Parameters.VPPrev * vec4(Vertex.Position, 1) * vec4(1, -1, 1, 1);
 		OutClipspacePos = ClipspacePos;
 		OutClipspacePosPrev = ClipspacePosPrev;
 
 		gl_Position = ClipspacePos;
-		OutNormal = normal;
-		OutUV = UvsBuffers[Parameters.ObjectId].uvs[index];
-		OutTextureId = MaterialsBuffers[Parameters.ObjectId].id;
+		OutNormal = Vertex.Normal;
+		OutUV = Vertex.UV;
+		OutTextureId = Mesh.TextureId;
+		OutLightmapId = Mesh.LightmapId;
 	}
 #endif
 
 #ifdef PIXEL_SHADER
-	layout(location = 0) out vec3 RT0;
-	layout(location = 1) out vec3 RT1;
-	layout(location = 2) out vec3 RT2;
-	layout(location = 3) out vec2 RT3;
-	layout(location = 4) out vec2 RT4;
+	layout(location = 0) out vec3 RT0; // diffuse
+	layout(location = 1) out vec3 RT1; // normal
+	layout(location = 2) out vec3 RT2; // world position
+	layout(location = 3) out vec2 RT3; // roughness/metallic
+	layout(location = 4) out vec2 RT4; // velocity
+	layout(location = 5) out vec3 RT5; // lightmap
 
 	layout (location = 0) in vec3 InNormal;
 	layout (location = 1) in vec2 InUV;
@@ -59,13 +58,27 @@ layout(push_constant) uniform Params
 	layout (location = 4) in vec4 InClipspacePos;
 	layout (location = 5) in vec4 InClipspacePosPrev;
 
+	layout (location = 6) in flat uint InLightmapId;
+
 	void main()
 	{
-		// RT0 = vec4(InNormal, 1);
-		RT0 = textureLod(Textures[InTextureId], InUV, 0.0f).rgb;
+		vec3 LightmapColor = vec3(0);
+		if (InLightmapId != -1)
+		{
+			LightmapColor = textureLod(Textures[InLightmapId], InUV, 0.0f).rgb;
+		}
+
+		vec3 AlbedoColor = vec3(1);
+		if (InTextureId != -1)
+		{
+			AlbedoColor = textureLod(Textures[InTextureId], InUV, 0.0f).rgb;
+		}
+
+		RT0 = AlbedoColor;
 		RT1 = InNormal;
 		RT2 = InWP;
 		RT3 = vec2(1, 0);
 		RT4 = vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);
+		RT5 = LightmapColor;
 	}
 #endif

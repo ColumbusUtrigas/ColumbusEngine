@@ -2,6 +2,7 @@
 
 #include "Graphics/Core/GraphicsCore.h"
 #include "Camera.h"
+#include "Graphics/Core/Texture.h"
 #include "Graphics/Light.h"
 #include "Graphics/Vulkan/DeviceVulkan.h"
 #include "Profiling/Profiling.h"
@@ -17,10 +18,6 @@ namespace Columbus
 	// after update/upload of a GPU scene, it can be used during rendering in render graph
 	// Similar concept as Unreal's RenderProxy, but simple
 
-	// TODO: define GPUScene upload routine, which uploads data to the GPU via Device
-	// TODO: define GPUScene update/populate routine, which converts CPU entities to GPU representation
-	// TODO: implement Lights buffer upload first
-
 	struct GPUSceneMesh
 	{
 		AccelerationStructure* BLAS;
@@ -29,9 +26,11 @@ namespace Columbus
 		Buffer* Indices;
 		Buffer* UVs;
 		Buffer* Normals;
-		Buffer* Material; // TODO
-		uint32_t VertexCount;
-		uint32_t IndicesCount;
+		u32 VertexCount;
+		u32 IndicesCount;
+
+		int TextureId = -1; // TODO: proper materials
+		int LightmapId = -1;
 	};
 
 	struct GPUCamera
@@ -55,6 +54,20 @@ namespace Columbus
 		bool operator!=(const GPUCamera&) const = default;
 	};
 
+	// to be uploaded into the GPU
+	struct GPUSceneMeshCompact
+	{
+		Matrix Transform;
+
+		u32 VertexCount;
+		u32 IndexCount;
+
+		// int MaterialId; // TODO:
+		int TextureId;
+		int LightmapId;
+		// 80 bytes
+	};
+
 	struct GPULight
 	{
 		Vector4 Position;
@@ -66,6 +79,7 @@ namespace Columbus
 		u32 Padding[1];
 	};
 
+	// TODO: plug it into GPUScene
 	struct GPUDecal
 	{
 		Matrix Model;
@@ -75,8 +89,24 @@ namespace Columbus
 		VkDescriptorSet _DescriptorSets[MaxFramesInFlight]{NULL};
 	};
 
+	// to be uploaded to the GPU
+	struct GPUSceneCompact
+	{
+		// TODO:
+		// GPUCamera Camera; // 64
+		// Matrix View;
+		// Matrix Projection;
+		// Matrix ProjectionInverse;
+
+		u32 MeshesCount;
+		u32 TexturesCount;
+		u32 LightsCount;
+		u32 DecalsCount;
+	};
+
 	struct GPUScene
 	{
+		static constexpr int MaxMeshes = 65536;
 		static constexpr int MaxGPULights = 8192;
 		static constexpr int MaxDecals = 8192;
 
@@ -90,17 +120,50 @@ namespace Columbus
 		bool Dirty = false;
 
 		// GPUScene also owns GPU-specific resources
+		Buffer* SceneBuffer = nullptr;
+		Buffer* SceneUploadBuffers[MaxFramesInFlight] {nullptr};
+
 		Buffer* LightsBuffer = nullptr;
 		Buffer* LightUploadBuffers[MaxFramesInFlight] {nullptr};
+
+		Buffer* MeshesBuffer = nullptr;
+		Buffer* MeshesUploadBuffers[MaxFramesInFlight] {nullptr};
 
 		Buffer* DecalsBuffers = nullptr;
 		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
 
-		// TODO: camera, lights, decals, materials, per-object data
+		// TODO: materials
+
+		GPUSceneCompact CreateCompact() const
+		{
+			return GPUSceneCompact {
+				.MeshesCount = (u32)Meshes.size(),
+				.TexturesCount = (u32)Textures.size(),
+				.LightsCount = (u32)Lights.size(),
+				.DecalsCount = (u32)Decals.size(),
+			};
+		}
 
 		static GPUScene* CreateGPUScene(SPtr<DeviceVulkan> Device)
 		{
 			GPUScene* Result = new GPUScene();
+
+			// scene
+			{
+				BufferDesc SceneBufferDesc;
+				SceneBufferDesc.Size = sizeof(GPUSceneCompact);
+				SceneBufferDesc.BindFlags = BufferType::UAV;
+				Result->SceneBuffer = Device->CreateBuffer(SceneBufferDesc, nullptr);
+				Device->SetDebugName(Result->SceneBuffer, "GPUScene.Scene");
+
+				for (Buffer*& UploadBuffer : Result->SceneUploadBuffers)
+				{
+					BufferDesc UploadBufferDesc(sizeof(GPUSceneCompact), BufferType::UAV);
+					UploadBufferDesc.HostVisible = true;
+					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
+					Device->SetDebugName(UploadBuffer, "GPUScene.Scene (upload buffer)");
+				}
+			}
 
 			// lights
 			{
@@ -117,6 +180,28 @@ namespace Columbus
 					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
 					Device->SetDebugName(UploadBuffer, "GPUScene.Lights (upload buffer)");
 				}
+			}
+
+			// meshes
+			{
+				BufferDesc MeshBufferDesc;
+				MeshBufferDesc.Size = GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact);
+				MeshBufferDesc.BindFlags = BufferType::UAV;
+				Result->MeshesBuffer = Device->CreateBuffer(MeshBufferDesc, nullptr);
+				Device->SetDebugName(Result->MeshesBuffer, "GPUScene.Meshes");
+
+				for (Buffer*& UploadBuffer : Result->MeshesUploadBuffers)
+				{
+					BufferDesc UploadBufferDesc(GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact), BufferType::UAV);
+					UploadBufferDesc.HostVisible = true;
+					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
+					Device->SetDebugName(UploadBuffer, "GPUScene.Meshes (upload buffer)");
+				}
+			}
+
+			// materials
+			{
+				// TODO:
 			}
 
 			// decals

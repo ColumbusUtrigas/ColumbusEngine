@@ -11,8 +11,8 @@ struct RayPayload {
     layout(location = 0) rayPayloadEXT RayPayload payload;
     layout(location = 1) rayPayloadEXT RayPayload shadowPayload;
 
-    layout(binding = 0, set = 7) uniform accelerationStructureEXT acc; // TODO
-    layout(binding = 1, set = 7, rgba32f) uniform image2D img;
+    layout(binding = 0, set = 6) uniform accelerationStructureEXT acc; // TODO
+    layout(binding = 1, set = 6, rgba32f) uniform image2D img;
 
 	#include "GPUScene.glsl"
 	#include "CommonRayTracing.glsl"
@@ -27,7 +27,6 @@ struct RayPayload {
         int frameNumber;
         int reset;
 		int bounces;
-		int lightsCount;
     } rayParams;
 
     void main() {
@@ -71,7 +70,7 @@ struct RayPayload {
         // Define the field of view by the vertical slope of the topmost rays:
         // const float fovVerticalSlope = 1.0 / 5.0;
 
-		vec3 finalColor = PathTrace(origin, direction, rayParams.bounces, rngState, rayParams.lightsCount);
+		vec3 finalColor = PathTrace(origin, direction, rayParams.bounces, rngState);
 
         if (rayParams.reset == 1)
         {

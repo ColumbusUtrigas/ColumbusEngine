@@ -20,6 +20,9 @@ compile_shader_hlsl(RayTracedShadows/DenoiserShadowsFilter.hlsl main:cs SHADER_B
 
 compile_shader_hlsl(TiledLightsPrepare.hlsl main:cs SHADER_BINARIES)
 
+compile_shader_glsl(LightmapRasterisation.glsl main:vs,main:ps SHADER_BINARIES)
+compile_shader_glsl(LightmapPathTracing.glsl   main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
+
 compile_shader_glsl(GBufferPass.glsl main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Debug.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)

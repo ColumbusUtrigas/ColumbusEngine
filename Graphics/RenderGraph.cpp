@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Clear", "RenderGraph", Counter_RenderGraphClear);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Build", "RenderGraph", Counter_RenderGraphBuild);
@@ -127,8 +128,7 @@ namespace Columbus
 		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 2, 1, &RenderData.GPUSceneData.UVSet);
 		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 3, 1, &RenderData.GPUSceneData.NormalSet);
 		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 4, 1, &RenderData.GPUSceneData.TextureSet);
-		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 5, 1, &RenderData.GPUSceneData.MaterialSet);
-		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 6, 1, &RenderData.GPUSceneData.LightSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 5, 1, &RenderData.GPUSceneData.SceneSet);
 	}
 
 	void RenderGraphContext::BindGPUScene(const RayTracingPipeline* Pipeline)
@@ -138,8 +138,7 @@ namespace Columbus
 		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &RenderData.GPUSceneData.UVSet);
 		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 3, 1, &RenderData.GPUSceneData.NormalSet);
 		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 4, 1, &RenderData.GPUSceneData.TextureSet);
-		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 5, 1, &RenderData.GPUSceneData.MaterialSet);
-		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &RenderData.GPUSceneData.LightSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 5, 1, &RenderData.GPUSceneData.SceneSet);
 	}
 
 	SPtr<Texture2> RenderGraphContext::GetRenderGraphTexture(RenderGraphTextureRef Ref)
@@ -230,7 +229,7 @@ namespace Columbus
 		// TODO: fully refactor
 
 		// brute-generate VkDescriptorSetLayout
-		auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type, uint32_t count, bool unbounded = true)
+		auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type, uint32_t count, bool unbounded = true, u32 bindingCount = 1)
 		{
 			VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
@@ -240,19 +239,24 @@ namespace Columbus
 			bindingFlagsInfo.bindingCount = 1;
 			bindingFlagsInfo.pBindingFlags = &bindingFlags;
 
-			VkDescriptorSetLayoutBinding binding;
-			binding.binding = bindingNum;
-			binding.descriptorType = type;
-			binding.descriptorCount = count;
-			binding.stageFlags = VK_SHADER_STAGE_ALL;
-			binding.pImmutableSamplers = nullptr;
+			fixed_vector<VkDescriptorSetLayoutBinding, 16> bindings;
+			for (u32 i = 0; i < bindingCount; i++)
+			{
+				VkDescriptorSetLayoutBinding binding;
+				binding.binding = bindingNum + i;
+				binding.descriptorType = type;
+				binding.descriptorCount = count;
+				binding.stageFlags = VK_SHADER_STAGE_ALL;
+				binding.pImmutableSamplers = nullptr;
+				bindings.push_back(binding);
+			}
 
 			VkDescriptorSetLayoutCreateInfo setLayoutInfo;
 			setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			setLayoutInfo.pNext = unbounded ? &bindingFlagsInfo : nullptr;
 			setLayoutInfo.flags = 0;
-			setLayoutInfo.bindingCount = 1;
-			setLayoutInfo.pBindings = &binding;
+			setLayoutInfo.bindingCount = bindingCount;
+			setLayoutInfo.pBindings = bindings.data();
 
 			VkDescriptorSetLayout layout;
 
@@ -266,16 +270,14 @@ namespace Columbus
 		RenderData.GPUSceneLayout.UVLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
 		RenderData.GPUSceneLayout.NormalLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
 		RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
-		RenderData.GPUSceneLayout.MaterialLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000);
-		RenderData.GPUSceneLayout.LightLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false);
+		RenderData.GPUSceneLayout.SceneLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false, 3);
 
 		RenderData.GPUSceneData.VerticesSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.IndicesLayout, 1000);
 		RenderData.GPUSceneData.IndicesSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.IndicesLayout, 1000);
 		RenderData.GPUSceneData.UVSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.UVLayout, 1000);
 		RenderData.GPUSceneData.NormalSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.NormalLayout, 1000);
 		RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 1000);
-		RenderData.GPUSceneData.MaterialSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.MaterialLayout, 1000);
-		RenderData.GPUSceneData.LightSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.LightLayout, 0);
+		RenderData.GPUSceneData.SceneSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.SceneLayout, 0);
 
 		for (int i = 0; i < Scene->Meshes.size(); i++)
 		{
@@ -284,15 +286,11 @@ namespace Columbus
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.IndicesSet, 0, i, mesh.Indices);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.UVSet, 0, i, mesh.UVs);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.NormalSet, 0, i, mesh.Normals);
-			Device->UpdateDescriptorSet(RenderData.GPUSceneData.MaterialSet, 0, i, mesh.Material);
 		}
 
-		for (int i = 0; i < Scene->Textures.size(); i++)
-		{
-			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i]);
-		}
-
-		Device->UpdateDescriptorSet(RenderData.GPUSceneData.LightSet, 0, 0, Scene->LightsBuffer);
+		Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 0, 0, Scene->SceneBuffer);
+		Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 1, 0, Scene->LightsBuffer);
+		Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 2, 0, Scene->MeshesBuffer);
 	}
 
 	RenderGraphTextureRef RenderGraph::CreateTexture(const TextureDesc2& Desc, const char* Name)
@@ -747,6 +745,12 @@ namespace Columbus
 			RenderData.SwapchainImage = Swapchain->Textures[RenderData.CurrentSwapchainImageIndex];
 		}
 
+		// TODO: refactor that mechanism
+		for (int i = 0; i < Scene->Textures.size(); i++)
+		{
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		}
+
 		Build(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
 
 		PROFILE_CPU(Counter_RenderGraphExecute);
@@ -860,7 +864,15 @@ namespace Columbus
 				Context.VulkanRenderPass = Pass.VulkanRenderPass;
 
 				// TODO: resize, extent
-				CommandBuffer->BeginRenderPass(Pass.VulkanRenderPass, VkRect2D{{}, Swapchain->swapChainExtent}, Pass.VulkanFramebuffer, (u32)ClearValues.size(), ClearValues.data());
+				VkRect2D PassRect {
+					.offset { .x = 0, .y = 0 },
+					.extent {
+						.width = (u32)Pass.Parameters.ViewportSize.X,
+						.height = (u32)Pass.Parameters.ViewportSize.Y,
+					},
+				};
+
+				CommandBuffer->BeginRenderPass(Pass.VulkanRenderPass, PassRect, Pass.VulkanFramebuffer, (u32)ClearValues.size(), ClearValues.data());
 				Pass.ExecutionFunc(Context);
 				CommandBuffer->EndRenderPass();
 
@@ -1056,14 +1068,19 @@ namespace Columbus
 		bool IsCached = MapOfVulkanFramebuffers[MapIndex].contains(Pass.VulkanRenderPass);
 		bool InvalidateFramebuffer = false;
 
-		if (IsCached && MapOfVulkanFramebuffers[MapIndex][Pass.VulkanRenderPass].Size != RenderData.CurrentSwapchainSize)
+		if (Pass.Parameters.ViewportSize == iVector2(-1))
+		{
+			Pass.Parameters.ViewportSize = RenderData.CurrentSwapchainSize;
+		}
+
+		if (IsCached && MapOfVulkanFramebuffers[MapIndex][Pass.VulkanRenderPass].Size != Pass.Parameters.ViewportSize)
 		{
 			InvalidateFramebuffer = true;
 		}
 
 		if (!IsCached || InvalidateFramebuffer)
 		{
-			iVector2 Size = RenderData.CurrentSwapchainSize;
+			iVector2 Size = Pass.Parameters.ViewportSize;
 			Log::Message("Call: CreateFramebuffer: %ix%i", Size.X, Size.Y);
 
 			// TODO: refactor + validation

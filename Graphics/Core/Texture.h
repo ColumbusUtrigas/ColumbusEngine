@@ -52,6 +52,7 @@ namespace Columbus
 	{
 		Sampled,
 		Storage,
+		StorageSampled,
 		RenderTargetColor,
 		RenderTargetDepth,
 	};
@@ -77,6 +78,7 @@ namespace Columbus
 		{
 		case TextureUsage::Sampled:           return "Sampled";
 		case TextureUsage::Storage:           return "Storage";
+		case TextureUsage::StorageSampled:    return "StorageSampled";
 		case TextureUsage::RenderTargetColor: return "RenderTargetColor";
 		case TextureUsage::RenderTargetDepth: return "RenderTargetDepth";
 		default:                              return "Undefined";

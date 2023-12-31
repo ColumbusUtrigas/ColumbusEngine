@@ -125,6 +125,7 @@ namespace Columbus
 		{
 			case TextureUsage::Sampled: return VK_IMAGE_USAGE_SAMPLED_BIT;
 			case TextureUsage::Storage: return VK_IMAGE_USAGE_STORAGE_BIT;
+			case TextureUsage::StorageSampled: return VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 			case TextureUsage::RenderTargetColor: return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 			case TextureUsage::RenderTargetDepth: return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 			default: COLUMBUS_ASSERT(false);
@@ -137,6 +138,7 @@ namespace Columbus
 		{
 			case TextureUsage::Sampled: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			case TextureUsage::Storage: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			case TextureUsage::StorageSampled: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 			case TextureUsage::RenderTargetColor: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			case TextureUsage::RenderTargetDepth: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			default: COLUMBUS_ASSERT(false);

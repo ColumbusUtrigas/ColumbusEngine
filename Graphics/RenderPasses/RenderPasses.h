@@ -35,6 +35,7 @@ namespace Columbus
 	struct GPULightRenderInfo
 	{
 		RenderGraphTextureRef RTShadow;
+		// TODO: denoising history textures should go here as well, think about persisting and clearing them
 	};
 
 	struct HistorySceneTextures
@@ -57,6 +58,7 @@ namespace Columbus
 		RenderGraphTextureRef GBufferRM; // Roughness Metallic
 		RenderGraphTextureRef GBufferDS; // Depth Stencil
 		RenderGraphTextureRef Velocity;
+		RenderGraphTextureRef Lightmap;
 		
 		HistorySceneTextures& History;
 	};
@@ -72,6 +74,39 @@ namespace Columbus
 	// Real-time raytracing
 	//
 	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
+
+	// Lightmap baking
+	//
+	struct LightmapBakingSettings
+	{
+		int LightmapSize;
+		int RequestedSamples;
+		int Bounces = 3;
+		int SamplesPerFrame = 1;
+		u32 MeshIndex;
+	};
+
+	struct LightmapBakingRenderData
+	{
+		// textures used for sampling
+		RenderGraphTextureRef Albedo;
+		RenderGraphTextureRef Normal;
+		RenderGraphTextureRef WP;
+		RenderGraphTextureRef RM;
+		RenderGraphTextureRef Validity;
+
+		Texture2* Lightmap;
+
+		LightmapBakingSettings Settings;
+		int AccumulatedSamples = 0;
+	};
+
+	LightmapBakingRenderData CreateLightmapBakingData(SPtr<DeviceVulkan> Device, LightmapBakingSettings Settings);
+
+	// this pass renders a mesh in lightmap UV space which gives lightmap_texel-vertex correspondance
+	// which is then used as sampling points for path tracing
+	void                     PrepareMeshForLightmapBaking(RenderGraph& Graph, const RenderView& View, LightmapBakingRenderData& Data);
+	void                     BakeLightmapPathTraced(RenderGraph& Graph, LightmapBakingRenderData& Data);
 
 	// Global illumination
 	//

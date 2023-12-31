@@ -488,6 +488,9 @@ namespace Columbus
 		case TextureUsage::Storage:
 			newLayout = VK_IMAGE_LAYOUT_GENERAL;
 			break;
+		case TextureUsage::StorageSampled:
+			newLayout = VK_IMAGE_LAYOUT_GENERAL;
+			break;
 		case TextureUsage::RenderTargetColor:
 			newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 			break;

@@ -18,6 +18,8 @@
 	void main() {
 		vec3 barycentrics = vec3(1.0f - HitAttribs.x - HitAttribs.y, HitAttribs.x, HitAttribs.y);
 
+		GPUSceneMeshCompact Mesh = GPUSceneMeshes.Meshes[nonuniformEXT(gl_InstanceCustomIndexEXT)];
+
 		uint index0 = IndexBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].indices[gl_PrimitiveID * 3 + 0];
 		uint index1 = IndexBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].indices[gl_PrimitiveID * 3 + 1];
 		uint index2 = IndexBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].indices[gl_PrimitiveID * 3 + 2];
@@ -32,7 +34,7 @@
 		vec3 normal2 = vec3(NORMALBUF[index2*3+0], NORMALBUF[index2*3+1], NORMALBUF[index2*3+2]);
 		vec3 normal = BaryLerp(normal0, normal1, normal2, barycentrics);
 
-		int texId = MaterialsBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].id;
+		int texId = Mesh.TextureId;
 		vec3 texel = vec3(1);
 
 		if (texId > -1)

@@ -22,7 +22,6 @@ namespace Columbus
 		int frameNumber;
 		int reset;
 		int bounces;
-		int lightsCount;
 	};
 
 	struct PathTraceDisplayParameters
@@ -57,7 +56,7 @@ namespace Columbus
 					PTPipeline = Context.Device->CreateRayTracingPipeline(Desc);
 				}
 
-				auto RTSet = Context.GetDescriptorSet(PTPipeline, 7);
+				auto RTSet = Context.GetDescriptorSet(PTPipeline, 6);
 				Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 				Context.Device->UpdateDescriptorSet(RTSet, 1, 0, Context.GetRenderGraphTexture(RTImage).get());
 
@@ -74,11 +73,10 @@ namespace Columbus
 					UpdatedCamera,
 					(int)frame, (int)reset,
 					CVar_Bounces.GetValue(),
-					(int)Context.Scene->Lights.size()
 				};
 
 				Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 7, 1, &RTSet);
+				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 6, 1, &RTSet);
 				Context.BindGPUScene(PTPipeline);
 
 				Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);

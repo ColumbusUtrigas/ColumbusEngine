@@ -322,7 +322,7 @@ namespace Columbus
 
 				if (RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] == NULL)
 				{
-					RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] = Context.Device->CreateDescriptorSet(Pipeline, 7);
+					RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] = Context.Device->CreateDescriptorSet(Pipeline, 6);
 				}
 
 				auto ShadowsBufferSet = RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i];
@@ -339,7 +339,7 @@ namespace Columbus
 				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
 				Context.BindGPUScene(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ShadowsBufferSet);
+				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &ShadowsBufferSet);
 
 				Context.CommandBuffer->TraceRays(Pipeline, View.OutputSize.X, View.OutputSize.Y, 1);
 			});

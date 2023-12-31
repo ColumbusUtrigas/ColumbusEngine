@@ -40,6 +40,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <queue>
 
 #include <Lib/tinygltf/tiny_gltf.h>
 
@@ -103,6 +104,7 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Meshes", "SceneMemory", MemoryCounter_SceneM
 IMPLEMENT_MEMORY_PROFILING_COUNTER("BLAS", "SceneMemory", MemoryCounter_SceneBLAS);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("TLAS", "SceneMemory", MemoryCounter_SceneTLAS);
 
+// TODO: move to appropriate place
 Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
 {
 	BufferDesc desc;
@@ -114,6 +116,7 @@ Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, 
 	return result;
 }
 
+// TODO: move to appropriate place
 SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename)
 {
 	tinygltf::Model model;
@@ -138,7 +141,6 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			Device->DestroyBuffer(Mesh.Indices);
 			Device->DestroyBuffer(Mesh.UVs);
 			Device->DestroyBuffer(Mesh.Normals);
-			Device->DestroyBuffer(Mesh.Material);
 			Device->DestroyAccelerationStructure(Mesh.BLAS);
 		}
 
@@ -263,11 +265,6 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 				matid = mat.pbrMetallicRoughness.baseColorTexture.index;
 			}
 
-			{
-				materialBuffer = CreateMeshBuffer(Device, sizeof(int), true, &matid);
-				Device->SetDebugName(materialBuffer, (mesh.name + " (Material)").c_str());
-			}
-
 			GPUSceneMesh Mesh;
 			Mesh.BLAS = BLAS;
 			Mesh.Transform = Matrix(1);
@@ -275,9 +272,9 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			Mesh.Indices = indexBuffer;
 			Mesh.UVs = uvBuffer;
 			Mesh.Normals = normalBuffer;
-			Mesh.Material = materialBuffer;
 			Mesh.VertexCount = verticesCount;
 			Mesh.IndicesCount = indicesCount;
+			Mesh.TextureId = matid;
 
 			Scene->Meshes.push_back(Mesh);
 		}
@@ -297,7 +294,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 	AddProfilingMemory(MemoryCounter_SceneTLAS, Scene->TLAS->GetSize());
 
-	Scene->Lights.push_back(GPULight{{}, {0,1,0,0}, {1,1,1,0}, LightType::Directional, 0, 0.1f});
+	Scene->Lights.push_back(GPULight{{}, {1,1,1,0}, {1,1,1,0}, LightType::Directional, 0, 0.1f});
 	Scene->Lights.push_back(GPULight{{0,200,0,0}, {}, {50,0,0,0}, LightType::Point, 500, 0});
 
 	{
@@ -317,6 +314,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	return Scene;
 }
 
+// TODO: move to appropriate place
 void UploadGPUSceneRG(RenderGraph& Graph)
 {
 	RenderPassParameters Parameters;
@@ -326,13 +324,55 @@ void UploadGPUSceneRG(RenderGraph& Graph)
 		// TODO: create UploadBuffer wrapper? have CurrentFrame as a constant in Context?
 		static int CurrentFrame = 0;
 		CurrentFrame = ++CurrentFrame % MaxFramesInFlight;
-		Buffer*& UploadBuffer = Context.Scene->LightUploadBuffers[CurrentFrame];
 
-		void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-		memcpy(Ptr, Context.Scene->Lights.data(), sizeof(GPULight) * Context.Scene->Lights.size());
-		Context.Device->UnmapBuffer(UploadBuffer);
+		// scene
+		{
+			Buffer*& UploadBuffer = Context.Scene->SceneUploadBuffers[CurrentFrame];
 
-		Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->LightsBuffer, 0, 0, sizeof(GPULight) * Context.Scene->Lights.size());
+			GPUSceneCompact Compact = Context.Scene->CreateCompact();
+
+			void* Ptr = Context.Device->MapBuffer(UploadBuffer);
+			memcpy(Ptr, &Compact, sizeof(Compact));
+			Context.Device->UnmapBuffer(UploadBuffer);
+
+			Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->SceneBuffer, 0, 0, sizeof(Compact));
+		}
+
+		// lights
+		if (Context.Scene->Lights.size() > 0)
+		{
+			Buffer*& UploadBuffer = Context.Scene->LightUploadBuffers[CurrentFrame];
+
+			void* Ptr = Context.Device->MapBuffer(UploadBuffer);
+			memcpy(Ptr, Context.Scene->Lights.data(), sizeof(GPULight) * Context.Scene->Lights.size());
+			Context.Device->UnmapBuffer(UploadBuffer);
+
+			Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->LightsBuffer, 0, 0, sizeof(GPULight) * Context.Scene->Lights.size());
+		}
+
+		// meshes
+		if (Context.Scene->Meshes.size() > 0)
+		{
+			Buffer*& UploadBuffer = Context.Scene->MeshesUploadBuffers[CurrentFrame];
+
+			void* Ptr = Context.Device->MapBuffer(UploadBuffer);
+			for (int i = 0; i < Context.Scene->Meshes.size(); i++)
+			{
+				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
+				GPUSceneMeshCompact Compact {
+					.Transform = Mesh.Transform,
+					.VertexCount = Mesh.VertexCount,
+					.IndexCount = Mesh.IndicesCount,
+					.TextureId = Mesh.TextureId,
+					.LightmapId = Mesh.LightmapId,
+				};
+
+				((GPUSceneMeshCompact*)Ptr)[i] = Compact;
+			}
+			Context.Device->UnmapBuffer(UploadBuffer);
+
+			Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MeshesBuffer, 0, 0, sizeof(GPUSceneMeshCompact) * Context.Scene->Meshes.size());
+		}
 	});
 }
 
@@ -505,10 +545,10 @@ int main()
 
 	Camera camera, cameraPrev;
 	Columbus::Timer timer;
-	camera.Pos = { 0, 300, 104 };
+	// camera.Pos = { 0, 300, 104 };
 	camera.Rot = { 0, -70, 0 };
-	camera.Perspective(45, 1280.f/720.f, 10.f, 5000.f);
-	float CameraSpeed = 200;
+	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
+	float CameraSpeed = 10;
 
 	camera.Update();
 	cameraPrev = camera;
@@ -519,9 +559,9 @@ int main()
 	auto device = instance.CreateDevice();
 
 	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
-	auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
+	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-	// auto scene = LoadScene(device, camera, "/home/columbus/assets/cubes.gltf");
+	auto scene = LoadScene(device, camera, "/home/columbus/assets/cp.gltf");
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
 	DeferredRenderContext DeferredContext; // for deferred
@@ -536,6 +576,11 @@ int main()
 
 	InitializeImgui(Window, device);
 
+	// TODO: baking system, lightmap storage
+	LightmapBakingRenderData BakingData;
+	std::queue<LightmapBakingSettings> BakingQueue;
+	bool BakingDataValid = false;
+
 	bool running = true;
 	while (running)
 	{
@@ -546,6 +591,7 @@ int main()
 		float DeltaTime = timer.Elapsed();
 		timer.Reset();
 
+		camera.Perspective(45, (float)Window.Size.X / (float)Window.Size.Y, 1.f, 5000.f);
 		camera.Update();
 		debugRender.Clear();
 
@@ -574,6 +620,70 @@ int main()
 			ImGui::ShowDemoWindow();
 			ShowDebugConsole();
 			ShowRenderGraphVisualiser(renderGraph);
+
+			// lightmap
+			{
+				static int ObjectId = 0;
+				static int Samples = 100;
+				static int Bounces = 3;
+				static int SamplesPerFrame = 1;
+				static int Size = 512;
+
+				if (ImGui::Begin("Lightmap"))
+				{
+					ImGui::InputInt("Object ID", &ObjectId);
+					ImGui::InputInt("Samples", &Samples);
+					ImGui::InputInt("Bounces", &Bounces);
+					ImGui::InputInt("Size", &Size);
+					ImGui::InputInt("Samples per frame", &SamplesPerFrame);
+
+					if (ImGui::Button("Bake"))
+					{
+						LightmapBakingSettings Settings;
+						Settings.RequestedSamples = Samples;
+						Settings.Bounces = Bounces;
+						Settings.SamplesPerFrame = SamplesPerFrame;
+						Settings.MeshIndex = ObjectId;
+						Settings.LightmapSize = Size;
+
+						BakingQueue.push(Settings);
+					}
+
+					if (ImGui::Button("Bake All"))
+					{
+						for (int i = 0; i < scene->Meshes.size(); i++)
+						{
+							LightmapBakingSettings Settings;
+							Settings.RequestedSamples = Samples;
+							Settings.Bounces = Bounces;
+							Settings.SamplesPerFrame = SamplesPerFrame;
+							Settings.MeshIndex = i;
+							Settings.LightmapSize = Size;
+
+							BakingQueue.push(Settings);
+						}
+					}
+
+					if (BakingDataValid && BakingData.AccumulatedSamples < BakingData.Settings.RequestedSamples)
+					{
+						ImGui::ProgressBar((float)BakingData.AccumulatedSamples / BakingData.Settings.RequestedSamples);
+					}
+				}
+				ImGui::End();
+
+				if (!BakingDataValid || (BakingDataValid && BakingData.AccumulatedSamples >= BakingData.Settings.RequestedSamples))
+				{
+					if (!BakingQueue.empty())
+					{
+						LightmapBakingSettings Settings = BakingQueue.front();
+						BakingData = CreateLightmapBakingData(device, Settings);
+						scene->Meshes[Settings.MeshIndex].LightmapId = (int)scene->Textures.size();
+						scene->Textures.push_back(BakingData.Lightmap);
+						BakingDataValid = true;
+						BakingQueue.pop();
+					}
+				}
+			}
 
 			// TODO: move to appropriate place
 			// TODO: object properties editor
@@ -666,6 +776,13 @@ int main()
 
 		if (render_cvar.GetValue() == 0)
 		{
+			if (BakingDataValid)
+			{
+				// TODO: generate UV2 for lightmaps
+				PrepareMeshForLightmapBaking(renderGraph, View, BakingData);
+				BakeLightmapPathTraced(renderGraph, BakingData);
+			}
+
 			RenderDeferred(renderGraph, View, DeferredContext);
 		}
 		else
@@ -697,7 +814,7 @@ int main()
 		}
 
 		// TODO:
-		std::this_thread::sleep_for(std::chrono::milliseconds(3));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(3));
 
 		device->EndFrame();
 	}

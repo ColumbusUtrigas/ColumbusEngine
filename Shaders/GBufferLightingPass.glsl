@@ -5,6 +5,7 @@
 	layout(binding = 1, set = 0) uniform sampler2D GBufferNormal;
 	layout(binding = 2, set = 0, rgba16f) uniform image2D LightingOutput;
 	layout(binding = 3, set = 0) uniform sampler2D GBufferWorldPosition;
+	layout(binding = 4, set = 0) uniform sampler2D GBufferLightmap;
 
 	// TODO: use GPUScene common definitions
 	struct GPULight
@@ -22,7 +23,7 @@
 	#define GPULIGHT_RECTANGLE 3
 	#define GPULIGHT_SPHERE 4
 
-	layout(binding = 4, set = 0) readonly buffer LightsBuffer {
+	layout(binding = 5, set = 0) readonly buffer LightsBuffer {
 		GPULight Lights[];
 	} GPUSceneLights;
 
@@ -45,7 +46,8 @@
 		vec3 Albedo = texture(GBufferAlbedo, UV).rgb;
 		vec3 N = texture(GBufferNormal, UV).rgb;
 		vec3 WorldPosition = texture(GBufferWorldPosition, UV).rgb;
-		vec3 LightingSum = vec3(0);
+		vec3 Lightmap = texture(GBufferLightmap, UV).rgb;
+		vec3 LightingSum = Lightmap * Albedo;
 
 		// TODO: move lighting functions to a common header
 		for (uint i = 0; i < Parameters.LightsCount; i++)

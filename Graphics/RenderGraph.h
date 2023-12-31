@@ -70,8 +70,7 @@ namespace Columbus
 			VkDescriptorSetLayout UVLayout;
 			VkDescriptorSetLayout NormalLayout;
 			VkDescriptorSetLayout TextureLayout;
-			VkDescriptorSetLayout MaterialLayout;
-			VkDescriptorSetLayout LightLayout;
+			VkDescriptorSetLayout SceneLayout;
 		} GPUSceneLayout;
 
 		// TODO: move to GPUScene
@@ -82,8 +81,7 @@ namespace Columbus
 			VkDescriptorSet UVSet;
 			VkDescriptorSet NormalSet;
 			VkDescriptorSet TextureSet;
-			VkDescriptorSet MaterialSet;
-			VkDescriptorSet LightSet;
+			VkDescriptorSet SceneSet;
 		} GPUSceneData;
 
 		// TODO: move to shader caching system
@@ -137,6 +135,9 @@ namespace Columbus
 
 		// if you want to create render pass externally and use it in the graph
 		VkRenderPass ExternalRenderPass = NULL;
+
+		// raster only
+		iVector2 ViewportSize{-1};
 
 		bool operator==(const RenderPassParameters& Other) const = default;
 	};

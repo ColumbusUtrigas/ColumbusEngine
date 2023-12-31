@@ -58,13 +58,15 @@ namespace Columbus
 		TextureDesc2 RMDesc = CommonDesc;
 		TextureDesc2 DSDesc = CommonDesc;
 		TextureDesc2 VelocityDesc = CommonDesc;
-				AlbedoDesc.Format = TextureFormat::RGBA8;
+		TextureDesc2 LightmapDesc = CommonDesc;
+		AlbedoDesc.Format = TextureFormat::RGBA8;
 		NormalDesc.Format = TextureFormat::RGBA16F;
 		WPDesc.Format = TextureFormat::RGBA32F;
 		RMDesc.Format = TextureFormat::RG8;
 		DSDesc.Format = TextureFormat::Depth24;
 		DSDesc.Usage = TextureUsage::RenderTargetDepth;
 		VelocityDesc.Format = TextureFormat::RG16F;
+		LightmapDesc.Format = TextureFormat::RGBA16F;
 		
 		SceneTextures Result { .History = History };
 		Result.GBufferAlbedo = Graph.CreateTexture(AlbedoDesc, "GBufferAlbedo");
@@ -73,7 +75,8 @@ namespace Columbus
 		Result.GBufferRM = Graph.CreateTexture(RMDesc, "GBufferRM");
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
 		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
-				return Result;
+		Result.Lightmap = Graph.CreateTexture(LightmapDesc, "Lightmap");
+		return Result;
 	}
 
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
@@ -84,6 +87,7 @@ namespace Columbus
 		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP };
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
 		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
+		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 
 		RenderPassDependencies Dependencies;
@@ -100,6 +104,7 @@ namespace Columbus
 				Desc.Name = "GBufferPass";
 				Desc.rasterizerState.Cull = CullMode::No;
 				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
@@ -215,6 +220,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
 		{
 			Dependencies.Read(LightInfo.RTShadow, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -246,7 +252,8 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.Scene->LightsBuffer);
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			for (int i = 0; i < DeferredContext.LightRenderInfos.size(); i++)

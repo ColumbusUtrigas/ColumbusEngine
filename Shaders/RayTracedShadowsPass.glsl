@@ -14,10 +14,10 @@ struct RayPayload {
 	#define GOLDEN_RATIO 1.618033988749894
 	#define PI 3.14159265359
 
-	layout(binding = 0, set = 7) uniform accelerationStructureEXT AccelerationStructure; // TODO
-	layout(binding = 1, set = 7, rgba16f) uniform image2D ShadowsBuffer;
-	layout(binding = 2, set = 7) uniform sampler2D GBufferNormals;
-	layout(binding = 3, set = 7) uniform sampler2D GBufferWorldPosition;
+	layout(binding = 0, set = 6) uniform accelerationStructureEXT AccelerationStructure; // TODO
+	layout(binding = 1, set = 6, rgba16f) uniform image2D ShadowsBuffer;
+	layout(binding = 2, set = 6) uniform sampler2D GBufferNormals;
+	layout(binding = 3, set = 6) uniform sampler2D GBufferWorldPosition;
 
 	layout(push_constant) uniform params
 	{
@@ -88,7 +88,7 @@ struct RayPayload {
 		direction = normalize(direction);
 
 		traceRayEXT(AccelerationStructure, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-			0xFF, 0, 0, 0, origin, 1, direction, MaxDistance, 0);
+			0xFF, 0, 0, 0, origin, 0.01, direction, MaxDistance, 0);
 
 		float Result = 0;
 		if (Payload.Distance > 0)
