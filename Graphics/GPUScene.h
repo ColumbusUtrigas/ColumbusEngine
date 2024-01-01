@@ -6,6 +6,7 @@
 #include "Graphics/Light.h"
 #include "Graphics/Vulkan/DeviceVulkan.h"
 #include "Profiling/Profiling.h"
+#include "IrradianceVolume.h"
 #include <Core/Core.h>
 #include <vector>
 
@@ -115,6 +116,8 @@ namespace Columbus
 		std::vector<Texture2*> Textures;
 		std::vector<GPULight> Lights;
 		std::vector<GPUDecal> Decals;
+
+		std::vector<IrradianceVolume> IrradianceVolumes;
 
 		GPUCamera MainCamera;
 		bool Dirty = false;

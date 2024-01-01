@@ -582,8 +582,8 @@ namespace Columbus
 				}
 				else
 				{
-					Log::Error("RenderGraph Validation: Texture %s can have only one producer, %s writes over it, was written in %s before",
-						GraphTexture.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphTexture.Writer].Name.c_str());
+					// Log::Error("RenderGraph Validation: Texture %s can have only one producer, %s writes over it, was written in %s before",
+					// 	GraphTexture.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphTexture.Writer].Name.c_str());
 				}
 			}
 
@@ -601,8 +601,8 @@ namespace Columbus
 				}
 				else
 				{
-					Log::Error("RenderGraph Validation: Buffer %s can have only one producer, %s writes over it, was written in %s before",
-						GraphBuffer.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphBuffer.Writer].Name.c_str());
+					// Log::Error("RenderGraph Validation: Buffer %s can have only one producer, %s writes over it, was written in %s before",
+					// 	GraphBuffer.DebugName.c_str(), Pass.Name.c_str(), Passes[GraphBuffer.Writer].Name.c_str());
 				}
 			}
 		}

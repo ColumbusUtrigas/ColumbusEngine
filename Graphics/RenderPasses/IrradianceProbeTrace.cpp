@@ -11,21 +11,80 @@ namespace Columbus
 	struct GPUIrradianceProbe
 	{
 		alignas(16) Vector3 Position; // 16
-		alignas(16) Vector3 test;
+		// alignas(16) Vector3 test;
 		alignas(16) Vector4 Irradiance[6]; // 112
 
-		alignas(16) Vector4 FullIrradiance[64];
-		alignas(16) Vector4 Directions[64];
+		// alignas(16) Vector4 FullIrradiance[64];
+		// alignas(16) Vector4 Directions[64];
 	};
 
-	std::vector<GPUIrradianceProbe> IrradianceProbes;
-
-	struct Parameters
+	struct IrradianceProbesTraceParameters
 	{
 		int RaysPerProbe;
 		int Bounces;
-		int Frame;
+		int Random;
 	};
+
+	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume)
+	{
+		// TODO: invent something better than this
+		std::vector<GPUIrradianceProbe> IrradianceProbes;
+
+		for (int i = 0; i < Volume.ProbesCount.X; i++)
+		{
+			for (int j = 0; j < Volume.ProbesCount.Y; j++)
+			{
+				for (int k = 0; k < Volume.ProbesCount.Z; k++)
+				{
+					Vector3 CellSize = Volume.Extent / Vector3(Volume.ProbesCount);
+					Vector3 ProbePosition = Vector3(i, j, k) * CellSize + CellSize/2 - Volume.Extent/2 + Volume.Position;
+					IrradianceProbes.push_back(GPUIrradianceProbe{ProbePosition});
+				}
+			}
+		}
+
+		BufferDesc ProbeBufferDesc;
+		ProbeBufferDesc.BindFlags = BufferType::UAV;
+		ProbeBufferDesc.Size = Volume.GetTotalProbes() * sizeof(GPUIrradianceProbe);
+		Volume.ProbesBuffer = Graph.Device->CreateBuffer(ProbeBufferDesc, IrradianceProbes.data());
+
+		RenderPassParameters Parameters;
+
+		RenderPassDependencies Dependencies;
+
+		Graph.AddPass("IrradianceProbesTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [Volume](RenderGraphContext& Context)
+		{
+			static RayTracingPipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				RayTracingPipelineDesc Desc{};
+				Desc.Name = "IrradianceProbesTrace";
+				Desc.MaxRecursionDepth = 1;
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceProbesTrace.csd");
+				Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
+			}
+
+			auto TlasSet = Context.GetDescriptorSet(Pipeline, 6);
+			auto ProbesSet = Context.GetDescriptorSet(Pipeline, 7);
+
+			Context.Device->UpdateDescriptorSet(TlasSet, 0, 0, Context.Scene->TLAS);
+			Context.Device->UpdateDescriptorSet(ProbesSet, 0, 0, Volume.ProbesBuffer);
+
+			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &TlasSet);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ProbesSet);
+			Context.BindGPUScene(Pipeline);
+
+			IrradianceProbesTraceParameters Parameters {
+				.RaysPerProbe = 128,
+				.Bounces = 6,
+				.Random = rand(),
+			};
+
+			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);
+			Context.CommandBuffer->TraceRays(Pipeline, Volume.GetTotalProbes(), 1, 1);
+		});
+	}
 
 	/*void IrradianceProbeTracePass::Setup(RenderGraphContext& Context)
 	{

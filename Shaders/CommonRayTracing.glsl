@@ -1,3 +1,6 @@
+#define GOLDEN_RATIO 1.618033988749894
+#define PI 3.14159265359
+
 // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
 uint hash( uint x ) {
 	x += ( x << 10u );
@@ -34,9 +37,28 @@ float stepAndOutputRNGFloat(inout uint rngState)
 	return float(word) / 4294967295.0f;
 }
 
-vec3 SampleDirectionalLight(GPULight Light, vec3 origin, vec3 normal)
+// Random in range [0-1]
+vec3 SampleConeRay(vec3 Direction, float BaseRadius, vec2 Random)
+{
+	// generate points in circle
+	float theta = Random.x * 2 * PI;
+	float radius = Random.y * 0.5 * BaseRadius;
+	vec2 circle = vec2(cos(theta) * radius, sin(theta) * radius);
+
+	// generate cone basis
+	// TODO: verify handinness
+	vec3 up = Direction.y < 0.999 ? vec3(0, 1, 0) : vec3(0, 0, 1);
+	vec3 right = normalize(cross(up, Direction));
+	vec3 forward = normalize(cross(right, up));
+
+	// use basis to transform points
+	return Direction + circle.x * right + circle.y * forward;
+}
+
+vec3 SampleDirectionalLight(GPULight Light, vec3 origin, vec3 normal, inout uint rngState)
 {
 	vec3 direction = normalize(Light.Direction.xyz);
+	direction = SampleConeRay(direction, Light.SourceRadius, vec2(stepAndOutputRNGFloat(rngState), stepAndOutputRNGFloat(rngState)));
 
 	// sample shadow
 	traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
@@ -53,10 +75,14 @@ vec3 SampleDirectionalLight(GPULight Light, vec3 origin, vec3 normal)
 	}
 }
 
-vec3 SamplePointLight(GPULight Light, vec3 origin, vec3 normal)
+vec3 SamplePointLight(GPULight Light, vec3 origin, vec3 normal, inout uint rngState)
 {
 	vec3 direction = normalize(Light.Position.xyz - origin);
 	float dist = distance(Light.Position.xyz, origin);
+
+	float normalisedConeBase = Light.SourceRadius / dist;
+	direction = SampleConeRay(direction, normalisedConeBase, vec2(stepAndOutputRNGFloat(rngState), stepAndOutputRNGFloat(rngState)));
+
 	// float attenuation = 1.0 / (1.0 + dist);
 	float attenuation = clamp(1.0 - dist * dist / (Light.Range * Light.Range), 0.0, 1.0);
 	attenuation *= attenuation;
@@ -100,7 +126,7 @@ vec3 RandomDirectionSphere(inout uint rngState)
 }
 
 // TODO
-vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface)
+vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface, inout uint rngState)
 {
 	// TODO
 	traceRayEXT(acc, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, origin, 0, direction, 5000, 0);
@@ -123,10 +149,10 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 			switch (Light.Type)
 			{
 			case GPULIGHT_DIRECTIONAL:
-				AccumulatedLight += SampleDirectionalLight(Light, origin, normal);
+				AccumulatedLight += SampleDirectionalLight(Light, origin, normal, rngState);
 				break;
 			case GPULIGHT_POINT:
-				AccumulatedLight += SamplePointLight(Light, origin, normal);
+				AccumulatedLight += SamplePointLight(Light, origin, normal, rngState);
 				break;
 			}
 		}
@@ -146,7 +172,7 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 	int HitSurface = 0;
 	vec3 SurfaceColor = vec3(0);
 	vec3 Normal = vec3(0);
-	vec3 Color = calculateLight(Origin, Direction, Normal, SurfaceColor, HitSurface);
+	vec3 Color = calculateLight(Origin, Direction, Normal, SurfaceColor, HitSurface, RngState);
 
 	vec3 BounceColor = vec3(0);
 	for (int i = 0; i < MaxBounces; i++)
@@ -154,7 +180,7 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 		vec3 BounceSurfaceColor = vec3(0);
 		Direction = RandomDirectionHemisphere(RngState, Normal);
 
-		BounceColor += calculateLight(Origin, Direction, Normal, BounceSurfaceColor, HitSurface);
+		BounceColor += calculateLight(Origin, Direction, Normal, BounceSurfaceColor, HitSurface, RngState);
 		if (HitSurface == 0) break;
 	}
 

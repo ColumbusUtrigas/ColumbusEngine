@@ -1,6 +1,7 @@
 #include "Core/CVar.h"
 #include "Core/Util.h"
 #include "Graphics/Core/Types.h"
+#include "Graphics/IrradianceVolume.h"
 #include "Graphics/RenderGraph.h"
 #include "RenderPasses.h"
 #include <algorithm>
@@ -12,6 +13,7 @@
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 
 ConsoleVariable<bool> CVar_DebugOverlay("r.DebugOverlay", "Enable using debug overlay", true);
+ConsoleVariable<bool> CVar_DebugOverlayIrradiance("r.DebugOverlay.Irradiance", "Enable irradiance volume visualisation", true);
 
 namespace Columbus
 {
@@ -75,6 +77,17 @@ namespace Columbus
 		Vector4 Colour;
 	};
 
+	struct DebugIrradianceProbesParameters
+	{
+		Matrix View, Projection;
+
+		Vector4 Position;
+		Vector4 Extent;
+		iVector4 ProbesCount;
+		iVector4 ProbeIndex;
+		Vector4 TestPoint;
+	};
+
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture)
 	{
 		if (!CVar_DebugOverlay.GetValue())
@@ -92,25 +105,43 @@ namespace Columbus
 		{
 			// TODO: normal shader system please
 			static GraphicsPipeline* Pipeline = nullptr;
+			static GraphicsPipeline* IrradianceVolumePipeline = nullptr;
 			if (Pipeline == nullptr)
 			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "Debug";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc {
-						.BlendEnable = true,
-						.SrcBlend = Blend::SrcAlpha,
-						.DestBlend = Blend::InvSrcAlpha,
-					},
-				};
-				// Desc.rasterizerState.Fill = FillMode::Wireframe;
+				{
+					GraphicsPipelineDesc Desc;
+					Desc.Name = "Debug";
+					Desc.rasterizerState.Cull = CullMode::No;
+					Desc.blendState.RenderTargets = {
+						RenderTargetBlendDesc {
+							.BlendEnable = true,
+							.SrcBlend = Blend::SrcAlpha,
+							.DestBlend = Blend::InvSrcAlpha,
+						},
+					};
+					// Desc.rasterizerState.Fill = FillMode::Wireframe;
 
-				Desc.depthStencilState.DepthEnable = true; // TODO: use flag, so generate two permutations
-				Desc.depthStencilState.DepthWriteMask = false;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Debug.csd");
+					Desc.depthStencilState.DepthEnable = true; // TODO: use flag, so generate two permutations
+					Desc.depthStencilState.DepthWriteMask = false;
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Debug.csd");
 
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+					Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+				}
+
+				{
+					GraphicsPipelineDesc Desc;
+					Desc.Name = "IrradianceProbesVisualise";
+					Desc.rasterizerState.Cull = CullMode::No;
+					Desc.blendState.RenderTargets = {
+						RenderTargetBlendDesc {},
+					};
+
+					Desc.depthStencilState.DepthEnable = true;
+					Desc.depthStencilState.DepthWriteMask = true;
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceProbesVisualise.csd");
+
+					IrradianceVolumePipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+				}
 			}
 
 			for (DebugRenderObject& Object : View.DebugRender->Objects)
@@ -126,6 +157,44 @@ namespace Columbus
 				Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
 				Context.CommandBuffer->Draw(36, 1, 0, 0);
+			}
+
+			if (CVar_DebugOverlayIrradiance.GetValue())
+			{
+				for (IrradianceVolume& Volume : Context.Scene->IrradianceVolumes)
+				{
+					Context.CommandBuffer->BindGraphicsPipeline(IrradianceVolumePipeline);
+					Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
+					Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
+
+					DebugIrradianceProbesParameters Parameters {
+						.View = View.CameraCur.GetViewMatrix(),
+						.Projection = View.CameraCur.GetProjectionMatrix(),
+						.Position = Vector4(Volume.Position, 0),
+						.Extent = Vector4(Volume.Extent, 0),
+						.ProbesCount = iVector4(Volume.ProbesCount, 0),
+						.ProbeIndex = iVector4(0, 0, 0, 0),
+						.TestPoint = Vector4(Volume.TestPoint, 0),
+					};
+
+					auto Set = Context.GetDescriptorSet(IrradianceVolumePipeline, 0);
+					Context.Device->UpdateDescriptorSet(Set, 0, 0, Volume.ProbesBuffer);
+
+					Context.CommandBuffer->BindDescriptorSetsGraphics(IrradianceVolumePipeline, 0, 1, &Set);
+					Context.CommandBuffer->PushConstantsGraphics(IrradianceVolumePipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(6 * (Volume.GetTotalProbes()+4), 1, 0, 0);
+
+					for (int i = 0; i < Volume.ProbesCount.X; i++)
+					{
+						for (int j = 0; j < Volume.ProbesCount.Y; j++)
+						{
+							for (int k = 0; k < Volume.ProbesCount.Z; k++)
+							{
+								
+							}
+						}
+					}
+				}
 			}
 		});
 	}

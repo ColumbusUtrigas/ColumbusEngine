@@ -112,6 +112,8 @@ namespace Columbus
 	//
 	void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View);
 
+	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume);
+
 	// **********************************
 	// Path-Tracing
 	//

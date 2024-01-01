@@ -94,6 +94,7 @@ public:
 	iVector2 Size{1280, 720};
 };
 
+
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTextures);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneBLAS);
@@ -380,7 +381,10 @@ ConsoleVariable<bool> test_flag("test.flag", "Description", true);
 ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 1", 0);
 
 DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
+DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
+
 IMPLEMENT_CPU_PROFILING_COUNTER("Total CPU", "CPU", Counter_TotalCPU);
+IMPLEMENT_CPU_PROFILING_COUNTER("RG Add", "RenderGraph", CpuCounter_RenderGraphCreate);
 
 void InitializeImgui(WindowVulkan& Window, SPtr<DeviceVulkan> Device)
 {
@@ -501,14 +505,14 @@ void NewFrameImgui(WindowVulkan& Window)
 //			- PBR atmosphere rendering
 //			- filmic camera
 //			- filmic HDR tonemapper
-//			- render image export (!!!)
-//			- decals
+//			- render image export from every stage of a graph (!!!)
+//			+ decals
 //			- subsurface scattering
 //			- IES light profiles
 //			+ shader include files
 //			+ fix descriptor set duplication
 //			- HLSL2021 instead of GLSL
-//			- make DebugRender work
+//			+ make DebugRender work
 //			- shader caching system
 //
 // Another high-level view of rendering system
@@ -568,9 +572,11 @@ int main()
 
 	// TODO: DDGI, that's a CPU-side representation, needs to be updated during GPUScene update stage and then used in a rendergraph
 	IrradianceVolume Volume;
-	Volume.Position = { 1000, 50, -250 };
+	Volume.Position = { 0, 0, 0 };
 	Volume.ProbesCount = { 5, 4, 5 };
-	Volume.Extent = { 250, 320, 500 };
+	Volume.Extent = { 10, 5, 10 };
+	scene->IrradianceVolumes.push_back(Volume);
+	bool ComputeIrradianceVolume = false;
 
 	DebugRender debugRender;
 
@@ -685,6 +691,28 @@ int main()
 				}
 			}
 
+			// irradiance volume
+			{
+				if (ImGui::Begin("Irradiance Volume"))
+				{
+					ImGui::SliderFloat3("Position", (float*)&scene->IrradianceVolumes[0].Position, -10, 10);
+					ImGui::SliderFloat3("Extent", (float*)&scene->IrradianceVolumes[0].Extent, -10, 10);
+					ImGui::SliderInt3("Count", (int*)&scene->IrradianceVolumes[0].ProbesCount, 2, 8);
+					ImGui::SliderFloat3("TestPoint", (float*)&scene->IrradianceVolumes[0].TestPoint, -5, 5);
+
+					if (ImGui::Button("Compute"))
+					{
+						ComputeIrradianceVolume = true;
+					}
+
+					Matrix Transform;
+					Transform.Scale(scene->IrradianceVolumes[0].Extent);
+					Transform.Translate(scene->IrradianceVolumes[0].Position);
+					debugRender.AddBox(Transform, Vector4(1, 1, 1, 0.1f));
+				}
+				ImGui::End();
+			}
+
 			// TODO: move to appropriate place
 			// TODO: object properties editor
 			// decal editor
@@ -772,22 +800,32 @@ int main()
 
 		renderGraph.Clear();
 
-		UploadGPUSceneRG(renderGraph);
-
-		if (render_cvar.GetValue() == 0)
 		{
-			if (BakingDataValid)
+			PROFILE_CPU(CpuCounter_RenderGraphCreate);
+
+			UploadGPUSceneRG(renderGraph);
+
+			if (render_cvar.GetValue() == 0)
 			{
-				// TODO: generate UV2 for lightmaps
-				PrepareMeshForLightmapBaking(renderGraph, View, BakingData);
-				BakeLightmapPathTraced(renderGraph, BakingData);
-			}
+				if (BakingDataValid)
+				{
+					// TODO: generate UV2 for lightmaps
+					PrepareMeshForLightmapBaking(renderGraph, View, BakingData);
+					BakeLightmapPathTraced(renderGraph, BakingData);
+				}
 
-			RenderDeferred(renderGraph, View, DeferredContext);
-		}
-		else
-		{
-			RenderPathTraced(renderGraph, View);
+				if (scene->IrradianceVolumes[0].ProbesBuffer == nullptr || ComputeIrradianceVolume)
+				{
+					RenderIrradianceProbes(renderGraph, View, scene->IrradianceVolumes[0]);
+					ComputeIrradianceVolume = false;
+				}
+
+				RenderDeferred(renderGraph, View, DeferredContext);
+			}
+			else
+			{
+				RenderPathTraced(renderGraph, View);
+			}
 		}
 
 		renderGraph.Execute(Window.Swapchain); // TODO: move swapchain handling out of rendergraph

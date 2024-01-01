@@ -35,6 +35,7 @@ struct RayPayload {
 		// return vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
 	}
 
+	// TODO: move to common library
 	// Random in range [0-1]
 	vec3 SampleConeRay(vec3 Direction, float BaseRadius, vec2 Random)
 	{
@@ -66,6 +67,7 @@ struct RayPayload {
 		GPULight Light = GPUSceneLights.Lights[Params.LightId];
 		vec3 LightDirection = normalize(Light.Direction.xyz);
 		float MaxDistance = 5000;
+		float LightRadius = Light.SourceRadius;
 
 		switch (Light.Type)
 		{
@@ -73,6 +75,7 @@ struct RayPayload {
 			case GPULIGHT_POINT:
 				LightDirection = normalize(Light.Position.xyz - origin);
 				MaxDistance = distance(Light.Position.xyz, origin);
+				LightRadius = Light.SourceRadius / MaxDistance;
 
 				if (MaxDistance > Light.Range)
 				{
@@ -84,7 +87,7 @@ struct RayPayload {
 			default: break; // TODO: other light types
 		}
 
-		vec3 direction = SampleConeRay(LightDirection, Light.SourceRadius, vec2(rand(uv + Params.Random), rand(uv + Params.Random)));
+		vec3 direction = SampleConeRay(LightDirection, LightRadius, vec2(rand(uv.xy + Params.Random), rand(uv.yx + Params.Random)));
 		direction = normalize(direction);
 
 		traceRayEXT(AccelerationStructure, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
