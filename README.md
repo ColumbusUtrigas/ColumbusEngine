@@ -4,6 +4,9 @@
 * RenderGraph based renderer
 * Reference GPU path tracer
 * Real-time deferred renderer
+* Deferred decals
+* Ray-traced shadows with variable-sized penumbra
+* Static GI: lightmaps, irradiance volumes
 * ACES image formation (TODO: AgX, Flim)
 
 ## Supports:

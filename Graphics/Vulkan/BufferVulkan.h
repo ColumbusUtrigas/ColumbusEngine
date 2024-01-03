@@ -22,6 +22,11 @@ namespace Columbus
 		{
 			Size = ByteSize;
 		}
+
+		void SetDeviceAddress(u64 Address)
+		{
+			DeviceAddress = Address;
+		}
 	};
 
 }

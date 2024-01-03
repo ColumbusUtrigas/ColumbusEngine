@@ -1,3 +1,6 @@
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_nonuniform_qualifier : require
+
 struct GPULight
 {
 	vec4 Position;
@@ -9,16 +12,40 @@ struct GPULight
 	uint _pad; // 64
 };
 
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer VertexBufferPtr {
+	float vertices[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer IndexBufferPtr {
+	uint indices[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer UvsBufferPtr {
+	vec2 uvs[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer NormalsBufferPtr {
+	float normals[];
+};
+
 struct GPUSceneMeshCompact
 {
-	mat4 Transform;
+	mat4 Transform; // 64
 
-	uint VertexCount;
-	uint IndexCount;
+	VertexBufferPtr  VertexBuffer; // 72
+	IndexBufferPtr   IndexBuffer;  // 80
+	UvsBufferPtr     Uv1Buffer;    // 88
+	UvsBufferPtr     Uv2Buffer;    // 96
+	NormalsBufferPtr NormalsBuffer; // 104
+
+	uint VertexCount; // 108
+	uint IndexCount;  // 112
 
 	// int MaterialId; // TODO:
-	int TextureId;
-	int LightmapId;
+	int TextureId;  // 116
+	int LightmapId; // 120
+
+	int _pad[2]; // 128
 };
 
 // TODO:
@@ -30,27 +57,10 @@ struct GPUSceneMeshCompact
 #define GPULIGHT_RECTANGLE 3
 #define GPULIGHT_SPHERE 4
 
-// TODO: pack data more efficiently, it uses too many descriptor sets
+#define GPUSCENE_TEXTURES_SET 0
+#define GPUSCENE_SCENE_SET 1
 
-layout(binding = 0, set = 0) readonly buffer VertexBuffer {
-	float vertices[];
-} VertexBuffers[1000];
-
-layout(binding = 0, set = 1) readonly buffer IndexBuffer {
-	uint indices[];
-} IndexBuffers[1000];
-
-layout(binding = 0, set = 2) readonly buffer UvsBuffer {
-	vec2 uvs[];
-} UvsBuffers[1000];
-
-layout(binding = 0, set = 3) readonly buffer NormalsBuffer {
-	float normals[];
-} NormalsBuffers[1000];
-
-layout(binding = 0, set = 4) uniform sampler2D Textures[1000];
-
-#define GPUSCENE_SCENE_SET 5
+layout(binding = 0, set = GPUSCENE_TEXTURES_SET) uniform sampler2D Textures[1000];
 
 layout(binding = 0, set = GPUSCENE_SCENE_SET) readonly buffer GPUSceneBuffer {
 	uint MeshesCount;
@@ -59,8 +69,6 @@ layout(binding = 0, set = GPUSCENE_SCENE_SET) readonly buffer GPUSceneBuffer {
 	uint DecalsCount;
 } GPUSceneScene;
 
-// TODO: decals
-
 layout(binding = 1, set = GPUSCENE_SCENE_SET) readonly buffer LightsBuffer {
 	GPULight Lights[];
 } GPUSceneLights;
@@ -68,8 +76,6 @@ layout(binding = 1, set = GPUSCENE_SCENE_SET) readonly buffer LightsBuffer {
 layout(binding = 2, set = GPUSCENE_SCENE_SET) readonly buffer MeshesBuffer {
 	GPUSceneMeshCompact Meshes[];
 } GPUSceneMeshes;
-
-#define NORMALBUF NormalsBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT)].normals
 
 uint GPUScene_GetMeshesCount()
 {
@@ -101,36 +107,36 @@ struct GPUScene_Vertex
 
 uint GPUScene_FetchIndex(uint ObjectId, uint Index)
 {
-	return IndexBuffers[ObjectId].indices[Index];
+	return GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].IndexBuffer.indices[nonuniformEXT(Index)];
 }
 
 vec3 GPUScene_FetchVertexPosition(uint ObjectId, uint Index)
 {
 	vec3 vertex = vec3(0);
-	vertex.x = VertexBuffers[ObjectId].vertices[Index * 3 + 0];
-	vertex.y = VertexBuffers[ObjectId].vertices[Index * 3 + 1];
-	vertex.z = VertexBuffers[ObjectId].vertices[Index * 3 + 2];
+	vertex.x = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].VertexBuffer.vertices[nonuniformEXT(Index * 3 + 0)];
+	vertex.y = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].VertexBuffer.vertices[nonuniformEXT(Index * 3 + 1)];
+	vertex.z = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].VertexBuffer.vertices[nonuniformEXT(Index * 3 + 2)];
 	return vertex;
 }
 
 vec3 GPUScene_FetchVertexNormal(uint ObjectId, uint Index)
 {
 	vec3 normal = vec3(0);
-	normal.x = NormalsBuffers[ObjectId].normals[Index * 3 + 0];
-	normal.y = NormalsBuffers[ObjectId].normals[Index * 3 + 1];
-	normal.z = NormalsBuffers[ObjectId].normals[Index * 3 + 2];
+	normal.x = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].NormalsBuffer.normals[nonuniformEXT(Index * 3 + 0)];
+	normal.y = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].NormalsBuffer.normals[nonuniformEXT(Index * 3 + 1)];
+	normal.z = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].NormalsBuffer.normals[nonuniformEXT(Index * 3 + 2)];
 	return normal;
 }
 
 vec2 GPUScene_FetchVertexUV(uint ObjectId, uint Index)
 {
-	return UvsBuffers[ObjectId].uvs[Index];
+	return GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].Uv1Buffer.uvs[nonuniformEXT(Index)];
 }
 
 uint GPUScene_FetchVertexMaterial(uint ObjectId, uint Index)
 {
 	// TODO: per-vertex materials
-	return GPUSceneMeshes.Meshes[ObjectId].TextureId;
+	return GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].TextureId;
 }
 
 GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)

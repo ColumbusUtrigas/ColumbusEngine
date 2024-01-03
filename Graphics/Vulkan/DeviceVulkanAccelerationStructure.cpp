@@ -1,6 +1,11 @@
 #include "DeviceVulkan.h"
+#include "Counters.h"
 #include "AccelerationStructureVulkan.h"
-#include <vulkan/vulkan_core.h>
+#include "Graphics/Core/AccelerationStructure.h"
+#include "Profiling/Profiling.h"
+
+IMPLEMENT_COUNTING_PROFILING_COUNTER("BLAS count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_BLASes, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("TLAS count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_TLASes, false);
 
 namespace Columbus
 {
@@ -92,12 +97,16 @@ namespace Columbus
 			accelerationStructureGeometry.geometry.triangles = PrepareTrianglesBLAS(Desc, this, TransformOrInstancesBuffer);
 			type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 			numPrimitives = Desc.IndicesCount / 3;
+
+			AddProfilingCount(CountingCounter_Vulkan_BLASes, 1);
 		} else
 		{
 			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
 			accelerationStructureGeometry.geometry.instances = PrepareInstancesTLAS(Desc, this, TransformOrInstancesBuffer);
 			type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 			numPrimitives = Desc.Instances.size();
+
+			AddProfilingCount(CountingCounter_Vulkan_TLASes, 1);
 		}
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{};
@@ -164,6 +173,14 @@ namespace Columbus
 	{
 		auto vkas = static_cast<AccelerationStructureVulkan*>(AS);
 		COLUMBUS_ASSERT(vkas);
+
+		if (AS->GetDesc().Type == AccelerationStructureType::BLAS)
+		{
+			RemoveProfilingCount(CountingCounter_Vulkan_BLASes, 1);
+		} else
+		{
+			RemoveProfilingCount(CountingCounter_Vulkan_TLASes, 1);
+		}
 
 		DestroyBuffer(vkas->_Buffer);
 		VkFunctions.vkDestroyAccelerationStructure(_Device, vkas->_Handle, nullptr);

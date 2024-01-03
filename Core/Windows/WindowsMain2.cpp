@@ -362,6 +362,11 @@ void UploadGPUSceneRG(RenderGraph& Graph)
 				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
 				GPUSceneMeshCompact Compact {
 					.Transform = Mesh.Transform,
+					.VertexBufferAddress = Mesh.Vertices->GetDeviceAddress(),
+					.IndexBufferAddress = Mesh.Indices->GetDeviceAddress(),
+					.Uv1BufferAddress = Mesh.UVs->GetDeviceAddress(),
+					.Uv2BufferAddress = 0, // TODO:
+					.NormalsBufferAddress = Mesh.Normals->GetDeviceAddress(),
 					.VertexCount = Mesh.VertexCount,
 					.IndexCount = Mesh.IndicesCount,
 					.TextureId = Mesh.TextureId,

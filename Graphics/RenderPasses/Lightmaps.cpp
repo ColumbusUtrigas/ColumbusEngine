@@ -149,7 +149,7 @@ namespace Columbus
 
 			Context.CommandBuffer->TransitionImageLayout(Data.Lightmap, VK_IMAGE_LAYOUT_GENERAL);
 
-			auto Set = Context.GetDescriptorSet(Pipeline, 6);
+			auto Set = Context.GetDescriptorSet(Pipeline, 2);
 			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Data.WP).get());
 			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Data.Normal).get());
@@ -165,7 +165,7 @@ namespace Columbus
 			};
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &Set);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &Set);
 			Context.BindGPUScene(Pipeline);
 
 			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);

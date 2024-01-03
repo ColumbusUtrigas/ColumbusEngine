@@ -19,8 +19,7 @@ namespace Columbus
 
 		VulkanFunctions& _Functions;
 	public:
-		CommandBufferVulkan(VkDevice Device, VkCommandPool Pool, VkCommandBuffer CmdBuf, VulkanFunctions& Functions) :
-			_Device(Device), _Pool(Pool), _CmdBuf(CmdBuf), _Functions(Functions) {}
+		CommandBufferVulkan(VkDevice Device, VkCommandPool Pool, VkCommandBuffer CmdBuf, VulkanFunctions& Functions);
 
 		void Reset();
 		void Begin();

@@ -56,7 +56,7 @@ namespace Columbus
 					PTPipeline = Context.Device->CreateRayTracingPipeline(Desc);
 				}
 
-				auto RTSet = Context.GetDescriptorSet(PTPipeline, 6);
+				auto RTSet = Context.GetDescriptorSet(PTPipeline, 2);
 				Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 				Context.Device->UpdateDescriptorSet(RTSet, 1, 0, Context.GetRenderGraphTexture(RTImage).get());
 
@@ -76,7 +76,7 @@ namespace Columbus
 				};
 
 				Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 6, 1, &RTSet);
+				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 2, 1, &RTSet);
 				Context.BindGPUScene(PTPipeline);
 
 				Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);

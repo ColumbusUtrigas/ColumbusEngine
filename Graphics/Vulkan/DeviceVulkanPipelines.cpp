@@ -1,9 +1,14 @@
 #include "Core/Core.h"
 #include "DeviceVulkan.h"
 #include "PipelinesVulkan.h"
+#include "Counters.h"
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
+
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Pipelines count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Pipelines, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Pipelines (Compute) count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_PipelinesCompute, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Pipelines (Graphics) count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_PipelinesGraphics, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Pipelines (Ray Tracing) count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_PipelinesRayTracing, false);
 
 namespace Columbus
 {
@@ -57,6 +62,9 @@ namespace Columbus
 		{
 			SetDebugName(result, Desc.Name.c_str());
 		}
+
+		AddProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
+		AddProfilingCount(CountingCounter_Vulkan_PipelinesCompute, 1);
 
 		return result;
 	}
@@ -264,6 +272,9 @@ namespace Columbus
 			SetDebugName(pipeline, Desc.Name.c_str());
 		}
 
+		AddProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
+		AddProfilingCount(CountingCounter_Vulkan_PipelinesGraphics, 1);
+
 		return pipeline;
 	}
 
@@ -378,6 +389,9 @@ namespace Columbus
 		{
 			SetDebugName(Pipeline, Desc.Name.c_str());
 		}
+
+		AddProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
+		AddProfilingCount(CountingCounter_Vulkan_PipelinesRayTracing, 1);
 
 		return Pipeline;
 	}

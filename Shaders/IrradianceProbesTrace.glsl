@@ -11,11 +11,10 @@ struct RayPayload {
 	layout(location = 0) rayPayloadEXT RayPayload payload;
 	layout(location = 1) rayPayloadEXT RayPayload shadowPayload;
 
-	#define IRRADIANCE_PROBES_SET 7
+	#define IRRADIANCE_PROBES_SET 3
 	#include "IrradianceProbeCommon.glsl"
 
-	layout(binding = 0, set = 6) uniform accelerationStructureEXT acc;
-	// IRRADIANCE_PROBES_BUFFER(8) // set 8
+	layout(binding = 0, set = 2) uniform accelerationStructureEXT acc;
 
 	#include "GPUScene.glsl"
 	#include "CommonRayTracing.glsl"

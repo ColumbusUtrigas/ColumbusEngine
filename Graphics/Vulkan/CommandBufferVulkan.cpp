@@ -1,5 +1,6 @@
 #include "CommandBufferVulkan.h"
 #include "Common.h"
+#include "Counters.h"
 #include "BufferVulkan.h"
 #include "TextureVulkan.h"
 #include "PipelinesVulkan.h"
@@ -7,10 +8,17 @@
 #include "TypeConversions.h"
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
+
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Command buffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_CommandBuffers, false);
 
 namespace Columbus
 {
+
+	CommandBufferVulkan::CommandBufferVulkan(VkDevice Device, VkCommandPool Pool, VkCommandBuffer CmdBuf, VulkanFunctions& Functions) :
+			_Device(Device), _Pool(Pool), _CmdBuf(CmdBuf), _Functions(Functions)
+	{
+		AddProfilingCount(CountingCounter_Vulkan_CommandBuffers, 1);
+	}
 
 	void CommandBufferVulkan::Reset()
 	{
@@ -287,6 +295,7 @@ namespace Columbus
 
 	CommandBufferVulkan::~CommandBufferVulkan()
 	{
+		RemoveProfilingCount(CountingCounter_Vulkan_CommandBuffers, 1);
 		vkFreeCommandBuffers(_Device, _Pool, 1, &_CmdBuf);
 	}
 

@@ -10,6 +10,7 @@
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
 
+#include "Counters.h"
 #include "PipelinesVulkan.h"
 #include "BufferVulkan.h"
 #include "TextureVulkan.h"
@@ -23,6 +24,18 @@
 
 #define VMA_IMPLEMENTATION
 #include <Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h>
+
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Buffers", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, MemoryCounter_Vulkan_AllocatedBuffers);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Host-visible buffers", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, MemoryCounter_Vulkan_AllocatedHostVisibleBuffers);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Images", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, MemoryCounter_Vulkan_AllocatedImages);
+
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Buffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Buffers, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Images count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Images, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Pipeline layouts count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_PipelineLayouts, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Descriptor sets count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_DescriptorSets, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Render passes count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_RenderPasses, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("Framebuffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Framebuffers, false);
+
 
 namespace Columbus
 {
@@ -116,6 +129,8 @@ namespace Columbus
 
 		VK_CHECK(vkCreateRenderPass(_Device, &renderPassInfo, nullptr, &renderPass));
 
+		AddProfilingCount(CountingCounter_Vulkan_RenderPasses, 1);
+
 		return renderPass;
 	}
 
@@ -139,6 +154,8 @@ namespace Columbus
 		VkFramebuffer Result;
 
 		VK_CHECK(vkCreateFramebuffer(_Device, &framebufferInfo, nullptr, &Result));
+
+		AddProfilingCount(CountingCounter_Vulkan_Framebuffers, 1);
 
 		return Result;
 	}
@@ -390,6 +407,23 @@ namespace Columbus
 
 		result->SetSize(allocationInfo.size);
 
+		if (!Desc.HostVisible)
+		{
+			VkBufferDeviceAddressInfo Info;
+			Info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+			Info.pNext = nullptr;
+			Info.buffer = result->_Buffer;
+			VkDeviceAddress Address = vkGetBufferDeviceAddress(_Device, &Info);
+			result->SetDeviceAddress((u64)Address);
+		}
+
+		AddProfilingMemory(MemoryCounter_Vulkan_AllocatedBuffers, allocationInfo.size);
+		if (Desc.HostVisible)
+		{
+			AddProfilingMemory(MemoryCounter_Vulkan_AllocatedHostVisibleBuffers, allocationInfo.size);
+		}
+		AddProfilingCount(CountingCounter_Vulkan_Buffers, 1);
+
 		if (InitialData != nullptr)
 		{
 			if (Desc.HostVisible)
@@ -418,6 +452,13 @@ namespace Columbus
 	{
 		auto vkbuf = static_cast<BufferVulkan*>(Buf);
 		COLUMBUS_ASSERT(vkbuf);
+
+		RemoveProfilingMemory(MemoryCounter_Vulkan_AllocatedBuffers, Buf->GetSize());
+		if (Buf->GetDesc().HostVisible)
+		{
+			RemoveProfilingMemory(MemoryCounter_Vulkan_AllocatedHostVisibleBuffers, Buf->GetSize());
+		}
+		RemoveProfilingCount(CountingCounter_Vulkan_Buffers, 1);
 
 		vmaDestroyBuffer(_Allocator, vkbuf->_Buffer, vkbuf->_Allocation);
 	}
@@ -595,6 +636,9 @@ namespace Columbus
 		auto vktex = static_cast<TextureVulkan*>(Tex);
 		COLUMBUS_ASSERT(vktex);
 
+		RemoveProfilingMemory(MemoryCounter_Vulkan_AllocatedImages, Tex->GetSize());
+		RemoveProfilingCount(CountingCounter_Vulkan_Images, 1);
+
 		vkDestroySampler(_Device, vktex->_Sampler, nullptr);
 		vkDestroyImageView(_Device, vktex->_View, nullptr);
 		if (vktex->_DepthView != NULL) vkDestroyImageView(_Device, vktex->_DepthView, nullptr);
@@ -710,6 +754,8 @@ namespace Columbus
 
 			OutSetLayouts.UsedLayouts++;
 			VK_CHECK(vkCreateDescriptorSetLayout(_Device, &setLayoutInfo, nullptr, &OutSetLayouts.Layouts[i]));
+
+			AddProfilingCount(CountingCounter_Vulkan_PipelineLayouts, 1);
 		}
 
 		VkPipelineLayoutCreateInfo layoutInfo;
@@ -749,6 +795,8 @@ namespace Columbus
 		}
 
 		VkDescriptorSet result;
+
+		AddProfilingCount(CountingCounter_Vulkan_DescriptorSets, 1);
 
 		VK_CHECK(vkAllocateDescriptorSets(_Device, &descriptorSetInfo, &result));
 
@@ -796,6 +844,9 @@ namespace Columbus
 		VmaAllocationInfo allocationInfo;
 		vmaGetAllocationInfo(_Allocator, result->_Allocation, &allocationInfo);
 		result->SetSize(allocationInfo.size);
+
+		AddProfilingMemory(MemoryCounter_Vulkan_AllocatedImages, allocationInfo.size);
+		AddProfilingCount(CountingCounter_Vulkan_Images, 1);
 
 		result->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 

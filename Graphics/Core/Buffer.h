@@ -75,6 +75,7 @@ namespace Columbus
 	protected:
 		BufferDesc Desc;
 		u64 Size = 0;
+		u64 DeviceAddress = 0;
 
 		Buffer(const BufferDesc& Desc) : Desc(Desc) {}
 	public:
@@ -82,6 +83,7 @@ namespace Columbus
 		virtual void* GetHandle() = 0;
 
 		u64 GetSize() const { return Size; }
+		u64 GetDeviceAddress() const { return DeviceAddress; }
 	};
 
 }

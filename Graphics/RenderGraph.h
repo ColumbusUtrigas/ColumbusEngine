@@ -65,10 +65,6 @@ namespace Columbus
 		// TODO: move to GPUScene
 		struct
 		{
-			VkDescriptorSetLayout VerticesLayout;
-			VkDescriptorSetLayout IndicesLayout;
-			VkDescriptorSetLayout UVLayout;
-			VkDescriptorSetLayout NormalLayout;
 			VkDescriptorSetLayout TextureLayout;
 			VkDescriptorSetLayout SceneLayout;
 		} GPUSceneLayout;
@@ -76,10 +72,6 @@ namespace Columbus
 		// TODO: move to GPUScene
 		struct
 		{
-			VkDescriptorSet VerticesSet;
-			VkDescriptorSet IndicesSet;
-			VkDescriptorSet UVSet;
-			VkDescriptorSet NormalSet;
 			VkDescriptorSet TextureSet;
 			VkDescriptorSet SceneSet;
 		} GPUSceneData;

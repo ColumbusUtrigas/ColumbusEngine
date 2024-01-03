@@ -82,6 +82,16 @@ namespace Columbus
 		AddCategoryToCategoriesList<ProfileCounterGPU>(Category);
 	}
 
+	ProfileCounterCounting::ProfileCounterCounting(const char* Text, const char* Category, const bool ResetEveryFrame)
+		: Text(Text), Category(Category), ResetEveryFrame(ResetEveryFrame)
+	{
+		Count = 0;
+		Id = (int)GetCounterList<ProfileCounterCounting>().size();
+		GetCounterList<ProfileCounterCounting>().push_back(this);
+		GetCategoryList<ProfileCounterCounting>(Category).push_back(this);
+		AddCategoryToCategoriesList<ProfileCounterCounting>(Category);
+	}
+
 	ProfileMarkerScopedCPU::ProfileMarkerScopedCPU(ProfileCounterCPU& Marker) : Marker(Marker)
 	{
 		Prof.Reset();
@@ -117,6 +127,14 @@ namespace Columbus
 			Counter->LastTime = Counter->Time;
 			Counter->Time = 0.0;
 		}
+
+		for (ProfileCounterCounting* Counter : GetCounterList<ProfileCounterCounting>())
+		{
+			if (Counter->ResetEveryFrame)
+			{
+				Counter->Count = 0;
+			}
+		}
 		// memset(CPU, 0, sizeof(CPU));
 		// memset(GPU, 0, sizeof(GPU));
 	}
@@ -134,6 +152,21 @@ namespace Columbus
 	void SetProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes)
 	{
 		Counter.Memory = Bytes;
+	}
+
+	void AddProfilingCount(ProfileCounterCounting& Counter, u64 Count)
+	{
+		Counter.Count += Count;
+	}
+
+	void RemoveProfilingCount(ProfileCounterCounting& Counter, u64 Count)
+	{
+		Counter.Count -= Count;
+	}
+
+	void SetProfilingCount(ProfileCounterCounting& Counter, u64 Count)
+	{
+		Counter.Count = Count;
 	}
 
 	double GetProfileTime(ProfileModule Module)
@@ -175,6 +208,16 @@ namespace Columbus
 	std::span<ProfileCounterGPU*> GetProfilerCategoryGPU(const char* Category)
 	{
 		return GetCategoryList<ProfileCounterGPU>(Category);
+	}
+
+	std::span<const char*> GetProfilerCategoryListCounting()
+	{
+		return GetCategoriesList<ProfileCounterCounting>();
+	}
+
+	std::span<ProfileCounterCounting*> GetProfilerCategoryCounting(const char* Category)
+	{
+		return GetCategoryList<ProfileCounterCounting>(Category);
 	}
 
 }

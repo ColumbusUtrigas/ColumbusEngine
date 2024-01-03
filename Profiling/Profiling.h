@@ -78,6 +78,19 @@ namespace Columbus
 		ProfileCounterGPU(const char* Text, const char* Category);
 	};
 
+	// to be used with a macro, should be statically initialised
+	struct ProfileCounterCounting
+	{
+		int Id;
+		u64 Count;
+
+		const char* Text;
+		const char* Category;
+		const bool ResetEveryFrame;
+
+		ProfileCounterCounting(const char* Text, const char* Category, const bool ResetEveryFrame);
+	};
+
 	struct ProfileMarkerScopedCPU
 	{
 		ProfileCounterCPU& Marker;
@@ -100,12 +113,19 @@ namespace Columbus
 	#define DECLARE_GPU_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterGPU counter;
 	#define IMPLEMENT_GPU_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterGPU counter (text, category);
 
+	#define DECLARE_COUNTING_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterCounting counter;
+	#define IMPLEMENT_COUNTING_PROFILING_COUNTER(text, category, counter, resetEveryFrame) Columbus::ProfileCounterCounting counter (text, category, resetEveryFrame);
+
 	#define PROFILE_CPU(counter) Columbus::ProfileMarkerScopedCPU MarkerCPU(counter);
 	// #define PROFILE_GPU(counter) // TODO: use ProfileMarkerScopedGPU
 
 	void AddProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 	void RemoveProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
 	void SetProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes);
+
+	void AddProfilingCount(ProfileCounterCounting& Counter, u64 Count);
+	void RemoveProfilingCount(ProfileCounterCounting& Counter, u64 Count);
+	void SetProfilingCount(ProfileCounterCounting& Counter, u64 Count);
 
 	// call it once per frame
  	void ResetProfiling();
@@ -122,6 +142,9 @@ namespace Columbus
 
 	std::span<const char*>        GetProfilerCategoryListGPU();
 	std::span<ProfileCounterGPU*> GetProfilerCategoryGPU(const char* Category);
+
+	std::span<const char*>             GetProfilerCategoryListCounting();
+	std::span<ProfileCounterCounting*> GetProfilerCategoryCounting(const char* Category);
 
 	// TODO: legacy
 	void ResetProfiling();	

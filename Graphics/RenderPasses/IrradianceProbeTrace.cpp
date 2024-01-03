@@ -64,15 +64,15 @@ namespace Columbus
 				Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
 			}
 
-			auto TlasSet = Context.GetDescriptorSet(Pipeline, 6);
-			auto ProbesSet = Context.GetDescriptorSet(Pipeline, 7);
+			auto TlasSet = Context.GetDescriptorSet(Pipeline, 2);
+			auto ProbesSet = Context.GetDescriptorSet(Pipeline, 3);
 
 			Context.Device->UpdateDescriptorSet(TlasSet, 0, 0, Context.Scene->TLAS);
 			Context.Device->UpdateDescriptorSet(ProbesSet, 0, 0, Volume.ProbesBuffer);
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 6, 1, &TlasSet);
-			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 7, 1, &ProbesSet);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &TlasSet);
+			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 3, 1, &ProbesSet);
 			Context.BindGPUScene(Pipeline);
 
 			IrradianceProbesTraceParameters Parameters {

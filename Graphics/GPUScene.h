@@ -60,13 +60,20 @@ namespace Columbus
 	{
 		Matrix Transform;
 
+		u64 VertexBufferAddress;
+		u64 IndexBufferAddress;
+		u64 Uv1BufferAddress;
+		u64 Uv2BufferAddress;
+		u64 NormalsBufferAddress;
+
 		u32 VertexCount;
 		u32 IndexCount;
 
 		// int MaterialId; // TODO:
 		int TextureId;
 		int LightmapId;
-		// 80 bytes
+		
+		int _pad[2]; // 128
 	};
 
 	struct GPULight

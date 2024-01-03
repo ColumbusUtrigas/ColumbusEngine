@@ -11,11 +11,11 @@ struct RayPayload {
 	layout(location = 0) rayPayloadEXT RayPayload payload;
 	layout(location = 1) rayPayloadEXT RayPayload shadowPayload;
 
-	layout(binding = 0, set = 6) uniform accelerationStructureEXT acc; // TODO
-	layout(binding = 1, set = 6) uniform sampler2D PositionsImage;
-	layout(binding = 2, set = 6) uniform sampler2D NormalsImage;
-	layout(binding = 3, set = 6) uniform sampler2D ValidityImage;
-	layout(binding = 4, set = 6, rgba32f) uniform image2D LightmapOutput;
+	layout(binding = 0, set = 2) uniform accelerationStructureEXT acc; // TODO
+	layout(binding = 1, set = 2) uniform sampler2D PositionsImage;
+	layout(binding = 2, set = 2) uniform sampler2D NormalsImage;
+	layout(binding = 3, set = 2) uniform sampler2D ValidityImage;
+	layout(binding = 4, set = 2, rgba32f) uniform image2D LightmapOutput;
 
 	#include "GPUScene.glsl"
 	#include "CommonRayTracing.glsl"
