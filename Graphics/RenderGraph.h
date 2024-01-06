@@ -27,6 +27,7 @@ DECLARE_CPU_PROFILING_COUNTER(Counter_RenderGraphExecute);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphTextures);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphBuffers);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphCPU);
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_RenderGraphAllocatorWaste);
 
 DECLARE_GPU_PROFILING_COUNTER(GpuCounter_RenderGraphFrame);
 
@@ -44,6 +45,86 @@ namespace Columbus
 	using RenderGraphBufferRef = int; // TODO: unify with Id
 	using RenderGraphBufferId = int;
 	using RenderGraphPassId = int;
+
+	static constexpr int RenderGraphMemoryPoolSize = 1024*1024;
+
+	// per-frame allocator of temporary resources, specifically for RenderGraph
+	// all pointers are valid only during frame graph build and execution
+	struct RenderGraphAllocator
+	{
+		const size_t PoolSize;
+		size_t CurrentOffset;
+		size_t AttemptsToDeallocate;
+		void* Memory;
+
+		RenderGraphAllocator(size_t PoolSize) : PoolSize(PoolSize)
+		{
+			Memory = malloc(PoolSize);
+			Clear();
+		}
+
+		void* Allocate(size_t Bytes)
+		{
+			COLUMBUS_ASSERT_MESSAGE((CurrentOffset + Bytes) <= PoolSize, "Ran out of RenderGraph pool memory");
+			void* Pointer = (char*)Memory + CurrentOffset;
+			CurrentOffset += Bytes;
+			return Pointer;
+		}
+
+		char* StrDup(const char* SrcStr)
+		{
+			size_t len = strlen(SrcStr);
+			char* str = (char*)Allocate(len+1);
+			memcpy(str, SrcStr, len+1);
+			return str;
+		}
+
+		void Free(void* Ptr)
+		{
+			// doesn't free
+		}
+
+		void Clear()
+		{
+			CurrentOffset = 0;
+			AttemptsToDeallocate = 0;
+		}
+
+		size_t GetTotalSize() const { return PoolSize; }
+		size_t GetTotalAllocated() const { return CurrentOffset; }
+
+		~RenderGraphAllocator()
+		{
+			free(Memory);
+		}
+	};
+
+	// a wrapper to use allocator with std containers
+	template <typename T>
+	struct RenderGraphAllocatorStd
+	{
+		using value_type = T;
+		using size_type = size_t;
+
+		RenderGraphAllocator& Allocator;
+
+		RenderGraphAllocatorStd(RenderGraphAllocator& Allocator) : Allocator(Allocator) {}
+		RenderGraphAllocatorStd(const RenderGraphAllocatorStd& A) : Allocator(A.Allocator) {}
+
+		T* allocate(size_t n) noexcept
+		{
+			return (T*)Allocator.Allocate(sizeof(T) * n);
+		}
+
+		void deallocate(T* p, size_t s) noexcept
+		{
+			Allocator.AttemptsToDeallocate += sizeof(T) * s;
+			return Allocator.Free(p);
+		}
+	};
+
+	template <typename T>
+	using RenderGraphDynamicArray = std::vector<T, RenderGraphAllocatorStd<T>>;
 
 	struct RenderGraphData
 	{
@@ -154,13 +235,13 @@ namespace Columbus
 
 		size_t AllocatedSize = 0;
 
-		std::string DebugName;
+		std::string DebugName; // TODO: more efficient data storage
 		RenderGraphTextureId Id;
 
 		// information about adjacent passes, needed to setup barriers
 		// TODO: better solution to get a specific dependency (edge)?
 		int Writer = -1; // can only be one writer
-		fixed_vector<int, 32> Readers;
+		RenderGraphDynamicArray<int> Readers;
 
 		// resource lifetime information
 		RenderGraphPassId FirstUsage = INT_MAX;
@@ -169,8 +250,8 @@ namespace Columbus
 		// Passes can overwrite a texture, incrementing a version
 		int Version = -1;
 
-		RenderGraphTexture(const TextureDesc2& Desc, std::string_view Name, RenderGraphTextureId Id)
-			: Desc(Desc), DebugName(Name), Id(Id) {}
+		RenderGraphTexture(const TextureDesc2& Desc, std::string_view Name, RenderGraphTextureId Id, RenderGraphAllocator& Allocator)
+			: Desc(Desc), DebugName(Name), Id(Id), Readers(Allocator) {}
 	};
 
 	// TODO: unify buffer and texture internally as a resource?
@@ -181,13 +262,13 @@ namespace Columbus
 
 		size_t AllocatedSize = 0;
 
-		std::string DebugName;
+		std::string DebugName; // TODO: more efficient data storage
 		RenderGraphBufferId Id;
 
 		// information about adjacent passes, needed to setup barriers
 		// TODO: better solution to get a specific dependency (edge)?
 		int Writer = -1; // can only be one writer
-		fixed_vector<int, 32> Readers;
+		RenderGraphDynamicArray<int> Readers;
 
 		// resource lifetime information
 		RenderGraphPassId FirstUsage = INT_MAX;
@@ -196,8 +277,8 @@ namespace Columbus
 		// Passes can overwrite a texture, incrementing a version
 		int Version = -1;
 
-		RenderGraphBuffer(const BufferDesc& Desc, std::string_view Name, RenderGraphBufferId Id)
-			: Desc(Desc), DebugName(Name), Id(Id) {}
+		RenderGraphBuffer(const BufferDesc& Desc, std::string_view Name, RenderGraphBufferId Id, RenderGraphAllocator& Allocator)
+			: Desc(Desc), DebugName(Name), Id(Id), Readers(Allocator) {}
 	};
 
 	// TODO: unify buffer and texture dependencies internally?
@@ -224,6 +305,10 @@ namespace Columbus
 
 	struct RenderPassDependencies
 	{
+		RenderPassDependencies(RenderGraphAllocator& Allocator) :
+			TextureWriteResources(Allocator), TextureReadResources(Allocator),
+			BufferWriteResources(Allocator), BufferReadResources(Allocator) {}
+
 		void Write(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{
 			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage });
@@ -244,11 +329,11 @@ namespace Columbus
 			BufferReadResources.push_back(RenderPassBufferDependency { Buffer, -1, Access, Stage });
 		}
 	private:
-		fixed_vector<RenderPassTextureDependency, 32> TextureWriteResources; // TODO: more efficient data storage
-		fixed_vector<RenderPassTextureDependency, 32> TextureReadResources;  // TODO: more efficient data storage
+		RenderGraphDynamicArray<RenderPassTextureDependency> TextureWriteResources;
+		RenderGraphDynamicArray<RenderPassTextureDependency> TextureReadResources;
 
-		fixed_vector<RenderPassBufferDependency, 32> BufferWriteResources; // TODO: more efficient data storage
-		fixed_vector<RenderPassBufferDependency, 32> BufferReadResources;  // TODO: more efficient data storage
+		RenderGraphDynamicArray<RenderPassBufferDependency> BufferWriteResources;
+		RenderGraphDynamicArray<RenderPassBufferDependency> BufferReadResources;
 
 		friend RenderGraph;
 		friend RenderGraphContext;
@@ -272,7 +357,7 @@ namespace Columbus
 
 	struct RenderPass
 	{
-		std::string Name;
+		const char* Name; // pointer to temporary allocator
 		RenderGraphPassId Id; // index to internal Passes array
 		RenderGraphPassType Type;
 		RenderPassParameters Parameters;
@@ -280,8 +365,8 @@ namespace Columbus
 		RenderGraphExecutionFunc ExecutionFunc;
 
 		// TODO: unify textures and buffers internally?
-		fixed_vector<RenderGraphTextureBarrier, 64> TextureBarriers; // TODO: more efficient data storage
-		fixed_vector<RenderGraphBufferBarrier, 64>  BufferBarriers; // TODO: more efficient data storage
+		RenderGraphDynamicArray<RenderGraphTextureBarrier> TextureBarriers;
+		RenderGraphDynamicArray<RenderGraphBufferBarrier>  BufferBarriers;
 
 		VkRenderPass VulkanRenderPass = NULL;
 		VkFramebuffer VulkanFramebuffer = NULL;
@@ -297,22 +382,12 @@ namespace Columbus
 	{
 		SPtr<Texture2> Texture;
 		bool Used = false;
-
-		void Clear()
-		{
-			Used = false;
-		}
 	};
 
 	struct RenderGraphPooledBuffer
 	{
 		SPtr<Buffer> Buffer;
 		bool Used = false;
-
-		void Clear()
-		{
-			Used = false;
-		}
 	};
 
 	// valid only while render graph is valid
@@ -338,14 +413,14 @@ namespace Columbus
 			TypePop,
 		};
 
-		std::string Marker;
+		const char* Marker; // pointer to internal allocator memory
 		RenderGraphPassId PassId;
 		MarkerType Type;
 	};
 
 	struct RenderGraphScopedMarker
 	{
-		RenderGraphScopedMarker(RenderGraph& Graph, const std::string& Marker);
+		RenderGraphScopedMarker(RenderGraph& Graph, const char* Marker);
 		~RenderGraphScopedMarker();
 
 		RenderGraph& Graph;
@@ -363,10 +438,10 @@ namespace Columbus
 
 		RenderGraphTextureRef GetSwapchainTexture();
 
-		void AddPass(const std::string& Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
+		void AddPass(const char* Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
 
 		// Use with scoped marker
-		void PushMarker(const std::string& Marker);
+		void PushMarker(const char* Marker);
 		void PopMarker();
 
 		// copies Src graph texture into Dst after execution
@@ -406,6 +481,8 @@ namespace Columbus
 	public:
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
+
+		RenderGraphAllocator Allocator{RenderGraphMemoryPoolSize};
 
 		RenderGraphData RenderData;
 

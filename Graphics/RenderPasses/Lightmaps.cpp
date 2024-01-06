@@ -76,7 +76,7 @@ namespace Columbus
 		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Data.Validity };
 		Parameters.ViewportSize = iVector2(Data.Settings.LightmapSize, Data.Settings.LightmapSize);
 
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 
 		u32 MeshIndex = Data.Settings.MeshIndex;
 		int LightmapSize = Data.Settings.LightmapSize;
@@ -128,7 +128,7 @@ namespace Columbus
 
 		RenderPassParameters Parameters;
 
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(Data.WP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(Data.Normal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(Data.Validity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);

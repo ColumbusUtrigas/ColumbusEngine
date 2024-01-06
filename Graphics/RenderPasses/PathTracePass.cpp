@@ -41,7 +41,7 @@ namespace Columbus
 		{
 			RenderPassParameters Parameters;
 
-			RenderPassDependencies Dependencies;
+			RenderPassDependencies Dependencies(Graph.Allocator);
 			Dependencies.Write(RTImage, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
 			Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [RTImage, View](RenderGraphContext& Context)

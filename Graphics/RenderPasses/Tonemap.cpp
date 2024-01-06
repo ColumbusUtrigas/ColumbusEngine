@@ -54,7 +54,7 @@ namespace Columbus
 			Textures.ColourGradingLUT = Graph.CreateTexture(Desc, "ColourGradingLUT");
 		}
 
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Write(Textures.ColourGradingLUT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Graph.AddPass("ComputeColourGradingLUT", RenderGraphPassType::Compute, {}, Dependencies, [Textures](RenderGraphContext& Context)
@@ -95,7 +95,7 @@ namespace Columbus
 		// Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Graph.GetSwapchainTexture() };
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.TonemappedImage };
 
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 

@@ -38,7 +38,7 @@ void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View)
 
 	{
 		RenderPassParameters Parameters;
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 		
 		Graph.AddPass("DDGI", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
 		{

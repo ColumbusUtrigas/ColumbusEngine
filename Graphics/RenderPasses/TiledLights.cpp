@@ -29,7 +29,7 @@ namespace Columbus
 
 		// TODO: run compute shader on light sources, which projects them onto screen and puts into a tile
 		RenderPassParameters Parameters;
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.WriteBuffer(TilesBuffer, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Graph.AddPass("PrepareTiledLights", RenderGraphPassType::Compute, Parameters, Dependencies, [TilesBuffer](RenderGraphContext& Context)

@@ -83,7 +83,7 @@ namespace Columbus
 
 			RenderPassParameters Parameters;
 
-			RenderPassDependencies Dependencies;
+			RenderPassDependencies Dependencies(Graph.Allocator);
 			Dependencies.Read(Shadow, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Write(RTShadowTiles, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -132,7 +132,7 @@ namespace Columbus
 
 			RenderPassParameters Parameters;
 
-			RenderPassDependencies Dependencies;
+			RenderPassDependencies Dependencies(Graph.Allocator);
 			Dependencies.Read(RTShadowTiles, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -214,7 +214,7 @@ namespace Columbus
 			{
 				RenderPassParameters Parameters;
 
-				RenderPassDependencies Dependencies;
+				RenderPassDependencies Dependencies(Graph.Allocator);
 				Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 				Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 				Dependencies.Read(CurrentFilterInput, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -293,7 +293,7 @@ namespace Columbus
 
 			RenderPassParameters Parameters;
 
-			RenderPassDependencies Dependencies;
+			RenderPassDependencies Dependencies(Graph.Allocator);
 			Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTShadow, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);

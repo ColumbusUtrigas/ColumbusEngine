@@ -61,7 +61,7 @@ namespace Columbus
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Texture, {} };
 		Parameters.ExternalRenderPass = ImGuiRenderPass;
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 
 		Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
@@ -99,7 +99,7 @@ namespace Columbus
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, OverlayTexture, {} };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 
 		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
@@ -502,11 +502,11 @@ namespace Columbus
 				bool hovered = ImGui::GetIO().MousePos.x > min.x && ImGui::GetIO().MousePos.y > min.y && ImGui::GetIO().MousePos.x < max.x && ImGui::GetIO().MousePos.y < max.y;
 
 				if (hovered)
-					ImGui::SetTooltip("%s\nId: %i\n", Pass.Name.c_str(), Pass.Id);
+					ImGui::SetTooltip("%s\nId: %i\n", Pass.Name, Pass.Id);
 
-				ImVec2 text_size = ImGui::CalcTextSize(Pass.Name.c_str());
+				ImVec2 text_size = ImGui::CalcTextSize(Pass.Name);
 				ImVec2 text_pos = middle - text_size / 2;
-				draw_list->AddText(text_pos, pass_text_colours[(int)Pass.Type], Pass.Name.c_str());
+				draw_list->AddText(text_pos, pass_text_colours[(int)Pass.Type], Pass.Name);
 				current_pos.x += rect_size.x + margin;
 			}
 

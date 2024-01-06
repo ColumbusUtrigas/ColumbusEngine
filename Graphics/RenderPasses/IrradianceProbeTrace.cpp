@@ -50,7 +50,7 @@ namespace Columbus
 
 		RenderPassParameters Parameters;
 
-		RenderPassDependencies Dependencies;
+		RenderPassDependencies Dependencies(Graph.Allocator);
 
 		Graph.AddPass("IrradianceProbesTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [Volume](RenderGraphContext& Context)
 		{

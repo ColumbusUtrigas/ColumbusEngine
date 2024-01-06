@@ -319,7 +319,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 void UploadGPUSceneRG(RenderGraph& Graph)
 {
 	RenderPassParameters Parameters;
-	RenderPassDependencies Dependencies;
+	RenderPassDependencies Dependencies(Graph.Allocator);
 	Graph.AddPass("UploadGPUScene", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
 	{
 		// TODO: create UploadBuffer wrapper? have CurrentFrame as a constant in Context?
