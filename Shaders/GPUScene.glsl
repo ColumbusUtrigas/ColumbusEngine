@@ -102,6 +102,7 @@ struct GPUScene_Vertex
 	vec3 Position;
 	vec3 Normal;
 	vec2 UV;
+	vec2 UV2;
 	uint MaterialId; // TODO:
 };
 
@@ -110,43 +111,56 @@ uint GPUScene_FetchIndex(uint ObjectId, uint Index)
 	return GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].IndexBuffer.indices[nonuniformEXT(Index)];
 }
 
-vec3 GPUScene_FetchVertexPosition(uint ObjectId, uint Index)
+vec3 GPUScene_FetchVertexPositionFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 {
 	vec3 vertex = vec3(0);
-	vertex.x = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].VertexBuffer.vertices[nonuniformEXT(Index * 3 + 0)];
-	vertex.y = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].VertexBuffer.vertices[nonuniformEXT(Index * 3 + 1)];
-	vertex.z = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].VertexBuffer.vertices[nonuniformEXT(Index * 3 + 2)];
+	vertex.x = Mesh.VertexBuffer.vertices[nonuniformEXT(Index * 3 + 0)];
+	vertex.y = Mesh.VertexBuffer.vertices[nonuniformEXT(Index * 3 + 1)];
+	vertex.z = Mesh.VertexBuffer.vertices[nonuniformEXT(Index * 3 + 2)];
 	return vertex;
 }
 
-vec3 GPUScene_FetchVertexNormal(uint ObjectId, uint Index)
+vec3 GPUScene_FetchVertexNormalFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 {
 	vec3 normal = vec3(0);
-	normal.x = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].NormalsBuffer.normals[nonuniformEXT(Index * 3 + 0)];
-	normal.y = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].NormalsBuffer.normals[nonuniformEXT(Index * 3 + 1)];
-	normal.z = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].NormalsBuffer.normals[nonuniformEXT(Index * 3 + 2)];
+	normal.x = Mesh.NormalsBuffer.normals[nonuniformEXT(Index * 3 + 0)];
+	normal.y = Mesh.NormalsBuffer.normals[nonuniformEXT(Index * 3 + 1)];
+	normal.z = Mesh.NormalsBuffer.normals[nonuniformEXT(Index * 3 + 2)];
 	return normal;
 }
 
-vec2 GPUScene_FetchVertexUV(uint ObjectId, uint Index)
+vec2 GPUScene_FetchVertexUVFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 {
-	return GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].Uv1Buffer.uvs[nonuniformEXT(Index)];
+	return Mesh.Uv1Buffer.uvs[nonuniformEXT(Index)];
 }
 
-uint GPUScene_FetchVertexMaterial(uint ObjectId, uint Index)
+vec2 GPUScene_FetchVertexUV2FromMesh(GPUSceneMeshCompact Mesh, uint Index)
+{
+	// TODO: check if buffer reference is 0 instead
+	if (Mesh.LightmapId != -1)
+	{
+		return Mesh.Uv2Buffer.uvs[nonuniformEXT(Index)];
+	}
+
+	return vec2(0);
+}
+
+uint GPUScene_FetchVertexMaterialFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 {
 	// TODO: per-vertex materials
-	return GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)].TextureId;
+	return Mesh.TextureId;
 }
 
 GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)
 {
 	uint index = GPUScene_FetchIndex(ObjectId, VertexIndex);
+	GPUSceneMeshCompact mesh = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)];
 
 	GPUScene_Vertex vertex;
-	vertex.Position = GPUScene_FetchVertexPosition(ObjectId, index);
-	vertex.Normal = GPUScene_FetchVertexNormal(ObjectId, index);
-	vertex.UV = GPUScene_FetchVertexUV(ObjectId, index);
-	vertex.MaterialId = GPUScene_FetchVertexMaterial(ObjectId, index);
+	vertex.Position = GPUScene_FetchVertexPositionFromMesh(mesh, index);
+	vertex.Normal = GPUScene_FetchVertexNormalFromMesh(mesh, index);
+	vertex.UV = GPUScene_FetchVertexUVFromMesh(mesh, index);
+	vertex.UV2 = GPUScene_FetchVertexUV2FromMesh(mesh, index);
+	vertex.MaterialId = GPUScene_FetchVertexMaterialFromMesh(mesh, index);
 	return vertex;
 }

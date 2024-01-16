@@ -2,6 +2,7 @@ add_library(DDGI
 	DDGI.cpp
 )
 
+target_include_directories(DDGI PRIVATE $ENV{VULKAN_SDK}/Include)
 target_include_directories(DDGI PRIVATE SDK/include)
 target_include_directories(DDGI PRIVATE ../)
 

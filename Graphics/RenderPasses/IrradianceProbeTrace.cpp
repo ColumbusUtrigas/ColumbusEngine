@@ -27,6 +27,11 @@ namespace Columbus
 
 	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume)
 	{
+		if (!Graph.Device->SupportsRayTracing())
+		{
+			return;
+		}
+
 		// TODO: invent something better than this
 		std::vector<GPUIrradianceProbe> IrradianceProbes;
 

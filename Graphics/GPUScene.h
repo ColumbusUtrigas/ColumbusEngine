@@ -25,7 +25,8 @@ namespace Columbus
 		Matrix Transform;
 		Buffer* Vertices;
 		Buffer* Indices;
-		Buffer* UVs;
+		Buffer* UV1;
+		Buffer* UV2 = nullptr;
 		Buffer* Normals;
 		u32 VertexCount;
 		u32 IndicesCount;

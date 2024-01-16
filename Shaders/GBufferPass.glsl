@@ -12,13 +12,14 @@ layout(push_constant) uniform Params
 #ifdef VERTEX_SHADER
 	layout (location = 0) out vec3 OutNormal;
 	layout (location = 1) out vec2 OutUV;
-	layout (location = 2) out uint OutTextureId;
-	layout (location = 3) out vec3 OutWP;
+	layout (location = 2) out vec2 OutUV2;
+	layout (location = 3) out uint OutTextureId;
+	layout (location = 4) out vec3 OutWP;
 
-	layout (location = 4) out vec4 OutClipspacePos;
-	layout (location = 5) out vec4 OutClipspacePosPrev;
+	layout (location = 5) out vec4 OutClipspacePos;
+	layout (location = 6) out vec4 OutClipspacePosPrev;
 
-	layout (location = 6) out uint OutLightmapId;
+	layout (location = 7) out uint OutLightmapId;
 
 	void main()
 	{
@@ -38,6 +39,7 @@ layout(push_constant) uniform Params
 		gl_Position = ClipspacePos;
 		OutNormal = Vertex.Normal;
 		OutUV = Vertex.UV;
+		OutUV2 = Vertex.UV2;
 		OutTextureId = Mesh.TextureId;
 		OutLightmapId = Mesh.LightmapId;
 	}
@@ -53,19 +55,20 @@ layout(push_constant) uniform Params
 
 	layout (location = 0) in vec3 InNormal;
 	layout (location = 1) in vec2 InUV;
-	layout (location = 2) in flat uint InTextureId;
-	layout (location = 3) in vec3 InWP;
-	layout (location = 4) in vec4 InClipspacePos;
-	layout (location = 5) in vec4 InClipspacePosPrev;
+	layout (location = 2) in vec2 InUV2;
+	layout (location = 3) in flat uint InTextureId;
+	layout (location = 4) in vec3 InWP;
+	layout (location = 5) in vec4 InClipspacePos;
+	layout (location = 6) in vec4 InClipspacePosPrev;
 
-	layout (location = 6) in flat uint InLightmapId;
+	layout (location = 7) in flat uint InLightmapId;
 
 	void main()
 	{
 		vec3 LightmapColor = vec3(0);
 		if (InLightmapId != -1)
 		{
-			LightmapColor = textureLod(Textures[InLightmapId], InUV, 0.0f).rgb;
+			LightmapColor = textureLod(Textures[InLightmapId], InUV2, 0.0f).rgb;
 		}
 
 		vec3 AlbedoColor = vec3(1);

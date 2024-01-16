@@ -3,53 +3,65 @@
 
 #include "GPUScene.glsl"
 
+struct LightmapBakingMeshVertex
+{
+	vec4 V1; // xyz - position, w - normal.x
+	vec4 V2; // xy - normal.yz, zw - uv2.xy
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer LightmapVertexBufferPtr {
+	LightmapBakingMeshVertex Vertices[];
+};
+
 layout(push_constant) uniform Params
 {
+	LightmapVertexBufferPtr VertexBuffer;
+	IndexBufferPtr IndexBuffer;
 	uint ObjectId;
 } Parameters;
 
 #ifdef VERTEX_SHADER
 	layout (location = 0) out vec3 OutNormal;
 	layout (location = 1) out vec2 OutUV;
-	layout (location = 2) out uint OutTextureId;
-	layout (location = 3) out vec3 OutWP;
+	layout (location = 2) out vec3 OutWP;
 
 	void main()
 	{
-		GPUSceneMeshCompact Mesh = GPUSceneMeshes.Meshes[Parameters.ObjectId];
+		uint Index = Parameters.IndexBuffer.indices[gl_VertexIndex];
+		LightmapBakingMeshVertex Vertex = Parameters.VertexBuffer.Vertices[Index];
 
-		// index is being read from index buffer by gl_VertexIndex
-		GPUScene_Vertex Vertex = GPUScene_FetchVertex(Parameters.ObjectId, gl_VertexIndex);
+		// TODO: model transformation
+		vec3 Position = Vertex.V1.xyz;
+		vec3 Normal = vec3(Vertex.V1.w, Vertex.V2.xy);
+		vec2 UV = Vertex.V2.zw;
 
-		OutWP = Vertex.Position;
+		// GPUSceneMeshCompact Mesh = GPUSceneMeshes.Meshes[Parameters.ObjectId];
+		// // index is being read from index buffer by gl_VertexIndex
+		// GPUScene_Vertex Vertex = GPUScene_FetchVertex(Parameters.ObjectId, gl_VertexIndex);
+		// OutWP = Vertex.Position;
 
-		vec4 ClipspacePos = vec4(Vertex.UV * 2 - 1, 0, 1);
+		vec4 ClipspacePos = vec4(UV * 2 - 1, 0, 1);
 
 		gl_Position = ClipspacePos;
-		OutNormal = Vertex.Normal;
-		OutUV = Vertex.UV;
-		OutTextureId = Mesh.TextureId;
+		OutNormal = Normal;
+		OutUV = UV;
+		OutWP = Position;
 	}
 #endif
 
 #ifdef PIXEL_SHADER
-	layout(location = 0) out vec3  RT0; // diffuse
-	layout(location = 1) out vec3  RT1; // normal
-	layout(location = 2) out vec3  RT2; // world position
-	layout(location = 3) out vec2  RT3; // roughness/metallic
-	layout(location = 4) out float RT4; // validity
+	layout(location = 0) out vec3  RT0; // normal
+	layout(location = 1) out vec3  RT1; // world position
+	layout(location = 2) out float RT2; // validity
 
 	layout (location = 0) in vec3 InNormal;
 	layout (location = 1) in vec2 InUV;
-	layout (location = 2) in flat uint InTextureId;
-	layout (location = 3) in vec3 InWP;
+	layout (location = 2) in vec3 InWP;
 
 	void main()
 	{
-		RT0 = textureLod(Textures[InTextureId], InUV, 0.0f).rgb;
-		RT1 = InNormal;
-		RT2 = InWP;
-		RT3 = vec2(1, 0);
-		RT4 = 1;
+		RT0 = InNormal;
+		RT1 = InWP;
+		RT2 = 1;
 	}
 #endif

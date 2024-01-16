@@ -163,6 +163,9 @@ namespace Columbus
 			{
 				for (IrradianceVolume& Volume : Context.Scene->IrradianceVolumes)
 				{
+					if (Volume.ProbesBuffer == nullptr)
+						continue;
+
 					Context.CommandBuffer->BindGraphicsPipeline(IrradianceVolumePipeline);
 					Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
 					Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);

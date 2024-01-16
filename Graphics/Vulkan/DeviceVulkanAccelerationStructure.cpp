@@ -78,6 +78,9 @@ namespace Columbus
 
 	AccelerationStructure* DeviceVulkan::CreateAccelerationStructure(const AccelerationStructureDesc& Desc)
 	{
+		if (!SupportsRayTracing())
+			return nullptr;
+
 		auto result = new AccelerationStructureVulkan(Desc);
 
 		VkAccelerationStructureTypeKHR type;

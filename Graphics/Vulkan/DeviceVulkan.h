@@ -29,7 +29,6 @@
 #include <cassert>
 
 #include <Common/Image/Image.h>
-#include <vulkan/vulkan_core.h>
 
 // disable to make RenderDoc captures
 #define ENABLE_RAY_TRACING 1
@@ -111,6 +110,7 @@ namespace Columbus
 
 		VkPhysicalDeviceRayTracingPipelinePropertiesKHR _RayTracingProperties;
 		VkPhysicalDeviceRayTracingPipelineFeaturesKHR _RayTracingFeatures;
+		VkPhysicalDeviceRayQueryFeaturesKHR _RayQueryFeatures;
 
 		VkPhysicalDeviceProperties2 _DeviceProperties;
 		VkPhysicalDeviceFeatures2 _DeviceFeatures;
@@ -134,6 +134,7 @@ namespace Columbus
 
 		TextureVulkan* _CreateTexture(const TextureDesc2& Desc);
 	public:
+		// TODO: move initialisation out from header
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 			_PhysicalDevice(PhysicalDevice), _Instance(Instance)
 		{
@@ -143,9 +144,11 @@ namespace Columbus
 			_AccelerationStructureFeatures.pNext = nullptr;
 			_RayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 			_RayTracingFeatures.pNext = &_AccelerationStructureFeatures;
+			_RayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+			_RayQueryFeatures.pNext = &_RayTracingFeatures;
 
 			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			_Vulkan12Features.pNext = ENABLE_RAY_TRACING ? &_RayTracingFeatures : nullptr;
+			_Vulkan12Features.pNext = ENABLE_RAY_TRACING ? &_RayQueryFeatures : nullptr;
 			_DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 			_DeviceFeatures.pNext = &_Vulkan12Features;
 
@@ -162,8 +165,9 @@ namespace Columbus
 			// logic if features are enabled/disabled
 			COLUMBUS_ASSERT(_Vulkan12Features.descriptorIndexing); // non-uniform descriptor indexing
 			COLUMBUS_ASSERT(_Vulkan12Features.descriptorBindingPartiallyBound);
-#if ENABLE_RAY_TRACING
 			COLUMBUS_ASSERT(_Vulkan12Features.bufferDeviceAddress);
+#if ENABLE_RAY_TRACING
+			// TOOD: make some features optional
 			COLUMBUS_ASSERT(_RayTracingFeatures.rayTracingPipeline);
 #endif
 
@@ -266,6 +270,10 @@ namespace Columbus
 			_Profiler.Device = this;
 			_Profiler.Init();
 		}
+
+		// Features
+		bool SupportsRayTracing() const;
+		bool SupportsRayQuery() const;
 
 		// Low-level API abstraction
 

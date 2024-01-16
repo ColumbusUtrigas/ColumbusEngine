@@ -89,6 +89,10 @@ elseif(WIN32)
 	target_include_directories(imgui PUBLIC $ENV{VULKAN_SDK}/Include)
 endif()
 
+########## XATLAS ##########
+file(GLOB XATLAS_SRC Lib/xatlas/xatlas.h Lib/xatlas/xatlas.cpp)
+add_library(xatlas STATIC ${XATLAS_SRC})
+
 ########## BULLET PHYSICS #############
 dir_to_var_recurse(Lib/bullet3/src/BulletCollision BULLET_COLLISION_SRC)
 dir_to_var_recurse(Lib/bullet3/src/BulletDynamics BULLET_DYNAMICS_SRC)
@@ -229,6 +233,7 @@ elseif(WIN32)
 endif()
 
 target_link_libraries(${TARGET} imgui)
+target_link_libraries(${TARGET} xatlas)
 target_link_libraries(${TARGET} spirv_reflect)
 target_link_libraries(${TARGET} ShaderBytecode)
 target_link_libraries(${TARGET} DDGI)

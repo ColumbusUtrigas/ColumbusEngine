@@ -150,7 +150,7 @@ namespace Columbus
 	{
 	public:
 		enum class Type;
-	private:
+	public:
 		uint32 Width = 0;
 		uint32 Height = 0;
 		uint32 Depth = 0;

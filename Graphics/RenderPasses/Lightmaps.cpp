@@ -1,3 +1,4 @@
+#include "Graphics/Lightmaps.h"
 #include "RenderPasses.h"
 
 namespace Columbus
@@ -5,6 +6,8 @@ namespace Columbus
 
 	struct LightmapRasterisationParameters
 	{
+		u64 VertexBuffer;
+		u64 IndexBuffer;
 		u32 ObjectId;
 	};
 
@@ -17,31 +20,16 @@ namespace Columbus
 		int SamplesPerFrame;
 	};
 
-	LightmapBakingRenderData CreateLightmapBakingData(SPtr<DeviceVulkan> Device, LightmapBakingSettings Settings)
-	{
-		LightmapBakingRenderData BakingData {
-			.Settings = Settings,
-		};
-
-		TextureDesc2 LightmapTextureDesc {
-			.Usage = TextureUsage::StorageSampled,
-			.Width = (u32)Settings.LightmapSize, .Height = (u32)Settings.LightmapSize,
-			.Format = TextureFormat::RGBA16F,
-		};
-
-		BakingData.Lightmap = Device->CreateTexture(LightmapTextureDesc);
-		Device->SetDebugName(BakingData.Lightmap, "Lightmap");
-
-		return BakingData;
-	}
-
 	// see note in the declaration
-	void PrepareMeshForLightmapBaking(RenderGraph& Graph, const RenderView& View, LightmapBakingRenderData& Data)
+	void PrepareAtlasForLightmapBaking(RenderGraph& Graph, LightmapSystem& System)
 	{
+		LightmapBakingSettings& Settings = System.BakingSettings;
+		LightmapBakingRenderData& Data = System.BakingData;
+
 		// TODO: unify format creation with GBuffer?
 		TextureDesc2 CommonDesc;
-		CommonDesc.Width = Data.Settings.LightmapSize;
-		CommonDesc.Height = Data.Settings.LightmapSize;
+		CommonDesc.Width = System.Atlas.Width;
+		CommonDesc.Height = System.Atlas.Height;
 		CommonDesc.Type = TextureType::Texture2D;
 		CommonDesc.Usage = TextureUsage::RenderTargetColor;
 		CommonDesc.AddressU = TextureAddressMode::ClampToEdge;
@@ -51,39 +39,28 @@ namespace Columbus
 		CommonDesc.MinFilter = TextureFilter2::Nearest;
 		CommonDesc.MipFilter = TextureFilter2::Nearest;
 
-		TextureDesc2 AlbedoDesc = CommonDesc;
 		TextureDesc2 NormalDesc = CommonDesc;
-		TextureDesc2 WPDesc = CommonDesc;
-		TextureDesc2 RMDesc = CommonDesc;
+		TextureDesc2 PositionDesc = CommonDesc;
 		TextureDesc2 ValidityDesc = CommonDesc;
-		AlbedoDesc.Format = TextureFormat::RGBA8;
 		NormalDesc.Format = TextureFormat::RGBA16F;
-		WPDesc.Format = TextureFormat::RGBA32F;
-		RMDesc.Format = TextureFormat::RG8;
+		PositionDesc.Format = TextureFormat::RGBA32F;
 		ValidityDesc.Format = TextureFormat::R8;
 
-		Data.Albedo = Graph.CreateTexture(AlbedoDesc, "LightmapBaking_Albedo");
-		Data.Normal = Graph.CreateTexture(NormalDesc, "LightmapBaking_Normal");
-		Data.WP = Graph.CreateTexture(WPDesc, "LightmapBaking_WP");
-		Data.RM = Graph.CreateTexture(RMDesc, "LightmapBaking_RM");
-		Data.Validity = Graph.CreateTexture(ValidityDesc, "LightmapBaking_Validity");
+		System.BakingData.Normal = Graph.CreateTexture(NormalDesc, "LightmapBaking_Normal");
+		System.BakingData.Position = Graph.CreateTexture(PositionDesc, "LightmapBaking_Posiiton");
+		System.BakingData.Validity = Graph.CreateTexture(ValidityDesc, "LightmapBaking_Validity");
 
 		RenderPassParameters Parameters;
-		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Data.Albedo };
-		Parameters.ColorAttachments[1] = RenderPassAttachment{ AttachmentLoadOp::Clear, Data.Normal };
-		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Data.WP };
-		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Data.RM };
-		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Data.Validity };
-		Parameters.ViewportSize = iVector2(Data.Settings.LightmapSize, Data.Settings.LightmapSize);
+		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, System.BakingData.Normal };
+		Parameters.ColorAttachments[1] = RenderPassAttachment{ AttachmentLoadOp::Clear, System.BakingData.Position };
+		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, System.BakingData.Validity };
+		Parameters.ViewportSize = iVector2(System.Atlas.Width, System.Atlas.Height);
+
+		iVector2 ViewportSize = Parameters.ViewportSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
-		u32 MeshIndex = Data.Settings.MeshIndex;
-		int LightmapSize = Data.Settings.LightmapSize;
-
-		char PassName[256]{0};
-		snprintf(PassName, 256, "PrepareMeshForLightmapBaking (%i)", MeshIndex);
-		Graph.AddPass(PassName, RenderGraphPassType::Raster, Parameters, Dependencies, [MeshIndex, LightmapSize](RenderGraphContext& Context)
+		Graph.AddPass("PrepareMeshForLightmapBaking", RenderGraphPassType::Raster, Parameters, Dependencies, [&System, ViewportSize](RenderGraphContext& Context)
 		{
 			// TODO: normal shader system damn it
 			static GraphicsPipeline* Pipeline = nullptr;
@@ -96,8 +73,6 @@ namespace Columbus
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
 				};
 				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/LightmapRasterisation.csd");
 
@@ -105,37 +80,50 @@ namespace Columbus
 			}
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->SetViewport(0, 0, LightmapSize, LightmapSize, 0.0f, 1.0f);
-			Context.CommandBuffer->SetScissor(0, 0, LightmapSize, LightmapSize);
+			Context.CommandBuffer->SetViewport(0, 0, ViewportSize.X, ViewportSize.Y, 0.0f, 1.0f);
+			Context.CommandBuffer->SetScissor(0, 0, ViewportSize.X, ViewportSize.Y);
 			Context.BindGPUScene(Pipeline);
 
-			LightmapRasterisationParameters Parameters {
-				.ObjectId = MeshIndex
-			};
+			for (u32 i = 0; i < System.Meshes.size(); i++)
+			{
+				LightmapRasterisationParameters Parameters {
+					.VertexBuffer = System.Meshes[i].VertexBuffer->GetDeviceAddress(),
+					.IndexBuffer = System.Meshes[i].IndexBuffer->GetDeviceAddress(),
+					.ObjectId = i,
+				};
 
-			GPUSceneMesh& Mesh = Context.Scene->Meshes[MeshIndex];
-			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
+				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+				Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
+			}
 		});
 	}
 
-	void BakeLightmapPathTraced(RenderGraph& Graph, LightmapBakingRenderData& Data)
+	void BakeLightmapPathTraced(RenderGraph& Graph, LightmapSystem& System)
 	{
-		if (Data.AccumulatedSamples >= Data.Settings.RequestedSamples)
+		LightmapBakingRenderData& Data = System.BakingData;
+		LightmapBakingSettings& Settings = System.BakingSettings;
+
+		if (Data.AccumulatedSamples >= Settings.RequestedSamples)
 		{
+			System.BakingRequested = false;
 			return;
 		}
 
 		RenderPassParameters Parameters;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Data.WP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		Dependencies.Read(Data.Position, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(Data.Normal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(Data.Validity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-		int TraceSamples = Math::Min(Data.Settings.SamplesPerFrame, Data.Settings.RequestedSamples - Data.AccumulatedSamples);
+		int TraceSamples = Math::Min(Settings.SamplesPerFrame, Settings.RequestedSamples - Data.AccumulatedSamples);
 
-		Graph.AddPass("LightmapPathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [Data, TraceSamples](RenderGraphContext& Context)
+		Texture2* Lightmap = System.Atlas.Lightmap;
+		u32 Width = System.Atlas.Width;
+		u32 Height = System.Atlas.Height;
+
+		Graph.AddPass("LightmapPathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [Data, Settings, TraceSamples, Lightmap, Width, Height](RenderGraphContext& Context)
 		{
 			static RayTracingPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
@@ -147,20 +135,20 @@ namespace Columbus
 				Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
 			}
 
-			Context.CommandBuffer->TransitionImageLayout(Data.Lightmap, VK_IMAGE_LAYOUT_GENERAL);
+			Context.CommandBuffer->TransitionImageLayout(Lightmap, VK_IMAGE_LAYOUT_GENERAL);
 
 			auto Set = Context.GetDescriptorSet(Pipeline, 2);
 			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
-			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Data.WP).get());
+			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Data.Position).get());
 			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Data.Normal).get());
 			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Data.Validity).get());
-			Context.Device->UpdateDescriptorSet(Set, 4, 0, Data.Lightmap);
+			Context.Device->UpdateDescriptorSet(Set, 4, 0, Lightmap);
 
 			LightmapPathTracingParameters Parameters {
 				.Random = rand(),
-				.Bounces = Data.Settings.Bounces,
+				.Bounces = Settings.Bounces,
 				.AccumulatedSamples = Data.AccumulatedSamples,
-				.RequestedSamples = Data.Settings.RequestedSamples,
+				.RequestedSamples = Settings.RequestedSamples,
 				.SamplesPerFrame = TraceSamples,
 			};
 
@@ -169,7 +157,7 @@ namespace Columbus
 			Context.BindGPUScene(Pipeline);
 
 			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->TraceRays(Pipeline, Data.Settings.LightmapSize, Data.Settings.LightmapSize, 1);
+			Context.CommandBuffer->TraceRays(Pipeline, Width, Height, 1);
 		});
 
 		Data.AccumulatedSamples += TraceSamples;

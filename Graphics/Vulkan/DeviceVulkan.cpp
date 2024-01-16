@@ -2,6 +2,7 @@
 
 #include "Common/Image/Image.h"
 #include "Core/Assert.h"
+#include "Core/CVar.h"
 #include "Core/fixed_vector.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
@@ -36,9 +37,20 @@ IMPLEMENT_COUNTING_PROFILING_COUNTER("Descriptor sets count", PROFILING_CATEGORY
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Render passes count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_RenderPasses, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Framebuffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Framebuffers, false);
 
+ConsoleVariable<bool> RayTracing_CVar("r.RayTracing", "Controls whether ray tracing features are supported", true);
 
 namespace Columbus
 {
+
+	bool DeviceVulkan::SupportsRayTracing() const
+	{
+		return ENABLE_RAY_TRACING && RayTracing_CVar.GetValue() && _RayTracingFeatures.rayTracingPipeline;
+	}
+
+	bool DeviceVulkan::SupportsRayQuery() const
+	{
+		return ENABLE_RAY_TRACING && RayTracing_CVar.GetValue() && _RayQueryFeatures.rayQuery;
+	}
 
 	SwapchainVulkan* DeviceVulkan::CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain)
 	{
@@ -675,7 +687,10 @@ namespace Columbus
 	}
 	void DeviceVulkan::SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name)
 	{
-		_SetDebugName((uint64_t)static_cast<const AccelerationStructureVulkan*>(AccelerationStructure)->_Handle, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, Name);
+		if (SupportsRayTracing())
+		{
+			_SetDebugName((uint64_t)static_cast<const AccelerationStructureVulkan*>(AccelerationStructure)->_Handle, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, Name);
+		}
 	}
 
 	QueryPool* DeviceVulkan::CreateQueryPool(const QueryPoolDesc& Desc)

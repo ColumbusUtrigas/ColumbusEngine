@@ -4,6 +4,7 @@
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Core/View.h"
 #include "Graphics/IrradianceVolume.h"
+#include <Graphics/Lightmaps.h>
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>
 #include <vector>
@@ -16,6 +17,8 @@ namespace Columbus
 	// **********************************
 	// Common
 	//
+
+	void UploadGPUSceneRG(RenderGraph& Graph);
 
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
 
@@ -77,36 +80,10 @@ namespace Columbus
 
 	// Lightmap baking
 	//
-	struct LightmapBakingSettings
-	{
-		int LightmapSize;
-		int RequestedSamples;
-		int Bounces = 3;
-		int SamplesPerFrame = 1;
-		u32 MeshIndex;
-	};
-
-	struct LightmapBakingRenderData
-	{
-		// textures used for sampling
-		RenderGraphTextureRef Albedo;
-		RenderGraphTextureRef Normal;
-		RenderGraphTextureRef WP;
-		RenderGraphTextureRef RM;
-		RenderGraphTextureRef Validity;
-
-		Texture2* Lightmap;
-
-		LightmapBakingSettings Settings;
-		int AccumulatedSamples = 0;
-	};
-
-	LightmapBakingRenderData CreateLightmapBakingData(SPtr<DeviceVulkan> Device, LightmapBakingSettings Settings);
-
-	// this pass renders a mesh in lightmap UV space which gives lightmap_texel-vertex correspondance
+	// this pass renders a meshes in lightmap UV space which gives lightmap_texel-vertex correspondance
 	// which is then used as sampling points for path tracing
-	void                     PrepareMeshForLightmapBaking(RenderGraph& Graph, const RenderView& View, LightmapBakingRenderData& Data);
-	void                     BakeLightmapPathTraced(RenderGraph& Graph, LightmapBakingRenderData& Data);
+	void PrepareAtlasForLightmapBaking(RenderGraph& Graph, LightmapSystem& System);
+	void BakeLightmapPathTraced(RenderGraph& Graph, LightmapSystem& System);
 
 	// Global illumination
 	//
