@@ -111,6 +111,9 @@ namespace Columbus
 		RenderGraphAllocatorStd(RenderGraphAllocator& Allocator) : Allocator(Allocator) {}
 		RenderGraphAllocatorStd(const RenderGraphAllocatorStd& A) : Allocator(A.Allocator) {}
 
+		template <typename U>
+		RenderGraphAllocatorStd(const RenderGraphAllocatorStd<U>& A) : Allocator(A.Allocator) {}
+
 		T* allocate(size_t n) noexcept
 		{
 			return (T*)Allocator.Allocate(sizeof(T) * n);
@@ -306,8 +309,8 @@ namespace Columbus
 	struct RenderPassDependencies
 	{
 		RenderPassDependencies(RenderGraphAllocator& Allocator) :
-			TextureWriteResources(Allocator), TextureReadResources(Allocator),
-			BufferWriteResources(Allocator), BufferReadResources(Allocator) {}
+			TextureWriteResources(Allocator), TextureReadResources(RenderGraphAllocatorStd<RenderPassTextureDependency>(Allocator)),
+			BufferWriteResources(Allocator), BufferReadResources(RenderGraphAllocatorStd<RenderPassBufferDependency>(Allocator)) {}
 
 		void Write(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{

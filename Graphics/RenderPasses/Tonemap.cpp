@@ -1,9 +1,13 @@
 #include "Core/Core.h"
+#include "Core/CVar.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
 #include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
+
+ConsoleVariable<int> CVar_FilmCurve("r.Tonemap.FilmCurve", "0 - ACES, 1 - AgX, 2 - Flim", 0);
+ConsoleVariable<int> CVar_OutputTransform("r.Tonemap.OutputTransform", "0 - None, 1 - Rec.709, 2 - Rec.2020", 1);
 
 namespace Columbus
 {
@@ -119,8 +123,8 @@ namespace Columbus
 			SPtr<Texture2> Texture = Context.GetRenderGraphTexture(SceneTexture);
 
 			TonemapParameters PushConstants {
-				.FilmCurve       = TonemapFilmCurve::ACES,
-				.OutputTransform = TonemapOutputTransform::Rec709,
+				.FilmCurve       = (TonemapFilmCurve)CVar_FilmCurve.GetValue(),
+				.OutputTransform = (TonemapOutputTransform)CVar_OutputTransform.GetValue(),
 				.Resolution      = iVector2(Texture->GetDesc().Width, Texture->GetDesc().Height),
 			};
 
