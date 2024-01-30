@@ -16,6 +16,9 @@ namespace Columbus
 		Camera CameraCur;
 		Camera CameraPrev;
 		DebugRender* DebugRender = nullptr;
+
+		bool ScreenshotHDR = false; // if true, screenshot is done before tonemapping
+		char* ScreenshotPath = nullptr; // when is not nullptr, saves a screenshot on disk
 	};
 
 }

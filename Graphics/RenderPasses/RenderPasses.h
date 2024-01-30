@@ -28,6 +28,7 @@ namespace Columbus
 	bool IsDebugConsoleFocused();
 	void ShowRenderGraphVisualiser(RenderGraph& Graph);
 
+	void ScreenshotPass(RenderGraph& Graph, RenderView& View, RenderGraphTextureRef Texture);
 	void DebugUIPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture); // TODO: be able to render debug UI after render graph execution
 	void CopyToSwapchain(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture);
 
@@ -72,7 +73,7 @@ namespace Columbus
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture); // only for DebugRender objects
-	void RenderDeferred(RenderGraph& Graph, const RenderView& View, DeferredRenderContext& HistoryTextures);
+	void RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& HistoryTextures);
 
 	// Real-time raytracing
 	//

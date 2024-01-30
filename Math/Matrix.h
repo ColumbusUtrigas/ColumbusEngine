@@ -219,7 +219,7 @@ namespace Columbus
 			{
 				for (int j = 0; j < 4; j++)
 				{
-					float mul = pow(-1, i+j); // "checkerboard" of signs for cofactors
+					float mul = powf(-1, (float)(i+j)); // "checkerboard" of signs for cofactors
 					float minor = GetMinor(j, i) * mul;
 					Result.M[i][j] = minor;
 				}

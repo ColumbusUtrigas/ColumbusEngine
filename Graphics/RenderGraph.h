@@ -137,7 +137,55 @@ namespace Columbus
 			VkSemaphore ImageSemaphore;
 			VkSemaphore SubmitSemaphore;
 
-			CommandBufferVulkan* CommandBuffer;
+			int CurrentCmdBuffer = -1; // reset every frame
+
+			std::vector<CommandBufferVulkan*> CommandBuffers;
+			std::vector<VkSemaphore> CommandBuffersSemaphores; // placed between 2 subsequent cmd buffers
+
+			CommandBufferVulkan* GetNextCommandBuffer(SPtr<DeviceVulkan> Device)
+			{
+				CurrentCmdBuffer++;
+				if (CurrentCmdBuffer >= CommandBuffers.size())
+				{
+					CommandBufferVulkan* CmdBuf = Device->CreateCommandBuffer();
+					CommandBuffers.push_back(CmdBuf);
+				}
+
+				return CommandBuffers[CurrentCmdBuffer];
+			}
+
+			VkSemaphore InternalGetSemaphore(SPtr<DeviceVulkan> Device, int Id)
+			{
+				if (Id >= CommandBuffersSemaphores.size())
+				{
+					VkSemaphore Semaphore = Device->CreateSemaphoreA();
+					CommandBuffersSemaphores.push_back(Semaphore);
+				}
+
+				return CommandBuffersSemaphores[Id];
+			}
+
+			// call these after GetNextCommandBuffer!
+			VkSemaphore GetPreviousSemaphore(SPtr<DeviceVulkan> Device, int TotalNumberOfSubmissions)
+			{
+				if (CurrentCmdBuffer == 0)
+				{
+					return ImageSemaphore;
+				}
+
+				return InternalGetSemaphore(Device, CurrentCmdBuffer - 1);
+			}
+
+			VkSemaphore GetNextSemaphore(SPtr<DeviceVulkan> Device, int TotalNumberOfSubmissions)
+			{
+				if (CurrentCmdBuffer == TotalNumberOfSubmissions - 1)
+				{
+					return SubmitSemaphore;
+				}
+
+				return InternalGetSemaphore(Device, CurrentCmdBuffer);
+			}
+
 		} PerFrameData[MaxFramesInFlight];
 
 		// TODO: move to shader caching system
@@ -209,6 +257,8 @@ namespace Columbus
 		std::optional<RenderPassAttachment> ColorAttachments[ColorAttachmentsCount];
 		std::optional<RenderPassAttachment> DepthStencilAttachment;
 
+		bool SubmitBeforeExecution = false;
+
 		// if you want to create render pass externally and use it in the graph
 		VkRenderPass ExternalRenderPass = NULL;
 
@@ -251,7 +301,8 @@ namespace Columbus
 		RenderGraphPassId LastUsage = INT_MIN;
 
 		// Passes can overwrite a texture, incrementing a version
-		int Version = -1;
+		int Version = -1; // incremented during build
+		int CurrentVersion = -1; // incremented during execution
 
 		RenderGraphTexture(const TextureDesc2& Desc, std::string_view Name, RenderGraphTextureId Id, RenderGraphAllocator& Allocator)
 			: Desc(Desc), DebugName(Name), Id(Id), Readers(Allocator) {}
@@ -278,7 +329,8 @@ namespace Columbus
 		RenderGraphPassId LastUsage = INT_MIN;
 
 		// Passes can overwrite a texture, incrementing a version
-		int Version = -1;
+		int Version = -1; // incremented during build
+		int CurrentVersion = -1; // incremented during execution
 
 		RenderGraphBuffer(const BufferDesc& Desc, std::string_view Name, RenderGraphBufferId Id, RenderGraphAllocator& Allocator)
 			: Desc(Desc), DebugName(Name), Id(Id), Readers(Allocator) {}
@@ -404,6 +456,7 @@ namespace Columbus
 	struct RenderGraphTextureExtraction
 	{
 		RenderGraphTextureRef Src;
+		int Version;
 		SPtr<Texture2>* Dst;
 	};
 

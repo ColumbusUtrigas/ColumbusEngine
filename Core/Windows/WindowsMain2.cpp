@@ -107,6 +107,16 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Meshes", "SceneMemory", MemoryCounter_SceneM
 IMPLEMENT_MEMORY_PROFILING_COUNTER("BLAS", "SceneMemory", MemoryCounter_SceneBLAS);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("TLAS", "SceneMemory", MemoryCounter_SceneTLAS);
 
+struct World
+{
+	CPUScene CpuScene;
+	GPUScene GpuScene;
+	DebugRender DebugRender;
+	LightmapSystem LightmapSys;
+
+	Camera MainCamera;
+};
+
 // TODO: move to appropriate place
 Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
 {
@@ -120,6 +130,7 @@ Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, 
 }
 
 // TODO: move to appropriate place
+// TODO: separate CPUScene load and GPUScene load?
 SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene)
 {
 	tinygltf::Model model;
@@ -338,7 +349,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 }
 
 ConsoleVariable<bool> test_flag("test.flag", "Description", true);
-ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 1", 0);
+ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 0", 0);
 
 DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
 DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
@@ -351,6 +362,9 @@ void InitializeImgui(WindowVulkan& Window, SPtr<DeviceVulkan> Device)
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(Window.Window);
 	SetupImguiForSwapchain(Device, Window.Swapchain);
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 }
 
 void NewFrameImgui(WindowVulkan& Window)
@@ -531,7 +545,7 @@ int main()
 	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-	auto scene = LoadScene(device, camera, "/home/columbus/assets/cp.gltf", cpuScene);
+	auto scene = LoadScene(device, camera, "C:/Users/Columbus/Downloads/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf", cpuScene);
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
 	DeferredRenderContext DeferredContext; // for deferred
@@ -582,11 +596,45 @@ int main()
 			}
 		}
 
+		RenderView View{
+			.Swapchain = Window.Swapchain,
+			.OutputSize = Window.Size,
+			.CameraCur = camera,
+			.CameraPrev = cameraPrev,
+			.DebugRender = &debugRender,
+		};
+
 		// UI
 		{
 			ImGui::ShowDemoWindow();
 			ShowDebugConsole();
 			ShowRenderGraphVisualiser(renderGraph);
+
+			// screenshot
+			{
+				if (ImGui::Begin("Screenshot"))
+				{
+					static bool HDR = false;
+
+					if (ImGui::Button("Take screenshot"))
+					{
+						// TODO: file dialog for saving
+						if (HDR)
+						{
+							View.ScreenshotPath = (char*)"C:/Users/Columbus/Desktop/screenshot.exr";
+						}
+						else
+						{
+							View.ScreenshotPath = (char*)"C:/Users/Columbus/Desktop/screenshot.png";
+						}
+
+						View.ScreenshotHDR = HDR;
+					}
+
+					ImGui::Checkbox("HDR", &HDR);
+				}
+				ImGui::End();
+			}
 
 			// lightmap
 			{
@@ -723,14 +771,6 @@ int main()
 			device->QueueWaitIdle();
 			Window.RecreateSwapchain();
 		}
-
-		RenderView View {
-			.Swapchain = Window.Swapchain,
-			.OutputSize = Window.Size,
-			.CameraCur = camera,
-			.CameraPrev = cameraPrev,
-			.DebugRender = &debugRender,
-		};
 
 		cameraPrev = camera;
 

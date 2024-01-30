@@ -10,7 +10,6 @@
 #include "Profiling/Profiling.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
-#include <vulkan/vulkan_core.h>
 
 namespace Columbus
 {
@@ -296,7 +295,7 @@ namespace Columbus
 		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
 	}
 
-	void RenderDeferred(RenderGraph& Graph, const RenderView& View, DeferredRenderContext& DeferredContext)
+	void RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
 		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);
 
@@ -310,6 +309,7 @@ namespace Columbus
 		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
+		ScreenshotPass(Graph, View, View.ScreenshotHDR ? LightingTexture : TonemappedImage);
 		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
 		DebugUIPass(Graph, View, TonemappedImage);
 		CopyToSwapchain(Graph, View, TonemappedImage);

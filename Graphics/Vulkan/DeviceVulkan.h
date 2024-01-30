@@ -134,142 +134,7 @@ namespace Columbus
 
 		TextureVulkan* _CreateTexture(const TextureDesc2& Desc);
 	public:
-		// TODO: move initialisation out from header
-		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
-			_PhysicalDevice(PhysicalDevice), _Instance(Instance)
-		{
-			VkFunctions.LoadFunctions(Instance);
-
-			_AccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-			_AccelerationStructureFeatures.pNext = nullptr;
-			_RayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-			_RayTracingFeatures.pNext = &_AccelerationStructureFeatures;
-			_RayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
-			_RayQueryFeatures.pNext = &_RayTracingFeatures;
-
-			_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			_Vulkan12Features.pNext = ENABLE_RAY_TRACING ? &_RayQueryFeatures : nullptr;
-			_DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-			_DeviceFeatures.pNext = &_Vulkan12Features;
-
-			vkGetPhysicalDeviceFeatures2(PhysicalDevice, &_DeviceFeatures);
-
-			_RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-			_RayTracingProperties.pNext = nullptr;
-			_DeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-			_DeviceProperties.pNext = ENABLE_RAY_TRACING ? &_RayTracingProperties : nullptr;
-
-			vkGetPhysicalDeviceProperties2(PhysicalDevice, &_DeviceProperties);
-			vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, &_MemoryProperties);
-
-			// logic if features are enabled/disabled
-			COLUMBUS_ASSERT(_Vulkan12Features.descriptorIndexing); // non-uniform descriptor indexing
-			COLUMBUS_ASSERT(_Vulkan12Features.descriptorBindingPartiallyBound);
-			COLUMBUS_ASSERT(_Vulkan12Features.bufferDeviceAddress);
-#if ENABLE_RAY_TRACING
-			// TOOD: make some features optional
-			COLUMBUS_ASSERT(_RayTracingFeatures.rayTracingPipeline);
-#endif
-
-			Log::Message("Creating Vulkan logical device on %s", _DeviceProperties.properties.deviceName);
-
-			// enumerate queue families
-			uint32_t queueFamilyCount;
-			vkGetPhysicalDeviceQueueFamilyProperties(_PhysicalDevice, &queueFamilyCount, nullptr);
-			std::vector<VkQueueFamilyProperties> qFamProps(queueFamilyCount);
-			vkGetPhysicalDeviceQueueFamilyProperties(_PhysicalDevice, &queueFamilyCount, qFamProps.data());
-
-			// find first suitable queue family
-			_FamilyIndex = -1;
-			for (uint32 i = 0; i < qFamProps.size(); i++)
-			{
-				if (qFamProps[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				{
-					_FamilyIndex = i;
-					break;
-				}
-			}
-
-			COLUMBUS_ASSERT_MESSAGE(_FamilyIndex != -1, "Failed to choose queue family");
-
-			float queuePriorities = 1.0f;
-			VkDeviceQueueCreateInfo queueCreateInfo;
-			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			queueCreateInfo.pNext = nullptr;
-			queueCreateInfo.flags = 0;
-			queueCreateInfo.queueFamilyIndex = _FamilyIndex;
-			queueCreateInfo.queueCount = 1;
-			queueCreateInfo.pQueuePriorities = &queuePriorities;
-
-			std::vector<const char*> extensions = {
-				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-
-#if ENABLE_RAY_TRACING
-				VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
-				VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-				VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-				VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-#endif
-			};
-
-			VkDeviceCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-			info.pNext = &_DeviceFeatures;
-			info.flags = 0;
-			info.queueCreateInfoCount = 1;
-			info.pQueueCreateInfos = &queueCreateInfo;
-			info.enabledLayerCount = 0;
-			info.ppEnabledLayerNames = nullptr;
-			info.enabledExtensionCount = extensions.size();
-			info.ppEnabledExtensionNames = extensions.data();
-			info.pEnabledFeatures = nullptr;
-
-			VK_CHECK(vkCreateDevice(PhysicalDevice, &info, nullptr, &_Device));
-
-			_ComputeQueue = SmartPointer<VkQueue>(new VkQueue);
-			vkGetDeviceQueue(_Device, _FamilyIndex, 0, _ComputeQueue.Get());
-
-			// create buffer pool
-			VkCommandPoolCreateInfo commandPoolInfo;
-			commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-			commandPoolInfo.pNext = nullptr;
-			commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			commandPoolInfo.queueFamilyIndex = _FamilyIndex;
-
-			VK_CHECK(vkCreateCommandPool(_Device, &commandPoolInfo, nullptr, &_CmdPool));
-
-			fixed_vector<VkDescriptorPoolSize, 16> poolSizes;
-			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100});
-			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100});
-			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, 100});
-			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10});
-			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10});
-#if ENABLE_RAY_TRACING
-			poolSizes.push_back(VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10});
-#endif
-
-			VkDescriptorPoolCreateInfo descriptorPoolInfo;
-			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			descriptorPoolInfo.pNext = nullptr;
-			descriptorPoolInfo.flags = 0;
-			descriptorPoolInfo.maxSets = 1024;
-			descriptorPoolInfo.poolSizeCount = poolSizes.size();
-			descriptorPoolInfo.pPoolSizes = poolSizes.data();
-
-			VK_CHECK(vkCreateDescriptorPool(_Device, &descriptorPoolInfo, nullptr, &_DescriptorPool));
-
-			// initialize VMA
-			VmaAllocatorCreateInfo allocatorInfo = {};
-			allocatorInfo.physicalDevice = PhysicalDevice;
-			allocatorInfo.device = _Device;
-			allocatorInfo.instance = Instance;
-			allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-			VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_Allocator));
-
-			// initialize profiling
-			_Profiler.Device = this;
-			_Profiler.Init();
-		}
+		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance);
 
 		// Features
 		bool SupportsRayTracing() const;
@@ -418,7 +283,14 @@ namespace Columbus
 			submit_info.signalSemaphoreCount = signalSemaphoresCount;
 			submit_info.pSignalSemaphores = signalSemaphores;
 
-			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
+			if (fence)
+			{
+				VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
+			}
+			else
+			{
+				VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, VK_NULL_HANDLE));
+			}
 		}
 
 		void Submit(CommandBufferVulkan* Buffer)

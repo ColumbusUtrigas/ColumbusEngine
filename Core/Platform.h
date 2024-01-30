@@ -34,6 +34,18 @@ namespace Columbus
 		#define FORCEINLINE __attribute__((always_inline))
 	#endif
 
+	#if defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || \
+		defined(__i386) || defined(__i486__) || defined(__i486) ||  \
+		defined(i386) || defined(__ia64__) || defined(__x86_64__)
+		#define COLUMBUS_X86_OR_X64_CPU 1
+	#else
+		#define COLUMBUS_X86_OR_X64_CPU 0
+	#endif
+
+	#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) || COLUMBUS_X86_OR_X64_CPU
+		#define COLUMBUS_LITTLE_ENDIAN 1
+	#else
+		#define COLUMBUS_LITTLE_ENDIAN 0
+	#endif
+
 }
-
-

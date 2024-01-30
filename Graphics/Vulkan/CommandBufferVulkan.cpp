@@ -266,6 +266,30 @@ namespace Columbus
 		vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Image, dstvk->_Layout, 1, &Region);
 	}
 
+	void CommandBufferVulkan::CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset)
+	{
+		auto srcvk = static_cast<const TextureVulkan*>(Src);
+		auto dstvk = static_cast<const BufferVulkan*>(Dst);
+
+		VkImageSubresourceLayers Subresource{
+			.aspectMask = TextureFormatToAspectMaskVk(Src->GetDesc().Format),
+			.mipLevel = 0, // TODO:
+			.baseArrayLayer = 0, // TODO:
+			.layerCount = 1, // TODO:
+		};
+
+		VkBufferImageCopy Copy {
+			.bufferOffset = DstOffset,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource = Subresource,
+			.imageOffset = VkOffset3D{SrcOffset.X, SrcOffset.Y, SrcOffset.Z},
+			.imageExtent = VkExtent3D{(u32)Size.X, (u32)Size.Y, (u32)Size.Z},
+		};
+
+		vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Buffer, 1, &Copy);
+	}
+
 	void CommandBufferVulkan::CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size)
 	{
 		auto srcvk = static_cast<const BufferVulkan*>(Src);

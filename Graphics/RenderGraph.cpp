@@ -214,7 +214,6 @@ namespace Columbus
 			PerFrameData.Fence = Device->CreateFence(true);
 			PerFrameData.ImageSemaphore = Device->CreateSemaphore();
 			PerFrameData.SubmitSemaphore = Device->CreateSemaphore();
-			PerFrameData.CommandBuffer = Device->CreateCommandBuffer();
 		}
 
 		// Assuming that GPUScene is completely static, fill it in
@@ -456,7 +455,7 @@ namespace Columbus
 
 	void RenderGraph::ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst)
 	{
-		Extractions.push_back(RenderGraphTextureExtraction{ .Src = Src, .Dst = Dst });
+		Extractions.push_back(RenderGraphTextureExtraction{ .Src = Src, .Version = Textures[Src].Version, .Dst = Dst });
 	}
 
 	void RenderGraph::Clear()
@@ -708,7 +707,7 @@ namespace Columbus
 	{
 		RenderData.CurrentPerFrameData = (RenderData.CurrentPerFrameData + 1) % MaxFramesInFlight;
 		auto& PerFrameData = RenderData.PerFrameData[RenderData.CurrentPerFrameData];
-		auto CommandBuffer = PerFrameData.CommandBuffer;
+		PerFrameData.CurrentCmdBuffer = -1;
 
 		{
 			PROFILE_CPU(Counter_RenderGraphExecute);
@@ -741,6 +740,20 @@ namespace Columbus
 
 		PROFILE_CPU(Counter_RenderGraphExecute);
 
+		int CmdBufferSubmissions = 1;
+		for (RenderPass& Pass : Passes)
+		{
+			if (Pass.Parameters.SubmitBeforeExecution)
+			{
+				CmdBufferSubmissions++;
+			}
+		}
+		// CmdBufferSubmissions - 1 == number of in-between semaphores
+
+		auto CommandBuffer = PerFrameData.GetNextCommandBuffer(Device);
+		auto WaitSemaphore = PerFrameData.GetPreviousSemaphore(Device, CmdBufferSubmissions);
+		auto SignalSemaphore = PerFrameData.GetNextSemaphore(Device, CmdBufferSubmissions);
+
 		// TODO: multithreaded rendering
 		RenderGraphContext Context{NULL, -1, Device, Scene, CommandBuffer, RenderData, *this};
 		CommandBuffer->Reset();
@@ -765,11 +778,39 @@ namespace Columbus
 
 		for (auto& Pass : Passes)
 		{
+			if (Pass.Parameters.SubmitBeforeExecution)
+			{
+				CommandBuffer->End();
+
+				Device->Submit(CommandBuffer, nullptr, 1, &WaitSemaphore, 1, &SignalSemaphore);
+
+				CommandBuffer = PerFrameData.GetNextCommandBuffer(Device);
+				WaitSemaphore = PerFrameData.GetPreviousSemaphore(Device, CmdBufferSubmissions);
+				SignalSemaphore = PerFrameData.GetNextSemaphore(Device, CmdBufferSubmissions);
+
+				Context.CommandBuffer = CommandBuffer;
+				CommandBuffer->Reset();
+				CommandBuffer->Begin();
+			}
+
 			Context.CurrentPass = Pass.Id;
 
 			while (!MarkersStack.empty() && MarkersStack.front().PassId == Pass.Id)
 			{
 				EvaluateMarker();
+			}
+
+			for (RenderPassTextureDependency& TexWrite : Pass.Dependencies.TextureWriteResources)
+			{
+				if (TexWrite.Texture != SwapchainId)
+				{
+					Textures[TexWrite.Texture].CurrentVersion++;
+				}
+			}
+
+			for (RenderPassBufferDependency& BufWrite : Pass.Dependencies.BufferWriteResources)
+			{
+				Buffers[BufWrite.Buffer].CurrentVersion++;
 			}
 
 			// pass marker
@@ -892,6 +933,37 @@ namespace Columbus
 				Pass.ExecutionFunc(Context);
 			}
 
+			// extractions
+			for (RenderGraphTextureExtraction& Extraction : Extractions)
+			{
+				if (Extraction.Version == Textures[Extraction.Src].CurrentVersion)
+				{
+					CommandBuffer->BeginDebugMarker("Extract");
+
+					if (*Extraction.Dst == nullptr ||
+						(*Extraction.Dst != nullptr && Extraction.Dst->get()->GetDesc() != Textures[Extraction.Src].Desc))
+					{
+						// TODO: move to allocation phase?
+						// TODO: resize invalidation
+						*Extraction.Dst = SPtr<Texture2>(Device->CreateTexture(Textures[Extraction.Src].Desc));
+					}
+
+					iVector3 Size = { (int)Textures[Extraction.Src].Desc.Width, (int)Textures[Extraction.Src].Desc.Height, (int)Textures[Extraction.Src].Desc.Depth };
+
+					auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
+					auto DstLayout = static_cast<TextureVulkan*>(Extraction.Dst->get())->_Layout;
+
+					// TODO: layout management
+					CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+					CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+					CommandBuffer->CopyImage(Textures[Extraction.Src].Texture.get(), Extraction.Dst->get(), {}, {}, Size);
+					CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), SrcLayout);
+					CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), DstLayout);
+
+					CommandBuffer->EndDebugMarker();
+				}
+			}
+
 			// pass marker
 			CommandBuffer->EndDebugMarker();
 		}
@@ -900,30 +972,6 @@ namespace Columbus
 		while (!MarkersStack.empty())
 		{
 			EvaluateMarker();
-		}
-
-		// extractions
-		for (RenderGraphTextureExtraction& Extraction : Extractions)
-		{
-			if (*Extraction.Dst == nullptr ||
-			   (*Extraction.Dst != nullptr && Extraction.Dst->get()->GetDesc() != Textures[Extraction.Src].Desc))
-			{
-				// TODO: move to allocation phase?
-				// TODO: resize invalidation
-				*Extraction.Dst = SPtr<Texture2>(Device->CreateTexture(Textures[Extraction.Src].Desc));
-			}
-
-			iVector3 Size = { (int)Textures[Extraction.Src].Desc.Width, (int)Textures[Extraction.Src].Desc.Height, (int)Textures[Extraction.Src].Desc.Depth };
-
-			auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
-			auto DstLayout = static_cast<TextureVulkan*>(Extraction.Dst->get())->_Layout;
-
-			// TODO: layout management
-			CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-			CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-			CommandBuffer->CopyImage(Textures[Extraction.Src].Texture.get(), Extraction.Dst->get(), {}, {}, Size);
-			CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), SrcLayout);
-			CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), DstLayout);
 		}
 
 		// TODO: remove swapchain logic and present from render graph, support for windowless rendering
@@ -936,8 +984,8 @@ namespace Columbus
 		Context.Device->_Profiler.EndProfileConter(GpuTimeMarker, CommandBuffer);
 		CommandBuffer->End();
 
-		Device->Submit(CommandBuffer, PerFrameData.Fence, 1, &PerFrameData.ImageSemaphore, 1, &PerFrameData.SubmitSemaphore);
-		Device->Present(Swapchain, RenderData.CurrentSwapchainImageIndex, PerFrameData.SubmitSemaphore);
+		Device->Submit(CommandBuffer, PerFrameData.Fence, 1, &WaitSemaphore, 1, &SignalSemaphore);
+		Device->Present(Swapchain, RenderData.CurrentSwapchainImageIndex, SignalSemaphore);
 	}
 
 	std::string RenderGraph::ExportGraphviz()
