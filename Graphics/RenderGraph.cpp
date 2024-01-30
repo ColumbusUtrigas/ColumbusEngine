@@ -291,6 +291,7 @@ namespace Columbus
 			Texture.Texture = PooledTexture.Texture;
 			Texture.AllocatedSize = PooledTexture.Texture->GetSize();
 			PooledTexture.Used = true;
+			PooledTexture.UnusedFrames = 0;
 			Device->SetDebugName(Texture.Texture.get(), Texture.DebugName.c_str());
 		};
 
@@ -331,6 +332,7 @@ namespace Columbus
 			Buffer.Buffer = PooledBuffer.Buffer;
 			Buffer.AllocatedSize = PooledBuffer.Buffer->GetSize();
 			PooledBuffer.Used = true;
+			PooledBuffer.UnusedFrames = 0;
 			Device->SetDebugName(Buffer.Buffer.get(), Buffer.DebugName.c_str());
 		};
 
@@ -467,22 +469,67 @@ namespace Columbus
 		Buffers.clear();
 		Extractions.clear();
 
-		// TODO: cleanup unused textures from the previous frame
-
 		// TODO: inter-frame and global resource logic
 		for (auto& DescPool : TextureResourcePool)
 		{
-			for (RenderGraphPooledTexture& PooledTexture : DescPool.second)
+			TexturePool& Pool = DescPool.second;
+
+			for (int i = 0; i < (int)Pool.size(); i++)
 			{
-				PooledTexture.Used = false;
+				RenderGraphPooledTexture& PooledTexture = Pool[i];
+
+				// unused textures cleanup logic
+				if (PooledTexture.UnusedFrames > MaxFramesInFlight)
+				{
+					Texture2* Texture = Pool[i].Texture.get();
+
+					Log::Message("RenderGraph texture deleted: %ix%ix%i", Texture->GetDesc().Width, Texture->GetDesc().Height, Texture->GetDesc().Depth);
+					RemoveProfilingMemory(MemoryCounter_RenderGraphTextures, Texture->GetSize());
+
+					Device->DestroyTexture(Texture);
+
+					Pool.erase(Pool.begin() + i);
+				}
+				else
+				{
+					if (!PooledTexture.Used)
+						PooledTexture.UnusedFrames++;
+
+					PooledTexture.Used = false;
+				}
 			}
 		}
 
 		for (auto& DescPool : BufferResourcePool)
 		{
-			for (RenderGraphPooledBuffer& PooledBuffer : DescPool.second)
+			BufferPool& Pool = DescPool.second;
+
+			for (int i = 0; i < (int)Pool.size(); i++)
 			{
-				PooledBuffer.Used = false;
+				RenderGraphPooledBuffer& PooledBuffer = Pool[i];
+
+				// unused buffers cleanup logic
+				if (PooledBuffer.UnusedFrames > MaxFramesInFlight)
+				{
+					Buffer* Buffer = Pool[i].Buffer.get();
+					
+					double Size;
+					const char* Suffix = HumanizeBytes(Buffer->GetSize(), Size);
+
+					Log::Message("RenderGraph buffer deleted: %0.2f %s", Size, Suffix);
+					RemoveProfilingMemory(MemoryCounter_RenderGraphBuffers, Buffer->GetSize());
+
+					Device->DestroyBuffer(Buffer);
+
+					Pool.erase(Pool.begin() + i);
+				}
+				else
+				{
+					if (!PooledBuffer.Used)
+						PooledBuffer.UnusedFrames++;
+
+					PooledBuffer.Used = false;
+				}
 			}
 		}
 

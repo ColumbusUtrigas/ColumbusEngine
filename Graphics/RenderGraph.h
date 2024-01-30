@@ -437,12 +437,14 @@ namespace Columbus
 	{
 		SPtr<Texture2> Texture;
 		bool Used = false;
+		int UnusedFrames = 0; // how many frames behind it was last used
 	};
 
 	struct RenderGraphPooledBuffer
 	{
 		SPtr<Buffer> Buffer;
 		bool Used = false;
+		int UnusedFrames = 0; // how many frames behind it was last used
 	};
 
 	// valid only while render graph is valid
@@ -531,8 +533,11 @@ namespace Columbus
 		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
 		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];
 
-		std::unordered_map<TextureDesc2, std::vector<RenderGraphPooledTexture>, HashTextureDesc2> TextureResourcePool;
-		std::unordered_map<BufferDesc, std::vector<RenderGraphPooledBuffer>, HashBufferDesc> BufferResourcePool;
+		using TexturePool = std::vector<RenderGraphPooledTexture>;
+		using BufferPool = std::vector<RenderGraphPooledBuffer>;
+
+		std::unordered_map<TextureDesc2, TexturePool, HashTextureDesc2> TextureResourcePool;
+		std::unordered_map<BufferDesc, BufferPool, HashBufferDesc> BufferResourcePool;
 
 	public:
 		SPtr<DeviceVulkan> Device;
