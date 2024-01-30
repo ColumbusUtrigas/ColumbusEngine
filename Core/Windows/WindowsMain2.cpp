@@ -45,6 +45,7 @@
 #include <queue>
 
 #include <Lib/tinygltf/tiny_gltf.h>
+#include <Lib/nativefiledialog/src/include/nfd.h>
 
 using namespace Columbus;
 
@@ -536,6 +537,12 @@ int main()
 
 	// SPtr<GPUScene> scene = std::make_shared<GPUScene>();
 
+	char* SceneLoadPath = NULL;
+	if (NFD_OpenDialog("gltf", NULL, &SceneLoadPath) != NFD_OKAY)
+	{
+		return 1;
+	}
+
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
 
@@ -545,7 +552,8 @@ int main()
 	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-	auto scene = LoadScene(device, camera, "C:/Users/Columbus/Downloads/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf", cpuScene);
+	//auto scene = LoadScene(device, camera, "C:/Users/Columbus/Downloads/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf", cpuScene);
+	auto scene = LoadScene(device, camera, SceneLoadPath, cpuScene);
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
 	DeferredRenderContext DeferredContext; // for deferred
@@ -618,14 +626,17 @@ int main()
 
 					if (ImGui::Button("Take screenshot"))
 					{
-						// TODO: file dialog for saving
+						char* ScreenshotPath = NULL;
+
 						if (HDR)
 						{
-							View.ScreenshotPath = (char*)"C:/Users/Columbus/Desktop/screenshot.exr";
+							if (NFD_SaveDialog("exr", NULL, &ScreenshotPath) == NFD_OKAY)
+								View.ScreenshotPath = ScreenshotPath;
 						}
 						else
 						{
-							View.ScreenshotPath = (char*)"C:/Users/Columbus/Desktop/screenshot.png";
+							if (NFD_SaveDialog("png", NULL, &ScreenshotPath) == NFD_OKAY)
+								View.ScreenshotPath = ScreenshotPath;
 						}
 
 						View.ScreenshotHDR = HDR;

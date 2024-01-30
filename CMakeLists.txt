@@ -93,6 +93,29 @@ endif()
 file(GLOB XATLAS_SRC Lib/xatlas/xatlas.h Lib/xatlas/xatlas.cpp)
 add_library(xatlas STATIC ${XATLAS_SRC})
 
+########## NFD ##########
+
+if(LINUX)
+	file(GLOB NFD_SRC
+		Lib/nativefiledialog/src/nfd_gtk.c
+		Lib/nativefiledialog/src/common.h
+		Lib/nativefiledialog/src/nfd_common.h
+		Lib/nativefiledialog/src/nfd_common.c)
+
+	add_library(nfd STATIC ${NFD_SRC})
+	target_include_directories(nfd PRIVATE Lib/nativefiledialog/src/include)
+	target_link_libraries(nfd gtk+-3.0)
+elseif(WIN32)
+	file(GLOB NFD_SRC
+		Lib/nativefiledialog/src/nfd_win.cpp
+		Lib/nativefiledialog/src/common.h
+		Lib/nativefiledialog/src/nfd_common.h
+		Lib/nativefiledialog/src/nfd_common.c)
+	add_library(nfd STATIC ${NFD_SRC})
+	target_include_directories(nfd PRIVATE Lib/nativefiledialog/src/include)
+	target_link_libraries(nfd comctl32)
+endif()
+
 ########## BULLET PHYSICS #############
 dir_to_var_recurse(Lib/bullet3/src/BulletCollision BULLET_COLLISION_SRC)
 dir_to_var_recurse(Lib/bullet3/src/BulletDynamics BULLET_DYNAMICS_SRC)
@@ -232,6 +255,7 @@ elseif(WIN32)
 	target_link_libraries(${TARGET} vulkan-1 shaderc_shared)
 endif()
 
+target_link_libraries(${TARGET} nfd)
 target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} xatlas)
 target_link_libraries(${TARGET} spirv_reflect)

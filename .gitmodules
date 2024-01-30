@@ -38,3 +38,6 @@
 [submodule "Lib/tinygltf"]
 	path = Lib/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "Lib/nativefiledialog"]
+	path = Lib/nativefiledialog
+	url = https://github.com/mlabbe/nativefiledialog.git
