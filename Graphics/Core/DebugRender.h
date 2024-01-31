@@ -10,6 +10,7 @@ namespace Columbus
 	enum class DebugRenderObjectType
 	{
 		Box,
+		Tri,
 	};
 
 	struct DebugRenderObject
@@ -22,6 +23,8 @@ namespace Columbus
 
 		bool DrawOutline = false;
 		bool UseZTest = true;
+
+		Vector3 Vertices[3]; // for triangle
 	};
 
 	struct DebugRender
@@ -42,6 +45,14 @@ namespace Columbus
 			Objects.push_back(Object);
 		}
 
+		void AddBox(const Vector3& Position, const Vector3& Size, const Vector4& Colour, bool ZTest = true)
+		{
+			Matrix Transform;
+			Transform.Translate(Position);
+			Transform.Scale(Size);
+			AddBox(Transform, Colour, ZTest);
+		}
+
 		void AddBoxWithOutline(const Matrix& Transform, Vector4 Colour, Vector4 OutlineColour, bool ZTest = true)
 		{
 			DebugRenderObject Object {
@@ -51,6 +62,19 @@ namespace Columbus
 				.OutlineColour = OutlineColour,
 				.DrawOutline = true,
 				.UseZTest = ZTest,
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddTri(const Vector3& A, const Vector3& B, const Vector3& C, const Vector4& Colour, bool ZTest = true)
+		{
+			DebugRenderObject Object {
+				.Type = DebugRenderObjectType::Tri,
+				.Transform = Matrix(1),
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Vertices = { A, B, C },
 			};
 			Objects.push_back(Object);
 		}

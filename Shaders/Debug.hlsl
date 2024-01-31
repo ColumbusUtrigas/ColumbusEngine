@@ -9,7 +9,13 @@ struct _Params {
 	float4x4 Model;
 	float4x4 VP;
 	float4 Colour;
+
+	float4 Vertices[3];
+	uint Type;
 } Params;
+
+#define TYPE_BOX 0
+#define TYPE_TRI 1
 
 static const float3 pos[8] = {
 	float3(-1, -1, -1),
@@ -45,8 +51,15 @@ static const int index[36] = {
 
 VS_TO_PS Vertex(uint VertexID : SV_VertexID)
 {
+	float4 vertex = float4(pos[index[VertexID]] * 0.5f, 1);
+
+	if (Params.Type == TYPE_TRI)
+	{
+		vertex = Params.Vertices[VertexID];
+	}
+
 	VS_TO_PS Out;
-	float4 World = mul(float4(pos[index[VertexID]] * 0.5f, 1), Params.Model);
+	float4 World = mul(vertex, Params.Model);
 	Out.Pos = mul(Params.VP, World) * float4(1, -1, 1, 1);
 	return Out;
 }

@@ -32,6 +32,7 @@
 #include <Graphics/RenderPasses/RenderPasses.h>
 #include <Graphics/Lightmaps.h>
 #include <Profiling/Profiling.h>
+#include <Math/Box.h>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -132,7 +133,7 @@ Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, 
 
 // TODO: move to appropriate place
 // TODO: separate CPUScene load and GPUScene load?
-SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene)
+SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings)
 {
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
@@ -195,6 +196,9 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			Buffer* normalBuffer = nullptr;
 			Buffer* materialBuffer = nullptr;
 
+			Vector3 MinVertex(FLT_MAX);
+			Vector3 MaxVertex(-FLT_MAX);
+
 			cpuScene.Meshes.push_back(CPUSceneMesh{});
 			CPUSceneMesh& cpuMesh = cpuScene.Meshes.back();
 
@@ -242,6 +246,19 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 				verticesCount = accessor.count;
 
 				cpuMesh.Vertices = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data) + verticesCount);
+
+				for (const Vector3& Vertex : cpuMesh.Vertices)
+				{
+					MinVertex.X = Math::Min(MinVertex.X, Vertex.X);
+					MinVertex.Y = Math::Min(MinVertex.Y, Vertex.Y);
+					MinVertex.Z = Math::Min(MinVertex.Z, Vertex.Z);
+
+					MaxVertex.X = Math::Max(MaxVertex.X, Vertex.X);
+					MaxVertex.Y = Math::Max(MaxVertex.Y, Vertex.Y);
+					MaxVertex.Z = Math::Max(MaxVertex.Z, Vertex.Z);
+				}
+
+				Boundings.push_back(Box(MinVertex, MaxVertex));
 
 				vertexBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
 				Device->SetDebugName(vertexBuffer, (mesh.name + " (Vertices)").c_str());
@@ -380,6 +397,51 @@ void NewFrameImgui(WindowVulkan& Window)
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplSDL2_NewFrame(Window.Window);
 	}
+}
+
+float TriangleArea(const Vector3& A, const Vector3& B, const Vector3& C)
+{
+	return Vector3::Cross(B - A, C - A).Length({}) / 2;
+}
+
+// TODO: organise a math library with intersections
+std::optional<Vector3> IntersectTriangleRay(const Vector3& A, const Vector3& B, const Vector3& C, const Vector3& Origin, const Vector3& Direction)
+{
+	// first, ray-plane intersection
+	// then build barycentrics for the triangle, and check if it's inside
+
+	Vector3 triCenter = (A + B + C) / 3;
+	Vector3 triNormal = Vector3::Cross(B - A, C - A).Normalized();
+	
+	Plane originPlane(triNormal, 0);
+
+	Plane triPlane(triNormal, originPlane.DistanceToPoint(triCenter));
+	Vector3 closest = triPlane.ClosestPoint(Origin);
+	float distance = triPlane.DistanceToPoint(Origin);
+	Vector3 closestDir = (closest - Origin).Normalized();
+
+	float dot = closestDir.Dot(Direction);
+
+	if (dot < 0.001f)
+	{
+		// ray is parallel or looking into other direction
+		return std::nullopt;
+	}
+
+	Vector3 planeIntersection = Origin + (Math::Abs(distance) / dot) * Direction;
+
+	Vector3 P = planeIntersection;
+	float area = TriangleArea(A, B, C);
+
+	Vector3 barycentrics = Vector3(TriangleArea(C, A, P) / area, TriangleArea(A, B, P) / area, TriangleArea(B, C, P) / area);
+	float barySum = barycentrics.X + barycentrics.Y + barycentrics.Z;
+
+	if ((barySum - 1.0f) < 0.001f) // if barySum == 1
+	{
+		return P;
+	}
+
+	return std::nullopt;
 }
 
 // TODO: think about it, is it REALLY needed? sounds like an overengineered system for nothing
@@ -549,11 +611,13 @@ int main()
 	CPUScene cpuScene;
 	LightmapSystem lightmapSystem;
 
+	std::vector<Box> BoundingBoxes;
+
 	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
 	//auto scene = LoadScene(device, camera, "C:/Users/Columbus/Downloads/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf", cpuScene);
-	auto scene = LoadScene(device, camera, SceneLoadPath, cpuScene);
+	auto scene = LoadScene(device, camera, SceneLoadPath, cpuScene, BoundingBoxes);
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
 	DeferredRenderContext DeferredContext; // for deferred
@@ -744,7 +808,7 @@ int main()
 					{
 						GPULight& Light = scene->Lights[i];
 
-						char Label[256]{0};
+						char Label[256]{ 0 };
 						snprintf(Label, 256, "%i", i);
 						if (ImGui::CollapsingHeader(Label))
 						{
@@ -769,11 +833,57 @@ int main()
 
 					if (ImGui::Button("+"))
 					{
-						GPULight NewLight{{}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0};
+						GPULight NewLight{ {}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0 };
 						scene->Lights.push_back(NewLight);
 					}
 				}
 				ImGui::End();
+			}
+		}
+
+		// crude collision check
+		{
+			// TODO: function to project mouse into world
+			ImGuiIO& io = ImGui::GetIO();
+			Vector2 mousepos = { io.MousePos.x, io.MousePos.y };
+			Vector2 displaysize = { io.DisplaySize.x, io.DisplaySize.y };
+
+			Vector2 mousendc = (mousepos / displaysize) * 2 - 1;
+			mousendc.Y = -mousendc.Y;
+
+			Vector4 mouseVector(mousendc, -1, 1);
+			Matrix mat = camera.GetViewProjection().GetInverted();
+			Vector3 mousevec = (mat * mouseVector).XYZ() - camera.Pos;
+
+			for (int i = 0; i < BoundingBoxes.size(); i++)
+			{
+				Box& Bounding = BoundingBoxes[i];
+
+				if (Bounding.Intersects(camera.Pos, mousevec))
+				{
+					CPUSceneMesh& Mesh = cpuScene.Meshes[i];
+					for (int v = 0; v < Mesh.Indices.size(); v += 3)
+					{
+						// extract triangle. TODO: mesh processing functions
+						u32 i1 = Mesh.Indices[v + 0];
+						u32 i2 = Mesh.Indices[v + 1];
+						u32 i3 = Mesh.Indices[v + 2];
+
+						Vector3 v1 = Mesh.Vertices[i1];
+						Vector3 v2 = Mesh.Vertices[i2];
+						Vector3 v3 = Mesh.Vertices[i3];
+
+						std::optional<Vector3> mouseIntersect = IntersectTriangleRay(v1, v2, v3, camera.Pos, mousevec);
+						if (mouseIntersect)
+						{
+							debugRender.AddBox(mouseIntersect.value(), { 0.1f }, Vector4(0, 0, 1, 1));
+
+							Vector3 triNormal = Vector3::Cross(v2 - v1, v3 - v1).Normalized();
+							Vector3 triOffset = triNormal * 0.1f;
+							debugRender.AddTri(v1 + triOffset, v2 + triOffset, v3 + triOffset, {1, 0, 0, 1});
+						}
+					}
+				}
 			}
 		}
 

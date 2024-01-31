@@ -75,6 +75,8 @@ namespace Columbus
 		Matrix Model;
 		Matrix VP;
 		Vector4 Colour;
+		Vector4 Vertices[3];
+		u32 Type;
 	};
 
 	struct DebugIrradianceProbesParameters
@@ -150,13 +152,27 @@ namespace Columbus
 					.Model = Object.Transform,
 					.VP = View.CameraCur.GetViewProjection(),
 					.Colour = Object.Colour,
+					.Type = (u32)Object.Type,
 				};
 
 				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 				Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
 				Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
-				Context.CommandBuffer->Draw(36, 1, 0, 0);
+
+				if (Object.Type == DebugRenderObjectType::Box)
+				{
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(36, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Tri)
+				{
+					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+					Parameters.Vertices[1] = Vector4(Object.Vertices[1], 1);
+					Parameters.Vertices[2] = Vector4(Object.Vertices[2], 1);
+
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(3, 1, 0, 0);
+				}
 			}
 
 			if (CVar_DebugOverlayIrradiance.GetValue())
