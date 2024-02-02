@@ -19,6 +19,7 @@ namespace Columbus
 	struct PathTraceParameters
 	{
 		GPUCamera MainCamera;
+		int randomNumber;
 		int frameNumber;
 		int reset;
 		int bounces;
@@ -34,9 +35,17 @@ namespace Columbus
 		TextureDesc2 PTTextureDesc {
 			.Usage = TextureUsage::Storage,
 			.Width = (uint32)View.OutputSize.X, .Height = (uint32)View.OutputSize.Y,
-			.Format = TextureFormat::RGBA16F,
+			.Format = TextureFormat::RGBA32F,
 		};
 		RenderGraphTextureRef RTImage = Graph.CreateTexture(PTTextureDesc, "PathTraceTexture");
+
+		// TODO: move to RenderView/PathTracingContext?
+		static SPtr<Texture2> HistoryTexture;
+
+		if (!HistoryTexture)
+		{
+			HistoryTexture = SPtr<Texture2>(Graph.Device->CreateTexture(PTTextureDesc));
+		}
 
 		{
 			RenderPassParameters Parameters;
@@ -59,19 +68,25 @@ namespace Columbus
 				auto RTSet = Context.GetDescriptorSet(PTPipeline, 2);
 				Context.Device->UpdateDescriptorSet(RTSet, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
 				Context.Device->UpdateDescriptorSet(RTSet, 1, 0, Context.GetRenderGraphTexture(RTImage).get());
+				Context.Device->UpdateDescriptorSet(RTSet, 2, 0, HistoryTexture.get());
 
 				GPUCamera UpdatedCamera = GPUCamera(View.CameraCur);
 				Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 				Context.Scene->MainCamera = UpdatedCamera;
 
 				bool reset = Context.Scene->Dirty;
-				reset = true;
-				int frame = rand() % 2000;
-				int bounces = 2;
+
+				// TODO: move to RenderView/PathTracingContext?
+				static int frame = 1;
+
+				if (reset)
+					frame = 1;
 
 				PathTraceParameters rayParams = {
 					UpdatedCamera,
-					(int)frame, (int)reset,
+					(int)rand() % 2000,
+					(int)frame++,
+					(int)reset,
 					CVar_Bounces.GetValue(),
 				};
 
@@ -82,6 +97,7 @@ namespace Columbus
 				Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
 				Context.CommandBuffer->TraceRays(PTPipeline, View.OutputSize.X, View.OutputSize.Y, 1);
 			});
+			Graph.ExtractTexture(RTImage, &HistoryTexture);
 		}
 
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, RTImage);

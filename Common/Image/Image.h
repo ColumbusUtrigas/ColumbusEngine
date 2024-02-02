@@ -59,6 +59,10 @@ namespace Columbus
 		R8UInt,
 		R32UInt,
 
+		R8SRGB,
+		RG8SRGB,
+		RGB8SRGB,
+		RGBA8SRGB,
 		BGRA8SRGB,
 
 		R11G11B10F,

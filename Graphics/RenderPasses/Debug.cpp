@@ -329,8 +329,8 @@ namespace Columbus
 				{
 					ImGui::TextWrapped("%s", Str.get());
 				}
-				ImGui::EndChild();
 			}
+			ImGui::EndChild();
 
 			ImGui::Separator();
 

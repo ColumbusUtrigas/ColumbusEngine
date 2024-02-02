@@ -139,10 +139,12 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 	tinygltf::TinyGLTF loader;
 	std::string err, warn;
 
+	Timer GltfTimer;
 	if (!loader.LoadASCIIFromFile(&model, &err, &warn, Filename))
 	{
 		Log::Fatal("Couldn't load scene, %s", Filename.c_str());
 	}
+	Log::Message("GLTF loaded, time: %0.2f s", GltfTimer.Elapsed());
 
 	SPtr<GPUScene> Scene = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [Device](GPUScene* Scene)
 	{
@@ -172,19 +174,25 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 		GPUScene::DestroyGPUScene(Scene, Device);
 	});
 
-	for (auto& texture : model.textures)
+	auto CreateTexture = [Scene, Device, &model](int textureId, const char* name, TextureFormat format) -> int
 	{
-		auto& image = model.images[texture.source];
+		auto& image = model.images[textureId];
 
 		Image img;
+		img.Format = format;
 		img.FromMemory(image.image.data(), image.image.size(), image.width, image.height);
 
 		auto tex = Device->CreateTexture(img);
-		Device->SetDebugName(tex, texture.name.c_str());
+		Device->SetDebugName(tex, name);
 		AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
-		Scene->Textures.push_back(tex);
-	}
 
+		int id = (int)Scene->Textures.size();
+		Scene->Textures.push_back(tex);
+
+		return id;
+	};
+
+	Timer MeshTimer;
 	// TODO
 	for (auto& mesh : model.meshes)
 	{
@@ -311,7 +319,11 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			if (primitive.material > -1)
 			{
 				auto mat = model.materials[primitive.material];
-				matid = mat.pbrMetallicRoughness.baseColorTexture.index;
+
+				int modelAlbedoId = mat.pbrMetallicRoughness.baseColorTexture.index;
+				int albedoId = CreateTexture(model.textures[modelAlbedoId].source, model.textures[modelAlbedoId].name.c_str(), TextureFormat::RGBA8SRGB);
+
+				matid = albedoId;
 			}
 
 			GPUSceneMesh Mesh;
@@ -328,6 +340,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 			Scene->Meshes.push_back(Mesh);
 		}
 	}
+	Log::Message("Meshes loaded, time: %0.2f s", MeshTimer.Elapsed());
 
 	// TLAS and BLASes should be packed into GPU scene
 	AccelerationStructureDesc TlasDesc;

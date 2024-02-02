@@ -38,6 +38,12 @@ namespace Columbus
 			case TextureFormat::RGB32F:  return 12; break;
 			case TextureFormat::RGBA32F: return 16; break;
 
+			case TextureFormat::R8SRGB:     return 1; break;
+			case TextureFormat::RG8SRGB:    return 2; break;
+			case TextureFormat::RGB8SRGB:   return 3; break;
+			case TextureFormat::RGBA8SRGB:  return 4; break;
+			case TextureFormat::BGRA8SRGB:  return 4; break;
+
 			case TextureFormat::R8UInt:  return 1; break;
 			case TextureFormat::R32UInt: return 4; break;
 
@@ -107,23 +113,27 @@ namespace Columbus
 		switch (format)
 		{
 		case TextureFormat::R8:
+		case TextureFormat::R8SRGB:
 		case TextureFormat::R16:
 		case TextureFormat::R32UInt:
 		case TextureFormat::R16F:
 		case TextureFormat::R32F: return 1;
 
 		case TextureFormat::RG8:
+		case TextureFormat::RG8SRGB:
 		case TextureFormat::RG16:
 		case TextureFormat::RG16F:
 		case TextureFormat::RG32F: return 2;
 
 		case TextureFormat::RGB8:
+		case TextureFormat::RGB8SRGB:
 		case TextureFormat::RGB16:
 		case TextureFormat::RGB16F:
 		case TextureFormat::RGB32F:
 		case TextureFormat::R11G11B10F: return 3;
 
 		case TextureFormat::RGBA8:
+		case TextureFormat::RGBA8SRGB:
 		case TextureFormat::RGBA16:
 		case TextureFormat::RGBA16F:
 		case TextureFormat::RGBA32F:
@@ -161,6 +171,10 @@ namespace Columbus
 		case TextureFormat::R8UInt:  return "R8Uint"; break;
 		case TextureFormat::R32UInt: return "R32Uint"; break;
 
+		case TextureFormat::R8SRGB:    return "R8sRGB";    break;
+		case TextureFormat::RG8SRGB:   return "RG8sRGB";   break;
+		case TextureFormat::RGB8SRGB:  return "RGB8sRGB";  break;
+		case TextureFormat::RGBA8SRGB: return "RGBA8sRGB"; break;
 		case TextureFormat::BGRA8SRGB: return "BGRA8sRGB"; break;
 
 		case TextureFormat::R11G11B10F: return "R11G11B10F"; break;
