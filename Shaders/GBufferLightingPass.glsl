@@ -1,11 +1,15 @@
 #version 460 core
+#extension GL_GOOGLE_include_directive : require
+
+#include "BRDF.glsl"
 
 #ifdef COMPUTE_SHADER
 	layout(binding = 0, set = 0) uniform sampler2D GBufferAlbedo;
 	layout(binding = 1, set = 0) uniform sampler2D GBufferNormal;
 	layout(binding = 2, set = 0, rgba16f) uniform image2D LightingOutput;
 	layout(binding = 3, set = 0) uniform sampler2D GBufferWorldPosition;
-	layout(binding = 4, set = 0) uniform sampler2D GBufferLightmap;
+	layout(binding = 4, set = 0) uniform sampler2D GBufferRoughnessMetallic;
+	layout(binding = 5, set = 0) uniform sampler2D GBufferLightmap;
 
 	// TODO: use GPUScene common definitions
 	struct GPULight
@@ -23,7 +27,7 @@
 	#define GPULIGHT_RECTANGLE 3
 	#define GPULIGHT_SPHERE 4
 
-	layout(binding = 5, set = 0) readonly buffer LightsBuffer {
+	layout(binding = 6, set = 0) readonly buffer LightsBuffer {
 		GPULight Lights[];
 	} GPUSceneLights;
 
@@ -32,6 +36,7 @@
 	// TODO: create a global GPUScene/View cbuffer
 	layout(push_constant) uniform Params
 	{
+		vec4 CameraPosition;
 		uint LightsCount;
 	} Parameters;
 
@@ -48,6 +53,14 @@
 		vec3 WorldPosition = texture(GBufferWorldPosition, UV).rgb;
 		vec3 Lightmap = texture(GBufferLightmap, UV).rgb;
 		vec3 LightingSum = Lightmap * Albedo;
+		vec2 RM = texture(GBufferRoughnessMetallic, UV).rg;
+
+		BRDFData BRDF;
+		BRDF.N = N;
+		BRDF.V = normalize(WorldPosition - Parameters.CameraPosition.xyz);
+		BRDF.Albedo = Albedo;
+		BRDF.Roughness = RM.x;
+		BRDF.Metallic = RM.y;
 
 		// TODO: move lighting functions to a common header
 		for (uint i = 0; i < Parameters.LightsCount; i++)
@@ -75,7 +88,13 @@
 				break;
 			}
 
-			LightingSum += vec3(max(dot(N, LightDir), 0)) * Albedo * Shadow * Attenuation * Light.Color.rgb;
+			BRDF.L = LightDir;
+
+			// vec3 LightValue = Albedo * Shadow * Attenuation * Light.Color.rgb;
+			vec3 LightValue = vec3(max(dot(N, LightDir), 0)) * Albedo * Shadow * Attenuation * Light.Color.rgb;
+
+			// LightingSum += LightValue;
+			LightingSum += EvaluateBRDF(BRDF, LightValue);
 		}
 
 		imageStore(LightingOutput, ivec2(gl_GlobalInvocationID.xy), vec4(LightingSum, 1));

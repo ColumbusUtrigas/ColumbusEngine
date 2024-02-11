@@ -77,16 +77,23 @@ struct RayPayload {
 		vec3 sampleColor = PathTrace(origin, direction, rayParams.bounces, rngState);
 		vec3 finalColor = vec3(0);
 
-		if (rayParams.reset == 1)
+		int reset = rayParams.reset;
+		// reset = 1;
+
+		if (reset == 1)
 		{
 			finalColor = sampleColor;
 		}
 
-		if (rayParams.reset == 0)
+		if (reset == 0)
 		{
 			vec3 previous = imageLoad(History, ivec2(gl_LaunchIDEXT)).rgb;
 
+			float sampleGray = dot(sampleColor, vec3(0.2126, 0.7152, 0.0722));;
+			float previousGray = dot(previous, vec3(0.2126, 0.7152, 0.0722));;
+
 			float factor = 1.0 / float(rayParams.frameNumber);
+			factor *= max(1, sampleGray - previousGray + 1);
 			finalColor = mix(previous, sampleColor, factor);
 		}
 

@@ -1,129 +1,5 @@
-#define GOLDEN_RATIO 1.618033988749894
-#define PI 3.14159265359
-
-// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
-uint hash( uint x ) {
-	x += ( x << 10u );
-	x ^= ( x >>  6u );
-	x += ( x <<  3u );
-	x ^= ( x >> 11u );
-	x += ( x << 15u );
-	return x;
-}
-
-// Construct a float with half-open range [0:1] using low 23 bits.
-// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
-float floatConstruct( uint m ) {
-	const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
-	const uint ieeeOne      = 0x3F800000u; // 1.0 in IEEE binary32
-
-	m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
-	m |= ieeeOne;                          // Add fractional part to 1.0
-
-	float  f = uintBitsToFloat( m );       // Range [1:2]
-	return f - 1.0;                        // Range [0:1]
-}
-
-// Pseudo-random value in half-open range [0:1].
-float rand(float x) { return floatConstruct(hash(floatBitsToUint(x))); }
-
-// Steps the RNG and returns a floating-point value between 0 and 1 inclusive.
-float stepAndOutputRNGFloat(inout uint rngState)
-{
-	// Condensed version of pcg_output_rxs_m_xs_32_32, with simple conversion to floating-point [0,1].
-	rngState  = rngState * 747796405 + 1;
-	uint word = ((rngState >> ((rngState >> 28) + 4)) ^ rngState) * 277803737;
-	word      = (word >> 22) ^ word;
-	return float(word) / 4294967295.0f;
-}
-
-// Random in range [0-1]
-vec3 SampleConeRay(vec3 Direction, float BaseRadius, vec2 Random)
-{
-	// generate points in circle
-	float theta = Random.x * 2 * PI;
-	float radius = Random.y * 0.5 * BaseRadius;
-	vec2 circle = vec2(cos(theta) * radius, sin(theta) * radius);
-
-	// generate cone basis
-	// TODO: verify handinness
-	vec3 up = Direction.y < 0.999 ? vec3(0, 1, 0) : vec3(0, 0, 1);
-	vec3 right = normalize(cross(up, Direction));
-	vec3 forward = normalize(cross(right, up));
-
-	// use basis to transform points
-	return Direction + circle.x * right + circle.y * forward;
-}
-
-vec3 SampleDirectionalLight(GPULight Light, vec3 origin, vec3 normal, inout uint rngState)
-{
-	vec3 direction = normalize(Light.Direction.xyz);
-	direction = SampleConeRay(direction, Light.SourceRadius, vec2(stepAndOutputRNGFloat(rngState), stepAndOutputRNGFloat(rngState)));
-
-	// sample shadow
-	traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-		0xFF, 0, 0, 0, origin, 0, direction, 5000, 1);
-
-	// was shadow ray occluded?
-	if (shadowPayload.colorAndDist.w > 0)
-	{
-		return vec3(0);
-	}
-	else
-	{
-		return max(dot(normal, direction), 0) * Light.Color.rgb;
-	}
-}
-
-vec3 SamplePointLight(GPULight Light, vec3 origin, vec3 normal, inout uint rngState)
-{
-	vec3 direction = normalize(Light.Position.xyz - origin);
-	float dist = distance(Light.Position.xyz, origin);
-
-	float normalisedConeBase = Light.SourceRadius / dist;
-	direction = SampleConeRay(direction, normalisedConeBase, vec2(stepAndOutputRNGFloat(rngState), stepAndOutputRNGFloat(rngState)));
-
-	// float attenuation = 1.0 / (1.0 + dist);
-	float attenuation = clamp(1.0 - dist * dist / (Light.Range * Light.Range), 0.0, 1.0);
-	attenuation *= attenuation;
-
-	// sample shadow
-	traceRayEXT(acc, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
-		0xFF, 0, 0, 0, origin, 0, direction, dist, 1);
-
-	// was shadow ray occluded?
-	if (shadowPayload.colorAndDist.w > 0)
-	{
-		return vec3(0);
-	}
-	else
-	{
-		return max(dot(normal, direction), 0) * attenuation * Light.Color.rgb;
-	}
-}
-
-vec3 RandomDirectionHemisphere(inout uint rngState, vec3 normal)
-{
-	// For a random diffuse bounce direction, we follow the approach of
-	// Ray Tracing in One Weekend, and generate a random point on a sphere
-	// of radius 1 centered at the normal. This uses the random_unit_vector
-	// function from chapter 8.5:
-	float theta    = 6.2831853 * stepAndOutputRNGFloat(rngState);  // Random in [0, 2pi]
-	float u        = 2.0 * stepAndOutputRNGFloat(rngState) - 1.0;  // Random in [-1, 1]
-	float r        = sqrt(1.0 - u * u);
-	vec3 direction = normal + vec3(r * cos(theta), r * sin(theta), u);
-	return normalize(direction);
-}
-
-vec3 RandomDirectionSphere(inout uint rngState)
-{
-	float phi   = 6.2831853 * stepAndOutputRNGFloat(rngState); // Random in [0, 2pi]
-	float theta = 3.1415926 * stepAndOutputRNGFloat(rngState); // Random in [0, 1pi]
-
-	return vec3(sin(theta) * cos(phi),
-	            sin(theta) * sin(phi),
-	            cos(theta));
-}
+#include "BRDF.glsl"
+#include "Common.glsl"
 
 // TODO
 vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface, inout uint rngState)
@@ -143,19 +19,41 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 
 		vec3 AccumulatedLight = vec3(0);
 
+		BRDFData BRDF;
+		BRDF.N = normalize(normal);
+		BRDF.V = -direction;
+		BRDF.Albedo = surfaceColor;
+		BRDF.Roughness = 0.5;
+		BRDF.Metallic = 1.0;
+
+		// next event estimation
 		for (uint i = 0; i < GPUScene_GetLightsCount(); i++)
 		{
+			vec3 LightSample = vec3(0);
+
+			// TODO: get it from sample functions
+			BRDF.L = vec3(0); // light direction
+
+			vec2 Xi = UniformDistrubition2d(rngState);
+
 			GPULight Light = GPUSceneLights.Lights[i];
 			switch (Light.Type)
 			{
 			case GPULIGHT_DIRECTIONAL:
-				AccumulatedLight += SampleDirectionalLight(Light, origin, normal, rngState);
+				LightSample = SampleDirectionalLight(Light, origin, normal, Xi);
+				BRDF.L = Light.Direction.xyz;
 				break;
 			case GPULIGHT_POINT:
-				AccumulatedLight += SamplePointLight(Light, origin, normal, rngState);
+				LightSample = SamplePointLight(Light, origin, normal, Xi);
+				// TODO: account for sphere light
+				BRDF.L = normalize(Light.Position.xyz - origin);
 				break;
 			}
+
+			AccumulatedLight += EvaluateBRDF(BRDF, LightSample);
 		}
+		
+		// TODO: account for ray losing energy?
 
 		return AccumulatedLight * surfaceColor;
 	}
@@ -177,10 +75,22 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 	vec3 BounceColor = vec3(0);
 	for (int i = 0; i < MaxBounces; i++)
 	{
-		vec3 BounceSurfaceColor = vec3(0);
-		Direction = RandomDirectionHemisphere(RngState, Normal);
+		BRDFData BRDF;
+		BRDF.N = normalize(Normal);
+		BRDF.V = -Direction;
+		BRDF.Albedo = SurfaceColor;
+		BRDF.Roughness = 0.3;
+		BRDF.Metallic = 0.0;
 
-		BounceColor += calculateLight(Origin, Direction, Normal, BounceSurfaceColor, HitSurface, RngState);
+		vec3 BounceSurfaceColor = vec3(0);
+		// Direction = RandomDirectionHemisphere(RngState, Normal);
+		Direction = reflect(Direction, Normal);
+		Direction = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, Direction, UniformDistrubition2d(RngState));
+		BRDF.L = Direction;
+
+		vec3 Sample = calculateLight(Origin, Direction, Normal, BounceSurfaceColor, HitSurface, RngState);
+		BounceColor += EvaluateBRDF(BRDF, Sample);
+
 		if (HitSurface == 0) break;
 	}
 

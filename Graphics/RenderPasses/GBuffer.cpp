@@ -35,6 +35,7 @@ namespace Columbus
 
 	struct GBufferLightingParameters
 	{
+		Vector4 CameraPosition;
 		u32 LightsCount;
 	};
 
@@ -219,6 +220,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
 		{
@@ -242,7 +244,8 @@ namespace Columbus
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}
 
-			GBufferLightingParameters Params {
+			GBufferLightingParameters Params{
+				.CameraPosition = Context.Scene->MainCamera.Position,
 				.LightsCount = (u32)Context.Scene->Lights.size()
 			};
 
@@ -251,8 +254,9 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.Scene->LightsBuffer);
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			for (int i = 0; i < DeferredContext.LightRenderInfos.size(); i++)

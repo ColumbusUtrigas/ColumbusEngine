@@ -381,6 +381,7 @@ SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const 
 
 ConsoleVariable<bool> test_flag("test.flag", "Description", true);
 ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 0", 0);
+ConsoleVariable<float> CVar_CameraSpeed("CameraSpeed", "", 10);
 
 DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
 DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
@@ -605,7 +606,6 @@ int main()
 	// camera.Pos = { 0, 300, 104 };
 	camera.Rot = { 0, -70, 0 };
 	camera.Perspective(45, 1280.f/720.f, 1.f, 5000.f);
-	float CameraSpeed = 10;
 
 	camera.Update();
 	cameraPrev = camera;
@@ -889,10 +889,10 @@ int main()
 						std::optional<Vector3> mouseIntersect = IntersectTriangleRay(v1, v2, v3, camera.Pos, mousevec);
 						if (mouseIntersect)
 						{
-							debugRender.AddBox(mouseIntersect.value(), { 0.1f }, Vector4(0, 0, 1, 1));
+							//debugRender.AddBox(mouseIntersect.value(), { 0.1f }, Vector4(0, 0, 1, 1));
 
 							Vector3 triNormal = Vector3::Cross(v2 - v1, v3 - v1).Normalized();
-							Vector3 triOffset = triNormal * 0.1f;
+							Vector3 triOffset = triNormal * 0.01f;
 							debugRender.AddTri(v1 + triOffset, v2 + triOffset, v3 + triOffset, {1, 0, 0, 1});
 						}
 					}
@@ -952,6 +952,7 @@ int main()
 			if (keyboard[SDL_SCANCODE_LEFT]) camera.Rot += Columbus::Vector3(0,5,0) * DeltaTime * 20;
 			if (keyboard[SDL_SCANCODE_RIGHT]) camera.Rot += Columbus::Vector3(0,-5,0) * DeltaTime * 20;
 
+			float CameraSpeed = CVar_CameraSpeed.GetValue();
 			if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_D]) camera.Pos += camera.Right() * DeltaTime * CameraSpeed;

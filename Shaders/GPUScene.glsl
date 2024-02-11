@@ -1,3 +1,6 @@
+#ifndef GPUSCENE_GLSL
+#define GPUSCENE_GLSL
+
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_nonuniform_qualifier : require
 
@@ -164,3 +167,5 @@ GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)
 	vertex.MaterialId = GPUScene_FetchVertexMaterialFromMesh(mesh, index);
 	return vertex;
 }
+
+#endif // GPUSCENE_GLSL
