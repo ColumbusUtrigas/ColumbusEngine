@@ -222,6 +222,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.RTReflections, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
 		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
 		{
 			Dependencies.Read(LightInfo.RTShadow, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -256,7 +257,8 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.Scene->LightsBuffer);
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			for (int i = 0; i < DeferredContext.LightRenderInfos.size(); i++)
@@ -310,6 +312,7 @@ namespace Columbus
 		RenderGBufferDecals(Graph, View, Textures);
 
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
+		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);

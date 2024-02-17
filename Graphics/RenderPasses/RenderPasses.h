@@ -63,6 +63,8 @@ namespace Columbus
 		RenderGraphTextureRef GBufferDS; // Depth Stencil
 		RenderGraphTextureRef Velocity;
 		RenderGraphTextureRef Lightmap;
+
+		RenderGraphTextureRef RTReflections;
 		
 		HistorySceneTextures& History;
 	};
@@ -78,6 +80,7 @@ namespace Columbus
 	// Real-time raytracing
 	//
 	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
+	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 
 	// Lightmap baking
 	//

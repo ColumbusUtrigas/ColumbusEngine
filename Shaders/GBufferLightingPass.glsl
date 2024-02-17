@@ -10,6 +10,7 @@
 	layout(binding = 3, set = 0) uniform sampler2D GBufferWorldPosition;
 	layout(binding = 4, set = 0) uniform sampler2D GBufferRoughnessMetallic;
 	layout(binding = 5, set = 0) uniform sampler2D GBufferLightmap;
+	layout(binding = 6, set = 0, rgba16f) uniform image2D GBufferReflections;
 
 	// TODO: use GPUScene common definitions
 	struct GPULight
@@ -27,7 +28,7 @@
 	#define GPULIGHT_RECTANGLE 3
 	#define GPULIGHT_SPHERE 4
 
-	layout(binding = 6, set = 0) readonly buffer LightsBuffer {
+	layout(binding = 7, set = 0) readonly buffer LightsBuffer {
 		GPULight Lights[];
 	} GPUSceneLights;
 
@@ -96,6 +97,8 @@
 			// LightingSum += LightValue;
 			LightingSum += EvaluateBRDF(BRDF, LightValue);
 		}
+
+		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
 
 		imageStore(LightingOutput, ivec2(gl_GlobalInvocationID.xy), vec4(LightingSum, 1));
 	}
