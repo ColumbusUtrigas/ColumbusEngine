@@ -12,8 +12,6 @@
 namespace Columbus
 {
 
-	// TODO: internal render resolution, upscaling
-
 	// **********************************
 	// Common
 	//
@@ -31,6 +29,13 @@ namespace Columbus
 	void ScreenshotPass(RenderGraph& Graph, RenderView& View, RenderGraphTextureRef Texture);
 	void DebugUIPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture); // TODO: be able to render debug UI after render graph execution
 	void CopyToSwapchain(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture);
+
+	// **********************************
+	// Upscaling
+	//
+	// a texture will be created based on DstDesc, but size UpscaleTo will be used
+	// that is to support dynamic resolution scaling and re-using one Texture
+	RenderGraphTextureRef ApplyFSR1(RenderGraph& Graph, RenderGraphTextureRef Texture, const TextureDesc2& DstDesc, iVector2 UpscaleTo, bool IsHdr, bool UseSharpening, float Sharpening);
 
 	// **********************************
 	// Real-time

@@ -40,6 +40,7 @@ namespace Columbus
 		RG8,
 		RGB8,
 		RGBA8,
+		BGRA8,
 
 		R16,
 		RG16,

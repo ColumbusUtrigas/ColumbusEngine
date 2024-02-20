@@ -284,6 +284,31 @@ namespace Columbus
 		return Id;
 	}
 
+	TextureDesc2 RenderGraph::GetTextureDesc(RenderGraphTextureRef Texture) const
+	{
+		return Textures[Texture].Desc;
+	}
+
+	BufferDesc RenderGraph::GetBufferDesc(RenderGraphBufferRef Buffer) const
+	{
+		return Buffers[Buffer].Desc;
+	}
+
+	const char* RenderGraph::GetTextureName(RenderGraphTextureRef Texture) const
+	{
+		return Textures[Texture].DebugName.c_str();
+	}
+
+	const char* RenderGraph::GetBufferName(RenderGraphBufferRef Buffer) const
+	{
+		return Buffers[Buffer].DebugName.c_str();
+	}
+
+	iVector2 RenderGraph::GetTextureSize2D(RenderGraphTextureRef Texture) const
+	{
+		return iVector2((int)Textures[Texture].Desc.Width, (int)Textures[Texture].Desc.Height);
+	}
+
 	// TODO: unify allocation logic for textures and buffers?
 	void RenderGraph::AllocateTexture(RenderGraphTexture& Texture)
 	{
@@ -427,7 +452,7 @@ namespace Columbus
 
 		for (RenderPassBufferDependency& Write : Pass.Dependencies.BufferWriteResources)
 		{
-			// If there was a version of a buffer before, we overwrite this texture and, therefore, depend on it
+			// If there was a version of a buffer before, we overwrite this buffer and, therefore, depend on it
 			if (Buffers[Write.Buffer].Version >= 0)
 			{
 				Pass.Dependencies.ReadBuffer(Write.Buffer, Write.Access, Write.Stage);
@@ -469,7 +494,9 @@ namespace Columbus
 		Buffers.clear();
 		Extractions.clear();
 
-		// TODO: inter-frame and global resource logic
+		// TODO: renderpass and framebuffer cleanup, framebuffer must be invalidated if any of texture that it depends on is invalidated
+
+		// update resources usage flags, destroy previously unused resources
 		for (auto& DescPool : TextureResourcePool)
 		{
 			TexturePool& Pool = DescPool.second;
@@ -540,7 +567,6 @@ namespace Columbus
 	{
 		PROFILE_CPU(Counter_RenderGraphBuild);
 		// TODO: topological sort and graph reordering
-		// TODO: resource versioning for R/W passes and mipmap generation
 
 		// virtual resources allocation on build
 		for (auto& Texture : Textures)
@@ -728,12 +754,47 @@ namespace Columbus
 		#endif
 
 		// some vulkan-specific stuff for renderpasses
-		for (auto& Pass : Passes)
+		for (RenderPass& Pass : Passes)
 		{
 			if (Pass.Type == RenderGraphPassType::Raster)
 			{
-				Pass.VulkanRenderPass = Pass.Parameters.ExternalRenderPass == NULL ? GetOrCreateVulkanRenderPass(Pass) : Pass.Parameters.ExternalRenderPass;
-				Pass.VulkanFramebuffer = GetOrCreateVulkanFramebuffer(Pass, SwapchainImage);
+				if (Pass.Parameters.ViewportSize == iVector2(-1))
+				{
+					Pass.Parameters.ViewportSize = RenderData.CurrentSwapchainSize;
+				}
+
+				RenderGraphPassParametersRHI RHIParams;
+
+				// convert Pass.Parameters into RHIParams
+				{
+					RHIParams.Size = Pass.Parameters.ViewportSize;
+
+					for (auto& ColorAttachment : Pass.Parameters.ColorAttachments)
+					{
+						if (ColorAttachment)
+						{
+							Texture2* Texture = ColorAttachment->Texture != SwapchainId ? Textures[ColorAttachment->Texture].Texture.get() : SwapchainImage;
+							TextureFormat Format = ColorAttachment->Texture != SwapchainId ? Texture->GetDesc().Format : TextureFormat::BGRA8SRGB;
+
+							RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::Color, ColorAttachment->LoadOp, Format);
+							RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
+							RHIParams.NumUsedAttachments++;
+						}
+					}
+
+					if (Pass.Parameters.DepthStencilAttachment)
+					{
+						auto Attachment = Pass.Parameters.DepthStencilAttachment;
+						Texture2* Texture = Textures[Attachment->Texture].Texture.get();
+
+						RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::DepthStencil, Attachment->LoadOp, Texture->GetDesc().Format);
+						RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
+						RHIParams.NumUsedAttachments++;
+					}
+				}
+
+				Pass.VulkanRenderPass = Pass.Parameters.ExternalRenderPass == NULL ? GetOrCreateVulkanRenderPass(RHIParams) : Pass.Parameters.ExternalRenderPass;
+				Pass.VulkanFramebuffer = GetOrCreateVulkanFramebuffer(RHIParams, Pass.VulkanRenderPass);
 			}
 		}
 
@@ -947,6 +1008,8 @@ namespace Columbus
 				};
 
 				CommandBuffer->BeginRenderPass(Pass.VulkanRenderPass, PassRect, Pass.VulkanFramebuffer, (u32)ClearValues.size(), ClearValues.data());
+				CommandBuffer->SetViewport(0, 0, (float)Pass.Parameters.ViewportSize.X, (float)Pass.Parameters.ViewportSize.Y, 0, 1);
+				CommandBuffer->SetScissor(0, 0, (u32)Pass.Parameters.ViewportSize.X, (u32)Pass.Parameters.ViewportSize.Y);
 				Pass.ExecutionFunc(Context);
 				CommandBuffer->EndRenderPass();
 
@@ -1111,85 +1174,45 @@ namespace Columbus
 		Info.Buffers = Buffers;
 	}
 
-	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderPass& Pass)
+	// TODO: destroy unused renderpasses
+	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderGraphPassParametersRHI& AttachmentParams)
 	{
-		if (!MapOfVulkanRenderPasses.contains(Pass.Parameters))
+		for (const auto& ParamsPassPair : VulkanRenderPasses)
 		{
-			Log::Message("Call: CreateRenderPass");
-
-			// TODO: refactor + validation
-			std::vector<AttachmentDesc> Attachments;
-			for (auto& ColorAttachment : Pass.Parameters.ColorAttachments)
-			{
-				if (ColorAttachment)
-				{
-					// TODO: refactor + validation
-					TextureFormat Format = ColorAttachment->Texture != SwapchainId ? Textures[ColorAttachment->Texture].Texture->GetDesc().Format : TextureFormat::BGRA8SRGB;
-					Attachments.push_back(AttachmentDesc("", AttachmentType::Color, ColorAttachment->LoadOp, Format));
-				}
-			}
-
-			if (Pass.Parameters.DepthStencilAttachment)
-			{
-				// TODO: refactor + validation
-				auto Attachment = Pass.Parameters.DepthStencilAttachment;
-				Attachments.push_back(AttachmentDesc("", AttachmentType::DepthStencil, Attachment->LoadOp, Textures[Attachment->Texture].Texture->GetDesc().Format));
-			}
-
-			MapOfVulkanRenderPasses[Pass.Parameters] = Device->CreateRenderPass(Attachments);
+			if (ParamsPassPair.first.EqualsDescs(AttachmentParams))
+				return ParamsPassPair.second;
 		}
 
-		return MapOfVulkanRenderPasses[Pass.Parameters];
+		Log::Message("Call: CreateRenderPass");
+
+		std::pair<RenderGraphPassParametersRHI, VkRenderPass> NewPair = {
+			AttachmentParams,
+			Device->CreateRenderPass(std::span<AttachmentDesc>(AttachmentParams.AttachmentDescs, AttachmentParams.NumUsedAttachments))
+		};
+
+		VulkanRenderPasses.push_back(NewPair);
+		return NewPair.second;
 	}
 
-	VkFramebuffer RenderGraph::GetOrCreateVulkanFramebuffer(RenderPass& Pass, Texture2* SwapchainImage)
+	// TODO: invalidate framebuffers when texture is destroyed
+	// TODO: destroy unused framebuffers
+	VkFramebuffer RenderGraph::GetOrCreateVulkanFramebuffer(RenderGraphPassParametersRHI& AttachmentParams, VkRenderPass RenderPassVulkan)
 	{
-		int MapIndex = RenderData.CurrentSwapchainImageIndex;
-
-		bool IsCached = MapOfVulkanFramebuffers[MapIndex].contains(Pass.VulkanRenderPass);
-		bool InvalidateFramebuffer = false;
-
-		if (Pass.Parameters.ViewportSize == iVector2(-1))
+		for (const auto& ParamsFramebufferPair : VulkanFramebuffers)
 		{
-			Pass.Parameters.ViewportSize = RenderData.CurrentSwapchainSize;
+			if (ParamsFramebufferPair.first.EqualsDescsAndTexturesAndSize(AttachmentParams))
+				return ParamsFramebufferPair.second;
 		}
 
-		if (IsCached && MapOfVulkanFramebuffers[MapIndex][Pass.VulkanRenderPass].Size != Pass.Parameters.ViewportSize)
-		{
-			InvalidateFramebuffer = true;
-		}
+		Log::Message("Call: CreateFramebuffer: %ix%i", AttachmentParams.Size.X, AttachmentParams.Size.Y);
 
-		if (!IsCached || InvalidateFramebuffer)
-		{
-			iVector2 Size = Pass.Parameters.ViewportSize;
-			Log::Message("Call: CreateFramebuffer: %ix%i", Size.X, Size.Y);
+		std::pair<RenderGraphPassParametersRHI, VkFramebuffer> NewPair = {
+			AttachmentParams,
+			Device->CreateFramebuffer(RenderPassVulkan, AttachmentParams.Size, std::span<Texture2*>(AttachmentParams.AttachmentTextures, AttachmentParams.NumUsedAttachments))
+		};
 
-			// TODO: refactor + validation
-			std::vector<Texture2*> PassTextures;
-			for (auto& Color : Pass.Parameters.ColorAttachments)
-			{
-				if (Color)
-				{
-					// TODO: refactor + validation
-					PassTextures.push_back(Color->Texture != SwapchainId ? Textures[Color->Texture].Texture.get() : SwapchainImage);
-				}
-			}
-
-			if (Pass.Parameters.DepthStencilAttachment)
-			{
-				// TODO: refactor + validation
-				PassTextures.push_back(Textures[Pass.Parameters.DepthStencilAttachment->Texture].Texture.get());
-			}
-
-			// TODO: use size of renderpass
-			RenderGraphFramebufferVulkan FB;
-			FB.VulkanFramebuffer = Device->CreateFramebuffer(Pass.VulkanRenderPass, Size, PassTextures);
-			FB.Size = Size;
-
-			MapOfVulkanFramebuffers[MapIndex][Pass.VulkanRenderPass] = FB;
-		}
-
-		return MapOfVulkanFramebuffers[MapIndex][Pass.VulkanRenderPass].VulkanFramebuffer;
+		VulkanFramebuffers.push_back(NewPair);
+		return NewPair.second;
 	}
 
 }

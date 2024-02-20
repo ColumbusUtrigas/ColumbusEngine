@@ -23,6 +23,7 @@ namespace Columbus
 			case TextureFormat::RG8:     return 2;  break;
 			case TextureFormat::RGB8:    return 3;  break;
 			case TextureFormat::RGBA8:   return 4;  break;
+			case TextureFormat::BGRA8:   return 4; break;
 
 			case TextureFormat::R16:    
 			case TextureFormat::R16F:    return 2;  break;
@@ -133,6 +134,7 @@ namespace Columbus
 		case TextureFormat::R11G11B10F: return 3;
 
 		case TextureFormat::RGBA8:
+		case TextureFormat::BGRA8:
 		case TextureFormat::RGBA8SRGB:
 		case TextureFormat::RGBA16:
 		case TextureFormat::RGBA16F:
@@ -149,10 +151,11 @@ namespace Columbus
 	{
 		switch (format)
 		{
-		case TextureFormat::R8:      return "R8";  break;
-		case TextureFormat::RG8:     return "RG8";  break;
+		case TextureFormat::R8:      return "R8";    break;
+		case TextureFormat::RG8:     return "RG8";   break;
 		case TextureFormat::RGB8:    return "RGB8";  break;
-		case TextureFormat::RGBA8:   return "RGBA8";  break;
+		case TextureFormat::RGBA8:   return "RGBA8"; break;
+		case TextureFormat::BGRA8:   return "BGRA8"; break;
 
 		case TextureFormat::R16:     return "R16"; break;
 		case TextureFormat::R16F:    return "R16F";  break;

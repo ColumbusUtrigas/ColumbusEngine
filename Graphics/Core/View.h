@@ -13,6 +13,7 @@ namespace Columbus
 	{
 		SwapchainVulkan* Swapchain;
 		iVector2 OutputSize;
+		iVector2 RenderSize; // internal resolution
 		Camera CameraCur;
 		Camera CameraPrev;
 		DebugRender* DebugRender = nullptr;

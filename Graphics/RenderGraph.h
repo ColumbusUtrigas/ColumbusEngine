@@ -189,6 +189,7 @@ namespace Columbus
 		} PerFrameData[MaxFramesInFlight];
 
 		// TODO: move to shader caching system
+		// TODO: proper descriptor set management, currently if two passes use one shader, they overlap
 		struct PipelineDescriptorSetData
 		{
 			VkDescriptorSet DescriptorSets[16] {0};
@@ -264,8 +265,49 @@ namespace Columbus
 
 		// raster only
 		iVector2 ViewportSize{-1};
+	};
 
-		bool operator==(const RenderPassParameters& Other) const = default;
+	// RenderPassParameters is converted into this struct during rendergraph build
+	// for internal use
+	struct RenderGraphPassParametersRHI
+	{
+		static constexpr int AttachmentsMax = RenderPassParameters::ColorAttachmentsCount + 1; // +1 because of DepthStencil attachment
+
+		AttachmentDesc AttachmentDescs[AttachmentsMax]{}; // will be used to create RHI render passes and framebuffers
+		Texture2* AttachmentTextures[AttachmentsMax]{ nullptr };
+		iVector2 Size;
+		int NumUsedAttachments = 0;
+
+		bool EqualsDescs(const RenderGraphPassParametersRHI& Other) const
+		{
+			if (Other.NumUsedAttachments != NumUsedAttachments)
+				return false;
+
+			for (int i = 0; i < NumUsedAttachments; i++)
+			{
+				if (AttachmentDescs[i] != Other.AttachmentDescs[i])
+					return false;
+			}
+
+			return true;
+		}
+
+		bool EqualsDescsAndTexturesAndSize(const RenderGraphPassParametersRHI& Other) const
+		{
+			if (!EqualsDescs(Other))
+				return false;
+
+			if (Size != Other.Size)
+				return false;
+
+			for (int i = 0; i < NumUsedAttachments; i++)
+			{
+				if (AttachmentTextures[i] != Other.AttachmentTextures[i])
+					return false;
+			}
+
+			return true;
+		}
 	};
 
 	struct HashRenderPassParameters
@@ -427,12 +469,6 @@ namespace Columbus
 		VkFramebuffer VulkanFramebuffer = NULL;
 	};
 
-	struct RenderGraphFramebufferVulkan
-	{
-		VkFramebuffer VulkanFramebuffer;
-		iVector2 Size;
-	};
-
 	struct RenderGraphPooledTexture
 	{
 		SPtr<Texture2> Texture;
@@ -494,6 +530,12 @@ namespace Columbus
 		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
 		RenderGraphBufferRef  CreateBuffer(const BufferDesc& Desc, const char* Name);
 
+		TextureDesc2 GetTextureDesc(RenderGraphTextureRef Texture) const;
+		BufferDesc   GetBufferDesc(RenderGraphBufferRef Buffer) const;
+		const char* GetTextureName(RenderGraphTextureRef Texture) const;
+		const char* GetBufferName(RenderGraphBufferRef Buffer) const;
+		iVector2    GetTextureSize2D(RenderGraphTextureRef Texture) const;
+
 		RenderGraphTextureRef GetSwapchainTexture();
 
 		void AddPass(const char* Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
@@ -520,8 +562,8 @@ namespace Columbus
 		void AllocateTexture(RenderGraphTexture& Texture);
 		void AllocateBuffer(RenderGraphBuffer& Buffer);
 
-		VkRenderPass GetOrCreateVulkanRenderPass(RenderPass& Pass);
-		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderPass& Pass, Texture2* SwapchainImage);
+		VkRenderPass GetOrCreateVulkanRenderPass(RenderGraphPassParametersRHI& AttachmentParams);
+		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderGraphPassParametersRHI& AttachmentParams, VkRenderPass RenderPassVulkan);
 
 	private:
 		std::vector<RenderPass> Passes;
@@ -530,8 +572,8 @@ namespace Columbus
 		std::vector<RenderGraphTextureExtraction> Extractions;
 		std::queue<RenderGraphMarker> MarkersStack;
 
-		std::unordered_map<RenderPassParameters, VkRenderPass, HashRenderPassParameters> MapOfVulkanRenderPasses;
-		std::unordered_map<VkRenderPass, RenderGraphFramebufferVulkan> MapOfVulkanFramebuffers[MaxFramesInFlight];
+		std::vector<std::pair<RenderGraphPassParametersRHI, VkRenderPass>> VulkanRenderPasses;
+		std::vector<std::pair<RenderGraphPassParametersRHI, VkFramebuffer>> VulkanFramebuffers;
 
 		using TexturePool = std::vector<RenderGraphPooledTexture>;
 		using BufferPool = std::vector<RenderGraphPooledBuffer>;

@@ -80,8 +80,6 @@ namespace Columbus
 			}
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->SetViewport(0, 0, ViewportSize.X, ViewportSize.Y, 0.0f, 1.0f);
-			Context.CommandBuffer->SetScissor(0, 0, ViewportSize.X, ViewportSize.Y);
 			Context.BindGPUScene(Pipeline);
 
 			for (u32 i = 0; i < System.Meshes.size(); i++)

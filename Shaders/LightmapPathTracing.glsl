@@ -55,7 +55,7 @@ struct RayPayload {
 
 		for (int i = 0; i < Parameters.SamplesPerFrame; i++)
 		{
-			vec3 direction = RandomDirectionHemisphere(rngState, normal);
+			vec3 direction = RandomDirectionHemisphere(UniformDistrubition2d(rngState), normal);
 
 			finalColor += PathTrace(origin, direction, Parameters.Bounces, rngState);
 		}

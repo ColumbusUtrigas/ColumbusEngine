@@ -27,8 +27,8 @@ namespace Columbus
 
 		TextureDesc2 Desc{
 			.Usage = TextureUsage::Storage,
-			.Width = (u32)View.OutputSize.X,
-			.Height = (u32)View.OutputSize.Y,
+			.Width = (u32)View.RenderSize.X,
+			.Height = (u32)View.RenderSize.Y,
 			.Format = TextureFormat::RGBA16F,
 		};
 
@@ -80,7 +80,7 @@ namespace Columbus
 				Context.BindGPUScene(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &DescriptorSet);
 				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
-				Context.CommandBuffer->TraceRays(Pipeline, View.OutputSize.X, View.OutputSize.Y, 1);
+				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 			});
 		}
 
@@ -111,10 +111,10 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTReflectionsDenoised).get());
 
 				RayTracedReflectionsDenoiseParamters Params{
-					.ImageSize = View.OutputSize
+					.ImageSize = View.RenderSize
 				};
 
-				iVector2 GroupsSize = (View.OutputSize + 7) / 8; // 8x8 group
+				iVector2 GroupsSize = (View.RenderSize + 7) / 8; // 8x8 group
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);

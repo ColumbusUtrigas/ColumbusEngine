@@ -88,24 +88,31 @@ namespace Columbus
 		TonemapTextures Textures;
 		ComputeColourGradingLUT(Graph, Textures);
 
+		TextureDesc2 Desc = Graph.GetTextureDesc(SceneTexture);
+
+		iVector2 Size(Desc.Width, Desc.Height);
+
 		TextureDesc2 TonemapTextureDesc {
 			.Usage = TextureUsage::RenderTargetColor,
-			.Width = (u32)View.OutputSize.X, .Height = (u32)View.OutputSize.Y,
-			.Format = TextureFormat::BGRA8SRGB
+			.Width = (u32)Size.X, .Height = (u32)Size.Y,
+			.Format = TextureFormat::BGRA8SRGB,
+			.AddressU = TextureAddressMode::ClampToEdge,
+			.AddressV = TextureAddressMode::ClampToEdge,
+			.AddressW = TextureAddressMode::ClampToEdge,
 		};
 		Textures.TonemappedImage = Graph.CreateTexture(TonemapTextureDesc, "Tonemapped");
 
 		RenderPassParameters Parameters;
-		// Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Graph.GetSwapchainTexture() };
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.TonemappedImage };
+		Parameters.ViewportSize = Size;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View](RenderGraphContext& Context)
+		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View, Size](RenderGraphContext& Context)
 		{
-			// TODO:
+			// TODO: shader system
 			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
 
 			static GraphicsPipeline* Pipeline = nullptr;
@@ -132,8 +139,6 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get());
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0, 1);
-			Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
 			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);

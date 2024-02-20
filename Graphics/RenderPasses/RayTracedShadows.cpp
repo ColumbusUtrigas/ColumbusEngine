@@ -55,11 +55,11 @@ namespace Columbus
 	{
 		RENDER_GRAPH_SCOPED_MARKER(Graph, "ShadowsDenoise");
 
-		iVector2 ShadowSize = View.OutputSize;
+		iVector2 ShadowSize = View.RenderSize;
 		// 8x4 tiles
-		iVector2 TilesSize = iVector2((View.OutputSize.X + 7) / 8, (View.OutputSize.Y + 3) / 4);
+		iVector2 TilesSize = iVector2((ShadowSize.X + 7) / 8, (ShadowSize.Y + 3) / 4);
 		// 8x8 tiles
-		iVector2 FilterTilesSize = iVector2((View.OutputSize.X + 7) / 8, (View.OutputSize.Y + 7) / 8);
+		iVector2 FilterTilesSize = iVector2((ShadowSize.X + 7) / 8, (ShadowSize.Y + 7) / 8);
 
 		RenderGraphTextureRef RTShadowTiles;
 		RenderGraphTextureRef Moments;
@@ -277,8 +277,8 @@ namespace Columbus
 
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::Storage,
-			.Width = (u32)View.OutputSize.X,
-			.Height = (u32)View.OutputSize.Y,
+			.Width = (u32)View.RenderSize.X,
+			.Height = (u32)View.RenderSize.Y,
 			.Format = TextureFormat::R8,
 		};
 
@@ -341,7 +341,7 @@ namespace Columbus
 				Context.BindGPUScene(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &ShadowsBufferSet);
 
-				Context.CommandBuffer->TraceRays(Pipeline, View.OutputSize.X, View.OutputSize.Y, 1);
+				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 			});
 
 			// TODO: improve that mechanism

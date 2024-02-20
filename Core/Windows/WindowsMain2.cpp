@@ -503,7 +503,7 @@ std::optional<Vector3> IntersectTriangleRay(const Vector3& A, const Vector3& B, 
 //		+ global/frame-local resources
 //		+ swapchain resize (and pipeline dynamic parameters)
 //		- resource aliasing
-//		- resource visualization
+//		+ resource visualization
 //		+ diagnostic information
 //		- resource type validation
 //		+ RW passes
@@ -551,10 +551,13 @@ std::optional<Vector3> IntersectTriangleRay(const Vector3& A, const Vector3& B, 
 //			- clustered rendering, GPU culling, vis buffer
 //			- volumetrics and OpenVDB
 //			- ray-traced translucency
-//			- DDGI+RT reflections
+//          - DDGI
+//			- RT reflections
 //			- GI1.0
 //			- simple billboard particles render
-//			- upscaling (simple and FSR)
+//			+ upscaling (FSR1)
+//          - TAA
+//          - FSR2
 //		3. Common
 //			- PBR atmosphere rendering
 //			- filmic camera
@@ -855,6 +858,7 @@ int main()
 		}
 
 		// crude collision check
+		if (0)
 		{
 			// TODO: function to project mouse into world
 			ImGuiIO& io = ImGui::GetIO();

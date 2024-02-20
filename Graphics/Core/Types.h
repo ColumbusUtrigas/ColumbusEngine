@@ -130,17 +130,17 @@ namespace Columbus
 		bool operator==(const AttachmentClearValue&) const = default;
 	};
 
-	// LEGACY?
 	struct AttachmentDesc
 	{
-		std::string Name;
 		AttachmentType Type;
 		AttachmentLoadOp LoadOp;
 		TextureFormat Format;
 
 		AttachmentDesc() {}
-		AttachmentDesc(std::string Name, AttachmentType Type, AttachmentLoadOp LoadOp, TextureFormat Format) :
-			Name(Name), Type(Type), LoadOp(LoadOp), Format(Format) {}
+		AttachmentDesc(AttachmentType Type, AttachmentLoadOp LoadOp, TextureFormat Format) :
+			Type(Type), LoadOp(LoadOp), Format(Format) {}
+
+		bool operator==(const AttachmentDesc&) const = default;
 	};
 
 	enum class PrimitiveTopology

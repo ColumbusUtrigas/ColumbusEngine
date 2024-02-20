@@ -956,7 +956,7 @@ namespace Columbus
 
 	void DeviceVulkan::_SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name)
 	{
-#if VULKAN_DEBUG
+//#if VULKAN_DEBUG
 		VkDebugUtilsObjectNameInfoEXT nameInfo;
 		nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 		nameInfo.pNext = nullptr;
@@ -964,7 +964,7 @@ namespace Columbus
 		nameInfo.objectHandle = ObjectHandle;
 		nameInfo.pObjectName = Name;
 		VK_CHECK(VkFunctions.vkSetDebugUtilsObjectName(_Device, &nameInfo));
-#endif
+//#endif
 	}
 
 	TextureVulkan* DeviceVulkan::_CreateTexture(const TextureDesc2& Desc)

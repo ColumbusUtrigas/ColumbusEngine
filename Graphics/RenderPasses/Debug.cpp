@@ -36,7 +36,7 @@ namespace Columbus
 			imguiVk.ImageCount = Swapchain->imageCount;
 
 			AttachmentDesc Attachments[] = {
-				AttachmentDesc { "Swapchain", AttachmentType::Color, AttachmentLoadOp::Load, TextureFormat::BGRA8SRGB }
+				AttachmentDesc { AttachmentType::Color, AttachmentLoadOp::Load, TextureFormat::BGRA8SRGB }
 			};
 
 			ImGuiRenderPass = Device->CreateRenderPass(Attachments);
@@ -100,6 +100,7 @@ namespace Columbus
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, OverlayTexture, {} };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.ViewportSize = Graph.GetTextureSize2D(OverlayTexture);
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
@@ -156,8 +157,6 @@ namespace Columbus
 				};
 
 				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-				Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
-				Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 
 				if (Object.Type == DebugRenderObjectType::Box)
 				{
@@ -183,8 +182,6 @@ namespace Columbus
 						continue;
 
 					Context.CommandBuffer->BindGraphicsPipeline(IrradianceVolumePipeline);
-					Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
-					Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 
 					DebugIrradianceProbesParameters Parameters {
 						.View = View.CameraCur.GetViewMatrix(),
@@ -532,8 +529,8 @@ namespace Columbus
 			for (const auto& Texture : Info.Textures)
 			{
 				current_line_pos.y += vertical_size + margin;
-				const ImVec2 min = ImVec2(Texture.FirstUsage * rect_size.x, 0) + current_line_pos;
-				const ImVec2 max = ImVec2((Texture.LastUsage + 1) * rect_size.x, vertical_size) + current_line_pos;
+				const ImVec2 min = ImVec2(Texture.FirstUsage * rect_size.x + Texture.FirstUsage * margin, 0) + current_line_pos;
+				const ImVec2 max = ImVec2((Texture.LastUsage + 1) * rect_size.x + Texture.LastUsage * margin, vertical_size) + current_line_pos;
 				const ImVec2 middle = (min + max) / 2;
 				draw_list->AddRectFilled(min, max, texture_colour);
 

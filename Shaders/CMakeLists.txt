@@ -23,6 +23,9 @@ compile_shader_glsl(RayTracedReflections/SimpleDenoise.glsl main:cs SHADER_BINAR
 
 compile_shader_hlsl(TiledLightsPrepare.hlsl main:cs SHADER_BINARIES)
 
+compile_shader_glsl(FSR1/FSR1CS.glsl main:cs SHADER_BINARIES)
+compile_shader_glsl(FSR1/FSR1PS.glsl main:vs,main:ps SHADER_BINARIES)
+
 compile_shader_glsl(LightmapRasterisation.glsl main:vs,main:ps SHADER_BINARIES)
 compile_shader_glsl(LightmapPathTracing.glsl   main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 

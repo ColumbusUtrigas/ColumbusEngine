@@ -11,6 +11,9 @@
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 
+// TODO: remove
+#include <Lib/imgui/imgui.h>
+
 namespace Columbus
 {
 
@@ -43,8 +46,8 @@ namespace Columbus
 	{
 		TextureDesc2 CommonDesc;
 		CommonDesc.Usage = TextureUsage::RenderTargetColor;
-		CommonDesc.Width = View.OutputSize.X;
-		CommonDesc.Height = View.OutputSize.Y;
+		CommonDesc.Width = View.RenderSize.X;
+		CommonDesc.Height = View.RenderSize.Y;
 		CommonDesc.AddressU = TextureAddressMode::ClampToEdge;
 		CommonDesc.AddressV = TextureAddressMode::ClampToEdge;
 		CommonDesc.AddressW = TextureAddressMode::ClampToEdge;
@@ -89,6 +92,7 @@ namespace Columbus
 		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
 		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
@@ -117,8 +121,6 @@ namespace Columbus
 			}
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
-			Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 			Context.BindGPUScene(Pipeline);
 
 			PerObjectParameters Parameters;
@@ -144,6 +146,7 @@ namespace Columbus
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferAlbedo };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -172,8 +175,6 @@ namespace Columbus
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-			Context.CommandBuffer->SetViewport(0, 0, View.OutputSize.X, View.OutputSize.Y, 0.0f, 1.0f);
-			Context.CommandBuffer->SetScissor(0, 0, View.OutputSize.X, View.OutputSize.Y);
 
 			PerDecalParameters Parameters;
 
@@ -204,9 +205,9 @@ namespace Columbus
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		TextureDesc2 Desc {
-			.Usage = TextureUsage::Storage,
-			.Width = (uint32)View.OutputSize.X,
-			.Height = (uint32)View.OutputSize.Y,
+			.Usage = TextureUsage::StorageSampled,
+			.Width = (uint32)View.RenderSize.X,
+			.Height = (uint32)View.RenderSize.Y,
 			.Format = TextureFormat::RGBA16F,
 		};
 
@@ -271,7 +272,7 @@ namespace Columbus
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &ShadowsSet);
 			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
 
-			const iVector2 GroupCount = (View.OutputSize + (GroupSize - 1)) / GroupSize;
+			const iVector2 GroupCount = (View.RenderSize + (GroupSize - 1)) / GroupSize;
 			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
 		});
 
@@ -303,6 +304,29 @@ namespace Columbus
 
 	void RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
+		static bool ApplyFSR = false;
+		static bool ApplyFSR1Sharpening = false;
+		static float FSR1Sharpening = 0.0f;
+
+		static float RenderResolution = 1.0f;
+		if (ImGui::Begin("Deferred Debug"))
+		{
+			ImGui::Checkbox("FSR1", &ApplyFSR);
+			ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
+			ImGui::SliderFloat("Sharpening", &FSR1Sharpening, 0.0f, 2.0f);
+			ImGui::SliderFloat("Scaling", &RenderResolution, 0.25f, 1.0f);
+		}
+		ImGui::End();
+
+		if (ApplyFSR)
+		{
+			View.RenderSize = iVector2((int)(View.OutputSize.X * RenderResolution), (int)(View.OutputSize.Y * RenderResolution));
+		}
+		else
+		{
+			View.RenderSize = View.OutputSize;
+		}
+
 		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);
 
 		DeferredContext.LightRenderInfos.clear();
@@ -315,9 +339,27 @@ namespace Columbus
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
+		if (View.ScreenshotPath == nullptr)
+		{
+			//DebugOverlayPass(Graph, View, Textures, TonemappedImage);
+		}
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		ScreenshotPass(Graph, View, View.ScreenshotHDR ? LightingTexture : TonemappedImage);
-		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
+
+		if (ApplyFSR)
+		{
+			TextureDesc2 FsrUpscaleDesc = Graph.GetTextureDesc(TonemappedImage);
+			//FsrUpscaleDesc.Usage = TextureUsage::StorageSampled;
+			FsrUpscaleDesc.Width = View.OutputSize.X;
+			FsrUpscaleDesc.Height = View.OutputSize.Y;
+
+			const iVector2 UpscaleTo = View.OutputSize;
+			const float UpscaleFactor = 1.0f / RenderResolution;
+			const bool IsHdr = true;
+
+			TonemappedImage = ApplyFSR1(Graph, TonemappedImage, FsrUpscaleDesc, UpscaleTo, IsHdr, ApplyFSR1Sharpening, FSR1Sharpening);
+		}
+
 		DebugUIPass(Graph, View, TonemappedImage);
 		CopyToSwapchain(Graph, View, TonemappedImage);
 		ExtractHistorySceneTextures(Graph, View, Textures, DeferredContext.History);

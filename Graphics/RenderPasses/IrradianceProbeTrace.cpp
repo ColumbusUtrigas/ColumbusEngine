@@ -42,7 +42,7 @@ namespace Columbus
 				for (int k = 0; k < Volume.ProbesCount.Z; k++)
 				{
 					Vector3 CellSize = Volume.Extent / Vector3(Volume.ProbesCount);
-					Vector3 ProbePosition = Vector3(i, j, k) * CellSize + CellSize/2 - Volume.Extent/2 + Volume.Position;
+					Vector3 ProbePosition = Vector3((float)i, (float)j, (float)k) * CellSize + CellSize/2 - Volume.Extent/2 + Volume.Position;
 					IrradianceProbes.push_back(GPUIrradianceProbe{ProbePosition});
 				}
 			}

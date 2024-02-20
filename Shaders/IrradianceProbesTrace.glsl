@@ -46,7 +46,7 @@ struct RayPayload {
 			{
 				// uint asd = s;
 				// vec3 direction = RandomDirectionSphere(asd);
-				vec3 direction = RandomDirectionHemisphere(rngState, IRRADIANCE_BASIS[i]);
+				vec3 direction = RandomDirectionHemisphere(UniformDistrubition2d(rngState), IRRADIANCE_BASIS[i]);
 				// vec3 direction = RandomDirectionSphere(rngState);
 				vec3 color = PathTrace(origin, direction, Params.Bounces, rngState);
 
