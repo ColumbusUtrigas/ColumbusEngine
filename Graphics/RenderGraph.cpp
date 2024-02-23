@@ -211,8 +211,6 @@ namespace Columbus
 	{
 		for (auto& PerFrameData : RenderData.PerFrameData)
 		{
-			PerFrameData.Fence = Device->CreateFence(true);
-			PerFrameData.ImageSemaphore = Device->CreateSemaphore();
 			PerFrameData.SubmitSemaphore = Device->CreateSemaphore();
 		}
 
@@ -309,6 +307,12 @@ namespace Columbus
 		return iVector2((int)Textures[Texture].Desc.Width, (int)Textures[Texture].Desc.Height);
 	}
 
+	Texture2* RenderGraph::GetTextureAfterExecution(RenderGraphTextureRef Texture) const
+	{
+		COLUMBUS_ASSERT(ExecutionHasFinished && "Trying to read RG texture before execution");
+		return Textures[Texture].Texture.get();
+	}
+
 	// TODO: unify allocation logic for textures and buffers?
 	void RenderGraph::AllocateTexture(RenderGraphTexture& Texture)
 	{
@@ -393,11 +397,6 @@ namespace Columbus
 		AddProfilingMemory(MemoryCounter_RenderGraphBuffers, Result.Buffer->GetSize());
 	}
 
-	RenderGraphTextureRef RenderGraph::GetSwapchainTexture()
-	{
-		return SwapchainId;
-	}
-
 	void RenderGraph::AddPass(const char* Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback)
 	{
 		int PassId = static_cast<int>(Passes.size());
@@ -436,18 +435,15 @@ namespace Columbus
 		
 		for (RenderPassTextureDependency& Write : Pass.Dependencies.TextureWriteResources)
 		{
-			if (Write.Texture != SwapchainId)
+			// If there was a version of a texture before, we overwrite this texture and, therefore, depend on it
+			if (Textures[Write.Texture].Version >= 0)
 			{
-				// If there was a version of a texture before, we overwrite this texture and, therefore, depend on it
-				if (Textures[Write.Texture].Version >= 0)
-				{
-					Pass.Dependencies.Read(Write.Texture, Write.Access, Write.Stage);
-					Pass.Dependencies.TextureReadResources[Pass.Dependencies.TextureReadResources.size() - 1].Version = Textures[Write.Texture].Version;
-				}
-
-				Textures[Write.Texture].Version++;
-				Write.Version = Write.Texture != SwapchainId ? Textures[Write.Texture].Version : -1;
+				Pass.Dependencies.Read(Write.Texture, Write.Access, Write.Stage);
+				Pass.Dependencies.TextureReadResources[Pass.Dependencies.TextureReadResources.size() - 1].Version = Textures[Write.Texture].Version;
 			}
+
+			Textures[Write.Texture].Version++;
+			Write.Version = Textures[Write.Texture].Version;
 		}
 
 		for (RenderPassBufferDependency& Write : Pass.Dependencies.BufferWriteResources)
@@ -561,9 +557,10 @@ namespace Columbus
 		}
 
 		Allocator.Clear();
+		ExecutionHasFinished = false;
 	}
 
-	void RenderGraph::Build(Texture2* SwapchainImage)
+	void RenderGraph::Build()
 	{
 		PROFILE_CPU(Counter_RenderGraphBuild);
 		// TODO: topological sort and graph reordering
@@ -595,9 +592,6 @@ namespace Columbus
 		{
 			for (const auto& Read : Pass.Dependencies.TextureReadResources)
 			{
-				if (Read.Texture == SwapchainId)
-					continue;
-
 				auto& GraphTexture = Textures[Read.Texture];
 
 				// update resource lifetime
@@ -620,9 +614,6 @@ namespace Columbus
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
 			{
-				if (Write.Texture == SwapchainId)
-					continue;
-
 				auto& GraphTexture = Textures[Write.Texture];
 
 				// update resource lifetime
@@ -760,7 +751,7 @@ namespace Columbus
 			{
 				if (Pass.Parameters.ViewportSize == iVector2(-1))
 				{
-					Pass.Parameters.ViewportSize = RenderData.CurrentSwapchainSize;
+					Pass.Parameters.ViewportSize = RenderData.DefaultViewportSize;
 				}
 
 				RenderGraphPassParametersRHI RHIParams;
@@ -773,8 +764,8 @@ namespace Columbus
 					{
 						if (ColorAttachment)
 						{
-							Texture2* Texture = ColorAttachment->Texture != SwapchainId ? Textures[ColorAttachment->Texture].Texture.get() : SwapchainImage;
-							TextureFormat Format = ColorAttachment->Texture != SwapchainId ? Texture->GetDesc().Format : TextureFormat::BGRA8SRGB;
+							Texture2* Texture = Textures[ColorAttachment->Texture].Texture.get();
+							TextureFormat Format = Texture->GetDesc().Format;
 
 							RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::Color, ColorAttachment->LoadOp, Format);
 							RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
@@ -811,32 +802,16 @@ namespace Columbus
 		SetProfilingMemory(MemoryCounter_RenderGraphAllocatorWaste, Allocator.CurrentOffset - Allocator.AttemptsToDeallocate);
 	}
 
-	void RenderGraph::Execute(SwapchainVulkan* Swapchain)
+	RenderGraphExecuteResults RenderGraph::Execute(const RenderGraphExecuteParameters& Parameters)
 	{
 		RenderData.CurrentPerFrameData = (RenderData.CurrentPerFrameData + 1) % MaxFramesInFlight;
 		auto& PerFrameData = RenderData.PerFrameData[RenderData.CurrentPerFrameData];
 		PerFrameData.CurrentCmdBuffer = -1;
 
-		{
-			PROFILE_CPU(Counter_RenderGraphExecute);
-			Device->WaitForFence(PerFrameData.Fence, UINT64_MAX);
-			Device->ResetFence(PerFrameData.Fence);
+		assert(Parameters.DefaultViewportSize.X > 0 && Parameters.DefaultViewportSize.Y > 0);
+		RenderData.DefaultViewportSize = Parameters.DefaultViewportSize;
 
-			if (!Device->AcqureNextImage(Swapchain, PerFrameData.ImageSemaphore, RenderData.CurrentSwapchainImageIndex))
-			{
-				// swapchain invalidated
-				// TODO: recreate swapchain
-				Log::Fatal("Swapchain Invalidated");
-			}
-
-			{
-				// Log::Message("Swapchain size: %ux%u", Swapchain->swapChainExtent.width, Swapchain->swapChainExtent.height);
-				iVector2 SwapchainSize{ (int)Swapchain->swapChainExtent.width, (int)Swapchain->swapChainExtent.height };
-				RenderData.CurrentSwapchainSize = SwapchainSize;
-			}
-
-			RenderData.SwapchainImage = Swapchain->Textures[RenderData.CurrentSwapchainImageIndex];
-		}
+		PerFrameData.FirstSemaphore = Parameters.WaitSemaphore;
 
 		// TODO: refactor that mechanism
 		for (int i = 0; i < Scene->Textures.size(); i++)
@@ -844,7 +819,7 @@ namespace Columbus
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 		}
 
-		Build(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex]);
+		Build();
 
 		PROFILE_CPU(Counter_RenderGraphExecute);
 
@@ -910,10 +885,7 @@ namespace Columbus
 
 			for (RenderPassTextureDependency& TexWrite : Pass.Dependencies.TextureWriteResources)
 			{
-				if (TexWrite.Texture != SwapchainId)
-				{
-					Textures[TexWrite.Texture].CurrentVersion++;
-				}
+				Textures[TexWrite.Texture].CurrentVersion++;
 			}
 
 			for (RenderPassBufferDependency& BufWrite : Pass.Dependencies.BufferWriteResources)
@@ -1018,7 +990,7 @@ namespace Columbus
 					// TODO: better system?
 					for (auto& Attachment : Pass.Parameters.ColorAttachments)
 					{
-						if (Attachment && Attachment->Texture != SwapchainId && Textures[Attachment->Texture].Texture && Attachment->Texture != SwapchainId)
+						if (Attachment && Textures[Attachment->Texture].Texture)
 						{
 							TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Attachment->Texture].Texture.get());
 							if (Texture != nullptr)
@@ -1084,18 +1056,16 @@ namespace Columbus
 			EvaluateMarker();
 		}
 
-		// TODO: remove swapchain logic and present from render graph, support for windowless rendering
-
-		// swapchain barrier
-		{
-			CommandBuffer->TransitionImageLayout(Swapchain->Textures[RenderData.CurrentSwapchainImageIndex], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-		}
-
 		Context.Device->_Profiler.EndProfileConter(GpuTimeMarker, CommandBuffer);
 		CommandBuffer->End();
+		Device->Submit(CommandBuffer, Parameters.SignalFence, 1, &WaitSemaphore, 1, &SignalSemaphore);
 
-		Device->Submit(CommandBuffer, PerFrameData.Fence, 1, &WaitSemaphore, 1, &SignalSemaphore);
-		Device->Present(Swapchain, RenderData.CurrentSwapchainImageIndex, SignalSemaphore);
+		RenderGraphExecuteResults Result;
+		Result.FinishSemaphore = SignalSemaphore;
+
+		ExecutionHasFinished = true;
+
+		return Result;
 	}
 
 	std::string RenderGraph::ExportGraphviz()
@@ -1141,14 +1111,7 @@ namespace Columbus
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
 			{
-				if (Write.Texture != SwapchainId)
-				{
-					Result += std::string(Pass.Name) + " -> " + Textures[Write.Texture].DebugName + "_v" + std::to_string(Write.Version) + "\n";
-				}
-				else
-				{
-					Result += std::string(Pass.Name) + " -> " + "Swapchain\n";
-				}
+				Result += std::string(Pass.Name) + " -> " + Textures[Write.Texture].DebugName + "_v" + std::to_string(Write.Version) + "\n";
 			}
 
 			for (const auto& Write : Pass.Dependencies.BufferWriteResources)

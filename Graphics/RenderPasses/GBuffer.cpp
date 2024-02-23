@@ -279,30 +279,12 @@ namespace Columbus
 		return LightingTexture;
 	}
 
-	void CopyToSwapchain(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture)
-	{
-		RenderPassParameters Parameters;
-		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Texture, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-		Dependencies.Write(Graph.GetSwapchainTexture(), VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-		Graph.AddPass("CopyToSwapchain", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, View](RenderGraphContext& Context)
-		{
-			SPtr<Texture2> Tonemapped = Context.GetRenderGraphTexture(Texture);
-			Texture2* Swapchain = Context.RenderData.SwapchainImage;
-
-			Context.CommandBuffer->TransitionImageLayout(Tonemapped.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-			Context.CommandBuffer->TransitionImageLayout(Swapchain, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-			Context.CommandBuffer->CopyImage(Tonemapped.get(), Swapchain, { 0,0,0 }, { 0,0,0 }, { View.OutputSize, 1 });
-		});
-	}
-
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures)
 	{
 		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
 	}
 
-	void RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
+	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
 		static bool ApplyFSR = false;
 		static bool ApplyFSR1Sharpening = false;
@@ -339,12 +321,10 @@ namespace Columbus
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
-		if (View.ScreenshotPath == nullptr)
-		{
-			//DebugOverlayPass(Graph, View, Textures, TonemappedImage);
-		}
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		ScreenshotPass(Graph, View, View.ScreenshotHDR ? LightingTexture : TonemappedImage);
+
+		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
 
 		if (ApplyFSR)
 		{
@@ -361,8 +341,9 @@ namespace Columbus
 		}
 
 		DebugUIPass(Graph, View, TonemappedImage);
-		CopyToSwapchain(Graph, View, TonemappedImage);
 		ExtractHistorySceneTextures(Graph, View, Textures, DeferredContext.History);
+
+		return TonemappedImage;
 	}
 
 }

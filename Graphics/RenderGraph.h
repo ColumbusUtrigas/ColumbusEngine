@@ -133,8 +133,7 @@ namespace Columbus
 	{
 		struct
 		{
-			SPtr<FenceVulkan> Fence;
-			VkSemaphore ImageSemaphore;
+			VkSemaphore FirstSemaphore; // external
 			VkSemaphore SubmitSemaphore;
 
 			int CurrentCmdBuffer = -1; // reset every frame
@@ -170,7 +169,7 @@ namespace Columbus
 			{
 				if (CurrentCmdBuffer == 0)
 				{
-					return ImageSemaphore;
+					return FirstSemaphore;
 				}
 
 				return InternalGetSemaphore(Device, CurrentCmdBuffer - 1);
@@ -213,11 +212,7 @@ namespace Columbus
 		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];
 
 		int CurrentPerFrameData = 0;
-
-		// TODO: View-related
-		uint32_t CurrentSwapchainImageIndex = 0;
-		iVector2 CurrentSwapchainSize{-1};
-		Texture2* SwapchainImage;
+		iVector2 DefaultViewportSize;
 	};
 
 	struct RenderGraphContext
@@ -522,6 +517,18 @@ namespace Columbus
 
 	#define RENDER_GRAPH_SCOPED_MARKER(Graph, Marker) RenderGraphScopedMarker _RG_ScopedMarker_##LINE(Graph, Marker);
 
+	struct RenderGraphExecuteParameters
+	{
+		iVector2 DefaultViewportSize;  // when renderpasses don't explicitly provide viewport size, this will be used
+		VkSemaphore WaitSemaphore;     // RG will start first submit after this one is signaled
+		SPtr<FenceVulkan> SignalFence; // optional fence that will be signaled after RG work is finished
+	};
+
+	struct RenderGraphExecuteResults
+	{
+		VkSemaphore FinishSemaphore; // is signaled when all RG submits are done
+	};
+
 	class RenderGraph
 	{
 	public:
@@ -536,7 +543,9 @@ namespace Columbus
 		const char* GetBufferName(RenderGraphBufferRef Buffer) const;
 		iVector2    GetTextureSize2D(RenderGraphTextureRef Texture) const;
 
-		RenderGraphTextureRef GetSwapchainTexture();
+		// use only after execution has been finished
+		// texture is valid only before the next Clear
+		Texture2* GetTextureAfterExecution(RenderGraphTextureRef Texture) const;
 
 		void AddPass(const char* Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
 
@@ -549,7 +558,7 @@ namespace Columbus
 		void ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst);
 
 		void Clear();
-		void Execute(SwapchainVulkan* Swapchain);
+		RenderGraphExecuteResults Execute(const RenderGraphExecuteParameters& Parameters);
 
 		// These functions should be used after graph was built
 		std::string ExportGraphviz(); // exports graphviz dot format
@@ -557,7 +566,7 @@ namespace Columbus
 		void GetDebugInformation(RenderGraphDebugInformation& Info);
 
 	private:
-		void Build(Texture2* SwapchainImage);
+		void Build();
 
 		void AllocateTexture(RenderGraphTexture& Texture);
 		void AllocateBuffer(RenderGraphBuffer& Buffer);
@@ -581,6 +590,7 @@ namespace Columbus
 		std::unordered_map<TextureDesc2, TexturePool, HashTextureDesc2> TextureResourcePool;
 		std::unordered_map<BufferDesc, BufferPool, HashBufferDesc> BufferResourcePool;
 
+		bool ExecutionHasFinished = false;
 	public:
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
@@ -590,8 +600,6 @@ namespace Columbus
 		RenderGraphData RenderData;
 
 	private:
-		static constexpr RenderGraphTextureRef SwapchainId = -1;
-
 		friend RenderGraphContext;
 	};
 

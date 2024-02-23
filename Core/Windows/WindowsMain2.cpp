@@ -14,6 +14,7 @@
 #include "Math/Quaternion.h"
 #include "Math/Vector2.h"
 #include "Math/Vector3.h"
+#include "Math/Geometry.h"
 #include "SDL_events.h"
 #include "SDL_video.h"
 #include "Scene/Transform.h"
@@ -50,6 +51,12 @@
 
 using namespace Columbus;
 
+struct SwapchainAcquireData
+{
+	Texture2* Image;
+	VkSemaphore ImageAcquiredSemaphore; // is signaled when next image is ready
+};
+
 class WindowVulkan
 {
 public:
@@ -60,6 +67,14 @@ public:
 		SDL_Vulkan_CreateSurface(Window, Instance.instance, &Surface);
 
 		Swapchain = Device->CreateSwapchain(Surface, nullptr);
+
+		for (int i = 0; i < MaxFramesInFlight; i++)
+		{
+			AcquireImageSemaphores[i] = Device->CreateSemaphoreA();
+			ImageBarrierSemaphores[i] = Device->CreateSemaphoreA();
+			FrameFences[i] = Device->CreateFence(true);
+			SwapchainImageBarrierCmdBuffers[i] = Device->CreateCommandBuffer();
+		}
 	}
 
 	void OnResize(iVector2 NewSize)
@@ -80,6 +95,56 @@ public:
 		Size = iVector2((int)Swapchain->swapChainExtent.width, (int)newSwapchain->swapChainExtent.height);
 	}
 
+	// begin frame with this
+	SwapchainAcquireData AcquireNextSwapchainImage()
+	{
+		const u64 Index = FrameIndex % MaxFramesInFlight;
+
+		Device->WaitForFence(FrameFences[Index], 18446744073709551615ULL);
+		Device->AcqureNextImage(Swapchain, AcquireImageSemaphores[Index], CurrentAcquiredImageId);
+		Device->ResetFence(FrameFences[Index]);
+
+		SwapchainAcquireData Result;
+		Result.Image = Swapchain->Textures[CurrentAcquiredImageId];
+		Result.ImageAcquiredSemaphore = AcquireImageSemaphores[Index];
+
+		return Result;
+	}
+
+	// end frame with this
+	void Present(VkSemaphore WaitSemaphore, Texture2* ImageToShowInSwapchain = nullptr)
+	{
+		assert(CurrentAcquiredImageId != -1 && "Forgot to AcquireNextSwapchainImage first?");
+
+		Texture2* CurrentSwapchainImage = Swapchain->Textures[CurrentAcquiredImageId];
+
+		const u64 Index = FrameIndex % MaxFramesInFlight;
+		SwapchainImageBarrierCmdBuffers[Index]->Reset();
+		SwapchainImageBarrierCmdBuffers[Index]->Begin();
+		SwapchainImageBarrierCmdBuffers[Index]->BeginDebugMarker("Barrier swapchain image");
+
+		if (ImageToShowInSwapchain != nullptr)
+		{
+			iVector2 ImageSize;
+			ImageSize.X = (int)ImageToShowInSwapchain->GetDesc().Width;
+			ImageSize.Y = (int)ImageToShowInSwapchain->GetDesc().Height;
+
+			SwapchainImageBarrierCmdBuffers[Index]->TransitionImageLayout(ImageToShowInSwapchain, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+			SwapchainImageBarrierCmdBuffers[Index]->TransitionImageLayout(CurrentSwapchainImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			SwapchainImageBarrierCmdBuffers[Index]->CopyImage(ImageToShowInSwapchain, CurrentSwapchainImage, {}, {}, iVector3(ImageSize, 1));
+		}
+
+		SwapchainImageBarrierCmdBuffers[Index]->TransitionImageLayout(CurrentSwapchainImage, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+		SwapchainImageBarrierCmdBuffers[Index]->EndDebugMarker();
+		SwapchainImageBarrierCmdBuffers[Index]->End();
+		Device->Submit(SwapchainImageBarrierCmdBuffers[Index], FrameFences[Index], 1, &WaitSemaphore, 1, &ImageBarrierSemaphores[Index]);
+
+		Device->Present(Swapchain, CurrentAcquiredImageId, ImageBarrierSemaphores[Index]);
+
+		FrameIndex++;
+	}
+
 	~WindowVulkan()
 	{
 		delete Swapchain;
@@ -94,6 +159,15 @@ public:
 
 	InstanceVulkan& Instance;
 	SPtr<DeviceVulkan> Device;
+
+	VkSemaphore AcquireImageSemaphores[MaxFramesInFlight];
+	VkSemaphore ImageBarrierSemaphores[MaxFramesInFlight];
+
+	SPtr<FenceVulkan> FrameFences[MaxFramesInFlight];
+	CommandBufferVulkan* SwapchainImageBarrierCmdBuffers[MaxFramesInFlight];
+
+	u32 CurrentAcquiredImageId = -1;
+	u64 FrameIndex = 0; // always increments
 
 	iVector2 Size{1280, 720};
 };
@@ -413,51 +487,6 @@ void NewFrameImgui(WindowVulkan& Window)
 	}
 }
 
-float TriangleArea(const Vector3& A, const Vector3& B, const Vector3& C)
-{
-	return Vector3::Cross(B - A, C - A).Length({}) / 2;
-}
-
-// TODO: organise a math library with intersections
-std::optional<Vector3> IntersectTriangleRay(const Vector3& A, const Vector3& B, const Vector3& C, const Vector3& Origin, const Vector3& Direction)
-{
-	// first, ray-plane intersection
-	// then build barycentrics for the triangle, and check if it's inside
-
-	Vector3 triCenter = (A + B + C) / 3;
-	Vector3 triNormal = Vector3::Cross(B - A, C - A).Normalized();
-	
-	Plane originPlane(triNormal, 0);
-
-	Plane triPlane(triNormal, originPlane.DistanceToPoint(triCenter));
-	Vector3 closest = triPlane.ClosestPoint(Origin);
-	float distance = triPlane.DistanceToPoint(Origin);
-	Vector3 closestDir = (closest - Origin).Normalized();
-
-	float dot = closestDir.Dot(Direction);
-
-	if (dot < 0.001f)
-	{
-		// ray is parallel or looking into other direction
-		return std::nullopt;
-	}
-
-	Vector3 planeIntersection = Origin + (Math::Abs(distance) / dot) * Direction;
-
-	Vector3 P = planeIntersection;
-	float area = TriangleArea(A, B, C);
-
-	Vector3 barycentrics = Vector3(TriangleArea(C, A, P) / area, TriangleArea(A, B, P) / area, TriangleArea(B, C, P) / area);
-	float barySum = barycentrics.X + barycentrics.Y + barycentrics.Z;
-
-	if ((barySum - 1.0f) < 0.001f) // if barySum == 1
-	{
-		return P;
-	}
-
-	return std::nullopt;
-}
-
 // TODO: think about it, is it REALLY needed? sounds like an overengineered system for nothing
 // BEGIN_GPU_PARAMETERS(GPUSceneParameters)
 //		GPU_PARAMETERS_UNBOUNDED_ARRAY(Textures, GPU_PARAMETER_TEXTURE2D, 0)
@@ -613,8 +642,6 @@ int main()
 	camera.Update();
 	cameraPrev = camera;
 
-	// SPtr<GPUScene> scene = std::make_shared<GPUScene>();
-
 	char* SceneLoadPath = NULL;
 	if (NFD_OpenDialog("gltf", NULL, &SceneLoadPath) != NFD_OKAY)
 	{
@@ -629,10 +656,7 @@ int main()
 
 	std::vector<Box> BoundingBoxes;
 
-	// auto scene = LoadScene(device, camera, "D:/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
-	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
-	// auto scene = LoadScene(device, camera, "/home/columbus/assets/glTF-Sample-Models-master/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-	//auto scene = LoadScene(device, camera, "C:/Users/Columbus/Downloads/glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf", cpuScene);
+	// SPtr<GPUScene> scene = std::make_shared<GPUScene>();
 	auto scene = LoadScene(device, camera, SceneLoadPath, cpuScene, BoundingBoxes);
 	auto renderGraph = RenderGraph(device, scene);
 	WindowVulkan Window(instance, device);
@@ -648,7 +672,12 @@ int main()
 
 	DebugRender debugRender;
 
-	InitializeImgui(Window, device);
+	const bool bEnableUI = true;
+
+	if (bEnableUI)
+	{
+		InitializeImgui(Window, device);
+	}
 
 	bool running = true;
 	while (running)
@@ -664,11 +693,18 @@ int main()
 		camera.Update();
 		debugRender.Clear();
 
-		NewFrameImgui(Window);
+		if (bEnableUI)
+		{
+			NewFrameImgui(Window);
+		}
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			ImGui_ImplSDL2_ProcessEvent(&event);
+			if (bEnableUI)
+			{
+				ImGui_ImplSDL2_ProcessEvent(&event);
+			}
+
 			if (event.type == SDL_QUIT) {
 				running = false;
 			}
@@ -693,6 +729,7 @@ int main()
 		};
 
 		// UI
+		if (bEnableUI)
 		{
 			ImGui::ShowDemoWindow();
 			ShowDebugConsole();
@@ -858,9 +895,8 @@ int main()
 		}
 
 		// crude collision check
-		if (0)
+		if (1 && bEnableUI)
 		{
-			// TODO: function to project mouse into world
 			ImGuiIO& io = ImGui::GetIO();
 			Vector2 mousepos = { io.MousePos.x, io.MousePos.y };
 			Vector2 displaysize = { io.DisplaySize.x, io.DisplaySize.y };
@@ -868,15 +904,16 @@ int main()
 			Vector2 mousendc = (mousepos / displaysize) * 2 - 1;
 			mousendc.Y = -mousendc.Y;
 
-			Vector4 mouseVector(mousendc, -1, 1);
-			Matrix mat = camera.GetViewProjection().GetInverted();
-			Vector3 mousevec = (mat * mouseVector).XYZ() - camera.Pos;
+			Geometry::Ray CameraRay{
+				.Origin = camera.Pos,
+				.Direction = camera.CalcRayByNdc(mousendc)
+			};
 
 			for (int i = 0; i < BoundingBoxes.size(); i++)
 			{
 				Box& Bounding = BoundingBoxes[i];
 
-				if (Bounding.Intersects(camera.Pos, mousevec))
+				if (Bounding.Intersects(CameraRay.Origin, CameraRay.Direction))
 				{
 					CPUSceneMesh& Mesh = cpuScene.Meshes[i];
 					for (int v = 0; v < Mesh.Indices.size(); v += 3)
@@ -886,18 +923,17 @@ int main()
 						u32 i2 = Mesh.Indices[v + 1];
 						u32 i3 = Mesh.Indices[v + 2];
 
-						Vector3 v1 = Mesh.Vertices[i1];
-						Vector3 v2 = Mesh.Vertices[i2];
-						Vector3 v3 = Mesh.Vertices[i3];
+						Geometry::Triangle Tri{
+							Mesh.Vertices[i1],
+							Mesh.Vertices[i2],
+							Mesh.Vertices[i3],
+						};
 
-						std::optional<Vector3> mouseIntersect = IntersectTriangleRay(v1, v2, v3, camera.Pos, mousevec);
-						if (mouseIntersect)
+						Geometry::HitPoint mouseIntersect = Geometry::RayTriangleIntersection(CameraRay, Tri);
+						if (mouseIntersect.IsHit)
 						{
-							//debugRender.AddBox(mouseIntersect.value(), { 0.1f }, Vector4(0, 0, 1, 1));
-
-							Vector3 triNormal = Vector3::Cross(v2 - v1, v3 - v1).Normalized();
-							Vector3 triOffset = triNormal * 0.01f;
-							debugRender.AddTri(v1 + triOffset, v2 + triOffset, v3 + triOffset, {1, 0, 0, 1});
+							Vector3 triOffset = Tri.Normal() * 0.01f;
+							debugRender.AddTri(Tri.A + triOffset, Tri.B + triOffset, Tri.C + triOffset, {1, 0, 0, 1});
 						}
 					}
 				}
@@ -912,37 +948,53 @@ int main()
 
 		cameraPrev = camera;
 
-		renderGraph.Clear();
-
+		// rendergraph stuff
 		{
-			PROFILE_CPU(CpuCounter_RenderGraphCreate);
+			RenderGraphTextureRef FinalTexture = -1;
+			renderGraph.Clear();
 
-			UploadGPUSceneRG(renderGraph);
-
-			if (render_cvar.GetValue() == 0)
+			// setup render passes
 			{
-				if (lightmapSystem.BakingRequested)
-				{
-					PrepareAtlasForLightmapBaking(renderGraph, lightmapSystem);
-					BakeLightmapPathTraced(renderGraph, lightmapSystem);
-				}
+				PROFILE_CPU(CpuCounter_RenderGraphCreate);
 
-				if (scene->IrradianceVolumes[0].ProbesBuffer == nullptr || ComputeIrradianceVolume)
-				{
-					RenderIrradianceProbes(renderGraph, View, scene->IrradianceVolumes[0]);
-					ComputeIrradianceVolume = false;
-				}
+				UploadGPUSceneRG(renderGraph);
 
-				RenderDeferred(renderGraph, View, DeferredContext);
+				if (render_cvar.GetValue() == 0)
+				{
+					if (lightmapSystem.BakingRequested)
+					{
+						PrepareAtlasForLightmapBaking(renderGraph, lightmapSystem);
+						BakeLightmapPathTraced(renderGraph, lightmapSystem);
+					}
+
+					if (scene->IrradianceVolumes[0].ProbesBuffer == nullptr || ComputeIrradianceVolume)
+					{
+						RenderIrradianceProbes(renderGraph, View, scene->IrradianceVolumes[0]);
+						ComputeIrradianceVolume = false;
+					}
+
+					FinalTexture = RenderDeferred(renderGraph, View, DeferredContext);
+				}
+				else
+				{
+					FinalTexture = RenderPathTraced(renderGraph, View);
+				}
 			}
-			else
+
+			// RG execution/present
 			{
-				RenderPathTraced(renderGraph, View);
+				SwapchainAcquireData AcquireData = Window.AcquireNextSwapchainImage();
+				Texture2* SwapchainTexture = AcquireData.Image;
+
+				RenderGraphExecuteParameters RGParameters;
+				RGParameters.DefaultViewportSize = Window.Size;
+				RGParameters.WaitSemaphore = AcquireData.ImageAcquiredSemaphore;
+				RenderGraphExecuteResults RGResults = renderGraph.Execute(RGParameters);
+
+				// TODO: draw debug UI directly to swapchain
+				Window.Present(RGResults.FinishSemaphore, renderGraph.GetTextureAfterExecution(FinalTexture));
 			}
 		}
-
-		renderGraph.Execute(Window.Swapchain); // TODO: move swapchain handling out of rendergraph
-		// TODO: allow debug overlay to be rendered afterwards
 
 		// std::string graphviz = renderGraph.ExportGraphviz();
 		// printf("%s\n", graphviz.c_str());

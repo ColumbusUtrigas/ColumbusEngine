@@ -30,7 +30,7 @@ namespace Columbus
 		uint FrameNumber;
 	};
 
-	void RenderPathTraced(RenderGraph& Graph, const RenderView& View)
+	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View)
 	{
 		TextureDesc2 PTTextureDesc {
 			.Usage = TextureUsage::Storage,
@@ -102,7 +102,8 @@ namespace Columbus
 
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, RTImage);
 		DebugUIPass(Graph, View, TonemappedImage);
-		CopyToSwapchain(Graph, View, TonemappedImage);
+		
+		return TonemappedImage;
 	}
 
 }

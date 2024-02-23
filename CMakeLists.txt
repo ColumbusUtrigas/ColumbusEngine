@@ -220,6 +220,7 @@ add_dir_to_target_recurse(${TARGET} Graphics/Particles)
 add_dir_to_target_recurse(${TARGET} Graphics/RenderPasses)
 add_dir_to_target(${TARGET} Graphics/Core)
 
+add_dir_to_target(${TARGET} Math)
 add_dir_to_target(${TARGET} Input)
 add_dir_to_target(${TARGET} Physics)
 add_dir_to_target(${TARGET} Profiling)

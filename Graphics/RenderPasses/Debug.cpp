@@ -20,6 +20,7 @@ namespace Columbus
 	VkRenderPass ImGuiRenderPass = NULL;
 	bool DebugConsoleFocus = false;
 
+	// TODO: rewrite with my RHI so it integrates nicely
 	void SetupImguiForSwapchain(SPtr<DeviceVulkan> Device, const SwapchainVulkan* Swapchain)
 	{
 		static bool Initialised = false;

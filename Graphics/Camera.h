@@ -43,6 +43,9 @@ namespace Columbus
 		const Matrix& GetViewProjection() const;
 		const Matrix& GetProjectionMatrix() const;
 		const Matrix& GetViewMatrix() const;
+
+		// having viewspace normalised coordinates, shoot a ray into the world and return it's direction
+		Vector3 CalcRayByNdc(const Vector2& NDC) const;
 		
 		~Camera();
 	};
