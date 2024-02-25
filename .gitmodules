@@ -41,3 +41,6 @@
 [submodule "Lib/nativefiledialog"]
 	path = Lib/nativefiledialog
 	url = https://github.com/mlabbe/nativefiledialog.git
+[submodule "Lib/implot"]
+	path = Lib/implot
+	url = https://github.com/epezent/implot.git

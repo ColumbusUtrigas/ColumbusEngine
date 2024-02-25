@@ -29,6 +29,7 @@ namespace Columbus
 		// Device->ResetQueryPool(Pools[CurrentFrame], 0, TimestampQueryCount);
 		CurrentTimestampQuery[CurrentFrame] = 0;
 		CurrentMeasurement[CurrentFrame] = 0;
+		WasReset = false;
 	}
 
 	void GPUProfilerVulkan::EndFrame()
@@ -57,7 +58,11 @@ namespace Columbus
 
 	void GPUProfilerVulkan::Reset(CommandBufferVulkan* CommandBuffer)
 	{
-		CommandBuffer->ResetQueryPool(Pools[CurrentFrame], 0, TimestampQueryCount);
+		if (!WasReset)
+		{
+			CommandBuffer->ResetQueryPool(Pools[CurrentFrame], 0, TimestampQueryCount);
+		}
+		WasReset = true;
 	}
 
 	void GPUProfilerVulkan::BeginProfileCounter(ProfileMarkerGPU& Scoped, CommandBufferVulkan* CommandBuffer)

@@ -262,6 +262,8 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.Scene->LightsBuffer);
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
+			// TODO: support lights not having shadows
+			// TODO: support shadowmaps/hybrid shadows
 			for (int i = 0; i < DeferredContext.LightRenderInfos.size(); i++)
 			{
 				Context.Device->UpdateDescriptorSet(ShadowsSet, 0, i, Context.GetRenderGraphTexture(DeferredContext.LightRenderInfos[i].RTShadow).get());
@@ -282,6 +284,19 @@ namespace Columbus
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures)
 	{
 		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
+	}
+
+	// TODO: find a way to do it without this pass
+	static void TransitionImagePass(RenderGraph& Graph, RenderGraphTextureRef Texture)
+	{
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies(Graph.Allocator);
+		Dependencies.Read(Texture, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+		Graph.AddPass("TransitionImage", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture](RenderGraphContext& Context)
+		{
+			Context.CommandBuffer->TransitionImageLayout(Context.GetRenderGraphTexture(Texture).get(), VK_IMAGE_LAYOUT_GENERAL);
+		});
 	}
 
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
@@ -340,7 +355,7 @@ namespace Columbus
 			TonemappedImage = ApplyFSR1(Graph, TonemappedImage, FsrUpscaleDesc, UpscaleTo, IsHdr, ApplyFSR1Sharpening, FSR1Sharpening);
 		}
 
-		DebugUIPass(Graph, View, TonemappedImage);
+		TransitionImagePass(Graph, TonemappedImage);
 		ExtractHistorySceneTextures(Graph, View, Textures, DeferredContext.History);
 
 		return TonemappedImage;

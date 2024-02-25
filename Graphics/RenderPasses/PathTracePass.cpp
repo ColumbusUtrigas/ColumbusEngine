@@ -30,6 +30,19 @@ namespace Columbus
 		uint FrameNumber;
 	};
 
+	// TODO: find a way to do it without this pass
+	static void TransitionImagePass(RenderGraph& Graph, RenderGraphTextureRef Texture)
+	{
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies(Graph.Allocator);
+		Dependencies.Read(Texture, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+		Graph.AddPass("TransitionImage", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture](RenderGraphContext& Context)
+		{
+			Context.CommandBuffer->TransitionImageLayout(Context.GetRenderGraphTexture(Texture).get(), VK_IMAGE_LAYOUT_GENERAL);
+		});
+	}
+
 	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View)
 	{
 		TextureDesc2 PTTextureDesc {
@@ -101,7 +114,8 @@ namespace Columbus
 		}
 
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, RTImage);
-		DebugUIPass(Graph, View, TonemappedImage);
+		//DebugUIPass(Graph, View, TonemappedImage);
+		TransitionImagePass(Graph, TonemappedImage);
 		
 		return TonemappedImage;
 	}

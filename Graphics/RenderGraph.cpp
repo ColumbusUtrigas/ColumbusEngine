@@ -216,53 +216,57 @@ namespace Columbus
 
 		// Assuming that GPUScene is completely static, fill it in
 		// TODO: fully refactor
+		// TODO: move to GPUScene
 
-		// brute-generate VkDescriptorSetLayout
-		auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type, uint32_t count, bool unbounded = true, u32 bindingCount = 1)
+		if (Scene)
 		{
-			VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-
-			VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
-			bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-			bindingFlagsInfo.pNext = nullptr;
-			bindingFlagsInfo.bindingCount = 1;
-			bindingFlagsInfo.pBindingFlags = &bindingFlags;
-
-			fixed_vector<VkDescriptorSetLayoutBinding, 16> bindings;
-			for (u32 i = 0; i < bindingCount; i++)
+			// brute-generate VkDescriptorSetLayout
+			auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type, uint32_t count, bool unbounded = true, u32 bindingCount = 1)
 			{
-				VkDescriptorSetLayoutBinding binding;
-				binding.binding = bindingNum + i;
-				binding.descriptorType = type;
-				binding.descriptorCount = count;
-				binding.stageFlags = VK_SHADER_STAGE_ALL;
-				binding.pImmutableSamplers = nullptr;
-				bindings.push_back(binding);
-			}
+				VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
-			VkDescriptorSetLayoutCreateInfo setLayoutInfo;
-			setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			setLayoutInfo.pNext = unbounded ? &bindingFlagsInfo : nullptr;
-			setLayoutInfo.flags = 0;
-			setLayoutInfo.bindingCount = bindingCount;
-			setLayoutInfo.pBindings = bindings.data();
+				VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
+				bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+				bindingFlagsInfo.pNext = nullptr;
+				bindingFlagsInfo.bindingCount = 1;
+				bindingFlagsInfo.pBindingFlags = &bindingFlags;
 
-			VkDescriptorSetLayout layout;
+				fixed_vector<VkDescriptorSetLayoutBinding, 16> bindings;
+				for (u32 i = 0; i < bindingCount; i++)
+				{
+					VkDescriptorSetLayoutBinding binding;
+					binding.binding = bindingNum + i;
+					binding.descriptorType = type;
+					binding.descriptorCount = count;
+					binding.stageFlags = VK_SHADER_STAGE_ALL;
+					binding.pImmutableSamplers = nullptr;
+					bindings.push_back(binding);
+				}
 
-			VK_CHECK(vkCreateDescriptorSetLayout(Device->_Device, &setLayoutInfo, nullptr, &layout));
+				VkDescriptorSetLayoutCreateInfo setLayoutInfo;
+				setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+				setLayoutInfo.pNext = unbounded ? &bindingFlagsInfo : nullptr;
+				setLayoutInfo.flags = 0;
+				setLayoutInfo.bindingCount = bindingCount;
+				setLayoutInfo.pBindings = bindings.data();
 
-			return layout;
-		};
+				VkDescriptorSetLayout layout;
 
-		RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
-		RenderData.GPUSceneLayout.SceneLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false, 3);
+				VK_CHECK(vkCreateDescriptorSetLayout(Device->_Device, &setLayoutInfo, nullptr, &layout));
 
-		RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 1000);
-		RenderData.GPUSceneData.SceneSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.SceneLayout, 0);
+				return layout;
+			};
 
-		Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 0, 0, Scene->SceneBuffer);
-		Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 1, 0, Scene->LightsBuffer);
-		Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 2, 0, Scene->MeshesBuffer);
+			RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000);
+			RenderData.GPUSceneLayout.SceneLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false, 3);
+
+			RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 1000);
+			RenderData.GPUSceneData.SceneSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.SceneLayout, 0);
+
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 0, 0, Scene->SceneBuffer);
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 1, 0, Scene->LightsBuffer);
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 2, 0, Scene->MeshesBuffer);
+		}
 	}
 
 	RenderGraphTextureRef RenderGraph::CreateTexture(const TextureDesc2& Desc, const char* Name)
@@ -814,9 +818,13 @@ namespace Columbus
 		PerFrameData.FirstSemaphore = Parameters.WaitSemaphore;
 
 		// TODO: refactor that mechanism
-		for (int i = 0; i < Scene->Textures.size(); i++)
+		// TODO: move to GPUScene
+		if (Scene)
 		{
-			Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+			for (int i = 0; i < Scene->Textures.size(); i++)
+			{
+				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+			}
 		}
 
 		Build();

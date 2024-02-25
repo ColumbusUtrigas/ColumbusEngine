@@ -89,6 +89,17 @@ elseif(WIN32)
 	target_include_directories(imgui PUBLIC $ENV{VULKAN_SDK}/Include)
 endif()
 
+########## IMPLOT ##########
+file(GLOB IMPLOT_SRC
+	Lib/implot/implot.h
+	Lib/implot/implot_internal.h
+	Lib/implot/implot.cpp
+	Lib/implot/implot_items.cpp
+)
+add_library(implot STATIC ${IMPLOT_SRC})
+target_include_directories(implot PUBLIC ./Lib/imgui)
+target_link_libraries(implot imgui)
+
 ########## XATLAS ##########
 file(GLOB XATLAS_SRC Lib/xatlas/xatlas.h Lib/xatlas/xatlas.cpp)
 add_library(xatlas STATIC ${XATLAS_SRC})
@@ -258,6 +269,7 @@ endif()
 
 target_link_libraries(${TARGET} nfd)
 target_link_libraries(${TARGET} imgui)
+target_link_libraries(${TARGET} implot)
 target_link_libraries(${TARGET} xatlas)
 target_link_libraries(${TARGET} spirv_reflect)
 target_link_libraries(${TARGET} ShaderBytecode)

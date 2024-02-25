@@ -17,59 +17,7 @@ ConsoleVariable<bool> CVar_DebugOverlayIrradiance("r.DebugOverlay.Irradiance", "
 
 namespace Columbus
 {
-	VkRenderPass ImGuiRenderPass = NULL;
 	bool DebugConsoleFocus = false;
-
-	// TODO: rewrite with my RHI so it integrates nicely
-	void SetupImguiForSwapchain(SPtr<DeviceVulkan> Device, const SwapchainVulkan* Swapchain)
-	{
-		static bool Initialised = false;
-		if (!Initialised)
-		{
-			ImGui_ImplVulkan_InitInfo imguiVk{};
-			imguiVk.Instance = Device->_Instance;
-			imguiVk.PhysicalDevice = Device->_PhysicalDevice;
-			imguiVk.Device = Device->_Device;
-			imguiVk.QueueFamily = Device->_FamilyIndex;
-			imguiVk.Queue = *Device->_ComputeQueue;
-			imguiVk.DescriptorPool = Device->_DescriptorPool;
-			imguiVk.MinImageCount = Swapchain->minImageCount;
-			imguiVk.ImageCount = Swapchain->imageCount;
-
-			AttachmentDesc Attachments[] = {
-				AttachmentDesc { AttachmentType::Color, AttachmentLoadOp::Load, TextureFormat::BGRA8SRGB }
-			};
-
-			ImGuiRenderPass = Device->CreateRenderPass(Attachments);
-
-			ImGui_ImplVulkan_Init(&imguiVk, ImGuiRenderPass);
-			{
-				auto CommandBuffer = Device->CreateCommandBufferShared();
-				CommandBuffer->Begin();
-				ImGui_ImplVulkan_CreateFontsTexture(CommandBuffer->_CmdBuf);
-				CommandBuffer->End();
-				Device->Submit(CommandBuffer.get());
-				Device->QueueWaitIdle();
-				ImGui_ImplVulkan_DestroyFontUploadObjects();
-			}
-
-			Initialised = true;
-		}
-	}
-
-	void DebugUIPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef Texture)
-	{
-		RenderPassParameters Parameters;
-		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Texture, {} };
-		Parameters.ExternalRenderPass = ImGuiRenderPass;
-		RenderPassDependencies Dependencies(Graph.Allocator);
-
-		Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
-		{
-			ImGui::Render();
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
-		});
-	}
 
 	struct DebugObjectParameters
 	{
@@ -148,7 +96,7 @@ namespace Columbus
 				}
 			}
 
-			for (DebugRenderObject& Object : View.DebugRender->Objects)
+			for (const DebugRenderObject& Object : View.DebugRender.Objects)
 			{
 				DebugObjectParameters Parameters {
 					.Model = Object.Transform,
@@ -365,7 +313,7 @@ namespace Columbus
 					{
 						if (!CommandHistory.empty())
 						{
-							if (!isPopupVisible) popupIndex = CommandHistory.size() - 1;
+							if (!isPopupVisible) popupIndex = (int)CommandHistory.size() - 1;
 							isPopupVisible = true;
 
 							popupIndex = std::clamp(popupIndex, 0, (int)CommandHistory.size() - 1);
@@ -379,7 +327,7 @@ namespace Columbus
 
 						if (!CvarList.empty())
 						{
-							if (!isPopupVisible) popupIndex = CvarList.size() - 1;
+							if (!isPopupVisible) popupIndex = (int)CvarList.size() - 1;
 							isPopupVisible = true;
 
 							popupIndex = std::clamp(popupIndex, 0, (int)CvarList.size() - 1);

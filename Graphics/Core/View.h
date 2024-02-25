@@ -11,12 +11,11 @@ namespace Columbus
 
 	struct RenderView
 	{
-		SwapchainVulkan* Swapchain;
 		iVector2 OutputSize;
 		iVector2 RenderSize; // internal resolution
 		Camera CameraCur;
 		Camera CameraPrev;
-		DebugRender* DebugRender = nullptr;
+		DebugRender DebugRender;
 
 		bool ScreenshotHDR = false; // if true, screenshot is done before tonemapping
 		char* ScreenshotPath = nullptr; // when is not nullptr, saves a screenshot on disk

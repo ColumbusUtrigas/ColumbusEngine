@@ -1,0 +1,259 @@
+#include "DebugUI.h"
+
+// Third party
+#include <Lib/imgui/imgui.h>
+#include <Lib/imgui/backends/imgui_impl_vulkan.h>
+#include <Lib/imgui/backends/imgui_impl_sdl2.h>
+#include <Lib/implot/implot.h>
+#include <Lib/nativefiledialog/src/include/nfd.h>
+
+// std
+#include <unordered_map>
+
+namespace Columbus::DebugUI
+{
+
+	static constexpr TextureFormat SwapchainFormat = TextureFormat::BGRA8SRGB;
+
+	static void ApplyDarkTheme()
+	{
+		ImGuiStyle& Style = ImGui::GetStyle();
+		ImGui::StyleColorsDark(&Style);
+		Style.FrameRounding = 3.0f;
+		Style.WindowRounding = 0.0f;
+		Style.ScrollbarRounding = 3.0f;
+
+		ImVec4* colors = ImGui::GetStyle().Colors;
+		colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+		colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.06f, 0.06f, 0.94f);
+		colors[ImGuiCol_ChildBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.00f);
+		colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+		colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+		colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.21f, 0.22f, 0.54f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.40f, 0.40f, 0.40f, 0.40f);
+		colors[ImGuiCol_FrameBgActive] = ImVec4(0.18f, 0.18f, 0.18f, 0.67f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
+		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+		colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
+		colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+		colors[ImGuiCol_CheckMark] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
+		colors[ImGuiCol_SliderGrab] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.44f, 0.44f, 0.44f, 0.40f);
+		colors[ImGuiCol_ButtonHovered] = ImVec4(0.46f, 0.47f, 0.48f, 1.00f);
+		colors[ImGuiCol_ButtonActive] = ImVec4(0.42f, 0.42f, 0.42f, 1.00f);
+		colors[ImGuiCol_Header] = ImVec4(0.70f, 0.70f, 0.70f, 0.31f);
+		colors[ImGuiCol_HeaderHovered] = ImVec4(0.70f, 0.70f, 0.70f, 0.80f);
+		colors[ImGuiCol_HeaderActive] = ImVec4(0.48f, 0.50f, 0.52f, 1.00f);
+		colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.72f, 0.72f, 0.72f, 0.78f);
+		colors[ImGuiCol_SeparatorActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+		colors[ImGuiCol_ResizeGrip] = ImVec4(0.91f, 0.91f, 0.91f, 0.25f);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.81f, 0.81f, 0.81f, 0.67f);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.46f, 0.46f, 0.46f, 0.95f);
+		colors[ImGuiCol_Tab] = ImVec4(0.44f, 0.44f, 0.44f, 0.40f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.46f, 0.47f, 0.48f, 1.00f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.42f, 0.42f, 0.42f, 1.00f);
+		colors[ImGuiCol_TabUnfocused] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
+		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.44f, 0.44f, 0.44f, 0.40f);
+		colors[ImGuiCol_DockingPreview] = ImVec4(0.75f, 0.75f, 0.75f, 0.70f);
+		colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+		colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+		colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+		colors[ImGuiCol_PlotHistogram] = ImVec4(0.73f, 0.60f, 0.15f, 1.00f);
+		colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.87f, 0.87f, 0.87f, 0.35f);
+		colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+		colors[ImGuiCol_NavHighlight] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
+		colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.60f);
+	}
+
+	static void SetupImguiForContext(Context* Ctx)
+	{
+		SPtr<DeviceVulkan> Device = Ctx->Window->Device;
+		SwapchainVulkan* Swapchain = Ctx->Window->Swapchain;
+
+		ImGui_ImplVulkan_InitInfo imguiVk{};
+		imguiVk.Instance = Device->_Instance;
+		imguiVk.PhysicalDevice = Device->_PhysicalDevice;
+		imguiVk.Device = Device->_Device;
+		imguiVk.QueueFamily = Device->_FamilyIndex;
+		imguiVk.Queue = *Device->_ComputeQueue;
+		imguiVk.DescriptorPool = Device->_DescriptorPool;
+		imguiVk.MinImageCount = Swapchain->minImageCount;
+		imguiVk.ImageCount = Swapchain->imageCount;
+
+		AttachmentDesc Attachments[] = {
+			AttachmentDesc { AttachmentType::Color, AttachmentLoadOp::Clear, SwapchainFormat }
+		};
+
+		Ctx->InternalRenderPass = Device->CreateRenderPass(Attachments);
+
+		ImGui_ImplVulkan_Init(&imguiVk, Ctx->InternalRenderPass);
+		{
+			auto CommandBuffer = Device->CreateCommandBufferShared();
+			CommandBuffer->Begin();
+			ImGui_ImplVulkan_CreateFontsTexture(CommandBuffer->_CmdBuf);
+			CommandBuffer->End();
+			Device->Submit(CommandBuffer.get());
+			Device->QueueWaitIdle();
+			ImGui_ImplVulkan_DestroyFontUploadObjects();
+		}
+	}
+
+	Context* Create(WindowVulkan* Window)
+	{
+		Context* Ctx = new Context();
+		Ctx->Window = Window;
+		Ctx->Graph = new RenderGraph(Window->Device, nullptr);
+
+		ImGui::CreateContext();
+		ImPlotContext* PlotCtx = ImPlot::CreateContext();
+		ImPlot::SetCurrentContext(PlotCtx);
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+		ApplyDarkTheme();
+
+		ImFontConfig lat, cyr, icons;
+		cyr.MergeMode = true;
+		icons.MergeMode = true;
+
+		//const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
+		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &lat);
+		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
+		//io.Fonts->AddFontFromFileTTF("./Data/FontAwesome5.ttf", 12.0f, &icons, icons_ranges);
+		io.Fonts->Build();
+
+		ImGui_ImplSDL2_InitForVulkan(Window->Window);
+		SetupImguiForContext(Ctx);
+
+		return Ctx;
+	}
+
+	void BeginFrame(Context* Ctx)
+	{
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.DisplaySize = { (float)Ctx->Window->Size.X, (float)Ctx->Window->Size.Y };
+
+		if (io.Fonts->IsBuilt())
+		{
+			ImGui::NewFrame();
+			ImGui_ImplVulkan_NewFrame();
+			ImGui_ImplSDL2_NewFrame(Ctx->Window->Window);
+		}
+	}
+
+	void ProcessInputSDL(Context* Ctx, SDL_Event* Event)
+	{
+		ImGui_ImplSDL2_ProcessEvent(Event);
+	}
+
+	RenderResult Render(Context* Ctx, VkSemaphore WaitSemaphore)
+	{
+		RenderGraphTextureRef UITexture;
+
+		iVector2 OutputSize = Ctx->Window->Size;
+		RenderGraph& Graph = *Ctx->Graph;
+
+		Graph.Clear();
+
+		{
+			TextureDesc2 UIFinalDesc;
+			UIFinalDesc.Format = SwapchainFormat;
+			UIFinalDesc.Width = (u32)OutputSize.X;
+			UIFinalDesc.Height = (u32)OutputSize.Y;
+			UIFinalDesc.Usage = TextureUsage::RenderTargetColor;
+			UITexture = Graph.CreateTexture(UIFinalDesc, "UI");
+
+			RenderPassParameters Parameters;
+			Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, UITexture, {} };
+			Parameters.ExternalRenderPass = Ctx->InternalRenderPass;
+			RenderPassDependencies Dependencies(Graph.Allocator);
+
+			Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [UITexture](RenderGraphContext& Context)
+			{
+				ImGui::Render();
+				ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
+			});
+		}
+
+		RenderGraphExecuteParameters RGParameters;
+		RGParameters.DefaultViewportSize = OutputSize;
+		RGParameters.WaitSemaphore = WaitSemaphore;
+		RenderGraphExecuteResults RGResults = Graph.Execute(RGParameters);
+
+		RenderResult Result;
+		Result.FinishSemaphore = RGResults.FinishSemaphore;
+		Result.ResultTexture = Graph.GetTextureAfterExecution(UITexture);
+
+		return Result;
+	}
+
+	void EndFrame(Context* Ctx)
+	{
+	}
+
+	void Destroy(Context* Ctx)
+	{
+		delete Ctx->Graph;
+		delete Ctx;
+	}
+
+	// mutates View
+	void ShowScreenshotSaveWindow(RenderView& View)
+	{
+		if (ImGui::Begin("Screenshot"))
+		{
+			static bool HDR = false;
+
+			if (ImGui::Button("Take screenshot"))
+			{
+				char* ScreenshotPath = NULL;
+
+				if (HDR)
+				{
+					if (NFD_SaveDialog("exr", NULL, &ScreenshotPath) == NFD_OKAY)
+						View.ScreenshotPath = ScreenshotPath;
+				}
+				else
+				{
+					if (NFD_SaveDialog("png", NULL, &ScreenshotPath) == NFD_OKAY)
+						View.ScreenshotPath = ScreenshotPath;
+				}
+
+				View.ScreenshotHDR = HDR;
+			}
+
+			ImGui::Checkbox("HDR", &HDR);
+		}
+		ImGui::End();
+	}
+
+	void TextureWidget(Texture2* Texture, Vector2 Size, bool ForceInvalidate)
+	{
+		// TODO: cleanup
+		static std::unordered_map<Texture2*, VkDescriptorSet> ImguiTexturesMap;
+
+		// TODO: find a way to hook imgui to rendering properly
+		if (!ImguiTexturesMap.contains(Texture) || ForceInvalidate)
+		{
+			TextureVulkan* vktex = static_cast<TextureVulkan*>(Texture);
+
+			ImguiTexturesMap[Texture] = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
+		}
+
+		ImGui::Image(ImguiTexturesMap[Texture], ImVec2(Size.X, Size.Y));
+	}
+
+}

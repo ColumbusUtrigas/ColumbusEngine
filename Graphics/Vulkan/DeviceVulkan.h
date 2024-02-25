@@ -54,6 +54,8 @@ namespace Columbus
 		std::atomic<int> CurrentMeasurement[MaxFramesInFlight]{0};
 		int CurrentFrame = 0;
 
+		bool WasReset = false; // profiler must be reset only once per frame
+
 		struct Measurement
 		{
 			ProfileCounterGPU* Counter;
