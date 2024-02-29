@@ -16,10 +16,13 @@ struct RayPayload {
 	layout(binding = 2, set = 2) uniform sampler2D GBufferNormals;
 	layout(binding = 3, set = 2) uniform sampler2D GBufferWorldPosition;
 	layout(binding = 4, set = 2) uniform sampler2D GBufferRoughnessMetallic;
+	layout(binding = 5, set = 2) uniform sampler2D GBufferDepth;
 	
 	#include "../GPUScene.glsl" // TODO:
 	#include "../BRDF.glsl"
 	#include "../Common.glsl"
+
+	#define EPSILON 0.0001
 
 	layout(push_constant) uniform params
 	{
@@ -31,6 +34,14 @@ struct RayPayload {
 	{
 		const uvec2 pixel = gl_LaunchIDEXT.xy;
 		const vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
+
+		float depth = texture(GBufferDepth, uv).x;
+		// do not trace from sky
+		if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+		{
+			imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(0));
+			return;
+		}
 
 		uint RngState = gl_LaunchIDEXT.x * pixel.y + pixel.x * (Params.Random + 1);  // Initial seed
 

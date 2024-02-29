@@ -114,14 +114,17 @@ namespace Columbus
 
 			case TextureFormat::Depth24: return VK_FORMAT_D24_UNORM_S8_UINT;
 			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+			case TextureFormat::DXT3: return VK_FORMAT_BC3_UNORM_BLOCK;
 			case TextureFormat::DXT5: return VK_FORMAT_BC5_UNORM_BLOCK;
+			case TextureFormat::BC6H: return VK_FORMAT_BC6H_SFLOAT_BLOCK;
+			case TextureFormat::BC7:  return VK_FORMAT_BC7_UNORM_BLOCK;
 			default: COLUMBUS_ASSERT(false);
 		}
 	}
 
 	static VkImageAspectFlags TextureFormatToAspectMaskVk(TextureFormat format)
 	{
-		return ImageIsDepthFormat(format) ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
+		return TextureFormatGetInfo(format).HasDepth ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
 	}
 
 	static VkImageUsageFlags TextureUsageToImageUsageVk(TextureUsage usage)

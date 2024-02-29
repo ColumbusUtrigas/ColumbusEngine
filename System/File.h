@@ -15,7 +15,7 @@ namespace Columbus
 		char* FileName = nullptr;
 	public:
 		File();
-		File(File& Other);
+		File(File& Other); // copy invalidates Other
 		File(const char* File, const char* Modes);
 
 		File& operator=(File& Other);
@@ -63,4 +63,56 @@ namespace Columbus
 		~File();
 	};
 
+	enum class DataStreamType
+	{
+		File,
+		Memory,
+	};
+
+	// both from memory and from filesystem
+	struct DataStream
+	{
+		static DataStream CreateFromFile(const char* FileName, const char* Modes);
+		static DataStream CreateFromMemory(u8* Memory, u64 Size);
+
+		u64 GetSize() const;
+
+		void SeekSet(u64 Offset);
+		void SeekCur(i32 Offset);
+
+		bool IsEOF() const;
+
+		size_t Read(void* Data, size_t Size, size_t Packs);
+		size_t Write(const void* Data, size_t Size, size_t Packs);
+
+		bool ReadBytes(void* Data, u64 Size);
+		bool WriteBytes(const void* Data, u64 Size);
+
+		template <typename T>
+		bool Read(T& Data)
+		{
+			return ReadBytes(&Data, sizeof(T));
+		}
+
+		template <typename T>
+		bool Write(const T& Data)
+		{
+			return WriteBytes(&Data, sizeof(T));
+		}
+
+		DataStreamType GetType() const { return Type; }
+		bool IsValid() const { return Valid; }
+
+	public:
+		DataStreamType Type;
+
+		bool Valid = false;
+
+		File F;
+
+		u8* Memory = nullptr;
+		u64 MemorySize = 0;
+
+		u64 CurrentOffset = 0;
+	};
 }

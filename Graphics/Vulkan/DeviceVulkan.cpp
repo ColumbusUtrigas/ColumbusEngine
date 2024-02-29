@@ -1024,7 +1024,9 @@ namespace Columbus
 			VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_View));
 		}
 
-		if (ImageIsDepthFormat(Desc.Format))
+		TextureFormatInfo FormatInfo = TextureFormatGetInfo(Desc.Format);
+
+		if (FormatInfo.HasDepth)
 		{
 			// depth-only view
 			{
@@ -1047,7 +1049,7 @@ namespace Columbus
 				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_DepthView));
 			}
 
-			if (ImageIsStencilFormat(Desc.Format))
+			if (FormatInfo.HasStencil);
 			{
 				// stencil-only view
 				VkImageViewCreateInfo viewInfo;

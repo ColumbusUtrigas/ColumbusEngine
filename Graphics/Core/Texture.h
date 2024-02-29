@@ -212,7 +212,7 @@ namespace Columbus
 		virtual bool Load(Image& InImage) = 0;
 		virtual bool Load(const char* File) = 0;
 
-		virtual bool Create(Image::Type InType, TextureDesc Desc) = 0;
+		virtual bool Create(ImageType InType, TextureDesc Desc) = 0;
 		virtual bool Create(Type InType, TextureDesc Desc) = 0;
 		virtual bool Create2D(TextureDesc Desc) = 0;
 		virtual bool CreateCube(TextureDesc Desc) = 0;

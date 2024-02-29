@@ -203,6 +203,137 @@ namespace Columbus
 		Close();
 	}
 
-}
+	DataStream DataStream::CreateFromFile(const char* FileName, const char* Modes)
+	{
+		DataStream Stream;
+		Stream.Type = DataStreamType::File;
+		Stream.Valid = Stream.F.Open(FileName, Modes);
 
+		return Stream;
+	}
+
+	DataStream DataStream::CreateFromMemory(u8* Memory, u64 Size)
+	{
+		DataStream Stream;
+		Stream.Type = DataStreamType::Memory;
+		Stream.Memory = Memory;
+		Stream.MemorySize = Size;
+		Stream.Valid = true;
+
+		return Stream;
+	}
+
+	u64 DataStream::GetSize() const
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.GetSize();
+		}
+		else
+		{
+			return MemorySize;
+		}
+	}
+
+	void DataStream::SeekSet(u64 Offset)
+	{
+		if (Type == DataStreamType::File)
+		{
+			F.SeekSet(Offset);
+		}
+		else
+		{
+			CurrentOffset = Offset;
+		}
+	}
+
+	void DataStream::SeekCur(i32 Offset)
+	{
+		if (Type == DataStreamType::File)
+		{
+			F.SeekCur(Offset);
+		}
+		else
+		{
+			CurrentOffset += Offset;
+		}
+	}
+
+	bool DataStream::IsEOF() const
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.IsEOF();
+		}
+		else
+		{
+			return CurrentOffset == MemorySize;
+		}
+	}
+
+	size_t DataStream::Read(void* Data, size_t Size, size_t Packs)
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.Read(Data, Size, Packs);
+		}
+		else
+		{
+			u64 TotalRead = Size * Packs;
+			i64 ReadSize = MemorySize - CurrentOffset;
+			if (ReadSize <= 0)
+				return 0;
+			if (ReadSize > TotalRead)
+				ReadSize = TotalRead;
+
+			memcpy(Data, Memory + CurrentOffset, ReadSize);
+			CurrentOffset += ReadSize;
+
+			return (size_t)ReadSize;
+		}
+	}
+
+	size_t DataStream::Write(const void* Data, size_t Size, size_t Packs)
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.Write(Data, Size, Packs);
+		}
+		else
+		{
+			assert(false && "not implemented");
+			return 0;
+		}
+	}
+
+	bool DataStream::ReadBytes(void* Data, u64 Size)
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.ReadBytes(Data, Size);
+		}
+		else
+		{
+			assert(CurrentOffset + Size <= MemorySize);
+			memcpy(Data, Memory + CurrentOffset, Size);
+			CurrentOffset += Size;
+			return true;
+		}
+	}
+
+	bool DataStream::WriteBytes(const void* Data, u64 Size)
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.WriteBytes(Data, Size);
+		}
+		else
+		{
+			assert(CurrentOffset + Size <= MemorySize);
+			memcpy(Memory + CurrentOffset, Data, Size);
+			CurrentOffset += Size;
+			return true;
+		}
+	}
+}
 

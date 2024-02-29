@@ -13,11 +13,13 @@ struct RayPayload {
 
 	#define GOLDEN_RATIO 1.618033988749894
 	#define PI 3.14159265359
+	#define EPSILON 0.0001
 
 	layout(binding = 0, set = 2) uniform accelerationStructureEXT AccelerationStructure; // TODO
 	layout(binding = 1, set = 2, rgba16f) uniform image2D ShadowsBuffer;
 	layout(binding = 2, set = 2) uniform sampler2D GBufferNormals;
 	layout(binding = 3, set = 2) uniform sampler2D GBufferWorldPosition;
+	layout(binding = 4, set = 2) uniform sampler2D GBufferDepth;
 
 	layout(push_constant) uniform params
 	{
@@ -61,6 +63,14 @@ struct RayPayload {
 	void main()
 	{
 		vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
+
+		float depth = texture(GBufferDepth, uv).x;
+		// do not trace from sky
+		if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+		{
+			imageStore(ShadowsBuffer, ivec2(gl_LaunchIDEXT), vec4(0));
+			return;
+		}
 
 		vec3 origin = texture(GBufferWorldPosition, uv).xyz;
 

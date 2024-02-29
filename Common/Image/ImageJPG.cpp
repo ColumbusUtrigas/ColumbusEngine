@@ -1,26 +1,46 @@
 #include <Common/Image/Image.h>
-#include <Common/Image/JPG/ImageJPG.h>
 #include <System/File.h>
 //#include <jpeglib.h>
 //#include <setjmp.h>
 #include <cstring>
 #include <stb_image.h>
+#include <Common/Image/ImageInternalCommon.h>
 
-namespace Columbus
+namespace Columbus::ImageUtils
 {
 
-	static uint8* ImageLoadJPG(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	bool ImageCheckFormatFromStreamJPG(DataStream& Stream)
 	{
+		u8 magic[3];
+		Stream.ReadBytes(magic, sizeof(magic));
+		Stream.SeekSet(0); // rewind
+
+		if (magic[0] == 0xFF &&
+			magic[1] == 0xD8 &&
+			magic[2] == 0xFF)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ImageLoadFromStreamJPG(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData)
+	{
+		stbi_io_callbacks Callbacks = StreamToStbCallbacks(Stream);
+
 		int x, y, chans;
-		auto data = stbi_load(FileName, &x, &y, &chans, 0);
+		OutData = (u8*)stbi_load_from_callbacks(&Callbacks, &Stream, &x, &y, &chans, 4);
 		OutWidth = x;
 		OutHeight = y;
-		OutSize = (int64)x * y * chans;
+		OutMips = 1;
+		OutType = ImageType::Image2D;
 
 		if (chans == 1) OutFormat = TextureFormat::R8;
 		if (chans == 3) OutFormat = TextureFormat::RGB8;
+		if (chans == 4) OutFormat = TextureFormat::RGBA8;
 
-		return data;
+		return OutData != nullptr;
 
 		/*struct jpeg_decompress_struct cinfo;
 
@@ -91,7 +111,7 @@ namespace Columbus
 		return data;*/
 	}
 
-	bool ImageSaveJPG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality)
+	bool ImageSaveToFileJPG(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data, u32 Quality)
 	{
 		return false;
 		/*if (Data == nullptr) return false;
@@ -138,37 +158,4 @@ namespace Columbus
 		return true;*/
 	}
 
-	bool ImageLoaderJPG::IsJPG(const char* FileName)
-	{
-		File JPGImageFile(FileName, "rb");
-		if (!JPGImageFile.IsOpened()) return false;
-
-		uint8_t magic[3];
-		if (!JPGImageFile.ReadBytes(magic, sizeof(magic))) return false;
-		JPGImageFile.Close();
-
-		if (magic[0] == 0xFF &&
-		    magic[1] == 0xD8 &&
-		    magic[2] == 0xFF)
-		{
-		    return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	bool ImageLoaderJPG::Load(const char* FileName)
-	{
-		uint64 Size = 0;
-
-		Data = ImageLoadJPG(FileName, Width, Height, Size, Format);
-		ImageType = ImageLoader::Type::Image2D;
-
-		return (Data != nullptr);
-	}
-
 }
-
-

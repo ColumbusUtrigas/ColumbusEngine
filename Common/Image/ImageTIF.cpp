@@ -1,17 +1,60 @@
 #include <Common/Image/Image.h>
-#include <Common/Image/TIF/ImageTIF.h>
 #include <System/File.h>
-#include <tiff.h>
-#include <tiffio.h>
+#include <Common/Image/ImageInternalCommon.h>
 #include <cstdlib>
 #include <cstring>
 
-namespace Columbus
+//#include <tiff.h>
+//#include <tiffio.h>
+
+namespace Columbus::ImageUtils
 {
 
-	static uint8* ImageLoadTIF(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	bool ImageCheckFormatFromStreamTIF(DataStream& Stream)
 	{
-		TIFF* tif = TIFFOpen(FileName, "r");
+		u8 magic[4];
+		Stream.ReadBytes(magic, sizeof(magic));
+		Stream.SeekSet(0); // rewind
+
+		bool II = (magic[0] == 'I' &&
+			magic[1] == 'I' &&
+			magic[2] == 42 &&
+			magic[3] == 0);
+
+		bool MM = (magic[0] == 'M' &&
+			magic[1] == 'M' &&
+			magic[2] == 0 &&
+			magic[3] == 42);
+
+		if (II || MM)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ImageLoadFromStreamTIF(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData)
+	{
+		stbi_io_callbacks Callbacks = StreamToStbCallbacks(Stream);
+
+		int x, y, chans;
+		OutData = (u8*)stbi_load_from_callbacks(&Callbacks, &Stream, &x, &y, &chans, 0);
+		OutWidth = x;
+		OutHeight = y;
+		OutMips = 1;
+		OutType = ImageType::Image2D;
+
+		switch (chans)
+		{
+		case 1: OutFormat = TextureFormat::R8; break;
+		case 3: OutFormat = TextureFormat::RGB8; break;
+		case 4: OutFormat = TextureFormat::RGBA8; break;
+		}
+
+		return OutData != nullptr;
+
+		/*TIFF* tif = TIFFOpen(FileName, "r");
 		if (tif == nullptr) return nullptr;
 
 		unsigned int width = 0;
@@ -55,12 +98,14 @@ namespace Columbus
 
 		ImageFlipY(data, width, height, bpp);
 
-		return data;
+		return data;*/
 	}
 	
-	bool ImageSaveTIF(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveToFileTIF(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data)
 	{
-		if (Data == nullptr) return false;
+		COLUMBUS_ASSERT(false && "Not implemented");
+		return false;
+		/*if (Data == nullptr) return false;
 
 		TIFF* tif = TIFFOpen(FileName, "w");
 		if (tif == nullptr) return false;
@@ -96,50 +141,7 @@ namespace Columbus
 			free(row);
 		}
 
-		return true;
-	}
-
-	bool ImageLoaderTIF::IsTIF(const char* FileName)
-	{
-		File TIFImageFile(FileName, "rb");
-		if (!TIFImageFile.IsOpened()) return false;
-
-		uint8_t magic[4];
-		if (!TIFImageFile.ReadBytes(magic, sizeof(magic))) return false;
-		TIFImageFile.Close();
-
-		bool II = (magic[0] == 'I' &&
-		           magic[1] == 'I' &&
-		           magic[2] == 42 &&
-		           magic[3] == 0);
-
-		bool MM = (magic[0] == 'M' &&
-		           magic[1] == 'M' &&
-		           magic[2] == 0 &&
-		           magic[3] == 42);
-
-		if (II || MM)
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	bool ImageLoaderTIF::Load(const char* FileName)
-	{
-		uint64 Size = 0;
-
-		Data = ImageLoadTIF(FileName, Width, Height, Size, Format);
-		ImageType = ImageLoader::Type::Image2D;
-
-		return (Data != nullptr);
+		return true;*/
 	}
 
 }
-
-
-
-
-
-

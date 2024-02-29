@@ -1,12 +1,12 @@
 #include <Common/Image/Image.h>
-#include <Common/Image/TGA/ImageTGA.h>
+#include <Common/Image/ImageInternalCommon.h>
 #include <Core/Assert.h>
 #include <System/File.h>
 #include <algorithm>
 #include <utility>
 #include <cstring>
 
-namespace Columbus
+namespace Columbus::ImageUtils
 {
 
 #define READPIXEL8(a) \
@@ -62,42 +62,40 @@ namespace Columbus
 		uint8 image_descriptor;
 	} TGA_HEADER;
 
-	static bool ReadHeader(TGA_HEADER* aHeader, File* aFile)
+	static bool ReadHeader(TGA_HEADER* aHeader, DataStream& Stream)
 	{
-		if (aHeader == nullptr || aFile == nullptr) return false;
+		if (aHeader == nullptr) return false;
 
-		if (!aFile->Read(aHeader->idlen)) return false;
-		if (!aFile->Read(aHeader->color_map_type)) return false;
-		if (!aFile->Read(aHeader->image_type)) return false;
-		if (!aFile->Read(aHeader->color_map_origin)) return false;
-		if (!aFile->Read(aHeader->color_map_length)) return false;
-		if (!aFile->Read(aHeader->color_map_entry_size)) return false;
-		if (!aFile->Read(aHeader->x_origin)) return false;
-		if (!aFile->Read(aHeader->y_origin)) return false;
-		if (!aFile->Read(aHeader->width)) return false;
-		if (!aFile->Read(aHeader->height)) return false;
-		if (!aFile->Read(aHeader->bits)) return false;
-		if (!aFile->Read(aHeader->image_descriptor)) return false;
+		if (!Stream.Read(aHeader->idlen)) return false;
+		if (!Stream.Read(aHeader->color_map_type)) return false;
+		if (!Stream.Read(aHeader->image_type)) return false;
+		if (!Stream.Read(aHeader->color_map_origin)) return false;
+		if (!Stream.Read(aHeader->color_map_length)) return false;
+		if (!Stream.Read(aHeader->color_map_entry_size)) return false;
+		if (!Stream.Read(aHeader->x_origin)) return false;
+		if (!Stream.Read(aHeader->y_origin)) return false;
+		if (!Stream.Read(aHeader->width)) return false;
+		if (!Stream.Read(aHeader->height)) return false;
+		if (!Stream.Read(aHeader->bits)) return false;
+		if (!Stream.Read(aHeader->image_descriptor)) return false;
 
 		return true;
 	}
 
-	static bool WriteHeader(TGA_HEADER aHeader, File* aFile)
+	static bool WriteHeader(TGA_HEADER aHeader, DataStream& Stream)
 	{
-		if (aFile == nullptr) return false;
-
-		if (!aFile->Write(aHeader.idlen)) return false;
-		if (!aFile->Write(aHeader.color_map_type)) return false;
-		if (!aFile->Write(aHeader.image_type)) return false;
-		if (!aFile->Write(aHeader.color_map_origin)) return false;
-		if (!aFile->Write(aHeader.color_map_length)) return false;
-		if (!aFile->Write(aHeader.color_map_entry_size)) return false;
-		if (!aFile->Write(aHeader.x_origin)) return false;
-		if (!aFile->Write(aHeader.y_origin)) return false;
-		if (!aFile->Write(aHeader.width)) return false;
-		if (!aFile->Write(aHeader.height)) return false;
-		if (!aFile->Write(aHeader.bits)) return false;
-		if (!aFile->Write(aHeader.image_descriptor)) return false;
+		if (!Stream.Write(aHeader.idlen)) return false;
+		if (!Stream.Write(aHeader.color_map_type)) return false;
+		if (!Stream.Write(aHeader.image_type)) return false;
+		if (!Stream.Write(aHeader.color_map_origin)) return false;
+		if (!Stream.Write(aHeader.color_map_length)) return false;
+		if (!Stream.Write(aHeader.color_map_entry_size)) return false;
+		if (!Stream.Write(aHeader.x_origin)) return false;
+		if (!Stream.Write(aHeader.y_origin)) return false;
+		if (!Stream.Write(aHeader.width)) return false;
+		if (!Stream.Write(aHeader.height)) return false;
+		if (!Stream.Write(aHeader.bits)) return false;
+		if (!Stream.Write(aHeader.image_descriptor)) return false;
 
 		return true;
 	}
@@ -255,31 +253,46 @@ namespace Columbus
 		}
 	}*/
 
-	static uint8* ImageLoadTGA(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	bool ImageCheckFormatFromStreamTGA(DataStream& Stream)
 	{
-		File file(FileName, "rb");
-		if (!file.IsOpened()) return nullptr;
+		if (Stream.GetType() == DataStreamType::Memory)
+			return false; // TODO: parse header and try to validate it?
 
+		const char* FileName = Stream.F.GetName();
+		auto len = strlen(FileName);
+		if (len < 4) return false;
+
+		char ext[5] = { '\0' };
+		strncpy(ext, &FileName[len - 4], 4);
+
+		if (strcmp(ext, ".tga") == 0 || strcmp(ext, ".vda") == 0 ||
+			strcmp(ext, ".icb") == 0 || strcmp(ext, ".vst") == 0) return true;
+
+		return false;
+	}
+
+	bool ImageLoadFromStreamTGA(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData)
+	{
 		TGA_HEADER tga;
-		if (!ReadHeader(&tga, &file)) return nullptr;
+		if (!ReadHeader(&tga, Stream)) return false;
 
 		uint8* Descriptor = new uint8[tga.image_descriptor];
-		file.ReadBytes(Descriptor, tga.image_descriptor);
+		Stream.ReadBytes(Descriptor, tga.image_descriptor);
 
 		size_t ColorMapElementSize = tga.color_map_entry_size / 8;
 		size_t ColorMapSize = tga.color_map_length * ColorMapElementSize;
 		uint8* ColorMap = new uint8[tga.color_map_type == 1 ? ColorMapSize : 1];
 		if (tga.color_map_type == 1)
 		{
-			file.ReadBytes(ColorMap, ColorMapSize);
+			Stream.ReadBytes(ColorMap, ColorMapSize);
 		}
 
 		size_t PixelSize = tga.color_map_type == 0 ? (tga.bits / 8) : ColorMapElementSize;
-		size_t dSize = file.GetSize() - sizeof(TGA_HEADER) - tga.image_descriptor - ColorMapSize;
+		size_t dSize = Stream.GetSize() - sizeof(TGA_HEADER) - tga.image_descriptor - ColorMapSize;
 		size_t size = tga.width * tga.height * PixelSize;
 
 		uint8* buffer = new uint8[dSize];
-		file.Read(buffer, dSize, 1);
+		Stream.ReadBytes(buffer, dSize);
 
 		uint8* data = new uint8[size];
 		memset(data, 0, size);
@@ -369,11 +382,10 @@ namespace Columbus
 		if (tga.x_origin != 0) ImageFlipX(data, tga.width, tga.height, PixelSize);
 		if (tga.y_origin == 0) ImageFlipY(data, tga.width, tga.height, PixelSize);
 
-		file.Close();
-
 		OutWidth = tga.width;
 		OutHeight = tga.height;
-		OutSize = tga.width * tga.height * PixelSize;
+		OutMips = 1;
+		OutType = ImageType::Image2D;
 
 		switch (PixelSize)
 		{
@@ -388,36 +400,14 @@ namespace Columbus
 		return data;
 	}
 
-	bool ImageLoaderTGA::IsTGA(const char* FileName)
-	{
-		auto len = strlen(FileName);
-		if (len < 4) return false;
-		
-		char ext[5] = { '\0' };
-		strncpy(ext, &FileName[len - 4], 4);
-
-		if (strcmp(ext, ".tga") == 0 || strcmp(ext, ".vda") == 0 ||
-		    strcmp(ext, ".icb") == 0 || strcmp(ext, ".vst") == 0) return true;
-
-		return false;
-	}
-
-	bool ImageLoaderTGA::Load(const char* FileName)
-	{
-		uint64 Size;
-		Data = ImageLoadTGA(FileName, Width, Height, Size, Format);
-		ImageType = ImageLoader::Type::Image2D;
-		return (Data != nullptr);
-	}
-
-	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveToFileTGA(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data)
 	{
 		if (Data == nullptr) return false;
 
-		File file(FileName, "wb");
-		if (!file.IsOpened()) return false;
+		DataStream Stream = DataStream::CreateFromFile(FileName, "wb");
+		if (!Stream.IsValid()) return false;
 
-		uint32 BPP = GetBPPFromFormat(Format);
+		uint32 BPP = TextureFormatGetInfo(Format).BitsPerPixel / 8;
 
 		uint16 width = static_cast<uint16>(Width);
 		uint16 height = static_cast<uint16>(Height);
@@ -437,8 +427,8 @@ namespace Columbus
 		case 32: ImageRGBA2BGRA(buffer, size); break;
 		};
 
-		WriteHeader(tga, &file);
-		file.Write(buffer, size, 1);
+		WriteHeader(tga, Stream);
+		Stream.WriteBytes(buffer, size);
 
 		free(buffer);
 		return true;
@@ -452,5 +442,3 @@ namespace Columbus
 #undef WRITEPIXEL32
 
 }
-
-

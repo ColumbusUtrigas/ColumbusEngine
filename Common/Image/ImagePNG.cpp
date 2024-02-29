@@ -1,21 +1,40 @@
 #include <Common/Image/Image.h>
-#include <Common/Image/PNG/ImagePNG.h>
 #include <System/File.h>
 #include <cstdlib>
 #include <cstring>
 //#include <png.h>
 #include <stb_image.h>
+#include <Common/Image/ImageInternalCommon.h>
 
-namespace Columbus
+namespace Columbus::ImageUtils
 {
 
-	static uint8* ImageLoadPNG(const char* FileName, uint32& OutWidth, uint32& OutHeight, uint64& OutSize, TextureFormat& OutFormat)
+	bool ImageCheckFormatFromStreamPNG(DataStream& Stream)
 	{
+		u8 magic[4];
+		Stream.ReadBytes(magic, sizeof(magic));
+		Stream.SeekSet(0); // rewind
+
+		if (magic[1] == 'P' &&
+			magic[2] == 'N' &&
+			magic[3] == 'G')
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool ImageLoadFromStreamPNG(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData)
+	{
+		stbi_io_callbacks Callbacks = StreamToStbCallbacks(Stream);
+
 		int x, y, chans;
-		auto data = stbi_load(FileName, &x, &y, &chans, 0);
+		OutData = (u8*)stbi_load_from_callbacks(&Callbacks, &Stream, &x, &y, &chans, 0);
 		OutWidth = x;
 		OutHeight = y;
-		OutSize = (int64)x * y * chans;
+		OutMips = 1;
+		OutType = ImageType::Image2D;
 
 		switch (chans)
 		{
@@ -24,7 +43,7 @@ namespace Columbus
 		case 4: OutFormat = TextureFormat::RGBA8; break;
 		}
 
-		return data;
+		return OutData != nullptr;
 
 		/*FILE* fp = fopen(FileName, "rb");
 		if (fp == nullptr) return nullptr;
@@ -86,7 +105,7 @@ namespace Columbus
 		return data;*/
 	}
 
-	bool ImageSavePNG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data)
+	bool ImageSaveToFilePNG(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data)
 	{
 		return false;
 		/*FILE* fp = fopen(FileName, "wb");
@@ -133,37 +152,4 @@ namespace Columbus
 		return true;*/
 	}
 
-	bool ImageLoaderPNG::IsPNG(const char* FileName)
-	{
-		File PNGImageFile(FileName, "rb");
-		if (!PNGImageFile.IsOpened()) return false;
-
-		uint8 magic[4];
-		if (!PNGImageFile.ReadBytes(magic, sizeof(magic))) return false;
-		PNGImageFile.Close();
-
-		if (magic[1] == 'P' &&
-		    magic[2] == 'N' &&
-		    magic[3] == 'G')
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	bool ImageLoaderPNG::Load(const char* FileName)
-	{
-		uint64 Size = 0;
-
-		Data = ImageLoadPNG(FileName, Width, Height, Size, Format);
-		ImageType = ImageLoader::Type::Image2D;
-
-		return (Data != nullptr);
-	}
-
 }
-
-

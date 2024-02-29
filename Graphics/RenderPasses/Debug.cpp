@@ -498,7 +498,7 @@ namespace Columbus
 						ImGui::TableNextColumn(); ImGui::TextDisabled("Usage:");
 						ImGui::TableNextColumn(); ImGui::Text("%s", TextureUsageToString(Texture.Desc.Usage));
 						ImGui::TableNextColumn(); ImGui::TextDisabled("Format:");
-						ImGui::TableNextColumn(); ImGui::Text("%s", TextureFormatToString(Texture.Desc.Format));
+						ImGui::TableNextColumn(); ImGui::Text("%s", TextureFormatGetInfo(Texture.Desc.Format).FriendlyName);
 						ImGui::TableNextColumn(); ImGui::TextDisabled("Versions:");
 						ImGui::TableNextColumn(); ImGui::Text("%i", Texture.Version + 1);
 						ImGui::TableNextColumn(); ImGui::TextDisabled("Width:");

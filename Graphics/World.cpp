@@ -119,13 +119,65 @@ namespace Columbus
 		return result;
 	}
 
+	enum GltfLoadTimerType
+	{
+		GltfLoadBuffer,
+		GltfLoadMaterial,
+		GltfLoadMax,
+	};
+
+	float GltfLoadTimes[GltfLoadMax]{ 0 };
+
+	template <GltfLoadTimerType Type>
+	struct GltfLoadTimer
+	{
+		Timer T;
+		~GltfLoadTimer()
+		{
+			GltfLoadTimes[Type] += T.Elapsed();
+		}
+	};
+
 	// TODO: move to appropriate place
 	// TODO: separate CPUScene load and GPUScene load?
 	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings)
 	{
+		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
+			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
+		{
+			u32 W, H, Mips;
+			TextureFormat Format;
+			ImageType Type;
+
+			DataStream Stream = DataStream::CreateFromMemory((u8*)bytes, size);
+
+			u8* Data = nullptr;
+			if (!ImageUtils::ImageLoadFromStream(Stream, W, H, Mips, Format, Type, Data))
+			{
+				delete[] Data;
+				return false;
+			}
+
+			TextureFormatInfo FormatInfo = TextureFormatGetInfo(Format);
+
+			u64 Size = size_t(W * H) * size_t(FormatInfo.BitsPerPixel / 8);
+
+			Img->width = W;
+			Img->height = H;
+			Img->component = FormatInfo.NumChannels;
+			Img->bits = FormatInfo.BitsPerPixel;
+			Img->pixel_type = (int)Format; // our small hack here
+			Img->image.resize(Size);
+			memcpy(Img->image.data(), Data, Size);
+			delete[] Data;
+			return true;
+		};
+
 		tinygltf::Model model;
 		tinygltf::TinyGLTF loader;
 		std::string err, warn;
+
+		loader.SetImageLoader(LoadImageFn, nullptr);
 
 		Timer GltfTimer;
 		if (!loader.LoadASCIIFromFile(&model, &err, &warn, Filename))
@@ -162,17 +214,34 @@ namespace Columbus
 				GPUScene::DestroyGPUScene(Scene, Device);
 			});
 
-		auto CreateTexture = [Scene, Device, &model](int textureId, const char* name, TextureFormat format) -> int
+		auto CreateTexture = [Scene, Device, &model](int textureId, const char* name) -> int
 		{
+			GltfLoadTimer<GltfLoadMaterial> T;
+
 			auto& image = model.images[textureId];
+			TextureFormat format = (TextureFormat)image.pixel_type;
+
+			// TODO: proper mechanism
+			if (format == TextureFormat::RGBA8)
+				format = TextureFormat::RGBA8SRGB;
+
+			// TODO: WTF
+			if (format == TextureFormat::RGB8)
+				format = TextureFormat::RGB8SRGB;
 
 			Image img;
 			img.Format = format;
-			img.FromMemory(image.image.data(), image.image.size(), image.width, image.height);
+			img.Width = image.width;
+			img.Height = image.height;
+			img.Size = image.image.size();
+			img.Data = image.image.data();
+			img.MipMaps = 1;
 
-			auto tex = Device->CreateTexture(img);
+			Texture2* tex = Device->CreateTexture(img);
 			Device->SetDebugName(tex, name);
 			AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
+
+			img.Data = nullptr; // so it doesn't get deleted here
 
 			int id = (int)Scene->Textures.size();
 			Scene->Textures.push_back(tex);
@@ -202,10 +271,10 @@ namespace Columbus
 				int verticesCount = 0;
 
 				{
-					auto accessor = model.accessors[primitive.indices];
-					auto view = model.bufferViews[accessor.bufferView];
-					auto buffer = model.buffers[view.buffer];
-					auto offset = accessor.byteOffset + view.byteOffset;
+					const auto& accessor = model.accessors[primitive.indices];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
 					const void* data = buffer.data.data() + offset;
 					std::vector<uint32_t> indices(accessor.count);
 					indicesCount = accessor.count;
@@ -229,15 +298,18 @@ namespace Columbus
 
 					cpuMesh.Indices = indices;
 
-					indexBuffer = CreateMeshBuffer(Device, indices.size() * sizeof(uint32_t), true, indices.data());
-					Device->SetDebugName(indexBuffer, (mesh.name + " (Indices)").c_str());
+					{
+						GltfLoadTimer<GltfLoadBuffer> T;
+						indexBuffer = CreateMeshBuffer(Device, indices.size() * sizeof(uint32_t), true, indices.data());
+						Device->SetDebugName(indexBuffer, (mesh.name + " (Indices)").c_str());
+					}
 				}
 
 				{
-					auto accessor = model.accessors[primitive.attributes["POSITION"]];
-					auto view = model.bufferViews[accessor.bufferView];
-					auto buffer = model.buffers[view.buffer];
-					auto offset = accessor.byteOffset + view.byteOffset;
+					const auto& accessor = model.accessors[primitive.attributes["POSITION"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
 					const void* data = buffer.data.data() + offset;
 					verticesCount = accessor.count;
 
@@ -256,36 +328,45 @@ namespace Columbus
 
 					Boundings.push_back(Box(MinVertex, MaxVertex));
 
-					vertexBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
-					Device->SetDebugName(vertexBuffer, (mesh.name + " (Vertices)").c_str());
+					{
+						GltfLoadTimer<GltfLoadBuffer> T;
+						vertexBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
+						Device->SetDebugName(vertexBuffer, (mesh.name + " (Vertices)").c_str());
+					}
 				}
 
 				{
-					auto accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
-					auto view = model.bufferViews[accessor.bufferView];
-					auto buffer = model.buffers[view.buffer];
-					auto offset = accessor.byteOffset + view.byteOffset;
+					const auto& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
 					const void* data = buffer.data.data() + offset;
 					verticesCount = accessor.count;
 
 					cpuMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
 
-					uvBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector2), true, data);
-					Device->SetDebugName(uvBuffer, (mesh.name + " (UVs)").c_str());
+					{
+						GltfLoadTimer<GltfLoadBuffer> T;
+						uvBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector2), true, data);
+						Device->SetDebugName(uvBuffer, (mesh.name + " (UVs)").c_str());
+					}
 				}
 
 				{
-					auto accessor = model.accessors[primitive.attributes["NORMAL"]];
-					auto view = model.bufferViews[accessor.bufferView];
-					auto buffer = model.buffers[view.buffer];
-					auto offset = accessor.byteOffset + view.byteOffset;
+					const auto& accessor = model.accessors[primitive.attributes["NORMAL"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
 					const void* data = buffer.data.data() + offset;
 					verticesCount = accessor.count;
 
 					cpuMesh.Normals = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
 
-					normalBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
-					Device->SetDebugName(normalBuffer, (mesh.name + " (Normals)").c_str());
+					{
+						GltfLoadTimer<GltfLoadBuffer> T;
+						normalBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
+						Device->SetDebugName(normalBuffer, (mesh.name + " (Normals)").c_str());
+					}
 				}
 
 				Columbus::AccelerationStructureDesc blasDesc;
@@ -306,10 +387,10 @@ namespace Columbus
 
 				if (primitive.material > -1)
 				{
-					auto mat = model.materials[primitive.material];
+					const auto& mat = model.materials[primitive.material];
 
 					int modelAlbedoId = mat.pbrMetallicRoughness.baseColorTexture.index;
-					int albedoId = CreateTexture(model.textures[modelAlbedoId].source, model.textures[modelAlbedoId].name.c_str(), TextureFormat::RGBA8SRGB);
+					int albedoId = CreateTexture(model.textures[modelAlbedoId].source, model.textures[modelAlbedoId].name.c_str());
 
 					matid = albedoId;
 				}
@@ -328,7 +409,9 @@ namespace Columbus
 				Scene->Meshes.push_back(Mesh);
 			}
 		}
-		Log::Message("Meshes loaded, time: %0.2f s", MeshTimer.Elapsed());
+		Log::Message("Meshes loaded, total time: %0.2f s", MeshTimer.Elapsed());
+		Log::Message("Buffer load time: %0.2f s", GltfLoadTimes[GltfLoadBuffer]);
+		Log::Message("Material load time: %0.2f s", GltfLoadTimes[GltfLoadMaterial]);
 
 		// TLAS and BLASes should be packed into GPU scene
 		AccelerationStructureDesc TlasDesc;
@@ -352,7 +435,7 @@ namespace Columbus
 
 		{
 			Image DecalImage;
-			if (!DecalImage.Load("./Data/Textures/Detail.dds"))
+			if (!DecalImage.LoadFromFile("./Data/Textures/Detail.dds"))
 			{
 				Log::Error("Couldn't load decal image");
 			}

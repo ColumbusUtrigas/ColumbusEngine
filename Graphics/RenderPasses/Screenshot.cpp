@@ -61,7 +61,7 @@ namespace Columbus
 				else
 				{
 					// swapchain format
-					ImageBGRA2RGBA((u8*)Data, ScreenshotBuffer->GetSize());
+					ImageUtils::ImageBGRA2RGBA((u8*)Data, ScreenshotBuffer->GetSize());
 					stbi_write_png(View.ScreenshotPath, Size.X, Size.Y, 4, Data, Size.X * 4);
 				}
 

@@ -63,7 +63,7 @@ struct GPUSceneMeshCompact
 #define GPUSCENE_TEXTURES_SET 0
 #define GPUSCENE_SCENE_SET 1
 
-layout(binding = 0, set = GPUSCENE_TEXTURES_SET) uniform sampler2D Textures[1000];
+layout(binding = 0, set = GPUSCENE_TEXTURES_SET) uniform sampler2D Textures[2000];
 
 layout(binding = 0, set = GPUSCENE_SCENE_SET) readonly buffer GPUSceneBuffer {
 	uint MeshesCount;

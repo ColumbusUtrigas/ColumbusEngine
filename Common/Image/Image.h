@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Types.h>
+#include <System/File.h>
 #include <cstring>
 #include <string_view>
 
@@ -32,7 +33,7 @@ namespace Columbus
 	};
 
 	/**
-	* @brief GPU texture format.
+	* @brief GPU texture format. If you add format, don't forget to update Image.cpp formats array
 	*/
 	enum class TextureFormat
 	{
@@ -71,8 +72,9 @@ namespace Columbus
 		DXT1,
 		DXT3,
 		DXT5,
+		BC6H,
+		BC7,
 
-		Depth,
 		Depth16,
 		Depth24,
 		Depth24Stencil8,
@@ -81,72 +83,73 @@ namespace Columbus
 		Unknown
 	};
 
-	/**
-	* @brief Helper class to load image from the disk.
-	*/
-	class ImageLoader
+	enum class ImageType
 	{
-	public:
-		enum class Type;
-	public:
-		uint32 Width = 0;
-		uint32 Height = 0;
-		uint32 Mipmaps = 0;
-
-		TextureFormat Format = TextureFormat::RGBA8;
-		Type ImageType = Type::Image2D;
-
-		uint8* Data = nullptr;
-	public:
-		enum class Type
-		{
-			Image2D,
-			Image3D,
-			ImageCube,
-			Image2DArray
-		};
-	public:
-		ImageLoader() {}
-
-		virtual bool Load(const char* FileName) = 0;
-
-		virtual ~ImageLoader() {}
+		Image2D,
+		Image3D,
+		ImageCube,
+		Image2DArray
 	};
 
+	// obtained by TextureFormatGetInfo
+	struct TextureFormatInfo
+	{
+		const char* FriendlyName;
 
+		TextureFormat Format;
 
-	ImageFormat ImageGetFormat(const char* FileName);
-	uint32 GetBPPFromFormat(TextureFormat Format);
-	uint32 GetBlockSizeFromFormat(TextureFormat Format);
-	uint64 ImageGetSize(uint32 Width, uint32 Height, uint32 Depth, uint32 Mips, TextureFormat Format);
-	size_t ImageGetNumChannelsFromFormat(TextureFormat format);
+		u8 BitsPerPixel;
+		u8 CompressedBlockSizeBits;
+		u8 NumChannels;
 
-	const char* TextureFormatToString(TextureFormat format);
+		u8 HasCompression : 1;
+		u8 HasDepth : 1;
+		u8 HasStencil : 1;
+	};
 
-	bool ImageIsRawFormat(TextureFormat Format);
-	bool ImageIsUnsignedShortFormat(TextureFormat Format);
-	bool ImageIsHalfFormat(TextureFormat Format);
-	bool ImageIsFloatFormat(TextureFormat Format);
-	bool ImageIsCompressedFormat(TextureFormat Format);
-	bool ImageIsDepthFormat(TextureFormat Format); // depth + depth-stencil formats
-	bool ImageIsStencilFormat(TextureFormat Format);
+	const TextureFormatInfo& TextureFormatGetInfo(TextureFormat Format);
 
-	bool ImageSaveBMP(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveTGA(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSavePNG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveTIF(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data);
-	bool ImageSaveJPG(const char* FileName, uint32 Width, uint32 Height, TextureFormat Format, uint8* Data, uint32 Quality = 100);
+	namespace ImageUtils
+	{
+		u64 ImageCalcByteSize(u32 Width, u32 Height, u32 Depth, u32 Mips, TextureFormat Format);
 
-	bool ImageBGR2RGB(uint8* Data, uint64 Size);
-	bool ImageBGRA2RGBA(uint8* Data, uint64 Size);
-	bool ImageABGR2RGBA(uint8* Data, uint64 Size);
-	bool ImageRGB2BGR(uint8* Data, uint64 Size);
-	bool ImageRGBA2BGRA(uint8* Data, uint64 Size);
+		ImageFormat ImageGetFileFormatFromStream(DataStream& Stream);
+		bool ImageCheckFormatFromStreamBMP(DataStream& Stream);
+		bool ImageCheckFormatFromStreamTGA(DataStream& Stream); // crappy test, so use it last!
+		bool ImageCheckFormatFromStreamPNG(DataStream& Stream);
+		bool ImageCheckFormatFromStreamTIF(DataStream& Stream);
+		bool ImageCheckFormatFromStreamJPG(DataStream& Stream);
+		bool ImageCheckFormatFromStreamEXR(DataStream& Stream);
+		bool ImageCheckFormatFromStreamHDR(DataStream& Stream);
+		bool ImageCheckFormatFromStreamDDS(DataStream& Stream);
 
-	bool ImageFlipX(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
-	bool ImageFlipY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
-	bool ImageFlipXY(uint8* Data, uint32 Width, uint32 Height, uint32 BPP);
+		// auto detects file format
+		bool ImageLoadFromStream   (DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamBMP(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamTGA(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamPNG(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamTIF(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamJPG(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamEXR(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamHDR(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamDDS(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
 
+		bool ImageSaveToFileBMP(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data);
+		bool ImageSaveToFileTGA(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data);
+		bool ImageSaveToFilePNG(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data);
+		bool ImageSaveToFileTIF(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data);
+		bool ImageSaveToFileJPG(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data, u32 Quality = 100);
+
+		bool ImageBGR2RGB  (u8* Data, u64 Size);
+		bool ImageBGRA2RGBA(u8* Data, u64 Size);
+		bool ImageABGR2RGBA(u8* Data, u64 Size);
+		bool ImageRGB2BGR  (u8* Data, u64 Size);
+		bool ImageRGBA2BGRA(u8* Data, u64 Size);
+
+		bool ImageFlipX (u8* Data, u32 Width, u32 Height, u32 BPP);
+		bool ImageFlipY (u8* Data, u32 Width, u32 Height, u32 BPP);
+		bool ImageFlipXY(u8* Data, u32 Width, u32 Height, u32 BPP);
+	}
 
 	/**
 	* @brief CPU-side image.
@@ -154,29 +157,19 @@ namespace Columbus
 	class Image
 	{
 	public:
-		enum class Type;
-	public:
-		uint32 Width = 0;
-		uint32 Height = 0;
-		uint32 Depth = 0;
-		uint32 MipMaps = 0;
-		uint64 Size = 0;
+		u32 Width = 0;
+		u32 Height = 0;
+		u32 Depth = 0;
+		u32 MipMaps = 0;
+		u64 Size = 0;
 		TextureFormat Format = TextureFormat::RGBA8;
-		uint8* Data = nullptr;
+		u8* Data = nullptr;
 		bool Exist = false;
 
-		Type ImageType;
+		ImageType Type;
 	public:
-		enum class Type
-		{
-			Image2D,
-			Image3D,
-			ImageCube,
-			Image2DArray
-		};
-	public:
-		Image();
-		Image(std::string_view FileName) { if (!Load(FileName)) { Data = nullptr; Exist = false; } }
+		Image() {}
+		Image(std::string_view FileName) { if (!LoadFromFile(FileName)) { Data = nullptr; Exist = false; } }
 		Image(const Image&) = delete;
 		Image(Image&& Base) noexcept { *this = (Image&&)(Base); }
 
@@ -198,10 +191,11 @@ namespace Columbus
 			swap(Format, Base.Format);
 			swap(Data, Base.Data);
 			swap(Exist, Base.Exist);
-			swap(ImageType, Base.ImageType);
+			swap(Type, Base.Type);
 			return *this;
 		}
 
+		// doesn't decode image from memory, initialises from raw data
 		void FromMemory(const void* InData, int InSize, int W, int H)
 		{
 			Data = new uint8[InSize];
@@ -209,48 +203,38 @@ namespace Columbus
 			Width = W;
 			Height = H;
 			memcpy(this->Data, InData, Size);
-			ImageType = Type::Image2D;
+			Type = ImageType::Image2D;
 			Exist = true;
 			MipMaps = 1;
 		}
 
-		bool Load(std::string_view FileName, ImageLoading Flags = ImageLoading::None);
-		bool Save(const char* FileName, ImageFormat Format, uint32 Quality = 100) const;
-		bool IsExist() const;
+		bool LoadFromFile(std::string_view FileName, ImageLoading Flags = ImageLoading::None);
+		bool LoadFromMemory(const u8* Memory, const u64 Size, ImageLoading Flags = ImageLoading::None);
+		bool LoadFromStream(DataStream& Stream, ImageLoading Flags = ImageLoading::None);
+
+		bool SaveToFile(const char* FileName, ImageFormat Format, u32 Quality = 100) const;
 		void FreeData();
 
-		bool FlipX();
-		bool FlipY();
-		bool FlipXY();
+		ImageType GetType() const { return Type; }
 
-		bool IsRawFormat() const;
-		bool IsUnsignedShortFormat() const;
-		bool IsHalfFormat() const;
-		bool IsFloatFormat() const;
-		bool IsCompressedFormat() const;
+		bool IsExist() const { return Exist; }
 
-		Type GetType() const;
+		u32 GetWidth () const { return Width;  }
+		u32 GetHeight() const { return Height; }
+		u32 GetDepth () const { return Depth;  }
 
-		uint32 GetWidth() const;
-		uint32 GetHeight() const;
-		uint32 GetDepth() const;
-		uint32 GetMipmapsCount() const;
-		uint32 GetBytesPerPixel() const;
-		uint32 GetBytesPerBlock() const;
+		u32 GetMipmapsCount() const { return MipMaps; }
 
-		uint64 GetOffset(uint32 Layer, uint32 Level) const;
-		uint64 GetSize(uint32 Level) const;
-		size_t GetNumChannels() const;
+		u64 GetOffset(u32 Layer, u32 Level) const;
+		u64 GetSize(u32 Level) const;
 
-		uint8* Get2DData(uint32 Level = 0) const;
-		uint8* GetCubeData(uint32 Face, uint32 Level = 0) const;
+		u8* Get2DData(u32 Level = 0) const;
+		u8* GetCubeData(u32 Face, u32 Level = 0) const;
 
-		TextureFormat GetFormat() const;
-		uint8* GetData() const;
+		TextureFormat GetFormat() const { return Format; }
+		u8* GetData() const { return Data; }
 
 		~Image();
 	};
 
 }
-
-
