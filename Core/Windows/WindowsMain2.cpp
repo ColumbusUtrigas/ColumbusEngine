@@ -315,6 +315,7 @@ int main()
 			DebugUI::ShowMeshesWindow(World);
 			DebugUI::ShowDecalsWindow(World);
 			DebugUI::ShowLightsWindow(World);
+			DebugUI::ShowMaterialsWindow(World);
 			DebugUI::ShowIrradianceWindow(World);
 			DebugUI::ShowLightmapWindow(World);
 

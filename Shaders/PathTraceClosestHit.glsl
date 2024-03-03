@@ -27,15 +27,11 @@
 		vec2 uv = BaryLerp(vert1.UV, vert2.UV, vert3.UV, barycentrics);
 		vec3 normal = BaryLerp(vert1.Normal, vert2.Normal, vert3.Normal, barycentrics);
 
-		int texId = Mesh.TextureId;
-		vec3 texel = vec3(1);
+		int matid = Mesh.MaterialId;
 
-		if (texId > -1)
-		{
-			texel = textureLod(Textures[nonuniformEXT(texId)], uv, 0.0f).rgb;
-		}
+		GPUMaterialSampledData Material = GPUScene_SampleMaterial(matid, uv);
 
-		payload.colorAndDist = vec4(texel, gl_HitTEXT);
+		payload.colorAndDist = vec4(Material.Albedo, gl_HitTEXT);
 		payload.normalAndObjId = vec4(normal, gl_InstanceCustomIndexEXT);
 	}
 #endif

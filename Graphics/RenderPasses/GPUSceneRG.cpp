@@ -56,7 +56,7 @@ namespace Columbus
 						.NormalsBufferAddress = Mesh.Normals->GetDeviceAddress(),
 						.VertexCount = Mesh.VertexCount,
 						.IndexCount = Mesh.IndicesCount,
-						.TextureId = Mesh.TextureId,
+						.MaterialId = Mesh.MaterialId,
 						.LightmapId = Mesh.LightmapId,
 					};
 
@@ -65,6 +65,27 @@ namespace Columbus
 				Context.Device->UnmapBuffer(UploadBuffer);
 
 				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MeshesBuffer, 0, 0, sizeof(GPUSceneMeshCompact) * Context.Scene->Meshes.size());
+			}
+
+			// materials
+			if (Context.Scene->Materials.size() > 0)
+			{
+				Buffer*& UploadBuffer = Context.Scene->MaterialsUploadBuffers[CurrentFrame];
+
+				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
+				for (int i = 0; i < Context.Scene->Materials.size(); i++)
+				{
+					Material& Mat = Context.Scene->Materials[i];
+					GPUMaterialCompact Compact{
+						.AlbedoId = Mat.AlbedoId,
+						.Roughness = Mat.Roughness,
+						.Metallic = Mat.Metallic,
+					};
+					((GPUMaterialCompact*)Ptr)[i] = Compact;
+				}
+				Context.Device->UnmapBuffer(UploadBuffer);
+
+				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MaterialsBuffer, 0, 0, sizeof(GPUMaterialCompact) * Context.Scene->Materials.size());
 			}
 		});
 	}

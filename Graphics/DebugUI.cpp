@@ -314,33 +314,12 @@ namespace Columbus::DebugUI
 			for (int i = 0; i < World.GameObjects.size(); i++)
 			{
 				GameObject& Object = World.GameObjects[i];
-				//Transform& Trans = Object.Trans;
 
 				// begin with root nodes
 				if (Object.ParentId == -1)
 				{
 					DrawObjectLeaf(World, Object);
 				}
-
-				//Trans.Update();
-
-				/*Matrix GlobalTransform = Trans.GetMatrix();
-
-				int ParentId = Object.ParentId;
-
-				// TODO: move to World
-				while (ParentId != -1)
-				{
-					GameObject& ParentObj = World.GameObjects[ParentId];
-					GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
-					ParentId = ParentObj.ParentId;
-				}
-
-				// TODO: move to World
-				if (Object.MeshId != -1)
-				{
-					World.SceneGPU->Meshes[Object.MeshId].Transform = GlobalTransform;
-				}*/
 			}
 		}
 		ImGui::End();
@@ -430,6 +409,31 @@ namespace Columbus::DebugUI
 			{
 				GPULight NewLight{ {}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0 };
 				World.SceneGPU->Lights.push_back(NewLight); // TODO: AddLight function
+			}
+		}
+		ImGui::End();
+	}
+
+	void ShowMaterialsWindow(EngineWorld& World)
+	{
+		if (ImGui::Begin("Material"))
+		{
+			for (int i = 0; i < (int)World.SceneGPU->Materials.size(); i++)
+			{
+				ImGui::PushID(i);
+				char Label[256]{ 0 };
+				snprintf(Label, 256, "%i", i);
+
+				if (ImGui::CollapsingHeader(Label))
+				{
+					Material& Mat = World.SceneGPU->Materials[i];
+
+					ImGui::InputInt("Albedo", &Mat.AlbedoId);
+					ImGui::SliderFloat("Roughness", &Mat.Roughness, 0, 1);
+					ImGui::SliderFloat("Metallic", &Mat.Metallic, 0, 1);
+				}
+
+				ImGui::PopID();
 			}
 		}
 		ImGui::End();

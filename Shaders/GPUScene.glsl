@@ -44,11 +44,27 @@ struct GPUSceneMeshCompact
 	uint VertexCount; // 108
 	uint IndexCount;  // 112
 
-	// int MaterialId; // TODO:
-	int TextureId;  // 116
+	int MaterialId;  // 116
 	int LightmapId; // 120
 
 	int _pad[2]; // 128
+};
+
+struct GPUSceneMaterialCompact
+{
+	int AlbedoId;
+
+	float Roughness;
+	float Metallic;
+
+	int _pad; // 16
+};
+
+struct GPUMaterialSampledData
+{
+	vec3 Albedo;
+	float Roughness;
+	float Metallic;
 };
 
 // TODO:
@@ -67,6 +83,7 @@ layout(binding = 0, set = GPUSCENE_TEXTURES_SET) uniform sampler2D Textures[2000
 
 layout(binding = 0, set = GPUSCENE_SCENE_SET) readonly buffer GPUSceneBuffer {
 	uint MeshesCount;
+	uint MaterialsCount;
 	uint TexturesCount;
 	uint LightsCount;
 	uint DecalsCount;
@@ -80,9 +97,18 @@ layout(binding = 2, set = GPUSCENE_SCENE_SET) readonly buffer MeshesBuffer {
 	GPUSceneMeshCompact Meshes[];
 } GPUSceneMeshes;
 
+layout(binding = 3, set = GPUSCENE_SCENE_SET) readonly buffer MaterialsBuffer {
+	GPUSceneMaterialCompact Materials[];
+} GPUSceneMaterials;
+
 uint GPUScene_GetMeshesCount()
 {
 	return GPUSceneScene.MeshesCount;
+}
+
+uint GPUScene_GetMaterialsCount()
+{
+	return GPUSceneScene.MaterialsCount;
 }
 
 uint GPUScene_GetTexturesCount()
@@ -106,7 +132,7 @@ struct GPUScene_Vertex
 	vec3 Normal;
 	vec2 UV;
 	vec2 UV2;
-	uint MaterialId; // TODO:
+	uint MaterialId;
 };
 
 uint GPUScene_FetchIndex(uint ObjectId, uint Index)
@@ -151,7 +177,7 @@ vec2 GPUScene_FetchVertexUV2FromMesh(GPUSceneMeshCompact Mesh, uint Index)
 uint GPUScene_FetchVertexMaterialFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 {
 	// TODO: per-vertex materials
-	return Mesh.TextureId;
+	return Mesh.MaterialId;
 }
 
 GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)
@@ -166,6 +192,36 @@ GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)
 	vertex.UV2 = GPUScene_FetchVertexUV2FromMesh(mesh, index);
 	vertex.MaterialId = GPUScene_FetchVertexMaterialFromMesh(mesh, index);
 	return vertex;
+}
+
+GPUMaterialSampledData GPUScene_SampleMaterial(uint MaterialId, vec2 UV)
+{
+	GPUMaterialSampledData Result;
+
+	if (MaterialId != -1)
+	{
+		GPUSceneMaterialCompact Material = GPUSceneMaterials.Materials[nonuniformEXT(MaterialId)];
+
+		if (Material.AlbedoId != -1)
+		{
+			Result.Albedo = textureLod(Textures[nonuniformEXT(Material.AlbedoId)], UV, 0.0f).rgb;
+		}
+		else
+		{
+			Result.Albedo = vec3(1);
+		}
+
+		Result.Roughness = Material.Roughness;
+		Result.Metallic = Material.Metallic;
+	}
+	else
+	{
+		Result.Albedo = vec3(1);
+		Result.Roughness = 1;
+		Result.Metallic = 0;
+	}
+
+	return Result;
 }
 
 #endif // GPUSCENE_GLSL

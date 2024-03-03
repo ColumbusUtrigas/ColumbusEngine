@@ -49,6 +49,7 @@ namespace Columbus::DebugUI
 	void ShowMeshesWindow(EngineWorld& World);
 	void ShowDecalsWindow(EngineWorld& World);
 	void ShowLightsWindow(EngineWorld& World);
+	void ShowMaterialsWindow(EngineWorld& World);
 	void ShowIrradianceWindow(EngineWorld& World);
 	void ShowLightmapWindow(EngineWorld& World);
 

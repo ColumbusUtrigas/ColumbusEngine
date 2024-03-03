@@ -312,6 +312,7 @@ namespace Columbus
 		Timer MeshTimer;
 		// TODO: proper data loading, materials, scene graph
 
+		// transforms
 		{
 			// get nodes and transforms
 			for (int i = 0; i < model.nodes.size(); i++)
@@ -366,6 +367,28 @@ namespace Columbus
 				{
 					GameObjects[Child].ParentId = i;
 				}
+			}
+		}
+
+		// materials
+		{
+			for (int i = 0; i < model.materials.size(); i++)
+			{
+				tinygltf::Material& Mat = model.materials[i];
+
+				Material Result;
+
+				int AlbedoId = Mat.pbrMetallicRoughness.baseColorTexture.index;
+				if (AlbedoId != -1)
+				{
+					Result.AlbedoId = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str());
+				}
+
+				// TODO:
+				Result.Roughness = 1;
+				Result.Metallic = 0;
+
+				Scene->Materials.push_back(Result);
 			}
 		}
 
@@ -508,19 +531,7 @@ namespace Columbus
 					AddProfilingMemory(MemoryCounter_SceneBLAS, BLAS->GetSize());
 				}
 
-				int matid = -1;
-
-				if (primitive.material > -1)
-				{
-					const auto& mat = model.materials[primitive.material];
-
-					int modelAlbedoId = mat.pbrMetallicRoughness.baseColorTexture.index;
-					if (modelAlbedoId != -1)
-					{
-						int albedoId = CreateTexture(model.textures[modelAlbedoId].source, model.textures[modelAlbedoId].name.c_str());
-						matid = albedoId;
-					}
-				}
+				int MaterialId = primitive.material > -1 ? primitive.material : -1;
 
 				Matrix Transform(1); // TODO: global transform
 				//Transform = GltfNodes[NodeId].Transform;
@@ -534,7 +545,7 @@ namespace Columbus
 				Mesh.Normals = normalBuffer;
 				Mesh.VertexCount = verticesCount;
 				Mesh.IndicesCount = indicesCount;
-				Mesh.TextureId = matid;
+				Mesh.MaterialId = MaterialId;
 
 				Scene->Meshes.push_back(Mesh);
 			}

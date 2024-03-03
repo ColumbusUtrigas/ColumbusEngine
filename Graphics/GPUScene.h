@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Graphics/Core/Texture.h"
 #include "Graphics/Light.h"
+#include "Graphics/Material.h"
 #include "Graphics/Vulkan/DeviceVulkan.h"
 #include "Profiling/Profiling.h"
 #include "IrradianceVolume.h"
@@ -19,6 +20,7 @@ namespace Columbus
 	// after update/upload of a GPU scene, it can be used during rendering in render graph
 	// Similar concept as Unreal's RenderProxy, but simple
 
+	// holds GPU resoures for a mesh
 	struct GPUSceneMesh
 	{
 		AccelerationStructure* BLAS;
@@ -31,7 +33,7 @@ namespace Columbus
 		u32 VertexCount;
 		u32 IndicesCount;
 
-		int TextureId = -1; // TODO: proper materials
+		int MaterialId = -1;
 		int LightmapId = -1;
 	};
 
@@ -70,8 +72,7 @@ namespace Columbus
 		u32 VertexCount;
 		u32 IndexCount;
 
-		// int MaterialId; // TODO:
-		int TextureId;
+		int MaterialId;
 		int LightmapId;
 		
 		int _pad[2]; // 128
@@ -88,7 +89,7 @@ namespace Columbus
 		u32 Padding[1];
 	};
 
-	// TODO: plug it into GPUScene
+	// TODO: have a CPU representation as well
 	struct GPUDecal
 	{
 		Matrix Model;
@@ -96,6 +97,16 @@ namespace Columbus
 		Texture2* Texture;
 
 		VkDescriptorSet _DescriptorSets[MaxFramesInFlight]{NULL};
+	};
+
+	struct GPUMaterialCompact
+	{
+		int AlbedoId;
+
+		float Roughness;
+		float Metallic;
+
+		int _Pad; // 16
 	};
 
 	// to be uploaded to the GPU
@@ -108,6 +119,7 @@ namespace Columbus
 		// Matrix ProjectionInverse;
 
 		u32 MeshesCount;
+		u32 MaterialsCount;
 		u32 TexturesCount;
 		u32 LightsCount;
 		u32 DecalsCount;
@@ -116,11 +128,16 @@ namespace Columbus
 	struct GPUScene
 	{
 		static constexpr int MaxMeshes = 65536;
+		static constexpr int MaxMaterials = 8192;
 		static constexpr int MaxGPULights = 8192;
 		static constexpr int MaxDecals = 8192;
 
 		AccelerationStructure* TLAS = nullptr;
+
+		// TODO: GPUScene must hold only GPU resources AND allow an upload routine
+		// TODO: Mesh instances (derived from the scene), GPUSceneMesh is a holder for a shared resource
 		std::vector<GPUSceneMesh> Meshes;
+		std::vector<Material> Materials;
 		std::vector<Texture2*> Textures;
 		std::vector<GPULight> Lights;
 		std::vector<GPUDecal> Decals;
@@ -131,6 +148,7 @@ namespace Columbus
 		bool Dirty = false;
 
 		// GPUScene also owns GPU-specific resources
+		// TODO: Host-visible upload ring buffer, upload only required parts
 		Buffer* SceneBuffer = nullptr;
 		Buffer* SceneUploadBuffers[MaxFramesInFlight] {nullptr};
 
@@ -139,6 +157,9 @@ namespace Columbus
 
 		Buffer* MeshesBuffer = nullptr;
 		Buffer* MeshesUploadBuffers[MaxFramesInFlight] {nullptr};
+
+		Buffer* MaterialsBuffer = nullptr;
+		Buffer* MaterialsUploadBuffers[MaxFramesInFlight] {nullptr};
 
 		Buffer* DecalsBuffers = nullptr;
 		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
@@ -149,6 +170,7 @@ namespace Columbus
 		{
 			return GPUSceneCompact {
 				.MeshesCount = (u32)Meshes.size(),
+				.MaterialsCount = (u32)Materials.size(),
 				.TexturesCount = (u32)Textures.size(),
 				.LightsCount = (u32)Lights.size(),
 				.DecalsCount = (u32)Decals.size(),
@@ -212,7 +234,19 @@ namespace Columbus
 
 			// materials
 			{
-				// TODO:
+				BufferDesc MaterialsBufferDesc;
+				MaterialsBufferDesc.Size = GPUScene::MaxMaterials * sizeof(GPUMaterialCompact);
+				MaterialsBufferDesc.BindFlags = BufferType::UAV;
+				Result->MaterialsBuffer = Device->CreateBuffer(MaterialsBufferDesc, nullptr);
+				Device->SetDebugName(Result->MaterialsBuffer, "GPUScene.Materials");
+
+				for (Buffer*& UploadBuffer : Result->MaterialsUploadBuffers)
+				{
+					BufferDesc UploadBufferDesc(GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), BufferType::UAV);
+					UploadBufferDesc.HostVisible = true;
+					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
+					Device->SetDebugName(UploadBuffer, "GPUScene.Meshes (upload buffer)");
+				}
 			}
 
 			// decals
@@ -240,6 +274,20 @@ namespace Columbus
 			Device->DestroyBuffer(Scene->LightsBuffer);
 
 			for (Buffer*& UploadBuffer : Scene->LightUploadBuffers)
+			{
+				Device->DestroyBuffer(UploadBuffer);
+			}
+
+			Device->DestroyBuffer(Scene->MeshesBuffer);
+
+			for (Buffer*& UploadBuffer : Scene->MeshesUploadBuffers)
+			{
+				Device->DestroyBuffer(UploadBuffer);
+			}
+
+			Device->DestroyBuffer(Scene->MaterialsBuffer);
+
+			for (Buffer*& UploadBuffer : Scene->MaterialsUploadBuffers)
 			{
 				Device->DestroyBuffer(UploadBuffer);
 			}
