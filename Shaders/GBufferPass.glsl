@@ -28,11 +28,11 @@ layout(push_constant) uniform Params
 		// index is being read from index buffer by gl_VertexIndex
 		GPUScene_Vertex Vertex = GPUScene_FetchVertex(Parameters.ObjectId, gl_VertexIndex);
 
-		// TODO: model transformation
-		OutWP = Vertex.Position;
+		vec4 TransformedPos = vec4(Vertex.Position, 1) * Mesh.Transform;
+		OutWP = TransformedPos.xyz;
 		
-		vec4 ClipspacePos = Parameters.VP * vec4(Vertex.Position, 1) * vec4(1, -1, 1, 1);
-		vec4 ClipspacePosPrev = Parameters.VPPrev * vec4(Vertex.Position, 1) * vec4(1, -1, 1, 1);
+		vec4 ClipspacePos = Parameters.VP * TransformedPos * vec4(1, -1, 1, 1);
+		vec4 ClipspacePosPrev = Parameters.VPPrev * TransformedPos * vec4(1, -1, 1, 1);
 		OutClipspacePos = ClipspacePos;
 		OutClipspacePosPrev = ClipspacePosPrev;
 

@@ -210,6 +210,40 @@ namespace Columbus::DebugUI
 		delete Ctx;
 	}
 
+	void DrawMainLayout()
+	{
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowViewport(viewport->ID);
+
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		if (ImGui::Begin("MainLayout", nullptr, window_flags))
+		{
+			//DrawToolbar();
+
+			ImGuiID dockspace_id = ImGui::GetID("MainDockspace");
+			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+			ImGui::PopStyleVar(3);
+			//DrawMainMenu(scene);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		}
+		ImGui::End();
+
+		ImGui::PopStyleVar(3);
+	}
+
 	// mutates View
 	void ShowScreenshotSaveWindow(RenderView& View)
 	{
@@ -236,6 +270,235 @@ namespace Columbus::DebugUI
 			}
 
 			ImGui::Checkbox("HDR", &HDR);
+		}
+		ImGui::End();
+	}
+
+	static void DrawObjectLeaf(EngineWorld& World, GameObject& Object)
+	{
+		char Label[256]{ 0 };
+		snprintf(Label, 256, "%i", Object.Id);
+
+		int flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+		//if (Object.Children.size() == 1) flags |= ImGuiTreeNodeFlags_Leaf;
+
+		Transform& Trans = Object.Trans;
+
+		ImGui::PushID(Object.Id);
+		Vector3 Euler = Trans.Rotation.Euler();
+
+		if (ImGui::TreeNodeEx(Object.Name.c_str(), flags))
+		{
+			ImGui::SliderFloat3("Position", (float*)&Trans.Position, -10, +10);
+			ImGui::SliderFloat3("Rotation", (float*)&Euler, 0, 360);
+			ImGui::SliderFloat4("Quat", (float*)&Trans.Rotation, 0, 360);
+			ImGui::SliderFloat3("Scale", (float*)&Trans.Scale, 0, +10);
+			ImGui::InputInt("Parent", &Object.ParentId);
+
+			Trans.Rotation = Quaternion(Euler);
+
+			for (int Child : Object.Children)
+			{
+				DrawObjectLeaf(World, World.GameObjects[Child]);
+			}
+			ImGui::TreePop();
+		}
+
+		ImGui::PopID();
+	}
+
+	void ShowMeshesWindow(EngineWorld& World)
+	{
+		if (ImGui::Begin("Mesh"))
+		{
+			for (int i = 0; i < World.GameObjects.size(); i++)
+			{
+				GameObject& Object = World.GameObjects[i];
+				//Transform& Trans = Object.Trans;
+
+				// begin with root nodes
+				if (Object.ParentId == -1)
+				{
+					DrawObjectLeaf(World, Object);
+				}
+
+				//Trans.Update();
+
+				/*Matrix GlobalTransform = Trans.GetMatrix();
+
+				int ParentId = Object.ParentId;
+
+				// TODO: move to World
+				while (ParentId != -1)
+				{
+					GameObject& ParentObj = World.GameObjects[ParentId];
+					GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
+					ParentId = ParentObj.ParentId;
+				}
+
+				// TODO: move to World
+				if (Object.MeshId != -1)
+				{
+					World.SceneGPU->Meshes[Object.MeshId].Transform = GlobalTransform;
+				}*/
+			}
+		}
+		ImGui::End();
+	}
+
+	void ShowDecalsWindow(EngineWorld& World)
+	{
+		if (ImGui::Begin("Decal"))
+		{
+			for (int i = 0; i < (int)World.SceneGPU->Decals.size(); i++)
+			{
+				ImGui::PushID(i);
+				char Label[256]{ 0 };
+				snprintf(Label, 256, "%i", i);
+
+				if (ImGui::CollapsingHeader(Label))
+				{
+					GPUDecal& Decal = World.SceneGPU->Decals[i];
+
+					Vector3 Position = Decal.Model.GetColumn(3).XYZ();
+					Vector3 Scale = Vector3(Decal.Model.M[0][0], Decal.Model.M[1][1], Decal.Model.M[2][2]);
+
+					ImGui::SliderFloat3("Position", (float*)&Position, -500, +500);
+					ImGui::SliderFloat3("Scale", (float*)&Scale, 1, 500);
+
+					Matrix Model;
+					Model.Scale(Scale);
+					Model.Translate(Position);
+
+					Decal.Model = Model;
+					Decal.ModelInverse = Model.GetInverted();
+
+					World.MainView.DebugRender.AddBox(Model, Vector4(1, 1, 1, 0.1f));
+				}
+
+				ImGui::PopID();
+			}
+		}
+		ImGui::End();
+	}
+
+	void ShowLightsWindow(EngineWorld& World)
+	{
+		if (ImGui::Begin("Light"))
+		{
+			// TODO: more robust sytem, make a function in World to add/delete lights
+			fixed_vector<int, 16> LightsToDelete;
+
+			for (int i = 0; i < (int)World.SceneGPU->Lights.size(); i++)
+			{
+				GPULight& Light = World.SceneGPU->Lights[i];
+
+				ImGui::PushID(i);
+				char Label[256]{ 0 };
+				snprintf(Label, 256, "%i", i);
+				if (ImGui::CollapsingHeader(Label))
+				{
+					const char* LightTypes[] = {
+						LightTypeToString(LightType::Directional),
+						LightTypeToString(LightType::Point),
+						LightTypeToString(LightType::Spot),
+						LightTypeToString(LightType::Rectangle),
+					};
+
+					ImGui::Combo("Type", (int*)&Light.Type, LightTypes, (int)LightType::Count);
+					ImGui::SliderFloat3("Position", (float*)&Light.Position, -500, +500);
+					ImGui::SliderFloat3("Direction", (float*)&Light.Direction, -1, +1);
+					ImGui::ColorPicker3("Colour", (float*)&Light.Color, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+					ImGui::SliderFloat("Range", (float*)&Light.Range, 1, 1000);
+					ImGui::SliderFloat("Source Radius", (float*)&Light.SourceRadius, 0, 5);
+
+					if (ImGui::Button("-"))
+					{
+						LightsToDelete.push_back(i);
+					}
+				}
+				ImGui::PopID();
+			}
+
+			for (int LightId : LightsToDelete)
+			{
+				// TODO: think about cleaning up render resources for light source
+				World.SceneGPU->Lights.erase(World.SceneGPU->Lights.begin() + LightId); // TODO: RemoveLight function
+			}
+
+			if (ImGui::Button("+"))
+			{
+				GPULight NewLight{ {}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0 };
+				World.SceneGPU->Lights.push_back(NewLight); // TODO: AddLight function
+			}
+		}
+		ImGui::End();
+	}
+
+	void ShowIrradianceWindow(EngineWorld& World)
+	{
+		if (ImGui::Begin("Irradiance Volume"))
+		{
+			for (int i = 0; i < (int)World.SceneGPU->IrradianceVolumes.size(); i++)
+			{
+				ImGui::PushID(i);
+				char Label[256]{ 0 };
+				snprintf(Label, 256, "%i", i);
+
+				if (ImGui::CollapsingHeader(Label))
+				{
+					ImGui::SliderFloat3("Position", (float*)&World.SceneGPU->IrradianceVolumes[i].Position, -10, 10);
+					ImGui::SliderFloat3("Extent", (float*)&World.SceneGPU->IrradianceVolumes[i].Extent, -10, 10);
+					ImGui::SliderInt3("Count", (int*)&World.SceneGPU->IrradianceVolumes[i].ProbesCount, 2, 8);
+					ImGui::SliderFloat3("TestPoint", (float*)&World.SceneGPU->IrradianceVolumes[i].TestPoint, -5, 5);
+
+					Matrix Transform;
+					Transform.Scale(World.SceneGPU->IrradianceVolumes[i].Extent);
+					Transform.Translate(World.SceneGPU->IrradianceVolumes[i].Position);
+					World.MainView.DebugRender.AddBox(Transform, Vector4(1, 1, 1, 0.1f));
+				}
+
+				ImGui::PopID();
+			}
+		}
+		ImGui::End();
+	}
+
+	void ShowLightmapWindow(EngineWorld& World)
+	{
+		if (ImGui::Begin("Lightmap"))
+		{
+			ImGui::InputInt("Samples", &World.Lightmaps.BakingSettings.RequestedSamples);
+			ImGui::InputInt("Bounces", &World.Lightmaps.BakingSettings.Bounces);
+			ImGui::InputInt("Samples per frame", &World.Lightmaps.BakingSettings.SamplesPerFrame);
+
+			static VkDescriptorSet PreviewImage = NULL;
+
+			if (ImGui::Button("Generate UV2"))
+			{
+				GenerateAndPackLightmaps(World.Lightmaps, World.SceneCPU);
+				UploadLightmapMeshesToGPU(World.Lightmaps, World.Device, World.SceneCPU, World.SceneGPU);
+
+				// TODO: make imgui image preview work normally
+				TextureVulkan* vktex = static_cast<TextureVulkan*>(World.Lightmaps.Atlas.Lightmap);
+				PreviewImage = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
+			}
+
+			if (ImGui::Button("Bake"))
+			{
+				World.Lightmaps.BakingRequested = true;
+				World.Lightmaps.BakingData.AccumulatedSamples = 0;
+			}
+
+			if (World.Lightmaps.BakingRequested)
+			{
+				ImGui::ProgressBar((float)World.Lightmaps.BakingData.AccumulatedSamples / World.Lightmaps.BakingSettings.RequestedSamples);
+			}
+
+			if (World.Lightmaps.Atlas.Lightmap != nullptr)
+			{
+				ImGui::Image(PreviewImage, ImVec2(200, 200));
+			}
 		}
 		ImGui::End();
 	}

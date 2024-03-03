@@ -177,6 +177,7 @@ namespace Columbus
 			auto rg_mem = GetProfilerCategoryMemory("RenderGraphMemory");
 			auto rg_gpu = GetProfilerCategoryGPU("RenderGraphGPU");
 			auto sc_mem = GetProfilerCategoryMemory("SceneMemory");
+			auto sc_cpu = GetProfilerCategoryCPU("SceneCPU");
 			auto vk_mem = GetProfilerCategoryMemory("Vulkan");
 			auto vk_cnt = GetProfilerCategoryCounting("Vulkan");
 
@@ -226,6 +227,17 @@ namespace Columbus
 
 					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
 					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+				}
+				ImGui::EndTable();
+			}
+
+			if (ImGui::BeginTable("Scene CPU", 2))
+			{
+				ImGui::TableHeader("Scene CPU");
+				for (auto counter : sc_cpu)
+				{
+					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
 				}
 				ImGui::EndTable();
 			}

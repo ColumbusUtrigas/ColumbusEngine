@@ -5,6 +5,12 @@
 namespace Columbus
 {
 
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedReflections);
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedReflectionsDenoise);
+
+	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Reflections", "RenderGraphGPU", GpuCounterRayTracedReflections);
+	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Reflections Denoise", "RenderGraphGPU", GpuCounterRayTracedReflectionsDenoise);
+
 	struct RayTracedReflectionPassParameters
 	{
 		Vector4 CameraPosition;
@@ -53,6 +59,8 @@ namespace Columbus
 
 			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflections, Textures, View](RenderGraphContext& Context)
 			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflections, Context);
+
 				static RayTracingPipeline* Pipeline = nullptr;
 				if (Pipeline == nullptr)
 				{
@@ -97,6 +105,8 @@ namespace Columbus
 
 			Graph.AddPass("Blur", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflections, RTReflectionsDenoised, View](RenderGraphContext& Context)
 			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
+
 				static ComputePipeline* Pipeline = nullptr;
 				if (Pipeline == nullptr)
 				{

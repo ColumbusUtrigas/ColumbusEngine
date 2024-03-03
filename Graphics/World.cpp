@@ -1,5 +1,7 @@
 #include "World.h"
 
+#include <Math/Quaternion.h>
+
 #include <algorithm>
 #include <Lib/tinygltf/tiny_gltf.h>
 
@@ -8,15 +10,32 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Meshes", "SceneMemory", MemoryCounter_SceneM
 IMPLEMENT_MEMORY_PROFILING_COUNTER("BLAS", "SceneMemory", MemoryCounter_SceneBLAS);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("TLAS", "SceneMemory", MemoryCounter_SceneTLAS);
 
+IMPLEMENT_CPU_PROFILING_COUNTER("Transforms Update", "SceneCPU", CpuCounter_SceneTransformUpdate);
+
 namespace Columbus
 {
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
-	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings);
+	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings, std::vector<GameObject>& GameObjects);
 
 	void EngineWorld::LoadLevelGLTF(const char* Path)
 	{
-		SceneGPU = LoadScene(Device, MainView.CameraCur, Path, SceneCPU, MeshBoundingBoxes);
+		SceneGPU = LoadScene(Device, MainView.CameraCur, Path, SceneCPU, MeshBoundingBoxes, GameObjects);
+	}
+
+	void EngineWorld::ReparentGameObject(GameObjectId Object, GameObjectId NewParent)
+	{
+		GameObjectId OldParent = GameObjects[Object].ParentId;
+		if (OldParent != -1)
+		{
+			// TODO: proper data structures
+			auto Iter = std::find(GameObjects[OldParent].Children.begin(), GameObjects[OldParent].Children.end(), Object);
+			if (Iter != GameObjects[OldParent].Children.end())
+				GameObjects[OldParent].Children.erase(Iter);
+		}
+
+		GameObjects[Object].ParentId = NewParent;
+		GameObjects[NewParent].Children.push_back(Object);
 	}
 
 	WorldIntersectionResult EngineWorld::CastRayClosestHit(const Geometry::Ray& Ray)
@@ -25,6 +44,7 @@ namespace Columbus
 		std::vector<WorldIntersectionResult> HitPoints;
 
 		// TODO: BVH/octree search
+		// TODO: apply transformations
 		for (int i = 0; i < MeshBoundingBoxes.size(); i++)
 		{
 			Box& Bounding = MeshBoundingBoxes[i];
@@ -96,6 +116,38 @@ namespace Columbus
 		MainView.DebugRender.Clear();
 	}
 
+	void EngineWorld::UpdateTransforms()
+	{
+		PROFILE_CPU(CpuCounter_SceneTransformUpdate);
+
+		// TODO: optimise
+
+		for (int i = 0; i < (int)GameObjects.size(); i++)
+		{
+			GameObject& Object = GameObjects[i];
+			Transform& Trans = Object.Trans;
+
+			Trans.Update();
+
+			Matrix GlobalTransform = Trans.GetMatrix();
+
+			int ParentId = Object.ParentId;
+
+			while (ParentId != -1)
+			{
+				GameObject& ParentObj = GameObjects[ParentId];
+				GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
+				ParentId = ParentObj.ParentId;
+			}
+
+			// TODO: remove mesh duplication
+			if (Object.MeshId != -1)
+			{
+				SceneGPU->Meshes[Object.MeshId].Transform = GlobalTransform;
+			}
+		}
+	}
+
 	void EngineWorld::EndFrame()
 	{
 	}
@@ -107,7 +159,6 @@ namespace Columbus
 		MeshBoundingBoxes.clear();
 	}
 
-	// TODO: move to appropriate place
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
 	{
 		BufferDesc desc;
@@ -138,9 +189,9 @@ namespace Columbus
 		}
 	};
 
-	// TODO: move to appropriate place
 	// TODO: separate CPUScene load and GPUScene load?
-	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings)
+	// TODO: refactor this completely
+	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings, std::vector<GameObject>& GameObjects)
 	{
 		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
 			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
@@ -214,8 +265,15 @@ namespace Columbus
 				GPUScene::DestroyGPUScene(Scene, Device);
 			});
 
-		auto CreateTexture = [Scene, Device, &model](int textureId, const char* name) -> int
+		std::unordered_map<int, int> LoadedTextures;
+
+		auto CreateTexture = [Scene, Device, &model, &LoadedTextures](int textureId, const char* name) -> int
 		{
+			if (LoadedTextures.contains(textureId))
+			{
+				return LoadedTextures[textureId];
+			}
+
 			GltfLoadTimer<GltfLoadMaterial> T;
 
 			auto& image = model.images[textureId];
@@ -226,6 +284,7 @@ namespace Columbus
 				format = TextureFormat::RGBA8SRGB;
 
 			// TODO: WTF
+			// TODO: GPUs don't really support RGB8, make a layer to convert it to RGBA8 instead
 			if (format == TextureFormat::RGB8)
 				format = TextureFormat::RGB8SRGB;
 
@@ -245,14 +304,80 @@ namespace Columbus
 
 			int id = (int)Scene->Textures.size();
 			Scene->Textures.push_back(tex);
+			LoadedTextures[textureId] = id;
 
 			return id;
 		};
 
 		Timer MeshTimer;
-		// TODO
-		for (auto& mesh : model.meshes)
+		// TODO: proper data loading, materials, scene graph
+
 		{
+			// get nodes and transforms
+			for (int i = 0; i < model.nodes.size(); i++)
+			{
+				tinygltf::Node& Node = model.nodes[i];
+				GameObject Object;
+
+				Matrix LocalTransform(1);
+				if (Node.matrix.size() > 0)
+				{
+					// TODO: support it
+					assert(false);
+					memcpy(LocalTransform.M, Node.matrix.data(), sizeof(float) * 16);
+					LocalTransform.Transpose();
+				}
+				else
+				{
+					if (Node.scale.size() > 0)
+					{
+						LocalTransform.Scale(Vector3(Node.scale[0], Node.scale[1], Node.scale[2]));
+						Object.Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
+					}
+
+					if (Node.rotation.size() > 0)
+					{
+						Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
+						LocalTransform *= Quat.ToMatrix();
+
+						Object.Trans.Rotation = Quat;
+					}
+
+					if (Node.translation.size() > 0)
+					{
+						LocalTransform.Translate(Vector3(Node.translation[0], Node.translation[1], Node.translation[2]));
+						Object.Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
+					}
+				}
+
+				Object.Id = i;
+				Object.Children = Node.children; // vector<int>
+				Object.MeshId = Node.mesh;
+				Object.Name = Node.name;
+
+				GameObjects.push_back(Object);
+			}
+
+			// compute parents
+			for (int i = 0; i < GameObjects.size(); i++)
+			{
+				GameObject& Object = GameObjects[i];
+				for (int Child : Object.Children)
+				{
+					GameObjects[Child].ParentId = i;
+				}
+			}
+		}
+
+		//for (tinygltf::Node& Node : model.nodes)
+		for (int NodeId = 0; NodeId < model.nodes.size(); NodeId++)
+		{
+			tinygltf::Node& Node = model.nodes[NodeId];
+
+			if (Node.mesh == -1) continue;
+
+			tinygltf::Mesh& mesh = model.meshes[Node.mesh];
+
 			for (auto& primitive : mesh.primitives)
 			{
 				Buffer* indexBuffer = nullptr;
@@ -390,14 +515,19 @@ namespace Columbus
 					const auto& mat = model.materials[primitive.material];
 
 					int modelAlbedoId = mat.pbrMetallicRoughness.baseColorTexture.index;
-					int albedoId = CreateTexture(model.textures[modelAlbedoId].source, model.textures[modelAlbedoId].name.c_str());
-
-					matid = albedoId;
+					if (modelAlbedoId != -1)
+					{
+						int albedoId = CreateTexture(model.textures[modelAlbedoId].source, model.textures[modelAlbedoId].name.c_str());
+						matid = albedoId;
+					}
 				}
+
+				Matrix Transform(1); // TODO: global transform
+				//Transform = GltfNodes[NodeId].Transform;
 
 				GPUSceneMesh Mesh;
 				Mesh.BLAS = BLAS;
-				Mesh.Transform = Matrix(1);
+				Mesh.Transform = Transform;
 				Mesh.Vertices = vertexBuffer;
 				Mesh.Indices = indexBuffer;
 				Mesh.UV1 = uvBuffer;

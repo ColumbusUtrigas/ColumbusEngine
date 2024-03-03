@@ -11,9 +11,9 @@ namespace Columbus
 		Directional	= 0,
 		Point		= 1,
 		Spot		= 2,
-
 		Rectangle	= 3,
-		Sphere		= 4,
+
+		Count       = 4
 	};
 
 	static const char* LightTypeToString(LightType type)
@@ -24,7 +24,6 @@ namespace Columbus
 		case LightType::Point:       return "Point";
 		case LightType::Spot:        return "Spot";
 		case LightType::Rectangle:   return "Rectangle";
-		case LightType::Sphere:      return "Sphere";
 		default: return "Unkown";
 		}
 	}

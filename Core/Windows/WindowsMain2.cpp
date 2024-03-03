@@ -23,11 +23,8 @@
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 #include "Lib/imgui/backends/imgui_impl_sdl2.h"
 #include "Lib/implot/implot.h"
+#include "Lib/ImGuizmo/ImGuizmo.h"
 #include "System/File.h"
-#include <cstdint>
-#include <memory>
-#include <thread>
-#include <chrono>
 #include <vulkan/vulkan.h>
 #include <Core/Core.h>
 #include <Core/CVar.h>
@@ -63,41 +60,8 @@ DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
 IMPLEMENT_CPU_PROFILING_COUNTER("Total CPU", "CPU", Counter_TotalCPU);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Add", "RenderGraph", CpuCounter_RenderGraphCreate);
 
-void DrawMainLayout()
-{
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(viewport->Pos);
-	ImGui::SetNextWindowSize(viewport->Size);
-	ImGui::SetNextWindowViewport(viewport->ID);
-
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-	if (ImGui::Begin("MainLayout", nullptr, window_flags))
-	{
-		//DrawToolbar();
-
-		ImGuiID dockspace_id = ImGui::GetID("MainDockspace");
-		ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-		ImGui::PopStyleVar(3);
-		//DrawMainMenu(scene);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	}
-	ImGui::End();
-
-	ImGui::PopStyleVar(3);
-}
-
-static void DrawGameViewportWindow(Texture2* FinalTexture, iVector2& InOutViewSize, bool& OutWindowHover, bool& OutViewportFocus, Vector2& OutRelativeMousePosition)
+// TODO: move to appropriate place
+static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMatrix, const Matrix& ProjectionMatrix, iVector2& InOutViewSize, bool& OutWindowHover, bool& OutViewportFocus, Vector2& OutRelativeMousePosition)
 {
 	OutWindowHover = false;
 
@@ -120,6 +84,11 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, iVector2& InOutViewSi
 		InOutViewSize = iVector2((int)viewportSize.x, (int)viewportSize.y);
 
 		DebugUI::TextureWidget(FinalTexture, InOutViewSize, InvalidateViewport);
+
+		static Matrix TestMatrix;
+		ImGuizmo::SetRect(WindowPos.x, WindowPos.y, viewportSize.x, viewportSize.y);
+		ImGuizmo::SetDrawlist();
+		ImGuizmo::Manipulate(&ViewMatrix.M[0][0], &ProjectionMatrix.M[0][0], ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, &TestMatrix.M[0][0]);
 	}
 	ImGui::End();
 	ImGui::PopStyleVar(1);
@@ -284,17 +253,7 @@ int main()
 
 	auto renderGraph = RenderGraph(device, World.SceneGPU);
 	WindowVulkan Window(instance, device);
-	DeferredRenderContext DeferredContext; // for deferred
-
-	// TODO: DDGI, that's a CPU-side representation, needs to be updated during GPUScene update stage and then used in a rendergraph
-#if 0
-	IrradianceVolume Volume;
-	Volume.Position = { 0, 0, 0 };
-	Volume.ProbesCount = { 5, 4, 5 };
-	Volume.Extent = { 10, 5, 10 };
-	scene->IrradianceVolumes.push_back(Volume);
-	bool ComputeIrradianceVolume = false;
-#endif
+	DeferredRenderContext DeferredContext;
 
 	World.MainView.OutputSize = Window.GetSize();
 
@@ -321,34 +280,43 @@ int main()
 		camera.Update();
 		World.MainView.CameraCur = camera;
 
+		// Input
+		{
+			SDL_Event event;
+			while (SDL_PollEvent(&event)) {
+				DebugUI::ProcessInputSDL(UiContext, &event);
 
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			DebugUI::ProcessInputSDL(UiContext, &event);
+				if (event.type == SDL_QUIT) {
+					running = false;
+				}
 
-			if (event.type == SDL_QUIT) {
-				running = false;
-			}
+				if (event.type == SDL_WINDOWEVENT) {
+					if (event.window.event == SDL_WINDOWEVENT_RESIZED || event.window.event == SDL_WINDOWEVENT_MAXIMIZED) {
+						device->QueueWaitIdle();
+						Window.Swapchain->IsOutdated = true;
+						Window.OnResize(iVector2{ event.window.data1, event.window.data2 });
 
-			if (event.type == SDL_WINDOWEVENT) {
-				if (event.window.event == SDL_WINDOWEVENT_RESIZED || event.window.event == SDL_WINDOWEVENT_MAXIMIZED) {
-					device->QueueWaitIdle();
-					Window.Swapchain->IsOutdated = true;
-					Window.OnResize(iVector2{event.window.data1, event.window.data2});
-
-					Log::Message("Window resized: %i %i", event.window.data1, event.window.data2);
+						Log::Message("Window resized: %i %i", event.window.data1, event.window.data2);
+					}
 				}
 			}
 		}
 
 		// UI
-		// TODO: move to appropriate place
 		{
-			DrawMainLayout();
+			DebugUI::DrawMainLayout();
 
 			ImGui::ShowDemoWindow();
 			ShowDebugConsole();
 			ShowRenderGraphVisualiser(renderGraph);
+
+			DebugUI::ShowScreenshotSaveWindow(World.MainView);
+
+			DebugUI::ShowMeshesWindow(World);
+			DebugUI::ShowDecalsWindow(World);
+			DebugUI::ShowLightsWindow(World);
+			DebugUI::ShowIrradianceWindow(World);
+			DebugUI::ShowLightmapWindow(World);
 
 			// test gaussian
 			{
@@ -384,147 +352,12 @@ int main()
 				}
 				ImGui::End();
 			}
-
-			// screenshot
-			{
-				DebugUI::ShowScreenshotSaveWindow(World.MainView);
-			}
-
-			// lightmap
-			// TODO: move to a more appropriate place
-			{
-				if (ImGui::Begin("Lightmap"))
-				{
-					ImGui::InputInt("Samples", &World.Lightmaps.BakingSettings.RequestedSamples);
-					ImGui::InputInt("Bounces", &World.Lightmaps.BakingSettings.Bounces);
-					ImGui::InputInt("Samples per frame", &World.Lightmaps.BakingSettings.SamplesPerFrame);
-
-					static VkDescriptorSet PreviewImage = NULL;
-
-					if (ImGui::Button("Generate UV2"))
-					{
-						GenerateAndPackLightmaps(World.Lightmaps, World.SceneCPU);
-						UploadLightmapMeshesToGPU(World.Lightmaps, device, World.SceneCPU, World.SceneGPU);
-
-						// TODO: make imgui image preview work normally
-						TextureVulkan* vktex = static_cast<TextureVulkan*>(World.Lightmaps.Atlas.Lightmap);
-						PreviewImage = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
-					}
-
-					if (ImGui::Button("Bake"))
-					{
-						World.Lightmaps.BakingRequested = true;
-						World.Lightmaps.BakingData.AccumulatedSamples = 0;
-					}
-
-					if (World.Lightmaps.BakingRequested)
-					{
-						ImGui::ProgressBar((float)World.Lightmaps.BakingData.AccumulatedSamples / World.Lightmaps.BakingSettings.RequestedSamples);
-					}
-
-					if (World.Lightmaps.Atlas.Lightmap != nullptr)
-					{
-						ImGui::Image(PreviewImage, ImVec2(200, 200));
-					}
-				}
-				ImGui::End();
-			}
-
-			// irradiance volume
-			{
-				if (ImGui::Begin("Irradiance Volume"))
-				{
-#if 0
-					ImGui::SliderFloat3("Position", (float*)&scene->IrradianceVolumes[0].Position, -10, 10);
-					ImGui::SliderFloat3("Extent", (float*)&scene->IrradianceVolumes[0].Extent, -10, 10);
-					ImGui::SliderInt3("Count", (int*)&scene->IrradianceVolumes[0].ProbesCount, 2, 8);
-					ImGui::SliderFloat3("TestPoint", (float*)&scene->IrradianceVolumes[0].TestPoint, -5, 5);
-
-					if (ImGui::Button("Compute"))
-					{
-						ComputeIrradianceVolume = true;
-					}
-
-					Matrix Transform;
-					Transform.Scale(scene->IrradianceVolumes[0].Extent);
-					Transform.Translate(scene->IrradianceVolumes[0].Position);
-					debugRender.AddBox(Transform, Vector4(1, 1, 1, 0.1f));
-#endif
-				}
-				ImGui::End();
-			}
-
-			// TODO: move to appropriate place
-			// TODO: object properties editor
-			// decal editor
-			{
-				if (ImGui::Begin("Decal"))
-				{
-					static Vector3 Pos{0};
-					static Vector3 Scale{100};
-
-					ImGui::SliderFloat3("Position", (float*)&Pos, -500, +500);
-					ImGui::SliderFloat3("Scale", (float*)&Scale, 1, 500);
-
-					Matrix Model;
-					Model.Scale(Scale);
-					Model.Translate(Pos);
-
-					World.SceneGPU->Decals[0].Model = Model;
-					World.SceneGPU->Decals[0].ModelInverse = Model.GetInverted();
-
-					World.MainView.DebugRender.AddBox(Model, Vector4(1, 1, 1, 0.1f));
-				}
-				ImGui::End();
-			}
-
-			// TODO: move to appropriate place
-			// TODO: object properties editor
-			// light editor
-			{
-				if (ImGui::Begin("Light"))
-				{
-					fixed_vector<int, 16> LightsToDelete;
-
-					for (int i = 0; i < World.SceneGPU->Lights.size(); i++)
-					{
-						GPULight& Light = World.SceneGPU->Lights[i];
-
-						char Label[256]{ 0 };
-						snprintf(Label, 256, "%i", i);
-						if (ImGui::CollapsingHeader(Label))
-						{
-							ImGui::SliderFloat3("Position", (float*)&Light.Position, -500, +500);
-							ImGui::SliderFloat3("Direction", (float*)&Light.Direction, -1, +1);
-							ImGui::ColorPicker3("Colour", (float*)&Light.Color, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-							ImGui::SliderFloat("Range", (float*)&Light.Range, 1, 1000);
-							ImGui::SliderFloat("Source Radius", (float*)&Light.SourceRadius, 0, 5);
-
-							if (ImGui::Button("-"))
-							{
-								LightsToDelete.push_back(i);
-							}
-						}
-					}
-
-					for (int LightId : LightsToDelete)
-					{
-						// TODO: think about cleaning up render resources for light source
-						World.SceneGPU->Lights.erase(World.SceneGPU->Lights.begin() + LightId);
-					}
-
-					if (ImGui::Button("+"))
-					{
-						GPULight NewLight{ {}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0 };
-						World.SceneGPU->Lights.push_back(NewLight);
-					}
-				}
-				ImGui::End();
-			}
 		}
 
+		World.UpdateTransforms();
+
 		// mouse picking
-		if (bViewportHover)
+		if (bViewportHover && false)
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			Vector2 MousePos = ViewportMousePos;
@@ -550,6 +383,7 @@ int main()
 				PROFILE_CPU(CpuCounter_RenderGraphCreate);
 
 				UploadGPUSceneRG(renderGraph);
+				// TODO: rebuild/refit TLAS
 
 				if (render_cvar.GetValue() == 0)
 				{
@@ -590,7 +424,7 @@ int main()
 					RenderGraphExecuteResults RGResults = renderGraph.Execute(RGParameters);
 					WaitSemaphore = RGResults.FinishSemaphore;
 
-					DrawGameViewportWindow(renderGraph.GetTextureAfterExecution(FinalTexture), World.MainView.OutputSize, bViewportHover, bViewportFocused, ViewportMousePos);
+					DrawGameViewportWindow(renderGraph.GetTextureAfterExecution(FinalTexture), camera.GetViewMatrix(), camera.GetProjectionMatrix(), World.MainView.OutputSize, bViewportHover, bViewportFocused, ViewportMousePos);
 					ViewportSize = World.MainView.OutputSize;
 				}
 
