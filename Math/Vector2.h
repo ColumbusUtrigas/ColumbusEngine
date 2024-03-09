@@ -198,12 +198,17 @@ namespace Columbus
 			return *this = Normalized();
 		}
 
-		Type Length(const Vector2_t& Other) const
+		Type Length() const
+		{
+			return sqrtf(X*X + Y*Y);
+		}
+
+		Type Distance(const Vector2_t& Other) const
 		{
 			return sqrtf(Math::Sqr(Other.X - X) + Math::Sqr(Other.Y - Y));
 		}
 
-		Type LengthSquare(const Vector2_t& Other) const
+		Type DistanceSquare(const Vector2_t& Other) const
 		{
 			return Math::Sqr(Other.X - X) + Math::Sqr(Other.Y - Y);
 		}

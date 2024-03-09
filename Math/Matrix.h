@@ -38,7 +38,12 @@ namespace Columbus
 	class Matrix
 	{
 	public:
-		float M[4][4];
+		union
+		{
+			float M[4][4];
+			float M16[16];
+			Vector4 Rows[4]; // row-major order
+		};
 	public:
 		explicit Matrix(float Diag = 1.0f)
 		{
@@ -47,7 +52,18 @@ namespace Columbus
 			M[2][0] = 0.0f; M[2][1] = 0.0f; M[2][2] = Diag; M[2][3] = 0.0f;
 			M[3][0] = 0.0f; M[3][1] = 0.0f; M[3][2] = 0.0f; M[3][3] = Diag;
 		}
-		
+
+		Matrix(const Matrix& Other)
+		{
+			memcpy(M, Other.M, sizeof(float) * 16);
+		}
+
+		Matrix& operator=(Matrix Other)
+		{
+			memcpy(M, Other.M, sizeof(float) * 16);
+			return *this;
+		}
+
 		Matrix(const Vector4& A, const Vector4& B, const Vector4& C, const Vector4& D)
 		{
 			SetRow(0, A);
@@ -96,6 +112,11 @@ namespace Columbus
 			//COLUMBUS_ASSERT_MESSAGE(Index < 4, "Matrix::GetColumn(): Index >= 4")
 
 			return Vector4(M[0][Index], M[1][Index], M[2][Index], M[3][Index]);
+		}
+
+		Vector3 ExtractTranslate() const
+		{
+			return Vector3(M[0][3], M[1][3], M[2][3]);
 		}
 		
 		void Elements(float* Elems) const
@@ -234,6 +255,35 @@ namespace Columbus
 		Matrix& Invert()
 		{
 			return *this = GetInverted();
+		}
+
+		// normalises basis, but leaves homogenous translation as is
+		Matrix& OrthoNormalise()
+		{
+			SetColumn(0, GetColumn(0).Normalized());
+			SetColumn(1, GetColumn(1).Normalized());
+			SetColumn(2, GetColumn(2).Normalized());
+
+			return *this;
+		}
+
+		void DecomposeTransform(Vector3& OutTranslation, Vector3& OutEulerRotationDegrees, Vector3& OutScale) const
+		{
+			Matrix Tmp = *this;
+
+			// scale is a length of basis vectors
+			OutScale.X = Tmp.GetColumn(0).XYZ().Length();
+			OutScale.Y = Tmp.GetColumn(1).XYZ().Length();
+			OutScale.Z = Tmp.GetColumn(2).XYZ().Length();
+
+			Tmp.OrthoNormalise();
+
+			OutEulerRotationDegrees.X = Math::Degrees(atan2f(Tmp.M[1][2], Tmp.M[2][2]));
+			OutEulerRotationDegrees.Y = Math::Degrees(atan2f(-Tmp.M[0][2], sqrtf(Tmp.M[1][2] * Tmp.M[1][2] + Tmp.M[2][2] * Tmp.M[2][2])));
+			OutEulerRotationDegrees.Z = Math::Degrees(atan2f(Tmp.M[0][1], Tmp.M[0][0]));
+
+			// homogenous translation
+			OutTranslation = Tmp.GetColumn(3).XYZ();
 		}
 		
 		inline Matrix& Translate(const Vector3& Position)
@@ -420,15 +470,15 @@ namespace Columbus
 		
 		Vector4 operator*(const Vector4& Other) const
 		{
-			static float Result[4];
+			float Result[4];
 
 			for (uint32 X = 0; X < 4; X++)
 			{
 				Result[X] = 0.0f;
-				Result[X] += M[0][X] * Other.X;
-				Result[X] += M[1][X] * Other.Y;
-				Result[X] += M[2][X] * Other.Z;
-				Result[X] += M[3][X] * Other.W;
+				Result[X] += M[X][0] * Other.X;
+				Result[X] += M[X][1] * Other.Y;
+				Result[X] += M[X][2] * Other.Z;
+				Result[X] += M[X][3] * Other.W;
 			}
 
 			return Vector4(Result[0], Result[1], Result[2], Result[3]);
@@ -436,15 +486,15 @@ namespace Columbus
 
 		friend Vector4 operator*(const Vector4& Left, const Matrix& Right)
 		{
-			static float Result[4];
+			float Result[4];
 
 			for (uint32 X = 0; X < 4; X++)
 			{
 				Result[X] = 0.0f;
-				Result[X] += Left.X * Right.M[X][0];
-				Result[X] += Left.Y * Right.M[X][1];
-				Result[X] += Left.Z * Right.M[X][2];
-				Result[X] += Left.W * Right.M[X][3];
+				Result[X] += Left.X * Right.M[0][X];
+				Result[X] += Left.Y * Right.M[1][X];
+				Result[X] += Left.Z * Right.M[2][X];
+				Result[X] += Left.W * Right.M[3][X];
 			}
 
 			return Vector4(Result[0], Result[1], Result[2], Result[3]);

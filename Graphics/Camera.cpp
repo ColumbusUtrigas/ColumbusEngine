@@ -82,7 +82,7 @@ namespace Columbus
 	{
 		Vector4 MouseVector(NDC, -1, 1);
 		Matrix InvVP = ViewProjection.GetInverted();
-		return (InvVP * MouseVector).XYZ() - Pos;
+		return (MouseVector * InvVP).XYZ() - Pos;
 	}
 	
 	Camera::~Camera() {}

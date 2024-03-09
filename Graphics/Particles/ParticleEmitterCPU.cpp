@@ -89,7 +89,7 @@ namespace Columbus
 				for (size_t j = 0; j < 4; j++)
 				{
 					Particles.Positions[id + j] += Particles.Velocities[id + j] * TimeTick;
-					Particles.Distances[id + j] = Particles.Positions[id + j].LengthSquare(CameraPosition);
+					Particles.Distances[id + j] = Particles.Positions[id + j].DistanceSquare(CameraPosition);
 				}
 			}
 		#else //SIMD instructions disabled
@@ -98,7 +98,7 @@ namespace Columbus
 				Particles.Ages[i] += TimeTick;
 				Particles.Positions[i] += Particles.Velocities[i] * TimeTick;
 				Particles.Percents[i] = Particles.Ages[i] / Particles.Lifetimes[i];
-				Particles.Distances[i] = Particles.Positions[i].LengthSquare(CameraPosition);
+				Particles.Distances[i] = Particles.Positions[i].DistanceSquare(CameraPosition);
 			}
 		#endif
 

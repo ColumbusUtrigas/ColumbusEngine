@@ -7,7 +7,7 @@ namespace Columbus::Geometry
 	// Triangle functions
 	float Triangle::Area() const
 	{
-		return Vector3::Cross(B - A, C - A).Length({}) / 2;
+		return Vector3::Cross(B - A, C - A).Length() / 2;
 	}
 
 	Vector3 Triangle::Center() const

@@ -7,6 +7,7 @@
 namespace Columbus
 {
 
+	// axis-aligned bounding box
 	class Box
 	{
 	public:
@@ -15,6 +16,12 @@ namespace Columbus
 	public:
 		Box() : Min(0), Max(0) {}
 		Box(const Vector3& InMin, const Vector3& InMax) : Min(InMin), Max(InMax) {}
+
+		Vector3 CalcCenter() const { return (Min + Max) / 2; }
+		Vector3 CalcSize() const { return (Max - Min); }
+
+		// calculates AABB of a transformed box
+		Box CalcTransformedBox(const Matrix& Transformation) const;
 
 		Box operator+(const Vector3& Other) const
 		{
@@ -31,6 +38,7 @@ namespace Columbus
 			return Box((Vector4(Min, 1) * Other).XYZ(), (Vector4(Max, 1) * Other).XYZ());
 		}
 
+		// TODO: move to Geometry?
 		bool Intersects(const Vector3& Origin, const Vector3& Direction)
 		{
 			float tmin = (Min.X - Origin.X) / Direction.X;
@@ -73,5 +81,3 @@ namespace Columbus
 	};
 
 }
-
-

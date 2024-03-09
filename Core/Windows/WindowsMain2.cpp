@@ -53,6 +53,7 @@ using namespace Columbus;
 
 ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 0", 0);
 ConsoleVariable<float> CVar_CameraSpeed("CameraSpeed", "", 10);
+ConsoleVariable<bool> CVar_Boundings("ShowBoundingBoxes", "", false);
 
 DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
 DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
@@ -358,7 +359,7 @@ int main()
 		World.UpdateTransforms();
 
 		// mouse picking
-		if (bViewportHover && false)
+		if (bViewportHover && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)))
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			Vector2 MousePos = ViewportMousePos;
@@ -371,6 +372,24 @@ int main()
 				Geometry::Triangle Tri = Intersection.Triangle;
 				Vector3 triOffset = Tri.Normal() * 0.01f;
 				World.MainView.DebugRender.AddTri(Tri.A + triOffset, Tri.B + triOffset, Tri.C + triOffset, { 1, 0, 0, 1 });
+			}
+		}
+
+		if (CVar_Boundings.GetValue())
+		{
+			for (int i = 0; i < (int)World.SceneGPU->Meshes.size(); i++)
+			{
+				const GPUSceneMesh& Mesh = World.SceneGPU->Meshes[i];
+				const Box& Bounding = World.MeshBoundingBoxes[i];
+				const Vector3 Center = Bounding.CalcCenter();
+				const Vector3 Extent = Bounding.CalcSize();
+
+				Matrix Transform;
+				Transform.Scale(Extent);
+				Transform.Translate(Center);
+				Transform = Mesh.Transform * Transform;
+
+				World.MainView.DebugRender.AddBox(Transform, Vector4(0, 0.3f, 0, 0.3f));
 			}
 		}
 

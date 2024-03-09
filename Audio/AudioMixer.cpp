@@ -13,7 +13,7 @@ namespace Columbus
 
 		if (Source->SoundMode == AudioSource::Mode::Sound3D)
 		{
-			float Distance = Math::Max(0.000001f, Source->Position.Length(Listener));
+			float Distance = Math::Max(0.000001f, Source->Position.Distance(Listener));
 			float MinDist = Source->MinDistance;
 			float MaxDist = Source->MaxDistance;
 			float Rolloff = Source->Rolloff;

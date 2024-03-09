@@ -44,14 +44,14 @@ namespace Columbus
 		std::vector<WorldIntersectionResult> HitPoints;
 
 		// TODO: BVH/octree search
-		// TODO: apply transformations
 		for (int i = 0; i < MeshBoundingBoxes.size(); i++)
 		{
+			CPUSceneMesh& Mesh = SceneCPU.Meshes[i];
+			Matrix& MeshTransform = SceneGPU->Meshes[i].Transform;
 			Box& Bounding = MeshBoundingBoxes[i];
 
-			if (Bounding.Intersects(Ray.Origin, Ray.Direction))
+			if (Bounding.CalcTransformedBox(MeshTransform).Intersects(Ray.Origin, Ray.Direction))
 			{
-				CPUSceneMesh& Mesh = SceneCPU.Meshes[i];
 				for (int v = 0; v < Mesh.Indices.size(); v += 3)
 				{
 					// extract triangle. TODO: mesh processing functions
@@ -60,9 +60,9 @@ namespace Columbus
 					u32 i3 = Mesh.Indices[v + 2];
 
 					Geometry::Triangle Tri{
-						Mesh.Vertices[i1],
-						Mesh.Vertices[i2],
-						Mesh.Vertices[i3],
+						(MeshTransform * Vector4(Mesh.Vertices[i1], 1)).XYZ(),
+						(MeshTransform * Vector4(Mesh.Vertices[i2], 1)).XYZ(),
+						(MeshTransform * Vector4(Mesh.Vertices[i3], 1)).XYZ(),
 					};
 
 					Geometry::HitPoint IntersectionPoint = Geometry::RayTriangleIntersection(Ray, Tri);
@@ -84,7 +84,7 @@ namespace Columbus
 
 		std::sort(HitPoints.begin(), HitPoints.end(), [Ray](const WorldIntersectionResult& L, const WorldIntersectionResult& R)
 		{
-			return L.IntersectionPoint.Length(Ray.Origin) < R.IntersectionPoint.Length(Ray.Origin);
+			return L.IntersectionPoint.DistanceSquare(Ray.Origin) < R.IntersectionPoint.DistanceSquare(Ray.Origin);
 		});
 
 		if (HitPoints.size() > 0)
@@ -320,33 +320,42 @@ namespace Columbus
 				tinygltf::Node& Node = model.nodes[i];
 				GameObject Object;
 
-				Matrix LocalTransform(1);
 				if (Node.matrix.size() > 0)
 				{
-					// TODO: support it
-					assert(false);
-					memcpy(LocalTransform.M, Node.matrix.data(), sizeof(float) * 16);
-					LocalTransform.Transpose();
+					Matrix LocalTransform(1);
+					// GLTF matrices are column-major
+					double* GltfMatrix = Node.matrix.data();
+					for (int i = 0; i < 4; i++)
+					{
+						Vector4 Column((float)GltfMatrix[i * 4 + 0], (float)GltfMatrix[i * 4 + 1], (float)GltfMatrix[i * 4 + 2], (float)GltfMatrix[i * 4 + 3]);
+						LocalTransform.SetColumn(i, Column);
+					}
+
+					Vector3 T, R, S;
+					LocalTransform.DecomposeTransform(T, R, S);
+
+					Object.Trans.Position = T;
+					Object.Trans.Rotation = Quaternion(R);
+					Object.Trans.Scale = S;
 				}
 				else
 				{
 					if (Node.scale.size() > 0)
 					{
-						LocalTransform.Scale(Vector3(Node.scale[0], Node.scale[1], Node.scale[2]));
 						Object.Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
 					}
 
 					if (Node.rotation.size() > 0)
 					{
-						Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
-						LocalTransform *= Quat.ToMatrix();
+						// negate imaginary components to rotate it into a proper basis
+						Quaternion Quat(-Node.rotation[0], -Node.rotation[1], -Node.rotation[2], Node.rotation[3]);
+						//Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
 
 						Object.Trans.Rotation = Quat;
 					}
 
 					if (Node.translation.size() > 0)
 					{
-						LocalTransform.Translate(Vector3(Node.translation[0], Node.translation[1], Node.translation[2]));
 						Object.Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
 					}
 				}
