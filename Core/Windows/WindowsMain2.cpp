@@ -372,6 +372,44 @@ int main()
 				Geometry::Triangle Tri = Intersection.Triangle;
 				Vector3 triOffset = Tri.Normal() * 0.01f;
 				World.MainView.DebugRender.AddTri(Tri.A + triOffset, Tri.B + triOffset, Tri.C + triOffset, { 1, 0, 0, 1 });
+
+				CPUSceneMesh& Mesh = World.SceneCPU.Meshes[Intersection.MeshId];
+
+				u32 Index1 = Mesh.Indices[Intersection.TriangleId * 3 + 0];
+				u32 Index2 = Mesh.Indices[Intersection.TriangleId * 3 + 1];
+				u32 Index3 = Mesh.Indices[Intersection.TriangleId * 3 + 2];
+
+				Vector3 Normal1 = Mesh.Normals[Index1];
+				Vector3 Normal2 = Mesh.Normals[Index2];
+				Vector3 Normal3 = Mesh.Normals[Index3];
+
+				float Length = 30;
+				float LineWidth = 2;
+
+				Vector3 BasisOffset = Tri.Normal() * LineWidth / 2;
+
+				// normals
+				World.MainView.DebugRender.AddLineFromTo(Tri.A + BasisOffset, Tri.A + BasisOffset + Normal1 * Length, LineWidth, Vector4(0, 0, 1, 1));
+				World.MainView.DebugRender.AddLineFromTo(Tri.B + BasisOffset, Tri.B + BasisOffset + Normal2 * Length, LineWidth, Vector4(0, 0, 1, 1));
+				World.MainView.DebugRender.AddLineFromTo(Tri.C + BasisOffset, Tri.C + BasisOffset + Normal3 * Length, LineWidth, Vector4(0, 0, 1, 1));
+
+				Vector3 Tangent1 = Mesh.Tangents[Index1].XYZ();
+				Vector3 Tangent2 = Mesh.Tangents[Index2].XYZ();
+				Vector3 Tangent3 = Mesh.Tangents[Index3].XYZ();
+
+				Vector3 Bitangent1 = Vector3::Cross(Tangent1, Normal1).Normalized() * Mesh.Tangents[Index1].W;
+				Vector3 Bitangent2 = Vector3::Cross(Tangent2, Normal2).Normalized() * Mesh.Tangents[Index2].W;
+				Vector3 Bitangent3 = Vector3::Cross(Tangent3, Normal3).Normalized() * Mesh.Tangents[Index3].W;
+
+				// tangents
+				World.MainView.DebugRender.AddLineFromTo(Tri.A + BasisOffset, Tri.A + BasisOffset + Tangent1 * Length, LineWidth, Vector4(1, 0, 0, 1));
+				World.MainView.DebugRender.AddLineFromTo(Tri.B + BasisOffset, Tri.B + BasisOffset + Tangent2 * Length, LineWidth, Vector4(1, 0, 0, 1));
+				World.MainView.DebugRender.AddLineFromTo(Tri.C + BasisOffset, Tri.C + BasisOffset + Tangent3 * Length, LineWidth, Vector4(1, 0, 0, 1));
+
+				// bitangents
+				World.MainView.DebugRender.AddLineFromTo(Tri.A + BasisOffset, Tri.A + BasisOffset + Bitangent1 * Length, LineWidth, Vector4(0, 1, 0, 1));
+				World.MainView.DebugRender.AddLineFromTo(Tri.B + BasisOffset, Tri.B + BasisOffset + Bitangent2 * Length, LineWidth, Vector4(0, 1, 0, 1));
+				World.MainView.DebugRender.AddLineFromTo(Tri.C + BasisOffset, Tri.C + BasisOffset + Bitangent3 * Length, LineWidth, Vector4(0, 1, 0, 1));
 			}
 		}
 

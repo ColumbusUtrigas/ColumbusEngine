@@ -58,7 +58,7 @@
 
 		BRDFData BRDF;
 		BRDF.N = N;
-		BRDF.V = normalize(WorldPosition - Parameters.CameraPosition.xyz);
+		BRDF.V = -normalize(WorldPosition - Parameters.CameraPosition.xyz);
 		BRDF.Albedo = Albedo;
 		BRDF.Roughness = RM.x;
 		BRDF.Metallic = RM.y;

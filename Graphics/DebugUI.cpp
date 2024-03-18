@@ -428,7 +428,14 @@ namespace Columbus::DebugUI
 				{
 					Material& Mat = World.SceneGPU->Materials[i];
 
+					ImGui::InputFloat4("Albedo Factor", (float*)&Mat.AlbedoFactor);
+					ImGui::InputFloat4("Emissive Factor", (float*)&Mat.EmissiveFactor);
+
 					ImGui::InputInt("Albedo", &Mat.AlbedoId);
+					ImGui::InputInt("Normal", &Mat.NormalId);
+					ImGui::InputInt("ORM", &Mat.OrmId);
+					ImGui::InputInt("Emissive", &Mat.EmissiveId);
+
 					ImGui::SliderFloat("Roughness", &Mat.Roughness, 0, 1);
 					ImGui::SliderFloat("Metallic", &Mat.Metallic, 0, 1);
 				}

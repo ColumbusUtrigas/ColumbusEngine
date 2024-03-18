@@ -5,7 +5,7 @@
 
 layout(push_constant) uniform Params
 {
-	mat4 M,VP,VPPrev;
+	mat4 M,VP,VPPrev; // TODO: remove that from here
 	uint ObjectId;
 } Parameters;
 
@@ -21,6 +21,8 @@ layout(push_constant) uniform Params
 
 	layout (location = 7) out uint OutLightmapId;
 
+	layout (location = 8) out mat3 TBN;
+
 	void main()
 	{
 		GPUSceneMeshCompact Mesh = GPUSceneMeshes.Meshes[Parameters.ObjectId];
@@ -28,6 +30,15 @@ layout(push_constant) uniform Params
 		// index is being read from index buffer by gl_VertexIndex
 		GPUScene_Vertex Vertex = GPUScene_FetchVertex(Parameters.ObjectId, gl_VertexIndex);
 
+		// TODO: precompute and store this matrix in the buffer
+		mat3 NormalMatrix = transpose(inverse(transpose(mat3(Mesh.Transform))));
+		vec3 Normal = normalize(NormalMatrix * Vertex.Normal);
+		vec3 Tangent = normalize(NormalMatrix * Vertex.TangentAndSign.xyz);
+		vec3 Bitangent = cross(Normal, Tangent) * Vertex.TangentAndSign.w;
+
+		TBN = mat3(Tangent, Bitangent, Normal);
+
+		// TODO: fucked up row/column major?
 		vec4 TransformedPos = vec4(Vertex.Position, 1) * Mesh.Transform;
 		OutWP = TransformedPos.xyz;
 		
@@ -37,7 +48,7 @@ layout(push_constant) uniform Params
 		OutClipspacePosPrev = ClipspacePosPrev;
 
 		gl_Position = ClipspacePos;
-		OutNormal = Vertex.Normal;
+		OutNormal = Normal;
 		OutUV = Vertex.UV;
 		OutUV2 = Vertex.UV2;
 		OutMaterialId = Mesh.MaterialId;
@@ -53,7 +64,7 @@ layout(push_constant) uniform Params
 	layout(location = 4) out vec2 RT4; // velocity
 	layout(location = 5) out vec3 RT5; // lightmap
 
-	layout (location = 0) in vec3 InNormal;
+	layout (location = 0) in vec3 InNormal; // TODO: don't need this anymore?
 	layout (location = 1) in vec2 InUV;
 	layout (location = 2) in vec2 InUV2;
 	layout (location = 3) in flat uint InMaterialId;
@@ -63,19 +74,22 @@ layout(push_constant) uniform Params
 
 	layout (location = 7) in flat uint InLightmapId;
 
+	layout (location = 8) in mat3 TBN;
+
 	void main()
 	{
 		vec3 LightmapColor = vec3(0);
 		if (InLightmapId != -1)
 		{
+			// TODO: bicubic lightmap sampling
 			LightmapColor = textureLod(Textures[InLightmapId], InUV2, 0.0f).rgb;
 		}
 
 		GPUMaterialSampledData Material = GPUScene_SampleMaterial(InMaterialId, InUV);
 
 		RT0 = Material.Albedo;
-		RT1 = InNormal;
-		RT2 = InWP;
+		RT1 = normalize(TBN * Material.Normal);
+		RT2 = InWP; // TODO: remove? reconstruct from screenpos and linear depth
 		RT3 = vec2(Material.Roughness, Material.Metallic);
 		RT4 = vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);
 		RT5 = LightmapColor;

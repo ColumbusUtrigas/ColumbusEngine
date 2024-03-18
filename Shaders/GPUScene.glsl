@@ -31,38 +31,50 @@ layout(buffer_reference, std430, buffer_reference_align = 4) buffer NormalsBuffe
 	float normals[];
 };
 
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer TangentsBufferPtr {
+	vec4 tangentsWithSign[];
+};
+
+// TODO: separate mesh and mesh instance?
 struct GPUSceneMeshCompact
 {
 	mat4 Transform; // 64
 
-	VertexBufferPtr  VertexBuffer; // 72
-	IndexBufferPtr   IndexBuffer;  // 80
-	UvsBufferPtr     Uv1Buffer;    // 88
-	UvsBufferPtr     Uv2Buffer;    // 96
-	NormalsBufferPtr NormalsBuffer; // 104
+	VertexBufferPtr   VertexBuffer; // 72
+	IndexBufferPtr    IndexBuffer;  // 80
+	UvsBufferPtr      Uv1Buffer;    // 88
+	UvsBufferPtr      Uv2Buffer;    // 96
+	NormalsBufferPtr  NormalsBuffer; // 104
+	TangentsBufferPtr TangentsBuffer; // 112
 
-	uint VertexCount; // 108
-	uint IndexCount;  // 112
+	uint VertexCount; // 116
+	uint IndexCount;  // 120
 
-	int MaterialId;  // 116
-	int LightmapId; // 120
-
-	int _pad[2]; // 128
+	int MaterialId;  // 124
+	int LightmapId; // 128
 };
 
 struct GPUSceneMaterialCompact
 {
+	vec4 AlbedoFactor; // 16
+	vec4 EmissiveFactor; // 32
+
+	// textures
 	int AlbedoId;
+	int NormalId;
+	int OrmId;
+	int EmissiveId; // 48
 
-	float Roughness;
-	float Metallic;
+	float Roughness; // 52
+	float Metallic; // 56
 
-	int _pad; // 16
+	int _pad, _pad2; // 64
 };
 
 struct GPUMaterialSampledData
 {
 	vec3 Albedo;
+	vec3 Normal; // -1 to 1, tangent space
 	float Roughness;
 	float Metallic;
 };
@@ -130,6 +142,7 @@ struct GPUScene_Vertex
 {
 	vec3 Position;
 	vec3 Normal;
+	vec4 TangentAndSign;
 	vec2 UV;
 	vec2 UV2;
 	uint MaterialId;
@@ -158,6 +171,11 @@ vec3 GPUScene_FetchVertexNormalFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 	return normal;
 }
 
+vec4 GPUScene_FetchVertexTangentFromMesh(GPUSceneMeshCompact Mesh, uint Index)
+{
+	return Mesh.TangentsBuffer.tangentsWithSign[nonuniformEXT(Index)];
+}
+
 vec2 GPUScene_FetchVertexUVFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 {
 	return Mesh.Uv1Buffer.uvs[nonuniformEXT(Index)];
@@ -180,18 +198,37 @@ uint GPUScene_FetchVertexMaterialFromMesh(GPUSceneMeshCompact Mesh, uint Index)
 	return Mesh.MaterialId;
 }
 
-GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)
+GPUScene_Vertex GPUScene_FetchVertexByIndex(uint ObjectId, uint Index)
 {
-	uint index = GPUScene_FetchIndex(ObjectId, VertexIndex);
 	GPUSceneMeshCompact mesh = GPUSceneMeshes.Meshes[nonuniformEXT(ObjectId)];
 
 	GPUScene_Vertex vertex;
-	vertex.Position = GPUScene_FetchVertexPositionFromMesh(mesh, index);
-	vertex.Normal = GPUScene_FetchVertexNormalFromMesh(mesh, index);
-	vertex.UV = GPUScene_FetchVertexUVFromMesh(mesh, index);
-	vertex.UV2 = GPUScene_FetchVertexUV2FromMesh(mesh, index);
-	vertex.MaterialId = GPUScene_FetchVertexMaterialFromMesh(mesh, index);
+	vertex.Position = GPUScene_FetchVertexPositionFromMesh(mesh, Index);
+	vertex.Normal = GPUScene_FetchVertexNormalFromMesh(mesh, Index);
+	vertex.TangentAndSign = GPUScene_FetchVertexTangentFromMesh(mesh, Index);
+	vertex.UV = GPUScene_FetchVertexUVFromMesh(mesh, Index);
+	vertex.UV2 = GPUScene_FetchVertexUV2FromMesh(mesh, Index);
+	vertex.MaterialId = GPUScene_FetchVertexMaterialFromMesh(mesh, Index);
 	return vertex;
+}
+
+// reads index by VertexIndex
+GPUScene_Vertex GPUScene_FetchVertex(uint ObjectId, uint VertexIndex)
+{
+	uint index = GPUScene_FetchIndex(ObjectId, VertexIndex);
+	return GPUScene_FetchVertexByIndex(ObjectId, index);
+}
+
+vec4 SampleTextureWithDefault(int TextureId, vec2 UV, vec4 Default)
+{
+	if (TextureId != -1)
+	{
+		return textureLod(Textures[nonuniformEXT(TextureId)], UV, 0.0f);
+	}
+	else
+	{
+		return Default;
+	}
 }
 
 GPUMaterialSampledData GPUScene_SampleMaterial(uint MaterialId, vec2 UV)
@@ -202,21 +239,20 @@ GPUMaterialSampledData GPUScene_SampleMaterial(uint MaterialId, vec2 UV)
 	{
 		GPUSceneMaterialCompact Material = GPUSceneMaterials.Materials[nonuniformEXT(MaterialId)];
 
-		if (Material.AlbedoId != -1)
-		{
-			Result.Albedo = textureLod(Textures[nonuniformEXT(Material.AlbedoId)], UV, 0.0f).rgb;
-		}
-		else
-		{
-			Result.Albedo = vec3(1);
-		}
+		// TODO: proper LOD selection
 
-		Result.Roughness = Material.Roughness;
-		Result.Metallic = Material.Metallic;
+		Result.Albedo = SampleTextureWithDefault(Material.AlbedoId, UV, vec4(1)).rgb * Material.AlbedoFactor.rgb;
+		Result.Normal = SampleTextureWithDefault(Material.NormalId, UV, vec4(0, 0, 1, 0)).rgb;
+
+		vec3 ORM = SampleTextureWithDefault(Material.OrmId, UV, vec4(1, Material.Roughness, Material.Metallic, 1)).rgb;
+
+		Result.Roughness = ORM.g;
+		Result.Metallic = ORM.b;
 	}
 	else
 	{
 		Result.Albedo = vec3(1);
+		Result.Normal = vec3(0, 0, 1);
 		Result.Roughness = 1;
 		Result.Metallic = 0;
 	}

@@ -267,6 +267,23 @@ namespace Columbus
 			return *this;
 		}
 
+		// input must be normalised, input vector will become Y
+		Matrix& OrthoNormalBasisFromVector(const Vector3& Vec)
+		{
+			// Using right-hand coord
+			const Vector3 up = fabs(Vec.Y) < 0.999 ? Vector3(0, 1, 0) : Vector3(1, 0, 0);
+			const Vector3 xAxis = Vector3::Cross(up, Vec).Normalized();
+			const Vector3 yAxis = Vec;
+			const Vector3 zAxis = Vector3::Cross(Vec, xAxis);
+
+			SetColumn(0, Vector4(xAxis, 0));
+			SetColumn(1, Vector4(yAxis, 0));
+			SetColumn(2, Vector4(zAxis, 0));
+			SetColumn(3, Vector4(0, 0, 0, 1));
+
+			return *this;
+		}
+
 		void DecomposeTransform(Vector3& OutTranslation, Vector3& OutEulerRotationDegrees, Vector3& OutScale) const
 		{
 			Matrix Tmp = *this;

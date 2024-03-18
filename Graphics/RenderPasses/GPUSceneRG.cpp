@@ -54,6 +54,7 @@ namespace Columbus
 						.Uv1BufferAddress = Mesh.UV1->GetDeviceAddress(),
 						.Uv2BufferAddress = Mesh.UV2 ? Mesh.UV2->GetDeviceAddress() : 0,
 						.NormalsBufferAddress = Mesh.Normals->GetDeviceAddress(),
+						.TangentsBufferAddress = Mesh.Tangents->GetDeviceAddress(),
 						.VertexCount = Mesh.VertexCount,
 						.IndexCount = Mesh.IndicesCount,
 						.MaterialId = Mesh.MaterialId,
@@ -77,7 +78,12 @@ namespace Columbus
 				{
 					Material& Mat = Context.Scene->Materials[i];
 					GPUMaterialCompact Compact{
+						.AlbedoFactor = Mat.AlbedoFactor,
+						.EmissiveFactor = Mat.EmissiveFactor,
 						.AlbedoId = Mat.AlbedoId,
+						.NormalId = Mat.NormalId,
+						.OrmID = Mat.OrmId,
+						.EmissiveId = Mat.EmissiveId,
 						.Roughness = Mat.Roughness,
 						.Metallic = Mat.Metallic,
 					};

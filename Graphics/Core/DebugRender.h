@@ -66,6 +66,25 @@ namespace Columbus
 			Objects.push_back(Object);
 		}
 
+		// a box between From and To, Width is in world units
+		void AddLineFromTo(const Vector3& From, const Vector3& To, float Width, const Vector4& Colour, bool ZTest = true)
+		{
+			float Dist = From.Distance(To);
+			Vector3 Center = (From + To) / 2;
+
+			Vector3 Direction = (To - From).Normalized();
+
+			Matrix Rot;
+			Rot.OrthoNormalBasisFromVector(Direction);
+
+			Matrix Transform;
+			Transform.Scale(Vector3(Width, Dist, Width));
+			Transform = Rot * Transform;
+			Transform.Translate(Center);
+
+			AddBox(Transform, Colour, ZTest);
+		}
+
 		void AddTri(const Vector3& A, const Vector3& B, const Vector3& C, const Vector4& Colour, bool ZTest = true)
 		{
 			DebugRenderObject Object {

@@ -267,7 +267,7 @@ namespace Columbus
 
 		std::unordered_map<int, int> LoadedTextures;
 
-		auto CreateTexture = [Scene, Device, &model, &LoadedTextures](int textureId, const char* name) -> int
+		auto CreateTexture = [Scene, Device, &model, &LoadedTextures](int textureId, const char* name, bool srgb) -> int
 		{
 			if (LoadedTextures.contains(textureId))
 			{
@@ -279,21 +279,39 @@ namespace Columbus
 			auto& image = model.images[textureId];
 			TextureFormat format = (TextureFormat)image.pixel_type;
 
+			u64 TextureDataSize = image.image.size();
+			u8* TextureData = image.image.data();
+			UPtr<u8> ConvertedData;
+
 			// TODO: proper mechanism
-			if (format == TextureFormat::RGBA8)
+			if (format == TextureFormat::RGBA8 && srgb)
 				format = TextureFormat::RGBA8SRGB;
 
-			// TODO: WTF
-			// TODO: GPUs don't really support RGB8, make a layer to convert it to RGBA8 instead
+			// TODO: GPUs don't really support RGB8, make a layer somewhere to convert it to RGBA8 instead
 			if (format == TextureFormat::RGB8)
-				format = TextureFormat::RGB8SRGB;
+			{
+				TextureDataSize = image.width * image.height * 4;
+				ConvertedData = UPtr<u8>(new u8[TextureDataSize]); // TODO: how to manage allocations in the loading system properly?
+
+				for (u64 pixel = 0; pixel < image.width * image.height; pixel++)
+				{
+					ConvertedData.get()[pixel * 4 + 0] = TextureData[pixel * 3 + 0];
+					ConvertedData.get()[pixel * 4 + 1] = TextureData[pixel * 3 + 1];
+					ConvertedData.get()[pixel * 4 + 2] = TextureData[pixel * 3 + 2];
+					ConvertedData.get()[pixel * 4 + 3] = 255; // alpha to 1
+				}
+
+				TextureData = ConvertedData.get();
+
+				format = srgb ? TextureFormat::RGBA8SRGB : TextureFormat::RGBA8;
+			}
 
 			Image img;
 			img.Format = format;
 			img.Width = image.width;
 			img.Height = image.height;
-			img.Size = image.image.size();
-			img.Data = image.image.data();
+			img.Size = TextureDataSize;
+			img.Data = TextureData;
 			img.MipMaps = 1;
 
 			Texture2* tex = Device->CreateTexture(img);
@@ -390,8 +408,30 @@ namespace Columbus
 				int AlbedoId = Mat.pbrMetallicRoughness.baseColorTexture.index;
 				if (AlbedoId != -1)
 				{
-					Result.AlbedoId = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str());
+					Result.AlbedoId = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str(), true);
 				}
+
+				int NormalId = Mat.normalTexture.index;
+				if (NormalId != -1)
+				{
+					Result.NormalId = CreateTexture(model.textures[NormalId].source, model.textures[NormalId].name.c_str(), false);
+				}
+
+				int RoughnessMetallicId = Mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+				if (RoughnessMetallicId != -1)
+				{
+					// TODO: convert separate Occlusion texture into ORM
+					Result.OrmId = CreateTexture(model.textures[RoughnessMetallicId].source, model.textures[RoughnessMetallicId].name.c_str(), false);
+				}
+
+				int EmissiveId = Mat.emissiveTexture.index;
+				if (EmissiveId != -1)
+				{
+					Result.EmissiveId = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), false);
+				}
+
+				Result.AlbedoFactor = Vector4(Mat.pbrMetallicRoughness.baseColorFactor[0], Mat.pbrMetallicRoughness.baseColorFactor[1], Mat.pbrMetallicRoughness.baseColorFactor[2], Mat.pbrMetallicRoughness.baseColorFactor[3]);
+				Result.EmissiveFactor = Vector4(Mat.emissiveFactor[0], Mat.emissiveFactor[1], Mat.emissiveFactor[2], 1);
 
 				// TODO:
 				Result.Roughness = 1;
@@ -416,6 +456,7 @@ namespace Columbus
 				Buffer* vertexBuffer = nullptr;
 				Buffer* uvBuffer = nullptr;
 				Buffer* normalBuffer = nullptr;
+				Buffer* tangentBuffer = nullptr;
 				Buffer* materialBuffer = nullptr;
 
 				Vector3 MinVertex(FLT_MAX);
@@ -526,6 +567,12 @@ namespace Columbus
 					}
 				}
 
+				{
+					cpuMesh.CalculateTangents();
+					tangentBuffer = CreateMeshBuffer(Device, cpuMesh.Tangents.size() * sizeof(Vector4), true, cpuMesh.Tangents.data());
+					Device->SetDebugName(tangentBuffer, (mesh.name + " (Tangents)").c_str());
+				}
+
 				Columbus::AccelerationStructureDesc blasDesc;
 				blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
 				blasDesc.Vertices = vertexBuffer;
@@ -552,6 +599,7 @@ namespace Columbus
 				Mesh.Indices = indexBuffer;
 				Mesh.UV1 = uvBuffer;
 				Mesh.Normals = normalBuffer;
+				Mesh.Tangents = tangentBuffer;
 				Mesh.VertexCount = verticesCount;
 				Mesh.IndicesCount = indicesCount;
 				Mesh.MaterialId = MaterialId;

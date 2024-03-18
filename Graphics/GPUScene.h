@@ -30,6 +30,7 @@ namespace Columbus
 		Buffer* UV1;
 		Buffer* UV2 = nullptr;
 		Buffer* Normals;
+		Buffer* Tangents;
 		u32 VertexCount;
 		u32 IndicesCount;
 
@@ -68,14 +69,15 @@ namespace Columbus
 		u64 Uv1BufferAddress;
 		u64 Uv2BufferAddress;
 		u64 NormalsBufferAddress;
+		u64 TangentsBufferAddress;
 
 		u32 VertexCount;
 		u32 IndexCount;
 
 		int MaterialId;
 		int LightmapId;
-		
-		int _pad[2]; // 128
+
+		// 128
 	};
 
 	struct GPULight
@@ -101,12 +103,18 @@ namespace Columbus
 
 	struct GPUMaterialCompact
 	{
+		Vector4 AlbedoFactor;
+		Vector4 EmissiveFactor;
+
 		int AlbedoId;
+		int NormalId;
+		int OrmID;
+		int EmissiveId;
 
 		float Roughness;
 		float Metallic;
 
-		int _Pad; // 16
+		int _pad[2];
 	};
 
 	// to be uploaded to the GPU
