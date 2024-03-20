@@ -86,7 +86,7 @@ vec3 EvaluateBRDF(BRDFData Data, vec3 Sample)
 
 	// vec3 DiffuseBRDF = LambertDiffuseBRDF(Data.Albedo) * clamp(dot(L, N), 0, 1); // * AO
 	// vec3 DiffuseBRDF = LambertDiffuseBRDF(vec3(1)) * clamp(dot(L, N), 0, 1); // * AO
-	vec3 DiffuseBRDF = LambertDiffuseBRDF(vec3(1)); // * AO
+	vec3 DiffuseBRDF = LambertDiffuseBRDF(Data.Albedo); // * AO
 	vec3 SpecularBRDF = CookTorranceSpecularBRDF(N, L, H, F, NdotV, Roughness);
 	float DiffuseFactor = 1.0 - Metallic;
 

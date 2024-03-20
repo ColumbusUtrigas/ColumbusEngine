@@ -33,5 +33,6 @@
 
 		payload.colorAndDist = vec4(Material.Albedo, gl_HitTEXT);
 		payload.normalAndObjId = vec4(normal, gl_InstanceCustomIndexEXT);
+		payload.RoughnessMetallic = vec2(Material.Roughness, Material.Metallic);
 	}
 #endif

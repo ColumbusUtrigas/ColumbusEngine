@@ -23,6 +23,8 @@ THE SOFTWARE.
 #ifndef FFX_DNSR_SHADOWS_TILECLASSIFICATION_HLSL
 #define FFX_DNSR_SHADOWS_TILECLASSIFICATION_HLSL
 
+#pragma pack_matrix(row_major)
+
 #include "DenoiserShadowsUtil.hlsli"
 
 // begin user code

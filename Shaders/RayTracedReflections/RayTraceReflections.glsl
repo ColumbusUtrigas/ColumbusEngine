@@ -5,6 +5,7 @@
 struct RayPayload {
 	vec4 colorAndDist;
 	vec4 normalAndObjId;
+	vec2 RoughnessMetallic;
 };
 
 #ifdef RAYGEN_SHADER
@@ -13,10 +14,11 @@ struct RayPayload {
 
 	layout(binding = 0, set = 2) uniform accelerationStructureEXT acc; // TODO:
 	layout(binding = 1, set = 2, rgba16f) uniform image2D ResultReflections;
-	layout(binding = 2, set = 2) uniform sampler2D GBufferNormals;
-	layout(binding = 3, set = 2) uniform sampler2D GBufferWorldPosition;
-	layout(binding = 4, set = 2) uniform sampler2D GBufferRoughnessMetallic;
-	layout(binding = 5, set = 2) uniform sampler2D GBufferDepth;
+	layout(binding = 2, set = 2) uniform sampler2D GBufferAlbedo;
+	layout(binding = 3, set = 2) uniform sampler2D GBufferNormals;
+	layout(binding = 4, set = 2) uniform sampler2D GBufferWorldPosition;
+	layout(binding = 5, set = 2) uniform sampler2D GBufferRoughnessMetallic;
+	layout(binding = 6, set = 2) uniform sampler2D GBufferDepth;
 	
 	#include "../GPUScene.glsl" // TODO:
 	#include "../BRDF.glsl"
@@ -48,13 +50,15 @@ struct RayPayload {
 		vec3 Origin = texture(GBufferWorldPosition, uv).xyz;
 		vec3 Normal = texture(GBufferNormals, uv).xyz;
 		vec3 Direction = normalize(Origin - Params.CameraPosition.xyz);
+		vec3 Albedo = texture(GBufferAlbedo, uv).rgb;
+		vec2 RM = texture(GBufferRoughnessMetallic, uv).xy;
 
 		BRDFData BRDF;
 		BRDF.N = Normal;
 		BRDF.V = -Direction;
-		BRDF.Albedo = vec3(1); // TODO: remove?
-		BRDF.Roughness = 0.3; // TODO: materials
-		BRDF.Metallic = 0.0; // TODO: materials
+		BRDF.Albedo = Albedo;
+		BRDF.Roughness = RM.r;
+		BRDF.Metallic = RM.g;
 
 		Direction = reflect(Direction, Normal);
 		Direction = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, Direction, UniformDistrubition2d(RngState));

@@ -23,8 +23,8 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 		BRDF.N = normalize(normal);
 		BRDF.V = -direction;
 		BRDF.Albedo = surfaceColor;
-		BRDF.Roughness = 0.5;
-		BRDF.Metallic = 1.0;
+		BRDF.Roughness = payload.RoughnessMetallic.x;
+		BRDF.Metallic = payload.RoughnessMetallic.y;
 
 		// next event estimation
 		for (uint i = 0; i < GPUScene_GetLightsCount(); i++)
@@ -55,7 +55,8 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 		
 		// TODO: account for ray losing energy?
 
-		return AccumulatedLight * surfaceColor;
+		// return AccumulatedLight * surfaceColor;
+		return AccumulatedLight;
 	}
 	else // sky
 	{
@@ -79,8 +80,8 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 		BRDF.N = normalize(Normal);
 		BRDF.V = -Direction;
 		BRDF.Albedo = SurfaceColor;
-		BRDF.Roughness = 0.3;
-		BRDF.Metallic = 0.0;
+		BRDF.Roughness = payload.RoughnessMetallic.x;
+		BRDF.Metallic = payload.RoughnessMetallic.y;
 
 		vec3 BounceSurfaceColor = vec3(0);
 		// Direction = RandomDirectionHemisphere(RngState, Normal);

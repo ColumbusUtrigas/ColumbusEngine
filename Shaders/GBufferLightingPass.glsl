@@ -92,13 +92,16 @@
 			BRDF.L = LightDir;
 
 			// vec3 LightValue = Albedo * Shadow * Attenuation * Light.Color.rgb;
-			vec3 LightValue = vec3(max(dot(N, LightDir), 0)) * Albedo * Shadow * Attenuation * Light.Color.rgb;
+			// vec3 LightValue = vec3(max(dot(N, LightDir), 0)) * Albedo * Shadow * Attenuation * Light.Color.rgb;
+			vec3 LightValue = vec3(max(dot(N, LightDir), 0)) * Shadow * Attenuation * Light.Color.rgb;
 
 			// LightingSum += LightValue;
 			LightingSum += EvaluateBRDF(BRDF, LightValue);
 		}
 
-		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
+		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb * Albedo;
+
+		// LightingSum = vec3(BRDFCalcPDF(BRDF));
 
 		imageStore(LightingOutput, ivec2(gl_GlobalInvocationID.xy), vec4(LightingSum, 1));
 	}

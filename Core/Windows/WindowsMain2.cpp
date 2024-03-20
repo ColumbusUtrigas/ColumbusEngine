@@ -277,7 +277,7 @@ int main()
 		timer.Reset();
 
 		// TODO:
-		camera.Perspective(45, (float)World.MainView.OutputSize.X / (float)World.MainView.OutputSize.Y, 1.f, 5000.f);
+		camera.Perspective(45, (float)World.MainView.OutputSize.X / (float)World.MainView.OutputSize.Y, 0.1f, 5000.f);
 		camera.Update();
 		World.MainView.CameraCur = camera;
 

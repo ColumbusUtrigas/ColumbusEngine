@@ -183,7 +183,7 @@ namespace Columbus
 				RTShadowDenoiserTileClassificationParams Params {
 					.InvViewProjectionMatrix = InvViewProjection,
 					.InvProjectionMatrix = InvProjection,
-					.ReprojectionMatrix = View.CameraPrev.GetViewProjection() * InvViewProjection,
+					.ReprojectionMatrix = InvViewProjection * View.CameraPrev.GetViewProjection(),
 					.CameraPosition = View.CameraCur.Pos,
 					.BufferDimensions = ShadowSize,
 					.PackedBufferDimensions = FilterTilesSize,
@@ -346,16 +346,16 @@ namespace Columbus
 				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 			});
 
+			if (Cvar_Denoiser.GetValue())
+			{
+				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow);
+			}
+
 			// TODO: improve that mechanism
 			GPULightRenderInfo LightInfo {
 				.RTShadow = RTShadow
 			};
 			DeferredContext.LightRenderInfos.push_back(LightInfo);
-
-			if (Cvar_Denoiser.GetValue())
-			{
-				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow);
-			}
 		}
 	}
 
