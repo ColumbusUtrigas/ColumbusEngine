@@ -67,6 +67,72 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 
 vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 {
+	vec3 PathRadiance = vec3(0);
+	vec3 PathAttenuation = vec3(1);
+	BRDFData BRDF;
+
+	// always at least one ray
+	for (int i = 0; i <= MaxBounces; i++)
+	{
+		traceRayEXT(acc, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, Origin, 0, Direction, 5000, 0);
+
+		if (payload.colorAndDist.w > 0)
+		{
+			BRDF.Albedo = payload.colorAndDist.rgb;
+			BRDF.N = payload.normalAndObjId.xyz;
+			BRDF.V = -Direction;
+			BRDF.Roughness = payload.RoughnessMetallic.x;
+			BRDF.Metallic = payload.RoughnessMetallic.y;
+
+			vec3 HitPoint = payload.colorAndDist.w * Direction + Origin;
+			Origin = HitPoint + BRDF.N * 0.001;
+
+			// next event estimation
+			for (uint l = 0; l < GPUScene_GetLightsCount(); l++)
+			{
+				vec3 LightSample = vec3(0);
+
+				// TODO: get it from sample functions
+				BRDF.L = vec3(0); // light direction
+
+				vec2 Xi = UniformDistrubition2d(RngState);
+
+				GPULight Light = GPUSceneLights.Lights[l];
+				switch (Light.Type)
+				{
+				case GPULIGHT_DIRECTIONAL:
+					LightSample = SampleDirectionalLight(Light, Origin, BRDF.N, Xi);
+					BRDF.L = Light.Direction.xyz;
+					break;
+				case GPULIGHT_POINT:
+					LightSample = SamplePointLight(Light, Origin, BRDF.N, Xi);
+					// TODO: account for sphere light
+					BRDF.L = normalize(Light.Position.xyz - Origin);
+					break;
+				}
+
+				PathRadiance += EvaluateBRDF(BRDF, LightSample) * PathAttenuation;
+			}
+
+			// generate new ray for the next trace
+			Direction = reflect(Direction, BRDF.N);
+			Direction = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, Direction, UniformDistrubition2d(RngState));
+			BRDF.L = Direction;
+
+			PathAttenuation *= EvaluateBRDF(BRDF, vec3(1));
+		}
+		else // sky
+		{
+			PathRadiance += payload.colorAndDist.rgb * PathAttenuation;
+			break;
+		}
+	}
+
+	return PathRadiance;
+}
+
+vec3 PathTraceOld(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
+{
 	// First ray is always calculated
 	int HitSurface = 0;
 	vec3 SurfaceColor = vec3(0);
