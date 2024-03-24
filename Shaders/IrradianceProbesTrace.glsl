@@ -5,6 +5,7 @@
 struct RayPayload {
 	vec4 colorAndDist;
 	vec4 normalAndObjId;
+	vec2 RoughnessMetallic;
 };
 
 #ifdef RAYGEN_SHADER

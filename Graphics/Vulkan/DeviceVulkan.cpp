@@ -686,6 +686,9 @@ namespace Columbus
 		case TextureUsage::RenderTargetDepth:
 			newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			break;
+		case TextureUsage::StorageSampled | TextureUsage::RenderTargetColor:
+			newLayout = VK_IMAGE_LAYOUT_GENERAL;
+			break;
 		default: COLUMBUS_ASSERT(false);
 		};
 

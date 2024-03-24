@@ -9,11 +9,8 @@ struct RayPayload {
 #ifdef RAYGEN_SHADER
 	layout(location = 0) rayPayloadEXT RayPayload Payload;
 
+	#include "Common.glsl"
 	#include "GPUScene.glsl"
-
-	#define GOLDEN_RATIO 1.618033988749894
-	#define PI 3.14159265359
-	#define EPSILON 0.0001
 
 	layout(binding = 0, set = 2) uniform accelerationStructureEXT AccelerationStructure; // TODO
 	layout(binding = 1, set = 2, rgba16f) uniform image2D ShadowsBuffer;
@@ -23,7 +20,7 @@ struct RayPayload {
 
 	layout(push_constant) uniform params
 	{
-		float Random;
+		uint Random;
 		uint LightId;
 	} Params;
 
@@ -62,6 +59,7 @@ struct RayPayload {
 
 	void main()
 	{
+		const uvec2 pixel = gl_LaunchIDEXT.xy;
 		vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
 
 		float depth = texture(GBufferDepth, uv).x;
@@ -97,7 +95,9 @@ struct RayPayload {
 			default: break; // TODO: other light types
 		}
 
-		vec3 direction = SampleConeRay(LightDirection, LightRadius, vec2(rand(uv.xy + Params.Random), rand(uv.yx + Params.Random)));
+		uint RngState = hash(hash(pixel.x) + hash(pixel.y) + (Params.Random)); // Initial seed
+
+		vec3 direction = SampleConeRay(LightDirection, LightRadius, UniformDistrubition2d(RngState));
 		direction = normalize(direction);
 
 		traceRayEXT(AccelerationStructure, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,

@@ -1,6 +1,7 @@
 #include "BRDF.glsl"
 #include "Common.glsl"
 
+#if 0
 // TODO
 vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3 surfaceColor, out int hitSurface, inout uint rngState)
 {
@@ -64,6 +65,7 @@ vec3 calculateLight(inout vec3 origin, vec3 direction, out vec3 normal, out vec3
 		return payload.colorAndDist.rgb;
 	}
 }
+#endif
 
 vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 {
@@ -96,6 +98,7 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 				BRDF.L = vec3(0); // light direction
 
 				vec2 Xi = UniformDistrubition2d(RngState);
+				// TODO: light PDF, as every time we do a random decision, we need to weight it by it's probability
 
 				GPULight Light = GPUSceneLights.Lights[l];
 				switch (Light.Type)
@@ -111,19 +114,51 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 					break;
 				}
 
-				PathRadiance += EvaluateBRDF(BRDF, LightSample) * PathAttenuation;
+				PathRadiance += EvaluateBRDF(BRDF, vec3(1)) * LightSample * PathAttenuation;
 			}
 
+			// diffuse only
+			#if 1
+			{
+				BRDFSample Sample = SampleBRDF_GGX(BRDF, UniformDistrubition2d(RngState));
+				// BRDFSample Sample = SampleBRDF_Lambert(BRDF, UniformDistrubition2d(RngState));
+				BRDF.L = Sample.Dir;
+				Direction = Sample.Dir;
+
+				float NdotL = max(0, dot(BRDF.N, BRDF.L));
+
+				PathAttenuation *= EvaluateBRDF(BRDF, vec3(1)) * NdotL / Sample.Pdf;
+
+				// PathAttenuation *= LambertDiffuseBRDF(BRDF.Albedo) * NdotL / Sample.Pdf;
+			}
+			#endif
+
+			#if 0
 			// generate new ray for the next trace
-			Direction = reflect(Direction, BRDF.N);
-			Direction = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, Direction, UniformDistrubition2d(RngState));
+			// Direction = reflect(Direction, BRDF.N); // TODO: reflect from H?
+			vec3 R = reflect(Direction, BRDF.N); // TODO: reflect from H?
+			Direction = RandomDirectionHemisphere(UniformDistrubition2d(RngState), BRDF.N);
+
+			//vec3 H = normalize(-Direction + R);
+			//float D = DistributionGGX(BRDF.N, H, BRDF.Roughness);
+			//return vec3(D);
+
+			//const vec4 ImportanceSample = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, BRDF.V, UniformDistrubition2d(RngState));
+			//Direction = ImportanceSample.xyz;
+			//float PDF = ImportanceSample.w;
+
+			// Direction = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, Direction, UniformDistrubition2d(RngState));
 			BRDF.L = Direction;
 
 			PathAttenuation *= EvaluateBRDF(BRDF, vec3(1));
+			#endif
 		}
 		else // sky
 		{
-			PathRadiance += payload.colorAndDist.rgb * PathAttenuation;
+			// blender default sky is 0.051 gray
+			PathRadiance += vec3(0.051) * PathAttenuation;
+
+			// PathRadiance += payload.colorAndDist.rgb * PathAttenuation;
 			break;
 		}
 	}
@@ -131,6 +166,7 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 	return PathRadiance;
 }
 
+#if 0
 vec3 PathTraceOld(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 {
 	// First ray is always calculated
@@ -163,3 +199,4 @@ vec3 PathTraceOld(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngSta
 
 	return Color + BounceColor * SurfaceColor;
 }
+#endif

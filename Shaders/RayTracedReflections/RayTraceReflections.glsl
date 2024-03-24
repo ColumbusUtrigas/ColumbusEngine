@@ -45,7 +45,7 @@ struct RayPayload {
 			return;
 		}
 
-		uint RngState = gl_LaunchIDEXT.x * pixel.y + pixel.x * (Params.Random + 1);  // Initial seed
+		uint RngState = hash(hash(pixel.x) + hash(pixel.y) + (Params.Random)); // Initial seed
 
 		vec3 Origin = texture(GBufferWorldPosition, uv).xyz;
 		vec3 Normal = texture(GBufferNormals, uv).xyz;
@@ -60,22 +60,70 @@ struct RayPayload {
 		BRDF.Roughness = RM.r;
 		BRDF.Metallic = RM.g;
 
-		Direction = reflect(Direction, Normal);
-		Direction = RandomDirectionGGX(BRDF.Roughness*BRDF.Roughness, Direction, UniformDistrubition2d(RngState));
+		BRDFSample Sample = SampleBRDF_GGX(BRDF, UniformDistrubition2d(RngState));
+		// Direction = reflect(Direction, Normal);
+		Direction = Sample.Dir;
 		BRDF.L = Direction;
+
+		float NdotL = max(0, dot(BRDF.N, BRDF.L));
+		vec3 RayAttenuation = EvaluateBRDF(BRDF, vec3(1)) * NdotL / Sample.Pdf;
 
 		float MaxDistance = 5000; // TODO: make it a parameter
 
 		traceRayEXT(acc, gl_RayFlagsOpaqueEXT,
 			0xFF, 0, 0, 0, Origin, 0.01, Direction, MaxDistance, 0);
 
-		// TODO: evaluate lighting at the hit point
-		vec3 Sample = Payload.colorAndDist.rgb;
+		vec3 Radiance = vec3(0);
 
-		vec3 FinalResult = EvaluateBRDF(BRDF, Sample);
+		// evaluate lighting at the hit point
+		if (Payload.colorAndDist.w > 0)
+		{
+			BRDF.Albedo = Payload.colorAndDist.rgb;
+			BRDF.N = Payload.normalAndObjId.xyz;
+			BRDF.V = -Direction;
+			BRDF.Roughness = Payload.RoughnessMetallic.x;
+			BRDF.Metallic = Payload.RoughnessMetallic.y;
+
+			vec3 HitPoint = Payload.colorAndDist.w * Direction + Origin;
+			Origin = HitPoint + BRDF.N * 0.001;
+
+			// TODO: unify light calculation between different RT passes into a function
+			for (uint l = 0; l < GPUScene_GetLightsCount(); l++)
+			{
+				vec3 LightSample = vec3(0);
+
+				// TODO: get it from sample functions
+				BRDF.L = vec3(0); // light direction
+
+				vec2 Xi = UniformDistrubition2d(RngState);
+				// TODO: light PDF, as every time we do a random decision, we need to weight it by it's probability
+
+				GPULight Light = GPUSceneLights.Lights[l];
+				switch (Light.Type)
+				{
+				case GPULIGHT_DIRECTIONAL:
+					LightSample = SampleDirectionalLight(Light, Origin, BRDF.N, Xi);
+					BRDF.L = Light.Direction.xyz;
+					break;
+				case GPULIGHT_POINT:
+					LightSample = SamplePointLight(Light, Origin, BRDF.N, Xi);
+					// TODO: account for sphere light
+					BRDF.L = normalize(Light.Position.xyz - Origin);
+					break;
+				}
+
+				Radiance += EvaluateBRDF(BRDF, vec3(1)) * LightSample;
+			}
+		}
+		else
+		{
+			Radiance += Payload.colorAndDist.rgb;
+		}
+
+		vec3 FinalResult = Radiance * RayAttenuation;
 
 		imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(FinalResult, 1));
-		//imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(Direction, 1));
+		// imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(Direction, 1));
 	}
 #endif
 

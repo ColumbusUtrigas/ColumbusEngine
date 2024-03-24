@@ -1,4 +1,4 @@
-#include "Common/Image/Image.h"
+﻿#include "Common/Image/Image.h"
 #include "Common/Model/Model.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Editor/CommonUI.h"
@@ -155,7 +155,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMat
 // 		1. Path Tracer (reference)
 //			+ automatic buffer reset on camera move
 //			+ Bounces setting
-//			- BRDF and simple material declaration
+//			+ BRDF and simple material declaration
 //			- lightweight shadow rays
 //			- lights:
 //				+ point
@@ -183,6 +183,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMat
 //			- ray-traced translucency
 //          - DDGI
 //			- RT reflections (TODO: denoiser)
+//          - RTGI (first bounce, diffuse)
 //			- GI1.0
 //			- simple billboard particles render
 //			+ upscaling (FSR1)
@@ -195,6 +196,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMat
 //			- render image export from every stage of a graph (!!!)
 //			+ decals
 //			- subsurface scattering
+//          - material layers
 //			- IES light profiles
 //			+ shader include files
 //			+ fix descriptor set duplication

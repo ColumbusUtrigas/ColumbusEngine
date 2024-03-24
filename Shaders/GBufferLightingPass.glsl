@@ -89,6 +89,8 @@
 				break;
 			}
 
+			// Shadow = 1;
+
 			BRDF.L = LightDir;
 
 			// vec3 LightValue = Albedo * Shadow * Attenuation * Light.Color.rgb;
@@ -99,9 +101,7 @@
 			LightingSum += EvaluateBRDF(BRDF, LightValue);
 		}
 
-		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb * Albedo;
-
-		// LightingSum = vec3(BRDFCalcPDF(BRDF));
+		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
 
 		imageStore(LightingOutput, ivec2(gl_GlobalInvocationID.xy), vec4(LightingSum, 1));
 	}

@@ -205,7 +205,7 @@ namespace Columbus
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		TextureDesc2 Desc {
-			.Usage = TextureUsage::StorageSampled,
+			.Usage = TextureUsage::StorageSampled | TextureUsage::RenderTargetColor,
 			.Width = (uint32)View.RenderSize.X,
 			.Height = (uint32)View.RenderSize.Y,
 			.Format = TextureFormat::RGBA16F,
@@ -281,6 +281,40 @@ namespace Columbus
 		return LightingTexture;
 	}
 
+	void RenderDeferredSky(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext, RenderGraphTextureRef OverTexture)
+	{
+		RenderPassParameters Parameters;
+		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, OverTexture };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.ViewportSize = View.RenderSize;
+
+		RenderPassDependencies Dependencies(Graph.Allocator);
+
+		Graph.AddPass("Sky", RenderGraphPassType::Raster, Parameters, Dependencies, [View, OverTexture, Textures, &DeferredContext](RenderGraphContext& Context)
+		{
+			static GraphicsPipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				GraphicsPipelineDesc Desc;
+				Desc.Name = "Sky";
+				Desc.rasterizerState.Cull = CullMode::No;
+				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc(),
+				};
+
+				Desc.depthStencilState.DepthEnable = true;
+				Desc.depthStencilState.DepthWriteMask = false;
+				Desc.depthStencilState.DepthFunc = ComparisonFunc::LEqual;
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Sky.csd");
+
+				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+			}
+
+			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.CommandBuffer->Draw(3, 1, 0, 0);
+		});
+	}
+
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures)
 	{
 		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
@@ -336,6 +370,7 @@ namespace Columbus
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 		RenderIndirectLightingDDGI(Graph, View);
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
+		RenderDeferredSky(Graph, View, Textures, DeferredContext, LightingTexture);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
 		ScreenshotPass(Graph, View, View.ScreenshotHDR ? LightingTexture : TonemappedImage);
 

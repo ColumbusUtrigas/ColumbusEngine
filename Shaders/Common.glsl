@@ -1,6 +1,15 @@
 #ifndef COMMON_GLSL
 #define COMMON_GLSL
 
+#define GOLDEN_RATIO 1.618033988749894
+#define PI 3.14159265359
+#define TWO_PI 6.28318530718
+#define ONE_OVER_PI 0.318310
+#define EPSILON 0.0001
+
+#define saturate(x) clamp(x, 0, 1)
+#define lerp(x, y, s) mix(x, y, s)
+
 // Math
 
 mat3 ComputeTangentsFromVector(vec3 normal)
@@ -62,6 +71,7 @@ vec2 UniformDistrubition2d(inout uint rngState)
 
 // Sampling
 
+#ifdef GPUSCENE_GLSL
 vec3 SampleConeRay(vec3 Direction, float BaseRadius, vec2 Random)
 {
 	// generate points in circle
@@ -125,6 +135,7 @@ vec3 SamplePointLight(GPULight Light, vec3 origin, vec3 normal, vec2 Random)
 		return max(dot(normal, direction), 0) * attenuation * Light.Color.rgb;
 	}
 }
+#endif // GPUSCENE_GLSL
 
 vec3 RandomDirectionHemisphere(vec2 xi, vec3 normal)
 {
@@ -139,6 +150,27 @@ vec3 RandomDirectionHemisphere(vec2 xi, vec3 normal)
 	return normalize(direction);
 }
 
+// Samples a direction within a hemisphere oriented along +Z axis with a cosine-weighted distribution 
+// Source: "Sampling Transformations Zoo" in Ray Tracing Gems by Shirley et al.
+// https://github.com/boksajak/brdf/blob/master/brdf.h
+vec3 RandomDirectionHemisphereCosineLocal(vec2 u, out float pdf)
+{
+	float a = sqrt(u.x);
+	float b = TWO_PI * u.y;
+
+	vec3 result = vec3(a * cos(b), a * sin(b), sqrt(1.0f - u.x));
+
+	pdf = result.z * ONE_OVER_PI;
+
+	return result;
+}
+
+vec3 RandomDirectionHemisphereCosine(vec2 u, vec3 normal, out float pdf)
+{
+	vec3 localdir = RandomDirectionHemisphereCosineLocal(u, pdf);
+	return ComputeTangentsFromVector(normal) * localdir;
+}
+
 vec3 RandomDirectionSphere(vec2 xi)
 {
 	float phi   = 6.2831853 * xi.x; // Random in [0, 2pi]
@@ -149,25 +181,39 @@ vec3 RandomDirectionSphere(vec2 xi)
 	            cos(theta));
 }
 
+#if 0
 // Importance sampling
 
-vec3 RandomLocalDirecitonGGX(float a, vec2 xi)
+// PDF = D * NoH / (4 * VoH)
+// xyz - dir, w - PDF
+vec4 RandomLocalDirecitonGGX(float roughness, vec2 xi)
 {
+	roughness = clamp(roughness, 0.01, 1);
+
 	const float phi = 2.0 * PI * xi.x;
+	const float a2 = roughness*roughness;
+
+	xi.y = clamp(xi.y + 0.01, 0, 1);
 
 	// Only near the specular direction according to the roughness for importance sampling
-	const float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y));
+	const float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (a2 - 1.0) * xi.y));
 	const float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
-	return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+	float d = (cosTheta * a2 - cosTheta) * cosTheta + 1;
+	float D = a2 / (PI*d*d);
+	float PDF = D * cosTheta;
+
+	return vec4(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta, PDF);
 }
 
-vec3 RandomDirectionGGX(float a, vec3 normal, vec2 xi)
+vec4 RandomDirectionGGX(float roughness, vec3 normal, vec2 xi)
 {
-	const vec3 localDir = RandomLocalDirecitonGGX(a, xi);
+	const vec4 localSample = RandomLocalDirecitonGGX(roughness, xi);
+	const vec3 localDir = localSample.xyz;
 	const mat3 tanSpace = ComputeTangentsFromVector(normal);
 
-	return tanSpace[0] * localDir.x + tanSpace[1] * localDir.y + tanSpace[2] * localDir.z;
+	return vec4(tanSpace * localDir, localSample.w);
 }
+#endif
 
 #endif // COMMON_GLSL

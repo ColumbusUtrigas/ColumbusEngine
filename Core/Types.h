@@ -27,4 +27,9 @@ namespace Columbus
 	typedef float    f32;
 	typedef double   f64;
 
+	#define IMPLEMENT_ENUM_CLASS_BITOPS(type) \
+		inline constexpr bool operator!=(type x, u64 y) { return static_cast<u64>(x) != y; } \
+		inline constexpr type operator|(type x, type y) { return static_cast<type>(static_cast<u64>(x) | static_cast<u64>(y)); } \
+		inline constexpr type operator&(type x, type y) { return static_cast<type>(static_cast<u64>(x) & static_cast<u64>(y)); }
+
 }

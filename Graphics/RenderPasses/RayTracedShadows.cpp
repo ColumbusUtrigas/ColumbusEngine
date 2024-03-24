@@ -20,7 +20,7 @@ namespace Columbus
 
 	struct RTShadowParams
 	{
-		float Random;
+		u32 Random;
 		u32 LightId;
 	};
 
@@ -334,7 +334,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth);
 
 				RTShadowParams Params {
-					.Random = (rand() % 2000) / 2000.0f,
+					.Random = (u32)(rand() % 2000),
 					.LightId = (u32)i
 				};
 

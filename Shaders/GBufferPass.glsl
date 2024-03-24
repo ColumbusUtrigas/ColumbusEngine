@@ -88,7 +88,8 @@ layout(push_constant) uniform Params
 		GPUMaterialSampledData Material = GPUScene_SampleMaterial(InMaterialId, InUV);
 
 		RT0 = Material.Albedo;
-		RT1 = normalize(TBN * Material.Normal);
+		// RT1 = normalize(TBN * Material.Normal);
+		RT1 = normalize(InNormal);
 		RT2 = InWP; // TODO: remove? reconstruct from screenpos and linear depth
 		RT3 = vec2(Material.Roughness, Material.Metallic);
 		RT4 = vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);

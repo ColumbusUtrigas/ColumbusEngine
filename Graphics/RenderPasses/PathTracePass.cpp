@@ -97,7 +97,7 @@ namespace Columbus
 
 				PathTraceParameters rayParams = {
 					UpdatedCamera,
-					(int)rand() % 2000,
+					(int)rand() % 20000,
 					(int)frame++,
 					(int)reset,
 					CVar_Bounces.GetValue(),

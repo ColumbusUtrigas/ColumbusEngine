@@ -629,20 +629,24 @@ namespace Columbus
 		}
 
 		Scene->Lights.push_back(GPULight{ {}, {1,1,1,0}, {1,1,1,0}, LightType::Directional, 0, 0.1f });
-		Scene->Lights.push_back(GPULight{ {0,200,0,0}, {}, {50,0,0,0}, LightType::Point, 500, 0 });
 
+		if (0)
 		{
-			Image DecalImage;
-			if (!DecalImage.LoadFromFile("./Data/Textures/Detail.dds"))
+			Scene->Lights.push_back(GPULight{ {0,200,0,0}, {}, {50,0,0,0}, LightType::Point, 500, 0 });
+
 			{
-				Log::Error("Couldn't load decal image");
+				Image DecalImage;
+				if (!DecalImage.LoadFromFile("./Data/Textures/Detail.dds"))
+				{
+					Log::Error("Couldn't load decal image");
+				}
+
+				Texture2* DecalTexture = Device->CreateTexture(DecalImage);
+
+				Matrix Decal;
+				Decal.Scale({ 100 });
+				Scene->Decals.push_back(GPUDecal{ Decal, Decal.GetInverted(), DecalTexture });
 			}
-
-			Texture2* DecalTexture = Device->CreateTexture(DecalImage);
-
-			Matrix Decal;
-			Decal.Scale({ 100 });
-			Scene->Decals.push_back(GPUDecal{ Decal, Decal.GetInverted(), DecalTexture });
 		}
 
 		return Scene;

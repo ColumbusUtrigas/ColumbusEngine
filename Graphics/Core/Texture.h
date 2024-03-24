@@ -50,12 +50,14 @@ namespace Columbus
 
 	enum class TextureUsage
 	{
-		Sampled,
-		Storage,
-		StorageSampled,
-		RenderTargetColor,
-		RenderTargetDepth,
+		Sampled = 1,
+		Storage = 2,
+		RenderTargetColor = 4,
+		RenderTargetDepth = 8,
+
+		StorageSampled = Sampled | Storage,
 	};
+	IMPLEMENT_ENUM_CLASS_BITOPS(TextureUsage);
 
 	static const char* TextureTypeToString(TextureType Type)
 	{

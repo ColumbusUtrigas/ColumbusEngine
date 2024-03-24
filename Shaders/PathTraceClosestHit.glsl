@@ -25,7 +25,7 @@
 		GPUScene_Vertex vert3 = GPUScene_FetchVertex(nonuniformEXT(gl_InstanceCustomIndexEXT), nonuniformEXT(gl_PrimitiveID * 3 + 2));
 
 		vec2 uv = BaryLerp(vert1.UV, vert2.UV, vert3.UV, barycentrics);
-		vec3 normal = BaryLerp(vert1.Normal, vert2.Normal, vert3.Normal, barycentrics);
+		vec3 normal = normalize(BaryLerp(vert1.Normal, vert2.Normal, vert3.Normal, barycentrics));
 
 		int matid = Mesh.MaterialId;
 

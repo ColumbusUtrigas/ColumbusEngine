@@ -45,7 +45,8 @@ struct RayPayload {
 		const uvec2 pixel = gl_LaunchIDEXT.xy;
 		const vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
 
-		uint rngState = gl_LaunchIDEXT.x * pixel.y + pixel.x * (rayParams.randomNumber + 1);  // Initial seed
+		// uint rngState = gl_LaunchIDEXT.x * pixel.y + pixel.x * (rayParams.randomNumber + 1);  // Initial seed
+		uint rngState = hash(hash(pixel.x) + hash(pixel.y) + (rayParams.randomNumber)); // Initial seed
 
 		vec3 u = camSide.xyz;
 		vec3 v = camUp.xyz;
