@@ -366,6 +366,12 @@ namespace Columbus
 		bufferInfo.offset = 0;
 		bufferInfo.range = VK_WHOLE_SIZE;
 
+		VkDescriptorType Type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		if (Buffer->GetDesc().BindFlags == BufferType::Constant)
+		{
+			Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		}
+
 		VkWriteDescriptorSet write;
 		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		write.pNext = nullptr;
@@ -373,7 +379,7 @@ namespace Columbus
 		write.dstBinding = BindingId;
 		write.dstArrayElement = ArrayId;
 		write.descriptorCount = 1;
-		write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		write.descriptorType = Type;
 		write.pImageInfo = nullptr;
 		write.pBufferInfo = &bufferInfo;
 		write.pTexelBufferView = nullptr;
@@ -446,6 +452,24 @@ namespace Columbus
 		write.dstBinding = 0;
 		write.descriptorCount = 1;
 		write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+
+		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+	}
+
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Sampler* Sam)
+	{
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.sampler = static_cast<const SamplerVulkan*>(Sam)->_Sampler;
+
+		VkWriteDescriptorSet write{};
+		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		write.pNext = nullptr;
+		write.dstSet = Set;
+		write.dstBinding = BindingId;
+		write.dstArrayElement = ArrayId;
+		write.descriptorCount = 1;
+		write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+		write.pImageInfo = &imageInfo;
 
 		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
 	}
@@ -689,6 +713,10 @@ namespace Columbus
 		case TextureUsage::StorageSampled | TextureUsage::RenderTargetColor:
 			newLayout = VK_IMAGE_LAYOUT_GENERAL;
 			break;
+		case TextureUsage::Sampled | TextureUsage::RenderTargetColor:
+		case TextureUsage::Sampled | TextureUsage::RenderTargetDepth:
+			newLayout = VK_IMAGE_LAYOUT_GENERAL;
+			break;
 		default: COLUMBUS_ASSERT(false);
 		};
 
@@ -795,6 +823,42 @@ namespace Columbus
 		if (vktex->_DepthView != NULL) vkDestroyImageView(_Device, vktex->_DepthView, nullptr);
 		if (vktex->_StencilView != NULL) vkDestroyImageView(_Device, vktex->_StencilView, nullptr);
 		vmaDestroyImage(_Allocator, vktex->_Image, vktex->_Allocation);
+	}
+
+	Sampler* DeviceVulkan::CreateSampler(const SamplerDesc& Desc)
+	{
+		SamplerVulkan* Result = new SamplerVulkan(Desc);
+
+		VkSamplerCreateInfo samplerInfo;
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.pNext = nullptr;
+		samplerInfo.flags = 0;
+		samplerInfo.magFilter = TextureFilterToVk(Desc.MagFilter);
+		samplerInfo.minFilter = TextureFilterToVk(Desc.MinFilter);
+		samplerInfo.mipmapMode = TextureFilterMipToVk(Desc.MipFilter);
+		samplerInfo.addressModeU = TextureAddressModeToVk(Desc.AddressU);
+		samplerInfo.addressModeV = TextureAddressModeToVk(Desc.AddressV);
+		samplerInfo.addressModeW = TextureAddressModeToVk(Desc.AddressW);
+		samplerInfo.mipLodBias = Desc.LodBias;
+		samplerInfo.anisotropyEnable = Desc.Anisotropy > 1;
+		samplerInfo.maxAnisotropy = Desc.Anisotropy;
+		samplerInfo.compareEnable = false; // TODO
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS; // TODO
+		samplerInfo.minLod = Desc.MinLOD;
+		samplerInfo.maxLod = Desc.MaxLOD;
+		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		samplerInfo.unnormalizedCoordinates = false;
+		VK_CHECK(vkCreateSampler(_Device, &samplerInfo, nullptr, &Result->_Sampler));
+
+		return Result;
+	}
+
+	void DeviceVulkan::DestroySampler(Sampler* Sam)
+	{
+		auto vksam = static_cast<SamplerVulkan*>(Sam);
+		vkDestroySampler(_Device, vksam->_Sampler, nullptr);
+
+		delete Sam;
 	}
 
 	void DeviceVulkan::SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name)

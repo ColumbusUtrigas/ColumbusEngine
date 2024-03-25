@@ -59,10 +59,10 @@ struct RayPayload {
 
 	void main()
 	{
-		const uvec2 pixel = gl_LaunchIDEXT.xy;
-		vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
+		const ivec2 pixel = ivec2(gl_LaunchIDEXT.xy);
+		// vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
 
-		float depth = texture(GBufferDepth, uv).x;
+		float depth = texelFetch(GBufferDepth, pixel, 0).x;
 		// do not trace from sky
 		if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
 		{
@@ -70,7 +70,7 @@ struct RayPayload {
 			return;
 		}
 
-		vec3 origin = texture(GBufferWorldPosition, uv).xyz;
+		vec3 origin = texelFetch(GBufferWorldPosition, pixel, 0).xyz;
 
 		GPULight Light = GPUSceneLights.Lights[Params.LightId];
 		vec3 LightDirection = normalize(Light.Direction.xyz);

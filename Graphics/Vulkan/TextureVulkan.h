@@ -26,4 +26,12 @@ namespace Columbus
 		}
 	};
 
+	class SamplerVulkan : public Sampler
+	{
+	public:
+		VkSampler _Sampler;
+	public:
+		SamplerVulkan(const SamplerDesc& Desc) : Sampler(Desc) {}
+	};
+
 }

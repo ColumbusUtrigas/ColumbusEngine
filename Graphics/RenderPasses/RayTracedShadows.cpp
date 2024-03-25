@@ -68,8 +68,8 @@ namespace Columbus
 		RenderGraphTextureRef DenoisedResult;
 
 		// TODO: define lifetime, refactor
-		static SPtr<Texture2> ShadowHistory;
-		static SPtr<Texture2> MomentsHistory;
+		static Texture2* ShadowHistory = nullptr;
+		static Texture2* MomentsHistory = nullptr;
 
 		// Prepare
 		{
@@ -163,18 +163,18 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				if (Textures.History.Depth)
 				{
-					Context.CommandBuffer->TransitionImageLayout(Textures.History.Depth.get(), VK_IMAGE_LAYOUT_GENERAL);
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Textures.History.Depth.get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+					Context.CommandBuffer->TransitionImageLayout(Textures.History.Depth, VK_IMAGE_LAYOUT_GENERAL);
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Textures.History.Depth, TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				}
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(ReprojectionResult).get());
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Moments).get());
 				if (MomentsHistory)
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, MomentsHistory.get());
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, MomentsHistory);
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(Metadata).get());
 				if (ShadowHistory)
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, ShadowHistory.get());
+					Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, ShadowHistory);
 				
 
 				Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
@@ -183,7 +183,7 @@ namespace Columbus
 				RTShadowDenoiserTileClassificationParams Params {
 					.InvViewProjectionMatrix = InvViewProjection,
 					.InvProjectionMatrix = InvProjection,
-					.ReprojectionMatrix = InvViewProjection * View.CameraPrev.GetViewProjection(),
+					.ReprojectionMatrix = View.CameraPrev.GetViewProjection() * InvViewProjection,
 					.CameraPosition = View.CameraCur.Pos,
 					.BufferDimensions = ShadowSize,
 					.PackedBufferDimensions = FilterTilesSize,

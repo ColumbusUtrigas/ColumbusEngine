@@ -490,7 +490,7 @@ namespace Columbus
 	{
 		RenderGraphTextureRef Src;
 		int Version;
-		SPtr<Texture2>* Dst;
+		Texture2** Dst;
 	};
 
 	// for internal use
@@ -529,6 +529,11 @@ namespace Columbus
 		VkSemaphore FinishSemaphore; // is signaled when all RG submits are done
 	};
 
+	struct RenderGraphHistoryInvalidation
+	{
+		Texture2* Dst;
+	};
+
 	class RenderGraph
 	{
 	public:
@@ -555,7 +560,12 @@ namespace Columbus
 
 		// copies Src graph texture into Dst after execution
 		// creates a new texture if doesn't exist
-		void ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst);
+		void ExtractTexture(RenderGraphTextureRef Src, Texture2** Dst);
+
+		// Creates a new *Dst if texture is invalid
+		// if invalidated, memsets texture to all zeroes before executing the render graph
+		// returns true on invalidation
+		bool CreateHistoryTexture(Texture2** Dst, const TextureDesc2& Desc, const char* DebugName);
 
 		void Clear();
 		RenderGraphExecuteResults Execute(const RenderGraphExecuteParameters& Parameters);
@@ -580,6 +590,7 @@ namespace Columbus
 		std::vector<RenderGraphBuffer> Buffers;   // buffers that are used in the current graph
 		std::vector<RenderGraphTextureExtraction> Extractions;
 		std::queue<RenderGraphMarker> MarkersStack;
+		std::vector<RenderGraphHistoryInvalidation> TextureInvalidations;
 
 		std::vector<std::pair<RenderGraphPassParametersRHI, VkRenderPass>> VulkanRenderPasses;
 		std::vector<std::pair<RenderGraphPassParametersRHI, VkFramebuffer>> VulkanFramebuffers;

@@ -232,6 +232,10 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 						descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 						break;
 
+					case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+						descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+						break;
+
 					default:
 						assert(false && "Descriptor type is not supported");
 						break;

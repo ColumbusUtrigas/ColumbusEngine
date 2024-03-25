@@ -303,6 +303,33 @@ namespace Columbus
 		vkCmdCopyBuffer(_CmdBuf, srcvk->_Buffer, dstvk->_Buffer, 1, &Region);
 	}
 
+	void CommandBufferVulkan::MemsetBuffer(const Buffer* Buf, u64 Offset, u64 Size, u32 Data32)
+	{
+		auto vkbuf = static_cast<const BufferVulkan*>(Buf);
+
+		vkCmdFillBuffer(_CmdBuf, vkbuf->_Buffer, Offset, Size, Data32);
+	}
+
+	void CommandBufferVulkan::MemsetTexture(const Texture2* Texture, Vector4 Value)
+	{
+		auto texvk = static_cast<const TextureVulkan*>(Texture);
+
+		VkClearColorValue Color;
+		Color.float32[0] = Value.X;
+		Color.float32[1] = Value.Y;
+		Color.float32[2] = Value.Z;
+		Color.float32[3] = Value.W;
+
+		VkImageSubresourceRange Range;
+		Range.aspectMask = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
+		Range.baseMipLevel = 0; // TODO:
+		Range.levelCount = 1; // TODO:
+		Range.baseArrayLayer = 0; // TODO:
+		Range.layerCount = 1; // TODO:
+
+		vkCmdClearColorImage(_CmdBuf, texvk->_Image, texvk->_Layout, &Color, 1, &Range);
+	}
+
 	void CommandBufferVulkan::ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount)
 	{
 		const QueryPoolVulkan* vkPool = static_cast<const QueryPoolVulkan*>(Pool);

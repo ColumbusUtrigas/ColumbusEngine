@@ -87,6 +87,21 @@ namespace Columbus
 		}
 	}
 
+	struct SamplerDesc
+	{
+		u32 Anisotropy = 1;
+		float MinLOD = 0.0f, MaxLOD = 1000.0f;
+		float LodBias = 0.0f;
+		TextureAddressMode AddressU = TextureAddressMode::Repeat;
+		TextureAddressMode AddressV = TextureAddressMode::Repeat;
+		TextureAddressMode AddressW = TextureAddressMode::Repeat;
+		TextureFilter2 MinFilter = TextureFilter2::Linear;
+		TextureFilter2 MagFilter = TextureFilter2::Linear;
+		TextureFilter2 MipFilter = TextureFilter2::Linear;
+
+		bool operator==(const SamplerDesc&) const = default;
+	};
+
 	struct TextureDesc2
 	{
 		// Image description
@@ -126,6 +141,16 @@ namespace Columbus
 	public:
 		const TextureDesc2& GetDesc() const { return _Desc; }
 		u64 GetSize() const { return Size; }
+	};
+
+	class Sampler
+	{
+	private:
+		SamplerDesc _Desc;
+	protected:
+		Sampler(const SamplerDesc& Desc) : _Desc(Desc) {}
+	public:
+		const SamplerDesc& GetDesc() const { return _Desc; }
 	};
 
 	// TODO: legacy

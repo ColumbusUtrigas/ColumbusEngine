@@ -62,6 +62,9 @@ namespace Columbus
 		void CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset);
 		void CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size);
 
+		void MemsetBuffer(const Buffer* Buf, u64 Offset, u64 Size, u32 Data32);
+		void MemsetTexture(const Texture2* Texture, Vector4 Value);
+
 		void ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount);
 		void WriteTimestamp(const QueryPool* Pool, u32 Id);
 

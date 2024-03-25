@@ -9,8 +9,9 @@
 	layout(binding = 2, set = 0, rgba16f) uniform image2D LightingOutput;
 	layout(binding = 3, set = 0) uniform sampler2D GBufferWorldPosition;
 	layout(binding = 4, set = 0) uniform sampler2D GBufferRoughnessMetallic;
-	layout(binding = 5, set = 0) uniform sampler2D GBufferLightmap;
+	layout(binding = 5, set = 0) uniform sampler2D GBufferLightmap; // TODO: unify with GI?
 	layout(binding = 6, set = 0, rgba16f) uniform image2D GBufferReflections;
+	layout(binding = 7, set = 0, rgba16f) uniform image2D GBufferGI;
 
 	// TODO: use GPUScene common definitions
 	struct GPULight
@@ -28,7 +29,7 @@
 	#define GPULIGHT_RECTANGLE 3
 	#define GPULIGHT_SPHERE 4
 
-	layout(binding = 7, set = 0) readonly buffer LightsBuffer {
+	layout(binding = 8, set = 0) readonly buffer LightsBuffer {
 		GPULight Lights[];
 	} GPUSceneLights;
 
@@ -45,16 +46,18 @@
 
 	void main()
 	{
+		const ivec2 Pixel = ivec2(gl_GlobalInvocationID.xy);
+
 		vec2 UV = (vec2(gl_GlobalInvocationID.xy) + 0.5) / vec2(gl_NumWorkGroups.xy) / vec2(gl_WorkGroupSize.xy);
 		if (UV.x >= 1 && UV.y >= 1)
 			return;
 
-		vec3 Albedo = texture(GBufferAlbedo, UV).rgb;
-		vec3 N = texture(GBufferNormal, UV).rgb;
-		vec3 WorldPosition = texture(GBufferWorldPosition, UV).rgb;
-		vec3 Lightmap = texture(GBufferLightmap, UV).rgb;
+		vec3 Albedo = texelFetch(GBufferAlbedo, Pixel, 0).rgb;
+		vec3 N = texelFetch(GBufferNormal, Pixel, 0).rgb;
+		vec3 WorldPosition = texelFetch(GBufferWorldPosition, Pixel, 0).rgb;
+		vec3 Lightmap = texelFetch(GBufferLightmap, Pixel, 0).rgb;
 		vec3 LightingSum = Lightmap * Albedo;
-		vec2 RM = texture(GBufferRoughnessMetallic, UV).rg;
+		vec2 RM = texelFetch(GBufferRoughnessMetallic, Pixel, 0).rg;
 
 		BRDFData BRDF;
 		BRDF.N = N;
@@ -101,8 +104,9 @@
 			LightingSum += EvaluateBRDF(BRDF, LightValue);
 		}
 
-		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
+		// LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
+		LightingSum += imageLoad(GBufferGI, ivec2(gl_GlobalInvocationID.xy)).rgb;
 
-		imageStore(LightingOutput, ivec2(gl_GlobalInvocationID.xy), vec4(LightingSum, 1));
+		imageStore(LightingOutput, Pixel, vec4(LightingSum, 1));
 	}
 #endif

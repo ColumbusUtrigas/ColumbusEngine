@@ -27,6 +27,8 @@ namespace Columbus
 
 	void ScreenshotPass(RenderGraph& Graph, RenderView& View, RenderGraphTextureRef Texture);
 
+	void ShaderMemsetTexture(RenderGraph& Graph, RenderGraphTextureRef Texture, Vector4 Value);
+
 	// **********************************
 	// Upscaling
 	//
@@ -38,6 +40,14 @@ namespace Columbus
 	// Real-time
 	//
 
+	struct ReflectionDenoiserHistory
+	{
+		Texture2* Radiance = nullptr;
+		Texture2* AverageRadiance = nullptr;
+		Texture2* Variance = nullptr;
+		Texture2* SampleCount = nullptr;
+	};
+
 	struct GPULightRenderInfo
 	{
 		RenderGraphTextureRef RTShadow;
@@ -46,7 +56,11 @@ namespace Columbus
 
 	struct HistorySceneTextures
 	{
-		SPtr<Texture2> Depth;
+		Texture2* Depth = nullptr;
+		Texture2* RoughnessMetallic = nullptr;
+		Texture2* Normals = nullptr;
+
+		ReflectionDenoiserHistory RTGI_History;
 	};
 
 	struct DeferredRenderContext
@@ -67,7 +81,8 @@ namespace Columbus
 		RenderGraphTextureRef Lightmap;
 
 		RenderGraphTextureRef RTReflections;
-		
+		RenderGraphTextureRef RTGI;
+
 		HistorySceneTextures& History;
 	};
 
@@ -83,6 +98,7 @@ namespace Columbus
 	//
 	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
+	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 
 	// Lightmap baking
 	//

@@ -18,10 +18,17 @@ compile_shader_hlsl(RayTracedShadows/DenoiserShadowsPrepare.hlsl main:cs SHADER_
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsTileClassification.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsFilter.hlsl main:cs SHADER_BINARIES)
 
+compile_shader_hlsl(DenoiserReflection/Reproject.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(DenoiserReflection/Prefilter.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(DenoiserReflection/ResolveTemporal.hlsl main:cs SHADER_BINARIES)
+
 compile_shader_glsl(RayTracedReflections/RayTraceReflections.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_glsl(RayTracedReflections/SimpleDenoise.glsl main:cs SHADER_BINARIES)
 
+compile_shader_glsl(RayTracedGlobalIllumination/RayTracedGI.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
+
 compile_shader_hlsl(TiledLightsPrepare.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(MemsetTexture.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_glsl(FSR1/FSR1CS.glsl main:cs SHADER_BINARIES)
 compile_shader_glsl(FSR1/FSR1PS.glsl main:vs,main:ps SHADER_BINARIES)

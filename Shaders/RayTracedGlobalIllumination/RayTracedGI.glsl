@@ -2,7 +2,8 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_GOOGLE_include_directive : require
 
-struct RayPayload {
+struct RayPayload
+{
 	vec4 colorAndDist;
 	vec4 normalAndObjId;
 	vec2 RoughnessMetallic;
@@ -13,7 +14,7 @@ struct RayPayload {
 	layout(location = 1) rayPayloadEXT RayPayload shadowPayload; // TODO:
 
 	layout(binding = 0, set = 2) uniform accelerationStructureEXT acc; // TODO:
-	layout(binding = 1, set = 2, rgba16f) uniform image2D ResultReflections;
+	layout(binding = 1, set = 2, rgba16f) uniform image2D Result;
 	layout(binding = 2, set = 2) uniform sampler2D GBufferAlbedo;
 	layout(binding = 3, set = 2) uniform sampler2D GBufferNormals;
 	layout(binding = 4, set = 2) uniform sampler2D GBufferWorldPosition;
@@ -26,63 +27,50 @@ struct RayPayload {
 
 	layout(push_constant) uniform params
 	{
-		vec4 CameraPosition;
 		uint Random;
 	} Params;
 
 	void main()
 	{
-		const uvec2 pixel = gl_LaunchIDEXT.xy;
-		const vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
+		const ivec2 Pixel = ivec2(gl_LaunchIDEXT.xy);
 
-		float depth = texture(GBufferDepth, uv).x;
+		float Depth = texelFetch(GBufferDepth, Pixel, 0).x;
+
 		// do not trace from sky
-		if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+		if (abs(Depth) < EPSILON || abs(Depth - 1) < EPSILON)
 		{
-			imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(0));
+			imageStore(Result, ivec2(Pixel), vec4(0));
 			return;
 		}
 
-		uint RngState = hash(hash(pixel.x) + hash(pixel.y) + (Params.Random)); // Initial seed
+		uint RngState = hash(hash(Pixel.x) + hash(Pixel.y) + (Params.Random)); // Initial seed
 
-		vec3 Origin = texture(GBufferWorldPosition, uv).xyz;
-		vec3 Normal = texture(GBufferNormals, uv).xyz;
-		vec3 Direction = normalize(Origin - Params.CameraPosition.xyz);
-		vec3 Albedo = texture(GBufferAlbedo, uv).rgb;
-		vec2 RM = texture(GBufferRoughnessMetallic, uv).xy;
+		// sample GBuffer
+		vec3 Origin = texelFetch(GBufferWorldPosition, Pixel, 0).xyz;
+		vec3 Normal = texelFetch(GBufferNormals, Pixel, 0).xyz;
+		vec3 Albedo = texelFetch(GBufferAlbedo, Pixel, 0).rgb;
+		vec2 RM = texelFetch(GBufferRoughnessMetallic, Pixel, 0).xy;
 
-		BRDFData BRDF;
-		BRDF.N = Normal;
-		BRDF.V = -Direction;
-		BRDF.Albedo = Albedo;
-		BRDF.Roughness = RM.r;
-		BRDF.Metallic = RM.g;
-
-		BRDFSample Sample = SampleBRDF_GGX(BRDF, UniformDistrubition2d(RngState));
-		// Direction = reflect(Direction, Normal);
-		Direction = Sample.Dir;
-		BRDF.L = Direction;
-
-		float NdotL = max(0, dot(BRDF.N, BRDF.L));
-		vec3 RayAttenuation = EvaluateBRDF(BRDF, vec3(1)) * NdotL / Sample.Pdf;
+		BRDFSample Sample = SampleBRDF_Lambert(Normal, UniformDistrubition2d(RngState));
 
 		float MaxDistance = 5000; // TODO: make it a parameter
 
-		traceRayEXT(acc, gl_RayFlagsOpaqueEXT,
-			0xFF, 0, 0, 0, Origin, 0.01, Direction, MaxDistance, 0);
+		traceRayEXT(acc, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, Origin, 0.01, Sample.Dir, MaxDistance, 0);
 
 		vec3 Radiance = vec3(0);
 
 		// evaluate lighting at the hit point
+		// TODO: make it a function
 		if (Payload.colorAndDist.w > 0)
 		{
+			BRDFData BRDF;
 			BRDF.Albedo = Payload.colorAndDist.rgb;
 			BRDF.N = Payload.normalAndObjId.xyz;
-			BRDF.V = -Direction;
+			BRDF.V = -Sample.Dir;
 			BRDF.Roughness = Payload.RoughnessMetallic.x;
 			BRDF.Metallic = Payload.RoughnessMetallic.y;
 
-			vec3 HitPoint = Payload.colorAndDist.w * Direction + Origin;
+			vec3 HitPoint = Payload.colorAndDist.w * Sample.Dir + Origin;
 			Origin = HitPoint + BRDF.N * 0.001;
 
 			// TODO: unify light calculation between different RT passes into a function
@@ -118,10 +106,11 @@ struct RayPayload {
 			Radiance += Payload.colorAndDist.rgb;
 		}
 
-		vec3 FinalResult = Radiance * RayAttenuation;
+		float RayDist = Payload.colorAndDist.w;
+		float NdotL = max(0, dot(Normal, Sample.Dir));
+		vec3 Irradiance = Radiance * LambertDiffuseBRDF(Albedo) * NdotL / Sample.Pdf;
 
-		imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(FinalResult, 1));
-		// imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(Direction, 1));
+		imageStore(Result, ivec2(Pixel), vec4(Irradiance, RayDist));
 	}
 #endif
 

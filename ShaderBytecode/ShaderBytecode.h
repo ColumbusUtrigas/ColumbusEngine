@@ -15,8 +15,8 @@ struct DescriptorSetReflectionData
 	uint32_t Index = 0;
 	uint32_t VariableCountMax = 0;
 
-	fixed_vector<VkDescriptorSetLayoutBinding, 16> Bindings;
-	fixed_vector<VkDescriptorBindingFlags,     16> BindingFlags;
+	fixed_vector<VkDescriptorSetLayoutBinding, 32> Bindings;
+	fixed_vector<VkDescriptorBindingFlags,     32> BindingFlags;
 };
 
 struct CompiledShaderBytecodeReflection

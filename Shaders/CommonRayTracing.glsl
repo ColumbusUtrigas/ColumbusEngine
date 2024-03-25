@@ -121,7 +121,7 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 			#if 1
 			{
 				BRDFSample Sample = SampleBRDF_GGX(BRDF, UniformDistrubition2d(RngState));
-				// BRDFSample Sample = SampleBRDF_Lambert(BRDF, UniformDistrubition2d(RngState));
+				// BRDFSample Sample = SampleBRDF_Lambert(BRDF.N, UniformDistrubition2d(RngState));
 				BRDF.L = Sample.Dir;
 				Direction = Sample.Dir;
 
@@ -156,9 +156,9 @@ vec3 PathTrace(vec3 Origin, vec3 Direction, int MaxBounces, inout uint RngState)
 		else // sky
 		{
 			// blender default sky is 0.051 gray
-			PathRadiance += vec3(0.051) * PathAttenuation;
+			// PathRadiance += vec3(0.051) * PathAttenuation;
 
-			// PathRadiance += payload.colorAndDist.rgb * PathAttenuation;
+			PathRadiance += payload.colorAndDist.rgb * PathAttenuation;
 			break;
 		}
 	}

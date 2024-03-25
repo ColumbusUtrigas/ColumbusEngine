@@ -79,7 +79,20 @@ namespace Columbus
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
 		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
 		Result.Lightmap = Graph.CreateTexture(LightmapDesc, "Lightmap");
+
+		// history textures
+		Graph.CreateHistoryTexture(&Result.History.Depth, DSDesc, "GBufferDS History");
+		Graph.CreateHistoryTexture(&Result.History.Normals, NormalDesc, "GBufferNormal History");
+		Graph.CreateHistoryTexture(&Result.History.RoughnessMetallic, RMDesc, "GBufferRM History");
+
 		return Result;
+	}
+
+	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures)
+	{
+		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
+		Graph.ExtractTexture(Textures.GBufferRM, &HistoryTextures.RoughnessMetallic);
+		Graph.ExtractTexture(Textures.GBufferNormal, &HistoryTextures.Normals);
 	}
 
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
@@ -224,6 +237,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.RTReflections, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
+		Dependencies.Read(Textures.RTGI, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
 		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
 		{
 			Dependencies.Read(LightInfo.RTShadow, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -259,7 +273,8 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.RTGI).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.Scene->LightsBuffer);
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			// TODO: support lights not having shadows
@@ -315,9 +330,50 @@ namespace Columbus
 		});
 	}
 
-	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures)
+	struct MemsetTextureParameters
 	{
-		Graph.ExtractTexture(Textures.GBufferDS, &HistoryTextures.Depth);
+		Vector4  Value;
+		iVector2 TextureSize;
+	};
+
+	void ShaderMemsetTexture(RenderGraph& Graph, RenderGraphTextureRef Texture, Vector4 Value)
+	{
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies(Graph.Allocator);
+		Dependencies.Write(Texture, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+		Graph.AddPass("MemsetTexture", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, Value](RenderGraphContext& Context)
+		{
+			static ComputePipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				ComputePipelineDesc Desc;
+				Desc.Name = "MemsetTexture";
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/MemsetTexture.csd");
+				Pipeline = Context.Device->CreateComputePipeline(Desc);
+			}
+
+			SPtr<Texture2> Tex = Context.GetRenderGraphTexture(Texture);
+
+			assert(Tex->GetDesc().Type == TextureType::Texture2D);
+
+			const iVector2 TextureSize = iVector2(Tex->GetDesc().Width, Tex->GetDesc().Height);
+			const int GroupSize = 8; // 8x8
+			const iVector2 Groups = (TextureSize + GroupSize - 1) / GroupSize;
+
+			MemsetTextureParameters Parameters{
+				.Value = Value,
+				.TextureSize = TextureSize,
+			};
+
+			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Tex.get());
+
+			Context.CommandBuffer->BindComputePipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
+			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Parameters), &Parameters);
+			Context.CommandBuffer->Dispatch(Groups.X, Groups.Y, 1);
+		});
 	}
 
 	// TODO: find a way to do it without this pass
@@ -368,7 +424,11 @@ namespace Columbus
 
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
+
+		// TODO: select GI mode
 		RenderIndirectLightingDDGI(Graph, View);
+		RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
+
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderDeferredSky(Graph, View, Textures, DeferredContext, LightingTexture);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);

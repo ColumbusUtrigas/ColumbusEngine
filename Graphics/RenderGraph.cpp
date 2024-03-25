@@ -481,9 +481,26 @@ namespace Columbus
 		});
 	}
 
-	void RenderGraph::ExtractTexture(RenderGraphTextureRef Src, SPtr<Texture2>* Dst)
+	void RenderGraph::ExtractTexture(RenderGraphTextureRef Src, Texture2** Dst)
 	{
 		Extractions.push_back(RenderGraphTextureExtraction{ .Src = Src, .Version = Textures[Src].Version, .Dst = Dst });
+	}
+
+	bool RenderGraph::CreateHistoryTexture(Texture2** Dst, const TextureDesc2& Desc, const char* DebugName)
+	{
+		if (*Dst == nullptr || (*Dst)->GetDesc() != Desc)
+		{
+			TextureDesc2 DescCreate = Desc;
+			DescCreate.Usage = DescCreate.Usage | TextureUsage::Sampled;
+
+			// TODO: destroy old one
+			*Dst = Device->CreateTexture(DescCreate);
+			Device->SetDebugName(*Dst, DebugName);
+			TextureInvalidations.push_back(RenderGraphHistoryInvalidation{ .Dst = *Dst });
+			return true;
+		}
+
+		return false;
 	}
 
 	void RenderGraph::Clear()
@@ -494,6 +511,7 @@ namespace Columbus
 		Textures.clear();
 		Buffers.clear();
 		Extractions.clear();
+		TextureInvalidations.clear();
 
 		// TODO: renderpass and framebuffer cleanup, framebuffer must be invalidated if any of texture that it depends on is invalidated
 
@@ -800,6 +818,7 @@ namespace Columbus
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Textures.size() * sizeof(RenderGraphTexture));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Buffers.size() * sizeof(RenderGraphBuffer));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Extractions.size() * sizeof(RenderGraphTextureExtraction));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, TextureInvalidations.size() * sizeof(RenderGraphHistoryInvalidation));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, MarkersStack.size() * sizeof(RenderGraphMarker));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, sizeof(RenderGraphData));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Allocator.GetTotalAllocated());
@@ -868,6 +887,18 @@ namespace Columbus
 			MarkersStack.pop();
 		};
 
+		// history invalidations
+		if (TextureInvalidations.size() > 0)
+		{
+			CommandBuffer->BeginDebugMarker("History Invalidations");
+			for (RenderGraphHistoryInvalidation& Invalidation : TextureInvalidations)
+			{
+				CommandBuffer->MemsetTexture(Invalidation.Dst, Vector4(0, 0, 0, 0));
+			}
+			CommandBuffer->EndDebugMarker();
+		}
+
+		// graph execution
 		for (auto& Pass : Passes)
 		{
 			if (Pass.Parameters.SubmitBeforeExecution)
@@ -1024,37 +1055,6 @@ namespace Columbus
 				Pass.ExecutionFunc(Context);
 			}
 
-			// extractions
-			for (RenderGraphTextureExtraction& Extraction : Extractions)
-			{
-				if (Extraction.Version == Textures[Extraction.Src].CurrentVersion)
-				{
-					CommandBuffer->BeginDebugMarker("Extract");
-
-					if (*Extraction.Dst == nullptr ||
-						(*Extraction.Dst != nullptr && Extraction.Dst->get()->GetDesc() != Textures[Extraction.Src].Desc))
-					{
-						// TODO: move to allocation phase?
-						// TODO: resize invalidation
-						*Extraction.Dst = SPtr<Texture2>(Device->CreateTexture(Textures[Extraction.Src].Desc));
-					}
-
-					iVector3 Size = { (int)Textures[Extraction.Src].Desc.Width, (int)Textures[Extraction.Src].Desc.Height, (int)Textures[Extraction.Src].Desc.Depth };
-
-					auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
-					auto DstLayout = static_cast<TextureVulkan*>(Extraction.Dst->get())->_Layout;
-
-					// TODO: layout management
-					CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-					CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-					CommandBuffer->CopyImage(Textures[Extraction.Src].Texture.get(), Extraction.Dst->get(), {}, {}, Size);
-					CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), SrcLayout);
-					CommandBuffer->TransitionImageLayout(Extraction.Dst->get(), DstLayout);
-
-					CommandBuffer->EndDebugMarker();
-				}
-			}
-
 			// pass marker
 			CommandBuffer->EndDebugMarker();
 		}
@@ -1064,6 +1064,38 @@ namespace Columbus
 		{
 			EvaluateMarker();
 		}
+
+		// extractions
+		CommandBuffer->BeginDebugMarker("Extract");
+		for (RenderGraphTextureExtraction& Extraction : Extractions)
+		{
+			if (Extraction.Version == Textures[Extraction.Src].CurrentVersion)
+			{
+				CommandBuffer->BeginDebugMarker(Textures[Extraction.Src].DebugName.c_str());
+
+				if (*Extraction.Dst == nullptr || (*Extraction.Dst != nullptr && (*Extraction.Dst)->GetDesc() != Textures[Extraction.Src].Desc))
+				{
+					// TODO: move to allocation phase?
+					// TODO: resize invalidation
+					*Extraction.Dst = Device->CreateTexture(Textures[Extraction.Src].Desc);
+				}
+
+				iVector3 Size = { (int)Textures[Extraction.Src].Desc.Width, (int)Textures[Extraction.Src].Desc.Height, (int)Textures[Extraction.Src].Desc.Depth };
+
+				auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
+				auto DstLayout = static_cast<TextureVulkan*>(*Extraction.Dst)->_Layout;
+
+				// TODO: layout management
+				CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+				CommandBuffer->TransitionImageLayout(*Extraction.Dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+				CommandBuffer->CopyImage(Textures[Extraction.Src].Texture.get(), *Extraction.Dst, {}, {}, Size);
+				CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), SrcLayout);
+				//CommandBuffer->TransitionImageLayout(*Extraction.Dst, DstLayout);
+				CommandBuffer->TransitionImageLayout(*Extraction.Dst, VK_IMAGE_LAYOUT_GENERAL);
+				CommandBuffer->EndDebugMarker();
+			}
+		}
+		CommandBuffer->EndDebugMarker();
 
 		Context.Device->_Profiler.EndProfileConter(GpuTimeMarker, CommandBuffer);
 		CommandBuffer->End();

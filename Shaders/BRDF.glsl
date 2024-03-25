@@ -33,17 +33,17 @@ vec3 LambertDiffuseBRDF(vec3 Albedo)
 	return Albedo * ONE_OVER_PI;
 }
 
-BRDFSample SampleBRDF_Lambert(BRDFData BRDF, vec2 Xi)
+BRDFSample SampleBRDF_Lambert(vec3 Normal, vec2 Xi)
 {
 	float pdf;
 
 	BRDFSample Sample;
 	// uniform hemisphere, pdf = 1
-	// Sample.Dir = RandomDirectionHemisphere(Xi, BRDF.N);
+	// Sample.Dir = RandomDirectionHemisphere(Xi, Normal);
 	// Sample.Pdf = 1;
 
 	// cosine weighted
-	Sample.Dir = RandomDirectionHemisphereCosine(Xi, BRDF.N, pdf);
+	Sample.Dir = RandomDirectionHemisphereCosine(Xi, Normal, pdf);
 	Sample.Pdf = pdf;
 	return Sample;
 }
