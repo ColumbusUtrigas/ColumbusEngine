@@ -155,6 +155,8 @@ vec3 RandomDirectionHemisphere(vec2 xi, vec3 normal)
 // https://github.com/boksajak/brdf/blob/master/brdf.h
 vec3 RandomDirectionHemisphereCosineLocal(vec2 u, out float pdf)
 {
+	u = clamp(u, 0.001, 0.999);
+
 	float a = sqrt(u.x);
 	float b = TWO_PI * u.y;
 

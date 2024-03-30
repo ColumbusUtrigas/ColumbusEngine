@@ -322,6 +322,13 @@ int main()
 			DebugUI::ShowIrradianceWindow(World);
 			DebugUI::ShowLightmapWindow(World);
 
+			if (ImGui::Begin("Camera"))
+			{
+				ImGui::InputFloat3("Camera Position", (float*)&camera.Pos);
+				ImGui::InputFloat3("Camera Rotation", (float*)&camera.Rot);
+			}
+			ImGui::End();
+
 			// test gaussian
 			{
 				static float Peak = 1;

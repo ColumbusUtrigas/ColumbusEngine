@@ -42,8 +42,8 @@ layout(push_constant) uniform Params
 		vec4 TransformedPos = vec4(Vertex.Position, 1) * Mesh.Transform;
 		OutWP = TransformedPos.xyz;
 		
-		vec4 ClipspacePos = Parameters.VP * TransformedPos * vec4(1, -1, 1, 1);
-		vec4 ClipspacePosPrev = Parameters.VPPrev * TransformedPos * vec4(1, -1, 1, 1);
+		vec4 ClipspacePos = TransformedPos * Parameters.VP * vec4(1, -1, 1, 1);
+		vec4 ClipspacePosPrev = TransformedPos * Parameters.VPPrev * vec4(1, -1, 1, 1);
 		OutClipspacePos = ClipspacePos;
 		OutClipspacePosPrev = ClipspacePosPrev;
 

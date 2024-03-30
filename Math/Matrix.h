@@ -418,6 +418,10 @@ namespace Columbus
 			M[3][2] = qn;
 			M[2][3] = -1.0f;
 
+			// transpose because the code above uses column major layout
+			// TODO: remake the code above
+			Transpose();
+
 			return *this;
 		}
 		
@@ -445,6 +449,11 @@ namespace Columbus
 			M[3][0] = -Vector3::Dot(s, Position);
 			M[3][1] = -Vector3::Dot(u, Position);
 			M[3][2] = Vector3::Dot(f, Position);
+
+			// transpose because the code above uses column major layout
+			// TODO: remake the code above
+			Transpose();
+
 			return *this;
 		}
 

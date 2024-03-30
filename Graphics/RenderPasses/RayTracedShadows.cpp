@@ -183,7 +183,7 @@ namespace Columbus
 				RTShadowDenoiserTileClassificationParams Params {
 					.InvViewProjectionMatrix = InvViewProjection,
 					.InvProjectionMatrix = InvProjection,
-					.ReprojectionMatrix = View.CameraPrev.GetViewProjection() * InvViewProjection,
+					.ReprojectionMatrix = InvViewProjection * View.CameraPrev.GetViewProjection(),
 					.CameraPosition = View.CameraCur.Pos,
 					.BufferDimensions = ShadowSize,
 					.PackedBufferDimensions = FilterTilesSize,

@@ -47,7 +47,7 @@ namespace Columbus
 		CameraUp = Vector3::Cross(CameraDirection, CameraRight);
 
 		ViewMatrix.LookAt(Pos, CameraDirection + Pos, CameraUp);
-		ViewProjection = ViewMatrix * ProjectionMatrix;
+		ViewProjection = ProjectionMatrix * ViewMatrix;
 
 		PreTargeted = false;
 	}
@@ -59,7 +59,8 @@ namespace Columbus
 
 	void Camera::Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far)
 	{
-		auto mat = glm::ortho(Left, Right, Bottom, Top, Near, Far);
+		// transpose because GLM uses column major and the engine uses row major layout
+		auto mat = glm::transpose(glm::ortho(Left, Right, Bottom, Top, Near, Far));
 		memcpy(&ProjectionMatrix.M[0][0], glm::value_ptr(mat), 64);
 	}
 

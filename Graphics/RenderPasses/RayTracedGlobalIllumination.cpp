@@ -1,5 +1,7 @@
 #include "RenderPasses.h"
 
+#include <imgui.h>
+
 namespace Columbus
 {
 
@@ -402,6 +404,156 @@ namespace Columbus
 		return Radiance2;
 	}
 
+	struct SimpleDenoiseSpatialParameters
+	{
+		iVector2 Size;
+		int StepSize;
+	};
+
+	struct SimpleDenoiserTemporalParameters
+	{
+		Matrix ProjectionInv;
+		Matrix ReprojectionMatrix;
+		iVector2 Size;
+	};
+
+	template <int Perm>
+	static void SimpleDenoiseSpatial(RenderGraph& Graph, SceneTextures& Textures, iVector2 Size, int StepSize, RenderGraphTextureRef Radiance1, RenderGraphTextureRef Radiance2)
+	{
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies(Graph.Allocator);
+		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(Radiance1, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Write(Radiance2, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+		Graph.AddPass("Spatial", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Radiance1, Radiance2, Size, StepSize](RenderGraphContext& Context)
+		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIDenoise, Context);
+
+			// TODO: shader system
+			static ComputePipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				ComputePipelineDesc Desc;
+				Desc.Name = "RTGI_Denoiser_Spatial";
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedGlobalIllumination/Spatial.csd");
+				Pipeline = Context.Device->CreateComputePipeline(Desc);
+			}
+
+			auto Set = Context.GetDescriptorSet(Pipeline, 0);
+			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Radiance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+
+			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Radiance2).get());
+
+			SimpleDenoiseSpatialParameters Params{
+				.Size = Size,
+				.StepSize = StepSize,
+			};
+
+			const int GroupSize = 8; // 8x8
+			const iVector2 Groups = (Size + GroupSize - 1) / GroupSize;
+
+			Context.CommandBuffer->BindComputePipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
+			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.CommandBuffer->Dispatch((u32)Groups.X, (u32)Groups.Y, 1);
+		});
+	}
+
+	static RenderGraphTextureRef SimpleDenoise(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef RTGI_Tex)
+	{
+		const iVector2 Size = View.RenderSize;
+
+		TextureDesc2 Desc;
+		Desc.Width = (u32)Size.X;
+		Desc.Height = (u32)Size.Y;
+		Desc.Usage = TextureUsage::Sampled | TextureUsage::Storage;
+		Desc.Format = TextureFormat::RGBA16F;
+
+		RenderGraphTextureRef Radiance1 = RTGI_Tex;
+		RenderGraphTextureRef Radiance2 = Graph.CreateTexture(Desc, "RTGI Denoiser Radiance 2");
+
+		Desc.Format = TextureFormat::R16F;
+		Graph.CreateHistoryTexture(&Textures.History.RTGI_History.SampleCount, Desc, "RTGI Denoiser Sample Count");
+
+		// spatial filter
+		{
+			SimpleDenoiseSpatial<1>(Graph, Textures, Size, 1, Radiance1, Radiance2);
+			SimpleDenoiseSpatial<2>(Graph, Textures, Size, 2, Radiance2, Radiance1);
+			SimpleDenoiseSpatial<3>(Graph, Textures, Size, 3, Radiance1, Radiance2);
+			SimpleDenoiseSpatial<4>(Graph, Textures, Size, 4, Radiance2, Radiance1);
+			SimpleDenoiseSpatial<5>(Graph, Textures, Size, 5, Radiance1, Radiance2);
+		}
+
+		// temporal filter
+		
+		{
+			RenderPassParameters Parameters;
+			RenderPassDependencies Dependencies(Graph.Allocator);
+			Dependencies.Read(Textures.Velocity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Radiance2, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			//Dependencies.Read(Textures.History.RTGI_History.Radiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Write(Radiance1, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
+			Matrix ProjectionInv = View.CameraCur.GetProjectionMatrix().GetInverted();
+			Matrix Reprojection = InvViewProjection * View.CameraPrev.GetViewProjection();
+
+			Graph.AddPass("Temporal", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Radiance1, Radiance2, Size, ProjectionInv, Reprojection](RenderGraphContext& Context)
+			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIDenoise, Context);
+
+				// TODO: shader system
+				static ComputePipeline* Pipeline = nullptr;
+				if (Pipeline == nullptr)
+				{
+					ComputePipelineDesc Desc;
+					Desc.Name = "RTGI_Denoiser_Temporal";
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedGlobalIllumination/Temporal.csd");
+					Pipeline = Context.Device->CreateComputePipeline(Desc);
+				}
+
+				auto Set = Context.GetDescriptorSet(Pipeline, 0);
+				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Radiance2).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 2, 0, Textures.History.RTGI_History.Radiance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 4, 0, Textures.History.Depth, TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 5, 0, Textures.History.RTGI_History.SampleCount);
+
+				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(Radiance1).get());
+
+				SimpleDenoiserTemporalParameters Params {
+					.ProjectionInv = ProjectionInv,
+					.ReprojectionMatrix = Reprojection,
+					.Size = Size,
+				};
+
+				const int GroupSize = 8; // 8x8
+				const iVector2 Groups = (Size + GroupSize - 1) / GroupSize;
+
+				Context.CommandBuffer->BindComputePipeline(Pipeline);
+				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
+				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+				Context.CommandBuffer->Dispatch((u32)Groups.X, (u32)Groups.Y, 1);
+			});
+		}
+
+		// spatial filter
+		if (0)
+		{
+			SimpleDenoiseSpatial<3>(Graph, Textures, Size, 1, Radiance2, Radiance1);
+			SimpleDenoiseSpatial<4>(Graph, Textures, Size, 2, Radiance1, Radiance2);
+			//SimpleDenoiseSpatial<5>(Graph, Textures, Size, 3, Radiance2, Radiance1);
+		}
+
+		return Radiance1;
+	}
+
 	struct RTGI_Parameters
 	{
 		u32 Random;
@@ -465,7 +617,20 @@ namespace Columbus
 			Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 		});
 
-		RTGI_Tex = Denoise(Graph, View, Textures, RTGI_Tex);
+		static bool UseDenoiser = true;
+
+		if (ImGui::Begin("RTGI"))
+		{
+			ImGui::Checkbox("Denoise", &UseDenoiser);
+		}
+		ImGui::End();
+
+		if (UseDenoiser)
+		{
+			//RTGI_Tex = Denoise(Graph, View, Textures, RTGI_Tex);
+			RTGI_Tex = SimpleDenoise(Graph, View, Textures, RTGI_Tex);
+		}
+
 		Graph.ExtractTexture(RTGI_Tex, &Textures.History.RTGI_History.Radiance);
 
 		Textures.RTGI = RTGI_Tex;
