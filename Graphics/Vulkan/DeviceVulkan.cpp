@@ -178,6 +178,18 @@ namespace Columbus
 		_Profiler.Init();
 	}
 
+	DeviceVulkan::~DeviceVulkan()
+	{
+		VK_CHECK(vkDeviceWaitIdle(_Device));
+
+		_Profiler.Shutdown();
+
+		//vmaDestroyAllocator(_Allocator);
+		vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
+		vkDestroyCommandPool(_Device, _CmdPool, nullptr);
+		vkDestroyDevice(_Device, nullptr);
+	}
+
 	bool DeviceVulkan::SupportsRayTracing() const
 	{
 		return ENABLE_RAY_TRACING && RayTracing_CVar.GetValue() && _RayTracingFeatures.rayTracingPipeline;
@@ -622,6 +634,9 @@ namespace Columbus
 
 	void DeviceVulkan::DestroyBuffer(Buffer* Buf)
 	{
+		if (Buf == nullptr)
+			return;
+
 		auto vkbuf = static_cast<BufferVulkan*>(Buf);
 		COLUMBUS_ASSERT(vkbuf);
 
@@ -812,6 +827,9 @@ namespace Columbus
 
 	void DeviceVulkan::DestroyTexture(Texture2* Tex)
 	{
+		if (Tex == nullptr)
+			return;
+
 		auto vktex = static_cast<TextureVulkan*>(Tex);
 		COLUMBUS_ASSERT(vktex);
 
@@ -823,6 +841,14 @@ namespace Columbus
 		if (vktex->_DepthView != NULL) vkDestroyImageView(_Device, vktex->_DepthView, nullptr);
 		if (vktex->_StencilView != NULL) vkDestroyImageView(_Device, vktex->_StencilView, nullptr);
 		vmaDestroyImage(_Allocator, vktex->_Image, vktex->_Allocation);
+	}
+
+	void DeviceVulkan::DestroyTextureDeferred(Texture2* Tex)
+	{
+		TextureDeferredDestroys.push_back(ResourceDeferredDestroyVulkan <Texture2*> {
+			.Resource = Tex,
+			.FramesLasted = 0,
+		});
 	}
 
 	Sampler* DeviceVulkan::CreateSampler(const SamplerDesc& Desc)
@@ -855,6 +881,9 @@ namespace Columbus
 
 	void DeviceVulkan::DestroySampler(Sampler* Sam)
 	{
+		if (Sam == nullptr)
+			return;
+
 		auto vksam = static_cast<SamplerVulkan*>(Sam);
 		vkDestroySampler(_Device, vksam->_Sampler, nullptr);
 
@@ -915,6 +944,9 @@ namespace Columbus
 
 	void DeviceVulkan::DestroyQueryPool(QueryPool* Pool)
 	{
+		if (Pool == nullptr)
+			return;
+
 		vkDestroyQueryPool(_Device, static_cast<QueryPoolVulkan*>(Pool)->_Pool, nullptr);
 
 		delete Pool;
@@ -937,6 +969,20 @@ namespace Columbus
 	void DeviceVulkan::BeginFrame()
 	{
 		_Profiler.BeginFrame();
+
+		// run deferred destroy logic
+		for (int i = 0; i < (int)TextureDeferredDestroys.size(); i++)
+		{
+			auto& TextureDestroy = TextureDeferredDestroys[i];
+
+			TextureDestroy.FramesLasted++;
+			if (TextureDestroy.FramesLasted > MaxFramesInFlight)
+			{
+				DestroyTexture(TextureDestroy.Resource);
+				TextureDeferredDestroys.erase(TextureDeferredDestroys.begin() + i);
+				i--;
+			}
+		}
 	}
 
 	void DeviceVulkan::EndFrame()

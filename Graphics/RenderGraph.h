@@ -96,6 +96,7 @@ namespace Columbus
 		~RenderGraphAllocator()
 		{
 			free(Memory);
+			Memory = nullptr;
 		}
 	};
 
@@ -538,6 +539,7 @@ namespace Columbus
 	{
 	public:
 		RenderGraph(SPtr<DeviceVulkan> Device, SPtr<GPUScene> Scene);
+		~RenderGraph();
 
 		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
 		RenderGraphBufferRef  CreateBuffer(const BufferDesc& Desc, const char* Name);
@@ -584,6 +586,9 @@ namespace Columbus
 		VkRenderPass GetOrCreateVulkanRenderPass(RenderGraphPassParametersRHI& AttachmentParams);
 		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderGraphPassParametersRHI& AttachmentParams, VkRenderPass RenderPassVulkan);
 
+	public:
+		// must be initialised first (and destroyed last)
+		RenderGraphAllocator Allocator{ RenderGraphMemoryPoolSize };
 	private:
 		std::vector<RenderPass> Passes;
 		std::vector<RenderGraphTexture> Textures; // textures that are used in the current graph
@@ -605,8 +610,6 @@ namespace Columbus
 	public:
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> Scene;
-
-		RenderGraphAllocator Allocator{RenderGraphMemoryPoolSize};
 
 		RenderGraphData RenderData;
 

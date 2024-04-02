@@ -33,7 +33,7 @@ namespace Columbus
 		TextureFormatInfo { "RGBA8SRGB",        TextureFormat::RGBA8SRGB,        32,   0,         4,        0,          0,     0 },
 		TextureFormatInfo { "BGRA8SRGB",        TextureFormat::BGRA8SRGB,        32,   0,         4,        0,          0,     0 },
 		TextureFormatInfo { "R11G11B10F",       TextureFormat::R11G11B10F,       32,   0,         3,        0,          0,     0 },
-		TextureFormatInfo { "DXT1",             TextureFormat::DXT1,             8,   64,         4,        1,          0,     0 },
+		TextureFormatInfo { "DXT1",             TextureFormat::DXT1,             4,   64,         4,        1,          0,     0 },
 		TextureFormatInfo { "DXT3",             TextureFormat::DXT3,             8,   64,         4,        1,          0,     0 },
 		TextureFormatInfo { "DXT5",             TextureFormat::DXT5,             8,  128,         4,        1,          0,     0 },
 		TextureFormatInfo { "BC6H",             TextureFormat::BC6H,             8,  128,         4,        1,          0,     0 },

@@ -174,6 +174,9 @@ namespace Columbus
 
 	void DeviceVulkan::DestroyAccelerationStructure(AccelerationStructure* AS)
 	{
+		if (AS == nullptr)
+			return;
+
 		auto vkas = static_cast<AccelerationStructureVulkan*>(AS);
 		COLUMBUS_ASSERT(vkas);
 
@@ -187,6 +190,8 @@ namespace Columbus
 
 		DestroyBuffer(vkas->_Buffer);
 		VkFunctions.vkDestroyAccelerationStructure(_Device, vkas->_Handle, nullptr);
+
+		delete AS;
 	}
 
 }

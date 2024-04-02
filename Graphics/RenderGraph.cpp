@@ -270,6 +270,32 @@ namespace Columbus
 		}
 	}
 
+	RenderGraph::~RenderGraph()
+	{
+		// TODO: move to GPUScene
+		//vkFreeDescriptorSets(Device->_Device, Device->_DescriptorPool, 1, &RenderData.GPUSceneData.TextureSet);
+		//vkFreeDescriptorSets(Device->_Device, Device->_DescriptorPool, 1, &RenderData.GPUSceneData.SceneSet);
+		vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.TextureLayout, nullptr);
+		vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.SceneLayout, nullptr);
+
+		for (int i = 0; i < MaxFramesInFlight; i++)
+		{
+			auto& Data = RenderData.PerFrameData[i];
+
+			vkDestroySemaphore(Device->_Device, Data.SubmitSemaphore, nullptr);
+
+			for (VkSemaphore& Semaph : Data.CommandBuffersSemaphores)
+			{
+				vkDestroySemaphore(Device->_Device, Semaph, nullptr);
+			}
+
+			for (CommandBufferVulkan* CmdBuf : Data.CommandBuffers)
+			{
+				delete CmdBuf;
+			}
+		}
+	}
+
 	RenderGraphTextureRef RenderGraph::CreateTexture(const TextureDesc2& Desc, const char* Name)
 	{
 		// on texture creation stage, we just create a description and a handle for it
@@ -493,7 +519,12 @@ namespace Columbus
 			TextureDesc2 DescCreate = Desc;
 			DescCreate.Usage = DescCreate.Usage | TextureUsage::Sampled;
 
-			// TODO: destroy old one
+			// destroy the old one when safe
+			if (*Dst != nullptr)
+			{
+				Device->DestroyTextureDeferred(*Dst);
+			}
+
 			*Dst = Device->CreateTexture(DescCreate);
 			Device->SetDebugName(*Dst, DebugName);
 			TextureInvalidations.push_back(RenderGraphHistoryInvalidation{ .Dst = *Dst });

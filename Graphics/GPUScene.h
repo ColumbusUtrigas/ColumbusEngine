@@ -279,6 +279,13 @@ namespace Columbus
 
 		static void DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device)
 		{
+			Device->DestroyBuffer(Scene->SceneBuffer);
+
+			for (Buffer*& UploadBuffer : Scene->SceneUploadBuffers)
+			{
+				Device->DestroyBuffer(UploadBuffer);
+			}
+
 			Device->DestroyBuffer(Scene->LightsBuffer);
 
 			for (Buffer*& UploadBuffer : Scene->LightUploadBuffers)

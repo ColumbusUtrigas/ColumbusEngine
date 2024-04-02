@@ -96,6 +96,13 @@ namespace Columbus
 
 	#define PROFILE_GPU(counter, profiler, commandbuffer) Columbus::ProfileMarkerScopedGPU MarkerGPU ## __LINE__ (&counter, profiler, commandbuffer);
 
+	template <typename T>
+	struct ResourceDeferredDestroyVulkan
+	{
+		T Resource;
+		int FramesLasted = 0;
+	};
+
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
 	{
@@ -129,6 +136,8 @@ namespace Columbus
 		VulkanFunctions VkFunctions;
 
 		GPUProfilerVulkan _Profiler;
+
+		std::vector<ResourceDeferredDestroyVulkan<Texture2*>> TextureDeferredDestroys;
 	private:
 		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
@@ -137,6 +146,7 @@ namespace Columbus
 		TextureVulkan* _CreateTexture(const TextureDesc2& Desc);
 	public:
 		DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance);
+		~DeviceVulkan();
 
 		// Features
 		bool SupportsRayTracing() const;
@@ -177,6 +187,7 @@ namespace Columbus
 		Texture2* CreateTexture(const TextureDesc2& Desc);
 		Texture2* CreateTexture(const Image& Image);
 		void      DestroyTexture(Texture2* Tex);
+		void      DestroyTextureDeferred(Texture2* Tex);
 
 		Sampler* CreateSampler(const SamplerDesc& Desc);
 		void     DestroySampler(Sampler* Sam);
@@ -338,18 +349,6 @@ namespace Columbus
 			{
 				swapchain->IsOutdated = true;
 			}
-		}
-
-		~DeviceVulkan()
-		{
-			VK_CHECK(vkDeviceWaitIdle(_Device));
-
-			_Profiler.Shutdown();
-
-			vmaDestroyAllocator(_Allocator);
-			vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
-			vkDestroyCommandPool(_Device, _CmdPool, nullptr);
-			vkDestroyDevice(_Device, nullptr);
 		}
 	};
 

@@ -28,6 +28,7 @@ struct RayPayload
 	layout(push_constant) uniform params
 	{
 		uint Random;
+		float DiffuseBoost;
 	} Params;
 
 	void main()
@@ -108,7 +109,10 @@ struct RayPayload
 
 		float RayDist = Payload.colorAndDist.w;
 		float NdotL = max(0, dot(Normal, Sample.Dir));
-		vec3 Irradiance = Radiance * LambertDiffuseBRDF(Albedo) * NdotL / Sample.Pdf;
+		vec3 Irradiance = Radiance * LambertDiffuseBRDF(vec3(1)) * NdotL / Sample.Pdf;
+
+		// not physically correct but I've thought it's nice to have
+		Irradiance *= Params.DiffuseBoost;
 
 		imageStore(Result, ivec2(Pixel), vec4(Irradiance, RayDist));
 	}

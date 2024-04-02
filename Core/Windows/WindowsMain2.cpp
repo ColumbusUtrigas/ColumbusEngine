@@ -538,6 +538,8 @@ int main()
 	VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));
 	VK_CHECK(vkDeviceWaitIdle(device->_Device));
 
+	DeferredContext.History.Destroy(device);
+
 	//SDL_DestroyWindow(window);
 	SDL_Quit();
 

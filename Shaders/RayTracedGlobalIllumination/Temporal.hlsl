@@ -18,7 +18,9 @@
 [[vk::push_constant]]
 struct _Params {
     float4x4 ProjectionInv;
-    float4x4 ReprojectionMatrix;
+    // float4x4 ReprojectionMatrix;
+    float4x4 ViewProjectionInv;
+    float4x4 PrevViewProjection;
 	int2 Size;
 } Params;
 
@@ -31,17 +33,21 @@ float GetLinearDepth(int2 dtid, float depth)
     return abs(Projected.z / Projected.w);
 }
 
+#define CLAMP_SCREEN_COORDS(a) clamp(a, int2(0,0), Params.Size - 1)
+
 [numthreads(8, 8, 1)]
 void main(int2 dtid : SV_DispatchThreadID)
 {
     if (any(dtid >= Params.Size))
         return;
 
-    float2 Velocity = g_velocity[dtid] / 2 * Params.Size;
+    float2 Velocity = floor(g_velocity[dtid] / 2 * Params.Size + 0.5);
     int2 PrevCoords = int2(dtid - Velocity);
-    int2 PrevCoordsClamped = clamp(PrevCoords, int2(0,0), Params.Size - 1);
+    int2 PrevCoordsClamped = CLAMP_SCREEN_COORDS(PrevCoords);
 
     float SampleCount = g_sample_count[PrevCoordsClamped];
+
+    float3 Debug = float3(0,0,0);
 
     // disocclusion
     if (any(PrevCoords < 0) || any(PrevCoords > Params.Size - 1))
@@ -51,19 +57,27 @@ void main(int2 dtid : SV_DispatchThreadID)
     {
         const float2 uv = (dtid + 0.5f) / float2(Params.Size);
 	    const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
-        // const float2 prevuv = (PrevCoords + 0.5f) / float2(Params.Size);
 
         float Depth = g_depth[dtid];
 
-        // TODO: proper reprojection
-        float4 ClipSpace = mul(Params.ReprojectionMatrix, float4(ndc, Depth, 1.0f));
-		ClipSpace /= ClipSpace.w; // perspective divide
+        float4 WorldSpace = mul(Params.ViewProjectionInv, float4(ndc, Depth, 1.0f));
+        WorldSpace /= WorldSpace.w;
+        float4 PrevNdc = mul(Params.PrevViewProjection, WorldSpace);
+        PrevNdc /= PrevNdc.w;
 
-        float LinearDepth = GetLinearDepth(dtid, g_depth[dtid]);
-        // float LinearDepth = GetLinearDepth(dtid, ClipSpace.z);
+        #if 0
+        float2 PrevUv = (PrevNdc.xy+1)/2;
+        PrevUv.y = 1 - PrevUv.y;
+        int2 ReprojectedCoords = CLAMP_SCREEN_COORDS(PrevUv * Params.Size);
+        PrevCoordsClamped = ReprojectedCoords;
+        PrevCoords = ReprojectedCoords;
+        Debug = PrevNdc.xyz;
+        #endif
+
+        float ReprojectedLinearDepth = GetLinearDepth(dtid, PrevNdc.z);
         float PrevLinearDepth = GetLinearDepth(PrevCoords, g_depth_history[PrevCoords]);
 
-        const float DepthDifference = abs(PrevLinearDepth - LinearDepth) / LinearDepth;
+        const float DepthDifference = abs(PrevLinearDepth - ReprojectedLinearDepth) / ReprojectedLinearDepth;
 
         if (DepthDifference >= 1e-2f)
         {
@@ -77,8 +91,30 @@ void main(int2 dtid : SV_DispatchThreadID)
 
     SampleCount = clamp(SampleCount, 0, 100);
 
+    float3 HistoryValue = g_history[PrevCoordsClamped];
+
+    // neighbourhood clamp
+    if (false)
+    {
+        float3 MinValue = float3(9999, 9999, 9999);
+        float3 MaxValue = float3(-9999, -9999, -9999);
+
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                float3 Value = g_input[CLAMP_SCREEN_COORDS(dtid + int2(i,j))];
+                MinValue = min(MinValue, Value);
+                MaxValue = max(MaxValue, Value);
+            }
+        }
+
+        HistoryValue = clamp(HistoryValue, MinValue, MaxValue);
+    }
+
     float HistoryWeight = 1 / (SampleCount + 1);
-    float3 Result = lerp(g_history[PrevCoordsClamped], g_input[dtid], HistoryWeight);
+    float3 Result = lerp(HistoryValue, g_input[dtid], HistoryWeight);
     g_output[dtid] = float4(Result, 1);
+    // g_output[dtid] = float4(Debug, 1);
     g_sample_count[dtid] = SampleCount;
 }

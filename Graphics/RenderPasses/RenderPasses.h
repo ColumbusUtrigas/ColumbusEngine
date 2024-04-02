@@ -40,12 +40,14 @@ namespace Columbus
 	// Real-time
 	//
 
-	struct ReflectionDenoiserHistory
+	struct RTGIDenoiserHistory
 	{
 		Texture2* Radiance = nullptr;
 		Texture2* AverageRadiance = nullptr;
 		Texture2* Variance = nullptr;
 		Texture2* SampleCount = nullptr;
+
+		void Destroy(SPtr<DeviceVulkan> Device);
 	};
 
 	struct GPULightRenderInfo
@@ -60,7 +62,9 @@ namespace Columbus
 		Texture2* RoughnessMetallic = nullptr;
 		Texture2* Normals = nullptr;
 
-		ReflectionDenoiserHistory RTGI_History;
+		RTGIDenoiserHistory RTGI_History;
+
+		void Destroy(SPtr<DeviceVulkan> Device);
 	};
 
 	struct DeferredRenderContext

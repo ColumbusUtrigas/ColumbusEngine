@@ -15,7 +15,7 @@ struct _Params {
 } Params;
 
 #define NORMAL_SIGMA 32.0
-#define DEPTH_SIGMA 1.0
+#define DEPTH_SIGMA 512.0
 
 min16float GetEdgeStoppingDepthWeight(float center_depth, float neighbor_depth)
 {
@@ -42,7 +42,7 @@ void main(int2 dtid : SV_DispatchThreadID)
     float CenterDepth = g_depth_buffer[dtid];
     float3 CenterNormal = g_normals[dtid];
 
-    if (CenterDepth <= 0.001 || CenterDepth >= 0.999)
+    if (CenterDepth <= 0.0001 || CenterDepth >= 0.9999)
     {
         // sky
         g_output[dtid] = float4(0,0,0,1);
@@ -67,7 +67,7 @@ void main(int2 dtid : SV_DispatchThreadID)
             float3 Normal = g_normals[Coords];
             Weight *= GetEdgeStoppingNormalWeight(CenterNormal, Normal);
 
-            float SkyWeight = (Depth >= 0.999 || Depth <= 0.001) ? 0 : 1;
+            float SkyWeight = (Depth >= 0.9999 || Depth <= 0.0001) ? 0 : 1;
             Weight *= SkyWeight;
 
             Result += g_input[Coords] * Weight;
@@ -78,4 +78,5 @@ void main(int2 dtid : SV_DispatchThreadID)
     Result /= TotalWeight;
 
     g_output[dtid] = float4(Result, 1);
+    // g_output[dtid] = float4(1-TotalWeight, 0, 0, 1);
 }

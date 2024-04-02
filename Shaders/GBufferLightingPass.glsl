@@ -105,7 +105,7 @@
 		}
 
 		// LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
-		LightingSum += imageLoad(GBufferGI, ivec2(gl_GlobalInvocationID.xy)).rgb;
+		LightingSum += Albedo * imageLoad(GBufferGI, ivec2(gl_GlobalInvocationID.xy)).rgb;
 
 		imageStore(LightingOutput, Pixel, vec4(LightingSum, 1));
 	}

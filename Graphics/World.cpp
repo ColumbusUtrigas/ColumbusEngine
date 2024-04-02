@@ -118,6 +118,7 @@ namespace Columbus
 
 	void EngineWorld::UpdateTransforms()
 	{
+		return;
 		PROFILE_CPU(CpuCounter_SceneTransformUpdate);
 
 		// TODO: optimise
@@ -211,7 +212,7 @@ namespace Columbus
 
 			TextureFormatInfo FormatInfo = TextureFormatGetInfo(Format);
 
-			u64 Size = size_t(W * H) * size_t(FormatInfo.BitsPerPixel / 8);
+			u64 Size = size_t(W * H) * size_t(FormatInfo.BitsPerPixel) / 8;
 
 			Img->width = W;
 			Img->height = H;
@@ -238,32 +239,32 @@ namespace Columbus
 		Log::Message("GLTF loaded, time: %0.2f s", GltfTimer.Elapsed());
 
 		SPtr<GPUScene> Scene = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [Device](GPUScene* Scene)
+		{
+			for (auto& Texture : Scene->Textures)
 			{
-				for (auto& Texture : Scene->Textures)
-				{
-					Device->DestroyTexture(Texture);
-				}
+				Device->DestroyTexture(Texture);
+			}
 
-				for (auto& Mesh : Scene->Meshes)
-				{
-					Device->DestroyBuffer(Mesh.Vertices);
-					Device->DestroyBuffer(Mesh.Indices);
-					Device->DestroyBuffer(Mesh.UV1);
-					if (Mesh.UV2)
-						Device->DestroyBuffer(Mesh.UV2);
-					Device->DestroyBuffer(Mesh.Normals);
-					Device->DestroyAccelerationStructure(Mesh.BLAS);
-				}
+			for (auto& Mesh : Scene->Meshes)
+			{
+				Device->DestroyBuffer(Mesh.Vertices);
+				Device->DestroyBuffer(Mesh.Indices);
+				Device->DestroyBuffer(Mesh.UV1);
+				Device->DestroyBuffer(Mesh.UV2);
+				Device->DestroyBuffer(Mesh.Normals);
+				Device->DestroyBuffer(Mesh.Tangents);
+				Device->DestroyAccelerationStructure(Mesh.BLAS);
+			}
 
-				for (auto& Decal : Scene->Decals)
-				{
-					Device->DestroyTexture(Decal.Texture);
-				}
+			for (auto& Decal : Scene->Decals)
+			{
+				Device->DestroyTexture(Decal.Texture);
+			}
 
-				Device->DestroyAccelerationStructure(Scene->TLAS);
+			Device->DestroyAccelerationStructure(Scene->TLAS);
 
-				GPUScene::DestroyGPUScene(Scene, Device);
-			});
+			GPUScene::DestroyGPUScene(Scene, Device);
+		});
 
 		std::unordered_map<int, int> LoadedTextures;
 
@@ -611,13 +612,43 @@ namespace Columbus
 		Log::Message("Buffer load time: %0.2f s", GltfLoadTimes[GltfLoadBuffer]);
 		Log::Message("Material load time: %0.2f s", GltfLoadTimes[GltfLoadMaterial]);
 
+		// TODO: unify with Update
+		for (int i = 0; i < (int)GameObjects.size(); i++)
+		{
+			GameObject& Object = GameObjects[i];
+			Transform& Trans = Object.Trans;
+
+			Trans.Update();
+
+			Matrix GlobalTransform = Trans.GetMatrix();
+
+			int ParentId = Object.ParentId;
+
+			while (ParentId != -1)
+			{
+				GameObject& ParentObj = GameObjects[ParentId];
+				GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
+				ParentId = ParentObj.ParentId;
+			}
+
+			// TODO: remove mesh duplication
+			if (Object.MeshId != -1)
+			{
+				Scene->Meshes[Object.MeshId].Transform = GlobalTransform;
+
+				Matrix M(1);
+				M.Scale(0.09f);
+				//Scene->Meshes[Object.MeshId].Transform = M;
+			}
+		}
+
 		// TLAS and BLASes should be packed into GPU scene
 		AccelerationStructureDesc TlasDesc;
 		TlasDesc.Type = AccelerationStructureType::TLAS;
 		TlasDesc.Instances = {};
 		for (auto& mesh : Scene->Meshes)
 		{
-			TlasDesc.Instances.push_back({ Matrix(), mesh.BLAS });
+			TlasDesc.Instances.push_back({ mesh.Transform, mesh.BLAS });
 		}
 
 		Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);

@@ -95,6 +95,13 @@ namespace Columbus
 		Graph.ExtractTexture(Textures.GBufferNormal, &HistoryTextures.Normals);
 	}
 
+	void HistorySceneTextures::Destroy(SPtr<DeviceVulkan> Device)
+	{
+		Device->DestroyTexture(Depth);
+		Device->DestroyTexture(RoughnessMetallic);
+		Device->DestroyTexture(Normals);
+	}
+
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
 	{
 		RenderPassParameters Parameters;
