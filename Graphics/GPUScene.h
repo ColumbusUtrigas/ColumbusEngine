@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graphics/Core/GraphicsCore.h"
+#include "Mesh.h"
 #include "Camera.h"
 #include "Graphics/Core/Texture.h"
 #include "Graphics/Light.h"
@@ -20,20 +21,12 @@ namespace Columbus
 	// after update/upload of a GPU scene, it can be used during rendering in render graph
 	// Similar concept as Unreal's RenderProxy, but simple
 
-	// holds GPU resoures for a mesh
+	// instance of a mesh
 	struct GPUSceneMesh
 	{
-		AccelerationStructure* BLAS;
-		Matrix Transform;
-		Buffer* Vertices;
-		Buffer* Indices;
-		Buffer* UV1;
-		Buffer* UV2 = nullptr;
-		Buffer* Normals;
-		Buffer* Tangents;
-		u32 VertexCount;
-		u32 IndicesCount;
+		GPUMeshResource* MeshResource;
 
+		Matrix Transform;
 		int MaterialId = -1;
 		int LightmapId = -1;
 	};
@@ -135,7 +128,7 @@ namespace Columbus
 
 	struct GPUScene
 	{
-		static constexpr int MaxMeshes = 65536;
+		static constexpr int MaxMeshes = 8192;
 		static constexpr int MaxMaterials = 8192;
 		static constexpr int MaxGPULights = 8192;
 		static constexpr int MaxDecals = 8192;
@@ -172,8 +165,6 @@ namespace Columbus
 		Buffer* DecalsBuffers = nullptr;
 		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
 
-		// TODO: materials
-
 		GPUSceneCompact CreateCompact() const
 		{
 			return GPUSceneCompact {
@@ -185,135 +176,8 @@ namespace Columbus
 			};
 		}
 
-		static GPUScene* CreateGPUScene(SPtr<DeviceVulkan> Device)
-		{
-			GPUScene* Result = new GPUScene();
-
-			// scene
-			{
-				BufferDesc SceneBufferDesc;
-				SceneBufferDesc.Size = sizeof(GPUSceneCompact);
-				SceneBufferDesc.BindFlags = BufferType::UAV;
-				Result->SceneBuffer = Device->CreateBuffer(SceneBufferDesc, nullptr);
-				Device->SetDebugName(Result->SceneBuffer, "GPUScene.Scene");
-
-				for (Buffer*& UploadBuffer : Result->SceneUploadBuffers)
-				{
-					BufferDesc UploadBufferDesc(sizeof(GPUSceneCompact), BufferType::UAV);
-					UploadBufferDesc.HostVisible = true;
-					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
-					Device->SetDebugName(UploadBuffer, "GPUScene.Scene (upload buffer)");
-				}
-			}
-
-			// lights
-			{
-				BufferDesc LightBufferDesc;
-				LightBufferDesc.Size = GPUScene::MaxGPULights * sizeof(GPULight);
-				LightBufferDesc.BindFlags = BufferType::UAV;
-				Result->LightsBuffer = Device->CreateBuffer(LightBufferDesc, nullptr);
-				Device->SetDebugName(Result->LightsBuffer, "GPUScene.Lights");
-
-				for (Buffer*& UploadBuffer : Result->LightUploadBuffers)
-				{
-					BufferDesc UploadBufferDesc(GPUScene::MaxGPULights * sizeof(GPULight), BufferType::UAV);
-					UploadBufferDesc.HostVisible = true;
-					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
-					Device->SetDebugName(UploadBuffer, "GPUScene.Lights (upload buffer)");
-				}
-			}
-
-			// meshes
-			{
-				BufferDesc MeshBufferDesc;
-				MeshBufferDesc.Size = GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact);
-				MeshBufferDesc.BindFlags = BufferType::UAV;
-				Result->MeshesBuffer = Device->CreateBuffer(MeshBufferDesc, nullptr);
-				Device->SetDebugName(Result->MeshesBuffer, "GPUScene.Meshes");
-
-				for (Buffer*& UploadBuffer : Result->MeshesUploadBuffers)
-				{
-					BufferDesc UploadBufferDesc(GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact), BufferType::UAV);
-					UploadBufferDesc.HostVisible = true;
-					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
-					Device->SetDebugName(UploadBuffer, "GPUScene.Meshes (upload buffer)");
-				}
-			}
-
-			// materials
-			{
-				BufferDesc MaterialsBufferDesc;
-				MaterialsBufferDesc.Size = GPUScene::MaxMaterials * sizeof(GPUMaterialCompact);
-				MaterialsBufferDesc.BindFlags = BufferType::UAV;
-				Result->MaterialsBuffer = Device->CreateBuffer(MaterialsBufferDesc, nullptr);
-				Device->SetDebugName(Result->MaterialsBuffer, "GPUScene.Materials");
-
-				for (Buffer*& UploadBuffer : Result->MaterialsUploadBuffers)
-				{
-					BufferDesc UploadBufferDesc(GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), BufferType::UAV);
-					UploadBufferDesc.HostVisible = true;
-					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
-					Device->SetDebugName(UploadBuffer, "GPUScene.Meshes (upload buffer)");
-				}
-			}
-
-			// decals
-			{
-				BufferDesc DecalsBufferDesc;
-				DecalsBufferDesc.Size = GPUScene::MaxDecals * sizeof(GPUDecal);
-				DecalsBufferDesc.BindFlags = BufferType::UAV;
-				Result->DecalsBuffers = Device->CreateBuffer(DecalsBufferDesc, nullptr);
-				Device->SetDebugName(Result->DecalsBuffers, "GPUScene.Decals");
-
-				for (Buffer*& UploadBuffer : Result->DecalsUploadBuffers)
-				{
-					BufferDesc UploadBufferDesc(GPUScene::MaxDecals * sizeof(GPUDecal), BufferType::UAV);
-					UploadBufferDesc.HostVisible = true;
-					UploadBuffer = Device->CreateBuffer(UploadBufferDesc, nullptr);
-					Device->SetDebugName(UploadBuffer, "GPUScene.Decals (upload buffer)");
-				}
-			}
-
-			return Result;
-		}
-
-		static void DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device)
-		{
-			Device->DestroyBuffer(Scene->SceneBuffer);
-
-			for (Buffer*& UploadBuffer : Scene->SceneUploadBuffers)
-			{
-				Device->DestroyBuffer(UploadBuffer);
-			}
-
-			Device->DestroyBuffer(Scene->LightsBuffer);
-
-			for (Buffer*& UploadBuffer : Scene->LightUploadBuffers)
-			{
-				Device->DestroyBuffer(UploadBuffer);
-			}
-
-			Device->DestroyBuffer(Scene->MeshesBuffer);
-
-			for (Buffer*& UploadBuffer : Scene->MeshesUploadBuffers)
-			{
-				Device->DestroyBuffer(UploadBuffer);
-			}
-
-			Device->DestroyBuffer(Scene->MaterialsBuffer);
-
-			for (Buffer*& UploadBuffer : Scene->MaterialsUploadBuffers)
-			{
-				Device->DestroyBuffer(UploadBuffer);
-			}
-
-			Device->DestroyBuffer(Scene->DecalsBuffers);
-
-			for (Buffer*& UploadBuffer : Scene->DecalsUploadBuffers)
-			{
-				Device->DestroyBuffer(UploadBuffer);
-			}
-		}
+		static GPUScene* CreateGPUScene(SPtr<DeviceVulkan> Device);
+		static void DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device);
 	};
 
 	// it's split up in two functions because populating/updating of a GPUScene might be done in different ways

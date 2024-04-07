@@ -7,7 +7,7 @@ namespace Columbus
 	{
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Graph.AddPass("UploadGPUScene", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
+		Graph.AddPass("UploadGPUScene + Build TLAS", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
 		{
 			// TODO: create UploadBuffer wrapper? have CurrentFrame as a constant in Context?
 			static int CurrentFrame = 0;
@@ -49,14 +49,14 @@ namespace Columbus
 					GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
 					GPUSceneMeshCompact Compact {
 						.Transform = Mesh.Transform,
-						.VertexBufferAddress = Mesh.Vertices->GetDeviceAddress(),
-						.IndexBufferAddress = Mesh.Indices->GetDeviceAddress(),
-						.Uv1BufferAddress = Mesh.UV1->GetDeviceAddress(),
-						.Uv2BufferAddress = Mesh.UV2 ? Mesh.UV2->GetDeviceAddress() : 0,
-						.NormalsBufferAddress = Mesh.Normals->GetDeviceAddress(),
-						.TangentsBufferAddress = Mesh.Tangents->GetDeviceAddress(),
-						.VertexCount = Mesh.VertexCount,
-						.IndexCount = Mesh.IndicesCount,
+						.VertexBufferAddress = Mesh.MeshResource->Vertices->GetDeviceAddress(),
+						.IndexBufferAddress = Mesh.MeshResource->Indices->GetDeviceAddress(),
+						.Uv1BufferAddress = Mesh.MeshResource->UV1->GetDeviceAddress(),
+						.Uv2BufferAddress = Mesh.MeshResource->UV2 ? Mesh.MeshResource->UV2->GetDeviceAddress() : 0,
+						.NormalsBufferAddress = Mesh.MeshResource->Normals->GetDeviceAddress(),
+						.TangentsBufferAddress = Mesh.MeshResource->Tangents->GetDeviceAddress(),
+						.VertexCount = Mesh.MeshResource->VertexCount,
+						.IndexCount = Mesh.MeshResource->IndicesCount,
 						.MaterialId = Mesh.MaterialId,
 						.LightmapId = Mesh.LightmapId,
 					};
@@ -92,6 +92,22 @@ namespace Columbus
 				Context.Device->UnmapBuffer(UploadBuffer);
 
 				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MaterialsBuffer, 0, 0, sizeof(GPUMaterialCompact) * Context.Scene->Materials.size());
+			}
+
+			// TLAS
+			{
+				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();
+				Desc.Instances.clear();
+
+				for (int i = 0; i < (int)Context.Scene->Meshes.size(); i++)
+				{
+					AccelerationStructureInstance& Instance = Desc.Instances.emplace_back();
+					Instance.Blas = Context.Scene->Meshes[i].MeshResource->BLAS;
+					Instance.Transform = Context.Scene->Meshes[i].Transform;
+				}
+
+				Context.Device->UpdateAccelerationStructureBuffer(Context.Scene->TLAS, Context.CommandBuffer, (u32)Context.Scene->Meshes.size());
+				Context.CommandBuffer->BuildAccelerationStructure(Context.Scene->TLAS, (u32)Context.Scene->Meshes.size());
 			}
 		});
 	}

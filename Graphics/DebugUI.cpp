@@ -289,11 +289,18 @@ namespace Columbus::DebugUI
 
 		if (ImGui::TreeNodeEx(Object.Name.c_str(), flags))
 		{
+			ImGui::Text("Id: %i", Object.Id);
+			ImGui::Text("Mesh Primitives: %i", World.Meshes[Object.MeshId].Primitives.size());
 			ImGui::SliderFloat3("Position", (float*)&Trans.Position, -10, +10);
 			ImGui::SliderFloat3("Rotation", (float*)&Euler, 0, 360);
 			ImGui::SliderFloat4("Quat", (float*)&Trans.Rotation, 0, 360);
 			ImGui::SliderFloat3("Scale", (float*)&Trans.Scale, 0, +10);
-			ImGui::InputInt("Parent", &Object.ParentId);
+
+			GameObjectId Parent = Object.ParentId;
+			if (ImGui::InputInt("Parent", &Parent))
+			{
+				World.ReparentGameObject(Object.Id, Parent);
+			}
 
 			Trans.Rotation = Quaternion(Euler);
 
@@ -487,8 +494,8 @@ namespace Columbus::DebugUI
 
 			if (ImGui::Button("Generate UV2"))
 			{
-				GenerateAndPackLightmaps(World.Lightmaps, World.SceneCPU);
-				UploadLightmapMeshesToGPU(World.Lightmaps, World.Device, World.SceneCPU, World.SceneGPU);
+				GenerateAndPackLightmaps(World);
+				UploadLightmapMeshesToGPU(World);
 
 				// TODO: make imgui image preview work normally
 				TextureVulkan* vktex = static_cast<TextureVulkan*>(World.Lightmaps.Atlas.Lightmap);

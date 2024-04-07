@@ -60,7 +60,7 @@ VS_TO_PS Vertex(uint VertexID : SV_VertexID)
 
 	VS_TO_PS Out;
 	float4 World = mul(vertex, Params.Model);
-	Out.Pos = mul(Params.VP, World) * float4(1, -1, 1, 1);
+	Out.Pos = mul(World, Params.VP) * float4(1, -1, 1, 1);
 	return Out;
 }
 

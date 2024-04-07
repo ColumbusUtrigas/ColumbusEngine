@@ -156,7 +156,7 @@ namespace Columbus
 				Parameters.ObjectId = i;
 
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
-				Context.CommandBuffer->Draw(Mesh.IndicesCount, 1, 0, 0);
+				Context.CommandBuffer->Draw(Mesh.MeshResource->IndicesCount, 1, 0, 0);
 			}
 		});
 	}

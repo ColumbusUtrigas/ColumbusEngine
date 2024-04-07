@@ -1,13 +1,15 @@
 #pragma once
 
-#include "CPUScene.h"
 #include "GPUScene.h"
+#include "Mesh.h"
 #include "Lightmaps.h"
 #include "Graphics/Core/View.h"
 #include "Math/Box.h"
 #include "Math/Geometry.h"
 #include "Scene/Transform.h"
 #include "Profiling/Profiling.h"
+
+#include "Common/Model/Model.h"
 
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTextures);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
@@ -24,14 +26,16 @@ namespace Columbus
 	struct WorldIntersectionResult
 	{
 		bool HasIntersection;
-		int MeshId; // TODO: object ID
+		int ObjectId;
+		int MeshPrimitiveId;
+		int MeshId;
 		int TriangleId;
 		Vector3 IntersectionPoint;
 		Geometry::Triangle Triangle;
 
 		static WorldIntersectionResult Invalid()
 		{
-			return WorldIntersectionResult{ false, -1, -1, { 0, 0, 0 } };
+			return WorldIntersectionResult{ false, -1, -1, -1, -1, { 0, 0, 0 } };
 		}
 	};
 
@@ -45,20 +49,25 @@ namespace Columbus
 		std::string Name; // TODO: optimise
 
 		int MeshId = -1;
-		// TODO: material id
 		// TODO: components
 
-		// TODO: optimise, use proper data structures, move to World
+		std::vector<int> GPUScenePrimitives;
+		//std::vector<int> Materials;
+		//std::vector<int> LightmapIds;
+
 		std::vector<GameObjectId> Children;
 	};
 
 	struct EngineWorld
 	{
-		// TODO: game objects? proper CPU->GPU routine
-		CPUScene SceneCPU;
 		SPtr<GPUScene> SceneGPU; // TODO: move some stuff (lights, decals) from SceneGPU here, make a proper upload routine
-		std::vector<Box> MeshBoundingBoxes; // TODO: remove/refactor
-		std::vector<GameObject> GameObjects; // TODO: currently these are just meshes, so move SceneCPU here
+
+		std::vector<Mesh2> Meshes;
+		// TODO: Materials (interface, which will be copied to GPUScene)
+		// TODO: Decals
+		// TODO: Lights
+		// TODO: Textures?
+		std::vector<GameObject> GameObjects;
 
 		// systems
 		LightmapSystem Lightmaps;
@@ -67,10 +76,23 @@ namespace Columbus
 		SPtr<DeviceVulkan> Device;
 		RenderView MainView;
 
+	public:
 		// functions
 		void LoadLevelGLTF(const char* Path);
 
-		void ReparentGameObject(GameObjectId Object, GameObjectId NewParent);
+		// TODO: don't use Model
+		int  LoadMesh(const Model& MeshModel);
+		int  LoadMesh(std::span<CPUMeshResource> MeshPrimitives);
+		void UnloadMesh(int Mesh);
+
+		// TODO: Load/Unload texture
+		// TODO: Create/Destroy light source
+		// TOOD: Create/Destroy decal
+		// TODO: Add/Remove material
+
+		GameObjectId CreateGameObject(const char* Name, int Mesh);
+		void         DestroyGameObject(GameObjectId Object);
+		void         ReparentGameObject(GameObjectId Object, GameObjectId NewParent);
 
 		WorldIntersectionResult CastRayClosestHit(const Geometry::Ray& Ray);
 

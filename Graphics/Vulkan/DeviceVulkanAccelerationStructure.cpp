@@ -43,7 +43,7 @@ namespace Columbus
 		return result;
 	}
 
-	static VkAccelerationStructureGeometryInstancesDataKHR PrepareInstancesTLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device, Buffer*& InstancesBuffer)
+	static std::vector<VkAccelerationStructureInstanceKHR> FillInstancesTLAS(const AccelerationStructureDesc& Desc)
 	{
 		std::vector<VkAccelerationStructureInstanceKHR> instances(Desc.Instances.size());
 
@@ -59,10 +59,17 @@ namespace Columbus
 			instances[i].mask = 0xFF; // TODO
 			instances[i].instanceShaderBindingTableRecordOffset = 0;
 			instances[i].flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-			instances[i].accelerationStructureReference = static_cast<AccelerationStructureVulkan*>(Desc.Instances[i].Blas)->_DeviceAddress; // TODO
+			instances[i].accelerationStructureReference = Desc.Instances[i].Blas == nullptr ? 0 : static_cast<AccelerationStructureVulkan*>(Desc.Instances[i].Blas)->_DeviceAddress; // TODO
 		}
 
-		InstancesBuffer = Device->CreateBuffer({instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput}, instances.data());
+		return instances;
+	}
+
+	static VkAccelerationStructureGeometryInstancesDataKHR PrepareInstancesTLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device, Buffer*& InstancesBuffer)
+	{
+		std::vector<VkAccelerationStructureInstanceKHR> instances = FillInstancesTLAS(Desc);
+
+		InstancesBuffer = Device->CreateBuffer({ instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput }, instances.data());
 
 		VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
 		instanceDataDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(InstancesBuffer);
@@ -92,7 +99,7 @@ namespace Columbus
 		accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 
 		// BLAS/TLAS build buffer
-		Buffer* TransformOrInstancesBuffer = nullptr;
+		Buffer*& TransformOrInstancesBuffer = result->_TransformOrInstancesBuffer;
 
 		if (Desc.Type == AccelerationStructureType::BLAS)
 		{
@@ -110,6 +117,14 @@ namespace Columbus
 			numPrimitives = Desc.Instances.size();
 
 			AddProfilingCount(CountingCounter_Vulkan_TLASes, 1);
+
+			BufferDesc UploadDesc = TransformOrInstancesBuffer->GetDesc();
+			UploadDesc.HostVisible = true;
+
+			for (Buffer*& UploadBuf : result->_InstancesUploadBuffers)
+			{
+				UploadBuf = CreateBuffer(UploadDesc, nullptr);
+			}
 		}
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{};
@@ -136,9 +151,15 @@ namespace Columbus
 		accelerationStructureCreateInfo.type = type;
 		VkFunctions.vkCreateAccelerationStructure(_Device, &accelerationStructureCreateInfo, nullptr, &result->_Handle);
 
+		// Get AS device memory address
+		VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
+		accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+		accelerationDeviceAddressInfo.accelerationStructure = result->_Handle;
+		result->_DeviceAddress = VkFunctions.vkGetAccelerationStructureDeviceAddress(_Device, &accelerationDeviceAddressInfo);
+
 		// Create a small scratch buffer used during build of the acceleration structure
-		auto scratchBuffer = CreateBuffer({accelerationStructureBuildSizesInfo.buildScratchSize, BufferType::UAV, true}, nullptr);
-		auto scratchBufferDeviceAddress = GetBufferDeviceAddress(scratchBuffer);
+		result->_ScratchBuffer = CreateBuffer({accelerationStructureBuildSizesInfo.buildScratchSize, BufferType::UAV, true}, nullptr);
+		auto scratchBufferDeviceAddress = GetBufferDeviceAddress(result->_ScratchBuffer);
 
 		accelerationStructureBuildGeometryInfo.dstAccelerationStructure = result->_Handle;
 		accelerationStructureBuildGeometryInfo.scratchData.deviceAddress = scratchBufferDeviceAddress;
@@ -159,15 +180,7 @@ namespace Columbus
 		Submit(commandBuffer.get());
 		QueueWaitIdle();
 
-		// Get AS device memory address
-		VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
-		accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-		accelerationDeviceAddressInfo.accelerationStructure = result->_Handle;
-		result->_DeviceAddress = VkFunctions.vkGetAccelerationStructureDeviceAddress(_Device, &accelerationDeviceAddressInfo);
-
 		result->SetSize(result->_Buffer->GetSize());
-		DestroyBuffer(TransformOrInstancesBuffer);
-		DestroyBuffer(scratchBuffer);
 
 		return result;
 	}
@@ -189,9 +202,76 @@ namespace Columbus
 		}
 
 		DestroyBuffer(vkas->_Buffer);
+		DestroyBuffer(vkas->_TransformOrInstancesBuffer);
+		DestroyBuffer(vkas->_ScratchBuffer);
+
 		VkFunctions.vkDestroyAccelerationStructure(_Device, vkas->_Handle, nullptr);
 
 		delete AS;
+	}
+
+	void DeviceVulkan::UpdateAccelerationStructureBuffer(AccelerationStructure* AS, CommandBufferVulkan* CmdBuf, u32 NumPrimitives)
+	{
+		auto vkas = static_cast<AccelerationStructureVulkan*>(AS);
+
+		assert(AS->GetDesc().Type == AccelerationStructureType::TLAS);
+
+		std::vector<VkAccelerationStructureInstanceKHR> instances = FillInstancesTLAS(AS->GetDesc());
+
+		// upload
+		{
+			Buffer* UploadBuffer = vkas->_InstancesUploadBuffers[vkas->CurrentUploadId];
+			vkas->CurrentUploadId++;
+			vkas->CurrentUploadId = vkas->CurrentUploadId % 3;
+
+			void* Ptr = MapBuffer(UploadBuffer);
+			memcpy(Ptr, instances.data(), sizeof(VkAccelerationStructureInstanceKHR) * NumPrimitives);
+			UnmapBuffer(UploadBuffer);
+
+			CmdBuf->CopyBuffer(UploadBuffer, vkas->_TransformOrInstancesBuffer, 0, 0, sizeof(VkAccelerationStructureInstanceKHR) * NumPrimitives);
+		}
+	}
+
+	void CommandBufferVulkan::BuildAccelerationStructure(AccelerationStructure* AS, u32 NumPrimitives)
+	{
+		auto vkas = static_cast<AccelerationStructureVulkan*>(AS);
+
+		assert(AS->GetDesc().Type == AccelerationStructureType::TLAS);
+
+		VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
+		instanceDataDeviceAddress.deviceAddress = vkas->_TransformOrInstancesBuffer->GetDeviceAddress();
+
+		VkAccelerationStructureGeometryInstancesDataKHR instances;
+		instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		instances.pNext = nullptr;
+		instances.arrayOfPointers = VK_FALSE;
+		instances.data = instanceDataDeviceAddress;
+
+		VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
+		accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+		accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		accelerationStructureGeometry.geometry.instances = instances;
+
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{};
+		accelerationStructureBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+		accelerationStructureBuildGeometryInfo.geometryCount = 1;
+		accelerationStructureBuildGeometryInfo.pGeometries = &accelerationStructureGeometry;
+		accelerationStructureBuildGeometryInfo.dstAccelerationStructure = vkas->_Handle;
+		accelerationStructureBuildGeometryInfo.scratchData.deviceAddress = vkas->_ScratchBuffer->GetDeviceAddress();
+
+		// Build ranges
+		VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
+		accelerationStructureBuildRangeInfo.primitiveCount = NumPrimitives;
+		accelerationStructureBuildRangeInfo.primitiveOffset = 0;
+		accelerationStructureBuildRangeInfo.firstVertex = 0;
+		accelerationStructureBuildRangeInfo.transformOffset = 0;
+		std::vector<VkAccelerationStructureBuildRangeInfoKHR*> accelerationBuildStructureRangeInfos = { &accelerationStructureBuildRangeInfo };
+
+		_Functions.vkCmdBuildAccelerationStructures(_CmdBuf, 1, &accelerationStructureBuildGeometryInfo, accelerationBuildStructureRangeInfos.data());
 	}
 
 }

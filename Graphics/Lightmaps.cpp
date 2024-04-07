@@ -1,4 +1,5 @@
 #include "Lightmaps.h"
+#include "World.h"
 
 // Third party
 #include "Lib/xatlas/xatlas.h"
@@ -30,30 +31,41 @@ namespace Columbus
 		Meshes.clear();
 	}
 
-	void GenerateAndPackLightmaps(LightmapSystem& System, CPUScene& Scene)
+	void GenerateAndPackLightmaps(EngineWorld& World)
 	{
+		// TODO: after refactoring of the World, UV2 storage is broken
+#if 0
+		LightmapSystem& System = World.Lightmaps;
+
 		System.Clear();
 
 		xatlas::Atlas* atlas = xatlas::Create();
 
-		for (const CPUSceneMesh& Mesh : Scene.Meshes)
+		for (const GameObject& GO : World.GameObjects)
 		{
-			xatlas::MeshDecl xmesh {
-				.vertexPositionData = Mesh.Vertices.data(),
-				.vertexNormalData = Mesh.Normals.data(),
-				.vertexUvData = Mesh.UV1.data(),
-				.indexData = Mesh.Indices.data(),
+			for (const MeshPrimitive& Primitive : World.Meshes[GO.MeshId].Primitives)
+			{
+				const CPUMeshResource& Mesh = Primitive.CPU;
+				//const Matrix Transform = GO.Trans.GetMatrix();
 
-				.vertexCount = (u32)Mesh.Vertices.size(),
-				.vertexPositionStride = sizeof(Vector3),
-				.vertexNormalStride = sizeof(Vector3),
-				.vertexUvStride = sizeof(Vector2),
-				.indexCount = (u32)Mesh.Indices.size(),
+				xatlas::MeshDecl xmesh
+				{
+					.vertexPositionData = Mesh.Vertices.data(),
+					.vertexNormalData = Mesh.Normals.data(),
+					.vertexUvData = Mesh.UV1.data(),
+					.indexData = Mesh.Indices.data(),
 
-				.indexFormat = xatlas::IndexFormat::UInt32,
-			};
+					.vertexCount = (u32)Mesh.Vertices.size(),
+					.vertexPositionStride = sizeof(Vector3),
+					.vertexNormalStride = sizeof(Vector3),
+					.vertexUvStride = sizeof(Vector2),
+					.indexCount = (u32)Mesh.Indices.size(),
 
-			xatlas::AddMesh(atlas, xmesh);
+					.indexFormat = xatlas::IndexFormat::UInt32,
+				};
+
+				xatlas::AddMesh(atlas, xmesh);
+			}
 		}
 
 		xatlas::ChartOptions chartOptions;
@@ -96,14 +108,19 @@ namespace Columbus
 		}
 
 		xatlas::Destroy(atlas);
+#endif
 	}
 
-	void UploadLightmapMeshesToGPU(LightmapSystem& System, SPtr<DeviceVulkan> Device, CPUScene& CpuScene, SPtr<GPUScene> GpuScene)
+	void UploadLightmapMeshesToGPU(EngineWorld& World)
 	{
+		// TODO: after refactoring of the World, UV2 storage is broken
+#if 0
+		LightmapSystem& System = World.Lightmaps;
+
 		for (u32 i = 0; i < System.Meshes.size(); i++)
 		{
 			LightmapMesh& Mesh = System.Meshes[i];
-			Mesh.Device = Device;
+			Mesh.Device = World.Device;
 
 			BufferDesc VerticesDesc;
 			VerticesDesc.BindFlags = BufferType::UAV;
@@ -113,8 +130,8 @@ namespace Columbus
 			IndicesDesc.BindFlags = BufferType::UAV;
 			IndicesDesc.Size = Mesh.Indices.size() * sizeof(Mesh.Indices[0]);
 
-			Mesh.VertexBuffer = Device->CreateBuffer(VerticesDesc, Mesh.Vertices.data());
-			Mesh.IndexBuffer = Device->CreateBuffer(IndicesDesc, Mesh.Indices.data());
+			Mesh.VertexBuffer = World.Device->CreateBuffer(VerticesDesc, Mesh.Vertices.data());
+			Mesh.IndexBuffer = World.Device->CreateBuffer(IndicesDesc, Mesh.Indices.data());
 
 			char VertexName[256]{0};
 			char IndexName[256]{0};
@@ -122,8 +139,8 @@ namespace Columbus
 			snprintf(VertexName, 256, "LightmapMesh Vertices %i", i);
 			snprintf(IndexName, 256, "LightmapMesh Indices %i", i);
 
-			Device->SetDebugName(Mesh.VertexBuffer, VertexName);
-			Device->SetDebugName(Mesh.IndexBuffer, IndexName);
+			World.Device->SetDebugName(Mesh.VertexBuffer, VertexName);
+			World.Device->SetDebugName(Mesh.IndexBuffer, IndexName);
 		}
 
 		// create lightmap
@@ -135,8 +152,8 @@ namespace Columbus
 				.Format = TextureFormat::RGBA16F,
 			};
 
-			System.Atlas.Lightmap = Device->CreateTexture(LightmapTextureDesc);
-			Device->SetDebugName(System.Atlas.Lightmap, "Lightmap");
+			System.Atlas.Lightmap = World.Device->CreateTexture(LightmapTextureDesc);
+			World.Device->SetDebugName(System.Atlas.Lightmap, "Lightmap");
 		}
 
 		// register lightmap
@@ -160,12 +177,13 @@ namespace Columbus
 			UV2Desc.BindFlags = BufferType::UAV;
 			UV2Desc.Size = CpuMesh.UV2.size() * sizeof(CpuMesh.UV2[0]);
 
-			GpuMesh.UV2 = Device->CreateBuffer(UV2Desc, CpuMesh.UV2.data());
+			GpuMesh.MeshResource->UV2 = Device->CreateBuffer(UV2Desc, CpuMesh.UV2.data());
 
 			char Uv2Name[256]{0};
 			snprintf(Uv2Name, 256, "Mesh UV2 %i", i);
-			Device->SetDebugName(GpuMesh.UV2, Uv2Name);
+			Device->SetDebugName(GpuMesh.MeshResource->UV2, Uv2Name);
 		}
+#endif
 	}
 
 }

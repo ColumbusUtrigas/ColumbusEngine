@@ -196,6 +196,7 @@ namespace Columbus
 
 		AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc& Desc);
 		void                   DestroyAccelerationStructure(AccelerationStructure* AS);
+		void                   UpdateAccelerationStructureBuffer(AccelerationStructure* AS, CommandBufferVulkan* CmdBuf, u32 NumPrimitives);
 
 		void SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name);
 		void SetDebugName(const ComputePipeline* Pipeline, const char* Name);

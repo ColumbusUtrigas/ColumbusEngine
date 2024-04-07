@@ -44,6 +44,7 @@ namespace Columbus
 		u64 Size = 0;
 	public:
 		const AccelerationStructureDesc& GetDesc() const { return _Desc; }
+		AccelerationStructureDesc& GetDescMut() { return _Desc; }
 
 		u64 GetSize() const { return Size; }
 	};

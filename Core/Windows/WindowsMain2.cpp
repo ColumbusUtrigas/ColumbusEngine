@@ -61,8 +61,11 @@ DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
 IMPLEMENT_CPU_PROFILING_COUNTER("Total CPU", "CPU", Counter_TotalCPU);
 IMPLEMENT_CPU_PROFILING_COUNTER("RG Add", "RenderGraph", CpuCounter_RenderGraphCreate);
 
+// TODO: make it normal
+int SelectedObject = -1;
+
 // TODO: move to appropriate place
-static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMatrix, const Matrix& ProjectionMatrix, iVector2& InOutViewSize, bool& OutWindowHover, bool& OutViewportFocus, Vector2& OutRelativeMousePosition)
+static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, Matrix ViewMatrix, Matrix ProjectionMatrix, iVector2& InOutViewSize, bool& OutWindowHover, bool& OutViewportFocus, Vector2& OutRelativeMousePosition)
 {
 	OutWindowHover = false;
 
@@ -86,10 +89,26 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMat
 
 		DebugUI::TextureWidget(FinalTexture, InOutViewSize, InvalidateViewport);
 
-		static Matrix TestMatrix;
-		ImGuizmo::SetRect(WindowPos.x, WindowPos.y, viewportSize.x, viewportSize.y);
-		ImGuizmo::SetDrawlist();
-		ImGuizmo::Manipulate(&ViewMatrix.M[0][0], &ProjectionMatrix.M[0][0], ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, &TestMatrix.M[0][0]);
+		// to column-major for ImGuizmo
+		ViewMatrix.Transpose();
+		ProjectionMatrix.Transpose();
+
+		if (SelectedObject != -1)
+		{
+			// TODO: proper scene graph and transform management
+
+			Transform& Trans = World.GameObjects[SelectedObject].Trans;
+
+			Matrix TestMatrix = Trans.GetMatrix().GetTransposed();
+			ImGuizmo::SetRect(WindowPos.x, WindowPos.y, viewportSize.x, viewportSize.y);
+			ImGuizmo::SetDrawlist();
+			ImGuizmo::Manipulate(&ViewMatrix.M[0][0], &ProjectionMatrix.M[0][0], ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, &TestMatrix.M[0][0]);
+
+			Vector3 Euler;
+			TestMatrix.Transpose();
+			TestMatrix.DecomposeTransform(Trans.Position, Euler, Trans.Scale);
+			Trans.Rotation = Quaternion(Euler);
+		}
 	}
 	ImGui::End();
 	ImGui::PopStyleVar(1);
@@ -183,7 +202,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, const Matrix& ViewMat
 //			- ray-traced translucency
 //          - DDGI
 //			- RT reflections (TODO: denoiser)
-//          - RTGI (first bounce, diffuse)
+//          + RTGI (first bounce, diffuse)
 //			- GI1.0
 //			- simple billboard particles render
 //			+ upscaling (FSR1)
@@ -242,6 +261,7 @@ int main()
 	camera.Update();
 
 	char* SceneLoadPath = NULL;
+	//if (0)
 	if (NFD_OpenDialog("gltf", NULL, &SceneLoadPath) != NFD_OKAY)
 	{
 		return 1;
@@ -253,6 +273,17 @@ int main()
 	EngineWorld World;
 	World.Device = device;
 	World.LoadLevelGLTF(SceneLoadPath);
+	//World.SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(device));
+
+	//if (0)
+	//{
+		Model model;
+		model.Load("Data/Meshes/Hercules.cmf");
+		model.RecalculateTangents();
+		int mesh = World.LoadMesh(model);
+	//}
+
+	bool MeshSpawned = false;
 
 	auto renderGraph = RenderGraph(device, World.SceneGPU);
 	WindowVulkan Window(instance, device);
@@ -283,6 +314,8 @@ int main()
 		camera.Update();
 		World.MainView.CameraCur = camera;
 
+		iVector2 MouseMotion;
+
 		// Input
 		{
 			SDL_Event event;
@@ -301,6 +334,17 @@ int main()
 
 						Log::Message("Window resized: %i %i", event.window.data1, event.window.data2);
 					}
+				}
+
+				if (event.type == SDL_MOUSEMOTION) {
+					MouseMotion.X = event.motion.xrel;
+					MouseMotion.Y = event.motion.yrel;
+				}
+
+				if (event.type == SDL_MOUSEWHEEL) {
+					float CameraSpeed = CVar_CameraSpeed.GetValue();
+					CameraSpeed += float(event.wheel.y);
+					CVar_CameraSpeed.SetValue(CameraSpeed);
 				}
 			}
 		}
@@ -368,7 +412,7 @@ int main()
 		World.UpdateTransforms();
 
 		// mouse picking
-		if (bViewportHover && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)))
+		if (bViewportHover && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) && !ImGuizmo::IsOver())
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			Vector2 MousePos = ViewportMousePos;
@@ -382,7 +426,7 @@ int main()
 				Vector3 triOffset = Tri.Normal() * 0.01f;
 				World.MainView.DebugRender.AddTri(Tri.A + triOffset, Tri.B + triOffset, Tri.C + triOffset, { 1, 0, 0, 1 });
 
-				CPUSceneMesh& Mesh = World.SceneCPU.Meshes[Intersection.MeshId];
+				CPUMeshResource& Mesh = World.Meshes[Intersection.MeshId].Primitives[Intersection.MeshPrimitiveId].CPU;
 
 				u32 Index1 = Mesh.Indices[Intersection.TriangleId * 3 + 0];
 				u32 Index2 = Mesh.Indices[Intersection.TriangleId * 3 + 1];
@@ -392,8 +436,8 @@ int main()
 				Vector3 Normal2 = Mesh.Normals[Index2];
 				Vector3 Normal3 = Mesh.Normals[Index3];
 
-				float Length = 30;
-				float LineWidth = 2;
+				float Length = Math::Min(Math::Min(Tri.A.Distance(Tri.B), Tri.A.Distance(Tri.C)), Tri.B.Distance(Tri.C));
+				float LineWidth = Length / 10.f;
 
 				Vector3 BasisOffset = Tri.Normal() * LineWidth / 2;
 
@@ -419,6 +463,8 @@ int main()
 				World.MainView.DebugRender.AddLineFromTo(Tri.A + BasisOffset, Tri.A + BasisOffset + Bitangent1 * Length, LineWidth, Vector4(0, 1, 0, 1));
 				World.MainView.DebugRender.AddLineFromTo(Tri.B + BasisOffset, Tri.B + BasisOffset + Bitangent2 * Length, LineWidth, Vector4(0, 1, 0, 1));
 				World.MainView.DebugRender.AddLineFromTo(Tri.C + BasisOffset, Tri.C + BasisOffset + Bitangent3 * Length, LineWidth, Vector4(0, 1, 0, 1));
+
+				SelectedObject = Intersection.ObjectId;
 			}
 		}
 
@@ -427,7 +473,7 @@ int main()
 			for (int i = 0; i < (int)World.SceneGPU->Meshes.size(); i++)
 			{
 				const GPUSceneMesh& Mesh = World.SceneGPU->Meshes[i];
-				const Box& Bounding = World.MeshBoundingBoxes[i];
+				const Box& Bounding = World.Meshes[i].BoundingBox;
 				const Vector3 Center = Bounding.CalcCenter();
 				const Vector3 Extent = Bounding.CalcSize();
 
@@ -438,6 +484,18 @@ int main()
 
 				World.MainView.DebugRender.AddBox(Transform, Vector4(0, 0.3f, 0, 0.3f));
 			}
+		}
+
+		if (SelectedObject != -1)
+		{
+			const int MeshId = World.GameObjects[SelectedObject].MeshId;
+			const Box Bounding = World.Meshes[MeshId].BoundingBox;
+			Matrix Transform = World.GameObjects[SelectedObject].Trans.GetMatrix();
+
+			Transform.Scale(Bounding.CalcSize());
+			Transform.Translate(Bounding.CalcCenter());
+
+			World.MainView.DebugRender.AddBox(Transform, Vector4(0, 0.3f, 0, 0.3f));
 		}
 
 		// rendergraph stuff
@@ -491,7 +549,7 @@ int main()
 					RenderGraphExecuteResults RGResults = renderGraph.Execute(RGParameters);
 					WaitSemaphore = RGResults.FinishSemaphore;
 
-					DrawGameViewportWindow(renderGraph.GetTextureAfterExecution(FinalTexture), camera.GetViewMatrix(), camera.GetProjectionMatrix(), World.MainView.OutputSize, bViewportHover, bViewportFocused, ViewportMousePos);
+					DrawGameViewportWindow(renderGraph.GetTextureAfterExecution(FinalTexture), World, camera.GetViewMatrix(), camera.GetProjectionMatrix(), World.MainView.OutputSize, bViewportHover, bViewportFocused, ViewportMousePos);
 					ViewportSize = World.MainView.OutputSize;
 				}
 
@@ -518,6 +576,8 @@ int main()
 			if (keyboard[SDL_SCANCODE_LEFT]) camera.Rot += Columbus::Vector3(0,5,0) * DeltaTime * 20;
 			if (keyboard[SDL_SCANCODE_RIGHT]) camera.Rot += Columbus::Vector3(0,-5,0) * DeltaTime * 20;
 
+			if (keyboard[SDL_SCANCODE_ESCAPE]) SelectedObject = -1;
+
 			float CameraSpeed = CVar_CameraSpeed.GetValue();
 			if (keyboard[SDL_SCANCODE_W]) camera.Pos += camera.Direction() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_S]) camera.Pos -= camera.Direction() * DeltaTime * CameraSpeed;
@@ -525,6 +585,17 @@ int main()
 			if (keyboard[SDL_SCANCODE_A]) camera.Pos -= camera.Right() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * CameraSpeed;
+
+			if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT))
+			{
+				camera.Rot += Vector3(MouseMotion.Y / 10.0f, -MouseMotion.X / 10.0f, 0);
+			}
+
+			if (keyboard[SDL_SCANCODE_P] && !MeshSpawned)
+			{
+				World.CreateGameObject("Hercules", mesh);
+				MeshSpawned = true;
+			}
 		}
 
 		DebugUI::EndFrame(UiContext);

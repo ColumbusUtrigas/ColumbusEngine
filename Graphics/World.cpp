@@ -16,11 +16,121 @@ namespace Columbus
 {
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
-	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings, std::vector<GameObject>& GameObjects);
+	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, EngineWorld* World);
 
 	void EngineWorld::LoadLevelGLTF(const char* Path)
 	{
-		SceneGPU = LoadScene(Device, MainView.CameraCur, Path, SceneCPU, MeshBoundingBoxes, GameObjects);
+		SceneGPU = LoadScene(Device, MainView.CameraCur, Path, this);
+	}
+
+	int EngineWorld::LoadMesh(const Model& MeshModel)
+	{
+		const SubModel& SModel = MeshModel.GetSubModel(0);
+
+		std::vector<CPUMeshResource> Primitives;
+		CPUMeshResource& CPUMesh = Primitives.emplace_back();
+
+		{
+			CPUMesh.Vertices = std::vector<Vector3>(SModel.Positions, SModel.Positions + SModel.VerticesCount);
+			CPUMesh.Normals = std::vector<Vector3>(SModel.Normals, SModel.Normals + SModel.VerticesCount);
+			CPUMesh.UV1 = std::vector<Vector2>(SModel.UVs, SModel.UVs + SModel.VerticesCount);
+			CPUMesh.Indices = std::vector<u32>(SModel.Indices, SModel.Indices + SModel.IndicesCount);
+
+			for (int i = 0; i < (int)SModel.VerticesCount; i++)
+			{
+				CPUMesh.Tangents.push_back(Vector4(SModel.Tangents[i], 1));
+			}
+		}
+
+		return LoadMesh(Primitives);
+	}
+
+	int EngineWorld::LoadMesh(std::span<CPUMeshResource> MeshPrimitives)
+	{
+		int Id = (int)Meshes.size();
+		Mesh2& Mesh = Meshes.emplace_back();
+
+		Mesh.BoundingBox = Box(Vector3(FLT_MAX), Vector3(-FLT_MAX));
+
+		for (CPUMeshResource& Primitive : MeshPrimitives)
+		{
+			MeshPrimitive& Prim = Mesh.Primitives.emplace_back();
+
+			Prim.CPU = Primitive;
+			CPUMeshResource& CPUMesh = Prim.CPU;
+			GPUMeshResource& GPUMesh = Prim.GPU;
+
+			GPUMesh.VertexCount = (int)CPUMesh.Vertices.size();
+			GPUMesh.IndicesCount = (int)CPUMesh.Indices.size();
+
+			GPUMesh.Vertices = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Vertices.size(), true, CPUMesh.Vertices.data());
+			GPUMesh.Normals = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Normals.size(), true, CPUMesh.Normals.data());
+			GPUMesh.Tangents = CreateMeshBuffer(Device, sizeof(Vector4) * CPUMesh.Tangents.size(), true, CPUMesh.Tangents.data());
+			GPUMesh.UV1 = CreateMeshBuffer(Device, sizeof(Vector2) * CPUMesh.UV1.size(), true, CPUMesh.UV1.data());
+			GPUMesh.Indices = CreateMeshBuffer(Device, sizeof(u32) * CPUMesh.Indices.size(), true, CPUMesh.Indices.data());
+
+			// Primitive bounding box
+			{
+				Vector3 MinVertex(FLT_MAX);
+				Vector3 MaxVertex(-FLT_MAX);
+
+				for (int i = 0; i < (int)CPUMesh.Vertices.size(); i++)
+				{
+					Vector3 Vertex = CPUMesh.Vertices[i];
+
+					MinVertex = Vector3::Min(Vertex, MinVertex);
+					MaxVertex = Vector3::Max(Vertex, MaxVertex);
+				}
+
+
+				Prim.BoundingBox = Box(MinVertex, MaxVertex);
+
+				// total mesh bounding box
+				Mesh.BoundingBox.Min = Vector3::Min(Mesh.BoundingBox.Min, MinVertex);
+				Mesh.BoundingBox.Max = Vector3::Max(Mesh.BoundingBox.Max, MaxVertex);
+			}
+
+			// BLAS
+			{
+				Columbus::AccelerationStructureDesc blasDesc;
+				blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
+				blasDesc.Vertices = GPUMesh.Vertices;
+				blasDesc.Indices = GPUMesh.Indices;
+				blasDesc.VerticesCount = GPUMesh.VertexCount;
+				blasDesc.IndicesCount = GPUMesh.IndicesCount;
+				GPUMesh.BLAS = Device->CreateAccelerationStructure(blasDesc);
+
+				Device->SetDebugName(GPUMesh.BLAS, "Mesh BLAS");
+				AddProfilingMemory(MemoryCounter_SceneBLAS, GPUMesh.BLAS->GetSize());
+			}
+		}
+
+		return Id;
+	}
+
+	GameObjectId EngineWorld::CreateGameObject(const char* Name, int Mesh)
+	{
+		GameObject GO;
+		GO.Id = (int)GameObjects.size();
+		GO.Name = Name;
+		GO.MeshId = Mesh;
+
+		// add GPUScene instance here
+		for (MeshPrimitive& Prim : Meshes[Mesh].Primitives)
+		{
+			GO.GPUScenePrimitives.push_back((int)SceneGPU->Meshes.size());
+
+			GPUSceneMesh GPUMesh;
+			GPUMesh.MeshResource = &Prim.GPU;
+			GPUMesh.Transform = GO.Trans.GetMatrix();
+			//GPUMesh.MaterialId
+
+			SceneGPU->Meshes.push_back(GPUMesh);
+		}
+
+		GameObjects.push_back(GO);
+
+		return GO.Id;
 	}
 
 	void EngineWorld::ReparentGameObject(GameObjectId Object, GameObjectId NewParent)
@@ -44,39 +154,47 @@ namespace Columbus
 		std::vector<WorldIntersectionResult> HitPoints;
 
 		// TODO: BVH/octree search
-		for (int i = 0; i < MeshBoundingBoxes.size(); i++)
+		for (int i = 0; i < (int)GameObjects.size(); i++)
 		{
-			CPUSceneMesh& Mesh = SceneCPU.Meshes[i];
-			Matrix& MeshTransform = SceneGPU->Meshes[i].Transform;
-			Box& Bounding = MeshBoundingBoxes[i];
+			GameObject& Obj = GameObjects[i];
 
-			if (Bounding.CalcTransformedBox(MeshTransform).Intersects(Ray.Origin, Ray.Direction))
+			for (int PrimId = 0; PrimId < (int)Meshes[Obj.MeshId].Primitives.size(); PrimId++)
 			{
-				for (int v = 0; v < Mesh.Indices.size(); v += 3)
+				const MeshPrimitive& Prim = Meshes[Obj.MeshId].Primitives[PrimId];
+				const CPUMeshResource& Mesh = Prim.CPU;
+				const Matrix& MeshTransform = Obj.Trans.GetMatrix();
+				const Box& Bounding = Prim.BoundingBox;
+
+				if (Bounding.CalcTransformedBox(MeshTransform).Intersects(Ray.Origin, Ray.Direction))
 				{
-					// extract triangle. TODO: mesh processing functions
-					u32 i1 = Mesh.Indices[v + 0];
-					u32 i2 = Mesh.Indices[v + 1];
-					u32 i3 = Mesh.Indices[v + 2];
-
-					Geometry::Triangle Tri{
-						(MeshTransform * Vector4(Mesh.Vertices[i1], 1)).XYZ(),
-						(MeshTransform * Vector4(Mesh.Vertices[i2], 1)).XYZ(),
-						(MeshTransform * Vector4(Mesh.Vertices[i3], 1)).XYZ(),
-					};
-
-					Geometry::HitPoint IntersectionPoint = Geometry::RayTriangleIntersection(Ray, Tri);
-					if (IntersectionPoint.IsHit)
+					for (int v = 0; v < Mesh.Indices.size(); v += 3)
 					{
-						WorldIntersectionResult Intersection{
-							.HasIntersection = true,
-							.MeshId = i,
-							.TriangleId = v / 3,
-							.IntersectionPoint = IntersectionPoint.Point,
-							.Triangle = Tri,
+						// extract triangle. TODO: mesh processing functions
+						u32 i1 = Mesh.Indices[v + 0];
+						u32 i2 = Mesh.Indices[v + 1];
+						u32 i3 = Mesh.Indices[v + 2];
+
+						Geometry::Triangle Tri{
+							(MeshTransform * Vector4(Mesh.Vertices[i1], 1)).XYZ(),
+							(MeshTransform * Vector4(Mesh.Vertices[i2], 1)).XYZ(),
+							(MeshTransform * Vector4(Mesh.Vertices[i3], 1)).XYZ(),
 						};
 
-						HitPoints.push_back(Intersection);
+						Geometry::HitPoint IntersectionPoint = Geometry::RayTriangleIntersection(Ray, Tri);
+						if (IntersectionPoint.IsHit)
+						{
+							WorldIntersectionResult Intersection{
+								.HasIntersection = true,
+								.ObjectId = i,
+								.MeshPrimitiveId = PrimId,
+								.MeshId = Obj.MeshId,
+								.TriangleId = v / 3,
+								.IntersectionPoint = IntersectionPoint.Point,
+								.Triangle = Tri,
+							};
+
+							HitPoints.push_back(Intersection);
+						}
 					}
 				}
 			}
@@ -118,7 +236,6 @@ namespace Columbus
 
 	void EngineWorld::UpdateTransforms()
 	{
-		return;
 		PROFILE_CPU(CpuCounter_SceneTransformUpdate);
 
 		// TODO: optimise
@@ -141,10 +258,12 @@ namespace Columbus
 				ParentId = ParentObj.ParentId;
 			}
 
-			// TODO: remove mesh duplication
 			if (Object.MeshId != -1)
 			{
-				SceneGPU->Meshes[Object.MeshId].Transform = GlobalTransform;
+				for (int Prim : Object.GPUScenePrimitives)
+				{
+					SceneGPU->Meshes[Prim].Transform = GlobalTransform;
+				}
 			}
 		}
 	}
@@ -155,9 +274,24 @@ namespace Columbus
 
 	void EngineWorld::FreeResources()
 	{
-		SceneCPU = CPUScene();
 		SceneGPU = nullptr;
-		MeshBoundingBoxes.clear();
+
+		// mesh unloading
+		for (Mesh2& Mesh : Meshes)
+		{
+			for (MeshPrimitive& Primitive : Mesh.Primitives)
+			{
+				Device->DestroyBuffer(Primitive.GPU.Vertices);
+				Device->DestroyBuffer(Primitive.GPU.Indices);
+				Device->DestroyBuffer(Primitive.GPU.UV1);
+				Device->DestroyBuffer(Primitive.GPU.UV2);
+				Device->DestroyBuffer(Primitive.GPU.Normals);
+				Device->DestroyBuffer(Primitive.GPU.Tangents);
+				Device->DestroyAccelerationStructure(Primitive.GPU.BLAS);
+			}
+		}
+
+		Meshes.clear();
 	}
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
@@ -192,7 +326,7 @@ namespace Columbus
 
 	// TODO: separate CPUScene load and GPUScene load?
 	// TODO: refactor this completely
-	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, CPUScene& cpuScene, std::vector<Box>& Boundings, std::vector<GameObject>& GameObjects)
+	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, EngineWorld* World)
 	{
 		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
 			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
@@ -245,17 +379,6 @@ namespace Columbus
 				Device->DestroyTexture(Texture);
 			}
 
-			for (auto& Mesh : Scene->Meshes)
-			{
-				Device->DestroyBuffer(Mesh.Vertices);
-				Device->DestroyBuffer(Mesh.Indices);
-				Device->DestroyBuffer(Mesh.UV1);
-				Device->DestroyBuffer(Mesh.UV2);
-				Device->DestroyBuffer(Mesh.Normals);
-				Device->DestroyBuffer(Mesh.Tangents);
-				Device->DestroyAccelerationStructure(Mesh.BLAS);
-			}
-
 			for (auto& Decal : Scene->Decals)
 			{
 				Device->DestroyTexture(Decal.Texture);
@@ -265,6 +388,7 @@ namespace Columbus
 
 			GPUScene::DestroyGPUScene(Scene, Device);
 		});
+		World->SceneGPU = Scene;
 
 		std::unordered_map<int, int> LoadedTextures;
 
@@ -329,74 +453,6 @@ namespace Columbus
 		};
 
 		Timer MeshTimer;
-		// TODO: proper data loading, materials, scene graph
-
-		// transforms
-		{
-			// get nodes and transforms
-			for (int i = 0; i < model.nodes.size(); i++)
-			{
-				tinygltf::Node& Node = model.nodes[i];
-				GameObject Object;
-
-				if (Node.matrix.size() > 0)
-				{
-					Matrix LocalTransform(1);
-					// GLTF matrices are column-major
-					double* GltfMatrix = Node.matrix.data();
-					for (int i = 0; i < 4; i++)
-					{
-						Vector4 Column((float)GltfMatrix[i * 4 + 0], (float)GltfMatrix[i * 4 + 1], (float)GltfMatrix[i * 4 + 2], (float)GltfMatrix[i * 4 + 3]);
-						LocalTransform.SetColumn(i, Column);
-					}
-
-					Vector3 T, R, S;
-					LocalTransform.DecomposeTransform(T, R, S);
-
-					Object.Trans.Position = T;
-					Object.Trans.Rotation = Quaternion(R);
-					Object.Trans.Scale = S;
-				}
-				else
-				{
-					if (Node.scale.size() > 0)
-					{
-						Object.Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
-					}
-
-					if (Node.rotation.size() > 0)
-					{
-						// negate imaginary components to rotate it into a proper basis
-						Quaternion Quat(-Node.rotation[0], -Node.rotation[1], -Node.rotation[2], Node.rotation[3]);
-						//Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
-
-						Object.Trans.Rotation = Quat;
-					}
-
-					if (Node.translation.size() > 0)
-					{
-						Object.Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
-					}
-				}
-
-				Object.Id = i;
-				Object.Children = Node.children; // vector<int>
-				Object.MeshId = Node.mesh;
-				Object.Name = Node.name;
-
-				GameObjects.push_back(Object);
-			}
-
-			// compute parents
-			for (int i = 0; i < GameObjects.size(); i++)
-			{
-				GameObject& Object = GameObjects[i];
-				for (int Child : Object.Children)
-				{
-					GameObjects[Child].ParentId = i;
-				}
-			}
-		}
 
 		// materials
 		{
@@ -442,33 +498,21 @@ namespace Columbus
 			}
 		}
 
-		//for (tinygltf::Node& Node : model.nodes)
-		for (int NodeId = 0; NodeId < model.nodes.size(); NodeId++)
+		// meshes
+		for (int i = 0; i < (int)model.meshes.size(); i++)
 		{
-			tinygltf::Node& Node = model.nodes[NodeId];
+			tinygltf::Mesh& mesh = model.meshes[i];
 
-			if (Node.mesh == -1) continue;
-
-			tinygltf::Mesh& mesh = model.meshes[Node.mesh];
+			std::vector<CPUMeshResource> Primitives;
 
 			for (auto& primitive : mesh.primitives)
 			{
-				Buffer* indexBuffer = nullptr;
-				Buffer* vertexBuffer = nullptr;
-				Buffer* uvBuffer = nullptr;
-				Buffer* normalBuffer = nullptr;
-				Buffer* tangentBuffer = nullptr;
-				Buffer* materialBuffer = nullptr;
+				CPUMeshResource& CPUMesh = Primitives.emplace_back();
 
-				Vector3 MinVertex(FLT_MAX);
-				Vector3 MaxVertex(-FLT_MAX);
+				u32 indicesCount;
+				u32 verticesCount;
 
-				cpuScene.Meshes.push_back(CPUSceneMesh{});
-				CPUSceneMesh& cpuMesh = cpuScene.Meshes.back();
-
-				int indicesCount = 0;
-				int verticesCount = 0;
-
+				// Indices
 				{
 					const auto& accessor = model.accessors[primitive.indices];
 					const auto& view = model.bufferViews[accessor.bufferView];
@@ -495,15 +539,10 @@ namespace Columbus
 					default: COLUMBUS_ASSERT(false);
 					}
 
-					cpuMesh.Indices = indices;
-
-					{
-						GltfLoadTimer<GltfLoadBuffer> T;
-						indexBuffer = CreateMeshBuffer(Device, indices.size() * sizeof(uint32_t), true, indices.data());
-						Device->SetDebugName(indexBuffer, (mesh.name + " (Indices)").c_str());
-					}
+					CPUMesh.Indices = indices;
 				}
 
+				// Vertices
 				{
 					const auto& accessor = model.accessors[primitive.attributes["POSITION"]];
 					const auto& view = model.bufferViews[accessor.bufferView];
@@ -512,28 +551,10 @@ namespace Columbus
 					const void* data = buffer.data.data() + offset;
 					verticesCount = accessor.count;
 
-					cpuMesh.Vertices = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
-
-					for (const Vector3& Vertex : cpuMesh.Vertices)
-					{
-						MinVertex.X = Math::Min(MinVertex.X, Vertex.X);
-						MinVertex.Y = Math::Min(MinVertex.Y, Vertex.Y);
-						MinVertex.Z = Math::Min(MinVertex.Z, Vertex.Z);
-
-						MaxVertex.X = Math::Max(MaxVertex.X, Vertex.X);
-						MaxVertex.Y = Math::Max(MaxVertex.Y, Vertex.Y);
-						MaxVertex.Z = Math::Max(MaxVertex.Z, Vertex.Z);
-					}
-
-					Boundings.push_back(Box(MinVertex, MaxVertex));
-
-					{
-						GltfLoadTimer<GltfLoadBuffer> T;
-						vertexBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
-						Device->SetDebugName(vertexBuffer, (mesh.name + " (Vertices)").c_str());
-					}
+					CPUMesh.Vertices = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
 				}
 
+				// UV1
 				{
 					const auto& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
 					const auto& view = model.bufferViews[accessor.bufferView];
@@ -542,15 +563,10 @@ namespace Columbus
 					const void* data = buffer.data.data() + offset;
 					verticesCount = accessor.count;
 
-					cpuMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
-
-					{
-						GltfLoadTimer<GltfLoadBuffer> T;
-						uvBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector2), true, data);
-						Device->SetDebugName(uvBuffer, (mesh.name + " (UVs)").c_str());
-					}
+					CPUMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
 				}
 
+				// Normals
 				{
 					const auto& accessor = model.accessors[primitive.attributes["NORMAL"]];
 					const auto& view = model.bufferViews[accessor.bufferView];
@@ -559,99 +575,112 @@ namespace Columbus
 					const void* data = buffer.data.data() + offset;
 					verticesCount = accessor.count;
 
-					cpuMesh.Normals = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
+					CPUMesh.Normals = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
+				}
 
+				// Tangents
+				{
+					CPUMesh.CalculateTangents();
+				}
+			}
+
+			int MeshId = World->LoadMesh(Primitives);
+		}
+
+		// scene graph
+		{
+			// get nodes and transforms
+			for (int i = 0; i < model.nodes.size(); i++)
+			{
+				tinygltf::Node& Node = model.nodes[i];
+				Transform Trans;
+
+				if (Node.mesh == -1) continue;
+
+				if (Node.matrix.size() > 0)
+				{
+					Matrix LocalTransform(1);
+					// GLTF matrices are column-major
+					double* GltfMatrix = Node.matrix.data();
+					for (int i = 0; i < 4; i++)
 					{
-						GltfLoadTimer<GltfLoadBuffer> T;
-						normalBuffer = CreateMeshBuffer(Device, accessor.count * sizeof(Vector3), true, data);
-						Device->SetDebugName(normalBuffer, (mesh.name + " (Normals)").c_str());
+						Vector4 Column((float)GltfMatrix[i * 4 + 0], (float)GltfMatrix[i * 4 + 1], (float)GltfMatrix[i * 4 + 2], (float)GltfMatrix[i * 4 + 3]);
+						LocalTransform.SetColumn(i, Column);
+					}
+
+					Vector3 T, R, S;
+					LocalTransform.DecomposeTransform(T, R, S);
+
+					Trans.Position = T;
+					Trans.Rotation = Quaternion(R);
+					Trans.Scale = S;
+				}
+				else
+				{
+					if (Node.scale.size() > 0)
+					{
+						Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
+					}
+
+					if (Node.rotation.size() > 0)
+					{
+						// negate imaginary components to rotate it into a proper basis
+						Quaternion Quat(-Node.rotation[0], -Node.rotation[1], -Node.rotation[2], Node.rotation[3]);
+						//Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
+
+						Trans.Rotation = Quat;
+					}
+
+					if (Node.translation.size() > 0)
+					{
+						Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
 					}
 				}
 
+				Trans.Update();
+				int GO = World->CreateGameObject(Node.name.c_str(), Node.mesh);
+				World->GameObjects[GO].Children = Node.children;
+				World->GameObjects[GO].Trans = Trans;
+
+				for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
 				{
-					cpuMesh.CalculateTangents();
-					tangentBuffer = CreateMeshBuffer(Device, cpuMesh.Tangents.size() * sizeof(Vector4), true, cpuMesh.Tangents.data());
-					Device->SetDebugName(tangentBuffer, (mesh.name + " (Tangents)").c_str());
+					auto& primitive = model.meshes[Node.mesh].primitives[prim];
+					int MaterialId = primitive.material > -1 ? primitive.material : -1;
+
+					Scene->Meshes[World->GameObjects[GO].GPUScenePrimitives[prim]].MaterialId = MaterialId;
 				}
-
-				Columbus::AccelerationStructureDesc blasDesc;
-				blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
-				blasDesc.Vertices = vertexBuffer;
-				blasDesc.Indices = indexBuffer;
-				blasDesc.VerticesCount = verticesCount;
-				blasDesc.IndicesCount = indicesCount;
-				auto BLAS = Device->CreateAccelerationStructure(blasDesc);
-
-				if (Device->SupportsRayTracing())
-				{
-					Device->SetDebugName(BLAS, mesh.name.c_str());
-					AddProfilingMemory(MemoryCounter_SceneBLAS, BLAS->GetSize());
-				}
-
-				int MaterialId = primitive.material > -1 ? primitive.material : -1;
-
-				Matrix Transform(1); // TODO: global transform
-				//Transform = GltfNodes[NodeId].Transform;
-
-				GPUSceneMesh Mesh;
-				Mesh.BLAS = BLAS;
-				Mesh.Transform = Transform;
-				Mesh.Vertices = vertexBuffer;
-				Mesh.Indices = indexBuffer;
-				Mesh.UV1 = uvBuffer;
-				Mesh.Normals = normalBuffer;
-				Mesh.Tangents = tangentBuffer;
-				Mesh.VertexCount = verticesCount;
-				Mesh.IndicesCount = indicesCount;
-				Mesh.MaterialId = MaterialId;
-
-				Scene->Meshes.push_back(Mesh);
 			}
+
+			// compute parents
+			for (int i = 0; i < World->GameObjects.size(); i++)
+			{
+				GameObject& Object = World->GameObjects[i];
+				for (int Child : Object.Children)
+				{
+					World->GameObjects[Child].ParentId = i;
+				}
+			}
+
 		}
+
 		Log::Message("Meshes loaded, total time: %0.2f s", MeshTimer.Elapsed());
 		Log::Message("Buffer load time: %0.2f s", GltfLoadTimes[GltfLoadBuffer]);
 		Log::Message("Material load time: %0.2f s", GltfLoadTimes[GltfLoadMaterial]);
 
-		// TODO: unify with Update
-		for (int i = 0; i < (int)GameObjects.size(); i++)
+		// create empty TLAS of MaxMeshes size
 		{
-			GameObject& Object = GameObjects[i];
-			Transform& Trans = Object.Trans;
-
-			Trans.Update();
-
-			Matrix GlobalTransform = Trans.GetMatrix();
-
-			int ParentId = Object.ParentId;
-
-			while (ParentId != -1)
+			// TLAS and BLASes should be packed into GPU scene
+			AccelerationStructureDesc TlasDesc;
+			TlasDesc.Type = AccelerationStructureType::TLAS;
+			TlasDesc.Instances = {};
+			for (int i = 0; i < GPUScene::MaxMeshes; i++)
 			{
-				GameObject& ParentObj = GameObjects[ParentId];
-				GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
-				ParentId = ParentObj.ParentId;
+				TlasDesc.Instances.push_back({ Matrix(1), nullptr });
 			}
 
-			// TODO: remove mesh duplication
-			if (Object.MeshId != -1)
-			{
-				Scene->Meshes[Object.MeshId].Transform = GlobalTransform;
-
-				Matrix M(1);
-				M.Scale(0.09f);
-				//Scene->Meshes[Object.MeshId].Transform = M;
-			}
+			Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
 		}
 
-		// TLAS and BLASes should be packed into GPU scene
-		AccelerationStructureDesc TlasDesc;
-		TlasDesc.Type = AccelerationStructureType::TLAS;
-		TlasDesc.Instances = {};
-		for (auto& mesh : Scene->Meshes)
-		{
-			TlasDesc.Instances.push_back({ mesh.Transform, mesh.BLAS });
-		}
-
-		Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
 		Scene->MainCamera = GPUCamera(DefaultCamera);
 
 		if (Device->SupportsRayTracing())

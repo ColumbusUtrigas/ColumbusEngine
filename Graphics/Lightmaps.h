@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CPUScene.h"
 #include "GPUScene.h"
 #include "Core/Buffer.h"
 #include "Core/Texture.h"
@@ -11,6 +10,8 @@
 
 namespace Columbus
 {
+
+	struct EngineWorld;
 
 	// output of lightmap packer
 	struct LightmapMeshVertex
@@ -80,10 +81,10 @@ namespace Columbus
 	};
 
 	// responsible for generating UV2 and packing atlases
-	void GenerateAndPackLightmaps(LightmapSystem& System, CPUScene& Scene);
+	void GenerateAndPackLightmaps(EngineWorld& World);
 
 	// TODO: move that into GenerateAndPackLightmaps?
-	void UploadLightmapMeshesToGPU(LightmapSystem& System, SPtr<DeviceVulkan> Device, CPUScene& CpuScene, SPtr<GPUScene> GpuScene);
+	void UploadLightmapMeshesToGPU(EngineWorld& World);
 
 	// TODO: export/saving
 

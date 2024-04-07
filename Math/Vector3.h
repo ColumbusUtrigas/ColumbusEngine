@@ -248,6 +248,16 @@ namespace Columbus
 			return *this = Clamped(Min, Max);
 		}
 
+		static Vector3_t Min(const Vector3_t& A, const Vector3_t& B)
+		{
+			return Vector3_t(Math::Min(A.X, B.X), Math::Min(A.Y, B.Y), Math::Min(A.Z, B.Z));
+		}
+
+		static Vector3_t Max(const Vector3_t& A, const Vector3_t& B)
+		{
+			return Vector3_t(Math::Max(A.X, B.X), Math::Max(A.Y, B.Y), Math::Max(A.Z, B.Z));
+		}
+
 		Vector3_t Normalized() const
 		{
 			return *this * (1.0f / sqrtf(X * X + Y * Y + Z * Z));
