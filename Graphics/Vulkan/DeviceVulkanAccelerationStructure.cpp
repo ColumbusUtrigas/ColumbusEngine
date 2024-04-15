@@ -219,6 +219,7 @@ namespace Columbus
 		std::vector<VkAccelerationStructureInstanceKHR> instances = FillInstancesTLAS(AS->GetDesc());
 
 		// upload
+		if (NumPrimitives > 0)
 		{
 			Buffer* UploadBuffer = vkas->_InstancesUploadBuffers[vkas->CurrentUploadId];
 			vkas->CurrentUploadId++;

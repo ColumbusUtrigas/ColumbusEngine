@@ -50,3 +50,4 @@ compile_shader_glsl(PathTrace.glsl   main:rgen,main:rmiss,main:rchit SHADER_BINA
 compile_shader_glsl(RayTracedShadowsPass.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 
 add_custom_target(Shaders DEPENDS ${SHADER_BINARIES} SOURCES ${SHADER_SOURCES})
+set_target_properties(Shaders PROPERTIES FOLDER "Engine")

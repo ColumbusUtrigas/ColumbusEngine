@@ -160,10 +160,10 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 // 2. UI system (basic)
 // 3. SceneGraph (and GPUScene)
 //		+ GPUScene
-//		- SceneGraph representation
-//			- Static meshes
-//			- Materials
-//			- Lights
+//		+ SceneGraph representation
+//			+ Static meshes
+//			+ Materials
+//			+ Lights
 // 4. Static reflection
 // 5. ECS
 // 6. TaskGraph
@@ -261,7 +261,6 @@ int main()
 	camera.Update();
 
 	char* SceneLoadPath = NULL;
-	//if (0)
 	if (NFD_OpenDialog("gltf", NULL, &SceneLoadPath) != NFD_OKAY)
 	{
 		return 1;
