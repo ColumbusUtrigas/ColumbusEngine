@@ -8,7 +8,7 @@
             "name": "Debug (GDB)",
             "type": "gdb",
             "request": "launch",
-            "target": "${workspaceFolder}/Binaries/ColumbusEngine",
+            "target": "${workspaceFolder}/Binaries/TestApp",
             "cwd": "${workspaceFolder}/Binaries",
             "valuesFormatting": "parseText"
         },
@@ -16,7 +16,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug (LLDB)",
-            "program": "${workspaceFolder}/Binaries/ColumbusEngine",
+            "program": "${workspaceFolder}/Binaries/TestApp",
             "args": [],
             "cwd": "${workspaceFolder}/Binaries"
         },

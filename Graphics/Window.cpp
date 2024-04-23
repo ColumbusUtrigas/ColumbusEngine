@@ -18,8 +18,8 @@ namespace Columbus
 
 		for (int i = 0; i < MaxFramesInFlight; i++)
 		{
-			AcquireImageSemaphores[i] = Device->CreateSemaphoreA();
-			ImageBarrierSemaphores[i] = Device->CreateSemaphoreA();
+			AcquireImageSemaphores[i] = Device->CreateSemaphore();
+			ImageBarrierSemaphores[i] = Device->CreateSemaphore();
 			FrameFences[i] = Device->CreateFence(true);
 			SwapchainImageBarrierCmdBuffers[i] = Device->CreateCommandBuffer();
 		}

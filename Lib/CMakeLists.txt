@@ -63,8 +63,13 @@ if(LINUX)
 		nativefiledialog/src/nfd_common.c)
 
 	add_library(nfd STATIC ${NFD_SRC})
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+
 	target_include_directories(nfd PRIVATE nativefiledialog/src/include)
-	target_link_libraries(nfd gtk+-3.0)
+	target_include_directories(nfd PRIVATE ${GTK3_INCLUDE_DIRS})
+	target_link_directories(nfd PRIVATE ${GTK3_LIBRARY_DIRS})
+	target_link_libraries(nfd ${GTK3_LIBRARIES})
 elseif(WIN32)
 	file(GLOB NFD_SRC
 		nativefiledialog/src/nfd_win.cpp

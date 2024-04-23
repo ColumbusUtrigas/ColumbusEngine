@@ -99,7 +99,7 @@ namespace Columbus
 					R = 1.0f / (DeltaUV[0].X * DeltaUV[1].Y - DeltaUV[0].Y * DeltaUV[1].X);
 					Tangent = R * (DeltaPos[0] * DeltaUV[1].Y - DeltaPos[1] * DeltaUV[0].Y);
 
-					for (int j = 0; j < 3; j++) model.Tangents[i + j] = Tangent;
+					for (int j = 0; j < 3 && i + j < model.VerticesCount; j++) model.Tangents[i + j] = Tangent;
 				}
 			}
 		}
