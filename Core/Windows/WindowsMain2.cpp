@@ -272,7 +272,7 @@ int main()
 	EngineWorld World;
 	World.Device = device;
 	World.LoadLevelGLTF(SceneLoadPath);
-	//World.SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(device));
+	// World.SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(device));
 
 	//if (0)
 	//{
@@ -336,8 +336,8 @@ int main()
 				}
 
 				if (event.type == SDL_MOUSEMOTION) {
-					MouseMotion.X = event.motion.xrel;
-					MouseMotion.Y = event.motion.yrel;
+					MouseMotion.X += event.motion.xrel;
+					MouseMotion.Y += event.motion.yrel;
 				}
 
 				if (event.type == SDL_MOUSEWHEEL) {

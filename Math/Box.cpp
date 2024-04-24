@@ -1,6 +1,7 @@
 #include "Box.h"
 
 #include <limits.h>
+#include <float.h>
 
 namespace Columbus
 {

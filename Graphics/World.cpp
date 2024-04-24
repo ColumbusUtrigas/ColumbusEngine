@@ -2,6 +2,8 @@
 
 #include <Math/Quaternion.h>
 
+#include <limits.h>
+#include <float.h>
 #include <algorithm>
 #include <Lib/tinygltf/tiny_gltf.h>
 
@@ -31,14 +33,17 @@ namespace Columbus
 		CPUMeshResource& CPUMesh = Primitives.emplace_back();
 
 		{
-			CPUMesh.Vertices = std::vector<Vector3>(SModel.Positions, SModel.Positions + SModel.VerticesCount);
-			CPUMesh.Normals = std::vector<Vector3>(SModel.Normals, SModel.Normals + SModel.VerticesCount);
-			CPUMesh.UV1 = std::vector<Vector2>(SModel.UVs, SModel.UVs + SModel.VerticesCount);
-			CPUMesh.Indices = std::vector<u32>(SModel.Indices, SModel.Indices + SModel.IndicesCount);
-
 			for (int i = 0; i < (int)SModel.VerticesCount; i++)
 			{
+				CPUMesh.Vertices.push_back(SModel.Positions[i]);
+				CPUMesh.Normals.push_back(SModel.Normals[i]);
+				CPUMesh.UV1.push_back(SModel.UVs[i]);
 				CPUMesh.Tangents.push_back(Vector4(SModel.Tangents[i], 1));
+			}
+
+			for (int i = 0; i < (int)SModel.IndicesCount; i++)
+			{
+				CPUMesh.Indices.push_back(SModel.Indices[i]);
 			}
 		}
 

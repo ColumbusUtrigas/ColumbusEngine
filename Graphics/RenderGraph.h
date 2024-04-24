@@ -158,7 +158,7 @@ namespace Columbus
 			{
 				if (Id >= CommandBuffersSemaphores.size())
 				{
-					VkSemaphore Semaphore = Device->CreateSemaphoreA();
+					VkSemaphore Semaphore = Device->CreateSemaphore();
 					CommandBuffersSemaphores.push_back(Semaphore);
 				}
 
