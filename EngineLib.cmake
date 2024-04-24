@@ -1,8 +1,8 @@
 # define shader-related variables
 if (LINUX)
-	set(DXC_PATH "${CMAKE_SOURCE_DIR}/Lib/dxc/linux/bin/dxc")
+	set(DXC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Lib/dxc/linux/bin/dxc")
 elseif (WIN32)
-	set(DXC_PATH "${CMAKE_SOURCE_DIR}/Lib/dxc/windows/bin/x64/dxc.exe")
+	set(DXC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Lib/dxc/windows/bin/x64/dxc.exe")
 endif()
 set(SPIRV_OUTPUT_DIR "${BINARIES_DIR}/PrecompiledShaders/")
 

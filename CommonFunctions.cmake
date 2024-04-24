@@ -22,7 +22,7 @@ function(group_files_by_directory)
 		string(REPLACE ${CMAKE_CURRENT_SOURCE_DIR} "" GROUP ${PARENT_DIR})
 
 		# Make sure we are using windows slashes
-		string(REPLACE "/" "\\" GROUP ${GROUP})
+		# string(REPLACE "/" "\\" GROUP ${GROUP})
 
 		# Group into "Source Files" and "Header Files"
 		#    if ("${FILE}" MATCHES ".*\\.cpp")

@@ -1,5 +1,8 @@
-file(GLOB_RECURSE SHADER_SOURCES *.glsl)
-file(GLOB_RECURSE SHADER_SOURCES *.hlsl)
+file(GLOB_RECURSE SHADER_SOURCES *.hlsl *.glsl)
+group_files_by_directory(SRCS ${SHADER_SOURCES})
+
+# disable visual studio's default shader compilation that fails my thing
+set_source_files_properties(SOURCE ${SHADER_SOURCES} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
 
 compile_shader_hlsl(Tonemap.hlsl     main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(ComputeColourGradingLUT.hlsl main:cs SHADER_BINARIES)
@@ -51,3 +54,9 @@ compile_shader_glsl(RayTracedShadowsPass.glsl main:rgen,main:rmiss,main:rchit SH
 
 add_custom_target(Shaders DEPENDS ${SHADER_BINARIES} SOURCES ${SHADER_SOURCES})
 set_target_properties(Shaders PROPERTIES FOLDER "Engine")
+
+add_custom_command(TARGET Shaders POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E echo "Copying compiled shaders into target directory"
+	COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${TARGET}>/PrecompiledShaders/"
+	COMMAND ${CMAKE_COMMAND} -E copy_directory "${BINARIES_DIR}/PrecompiledShaders/" "$<TARGET_FILE_DIR:${TARGET}>/PrecompiledShaders/"
+)

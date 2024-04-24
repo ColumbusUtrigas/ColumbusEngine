@@ -6,11 +6,22 @@ project(ColumbusEngine)
 include(EngineLib.cmake)
 
 # TODO: project-related stuff here
-set(BINARIES_DIR ${PROJECT_SOURCE_DIR}/Binaries)
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BINARIES_DIR}) # static libraries output
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BINARIES_DIR}) # dynamic libraries output
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BINARIES_DIR}) # executables output
+if (NOT DEFINED BINARIES_DIR)
+    set(BINARIES_DIR ${PROJECT_SOURCE_DIR}/Binaries)
+    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BINARIES_DIR}) # static libraries output
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BINARIES_DIR}) # dynamic libraries output
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BINARIES_DIR}) # executables output
+
+    message("Setting new BINARIES_DIR, it is ${BINARIES_DIR}")
+else()
+    message("Grabbing BINARIES_DIR from the upper project, it is ${BINARIES_DIR}")
+endif()
+
+message("Some debug info for CMake")
+message("CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
+message("CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
+message("CMAKE_ARCHIVE_OUTPUT_DIRECTORY = ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 
 # add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")
 # add_custom_command(TARGET ${PROJECT_NAME} COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Shaders" "$<TARGET_FILE_DIR:${TARGET}>/Data/Shaders")
@@ -31,11 +42,11 @@ set_target_properties(TestApp PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET
                                          VS_DEBUGGER_COMMAND           "$<TARGET_FILE:TestApp>")
 ################################
 
-ADD_CUSTOM_TARGET(do_always1 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")
-ADD_CUSTOM_TARGET(do_always2 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/Shaders" "$<TARGET_FILE_DIR:${TARGET}>/Data/Shaders")
+ADD_CUSTOM_TARGET(do_always1 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Data" "$<TARGET_FILE_DIR:${TARGET}>/Data")
+ADD_CUSTOM_TARGET(do_always2 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" "$<TARGET_FILE_DIR:${TARGET}>/Data/Shaders")
 
 if (WIN32)
 	# copy required DLLs to build
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/RequiredForBuild/" "$<TARGET_FILE_DIR:${TARGET}>")
+			COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/RequiredForBuild/" "$<TARGET_FILE_DIR:${TARGET}>")
 endif()
