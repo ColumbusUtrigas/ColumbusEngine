@@ -30,6 +30,7 @@ namespace Columbus
 	public:
 		btRigidBody* mRigidbody;
 	public:
+		Rigidbody(btCollisionShape* InShape);
 		Rigidbody(PhysicsShape* InShape = nullptr);
 		Rigidbody(Transform InTransform, PhysicsShape* INShape = nullptr);
 

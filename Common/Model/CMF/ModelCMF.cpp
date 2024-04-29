@@ -61,6 +61,19 @@ namespace Columbus
 		return Result;
 	}
 
+	template <typename T>
+	static int* CreateAndFillIndex32(uint32 Count, T* Data)
+	{
+		int* Result = new int[Count];
+
+		for (int i = 0; i < (int)Count; i++)
+		{
+			Result[i] = (int)Data[i];
+		}
+
+		return Result;
+	}
+
 	bool IsNew(const char* FileName)
 	{
 		File Model(FileName, "rb");
@@ -133,12 +146,24 @@ namespace Columbus
 					SubModels[0].IndicesCount = ArrayHeader.Size / SubModels[0].IndexSize;
 					SubModels[0].Indexed = true;
 
+#if 0
 					switch (SubModels[0].IndexSize)
 					{
 					case 1: SubModels[0].Indices = (int*)CreateAndFill<uint8> (SubModels[0].IndicesCount, Data + Offset, ArrayHeader.Size); break;
 					case 2: SubModels[0].Indices = (int*)CreateAndFill<uint16>(SubModels[0].IndicesCount, Data + Offset, ArrayHeader.Size); break;
 					case 4: SubModels[0].Indices = (int*)CreateAndFill<uint32>(SubModels[0].IndicesCount, Data + Offset, ArrayHeader.Size); break;
 					}
+#endif
+
+					switch (SubModels[0].IndexSize)
+					{
+					case 1: SubModels[0].Indices = (int*)CreateAndFillIndex32<u8>(SubModels[0].IndicesCount, (u8*)(Data + Offset)); break;
+					case 2: SubModels[0].Indices = (int*)CreateAndFillIndex32<u16>(SubModels[0].IndicesCount, (u16*)(Data + Offset)); break;
+					case 4: SubModels[0].Indices = (int*)CreateAndFillIndex32<u32>(SubModels[0].IndicesCount, (u32*)(Data + Offset)); break;
+					}
+
+					// output always int index size
+					SubModels[0].IndexSize = 4;
 
 					break;
 				}

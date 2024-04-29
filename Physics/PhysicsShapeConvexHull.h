@@ -4,6 +4,8 @@
 #include <Common/Model/Model.h>
 #include <Core/Types.h>
 
+#include <BulletCollision/CollisionShapes/btShapeHull.h>
+
 namespace Columbus
 {
 
@@ -13,34 +15,40 @@ namespace Columbus
 		uint32 Count; //Count of points
 		DECLARE_PROTOTYPE(PhysicsShape, PhysicsShapeConvexHull, "PhysicsShapeConvexHull", nullptr, 0)
 	public:
-		PhysicsShapeConvexHull(float* Points, uint32 Count) :
+		PhysicsShapeConvexHull(float* Points, uint32 InCount, bool OptimiseHull = true) :
 			Count(0)
 		{
-			if (Points != nullptr && Count != 0)
+			assert(InCount > 3);
+
+			if (OptimiseHull)
 			{
-				mShape = new btConvexHullShape(Points, Count, sizeof(float) * 3);
-				this->Count = Count;
+				// https://www.gamedev.net/forums/topic/691208-build-a-convex-hull-from-a-given-mesh-in-bullet/
+
+				// needed to optimise convex hull
+				btConvexHullShape TmpHull(Points, InCount, sizeof(float) * 3);
+
+				//create a hull approximation
+				TmpHull.setMargin(0);  // this is to compensate for a bug in bullet
+
+				// optimisation procedure
+				btShapeHull* Hull = new btShapeHull(&TmpHull);
+				Hull->buildHull(0);    // note: parameter is ignored by buildHull
+
+				mShape = new btConvexHullShape((const btScalar*)Hull->getVertexPointer(), Hull->numVertices(), sizeof(btVector3));
+				this->Count = Hull->numVertices();
+
+				delete Hull;
+			}
+			else
+			{
+				mShape = new btConvexHullShape(Points, InCount, sizeof(float) * 3);
+				this->Count = InCount;
 			}
 		}
 
-		PhysicsShapeConvexHull(const std::vector<Vertex>& Vertices) :
-			Count(0)
+		PhysicsShapeConvexHull(const std::vector<Vector3>& Vertices, bool OptimiseHull = true) :
+			PhysicsShapeConvexHull((float*)Vertices.data(), Vertices.size(), OptimiseHull)
 		{
-			if (Vertices.size() != 0)
-			{
-				float* Points = new float[Vertices.size() * 3];
-				uint64 Counter = 0;
-				for (auto& Vertex : Vertices)
-				{
-					Points[Counter++] = Vertex.pos.X;
-					Points[Counter++] = Vertex.pos.Y;
-					Points[Counter++] = Vertex.pos.Z;
-				}
-
-				this->Count = Vertices.size();
-				mShape = new btConvexHullShape(Points, Vertices.size(), sizeof(float) * 3);
-				delete[] Points;
-			}
 		}
 		/*
 		* Returns count of Convex-mesh points

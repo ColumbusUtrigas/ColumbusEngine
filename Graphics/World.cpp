@@ -20,6 +20,11 @@ namespace Columbus
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
 	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, EngineWorld* World);
 
+	EngineWorld::EngineWorld()
+	{
+		Physics.SetGravity(Vector3(0, -9.81f, 0));
+	}
+
 	void EngineWorld::LoadLevelGLTF(const char* Path)
 	{
 		SceneGPU = LoadScene(Device, MainView.CameraCur, Path, this);
@@ -237,6 +242,13 @@ namespace Columbus
 
 		MainView.CameraPrev = MainView.CameraCur;
 		MainView.DebugRender.Clear();
+	}
+
+	void EngineWorld::Update(float DeltaTime)
+	{
+		UpdateTransforms();
+
+		Physics.Step(DeltaTime, 1);
 	}
 
 	void EngineWorld::UpdateTransforms()

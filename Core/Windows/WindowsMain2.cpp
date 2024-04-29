@@ -36,6 +36,11 @@
 #include <Math/Box.h>
 #include <Graphics/DebugUI.h>
 
+// TEST
+#include <Physics/PhysicsWorld.h>
+#include <Physics/PhysicsShapeConvexHull.h>
+#include <Physics/PhysicsShapeSphere.h>
+
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_vulkan.h>
@@ -63,6 +68,98 @@ IMPLEMENT_CPU_PROFILING_COUNTER("RG Add", "RenderGraph", CpuCounter_RenderGraphC
 
 // TODO: make it normal
 int SelectedObject = -1;
+
+struct Player
+{
+	EngineWorld& World;
+
+	int MeshId;
+	GameObjectId Id;
+	Rigidbody* RB;
+
+	Player(EngineWorld& World) : World(World), Id(-1) {}
+
+	void Load();
+	void Spawn();
+
+	void HandleInput();
+
+	void PrePhysics();
+	void PostPhysics();
+};
+
+void Player::Load()
+{
+	Model model;
+	model.Load("Data/Meshes/Sphere.obj");
+	//model.Load("Data/Meshes/Hercules.cmf");
+	model.RecalculateTangents();
+	MeshId = World.LoadMesh(model);
+
+	SubModel a = model.GetSubModel(0);
+
+	Vector3 Center;
+	float Radius = 0;
+	{
+		for (int i = 0; i < a.VerticesCount; i++)
+		{
+			Center += a.Positions[i];
+		}
+
+		Center /= a.VerticesCount;
+
+		for (int i = 0; i < a.VerticesCount; i++)
+		{
+			Radius = Math::Max(a.Positions[i].Distance(Center), Radius);
+		}
+	}
+
+	PhysicsShapeConvexHull* Hull = new PhysicsShapeConvexHull((float*)a.Positions, a.VerticesCount);
+	PhysicsShapeSphere* Sphere = new PhysicsShapeSphere(Radius);
+
+	RB = new Rigidbody(Sphere);
+	RB->SetStatic(false);
+}
+
+void Player::Spawn()
+{
+	if (Id != -1)
+		return; // already spawned
+
+	Id = World.CreateGameObject("Player", MeshId);
+	World.GameObjects[Id].Trans.Position = Vector3(0, 100, 0);
+	World.GameObjects[Id].Trans.Update();
+
+	RB->SetTransform(World.GameObjects[Id].Trans);
+
+	World.Physics.AddRigidbody(RB);
+}
+
+void Player::HandleInput()
+{
+	auto keyboard = SDL_GetKeyboardState(NULL);
+	if (keyboard[SDL_SCANCODE_I]) RB->ApplyCentralImpulse(Vector3(0, 0, +1));
+	if (keyboard[SDL_SCANCODE_J]) RB->ApplyCentralImpulse(Vector3(+1, 0, 0));
+	if (keyboard[SDL_SCANCODE_K]) RB->ApplyCentralImpulse(Vector3(0, 0, -1));
+	if (keyboard[SDL_SCANCODE_L]) RB->ApplyCentralImpulse(Vector3(-1, 0, 0));
+}
+
+void Player::PrePhysics()
+{
+	if (Id != -1)
+	{
+		RB->SetTransform(World.GameObjects[Id].Trans);
+	}
+}
+
+void Player::PostPhysics()
+{
+	if (Id != -1)
+	{
+		World.GameObjects[Id].Trans = RB->GetTransform();
+		World.GameObjects[Id].Trans.Update();
+	}
+}
 
 // TODO: move to appropriate place
 static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, Matrix ViewMatrix, Matrix ProjectionMatrix, iVector2& InOutViewSize, bool& OutWindowHover, bool& OutViewportFocus, Vector2& OutRelativeMousePosition)
@@ -112,6 +209,31 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 	}
 	ImGui::End();
 	ImGui::PopStyleVar(1);
+}
+
+static void AddWorldCollision(EngineWorld& World)
+{
+	// create rigidbodies for the level
+	for (int i = 0; i < (int)World.GameObjects.size(); i++)
+	{
+		const Mesh2& mesh = World.Meshes[World.GameObjects[i].MeshId];
+
+		for (int j = 0; j < (int)mesh.Primitives.size(); j++)
+		{
+			int numFaces = mesh.Primitives[j].CPU.Indices.size() / 3;
+			int vertStride = sizeof(Vector3);
+			int indexStride = 3 * sizeof(u32);
+			btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray(numFaces,
+				(int*)mesh.Primitives[j].CPU.Indices.data(),
+				indexStride,
+				mesh.Primitives[j].CPU.Vertices.size(), (btScalar*)mesh.Primitives[j].CPU.Vertices.data(), vertStride);
+			btBvhTriangleMeshShape* triShape = new btBvhTriangleMeshShape(va, true);
+
+			Rigidbody* MeshRB = new Rigidbody(triShape);
+			MeshRB->SetStatic(true);
+			World.Physics.AddRigidbody(MeshRB);
+		}
+	}
 }
 
 // Engine structure that I find appropriate
@@ -239,18 +361,6 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 // Think about multiple windows/viewports
 // Think about multi-gpu
 //
-// POSSIBLY
-// GPUParameters struct should contain descriptor sets
-// So, Context.GetParameters<MyParameters>() will return a valid struct with a several preallocated descriptor sets
-// Context.UpdateParameters<MyParameters>(params) will update descriptor sets based on data passed into it
-// and then Context.BindParameters<MyParameters>(params)
-//
-// Therefore, GPUScene can be abstracted away with this (so, it defines several descriptor sets and how to map data from CPU to GPU)
-// descriptor set layouts are allocated and recycled based on SPIR-V reflection
-// How to generate descriptor set layouts for GPUScene when there are no shaders loaded?
-//	- what data do we really need for descriptor set layout? can it be acquired from GPUParameters?
-//	- solution 1 - define everything (indices, names, types) in GPUParameters, create descriptor set layouts using caching scheme
-//	- solution 2 - simple - just create it in rendergraph
 int main()
 {
 	InitializeEngine();
@@ -272,17 +382,12 @@ int main()
 	EngineWorld World;
 	World.Device = device;
 	World.LoadLevelGLTF(SceneLoadPath);
-	// World.SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(device));
+	// World.SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(device)); // empty level
 
-	//if (0)
-	//{
-		Model model;
-		model.Load("Data/Meshes/Hercules.cmf");
-		model.RecalculateTangents();
-		int mesh = World.LoadMesh(model);
-	//}
+	AddWorldCollision(World);
 
-	bool MeshSpawned = false;
+	Player player(World);
+	player.Load();
 
 	auto renderGraph = RenderGraph(device, World.SceneGPU);
 	WindowVulkan Window(instance, device);
@@ -305,7 +410,7 @@ int main()
 		DebugUI::BeginFrame(UiContext);
 		PROFILE_CPU(Counter_TotalCPU);
 
-		float DeltaTime = timer.Elapsed();
+		float DeltaTime = (float)timer.Elapsed();
 		timer.Reset();
 
 		// TODO:
@@ -377,6 +482,8 @@ int main()
 				static float Peak = 1;
 				static float Offset = 0.5f;
 				static float StdDev = 1;
+				static float XMin = -4;
+				static float XMax = 4;
 
 				const auto Gaussian = [](float x)
 				{
@@ -388,15 +495,27 @@ int main()
 					ImGui::SliderFloat("Peak", &Peak, 0, 5);
 					ImGui::SliderFloat("Offset", &Offset, -0.5f, 0.5f);
 					ImGui::SliderFloat("StdDev", &StdDev, 0, 5);
+					ImGui::InputFloat("X Min", &XMin);
+					ImGui::InputFloat("X Max", &XMax);
 
 					float x[1000];
 					float y[1000];
 
 					for (int i = 0; i < 1000; i++)
 					{
-						x[i] = i / (float)1000;
+						x[i] = i / (float)1000 * (XMax - XMin) + XMin;
 						y[i] = Gaussian(x[i]);
 					}
+
+					// find area under the curve
+					float xDist = x[1] - x[0]; // distance between samples
+					float area = 0;
+					for (int i = 0; i < 1000; i++)
+					{
+						area += xDist * y[i];
+					}
+
+					ImGui::Text("Area: %f", area);
 
 					if (ImPlot::BeginPlot("Gaussian"))
 					{
@@ -408,7 +527,9 @@ int main()
 			}
 		}
 
-		World.UpdateTransforms();
+		player.PrePhysics();
+		World.Update(DeltaTime);
+		player.PostPhysics();
 
 		// mouse picking
 		if (bViewportHover && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) && !ImGuizmo::IsOver())
@@ -485,6 +606,7 @@ int main()
 			}
 		}
 
+		// TODO: common object selection interface
 		if (SelectedObject != -1)
 		{
 			const int MeshId = World.GameObjects[SelectedObject].MeshId;
@@ -585,15 +707,16 @@ int main()
 			if (keyboard[SDL_SCANCODE_LSHIFT]) camera.Pos += camera.Up() * DeltaTime * CameraSpeed;
 			if (keyboard[SDL_SCANCODE_LCTRL]) camera.Pos -= camera.Up() * DeltaTime * CameraSpeed;
 
+			player.HandleInput();
+
 			if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT))
 			{
 				camera.Rot += Vector3(MouseMotion.Y / 10.0f, -MouseMotion.X / 10.0f, 0);
 			}
 
-			if (keyboard[SDL_SCANCODE_P] && !MeshSpawned)
+			if (keyboard[SDL_SCANCODE_P])
 			{
-				World.CreateGameObject("Hercules", mesh);
-				MeshSpawned = true;
+				player.Spawn();
 			}
 		}
 

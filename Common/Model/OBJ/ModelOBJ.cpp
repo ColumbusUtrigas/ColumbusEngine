@@ -29,6 +29,15 @@ namespace Columbus
 			SubModels[i].VerticesCount = shapes[i].mesh.indices.size();
 			SubModels[i].Positions = new Vector3[SubModels[i].VerticesCount];
 
+			SubModels[i].Indexed = true;
+			SubModels[i].Indices = new int[SubModels[i].VerticesCount];
+			SubModels[i].IndicesCount = shapes[i].mesh.indices.size();
+
+			for (int j = 0; j < SubModels[i].VerticesCount; j++)
+			{
+				SubModels[i].Indices[j] = j;
+			}
+
 			for (int j = 0; j < SubModels[i].VerticesCount; j++)
 			{
 				auto vid = shapes[i].mesh.indices[j].vertex_index;

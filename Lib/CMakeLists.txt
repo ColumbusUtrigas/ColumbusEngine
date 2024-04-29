@@ -89,6 +89,7 @@ dir_to_var_recurse(bullet3/src/LinearMath BULLET_MATH_SRC)
 set(BULLET_SRC ${BULLET_COLLISION_SRC} ${BULLET_DYNAMICS_SRC} ${BULLET_MATH_SRC})
 add_library(bullet STATIC ${BULLET_SRC})
 target_include_directories(bullet PRIVATE bullet3/src)
+target_compile_definitions(bullet PRIVATE BT_THREADSAFE)
 set(BULLET_LIB bullet)
 set_target_properties(bullet PROPERTIES FOLDER "Lib")
 

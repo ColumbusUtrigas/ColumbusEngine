@@ -53,9 +53,9 @@ struct CVarData
 		// TODO: thread safety
 		switch (Type)
 		{
-		case CVarDataType::Bool:  Bool  = (T)Value; break;
-		case CVarDataType::Int:   Int   = (T)Value; break;
-		case CVarDataType::Float: Float = (T)Value; break;
+		case CVarDataType::Bool:  Bool  =  (bool)Value; break;
+		case CVarDataType::Int:   Int   =   (int)Value; break;
+		case CVarDataType::Float: Float = (float)Value; break;
 		default:
 			assert(false);
 		}

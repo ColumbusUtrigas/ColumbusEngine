@@ -7,6 +7,7 @@
 #include "Math/Box.h"
 #include "Math/Geometry.h"
 #include "Scene/Transform.h"
+#include "Physics/PhysicsWorld.h"
 #include "Profiling/Profiling.h"
 
 #include "Common/Model/Model.h"
@@ -17,6 +18,7 @@ DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneBLAS);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTLAS);
 
 DECLARE_CPU_PROFILING_COUNTER(CpuCounter_SceneTransformUpdate);
+DECLARE_CPU_PROFILING_COUNTER(CpuCounter_ScenePhysicsUpdate);
 
 namespace Columbus
 {
@@ -71,11 +73,14 @@ namespace Columbus
 
 		// systems
 		LightmapSystem Lightmaps;
+		PhysicsWorld Physics;
 
 		// rendering
 		SPtr<DeviceVulkan> Device;
 		RenderView MainView;
 
+	public:
+		EngineWorld();
 	public:
 		// functions
 		void LoadLevelGLTF(const char* Path);
@@ -100,6 +105,7 @@ namespace Columbus
 		WorldIntersectionResult CastCameraRayClosestHit(const Vector2& NormalisedScreenCoordinates);
 
 		void BeginFrame();
+		void Update(float DeltaTime);
 		void UpdateTransforms();
 		void EndFrame();
 

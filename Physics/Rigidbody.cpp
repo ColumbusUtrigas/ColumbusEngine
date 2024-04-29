@@ -5,7 +5,7 @@ namespace Columbus
 {
 
 	Rigidbody::Rigidbody(PhysicsShape* InShape) :
-		Static(false),
+		Static(true),
 		Mass(1.0f),
 		Restitution(0.0f),
 		Friction(0.5f),
@@ -30,8 +30,14 @@ namespace Columbus
 		SetLinearTreshold(LinearTreshold);
 	}
 
+	Rigidbody::Rigidbody(btCollisionShape* InShape) : Rigidbody()
+	{
+		mRigidbody->setCollisionShape(InShape);
+		SetStatic(Static);
+	}
+
 	Rigidbody::Rigidbody(Transform InTransform, PhysicsShape* InShape) :
-		Static(false),
+		Static(true),
 		Mass(1.0f),
 		Restitution(0.0f),
 		Friction(0.5f),
@@ -128,6 +134,7 @@ namespace Columbus
 			if (InStatic == true)
 			{
 				mRigidbody->setMassProps(0, btVector3(0, 0, 0));
+				mRigidbody->setCollisionFlags(mRigidbody->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 			} else
 			{
 				SetMass(Mass);
