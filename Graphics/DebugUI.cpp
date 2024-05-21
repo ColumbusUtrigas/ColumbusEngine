@@ -290,7 +290,7 @@ namespace Columbus::DebugUI
 		if (ImGui::TreeNodeEx(Object.Name.c_str(), flags))
 		{
 			ImGui::Text("Id: %i", Object.Id);
-			ImGui::Text("Mesh Primitives: %i", World.Meshes[Object.MeshId].Primitives.size());
+			ImGui::Text("Mesh Primitives: %i", World.Meshes[Object.MeshId]->Primitives.size());
 			ImGui::SliderFloat3("Position", (float*)&Trans.Position, -10, +10);
 			ImGui::SliderFloat3("Rotation", (float*)&Euler, 0, 360);
 			ImGui::SliderFloat4("Quat", (float*)&Trans.Rotation, 0, 360);

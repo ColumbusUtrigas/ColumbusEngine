@@ -58,7 +58,8 @@ namespace Columbus
 	int EngineWorld::LoadMesh(std::span<CPUMeshResource> MeshPrimitives)
 	{
 		int Id = (int)Meshes.size();
-		Mesh2& Mesh = Meshes.emplace_back();
+		Meshes.push_back(new Mesh2{});
+		Mesh2& Mesh = *Meshes.back();
 
 		Mesh.BoundingBox = Box(Vector3(FLT_MAX), Vector3(-FLT_MAX));
 
@@ -126,7 +127,7 @@ namespace Columbus
 		GO.MeshId = Mesh;
 
 		// add GPUScene instance here
-		for (MeshPrimitive& Prim : Meshes[Mesh].Primitives)
+		for (MeshPrimitive& Prim : Meshes[Mesh]->Primitives)
 		{
 			GO.GPUScenePrimitives.push_back((int)SceneGPU->Meshes.size());
 
@@ -168,9 +169,9 @@ namespace Columbus
 		{
 			GameObject& Obj = GameObjects[i];
 
-			for (int PrimId = 0; PrimId < (int)Meshes[Obj.MeshId].Primitives.size(); PrimId++)
+			for (int PrimId = 0; PrimId < (int)Meshes[Obj.MeshId]->Primitives.size(); PrimId++)
 			{
-				const MeshPrimitive& Prim = Meshes[Obj.MeshId].Primitives[PrimId];
+				const MeshPrimitive& Prim = Meshes[Obj.MeshId]->Primitives[PrimId];
 				const CPUMeshResource& Mesh = Prim.CPU;
 				const Matrix& MeshTransform = Obj.Trans.GetMatrix();
 				const Box& Bounding = Prim.BoundingBox;
@@ -294,9 +295,9 @@ namespace Columbus
 		SceneGPU = nullptr;
 
 		// mesh unloading
-		for (Mesh2& Mesh : Meshes)
+		for (Mesh2* Mesh : Meshes)
 		{
-			for (MeshPrimitive& Primitive : Mesh.Primitives)
+			for (MeshPrimitive& Primitive : Mesh->Primitives)
 			{
 				Device->DestroyBuffer(Primitive.GPU.Vertices);
 				Device->DestroyBuffer(Primitive.GPU.Indices);

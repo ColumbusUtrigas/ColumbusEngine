@@ -64,7 +64,7 @@ namespace Columbus
 	{
 		SPtr<GPUScene> SceneGPU; // TODO: move some stuff (lights, decals) from SceneGPU here, make a proper upload routine
 
-		std::vector<Mesh2> Meshes;
+		std::vector<Mesh2*> Meshes; // pointer so that resize of Meshes doesn't invalidate internal pointers
 		// TODO: Materials (interface, which will be copied to GPUScene)
 		// TODO: Decals
 		// TODO: Lights

@@ -528,6 +528,7 @@ namespace Columbus
 		static float DiffuseBoost = 1.0f;
 
 		// debug ui
+		if (ImGui::GetCurrentContext())
 		{
 			if (ImGui::Begin("RTGI"))
 			{

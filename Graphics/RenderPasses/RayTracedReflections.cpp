@@ -39,11 +39,14 @@ namespace Columbus
 
 		static bool Blur = true;
 
-		if (ImGui::Begin("RT Reflections Debug"))
+		if (ImGui::GetCurrentContext())
 		{
-			ImGui::Checkbox("Blur", &Blur);
+			if (ImGui::Begin("RT Reflections Debug"))
+			{
+				ImGui::Checkbox("Blur", &Blur);
+			}
+			ImGui::End();
 		}
-		ImGui::End();
 
 		RenderGraphTextureRef RTReflections = Graph.CreateTexture(Desc, "RayTracedReflection");
 

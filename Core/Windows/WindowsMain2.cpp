@@ -216,7 +216,7 @@ static void AddWorldCollision(EngineWorld& World)
 	// create rigidbodies for the level
 	for (int i = 0; i < (int)World.GameObjects.size(); i++)
 	{
-		const Mesh2& mesh = World.Meshes[World.GameObjects[i].MeshId];
+		const Mesh2& mesh = *World.Meshes[World.GameObjects[i].MeshId];
 
 		for (int j = 0; j < (int)mesh.Primitives.size(); j++)
 		{
@@ -546,7 +546,7 @@ int main()
 				Vector3 triOffset = Tri.Normal() * 0.01f;
 				World.MainView.DebugRender.AddTri(Tri.A + triOffset, Tri.B + triOffset, Tri.C + triOffset, { 1, 0, 0, 1 });
 
-				CPUMeshResource& Mesh = World.Meshes[Intersection.MeshId].Primitives[Intersection.MeshPrimitiveId].CPU;
+				CPUMeshResource& Mesh = World.Meshes[Intersection.MeshId]->Primitives[Intersection.MeshPrimitiveId].CPU;
 
 				u32 Index1 = Mesh.Indices[Intersection.TriangleId * 3 + 0];
 				u32 Index2 = Mesh.Indices[Intersection.TriangleId * 3 + 1];
@@ -593,7 +593,7 @@ int main()
 			for (int i = 0; i < (int)World.SceneGPU->Meshes.size(); i++)
 			{
 				const GPUSceneMesh& Mesh = World.SceneGPU->Meshes[i];
-				const Box& Bounding = World.Meshes[i].BoundingBox;
+				const Box& Bounding = World.Meshes[i]->BoundingBox;
 				const Vector3 Center = Bounding.CalcCenter();
 				const Vector3 Extent = Bounding.CalcSize();
 
@@ -610,7 +610,7 @@ int main()
 		if (SelectedObject != -1)
 		{
 			const int MeshId = World.GameObjects[SelectedObject].MeshId;
-			const Box Bounding = World.Meshes[MeshId].BoundingBox;
+			const Box Bounding = World.Meshes[MeshId]->BoundingBox;
 			Matrix Transform = World.GameObjects[SelectedObject].Trans.GetMatrix();
 
 			Transform.Scale(Bounding.CalcSize());

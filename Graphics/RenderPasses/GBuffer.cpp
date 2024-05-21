@@ -403,14 +403,18 @@ namespace Columbus
 		static float FSR1Sharpening = 0.0f;
 
 		static float RenderResolution = 1.0f;
-		if (ImGui::Begin("Deferred Debug"))
+
+		if (ImGui::GetCurrentContext())
 		{
-			ImGui::Checkbox("FSR1", &ApplyFSR);
-			ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
-			ImGui::SliderFloat("Sharpening", &FSR1Sharpening, 0.0f, 2.0f);
-			ImGui::SliderFloat("Scaling", &RenderResolution, 0.25f, 1.0f);
+			if (ImGui::Begin("Deferred Debug"))
+			{
+				ImGui::Checkbox("FSR1", &ApplyFSR);
+				ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
+				ImGui::SliderFloat("Sharpening", &FSR1Sharpening, 0.0f, 2.0f);
+				ImGui::SliderFloat("Scaling", &RenderResolution, 0.25f, 1.0f);
+			}
+			ImGui::End();
 		}
-		ImGui::End();
 
 		if (ApplyFSR)
 		{
