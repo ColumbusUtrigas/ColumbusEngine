@@ -629,7 +629,6 @@ int main()
 				PROFILE_CPU(CpuCounter_RenderGraphCreate);
 
 				UploadGPUSceneRG(renderGraph);
-				// TODO: rebuild/refit TLAS
 
 				if (render_cvar.GetValue() == 0)
 				{

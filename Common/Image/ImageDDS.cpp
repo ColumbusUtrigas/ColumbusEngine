@@ -290,7 +290,7 @@ namespace Columbus::ImageUtils
 		case DDS_FOURCC("DXT2"): // BC2_UNORM
 		case DDS_FOURCC("DXT3"): return TextureFormat::DXT3; // BC2_UNORM
 		case DDS_FOURCC("DXT4"): // BC3_UNORM
-		case DDS_FOURCC("DXT5"): return TextureFormat::DXT3; // BC3_UNORM
+		case DDS_FOURCC("DXT5"): return TextureFormat::DXT5; // BC3_UNORM
 		case DDS_FOURCC("ATI2"): return TextureFormat::DXT5; // BC5_UNORM
 		// TODO: "BC4S" = BC4_SNORM, "BC5S" = BC5_SNORM
 		}
