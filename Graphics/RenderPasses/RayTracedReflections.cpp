@@ -31,7 +31,7 @@ namespace Columbus
 		RENDER_GRAPH_SCOPED_MARKER(Graph, "RayTracedReflections");
 
 		TextureDesc2 Desc{
-			.Usage = TextureUsage::Storage,
+			.Usage = TextureUsage::StorageSampled,
 			.Width = (u32)View.RenderSize.X,
 			.Height = (u32)View.RenderSize.Y,
 			.Format = TextureFormat::RGBA16F,

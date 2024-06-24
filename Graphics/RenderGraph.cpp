@@ -58,67 +58,51 @@ size_t Columbus::HashRenderPassParameters::operator()(const Columbus::RenderPass
 namespace Columbus
 {
 
-	// TODO: unify
+	void RenderGraphData::ClearDescriptorData()
+	{
+		for (auto& DescriptorData : DescriptorSets[CurrentPerFrameData])
+		{
+			memset(DescriptorData.second.NumUsedThisFrame, 0, sizeof(DescriptorData.second.NumUsedThisFrame));
+		}
+	}
+
+	template <typename PipelineType, typename VulkanPipelineType>
+	static VkDescriptorSet GetDescriptorSetCached(RenderGraphData& RenderData, SPtr<DeviceVulkan> Device, const PipelineType* InPipeline, int Index)
+	{
+		auto vkpipe = static_cast<const VulkanPipelineType*>(InPipeline);
+		VkPipeline Pipeline = vkpipe->pipeline;
+
+		auto& DescriptorCache = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
+		if (DescriptorCache.find(Pipeline) == DescriptorCache.end())
+		{
+			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetFrameData();
+
+			DescriptorCache[Pipeline] = DescriptorSetData;
+		}
+
+		auto& PipelineDescriptorsData = DescriptorCache[Pipeline];
+
+		if (PipelineDescriptorsData.NumUsedThisFrame[Index] >= PipelineDescriptorsData.DescriptorSets[Index].size())
+		{
+			PipelineDescriptorsData.DescriptorSets[Index].push_back(Device->CreateDescriptorSet(InPipeline, Index));
+		}
+
+		return PipelineDescriptorsData.DescriptorSets[Index][PipelineDescriptorsData.NumUsedThisFrame[Index]++];
+	}
+
 	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const ComputePipeline* Pipeline, int Index)
 	{
-		auto vkpipe = static_cast<const ComputePipelineVulkan*>(Pipeline);
-
-		auto& DescriptorSets = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
-		if (DescriptorSets.find(vkpipe->pipeline) == DescriptorSets.end())
-		{
-			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
-
-			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
-			{
-				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
-			}
-
-			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
-		}
-
-		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
+		return GetDescriptorSetCached<ComputePipeline, ComputePipelineVulkan>(RenderData, Device, Pipeline, Index);
 	}
 
-	// TODO: unify
 	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index)
 	{
-		auto vkpipe = static_cast<const GraphicsPipelineVulkan*>(Pipeline);
-
-		auto& DescriptorSets = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
-		if (DescriptorSets.find(vkpipe->pipeline) == DescriptorSets.end())
-		{
-			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
-
-			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
-			{
-				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
-			}
-
-			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
-		}
-
-		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
+		return GetDescriptorSetCached<GraphicsPipeline, GraphicsPipelineVulkan>(RenderData, Device, Pipeline, Index);
 	}
 
-	// TODO: unify
 	VkDescriptorSet RenderGraphContext::GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index)
 	{
-		auto vkpipe = static_cast<const RayTracingPipelineVulkan*>(Pipeline);
-
-		auto& DescriptorSets = RenderData.DescriptorSets[RenderData.CurrentPerFrameData];
-		if (DescriptorSets.find(vkpipe->pipeline) == DescriptorSets.end())
-		{
-			auto DescriptorSetData = RenderGraphData::PipelineDescriptorSetData();
-
-			for (u32 i = 0; i < vkpipe->SetLayouts.UsedLayouts; i++)
-			{
-				DescriptorSetData.DescriptorSets[i] = Device->CreateDescriptorSet(Pipeline, i);
-			}
-
-			DescriptorSets[vkpipe->pipeline] = DescriptorSetData;
-		}
-
-		return DescriptorSets[vkpipe->pipeline].DescriptorSets[Index];
+		return GetDescriptorSetCached<RayTracingPipeline, RayTracingPipelineVulkan>(RenderData, Device, Pipeline, Index);
 	}
 
 	void RenderGraphContext::BindGPUScene(const GraphicsPipeline* Pipeline)
@@ -543,6 +527,7 @@ namespace Columbus
 		Buffers.clear();
 		Extractions.clear();
 		TextureInvalidations.clear();
+		RenderData.ClearDescriptorData();
 
 		// TODO: renderpass and framebuffer cleanup, framebuffer must be invalidated if any of texture that it depends on is invalidated
 

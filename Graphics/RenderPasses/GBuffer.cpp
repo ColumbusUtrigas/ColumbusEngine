@@ -412,6 +412,24 @@ namespace Columbus
 				ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
 				ImGui::SliderFloat("Sharpening", &FSR1Sharpening, 0.0f, 2.0f);
 				ImGui::SliderFloat("Scaling", &RenderResolution, 0.25f, 1.0f);
+
+				static const char* Combos[] =
+				{
+					"Final",
+					"GBufferOverview",
+					"GBufferAlbedo",
+					"GBufferNormal",
+					"GBufferRoughness",
+					"GBufferMetallic",
+					"GBufferDepth",
+					"Velocity",
+					"LightingOnly",
+					"Shadows",
+					"Reflections",
+					"RTGI",
+				};
+
+				ImGui::Combo("Visualisation mode", (int*)&DeferredContext.VisualisationMode, Combos, sizeof(Combos) / sizeof(Combos[0]));
 			}
 			ImGui::End();
 		}
@@ -443,9 +461,16 @@ namespace Columbus
 		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderDeferredSky(Graph, View, Textures, DeferredContext, LightingTexture);
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
+		Textures.FinalAfterTonemap = TonemappedImage;
 		ScreenshotPass(Graph, View, View.ScreenshotHDR ? LightingTexture : TonemappedImage);
 
 		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
+
+		// debug visualisation modes
+		if (DeferredContext.VisualisationMode != EDeferredRenderVisualisationMode::Final)
+		{
+			TonemappedImage = DebugVisualisationPass(Graph, View, Textures, DeferredContext);
+		}
 
 		if (ApplyFSR)
 		{

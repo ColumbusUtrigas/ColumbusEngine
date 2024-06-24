@@ -314,12 +314,6 @@ namespace Columbus
 	{
 		auto texvk = static_cast<const TextureVulkan*>(Texture);
 
-		VkClearColorValue Color;
-		Color.float32[0] = Value.X;
-		Color.float32[1] = Value.Y;
-		Color.float32[2] = Value.Z;
-		Color.float32[3] = Value.W;
-
 		VkImageSubresourceRange Range;
 		Range.aspectMask = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
 		Range.baseMipLevel = 0; // TODO:
@@ -327,7 +321,26 @@ namespace Columbus
 		Range.baseArrayLayer = 0; // TODO:
 		Range.layerCount = 1; // TODO:
 
-		vkCmdClearColorImage(_CmdBuf, texvk->_Image, texvk->_Layout, &Color, 1, &Range);
+		const TextureFormatInfo& Info = TextureFormatGetInfo(Texture->GetDesc().Format);
+
+		if (Info.HasStencil || Info.HasDepth)
+		{
+			VkClearDepthStencilValue DSValue;
+			DSValue.depth = Value.X;
+			DSValue.stencil = 0;
+
+			vkCmdClearDepthStencilImage(_CmdBuf, texvk->_Image, texvk->_Layout, &DSValue, 1, &Range);
+		}
+		else
+		{
+			VkClearColorValue Color;
+			Color.float32[0] = Value.X;
+			Color.float32[1] = Value.Y;
+			Color.float32[2] = Value.Z;
+			Color.float32[3] = Value.W;
+
+			vkCmdClearColorImage(_CmdBuf, texvk->_Image, texvk->_Layout, &Color, 1, &Range);
+		}
 	}
 
 	void CommandBufferVulkan::ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount)

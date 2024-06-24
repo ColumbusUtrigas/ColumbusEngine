@@ -164,6 +164,172 @@ namespace Columbus
 		});
 	}
 
+	RenderGraphTextureRef DebugVisualisationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
+	{
+		iVector2 Size = View.RenderSize;
+
+		TextureDesc2 ResultDesc;
+		ResultDesc.Format = TextureFormat::R11G11B10F; // format to get less banding
+		ResultDesc.Usage = TextureUsage::RenderTargetColor;
+		ResultDesc.Width = (u32)Size.X;
+		ResultDesc.Height = (u32)Size.Y;
+
+		RenderGraphTextureRef Result = Graph.CreateTexture(ResultDesc, "VisualisationResult");
+
+		RenderPassParameters Parameters;
+		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Result, {} };
+		Parameters.ViewportSize = Size;
+
+		RenderPassDependencies Dependencies(Graph.Allocator);
+
+		struct ShaderParameters
+		{
+			enum
+			{
+				FLAG_NONE   = 0,
+				FLAG_R_ONLY = 1,
+				FLAG_G_ONLY = 2,
+				FLAG_NORMAL = 4,
+				FLAG_DEPTH  = 8,
+			};
+
+			iVector2 ViewportSize;
+			u32 Flags;
+		};
+
+		struct VisualisationImageParameters
+		{
+			RenderGraphTextureRef TextureToVisualise;
+			TextureBindingFlags BindingFlags;
+			ShaderParameters ShaderParams;
+		};
+
+		VisualisationImageParameters ImagesParams[6]{};
+		int ImagesParamsCount = 1;
+
+		ImagesParams[0].BindingFlags = TextureBindingFlags::AspectColour;
+		ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_NONE;
+
+		switch (DeferredContext.VisualisationMode)
+		{
+		case EDeferredRenderVisualisationMode::GBufferOverview:
+			ImagesParamsCount = 6;
+
+			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
+			ImagesParams[1].TextureToVisualise = Textures.GBufferNormal;
+			ImagesParams[2].TextureToVisualise = Textures.GBufferDS;
+			ImagesParams[3].TextureToVisualise = Textures.GBufferRM;
+			ImagesParams[4].TextureToVisualise = Textures.GBufferRM;
+			ImagesParams[5].TextureToVisualise = Textures.FinalAfterTonemap;
+
+			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_NONE;
+			ImagesParams[1].ShaderParams.Flags = ShaderParameters::FLAG_NORMAL;
+			ImagesParams[2].ShaderParams.Flags = ShaderParameters::FLAG_DEPTH;
+			ImagesParams[3].ShaderParams.Flags = ShaderParameters::FLAG_R_ONLY;
+			ImagesParams[4].ShaderParams.Flags = ShaderParameters::FLAG_G_ONLY;
+			ImagesParams[5].ShaderParams.Flags = ShaderParameters::FLAG_NONE;
+
+			ImagesParams[0].BindingFlags = TextureBindingFlags::AspectColour;
+			ImagesParams[1].BindingFlags = TextureBindingFlags::AspectColour;
+			ImagesParams[2].BindingFlags = TextureBindingFlags::AspectDepth;
+			ImagesParams[3].BindingFlags = TextureBindingFlags::AspectColour;
+			ImagesParams[4].BindingFlags = TextureBindingFlags::AspectColour;
+			ImagesParams[5].BindingFlags = TextureBindingFlags::AspectColour;
+			break;
+		case EDeferredRenderVisualisationMode::GBufferAlbedo:
+			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
+			break;
+		case EDeferredRenderVisualisationMode::GBufferNormal:
+			ImagesParams[0].TextureToVisualise = Textures.GBufferNormal;
+			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_NORMAL;
+			break;
+		case EDeferredRenderVisualisationMode::GBufferRoughness:
+			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_R_ONLY;
+			ImagesParams[0].TextureToVisualise = Textures.GBufferRM;
+			break;
+		case EDeferredRenderVisualisationMode::GBufferMetallic:
+			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_G_ONLY;
+			ImagesParams[0].TextureToVisualise = Textures.GBufferRM;
+			break;
+		case EDeferredRenderVisualisationMode::GBufferDepth:
+			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_DEPTH;
+			ImagesParams[0].TextureToVisualise = Textures.GBufferDS;
+			ImagesParams[0].BindingFlags = TextureBindingFlags::AspectDepth;
+			break;
+		case EDeferredRenderVisualisationMode::Velocity:
+			ImagesParams[0].TextureToVisualise = Textures.Velocity;
+			break;
+		case EDeferredRenderVisualisationMode::Reflections:
+			ImagesParams[0].TextureToVisualise = Textures.RTReflections;
+			break;
+		case EDeferredRenderVisualisationMode::RTGI:
+			ImagesParams[0].TextureToVisualise = Textures.RTGI;
+			break;
+		default:
+			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
+			break;
+		}
+
+		for (int i = 0; i < ImagesParamsCount; i++)
+		{
+			Dependencies.Read(ImagesParams[i].TextureToVisualise, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		}
+
+		Graph.AddPass("Debug Visualisation", RenderGraphPassType::Raster, Parameters, Dependencies, [ImagesParams, ImagesParamsCount, Size](RenderGraphContext& Context)
+		{
+			static GraphicsPipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				GraphicsPipelineDesc Desc;
+				Desc.Name = "DebugVisualisation";
+				Desc.rasterizerState.Cull = CullMode::No;
+				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc(),
+				};
+
+				Desc.depthStencilState.DepthEnable = false;
+				Desc.depthStencilState.DepthWriteMask = false;
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Visualisation.csd");
+
+				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+			}
+
+			// TODO: create generic static sampler system, similar to unreal's
+			static Sampler* Sam = nullptr;
+			if (Sam == nullptr)
+			{
+				SamplerDesc SamDesc;
+				Sam = Context.Device->CreateSampler(SamDesc);
+			}
+
+			Vector2 ViewportSize = ImagesParamsCount == 1 ? Size : Size / Vector2(3, 2);
+
+			for (int i = 0; i < ImagesParamsCount; i++)
+			{
+				VisualisationImageParameters Params = ImagesParams[i];
+				Params.ShaderParams.ViewportSize = Size;
+
+				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Params.TextureToVisualise).get(), Params.BindingFlags, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Sam);
+
+				Vector2 CurrentPos;
+				CurrentPos.X = (i % 3) * ViewportSize.X;
+				CurrentPos.Y = (i / 3) * ViewportSize.Y;
+
+				Context.CommandBuffer->SetViewport(CurrentPos.X, CurrentPos.Y, ViewportSize.X, ViewportSize.Y, 0, 1);
+				Context.CommandBuffer->SetScissor((i32)CurrentPos.X, (i32)CurrentPos.Y, (i32)ViewportSize.X, (i32)ViewportSize.Y);
+
+				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Params.ShaderParams), &Params.ShaderParams);
+				Context.CommandBuffer->Draw(3, 1, 0, 0);
+			}
+		});
+
+		return Result;
+	}
+
 	void ShowDebugConsole()
 	{
 		static char buf[1024]{ 0 };

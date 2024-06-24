@@ -12,7 +12,12 @@ namespace Columbus
 	public:
 		DescriptorCache(DeviceVulkan* Device) : Device(Device) {}
 
-		VkDescriptorSetLayout GetSetLayout();
+		void StartNewFrame()
+		{
+
+		}
+
+		VkDescriptorSet GetDescriptorSet(VkPipeline Pipeline, int Index);
 	private:
 		DeviceVulkan* Device;
 	};

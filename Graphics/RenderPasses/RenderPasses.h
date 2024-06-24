@@ -16,6 +16,22 @@ namespace Columbus
 	// Common
 	//
 
+	enum class EDeferredRenderVisualisationMode
+	{
+		Final,
+		GBufferOverview,
+		GBufferAlbedo,
+		GBufferNormal,
+		GBufferRoughness,
+		GBufferMetallic,
+		GBufferDepth,
+		Velocity,
+		LightingOnly,
+		Shadows,
+		Reflections,
+		RTGI,
+	};
+
 	void UploadGPUSceneRG(RenderGraph& Graph);
 
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
@@ -71,6 +87,7 @@ namespace Columbus
 	{
 		std::vector<GPULightRenderInfo> LightRenderInfos;
 
+		EDeferredRenderVisualisationMode VisualisationMode = EDeferredRenderVisualisationMode::Final;
 		HistorySceneTextures History;
 	};
 
@@ -87,6 +104,8 @@ namespace Columbus
 		RenderGraphTextureRef RTReflections;
 		RenderGraphTextureRef RTGI;
 
+		RenderGraphTextureRef FinalAfterTonemap;
+
 		HistorySceneTextures& History;
 	};
 
@@ -96,6 +115,7 @@ namespace Columbus
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture); // only for DebugRender objects
+	RenderGraphTextureRef DebugVisualisationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& HistoryTextures);
 
 	// Real-time raytracing

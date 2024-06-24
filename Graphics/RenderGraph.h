@@ -188,12 +188,17 @@ namespace Columbus
 
 		} PerFrameData[MaxFramesInFlight];
 
-		// TODO: move to shader caching system
-		// TODO: proper descriptor set management, currently if two passes use one shader, they overlap
-		struct PipelineDescriptorSetData
+		struct PipelineDescriptorSetFrameData
 		{
-			VkDescriptorSet DescriptorSets[16] {0};
+			static constexpr int MaxDescriptorSet = 16;
+
+			std::vector<VkDescriptorSet> DescriptorSets[MaxDescriptorSet];
+			u32 NumUsedThisFrame[MaxDescriptorSet]{ 0 };
 		};
+
+		std::unordered_map<VkPipeline, PipelineDescriptorSetFrameData> DescriptorSets[MaxFramesInFlight];
+
+		void ClearDescriptorData();
 
 		// TODO: move to GPUScene
 		struct
@@ -208,9 +213,6 @@ namespace Columbus
 			VkDescriptorSet TextureSet;
 			VkDescriptorSet SceneSet;
 		} GPUSceneData;
-
-		// TODO: move to shader caching system
-		std::unordered_map<VkPipeline, PipelineDescriptorSetData> DescriptorSets[MaxFramesInFlight];
 
 		int CurrentPerFrameData = 0;
 		iVector2 DefaultViewportSize;
