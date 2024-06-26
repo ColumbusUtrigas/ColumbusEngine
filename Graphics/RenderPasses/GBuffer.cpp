@@ -26,7 +26,8 @@ namespace Columbus
 	struct PerObjectParameters
 	{
 		Matrix M,VP,VPPrev;
-		// Matrix VPrev, PPrev;
+		Vector2 Jittering;
+		Vector2 JitteringPrev;
 		uint32_t ObjectId;
 	};
 
@@ -144,6 +145,8 @@ namespace Columbus
 			Context.BindGPUScene(Pipeline);
 
 			PerObjectParameters Parameters;
+			Parameters.Jittering = View.CameraCur.GetJittering();
+			Parameters.JitteringPrev = View.CameraPrev.GetJittering();
 
 			for (int i = 0; i < Context.Scene->Meshes.size(); i++)
 			{
@@ -398,6 +401,7 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
+		static bool ApplyTAA = false;
 		static bool ApplyFSR = false;
 		static bool ApplyFSR1Sharpening = false;
 		static float FSR1Sharpening = 0.0f;
@@ -408,6 +412,7 @@ namespace Columbus
 		{
 			if (ImGui::Begin("Deferred Debug"))
 			{
+				ImGui::Checkbox("TAA", &ApplyTAA);
 				ImGui::Checkbox("FSR1", &ApplyFSR);
 				ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
 				ImGui::SliderFloat("Sharpening", &FSR1Sharpening, 0.0f, 2.0f);
@@ -443,6 +448,11 @@ namespace Columbus
 			View.RenderSize = View.OutputSize;
 		}
 
+		if (ApplyTAA)
+		{
+			Antialiasing::ApplyJitter(View);
+		}
+
 		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);
 
 		DeferredContext.LightRenderInfos.clear();
@@ -458,11 +468,17 @@ namespace Columbus
 		RenderIndirectLightingDDGI(Graph, View);
 		RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
 
-		RenderGraphTextureRef LightingTexture = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
-		RenderDeferredSky(Graph, View, Textures, DeferredContext, LightingTexture);
-		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, LightingTexture);
+		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
+		RenderDeferredSky(Graph, View, Textures, DeferredContext, Textures.FinalBeforeTonemap);
+
+		if (ApplyTAA)
+		{
+			Textures.FinalBeforeTonemap = Antialiasing::RenderTAA(Graph, View, Textures);
+		}
+
+		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, Textures.FinalBeforeTonemap);
 		Textures.FinalAfterTonemap = TonemappedImage;
-		ScreenshotPass(Graph, View, View.ScreenshotHDR ? LightingTexture : TonemappedImage);
+		ScreenshotPass(Graph, View, View.ScreenshotHDR ? Textures.FinalBeforeTonemap : TonemappedImage);
 
 		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
 

@@ -47,6 +47,7 @@ compile_shader_glsl(IrradianceProbesVisualise.glsl   main:vs,main:ps SHADER_BINA
 compile_shader_glsl(GBufferPass.glsl main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Sky.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
+compile_shader_hlsl(TAA.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(Debug.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Visualisation.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_glsl(GBufferLightingPass.glsl main:cs SHADER_BINARIES)

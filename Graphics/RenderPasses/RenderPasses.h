@@ -78,6 +78,8 @@ namespace Columbus
 		Texture2* RoughnessMetallic = nullptr;
 		Texture2* Normals = nullptr;
 
+		Texture2* TAAHistory = nullptr;
+
 		RTGIDenoiserHistory RTGI_History;
 
 		void Destroy(SPtr<DeviceVulkan> Device);
@@ -104,10 +106,19 @@ namespace Columbus
 		RenderGraphTextureRef RTReflections;
 		RenderGraphTextureRef RTGI;
 
+		RenderGraphTextureRef FinalBeforeTonemap;
 		RenderGraphTextureRef FinalAfterTonemap;
 
 		HistorySceneTextures& History;
 	};
+
+	// Anti-Aliasing
+	namespace Antialiasing
+	{
+		void ApplyJitter(RenderView& View);
+
+		RenderGraphTextureRef RenderTAA(RenderGraph& Graph, RenderView& View, SceneTextures& Textures);
+	}
 
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History);
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures);

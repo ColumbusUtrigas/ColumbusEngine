@@ -6,6 +6,8 @@
 layout(push_constant) uniform Params
 {
 	mat4 M,VP,VPPrev; // TODO: remove that from here
+	vec2 Jittering;
+	vec2 JitteringPrev;
 	uint ObjectId;
 } Parameters;
 
@@ -76,6 +78,11 @@ layout(push_constant) uniform Params
 
 	layout (location = 8) in mat3 TBN;
 
+	vec2 NdcToUv(vec2 x)
+	{
+		return x * vec2(0.5f, -0.5f) + 0.5f;
+	}
+
 	void main()
 	{
 		vec3 LightmapColor = vec3(0);
@@ -87,12 +94,25 @@ layout(push_constant) uniform Params
 
 		GPUMaterialSampledData Material = GPUScene_SampleMaterial(InMaterialId, InUV);
 
+		vec2 Velocity;
+		{
+			vec2 NdcCurrent = InClipspacePos.xy / InClipspacePos.w;
+			vec2 NdcPrev = InClipspacePosPrev.xy / InClipspacePosPrev.w;
+
+			// remove jitter
+			NdcCurrent -= Parameters.Jittering * vec2(1,-1);
+			NdcPrev    -= Parameters.JitteringPrev * vec2(1,-1);
+
+			Velocity = NdcCurrent - NdcPrev;
+			//Velocity = NdcToUv(NdcCurrent) - NdcToUv(NdcPrev);
+		}
+
 		RT0 = Material.Albedo;
 		// RT1 = normalize(TBN * Material.Normal);
 		RT1 = normalize(InNormal);
 		RT2 = InWP; // TODO: remove? reconstruct from screenpos and linear depth
 		RT3 = vec2(Material.Roughness, Material.Metallic);
-		RT4 = vec2(InClipspacePos.xy/InClipspacePos.w - InClipspacePosPrev.xy/InClipspacePosPrev.w);
+		RT4 = Velocity;
 		RT5 = LightmapColor;
 	}
 #endif

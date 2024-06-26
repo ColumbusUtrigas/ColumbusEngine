@@ -79,6 +79,17 @@ namespace Columbus
 		return ViewMatrix;
 	}
 
+	void Camera::ApplyProjectionJitter(float X, float Y)
+	{
+		Matrix JitterMatrix(1);
+		JitterMatrix.Translate(Vector3(X, Y, 0));
+
+		ProjectionMatrix = JitterMatrix * ProjectionMatrix;
+		ViewProjection = ProjectionMatrix * ViewMatrix;
+
+		Jittering = Vector2(X, Y);
+	}
+
 	Vector3 Camera::CalcRayByNdc(const Vector2& NDC) const
 	{
 		Vector4 MouseVector(NDC, -1, 1);

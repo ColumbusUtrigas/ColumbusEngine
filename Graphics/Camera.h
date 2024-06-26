@@ -16,9 +16,11 @@ namespace Columbus
 		Matrix ProjectionMatrix;
 		Matrix ViewMatrix;
 		Matrix ViewProjection;
-		
+
 		bool PreTargeted = false;
 		Vector3 Target = Vector3(0, 0, 4);
+
+		Vector2 Jittering;
 	public:
 		Vector3 Pos = Vector3(0, 0, 5);
 		Vector3 Rot = Vector3(0, 0, 0);
@@ -30,9 +32,9 @@ namespace Columbus
 		}
 	public:
 		Camera();
-		
+
 		void Update();
-		
+
 		Vector3 Direction() const;
 		Vector3 Right() const;
 		Vector3 Up() const;
@@ -43,6 +45,10 @@ namespace Columbus
 		const Matrix& GetViewProjection() const;
 		const Matrix& GetProjectionMatrix() const;
 		const Matrix& GetViewMatrix() const;
+
+		Vector2 GetJittering() const { return Jittering; }
+
+		void ApplyProjectionJitter(float X, float Y);
 
 		// having viewspace normalised coordinates, shoot a ray into the world and return it's direction
 		Vector3 CalcRayByNdc(const Vector2& NDC) const;

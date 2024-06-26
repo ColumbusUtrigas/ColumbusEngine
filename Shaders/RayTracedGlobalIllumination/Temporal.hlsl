@@ -15,6 +15,9 @@
 // Outputs
 [[vk::binding(6, SET)]] RWTexture2D<float4> g_output      : register(u1);
 
+// Misc
+[[vk::binding(7, SET)]] SamplerState g_sampler            : register(s7);
+
 [[vk::push_constant]]
 struct _Params {
     float4x4 ProjectionInv;
@@ -40,6 +43,10 @@ void main(int2 dtid : SV_DispatchThreadID)
 {
     if (any(dtid >= Params.Size))
         return;
+
+    const float2 VelocityRaw = g_velocity[dtid] / 2;
+    const float2 Uv = (dtid + 0.5f) / float2(Params.Size);
+    const float2 UvReprojected = Uv - VelocityRaw;
 
     float2 Velocity = floor(g_velocity[dtid] / 2 * Params.Size + 0.5);
     int2 PrevCoords = int2(dtid - Velocity);
@@ -91,7 +98,8 @@ void main(int2 dtid : SV_DispatchThreadID)
 
     SampleCount = clamp(SampleCount, 0, 100);
 
-    float3 HistoryValue = g_history[PrevCoordsClamped];
+    //float3 HistoryValue = g_history[PrevCoordsClamped];
+    float3 HistoryValue = g_history.SampleLevel(g_sampler, UvReprojected, 0);
 
     // neighbourhood clamp
     if (false)

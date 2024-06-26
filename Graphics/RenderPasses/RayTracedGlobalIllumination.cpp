@@ -475,6 +475,16 @@ namespace Columbus
 					Pipeline = Context.Device->CreateComputePipeline(Desc);
 				}
 
+				// TODO: create generic static sampler system, similar to unreal's
+				static Sampler* Sam = nullptr;
+				if (Sam == nullptr)
+				{
+					SamplerDesc SamDesc;
+					SamDesc.AddressU = TextureAddressMode::ClampToEdge;
+					SamDesc.AddressV = TextureAddressMode::ClampToEdge;
+					Sam = Context.Device->CreateSampler(SamDesc);
+				}
+
 				auto Set = Context.GetDescriptorSet(Pipeline, 0);
 				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Radiance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
@@ -484,6 +494,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(Set, 5, 0, Textures.History.RTGI_History.SampleCount);
 
 				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(Radiance2).get());
+				Context.Device->UpdateDescriptorSet(Set, 7, 0, Sam);
 
 				SimpleDenoiserTemporalParameters Params{
 					.ProjectionInv = ProjectionInv,
