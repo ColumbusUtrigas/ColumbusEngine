@@ -63,22 +63,12 @@ namespace Columbus::Antialiasing
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}
 
-			// TODO: create generic static sampler system, similar to unreal's
-			static Sampler* Sam = nullptr;
-			if (Sam == nullptr)
-			{
-				SamplerDesc SamDesc;
-				SamDesc.AddressU = TextureAddressMode::ClampToEdge;
-				SamDesc.AddressV = TextureAddressMode::ClampToEdge;
-				Sam = Context.Device->CreateSampler(SamDesc);
-			}
-
 			auto Set = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(InputTexture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set, 1, 0, HistoryTexture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(VelocityTexture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(OutputTexture).get());
-			Context.Device->UpdateDescriptorSet(Set, 4, 0, Sam);
+			Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
 
 			struct
 			{
@@ -86,14 +76,10 @@ namespace Columbus::Antialiasing
 			} Params;
 			Params.Resolution = Size;
 
-			// TODO: compute dispatch helper
-			const int GroupSize = 8; // 8x8
-			const iVector2 Groups = (Size + GroupSize - 1) / GroupSize;
-
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
 			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
-			Context.CommandBuffer->Dispatch(Groups.X, Groups.Y, 1);
+			Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { Size, 1 });
 		});
 
 		Graph.ExtractTexture(OutputTexture, &Textures.History.TAAHistory);

@@ -294,14 +294,6 @@ namespace Columbus
 				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 			}
 
-			// TODO: create generic static sampler system, similar to unreal's
-			static Sampler* Sam = nullptr;
-			if (Sam == nullptr)
-			{
-				SamplerDesc SamDesc;
-				Sam = Context.Device->CreateSampler(SamDesc);
-			}
-
 			Vector2 ViewportSize = ImagesParamsCount == 1 ? Size : Size / Vector2(3, 2);
 
 			for (int i = 0; i < ImagesParamsCount; i++)
@@ -311,7 +303,7 @@ namespace Columbus
 
 				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Params.TextureToVisualise).get(), Params.BindingFlags, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Sam);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
 
 				Vector2 CurrentPos;
 				CurrentPos.X = (i % 3) * ViewportSize.X;

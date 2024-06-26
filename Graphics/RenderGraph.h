@@ -238,6 +238,9 @@ namespace Columbus
 
 		SPtr<Texture2> GetRenderGraphTexture(RenderGraphTextureRef Ref);
 		SPtr<Buffer> GetRenderGraphBuffer(RenderGraphBufferRef Ref);
+
+		// automatically launch groups encapsulating pixels
+		void DispatchComputePixels(const ComputePipeline* Pipeline, iVector3 GroupSize, iVector3 Pixels);
 	};
 
 	struct RenderPassAttachment

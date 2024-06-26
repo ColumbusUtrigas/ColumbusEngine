@@ -890,6 +890,16 @@ namespace Columbus
 		delete Sam;
 	}
 
+	Sampler* DeviceVulkan::GetStaticSampler(const SamplerDesc& Desc)
+	{
+		if (!StaticSamplers.contains(Desc))
+		{
+			StaticSamplers[Desc] = CreateSampler(Desc);
+		}
+		
+		return StaticSamplers[Desc];
+	}
+
 	void DeviceVulkan::SetDebugName(const CommandBufferVulkan* CmdBuf, const char* Name)
 	{
 		_SetDebugName((uint64_t)CmdBuf->_CmdBuf, VK_OBJECT_TYPE_COMMAND_BUFFER, Name);

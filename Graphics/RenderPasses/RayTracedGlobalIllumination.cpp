@@ -47,9 +47,6 @@ namespace Columbus
 		static Buffer* CB = Graph.Device->CreateBuffer(CBDesc, nullptr);
 		static Buffer* UploadBuffers[MaxFramesInFlight]{ nullptr };
 
-		SamplerDesc SamDesc; // linear by default
-		static Sampler* Sampl = Graph.Device->CreateSampler(SamDesc);
-
 		const iVector2 Size = View.RenderSize;
 
 		// update constants
@@ -217,7 +214,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(Set, 10, 0, Textures.History.RTGI_History.Variance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 11, 0, Textures.History.RTGI_History.SampleCount, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-				Context.Device->UpdateDescriptorSet(Set, 12, 0, Sampl);
+				Context.Device->UpdateDescriptorSet(Set, 12, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
 
 				Context.Device->UpdateDescriptorSet(Set, 13, 0, Context.GetRenderGraphTexture(ReprojectedRadiance).get());
 				Context.Device->UpdateDescriptorSet(Set, 14, 0, Context.GetRenderGraphTexture(AverageRadiance).get());
@@ -279,7 +276,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(CaptureParameters.Variance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(CaptureParameters.SampleCount1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Sampl);
+				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
 
 				Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(CaptureParameters.Radiance1).get());
 				Context.Device->UpdateDescriptorSet(Set, 9, 0, Context.GetRenderGraphTexture(CaptureParameters.Variance2).get());
@@ -336,7 +333,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(CaptureParameters.Variance2).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(CaptureParameters.SampleCount2).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Sampl);
+				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
 
 				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.GetRenderGraphTexture(CaptureParameters.Radiance2).get());
 				Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(CaptureParameters.Variance1).get());
@@ -475,16 +472,6 @@ namespace Columbus
 					Pipeline = Context.Device->CreateComputePipeline(Desc);
 				}
 
-				// TODO: create generic static sampler system, similar to unreal's
-				static Sampler* Sam = nullptr;
-				if (Sam == nullptr)
-				{
-					SamplerDesc SamDesc;
-					SamDesc.AddressU = TextureAddressMode::ClampToEdge;
-					SamDesc.AddressV = TextureAddressMode::ClampToEdge;
-					Sam = Context.Device->CreateSampler(SamDesc);
-				}
-
 				auto Set = Context.GetDescriptorSet(Pipeline, 0);
 				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Radiance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
@@ -494,7 +481,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(Set, 5, 0, Textures.History.RTGI_History.SampleCount);
 
 				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(Radiance2).get());
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Sam);
+				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
 
 				SimpleDenoiserTemporalParameters Params{
 					.ProjectionInv = ProjectionInv,
@@ -504,6 +491,7 @@ namespace Columbus
 					.Size = Size,
 				};
 
+				// TODO: dispatch helper
 				const int GroupSize = 8; // 8x8
 				const iVector2 Groups = (Size + GroupSize - 1) / GroupSize;
 

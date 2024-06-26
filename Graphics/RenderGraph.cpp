@@ -58,6 +58,12 @@ size_t Columbus::HashRenderPassParameters::operator()(const Columbus::RenderPass
 namespace Columbus
 {
 
+	void RenderGraphContext::DispatchComputePixels(const ComputePipeline* Pipeline, iVector3 GroupSize, iVector3 Pixels)
+	{
+		const iVector3 Groups = (Pixels + GroupSize - 1) / GroupSize;
+		CommandBuffer->Dispatch(Groups.X, Groups.Y, Groups.Z);
+	}
+
 	void RenderGraphData::ClearDescriptorData()
 	{
 		for (auto& DescriptorData : DescriptorSets[CurrentPerFrameData])

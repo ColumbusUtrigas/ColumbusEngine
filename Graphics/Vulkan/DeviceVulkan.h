@@ -25,6 +25,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <unordered_map>
 #include <atomic>
 #include <cassert>
 
@@ -137,6 +138,7 @@ namespace Columbus
 
 		GPUProfilerVulkan _Profiler;
 
+		std::unordered_map<SamplerDesc, Sampler*, HashSamplerDesc> StaticSamplers;
 		std::vector<ResourceDeferredDestroyVulkan<Texture2*>> TextureDeferredDestroys;
 	private:
 		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
@@ -191,6 +193,25 @@ namespace Columbus
 
 		Sampler* CreateSampler(const SamplerDesc& Desc);
 		void     DestroySampler(Sampler* Sam);
+
+		// creates a sampler only once
+		Sampler* GetStaticSampler(const SamplerDesc& Desc);
+
+		// helper to create a static sampler with template args
+		template <
+			TextureFilter2 Filter=TextureFilter2::Linear,
+			TextureAddressMode Address = TextureAddressMode::ClampToEdge>
+		Sampler* GetStaticSampler()
+		{
+			SamplerDesc Desc;
+			Desc.AddressU  = Address;
+			Desc.AddressV  = Address;
+			Desc.AddressW  = Address;
+			Desc.MagFilter = Filter;
+			Desc.MinFilter = Filter;
+			Desc.MipFilter = Filter;
+			return GetStaticSampler(Desc);
+		}
 
 		// TODO: data sync, bariers, implement in command buffer
 

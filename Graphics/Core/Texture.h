@@ -102,6 +102,11 @@ namespace Columbus
 		bool operator==(const SamplerDesc&) const = default;
 	};
 
+	struct HashSamplerDesc
+	{
+		size_t operator()(const SamplerDesc&) const;
+	};
+
 	struct TextureDesc2
 	{
 		// Image description
