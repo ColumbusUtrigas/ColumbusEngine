@@ -64,18 +64,6 @@ struct RayPayload {
 		origin += u * (stepAndOutputRNGFloat(rngState) * 2 - 1) / float(gl_LaunchSizeEXT.x);
 		origin += v * (stepAndOutputRNGFloat(rngState) * 2 - 1) / float(gl_LaunchSizeEXT.y);
 
-		// const uint cullMask = 0xFF;
-		// const uint sbtRecordOffset = 0;
-		// const uint sbtRecordStride = 0;
-		// const uint missIndex = 0;
-		// const float tmin = 0.0f;
-		// const float tmax = 5000.0f;
-		// const int payloadLocation = 0;
-		// const int NUM_SAMPLES = 1;
-
-		// Define the field of view by the vertical slope of the topmost rays:
-		// const float fovVerticalSlope = 1.0 / 5.0;
-
 		vec3 sampleColor = PathTrace(origin, direction, rayParams.bounces, rngState);
 		vec3 finalColor = vec3(0);
 

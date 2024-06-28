@@ -8,3 +8,4 @@
 #include "QueryPool.h"
 #include "Types.h"
 #include "TypesCommon.h"
+#include "View.h"

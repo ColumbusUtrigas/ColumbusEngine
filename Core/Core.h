@@ -20,3 +20,5 @@
 // TODO: move it to somewhere else, it's not Core
 void InitializeEngine();
 std::string LoadShaderFile(const std::string& Name);
+
+extern Columbus::u64 GFrameNumber;

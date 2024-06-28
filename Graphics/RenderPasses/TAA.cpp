@@ -21,11 +21,7 @@ namespace Columbus::Antialiasing
 	{
 		const int SequenceLength = 10;
 
-		// TODO: global frame counter
-		static i64 FrameNumber = 0;
-		FrameNumber++;
-
-		int Index = (FrameNumber % SequenceLength) + 1;
+		int Index = (GFrameNumber % SequenceLength) + 1;
 		float x = (Halton(Index, 2) - 0.5f) / (float)View.RenderSize.X;
 		float y = (Halton(Index, 3) - 0.5f) / (float)View.RenderSize.Y;
 

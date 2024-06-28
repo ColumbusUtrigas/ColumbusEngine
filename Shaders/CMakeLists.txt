@@ -17,6 +17,9 @@ compile_shader_hlsl(DDGI/ProbeClassificationReset.hlsl DDGIProbeClassificationRe
 compile_shader_hlsl(DDGI/ProbeVariabilityReduction.hlsl DDGIReductionCS:cs SHADER_BINARIES)
 compile_shader_hlsl(DDGI/ProbeVariabilityExtraReduction.hlsl DDGIExtraReductionCS:cs SHADER_BINARIES)
 
+compile_shader_glsl(RadianceCache/RadianceCacheTrace.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
+compile_shader_glsl(RadianceCache/RadianceCacheVisualise.glsl main:vs,main:ps SHADER_BINARIES)
+
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsPrepare.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsTileClassification.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsFilter.hlsl main:cs SHADER_BINARIES)
@@ -27,6 +30,7 @@ compile_shader_hlsl(DenoiserReflection/ResolveTemporal.hlsl main:cs SHADER_BINAR
 
 compile_shader_glsl(RayTracedReflections/RayTraceReflections.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_glsl(RayTracedReflections/SimpleDenoise.glsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(RayTracedReflections/ReflectionsResolve.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_glsl(RayTracedGlobalIllumination/RayTracedGI.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Spatial.hlsl main:cs SHADER_BINARIES)

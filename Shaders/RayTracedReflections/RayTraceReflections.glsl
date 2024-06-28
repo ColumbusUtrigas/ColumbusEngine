@@ -13,12 +13,13 @@ struct RayPayload {
 	layout(location = 1) rayPayloadEXT RayPayload shadowPayload; // TODO:
 
 	layout(binding = 0, set = 2) uniform accelerationStructureEXT acc; // TODO:
-	layout(binding = 1, set = 2, rgba16f) uniform image2D ResultReflections;
-	layout(binding = 2, set = 2) uniform sampler2D GBufferAlbedo;
-	layout(binding = 3, set = 2) uniform sampler2D GBufferNormals;
-	layout(binding = 4, set = 2) uniform sampler2D GBufferWorldPosition;
-	layout(binding = 5, set = 2) uniform sampler2D GBufferRoughnessMetallic;
-	layout(binding = 6, set = 2) uniform sampler2D GBufferDepth;
+	layout(binding = 1, set = 2, rgba16f) uniform image2D ResultRadiance;
+	layout(binding = 2, set = 2, rgba16f) uniform image2D ResultDirectionDistance;
+	layout(binding = 3, set = 2) uniform sampler2D GBufferAlbedo;
+	layout(binding = 4, set = 2) uniform sampler2D GBufferNormals;
+	layout(binding = 5, set = 2) uniform sampler2D GBufferWorldPosition;
+	layout(binding = 6, set = 2) uniform sampler2D GBufferRoughnessMetallic;
+	layout(binding = 7, set = 2) uniform sampler2D GBufferDepth;
 	
 	#include "../GPUScene.glsl" // TODO:
 	#include "../BRDF.glsl"
@@ -39,7 +40,8 @@ struct RayPayload {
 		// do not trace from sky
 		if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
 		{
-			imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(0));
+			imageStore(ResultRadiance, ivec2(gl_LaunchIDEXT), vec4(0));
+			imageStore(ResultDirectionDistance, ivec2(gl_LaunchIDEXT), vec4(-1));
 			return;
 		}
 
@@ -50,6 +52,14 @@ struct RayPayload {
 		vec3 Direction = normalize(Origin - Params.CameraPosition.xyz);
 		vec3 Albedo = texture(GBufferAlbedo, uv).rgb;
 		vec2 RM = texture(GBufferRoughnessMetallic, uv).xy;
+
+		// roughness cut
+		if (RM.x > 0.5)
+		{
+			imageStore(ResultRadiance, ivec2(gl_LaunchIDEXT), vec4(0));
+			imageStore(ResultDirectionDistance, ivec2(gl_LaunchIDEXT), vec4(-1));
+			return;
+		}
 
 		BRDFData BRDF;
 		BRDF.N = Normal;
@@ -64,17 +74,19 @@ struct RayPayload {
 		BRDF.L = Direction;
 
 		float NdotL = max(0, dot(BRDF.N, BRDF.L));
-		vec3 RayAttenuation = EvaluateBRDF(BRDF, vec3(1)) * NdotL / Sample.Pdf;
+		//vec3 RayAttenuation = EvaluateBRDF(BRDF, vec3(1)) * NdotL / Sample.Pdf;
+		vec3 RayAttenuation = EvaluateBRDF(BRDF, vec3(1)) / max(Sample.Pdf, 0.001);
 
 		float MaxDistance = 5000; // TODO: make it a parameter
 
 		traceRayEXT(acc, gl_RayFlagsOpaqueEXT,
 			0xFF, 0, 0, 0, Origin, 0.01, Direction, MaxDistance, 0);
 
+		float RayDistance = Payload.colorAndDist.w;
 		vec3 Radiance = vec3(0);
 
 		// evaluate lighting at the hit point
-		if (Payload.colorAndDist.w > 0)
+		if (RayDistance > 0)
 		{
 			BRDF.Albedo = Payload.colorAndDist.rgb;
 			BRDF.N = Payload.normalAndObjId.xyz;
@@ -82,9 +94,10 @@ struct RayPayload {
 			BRDF.Roughness = Payload.RoughnessMetallic.x;
 			BRDF.Metallic = Payload.RoughnessMetallic.y;
 
-			vec3 HitPoint = Payload.colorAndDist.w * Direction + Origin;
+			vec3 HitPoint = RayDistance * Direction + Origin;
 			Origin = HitPoint + BRDF.N * 0.001;
 
+			// TODO: sample lighting from GI
 			// TODO: unify light calculation between different RT passes into a function
 			for (uint l = 0; l < GPUScene_GetLightsCount(); l++)
 			{
@@ -120,8 +133,8 @@ struct RayPayload {
 
 		vec3 FinalResult = Radiance * RayAttenuation;
 
-		imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(FinalResult, 1));
-		// imageStore(ResultReflections, ivec2(gl_LaunchIDEXT), vec4(Direction, 1));
+		imageStore(ResultRadiance, ivec2(gl_LaunchIDEXT), vec4(FinalResult, 1));
+		imageStore(ResultDirectionDistance, ivec2(gl_LaunchIDEXT), vec4(Sample.Dir, RayDistance));
 	}
 #endif
 

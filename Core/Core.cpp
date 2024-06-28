@@ -4,6 +4,8 @@
 
 using namespace Columbus;
 
+u64 GFrameNumber = 0;
+
 void CrashHandler(int signal)
 {
 	WriteStacktraceToLog();

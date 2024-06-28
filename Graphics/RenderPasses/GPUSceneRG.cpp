@@ -95,6 +95,8 @@ namespace Columbus
 			}
 
 			// TLAS
+			// TODO: sync properly because path tracing pass crashes here
+			//if (GFrameNumber < 3)
 			{
 				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();
 				Desc.Instances.clear();

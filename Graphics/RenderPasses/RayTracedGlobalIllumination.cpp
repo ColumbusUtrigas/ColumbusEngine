@@ -491,14 +491,10 @@ namespace Columbus
 					.Size = Size,
 				};
 
-				// TODO: dispatch helper
-				const int GroupSize = 8; // 8x8
-				const iVector2 Groups = (Size + GroupSize - 1) / GroupSize;
-
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
 				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
 				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
-				Context.CommandBuffer->Dispatch((u32)Groups.X, (u32)Groups.Y, 1);
+				Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { Size, 1 });
 			});
 		}
 
@@ -516,14 +512,17 @@ namespace Columbus
 
 	struct RTGI_Parameters
 	{
+		Vector3 CameraPosition;
 		u32 Random;
 		float DiffuseBoost;
+		u32 UseRadianceCache;
 	};
 
 	// diffuse GI, one sample
 	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		static bool UseDenoiser = true;
+		static bool UseRadianceCache = false;
 		static float DiffuseBoost = 1.0f;
 
 		// debug ui
@@ -532,6 +531,7 @@ namespace Columbus
 			if (ImGui::Begin("RTGI"))
 			{
 				ImGui::Checkbox("Denoise", &UseDenoiser);
+				ImGui::Checkbox("Radiance Cache", &UseRadianceCache);
 				ImGui::SliderFloat("Diffuse Boost", &DiffuseBoost, 1.0f, 5.0f);
 			}
 			ImGui::End();
@@ -555,6 +555,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Write(RTGI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
 		Graph.AddPass("RayTraceGI", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Textures, View](RenderGraphContext& Context)
@@ -580,10 +581,13 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 
 			RTGI_Parameters Params{
+				.CameraPosition = View.CameraCur.Pos,
 				.Random = (u32)rand() % 2000,
 				.DiffuseBoost = DiffuseBoost,
+				.UseRadianceCache = (u32)UseRadianceCache,
 			};
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);

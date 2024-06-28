@@ -20,15 +20,20 @@ struct RayPayload
 	layout(binding = 4, set = 2) uniform sampler2D GBufferWorldPosition;
 	layout(binding = 5, set = 2) uniform sampler2D GBufferRoughnessMetallic;
 	layout(binding = 6, set = 2) uniform sampler2D GBufferDepth;
-	
+
+	#define RADIANCE_CACHE_BINDING 7
+	#define RADIANCE_CACHE_SET 2
+	#include "../RadianceCache/RadianceCache.glsl"
 	#include "../GPUScene.glsl" // TODO:
 	#include "../BRDF.glsl"
 	#include "../Common.glsl"
 
 	layout(push_constant) uniform params
 	{
+		vec3 CameraPosition;
 		uint Random;
 		float DiffuseBoost;
+		uint UseRadianceCache;
 	} Params;
 
 	void main()
@@ -68,11 +73,19 @@ struct RayPayload
 			BRDF.Albedo = Payload.colorAndDist.rgb;
 			BRDF.N = Payload.normalAndObjId.xyz;
 			BRDF.V = -Sample.Dir;
-			BRDF.Roughness = Payload.RoughnessMetallic.x;
-			BRDF.Metallic = Payload.RoughnessMetallic.y;
+			// use Lambertian-only material to reduce noise and fireflies
+			//BRDF.Roughness = Payload.RoughnessMetallic.x;
+			//BRDF.Metallic = Payload.RoughnessMetallic.y;
+			BRDF.Roughness = 1;
+			BRDF.Metallic = 0;
 
 			vec3 HitPoint = Payload.colorAndDist.w * Sample.Dir + Origin;
 			Origin = HitPoint + BRDF.N * 0.001;
+
+			if (Params.UseRadianceCache > 0)
+			{
+				Radiance += SampleRadianceCache(Params.CameraPosition, HitPoint);
+			}
 
 			// TODO: unify light calculation between different RT passes into a function
 			for (uint l = 0; l < GPUScene_GetLightsCount(); l++)

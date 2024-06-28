@@ -4,6 +4,7 @@
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Core/View.h"
 #include "Graphics/IrradianceVolume.h"
+#include "RadianceCache.h"
 #include <Graphics/Lightmaps.h>
 #include <Graphics/RenderGraph.h>
 #include <Graphics/Camera.h>
@@ -30,6 +31,7 @@ namespace Columbus
 		Shadows,
 		Reflections,
 		RTGI,
+		RadianceCache,
 	};
 
 	void UploadGPUSceneRG(RenderGraph& Graph);
@@ -110,6 +112,8 @@ namespace Columbus
 		RenderGraphTextureRef FinalAfterTonemap;
 
 		HistorySceneTextures& History;
+
+		RadianceCache::RadianceCacheData RadianceCache;
 	};
 
 	// Anti-Aliasing

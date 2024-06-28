@@ -94,13 +94,13 @@ layout(push_constant) uniform params
 		// vec3 screen_pos = ViewMatrixInverse[0].xyz * OutVertex.x + ViewMatrixInverse[1].xyz * OutVertex.y;
 		// probe_pos += screen_pos * sphere_size;
 
-		mat4 ViewMatrixInverse = inverse(Params.View);
+		mat4 ViewMatrixInverse = inverse(transpose(Params.View));
 		vec3 screen_pos = ViewMatrixInverse[0].xyz * OutVertex.x + ViewMatrixInverse[1].xyz * OutVertex.y;
 
 		probe_pos += screen_pos * probe_size;
 
 		// mat4 V = Params.View;
-		gl_Position = Params.Projection * Params.View * vec4(probe_pos, 1.0) * vec4(1, -1, 1, 1);
+		gl_Position = vec4(probe_pos, 1.0) * (Params.View * Params.Projection) * vec4(1, -1, 1, 1);
 
 		// gl_Position = ProjectionMatrix * (ViewMatrix * vec4(ws_cell_location, 1.0));
 		// gl_Position.z += 0.0001; /* Small bias to let the icon draw without zfighting */

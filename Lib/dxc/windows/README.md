@@ -18,6 +18,58 @@ The included licenses apply to the following files:
 
 ## Changelog
 
+### Version 1.8.2405
+
+DX Compiler Relase for May 2024
+
+This release includes two major new elements:
+- The introduction of the first component of HLSL 202x
+- The inclusion of clang-built Windows binaries
+
+See [the official blog post](https://devblogs.microsoft.com/directx/dxc-1-8-2405-available) for a more detailed description of this release.
+
+HLSL 202x is a placeholder designation for what will ultimately be a new language version that further aligns HLSL with modern language features. It is intended to serve as a bridge to help transition to the expected behavior of the modernized compiler.
+
+To experiment with 202x, use the `-HV 202x` flag. We recommend enabling these warnings as well to catch potential changes in behavior: `-Wconversion -Wdouble-promotion -Whlsl-legacy-literal`.
+
+The first feature available in 202x updates HLSL's treatment of literals to better conform with C/C++. In previous versions, un-suffixed literal types targeted the highest possible precision. This feature revises that to mostly conform with C/C++ behavior. See the above blog post for details.
+
+Clang-built Windows binaries are included in addition to the MSVC-built binaries that have always been shipped before. The clang-built compiler is expected to improve HLSL compile times in many cases. We are eager for feedback about this build positive or negative, related to compile times or correctness.
+
+### Version 1.8.2403.2
+
+DX Compiler Release for March 2024 - Patch 2
+
+- Fix regression: [#6426](https://github.com/microsoft/DirectXShaderCompiler/issues/6426) Regression, SIGSEGV instead of diagnostics when encountering bool operator==(const T&, const T&).
+
+### Version 1.8.2403.1
+
+DX Compiler Release for March 2024 - Patch 1
+
+- Fix regression: [#6419](https://github.com/microsoft/DirectXShaderCompiler/issues/6419) crash when using literal arguments with `fmod`.
+
+### Version 1.8.2403
+
+DX Compiler release for March 2024
+
+- Shader Model 6.8 is fully supported
+  - Work Graphs allow node shaders with user-defined input and output payloads
+  - New Barrier builtin functions with specific memory types and semantics
+  - Expanded Comparison sampler intrinsics: SampleCmpBias, SampleCmpGrad, and CalculateLevelOfDetail
+  - StartVertexLocation and StartInstanceLocation semantics
+  - WaveSizeRange entry point attribute allows specifying a range of supported wave sizes
+- Improved compile-time validation and runtime validation information
+- Various stability improvements including numerous address sanitation fixes
+- Several Diagnostic improvements
+  - Many diagnostics are generated earlier and with more detailed information
+  - Library profile diagnostic improvements
+  - No longer infer library shader type when not specified
+  - More helpful diagnostics for numthreads and other entry point attributes
+  - Validation errors more accurately determine usage by the entry point
+- Improve debug info generation
+- Further improvements to Linux build quality
+
+
 ### Version 1.7.2308
 
 DX Compiler release for August 2023

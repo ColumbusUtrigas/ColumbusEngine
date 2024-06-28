@@ -432,6 +432,7 @@ namespace Columbus
 					"Shadows",
 					"Reflections",
 					"RTGI",
+					"RadianceCache",
 				};
 
 				ImGui::Combo("Visualisation mode", (int*)&DeferredContext.VisualisationMode, Combos, sizeof(Combos) / sizeof(Combos[0]));
@@ -466,6 +467,7 @@ namespace Columbus
 
 		// TODO: select GI mode
 		RenderIndirectLightingDDGI(Graph, View);
+		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
 		RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
@@ -485,7 +487,14 @@ namespace Columbus
 		// debug visualisation modes
 		if (DeferredContext.VisualisationMode != EDeferredRenderVisualisationMode::Final)
 		{
-			TonemappedImage = DebugVisualisationPass(Graph, View, Textures, DeferredContext);
+			if (DeferredContext.VisualisationMode == EDeferredRenderVisualisationMode::RadianceCache)
+			{
+				TonemappedImage = RadianceCache::VisualiseRadianceCache(Graph, View, Textures.RadianceCache, Textures.GBufferWP);
+			}
+			else
+			{
+				TonemappedImage = DebugVisualisationPass(Graph, View, Textures, DeferredContext);
+			}
 		}
 
 		if (ApplyFSR)

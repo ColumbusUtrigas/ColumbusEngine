@@ -305,7 +305,7 @@ static void AddWorldCollision(EngineWorld& World)
 //				- rect
 //				- sphere
 //				- capsule
-//			- importance sampling
+//			+ importance sampling
 //			- refractions
 //			- volumetrics and OpenVDB
 //			- spectral refraction
@@ -321,19 +321,20 @@ static void AddWorldCollision(EngineWorld& World)
 //			- RTAO
 //			- clustered rendering, GPU culling, vis buffer
 //			- volumetrics and OpenVDB
-//			- ray-traced translucency
+//			- translucency
+//             - frosted glass
 //          - DDGI
 //			- RT reflections (TODO: denoiser)
 //          + RTGI (first bounce, diffuse)
 //			- GI1.0
 //			- simple billboard particles render
 //			+ upscaling (FSR1)
-//          - TAA
+//          + TAA
 //          - FSR2
 //		3. Common
 //			- PBR atmosphere rendering
 //			- filmic camera
-//			- filmic HDR tonemapper
+//			+ filmic HDR tonemapper
 //			- render image export from every stage of a graph (!!!)
 //			+ decals
 //			- subsurface scattering
@@ -402,9 +403,17 @@ int main()
 
 	DebugUI::Context* UiContext = DebugUI::Create(&Window);
 
+	IrradianceVolume Volume;
+	Volume.ProbesCount = {8,8,8};
+	Volume.Extent = {3,3,3};
+	World.SceneGPU->IrradianceVolumes.push_back(Volume);
+
+	bool ComputeIrradianceVolume = false;
+
 	bool running = true;
 	while (running)
 	{
+		GFrameNumber++;
 		device->BeginFrame();
 		World.BeginFrame();
 		DebugUI::BeginFrame(UiContext);
@@ -474,6 +483,16 @@ int main()
 			{
 				ImGui::InputFloat3("Camera Position", (float*)&camera.Pos);
 				ImGui::InputFloat3("Camera Rotation", (float*)&camera.Rot);
+			}
+			ImGui::End();
+
+			if (ImGui::Begin("Irradiance"))
+			{
+				if (ImGui::Button("Compute"))
+				{
+					ComputeIrradianceVolume = true;
+					World.SceneGPU->IrradianceVolumes[0].Position = camera.Pos;
+				}
 			}
 			ImGui::End();
 
@@ -638,10 +657,11 @@ int main()
 						BakeLightmapPathTraced(renderGraph, World.Lightmaps);
 					}
 
-#if 0
-					if (scene->IrradianceVolumes[0].ProbesBuffer == nullptr || ComputeIrradianceVolume)
+#if 1
+					//if (World.SceneGPU->IrradianceVolumes[0].ProbesBuffer == nullptr || ComputeIrradianceVolume)
+					if (ComputeIrradianceVolume)
 					{
-						RenderIrradianceProbes(renderGraph, World.MainView, scene->IrradianceVolumes[0]);
+						RenderIrradianceProbes(renderGraph, World.MainView, World.SceneGPU->IrradianceVolumes[0]);
 						ComputeIrradianceVolume = false;
 					}
 #endif
