@@ -369,6 +369,8 @@ namespace Columbus
 	{
 		iVector2 Size;
 		int StepSize;
+		int MaxSamples;
+		int DominationNumber;
 	};
 
 	struct SimpleDenoiserTemporalParameters
@@ -378,10 +380,11 @@ namespace Columbus
 		Matrix ViewProjectionInv;
 		Matrix PrevViewProjection;
 		iVector2 Size;
+		int MaxSamples;
 	};
 
 	template <int Perm>
-	static void SimpleDenoiseSpatial(RenderGraph& Graph, SceneTextures& Textures, iVector2 Size, int StepSize, RenderGraphTextureRef Radiance1, RenderGraphTextureRef Radiance2)
+	static void SimpleDenoiseSpatial(RenderGraph& Graph, SceneTextures& Textures, iVector2 Size, int StepSize, RenderGraphTextureRef Radiance1, RenderGraphTextureRef Radiance2, int MaxSamples, int DominationSampleNumber)
 	{
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
@@ -390,7 +393,7 @@ namespace Columbus
 		Dependencies.Read(Radiance1, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(Radiance2, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-		Graph.AddPass("Spatial", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Radiance1, Radiance2, Size, StepSize](RenderGraphContext& Context)
+		Graph.AddPass("Spatial", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Radiance1, Radiance2, Size, StepSize, MaxSamples, DominationSampleNumber](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIDenoise, Context);
 
@@ -407,13 +410,16 @@ namespace Columbus
 			auto Set = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Radiance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 2, 0, Textures.History.RTGI_History.SampleCount, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Radiance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Radiance2).get());
+			Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Radiance2).get());
 
 			SimpleDenoiseSpatialParameters Params{
 				.Size = Size,
 				.StepSize = StepSize,
+				.MaxSamples = MaxSamples,
+				.DominationNumber = DominationSampleNumber,
 			};
 
 			const int GroupSize = 8; // 8x8
@@ -441,6 +447,8 @@ namespace Columbus
 
 		Desc.Format = TextureFormat::R16F;
 		Graph.CreateHistoryTexture(&Textures.History.RTGI_History.SampleCount, Desc, "RTGI Denoiser Sample Count");
+
+		static const int MaxSamples = 100;
 
 		// temporal filter
 		{
@@ -489,6 +497,7 @@ namespace Columbus
 					.PrevViewProjection = PrevViewProjection,
 					//.ReprojectionMatrix = Reprojection,
 					.Size = Size,
+					.MaxSamples = MaxSamples,
 				};
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
@@ -500,11 +509,12 @@ namespace Columbus
 
 		// spatial filter
 		{
-			SimpleDenoiseSpatial<1>(Graph, Textures, Size, 1, Radiance2, Radiance1);
-			SimpleDenoiseSpatial<2>(Graph, Textures, Size, 2, Radiance1, Radiance2);
-			//SimpleDenoiseSpatial<3>(Graph, Textures, Size, 3, Radiance2, Radiance1);
-			//SimpleDenoiseSpatial<4>(Graph, Textures, Size, 4, Radiance1, Radiance2);
-			//SimpleDenoiseSpatial<5>(Graph, Textures, Size, 5, Radiance2, Radiance1);
+			SimpleDenoiseSpatial<1>(Graph, Textures, Size, 1, Radiance2, Radiance1, MaxSamples, 80);
+			SimpleDenoiseSpatial<2>(Graph, Textures, Size, 2, Radiance1, Radiance2, MaxSamples, 60);
+			SimpleDenoiseSpatial<3>(Graph, Textures, Size, 3, Radiance2, Radiance1, MaxSamples, 40);
+			SimpleDenoiseSpatial<4>(Graph, Textures, Size, 4, Radiance1, Radiance2, MaxSamples, 20);
+			SimpleDenoiseSpatial<5>(Graph, Textures, Size, 5, Radiance2, Radiance1, MaxSamples, 10);
+			SimpleDenoiseSpatial<6>(Graph, Textures, Size, 6, Radiance1, Radiance2, MaxSamples, 05);
 		}
 
 		return Radiance2;

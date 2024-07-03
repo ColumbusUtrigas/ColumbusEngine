@@ -3,15 +3,18 @@
 // Inputs
 [[vk::binding( 0, SET)]] Texture2D<float>  g_depth_buffer : register(t0);
 [[vk::binding( 1, SET)]] Texture2D<float3> g_normals      : register(t1);
-[[vk::binding( 2, SET)]] Texture2D<float4> g_input        : register(t2);
+[[vk::binding( 2, SET)]] Texture2D<float>  g_sample_count : register(t2);
+[[vk::binding( 3, SET)]] Texture2D<float4> g_input        : register(t3);
 
 // Outputs
-[[vk::binding(3, SET)]] RWTexture2D<float4> g_output      : register(u0);
+[[vk::binding(4, SET)]] RWTexture2D<float4> g_output      : register(u0);
 
 [[vk::push_constant]]
 struct _Params {
 	int2 Size;
     int StepSize;
+    int MaxSamples;
+    int DominationNumber;
 } Params;
 
 #define NORMAL_SIGMA 32.0
@@ -49,6 +52,10 @@ void main(int2 dtid : SV_DispatchThreadID)
         return;
     }
 
+    float SampleCount = g_sample_count[dtid];
+    float DominationCoefficient = clamp(float(Params.DominationNumber) / (SampleCount + 1), 0, 1);
+    float3 CenterValue = g_input[dtid];
+
     int KernelRange = 2; // 5x5
     // int KernelRange = 4; // 9x9
 
@@ -77,6 +84,6 @@ void main(int2 dtid : SV_DispatchThreadID)
 
     Result /= TotalWeight;
 
-    g_output[dtid] = float4(Result, 1);
+    g_output[dtid] = float4(lerp(CenterValue, Result, DominationCoefficient), 1);
     // g_output[dtid] = float4(1-TotalWeight, 0, 0, 1);
 }

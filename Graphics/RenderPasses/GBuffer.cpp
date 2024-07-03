@@ -462,12 +462,13 @@ namespace Columbus
 		RenderGBufferPass(Graph, View, Textures);
 		RenderGBufferDecals(Graph, View, Textures);
 
+		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
+
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 
 		// TODO: select GI mode
 		RenderIndirectLightingDDGI(Graph, View);
-		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
 		RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);

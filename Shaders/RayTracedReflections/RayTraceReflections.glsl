@@ -20,6 +20,10 @@ struct RayPayload {
 	layout(binding = 5, set = 2) uniform sampler2D GBufferWorldPosition;
 	layout(binding = 6, set = 2) uniform sampler2D GBufferRoughnessMetallic;
 	layout(binding = 7, set = 2) uniform sampler2D GBufferDepth;
+
+	#define RADIANCE_CACHE_BINDING 8
+	#define RADIANCE_CACHE_SET 2
+	#include "../RadianceCache/RadianceCache.glsl"
 	
 	#include "../GPUScene.glsl" // TODO:
 	#include "../BRDF.glsl"
@@ -29,6 +33,7 @@ struct RayPayload {
 	{
 		vec4 CameraPosition;
 		uint Random;
+		uint UseRadianceCache;
 	} Params;
 
 	void main()
@@ -96,6 +101,11 @@ struct RayPayload {
 
 			vec3 HitPoint = RayDistance * Direction + Origin;
 			Origin = HitPoint + BRDF.N * 0.001;
+
+			if (Params.UseRadianceCache > 0)
+			{
+				Radiance += SampleRadianceCache(Params.CameraPosition.xyz, HitPoint);
+			}
 
 			// TODO: sample lighting from GI
 			// TODO: unify light calculation between different RT passes into a function

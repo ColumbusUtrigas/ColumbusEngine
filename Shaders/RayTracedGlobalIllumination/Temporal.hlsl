@@ -25,6 +25,7 @@ struct _Params {
     float4x4 ViewProjectionInv;
     float4x4 PrevViewProjection;
 	int2 Size;
+    int MaxSamples;
 } Params;
 
 float GetLinearDepth(int2 dtid, float depth)
@@ -96,7 +97,7 @@ void main(int2 dtid : SV_DispatchThreadID)
         }
     }
 
-    SampleCount = clamp(SampleCount, 0, 100);
+    SampleCount = clamp(SampleCount, 0, Params.MaxSamples);
 
     //float3 HistoryValue = g_history[PrevCoordsClamped];
     float3 HistoryValue = g_history.SampleLevel(g_sampler, UvReprojected, 0);

@@ -15,6 +15,7 @@ namespace Columbus
 	{
 		Vector4 CameraPosition;
 		u32 Random;
+		u32 UseRadianceCache;
 	};
 
 	struct RayTracedReflectionsDenoiseParamters
@@ -46,6 +47,7 @@ namespace Columbus
 
 		static bool Blur = false;
 		static bool Resolve = false;
+		static bool UseRadianceCache = false;
 
 		if (ImGui::GetCurrentContext())
 		{
@@ -53,6 +55,7 @@ namespace Columbus
 			{
 				ImGui::Checkbox("Blur", &Blur);
 				ImGui::Checkbox("Resolve", &Resolve);
+				ImGui::Checkbox("Radiance cache", &UseRadianceCache);
 			}
 			ImGui::End();
 		}
@@ -69,6 +72,7 @@ namespace Columbus
 			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRadiance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRays, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
@@ -96,10 +100,12 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 
 				RayTracedReflectionPassParameters Params{
 					.CameraPosition = Vector4(View.CameraCur.Pos, 1),
 					.Random = (u32)rand() % 2000,
+					.UseRadianceCache = (u32)UseRadianceCache,
 				};
 
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
