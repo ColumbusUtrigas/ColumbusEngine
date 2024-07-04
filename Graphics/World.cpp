@@ -430,9 +430,11 @@ namespace Columbus
 			if (format == TextureFormat::RGBA8 && srgb)
 				format = TextureFormat::RGBA8SRGB;
 
-			// TODO: GPUs don't really support RGB8, make a layer somewhere to convert it to RGBA8 instead
+			// GPUs don't support RGB, so convert to RGBA instead
 			if (format == TextureFormat::RGB8)
 			{
+				Log::Warning("Applying RGB8->RGBA8 convertion to texture %s", image.name.c_str());
+
 				TextureDataSize = image.width * image.height * 4;
 				ConvertedData = UPtr<u8>(new u8[TextureDataSize]); // TODO: how to manage allocations in the loading system properly?
 
@@ -455,7 +457,7 @@ namespace Columbus
 			img.Height = image.height;
 			img.Size = TextureDataSize;
 			img.Data = TextureData;
-			img.MipMaps = 1;
+			img.MipMaps = 1; // TODO: load all mip maps
 
 			Texture2* tex = Device->CreateTexture(img);
 			Device->SetDebugName(tex, name);

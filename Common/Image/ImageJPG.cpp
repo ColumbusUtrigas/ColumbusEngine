@@ -30,7 +30,7 @@ namespace Columbus::ImageUtils
 		stbi_io_callbacks Callbacks = StreamToStbCallbacks(Stream);
 
 		int x, y, chans;
-		OutData = (u8*)stbi_load_from_callbacks(&Callbacks, &Stream, &x, &y, &chans, 4);
+		OutData = (u8*)stbi_load_from_callbacks(&Callbacks, &Stream, &x, &y, &chans, 0);
 		OutWidth = x;
 		OutHeight = y;
 		OutMips = 1;
