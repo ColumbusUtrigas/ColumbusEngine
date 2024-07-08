@@ -2,6 +2,7 @@
 #include <System/File.h>
 #include <System/Log.h>
 #include <Core/Assert.h>
+#include <Math/MathUtil.h>
 #include <cstring>
 
 namespace Columbus::ImageUtils
@@ -52,6 +53,8 @@ namespace Columbus::ImageUtils
 	//constexpr uint32 DDSFourCC_DXT4 = 0x34545844; // "DXT4", BC3_UNORM
 	//constexpr uint32 DDSFourCC_DXT5 = 0x35545844; // "DXT5", BC3_UNORM
 	#define	DDS_FOURCC(chars) ((u32)chars[0] | ((u32)chars[1] << 8) | ((u32)chars[2] << 16) | ((u32)chars[3] << 24))
+	constexpr uint32 DDSFourccARGB16F = 113; // D3DFMT_A16B16G16R16F
+	constexpr uint32 DDSFourccARGB32F = 116; // D3DFMT_A32B32G32R32F
 
 	/*
 	* Texture dimension
@@ -288,10 +291,12 @@ namespace Columbus::ImageUtils
 		{
 		case DDS_FOURCC("DXT1"): return  TextureFormat::DXT1; // BC1_UNORM
 		case DDS_FOURCC("DXT2"): // BC2_UNORM
-		case DDS_FOURCC("DXT3"): return TextureFormat::DXT3; // BC2_UNORM
+		case DDS_FOURCC("DXT3"): return TextureFormat::DXT3;  // BC2_UNORM
 		case DDS_FOURCC("DXT4"): // BC3_UNORM
-		case DDS_FOURCC("DXT5"): return TextureFormat::DXT5; // BC3_UNORM
-		case DDS_FOURCC("ATI2"): return TextureFormat::DXT5; // BC5_UNORM
+		case DDS_FOURCC("DXT5"): return TextureFormat::DXT5;  // BC3_UNORM
+		case DDS_FOURCC("ATI2"): return TextureFormat::DXT5;  // BC5_UNORM
+		case   DDSFourccARGB16F: return TextureFormat::RGBA16F;
+		case   DDSFourccARGB32F: return TextureFormat::RGBA32F;
 		// TODO: "BC4S" = BC4_SNORM, "BC5S" = BC5_SNORM
 		}
 
@@ -312,7 +317,7 @@ namespace Columbus::ImageUtils
 		return false;
 	}
 
-	bool ImageLoadFromStreamDDS(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData)
+	bool ImageLoadFromStreamDDS(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutDepth, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData)
 	{
 		DDS_HEADER Header;
 		DDS_HEADER_DXT10 Header10;
@@ -332,6 +337,7 @@ namespace Columbus::ImageUtils
 		OutMips = Header.MipMapCount;
 		OutWidth = Header.Width;
 		OutHeight = Header.Height;
+		OutDepth = Header.Depth;
 		OutFormat = TextureFormat::Unknown;
 
 		if ((Header.Caps1 & DDSMipMap) == 0 || OutMips == 0)
@@ -353,8 +359,6 @@ namespace Columbus::ImageUtils
 			else if (Header10.ResourceDimension == DDSDimensionTexture3D)
 			{
 				OutType = ImageType::Image3D;
-				Log::Error("ImageLoadFromStreamDDS() error: 3D textures are not supported");
-				return false;
 			}
 			else
 			{
@@ -402,8 +406,6 @@ namespace Columbus::ImageUtils
 			else if (Header.Caps2 & DDSVolume && HeaderFlags.Volume)
 			{
 				OutType = ImageType::Image3D;
-				Log::Error("ImageLoadFromStreamDDS() error: 3D textures are not supported");
-				return false;
 			}
 			else
 			{
@@ -417,8 +419,7 @@ namespace Columbus::ImageUtils
 			return false;
 		}
 
-		u32 Depth = 1; // TODO: 3D textures
-		u64 DataSize = ImageUtils::ImageCalcByteSize(OutWidth, OutHeight, Depth, OutMips, OutFormat);
+		u64 DataSize = ImageUtils::ImageCalcByteSize(OutWidth, OutHeight, OutDepth, OutMips, OutFormat);
 
 		if (OutType == ImageType::ImageCube)
 			DataSize *= 6;
@@ -426,7 +427,243 @@ namespace Columbus::ImageUtils
 		OutData = new u8[DataSize];
 		Stream.ReadBytes(OutData, DataSize);
 
+		TextureFormatInfo FormatInfo = TextureFormatGetInfo(OutFormat);
+
+		// apply swizzling
+		if (OutFormat == TextureFormat::RG8 || OutFormat == TextureFormat::RGB8 || OutFormat == TextureFormat::RGBA8)
+		{
+			bool bNeedsSwizzling = false;
+
+			u32 BytesPerPixel = FormatInfo.BitsPerPixel / 8;
+
+			u32 SwizzleR = 0x000000FF;
+			u32 SwizzleG = 0x0000FF00;
+			u32 SwizzleB = 0x00FF0000;
+			u32 SwizzleA = 0xFF000000;
+			u32 Swizzles[] = { SwizzleR, SwizzleG, SwizzleB, SwizzleA };
+			u32 HeaderSwizzles[] = { Header.PixelFormat.RBitMask, Header.PixelFormat.GBitMask, Header.PixelFormat.BBitMask, Header.PixelFormat.ABitMask };
+			
+			for (int i = 0; i < FormatInfo.NumChannels; i++)
+			{
+				if (Swizzles[i] != HeaderSwizzles[i])
+				{
+					bNeedsSwizzling = true;
+				}
+			}
+
+			if (bNeedsSwizzling)
+			{
+				u32 ComponentRemappingIndex[4]{ 0 };
+
+				for (int i = 0; i < FormatInfo.NumChannels; i++)
+				{
+					u32 Swizzle = HeaderSwizzles[i];
+					u32 RightmostSetBit = Swizzle - (Swizzle & Swizzle - 1);
+					u32 RightmostBitNumber = (u32)log2(RightmostSetBit);
+					u32 ByteNumber = RightmostBitNumber / 8;
+
+					ComponentRemappingIndex[i] = ByteNumber;
+				}
+
+				u64 TotalPixels = DataSize / BytesPerPixel;
+
+				for (u32 Pixel = 0; Pixel < TotalPixels; Pixel++)
+				{
+					u8* CurrentPixel = OutData + Pixel * BytesPerPixel;
+					u8 SavedPixel[4]{ 0 };
+					memcpy(SavedPixel, CurrentPixel, BytesPerPixel);
+
+					for (int i = 0; i < FormatInfo.NumChannels; i++)
+					{
+						CurrentPixel[i] = SavedPixel[ComponentRemappingIndex[i]];
+					}
+				}
+			}
+		}
+
 		return true;
 	}
 
+	bool ImageSaveToStreamDDS(DataStream& Stream, const Image& Img)
+	{
+		TextureFormat OldHeaderFormats[] =
+		{
+			TextureFormat::DXT1,
+			TextureFormat::DXT3,
+			TextureFormat::DXT5,
+			TextureFormat::R8,
+			TextureFormat::RG8,
+			TextureFormat::RGB8,
+			TextureFormat::RGBA8,
+		};
+
+		DDS_HEADER Header;
+		DDS_HEADER_DXT10 Header10;
+
+		TextureFormatInfo FormatInfo = TextureFormatGetInfo(Img.Format);
+
+		// decide if we want to use Header10
+		// we want to use it with some formats (BC7 for example), and with array textures
+		bool HasDX10Header = false;
+		{
+			bool OldFormatFound = false;
+			for (int i = 0; i < sizeofarray(OldHeaderFormats); i++)
+			{
+				if (Img.Format == OldHeaderFormats[i])
+				{
+					OldFormatFound = true;
+					break;
+				}
+			}
+
+			HasDX10Header = !OldFormatFound || Img.Type == ImageType::Image2DArray;
+		}
+
+		u32 CompressionFlag = FormatInfo.HasCompression ?  DDSFlagLinearSize : DDSFlagPitch;
+		u32 MipFlags = Img.MipMaps > 1 ? DDSFlagMipMapCount : 0;
+		u32 DepthFlags = Img.Type == ImageType::Image3D ? DDSFlagDepth : 0;
+
+		// fill in base header
+		{
+			memcpy(Header.Magic, "DDS ", 4);
+			Header.Size = 124;
+			Header.Flags = DDSFlagCaps | DDSFlagHeight | DDSFlagWidth | DDSFlagPixelFormat | MipFlags | CompressionFlag | DepthFlags;
+			Header.Height = Img.Height;
+			Header.Width = Img.Width;
+
+			if (Header.Flags & DDSFlagPitch)
+			{
+				Header.PitchOrLinearSize = FormatInfo.HasCompression
+					? Math::Max(1u, (Img.Width + 3) / 4) * (FormatInfo.CompressedBlockSizeBits / 8)
+					: (Img.Width * FormatInfo.BitsPerPixel + 7) / 8;
+			}
+			else
+			{
+				Header.PitchOrLinearSize = FormatInfo.BitsPerPixel * Img.Width * Img.Height / 8;
+			}
+
+			Header.Depth = Img.Type == ImageType::Image3D ? Img.Depth : 0;
+			Header.MipMapCount = Img.MipMaps;
+			memset(Header.Reserved1, 0, sizeof(Header.Reserved1));
+
+			Header.PixelFormat.Size = 32;
+
+			if (FormatInfo.HasCompression)
+			{
+				Header.PixelFormat.Flags = DDSFourCC;
+				Header.PixelFormat.RGBBitCount = 0;
+				Header.PixelFormat.RBitMask = 0;
+				Header.PixelFormat.GBitMask = 0;
+				Header.PixelFormat.BBitMask = 0;
+				Header.PixelFormat.ABitMask = 0;
+			}
+			else
+			{
+				Header.PixelFormat.Flags = DDSRGB | (FormatInfo.HasAlpha ? DDSAlphaPixels : 0);
+				Header.PixelFormat.RGBBitCount = FormatInfo.BitsPerPixel;
+
+				// here we assume RGB8 or RGBA8
+				switch (Img.Format)
+				{
+				case TextureFormat::RGB8:
+					Header.PixelFormat.RBitMask = 0x0000FF;
+					Header.PixelFormat.GBitMask = 0x00FF00;
+					Header.PixelFormat.BBitMask = 0xFF0000;
+					Header.PixelFormat.ABitMask = 0;
+					break;
+				case TextureFormat::RGBA8:
+					Header.PixelFormat.RBitMask = 0x000000FF;
+					Header.PixelFormat.GBitMask = 0x0000FF00;
+					Header.PixelFormat.BBitMask = 0x00FF0000;
+					Header.PixelFormat.ABitMask = 0xFF000000;
+					break;
+				case TextureFormat::RGBA16F:
+					Header.PixelFormat.Flags = DDSFourCC | DDSAlphaPixels;
+					Header.PixelFormat.RGBBitCount = 0;
+					Header.PixelFormat.RBitMask = 0;
+					Header.PixelFormat.GBitMask = 0;
+					Header.PixelFormat.BBitMask = 0;
+					Header.PixelFormat.ABitMask = 0;
+					Header.PixelFormat.FourCC = DDSFourccARGB16F;
+					break;
+				case TextureFormat::RGBA32F:
+					Header.PixelFormat.Flags = DDSFourCC | DDSAlphaPixels;
+					Header.PixelFormat.RGBBitCount = 0;
+					Header.PixelFormat.RBitMask = 0;
+					Header.PixelFormat.GBitMask = 0;
+					Header.PixelFormat.BBitMask = 0;
+					Header.PixelFormat.ABitMask = 0;
+					Header.PixelFormat.FourCC = DDSFourccARGB32F;
+					break;
+				default:
+					Log::Error("[ImageSaveDDS] Unsupported uncompressed format, only RGB8, RGBA8, RGBA16F and RGBA32F: %s", FormatInfo.FriendlyName);
+					DEBUGBREAK();
+					return false;
+					break;
+				}
+			}
+			
+			Header.Caps1  = DDSTexture;
+			Header.Caps1 |= (Img.MipMaps > 1 ? (DDSMipMap | DDSComplex) : 0);
+			Header.Caps1 |= (Img.Type == ImageType::ImageCube ? DDSComplex : 0);
+			Header.Caps2 = Img.Type == ImageType::Image3D ? DDSVolume : 0;
+			Header.Caps2 |= (Img.Type == ImageType::ImageCube ? (DDSCubemap | DDSCubemapAllFaces) : 0);
+			Header.Caps3 = 0;
+			Header.Caps4 = 0;
+			Header.Reserved2 = 0;
+		}
+
+		if (HasDX10Header)
+		{
+			Header.PixelFormat.FourCC = DDS_FOURCC("DX10");
+
+			// find dxgi format
+			switch (Img.Format)
+			{
+			case TextureFormat::BC6H: Header10.Format = 95; break; // DXGI_FORMAT_BC6H_UF16
+			case TextureFormat::BC7:  Header10.Format = 98; break; // DXGI_FORMAT_BC7_UNORM
+			default:
+			{
+				for (int i = 0; i < sizeofarray(DdsDxgiFormat_Map); i++)
+				{
+					if (Img.Format == DdsDxgiFormat_Map[i])
+					{
+						Header10.Format = i;
+						break;
+					}
+				}
+				break;
+			}
+			}
+			
+			Header10.ResourceDimension = Img.Type == ImageType::Image3D ? DDSDimensionTexture3D : DDSDimensionTexture2D;
+			Header10.MiscFlag = Img.Type == ImageType::ImageCube ? DDS_DX10_Misc_Cube : 0;
+			Header10.ArraySize = 1; // no support for arrays in the engine
+			Header10.MiscFlags2 = DDS_DX10_Misc2_AlphaUnkown;
+		} else
+		{
+			switch (Img.Format)
+			{
+			case TextureFormat::DXT1: Header.PixelFormat.FourCC = DDS_FOURCC("DXT1"); break;
+			case TextureFormat::DXT3: Header.PixelFormat.FourCC = DDS_FOURCC("DXT3"); break;
+			case TextureFormat::DXT5: Header.PixelFormat.FourCC = DDS_FOURCC("DXT5"); break;
+			default:                  Header.PixelFormat.FourCC = 0; break;
+			}
+		}
+
+		Stream.Write(Header);
+		if (HasDX10Header)
+		{
+			Stream.Write(Header10);
+		}
+
+		u64 DataSize = ImageUtils::ImageCalcByteSize(Img.Width, Img.Height, Img.Depth, Img.MipMaps, Img.Format);
+		if (Img.Type == ImageType::ImageCube)
+			DataSize *= 6;
+
+		bool result = Stream.WriteBytes(Img.Data, DataSize);
+
+		return true;
+
+	}
 }

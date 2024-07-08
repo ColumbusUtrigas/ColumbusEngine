@@ -42,6 +42,8 @@ namespace Columbus::DebugUI
 
 	void DrawMainLayout();
 
+	void ShowProjectSettingsWindow();
+
 	// mutates View
 	void ShowScreenshotSaveWindow(RenderView& View);
 

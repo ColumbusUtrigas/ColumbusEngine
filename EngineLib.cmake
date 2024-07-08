@@ -55,7 +55,7 @@ if(LINUX)
 elseif(WIN32)
 	add_dir_to_target(${TARGET} Core/Windows)
 endif()
-# add_dir_to_target(${TARGET} Editor)
+add_dir_to_target_recurse(${TARGET} Editor)
 add_dir_to_target_recurse(${TARGET} Game)
 
 #add_dir_to_target_recurse(${TARGET} Graphics) #OpenGL is included
@@ -95,6 +95,8 @@ elseif(WIN32)
 	target_link_libraries(${TARGET} vulkan-1 shaderc_shared)
 endif()
 
+target_link_libraries(${TARGET} bc7enc)
+target_link_libraries(${TARGET} CMP_Compressonator)
 target_link_libraries(${TARGET} nfd)
 target_link_libraries(${TARGET} imgui)
 target_link_libraries(${TARGET} implot)

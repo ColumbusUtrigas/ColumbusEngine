@@ -1,7 +1,9 @@
 #pragma once
+
 #include <imgui/imgui.h>
 #include <Graphics/Core/GraphicsCore.h>
 #include <Core/String.h>
+#include <functional>
 
 namespace Columbus::Editor
 {
@@ -20,6 +22,19 @@ namespace Columbus::Editor
 	void ShowTooltipDelayed(float delay, const char* fmt, ...);
 
 	const char* GetFileIcon(const std::string& ext);
+
+	// at some point return true from lambda to exit window
+	void ShowModalWindow(const char* Name, std::function<bool()> DrawCallback);
+	void TickAllModalWindows(); // should be called only once in the end of the UI frame
+
+	struct MessageBoxCallbacks
+	{
+		std::function<void()> OnYes;
+		std::function<void()> OnNo;
+		std::function<void()> OnCancel;
+	};
+
+	void ShowMessageBox(const char* Name, const char* Text, MessageBoxCallbacks Callbacks);
 
 }
 

@@ -349,14 +349,14 @@ namespace Columbus
 		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
 			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
 		{
-			u32 W, H, Mips;
+			u32 W, H, D, Mips;
 			TextureFormat Format;
 			ImageType Type;
 
 			DataStream Stream = DataStream::CreateFromMemory((u8*)bytes, size);
 
 			u8* Data = nullptr;
-			if (!ImageUtils::ImageLoadFromStream(Stream, W, H, Mips, Format, Type, Data))
+			if (!ImageUtils::ImageLoadFromStream(Stream, W, H, D, Mips, Format, Type, Data))
 			{
 				delete[] Data;
 				return false;
@@ -425,6 +425,13 @@ namespace Columbus
 			u64 TextureDataSize = image.image.size();
 			u8* TextureData = image.image.data();
 			UPtr<u8> ConvertedData;
+
+			TextureFormatInfo formatInfo = TextureFormatGetInfo(format);
+			
+			if (!formatInfo.HasCompression)
+			{
+				Log::Warning("[Level Loading] Uncompressed texture %s", image.name.c_str());
+			}
 
 			// TODO: proper mechanism
 			if (format == TextureFormat::RGBA8 && srgb)

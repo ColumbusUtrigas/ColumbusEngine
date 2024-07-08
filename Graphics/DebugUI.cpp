@@ -1,4 +1,6 @@
 #include "DebugUI.h"
+#include "Scene/Project.h"
+#include "Editor/CommonUI.h"
 
 // Third party
 #include <Lib/imgui/imgui.h>
@@ -210,6 +212,130 @@ namespace Columbus::DebugUI
 		delete Ctx;
 	}
 
+	// TODO: these things are not "debug ui" anymore, but an editor, so it should go there instead
+	static void DrawMainMenu()
+	{
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				{
+					ImGui::Spacing();
+					if (ImGui::MenuItem("New Project..."))
+					{
+						Editor::ShowModalWindow("New Project", []()->bool
+						{
+							static char Name[256]{};
+							static char Path[512]{};
+
+							ImGui::InputText("Name", Name, 256);
+							ImGui::InputText("Path", Path, 512);
+							ImGui::SameLine();
+							if (ImGui::Button("..."))
+							{
+								char* SavePath = NULL;
+								if (NFD_PickFolder(NULL, &SavePath) == NFD_OKAY)
+								{
+									strcpy(Path, SavePath);
+								}
+							}
+
+							ImGui::BeginDisabled((strlen(Name) == 0) || (strlen(Path) == 0));
+							if (ImGui::Button("Create"))
+							{
+								GCurrentProject = EngineProject::CreateProject(Name, Path);
+								ImGui::EndDisabled();
+								return true;
+							}
+							ImGui::EndDisabled();
+
+							return false;
+						});
+					}
+
+					ImGui::Spacing();
+					if (ImGui::MenuItem("Open Project..."))
+					{
+						char* Path;
+						if (NFD_OpenDialog("json", NULL, &Path) == NFD_OKAY)
+						{
+							GCurrentProject = EngineProject::LoadProject(Path);
+						}
+					}
+
+					ImGui::Spacing();
+					if (ImGui::MenuItem("Import Level..."))
+					{
+						Editor::ShowModalWindow("Import Level", []()->bool
+						{
+							static char SourcePath[256]{};
+							static char ImportPath[512]{};
+
+							// TODO: common pick path widget
+
+							ImGui::InputText("Source Path", SourcePath, 256);
+							ImGui::SameLine();
+							if (ImGui::Button("..."))
+							{
+								char* Path = NULL;
+								if (NFD_PickFolder(NULL, &Path) == NFD_OKAY)
+								{
+									strcpy(Path, Path);
+								}
+							}
+
+							ImGui::InputText("Path", ImportPath, 512);
+							ImGui::SameLine();
+							if (ImGui::Button("..."))
+							{
+								char* SavePath = NULL;
+								if (NFD_PickFolder(NULL, &SavePath) == NFD_OKAY)
+								{
+									strcpy(ImportPath, SavePath);
+								}
+							}
+
+							ImGui::BeginDisabled((strlen(SourcePath) == 0) || (strlen(ImportPath) == 0));
+							if (ImGui::Button("Import"))
+							{
+								// TODO: import
+								// TODO: modal window that cannot be closed
+								ImGui::EndDisabled();
+								return true;
+							}
+							ImGui::EndDisabled();
+
+							return false;
+						});
+					}
+
+					ImGui::Spacing();
+					if (ImGui::MenuItem("New Level"))
+					{
+						// Do stuff
+					}
+
+					ImGui::Spacing();
+					if (ImGui::MenuItem("Open Level..."))
+					{
+						// Do stuff
+					}
+
+					ImGui::Spacing();
+					if (ImGui::MenuItem("Save Level"))
+					{
+						// Do stuff
+					}
+				}
+
+				ImGui::Spacing();
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMainMenuBar();
+		}
+	}
+
 	void DrawMainLayout()
 	{
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -234,7 +360,7 @@ namespace Columbus::DebugUI
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
 			ImGui::PopStyleVar(3);
-			//DrawMainMenu(scene);
+			DrawMainMenu();
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -242,6 +368,23 @@ namespace Columbus::DebugUI
 		ImGui::End();
 
 		ImGui::PopStyleVar(3);
+	}
+
+	void ShowProjectSettingsWindow()
+	{
+		if (ImGui::Begin("Project Settings"))
+		{
+			if (GCurrentProject == nullptr)
+			{
+				ImGui::Text("No current project available");
+			}
+			else
+			{
+				ImGui::InputText("Project Name", (char*)GCurrentProject->ProjectName.c_str(), GCurrentProject->ProjectName.size(), ImGuiInputTextFlags_ReadOnly);
+				ImGui::InputText("Base Path", (char*)GCurrentProject->BasePath.c_str(), GCurrentProject->BasePath.size(), ImGuiInputTextFlags_ReadOnly);
+			}
+		}
+		ImGui::End();
 	}
 
 	// mutates View

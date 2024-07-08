@@ -1,4 +1,6 @@
 # exported libraries:
+# - bc7enc
+# - CMP_Compressonator
 # - spirv_reflect
 # - imgui
 # - implot
@@ -82,6 +84,20 @@ elseif(WIN32)
 endif()
 set_target_properties(nfd PROPERTIES FOLDER "Lib")
 
+########## BC7ENC ##########
+file(GLOB BC7ENC_SRC
+	bc7enc/bc7decomp.cpp
+	bc7enc/bc7decomp.h
+	bc7enc/bc7enc.c
+	bc7enc/bc7enc.h
+	bc7enc/dds_defs.h
+	bc7enc/rgbcx.h
+	bc7enc/rgbcx_table4.h
+	bc7enc/rgbcx_impl.cpp
+)
+add_library(bc7enc STATIC ${BC7ENC_SRC})
+set_target_properties(bc7enc PROPERTIES FOLDER "Lib")
+
 ########## BULLET PHYSICS #############
 dir_to_var_recurse(bullet3/src/BulletCollision BULLET_COLLISION_SRC)
 dir_to_var_recurse(bullet3/src/BulletDynamics BULLET_DYNAMICS_SRC)
@@ -122,3 +138,9 @@ set_target_properties(bullet PROPERTIES FOLDER "Lib")
 #set_target_properties(Bullet3Common      PROPERTIES FOLDER Bullet)
 #set_target_properties(BulletInverseDynamics      PROPERTIES FOLDER Bullet)
 #set_target_properties(BulletSoftBody      PROPERTIES FOLDER Bullet)
+
+### Compressonator
+set(PROJECT_FOLDER_SDK_LIBS "Lib/Compressonator")
+get_filename_component(PROJECT_SOURCE_DIR "./compressonator" ABSOLUTE)
+add_subdirectory(compressonator/cmp_core/)
+add_subdirectory(compressonator/cmp_compressonatorlib/)

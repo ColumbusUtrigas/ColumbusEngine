@@ -1,10 +1,7 @@
 #include <Editor/CommonUI.h>
 #include <Editor/Icons.h>
-#include <Graphics/Device.h>
 #include <Core/Filesystem.h>
 #include <imgui_internal.h>
-
-#include <Graphics/OpenGL/TextureOpenGL.h>
 
 namespace Columbus::Editor
 {
@@ -158,6 +155,98 @@ namespace Columbus::Editor
 
 		return ICON_FA_FILE;
 	}
+
+	struct InternalModalWindow
+	{
+		std::string Name;
+		std::function<bool()> DrawCallback;
+	};
+
+	static std::vector<InternalModalWindow> ModalWindowsList;
+
+	void ShowModalWindow(const char* Name, std::function<bool()> DrawCallback)
+	{
+		ModalWindowsList.push_back(InternalModalWindow
+		{
+			.Name = Name,
+			.DrawCallback = DrawCallback,
+		});
+	}
+
+	void TickAllModalWindows()
+	{
+		for (int i = 0; i < (int)ModalWindowsList.size(); i++)
+		{
+			InternalModalWindow& Window = ModalWindowsList[i];
+			bool Open = true;
+			bool WasClosed = false;
+
+			ImVec2 Size(300, 100);
+
+			ImGui::OpenPopup(Window.Name.c_str());
+			ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
+			//ImGui::SetNextWindowSize(ImVec2(Size.x, Size.y));
+			if (ImGui::BeginPopupModal(Window.Name.c_str(), &Open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				if (Window.DrawCallback())
+				{
+					ModalWindowsList.erase(ModalWindowsList.begin() + i--);
+					WasClosed = true;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			if (!Open && !WasClosed)
+			{
+				ModalWindowsList.erase(ModalWindowsList.begin() + i--);
+			}
+		}
+	}
+
+	void ShowMessageBox(const char* Name, const char* Text, MessageBoxCallbacks Callbacks)
+	{
+		std::string TextStr = Text;
+
+		ShowModalWindow(Name, [TextStr, Callbacks]() -> bool
+		{
+			ImVec2 Size = ImGui::GetContentRegionAvail();
+			if (ImGui::BeginChild("TextField##MessageBox", ImVec2(Size.x, Size.y - 30)))
+			{
+				ImGui::TextWrapped("%s", TextStr.c_str());
+			}
+			ImGui::EndChild();
+
+			bool Result = false;
+
+			if (ImGui::BeginChild("Buttons##MessageBox"))
+			{
+				if (ImGui::Button("Cancel"))
+				{
+					if (Callbacks.OnCancel)
+						Callbacks.OnCancel();
+					Result = true;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("No"))
+				{
+					if (Callbacks.OnNo)
+						Callbacks.OnNo();
+					Result = true;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Yes"))
+				{
+					if (Callbacks.OnYes)
+						Callbacks.OnYes();
+					Result = true;
+				}
+			}
+			ImGui::EndChild();
+
+			return Result;
+		});
+	}
 }
 
 namespace ImGui
@@ -216,7 +305,7 @@ namespace ImGui
 		return result;
 	}
 
-	void Image(Columbus::Texture* texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col)
+	/*void Image(Columbus::Texture* texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col)
 	{
 		switch (Columbus::gDevice->GetCurrentAPI())
 		{
@@ -231,5 +320,5 @@ namespace ImGui
 				break;
 			}
 		}
-	}
+	}*/
 }

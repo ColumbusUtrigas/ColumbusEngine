@@ -1,7 +1,6 @@
 ﻿#include "Common/Image/Image.h"
 #include "Common/Model/Model.h"
 #include "Graphics/Core/GraphicsCore.h"
-#include "Editor/CommonUI.h"
 #include "Graphics/Camera.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/IrradianceVolume.h"
@@ -25,15 +24,18 @@
 #include "Lib/implot/implot.h"
 #include "Lib/ImGuizmo/ImGuizmo.h"
 #include "System/File.h"
+#include "Editor/CommonUI.h"
 #include <vulkan/vulkan.h>
 #include <Core/Core.h>
 #include <Core/CVar.h>
+#include "Scene/Project.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/RenderPasses/RenderPasses.h>
 #include <Graphics/Lightmaps.h>
 #include <Graphics/World.h>
 #include <Profiling/Profiling.h>
 #include <Math/Box.h>
+#include "Scene/AssetImport.h"
 #include <Graphics/DebugUI.h>
 
 // TEST
@@ -68,6 +70,7 @@ IMPLEMENT_CPU_PROFILING_COUNTER("RG Add", "RenderGraph", CpuCounter_RenderGraphC
 
 // TODO: make it normal
 int SelectedObject = -1;
+const bool DoPlayer = false;
 
 struct Player
 {
@@ -90,6 +93,8 @@ struct Player
 
 void Player::Load()
 {
+	if (!DoPlayer) return;
+
 	Model model;
 	model.Load("Data/Meshes/Sphere.obj");
 	//model.Load("Data/Meshes/Hercules.cmf");
@@ -123,6 +128,8 @@ void Player::Load()
 
 void Player::Spawn()
 {
+	if (!DoPlayer) return;
+
 	if (Id != -1)
 		return; // already spawned
 
@@ -137,6 +144,8 @@ void Player::Spawn()
 
 void Player::HandleInput()
 {
+	if (!DoPlayer) return;
+
 	auto keyboard = SDL_GetKeyboardState(NULL);
 	if (keyboard[SDL_SCANCODE_I]) RB->ApplyCentralImpulse(Vector3(0, 0, +1));
 	if (keyboard[SDL_SCANCODE_J]) RB->ApplyCentralImpulse(Vector3(+1, 0, 0));
@@ -146,6 +155,8 @@ void Player::HandleInput()
 
 void Player::PrePhysics()
 {
+	if (!DoPlayer) return;
+
 	if (Id != -1)
 	{
 		RB->SetTransform(World.GameObjects[Id].Trans);
@@ -154,6 +165,8 @@ void Player::PrePhysics()
 
 void Player::PostPhysics()
 {
+	if (!DoPlayer) return;
+
 	if (Id != -1)
 	{
 		World.GameObjects[Id].Trans = RB->GetTransform();
@@ -364,6 +377,376 @@ static void AddWorldCollision(EngineWorld& World)
 //
 int main()
 {
+	Assets::ImportLevel("C:/Users/Columbus/Documents/src/TestProject/Data/TestLevel/TestLevel.gltf", "C:/Users/Columbus/Documents/src/TestProject/Data/TestImport/Level.gltf");
+	return 0;
+
+	// 3d texture gen
+	if (0)
+	{
+		char Volume[32][32][32][4]; // rgba8 32x32x32
+
+		for (int i = 0; i < 32; i++)
+		{
+			for (int j = 0; j < 32; j++)
+			{
+				for (int k = 0; k < 32; k++)
+				{
+					char pixel[4]{
+						(char)((i / 32.0f) * 255),
+						(char)((j / 32.0f) * 255),
+						(char)((k / 32.0f) * 255),
+						255,
+					};
+
+					memcpy(Volume[i][j][k], pixel, 4);
+				}
+			}
+		}
+
+		Image Img;
+		Img.Type = ImageType::Image3D;
+		Img.Exist = true;
+		Img.Data = (u8*)Volume;
+		Img.MipMaps = 1;
+		Img.Width = 32;
+		Img.Height = 32;
+		Img.Depth = 32;
+		Img.Format = TextureFormat::RGBA8;
+
+		DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/volume.dds", "wb");
+		ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+	}
+
+	// Test DDS Load/Save
+	if (0)
+	{
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgb.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgb_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/dxt1.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/dxt3.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/dxt3_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/dxt5.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/dxt5_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/bc7.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/bc7_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgb_mips.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgb_mips_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba_mips.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba_mips_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/cubemap_mips.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/cubemap_mips_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba16f.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba16f_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba32f.dds");
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/load_test/rgba32f_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+	}
+
+	// Compression test
+	if (0)
+	{
+		ImageCompression::InitImageCompression();
+
+		const bool bCompressFromDDS = false;
+
+		if (bCompressFromDDS)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (bCompressFromDDS)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT5,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb_dxt5_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (bCompressFromDDS)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::BC7,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb_bc7_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (bCompressFromDDS)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (bCompressFromDDS)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT5,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba_dxt5_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (bCompressFromDDS)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::BC7,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba_bc7_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb.jpg");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb_jpg_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba.png");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba_png_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb.jpg");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::BC7,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgb_jpg_bc7_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba_mips.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgab_mips_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/volume.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/volume_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/cubemap_rgba_mips.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::DXT1,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/cubemap_dxt1_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba16f.dds");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::BC6H,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba16f_bc6h_result.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/Abandoned.hdr");
+			Image CompressedImage;
+
+			ImageCompression::CompressionParams Params{
+				.Format = TextureFormat::BC6H,
+			};
+
+			ImageCompression::CompressImage(Img, CompressedImage, Params);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/Abandoned_bc6h.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, CompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/rgba_dxt1_result.dds");
+			Image DecompressedImage;
+
+			ImageCompression::DecompressImage(Img, DecompressedImage);
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/comp_test/decompress_rgba_dxt1.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, DecompressedImage);
+		}
+
+		if (0)
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/mip_test/rgba.dds");
+			Image DstImg;
+
+			ImageMips::GenerateImageMips(Img, DstImg, {});
+			ImageCompression::CompressImage(DstImg, Img, ImageCompression::CompressionParams{
+				.Format = TextureFormat::DXT1
+			});
+
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/mip_test/rgba_mipgen.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+
+		{
+			Image Img;
+			Img.LoadFromFile("C:/Users/Columbus/Downloads/tmp/mip_test/volume.dds");
+			Image DstImg;
+
+			ImageMips::GenerateImageMips(Img, DstImg, {});
+			ImageCompression::CompressImage(DstImg, Img, ImageCompression::CompressionParams{
+				.Format = TextureFormat::DXT1
+			});
+
+			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/mip_test/volume_mipgen.dds", "wb");
+			ImageUtils::ImageSaveToStreamDDS(Stream, Img);
+		}
+	}
+
+	//return 0;
 	InitializeEngine();
 
 	Camera camera;
@@ -464,6 +847,12 @@ int main()
 
 		// UI
 		{
+			{
+				char Buf[256]{};
+				snprintf(Buf, 256, "Columbus Engine (Vulkan) - %s", GCurrentProject ? GCurrentProject->ProjectName.c_str() : "No project");
+				SDL_SetWindowTitle(Window.Window, Buf);
+			}
+
 			DebugUI::DrawMainLayout();
 
 			ImGui::ShowDemoWindow();
@@ -472,12 +861,14 @@ int main()
 
 			DebugUI::ShowScreenshotSaveWindow(World.MainView);
 
+			DebugUI::ShowProjectSettingsWindow();
 			DebugUI::ShowMeshesWindow(World);
 			DebugUI::ShowDecalsWindow(World);
 			DebugUI::ShowLightsWindow(World);
 			DebugUI::ShowMaterialsWindow(World);
 			DebugUI::ShowIrradianceWindow(World);
 			DebugUI::ShowLightmapWindow(World);
+			Editor::TickAllModalWindows();
 
 			if (ImGui::Begin("Camera"))
 			{

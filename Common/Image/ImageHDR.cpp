@@ -26,8 +26,8 @@ namespace Columbus::ImageUtils
 
 		switch (comp)
 		{
-		case 3: OutFormat = TextureFormat::RGB16F; break;
-		case 4: OutFormat = TextureFormat::RGBA16F; break;
+		case 3: OutFormat = TextureFormat::RGB32F; break;
+		case 4: OutFormat = TextureFormat::RGBA32F; break;
 		default:
 			Log::Error("%s:%i:   Invalid HDR image format", __FILE__, __LINE__);
 			stbi_image_free(OutData);

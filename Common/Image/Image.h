@@ -8,6 +8,8 @@
 namespace Columbus
 {
 
+	class Image;
+
 	enum class ImageLoading
 	{
 		None,
@@ -102,6 +104,7 @@ namespace Columbus
 		u8 CompressedBlockSizeBits;
 		u8 NumChannels;
 
+		u8 HasAlpha : 1;
 		u8 HasCompression : 1;
 		u8 HasDepth : 1;
 		u8 HasStencil : 1;
@@ -111,7 +114,11 @@ namespace Columbus
 
 	namespace ImageUtils
 	{
+		u64 ImageCalcByteSizeForMip(u32 Width, u32 Height, u32 Depth, u32 Mip, TextureFormat Format);
+
 		u64 ImageCalcByteSize(u32 Width, u32 Height, u32 Depth, u32 Mips, TextureFormat Format);
+		u64 ImageCalcByteSize(u32 Width, u32 Height, u32 Depth, u32 Mips, u32 Layers, TextureFormat Format);
+		u64 ImageCalcByteSize(u32 Width, u32 Height, u32 Depth, u32 Mips, TextureFormat Format, ImageType Type);
 
 		ImageFormat ImageGetFileFormatFromStream(DataStream& Stream);
 		bool ImageCheckFormatFromStreamBMP(DataStream& Stream);
@@ -124,7 +131,7 @@ namespace Columbus
 		bool ImageCheckFormatFromStreamDDS(DataStream& Stream);
 
 		// auto detects file format
-		bool ImageLoadFromStream   (DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStream   (DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutDepth, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
 		bool ImageLoadFromStreamBMP(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
 		bool ImageLoadFromStreamTGA(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
 		bool ImageLoadFromStreamPNG(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
@@ -132,7 +139,9 @@ namespace Columbus
 		bool ImageLoadFromStreamJPG(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
 		bool ImageLoadFromStreamEXR(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
 		bool ImageLoadFromStreamHDR(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
-		bool ImageLoadFromStreamDDS(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+		bool ImageLoadFromStreamDDS(DataStream& Stream, u32& OutWidth, u32& OutHeight, u32& OutDepth, u32& OutMips, TextureFormat& OutFormat, ImageType& OutType, u8*& OutData);
+
+		bool ImageSaveToStreamDDS(DataStream& Stream, const Image& Img);
 
 		bool ImageSaveToFileBMP(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data);
 		bool ImageSaveToFileTGA(const char* FileName, u32 Width, u32 Height, TextureFormat Format, u8* Data);
@@ -150,6 +159,27 @@ namespace Columbus
 		bool ImageFlipY (u8* Data, u32 Width, u32 Height, u32 BPP);
 		bool ImageFlipXY(u8* Data, u32 Width, u32 Height, u32 BPP);
 	}
+
+	struct ImageMip
+	{
+		u32 Width;
+		u32 Height;
+		u32 Depth;
+		TextureFormat Format;
+		u8* Data;
+
+	public:
+		// for any read/write function:
+		// applies format conversion automatically
+		// supports limited number of formats
+		// will return false if conversion failed
+
+		// works with WxHxD pixels from the image, starting from [X, Y, Z] coordinate
+		//bool ReadPixelsRGBA32F(float* Pixels, u32 X, u32 Y, u32 Z, u32 W, u32 H, u32 D);
+
+		bool ReadPixelRGBA32F(float Pixels[4], u32 X, u32 Y, u32 Z) const;
+		bool WritePixelRGBA32F(float Pixels[4], u32 X, u32 Y, u32 Z) const;
+	};
 
 	/**
 	* @brief CPU-side image.
@@ -173,7 +203,26 @@ namespace Columbus
 		Image(const Image&) = delete;
 		Image(Image&& Base) noexcept { *this = (Image&&)(Base); }
 
-		Image& operator=(const Image&) = delete;
+		Image& operator=(const Image& Other)
+		{
+			FreeData();
+			Width = Other.Width;
+			Height = Other.Height;
+			Depth = Other.Depth;
+			Format = Other.Format;
+			Exist = Other.Exist;
+			Type = Other.Type;
+
+			if (Other.Data)
+			{
+				u64 DataSize = ImageUtils::ImageCalcByteSize(Width, Height, Depth, MipMaps, Format) * (Type == ImageType::ImageCube ? 6 : 1);
+				Data = new u8[DataSize];
+				memcpy(Data, Other.Data, DataSize);
+			}
+
+			return *this;
+		}
+
 		Image& operator=(Image&& Base) noexcept
 		{
 			auto swap = [](auto& a, auto& b)
@@ -208,6 +257,12 @@ namespace Columbus
 			MipMaps = 1;
 		}
 
+		// will empty internals
+		// used for empty image initialisation
+		void AllocImage(u32 W, u32 H, u32 D, u32 Mips, TextureFormat Format, ImageType Type);
+
+		ImageMip GetMip(u32 Mip, u32 Layer) const;
+
 		bool LoadFromFile(std::string_view FileName, ImageLoading Flags = ImageLoading::None);
 		bool LoadFromMemory(const u8* Memory, const u64 Size, ImageLoading Flags = ImageLoading::None);
 		bool LoadFromStream(DataStream& Stream, ImageLoading Flags = ImageLoading::None);
@@ -228,6 +283,9 @@ namespace Columbus
 		u64 GetOffset(u32 Layer, u32 Level) const;
 		u64 GetSize(u32 Level) const;
 
+		u64 GetTotalPixelCount() const;
+		u64 GetFullSize() const;
+
 		u8* Get2DData(u32 Level = 0) const;
 		u8* GetCubeData(u32 Face, u32 Level = 0) const;
 
@@ -236,5 +294,37 @@ namespace Columbus
 
 		~Image();
 	};
+
+	namespace ImageMips
+	{
+		struct MipGenerationParams
+		{
+			
+		};
+
+		void GenerateImageMips(const Image& Img, Image& DstImage, MipGenerationParams Params);
+	}
+
+	namespace ImageCompression
+	{
+		struct CompressionParams
+		{
+			TextureFormat Format;
+
+			// BC7 only
+			bool PerceptualMetric = true;
+		};
+
+		// init must be called once in the beginning
+		void InitImageCompression();
+
+		bool CompressImageBcEnc(const Image& Img, Image& DstImage, CompressionParams Params);
+		bool CompressImageCompressonator(const Image& Img, Image& DstImage, CompressionParams Params);
+		bool CompressImage(const Image& Img, Image& DstImage, CompressionParams Params);
+
+		// selects the most suitable decompressed format
+		// returns true if decompression was performed
+		bool DecompressImage(const Image& Img, Image& DstImage);
+	}
 
 }

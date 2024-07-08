@@ -379,8 +379,8 @@ namespace Columbus::ImageUtils
 			}
 		}
 
-		if (tga.x_origin != 0) ImageFlipX(data, tga.width, tga.height, PixelSize);
-		if (tga.y_origin == 0) ImageFlipY(data, tga.width, tga.height, PixelSize);
+		if (tga.x_origin != 0) ImageFlipX(data, tga.width, tga.height, (u32)PixelSize);
+		if (tga.y_origin == 0) ImageFlipY(data, tga.width, tga.height, (u32)PixelSize);
 
 		OutWidth = tga.width;
 		OutHeight = tga.height;

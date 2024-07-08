@@ -10,7 +10,7 @@
 #define DX12_ENABLE_DEBUG_LAYER 1
 
 #if COLUMBUS_EDITOR
-	#include <Editor/Settings.h>
+	//#include <Editor/Settings.h>
 #endif
 
 #include <Graphics/Core/GraphicsCore.h>

@@ -194,7 +194,8 @@ namespace Columbus
 		if (!Data) return false;
 		if (Handle == nullptr) return false;
 		CurrentOffset += Size;
-		if (fwrite(Data, Size, 1, Handle) != 1) return false;
+		size_t WriteResult = fwrite(Data, Size, 1, Handle);
+		if (WriteResult != Size) return false;
 		else return true;
 	}
 

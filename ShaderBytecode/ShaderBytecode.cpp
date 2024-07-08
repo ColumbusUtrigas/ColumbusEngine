@@ -83,7 +83,7 @@ CompiledShaderData LoadCompiledShaderData(const std::string& Path)
 
 	// TODO: error handling
 
-	for (int i = 0; i < DataHeader.NumBytecodes; i++)
+	for (uint32_t i = 0; i < DataHeader.NumBytecodes; i++)
 	{
 		CompiledShaderBytecode Bytecode;
 		CompiledShaderBytecodeHeader BytecodeHeader;
@@ -172,7 +172,7 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 	spvReflectEnumerateDescriptorSets(&spv_module, &sets_num, sets);
 	assert(reflect_result == SPV_REFLECT_RESULT_SUCCESS);
 
-	for (int i = 0; i < push_constant_num; i++)
+	for (uint32_t i = 0; i < push_constant_num; i++)
 	{
 		VkPushConstantRange push;
 		push.stageFlags = ShaderTypeToVk(Bytecode.Stage); // TODO: information about push constant usage
@@ -182,13 +182,13 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 		Reflection->PushConstants.push_back(push);
 	}
 
-	for (int i = 0; i < sets_num; i++)
+	for (uint32_t i = 0; i < sets_num; i++)
 	{
 		DescriptorSetReflectionData setInfo;
 
 		SpvReflectDescriptorType UsedDescriptorTypesCache[32]{(SpvReflectDescriptorType)-1};
 
-		for (int b = 0; b < sets[i]->binding_count; b++)
+		for (uint32_t b = 0; b < sets[i]->binding_count; b++)
 		{
 			auto binding = sets[i]->bindings[b];
 			assert(Bytecode.Stage == ShaderType::Vertex || Bytecode.Stage == ShaderType::Pixel || Bytecode.Stage == ShaderType::Raygen || Bytecode.Stage == ShaderType::ClosestHit || Bytecode.Stage == ShaderType::Compute);
