@@ -436,21 +436,15 @@ namespace Columbus
 		{
 		case TextureFormat::R8:
 			PixelPtr[0] = (char)(Pixel[0] * 255.f);
-			PixelPtr[1] = 0.0f;
-			PixelPtr[2] = 0.0f;
-			PixelPtr[3] = 1.0f; // alpha 1
 			break;
 		case TextureFormat::RG8:
 			PixelPtr[0] = (char)(Pixel[0] * 255.f);
 			PixelPtr[1] = (char)(Pixel[1] * 255.f);
-			PixelPtr[2] = 0.0f;
-			PixelPtr[3] = 1.0f; // alpha 1
 			break;
 		case TextureFormat::RGB8:
 			PixelPtr[0] = (char)(Pixel[0] * 255.f);
 			PixelPtr[1] = (char)(Pixel[1] * 255.f);
 			PixelPtr[2] = (char)(Pixel[2] * 255.f);
-			PixelPtr[3] = 1.0f; // alpha 1
 			break;
 		case TextureFormat::RGBA8:
 			PixelPtr[0] = (char)(Pixel[0] * 255.f);
@@ -464,7 +458,6 @@ namespace Columbus
 			*PixelPtrF32++ = *Pixel++;
 			*PixelPtrF32++ = *Pixel++;
 			*PixelPtrF32++ = *Pixel++;
-			*PixelPtrF32++ = 1.0f; // alpha 1
 			break;
 		}
 		case TextureFormat::RGBA32F:

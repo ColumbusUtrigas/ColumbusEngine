@@ -377,8 +377,8 @@ static void AddWorldCollision(EngineWorld& World)
 //
 int main()
 {
-	Assets::ImportLevel("C:/Users/Columbus/Documents/src/TestProject/Data/TestLevel/TestLevel.gltf", "C:/Users/Columbus/Documents/src/TestProject/Data/TestImport/Level.gltf");
-	return 0;
+	//Assets::ImportLevel("C:/Users/Columbus/Documents/src/TestProject/Data/TestLevel/TestLevel.gltf", "C:/Users/Columbus/Documents/src/TestProject/Data/TestImport/Level.gltf");
+	//return 0;
 
 	// 3d texture gen
 	if (0)

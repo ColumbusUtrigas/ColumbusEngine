@@ -209,6 +209,7 @@ namespace Columbus
 			Width = Other.Width;
 			Height = Other.Height;
 			Depth = Other.Depth;
+			MipMaps = Other.MipMaps;
 			Format = Other.Format;
 			Exist = Other.Exist;
 			Type = Other.Type;

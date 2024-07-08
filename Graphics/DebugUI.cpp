@@ -1,6 +1,7 @@
 #include "DebugUI.h"
 #include "Scene/Project.h"
 #include "Editor/CommonUI.h"
+#include "Scene/AssetImport.h"
 
 // Third party
 #include <Lib/imgui/imgui.h>
@@ -268,28 +269,30 @@ namespace Columbus::DebugUI
 					{
 						Editor::ShowModalWindow("Import Level", []()->bool
 						{
-							static char SourcePath[256]{};
+							static char SourcePath[512]{};
 							static char ImportPath[512]{};
 
+							// TODO: should only be available if current project is set (?)
 							// TODO: common pick path widget
 
-							ImGui::InputText("Source Path", SourcePath, 256);
+							ImGui::InputText("Source Path", SourcePath, 512);
 							ImGui::SameLine();
 							if (ImGui::Button("..."))
 							{
 								char* Path = NULL;
-								if (NFD_PickFolder(NULL, &Path) == NFD_OKAY)
+								if (NFD_OpenDialog("gltf", NULL, &Path) == NFD_OKAY)
 								{
-									strcpy(Path, Path);
+									strcpy(SourcePath, Path);
 								}
 							}
 
 							ImGui::InputText("Path", ImportPath, 512);
 							ImGui::SameLine();
-							if (ImGui::Button("..."))
+							if (ImGui::Button("...##2"))
 							{
 								char* SavePath = NULL;
-								if (NFD_PickFolder(NULL, &SavePath) == NFD_OKAY)
+								// TODO: ensure that save path is under the project folder
+								if (NFD_SaveDialog("gltf", NULL, &SavePath) == NFD_OKAY)
 								{
 									strcpy(ImportPath, SavePath);
 								}
@@ -298,9 +301,13 @@ namespace Columbus::DebugUI
 							ImGui::BeginDisabled((strlen(SourcePath) == 0) || (strlen(ImportPath) == 0));
 							if (ImGui::Button("Import"))
 							{
-								// TODO: import
-								// TODO: modal window that cannot be closed
 								ImGui::EndDisabled();
+
+								// TODO: handle errors
+								Assets::ImportLevel(SourcePath, ImportPath);
+
+								// TODO: async (?) import
+								// TODO: modal progress window that cannot be closed
 								return true;
 							}
 							ImGui::EndDisabled();
