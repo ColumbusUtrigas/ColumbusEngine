@@ -15,6 +15,7 @@
 
 #include <Graphics/Core/GraphicsCore.h>
 #include <Core/Assert.h>
+#define NOMINMAX
 #include <windows.h>
 
 extern LPCTSTR window_class;

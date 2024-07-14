@@ -54,14 +54,45 @@ namespace Columbus
 	
 	void Camera::Perspective(float FOV, float Aspect, float Near, float Far)
 	{
+		FovY = FOV;
+		AspectRatio = Aspect;
+
 		ProjectionMatrix.Perspective(FOV, Aspect, Near, Far);
 	}
 
 	void Camera::Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far)
 	{
+		// NOT IMPLEMENTED PROPERLY
+		DEBUGBREAK();
+
 		// transpose because GLM uses column major and the engine uses row major layout
 		auto mat = glm::transpose(glm::ortho(Left, Right, Bottom, Top, Near, Far));
 		memcpy(&ProjectionMatrix.M[0][0], glm::value_ptr(mat), 64);
+	}
+
+	float Camera::GetFovX() const
+	{
+		return Math::Min((float)Math::Pi/2, FovY * AspectRatio);
+	}
+
+	float Camera::GetFovY() const
+	{
+		return FovY;
+	}
+
+	float Camera::GetAspect() const
+	{
+		return AspectRatio;
+	}
+
+	float Camera::GetFocalLength() const
+	{
+		return SensorSize / (2.f * tanf(GetFovX() * 0.5f));
+	}
+
+	float Camera::GetApertureDiameter() const
+	{
+		return GetFocalLength() / FStop;
 	}
 
 	const Matrix& Camera::GetViewProjection() const

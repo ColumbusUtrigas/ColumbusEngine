@@ -28,6 +28,11 @@ struct _Params {
 	uint FilmCurve;
 	uint OutputTransform;
 	uint2 Resolution;
+
+	float Vignette;
+	float GrainScale;
+	float GrainAmount;
+	uint  GrainSeed;
 } Params;
 
 #define FILMCURVE_ACES 0
@@ -204,6 +209,78 @@ float3 Tonemap(float3 Linear)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// 
+// Got from AMD FidelityFX Lens
+//
+// Noise function used as basis for film grain effect
+uint3 pcg3d16(uint3 v)
+{
+	v = v * 12829u + 47989u;
+	v.x += v.y * v.z;
+	v.y += v.z * v.x;
+	v.z += v.x * v.y;
+	v.x += v.y * v.z;
+	v.y += v.z * v.x;
+	v.z += v.x * v.y;
+	v >>= 16u;
+	return v;
+}
+
+// Simplex noise, transforms given position onto triangle grid
+// This logic should be kept at 32-bit floating point precision. 16 bits causes artifacting.
+float2 simplex(const in float2 P)
+{
+	// Skew and unskew factors are a bit hairy for 2D, so define them as constants
+	//const float F2 = (sqrt(3.0) - 1.0) / 2.0;  // 0.36602540378
+	//const float G2 = (3.0 - sqrt(3.0)) / 6.0;  // 0.2113248654
+	const float F2 = 0.36602540378;
+	const float G2 = 0.2113248654;
+
+	// Skew the (x,y) space to determine which cell of 2 simplices we're in
+	float   u = (P.x + P.y) * F2;
+	float2 Pi = round(P + u);
+	float   v = (Pi.x + Pi.y) * G2;
+	float2 P0 = Pi - v;  // Unskew the cell origin back to (x,y) space
+	float2 Pf0 = P - P0;  // The x,y distances from the cell origin
+
+	return float2(Pf0);
+}
+
+float2 toFloat16(float2 inputVal)
+{
+	return float2(inputVal * (1.0 / 65536.0) - 0.5);
+}
+
+float3 toFloat16(float3 inputVal)
+{
+	return float3(inputVal * (1.0 / 65536.0) - 0.5);
+}
+
+void FfxLensApplyFilmGrain(int2 coord, inout float3 color, float grainScaleVal, float grainAmountVal, uint grainSeedVal)
+{
+	float2     randomNumberFine = toFloat16(pcg3d16(float3(coord / (grainScaleVal / 8), grainSeedVal)).xy).xy;
+	float2     simplexP = simplex(coord / grainScaleVal + randomNumberFine);
+	const float grainShape = 3;
+
+	float grain = 1 - 2 * exp2(-length(simplexP) * grainShape);
+
+	color += grain * min(color, 1 - color) * grainAmountVal;
+}
+
+void FfxLensApplyVignette(int2 coord, int2 centerCoord, inout float3 color, float vignetteAmount)
+{
+	float2 vignetteMask = float2(0.0, 0.0);
+	float2 coordFromCenter = abs(coord - centerCoord) / float2(centerCoord);
+
+	const float piOver4 = 3.141592659 * 0.25;
+	vignetteMask = cos(coordFromCenter * vignetteAmount * piOver4);
+	vignetteMask = vignetteMask * vignetteMask;
+	vignetteMask = vignetteMask * vignetteMask;
+
+	color *= clamp(vignetteMask.x * vignetteMask.y, 0, 1);
+}
+
 float4 main(VS_TO_PS Input) : SV_TARGET
 {
 	// ACES image formation recap:
@@ -213,8 +290,14 @@ float4 main(VS_TO_PS Input) : SV_TARGET
 	// Apply Output Transform (Rec709 or Rec2020-PQ)
 
 	float3 Linear = float3(Input.Uv*5, 0);
-	Linear = SceneTexture[uint2(Input.Uv * Params.Resolution)].rgb;
+	int2 Coord = Input.Uv * Params.Resolution;
 
-	return float4(Tonemap(Linear),1);
+	Linear = SceneTexture[Coord].rgb;
+	float3 Tonemapped =  Tonemap(Linear);
+
+	FfxLensApplyVignette(Coord, Params.Resolution/2, Tonemapped, Params.Vignette);
+	FfxLensApplyFilmGrain(Coord, Tonemapped, Params.GrainScale, Params.GrainAmount, Params.GrainSeed);
+
+	return float4(Tonemapped, 1);
 }
 #endif

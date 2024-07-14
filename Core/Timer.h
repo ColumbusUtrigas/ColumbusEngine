@@ -3,6 +3,7 @@
 #include <Core/Platform.h>
 
 #ifdef PLATFORM_WINDOWS
+	#define NOMINMAX
 	#include <windows.h>
 #else
 	#include <sys/time.h>

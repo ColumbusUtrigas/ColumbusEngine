@@ -1172,7 +1172,7 @@ namespace Columbus
 				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_DepthView));
 			}
 
-			if (FormatInfo.HasStencil);
+			if (FormatInfo.HasStencil)
 			{
 				// stencil-only view
 				VkImageViewCreateInfo viewInfo;

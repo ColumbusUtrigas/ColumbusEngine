@@ -67,7 +67,7 @@ namespace Columbus
 		NormalDesc.Format = TextureFormat::RGBA16F;
 		WPDesc.Format = TextureFormat::RGBA32F;
 		RMDesc.Format = TextureFormat::RG8;
-		DSDesc.Format = TextureFormat::Depth24;
+		DSDesc.Format = TextureFormat::Depth32F;
 		DSDesc.Usage = TextureUsage::RenderTargetDepth;
 		VelocityDesc.Format = TextureFormat::RG16F;
 		LightmapDesc.Format = TextureFormat::RGBA16F;
@@ -473,6 +473,9 @@ namespace Columbus
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderDeferredSky(Graph, View, Textures, DeferredContext, Textures.FinalBeforeTonemap);
+
+		// TODO: find a way to apply DoF after TAA
+		Textures.FinalBeforeTonemap = FFX::DispatchDepthOfFieldRG(Graph, View, Textures, DeferredContext.FFX);
 
 		if (ApplyTAA)
 		{

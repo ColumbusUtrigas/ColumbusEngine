@@ -33,6 +33,11 @@ namespace Columbus
 		TonemapOutputTransform OutputTransform;
 
 		iVector2 Resolution;
+
+		float Vignette;
+		float GrainScale;
+		float GrainAmount;
+		u32   GrainSeed;
 	};
 
 	struct TonemapTextures
@@ -133,6 +138,10 @@ namespace Columbus
 				.FilmCurve       = (TonemapFilmCurve)CVar_FilmCurve.GetValue(),
 				.OutputTransform = (TonemapOutputTransform)CVar_OutputTransform.GetValue(),
 				.Resolution      = iVector2(Texture->GetDesc().Width, Texture->GetDesc().Height),
+				.Vignette        = View.CameraCur.Vignette * View.CameraCur.EnableVignette,
+				.GrainScale      = Math::Max(0.001f, View.CameraCur.GrainScale),
+				.GrainAmount     = View.CameraCur.GrainAmount * View.CameraCur.EnableGrain,
+				.GrainSeed       = (u32)rand(),
 			};
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);

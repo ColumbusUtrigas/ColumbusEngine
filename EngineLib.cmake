@@ -16,6 +16,7 @@ endif()
 set(TARGET ColumbusEngine)
 
 ########## COLUMBUS ENGINE ############
+add_compile_options(/MP) # enables multithreaded compilation
 add_library(${TARGET} STATIC Core/Engine.cpp)
 set_target_properties(${TARGET} PROPERTIES
 	CXX_STANDARD 20
@@ -104,6 +105,10 @@ target_link_libraries(${TARGET} xatlas)
 target_link_libraries(${TARGET} spirv_reflect)
 target_link_libraries(${TARGET} ShaderBytecode)
 target_link_libraries(${TARGET} DDGI)
+
+target_link_libraries(${TARGET} ffx_backend_vk_x64)
+target_link_libraries(${TARGET} ffx_dof_x64)
+target_link_libraries(${TARGET} ffx_blur_x64)
 
 add_subdirectory(Lib)
 add_subdirectory(ShaderBytecode)

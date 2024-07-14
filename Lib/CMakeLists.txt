@@ -144,3 +144,10 @@ set(PROJECT_FOLDER_SDK_LIBS "Lib/Compressonator")
 get_filename_component(PROJECT_SOURCE_DIR "./compressonator" ABSOLUTE)
 add_subdirectory(compressonator/cmp_core/)
 add_subdirectory(compressonator/cmp_compressonatorlib/)
+
+### FidelityFX
+set(FFX_API_BACKEND "VK_X64")
+set(FFX_AUTO_COMPILE_SHADERS ON)
+set(FFX_BLUR ON)
+set(FFX_DOF ON)
+add_subdirectory_with_folder("Lib/FidelityFX" FidelityFX-SDK/sdk/)

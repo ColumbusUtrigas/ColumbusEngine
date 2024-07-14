@@ -377,8 +377,11 @@ static void AddWorldCollision(EngineWorld& World)
 //
 int main()
 {
+	// TOOD: create import unit tests
 	//Assets::ImportLevel("C:/Users/Columbus/Documents/src/TestProject/Data/TestLevel/TestLevel.gltf", "C:/Users/Columbus/Documents/src/TestProject/Data/TestImport/Level.gltf");
 	//return 0;
+
+	// TODO: create other unit tests
 
 	// 3d texture gen
 	if (0)
@@ -775,7 +778,7 @@ int main()
 
 	auto renderGraph = RenderGraph(device, World.SceneGPU);
 	WindowVulkan Window(instance, device);
-	DeferredRenderContext DeferredContext;
+	DeferredRenderContext DeferredContext(device);
 
 	World.MainView.OutputSize = Window.GetSize();
 
@@ -874,6 +877,18 @@ int main()
 			{
 				ImGui::InputFloat3("Camera Position", (float*)&camera.Pos);
 				ImGui::InputFloat3("Camera Rotation", (float*)&camera.Rot);
+
+				ImGui::Checkbox("Enable DoF", &camera.EnableDoF);
+				ImGui::SliderFloat("F-Stop", &camera.FStop, 0.1f, 10.0f);
+				ImGui::SliderFloat("Focus", &camera.FocusDistance, 0.01f, 100.0f);
+				ImGui::SliderFloat("SensorSize", &camera.SensorSize, 0.01f, 10.0f);
+
+				ImGui::Checkbox("Enable Vignette", &camera.EnableVignette);
+				ImGui::SliderFloat("Vignette", &camera.Vignette, 0.0f, 2.0f);
+
+				ImGui::Checkbox("Enable Grain", &camera.EnableGrain);
+				ImGui::SliderFloat("Grain Scale", &camera.GrainScale, 0.01f, 100.0f);
+				ImGui::SliderFloat("Grain Amount", &camera.GrainAmount, 0.0f, 2.0f);
 			}
 			ImGui::End();
 
@@ -1140,8 +1155,6 @@ int main()
 	// TODO: proper cleanup
 	VK_CHECK(vkQueueWaitIdle(*device->_ComputeQueue));
 	VK_CHECK(vkDeviceWaitIdle(device->_Device));
-
-	DeferredContext.History.Destroy(device);
 
 	//SDL_DestroyWindow(window);
 	SDL_Quit();

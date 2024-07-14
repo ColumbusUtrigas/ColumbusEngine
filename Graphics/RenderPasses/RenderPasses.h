@@ -87,12 +87,39 @@ namespace Columbus
 		void Destroy(SPtr<DeviceVulkan> Device);
 	};
 
+	// just some type erasure to reduce nested includes, this struct shouldn't be accessed from outside
+	struct FidelityFXContext
+	{
+		void* InterfaceFFX = nullptr; // FfxInterface*
+		void* BlurContext  = nullptr; // FfxBlurContext*
+		void* DofState     = nullptr; // InternalFfxDofState*
+	};
+
+	struct DeferredRenderContext;
+
+	void InitDeferredRenderContext(SPtr<DeviceVulkan> Device, DeferredRenderContext* pContext);
+	void ShutdownDeferredRenderContext(SPtr<DeviceVulkan> Device, DeferredRenderContext* pContext);
+
 	struct DeferredRenderContext
 	{
+		SPtr<DeviceVulkan> Device;
+
 		std::vector<GPULightRenderInfo> LightRenderInfos;
 
 		EDeferredRenderVisualisationMode VisualisationMode = EDeferredRenderVisualisationMode::Final;
 		HistorySceneTextures History;
+
+		FidelityFXContext* FFX = nullptr;
+
+		DeferredRenderContext(SPtr<DeviceVulkan> Device) : Device(Device)
+		{
+			InitDeferredRenderContext(Device, this);
+		}
+
+		~DeferredRenderContext()
+		{
+			ShutdownDeferredRenderContext(Device, this);
+		}
 	};
 
 	struct SceneTextures
@@ -115,6 +142,44 @@ namespace Columbus
 
 		RadianceCache::RadianceCacheData RadianceCache;
 	};
+
+	// FidelityFX wrapper
+	namespace FFX
+	{
+		// values match FfxBlurKernelPermutation
+		enum class EFFXBlurSigma
+		{
+			k1_6 = 1, // FFX_BLUR_KERNEL_PERMUTATION_0
+			k2_8 = 2, // FFX_BLUR_KERNEL_PERMUTATION_1
+			k4_0 = 4, // FFX_BLUR_KERNEL_PERMUTATION_2
+		};
+
+		// values match FfxBlurKernelSize
+		enum class EFFXBlurKernelSize
+		{
+			k3x3   = (1 << 0),
+			k5x5   = (1 << 1),
+			k7x7   = (1 << 2),
+			k9x9   = (1 << 3),
+			k11x11 = (1 << 4),
+			k13x13 = (1 << 5),
+			k15x15 = (1 << 6),
+			k17x17 = (1 << 7),
+			k19x19 = (1 << 8),
+			k21x21 = (1 << 9),
+		};
+
+		void DispatchGaussianBlur(CommandBufferVulkan* CmdBuf, Texture2* Source, Texture2* Target, FidelityFXContext* Context, EFFXBlurSigma Sigma, EFFXBlurKernelSize KernelSize);
+
+		RenderGraphTextureRef DispatchGaussianBlurRG(RenderGraph& Graph, RenderGraphTextureRef Source, FidelityFXContext* Context, EFFXBlurSigma Sigma, EFFXBlurKernelSize KernelSize);
+
+		RenderGraphTextureRef DispatchDepthOfFieldRG(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, FidelityFXContext* Context);
+
+		// TODO: shadow denoiser
+		// TODO: reflections denoiser
+		// TODO: lens effects (move to my custom thing, doesn't worth using FFX here)
+		// TODO: SSR
+	}
 
 	// Anti-Aliasing
 	namespace Antialiasing
