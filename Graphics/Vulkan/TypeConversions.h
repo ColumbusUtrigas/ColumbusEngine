@@ -95,6 +95,8 @@ namespace Columbus
 			case TextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_UNORM;
 			case TextureFormat::BGRA8: return VK_FORMAT_B8G8R8A8_UNORM;
 
+			case TextureFormat::R16: return VK_FORMAT_R16_UNORM;
+
 			case TextureFormat::R16F: return VK_FORMAT_R16_SFLOAT;
 			case TextureFormat::RG16F: return VK_FORMAT_R16G16_SFLOAT;
 			case TextureFormat::RGB16F: return VK_FORMAT_R16G16B16_SFLOAT;

@@ -303,6 +303,14 @@ namespace FFX
 		return Source;
 	}
 
+	RenderGraphTextureRef DispatchReflectionsDenoiserRG(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, FidelityFXContext* Context)
+	{
+		// TODO: update context
+		// TODO: get all resources
+		// TODO: dispatch
+
+		return Textures.RTReflections;
+	}
 } // namespace FFX
 
 }

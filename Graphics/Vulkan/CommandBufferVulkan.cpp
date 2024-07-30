@@ -228,7 +228,7 @@ namespace Columbus
 		Barrier.image = vktex->_Image;
 		Barrier.subresourceRange.aspectMask = AspectFlags;
 		Barrier.subresourceRange.baseArrayLayer = 0; // TODO:
-		Barrier.subresourceRange.levelCount = 1; // TODO:
+		Barrier.subresourceRange.levelCount = Texture->GetDesc().Mips;
 		Barrier.subresourceRange.baseMipLevel = 0; // TODO:
 		Barrier.subresourceRange.layerCount = 1; // TODO:
 

@@ -175,9 +175,10 @@ namespace Columbus
 
 		RenderGraphTextureRef DispatchDepthOfFieldRG(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, FidelityFXContext* Context);
 
+		RenderGraphTextureRef DispatchReflectionsDenoiserRG(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, FidelityFXContext* Context);
+
 		// TODO: shadow denoiser
 		// TODO: reflections denoiser
-		// TODO: lens effects (move to my custom thing, doesn't worth using FFX here)
 		// TODO: SSR
 	}
 

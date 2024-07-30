@@ -15,13 +15,11 @@ struct RayPayload
 
 	layout(binding = 0, set = 2) uniform accelerationStructureEXT acc; // TODO:
 	layout(binding = 1, set = 2, rgba16f) uniform image2D Result;
-	layout(binding = 2, set = 2) uniform sampler2D GBufferAlbedo;
-	layout(binding = 3, set = 2) uniform sampler2D GBufferNormals;
-	layout(binding = 4, set = 2) uniform sampler2D GBufferWorldPosition;
-	layout(binding = 5, set = 2) uniform sampler2D GBufferRoughnessMetallic;
-	layout(binding = 6, set = 2) uniform sampler2D GBufferDepth;
+	layout(binding = 2, set = 2) uniform sampler2D GBufferNormals;
+	layout(binding = 3, set = 2) uniform sampler2D GBufferWorldPosition; // TODO: remove
+	layout(binding = 4, set = 2) uniform sampler2D GBufferDepth;
 
-	#define RADIANCE_CACHE_BINDING 7
+	#define RADIANCE_CACHE_BINDING 5
 	#define RADIANCE_CACHE_SET 2
 	#include "../RadianceCache/RadianceCache.glsl"
 	#include "../GPUScene.glsl" // TODO:
@@ -33,14 +31,16 @@ struct RayPayload
 		vec3 CameraPosition;
 		uint Random;
 		float DiffuseBoost;
-		uint UseRadianceCache;
+		uint  UseRadianceCache;
+		float UpscaleFactor;
 	} Params;
 
 	void main()
 	{
 		const ivec2 Pixel = ivec2(gl_LaunchIDEXT.xy);
+		const ivec2 SourcePixel = Pixel;
 
-		float Depth = texelFetch(GBufferDepth, Pixel, 0).x;
+		float Depth = texelFetch(GBufferDepth, SourcePixel, 0).x;
 
 		// do not trace from sky
 		if (abs(Depth) < EPSILON || abs(Depth - 1) < EPSILON)
@@ -52,10 +52,8 @@ struct RayPayload
 		uint RngState = hash(hash(Pixel.x) + hash(Pixel.y) + (Params.Random)); // Initial seed
 
 		// sample GBuffer
-		vec3 Origin = texelFetch(GBufferWorldPosition, Pixel, 0).xyz;
-		vec3 Normal = texelFetch(GBufferNormals, Pixel, 0).xyz;
-		vec3 Albedo = texelFetch(GBufferAlbedo, Pixel, 0).rgb;
-		vec2 RM = texelFetch(GBufferRoughnessMetallic, Pixel, 0).xy;
+		vec3 Origin = texelFetch(GBufferWorldPosition, SourcePixel, 0).xyz;
+		vec3 Normal = texelFetch(GBufferNormals, SourcePixel, 0).xyz;
 
 		BRDFSample Sample = SampleBRDF_Lambert(Normal, UniformDistrubition2d(RngState));
 

@@ -106,8 +106,11 @@
 
 		float MetalFactor = 1 - RM.y;
 		LightingSum += imageLoad(GBufferReflections, ivec2(gl_GlobalInvocationID.xy)).rgb;
+
 		// TODO: low-res specular GI for rough metals (and other things as well)
-		LightingSum += Albedo * imageLoad(GBufferGI, ivec2(gl_GlobalInvocationID.xy)).rgb * MetalFactor;
+
+		// TODO: remove this weird scaling factor
+		LightingSum += Albedo * imageLoad(GBufferGI, ivec2(gl_GlobalInvocationID.xy/4)).rgb * MetalFactor;
 
 		imageStore(LightingOutput, Pixel, vec4(LightingSum, 1));
 	}

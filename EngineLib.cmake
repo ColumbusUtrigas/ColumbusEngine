@@ -109,6 +109,7 @@ target_link_libraries(${TARGET} DDGI)
 target_link_libraries(${TARGET} ffx_backend_vk_x64)
 target_link_libraries(${TARGET} ffx_dof_x64)
 target_link_libraries(${TARGET} ffx_blur_x64)
+target_link_libraries(${TARGET} ffx_denoiser_x64)
 
 add_subdirectory(Lib)
 add_subdirectory(ShaderBytecode)

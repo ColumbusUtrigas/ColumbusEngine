@@ -405,6 +405,7 @@ namespace Columbus
 		static bool ApplyFSR = false;
 		static bool ApplyFSR1Sharpening = false;
 		static float FSR1Sharpening = 0.0f;
+		static bool ApplyRTGI = true;
 
 		static float RenderResolution = 1.0f;
 
@@ -412,6 +413,7 @@ namespace Columbus
 		{
 			if (ImGui::Begin("Deferred Debug"))
 			{
+				ImGui::Checkbox("RTGI", &ApplyRTGI);
 				ImGui::Checkbox("TAA", &ApplyTAA);
 				ImGui::Checkbox("FSR1", &ApplyFSR);
 				ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
@@ -467,9 +469,23 @@ namespace Columbus
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 
-		// TODO: select GI mode
-		RenderIndirectLightingDDGI(Graph, View);
-		RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
+		if (ApplyRTGI)
+		{
+			RenderIndirectLightingDDGI(Graph, View);
+			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
+		}
+		else
+		{
+			TextureDesc2 Desc{
+				.Usage = TextureUsage::Storage | TextureUsage::Sampled,
+				.Width = (u32)View.RenderSize.X,
+				.Height = (u32)View.RenderSize.Y,
+				.Format = TextureFormat::RGBA16F,
+			};
+
+			Textures.RTGI = Graph.CreateTexture(Desc, "RayTracedGI");
+			ShaderMemsetTexture(Graph, Textures.RTGI, {});
+		}
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderDeferredSky(Graph, View, Textures, DeferredContext, Textures.FinalBeforeTonemap);
