@@ -1,17 +1,33 @@
 # Columbus Engine
+
 3D experimental rendering engine
-## Columbus Engine features:
+
+![Optional Text](./Tests/New1.jpg)
+
+## Columbus Engine features
+
 * RenderGraph based renderer
 * Reference GPU path tracer
 * Real-time deferred renderer
 * Deferred decals
 * Ray-traced shadows with variable-sized penumbra
 * Static GI: lightmaps, irradiance volumes
-* ACES image formation (TODO: AgX, Flim)
+* Dynamic GI: Ray Traced first-bounce with irradiance caching and SVGF-ish denoising
+* RT Reflections (can optionally use irradiance cache)
+* AgX and ACES (simplified) image formation
+* TAA with neighbourhood clamping
+* Bokeh DoF (FFX)
+* Vignette and Film grain
 
-## Supports:
-* Vulkan 1.2, Vulkan Ray Tracing
+## RTGI
 
-## Tests TODO: update
-![Optional Text](./Tests/1.png)
-![Optional Text](./Tests/5.png)
+Implementation described here
+https://columbusutrigas.com/posts/rtgi/
+
+## Supports
+
+* Vulkan 1.3, Vulkan Ray Tracing
+
+## Tests
+
+![Optional Text](./Tests/New2.png)
