@@ -3,7 +3,6 @@
 #include <Graphics/Texture.h>
 #include <Graphics/Camera.h>
 #include <Graphics/Device.h>
-#include <memory>
 
 namespace Columbus
 {
@@ -11,13 +10,11 @@ namespace Columbus
 	class Skybox
 	{
 	private:
-		BlendState* BS;
-		DepthStencilState* DSS;
-		RasterizerState* RS;
+		SPtr<Buffer> cbuffer;
+		SPtr<Buffer> vbuffer;
+		SPtr<Buffer> ibuffer;
 
-		Buffer* VertexBuffer;
-		Buffer* IndexBuffer;
-		std::shared_ptr<InputLayout> Layout;
+		SPtr<Texture> tex;
 
 		Texture* Tex = nullptr;
 		Texture* IrradianceMap = nullptr;
@@ -26,6 +23,7 @@ namespace Columbus
 		Camera ViewCamera;
 	public:
 		Skybox();
+		Skybox(SPtr<Texture> hdri);
 		Skybox(Texture* InTexture);
 
 		void Render();

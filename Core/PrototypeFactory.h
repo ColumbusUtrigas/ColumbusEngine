@@ -5,7 +5,6 @@
 #include <utility>
 #include <type_traits>
 #include <System/Log.h>
-#include <Core/Serialization.h>
 
 namespace Columbus
 {
@@ -18,7 +17,7 @@ namespace Columbus
 	public:
 		PrototypeFactory()
 		{
-			static_assert(std::is_base_of<ICloneable, T>::value, __FUNCTION__": type parameter of this class must derive from ICloneable");
+			//static_assert(std::is_base_of<ICloneable, T>::value, __FUNCTION__": type parameter of this class must derive from ICloneable");
 		}
 
 		static PrototypeFactory& Instance()
@@ -32,7 +31,7 @@ namespace Columbus
 			return _builders;
 		}
 
-		template <typename T, typename...Args>
+		template <typename U, typename...Args>
 		void Register(const std::string_view& type, Args...args)
 		{
 			auto tname = type;
@@ -40,7 +39,7 @@ namespace Columbus
 			if (it != _builders.end()) {
 				Log::Error("Trying to re-register type: %s", tname);
 			}
-			_builders[tname] = new T(std::forward<Args>(args)...);
+			_builders[tname] = new U(std::forward<Args>(args)...);
 		}
 
 		T* CreateFromTypename(const std::string_view& name)
@@ -59,19 +58,22 @@ namespace Columbus
 		}
 	};
 
-	#define DECLARE_PROTOTYPE(BaseType, Type, Typename, ...) \
-		static struct Type##_PrototypeTypeRegistrator { \
-			Type##_PrototypeTypeRegistrator() { \
-				PrototypeFactory<BaseType>::Instance().Register<Type>(Typename, __VA_ARGS__); \
-			} \
-		} Type##_PrototypeTypeRegistrator_Init; \
-		DECLARE_SERIALIZATION(Type); \
-		public: \
-			std::string_view GetTypename() const override { return Typename; } \
-			static std::string_view GetTypenameStatic() { return Typename; }
+	#define DECLARE_PROTOTYPE(BaseType, Type, Typename, ...)
+	#define IMPLEMENT_PROTOTYPE(BaseType, Type)
 
-	#define IMPLEMENT_PROTOTYPE(BaseType, Type) \
-		Type::Type##_PrototypeTypeRegistrator Type::Type##_PrototypeTypeRegistrator_Init; \
-		IMPLEMENT_SERIALIZATION(Type);
+	// #define DECLARE_PROTOTYPE(BaseType, Type, Typename, ...) \
+	// 	static struct Type##_PrototypeTypeRegistrator { \
+	// 		Type##_PrototypeTypeRegistrator() { \
+	// 			/*PrototypeFactory<BaseType>::Instance().Register<Type>(Typename, __VA_ARGS__);*/ \
+	// 		} \
+	// 	} Type##_PrototypeTypeRegistrator_Init; \
+	// 	/*DECLARE_SERIALIZATION(Type);*/ \
+	// 	public: \
+	// 		std::string_view GetTypename() const override { return Typename; } \
+	// 		static std::string_view GetTypenameStatic() { return Typename; }
+
+	// #define IMPLEMENT_PROTOTYPE(BaseType, Type) \
+	// 	eType::Type##_PrototypeTypeRgistrator Type::Type##_PrototypeTypeRegistrator_Init; \
+		/*IMPLEMENT_SERIALIZATION(Type);*/
 
 }

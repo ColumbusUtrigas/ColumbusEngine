@@ -6,14 +6,14 @@
 namespace Columbus::Graphics::DX12
 {
 
-	class ComputePipelineDX12 : public Columbus::ComputePipeline
+	class ComputePipelineDX12 : public ComputePipeline
 	{
 	public:
 		ID3D12PipelineState* _pso = nullptr;
 		ID3D12RootSignature* _rso = nullptr;
 	public:
-		ComputePipelineDX12(const Columbus::ComputePipelineDesc& Desc) :
-			ComputePipeline(Desc) {}
+		ComputePipelineDX12(const ComputePipelineDesc& desc) :
+			ComputePipeline(desc) {}
 	};
 
 }

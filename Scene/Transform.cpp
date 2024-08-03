@@ -19,7 +19,8 @@ namespace Columbus
 		{
 			ModelMatrix.SetIdentity();
 			ModelMatrix.Scale(Scale);
-			ModelMatrix = Rotation.ToMatrix() * ModelMatrix;
+			//ModelMatrix = Rotation.ToMatrix() * ModelMatrix;
+			ModelMatrix = ModelMatrix * Rotation.ToMatrix();
 			ModelMatrix.Translate(Position);
 		}
 	}

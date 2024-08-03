@@ -23,7 +23,7 @@ namespace Columbus
 		case SubUVMode::Random:
 			for (size_t i = Container.Count; i < Container.Count + Spawn; i++)
 			{
-				Container.Frames[i] = Random::Range<uint32>(0, Horizontal * Vertical);
+				Container.Frames[i] = (uint32)Random::Range(0, Horizontal * Vertical);
 			}
 			break;
 		}

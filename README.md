@@ -1,31 +1,33 @@
 # Columbus Engine
-3D cross-platform engine, written in C++14
-## Columbus Engine features:
-* Own 3D model format called CMF
-* Loading images from DDS, HDR, EXR, PNG, JPEG, TGA, BMP and TIFF formats
-* Parsing JSON files
-* Flexible Material and Shader system
-* Physically Based HDR forward rendering
-* Audio system with high perfomance 3D sound (soon audio effects)
-* Advanced graphics system
-* Rigidbody physics based on Bullet Physics
-* Input System
-* Scene manager
-* Advanced Particle Effect System
-* Advanced Math Lib (Vector, Matrices, Quaternions)
-* Postprocessing (Bloom, Vignette, Eye adaptation, Different Tonemapping techinques)
-* Antialiasing (FXAA, MSAA)
-* Integrated CPU and GPU profiler
-* Editor based on ImGui
 
-## Supports:
-* OpenGL 3.3 Core Profile
+3D experimental rendering engine
+
+![Optional Text](./Tests/New1.jpg)
+
+## Columbus Engine features
+
+* RenderGraph based renderer
+* Reference GPU path tracer
+* Real-time deferred renderer
+* Deferred decals
+* Ray-traced shadows with variable-sized penumbra
+* Static GI: lightmaps, irradiance volumes
+* Dynamic GI: Ray Traced first-bounce with irradiance caching and SVGF-ish denoising
+* RT Reflections (can optionally use irradiance cache)
+* AgX and ACES (simplified) image formation
+* TAA with neighbourhood clamping
+* Bokeh DoF (FFX)
+* Vignette and Film grain
+
+## RTGI
+
+Implementation described here
+https://columbusutrigas.com/posts/rtgi/
+
+## Supports
+
+* Vulkan 1.3, Vulkan Ray Tracing
 
 ## Tests
-![Optional Text](./Tests/1.png)
-![Optional Text](./Tests/2.png)
-![Optional Text](./Tests/3.png)
-![Optional Text](./Tests/4.png)
-![Optional Text](./Tests/5.png)
-![Optional Text](./Tests/6.png)
-![Optional Text](./Tests/7.png)
+
+![Optional Text](./Tests/New2.png)

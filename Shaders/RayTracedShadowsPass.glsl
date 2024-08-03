@@ -1,0 +1,133 @@
+#version 460 core
+#extension GL_EXT_ray_tracing : enable
+#extension GL_GOOGLE_include_directive : require
+
+struct RayPayload {
+	float Distance;
+};
+
+#ifdef RAYGEN_SHADER
+	layout(location = 0) rayPayloadEXT RayPayload Payload;
+
+	#include "Common.glsl"
+	#include "GPUScene.glsl"
+
+	layout(binding = 0, set = 2) uniform accelerationStructureEXT AccelerationStructure; // TODO
+	layout(binding = 1, set = 2, rgba16f) uniform image2D ShadowsBuffer;
+	layout(binding = 2, set = 2) uniform sampler2D GBufferNormals;
+	layout(binding = 3, set = 2) uniform sampler2D GBufferWorldPosition;
+	layout(binding = 4, set = 2) uniform sampler2D GBufferDepth;
+
+	layout(push_constant) uniform params
+	{
+		uint Random;
+		uint LightId;
+	} Params;
+
+	// 0 < angle < 2pi
+	vec3 SampleConeFibonacci(uint i, uint N, float angle)
+	{
+		float phi = acos(1 - angle * i / (N*PI));
+		float theta = 2*PI * i / GOLDEN_RATIO;
+
+		return vec3(cos(theta) * sin(phi), 1, sin(theta) * sin(phi));
+		// return vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
+	}
+
+	// TODO: move to common library
+	// Random in range [0-1]
+	vec3 SampleConeRay(vec3 Direction, float BaseRadius, vec2 Random)
+	{
+		// generate points in circle
+		float theta = Random.x * 2 * PI;
+		float radius = Random.y * 0.5 * BaseRadius;
+		vec2 circle = vec2(cos(theta) * radius, sin(theta) * radius);
+
+		// generate cone basis
+		// TODO: verify handinness
+		vec3 up = Direction.y < 0.999 ? vec3(0, 1, 0) : vec3(0, 0, 1);
+		vec3 right = normalize(cross(up, Direction));
+		vec3 forward = normalize(cross(right, up));
+
+		// use basis to transform points
+		return Direction + circle.x * right + circle.y * forward;
+	}
+
+	float rand(vec2 co){
+		return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+	}
+
+	void main()
+	{
+		const ivec2 pixel = ivec2(gl_LaunchIDEXT.xy);
+		// vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
+
+		float depth = texelFetch(GBufferDepth, pixel, 0).x;
+		// do not trace from sky
+		if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+		{
+			imageStore(ShadowsBuffer, ivec2(gl_LaunchIDEXT), vec4(0));
+			return;
+		}
+
+		vec3 origin = texelFetch(GBufferWorldPosition, pixel, 0).xyz;
+
+		GPULight Light = GPUSceneLights.Lights[Params.LightId];
+		vec3 LightDirection = normalize(Light.Direction.xyz);
+		float MaxDistance = 5000;
+		float LightRadius = Light.SourceRadius;
+
+		switch (Light.Type)
+		{
+			case GPULIGHT_DIRECTIONAL: break;
+			case GPULIGHT_POINT:
+				LightDirection = normalize(Light.Position.xyz - origin);
+				MaxDistance = distance(Light.Position.xyz, origin);
+				LightRadius = Light.SourceRadius / MaxDistance;
+
+				if (MaxDistance > Light.Range)
+				{
+					imageStore(ShadowsBuffer, ivec2(gl_LaunchIDEXT), vec4(0));
+					return;
+				}
+
+				break;
+			default: break; // TODO: other light types
+		}
+
+		uint RngState = hash(hash(pixel.x) + hash(pixel.y) + (Params.Random)); // Initial seed
+
+		vec3 direction = SampleConeRay(LightDirection, LightRadius, UniformDistrubition2d(RngState));
+		direction = normalize(direction);
+
+		traceRayEXT(AccelerationStructure, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT,
+			0xFF, 0, 0, 0, origin, 0.01, direction, MaxDistance, 0);
+
+		float Result = 0;
+		if (Payload.Distance > 0)
+		{
+			Result = 0;
+		} else
+		{
+			Result = 1;
+		}
+
+		imageStore(ShadowsBuffer, ivec2(gl_LaunchIDEXT), vec4(Result));
+	}
+#endif
+
+#ifdef MISS_SHADER
+	layout(location = 0) rayPayloadInEXT RayPayload Payload;
+
+	void main() {
+		Payload.Distance = -10;
+	}
+#endif
+
+#ifdef CLOSEST_HIT_SHADER
+	layout(location = 0) rayPayloadInEXT RayPayload Payload;
+
+	void main() {
+		Payload.Distance = gl_HitTEXT;
+	}
+#endif

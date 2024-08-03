@@ -1,3 +1,4 @@
+#if 0
 #include "Main.h"
 
 #include <Core/Windows/WindowsDragDrop.h>
@@ -13,11 +14,10 @@
 #include <System/File.h>
 #include <Common/JSON/JSON.h>
 #include <Graphics/ShaderCompiler.h>
-#include <fstream>
-#include <iostream>
 #include <Graphics\OpenGL\TextureOpenGL.h>
 #include <Graphics\OpenGL\DeviceOpenGL.h>
 #include <Graphics\OpenGL\GraphicsPipelineGL.h>
+#include <Graphics\Render2.h>
 
 //Hint to the driver to use discrete GPU
 extern "C"
@@ -37,159 +37,14 @@ bool Running = true;
 
 Columbus::Camera cam;
 Columbus::Transform trans;
-
 Columbus::GraphicsAPI chosen_api = Columbus::GraphicsAPI::None;
-Columbus::Buffer* vbuf;
-Columbus::Buffer* cbuf;
-Columbus::Buffer* tbuf;
-Columbus::Buffer* ibuf;
-Columbus::Buffer* cbv;
-Columbus::Texture* tex;
-Columbus::Texture* tex2;
-Columbus::Graphics::GraphicsPipeline* pipeline;
 
-// legacy
-Columbus::InputLayout* layout;
-Columbus::ShaderProgram* shader;
-
-static std::string ReadFile(std::string_view path)
-{
-	std::ifstream f(path.data());
-	return std::string((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-}
-
-void TriangleInit()
-{
-	using namespace Columbus;
-
-	Columbus::Model model;
-	model.Load("Data/Meshes/Box.cmf");
-	const auto& mesh = model.GetSubModel(0);
-
-	// vertex
-	{
-		BufferDesc desc;
-		desc.Size = mesh.VerticesCount * sizeof(Vector3);
-		desc.BindFlags = BufferType::Array;
-		desc.Usage = BufferUsage::Static;
-		desc.CpuAccess = BufferCpuAccess::Write;
-
-		SubresourceData initial;
-		initial.pSysMem = mesh.Positions;
-		initial.SysMemPitch = desc.Size;
-
-		Columbus::gDevice->CreateBuffer(desc, &initial, &vbuf);
-	}
-
-	// normal
-	{
-		BufferDesc desc;
-		desc.Size = mesh.VerticesCount * sizeof(Vector3);
-		desc.BindFlags = BufferType::Array;
-		desc.Usage = BufferUsage::Static;
-		desc.CpuAccess = BufferCpuAccess::Write;
-
-		SubresourceData initial;
-		initial.pSysMem = mesh.Normals;
-		initial.SysMemPitch = desc.Size;
-
-		Columbus::gDevice->CreateBuffer(desc, &initial, &cbuf);
-	}
-
-	// texcoord
-	{
-		BufferDesc desc;
-		desc.Size = mesh.VerticesCount * sizeof(Vector2);
-		desc.BindFlags = BufferType::Array;
-		desc.Usage = BufferUsage::Static;
-		desc.CpuAccess = BufferCpuAccess::Write;
-
-		SubresourceData initial;
-		initial.pSysMem = mesh.UVs;
-		initial.SysMemPitch = desc.Size;
-
-		Columbus::gDevice->CreateBuffer(desc, &initial, &tbuf);
-	}
-
-	// index
-	{
-		BufferDesc desc;
-		desc.Size = mesh.IndicesCount * mesh.IndexSize;
-		desc.BindFlags = BufferType::Index;
-		desc.Usage = BufferUsage::Static;
-		desc.CpuAccess = BufferCpuAccess::Write;
-
-		SubresourceData initial;
-		initial.pSysMem = mesh.Indices;
-		initial.SysMemPitch = desc.Size;
-
-		Columbus::gDevice->CreateBuffer(desc, &initial, &ibuf);
-	}
-
-	// tex
-	{
-		/*tex = gDevice->CreateTexture();
-		tex->Load("Data/Textures/Detail.dds");
-
-		tex2 = gDevice->CreateTexture();
-		tex2->Load("Data/Textures/bark 02d.jpg");*/
-	}
-
-	// cbv
-	{
-		BufferDesc desc;
-		desc.Size = sizeof(Matrix) * 2;
-		desc.BindFlags = BufferType::Uniform;
-		desc.Usage = BufferUsage::Static;
-		desc.CpuAccess = BufferCpuAccess::Write;
-
-		Columbus::gDevice->CreateBuffer(desc, nullptr, &cbv);
-	}
-
-	// graphics pipeline
-	{
-		Graphics::GraphicsPipelineDesc desc;
-		desc.layout.Elements = {
-			InputLayoutElementDesc{ "POSITION", 0, 0, 3 },
-			InputLayoutElementDesc{ "NORMAL", 0, 1, 3 },
-			InputLayoutElementDesc{ "TEXCOORD", 0, 2, 2 },
-		};
-		desc.textures = {
-			Graphics::ShaderResourceTex2D{ "tex", 0 },
-			Graphics::ShaderResourceTex2D{ "tex2", 2 }
-		};
-		desc.cbs = {
-			Graphics::ShaderResourceDesc{ "Params", 0 }
-		};
-		desc.rasterizerState.Cull = CullMode::No;
-		desc.topology = PrimitiveTopology::TriangleList;
-
-		ShaderLanguage lang;
-
-		switch (chosen_api)
-		{
-		case GraphicsAPI::DX12:
-			lang = ShaderLanguage::HLSL;
-			break;
-
-		case GraphicsAPI::OpenGL:
-			lang = ShaderLanguage::GLSL;
-			break;
-		}
-
-		auto prog = Graphics::ShaderCompiler::Compile(ReadFile("shader.csl"), lang, {});
-		desc.VS = prog.VS;
-		desc.PS = prog.PS;
-
-		Columbus::gDevice->CreateGraphicsPipeline(desc, &pipeline);
-	}
-}
-
-int main()
+//int main()
+int asd()
 {
 	Game game;
 
-	chosen_api = Columbus::GraphicsAPI::OpenGL;
+	chosen_api = Columbus::GraphicsAPI::DX12;
 
 	Columbus::Editor::Settings settings;
 	settings.TryLoad();
@@ -201,6 +56,8 @@ int main()
 	}
 
 	game.EngineStarted();
+
+	Columbus::Skybox sky;
 
 	#if COLUMBUS_EDITOR
 		/*Columbus::Editor::Editor editor;
@@ -224,7 +81,7 @@ int main()
 	MSG msg;
 	ZeroMemory(&msg, sizeof(MSG));
 
-	TriangleInit();
+	Columbus::Render2 render;
 
  	while (Running)
 	{
@@ -270,32 +127,34 @@ int main()
 
 		//editor.Draw(scene, render, viewport_size, RedrawTime);
 
-		Columbus::Buffer* bufs[] = { vbuf, cbuf, tbuf };
-		Columbus::Texture* texs[] = { tex, tex2 };
 		Columbus::Viewport viewport{ 0, 0, (float)viewport_size.X, (float)viewport_size.Y, 0, 1 };
 		Columbus::ScissorRect scissor{ 0, 0, (Columbus::uint32)viewport_size.X, (Columbus::uint32)viewport_size.Y };
 
 		trans.Rotation *= Columbus::Quaternion({ 0, 30 * RedrawTime, 0 });
 
+		if (Columbus::gInput.GetKey('W'))
+			cam.Rot -= { 30 * RedrawTime, 0, 0 };
+
+		if (Columbus::gInput.GetKey('S'))
+			cam.Rot += { 30 * RedrawTime, 0, 0 };
+
+		if (Columbus::gInput.GetKey('A'))
+			cam.Rot += { 0, 30 * RedrawTime, 0 };
+
+		if (Columbus::gInput.GetKey('D'))
+			cam.Rot -= { 0, 30 * RedrawTime, 0 };
+
 		cam.Perspective(50, 1, 0.1f, 100);
 		cam.Update();
 		trans.Update();
 
-		void* map;
-		Columbus::gDevice->MapBuffer(cbv, Columbus::BufferMapAccess::Write, map);
-		((Columbus::Matrix*)map)[0] = trans.GetMatrix();
-		((Columbus::Matrix*)map)[1] = cam.GetViewProjection();
-		Columbus::gDevice->UnmapBuffer(cbv);
-
-		Columbus::gDevice->BeginMarker("Draw");
-		Columbus::gDevice->SetGraphicsPipeline(pipeline);
 		Columbus::gDevice->RSSetViewports(1, &viewport);
 		Columbus::gDevice->RSSetScissorRects(1, &scissor);
-		Columbus::gDevice->IASetVertexBuffers(0, 3, bufs);
-		//Columbus::gDevice->IASetIndexBuffer(ibuf, Columbus::IndexFormat::Uint16, 0);
-		Columbus::gDevice->SetGraphicsCBV(0, cbv);
-		Columbus::gDevice->Draw(36, 0);
-		Columbus::gDevice->EndMarker();
+
+		//render.Render();
+
+		sky.SetCamera(cam);
+		sky.Render();
 
 		Render();
 	}
@@ -902,4 +761,5 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+#endif
 #endif

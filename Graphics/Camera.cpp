@@ -47,20 +47,52 @@ namespace Columbus
 		CameraUp = Vector3::Cross(CameraDirection, CameraRight);
 
 		ViewMatrix.LookAt(Pos, CameraDirection + Pos, CameraUp);
-		ViewProjection = ViewMatrix * ProjectionMatrix;
+		ViewProjection = ProjectionMatrix * ViewMatrix;
 
 		PreTargeted = false;
 	}
 	
 	void Camera::Perspective(float FOV, float Aspect, float Near, float Far)
 	{
+		FovY = FOV;
+		AspectRatio = Aspect;
+
 		ProjectionMatrix.Perspective(FOV, Aspect, Near, Far);
 	}
 
 	void Camera::Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far)
 	{
-		auto mat = glm::ortho(Left, Right, Bottom, Top, Near, Far);
+		// NOT IMPLEMENTED PROPERLY
+		DEBUGBREAK();
+
+		// transpose because GLM uses column major and the engine uses row major layout
+		auto mat = glm::transpose(glm::ortho(Left, Right, Bottom, Top, Near, Far));
 		memcpy(&ProjectionMatrix.M[0][0], glm::value_ptr(mat), 64);
+	}
+
+	float Camera::GetFovX() const
+	{
+		return Math::Min((float)Math::Pi/2, FovY * AspectRatio);
+	}
+
+	float Camera::GetFovY() const
+	{
+		return FovY;
+	}
+
+	float Camera::GetAspect() const
+	{
+		return AspectRatio;
+	}
+
+	float Camera::GetFocalLength() const
+	{
+		return SensorSize / (2.f * tanf(GetFovX() * 0.5f));
+	}
+
+	float Camera::GetApertureDiameter() const
+	{
+		return GetFocalLength() / FStop;
 	}
 
 	const Matrix& Camera::GetViewProjection() const
@@ -77,9 +109,27 @@ namespace Columbus
 	{
 		return ViewMatrix;
 	}
+
+	void Camera::ApplyProjectionJitter(float X, float Y)
+	{
+		Matrix JitterMatrix(1);
+		JitterMatrix.Translate(Vector3(X, Y, 0));
+
+		ProjectionMatrix = JitterMatrix * ProjectionMatrix;
+		ViewProjection = ProjectionMatrix * ViewMatrix;
+
+		Jittering = Vector2(X, Y);
+	}
+
+	Vector3 Camera::CalcRayByNdc(const Vector2& NDC) const
+	{
+		Vector4 MouseVector(NDC, -1, 1);
+		Matrix InvVP = ViewProjection.GetInverted();
+		Vector4 WorldSpace = InvVP * MouseVector;
+		WorldSpace /= WorldSpace.W;
+		return (WorldSpace.XYZ() - Pos).Normalized();
+	}
 	
 	Camera::~Camera() {}
 
 }
-
-

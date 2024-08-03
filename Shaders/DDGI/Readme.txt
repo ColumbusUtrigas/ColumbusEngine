@@ -1,0 +1,1 @@
+SDK folder contains shaders from RTXGI SDK, version 1.37

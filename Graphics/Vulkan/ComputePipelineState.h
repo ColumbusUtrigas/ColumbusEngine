@@ -1,8 +1,0 @@
-
-
-namespace Columbus::Graphics::Vulkan
-{
-
-
-
-}

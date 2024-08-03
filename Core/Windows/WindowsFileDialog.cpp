@@ -37,7 +37,7 @@ namespace Columbus
 		for (int i = 0; i < len; i++)
 			if (str[i] == '/') str[i] = '\\';
 
-		char* typestr = "/select";
+		const char* typestr = "/select";
 		switch (type)
 		{
 		case ShowInExplorerType::Root: typestr = "/root";  break;

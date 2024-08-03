@@ -1,14 +1,14 @@
 #include "Main.h"
 #include <imgui/imgui.h>
 
-bool InitializeEngine()
+/*bool InitializeEngine()
 {
 	InitializeCommon();
 
 	switch (chosen_api)
 	{
 	case Columbus::GraphicsAPI::None:
-		MessageBox(0, "DX12 Initialization Failed", "Error", MB_APPLMODAL | MB_ICONERROR | MB_OK);
+		MessageBox(0, "Chosen Graphics API: None", "Error", MB_APPLMODAL | MB_ICONERROR | MB_OK);
 		return false;
 
 	case Columbus::GraphicsAPI::OpenGL:
@@ -30,6 +30,15 @@ bool InitializeEngine()
 
 		InitializeImGUI_DX12();
 		return true;
+
+	case Columbus::GraphicsAPI::Vulkan:
+		if (!InitializeWindowAndContext_VK())
+		{
+			MessageBox(0, "Vulkan Initialization Failed", "Error", MB_APPLMODAL | MB_ICONERROR | MB_OK);
+			return false;
+		}
+
+		return true;
 	}
 
 	return false;
@@ -49,6 +58,9 @@ void NewFrameImGUI()
 	case Columbus::GraphicsAPI::DX12:
 		NewFrameImGUI_DX12();
 		break;
+
+	case Columbus::GraphicsAPI::Vulkan:
+		break;
 	}
 }
 
@@ -65,6 +77,10 @@ void BeginFrame()
 
 	case Columbus::GraphicsAPI::DX12:
 		BeginFrame_DX12();
+		break;
+
+	case Columbus::GraphicsAPI::Vulkan:
+		BeginFrame_VK();
 		break;
 	}
 }
@@ -86,6 +102,10 @@ void Render()
 		RenderImGUI_DX12();
 		Present_DX12();
 		break;
+
+	case Columbus::GraphicsAPI::Vulkan:
+		Present_VK();
+		break;
 	}
 }
 
@@ -104,6 +124,10 @@ void ShutdownEngine()
 	case Columbus::GraphicsAPI::DX12:
 		ShutdownImGUI_DX12();
 		ShutdownWindowAndContext_DX12();
+		break;
+
+	case Columbus::GraphicsAPI::Vulkan:
+		ShutdownWindowAndContext_VK();
 		break;
 	}
 }
@@ -124,4 +148,4 @@ void InitializeImGUI_Common()
 	io.IniFilename = "interface.ini";
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-}
+}*/

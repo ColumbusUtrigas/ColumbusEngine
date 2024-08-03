@@ -1,4 +1,5 @@
 #include <System/Log.h>
+#include <Core/Stacktrace.h>
 #include <Core/Platform.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -117,7 +118,13 @@ namespace Columbus
 	void Log::Fatal(const char* Fmt, ...)
 	{
 		Log("[FATAL]: ", Color_Purple, Color_White, Type_Fatal);
+		WriteStacktraceToLog();
 		exit(1);
+	}
+
+	void Log::_InternalStack(const char *Fmt, ...)
+	{
+		Log("[STACKTRACE]: ", Color_Purple, Color_White, Type_Message);
 	}
 
 	std::vector<Log::Msg>& Log::GetData()

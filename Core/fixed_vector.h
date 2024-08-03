@@ -4,6 +4,7 @@
 #include <array>
 #include <type_traits>
 #include <cassert>
+#include <stddef.h>
 
 #define _fixed_vector_type_check(otherType) static_assert(std::is_same<otherType, T>::value, "fixed_vector types are incopatible");
 #define _fixed_vector_static_check(otherType, otherSize) \
@@ -100,6 +101,8 @@ public:
 		_internal[_used++] = value;
 		return *this;
 	}
+
+	T* data() { return _internal.data(); }
 
 	size_t size() const noexcept { return _used; }
 	constexpr size_t capacity() const noexcept{ return Size; }

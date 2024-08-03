@@ -1,3 +1,4 @@
+#if 0
 #include "Main.h"
 #include <RenderAPIOpenGL/OpenGL.h>
 #include <Graphics/Device.h>
@@ -156,3 +157,4 @@ void ShutdownWindowAndContext_GL()
 {
 
 }
+#endif

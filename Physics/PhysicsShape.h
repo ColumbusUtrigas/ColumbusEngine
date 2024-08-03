@@ -53,7 +53,7 @@ namespace Columbus
 			return 0.0f;
 		}
 
-		virtual std::string_view GetTypename() const = 0;
+		// virtual std::string_view GetTypename() const = 0;
 
 		virtual void Serialize(JSON& J) const override = 0;
 		virtual void Deserialize(JSON& J) override = 0;

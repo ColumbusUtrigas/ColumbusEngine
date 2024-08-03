@@ -2,12 +2,16 @@
 
 #include <Core/Types.h>
 #include <cmath>
+#include <numbers>
 
 namespace Columbus
 {
 
 	struct Math
 	{
+		static constexpr double Pi = std::numbers::pi;
+		static constexpr float  FPi = std::numbers::pi_v<float>;
+
 		static inline int32  TruncToInt(const float Value)     noexcept { return (int32)Value; }
 		static inline float  TruncToFloat(const double Value)  noexcept { return (float)Value; }
 		static inline int32  FloorToInt(const float Value)     noexcept { return (int32)floorf(Value); }

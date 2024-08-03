@@ -1,3 +1,4 @@
+#if 0
 #include <Core/Windows/Main.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
@@ -31,7 +32,6 @@ void WaitForLastSubmittedFrame();
 FrameContext* WaitForNextFrameResources();
 void ResizeSwapChain(HWND hWnd, int width, int height);
 
-Columbus::Graphics::DX12::DeviceDX12 _Device;
 Columbus::Graphics::GraphicsPipeline* Pipeline;
 Columbus::Buffer* Buf, *ColorBuf;
 Columbus::Buffer* IndexBuf;
@@ -231,6 +231,7 @@ bool _InitializeD3D()
 	if (D3D12CreateDevice(NULL, featureLevel, IID_PPV_ARGS(&g_pd3dDevice)) != S_OK)
 		return false;
 
+	// RTV descriptor heap
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -249,6 +250,7 @@ bool _InitializeD3D()
 		}
 	}
 
+	// CBV/SRV/UAV descriptor heap
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -283,6 +285,7 @@ bool _InitializeD3D()
 	if (g_fenceEvent == NULL)
 		return false;
 
+	// swapchain
 	{
 		IDXGIFactory4* dxgiFactory = NULL;
 		IDXGISwapChain1* swapChain1 = NULL;
@@ -296,9 +299,7 @@ bool _InitializeD3D()
 		g_hSwapChainWaitableObject = g_pSwapChain->GetFrameLatencyWaitableObject();
 	}
 
-	_Device._device = g_pd3dDevice;
-
-	Columbus::gDevice = new Columbus::Graphics::DX12::tmpDeviceDX12(g_pd3dDevice, g_pd3dCommandQueue, g_pd3dCommandList);
+	Columbus::gDevice = new Columbus::Graphics::DX12::DeviceDX12(g_pd3dDevice, g_pd3dCommandQueue, g_pd3dCommandList, g_pd3dSrvDescHeap);
 
 	CreateRenderTarget();
 
@@ -319,10 +320,6 @@ void _ResizeSwaphain(HWND hwnd, WPARAM wparam, LPARAM lparam)
 
 void BeginFrame_DX12()
 {
-	_Device._device = g_pd3dDevice;
-	_Device._queue = g_pd3dCommandQueue;
-	_Device._cmdList = g_pd3dCommandList;
-
 	const float clear_color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 	g_currentFrameContext = WaitForNextFrameResources();
@@ -354,8 +351,9 @@ void Present_DX12()
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	g_pd3dCommandList->ResourceBarrier(1, &barrier);
-
-	_Device.EndFrame();
+	g_pd3dCommandList->Close();
+	g_pd3dCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList**)&g_pd3dCommandList);
+	
 	g_pSwapChain->Present(1, 0);
 
 	UINT64 fenceValue = g_fenceLastSignaledValue + 1;
@@ -403,3 +401,4 @@ void ShutdownWindowAndContext_DX12()
 {
 
 }
+#endif

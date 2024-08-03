@@ -1,5 +1,8 @@
 ﻿Objects
 .vs
+.cache
+.build
+build
 Build
 Binaries
 ProjectFiles
