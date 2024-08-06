@@ -389,6 +389,12 @@ namespace Columbus
 		int DownsampleFactor;
 	};
 
+	struct UpsampleRTGIParameters
+	{
+		iVector2 Size;
+		int DownsampleFactor;
+	};
+
 	struct DownsampledTextures
 	{
 		RenderGraphTextureRef Depth;
@@ -621,6 +627,60 @@ namespace Columbus
 		return Radiance2;
 	}
 
+	static RenderGraphTextureRef UpsampleRTGI(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DownsampledTextures DownTextures, RenderGraphTextureRef RTGI_Tex, int DownsampleFactor)
+	{
+		const iVector2 Size = View.RenderSize;
+
+		TextureDesc2 Desc;
+		Desc.Width = (u32)Size.X;
+		Desc.Height = (u32)Size.Y;
+		Desc.Usage = TextureUsage::Sampled | TextureUsage::Storage;
+		Desc.Format = TextureFormat::RGBA16F;
+
+		RenderGraphTextureRef Result = Graph.CreateTexture(Desc, "RTGI_Upsampled");
+
+		RenderPassParameters Parameters;
+		RenderPassDependencies Dependencies(Graph.Allocator);
+		Dependencies.Read(RTGI_Tex, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(DownTextures.Depth, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Write(Result, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+		Graph.AddPass("Upsample", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Size, Result, DownsampleFactor, Textures, DownTextures](RenderGraphContext& Context)
+		{
+			// TODO: shader system
+			static ComputePipeline* Pipeline = nullptr;
+			if (Pipeline == nullptr)
+			{
+				ComputePipelineDesc Desc;
+				Desc.Name = "RTGI_Upsample";
+				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedGlobalIllumination/Upsample.csd");
+				Pipeline = Context.Device->CreateComputePipeline(Desc);
+			}
+
+			auto Set = Context.GetDescriptorSet(Pipeline, 0);
+			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(RTGI_Tex).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(DownTextures.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Result).get());
+
+			UpsampleRTGIParameters Params{
+				.Size = Size,
+				.DownsampleFactor = DownsampleFactor,
+			};
+
+			const int GroupSize = 8; // 8x8
+			const iVector2 Groups = (Size + GroupSize - 1) / GroupSize;
+
+			Context.CommandBuffer->BindComputePipeline(Pipeline);
+			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
+			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.CommandBuffer->Dispatch((u32)Groups.X, (u32)Groups.Y, 1);
+		});
+
+		return Result;
+	}
+
 	struct RTGI_Parameters
 	{
 		Vector3 CameraPosition;
@@ -722,7 +782,10 @@ namespace Columbus
 
 		Graph.ExtractTexture(RTGI_Tex, &Textures.History.RTGI_History.Radiance);
 
-		// TODO: upsample
+		if (DownsampleFactor != 1)
+		{
+			RTGI_Tex = UpsampleRTGI(Graph, View, Textures, DownsampledGBuffer, RTGI_Tex, DownsampleFactor);
+		}
 
 		Textures.RTGI = RTGI_Tex;
 	}

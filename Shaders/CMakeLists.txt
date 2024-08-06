@@ -34,6 +34,7 @@ compile_shader_hlsl(RayTracedReflections/ReflectionsResolve.hlsl main:cs SHADER_
 
 compile_shader_glsl(RayTracedGlobalIllumination/RayTracedGI.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Downsample.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(RayTracedGlobalIllumination/Upsample.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Spatial.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Temporal.hlsl main:cs SHADER_BINARIES)
 

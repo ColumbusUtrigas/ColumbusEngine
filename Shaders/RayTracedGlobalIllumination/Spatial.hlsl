@@ -18,14 +18,14 @@ struct _Params {
 } Params;
 
 #define NORMAL_SIGMA 32.0
-#define DEPTH_SIGMA 512.0
+#define DEPTH_SIGMA 1024.0
 
-min16float GetEdgeStoppingDepthWeight(float center_depth, float neighbor_depth)
+float GetEdgeStoppingDepthWeight(float center_depth, float neighbor_depth)
 {
     return exp(-abs(center_depth - neighbor_depth) * center_depth * DEPTH_SIGMA);
 }
 
-min16float GetEdgeStoppingNormalWeight(min16float3 normal_p, min16float3 normal_q)
+float GetEdgeStoppingNormalWeight(float3 normal_p, float3 normal_q)
 {
     return pow(saturate(dot(normal_p, normal_q)), NORMAL_SIGMA);
 }
@@ -54,7 +54,7 @@ void main(int2 dtid : SV_DispatchThreadID)
 
     float SampleCount = g_sample_count[dtid];
     float DominationCoefficient = clamp(float(Params.DominationNumber) / (SampleCount + 1), 0, 1);
-    float3 CenterValue = g_input[dtid];
+    float3 CenterValue = g_input[dtid].xyz;
 
     int KernelRange = 2; // 5x5
     // int KernelRange = 4; // 9x9
@@ -77,7 +77,7 @@ void main(int2 dtid : SV_DispatchThreadID)
             float SkyWeight = (Depth >= 0.9999 || Depth <= 0.0001) ? 0 : 1;
             Weight *= SkyWeight;
 
-            Result += g_input[Coords] * Weight;
+            Result += g_input[Coords].xyz * Weight;
             TotalWeight += Weight;
         }
     }

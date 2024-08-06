@@ -95,8 +95,6 @@ namespace Columbus
 			}
 
 			// TLAS
-			// TODO: sync properly because path tracing pass crashes here
-			//if (GFrameNumber < 3)
 			{
 				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();
 				Desc.Instances.clear();
@@ -110,6 +108,29 @@ namespace Columbus
 
 				Context.Device->UpdateAccelerationStructureBuffer(Context.Scene->TLAS, Context.CommandBuffer, (u32)Context.Scene->Meshes.size());
 				Context.CommandBuffer->BuildAccelerationStructure(Context.Scene->TLAS, (u32)Context.Scene->Meshes.size());
+
+				// TLAS sync
+				{
+					AccelerationStructureVulkan* TLAS = static_cast<AccelerationStructureVulkan*>(Context.Scene->TLAS);
+					BufferVulkan* Buffer = static_cast<BufferVulkan*>(TLAS->_Buffer);
+
+					VkBufferMemoryBarrier VkBarrier;
+					VkBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+					VkBarrier.pNext = nullptr;
+					VkBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+					VkBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+					VkBarrier.srcQueueFamilyIndex = 0;
+					VkBarrier.dstQueueFamilyIndex = 0;
+					VkBarrier.buffer = Buffer->_Buffer;
+					VkBarrier.offset = 0;
+					VkBarrier.size = Buffer->GetSize();
+
+					vkCmdPipelineBarrier(Context.CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0,
+						0, 0, // memory barrier
+						1, &VkBarrier, // buffer memory barrier
+						0, 0  // image memory barrier
+					);
+				}
 			}
 		});
 	}
