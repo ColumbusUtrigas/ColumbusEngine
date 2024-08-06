@@ -31,9 +31,10 @@ struct RayPayload {
 
 	layout(push_constant) uniform params
 	{
-		vec4 CameraPosition;
-		uint Random;
-		uint UseRadianceCache;
+		vec4  CameraPosition;
+		float MaxRoughness;
+		uint  Random;
+		uint  UseRadianceCache;
 	} Params;
 
 	void main()
@@ -59,7 +60,7 @@ struct RayPayload {
 		vec2 RM = texture(GBufferRoughnessMetallic, uv).xy;
 
 		// roughness cut
-		if (RM.x > 0.5)
+		if (RM.x > Params.MaxRoughness)
 		{
 			imageStore(ResultRadiance, ivec2(gl_LaunchIDEXT), vec4(0));
 			imageStore(ResultDirectionDistance, ivec2(gl_LaunchIDEXT), vec4(-1));

@@ -1,4 +1,5 @@
 #include "RenderPasses.h"
+#include "Core/CVar.h"
 
 #include <Lib/imgui/imgui.h>
 
@@ -11,9 +12,12 @@ namespace Columbus
 	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Reflections", "RenderGraphGPU", GpuCounterRayTracedReflections);
 	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Reflections Denoise", "RenderGraphGPU", GpuCounterRayTracedReflectionsDenoise);
 
+	ConsoleVariable<float> CVar_MaxRoughness("r.RTReflection.MaxRoughness", "Max roughness to trace, default - 0.5", 0.5f);
+
 	struct RayTracedReflectionPassParameters
 	{
 		Vector4 CameraPosition;
+		float MaxRoughness;
 		u32 Random;
 		u32 UseRadianceCache;
 	};
@@ -104,6 +108,7 @@ namespace Columbus
 
 				RayTracedReflectionPassParameters Params{
 					.CameraPosition = Vector4(View.CameraCur.Pos, 1),
+					.MaxRoughness = CVar_MaxRoughness.GetValue(),
 					.Random = (u32)rand() % 2000,
 					.UseRadianceCache = (u32)UseRadianceCache,
 				};
