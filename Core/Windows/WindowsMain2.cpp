@@ -809,7 +809,7 @@ int main()
 		timer.Reset();
 
 		// TODO:
-		camera.Perspective(45, (float)World.MainView.OutputSize.X / (float)World.MainView.OutputSize.Y, 0.1f, 5000.f);
+		camera.Perspective(60, (float)World.MainView.OutputSize.X / (float)World.MainView.OutputSize.Y, 0.1f, 5000.f);
 		camera.Update();
 		World.MainView.CameraCur = camera;
 
@@ -1053,7 +1053,8 @@ int main()
 			{
 				PROFILE_CPU(CpuCounter_RenderGraphCreate);
 
-				UploadGPUSceneRG(renderGraph);
+				World.MainView.RenderSize = World.MainView.OutputSize; // TODO: think of this logic
+				UploadGPUSceneRG(renderGraph, World.MainView);
 
 				if (render_cvar.GetValue() == 0)
 				{

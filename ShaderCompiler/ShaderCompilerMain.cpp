@@ -138,7 +138,8 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 		// SpvExtensions += "-fspv-extension=SPV_GOOGLE_user_type ";
 
 		SpvExtensions += "-fspv-extension=SPV_KHR_ray_tracing ";
-		SpvExtensions += "-fspv-extension=SPV_KHR_ray_query ";
+		SpvExtensions += "-fspv-extension=SPV_KHR_physical_storage_buffer ";
+		//SpvExtensions += "-fspv-extension=SPV_KHR_ray_query ";
 		//SpvExtensions += "-fspv-extension=SPV_KHR_shader_draw_parameters ";
 		SpvExtensions += "-fspv-extension=SPV_EXT_descriptor_indexing ";
 		//SpvExtensions += "-fspv-extension=SPV_EXT_shader_viewport_index_layer ";

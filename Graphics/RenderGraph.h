@@ -211,6 +211,7 @@ namespace Columbus
 		struct
 		{
 			VkDescriptorSet TextureSet;
+			VkDescriptorSet TextureSetNonCombined;
 			VkDescriptorSet SceneSet;
 		} GPUSceneData;
 
@@ -233,8 +234,8 @@ namespace Columbus
 		VkDescriptorSet GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
 
-		void BindGPUScene(const GraphicsPipeline* Pipeline);
-		void BindGPUScene(const RayTracingPipeline* Pipeline);
+		void BindGPUScene(const GraphicsPipeline* Pipeline, bool UseCombinedSampler = true);
+		void BindGPUScene(const RayTracingPipeline* Pipeline, bool UseCombinedSampler = true);
 
 		SPtr<Texture2> GetRenderGraphTexture(RenderGraphTextureRef Ref);
 		SPtr<Buffer> GetRenderGraphBuffer(RenderGraphBufferRef Ref);

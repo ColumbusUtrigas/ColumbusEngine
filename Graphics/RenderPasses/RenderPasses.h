@@ -34,7 +34,7 @@ namespace Columbus
 		RadianceCache,
 	};
 
-	void UploadGPUSceneRG(RenderGraph& Graph);
+	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View);
 
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
 

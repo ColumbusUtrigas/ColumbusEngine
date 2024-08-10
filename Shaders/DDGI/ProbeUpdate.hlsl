@@ -23,6 +23,8 @@ struct GPULight
 #define GPULIGHT_RECTANGLE 3
 #define GPULIGHT_SPHERE 4
 
+// TODO: match new GPUScene format
+
 // struct GPULightsBuffer
 // {
 // 	uint Count;

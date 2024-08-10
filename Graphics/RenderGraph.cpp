@@ -111,15 +111,15 @@ namespace Columbus
 		return GetDescriptorSetCached<RayTracingPipeline, RayTracingPipelineVulkan>(RenderData, Device, Pipeline, Index);
 	}
 
-	void RenderGraphContext::BindGPUScene(const GraphicsPipeline* Pipeline)
+	void RenderGraphContext::BindGPUScene(const GraphicsPipeline* Pipeline, bool UseCombinedSampler)
 	{
-		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &RenderData.GPUSceneData.TextureSet);
+		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, UseCombinedSampler ? &RenderData.GPUSceneData.TextureSet : &RenderData.GPUSceneData.TextureSetNonCombined);
 		CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 1, 1, &RenderData.GPUSceneData.SceneSet);
 	}
 
-	void RenderGraphContext::BindGPUScene(const RayTracingPipeline* Pipeline)
+	void RenderGraphContext::BindGPUScene(const RayTracingPipeline* Pipeline, bool UseCombinedSampler)
 	{
-		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 0, 1, &RenderData.GPUSceneData.TextureSet);
+		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 0, 1, UseCombinedSampler ? &RenderData.GPUSceneData.TextureSet : &RenderData.GPUSceneData.TextureSetNonCombined);
 		CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 1, 1, &RenderData.GPUSceneData.SceneSet);
 	}
 
@@ -211,7 +211,7 @@ namespace Columbus
 		if (Scene)
 		{
 			// brute-generate VkDescriptorSetLayout
-			auto CreateLayout = [&](uint32_t bindingNum, VkDescriptorType type, uint32_t count, bool unbounded = true, u32 bindingCount = 1)
+			auto CreateLayout = [&](uint32_t bindingNum, std::span<VkDescriptorType> types, uint32_t count, bool unbounded = true, u32 bindingCount = 1)
 			{
 				VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 
@@ -226,7 +226,7 @@ namespace Columbus
 				{
 					VkDescriptorSetLayoutBinding binding;
 					binding.binding = bindingNum + i;
-					binding.descriptorType = type;
+					binding.descriptorType = types.size() > i ? types[i] : types[0];
 					binding.descriptorCount = count;
 					binding.stageFlags = VK_SHADER_STAGE_ALL;
 					binding.pImmutableSamplers = nullptr;
@@ -247,16 +247,32 @@ namespace Columbus
 				return layout;
 			};
 
-			RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2000);
-			RenderData.GPUSceneLayout.SceneLayout = CreateLayout(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, false, 4);
+			// TODO: unify texture set
+			VkDescriptorType TextureTypes[] = { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER };
+			VkDescriptorType TextureTypesNonCombined[] = { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE };
+			VkDescriptorType SceneTypes[] = {
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				VK_DESCRIPTOR_TYPE_SAMPLER
+			};
+
+			RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, TextureTypes, 2000);
+			RenderData.GPUSceneLayout.SceneLayout = CreateLayout(0, SceneTypes, 1, false, 5);
+
+			auto TextureLayoutNonCombined = CreateLayout(0, TextureTypesNonCombined, 2000);
 
 			RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 2000);
+			RenderData.GPUSceneData.TextureSetNonCombined = Device->CreateDescriptorSetUnbounded(TextureLayoutNonCombined, 2000);
 			RenderData.GPUSceneData.SceneSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.SceneLayout, 0);
+
 
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 0, 0, Scene->SceneBuffer);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 1, 0, Scene->LightsBuffer);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 2, 0, Scene->MeshesBuffer);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 3, 0, Scene->MaterialsBuffer);
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 4, 0, Device->GetStaticSampler());
 		}
 	}
 

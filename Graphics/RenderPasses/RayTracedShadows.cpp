@@ -312,7 +312,7 @@ namespace Columbus
 					RayTracingPipelineDesc Desc;
 					Desc.Name = "RayTracedShadowsPass";
 					Desc.MaxRecursionDepth = 1;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadowsPass.csd");
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/RayTraceShadows.csd");
 
 					Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
 				}
@@ -328,10 +328,10 @@ namespace Columbus
 
 				auto ShadowsBufferSet = RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i];
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, Context.GetRenderGraphTexture(RTShadow).get());
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth);
+				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 4, 0, Context.GetRenderGraphTexture(RTShadow).get());
 
 				RTShadowParams Params {
 					.Random = (u32)(rand() % 2000),
@@ -340,7 +340,7 @@ namespace Columbus
 
 				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-				Context.BindGPUScene(Pipeline);
+				Context.BindGPUScene(Pipeline, false);
 				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &ShadowsBufferSet);
 
 				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);

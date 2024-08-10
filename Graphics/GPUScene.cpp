@@ -38,6 +38,43 @@ namespace Columbus
 		}
 	}
 
+	static GPUViewCamera CreateCameraCompact(const Camera& Camera)
+	{
+		return GPUViewCamera
+		{
+			.ViewMatrix           = Camera.GetViewMatrix(),
+			.ProjectionMatrix     = Camera.GetProjectionMatrix(),
+			.ViewProjectionMatrix = Camera.GetViewProjection(),
+
+			.InverseViewMatrix           = Camera.GetViewMatrix().GetInverted(),
+			.InverseProjectionMatrix     = Camera.GetProjectionMatrix().GetInverted(),
+			.InverseViewProjectionMatrix = Camera.GetViewProjection().GetInverted(),
+
+			.CameraPosition = Vector4(Camera.Pos, 0),
+			.CameraForward  = Vector4(Camera.Direction(), 0),
+			.CameraUp       = Vector4(Camera.Up(), 0),
+			.CameraRight    = Vector4(Camera.Right(), 0),
+			.Jittering      = Camera.GetJittering(),
+		};
+	}
+
+	GPUSceneCompact GPUScene::CreateCompact(const RenderView& View) const
+	{
+		return GPUSceneCompact
+		{
+			.CameraCur  = CreateCameraCompact(View.CameraCur),
+			.CameraPrev = CreateCameraCompact(View.CameraPrev),
+			.RenderSize = View.RenderSize,
+			.OutputSize = View.OutputSize,
+
+			.MeshesCount    = (u32)Meshes.size(),
+			.MaterialsCount = (u32)Materials.size(),
+			.TexturesCount  = (u32)Textures.size(),
+			.LightsCount    = (u32)Lights.size(),
+			.DecalsCount    = (u32)Decals.size(),
+		};
+	}
+
 	GPUScene* GPUScene::CreateGPUScene(SPtr<DeviceVulkan> Device)
 	{
 		GPUScene* Scene = new GPUScene();

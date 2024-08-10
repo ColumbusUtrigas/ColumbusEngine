@@ -110,15 +110,36 @@ namespace Columbus
 		int _pad[2];
 	};
 
+	struct GPUViewCamera
+	{
+		Matrix ViewMatrix;
+		Matrix ProjectionMatrix;
+		Matrix ViewProjectionMatrix; // 192
+
+		Matrix InverseViewMatrix;
+		Matrix InverseProjectionMatrix;
+		Matrix InverseViewProjectionMatrix; // 384
+
+		Vector4 CameraPosition;
+		Vector4 CameraForward;
+		Vector4 CameraUp;
+		Vector4 CameraRight; // 448
+
+		Vector2 Jittering; // 456
+
+		int _pad[14]; // 512
+	};
+
 	// to be uploaded to the GPU
 	struct GPUSceneCompact
 	{
-		// TODO:
-		// GPUCamera Camera; // 64
-		// Matrix View;
-		// Matrix Projection;
-		// Matrix ProjectionInverse;
+		// view description
+		GPUViewCamera CameraCur;
+		GPUViewCamera CameraPrev;
+		iVector2 RenderSize;
+		iVector2 OutputSize;
 
+		// scene description
 		u32 MeshesCount;
 		u32 MaterialsCount;
 		u32 TexturesCount;
@@ -128,10 +149,10 @@ namespace Columbus
 
 	struct GPUScene
 	{
-		static constexpr int MaxMeshes = 8192;
+		static constexpr int MaxMeshes    = 8192;
 		static constexpr int MaxMaterials = 8192;
 		static constexpr int MaxGPULights = 8192;
-		static constexpr int MaxDecals = 8192;
+		static constexpr int MaxDecals    = 8192;
 
 		AccelerationStructure* TLAS = nullptr;
 
@@ -165,16 +186,7 @@ namespace Columbus
 		Buffer* DecalsBuffers = nullptr;
 		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
 
-		GPUSceneCompact CreateCompact() const
-		{
-			return GPUSceneCompact {
-				.MeshesCount = (u32)Meshes.size(),
-				.MaterialsCount = (u32)Materials.size(),
-				.TexturesCount = (u32)Textures.size(),
-				.LightsCount = (u32)Lights.size(),
-				.DecalsCount = (u32)Decals.size(),
-			};
-		}
+		GPUSceneCompact CreateCompact(const RenderView& View) const;
 
 		static GPUScene* CreateGPUScene(SPtr<DeviceVulkan> Device);
 		static void DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device);

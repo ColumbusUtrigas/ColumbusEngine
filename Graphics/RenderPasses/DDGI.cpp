@@ -146,6 +146,7 @@ void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View)
 				u32 Width, Height, Depth;
 				sdkVolume->GetRayDispatchDimensions(Width, Height, Depth);
 
+				// TODO: fix Textures set
 				Context.BindGPUScene(TracePipeline);
 
 				auto TlasSet = Context.GetDescriptorSet(TracePipeline, 7);

@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SHADER_SOURCES *.hlsl *.glsl)
+file(GLOB_RECURSE SHADER_SOURCES *.hlsl *.glsl *.hlsli)
 group_files_by_directory(SRCS ${SHADER_SOURCES})
 
 # disable visual studio's default shader compilation that fails my thing
@@ -23,6 +23,7 @@ compile_shader_glsl(RadianceCache/RadianceCacheVisualise.glsl main:vs,main:ps SH
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsPrepare.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsTileClassification.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsFilter.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(RayTracedShadows/RayTraceShadows.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 
 compile_shader_hlsl(DenoiserReflection/Reproject.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(DenoiserReflection/Prefilter.hlsl main:cs SHADER_BINARIES)
@@ -50,15 +51,14 @@ compile_shader_glsl(LightmapPathTracing.glsl   main:rgen,main:rmiss,main:rchit S
 compile_shader_glsl(IrradianceProbesTrace.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_glsl(IrradianceProbesVisualise.glsl   main:vs,main:ps SHADER_BINARIES)
 
-compile_shader_glsl(GBufferPass.glsl main:vs,main:ps SHADER_BINARIES)
+compile_shader_hlsl(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Sky.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(TAA.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(Debug.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Visualisation.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
-compile_shader_glsl(GBufferLightingPass.glsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(GBufferLightingPass.hlsl main:cs SHADER_BINARIES)
 compile_shader_glsl(PathTrace.glsl   main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
-compile_shader_glsl(RayTracedShadowsPass.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 
 add_custom_target(Shaders DEPENDS ${SHADER_BINARIES} SOURCES ${SHADER_SOURCES})
 set_target_properties(Shaders PROPERTIES FOLDER "Engine")

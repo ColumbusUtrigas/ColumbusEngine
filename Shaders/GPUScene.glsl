@@ -79,6 +79,26 @@ struct GPUMaterialSampledData
 	float Metallic;
 };
 
+struct GPUViewCamera
+{
+	mat4 ViewMatrix;
+	mat4 ProjectionMatrix;
+	mat4 ViewProjectionMatrix; // 192
+
+	mat4 InverseViewMatrix;
+	mat4 InverseProjectionMatrix;
+	mat4 InverseViewProjectionMatrix; // 384
+
+	vec4 CameraPosition;
+	vec4 CameraForward;
+	vec4 CameraUp;
+	vec4 CameraRight; // 448
+
+	vec2 Jittering; // 456
+
+	int _pad[14]; // 512
+};
+
 // TODO:
 // struct GPUDecal;
 
@@ -94,6 +114,11 @@ struct GPUMaterialSampledData
 layout(binding = 0, set = GPUSCENE_TEXTURES_SET) uniform sampler2D Textures[2000];
 
 layout(binding = 0, set = GPUSCENE_SCENE_SET) readonly buffer GPUSceneBuffer {
+	GPUViewCamera CameraCur;
+	GPUViewCamera CameraPrev;
+	ivec2 RenderSize;
+	ivec2 OutputSize;
+
 	uint MeshesCount;
 	uint MaterialsCount;
 	uint TexturesCount;
@@ -112,6 +137,8 @@ layout(binding = 2, set = GPUSCENE_SCENE_SET) readonly buffer MeshesBuffer {
 layout(binding = 3, set = GPUSCENE_SCENE_SET) readonly buffer MaterialsBuffer {
 	GPUSceneMaterialCompact Materials[];
 } GPUSceneMaterials;
+
+layout(binding = 4, set = GPUSCENE_SCENE_SET) uniform sampler GPUSceneSampler;
 
 uint GPUScene_GetMeshesCount()
 {

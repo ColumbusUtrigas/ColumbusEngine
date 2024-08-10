@@ -37,12 +37,6 @@ namespace Columbus
 		Matrix VP;
 	};
 
-	struct GBufferLightingParameters
-	{
-		Vector4 CameraPosition;
-		u32 LightsCount;
-	};
-
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History)
 	{
 		TextureDesc2 CommonDesc;
@@ -142,7 +136,7 @@ namespace Columbus
 			}
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.BindGPUScene(Pipeline);
+			Context.BindGPUScene(Pipeline, false);
 
 			PerObjectParameters Parameters;
 			Parameters.Jittering = View.CameraCur.GetJittering();
@@ -270,21 +264,17 @@ namespace Columbus
 				Pipeline = Context.Device->CreateComputePipeline(Desc);
 			}
 
-			GBufferLightingParameters Params{
-				.CameraPosition = Context.Scene->MainCamera.Position,
-				.LightsCount = (u32)Context.Scene->Lights.size()
-			};
-
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(LightingTexture).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.RTGI).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTGI).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(LightingTexture).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.Scene->SceneBuffer);
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			// TODO: support lights not having shadows
@@ -297,7 +287,6 @@ namespace Columbus
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
 			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &ShadowsSet);
-			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
 
 			const iVector2 GroupCount = (View.RenderSize + (GroupSize - 1)) / GroupSize;
 			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
@@ -305,6 +294,13 @@ namespace Columbus
 
 		return LightingTexture;
 	}
+
+	struct SkyPassParameters
+	{
+		Matrix  InverseViewProjection;
+		Vector4 CameraPosition;
+		Vector4 SunDirection;
+	};
 
 	void RenderDeferredSky(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext, RenderGraphTextureRef OverTexture)
 	{
@@ -335,7 +331,24 @@ namespace Columbus
 				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 			}
 
+			Vector3 SunDirection = Vector3(1, 1, 1);
+			for (const GPULight& SceneLight : Context.Scene->Lights)
+			{
+				// select first directional light as sun direction
+				if (SceneLight.Type == LightType::Directional)
+				{
+					SunDirection = SceneLight.Direction.XYZ();
+				}
+			}
+
+			SkyPassParameters Parameters{
+				.InverseViewProjection = View.CameraCur.GetViewProjection().GetInverted(),
+				.CameraPosition = Vector4(View.CameraCur.Pos, 0),
+				.SunDirection = Vector4(SunDirection, 0)
+			};
+
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		});
 	}

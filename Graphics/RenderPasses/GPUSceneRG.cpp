@@ -3,11 +3,11 @@
 namespace Columbus
 {
 
-	void UploadGPUSceneRG(RenderGraph& Graph)
+	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View)
 	{
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Graph.AddPass("UploadGPUScene + Build TLAS", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
+		Graph.AddPass("UploadGPUScene + Build TLAS", RenderGraphPassType::Compute, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
 			// TODO: create UploadBuffer wrapper? have CurrentFrame as a constant in Context?
 			static int CurrentFrame = 0;
@@ -17,7 +17,7 @@ namespace Columbus
 			{
 				Buffer*& UploadBuffer = Context.Scene->SceneUploadBuffers[CurrentFrame];
 
-				GPUSceneCompact Compact = Context.Scene->CreateCompact();
+				GPUSceneCompact Compact = Context.Scene->CreateCompact(View);
 
 				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
 				memcpy(Ptr, &Compact, sizeof(Compact));
