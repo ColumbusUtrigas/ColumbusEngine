@@ -189,9 +189,9 @@ BRDFSample SampleBRDF_GGX(BRDFData Data, float2 Xi)
 	float3x3 LocalTransform = ComputeTangentsFromVector(Data.N);
 
 	float3 Hlocal; // microfacet normal (H) in local space
-	float3 Vlocal = mul(Data.V, LocalTransform); // world to local
+    float3 Vlocal = mul(LocalTransform, Data.V); // world to local
 
-	Data.Roughness = max(Data.Roughness, 0.001);
+	//Data.Roughness = max(Data.Roughness, 0.001);
 	
 	if (Data.Roughness <= 0.01)
 	{
@@ -210,20 +210,20 @@ BRDFSample SampleBRDF_GGX(BRDFData Data, float2 Xi)
 	float3 Llocal = reflect(-Vlocal, Hlocal);
 
 #if USE_VNDF_GGX
-		// PDF is 'G1(NdotV) * D'
-		float3 Nlocal = Data.N * LocalTransform;
-		float Pdf = VDNF_GGX_PDF(Data.Roughness, Vlocal, Nlocal, Hlocal, Llocal);
-		// float Pdf = DistributionGGX(Nlocal, Hlocal, Data.Roughness);
+	// PDF is 'G1(NdotV) * D'
+	float3 Nlocal = Data.N * LocalTransform;
+	float Pdf = VDNF_GGX_PDF(Data.Roughness, Vlocal, Nlocal, Hlocal, Llocal);
+	// float Pdf = DistributionGGX(Nlocal, Hlocal, Data.Roughness);
 #else
-		// Pdf = D * NoH / (4 * VoH);
-	float3 Nlocal = mul(Data.N, LocalTransform);
-	float NdotH   = max(0.001, dot(Nlocal, Hlocal));
-	float VdotH   = max(0.001, dot(Vlocal, Hlocal));
+	// Pdf = D * NoH / (4 * VoH);
+    float3 Nlocal = mul(LocalTransform, Data.N);
+	float NdotH   = max(0.01, dot(Nlocal, Hlocal));
+	float VdotH   = max(0.01, dot(Vlocal, Hlocal));
 	float Pdf     = DistributionGGX(Nlocal, Hlocal, Data.Roughness) * NdotH / (4 * VdotH);
 #endif
 
 	BRDFSample Sample;
-	Sample.Dir = mul(LocalTransform, Llocal); // local to world
+    Sample.Dir = mul(Llocal, LocalTransform); // local to world
 	Sample.Pdf = Pdf;
 	// Sample.Dir = Hlocal;
 	return Sample;

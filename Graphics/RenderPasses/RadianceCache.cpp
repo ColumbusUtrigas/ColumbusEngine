@@ -3,6 +3,10 @@
 namespace Columbus::RadianceCache
 {
 
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterTraceRadianceCache);
+
+	IMPLEMENT_GPU_PROFILING_COUNTER("RadianceCache", "RenderGraphGPU", GpuCounterTraceRadianceCache);
+
 	static constexpr int NumCascades = 6;
 	static constexpr int CascadeResolution = 16;
 
@@ -31,6 +35,8 @@ namespace Columbus::RadianceCache
 
 		Graph.AddPass("RadianceCacheTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [View, RadianceCache](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTraceRadianceCache, Context);
+
 			static RayTracingPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{

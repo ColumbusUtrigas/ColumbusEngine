@@ -18,7 +18,6 @@ namespace Columbus
 	// no need to GPUParametrize push constants?
 	struct PathTraceParameters
 	{
-		GPUCamera MainCamera;
 		int randomNumber;
 		int frameNumber;
 		int reset;
@@ -93,7 +92,6 @@ namespace Columbus
 					frame = 1;
 
 				PathTraceParameters rayParams = {
-					UpdatedCamera,
 					(int)rand() % 20000,
 					(int)frame++,
 					(int)reset,
@@ -102,7 +100,7 @@ namespace Columbus
 
 				Context.CommandBuffer->BindRayTracingPipeline(PTPipeline);
 				Context.CommandBuffer->BindDescriptorSetsRayTracing(PTPipeline, 2, 1, &RTSet);
-				Context.BindGPUScene(PTPipeline);
+				Context.BindGPUScene(PTPipeline, false);
 
 				Context.CommandBuffer->PushConstantsRayTracing(PTPipeline, ShaderType::Raygen, 0, sizeof(rayParams), &rayParams);
 				Context.CommandBuffer->TraceRays(PTPipeline, View.OutputSize.X, View.OutputSize.Y, 1);

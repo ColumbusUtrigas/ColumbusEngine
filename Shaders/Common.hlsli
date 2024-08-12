@@ -112,8 +112,8 @@ namespace Random
 	float3 RandomDirectionHemisphereCosine(float2 u, float3 normal, out float pdf)
 	{
 		float3 localdir = RandomDirectionHemisphereCosineLocal(u, pdf);
-		return mul(ComputeTangentsFromVector(normal), localdir);
-	}
+        return mul(localdir, ComputeTangentsFromVector(normal));
+    }
 
 	float3 RandomDirectionSphere(float2 xi)
 	{

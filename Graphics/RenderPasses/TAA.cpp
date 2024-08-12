@@ -3,6 +3,10 @@
 namespace Columbus::Antialiasing
 {
 
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterTAA);
+
+	IMPLEMENT_GPU_PROFILING_COUNTER("TAA", "RenderGraphGPU", GpuCounterTAA);
+
 	static float Halton(int32_t index, int32_t base)
 	{
 		float f = 1.0f, result = 0.0f;
@@ -50,6 +54,8 @@ namespace Columbus::Antialiasing
 
 		Graph.AddPass("TAA", RenderGraphPassType::Compute, Parameters, Dependencies, [Size, InputTexture, VelocityTexture, OutputTexture, HistoryTexture](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTAA, Context);
+
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{

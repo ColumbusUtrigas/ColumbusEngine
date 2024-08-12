@@ -25,10 +25,7 @@ namespace Columbus
 
 	struct PerObjectParameters
 	{
-		Matrix M,VP,VPPrev;
-		Vector2 Jittering;
-		Vector2 JitteringPrev;
-		uint32_t ObjectId;
+		u32 ObjectId;
 	};
 
 	struct PerDecalParameters
@@ -138,21 +135,13 @@ namespace Columbus
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.BindGPUScene(Pipeline, false);
 
-			PerObjectParameters Parameters;
-			Parameters.Jittering = View.CameraCur.GetJittering();
-			Parameters.JitteringPrev = View.CameraPrev.GetJittering();
-
 			for (int i = 0; i < Context.Scene->Meshes.size(); i++)
 			{
 				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
-				Parameters.M = Matrix(1);
-				Parameters.VP = View.CameraCur.GetViewProjection();
-				// Parameters.P = View.CameraCur.GetProjectionMatrix();
-				Parameters.VPPrev = View.CameraPrev.GetViewProjection();
-				// Parameters.PPrev = View.CameraPrev.GetProjectionMatrix();
+				PerObjectParameters Parameters;
 				Parameters.ObjectId = i;
 
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex, 0, sizeof(Parameters), &Parameters);
 				Context.CommandBuffer->Draw(Mesh.MeshResource->IndicesCount, 1, 0, 0);
 			}
 		});

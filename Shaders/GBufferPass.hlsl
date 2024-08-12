@@ -3,9 +3,6 @@
 [[vk::push_constant]]
 struct _Params
 {
-    float4x4 M, VP, VPPrev; // TODO: remove that from here
-    float2 Jittering;
-    float2 JitteringPrev;
     uint ObjectId;
 } Parameters;
 
@@ -56,8 +53,8 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     float4 TransformedPos = mul(float4(Vertex.Position, 1), Mesh.Transform);
     Out.WorldPos = TransformedPos.xyz;
 		
-    float4 ClipspacePos     = mul(TransformedPos, Parameters.VP) * float4(1, -1, 1, 1);
-    float4 ClipspacePosPrev = mul(TransformedPos, Parameters.VPPrev) * float4(1, -1, 1, 1);
+    float4 ClipspacePos     = mul(TransformedPos, GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix)  * float4(1, -1, 1, 1);
+    float4 ClipspacePosPrev = mul(TransformedPos, GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix) * float4(1, -1, 1, 1);
     Out.ClipspacePos     = ClipspacePos;
     Out.ClipspacePosPrev = ClipspacePosPrev;
 
@@ -90,8 +87,8 @@ PS_Out PSMain(VS_TO_PS In)
         float2 NdcPrev    = In.ClipspacePosPrev.xy / In.ClipspacePosPrev.w;
 
 		// remove jitter
-        NdcCurrent -= Parameters.Jittering     * float2(1, -1);
-        NdcPrev    -= Parameters.JitteringPrev * float2(1, -1);
+        NdcCurrent -= GPUScene::GPUSceneScene[0].CameraCur.Jittering  * float2(1, -1);
+        NdcPrev    -= GPUScene::GPUSceneScene[0].CameraPrev.Jittering * float2(1, -1);
 
         Velocity = NdcCurrent - NdcPrev;
 		//Velocity = NdcToUv(NdcCurrent) - NdcToUv(NdcPrev);

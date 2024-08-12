@@ -111,6 +111,11 @@ namespace GPUScene
 	[[vk::binding(3, GPUSCENE_SCENE_SET)]] StructuredBuffer<GPUSceneMaterialCompact> GPUSceneMaterials;
     [[vk::binding(4, GPUSCENE_SCENE_SET)]] SamplerState                              GPUSceneSampler;
 	
+    uint GetLightsCount()
+    {
+        return GPUSceneScene[0].LightsCount;
+    }
+	
 	struct Vertex
 	{
 		float3 Position;
@@ -194,7 +199,12 @@ namespace GPUScene
     {
         if (TextureId != -1)
         {
+#if defined(MISS_SHADER) || defined(CLOSEST_HIT_SHADER) || defined(RAYGEN_SHADER)
+			return Textures[NonUniformResourceIndex(TextureId)].SampleLevel(GPUSceneSampler, UV, 0);
+#else
             return Textures[NonUniformResourceIndex(TextureId)].Sample(GPUSceneSampler, UV);
+#endif
+			
         }
         else
         {

@@ -9,6 +9,10 @@
 ConsoleVariable<int> CVar_FilmCurve("r.Tonemap.FilmCurve", "0 - ACES, 1 - AgX, 2 - Flim", 0);
 ConsoleVariable<int> CVar_OutputTransform("r.Tonemap.OutputTransform", "0 - None, 1 - Rec.709, 2 - Rec.2020", 1);
 
+DECLARE_GPU_PROFILING_COUNTER(GpuCounterTonemap);
+
+IMPLEMENT_GPU_PROFILING_COUNTER("Tonemap", "RenderGraphGPU", GpuCounterTonemap);
+
 namespace Columbus
 {
 
@@ -117,6 +121,7 @@ namespace Columbus
 
 		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View, Size](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTonemap, Context);
 			// TODO: shader system
 			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
 

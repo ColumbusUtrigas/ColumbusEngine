@@ -191,7 +191,7 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 		for (uint32_t b = 0; b < sets[i]->binding_count; b++)
 		{
 			auto binding = sets[i]->bindings[b];
-			assert(Bytecode.Stage == ShaderType::Vertex || Bytecode.Stage == ShaderType::Pixel || Bytecode.Stage == ShaderType::Raygen || Bytecode.Stage == ShaderType::ClosestHit || Bytecode.Stage == ShaderType::Compute);
+			assert(Bytecode.Stage == ShaderType::Vertex || Bytecode.Stage == ShaderType::Pixel || Bytecode.Stage == ShaderType::Raygen || Bytecode.Stage == ShaderType::Miss || Bytecode.Stage == ShaderType::ClosestHit || Bytecode.Stage == ShaderType::Compute);
 
 			bool skipBinding = false;
 
