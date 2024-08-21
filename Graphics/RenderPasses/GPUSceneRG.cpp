@@ -114,6 +114,7 @@ namespace Columbus
 					AccelerationStructureVulkan* TLAS = static_cast<AccelerationStructureVulkan*>(Context.Scene->TLAS);
 					BufferVulkan* Buffer = static_cast<BufferVulkan*>(TLAS->_Buffer);
 
+					// TODO: RHI sync
 					VkBufferMemoryBarrier VkBarrier;
 					VkBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 					VkBarrier.pNext = nullptr;

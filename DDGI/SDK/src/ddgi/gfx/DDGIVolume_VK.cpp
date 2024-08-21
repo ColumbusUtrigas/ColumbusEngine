@@ -19,6 +19,8 @@
 
 #define VKFAILED(x) (x != VK_SUCCESS)
 
+#define RTXGI_GFX_NAME_OBJECTS
+
 #ifdef RTXGI_GFX_NAME_OBJECTS
 /**
  * Sets a debug name for an object.

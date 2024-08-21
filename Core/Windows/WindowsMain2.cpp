@@ -226,6 +226,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 
 static void AddWorldCollision(EngineWorld& World)
 {
+	return;
 	// create rigidbodies for the level
 	for (int i = 0; i < (int)World.GameObjects.size(); i++)
 	{
@@ -345,10 +346,10 @@ static void AddWorldCollision(EngineWorld& World)
 //          + TAA
 //          - FSR2
 //		3. Common
-//			- PBR atmosphere rendering
+//			+ PBR atmosphere rendering
 //			- filmic camera
 //			+ filmic HDR tonemapper
-//			- render image export from every stage of a graph (!!!)
+//			- render image export from every stage of a graph
 //			+ decals
 //			- subsurface scattering
 //          - material layers
@@ -897,7 +898,7 @@ int main()
 				if (ImGui::Button("Compute"))
 				{
 					ComputeIrradianceVolume = true;
-					World.SceneGPU->IrradianceVolumes[0].Position = camera.Pos;
+					//World.SceneGPU->IrradianceVolumes[0].Position = camera.Pos;
 				}
 			}
 			ImGui::End();
@@ -957,7 +958,7 @@ int main()
 		player.PostPhysics();
 
 		// mouse picking
-		if (bViewportHover && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) && !ImGuizmo::IsOver())
+		if (bViewportFocused && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) && !ImGuizmo::IsOver())
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			Vector2 MousePos = ViewportMousePos;

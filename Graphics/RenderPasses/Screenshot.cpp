@@ -17,7 +17,7 @@ namespace Columbus
 			RenderPassDependencies Dependencies(Graph.Allocator);
 			Dependencies.Read(Texture, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-			Graph.AddPass("ScreenshotPass", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, View](RenderGraphContext& Context)
+			Graph.AddPass("ScreenshotPass", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, &View](RenderGraphContext& Context)
 			{
 				SPtr<Texture2> TextureToUpload = Context.GetRenderGraphTexture(Texture);
 				SPtr<CommandBufferVulkan> CmdBuf = Context.Device->CreateCommandBufferShared();
@@ -38,7 +38,13 @@ namespace Columbus
 
 				Context.Device->WaitForFence(Fence, UINT64_MAX);
 
-				void* Data = Context.Device->MapBuffer(ScreenshotBuffer);
+				// readback screenshot image
+				void* SourceData = Context.Device->MapBuffer(ScreenshotBuffer);
+				void* Data = malloc(Desc.Size);
+				memcpy(Data, SourceData, Desc.Size);
+
+				Context.Device->UnmapBuffer(ScreenshotBuffer);
+				Context.Device->DestroyBuffer(ScreenshotBuffer);
 
 				if (View.ScreenshotHDR)
 				{
@@ -65,8 +71,9 @@ namespace Columbus
 					stbi_write_png(View.ScreenshotPath, Size.X, Size.Y, 4, Data, Size.X * 4);
 				}
 
-				Context.Device->UnmapBuffer(ScreenshotBuffer);
-				Context.Device->DestroyBuffer(ScreenshotBuffer);
+				View.ScreenshotPath = nullptr;
+
+				free(Data);
 			});
 		}
 	}

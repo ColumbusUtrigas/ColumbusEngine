@@ -401,13 +401,21 @@ namespace Columbus
 		});
 	}
 
+	enum class GIMode
+	{
+		None,
+		RTGI,
+		DDGI,
+		IV,
+	};
+
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
 		static bool ApplyTAA = false;
 		static bool ApplyFSR = false;
 		static bool ApplyFSR1Sharpening = false;
 		static float FSR1Sharpening = 0.0f;
-		static bool ApplyRTGI = true;
+		static GIMode GiMode = GIMode::RTGI;
 
 		static float RenderResolution = 1.0f;
 
@@ -415,7 +423,12 @@ namespace Columbus
 		{
 			if (ImGui::Begin("Deferred Debug"))
 			{
-				ImGui::Checkbox("RTGI", &ApplyRTGI);
+				static const char* GiModes[] =
+				{
+					"None", "RTGI", "DDGI", "IV"
+				};
+				ImGui::Combo("GI Mode", (int*)&GiMode, GiModes, sizeof(GiModes) / sizeof(GiModes[0]));
+
 				ImGui::Checkbox("TAA", &ApplyTAA);
 				ImGui::Checkbox("FSR1", &ApplyFSR);
 				ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
@@ -471,12 +484,21 @@ namespace Columbus
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 
-		if (ApplyRTGI)
+		switch (GiMode)
 		{
-			RenderIndirectLightingDDGI(Graph, View);
+		case GIMode::RTGI:
 			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
-		}
-		else
+			break;
+
+		case GIMode::DDGI:
+			RenderIndirectLightingDDGI(Graph, View, Textures, DeferredContext);
+			break;
+
+		case GIMode::IV:
+			// TODO: no hardcode for the volumes
+			RenderApplyIrradianceProbes(Graph, View, Textures, Graph.Scene->IrradianceVolumes[0]);
+			break;
+		case GIMode::None:
 		{
 			TextureDesc2 Desc{
 				.Usage = TextureUsage::Storage | TextureUsage::Sampled,
@@ -487,6 +509,7 @@ namespace Columbus
 
 			Textures.RTGI = Graph.CreateTexture(Desc, "RayTracedGI");
 			ShaderMemsetTexture(Graph, Textures.RTGI, {});
+		}
 		}
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);

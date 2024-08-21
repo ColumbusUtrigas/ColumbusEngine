@@ -214,9 +214,10 @@ namespace Columbus
 
 	// Global illumination
 	//
-	void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View);
+	void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 
 	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume);
+	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, IrradianceVolume& Volume);
 
 	// **********************************
 	// Path-Tracing

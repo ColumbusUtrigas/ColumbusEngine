@@ -16,6 +16,7 @@ compile_shader_hlsl(DDGI/ProbeClassification.hlsl DDGIProbeClassificationCS:cs S
 compile_shader_hlsl(DDGI/ProbeClassificationReset.hlsl DDGIProbeClassificationResetCS:cs SHADER_BINARIES)
 compile_shader_hlsl(DDGI/ProbeVariabilityReduction.hlsl DDGIReductionCS:cs SHADER_BINARIES)
 compile_shader_hlsl(DDGI/ProbeVariabilityExtraReduction.hlsl DDGIExtraReductionCS:cs SHADER_BINARIES)
+compile_shader_hlsl(DDGI/Apply.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_glsl(RadianceCache/RadianceCacheTrace.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_glsl(RadianceCache/RadianceCacheVisualise.glsl main:vs,main:ps SHADER_BINARIES)
@@ -50,6 +51,9 @@ compile_shader_glsl(LightmapPathTracing.glsl   main:rgen,main:rmiss,main:rchit S
 
 compile_shader_glsl(IrradianceProbesTrace.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
 compile_shader_glsl(IrradianceProbesVisualise.glsl   main:vs,main:ps SHADER_BINARIES)
+
+compile_shader_hlsl(IrradianceVolume/IrradianceVolumeTrace.hlsl RGS:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl(IrradianceVolume/IrradianceVolumeApply.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_hlsl(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)

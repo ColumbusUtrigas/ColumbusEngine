@@ -269,11 +269,14 @@ namespace Columbus
 
 			int ParentId = Object.ParentId;
 
-			while (ParentId != -1)
+			while (ParentId != -1 && Object.Id != Object.ParentId)
 			{
 				GameObject& ParentObj = GameObjects[ParentId];
 				GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
 				ParentId = ParentObj.ParentId;
+
+				if (Object.ParentId == ParentObj.ParentId)
+					break;
 			}
 
 			if (Object.MeshId != -1)
@@ -582,6 +585,7 @@ namespace Columbus
 				}
 
 				// UV1
+				if (primitive.attributes.contains("TEXCOORD_0"))
 				{
 					const auto& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
 					const auto& view = model.bufferViews[accessor.bufferView];
@@ -591,6 +595,13 @@ namespace Columbus
 					verticesCount = accessor.count;
 
 					CPUMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
+				}
+				else
+				{
+					Log::Warning("Mesh %s doesn't have UV1", mesh.name.c_str());
+
+					verticesCount = CPUMesh.Vertices.size();
+					CPUMesh.UV1 = std::vector<Vector2>(CPUMesh.Vertices.size(), Vector2());
 				}
 
 				// Normals

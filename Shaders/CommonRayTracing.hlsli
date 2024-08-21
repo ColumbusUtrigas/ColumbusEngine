@@ -65,6 +65,40 @@ float3 SamplePointLight(RaytracingAccelerationStructure AS, GPULight Light, floa
 	return max(dot(normal, direction), 0) * attenuation * Light.Color.rgb * occlusion;
 }
 
+float3 RayTraceEvaluateDirectLighting(RaytracingAccelerationStructure AS, float3 Origin, uint RngState, BRDFData BRDF)
+{
+	float3 Result = float3(0, 0, 0);
+	
+	for (uint l = 0; l < GPUScene::GetLightsCount(); l++)
+	{
+		float3 LightSample = float3(0, 0, 0);
+
+		// TODO: get it from sample functions
+		BRDF.L = float3(0, 0, 0); // light direction
+
+		float2 Xi = Random::UniformDistrubition2d(RngState);
+		// TODO: light PDF, as every time we do a random decision, we need to weight it by it's probability
+
+		GPULight Light = GPUScene::GPUSceneLights[l];
+		switch (Light.Type)
+		{
+		case GPULIGHT_DIRECTIONAL:
+			LightSample = SampleDirectionalLight(AS, Light, Origin, BRDF.N, Xi);
+			BRDF.L = Light.Direction.xyz;
+			break;
+		case GPULIGHT_POINT:
+			LightSample = SamplePointLight(AS, Light, Origin, BRDF.N, Xi);
+			// TODO: account for sphere light
+			BRDF.L = normalize(Light.Position.xyz - Origin);
+			break;
+		}
+
+        Result += EvaluateBRDF(BRDF, float3(1, 1, 1)) * LightSample;
+    }
+	
+	return Result;
+}
+
 // performs multi-bounce raytracing and path accumulation
 float3 RayTraceAccumulate(RaytracingAccelerationStructure AS,
 	float3 Origin, float3 Direction, int MaxBounces, inout uint RngState
@@ -98,6 +132,7 @@ float3 RayTraceAccumulate(RaytracingAccelerationStructure AS,
 			Origin = HitPoint + BRDF.N * 0.001;
 
 			// next event estimation
+			#if 0
 			for (uint l = 0; l < GPUScene::GetLightsCount(); l++)
 			{
 				float3 LightSample = float3(0, 0, 0);
@@ -125,6 +160,9 @@ float3 RayTraceAccumulate(RaytracingAccelerationStructure AS,
 				
 				PathRadiance += EvaluateBRDF(BRDF, float3(1, 1, 1)) * LightSample * PathAttenuation;
 			}
+			#endif
+
+            PathRadiance += RayTraceEvaluateDirectLighting(AS, Origin, RngState, BRDF) * PathAttenuation;
 
 			// generate new ray and apply BRDF to the segment
 			{
