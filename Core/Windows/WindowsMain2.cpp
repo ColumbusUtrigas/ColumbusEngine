@@ -258,6 +258,17 @@ static void AddWorldCollision(EngineWorld& World)
 	}
 }
 
+// all the data about current editor context
+struct EngineEditor
+{
+	// list of potential things:
+	// - currently picked object/mouse picking logic
+	// - vieweport hover states
+	// - registration of all callbacks for menu buttons
+
+	// - states to update baking systems and lock editor
+};
+
 // Engine structure that I find appropriate
 // 1. Engine is a library, editor, apps, games are made using it
 // 2. It uses it's own static code-generated reflection system
@@ -1009,6 +1020,30 @@ int main()
 						DebugUI::ShowIrradianceWindow(World);
 						DebugUI::ShowLightmapWindow(World);
 						Editor::TickAllModalWindows();
+
+						if (ImGui::Begin("Sky"))
+						{
+							//// scaterring coefficients: w parameter unused for GPU alignments
+							//Vector4 BetaRayleigh = Vector4(3.8e-6f, 13.5e-6f, 33.1e-6f, 0);
+							//Vector4 BetaMie = Vector4(21e-6f, 21e-6f, 21e-6f, 0);
+							//Vector4 BetaOzone = Vector4(2.04e-5f, 4.97e-5f, 1.95e-6f, 0);
+
+							ImGui::SliderInt("Samples", &World.Sky.Samples, 1, 16);
+							ImGui::SliderInt("Light Samples", &World.Sky.LightSamples, 1, 16);
+
+							ImGui::SliderFloat("Planet Radius (km)", &World.Sky.PlanetRadiusKm, 0.0f, 10000.0f);
+							ImGui::SliderFloat("Atmosphere Height (km)", &World.Sky.AtmosphereHeightKm, 0.0f, 1000.0f);
+							ImGui::SliderFloat("Rayleight Height (km)", &World.Sky.RayleightHeightKm, 0.0f, 10.0f);
+							ImGui::SliderFloat("Mie Height (km)", &World.Sky.MieHeight, 0.0f, 4.0f);
+							ImGui::SliderFloat("Ozone Peak (km)", &World.Sky.OzonePeak, 0.0f, 100.0f);
+							ImGui::SliderFloat("Ozon Falloff (km)", &World.Sky.OzoneFalloff, 0.0f, 10.0f);
+
+							ImGui::SliderFloat("Sun Illuminance", &World.Sky.SunIlluminance, 0.0f, 400000.0f);
+							ImGui::SliderFloat("Moon Illuminance", &World.Sky.MoonIlluminance, 0.0f, 10.0f);
+							ImGui::SliderFloat("Space Illuminance", &World.Sky.SpaceIlluminance, 0.0f, 1.0f);
+							ImGui::SliderFloat("Expoure", &World.Sky.Exposure, 0.0f, 100.0f);
+						}
+						ImGui::End();
 
 						if (ImGui::Begin("Camera"))
 						{

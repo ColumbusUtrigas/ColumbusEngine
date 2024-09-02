@@ -76,10 +76,22 @@ namespace Columbus
 		Vector4 SHG(1, 0, 0, 0);
 		Vector4 SHB(1, 0, 0, 0);
 
+		SkySettings SkyConverted = Sky;
+		// convert units
+		{
+			SkyConverted.PlanetRadiusKm     *= 1000;
+			SkyConverted.AtmosphereHeightKm *= 1000;
+			SkyConverted.RayleightHeightKm  *= 1000;
+			SkyConverted.MieHeight          *= 1000;
+			SkyConverted.OzonePeak          *= 1000;
+			SkyConverted.OzoneFalloff       *= 1000;
+		}
+
 		return GPUSceneCompact
 		{
 			.CameraCur  = CreateCameraCompact(View.CameraCur),
 			.CameraPrev = CreateCameraCompact(View.CameraPrev),
+
 			.RenderSize = View.RenderSize,
 			.OutputSize = View.OutputSize,
 
@@ -93,6 +105,8 @@ namespace Columbus
 			.TexturesCount  = (u32)Textures.size(),
 			.LightsCount    = (u32)Lights.size(),
 			.DecalsCount    = (u32)Decals.size(),
+
+			.Sky = SkyConverted,
 		};
 	}
 

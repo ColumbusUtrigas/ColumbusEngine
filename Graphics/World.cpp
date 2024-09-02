@@ -248,6 +248,7 @@ namespace Columbus
 	void EngineWorld::Update(float DeltaTime)
 	{
 		UpdateTransforms();
+		SceneGPU->Sky = Sky;
 
 		Physics.Step(DeltaTime, 1);
 	}

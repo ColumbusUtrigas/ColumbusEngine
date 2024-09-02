@@ -74,7 +74,7 @@ namespace Columbus
 	{
 	protected:
 		BufferDesc Desc;
-		u64 Size = 0;
+		u64 Size = 0; // allocation size, occupied memory
 		u64 DeviceAddress = 0;
 
 		Buffer(const BufferDesc& Desc) : Desc(Desc) {}

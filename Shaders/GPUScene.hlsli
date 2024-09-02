@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SkyCommon.hlsli"
+
 struct GPUViewCamera
 {
 	float4x4 ViewMatrix;
@@ -25,6 +27,9 @@ struct GPUSceneStruct
 	// view description
 	GPUViewCamera CameraCur;
 	GPUViewCamera CameraPrev;
+	
+    //SkySettings Sky;
+	
 	int2 RenderSize;
 	int2 OutputSize;
 
@@ -39,6 +44,10 @@ struct GPUSceneStruct
 	uint TexturesCount;
 	uint LightsCount;
 	uint DecalsCount;
+	
+    uint _pad[3];
+	
+    SkySettings Sky;
 };
 
 struct GPULight

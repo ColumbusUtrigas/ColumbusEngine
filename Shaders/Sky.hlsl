@@ -1,14 +1,9 @@
-// TODO: unify computations with path tracing (medium, requires full HLSL for PT)
-
 #include "SkyCommon.hlsli"
 
-[[vk::push_constant]]
-struct _Params
-{
-    float4x4 InverseViewProjection; // camera-space to world-space transform
-    float4   CameraPosition;
-    float4   SunDirection;
-} Params;
+#define GPU_SCENE_NO_BINDINGS
+#include "GPUScene.hlsli"
+
+[[vk::binding(0, 0)]] StructuredBuffer<GPUSceneStruct> GPUSceneScene;
 
 struct VS_TO_PS
 {
@@ -34,14 +29,14 @@ float4 Pixel(VS_TO_PS In) : SV_TARGET
 {   
     // z=-1 for "forward" direction, -1-1 NDC xy position on a far plane
     float4 ViewDirectionCameraSpace = float4(In.Pos2d.xy * float2(1, -1), -1, 1);
-    float4 ViewDirectionWorldSpace = mul(ViewDirectionCameraSpace, Params.InverseViewProjection);
+    float4 ViewDirectionWorldSpace = mul(ViewDirectionCameraSpace, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
     ViewDirectionWorldSpace /= ViewDirectionWorldSpace.w; // perspective divide
 
-    float3 ViewDirection = normalize(ViewDirectionWorldSpace.xyz - Params.CameraPosition.xyz);
-    float3 CameraPosition = Params.CameraPosition.xyz;
-    float3 SunDirection = normalize(Params.SunDirection.xyz);
+    float3 CameraPosition = GPUSceneScene[0].CameraCur.CameraPosition;
+    float3 ViewDirection = normalize(ViewDirectionWorldSpace.xyz - CameraPosition);
+    float3 SunDirection = normalize(GPUSceneScene[0].SunDirection.xyz);
 
-    return float4(Sky::Atmosphere(CameraPosition, ViewDirection, SunDirection), 1);
+    return float4(Sky::Atmosphere(CameraPosition, ViewDirection, SunDirection, GPUSceneScene[0].Sky), 1);
 
     //return float4(0.412, 0.796, 1.0, 1);
 }

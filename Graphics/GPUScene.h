@@ -130,12 +130,41 @@ namespace Columbus
 		int _pad[14]; // 512
 	};
 
+	struct SkySettings
+	{
+		// scaterring coefficients: w parameter unused for GPU alignments
+		Vector4 BetaRayleigh = Vector4(3.8e-6f, 13.5e-6f, 33.1e-6f, 0);
+		Vector4 BetaMie = Vector4(21e-6f, 21e-6f, 21e-6f, 0);
+		Vector4 BetaOzone = Vector4(2.04e-5f, 4.97e-5f, 1.95e-6f, 0);
+
+		// samples
+		int Samples = 4;
+		int LightSamples = 1; // Set to more than 1 for a realistic, less vibrant sunset
+
+		// scattering distributions, dimensions
+		float PlanetRadiusKm = 6371;
+		float AtmosphereHeightKm = 100;
+		float RayleightHeightKm = 8;
+		float MieHeight = 1.2f;
+		float OzonePeak = 30;
+		float OzoneFalloff = 3;
+
+		// illuminance
+		float SunIlluminance = 128000;
+		float MoonIlluminance = 0.32f;
+		float SpaceIlluminance = 0.01f;
+		float Exposure = 16.0f;
+
+		int _pad[8]; // 128
+	};
+
 	// to be uploaded to the GPU
 	struct GPUSceneCompact
 	{
 		// view description
 		GPUViewCamera CameraCur;
 		GPUViewCamera CameraPrev;
+
 		iVector2 RenderSize;
 		iVector2 OutputSize;
 
@@ -150,6 +179,10 @@ namespace Columbus
 		u32 TexturesCount;
 		u32 LightsCount;
 		u32 DecalsCount;
+
+		u32 _pad[3]; // 1136
+
+		SkySettings Sky;
 	};
 
 	struct GPUScene
@@ -173,6 +206,9 @@ namespace Columbus
 
 		GPUCamera MainCamera;
 		bool Dirty = false;
+
+		// copied over from World
+		SkySettings Sky;
 
 		Vector4 SunDirection = Vector4(1,1,1,0);
 

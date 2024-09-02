@@ -96,6 +96,34 @@ namespace Columbus
 				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MaterialsBuffer, 0, 0, sizeof(GPUMaterialCompact) * Context.Scene->Materials.size());
 			}
 
+			// synchronisation
+			{
+				Buffer* BuffersToSync[] = { Context.Scene->SceneBuffer, Context.Scene->MaterialsBuffer, Context.Scene->MeshesBuffer };
+
+				for (Buffer* Buf : BuffersToSync)
+				{
+					BufferVulkan* VkBuffer = static_cast<BufferVulkan*>(Buf);
+
+					// TODO: RHI sync
+					VkBufferMemoryBarrier VkBarrier;
+					VkBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+					VkBarrier.pNext = nullptr;
+					VkBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+					VkBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+					VkBarrier.srcQueueFamilyIndex = 0;
+					VkBarrier.dstQueueFamilyIndex = 0;
+					VkBarrier.buffer = VkBuffer->_Buffer;
+					VkBarrier.offset = 0;
+					VkBarrier.size = VkBuffer->GetDesc().Size;
+
+					vkCmdPipelineBarrier(Context.CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+						0, 0, // memory barrier
+						1, &VkBarrier, // buffer memory barrier
+						0, 0  // image memory barrier
+					);
+				}
+			}
+
 			// TLAS
 			{
 				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();

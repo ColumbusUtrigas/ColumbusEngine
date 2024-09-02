@@ -74,6 +74,7 @@ namespace Columbus
 		PhysicsWorld Physics;
 
 		// rendering
+		SkySettings Sky;
 		SPtr<DeviceVulkan> Device;
 		RenderView MainView;
 

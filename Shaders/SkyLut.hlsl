@@ -33,7 +33,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
     for (int i = 0; i < SamplesPerThread; i++)
     {
         float3 SampleRayDirection = Random::RandomDirectionSphere(Random::UniformDistrubition2d(rng));
-        float3 Sample = Sky::Atmosphere(CameraPosition, SampleRayDirection, SunDirection);
+        float3 Sample = Sky::Atmosphere(CameraPosition, SampleRayDirection, SunDirection, GPUSceneScene[0].Sky);
         
         // update SH
         sh2 sh = shEvaluate(SampleRayDirection);

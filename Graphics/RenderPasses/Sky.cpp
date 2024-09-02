@@ -3,13 +3,6 @@
 namespace Columbus
 {
 
-struct SkyPassParameters
-{
-	Matrix  InverseViewProjection;
-	Vector4 CameraPosition;
-	Vector4 SunDirection;
-};
-
 void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context)
 {
 	// essentially a preparation step that just creates a spherical harmonic of the sky for diffuse lookups
@@ -66,14 +59,11 @@ void RenderDeferredSky(RenderGraph& Graph, RenderView& View, SceneTextures& Text
 			Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 		}
 
-		SkyPassParameters Parameters{
-			.InverseViewProjection = View.CameraCur.GetViewProjection().GetInverted(),
-			.CameraPosition = Vector4(View.CameraCur.Pos, 0),
-			.SunDirection = Context.Scene->SunDirection
-		};
+		auto Set = Context.GetDescriptorSet(Pipeline, 0);
+		Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->SceneBuffer);
 
 		Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-		Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+		Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &Set);
 		Context.CommandBuffer->Draw(3, 1, 0, 0);
 	});
 }

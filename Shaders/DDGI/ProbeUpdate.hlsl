@@ -184,7 +184,7 @@ void Miss(inout RayPayload payload)
 {
 	float3 Sun = normalize(float3(1, 1, 1)); // TODO: put sun direction into scene description
 	
-	payload.Colour = Sky::Atmosphere(WorldRayOrigin(), WorldRayDirection(), Sun);
+	payload.Colour = Sky::Atmosphere(WorldRayOrigin(), WorldRayDirection(), Sun, GPUScene::GPUSceneScene[0].Sky);
 	payload.HitDistance = -1.0;
 }
 #endif

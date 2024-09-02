@@ -6,7 +6,9 @@
 // TODO: make different sky types: colour, gradient, procedural, texture
 
 #define PI 3.14159265359
+#define SKY_G 0.75
 
+/*
 // Dimensions
 // TODO: make them tunable properties
 #define PLANET_RADIUS     6371e3
@@ -20,7 +22,6 @@
 #define BETA_RAY   float3(3.8e-6, 13.5e-6, 33.1e-6) // float3(5.5e-6, 13.0e-6, 22.4e-6)
 #define BETA_MIE   float3(21e-6, 21e-6, 21e-6)
 #define BETA_OZONE float3(2.04e-5, 4.97e-5, 1.95e-6)
-#define SKY_G          0.75
 // Samples
 #define SAMPLES          4
 #define LIGHT_SAMPLES    1 // Set to more than 1 for a realistic, less vibrant sunset
@@ -30,8 +31,36 @@
 #define SUN_ILLUMINANCE   128000.0
 #define MOON_ILLUMINANCE  0.32
 #define SPACE_ILLUMINANCE 0.01
-
 #define ATMOSPHERE_RADIUS (PLANET_RADIUS + ATMOSPHERE_HEIGHT)
+*/
+
+struct SkySettings
+{
+	// scaterring coefficients: w parameter unused for GPU alignments
+	float4 BetaRayleigh;
+	float4 BetaMie;
+	float4 BetaOzone;
+
+	// samples
+	int Samples;
+	int LightSamples; // Set to more than 1 for a realistic, less vibrant sunset
+
+	// scattering distributions, dimensions, in meters
+	float PlanetRadius;
+	float AtmosphereHeight;
+	float RayleightHeight;
+	float MieHeight;
+	float OzonePeak;
+	float OzoneFalloff;
+
+	// illuminance
+	float SunIlluminance;
+	float MoonIlluminance;
+	float SpaceIlluminance;
+	float Exposure;
+
+	int _pad[8]; // 128
+};
 
 ///////////////////////////////////////////////////////////////////
 // Nishita sky simulation functions
@@ -94,13 +123,13 @@ float3 PhaseMie(in float cosTheta, in float g)
 // Approximates density values for a given point around the planet.
 // @param pos    position of the point, for which densities are calculated
 // @return    .x - Rayleigh density | .y - Mie density | .z - ozone density
-float3 AvgDensities(in float3 pos)
+float3 AvgDensities(in float3 pos, in SkySettings Settings)
 {
-	float height = length(pos) - PLANET_RADIUS; // Height above surface
+	float height = length(pos) - Settings.PlanetRadius; // Height above surface
 	float3 density;
-	density.x = exp(-height / RAYLEIGH_HEIGHT);
-	density.y = exp(-height / MIE_HEIGHT);
-	density.z = (1.0 / cosh((OZONE_PEAK_LEVEL - height) / OZONE_FALLOFF)) * density.x; // Ozone absorption scales with rayleigh
+	density.x = exp(-height / Settings.RayleightHeight);
+	density.y = exp(-height / Settings.MieHeight);
+	density.z = (1.0 / cosh((Settings.OzonePeak - height) / Settings.OzoneFalloff)) * density.x; // Ozone absorption scales with rayleigh
 	return density;
 }
 
@@ -116,13 +145,15 @@ float3 AvgDensities(in float3 pos)
 float3 Atmosphere(
 	in float3 pos,
 	in float3 dir,
-	in float3 lightDir
+	in float3 lightDir,
+	in SkySettings Settings
 )
 {
-	pos += float3(0.0, PLANET_RADIUS + 2.0, 0.0);
+	float AtmosphereRadius = Settings.PlanetRadius + Settings.AtmosphereHeight;
+	pos += float3(0.0, Settings.PlanetRadius + 2.0, 0.0);
 		
 	// Intersect the atmosphere
-	float2 intersect = RaySphereIntersect(pos, dir, ATMOSPHERE_RADIUS);
+	float2 intersect = RaySphereIntersect(pos, dir, AtmosphereRadius);
 
 	// Accumulators
 	float3 opticalDepth = float3(0, 0, 0); // Accumulated density of particles participating in Rayleigh, Mie and ozone scattering respectively
@@ -132,39 +163,39 @@ float3 Atmosphere(
 	// Here's the trick - we clamp the sampling length to keep precision at the horizon
 	// This introduces banding, but we can compensate for that by scaling the clamp according to horizon angle
 	float rayPos = max(0.0, intersect.x);
-	float maxLen = ATMOSPHERE_HEIGHT;
+	float maxLen = Settings.AtmosphereHeight;
 	maxLen *= (1.0 - abs(dir.y) * 0.5);
-	float stepSize = min(intersect.y - rayPos, maxLen) / float(SAMPLES);
+	float stepSize = min(intersect.y - rayPos, maxLen) / float(Settings.Samples);
 	rayPos += stepSize * 0.5; // Let's sample in the center
 	
-	for (int i = 0; i < SAMPLES; i++)
+	for (int i = 0; i < Settings.Samples; i++)
 	{
 		float3 samplePos = pos + dir * rayPos; // Current sampling position
 
 		// Similar to the primary iteration
-		float2 lightIntersect = RaySphereIntersect(samplePos, lightDir, ATMOSPHERE_RADIUS); // No need to check if intersection happened as we already are inside the sphere
+		float2 lightIntersect = RaySphereIntersect(samplePos, lightDir, AtmosphereRadius); // No need to check if intersection happened as we already are inside the sphere
 
 		float3 lightOpticalDepth = float3(0, 0, 0);
 		
 		// We're inside the sphere now, hence we don't have to clamp ray pos
-		float lightStep = lightIntersect.y / float(LIGHT_SAMPLES);
+		float lightStep = lightIntersect.y / float(Settings.LightSamples);
 		float lightRayPos = lightStep * 0.5; // Let's sample in the center
 		
-		for (int j = 0; j < LIGHT_SAMPLES; j++)
+		for (int j = 0; j < Settings.LightSamples; j++)
 		{
 			float3 lightSamplePos = samplePos + lightDir * (lightRayPos);
 
-			lightOpticalDepth += AvgDensities(lightSamplePos) * lightStep;
+			lightOpticalDepth += AvgDensities(lightSamplePos, Settings) * lightStep;
 
 			lightRayPos += lightStep;
 		}
 
 		// Accumulate optical depth
-		float3 densities = AvgDensities(samplePos) * stepSize;
+		float3 densities = AvgDensities(samplePos, Settings) * stepSize;
 		opticalDepth += densities;
 
 		// Accumulate scattered light
-		float3 scattered = exp(-(BETA_RAY * (opticalDepth.x + lightOpticalDepth.x) + BETA_MIE * (opticalDepth.y + lightOpticalDepth.y) + BETA_OZONE * (opticalDepth.z + lightOpticalDepth.z)));
+		float3 scattered = exp(-(Settings.BetaRayleigh.xyz * (opticalDepth.x + lightOpticalDepth.x) + Settings.BetaMie.xyz * (opticalDepth.y + lightOpticalDepth.y) + Settings.BetaOzone.xyz * (opticalDepth.z + lightOpticalDepth.z)));
 		sumR += scattered * densities.x;
 		sumM += scattered * densities.y;
 
@@ -173,14 +204,14 @@ float3 Atmosphere(
 
 	float cosTheta = dot(dir, lightDir);
 		
-	float Illuminance = SUN_ILLUMINANCE;
+	float Illuminance = Settings.SunIlluminance;
 	
-	float Exposure = 16.0 / Illuminance;
-	Exposure = min(Exposure, 16.0 / (MOON_ILLUMINANCE * 8.0)); // Clamp the exposure to make night appear darker
+	float Exposure = Settings.Exposure / Illuminance;
+	Exposure = min(Exposure, Settings.Exposure / (Settings.MoonIlluminance * Settings.Exposure*0.5f)); // Clamp the exposure to make night appear darker
 
 	return max(
-		PhaseRayleigh(cosTheta) * BETA_RAY * sumR + // Rayleigh color
-		PhaseMie(cosTheta, SKY_G) * BETA_MIE * sumM, // Mie color
+		PhaseRayleigh(cosTheta) * Settings.BetaRayleigh.xyz * sumR + // Rayleigh color
+		PhaseMie(cosTheta, SKY_G) * Settings.BetaMie.xyz * sumM, // Mie color
 		0.0
 	) * Illuminance * Exposure;
 }
