@@ -1,4 +1,5 @@
 #include "GPUScene.hlsli"
+#include "SH.hlsli"
 
 [[vk::push_constant]]
 struct _Params
@@ -93,6 +94,9 @@ PS_Out PSMain(VS_TO_PS In)
         Velocity = NdcCurrent - NdcPrev;
 		//Velocity = NdcToUv(NdcCurrent) - NdcToUv(NdcPrev);
     }
+    
+    // TEST
+    LightmapColor = shUnproject(GPUScene::GPUSceneScene[0].SkySHR, GPUScene::GPUSceneScene[0].SkySHG, GPUScene::GPUSceneScene[0].SkySHB, normalize(In.Normal));
 
     Out.Albedo = Material.Albedo;
 	// RT1 = normalize(TBN * Material.Normal);

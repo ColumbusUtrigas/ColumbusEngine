@@ -13,6 +13,8 @@ namespace Columbus
 			static int CurrentFrame = 0;
 			CurrentFrame = ++CurrentFrame % MaxFramesInFlight;
 
+			Context.Scene->Update();
+
 			// scene
 			{
 				Buffer*& UploadBuffer = Context.Scene->SceneUploadBuffers[CurrentFrame];

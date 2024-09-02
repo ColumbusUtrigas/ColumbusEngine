@@ -60,7 +60,6 @@ using namespace Columbus;
 
 ConsoleVariable<int> render_cvar("r.Render", "0 - Deferred, 1 - PathTraced, default - 0", 0);
 ConsoleVariable<float> CVar_CameraSpeed("CameraSpeed", "", 10);
-ConsoleVariable<bool> CVar_Boundings("ShowBoundingBoxes", "", false);
 
 DECLARE_CPU_PROFILING_COUNTER(Counter_TotalCPU);
 DECLARE_CPU_PROFILING_COUNTER(CpuCounter_RenderGraphCreate);
@@ -179,11 +178,19 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 {
 	OutWindowHover = false;
 
+	static ImGuizmo::OPERATION OperationMode = ImGuizmo::OPERATION::TRANSLATE;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	if (ImGui::Begin("Viewport"))
 	{
 		OutWindowHover = ImGui::IsWindowHovered();
 		OutViewportFocus = ImGui::IsWindowFocused();
+
+		float BarHeight = 20;
+		ImGui::Button("Bake GI", ImVec2(0, BarHeight)); ImGui::SameLine();
+		ImGui::RadioButton("T", (int*)& OperationMode, ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
+		ImGui::RadioButton("R", (int*)&OperationMode, ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
+		ImGui::RadioButton("S", (int*)&OperationMode, ImGuizmo::OPERATION::SCALE);
 
 		ImVec2 MousePos = ImGui::GetMousePos();
 		ImVec2 WindowPos = ImGui::GetWindowPos();
@@ -203,6 +210,9 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 		ViewMatrix.Transpose();
 		ProjectionMatrix.Transpose();
 
+		ImGuizmo::SetRect(WindowPos.x, WindowPos.y + Cursor.y, viewportSize.x, viewportSize.y);
+		ImGuizmo::SetDrawlist();
+
 		if (SelectedObject != -1)
 		{
 			// TODO: proper scene graph and transform management
@@ -210,9 +220,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 			Transform& Trans = World.GameObjects[SelectedObject].Trans;
 
 			Matrix TestMatrix = Trans.GetMatrix().GetTransposed();
-			ImGuizmo::SetRect(WindowPos.x, WindowPos.y, viewportSize.x, viewportSize.y);
-			ImGuizmo::SetDrawlist();
-			ImGuizmo::Manipulate(&ViewMatrix.M[0][0], &ProjectionMatrix.M[0][0], ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, &TestMatrix.M[0][0]);
+			ImGuizmo::Manipulate(&ViewMatrix.M[0][0], &ProjectionMatrix.M[0][0], OperationMode, ImGuizmo::MODE::LOCAL, &TestMatrix.M[0][0]);
 
 			Vector3 Euler;
 			TestMatrix.Transpose();
@@ -785,6 +793,7 @@ int main()
 
 	bool bViewportHover = false;
 	bool bViewportFocused = false;
+	bool bImguizmoHover = false;
 	Vector2 ViewportMousePos;
 	Vector2 ViewportSize;
 
@@ -849,116 +858,12 @@ int main()
 			}
 		}
 
-		// UI
-		{
-			{
-				char Buf[256]{};
-				snprintf(Buf, 256, "Columbus Engine (Vulkan) - %s", GCurrentProject ? GCurrentProject->ProjectName.c_str() : "No project");
-				SDL_SetWindowTitle(Window.Window, Buf);
-			}
-
-			DebugUI::DrawMainLayout();
-
-			ImGui::ShowDemoWindow();
-			ShowDebugConsole();
-			ShowRenderGraphVisualiser(renderGraph);
-
-			DebugUI::ShowScreenshotSaveWindow(World.MainView);
-
-			DebugUI::ShowProjectSettingsWindow();
-			DebugUI::ShowMeshesWindow(World);
-			DebugUI::ShowDecalsWindow(World);
-			DebugUI::ShowLightsWindow(World);
-			DebugUI::ShowMaterialsWindow(World);
-			DebugUI::ShowIrradianceWindow(World);
-			DebugUI::ShowLightmapWindow(World);
-			Editor::TickAllModalWindows();
-
-			if (ImGui::Begin("Camera"))
-			{
-				ImGui::InputFloat3("Camera Position", (float*)&camera.Pos);
-				ImGui::InputFloat3("Camera Rotation", (float*)&camera.Rot);
-
-				ImGui::Checkbox("Enable DoF", &camera.EnableDoF);
-				ImGui::SliderFloat("F-Stop", &camera.FStop, 0.1f, 10.0f);
-				ImGui::SliderFloat("Focus", &camera.FocusDistance, 0.01f, 100.0f);
-				ImGui::SliderFloat("SensorSize", &camera.SensorSize, 0.01f, 10.0f);
-
-				ImGui::Checkbox("Enable Vignette", &camera.EnableVignette);
-				ImGui::SliderFloat("Vignette", &camera.Vignette, 0.0f, 2.0f);
-
-				ImGui::Checkbox("Enable Grain", &camera.EnableGrain);
-				ImGui::SliderFloat("Grain Scale", &camera.GrainScale, 0.01f, 100.0f);
-				ImGui::SliderFloat("Grain Amount", &camera.GrainAmount, 0.0f, 2.0f);
-			}
-			ImGui::End();
-
-			if (ImGui::Begin("Irradiance"))
-			{
-				if (ImGui::Button("Compute"))
-				{
-					ComputeIrradianceVolume = true;
-					//World.SceneGPU->IrradianceVolumes[0].Position = camera.Pos;
-				}
-			}
-			ImGui::End();
-
-			// test gaussian
-			{
-				static float Peak = 1;
-				static float Offset = 0.5f;
-				static float StdDev = 1;
-				static float XMin = -4;
-				static float XMax = 4;
-
-				const auto Gaussian = [](float x)
-				{
-					return Peak * expf(-powf(x-Offset, 2) / 2*StdDev*StdDev);
-				};
-
-				if (ImGui::Begin("Gaussian Test"))
-				{
-					ImGui::SliderFloat("Peak", &Peak, 0, 5);
-					ImGui::SliderFloat("Offset", &Offset, -0.5f, 0.5f);
-					ImGui::SliderFloat("StdDev", &StdDev, 0, 5);
-					ImGui::InputFloat("X Min", &XMin);
-					ImGui::InputFloat("X Max", &XMax);
-
-					float x[1000];
-					float y[1000];
-
-					for (int i = 0; i < 1000; i++)
-					{
-						x[i] = i / (float)1000 * (XMax - XMin) + XMin;
-						y[i] = Gaussian(x[i]);
-					}
-
-					// find area under the curve
-					float xDist = x[1] - x[0]; // distance between samples
-					float area = 0;
-					for (int i = 0; i < 1000; i++)
-					{
-						area += xDist * y[i];
-					}
-
-					ImGui::Text("Area: %f", area);
-
-					if (ImPlot::BeginPlot("Gaussian"))
-					{
-						ImPlot::PlotLine("Graph", x, y, 1000);
-						ImPlot::EndPlot();
-					}
-				}
-				ImGui::End();
-			}
-		}
-
 		player.PrePhysics();
 		World.Update(DeltaTime);
 		player.PostPhysics();
 
 		// mouse picking
-		if (bViewportFocused && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) && !ImGuizmo::IsOver())
+		if (bViewportHover && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(1)) && !bImguizmoHover)
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			Vector2 MousePos = ViewportMousePos;
@@ -1014,24 +919,6 @@ int main()
 			}
 		}
 
-		if (CVar_Boundings.GetValue())
-		{
-			for (int i = 0; i < (int)World.SceneGPU->Meshes.size(); i++)
-			{
-				const GPUSceneMesh& Mesh = World.SceneGPU->Meshes[i];
-				const Box& Bounding = World.Meshes[i]->BoundingBox;
-				const Vector3 Center = Bounding.CalcCenter();
-				const Vector3 Extent = Bounding.CalcSize();
-
-				Matrix Transform;
-				Transform.Scale(Extent);
-				Transform.Translate(Center);
-				Transform = Mesh.Transform * Transform;
-
-				World.MainView.DebugRender.AddBox(Transform, Vector4(0, 0.3f, 0, 0.3f));
-			}
-		}
-
 		// TODO: common object selection interface
 		if (SelectedObject != -1)
 		{
@@ -1043,6 +930,11 @@ int main()
 			Transform.Translate(Bounding.CalcCenter());
 
 			World.MainView.DebugRender.AddBox(Transform, Vector4(0, 0.3f, 0, 0.3f));
+		}
+
+		// UI Prepare
+		{
+			DebugUI::DrawMainLayout();
 		}
 
 		// rendergraph stuff
@@ -1065,14 +957,11 @@ int main()
 						BakeLightmapPathTraced(renderGraph, World.Lightmaps);
 					}
 
-#if 1
-					//if (World.SceneGPU->IrradianceVolumes[0].ProbesBuffer == nullptr || ComputeIrradianceVolume)
 					if (ComputeIrradianceVolume)
 					{
 						RenderIrradianceProbes(renderGraph, World.MainView, World.SceneGPU->IrradianceVolumes[0]);
 						ComputeIrradianceVolume = false;
 					}
-#endif
 
 					FinalTexture = RenderDeferred(renderGraph, World.MainView, DeferredContext);
 				}
@@ -1097,8 +986,61 @@ int main()
 					RenderGraphExecuteResults RGResults = renderGraph.Execute(RGParameters);
 					WaitSemaphore = RGResults.FinishSemaphore;
 
-					DrawGameViewportWindow(renderGraph.GetTextureAfterExecution(FinalTexture), World, camera.GetViewMatrix(), camera.GetProjectionMatrix(), World.MainView.OutputSize, bViewportHover, bViewportFocused, ViewportMousePos);
+					// UI
+					{
+						{
+							char Buf[256]{};
+							snprintf(Buf, 256, "Columbus Engine (Vulkan) - %s", GCurrentProject ? GCurrentProject->ProjectName.c_str() : "No project");
+							SDL_SetWindowTitle(Window.Window, Buf);
+						}
+
+						ImGui::ShowDemoWindow();
+						ShowDebugConsole();
+						ShowRenderGraphVisualiser(renderGraph);
+
+						DebugUI::ShowScreenshotSaveWindow(World.MainView);
+
+						DebugUI::ShowProjectSettingsWindow();
+						DrawGameViewportWindow(renderGraph.GetTextureAfterExecution(FinalTexture), World, camera.GetViewMatrix(), camera.GetProjectionMatrix(), World.MainView.OutputSize, bViewportHover, bViewportFocused, ViewportMousePos);
+						DebugUI::ShowMeshesWindow(World);
+						DebugUI::ShowDecalsWindow(World);
+						DebugUI::ShowLightsWindow(World);
+						DebugUI::ShowMaterialsWindow(World);
+						DebugUI::ShowIrradianceWindow(World);
+						DebugUI::ShowLightmapWindow(World);
+						Editor::TickAllModalWindows();
+
+						if (ImGui::Begin("Camera"))
+						{
+							ImGui::InputFloat3("Camera Position", (float*)&camera.Pos);
+							ImGui::InputFloat3("Camera Rotation", (float*)&camera.Rot);
+
+							ImGui::Checkbox("Enable DoF", &camera.EnableDoF);
+							ImGui::SliderFloat("F-Stop", &camera.FStop, 0.1f, 10.0f);
+							ImGui::SliderFloat("Focus", &camera.FocusDistance, 0.01f, 100.0f);
+							ImGui::SliderFloat("SensorSize", &camera.SensorSize, 0.01f, 10.0f);
+
+							ImGui::Checkbox("Enable Vignette", &camera.EnableVignette);
+							ImGui::SliderFloat("Vignette", &camera.Vignette, 0.0f, 2.0f);
+
+							ImGui::Checkbox("Enable Grain", &camera.EnableGrain);
+							ImGui::SliderFloat("Grain Scale", &camera.GrainScale, 0.01f, 100.0f);
+							ImGui::SliderFloat("Grain Amount", &camera.GrainAmount, 0.0f, 2.0f);
+						}
+						ImGui::End();
+
+						if (ImGui::Begin("Irradiance"))
+						{
+							if (ImGui::Button("Compute"))
+							{
+								ComputeIrradianceVolume = true;
+							}
+						}
+						ImGui::End();
+					}
+
 					ViewportSize = World.MainView.OutputSize;
+					bImguizmoHover = ImGuizmo::IsOver();
 				}
 
 				// UI rendering

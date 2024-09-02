@@ -58,14 +58,35 @@ namespace Columbus
 		};
 	}
 
+	void GPUScene::Update()
+	{
+		for (const GPULight& SceneLight : Lights)
+		{
+			// select first directional light as sun direction
+			if (SceneLight.Type == LightType::Directional)
+			{
+				SunDirection = Vector4(SceneLight.Direction.XYZ().Normalized(), 0);
+			}
+		}
+	}
+
 	GPUSceneCompact GPUScene::CreateCompact(const RenderView& View) const
 	{
+		Vector4 SHR(1, 0, 0, 0);
+		Vector4 SHG(1, 0, 0, 0);
+		Vector4 SHB(1, 0, 0, 0);
+
 		return GPUSceneCompact
 		{
 			.CameraCur  = CreateCameraCompact(View.CameraCur),
 			.CameraPrev = CreateCameraCompact(View.CameraPrev),
 			.RenderSize = View.RenderSize,
 			.OutputSize = View.OutputSize,
+
+			.SunDirection = SunDirection,
+			.SkySHR       = SHR,
+			.SkySHG       = SHG,
+			.SkySHB       = SHB,
 
 			.MeshesCount    = (u32)Meshes.size(),
 			.MaterialsCount = (u32)Materials.size(),

@@ -284,64 +284,6 @@ namespace Columbus
 		return LightingTexture;
 	}
 
-	struct SkyPassParameters
-	{
-		Matrix  InverseViewProjection;
-		Vector4 CameraPosition;
-		Vector4 SunDirection;
-	};
-
-	void RenderDeferredSky(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext, RenderGraphTextureRef OverTexture)
-	{
-		RenderPassParameters Parameters;
-		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, OverTexture };
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
-		Parameters.ViewportSize = View.RenderSize;
-
-		RenderPassDependencies Dependencies(Graph.Allocator);
-
-		Graph.AddPass("Sky", RenderGraphPassType::Raster, Parameters, Dependencies, [View, OverTexture, Textures, &DeferredContext](RenderGraphContext& Context)
-		{
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "Sky";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc(),
-				};
-
-				Desc.depthStencilState.DepthEnable = true;
-				Desc.depthStencilState.DepthWriteMask = false;
-				Desc.depthStencilState.DepthFunc = ComparisonFunc::LEqual;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Sky.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
-			Vector3 SunDirection = Vector3(1, 1, 1);
-			for (const GPULight& SceneLight : Context.Scene->Lights)
-			{
-				// select first directional light as sun direction
-				if (SceneLight.Type == LightType::Directional)
-				{
-					SunDirection = SceneLight.Direction.XYZ();
-				}
-			}
-
-			SkyPassParameters Parameters{
-				.InverseViewProjection = View.CameraCur.GetViewProjection().GetInverted(),
-				.CameraPosition = Vector4(View.CameraCur.Pos, 0),
-				.SunDirection = Vector4(SunDirection, 0)
-			};
-
-			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->Draw(3, 1, 0, 0);
-		});
-	}
-
 	struct MemsetTextureParameters
 	{
 		Vector4  Value;
@@ -475,10 +417,12 @@ namespace Columbus
 
 		DeferredContext.LightRenderInfos.clear();
 
+		RenderPrepareSkyLut(Graph, View, Textures, DeferredContext);
 		PrepareTiledLights(Graph, View);
 		RenderGBufferPass(Graph, View, Textures);
 		RenderGBufferDecals(Graph, View, Textures);
 
+		// TODO: only if it's needed
 		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
 
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);

@@ -119,6 +119,11 @@ layout(binding = 0, set = GPUSCENE_SCENE_SET) readonly buffer GPUSceneBuffer {
 	ivec2 RenderSize;
 	ivec2 OutputSize;
 
+	vec4 SunDirection;
+	vec4 SkySHR;
+	vec4 SkySHG;
+	vec4 SkySHB;
+
 	uint MeshesCount;
 	uint MaterialsCount;
 	uint TexturesCount;

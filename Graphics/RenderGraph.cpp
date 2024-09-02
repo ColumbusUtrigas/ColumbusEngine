@@ -272,7 +272,7 @@ namespace Columbus
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 1, 0, Scene->LightsBuffer);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 2, 0, Scene->MeshesBuffer);
 			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 3, 0, Scene->MaterialsBuffer);
-			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 4, 0, Device->GetStaticSampler());
+			Device->UpdateDescriptorSet(RenderData.GPUSceneData.SceneSet, 4, 0, Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::Repeat>());
 		}
 	}
 

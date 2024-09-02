@@ -80,5 +80,8 @@ void main(uint3 dtid : SV_DispatchThreadID)
 		LightingSum += BRDF.Albedo * GBufferGI[Pixel].rgb * MetalFactor;
 	}
 	
+	// TEST
+    //LightingSum = GBufferLightmap[Pixel].rgb;
+	
 	LightingOutput[Pixel] = float4(LightingSum, 1);
 }

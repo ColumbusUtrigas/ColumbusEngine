@@ -123,7 +123,7 @@ layout(push_constant) uniform params
 		}
 
 		vec3 view_nor = vec3(InVertex, sqrt(max(0.0, 1.0 - dist_sqr)));
-		vec3 world_nor = mat3(inverse(Params.View)) * view_nor;
+		vec3 world_nor = view_nor * mat3(inverse(Params.View));
 
 		vec3 color = vec3(0);
 		for (int i = 0; i < 64; i++)
@@ -165,7 +165,7 @@ layout(push_constant) uniform params
 		// FragColor = vec4(compute_irradiance(world_nor, ir_data), 1.0);
 
 		// RT0 = vec4(1,0,0,1);
-		// RT0 = vec4(world_nor, 1);
+		//RT0 = vec4((world_nor + 1) / 2, 1);
 		RT0 = vec4(color, 1);
 	}
 #endif

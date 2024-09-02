@@ -76,7 +76,7 @@ void RayGen()
 [shader("miss")]
 void Miss(inout RayPayload payload)
 {
-	float3 Sun = normalize(float3(1, 1, 1)); // TODO: put sun direction into scene description
+    float3 Sun = normalize(GPUScene::GPUSceneScene[0].SunDirection.xyz);
 	
 	payload.Colour = Sky::Atmosphere(WorldRayOrigin(), WorldRayDirection(), Sun);
 	payload.HitDistance = -1.0;

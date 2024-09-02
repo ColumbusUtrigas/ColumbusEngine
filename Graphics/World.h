@@ -48,14 +48,12 @@ namespace Columbus
 		GameObjectId Id = -1;
 		GameObjectId ParentId = -1;
 
-		std::string Name; // TODO: optimise
+		std::string Name;
 
 		int MeshId = -1;
 		// TODO: components
 
 		std::vector<int> GPUScenePrimitives;
-		//std::vector<int> Materials;
-		//std::vector<int> LightmapIds;
 
 		std::vector<GameObjectId> Children;
 	};

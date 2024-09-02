@@ -29,6 +29,11 @@ struct GPUSceneStruct
 	int2 OutputSize;
 
 	// scene description
+    float4 SunDirection; // xyz - direction, w - unused
+    float4 SkySHR; // sky SH2 red
+    float4 SkySHG; // sky SH2 green
+    float4 SkySHB; // sky SH2 blue
+	
 	uint MeshesCount;
 	uint MaterialsCount;
 	uint TexturesCount;

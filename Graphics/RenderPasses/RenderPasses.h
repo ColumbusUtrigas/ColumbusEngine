@@ -199,6 +199,9 @@ namespace Columbus
 	RenderGraphTextureRef DebugVisualisationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& HistoryTextures);
 
+	void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context);
+	void RenderDeferredSky(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context, RenderGraphTextureRef OverTexture);
+
 	// Real-time raytracing
 	//
 	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);

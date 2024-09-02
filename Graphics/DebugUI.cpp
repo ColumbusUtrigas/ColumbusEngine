@@ -8,6 +8,7 @@
 #include <Lib/imgui/backends/imgui_impl_vulkan.h>
 #include <Lib/imgui/backends/imgui_impl_sdl2.h>
 #include <Lib/implot/implot.h>
+#include <Lib/ImGuizmo/ImGuizmo.h>
 #include <Lib/nativefiledialog/src/include/nfd.h>
 
 // std
@@ -609,21 +610,58 @@ namespace Columbus::DebugUI
 		{
 			for (int i = 0; i < (int)World.SceneGPU->IrradianceVolumes.size(); i++)
 			{
+				IrradianceVolume& Volume = World.SceneGPU->IrradianceVolumes[i];
+
 				ImGui::PushID(i);
 				char Label[256]{ 0 };
 				snprintf(Label, 256, "%i", i);
 
 				if (ImGui::CollapsingHeader(Label))
 				{
-					ImGui::SliderFloat3("Position", (float*)&World.SceneGPU->IrradianceVolumes[i].Position, -10, 10);
-					ImGui::SliderFloat3("Extent", (float*)&World.SceneGPU->IrradianceVolumes[i].Extent, -10, 10);
-					ImGui::SliderInt3("Count", (int*)&World.SceneGPU->IrradianceVolumes[i].ProbesCount, 2, 8);
-					ImGui::SliderFloat3("TestPoint", (float*)&World.SceneGPU->IrradianceVolumes[i].TestPoint, -5, 5);
+					ImGui::SliderFloat3("Position", (float*)&Volume.Position, -10, 10);
+					ImGui::SliderFloat3("Extent", (float*)&Volume.Extent, -10, 10);
+					ImGui::SliderInt3("Count", (int*)&Volume.ProbesCount, 2, 8);
+					ImGui::SliderFloat3("TestPoint", (float*)&Volume.TestPoint, -5, 5);
 
-					Matrix Transform;
-					Transform.Scale(World.SceneGPU->IrradianceVolumes[i].Extent);
-					Transform.Translate(World.SceneGPU->IrradianceVolumes[i].Position);
-					World.MainView.DebugRender.AddBox(Transform, Vector4(1, 1, 1, 0.1f));
+					Matrix ViewMat = World.MainView.CameraCur.GetViewMatrix().GetTransposed();
+					Matrix ProjMat = World.MainView.CameraCur.GetProjectionMatrix().GetTransposed();
+
+					Matrix Mat;
+					Mat.Scale(Volume.Extent);
+					Mat.Translate(Volume.Position);
+					Mat.Transpose();
+
+					Vector3 Bounds[2]{
+						-Vector3(0.5f),
+						+Vector3(0.5f),
+					};
+
+					// view projection
+					ImGuizmo::Manipulate(&ViewMat.M[0][0], &ProjMat.M[0][0], ImGuizmo::OPERATION::BOUNDS, ImGuizmo::MODE::LOCAL, &Mat.M[0][0],
+						nullptr, nullptr, (float*)&Bounds, nullptr);
+
+					//Volume.Extent = (Bounds[1] - Bounds[0]);
+
+					Vector3 Position, Euler, Scale;
+					Mat.Transpose();
+					Mat.DecomposeTransform(Position, Euler, Scale);
+
+					if (Scale != Vector3(1))
+					{
+						int asd = 123;
+					}
+
+					Volume.Position = Position;
+					Volume.Extent = Scale;
+
+					// bounding
+					if (0)
+					{
+						Matrix Transform;
+						Transform.Scale(World.SceneGPU->IrradianceVolumes[i].Extent);
+						Transform.Translate(World.SceneGPU->IrradianceVolumes[i].Position);
+						World.MainView.DebugRender.AddBox(Transform, Vector4(1, 1, 1, 0.1f));
+					}
 				}
 
 				ImGui::PopID();

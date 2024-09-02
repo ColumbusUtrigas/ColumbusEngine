@@ -140,6 +140,11 @@ namespace Columbus
 		iVector2 OutputSize;
 
 		// scene description
+		Vector4 SunDirection;
+		Vector4 SkySHR; // SH2 Red
+		Vector4 SkySHG; // SH2 Green
+		Vector4 SkySHB; // SH2 Blue
+
 		u32 MeshesCount;
 		u32 MaterialsCount;
 		u32 TexturesCount;
@@ -169,6 +174,8 @@ namespace Columbus
 		GPUCamera MainCamera;
 		bool Dirty = false;
 
+		Vector4 SunDirection = Vector4(1,1,1,0);
+
 		// GPUScene also owns GPU-specific resources
 		// TODO: Host-visible upload ring buffer, upload only required parts
 		Buffer* SceneBuffer = nullptr;
@@ -185,6 +192,8 @@ namespace Columbus
 
 		Buffer* DecalsBuffers = nullptr;
 		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
+
+		void Update();
 
 		GPUSceneCompact CreateCompact(const RenderView& View) const;
 

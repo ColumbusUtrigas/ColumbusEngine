@@ -39,6 +39,15 @@ int IrradianceProbeGridIdToLinear(IrradianceVolume Volume, int3 ProbeId)
     return ProbeId.x * (Volume.ProbesCount.y * Volume.ProbesCount.z) + ProbeId.y + ProbeId.z * Volume.ProbesCount.y;
 }
 
+int3 GetClosestIrradianceProbeId3d(IrradianceVolume Volume, float3 Position)
+{
+    float3 CellSize = Volume.Extent / Volume.ProbesCount;
+    Position -= Volume.Position;
+    Position += Volume.Extent / 2;
+    int3 ProbeId = int3(Position / CellSize);
+    return clamp(ProbeId, int3(0, 0, 0), Volume.ProbesCount - 1);
+}
+
 IrradianceProbe GetClosestIrradianceProbe(IrradianceVolume Volume, float3 Position)
 {
     float3 CellSize = Volume.Extent / Volume.ProbesCount;
@@ -73,6 +82,42 @@ float3 SampleIrradianceProbes(IrradianceVolume Volume, float3 Position, float3 N
     float3 PosRelativeToProbe = Position - Probe.Position;
     float3 CellSize = Volume.Extent / Volume.ProbesCount;
     float3 NextProbes = sign(PosRelativeToProbe) * CellSize;
+    
+    Colour = float3(0, 0, 0);
+    
+    int3 ProbeId3d = GetClosestIrradianceProbeId3d(Volume, Position);
+    
+    const int3 Offsets[] =
+    {
+        int3(0, 0, 0),
+        
+        int3(1, 0, 0),
+        int3(0, 1, 0),
+        int3(0, 0, 1),
+        int3(1, 1, 0),
+        int3(1, 0, 1),
+        int3(0, 1, 1),
+        int3(1, 1, 1),
+    };
+    
+    float SumW = 0.0f;
+    for (int i = 0; i < 8; i++)
+    {
+        int3 NeighbourId = clamp(ProbeId3d + Offsets[i], int3(0, 0, 0), Volume.ProbesCount - 1);
+        int Id = NeighbourId.x * Volume.ProbesCount.y * Volume.ProbesCount.z + NeighbourId.y * Volume.ProbesCount.z + NeighbourId.z;
+        Id = i;
+        
+        IrradianceProbe Neighbour = IrradianceProbes[Id];
+
+        //IrradianceProbe Neighbour = GetClosestIrradianceProbe(Volume, Position + Offsets[i]*CellSize);
+
+        float W = distance(Position, Neighbour.Position);
+        Colour += SampleIrradianceProbe(Neighbour, -Normal) * W;
+        SumW += W;
+    }
+    
+    Colour /= SumW;
+    return Colour;
 
     IrradianceProbe Neighbour1 = GetClosestIrradianceProbe(Volume, Position + NextProbes.x * float3(1, 0, 0));
     IrradianceProbe Neighbour2 = GetClosestIrradianceProbe(Volume, Position + NextProbes.y * float3(0, 1, 0));
