@@ -91,17 +91,18 @@ float3 SampleIrradianceProbes(IrradianceVolume Volume, float3 Position, float3 N
     {
         int3(0, 0, 0),
         
-        int3(1, 0, 0),
-        int3(0, 1, 0),
-        int3(0, 0, 1),
-        int3(1, 1, 0),
-        int3(1, 0, 1),
-        int3(0, 1, 1),
-        int3(1, 1, 1),
+        int3(+1, 0, 0),
+        int3(-1, 0, 0),
+        int3(0, +1, 0),
+        int3(0, -1, 0),
+        int3(0, 0, +1),
+        int3(0, 0, -1),
     };
+
+    int totalProbes = Volume.ProbesCount.x * Volume.ProbesCount.y * Volume.ProbesCount.z;
     
     float SumW = 0.0f;
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < totalProbes; i++)
     {
         int3 NeighbourId = clamp(ProbeId3d + Offsets[i], int3(0, 0, 0), Volume.ProbesCount - 1);
         int Id = NeighbourId.x * Volume.ProbesCount.y * Volume.ProbesCount.z + NeighbourId.y * Volume.ProbesCount.z + NeighbourId.z;
@@ -111,9 +112,10 @@ float3 SampleIrradianceProbes(IrradianceVolume Volume, float3 Position, float3 N
 
         //IrradianceProbe Neighbour = GetClosestIrradianceProbe(Volume, Position + Offsets[i]*CellSize);
 
-        float W = distance(Position, Neighbour.Position);
+        float W = 1 - distance(Position / CellSize, Neighbour.Position / CellSize);
         Colour += SampleIrradianceProbe(Neighbour, -Normal) * W;
-        SumW += W;
+        //SumW += W;
+        SumW += 1;
     }
     
     Colour /= SumW;

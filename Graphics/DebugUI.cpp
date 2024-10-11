@@ -623,6 +623,21 @@ namespace Columbus::DebugUI
 					ImGui::SliderInt3("Count", (int*)&Volume.ProbesCount, 2, 8);
 					ImGui::SliderFloat3("TestPoint", (float*)&Volume.TestPoint, -5, 5);
 
+					if (ImGui::Button("To World Bounds"))
+					{
+						Vector3 Min(999999);
+						Vector3 Max(-999999);
+
+						for (auto& GO : World.GameObjects)
+						{
+							Min = Vector3::Min(Min, World.Meshes[GO.MeshId]->BoundingBox.Min);
+							Max = Vector3::Max(Max, World.Meshes[GO.MeshId]->BoundingBox.Max);
+						}
+
+						Volume.Position = (Min + Max) / 2;
+						Volume.Extent = (Max - Min);
+					}
+
 					Matrix ViewMat = World.MainView.CameraCur.GetViewMatrix().GetTransposed();
 					Matrix ProjMat = World.MainView.CameraCur.GetProjectionMatrix().GetTransposed();
 
