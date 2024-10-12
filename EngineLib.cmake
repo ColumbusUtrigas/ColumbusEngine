@@ -114,6 +114,7 @@ target_link_libraries(${TARGET} ffx_denoiser_x64)
 add_subdirectory(Lib)
 add_subdirectory(ShaderBytecode)
 add_subdirectory(ShaderCompiler)
+add_subdirectory(ReflectionGenerator)
 add_subdirectory(DDGI)
 
 add_subdirectory(Shaders)

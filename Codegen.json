@@ -1,0 +1,19 @@
+{
+    "Folders": [
+        "Animation",
+        "Audio",
+        "Common",
+        "Core",
+        "DDGI",
+        "Editor",
+        "Game",
+        "Graphics",
+        "Input",
+        "Math",
+        "Physics",
+        "Profiling",
+        "Scene",
+        "ShaderBytecode",
+        "System"
+    ]
+}
