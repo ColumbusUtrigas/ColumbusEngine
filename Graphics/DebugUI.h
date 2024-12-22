@@ -34,7 +34,13 @@ namespace Columbus::DebugUI
 	Context* Create(WindowVulkan* Window);
 	void BeginFrame(Context* Ctx);
 	void ProcessInputSDL(Context* Ctx, SDL_Event* Event);
+
+	// creates a new texture
 	RenderResult Render(Context* Ctx, VkSemaphore WaitSemaphore);
+
+	// overlays the input texture
+	RenderResult RenderOverlay(Context* Ctx, VkSemaphore WaitSemaphore, SPtr<Texture2> OverlayTexture);
+
 	void EndFrame(Context* Ctx);
 	void Destroy(Context* Ctx);
 

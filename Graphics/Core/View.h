@@ -5,6 +5,7 @@
 #include "Graphics/Camera.h"
 #include "Graphics/Core/DebugRender.h"
 #include "Graphics/Vulkan/SwapchainVulkan.h"
+#include "UI/UISystem.h"
 
 namespace Columbus
 {
@@ -16,6 +17,7 @@ namespace Columbus
 		Camera CameraCur;
 		Camera CameraPrev;
 		DebugRender DebugRender;
+		UISystem* UI = nullptr;
 
 		bool ScreenshotHDR = false; // if true, screenshot is done before tonemapping
 		char* ScreenshotPath = nullptr; // when is not nullptr, saves a screenshot on disk

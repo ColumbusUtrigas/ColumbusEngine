@@ -73,6 +73,7 @@ add_dir_to_target(${TARGET} Physics)
 add_dir_to_target(${TARGET} Profiling)
 add_dir_to_target(${TARGET} Scene)
 add_dir_to_target(${TARGET} System)
+add_dir_to_target(${TARGET} UI)
 
 if (LINUX)
 	target_compile_options(${TARGET} PUBLIC -O0 -g)

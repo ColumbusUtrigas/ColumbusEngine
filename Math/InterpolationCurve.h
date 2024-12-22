@@ -41,12 +41,12 @@ namespace Columbus
 		}
 		/*
 		* Interpolate curve
-		* @param float Position: Position of X on curve
+		* @param float Position: Position of X on curve, range is between min and max positions
 		*/		
 		PointType Interpolate(float Position) const
 		{
-			PointType Result;
-			PointType Down, Up;
+			PointType Result{};
+			PointType Down{}, Up{};
 
 			if (Points.size() >= 2)
 			{

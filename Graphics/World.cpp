@@ -249,6 +249,7 @@ namespace Columbus
 	{
 		UpdateTransforms();
 		SceneGPU->Sky = Sky;
+		MainView.UI = &UI;
 
 		Physics.Step(DeltaTime, 1);
 	}
@@ -405,8 +406,6 @@ namespace Columbus
 			{
 				Device->DestroyTexture(Decal.Texture);
 			}
-
-			Device->DestroyAccelerationStructure(Scene->TLAS);
 
 			GPUScene::DestroyGPUScene(Scene, Device);
 		});

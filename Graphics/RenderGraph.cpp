@@ -319,6 +319,16 @@ namespace Columbus
 		return Id;
 	}
 
+	RenderGraphTextureRef RenderGraph::RegisterExternalTexture(SPtr<Texture2> Tex, const char* Name)
+	{
+		int Id = static_cast<int>(Textures.size());
+		auto RGTex = RenderGraphTexture(Tex->GetDesc(), Name, Id, Allocator);
+		RGTex.Texture = Tex;
+		RGTex.bExternal = true;
+		Textures.push_back(RGTex);
+		return Id;
+	}
+
 	TextureDesc2 RenderGraph::GetTextureDesc(RenderGraphTextureRef Texture) const
 	{
 		return Textures[Texture].Desc;
@@ -350,9 +360,18 @@ namespace Columbus
 		return Textures[Texture].Texture.get();
 	}
 
+	SPtr<Texture2> RenderGraph::GetTextureAfterExecutionShared(RenderGraphTextureRef Texture) const
+	{
+		COLUMBUS_ASSERT(ExecutionHasFinished && "Trying to read RG texture before execution");
+		return Textures[Texture].Texture;
+	}
+
 	// TODO: unify allocation logic for textures and buffers?
 	void RenderGraph::AllocateTexture(RenderGraphTexture& Texture)
 	{
+		if (Texture.bExternal)
+			return; // don't do anything with the external resource
+
 		const auto ApplyTextureFromPool = [&Texture, this](RenderGraphPooledTexture& PooledTexture) {
 			Texture.Texture = PooledTexture.Texture;
 			Texture.AllocatedSize = PooledTexture.Texture->GetSize();

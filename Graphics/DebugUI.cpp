@@ -96,7 +96,7 @@ namespace Columbus::DebugUI
 		imguiVk.ImageCount = Swapchain->imageCount;
 
 		AttachmentDesc Attachments[] = {
-			AttachmentDesc { AttachmentType::Color, AttachmentLoadOp::Clear, SwapchainFormat }
+			AttachmentDesc { AttachmentType::Color, AttachmentLoadOp::Load, SwapchainFormat }
 		};
 
 		Ctx->InternalRenderPass = Device->CreateRenderPass(Attachments);
@@ -182,10 +182,53 @@ namespace Columbus::DebugUI
 
 			RenderPassParameters Parameters;
 			Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, UITexture, {} };
+			RenderPassDependencies Dependencies(Graph.Allocator);
+
+			// empty pass just to clear the texture
+			Graph.AddPass("ClearDebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [](RenderGraphContext& Context)
+			{}
+			);
+
+			// then set the internal render pass to use ImGUIs internal pass
+			Parameters.ExternalRenderPass = Ctx->InternalRenderPass;
+
+			Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [UITexture](RenderGraphContext& Context)
+			{
+				ImGui::Render();
+				ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);
+			});
+		}
+
+		RenderGraphExecuteParameters RGParameters;
+		RGParameters.DefaultViewportSize = OutputSize;
+		RGParameters.WaitSemaphore = WaitSemaphore;
+		RenderGraphExecuteResults RGResults = Graph.Execute(RGParameters);
+
+		RenderResult Result;
+		Result.FinishSemaphore = RGResults.FinishSemaphore;
+		Result.ResultTexture = Graph.GetTextureAfterExecution(UITexture);
+
+		return Result;
+	}
+
+	RenderResult RenderOverlay(Context* Ctx, VkSemaphore WaitSemaphore, SPtr<Texture2> OverlayTexture)
+	{
+		RenderGraphTextureRef UITexture;
+
+		iVector2 OutputSize = Ctx->Window->Size;
+		RenderGraph& Graph = *Ctx->Graph;
+
+		Graph.Clear();
+
+		{
+			UITexture = Graph.RegisterExternalTexture(OverlayTexture, "UI");
+
+			RenderPassParameters Parameters;
+			Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, UITexture, {} };
 			Parameters.ExternalRenderPass = Ctx->InternalRenderPass;
 			RenderPassDependencies Dependencies(Graph.Allocator);
 
-			Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [UITexture](RenderGraphContext& Context)
+			Graph.AddPass("DebugUI", RenderGraphPassType::Raster, Parameters, Dependencies, [OverlayTexture](RenderGraphContext& Context)
 			{
 				ImGui::Render();
 				ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context.CommandBuffer->_CmdBuf);

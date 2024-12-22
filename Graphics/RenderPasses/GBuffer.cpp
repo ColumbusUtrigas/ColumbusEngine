@@ -500,6 +500,8 @@ namespace Columbus
 			TonemappedImage = ApplyFSR1(Graph, TonemappedImage, FsrUpscaleDesc, UpscaleTo, IsHdr, ApplyFSR1Sharpening, FSR1Sharpening);
 		}
 
+		RenderUIPass(Graph, View, TonemappedImage);
+
 		TransitionImagePass(Graph, TonemappedImage);
 		ExtractHistorySceneTextures(Graph, View, Textures, DeferredContext.History);
 

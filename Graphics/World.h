@@ -9,6 +9,7 @@
 #include "Scene/Transform.h"
 #include "Physics/PhysicsWorld.h"
 #include "Profiling/Profiling.h"
+#include "UI/UISystem.h"
 
 #include "Common/Model/Model.h"
 
@@ -72,6 +73,7 @@ namespace Columbus
 		// systems
 		LightmapSystem Lightmaps;
 		PhysicsWorld Physics;
+		UISystem UI;
 
 		// rendering
 		SkySettings Sky;

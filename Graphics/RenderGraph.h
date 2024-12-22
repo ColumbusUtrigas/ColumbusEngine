@@ -331,6 +331,7 @@ namespace Columbus
 		TextureDesc2 Desc;
 
 		size_t AllocatedSize = 0;
+		bool bExternal = false; // external resource is not managed by the render graph but can be used by it
 
 		std::string DebugName; // TODO: more efficient data storage
 		RenderGraphTextureId Id;
@@ -550,6 +551,8 @@ namespace Columbus
 		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
 		RenderGraphBufferRef  CreateBuffer(const BufferDesc& Desc, const char* Name);
 
+		RenderGraphTextureRef RegisterExternalTexture(SPtr<Texture2> Tex, const char* Name);
+
 		TextureDesc2 GetTextureDesc(RenderGraphTextureRef Texture) const;
 		BufferDesc   GetBufferDesc(RenderGraphBufferRef Buffer) const;
 		const char* GetTextureName(RenderGraphTextureRef Texture) const;
@@ -558,7 +561,8 @@ namespace Columbus
 
 		// use only after execution has been finished
 		// texture is valid only before the next Clear
-		Texture2* GetTextureAfterExecution(RenderGraphTextureRef Texture) const;
+		Texture2*      GetTextureAfterExecution(RenderGraphTextureRef Texture) const;
+		SPtr<Texture2> GetTextureAfterExecutionShared(RenderGraphTextureRef Texture) const;
 
 		void AddPass(const char* Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback);
 

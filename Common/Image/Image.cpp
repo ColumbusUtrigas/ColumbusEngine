@@ -487,6 +487,7 @@ namespace Columbus
 	bool Image::LoadFromFile(std::string_view InFileName, ImageLoading Flags)
 	{
 		DataStream Stream = DataStream::CreateFromFile(std::string(InFileName).c_str(), "rb");
+		COLUMBUS_ASSERT_MESSAGE(Stream.IsValid(), "Image failed to open");
 		return LoadFromStream(Stream, Flags);
 	}
 
