@@ -25,6 +25,7 @@ namespace Columbus
 {
 
 	using GameObjectId = int;
+	using AThingId = int;
 
 	struct WorldIntersectionResult
 	{
@@ -42,21 +43,80 @@ namespace Columbus
 		}
 	};
 
+	struct EngineWorld;
+
 	struct GameObject
 	{
+	public:
+		// Common data definition
+
 		Transform Trans;
+		EngineWorld* World = nullptr;
 
 		GameObjectId Id = -1;
 		GameObjectId ParentId = -1;
+		std::vector<GameObjectId> Children;
 
 		std::string Name;
 
+		// TODO: remove that because it's not always a mesh
 		int MeshId = -1;
-		// TODO: components
-
+		// TODO: remove that because it's a mesh GPU state thing
 		std::vector<int> GPUScenePrimitives;
+	};
 
-		std::vector<GameObjectId> Children;
+	struct AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AThing);
+	public:
+		// Common data definition
+
+		Transform Trans;
+		EngineWorld* World = nullptr;
+
+		std::string Name;
+		AThingId Id = -1;
+
+		bool bRenderStateDirty = false;
+
+	public:
+		// Common functional definition
+
+		virtual void OnCreate() {}
+		virtual void OnDestroy() {}
+
+		// TODO:
+		// virtual void OnUpdateRenderState() {}
+
+		virtual void OnUiPropertyChange() {}
+	};
+
+	struct ALight : public AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(ALight);
+	public:
+		using Super = AThing;
+
+		Light L;
+
+	protected:
+		// TODO: render state reference
+
+	public:
+
+	};
+
+	struct ADecal : public AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(ADecal);
+	public:
+
+		using Super = AThing;
+
+		// reference texture somehow
+
+	public:
+
 	};
 
 	struct EngineWorld
@@ -69,6 +129,8 @@ namespace Columbus
 		// TODO: Lights
 		// TODO: Textures?
 		std::vector<GameObject> GameObjects;
+
+		std::vector<AThing*> AllThings;
 
 		// systems
 		LightmapSystem Lightmaps;
@@ -119,3 +181,7 @@ namespace Columbus
 	};
 
 }
+
+CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");

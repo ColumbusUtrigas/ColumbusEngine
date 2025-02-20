@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Random.h>
+#include <Core/Reflection.h>
 #include <Math/MathUtil.h>
 
 namespace Columbus
@@ -220,3 +221,5 @@ namespace Columbus
 	};
 
 }
+
+CREFLECT_DECLARE_STRUCT(Columbus::Vector2, 1, "FCA5B677-82B6-4A7C-8CD6-ABBC2F326E2E");

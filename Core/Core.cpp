@@ -1,4 +1,5 @@
 #include "Core.h"
+#include "Reflection.h"
 #include <csignal>
 #include <filesystem>
 
@@ -17,6 +18,9 @@ void InitializeEngine()
 	std::signal(SIGSEGV, CrashHandler);
 	Log::Initialization("Crash Handler was set up");
 	Log::Initialization("Current working directory: %s", std::filesystem::current_path().c_str());
+
+	Reflection::Initialise();
+	Log::Initialization("Reflection initialised");
 }
 
 std::string LoadShaderFile(const std::string& Name)

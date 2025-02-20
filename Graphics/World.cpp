@@ -750,3 +750,45 @@ namespace Columbus
 		return Scene;
 	}
 }
+
+// reflection stuff
+using namespace Columbus;
+
+CREFLECT_ENUM_BEGIN(LightType, "")
+	CREFLECT_ENUM_FIELD(LightType::Directional, 0)
+	CREFLECT_ENUM_FIELD(LightType::Point, 1)
+	CREFLECT_ENUM_FIELD(LightType::Spot, 2)
+	CREFLECT_ENUM_FIELD(LightType::Rectangle, 3)
+CREFLECT_ENUM_END()
+
+CREFLECT_STRUCT_BEGIN(Light, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Color, "Colour, HDR")
+	CREFLECT_STRUCT_FIELD(Vector3, Pos, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Dir, "")
+	CREFLECT_STRUCT_FIELD(Vector2, Size, "")
+
+	CREFLECT_STRUCT_FIELD(float, Energy, "")
+	CREFLECT_STRUCT_FIELD(float, Range, "")
+	CREFLECT_STRUCT_FIELD(float, InnerCutoff, "")
+	CREFLECT_STRUCT_FIELD(float, OuterCutoff, "")
+
+	CREFLECT_STRUCT_FIELD(LightType, Type, "")
+	CREFLECT_STRUCT_FIELD(bool, Shadows, "")
+CREFLECT_STRUCT_END()
+
+
+CREFLECT_DEFINE_VIRTUAL(AThing);
+CREFLECT_STRUCT_BEGIN(AThing, "")
+	CREFLECT_STRUCT_FIELD(Transform, Trans, "")
+	CREFLECT_STRUCT_FIELD(std::string, Name, "")
+	CREFLECT_STRUCT_FIELD(int, Id, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(ALight);
+CREFLECT_STRUCT_BEGIN(ALight, "")
+	CREFLECT_STRUCT_FIELD(Light, L, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(ADecal);
+CREFLECT_STRUCT_BEGIN(ADecal, "")
+CREFLECT_STRUCT_END()

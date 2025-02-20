@@ -91,3 +91,38 @@ namespace Columbus::Geometry
 	}
 
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Reflection type definitions
+
+#include "Core/Reflection.h"
+#include "Quaternion.h"
+
+using namespace Columbus;
+
+CREFLECT_STRUCT_BEGIN(Vector2, "")
+	CREFLECT_STRUCT_FIELD(float, X, "")
+	CREFLECT_STRUCT_FIELD(float, Y, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(Vector3, "")
+	CREFLECT_STRUCT_FIELD(float, X, "")
+	CREFLECT_STRUCT_FIELD(float, Y, "")
+	CREFLECT_STRUCT_FIELD(float, Z, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(Vector4, "")
+	CREFLECT_STRUCT_FIELD(float, X, "")
+	CREFLECT_STRUCT_FIELD(float, Y, "")
+	CREFLECT_STRUCT_FIELD(float, Z, "")
+	CREFLECT_STRUCT_FIELD(float, W, "")
+CREFLECT_STRUCT_END()
+
+
+CREFLECT_STRUCT_BEGIN(Quaternion, "")
+	CREFLECT_STRUCT_FIELD(float, X, "")
+	CREFLECT_STRUCT_FIELD(float, Y, "")
+	CREFLECT_STRUCT_FIELD(float, Z, "")
+	CREFLECT_STRUCT_FIELD(float, W, "")
+CREFLECT_STRUCT_END()

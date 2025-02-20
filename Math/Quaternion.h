@@ -217,3 +217,5 @@ namespace Columbus
 	};
 
 }
+
+CREFLECT_DECLARE_STRUCT(Columbus::Quaternion, 1, "0A0C06E4-B5E5-4462-8D82-B25BF3A65A44");

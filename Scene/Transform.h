@@ -31,4 +31,5 @@ namespace Columbus
 
 }
 
+CREFLECT_DECLARE_STRUCT(Columbus::Transform, 1, "EA17C079-E76A-49F3-946A-03F138C5100B");
 

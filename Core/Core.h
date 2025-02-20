@@ -2,6 +2,7 @@
 
 #include "Types.h"
 #include "Random.h"
+#include "Reflection.h"
 #include "SmartPointer.h"
 #include "Timer.h"
 #include "Assert.h"

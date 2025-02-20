@@ -3,6 +3,7 @@
 #include <imgui/imgui.h>
 #include <Graphics/Core/GraphicsCore.h>
 #include <Core/String.h>
+#include <Core/Reflection.h>
 #include <functional>
 
 namespace Columbus::Editor
@@ -36,6 +37,16 @@ namespace Columbus::Editor
 
 	void ShowMessageBox(const char* Name, const char* Text, MessageBoxCallbacks Callbacks);
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Editing of reflected objects
+
+	bool Reflection_EditObjectField(char* Object, const Reflection::Field& Field, int Depth = 0);
+	bool Reflection_EditStruct(char* Object, const Reflection::Struct* Struct);
+	template <typename T>
+	static bool Reflection_EditStruct(T& Object)
+	{
+		return Reflection_EditStruct((char*)&Object, Reflection::FindStructTypeForObject<T>(Object));
+	}
 }
 
 namespace ImGui

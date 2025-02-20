@@ -4,6 +4,12 @@
 namespace Columbus
 {
 
+CREFLECT_STRUCT_BEGIN(Transform, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Position, "")
+	CREFLECT_STRUCT_FIELD(Quaternion, Rotation, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Scale, "")
+CREFLECT_STRUCT_END()
+
 	Transform::Transform(const Vector3& Pos, const Vector3& Rot, const Vector3& Scale) :
 		Position(Pos),
 		Rotation(Rot),

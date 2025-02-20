@@ -1,11 +1,58 @@
 #include <Editor/CommonUI.h>
 #include <Editor/Icons.h>
+#include <Core/Reflection.h>
 #include <Core/Filesystem.h>
 #include <imgui_internal.h>
+#include <Lib/imgui/misc/cpp/imgui_stdlib.h>
+
 
 namespace Columbus::Editor
 {
 	_CommonUISettings CommonUISettings;
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Custom UI specialisations for reflected types
+
+	bool ImGui_EditVector2(char* Object, const Reflection::Field& Field, int Depth)
+	{
+		return ImGui::InputFloat2(Field.Name, (float*)Object);
+	}
+
+	bool ImGui_EditVector3(char* Object, const Reflection::Field& Field, int Depth)
+	{
+		if (strstr(Field.Meta, "Colour"))
+		{
+			ImGuiColorEditFlags Flags = ImGuiColorEditFlags_Float;
+			if (strstr(Field.Meta, "HDR"))
+				Flags |= ImGuiColorEditFlags_HDR;
+
+			return ImGui::ColorEdit3(Field.Name, (float*)Object, Flags);
+		}
+
+		return ImGui::InputFloat3(Field.Name, (float*)Object);
+	}
+
+	bool ImGui_EditVector4(char* Object, const Reflection::Field& Field, int Depth)
+	{
+		if (strstr(Field.Meta, "Colour"))
+		{
+			ImGuiColorEditFlags Flags = ImGuiColorEditFlags_Float;
+			if (strstr(Field.Meta, "HDR"))
+				Flags |= ImGuiColorEditFlags_HDR;
+
+			return ImGui::ColorEdit4(Field.Name, (float*)Object, Flags);
+		}
+
+		return ImGui::InputFloat4(Field.Name, (float*)Object);
+	}
+
+	CREFLECT_STRUCT_CUSTOM_UI(Vector2, ImGui_EditVector2);
+	CREFLECT_STRUCT_CUSTOM_UI(Vector3, ImGui_EditVector3);
+	CREFLECT_STRUCT_CUSTOM_UI(Vector4, ImGui_EditVector4);
+
+	// Custom UI specialisations for reflected types
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 	void ApplyDarkTheme()
 	{
@@ -247,6 +294,111 @@ namespace Columbus::Editor
 			return Result;
 		});
 	}
+
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Editing of reflected objects
+
+	bool Reflection_EditObjectField(char* Object, const Reflection::Field& Field, int Depth)
+	{
+		char* FieldData = Object + Field.Offset;
+
+		switch (Field.Type)
+		{
+		case Reflection::FieldType::Bool:
+			return ImGui::Checkbox(Field.Name, (bool*)FieldData);
+			break;
+		case Reflection::FieldType::Int:
+			return ImGui::InputInt(Field.Name, (int*)FieldData);
+			break;
+		case Reflection::FieldType::Float:
+			return ImGui::InputFloat(Field.Name, (float*)FieldData);
+			break;
+		case Reflection::FieldType::String:
+			ImGui::InputText(Field.Name, (std::string*)FieldData);
+			break;
+
+		case Reflection::FieldType::Enum:
+		{
+			int EnumValue = *(int*)FieldData;
+
+			const Reflection::Enum* Enum = Field.Enum;
+			const Reflection::EnumField* EnumField = Enum->FindFieldByValue(EnumValue);
+			int Idx = EnumField->Index;
+
+			bool Result = ImGui::Combo(Field.Name, &Idx, [](void* data, int idx, const char** out_text) -> bool
+				{
+					*out_text = ((Reflection::Enum*)data)->Fields[idx].Name;
+					return true;
+				}, (void*)Enum, Enum->Fields.size());
+
+			*((int*)(FieldData)) = Enum->Fields[Idx].Value;
+
+			return Result;
+		}
+		break;
+
+
+		case Reflection::FieldType::Struct:
+		{
+			const Reflection::Struct* Struct = Field.Struct;
+			float Indentation = Depth * 5.0f;
+			bool Result = false;
+
+			if (Struct->CustomUI)
+			{
+				Result = Struct->CustomUI(FieldData, Field, Depth + 1);
+			}
+			else
+			{
+				if (ImGui::CollapsingHeader(Field.Name))
+				{
+					for (const auto& SField : Struct->Fields)
+					{
+						ImGui::Indent(Indentation);
+						ImGui::PushID(SField.Name);
+						Result = Reflection_EditObjectField(FieldData, SField, Depth + 1);
+						ImGui::PopID();
+						ImGui::Unindent(Indentation);
+					}
+				}
+			}
+
+			return Result;
+		}
+		break;
+
+		default:
+			ImGui::LabelText("Unsupported Type", "%s %s", Field.Typename, Field.Name);
+			break;
+		}
+
+		return false;
+	}
+
+	bool Reflection_EditStruct(char* Object, const Reflection::Struct* Struct)
+	{
+		ImGui::LabelText("Struct Guid", "%s", Struct->Guid);
+		ImGui::LabelText("Struct Version", "%i", Struct->Version);
+
+		bool AnyFieldChanged = false;
+
+		for (const auto& Field : Struct->Fields)
+		{
+			AnyFieldChanged |= Reflection_EditObjectField(Object, Field);
+		}
+
+		if (AnyFieldChanged && Struct->ChangeNotify)
+		{
+			Struct->ChangeNotify(Object);
+		}
+
+		return AnyFieldChanged;
+	}
+
+	// Editing of reflected objects
+	///////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 namespace ImGui
