@@ -5,32 +5,12 @@ namespace Columbus
 
 	AudioSystem::AudioSystem()
 	{
-		Player = std::make_unique<AudioPlayer>(2, 44100, &Mixer);
+		Player = std::make_unique<AudioPlayer>(2, 44100, &MasterMixer);
 	}
 
 	void AudioSystem::Clear()
 	{
-		Mixer.Clear();
-	}
-
-	void AudioSystem::AddSource(std::shared_ptr<AudioSource> Source)
-	{
-		Mixer.AddSource(Source);
-	}
-
-	void AudioSystem::SetListener(AudioListener Listener)
-	{
-		Mixer.SetListener(Listener);
-	}
-
-	void AudioSystem::SetSpeed(float Speed)
-	{
-		Mixer.SetSpeed(Speed);
-	}
-
-	float AudioSystem::GetSpeed() const
-	{
-		return Mixer.GetSpeed();
+		MasterMixer.Clear();
 	}
 
 	void AudioSystem::Play()

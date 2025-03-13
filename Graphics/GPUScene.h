@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/StableSparseArray.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Mesh.h"
 #include "Camera.h"
@@ -185,6 +186,8 @@ namespace Columbus
 		SkySettings Sky;
 	};
 
+	using HStableLightId = TStableSparseArray<GPULight>::Handle;
+
 	struct GPUScene
 	{
 		static constexpr int MaxMeshes    = 8192;
@@ -199,7 +202,7 @@ namespace Columbus
 		std::vector<GPUSceneMesh> Meshes;
 		std::vector<Material> Materials;
 		std::vector<Texture2*> Textures;
-		std::vector<GPULight> Lights;
+		TStableSparseArray<GPULight> Lights;
 		std::vector<GPUDecal> Decals;
 
 		std::vector<IrradianceVolume> IrradianceVolumes;

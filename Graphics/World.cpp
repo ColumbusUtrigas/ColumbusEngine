@@ -119,6 +119,36 @@ namespace Columbus
 		return Id;
 	}
 
+	int EngineWorld::LoadMesh(const char* AssetPath)
+	{
+		// TODO: wtf is this
+		Model* asd = new Model();
+		Model& model = *asd;
+		model.Load(AssetPath);
+		model.RecalculateTangents();
+
+		return LoadMesh(model);
+	}
+
+	Sound* EngineWorld::LoadSoundAsset(const char* AssetPath)
+	{
+		// TODO: don't load already loaded sounds
+		Sound* Snd = new Sound();
+		if (!Snd->Load(AssetPath))
+		{
+			delete Snd;
+			return nullptr;
+		}
+
+		Sounds.push_back(Snd);
+		return Snd;
+	}
+
+	void EngineWorld::UnloadSoundAsset(Sound* Snd)
+	{
+		// TODO:
+	}
+
 	GameObjectId EngineWorld::CreateGameObject(const char* Name, int Mesh)
 	{
 		GameObject GO;
@@ -144,6 +174,7 @@ namespace Columbus
 		return GO.Id;
 	}
 
+	// TODO: delete
 	void EngineWorld::ReparentGameObject(GameObjectId Object, GameObjectId NewParent)
 	{
 		GameObjectId OldParent = GameObjects[Object].ParentId;
@@ -159,72 +190,33 @@ namespace Columbus
 		GameObjects[NewParent].Children.push_back(Object);
 	}
 
-	WorldIntersectionResult EngineWorld::CastRayClosestHit(const Geometry::Ray& Ray)
+	HWorldIntersectionResult EngineWorld::CastRayClosestHit(const Geometry::Ray& Ray, float Distance, int CollisionMask)
 	{
-		// TODO: remove allocations, use some temporary frame allocator
-		std::vector<WorldIntersectionResult> HitPoints;
-
-		// TODO: BVH/octree search
-		for (int i = 0; i < (int)GameObjects.size(); i++)
-		{
-			GameObject& Obj = GameObjects[i];
-
-			for (int PrimId = 0; PrimId < (int)Meshes[Obj.MeshId]->Primitives.size(); PrimId++)
-			{
-				const MeshPrimitive& Prim = Meshes[Obj.MeshId]->Primitives[PrimId];
-				const CPUMeshResource& Mesh = Prim.CPU;
-				const Matrix& MeshTransform = Obj.Trans.GetMatrix();
-				const Box& Bounding = Prim.BoundingBox;
-
-				if (Bounding.CalcTransformedBox(MeshTransform).Intersects(Ray.Origin, Ray.Direction))
-				{
-					for (int v = 0; v < Mesh.Indices.size(); v += 3)
-					{
-						// extract triangle. TODO: mesh processing functions
-						u32 i1 = Mesh.Indices[v + 0];
-						u32 i2 = Mesh.Indices[v + 1];
-						u32 i3 = Mesh.Indices[v + 2];
-
-						Geometry::Triangle Tri{
-							(MeshTransform * Vector4(Mesh.Vertices[i1], 1)).XYZ(),
-							(MeshTransform * Vector4(Mesh.Vertices[i2], 1)).XYZ(),
-							(MeshTransform * Vector4(Mesh.Vertices[i3], 1)).XYZ(),
-						};
-
-						Geometry::HitPoint IntersectionPoint = Geometry::RayTriangleIntersection(Ray, Tri);
-						if (IntersectionPoint.IsHit)
-						{
-							WorldIntersectionResult Intersection{
-								.HasIntersection = true,
-								.ObjectId = i,
-								.MeshPrimitiveId = PrimId,
-								.MeshId = Obj.MeshId,
-								.TriangleId = v / 3,
-								.IntersectionPoint = IntersectionPoint.Point,
-								.Triangle = Tri,
-							};
-
-							HitPoints.push_back(Intersection);
-						}
-					}
-				}
-			}
-		}
-
-		std::sort(HitPoints.begin(), HitPoints.end(), [Ray](const WorldIntersectionResult& L, const WorldIntersectionResult& R)
-		{
-			return L.IntersectionPoint.DistanceSquare(Ray.Origin) < R.IntersectionPoint.DistanceSquare(Ray.Origin);
-		});
-
-		if (HitPoints.size() > 0)
-		{
-			return HitPoints[0];
-		}
-
-		return WorldIntersectionResult::Invalid();
+		return CastRayClosestHit(Ray.Origin, Ray.Origin + Ray.Direction*Distance, CollisionMask);
 	}
 
-	WorldIntersectionResult EngineWorld::CastCameraRayClosestHit(const Vector2& NormalisedScreenCoordinates)
+	HWorldIntersectionResult EngineWorld::CastRayClosestHit(const Vector3& From, const Vector3& To, int CollisionMask)
+	{
+		const auto btFrom = btVector3(From.X, From.Y, From.Z);
+		const auto btTo = btVector3(To.X, To.Y, To.Z);
+		btCollisionWorld::ClosestRayResultCallback Callback(btFrom, btTo);
+		Callback.m_collisionFilterMask = CollisionMask;
+		Physics.mWorld->rayTest(btFrom, btTo, Callback);
+
+		const auto btN = Callback.m_hitNormalWorld;
+		const auto btP = Callback.m_hitPointWorld;
+
+		HWorldIntersectionResult Result;
+		Result.bHasIntersection = Callback.hasHit();
+		Result.IntersectionFraction = Callback.m_closestHitFraction;
+		Result.IntersectionPoint  = Vector3(btP.x(), btP.y(), btP.z());
+		Result.IntersectionNormal = Vector3(btN.x(), btN.y(), btN.z());
+		Result.HitThing = Callback.m_collisionObject ? (AThing*)Callback.m_collisionObject->getUserPointer() : nullptr;
+
+		return Result;
+	}
+
+	HWorldIntersectionResult EngineWorld::CastCameraRayClosestHit(const Vector2& NormalisedScreenCoordinates, float MaxDistance, int CollisionMask)
 	{
 		Vector2 NDC = NormalisedScreenCoordinates * 2 - 1;
 		NDC.Y = -NDC.Y;
@@ -234,7 +226,20 @@ namespace Columbus
 			.Direction = MainView.CameraCur.CalcRayByNdc(NDC)
 		};
 
-		return CastRayClosestHit(CameraRay);
+		return CastRayClosestHit(CameraRay, MaxDistance, CollisionMask);
+	}
+
+	HStableThingId EngineWorld::AddThing(AThing* Thing)
+	{
+		return AllThings.Add(Thing);
+	}
+
+	void EngineWorld::DeleteThing(HStableThingId ThingId)
+	{
+		AThing* Thing = *AllThings.Get(ThingId);
+		Thing->OnDestroy();
+		AllThings.Remove(ThingId);
+		delete Thing;
 	}
 
 	void EngineWorld::BeginFrame()
@@ -247,6 +252,8 @@ namespace Columbus
 
 	void EngineWorld::Update(float DeltaTime)
 	{
+		GlobalTime += DeltaTime;
+
 		UpdateTransforms();
 		SceneGPU->Sky = Sky;
 		MainView.UI = &UI;
@@ -287,6 +294,19 @@ namespace Columbus
 				{
 					SceneGPU->Meshes[Prim].Transform = GlobalTransform;
 				}
+			}
+		}
+	}
+
+	void EngineWorld::PostUpdate()
+	{
+		for (int i = 0; i < (int)AllThings.Size(); i++)
+		{
+			AThing* Thing = AllThings.Data()[i];
+			if (Thing->bRenderStateDirty)
+			{
+				Thing->OnUpdateRenderState();
+				Thing->bRenderStateDirty = false;
 			}
 		}
 	}
@@ -633,8 +653,6 @@ namespace Columbus
 				tinygltf::Node& Node = model.nodes[i];
 				Transform Trans;
 
-				if (Node.mesh == -1) continue;
-
 				if (Node.matrix.size() > 0)
 				{
 					Matrix LocalTransform(1);
@@ -676,28 +694,69 @@ namespace Columbus
 				}
 
 				Trans.Update();
-				int GO = World->CreateGameObject(Node.name.c_str(), Node.mesh);
-				World->GameObjects[GO].Children = Node.children;
-				World->GameObjects[GO].Trans = Trans;
 
-				for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
+				if (Node.extensions.contains("KHR_lights_punctual"))
 				{
-					auto& primitive = model.meshes[Node.mesh].primitives[prim];
-					int MaterialId = primitive.material > -1 ? primitive.material : -1;
+					int light = Node.extensions["KHR_lights_punctual"].Get("light").GetNumberAsInt();
+					const auto& gltfLight = model.lights[light];
 
-					Scene->Meshes[World->GameObjects[GO].GPUScenePrimitives[prim]].MaterialId = MaterialId;
+					ALight* LightThing = new ALight();
+					LightThing->World = World;
+					LightThing->Trans = Trans;
+					LightThing->Name = Node.name;
+
+					if (gltfLight.type == "point")
+						LightThing->L.Type = LightType::Point;
+					if (gltfLight.type == "directional")
+						LightThing->L.Type = LightType::Directional;
+
+					float intensity = 10.0f;
+					LightThing->L.Color.X = gltfLight.color[0] * intensity;
+					LightThing->L.Color.Y = gltfLight.color[1] * intensity;
+					LightThing->L.Color.Z = gltfLight.color[2] * intensity;
+					LightThing->L.Range = gltfLight.range;
+
+					if (LightThing->L.Range < 0.01f)
+						LightThing->L.Range = 10.0f;
+
+					World->AllThings.Add(LightThing);
+					LightThing->OnCreate();
+
+					continue;
+				}
+
+				if (Node.mesh == -1) continue;
+
+				{
+					AMeshInstance* MeshThing = new AMeshInstance();
+					MeshThing->World = World;
+					MeshThing->Trans = Trans;
+					MeshThing->Name = Node.name;
+					MeshThing->MeshID = Node.mesh;
+
+					for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
+					{
+						auto& primitive = model.meshes[Node.mesh].primitives[prim];
+						int MaterialId = primitive.material > -1 ? primitive.material : -1;
+						MeshThing->Materials.push_back(MaterialId);
+					}
+
+					World->AllThings.Add(MeshThing);
+					MeshThing->OnCreate();
+
+					continue;
 				}
 			}
 
-			// compute parents
-			for (int i = 0; i < World->GameObjects.size(); i++)
+			// TODO: compute parents
+			/*for (int i = 0; i < World->GameObjects.size(); i++)
 			{
 				GameObject& Object = World->GameObjects[i];
 				for (int Child : Object.Children)
 				{
 					World->GameObjects[Child].ParentId = i;
 				}
-			}
+			}*/
 
 		}
 
@@ -726,12 +785,8 @@ namespace Columbus
 			AddProfilingMemory(MemoryCounter_SceneTLAS, Scene->TLAS->GetSize());
 		}
 
-		Scene->Lights.push_back(GPULight{ {}, {1,1,1,0}, {1,1,1,0}, LightType::Directional, 0, 0.1f });
-
 		if (0)
 		{
-			Scene->Lights.push_back(GPULight{ {0,200,0,0}, {}, {50,0,0,0}, LightType::Point, 500, 0 });
-
 			{
 				Image DecalImage;
 				if (!DecalImage.LoadFromFile("./Data/Textures/Detail.dds"))
@@ -748,6 +803,102 @@ namespace Columbus
 		}
 
 		return Scene;
+	}
+}
+
+
+// Things implementation
+namespace Columbus
+{
+
+	void ALight::OnCreate()
+	{
+		Super::OnCreate();
+		OnUpdateRenderState();
+	}
+
+	void ALight::OnUpdateRenderState()
+	{
+		const auto RotMat = Trans.Rotation.ToMatrix();
+
+		GPULight GL{};
+		GL.Color = Vector4(L.Color, 1);
+		GL.Position = Vector4(Trans.Position, 1);
+		GL.Direction = (Vector4(1, 0, 0, 1) * RotMat).Normalized();
+		GL.Range = L.Range;
+		GL.Type = L.Type;
+
+		if (GPULight* LightProxy = World->SceneGPU->Lights.Get(LightHandle))
+		{
+			*LightProxy = GL;
+		}
+		else
+		{
+			LightHandle = World->SceneGPU->Lights.Add(GL);
+		}
+	}
+
+	void ALight::OnDestroy()
+	{
+		World->SceneGPU->Lights.Remove(LightHandle);
+
+		Super::OnDestroy();
+	}
+
+	void AMeshInstance::OnCreate()
+	{
+		Super::OnCreate();
+		assert(World != nullptr);
+		assert(MeshID != -1);
+
+		// TODO: make adding these mesh proxies easier!
+
+		int i = 0;
+		for (MeshPrimitive& Prim : World->Meshes[MeshID]->Primitives)
+		{
+			GPUSceneMesh GPUMesh;
+			GPUMesh.MeshResource = &Prim.GPU;
+			GPUMesh.Transform = Trans.GetMatrix();
+
+			if (Materials.size() > i)
+			{
+				GPUMesh.MaterialId = Materials[i];
+			}
+
+			World->SceneGPU->Meshes.push_back(GPUMesh);
+		}
+
+		// TODO: collision proxy setup
+		{
+			const Mesh2& mesh = *World->Meshes[MeshID];
+
+			for (int j = 0; j < (int)mesh.Primitives.size(); j++)
+			{
+				int numFaces = mesh.Primitives[j].CPU.Indices.size() / 3;
+				int vertStride = sizeof(Vector3);
+				int indexStride = 3 * sizeof(u32);
+
+				btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray(numFaces,
+					(int*)mesh.Primitives[j].CPU.Indices.data(),
+					indexStride,
+					mesh.Primitives[j].CPU.Vertices.size(), (btScalar*)mesh.Primitives[j].CPU.Vertices.data(), vertStride);
+				btBvhTriangleMeshShape* triShape = new btBvhTriangleMeshShape(va, true);
+
+				Rigidbody* MeshRB = new Rigidbody(triShape);
+				MeshRB->SetTransform(Trans);
+				MeshRB->SetStatic(true);
+				MeshRB->mRigidbody->setUserPointer(this);
+
+				World->Physics.AddRigidbody(MeshRB);
+			}
+		}
+	}
+
+	void AMeshInstance::OnDestroy()
+	{
+		// TODO: remove physics proxies!
+		// TODO: remove render proxies!
+		Super::OnDestroy();
 	}
 }
 
@@ -781,7 +932,6 @@ CREFLECT_DEFINE_VIRTUAL(AThing);
 CREFLECT_STRUCT_BEGIN(AThing, "")
 	CREFLECT_STRUCT_FIELD(Transform, Trans, "")
 	CREFLECT_STRUCT_FIELD(std::string, Name, "")
-	CREFLECT_STRUCT_FIELD(int, Id, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALight);
@@ -791,4 +941,8 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ADecal);
 CREFLECT_STRUCT_BEGIN(ADecal, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
+CREFLECT_STRUCT_BEGIN(AMeshInstance, "")
 CREFLECT_STRUCT_END()

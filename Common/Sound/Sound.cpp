@@ -130,18 +130,20 @@ namespace Columbus
 			{
 				uint32 RealCount = Count / Divider;
 
+				const uint32 BufferSizeSamples = BufferSize / 2;
+
 				if (Channels == 1)
 				{
 					for (uint32 i = 0; i < RealCount; i++)
 					{
-						Tmp[i].L = Tmp[i].R = Buffer[Offset++ % BufferSize];
+						Tmp[i].L = Tmp[i].R = Buffer[Offset++ % BufferSizeSamples];
 					}
 				} else if (Channels == 2)
 				{
 					for (uint32 i = 0; i < RealCount; i++)
 					{
-						Tmp[i].L = Buffer[Offset++ % BufferSize];
-						Tmp[i].R = Buffer[Offset++ % BufferSize];
+						Tmp[i].L = Buffer[Offset++ % BufferSizeSamples];
+						Tmp[i].R = Buffer[Offset++ % BufferSizeSamples];
 					}
 				}
 

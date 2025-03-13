@@ -60,6 +60,8 @@ namespace Columbus
 			Data = new Sound::Frame[Count];
 			Mixed = new Sound::FrameHight[Count];
 
+			memset(Mixed, 0, sizeof(Sound::FrameHight) * Count);
+
 			BufferInitialized = true;
 		}
 		
@@ -67,6 +69,8 @@ namespace Columbus
 
 		for (auto Source : Sources)
 		{
+			memset(Data, 0, sizeof(Sound::Frame) * Count);
+
 			if ((bool)Source)
 			{
 				float Attenuation = CalculateSourceAttenuation(Source.get(), Listener.Position);
@@ -87,6 +91,9 @@ namespace Columbus
 				}
 			}
 		}
+
+		// apply mixer effects
+		LowPass.Process(Mixed, Count);
 
 		AudioBufferClip(Mixed, Count);
 

@@ -285,9 +285,9 @@ namespace Columbus
 		// TODO:
 		static VkDescriptorSet RayDescriptorSets[MaxFramesInFlight][64]{NULL};
 
-		for (int i = 0; i < Graph.Scene->Lights.size(); i++)
+		for (int i = 0; i < Graph.Scene->Lights.Size(); i++)
 		{
-			GPULight& Light = Graph.Scene->Lights[i];
+			const GPULight& Light = Graph.Scene->Lights.Data()[i];
 
 			RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
 

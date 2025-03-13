@@ -16,17 +16,13 @@ namespace Columbus
 		friend class Renderer;
 
 		std::unique_ptr<AudioPlayer> Player;
-		AudioMixer Mixer;
+
+	public:
+		AudioMixer MasterMixer;
 	public:
 		AudioSystem();
 
 		void Clear();
-
-		void AddSource(std::shared_ptr<AudioSource> Source);
-		void SetListener(AudioListener Listener);
-
-		void SetSpeed(float Speed);
-		float GetSpeed() const;
 
 		void Play();
 		void Stop();

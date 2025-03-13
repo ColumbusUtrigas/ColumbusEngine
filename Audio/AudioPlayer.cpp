@@ -28,7 +28,7 @@ namespace Columbus
 
 				Mixer->Update(Frames, static_cast<uint32>(Size * Speed));
 
-				float Step = 1.0f / Speed;
+				const float Step = 1.0f / Speed;
 
 				for (uint32 i = 0; i < Size; i++)
 				{
@@ -48,7 +48,6 @@ namespace Columbus
 
 	AudioPlayer::AudioPlayer(uint16 Channels, uint32 Frequency, AudioMixer* Mixer)
 	{
-		return;
 		Log::Initialization("Audio system initialization");
 		COLUMBUS_ASSERT_MESSAGE(Channels >= 1, "AudioPlayer::AudioPlayer(): Invalid channels count")
 		COLUMBUS_ASSERT_MESSAGE(Frequency > 0, "AudioPlayer::AudioPlayer(): Invalid frequency")

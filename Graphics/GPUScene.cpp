@@ -60,8 +60,10 @@ namespace Columbus
 
 	void GPUScene::Update()
 	{
-		for (const GPULight& SceneLight : Lights)
+		for (int i = 0; i < (int)Lights.Size(); i++)
 		{
+			const GPULight& SceneLight = Lights.Data()[i];
+
 			// select first directional light as sun direction
 			if (SceneLight.Type == LightType::Directional)
 			{
@@ -103,7 +105,7 @@ namespace Columbus
 			.MeshesCount    = (u32)Meshes.size(),
 			.MaterialsCount = (u32)Materials.size(),
 			.TexturesCount  = (u32)Textures.size(),
-			.LightsCount    = (u32)Lights.size(),
+			.LightsCount    = (u32)Lights.Size(),
 			.DecalsCount    = (u32)Decals.size(),
 
 			.Sky = SkyConverted,

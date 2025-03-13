@@ -29,15 +29,15 @@ namespace Columbus
 			}
 
 			// lights
-			if (Context.Scene->Lights.size() > 0)
+			if (Context.Scene->Lights.Size() > 0)
 			{
 				Buffer*& UploadBuffer = Context.Scene->LightUploadBuffers[CurrentFrame];
 
 				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-				memcpy(Ptr, Context.Scene->Lights.data(), sizeof(GPULight) * Context.Scene->Lights.size());
+				memcpy(Ptr, Context.Scene->Lights.Data(), Context.Scene->Lights.Size() * sizeof(GPULight));
 				Context.Device->UnmapBuffer(UploadBuffer);
 
-				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->LightsBuffer, 0, 0, sizeof(GPULight) * Context.Scene->Lights.size());
+				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->LightsBuffer, 0, 0, sizeof(GPULight) * Context.Scene->Lights.Size());
 			}
 
 			// meshes

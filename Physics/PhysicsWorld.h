@@ -11,7 +11,7 @@ namespace Columbus
 
 	class PhysicsWorld
 	{
-	private:
+	public:
 		btBroadphaseInterface* mBroadphase;
 		btDefaultCollisionConfiguration* mCollisionConfiguration;
 		btDispatcher* mDispatcher;

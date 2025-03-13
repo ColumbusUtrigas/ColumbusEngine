@@ -316,7 +316,7 @@ namespace Columbus::Editor
 			return ImGui::InputFloat(Field.Name, (float*)FieldData);
 			break;
 		case Reflection::FieldType::String:
-			ImGui::InputText(Field.Name, (std::string*)FieldData);
+			return ImGui::InputText(Field.Name, (std::string*)FieldData);
 			break;
 
 		case Reflection::FieldType::Enum:
@@ -358,7 +358,7 @@ namespace Columbus::Editor
 					{
 						ImGui::Indent(Indentation);
 						ImGui::PushID(SField.Name);
-						Result = Reflection_EditObjectField(FieldData, SField, Depth + 1);
+						Result |= Reflection_EditObjectField(FieldData, SField, Depth + 1);
 						ImGui::PopID();
 						ImGui::Unindent(Indentation);
 					}

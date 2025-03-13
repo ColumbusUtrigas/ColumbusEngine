@@ -3,6 +3,7 @@
 #include "GPUScene.h"
 #include "Mesh.h"
 #include "Lightmaps.h"
+#include "Audio/AudioSystem.h"
 #include "Graphics/Core/View.h"
 #include "Math/Box.h"
 #include "Math/Geometry.h"
@@ -24,27 +25,12 @@ DECLARE_CPU_PROFILING_COUNTER(CpuCounter_ScenePhysicsUpdate);
 namespace Columbus
 {
 
+	// TODO: delete
 	using GameObjectId = int;
-	using AThingId = int;
-
-	struct WorldIntersectionResult
-	{
-		bool HasIntersection;
-		int ObjectId;
-		int MeshPrimitiveId;
-		int MeshId;
-		int TriangleId;
-		Vector3 IntersectionPoint;
-		Geometry::Triangle Triangle;
-
-		static WorldIntersectionResult Invalid()
-		{
-			return WorldIntersectionResult{ false, -1, -1, -1, -1, { 0, 0, 0 } };
-		}
-	};
 
 	struct EngineWorld;
 
+	// TODO: remove that - temporary thing served it's purpose
 	struct GameObject
 	{
 	public:
@@ -75,65 +61,84 @@ namespace Columbus
 		EngineWorld* World = nullptr;
 
 		std::string Name;
-		AThingId Id = -1;
 
 		bool bRenderStateDirty = false;
 
 	public:
 		// Common functional definition
 
-		virtual void OnCreate() {}
+		virtual void OnCreate() { Trans.Update(); }
 		virtual void OnDestroy() {}
 
-		// TODO:
-		// virtual void OnUpdateRenderState() {}
+		virtual void OnUpdateRenderState() {}
 
-		virtual void OnUiPropertyChange() {}
+		virtual void OnUiPropertyChange() { bRenderStateDirty = true; }
 	};
 
 	struct ALight : public AThing
 	{
 		CREFLECT_BODY_STRUCT_VIRTUAL(ALight);
-	public:
 		using Super = AThing;
 
+	protected:
+		HStableLightId LightHandle;
+	public:
 		Light L;
 
-	protected:
-		// TODO: render state reference
-
 	public:
-
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+		virtual void OnUpdateRenderState() override;
 	};
 
 	struct ADecal : public AThing
 	{
 		CREFLECT_BODY_STRUCT_VIRTUAL(ADecal);
-	public:
-
 		using Super = AThing;
-
-		// reference texture somehow
-
+	public:
 	public:
 
 	};
 
+	struct AMeshInstance : public AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AMesh);
+		using Super = AThing;
+	public:
+		int MeshID = -1; // TODO: proper asset id
+		std::vector<int> Materials; // TODO: proper material ids
+
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+	};
+
+	using HStableThingId = TStableSparseArray<AThing*>::Handle;
+
+	struct HWorldIntersectionResult
+	{
+		bool  bHasIntersection = false;
+		float IntersectionFraction = 1.0f; // 0-1 along the distance of the cast
+
+		AThing* HitThing = nullptr;
+		Vector3 IntersectionPoint;
+		Vector3 IntersectionNormal;
+	};
+
 	struct EngineWorld
 	{
-		SPtr<GPUScene> SceneGPU; // TODO: move some stuff (lights, decals) from SceneGPU here, make a proper upload routine
+		SPtr<GPUScene> SceneGPU;
 
 		std::vector<Mesh2*> Meshes; // pointer so that resize of Meshes doesn't invalidate internal pointers
-		// TODO: Materials (interface, which will be copied to GPUScene)
-		// TODO: Decals
-		// TODO: Lights
-		// TODO: Textures?
+		std::vector<Sound*> Sounds;
+		// TODO: texture resources
+
 		std::vector<GameObject> GameObjects;
 
-		std::vector<AThing*> AllThings;
+		TStableSparseArray<AThing*> AllThings;
 
 		// systems
 		LightmapSystem Lightmaps;
+		AudioSystem Audio;
 		PhysicsWorld Physics;
 		UISystem UI;
 
@@ -148,29 +153,38 @@ namespace Columbus
 		// functions
 		void LoadLevelGLTF(const char* Path);
 
-		// TODO: don't use Model
+		// TODO: remake it for the asset ref system
 		int  LoadMesh(const Model& MeshModel);
 		int  LoadMesh(std::span<CPUMeshResource> MeshPrimitives);
+		int  LoadMesh(const char* AssetPath);
 		void UnloadMesh(int Mesh);
-
 		// TODO: Load/Unload texture
-		// TODO: Create/Destroy light source
-		// TOOD: Create/Destroy decal
-		// TODO: Add/Remove material
+		// TODO: asset referencing system
 
+		Sound* LoadSoundAsset(const char* AssetPath);
+		void   UnloadSoundAsset(Sound* Snd);
+
+		HStableThingId AddThing(AThing* Thing);
+		void DeleteThing(HStableThingId ThingId);
+
+		// TODO: delete
 		GameObjectId CreateGameObject(const char* Name, int Mesh);
 		void         DestroyGameObject(GameObjectId Object);
 		void         ReparentGameObject(GameObjectId Object, GameObjectId NewParent);
 
-		WorldIntersectionResult CastRayClosestHit(const Geometry::Ray& Ray);
+		HWorldIntersectionResult CastRayClosestHit(const Geometry::Ray& Ray, float MaxDistance, int CollisionMask);
+		HWorldIntersectionResult CastRayClosestHit(const Vector3& From, const Vector3& To, int CollisionMask);
 
 		// will use MainView camera, screen coordinates must be in 0-1 range
-		WorldIntersectionResult CastCameraRayClosestHit(const Vector2& NormalisedScreenCoordinates);
+		HWorldIntersectionResult CastCameraRayClosestHit(const Vector2& NormalisedScreenCoordinates, float MaxDistance, int CollisionMask);
 
 		void BeginFrame();
 		void Update(float DeltaTime);
 		void UpdateTransforms();
+		void PostUpdate();
 		void EndFrame();
+
+		float GetGlobalTime() const { return GlobalTime; }
 
 		void FreeResources();
 
@@ -178,6 +192,9 @@ namespace Columbus
 		{
 			FreeResources();
 		}
+
+	private:
+		float GlobalTime = 0.0f;
 	};
 
 }
@@ -185,3 +202,4 @@ namespace Columbus
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");

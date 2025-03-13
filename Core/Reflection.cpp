@@ -71,6 +71,16 @@ namespace Reflection
 		return nullptr;
 	}
 
+	const std::vector<Struct*>& GetAllStructs()
+	{
+		return ReflectionData::Instance().AllStructs;
+	}
+
+	const std::vector<Enum*>& GetAllEnums()
+	{
+		return ReflectionData::Instance().AllEnums;
+	}
+
 	// Type search
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 

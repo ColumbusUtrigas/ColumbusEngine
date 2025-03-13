@@ -157,6 +157,9 @@ namespace Columbus
 
 			bTrans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
 			bTrans.setRotation(bQuat);
+
+			//if (mRigidbody->isKinematicObject())
+			mRigidbody->setWorldTransform(bTrans);
 			mRigidbody->proceedToTransform(bTrans);
 
 			Trans = InTransform;

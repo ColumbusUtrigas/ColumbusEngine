@@ -2,6 +2,8 @@
 
 #include <Audio/AudioSource.h>
 #include <Audio/AudioListener.h>
+#include <Audio/Filters.h>
+#include <algorithm>
 #include <vector>
 #include <memory>
 
@@ -23,6 +25,10 @@ namespace Columbus
 
 		float Speed = 1.0f;
 		bool BufferInitialized = false;
+
+	public: // filters
+		AudioFilterLowPass LowPass;
+
 	public:
 		AudioMixer() {}
 
@@ -34,6 +40,11 @@ namespace Columbus
 		void AddSource(std::shared_ptr<AudioSource> Source)
 		{
 			Sources.push_back(Source);
+		}
+
+		void RemoveSource(std::shared_ptr<AudioSource> Source)
+		{
+			Sources.erase(std::remove(Sources.begin(), Sources.end(), Source));
 		}
 
 		void SetListener(AudioListener InListener)

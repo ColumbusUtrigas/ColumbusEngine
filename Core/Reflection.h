@@ -160,6 +160,10 @@ namespace Reflection
 	const Struct* FindStructByName(const char* Name);
 
 
+	const std::vector<Struct*>& GetAllStructs();
+	const std::vector<Enum*>&   GetAllEnums();
+
+
 	// Manual type register
 
 	Enum*   RegisterEnum(const char* Name, const char* Guid);
@@ -207,6 +211,7 @@ namespace Reflection
 	template <typename T> static const char*   FindStructGuid() { return nullptr; }
 	template <typename T> static const char*   FindStructParentGuid() { return nullptr; }
 	template <typename T> static const int     FindStructVersion() { return -1; }
+
 
 	// finds type for both primitive and virtual structs
 	template <typename T>

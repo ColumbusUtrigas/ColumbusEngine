@@ -470,60 +470,10 @@ namespace Columbus::DebugUI
 
 	static void DrawObjectLeaf(EngineWorld& World, GameObject& Object)
 	{
-		char Label[256]{ 0 };
-		snprintf(Label, 256, "%i", Object.Id);
-
-		int flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-		//if (Object.Children.size() == 1) flags |= ImGuiTreeNodeFlags_Leaf;
-
-		Transform& Trans = Object.Trans;
-
-		ImGui::PushID(Object.Id);
-		Vector3 Euler = Trans.Rotation.Euler();
-
-		if (ImGui::TreeNodeEx(Object.Name.c_str(), flags))
-		{
-			ImGui::Text("Id: %i", Object.Id);
-			ImGui::Text("Mesh Primitives: %i", World.Meshes[Object.MeshId]->Primitives.size());
-			ImGui::SliderFloat3("Position", (float*)&Trans.Position, -10, +10);
-			ImGui::SliderFloat3("Rotation", (float*)&Euler, 0, 360);
-			ImGui::SliderFloat4("Quat", (float*)&Trans.Rotation, 0, 360);
-			ImGui::SliderFloat3("Scale", (float*)&Trans.Scale, 0, +10);
-
-			GameObjectId Parent = Object.ParentId;
-			if (ImGui::InputInt("Parent", &Parent))
-			{
-				World.ReparentGameObject(Object.Id, Parent);
-			}
-
-			Trans.Rotation = Quaternion(Euler);
-
-			for (int Child : Object.Children)
-			{
-				DrawObjectLeaf(World, World.GameObjects[Child]);
-			}
-			ImGui::TreePop();
-		}
-
-		ImGui::PopID();
 	}
 
 	void ShowMeshesWindow(EngineWorld& World)
 	{
-		if (ImGui::Begin("Mesh"))
-		{
-			for (int i = 0; i < World.GameObjects.size(); i++)
-			{
-				GameObject& Object = World.GameObjects[i];
-
-				// begin with root nodes
-				if (Object.ParentId == -1)
-				{
-					DrawObjectLeaf(World, Object);
-				}
-			}
-		}
-		ImGui::End();
 	}
 
 	void ShowDecalsWindow(EngineWorld& World)
@@ -564,55 +514,6 @@ namespace Columbus::DebugUI
 
 	void ShowLightsWindow(EngineWorld& World)
 	{
-		if (ImGui::Begin("Light"))
-		{
-			// TODO: more robust sytem, make a function in World to add/delete lights
-			fixed_vector<int, 16> LightsToDelete;
-
-			for (int i = 0; i < (int)World.SceneGPU->Lights.size(); i++)
-			{
-				GPULight& Light = World.SceneGPU->Lights[i];
-
-				ImGui::PushID(i);
-				char Label[256]{ 0 };
-				snprintf(Label, 256, "%i", i);
-				if (ImGui::CollapsingHeader(Label))
-				{
-					const char* LightTypes[] = {
-						LightTypeToString(LightType::Directional),
-						LightTypeToString(LightType::Point),
-						LightTypeToString(LightType::Spot),
-						LightTypeToString(LightType::Rectangle),
-					};
-
-					ImGui::Combo("Type", (int*)&Light.Type, LightTypes, (int)LightType::Count);
-					ImGui::SliderFloat3("Position", (float*)&Light.Position, -500, +500);
-					ImGui::SliderFloat3("Direction", (float*)&Light.Direction, -1, +1);
-					ImGui::ColorPicker3("Colour", (float*)&Light.Color, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-					ImGui::SliderFloat("Range", (float*)&Light.Range, 1, 1000);
-					ImGui::SliderFloat("Source Radius", (float*)&Light.SourceRadius, 0, 5);
-
-					if (ImGui::Button("-"))
-					{
-						LightsToDelete.push_back(i);
-					}
-				}
-				ImGui::PopID();
-			}
-
-			for (int LightId : LightsToDelete)
-			{
-				// TODO: think about cleaning up render resources for light source
-				World.SceneGPU->Lights.erase(World.SceneGPU->Lights.begin() + LightId); // TODO: RemoveLight function
-			}
-
-			if (ImGui::Button("+"))
-			{
-				GPULight NewLight{ {}, {0,1,0,0}, {1,1,1,1}, LightType::Point, 100, 0 };
-				World.SceneGPU->Lights.push_back(NewLight); // TODO: AddLight function
-			}
-		}
-		ImGui::End();
 	}
 
 	void ShowMaterialsWindow(EngineWorld& World)
@@ -671,11 +572,13 @@ namespace Columbus::DebugUI
 						Vector3 Min(999999);
 						Vector3 Max(-999999);
 
-						for (auto& GO : World.GameObjects)
+						assert(false);
+
+						/*for (auto& GO : World.GameObjects)
 						{
 							Min = Vector3::Min(Min, World.Meshes[GO.MeshId]->BoundingBox.Min);
 							Max = Vector3::Max(Max, World.Meshes[GO.MeshId]->BoundingBox.Max);
-						}
+						}*/
 
 						Volume.Position = (Min + Max) / 2;
 						Volume.Extent = (Max - Min);
