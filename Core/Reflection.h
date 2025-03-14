@@ -10,14 +10,16 @@
 #define CREFLECT_DECLARE_ENUM(x, guid) \
 template <> static const Reflection::Enum* Reflection::FindEnum<x>() { return Reflection::FindEnumByName(#x); } \
 template <> static const char* Reflection::FindEnumGuid<x>() { return guid; } \
-template <> static const char* Reflection::FindTypeGuid<x>() { return guid; }
+template <> static const char* Reflection::FindTypeGuid<x>() { return guid; } \
+template <> void Reflection::EnforceTypeLinkage<x>();
 
 #define CREFLECT_DECLARE_STRUCT(x, version, guid) \
 template <> static const Reflection::Struct* Reflection::FindStruct<x>() { return Reflection::FindStructByName(#x); } \
 template <> static const char* Reflection::FindStructName<x>() { return #x; } \
 template <> static const char* Reflection::FindStructGuid<x>() { return guid; } \
 template <> static const char* Reflection::FindTypeGuid<x>() { return guid; } \
-template <> static const int Reflection::FindStructVersion<x>() { return version; }
+template <> static const int Reflection::FindStructVersion<x>() { return version; } \
+template <> void Reflection::EnforceTypeLinkage<x>();
 
 #define CREFLECT_DECLARE_STRUCT_VIRTUAL(x, version, guid) \
 CREFLECT_DECLARE_STRUCT(x, version, guid) \
@@ -50,19 +52,24 @@ const Reflection::Struct* type::GetTypeVirtual() const { return Reflection::Find
 #define CREFLECT_TOKENPASTE2(x, y) CREFLECT_TOKENPASTE(x, y)
 
 
-#define CREFLECT_ENUM_BEGIN(x, meta) struct XXX_CReflection_Enum_Initialiser_##x { \
+#define CREFLECT_ENUM_BEGIN(x, meta) \
+template <> void ::Reflection::EnforceTypeLinkage<x>() {} \
+struct XXX_CReflection_Enum_Initialiser_##x { \
 	XXX_CReflection_Enum_Initialiser_##x() { Reflection::Enum* Enum = Reflection::RegisterEnum(#x, Reflection::FindEnumGuid<x>());
 #define CREFLECT_ENUM_FIELD(e, idx) \
 	Enum->Fields.push_back(Reflection::EnumField{ #e, (int)e, idx });
 #define CREFLECT_ENUM_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Enum_Initialiser_Instance_##x, __LINE__);
 
-#define CREFLECT_STRUCT_BEGIN(x, meta) struct XXX_CReflection_Struct_Initialiser_##x { \
+#define CREFLECT_STRUCT_BEGIN(x, meta) \
+template <> void ::Reflection::EnforceTypeLinkage<x>() {} \
+struct XXX_CReflection_Struct_Initialiser_##x { \
 XXX_CReflection_Struct_Initialiser_##x() {\
 	using LocalStructType = x; \
 	Reflection::Struct* Struct = Reflection::RegisterStruct<x>(); \
 	Struct->Constructor = []() -> void* { return (void*) (new x()); }; \
 	Struct->ParentGuid = Reflection::FindStructParentGuid<x>();
 #define CREFLECT_STRUCT_FIELD(type, name, meta) \
+	Reflection::EnforceTypeLinkage<type>(); \
 	Struct->LocalFields.push_back(Reflection::Field{ #name, #type, Reflection::FindTypeGuid<type>(), meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) });
 #define CREFLECT_STRUCT_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_Instance_##x, __LINE__);
 
@@ -211,6 +218,9 @@ namespace Reflection
 	template <typename T> static const char*   FindStructGuid() { return nullptr; }
 	template <typename T> static const char*   FindStructParentGuid() { return nullptr; }
 	template <typename T> static const int     FindStructVersion() { return -1; }
+
+	// to make sure that compiler will not remove "unused" static initialisers
+	template <typename T> void EnforceTypeLinkage();
 
 
 	// finds type for both primitive and virtual structs

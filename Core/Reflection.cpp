@@ -4,6 +4,11 @@
 #include <string_view>
 #include <unordered_map>
 
+template <> void Reflection::EnforceTypeLinkage<bool>() {}
+template <> void Reflection::EnforceTypeLinkage<int>() {}
+template <> void Reflection::EnforceTypeLinkage<float>() {}
+template <> void Reflection::EnforceTypeLinkage<std::string>() {}
+
 namespace Reflection
 {
 
@@ -227,6 +232,9 @@ namespace Reflection
 				ReflectionData::Instance().GuidToStructs[Guid]->CustomUI = Func;
 			}
 		}
+
+		auto inst = ReflectionData::Instance();
+		int asd = 123;
 	}
 
 
