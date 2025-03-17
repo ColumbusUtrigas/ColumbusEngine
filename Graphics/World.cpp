@@ -879,6 +879,27 @@ namespace Columbus
 		}
 	}
 
+	void AMeshInstance::OnUpdateRenderState()
+	{
+		Trans.Update();
+
+		for (HStableMeshId Mesh : MeshPrimitives)
+		{
+			GPUSceneMesh* Proxy = World->SceneGPU->Meshes.Get(Mesh);
+			if (Proxy)
+			{
+				Proxy->Transform = Trans.GetMatrix();
+			}
+		}
+
+		for (Rigidbody* RB : Rigidbodies)
+		{
+			RB->SetTransform(Trans);
+		}
+
+		Super::OnUpdateRenderState();
+	}
+
 	void AMeshInstance::OnDestroy()
 	{
 		for (HStableMeshId Mesh : MeshPrimitives)

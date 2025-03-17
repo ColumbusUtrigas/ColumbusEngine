@@ -120,6 +120,7 @@ namespace Columbus
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
+		virtual void OnUpdateRenderState() override;
 	};
 
 	struct HWorldIntersectionResult

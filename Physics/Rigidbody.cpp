@@ -150,10 +150,10 @@ namespace Columbus
 		{
 			btTransform bTrans;
 			Vector3 pos = InTransform.Position;
-			//Vector3 scale = InTransform.Scale;
 
 			Quaternion Q = InTransform.Rotation;
 			btQuaternion bQuat(-Q.X, -Q.Y, -Q.Z, Q.W);
+			btVector3 scale = btVector3(InTransform.Scale.X, InTransform.Scale.Y, InTransform.Scale.Z);
 
 			bTrans.setOrigin(btVector3(pos.X, pos.Y, pos.Z));
 			bTrans.setRotation(bQuat);
@@ -161,6 +161,8 @@ namespace Columbus
 			//if (mRigidbody->isKinematicObject())
 			mRigidbody->setWorldTransform(bTrans);
 			mRigidbody->proceedToTransform(bTrans);
+
+			mRigidbody->getCollisionShape()->setLocalScaling(scale);
 
 			Trans = InTransform;
 		}
