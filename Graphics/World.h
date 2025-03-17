@@ -25,6 +25,9 @@ DECLARE_CPU_PROFILING_COUNTER(CpuCounter_ScenePhysicsUpdate);
 namespace Columbus
 {
 
+	struct AThing;
+	using HStableThingId = TStableSparseArray<AThing*>::Handle;
+
 	// TODO: delete
 	using GameObjectId = int;
 
@@ -63,6 +66,7 @@ namespace Columbus
 		std::string Name;
 
 		bool bRenderStateDirty = false;
+		HStableThingId StableId;
 
 	public:
 		// Common functional definition
@@ -104,15 +108,19 @@ namespace Columbus
 	{
 		CREFLECT_BODY_STRUCT_VIRTUAL(AMesh);
 		using Super = AThing;
+
+	protected:
+		std::vector<HStableMeshId> MeshPrimitives;
+
 	public:
+		std::vector<Rigidbody*> Rigidbodies;
+
 		int MeshID = -1; // TODO: proper asset id
 		std::vector<int> Materials; // TODO: proper material ids
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
 	};
-
-	using HStableThingId = TStableSparseArray<AThing*>::Handle;
 
 	struct HWorldIntersectionResult
 	{

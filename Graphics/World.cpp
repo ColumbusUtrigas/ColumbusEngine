@@ -149,29 +149,10 @@ namespace Columbus
 		// TODO:
 	}
 
+	// TODO: delete
 	GameObjectId EngineWorld::CreateGameObject(const char* Name, int Mesh)
 	{
-		GameObject GO;
-		GO.Id = (int)GameObjects.size();
-		GO.Name = Name;
-		GO.MeshId = Mesh;
-
-		// add GPUScene instance here
-		for (MeshPrimitive& Prim : Meshes[Mesh]->Primitives)
-		{
-			GO.GPUScenePrimitives.push_back((int)SceneGPU->Meshes.size());
-
-			GPUSceneMesh GPUMesh;
-			GPUMesh.MeshResource = &Prim.GPU;
-			GPUMesh.Transform = GO.Trans.GetMatrix();
-			//GPUMesh.MaterialId
-
-			SceneGPU->Meshes.push_back(GPUMesh);
-		}
-
-		GameObjects.push_back(GO);
-
-		return GO.Id;
+		return -1;
 	}
 
 	// TODO: delete
@@ -231,7 +212,9 @@ namespace Columbus
 
 	HStableThingId EngineWorld::AddThing(AThing* Thing)
 	{
-		return AllThings.Add(Thing);
+		HStableThingId Id = AllThings.Add(Thing);
+		Thing->StableId = Id;
+		return Id;
 	}
 
 	void EngineWorld::DeleteThing(HStableThingId ThingId)
@@ -288,13 +271,13 @@ namespace Columbus
 					break;
 			}
 
-			if (Object.MeshId != -1)
+			/*if (Object.MeshId != -1)
 			{
 				for (int Prim : Object.GPUScenePrimitives)
 				{
 					SceneGPU->Meshes[Prim].Transform = GlobalTransform;
 				}
-			}
+			}*/
 		}
 	}
 
@@ -865,7 +848,7 @@ namespace Columbus
 				GPUMesh.MaterialId = Materials[i];
 			}
 
-			World->SceneGPU->Meshes.push_back(GPUMesh);
+			MeshPrimitives.push_back(World->SceneGPU->Meshes.Add(GPUMesh));
 		}
 
 		// TODO: collision proxy setup
@@ -890,14 +873,29 @@ namespace Columbus
 				MeshRB->mRigidbody->setUserPointer(this);
 
 				World->Physics.AddRigidbody(MeshRB);
+
+				Rigidbodies.push_back(MeshRB);
 			}
 		}
 	}
 
 	void AMeshInstance::OnDestroy()
 	{
-		// TODO: remove physics proxies!
-		// TODO: remove render proxies!
+		for (HStableMeshId Mesh : MeshPrimitives)
+		{
+			World->SceneGPU->Meshes.Remove(Mesh);
+		}
+		MeshPrimitives.clear();
+
+		for (Rigidbody* RB : Rigidbodies)
+		{
+			World->Physics.RemoveRigidbody(RB);
+			delete RB;
+		}
+		Rigidbodies.clear();
+
+		// TODO: decrement mesh reference count
+
 		Super::OnDestroy();
 	}
 }

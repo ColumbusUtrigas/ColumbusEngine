@@ -135,9 +135,9 @@ namespace Columbus
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.BindGPUScene(Pipeline, false);
 
-			for (int i = 0; i < Context.Scene->Meshes.size(); i++)
+			for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
 			{
-				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
+				const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
 				PerObjectParameters Parameters;
 				Parameters.ObjectId = i;
 

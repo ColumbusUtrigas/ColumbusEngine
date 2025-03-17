@@ -187,6 +187,7 @@ namespace Columbus
 	};
 
 	using HStableLightId = TStableSparseArray<GPULight>::Handle;
+	using HStableMeshId  = TStableSparseArray<GPUSceneMesh>::Handle;
 
 	struct GPUScene
 	{
@@ -197,9 +198,7 @@ namespace Columbus
 
 		AccelerationStructure* TLAS = nullptr;
 
-		// TODO: GPUScene must hold only GPU resources AND allow an upload routine
-		// TODO: Mesh instances (derived from the scene), GPUSceneMesh is a holder for a shared resource
-		std::vector<GPUSceneMesh> Meshes;
+		TStableSparseArray<GPUSceneMesh> Meshes;
 		std::vector<Material> Materials;
 		std::vector<Texture2*> Textures;
 		TStableSparseArray<GPULight> Lights;

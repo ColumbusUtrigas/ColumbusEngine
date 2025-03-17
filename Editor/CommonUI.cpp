@@ -2,6 +2,7 @@
 #include <Editor/Icons.h>
 #include <Core/Reflection.h>
 #include <Core/Filesystem.h>
+#include <Math/Quaternion.h>
 #include <imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 
@@ -46,9 +47,22 @@ namespace Columbus::Editor
 		return ImGui::InputFloat4(Field.Name, (float*)Object);
 	}
 
+	bool ImGui_EditQuaternion(char* Object, const Reflection::Field& Field, int Depth)
+	{
+		Quaternion* Quat = (Quaternion*)Object;
+		Vector3 Euler = Quat->Euler();
+		bool Changed = ImGui::InputFloat3(Field.Name, (float*)&Euler);
+		if (Changed)
+		{
+			*Quat = Quaternion(Euler);
+		}
+		return Changed;
+	}
+
 	CREFLECT_STRUCT_CUSTOM_UI(Vector2, ImGui_EditVector2);
 	CREFLECT_STRUCT_CUSTOM_UI(Vector3, ImGui_EditVector3);
 	CREFLECT_STRUCT_CUSTOM_UI(Vector4, ImGui_EditVector4);
+	CREFLECT_STRUCT_CUSTOM_UI(Quaternion, ImGui_EditQuaternion);
 
 	// Custom UI specialisations for reflected types
 	///////////////////////////////////////////////////////////////////////////////////////////////

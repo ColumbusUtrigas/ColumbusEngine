@@ -210,7 +210,7 @@ namespace Reflection
 				while (s)
 				{
 					TypeHierarchy.push_back(s);
-					s = s->Parent;
+					s = s->ParentGuid ? (Struct*)FindStructByGuid(s->ParentGuid) : nullptr;
 				}
 
 				for (int i = (int)TypeHierarchy.size() - 1; i >= 0; i--)

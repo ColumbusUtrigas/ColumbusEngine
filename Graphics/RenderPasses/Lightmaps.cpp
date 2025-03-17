@@ -90,7 +90,7 @@ namespace Columbus
 					.ObjectId = i,
 				};
 
-				GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
+				const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
 				Context.CommandBuffer->Draw(Mesh.MeshResource->IndicesCount, 1, 0, 0);
 			}

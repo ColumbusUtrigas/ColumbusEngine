@@ -41,14 +41,14 @@ namespace Columbus
 			}
 
 			// meshes
-			if (Context.Scene->Meshes.size() > 0)
+			if (Context.Scene->Meshes.Size() > 0)
 			{
 				Buffer*& UploadBuffer = Context.Scene->MeshesUploadBuffers[CurrentFrame];
 
 				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-				for (int i = 0; i < Context.Scene->Meshes.size(); i++)
+				for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
 				{
-					GPUSceneMesh& Mesh = Context.Scene->Meshes[i];
+					const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
 					GPUSceneMeshCompact Compact {
 						.Transform = Mesh.Transform,
 						.VertexBufferAddress = Mesh.MeshResource->Vertices->GetDeviceAddress(),
@@ -67,7 +67,7 @@ namespace Columbus
 				}
 				Context.Device->UnmapBuffer(UploadBuffer);
 
-				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MeshesBuffer, 0, 0, sizeof(GPUSceneMeshCompact) * Context.Scene->Meshes.size());
+				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MeshesBuffer, 0, 0, sizeof(GPUSceneMeshCompact) * Context.Scene->Meshes.Size());
 			}
 
 			// materials
@@ -129,15 +129,15 @@ namespace Columbus
 				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();
 				Desc.Instances.clear();
 
-				for (int i = 0; i < (int)Context.Scene->Meshes.size(); i++)
+				for (int i = 0; i < (int)Context.Scene->Meshes.Size(); i++)
 				{
 					AccelerationStructureInstance& Instance = Desc.Instances.emplace_back();
-					Instance.Blas = Context.Scene->Meshes[i].MeshResource->BLAS;
-					Instance.Transform = Context.Scene->Meshes[i].Transform;
+					Instance.Blas = Context.Scene->Meshes.Data()[i].MeshResource->BLAS;
+					Instance.Transform = Context.Scene->Meshes.Data()[i].Transform;
 				}
 
-				Context.Device->UpdateAccelerationStructureBuffer(Context.Scene->TLAS, Context.CommandBuffer, (u32)Context.Scene->Meshes.size());
-				Context.CommandBuffer->BuildAccelerationStructure(Context.Scene->TLAS, (u32)Context.Scene->Meshes.size());
+				Context.Device->UpdateAccelerationStructureBuffer(Context.Scene->TLAS, Context.CommandBuffer, (u32)Context.Scene->Meshes.Size());
+				Context.CommandBuffer->BuildAccelerationStructure(Context.Scene->TLAS, (u32)Context.Scene->Meshes.Size());
 
 				// TLAS sync
 				{

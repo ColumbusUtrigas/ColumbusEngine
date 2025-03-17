@@ -102,7 +102,7 @@ namespace Columbus
 			.SkySHG       = SHG,
 			.SkySHB       = SHB,
 
-			.MeshesCount    = (u32)Meshes.size(),
+			.MeshesCount    = (u32)Meshes.Size(),
 			.MaterialsCount = (u32)Materials.size(),
 			.TexturesCount  = (u32)Textures.size(),
 			.LightsCount    = (u32)Lights.Size(),
