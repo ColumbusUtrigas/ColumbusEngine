@@ -596,6 +596,9 @@ namespace Columbus
 		VkRenderPass GetOrCreateVulkanRenderPass(RenderGraphPassParametersRHI& AttachmentParams);
 		VkFramebuffer GetOrCreateVulkanFramebuffer(RenderGraphPassParametersRHI& AttachmentParams, VkRenderPass RenderPassVulkan);
 
+		void InvalidateVulkanRenderPasses(Texture2* TextureBeingDeleted);
+		void InvalidateVulkanFramebuffers(Texture2* TextureBeingDeleted);
+
 	public:
 		// must be initialised first (and destroyed last)
 		RenderGraphAllocator Allocator{ RenderGraphMemoryPoolSize };

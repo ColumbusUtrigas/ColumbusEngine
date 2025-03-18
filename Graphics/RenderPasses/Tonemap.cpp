@@ -6,7 +6,7 @@
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 
-ConsoleVariable<int> CVar_FilmCurve("r.Tonemap.FilmCurve", "0 - ACES, 1 - AgX, 2 - Flim", 0);
+ConsoleVariable<int> CVar_FilmCurve("r.Tonemap.FilmCurve", "0 - ACES, 1 - AgX, 2 - Flim", 1);
 ConsoleVariable<int> CVar_OutputTransform("r.Tonemap.OutputTransform", "0 - None, 1 - Rec.709, 2 - Rec.2020", 1);
 
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTonemap);

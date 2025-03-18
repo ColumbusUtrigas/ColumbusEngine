@@ -570,8 +570,6 @@ namespace Columbus
 		TextureInvalidations.clear();
 		RenderData.ClearDescriptorData();
 
-		// TODO: renderpass and framebuffer cleanup, framebuffer must be invalidated if any of texture that it depends on is invalidated
-
 		// update resources usage flags, destroy previously unused resources
 		for (auto& DescPool : TextureResourcePool)
 		{
@@ -589,9 +587,14 @@ namespace Columbus
 					Log::Message("RenderGraph texture deleted: %ix%ix%i", Texture->GetDesc().Width, Texture->GetDesc().Height, Texture->GetDesc().Depth);
 					RemoveProfilingMemory(MemoryCounter_RenderGraphTextures, Texture->GetSize());
 
+					// invalidate related framebuffers and render passes
+					InvalidateVulkanFramebuffers(Texture);
+					InvalidateVulkanRenderPasses(Texture);
+
 					Device->DestroyTexture(Texture);
 
 					Pool.erase(Pool.begin() + i);
+					i--;
 				}
 				else
 				{
@@ -1236,7 +1239,6 @@ namespace Columbus
 		Info.Buffers = Buffers;
 	}
 
-	// TODO: destroy unused renderpasses
 	VkRenderPass RenderGraph::GetOrCreateVulkanRenderPass(RenderGraphPassParametersRHI& AttachmentParams)
 	{
 		for (const auto& ParamsPassPair : VulkanRenderPasses)
@@ -1256,8 +1258,6 @@ namespace Columbus
 		return NewPair.second;
 	}
 
-	// TODO: invalidate framebuffers when texture is destroyed
-	// TODO: destroy unused framebuffers
 	VkFramebuffer RenderGraph::GetOrCreateVulkanFramebuffer(RenderGraphPassParametersRHI& AttachmentParams, VkRenderPass RenderPassVulkan)
 	{
 		for (const auto& ParamsFramebufferPair : VulkanFramebuffers)
@@ -1275,6 +1275,59 @@ namespace Columbus
 
 		VulkanFramebuffers.push_back(NewPair);
 		return NewPair.second;
+	}
+
+	void RenderGraph::InvalidateVulkanFramebuffers(Texture2* TextureBeingDeleted)
+	{
+		for (int i = 0; i < (int)VulkanFramebuffers.size(); i++)
+		{
+			const auto& ParamsFramebufferPair = VulkanFramebuffers[i];
+
+			bool Found = false;
+
+			for (int j = 0; j < (int)ParamsFramebufferPair.first.NumUsedAttachments; j++)
+			{
+				if (ParamsFramebufferPair.first.AttachmentTextures[j] == TextureBeingDeleted)
+				{
+					Found = true;
+				}
+			}
+
+			if (Found)
+			{
+				Log::Message("Invalidation: DestroyFramebuffer");
+
+				Device->DestroyFramebufferDeferred(ParamsFramebufferPair.second);
+				VulkanFramebuffers.erase(VulkanFramebuffers.begin() + i);
+			}
+		}
+	}
+
+	void RenderGraph::InvalidateVulkanRenderPasses(Texture2* TextureBeingDeleted)
+	{
+		for (int i = 0; i < (int)VulkanRenderPasses.size(); i++)
+		{
+			const auto& ParamsRenderPassPair = VulkanRenderPasses[i];
+
+			bool Found = false;
+
+
+			for (int j = 0; j < (int)ParamsRenderPassPair.first.NumUsedAttachments; j++)
+			{
+				if (ParamsRenderPassPair.first.AttachmentTextures[j] == TextureBeingDeleted)
+				{
+					Found = true;
+				}
+			}
+
+			if (Found)
+			{
+				Log::Message("Invalidation: DestroyRenderPass");
+
+				Device->DestroyRenderPassDeferred(ParamsRenderPassPair.second);
+				VulkanRenderPasses.erase(VulkanRenderPasses.begin() + i);
+			}
+		}
 	}
 
 }

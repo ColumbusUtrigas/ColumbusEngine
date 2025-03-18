@@ -139,7 +139,10 @@ namespace Columbus
 		GPUProfilerVulkan _Profiler;
 
 		std::unordered_map<SamplerDesc, Sampler*, HashSamplerDesc> StaticSamplers;
-		std::vector<ResourceDeferredDestroyVulkan<Texture2*>> TextureDeferredDestroys;
+
+		std::vector<ResourceDeferredDestroyVulkan<Texture2*>>     TextureDeferredDestroys;
+		std::vector<ResourceDeferredDestroyVulkan<VkRenderPass>>  RenderPassDeferredDestroys;
+		std::vector<ResourceDeferredDestroyVulkan<VkFramebuffer>> FramebufferDeferredDestroys;
 	private:
 		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
@@ -159,6 +162,9 @@ namespace Columbus
 		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain);
 		VkRenderPass CreateRenderPass(std::span<AttachmentDesc> Attachments);
 		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, std::span<Texture2*> Textures);
+
+		void DestroyRenderPassDeferred(VkRenderPass Renderpass);
+		void DestroyFramebufferDeferred(VkFramebuffer Framebuffer);
 
 		CommandBufferVulkan* CreateCommandBuffer();
 		SPtr<CommandBufferVulkan> CreateCommandBufferShared();

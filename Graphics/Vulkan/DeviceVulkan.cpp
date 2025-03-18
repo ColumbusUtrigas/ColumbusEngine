@@ -320,6 +320,22 @@ namespace Columbus
 		return Result;
 	}
 
+	void DeviceVulkan::DestroyRenderPassDeferred(VkRenderPass Renderpass)
+	{
+		RenderPassDeferredDestroys.push_back(ResourceDeferredDestroyVulkan<VkRenderPass> {
+			.Resource = Renderpass,
+			.FramesLasted = 0,
+		});
+	}
+
+	void DeviceVulkan::DestroyFramebufferDeferred(VkFramebuffer Framebuffer)
+	{
+		FramebufferDeferredDestroys.push_back(ResourceDeferredDestroyVulkan<VkFramebuffer> {
+			.Resource = Framebuffer,
+			.FramesLasted = 0,
+		});
+	}
+
 	CommandBufferVulkan* DeviceVulkan::CreateCommandBuffer()
 	{
 		VkCommandBufferAllocateInfo commandBufferInfo;
@@ -976,23 +992,37 @@ namespace Columbus
 		VK_CHECK(vkGetQueryPoolResults(_Device, vkPool->_Pool, FirstQuery, QueryCount, DataSize, Data, sizeof(u64), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
 	}
 
+	template <typename T>
+	static void RunDeferredDestroyLogic(std::vector<ResourceDeferredDestroyVulkan<T>>& DeferredDestroys, DeviceVulkan* Device, std::function<void(DeviceVulkan*, T)> DestroyFunc)
+	{
+		for (int i = 0; i < (int)DeferredDestroys.size(); i++)
+		{
+			auto& Destroy = DeferredDestroys[i];
+			Destroy.FramesLasted++;
+			if (Destroy.FramesLasted > MaxFramesInFlight)
+			{
+				DestroyFunc(Device, Destroy.Resource);
+				DeferredDestroys.erase(DeferredDestroys.begin() + i);
+				i--;
+			}
+		}
+	}
+
 	void DeviceVulkan::BeginFrame()
 	{
 		_Profiler.BeginFrame();
 
 		// run deferred destroy logic
-		for (int i = 0; i < (int)TextureDeferredDestroys.size(); i++)
-		{
-			auto& TextureDestroy = TextureDeferredDestroys[i];
 
-			TextureDestroy.FramesLasted++;
-			if (TextureDestroy.FramesLasted > MaxFramesInFlight)
-			{
-				DestroyTexture(TextureDestroy.Resource);
-				TextureDeferredDestroys.erase(TextureDeferredDestroys.begin() + i);
-				i--;
-			}
-		}
+		RunDeferredDestroyLogic<Texture2*>(TextureDeferredDestroys, this, [](DeviceVulkan* Dev, Texture2* Tex) {
+			Dev->DestroyTexture(Tex);
+		});
+		RunDeferredDestroyLogic<VkRenderPass>(RenderPassDeferredDestroys, this, [](DeviceVulkan* Dev, VkRenderPass Pass) {
+			vkDestroyRenderPass(Dev->_Device, Pass, nullptr);
+		});
+		RunDeferredDestroyLogic<VkFramebuffer>(FramebufferDeferredDestroys, this, [](DeviceVulkan* Dev, VkFramebuffer Framebuffer) {
+			vkDestroyFramebuffer(Dev->_Device, Framebuffer, nullptr);
+		});
 	}
 
 	void DeviceVulkan::EndFrame()
