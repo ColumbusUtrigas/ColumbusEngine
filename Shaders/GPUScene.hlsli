@@ -58,16 +58,22 @@ struct GPULight
 	uint   Type;
 	float  Range;
 	float  SourceRadius;
-	uint _pad; // 64
+	uint Flags; // 64
+    float2 SizeOrSpotAngles; // 72
+	
+    int _pad[14]; // 128
 };
+
+#define GPULIGHT_FLAG_TWOSIDED 1
+#define GPULIGHT_FLAG_SHADOW   2
 
 #define GPULIGHT_DIRECTIONAL 0
 #define GPULIGHT_POINT 1
 #define GPULIGHT_SPOT 2
 #define GPULIGHT_RECTANGLE 3
-#define GPULIGHT_SPHERE 4
+#define GPULIGHT_DISC 4
+#define GPULIGHT_LINE 5
 
-// TODO: separate mesh and mesh instance?
 struct GPUSceneMeshCompact
 {
 	float4x4 Transform; // 64

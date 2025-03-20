@@ -87,7 +87,25 @@ namespace Columbus
 	protected:
 		HStableLightId LightHandle;
 	public:
-		Light L;
+		LightType Type = LightType::Point;
+
+		// common
+		Vector3 Colour = Vector3(1, 1, 1);
+		float Energy = 1.0f;
+		float Range = 10.0f;
+		float SourceRadius = 0.0f;
+		bool  Shadows = false;
+
+		// spot
+		float InnerAngle = 40.0f;
+		float OuterAngle = 70.0f;
+
+		// area
+		Vector2 Size = Vector2(1, 1);
+		bool    TwoSided = false;
+
+		// line
+		float Length = 1.0f;
 
 	public:
 		virtual void OnCreate() override;

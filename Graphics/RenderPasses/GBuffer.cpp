@@ -264,6 +264,9 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(LightingTexture).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.Scene->LightsBuffer);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.Scene->SceneBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 10, 0, Context.Scene->LTC_1, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 11, 0, Context.Scene->LTC_2, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 12, 0, Context.Device->GetStaticSampler());
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			// TODO: support lights not having shadows

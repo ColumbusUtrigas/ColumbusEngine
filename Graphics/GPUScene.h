@@ -82,7 +82,10 @@ namespace Columbus
 		LightType Type;
 		float Range;
 		float SourceRadius;
-		u32 Padding[1];
+		ELightFlags Flags; // 64
+		Vector2 SizeOrSpotAngles; // 72
+
+		u32 _pad[14]; // 128
 	};
 
 	// TODO: have a CPU representation as well
@@ -230,6 +233,10 @@ namespace Columbus
 
 		Buffer* DecalsBuffers = nullptr;
 		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
+
+		// Linearly Transformed Cosines (LTC)
+		Texture2* LTC_1 = nullptr;
+		Texture2* LTC_2 = nullptr;
 
 		void Update();
 

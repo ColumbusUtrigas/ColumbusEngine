@@ -12,7 +12,10 @@ struct GPULight
 	uint Type;
 	float Range;
 	float SourceRadius;
-	uint _pad; // 64
+	uint Flags; // 64
+	vec2 SizeOrSpotAngles; // 72
+
+	int _pad[14]; // 128
 };
 
 layout(buffer_reference, std430, buffer_reference_align = 4) buffer VertexBufferPtr {

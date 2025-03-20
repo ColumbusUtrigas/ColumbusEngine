@@ -50,9 +50,12 @@ void RayGen()
 	{
 	case GPULIGHT_DIRECTIONAL: break;
 	case GPULIGHT_POINT:
+	case GPULIGHT_SPOT:
 		LightDirection = normalize(Light.Position.xyz - origin);
 		MaxDistance = distance(Light.Position.xyz, origin);
 		LightRadius = Light.SourceRadius / MaxDistance;
+
+		// TODO: spotlight early reject
 
 		if (MaxDistance > Light.Range)
 		{
@@ -61,7 +64,11 @@ void RayGen()
 		}
 
 		break;
-	default: break; // TODO: other light types
+	case GPULIGHT_RECTANGLE: // TODO: better sampling
+		LightDirection = normalize(Light.Position.xyz - origin);
+		MaxDistance = distance(Light.Position.xyz, origin);
+		break;
+	default: break;
 	}
 
     uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed

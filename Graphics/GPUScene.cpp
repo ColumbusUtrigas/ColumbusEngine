@@ -1,5 +1,7 @@
 #include "GPUScene.h"
 
+#include "LTC.h"
+
 #include <stdio.h>
 
 namespace Columbus
@@ -122,6 +124,23 @@ namespace Columbus
 		CreateGPUSceneBuffers(Device, GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), "GPUScene.Materials", Scene->MaterialsBuffer, Scene->MaterialsUploadBuffers);
 		CreateGPUSceneBuffers(Device, GPUScene::MaxDecals * sizeof(GPUDecal), "GPUScene.Decals", Scene->DecalsBuffers, Scene->DecalsUploadBuffers);
 
+		// populate LTC look up tables
+		{
+			TextureDesc2 LTCDesc;
+			LTCDesc.Width = 64;
+			LTCDesc.Height = 64;
+			LTCDesc.Format = TextureFormat::RGBA32F;
+			LTCDesc.MinFilter = TextureFilter2::Nearest;
+			LTCDesc.MagFilter = TextureFilter2::Linear;
+			LTCDesc.AddressU = TextureAddressMode::ClampToEdge;
+			LTCDesc.AddressV = TextureAddressMode::ClampToEdge;
+
+			Scene->LTC_1 = Device->CreateTexture(LTCDesc);
+			Scene->LTC_2 = Device->CreateTexture(LTCDesc);
+
+			Device->UploadTextureMipData(Scene->LTC_1, 0, 0, LTC::LTC_1);
+			Device->UploadTextureMipData(Scene->LTC_2, 0, 0, LTC::LTC_2);
+		}
 		
 		// allocate empty TLAS
 		{

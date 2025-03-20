@@ -8,25 +8,6 @@ struct LightTile
 	uint LightIds[LightsPerTile];
 };
 
-// TODO: move to a common file, it's being used in several places
-struct GPULight
-{
-	float4 Position;
-	float4 Direction;
-	float4 Color;
-	uint Type;
-	float Range;
-	float SourceRadius;
-	uint _pad; // 64
-};
-#define SizeofGPULight 52
-
-#define GPULIGHT_DIRECTIONAL 0
-#define GPULIGHT_POINT 1
-#define GPULIGHT_SPOT 2
-#define GPULIGHT_RECTANGLE 3
-#define GPULIGHT_SPHERE 4
-
 // TODO: project light sources on screen, then use atomic add on count and write light id
 
 [[vk::binding(0, 0)]] ByteAddressBuffer LightsBuffer;
@@ -52,12 +33,4 @@ void main(uint3 dtid : SV_DispatchThreadID, uint3 gid : SV_GroupID)
 
 	// if (LightId >= tmpLightsCount)
 	// 	return;
-
-	// GPULight Light = LightsBuffer.Load<GPULight>(4 + LightId * SizeofGPULight);
-
-	// switch (Light.Type)
-	// {
-	// 	case GPULIGHT_DIRECTIONAL:
-
-	// }
 }

@@ -689,20 +689,20 @@ namespace Columbus
 					LightThing->Name = Node.name;
 
 					if (gltfLight.type == "point")
-						LightThing->L.Type = LightType::Point;
+						LightThing->Type = LightType::Point;
 					if (gltfLight.type == "directional")
-						LightThing->L.Type = LightType::Directional;
+						LightThing->Type = LightType::Directional;
 
 					float intensity = 10.0f;
-					LightThing->L.Color.X = gltfLight.color[0] * intensity;
-					LightThing->L.Color.Y = gltfLight.color[1] * intensity;
-					LightThing->L.Color.Z = gltfLight.color[2] * intensity;
-					LightThing->L.Range = gltfLight.range;
+					LightThing->Colour.X = gltfLight.color[0] * intensity;
+					LightThing->Colour.Y = gltfLight.color[1] * intensity;
+					LightThing->Colour.Z = gltfLight.color[2] * intensity;
+					LightThing->Range = gltfLight.range;
 
-					if (LightThing->L.Range < 0.01f)
-						LightThing->L.Range = 10.0f;
+					if (LightThing->Range < 0.01f)
+						LightThing->Range = 10.0f;
 
-					World->AllThings.Add(LightThing);
+					World->AddThing(LightThing);
 					LightThing->OnCreate();
 
 					continue;
@@ -724,7 +724,7 @@ namespace Columbus
 						MeshThing->Materials.push_back(MaterialId);
 					}
 
-					World->AllThings.Add(MeshThing);
+					World->AddThing(MeshThing);
 					MeshThing->OnCreate();
 
 					continue;
@@ -802,14 +802,39 @@ namespace Columbus
 
 	void ALight::OnUpdateRenderState()
 	{
+		Trans.Update();
 		const auto RotMat = Trans.Rotation.ToMatrix();
 
 		GPULight GL{};
-		GL.Color = Vector4(L.Color, 1);
+		GL.Color = Vector4(Colour * Energy, 1);
 		GL.Position = Vector4(Trans.Position, 1);
 		GL.Direction = (Vector4(1, 0, 0, 1) * RotMat).Normalized();
-		GL.Range = L.Range;
-		GL.Type = L.Type;
+		GL.Range = Range;
+		GL.SourceRadius = SourceRadius;
+		GL.Type = Type;
+
+		if (Shadows)
+			GL.Flags = GL.Flags | ELightFlags::Shadow;
+		
+		switch (Type)
+		{
+		case LightType::Spot:
+		{
+			float inner = cosf(Math::Radians(InnerAngle));
+			float outer = cosf(Math::Radians(OuterAngle));
+
+			GL.SizeOrSpotAngles = Vector2(inner, outer);
+		}
+			break;
+		case LightType::Rectangle:
+			GL.SizeOrSpotAngles = Size * 0.5f;
+			if (TwoSided)
+				GL.Flags = GL.Flags | ELightFlags::TwoSided;
+			break;
+		case LightType::Line:
+			GL.SizeOrSpotAngles = Vector2(Length, 0);
+			break;
+		}
 
 		if (GPULight* LightProxy = World->SceneGPU->Lights.Get(LightHandle))
 		{
@@ -845,6 +870,7 @@ namespace Columbus
 
 			if (Materials.size() > i)
 			{
+				World->SceneGPU->Materials[i].Roughness = 0.2f;
 				GPUMesh.MaterialId = Materials[i];
 			}
 
@@ -929,23 +955,9 @@ CREFLECT_ENUM_BEGIN(LightType, "")
 	CREFLECT_ENUM_FIELD(LightType::Point, 1)
 	CREFLECT_ENUM_FIELD(LightType::Spot, 2)
 	CREFLECT_ENUM_FIELD(LightType::Rectangle, 3)
+	CREFLECT_ENUM_FIELD(LightType::Disc, 4)
+	CREFLECT_ENUM_FIELD(LightType::Line, 5)
 CREFLECT_ENUM_END()
-
-CREFLECT_STRUCT_BEGIN(Light, "")
-	CREFLECT_STRUCT_FIELD(Vector3, Color, "Colour, HDR")
-	CREFLECT_STRUCT_FIELD(Vector3, Pos, "")
-	CREFLECT_STRUCT_FIELD(Vector3, Dir, "")
-	CREFLECT_STRUCT_FIELD(Vector2, Size, "")
-
-	CREFLECT_STRUCT_FIELD(float, Energy, "")
-	CREFLECT_STRUCT_FIELD(float, Range, "")
-	CREFLECT_STRUCT_FIELD(float, InnerCutoff, "")
-	CREFLECT_STRUCT_FIELD(float, OuterCutoff, "")
-
-	CREFLECT_STRUCT_FIELD(LightType, Type, "")
-	CREFLECT_STRUCT_FIELD(bool, Shadows, "")
-CREFLECT_STRUCT_END()
-
 
 CREFLECT_DEFINE_VIRTUAL(AThing);
 CREFLECT_STRUCT_BEGIN(AThing, "")
@@ -955,7 +967,21 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALight);
 CREFLECT_STRUCT_BEGIN(ALight, "")
-	CREFLECT_STRUCT_FIELD(Light, L, "")
+	CREFLECT_STRUCT_FIELD(LightType, Type, "")
+
+	CREFLECT_STRUCT_FIELD(Vector3,   Colour, "Colour")
+	CREFLECT_STRUCT_FIELD(float, Energy, "")
+	CREFLECT_STRUCT_FIELD(float, Range, "")
+	CREFLECT_STRUCT_FIELD(float, SourceRadius, "")
+	CREFLECT_STRUCT_FIELD(bool, Shadows, "")
+
+	CREFLECT_STRUCT_FIELD(float, InnerAngle, "")
+	CREFLECT_STRUCT_FIELD(float, OuterAngle, "")
+
+	CREFLECT_STRUCT_FIELD(Vector2, Size, "")
+	CREFLECT_STRUCT_FIELD(bool, TwoSided, "")
+
+	CREFLECT_STRUCT_FIELD(float, Length, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ADecal);

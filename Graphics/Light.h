@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Math/Vector2.h>
-#include <Math/Vector3.h>
+#include <Core/Reflection.h>
+#include <Core/Types.h>
 
 namespace Columbus
 {
@@ -12,9 +12,18 @@ namespace Columbus
 		Point		= 1,
 		Spot		= 2,
 		Rectangle	= 3,
+		Disc        = 4,
+		Line        = 5,
 
-		Count       = 4
+		Count       = 6
 	};
+
+	enum class ELightFlags : u32
+	{
+		TwoSided = 1 << 0,
+		Shadow   = 1 << 1,
+	};
+	IMPLEMENT_ENUM_CLASS_BITOPS(ELightFlags);
 
 	static const char* LightTypeToString(LightType type)
 	{
@@ -28,25 +37,6 @@ namespace Columbus
 		}
 	}
 
-	// TODO: make parameters more physical
-	// TODO: support for IES profiles
-	struct Light
-	{
-		Vector3 Color = Vector3(1, 1, 1);
-		Vector3 Pos = Vector3(0, 0, 0);
-		Vector3 Dir = Vector3(1, 0, 0);
-		Vector2 Size = Vector2(1, 1);
-
-		float Energy = 1.0f;
-		float Range = 10.0f;
-		float InnerCutoff = 12.5f;
-		float OuterCutoff = 17.5f;
-
-		LightType Type = LightType::Directional;
-		bool Shadows = false;
-	};
-
 }
 
 CREFLECT_DECLARE_ENUM(Columbus::LightType, "CA1472F6-750C-4647-9FAC-B49252236033");
-CREFLECT_DECLARE_STRUCT(Columbus::Light, 1, "C1A59304-17E2-4A0F-B561-AB1734CFFE0E");

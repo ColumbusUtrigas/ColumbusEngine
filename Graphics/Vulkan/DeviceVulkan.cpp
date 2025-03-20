@@ -781,64 +781,90 @@ namespace Columbus
 		desc.Format = Image.GetFormat();
 		auto result = _CreateTexture(desc);
 
-		auto size = 1;
-		
+		UploadTextureMipData(result, 0, 0, Image.GetData());
+
+		return result;
+	}
+
+	void DeviceVulkan::UploadTextureMipData(Texture2* Tex, int Mip, int Layer, const void* Data)
+	{
+		TextureVulkan* vktex = static_cast<TextureVulkan*>(Tex);
+		TextureDesc2 Desc = Tex->GetDesc();
+
+		// TODO: support async transfer
+
+		// TODO:
+		// not implemented
+		assert(Layer == 0);
+		assert(Mip == 0);
+
+		Image Img; // dummy image for size calculations
+		Img.Width = Desc.Width;
+		Img.Height = Desc.Height;
+		Img.Depth = Desc.Depth;
+		Img.Format = Desc.Format;
+		Img.MipMaps = Desc.Mips;
+
+		int size = 1; // number of layers, TODO: fix this
+
 		StagingBufferVulkan staging;
-		staging = CreateStagingBufferVulkanInternal(_Allocator, Image.GetSize(0) * size, Image.GetData());
+		staging = CreateStagingBufferVulkanInternal(_Allocator, Img.GetSize(0) * size, Data);
 
 		auto copyCmdBuf = CreateCommandBufferShared();
 		copyCmdBuf->Reset();
 		copyCmdBuf->Begin();
 
 		TransitionImageLayout(copyCmdBuf->_CmdBuf,
-			result->_Image,
+			vktex->_Image,
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			0, VK_ACCESS_TRANSFER_WRITE_BIT,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			size, desc.Format
+			size, Desc.Format
 		);
 
 		VkBufferImageCopy regions[6];
 
 		for (int i = 0; i < size; i++)
 		{
-			regions[i].bufferOffset = Image.GetOffset(i, 0);
+			regions[i].bufferOffset = Img.GetOffset(i, 0);
 			regions[i].bufferRowLength = 0;
 			regions[i].bufferImageHeight = 0;
 			regions[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			regions[i].imageSubresource.mipLevel = 0;
 			regions[i].imageSubresource.baseArrayLayer = i;
 			regions[i].imageSubresource.layerCount = 1;
-			regions[i].imageOffset = {0, 0, 0};
-			regions[i].imageExtent = { Image.GetWidth(), Image.GetHeight(), 1 };
+			regions[i].imageOffset = { 0, 0, 0 };
+			regions[i].imageExtent = { Img.GetWidth(), Img.GetHeight(), 1 };
 		}
 
 		vkCmdCopyBufferToImage(copyCmdBuf->_CmdBuf,
 			staging.Buffer,
-			result->_Image,
+			vktex->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			size,
 			regions
 		);
 
 		TransitionImageLayout(copyCmdBuf->_CmdBuf,
-			result->_Image,
+			vktex->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			size, desc.Format
+			size, Desc.Format
 		);
-		result->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		vktex->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		copyCmdBuf->End();
 		Submit(copyCmdBuf.get());
 		QueueWaitIdle();
 
 		DestroyStagingBufferVulkanInternal(_Allocator, staging);
+	}
 
-		return result;
+	void UploadTextureData(Texture2* Tex, int Mip, int NumMips, const void* Data)
+	{
 	}
 
 	void DeviceVulkan::DestroyTexture(Texture2* Tex)
