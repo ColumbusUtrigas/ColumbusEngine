@@ -43,22 +43,28 @@ namespace Columbus
 
 	void CommandBufferVulkan::BeginDebugMarker(const char* Name)
 	{
+#if VULKAN_DEBUG
 		VkDebugUtilsLabelEXT label {};
 		label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
 		label.pLabelName = Name;
 		_Functions.vkCmdBeginDebugUtilsLabel(_CmdBuf, &label);
+#endif
 	}
 
 	void CommandBufferVulkan::EndDebugMarker()
 	{
+#if VULKAN_DEBUG
 		_Functions.vkCmdEndDebugUtilsLabel(_CmdBuf);
+#endif
 	}
 	void CommandBufferVulkan::InsertDebugLabel(const char* Name)
 	{
+#if VULKAN_DEBUG
 		VkDebugUtilsLabelEXT label {};
 		label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
 		label.pLabelName = Name;
 		_Functions.vkCmdInsertDebugUtilsLabel(_CmdBuf, &label);
+#endif
 	}
 
 	void CommandBufferVulkan::BeginRenderPass(VkRenderPass renderPass, VkRect2D renderArea, VkFramebuffer framebuffer, uint32_t clearValuesCount, VkClearValue* clearValues)

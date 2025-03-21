@@ -54,7 +54,7 @@ namespace Columbus::RadianceCache
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &Set);
-			Context.BindGPUScene(Pipeline);
+			Context.BindGPUScene(Pipeline, false);
 
 			RadianceCacheTracingParams Parameters{
 				.CameraPosition = View.CameraCur.Pos,
@@ -119,7 +119,7 @@ namespace Columbus::RadianceCache
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphBuffer(RadianceCache.DataBuffer).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(GBufferWP).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);

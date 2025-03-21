@@ -754,10 +754,10 @@ namespace Columbus
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 2);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.Scene->TLAS);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTGI_Tex).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Normal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.WorldPos).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Normal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.WorldPos).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			//Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 
 			RTGI_Parameters Params{
 				.CameraPosition = View.CameraCur.Pos,
@@ -768,7 +768,7 @@ namespace Columbus
 			};
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-			Context.BindGPUScene(Pipeline);
+			Context.BindGPUScene(Pipeline, false);
 			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &DescriptorSet);
 			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
 			Context.CommandBuffer->TraceRays(Pipeline, GIResolution.X, GIResolution.Y, 1);

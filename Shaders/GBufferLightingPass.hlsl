@@ -375,7 +375,11 @@ void main(uint3 dtid : SV_DispatchThreadID)
 	{
 		GPULight Light = GPUSceneLights[i];
 
-		float  Shadow   = ShadowTextures[i][Pixel].r;
+		float Shadow = 1.0f;
+
+		if ((Light.Flags & GPULIGHT_FLAG_SHADOW) != 0)
+			Shadow = ShadowTextures[i][Pixel].r;
+
 		float3 LightDir = Light.Direction.xyz;
 
 		float Attenuation = 0;
@@ -420,6 +424,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 		break;
 		case GPULIGHT_RECTANGLE:
 			{
+				// TODO: make it more stable
 				float3x3 LTC_Axis = ComputeTangentsFromVector(Light.Direction.xyz);
 
 				float3 points[4];
@@ -432,7 +437,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 				points[2] = Light.Position.xyz + ex + ey;
 				points[3] = Light.Position.xyz - ex + ey;
 
-				bool twoSided = (Light.Flags & 1) != 0;
+				bool twoSided = (Light.Flags & GPULIGHT_FLAG_TWOSIDED) != 0;
 				
 				float3 diffuse = LTC_Evaluate_Rect(BRDF.N, BRDF.V, WP, LTC_identity, points, twoSided) * BRDF.Albedo * MetalFactor;
                 float3 specular = LTC_Evaluate_Rect(BRDF.N, BRDF.V, WP, Minv, points, twoSided);

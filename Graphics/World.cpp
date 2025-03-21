@@ -693,11 +693,12 @@ namespace Columbus
 					if (gltfLight.type == "directional")
 						LightThing->Type = LightType::Directional;
 
-					float intensity = 10.0f;
-					LightThing->Colour.X = gltfLight.color[0] * intensity;
-					LightThing->Colour.Y = gltfLight.color[1] * intensity;
-					LightThing->Colour.Z = gltfLight.color[2] * intensity;
+					LightThing->Colour.X = gltfLight.color[0];
+					LightThing->Colour.Y = gltfLight.color[1];
+					LightThing->Colour.Z = gltfLight.color[2];
 					LightThing->Range = gltfLight.range;
+					LightThing->Energy = 10.0f;
+					LightThing->Shadows = true;
 
 					if (LightThing->Range < 0.01f)
 						LightThing->Range = 10.0f;

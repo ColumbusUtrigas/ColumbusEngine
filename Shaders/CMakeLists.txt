@@ -18,8 +18,8 @@ compile_shader_hlsl(DDGI/ProbeVariabilityReduction.hlsl DDGIReductionCS:cs SHADE
 compile_shader_hlsl(DDGI/ProbeVariabilityExtraReduction.hlsl DDGIExtraReductionCS:cs SHADER_BINARIES)
 compile_shader_hlsl(DDGI/Apply.hlsl main:cs SHADER_BINARIES)
 
-compile_shader_glsl(RadianceCache/RadianceCacheTrace.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
-compile_shader_glsl(RadianceCache/RadianceCacheVisualise.glsl main:vs,main:ps SHADER_BINARIES)
+compile_shader_hlsl(RadianceCache/RadianceCacheTrace.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl(RadianceCache/RadianceCacheVisualise.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsPrepare.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsTileClassification.hlsl main:cs SHADER_BINARIES)
@@ -30,11 +30,10 @@ compile_shader_hlsl(DenoiserReflection/Reproject.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(DenoiserReflection/Prefilter.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(DenoiserReflection/ResolveTemporal.hlsl main:cs SHADER_BINARIES)
 
-compile_shader_glsl(RayTracedReflections/RayTraceReflections.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
-compile_shader_glsl(RayTracedReflections/SimpleDenoise.glsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(RayTracedReflections/RayTraceReflections.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(RayTracedReflections/ReflectionsResolve.hlsl main:cs SHADER_BINARIES)
 
-compile_shader_glsl(RayTracedGlobalIllumination/RayTracedGI.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
+compile_shader_hlsl(RayTracedGlobalIllumination/RayTracedGI.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Downsample.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Upsample.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Spatial.hlsl main:cs SHADER_BINARIES)
@@ -47,10 +46,7 @@ compile_shader_glsl(FSR1/FSR1CS.glsl main:cs SHADER_BINARIES)
 compile_shader_glsl(FSR1/FSR1PS.glsl main:vs,main:ps SHADER_BINARIES)
 
 compile_shader_glsl(LightmapRasterisation.glsl main:vs,main:ps SHADER_BINARIES)
-compile_shader_glsl(LightmapPathTracing.glsl   main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
-
-compile_shader_glsl(IrradianceProbesTrace.glsl main:rgen,main:rmiss,main:rchit SHADER_BINARIES)
-compile_shader_glsl(IrradianceProbesVisualise.glsl   main:vs,main:ps SHADER_BINARIES)
+compile_shader_hlsl(LightmapPathTracing.hlsl   RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeTrace.hlsl RGS:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeApply.hlsl main:cs SHADER_BINARIES)

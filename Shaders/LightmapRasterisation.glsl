@@ -1,7 +1,7 @@
 #version 460 core
 #extension GL_GOOGLE_include_directive : require
-
-#include "GPUScene.glsl"
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_nonuniform_qualifier : require
 
 struct LightmapBakingMeshVertex
 {
@@ -11,6 +11,10 @@ struct LightmapBakingMeshVertex
 
 layout(buffer_reference, std430, buffer_reference_align = 4) buffer LightmapVertexBufferPtr {
 	LightmapBakingMeshVertex Vertices[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4) buffer IndexBufferPtr {
+	uint indices[];
 };
 
 layout(push_constant) uniform Params

@@ -10,8 +10,6 @@
 #include "Common.h"
 #include <vector>
 
-#define VULKAN_DEBUG 1
-
 namespace Columbus
 {
 
