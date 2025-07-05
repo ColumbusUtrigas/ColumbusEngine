@@ -122,6 +122,16 @@ namespace Columbus
 			return *this = *this / Other;
 		}
 
+		Quaternion operator+(const Quaternion& Other) const
+		{
+			return Quaternion(X + Other.X, Y + Other.Y, Z + Other.Z, W + Other.W);
+		}
+
+		Quaternion operator-(const Quaternion& Other) const
+		{
+			return Quaternion(X - Other.X, Y - Other.Y, Z - Other.Z, W - Other.W);
+		}
+
 		float LengthSqr() const
 		{
 			return X*X + Y*Y + Z*Z + W*W;
@@ -130,6 +140,11 @@ namespace Columbus
 		float Length() const
 		{
 			return sqrtf(X*X + Y*Y + Z*Z + W*W);
+		}
+
+		static float Dot(const Quaternion& A, const Quaternion& B)
+		{
+			return A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
 		}
 
 		Quaternion Normalized() const
@@ -201,6 +216,37 @@ namespace Columbus
 			angles.Z = Math::Degrees(angles.Z);
 
 			return angles;
+		}
+
+		static Quaternion Slerp(Quaternion a, Quaternion b, float t)
+		{
+			float dot = Quaternion::Dot(a, b);
+
+			// If the dot product is negative, negate one quaternion to take the shorter path
+			if (dot < 0.0f)
+			{
+				dot = -dot;
+				b = -b;
+			}
+
+			const float DOT_THRESHOLD = 0.9995f;
+			if (dot > DOT_THRESHOLD)
+			{
+				// Quaternions are very close use linear interpolation
+				Quaternion result = a + t * (b - a);
+				return result.Normalized();
+			}
+
+			float theta0 = acosf(dot);       // angle between input quaternions
+			float theta = theta0 * t;        // angle at time t
+
+			float sin_theta = sinf(theta);
+			float sin_theta0 = sinf(theta0);
+
+			float s0 = cosf(theta) - dot * sin_theta / sin_theta0;
+			float s1 = sin_theta / sin_theta0;
+
+			return (a * s0 + b * s1).Normalized();
 		}
 
 		Quaternion Inversed() const

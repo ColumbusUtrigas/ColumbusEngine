@@ -60,17 +60,26 @@ struct XXX_CReflection_Enum_Initialiser_##x { \
 	Enum->Fields.push_back(Reflection::EnumField{ #e, (int)e, idx });
 #define CREFLECT_ENUM_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Enum_Initialiser_Instance_##x, __LINE__);
 
-#define CREFLECT_STRUCT_BEGIN(x, meta) \
+#define CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, constructorLambda, meta) \
 template <> void ::Reflection::EnforceTypeLinkage<x>() {} \
 struct XXX_CReflection_Struct_Initialiser_##x { \
 XXX_CReflection_Struct_Initialiser_##x() {\
 	using LocalStructType = x; \
 	Reflection::Struct* Struct = Reflection::RegisterStruct<x>(); \
-	Struct->Constructor = []() -> void* { return (void*) (new x()); }; \
+	Struct->Constructor = constructorLambda; \
 	Struct->ParentGuid = Reflection::FindStructParentGuid<x>();
+
+#define CREFLECT_STRUCT_BEGIN(x, meta) \
+CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, []() -> void* { return (void*) (new x()); }, meta)
+
 #define CREFLECT_STRUCT_FIELD(type, name, meta) \
 	Reflection::EnforceTypeLinkage<type>(); \
 	Struct->LocalFields.push_back(Reflection::Field{ #name, #type, Reflection::FindTypeGuid<type>(), meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) });
+
+#define CREFLECT_STRUCT_FIELD_ASSETREF(type, name, meta) \
+	Reflection::EnforceTypeLinkage<type>(); \
+	Struct->LocalFields.push_back(Reflection::Field{ #name, "AssetRef", Reflection::FindTypeGuid<type>(), meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) });
+
 #define CREFLECT_STRUCT_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_Instance_##x, __LINE__);
 
 // UI drawing specialisation for the struct
@@ -109,6 +118,8 @@ namespace Reflection
 
 		Enum,
 		Struct,
+
+		AssetRef,
 	};
 
 

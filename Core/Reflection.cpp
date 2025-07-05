@@ -172,6 +172,14 @@ namespace Reflection
 					field.Type = FieldType::String;
 					COLUMBUS_ASSERT(field.Size == sizeof(std::string));
 				}
+				else if (strcmp(field.Typename, "AssetRef") == 0)
+				{
+					IsBasicType = true;
+					field.Type = FieldType::AssetRef;
+
+					// asset ref is path string + pointer
+					COLUMBUS_ASSERT(field.Size == sizeof(std::string) + sizeof(size_t));
+				}
 
 				if (!IsBasicType)
 				{

@@ -108,7 +108,7 @@ namespace Columbus
 			.MaterialsCount = (u32)Materials.size(),
 			.TexturesCount  = (u32)Textures.size(),
 			.LightsCount    = (u32)Lights.Size(),
-			.DecalsCount    = (u32)Decals.size(),
+			.DecalsCount    = (u32)Decals.Size(),
 
 			.Sky = SkyConverted,
 		};

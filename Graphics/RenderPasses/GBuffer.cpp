@@ -184,9 +184,9 @@ namespace Columbus
 
 			PerDecalParameters Parameters;
 
-			for (int i = 0; i < Context.Scene->Decals.size(); i++)
+			for (int i = 0; i < Context.Scene->Decals.Size(); i++)
 			{
-				GPUDecal& Decal = Context.Scene->Decals[i];
+				GPUDecal& Decal = ((GPUDecal*)Context.Scene->Decals.Data())[i]; // TODO: nasty
 				Parameters.Model = Decal.Model;
 				Parameters.ModelInverse = Decal.ModelInverse;
 				Parameters.VP = View.CameraCur.GetViewProjection();
@@ -356,7 +356,7 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
-		static bool ApplyTAA = false;
+		static bool ApplyTAA = true;
 		static bool ApplyFSR = false;
 		static bool ApplyFSR1Sharpening = false;
 		static float FSR1Sharpening = 0.0f;
@@ -413,7 +413,7 @@ namespace Columbus
 
 		if (ApplyTAA)
 		{
-			Antialiasing::ApplyJitter(View);
+			//Antialiasing::ApplyJitter(View);
 		}
 
 		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);

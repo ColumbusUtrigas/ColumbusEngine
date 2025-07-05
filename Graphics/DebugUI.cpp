@@ -13,6 +13,7 @@
 
 // std
 #include <unordered_map>
+#include <filesystem>
 
 namespace Columbus::DebugUI
 {
@@ -363,19 +364,54 @@ namespace Columbus::DebugUI
 					ImGui::Spacing();
 					if (ImGui::MenuItem("New Level"))
 					{
-						// Do stuff
+						GCurrentLevelPath = "";
+						GCurrentProject->World->ClearWorld();
 					}
 
 					ImGui::Spacing();
 					if (ImGui::MenuItem("Open Level..."))
 					{
-						// Do stuff
+						char* path = nullptr;
+						if (NFD_OpenDialog("clvl", NULL, &path) == NFD_OKAY)
+						{
+							HLevel* level = GCurrentProject->World->LoadLevelCLVL(path);
+							GCurrentProject->World->AddLevel(level);
+						}
 					}
 
 					ImGui::Spacing();
 					if (ImGui::MenuItem("Save Level"))
 					{
-						// Do stuff
+						if (!GCurrentProject || !GCurrentProject->World)
+						{
+							Log::Error("Can't save the level, no project is loaded or world doesn't exist");
+						}
+
+						if (GCurrentProject && GCurrentProject->World)
+						{
+							if (GCurrentLevelPath.empty())
+							{
+								std::filesystem::path LevelsDefaultPath = std::filesystem::path(GCurrentProject->BasePath + "/Data/Levels/");
+
+								char* Path = NULL;
+								nfdresult_t result = NFD_SaveDialog("clvl", LevelsDefaultPath.make_preferred().string().c_str(), (char**)&Path);
+								if (result == NFD_OKAY)
+								{
+									std::string PathStr = Path;
+									if (!PathStr.ends_with(".clvl"))
+									{
+										PathStr += ".clvl";
+									}
+
+									GCurrentLevelPath = PathStr;
+									GCurrentProject->World->SaveWorldLevel(PathStr.c_str());
+								}
+							}
+							else
+							{
+								GCurrentProject->World->SaveWorldLevel(GCurrentLevelPath.c_str());
+							}
+						}
 					}
 				}
 
@@ -480,7 +516,7 @@ namespace Columbus::DebugUI
 	{
 		if (ImGui::Begin("Decal"))
 		{
-			for (int i = 0; i < (int)World.SceneGPU->Decals.size(); i++)
+			for (int i = 0; i < (int)World.SceneGPU->Decals.Size(); i++)
 			{
 				ImGui::PushID(i);
 				char Label[256]{ 0 };
@@ -488,7 +524,7 @@ namespace Columbus::DebugUI
 
 				if (ImGui::CollapsingHeader(Label))
 				{
-					GPUDecal& Decal = World.SceneGPU->Decals[i];
+					GPUDecal Decal = World.SceneGPU->Decals.Data()[i];
 
 					Vector3 Position = Decal.Model.GetColumn(3).XYZ();
 					Vector3 Scale = Vector3(Decal.Model.M[0][0], Decal.Model.M[1][1], Decal.Model.M[2][2]);

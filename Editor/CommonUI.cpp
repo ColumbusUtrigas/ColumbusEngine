@@ -5,6 +5,7 @@
 #include <Math/Quaternion.h>
 #include <imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
+#include <Lib/nativefiledialog/src/include/nfd.h>
 
 
 namespace Columbus::Editor
@@ -330,7 +331,32 @@ namespace Columbus::Editor
 			return ImGui::InputFloat(Field.Name, (float*)FieldData);
 			break;
 		case Reflection::FieldType::String:
-			return ImGui::InputText(Field.Name, (std::string*)FieldData);
+		{
+			if (strstr(Field.Meta, "Picker"))
+			{
+				ImGui::LabelText(Field.Name, "%s", ((std::string*)FieldData)->c_str());
+				ImGui::SameLine();
+				if (ImGui::Button("..."))
+				{
+					char* path = nullptr;
+					if (NFD_OpenDialog("gltf,clvl", nullptr, &path) == NFD_OKAY)
+					{
+						((std::string*)FieldData)->assign(path);
+						return true;
+					}
+
+					return false;
+				}
+			}
+			else if (strstr(Field.Meta, "Noedit"))
+			{
+				ImGui::LabelText(Field.Name, "%s", ((std::string*)FieldData)->c_str());
+			}
+			else
+			{
+				return ImGui::InputText(Field.Name, (std::string*)FieldData);
+			}
+		}
 			break;
 
 		case Reflection::FieldType::Enum:
@@ -382,6 +408,34 @@ namespace Columbus::Editor
 			return Result;
 		}
 		break;
+
+		case Reflection::FieldType::AssetRef:
+		{
+			struct AssetRefBase
+			{
+				std::string Path;
+				// templated reference is not present here
+			};
+
+			ImGui::LabelText(Field.Name, "%s", ((AssetRefBase*)FieldData)->Path.c_str());
+			ImGui::SameLine();
+			if (ImGui::Button("..."))
+			{
+				char* path = nullptr;
+
+				Log::Warning("Asset picker: TODO: list of supported extensions per asset type");
+
+				if (NFD_OpenDialog("", nullptr, &path) == NFD_OKAY)
+				{
+					((AssetRefBase*)FieldData)->Path.assign(path);
+					// TODO: request asset loading and update reference
+					return true;
+				}
+
+				return false;
+			}
+			break;
+		}
 
 		default:
 			ImGui::LabelText("Unsupported Type", "%s %s", Field.Typename, Field.Name);

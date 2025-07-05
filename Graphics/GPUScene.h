@@ -88,13 +88,13 @@ namespace Columbus
 		u32 _pad[14]; // 128
 	};
 
-	// TODO: have a CPU representation as well
 	struct GPUDecal
 	{
 		Matrix Model;
 		Matrix ModelInverse;
 		Texture2* Texture;
 
+		// TODO: remove that, handle internally
 		VkDescriptorSet _DescriptorSets[MaxFramesInFlight]{NULL};
 	};
 
@@ -142,7 +142,7 @@ namespace Columbus
 		Vector4 BetaOzone = Vector4(2.04e-5f, 4.97e-5f, 1.95e-6f, 0);
 
 		// samples
-		int Samples = 4;
+		int Samples = 8;
 		int LightSamples = 1; // Set to more than 1 for a realistic, less vibrant sunset
 
 		// scattering distributions, dimensions
@@ -191,6 +191,7 @@ namespace Columbus
 
 	using HStableLightId = TStableSparseArray<GPULight>::Handle;
 	using HStableMeshId  = TStableSparseArray<GPUSceneMesh>::Handle;
+	using HStableDecalId = TStableSparseArray<GPUDecal>::Handle;
 
 	struct GPUScene
 	{
@@ -205,7 +206,7 @@ namespace Columbus
 		std::vector<Material> Materials;
 		std::vector<Texture2*> Textures;
 		TStableSparseArray<GPULight> Lights;
-		std::vector<GPUDecal> Decals;
+		TStableSparseArray<GPUDecal> Decals;
 
 		std::vector<IrradianceVolume> IrradianceVolumes;
 

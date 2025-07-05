@@ -13,6 +13,7 @@
 #include "UI/UISystem.h"
 
 #include "Common/Model/Model.h"
+#include <Core/Guid.h>
 
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTextures);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
@@ -24,6 +25,22 @@ DECLARE_CPU_PROFILING_COUNTER(CpuCounter_ScenePhysicsUpdate);
 
 namespace Columbus
 {
+
+	template <typename T>
+	struct AssetRef
+	{
+		std::string Path;
+		T* Asset = nullptr;
+
+		AssetRef()
+		{
+		}
+
+		const char* GetTypeGuid() const
+		{
+			return Reflection::FindTypeGuid<T>();
+		}
+	};
 
 	struct AThing;
 	using HStableThingId = TStableSparseArray<AThing*>::Handle;
@@ -61,20 +78,33 @@ namespace Columbus
 		// Common data definition
 
 		Transform Trans;
+		Transform TransGlobal;
+
 		EngineWorld* World = nullptr;
 
 		std::string Name;
+		HGuid Guid;
+
+		AThing* Parent = nullptr;
+		std::vector<AThing*> Children;
 
 		bool bRenderStateDirty = false;
 		HStableThingId StableId;
 
+		bool bNeedsTicking = false;
+		bool bTransientThing = false; // TODO: remove that - it's a hack to not save transient things in the level
+
 	public:
 		// Common functional definition
+
+		virtual void OnLoad() {}
 
 		virtual void OnCreate() { Trans.Update(); }
 		virtual void OnDestroy() {}
 
-		virtual void OnUpdateRenderState() {}
+		virtual void OnTick(float DeltaTime) {}
+
+		virtual void OnUpdateRenderState();
 
 		virtual void OnUiPropertyChange() { bRenderStateDirty = true; }
 	};
@@ -118,8 +148,13 @@ namespace Columbus
 		CREFLECT_BODY_STRUCT_VIRTUAL(ADecal);
 		using Super = AThing;
 	public:
-	public:
+		HStableDecalId DecalHandle;
 
+		AssetRef<Texture2> Texture;
+	public:
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+		virtual void OnUpdateRenderState() override;
 	};
 
 	struct AMeshInstance : public AThing
@@ -133,12 +168,41 @@ namespace Columbus
 	public:
 		std::vector<Rigidbody*> Rigidbodies;
 
+		std::string MeshPath;
+
 		int MeshID = -1; // TODO: proper asset id
 		std::vector<int> Materials; // TODO: proper material ids
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
 		virtual void OnUpdateRenderState() override;
+	};
+
+	struct HLevel
+	{
+		EngineWorld* World = nullptr;
+
+		std::vector<AThing*> Things;
+	};
+
+	struct ALevelThing : public AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(ALevelThing);
+		using Super = AThing;
+
+	public:
+		std::string LevelPath;
+		std::string CachedLevelPath; // not saved
+
+		HLevel* Level = nullptr;
+
+	public:
+		virtual void OnLoad() override;
+
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+
+		virtual void OnUiPropertyChange();
 	};
 
 	struct HWorldIntersectionResult
@@ -151,14 +215,86 @@ namespace Columbus
 		Vector3 IntersectionNormal;
 	};
 
+	template <typename T>
+	struct TResourceManager
+	{
+	private:
+		std::unordered_map<std::string, T*> ResourceByPath;
+		std::unordered_map<T*, std::string> PathByResource;
+		std::unordered_map<T*, int>         RefCountByResource;
+
+		TStableSparseArray<T*> Resources;
+
+	public:
+		std::function<T* (const char*)> LoadFunction;
+		std::function<void(T*)>         UnloadFunction;
+
+	public:
+		T* Load(const char* Path)
+		{
+			auto Iter = ResourceByPath.find(Path);
+			if (Iter != ResourceByPath.end())
+			{
+				RefCountByResource[Iter->second]++;
+				return Iter->second;
+			}
+			T* Resource = LoadFunction(Path);
+			ResourceByPath[Path] = Resource;
+			PathByResource[Resource] = Path;
+			RefCountByResource[Resource] = 1;
+			return Resource;
+		}
+
+		T* Get(const char* Path)
+		{
+			auto Iter = ResourceByPath.find(Path);
+			if (Iter != ResourceByPath.end())
+			{
+				return Iter->second;
+			}
+
+			return Load(Path);
+		}
+
+		void Unload(T* Resource)
+		{
+			auto Iter = PathByResource.find(Resource);
+			if (Iter == PathByResource.end())
+				return;
+			RefCountByResource[Resource]--;
+			if (RefCountByResource[Resource] == 0)
+			{
+				ResourceByPath.erase(Iter->second);
+				PathByResource.erase(Iter);
+				RefCountByResource.erase(Resource);
+
+				UnloadFunction(Resource);
+			}
+		}
+
+		void Unload(const char* Path)
+		{
+			auto Iter = ResourceByPath.find(Path);
+			if (Iter != ResourceByPath.end())
+			{
+				Unload(Iter->second);
+			}
+		}
+	};
+
 	struct EngineWorld
 	{
 		SPtr<GPUScene> SceneGPU;
 
-		std::vector<Mesh2*> Meshes; // pointer so that resize of Meshes doesn't invalidate internal pointers
-		std::vector<Sound*> Sounds;
-		// TODO: texture resources
 
+		// TODO: proper resource management
+		std::vector<Mesh2*> Meshes;
+		TResourceManager<Sound> Sounds;
+		TResourceManager<Texture2> Textures;
+
+		std::unordered_map<std::string, HLevel*> LoadedLevels;
+
+		// TODO: delete
 		std::vector<GameObject> GameObjects;
 
 		TStableSparseArray<AThing*> AllThings;
@@ -175,10 +311,21 @@ namespace Columbus
 		RenderView MainView;
 
 	public:
-		EngineWorld();
+		EngineWorld(SPtr<DeviceVulkan> Device);
 	public:
 		// functions
-		void LoadLevelGLTF(const char* Path);
+		ALevelThing* LoadLevelGLTF(const char* Path);
+		HLevel* LoadLevelGLTF2(const char* Path);
+		HLevel* LoadLevelCLVL(const char* Path);
+
+		void ClearWorld();
+		void SaveWorldLevel(const char* Path);
+
+		void AddLevel(HLevel* Level);
+		void RemoveLevel(HLevel* Level);
+
+		void ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object);
+		void ResolveThingThingReferences(AThing* Thing);
 
 		// TODO: remake it for the asset ref system
 		int  LoadMesh(const Model& MeshModel);
@@ -187,9 +334,6 @@ namespace Columbus
 		void UnloadMesh(int Mesh);
 		// TODO: Load/Unload texture
 		// TODO: asset referencing system
-
-		Sound* LoadSoundAsset(const char* AssetPath);
-		void   UnloadSoundAsset(Sound* Snd);
 
 		HStableThingId AddThing(AThing* Thing);
 		void DeleteThing(HStableThingId ThingId);
@@ -226,7 +370,10 @@ namespace Columbus
 
 }
 
+CREFLECT_DECLARE_STRUCT(Columbus::Texture2, 1, "1B4AF05B-674A-4B68-8C72-1B46644DA0EC");
+
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALevelThing, Columbus::AThing, 1, "CBF88292-8650-4764-ACFE-3C84AA6B072C");

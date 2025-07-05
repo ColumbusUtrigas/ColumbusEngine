@@ -10,6 +10,7 @@ namespace Columbus
 {
 
 	EngineProject* GCurrentProject = nullptr;
+	std::string    GCurrentLevelPath = "";
 
 	EngineProject* EngineProject::CreateProject(std::string Name, std::string Path)
 	{

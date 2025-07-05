@@ -1,10 +1,13 @@
 #include "World.h"
 
 #include <Math/Quaternion.h>
+#include <Core/Serialisation.h>
 
 #include <limits.h>
 #include <float.h>
 #include <algorithm>
+#include <iomanip>
+#include <fstream>
 #include <Lib/tinygltf/tiny_gltf.h>
 
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Textures", "SceneMemory", MemoryCounter_SceneTextures);
@@ -18,16 +21,570 @@ namespace Columbus
 {
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
-	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, EngineWorld* World);
 
-	EngineWorld::EngineWorld()
+	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice)
 	{
 		Physics.SetGravity(Vector3(0, -9.81f, 0));
+
+		// asset handling callbacks
+		{
+			Sounds.LoadFunction = [this](const char* Path) -> Sound*
+			{
+				Sound* Snd = new Sound();
+				if (!Snd->Load(Path))
+				{
+					delete Snd;
+					return nullptr;
+				}
+				return Snd;
+			};
+
+			Sounds.UnloadFunction = [this](Sound* Snd) { delete Snd; };
+
+			Textures.LoadFunction = [this](const char* Path) -> Texture2*
+			{
+				Image Img;
+				if (!Img.LoadFromFile(Path))
+				{
+					return nullptr;
+				}
+
+				return Device->CreateTexture(Img);
+			};
+
+			Textures.UnloadFunction = [this](Texture2* Tex) { Device->DestroyTextureDeferred(Tex); };
+		}
+
+		SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [this](GPUScene* Scene)
+		{
+			for (auto& Texture : Scene->Textures)
+			{
+				Device->DestroyTexture(Texture);
+			}
+
+			for (int i = 0; i < Scene->Decals.Size(); i++)
+			{
+				Device->DestroyTexture(Scene->Decals.Data()[i].Texture);
+			}
+
+			GPUScene::DestroyGPUScene(Scene, Device);
+		});
+
+		// create empty TLAS of MaxMeshes size
+		{
+			// TLAS and BLASes should be packed into GPU scene
+			AccelerationStructureDesc TlasDesc;
+			TlasDesc.Type = AccelerationStructureType::TLAS;
+			TlasDesc.Instances = {};
+			for (int i = 0; i < GPUScene::MaxMeshes; i++)
+			{
+				TlasDesc.Instances.push_back({ Matrix(1), nullptr });
+			}
+
+			SceneGPU->TLAS = Device->CreateAccelerationStructure(TlasDesc);
+		}
+
+		if (Device->SupportsRayTracing())
+		{
+			AddProfilingMemory(MemoryCounter_SceneTLAS, SceneGPU->TLAS->GetSize());
+		}
 	}
 
-	void EngineWorld::LoadLevelGLTF(const char* Path)
+	ALevelThing* EngineWorld::LoadLevelGLTF(const char* Path)
 	{
-		SceneGPU = LoadScene(Device, MainView.CameraCur, Path, this);
+		ALevelThing* LevelThing = new ALevelThing();
+		LevelThing->World = this;
+		LevelThing->Name = std::string("ALevelThing ") + std::to_string(AllThings.Size());
+
+		AddThing(LevelThing);
+
+		LevelThing->LevelPath = Path;
+		LevelThing->OnLoad();
+		LevelThing->OnCreate();
+
+		return LevelThing;
+	}
+
+	HLevel* EngineWorld::LoadLevelGLTF2(const char* Path)
+	{
+		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
+			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
+			{
+				u32 W, H, D, Mips;
+				TextureFormat Format;
+				ImageType Type;
+
+				DataStream Stream = DataStream::CreateFromMemory((u8*)bytes, size);
+
+				u8* Data = nullptr;
+				if (!ImageUtils::ImageLoadFromStream(Stream, W, H, D, Mips, Format, Type, Data))
+				{
+					delete[] Data;
+					return false;
+				}
+
+				TextureFormatInfo FormatInfo = TextureFormatGetInfo(Format);
+
+				u64 Size = size_t(W * H) * size_t(FormatInfo.BitsPerPixel) / 8;
+
+				Img->width = W;
+				Img->height = H;
+				Img->component = FormatInfo.NumChannels;
+				Img->bits = FormatInfo.BitsPerPixel;
+				Img->pixel_type = (int)Format; // our small hack here
+				Img->image.resize(Size);
+				memcpy(Img->image.data(), Data, Size);
+				delete[] Data;
+				return true;
+			};
+
+		tinygltf::Model model;
+		tinygltf::TinyGLTF loader;
+		std::string err, warn;
+
+		loader.SetImageLoader(LoadImageFn, nullptr);
+
+		Timer GltfTimer;
+		if (!loader.LoadASCIIFromFile(&model, &err, &warn, Path))
+		{
+			Log::Fatal("Couldn't load scene, %s", Path);
+			return nullptr;
+		}
+		Log::Message("GLTF loaded, time: %0.2f s", GltfTimer.Elapsed());
+
+		HLevel* Level = new HLevel{};
+		Level->World = this;
+
+		std::unordered_map<int, int> LoadedTextures;
+		std::unordered_map<int, int> LoadedMeshes;
+		std::unordered_map<int, int> LoadedMaterials;
+
+		auto CreateTexture = [this, &model, &LoadedTextures](int textureId, const char* name, bool srgb) -> int
+		{
+			if (LoadedTextures.contains(textureId))
+			{
+				return LoadedTextures[textureId];
+			}
+
+			auto& image = model.images[textureId];
+			TextureFormat format = (TextureFormat)image.pixel_type;
+
+			u64 TextureDataSize = image.image.size();
+			u8* TextureData = image.image.data();
+			UPtr<u8> ConvertedData;
+
+			TextureFormatInfo formatInfo = TextureFormatGetInfo(format);
+
+			if (!formatInfo.HasCompression)
+			{
+				Log::Warning("[Level Loading] Uncompressed texture %s", image.name.c_str());
+			}
+
+			// TODO: proper mechanism
+			if (format == TextureFormat::RGBA8 && srgb)
+				format = TextureFormat::RGBA8SRGB;
+
+			// GPUs don't support RGB, so convert to RGBA instead
+			if (format == TextureFormat::RGB8)
+			{
+				Log::Warning("Applying RGB8->RGBA8 convertion to texture %s", image.name.c_str());
+
+				TextureDataSize = image.width * image.height * 4;
+				ConvertedData = UPtr<u8>(new u8[TextureDataSize]); // TODO: how to manage allocations in the loading system properly?
+
+				for (u64 pixel = 0; pixel < image.width * image.height; pixel++)
+				{
+					ConvertedData.get()[pixel * 4 + 0] = TextureData[pixel * 3 + 0];
+					ConvertedData.get()[pixel * 4 + 1] = TextureData[pixel * 3 + 1];
+					ConvertedData.get()[pixel * 4 + 2] = TextureData[pixel * 3 + 2];
+					ConvertedData.get()[pixel * 4 + 3] = 255; // alpha to 1
+				}
+
+				TextureData = ConvertedData.get();
+
+				format = srgb ? TextureFormat::RGBA8SRGB : TextureFormat::RGBA8;
+			}
+
+			Image img;
+			img.Format = format;
+			img.Width = image.width;
+			img.Height = image.height;
+			img.Size = TextureDataSize;
+			img.Data = TextureData;
+			img.MipMaps = 1; // TODO: load all mip maps
+
+			Texture2* tex = Device->CreateTexture(img);
+			Device->SetDebugName(tex, name);
+			AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
+
+			img.Data = nullptr; // so it doesn't get deleted here
+
+			// TODO: proper texture Ids
+			int id = (int)SceneGPU->Textures.size();
+			SceneGPU->Textures.push_back(tex);
+			LoadedTextures[textureId] = id;
+
+			return id;
+		};
+
+		// materials
+		{
+			for (int i = 0; i < model.materials.size(); i++)
+			{
+				tinygltf::Material& Mat = model.materials[i];
+
+				Material Result;
+
+				int AlbedoId = Mat.pbrMetallicRoughness.baseColorTexture.index;
+				if (AlbedoId != -1)
+				{
+					Result.AlbedoId = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str(), true);
+				}
+
+				int NormalId = Mat.normalTexture.index;
+				if (NormalId != -1)
+				{
+					Result.NormalId = CreateTexture(model.textures[NormalId].source, model.textures[NormalId].name.c_str(), false);
+				}
+
+				int RoughnessMetallicId = Mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+				if (RoughnessMetallicId != -1)
+				{
+					// TODO: convert separate Occlusion texture into ORM
+					Result.OrmId = CreateTexture(model.textures[RoughnessMetallicId].source, model.textures[RoughnessMetallicId].name.c_str(), false);
+				}
+
+				int EmissiveId = Mat.emissiveTexture.index;
+				if (EmissiveId != -1)
+				{
+					Result.EmissiveId = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), false);
+				}
+
+				Result.AlbedoFactor = Vector4(Mat.pbrMetallicRoughness.baseColorFactor[0], Mat.pbrMetallicRoughness.baseColorFactor[1], Mat.pbrMetallicRoughness.baseColorFactor[2], Mat.pbrMetallicRoughness.baseColorFactor[3]);
+				Result.EmissiveFactor = Vector4(Mat.emissiveFactor[0], Mat.emissiveFactor[1], Mat.emissiveFactor[2], 1);
+
+				Result.Roughness = Mat.pbrMetallicRoughness.roughnessFactor;
+				Result.Metallic = Mat.pbrMetallicRoughness.metallicFactor;
+
+				// TODO: proper material ids
+				LoadedMaterials[i] = (int)SceneGPU->Materials.size();
+				SceneGPU->Materials.push_back(Result);
+			}
+		}
+
+		// meshes
+		for (int i = 0; i < (int)model.meshes.size(); i++)
+		{
+			tinygltf::Mesh& mesh = model.meshes[i];
+
+			std::vector<CPUMeshResource> Primitives;
+
+			for (auto& primitive : mesh.primitives)
+			{
+				CPUMeshResource& CPUMesh = Primitives.emplace_back();
+
+				u32 indicesCount;
+				u32 verticesCount;
+
+				// Indices
+				{
+					const auto& accessor = model.accessors[primitive.indices];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
+					const void* data = buffer.data.data() + offset;
+					std::vector<uint32_t> indices(accessor.count);
+					indicesCount = accessor.count;
+
+					switch (accessor.componentType)
+					{
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+						for (int i = 0; i < accessor.count; i++)
+						{
+							indices[i] = static_cast<const uint16_t*>(data)[i];
+						}
+						break;
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+						for (int i = 0; i < accessor.count; i++)
+						{
+							indices[i] = static_cast<const uint32_t*>(data)[i];
+						}
+						break;
+					default: COLUMBUS_ASSERT(false);
+					}
+
+					CPUMesh.Indices = indices;
+				}
+
+				// Vertices
+				{
+					const auto& accessor = model.accessors[primitive.attributes["POSITION"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
+					const void* data = buffer.data.data() + offset;
+					verticesCount = accessor.count;
+
+					CPUMesh.Vertices = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
+				}
+
+				// UV1
+				if (primitive.attributes.contains("TEXCOORD_0"))
+				{
+					const auto& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
+					const void* data = buffer.data.data() + offset;
+					verticesCount = accessor.count;
+
+					CPUMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
+				}
+				else
+				{
+					Log::Warning("Mesh %s doesn't have UV1", mesh.name.c_str());
+
+					verticesCount = CPUMesh.Vertices.size();
+					CPUMesh.UV1 = std::vector<Vector2>(CPUMesh.Vertices.size(), Vector2());
+				}
+
+				// Normals
+				{
+					const auto& accessor = model.accessors[primitive.attributes["NORMAL"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
+					const void* data = buffer.data.data() + offset;
+					verticesCount = accessor.count;
+
+					CPUMesh.Normals = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
+				}
+
+				// Tangents
+				{
+					CPUMesh.CalculateTangents();
+				}
+			}
+
+			// TODO: proper MeshIds
+			LoadedMeshes[i] = LoadMesh(Primitives);
+		}
+
+		// scene graph
+		{
+			// get nodes and transforms
+			for (int i = 0; i < model.nodes.size(); i++)
+			{
+				tinygltf::Node& Node = model.nodes[i];
+				Transform Trans;
+
+				if (Node.matrix.size() > 0)
+				{
+					Matrix LocalTransform(1);
+					// GLTF matrices are column-major
+					double* GltfMatrix = Node.matrix.data();
+					for (int i = 0; i < 4; i++)
+					{
+						Vector4 Column((float)GltfMatrix[i * 4 + 0], (float)GltfMatrix[i * 4 + 1], (float)GltfMatrix[i * 4 + 2], (float)GltfMatrix[i * 4 + 3]);
+						LocalTransform.SetColumn(i, Column);
+					}
+
+					Vector3 T, R, S;
+					LocalTransform.DecomposeTransform(T, R, S);
+
+					Trans.Position = T;
+					Trans.Rotation = Quaternion(R);
+					Trans.Scale = S;
+				}
+				else
+				{
+					if (Node.scale.size() > 0)
+					{
+						Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
+					}
+
+					if (Node.rotation.size() > 0)
+					{
+						// negate imaginary components to rotate it into a proper basis
+						Quaternion Quat(-Node.rotation[0], -Node.rotation[1], -Node.rotation[2], Node.rotation[3]);
+						//Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
+
+						Trans.Rotation = Quat;
+					}
+
+					if (Node.translation.size() > 0)
+					{
+						Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
+					}
+				}
+
+				Trans.Update();
+
+				if (Node.extensions.contains("KHR_lights_punctual"))
+				{
+					int light = Node.extensions["KHR_lights_punctual"].Get("light").GetNumberAsInt();
+					const auto& gltfLight = model.lights[light];
+
+					ALight* LightThing = new ALight();
+					LightThing->World = this;
+					LightThing->Trans = Trans;
+					LightThing->Name = Node.name;
+
+					if (gltfLight.type == "point")
+						LightThing->Type = LightType::Point;
+					if (gltfLight.type == "directional")
+						LightThing->Type = LightType::Directional;
+
+					LightThing->Colour.X = gltfLight.color[0];
+					LightThing->Colour.Y = gltfLight.color[1];
+					LightThing->Colour.Z = gltfLight.color[2];
+					LightThing->Range = gltfLight.range;
+					LightThing->Energy = 10.0f;
+					LightThing->Shadows = true;
+
+					if (LightThing->Range < 0.01f)
+						LightThing->Range = 10.0f;
+
+					Level->Things.push_back(LightThing);
+
+					continue;
+				}
+
+				if (Node.mesh == -1) continue;
+
+				{
+					AMeshInstance* MeshThing = new AMeshInstance();
+					MeshThing->World = this;
+					MeshThing->Trans = Trans;
+					MeshThing->Name = Node.name;
+					MeshThing->MeshID = LoadedMeshes[Node.mesh];
+					MeshThing->MeshPath = std::string(Path) + "#" + Node.name;
+
+					for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
+					{
+						auto& primitive = model.meshes[Node.mesh].primitives[prim];
+						int MaterialId = primitive.material > -1 ? LoadedMaterials[primitive.material] : -1;
+						MeshThing->Materials.push_back(MaterialId);
+					}
+
+					Level->Things.push_back(MeshThing);
+
+					continue;
+				}
+			}
+
+		}
+
+		return Level;
+	}
+
+	HLevel* EngineWorld::LoadLevelCLVL(const char* Path)
+	{
+		std::ifstream fs(Path);
+		if (!fs.is_open())
+		{
+			Log::Fatal("Couldn't load scene, %s", Path);
+			return nullptr;
+		}
+
+		nlohmann::json json;
+		fs >> json;
+		fs.close();
+
+		HLevel* Level = new HLevel{};
+		Level->World = this;
+		for (auto& thing : json["things"])
+		{
+			AThing* NewThing = Reflection_DeserialiseStructJson_NewInstance<AThing>(thing);
+			NewThing->World = this;
+			ResolveStructAssetReferences(NewThing->GetTypeVirtual(), NewThing);
+			NewThing->OnLoad();
+			Level->Things.push_back(NewThing);
+		}
+
+
+		return Level;
+	}
+
+	void EngineWorld::ClearWorld()
+	{
+		for (int i = 0; i < AllThings.Size(); i++)
+		{
+			DeleteThing(AllThings.Data()[i]->StableId);
+			i--;
+		}
+	}
+
+	void EngineWorld::SaveWorldLevel(const char* Path)
+	{
+		nlohmann::json json;
+		json["things"].array();
+
+		for (int i = 0; i < AllThings.Size(); i++)
+		{
+			AThing* Thing = AllThings.Data()[i];
+			if (Thing->bTransientThing)
+			{
+				continue;
+			}
+
+			auto thing = nlohmann::json();
+			Reflection_SerialiseStructJson<AThing>(*Thing, thing);
+			json["things"].push_back(thing);
+		}
+
+		std::ofstream fs(Path);
+		fs << std::setw(4) << json;
+
+		Log::Message("Saved level to %s", Path);
+	}
+
+	void EngineWorld::AddLevel(HLevel* Level)
+	{
+		for (AThing* Thing : Level->Things)
+		{
+			// resolve thing references
+			ResolveThingThingReferences(Thing);
+
+			Thing->World = this;
+			AddThing(Thing);
+		}
+	}
+
+	void EngineWorld::RemoveLevel(HLevel* Level)
+	{
+		assert(false);
+	}
+
+	void EngineWorld::ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object)
+	{
+		for (const auto& Field : Struct->Fields)
+		{
+			if (Field.Type == Reflection::FieldType::AssetRef)
+			{
+				if (Field.Typeguid == Reflection::FindTypeGuid<Texture2>())
+				{
+					AssetRef<Texture2>* Ref = (AssetRef<Texture2>*)((char*)Object + Field.Offset);
+					if (Ref->Path.empty())
+					{
+						Log::Warning("Texture asset reference %s is empty in %s", Field.Name, Struct->Name);
+					}
+					else
+					{
+						Ref->Asset = Textures.Load(Ref->Path.c_str());
+					}
+				}
+				else
+				{
+					Log::Error("Unknown asset reference type %s in %s", Field.Name, Struct->Name);
+				}
+			}
+		}
+	}
+
+	void EngineWorld::ResolveThingThingReferences(AThing* Thing)
+	{
+
 	}
 
 	int EngineWorld::LoadMesh(const Model& MeshModel)
@@ -130,25 +687,6 @@ namespace Columbus
 		return LoadMesh(model);
 	}
 
-	Sound* EngineWorld::LoadSoundAsset(const char* AssetPath)
-	{
-		// TODO: don't load already loaded sounds
-		Sound* Snd = new Sound();
-		if (!Snd->Load(AssetPath))
-		{
-			delete Snd;
-			return nullptr;
-		}
-
-		Sounds.push_back(Snd);
-		return Snd;
-	}
-
-	void EngineWorld::UnloadSoundAsset(Sound* Snd)
-	{
-		// TODO:
-	}
-
 	// TODO: delete
 	GameObjectId EngineWorld::CreateGameObject(const char* Name, int Mesh)
 	{
@@ -214,6 +752,9 @@ namespace Columbus
 	{
 		HStableThingId Id = AllThings.Add(Thing);
 		Thing->StableId = Id;
+		Thing->Trans.Update();
+		Thing->OnCreate();
+		Thing->OnUpdateRenderState();
 		return Id;
 	}
 
@@ -236,6 +777,15 @@ namespace Columbus
 	void EngineWorld::Update(float DeltaTime)
 	{
 		GlobalTime += DeltaTime;
+
+		for (int i = 0; i < (int)AllThings.Size(); i++)
+		{
+			AThing* Thing = AllThings.Data()[i];
+			if (Thing->bNeedsTicking)
+			{
+				Thing->OnTick(DeltaTime);
+			}
+		}
 
 		UpdateTransforms();
 		SceneGPU->Sky = Sky;
@@ -288,6 +838,7 @@ namespace Columbus
 			AThing* Thing = AllThings.Data()[i];
 			if (Thing->bRenderStateDirty)
 			{
+				Thing->Trans.Update();
 				Thing->OnUpdateRenderState();
 				Thing->bRenderStateDirty = false;
 			}
@@ -330,470 +881,92 @@ namespace Columbus
 		AddProfilingMemory(MemoryCounter_SceneMeshes, result->GetSize());
 		return result;
 	}
-
-	enum GltfLoadTimerType
-	{
-		GltfLoadBuffer,
-		GltfLoadMaterial,
-		GltfLoadMax,
-	};
-
-	float GltfLoadTimes[GltfLoadMax]{ 0 };
-
-	template <GltfLoadTimerType Type>
-	struct GltfLoadTimer
-	{
-		Timer T;
-		~GltfLoadTimer()
-		{
-			GltfLoadTimes[Type] += T.Elapsed();
-		}
-	};
-
-	// TODO: separate CPUScene load and GPUScene load?
-	// TODO: refactor this completely
-	SPtr<GPUScene> LoadScene(SPtr<DeviceVulkan> Device, Camera DefaultCamera, const std::string& Filename, EngineWorld* World)
-	{
-		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
-			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
-		{
-			u32 W, H, D, Mips;
-			TextureFormat Format;
-			ImageType Type;
-
-			DataStream Stream = DataStream::CreateFromMemory((u8*)bytes, size);
-
-			u8* Data = nullptr;
-			if (!ImageUtils::ImageLoadFromStream(Stream, W, H, D, Mips, Format, Type, Data))
-			{
-				delete[] Data;
-				return false;
-			}
-
-			TextureFormatInfo FormatInfo = TextureFormatGetInfo(Format);
-
-			u64 Size = size_t(W * H) * size_t(FormatInfo.BitsPerPixel) / 8;
-
-			Img->width = W;
-			Img->height = H;
-			Img->component = FormatInfo.NumChannels;
-			Img->bits = FormatInfo.BitsPerPixel;
-			Img->pixel_type = (int)Format; // our small hack here
-			Img->image.resize(Size);
-			memcpy(Img->image.data(), Data, Size);
-			delete[] Data;
-			return true;
-		};
-
-		tinygltf::Model model;
-		tinygltf::TinyGLTF loader;
-		std::string err, warn;
-
-		loader.SetImageLoader(LoadImageFn, nullptr);
-
-		Timer GltfTimer;
-		if (!loader.LoadASCIIFromFile(&model, &err, &warn, Filename))
-		{
-			Log::Fatal("Couldn't load scene, %s", Filename.c_str());
-		}
-		Log::Message("GLTF loaded, time: %0.2f s", GltfTimer.Elapsed());
-
-		SPtr<GPUScene> Scene = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [Device](GPUScene* Scene)
-		{
-			for (auto& Texture : Scene->Textures)
-			{
-				Device->DestroyTexture(Texture);
-			}
-
-			for (auto& Decal : Scene->Decals)
-			{
-				Device->DestroyTexture(Decal.Texture);
-			}
-
-			GPUScene::DestroyGPUScene(Scene, Device);
-		});
-		World->SceneGPU = Scene;
-
-		std::unordered_map<int, int> LoadedTextures;
-
-		auto CreateTexture = [Scene, Device, &model, &LoadedTextures](int textureId, const char* name, bool srgb) -> int
-		{
-			if (LoadedTextures.contains(textureId))
-			{
-				return LoadedTextures[textureId];
-			}
-
-			GltfLoadTimer<GltfLoadMaterial> T;
-
-			auto& image = model.images[textureId];
-			TextureFormat format = (TextureFormat)image.pixel_type;
-
-			u64 TextureDataSize = image.image.size();
-			u8* TextureData = image.image.data();
-			UPtr<u8> ConvertedData;
-
-			TextureFormatInfo formatInfo = TextureFormatGetInfo(format);
-			
-			if (!formatInfo.HasCompression)
-			{
-				Log::Warning("[Level Loading] Uncompressed texture %s", image.name.c_str());
-			}
-
-			// TODO: proper mechanism
-			if (format == TextureFormat::RGBA8 && srgb)
-				format = TextureFormat::RGBA8SRGB;
-
-			// GPUs don't support RGB, so convert to RGBA instead
-			if (format == TextureFormat::RGB8)
-			{
-				Log::Warning("Applying RGB8->RGBA8 convertion to texture %s", image.name.c_str());
-
-				TextureDataSize = image.width * image.height * 4;
-				ConvertedData = UPtr<u8>(new u8[TextureDataSize]); // TODO: how to manage allocations in the loading system properly?
-
-				for (u64 pixel = 0; pixel < image.width * image.height; pixel++)
-				{
-					ConvertedData.get()[pixel * 4 + 0] = TextureData[pixel * 3 + 0];
-					ConvertedData.get()[pixel * 4 + 1] = TextureData[pixel * 3 + 1];
-					ConvertedData.get()[pixel * 4 + 2] = TextureData[pixel * 3 + 2];
-					ConvertedData.get()[pixel * 4 + 3] = 255; // alpha to 1
-				}
-
-				TextureData = ConvertedData.get();
-
-				format = srgb ? TextureFormat::RGBA8SRGB : TextureFormat::RGBA8;
-			}
-
-			Image img;
-			img.Format = format;
-			img.Width = image.width;
-			img.Height = image.height;
-			img.Size = TextureDataSize;
-			img.Data = TextureData;
-			img.MipMaps = 1; // TODO: load all mip maps
-
-			Texture2* tex = Device->CreateTexture(img);
-			Device->SetDebugName(tex, name);
-			AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
-
-			img.Data = nullptr; // so it doesn't get deleted here
-
-			int id = (int)Scene->Textures.size();
-			Scene->Textures.push_back(tex);
-			LoadedTextures[textureId] = id;
-
-			return id;
-		};
-
-		Timer MeshTimer;
-
-		// materials
-		{
-			for (int i = 0; i < model.materials.size(); i++)
-			{
-				tinygltf::Material& Mat = model.materials[i];
-
-				Material Result;
-
-				int AlbedoId = Mat.pbrMetallicRoughness.baseColorTexture.index;
-				if (AlbedoId != -1)
-				{
-					Result.AlbedoId = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str(), true);
-				}
-
-				int NormalId = Mat.normalTexture.index;
-				if (NormalId != -1)
-				{
-					Result.NormalId = CreateTexture(model.textures[NormalId].source, model.textures[NormalId].name.c_str(), false);
-				}
-
-				int RoughnessMetallicId = Mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
-				if (RoughnessMetallicId != -1)
-				{
-					// TODO: convert separate Occlusion texture into ORM
-					Result.OrmId = CreateTexture(model.textures[RoughnessMetallicId].source, model.textures[RoughnessMetallicId].name.c_str(), false);
-				}
-
-				int EmissiveId = Mat.emissiveTexture.index;
-				if (EmissiveId != -1)
-				{
-					Result.EmissiveId = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), false);
-				}
-
-				Result.AlbedoFactor = Vector4(Mat.pbrMetallicRoughness.baseColorFactor[0], Mat.pbrMetallicRoughness.baseColorFactor[1], Mat.pbrMetallicRoughness.baseColorFactor[2], Mat.pbrMetallicRoughness.baseColorFactor[3]);
-				Result.EmissiveFactor = Vector4(Mat.emissiveFactor[0], Mat.emissiveFactor[1], Mat.emissiveFactor[2], 1);
-
-				// TODO:
-				Result.Roughness = 1;
-				Result.Metallic = 0;
-
-				Scene->Materials.push_back(Result);
-			}
-		}
-
-		// meshes
-		for (int i = 0; i < (int)model.meshes.size(); i++)
-		{
-			tinygltf::Mesh& mesh = model.meshes[i];
-
-			std::vector<CPUMeshResource> Primitives;
-
-			for (auto& primitive : mesh.primitives)
-			{
-				CPUMeshResource& CPUMesh = Primitives.emplace_back();
-
-				u32 indicesCount;
-				u32 verticesCount;
-
-				// Indices
-				{
-					const auto& accessor = model.accessors[primitive.indices];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					std::vector<uint32_t> indices(accessor.count);
-					indicesCount = accessor.count;
-
-					switch (accessor.componentType)
-					{
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-						for (int i = 0; i < accessor.count; i++)
-						{
-							indices[i] = static_cast<const uint16_t*>(data)[i];
-						}
-						break;
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-						for (int i = 0; i < accessor.count; i++)
-						{
-							indices[i] = static_cast<const uint32_t*>(data)[i];
-						}
-						break;
-					default: COLUMBUS_ASSERT(false);
-					}
-
-					CPUMesh.Indices = indices;
-				}
-
-				// Vertices
-				{
-					const auto& accessor = model.accessors[primitive.attributes["POSITION"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					verticesCount = accessor.count;
-
-					CPUMesh.Vertices = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
-				}
-
-				// UV1
-				if (primitive.attributes.contains("TEXCOORD_0"))
-				{
-					const auto& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					verticesCount = accessor.count;
-
-					CPUMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
-				}
-				else
-				{
-					Log::Warning("Mesh %s doesn't have UV1", mesh.name.c_str());
-
-					verticesCount = CPUMesh.Vertices.size();
-					CPUMesh.UV1 = std::vector<Vector2>(CPUMesh.Vertices.size(), Vector2());
-				}
-
-				// Normals
-				{
-					const auto& accessor = model.accessors[primitive.attributes["NORMAL"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					verticesCount = accessor.count;
-
-					CPUMesh.Normals = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
-				}
-
-				// Tangents
-				{
-					CPUMesh.CalculateTangents();
-				}
-			}
-
-			int MeshId = World->LoadMesh(Primitives);
-		}
-
-		// scene graph
-		{
-			// get nodes and transforms
-			for (int i = 0; i < model.nodes.size(); i++)
-			{
-				tinygltf::Node& Node = model.nodes[i];
-				Transform Trans;
-
-				if (Node.matrix.size() > 0)
-				{
-					Matrix LocalTransform(1);
-					// GLTF matrices are column-major
-					double* GltfMatrix = Node.matrix.data();
-					for (int i = 0; i < 4; i++)
-					{
-						Vector4 Column((float)GltfMatrix[i * 4 + 0], (float)GltfMatrix[i * 4 + 1], (float)GltfMatrix[i * 4 + 2], (float)GltfMatrix[i * 4 + 3]);
-						LocalTransform.SetColumn(i, Column);
-					}
-
-					Vector3 T, R, S;
-					LocalTransform.DecomposeTransform(T, R, S);
-
-					Trans.Position = T;
-					Trans.Rotation = Quaternion(R);
-					Trans.Scale = S;
-				}
-				else
-				{
-					if (Node.scale.size() > 0)
-					{
-						Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
-					}
-
-					if (Node.rotation.size() > 0)
-					{
-						// negate imaginary components to rotate it into a proper basis
-						Quaternion Quat(-Node.rotation[0], -Node.rotation[1], -Node.rotation[2], Node.rotation[3]);
-						//Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
-
-						Trans.Rotation = Quat;
-					}
-
-					if (Node.translation.size() > 0)
-					{
-						Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
-					}
-				}
-
-				Trans.Update();
-
-				if (Node.extensions.contains("KHR_lights_punctual"))
-				{
-					int light = Node.extensions["KHR_lights_punctual"].Get("light").GetNumberAsInt();
-					const auto& gltfLight = model.lights[light];
-
-					ALight* LightThing = new ALight();
-					LightThing->World = World;
-					LightThing->Trans = Trans;
-					LightThing->Name = Node.name;
-
-					if (gltfLight.type == "point")
-						LightThing->Type = LightType::Point;
-					if (gltfLight.type == "directional")
-						LightThing->Type = LightType::Directional;
-
-					LightThing->Colour.X = gltfLight.color[0];
-					LightThing->Colour.Y = gltfLight.color[1];
-					LightThing->Colour.Z = gltfLight.color[2];
-					LightThing->Range = gltfLight.range;
-					LightThing->Energy = 10.0f;
-					LightThing->Shadows = true;
-
-					if (LightThing->Range < 0.01f)
-						LightThing->Range = 10.0f;
-
-					World->AddThing(LightThing);
-					LightThing->OnCreate();
-
-					continue;
-				}
-
-				if (Node.mesh == -1) continue;
-
-				{
-					AMeshInstance* MeshThing = new AMeshInstance();
-					MeshThing->World = World;
-					MeshThing->Trans = Trans;
-					MeshThing->Name = Node.name;
-					MeshThing->MeshID = Node.mesh;
-
-					for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
-					{
-						auto& primitive = model.meshes[Node.mesh].primitives[prim];
-						int MaterialId = primitive.material > -1 ? primitive.material : -1;
-						MeshThing->Materials.push_back(MaterialId);
-					}
-
-					World->AddThing(MeshThing);
-					MeshThing->OnCreate();
-
-					continue;
-				}
-			}
-
-			// TODO: compute parents
-			/*for (int i = 0; i < World->GameObjects.size(); i++)
-			{
-				GameObject& Object = World->GameObjects[i];
-				for (int Child : Object.Children)
-				{
-					World->GameObjects[Child].ParentId = i;
-				}
-			}*/
-
-		}
-
-		Log::Message("Meshes loaded, total time: %0.2f s", MeshTimer.Elapsed());
-		Log::Message("Buffer load time: %0.2f s", GltfLoadTimes[GltfLoadBuffer]);
-		Log::Message("Material load time: %0.2f s", GltfLoadTimes[GltfLoadMaterial]);
-
-		// create empty TLAS of MaxMeshes size
-		{
-			// TLAS and BLASes should be packed into GPU scene
-			AccelerationStructureDesc TlasDesc;
-			TlasDesc.Type = AccelerationStructureType::TLAS;
-			TlasDesc.Instances = {};
-			for (int i = 0; i < GPUScene::MaxMeshes; i++)
-			{
-				TlasDesc.Instances.push_back({ Matrix(1), nullptr });
-			}
-
-			Scene->TLAS = Device->CreateAccelerationStructure(TlasDesc);
-		}
-
-		Scene->MainCamera = GPUCamera(DefaultCamera);
-
-		if (Device->SupportsRayTracing())
-		{
-			AddProfilingMemory(MemoryCounter_SceneTLAS, Scene->TLAS->GetSize());
-		}
-
-		if (0)
-		{
-			{
-				Image DecalImage;
-				if (!DecalImage.LoadFromFile("./Data/Textures/Detail.dds"))
-				{
-					Log::Error("Couldn't load decal image");
-				}
-
-				Texture2* DecalTexture = Device->CreateTexture(DecalImage);
-
-				Matrix Decal;
-				Decal.Scale({ 100 });
-				Scene->Decals.push_back(GPUDecal{ Decal, Decal.GetInverted(), DecalTexture });
-			}
-		}
-
-		return Scene;
-	}
 }
 
 
 // Things implementation
 namespace Columbus
 {
+
+	struct EngineAssetSystem
+	{
+		
+	};
+
+	// Things: Hierarchy, Sub-levels management (think CHARACTERS with a bunch of presets)
+
+	// MeshInstance: Material serialised in and edited (requires texture refs)
+
+	// asset handle:
+		// guid/path, resolve (load, increment)
+		// use (no increment)
+		// unload (decrement)
+		// copy (increment)
+
+	// UNIFIED asset handle (typesafe):
+		// base asset type?
+
+	// Asynchronous loading
+	// Asynchronous resolve during onwer asynchronous streaming (level)
+
+	// UI picking
+		// Requires asset database - refresh, scan on load, filewatch
+
+	// Asset indirection system
+		// Possible absolute path
+		// Path relative to the data folder
+		// GUID -> Relative path; Relative path -> GUID
+
+	void AThing::OnUpdateRenderState()
+	{
+		TransGlobal = Trans;
+
+		// hierarchy
+		if (Parent)
+		{
+			TransGlobal.Scale = Parent->TransGlobal.Scale * Trans.Scale;
+			TransGlobal.Rotation = Parent->TransGlobal.Rotation * Trans.Rotation;
+
+			Vector3 ScaledOffset = Parent->TransGlobal.Scale * Trans.Position;
+
+			Quaternion p{ ScaledOffset.X, ScaledOffset.Y, ScaledOffset.Z, 0.0f};
+			Quaternion rot = Parent->TransGlobal.Rotation.Normalized();
+			Quaternion res = (-rot) * p * rot;
+
+			Vector3 RotatedOffset = Vector3(res.X, res.Y, res.Z);
+			TransGlobal.Position = Parent->TransGlobal.Position + RotatedOffset;
+
+			TransGlobal.Update();
+		}
+
+		for (auto& Child : Children)
+		{
+			Child->OnUpdateRenderState();
+		}
+	}
+
+	void ADecal::OnCreate()
+	{
+		Super::OnCreate();
+
+		DecalHandle = World->SceneGPU->Decals.Add(GPUDecal());
+	}
+	void ADecal::OnDestroy()
+	{
+		World->SceneGPU->Decals.Remove(DecalHandle);
+
+		// TODO: de-resolve asset ref
+
+		Super::OnDestroy();
+	}
+	void ADecal::OnUpdateRenderState()
+	{
+		Super::OnUpdateRenderState();
+
+		World->SceneGPU->Decals.Get(DecalHandle)->Model = TransGlobal.GetMatrix();
+		World->SceneGPU->Decals.Get(DecalHandle)->ModelInverse = TransGlobal.GetMatrix().GetInverted();
+		World->SceneGPU->Decals.Get(DecalHandle)->Texture = Texture.Asset;
+	}
 
 	void ALight::OnCreate()
 	{
@@ -803,12 +976,13 @@ namespace Columbus
 
 	void ALight::OnUpdateRenderState()
 	{
-		Trans.Update();
-		const auto RotMat = Trans.Rotation.ToMatrix();
+		Super::OnUpdateRenderState();
+
+		const auto RotMat = TransGlobal.Rotation.ToMatrix();
 
 		GPULight GL{};
 		GL.Color = Vector4(Colour * Energy, 1);
-		GL.Position = Vector4(Trans.Position, 1);
+		GL.Position = Vector4(TransGlobal.Position, 1);
 		GL.Direction = (Vector4(1, 0, 0, 1) * RotMat).Normalized();
 		GL.Range = Range;
 		GL.SourceRadius = SourceRadius;
@@ -867,11 +1041,12 @@ namespace Columbus
 		{
 			GPUSceneMesh GPUMesh;
 			GPUMesh.MeshResource = &Prim.GPU;
-			GPUMesh.Transform = Trans.GetMatrix();
+			GPUMesh.Transform = TransGlobal.GetMatrix();
 
 			if (Materials.size() > i)
 			{
 				World->SceneGPU->Materials[i].Roughness = 0.2f;
+				World->SceneGPU->Materials[i].Metallic = 0.5f;
 				GPUMesh.MaterialId = Materials[i];
 			}
 
@@ -908,23 +1083,21 @@ namespace Columbus
 
 	void AMeshInstance::OnUpdateRenderState()
 	{
-		Trans.Update();
+		Super::OnUpdateRenderState();
 
 		for (HStableMeshId Mesh : MeshPrimitives)
 		{
 			GPUSceneMesh* Proxy = World->SceneGPU->Meshes.Get(Mesh);
 			if (Proxy)
 			{
-				Proxy->Transform = Trans.GetMatrix();
+				Proxy->Transform = TransGlobal.GetMatrix();
 			}
 		}
 
 		for (Rigidbody* RB : Rigidbodies)
 		{
-			RB->SetTransform(Trans);
+			RB->SetTransform(TransGlobal);
 		}
-
-		Super::OnUpdateRenderState();
 	}
 
 	void AMeshInstance::OnDestroy()
@@ -946,10 +1119,90 @@ namespace Columbus
 
 		Super::OnDestroy();
 	}
+
+	void ALevelThing::OnLoad()
+	{
+		Super::OnLoad();
+
+		Level = World->LoadLevelGLTF2(LevelPath.c_str());
+		if (Level == nullptr)
+		{
+			Log::Error("Couldn't load level %s", LevelPath.c_str());
+			return;
+		}
+
+		CachedLevelPath = LevelPath;
+	}
+
+	void ALevelThing::OnCreate()
+	{
+		Super::OnCreate();
+
+		if (Level == nullptr)
+		{
+			Log::Error("Level is null");
+			return;
+		}
+
+		// find all root nodes in the level, parent them to the thing
+		for (AThing* Thing : Level->Things)
+		{
+			Thing->bTransientThing = true;
+
+			if (Thing->Parent == nullptr)
+			{
+				Thing->Parent = this;
+				Children.push_back(Thing);
+			}
+		}
+
+		World->AddLevel(Level);
+	}
+
+	void ALevelThing::OnDestroy()
+	{
+		if (Level == nullptr)
+		{
+			Log::Error("Level is null");
+			return;
+		}
+
+		for (AThing* Thing : Level->Things)
+		{
+			World->DeleteThing(Thing->StableId);
+		}
+		Children.clear();
+		Level = nullptr;
+
+		// TODO: simplify
+		// World->RemoveLevel(Level);
+
+		// TODO: unload level
+
+		Super::OnDestroy();
+	}
+
+	void ALevelThing::OnUiPropertyChange()
+	{
+		// TODO: make this string a picker that only works on gltfs so that we don't fuck it up
+
+		if (LevelPath != CachedLevelPath)
+		{
+			// reload it
+			OnDestroy();
+			OnLoad();
+			OnCreate();
+		}
+
+		bRenderStateDirty = true;
+	}
 }
 
 // reflection stuff
 using namespace Columbus;
+
+CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Texture2, []() -> void* { return nullptr; }, "")
+CREFLECT_STRUCT_END()
 
 CREFLECT_ENUM_BEGIN(LightType, "")
 	CREFLECT_ENUM_FIELD(LightType::Directional, 0)
@@ -987,8 +1240,15 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ADecal);
 CREFLECT_STRUCT_BEGIN(ADecal, "")
+CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Texture, "");
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
 CREFLECT_STRUCT_BEGIN(AMeshInstance, "")
+	CREFLECT_STRUCT_FIELD(std::string, MeshPath, "Noedit")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(ALevelThing);
+CREFLECT_STRUCT_BEGIN(ALevelThing, "")
+	CREFLECT_STRUCT_FIELD(std::string, LevelPath, "Picker(gltf,clvl)")
 CREFLECT_STRUCT_END()

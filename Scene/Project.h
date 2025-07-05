@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Graphics/World.h"
+
 #include <string>
 #include <vector>
 
@@ -28,11 +30,15 @@ namespace Columbus
 		std::vector<EngineProjectLevelEntry> Levels;
 
 	public:
+		EngineWorld* World = nullptr;
+
+	public:
 		static EngineProject* CreateProject(std::string Name, std::string Path);
 		static EngineProject* LoadProject(std::string Path);
 		static void           SaveProject(const EngineProject* Project);
 	};
 
 	extern EngineProject* GCurrentProject;
+	extern std::string    GCurrentLevelPath;
 
 }

@@ -28,6 +28,7 @@
 #include <vulkan/vulkan.h>
 #include <Core/Core.h>
 #include <Core/CVar.h>
+#include <Core/Reflection.h>
 #include "Scene/Project.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/RenderPasses/RenderPasses.h>
@@ -269,6 +270,66 @@ struct EngineEditor
 	// - states to update baking systems and lock editor
 };
 
+
+enum class TestEnum
+{
+	One,
+	Two = 15,
+	Three,
+	Four = 123
+};
+
+// SHOULD BE CODEGEN with include
+template <> const Reflection::Enum* Reflection::FindEnum<TestEnum>();
+
+
+
+// SHOULD BE CODEGEN
+#if 1
+struct TestEnum__Registration
+{
+	Reflection::Enum EnumData;
+
+	TestEnum__Registration()
+	{
+		EnumData.Name = "TestEnum";
+		EnumData.Fields.push_back(Reflection::EnumField{ .Name = "One",   .Value = (int)TestEnum::One,   .Index = 0 });
+		EnumData.Fields.push_back(Reflection::EnumField{ .Name = "Two",   .Value = (int)TestEnum::Two,   .Index = 1 });
+		EnumData.Fields.push_back(Reflection::EnumField{ .Name = "Three", .Value = (int)TestEnum::Three, .Index = 2 });
+		EnumData.Fields.push_back(Reflection::EnumField{ .Name = "Four",  .Value = (int)TestEnum::Four,  .Index = 3 });
+	}
+} TestEnum__Registration_Instance;
+
+template <>
+const Reflection::Enum* Reflection::FindEnum<TestEnum>()
+{
+	return &TestEnum__Registration_Instance.EnumData;
+}
+#endif
+
+
+
+bool EnumComboBox(const char* Label, const Reflection::Enum* Enum, int* Value)
+{
+	const Reflection::EnumField* Field = Enum->FindFieldByValue(*Value);
+	int Idx = Field->Index;
+
+	bool Result = ImGui::Combo(Label, &Idx, [](void* data, int idx, const char** out_text) -> bool
+	{
+		*out_text = ((Reflection::Enum*)data)->Fields[idx].Name;
+		return true;
+	}, (void*)Enum, Enum->Fields.size());
+
+	*Value = Enum->Fields[Idx].Value;
+	return Result;
+}
+
+template <typename T>
+bool EnumComboBox(const char* Label, T* Value)
+{
+	return EnumComboBox(Label, Reflection::FindEnum<T>(), (int*)Value);
+}
+
 // Engine structure that I find appropriate
 // 1. Engine is a library, editor, apps, games are made using it
 // 2. It uses it's own static code-generated reflection system
@@ -281,9 +342,8 @@ struct EngineEditor
 // render.AddRenderPass(...);
 //
 // TODO: think about extensions (or engine modules for different systems), non-game and non-editor scenarios
-// Scene scene = LoadScene(...); // uses ECS
-// Object object = scene.AddObject(...);
-// scene.AddComponent(object, ...);
+// Scene scene = LoadScene(...); // loads all entities
+// AThing* thing = scene.AddThing(...);
 //
 // TODO: think about it
 // !!!! Integrate TaskFlow
@@ -786,10 +846,13 @@ int main()
 	Columbus::InstanceVulkan instance;
 	auto device = instance.CreateDevice();
 
-	EngineWorld World;
-	World.Device = device;
+	EngineWorld World(device);
 	World.LoadLevelGLTF(SceneLoadPath);
 	// World.SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(device)); // empty level
+
+	// World.RegisterSystem<SPlayerSystem>();
+	// World.RegisterSystem<SGaussianSystem>();
+	// World.RegisterSystem<SLightBakingSystem>();
 
 	AddWorldCollision(World);
 
@@ -990,6 +1053,11 @@ int main()
 							ImGui::SliderFloat("Moon Illuminance", &World.Sky.MoonIlluminance, 0.0f, 10.0f);
 							ImGui::SliderFloat("Space Illuminance", &World.Sky.SpaceIlluminance, 0.0f, 1.0f);
 							ImGui::SliderFloat("Expoure", &World.Sky.Exposure, 0.0f, 100.0f);
+
+							static TestEnum asd = TestEnum::One;
+							EnumComboBox<TestEnum>("Test", &asd);
+
+							ImGui::LabelText("Test Value", "%i", (int)asd);
 						}
 						ImGui::End();
 
