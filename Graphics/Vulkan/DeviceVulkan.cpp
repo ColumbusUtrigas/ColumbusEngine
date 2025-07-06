@@ -146,13 +146,13 @@ namespace Columbus
 		VK_CHECK(vkCreateCommandPool(_Device, &commandPoolInfo, nullptr, &_CmdPool));
 
 		fixed_vector<VkDescriptorPoolSize, 16> poolSizes;
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4000 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4000 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 4000 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 100 });
 		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 100 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10 });
 #if ENABLE_RAY_TRACING
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 5 });
 #endif
 
 		VkDescriptorPoolCreateInfo descriptorPoolInfo;
@@ -510,13 +510,13 @@ namespace Columbus
 	};
 
 	// TODO: REMOVE
-	StagingBufferVulkan CreateStagingBufferVulkanInternal(VmaAllocator allocator, size_t size, const void* data)
+	StagingBufferVulkan CreateStagingBufferVulkanInternal(VmaAllocator allocator, size_t size, size_t align, const void* data)
 	{
 		StagingBufferVulkan buffer;
 
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = size;
+		bufferInfo.size = size + align;
 		bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 		VmaAllocationCreateInfo vmaallocInfo = {};
@@ -524,7 +524,7 @@ namespace Columbus
 		vmaallocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 		vmaallocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
-		VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo,
+		VK_CHECK(vmaCreateBufferWithAlignment(allocator, &bufferInfo, &vmaallocInfo, align,
 			&buffer.Buffer,
 			&buffer.Allocation,
 			nullptr));
@@ -554,7 +554,7 @@ namespace Columbus
 
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = Desc.Size;
+		bufferInfo.size = Desc.Size + Desc.Alignment;
 
 		// TODO: enhance
 		if (Desc.HostVisible)
@@ -570,7 +570,7 @@ namespace Columbus
 		if (InitialData != nullptr)
 		{
 			if (!Desc.HostVisible)
-				staging = CreateStagingBufferVulkanInternal(_Allocator, Desc.Size, InitialData);
+				staging = CreateStagingBufferVulkanInternal(_Allocator, Desc.Size, Desc.Alignment, InitialData);
 
 			bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		}
@@ -597,7 +597,7 @@ namespace Columbus
 			vmaallocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		}
 
-		VK_CHECK(vmaCreateBuffer(_Allocator, &bufferInfo, &vmaallocInfo,
+		VK_CHECK(vmaCreateBufferWithAlignment(_Allocator, &bufferInfo, &vmaallocInfo, Desc.Alignment,
 			&result->_Buffer,
 			&result->_Allocation,
 			nullptr));
@@ -634,7 +634,7 @@ namespace Columbus
 			{
 				auto copyCmdBuf = CreateCommandBufferShared();
 				copyCmdBuf->Begin();
-				VkBufferCopy copy = vk::BufferCopy(0, 0, Desc.Size);
+				VkBufferCopy copy = vk::BufferCopy(0, 0, Desc.Size + Desc.Alignment);
 				vkCmdCopyBuffer(copyCmdBuf->_CmdBuf, staging.Buffer, result->_Buffer, 1, &copy);
 				copyCmdBuf->End();
 
@@ -808,7 +808,7 @@ namespace Columbus
 		int size = 1; // number of layers, TODO: fix this
 
 		StagingBufferVulkan staging;
-		staging = CreateStagingBufferVulkanInternal(_Allocator, Img.GetSize(0) * size, Data);
+		staging = CreateStagingBufferVulkanInternal(_Allocator, Img.GetSize(0) * size, 0, Data);
 
 		auto copyCmdBuf = CreateCommandBufferShared();
 		copyCmdBuf->Reset();

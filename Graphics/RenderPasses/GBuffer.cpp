@@ -191,6 +191,9 @@ namespace Columbus
 				Parameters.ModelInverse = Decal.ModelInverse;
 				Parameters.VP = View.CameraCur.GetViewProjection();
 
+				if (!Decal.Texture)
+					continue;
+
 				auto& DecalDescriptorSet = Decal._DescriptorSets[Context.RenderData.CurrentPerFrameData];
 
 				if (DecalDescriptorSet == NULL)

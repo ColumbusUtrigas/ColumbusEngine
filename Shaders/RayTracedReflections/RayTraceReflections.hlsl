@@ -117,6 +117,7 @@ void RayGen()
 			BRDF.Metallic = payload.RoughnessMetallic.y;
 
 			float3 HitPoint = WP + Direction * payload.HitDistance;
+			HitPoint += BRDF.N * 0.01;
 			ColourResult = RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) * RayAttenuation;
 		}
 	}

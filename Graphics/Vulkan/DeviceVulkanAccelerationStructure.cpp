@@ -7,6 +7,9 @@
 IMPLEMENT_COUNTING_PROFILING_COUNTER("BLAS count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_BLASes, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("TLAS count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_TLASes, false);
 
+static constexpr uint64_t TransformAlignment = 16;
+static constexpr uint64_t ScratchAlignment   = 256;
+
 namespace Columbus
 {
 
@@ -19,7 +22,10 @@ namespace Columbus
 			0.0f, 1.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 1.0f, 0.0f
 		};
-		TransformBuffer = Device->CreateBuffer({sizeof(transformMatrix), BufferType::AccelerationStructureInput}, &transformMatrix);
+		BufferDesc TransformDesc(sizeof(transformMatrix), BufferType::AccelerationStructureInput);
+		TransformDesc.Alignment = TransformAlignment;
+		TransformBuffer = Device->CreateBuffer(TransformDesc, &transformMatrix);
+		Device->SetDebugName(TransformBuffer, "BLAS Transform Buf");
 
 		VkDeviceOrHostAddressConstKHR vertexBufferDeviceAddress{};
 		VkDeviceOrHostAddressConstKHR indexBufferDeviceAddress{};
@@ -69,7 +75,9 @@ namespace Columbus
 	{
 		std::vector<VkAccelerationStructureInstanceKHR> instances = FillInstancesTLAS(Desc);
 
-		InstancesBuffer = Device->CreateBuffer({ instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput }, instances.data());
+		BufferDesc InstancesDesc(instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput);
+		//InstancesDesc.Alignment = TransformAlignment;
+		InstancesBuffer = Device->CreateBuffer(InstancesDesc, instances.data());
 
 		VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
 		instanceDataDeviceAddress.deviceAddress = Device->GetBufferDeviceAddress(InstancesBuffer);
@@ -158,8 +166,11 @@ namespace Columbus
 		result->_DeviceAddress = VkFunctions.vkGetAccelerationStructureDeviceAddress(_Device, &accelerationDeviceAddressInfo);
 
 		// Create a small scratch buffer used during build of the acceleration structure
-		result->_ScratchBuffer = CreateBuffer({accelerationStructureBuildSizesInfo.buildScratchSize, BufferType::UAV, true}, nullptr);
-		auto scratchBufferDeviceAddress = GetBufferDeviceAddress(result->_ScratchBuffer);
+		u64 scratchSize = accelerationStructureBuildSizesInfo.buildScratchSize;
+		BufferDesc ScratchDesc(scratchSize, BufferType::UAV, true);
+		ScratchDesc.Alignment = ScratchAlignment;
+		result->_ScratchBuffer = CreateBuffer(ScratchDesc, nullptr);
+		u64 scratchBufferDeviceAddress = GetBufferDeviceAddress(result->_ScratchBuffer);
 
 		accelerationStructureBuildGeometryInfo.dstAccelerationStructure = result->_Handle;
 		accelerationStructureBuildGeometryInfo.scratchData.deviceAddress = scratchBufferDeviceAddress;

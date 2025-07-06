@@ -40,6 +40,23 @@ namespace Columbus
 		info.enabledExtensionCount = (u32)extensions.size();
 		info.ppEnabledExtensionNames = extensions.data();
 
+		// GPU assisted validation
+#if VULKAN_DEBUG && 0
+		VkValidationFeaturesEXT validationFeatures{};
+		validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+		validationFeatures.enabledValidationFeatureCount = 1;
+
+		VkValidationFeatureEnableEXT enables[] = {
+			VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+		};
+
+		validationFeatures.pEnabledValidationFeatures = enables;
+		validationFeatures.pNext = nullptr;
+
+		// When creating VkInstance
+		info.pNext = &validationFeatures;
+#endif
+
 		VK_CHECK(vkCreateInstance(&info, nullptr, &instance));
 
 		// setup debug messages

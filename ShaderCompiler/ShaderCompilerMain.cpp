@@ -148,7 +148,7 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 			exit(1);
 
 		// ${DXC} -E main -DPIXEL_SHADER -spirv -T ps_6_3 -fspv-reflect -fspv-target-env=vulkan1.2 -Zi Tonemap.hlsl
-		CommandLine = std::format("{} {} -E {} -T {} {} -fspv-preserve-bindings -fspv-target-env=vulkan1.2 -spirv -Zi {} -Fo {}", DxcPath, DefinesParameters, EntryPoint, ShaderStageToDxcStage(Stage), SpvExtensions, Path, TmpOutput);
+		CommandLine = std::format("{} {} -E {} -T {} {} -fspv-preserve-bindings -fspv-target-env=vulkan1.2 -spirv -Zi -Vd {} -Fo {}", DxcPath, DefinesParameters, EntryPoint, ShaderStageToDxcStage(Stage), SpvExtensions, Path, TmpOutput);
 	} else
 	{
 		printf("Compiling as GLSL\n");

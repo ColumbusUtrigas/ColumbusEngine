@@ -135,8 +135,8 @@ namespace Columbus::DebugUI
 
 		//const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
-		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &lat);
-		io.Fonts->AddFontFromFileTTF("./Data/A.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
+		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 14.0f, &lat);
+		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
 		//io.Fonts->AddFontFromFileTTF("./Data/FontAwesome5.ttf", 12.0f, &icons, icons_ranges);
 		io.Fonts->Build();
 

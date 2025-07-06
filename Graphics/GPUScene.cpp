@@ -144,7 +144,7 @@ namespace Columbus
 		
 		// allocate empty TLAS
 		{
-			AccelerationStructureDesc TlasDesc;
+			AccelerationStructureDesc TlasDesc{};
 			TlasDesc.Type = AccelerationStructureType::TLAS;
 			TlasDesc.Instances = {};
 

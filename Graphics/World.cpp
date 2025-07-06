@@ -766,6 +766,17 @@ namespace Columbus
 		delete Thing;
 	}
 
+	AThing* EngineWorld::FindThingByType(const Reflection::Struct* Type)
+	{
+		for (AThing* Thing : AllThings)
+		{
+			if (Thing->GetTypeVirtual() == Type)
+				return Thing;
+		}
+
+		return nullptr;
+	}
+
 	void EngineWorld::BeginFrame()
 	{
 		ResetProfiling();
@@ -943,6 +954,12 @@ namespace Columbus
 		{
 			Child->OnUpdateRenderState();
 		}
+	}
+
+	void AThing::OnUiPropertyChange()
+	{
+		bRenderStateDirty = true;
+		World->ResolveStructAssetReferences(GetTypeVirtual(), this);
 	}
 
 	void ADecal::OnCreate()

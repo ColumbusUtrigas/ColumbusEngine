@@ -263,7 +263,12 @@ namespace Columbus
 			info.pNext = nullptr;
 			info.buffer = static_cast<const BufferVulkan*>(Buffer)->_Buffer;
 
-			return vkGetBufferDeviceAddress(_Device, &info);
+			u64 address = vkGetBufferDeviceAddress(_Device, &info);
+			u64 align = Buffer->GetDesc().Alignment;
+			if (align == 0)
+				return address;
+
+			return (address + (align - 1)) & ~(align - 1);
 		}
 
 		SPtr<FenceVulkan> CreateFence(bool signaled)

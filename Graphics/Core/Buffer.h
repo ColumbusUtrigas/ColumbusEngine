@@ -40,6 +40,7 @@ namespace Columbus
 	struct BufferDesc
 	{
 		uint64 Size = 0;
+		uint64 Alignment = 0;
 		BufferUsage Usage = BufferUsage::Static;
 		BufferType BindFlags = BufferType::Array;
 		BufferCpuAccess CpuAccess = BufferCpuAccess::Write;

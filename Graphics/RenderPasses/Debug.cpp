@@ -90,9 +90,14 @@ namespace Columbus
 
 					Desc.depthStencilState.DepthEnable = true;
 					Desc.depthStencilState.DepthWriteMask = true;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceProbesVisualise.csd");
 
+					// TODO:
+					Log::Warning("TODO: Skipping Irradiance Volume Visualisation shader - TBD");
+
+#if 0
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeVisualise.csd");
 					IrradianceVolumePipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+#endif
 				}
 			}
 

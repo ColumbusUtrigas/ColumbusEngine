@@ -106,7 +106,7 @@ namespace Columbus
 
 		virtual void OnUpdateRenderState();
 
-		virtual void OnUiPropertyChange() { bRenderStateDirty = true; }
+		virtual void OnUiPropertyChange();
 	};
 
 	struct ALight : public AThing
@@ -337,6 +337,13 @@ namespace Columbus
 
 		HStableThingId AddThing(AThing* Thing);
 		void DeleteThing(HStableThingId ThingId);
+
+		// give the first found Thing of the type or nullptr if not found
+		template <typename T>
+		AThing* FindThingByType() { return FindThingByType(Reflection::FindStruct<T>()); }
+
+		// give the first found Thing of the type or nullptr if not found
+		AThing* FindThingByType(const Reflection::Struct* Type);
 
 		// TODO: delete
 		GameObjectId CreateGameObject(const char* Name, int Mesh);

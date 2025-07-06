@@ -368,17 +368,19 @@ namespace Columbus
 		const uint32_t handleSize = _RayTracingProperties.shaderGroupHandleSize;
 		const uint32_t handleSizeAligned = alignedSize(_RayTracingProperties.shaderGroupHandleSize, _RayTracingProperties.shaderGroupHandleAlignment);
 		const uint32_t sbtSize = Groups.size() * handleSizeAligned;
+		const uint32_t baseAlign = _RayTracingProperties.shaderGroupBaseAlignment;
 
 		// TODO: is it correct?
 
 		std::vector<uint8_t> shaderHandleStorage(sbtSize);
 		VK_CHECK(VkFunctions.vkGetRayTracingShaderGroupHandles(_Device, Pipeline->pipeline, 0, Groups.size(), sbtSize, shaderHandleStorage.data()));
 
-		Pipeline->RayGenSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data());
-		Pipeline->MissSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data() + handleSizeAligned);
-		Pipeline->HitSBT = CreateBuffer({handleSize, BufferType::ShaderBindingTable, true}, shaderHandleStorage.data() + handleSizeAligned * 2);
+		BufferDesc SbtDesc(handleSize, BufferType::ShaderBindingTable, true);
+		SbtDesc.Alignment = baseAlign;
 
-		vk::Device dev(_Device);
+		Pipeline->RayGenSBT = CreateBuffer(SbtDesc, shaderHandleStorage.data());
+		Pipeline->MissSBT   = CreateBuffer(SbtDesc, shaderHandleStorage.data() + handleSizeAligned);
+		Pipeline->HitSBT    = CreateBuffer(SbtDesc, shaderHandleStorage.data() + handleSizeAligned * 2);
 
 		Pipeline->RayGenRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->RayGenSBT), handleSizeAligned, handleSizeAligned);
 		Pipeline->MissRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->MissSBT), handleSizeAligned, handleSizeAligned);

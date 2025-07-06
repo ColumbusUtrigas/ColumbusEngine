@@ -88,6 +88,11 @@ namespace Columbus
 		const T* Data() const { return dense.data(); }
 		size_t   Size() const { return dense.size(); }
 
+		T& operator[](size_t id) { return dense[id]; }
+
+		std::vector<T>::iterator begin() { return dense.begin(); }
+		std::vector<T>::iterator end()   { return dense.end(); }
+
 		bool IsValid(Handle handle) const
 		{
 			return handle.index < sparse.size() &&
@@ -98,7 +103,7 @@ namespace Columbus
 	private:
 		std::vector<SparseEntry> sparse;
 		std::vector<T> dense;
-		std::vector<u32> dense_to_sparse; // Maps dense indices → sparse indices
+		std::vector<u32> dense_to_sparse; // Maps dense indices -> sparse indices
 		std::vector<u32> free_indices;
 	};
 

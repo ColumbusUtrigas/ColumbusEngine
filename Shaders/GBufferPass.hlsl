@@ -44,6 +44,7 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
 	// TODO: precompute and store this matrix in the buffer
     //float3x3 NormalMatrix = transpose(inverse(transpose(float3x3(Mesh.Transform))));
     float3x3 NormalMatrix = float3x3(float3(1, 0, 0), float3(0, 1, 0), float3(0, 0, 1));
+    NormalMatrix = transpose((float3x3) Mesh.Transform);
     float3 Normal    = normalize(mul(NormalMatrix, Vertex.Normal));
     float3 Tangent   = normalize(mul(NormalMatrix, Vertex.TangentAndSign.xyz));
     float3 Bitangent = cross(Normal, Tangent) * Vertex.TangentAndSign.w;

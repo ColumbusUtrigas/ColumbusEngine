@@ -26,7 +26,7 @@ float3 SampleConeRay(float3 Direction, float BaseRadius, float2 Random)
 }
 
 // returns 0 if occluded, 1 if not
-float TraceShadowRay(RaytracingAccelerationStructure AS, float3 Origin, float3 Direction, float MaxDist)
+float TraceShadowRay(const in RaytracingAccelerationStructure AS, float3 Origin, float3 Direction, float MaxDist)
 {
 	PAYLOAD_TYPE payload;
 	RayDesc Ray;
@@ -39,7 +39,7 @@ float TraceShadowRay(RaytracingAccelerationStructure AS, float3 Origin, float3 D
 	return payload.HitDistance > 0 ? 0.0f : 1.0f;
 }
 
-float3 SampleDirectionalLight(RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
+float3 SampleDirectionalLight(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
 {
 	float3 direction = normalize(Light.Direction.xyz);
 	direction = SampleConeRay(direction, Light.SourceRadius, Random);
@@ -47,7 +47,7 @@ float3 SampleDirectionalLight(RaytracingAccelerationStructure AS, GPULight Light
 	return max(dot(normal, direction), 0) * Light.Color.rgb * occlusion;
 }
 
-float3 SamplePointLight(RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
+float3 SamplePointLight(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
 {
 	float3 direction = normalize(Light.Position.xyz - origin);
 	float dist = distance(Light.Position.xyz, origin);
@@ -65,7 +65,7 @@ float3 SamplePointLight(RaytracingAccelerationStructure AS, GPULight Light, floa
 	return max(dot(normal, direction), 0) * attenuation * Light.Color.rgb * occlusion;
 }
 
-float3 RayTraceEvaluateDirectLighting(RaytracingAccelerationStructure AS, float3 Origin, uint RngState, BRDFData BRDF)
+float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure AS, float3 Origin, uint RngState, BRDFData BRDF)
 {
 	float3 Result = float3(0, 0, 0);
 	
@@ -100,7 +100,7 @@ float3 RayTraceEvaluateDirectLighting(RaytracingAccelerationStructure AS, float3
 }
 
 // performs multi-bounce raytracing and path accumulation
-float3 RayTraceAccumulate(RaytracingAccelerationStructure AS,
+float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 	float3 Origin, float3 Direction, int MaxBounces, inout uint RngState
 )
 {
