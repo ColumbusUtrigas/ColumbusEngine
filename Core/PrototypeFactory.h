@@ -74,6 +74,6 @@ namespace Columbus
 
 	// #define IMPLEMENT_PROTOTYPE(BaseType, Type) \
 	// 	eType::Type##_PrototypeTypeRgistrator Type::Type##_PrototypeTypeRegistrator_Init; \
-		/*IMPLEMENT_SERIALIZATION(Type);*/
+	//	IMPLEMENT_SERIALIZATION(Type);
 
 }

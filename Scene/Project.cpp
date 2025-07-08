@@ -33,7 +33,10 @@ namespace Columbus
 		std::ifstream ifs(Path);
 		ifs >> json;
 
-		Project->BasePath = std::filesystem::path(Path).parent_path().string();
+		auto Base = std::filesystem::path(Path).parent_path();
+
+		Project->BasePath = Base.string();
+		Project->DataPath = (Base / "Data").string();
 
 		Project->Version = json["Version"];
 		Project->ProjectName = json["ProjectName"];

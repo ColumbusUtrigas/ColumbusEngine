@@ -3,9 +3,12 @@
 #include <Core/Reflection.h>
 #include <Core/Filesystem.h>
 #include <Math/Quaternion.h>
+#include <Scene/Project.h>
 #include <imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <Lib/nativefiledialog/src/include/nfd.h>
+
+#include <filesystem>
 
 
 namespace Columbus::Editor
@@ -243,11 +246,11 @@ namespace Columbus::Editor
 			bool Open = true;
 			bool WasClosed = false;
 
-			ImVec2 Size(300, 100);
+			ImVec2 Size(500, 250);
 
 			ImGui::OpenPopup(Window.Name.c_str());
 			ImGui::SetNextWindowPosCenter(ImGuiCond_Always);
-			//ImGui::SetNextWindowSize(ImVec2(Size.x, Size.y));
+			ImGui::SetNextWindowSize(ImVec2(Size.x, Size.y));
 			if (ImGui::BeginPopupModal(Window.Name.c_str(), &Open, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				if (Window.DrawCallback())
@@ -314,6 +317,12 @@ namespace Columbus::Editor
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Editing of reflected objects
+
+	static bool is_subpath(const std::filesystem::path& path, const std::filesystem::path& base)
+	{
+		const auto mismatch_pair = std::mismatch(path.begin(), path.end(), base.begin(), base.end());
+		return mismatch_pair.second == base.end();
+	}
 
 	bool Reflection_EditObjectField(char* Object, const Reflection::Field& Field, int Depth)
 	{
@@ -427,8 +436,19 @@ namespace Columbus::Editor
 
 				if (NFD_OpenDialog("", nullptr, &path) == NFD_OKAY)
 				{
-					((AssetRefBase*)FieldData)->Path.assign(path);
-					// TODO: request asset loading and update reference
+					const auto& AssetBasePath = GCurrentProject->DataPath;
+
+					if (!is_subpath(path, AssetBasePath))
+					{
+						char ErrorBuf[4096]{ 0 };
+						snprintf(ErrorBuf, 4096, "Cannot choose asset (%s) - any referenced asset has to be under project's Data folder (%s)", path, AssetBasePath.c_str());
+
+						Editor::ShowMessageBox("Asset Reference Error", ErrorBuf, {});
+						Log::Error(ErrorBuf);
+						return false;
+					}
+
+					((AssetRefBase*)FieldData)->Path = std::filesystem::relative(path, AssetBasePath).string();
 					return true;
 				}
 

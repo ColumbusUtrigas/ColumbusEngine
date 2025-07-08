@@ -2,10 +2,12 @@
 
 #include <Math/Quaternion.h>
 #include <Core/Serialisation.h>
+#include <Scene/Project.h>
 
 #include <limits.h>
 #include <float.h>
 #include <algorithm>
+#include <filesystem>
 #include <iomanip>
 #include <fstream>
 #include <Lib/tinygltf/tiny_gltf.h>
@@ -20,15 +22,16 @@ IMPLEMENT_CPU_PROFILING_COUNTER("Transforms Update", "SceneCPU", CpuCounter_Scen
 namespace Columbus
 {
 
+
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
 
-	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice)
+	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice), Assets(AssetSystem::Get())
 	{
 		Physics.SetGravity(Vector3(0, -9.81f, 0));
 
 		// asset handling callbacks
 		{
-			Sounds.LoadFunction = [this](const char* Path) -> Sound*
+			Assets.AssetLoaderFunctions[Reflection::FindStruct<Sound>()] = [this](const char* Path) -> void*
 			{
 				Sound* Snd = new Sound();
 				if (!Snd->Load(Path))
@@ -38,10 +41,9 @@ namespace Columbus
 				}
 				return Snd;
 			};
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Sound>()] = [this](void* Snd) { delete ((Sound*)Snd); };
 
-			Sounds.UnloadFunction = [this](Sound* Snd) { delete Snd; };
-
-			Textures.LoadFunction = [this](const char* Path) -> Texture2*
+			Assets.AssetLoaderFunctions[Reflection::FindStruct<Texture2>()] = [this](const char* Path) -> void*
 			{
 				Image Img;
 				if (!Img.LoadFromFile(Path))
@@ -51,8 +53,18 @@ namespace Columbus
 
 				return Device->CreateTexture(Img);
 			};
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Texture2>()] = [this](void* Asset) { Device->DestroyTextureDeferred((Texture2*)Asset); };
 
-			Textures.UnloadFunction = [this](Texture2* Tex) { Device->DestroyTextureDeferred(Tex); };
+			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevel>()] = [this](const char* Path) -> void*
+			{
+				HLevel* Level = nullptr;
+				if (std::string(Path).ends_with(".clvl"))
+				{
+					return LoadLevelCLVL(Path);
+				}
+				return LoadLevelGLTF2(Path);
+			};
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevel>()] = [this](void* Asset) { RemoveLevel((HLevel*)Asset); };
 		}
 
 		SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [this](GPUScene* Scene)
@@ -95,10 +107,9 @@ namespace Columbus
 		ALevelThing* LevelThing = new ALevelThing();
 		LevelThing->World = this;
 		LevelThing->Name = std::string("ALevelThing ") + std::to_string(AllThings.Size());
+		LevelThing->LevelAsset = AssetRef<HLevel>(Path);
 
 		AddThing(LevelThing);
-
-		LevelThing->LevelPath = Path;
 		LevelThing->OnLoad();
 		LevelThing->OnCreate();
 
@@ -497,7 +508,7 @@ namespace Columbus
 		{
 			AThing* NewThing = Reflection_DeserialiseStructJson_NewInstance<AThing>(thing);
 			NewThing->World = this;
-			ResolveStructAssetReferences(NewThing->GetTypeVirtual(), NewThing);
+			AssetSystem::Get().ResolveStructAssetReferences(NewThing->GetTypeVirtual(), NewThing);
 			NewThing->OnLoad();
 			Level->Things.push_back(NewThing);
 		}
@@ -554,32 +565,6 @@ namespace Columbus
 	void EngineWorld::RemoveLevel(HLevel* Level)
 	{
 		assert(false);
-	}
-
-	void EngineWorld::ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object)
-	{
-		for (const auto& Field : Struct->Fields)
-		{
-			if (Field.Type == Reflection::FieldType::AssetRef)
-			{
-				if (Field.Typeguid == Reflection::FindTypeGuid<Texture2>())
-				{
-					AssetRef<Texture2>* Ref = (AssetRef<Texture2>*)((char*)Object + Field.Offset);
-					if (Ref->Path.empty())
-					{
-						Log::Warning("Texture asset reference %s is empty in %s", Field.Name, Struct->Name);
-					}
-					else
-					{
-						Ref->Asset = Textures.Load(Ref->Path.c_str());
-					}
-				}
-				else
-				{
-					Log::Error("Unknown asset reference type %s in %s", Field.Name, Struct->Name);
-				}
-			}
-		}
 	}
 
 	void EngineWorld::ResolveThingThingReferences(AThing* Thing)
@@ -959,7 +944,7 @@ namespace Columbus
 	void AThing::OnUiPropertyChange()
 	{
 		bRenderStateDirty = true;
-		World->ResolveStructAssetReferences(GetTypeVirtual(), this);
+		AssetSystem::Get().ResolveStructAssetReferences(GetTypeVirtual(), this);
 	}
 
 	void ADecal::OnCreate()
@@ -1141,28 +1126,21 @@ namespace Columbus
 	{
 		Super::OnLoad();
 
-		Level = World->LoadLevelGLTF2(LevelPath.c_str());
-		if (Level == nullptr)
-		{
-			Log::Error("Couldn't load level %s", LevelPath.c_str());
-			return;
-		}
-
-		CachedLevelPath = LevelPath;
+		LevelAsset.Resolve();
 	}
 
 	void ALevelThing::OnCreate()
 	{
 		Super::OnCreate();
 
-		if (Level == nullptr)
+		if (LevelAsset.Asset == nullptr)
 		{
 			Log::Error("Level is null");
 			return;
 		}
 
 		// find all root nodes in the level, parent them to the thing
-		for (AThing* Thing : Level->Things)
+		for (AThing* Thing : LevelAsset.Asset->Things)
 		{
 			Thing->bTransientThing = true;
 
@@ -1173,45 +1151,27 @@ namespace Columbus
 			}
 		}
 
-		World->AddLevel(Level);
+		World->AddLevel(LevelAsset.Asset);
 	}
 
 	void ALevelThing::OnDestroy()
 	{
-		if (Level == nullptr)
+		if (LevelAsset.Asset == nullptr)
 		{
 			Log::Error("Level is null");
 			return;
 		}
 
-		for (AThing* Thing : Level->Things)
+		// deletion of the level - double-check that it works properly
+		__debugbreak();
+
+		for (AThing* Thing : LevelAsset.Asset->Things)
 		{
 			World->DeleteThing(Thing->StableId);
 		}
 		Children.clear();
-		Level = nullptr;
-
-		// TODO: simplify
-		// World->RemoveLevel(Level);
-
-		// TODO: unload level
 
 		Super::OnDestroy();
-	}
-
-	void ALevelThing::OnUiPropertyChange()
-	{
-		// TODO: make this string a picker that only works on gltfs so that we don't fuck it up
-
-		if (LevelPath != CachedLevelPath)
-		{
-			// reload it
-			OnDestroy();
-			OnLoad();
-			OnCreate();
-		}
-
-		bRenderStateDirty = true;
 	}
 }
 
@@ -1219,6 +1179,12 @@ namespace Columbus
 using namespace Columbus;
 
 CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Texture2, []() -> void* { return nullptr; }, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(Sound)
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(HLevel)
 CREFLECT_STRUCT_END()
 
 CREFLECT_ENUM_BEGIN(LightType, "")
@@ -1257,7 +1223,7 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ADecal);
 CREFLECT_STRUCT_BEGIN(ADecal, "")
-CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Texture, "");
+	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Texture, "");
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
@@ -1267,5 +1233,5 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALevelThing);
 CREFLECT_STRUCT_BEGIN(ALevelThing, "")
-	CREFLECT_STRUCT_FIELD(std::string, LevelPath, "Picker(gltf,clvl)")
+	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "Picker(gltf,clvl)")
 CREFLECT_STRUCT_END()

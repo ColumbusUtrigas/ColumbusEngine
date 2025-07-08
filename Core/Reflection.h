@@ -67,6 +67,7 @@ XXX_CReflection_Struct_Initialiser_##x() {\
 	using LocalStructType = x; \
 	Reflection::Struct* Struct = Reflection::RegisterStruct<x>(); \
 	Struct->Constructor = constructorLambda; \
+	Struct->Destructor = [](void* Object) { delete (LocalStructType*)Object; }; \
 	Struct->ParentGuid = Reflection::FindStructParentGuid<x>();
 
 #define CREFLECT_STRUCT_BEGIN(x, meta) \
@@ -162,6 +163,7 @@ namespace Reflection
 		std::vector<Field> LocalFields;
 
 		std::function<void*()> Constructor;
+		std::function<void(void*)> Destructor; // deletes as well
 
 		const char* ParentGuid;
 		Struct* Parent;

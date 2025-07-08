@@ -25,6 +25,7 @@ namespace Columbus
 		int Version;
 		std::string ProjectName;
 		std::string BasePath;
+		std::string DataPath;
 
 		int StartLevelIndex = -1;
 		std::vector<EngineProjectLevelEntry> Levels;
