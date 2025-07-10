@@ -1,5 +1,6 @@
 #include "Core/CVar.h"
 #include "Core/Util.h"
+#include "Core/Asset.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/IrradianceVolume.h"
 #include "Graphics/RenderGraph.h"
@@ -549,6 +550,28 @@ namespace Columbus
 				memset(buf, 0, 1024);
 
 				isPopupVisible = false;
+			}
+		}
+		ImGui::End();
+
+		if (ImGui::Begin("Loaded Assets"))
+		{
+			auto& assets = AssetSystem::Get();
+			if (ImGui::BeginTable("AssetsTable", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders))
+			{
+				ImGui::TableSetupColumn("Path");
+				ImGui::TableSetupColumn("Type");
+				ImGui::TableSetupColumn("RefCount");
+				ImGui::TableHeadersRow();
+
+				for (const auto& [path, data] : assets.LoadedAssets)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(path.c_str());
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(data.Type ? data.Type->Name : "Unknown");
+					ImGui::TableNextColumn(); ImGui::Text("%d", data.RefCount);
+				}
+				ImGui::EndTable();
 			}
 		}
 		ImGui::End();

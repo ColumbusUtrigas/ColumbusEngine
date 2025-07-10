@@ -183,6 +183,20 @@ namespace Reflection
 	const std::vector<Struct*>& GetAllStructs();
 	const std::vector<Enum*>&   GetAllEnums();
 
+	// walks the inheritance tree to check if Child has Parent anywhere in the chain
+	bool HasParentType(const Struct* Child, const Struct* Parent);
+
+	template <typename Parent>
+	bool HasParentType(const Struct* Child)
+	{
+		return HasParentType(Child, FindStruct<Parent>());
+	}
+
+	template <typename Child, typename Parent>
+	bool HasParentType()
+	{
+		return HasParentType(FindStruct<Child>(), FindStruct<Parent>());
+	}
 
 	// Manual type register
 

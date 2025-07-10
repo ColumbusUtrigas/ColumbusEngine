@@ -86,6 +86,24 @@ namespace Reflection
 		return ReflectionData::Instance().AllEnums;
 	}
 
+	bool HasParentType(const Struct* Child, const Struct* Parent)
+	{
+		if (!Child || !Parent)
+			return false;
+		if (Child == Parent)
+			return true;
+
+		if (Child->ParentGuid)
+		{
+			const Struct* ParentStruct = FindStructByGuid(Child->ParentGuid);
+			if (ParentStruct)
+			{
+				return HasParentType(ParentStruct, Parent);
+			}
+		}
+		return false;
+	}
+
 	// Type search
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 

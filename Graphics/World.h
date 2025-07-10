@@ -31,31 +31,7 @@ namespace Columbus
 	struct AThing;
 	using HStableThingId = TStableSparseArray<AThing*>::Handle;
 
-	// TODO: delete
-	using GameObjectId = int;
-
 	struct EngineWorld;
-
-	// TODO: remove that - temporary thing served it's purpose
-	struct GameObject
-	{
-	public:
-		// Common data definition
-
-		Transform Trans;
-		EngineWorld* World = nullptr;
-
-		GameObjectId Id = -1;
-		GameObjectId ParentId = -1;
-		std::vector<GameObjectId> Children;
-
-		std::string Name;
-
-		// TODO: remove that because it's not always a mesh
-		int MeshId = -1;
-		// TODO: remove that because it's a mesh GPU state thing
-		std::vector<int> GPUScenePrimitives;
-	};
 
 	struct AThing
 	{
@@ -95,6 +71,16 @@ namespace Columbus
 		virtual void OnUpdateRenderState();
 
 		virtual void OnUiPropertyChange();
+	};
+
+	struct AVolume : public AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AVolume);
+		using Super = AThing;
+
+		Vector4 DebugColour = Vector4(1, 0, 0, 0.3f);
+	public:
+		bool ContainsPoint(const Vector3& Point) const;
 	};
 
 	struct ALight : public AThing
@@ -201,17 +187,11 @@ namespace Columbus
 
 	struct EngineWorld
 	{
-		SPtr<GPUScene> SceneGPU;
-
-
 		// TODO: proper resource management for meshes
 		std::vector<Mesh2*> Meshes;
 
+		// levels, things
 		std::unordered_map<std::string, HLevel*> LoadedLevels;
-
-		// TODO: delete
-		std::vector<GameObject> GameObjects;
-
 		TStableSparseArray<AThing*> AllThings;
 
 		// systems
@@ -222,8 +202,9 @@ namespace Columbus
 		UISystem UI;
 
 		// rendering
-		SkySettings Sky;
 		SPtr<DeviceVulkan> Device;
+		SPtr<GPUScene> SceneGPU;
+		SkySettings Sky;
 		RenderView MainView;
 
 	public:
@@ -260,11 +241,6 @@ namespace Columbus
 		// give the first found Thing of the type or nullptr if not found
 		AThing* FindThingByType(const Reflection::Struct* Type);
 
-		// TODO: delete
-		GameObjectId CreateGameObject(const char* Name, int Mesh);
-		void         DestroyGameObject(GameObjectId Object);
-		void         ReparentGameObject(GameObjectId Object, GameObjectId NewParent);
-
 		HWorldIntersectionResult CastRayClosestHit(const Geometry::Ray& Ray, float MaxDistance, int CollisionMask);
 		HWorldIntersectionResult CastRayClosestHit(const Vector3& From, const Vector3& To, int CollisionMask);
 
@@ -297,6 +273,7 @@ CREFLECT_DECLARE_STRUCT(Columbus::Sound, 1, "D8CFCF19-4688-4039-BC40-81C4B796C25
 CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 1, "4112562B-4C50-47FD-B6F4-BAAC28FC4CE7");
 
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AVolume, Columbus::AThing, 1, "EA5F80A9-684B-4F60-95A9-DBE4949B6268");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");

@@ -7,6 +7,15 @@
 #include <unordered_map>
 #include <functional>
 
+// system description:
+// 
+// AssetRef is a shared immutable resource, it can refernce any reflected type and types like textures, sounds, levels
+// AssetRef helps to manage lifetime of an asset, its loading and unloading, and can be used in the editor UI
+// 
+// AssetSystem provides a central hub for resolving references and holding resources
+// AssetSystem should not be used directly as much as possible, use AssetRef instead
+// By default, AssetSystem will treat any asset as a serialised struct, but you can register custom loaders and unloaders for specific types (like textures and sounds)
+
 namespace Columbus
 {
 
@@ -89,12 +98,13 @@ namespace Columbus
 		using AssetLoaderFn = std::function<void* (const char* Path)>;
 		using AssetUnloaderFn = std::function<void(void* Asset)>;
 
+		std::unordered_map<const Reflection::Struct*, const char*>     AssetExtensions; // for asset picker
 		std::unordered_map<const Reflection::Struct*, AssetLoaderFn>   AssetLoaderFunctions;
 		std::unordered_map<const Reflection::Struct*, AssetUnloaderFn> AssetUnloaderFunctions;
 
 		std::string SourceDataPath; // path to the source data folder, used for relative paths
 
-	private:
+	public:
 		// DATA
 		struct AssetData
 		{

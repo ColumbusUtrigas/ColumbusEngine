@@ -432,9 +432,15 @@ namespace Columbus::Editor
 			{
 				char* path = nullptr;
 
-				Log::Warning("Asset picker: TODO: list of supported extensions per asset type");
+				const char* AssetExts = "";
+				const Reflection::Struct* AssetType = Reflection::FindStructByGuid(Field.Typeguid);
 
-				if (NFD_OpenDialog("", nullptr, &path) == NFD_OKAY)
+				if (AssetSystem::Get().AssetExtensions.contains(AssetType))
+				{
+					AssetExts = AssetSystem::Get().AssetExtensions[AssetType];
+				}
+
+				if (NFD_OpenDialog(AssetExts, nullptr, &path) == NFD_OKAY)
 				{
 					const auto& AssetBasePath = GCurrentProject->DataPath;
 

@@ -77,10 +77,12 @@ struct Player
 	EngineWorld& World;
 
 	int MeshId;
-	GameObjectId Id;
+	//GameObjectId Id;
 	Rigidbody* RB;
 
-	Player(EngineWorld& World) : World(World), Id(-1) {}
+	Player(EngineWorld& World) : World(World)
+		//, Id(-1)
+	{}
 
 	void Load();
 	void Spawn();
@@ -93,53 +95,53 @@ struct Player
 
 void Player::Load()
 {
-	if (!DoPlayer) return;
+	//if (!DoPlayer) return;
 
-	Model model;
-	model.Load("Data/Meshes/Sphere.obj");
-	//model.Load("Data/Meshes/Hercules.cmf");
-	model.RecalculateTangents();
-	MeshId = World.LoadMesh(model);
+	//Model model;
+	//model.Load("Data/Meshes/Sphere.obj");
+	////model.Load("Data/Meshes/Hercules.cmf");
+	//model.RecalculateTangents();
+	//MeshId = World.LoadMesh(model);
 
-	SubModel a = model.GetSubModel(0);
+	//SubModel a = model.GetSubModel(0);
 
-	Vector3 Center;
-	float Radius = 0;
-	{
-		for (int i = 0; i < a.VerticesCount; i++)
-		{
-			Center += a.Positions[i];
-		}
+	//Vector3 Center;
+	//float Radius = 0;
+	//{
+	//	for (int i = 0; i < a.VerticesCount; i++)
+	//	{
+	//		Center += a.Positions[i];
+	//	}
 
-		Center /= a.VerticesCount;
+	//	Center /= a.VerticesCount;
 
-		for (int i = 0; i < a.VerticesCount; i++)
-		{
-			Radius = Math::Max(a.Positions[i].Distance(Center), Radius);
-		}
-	}
+	//	for (int i = 0; i < a.VerticesCount; i++)
+	//	{
+	//		Radius = Math::Max(a.Positions[i].Distance(Center), Radius);
+	//	}
+	//}
 
-	PhysicsShapeConvexHull* Hull = new PhysicsShapeConvexHull((float*)a.Positions, a.VerticesCount);
-	PhysicsShapeSphere* Sphere = new PhysicsShapeSphere(Radius);
+	//PhysicsShapeConvexHull* Hull = new PhysicsShapeConvexHull((float*)a.Positions, a.VerticesCount);
+	//PhysicsShapeSphere* Sphere = new PhysicsShapeSphere(Radius);
 
-	RB = new Rigidbody(Sphere);
-	RB->SetStatic(false);
+	//RB = new Rigidbody(Sphere);
+	//RB->SetStatic(false);
 }
 
 void Player::Spawn()
 {
 	if (!DoPlayer) return;
 
-	if (Id != -1)
-		return; // already spawned
+//	if (Id != -1)
+//		return; // already spawned
 
-	Id = World.CreateGameObject("Player", MeshId);
-	World.GameObjects[Id].Trans.Position = Vector3(0, 100, 0);
-	World.GameObjects[Id].Trans.Update();
+	//Id = World.CreateGameObject("Player", MeshId);
+	//World.GameObjects[Id].Trans.Position = Vector3(0, 100, 0);
+	//World.GameObjects[Id].Trans.Update();
 
-	RB->SetTransform(World.GameObjects[Id].Trans);
+	//RB->SetTransform(World.GameObjects[Id].Trans);
 
-	World.Physics.AddRigidbody(RB);
+	//World.Physics.AddRigidbody(RB);
 }
 
 void Player::HandleInput()
@@ -157,9 +159,9 @@ void Player::PrePhysics()
 {
 	if (!DoPlayer) return;
 
-	if (Id != -1)
+	//if (Id != -1)
 	{
-		RB->SetTransform(World.GameObjects[Id].Trans);
+		//RB->SetTransform(World.GameObjects[Id].Trans);
 	}
 }
 
@@ -167,10 +169,10 @@ void Player::PostPhysics()
 {
 	if (!DoPlayer) return;
 
-	if (Id != -1)
+	//if (Id != -1)
 	{
-		World.GameObjects[Id].Trans = RB->GetTransform();
-		World.GameObjects[Id].Trans.Update();
+		//World.GameObjects[Id].Trans = RB->GetTransform();
+		//World.GameObjects[Id].Trans.Update();
 	}
 }
 
@@ -218,7 +220,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 		{
 			// TODO: proper scene graph and transform management
 
-			Transform& Trans = World.GameObjects[SelectedObject].Trans;
+			/*Transform& Trans = World.GameObjects[SelectedObject].Trans;
 
 			Matrix TestMatrix = Trans.GetMatrix().GetTransposed();
 			ImGuizmo::Manipulate(&ViewMatrix.M[0][0], &ProjectionMatrix.M[0][0], OperationMode, ImGuizmo::MODE::LOCAL, &TestMatrix.M[0][0]);
@@ -226,7 +228,7 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 			Vector3 Euler;
 			TestMatrix.Transpose();
 			TestMatrix.DecomposeTransform(Trans.Position, Euler, Trans.Scale);
-			Trans.Rotation = Quaternion(Euler);
+			Trans.Rotation = Quaternion(Euler);*/
 		}
 	}
 	ImGui::End();
@@ -237,7 +239,7 @@ static void AddWorldCollision(EngineWorld& World)
 {
 	return;
 	// create rigidbodies for the level
-	for (int i = 0; i < (int)World.GameObjects.size(); i++)
+	/*for (int i = 0; i < (int)World.GameObjects.size(); i++)
 	{
 		const Mesh2& mesh = *World.Meshes[World.GameObjects[i].MeshId];
 
@@ -256,7 +258,7 @@ static void AddWorldCollision(EngineWorld& World)
 			MeshRB->SetStatic(true);
 			World.Physics.AddRigidbody(MeshRB);
 		}
-	}
+	}*/
 }
 
 // all the data about current editor context
@@ -942,7 +944,7 @@ int main()
 		}
 
 		// TODO: common object selection interface
-		if (SelectedObject != -1)
+		/*if (SelectedObject != -1)
 		{
 			const int MeshId = World.GameObjects[SelectedObject].MeshId;
 			const Box Bounding = World.Meshes[MeshId]->BoundingBox;
@@ -952,7 +954,7 @@ int main()
 			Transform.Translate(Bounding.CalcCenter());
 
 			World.MainView.DebugRender.AddBox(Transform, Vector4(0, 0.3f, 0, 0.3f));
-		}
+		}*/
 
 		// UI Prepare
 		{

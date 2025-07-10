@@ -504,10 +504,6 @@ namespace Columbus::DebugUI
 		ImGui::End();
 	}
 
-	static void DrawObjectLeaf(EngineWorld& World, GameObject& Object)
-	{
-	}
-
 	void ShowMeshesWindow(EngineWorld& World)
 	{
 	}

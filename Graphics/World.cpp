@@ -42,6 +42,7 @@ namespace Columbus
 				return Snd;
 			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Sound>()] = [this](void* Snd) { delete ((Sound*)Snd); };
+			Assets.AssetExtensions[Reflection::FindStruct<Sound>()] = "wav,ogg,mp3";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<Texture2>()] = [this](const char* Path) -> void*
 			{
@@ -54,6 +55,7 @@ namespace Columbus
 				return Device->CreateTexture(Img);
 			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Texture2>()] = [this](void* Asset) { Device->DestroyTextureDeferred((Texture2*)Asset); };
+			Assets.AssetExtensions[Reflection::FindStruct<Texture2>()] = "dds,png,jpg,jpeg,exr,hdr,tiff,tga,bmp";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevel>()] = [this](const char* Path) -> void*
 			{
@@ -65,6 +67,7 @@ namespace Columbus
 				return LoadLevelGLTF2(Path);
 			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevel>()] = [this](void* Asset) { RemoveLevel((HLevel*)Asset); };
+			Assets.AssetExtensions[Reflection::FindStruct<HLevel>()] = "gltf,clvl";
 		}
 
 		SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [this](GPUScene* Scene)
@@ -672,28 +675,6 @@ namespace Columbus
 		return LoadMesh(model);
 	}
 
-	// TODO: delete
-	GameObjectId EngineWorld::CreateGameObject(const char* Name, int Mesh)
-	{
-		return -1;
-	}
-
-	// TODO: delete
-	void EngineWorld::ReparentGameObject(GameObjectId Object, GameObjectId NewParent)
-	{
-		GameObjectId OldParent = GameObjects[Object].ParentId;
-		if (OldParent != -1)
-		{
-			// TODO: proper data structures
-			auto Iter = std::find(GameObjects[OldParent].Children.begin(), GameObjects[OldParent].Children.end(), Object);
-			if (Iter != GameObjects[OldParent].Children.end())
-				GameObjects[OldParent].Children.erase(Iter);
-		}
-
-		GameObjects[Object].ParentId = NewParent;
-		GameObjects[NewParent].Children.push_back(Object);
-	}
-
 	HWorldIntersectionResult EngineWorld::CastRayClosestHit(const Geometry::Ray& Ray, float Distance, int CollisionMask)
 	{
 		return CastRayClosestHit(Ray.Origin, Ray.Origin + Ray.Direction*Distance, CollisionMask);
@@ -793,38 +774,6 @@ namespace Columbus
 	void EngineWorld::UpdateTransforms()
 	{
 		PROFILE_CPU(CpuCounter_SceneTransformUpdate);
-
-		// TODO: optimise
-
-		for (int i = 0; i < (int)GameObjects.size(); i++)
-		{
-			GameObject& Object = GameObjects[i];
-			Transform& Trans = Object.Trans;
-
-			Trans.Update();
-
-			Matrix GlobalTransform = Trans.GetMatrix();
-
-			int ParentId = Object.ParentId;
-
-			while (ParentId != -1 && Object.Id != Object.ParentId)
-			{
-				GameObject& ParentObj = GameObjects[ParentId];
-				GlobalTransform = ParentObj.Trans.GetMatrix() * GlobalTransform;
-				ParentId = ParentObj.ParentId;
-
-				if (Object.ParentId == ParentObj.ParentId)
-					break;
-			}
-
-			/*if (Object.MeshId != -1)
-			{
-				for (int Prim : Object.GPUScenePrimitives)
-				{
-					SceneGPU->Meshes[Prim].Transform = GlobalTransform;
-				}
-			}*/
-		}
 	}
 
 	void EngineWorld::PostUpdate()
@@ -884,35 +833,6 @@ namespace Columbus
 namespace Columbus
 {
 
-	struct EngineAssetSystem
-	{
-		
-	};
-
-	// Things: Hierarchy, Sub-levels management (think CHARACTERS with a bunch of presets)
-
-	// MeshInstance: Material serialised in and edited (requires texture refs)
-
-	// asset handle:
-		// guid/path, resolve (load, increment)
-		// use (no increment)
-		// unload (decrement)
-		// copy (increment)
-
-	// UNIFIED asset handle (typesafe):
-		// base asset type?
-
-	// Asynchronous loading
-	// Asynchronous resolve during onwer asynchronous streaming (level)
-
-	// UI picking
-		// Requires asset database - refresh, scan on load, filewatch
-
-	// Asset indirection system
-		// Possible absolute path
-		// Path relative to the data folder
-		// GUID -> Relative path; Relative path -> GUID
-
 	void AThing::OnUpdateRenderState()
 	{
 		TransGlobal = Trans;
@@ -947,6 +867,13 @@ namespace Columbus
 		AssetSystem::Get().ResolveStructAssetReferences(GetTypeVirtual(), this);
 	}
 
+	bool AVolume::ContainsPoint(const Vector3& Point) const
+	{
+		Vector3 LocalPoint = Point - TransGlobal.Position;
+		Vector3 HalfSize = TransGlobal.Scale * 0.5f;
+		return abs(LocalPoint.X) <= HalfSize.X && abs(LocalPoint.Y) <= HalfSize.Y && abs(LocalPoint.Z) <= HalfSize.Z;
+	}
+
 	void ADecal::OnCreate()
 	{
 		Super::OnCreate();
@@ -956,8 +883,6 @@ namespace Columbus
 	void ADecal::OnDestroy()
 	{
 		World->SceneGPU->Decals.Remove(DecalHandle);
-
-		// TODO: de-resolve asset ref
 
 		Super::OnDestroy();
 	}
@@ -1202,6 +1127,10 @@ CREFLECT_STRUCT_BEGIN(AThing, "")
 	CREFLECT_STRUCT_FIELD(std::string, Name, "")
 CREFLECT_STRUCT_END()
 
+CREFLECT_DEFINE_VIRTUAL(AVolume);
+CREFLECT_STRUCT_BEGIN(AVolume, "")
+CREFLECT_STRUCT_END()
+
 CREFLECT_DEFINE_VIRTUAL(ALight);
 CREFLECT_STRUCT_BEGIN(ALight, "")
 	CREFLECT_STRUCT_FIELD(LightType, Type, "")
@@ -1233,5 +1162,5 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALevelThing);
 CREFLECT_STRUCT_BEGIN(ALevelThing, "")
-	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "Picker(gltf,clvl)")
+	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "")
 CREFLECT_STRUCT_END()
