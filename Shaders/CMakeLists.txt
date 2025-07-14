@@ -67,6 +67,6 @@ set_target_properties(Shaders PROPERTIES FOLDER "Engine")
 
 add_custom_command(TARGET Shaders POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E echo "Copying compiled shaders into target directory"
-	COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${TARGET}>/PrecompiledShaders/"
-	COMMAND ${CMAKE_COMMAND} -E copy_directory "${BINARIES_DIR}/PrecompiledShaders/" "$<TARGET_FILE_DIR:${TARGET}>/PrecompiledShaders/"
+	COMMAND ${CMAKE_COMMAND} -E make_directory "${BINARIES_DIR}/$<CONFIG>/PrecompiledShaders/"
+	COMMAND ${CMAKE_COMMAND} -E copy_directory "${BINARIES_DIR}/PrecompiledShaders/" "${BINARIES_DIR}/$<CONFIG>/PrecompiledShaders/"
 )
