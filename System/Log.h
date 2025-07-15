@@ -34,6 +34,7 @@ namespace Columbus
 		static void _InternalStack(const char* Fmt, ...);
 
 		static std::vector<Msg>& GetData();
+		static std::string GetDataAsString();
 	};
 
 }

@@ -89,3 +89,15 @@ void WriteStacktraceToLog()
 			free(name);
 	}
 }
+
+static void CrashHandlerCallback(int signal)
+{
+	Columbus::Log::Error("System crash handler triggered with signal: %d", signal);
+	WriteStacktraceToLog();
+	exit(1);
+}
+
+void SetupSystemCrashHandler()
+{
+	std::signal(SIGSEGV, CrashHandlerCallback);
+}

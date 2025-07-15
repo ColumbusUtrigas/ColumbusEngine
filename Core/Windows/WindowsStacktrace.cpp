@@ -2,6 +2,7 @@
 #include <System/Log.h>
 #include <Windows.h>
 #include <DbgHelp.h>
+#include <filesystem>
 
 #pragma comment(lib, "dbghelp.lib")
 
@@ -165,4 +166,101 @@ void WriteStacktraceToLog()
 	{
 		Columbus::Log::_InternalStack("#%i %s %s at %s, line %i", ++n, Frame.module.c_str(), Frame.name.c_str(), Frame.file.c_str(), Frame.line);
 	}
+}
+
+static bool GCrashHandled = false;
+
+LONG WriteMinidump(EXCEPTION_POINTERS* exceptionInfo)
+{
+	if (GCrashHandled)
+	{
+		return EXCEPTION_CONTINUE_SEARCH; // already handled
+	}
+	GCrashHandled = true;
+
+	WriteStacktraceToLog();
+
+	// Create crash dumps folder
+	std::filesystem::path dumpDir = std::filesystem::current_path() / "CrashDumps";
+	std::filesystem::create_directories(dumpDir);
+
+	// Timestamp for filename
+	std::time_t t = std::time(nullptr);
+	std::tm tm;
+	localtime_s(&tm, &t);
+
+	char filename[64];
+	snprintf(filename, sizeof(filename), "Crash_%04d%02d%02d_%02d%02d%02d.dmp",
+		tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+		tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	std::filesystem::path dumpPath = dumpDir / filename;
+
+	// Create file
+	HANDLE hFile = CreateFileA(dumpPath.string().c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (hFile == INVALID_HANDLE_VALUE) return EXCEPTION_CONTINUE_SEARCH;
+
+	// Serialise logs into a user stream
+	std::string logData = Columbus::Log::GetDataAsString();
+
+	MINIDUMP_USER_STREAM logStream{};
+	logStream.Type = CommentStreamA;
+	logStream.BufferSize = (ULONG)logData.size();
+	logStream.Buffer = (PVOID)logData.data();
+
+	MINIDUMP_USER_STREAM_INFORMATION userStreamInfo{};
+	userStreamInfo.UserStreamCount = 1;
+	userStreamInfo.UserStreamArray = &logStream;
+
+	// Write minidump
+	MINIDUMP_EXCEPTION_INFORMATION dumpInfo;
+	dumpInfo.ThreadId = GetCurrentThreadId();
+	dumpInfo.ExceptionPointers = exceptionInfo;
+	dumpInfo.ClientPointers = FALSE;
+
+	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpWithFullMemory, &dumpInfo, &userStreamInfo, nullptr);
+	CloseHandle(hFile);
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+void SetupSystemCrashHandler()
+{
+	AddVectoredExceptionHandler(1, WriteMinidump);
+}
+
+
+__declspec(noinline) void Crash_NullPointer()
+{
+	Columbus::Log::Error("[CrashTest] Null pointer dereference");
+	int* ptr = nullptr;
+	*ptr = 42;
+}
+
+__declspec(noinline) void Crash_InvalidWrite()
+{
+	Columbus::Log::Error("[CrashTest] Invalid memory write");
+	int* ptr = (int*)0xDEADBEEF;
+	*ptr = 123;
+}
+
+__declspec(noinline) void Crash_StackOverflow()
+{
+	Columbus::Log::Error("[CrashTest] Stack overflow");
+	Crash_StackOverflow();
+}
+
+__declspec(noinline) void Crash_DivideByZero()
+{
+	Columbus::Log::Error("[CrashTest] Divide by zero");
+	int x = 1;
+	int y = 0;
+	int z = x / y;
+	Columbus::Log::Error("[CrashTest] Divide by zero result: %i", z);
+}
+
+__declspec(noinline) void Crash_DebugBreak()
+{
+	Columbus::Log::Error("[CrashTest] Debug break triggered");
+	__debugbreak();
 }

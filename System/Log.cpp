@@ -132,6 +132,34 @@ namespace Columbus
 		return g_LogBuffer;
 	}
 
+	std::string Log::GetDataAsString()
+	{
+		std::string result;
+		result.reserve(256 * 1024); // reserve 256KB for the log string
+
+		for (const Msg& msg : g_LogBuffer)
+		{
+			const char* typeStr = "Unknown";
+			switch (msg.type)
+			{
+			case Type_Initialization: typeStr = "Init";    break;
+			case Type_Success:        typeStr = "Success"; break;
+			case Type_Message:        typeStr = "Message"; break;
+			case Type_Warning:        typeStr = "Warning"; break;
+			case Type_Error:          typeStr = "Error";   break;
+			case Type_Fatal:          typeStr = "Fatal";   break;
+			}
+
+			result += "[";
+			result += typeStr;
+			result += "] ";
+			result += msg.text;
+			result += '\n';
+		}
+
+		return result;
+	}
+
 }
 
 
