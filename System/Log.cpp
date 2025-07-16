@@ -118,6 +118,10 @@ namespace Columbus
 	void Log::Fatal(const char* Fmt, ...)
 	{
 		Log("[FATAL]: ", Color_Purple, Color_White, Type_Fatal);
+
+		Crash_ProcessCustom();
+
+		// fallback
 		WriteStacktraceToLog();
 		exit(1);
 	}

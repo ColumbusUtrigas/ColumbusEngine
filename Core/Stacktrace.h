@@ -4,6 +4,7 @@ void SetupSystemCrashHandler();
 void WriteStacktraceToLog();
 
 // test crash functions
+void Crash_ProcessCustom();
 void Crash_NullPointer();
 void Crash_InvalidWrite();
 void Crash_StackOverflow();

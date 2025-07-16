@@ -25,34 +25,63 @@ namespace Columbus
 		return Project;
 	}
 
+	EngineProject* EngineProject::LoadProjectAuto()
+	{
+		std::string ProjectPath = GCommandLine.GetArgValue("-project", "");
+		if (ProjectPath.empty())
+		{
+			Log::Message("Project path is not specified. Falling back to default. Use -project <path> to specify the project path.");
+		}
+
+		return LoadProject(ProjectPath);
+	}
+
 	EngineProject* EngineProject::LoadProject(std::string Path)
 	{
 		EngineProject* Project = new EngineProject();
 
-		nlohmann::json json;
-		std::ifstream ifs(Path);
-		ifs >> json;
-
-		auto Base = std::filesystem::path(Path).parent_path();
-
-		Project->BasePath = Base.string();
-		Project->DataPath = (Base / "Data").string();
-
-		Project->Version = json["Version"];
-		Project->ProjectName = json["ProjectName"];
-		Project->StartLevelIndex = json["StartLevelIndex"];
-
-		for (auto& Element : json["Levels"].array())
+		if (Path.empty())
 		{
-			EngineProjectLevelEntry Level;
-			Level.LevelName = Element["LevelName"];
-			Level.ImportedPath = Element["ImportedPath"];
-			Level.SourcePath = Element["SourcePath"];
+			// fall back to default project setup
+			Project->BasePath = ".";
+			Project->DataPath = "./Data";
+			Project->Version = EngineProject::DataVersion;
+			Project->ProjectName = "Project";
+			Project->StartLevelIndex = 0;
 		}
-
-		if (Project->Version != EngineProject::DataVersion)
+		else
 		{
-			Log::Fatal("Project version doesn't match. Loaded %i, required %i", Project->Version, EngineProject::DataVersion);
+			nlohmann::json json;
+			Path += "/Project.json";
+			std::ifstream ifs(Path);
+			if (!ifs.is_open())
+			{
+				Log::Fatal("Couldn't load project from %s", Path.c_str());
+			}
+
+			ifs >> json;
+
+			auto Base = std::filesystem::path(Path).parent_path();
+
+			Project->BasePath = Base.string();
+			Project->DataPath = (Base / "Data").string();
+
+			Project->Version = json["Version"];
+			Project->ProjectName = json["ProjectName"];
+			Project->StartLevelIndex = json["StartLevelIndex"];
+
+			for (auto& Element : json["Levels"].array())
+			{
+				EngineProjectLevelEntry Level;
+				Level.LevelName = Element["LevelName"];
+				Level.ImportedPath = Element["ImportedPath"];
+				Level.SourcePath = Element["SourcePath"];
+			}
+
+			if (Project->Version != EngineProject::DataVersion)
+			{
+				Log::Fatal("Project version doesn't match. Loaded %i, required %i", Project->Version, EngineProject::DataVersion);
+			}
 		}
 
 		return Project;

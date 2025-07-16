@@ -494,10 +494,17 @@ namespace Columbus
 
 	HLevel* EngineWorld::LoadLevelCLVL(const char* Path)
 	{
-		std::ifstream fs(Path);
+		std::filesystem::path LevelPath = Path;
+		if (!LevelPath.is_absolute())
+		{
+			// relative path, prepend project data path
+			LevelPath = GCurrentProject->DataPath / LevelPath;
+		}
+
+		std::ifstream fs(LevelPath);
 		if (!fs.is_open())
 		{
-			Log::Fatal("Couldn't load scene, %s", Path);
+			Log::Fatal("Couldn't load scene, %s", LevelPath.c_str());
 			return nullptr;
 		}
 

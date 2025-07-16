@@ -35,6 +35,7 @@ namespace Columbus
 
 	public:
 		static EngineProject* CreateProject(std::string Name, std::string Path);
+		static EngineProject* LoadProjectAuto();
 		static EngineProject* LoadProject(std::string Path);
 		static void           SaveProject(const EngineProject* Project);
 	};

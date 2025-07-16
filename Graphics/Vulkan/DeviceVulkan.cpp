@@ -119,6 +119,11 @@ namespace Columbus
 #endif
 		};
 
+		if (IsVulkanDebugEnabled())
+		{
+			extensions.push_back(VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME);
+		}
+
 		VkDeviceCreateInfo info;
 		info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		info.pNext = &_DeviceFeatures;
@@ -1135,15 +1140,16 @@ namespace Columbus
 
 	void DeviceVulkan::_SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name)
 	{
-#if VULKAN_DEBUG
-		VkDebugUtilsObjectNameInfoEXT nameInfo;
-		nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-		nameInfo.pNext = nullptr;
-		nameInfo.objectType = Type;
-		nameInfo.objectHandle = ObjectHandle;
-		nameInfo.pObjectName = Name;
-		VK_CHECK(VkFunctions.vkSetDebugUtilsObjectName(_Device, &nameInfo));
-#endif
+		if (IsVulkanDebugEnabled())
+		{
+			VkDebugUtilsObjectNameInfoEXT nameInfo;
+			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+			nameInfo.pNext = nullptr;
+			nameInfo.objectType = Type;
+			nameInfo.objectHandle = ObjectHandle;
+			nameInfo.pObjectName = Name;
+			VK_CHECK(VkFunctions.vkSetDebugUtilsObjectName(_Device, &nameInfo));
+		}
 	}
 
 	TextureVulkan* DeviceVulkan::_CreateTexture(const TextureDesc2& Desc)

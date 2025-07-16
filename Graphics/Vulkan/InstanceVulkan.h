@@ -26,30 +26,14 @@ namespace Columbus
 	public:
 		InstanceVulkan();
 
-		SPtr<DeviceVulkan> CreateDevice()
-		{
-			// enumerate physical devices
-			uint32_t count;
-			if (vkEnumeratePhysicalDevices(instance, &count, nullptr) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to enumerate Vulkan physical devices");
-			}
-
-			std::vector<VkPhysicalDevice> devices(count);
-			if (vkEnumeratePhysicalDevices(instance, &count, devices.data()) != VK_SUCCESS)
-			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to enumerate Vulkan physical devices");
-			}
-
-			// TODO: choose the most powerful device
-			return SPtr<DeviceVulkan>(new DeviceVulkan(devices[0], instance));
-		}
+		SPtr<DeviceVulkan> CreateDevice();
 
 		~InstanceVulkan()
 		{
-			#ifdef VULKAN_DEBUG
+			if (IsVulkanDebugEnabled())
+			{
 				vk_vkDestroyDebugUtilsMessengerEXT(instance, _DebugUtilsMessenger, nullptr);
-			#endif
+			}
 
 			vkDestroyInstance(instance, nullptr);
 		}

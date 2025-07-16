@@ -170,8 +170,44 @@ void WriteStacktraceToLog()
 
 static bool GCrashHandled = false;
 
+bool ShouldWriteCrashDump(EXCEPTION_POINTERS* ep)
+{
+	DWORD code = ep->ExceptionRecord->ExceptionCode;
+
+	// Fatal always-dump list
+	switch (code)
+	{
+		case EXCEPTION_ACCESS_VIOLATION:
+		case EXCEPTION_INT_DIVIDE_BY_ZERO:
+		case EXCEPTION_ILLEGAL_INSTRUCTION:
+		case EXCEPTION_STACK_OVERFLOW:
+		case STATUS_HEAP_CORRUPTION:
+		case STATUS_STACK_BUFFER_OVERRUN:
+			return true;
+	}
+
+	// Ignore known benign cases
+	switch (code)
+	{
+		case 0x406D1388: // Thread naming
+		case 0x80000003: // Breakpoint
+		case 0x40010006: // OutputDebugString
+			return false;
+	}
+
+	// For others: only dump if non-continuable
+	//return (ep->ExceptionRecord->ExceptionFlags & EXCEPTION_NONCONTINUABLE);
+
+	return false; // if it's not fatal, don't dump
+}
+
 LONG WriteMinidump(EXCEPTION_POINTERS* exceptionInfo)
 {
+	if (!ShouldWriteCrashDump(exceptionInfo))
+	{
+		return EXCEPTION_CONTINUE_SEARCH; // not a crash we care about
+	}
+
 	if (GCrashHandled)
 	{
 		return EXCEPTION_CONTINUE_SEARCH; // already handled
@@ -229,6 +265,12 @@ void SetupSystemCrashHandler()
 	AddVectoredExceptionHandler(1, WriteMinidump);
 }
 
+void Crash_ProcessCustom()
+{
+	// Trigger an artificial SEH exception that your vectored handler will catch
+	DWORD exceptionCode = 0xE0000001; // Custom app-defined fatal error code
+	RaiseException(exceptionCode, EXCEPTION_NONCONTINUABLE, 0, nullptr);
+}
 
 __declspec(noinline) void Crash_NullPointer()
 {

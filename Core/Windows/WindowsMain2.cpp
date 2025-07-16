@@ -457,7 +457,7 @@ bool EnumComboBox(const char* Label, T* Value)
 // Think about multiple windows/viewports
 // Think about multi-gpu
 //
-int main()
+int main(int argc, char** argv)
 {
 	// TOOD: create import unit tests
 	//Assets::ImportLevel("C:/Users/Columbus/Documents/src/TestProject/Data/TestLevel/TestLevel.gltf", "C:/Users/Columbus/Documents/src/TestProject/Data/TestImport/Level.gltf");
@@ -832,7 +832,7 @@ int main()
 	}
 
 	//return 0;
-	InitializeEngine();
+	InitializeEngine(argc, argv);
 
 	Camera camera;
 	Timer timer;
