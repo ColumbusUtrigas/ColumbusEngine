@@ -128,10 +128,13 @@ static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Fiel
 	}
 }
 
-static void Reflection_SerialiseStructJson(char* Object, const Reflection::Struct* Struct, nlohmann::json& json)
+static void Reflection_SerialiseStructJson(char* Object, const Reflection::Struct* Struct, nlohmann::json& json, bool bWriteType = true)
 {
-	json["0_type_guid"] = Struct->Guid;
-	json["0_version"] = Struct->Version;
+	if (bWriteType)
+	{
+		json["0_type_guid"] = Struct->Guid;
+		json["0_version"] = Struct->Version;
+	}
 
 	for (const auto& Field : Struct->Fields)
 	{
@@ -148,9 +151,9 @@ static void Reflection_DeserialiseStructJson(char* Object, const Reflection::Str
 }
 
 template <typename T>
-static void Reflection_SerialiseStructJson(T& Object, nlohmann::json& json)
+static void Reflection_SerialiseStructJson(T& Object, nlohmann::json& json, bool bWriteType = true)
 {
-	Reflection_SerialiseStructJson((char*)&Object, Reflection::FindStructTypeForObject<T>(Object), json);
+	Reflection_SerialiseStructJson((char*)&Object, Reflection::FindStructTypeForObject<T>(Object), json, bWriteType);
 }
 
 template <typename T>
