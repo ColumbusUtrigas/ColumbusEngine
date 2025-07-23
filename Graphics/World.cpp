@@ -517,6 +517,15 @@ namespace Columbus
 		for (auto& thing : json["things"])
 		{
 			AThing* NewThing = Reflection_DeserialiseStructJson_NewInstance<AThing>(thing);
+			if (thing["1_Guid"].is_number_unsigned())
+			{
+				NewThing->Guid = (u64)thing["1_Guid"].get<u64>();
+			}
+			else
+			{
+				Log::Warning("Thing %s doesn't have a valid Guid, generating new one", NewThing->Name.c_str());
+			}
+
 			NewThing->World = this;
 			AssetSystem::Get().ResolveStructAssetReferences(NewThing->GetTypeVirtual(), NewThing);
 			NewThing->OnLoad();
@@ -551,6 +560,7 @@ namespace Columbus
 
 			auto thing = nlohmann::json();
 			Reflection_SerialiseStructJson<AThing>(*Thing, thing);
+			thing["1_Guid"] = (u64)Thing->Guid;
 			json["things"].push_back(thing);
 		}
 
@@ -564,9 +574,6 @@ namespace Columbus
 	{
 		for (AThing* Thing : Level->Things)
 		{
-			// resolve thing references
-			ResolveThingThingReferences(Thing);
-
 			Thing->World = this;
 			AddThing(Thing);
 		}
@@ -579,7 +586,29 @@ namespace Columbus
 
 	void EngineWorld::ResolveThingThingReferences(AThing* Thing)
 	{
+		for (const Reflection::Field& Field : Thing->GetTypeVirtual()->Fields)
+		{
+			if (Field.Type == Reflection::FieldType::ThingRef)
+			{
+				ThingRef<AThing>* Ref = (ThingRef<AThing>*)((char*)Thing + Field.Offset);
+				
+				HStableThingId Id = ThingGuidToId[Ref->Guid];
+				AThing** ppThing = AllThings.Get(Id);
+				Ref->Thing = ppThing ? *ppThing : nullptr;
 
+				if (!AllThings.IsValid(Id))
+				{
+					Log::Error("Thing %s has a reference to a non-existing thing with Guid %llu", Thing->Name.c_str(), Ref->Guid);
+				}
+
+				// TODO: type check should consider inheritnance
+				/*if (AllThings.IsValid(Id) && Ref->Thing->GetTypeVirtual() != Reflection::FindStructByGuid(Field.Typeguid))
+				{
+					Log::Error("Thing %s has a reference to a thing with wrong type %s, expected %s", Thing->Name.c_str(),
+						Ref->Thing->GetTypeVirtual()->Name, Reflection::FindStructByGuid(Field.Typeguid)->Name);
+				}*/
+			}
+		}
 	}
 
 	int EngineWorld::LoadMesh(const Model& MeshModel)
@@ -724,8 +753,14 @@ namespace Columbus
 	HStableThingId EngineWorld::AddThing(AThing* Thing)
 	{
 		HStableThingId Id = AllThings.Add(Thing);
+		ThingGuidToId[Thing->Guid] = Id;		
+
 		Thing->StableId = Id;
 		Thing->Trans.Update();
+
+		// resolve thing references
+		ResolveThingThingReferences(Thing);
+
 		Thing->OnCreate();
 		Thing->OnUpdateRenderState();
 		return Id;
@@ -736,6 +771,8 @@ namespace Columbus
 		AThing* Thing = *AllThings.Get(ThingId);
 		Thing->OnDestroy();
 		AllThings.Remove(ThingId);
+		ThingGuidToId.erase(Thing->Guid);
+
 		delete Thing;
 	}
 

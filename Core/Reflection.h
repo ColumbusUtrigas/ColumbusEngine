@@ -81,6 +81,10 @@ CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, []() -> void* { return (void*) (new x()); }
 	Reflection::EnforceTypeLinkage<type>(); \
 	Struct->LocalFields.push_back(Reflection::Field{ #name, "AssetRef", Reflection::FindTypeGuid<type>(), meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) });
 
+#define CREFLECT_STRUCT_FIELD_THINGREF(type, name, meta) \
+	Reflection::EnforceTypeLinkage<type>(); \
+	Struct->LocalFields.push_back(Reflection::Field{ #name, "ThingRef", Reflection::FindTypeGuid<type>(), meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) });
+
 #define CREFLECT_STRUCT_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_Instance_##x, __LINE__);
 
 // UI drawing specialisation for the struct
@@ -121,6 +125,7 @@ namespace Reflection
 		Struct,
 
 		AssetRef,
+		ThingRef,
 	};
 
 

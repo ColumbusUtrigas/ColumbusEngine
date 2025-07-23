@@ -4,6 +4,7 @@
 #include <Core/Filesystem.h>
 #include <Math/Quaternion.h>
 #include <Scene/Project.h>
+#include <Graphics/World.h>
 #include <imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
 #include <Lib/nativefiledialog/src/include/nfd.h>
@@ -461,6 +462,64 @@ namespace Columbus::Editor
 				return false;
 			}
 			break;
+		}
+
+		case Reflection::FieldType::ThingRef:
+		{
+			ThingRef<AThing>* Ref = reinterpret_cast<ThingRef<AThing>*>(FieldData);
+
+			// Get all things in the world
+			std::vector<AThing*> things;
+			if (GCurrentProject && GCurrentProject->World)
+			{
+				for (AThing* thing : GCurrentProject->World->AllThings)
+				{
+					if (Reflection::HasParentType(thing->GetTypeVirtual(), Reflection::FindStructByGuid(Field.Typeguid)))
+					{
+						things.push_back(thing);
+					}
+				}
+			}
+
+			// Build display names
+			std::vector<std::string> thingNames;
+			int currentIdx = -1;
+			for (size_t i = 0; i < things.size(); ++i)
+			{
+				const auto& thing = things[i];
+				thingNames.push_back(thing->Name + " (" + std::to_string((u64)thing->Guid) + ")");
+				if (Ref->Thing == thing)
+					currentIdx = static_cast<int>(i);
+			}
+
+			// Add "None" option
+			thingNames.insert(thingNames.begin(), "None");
+			if (currentIdx == -1)
+				currentIdx = 0;
+			else
+				currentIdx += 1;
+
+			bool changed = false;
+			if (ImGui::Combo(Field.Name, &currentIdx,
+				[](void* data, int idx, const char** out_text) -> bool {
+					auto& names = *static_cast<std::vector<std::string>*>(data);
+					*out_text = names[idx].c_str();
+					return true;
+				}, &thingNames, static_cast<int>(thingNames.size())))
+			{
+				if (currentIdx == 0)
+				{
+					Ref->Thing = nullptr;
+					Ref->Guid = 0;
+				}
+				else
+				{
+					Ref->Thing = things[currentIdx - 1];
+					Ref->Guid = Ref->Thing->Guid;
+				}
+				changed = true;
+			}
+			return changed;
 		}
 
 		default:

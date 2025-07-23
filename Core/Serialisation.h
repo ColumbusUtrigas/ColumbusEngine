@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Reflection.h"
+#include "Core/Guid.h"
 using namespace Columbus;
 
 #include "Lib/json/single_include/nlohmann/json.hpp"
@@ -51,6 +52,20 @@ static void Reflection_SerialiseFieldJson(char* Object, const Reflection::Field&
 
 		// GUID===Path format
 		json[Field.Name] = std::string(Field.Typeguid) + "===" + ref->Path;
+		break;
+	}
+	case Reflection::FieldType::ThingRef:
+	{
+		struct ThingRefBase
+		{
+			HGuid Guid;
+			// actual T* is templated, but we don't need it here, it's shady
+		};
+
+		auto* ref = (ThingRefBase*)FieldData;
+
+		// TypeGuid===ThingGuid format
+		json[Field.Name] = std::string(Field.Typeguid) + "===" + std::to_string((u64)ref->Guid);
 		break;
 	}
 	}
@@ -125,6 +140,36 @@ static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Fiel
 		((AssetRefBase*)FieldData)->Path = path;
 		break;
 	}
+	case Reflection::FieldType::ThingRef:
+	{
+		auto& sjson = json[Field.Name];
+
+		std::string refString = sjson.get<std::string>();
+		size_t delim = refString.find("===");
+		if (delim == std::string::npos)
+		{
+			Log::Error("ThingRef field %s is malformed: %s", Field.Name, refString.c_str());
+			break;
+		}
+
+		std::string guid = refString.substr(0, delim);
+		std::string thingGuidStr = refString.substr(delim + 3);
+
+		if (guid != Field.Typeguid)
+		{
+			Log::Error("ThingRef type GUID mismatch for field %s\nExpected: %s\nFound:   %s",
+				Field.Name, Field.Typeguid, guid.c_str());
+			break;
+		}
+		HGuid thingGuid = (HGuid)std::stoull(thingGuidStr);
+		struct ThingRefBase {
+			HGuid Guid;
+			// pointer unused here
+		};
+		((ThingRefBase*)FieldData)->Guid = thingGuid;
+		break;
+	}
+
 	}
 }
 

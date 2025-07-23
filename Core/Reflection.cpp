@@ -1,4 +1,5 @@
 #include "Reflection.h"
+#include "Guid.h"
 #include "Assert.h"
 
 #include <string_view>
@@ -197,6 +198,14 @@ namespace Reflection
 
 					// asset ref is path string + pointer
 					COLUMBUS_ASSERT(field.Size == sizeof(std::string) + sizeof(size_t));
+				}
+				else if (strcmp(field.Typename, "ThingRef") == 0)
+				{
+					IsBasicType = true;
+					field.Type = FieldType::ThingRef;
+
+					// thing ref is guid + pointer
+					COLUMBUS_ASSERT(field.Size == sizeof(HGuid) + sizeof(size_t));
 				}
 
 				if (!IsBasicType)

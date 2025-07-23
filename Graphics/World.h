@@ -73,6 +73,24 @@ namespace Columbus
 		virtual void OnUiPropertyChange();
 	};
 
+	template <typename T>
+	struct ThingRef
+	{
+		HGuid Guid;
+		T* Thing = nullptr;
+
+		ThingRef()
+		{
+			Guid = 0;
+		}
+
+		const char* GetTypeGuid() const
+		{
+			return Reflection::FindTypeGuid<T>();
+		}
+	};
+
+
 	struct AVolume : public AThing
 	{
 		CREFLECT_BODY_STRUCT_VIRTUAL(AVolume);
@@ -193,6 +211,7 @@ namespace Columbus
 		// levels, things
 		std::unordered_map<std::string, HLevel*> LoadedLevels;
 		TStableSparseArray<AThing*> AllThings;
+		std::unordered_map<u64, HStableThingId> ThingGuidToId; // for fast lookup by guid
 
 		// systems
 		AssetSystem& Assets;
