@@ -84,10 +84,8 @@ namespace Columbus
 			Guid = 0;
 		}
 
-		const char* GetTypeGuid() const
-		{
-			return Reflection::FindTypeGuid<T>();
-		}
+		operator bool() const { return Thing != nullptr; }
+		T* operator->() { return Thing; }
 	};
 
 
@@ -184,6 +182,7 @@ namespace Columbus
 
 	public:
 		AssetRef<HLevel> LevelAsset;
+		std::vector<HStableThingId> ThingsIds;
 
 	public:
 		virtual void OnLoad() override;

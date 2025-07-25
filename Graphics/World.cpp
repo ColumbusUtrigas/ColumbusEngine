@@ -110,7 +110,10 @@ namespace Columbus
 		ALevelThing* LevelThing = new ALevelThing();
 		LevelThing->World = this;
 		LevelThing->Name = std::string("ALevelThing ") + std::to_string(AllThings.Size());
-		LevelThing->LevelAsset = AssetRef<HLevel>(Path);
+
+		std::string AssetBasePath = GCurrentProject->DataPath;
+		std::string RelPath = std::filesystem::relative(Path, AssetBasePath).string();
+		LevelThing->LevelAsset = AssetRef<HLevel>(RelPath);
 
 		AddThing(LevelThing);
 		LevelThing->OnLoad();
@@ -538,10 +541,9 @@ namespace Columbus
 
 	void EngineWorld::ClearWorld()
 	{
-		for (int i = 0; i < AllThings.Size(); i++)
+		while (AllThings.Size() > 0)
 		{
-			DeleteThing(AllThings.Data()[i]->StableId);
-			i--;
+			DeleteThing(AllThings[0]->StableId);
 		}
 	}
 
@@ -581,7 +583,8 @@ namespace Columbus
 
 	void EngineWorld::RemoveLevel(HLevel* Level)
 	{
-		assert(false);
+		Log::Error("Removing level is not implemented yet");
+		//assert(false);
 	}
 
 	void EngineWorld::ResolveThingThingReferences(AThing* Thing)
@@ -768,6 +771,9 @@ namespace Columbus
 
 	void EngineWorld::DeleteThing(HStableThingId ThingId)
 	{
+		if (!AllThings.IsValid(ThingId))
+			return;
+
 		AThing* Thing = *AllThings.Get(ThingId);
 		Thing->OnDestroy();
 		AllThings.Remove(ThingId);
@@ -1112,6 +1118,7 @@ namespace Columbus
 		for (AThing* Thing : LevelAsset.Asset->Things)
 		{
 			Thing->bTransientThing = true;
+			ThingsIds.push_back(Thing->StableId);
 
 			if (Thing->Parent == nullptr)
 			{
@@ -1132,11 +1139,11 @@ namespace Columbus
 		}
 
 		// deletion of the level - double-check that it works properly
-		__debugbreak();
+		//DEBUGBREAK();
 
-		for (AThing* Thing : LevelAsset.Asset->Things)
+		for (HStableThingId Id : ThingsIds)
 		{
-			World->DeleteThing(Thing->StableId);
+			World->DeleteThing(Id);
 		}
 		Children.clear();
 
