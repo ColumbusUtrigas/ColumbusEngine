@@ -61,7 +61,7 @@ namespace Columbus
 
 		// Common functional definition
 
-		virtual void OnLoad() {}
+		virtual void OnLoad();
 
 		virtual void OnCreate() { Trans.Update(); }
 		virtual void OnDestroy() {}
@@ -97,6 +97,28 @@ namespace Columbus
 		Vector4 DebugColour = Vector4(1, 0, 0, 0.3f);
 	public:
 		bool ContainsPoint(const Vector3& Point) const;
+	};
+
+	struct AEffectVolume : public AVolume
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AEffectVolume);
+		using Super = AVolume;
+
+	public:
+		bool bInfiniteExtent = false;
+		float Priority       = 0.0f;
+		float BlendWeight    = 1.0f;
+		float BlendRadius    = 5.0f;
+
+		HEffectsSettings EffectsSettings;
+
+	public:
+		AEffectVolume()
+		{
+			DebugColour = Vector4(0, 1, 0, 0.3f);
+		}
+
+		float ComputeBlendFactor(const Vector3& Point) const;
 	};
 
 	struct ALight : public AThing
@@ -222,8 +244,10 @@ namespace Columbus
 		// rendering
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> SceneGPU;
-		SkySettings Sky;
 		RenderView MainView;
+
+	private:
+		std::vector<AEffectVolume*> EffectVolumes;
 
 	public:
 		EngineWorld(SPtr<DeviceVulkan> Device);
@@ -292,6 +316,7 @@ CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 1, "4112562B-4C50-47FD-B6F4-BAAC28FC4C
 
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AVolume, Columbus::AThing, 1, "EA5F80A9-684B-4F60-95A9-DBE4949B6268");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AEffectVolume, Columbus::AVolume, 1, "1204F071-0B6D-451C-8497-57D78CCD1EF5");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");

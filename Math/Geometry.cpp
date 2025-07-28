@@ -32,6 +32,9 @@ namespace Columbus::Geometry
 	}
 	//
 
+	// *************************************
+	// Intersection functions
+
 	HitPoint RayPlaneIntersection(const Ray& R, const Plane& P)
 	{
 		Vector3 Closest = P.ClosestPoint(R.Origin);
@@ -81,13 +84,97 @@ namespace Columbus::Geometry
 	HitPoint RaySphereIntersection(const Ray& R, const Sphere& S)
 	{
 		// not implemented
+		assert(false);
 		return HitPoint::Invalid();
 	}
 
 	HitPoint RayBoxIntersecetion(const Ray& R, const Box& B)
 	{
 		// not implemented
+		assert(false);
 		return HitPoint::Invalid();
+	}
+
+	// *************************************
+	// Closest point functions
+
+	Vector3 LineSegmentClosestPoint(const Vector3& P, const LineSegment& L)
+	{
+		// compute projection of P onto L transformed to zero, assume L has non-zero length
+		Vector3 Dir = (L.End - L.Start).Normalized();
+		Vector3 Point = P - L.Start;
+		float Proj = Dir.Dot(Point);
+
+		Proj = Math::Clamp(Proj, 0.0f, 1.0f);
+		return L.Start + (L.End - L.Start) * Proj;
+	}
+
+	Vector3 PlaneClosestPoint(const Vector3& P, const Plane& Pl)
+	{
+		return P - Pl.normal * PointPlaneDistance(P, Pl);
+	}
+
+	Vector3 TriangleClosestPoint(const Vector3& P, const Triangle& Tri)
+	{
+		// not implemented
+		assert(false);
+		return Vector3();
+	}
+
+	Vector3 SphereClosestPoint(const Vector3& P, const Sphere& S)
+	{
+		Vector3 Dir = P - S.Center;
+
+		if (Dir.Length() > 0.001f)
+		{
+			return Dir.Normalized() * S.Radius;
+		}
+
+		return S.Center + Vector3(1, 0, 0) * S.Radius; // fallback if P is in the center
+	}
+
+	Vector3 BoxClosestPoint(const Vector3& P, const Box& B)
+	{
+		return Vector3(
+			Math::Clamp(P.X, B.Min.X, B.Max.X),
+			Math::Clamp(P.Y, B.Min.Y, B.Max.Y),
+			Math::Clamp(P.Z, B.Min.Z, B.Max.Z)
+		);
+	}
+
+	// *************************************
+	// Distance functions
+
+	float PointLineSegmentDistance(const Vector3& P, const LineSegment& L)
+	{
+		return LineSegmentClosestPoint(P, L).Distance(P);
+	}
+
+	float PointPlaneDistance(const Vector3& P, const Plane& Pl)
+	{
+		// project P onto normal
+		float OriginDistance = P.Dot(Pl.normal);
+		// positive distance when above the normal, negative when below
+		return OriginDistance - Pl.d;
+	}
+
+	float PointTriangleDistance(const Vector3& P, const Triangle& B)
+	{
+		// TODO: min distance to three line segments?
+
+		// not implemented
+		assert(false);
+		return 0.0f;
+	}
+
+	float PointSphereDistance(const Vector3& P, const Sphere& S)
+	{
+		return P.Distance(S.Center) - S.Radius;
+	}
+
+	float PointBoxDistance(const Vector3& P, const Box& B)
+	{
+		return BoxClosestPoint(P, B).Distance(P);
 	}
 
 }

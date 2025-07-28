@@ -234,6 +234,9 @@ namespace Columbus
 		VkDescriptorSet GetDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet GetDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
 
+		// will return a managed filled constant buffer
+		Buffer* CreateConstantBuffer(u32 Size, void* Data);
+
 		void BindGPUScene(const GraphicsPipeline* Pipeline, bool UseCombinedSampler = true);
 		void BindGPUScene(const RayTracingPipeline* Pipeline, bool UseCombinedSampler = true);
 

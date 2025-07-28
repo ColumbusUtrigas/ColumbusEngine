@@ -244,7 +244,7 @@ namespace FFX
 		RenderGraphTextureRef Source = Textures.FinalBeforeTonemap;
 		RenderGraphTextureRef Depth = Textures.GBufferDS;
 
-		if (!View.CameraCur.EnableDoF)
+		if (!View.EffectsSettings.DepthOfField.EnableDoF)
 		{
 			return Source;
 		}
@@ -269,10 +269,12 @@ namespace FFX
 			Texture2* DepthTex  = Context.GetRenderGraphTexture(Depth).get();
 			Texture2* TargetTex = SourceTex;
 
-			const float FocusDist   = View.CameraCur.FocusDistance;
-			const float SensorSize  = View.CameraCur.SensorSize;
-			const float FocalLength = View.CameraCur.GetFocalLength();
-			const float Aperture    = View.CameraCur.GetApertureDiameter();
+			const HDepthOfFieldSettings& DofSettings = View.EffectsSettings.DepthOfField;
+
+			const float FocusDist   = DofSettings.FocusDistance;
+			const float SensorSize  = DofSettings.SensorSize;
+			const float FocalLength = View.CameraCur.GetFocalLength(DofSettings.SensorSize);
+			const float Aperture    = View.CameraCur.GetApertureDiameter(DofSettings.SensorSize, DofSettings.FStop);
 
 			Matrix Proj = View.CameraCur.GetProjectionMatrix();
 

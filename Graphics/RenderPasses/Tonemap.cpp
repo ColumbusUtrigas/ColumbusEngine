@@ -8,6 +8,7 @@
 
 ConsoleVariable<int> CVar_FilmCurve("r.Tonemap.FilmCurve", "0 - ACES, 1 - AgX, 2 - Flim", 1);
 ConsoleVariable<int> CVar_OutputTransform("r.Tonemap.OutputTransform", "0 - None, 1 - Rec.709, 2 - Rec.2020", 1);
+ConsoleVariable<int> CVar_FilmGrain("r.FilmGrain", "Whether to allow using film grain", 1);
 
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTonemap);
 
@@ -119,7 +120,9 @@ namespace Columbus
 		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View, Size](RenderGraphContext& Context)
+		Buffer* ColourCbuf = Graph.Device->GetConstantBufferPrepared(sizeof(View.EffectsSettings.ColourCorrection), (void*)&View.EffectsSettings.ColourCorrection);
+
+		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View, Size, ColourCbuf](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTonemap, Context);
 			// TODO: shader system
@@ -139,18 +142,21 @@ namespace Columbus
 
 			SPtr<Texture2> Texture = Context.GetRenderGraphTexture(SceneTexture);
 
+			bool AllowFilmGrain = CVar_FilmGrain.GetValue() && View.EffectsSettings.FilmGrain.EnableGrain;
+
 			TonemapParameters PushConstants {
 				.FilmCurve       = (TonemapFilmCurve)CVar_FilmCurve.GetValue(),
 				.OutputTransform = (TonemapOutputTransform)CVar_OutputTransform.GetValue(),
 				.Resolution      = iVector2(Texture->GetDesc().Width, Texture->GetDesc().Height),
-				.Vignette        = View.CameraCur.Vignette * View.CameraCur.EnableVignette,
-				.GrainScale      = Math::Max(0.001f, View.CameraCur.GrainScale),
-				.GrainAmount     = View.CameraCur.GrainAmount * View.CameraCur.EnableGrain,
+				.Vignette        = View.EffectsSettings.Vignette.Vignette * View.EffectsSettings.Vignette.EnableVignette,
+				.GrainScale      = Math::Max(0.001f, View.EffectsSettings.FilmGrain.GrainScale),
+				.GrainAmount     = View.EffectsSettings.FilmGrain.GrainAmount * AllowFilmGrain,
 				.GrainSeed       = (u32)rand(),
 			};
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, ColourCbuf);
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);

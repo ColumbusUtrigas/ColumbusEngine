@@ -1034,7 +1034,7 @@ int main(int argc, char** argv)
 						DebugUI::ShowLightmapWindow(World);
 						Editor::TickAllModalWindows();
 
-						if (ImGui::Begin("Sky"))
+						/*if (ImGui::Begin("Sky"))
 						{
 							//// scaterring coefficients: w parameter unused for GPU alignments
 							//Vector4 BetaRayleigh = Vector4(3.8e-6f, 13.5e-6f, 33.1e-6f, 0);
@@ -1061,9 +1061,9 @@ int main(int argc, char** argv)
 
 							ImGui::LabelText("Test Value", "%i", (int)asd);
 						}
-						ImGui::End();
+						ImGui::End();*/
 
-						if (ImGui::Begin("Camera"))
+						/*if (ImGui::Begin("Camera"))
 						{
 							ImGui::InputFloat3("Camera Position", (float*)&camera.Pos);
 							ImGui::InputFloat3("Camera Rotation", (float*)&camera.Rot);
@@ -1080,7 +1080,7 @@ int main(int argc, char** argv)
 							ImGui::SliderFloat("Grain Scale", &camera.GrainScale, 0.01f, 100.0f);
 							ImGui::SliderFloat("Grain Amount", &camera.GrainAmount, 0.0f, 2.0f);
 						}
-						ImGui::End();
+						ImGui::End();*/
 
 						if (ImGui::Begin("Irradiance"))
 						{

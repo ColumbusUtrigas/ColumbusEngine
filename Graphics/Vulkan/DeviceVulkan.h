@@ -104,6 +104,22 @@ namespace Columbus
 		int FramesLasted = 0;
 	};
 
+	struct CBufferPoolVulkan
+	{
+		struct FrameCBuffer
+		{
+			Buffer* Buf = nullptr;
+			u32 Size = 0;
+			bool Used = false;
+		};
+
+		std::vector<FrameCBuffer> Pool[MaxFramesInFlight];
+		int CurrentFrame = 0;
+
+	public:
+		void BeginFrame();
+	};
+
 	/**Represents device (GPU) on which Vulkan is executed.*/
 	class DeviceVulkan
 	{
@@ -137,6 +153,7 @@ namespace Columbus
 		VulkanFunctions VkFunctions;
 
 		GPUProfilerVulkan _Profiler;
+		CBufferPoolVulkan _CBufPool;
 
 		std::unordered_map<SamplerDesc, Sampler*, HashSamplerDesc> StaticSamplers;
 
@@ -190,6 +207,9 @@ namespace Columbus
 		void    DestroyBuffer(Buffer* Buf);
 		void*   MapBuffer(const Buffer* Buf);
 		void    UnmapBuffer(const Buffer* Buf);
+
+		// will return a managed filled constant buffer
+		Buffer* GetConstantBufferPrepared(u32 Size, void* Data);
 
 		// TODO: data change, streaming, layout transitions
 		Texture2* CreateTexture(const TextureDesc2& Desc);

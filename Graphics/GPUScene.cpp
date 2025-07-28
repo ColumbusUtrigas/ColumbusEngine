@@ -80,9 +80,12 @@ namespace Columbus
 		Vector4 SHG(1, 0, 0, 0);
 		Vector4 SHB(1, 0, 0, 0);
 
-		SkySettings SkyConverted = Sky;
+		HSkySettings SkyConverted = Sky;
 		// convert units
 		{
+			SkyConverted.SunAngularRadius = Math::Radians(SkyConverted.SunAngularRadius);
+			SkyConverted.SunDiscSoftness *= 0.001f;
+
 			SkyConverted.PlanetRadiusKm     *= 1000;
 			SkyConverted.AtmosphereHeightKm *= 1000;
 			SkyConverted.RayleightHeightKm  *= 1000;

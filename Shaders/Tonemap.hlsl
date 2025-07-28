@@ -1,7 +1,7 @@
 struct VS_TO_PS
 {
 	float4 Pos : SV_POSITION;
-	float2 Uv  : TEXCOORD;
+	float2 Uv : TEXCOORD;
 };
 
 #ifdef VERTEX_SHADER
@@ -21,7 +21,24 @@ VS_TO_PS main(uint VertexID : SV_VertexID)
 #endif
 
 #ifdef PIXEL_SHADER
-RWTexture2D<float4> SceneTexture;
+
+struct HColourCorrectionSettings
+{
+	float4 Lift;
+	float4 Gamma;
+	float4 Gain;
+	float4 Offset;
+	float Exposure;
+	float Contrast;
+	float Saturation;
+	float HueShift;
+	float Temperature;
+	float Tint;
+	int _pad[10]; // 128
+};
+
+[[vk::binding(0, 0)]] RWTexture2D<float4> SceneTexture;
+[[vk::binding(1, 0)]] ConstantBuffer<HColourCorrectionSettings> ColourCorrectionSettings;
 
 [[vk::push_constant]]
 struct _Params {
@@ -51,42 +68,42 @@ struct _Params {
 // sRGB => XYZ => D65_2_D60 => AP1 => RRT_SAT
 static const float3x3 ACESInputMat =
 {
-    {0.59719, 0.35458, 0.04823},
-    {0.07600, 0.90834, 0.01566},
-    {0.02840, 0.13383, 0.83777}
+	{0.59719, 0.35458, 0.04823},
+	{0.07600, 0.90834, 0.01566},
+	{0.02840, 0.13383, 0.83777}
 };
 
 // ODT_SAT => XYZ => D60_2_D65 => sRGB
 static const float3x3 ACESOutputMat =
 {
-    { 1.60475, -0.53108, -0.07367},
-    {-0.10208,  1.10813, -0.00605},
-    {-0.00327, -0.07276,  1.07602}
+	{ 1.60475, -0.53108, -0.07367},
+	{-0.10208,  1.10813, -0.00605},
+	{-0.00327, -0.07276,  1.07602}
 };
 
 float3 RRTAndODTFit(float3 v)
 {
-    float3 a = v * (v + 0.0245786f) - 0.000090537f;
-    float3 b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
-    return a / b;
+	float3 a = v * (v + 0.0245786f) - 0.000090537f;
+	float3 b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
+	return a / b;
 }
 
 float3 ACESFitted(float3 color)
 {
-    color = mul(ACESInputMat, color);
+	color = mul(ACESInputMat, color);
 
-    // Apply RRT and ODT
-    color = RRTAndODTFit(color);
+	// Apply RRT and ODT
+	color = RRTAndODTFit(color);
 
-    color = mul(ACESOutputMat, color);
+	color = mul(ACESOutputMat, color);
 
-    // Clamp to [0, 1]
-    color = clamp(color, 0, 1);
+	// Clamp to [0, 1]
+	color = clamp(color, 0, 1);
 
 	// sRGB output
 	color = pow(color, float3(0.45, 0.45, 0.45));
 
-    return color;
+	return color;
 }
 
 //
@@ -281,6 +298,76 @@ void FfxLensApplyVignette(int2 coord, int2 centerCoord, inout float3 color, floa
 	color *= clamp(vignetteMask.x * vignetteMask.y, 0, 1);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// 
+// Colour correction
+
+float3 ApplyLiftGammaGain(float3 color)
+{
+	color = ColourCorrectionSettings.Lift.rgb + color * ColourCorrectionSettings.Gain.rgb;
+	color = pow(abs(color), 1.0f / max(ColourCorrectionSettings.Gamma.rgb, 0.001f));
+	color += ColourCorrectionSettings.Offset.rgb;
+	return color;
+}
+
+float3 ApplySaturation(float3 color)
+{
+	float luminance = dot(color, float3(0.299, 0.587, 0.114));
+	return lerp(float3(luminance, luminance, luminance), color, ColourCorrectionSettings.Saturation);
+}
+
+// Approximate hue shift with rotation around grayscale axis
+float3 ApplyHueShift(float3 color)
+{
+	float angle = radians(ColourCorrectionSettings.HueShift);
+	float s = sin(angle);
+	float c = cos(angle);
+	const float3x3 hueRot =
+	{
+		{0.213f + c * 0.787f - s * 0.213f, 0.715f - c * 0.715f - s * 0.715f, 0.072f - c * 0.072f + s * 0.928f},
+		{0.213f - c * 0.213f + s * 0.143f, 0.715f + c * 0.285f + s * 0.140f, 0.072f - c * 0.072f - s * 0.283f},
+		{0.213f - c * 0.213f - s * 0.787f, 0.715f - c * 0.715f + s * 0.715f, 0.072f + c * 0.928f + s * 0.072f}
+	};
+	return mul(color, hueRot);
+}
+
+float3 ApplyExposure(float3 color)
+{
+	return color * exp2(ColourCorrectionSettings.Exposure);
+}
+
+float3 ApplyContrast(float3 color)
+{
+	return 0.5 + (color - 0.5) * ColourCorrectionSettings.Contrast;
+}
+
+float3 KelvinToRGB(float kelvin)
+{
+	kelvin = kelvin / 100.0;
+
+	float r = kelvin <= 66 ? 1.0 : saturate(1.292936186f * pow(kelvin - 60.0, -0.1332047592f));
+	float g = kelvin <= 66 ? saturate(0.3900815788f * log(kelvin) - 0.6318414438f)
+						   : saturate(1.1298908609f * pow(kelvin - 60.0, -0.0755148492f));
+	float b = kelvin >= 66 ? 1.0 : kelvin <= 19 ? 0.0
+						   : saturate(0.5432067891f * log(kelvin - 10.0) - 1.1962540891f);
+
+	return float3(r, g, b);
+}
+
+float3 ApplyWhiteBalance(float3 color)
+{
+	// Normalize Kelvin to D65 white point (6500K)
+	float3 whiteBalance = KelvinToRGB(ColourCorrectionSettings.Temperature) / KelvinToRGB(6500.0);
+	color *= whiteBalance;
+
+	// Tint adjustment: green-magenta axis
+	float tint = ColourCorrectionSettings.Tint * 0.01f; // [-1..1] scale (or adjust based on UI range)
+	float3 tintBalance = float3(1.0, 1.0 - tint, 1.0 + tint);
+	color *= tintBalance;
+
+	return color;
+}
+
 float4 main(VS_TO_PS Input) : SV_TARGET
 {
 	// ACES image formation recap:
@@ -293,6 +380,15 @@ float4 main(VS_TO_PS Input) : SV_TARGET
 	int2 Coord = Input.Uv * Params.Resolution;
 
 	Linear = SceneTexture[Coord].rgb;
+
+	// do colour correction
+	Linear = ApplyExposure(Linear);
+	Linear = ApplyWhiteBalance(Linear);
+	Linear = ApplyLiftGammaGain(Linear);
+	Linear = ApplyHueShift(Linear);
+	Linear = ApplySaturation(Linear);
+	Linear = ApplyContrast(Linear);
+
 	float3 Tonemapped =  Tonemap(Linear);
 
 	FfxLensApplyVignette(Coord, Params.Resolution/2, Tonemapped, Params.Vignette);

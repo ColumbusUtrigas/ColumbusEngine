@@ -28,22 +28,6 @@ namespace Columbus
 		Vector3 Pos = Vector3(0, 0, 5);
 		Vector3 Rot = Vector3(0, 0, 0);
 
-		bool  EnableDoF = false;
-		float FStop = 1.4f;
-		float FocusDistance = 10.0f;
-		float SensorSize = 0.1f;
-
-		bool  EnableGrain = false;
-		float GrainScale  = 0.01f;
-		float GrainAmount = 0.7f;
-
-		// Chromatic aberration
-		bool  EnableChromaticAberration = false;
-		float ChromaticAberrationAmount = 0.5f;
-
-		bool  EnableVignette = false;
-		float Vignette = 0.5f;
-
 		void SetTarget(const Vector3& NewTarget)
 		{
 			Target = NewTarget;
@@ -65,8 +49,8 @@ namespace Columbus
 		float GetFovY() const;
 		float GetAspect() const;
 
-		float GetFocalLength() const;
-		float GetApertureDiameter() const;
+		float GetFocalLength(float SensorSize) const;
+		float GetApertureDiameter(float SensorSize, float Fstop) const;
 
 		const Matrix& GetViewProjection() const;
 		const Matrix& GetProjectionMatrix() const;

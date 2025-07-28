@@ -55,6 +55,8 @@ namespace Columbus
 		//TODO
 		//PROFILE_CPU(ProfileModule::Audio);
 
+		std::lock_guard lg(ThreadAccessMt);
+
 		if (!BufferInitialized)
 		{
 			Data = new Sound::Frame[Count];

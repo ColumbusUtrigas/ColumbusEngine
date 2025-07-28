@@ -530,7 +530,6 @@ namespace Columbus
 			}
 
 			NewThing->World = this;
-			AssetSystem::Get().ResolveStructAssetReferences(NewThing->GetTypeVirtual(), NewThing);
 			NewThing->OnLoad();
 			Level->Things.push_back(NewThing);
 		}
@@ -766,6 +765,12 @@ namespace Columbus
 
 		Thing->OnCreate();
 		Thing->OnUpdateRenderState();
+
+		if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
+		{
+			EffectVolumes.push_back(Volume);
+		}
+
 		return Id;
 	}
 
@@ -778,6 +783,11 @@ namespace Columbus
 		Thing->OnDestroy();
 		AllThings.Remove(ThingId);
 		ThingGuidToId.erase(Thing->Guid);
+
+		if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
+		{
+			EffectVolumes.erase(std::remove(EffectVolumes.begin(), EffectVolumes.end(), Volume));
+		}
 
 		delete Thing;
 	}
@@ -815,10 +825,33 @@ namespace Columbus
 		}
 
 		UpdateTransforms();
-		SceneGPU->Sky = Sky;
-		MainView.UI = &UI;
 
 		Physics.Step(DeltaTime, 1);
+
+		// update effects volumes
+		HEffectsSettings EffectsSettings;
+		{
+			// sort effect volumes by priority
+			std::sort(EffectVolumes.begin(), EffectVolumes.end(), [](const AEffectVolume* A, const AEffectVolume* B) {
+				return A->Priority < B->Priority;
+			});
+
+			// blend effect volumes
+			Vector3 EffectBlendPoint = MainView.CameraCur.Pos;
+			for (AEffectVolume* Volume : EffectVolumes)
+			{
+				float BlendFactor = Volume->ComputeBlendFactor(EffectBlendPoint);
+
+				if (BlendFactor > 0.0f)
+				{
+					EffectsSettings.BlendWith(Volume->EffectsSettings, BlendFactor);
+				}
+			}
+		}
+
+		SceneGPU->Sky = EffectsSettings.Sky;
+		MainView.EffectsSettings = EffectsSettings;
+		MainView.UI = &UI;
 	}
 
 	void EngineWorld::UpdateTransforms()
@@ -883,6 +916,11 @@ namespace Columbus
 namespace Columbus
 {
 
+	void AThing::OnLoad()
+	{
+		World->Assets.ResolveStructAssetReferences(GetTypeVirtual(), this);
+	}
+
 	void AThing::OnUpdateRenderState()
 	{
 		TransGlobal = Trans;
@@ -922,6 +960,29 @@ namespace Columbus
 		Vector3 LocalPoint = Point - TransGlobal.Position;
 		Vector3 HalfSize = TransGlobal.Scale * 0.5f;
 		return abs(LocalPoint.X) <= HalfSize.X && abs(LocalPoint.Y) <= HalfSize.Y && abs(LocalPoint.Z) <= HalfSize.Z;
+	}
+
+	float AEffectVolume::ComputeBlendFactor(const Vector3& Point) const
+	{
+		if (bInfiniteExtent)
+			return 1.0f;
+
+		Vector3 Center = TransGlobal.Position;
+		Vector3 HalfSize = TransGlobal.Scale * 0.5f;
+		Box B(Center - HalfSize, Center + HalfSize);
+
+		// hard edge
+		if (BlendRadius <= 0.001f)
+			return ContainsPoint(Point) ? 1.0f : 0.0f;
+
+		// soft linear falloff
+
+		float Distance = Geometry::PointBoxDistance(Point, B);
+		float SafeRadius = Math::Max(BlendRadius, 0.001f);
+
+		if (Distance >= SafeRadius)
+			return 0.0f;
+		return 1.0f - (Distance / SafeRadius);
 	}
 
 	void ADecal::OnCreate()
@@ -1172,6 +1233,7 @@ CREFLECT_ENUM_BEGIN(LightType, "")
 	CREFLECT_ENUM_FIELD(LightType::Line, 5)
 CREFLECT_ENUM_END()
 
+
 CREFLECT_DEFINE_VIRTUAL(AThing);
 CREFLECT_STRUCT_BEGIN(AThing, "")
 	CREFLECT_STRUCT_FIELD(Transform, Trans, "")
@@ -1180,6 +1242,15 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AVolume);
 CREFLECT_STRUCT_BEGIN(AVolume, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(AEffectVolume);
+CREFLECT_STRUCT_BEGIN(AEffectVolume)
+	CREFLECT_STRUCT_FIELD(bool, bInfiniteExtent, "")
+	CREFLECT_STRUCT_FIELD(float, Priority, "")
+	CREFLECT_STRUCT_FIELD(float, BlendWeight, "")
+	CREFLECT_STRUCT_FIELD(float, BlendRadius, "")
+	CREFLECT_STRUCT_FIELD(HEffectsSettings, EffectsSettings, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALight);

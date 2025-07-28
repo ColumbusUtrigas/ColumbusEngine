@@ -85,14 +85,14 @@ namespace Columbus
 		return AspectRatio;
 	}
 
-	float Camera::GetFocalLength() const
+	float Camera::GetFocalLength(float SensorSize) const
 	{
 		return SensorSize / (2.f * tanf(GetFovX() * 0.5f));
 	}
 
-	float Camera::GetApertureDiameter() const
+	float Camera::GetApertureDiameter(float SensorSize, float Fstop) const
 	{
-		return GetFocalLength() / FStop;
+		return GetFocalLength(SensorSize) / Fstop;
 	}
 
 	const Matrix& Camera::GetViewProjection() const

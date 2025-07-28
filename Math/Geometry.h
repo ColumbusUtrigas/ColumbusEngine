@@ -13,6 +13,12 @@ namespace Columbus::Geometry
 		Vector3 Direction; // must be normalised
 	};
 
+	struct LineSegment
+	{
+		Vector3 Start;
+		Vector3 End;
+	};
+
 	struct Triangle
 	{
 		Vector3 A, B, C;
@@ -46,5 +52,17 @@ namespace Columbus::Geometry
 	HitPoint RayTriangleIntersection(const Ray& R, const Triangle& Tri);
 	HitPoint RaySphereIntersection(const Ray& R, const Sphere& S);
 	HitPoint RayBoxIntersecetion(const Ray& R, const Box& B);
+
+	Vector3 LineSegmentClosestPoint(const Vector3& P, const LineSegment& L);
+	Vector3 PlaneClosestPoint(const Vector3& P, const Plane& Pl);
+	Vector3 TriangleClosestPoint(const Vector3& P, const Triangle& Tri);
+	Vector3 SphereClosestPoint(const Vector3& P, const Sphere& S);
+	Vector3 BoxClosestPoint(const Vector3& P, const Box& B);
+
+	float PointLineSegmentDistance(const Vector3& P, const LineSegment& L);
+	float PointPlaneDistance(const Vector3& P, const Plane& Pl);
+	float PointTriangleDistance(const Vector3& P, const Triangle& Tri);
+	float PointSphereDistance(const Vector3& P, const Sphere& S);
+	float PointBoxDistance(const Vector3& P, const Box& B);
 
 }

@@ -58,8 +58,17 @@ struct SkySettings
 	float MoonIlluminance;
 	float SpaceIlluminance;
 	float Exposure;
+	
+	// sun disc
+	float4 SunDiscColour;
+	float  SunAngularRadiusRad;
+	float  SunDiscSoftness;
 
-	int _pad[8]; // 128
+	// stars
+	float StarsBrightness;
+	float StarsDensity;
+
+	// 128
 };
 
 ///////////////////////////////////////////////////////////////////
@@ -131,6 +140,56 @@ float3 AvgDensities(in float3 pos, in SkySettings Settings)
 	density.y = exp(-height / Settings.MieHeight);
 	density.z = (1.0 / cosh((Settings.OzonePeak - height) / Settings.OzoneFalloff)) * density.x; // Ozone absorption scales with rayleigh
 	return density;
+}
+
+float3 SunDisc(float3 dir, float3 sunDir, in SkySettings Settings)
+{
+	float cosAngle = dot(dir, sunDir);
+	float angle = acos(clamp(cosAngle, -1.0, 1.0)); // Angular distance
+	
+	// Obstruction logic, amount of disc visible
+	float sunScreenY = dot(dir, float3(0, 1, 0)); // world up
+	float obstruction = smoothstep(-Settings.SunDiscSoftness, Settings.SunDiscSoftness, sunScreenY);
+		
+	float intensity = smoothstep(Settings.SunAngularRadiusRad + Settings.SunDiscSoftness, Settings.SunAngularRadiusRad, angle);
+	return Settings.SunDiscColour.rgb * intensity * obstruction;
+}
+	
+float3 ProceduralStars(float3 dir, float3 sunDir, in SkySettings Settings)
+{
+	// === Generate a coherent "star cell" ===
+	const float starDensity = Settings.StarsDensity;
+	float3 cell = floor(dir * starDensity);
+	float3 cellDir = normalize(cell / starDensity);
+
+	// === Hash the cell to get unique but repeatable seed ===
+	float h = frac(sin(dot(cell, float3(12.9898,78.233,45.164))) * 43758.5453);
+	if (h < 0.995) return float3(0.0, 0.0, 0.0); // only some cells have stars
+
+	// === Star properties ===
+	float angularDist = acos(dot(dir, cellDir)); // angular distance to center of cell
+	float radius = 0.003;                         // star disc radius in radians
+	float softness = radius * 0.5;
+	float disc = smoothstep(radius + softness, radius, angularDist);
+
+	// Horizon obstruction
+	float sunScreenY = dot(dir, float3(0, 1, 0)); // world up
+	float obstruction = smoothstep(-Settings.SunDiscSoftness, Settings.SunDiscSoftness, sunScreenY);
+
+	// === Color variation ===
+	float hue = frac(sin(dot(cell, float3(95.435, 12.783, 46.971))) * 145837.253);
+
+	// Temperature-based color
+	float3 starColor = float3(
+		saturate(1.5 - 6.0 * abs(hue - 0.0)),   // Red to White
+		saturate(1.5 - 6.0 * abs(hue - 0.33)),  // Orange/Yellow to White
+		saturate(1.5 - 6.0 * abs(hue - 0.66))   // Blue to White
+	);
+	starColor = lerp(starColor, float3(1,1,1), 0.5); // adjust star variation
+
+	float brightness = (h - 0.995) * starDensity * disc; // brighter for rare stars
+
+	return float3(brightness, brightness, brightness) * obstruction * starColor * Settings.StarsBrightness;
 }
 
 /**
@@ -209,11 +268,20 @@ float3 Atmosphere(
 	float Exposure = Settings.Exposure / Illuminance;
 	Exposure = min(Exposure, Settings.Exposure / (Settings.MoonIlluminance * Settings.Exposure*0.5f)); // Clamp the exposure to make night appear darker
 
-	return max(
+	float3 skyColour = max(
 		PhaseRayleigh(cosTheta) * Settings.BetaRayleigh.xyz * sumR + // Rayleigh color
 		PhaseMie(cosTheta, SKY_G) * Settings.BetaMie.xyz * sumM, // Mie color
 		0.0
 	) * Illuminance * Exposure;
+
+	skyColour += SunDisc(dir, lightDir, Settings);
+
+	if (Settings.StarsBrightness > 0.01f)
+	{
+		skyColour += ProceduralStars(dir, lightDir, Settings);
+	}
+		
+	return skyColour;
 }
 
 } // namespace Sky

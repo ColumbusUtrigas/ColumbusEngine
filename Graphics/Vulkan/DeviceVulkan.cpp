@@ -31,6 +31,7 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Host-visible buffers", PROFILING_CATEGORY_VU
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Images", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, MemoryCounter_Vulkan_AllocatedImages);
 
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Buffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Buffers, false);
+IMPLEMENT_COUNTING_PROFILING_COUNTER("CBuffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_CBuffers, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Images count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Images, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Pipeline layouts count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_PipelineLayouts, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Descriptor sets count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_DescriptorSets, false);
@@ -41,6 +42,13 @@ ConsoleVariable<bool> RayTracing_CVar("r.RayTracing", "Controls whether ray trac
 
 namespace Columbus
 {
+
+	void CBufferPoolVulkan::BeginFrame()
+	{
+		CurrentFrame = (CurrentFrame + 1) % MaxFramesInFlight;
+		for (auto& entry : Pool[CurrentFrame])
+			entry.Used = false;
+	}
 
 	DeviceVulkan::DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 		_PhysicalDevice(PhysicalDevice), _Instance(Instance)
@@ -572,6 +580,11 @@ namespace Columbus
 			bufferInfo.usage = BufferTypeToVK(Desc.BindFlags) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		}
 
+		if (Desc.BindFlags == BufferType::Constant)
+		{
+			bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		}
+
 		if (InitialData != nullptr)
 		{
 			if (!Desc.HostVisible)
@@ -687,6 +700,46 @@ namespace Columbus
 
 		const BufferVulkan* vkbuf = static_cast<const BufferVulkan*>(Buf);
 		vmaUnmapMemory(_Allocator, vkbuf->_Allocation);
+	}
+
+	constexpr size_t Align(size_t value, size_t alignment)
+	{
+		return (value + alignment - 1) & ~(alignment - 1);
+	}
+
+	Buffer* DeviceVulkan::GetConstantBufferPrepared(u32 Size, void* Data)
+	{
+		auto& FrameBuffers = _CBufPool.Pool[_CBufPool.CurrentFrame];
+
+		// Round size up to alignment
+		const u32 AlignedSize = Align(Size, 256);
+
+		// Try to reuse an existing unused buffer of same size
+		for (auto& entry : FrameBuffers)
+		{
+			if (!entry.Used && entry.Size == AlignedSize)
+			{
+				void* MappedPtr = MapBuffer(entry.Buf);
+				memcpy(MappedPtr, Data, Size);
+				UnmapBuffer(entry.Buf);
+				entry.Used = true;
+				return entry.Buf;
+			}
+		}
+
+		// Allocate a new one
+		BufferDesc CBDesc(AlignedSize, BufferType::Constant);
+		CBDesc.HostVisible = true;
+
+		Buffer* NewBuf = CreateBuffer(CBDesc, nullptr);
+		void* MappedPtr = MapBuffer(NewBuf);
+		memcpy(MappedPtr, Data, Size);
+		UnmapBuffer(NewBuf);
+
+		AddProfilingCount(CountingCounter_Vulkan_CBuffers, 1);
+
+		FrameBuffers.push_back({ NewBuf, AlignedSize, true });
+		return NewBuf;
 	}
 
 	// TODO: move all this logic to command buffer
@@ -1042,6 +1095,7 @@ namespace Columbus
 	void DeviceVulkan::BeginFrame()
 	{
 		_Profiler.BeginFrame();
+		_CBufPool.BeginFrame();
 
 		// run deferred destroy logic
 

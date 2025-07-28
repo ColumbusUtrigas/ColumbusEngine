@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 namespace Columbus
 {
@@ -16,6 +17,8 @@ namespace Columbus
 		using SourcesList = std::vector<std::shared_ptr<AudioSource>>;
 
 		friend class Renderer;
+
+		std::mutex ThreadAccessMt;
 		
 		AudioListener Listener;
 		SourcesList Sources;
@@ -39,11 +42,13 @@ namespace Columbus
 
 		void AddSource(std::shared_ptr<AudioSource> Source)
 		{
+			std::lock_guard lg(ThreadAccessMt);
 			Sources.push_back(Source);
 		}
 
 		void RemoveSource(std::shared_ptr<AudioSource> Source)
 		{
+			std::lock_guard lg(ThreadAccessMt);
 			Sources.erase(std::remove(Sources.begin(), Sources.end(), Source));
 		}
 
