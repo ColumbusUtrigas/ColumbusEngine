@@ -367,7 +367,60 @@ namespace Columbus::Editor
 				return ImGui::InputText(Field.Name, (std::string*)FieldData);
 			}
 		}
-			break;
+		break;
+
+		case Reflection::FieldType::Array:
+		{
+			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+			Reflection::ArrayData* Array = Field.Array;
+
+			u32 ElementSize = Array->ElementField.Size;
+			u32 NumElements = (u32)ArrayData->size() / ElementSize;
+
+			bool Result = false;
+			if (ImGui::CollapsingHeader(Field.Name))
+			{
+				if (NumElements == 0)
+				{
+					ImGui::Text("Empty array");
+				}
+
+				i32 ElementToRemove = -1;
+
+				ImGui::Indent(Depth * 5.0f);
+				u32 Offset = 0;
+				for (u32 i = 0; i < NumElements; i++)
+				{
+					ImGui::PushID(i);
+					Result |= Reflection_EditObjectField(ArrayData->data() + Offset, Array->ElementField, Depth + 1);
+					ImGui::SameLine();
+
+					if (ImGui::Button("Remove"))
+					{
+						ElementToRemove = i;
+					}
+
+					ImGui::PopID();
+
+					Offset += ElementSize;
+				}
+				ImGui::Unindent(Depth * 5.0f);
+
+				if (ImGui::Button("Add Element"))
+				{
+					Array->NewElement(FieldData);
+					Result = true;
+				}
+
+				if (ElementToRemove > -1)
+				{
+					Array->DeleteElement(FieldData, ElementToRemove);
+					Result = true;
+				}
+			}
+			return Result;
+		}
+		break;
 
 		case Reflection::FieldType::Enum:
 		{

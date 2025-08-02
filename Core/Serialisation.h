@@ -39,6 +39,27 @@ static void Reflection_SerialiseFieldJson(char* Object, const Reflection::Field&
 		}
 		break;
 	}
+	case Reflection::FieldType::Array:
+	{
+		auto& sjson = json[Field.Name];
+		sjson = nlohmann::json::array();
+
+		std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+
+		u32 ElementSize = Field.Array->ElementField.Size;
+		u32 NumElements = ArrayData->size() / ElementSize;
+		u32 Offset = 0;
+
+		for (u32 i = 0; i < NumElements; i++)
+		{
+			nlohmann::json elementJson;
+			Reflection_SerialiseFieldJson(ArrayData->data() + Offset, Field.Array->ElementField, elementJson);
+			sjson.push_back(elementJson[Field.Array->ElementField.Name]); // strip the name
+
+			Offset += ElementSize;
+		}
+		break;
+	}
 
 	case Reflection::FieldType::AssetRef:
 	{
@@ -71,6 +92,8 @@ static void Reflection_SerialiseFieldJson(char* Object, const Reflection::Field&
 	}
 }
 
+void Reflection_DeserialiseFieldInternalJson(char* FieldData, const Reflection::Field& Field, nlohmann::json& json);
+
 static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Field& Field, nlohmann::json& json)
 {
 	char* FieldData = Object + Field.Offset;
@@ -81,7 +104,9 @@ static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Fiel
 		return;
 	}
 
-	switch (Field.Type)
+	Reflection_DeserialiseFieldInternalJson(FieldData, Field, json[Field.Name]);
+
+	/*switch (Field.Type)
 	{
 	case Reflection::FieldType::Bool:
 		*(bool*)FieldData = json[Field.Name];
@@ -108,6 +133,31 @@ static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Fiel
 		}
 		break;
 	}
+
+	case Reflection::FieldType::Array:
+	{
+		auto& sjson = json[Field.Name];
+		if (!sjson.is_array())
+		{
+			Log::Error("Array field %s is not an array", Field.Name);
+			break;
+		}
+
+		u32 ElementSize = Field.Array->ElementField.Size;
+		u32 Offset = 0;
+
+		for (auto& elementJson : sjson)
+		{
+			Field.Array->NewElement(FieldData);
+			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+
+			Reflection_DeserialiseFieldJson(ArrayData->data() + Offset, Field.Array->ElementField, elementJson);
+
+			Offset += ElementSize;
+		}
+		break;
+	}
+
 	case Reflection::FieldType::AssetRef:
 	{
 		auto& sjson = json[Field.Name];
@@ -170,8 +220,128 @@ static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Fiel
 		break;
 	}
 
+	}*/
+}
+
+static void Reflection_DeserialiseFieldInternalJson(char* FieldData, const Reflection::Field& Field, nlohmann::json& json)
+{
+	switch (Field.Type)
+	{
+	case Reflection::FieldType::Bool:
+		*(bool*)FieldData = json;
+		break;
+	case Reflection::FieldType::Int:
+		*(int*)FieldData = json;
+		break;
+	case Reflection::FieldType::Float:
+		*(float*)FieldData = json;
+		break;
+	case Reflection::FieldType::String:
+		*(std::string*)FieldData = json;
+		break;
+	case Reflection::FieldType::Enum:
+		*(int*)FieldData = json;
+		break;
+	case Reflection::FieldType::Struct:
+	{
+		auto& sjson = json;
+
+		for (const auto& SField : Field.Struct->Fields)
+		{
+			Reflection_DeserialiseFieldJson(FieldData, SField, sjson);
+		}
+		break;
+	}
+
+	case Reflection::FieldType::Array:
+	{
+		auto& sjson = json;
+		if (!sjson.is_array())
+		{
+			Log::Error("Array field %s is not an array", Field.Name);
+			break;
+		}
+
+		u32 ElementSize = Field.Array->ElementField.Size;
+		u32 Offset = 0;
+
+		for (auto& elementJson : sjson)
+		{
+			Field.Array->NewElement(FieldData);
+			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+
+			Reflection_DeserialiseFieldInternalJson(ArrayData->data() + Offset, Field.Array->ElementField, elementJson);
+
+			Offset += ElementSize;
+		}
+		break;
+	}
+
+	case Reflection::FieldType::AssetRef:
+	{
+		auto& sjson = json;
+
+		std::string refString = sjson.get<std::string>();
+		size_t delim = refString.find("===");
+
+		if (delim == std::string::npos)
+		{
+			Log::Error("AssetRef field %s is malformed: %s", Field.Name, refString.c_str());
+			break;
+		}
+
+		std::string guid = refString.substr(0, delim);
+		std::string path = refString.substr(delim + 3);
+
+		if (guid != Field.Typeguid)
+		{
+			Log::Error("AssetRef type GUID mismatch for field %s\nExpected: %s\nFound:   %s",
+				Field.Name, Field.Typeguid, guid.c_str());
+			break;
+		}
+
+		// Assign to the actual AssetRef<T>::Path
+		struct AssetRefBase {
+			std::string Path;
+			// pointer unused here
+		};
+
+		((AssetRefBase*)FieldData)->Path = path;
+		break;
+	}
+	case Reflection::FieldType::ThingRef:
+	{
+		auto& sjson = json;
+
+		std::string refString = sjson.get<std::string>();
+		size_t delim = refString.find("===");
+		if (delim == std::string::npos)
+		{
+			Log::Error("ThingRef field %s is malformed: %s", Field.Name, refString.c_str());
+			break;
+		}
+
+		std::string guid = refString.substr(0, delim);
+		std::string thingGuidStr = refString.substr(delim + 3);
+
+		if (guid != Field.Typeguid)
+		{
+			Log::Error("ThingRef type GUID mismatch for field %s\nExpected: %s\nFound:   %s",
+				Field.Name, Field.Typeguid, guid.c_str());
+			break;
+		}
+		HGuid thingGuid = (HGuid)std::stoull(thingGuidStr);
+		struct ThingRefBase {
+			HGuid Guid;
+			// pointer unused here
+		};
+		((ThingRefBase*)FieldData)->Guid = thingGuid;
+		break;
+	}
+
 	}
 }
+
 
 static void Reflection_SerialiseStructJson(char* Object, const Reflection::Struct* Struct, nlohmann::json& json, bool bWriteType = true)
 {

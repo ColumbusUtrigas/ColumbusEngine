@@ -7,20 +7,21 @@
 namespace Columbus
 {
 
+	enum class EParticleColorUpdateMode
+	{
+		Initial,
+		OverLife
+	};
+
 	class ParticleModuleColor
 	{
 	public:
-		enum class UpdateMode
-		{
-			Initial,
-			OverLife
-		};
 
 		Vector4 Min;
 		Vector4 Max;
 		InterpolationCurve<Vector4> Curve;
 
-		UpdateMode Mode = UpdateMode::Initial;
+		EParticleColorUpdateMode Mode = EParticleColorUpdateMode::Initial;
 	public:
 		ParticleModuleColor() : Min(1), Max(1) {}
 
@@ -34,7 +35,7 @@ namespace Columbus
 
 		void Update(ParticleContainer& Container) const
 		{
-			if (Mode == UpdateMode::OverLife)
+			if (Mode == EParticleColorUpdateMode::OverLife)
 			{
 				for (size_t i = 0; i < Container.Count; i++)
 				{

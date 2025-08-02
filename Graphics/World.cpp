@@ -1210,6 +1210,50 @@ namespace Columbus
 
 		Super::OnDestroy();
 	}
+
+
+	AParticleSystem::AParticleSystem()
+	{
+		bNeedsTicking = true;
+	}
+
+	void AParticleSystem::OnCreate()
+	{
+		Super::OnCreate();
+
+		if (ParticleAsset)
+		{
+			ParticleInstance.Settings = ParticleAsset;
+
+			ParticleRenderHandle = World->SceneGPU->AddParticleSystem(&ParticleInstance);
+		}
+	}
+
+	void AParticleSystem::OnDestroy()
+	{
+		World->SceneGPU->DeleteParticleSystem(ParticleRenderHandle);
+
+		Super::OnDestroy();
+	}
+
+	void AParticleSystem::OnTick(float DeltaTime)
+	{
+		Super::OnTick(DeltaTime);
+
+		ParticleInstance.CurrentPosition = TransGlobal.Position;
+		ParticleInstance.CameraPosition = World->MainView.CameraCur.Pos;
+
+		ParticleInstance.Update(DeltaTime);
+
+		bRenderStateDirty = true;
+	}
+
+	void AParticleSystem::OnUpdateRenderState()
+	{
+		Super::OnUpdateRenderState();
+
+		// TODO: GPUScene particle proxy
+	}
 }
 
 // reflection stuff
@@ -1218,10 +1262,10 @@ using namespace Columbus;
 CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Texture2, []() -> void* { return nullptr; }, "")
 CREFLECT_STRUCT_END()
 
-CREFLECT_STRUCT_BEGIN(Sound)
+CREFLECT_STRUCT_BEGIN(Sound, "")
 CREFLECT_STRUCT_END()
 
-CREFLECT_STRUCT_BEGIN(HLevel)
+CREFLECT_STRUCT_BEGIN(HLevel, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_ENUM_BEGIN(LightType, "")
@@ -1285,4 +1329,9 @@ CREFLECT_STRUCT_END()
 CREFLECT_DEFINE_VIRTUAL(ALevelThing);
 CREFLECT_STRUCT_BEGIN(ALevelThing, "")
 	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(AParticleSystem)
+CREFLECT_STRUCT_BEGIN(AParticleSystem, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(HParticleEmitterSettings, ParticleAsset, "")
 CREFLECT_STRUCT_END()

@@ -14,13 +14,13 @@ namespace Columbus
 	{
 		switch (Mode)
 		{
-		case SubUVMode::Linear:
+		case EParticleSubUVMode::Linear:
 			for (size_t i = Container.Count; i < Container.Count + Spawn; i++)
 			{
 				Container.Frames[i] = 0;
 			}
 			break;
-		case SubUVMode::Random:
+		case EParticleSubUVMode::Random:
 			for (size_t i = Container.Count; i < Container.Count + Spawn; i++)
 			{
 				Container.Frames[i] = (uint32)Random::Range(0, Horizontal * Vertical);
@@ -32,7 +32,7 @@ namespace Columbus
 	void ParticleModuleSubUV::Update(ParticleContainer& Container) const
 	{
 	#if USE_SIMD_EXTENSIONS
-		if (Mode == SubUVMode::Linear)
+		if (Mode == EParticleSubUVMode::Linear)
 		{
 			float M = Horizontal * Vertical * Cycles;
 			__m128 Factor = _mm_load1_ps(&M);
@@ -45,7 +45,7 @@ namespace Columbus
 			}
 		}
 	#else
-		if (Mode == SubUVMode::Linear)
+		if (Mode == EParticleSubUVMode::Linear)
 		{
 			for (size_t i = 0; i < Container.Count; i++)
 			{

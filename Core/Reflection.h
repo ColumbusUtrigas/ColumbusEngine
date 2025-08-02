@@ -62,8 +62,9 @@ struct XXX_CReflection_Enum_Initialiser_##x { \
 
 #define CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, constructorLambda, meta) \
 template <> void ::Reflection::EnforceTypeLinkage<x>() {} \
-struct XXX_CReflection_Struct_Initialiser_##x { \
-XXX_CReflection_Struct_Initialiser_##x() {\
+namespace { \
+struct CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_, __LINE__) { \
+CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_, __LINE__) () {\
 	using LocalStructType = x; \
 	Reflection::Struct* Struct = Reflection::RegisterStruct<x>(); \
 	Struct->Constructor = constructorLambda; \
@@ -85,7 +86,20 @@ CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, []() -> void* { return (void*) (new x()); }
 	Reflection::EnforceTypeLinkage<type>(); \
 	Struct->LocalFields.push_back(Reflection::Field{ #name, "ThingRef", Reflection::FindTypeGuid<type>(), meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) });
 
-#define CREFLECT_STRUCT_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_Instance_##x, __LINE__);
+#define CREFLECT_STRUCT_FIELD_ARRAY(type, name, meta) \
+	Reflection::EnforceTypeLinkage<type>(); \
+	Struct->LocalFields.push_back(Reflection::Field{ #name, "Array", nullptr, meta, offsetof(LocalStructType, name), sizeof(LocalStructType::name) }); \
+	Struct->LocalFields.back().Array = new Reflection::ArrayData(); \
+	Struct->LocalFields.back().Array->ElementSize = sizeof(type); \
+	Struct->LocalFields.back().Array->ElementField = Reflection::Field{ "ArrayElement", #type, Reflection::FindTypeGuid<type>(), meta, 0, sizeof(type) }; \
+	Struct->LocalFields.back().Array->NewElement = [](void* ArrayPtr) { reinterpret_cast<std::vector<type>*>(ArrayPtr)->push_back({ }); }; \
+	Struct->LocalFields.back().Array->Clear = [](void* ArrayPtr) { reinterpret_cast<std::vector<type>*>(ArrayPtr)->clear(); }; \
+	Struct->LocalFields.back().Array->DeleteElement = [](void* ArrayPtr, int Id) { \
+		auto& vec = *reinterpret_cast<std::vector<type>*>(ArrayPtr); \
+		vec.erase(vec.begin() + Id); \
+	};
+
+#define CREFLECT_STRUCT_END() } } CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_Instance_, __LINE__); }
 
 // UI drawing specialisation for the struct
 #define CREFLECT_STRUCT_CUSTOM_UI(x, function) struct XXX_CReflection_StructCustomUI_Initialiser_##x { \
@@ -145,6 +159,8 @@ namespace Reflection
 		const EnumField* FindFieldByValue(int Value) const;
 	};
 
+	struct ArrayData;
+
 	struct Field
 	{
 		const char* Name;
@@ -157,6 +173,17 @@ namespace Reflection
 		FieldType Type;
 		Enum* Enum = nullptr;
 		Struct* Struct = nullptr;
+		ArrayData* Array = nullptr; // only for arrays
+	};
+
+	struct ArrayData
+	{
+		Field ElementField; // type of the array element
+		int ElementSize = 0;
+
+		std::function<void(void* ArrayPtr)> NewElement;
+		std::function<void(void* ArrayPtr)> Clear;
+		std::function<void(void* ArrayPtr, int Id)> DeleteElement;
 	};
 
 	struct Struct

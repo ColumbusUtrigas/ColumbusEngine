@@ -5,125 +5,108 @@ namespace Columbus
 
 	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View)
 	{
+		Graph.Scene->Update();
+
+		// Scene
+		{
+			GPUSceneCompact Compact = Graph.Scene->CreateCompact(View);
+			Graph.Device->UploadRing.UploadBuffer(&Compact, sizeof(Compact), 0, Graph.Scene->SceneBuffer);
+		}
+
+		// Lights
+		if (Graph.Scene->Lights.Size() > 0)
+		{
+			Graph.Device->UploadRing.UploadBuffer(Graph.Scene->Lights.Data(), Graph.Scene->Lights.Size() * sizeof(GPULight), 0, Graph.Scene->LightsBuffer);
+		}
+
+		// Meshes
+		if (Graph.Scene->Meshes.Size() > 0)
+		{
+			u32 NumMeshes = Graph.Scene->Meshes.Size();
+
+			void* Ptr = Graph.Device->UploadRing.UploadBufferMap(NumMeshes * sizeof(GPUSceneMeshCompact), 0, Graph.Scene->MeshesBuffer);
+
+			for (u32 i = 0; i < NumMeshes; i++)
+			{
+				const GPUSceneMesh& Mesh = Graph.Scene->Meshes[i];
+				GPUSceneMeshCompact Compact{
+					.Transform = Mesh.Transform,
+					.VertexBufferAddress = Mesh.MeshResource->Vertices->GetDeviceAddress(),
+					.IndexBufferAddress = Mesh.MeshResource->Indices->GetDeviceAddress(),
+					.Uv1BufferAddress = Mesh.MeshResource->UV1->GetDeviceAddress(),
+					.Uv2BufferAddress = Mesh.MeshResource->UV2 ? Mesh.MeshResource->UV2->GetDeviceAddress() : 0,
+					.NormalsBufferAddress = Mesh.MeshResource->Normals->GetDeviceAddress(),
+					.TangentsBufferAddress = Mesh.MeshResource->Tangents->GetDeviceAddress(),
+					.VertexCount = Mesh.MeshResource->VertexCount,
+					.IndexCount = Mesh.MeshResource->IndicesCount,
+					.MaterialId = Mesh.MaterialId,
+					.LightmapId = Mesh.LightmapId,
+				};
+
+				((GPUSceneMeshCompact*)Ptr)[i] = Compact;
+			}
+		}
+
+		// Materials
+		if (Graph.Scene->Materials.size() > 0)
+		{
+			u32 NumMaterials = Graph.Scene->Materials.size();
+
+			void* Ptr = Graph.Device->UploadRing.UploadBufferMap(NumMaterials * sizeof(GPUMaterialCompact), 0, Graph.Scene->MaterialsBuffer);
+
+			for (u32 i = 0; i < NumMaterials; i++)
+			{
+				Material& Mat = Graph.Scene->Materials[i];
+				GPUMaterialCompact Compact{
+					.AlbedoFactor = Mat.AlbedoFactor,
+					.EmissiveFactor = Mat.EmissiveFactor,
+					.AlbedoId = Mat.AlbedoId,
+					.NormalId = Mat.NormalId,
+					.OrmID = Mat.OrmId,
+					.EmissiveId = Mat.EmissiveId,
+					.Roughness = Mat.Roughness,
+					.Metallic = Mat.Metallic,
+				};
+				((GPUMaterialCompact*)Ptr)[i] = Compact;
+			}
+		}
+
+		// Particles
+		{
+			u32 NumEmitters = Graph.Scene->Particles.Size();
+			for (u32 i = 0; i < NumEmitters; i++)
+			{
+				const GPUSceneParticles& Particles = Graph.Scene->Particles[i];
+
+				u32 NumParticles = Particles.ParticleInstance->Particles.Count;
+
+				if (NumParticles == 0)
+					continue;
+
+				GPUParticleCompact* Ptr = (GPUParticleCompact*)Graph.Device->UploadRing.UploadBufferMap(NumParticles * sizeof(GPUParticleCompact), 0, Particles.DataBuffer);
+
+				// pack particles
+				for (u32 j = 0; j < NumParticles; j++)
+				{
+					auto& Container = Particles.ParticleInstance->Particles;
+
+					GPUParticleCompact Particle{
+						.Position_Rotation = Vector4(Container.Positions[j], Container.Rotations[j]),
+						.Size_Frame = Vector4(Container.Sizes[j], Container.Frames[j]),
+						.Colour = Container.Colors[j]
+					};
+
+					Ptr[j] = Particle;
+				}
+			}
+		}
+
+		Graph.Device->UploadRing.FlushUploads();
+
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Graph.AddPass("UploadGPUScene + Build TLAS", RenderGraphPassType::Compute, Parameters, Dependencies, [View](RenderGraphContext& Context)
+		Graph.AddPass("Build TLAS", RenderGraphPassType::Compute, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
-			// TODO: create UploadBuffer wrapper? have CurrentFrame as a constant in Context?
-			static int CurrentFrame = 0;
-			CurrentFrame = ++CurrentFrame % MaxFramesInFlight;
-
-			Context.Scene->Update();
-
-			// scene
-			{
-				Buffer*& UploadBuffer = Context.Scene->SceneUploadBuffers[CurrentFrame];
-
-				GPUSceneCompact Compact = Context.Scene->CreateCompact(View);
-
-				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-				memcpy(Ptr, &Compact, sizeof(Compact));
-				Context.Device->UnmapBuffer(UploadBuffer);
-
-				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->SceneBuffer, 0, 0, sizeof(Compact));
-			}
-
-			// lights
-			if (Context.Scene->Lights.Size() > 0)
-			{
-				Buffer*& UploadBuffer = Context.Scene->LightUploadBuffers[CurrentFrame];
-
-				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-				memcpy(Ptr, Context.Scene->Lights.Data(), Context.Scene->Lights.Size() * sizeof(GPULight));
-				Context.Device->UnmapBuffer(UploadBuffer);
-
-				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->LightsBuffer, 0, 0, sizeof(GPULight) * Context.Scene->Lights.Size());
-			}
-
-			// meshes
-			if (Context.Scene->Meshes.Size() > 0)
-			{
-				Buffer*& UploadBuffer = Context.Scene->MeshesUploadBuffers[CurrentFrame];
-
-				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-				for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
-				{
-					const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
-					GPUSceneMeshCompact Compact {
-						.Transform = Mesh.Transform,
-						.VertexBufferAddress = Mesh.MeshResource->Vertices->GetDeviceAddress(),
-						.IndexBufferAddress = Mesh.MeshResource->Indices->GetDeviceAddress(),
-						.Uv1BufferAddress = Mesh.MeshResource->UV1->GetDeviceAddress(),
-						.Uv2BufferAddress = Mesh.MeshResource->UV2 ? Mesh.MeshResource->UV2->GetDeviceAddress() : 0,
-						.NormalsBufferAddress = Mesh.MeshResource->Normals->GetDeviceAddress(),
-						.TangentsBufferAddress = Mesh.MeshResource->Tangents->GetDeviceAddress(),
-						.VertexCount = Mesh.MeshResource->VertexCount,
-						.IndexCount = Mesh.MeshResource->IndicesCount,
-						.MaterialId = Mesh.MaterialId,
-						.LightmapId = Mesh.LightmapId,
-					};
-
-					((GPUSceneMeshCompact*)Ptr)[i] = Compact;
-				}
-				Context.Device->UnmapBuffer(UploadBuffer);
-
-				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MeshesBuffer, 0, 0, sizeof(GPUSceneMeshCompact) * Context.Scene->Meshes.Size());
-			}
-
-			// materials
-			if (Context.Scene->Materials.size() > 0)
-			{
-				Buffer*& UploadBuffer = Context.Scene->MaterialsUploadBuffers[CurrentFrame];
-
-				void* Ptr = Context.Device->MapBuffer(UploadBuffer);
-				for (int i = 0; i < Context.Scene->Materials.size(); i++)
-				{
-					Material& Mat = Context.Scene->Materials[i];
-					GPUMaterialCompact Compact{
-						.AlbedoFactor = Mat.AlbedoFactor,
-						.EmissiveFactor = Mat.EmissiveFactor,
-						.AlbedoId = Mat.AlbedoId,
-						.NormalId = Mat.NormalId,
-						.OrmID = Mat.OrmId,
-						.EmissiveId = Mat.EmissiveId,
-						.Roughness = Mat.Roughness,
-						.Metallic = Mat.Metallic,
-					};
-					((GPUMaterialCompact*)Ptr)[i] = Compact;
-				}
-				Context.Device->UnmapBuffer(UploadBuffer);
-
-				Context.CommandBuffer->CopyBuffer(UploadBuffer, Context.Scene->MaterialsBuffer, 0, 0, sizeof(GPUMaterialCompact) * Context.Scene->Materials.size());
-			}
-
-			// synchronisation
-			{
-				Buffer* BuffersToSync[] = { Context.Scene->SceneBuffer, Context.Scene->MaterialsBuffer, Context.Scene->MeshesBuffer };
-
-				for (Buffer* Buf : BuffersToSync)
-				{
-					BufferVulkan* VkBuffer = static_cast<BufferVulkan*>(Buf);
-
-					// TODO: RHI sync
-					VkBufferMemoryBarrier VkBarrier;
-					VkBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-					VkBarrier.pNext = nullptr;
-					VkBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-					VkBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-					VkBarrier.srcQueueFamilyIndex = 0;
-					VkBarrier.dstQueueFamilyIndex = 0;
-					VkBarrier.buffer = VkBuffer->_Buffer;
-					VkBarrier.offset = 0;
-					VkBarrier.size = VkBuffer->GetDesc().Size;
-
-					vkCmdPipelineBarrier(Context.CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-						0, 0, // memory barrier
-						1, &VkBarrier, // buffer memory barrier
-						0, 0  // image memory barrier
-					);
-				}
-			}
-
 			// TLAS
 			{
 				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();

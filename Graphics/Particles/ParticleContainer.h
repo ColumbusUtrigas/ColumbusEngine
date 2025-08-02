@@ -48,14 +48,15 @@ namespace Columbus
 		};
 
 		size_t Count = 0;
+		size_t PreviousMaxSize = 0;
 
-		DataWrapper<float> Ages;
-		DataWrapper<float> Lifetimes;
-		DataWrapper<float> Percents;
-		DataWrapper<float> Rotations;
-		DataWrapper<float> RotationVelocities;
-		DataWrapper<float> Distances;
-		DataWrapper<uint32> Frames;
+		DataWrapper<float>   Ages;
+		DataWrapper<float>   Lifetimes;
+		DataWrapper<float>   Percents;
+		DataWrapper<float>   Rotations;
+		DataWrapper<float>   RotationVelocities;
+		DataWrapper<float>   Distances;
+		DataWrapper<uint32>  Frames;
 		DataWrapper<Vector3> Positions;
 		DataWrapper<Vector3> Velocities;
 		DataWrapper<Vector3> Sizes;
@@ -63,6 +64,13 @@ namespace Columbus
 
 		void Allocate(size_t MaxSize)
 		{
+			if (MaxSize <= PreviousMaxSize)
+			{
+				return;
+			}
+
+			PreviousMaxSize = MaxSize;
+
 			Ages.Allocate(MaxSize);
 			Lifetimes.Allocate(MaxSize);
 			Percents.Allocate(MaxSize);
@@ -78,17 +86,17 @@ namespace Columbus
 
 		void Move(size_t To, size_t From)
 		{
-			Ages[To] = Ages[From];
-			Lifetimes[To] = Lifetimes[From];
-			Percents[To] = Percents[From];
-			Rotations[To] = Rotations[From];
+			Ages[To]       = Ages[From];
+			Lifetimes[To]  = Lifetimes[From];
+			Percents[To]   = Percents[From];
+			Rotations[To]  = Rotations[From];
 			RotationVelocities[To] = RotationVelocities[From];
-			Distances[To] = Distances[From];
-			Frames[To] = Frames[From];
-			Positions[To] = Positions[From];
+			Distances[To]  = Distances[From];
+			Frames[To]     = Frames[From];
+			Positions[To]  = Positions[From];
 			Velocities[To] = Velocities[From];
-			Sizes[To] = Sizes[From];
-			Colors[To] = Colors[From];
+			Sizes[To]      = Sizes[From];
+			Colors[To]     = Colors[From];
 		}
 
 		void Swap(size_t A, size_t B)

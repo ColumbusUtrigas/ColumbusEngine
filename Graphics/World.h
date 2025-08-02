@@ -5,6 +5,7 @@
 #include "Lightmaps.h"
 #include "Audio/AudioSystem.h"
 #include "Graphics/Core/View.h"
+#include "Graphics/Particles/ParticleEmitterCPU.h"
 #include "Math/Box.h"
 #include "Math/Geometry.h"
 #include "Scene/Transform.h"
@@ -190,6 +191,26 @@ namespace Columbus
 		virtual void OnUpdateRenderState() override;
 	};
 
+	struct AParticleSystem : public AThing
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AParticleSystem);
+		using Super = AThing;
+
+	public:
+		AssetRef<HParticleEmitterSettings> ParticleAsset;
+		HParticleEmitterInstanceCPU        ParticleInstance;
+
+		HStableParticlesId ParticleRenderHandle;
+
+	public:
+		AParticleSystem();
+
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+		virtual void OnTick(float DeltaTime) override;
+		virtual void OnUpdateRenderState() override;
+	};
+
 	struct HLevel
 	{
 		EngineWorld* World = nullptr;
@@ -310,8 +331,6 @@ namespace Columbus
 
 }
 
-CREFLECT_DECLARE_STRUCT(Columbus::Texture2, 1, "1B4AF05B-674A-4B68-8C72-1B46644DA0EC");
-CREFLECT_DECLARE_STRUCT(Columbus::Sound, 1, "D8CFCF19-4688-4039-BC40-81C4B796C254");
 CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 1, "4112562B-4C50-47FD-B6F4-BAAC28FC4CE7");
 
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
@@ -321,3 +340,4 @@ CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALevelThing, Columbus::AThing, 1, "CBF88292-8650-4764-ACFE-3C84AA6B072C");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AParticleSystem, Columbus::AThing, 1, "FEBD331E-0CCE-47DA-B2F1-4A089EB60DE8");

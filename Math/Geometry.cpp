@@ -185,6 +185,7 @@ namespace Columbus::Geometry
 
 #include "Core/Reflection.h"
 #include "Quaternion.h"
+#include "InterpolationCurve.h"
 
 using namespace Columbus;
 
@@ -212,4 +213,23 @@ CREFLECT_STRUCT_BEGIN(Quaternion, "")
 	CREFLECT_STRUCT_FIELD(float, Y, "")
 	CREFLECT_STRUCT_FIELD(float, Z, "")
 	CREFLECT_STRUCT_FIELD(float, W, "")
+CREFLECT_STRUCT_END()
+
+
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat3::Node, "")
+	CREFLECT_STRUCT_FIELD(float, Key, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Value, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat4::Node, "")
+	CREFLECT_STRUCT_FIELD(float, Key, "")
+	CREFLECT_STRUCT_FIELD(Vector4, Value, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat3, "")
+	 CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat3::Node, Points, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat4, "")
+	 CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat4::Node, Points, "")
 CREFLECT_STRUCT_END()

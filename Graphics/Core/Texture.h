@@ -3,6 +3,8 @@
 #include <Common/Image/Image.h>
 #include <memory>
 
+#include <Core/Reflection.h>
+
 namespace Columbus
 {
 
@@ -280,3 +282,5 @@ namespace Columbus
 	};
 
 }
+
+CREFLECT_DECLARE_STRUCT(Columbus::Texture2, 1, "1B4AF05B-674A-4B68-8C72-1B46644DA0EC");

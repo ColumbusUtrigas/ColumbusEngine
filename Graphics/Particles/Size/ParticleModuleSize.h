@@ -7,26 +7,26 @@
 namespace Columbus
 {
 
+	enum class EParticleSizeUpdateMode
+	{
+		Initial,
+		OverLife
+	};
+
 	class ParticleModuleSize
 	{
 	public:
-		enum class UpdateMode
-		{
-			Initial,
-			OverLife
-		};
-
 		InterpolationCurve<Vector3> Curve;
 		Vector3 Min;
 		Vector3 Max;
 
-		UpdateMode Mode;
+		EParticleSizeUpdateMode Mode;
 	public:
-		ParticleModuleSize() : Min(1), Max(1) {}
+		ParticleModuleSize() : Min(1), Max(1), Mode(EParticleSizeUpdateMode::Initial) {}
 
 		void Spawn(const ParticleContainer& Container, size_t Spawn) const
 		{
-			if (Mode == UpdateMode::Initial)
+			if (Mode == EParticleSizeUpdateMode::Initial)
 			{
 				for (size_t i = Container.Count; i < Container.Count + Spawn; i++)
 				{
@@ -37,7 +37,7 @@ namespace Columbus
 
 		void Update(ParticleContainer& Container) const
 		{
-			if (Mode == UpdateMode::OverLife)
+			if (Mode == EParticleSizeUpdateMode::OverLife)
 			{
 				for (size_t i = 0; i < Container.Count; i++)
 				{

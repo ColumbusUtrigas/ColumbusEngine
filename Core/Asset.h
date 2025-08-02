@@ -35,6 +35,41 @@ namespace Columbus
 		{
 		}
 
+		AssetRef(const AssetRef<T>& Other)
+		{
+			*this = Other;
+		}
+
+		AssetRef<T>& operator=(const AssetRef<T>& Other)
+		{
+			if (Other.Asset)
+			{
+				Path = Other.Path;
+				Resolve(); // increase refcount
+			}
+			else
+			{
+				Unload(); // decrease refcount
+			}
+
+			return *this;
+		}
+
+		T* operator->()
+		{
+			return Asset;
+		}
+
+		operator bool() const
+		{
+			return IsValid();
+		}
+
+		bool IsValid() const
+		{
+			return Asset != nullptr;
+		}
+
 		~AssetRef()
 		{
 			Unload();

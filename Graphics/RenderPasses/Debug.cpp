@@ -334,114 +334,94 @@ namespace Columbus
 		static std::vector<UPtr<char>> CommandHistory;
 		static std::vector<UPtr<char>> History;
 
+		const auto RightAlignText = [](const char* Text)
+		{
+			float region_width = ImGui::GetContentRegionAvail().x;
+			float text_width = ImGui::CalcTextSize(Text).x;
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + region_width - text_width);
+			ImGui::TextDisabled(Text);
+		};
+
 		// TODO: move to a proper place
 		if (ImGui::Begin("Stats"))
 		{
-			auto rg_cpu = GetProfilerCategoryCPU("RenderGraph");
-			auto rg_mem = GetProfilerCategoryMemory("RenderGraphMemory");
-			auto rg_gpu = GetProfilerCategoryGPU("RenderGraphGPU");
-			auto sc_mem = GetProfilerCategoryMemory("SceneMemory");
-			auto sc_cpu = GetProfilerCategoryCPU("SceneCPU");
-			auto ph_cpu = GetProfilerCategoryCPU("Physics");
-			auto vk_mem = GetProfilerCategoryMemory("Vulkan");
-			auto vk_cnt = GetProfilerCategoryCounting("Vulkan");
+			ImGuiTableFlags flags = ImGuiTableFlags_Borders;
 
-			if (ImGui::BeginTable("RG CPU", 2))
+			for (const char* cpu_category : GetProfilerCategoryListCPU())
 			{
-				ImGui::TableHeader("RG CPU");
-				for (auto counter : rg_cpu)
+				auto category = GetProfilerCategoryCPU(cpu_category);
+
+				ImGui::Text(cpu_category);
+				ImGui::SameLine();
+				RightAlignText("CPU");
+				if (ImGui::BeginTable(cpu_category, 2, flags))
 				{
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
+					for (auto counter : category)
+					{
+						ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+						ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
+					}
+					ImGui::EndTable();
 				}
-				ImGui::EndTable();
 			}
 
-			if (ImGui::BeginTable("RG Memory", 2))
+			for (const char* gpu_category : GetProfilerCategoryListGPU())
 			{
-				ImGui::TableHeader("RG Memory");
-				for (auto counter : rg_mem)
-				{
-					double mem;
-					const char* postfix = HumanizeBytes(counter->Memory, mem);
+				auto category = GetProfilerCategoryGPU(gpu_category);
 
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+				ImGui::Text(gpu_category);
+				ImGui::SameLine();
+				RightAlignText("GPU");
+				if (ImGui::BeginTable(gpu_category, 2, flags))
+				{
+					for (auto counter : category)
+					{
+						ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+						ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
+					}
+					ImGui::EndTable();
 				}
-				ImGui::EndTable();
 			}
 
-			if (ImGui::BeginTable("RG GPU", 2))
+			for (const char* mem_category : GetProfilerCategoryListMemory())
 			{
-				ImGui::TableHeader("RG GPU");
-				for (auto counter : rg_gpu)
+				auto category = GetProfilerCategoryMemory(mem_category);
+
+				ImGui::Text(mem_category);
+				ImGui::SameLine();
+				RightAlignText("MEM");
+				if (ImGui::BeginTable(mem_category, 2, flags))
 				{
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
+					for (auto counter : category)
+					{
+						double mem;
+						const char* postfix = HumanizeBytes(counter->Memory, mem);
+
+						ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+						ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+					}
+					ImGui::EndTable();
 				}
-				ImGui::EndTable();
 			}
 
-			if (ImGui::BeginTable("Scene Memory", 2))
+			for (const char* cnt_category : GetProfilerCategoryListCounting())
 			{
-				ImGui::TableHeader("Scene Memory");
-				for (auto counter : sc_mem)
-				{
-					double mem;
-					const char* postfix = HumanizeBytes(counter->Memory, mem);
+				auto category = GetProfilerCategoryCounting(cnt_category);
 
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
+				ImGui::Text(cnt_category);
+				ImGui::SameLine();
+				RightAlignText("COUNT");
+				if (ImGui::BeginTable(cnt_category, 2, flags))
+				{
+					for (auto counter : category)
+					{
+						ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
+						ImGui::TableNextColumn(); ImGui::Text("%lu", counter->Count);
+					}
+					ImGui::EndTable();
 				}
-				ImGui::EndTable();
 			}
 
-			if (ImGui::BeginTable("Scene CPU", 2))
-			{
-				ImGui::TableHeader("Scene CPU");
-				for (auto counter : sc_cpu)
-				{
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
-				}
-				ImGui::EndTable();
-			}
-
-			if (ImGui::BeginTable("Physics", 2))
-			{
-				ImGui::TableHeader("Physics");
-				for (auto counter : ph_cpu)
-				{
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2fms", counter->LastTime);
-				}
-				ImGui::EndTable();
-			}
-
-			if (ImGui::BeginTable("Vulkan Memory", 2))
-			{
-				ImGui::TableHeader("Vulkan Memory");
-				for (auto counter : vk_mem)
-				{
-					double mem;
-					const char* postfix = HumanizeBytes(counter->Memory, mem);
-
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%.2f%s", mem, postfix);
-				}
-				ImGui::EndTable();
-			}
-
-			if (ImGui::BeginTable("Vulkan Counts", 2))
-			{
-				ImGui::TableHeader("Vulkan Counts");
-				for (auto counter : vk_cnt)
-				{
-					ImGui::TableNextColumn(); ImGui::TextDisabled("%s", counter->Text);
-					ImGui::TableNextColumn(); ImGui::Text("%lu", counter->Count);
-				}
-				ImGui::EndTable();
-			}
 		}
 		ImGui::End();
 

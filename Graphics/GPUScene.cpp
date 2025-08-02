@@ -7,37 +7,18 @@
 namespace Columbus
 {
 
-	static void CreateGPUSceneBuffers(SPtr<DeviceVulkan> Device, u64 Size, const char* Name, Buffer*& Buf, Buffer** UploadBufs)
+	static void CreateGPUSceneBuffers(SPtr<DeviceVulkan> Device, u64 Size, const char* Name, Buffer*& Buf)
 	{
 		BufferDesc Desc;
 		Desc.Size = Size;
 		Desc.BindFlags = BufferType::UAV;
 		Buf = Device->CreateBuffer(Desc, nullptr);
 		Device->SetDebugName(Buf, Name);
-
-		for (int i = 0; i < MaxFramesInFlight; i++)
-		{
-			Buffer*& UploadBuf = UploadBufs[i];
-
-			BufferDesc UploadBufferDesc(Size, BufferType::UAV);
-			UploadBufferDesc.HostVisible = true;
-			UploadBuf = Device->CreateBuffer(UploadBufferDesc, nullptr);
-
-			char UploadName[256]{ 0 };
-			snprintf(UploadName, 256, "%s (upload buffer %i)", Name, i+1);
-
-			Device->SetDebugName(UploadBuf, UploadName);
-		}
 	}
 
-	static void DestroyGPUSceneBuffers(SPtr<DeviceVulkan> Device, Buffer* Buf, Buffer** UploadBufs)
+	static void DestroyGPUSceneBuffers(SPtr<DeviceVulkan> Device, Buffer* Buf)
 	{
 		Device->DestroyBuffer(Buf);
-
-		for (int i = 0; i < MaxFramesInFlight; i++)
-		{
-			Device->DestroyBuffer(UploadBufs[i]);
-		}
 	}
 
 	static GPUViewCamera CreateCameraCompact(const Camera& Camera)
@@ -72,6 +53,32 @@ namespace Columbus
 				SunDirection = Vector4(SceneLight.Direction.XYZ().Normalized(), 0);
 			}
 		}
+	}
+
+	HStableParticlesId GPUScene::AddParticleSystem(HParticleEmitterInstanceCPU* Emitter)
+	{
+		GPUSceneParticles Resource;
+		Resource.ParticleInstance = Emitter;
+
+		BufferDesc Desc;
+		Desc.BindFlags = BufferType::UAV;
+		Desc.Size = Emitter->Settings->MaxParticles * sizeof(GPUParticleCompact);
+
+		Resource.DataBuffer = Device->CreateBuffer(Desc, nullptr);
+		Device->SetDebugName(Resource.DataBuffer, "GPUScene.ParticleBuffer");
+
+		return Particles.Add(Resource);
+	}
+
+	void GPUScene::DeleteParticleSystem(HStableParticlesId Id)
+	{
+		GPUSceneParticles* Resource = Particles.Get(Id);
+		if (Resource && Resource->DataBuffer)
+		{
+			Device->DestroyBufferDeferred(Resource->DataBuffer);
+		}
+
+		Particles.Remove(Id);
 	}
 
 	GPUSceneCompact GPUScene::CreateCompact(const RenderView& View) const
@@ -120,12 +127,13 @@ namespace Columbus
 	GPUScene* GPUScene::CreateGPUScene(SPtr<DeviceVulkan> Device)
 	{
 		GPUScene* Scene = new GPUScene();
+		Scene->Device = Device;
 
-		CreateGPUSceneBuffers(Device, sizeof(GPUSceneCompact), "GPUScene.Scene", Scene->SceneBuffer, Scene->SceneUploadBuffers);
-		CreateGPUSceneBuffers(Device, GPUScene::MaxGPULights * sizeof(GPULight), "GPUScene.Lights", Scene->LightsBuffer, Scene->LightUploadBuffers);
-		CreateGPUSceneBuffers(Device, GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact), "GPUScene.Meshes", Scene->MeshesBuffer, Scene->MeshesUploadBuffers);
-		CreateGPUSceneBuffers(Device, GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), "GPUScene.Materials", Scene->MaterialsBuffer, Scene->MaterialsUploadBuffers);
-		CreateGPUSceneBuffers(Device, GPUScene::MaxDecals * sizeof(GPUDecal), "GPUScene.Decals", Scene->DecalsBuffers, Scene->DecalsUploadBuffers);
+		CreateGPUSceneBuffers(Device, sizeof(GPUSceneCompact), "GPUScene.Scene", Scene->SceneBuffer);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxGPULights * sizeof(GPULight), "GPUScene.Lights", Scene->LightsBuffer);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact), "GPUScene.Meshes", Scene->MeshesBuffer);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), "GPUScene.Materials", Scene->MaterialsBuffer);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxDecals * sizeof(GPUDecal), "GPUScene.Decals", Scene->DecalsBuffers);
 
 		// populate LTC look up tables
 		{
@@ -164,11 +172,11 @@ namespace Columbus
 
 	void GPUScene::DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device)
 	{
-		DestroyGPUSceneBuffers(Device, Scene->SceneBuffer, Scene->SceneUploadBuffers);
-		DestroyGPUSceneBuffers(Device, Scene->LightsBuffer, Scene->LightUploadBuffers);
-		DestroyGPUSceneBuffers(Device, Scene->MeshesBuffer, Scene->MeshesUploadBuffers);
-		DestroyGPUSceneBuffers(Device, Scene->MaterialsBuffer, Scene->MaterialsUploadBuffers);
-		DestroyGPUSceneBuffers(Device, Scene->DecalsBuffers, Scene->DecalsUploadBuffers);
+		DestroyGPUSceneBuffers(Device, Scene->SceneBuffer);
+		DestroyGPUSceneBuffers(Device, Scene->LightsBuffer);
+		DestroyGPUSceneBuffers(Device, Scene->MeshesBuffer);
+		DestroyGPUSceneBuffers(Device, Scene->MaterialsBuffer);
+		DestroyGPUSceneBuffers(Device, Scene->DecalsBuffers);
 
 		Device->DestroyAccelerationStructure(Scene->TLAS);
 	}

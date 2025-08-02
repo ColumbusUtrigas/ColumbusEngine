@@ -6,21 +6,21 @@
 namespace Columbus
 {
 
+	enum class EParticleSpawnShape
+	{
+		Point,
+		Box,
+		Circle,
+		Sphere
+	};
+
 	class ParticleModuleLocation
 	{
 	public:
-		enum class SpawnShape
-		{
-			Point,
-			Box,
-			Circle,
-			Sphere
-		};
-
 		Vector3 Size = Vector3(1);
 		float Radius = 1.0f;
 
-		SpawnShape Shape = SpawnShape::Point;
+		EParticleSpawnShape Shape = EParticleSpawnShape::Point;
 		bool EmitFromShell = false;
 	private:
 		void SpawnBox(const ParticleContainer& Container, size_t Spawn, const Vector3& Base) const;

@@ -120,7 +120,59 @@ namespace Columbus
 		void BeginFrame();
 	};
 
-	/**Represents device (GPU) on which Vulkan is executed.*/
+	// a general system to upload data from Host to Device
+	struct HUploadBufferRing
+	{
+		struct UploadEntry
+		{
+			Buffer* Dst;
+
+			u32 HostOffset;
+			u32 DstOffset;
+			u32 Size;
+		};
+
+		static constexpr u32 DefaultUploadSize = 16 * 1024 * 1024; // 16MB
+		static constexpr u32 DefaultGrowthFactor = 2;
+
+	public:
+
+		// schedule upload of the data into device-local Buf
+		void UploadBuffer(const void* Data, u32 Size, u32 DstOffset, Buffer* Buf);
+
+		// schedule upload but fill the data manually
+		void* UploadBufferMap(u32 Size, u32 DstOffset, Buffer* Buf);
+
+		void FlushUploads();
+
+	private:
+		friend class DeviceVulkan;
+		void BeginFrame();
+
+		void Init();
+		void Realloc(int BufNum, u32 NewSize);
+		void Shutdown();
+
+	private:
+		int CurrentFrame = 0;
+		DeviceVulkan* Device;
+
+		u32                      UploadOffsets   [MaxFramesInFlight]{ 0 };
+		CommandBufferVulkan*     CommandBufs     [MaxFramesInFlight]{ nullptr };
+		Buffer*                  UploadBuffers   [MaxFramesInFlight]{ nullptr };
+		u8*                      MappedBuffers   [MaxFramesInFlight]{ nullptr };
+		std::vector<UploadEntry> ScheduledUploads[MaxFramesInFlight];
+		SPtr<FenceVulkan>        UploadFences    [MaxFramesInFlight];
+	};
+
+	struct DeviceDefaultTextures
+	{
+		Texture2* White = nullptr;
+		Texture2* Black = nullptr;
+		Texture2* Transparent = nullptr;
+	};
+
+	/** Represents device (GPU) on which Vulkan is executed. */
 	class DeviceVulkan
 	{
 	public:
@@ -152,11 +204,15 @@ namespace Columbus
 
 		VulkanFunctions VkFunctions;
 
+		DeviceDefaultTextures DefaultTextures;
+		HUploadBufferRing UploadRing;
+
 		GPUProfilerVulkan _Profiler;
 		CBufferPoolVulkan _CBufPool;
 
 		std::unordered_map<SamplerDesc, Sampler*, HashSamplerDesc> StaticSamplers;
 
+		std::vector<ResourceDeferredDestroyVulkan<Buffer*>>       BufferDeferredDestroys;
 		std::vector<ResourceDeferredDestroyVulkan<Texture2*>>     TextureDeferredDestroys;
 		std::vector<ResourceDeferredDestroyVulkan<VkRenderPass>>  RenderPassDeferredDestroys;
 		std::vector<ResourceDeferredDestroyVulkan<VkFramebuffer>> FramebufferDeferredDestroys;
@@ -205,6 +261,7 @@ namespace Columbus
 		// TODO: streaming
 		Buffer* CreateBuffer(const BufferDesc& Desc, const void* InitialData);
 		void    DestroyBuffer(Buffer* Buf);
+		void    DestroyBufferDeferred(Buffer* Buf);
 		void*   MapBuffer(const Buffer* Buf);
 		void    UnmapBuffer(const Buffer* Buf);
 
@@ -312,98 +369,16 @@ namespace Columbus
 			return semaphore;
 		}
 
-		void WaitForFence(SPtr<FenceVulkan> fence, uint64_t timeout)
-		{
-			vkWaitForFences(_Device, 1, &fence->_Fence, true, timeout);
-		}
+		void WaitForFence(SPtr<FenceVulkan> fence, uint64_t timeout);
+		void ResetFence(SPtr<FenceVulkan> fence);
 
-		void ResetFence(SPtr<FenceVulkan> fence)
-		{
-			vkResetFences(_Device, 1, &fence->_Fence);
-		}
+		bool AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex);
 
-		bool AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex)
-		{
-			VkResult Result = vkAcquireNextImageKHR(_Device, swapchain->swapChain, UINT64_MAX, signalSemaphore, nullptr, &imageIndex);
+		void Submit(CommandBufferVulkan* Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores);
+		void Submit(CommandBufferVulkan* Buffer);
+		void QueueWaitIdle();
 
-			if (Result == VK_ERROR_OUT_OF_DATE_KHR)
-			{
-				return false;
-			}
-
-			VK_CHECK(Result);
-			return true;
-		}
-
-		void Submit(CommandBufferVulkan* Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores)
-		{
-			VkPipelineStageFlags waitStages[] = {
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-			};
-
-			VkSubmitInfo submit_info;
-			submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			submit_info.pNext = nullptr;
-			submit_info.waitSemaphoreCount = waitSemaphoresCount;
-			submit_info.pWaitSemaphores = waitSemaphores;
-			submit_info.pWaitDstStageMask = waitStages;
-			submit_info.commandBufferCount = 1;
-			submit_info.pCommandBuffers = &Buffer->_GetHandle();
-			submit_info.signalSemaphoreCount = signalSemaphoresCount;
-			submit_info.pSignalSemaphores = signalSemaphores;
-
-			if (fence)
-			{
-				VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
-			}
-			else
-			{
-				VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, VK_NULL_HANDLE));
-			}
-		}
-
-		void Submit(CommandBufferVulkan* Buffer)
-		{
-			VkSubmitInfo submit_info;
-			submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			submit_info.pNext = nullptr;
-			submit_info.waitSemaphoreCount = 0;
-			submit_info.pWaitSemaphores = nullptr;
-			submit_info.pWaitDstStageMask = nullptr;
-			submit_info.commandBufferCount = 1;
-			submit_info.pCommandBuffers = &Buffer->_CmdBuf;
-			submit_info.signalSemaphoreCount = 0;
-			submit_info.pSignalSemaphores = nullptr;
-
-			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
-		}
-
-		void QueueWaitIdle()
-		{
-			VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
-		}
-
-		void Present(SwapchainVulkan* swapchain, uint32_t imageIndex, VkSemaphore waitSemaphore)
-		{
-			VkPresentInfoKHR presentInfo{};
-			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-			presentInfo.waitSemaphoreCount = 1;
-			presentInfo.pWaitSemaphores = &waitSemaphore;
-
-			VkSwapchainKHR swapChains[] = { swapchain->swapChain };
-			presentInfo.swapchainCount = 1;
-			presentInfo.pSwapchains = swapChains;
-
-			presentInfo.pImageIndices = &imageIndex;
-
-			if (vkQueuePresentKHR(*_ComputeQueue, &presentInfo) != VK_SUCCESS)
-			{
-				swapchain->IsOutdated = true;
-			}
-		}
+		void Present(SwapchainVulkan* swapchain, uint32_t imageIndex, VkSemaphore waitSemaphore);
 	};
 
 }

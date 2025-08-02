@@ -5,25 +5,25 @@
 namespace Columbus
 {
 
+	/*
+	* If needed to create particle spritesheet animation or random texture from sheet
+	*/
+	enum class EParticleSubUVMode
+	{
+		Linear,
+		Random
+	};
+
 	class ParticleModuleSubUV
 	{
-	public:
-		/*
-		* If needed to create particle spritesheet animation or random texture from sheet
-		*/
-		enum class SubUVMode
-		{
-			Linear,
-			Random
-		};
 	public:
 		int Horizontal;
 		int Vertical;
 		float Cycles;
 
-		SubUVMode Mode;
+		EParticleSubUVMode Mode;
 	public:
-		ParticleModuleSubUV() : Horizontal(1), Vertical(1), Cycles(1.0f), Mode(SubUVMode::Linear) {}
+		ParticleModuleSubUV() : Horizontal(1), Vertical(1), Cycles(1.0f), Mode(EParticleSubUVMode::Linear) {}
 
 		void Spawn(ParticleContainer& Container, size_t Spawn) const;
 		void Update(ParticleContainer& Container) const;

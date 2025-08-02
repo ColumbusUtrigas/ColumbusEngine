@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Core/Reflection.h>
 #include <Core/Types.h>
 
 namespace Columbus
@@ -95,4 +96,4 @@ namespace Columbus
 
 }
 
-
+CREFLECT_DECLARE_STRUCT(Columbus::Sound, 1, "D8CFCF19-4688-4039-BC40-81C4B796C254");

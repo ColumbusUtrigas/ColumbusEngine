@@ -464,6 +464,7 @@ namespace Columbus
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderDeferredSky(Graph, View, Textures, DeferredContext, Textures.FinalBeforeTonemap);
+		RenderDeferredTransparency(Graph, View, Textures, DeferredContext);
 
 		// TODO: find a way to apply DoF after TAA
 		Textures.FinalBeforeTonemap = FFX::DispatchDepthOfFieldRG(Graph, View, Textures, DeferredContext.FFX);

@@ -51,7 +51,7 @@ namespace Columbus
 			{
 				// otherwise assume it's a plain struct asset
 
-				std::ifstream fs(Path);
+				std::ifstream fs(RealPath);
 				if (!fs.is_open())
 				{
 					Log::Error("Couldn't load asset, %s of type %s", Path, Type->Name);

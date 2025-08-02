@@ -3,6 +3,7 @@
 #include "Core/StableSparseArray.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Core/View.h"
+#include "Graphics/Particles/ParticleEmitterCPU.h"
 #include "Mesh.h"
 #include "Camera.h"
 #include "Graphics/Core/Texture.h"
@@ -135,6 +136,21 @@ namespace Columbus
 		int _pad[14]; // 512
 	};
 
+	// per-particle data
+	struct GPUParticleCompact
+	{
+		Vector4 Position_Rotation; // xyz=pos, w=rot
+		Vector4 Size_Frame;        // xyz=scale, w=frame
+		Vector4 Colour;            // xyzw=colour
+	};
+
+	// particles render proxy
+	struct GPUSceneParticles
+	{
+		HParticleEmitterInstanceCPU* ParticleInstance; // data coming into GPUScene
+		Buffer* DataBuffer = nullptr; // GPU packed particles data
+	};
+
 	// to be uploaded to the GPU
 	struct GPUSceneCompact
 	{
@@ -165,6 +181,8 @@ namespace Columbus
 	using HStableLightId = TStableSparseArray<GPULight>::Handle;
 	using HStableMeshId  = TStableSparseArray<GPUSceneMesh>::Handle;
 	using HStableDecalId = TStableSparseArray<GPUDecal>::Handle;
+	using HStableParticlesId = TStableSparseArray<GPUSceneParticles>::Handle;
+
 
 	struct GPUScene
 	{
@@ -180,8 +198,11 @@ namespace Columbus
 		std::vector<Texture2*> Textures;
 		TStableSparseArray<GPULight> Lights;
 		TStableSparseArray<GPUDecal> Decals;
+		TStableSparseArray<GPUSceneParticles> Particles;
 
 		std::vector<IrradianceVolume> IrradianceVolumes;
+
+		SPtr<DeviceVulkan> Device;
 
 		GPUCamera MainCamera;
 		bool Dirty = false;
@@ -192,27 +213,21 @@ namespace Columbus
 		Vector4 SunDirection = Vector4(1,1,1,0);
 
 		// GPUScene also owns GPU-specific resources
-		// TODO: Host-visible upload ring buffer, upload only required parts
 		Buffer* SceneBuffer = nullptr;
-		Buffer* SceneUploadBuffers[MaxFramesInFlight] {nullptr};
-
 		Buffer* LightsBuffer = nullptr;
-		Buffer* LightUploadBuffers[MaxFramesInFlight] {nullptr};
-
 		Buffer* MeshesBuffer = nullptr;
-		Buffer* MeshesUploadBuffers[MaxFramesInFlight] {nullptr};
-
 		Buffer* MaterialsBuffer = nullptr;
-		Buffer* MaterialsUploadBuffers[MaxFramesInFlight] {nullptr};
-
 		Buffer* DecalsBuffers = nullptr;
-		Buffer* DecalsUploadBuffers[MaxFramesInFlight] {nullptr};
 
 		// Linearly Transformed Cosines (LTC)
 		Texture2* LTC_1 = nullptr;
 		Texture2* LTC_2 = nullptr;
 
+	public:
 		void Update();
+
+		HStableParticlesId AddParticleSystem(HParticleEmitterInstanceCPU* Emitter);
+		void DeleteParticleSystem(HStableParticlesId Id);
 
 		GPUSceneCompact CreateCompact(const RenderView& View) const;
 

@@ -202,6 +202,7 @@ namespace Columbus
 
 	void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context);
 	void RenderDeferredSky(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context, RenderGraphTextureRef OverTexture);
+	void RenderDeferredTransparency(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context);
 
 	// Real-time raytracing
 	//

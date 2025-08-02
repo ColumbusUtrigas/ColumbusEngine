@@ -94,15 +94,15 @@ namespace Reflection
 		if (Child == Parent)
 			return true;
 
-		if (Child->ParentGuid)
-		{
-			const Struct* ParentStruct = FindStructByGuid(Child->ParentGuid);
-			if (ParentStruct)
+			if (Child->ParentGuid)
 			{
-				return HasParentType(ParentStruct, Parent);
+				const Struct* ParentStruct = FindStructByGuid(Child->ParentGuid);
+				if (ParentStruct)
+				{
+					return HasParentType(ParentStruct, Parent);
+				}
 			}
-		}
-		return false;
+			return false;
 	}
 
 	// Type search
@@ -153,6 +153,87 @@ namespace Reflection
 	// Manual type register
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 
+	static void ResolveField(Field& field)
+	{
+		using namespace Columbus;
+
+		bool IsBasicType = false;
+
+		if (strcmp(field.Typename, "bool") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::Bool;
+			COLUMBUS_ASSERT(field.Size == sizeof(bool));
+		}
+		else if (strcmp(field.Typename, "int") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::Int;
+			COLUMBUS_ASSERT(field.Size == sizeof(int));
+		}
+		else if (strcmp(field.Typename, "float") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::Float;
+			COLUMBUS_ASSERT(field.Size == sizeof(float));
+		}
+		else if (strcmp(field.Typename, "std::string") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::String;
+			COLUMBUS_ASSERT(field.Size == sizeof(std::string));
+		}
+		else if (strcmp(field.Typename, "Array") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::Array;
+
+			static_assert(sizeof(std::vector<short>) == sizeof(std::vector<double>));
+
+			COLUMBUS_ASSERT(field.Size == sizeof(std::vector<int>));
+
+			ResolveField(field.Array->ElementField);
+		}
+		else if (strcmp(field.Typename, "AssetRef") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::AssetRef;
+
+			// asset has to be a valid type
+			COLUMBUS_ASSERT(field.Typeguid != nullptr);
+
+			// asset ref is path string + pointer
+			COLUMBUS_ASSERT(field.Size == sizeof(std::string) + sizeof(size_t));
+		}
+		else if (strcmp(field.Typename, "ThingRef") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::ThingRef;
+
+			// thing has to be a valid type
+			COLUMBUS_ASSERT(field.Typeguid != nullptr);
+
+			// thing ref is guid + pointer
+			COLUMBUS_ASSERT(field.Size == sizeof(HGuid) + sizeof(size_t));
+		}
+
+		if (!IsBasicType)
+		{
+			if (field.Typeguid && ReflectionData::Instance().GuidToEnums.contains(field.Typeguid))
+			{
+				field.Type = FieldType::Enum;
+				field.Enum = ReflectionData::Instance().GuidToEnums[field.Typeguid];
+				COLUMBUS_ASSERT(field.Size == sizeof(int));
+			}
+
+			if (field.Typeguid && ReflectionData::Instance().GuidToStructs.contains(field.Typeguid))
+			{
+				field.Type = FieldType::Struct;
+				field.Struct = ReflectionData::Instance().GuidToStructs[field.Typeguid];
+			}
+		}
+	}
+
 	void Initialise()
 	{
 		using namespace Columbus;
@@ -165,64 +246,7 @@ namespace Reflection
 		{
 			for (Field& field : sstruct->LocalFields)
 			{
-				bool IsBasicType = false;
-
-				if (strcmp(field.Typename, "bool") == 0)
-				{
-					IsBasicType = true;
-					field.Type = FieldType::Bool;
-					COLUMBUS_ASSERT(field.Size == sizeof(bool));
-				}
-				else if (strcmp(field.Typename, "int") == 0)
-				{
-					IsBasicType = true;
-					field.Type = FieldType::Int;
-					COLUMBUS_ASSERT(field.Size == sizeof(int));
-				}
-				else if (strcmp(field.Typename, "float") == 0)
-				{
-					IsBasicType = true;
-					field.Type = FieldType::Float;
-					COLUMBUS_ASSERT(field.Size == sizeof(float));
-				}
-				else if (strcmp(field.Typename, "std::string") == 0)
-				{
-					IsBasicType = true;
-					field.Type = FieldType::String;
-					COLUMBUS_ASSERT(field.Size == sizeof(std::string));
-				}
-				else if (strcmp(field.Typename, "AssetRef") == 0)
-				{
-					IsBasicType = true;
-					field.Type = FieldType::AssetRef;
-
-					// asset ref is path string + pointer
-					COLUMBUS_ASSERT(field.Size == sizeof(std::string) + sizeof(size_t));
-				}
-				else if (strcmp(field.Typename, "ThingRef") == 0)
-				{
-					IsBasicType = true;
-					field.Type = FieldType::ThingRef;
-
-					// thing ref is guid + pointer
-					COLUMBUS_ASSERT(field.Size == sizeof(HGuid) + sizeof(size_t));
-				}
-
-				if (!IsBasicType)
-				{
-					if (field.Typeguid && ReflectionData::Instance().GuidToEnums.contains(field.Typeguid))
-					{
-						field.Type = FieldType::Enum;
-						field.Enum = ReflectionData::Instance().GuidToEnums[field.Typeguid];
-						COLUMBUS_ASSERT(field.Size == sizeof(int));
-					}
-
-					if (field.Typeguid && ReflectionData::Instance().GuidToStructs.contains(field.Typeguid))
-					{
-						field.Type = FieldType::Struct;
-						field.Struct = ReflectionData::Instance().GuidToStructs[field.Typeguid];
-					}
-				}
+				ResolveField(field);
 			}
 		}
 

@@ -77,10 +77,10 @@ namespace Columbus
 	{
 		switch (Shape)
 		{
-		case SpawnShape::Point:  for (size_t i = Container.Count; i < Container.Count + Spawn; i++) Container.Positions[i] = Base; break;
-		case SpawnShape::Box:    SpawnBox(Container, Spawn, Base); break;
-		case SpawnShape::Circle: SpawnCircle(Container, Spawn, Base); break;
-		case SpawnShape::Sphere: SpawnSphere(Container, Spawn, Base); break;
+		case EParticleSpawnShape::Point:  for (size_t i = Container.Count; i < Container.Count + Spawn; i++) Container.Positions[i] = Base; break;
+		case EParticleSpawnShape::Box:    SpawnBox(Container, Spawn, Base); break;
+		case EParticleSpawnShape::Circle: SpawnCircle(Container, Spawn, Base); break;
+		case EParticleSpawnShape::Sphere: SpawnSphere(Container, Spawn, Base); break;
 		}
 	}
 

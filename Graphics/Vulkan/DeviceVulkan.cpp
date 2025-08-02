@@ -30,6 +30,12 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Buffers", PROFILING_CATEGORY_VULKAN_LOW_LEVE
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Host-visible buffers", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, MemoryCounter_Vulkan_AllocatedHostVisibleBuffers);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Images", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, MemoryCounter_Vulkan_AllocatedImages);
 
+IMPLEMENT_CPU_PROFILING_COUNTER("Submit Time", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CpuCounter_Vulkan_SubmitTime, true);
+IMPLEMENT_CPU_PROFILING_COUNTER("QueueWaitIdle Time", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CpuCounter_Vulkan_QueueWaitIdleTime, true);
+IMPLEMENT_CPU_PROFILING_COUNTER("Fence Wait Time", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CpuCounter_Vulkan_FenceWaitTime, true);
+IMPLEMENT_CPU_PROFILING_COUNTER("AcquireImage Time", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CpuCounter_Vulkan_AcquireImageTime, true);
+IMPLEMENT_CPU_PROFILING_COUNTER("Present Time", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CpuCounter_Vulkan_PresentTime, true);
+
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Buffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Buffers, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("CBuffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_CBuffers, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Images count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_Images, false);
@@ -178,7 +184,7 @@ namespace Columbus
 
 		VK_CHECK(vkCreateDescriptorPool(_Device, &descriptorPoolInfo, nullptr, &_DescriptorPool));
 
-		// initialize VMA
+		// initialise VMA
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo.physicalDevice = PhysicalDevice;
 		allocatorInfo.device = _Device;
@@ -186,16 +192,48 @@ namespace Columbus
 		allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 		VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_Allocator));
 
-		// initialize profiling
+		// initialise profiling
 		_Profiler.Device = this;
 		_Profiler.Init();
+
+		// initialise upload ring
+		UploadRing.Device = this;
+		UploadRing.Init();
+
+		// initialise default textures
+		{
+			Image img;
+			img.Width = 1;
+			img.Height = 1;
+			img.Format = TextureFormat::RGBA8;
+
+			u32 White = 0xFFFFFFFF;
+			u32 Black = 0x00000000;
+			u32 Transparent = 0xFFFFFF00;
+
+			img.Data = (u8*)&White;
+			DefaultTextures.White = CreateTexture(img);
+
+			img.Data = (u8*)&Black;
+			DefaultTextures.Black = CreateTexture(img);
+
+			img.Data = (u8*)&Transparent;
+			DefaultTextures.Transparent = CreateTexture(img);
+
+			img.Data = nullptr;
+		}
 	}
 
 	DeviceVulkan::~DeviceVulkan()
 	{
 		VK_CHECK(vkDeviceWaitIdle(_Device));
 
+		DestroyTexture(DefaultTextures.White);
+		DestroyTexture(DefaultTextures.Black);
+		DestroyTexture(DefaultTextures.Transparent);
+
 		_Profiler.Shutdown();
+		UploadRing.Shutdown();
 
 		//vmaDestroyAllocator(_Allocator);
 		vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
@@ -684,6 +722,14 @@ namespace Columbus
 		vmaDestroyBuffer(_Allocator, vkbuf->_Buffer, vkbuf->_Allocation);
 	}
 
+	void DeviceVulkan::DestroyBufferDeferred(Buffer* Buf)
+	{
+		BufferDeferredDestroys.push_back(ResourceDeferredDestroyVulkan<Buffer*> {
+			.Resource = Buf,
+			.FramesLasted = 0,
+		});
+	}
+
 	void* DeviceVulkan::MapBuffer(const Buffer* Buf)
 	{
 		COLUMBUS_ASSERT_MESSAGE(Buf->GetDesc().HostVisible, "MapBuffer is available only for host-visible buffers");
@@ -1096,9 +1142,13 @@ namespace Columbus
 	{
 		_Profiler.BeginFrame();
 		_CBufPool.BeginFrame();
+		UploadRing.BeginFrame();
 
 		// run deferred destroy logic
 
+		RunDeferredDestroyLogic<Buffer*>(BufferDeferredDestroys, this, [](DeviceVulkan* Dev, Buffer* Buf) {
+			Dev->DestroyBuffer(Buf);
+		});
 		RunDeferredDestroyLogic<Texture2*>(TextureDeferredDestroys, this, [](DeviceVulkan* Dev, Texture2* Tex) {
 			Dev->DestroyTexture(Tex);
 		});
@@ -1113,6 +1163,112 @@ namespace Columbus
 	void DeviceVulkan::EndFrame()
 	{
 		_Profiler.EndFrame();
+	}
+
+
+	void DeviceVulkan::WaitForFence(SPtr<FenceVulkan> fence, uint64_t timeout)
+	{
+		PROFILE_CPU(CpuCounter_Vulkan_FenceWaitTime);
+
+		vkWaitForFences(_Device, 1, &fence->_Fence, true, timeout);
+	}
+
+	void DeviceVulkan::ResetFence(SPtr<FenceVulkan> fence)
+	{
+		vkResetFences(_Device, 1, &fence->_Fence);
+	}
+
+	bool DeviceVulkan::AcqureNextImage(SwapchainVulkan* swapchain, VkSemaphore signalSemaphore, uint32_t& imageIndex)
+	{
+		PROFILE_CPU(CpuCounter_Vulkan_AcquireImageTime);
+
+		VkResult Result = vkAcquireNextImageKHR(_Device, swapchain->swapChain, UINT64_MAX, signalSemaphore, nullptr, &imageIndex);
+
+		if (Result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			return false;
+		}
+
+		VK_CHECK(Result);
+		return true;
+	}
+
+	void DeviceVulkan::Submit(CommandBufferVulkan* Buffer, SPtr<FenceVulkan> fence, uint32_t waitSemaphoresCount, VkSemaphore* waitSemaphores, uint32_t signalSemaphoresCount, VkSemaphore* signalSemaphores)
+	{
+		PROFILE_CPU(CpuCounter_Vulkan_SubmitTime);
+
+		VkPipelineStageFlags waitStages[] = {
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		};
+
+		VkSubmitInfo submit_info;
+		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submit_info.pNext = nullptr;
+		submit_info.waitSemaphoreCount = waitSemaphoresCount;
+		submit_info.pWaitSemaphores = waitSemaphores;
+		submit_info.pWaitDstStageMask = waitStages;
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &Buffer->_GetHandle();
+		submit_info.signalSemaphoreCount = signalSemaphoresCount;
+		submit_info.pSignalSemaphores = signalSemaphores;
+
+		if (fence)
+		{
+			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
+		}
+		else
+		{
+			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, VK_NULL_HANDLE));
+		}
+	}
+
+	void DeviceVulkan::Submit(CommandBufferVulkan* Buffer)
+	{
+		PROFILE_CPU(CpuCounter_Vulkan_SubmitTime);
+
+		VkSubmitInfo submit_info;
+		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submit_info.pNext = nullptr;
+		submit_info.waitSemaphoreCount = 0;
+		submit_info.pWaitSemaphores = nullptr;
+		submit_info.pWaitDstStageMask = nullptr;
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &Buffer->_CmdBuf;
+		submit_info.signalSemaphoreCount = 0;
+		submit_info.pSignalSemaphores = nullptr;
+
+		VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
+	}
+
+	void DeviceVulkan::QueueWaitIdle()
+	{
+		PROFILE_CPU(CpuCounter_Vulkan_QueueWaitIdleTime);
+
+		VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
+	}
+
+	void DeviceVulkan::Present(SwapchainVulkan* swapchain, uint32_t imageIndex, VkSemaphore waitSemaphore)
+	{
+		PROFILE_CPU(CpuCounter_Vulkan_PresentTime);
+
+		VkPresentInfoKHR presentInfo{};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = &waitSemaphore;
+
+		VkSwapchainKHR swapChains[] = { swapchain->swapChain };
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+
+		presentInfo.pImageIndices = &imageIndex;
+
+		if (vkQueuePresentKHR(*_ComputeQueue, &presentInfo) != VK_SUCCESS)
+		{
+			swapchain->IsOutdated = true;
+		}
 	}
 
 	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts)
