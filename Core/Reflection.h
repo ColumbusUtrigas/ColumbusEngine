@@ -69,7 +69,11 @@ CREFLECT_TOKENPASTE2(XXX_CReflection_Struct_Initialiser_, __LINE__) () {\
 	Reflection::Struct* Struct = Reflection::RegisterStruct<x>(); \
 	Struct->Constructor = constructorLambda; \
 	Struct->Destructor = [](void* Object) { delete (LocalStructType*)Object; }; \
-	Struct->ParentGuid = Reflection::FindStructParentGuid<x>();
+	Struct->ParentGuid = Reflection::FindStructParentGuid<x>(); \
+	Struct->Instantiate = [](void* Object) -> void* { return nullptr; };
+
+#define CREFLECT_STRUCT_DEFINE_INSTANTIATE() \
+	Struct->Instantiate = [Struct](void* Object) -> void* { void* NewObj = Struct->Constructor(); *((LocalStructType*)NewObj) = *((LocalStructType*)Object); return NewObj; };
 
 #define CREFLECT_STRUCT_BEGIN(x, meta) \
 CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, []() -> void* { return (void*) (new x()); }, meta)
@@ -196,6 +200,7 @@ namespace Reflection
 
 		std::function<void*()> Constructor;
 		std::function<void(void*)> Destructor; // deletes as well
+		std::function<void*(void*)> Instantiate;
 
 		const char* ParentGuid;
 		Struct* Parent;
@@ -305,4 +310,5 @@ namespace Reflection
 			return static_cast<T*>(Obj);
 		return nullptr;
 	}
+
 }

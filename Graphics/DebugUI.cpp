@@ -315,44 +315,45 @@ namespace Columbus::DebugUI
 						Editor::ShowModalWindow("Import Level", []()->bool
 						{
 							static char SourcePath[512]{};
-							static char ImportPath[512]{};
 
-							// TODO: should only be available if current project is set (?)
-							// TODO: common pick path widget
+
+							auto SourceFolderPath = AssetSystem::Get().SourceDataPath;
+							std::filesystem::path SourceRelativePath;
 
 							ImGui::InputText("Source Path", SourcePath, 512);
 							ImGui::SameLine();
 							if (ImGui::Button("..."))
 							{
 								char* Path = NULL;
-								if (NFD_OpenDialog("gltf", NULL, &Path) == NFD_OKAY)
+								if (NFD_OpenDialog("gltf,glb", NULL, &Path) == NFD_OKAY)
 								{
 									strcpy(SourcePath, Path);
+									if (!AssetSystem::Get().IsPathInSourceFolder(SourcePath))
+									{
+										char ErrorBuf[4096]{ 0 };
+										snprintf(ErrorBuf, 4096, "Source asset has to be in the data source folder");
+
+										Editor::ShowMessageBox("Asset Import Error", ErrorBuf, {});
+										Log::Error(ErrorBuf);
+
+										memset(SourcePath, 0, 512);
+									}
 								}
 							}
 
-							ImGui::InputText("Path", ImportPath, 512);
-							ImGui::SameLine();
-							if (ImGui::Button("...##2"))
-							{
-								char* SavePath = NULL;
-								// TODO: ensure that save path is under the project folder
-								if (NFD_SaveDialog("gltf", NULL, &SavePath) == NFD_OKAY)
-								{
-									strcpy(ImportPath, SavePath);
-								}
-							}
-
-							ImGui::BeginDisabled((strlen(SourcePath) == 0) || (strlen(ImportPath) == 0));
+							ImGui::BeginDisabled((strlen(SourcePath) == 0));
 							if (ImGui::Button("Import"))
 							{
+								auto SourcePathRel = AssetSystem::Get().MakePathRelativeToSourceFolder(SourcePath);
+								auto DestPathAbs = std::filesystem::path(AssetSystem::Get().DataPath) / SourcePathRel;
+								auto DestPathFolder = DestPathAbs.parent_path();
+
+								std::filesystem::create_directories(DestPathFolder); // mimic the same folder structure as the source
+
 								ImGui::EndDisabled();
 
-								// TODO: handle errors
-								Assets::ImportLevel(SourcePath, ImportPath);
+								Assets::ImportLevel(SourcePath, DestPathAbs.string().c_str());
 
-								// TODO: async (?) import
-								// TODO: modal progress window that cannot be closed
 								return true;
 							}
 							ImGui::EndDisabled();

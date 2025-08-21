@@ -166,7 +166,11 @@ namespace Columbus
 				Desc.Name = "Decals";
 				Desc.rasterizerState.Cull = CullMode::No;
 				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc(),
+					RenderTargetBlendDesc {
+						.BlendEnable = true,
+						.SrcBlend = Blend::SrcAlpha,
+						.DestBlend = Blend::InvSrcAlpha,
+					},
 				};
 
 				Desc.depthStencilState.DepthEnable = false;

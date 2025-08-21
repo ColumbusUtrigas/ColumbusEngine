@@ -198,7 +198,7 @@ namespace Columbus
 
 	public:
 		AssetRef<HParticleEmitterSettings> ParticleAsset;
-		HParticleEmitterInstanceCPU        ParticleInstance;
+		HParticleEmitterInstanceCPU*       ParticleInstance = nullptr;
 
 		HStableParticlesId ParticleRenderHandle;
 
@@ -209,6 +209,7 @@ namespace Columbus
 		virtual void OnDestroy() override;
 		virtual void OnTick(float DeltaTime) override;
 		virtual void OnUpdateRenderState() override;
+		virtual void OnUiPropertyChange() override;
 	};
 
 	struct HLevel
@@ -225,13 +226,18 @@ namespace Columbus
 
 	public:
 		AssetRef<HLevel> LevelAsset;
+		HLevel* LevelCopy = nullptr;
+
 		std::vector<HStableThingId> ThingsIds;
+		std::string PreviousAssetPath;
 
 	public:
 		virtual void OnLoad() override;
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
+
+		virtual void OnUiPropertyChange() override;
 	};
 
 	struct HWorldIntersectionResult
@@ -251,7 +257,6 @@ namespace Columbus
 		std::vector<Mesh2*> Meshes;
 
 		// levels, things
-		std::unordered_map<std::string, HLevel*> LoadedLevels;
 		TStableSparseArray<AThing*> AllThings;
 		std::unordered_map<u64, HStableThingId> ThingGuidToId; // for fast lookup by guid
 

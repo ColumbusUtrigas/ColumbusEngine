@@ -25,6 +25,7 @@ namespace Columbus
 	{
 		WindowVulkan(InstanceVulkan& Instance, SPtr<DeviceVulkan> Device);
 
+		void SetVSync(bool VSync);
 		void OnResize(const iVector2& NewSize);
 		void RecreateSwapchain();
 

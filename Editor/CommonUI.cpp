@@ -319,12 +319,6 @@ namespace Columbus::Editor
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Editing of reflected objects
 
-	static bool is_subpath(const std::filesystem::path& path, const std::filesystem::path& base)
-	{
-		const auto mismatch_pair = std::mismatch(path.begin(), path.end(), base.begin(), base.end());
-		return mismatch_pair.second == base.end();
-	}
-
 	bool Reflection_EditObjectField(char* Object, const Reflection::Field& Field, int Depth)
 	{
 		char* FieldData = Object + Field.Offset;
@@ -496,10 +490,10 @@ namespace Columbus::Editor
 
 				if (NFD_OpenDialog(AssetExts, nullptr, &path) == NFD_OKAY)
 				{
-					const auto& AssetBasePath = GCurrentProject->DataPath;
-
-					if (!is_subpath(path, AssetBasePath))
+					if (!AssetSystem::Get().IsPathInBakedFolder(path))
 					{
+						const auto& AssetBasePath = AssetSystem::Get().DataPath;
+
 						char ErrorBuf[4096]{ 0 };
 						snprintf(ErrorBuf, 4096, "Cannot choose asset (%s) - any referenced asset has to be under project's Data folder (%s)", path, AssetBasePath.c_str());
 
@@ -508,7 +502,7 @@ namespace Columbus::Editor
 						return false;
 					}
 
-					((AssetRefBase*)FieldData)->Path = std::filesystem::relative(path, AssetBasePath).string();
+					((AssetRefBase*)FieldData)->Path = AssetSystem::Get().MakePathRelativeToBakedFolder(path);
 					return true;
 				}
 

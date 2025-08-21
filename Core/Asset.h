@@ -50,6 +50,7 @@ namespace Columbus
 			else
 			{
 				Unload(); // decrease refcount
+				Path = Other.Path;
 			}
 
 			return *this;
@@ -101,6 +102,17 @@ namespace Columbus
 			return Instance;
 		}
 
+	public:
+		// public asset manipulation API
+
+		bool IsPathInSourceFolder(const std::string& Path) const;
+		bool IsPathInBakedFolder(const std::string& Path) const;
+		std::string MakePathRelativeToSourceFolder(const std::string& Path) const;
+		std::string MakePathRelativeToBakedFolder(const std::string& Path) const;
+
+	public:
+		// a bit more internal asset resolution functions
+
 		template <typename T>
 		void ResolveRef(AssetRef<T>& Ref)
 		{
@@ -138,6 +150,7 @@ namespace Columbus
 		std::unordered_map<const Reflection::Struct*, AssetUnloaderFn> AssetUnloaderFunctions;
 
 		std::string SourceDataPath; // path to the source data folder, used for relative paths
+		std::string DataPath; // baked data path
 
 	public:
 		// DATA

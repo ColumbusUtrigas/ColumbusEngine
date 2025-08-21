@@ -582,8 +582,11 @@ namespace Columbus
 
 	void EngineWorld::RemoveLevel(HLevel* Level)
 	{
-		Log::Error("Removing level is not implemented yet");
-		//assert(false);
+		for (AThing* Thing : Level->Things)
+		{
+			delete Thing;
+		}
+		Level->Things.clear();
 	}
 
 	void EngineWorld::ResolveThingThingReferences(AThing* Thing)
@@ -755,10 +758,15 @@ namespace Columbus
 	HStableThingId EngineWorld::AddThing(AThing* Thing)
 	{
 		HStableThingId Id = AllThings.Add(Thing);
-		ThingGuidToId[Thing->Guid] = Id;		
+		ThingGuidToId[Thing->Guid] = Id;
 
 		Thing->StableId = Id;
 		Thing->Trans.Update();
+
+		if (Thing->Name.empty())
+		{
+			Thing->Name = Thing->GetTypeVirtual()->Name + std::string(" ") + std::to_string(AllThings.Size());
+		}
 
 		// resolve thing references
 		ResolveThingThingReferences(Thing);
@@ -783,6 +791,11 @@ namespace Columbus
 		Thing->OnDestroy();
 		AllThings.Remove(ThingId);
 		ThingGuidToId.erase(Thing->Guid);
+
+		if (Thing->Parent)
+		{
+			Thing->Parent->Children.erase(std::remove(Thing->Parent->Children.begin(), Thing->Parent->Children.end(), Thing));
+		}
 
 		if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
 		{
@@ -1175,8 +1188,46 @@ namespace Columbus
 			return;
 		}
 
-		// find all root nodes in the level, parent them to the thing
+		PreviousAssetPath = LevelAsset.Path;
+
+		assert(LevelCopy == nullptr);
+
+		// instantiate level stuff
+		LevelCopy = new HLevel();
+
+		std::unordered_map<AThing*, AThing*> HierarchyRewireMap;
+
 		for (AThing* Thing : LevelAsset.Asset->Things)
+		{
+			// deep copy of a thing
+			const Reflection::Struct* Type = Thing->GetTypeVirtual();
+			AThing* NewThing = (AThing*)Type->Instantiate(Thing);
+			assert(NewThing != nullptr); // things must be able to instantiate
+
+			LevelCopy->Things.push_back(NewThing);
+			NewThing->Guid = HGuid();
+
+			HierarchyRewireMap[Thing] = NewThing;
+		}
+
+		// parent-child relationship rewire
+		for (AThing* Thing : LevelAsset.Asset->Things)
+		{
+			if (Thing->Parent)
+			{
+				Thing->Parent = HierarchyRewireMap[Thing->Parent];
+			}
+
+			for (AThing*& Child : Thing->Children)
+			{
+				Child = HierarchyRewireMap[Child];
+			}
+		}
+
+		World->AddLevel(LevelCopy);
+
+		// find all root nodes in the level, parent them to the thing
+		for (AThing* Thing : LevelCopy->Things)
 		{
 			Thing->bTransientThing = true;
 			ThingsIds.push_back(Thing->StableId);
@@ -1187,8 +1238,6 @@ namespace Columbus
 				Children.push_back(Thing);
 			}
 		}
-
-		World->AddLevel(LevelAsset.Asset);
 	}
 
 	void ALevelThing::OnDestroy()
@@ -1199,8 +1248,7 @@ namespace Columbus
 			return;
 		}
 
-		// deletion of the level - double-check that it works properly
-		//DEBUGBREAK();
+		assert(LevelCopy != nullptr);
 
 		for (HStableThingId Id : ThingsIds)
 		{
@@ -1208,7 +1256,23 @@ namespace Columbus
 		}
 		Children.clear();
 
+		delete LevelCopy;
+		LevelCopy = nullptr;
+
 		Super::OnDestroy();
+	}
+
+	void ALevelThing::OnUiPropertyChange()
+	{
+		Super::OnUiPropertyChange();
+		// here dependencies are resolved
+
+		if (LevelAsset.Path == PreviousAssetPath)
+			return; // same reference
+
+		// recreate the instance
+		OnDestroy();
+		OnCreate();
 	}
 
 
@@ -1223,15 +1287,19 @@ namespace Columbus
 
 		if (ParticleAsset)
 		{
-			ParticleInstance.Settings = ParticleAsset;
+			ParticleInstance = new HParticleEmitterInstanceCPU();
+			ParticleInstance->Settings = ParticleAsset;
 
-			ParticleRenderHandle = World->SceneGPU->AddParticleSystem(&ParticleInstance);
+			ParticleRenderHandle = World->SceneGPU->AddParticleSystem(ParticleInstance);
 		}
 	}
 
 	void AParticleSystem::OnDestroy()
 	{
 		World->SceneGPU->DeleteParticleSystem(ParticleRenderHandle);
+
+		delete ParticleInstance;
+		ParticleInstance = nullptr;
 
 		Super::OnDestroy();
 	}
@@ -1240,10 +1308,13 @@ namespace Columbus
 	{
 		Super::OnTick(DeltaTime);
 
-		ParticleInstance.CurrentPosition = TransGlobal.Position;
-		ParticleInstance.CameraPosition = World->MainView.CameraCur.Pos;
+		if (!ParticleInstance)
+			return;
 
-		ParticleInstance.Update(DeltaTime);
+		ParticleInstance->CurrentPosition = TransGlobal.Position;
+		ParticleInstance->CameraPosition = World->MainView.CameraCur.Pos;
+
+		ParticleInstance->Update(DeltaTime);
 
 		bRenderStateDirty = true;
 	}
@@ -1251,9 +1322,21 @@ namespace Columbus
 	void AParticleSystem::OnUpdateRenderState()
 	{
 		Super::OnUpdateRenderState();
-
-		// TODO: GPUScene particle proxy
 	}
+
+	void AParticleSystem::OnUiPropertyChange()
+	{
+		Super::OnUiPropertyChange();
+		// asset dependency resolved
+
+		if (ParticleInstance && ParticleInstance->Settings.Path == ParticleAsset.Path)
+			return; // same reference
+
+		// recreate state
+		OnDestroy();
+		OnCreate();
+	}
+
 }
 
 // reflection stuff
@@ -1280,16 +1363,19 @@ CREFLECT_ENUM_END()
 
 CREFLECT_DEFINE_VIRTUAL(AThing);
 CREFLECT_STRUCT_BEGIN(AThing, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD(Transform, Trans, "")
 	CREFLECT_STRUCT_FIELD(std::string, Name, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AVolume);
 CREFLECT_STRUCT_BEGIN(AVolume, "")
+CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AEffectVolume);
 CREFLECT_STRUCT_BEGIN(AEffectVolume)
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD(bool, bInfiniteExtent, "")
 	CREFLECT_STRUCT_FIELD(float, Priority, "")
 	CREFLECT_STRUCT_FIELD(float, BlendWeight, "")
@@ -1299,6 +1385,7 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALight);
 CREFLECT_STRUCT_BEGIN(ALight, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD(LightType, Type, "")
 
 	CREFLECT_STRUCT_FIELD(Vector3,   Colour, "Colour")
@@ -1318,20 +1405,24 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ADecal);
 CREFLECT_STRUCT_BEGIN(ADecal, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Texture, "");
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
 CREFLECT_STRUCT_BEGIN(AMeshInstance, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD(std::string, MeshPath, "Noedit")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALevelThing);
 CREFLECT_STRUCT_BEGIN(ALevelThing, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AParticleSystem)
 CREFLECT_STRUCT_BEGIN(AParticleSystem, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD_ASSETREF(HParticleEmitterSettings, ParticleAsset, "")
 CREFLECT_STRUCT_END()

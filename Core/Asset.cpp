@@ -5,12 +5,40 @@
 #include <filesystem>
 #include <fstream>
 
+#include "Stacktrace.h"
+
 namespace Columbus
 {
 
+	static bool is_subpath(const std::filesystem::path& path, const std::filesystem::path& base)
+	{
+		const auto mismatch_pair = std::mismatch(path.begin(), path.end(), base.begin(), base.end());
+		return mismatch_pair.second == base.end();
+	}
+
+	bool AssetSystem::IsPathInSourceFolder(const std::string& Path) const
+	{
+		return is_subpath(Path, SourceDataPath);
+	}
+
+	bool AssetSystem::IsPathInBakedFolder(const std::string& Path) const
+	{
+		return is_subpath(Path, DataPath);
+	}
+
+	std::string AssetSystem::MakePathRelativeToSourceFolder(const std::string& Path) const
+	{
+		return std::filesystem::relative(Path, SourceDataPath).string();
+	}
+
+	std::string AssetSystem::MakePathRelativeToBakedFolder(const std::string& Path) const
+	{
+		return std::filesystem::relative(Path, DataPath).string();
+	}
+
 	void AssetSystem::ResolveRef(AssetRef<void>& Ref, const Reflection::Struct* Type)
 	{
-		void* AssetToUnload = nullptr;
+		assert(std::filesystem::path(Ref.Path).is_absolute() == false);
 
 		if (LoadedAssets.contains(Ref.Path))
 		{
@@ -20,11 +48,9 @@ namespace Columbus
 			{
 				return; // already loaded
 			}
-			else
-			{
-				AssetToUnload = Ref.Asset; // unload previous asset if it was loaded
-			}
 		}
+
+		void* AssetToUnload = Ref.Asset; // unload previous asset if it was loaded
 
 		Ref.Asset = LoadAssetRaw(Ref.Path, Type);
 		UnloadAssetRaw(AssetToUnload);
@@ -41,7 +67,7 @@ namespace Columbus
 		void* Asset = nullptr;
 		if (!LoadedAssets.contains(Path))
 		{
-			auto RealPath = (std::filesystem::path(SourceDataPath) / Path).string();
+			auto RealPath = (std::filesystem::path(DataPath) / Path).string();
 			if (AssetLoaderFunctions.contains(Type))
 			{
 				// load asset using the registered loader function
