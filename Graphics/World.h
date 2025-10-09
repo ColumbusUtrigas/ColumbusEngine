@@ -181,10 +181,8 @@ namespace Columbus
 	public:
 		std::vector<Rigidbody*> Rigidbodies;
 
-		std::string MeshPath;
-
-		int MeshID = -1; // TODO: proper asset id
-		std::vector<int> Materials; // TODO: proper material ids
+		AssetRef<Mesh2> Mesh;
+		std::vector<AssetRef<Material>> Materials;
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
@@ -253,9 +251,6 @@ namespace Columbus
 
 	struct EngineWorld
 	{
-		// TODO: proper resource management for meshes
-		std::vector<Mesh2*> Meshes;
-
 		// levels, things
 		TStableSparseArray<AThing*> AllThings;
 		std::unordered_map<u64, HStableThingId> ThingGuidToId; // for fast lookup by guid
@@ -291,13 +286,9 @@ namespace Columbus
 
 		void ResolveThingThingReferences(AThing* Thing);
 
-		// TODO: remake it for the asset ref system
-		int  LoadMesh(const Model& MeshModel);
-		int  LoadMesh(std::span<CPUMeshResource> MeshPrimitives);
-		int  LoadMesh(const char* AssetPath);
-		void UnloadMesh(int Mesh);
-		// TODO: Load/Unload texture
-		// TODO: asset referencing system
+		AssetRef<Mesh2> LoadMesh(const Model& MeshModel, const std::string& AssetName);
+		AssetRef<Mesh2> LoadMesh(std::span<CPUMeshResource> MeshPrimitives, const std::string& AssetName);
+		AssetRef<Mesh2> LoadMesh(const char* AssetPath);
 
 		HStableThingId AddThing(AThing* Thing);
 		void DeleteThing(HStableThingId ThingId);

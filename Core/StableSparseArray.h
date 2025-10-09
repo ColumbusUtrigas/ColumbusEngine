@@ -19,7 +19,7 @@ namespace Columbus
 	public:
 		struct Handle
 		{
-			u32 index = (u32)- 1;     // Sparse array index
+			u32 index = (u32)-1;     // Sparse array index
 			u32 generation = (u32)-1;
 		};
 
@@ -82,6 +82,35 @@ namespace Columbus
 				return nullptr;
 
 			return &dense[sparse[handle.index].dense_index];
+		}
+
+		// return the first occurence of a value and return its handle
+		Handle Find(const T& value)
+		{
+			// O(n) because can't make a cache on struct values
+			for (size_t i = 0; i < dense.size(); ++i)
+			{
+				if (dense[i] == value)
+				{
+					u32 sparse_idx = dense_to_sparse[i];
+					return { sparse_idx, sparse[sparse_idx].generation };
+				}
+			}
+
+			return {}; // invalid
+		}
+
+		// remove the first occurance of a value, return true if found and removed
+		bool Remove(const T& value)
+		{
+			Handle handle = Find(value);
+			if (IsValid(handle))
+			{
+				Remove(handle);
+				return true;
+			}
+
+			return false;
 		}
 
 		// Direct access to the contiguous data (e.g., for GPU upload)

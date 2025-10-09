@@ -2,6 +2,7 @@
 #include "Scene/Project.h"
 #include "Editor/CommonUI.h"
 #include "Scene/AssetImport.h"
+#include "Editor/FontAwesome.h"
 
 // Third party
 #include <Lib/imgui/imgui.h>
@@ -133,11 +134,13 @@ namespace Columbus::DebugUI
 		cyr.MergeMode = true;
 		icons.MergeMode = true;
 
-		//const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
+		std::string fontAwesomePath = GCurrentProject->DataPath + "/FontAwesome5.ttf";
 
 		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 14.0f, &lat);
 		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
-		//io.Fonts->AddFontFromFileTTF("./Data/FontAwesome5.ttf", 12.0f, &icons, icons_ranges);
+		io.Fonts->AddFontFromFileTTF(fontAwesomePath.c_str(), 12.0f, &icons, icons_ranges);
 		io.Fonts->Build();
 
 		ImGui_ImplSDL2_InitForVulkan(Window->Window);
@@ -553,7 +556,7 @@ namespace Columbus::DebugUI
 	{
 		if (ImGui::Begin("Material"))
 		{
-			for (int i = 0; i < (int)World.SceneGPU->Materials.size(); i++)
+			for (int i = 0; i < (int)World.SceneGPU->Materials.Size(); i++)
 			{
 				ImGui::PushID(i);
 				char Label[256]{ 0 };
@@ -566,10 +569,10 @@ namespace Columbus::DebugUI
 					ImGui::InputFloat4("Albedo Factor", (float*)&Mat.AlbedoFactor);
 					ImGui::InputFloat4("Emissive Factor", (float*)&Mat.EmissiveFactor);
 
-					ImGui::InputInt("Albedo", &Mat.AlbedoId);
+					/*ImGui::InputInt("Albedo", &Mat.AlbedoId);
 					ImGui::InputInt("Normal", &Mat.NormalId);
 					ImGui::InputInt("ORM", &Mat.OrmId);
-					ImGui::InputInt("Emissive", &Mat.EmissiveId);
+					ImGui::InputInt("Emissive", &Mat.EmissiveId);*/
 
 					ImGui::SliderFloat("Roughness", &Mat.Roughness, 0, 1);
 					ImGui::SliderFloat("Metallic", &Mat.Metallic, 0, 1);

@@ -24,6 +24,12 @@ namespace Columbus
 
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
+	static void DestroyMeshBuffer(SPtr<DeviceVulkan> device, Buffer* buf)
+	{
+		if (buf)
+			RemoveProfilingMemory(MemoryCounter_SceneMeshes, buf->GetSize());
+		device->DestroyBufferDeferred(buf);
+	}
 
 	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice), Assets(AssetSystem::Get())
 	{
@@ -52,10 +58,44 @@ namespace Columbus
 					return nullptr;
 				}
 
-				return Device->CreateTexture(Img);
+				Texture2* tex = Device->CreateTexture(Img);
+				AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
+				return tex;
 			};
-			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Texture2>()] = [this](void* Asset) { Device->DestroyTextureDeferred((Texture2*)Asset); };
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Texture2>()] = [this](void* Asset)
+			{
+				RemoveProfilingMemory(MemoryCounter_SceneTextures, static_cast<Texture2*>(Asset)->GetSize());
+				Device->DestroyTextureDeferred((Texture2*)Asset);
+			};
+
 			Assets.AssetExtensions[Reflection::FindStruct<Texture2>()] = "dds,png,jpg,jpeg,exr,hdr,tiff,tga,bmp";
+
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Material>()] = [this](void* Asset)
+			{
+				Material* Mat = static_cast<Material*>(Asset);
+				SceneGPU->Materials.Remove(Mat->StableId);
+				delete Mat;
+			};
+
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Mesh2>()] = [this](void* Asset)
+			{
+				Mesh2* mesh = static_cast<Mesh2*>(Asset);
+
+				for (MeshPrimitive& Primitive : mesh->Primitives)
+				{
+					DestroyMeshBuffer(Device, Primitive.GPU.Vertices);
+					DestroyMeshBuffer(Device, Primitive.GPU.Indices);
+					DestroyMeshBuffer(Device, Primitive.GPU.UV1);
+					DestroyMeshBuffer(Device, Primitive.GPU.UV2);
+					DestroyMeshBuffer(Device, Primitive.GPU.Normals);
+					DestroyMeshBuffer(Device, Primitive.GPU.Tangents);
+					if (Primitive.GPU.BLAS)
+						RemoveProfilingMemory(MemoryCounter_SceneBLAS, Primitive.GPU.BLAS->GetSize());
+					Device->DestroyAccelerationStructure(Primitive.GPU.BLAS);
+				}
+				
+				delete mesh;
+			};
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevel>()] = [this](const char* Path) -> void*
 			{
@@ -105,14 +145,14 @@ namespace Columbus
 		}
 	}
 
+	// TODO: remove
 	ALevelThing* EngineWorld::LoadLevelGLTF(const char* Path)
 	{
 		ALevelThing* LevelThing = new ALevelThing();
 		LevelThing->World = this;
 		LevelThing->Name = std::string("ALevelThing ") + std::to_string(AllThings.Size());
 
-		std::string AssetBasePath = GCurrentProject->DataPath;
-		std::string RelPath = std::filesystem::relative(Path, AssetBasePath).string();
+		std::string RelPath = Assets.MakePathRelativeToBakedFolder(Path);
 		LevelThing->LevelAsset = AssetRef<HLevel>(RelPath);
 
 		AddThing(LevelThing);
@@ -121,6 +161,20 @@ namespace Columbus
 
 		return LevelThing;
 	}
+
+	// TODO: move to proper place
+	struct SkeletonBone
+	{
+		std::string Name;
+		Matrix InverseBindMatrix;
+		int ParentIndex = -1;
+	};
+
+	// TODO: move to proper place
+	struct Skeleton
+	{
+		std::vector<SkeletonBone> Bones;
+	};
 
 	HLevel* EngineWorld::LoadLevelGLTF2(const char* Path)
 	{
@@ -172,11 +226,19 @@ namespace Columbus
 		HLevel* Level = new HLevel{};
 		Level->World = this;
 
-		std::unordered_map<int, int> LoadedTextures;
-		std::unordered_map<int, int> LoadedMeshes;
-		std::unordered_map<int, int> LoadedMaterials;
+		const std::string RelativePath = Assets.MakePathRelativeToBakedFolder(Path);
 
-		auto CreateTexture = [this, &model, &LoadedTextures](int textureId, const char* name, bool srgb) -> int
+		struct TexturePair
+		{
+			AssetRef<Texture2> Ref;
+			HStableTextureId Id;
+		};
+
+		std::unordered_map<int, TexturePair> LoadedTextures;
+		std::unordered_map<int, AssetRef<Mesh2>> LoadedMeshes;
+		std::unordered_map<int, AssetRef<Material>> LoadedMaterials;
+
+		auto CreateTexture = [this, &Path, &model, &LoadedTextures](int textureId, const char* name, bool srgb) -> TexturePair
 		{
 			if (LoadedTextures.contains(textureId))
 			{
@@ -231,18 +293,53 @@ namespace Columbus
 			img.MipMaps = 1; // TODO: load all mip maps
 
 			Texture2* tex = Device->CreateTexture(img);
-			Device->SetDebugName(tex, name);
+			Device->SetDebugName(tex, image.name.c_str());
 			AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
 
 			img.Data = nullptr; // so it doesn't get deleted here
 
-			// TODO: proper texture Ids
-			int id = (int)SceneGPU->Textures.size();
-			SceneGPU->Textures.push_back(tex);
-			LoadedTextures[textureId] = id;
+			// relative path
+			std::string TexPath = (std::filesystem::path(Path) / std::filesystem::path(image.uri)).string();
+			TexPath = Assets.MakePathRelativeToBakedFolder(TexPath);
 
-			return id;
+			TexturePair Pair;
+			Pair.Ref = AssetSystem::Get().RegisterAssetRef<Texture2>(tex, TexPath);
+			Pair.Id = SceneGPU->Textures.Add(tex);
+			return Pair;
 		};
+
+		// skeletons
+		{
+			for (int i = 0; i < model.skins.size(); i++)
+			{
+				tinygltf::Skin& skin = model.skins[i];
+				Skeleton skeleton;
+				// skeleton.rootNodeIndex = skin.skeleton; // -1 if not present
+
+				const tinygltf::Accessor& ibmAccessor = model.accessors[skin.inverseBindMatrices];
+				const tinygltf::BufferView& ibmView = model.bufferViews[ibmAccessor.bufferView];
+				const tinygltf::Buffer& buffer = model.buffers[ibmView.buffer];
+
+				const size_t jointCount = skin.joints.size();
+				skeleton.Bones.resize(jointCount);
+
+				for (size_t i = 0; i < jointCount; ++i)
+				{
+					SkeletonBone& bone = skeleton.Bones[i];
+					int nodeIndex = skin.joints[i];
+					bone.Name = model.nodes[nodeIndex].name;
+
+					// Read matrix from the buffer
+					size_t offset = ibmAccessor.byteOffset + ibmView.byteOffset + i * sizeof(Matrix);
+					const float* matrixData = reinterpret_cast<const float*>(&buffer.data[offset]);
+					const Matrix* matrix = reinterpret_cast<const Matrix*>(matrixData);
+
+					bone.InverseBindMatrix = *matrix;
+				}
+
+				int asd = 123;
+			}
+		}
 
 		// materials
 		{
@@ -250,42 +347,54 @@ namespace Columbus
 			{
 				tinygltf::Material& Mat = model.materials[i];
 
-				Material Result;
+				Material* Result = new Material();
 
 				int AlbedoId = Mat.pbrMetallicRoughness.baseColorTexture.index;
 				if (AlbedoId != -1)
 				{
-					Result.AlbedoId = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str(), true);
+					TexturePair Pair = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str(), true);
+					Result->Albedo = Pair.Ref;
+					Result->AlbedoId = Pair.Id;
 				}
 
 				int NormalId = Mat.normalTexture.index;
 				if (NormalId != -1)
 				{
-					Result.NormalId = CreateTexture(model.textures[NormalId].source, model.textures[NormalId].name.c_str(), false);
+					TexturePair Pair = CreateTexture(model.textures[NormalId].source, model.textures[NormalId].name.c_str(), false);
+					Result->Normal = Pair.Ref;
+					Result->NormalId = Pair.Id;
 				}
 
 				int RoughnessMetallicId = Mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
 				if (RoughnessMetallicId != -1)
 				{
 					// TODO: convert separate Occlusion texture into ORM
-					Result.OrmId = CreateTexture(model.textures[RoughnessMetallicId].source, model.textures[RoughnessMetallicId].name.c_str(), false);
+					TexturePair Pair = CreateTexture(model.textures[RoughnessMetallicId].source, model.textures[RoughnessMetallicId].name.c_str(), false);
+					Result->Orm = Pair.Ref;
+					Result->OrmId = Pair.Id;
 				}
 
 				int EmissiveId = Mat.emissiveTexture.index;
 				if (EmissiveId != -1)
 				{
-					Result.EmissiveId = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), false);
+					TexturePair Pair = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), false);
+					Result->Emissive = Pair.Ref;
+					Result->EmissiveId = Pair.Id;
 				}
 
-				Result.AlbedoFactor = Vector4(Mat.pbrMetallicRoughness.baseColorFactor[0], Mat.pbrMetallicRoughness.baseColorFactor[1], Mat.pbrMetallicRoughness.baseColorFactor[2], Mat.pbrMetallicRoughness.baseColorFactor[3]);
-				Result.EmissiveFactor = Vector4(Mat.emissiveFactor[0], Mat.emissiveFactor[1], Mat.emissiveFactor[2], 1);
+				Result->AlbedoFactor = Vector4(Mat.pbrMetallicRoughness.baseColorFactor[0], Mat.pbrMetallicRoughness.baseColorFactor[1], Mat.pbrMetallicRoughness.baseColorFactor[2], Mat.pbrMetallicRoughness.baseColorFactor[3]);
+				Result->EmissiveFactor = Vector4(Mat.emissiveFactor[0], Mat.emissiveFactor[1], Mat.emissiveFactor[2], 1);
 
-				Result.Roughness = Mat.pbrMetallicRoughness.roughnessFactor;
-				Result.Metallic = Mat.pbrMetallicRoughness.metallicFactor;
+				Result->Roughness = Mat.pbrMetallicRoughness.roughnessFactor;
+				Result->Metallic = Mat.pbrMetallicRoughness.metallicFactor;
 
-				// TODO: proper material ids
-				LoadedMaterials[i] = (int)SceneGPU->Materials.size();
-				SceneGPU->Materials.push_back(Result);
+				HStableMaterialId Id = SceneGPU->Materials.Add(*Result);
+				SceneGPU->Materials.Get(Id)->StableId = Id;
+				Result->StableId = Id;
+
+				std::string MaterialName = "Material." + RelativePath + "#" + Mat.name;
+
+				LoadedMaterials[i] = AssetSystem::Get().RegisterAssetRef(Result, MaterialName);
 			}
 		}
 
@@ -315,16 +424,23 @@ namespace Columbus
 
 					switch (accessor.componentType)
 					{
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+						for (int i = 0; i < accessor.count; i++)
+						{
+							indices[i] = static_cast<const u8*>(data)[i];
+						}
+						break;
+
 					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
 						for (int i = 0; i < accessor.count; i++)
 						{
-							indices[i] = static_cast<const uint16_t*>(data)[i];
+							indices[i] = static_cast<const u16*>(data)[i];
 						}
 						break;
 					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
 						for (int i = 0; i < accessor.count; i++)
 						{
-							indices[i] = static_cast<const uint32_t*>(data)[i];
+							indices[i] = static_cast<const u32*>(data)[i];
 						}
 						break;
 					default: COLUMBUS_ASSERT(false);
@@ -381,10 +497,33 @@ namespace Columbus
 				{
 					CPUMesh.CalculateTangents();
 				}
+
+				// Bone weights
+				if (primitive.attributes.contains("WEIGHTS_0"))
+				{
+					const auto& accessor = model.accessors[primitive.attributes["WEIGHTS_0"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
+					const void* data = buffer.data.data() + offset;
+
+					CPUMesh.BoneWeights = std::vector<Vector4>((Vector4*)(data), (Vector4*)(data)+verticesCount);
+				}
+
+				// Bone indices
+				if (primitive.attributes.contains("JOINTS_0"))
+				{
+					const auto& accessor = model.accessors[primitive.attributes["JOINTS_0"]];
+					const auto& view = model.bufferViews[accessor.bufferView];
+					const auto& buffer = model.buffers[view.buffer];
+					const auto& offset = accessor.byteOffset + view.byteOffset;
+					const void* data = buffer.data.data() + offset;
+
+					CPUMesh.BoneIndices = std::vector<iVector4>((iVector4*)(data), (iVector4*)(data)+verticesCount);
+				}
 			}
 
-			// TODO: proper MeshIds
-			LoadedMeshes[i] = LoadMesh(Primitives);
+			LoadedMeshes[i] = LoadMesh(Primitives, "Mesh." + RelativePath + std::string("#") + mesh.name);
 		}
 
 		// scene graph
@@ -474,13 +613,15 @@ namespace Columbus
 					MeshThing->World = this;
 					MeshThing->Trans = Trans;
 					MeshThing->Name = Node.name;
-					MeshThing->MeshID = LoadedMeshes[Node.mesh];
-					MeshThing->MeshPath = std::string(Path) + "#" + Node.name;
+					MeshThing->Mesh = LoadedMeshes[Node.mesh];
 
 					for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
 					{
 						auto& primitive = model.meshes[Node.mesh].primitives[prim];
-						int MaterialId = primitive.material > -1 ? LoadedMaterials[primitive.material] : -1;
+						AssetRef<Material> MaterialId;
+						if (primitive.material > -1)
+							MaterialId = LoadedMaterials[primitive.material];
+
 						MeshThing->Materials.push_back(MaterialId);
 					}
 
@@ -616,7 +757,7 @@ namespace Columbus
 		}
 	}
 
-	int EngineWorld::LoadMesh(const Model& MeshModel)
+	AssetRef<Mesh2> EngineWorld::LoadMesh(const Model& MeshModel, const std::string& AssetName)
 	{
 		const SubModel& SModel = MeshModel.GetSubModel(0);
 
@@ -638,14 +779,13 @@ namespace Columbus
 			}
 		}
 
-		return LoadMesh(Primitives);
+		return LoadMesh(Primitives, AssetName);
 	}
 
-	int EngineWorld::LoadMesh(std::span<CPUMeshResource> MeshPrimitives)
+	AssetRef<Mesh2> EngineWorld::LoadMesh(std::span<CPUMeshResource> MeshPrimitives, const std::string& AssetName)
 	{
-		int Id = (int)Meshes.size();
-		Meshes.push_back(new Mesh2{});
-		Mesh2& Mesh = *Meshes.back();
+		Mesh2* pMesh = new Mesh2();
+		Mesh2& Mesh = *pMesh;
 
 		Mesh.BoundingBox = Box(Vector3(FLT_MAX), Vector3(-FLT_MAX));
 
@@ -657,14 +797,14 @@ namespace Columbus
 			CPUMeshResource& CPUMesh = Prim.CPU;
 			GPUMeshResource& GPUMesh = Prim.GPU;
 
-			GPUMesh.VertexCount = (int)CPUMesh.Vertices.size();
+			GPUMesh.VertexCount  = (int)CPUMesh.Vertices.size();
 			GPUMesh.IndicesCount = (int)CPUMesh.Indices.size();
 
 			GPUMesh.Vertices = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Vertices.size(), true, CPUMesh.Vertices.data());
-			GPUMesh.Normals = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Normals.size(), true, CPUMesh.Normals.data());
+			GPUMesh.Normals  = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Normals.size(), true, CPUMesh.Normals.data());
 			GPUMesh.Tangents = CreateMeshBuffer(Device, sizeof(Vector4) * CPUMesh.Tangents.size(), true, CPUMesh.Tangents.data());
-			GPUMesh.UV1 = CreateMeshBuffer(Device, sizeof(Vector2) * CPUMesh.UV1.size(), true, CPUMesh.UV1.data());
-			GPUMesh.Indices = CreateMeshBuffer(Device, sizeof(u32) * CPUMesh.Indices.size(), true, CPUMesh.Indices.data());
+			GPUMesh.UV1      = CreateMeshBuffer(Device, sizeof(Vector2) * CPUMesh.UV1.size(), true, CPUMesh.UV1.data());
+			GPUMesh.Indices  = CreateMeshBuffer(Device, sizeof(u32) * CPUMesh.Indices.size(), true, CPUMesh.Indices.data());
 
 			// Primitive bounding box
 			{
@@ -697,23 +837,30 @@ namespace Columbus
 				blasDesc.IndicesCount = GPUMesh.IndicesCount;
 				GPUMesh.BLAS = Device->CreateAccelerationStructure(blasDesc);
 
-				Device->SetDebugName(GPUMesh.BLAS, "Mesh BLAS");
+				Device->SetDebugName(GPUMesh.BLAS, (AssetName + " BLAS").c_str());
 				AddProfilingMemory(MemoryCounter_SceneBLAS, GPUMesh.BLAS->GetSize());
 			}
 		}
 
-		return Id;
+		return AssetSystem::Get().RegisterAssetRef<Mesh2>(pMesh, AssetName);
 	}
 
-	int EngineWorld::LoadMesh(const char* AssetPath)
+	AssetRef<Mesh2> EngineWorld::LoadMesh(const char* AssetPath)
 	{
+		std::string InternalPath = std::string("Mesh.") + AssetPath;
+
+		if (AssetSystem::Get().HasPath(InternalPath))
+		{
+			return AssetSystem::Get().GetRefByPath<Mesh2>(InternalPath);
+		}
+
 		// TODO: wtf is this
 		Model* asd = new Model();
 		Model& model = *asd;
 		model.Load(AssetPath);
 		model.RecalculateTangents();
 
-		return LoadMesh(model);
+		return LoadMesh(model, InternalPath);
 	}
 
 	HWorldIntersectionResult EngineWorld::CastRayClosestHit(const Geometry::Ray& Ray, float Distance, int CollisionMask)
@@ -893,23 +1040,6 @@ namespace Columbus
 	void EngineWorld::FreeResources()
 	{
 		SceneGPU = nullptr;
-
-		// mesh unloading
-		for (Mesh2* Mesh : Meshes)
-		{
-			for (MeshPrimitive& Primitive : Mesh->Primitives)
-			{
-				Device->DestroyBuffer(Primitive.GPU.Vertices);
-				Device->DestroyBuffer(Primitive.GPU.Indices);
-				Device->DestroyBuffer(Primitive.GPU.UV1);
-				Device->DestroyBuffer(Primitive.GPU.UV2);
-				Device->DestroyBuffer(Primitive.GPU.Normals);
-				Device->DestroyBuffer(Primitive.GPU.Tangents);
-				Device->DestroyAccelerationStructure(Primitive.GPU.BLAS);
-			}
-		}
-
-		Meshes.clear();
 	}
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data)
@@ -1083,41 +1213,39 @@ namespace Columbus
 	{
 		Super::OnCreate();
 		assert(World != nullptr);
-		assert(MeshID != -1);
+		assert(Mesh.IsValid());
 
 		// TODO: make adding these mesh proxies easier!
 
 		int i = 0;
-		for (MeshPrimitive& Prim : World->Meshes[MeshID]->Primitives)
+		for (MeshPrimitive& Prim : Mesh->Primitives)
 		{
 			GPUSceneMesh GPUMesh;
 			GPUMesh.MeshResource = &Prim.GPU;
 			GPUMesh.Transform = TransGlobal.GetMatrix();
 
-			if (Materials.size() > i)
+			if (Materials.size() > i && Materials[i].IsValid())
 			{
-				World->SceneGPU->Materials[i].Roughness = 0.2f;
-				World->SceneGPU->Materials[i].Metallic = 0.5f;
-				GPUMesh.MaterialId = Materials[i];
+				GPUMesh.MaterialId = Materials[i]->StableId.index;
 			}
+
+			i++;
 
 			MeshPrimitives.push_back(World->SceneGPU->Meshes.Add(GPUMesh));
 		}
 
 		// TODO: collision proxy setup
 		{
-			const Mesh2& mesh = *World->Meshes[MeshID];
-
-			for (int j = 0; j < (int)mesh.Primitives.size(); j++)
+			for (const MeshPrimitive& Prim : Mesh->Primitives)
 			{
-				int numFaces = mesh.Primitives[j].CPU.Indices.size() / 3;
+				int numFaces = Prim.CPU.Indices.size() / 3;
 				int vertStride = sizeof(Vector3);
 				int indexStride = 3 * sizeof(u32);
 
 				btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray(numFaces,
-					(int*)mesh.Primitives[j].CPU.Indices.data(),
+					(int*)Prim.CPU.Indices.data(),
 					indexStride,
-					mesh.Primitives[j].CPU.Vertices.size(), (btScalar*)mesh.Primitives[j].CPU.Vertices.data(), vertStride);
+					Prim.CPU.Vertices.size(), (btScalar*)Prim.CPU.Vertices.data(), vertStride);
 				btBvhTriangleMeshShape* triShape = new btBvhTriangleMeshShape(va, true);
 
 				Rigidbody* MeshRB = new Rigidbody(triShape);
@@ -1345,6 +1473,12 @@ using namespace Columbus;
 CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Texture2, []() -> void* { return nullptr; }, "")
 CREFLECT_STRUCT_END()
 
+CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Mesh2, []() -> void* { return nullptr; }, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(Material, "")
+CREFLECT_STRUCT_END()
+
 CREFLECT_STRUCT_BEGIN(Sound, "")
 CREFLECT_STRUCT_END()
 
@@ -1412,7 +1546,7 @@ CREFLECT_STRUCT_END()
 CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
 CREFLECT_STRUCT_BEGIN(AMeshInstance, "")
 	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
-	CREFLECT_STRUCT_FIELD(std::string, MeshPath, "Noedit")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Mesh2, Mesh, "");
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALevelThing);

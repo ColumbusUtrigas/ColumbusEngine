@@ -537,19 +537,74 @@ namespace Columbus
 		if (ImGui::Begin("Loaded Assets"))
 		{
 			auto& assets = AssetSystem::Get();
-			if (ImGui::BeginTable("AssetsTable", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders))
+			
+			// Create temporary vector for sorting
+			struct AssetEntry
 			{
-				ImGui::TableSetupColumn("Path");
-				ImGui::TableSetupColumn("Type");
-				ImGui::TableSetupColumn("RefCount");
+				std::string_view Path;
+				AssetSystem::AssetData Data;
+				
+				AssetEntry(std::string_view path, const AssetSystem::AssetData& data)
+					: Path(path), Data(data) {}
+			};
+			
+			std::vector<AssetEntry> sortedAssets;
+			sortedAssets.reserve(assets.LoadedAssets.size());
+			
+			// fill vector with assets
+			for (const auto& [path, data] : assets.LoadedAssets)
+			{
+				sortedAssets.emplace_back(path, data);
+			}
+
+			if (ImGui::BeginTable("AssetsTable", 3, 
+				ImGuiTableFlags_RowBg | 
+				ImGuiTableFlags_Borders | 
+				ImGuiTableFlags_Sortable | 
+				ImGuiTableFlags_SortMulti))
+			{
+				ImGui::TableSetupColumn("Path", ImGuiTableColumnFlags_DefaultSort);
+				ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_DefaultSort);
+				ImGui::TableSetupColumn("RefCount", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortDescending);
 				ImGui::TableHeadersRow();
 
-				for (const auto& [path, data] : assets.LoadedAssets)
+				// Get sort specs
+				if (ImGuiTableSortSpecs* sorts_specs = ImGui::TableGetSortSpecs())
+				{
+					std::sort(sortedAssets.begin(), sortedAssets.end(), [sorts_specs](const AssetEntry& a, const AssetEntry& b)
+					{
+						for (int n = 0; n < sorts_specs->SpecsCount; n++)
+						{
+							const ImGuiTableColumnSortSpecs* sort_spec = &sorts_specs->Specs[n];
+							int delta = 0;
+							switch (sort_spec->ColumnIndex)
+							{
+								case 0: // Path
+									delta = a.Path.compare(b.Path);
+									break;
+								case 1: // Type
+									delta = strcmp(a.Data.Type->Name, b.Data.Type->Name);
+									break;
+								case 2: // RefCount
+									delta = a.Data.RefCount - b.Data.RefCount;
+									break;
+							}
+							if (delta > 0)
+								return sort_spec->SortDirection == ImGuiSortDirection_Ascending ? false : true;
+							if (delta < 0)
+								return sort_spec->SortDirection == ImGuiSortDirection_Ascending ? true : false;
+						}
+						return false;
+					});
+				}
+
+				// Display sorted data
+				for (const auto& entry : sortedAssets)
 				{
 					ImGui::TableNextRow();
-					ImGui::TableNextColumn(); ImGui::TextUnformatted(path.c_str());
-					ImGui::TableNextColumn(); ImGui::TextUnformatted(data.Type ? data.Type->Name : "Unknown");
-					ImGui::TableNextColumn(); ImGui::Text("%d", data.RefCount);
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Path.data());
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Data.Type ? entry.Data.Type->Name : "Unknown");
+					ImGui::TableNextColumn(); ImGui::Text("%d", entry.Data.RefCount);
 				}
 				ImGui::EndTable();
 			}

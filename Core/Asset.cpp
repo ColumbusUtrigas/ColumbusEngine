@@ -28,12 +28,16 @@ namespace Columbus
 
 	std::string AssetSystem::MakePathRelativeToSourceFolder(const std::string& Path) const
 	{
-		return std::filesystem::relative(Path, SourceDataPath).string();
+		std::string r = std::filesystem::relative(Path, SourceDataPath).string();
+		std::replace(r.begin(), r.end(), '\\', '/');
+		return r;
 	}
 
 	std::string AssetSystem::MakePathRelativeToBakedFolder(const std::string& Path) const
 	{
-		return std::filesystem::relative(Path, DataPath).string();
+		std::string r = std::filesystem::relative(Path, DataPath).string();
+		std::replace(r.begin(), r.end(), '\\', '/');
+		return r;
 	}
 
 	void AssetSystem::ResolveRef(AssetRef<void>& Ref, const Reflection::Struct* Type)

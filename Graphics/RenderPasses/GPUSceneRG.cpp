@@ -48,9 +48,9 @@ namespace Columbus
 		}
 
 		// Materials
-		if (Graph.Scene->Materials.size() > 0)
+		if (Graph.Scene->Materials.Size() > 0)
 		{
-			u32 NumMaterials = Graph.Scene->Materials.size();
+			u32 NumMaterials = Graph.Scene->Materials.Size();
 
 			void* Ptr = Graph.Device->UploadRing.UploadBufferMap(NumMaterials * sizeof(GPUMaterialCompact), 0, Graph.Scene->MaterialsBuffer);
 
@@ -60,10 +60,10 @@ namespace Columbus
 				GPUMaterialCompact Compact{
 					.AlbedoFactor = Mat.AlbedoFactor,
 					.EmissiveFactor = Mat.EmissiveFactor,
-					.AlbedoId = Mat.AlbedoId,
-					.NormalId = Mat.NormalId,
-					.OrmID = Mat.OrmId,
-					.EmissiveId = Mat.EmissiveId,
+					.AlbedoId = (int)Mat.AlbedoId.index,
+					.NormalId = (int)Mat.NormalId.index,
+					.OrmID = (int)Mat.OrmId.index,
+					.EmissiveId = (int)Mat.EmissiveId.index,
 					.Roughness = Mat.Roughness,
 					.Metallic = Mat.Metallic,
 				};

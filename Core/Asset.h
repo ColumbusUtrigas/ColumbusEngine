@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Reflection.h"
+#include "Core/Assert.h"
 
 #include <string>
 #include <string_view>
@@ -123,6 +124,35 @@ namespace Columbus
 
 		void ResolveRef(AssetRef<void>& Ref, const Reflection::Struct* Type);
 
+		bool HasPath(const std::string& Path)
+		{
+			return LoadedAssets.contains(Path);
+		}
+
+		template <typename T>
+		AssetRef<T> GetRefByPath(const std::string& Path)
+		{
+			if (!HasPath(Path))
+			{
+				Log::Error("Trying to GetRefByPath for a non existing path %s", Path.c_str());
+				return {};
+			}
+
+			AssetData& Data = LoadedAssets[Path];
+			if (Data.Type != Reflection::FindStruct<T>())
+			{
+				Log::Error("Trying to GetRefByPath using the wrong type %s for an asset with path %s and type %s",
+					Reflection::FindStruct<T>()->Name,
+					Path.c_str(),
+					Data.Type->Name);
+				return {};
+			}
+
+			AssetRef<T> Ref(Path);
+			Ref.Resolve();
+			return Ref;
+		}
+
 		template <typename T>
 		void UnloadRef(Columbus::AssetRef<T>& Ref)
 		{
@@ -140,6 +170,28 @@ namespace Columbus
 		void UnloadAssetRaw(void* Asset);
 
 		void ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object);
+
+		// register ref from raw data
+		template <typename T>
+		AssetRef<T> RegisterAssetRef(T* Asset, const std::string& Path)
+		{
+			if (LoadedAssets.contains(Path))
+			{
+				// if hit this, it means asset with the same name gets registered twice
+				COLUMBUS_ASSERT(false);
+				return {};
+			}
+
+			// register
+			LoadedAssets[Path] = AssetData{ Asset, Reflection::FindStruct<T>(), 1 };
+			PathByAsset[Asset] = Path;
+
+			AssetRef<T> Ref;
+			Ref.Asset = Asset;
+			Ref.Path = Path;
+
+			return Ref;
+		}
 
 	public:
 		using AssetLoaderFn = std::function<void* (const char* Path)>;

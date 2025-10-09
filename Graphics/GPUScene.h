@@ -178,9 +178,11 @@ namespace Columbus
 		HSkySettings Sky;
 	};
 
-	using HStableLightId = TStableSparseArray<GPULight>::Handle;
-	using HStableMeshId  = TStableSparseArray<GPUSceneMesh>::Handle;
-	using HStableDecalId = TStableSparseArray<GPUDecal>::Handle;
+	using HStableLightId     = TStableSparseArray<GPULight>::Handle;
+	using HStableTextureId   = TStableSparseArray<Texture2*>::Handle;
+	using HStableMaterialId  = TStableSparseArray<Material>::Handle;
+	using HStableMeshId      = TStableSparseArray<GPUSceneMesh>::Handle;
+	using HStableDecalId     = TStableSparseArray<GPUDecal>::Handle;
 	using HStableParticlesId = TStableSparseArray<GPUSceneParticles>::Handle;
 
 
@@ -194,10 +196,10 @@ namespace Columbus
 		AccelerationStructure* TLAS = nullptr;
 
 		TStableSparseArray<GPUSceneMesh> Meshes;
-		std::vector<Material> Materials;
-		std::vector<Texture2*> Textures;
-		TStableSparseArray<GPULight> Lights;
-		TStableSparseArray<GPUDecal> Decals;
+		TStableSparseArray<Material>     Materials;
+		TStableSparseArray<Texture2*>    Textures;
+		TStableSparseArray<GPULight>     Lights;
+		TStableSparseArray<GPUDecal>     Decals;
 		TStableSparseArray<GPUSceneParticles> Particles;
 
 		std::vector<IrradianceVolume> IrradianceVolumes;

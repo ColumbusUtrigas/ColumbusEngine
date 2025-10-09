@@ -901,7 +901,7 @@ namespace Columbus
 		// TODO: move to GPUScene
 		if (Scene)
 		{
-			for (int i = 0; i < Scene->Textures.size(); i++)
+			for (int i = 0; i < Scene->Textures.Size(); i++)
 			{
 				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSetNonCombined, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
