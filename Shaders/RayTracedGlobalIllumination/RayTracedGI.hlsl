@@ -61,12 +61,12 @@ void RayGen()
 	// ray trace
 	{
 		RayDesc Ray;
-		Ray.Origin = WP;
-		Ray.TMin = 0.01;
+		Ray.Origin = WP + Direction * 0.001;
+		Ray.TMin = 0.0;
 		Ray.Direction = Direction;
 		Ray.TMax = MaxDistance;
 
-		TraceRay(AccelerationStructure, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
+		TraceRay(AccelerationStructure, RAY_FLAG_FORCE_OPAQUE,
 			~0, 0, 0, 0, Ray, payload);
 	}
 

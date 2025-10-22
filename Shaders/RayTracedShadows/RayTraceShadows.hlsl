@@ -108,10 +108,12 @@ void RayGen()
 	
 	// ray trace
 	{
+		float3 dir = normalize(RayDirection);
+
 		RayDesc Ray;
-		Ray.Origin = origin;
-		Ray.TMin = 0.01;
-		Ray.Direction = normalize(RayDirection);
+		Ray.Origin = origin + dir * 0.001;
+		Ray.TMin = 0.0;
+		Ray.Direction = dir;
 		Ray.TMax = MaxDistance;
 		
 		TraceRay(AccelerationStructure, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
