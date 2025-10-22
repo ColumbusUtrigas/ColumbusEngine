@@ -84,10 +84,12 @@ void main(int2 dtid : SV_DispatchThreadID)
 
         float ReprojectedLinearDepth = GetLinearDepth(dtid, PrevNdc.z);
         float PrevLinearDepth = GetLinearDepth(PrevCoords, g_depth_history[PrevCoords]);
-
+        
+        // distance-aware depth rejection
         const float DepthDifference = abs(PrevLinearDepth - ReprojectedLinearDepth) / ReprojectedLinearDepth;
+        const float DepthThreshold = max(1e-2f, 0.05f * ReprojectedLinearDepth);
 
-        if (DepthDifference >= 1e-2f)
+        if (DepthDifference >= DepthThreshold)
         {
             SampleCount = 0;
         }

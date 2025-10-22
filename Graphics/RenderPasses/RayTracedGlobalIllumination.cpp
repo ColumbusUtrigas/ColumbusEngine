@@ -661,8 +661,9 @@ namespace Columbus
 			auto Set = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(RTGI_Tex).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(DownTextures.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Result).get());
+			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(DownTextures.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Result).get());
 
 			UpsampleRTGIParameters Params{
 				.Size = Size,

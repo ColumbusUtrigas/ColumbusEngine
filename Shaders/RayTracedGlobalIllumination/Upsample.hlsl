@@ -2,10 +2,12 @@
 
 [[vk::binding(0, SET)]] Texture2D<float4> g_input        : register(t0);
 [[vk::binding(1, SET)]] Texture2D<float>  g_depth        : register(t1);
-[[vk::binding(2, SET)]] Texture2D<float>  g_depth_lowres : register(t2);
+[[vk::binding(2, SET)]] Texture2D<float3> g_normals      : register(t2);
+[[vk::binding(3, SET)]] Texture2D<float>  g_depth_lowres : register(t3);
+
 
 // Outputs
-[[vk::binding(3, SET)]] RWTexture2D<float4>  g_output     : register(u0);
+[[vk::binding(4, SET)]] RWTexture2D<float4>  g_output     : register(u0);
 
 [[vk::push_constant]]
 struct _Params {
@@ -15,6 +17,7 @@ struct _Params {
 
 #define NORMAL_SIGMA 32.0
 #define DEPTH_SIGMA 4096.0
+#define MIN_WEIGHT 0.001
 
 float GetEdgeStoppingDepthWeight(float center_depth, float neighbor_depth)
 {
@@ -40,6 +43,8 @@ void main(int2 dtid : SV_DispatchThreadID)
     float WeightSum = 0.0f;
 
     float ReferenceDepth = g_depth[dtid].x;
+    //float3 ReferenceNormal = g_normals[dtid].xyz;
+    
     int Samples = Params.DownsampleFactor - 1;
     Samples = 1; // 3x3 seems to work just fine
 
@@ -52,7 +57,10 @@ void main(int2 dtid : SV_DispatchThreadID)
             float3 Sample = g_input[Pos].rgb;
             float  SampleLowresDepth = g_depth_lowres[Pos].x;
 
-            float Weight = GetEdgeStoppingDepthWeight(ReferenceDepth, SampleLowresDepth);
+            float DepthWeight = GetEdgeStoppingDepthWeight(ReferenceDepth, SampleLowresDepth);
+            float Weight = max(DepthWeight, MIN_WEIGHT);
+            //float NormalWeight = GetEdgeStoppingNormalWeight(ReferenceNormal, g_normals[Pos].xyz);
+            //float Weight = max(DepthWeight * NormalWeight, MIN_WEIGHT);
 
             Result += Sample * Weight;
             WeightSum += Weight;
