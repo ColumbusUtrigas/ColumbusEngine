@@ -64,7 +64,7 @@ namespace Columbus
 			while (SimulationTime >= FireTime && Particles.Count < Settings->MaxParticles)
 			{
 				SimulationTime -= FireTime;
-				Particles.Ages[Particles.Count + NeedToSpawn] = SimulationTime;
+				Particles.Ages[Particles.Count + NeedToSpawn] = 0.0f;
 				NeedToSpawn += Particles.Count + NeedToSpawn < Settings->MaxParticles ? 1 : 0;
 			}
 
@@ -273,6 +273,9 @@ CREFLECT_STRUCT_BEGIN(HParticleEmitterSettings, "")
 	CREFLECT_STRUCT_FIELD(float, EmitRate, "")
 
 	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Texture, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, MotionVectors, "")
+
+	CREFLECT_STRUCT_FIELD(float, MotionVectorStrength, "")
 
 	CREFLECT_STRUCT_FIELD(EParticleBlendMode, Blend, "")
 	CREFLECT_STRUCT_FIELD(EParticleBillboardMode, Billboard, "")

@@ -644,6 +644,7 @@ namespace Columbus
 		Dependencies.Read(RTGI_Tex, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(DownTextures.Depth, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(Result, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Graph.AddPass("Upsample", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Size, Result, DownsampleFactor, Textures, DownTextures](RenderGraphContext& Context)

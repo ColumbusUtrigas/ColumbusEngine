@@ -90,9 +90,11 @@ namespace Columbus
 				{
 					auto& Container = Particles.ParticleInstance->Particles;
 
+					const float NormalisedAge = Math::Clamp(Container.Ages[j] / Math::Max(Container.Lifetimes[j], 0.001f), 0.0f, 1.0f);
+
 					GPUParticleCompact Particle{
 						.Position_Rotation = Vector4(Container.Positions[j], Container.Rotations[j]),
-						.Size_Frame = Vector4(Container.Sizes[j], Container.Frames[j]),
+						.Size_Frame = Vector4(Container.Sizes[j], NormalisedAge),
 						.Colour = Container.Colors[j]
 					};
 

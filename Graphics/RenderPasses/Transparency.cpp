@@ -13,7 +13,9 @@ namespace Columbus
 	{
 		Matrix ViewProjection;
 		Matrix BillboardMatrix;
-		iVector2 Frame;
+		iVector2 SubImages;
+		float SubImagesSpeed;
+		float MotionVectorStrength; // < 0 if no motion vectors
 	};
 
 	void RenderDeferredTransparency(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context)
@@ -100,19 +102,29 @@ namespace Columbus
 				ParticlesParameters Params;
 				Params.ViewProjection = View.CameraCur.GetViewProjection();
 				Params.BillboardMatrix = Q.ToMatrix();
-				Params.Frame = iVector2(ParticleSystem.ParticleInstance->Settings->SubUV.Horizontal, ParticleSystem.ParticleInstance->Settings->SubUV.Vertical);
+				Params.SubImages = iVector2(ParticleSystem.ParticleInstance->Settings->SubUV.Horizontal, ParticleSystem.ParticleInstance->Settings->SubUV.Vertical);
+				Params.SubImagesSpeed = ParticleSystem.ParticleInstance->Settings->SubUV.Cycles;
 
 				Texture2* ParticleTexture = ParticleSystem.ParticleInstance->Settings->Texture.Asset;
+				Texture2* MotionVectorsTexture = ParticleSystem.ParticleInstance->Settings->MotionVectors.Asset;
+
+				Params.MotionVectorStrength = MotionVectorsTexture ? ParticleSystem.ParticleInstance->Settings->MotionVectorStrength : -1.0f;
 
 				if (ParticleTexture == nullptr)
 				{
 					ParticleTexture = Context.Device->DefaultTextures.White;
 				}
 
+				if (MotionVectorsTexture == nullptr)
+				{
+					MotionVectorsTexture = Context.Device->DefaultTextures.Black;
+				}
+
 				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, ParticleSystem.DataBuffer);
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, ParticleTexture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.Device->GetStaticSampler());
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, MotionVectorsTexture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.Device->GetStaticSampler());
 
 				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex, 0, sizeof(Params), &Params);

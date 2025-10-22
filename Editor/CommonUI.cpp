@@ -474,9 +474,12 @@ namespace Columbus::Editor
 				// templated reference is not present here
 			};
 
+			char ButtonBuf[512]{};
+			snprintf(ButtonBuf, 512, "...##%s", Field.Name);
+
 			ImGui::LabelText(Field.Name, "%s", ((AssetRefBase*)FieldData)->Path.c_str());
 			ImGui::SameLine();
-			if (ImGui::Button("..."))
+			if (ImGui::Button(ButtonBuf))
 			{
 				char* path = nullptr;
 

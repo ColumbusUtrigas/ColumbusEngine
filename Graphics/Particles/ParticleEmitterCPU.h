@@ -55,6 +55,9 @@ namespace Columbus
 		float EmitRate = 5.0f;
 
 		AssetRef<Texture2> Texture;
+		AssetRef<Texture2> MotionVectors;
+
+		float MotionVectorStrength = 0.0f;
 
 		EParticleBlendMode          Blend          = EParticleBlendMode::Default;
 		EParticleBillboardMode      Billboard      = EParticleBillboardMode::FaceToCamera;
