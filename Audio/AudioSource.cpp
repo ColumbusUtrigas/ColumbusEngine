@@ -58,7 +58,7 @@ namespace Columbus
 	{
 		if (Playing && SoundClip != nullptr)
 		{
-			uint32 Decoded = SoundClip->Decode(Frames, Count, Offset);
+			uint32 Decoded = SoundClip->Decode(Frames, Count, Offset, Looping);
 
 			Played += 1.0 / SoundClip->GetFrequency() * SoundClip->GetChannelsCount() * Count;
 
@@ -67,6 +67,11 @@ namespace Columbus
 				SoundClip->Seek(0);
 				Offset = 0;
 				Played = 0.0;
+
+				if (!Looping)
+				{
+					Playing = false;
+				}
 			}
 		} else
 		{

@@ -40,6 +40,13 @@ namespace Columbus
 			Sources.clear();
 		}
 
+		// simpler fire and forget interface
+
+		void PlaySound2D(Sound* Clip);
+
+
+		// main interface
+
 		void AddSource(std::shared_ptr<AudioSource> Source)
 		{
 			std::lock_guard lg(ThreadAccessMt);

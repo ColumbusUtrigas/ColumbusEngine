@@ -50,6 +50,18 @@ namespace Columbus
 		}
 	}
 
+	void AudioMixer::PlaySound2D(Sound* Clip)
+	{
+		auto Source = std::make_shared<AudioSource>();
+		Source->SetSound(Clip);
+		Source->bFireAndForget = true;
+		Source->Looping = false;
+		Source->SoundMode = AudioSource::Mode::Sound2D;
+		Source->Play();
+
+		AddSource(Source);
+	}
+
 	void AudioMixer::Update(Sound::Frame* Frames, uint32 Count)
 	{
 		//TODO
@@ -69,6 +81,17 @@ namespace Columbus
 		
 		memset(Mixed, 0, Count * sizeof(Sound::FrameHight));
 
+		// delete expired fire-and-forget sounds
+		for (int i = 0; i < (int)Sources.size(); i++)
+		{
+			if (Sources[i]->bFireAndForget && !Sources[i]->Playing)
+			{
+				Sources.erase(Sources.begin() + i);
+				i--;
+			}
+		}
+
+		// main mixing procedure
 		for (auto Source : Sources)
 		{
 			memset(Data, 0, sizeof(Sound::Frame) * Count);

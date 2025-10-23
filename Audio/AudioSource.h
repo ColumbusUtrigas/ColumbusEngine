@@ -30,6 +30,8 @@ namespace Columbus
 		bool Playing;
 		bool Looping;
 		Mode SoundMode;
+
+		bool bFireAndForget = false;
 	public:
 		AudioSource();
 

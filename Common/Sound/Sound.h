@@ -58,7 +58,7 @@ namespace Columbus
 		void Free();
 
 		void Seek(uint64 Offset);
-		uint32 Decode(Frame* Frames, uint32 Count, uint64& Offset);
+		uint32 Decode(Frame* Frames, uint32 Count, uint64& Offset, bool bLoop);
 
 		uint64 GetBufferSize() const;
 		uint32 GetFrequency() const;

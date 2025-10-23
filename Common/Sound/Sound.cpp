@@ -2,6 +2,7 @@
 #include <Common/Sound/OGG/SoundOGG.h>
 #include <Common/Sound/WAV/SoundWAV.h>
 #include <Common/Sound/SoundUtil.h>
+#include <Math/MathUtil.h>
 #include <cstdlib>
 
 namespace Columbus
@@ -104,7 +105,7 @@ namespace Columbus
 		}
 	}
 
-	uint32 Sound::Decode(Frame* Frames, uint32 Count, uint64& Offset)
+	uint32 Sound::Decode(Frame* Frames, uint32 Count, uint64& Offset, bool bLoop)
 	{
 		if (Frames != nullptr)
 		{
@@ -128,28 +129,43 @@ namespace Columbus
 				}
 			} else
 			{
-				uint32 RealCount = Count / Divider;
+				const uint32 RealCount = Count / Divider;
+				uint32 NumSamplesFilled = 0;
 
 				const uint32 BufferSizeSamples = BufferSize / 2;
 
+				const uint32 BufferRemaining = (BufferSizeSamples - Offset) / GetChannelsCount();
+				const uint32 FillSamplesNum = bLoop ? RealCount : Math::Min(BufferRemaining, RealCount);
+
 				if (Channels == 1)
 				{
-					for (uint32 i = 0; i < RealCount; i++)
+					for (uint32 i = 0; i < FillSamplesNum; i++)
 					{
 						Tmp[i].L = Tmp[i].R = Buffer[Offset++ % BufferSizeSamples];
+						NumSamplesFilled++;
 					}
-				} else if (Channels == 2)
+				}
+				else if (Channels == 2)
 				{
-					for (uint32 i = 0; i < RealCount; i++)
+					for (uint32 i = 0; i < FillSamplesNum; i++)
 					{
 						Tmp[i].L = Buffer[Offset++ % BufferSizeSamples];
 						Tmp[i].R = Buffer[Offset++ % BufferSizeSamples];
+						NumSamplesFilled++;
+					}
+				}
+
+				if (!bLoop)
+				{
+					for (uint32 i = FillSamplesNum; i < RealCount; i++)
+					{
+						Tmp[i].L = Tmp[i].R = 0;
 					}
 				}
 
 				SoundUtil::Resample(Tmp, Frames, RealCount, from_freq, to_freq);
 
-				return Count;
+				return NumSamplesFilled * Divider;
 			}
 		}
 
