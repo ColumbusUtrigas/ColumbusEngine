@@ -1,66 +1,39 @@
 #include <Physics/Rigidbody.h>
-#include <Common/JSON/JSON.h>
+#include <Graphics/Mesh.h>
+
+#include <BulletCollision/CollisionShapes/btShapeHull.h>
 
 namespace Columbus
 {
 
-	Rigidbody::Rigidbody(PhysicsShape* InShape) :
-		Static(true),
-		Mass(1.0f),
-		Restitution(0.0f),
-		Friction(0.5f),
-		RollingFriction(0.0f),
-		AngularDamping(0.2f),
-		AngularTreshold(0.25f),
-		AngularFactor(1, 1, 1),
-		LinearTreshold(0.2f),
-		LinearDamping(0.2f),
-		LinearFactor(1, 1, 1),
-		Shape(nullptr),
-		mRigidbody(nullptr)
+	Rigidbody::Rigidbody(btCollisionShape* InShape)
 	{
 		btDefaultMotionState* MotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
 		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
 		mRigidbody = new btRigidBody(*CI);
 
-		SetCollisionShape(InShape);
 		SetAngularDamping(AngularDamping);
 		SetLinearDamping(LinearDamping);
 		SetAngularTreshold(AngularTreshold);
 		SetLinearTreshold(LinearTreshold);
-	}
 
-	Rigidbody::Rigidbody(btCollisionShape* InShape) : Rigidbody()
-	{
 		mRigidbody->setCollisionShape(InShape);
 		SetStatic(Static);
 	}
 
-	Rigidbody::Rigidbody(Transform InTransform, PhysicsShape* InShape) :
-		Static(true),
-		Mass(1.0f),
-		Restitution(0.0f),
-		Friction(0.5f),
-		RollingFriction(0.0f),
-		AngularDamping(0.2f),
-		AngularTreshold(0.25f),
-		AngularFactor(1, 1, 1),
-		LinearTreshold(0.2f),
-		LinearDamping(0.2f),
-		LinearFactor(1, 1, 1),
-		Shape(nullptr),
-		mRigidbody(nullptr)
+	void Rigidbody::SetCollisionSettings(const HCollisionSettings& Settings)
 	{
-		btDefaultMotionState* MotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
-		btRigidBody::btRigidBodyConstructionInfo* CI = new btRigidBody::btRigidBodyConstructionInfo(1, MotionState, new btSphereShape(1), btVector3(0, 0, 0));
-		mRigidbody = new btRigidBody(*CI);
-
-		SetTransform(InTransform);
-		SetCollisionShape(InShape);
-		SetAngularDamping(AngularDamping);
-		SetLinearDamping(LinearDamping);
-		SetAngularTreshold(AngularTreshold);
-		SetLinearTreshold(LinearTreshold);
+		SetMass(Settings.Mass);
+		SetRestitution(Settings.Restitution);
+		SetFriction(Settings.Friction);
+		SetRollingFriction(Settings.RollingFriction);
+		SetAngularDamping(Settings.AngularDamping);
+		SetAngularTreshold(Settings.AngularTreshold);
+		SetAngularFactor(Settings.AngularFactor);
+		SetLinearTreshold(Settings.LinearTreshold);
+		SetLinearDamping(Settings.LinearDamping);
+		SetLinearFactor(Settings.LinearFactor);
+		SetStatic(Settings.Static);
 	}
 
 	void Rigidbody::Activate()
@@ -291,20 +264,6 @@ namespace Columbus
 		}
 	}
 
-	void Rigidbody::SetCollisionShape(PhysicsShape* InShape)
-	{
-		if (mRigidbody != nullptr)
-		{
-			if (InShape != nullptr && InShape->mShape != nullptr)
-			{
-				Shape = InShape;
-				mRigidbody->setCollisionShape(InShape->mShape);
-
-				SetStatic(Static);
-			}
-		}
-	}
-
 	bool Rigidbody::IsStatic() const
 	{
 		return this->Static;
@@ -415,63 +374,6 @@ namespace Columbus
 		return Vector3(0, 0, 0);
 	}
 
-	PhysicsShape* Rigidbody::GetCollisionShape() const
-	{
-		return this->Shape;
-	}
-
-	void Rigidbody::Serialize(JSON& J) const
-	{
-		J["Static"] = Static;
-		J["Mass"] = Mass;
-		J["Restitution"] = Restitution;
-		J["Friction"] = Friction;
-		J["RollingFriction"] = RollingFriction;
-		J["AngularDamping"] = AngularDamping;
-		J["AngularTreshold"] = AngularTreshold;
-		J["AngularFactor"] = AngularFactor;
-		J["LinearTreshold"] = LinearTreshold;
-		J["LinearDamping"] = LinearDamping;
-		J["LinearFactor"] = LinearFactor;
-		J["Shape"] = Shape;
-	}
-
-	void Rigidbody::Deserialize(JSON& J)
-	{
-		Static = J["Static"].GetBool();
-		Mass = J["Mass"].GetFloat();
-		Restitution = J["Restitution"].GetFloat();
-		Friction = J["Friction"].GetFloat();
-		RollingFriction = J["RollingFriction"].GetFloat();
-		AngularDamping = J["AngularDamping"].GetFloat();
-		AngularTreshold = J["AngularTreshold"].GetFloat();
-		AngularFactor = J["AngularFactor"].GetVector3<float>();
-		LinearTreshold = J["LinearTreshold"].GetFloat();
-		LinearDamping = J["LinearDamping"].GetFloat();
-		LinearFactor = J["LinearFactor"].GetVector3<float>();
-
-		if (J.HasChild("Shape") && !J["Shape"].IsNull())
-		{
-			auto type = J["Shape"]["Type"].GetString();
-			auto shape = PrototypeFactory<PhysicsShape>::Instance().CreateFromTypename(type);
-			if (shape != nullptr)
-			{
-				shape->Deserialize(J["Shape"]);
-				auto clone = shape->Clone();
-				SetCollisionShape(static_cast<PhysicsShape*>(clone));
-			}
-			else
-			{
-				Shape = nullptr;
-			}
-		}
-		else
-		{
-			//mRigidbody->setCollisionShape();
-			Shape = nullptr;
-		}
-	}
-
 	Rigidbody::~Rigidbody()
 	{
 		delete mRigidbody->getMotionState();
@@ -479,3 +381,170 @@ namespace Columbus
 	}
 
 }
+
+// helper functions
+namespace Columbus::Physics
+{
+
+	using namespace Columbus;
+
+	void CombineAllPointsFromMesh(Mesh2* Mesh, std::vector<float>& OutPoints)
+	{
+		for (const MeshPrimitive& Prim : Mesh->Primitives)
+		{
+			for (const Vector3& Vert : Prim.CPU.Vertices)
+			{
+				OutPoints.push_back(Vert.X);
+				OutPoints.push_back(Vert.Y);
+				OutPoints.push_back(Vert.Z);
+			}
+		}
+	}
+
+	btCollisionShape* CreatePhysicsShapeFromDesc(const HCollisionShapeDesc& Desc, Mesh2* Mesh)
+	{
+		btCollisionShape* Shape = nullptr;
+
+		constexpr bool bOptimiseHull = true;
+
+		switch (Desc.Type)
+		{
+		case ECollisionShape::None: break;
+		case ECollisionShape::Box:
+			Shape = new btBoxShape(btVector3(Desc.Size.X * 0.5f, Desc.Size.Y * 0.5f, Desc.Size.Z * 0.5f));
+			break;
+		case ECollisionShape::Sphere:
+			Shape = new btSphereShape(Desc.Radius);
+			break;
+		case ECollisionShape::Capsule:
+			Shape = new btCapsuleShape(Desc.Radius, Desc.Height);
+			break;
+		case ECollisionShape::Cone:
+			Shape = new btConeShape(Desc.Radius, Desc.Height);
+			break;
+		case ECollisionShape::Cylinder:
+			Shape = new btCylinderShape(btVector3(Desc.Size.X * 0.5f, Desc.Size.Y * 0.5f, Desc.Size.Z * 0.5f));
+			break;
+		case ECollisionShape::ConvexHull:
+		{
+			std::vector<float> AllPoints;
+			CombineAllPointsFromMesh(Mesh, AllPoints);
+
+			if (bOptimiseHull)
+			{
+				// https://www.gamedev.net/forums/topic/691208-build-a-convex-hull-from-a-given-mesh-in-bullet/
+
+				// needed to optimise convex hull
+				btConvexHullShape TmpHull(AllPoints.data(), AllPoints.size() / 3, sizeof(float) * 3);
+
+				//create a hull approximation
+				TmpHull.setMargin(0);  // this is to compensate for a bug in bullet
+
+				// optimisation procedure
+				btShapeHull* Hull = new btShapeHull(&TmpHull);
+				Hull->buildHull(0);    // note: parameter is ignored by buildHull
+
+				Shape = new btConvexHullShape((const btScalar*)Hull->getVertexPointer(), Hull->numVertices(), sizeof(btVector3));
+
+				delete Hull;
+			}
+			else
+			{
+				Shape = new btConvexHullShape(AllPoints.data(), AllPoints.size() / 3, sizeof(float) * 3);
+			}
+			break;
+		}
+		case ECollisionShape::TriMesh:
+		{
+			btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray();
+
+			for (const MeshPrimitive& Prim : Mesh->Primitives)
+			{
+				const auto& verts = Prim.CPU.Vertices;
+				const auto& inds = Prim.CPU.Indices;
+
+				if (verts.empty() || inds.empty())
+					continue;
+
+				btIndexedMesh im;
+				im.m_numTriangles = static_cast<unsigned int>(inds.size() / 3);
+				im.m_triangleIndexBase = reinterpret_cast<const unsigned char*>(inds.data());
+				im.m_triangleIndexStride = static_cast<int>(3 * sizeof(u32));
+				im.m_numVertices = static_cast<unsigned int>(verts.size());
+				im.m_vertexBase = reinterpret_cast<const unsigned char*>(verts.data());
+				im.m_vertexStride = static_cast<int>(sizeof(Vector3));
+				im.m_indexType = PHY_INTEGER; // u32 indices
+
+				va->addIndexedMesh(im, PHY_INTEGER);
+			}
+
+			// build an acceleration structure backed by the triangle interface
+			Shape = new btBvhTriangleMeshShape(va, true);
+
+			break;
+		}
+		case ECollisionShape::Compound:
+		{
+			Shape = new btCompoundShape(true, (int)Desc.ChildShapes.size());
+			for (const HCollisionShapeDesc& Child : Desc.ChildShapes)
+			{
+				btTransform bTransform;
+				// TODO: local transform
+				//const auto& Pos = LocalTransform.Position;
+				//const auto& Rot = LocalTransform.Rotation;
+				Vector3 Pos = Vector3(0, 0, 0);
+				Quaternion Rot(Vector3(0, 0, 0));
+
+				bTransform.setOrigin(btVector3(Pos.X, Pos.Y, Pos.Z));
+				bTransform.setRotation(btQuaternion(Rot.X, Rot.Y, Rot.Z, Rot.W));
+
+				static_cast<btCompoundShape*>(Shape)->addChildShape(bTransform, CreatePhysicsShapeFromDesc(Child, Mesh));
+			}
+			break;
+		}
+		}
+
+		return Shape;
+	}
+
+} // namespace Columbus::Physics
+
+
+// reflection stuff
+
+using namespace Columbus;
+
+CREFLECT_ENUM_BEGIN(ECollisionShape, "")
+	CREFLECT_ENUM_FIELD(ECollisionShape::None,       0)
+	CREFLECT_ENUM_FIELD(ECollisionShape::Box,        1)
+	CREFLECT_ENUM_FIELD(ECollisionShape::Sphere,     2)
+	CREFLECT_ENUM_FIELD(ECollisionShape::Capsule,    3)
+	CREFLECT_ENUM_FIELD(ECollisionShape::Cone,       4)
+	CREFLECT_ENUM_FIELD(ECollisionShape::Cylinder,   5)
+	CREFLECT_ENUM_FIELD(ECollisionShape::ConvexHull, 6)
+	CREFLECT_ENUM_FIELD(ECollisionShape::TriMesh,    7)
+	CREFLECT_ENUM_FIELD(ECollisionShape::Compound,   8)
+CREFLECT_ENUM_END()
+
+CREFLECT_STRUCT_BEGIN(HCollisionShapeDesc, "")
+	CREFLECT_STRUCT_FIELD(ECollisionShape, Type, "")
+	CREFLECT_STRUCT_FIELD(float, Radius, "")
+	CREFLECT_STRUCT_FIELD(float, Height, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Size, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(HCollisionShapeDesc, ChildShapes, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(HCollisionSettings, "")
+	CREFLECT_STRUCT_FIELD(bool,    Static, "")
+	CREFLECT_STRUCT_FIELD(float,   Mass, "")
+	CREFLECT_STRUCT_FIELD(float,   Restitution, "SliderMin(0) SliderMax(2)")
+	CREFLECT_STRUCT_FIELD(float,   Friction,    "SliderMin(0) SliderMax(2)")
+	CREFLECT_STRUCT_FIELD(float,   RollingFriction, "SliderMin(0) SliderMax(1)")
+	CREFLECT_STRUCT_FIELD(float,   AngularDamping,  "SliderMin(0) SliderMax(1)")
+	CREFLECT_STRUCT_FIELD(float,   AngularTreshold, "SliderMin(0) SliderMax(5)")
+	CREFLECT_STRUCT_FIELD(Vector3, AngularFactor, "")
+	CREFLECT_STRUCT_FIELD(float,   LinearTreshold, "SliderMin(0) SliderMax(5)")
+	CREFLECT_STRUCT_FIELD(float,   LinearDamping,  "SliderMin(0) SliderMax(1)")
+	CREFLECT_STRUCT_FIELD(Vector3, LinearFactor, "")
+	CREFLECT_STRUCT_FIELD(HCollisionShapeDesc, Shape, "")
+CREFLECT_STRUCT_END()

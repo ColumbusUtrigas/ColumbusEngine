@@ -23,6 +23,7 @@ namespace Columbus
 		void SetGravity(Vector3 aGravity);
 
 		void AddRigidbody(Rigidbody* aRigidbody);
+		void AddRigidbody(Rigidbody* aRigidbody, int Group, int Mask);
 		void RemoveRigidbody(Rigidbody* aRigidbody);
 
 		void AddRigidbody(btRigidBody* aRigidbody);
@@ -35,7 +36,3 @@ namespace Columbus
 	};
 
 }
-
-
-
-

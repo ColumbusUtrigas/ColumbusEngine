@@ -26,6 +26,10 @@ namespace Columbus
 		Matrix VP;
 		Vector4 Colour;
 		Vector4 Vertices[3];
+
+		u64 VertexBuffer = 0;
+		u64 IndexBuffer = 0;
+
 		u32 Type;
 	};
 
@@ -57,14 +61,16 @@ namespace Columbus
 		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
 			// TODO: normal shader system please
-			static GraphicsPipeline* Pipeline = nullptr;
+			static GraphicsPipeline* PipelineSolid = nullptr;
+			static GraphicsPipeline* PipelineWireframe = nullptr;
 			static GraphicsPipeline* IrradianceVolumePipeline = nullptr;
-			if (Pipeline == nullptr)
+			if (PipelineSolid == nullptr)
 			{
 				{
 					GraphicsPipelineDesc Desc;
 					Desc.Name = "Debug";
 					Desc.rasterizerState.Cull = CullMode::No;
+					Desc.rasterizerState.Fill = FillMode::Solid;
 					Desc.blendState.RenderTargets = {
 						RenderTargetBlendDesc {
 							.BlendEnable = true,
@@ -72,13 +78,18 @@ namespace Columbus
 							.DestBlend = Blend::InvSrcAlpha,
 						},
 					};
-					// Desc.rasterizerState.Fill = FillMode::Wireframe;
+					// 
 
 					Desc.depthStencilState.DepthEnable = true; // TODO: use flag, so generate two permutations
 					Desc.depthStencilState.DepthWriteMask = false;
 					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Debug.csd");
 
-					Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+					GraphicsPipelineDesc WireframeDesc = Desc;
+					WireframeDesc.rasterizerState.Fill = FillMode::Wireframe;
+					WireframeDesc.rasterizerState.LineWidth = 2.0f;
+
+					PipelineSolid = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
+					PipelineWireframe = Context.Device->CreateGraphicsPipeline(WireframeDesc, Context.VulkanRenderPass);
 				}
 
 				{
@@ -111,6 +122,7 @@ namespace Columbus
 					.Type = (u32)Object.Type,
 				};
 
+				GraphicsPipeline* Pipeline = Object.Wireframe ? PipelineWireframe : PipelineSolid;
 				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 
 				if (Object.Type == DebugRenderObjectType::Box)
@@ -126,6 +138,56 @@ namespace Columbus
 
 					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
 					Context.CommandBuffer->Draw(3, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Sphere)
+				{
+					static const uint SPHERE_SLICES = 32;  // around Y
+					static const uint SPHERE_STACKS = 16;  // bottom->top
+
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(SPHERE_SLICES * SPHERE_STACKS * 6, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Cone)
+				{
+					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+
+					static const uint CONE_SLICES = 32;
+
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(CONE_SLICES * 6, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Cylinder)
+				{
+					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+
+					static const uint CYL_SLICES = 32;
+
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(CYL_SLICES * 2 * 6, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Capsule)
+				{
+					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+
+					static const uint CAP_SLICES = 32;
+					static const uint CAP_HEMI_STACKS = 8; // per hemisphere
+					static const uint CAP_CYL_STACKS = 1; // just a band
+
+					// capsule
+					uint capHemiVerts = CAP_SLICES * CAP_HEMI_STACKS * 6;
+					uint capCylVerts  = CAP_SLICES * 1 * 6;
+					uint capsuleVerts = capHemiVerts * 2 + capCylVerts;
+
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(capsuleVerts, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Mesh)
+				{
+					Parameters.VertexBuffer = Object.VertexBuffer->GetDeviceAddress();
+					Parameters.IndexBuffer = Object.IndexBuffer->GetDeviceAddress();
+
+					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(Object.MeshNumIndices, 1, 0, 0);
 				}
 			}
 

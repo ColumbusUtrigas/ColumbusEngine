@@ -17,6 +17,53 @@ namespace Columbus::Editor
 	_CommonUISettings CommonUISettings;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Helper for UI property metadata
+	struct FieldUIMetadata
+	{
+		bool NoEdit = false;
+		bool HasSliderLimits = false;
+		float SliderMin = 0.0f;
+		float SliderMax = 0.0f;
+		bool IsPicker = false;
+		bool IsColor = false;
+		bool IsHDR = false;
+	};
+
+	static FieldUIMetadata ParseFieldMetadata(const char* Meta)
+	{
+		FieldUIMetadata Result;
+
+		if (!Meta)
+			return Result;
+
+		// Parse slider limits
+		const char* SliderMin = strstr(Meta, "SliderMin(");
+		if (SliderMin)
+		{
+			SliderMin += 10; // Skip "SliderMin("
+			Result.SliderMin = (float)atof(SliderMin);
+			Result.HasSliderLimits = true;
+		}
+
+		const char* SliderMax = strstr(Meta, "SliderMax(");
+		if (SliderMax)
+		{
+			SliderMax += 10; // Skip "SliderMax("
+			Result.SliderMax = (float)atof(SliderMax);
+			Result.HasSliderLimits = true;
+		}
+
+		// Parse flags
+		Result.NoEdit = strstr(Meta, "Noedit") != nullptr;
+		Result.IsPicker = strstr(Meta, "Picker") != nullptr;
+		Result.IsColor = strstr(Meta, "Colour") != nullptr;
+		Result.IsHDR = strstr(Meta, "HDR") != nullptr;
+
+		return Result;
+	}
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Custom UI specialisations for reflected types
 
 	bool ImGui_EditVector2(char* Object, const Reflection::Field& Field, int Depth)
@@ -26,10 +73,12 @@ namespace Columbus::Editor
 
 	bool ImGui_EditVector3(char* Object, const Reflection::Field& Field, int Depth)
 	{
-		if (strstr(Field.Meta, "Colour"))
+		auto Meta = ParseFieldMetadata(Field.Meta);
+
+		if (Meta.IsColor)
 		{
 			ImGuiColorEditFlags Flags = ImGuiColorEditFlags_Float;
-			if (strstr(Field.Meta, "HDR"))
+			if (Meta.IsHDR)
 				Flags |= ImGuiColorEditFlags_HDR;
 
 			return ImGui::ColorEdit3(Field.Name, (float*)Object, Flags);
@@ -40,10 +89,12 @@ namespace Columbus::Editor
 
 	bool ImGui_EditVector4(char* Object, const Reflection::Field& Field, int Depth)
 	{
-		if (strstr(Field.Meta, "Colour"))
+		auto Meta = ParseFieldMetadata(Field.Meta);
+
+		if (Meta.IsColor)
 		{
 			ImGuiColorEditFlags Flags = ImGuiColorEditFlags_Float;
-			if (strstr(Field.Meta, "HDR"))
+			if (Meta.IsHDR)
 				Flags |= ImGuiColorEditFlags_HDR;
 
 			return ImGui::ColorEdit4(Field.Name, (float*)Object, Flags);
@@ -323,6 +374,8 @@ namespace Columbus::Editor
 	{
 		char* FieldData = Object + Field.Offset;
 
+		auto Metadata = ParseFieldMetadata(Field.Meta);
+
 		switch (Field.Type)
 		{
 		case Reflection::FieldType::Bool:
@@ -332,8 +385,22 @@ namespace Columbus::Editor
 			return ImGui::InputInt(Field.Name, (int*)FieldData);
 			break;
 		case Reflection::FieldType::Float:
+		{
+			if (Metadata.NoEdit)
+			{
+				ImGui::LabelText(Field.Name, "%.3f", *(float*)FieldData);
+				return false;
+			}
+
+			if (Metadata.HasSliderLimits)
+			{
+				return ImGui::SliderFloat(Field.Name, (float*)FieldData, Metadata.SliderMin, Metadata.SliderMax);
+			}
+
 			return ImGui::InputFloat(Field.Name, (float*)FieldData);
+
 			break;
+		}
 		case Reflection::FieldType::String:
 		{
 			if (strstr(Field.Meta, "Picker"))
@@ -352,7 +419,7 @@ namespace Columbus::Editor
 					return false;
 				}
 			}
-			else if (strstr(Field.Meta, "Noedit"))
+			else if (Metadata.NoEdit)
 			{
 				ImGui::LabelText(Field.Name, "%s", ((std::string*)FieldData)->c_str());
 			}

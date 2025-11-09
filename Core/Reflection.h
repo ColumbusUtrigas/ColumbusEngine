@@ -304,6 +304,9 @@ namespace Reflection
 	template <typename T, typename U>
 	T* Cast(U* Obj)
 	{
+		if (Obj == nullptr)
+			return nullptr;
+
 		const Struct* From = FindStructTypeForObject(*Obj);
 		const Struct* To = FindStruct<T>();
 		if (HasParentType(From, To) || HasParentType(To, From))

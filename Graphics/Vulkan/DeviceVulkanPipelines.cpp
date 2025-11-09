@@ -166,7 +166,7 @@ namespace Columbus
 		rasterState.depthBiasConstantFactor = Desc.rasterizerState.DepthBias;
 		rasterState.depthBiasClamp = Desc.rasterizerState.DepthBiasClamp;
 		rasterState.depthBiasSlopeFactor = Desc.rasterizerState.SlopeScaledDepthBias;
-		rasterState.lineWidth = 1;
+		rasterState.lineWidth = Desc.rasterizerState.LineWidth;
 
 		VkPipelineMultisampleStateCreateInfo multisampleState;
 		multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

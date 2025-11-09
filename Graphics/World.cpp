@@ -639,7 +639,7 @@ namespace Columbus
 	HLevel* EngineWorld::LoadLevelCLVL(const char* Path)
 	{
 		std::filesystem::path LevelPath = Path;
-		if (!LevelPath.is_absolute())
+		if (!LevelPath.is_absolute() && !Assets.IsPathInBakedFolder(Path))
 		{
 			// relative path, prepend project data path
 			LevelPath = GCurrentProject->DataPath / LevelPath;
@@ -975,18 +975,18 @@ namespace Columbus
 	{
 		GlobalTime += DeltaTime;
 
-		for (int i = 0; i < (int)AllThings.Size(); i++)
+		for (size_t i = 0; i < AllThings.Size(); i++)
 		{
-			AThing* Thing = AllThings.Data()[i];
+			AThing* Thing = AllThings[i];
 			if (Thing->bNeedsTicking)
 			{
 				Thing->OnTick(DeltaTime);
 			}
 		}
 
-		UpdateTransforms();
+		Physics.Step(DeltaTime, 0);
 
-		Physics.Step(DeltaTime, 1);
+		UpdateTransforms();
 
 		// update effects volumes
 		HEffectsSettings EffectsSettings;
@@ -1021,9 +1021,16 @@ namespace Columbus
 
 	void EngineWorld::PostUpdate()
 	{
-		for (int i = 0; i < (int)AllThings.Size(); i++)
+		for (AThing* Thing : AllThings)
 		{
-			AThing* Thing = AllThings.Data()[i];
+			if (Thing->bNeedsPostPhysicsTicking)
+			{
+				Thing->OnPostPhysics();
+			}
+		}
+
+		for (AThing* Thing : AllThings)
+		{
 			if (Thing->bRenderStateDirty)
 			{
 				Thing->Trans.Update();
@@ -1096,6 +1103,61 @@ namespace Columbus
 	{
 		bRenderStateDirty = true;
 		AssetSystem::Get().ResolveStructAssetReferences(GetTypeVirtual(), this);
+	}
+
+	void AThing::SetWorldTransform(const Transform& WorldTransform)
+	{
+		if (Parent)
+		{
+			// Convert world transform to local space
+			Matrix parentWorldToLocal = Parent->TransGlobal.GetWorldToLocalMatrix();
+			Matrix localMatrix = WorldTransform.GetMatrix() * parentWorldToLocal;
+			Trans.SetFromMatrix(localMatrix);
+		}
+		else
+		{
+			Trans = WorldTransform;
+		}
+		MarkTransformDirty();
+	}
+
+	const Transform& AThing::GetWorldTransform()
+	{
+		UpdateWorldTransform();
+		return TransGlobal;
+	}
+
+	void AThing::MarkTransformDirty()
+	{
+		if (!bTransformDirty)
+		{
+			bTransformDirty = true;
+			// Propagate to children
+			for (AThing* child : Children)
+			{
+				child->MarkTransformDirty();
+			}
+		}
+	}
+
+	void AThing::UpdateWorldTransform()
+	{
+		if (bTransformDirty)
+		{
+			if (Parent)
+			{
+				// Get parent's world transform and combine with local
+				const Transform& parentWorld = Parent->GetWorldTransform();
+				Matrix worldMatrix = Trans.GetMatrix() * parentWorld.GetMatrix();
+				TransGlobal.SetFromMatrix(worldMatrix);
+			}
+			else
+			{
+				TransGlobal = Trans;
+			}
+
+			bTransformDirty = false;
+		}
 	}
 
 	bool AVolume::ContainsPoint(const Vector3& Point) const
@@ -1209,13 +1271,59 @@ namespace Columbus
 		Super::OnDestroy();
 	}
 
+	void AMeshInstance::CreatePhysicsState()
+	{
+		if (PhysicsBody)
+		{
+			World->Physics.RemoveRigidbody(PhysicsBody);
+			delete PhysicsBody;
+
+			// TODO: delete shapes
+		}
+
+		btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(CollisionSettings.Shape, Mesh.Asset);
+
+		bNeedsPostPhysicsTicking = false;
+
+		if (Shape)
+		{
+			PhysicsBody = new Rigidbody(Shape);
+
+			// when collision or trace is performed, we can find this object
+			PhysicsBody->mRigidbody->setUserPointer(this);
+
+			// apply settings from the desc
+			PhysicsBody->SetCollisionSettings(CollisionSettings);
+
+			World->Physics.AddRigidbody(PhysicsBody);
+
+			if (!CollisionSettings.Static)
+			{
+				bNeedsPostPhysicsTicking = true;
+				PhysicsBody->Activate();
+			}
+
+			PhysicsBody->SetTransform(GetWorldTransform());
+		}
+	}
+
+	void AMeshInstance::OnPostPhysics()
+	{
+		Super::OnPostPhysics();
+
+		if (PhysicsBody)
+		{
+			Transform PhysicsTransform = PhysicsBody->GetTransform();
+			SetWorldTransform(PhysicsTransform);
+			bRenderStateDirty = true;
+		}
+	}
+
 	void AMeshInstance::OnCreate()
 	{
 		Super::OnCreate();
 		assert(World != nullptr);
 		assert(Mesh.IsValid());
-
-		// TODO: make adding these mesh proxies easier!
 
 		int i = 0;
 		for (MeshPrimitive& Prim : Mesh->Primitives)
@@ -1234,30 +1342,29 @@ namespace Columbus
 			MeshPrimitives.push_back(World->SceneGPU->Meshes.Add(GPUMesh));
 		}
 
-		// TODO: collision proxy setup
+		// collision proxy setup
+		if (World->WorldType == EWorldType::Game)
 		{
-			for (const MeshPrimitive& Prim : Mesh->Primitives)
-			{
-				int numFaces = Prim.CPU.Indices.size() / 3;
-				int vertStride = sizeof(Vector3);
-				int indexStride = 3 * sizeof(u32);
-
-				btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray(numFaces,
-					(int*)Prim.CPU.Indices.data(),
-					indexStride,
-					Prim.CPU.Vertices.size(), (btScalar*)Prim.CPU.Vertices.data(), vertStride);
-				btBvhTriangleMeshShape* triShape = new btBvhTriangleMeshShape(va, true);
-
-				Rigidbody* MeshRB = new Rigidbody(triShape);
-				MeshRB->SetTransform(Trans);
-				MeshRB->SetStatic(true);
-				MeshRB->mRigidbody->setUserPointer(this);
-
-				World->Physics.AddRigidbody(MeshRB);
-
-				Rigidbodies.push_back(MeshRB);
-			}
+			CreatePhysicsState();
 		}
+
+		// editor mouse click collision proxy setup
+		// TODO: don't do it if no collision - has to be set up, but now default to having trimesh collisions
+		if (PhysicsBody == nullptr || World->WorldType == EWorldType::Editor)
+		{
+			HCollisionShapeDesc EditorCollisionShape;
+			EditorCollisionShape.Type = ECollisionShape::TriMesh;
+
+			btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EditorCollisionShape, Mesh.Asset);
+
+			EditorRigidbody = new Rigidbody(Shape);
+			EditorRigidbody->SetTransform(GetWorldTransform());
+			EditorRigidbody->SetStatic(true);
+			EditorRigidbody->mRigidbody->setUserPointer(this);
+
+			World->Physics.AddRigidbody(EditorRigidbody);
+		}
+
 	}
 
 	void AMeshInstance::OnUpdateRenderState()
@@ -1273,9 +1380,9 @@ namespace Columbus
 			}
 		}
 
-		for (Rigidbody* RB : Rigidbodies)
+		if (EditorRigidbody)
 		{
-			RB->SetTransform(TransGlobal);
+			EditorRigidbody->SetTransform(TransGlobal);
 		}
 	}
 
@@ -1287,14 +1394,19 @@ namespace Columbus
 		}
 		MeshPrimitives.clear();
 
-		for (Rigidbody* RB : Rigidbodies)
+		if (PhysicsBody)
 		{
-			World->Physics.RemoveRigidbody(RB);
-			delete RB;
+			World->Physics.RemoveRigidbody(PhysicsBody);
+			delete PhysicsBody;
 		}
-		Rigidbodies.clear();
+		PhysicsBody = nullptr;
 
-		// TODO: decrement mesh reference count
+		if (EditorRigidbody)
+		{
+			World->Physics.RemoveRigidbody(EditorRigidbody);
+			delete EditorRigidbody;
+		}
+		EditorRigidbody = nullptr;
 
 		Super::OnDestroy();
 	}
@@ -1352,7 +1464,21 @@ namespace Columbus
 			}
 		}
 
-		World->AddLevel(LevelCopy);
+		// TODO: generate stable Guids
+
+		// apply overrides
+		for (const HLevelThingMeshOverride& Override : MeshOverrides)
+		{
+			auto Thing = std::find_if(LevelCopy->Things.begin(), LevelCopy->Things.end(), [&Override](AThing* Thing)
+			{
+				return Thing->Name == Override.TargetName && Thing->GetTypeVirtual() == AMeshInstance::GetTypeStatic();
+			});
+
+			if (Thing != LevelCopy->Things.end())
+			{
+				Reflection::Cast<AMeshInstance>(*Thing)->CollisionSettings = Override.CollisionSettings;
+			}
+		}
 
 		// find all root nodes in the level, parent them to the thing
 		for (AThing* Thing : LevelCopy->Things)
@@ -1366,6 +1492,8 @@ namespace Columbus
 				Children.push_back(Thing);
 			}
 		}
+
+		World->AddLevel(LevelCopy);
 	}
 
 	void ALevelThing::OnDestroy()
@@ -1485,6 +1613,11 @@ CREFLECT_STRUCT_END()
 CREFLECT_STRUCT_BEGIN(HLevel, "")
 CREFLECT_STRUCT_END()
 
+CREFLECT_STRUCT_BEGIN(HLevelThingMeshOverride, "")
+	CREFLECT_STRUCT_FIELD(std::string, TargetName, "")
+	CREFLECT_STRUCT_FIELD(HCollisionSettings, CollisionSettings, "")
+CREFLECT_STRUCT_END()
+
 CREFLECT_ENUM_BEGIN(LightType, "")
 	CREFLECT_ENUM_FIELD(LightType::Directional, 0)
 	CREFLECT_ENUM_FIELD(LightType::Point, 1)
@@ -1546,6 +1679,7 @@ CREFLECT_STRUCT_END()
 CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
 CREFLECT_STRUCT_BEGIN(AMeshInstance, "")
 	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
+	CREFLECT_STRUCT_FIELD(HCollisionSettings, CollisionSettings, "");
 	CREFLECT_STRUCT_FIELD_ASSETREF(Mesh2, Mesh, "");
 CREFLECT_STRUCT_END()
 
@@ -1553,6 +1687,7 @@ CREFLECT_DEFINE_VIRTUAL(ALevelThing);
 CREFLECT_STRUCT_BEGIN(ALevelThing, "")
 	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(HLevelThingMeshOverride, MeshOverrides, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AParticleSystem)

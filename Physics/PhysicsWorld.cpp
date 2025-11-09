@@ -44,6 +44,11 @@ namespace Columbus
 		mWorld->addRigidBody(aRigidbody->mRigidbody);
 	}
 
+	void PhysicsWorld::AddRigidbody(Rigidbody* aRigidbody, int Group, int Mask)
+	{
+		mWorld->addRigidBody(aRigidbody->mRigidbody, Group, Mask);
+	}
+
 	void PhysicsWorld::RemoveRigidbody(Rigidbody* aRigidbody)
 	{
 		mWorld->removeRigidBody(aRigidbody->mRigidbody);

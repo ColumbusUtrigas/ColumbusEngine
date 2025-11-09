@@ -3,6 +3,7 @@
 #include <vector>
 #include <Math/Matrix.h>
 #include <Math/Vector4.h>
+#include <Graphics/Core/Buffer.h>
 
 namespace Columbus
 {
@@ -11,6 +12,11 @@ namespace Columbus
 	{
 		Box,
 		Tri,
+		Sphere,
+		Cone,
+		Cylinder,
+		Capsule,
+		Mesh,
 	};
 
 	struct DebugRenderObject
@@ -23,8 +29,14 @@ namespace Columbus
 
 		bool DrawOutline = false;
 		bool UseZTest = true;
+		bool Wireframe = false;
 
 		Vector3 Vertices[3]; // for triangle
+
+		// for mesh
+		Buffer* VertexBuffer = nullptr;
+		Buffer* IndexBuffer = nullptr;
+		u32 MeshNumIndices = 0;
 	};
 
 	struct DebugRender
@@ -33,7 +45,7 @@ namespace Columbus
 		std::vector<DebugRenderObject> Objects;
 
 	public:
-		void AddBox(const Matrix& Transform, Vector4 Colour, bool ZTest = true)
+		void AddBox(const Matrix& Transform, Vector4 Colour, bool Wireframe = false, bool ZTest = true)
 		{
 			DebugRenderObject Object {
 				.Type = DebugRenderObjectType::Box,
@@ -41,11 +53,12 @@ namespace Columbus
 				.Colour = Colour,
 				.DrawOutline = false,
 				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
 			};
 			Objects.push_back(Object);
 		}
 
-		void AddBox(const Vector3& Position, const Vector3& Size, const Vector4& Colour, bool ZTest = true)
+		void AddBox(const Vector3& Position, const Vector3& Size, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
 		{
 			Matrix Transform;
 			Transform.Translate(Position);
@@ -53,7 +66,7 @@ namespace Columbus
 			AddBox(Transform, Colour, ZTest);
 		}
 
-		void AddBoxWithOutline(const Matrix& Transform, Vector4 Colour, Vector4 OutlineColour, bool ZTest = true)
+		void AddBoxWithOutline(const Matrix& Transform, Vector4 Colour, Vector4 OutlineColour, bool Wireframe = false, bool ZTest = true)
 		{
 			DebugRenderObject Object {
 				.Type = DebugRenderObjectType::Box,
@@ -62,12 +75,13 @@ namespace Columbus
 				.OutlineColour = OutlineColour,
 				.DrawOutline = true,
 				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
 			};
 			Objects.push_back(Object);
 		}
 
 		// a box between From and To, Width is in world units
-		void AddLineFromTo(const Vector3& From, const Vector3& To, float Width, const Vector4& Colour, bool ZTest = true)
+		void AddLineFromTo(const Vector3& From, const Vector3& To, float Width, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
 		{
 			float Dist = From.Distance(To);
 			Vector3 Center = (From + To) / 2;
@@ -85,7 +99,7 @@ namespace Columbus
 			AddBox(Transform, Colour, ZTest);
 		}
 
-		void AddTri(const Vector3& A, const Vector3& B, const Vector3& C, const Vector4& Colour, bool ZTest = true)
+		void AddTri(const Vector3& A, const Vector3& B, const Vector3& C, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
 		{
 			DebugRenderObject Object {
 				.Type = DebugRenderObjectType::Tri,
@@ -93,7 +107,99 @@ namespace Columbus
 				.Colour = Colour,
 				.DrawOutline = false,
 				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
 				.Vertices = { A, B, C },
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddSphere(const Vector3& Pos, float Radius, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
+			Matrix Mat;
+			Mat.Scale(Vector3(Radius));
+			Mat.Translate(Pos);
+
+			DebugRenderObject Object{
+				.Type = DebugRenderObjectType::Sphere,
+				.Transform = Mat,
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddCone(const Vector3& Pos, float Radius, float Height, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
+			Matrix Mat;
+			Mat.Translate(Pos);
+
+			Vector3 Packed(Radius, Height, 0);
+
+			DebugRenderObject Object{
+				.Type = DebugRenderObjectType::Cone,
+				.Transform = Mat,
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
+				.Vertices = { Packed, {}, {} }
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddCylinder(const Vector3& Pos, float Radius, float Height, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
+			Matrix Mat;
+			Mat.Translate(Pos);
+
+			Vector3 Packed(Radius, Height, 0);
+
+			DebugRenderObject Object{
+				.Type = DebugRenderObjectType::Cylinder,
+				.Transform = Mat,
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
+				.Vertices = { Packed, {}, {} }
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddCapsule(const Vector3& Pos, float Radius, float Height, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
+			Matrix Mat;
+			Mat.Translate(Pos);
+
+			Vector3 Packed(Radius, Height, 0);
+
+			DebugRenderObject Object{
+				.Type = DebugRenderObjectType::Capsule,
+				.Transform = Mat,
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
+				.Vertices = { Packed, {}, {} }
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddMesh(const Matrix& Transform, Buffer* VB, Buffer* IB, u32 NumIndices, Vector4 Colour, bool Wireframe = false, bool ZTest = true)
+		{
+			DebugRenderObject Object{
+				.Type = DebugRenderObjectType::Mesh,
+				.Transform = Transform,
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
+				.Vertices = { {}, {}, {}},
+				.VertexBuffer = VB,
+				.IndexBuffer = IB,
+				.MeshNumIndices = NumIndices,
 			};
 			Objects.push_back(Object);
 		}

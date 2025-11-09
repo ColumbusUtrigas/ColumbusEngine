@@ -41,8 +41,6 @@
 
 // TEST
 #include <Physics/PhysicsWorld.h>
-#include <Physics/PhysicsShapeConvexHull.h>
-#include <Physics/PhysicsShapeSphere.h>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>

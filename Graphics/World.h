@@ -51,10 +51,12 @@ namespace Columbus
 		AThing* Parent = nullptr;
 		std::vector<AThing*> Children;
 
+		bool bTransformDirty = true;
 		bool bRenderStateDirty = false;
 		HStableThingId StableId;
 
 		bool bNeedsTicking = false;
+		bool bNeedsPostPhysicsTicking = false;
 		bool bTransientThing = false; // TODO: remove that - it's a hack to not save transient things in the level
 
 	public:
@@ -62,16 +64,24 @@ namespace Columbus
 
 		// Common functional definition
 
+		void SetWorldTransform(const Transform& WorldTransform);
+		const Transform& GetWorldTransform();
+
 		virtual void OnLoad();
 
 		virtual void OnCreate() { Trans.Update(); }
 		virtual void OnDestroy() {}
 
 		virtual void OnTick(float DeltaTime) {}
+		virtual void OnPostPhysics() {}
 
 		virtual void OnUpdateRenderState();
 
 		virtual void OnUiPropertyChange();
+
+	private:
+		void MarkTransformDirty();
+		void UpdateWorldTransform();
 	};
 
 	template <typename T>
@@ -178,11 +188,20 @@ namespace Columbus
 	protected:
 		std::vector<HStableMeshId> MeshPrimitives;
 
+		Rigidbody* EditorRigidbody; // used for picking objects
+
 	public:
-		std::vector<Rigidbody*> Rigidbodies;
+
+		HCollisionSettings CollisionSettings;
+		Rigidbody* PhysicsBody = nullptr;
 
 		AssetRef<Mesh2> Mesh;
 		std::vector<AssetRef<Material>> Materials;
+
+	public:
+		void CreatePhysicsState();
+
+		virtual void OnPostPhysics() override;
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
@@ -217,6 +236,16 @@ namespace Columbus
 		std::vector<AThing*> Things;
 	};
 
+	// We use property overrides for meshes that have been loaded from GLTF
+	// that's because we don't want to directly write meta stuff into the source asset.
+	// It is mesh-specific since having generic property overrides is an overkill right now.
+	struct HLevelThingMeshOverride
+	{
+		std::string TargetName; // name of the thing within level instance
+
+		HCollisionSettings CollisionSettings;
+	};
+
 	struct ALevelThing : public AThing
 	{
 		CREFLECT_BODY_STRUCT_VIRTUAL(ALevelThing);
@@ -228,6 +257,8 @@ namespace Columbus
 
 		std::vector<HStableThingId> ThingsIds;
 		std::string PreviousAssetPath;
+
+		std::vector<HLevelThingMeshOverride> MeshOverrides;
 
 	public:
 		virtual void OnLoad() override;
@@ -248,6 +279,11 @@ namespace Columbus
 		Vector3 IntersectionNormal;
 	};
 
+	enum class EWorldType
+	{
+		Game,
+		Editor,
+	};
 
 	struct EngineWorld
 	{
@@ -266,6 +302,8 @@ namespace Columbus
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> SceneGPU;
 		RenderView MainView;
+
+		EWorldType WorldType = EWorldType::Editor;
 
 	private:
 		std::vector<AEffectVolume*> EffectVolumes;
@@ -328,6 +366,7 @@ namespace Columbus
 }
 
 CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 1, "4112562B-4C50-47FD-B6F4-BAAC28FC4CE7");
+CREFLECT_DECLARE_STRUCT(Columbus::HLevelThingMeshOverride, 1, "461D2533-8AB5-4681-8109-10345C5D9129");
 
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AVolume, Columbus::AThing, 1, "EA5F80A9-684B-4F60-95A9-DBE4949B6268");

@@ -1,5 +1,4 @@
 #include <Scene/Transform.h>
-#include <Common/JSON/JSON.h>
 
 using namespace Columbus;
 
@@ -17,7 +16,7 @@ Transform::Transform(const Vector3& Pos, const Vector3& Rot, const Vector3& Scal
 {
 	Update();
 }
-	
+
 void Transform::Update()
 {
 	//if (Dirty)
@@ -27,35 +26,25 @@ void Transform::Update()
 		//ModelMatrix = Rotation.ToMatrix() * ModelMatrix;
 		ModelMatrix = ModelMatrix * Rotation.ToMatrix();
 		ModelMatrix.Translate(Position);
+
+		WorldToLocalMatrix = ModelMatrix.GetInverted();
 	}
 }
-	
-void Transform::SetMatrix(const Matrix& InMatrix)
+
+void Transform::SetFromMatrix(const Matrix& WorldMatrix)
 {
-	this->ModelMatrix = InMatrix;
+	Vector3 Rot;
+	WorldMatrix.DecomposeTransform(Position, Rot, Scale);
+	Rotation = Quaternion(Rot);
+	Update();
 }
-	
+
 const Matrix& Transform::GetMatrix() const
 {
 	return ModelMatrix;
 }
 
-void Transform::Serialize(JSON& J) const
+const Matrix& Transform::GetWorldToLocalMatrix()
 {
-	J["Position"] = Position;
-	J["Rotation"] = Rotation;
-	J["Scale"] = Scale;
+	return WorldToLocalMatrix;
 }
-
-void Transform::Deserialize(JSON& J)
-{
-	Position = J["Position"];
-	Rotation = J["Rotation"];
-	Scale = J["Scale"];
-}
-
-Transform::~Transform()
-{
-
-}
-

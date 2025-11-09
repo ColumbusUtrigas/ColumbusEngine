@@ -302,6 +302,7 @@ namespace Columbus
 		CullMode Cull = CullMode::Back;
 		bool FrontCounterClockwise = false;
 		int DepthBias = 0;
+		float LineWidth = 1.0f;
 		float DepthBiasClamp = 0;
 		float SlopeScaledDepthBias = 0;
 		bool DepthClipEnable = true;

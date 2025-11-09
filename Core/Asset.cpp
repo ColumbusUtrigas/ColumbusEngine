@@ -72,6 +72,8 @@ namespace Columbus
 		if (!LoadedAssets.contains(Path))
 		{
 			auto RealPath = (std::filesystem::path(DataPath) / Path).string();
+			std::replace(RealPath.begin(), RealPath.end(), '\\', '/');
+
 			if (AssetLoaderFunctions.contains(Type))
 			{
 				// load asset using the registered loader function

@@ -5,12 +5,13 @@
 #include <Math/Vector3.h>
 #include <Scene/Transform.h>
 #include <Core/Types.h>
-#include <Core/ISerializable.h>
 
 namespace Columbus
 {
 
-	class Rigidbody : public ISerializable
+	struct Mesh2;
+
+	class Rigidbody
 	{
 	protected:
 		bool Static;
@@ -25,14 +26,13 @@ namespace Columbus
 		float LinearDamping;
 		Vector3 LinearFactor;
 
-		PhysicsShape* Shape;
 		Transform Trans;
 	public:
 		btRigidBody* mRigidbody;
 	public:
 		Rigidbody(btCollisionShape* InShape);
-		Rigidbody(PhysicsShape* InShape = nullptr);
-		Rigidbody(Transform InTransform, PhysicsShape* INShape = nullptr);
+
+		void SetCollisionSettings(const HCollisionSettings& Settings);
 
 		virtual void Activate();
 		virtual void ApplyCentralForce(Vector3 Force);
@@ -57,7 +57,6 @@ namespace Columbus
 		virtual void SetLinearFactor(Vector3 InFactor);
 		virtual void SetLinearVelocity(Vector3 Velocity);
 		virtual void SetGravity(Vector3 Gravity);
-		virtual void SetCollisionShape(PhysicsShape* InShape);
 
 		virtual bool IsStatic() const;
 		virtual Transform GetTransform() const;
@@ -74,10 +73,6 @@ namespace Columbus
 		virtual Vector3 GetLinearFactor() const;
 		virtual Vector3 GetLinearVelocity() const;
 		virtual Vector3 GetGravity() const;
-		virtual PhysicsShape* GetCollisionShape() const;
-
-		virtual void Serialize(JSON& J) const override;
-		virtual void Deserialize(JSON& J) override;
 
 		~Rigidbody();
 	};
