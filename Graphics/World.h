@@ -148,6 +148,8 @@ namespace Columbus
 		float Range = 10.0f;
 		float SourceRadius = 0.0f;
 		bool  Shadows = false;
+		bool  AffectVolumetricFog = true;
+		float VolumetricIntensity = 1.0f;
 
 		// spot
 		float InnerAngle = 40.0f;
@@ -233,6 +235,7 @@ namespace Columbus
 	{
 		EngineWorld* World = nullptr;
 
+		HEffectsSettings EffectsSettings;
 		std::vector<AThing*> Things;
 	};
 
@@ -301,6 +304,7 @@ namespace Columbus
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> SceneGPU;
 		RenderView MainView;
+		HEffectsSettings LevelEffectsSettings;
 
 		EWorldType WorldType = EWorldType::Editor;
 

@@ -33,7 +33,7 @@ namespace Columbus
 		BLEND_SCALAR(Sky.StarsBrightness);
 		BLEND_SCALAR(Sky.StarsDensity);
 
-		// Note: don't blend sample counts — usually discrete/static
+		// Note: don't blend sample counts - usually discrete/static
 		// Keep higher one?
 		Sky.Samples = Math::Max(Sky.Samples, Other.Sky.Samples);
 		Sky.LightSamples = Math::Max(Sky.LightSamples, Other.Sky.LightSamples);
@@ -49,6 +49,29 @@ namespace Columbus
 		BLEND_SCALAR(ColourCorrection.HueShift);
 		BLEND_SCALAR(ColourCorrection.Temperature);
 		BLEND_SCALAR(ColourCorrection.Tint);
+
+		// Volumetric Fog
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.Density);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.HeightFalloff);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.HeightOffset);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.MaxDistance);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.Anisotropy);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.NoiseScale);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.NoiseAmount);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.ShadowStrength);
+		BLEND_IF_ENABLED_VECTOR(VolumetricFog.EnableVolumetricFog, VolumetricFog.Albedo);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.TemporalBlend);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.SkyTransmittance);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.ShadowJitter);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.FroxelJitter);
+		BLEND_IF_ENABLED(VolumetricFog.EnableVolumetricFog, VolumetricFog.HistoryClip);
+
+		VolumetricFog.FroxelPixelSize = Math::Max(VolumetricFog.FroxelPixelSize, Other.VolumetricFog.FroxelPixelSize);
+		VolumetricFog.FroxelSlices = Math::Max(VolumetricFog.FroxelSlices, Other.VolumetricFog.FroxelSlices);
+		VolumetricFog.IntegrationSteps = Math::Max(VolumetricFog.IntegrationSteps, Other.VolumetricFog.IntegrationSteps);
+		VolumetricFog.SampleFilter = Math::Max(VolumetricFog.SampleFilter, Other.VolumetricFog.SampleFilter);
+		VolumetricFog.MaxLights = Math::Max(VolumetricFog.MaxLights, Other.VolumetricFog.MaxLights);
+		VolumetricFog.ShadowSamples = Math::Max(VolumetricFog.ShadowSamples, Other.VolumetricFog.ShadowSamples);
 
 		// Depth of Field
 		BLEND_IF_ENABLED(DepthOfField.EnableDoF, DepthOfField.FStop);
@@ -139,9 +162,34 @@ CREFLECT_STRUCT_BEGIN(HColourCorrectionSettings)
 	CREFLECT_STRUCT_FIELD(float, Tint, "")
 CREFLECT_STRUCT_END()
 
+CREFLECT_STRUCT_BEGIN(HVolumetricFogSettings)
+	CREFLECT_STRUCT_FIELD(bool, EnableVolumetricFog, "")
+	CREFLECT_STRUCT_FIELD(float, Density, "")
+	CREFLECT_STRUCT_FIELD(float, HeightFalloff, "")
+	CREFLECT_STRUCT_FIELD(float, HeightOffset, "")
+	CREFLECT_STRUCT_FIELD(float, MaxDistance, "")
+	CREFLECT_STRUCT_FIELD(float, Anisotropy, "")
+	CREFLECT_STRUCT_FIELD(float, NoiseScale, "")
+	CREFLECT_STRUCT_FIELD(float, NoiseAmount, "")
+	CREFLECT_STRUCT_FIELD(float, ShadowStrength, "")
+	CREFLECT_STRUCT_FIELD(int, FroxelPixelSize, "")
+	CREFLECT_STRUCT_FIELD(int, FroxelSlices, "")
+	CREFLECT_STRUCT_FIELD(int, IntegrationSteps, "")
+	CREFLECT_STRUCT_FIELD(int, SampleFilter, "")
+	CREFLECT_STRUCT_FIELD(int, MaxLights, "")
+	CREFLECT_STRUCT_FIELD(int, ShadowSamples, "")
+	CREFLECT_STRUCT_FIELD(float, TemporalBlend, "")
+	CREFLECT_STRUCT_FIELD(float, SkyTransmittance, "")
+	CREFLECT_STRUCT_FIELD(float, ShadowJitter, "")
+	CREFLECT_STRUCT_FIELD(float, FroxelJitter, "")
+	CREFLECT_STRUCT_FIELD(float, HistoryClip, "")
+	CREFLECT_STRUCT_FIELD(Vector4, Albedo, "Colour,HDR")
+CREFLECT_STRUCT_END()
+
 CREFLECT_STRUCT_BEGIN(HEffectsSettings)
 	CREFLECT_STRUCT_FIELD(HSkySettings, Sky, "")
 	CREFLECT_STRUCT_FIELD(HColourCorrectionSettings, ColourCorrection, "")
+	CREFLECT_STRUCT_FIELD(HVolumetricFogSettings, VolumetricFog, "")
 	CREFLECT_STRUCT_FIELD(HDepthOfFieldSettings, DepthOfField, "")
 	CREFLECT_STRUCT_FIELD(HFilmGrainSettings, FilmGrain, "")
 	CREFLECT_STRUCT_FIELD(HChromaticAberrationSettings, ChromaticAberration, "")

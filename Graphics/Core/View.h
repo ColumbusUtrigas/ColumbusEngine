@@ -91,10 +91,39 @@ namespace Columbus
 		int _pad[10]; // 128
 	};
 
+	struct HVolumetricFogSettings
+	{
+		bool EnableVolumetricFog = false;
+		float Density = 0.02f;
+		float HeightFalloff = 0.1f;
+		float HeightOffset = 0.0f;
+
+		float MaxDistance = 200.0f;
+		float Anisotropy = 0.2f;
+		float NoiseScale = 0.03f; // world-space density noise frequency
+		float NoiseAmount = 0.25f; // world-space density noise amplitude
+
+		float ShadowStrength = 1.0f;
+		int FroxelPixelSize = 16;
+		int FroxelSlices = 128;
+		int IntegrationSteps = 32;
+		int SampleFilter = 1; // 0 linear, 1 stochastic, 2 bicubic fast, 3 tricubic
+
+		int MaxLights = 4;
+		int ShadowSamples = 1;
+		float TemporalBlend = 0.97f;
+		float SkyTransmittance = 0.25f;
+		float ShadowJitter = 1.0f;
+		float FroxelJitter = 1.0f; // temporal froxel sampling jitter (not density noise)
+		float HistoryClip = 0.2f;
+		Vector4 Albedo = Vector4(0.95f, 0.97f, 1.0f, 0.0f);
+	};
+
 	struct HEffectsSettings
 	{
 		HSkySettings                 Sky;
 		HColourCorrectionSettings    ColourCorrection;
+		HVolumetricFogSettings       VolumetricFog;
 		HDepthOfFieldSettings        DepthOfField;
 		HFilmGrainSettings           FilmGrain;
 		HChromaticAberrationSettings ChromaticAberration;
@@ -123,6 +152,7 @@ namespace Columbus
 
 CREFLECT_DECLARE_STRUCT(Columbus::HSkySettings,                 1, "C8CD8A8A-05D2-4428-B6C5-324C0333964F");
 CREFLECT_DECLARE_STRUCT(Columbus::HColourCorrectionSettings,    1, "2AB3A87D-9012-4627-8F00-4634A5614EC0");
+CREFLECT_DECLARE_STRUCT(Columbus::HVolumetricFogSettings,       1, "D8EE08F3-4CB4-4E1B-8D2B-FD2EC2D3EE1B");
 CREFLECT_DECLARE_STRUCT(Columbus::HDepthOfFieldSettings,        1, "C222F247-7DF5-4CD9-B515-DA23DC1CD9EB");
 CREFLECT_DECLARE_STRUCT(Columbus::HFilmGrainSettings,           1, "9B03BC30-0A0B-4AED-96A8-278DEFDB81F0");
 CREFLECT_DECLARE_STRUCT(Columbus::HChromaticAberrationSettings, 1, "98F10CDD-9535-4138-9F9A-5A0414B805F4");

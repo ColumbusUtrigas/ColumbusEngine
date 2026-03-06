@@ -333,6 +333,9 @@ namespace Columbus
 		case EDeferredRenderVisualisationMode::RTGI:
 			ImagesParams[0].TextureToVisualise = Textures.RTGI;
 			break;
+		case EDeferredRenderVisualisationMode::VolumetricFog:
+			ImagesParams[0].TextureToVisualise = Textures.VolumetricFog;
+			break;
 		default:
 			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
 			break;

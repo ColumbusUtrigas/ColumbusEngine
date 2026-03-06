@@ -71,6 +71,7 @@ namespace Columbus
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
 		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
 		Result.Lightmap = Graph.CreateTexture(LightmapDesc, "Lightmap");
+		Result.VolumetricFog = Result.GBufferAlbedo;
 
 		// history textures
 		Graph.CreateHistoryTexture(&Result.History.Depth, DSDesc, "GBufferDS History");
@@ -92,6 +93,7 @@ namespace Columbus
 		Device->DestroyTexture(Depth);
 		Device->DestroyTexture(RoughnessMetallic);
 		Device->DestroyTexture(Normals);
+		Device->DestroyTexture(VolumetricFogFroxels);
 	}
 
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
@@ -402,6 +404,7 @@ namespace Columbus
 					"Reflections",
 					"RTGI",
 					"RadianceCache",
+					"VolumetricFog",
 				};
 
 				ImGui::Combo("Visualisation mode", (int*)&DeferredContext.VisualisationMode, Combos, sizeof(Combos) / sizeof(Combos[0]));
@@ -468,6 +471,7 @@ namespace Columbus
 
 		Textures.FinalBeforeTonemap = RenderDeferredLightingPass(Graph, View, Textures, DeferredContext);
 		RenderDeferredSky(Graph, View, Textures, DeferredContext, Textures.FinalBeforeTonemap);
+		Textures.FinalBeforeTonemap = RenderVolumetricFog(Graph, View, Textures, Textures.FinalBeforeTonemap);
 		RenderDeferredTransparency(Graph, View, Textures, DeferredContext);
 
 		// TODO: find a way to apply DoF after TAA

@@ -32,6 +32,7 @@ namespace Columbus
 		Reflections,
 		RTGI,
 		RadianceCache,
+		VolumetricFog,
 	};
 
 	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View);
@@ -79,6 +80,7 @@ namespace Columbus
 		Texture2* Depth = nullptr;
 		Texture2* RoughnessMetallic = nullptr;
 		Texture2* Normals = nullptr;
+		Texture2* VolumetricFogFroxels = nullptr;
 
 		Texture2* TAAHistory = nullptr;
 
@@ -134,6 +136,7 @@ namespace Columbus
 
 		RenderGraphTextureRef RTReflections;
 		RenderGraphTextureRef RTGI;
+		RenderGraphTextureRef VolumetricFog;
 
 		RenderGraphTextureRef FinalBeforeTonemap;
 		RenderGraphTextureRef FinalAfterTonemap;
@@ -202,6 +205,7 @@ namespace Columbus
 
 	void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context);
 	void RenderDeferredSky(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context, RenderGraphTextureRef OverTexture);
+	RenderGraphTextureRef RenderVolumetricFog(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef SceneTexture);
 	void RenderDeferredTransparency(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context);
 
 	// Real-time raytracing

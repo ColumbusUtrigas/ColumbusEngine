@@ -22,6 +22,15 @@ struct GPUViewCamera
 	int _pad[14]; // 512
 };
 
+struct GPUVolumetricFogSettings
+{
+	float4 AlbedoDensity; // rgb albedo, a density
+	float4 Params0; // x height falloff, y height offset, z max distance, w anisotropy
+	float4 Params1; // x noise scale, y noise amount, z shadow strength, w unused
+	int4 Control; // x enabled, y froxel pixel size, z froxel slices, w integration steps
+	int4 Control2; // x max lights
+};
+
 struct GPUSceneStruct
 {
 	// view description
@@ -48,6 +57,7 @@ struct GPUSceneStruct
     uint _pad[3];
 	
     SkySettings Sky;
+	GPUVolumetricFogSettings VolumetricFog;
 };
 
 struct GPULight
@@ -58,10 +68,11 @@ struct GPULight
 	uint   Type;
 	float  Range;
 	float  SourceRadius;
+	float  VolumetricIntensity;
 	uint Flags; // 64
-    float2 SizeOrSpotAngles; // 72
+    float2 SizeOrSpotAngles; // 76
 	
-    int _pad[14]; // 128
+    int _pad[13]; // 128
 };
 
 #define GPULIGHT_FLAG_TWOSIDED 1

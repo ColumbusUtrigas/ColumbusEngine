@@ -659,6 +659,7 @@ namespace Columbus
 
 		HLevel* Level = new HLevel{};
 		Level->World = this;
+		Reflection_DeserialiseStructJson(*Level, json);
 		for (auto& thing : json["things"])
 		{
 			AThing* NewThing = Reflection_DeserialiseStructJson_NewInstance<AThing>(thing);
@@ -686,11 +687,16 @@ namespace Columbus
 		{
 			DeleteThing(AllThings[0]->StableId);
 		}
+
+		LevelEffectsSettings = {};
 	}
 
 	void EngineWorld::SaveWorldLevel(const char* Path)
 	{
 		nlohmann::json json;
+		HLevel LevelMetadata;
+		LevelMetadata.EffectsSettings = LevelEffectsSettings;
+		Reflection_SerialiseStructJson(LevelMetadata, json);
 		json["things"].array();
 
 		for (int i = 0; i < AllThings.Size(); i++)
@@ -715,6 +721,8 @@ namespace Columbus
 
 	void EngineWorld::AddLevel(HLevel* Level)
 	{
+		LevelEffectsSettings = Level->EffectsSettings;
+
 		for (AThing* Thing : Level->Things)
 		{
 			Thing->World = this;
@@ -999,7 +1007,7 @@ namespace Columbus
 		UpdateTransforms();
 
 		// update effects volumes
-		HEffectsSettings EffectsSettings;
+		HEffectsSettings EffectsSettings = LevelEffectsSettings;
 		{
 			// sort effect volumes by priority
 			std::sort(EffectVolumes.begin(), EffectVolumes.end(), [](const AEffectVolume* A, const AEffectVolume* B) {
@@ -1020,6 +1028,7 @@ namespace Columbus
 		}
 
 		SceneGPU->Sky = EffectsSettings.Sky;
+		SceneGPU->VolumetricFog = EffectsSettings.VolumetricFog;
 		MainView.EffectsSettings = EffectsSettings;
 		MainView.UI = &UI;
 	}
@@ -1239,6 +1248,7 @@ namespace Columbus
 		GL.Direction = (Vector4(1, 0, 0, 1) * RotMat).Normalized();
 		GL.Range = Range;
 		GL.SourceRadius = SourceRadius;
+		GL.VolumetricIntensity = AffectVolumetricFog ? VolumetricIntensity : 0.0f;
 		GL.Type = Type;
 
 		if (Shadows)
@@ -1620,6 +1630,7 @@ CREFLECT_STRUCT_BEGIN(Sound, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HLevel, "")
+	CREFLECT_STRUCT_FIELD(HEffectsSettings, EffectsSettings, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HLevelThingMeshOverride, "")
@@ -1669,6 +1680,8 @@ CREFLECT_STRUCT_BEGIN(ALight, "")
 	CREFLECT_STRUCT_FIELD(float, Range, "")
 	CREFLECT_STRUCT_FIELD(float, SourceRadius, "")
 	CREFLECT_STRUCT_FIELD(bool, Shadows, "")
+	CREFLECT_STRUCT_FIELD(bool, AffectVolumetricFog, "")
+	CREFLECT_STRUCT_FIELD(float, VolumetricIntensity, "")
 
 	CREFLECT_STRUCT_FIELD(float, InnerAngle, "")
 	CREFLECT_STRUCT_FIELD(float, OuterAngle, "")

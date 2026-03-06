@@ -87,10 +87,20 @@ namespace Columbus
 		LightType Type;
 		float Range;
 		float SourceRadius;
+		float VolumetricIntensity;
 		ELightFlags Flags; // 64
-		Vector2 SizeOrSpotAngles; // 72
+		Vector2 SizeOrSpotAngles; // 76
 
-		u32 _pad[14]; // 128
+		u32 _pad[13]; // 128
+	};
+
+	struct GPUVolumetricFogSettings
+	{
+		Vector4 AlbedoDensity; // rgb albedo, a density
+		Vector4 Params0; // x height falloff, y height offset, z max distance, w anisotropy
+		Vector4 Params1; // x noise scale, y noise amount, z shadow strength, w unused
+		iVector4 Control; // x enabled, y froxel pixel size, z froxel slices, w integration steps
+		iVector4 Control2; // x max lights
 	};
 
 	struct GPUDecal
@@ -179,6 +189,7 @@ namespace Columbus
 		u32 _pad[3]; // 1136
 
 		HSkySettings Sky;
+		GPUVolumetricFogSettings VolumetricFog;
 	};
 
 	using HStableLightId     = TStableSparseArray<GPULight>::Handle;
@@ -214,6 +225,7 @@ namespace Columbus
 
 		// copied over from World
 		HSkySettings Sky;
+		HVolumetricFogSettings VolumetricFog;
 
 		Vector4 SunDirection = Vector4(1,1,1,0);
 

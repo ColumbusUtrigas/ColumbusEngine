@@ -88,6 +88,7 @@ namespace Columbus
 		Vector4 SHB(1, 0, 0, 0);
 
 		HSkySettings SkyConverted = Sky;
+		HVolumetricFogSettings FogConverted = VolumetricFog;
 		// convert units
 		{
 			SkyConverted.SunAngularRadius = Math::Radians(SkyConverted.SunAngularRadius);
@@ -99,7 +100,27 @@ namespace Columbus
 			SkyConverted.MieHeight          *= 1000;
 			SkyConverted.OzonePeak          *= 1000;
 			SkyConverted.OzoneFalloff       *= 1000;
+
+			FogConverted.Density = Math::Max(0.0f, FogConverted.Density);
+			FogConverted.HeightFalloff = Math::Max(0.0f, FogConverted.HeightFalloff);
+			FogConverted.MaxDistance = Math::Max(1.0f, FogConverted.MaxDistance);
+			FogConverted.Anisotropy = Math::Clamp(FogConverted.Anisotropy, -0.95f, 0.95f);
+			FogConverted.NoiseScale = Math::Max(0.0001f, FogConverted.NoiseScale);
+			FogConverted.NoiseAmount = Math::Clamp(FogConverted.NoiseAmount, 0.0f, 1.0f);
+			FogConverted.ShadowStrength = Math::Clamp(FogConverted.ShadowStrength, 0.0f, 2.0f);
+			FogConverted.FroxelPixelSize = Math::Clamp(FogConverted.FroxelPixelSize, 4, 64);
+			FogConverted.FroxelSlices = Math::Clamp(FogConverted.FroxelSlices, 8, 256);
+			FogConverted.IntegrationSteps = Math::Clamp(FogConverted.IntegrationSteps, 4, 256);
+			FogConverted.MaxLights = Math::Clamp(FogConverted.MaxLights, 1, 256);
 		}
+
+		GPUVolumetricFogSettings FogGPU{
+			.AlbedoDensity = Vector4(FogConverted.Albedo.X, FogConverted.Albedo.Y, FogConverted.Albedo.Z, FogConverted.Density),
+			.Params0 = Vector4(FogConverted.HeightFalloff, FogConverted.HeightOffset, FogConverted.MaxDistance, FogConverted.Anisotropy),
+			.Params1 = Vector4(FogConverted.NoiseScale, FogConverted.NoiseAmount, FogConverted.ShadowStrength, 0.0f),
+			.Control = iVector4(FogConverted.EnableVolumetricFog ? 1 : 0, FogConverted.FroxelPixelSize, FogConverted.FroxelSlices, FogConverted.IntegrationSteps),
+			.Control2 = iVector4(FogConverted.MaxLights, 0, 0, 0),
+		};
 
 		return GPUSceneCompact
 		{
@@ -121,6 +142,7 @@ namespace Columbus
 			.DecalsCount    = (u32)Decals.Size(),
 
 			.Sky = SkyConverted,
+			.VolumetricFog = FogGPU,
 		};
 	}
 
