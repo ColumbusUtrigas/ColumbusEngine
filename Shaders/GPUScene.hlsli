@@ -77,19 +77,22 @@ struct GPULight
 struct GPUSceneMeshCompact
 {
 	float4x4 Transform; // 64
+    float4x4 NormalMatrix; // 128
 
-	uint64_t VertexBuffer;   // 72
-	uint64_t IndexBuffer;    // 80
-	uint64_t Uv1Buffer;      // 88
-	uint64_t Uv2Buffer;      // 96
-	uint64_t NormalsBuffer;  // 104
-	uint64_t TangentsBuffer; // 112
+	uint64_t VertexBuffer;   // 136
+	uint64_t IndexBuffer;    // 144
+	uint64_t Uv1Buffer;      // 152
+	uint64_t Uv2Buffer;      // 160
+	uint64_t NormalsBuffer;  // 168
+	uint64_t TangentsBuffer; // 176
 
-	uint VertexCount; // 116
-	uint IndexCount;  // 120
+	uint VertexCount; // 180
+	uint IndexCount;  // 184
 
-	int MaterialId; // 124
-	int LightmapId; // 128
+	int MaterialId; // 188
+	int LightmapId; // 192
+
+    int _pad[16]; // 256
 };
 
 struct GPUSceneMaterialCompact
@@ -113,6 +116,7 @@ struct GPUMaterialSampledData
 {
     float3 Albedo;
     float3 Normal; // -1 to 1, tangent space
+    float  Occlusion;
     float  Roughness;
     float  Metallic;
 };
@@ -241,10 +245,14 @@ namespace GPUScene
             GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
 
             Result.Albedo = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1)).rgb * Material.AlbedoFactor.rgb;
-            Result.Normal = SampleTextureWithDefault(Material.NormalId, UV, float4(0, 0, 1, 0)).rgb;
+            Result.Normal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0)).rgb;
+			
+            Result.Normal = normalize(Result.Normal * 2.0f - 1.0f);
+            Result.Normal.y *= -1.0f; // OpenGL to DX convention
 
             float3 ORM = SampleTextureWithDefault(Material.OrmId, UV, float4(1, Material.Roughness, Material.Metallic, 1)).rgb;
 
+            Result.Occlusion = ORM.r;
             Result.Roughness = ORM.g;
             Result.Metallic = ORM.b;
         }
@@ -252,6 +260,7 @@ namespace GPUScene
         {
             Result.Albedo = float3(1,1,1);
             Result.Normal = float3(0, 0, 1);
+            Result.Occlusion = 1;
             Result.Roughness = 1;
             Result.Metallic = 0;
         }

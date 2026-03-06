@@ -255,7 +255,6 @@ namespace Columbus
 		AssetRef<HLevel> LevelAsset;
 		HLevel* LevelCopy = nullptr;
 
-		std::vector<HStableThingId> ThingsIds;
 		std::string PreviousAssetPath;
 
 		std::vector<HLevelThingMeshOverride> MeshOverrides;

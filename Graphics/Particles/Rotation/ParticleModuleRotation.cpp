@@ -19,20 +19,24 @@ namespace Columbus
 		}
 	}
 
-	void ParticleModuleRotation::Update(ParticleContainer& Container) const
+	void ParticleModuleRotation::Update(ParticleContainer& Container, float DeltaTime) const
 	{
 	#if USE_SIMD_EXTENSIONS
+		__m128 DeltaTimes = _mm_set_ps1(DeltaTime);
+
 		for (size_t i = 0, id = 0; i < (Container.Count + 3) / 4; i++, id += 4)
 		{
 			__m128 RotationVelocities = _mm_load_ps(&Container.RotationVelocities[id]);
-			__m128 Ages = _mm_load_ps(&Container.Ages[id]);
-			__m128 Rotations = _mm_mul_ps(RotationVelocities, Ages);
+			__m128 Delta = _mm_mul_ps(RotationVelocities, DeltaTimes);
+
+			__m128 Rotations = _mm_load_ps(&Container.Rotations[id]);
+			Rotations = _mm_add_ps(Rotations, Delta);
 			_mm_store_ps(&Container.Rotations[id], Rotations);
 		}
 	#else
 		for (size_t i = 0; i < Container.Count; i++)
 		{
-			Container.Rotations[i] = Container.RotationVelocities[i] * Container.Ages[i];
+			Container.Rotations[i] += Container.RotationVelocities[i] * DeltaTime;
 		}
 	#endif
 	}

@@ -159,7 +159,7 @@ namespace Columbus
 				u32 BlockSize = Info.CompressedBlockSizeBits / 8;
 				for (u32 Level = 0; Level < Mips; Level++)
 				{
-					Size += (((Width >> Level) + 3) / 4) * (((Height >> Level) + 3) / 4) * BlockSize;
+					Size += ((Math::Max(1u, Width >> Level) + 3) / 4) * ((Math::Max(1u, Height >> Level) + 3) / 4) * BlockSize;
 				}
 			}
 			else
@@ -167,7 +167,7 @@ namespace Columbus
 				u32 BPP = Info.BitsPerPixel / 8;
 				for (u32 Level = 0; Level < Mips; Level++)
 				{
-					Size += (Width >> Level) * (Height >> Level) * BPP;
+					Size += Math::Max(1u, Width >> Level) * Math::Max(1u, Height >> Level) * BPP;
 				}
 			}
 
@@ -190,11 +190,11 @@ namespace Columbus
 
 			if (FormatInfo.HasCompression)
 			{
-				return (((Width >> Mip) + 3) / 4) * (((Height >> Mip) + 3) / 4) * Math::Max(1u, Depth >> Mip) * (FormatInfo.CompressedBlockSizeBits / 8);
+				return ((Math::Max(1u, Width >> Mip) + 3) / 4) * ((Math::Max(1u, Height >> Mip) + 3) / 4) * Math::Max(1u, Depth >> Mip) * (FormatInfo.CompressedBlockSizeBits / 8);
 			}
 			else
 			{
-				return ((Width >> Mip) * (Height >> Mip) * Math::Max(1u, Depth >> Mip) * FormatInfo.BitsPerPixel) / 8;
+				return (Math::Max(1u, Width >> Mip) * Math::Max(1u, Height >> Mip) * Math::Max(1u, Depth >> Mip) * FormatInfo.BitsPerPixel) / 8;
 			}
 
 			return 0;
@@ -334,6 +334,75 @@ namespace Columbus
 		}
 	}
 
+	Image& Image::operator=(const Image& Other)
+	{
+		FreeData();
+		Width = Other.Width;
+		Height = Other.Height;
+		Depth = Other.Depth;
+		MipMaps = Other.MipMaps;
+		Format = Other.Format;
+		Exist = Other.Exist;
+		Size = Other.Size;
+		Type = Other.Type;
+
+		if (Other.Data)
+		{
+			u64 DataSize = GetFullSize();
+			Data = new u8[DataSize];
+			memcpy(Data, Other.Data, DataSize);
+		}
+
+		return *this;
+	}
+
+	Image::Image(Image&& Base) noexcept
+	{
+		Width = Base.Width;
+		Height = Base.Height;
+		Depth = Base.Depth;
+		MipMaps = Base.MipMaps;
+		Size = Base.Size;
+		Format = Base.Format;
+		Data = Base.Data;
+		Exist = Base.Exist;
+		Type = Base.Type;
+
+		Base.Data = nullptr;
+		Base.Width = Base.Height = Base.Depth = Base.MipMaps = 0;
+		Base.Size = 0;
+		Base.Exist = false;
+		Base.Format = TextureFormat::RGBA8;
+		Base.Type = ImageType::Image2D;
+	}
+
+	Image& Image::operator=(Image&& Base) noexcept
+	{
+		if (this != &Base)
+		{
+			FreeData();
+
+			Width = Base.Width;
+			Height = Base.Height;
+			Depth = Base.Depth;
+			MipMaps = Base.MipMaps;
+			Size = Base.Size;
+			Format = Base.Format;
+			Data = Base.Data;
+			Exist = Base.Exist;
+			Type = Base.Type;
+
+			Base.Data = nullptr;
+			Base.Width = Base.Height = Base.Depth = Base.MipMaps = 0;
+			Base.Size = 0;
+			Base.Exist = false;
+			Base.Format = TextureFormat::RGBA8;
+			Base.Type = ImageType::Image2D;
+		}
+
+		return *this;
+	}
+
 	void Image::AllocImage(u32 W, u32 H, u32 D, u32 Mips, TextureFormat InFormat, ImageType InType)
 	{
 		FreeData();
@@ -430,7 +499,7 @@ namespace Columbus
 		Z = Math::Clamp(Z, 0u, Depth - 1);
 
 		u64 PixelOffset = (TextureFormatGetInfo(Format).BitsPerPixel / 8) * (X + Y * Width + Z * Width * Height);
-		u8* PixelPtr = Data +PixelOffset;
+		u8* PixelPtr = Data + PixelOffset;
 
 		switch (Format)
 		{
@@ -673,30 +742,26 @@ namespace Columbus
 					int NumSamples = Img.Type == ImageType::Image3D ? 8 : 4;
 
 					// compute next mip
-					for (u32 z = 0; z < NextMip.Depth; z++)
+					for (u32 z = 0; z < NextMip.Depth;  z++)
+					for (u32 y = 0; y < NextMip.Height; y++)
+					for (u32 x = 0; x < NextMip.Width;  x++)
 					{
-						for (u32 y = 0; y < NextMip.Height; y++)
+						Vector4 AveragePixel(0);
+						for (int i = 0; i < NumSamples; ++i)
 						{
-							for (u32 x = 0; x < NextMip.Width; x++)
-							{
-								Vector4 Pixels[8];
+							u32 sx = x * 2 + SampleOffsetsX[i];
+							u32 sy = y * 2 + SampleOffsetsY[i];
+							u32 sz = z * 2 + SampleOffsetsZ[i];
 
-								for (int i = 0; i < NumSamples; i++)
-								{
-									CurrentMip.ReadPixelRGBA32F((float*)&Pixels[i], x * 2 + SampleOffsetsX[i], y * 2 + SampleOffsetsY[i], z * 2 + SampleOffsetsZ[i]);
-								}
-
-								Vector4 AveragePixel(0);
-								for (int i = 0; i < NumSamples; i++)
-								{
-									AveragePixel += Pixels[i];
-								}
-								AveragePixel /= (float)NumSamples;
-
-								NextMip.WritePixelRGBA32F((float*)&AveragePixel, x, y, z);
-							}
+							Vector4 p;
+							CurrentMip.ReadPixelRGBA32F((float*)&p, sx, sy, sz);
+							AveragePixel += p;
 						}
+						AveragePixel /= (float)NumSamples;
+
+						NextMip.WritePixelRGBA32F((float*)&AveragePixel, x, y, z);
 					}
+					// triple loop ends here
 				}
 			}
 		}

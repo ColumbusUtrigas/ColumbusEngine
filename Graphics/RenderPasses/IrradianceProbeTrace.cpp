@@ -8,6 +8,16 @@
 namespace Columbus
 {
 
+	// Roadmap:
+	// - Resources definition and tooling/workflow preparation goes first
+	// - Allocation process
+	// - Baking into spherical harmonics or octohedrals
+	// - Saving process (level lighting data)
+	// - Loading process from the level lighting data
+	// - Efficient rendering
+	// - Data compression BC6H
+	// - Dynamicity support - turning off light sources, changing weather params, changing scene lighting setups
+
 	struct GPUIrradianceProbe
 	{
 		alignas(16) Vector3 Position; // 16

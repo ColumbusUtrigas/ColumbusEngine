@@ -29,8 +29,12 @@ namespace Columbus
 			for (u32 i = 0; i < NumMeshes; i++)
 			{
 				const GPUSceneMesh& Mesh = Graph.Scene->Meshes[i];
+
+				Matrix NormalMatrix = Mesh.Transform.GetInverted().GetTransposed();
+
 				GPUSceneMeshCompact Compact{
 					.Transform = Mesh.Transform,
+					.NormalMatrix = NormalMatrix,
 					.VertexBufferAddress = Mesh.MeshResource->Vertices->GetDeviceAddress(),
 					.IndexBufferAddress = Mesh.MeshResource->Indices->GetDeviceAddress(),
 					.Uv1BufferAddress = Mesh.MeshResource->UV1->GetDeviceAddress(),

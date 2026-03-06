@@ -69,6 +69,7 @@ float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure A
 {
 	float3 Result = float3(0, 0, 0);
 	
+	// TODO: sample from a grid
 	for (uint l = 0; l < GPUScene::GetLightsCount(); l++)
 	{
 		float3 LightSample = float3(0, 0, 0);
@@ -78,22 +79,45 @@ float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure A
 
 		float2 Xi = Random::UniformDistrubition2d(RngState);
 		// TODO: light PDF, as every time we do a random decision, we need to weight it by it's probability
+		
+        GPULight Light = GPUScene::GPUSceneLights[l];
+		
+        float Attenuation = 0.0f;
+        float Distance = distance(Light.Position.xyz, Origin);
+		
+		// TODO: unify it with code path in GBufferLightingPass.hlsl
 
-		GPULight Light = GPUScene::GPUSceneLights[l];
 		switch (Light.Type)
 		{
 		case GPULIGHT_DIRECTIONAL:
 			LightSample = SampleDirectionalLight(AS, Light, Origin, BRDF.N, Xi);
 			BRDF.L = Light.Direction.xyz;
+            Attenuation = 1.0f;
 			break;
 		case GPULIGHT_POINT:
 			LightSample = SamplePointLight(AS, Light, Origin, BRDF.N, Xi);
 			// TODO: account for sphere light
 			BRDF.L = normalize(Light.Position.xyz - Origin);
+            Attenuation = clamp(1.0 - Distance * Distance / (Light.Range * Light.Range), 0.0, 1.0);
+            Attenuation *= Attenuation;
 			break;
-		}
+		case GPULIGHT_SPOT:
+            LightSample = SamplePointLight(AS, Light, Origin, BRDF.N, Xi);
+			
+            Attenuation = clamp(1.0 - Distance * Distance / (Light.Range * Light.Range), 0.0, 1.0);
+            Attenuation *= Attenuation;
+            BRDF.L = normalize(Light.Position.xyz - Origin);
 
-        Result += EvaluateBRDF(BRDF, float3(1, 1, 1)) * LightSample;
+            float angle = saturate(dot(BRDF.L, Light.Direction.xyz));
+            float2 angles = Light.SizeOrSpotAngles;
+
+            Attenuation *= smoothstep(angles.y, angles.x, angle);
+            break;
+			
+			// TODO: area lights
+        }
+
+        Result += EvaluateBRDF(BRDF, float3(1, 1, 1)) * LightSample * Attenuation;
     }
 	
 	return Result;
@@ -162,7 +186,7 @@ float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 			}
 			#endif
 
-            PathRadiance += RayTraceEvaluateDirectLighting(AS, Origin, RngState, BRDF) * PathAttenuation;
+			PathRadiance += RayTraceEvaluateDirectLighting(AS, Origin, RngState, BRDF) * PathAttenuation;
 
 			// generate new ray and apply BRDF to the segment
 			{

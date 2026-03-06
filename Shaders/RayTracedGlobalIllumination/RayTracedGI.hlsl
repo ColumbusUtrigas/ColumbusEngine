@@ -85,8 +85,10 @@ void RayGen()
 		BRDF.Albedo = payload.Colour;
 		BRDF.N = payload.Normal;
 		BRDF.V = -Direction;
-		BRDF.Roughness = payload.RoughnessMetallic.x;
-		BRDF.Metallic = payload.RoughnessMetallic.y;
+		BRDF.Roughness = 1.0;
+		BRDF.Metallic = 0.0;
+		//BRDF.Roughness = payload.RoughnessMetallic.x;
+		//BRDF.Metallic = payload.RoughnessMetallic.y;
 
 		float3 HitPoint = WP + Direction * payload.HitDistance;
 		Radiance = RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF);

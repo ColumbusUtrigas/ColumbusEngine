@@ -43,9 +43,9 @@ namespace Columbus
 
 		Particles.Allocate(Settings->MaxParticles);
 
+		RemoveOldParticles();
 		SpawnParticles(TimeTick);
 		UpdateParticles(TimeTick);
-		RemoveOldParticles();
 		SortParticles();
 
 		AddProfilingCount(CountingCounter_Particles_NumUpdates, 1);
@@ -111,7 +111,7 @@ namespace Columbus
 			}
 		#endif
 
-		Settings->Rotation.Update(Particles);
+		Settings->Rotation.Update(Particles, TimeTick);
 		Settings->Color.Update(Particles);
 		Settings->Size.Update(Particles);
 		Settings->SubUV.Update(Particles);

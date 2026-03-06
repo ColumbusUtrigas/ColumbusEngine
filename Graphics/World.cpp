@@ -305,6 +305,7 @@ namespace Columbus
 			TexturePair Pair;
 			Pair.Ref = AssetSystem::Get().RegisterAssetRef<Texture2>(tex, TexPath);
 			Pair.Id = SceneGPU->Textures.Add(tex);
+			LoadedTextures[textureId] = Pair;
 			return Pair;
 		};
 
@@ -770,7 +771,7 @@ namespace Columbus
 				CPUMesh.Vertices.push_back(SModel.Positions[i]);
 				CPUMesh.Normals.push_back(SModel.Normals[i]);
 				CPUMesh.UV1.push_back(SModel.UVs[i]);
-				CPUMesh.Tangents.push_back(Vector4(SModel.Tangents[i], 1));
+				//CPUMesh.Tangents.push_back(Vector4(SModel.Tangents[i], 1));
 			}
 
 			for (int i = 0; i < (int)SModel.IndicesCount; i++)
@@ -792,6 +793,8 @@ namespace Columbus
 		for (CPUMeshResource& Primitive : MeshPrimitives)
 		{
 			MeshPrimitive& Prim = Mesh.Primitives.emplace_back();
+
+			Primitive.CalculateTangents();
 
 			Prim.CPU = Primitive;
 			CPUMeshResource& CPUMesh = Prim.CPU;
@@ -858,7 +861,7 @@ namespace Columbus
 		Model* asd = new Model();
 		Model& model = *asd;
 		model.Load(AssetPath);
-		model.RecalculateTangents();
+		//model.RecalculateTangents();
 
 		return LoadMesh(model, InternalPath);
 	}
@@ -935,6 +938,7 @@ namespace Columbus
 			return;
 
 		AThing* Thing = *AllThings.Get(ThingId);
+
 		Thing->OnDestroy();
 		AllThings.Remove(ThingId);
 		ThingGuidToId.erase(Thing->Guid);
@@ -942,6 +946,12 @@ namespace Columbus
 		if (Thing->Parent)
 		{
 			Thing->Parent->Children.erase(std::remove(Thing->Parent->Children.begin(), Thing->Parent->Children.end(), Thing));
+		}
+
+		// delete all children
+		while (!Thing->Children.empty())
+		{
+			DeleteThing(Thing->Children[0]->StableId);
 		}
 
 		if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
@@ -1348,6 +1358,12 @@ namespace Columbus
 			CreatePhysicsState();
 		}
 
+		if (PhysicsBody)
+		{
+			PhysicsBody->mRigidbody->setActivationState(0);
+			PhysicsBody->mRigidbody->forceActivationState(0);
+		}
+
 		// editor mouse click collision proxy setup
 		// TODO: don't do it if no collision - has to be set up, but now default to having trimesh collisions
 		if (PhysicsBody == nullptr || World->WorldType == EWorldType::Editor)
@@ -1376,13 +1392,13 @@ namespace Columbus
 			GPUSceneMesh* Proxy = World->SceneGPU->Meshes.Get(Mesh);
 			if (Proxy)
 			{
-				Proxy->Transform = TransGlobal.GetMatrix();
+				Proxy->Transform = GetWorldTransform().GetMatrix();
 			}
 		}
 
 		if (EditorRigidbody)
 		{
-			EditorRigidbody->SetTransform(TransGlobal);
+			EditorRigidbody->SetTransform(GetWorldTransform());
 		}
 	}
 
@@ -1484,7 +1500,6 @@ namespace Columbus
 		for (AThing* Thing : LevelCopy->Things)
 		{
 			Thing->bTransientThing = true;
-			ThingsIds.push_back(Thing->StableId);
 
 			if (Thing->Parent == nullptr)
 			{
@@ -1505,12 +1520,6 @@ namespace Columbus
 		}
 
 		assert(LevelCopy != nullptr);
-
-		for (HStableThingId Id : ThingsIds)
-		{
-			World->DeleteThing(Id);
-		}
-		Children.clear();
 
 		delete LevelCopy;
 		LevelCopy = nullptr;

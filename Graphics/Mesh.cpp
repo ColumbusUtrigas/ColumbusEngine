@@ -7,40 +7,88 @@ namespace Columbus
 	{
 		Tangents.resize(Vertices.size());
 
-		Vector3 DeltaPos[2];
-		Vector2 DeltaUV[2];
-		Vector3 Tangent;
-		float R;
+		std::vector<Vector3> tan1(Vertices.size(), Vector3(0, 0, 0));
+		std::vector<Vector3> tan2(Vertices.size(), Vector3(0, 0, 0));
 
-		// iterate over triangles
-		for (u32 i = 0; i < (u32)Indices.size(); i += 3)
+		// Iterate over triangles to accumulate weighted tangents
+
+		if (!UV1.empty())
 		{
-			u32 Index[3]{ Indices[i], Indices[i + 1], Indices[i + 2] };
-
-			DeltaPos[0] = Vertices[Index[1]] - Vertices[Index[0]];
-			DeltaPos[1] = Vertices[Index[2]] - Vertices[Index[0]];
-
-			DeltaUV[0] = UV1[Index[1]] - UV1[Index[0]];
-			DeltaUV[1] = UV1[Index[2]] - UV1[Index[0]];
-
-			R = 1.0f / (DeltaUV[0].X * DeltaUV[1].Y - DeltaUV[0].Y * DeltaUV[1].X);
-
-			Tangent = (R * (DeltaPos[0] * DeltaUV[1].Y - DeltaPos[1] * DeltaUV[0].Y)).Normalized();
-
-			// iterate over vertices in the triangle
-			for (int v = 0; v < 3; v++)
+			for (u32 i = 0; i < (u32)Indices.size(); i += 3)
 			{
-				u32 IndexV = Indices[i + v];
-				Vector3 Normal = Normals[IndexV];
+				u32 i1 = Indices[i];
+				u32 i2 = Indices[i + 1];
+				u32 i3 = Indices[i + 2];
 
-				// Gram-Schmidt orthogonalize
-				Tangent = (Tangent - Normal * Vector3::Dot(Normal, Tangent)).Normalized();
+				Vector3 v1 = Vertices[i1];
+				Vector3 v2 = Vertices[i2];
+				Vector3 v3 = Vertices[i3];
 
-				// TODO:
-				// Calculate handedness
-				//float Sign = (Vector3::Dot(Vector3::Cross(Normal, Tangent), Tangent2) < 0) ? -1 : 1;
+				Vector2 w1 = UV1[i1];
+				Vector2 w2 = UV1[i2];
+				Vector2 w3 = UV1[i3];
 
-				Tangents[IndexV] = Vector4(Tangent, 1.0f);
+				float x1 = v2.X - v1.X;
+				float x2 = v3.X - v1.X;
+				float y1 = v2.Y - v1.Y;
+				float y2 = v3.Y - v1.Y;
+				float z1 = v2.Z - v1.Z;
+				float z2 = v3.Z - v1.Z;
+
+				float s1 = w2.X - w1.X;
+				float s2 = w3.X - w1.X;
+				float t1 = w2.Y - w1.Y;
+				float t2 = w3.Y - w1.Y;
+
+				float det = s1 * t2 - s2 * t1;
+
+				if (fabsf(det) > 1e-6f)
+				{
+					float r = 1.0f / det;
+
+					// S-Direction (Tangent)
+					Vector3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+					// T-Direction (Bitangent/Binormal)
+					Vector3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+
+					// ACCUMULATE: Add to existing values for shared vertices
+					tan1[i1] += sdir;
+					tan1[i2] += sdir;
+					tan1[i3] += sdir;
+
+					tan2[i1] += tdir;
+					tan2[i2] += tdir;
+					tan2[i3] += tdir;
+				}
+			}
+		}
+
+		// Iterate over vertices to Orthogonalize and Calculate Handedness
+		for (u32 a = 0; a < (u32)Vertices.size(); a++)
+		{
+			Vector3 n = Normals[a];
+			Vector3 t = tan1[a];
+
+			if (t.Length() < 1e-5f)
+			{
+				// We need a vector perpendicular to Normal.
+				// If Normal is roughly pointing up Y, use Z as the helper. 
+				// Otherwise use Y.
+				Vector3 helper = (fabsf(n.Y) > 0.999f) ? Vector3(0, 0, 1) : Vector3(0, 1, 0);
+
+				// Generate a valid Tangent
+				t = Vector3::Cross(n, helper).Normalized();
+				float w = 1.0f;
+				Tangents[a] = Vector4(t, w);
+			}
+			else
+			{
+				// Gram-Schmidt Orthogonalize
+				Vector3 xyz = (t - n * Vector3::Dot(n, t)).Normalized();
+
+				// Calculate Handedness
+				float w = (Vector3::Dot(Vector3::Cross(n, t), tan2[a]) < 0.0f) ? -1.0f : 1.0f;
+				Tangents[a] = Vector4(xyz, w);
 			}
 		}
 	}

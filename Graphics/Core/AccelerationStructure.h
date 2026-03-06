@@ -47,6 +47,8 @@ namespace Columbus
 		AccelerationStructureDesc& GetDescMut() { return _Desc; }
 
 		u64 GetSize() const { return Size; }
+
+		virtual ~AccelerationStructure() = default;
 	};
 
 }

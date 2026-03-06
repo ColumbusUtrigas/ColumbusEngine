@@ -64,7 +64,7 @@ namespace Columbus
 	{
 		if (Path.empty())
 		{
-			Log::Warning("Asset reference %s is empty in %s", Type->Name);
+			Log::Warning("Asset reference is empty in %s", Type->Name);
 			return nullptr;
 		}
 

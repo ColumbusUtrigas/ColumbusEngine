@@ -16,7 +16,8 @@ struct VS_TO_PS
     float3 WorldPos         : POSITION0;
     float4 ClipspacePos     : POSITION1;
     float4 ClipspacePosPrev : POSITION2;
-    float3x3 TBN            : POSITION3;
+    float3 Tangent          : NORMAL1;
+    float3 Bitangent        : NORMAL2;
     
     nointerpolation uint MaterialId : COLOR0;
     nointerpolation uint LightmapId : COLOR1;
@@ -40,16 +41,15 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
 
 	// index is being read from index buffer by gl_VertexIndex
     GPUScene::Vertex Vertex = GPUScene::FetchVertex(Parameters.ObjectId, VertexId);
-
-	// TODO: precompute and store this matrix in the buffer
-    //float3x3 NormalMatrix = transpose(inverse(transpose(float3x3(Mesh.Transform))));
-    float3x3 NormalMatrix = float3x3(float3(1, 0, 0), float3(0, 1, 0), float3(0, 0, 1));
-    NormalMatrix = transpose((float3x3) Mesh.Transform);
-    float3 Normal    = normalize(mul(NormalMatrix, Vertex.Normal));
-    float3 Tangent   = normalize(mul(NormalMatrix, Vertex.TangentAndSign.xyz));
-    float3 Bitangent = cross(Normal, Tangent) * Vertex.TangentAndSign.w;
-
-    Out.TBN = float3x3(Tangent, Bitangent, Normal);
+    
+    float3x3 NormalMatrix = (float3x3) 0;
+    NormalMatrix[0] = Mesh.NormalMatrix[0].xyz;
+    NormalMatrix[1] = Mesh.NormalMatrix[1].xyz;
+    NormalMatrix[2] = Mesh.NormalMatrix[2].xyz;
+    
+    Out.Normal = normalize(mul(Vertex.Normal, NormalMatrix));
+    Out.Tangent = normalize(mul(Vertex.TangentAndSign.xyz, NormalMatrix));
+    Out.Bitangent = cross(Out.Normal, Out.Tangent) * Vertex.TangentAndSign.w;
 
 	// TODO: fucked up row/column major?
     float4 TransformedPos = mul(float4(Vertex.Position, 1), Mesh.Transform);
@@ -61,7 +61,6 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     Out.ClipspacePosPrev = ClipspacePosPrev;
 
     Out.Pos    = ClipspacePos;
-    Out.Normal = Normal;
     Out.Uv1 = Vertex.UV;
     Out.Uv2 = Vertex.UV2;
     Out.MaterialId = Mesh.MaterialId;
@@ -98,10 +97,11 @@ PS_Out PSMain(VS_TO_PS In)
     
     // TEST
     LightmapColor = shUnproject(GPUScene::GPUSceneScene[0].SkySHR, GPUScene::GPUSceneScene[0].SkySHG, GPUScene::GPUSceneScene[0].SkySHB, normalize(In.Normal));
+    
+    float3x3 TBN = float3x3(normalize(In.Tangent), normalize(In.Bitangent), normalize(In.Normal));
 
     Out.Albedo = Material.Albedo;
-	// RT1 = normalize(TBN * Material.Normal);
-    Out.Normal = normalize(In.Normal);
+    Out.Normal = normalize(mul(Material.Normal, TBN));
     Out.WP = In.WorldPos; // TODO: remove? reconstruct from screenpos and linear depth
     Out.RM = float2(Material.Roughness, Material.Metallic);
     Out.Velocity = Velocity;

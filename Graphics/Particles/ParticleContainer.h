@@ -64,6 +64,9 @@ namespace Columbus
 
 		void Allocate(size_t MaxSize)
 		{
+			// round to the nearest 4 for intrinsics to work well
+			MaxSize = (MaxSize + 3) & ~static_cast<size_t>(3);
+
 			if (MaxSize <= PreviousMaxSize)
 			{
 				return;

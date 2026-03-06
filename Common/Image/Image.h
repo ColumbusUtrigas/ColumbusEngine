@@ -196,54 +196,15 @@ namespace Columbus
 		u8* Data = nullptr;
 		bool Exist = false;
 
-		ImageType Type;
+		ImageType Type = ImageType::Image2D;
 	public:
 		Image() {}
 		Image(std::string_view FileName) { if (!LoadFromFile(FileName)) { Data = nullptr; Exist = false; } }
 		Image(const Image&) = delete;
-		Image(Image&& Base) noexcept { *this = (Image&&)(Base); }
 
-		Image& operator=(const Image& Other)
-		{
-			FreeData();
-			Width = Other.Width;
-			Height = Other.Height;
-			Depth = Other.Depth;
-			MipMaps = Other.MipMaps;
-			Format = Other.Format;
-			Exist = Other.Exist;
-			Type = Other.Type;
-
-			if (Other.Data)
-			{
-				u64 DataSize = ImageUtils::ImageCalcByteSize(Width, Height, Depth, MipMaps, Format) * (Type == ImageType::ImageCube ? 6 : 1);
-				Data = new u8[DataSize];
-				memcpy(Data, Other.Data, DataSize);
-			}
-
-			return *this;
-		}
-
-		Image& operator=(Image&& Base) noexcept
-		{
-			auto swap = [](auto& a, auto& b)
-			{
-				auto tmp = a;
-				a = b;
-				b = tmp;
-			};
-
-			swap(Width, Base.Width);
-			swap(Height, Base.Height);
-			swap(Depth, Base.Depth);
-			swap(MipMaps, Base.MipMaps);
-			swap(Size, Base.Size);
-			swap(Format, Base.Format);
-			swap(Data, Base.Data);
-			swap(Exist, Base.Exist);
-			swap(Type, Base.Type);
-			return *this;
-		}
+		Image& operator=(const Image& Other);
+		Image(Image&& Base) noexcept;
+		Image& operator=(Image&& Base) noexcept;
 
 		// doesn't decode image from memory, initialises from raw data
 		void FromMemory(const void* InData, int InSize, int W, int H)

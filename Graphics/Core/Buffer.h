@@ -85,6 +85,8 @@ namespace Columbus
 
 		u64 GetSize() const { return Size; }
 		u64 GetDeviceAddress() const { return DeviceAddress; }
+
+		virtual ~Buffer() = default;
 	};
 
 }

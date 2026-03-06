@@ -40,6 +40,7 @@ struct _Params
 void RayGen()
 {
 	const int2 pixel = DispatchRaysIndex().xy;
+	const uint2 launchDim = DispatchRaysDimensions().xy;
 
 	float depth = GBufferDepth[pixel].x;
 	// do not trace from sky, early exit
@@ -70,7 +71,7 @@ void RayGen()
 	BRDF.N         = Normal;
 	BRDF.V         = -Direction;
 	BRDF.Albedo    = Albedo;
-	BRDF.Roughness = RM.r;
+	BRDF.Roughness = max(RM.r, 0.001);
 	BRDF.Metallic  = RM.g;
 
 	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
@@ -79,8 +80,7 @@ void RayGen()
 	Direction = Sample.Dir;
 	BRDF.L = Direction;
 
-	float NdotL = saturate(dot(BRDF.N, BRDF.L));
-	float3 RayAttenuation = EvaluateBRDF(BRDF, float3(1,1,1)) / max(Sample.Pdf, 0.001);
+	float3 RayAttenuation = EvaluateReflectionBRDF(BRDF);
 	
 	const float MaxDistance = 5000.0f;
 
@@ -89,7 +89,7 @@ void RayGen()
 	// ray trace
 	{
 		RayDesc Ray;
-		Ray.Origin = WP + Direction * 0.001;
+		Ray.Origin = WP + Normal * 0.03;
 		Ray.TMin = 0.0;
 		Ray.Direction = Direction;
 		Ray.TMax = MaxDistance;

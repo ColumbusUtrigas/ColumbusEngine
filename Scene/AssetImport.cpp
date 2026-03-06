@@ -53,6 +53,12 @@ namespace Columbus::Assets
 
 		// TODO: pack ORM textures
 
+		const auto IsNormalMapImage = [&](int Index) -> bool
+		{
+			std::string str = str_tolower(model.images[Index].uri);
+			return str.find("normal") != str.npos;
+		};
+
 		// generate mips
 		{
 			Timer MipTotalTimer;
@@ -64,7 +70,7 @@ namespace Columbus::Assets
 
 				Image ImageWithMips;
 				ImageMips::GenerateImageMips(Element.second, ImageWithMips, {});
-				Element.second = ImageWithMips;
+				Element.second = std::move(ImageWithMips);
 
 				Log::Message("[ImportLevel] Generating mips for %s finished, took %.3f seconds", model.images[Element.first].name.c_str(), MipTimer.Elapsed());
 			}
@@ -87,10 +93,17 @@ namespace Columbus::Assets
 					.Format = TextureFormat::DXT1
 				};
 
-				ImageCompression::CompressImage(Element.second, CompressImage, Params);
-				Element.second = CompressImage;
+				if (IsNormalMapImage(Element.first))
+				{
+					Params.Format = TextureFormat::BC7;
+				}
 
-				Log::Message("[ImportLevel] Compression of %s finished, took %.3f seconds", model.images[Element.first].name.c_str(), CompressTimer.Elapsed());
+				TextureFormatInfo FormatInfo = TextureFormatGetInfo(Params.Format);
+
+				ImageCompression::CompressImage(Element.second, CompressImage, Params);
+				Element.second = std::move(CompressImage);
+
+				Log::Message("[ImportLevel] Compression of %s with format %s finished, took %.3f seconds", model.images[Element.first].name.c_str(), FormatInfo.FriendlyName, CompressTimer.Elapsed());
 			}
 
 			Log::Message("[ImportLevel] Compression finished, took %.3f seconds in total", CompressTotalTimer.Elapsed());

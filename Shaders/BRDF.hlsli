@@ -229,6 +229,42 @@ BRDFSample SampleBRDF_GGX(BRDFData Data, float2 Xi)
 	return Sample;
 }
 
+// Calculates (SpecularBRDF * NdotL) / PDF without evaluating D (Distribution).
+// This cancels out the unstable terms at low roughness.
+// Formula derived from: (D * F * Vis * NdotL) / (D * NdotH / (4 * VdotH))
+float3 EvaluateReflectionBRDF(BRDFData Data)
+{
+    float3 H = normalize(Data.V + Data.L);
+    float3 N = Data.N;
+    float3 V = Data.V;
+    float3 L = Data.L;
+    float Roughness = Data.Roughness;
+
+    float NdotL = saturate(dot(N, L));
+    float NdotV = saturate(dot(N, V));
+    float NdotH = saturate(dot(N, H));
+    float VdotH = saturate(dot(V, H));
+
+	// FRESNEL
+    float3 F0 = float3(0.04, 0.04, 0.04);
+    F0 = lerp(F0, Data.Albedo, Data.Metallic);
+    float3 F = FresnelRoughness(VdotH, F0, Roughness);
+
+	// GEOMETRY (VISIBILITY)
+	// GeometryGGX function actually calculates the Visibility term (G / (4 * NdotL * NdotV))
+    float Vis = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
+
+	// COMBINE
+	// The D term cancels out
+	// We are left with: F * Vis * NdotL * (4 * VdotH / NdotH)
+	
+	// Safety to prevent division by zero
+    if (NdotH <= 0.0001)
+        return float3(0, 0, 0);
+
+    return F * Vis * NdotL * (4.0 * VdotH / NdotH);
+}
+
 // TODO: EvaluateIndirectBRDF()
 
 float BRDFCalcPDF(BRDFData Data)

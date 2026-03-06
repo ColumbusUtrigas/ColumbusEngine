@@ -59,6 +59,7 @@ namespace Columbus
 	struct GPUSceneMeshCompact
 	{
 		Matrix Transform;
+		Matrix NormalMatrix;
 
 		u64 VertexBufferAddress;
 		u64 IndexBufferAddress;
@@ -73,7 +74,9 @@ namespace Columbus
 		int MaterialId;
 		int LightmapId;
 
-		// 128
+		int _pad[16];
+
+		// 256
 	};
 
 	struct GPULight

@@ -148,6 +148,8 @@ namespace Columbus
 	public:
 		const TextureDesc2& GetDesc() const { return _Desc; }
 		u64 GetSize() const { return Size; }
+
+		virtual ~Texture2() = default;
 	};
 
 	class Sampler
