@@ -413,14 +413,15 @@ bool EnumComboBox(const char* Label, T* Value)
 //			- SSAO
 //			- RTAO
 //			- clustered rendering, GPU culling, vis buffer
-//			- volumetrics and OpenVDB
+//          + volumetric fog
+//			- OpenVDB
 //			- translucency
 //             - frosted glass
 //          - DDGI
-//			- RT reflections (TODO: denoiser)
+//			+ RT reflections
 //          + RTGI (first bounce, diffuse)
 //			- GI1.0
-//			- simple billboard particles render
+//			+ simple billboard particles render
 //			+ upscaling (FSR1)
 //          + TAA
 //          - FSR2
@@ -435,7 +436,7 @@ bool EnumComboBox(const char* Label, T* Value)
 //			- IES light profiles
 //			+ shader include files
 //			+ fix descriptor set duplication
-//			- HLSL2021 instead of GLSL
+//			+ HLSL2021 instead of GLSL
 //			+ make DebugRender work
 //			- shader caching system
 //

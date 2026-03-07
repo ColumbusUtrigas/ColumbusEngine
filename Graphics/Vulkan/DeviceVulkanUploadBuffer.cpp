@@ -59,6 +59,7 @@ namespace Columbus
 			return;
 
 		Device->WaitForFence(UploadFences[CurrentFrame], UINT64_MAX);
+		Device->ResetFence(UploadFences[CurrentFrame]);
 
 		CommandBufferVulkan* CmdBuf = CommandBufs[CurrentFrame];
 		CmdBuf->Reset();

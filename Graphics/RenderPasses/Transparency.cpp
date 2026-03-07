@@ -127,7 +127,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.Device->GetStaticSampler());
 
 				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex, 0, sizeof(Params), &Params);
+				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Params), &Params);
 				Context.CommandBuffer->Draw(NumParticles*6, 1, 0, 0);
 			}
 		});
