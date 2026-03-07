@@ -94,6 +94,9 @@ namespace Columbus
 		Device->DestroyTexture(RoughnessMetallic);
 		Device->DestroyTexture(Normals);
 		Device->DestroyTexture(VolumetricFogFroxels);
+		Device->DestroyTexture(TAAHistory);
+		Device->DestroyTexture(RTReflectionsRadiance);
+		Device->DestroyTexture(RTReflectionsSampleCount);
 	}
 
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)

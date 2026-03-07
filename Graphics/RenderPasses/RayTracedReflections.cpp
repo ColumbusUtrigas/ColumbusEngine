@@ -22,18 +22,24 @@ namespace Columbus
 		u32 UseRadianceCache;
 	};
 
-	struct RayTracedReflectionsDenoiseParamters
-	{
-		iVector2 ImageSize;
-	};
-
 	struct RayTracedReflectionsResolveParameters
 	{
+		Vector4 CameraPosition;
 		iVector2 ImageSize;
+		iVector2 _Padding;
+	};
+
+	struct RayTracedReflectionsTemporalParameters
+	{
+		Matrix ProjectionInv;
+		Matrix ViewProjectionInv;
+		Matrix PrevViewProjection;
+		iVector2 Size;
+		int MaxSamples;
+		int _Padding;
 	};
 
 	// TODO: downscale reflections resolution and then upscale (FSR1?)
-	// TODO: denoise
 	// TODO: sample lighting in reflection (requires volumetric GI)
 	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
@@ -48,14 +54,21 @@ namespace Columbus
 			.Format = TextureFormat::RGBA16F,
 		};
 
-		static bool Resolve = false;
+		TextureDesc2 SingleChannelDesc = Desc;
+		SingleChannelDesc.Format = TextureFormat::R16F;
+
+		static bool Resolve = true;
+		static bool Temporal = true;
 		static bool UseRadianceCache = false;
+		static int TemporalMaxSamples = 16;
 
 		if (ImGui::GetCurrentContext())
 		{
 			if (ImGui::Begin("RT Reflections Debug"))
 			{
 				ImGui::Checkbox("Resolve", &Resolve);
+				ImGui::Checkbox("Temporal", &Temporal);
+				ImGui::SliderInt("Temporal Max Samples", &TemporalMaxSamples, 1, 64);
 				ImGui::Checkbox("Radiance cache", &UseRadianceCache);
 			}
 			ImGui::End();
@@ -63,6 +76,7 @@ namespace Columbus
 
 		RenderGraphTextureRef RTReflectionRadiance = Graph.CreateTexture(Desc, "RTReflRadiance");
 		RenderGraphTextureRef RTReflectionRays = Graph.CreateTexture(Desc, "RTReflRays");
+		RenderGraphTextureRef RTReflectionRayPdf = Graph.CreateTexture(SingleChannelDesc, "RTReflRayPdf");
 
 		{
 			RenderPassParameters Parameters;
@@ -76,8 +90,9 @@ namespace Columbus
 			Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRadiance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRays, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			Dependencies.Write(RTReflectionRayPdf, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, Textures, View](RenderGraphContext& Context)
+			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, Textures, View](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflections, Context);
 
@@ -96,12 +111,13 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.Scene->TLAS);
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTReflectionRadiance).get());
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(RTReflectionRays).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				//Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(RTReflectionRayPdf).get());
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				//Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 
 				RayTracedReflectionPassParameters Params{
 					.CameraPosition = Vector4(View.CameraCur.Pos, 1),
@@ -118,9 +134,9 @@ namespace Columbus
 			});
 		}
 
-		Textures.RTReflections = RTReflectionRadiance;
+		RenderGraphTextureRef ReflectionsResult = RTReflectionRadiance;
 
-		// reflections resolve
+		// BRDF/PDF-based spatial reuse pass
 		if (Resolve)
 		{
 			RenderGraphTextureRef RTResolveResult = Graph.CreateTexture(Desc, "RTReflResolved");
@@ -128,16 +144,17 @@ namespace Columbus
 			RenderPassParameters Parameters;
 
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(RTReflectionRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(RTReflectionRays, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Write(RTResolveResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(RTReflectionRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(RTReflectionRays, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(RTReflectionRayPdf, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Write(RTResolveResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-			Graph.AddPass("RTReflResolve", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTResolveResult, Textures, TraceSize](RenderGraphContext& Context)
+			Graph.AddPass("RTReflResolve", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, RTResolveResult, Textures, TraceSize, View](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 
@@ -147,22 +164,24 @@ namespace Columbus
 					ComputePipelineDesc Desc;
 					Desc.Name = "ReflectionsResolve";
 					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedReflections/ReflectionsResolve.csd");
-
 					Pipeline = Context.Device->CreateComputePipeline(Desc);
 				}
 
 				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(RTReflectionRadiance).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTReflectionRays).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(RTResolveResult).get());
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(RTReflectionRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTReflectionRays).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(RTReflectionRayPdf).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(RTResolveResult).get());
 
 				RayTracedReflectionsResolveParameters Params{
-					.ImageSize = TraceSize
+					.CameraPosition = Vector4(View.CameraCur.Pos, 1),
+					.ImageSize = TraceSize,
+					._Padding = iVector2(0, 0),
 				};
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
@@ -171,8 +190,78 @@ namespace Columbus
 				Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { TraceSize, 1 });
 			});
 
-			Textures.RTReflections = RTResolveResult;
+			ReflectionsResult = RTResolveResult;
 		}
+
+		// Minimal temporal resolve (history + reprojection + neighborhood clamp + sample count)
+		if (Temporal)
+		{
+			Graph.CreateHistoryTexture(&Textures.History.RTReflectionsRadiance, Desc, "RTReflTemporalHistory");
+			Graph.CreateHistoryTexture(&Textures.History.RTReflectionsSampleCount, SingleChannelDesc, "RTReflTemporalSampleCountHistory");
+
+			RenderGraphTextureRef RTTemporalResult = Graph.CreateTexture(Desc, "RTReflTemporal");
+			RenderGraphTextureRef RTTemporalSampleCount = Graph.CreateTexture(SingleChannelDesc, "RTReflTemporalSampleCount");
+
+			Texture2* ReflectionHistory = Textures.History.RTReflectionsRadiance;
+			Texture2* ReflectionSampleCountHistory = Textures.History.RTReflectionsSampleCount;
+
+			RenderPassParameters Parameters;
+			RenderPassDependencies Dependencies(Graph.Allocator);
+			Dependencies.Read(ReflectionsResult, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.Velocity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Write(RTTemporalResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Write(RTTemporalSampleCount, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+			Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
+			Matrix ProjectionInv = View.CameraCur.GetProjectionMatrix().GetInverted();
+			Matrix PrevViewProjection = View.CameraPrev.GetViewProjection();
+
+			Graph.AddPass("RTReflTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [ReflectionsResult, RTTemporalResult, RTTemporalSampleCount, ReflectionHistory, ReflectionSampleCountHistory, Textures, TraceSize, ProjectionInv, InvViewProjection, PrevViewProjection](RenderGraphContext& Context)
+			{
+				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
+
+				static ComputePipeline* Pipeline = nullptr;
+				if (Pipeline == nullptr)
+				{
+					ComputePipelineDesc Desc;
+					Desc.Name = "ReflectionsTemporal";
+					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedReflections/ReflectionsTemporal.csd");
+					Pipeline = Context.Device->CreateComputePipeline(Desc);
+				}
+
+				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(ReflectionsResult).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, ReflectionHistory, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Textures.History.Depth, TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, ReflectionSampleCountHistory, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(RTTemporalResult).get());
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(RTTemporalSampleCount).get());
+				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
+
+				RayTracedReflectionsTemporalParameters Params{
+					.ProjectionInv = ProjectionInv,
+					.ViewProjectionInv = InvViewProjection,
+					.PrevViewProjection = PrevViewProjection,
+					.Size = TraceSize,
+					.MaxSamples = TemporalMaxSamples,
+					._Padding = 0,
+				};
+
+				Context.CommandBuffer->BindComputePipeline(Pipeline);
+				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
+				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+				Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { TraceSize, 1 });
+			});
+
+			Graph.ExtractTexture(RTTemporalResult, &Textures.History.RTReflectionsRadiance);
+			Graph.ExtractTexture(RTTemporalSampleCount, &Textures.History.RTReflectionsSampleCount);
+			ReflectionsResult = RTTemporalResult;
+		}
+
+		Textures.RTReflections = ReflectionsResult;
 	}
 
 }

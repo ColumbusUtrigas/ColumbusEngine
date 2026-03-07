@@ -20,11 +20,12 @@ struct RayPayload
 [[vk::binding(0, SET)]] RaytracingAccelerationStructure AccelerationStructure;
 [[vk::binding(1, SET)]] RWTexture2D<float4> Output;
 [[vk::binding(2, SET)]] RWTexture2D<float4> ResultDirectionDistance;
-[[vk::binding(3, SET)]] Texture2D<float3>   GBufferAlbedo;
-[[vk::binding(4, SET)]] Texture2D<float3>   GBufferNormals;
-[[vk::binding(5, SET)]] Texture2D<float3>   GBufferWorldPosition;
-[[vk::binding(6, SET)]] Texture2D<float4>   GBufferRoughnessMetallic;
-[[vk::binding(7, SET)]] Texture2D<float>    GBufferDepth;
+[[vk::binding(3, SET)]] RWTexture2D<float>  ResultRayPdf;
+[[vk::binding(4, SET)]] Texture2D<float3>   GBufferAlbedo;
+[[vk::binding(5, SET)]] Texture2D<float3>   GBufferNormals;
+[[vk::binding(6, SET)]] Texture2D<float3>   GBufferWorldPosition;
+[[vk::binding(7, SET)]] Texture2D<float4>   GBufferRoughnessMetallic;
+[[vk::binding(8, SET)]] Texture2D<float>    GBufferDepth;
 
 [[vk::push_constant]]
 struct _Params
@@ -48,6 +49,7 @@ void RayGen()
 	{
 		Output[pixel] = float4(0,0,0,0);
 		ResultDirectionDistance[pixel] = float4(0,0,0,-1);
+		ResultRayPdf[pixel] = 0;
 		return;
 	}
 
@@ -58,6 +60,7 @@ void RayGen()
 	{
 		Output[pixel] = float4(0,0,0,0);
 		ResultDirectionDistance[pixel] = float4(0,0,0,-1);
+		ResultRayPdf[pixel] = 0;
 		return;
 	}
 
@@ -79,6 +82,7 @@ void RayGen()
 	BRDFSample Sample = SampleBRDF_GGX(BRDF, Random::UniformDistrubition2d(RngState));
 	Direction = Sample.Dir;
 	BRDF.L = Direction;
+	float RayPdf = max(Sample.Pdf, 1e-6);
 
 	float3 RayAttenuation = EvaluateReflectionBRDF(BRDF);
 	
@@ -103,7 +107,7 @@ void RayGen()
 	// miss sky lighting
 	if (payload.HitDistance < 0)
 	{
-		ColourResult = payload.Colour;
+		ColourResult = payload.Colour * RayAttenuation;
 	}
 
 	// hit point lighting
@@ -126,6 +130,7 @@ void RayGen()
 	{
 		Output[pixel]                  = float4(ColourResult, 1);
 		ResultDirectionDistance[pixel] = float4(Direction, payload.HitDistance);
+		ResultRayPdf[pixel]            = RayPdf;
 	}
 }
 

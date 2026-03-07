@@ -276,7 +276,7 @@ float BRDFCalcPDF(BRDFData Data)
 	float Roughness = Data.Roughness;
 
 	float NdotH = max(dot(N, H), 0.0);
-	float VdotH = max(dot(N, H), 0.0);
+	float VdotH = max(dot(V, H), 0.0);
 
 	float D = DistributionGGX(N, H, Roughness);
 

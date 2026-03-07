@@ -42,7 +42,6 @@ float TraceShadowRay(const in RaytracingAccelerationStructure AS, float3 Origin,
 float3 SampleDirectionalLight(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
 {
 	float3 direction = normalize(Light.Direction.xyz);
-	direction = SampleConeRay(direction, Light.SourceRadius, Random);
 	float occlusion = TraceShadowRay(AS, origin, direction, 5000.0f);
 	return max(dot(normal, direction), 0) * Light.Color.rgb * occlusion;
 }
@@ -51,9 +50,6 @@ float3 SamplePointLight(const in RaytracingAccelerationStructure AS, GPULight Li
 {
 	float3 direction = normalize(Light.Position.xyz - origin);
 	float dist = distance(Light.Position.xyz, origin);
-
-	float normalisedConeBase = Light.SourceRadius / dist;
-	direction = SampleConeRay(direction, normalisedConeBase, Random);
 
 	// float attenuation = 1.0 / (1.0 + dist);
 	float attenuation = clamp(1.0 - dist * dist / (Light.Range * Light.Range), 0.0, 1.0);
