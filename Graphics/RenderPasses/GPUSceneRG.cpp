@@ -34,6 +34,7 @@ namespace Columbus
 
 				GPUSceneMeshCompact Compact{
 					.Transform = Mesh.Transform,
+					.PrevTransform = Mesh.PrevTransform,
 					.NormalMatrix = NormalMatrix,
 					.VertexBufferAddress = Mesh.MeshResource->Vertices->GetDeviceAddress(),
 					.IndexBufferAddress = Mesh.MeshResource->Indices->GetDeviceAddress(),

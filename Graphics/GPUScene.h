@@ -30,6 +30,7 @@ namespace Columbus
 		GPUMeshResource* MeshResource;
 
 		Matrix Transform;
+		Matrix PrevTransform = Matrix(1);
 		int MaterialId = -1;
 		int LightmapId = -1;
 	};
@@ -59,6 +60,7 @@ namespace Columbus
 	struct GPUSceneMeshCompact
 	{
 		Matrix Transform;
+		Matrix PrevTransform;
 		Matrix NormalMatrix;
 
 		u64 VertexBufferAddress;
@@ -74,10 +76,10 @@ namespace Columbus
 		int MaterialId;
 		int LightmapId;
 
-		int _pad[16];
-
 		// 256
 	};
+
+	static_assert(sizeof(GPUSceneMeshCompact) == 256, "GPUSceneMeshCompact must be 256 bytes");
 
 	struct GPULight
 	{

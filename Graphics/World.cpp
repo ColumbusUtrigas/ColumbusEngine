@@ -986,6 +986,12 @@ namespace Columbus
 		ResetProfiling();
 
 		MainView.CameraPrev = MainView.CameraCur;
+
+		for (u32 i = 0; SceneGPU && i < (u32)SceneGPU->Meshes.Size(); i++)
+		{
+			SceneGPU->Meshes[i].PrevTransform = SceneGPU->Meshes[i].Transform;
+		}
+
 		MainView.DebugRender.Clear();
 	}
 
@@ -1351,6 +1357,7 @@ namespace Columbus
 			GPUSceneMesh GPUMesh;
 			GPUMesh.MeshResource = &Prim.GPU;
 			GPUMesh.Transform = TransGlobal.GetMatrix();
+			GPUMesh.PrevTransform = GPUMesh.Transform;
 
 			if (Materials.size() > i && Materials[i].IsValid())
 			{

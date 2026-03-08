@@ -53,10 +53,11 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
 
 	// TODO: fucked up row/column major?
     float4 TransformedPos = mul(float4(Vertex.Position, 1), Mesh.Transform);
+    float4 TransformedPosPrev = mul(float4(Vertex.Position, 1), Mesh.PrevTransform);
     Out.WorldPos = TransformedPos.xyz;
 		
     float4 ClipspacePos     = mul(TransformedPos, GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix)  * float4(1, -1, 1, 1);
-    float4 ClipspacePosPrev = mul(TransformedPos, GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix) * float4(1, -1, 1, 1);
+    float4 ClipspacePosPrev = mul(TransformedPosPrev, GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix) * float4(1, -1, 1, 1);
     Out.ClipspacePos     = ClipspacePos;
     Out.ClipspacePosPrev = ClipspacePosPrev;
 

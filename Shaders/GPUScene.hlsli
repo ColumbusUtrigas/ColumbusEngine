@@ -88,22 +88,21 @@ struct GPULight
 struct GPUSceneMeshCompact
 {
 	float4x4 Transform; // 64
-    float4x4 NormalMatrix; // 128
+	float4x4 PrevTransform; // 128
+    float4x4 NormalMatrix; // 192
 
-	uint64_t VertexBuffer;   // 136
-	uint64_t IndexBuffer;    // 144
-	uint64_t Uv1Buffer;      // 152
-	uint64_t Uv2Buffer;      // 160
-	uint64_t NormalsBuffer;  // 168
-	uint64_t TangentsBuffer; // 176
+	uint64_t VertexBuffer;   // 200
+	uint64_t IndexBuffer;    // 208
+	uint64_t Uv1Buffer;      // 216
+	uint64_t Uv2Buffer;      // 224
+	uint64_t NormalsBuffer;  // 232
+	uint64_t TangentsBuffer; // 240
 
-	uint VertexCount; // 180
-	uint IndexCount;  // 184
+	uint VertexCount; // 244
+	uint IndexCount;  // 248
 
-	int MaterialId; // 188
-	int LightmapId; // 192
-
-    int _pad[16]; // 256
+	int MaterialId; // 252
+	int LightmapId; // 256
 };
 
 struct GPUSceneMaterialCompact

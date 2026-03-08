@@ -35,20 +35,19 @@ namespace Columbus::Antialiasing
 	RenderGraphTextureRef RenderTAA(RenderGraph& Graph, RenderView& View, SceneTextures& Textures)
 	{
 		TextureDesc2 Desc = Graph.GetTextureDesc(Textures.FinalBeforeTonemap);
-		Graph.CreateHistoryTexture(&Textures.History.TAAHistory, Desc, "FinalHistory");
-
 		Desc.Usage = TextureUsage::StorageSampled;
+		Graph.CreateHistoryTexture(&Textures.History.TAAHistory, Desc, "FinalHistory");
 
 		Texture2* HistoryTexture = Textures.History.TAAHistory;
 		RenderGraphTextureRef InputTexture = Textures.FinalBeforeTonemap;
 		RenderGraphTextureRef VelocityTexture = Textures.Velocity;
-		RenderGraphTextureRef OutputTexture = Textures.FinalBeforeTonemap;
+		RenderGraphTextureRef OutputTexture = Graph.CreateTexture(Desc, "FinalTAA");
 
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(InputTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(VelocityTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Write(OutputTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Write(OutputTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		iVector2 Size = View.RenderSize;
 
