@@ -2,14 +2,23 @@
 #include <Editor/Icons.h>
 #include <Core/Reflection.h>
 #include <Core/Filesystem.h>
+#include <Math/InterpolationCurve.h>
 #include <Math/Quaternion.h>
+#include <Math/Vector2.h>
+#include <Math/Vector3.h>
+#include <Math/Vector4.h>
 #include <Scene/Project.h>
 #include <Graphics/World.h>
 #include <imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
+#include <Lib/implot/implot.h>
 #include <Lib/nativefiledialog/src/include/nfd.h>
 
+#include <cfloat>
+#include <cmath>
 #include <filesystem>
+#include <type_traits>
+#include <unordered_map>
 
 
 namespace Columbus::Editor
@@ -27,6 +36,8 @@ namespace Columbus::Editor
 		bool IsPicker = false;
 		bool IsColor = false;
 		bool IsHDR = false;
+		bool UseChannelColours = false;
+		bool IsGradient = false;
 	};
 
 	static FieldUIMetadata ParseFieldMetadata(const char* Meta)
@@ -58,6 +69,8 @@ namespace Columbus::Editor
 		Result.IsPicker = strstr(Meta, "Picker") != nullptr;
 		Result.IsColor = strstr(Meta, "Colour") != nullptr;
 		Result.IsHDR = strstr(Meta, "HDR") != nullptr;
+		Result.UseChannelColours = strstr(Meta, "ColourChannels") != nullptr;
+		Result.IsGradient = strstr(Meta, "Gradient") != nullptr;
 
 		return Result;
 	}
@@ -66,8 +79,830 @@ namespace Columbus::Editor
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Custom UI specialisations for reflected types
 
+	struct CurvePlotViewState
+	{
+		float MinValue = -1.0f;
+		float MaxValue = 1.0f;
+		bool bInitialised = false;
+		bool bWasDraggingPoint = false;
+	};
+
+	struct CurveEditorState
+	{
+		int SelectedIndex = -1;
+		int ActiveGradientStop = -1;
+		CurvePlotViewState PlotView;
+	};
+
+	static std::unordered_map<ImGuiID, CurveEditorState> GCurveEditorStates;
+	static ImGuiID GActiveCurveEditorId = 0;
+
+	static constexpr const char* GVectorChannelLabels[] = { "X", "Y", "Z", "W" };
+	static constexpr const char* GColorChannelLabels[] = { "R", "G", "B", "A" };
+
+	static ImVec4 GetCurveChannelColor(int Component, bool bIsColorCurve)
+	{
+		if (bIsColorCurve)
+		{
+			switch (Component)
+			{
+				case 0: return ImVec4(0.95f, 0.35f, 0.35f, 1.0f);
+				case 1: return ImVec4(0.35f, 0.90f, 0.45f, 1.0f);
+				case 2: return ImVec4(0.35f, 0.65f, 1.0f, 1.0f);
+				default: return ImVec4(0.92f, 0.92f, 0.92f, 1.0f);
+			}
+		}
+
+		switch (Component)
+		{
+			case 0: return ImVec4(0.95f, 0.42f, 0.42f, 1.0f);
+			case 1: return ImVec4(0.45f, 0.88f, 0.48f, 1.0f);
+			case 2: return ImVec4(0.42f, 0.68f, 1.0f, 1.0f);
+			default: return ImVec4(0.88f, 0.82f, 0.42f, 1.0f);
+		}
+	}
+
+	static ImVec4 ToImVec4(const Vector3& Value)
+	{
+		return ImVec4(Value.X, Value.Y, Value.Z, 1.0f);
+	}
+
+	static ImVec4 ToImVec4(const Vector4& Value)
+	{
+		return ImVec4(Value.X, Value.Y, Value.Z, Value.W);
+	}
+
+	static bool DrawStyledFloatField(const char* Label, float& Value, const ImVec4* Color, bool bDragEdit)
+	{
+		if (Color)
+		{
+			const ImVec4& Tint = *Color;
+			ImGui::PushStyleColor(ImGuiCol_Text, Tint);
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(Tint.x * 0.22f, Tint.y * 0.22f, Tint.z * 0.22f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(Tint.x * 0.33f, Tint.y * 0.33f, Tint.z * 0.33f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(Tint.x * 0.44f, Tint.y * 0.44f, Tint.z * 0.44f, 1.0f));
+		}
+
+		const bool Changed = bDragEdit
+			? ImGui::DragFloat(Label, &Value, 0.01f, 0.0f, 0.0f, "%.3f")
+			: ImGui::InputFloat(Label, &Value, 0.0f, 0.0f, "%.3f");
+
+		if (Color)
+			ImGui::PopStyleColor(4);
+
+		return Changed;
+	}
+
+	static bool DrawInlineFloatComponents(const char* Label, float* Values, int ComponentCount, const char* const* ComponentLabels, bool bUseChannelColours, bool bDragEdit, bool bIsColorSemantic = false)
+	{
+		bool Changed = false;
+
+		if (Label && Label[0] != '\0')
+		{
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(Label);
+			ImGui::SameLine();
+		}
+
+		ImGui::PushID(Label ? Label : "InlineFloatComponents");
+		const float Spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+		const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+		const float ItemWidth = std::max(70.0f, (AvailableWidth - Spacing * (ComponentCount - 1)) / std::max(ComponentCount, 1));
+
+		for (int Component = 0; Component < ComponentCount; Component++)
+		{
+			if (Component > 0)
+				ImGui::SameLine();
+
+			ImGui::SetNextItemWidth(ItemWidth);
+			const ImVec4 Color = GetCurveChannelColor(Component, bIsColorSemantic);
+			const ImVec4* ColorPtr = bUseChannelColours ? &Color : nullptr;
+			Changed |= DrawStyledFloatField(ComponentLabels[Component], Values[Component], ColorPtr, bDragEdit);
+		}
+
+		ImGui::PopID();
+		return Changed;
+	}
+
+	static float& GetCurveValueComponent(float& Value, int Component)
+	{
+		return Value;
+	}
+
+	static const float& GetCurveValueComponent(const float& Value, int Component)
+	{
+		return Value;
+	}
+
+	static float& GetCurveValueComponent(Vector2& Value, int Component)
+	{
+		return Component == 0 ? Value.X : Value.Y;
+	}
+
+	static const float& GetCurveValueComponent(const Vector2& Value, int Component)
+	{
+		return Component == 0 ? Value.X : Value.Y;
+	}
+
+	static float& GetCurveValueComponent(Vector3& Value, int Component)
+	{
+		switch (Component)
+		{
+			case 0: return Value.X;
+			case 1: return Value.Y;
+			default: return Value.Z;
+		}
+	}
+
+	static const float& GetCurveValueComponent(const Vector3& Value, int Component)
+	{
+		switch (Component)
+		{
+			case 0: return Value.X;
+			case 1: return Value.Y;
+			default: return Value.Z;
+		}
+	}
+
+	static float& GetCurveValueComponent(Vector4& Value, int Component)
+	{
+		switch (Component)
+		{
+			case 0: return Value.X;
+			case 1: return Value.Y;
+			case 2: return Value.Z;
+			default: return Value.W;
+		}
+	}
+
+	static const float& GetCurveValueComponent(const Vector4& Value, int Component)
+	{
+		switch (Component)
+		{
+			case 0: return Value.X;
+			case 1: return Value.Y;
+			case 2: return Value.Z;
+			default: return Value.W;
+		}
+	}
+
+	template <typename ValueType>
+	static constexpr int GetCurveComponentCount()
+	{
+		if constexpr (std::is_same_v<ValueType, float>)
+			return 1;
+		else if constexpr (std::is_same_v<ValueType, Vector2>)
+			return 2;
+		else if constexpr (std::is_same_v<ValueType, Vector3>)
+			return 3;
+		else
+			return 4;
+	}
+
+	template <typename ValueType>
+	static const char* GetCurveNumericChannelLabel(int Component)
+	{
+		if constexpr (std::is_same_v<ValueType, float>)
+			return "Value";
+		else if constexpr (std::is_same_v<ValueType, Vector2>)
+			return GVectorChannelLabels[Component];
+		else if constexpr (std::is_same_v<ValueType, Vector3>)
+			return GVectorChannelLabels[Component];
+		else
+			return GVectorChannelLabels[Component];
+	}
+
+	template <typename ValueType>
+	static bool DrawCurveValueEditor(ValueType& Value, bool bIsColorCurve)
+	{
+		bool bChanged = false;
+		const int ComponentCount = GetCurveComponentCount<ValueType>();
+
+		for (int Component = 0; Component < ComponentCount; Component++)
+		{
+			if (Component > 0)
+				ImGui::SameLine();
+
+			ImGui::PushItemWidth(110.0f);
+			float& ComponentValue = GetCurveValueComponent(Value, Component);
+			const ImVec4 ChannelColor = GetCurveChannelColor(Component, bIsColorCurve);
+			bChanged |= DrawStyledFloatField(GetCurveNumericChannelLabel<ValueType>(Component), ComponentValue, &ChannelColor, true);
+			ImGui::PopItemWidth();
+		}
+
+		return bChanged;
+	}
+
+	static void UpdateCurvePlotViewRange(CurvePlotViewState& View, float TargetMin, float TargetMax, bool bAllowChange)
+	{
+		if (!View.bInitialised)
+		{
+			View.MinValue = TargetMin;
+			View.MaxValue = TargetMax;
+			View.bInitialised = true;
+			return;
+		}
+
+		if (bAllowChange)
+		{
+			View.MinValue = TargetMin;
+			View.MaxValue = TargetMax;
+		}
+	}
+
+	template <typename CurveType>
+	static void ComputeCurveValueRange(const CurveType& Curve, float& OutMinValue, float& OutMaxValue)
+	{
+		using CurveValueType = std::decay_t<decltype(std::declval<CurveType>().Points[0].Value)>;
+		const int ComponentCount = GetCurveComponentCount<CurveValueType>();
+
+		OutMinValue = FLT_MAX;
+		OutMaxValue = -FLT_MAX;
+
+		for (const auto& Point : Curve.Points)
+		{
+			for (int Component = 0; Component < ComponentCount; Component++)
+			{
+				const float Value = GetCurveValueComponent(Point.Value, Component);
+				OutMinValue = std::min(OutMinValue, Value);
+				OutMaxValue = std::max(OutMaxValue, Value);
+			}
+		}
+
+		if (OutMinValue == FLT_MAX || OutMaxValue == -FLT_MAX)
+		{
+			OutMinValue = -1.0f;
+			OutMaxValue = 1.0f;
+			return;
+		}
+
+		if (fabsf(OutMaxValue - OutMinValue) < 0.1f)
+		{
+			OutMinValue -= 0.5f;
+			OutMaxValue += 0.5f;
+		}
+		else
+		{
+			const float Padding = (OutMaxValue - OutMinValue) * 0.15f;
+			OutMinValue -= Padding;
+			OutMaxValue += Padding;
+		}
+	}
+
+	template <typename CurveType>
+	static int FindClosestCurvePointIndex(const CurveType& Curve, float Key)
+	{
+		if (Curve.Points.empty())
+			return -1;
+
+		int BestIndex = 0;
+		float BestDistance = fabsf(Curve.Points[0].Key - Key);
+		for (int i = 1; i < (int)Curve.Points.size(); i++)
+		{
+			const float Distance = fabsf(Curve.Points[i].Key - Key);
+			if (Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				BestIndex = i;
+			}
+		}
+
+		return BestIndex;
+	}
+
+	template <typename CurveType>
+	static int AddCurvePoint(CurveType& Curve, int SelectedIndex)
+	{
+		float NewKey = 0.5f;
+		if (!Curve.Points.empty())
+		{
+			if (SelectedIndex >= 0 && SelectedIndex < (int)Curve.Points.size())
+			{
+				if (SelectedIndex + 1 < (int)Curve.Points.size())
+					NewKey = 0.5f * (Curve.Points[SelectedIndex].Key + Curve.Points[SelectedIndex + 1].Key);
+				else if (SelectedIndex > 0)
+					NewKey = 0.5f * (Curve.Points[SelectedIndex].Key + 1.0f);
+				else
+					NewKey = std::clamp(Curve.Points[SelectedIndex].Key + 0.1f, 0.0f, 1.0f);
+			}
+		}
+
+		const auto NewValue = Curve.Interpolate(NewKey);
+		Curve.Points.emplace_back(NewKey, NewValue);
+		Curve.Sort();
+		return FindClosestCurvePointIndex(Curve, NewKey);
+	}
+
+	template <typename CurveType>
+	static void RemoveCurvePoint(CurveType& Curve, int& SelectedIndex)
+	{
+		if (SelectedIndex < 0 || SelectedIndex >= (int)Curve.Points.size())
+			return;
+
+		Curve.RemovePoint((size_t)SelectedIndex);
+		if (Curve.Points.empty())
+			SelectedIndex = -1;
+		else if (SelectedIndex >= (int)Curve.Points.size())
+			SelectedIndex = (int)Curve.Points.size() - 1;
+	}
+
+	template <typename CurveType>
+	static void SetFlatCurvePreset(CurveType& Curve, int& SelectedIndex)
+	{
+		using CurveValueType = std::decay_t<decltype(std::declval<CurveType>().Points[0].Value)>;
+		Curve.Points.clear();
+		Curve.Points.emplace_back(0.0f, CurveValueType(1.0f));
+		Curve.Points.emplace_back(1.0f, CurveValueType(1.0f));
+		SelectedIndex = 0;
+	}
+
+	template <typename CurveType>
+	static void FitCurvePlotView(CurveType& Curve, CurveEditorState& State)
+	{
+		float FitMin = -1.0f;
+		float FitMax = 1.0f;
+		ComputeCurveValueRange(Curve, FitMin, FitMax);
+		UpdateCurvePlotViewRange(State.PlotView, FitMin, FitMax, true);
+	}
+
+	static const char* GetCurveInterpolationModeLabel(EInterpolationCurveMode Mode)
+	{
+		switch (Mode)
+		{
+			case EInterpolationCurveMode::Linear:   return "Linear";
+			case EInterpolationCurveMode::Bezier:   return "Bezier";
+			case EInterpolationCurveMode::Constant: return "Constant";
+			default:                                return "Linear";
+		}
+	}
+
+	template <typename CurveType>
+	static bool DrawCurveEditorToolbar(const char* RemoveLabel, const char* FlatPresetLabel, CurveType& Curve, CurveEditorState& State, ImGuiID EditorId)
+	{
+		bool Changed = false;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
+
+		if (ImGui::Button(ICON_FA_PLUS " Add Point"))
+		{
+			GActiveCurveEditorId = EditorId;
+			State.SelectedIndex = AddCurvePoint(Curve, State.SelectedIndex);
+			FitCurvePlotView(Curve, State);
+			Changed = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(RemoveLabel))
+		{
+			GActiveCurveEditorId = EditorId;
+			RemoveCurvePoint(Curve, State.SelectedIndex);
+			FitCurvePlotView(Curve, State);
+			Changed = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(FlatPresetLabel))
+		{
+			GActiveCurveEditorId = EditorId;
+			SetFlatCurvePreset(Curve, State.SelectedIndex);
+			FitCurvePlotView(Curve, State);
+			Changed = true;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(160.0f);
+		int ModeIndex = (int)Curve.Mode;
+		if (ImGui::Combo("##InterpolationMode", &ModeIndex, "Linear\0Bezier\0Constant\0"))
+		{
+			GActiveCurveEditorId = EditorId;
+			Curve.Mode = (EInterpolationCurveMode)ModeIndex;
+			Changed = true;
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("%s", GetCurveInterpolationModeLabel(Curve.Mode));
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_FA_EXPAND " Fit"))
+		{
+			GActiveCurveEditorId = EditorId;
+			FitCurvePlotView(Curve, State);
+		}
+
+		ImGui::PopStyleVar();
+		return Changed;
+	}
+
+	template <typename CurveType>
+	static bool HandleCurveDeleteShortcut(CurveType& Curve, CurveEditorState& State, ImGuiID EditorId)
+	{
+		if (GActiveCurveEditorId != EditorId
+			|| !ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+			|| State.SelectedIndex < 0
+			|| State.SelectedIndex >= (int)Curve.Points.size()
+			|| ImGui::IsAnyItemActive()
+			|| !ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+		{
+			return false;
+		}
+
+		RemoveCurvePoint(Curve, State.SelectedIndex);
+		FitCurvePlotView(Curve, State);
+		return true;
+	}
+
+	static void DrawColorGradientStopHandle(ImDrawList* DrawList, const ImRect& BarRect, const ImVec4& Color, float Key, bool bSelected)
+	{
+		const float HandleX = ImLerp(BarRect.Min.x, BarRect.Max.x, Key);
+		const ImVec2 Tip(HandleX, BarRect.Max.y + 4.0f);
+		const ImVec2 Left(HandleX - 7.0f, BarRect.Max.y + 18.0f);
+		const ImVec2 Right(HandleX + 7.0f, BarRect.Max.y + 18.0f);
+		const ImVec2 SquareMin(HandleX - 6.0f, BarRect.Max.y + 18.0f);
+		const ImVec2 SquareMax(HandleX + 6.0f, BarRect.Max.y + 30.0f);
+
+		const ImU32 FillColor = ImGui::ColorConvertFloat4ToU32(Color);
+		const ImU32 BorderColor = ImGui::GetColorU32(bSelected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.08f, 0.08f, 0.08f, 1.0f));
+		const float Thickness = bSelected ? 2.0f : 1.0f;
+
+		DrawList->AddTriangleFilled(Tip, Left, Right, FillColor);
+		DrawList->AddRectFilled(SquareMin, SquareMax, FillColor, 2.0f);
+		DrawList->AddTriangle(Tip, Left, Right, BorderColor, Thickness);
+		DrawList->AddRect(SquareMin, SquareMax, BorderColor, 2.0f, 0, Thickness);
+	}
+
+	template <typename CurveType>
+	static int FindHoveredColorGradientStop(const CurveType& Curve, const ImRect& BarRect, const ImVec2& MousePosition)
+	{
+		for (int PointIndex = 0; PointIndex < (int)Curve.Points.size(); PointIndex++)
+		{
+			const float HandleX = ImLerp(BarRect.Min.x, BarRect.Max.x, Curve.Points[PointIndex].Key);
+			const ImRect HitRect(
+				ImVec2(HandleX - 9.0f, BarRect.Max.y + 2.0f),
+				ImVec2(HandleX + 9.0f, BarRect.Max.y + 32.0f));
+			if (HitRect.Contains(MousePosition))
+				return PointIndex;
+		}
+
+		return -1;
+	}
+
+	template <typename CurveType>
+	static bool DrawNumericInterpolationCurveEditor(CurveType& Curve, const Reflection::Field& Field, CurveEditorState& State, ImGuiID EditorId)
+	{
+		using CurveValueType = std::decay_t<decltype(std::declval<CurveType>().Points[0].Value)>;
+		constexpr float PointKeyPadding = 0.001f;
+		const int ComponentCount = GetCurveComponentCount<CurveValueType>();
+
+		if (State.SelectedIndex < 0 && !Curve.Points.empty())
+			State.SelectedIndex = 0;
+
+		bool Changed = false;
+		ImGui::SeparatorText(Field.Name);
+		Changed |= DrawCurveEditorToolbar(ICON_FA_TRASH " Remove Point", ICON_FA_STREAM " Flat 1", Curve, State, EditorId);
+		Changed |= HandleCurveDeleteShortcut(Curve, State, EditorId);
+
+		if (State.SelectedIndex >= (int)Curve.Points.size())
+			State.SelectedIndex = (int)Curve.Points.size() - 1;
+
+		float RangeMin = -1.0f;
+		float RangeMax = 1.0f;
+		ComputeCurveValueRange(Curve, RangeMin, RangeMax);
+		UpdateCurvePlotViewRange(State.PlotView, RangeMin, RangeMax, false);
+
+		if (ImPlot::BeginPlot("##CurvePlot", ImVec2(-1.0f, 220.0f), ImPlotFlags_NoMenus))
+		{
+			ImPlot::SetupAxes("Time", "Value");
+			ImPlot::SetupAxesLimits(0.0, 1.0, State.PlotView.MinValue, State.PlotView.MaxValue, ImPlotCond_Always);
+			ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_NoMenus);
+
+			std::vector<double> Xs(Curve.Points.size());
+			std::vector<double> Ys(Curve.Points.size());
+			bool bAnyPointHeld = false;
+
+			if (State.SelectedIndex >= 0 && State.SelectedIndex < (int)Curve.Points.size())
+			{
+				const double HighlightXs[2] = { Curve.Points[State.SelectedIndex].Key, Curve.Points[State.SelectedIndex].Key };
+				const double HighlightYs[2] = { State.PlotView.MinValue, State.PlotView.MaxValue };
+				ImPlot::SetNextLineStyle(ImVec4(1.0f, 1.0f, 1.0f, 0.18f), 1.0f);
+				ImPlot::PlotLine("##SelectedKeyLine", HighlightXs, HighlightYs, 2, ImPlotLineFlags_NoClip);
+			}
+
+			for (int Component = 0; Component < ComponentCount; Component++)
+			{
+				for (int PointIndex = 0; PointIndex < (int)Curve.Points.size(); PointIndex++)
+				{
+					Xs[PointIndex] = Curve.Points[PointIndex].Key;
+					Ys[PointIndex] = GetCurveValueComponent(Curve.Points[PointIndex].Value, Component);
+				}
+
+				if (Curve.Points.size() >= 2)
+				{
+					if (Curve.Mode == EInterpolationCurveMode::Linear)
+					{
+						ImPlot::SetNextLineStyle(GetCurveChannelColor(Component, false), 2.0f);
+						ImPlot::PlotLine(GetCurveNumericChannelLabel<CurveValueType>(Component), Xs.data(), Ys.data(), (int)Curve.Points.size());
+					}
+					else if (Curve.Mode == EInterpolationCurveMode::Constant)
+					{
+						std::vector<double> StepXs;
+						std::vector<double> StepYs;
+						StepXs.reserve(Curve.Points.size() * 2);
+						StepYs.reserve(Curve.Points.size() * 2);
+
+						StepXs.push_back(Xs[0]);
+						StepYs.push_back(Ys[0]);
+						for (int PointIndex = 1; PointIndex < (int)Curve.Points.size(); PointIndex++)
+						{
+							StepXs.push_back(Xs[PointIndex]);
+							StepYs.push_back(Ys[PointIndex - 1]);
+							StepXs.push_back(Xs[PointIndex]);
+							StepYs.push_back(Ys[PointIndex]);
+						}
+
+						ImPlot::SetNextLineStyle(GetCurveChannelColor(Component, false), 2.0f);
+						ImPlot::PlotLine(GetCurveNumericChannelLabel<CurveValueType>(Component), StepXs.data(), StepYs.data(), (int)StepXs.size());
+					}
+					else
+					{
+						const int SampleCount = 96;
+						std::vector<double> SampleXs(SampleCount);
+						std::vector<double> SampleYs(SampleCount);
+						for (int SampleIndex = 0; SampleIndex < SampleCount; SampleIndex++)
+						{
+							const float T = SampleCount > 1 ? (float)SampleIndex / (float)(SampleCount - 1) : 0.0f;
+							SampleXs[SampleIndex] = T;
+							SampleYs[SampleIndex] = GetCurveValueComponent(Curve.Interpolate(T), Component);
+						}
+
+						ImPlot::SetNextLineStyle(GetCurveChannelColor(Component, false), 2.0f);
+						ImPlot::PlotLine(GetCurveNumericChannelLabel<CurveValueType>(Component), SampleXs.data(), SampleYs.data(), SampleCount);
+					}
+				}
+
+				for (int PointIndex = 0; PointIndex < (int)Curve.Points.size(); PointIndex++)
+				{
+					double Key = Curve.Points[PointIndex].Key;
+					double Value = GetCurveValueComponent(Curve.Points[PointIndex].Value, Component);
+					bool bClicked = false;
+					bool bHeld = false;
+					const int DragPointId = (int)(EditorId + (ImGuiID)(PointIndex * 8 + Component + 1));
+					ImPlot::DragPoint(
+						DragPointId,
+						&Key,
+						&Value,
+						GetCurveChannelColor(Component, false),
+						PointIndex == State.SelectedIndex ? 7.0f : 5.0f,
+						ImPlotDragToolFlags_NoFit,
+						&bClicked,
+						nullptr,
+						&bHeld);
+
+					if (bClicked || bHeld)
+					{
+						GActiveCurveEditorId = EditorId;
+						const float MinKey = PointIndex > 0 ? Curve.Points[PointIndex - 1].Key + PointKeyPadding : 0.0f;
+						const float MaxKey = PointIndex + 1 < (int)Curve.Points.size() ? Curve.Points[PointIndex + 1].Key - PointKeyPadding : 1.0f;
+						Curve.Points[PointIndex].Key = (float)std::clamp(Key, (double)MinKey, (double)MaxKey);
+						GetCurveValueComponent(Curve.Points[PointIndex].Value, Component) = (float)Value;
+						State.SelectedIndex = PointIndex;
+						Changed = true;
+					}
+
+					bAnyPointHeld |= bHeld;
+				}
+			}
+
+			if (ImPlot::IsPlotHovered())
+			{
+				if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+					GActiveCurveEditorId = EditorId;
+
+				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					GActiveCurveEditorId = EditorId;
+					const ImPlotPoint MousePlotPosition = ImPlot::GetPlotMousePos();
+					const float NewKey = std::clamp((float)MousePlotPosition.x, 0.0f, 1.0f);
+					auto NewValue = Curve.Interpolate(NewKey);
+
+					if constexpr (std::is_same_v<CurveValueType, float>)
+					{
+						NewValue = (float)MousePlotPosition.y;
+					}
+					else
+					{
+						int ClosestComponent = 0;
+						float BestDistance = fabsf(GetCurveValueComponent(NewValue, 0) - (float)MousePlotPosition.y);
+						for (int Component = 1; Component < ComponentCount; Component++)
+						{
+							const float Distance = fabsf(GetCurveValueComponent(NewValue, Component) - (float)MousePlotPosition.y);
+							if (Distance < BestDistance)
+							{
+								BestDistance = Distance;
+								ClosestComponent = Component;
+							}
+						}
+
+						GetCurveValueComponent(NewValue, ClosestComponent) = (float)MousePlotPosition.y;
+					}
+
+					Curve.Points.emplace_back(NewKey, NewValue);
+					Curve.Sort();
+					State.SelectedIndex = FindClosestCurvePointIndex(Curve, NewKey);
+					FitCurvePlotView(Curve, State);
+					Changed = true;
+				}
+			}
+
+			if (!bAnyPointHeld && State.PlotView.bWasDraggingPoint)
+				FitCurvePlotView(Curve, State);
+
+			State.PlotView.bWasDraggingPoint = bAnyPointHeld;
+			ImPlot::EndPlot();
+		}
+
+		if (State.SelectedIndex >= 0 && State.SelectedIndex < (int)Curve.Points.size())
+		{
+			auto& Point = Curve.Points[State.SelectedIndex];
+			ImGui::Spacing();
+			ImGui::TextDisabled("Selected point %d", State.SelectedIndex);
+
+			const float MinKey = State.SelectedIndex > 0 ? Curve.Points[State.SelectedIndex - 1].Key + PointKeyPadding : 0.0f;
+			const float MaxKey = State.SelectedIndex + 1 < (int)Curve.Points.size() ? Curve.Points[State.SelectedIndex + 1].Key - PointKeyPadding : 1.0f;
+			bool bPointChanged = false;
+			bPointChanged |= ImGui::SliderFloat("Time", &Point.Key, MinKey, MaxKey, "%.3f");
+			bPointChanged |= DrawCurveValueEditor(Point.Value, false);
+			if (bPointChanged)
+			{
+				GActiveCurveEditorId = EditorId;
+				FitCurvePlotView(Curve, State);
+				Changed = true;
+			}
+		}
+
+		return Changed;
+	}
+
+	template <typename CurveType>
+	static bool DrawGradientInterpolationCurveEditor(CurveType& Curve, const Reflection::Field& Field, CurveEditorState& State, ImGuiID EditorId)
+	{
+		using CurveValueType = std::decay_t<decltype(std::declval<CurveType>().Points[0].Value)>;
+
+		if (State.SelectedIndex < 0 && !Curve.Points.empty())
+			State.SelectedIndex = 0;
+
+		bool Changed = false;
+		ImGui::SeparatorText(Field.Name);
+		Changed |= DrawCurveEditorToolbar(ICON_FA_TRASH " Remove Stop", ICON_FA_STREAM " Flat 1", Curve, State, EditorId);
+		Changed |= HandleCurveDeleteShortcut(Curve, State, EditorId);
+
+		const float Width = ImGui::GetContentRegionAvail().x;
+		ImGui::InvisibleButton("GradientCanvas", ImVec2(Width, 58.0f));
+		const ImVec2 CanvasMin = ImGui::GetItemRectMin();
+		const ImVec2 CanvasMax = ImGui::GetItemRectMax();
+		const ImRect BarRect(CanvasMin, ImVec2(CanvasMax.x, CanvasMin.y + 30.0f));
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+		const int SegmentCount = 96;
+		for (int Segment = 0; Segment < SegmentCount; Segment++)
+		{
+			const float T0 = (float)Segment / (float)SegmentCount;
+			const float T1 = (float)(Segment + 1) / (float)SegmentCount;
+			const ImVec4 C0 = ToImVec4(Curve.Interpolate(T0));
+			const ImVec4 C1 = ToImVec4(Curve.Interpolate(T1));
+			const float X0 = ImLerp(BarRect.Min.x, BarRect.Max.x, T0);
+			const float X1 = ImLerp(BarRect.Min.x, BarRect.Max.x, T1);
+			DrawList->AddRectFilledMultiColor(
+				ImVec2(X0, BarRect.Min.y),
+				ImVec2(X1, BarRect.Max.y),
+				ImGui::ColorConvertFloat4ToU32(C0),
+				ImGui::ColorConvertFloat4ToU32(C1),
+				ImGui::ColorConvertFloat4ToU32(C1),
+				ImGui::ColorConvertFloat4ToU32(C0));
+		}
+
+		DrawList->AddRect(BarRect.Min, BarRect.Max, ImGui::GetColorU32(ImVec4(0.25f, 0.25f, 0.25f, 1.0f)), 6.0f, 0, 1.5f);
+
+		const bool bCanvasHovered = ImGui::IsItemHovered();
+		if (bCanvasHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+			GActiveCurveEditorId = EditorId;
+			const float T = std::clamp((ImGui::GetIO().MousePos.x - BarRect.Min.x) / std::max(BarRect.GetWidth(), 1.0f), 0.0f, 1.0f);
+			Curve.Points.emplace_back(T, Curve.Interpolate(T));
+			Curve.Sort();
+			State.SelectedIndex = FindClosestCurvePointIndex(Curve, T);
+			Changed = true;
+		}
+
+		const ImVec2 MousePosition = ImGui::GetIO().MousePos;
+		const int HoveredPoint = FindHoveredColorGradientStop(Curve, BarRect, MousePosition);
+		if (HoveredPoint >= 0 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			GActiveCurveEditorId = EditorId;
+			State.SelectedIndex = HoveredPoint;
+			State.ActiveGradientStop = HoveredPoint;
+		}
+		else if (bCanvasHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			GActiveCurveEditorId = EditorId;
+			State.ActiveGradientStop = -1;
+		}
+
+		if (State.ActiveGradientStop >= 0 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		{
+			const float T = std::clamp((MousePosition.x - BarRect.Min.x) / std::max(BarRect.GetWidth(), 1.0f), 0.0f, 1.0f);
+			Curve.Points[State.ActiveGradientStop].Key = T;
+			Curve.Sort();
+			State.SelectedIndex = FindClosestCurvePointIndex(Curve, T);
+			State.ActiveGradientStop = State.SelectedIndex;
+			Changed = true;
+		}
+		else if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		{
+			State.ActiveGradientStop = -1;
+		}
+
+		for (int PointIndex = 0; PointIndex < (int)Curve.Points.size(); PointIndex++)
+		{
+			DrawColorGradientStopHandle(DrawList, BarRect, ToImVec4(Curve.Points[PointIndex].Value), Curve.Points[PointIndex].Key, PointIndex == State.SelectedIndex);
+		}
+
+		if (State.SelectedIndex >= (int)Curve.Points.size())
+			State.SelectedIndex = (int)Curve.Points.size() - 1;
+
+		if (State.SelectedIndex >= 0 && State.SelectedIndex < (int)Curve.Points.size())
+		{
+			ImGui::Spacing();
+			ImGui::TextDisabled("Selected stop %d", State.SelectedIndex);
+
+			float SelectedKey = Curve.Points[State.SelectedIndex].Key;
+			if (ImGui::SliderFloat("Stop Time", &SelectedKey, 0.0f, 1.0f, "%.3f"))
+			{
+				GActiveCurveEditorId = EditorId;
+				Curve.Points[State.SelectedIndex].Key = SelectedKey;
+				Curve.Sort();
+				State.SelectedIndex = FindClosestCurvePointIndex(Curve, SelectedKey);
+				Changed = true;
+			}
+
+			if constexpr (std::is_same_v<CurveValueType, Vector3>)
+			{
+				if (ImGui::ColorEdit3("Colour", &Curve.Points[State.SelectedIndex].Value.X, ImGuiColorEditFlags_Float))
+				{
+					GActiveCurveEditorId = EditorId;
+					Changed = true;
+				}
+			}
+			else
+			{
+				if (ImGui::ColorEdit4("Colour", &Curve.Points[State.SelectedIndex].Value.X, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_AlphaBar))
+				{
+					GActiveCurveEditorId = EditorId;
+					Changed = true;
+				}
+			}
+		}
+
+		return Changed;
+	}
+
+	template <typename CurveType>
+	static bool ImGui_EditInterpolationCurve(char* Object, const Reflection::Field& Field, int Depth)
+	{
+		using CurveValueType = std::decay_t<decltype(std::declval<CurveType>().Points[0].Value)>;
+		(void)Depth;
+
+		CurveType& Curve = *reinterpret_cast<CurveType*>(Object);
+		const FieldUIMetadata Meta = ParseFieldMetadata(Field.Meta);
+
+		ImGui::PushID((void*)Object);
+		ImGui::PushID(Field.Name);
+		const ImGuiID EditorId = ImGui::GetID("InterpolationCurveEditor");
+		CurveEditorState& State = GCurveEditorStates[EditorId];
+		if (!State.PlotView.bInitialised)
+			FitCurvePlotView(Curve, State);
+		ImGui::PushID((int)EditorId);
+
+		bool Changed = false;
+		if constexpr (std::is_same_v<CurveValueType, Vector3> || std::is_same_v<CurveValueType, Vector4>)
+		{
+			if (Meta.IsGradient)
+				Changed = DrawGradientInterpolationCurveEditor(Curve, Field, State, EditorId);
+			else
+				Changed = DrawNumericInterpolationCurveEditor(Curve, Field, State, EditorId);
+		}
+		else
+		{
+			Changed = DrawNumericInterpolationCurveEditor(Curve, Field, State, EditorId);
+		}
+
+		ImGui::PopID();
+		ImGui::PopID();
+		ImGui::PopID();
+		return Changed;
+	}
+
 	bool ImGui_EditVector2(char* Object, const Reflection::Field& Field, int Depth)
 	{
+		auto Meta = ParseFieldMetadata(Field.Meta);
+
+		if (Meta.UseChannelColours)
+			return DrawInlineFloatComponents(Field.Name, (float*)Object, 2, GVectorChannelLabels, true, false);
+
 		return ImGui::InputFloat2(Field.Name, (float*)Object);
 	}
 
@@ -84,6 +919,9 @@ namespace Columbus::Editor
 			return ImGui::ColorEdit3(Field.Name, (float*)Object, Flags);
 		}
 
+		if (Meta.UseChannelColours)
+			return DrawInlineFloatComponents(Field.Name, (float*)Object, 3, GVectorChannelLabels, true, false);
+
 		return ImGui::InputFloat3(Field.Name, (float*)Object);
 	}
 
@@ -99,6 +937,9 @@ namespace Columbus::Editor
 
 			return ImGui::ColorEdit4(Field.Name, (float*)Object, Flags);
 		}
+
+		if (Meta.UseChannelColours)
+			return DrawInlineFloatComponents(Field.Name, (float*)Object, 4, GVectorChannelLabels, true, false);
 
 		return ImGui::InputFloat4(Field.Name, (float*)Object);
 	}
@@ -119,6 +960,10 @@ namespace Columbus::Editor
 	CREFLECT_STRUCT_CUSTOM_UI(Vector3, ImGui_EditVector3);
 	CREFLECT_STRUCT_CUSTOM_UI(Vector4, ImGui_EditVector4);
 	CREFLECT_STRUCT_CUSTOM_UI(Quaternion, ImGui_EditQuaternion);
+	CREFLECT_STRUCT_CUSTOM_UI(InterpolationCurveFloat1, ImGui_EditInterpolationCurve<InterpolationCurveFloat1>);
+	CREFLECT_STRUCT_CUSTOM_UI(InterpolationCurveFloat2, ImGui_EditInterpolationCurve<InterpolationCurveFloat2>);
+	CREFLECT_STRUCT_CUSTOM_UI(InterpolationCurveFloat3, ImGui_EditInterpolationCurve<InterpolationCurveFloat3>);
+	CREFLECT_STRUCT_CUSTOM_UI(InterpolationCurveFloat4, ImGui_EditInterpolationCurve<InterpolationCurveFloat4>);
 
 	// Custom UI specialisations for reflected types
 	///////////////////////////////////////////////////////////////////////////////////////////////

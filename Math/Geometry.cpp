@@ -189,6 +189,12 @@ namespace Columbus::Geometry
 
 using namespace Columbus;
 
+CREFLECT_ENUM_BEGIN(EInterpolationCurveMode, "")
+	CREFLECT_ENUM_FIELD(EInterpolationCurveMode::Linear, 0)
+	CREFLECT_ENUM_FIELD(EInterpolationCurveMode::Bezier, 1)
+	CREFLECT_ENUM_FIELD(EInterpolationCurveMode::Constant, 2)
+CREFLECT_ENUM_END()
+
 CREFLECT_STRUCT_BEGIN(Vector2, "")
 	CREFLECT_STRUCT_FIELD(float, X, "")
 	CREFLECT_STRUCT_FIELD(float, Y, "")
@@ -216,6 +222,16 @@ CREFLECT_STRUCT_BEGIN(Quaternion, "")
 CREFLECT_STRUCT_END()
 
 
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat1::Node, "")
+	CREFLECT_STRUCT_FIELD(float, Key, "")
+	CREFLECT_STRUCT_FIELD(float, Value, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat2::Node, "")
+	CREFLECT_STRUCT_FIELD(float, Key, "")
+	CREFLECT_STRUCT_FIELD(Vector2, Value, "")
+CREFLECT_STRUCT_END()
+
 CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat3::Node, "")
 	CREFLECT_STRUCT_FIELD(float, Key, "")
 	CREFLECT_STRUCT_FIELD(Vector3, Value, "")
@@ -226,10 +242,22 @@ CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat4::Node, "")
 	CREFLECT_STRUCT_FIELD(Vector4, Value, "")
 CREFLECT_STRUCT_END()
 
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat1, "")
+	CREFLECT_STRUCT_FIELD(EInterpolationCurveMode, Mode, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat1::Node, Points, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat2, "")
+	CREFLECT_STRUCT_FIELD(EInterpolationCurveMode, Mode, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat2::Node, Points, "")
+CREFLECT_STRUCT_END()
+
 CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat3, "")
-	 CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat3::Node, Points, "")
+	CREFLECT_STRUCT_FIELD(EInterpolationCurveMode, Mode, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat3::Node, Points, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(InterpolationCurveFloat4, "")
-	 CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat4::Node, Points, "")
+	CREFLECT_STRUCT_FIELD(EInterpolationCurveMode, Mode, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(InterpolationCurveFloat4::Node, Points, "")
 CREFLECT_STRUCT_END()

@@ -17,18 +17,37 @@ namespace nlohmann
 	{
 		static void to_json(json& j, const Columbus::InterpolationCurve<T>& c)
 		{
+			j = json::object();
+			j["mode"] = static_cast<int>(c.Mode);
+			j["points"] = json::array();
+
 			for (size_t i = 0; i < c.Points.size(); i++)
 			{
-				j[i]["key"] = c.Points[i].Key;
-				j[i]["value"] = c.Points[i].Value;
+				j["points"][i]["key"] = c.Points[i].Key;
+				j["points"][i]["value"] = c.Points[i].Value;
 			}
 		}
 
 		static void from_json(const json& j, Columbus::InterpolationCurve<T>& c)
 		{
-			for (const auto& p : j)
+			c.Points.clear();
+			c.Mode = Columbus::EInterpolationCurveMode::Linear;
+
+			const json* PointsJson = &j;
+			if (j.is_object())
 			{
-				c.AddPoint(p["value"].get<T>(), p["key"].get<float>())
+				if (j.contains("mode"))
+					c.Mode = static_cast<Columbus::EInterpolationCurveMode>(j["mode"].get<int>());
+
+				if (j.contains("points"))
+					PointsJson = &j["points"];
+				else
+					return;
+			}
+
+			for (const auto& p : *PointsJson)
+			{
+				c.AddPoint(p["value"].get<T>(), p["key"].get<float>());
 			}
 		}
 	};

@@ -240,7 +240,7 @@ CREFLECT_STRUCT_END()
 CREFLECT_STRUCT_BEGIN(ParticleModuleColor, "")
 	CREFLECT_STRUCT_FIELD(Vector4, Min, "Colour")
 	CREFLECT_STRUCT_FIELD(Vector4, Max, "Colour")
-	CREFLECT_STRUCT_FIELD(InterpolationCurveFloat4, Curve, "")
+	CREFLECT_STRUCT_FIELD(InterpolationCurveFloat4, Curve, "Gradient")
 	CREFLECT_STRUCT_FIELD(EParticleColorUpdateMode, Mode, "")
 CREFLECT_STRUCT_END()
 
