@@ -21,6 +21,41 @@ namespace Columbus::DebugUI
 
 	static constexpr TextureFormat SwapchainFormat = TextureFormat::BGRA8SRGB;
 
+	struct RetiredImguiTexture
+	{
+		VkDescriptorSet Set = VK_NULL_HANDLE;
+		int FramesLeft = MaxFramesInFlight;
+	};
+
+	static std::vector<RetiredImguiTexture> GRetiredImguiTextures;
+
+	static void RetireImguiTexture(VkDescriptorSet Set)
+	{
+		if (Set != VK_NULL_HANDLE)
+		{
+			GRetiredImguiTextures.push_back({ Set, MaxFramesInFlight });
+		}
+	}
+
+	static void FlushRetiredImguiTextures()
+	{
+		for (size_t Index = 0; Index < GRetiredImguiTextures.size();)
+		{
+			RetiredImguiTexture& Retired = GRetiredImguiTextures[Index];
+			Retired.FramesLeft--;
+
+			if (Retired.FramesLeft <= 0)
+			{
+				ImGui_ImplVulkan_RemoveTexture(Retired.Set);
+				GRetiredImguiTextures.erase(GRetiredImguiTextures.begin() + Index);
+			}
+			else
+			{
+				Index++;
+			}
+		}
+	}
+
 	static void ApplyDarkTheme()
 	{
 		ImGuiStyle& Style = ImGui::GetStyle();
@@ -151,6 +186,8 @@ namespace Columbus::DebugUI
 
 	void BeginFrame(Context* Ctx)
 	{
+		FlushRetiredImguiTextures();
+
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.DisplaySize = { (float)Ctx->Window->Size.X, (float)Ctx->Window->Size.Y };
 
@@ -708,18 +745,46 @@ namespace Columbus::DebugUI
 
 	void TextureWidget(Texture2* Texture, Vector2 Size, bool ForceInvalidate)
 	{
-		// TODO: cleanup
-		static std::unordered_map<Texture2*, VkDescriptorSet> ImguiTexturesMap;
-
-		// TODO: find a way to hook imgui to rendering properly
-		if (!ImguiTexturesMap.contains(Texture) || ForceInvalidate)
+		struct ImguiTextureBinding
 		{
-			TextureVulkan* vktex = static_cast<TextureVulkan*>(Texture);
+			VkDescriptorSet Set = VK_NULL_HANDLE;
+			VkImageView View = VK_NULL_HANDLE;
+			VkSampler Sampler = VK_NULL_HANDLE;
+			VkImageLayout Layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		};
 
-			ImguiTexturesMap[Texture] = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
+		static std::unordered_map<Texture2*, ImguiTextureBinding> ImguiTexturesMap;
+
+		if (Texture == nullptr)
+		{
+			ImGui::Dummy(ImVec2(Size.X, Size.Y));
+			return;
 		}
 
-		ImGui::Image(ImguiTexturesMap[Texture], ImVec2(Size.X, Size.Y));
+		TextureVulkan* vktex = static_cast<TextureVulkan*>(Texture);
+		ImguiTextureBinding& Binding = ImguiTexturesMap[Texture];
+
+		const bool bDescriptorChanged =
+			Binding.Set == VK_NULL_HANDLE ||
+			Binding.View != vktex->_View ||
+			Binding.Sampler != vktex->_Sampler ||
+			Binding.Layout != vktex->_Layout;
+
+		// TODO: find a way to hook imgui to rendering properly
+		if (ForceInvalidate || bDescriptorChanged)
+		{
+			if (Binding.Set != VK_NULL_HANDLE)
+			{
+				RetireImguiTexture(Binding.Set);
+			}
+
+			Binding.Set = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
+			Binding.View = vktex->_View;
+			Binding.Sampler = vktex->_Sampler;
+			Binding.Layout = vktex->_Layout;
+		}
+
+		ImGui::Image(Binding.Set, ImVec2(Size.X, Size.Y));
 	}
 
 }

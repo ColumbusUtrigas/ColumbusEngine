@@ -178,7 +178,7 @@ namespace Columbus
 		VkDescriptorPoolCreateInfo descriptorPoolInfo;
 		descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		descriptorPoolInfo.pNext = nullptr;
-		descriptorPoolInfo.flags = 0;
+		descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		descriptorPoolInfo.maxSets = 4096;
 		descriptorPoolInfo.poolSizeCount = poolSizes.size();
 		descriptorPoolInfo.pPoolSizes = poolSizes.data();
