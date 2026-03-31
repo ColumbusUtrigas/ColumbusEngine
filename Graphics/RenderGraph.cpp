@@ -261,10 +261,10 @@ namespace Columbus
 			RenderData.GPUSceneLayout.TextureLayout = CreateLayout(0, TextureTypes, 2000);
 			RenderData.GPUSceneLayout.SceneLayout = CreateLayout(0, SceneTypes, 1, false, 5);
 
-			auto TextureLayoutNonCombined = CreateLayout(0, TextureTypesNonCombined, 2000);
+			RenderData.GPUSceneLayout.TextureLayoutNonCombined = CreateLayout(0, TextureTypesNonCombined, 2000);
 
 			RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 2000);
-			RenderData.GPUSceneData.TextureSetNonCombined = Device->CreateDescriptorSetUnbounded(TextureLayoutNonCombined, 2000);
+			RenderData.GPUSceneData.TextureSetNonCombined = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayoutNonCombined, 2000);
 			RenderData.GPUSceneData.SceneSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.SceneLayout, 0);
 
 
@@ -278,11 +278,63 @@ namespace Columbus
 
 	RenderGraph::~RenderGraph()
 	{
+		for (auto& ParamsFramebufferPair : VulkanFramebuffers)
+		{
+			vkDestroyFramebuffer(Device->_Device, ParamsFramebufferPair.second, nullptr);
+		}
+		VulkanFramebuffers.clear();
+
+		for (auto& ParamsRenderPassPair : VulkanRenderPasses)
+		{
+			vkDestroyRenderPass(Device->_Device, ParamsRenderPassPair.second, nullptr);
+		}
+		VulkanRenderPasses.clear();
+
+		for (auto& DescPool : TextureResourcePool)
+		{
+			TexturePool& Pool = DescPool.second;
+			for (auto& PooledTexture : Pool)
+			{
+				Texture2* Texture = PooledTexture.Texture.get();
+				if (Texture != nullptr)
+				{
+					RemoveProfilingMemory(MemoryCounter_RenderGraphTextures, Texture->GetSize());
+					Device->DestroyTexture(Texture);
+				}
+			}
+		}
+		TextureResourcePool.clear();
+
+		for (auto& DescPool : BufferResourcePool)
+		{
+			BufferPool& Pool = DescPool.second;
+			for (auto& PooledBuffer : Pool)
+			{
+				Buffer* Buffer = PooledBuffer.Buffer.get();
+				if (Buffer != nullptr)
+				{
+					RemoveProfilingMemory(MemoryCounter_RenderGraphBuffers, Buffer->GetSize());
+					Device->DestroyBuffer(Buffer);
+				}
+			}
+		}
+		BufferResourcePool.clear();
+
 		// TODO: move to GPUScene
 		//vkFreeDescriptorSets(Device->_Device, Device->_DescriptorPool, 1, &RenderData.GPUSceneData.TextureSet);
 		//vkFreeDescriptorSets(Device->_Device, Device->_DescriptorPool, 1, &RenderData.GPUSceneData.SceneSet);
-		vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.TextureLayout, nullptr);
-		vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.SceneLayout, nullptr);
+		if (RenderData.GPUSceneLayout.TextureLayout != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.TextureLayout, nullptr);
+		}
+		if (RenderData.GPUSceneLayout.TextureLayoutNonCombined != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.TextureLayoutNonCombined, nullptr);
+		}
+		if (RenderData.GPUSceneLayout.SceneLayout != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.SceneLayout, nullptr);
+		}
 
 		for (int i = 0; i < MaxFramesInFlight; i++)
 		{
@@ -628,6 +680,7 @@ namespace Columbus
 					Device->DestroyBuffer(Buffer);
 
 					Pool.erase(Pool.begin() + i);
+					i--;
 				}
 				else
 				{

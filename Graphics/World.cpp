@@ -129,20 +129,6 @@ namespace Columbus
 			GPUScene::DestroyGPUScene(Scene, Device);
 		});
 
-		// create empty TLAS of MaxMeshes size
-		{
-			// TLAS and BLASes should be packed into GPU scene
-			AccelerationStructureDesc TlasDesc;
-			TlasDesc.Type = AccelerationStructureType::TLAS;
-			TlasDesc.Instances = {};
-			for (int i = 0; i < GPUScene::MaxMeshes; i++)
-			{
-				TlasDesc.Instances.push_back({ Matrix(1), nullptr });
-			}
-
-			SceneGPU->TLAS = Device->CreateAccelerationStructure(TlasDesc);
-		}
-
 		if (Device->SupportsRayTracing())
 		{
 			AddProfilingMemory(MemoryCounter_SceneTLAS, SceneGPU->TLAS->GetSize());

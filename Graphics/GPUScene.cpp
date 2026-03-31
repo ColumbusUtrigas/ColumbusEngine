@@ -194,12 +194,26 @@ namespace Columbus
 
 	void GPUScene::DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device)
 	{
+		for (const auto& ParticleEntry : Scene->Particles)
+		{
+			if (ParticleEntry.DataBuffer)
+			{
+				Device->DestroyBuffer(ParticleEntry.DataBuffer);
+			}
+		}
+
 		DestroyGPUSceneBuffers(Device, Scene->SceneBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->LightsBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->MeshesBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->MaterialsBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->DecalsBuffers);
 
+		Device->DestroyTexture(Scene->LTC_1);
+		Device->DestroyTexture(Scene->LTC_2);
+
 		Device->DestroyAccelerationStructure(Scene->TLAS);
+
+		Scene->Device.reset();
+		delete Scene;
 	}
 }

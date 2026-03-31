@@ -9,6 +9,7 @@ namespace Columbus
 	{
 	public:
 		AudioPlayer(uint16 Channels, uint32 Frequency, AudioMixer* Mixer);
+		~AudioPlayer();
 
 		void Play();
 		void Stop();

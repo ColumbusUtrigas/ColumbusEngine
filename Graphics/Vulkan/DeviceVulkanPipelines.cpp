@@ -57,6 +57,7 @@ namespace Columbus
 		pipelineInfo.basePipelineIndex = -1;
 
 		VK_CHECK(vkCreateComputePipelines(_Device, nullptr, 1, &pipelineInfo, nullptr, &result->pipeline));
+		vkDestroyShaderModule(_Device, CS.module, nullptr);
 
 		if (!Desc.Name.empty())
 		{
@@ -65,6 +66,7 @@ namespace Columbus
 
 		AddProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
 		AddProfilingCount(CountingCounter_Vulkan_PipelinesCompute, 1);
+		CreatedComputePipelines.push_back(result);
 
 		return result;
 	}
@@ -266,6 +268,10 @@ namespace Columbus
 		info.basePipelineIndex = 0;
 
 		VK_CHECK(vkCreateGraphicsPipelines(_Device, nullptr, 1, &info, nullptr, &pipeline->pipeline));
+		for (const VkPipelineShaderStageCreateInfo& Stage : Stages)
+		{
+			vkDestroyShaderModule(_Device, Stage.module, nullptr);
+		}
 
 		if (!Desc.Name.empty())
 		{
@@ -274,6 +280,7 @@ namespace Columbus
 
 		AddProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
 		AddProfilingCount(CountingCounter_Vulkan_PipelinesGraphics, 1);
+		CreatedGraphicsPipelines.push_back(pipeline);
 
 		return pipeline;
 	}
@@ -362,7 +369,11 @@ namespace Columbus
 		info.basePipelineIndex = -1;
 
 		// Create pipeline
-		VkFunctions.vkCreateRayTracingPipelines(_Device, NULL, NULL, 1, &info, nullptr, &Pipeline->pipeline);
+		VK_CHECK(VkFunctions.vkCreateRayTracingPipelines(_Device, NULL, NULL, 1, &info, nullptr, &Pipeline->pipeline));
+		for (const VkPipelineShaderStageCreateInfo& Stage : Stages)
+		{
+			vkDestroyShaderModule(_Device, Stage.module, nullptr);
+		}
 
 		// Build Shader Binding Table
 		const uint32_t handleSize = _RayTracingProperties.shaderGroupHandleSize;
@@ -394,6 +405,7 @@ namespace Columbus
 
 		AddProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
 		AddProfilingCount(CountingCounter_Vulkan_PipelinesRayTracing, 1);
+		CreatedRayTracingPipelines.push_back(Pipeline);
 
 		return Pipeline;
 	}

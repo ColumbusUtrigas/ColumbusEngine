@@ -362,7 +362,13 @@ namespace Columbus
 	void RTGIDenoiserHistory::Destroy(SPtr<DeviceVulkan> Device)
 	{
 		Device->DestroyTexture(Radiance);
+		Device->DestroyTexture(AverageRadiance);
+		Device->DestroyTexture(Variance);
 		Device->DestroyTexture(SampleCount);
+		Radiance = nullptr;
+		AverageRadiance = nullptr;
+		Variance = nullptr;
+		SampleCount = nullptr;
 	}
 
 	struct SimpleDenoiseSpatialParameters

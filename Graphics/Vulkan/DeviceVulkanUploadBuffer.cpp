@@ -129,8 +129,19 @@ namespace Columbus
 	{
 		for (u32 i = 0; i < MaxFramesInFlight; i++)
 		{
-			Device->UnmapBuffer(UploadBuffers[i]);
-			Device->DestroyBuffer(UploadBuffers[i]);
+			if (UploadBuffers[i])
+			{
+				Device->UnmapBuffer(UploadBuffers[i]);
+				Device->DestroyBuffer(UploadBuffers[i]);
+				UploadBuffers[i] = nullptr;
+				MappedBuffers[i] = nullptr;
+			}
+
+			delete CommandBufs[i];
+			CommandBufs[i] = nullptr;
+
+			UploadFences[i].reset();
+			ScheduledUploads[i].clear();
 		}
 	}
 

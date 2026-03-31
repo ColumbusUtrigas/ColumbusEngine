@@ -18,6 +18,8 @@
 #include "QueryPoolVulkan.h"
 
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
@@ -230,17 +232,154 @@ namespace Columbus
 	{
 		VK_CHECK(vkDeviceWaitIdle(_Device));
 
+		for (RayTracingPipelineVulkan* Pipeline : CreatedRayTracingPipelines)
+		{
+			if (Pipeline == nullptr)
+				continue;
+
+			DestroyBuffer(Pipeline->RayGenSBT);
+			DestroyBuffer(Pipeline->MissSBT);
+			DestroyBuffer(Pipeline->HitSBT);
+			DestroyBuffer(Pipeline->CallableSBT);
+
+			vkDestroyPipeline(_Device, Pipeline->pipeline, nullptr);
+			vkDestroyPipelineLayout(_Device, Pipeline->layout, nullptr);
+			_DestroyPipelineSetLayouts(Pipeline->SetLayouts);
+
+			RemoveProfilingCount(CountingCounter_Vulkan_PipelinesRayTracing, 1);
+			RemoveProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
+			delete Pipeline;
+		}
+		CreatedRayTracingPipelines.clear();
+
+		for (GraphicsPipelineVulkan* Pipeline : CreatedGraphicsPipelines)
+		{
+			if (Pipeline == nullptr)
+				continue;
+
+			vkDestroyPipeline(_Device, Pipeline->pipeline, nullptr);
+			vkDestroyPipelineLayout(_Device, Pipeline->layout, nullptr);
+			_DestroyPipelineSetLayouts(Pipeline->SetLayouts);
+
+			RemoveProfilingCount(CountingCounter_Vulkan_PipelinesGraphics, 1);
+			RemoveProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
+			delete Pipeline;
+		}
+		CreatedGraphicsPipelines.clear();
+
+		for (ComputePipelineVulkan* Pipeline : CreatedComputePipelines)
+		{
+			if (Pipeline == nullptr)
+				continue;
+
+			vkDestroyPipeline(_Device, Pipeline->pipeline, nullptr);
+			vkDestroyPipelineLayout(_Device, Pipeline->layout, nullptr);
+			_DestroyPipelineSetLayouts(Pipeline->SetLayouts);
+
+			RemoveProfilingCount(CountingCounter_Vulkan_PipelinesCompute, 1);
+			RemoveProfilingCount(CountingCounter_Vulkan_Pipelines, 1);
+			delete Pipeline;
+		}
+		CreatedComputePipelines.clear();
+
+		for (auto& Deferred : BufferDeferredDestroys)
+		{
+			DestroyBuffer(Deferred.Resource);
+		}
+		BufferDeferredDestroys.clear();
+
+		for (auto& Deferred : TextureDeferredDestroys)
+		{
+			DestroyTexture(Deferred.Resource);
+		}
+		TextureDeferredDestroys.clear();
+
+		for (auto& Deferred : RenderPassDeferredDestroys)
+		{
+			vkDestroyRenderPass(_Device, Deferred.Resource, nullptr);
+		}
+		RenderPassDeferredDestroys.clear();
+
+		for (auto& Deferred : FramebufferDeferredDestroys)
+		{
+			vkDestroyFramebuffer(_Device, Deferred.Resource, nullptr);
+		}
+		FramebufferDeferredDestroys.clear();
+
+		for (int FrameIndex = 0; FrameIndex < MaxFramesInFlight; FrameIndex++)
+		{
+			for (auto& FrameBuffer : _CBufPool.Pool[FrameIndex])
+			{
+				DestroyBuffer(FrameBuffer.Buf);
+				FrameBuffer.Buf = nullptr;
+			}
+			_CBufPool.Pool[FrameIndex].clear();
+		}
+
+		for (auto& [Desc, Sampler] : StaticSamplers)
+		{
+			(void)Desc;
+			DestroySampler(Sampler);
+		}
+		StaticSamplers.clear();
+
 		DestroyTexture(DefaultTextures.White);
 		DestroyTexture(DefaultTextures.Black);
 		DestroyTexture(DefaultTextures.Transparent);
+		DefaultTextures.White = nullptr;
+		DefaultTextures.Black = nullptr;
+		DefaultTextures.Transparent = nullptr;
 
 		_Profiler.Shutdown();
 		UploadRing.Shutdown();
 
-		//vmaDestroyAllocator(_Allocator);
+		VmaTotalStatistics TotalStats{};
+		vmaCalculateStatistics(_Allocator, &TotalStats);
+		if (TotalStats.total.statistics.allocationCount > 0)
+		{
+			char* StatsString = nullptr;
+			vmaBuildStatsString(_Allocator, &StatsString, VK_TRUE);
+
+			const std::filesystem::path DumpPath = std::filesystem::absolute("vma_shutdown_dump.json");
+			std::ofstream DumpFile(DumpPath, std::ios::binary | std::ios::trunc);
+			if (DumpFile.is_open() && StatsString != nullptr)
+			{
+				DumpFile << StatsString;
+				DumpFile.close();
+				Log::Error("VMA leak dump written to %s (%u allocations still alive, %llu bytes).",
+					DumpPath.string().c_str(),
+					TotalStats.total.statistics.allocationCount,
+					static_cast<unsigned long long>(TotalStats.total.statistics.allocationBytes));
+			}
+			else
+			{
+				Log::Error("VMA leak dump failed to write (%u allocations still alive, %llu bytes).",
+					TotalStats.total.statistics.allocationCount,
+					static_cast<unsigned long long>(TotalStats.total.statistics.allocationBytes));
+			}
+
+			if (StatsString != nullptr)
+			{
+				vmaFreeStatsString(_Allocator, StatsString);
+			}
+		}
+
+		vmaDestroyAllocator(_Allocator);
 		vkDestroyDescriptorPool(_Device, _DescriptorPool, nullptr);
 		vkDestroyCommandPool(_Device, _CmdPool, nullptr);
 		vkDestroyDevice(_Device, nullptr);
+	}
+
+	void DeviceVulkan::_DestroyPipelineSetLayouts(const PipelineDescriptorSetLayoutsVulkan& SetLayouts)
+	{
+		for (u32 i = 0; i < SetLayouts.UsedLayouts; i++)
+		{
+			if (SetLayouts.Layouts[i] != VK_NULL_HANDLE)
+			{
+				vkDestroyDescriptorSetLayout(_Device, SetLayouts.Layouts[i], nullptr);
+				RemoveProfilingCount(CountingCounter_Vulkan_PipelineLayouts, 1);
+			}
+		}
 	}
 
 	bool DeviceVulkan::SupportsRayTracing() const
@@ -1091,7 +1230,12 @@ namespace Columbus
 	}
 	void DeviceVulkan::SetDebugName(const Buffer* Buffer, const char* Name)
 	{
-		_SetDebugName((uint64_t)static_cast<const BufferVulkan*>(Buffer)->_Buffer, VK_OBJECT_TYPE_BUFFER, Name);
+		const BufferVulkan* VkBuffer = static_cast<const BufferVulkan*>(Buffer);
+		_SetDebugName((uint64_t)VkBuffer->_Buffer, VK_OBJECT_TYPE_BUFFER, Name);
+		if (VkBuffer->_Allocation != nullptr)
+		{
+			vmaSetAllocationName(_Allocator, VkBuffer->_Allocation, Name);
+		}
 	}
 	void DeviceVulkan::SetDebugName(const Texture2* Texture, const char* Name)
 	{
@@ -1099,6 +1243,10 @@ namespace Columbus
 		_SetDebugName((uint64_t)vktex->_Image, VK_OBJECT_TYPE_IMAGE, Name);
 		_SetDebugName((uint64_t)vktex->_View, VK_OBJECT_TYPE_IMAGE_VIEW, Name);
 		_SetDebugName((uint64_t)vktex->_Sampler, VK_OBJECT_TYPE_SAMPLER, Name);
+		if (vktex->_Allocation != nullptr)
+		{
+			vmaSetAllocationName(_Allocator, vktex->_Allocation, Name);
+		}
 	}
 	void DeviceVulkan::SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name)
 	{

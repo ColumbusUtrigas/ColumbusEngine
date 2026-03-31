@@ -97,6 +97,14 @@ namespace Columbus
 		Device->DestroyTexture(TAAHistory);
 		Device->DestroyTexture(RTReflectionsRadiance);
 		Device->DestroyTexture(RTReflectionsSampleCount);
+		RTGI_History.Destroy(Device);
+		Depth = nullptr;
+		RoughnessMetallic = nullptr;
+		Normals = nullptr;
+		VolumetricFogFroxels = nullptr;
+		TAAHistory = nullptr;
+		RTReflectionsRadiance = nullptr;
+		RTReflectionsSampleCount = nullptr;
 	}
 
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)

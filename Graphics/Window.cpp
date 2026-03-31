@@ -93,6 +93,27 @@ namespace Columbus
 
 	WindowVulkan::~WindowVulkan()
 	{
+		Device->QueueWaitIdle();
+
+		for (int i = 0; i < MaxFramesInFlight; i++)
+		{
+			delete SwapchainImageBarrierCmdBuffers[i];
+			SwapchainImageBarrierCmdBuffers[i] = nullptr;
+
+			FrameFences[i].reset();
+
+			if (AcquireImageSemaphores[i] != VK_NULL_HANDLE)
+			{
+				vkDestroySemaphore(Device->_Device, AcquireImageSemaphores[i], nullptr);
+				AcquireImageSemaphores[i] = VK_NULL_HANDLE;
+			}
+			if (ImageBarrierSemaphores[i] != VK_NULL_HANDLE)
+			{
+				vkDestroySemaphore(Device->_Device, ImageBarrierSemaphores[i], nullptr);
+				ImageBarrierSemaphores[i] = VK_NULL_HANDLE;
+			}
+		}
+
 		delete Swapchain;
 		vkDestroySurfaceKHR(Instance.instance, Surface, nullptr);
 		SDL_DestroyWindow(Window);

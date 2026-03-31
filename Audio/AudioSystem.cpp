@@ -25,6 +25,11 @@ namespace Columbus
 
 	AudioSystem::~AudioSystem()
 	{
+		if (Player)
+		{
+			Player->Stop();
+			Player.reset();
+		}
 	}
 
 }

@@ -10,8 +10,8 @@ namespace Columbus
 	class BufferVulkan : public Buffer
 	{
 	public:
-		VkBuffer _Buffer;
-		VmaAllocation _Allocation;
+		VkBuffer _Buffer = VK_NULL_HANDLE;
+		VmaAllocation _Allocation = nullptr;
 	public:
 		BufferVulkan(const BufferDesc& Desc) : Buffer(Desc) {}
 

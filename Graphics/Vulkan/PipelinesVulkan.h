@@ -12,8 +12,8 @@ namespace Columbus
 	class ComputePipelineVulkan : public ComputePipeline
 	{
 	public:
-		VkPipeline pipeline;
-		VkPipelineLayout layout;
+		VkPipeline pipeline = VK_NULL_HANDLE;
+		VkPipelineLayout layout = VK_NULL_HANDLE;
 
 		PipelineDescriptorSetLayoutsVulkan SetLayouts;
 
@@ -24,8 +24,8 @@ namespace Columbus
 	class GraphicsPipelineVulkan : public GraphicsPipeline
 	{
 	public:
-		VkPipeline pipeline;
-		VkPipelineLayout layout;
+		VkPipeline pipeline = VK_NULL_HANDLE;
+		VkPipelineLayout layout = VK_NULL_HANDLE;
 		PipelineDescriptorSetLayoutsVulkan SetLayouts;
 
 	public:
@@ -35,20 +35,20 @@ namespace Columbus
 	class RayTracingPipelineVulkan : public RayTracingPipeline
 	{
 	public:
-		VkPipeline pipeline;
-		VkPipelineLayout layout;
+		VkPipeline pipeline = VK_NULL_HANDLE;
+		VkPipelineLayout layout = VK_NULL_HANDLE;
 		
 		PipelineDescriptorSetLayoutsVulkan SetLayouts;
 
-		Buffer* RayGenSBT;
-		Buffer* MissSBT;
-		Buffer* HitSBT;
-		Buffer* CallableSBT;
+		Buffer* RayGenSBT = nullptr;
+		Buffer* MissSBT = nullptr;
+		Buffer* HitSBT = nullptr;
+		Buffer* CallableSBT = nullptr;
 
-		VkStridedDeviceAddressRegionKHR RayGenRegionSBT;
-		VkStridedDeviceAddressRegionKHR MissRegionSBT;
-		VkStridedDeviceAddressRegionKHR HitRegionSBT;
-		VkStridedDeviceAddressRegionKHR CallableRegionSBT;
+		VkStridedDeviceAddressRegionKHR RayGenRegionSBT{};
+		VkStridedDeviceAddressRegionKHR MissRegionSBT{};
+		VkStridedDeviceAddressRegionKHR HitRegionSBT{};
+		VkStridedDeviceAddressRegionKHR CallableRegionSBT{};
 
 	public:
 		RayTracingPipelineVulkan(const RayTracingPipelineDesc& Desc) : RayTracingPipeline(Desc) {}

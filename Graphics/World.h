@@ -359,6 +359,7 @@ namespace Columbus
 
 		~EngineWorld()
 		{
+			ClearWorld();
 			FreeResources();
 		}
 

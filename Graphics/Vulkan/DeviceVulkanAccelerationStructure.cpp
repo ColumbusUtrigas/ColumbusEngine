@@ -212,11 +212,17 @@ namespace Columbus
 			RemoveProfilingCount(CountingCounter_Vulkan_TLASes, 1);
 		}
 
+		VkFunctions.vkDestroyAccelerationStructure(_Device, vkas->_Handle, nullptr);
+
+		for (Buffer*& UploadBuf : vkas->_InstancesUploadBuffers)
+		{
+			DestroyBuffer(UploadBuf);
+			UploadBuf = nullptr;
+		}
+
 		DestroyBuffer(vkas->_Buffer);
 		DestroyBuffer(vkas->_TransformOrInstancesBuffer);
 		DestroyBuffer(vkas->_ScratchBuffer);
-
-		VkFunctions.vkDestroyAccelerationStructure(_Device, vkas->_Handle, nullptr);
 
 		delete AS;
 	}

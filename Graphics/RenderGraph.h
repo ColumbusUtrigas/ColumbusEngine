@@ -203,16 +203,17 @@ namespace Columbus
 		// TODO: move to GPUScene
 		struct
 		{
-			VkDescriptorSetLayout TextureLayout;
-			VkDescriptorSetLayout SceneLayout;
+			VkDescriptorSetLayout TextureLayout = VK_NULL_HANDLE;
+			VkDescriptorSetLayout TextureLayoutNonCombined = VK_NULL_HANDLE;
+			VkDescriptorSetLayout SceneLayout = VK_NULL_HANDLE;
 		} GPUSceneLayout;
 
 		// TODO: move to GPUScene
 		struct
 		{
-			VkDescriptorSet TextureSet;
-			VkDescriptorSet TextureSetNonCombined;
-			VkDescriptorSet SceneSet;
+			VkDescriptorSet TextureSet = VK_NULL_HANDLE;
+			VkDescriptorSet TextureSetNonCombined = VK_NULL_HANDLE;
+			VkDescriptorSet SceneSet = VK_NULL_HANDLE;
 		} GPUSceneData;
 
 		int CurrentPerFrameData = 0;

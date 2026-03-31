@@ -27,7 +27,17 @@ namespace Columbus::DebugUI
 		int FramesLeft = MaxFramesInFlight;
 	};
 
+	struct ImguiTextureBinding
+	{
+		VkDescriptorSet Set = VK_NULL_HANDLE;
+		VkImageView View = VK_NULL_HANDLE;
+		VkSampler Sampler = VK_NULL_HANDLE;
+		VkImageLayout Layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	};
+
 	static std::vector<RetiredImguiTexture> GRetiredImguiTextures;
+	static std::unordered_map<Texture2*, ImguiTextureBinding> GImguiTexturesMap;
+	static VkDescriptorSet GLightmapPreviewImage = VK_NULL_HANDLE;
 
 	static void RetireImguiTexture(VkDescriptorSet Set)
 	{
@@ -54,6 +64,34 @@ namespace Columbus::DebugUI
 				Index++;
 			}
 		}
+	}
+
+	static void ClearImguiTextureBindings()
+	{
+		for (auto& [Texture, Binding] : GImguiTexturesMap)
+		{
+			(void)Texture;
+			if (Binding.Set != VK_NULL_HANDLE)
+			{
+				ImGui_ImplVulkan_RemoveTexture(Binding.Set);
+			}
+		}
+		GImguiTexturesMap.clear();
+
+		if (GLightmapPreviewImage != VK_NULL_HANDLE)
+		{
+			ImGui_ImplVulkan_RemoveTexture(GLightmapPreviewImage);
+			GLightmapPreviewImage = VK_NULL_HANDLE;
+		}
+
+		for (RetiredImguiTexture& Retired : GRetiredImguiTextures)
+		{
+			if (Retired.Set != VK_NULL_HANDLE)
+			{
+				ImGui_ImplVulkan_RemoveTexture(Retired.Set);
+			}
+		}
+		GRetiredImguiTextures.clear();
 	}
 
 	static void ApplyDarkTheme()
@@ -294,6 +332,31 @@ namespace Columbus::DebugUI
 
 	void Destroy(Context* Ctx)
 	{
+		if (Ctx == nullptr)
+		{
+			return;
+		}
+
+		Ctx->Window->Device->QueueWaitIdle();
+		ClearImguiTextureBindings();
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+
+		if (ImPlot::GetCurrentContext() != nullptr)
+		{
+			ImPlot::DestroyContext();
+		}
+		if (ImGui::GetCurrentContext() != nullptr)
+		{
+			ImGui::DestroyContext();
+		}
+
+		if (Ctx->InternalRenderPass != VK_NULL_HANDLE)
+		{
+			vkDestroyRenderPass(Ctx->Window->Device->_Device, Ctx->InternalRenderPass, nullptr);
+			Ctx->InternalRenderPass = VK_NULL_HANDLE;
+		}
+
 		delete Ctx->Graph;
 		delete Ctx;
 	}
@@ -712,8 +775,6 @@ namespace Columbus::DebugUI
 			ImGui::InputInt("Bounces", &World.Lightmaps.BakingSettings.Bounces);
 			ImGui::InputInt("Samples per frame", &World.Lightmaps.BakingSettings.SamplesPerFrame);
 
-			static VkDescriptorSet PreviewImage = NULL;
-
 			if (ImGui::Button("Generate UV2"))
 			{
 				GenerateAndPackLightmaps(World);
@@ -721,7 +782,11 @@ namespace Columbus::DebugUI
 
 				// TODO: make imgui image preview work normally
 				TextureVulkan* vktex = static_cast<TextureVulkan*>(World.Lightmaps.Atlas.Lightmap);
-				PreviewImage = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
+				if (GLightmapPreviewImage != VK_NULL_HANDLE)
+				{
+					ImGui_ImplVulkan_RemoveTexture(GLightmapPreviewImage);
+				}
+				GLightmapPreviewImage = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
 			}
 
 			if (ImGui::Button("Bake"))
@@ -737,7 +802,7 @@ namespace Columbus::DebugUI
 
 			if (World.Lightmaps.Atlas.Lightmap != nullptr)
 			{
-				ImGui::Image(PreviewImage, ImVec2(200, 200));
+				ImGui::Image(GLightmapPreviewImage, ImVec2(200, 200));
 			}
 		}
 		ImGui::End();
@@ -745,16 +810,6 @@ namespace Columbus::DebugUI
 
 	void TextureWidget(Texture2* Texture, Vector2 Size, bool ForceInvalidate)
 	{
-		struct ImguiTextureBinding
-		{
-			VkDescriptorSet Set = VK_NULL_HANDLE;
-			VkImageView View = VK_NULL_HANDLE;
-			VkSampler Sampler = VK_NULL_HANDLE;
-			VkImageLayout Layout = VK_IMAGE_LAYOUT_UNDEFINED;
-		};
-
-		static std::unordered_map<Texture2*, ImguiTextureBinding> ImguiTexturesMap;
-
 		if (Texture == nullptr)
 		{
 			ImGui::Dummy(ImVec2(Size.X, Size.Y));
@@ -762,7 +817,7 @@ namespace Columbus::DebugUI
 		}
 
 		TextureVulkan* vktex = static_cast<TextureVulkan*>(Texture);
-		ImguiTextureBinding& Binding = ImguiTexturesMap[Texture];
+		ImguiTextureBinding& Binding = GImguiTexturesMap[Texture];
 
 		const bool bDescriptorChanged =
 			Binding.Set == VK_NULL_HANDLE ||

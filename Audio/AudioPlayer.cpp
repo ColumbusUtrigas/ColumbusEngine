@@ -140,6 +140,12 @@ namespace Columbus
 		SDL_PauseAudio(1);
 	}
 
+	AudioPlayer::~AudioPlayer()
+	{
+		SDL_PauseAudio(1);
+		SDL_CloseAudio();
+	}
+
 }
 
 

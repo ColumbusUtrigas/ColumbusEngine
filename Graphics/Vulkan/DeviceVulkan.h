@@ -40,6 +40,9 @@ namespace Columbus
 {
 
 	class DeviceVulkan;
+	class ComputePipelineVulkan;
+	class GraphicsPipelineVulkan;
+	class RayTracingPipelineVulkan;
 	struct ProfileMarkerGPU;
 	struct ProfileMarkerScopedGPU;
 
@@ -211,12 +214,16 @@ namespace Columbus
 		CBufferPoolVulkan _CBufPool;
 
 		std::unordered_map<SamplerDesc, Sampler*, HashSamplerDesc> StaticSamplers;
+		std::vector<ComputePipelineVulkan*> CreatedComputePipelines;
+		std::vector<GraphicsPipelineVulkan*> CreatedGraphicsPipelines;
+		std::vector<RayTracingPipelineVulkan*> CreatedRayTracingPipelines;
 
 		std::vector<ResourceDeferredDestroyVulkan<Buffer*>>       BufferDeferredDestroys;
 		std::vector<ResourceDeferredDestroyVulkan<Texture2*>>     TextureDeferredDestroys;
 		std::vector<ResourceDeferredDestroyVulkan<VkRenderPass>>  RenderPassDeferredDestroys;
 		std::vector<ResourceDeferredDestroyVulkan<VkFramebuffer>> FramebufferDeferredDestroys;
 	private:
+		void _DestroyPipelineSetLayouts(const PipelineDescriptorSetLayoutsVulkan& SetLayouts);
 		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
 		void _SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name);

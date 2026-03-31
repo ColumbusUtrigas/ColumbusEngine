@@ -137,7 +137,12 @@ namespace Columbus
 
 		if (DofState)
 		{
-			ffxDofContextDestroy(DofState->DofContext);
+			if (DofState->DofContext)
+			{
+				ffxDofContextDestroy(DofState->DofContext);
+				delete DofState->DofContext;
+				DofState->DofContext = nullptr;
+			}
 
 			delete DofState;
 			pContext->DofState = nullptr;
@@ -183,14 +188,19 @@ namespace Columbus
 
 	void ShutdownDeferredRenderContext(SPtr<DeviceVulkan> Device, DeferredRenderContext* pContext)
 	{
+		Device->QueueWaitIdle();
+
+		if (pContext->FFX)
+		{
+			DestroyFfxDof(pContext->FFX);
+			DestroyFfxBlur(pContext->FFX);
+
+			delete pContext->FFX->InterfaceFFX;
+			delete pContext->FFX;
+			pContext->FFX = nullptr;
+		}
+
 		pContext->History.Destroy(Device);
-
-		DestroyFfxBlur(pContext->FFX);
-		DestroyFfxDof(pContext->FFX);
-
-		delete pContext->FFX->InterfaceFFX;
-		delete pContext->FFX;
-		pContext->FFX = nullptr;
 	}
 
 	// implementation of public functions
