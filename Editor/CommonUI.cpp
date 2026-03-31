@@ -8,6 +8,7 @@
 #include <Math/Vector3.h>
 #include <Math/Vector4.h>
 #include <Scene/Project.h>
+#include <Graphics/DebugUI.h>
 #include <Graphics/World.h>
 #include <imgui_internal.h>
 #include <Lib/imgui/misc/cpp/imgui_stdlib.h>
@@ -1383,13 +1384,14 @@ namespace Columbus::Editor
 			struct AssetRefBase
 			{
 				std::string Path;
-				// templated reference is not present here
+				void* Asset = nullptr;
 			};
 
+			AssetRefBase* AssetRef = reinterpret_cast<AssetRefBase*>(FieldData);
 			char ButtonBuf[512]{};
 			snprintf(ButtonBuf, 512, "...##%s", Field.Name);
 
-			ImGui::LabelText(Field.Name, "%s", ((AssetRefBase*)FieldData)->Path.c_str());
+			ImGui::LabelText(Field.Name, "%s", AssetRef->Path.c_str());
 			ImGui::SameLine();
 			if (ImGui::Button(ButtonBuf))
 			{
@@ -1417,11 +1419,42 @@ namespace Columbus::Editor
 						return false;
 					}
 
-					((AssetRefBase*)FieldData)->Path = AssetSystem::Get().MakePathRelativeToBakedFolder(path);
+					AssetRef->Path = AssetSystem::Get().MakePathRelativeToBakedFolder(path);
 					return true;
 				}
 
 				return false;
+			}
+
+			const Reflection::Struct* AssetType = Reflection::FindStructByGuid(Field.Typeguid);
+			if (AssetType == Reflection::FindStruct<Texture2>())
+			{
+				Columbus::AssetRef<Texture2> PreviewRef;
+				Texture2* PreviewTexture = static_cast<Texture2*>(AssetRef->Asset);
+
+				if (!PreviewTexture && !AssetRef->Path.empty() && AssetSystem::Get().HasPath(AssetRef->Path))
+				{
+					PreviewRef = AssetSystem::Get().GetRefByPath<Texture2>(AssetRef->Path);
+					PreviewTexture = PreviewRef.Asset;
+				}
+
+				if (PreviewTexture)
+				{
+					const TextureDesc2& Desc = PreviewTexture->GetDesc();
+					const std::string AssetName = AssetRef->Path.empty()
+						? std::string("Texture")
+						: std::filesystem::path(AssetRef->Path).filename().string();
+
+					ImGui::BeginChild((std::string("##TexturePreview") + Field.Name).c_str(), ImVec2(0.0f, 124.0f), true);
+					DebugUI::TextureWidget(PreviewTexture, Vector2(96.0f, 96.0f));
+					ImGui::SameLine();
+					ImGui::BeginGroup();
+					ImGui::TextUnformatted(AssetName.c_str());
+					ImGui::TextDisabled("%u x %u", Desc.Width, Desc.Height);
+					ImGui::TextDisabled("%s", AssetRef->Path.c_str());
+					ImGui::EndGroup();
+					ImGui::EndChild();
+				}
 			}
 			break;
 		}
