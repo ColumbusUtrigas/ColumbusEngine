@@ -1142,6 +1142,10 @@ namespace Columbus
 				{
 					// TODO: move to allocation phase?
 					// TODO: resize invalidation
+					if (*Extraction.Dst != nullptr)
+					{
+						Device->DestroyTextureDeferred(*Extraction.Dst);
+					}
 					*Extraction.Dst = Device->CreateTexture(Textures[Extraction.Src].Desc);
 				}
 
