@@ -64,8 +64,12 @@ namespace Columbus
 			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Texture2>()] = [this](void* Asset)
 			{
-				RemoveProfilingMemory(MemoryCounter_SceneTextures, static_cast<Texture2*>(Asset)->GetSize());
-				Device->DestroyTextureDeferred((Texture2*)Asset);
+				Texture2* Texture = static_cast<Texture2*>(Asset);
+				while (SceneGPU->Textures.Remove(Texture))
+				{
+				}
+				RemoveProfilingMemory(MemoryCounter_SceneTextures, Texture->GetSize());
+				Device->DestroyTextureDeferred(Texture);
 			};
 
 			Assets.AssetExtensions[Reflection::FindStruct<Texture2>()] = "dds,png,jpg,jpeg,exr,hdr,tiff,tga,bmp";
