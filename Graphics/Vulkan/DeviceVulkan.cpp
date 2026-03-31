@@ -165,20 +165,21 @@ namespace Columbus
 		VK_CHECK(vkCreateCommandPool(_Device, &commandPoolInfo, nullptr, &_CmdPool));
 
 		fixed_vector<VkDescriptorPoolSize, 16> poolSizes;
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4000 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4000 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 4000 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 100 });
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8192 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8192 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4096 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 8192 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 512 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 512 });
 #if ENABLE_RAY_TRACING
-		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 5 });
+		poolSizes.push_back(VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 32 });
 #endif
 
 		VkDescriptorPoolCreateInfo descriptorPoolInfo;
 		descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		descriptorPoolInfo.pNext = nullptr;
 		descriptorPoolInfo.flags = 0;
-		descriptorPoolInfo.maxSets = 1024;
+		descriptorPoolInfo.maxSets = 4096;
 		descriptorPoolInfo.poolSizeCount = poolSizes.size();
 		descriptorPoolInfo.pPoolSizes = poolSizes.data();
 
