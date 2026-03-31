@@ -280,6 +280,7 @@ namespace Columbus
 
 		AttachmentDesc AttachmentDescs[AttachmentsMax]{}; // will be used to create RHI render passes and framebuffers
 		Texture2* AttachmentTextures[AttachmentsMax]{ nullptr };
+		VkImageView AttachmentViews[AttachmentsMax]{ nullptr };
 		iVector2 Size;
 		int NumUsedAttachments = 0;
 
@@ -307,7 +308,7 @@ namespace Columbus
 
 			for (int i = 0; i < NumUsedAttachments; i++)
 			{
-				if (AttachmentTextures[i] != Other.AttachmentTextures[i])
+				if (AttachmentViews[i] != Other.AttachmentViews[i])
 					return false;
 			}
 

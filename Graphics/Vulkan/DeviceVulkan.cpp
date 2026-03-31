@@ -252,6 +252,31 @@ namespace Columbus
 		return ENABLE_RAY_TRACING && RayTracing_CVar.GetValue() && _RayQueryFeatures.rayQuery;
 	}
 
+	u64 DeviceVulkan::GetUsedDeviceLocalMemoryBytes() const
+	{
+		VmaBudget Budgets[VK_MAX_MEMORY_HEAPS] = {};
+		vmaGetHeapBudgets(_Allocator, Budgets);
+
+		u64 TotalUsage = 0;
+		bool bFoundDeviceLocalHeap = false;
+		for (uint32 HeapIndex = 0; HeapIndex < _MemoryProperties.memoryHeapCount; ++HeapIndex)
+		{
+			if (_MemoryProperties.memoryHeaps[HeapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+			{
+				bFoundDeviceLocalHeap = true;
+				TotalUsage += Budgets[HeapIndex].usage;
+			}
+		}
+
+		if (bFoundDeviceLocalHeap)
+			return TotalUsage;
+
+		for (uint32 HeapIndex = 0; HeapIndex < _MemoryProperties.memoryHeapCount; ++HeapIndex)
+			TotalUsage += Budgets[HeapIndex].usage;
+
+		return TotalUsage;
+	}
+
 	SwapchainVulkan* DeviceVulkan::CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain)
 	{
 		return new SwapchainVulkan(_Device, _PhysicalDevice, surface, OldSwapchain);

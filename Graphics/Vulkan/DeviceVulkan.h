@@ -229,6 +229,7 @@ namespace Columbus
 		// Features
 		bool SupportsRayTracing() const;
 		bool SupportsRayQuery() const;
+		u64 GetUsedDeviceLocalMemoryBytes() const;
 
 		// Low-level API abstraction
 

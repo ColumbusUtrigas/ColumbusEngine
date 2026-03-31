@@ -849,9 +849,11 @@ namespace Columbus
 						{
 							Texture2* Texture = Textures[ColorAttachment->Texture].Texture.get();
 							TextureFormat Format = Texture->GetDesc().Format;
+							TextureVulkan* TextureVk = static_cast<TextureVulkan*>(Texture);
 
 							RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::Color, ColorAttachment->LoadOp, Format);
 							RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
+							RHIParams.AttachmentViews[RHIParams.NumUsedAttachments] = TextureVk ? TextureVk->_View : nullptr;
 							RHIParams.NumUsedAttachments++;
 						}
 					}
@@ -860,9 +862,11 @@ namespace Columbus
 					{
 						auto Attachment = Pass.Parameters.DepthStencilAttachment;
 						Texture2* Texture = Textures[Attachment->Texture].Texture.get();
+						TextureVulkan* TextureVk = static_cast<TextureVulkan*>(Texture);
 
 						RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::DepthStencil, Attachment->LoadOp, Texture->GetDesc().Format);
 						RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
+						RHIParams.AttachmentViews[RHIParams.NumUsedAttachments] = TextureVk ? TextureVk->_View : nullptr;
 						RHIParams.NumUsedAttachments++;
 					}
 				}
@@ -1299,6 +1303,7 @@ namespace Columbus
 
 				Device->DestroyFramebufferDeferred(ParamsFramebufferPair.second);
 				VulkanFramebuffers.erase(VulkanFramebuffers.begin() + i);
+				i--;
 			}
 		}
 	}
@@ -1326,6 +1331,7 @@ namespace Columbus
 
 				Device->DestroyRenderPassDeferred(ParamsRenderPassPair.second);
 				VulkanRenderPasses.erase(VulkanRenderPasses.begin() + i);
+				i--;
 			}
 		}
 	}
