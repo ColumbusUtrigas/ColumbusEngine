@@ -9,10 +9,10 @@ struct Payload
 
 #define SET 2
 
-[[vk::binding(0, SET)]] RaytracingAccelerationStructure AccelerationStructure;
-[[vk::binding(1, SET)]] RWTexture3D<float4> OutputFroxels;
-[[vk::binding(2, SET)]] Texture3D<float4> HistoryFroxels;
-[[vk::binding(3, SET)]] SamplerState LinearSampler;
+[[vk::binding(0, SET)]] RaytracingAccelerationStructure                     AccelerationStructure;
+[[vk::binding(1, SET)]] [[vk::image_format("rgba16f")]] RWTexture3D<float4> OutputFroxels;
+[[vk::binding(2, SET)]] Texture3D<float4>                                   HistoryFroxels;
+[[vk::binding(3, SET)]] SamplerState                                        LinearSampler;
 
 [[vk::push_constant]]
 struct _Params

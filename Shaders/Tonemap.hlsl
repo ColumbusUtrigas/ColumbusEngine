@@ -37,7 +37,7 @@ struct HColourCorrectionSettings
 	int _pad[10]; // 128
 };
 
-[[vk::binding(0, 0)]] RWTexture2D<float4> SceneTexture;
+[[vk::binding(0, 0)]] Texture2D<float4> SceneTexture;
 [[vk::binding(1, 0)]] ConstantBuffer<HColourCorrectionSettings> ColourCorrectionSettings;
 
 [[vk::push_constant]]

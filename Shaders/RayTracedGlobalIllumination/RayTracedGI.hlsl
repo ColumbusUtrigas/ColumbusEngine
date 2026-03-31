@@ -27,11 +27,11 @@ struct _Params
 	float UpscaleFactor;
 } Params;
 
-[[vk::binding(0, SET)]] RaytracingAccelerationStructure AccelerationStructure;
-[[vk::binding(1, SET)]] RWTexture2D<float4> Output;
-[[vk::binding(2, SET)]] Texture2D<float3>   GBufferNormals;
-[[vk::binding(3, SET)]] Texture2D<float3>   GBufferWorldPosition;
-[[vk::binding(4, SET)]] Texture2D<float>    GBufferDepth;
+[[vk::binding(0, SET)]] RaytracingAccelerationStructure                     AccelerationStructure;
+[[vk::binding(1, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
+[[vk::binding(2, SET)]] Texture2D<float3>                                      GBufferNormals;
+[[vk::binding(3, SET)]] Texture2D<float3>                                      GBufferWorldPosition;
+[[vk::binding(4, SET)]] Texture2D<float>                                       GBufferDepth;
 
 [shader("raygeneration")]
 void RayGen()

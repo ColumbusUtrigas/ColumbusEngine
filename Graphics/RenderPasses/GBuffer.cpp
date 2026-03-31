@@ -313,35 +313,8 @@ namespace Columbus
 
 		Graph.AddPass("MemsetTexture", RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, Value](RenderGraphContext& Context)
 		{
-			static ComputePipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				ComputePipelineDesc Desc;
-				Desc.Name = "MemsetTexture";
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/MemsetTexture.csd");
-				Pipeline = Context.Device->CreateComputePipeline(Desc);
-			}
-
 			SPtr<Texture2> Tex = Context.GetRenderGraphTexture(Texture);
-
-			assert(Tex->GetDesc().Type == TextureType::Texture2D);
-
-			const iVector2 TextureSize = iVector2(Tex->GetDesc().Width, Tex->GetDesc().Height);
-			const int GroupSize = 8; // 8x8
-			const iVector2 Groups = (TextureSize + GroupSize - 1) / GroupSize;
-
-			MemsetTextureParameters Parameters{
-				.Value = Value,
-				.TextureSize = TextureSize,
-			};
-
-			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Tex.get());
-
-			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->Dispatch(Groups.X, Groups.Y, 1);
+			Context.CommandBuffer->MemsetTexture(Tex.get(), Value);
 		});
 	}
 

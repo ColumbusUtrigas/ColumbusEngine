@@ -155,7 +155,7 @@ namespace Columbus
 			};
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, ColourCbuf);
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);

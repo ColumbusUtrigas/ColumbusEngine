@@ -147,21 +147,27 @@ SamplerState PointSampler : register(s1);
 
 // UAVs
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_BILAT_COLOR)
+    [[vk::image_format("rgba16f")]]
     RWTexture2D<FfxHalfOpt4>  rw_internal_bilat_color[4]    : FFX_DOF_DECLARE_UAV(FFX_DOF_BIND_UAV_INTERNAL_BILAT_COLOR);
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_RADIUS)
+    [[vk::image_format("rg16f")]]
     RWTexture2D<FfxFloat32x2> rw_internal_radius            : FFX_DOF_DECLARE_UAV(FFX_DOF_BIND_UAV_INTERNAL_RADIUS);
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_DILATED_RADIUS)
+    [[vk::image_format("rg16f")]]
     RWTexture2D<FfxFloat32x2> rw_internal_dilated_radius    : FFX_DOF_DECLARE_UAV(FFX_DOF_BIND_UAV_INTERNAL_DILATED_RADIUS);
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_NEAR)
+    [[vk::image_format("rgba16f")]]
     RWTexture2D<FfxHalfOpt4>  rw_internal_near              : FFX_DOF_DECLARE_UAV(FFX_DOF_BIND_UAV_INTERNAL_NEAR);
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_FAR)
+    [[vk::image_format("rgba16f")]]
     RWTexture2D<FfxHalfOpt4>  rw_internal_far               : FFX_DOF_DECLARE_UAV(FFX_DOF_BIND_UAV_INTERNAL_FAR);
 #endif
 #if defined(FFX_DOF_BIND_UAV_OUTPUT_COLOR)
+    [[vk::image_format("rgba16f")]]
     RWTexture2D<FfxFloat32x4> rw_output_color               : FFX_DOF_DECLARE_UAV(FFX_DOF_BIND_UAV_OUTPUT_COLOR);
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_GLOBALS)

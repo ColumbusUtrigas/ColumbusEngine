@@ -5,14 +5,14 @@
 [[vk::binding(1, SET)]] Texture2D<float3> g_normals       : register(t1);
 [[vk::binding(2, SET)]] Texture2D<float4> g_world_pos     : register(t2);
 [[vk::binding(3, SET)]] Texture2D<float>  g_depth_history : register(t3);
-[[vk::binding(4, SET)]] Texture2D<float4> g_velocity      : register(t4);
+[[vk::binding(4, SET)]] Texture2D<float2> g_velocity      : register(t4);
 
 // Outputs
-[[vk::binding(5, SET)]] RWTexture2D<float>  g_output_depth         : register(u0);
-[[vk::binding(6, SET)]] RWTexture2D<float4> g_output_normals       : register(u1);
-[[vk::binding(7, SET)]] RWTexture2D<float4> g_output_world_pos     : register(u2);
-[[vk::binding(8, SET)]] RWTexture2D<float4> g_output_depth_history : register(u2);
-[[vk::binding(9, SET)]] RWTexture2D<float4> g_output_velocity      : register(u2);
+[[vk::binding(5, SET)]] [[vk::image_format("r16")]]     RWTexture2D<unorm float> g_output_depth         : register(u0);
+[[vk::binding(6, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4>      g_output_normals       : register(u1);
+[[vk::binding(7, SET)]] [[vk::image_format("rgba32f")]] RWTexture2D<float4>      g_output_world_pos     : register(u2);
+[[vk::binding(8, SET)]] [[vk::image_format("r16")]]     RWTexture2D<unorm float> g_output_depth_history : register(u3);
+[[vk::binding(9, SET)]] [[vk::image_format("rg16f")]]   RWTexture2D<float2>      g_output_velocity      : register(u4);
 
 [[vk::push_constant]]
 struct _Params {
@@ -30,7 +30,7 @@ void main(int2 dtid : SV_DispatchThreadID)
     float  DepthHistory = 1.0f;
     float3 ResultNormal = float3(0,0,0);
     float3 ResultWorldPos = float3(0,0,0);
-    float3 ResultVelocity = float3(0,0,0);
+    float2 ResultVelocity = float2(0,0);
 
     const int2 SourcePosStart = dtid * Params.DownsampleFactor;
 
@@ -50,7 +50,7 @@ void main(int2 dtid : SV_DispatchThreadID)
             {
                 ResultNormal = g_normals[SourcePos].xyz;
                 ResultWorldPos = g_world_pos[SourcePos].xyz;
-                ResultVelocity = g_velocity[SourcePos].xyz;
+                ResultVelocity = g_velocity[SourcePos].xy;
             }
         }
     }
@@ -59,5 +59,5 @@ void main(int2 dtid : SV_DispatchThreadID)
     g_output_normals[dtid] = float4(ResultNormal, 0);
     g_output_world_pos[dtid] = float4(ResultWorldPos, 0);
     g_output_depth_history[dtid] = DepthHistory;
-    g_output_velocity[dtid] = float4(ResultVelocity, 0);
+    g_output_velocity[dtid] = ResultVelocity;
 }

@@ -17,10 +17,10 @@ struct RayPayload
 
 #define SET 2
 
-[[vk::binding(0, SET)]] RaytracingAccelerationStructure AccelerationStructure;
-[[vk::binding(1, SET)]] RWTexture2D<float4> Output;
-[[vk::binding(2, SET)]] RWTexture2D<float4> ResultDirectionDistance;
-[[vk::binding(3, SET)]] RWTexture2D<float>  ResultRayPdf;
+[[vk::binding(0, SET)]] RaytracingAccelerationStructure                     AccelerationStructure;
+[[vk::binding(1, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
+[[vk::binding(2, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> ResultDirectionDistance;
+[[vk::binding(3, SET)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  ResultRayPdf;
 [[vk::binding(4, SET)]] Texture2D<float3>   GBufferAlbedo;
 [[vk::binding(5, SET)]] Texture2D<float3>   GBufferNormals;
 [[vk::binding(6, SET)]] Texture2D<float3>   GBufferWorldPosition;

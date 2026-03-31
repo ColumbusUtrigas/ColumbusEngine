@@ -6,8 +6,8 @@
 [[vk::binding(3, 0)]]   Texture2D<float>  InDepth;
 [[vk::binding(4, 0)]]   Texture2D<float>  InDepthHistory;
 [[vk::binding(5, 0)]]   Texture2D<float>  InHistorySampleCount;
-[[vk::binding(6, 0)]] RWTexture2D<float4> OutRadiance;
-[[vk::binding(7, 0)]] RWTexture2D<float>  OutSampleCount;
+[[vk::binding(6, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutRadiance;
+[[vk::binding(7, 0)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  OutSampleCount;
 [[vk::binding(8, 0)]]   SamplerState      LinearSampler;
 
 #include "../Common.hlsli"

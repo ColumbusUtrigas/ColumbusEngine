@@ -20,7 +20,7 @@ struct VS_TO_PS
     float3 Bitangent        : NORMAL2;
     
     nointerpolation uint MaterialId : COLOR0;
-    nointerpolation uint LightmapId : COLOR1;
+    // nointerpolation uint LightmapId : COLOR1;
 };
 
 struct PS_Out
@@ -65,7 +65,7 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     Out.Uv1 = Vertex.UV;
     Out.Uv2 = Vertex.UV2;
     Out.MaterialId = Mesh.MaterialId;
-    Out.LightmapId = Mesh.LightmapId;
+    // Out.LightmapId = Mesh.LightmapId;
 
     return Out;
 }
@@ -75,11 +75,11 @@ PS_Out PSMain(VS_TO_PS In)
     PS_Out Out;
     
     float3 LightmapColor = float3(0,0,0);
-    if (In.LightmapId != -1)
-    {
-		// TODO: bicubic lightmap sampling
-        //LightmapColor = textureLod(Textures[InLightmapId], InUV2, 0.0f).rgb;
-    }
+    // if (In.LightmapId != -1)
+    // {
+	// 	// TODO: bicubic lightmap sampling
+    //     //LightmapColor = textureLod(Textures[InLightmapId], InUV2, 0.0f).rgb;
+    // }
 
     GPUMaterialSampledData Material = GPUScene::SampleMaterial(In.MaterialId, In.Uv1);
 

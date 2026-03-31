@@ -1,7 +1,7 @@
 [[vk::binding(0, 0)]]   Texture2D<float4> Image;
 [[vk::binding(1, 0)]]   Texture2D<float4> History;
 [[vk::binding(2, 0)]]   Texture2D<float2> VelocityImage;
-[[vk::binding(3, 0)]] RWTexture2D<float4> Output;
+[[vk::binding(3, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
 [[vk::binding(4, 0)]]   SamplerState      LinearSampler;
 
 // references:

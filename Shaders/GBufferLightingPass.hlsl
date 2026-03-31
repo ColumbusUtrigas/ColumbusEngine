@@ -11,7 +11,7 @@
 [[vk::binding(4, 0)]] Texture2D GBufferLightmap; // TODO: unify with GI?
 [[vk::binding(5, 0)]] Texture2D GBufferReflections;
 [[vk::binding(6, 0)]] Texture2D GBufferGI;
-[[vk::binding(7, 0)]] RWTexture2D<float4> LightingOutput;
+[[vk::binding(7, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> LightingOutput;
 
 [[vk::binding(8, 0)]] StructuredBuffer<GPULight> GPUSceneLights;
 [[vk::binding(9, 0)]] StructuredBuffer<GPUSceneStruct> GPUSceneScene;

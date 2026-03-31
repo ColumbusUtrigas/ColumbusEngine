@@ -7,7 +7,7 @@
 
 
 // Outputs
-[[vk::binding(4, SET)]] RWTexture2D<float4>  g_output     : register(u0);
+[[vk::binding(4, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> g_output : register(u0);
 
 [[vk::push_constant]]
 struct _Params {

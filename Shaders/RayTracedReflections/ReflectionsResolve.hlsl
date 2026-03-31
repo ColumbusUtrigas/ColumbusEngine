@@ -6,7 +6,7 @@
 [[vk::binding(5, 0)]]   Texture2D<float4> GBufferNormal;
 [[vk::binding(6, 0)]]   Texture2D<float2> GBufferRM;
 [[vk::binding(7, 0)]]   Texture2D<float>  GBufferDepth;
-[[vk::binding(8, 0)]] RWTexture2D<float4> Output;
+[[vk::binding(8, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
 
 #include "../Common.hlsli"
 #include "../BRDF.hlsli"

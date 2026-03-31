@@ -16,7 +16,7 @@ struct Payload
 [[vk::binding(3, SET)]] Texture2D<float>  InputDepth;
 
 // OUTPUTS
-[[vk::binding(4, SET)]] RWTexture2D<float> OutputShadow;
+[[vk::binding(4, SET)]] [[vk::image_format("r8")]] RWTexture2D<float> OutputShadow;
 
 [[vk::push_constant]]
 struct _Params

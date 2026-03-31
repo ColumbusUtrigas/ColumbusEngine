@@ -112,11 +112,11 @@ uniform sampler PointSampler;
     uniform image2D rw_internal_bilat_color[4];
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_RADIUS)
-    layout (set = 0, binding = FFX_DOF_BIND_UAV_INTERNAL_RADIUS, rg32f)
+    layout (set = 0, binding = FFX_DOF_BIND_UAV_INTERNAL_RADIUS, rg16f)
     uniform image2D rw_internal_radius;
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_DILATED_RADIUS)
-    layout (set = 0, binding = FFX_DOF_BIND_UAV_INTERNAL_DILATED_RADIUS, rg32f)
+    layout (set = 0, binding = FFX_DOF_BIND_UAV_INTERNAL_DILATED_RADIUS, rg16f)
     uniform image2D rw_internal_dilated_radius;
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_NEAR)
@@ -128,7 +128,7 @@ uniform sampler PointSampler;
     uniform image2D rw_internal_far;
 #endif
 #if defined(FFX_DOF_BIND_UAV_OUTPUT_COLOR)
-    layout (set = 0, binding = FFX_DOF_BIND_UAV_OUTPUT_COLOR, rgba32f)
+    layout (set = 0, binding = FFX_DOF_BIND_UAV_OUTPUT_COLOR, rgba16f)
     uniform image2D rw_output_color;
 #endif
 #if defined(FFX_DOF_BIND_UAV_INTERNAL_GLOBALS)

@@ -10,10 +10,10 @@
 [[vk::binding(4, SET)]] Texture2D<float>  g_depth_history : register(t4);
 
 // RW
-[[vk::binding(5, SET)]] RWTexture2D<float> g_sample_count : register(u0);
+[[vk::binding(5, SET)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  g_sample_count : register(u0);
 
 // Outputs
-[[vk::binding(6, SET)]] RWTexture2D<float4> g_output      : register(u1);
+[[vk::binding(6, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> g_output       : register(u1);
 
 // Misc
 [[vk::binding(7, SET)]] SamplerState g_sampler            : register(s7);
