@@ -1351,7 +1351,7 @@ namespace Columbus
 
 			if (Materials.size() > i && Materials[i].IsValid())
 			{
-				GPUMesh.MaterialId = Materials[i]->StableId.index;
+				GPUMesh.MaterialId = Materials[i]->StableId;
 			}
 
 			i++;

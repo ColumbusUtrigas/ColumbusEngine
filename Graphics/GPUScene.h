@@ -31,7 +31,7 @@ namespace Columbus
 
 		Matrix Transform;
 		Matrix PrevTransform = Matrix(1);
-		int MaterialId = -1;
+		TStableSparseArray<Material>::Handle MaterialId{};
 		int LightmapId = -1;
 	};
 

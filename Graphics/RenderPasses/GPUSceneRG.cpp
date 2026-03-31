@@ -7,6 +7,16 @@ namespace Columbus
 	{
 		Graph.Scene->Update();
 
+		const auto GetTextureDenseIndex = [&Graph](TStableSparseArray<Texture2*>::Handle Handle) -> int
+		{
+			return Graph.Scene->Textures.GetDenseIndex(Handle);
+		};
+
+		const auto GetMaterialDenseIndex = [&Graph](TStableSparseArray<Material>::Handle Handle) -> int
+		{
+			return Graph.Scene->Materials.GetDenseIndex(Handle);
+		};
+
 		// Scene
 		{
 			GPUSceneCompact Compact = Graph.Scene->CreateCompact(View);
@@ -44,7 +54,7 @@ namespace Columbus
 					.TangentsBufferAddress = Mesh.MeshResource->Tangents->GetDeviceAddress(),
 					.VertexCount = Mesh.MeshResource->VertexCount,
 					.IndexCount = Mesh.MeshResource->IndicesCount,
-					.MaterialId = Mesh.MaterialId,
+					.MaterialId = GetMaterialDenseIndex(Mesh.MaterialId),
 					.LightmapId = Mesh.LightmapId,
 				};
 
@@ -65,10 +75,10 @@ namespace Columbus
 				GPUMaterialCompact Compact{
 					.AlbedoFactor = Mat.AlbedoFactor,
 					.EmissiveFactor = Mat.EmissiveFactor,
-					.AlbedoId = (int)Mat.AlbedoId.index,
-					.NormalId = (int)Mat.NormalId.index,
-					.OrmID = (int)Mat.OrmId.index,
-					.EmissiveId = (int)Mat.EmissiveId.index,
+					.AlbedoId = GetTextureDenseIndex(Mat.AlbedoId),
+					.NormalId = GetTextureDenseIndex(Mat.NormalId),
+					.OrmID = GetTextureDenseIndex(Mat.OrmId),
+					.EmissiveId = GetTextureDenseIndex(Mat.EmissiveId),
 					.Roughness = Mat.Roughness,
 					.Metallic = Mat.Metallic,
 				};

@@ -84,6 +84,14 @@ namespace Columbus
 			return &dense[sparse[handle.index].dense_index];
 		}
 
+		int GetDenseIndex(Handle handle) const
+		{
+			if (!IsValid(handle))
+				return -1;
+
+			return sparse[handle.index].dense_index;
+		}
+
 		// return the first occurence of a value and return its handle
 		Handle Find(const T& value)
 		{
