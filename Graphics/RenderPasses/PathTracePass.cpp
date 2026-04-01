@@ -13,7 +13,7 @@ namespace Columbus
 
 	// TODO: temporal accumulation, rays per pixel
 
-	ConsoleVariable<int> CVar_Bounces("r.PathTracing.Bounces", "Number of bounces for each path, default - 2", 2);
+	ConsoleVariable<int> CVar_Bounces("r.PathTracing.Bounces", "Number of bounces for each path, default - 4", 4);
 
 	// no need to GPUParametrize push constants?
 	struct PathTraceParameters
@@ -45,7 +45,7 @@ namespace Columbus
 	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View)
 	{
 		TextureDesc2 PTTextureDesc {
-			.Usage = TextureUsage::Storage,
+			.Usage = TextureUsage::StorageSampled,
 			.Width = (uint32)View.OutputSize.X, .Height = (uint32)View.OutputSize.Y,
 			.Format = TextureFormat::RGBA32F,
 		};

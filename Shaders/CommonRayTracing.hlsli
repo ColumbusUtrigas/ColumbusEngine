@@ -8,6 +8,77 @@
 #include "Common.hlsli"
 #include "GPUScene.hlsli"
 
+float3 SanitizeRadiance(float3 Value)
+{
+	if (any(isnan(Value)) || any(isinf(Value)))
+		return float3(0, 0, 0);
+
+	return max(Value, 0.0.xxx);
+}
+
+float3 ClampPathWeight(float3 Weight, float MaxComponent)
+{
+	Weight = SanitizeRadiance(Weight);
+	float Peak = max(Weight.x, max(Weight.y, Weight.z));
+	if (Peak > MaxComponent)
+	{
+		Weight *= MaxComponent / Peak;
+	}
+	return Weight;
+}
+
+float Luminance(float3 Value)
+{
+	return dot(Value, float3(0.2126, 0.7152, 0.0722));
+}
+
+float3 PathF0(BRDFData Data)
+{
+	return lerp(float3(0.04, 0.04, 0.04), Data.Albedo, Data.Metallic);
+}
+
+float3 FresnelSchlickPath(float CosTheta, float3 F0)
+{
+	return F0 + (1.0.xxx - F0) * pow(1.0 - saturate(CosTheta), 5.0);
+}
+
+float3 EvaluatePathBSDF(BRDFData Data)
+{
+	float3 N = Data.N;
+	float3 V = Data.V;
+	float3 L = Data.L;
+	float3 H = normalize(V + L);
+
+	float NdotV = saturate(dot(N, V));
+	float NdotL = saturate(dot(N, L));
+	float VdotH = saturate(dot(V, H));
+
+	if (NdotV <= 0.0 || NdotL <= 0.0)
+		return 0.0.xxx;
+
+	float Roughness = max(Data.Roughness, 0.02);
+	float3 F0 = PathF0(Data);
+	float3 F = FresnelSchlickPath(VdotH, F0);
+	float3 Kd = (1.0.xxx - F) * (1.0 - Data.Metallic);
+
+	float3 Diffuse = Kd * LambertDiffuseBRDF(Data.Albedo);
+	float D = DistributionGGX(N, H, Roughness);
+	float Vis = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
+	float3 Specular = D * F * Vis;
+
+	return Diffuse + Specular;
+}
+
+float3 EvaluatePathBSDFCos(BRDFData Data)
+{
+	return EvaluatePathBSDF(Data) * saturate(dot(Data.N, Data.L));
+}
+
+float DiffusePDF(BRDFData Data, float3 L)
+{
+	return saturate(dot(Data.N, L)) * ONE_OVER_PI;
+}
+
 float3 SampleConeRay(float3 Direction, float BaseRadius, float2 Random)
 {
 	// generate points in circle
@@ -43,7 +114,7 @@ float3 SampleDirectionalLight(const in RaytracingAccelerationStructure AS, GPULi
 {
 	float3 direction = normalize(Light.Direction.xyz);
 	float occlusion = TraceShadowRay(AS, origin, direction, 5000.0f);
-	return max(dot(normal, direction), 0) * Light.Color.rgb * occlusion;
+	return Light.Color.rgb * occlusion;
 }
 
 float3 SamplePointLight(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
@@ -58,7 +129,7 @@ float3 SamplePointLight(const in RaytracingAccelerationStructure AS, GPULight Li
 	// sample shadow
 	float occlusion = TraceShadowRay(AS, origin, direction, dist);
 
-	return max(dot(normal, direction), 0) * attenuation * Light.Color.rgb * occlusion;
+	return attenuation * Light.Color.rgb * occlusion;
 }
 
 float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure AS, float3 Origin, uint RngState, BRDFData BRDF)
@@ -78,7 +149,6 @@ float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure A
 		
         GPULight Light = GPUScene::GPUSceneLights[l];
 		
-        float Attenuation = 0.0f;
         float Distance = distance(Light.Position.xyz, Origin);
 		
 		// TODO: unify it with code path in GBufferLightingPass.hlsl
@@ -88,35 +158,29 @@ float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure A
 		case GPULIGHT_DIRECTIONAL:
 			LightSample = SampleDirectionalLight(AS, Light, Origin, BRDF.N, Xi);
 			BRDF.L = Light.Direction.xyz;
-            Attenuation = 1.0f;
 			break;
 		case GPULIGHT_POINT:
 			LightSample = SamplePointLight(AS, Light, Origin, BRDF.N, Xi);
 			// TODO: account for sphere light
 			BRDF.L = normalize(Light.Position.xyz - Origin);
-            Attenuation = clamp(1.0 - Distance * Distance / (Light.Range * Light.Range), 0.0, 1.0);
-            Attenuation *= Attenuation;
 			break;
 		case GPULIGHT_SPOT:
             LightSample = SamplePointLight(AS, Light, Origin, BRDF.N, Xi);
-			
-            Attenuation = clamp(1.0 - Distance * Distance / (Light.Range * Light.Range), 0.0, 1.0);
-            Attenuation *= Attenuation;
             BRDF.L = normalize(Light.Position.xyz - Origin);
 
             float angle = saturate(dot(BRDF.L, Light.Direction.xyz));
             float2 angles = Light.SizeOrSpotAngles;
 
-            Attenuation *= smoothstep(angles.y, angles.x, angle);
+            LightSample *= smoothstep(angles.y, angles.x, angle);
             break;
 			
 			// TODO: area lights
         }
 
-        Result += EvaluateBRDF(BRDF, float3(1, 1, 1)) * LightSample * Attenuation;
+        Result += SanitizeRadiance(EvaluatePathBSDFCos(BRDF) * LightSample);
     }
 	
-	return Result;
+	return SanitizeRadiance(Result);
 }
 
 // performs multi-bounce raytracing and path accumulation
@@ -149,60 +213,57 @@ float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 			BRDF.Metallic = payload.RoughnessMetallic.y;
 
 			float3 HitPoint = payload.HitDistance * Direction + Origin;
+#ifdef PAYLOAD_HAS_GEOMETRIC_NORMAL
+			Origin = HitPoint + payload.GeometricNormal * 0.001;
+#else
 			Origin = HitPoint + BRDF.N * 0.001;
+#endif
 
-			// next event estimation
-			#if 0
-			for (uint l = 0; l < GPUScene::GetLightsCount(); l++)
-			{
-				float3 LightSample = float3(0, 0, 0);
-
-				// TODO: get it from sample functions
-				BRDF.L = float3(0, 0, 0); // light direction
-
-				float2 Xi = Random::UniformDistrubition2d(RngState);
-				// TODO: light PDF, as every time we do a random decision, we need to weight it by it's probability
-
-				GPULight Light = GPUScene::GPUSceneLights[l];
-				switch (Light.Type)
-				{
-				case GPULIGHT_DIRECTIONAL:
-					LightSample = SampleDirectionalLight(AS, Light, Origin, BRDF.N, Xi);
-					BRDF.L = Light.Direction.xyz;
-					break;
-				case GPULIGHT_POINT:
-					LightSample = SamplePointLight(AS, Light, Origin, BRDF.N, Xi);
-					// TODO: account for sphere light
-					BRDF.L = normalize(Light.Position.xyz - Origin);
-					break;
-				}
-
-				
-				PathRadiance += EvaluateBRDF(BRDF, float3(1, 1, 1)) * LightSample * PathAttenuation;
-			}
-			#endif
-
-			PathRadiance += RayTraceEvaluateDirectLighting(AS, Origin, RngState, BRDF) * PathAttenuation;
+			// NEE
+			PathRadiance += SanitizeRadiance(RayTraceEvaluateDirectLighting(AS, Origin, RngState, BRDF) * PathAttenuation);
 
 			// generate new ray and apply BRDF to the segment
 			{
-				BRDFSample Sample = SampleBRDF_GGX(BRDF, Random::UniformDistrubition2d(RngState));
-				//BRDFSample Sample = SampleBRDF_Lambert(BRDF.N, Random::UniformDistrubition2d(RngState));
+				float3 F0 = PathF0(BRDF);
+				float SpecularWeight = max(Luminance(F0), 0.05f);
+				float DiffuseWeight = max((1.0 - BRDF.Metallic) * Luminance(BRDF.Albedo), 0.05f);
+				float WeightSum = SpecularWeight + DiffuseWeight;
+				float SpecularProb = SpecularWeight / WeightSum;
+				float DiffuseProb = DiffuseWeight / WeightSum;
+
+				BRDFSample Sample;
+				float Selector = Random::StepAndOutputRNGFloat(RngState);
+				if (Selector < DiffuseProb)
+				{
+					Sample = SampleBRDF_Lambert(BRDF.N, Random::UniformDistrubition2d(RngState));
+				}
+				else
+				{
+					Sample = SampleBRDF_GGX(BRDF, Random::UniformDistrubition2d(RngState));
+				}
+
 				BRDF.L = Sample.Dir;
 				Direction = Sample.Dir;
 
 				float NdotL = max(0, dot(BRDF.N, BRDF.L));
+				if (NdotL <= 0.0 || !isfinite(Sample.Pdf) || Sample.Pdf <= 1e-5 || any(isnan(Direction)) || any(isinf(Direction)))
+					break;
 
-				PathAttenuation *= EvaluateBRDF(BRDF, float3(1, 1, 1)) * NdotL / Sample.Pdf;
-				//PathAttenuation *= LambertDiffuseBRDF(float3(1, 1, 1)) * NdotL / Sample.Pdf;
-			}
+				float TotalPdf = DiffuseProb * DiffusePDF(BRDF, BRDF.L) + SpecularProb * BRDFCalcPDF(BRDF);
+				if (!isfinite(TotalPdf) || TotalPdf <= 1e-5)
+					break;
+
+				float3 Weight = EvaluatePathBSDFCos(BRDF) / TotalPdf;
+				PathAttenuation *= ClampPathWeight(Weight, 8.0);
+				PathAttenuation = ClampPathWeight(PathAttenuation, 16.0);
+            }
 		}
 		else // sky
 		{
-			PathRadiance += payload.Colour.rgb * PathAttenuation;
+			PathRadiance += SanitizeRadiance(payload.Colour.rgb * PathAttenuation);
 			break;
 		}
 	}
 	
-	return PathRadiance;
+	return SanitizeRadiance(PathRadiance);
 }

@@ -3,9 +3,12 @@ struct RayPayload
 	float3 Colour;
 	float  HitDistance;
 	float3 Normal;
+	float3 GeometricNormal;
 	uint   ObjectId;
 	float2 RoughnessMetallic;
 };
+
+#define PAYLOAD_HAS_GEOMETRIC_NORMAL 1
 
 #include "GPUScene.hlsli"
 #include "Common.hlsli"
@@ -30,7 +33,6 @@ struct _Params
 	int FrameNumber;
 	int Reset;
 	int Bounces;
-	int HasHistory;
 } Params;
 
 [shader("raygeneration")]
@@ -48,6 +50,11 @@ void RayGen()
 
 	float3 Sample = RayTraceAccumulate(AccelerationStructure, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz,
 		Direction, Params.Bounces, RngState);
+	if (any(isnan(Sample)) || any(isinf(Sample)))
+	{
+		Sample = float3(0, 0, 0);
+	}
+	Sample = max(Sample, 0.0.xxx);
 
     float3 FinalColor = float3(0, 0, 0);
 
@@ -56,15 +63,15 @@ void RayGen()
         FinalColor = Sample;
     }
 
-    if (Params.Reset == 0)
+	if (Params.Reset == 0)
 	{
 		float3 previous = History[pixel].rgb;
-
-        float sampleGray   = dot(Sample,   float3(0.2126, 0.7152, 0.0722));
-        float previousGray = dot(previous, float3(0.2126, 0.7152, 0.0722));
-
-		float factor = 1.0 / float(Params.FrameNumber);
-		factor *= max(1, sampleGray - previousGray + 1);
+		if (any(isnan(previous)) || any(isinf(previous)))
+		{
+			previous = float3(0, 0, 0);
+		}
+		previous = max(previous, 0.0.xxx);
+		float factor = 1.0 / max(float(Params.FrameNumber), 1.0);
         FinalColor = lerp(previous, Sample, factor);
     }
 
