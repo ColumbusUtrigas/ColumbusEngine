@@ -76,6 +76,7 @@ namespace Columbus
 		static DataStream CreateFromMemory(u8* Memory, u64 Size);
 
 		u64 GetSize() const;
+		u64 Tell() const;
 
 		void SeekSet(u64 Offset);
 		void SeekCur(i32 Offset);

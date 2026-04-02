@@ -195,7 +195,7 @@ namespace Columbus
 		if (Handle == nullptr) return false;
 		CurrentOffset += Size;
 		size_t WriteResult = fwrite(Data, Size, 1, Handle);
-		if (WriteResult != Size) return false;
+		if (WriteResult != 1) return false;
 		else return true;
 	}
 
@@ -233,6 +233,18 @@ namespace Columbus
 		else
 		{
 			return MemorySize;
+		}
+	}
+
+	u64 DataStream::Tell() const
+	{
+		if (Type == DataStreamType::File)
+		{
+			return F.Tell();
+		}
+		else
+		{
+			return CurrentOffset;
 		}
 	}
 

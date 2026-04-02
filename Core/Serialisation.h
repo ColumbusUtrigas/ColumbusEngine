@@ -2,6 +2,7 @@
 
 #include "Core/Reflection.h"
 #include "Core/Guid.h"
+#include "System/File.h"
 using namespace Columbus;
 
 #include "Lib/json/single_include/nlohmann/json.hpp"
@@ -47,10 +48,10 @@ static void Reflection_SerialiseFieldJson(char* Object, const Reflection::Field&
 		std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
 
 		u32 ElementSize = Field.Array->ElementField.Size;
-		u32 NumElements = ArrayData->size() / ElementSize;
-		u32 Offset = 0;
+		size_t NumElements = ElementSize == 0 ? 0 : (ArrayData->size() / ElementSize);
+		size_t Offset = 0;
 
-		for (u32 i = 0; i < NumElements; i++)
+		for (size_t i = 0; i < NumElements; i++)
 		{
 			nlohmann::json elementJson;
 			Reflection_SerialiseFieldJson(ArrayData->data() + Offset, Field.Array->ElementField, elementJson);
@@ -105,122 +106,6 @@ static void Reflection_DeserialiseFieldJson(char* Object, const Reflection::Fiel
 	}
 
 	Reflection_DeserialiseFieldInternalJson(FieldData, Field, json[Field.Name]);
-
-	/*switch (Field.Type)
-	{
-	case Reflection::FieldType::Bool:
-		*(bool*)FieldData = json[Field.Name];
-		break;
-	case Reflection::FieldType::Int:
-		*(int*)FieldData = json[Field.Name];
-		break;
-	case Reflection::FieldType::Float:
-		*(float*)FieldData = json[Field.Name];
-		break;
-	case Reflection::FieldType::String:
-		*(std::string*)FieldData = json[Field.Name];
-		break;
-	case Reflection::FieldType::Enum:
-		*(int*)FieldData = json[Field.Name];
-		break;
-	case Reflection::FieldType::Struct:
-	{
-		auto& sjson = json[Field.Name];
-
-		for (const auto& SField : Field.Struct->Fields)
-		{
-			Reflection_DeserialiseFieldJson(FieldData, SField, sjson);
-		}
-		break;
-	}
-
-	case Reflection::FieldType::Array:
-	{
-		auto& sjson = json[Field.Name];
-		if (!sjson.is_array())
-		{
-			Log::Error("Array field %s is not an array", Field.Name);
-			break;
-		}
-
-		u32 ElementSize = Field.Array->ElementField.Size;
-		u32 Offset = 0;
-
-		for (auto& elementJson : sjson)
-		{
-			Field.Array->NewElement(FieldData);
-			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
-
-			Reflection_DeserialiseFieldJson(ArrayData->data() + Offset, Field.Array->ElementField, elementJson);
-
-			Offset += ElementSize;
-		}
-		break;
-	}
-
-	case Reflection::FieldType::AssetRef:
-	{
-		auto& sjson = json[Field.Name];
-
-		std::string refString = sjson.get<std::string>();
-		size_t delim = refString.find("===");
-
-		if (delim == std::string::npos)
-		{
-			Log::Error("AssetRef field %s is malformed: %s", Field.Name, refString.c_str());
-			break;
-		}
-
-		std::string guid = refString.substr(0, delim);
-		std::string path = refString.substr(delim + 3);
-
-		if (guid != Field.Typeguid)
-		{
-			Log::Error("AssetRef type GUID mismatch for field %s\nExpected: %s\nFound:   %s",
-				Field.Name, Field.Typeguid, guid.c_str());
-			break;
-		}
-
-		// Assign to the actual AssetRef<T>::Path
-		struct AssetRefBase {
-			std::string Path;
-			// pointer unused here
-		};
-
-		((AssetRefBase*)FieldData)->Path = path;
-		break;
-	}
-	case Reflection::FieldType::ThingRef:
-	{
-		auto& sjson = json[Field.Name];
-
-		std::string refString = sjson.get<std::string>();
-		size_t delim = refString.find("===");
-		if (delim == std::string::npos)
-		{
-			Log::Error("ThingRef field %s is malformed: %s", Field.Name, refString.c_str());
-			break;
-		}
-
-		std::string guid = refString.substr(0, delim);
-		std::string thingGuidStr = refString.substr(delim + 3);
-
-		if (guid != Field.Typeguid)
-		{
-			Log::Error("ThingRef type GUID mismatch for field %s\nExpected: %s\nFound:   %s",
-				Field.Name, Field.Typeguid, guid.c_str());
-			break;
-		}
-		HGuid thingGuid = (HGuid)std::stoull(thingGuidStr);
-		struct ThingRefBase {
-			HGuid Guid;
-			// pointer unused here
-		};
-		((ThingRefBase*)FieldData)->Guid = thingGuid;
-		break;
-	}
-
-	}*/
 }
 
 static void Reflection_DeserialiseFieldInternalJson(char* FieldData, const Reflection::Field& Field, nlohmann::json& json)
@@ -388,4 +273,49 @@ static T* Reflection_DeserialiseStructJson_NewInstance(nlohmann::json& json)
 	Reflection_DeserialiseStructJson((char*)NewInstance, Struct, json);
 
 	return NewInstance;
+}
+
+// -----------------------------------------------------------------------------
+// Binary reflection serialisation
+//
+// Object stream layout:
+// 1. ObjectHeader
+// 2. Struct guid string
+// 3. Repeated field records:
+//    - FieldHeader
+//    - Field name bytes
+//    - Field payload bytes
+//
+// Payload rules:
+// - bool/int/float/enum: raw POD bytes
+// - native reflected structs: raw struct bytes
+// - non-native reflected structs: nested object stream
+// - strings: length + bytes
+// - arrays of native elements: count + contiguous raw blob
+// - arrays of non-native elements: count + per-element payloads
+// - asset refs / thing refs: small tagged payloads using existing reflected info
+//
+// Procedure:
+// - writer walks Reflection::Struct / Field metadata
+// - loader resolves fields by name and skips unknown ones
+// - native-binary types use Reflection::Struct::IsNativeBinary
+// -----------------------------------------------------------------------------
+
+bool Reflection_SerialiseStructBinary(DataStream& Stream, char* Object, const Reflection::Struct* Struct);
+bool Reflection_DeserialiseStructBinary(DataStream& Stream, char* Object, const Reflection::Struct* Struct);
+
+template <typename T>
+static bool Reflection_SerialiseStructBinary(DataStream& Stream, T& Object)
+{
+	const Reflection::Struct* Struct = Reflection::FindStructTypeForObject<T>(Object);
+	assert(Struct != nullptr);
+	return Reflection_SerialiseStructBinary(Stream, (char*)&Object, Struct);
+}
+
+template <typename T>
+static bool Reflection_DeserialiseStructBinary(DataStream& Stream, T& Object)
+{
+	const Reflection::Struct* Struct = Reflection::FindStructTypeForObject<T>(Object);
+	assert(Struct != nullptr);
+	return Reflection_DeserialiseStructBinary(Stream, (char*)&Object, Struct);
 }

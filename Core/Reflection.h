@@ -21,6 +21,10 @@ template <> static const char* Reflection::FindTypeGuid<x>() { return guid; } \
 template <> static const int Reflection::FindStructVersion<x>() { return version; } \
 template <> void Reflection::EnforceTypeLinkage<x>();
 
+#define CREFLECT_DECLARE_STRUCT_NATIVE(x, version, guid) \
+CREFLECT_DECLARE_STRUCT(x, version, guid) \
+template <> static constexpr const bool Reflection::FindTypeIsNativeBinary<x>() { return true; }
+
 #define CREFLECT_DECLARE_STRUCT_VIRTUAL(x, version, guid) \
 CREFLECT_DECLARE_STRUCT(x, version, guid) \
 template <> static constexpr const bool Reflection::FindTypeIsVirtual<x>() { return true; }
@@ -32,6 +36,11 @@ template <> static const char* Reflection::FindStructParentGuid<x>() { return Re
 
 #define CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(x, parent, version, guid) \
 CREFLECT_DECLARE_STRUCT_VIRTUAL(x, version, guid) \
+template <> static const Reflection::Struct* Reflection::FindStructParent<x>() { return Reflection::FindStruct<parent>(); } \
+template <> static const char* Reflection::FindStructParentGuid<x>() { return Reflection::FindStructGuid<parent>(); }
+
+#define CREFLECT_DECLARE_STRUCT_WITH_PARENT_NATIVE(x, parent, version, guid) \
+CREFLECT_DECLARE_STRUCT_NATIVE(x, version, guid) \
 template <> static const Reflection::Struct* Reflection::FindStructParent<x>() { return Reflection::FindStruct<parent>(); } \
 template <> static const char* Reflection::FindStructParentGuid<x>() { return Reflection::FindStructGuid<parent>(); }
 
@@ -195,6 +204,7 @@ namespace Reflection
 		const char* Name;
 		const char* Guid;
 		int Version;
+		bool IsNativeBinary = false;
 		std::vector<Field> Fields;
 		std::vector<Field> LocalFields;
 
@@ -228,7 +238,9 @@ namespace Reflection
 	template <typename T>
 	static Struct* RegisterStruct()
 	{
-		return RegisterStruct(FindStructName<T>(), FindStructGuid<T>(), FindStructVersion<T>());
+		Struct* Struct = RegisterStruct(FindStructName<T>(), FindStructGuid<T>(), FindStructVersion<T>());
+		Struct->IsNativeBinary = FindTypeIsNativeBinary<T>();
+		return Struct;
 	}
 
 	void RegisterStructCustomUI(const char* Guid, StructCustomUIFunc Func);
@@ -253,6 +265,7 @@ namespace Reflection
 
 	template <typename T> static const char* FindTypeGuid() { return nullptr; }
 	template <typename T> static constexpr const bool  FindTypeIsVirtual() { return false; }
+	template <typename T> static constexpr const bool  FindTypeIsNativeBinary() { return false; }
 
 
 
