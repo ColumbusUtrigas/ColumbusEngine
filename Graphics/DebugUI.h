@@ -35,6 +35,7 @@ namespace Columbus::DebugUI
 		bool ShowGreen = true;
 		bool ShowBlue = true;
 		bool ShowAlpha = true;
+		bool ForceOpaqueAlpha = false;
 		bool ShowCheckerboard = true;
 		int MipLevel = 0;
 		float Zoom = 1.0f;

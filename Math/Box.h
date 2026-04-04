@@ -81,3 +81,5 @@ namespace Columbus
 	};
 
 }
+
+CREFLECT_DECLARE_STRUCT(Columbus::Box, 1, "BBE6BA13-403E-40B4-A1E9-BE03340D395A");

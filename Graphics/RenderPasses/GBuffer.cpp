@@ -341,6 +341,9 @@ namespace Columbus
 
 	void PrepareDeferredView(RenderView& View)
 	{
+		View.CameraCurUnjittered = View.CameraCur;
+		View.CameraPrevUnjittered = View.CameraPrev;
+
 		if (View.DeferredSettings.ApplyFSR1)
 		{
 			View.RenderSize = iVector2((int)(View.OutputSize.X * View.DeferredSettings.RenderResolution), (int)(View.OutputSize.Y * View.DeferredSettings.RenderResolution));

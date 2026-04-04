@@ -87,6 +87,8 @@ namespace Columbus
 					GraphicsPipelineDesc WireframeDesc = Desc;
 					WireframeDesc.rasterizerState.Fill = FillMode::Wireframe;
 					WireframeDesc.rasterizerState.LineWidth = 2.0f;
+					WireframeDesc.rasterizerState.DepthBias = -1;
+					WireframeDesc.rasterizerState.SlopeScaledDepthBias = -1.0f;
 
 					PipelineSolid = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 					PipelineWireframe = Context.Device->CreateGraphicsPipeline(WireframeDesc, Context.VulkanRenderPass);
@@ -115,9 +117,10 @@ namespace Columbus
 
 			for (const DebugRenderObject& Object : View.DebugRender.Objects)
 			{
+				const Camera& DebugCamera = Object.UseUnjitteredCamera ? View.CameraCurUnjittered : View.CameraCur;
 				DebugObjectParameters Parameters {
 					.Model = Object.Transform,
-					.VP = View.CameraCur.GetViewProjection(),
+					.VP = DebugCamera.GetViewProjection(),
 					.Colour = Object.Colour,
 					.Type = (u32)Object.Type,
 				};
@@ -201,8 +204,8 @@ namespace Columbus
 					Context.CommandBuffer->BindGraphicsPipeline(IrradianceVolumePipeline);
 
 					DebugIrradianceProbesParameters Parameters {
-						.View = View.CameraCur.GetViewMatrix(),
-						.Projection = View.CameraCur.GetProjectionMatrix(),
+						.View = View.CameraCurUnjittered.GetViewMatrix(),
+						.Projection = View.CameraCurUnjittered.GetProjectionMatrix(),
 						.Position = Vector4(Volume.Position, 0),
 						.Extent = Vector4(Volume.Extent, 0),
 						.ProbesCount = iVector4(Volume.ProbesCount, 0),

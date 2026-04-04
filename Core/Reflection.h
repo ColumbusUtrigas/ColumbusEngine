@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <functional>
 
@@ -120,6 +121,11 @@ CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(x, []() -> void* { return (void*) (new x()); }
 		Reflection::RegisterStructCustomUI<x>(function); \
 	} } CREFLECT_TOKENPASTE2(XXX_CReflection_StructCustomUI_Initialiser_##x, __LINE__);
 
+#define CREFLECT_STRUCT_ARRAY_LABEL(x, function) struct XXX_CReflection_StructArrayLabel_Initialiser_##x { \
+	XXX_CReflection_StructArrayLabel_Initialiser_##x() { \
+		Reflection::RegisterStructArrayElementLabel<x>(function); \
+	} } CREFLECT_TOKENPASTE2(XXX_CReflection_StructArrayLabel_Initialiser_##x, __LINE__);
+
 
 // code generation macros, used only by header tool
 // for regular c++ compiler they don't produce anything
@@ -138,6 +144,7 @@ namespace Reflection
 	struct Struct;
 
 	using StructCustomUIFunc = std::function<bool(char* Object, const Field& aField, int Depth)>;
+	using StructArrayElementLabelFunc = std::function<std::string(const void* Object, int Index)>;
 	using StructChangeNofifyFunc = std::function<void(char* Object)>;
 
 	enum class FieldType
@@ -218,6 +225,7 @@ namespace Reflection
 		std::vector<Struct*> Children;
 
 		StructCustomUIFunc CustomUI;
+		StructArrayElementLabelFunc ArrayElementLabel;
 		StructChangeNofifyFunc ChangeNotify;
 	};
 
@@ -249,6 +257,13 @@ namespace Reflection
 	static void RegisterStructCustomUI(StructCustomUIFunc Func)
 	{
 		RegisterStructCustomUI(FindStructGuid<T>(), Func);
+	}
+
+	void RegisterStructArrayElementLabel(const char* Guid, StructArrayElementLabelFunc Func);
+	template <typename T>
+	static void RegisterStructArrayElementLabel(StructArrayElementLabelFunc Func)
+	{
+		RegisterStructArrayElementLabel(FindStructGuid<T>(), Func);
 	}
 
 	void SubscribeUiChangeNotify(const char* Guid, StructChangeNofifyFunc Func);

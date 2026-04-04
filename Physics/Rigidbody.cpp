@@ -403,108 +403,134 @@ namespace Columbus::Physics
 
 	btCollisionShape* CreatePhysicsShapeFromDesc(const HCollisionShapeDesc& Desc, Mesh2* Mesh)
 	{
-		btCollisionShape* Shape = nullptr;
-
-		constexpr bool bOptimiseHull = true;
-
-		switch (Desc.Type)
+		auto ToBulletTransformNoScale = [](const Transform& InTransform) -> btTransform
 		{
-		case ECollisionShape::None: break;
-		case ECollisionShape::Box:
-			Shape = new btBoxShape(btVector3(Desc.Size.X * 0.5f, Desc.Size.Y * 0.5f, Desc.Size.Z * 0.5f));
-			break;
-		case ECollisionShape::Sphere:
-			Shape = new btSphereShape(Desc.Radius);
-			break;
-		case ECollisionShape::Capsule:
-			Shape = new btCapsuleShape(Desc.Radius, Desc.Height);
-			break;
-		case ECollisionShape::Cone:
-			Shape = new btConeShape(Desc.Radius, Desc.Height);
-			break;
-		case ECollisionShape::Cylinder:
-			Shape = new btCylinderShape(btVector3(Desc.Size.X * 0.5f, Desc.Size.Y * 0.5f, Desc.Size.Z * 0.5f));
-			break;
-		case ECollisionShape::ConvexHull:
+			btTransform Result;
+			Result.setIdentity();
+			Result.setOrigin(btVector3(InTransform.Position.X, InTransform.Position.Y, InTransform.Position.Z));
+			Result.setRotation(btQuaternion(InTransform.Rotation.X, InTransform.Rotation.Y, InTransform.Rotation.Z, InTransform.Rotation.W));
+			return Result;
+		};
+
+		auto ToBulletScale = [](const Transform& InTransform) -> btVector3
 		{
-			std::vector<float> AllPoints;
-			CombineAllPointsFromMesh(Mesh, AllPoints);
+			return btVector3(fabsf(InTransform.Scale.X), fabsf(InTransform.Scale.Y), fabsf(InTransform.Scale.Z));
+		};
 
-			if (bOptimiseHull)
-			{
-				// https://www.gamedev.net/forums/topic/691208-build-a-convex-hull-from-a-given-mesh-in-bullet/
-
-				// needed to optimise convex hull
-				btConvexHullShape TmpHull(AllPoints.data(), AllPoints.size() / 3, sizeof(float) * 3);
-
-				//create a hull approximation
-				TmpHull.setMargin(0);  // this is to compensate for a bug in bullet
-
-				// optimisation procedure
-				btShapeHull* Hull = new btShapeHull(&TmpHull);
-				Hull->buildHull(0);    // note: parameter is ignored by buildHull
-
-				Shape = new btConvexHullShape((const btScalar*)Hull->getVertexPointer(), Hull->numVertices(), sizeof(btVector3));
-
-				delete Hull;
-			}
-			else
-			{
-				Shape = new btConvexHullShape(AllPoints.data(), AllPoints.size() / 3, sizeof(float) * 3);
-			}
-			break;
-		}
-		case ECollisionShape::TriMesh:
+		std::function<btCollisionShape*(const HCollisionShapeDesc&, bool)> CreateShapeInternal =
+			[&](const HCollisionShapeDesc& InDesc, bool bIgnoreOwnPlacement) -> btCollisionShape*
 		{
-			btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray();
+			btCollisionShape* Shape = nullptr;
+			constexpr bool bOptimiseHull = true;
 
-			for (const MeshPrimitive& Prim : Mesh->Primitives)
+			switch (InDesc.Type)
 			{
-				const auto& verts = Prim.CPU.Vertices;
-				const auto& inds = Prim.CPU.Indices;
+			case ECollisionShape::None: break;
+			case ECollisionShape::Box:
+				Shape = new btBoxShape(btVector3(InDesc.Size.X * 0.5f, InDesc.Size.Y * 0.5f, InDesc.Size.Z * 0.5f));
+				break;
+			case ECollisionShape::Sphere:
+				Shape = new btSphereShape(InDesc.Radius);
+				break;
+			case ECollisionShape::Capsule:
+				Shape = new btCapsuleShape(InDesc.Radius, InDesc.Height);
+				break;
+			case ECollisionShape::Cone:
+				Shape = new btConeShape(InDesc.Radius, InDesc.Height);
+				break;
+			case ECollisionShape::Cylinder:
+				Shape = new btCylinderShape(btVector3(InDesc.Size.X * 0.5f, InDesc.Size.Y * 0.5f, InDesc.Size.Z * 0.5f));
+				break;
+			case ECollisionShape::ConvexHull:
+			{
+				std::vector<float> AllPoints;
+				CombineAllPointsFromMesh(Mesh, AllPoints);
 
-				if (verts.empty() || inds.empty())
-					continue;
+				if (bOptimiseHull)
+				{
+					btConvexHullShape TmpHull(AllPoints.data(), AllPoints.size() / 3, sizeof(float) * 3);
+					TmpHull.setMargin(0);
 
-				btIndexedMesh im;
-				im.m_numTriangles = static_cast<unsigned int>(inds.size() / 3);
-				im.m_triangleIndexBase = reinterpret_cast<const unsigned char*>(inds.data());
-				im.m_triangleIndexStride = static_cast<int>(3 * sizeof(u32));
-				im.m_numVertices = static_cast<unsigned int>(verts.size());
-				im.m_vertexBase = reinterpret_cast<const unsigned char*>(verts.data());
-				im.m_vertexStride = static_cast<int>(sizeof(Vector3));
-				im.m_indexType = PHY_INTEGER; // u32 indices
+					btShapeHull* Hull = new btShapeHull(&TmpHull);
+					Hull->buildHull(0);
 
-				va->addIndexedMesh(im, PHY_INTEGER);
+					Shape = new btConvexHullShape((const btScalar*)Hull->getVertexPointer(), Hull->numVertices(), sizeof(btVector3));
+
+					delete Hull;
+				}
+				else
+				{
+					Shape = new btConvexHullShape(AllPoints.data(), AllPoints.size() / 3, sizeof(float) * 3);
+				}
+				break;
+			}
+			case ECollisionShape::TriMesh:
+			{
+				btTriangleIndexVertexArray* va = new btTriangleIndexVertexArray();
+
+				for (const MeshPrimitive& Prim : Mesh->Primitives)
+				{
+					const auto& verts = Prim.CPU.Vertices;
+					const auto& inds = Prim.CPU.Indices;
+
+					if (verts.empty() || inds.empty())
+						continue;
+
+					btIndexedMesh im;
+					im.m_numTriangles = static_cast<unsigned int>(inds.size() / 3);
+					im.m_triangleIndexBase = reinterpret_cast<const unsigned char*>(inds.data());
+					im.m_triangleIndexStride = static_cast<int>(3 * sizeof(u32));
+					im.m_numVertices = static_cast<unsigned int>(verts.size());
+					im.m_vertexBase = reinterpret_cast<const unsigned char*>(verts.data());
+					im.m_vertexStride = static_cast<int>(sizeof(Vector3));
+					im.m_indexType = PHY_INTEGER;
+
+					va->addIndexedMesh(im, PHY_INTEGER);
+				}
+
+				Shape = new btBvhTriangleMeshShape(va, true);
+				break;
+			}
+			case ECollisionShape::Compound:
+			{
+				Shape = new btCompoundShape(true, (int)InDesc.ChildShapes.size());
+				for (const HCollisionShapeDesc& Child : InDesc.ChildShapes)
+				{
+					btTransform bTransform = ToBulletTransformNoScale(Child.LocalTransform);
+					static_cast<btCompoundShape*>(Shape)->addChildShape(bTransform, CreateShapeInternal(Child, true));
+				}
+				break;
+			}
 			}
 
-			// build an acceleration structure backed by the triangle interface
-			Shape = new btBvhTriangleMeshShape(va, true);
-
-			break;
-		}
-		case ECollisionShape::Compound:
-		{
-			Shape = new btCompoundShape(true, (int)Desc.ChildShapes.size());
-			for (const HCollisionShapeDesc& Child : Desc.ChildShapes)
+			if (Shape != nullptr)
 			{
-				btTransform bTransform;
-				// TODO: local transform
-				//const auto& Pos = LocalTransform.Position;
-				//const auto& Rot = LocalTransform.Rotation;
-				Vector3 Pos = Vector3(0, 0, 0);
-				Quaternion Rot(Vector3(0, 0, 0));
-
-				bTransform.setOrigin(btVector3(Pos.X, Pos.Y, Pos.Z));
-				bTransform.setRotation(btQuaternion(Rot.X, Rot.Y, Rot.Z, Rot.W));
-
-				static_cast<btCompoundShape*>(Shape)->addChildShape(bTransform, CreatePhysicsShapeFromDesc(Child, Mesh));
+				Shape->setLocalScaling(ToBulletScale(InDesc.LocalTransform));
 			}
-			break;
-		}
-		}
 
-		return Shape;
+			if (Shape != nullptr && !bIgnoreOwnPlacement)
+			{
+				const bool bHasPlacement =
+					fabsf(InDesc.LocalTransform.Position.X) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Position.Y) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Position.Z) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Rotation.X) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Rotation.Y) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Rotation.Z) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Rotation.W - 1.0f) >= 0.0001f;
+
+				if (bHasPlacement)
+				{
+					btCompoundShape* Wrapper = new btCompoundShape(true, 1);
+					Wrapper->addChildShape(ToBulletTransformNoScale(InDesc.LocalTransform), Shape);
+					Shape = Wrapper;
+				}
+			}
+
+			return Shape;
+		};
+
+		return CreateShapeInternal(Desc, false);
 	}
 
 } // namespace Columbus::Physics
@@ -528,9 +554,10 @@ CREFLECT_ENUM_END()
 
 CREFLECT_STRUCT_BEGIN(HCollisionShapeDesc, "")
 	CREFLECT_STRUCT_FIELD(ECollisionShape, Type, "")
+	CREFLECT_STRUCT_FIELD(Transform, LocalTransform, "")
 	CREFLECT_STRUCT_FIELD(float, Radius, "")
 	CREFLECT_STRUCT_FIELD(float, Height, "")
-	CREFLECT_STRUCT_FIELD(Vector3, Size, "")
+	CREFLECT_STRUCT_FIELD(Vector3, Size, "ColourChannels")
 	CREFLECT_STRUCT_FIELD_ARRAY(HCollisionShapeDesc, ChildShapes, "")
 CREFLECT_STRUCT_END()
 
@@ -542,9 +569,9 @@ CREFLECT_STRUCT_BEGIN(HCollisionSettings, "")
 	CREFLECT_STRUCT_FIELD(float,   RollingFriction, "SliderMin(0) SliderMax(1)")
 	CREFLECT_STRUCT_FIELD(float,   AngularDamping,  "SliderMin(0) SliderMax(1)")
 	CREFLECT_STRUCT_FIELD(float,   AngularTreshold, "SliderMin(0) SliderMax(5)")
-	CREFLECT_STRUCT_FIELD(Vector3, AngularFactor, "")
+	CREFLECT_STRUCT_FIELD(Vector3, AngularFactor, "ColourChannels")
 	CREFLECT_STRUCT_FIELD(float,   LinearTreshold, "SliderMin(0) SliderMax(5)")
 	CREFLECT_STRUCT_FIELD(float,   LinearDamping,  "SliderMin(0) SliderMax(1)")
-	CREFLECT_STRUCT_FIELD(Vector3, LinearFactor, "")
+	CREFLECT_STRUCT_FIELD(Vector3, LinearFactor, "ColourChannels")
 	CREFLECT_STRUCT_FIELD(HCollisionShapeDesc, Shape, "")
 CREFLECT_STRUCT_END()

@@ -164,8 +164,11 @@ namespace Columbus
 		rasterState.polygonMode = FillModeToVK(Desc.rasterizerState.Fill);
 		rasterState.cullMode = CullModeToVK(Desc.rasterizerState.Cull);
 		rasterState.frontFace = Desc.rasterizerState.FrontCounterClockwise ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
-		rasterState.depthBiasEnable = false;
-		rasterState.depthBiasConstantFactor = Desc.rasterizerState.DepthBias;
+		rasterState.depthBiasEnable =
+			Desc.rasterizerState.DepthBias != 0 ||
+			Desc.rasterizerState.DepthBiasClamp != 0.0f ||
+			Desc.rasterizerState.SlopeScaledDepthBias != 0.0f;
+		rasterState.depthBiasConstantFactor = (float)Desc.rasterizerState.DepthBias;
 		rasterState.depthBiasClamp = Desc.rasterizerState.DepthBiasClamp;
 		rasterState.depthBiasSlopeFactor = Desc.rasterizerState.SlopeScaledDepthBias;
 		rasterState.lineWidth = Desc.rasterizerState.LineWidth;

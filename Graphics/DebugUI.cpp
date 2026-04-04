@@ -51,6 +51,7 @@ namespace Columbus::DebugUI
 			&& A.ShowGreen == B.ShowGreen
 			&& A.ShowBlue == B.ShowBlue
 			&& A.ShowAlpha == B.ShowAlpha
+			&& A.ForceOpaqueAlpha == B.ForceOpaqueAlpha
 			&& A.ShowCheckerboard == B.ShowCheckerboard
 			&& A.MipLevel == B.MipLevel
 			&& A.Zoom == B.Zoom;
@@ -869,7 +870,8 @@ namespace Columbus::DebugUI
 			Settings.ShowRed &&
 			Settings.ShowGreen &&
 			Settings.ShowBlue &&
-			Settings.ShowAlpha;
+			Settings.ShowAlpha &&
+			!Settings.ForceOpaqueAlpha;
 
 		if (bIdentityPreview)
 		{
@@ -890,14 +892,14 @@ namespace Columbus::DebugUI
 			ViewInfo.components.r = VK_COMPONENT_SWIZZLE_A;
 			ViewInfo.components.g = VK_COMPONENT_SWIZZLE_A;
 			ViewInfo.components.b = VK_COMPONENT_SWIZZLE_A;
-			ViewInfo.components.a = VK_COMPONENT_SWIZZLE_ONE;
+			ViewInfo.components.a = Settings.ForceOpaqueAlpha ? VK_COMPONENT_SWIZZLE_ONE : VK_COMPONENT_SWIZZLE_A;
 		}
 		else
 		{
 			ViewInfo.components.r = ToChannelSwizzle(Settings.ShowRed, VK_COMPONENT_SWIZZLE_R);
 			ViewInfo.components.g = ToChannelSwizzle(Settings.ShowGreen, VK_COMPONENT_SWIZZLE_G);
 			ViewInfo.components.b = ToChannelSwizzle(Settings.ShowBlue, VK_COMPONENT_SWIZZLE_B);
-			ViewInfo.components.a = Settings.ShowAlpha ? VK_COMPONENT_SWIZZLE_A : VK_COMPONENT_SWIZZLE_ONE;
+			ViewInfo.components.a = Settings.ForceOpaqueAlpha ? VK_COMPONENT_SWIZZLE_ONE : (Settings.ShowAlpha ? VK_COMPONENT_SWIZZLE_A : VK_COMPONENT_SWIZZLE_ONE);
 		}
 
 		ViewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Desc.Format);

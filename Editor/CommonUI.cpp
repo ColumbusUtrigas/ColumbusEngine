@@ -32,6 +32,8 @@ namespace Columbus::Editor
 	struct FieldUIMetadata
 	{
 		bool NoEdit = false;
+		bool Hidden = false;
+		bool NoArrayResize = false;
 		bool CommitOnEnter = false;
 		bool HasSliderLimits = false;
 		float SliderMin = 0.0f;
@@ -69,9 +71,11 @@ namespace Columbus::Editor
 
 		// Parse flags
 		Result.NoEdit = strstr(Meta, "Noedit") != nullptr;
+		Result.Hidden = strstr(Meta, "Hidden") != nullptr;
+		Result.NoArrayResize = strstr(Meta, "NoArrayResize") != nullptr;
 		Result.CommitOnEnter = strstr(Meta, "EnterCommits") != nullptr;
 		Result.IsPicker = strstr(Meta, "Picker") != nullptr;
-		Result.IsColor = strstr(Meta, "Colour") != nullptr;
+		Result.IsColor = strstr(Meta, "Colour") != nullptr && strstr(Meta, "ColourChannels") == nullptr;
 		Result.IsHDR = strstr(Meta, "HDR") != nullptr;
 		Result.UseChannelColours = strstr(Meta, "ColourChannels") != nullptr;
 		Result.IsGradient = strstr(Meta, "Gradient") != nullptr;
@@ -160,32 +164,52 @@ namespace Columbus::Editor
 	static bool DrawInlineFloatComponents(const char* Label, float* Values, int ComponentCount, const char* const* ComponentLabels, bool bUseChannelColours, bool bDragEdit, bool bIsColorSemantic = false)
 	{
 		bool Changed = false;
+		ImGui::PushID(Label ? Label : "InlineFloatComponents");
+
+		ImGui::PushMultiItemsWidths(ComponentCount, ImGui::CalcItemWidth());
+		for (int Component = 0; Component < ComponentCount; Component++)
+		{
+			ImGui::PushID(Component);
+			if (Component > 0)
+				ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+
+			ImGui::SetNextItemWidth(ImGui::CalcItemWidth());
+			const ImVec4 Color = GetCurveChannelColor(Component, bIsColorSemantic);
+			const ImVec4* ColorPtr = bUseChannelColours ? &Color : nullptr;
+			std::string ComponentId = std::string("##") + ComponentLabels[Component];
+			Changed |= DrawStyledFloatField(ComponentId.c_str(), Values[Component], ColorPtr, bDragEdit);
+			ImGui::PopItemWidth();
+			ImGui::PopID();
+		}
 
 		if (Label && Label[0] != '\0')
 		{
+			ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
 			ImGui::AlignTextToFramePadding();
 			ImGui::TextUnformatted(Label);
-			ImGui::SameLine();
-		}
-
-		ImGui::PushID(Label ? Label : "InlineFloatComponents");
-		const float Spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-		const float AvailableWidth = ImGui::GetContentRegionAvail().x;
-		const float ItemWidth = std::max(70.0f, (AvailableWidth - Spacing * (ComponentCount - 1)) / std::max(ComponentCount, 1));
-
-		for (int Component = 0; Component < ComponentCount; Component++)
-		{
-			if (Component > 0)
-				ImGui::SameLine();
-
-			ImGui::SetNextItemWidth(ItemWidth);
-			const ImVec4 Color = GetCurveChannelColor(Component, bIsColorSemantic);
-			const ImVec4* ColorPtr = bUseChannelColours ? &Color : nullptr;
-			Changed |= DrawStyledFloatField(ComponentLabels[Component], Values[Component], ColorPtr, bDragEdit);
 		}
 
 		ImGui::PopID();
 		return Changed;
+	}
+
+	static std::string GetArrayElementHeaderLabel(const Reflection::Struct* Struct, const void* ElementData, int Index)
+	{
+		std::string DisplayLabel;
+		if (Struct && Struct->ArrayElementLabel)
+		{
+			DisplayLabel = Struct->ArrayElementLabel(ElementData, Index);
+		}
+
+		if (DisplayLabel.empty())
+		{
+			const char* StructName = Struct && Struct->Name ? Struct->Name : "Element";
+			DisplayLabel = std::string(StructName) + " " + std::to_string(Index);
+		}
+
+		DisplayLabel += "##ArrayElement";
+		DisplayLabel += std::to_string(Index);
+		return DisplayLabel;
 	}
 
 	static float& GetCurveValueComponent(float& Value, int Component)
@@ -905,9 +929,9 @@ namespace Columbus::Editor
 		auto Meta = ParseFieldMetadata(Field.Meta);
 
 		if (Meta.UseChannelColours)
-			return DrawInlineFloatComponents(Field.Name, (float*)Object, 2, GVectorChannelLabels, true, false);
+			return DrawInlineFloatComponents(Field.Name, (float*)Object, 2, GVectorChannelLabels, true, true);
 
-		return ImGui::InputFloat2(Field.Name, (float*)Object);
+		return DrawInlineFloatComponents(Field.Name, (float*)Object, 2, GVectorChannelLabels, false, true);
 	}
 
 	bool ImGui_EditVector3(char* Object, const Reflection::Field& Field, int Depth)
@@ -924,9 +948,9 @@ namespace Columbus::Editor
 		}
 
 		if (Meta.UseChannelColours)
-			return DrawInlineFloatComponents(Field.Name, (float*)Object, 3, GVectorChannelLabels, true, false);
+			return DrawInlineFloatComponents(Field.Name, (float*)Object, 3, GVectorChannelLabels, true, true);
 
-		return ImGui::InputFloat3(Field.Name, (float*)Object);
+		return DrawInlineFloatComponents(Field.Name, (float*)Object, 3, GVectorChannelLabels, false, true);
 	}
 
 	bool ImGui_EditVector4(char* Object, const Reflection::Field& Field, int Depth)
@@ -943,16 +967,16 @@ namespace Columbus::Editor
 		}
 
 		if (Meta.UseChannelColours)
-			return DrawInlineFloatComponents(Field.Name, (float*)Object, 4, GVectorChannelLabels, true, false);
+			return DrawInlineFloatComponents(Field.Name, (float*)Object, 4, GVectorChannelLabels, true, true);
 
-		return ImGui::InputFloat4(Field.Name, (float*)Object);
+		return DrawInlineFloatComponents(Field.Name, (float*)Object, 4, GVectorChannelLabels, false, true);
 	}
 
 	bool ImGui_EditQuaternion(char* Object, const Reflection::Field& Field, int Depth)
 	{
 		Quaternion* Quat = (Quaternion*)Object;
 		Vector3 Euler = Quat->Euler();
-		bool Changed = ImGui::InputFloat3(Field.Name, (float*)&Euler);
+		bool Changed = DrawInlineFloatComponents(Field.Name, (float*)&Euler, 3, GVectorChannelLabels, true, true);
 		if (Changed)
 		{
 			*Quat = Quaternion(Euler);
@@ -1246,7 +1270,7 @@ namespace Columbus::Editor
 				ImGui::InputInt(Field.Name, (int*)FieldData, 1, 100, ImGuiInputTextFlags_EnterReturnsTrue);
 				return ImGui::IsItemDeactivatedAfterEdit();
 			}
-			return ImGui::InputInt(Field.Name, (int*)FieldData);
+			return ImGui::DragInt(Field.Name, (int*)FieldData, 1.0f);
 			break;
 		case Reflection::FieldType::Float:
 		{
@@ -1261,7 +1285,7 @@ namespace Columbus::Editor
 				return ImGui::SliderFloat(Field.Name, (float*)FieldData, Metadata.SliderMin, Metadata.SliderMax);
 			}
 
-			return ImGui::InputFloat(Field.Name, (float*)FieldData);
+			return ImGui::DragFloat(Field.Name, (float*)FieldData, 0.01f, 0.0f, 0.0f, "%.3f");
 
 			break;
 		}
@@ -1308,40 +1332,81 @@ namespace Columbus::Editor
 		{
 			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
 			Reflection::ArrayData* Array = Field.Array;
+			const bool bAllowArrayResize = !Metadata.NoArrayResize;
 
 			u32 ElementSize = Array->ElementField.Size;
 			u32 NumElements = (u32)ArrayData->size() / ElementSize;
 
 			bool Result = false;
-			if (ImGui::CollapsingHeader(Field.Name))
+			if (ImGui::TreeNodeEx(Field.Name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding))
 			{
+				ImDrawList* DrawList = ImGui::GetWindowDrawList();
+				const float ChildIndentation = 5.0f;
+				ImGui::Indent(ChildIndentation);
+				const ImVec2 ChildRegionStart = ImGui::GetCursorScreenPos();
+				const float GuideX = ChildRegionStart.x - ImGui::GetTreeNodeToLabelSpacing() * 0.5f;
+
 				if (NumElements == 0)
 				{
-					ImGui::Text("Empty array");
+					ImGui::TextDisabled("Empty array");
 				}
 
 				i32 ElementToRemove = -1;
 
-				ImGui::Indent(Depth * 5.0f);
 				u32 Offset = 0;
 				for (u32 i = 0; i < NumElements; i++)
 				{
 					ImGui::PushID(i);
-					Result |= Reflection_EditObjectField(ArrayData->data() + Offset, Array->ElementField, Depth + 1);
-					ImGui::SameLine();
 
-					if (ImGui::Button("Remove"))
+					char* ElementData = ArrayData->data() + Offset;
+					const Reflection::Field& ElementField = Array->ElementField;
+					bool bElementChanged = false;
+
+					if (ElementField.Type == Reflection::FieldType::Struct && ElementField.Struct && !ElementField.Struct->CustomUI)
 					{
-						ElementToRemove = i;
+						std::string HeaderLabel = GetArrayElementHeaderLabel(ElementField.Struct, ElementData, i);
+						bool bOpen = ImGui::TreeNodeEx(HeaderLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_FramePadding);
+						if (bAllowArrayResize)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button(ICON_FA_TRASH_ALT " Remove"))
+							{
+								ElementToRemove = i;
+							}
+						}
+
+						if (bOpen)
+						{
+							const float TreeContentIndentation = ImGui::GetTreeNodeToLabelSpacing();
+							ImGui::Indent(TreeContentIndentation);
+							for (const Reflection::Field& StructField : ElementField.Struct->Fields)
+							{
+								if (ParseFieldMetadata(StructField.Meta).Hidden)
+									continue;
+								bElementChanged |= Reflection_EditObjectField(ElementData, StructField, Depth + 1);
+							}
+							ImGui::Unindent(TreeContentIndentation);
+						}
 					}
+					else
+					{
+						bElementChanged |= Reflection_EditObjectField(ElementData, ElementField, Depth + 1);
+						if (bAllowArrayResize)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button(ICON_FA_TRASH_ALT " Remove"))
+							{
+								ElementToRemove = i;
+							}
+						}
+					}
+					Result |= bElementChanged;
 
 					ImGui::PopID();
 
 					Offset += ElementSize;
 				}
-				ImGui::Unindent(Depth * 5.0f);
-
-				if (ImGui::Button("Add Element"))
+				if (bAllowArrayResize && ImGui::Button(ICON_FA_PLUS " Add Element"))
 				{
 					Array->NewElement(FieldData);
 					Result = true;
@@ -1352,6 +1417,21 @@ namespace Columbus::Editor
 					Array->DeleteElement(FieldData, ElementToRemove);
 					Result = true;
 				}
+
+				const ImVec2 ChildRegionEnd = ImGui::GetItemRectMax();
+				if (ChildRegionEnd.y > ChildRegionStart.y)
+				{
+					ImVec4 GuideColour = ImGui::GetStyleColorVec4(ImGuiCol_Separator);
+					GuideColour.w *= 0.65f;
+					DrawList->AddLine(
+						ImVec2(GuideX, ChildRegionStart.y),
+						ImVec2(GuideX, ChildRegionEnd.y),
+						ImGui::GetColorU32(GuideColour),
+						1.0f);
+				}
+
+				ImGui::Unindent(ChildIndentation);
+				ImGui::TreePop();
 			}
 			return Result;
 		}
@@ -1493,9 +1573,14 @@ namespace Columbus::Editor
 					const std::string AssetName = AssetRef->Path.empty()
 						? std::string("Texture")
 						: std::filesystem::path(AssetRef->Path).filename().string();
+					const float FitZoomX = 96.0f / (float)Math::Max(1u, Desc.Width);
+					const float FitZoomY = 96.0f / (float)Math::Max(1u, Desc.Height);
+					DebugUI::TextureWidgetSettings PreviewSettings;
+					PreviewSettings.ShowCheckerboard = false;
+					PreviewSettings.Zoom = std::min(1.0f, std::min(FitZoomX, FitZoomY));
 
-					ImGui::BeginChild((std::string("##TexturePreview") + Field.Name).c_str(), ImVec2(0.0f, 124.0f), true);
-					DebugUI::TextureWidget(PreviewTexture, Vector2(96.0f, 96.0f));
+					ImGui::BeginChild((std::string("##TexturePreview") + Field.Name).c_str(), ImVec2(0.0f, 124.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+					DebugUI::TextureWidget(PreviewTexture, Vector2(96.0f, 96.0f), PreviewSettings);
 					ImGui::SameLine();
 					ImGui::BeginGroup();
 					ImGui::TextUnformatted(AssetName.c_str());
@@ -1574,16 +1659,15 @@ namespace Columbus::Editor
 		return false;
 	}
 
-	bool Reflection_EditStruct(char* Object, const Reflection::Struct* Struct)
+	bool Reflection_EditStructContents(char* Object, const Reflection::Struct* Struct, int Depth)
 	{
-		ImGui::LabelText("Struct Guid", "%s", Struct->Guid);
-		ImGui::LabelText("Struct Version", "%i", Struct->Version);
-
 		bool AnyFieldChanged = false;
 
 		for (const auto& Field : Struct->Fields)
 		{
-			AnyFieldChanged |= Reflection_EditObjectField(Object, Field);
+			if (ParseFieldMetadata(Field.Meta).Hidden)
+				continue;
+			AnyFieldChanged |= Reflection_EditObjectField(Object, Field, Depth);
 		}
 
 		if (AnyFieldChanged && Struct->ChangeNotify)
@@ -1592,6 +1676,18 @@ namespace Columbus::Editor
 		}
 
 		return AnyFieldChanged;
+	}
+
+	bool Reflection_EditStruct(char* Object, const Reflection::Struct* Struct)
+	{
+		ImGui::TextDisabled("%s", Struct->Name);
+		ImGui::SameLine();
+		ImGui::TextDisabled("v%i", Struct->Version);
+		ImGui::SameLine();
+		ImGui::TextDisabled("%s", Struct->Guid);
+		ImGui::Separator();
+
+		return Reflection_EditStructContents(Object, Struct);
 	}
 
 	// Editing of reflected objects

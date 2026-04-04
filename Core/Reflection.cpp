@@ -8,6 +8,7 @@
 
 template <> void Reflection::EnforceTypeLinkage<bool>() {}
 template <> void Reflection::EnforceTypeLinkage<int>() {}
+template <> void Reflection::EnforceTypeLinkage<unsigned int>() {}
 template <> void Reflection::EnforceTypeLinkage<float>() {}
 template <> void Reflection::EnforceTypeLinkage<std::string>() {}
 
@@ -37,6 +38,7 @@ namespace Reflection
 		std::unordered_map<std::string_view, Struct*> GuidToStructs;
 
 		std::unordered_map<std::string_view, StructCustomUIFunc> GuidStructCustomUI;
+		std::unordered_map<std::string_view, StructArrayElementLabelFunc> GuidStructArrayElementLabels;
 		std::unordered_map<std::string_view, StructChangeNofifyFunc> GuidStructChangeNotify;
 	};
 
@@ -146,6 +148,11 @@ namespace Reflection
 		ReflectionData::Instance().GuidStructCustomUI[Guid] = Func;
 	}
 
+	void RegisterStructArrayElementLabel(const char* Guid, StructArrayElementLabelFunc Func)
+	{
+		ReflectionData::Instance().GuidStructArrayElementLabels[Guid] = Func;
+	}
+
 	void SubscribeUiChangeNotify(const char* Guid, StructChangeNofifyFunc Func)
 	{
 		if (ReflectionData::Instance().GuidToStructs.contains(Guid))
@@ -174,6 +181,12 @@ namespace Reflection
 			IsBasicType = true;
 			field.Type = FieldType::Int;
 			COLUMBUS_ASSERT(field.Size == sizeof(int));
+		}
+		else if (strcmp(field.Typename, "unsigned int") == 0 || strcmp(field.Typename, "u32") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::Int;
+			COLUMBUS_ASSERT(field.Size == sizeof(unsigned int));
 		}
 		else if (strcmp(field.Typename, "float") == 0)
 		{
@@ -299,6 +312,16 @@ namespace Reflection
 			if (ReflectionData::Instance().GuidToStructs.contains(Guid))
 			{
 				ReflectionData::Instance().GuidToStructs[Guid]->CustomUI = Func;
+			}
+		}
+
+		Log::Initialization("Reflection: setting %i struct array labels...", (int)ReflectionData::Instance().GuidStructArrayElementLabels.size());
+
+		for (const auto [Guid, Func] : ReflectionData::Instance().GuidStructArrayElementLabels)
+		{
+			if (ReflectionData::Instance().GuidToStructs.contains(Guid))
+			{
+				ReflectionData::Instance().GuidToStructs[Guid]->ArrayElementLabel = Func;
 			}
 		}
 

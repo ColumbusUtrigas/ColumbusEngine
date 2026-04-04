@@ -4,6 +4,7 @@
 #include <Core/Serialisation.h>
 #include <Scene/Project.h>
 #include <Scene/TextureAsset.h>
+#include <Scene/MeshAsset.h>
 
 #include <limits.h>
 #include <float.h>
@@ -121,22 +122,20 @@ namespace Columbus
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Mesh2>()] = [this](void* Asset)
 			{
 				Mesh2* mesh = static_cast<Mesh2*>(Asset);
-
-				for (MeshPrimitive& Primitive : mesh->Primitives)
-				{
-					DestroyMeshBuffer(Device, Primitive.GPU.Vertices);
-					DestroyMeshBuffer(Device, Primitive.GPU.Indices);
-					DestroyMeshBuffer(Device, Primitive.GPU.UV1);
-					DestroyMeshBuffer(Device, Primitive.GPU.UV2);
-					DestroyMeshBuffer(Device, Primitive.GPU.Normals);
-					DestroyMeshBuffer(Device, Primitive.GPU.Tangents);
-					if (Primitive.GPU.BLAS)
-						RemoveProfilingMemory(MemoryCounter_SceneBLAS, Primitive.GPU.BLAS->GetSize());
-					Device->DestroyAccelerationStructure(Primitive.GPU.BLAS);
-				}
-				
+				DestroyMeshRuntimeResources(mesh);
 				delete mesh;
 			};
+			Assets.AssetLoaderFunctions[Reflection::FindStruct<Mesh2>()] = [this](const char* Path) -> void*
+			{
+				Mesh2* Mesh = LoadMeshAssetFromFile(Path);
+				if (Mesh == nullptr)
+					return nullptr;
+
+				Assets.ResolveStructAssetReferences(Reflection::FindStruct<Mesh2>(), Mesh);
+				BuildMeshRuntimeResources(Mesh, std::filesystem::path(Path).filename().string());
+				return Mesh;
+			};
+			Assets.AssetExtensions[Reflection::FindStruct<Mesh2>()] = "cas,obj";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevel>()] = [this](const char* Path) -> void*
 			{
@@ -836,65 +835,118 @@ namespace Columbus
 	{
 		Mesh2* pMesh = new Mesh2();
 		Mesh2& Mesh = *pMesh;
+		Mesh.DefaultCollisionSettings.Shape.Type = ECollisionShape::TriMesh;
 
-		Mesh.BoundingBox = Box(Vector3(FLT_MAX), Vector3(-FLT_MAX));
-
-		for (CPUMeshResource& Primitive : MeshPrimitives)
+		for (int PrimitiveIndex = 0; PrimitiveIndex < (int)MeshPrimitives.size(); PrimitiveIndex++)
 		{
 			MeshPrimitive& Prim = Mesh.Primitives.emplace_back();
+			Prim.Name = "Primitive " + std::to_string(PrimitiveIndex);
+			Prim.CPU = MeshPrimitives[PrimitiveIndex];
+		}
 
-			Primitive.CalculateTangents();
+		BuildMeshRuntimeResources(pMesh, AssetName);
 
-			Prim.CPU = Primitive;
-			CPUMeshResource& CPUMesh = Prim.CPU;
-			GPUMeshResource& GPUMesh = Prim.GPU;
+		return AssetSystem::Get().RegisterAssetRef<Mesh2>(pMesh, AssetName);
+	}
 
-			GPUMesh.VertexCount  = (int)CPUMesh.Vertices.size();
-			GPUMesh.IndicesCount = (int)CPUMesh.Indices.size();
+	void EngineWorld::DestroyMeshRuntimeResources(Mesh2* MeshAsset)
+	{
+		if (MeshAsset == nullptr)
+			return;
+
+		for (MeshPrimitive& Primitive : MeshAsset->Primitives)
+		{
+			DestroyMeshBuffer(Device, Primitive.GPU.Vertices);
+			DestroyMeshBuffer(Device, Primitive.GPU.Indices);
+			DestroyMeshBuffer(Device, Primitive.GPU.UV1);
+			DestroyMeshBuffer(Device, Primitive.GPU.UV2);
+			DestroyMeshBuffer(Device, Primitive.GPU.Normals);
+			DestroyMeshBuffer(Device, Primitive.GPU.Tangents);
+			DestroyMeshBuffer(Device, Primitive.GPU.BoneIndices);
+			DestroyMeshBuffer(Device, Primitive.GPU.BoneWeights);
+			if (Primitive.GPU.BLAS)
+				RemoveProfilingMemory(MemoryCounter_SceneBLAS, Primitive.GPU.BLAS->GetSize());
+			Device->DestroyAccelerationStructure(Primitive.GPU.BLAS);
+			Primitive.GPU = {};
+		}
+	}
+
+	void EngineWorld::BuildMeshRuntimeResources(Mesh2* MeshAsset, const std::string& AssetDebugName)
+	{
+		if (MeshAsset == nullptr)
+			return;
+
+		DestroyMeshRuntimeResources(MeshAsset);
+		MeshAsset->BoundingBox = Box(Vector3(FLT_MAX), Vector3(-FLT_MAX));
+		bool bHasAnyBounds = false;
+
+		for (MeshPrimitive& Primitive : MeshAsset->Primitives)
+		{
+			CPUMeshResource& CPUMesh = Primitive.CPU;
+			GPUMeshResource& GPUMesh = Primitive.GPU;
+
+			if (CPUMesh.Vertices.empty() || CPUMesh.Indices.empty())
+				continue;
+
+			if (CPUMesh.UV1.size() != CPUMesh.Vertices.size())
+				CPUMesh.UV1.assign(CPUMesh.Vertices.size(), Vector2(0.0f, 0.0f));
+
+			if (CPUMesh.Normals.size() != CPUMesh.Vertices.size())
+				CPUMesh.CalculateNormals();
+
+			if (CPUMesh.Tangents.size() != CPUMesh.Vertices.size())
+				CPUMesh.CalculateTangents();
+
+			GPUMesh.VertexCount = (u32)CPUMesh.Vertices.size();
+			GPUMesh.IndicesCount = (u32)CPUMesh.Indices.size();
 
 			GPUMesh.Vertices = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Vertices.size(), true, CPUMesh.Vertices.data());
-			GPUMesh.Normals  = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Normals.size(), true, CPUMesh.Normals.data());
+			GPUMesh.Normals = CreateMeshBuffer(Device, sizeof(Vector3) * CPUMesh.Normals.size(), true, CPUMesh.Normals.data());
 			GPUMesh.Tangents = CreateMeshBuffer(Device, sizeof(Vector4) * CPUMesh.Tangents.size(), true, CPUMesh.Tangents.data());
-			GPUMesh.UV1      = CreateMeshBuffer(Device, sizeof(Vector2) * CPUMesh.UV1.size(), true, CPUMesh.UV1.data());
-			GPUMesh.Indices  = CreateMeshBuffer(Device, sizeof(u32) * CPUMesh.Indices.size(), true, CPUMesh.Indices.data());
+			GPUMesh.UV1 = CreateMeshBuffer(Device, sizeof(Vector2) * CPUMesh.UV1.size(), true, CPUMesh.UV1.data());
+			GPUMesh.Indices = CreateMeshBuffer(Device, sizeof(u32) * CPUMesh.Indices.size(), true, CPUMesh.Indices.data());
 
-			// Primitive bounding box
+			if (!CPUMesh.UV2.empty())
+				GPUMesh.UV2 = CreateMeshBuffer(Device, sizeof(Vector2) * CPUMesh.UV2.size(), true, CPUMesh.UV2.data());
+			if (!CPUMesh.BoneIndices.empty())
+				GPUMesh.BoneIndices = CreateMeshBuffer(Device, sizeof(iVector4) * CPUMesh.BoneIndices.size(), true, CPUMesh.BoneIndices.data());
+			if (!CPUMesh.BoneWeights.empty())
+				GPUMesh.BoneWeights = CreateMeshBuffer(Device, sizeof(Vector4) * CPUMesh.BoneWeights.size(), true, CPUMesh.BoneWeights.data());
+
+			Vector3 MinVertex(FLT_MAX);
+			Vector3 MaxVertex(-FLT_MAX);
+			for (const Vector3& Vertex : CPUMesh.Vertices)
 			{
-				Vector3 MinVertex(FLT_MAX);
-				Vector3 MaxVertex(-FLT_MAX);
-
-				for (int i = 0; i < (int)CPUMesh.Vertices.size(); i++)
-				{
-					Vector3 Vertex = CPUMesh.Vertices[i];
-
-					MinVertex = Vector3::Min(Vertex, MinVertex);
-					MaxVertex = Vector3::Max(Vertex, MaxVertex);
-				}
-
-
-				Prim.BoundingBox = Box(MinVertex, MaxVertex);
-
-				// total mesh bounding box
-				Mesh.BoundingBox.Min = Vector3::Min(Mesh.BoundingBox.Min, MinVertex);
-				Mesh.BoundingBox.Max = Vector3::Max(Mesh.BoundingBox.Max, MaxVertex);
+				MinVertex = Vector3::Min(Vertex, MinVertex);
+				MaxVertex = Vector3::Max(Vertex, MaxVertex);
 			}
 
-			// BLAS
-			{
-				Columbus::AccelerationStructureDesc blasDesc;
-				blasDesc.Type = Columbus::AccelerationStructureType::BLAS;
-				blasDesc.Vertices = GPUMesh.Vertices;
-				blasDesc.Indices = GPUMesh.Indices;
-				blasDesc.VerticesCount = GPUMesh.VertexCount;
-				blasDesc.IndicesCount = GPUMesh.IndicesCount;
-				GPUMesh.BLAS = Device->CreateAccelerationStructure(blasDesc);
+			Primitive.BoundingBox = CPUMesh.Vertices.empty() ? Box(Vector3(0.0f), Vector3(0.0f)) : Box(MinVertex, MaxVertex);
+			MeshAsset->BoundingBox.Min = Vector3::Min(MeshAsset->BoundingBox.Min, Primitive.BoundingBox.Min);
+			MeshAsset->BoundingBox.Max = Vector3::Max(MeshAsset->BoundingBox.Max, Primitive.BoundingBox.Max);
+			bHasAnyBounds = true;
 
-				Device->SetDebugName(GPUMesh.BLAS, (AssetName + " BLAS").c_str());
-				AddProfilingMemory(MemoryCounter_SceneBLAS, GPUMesh.BLAS->GetSize());
+			if (MeshAsset->ImportSettings.BuildBLAS)
+			{
+				AccelerationStructureDesc BlasDesc;
+				BlasDesc.Type = AccelerationStructureType::BLAS;
+				BlasDesc.Vertices = GPUMesh.Vertices;
+				BlasDesc.Indices = GPUMesh.Indices;
+				BlasDesc.VerticesCount = GPUMesh.VertexCount;
+				BlasDesc.IndicesCount = GPUMesh.IndicesCount;
+				GPUMesh.BLAS = Device->CreateAccelerationStructure(BlasDesc);
+
+				if (GPUMesh.BLAS)
+				{
+					if (!AssetDebugName.empty())
+						Device->SetDebugName(GPUMesh.BLAS, (AssetDebugName + " BLAS").c_str());
+					AddProfilingMemory(MemoryCounter_SceneBLAS, GPUMesh.BLAS->GetSize());
+				}
 			}
 		}
 
-		return AssetSystem::Get().RegisterAssetRef<Mesh2>(pMesh, AssetName);
+		if (!bHasAnyBounds)
+			MeshAsset->BoundingBox = Box(Vector3(0.0f), Vector3(0.0f));
 	}
 
 	AssetRef<Mesh2> EngineWorld::LoadMesh(const char* AssetPath)
@@ -1371,7 +1423,11 @@ namespace Columbus
 			// TODO: delete shapes
 		}
 
-		btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(CollisionSettings.Shape, Mesh.Asset);
+		HCollisionSettings EffectiveCollisionSettings = CollisionSettings;
+		if (Mesh.Asset != nullptr && EffectiveCollisionSettings.Shape.Type == ECollisionShape::None)
+			EffectiveCollisionSettings = Mesh.Asset->DefaultCollisionSettings;
+
+		btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EffectiveCollisionSettings.Shape, Mesh.Asset);
 
 		bNeedsPostPhysicsTicking = false;
 
@@ -1383,11 +1439,11 @@ namespace Columbus
 			PhysicsBody->mRigidbody->setUserPointer(this);
 
 			// apply settings from the desc
-			PhysicsBody->SetCollisionSettings(CollisionSettings);
+			PhysicsBody->SetCollisionSettings(EffectiveCollisionSettings);
 
 			World->Physics.AddRigidbody(PhysicsBody);
 
-			if (!CollisionSettings.Static)
+			if (!EffectiveCollisionSettings.Static)
 			{
 				bNeedsPostPhysicsTicking = true;
 				PhysicsBody->Activate();
@@ -1426,6 +1482,10 @@ namespace Columbus
 			if (Materials.size() > i && Materials[i].IsValid())
 			{
 				GPUMesh.MaterialId = Materials[i]->StableId;
+			}
+			else if (Prim.DefaultMaterial.IsValid())
+			{
+				GPUMesh.MaterialId = Prim.DefaultMaterial->StableId;
 			}
 
 			i++;
@@ -1739,7 +1799,60 @@ CREFLECT_STRUCT_BEGIN(TextureStoredPixels, "")
 	CREFLECT_STRUCT_FIELD(Blob, Pixels, "Noedit")
 CREFLECT_STRUCT_END()
 
-CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Mesh2, []() -> void* { return nullptr; }, "")
+CREFLECT_STRUCT_BEGIN(MeshImportSettings, "")
+	CREFLECT_STRUCT_FIELD(bool, GenerateTangents, "")
+	CREFLECT_STRUCT_FIELD(float, ImportScale, "")
+	CREFLECT_STRUCT_FIELD(bool, BuildBLAS, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(CPUMeshResource, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, Vertices, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, Normals, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector4, Tangents, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector2, UV1, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector2, UV2, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(iVector4, BoneIndices, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector4, BoneWeights, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(u32, Indices, "Noedit")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(MeshPrimitive, "")
+	CREFLECT_STRUCT_FIELD(std::string, Name, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Material, DefaultMaterial, "")
+	CREFLECT_STRUCT_FIELD(Box, BoundingBox, "Hidden")
+	CREFLECT_STRUCT_FIELD(CPUMeshResource, CPU, "Hidden")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(MeshSocket, "")
+	CREFLECT_STRUCT_FIELD(std::string, Name, "")
+	CREFLECT_STRUCT_FIELD(Transform, LocalTransform, "")
+CREFLECT_STRUCT_END()
+
+static std::string GetMeshPrimitiveArrayLabel(const void* Object, int Index)
+{
+	const MeshPrimitive* Primitive = reinterpret_cast<const MeshPrimitive*>(Object);
+	if (Primitive && !Primitive->Name.empty())
+		return Primitive->Name;
+	return "Primitive " + std::to_string(Index);
+}
+CREFLECT_STRUCT_ARRAY_LABEL(MeshPrimitive, GetMeshPrimitiveArrayLabel)
+
+static std::string GetMeshSocketArrayLabel(const void* Object, int Index)
+{
+	const MeshSocket* Socket = reinterpret_cast<const MeshSocket*>(Object);
+	if (Socket && !Socket->Name.empty())
+		return Socket->Name;
+	return "Socket " + std::to_string(Index);
+}
+CREFLECT_STRUCT_ARRAY_LABEL(MeshSocket, GetMeshSocketArrayLabel)
+
+CREFLECT_STRUCT_BEGIN(Mesh2, "")
+	CREFLECT_STRUCT_FIELD(std::string, SourcePath, "Noedit")
+	CREFLECT_STRUCT_FIELD(MeshImportSettings, ImportSettings, "")
+	CREFLECT_STRUCT_FIELD(HCollisionSettings, DefaultCollisionSettings, "")
+	CREFLECT_STRUCT_FIELD(Box, BoundingBox, "Hidden")
+	CREFLECT_STRUCT_FIELD_ARRAY(MeshSocket, Sockets, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(MeshPrimitive, Primitives, "Hidden NoArrayResize")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(Material, "")

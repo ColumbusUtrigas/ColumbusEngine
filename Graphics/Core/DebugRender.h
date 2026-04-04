@@ -30,6 +30,7 @@ namespace Columbus
 		bool DrawOutline = false;
 		bool UseZTest = true;
 		bool Wireframe = false;
+		bool UseUnjitteredCamera = true;
 
 		Vector3 Vertices[3]; // for triangle
 
@@ -119,9 +120,14 @@ namespace Columbus
 			Mat.Scale(Vector3(Radius));
 			Mat.Translate(Pos);
 
+			AddSphere(Mat, Colour, Wireframe, ZTest);
+		}
+
+		void AddSphere(const Matrix& Transform, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
 			DebugRenderObject Object{
 				.Type = DebugRenderObjectType::Sphere,
-				.Transform = Mat,
+				.Transform = Transform,
 				.Colour = Colour,
 				.DrawOutline = false,
 				.UseZTest = ZTest,
@@ -135,11 +141,16 @@ namespace Columbus
 			Matrix Mat;
 			Mat.Translate(Pos);
 
+			AddCone(Mat, Radius, Height, Colour, Wireframe, ZTest);
+		}
+
+		void AddCone(const Matrix& Transform, float Radius, float Height, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
 			Vector3 Packed(Radius, Height, 0);
 
 			DebugRenderObject Object{
 				.Type = DebugRenderObjectType::Cone,
-				.Transform = Mat,
+				.Transform = Transform,
 				.Colour = Colour,
 				.DrawOutline = false,
 				.UseZTest = ZTest,
@@ -154,11 +165,16 @@ namespace Columbus
 			Matrix Mat;
 			Mat.Translate(Pos);
 
+			AddCylinder(Mat, Radius, Height, Colour, Wireframe, ZTest);
+		}
+
+		void AddCylinder(const Matrix& Transform, float Radius, float Height, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
 			Vector3 Packed(Radius, Height, 0);
 
 			DebugRenderObject Object{
 				.Type = DebugRenderObjectType::Cylinder,
-				.Transform = Mat,
+				.Transform = Transform,
 				.Colour = Colour,
 				.DrawOutline = false,
 				.UseZTest = ZTest,
@@ -173,11 +189,16 @@ namespace Columbus
 			Matrix Mat;
 			Mat.Translate(Pos);
 
+			AddCapsule(Mat, Radius, Height, Colour, Wireframe, ZTest);
+		}
+
+		void AddCapsule(const Matrix& Transform, float Radius, float Height, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
 			Vector3 Packed(Radius, Height, 0);
 
 			DebugRenderObject Object{
 				.Type = DebugRenderObjectType::Capsule,
-				.Transform = Mat,
+				.Transform = Transform,
 				.Colour = Colour,
 				.DrawOutline = false,
 				.UseZTest = ZTest,
@@ -187,7 +208,7 @@ namespace Columbus
 			Objects.push_back(Object);
 		}
 
-		void AddMesh(const Matrix& Transform, Buffer* VB, Buffer* IB, u32 NumIndices, Vector4 Colour, bool Wireframe = false, bool ZTest = true)
+		void AddMesh(const Matrix& Transform, Buffer* VB, Buffer* IB, u32 NumIndices, Vector4 Colour, bool Wireframe = false, bool ZTest = true, bool UseUnjitteredCamera = true)
 		{
 			DebugRenderObject Object{
 				.Type = DebugRenderObjectType::Mesh,
@@ -196,6 +217,7 @@ namespace Columbus
 				.DrawOutline = false,
 				.UseZTest = ZTest,
 				.Wireframe = Wireframe,
+				.UseUnjitteredCamera = UseUnjitteredCamera,
 				.Vertices = { {}, {}, {}},
 				.VertexBuffer = VB,
 				.IndexBuffer = IB,

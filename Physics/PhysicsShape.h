@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Reflection.h>
+#include <Scene/Transform.h>
 #include <Math/Vector3.h>
 #include <vector>
 
@@ -25,6 +26,7 @@ namespace Columbus
 	struct HCollisionShapeDesc
 	{
 		ECollisionShape Type = ECollisionShape::None;
+		Transform LocalTransform;
 
 		float Radius = 0.5f; // Radius is used for Sphere, Cone, Capsule
 		float Height = 1.5f; // Height is used for Cone, Capsule

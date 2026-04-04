@@ -2,6 +2,36 @@
 
 namespace Columbus
 {
+	void CPUMeshResource::CalculateNormals()
+	{
+		Normals.assign(Vertices.size(), Vector3(0.0f));
+
+		for (u32 i = 0; i + 2 < (u32)Indices.size(); i += 3)
+		{
+			const u32 i1 = Indices[i + 0];
+			const u32 i2 = Indices[i + 1];
+			const u32 i3 = Indices[i + 2];
+
+			if (i1 >= Vertices.size() || i2 >= Vertices.size() || i3 >= Vertices.size())
+				continue;
+
+			const Vector3 Edge1 = Vertices[i2] - Vertices[i1];
+			const Vector3 Edge2 = Vertices[i3] - Vertices[i1];
+			const Vector3 FaceNormal = Vector3::Cross(Edge1, Edge2);
+
+			Normals[i1] += FaceNormal;
+			Normals[i2] += FaceNormal;
+			Normals[i3] += FaceNormal;
+		}
+
+		for (Vector3& Normal : Normals)
+		{
+			if (Normal.Length() > 1e-6f)
+				Normal = Normal.Normalized();
+			else
+				Normal = Vector3(0.0f, 1.0f, 0.0f);
+		}
+	}
 
 	void CPUMeshResource::CalculateTangents()
 	{

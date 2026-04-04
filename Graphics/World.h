@@ -319,6 +319,8 @@ namespace Columbus
 		HLevel* LoadLevelGLTF2(const char* Path);
 		HLevel* LoadLevelCLVL(const char* Path);
 		void RefreshMaterial(Material* MaterialAsset);
+		void BuildMeshRuntimeResources(Mesh2* MeshAsset, const std::string& AssetDebugName = {});
+		void DestroyMeshRuntimeResources(Mesh2* MeshAsset);
 
 		void ClearWorld();
 		void SaveWorldLevel(const char* Path);

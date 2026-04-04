@@ -41,11 +41,17 @@ namespace Columbus::Editor
 	// Editing of reflected objects
 
 	bool Reflection_EditObjectField(char* Object, const Reflection::Field& Field, int Depth = 0);
+	bool Reflection_EditStructContents(char* Object, const Reflection::Struct* Struct, int Depth = 0);
 	bool Reflection_EditStruct(char* Object, const Reflection::Struct* Struct);
 	template <typename T>
 	static bool Reflection_EditStruct(T& Object)
 	{
 		return Reflection_EditStruct((char*)&Object, Reflection::FindStructTypeForObject<T>(Object));
+	}
+	template <typename T>
+	static bool Reflection_EditStructContents(T& Object)
+	{
+		return Reflection_EditStructContents((char*)&Object, Reflection::FindStructTypeForObject<T>(Object));
 	}
 }
 

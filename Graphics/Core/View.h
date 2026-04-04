@@ -187,6 +187,8 @@ namespace Columbus
 		iVector2 RenderSize; // internal resolution
 		Camera CameraCur;
 		Camera CameraPrev;
+		Camera CameraCurUnjittered;
+		Camera CameraPrevUnjittered;
 		DebugRender DebugRender;
 		UISystem* UI = nullptr;
 
