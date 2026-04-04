@@ -147,21 +147,21 @@ namespace Columbus::ImageUtils
 		TextureFormat::Unknown,    // DXGI_FORMAT_R9G9B9E5_SHAREDEXP = 67,
 		TextureFormat::Unknown,    // DXGI_FORMAT_R8G8_B8G8_UNORM = 68,
 		TextureFormat::Unknown,    // DXGI_FORMAT_G8R8_G8B8_UNORM = 69,
-		TextureFormat::DXT1,       // DXGI_FORMAT_BC1_TYPELESS = 70,
-		TextureFormat::DXT1,       // DXGI_FORMAT_BC1_UNORM = 71,
-		TextureFormat::DXT1,       // DXGI_FORMAT_BC1_UNORM_SRGB = 72,
-		TextureFormat::DXT3,       // DXGI_FORMAT_BC2_TYPELESS = 73,
-		TextureFormat::DXT3,       // DXGI_FORMAT_BC2_UNORM = 74,
-		TextureFormat::DXT3,       // DXGI_FORMAT_BC2_UNORM_SRGB = 75,
-		TextureFormat::DXT3,       // DXGI_FORMAT_BC3_TYPELESS = 76,
-		TextureFormat::DXT3,       // DXGI_FORMAT_BC3_UNORM = 77,
-		TextureFormat::DXT3,       // DXGI_FORMAT_BC3_UNORM_SRGB = 78,
-		TextureFormat::DXT5,       // DXGI_FORMAT_BC4_TYPELESS = 79,
-		TextureFormat::DXT5,       // DXGI_FORMAT_BC4_UNORM = 80,
-		TextureFormat::DXT5,       // DXGI_FORMAT_BC4_SNORM = 81,
-		TextureFormat::DXT5,       // DXGI_FORMAT_BC5_TYPELESS = 82,
-		TextureFormat::DXT5,       // DXGI_FORMAT_BC5_UNORM = 83,
-		TextureFormat::DXT5,       // DXGI_FORMAT_BC5_SNORM = 84,
+		TextureFormat::BC1,        // DXGI_FORMAT_BC1_TYPELESS = 70,
+		TextureFormat::BC1,        // DXGI_FORMAT_BC1_UNORM = 71,
+		TextureFormat::BC1SRGB,    // DXGI_FORMAT_BC1_UNORM_SRGB = 72,
+		TextureFormat::Unknown,    // DXGI_FORMAT_BC2_TYPELESS = 73,
+		TextureFormat::Unknown,    // DXGI_FORMAT_BC2_UNORM = 74,
+		TextureFormat::Unknown,    // DXGI_FORMAT_BC2_UNORM_SRGB = 75,
+		TextureFormat::BC3,        // DXGI_FORMAT_BC3_TYPELESS = 76,
+		TextureFormat::BC3,        // DXGI_FORMAT_BC3_UNORM = 77,
+		TextureFormat::BC3SRGB,    // DXGI_FORMAT_BC3_UNORM_SRGB = 78,
+		TextureFormat::Unknown,    // DXGI_FORMAT_BC4_TYPELESS = 79,
+		TextureFormat::Unknown,    // DXGI_FORMAT_BC4_UNORM = 80,
+		TextureFormat::Unknown,    // DXGI_FORMAT_BC4_SNORM = 81,
+		TextureFormat::BC5,        // DXGI_FORMAT_BC5_TYPELESS = 82,
+		TextureFormat::BC5,        // DXGI_FORMAT_BC5_UNORM = 83,
+		TextureFormat::BC5,        // DXGI_FORMAT_BC5_SNORM = 84,
 		TextureFormat::Unknown,    // DXGI_FORMAT_B5G6R5_UNORM = 85,
 		TextureFormat::Unknown,    // DXGI_FORMAT_B5G5R5A1_UNORM = 86,
 		TextureFormat::Unknown,    // DXGI_FORMAT_B8G8R8A8_UNORM = 87,
@@ -176,7 +176,7 @@ namespace Columbus::ImageUtils
 		TextureFormat::BC6H,       // DXGI_FORMAT_BC6H_SF16 = 96,
 		TextureFormat::BC7,        // DXGI_FORMAT_BC7_TYPELESS = 97,
 		TextureFormat::BC7,        // DXGI_FORMAT_BC7_UNORM = 98,
-		TextureFormat::BC7,        // DXGI_FORMAT_BC7_UNORM_SRGB = 99,
+		TextureFormat::BC7SRGB,    // DXGI_FORMAT_BC7_UNORM_SRGB = 99,
 		TextureFormat::Unknown,    // DXGI_FORMAT_AYUV = 100,
 		TextureFormat::Unknown,    // DXGI_FORMAT_Y410 = 101,
 		TextureFormat::Unknown,    // DXGI_FORMAT_Y416 = 102,
@@ -289,15 +289,15 @@ namespace Columbus::ImageUtils
 	{
 		switch (FourCC)
 		{
-		case DDS_FOURCC("DXT1"): return  TextureFormat::DXT1; // BC1_UNORM
-		case DDS_FOURCC("DXT2"): // BC2_UNORM
-		case DDS_FOURCC("DXT3"): return TextureFormat::DXT3;  // BC2_UNORM
+		case DDS_FOURCC("DXT1"): return TextureFormat::BC1; // BC1_UNORM
 		case DDS_FOURCC("DXT4"): // BC3_UNORM
-		case DDS_FOURCC("DXT5"): return TextureFormat::DXT5;  // BC3_UNORM
-		case DDS_FOURCC("ATI2"): return TextureFormat::DXT5;  // BC5_UNORM
+		case DDS_FOURCC("DXT5"): return TextureFormat::BC3; // BC3_UNORM
+		case DDS_FOURCC("ATI2"): return TextureFormat::BC5; // BC5_UNORM
 		case   DDSFourccARGB16F: return TextureFormat::RGBA16F;
 		case   DDSFourccARGB32F: return TextureFormat::RGBA32F;
-		// TODO: "BC4S" = BC4_SNORM, "BC5S" = BC5_SNORM
+		case DDS_FOURCC("DXT2"): // BC2_UNORM
+		case DDS_FOURCC("DXT3"): // BC2_UNORM
+		default: break;
 		}
 
 		return TextureFormat::Unknown;
@@ -488,9 +488,8 @@ namespace Columbus::ImageUtils
 	{
 		TextureFormat OldHeaderFormats[] =
 		{
-			TextureFormat::DXT1,
-			TextureFormat::DXT3,
-			TextureFormat::DXT5,
+			TextureFormat::BC1,
+			TextureFormat::BC3,
 			TextureFormat::R8,
 			TextureFormat::RG8,
 			TextureFormat::RGB8,
@@ -620,8 +619,9 @@ namespace Columbus::ImageUtils
 			// find dxgi format
 			switch (Img.Format)
 			{
-			case TextureFormat::BC6H: Header10.Format = 95; break; // DXGI_FORMAT_BC6H_UF16
-			case TextureFormat::BC7:  Header10.Format = 98; break; // DXGI_FORMAT_BC7_UNORM
+			case TextureFormat::BC6H:    Header10.Format = 95; break; // DXGI_FORMAT_BC6H_UF16
+			case TextureFormat::BC7:     Header10.Format = 98; break; // DXGI_FORMAT_BC7_UNORM
+			case TextureFormat::BC7SRGB: Header10.Format = 99; break; // DXGI_FORMAT_BC7_UNORM_SRGB
 			default:
 			{
 				for (int i = 0; i < sizeofarray(DdsDxgiFormat_Map); i++)
@@ -644,10 +644,9 @@ namespace Columbus::ImageUtils
 		{
 			switch (Img.Format)
 			{
-			case TextureFormat::DXT1: Header.PixelFormat.FourCC = DDS_FOURCC("DXT1"); break;
-			case TextureFormat::DXT3: Header.PixelFormat.FourCC = DDS_FOURCC("DXT3"); break;
-			case TextureFormat::DXT5: Header.PixelFormat.FourCC = DDS_FOURCC("DXT5"); break;
-			default:                  Header.PixelFormat.FourCC = 0; break;
+			case TextureFormat::BC1: Header.PixelFormat.FourCC = DDS_FOURCC("DXT1"); break;
+			case TextureFormat::BC3: Header.PixelFormat.FourCC = DDS_FOURCC("DXT5"); break;
+			default:                 Header.PixelFormat.FourCC = 0; break;
 			}
 		}
 

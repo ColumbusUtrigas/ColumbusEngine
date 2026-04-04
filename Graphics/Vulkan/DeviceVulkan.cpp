@@ -958,7 +958,7 @@ namespace Columbus
 	void TransitionImageLayout(VkCommandBuffer cmdbuf, VkImage image,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlags srcAccessMaks, VkAccessFlags dstAccessMask,
-		VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, int layers, TextureFormat format)
+		VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, int layers, TextureFormat format, int mipLevels = 1)
 	{
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -969,7 +969,7 @@ namespace Columbus
 		barrier.image = image;
 		barrier.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(format);
 		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.levelCount = mipLevels;
 		barrier.subresourceRange.baseArrayLayer = 0;
 		barrier.subresourceRange.layerCount = layers;
 		barrier.srcAccessMask = srcAccessMaks;
@@ -1042,17 +1042,34 @@ namespace Columbus
 		TextureDesc2 desc;
 		desc.Type = TextureType::Texture2D;
 		desc.Usage = TextureUsage::Sampled;
-		desc.Width = Image.GetWidth();
-		desc.Height = Image.GetHeight();
+		desc.Width = Math::Max(1u, Image.GetWidth());
+		desc.Height = Math::Max(1u, Image.GetHeight());
 		// desc.Depth = Image.GetDepth();
 		desc.Depth = 1;
-		desc.Mips = 1;
+		desc.Mips = Math::Max(1u, Image.GetMipmapsCount());
 		desc.Samples = 1;
 		desc.Format = Image.GetFormat();
 		auto result = _CreateTexture(desc);
 
 		UploadTextureMipData(result, 0, 0, Image.GetData());
 
+		return result;
+	}
+
+	Texture2* DeviceVulkan::CreateTexture(const Image& Image, const TextureDesc2& Desc)
+	{
+		TextureDesc2 UploadDesc = Desc;
+		UploadDesc.Type = TextureType::Texture2D;
+		UploadDesc.Usage = TextureUsage::Sampled;
+		UploadDesc.Width = Math::Max(1u, Image.GetWidth());
+		UploadDesc.Height = Math::Max(1u, Image.GetHeight());
+		UploadDesc.Depth = 1;
+		UploadDesc.Mips = Math::Max(1u, Image.GetMipmapsCount());
+		UploadDesc.Samples = 1;
+		UploadDesc.Format = Image.GetFormat();
+
+		auto result = _CreateTexture(UploadDesc);
+		UploadTextureMipData(result, 0, 0, Image.GetData());
 		return result;
 	}
 
@@ -1063,8 +1080,6 @@ namespace Columbus
 
 		// TODO: support async transfer
 
-		// TODO:
-		// not implemented
 		assert(Layer == 0);
 		assert(Mip == 0);
 
@@ -1078,7 +1093,7 @@ namespace Columbus
 		int size = 1; // number of layers, TODO: fix this
 
 		StagingBufferVulkan staging;
-		staging = CreateStagingBufferVulkanInternal(_Allocator, Img.GetSize(0) * size, 0, Data);
+		staging = CreateStagingBufferVulkanInternal(_Allocator, Img.GetFullSize() * size, 0, Data);
 
 		auto copyCmdBuf = CreateCommandBufferShared();
 		copyCmdBuf->Reset();
@@ -1090,30 +1105,36 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			0, VK_ACCESS_TRANSFER_WRITE_BIT,
 			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			size, Desc.Format
+			size, Desc.Format, Desc.Mips
 		);
 
-		VkBufferImageCopy regions[6];
+		std::vector<VkBufferImageCopy> regions;
+		regions.reserve(Desc.Mips * size);
 
 		for (int i = 0; i < size; i++)
 		{
-			regions[i].bufferOffset = Img.GetOffset(i, 0);
-			regions[i].bufferRowLength = 0;
-			regions[i].bufferImageHeight = 0;
-			regions[i].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			regions[i].imageSubresource.mipLevel = 0;
-			regions[i].imageSubresource.baseArrayLayer = i;
-			regions[i].imageSubresource.layerCount = 1;
-			regions[i].imageOffset = { 0, 0, 0 };
-			regions[i].imageExtent = { Img.GetWidth(), Img.GetHeight(), 1 };
+			for (u32 CurrentMip = 0; CurrentMip < Desc.Mips; CurrentMip++)
+			{
+				VkBufferImageCopy Region{};
+				Region.bufferOffset = Img.GetOffset(i, CurrentMip);
+				Region.bufferRowLength = 0;
+				Region.bufferImageHeight = 0;
+				Region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				Region.imageSubresource.mipLevel = CurrentMip;
+				Region.imageSubresource.baseArrayLayer = i;
+				Region.imageSubresource.layerCount = 1;
+				Region.imageOffset = { 0, 0, 0 };
+				Region.imageExtent = { Math::Max(1u, Img.GetWidth() >> CurrentMip), Math::Max(1u, Img.GetHeight() >> CurrentMip), 1 };
+				regions.push_back(Region);
+			}
 		}
 
 		vkCmdCopyBufferToImage(copyCmdBuf->_CmdBuf,
 			staging.Buffer,
 			vktex->_Image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			size,
-			regions
+			(u32)regions.size(),
+			regions.data()
 		);
 
 		TransitionImageLayout(copyCmdBuf->_CmdBuf,
@@ -1122,7 +1143,7 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			size, Desc.Format
+			size, Desc.Format, Desc.Mips
 		);
 		vktex->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 

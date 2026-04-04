@@ -40,11 +40,14 @@ namespace Columbus
 		TextureFormatInfo { "RGBA8SRGB",        TextureFormat::RGBA8SRGB,        32,   0,         4,       1,    0,          0,     0 },
 		TextureFormatInfo { "BGRA8SRGB",        TextureFormat::BGRA8SRGB,        32,   0,         4,       1,    0,          0,     0 },
 		TextureFormatInfo { "R11G11B10F",       TextureFormat::R11G11B10F,       32,   0,         3,       0,    0,          0,     0 },
-		TextureFormatInfo { "DXT1",             TextureFormat::DXT1,             4,   64,         4,       0,    1,          0,     0 },
-		TextureFormatInfo { "DXT3",             TextureFormat::DXT3,             8,  128,         4,       1,    1,          0,     0 },
-		TextureFormatInfo { "DXT5",             TextureFormat::DXT5,             8,  128,         4,       1,    1,          0,     0 },
+		TextureFormatInfo { "BC1",              TextureFormat::BC1,              4,   64,         4,       0,    1,          0,     0 },
+		TextureFormatInfo { "BC1SRGB",          TextureFormat::BC1SRGB,          4,   64,         4,       0,    1,          0,     0 },
+		TextureFormatInfo { "BC3",              TextureFormat::BC3,              8,  128,         4,       1,    1,          0,     0 },
+		TextureFormatInfo { "BC3SRGB",          TextureFormat::BC3SRGB,          8,  128,         4,       1,    1,          0,     0 },
+		TextureFormatInfo { "BC5",              TextureFormat::BC5,              8,  128,         2,       0,    1,          0,     0 },
 		TextureFormatInfo { "BC6H",             TextureFormat::BC6H,             8,  128,         4,       0,    1,          0,     0 },
 		TextureFormatInfo { "BC7",              TextureFormat::BC7,              8,  128,         4,       1,    1,          0,     0 },
+		TextureFormatInfo { "BC7SRGB",          TextureFormat::BC7SRGB,          8,  128,         4,       1,    1,          0,     0 },
 		TextureFormatInfo { "Depth16",          TextureFormat::Depth16,          16,   0,         1,       0,    0,          1,     0 },
 		TextureFormatInfo { "Depth24",          TextureFormat::Depth24,          24,   0,         1,       0,    0,          1,     0 },
 		TextureFormatInfo { "Depth24Stencil8",  TextureFormat::Depth24Stencil8,  32,   0,         2,       0,    0,          1,     1 },
@@ -87,11 +90,14 @@ namespace Columbus
 
 		CMP_FORMAT_Unknown, // R11G11B10F
 
-		CMP_FORMAT_DXT1, // DXT1
-		CMP_FORMAT_DXT3, // DXT3
-		CMP_FORMAT_DXT5, // DXT5
+		CMP_FORMAT_DXT1, // BC1
+		CMP_FORMAT_DXT1, // BC1SRGB
+		CMP_FORMAT_DXT5, // BC3
+		CMP_FORMAT_DXT5, // BC3SRGB
+		CMP_FORMAT_BC5,  // BC5
 		CMP_FORMAT_BC6H, // BC6H
 		CMP_FORMAT_BC7,  // BC7
+		CMP_FORMAT_BC7,  // BC7SRGB
 
 		CMP_FORMAT_Unknown, // Depth16
 		CMP_FORMAT_Unknown, // Depth24
@@ -106,8 +112,153 @@ namespace Columbus
 		return TextureFormats[(u32)Format];
 	}
 
+	bool TextureFormatIsLikelySrgbSource(TextureFormat Format)
+	{
+		switch (Format)
+		{
+		case TextureFormat::R8:
+		case TextureFormat::RG8:
+		case TextureFormat::RGB8:
+		case TextureFormat::RGBA8:
+		case TextureFormat::BGRA8:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	bool TextureFormatIsHdr(TextureFormat Format)
+	{
+		switch (Format)
+		{
+		case TextureFormat::R16F:
+		case TextureFormat::RG16F:
+		case TextureFormat::RGB16F:
+		case TextureFormat::RGBA16F:
+		case TextureFormat::R32F:
+		case TextureFormat::RG32F:
+		case TextureFormat::RGB32F:
+		case TextureFormat::RGBA32F:
+		case TextureFormat::R11G11B10F:
+		case TextureFormat::BC6H:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	TextureFormat TextureFormatRemoveSrgb(TextureFormat Format)
+	{
+		switch (Format)
+		{
+		case TextureFormat::R8SRGB: return TextureFormat::R8;
+		case TextureFormat::RG8SRGB: return TextureFormat::RG8;
+		case TextureFormat::RGB8SRGB: return TextureFormat::RGB8;
+		case TextureFormat::RGBA8SRGB: return TextureFormat::RGBA8;
+		case TextureFormat::BGRA8SRGB: return TextureFormat::BGRA8;
+		case TextureFormat::BC1SRGB: return TextureFormat::BC1;
+		case TextureFormat::BC3SRGB: return TextureFormat::BC3;
+		case TextureFormat::BC7SRGB: return TextureFormat::BC7;
+		default: return Format;
+		}
+	}
+
+	TextureFormat TextureFormatApplySrgb(TextureFormat Format, bool bSrgb)
+	{
+		if (!bSrgb)
+			return TextureFormatRemoveSrgb(Format);
+
+		switch (Format)
+		{
+		case TextureFormat::R8: return TextureFormat::R8SRGB;
+		case TextureFormat::RG8: return TextureFormat::RG8SRGB;
+		case TextureFormat::RGB8: return TextureFormat::RGB8SRGB;
+		case TextureFormat::RGBA8: return TextureFormat::RGBA8SRGB;
+		case TextureFormat::BGRA8: return TextureFormat::BGRA8SRGB;
+		case TextureFormat::BC1: return TextureFormat::BC1SRGB;
+		case TextureFormat::BC3: return TextureFormat::BC3SRGB;
+		case TextureFormat::BC7: return TextureFormat::BC7SRGB;
+		default: return Format;
+		}
+	}
+
+	TextureFormat TextureFormatFromFriendlyName(std::string_view FriendlyName)
+	{
+		if (FriendlyName == "DXT1") return TextureFormat::BC1;
+		if (FriendlyName == "DXT5") return TextureFormat::BC3;
+
+		for (int i = 0; i <= (int)TextureFormat::Unknown; i++)
+		{
+			TextureFormat Format = (TextureFormat)i;
+			if (FriendlyName == TextureFormatGetInfo(Format).FriendlyName)
+				return Format;
+		}
+
+		return TextureFormat::Unknown;
+	}
+
+	const char* ImageTypeToString(ImageType Type)
+	{
+		switch (Type)
+		{
+		case ImageType::Image2D: return "Image2D";
+		case ImageType::Image3D: return "Image3D";
+		case ImageType::ImageCube: return "ImageCube";
+		case ImageType::Image2DArray: return "Image2DArray";
+		default: return "Image2D";
+		}
+	}
+
+	ImageType ImageTypeFromString(std::string_view Type)
+	{
+		if (Type == "Image3D") return ImageType::Image3D;
+		if (Type == "ImageCube") return ImageType::ImageCube;
+		if (Type == "Image2DArray") return ImageType::Image2DArray;
+		return ImageType::Image2D;
+	}
+
 	namespace ImageUtils
 	{
+		bool CanInspectAlphaPrecisely(TextureFormat Format)
+		{
+			switch (Format)
+			{
+			case TextureFormat::RGBA8:
+			case TextureFormat::RGBA32F:
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		bool HasMeaningfulAlpha(const Image& ImageData)
+		{
+			const TextureFormatInfo FormatInfo = TextureFormatGetInfo(ImageData.Format);
+			if (!FormatInfo.HasAlpha)
+				return false;
+
+			if (!CanInspectAlphaPrecisely(ImageData.Format))
+			{
+				return true;
+			}
+
+			ImageMip BaseMip = ImageData.GetMip(0, 0);
+			for (u32 Y = 0; Y < BaseMip.Height; Y++)
+			{
+				for (u32 X = 0; X < BaseMip.Width; X++)
+				{
+					float Pixel[4] {};
+					if (!BaseMip.ReadPixelRGBA32F(Pixel, X, Y, 0))
+						return true;
+
+					if (Pixel[3] < (1.0f - (0.5f / 255.0f)))
+						return true;
+				}
+			}
+
+			return false;
+		}
+
 		ImageFormat ImageGetFileFormatFromStream(DataStream& Stream)
 		{
 			if (!Stream.IsValid())
@@ -813,8 +964,8 @@ namespace Columbus
 
 				switch (Params.Format)
 				{
-				case TextureFormat::DXT1:
-				case TextureFormat::DXT5:
+				case TextureFormat::BC1:
+				case TextureFormat::BC3:
 				case TextureFormat::BC7: break;
 				default:
 					Log::Error("[ImageCompression] Compression Target Image format is not supported: %s", TargetFormatInfo.FriendlyName);
@@ -904,10 +1055,10 @@ namespace Columbus
 
 					switch (Params.Format)
 					{
-					case TextureFormat::DXT1:
+					case TextureFormat::BC1:
 						rgbcx::encode_bc1(Uberlevel, &Block, (u8*)BlockPixels, false, false);
 						break;
-					case TextureFormat::DXT5:
+					case TextureFormat::BC3:
 						rgbcx::encode_bc3(Uberlevel, &Block, (u8*)BlockPixels);
 						break;
 					case TextureFormat::BC7:
@@ -1123,13 +1274,16 @@ namespace Columbus
 
 			switch (Img.Format)
 			{
-			case TextureFormat::DXT1:
-			case TextureFormat::DXT3:
-			case TextureFormat::DXT5:
+			case TextureFormat::BC1:
+			case TextureFormat::BC1SRGB:
+			case TextureFormat::BC3:
+			case TextureFormat::BC3SRGB:
+			case TextureFormat::BC5:
+			case TextureFormat::BC7:
+			case TextureFormat::BC7SRGB:
 				SelectedFormat = TextureFormat::RGBA8;
 				break;
 			case TextureFormat::BC6H:
-			case TextureFormat::BC7:
 				SelectedFormat = TextureFormat::RGBA32F;
 				break;
 			default:

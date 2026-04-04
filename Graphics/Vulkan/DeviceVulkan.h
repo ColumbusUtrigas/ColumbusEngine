@@ -279,6 +279,7 @@ namespace Columbus
 		// TODO: data change, streaming, layout transitions
 		Texture2* CreateTexture(const TextureDesc2& Desc);
 		Texture2* CreateTexture(const Image& Image);
+		Texture2* CreateTexture(const Image& Image, const TextureDesc2& Desc);
 		void      UploadTextureMipData(Texture2* Tex, int Mip, int Layer, const void* Data);
 		void      DestroyTexture(Texture2* Tex);
 		void      DestroyTextureDeferred(Texture2* Tex);

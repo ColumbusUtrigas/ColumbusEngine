@@ -1,4 +1,5 @@
 #include "Reflection.h"
+#include "Blob.h"
 #include "Guid.h"
 #include "Assert.h"
 
@@ -12,6 +13,9 @@ template <> void Reflection::EnforceTypeLinkage<std::string>() {}
 
 namespace Reflection
 {
+
+	CREFLECT_STRUCT_BEGIN(Columbus::Blob, "")
+	CREFLECT_STRUCT_END()
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// All the data
@@ -193,6 +197,12 @@ namespace Reflection
 			COLUMBUS_ASSERT(field.Size == sizeof(std::vector<int>));
 
 			ResolveField(field.Array->ElementField);
+		}
+		else if (strcmp(field.Typename, "Columbus::Blob") == 0 || strcmp(field.Typename, "Blob") == 0)
+		{
+			IsBasicType = true;
+			field.Type = FieldType::Blob;
+			COLUMBUS_ASSERT(field.Size == sizeof(Columbus::Blob));
 		}
 		else if (strcmp(field.Typename, "AssetRef") == 0)
 		{

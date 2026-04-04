@@ -29,6 +29,17 @@ namespace Columbus::DebugUI
 		VkSemaphore FinishSemaphore;
 	};
 
+	struct TextureWidgetSettings
+	{
+		bool ShowRed = true;
+		bool ShowGreen = true;
+		bool ShowBlue = true;
+		bool ShowAlpha = true;
+		bool ShowCheckerboard = true;
+		int MipLevel = 0;
+		float Zoom = 1.0f;
+	};
+
 	// Core functions
 
 	Context* Create(WindowVulkan* Window);
@@ -62,6 +73,8 @@ namespace Columbus::DebugUI
 	void ShowLightmapWindow(EngineWorld& World);
 
 	// TODO: find a way without external force invalidation
+	void ReleaseTextureWidget(Texture2* Texture);
+	void TextureWidget(Texture2* Texture, Vector2 Size, const TextureWidgetSettings& Settings, bool ForceInvalidate = false);
 	void TextureWidget(Texture2* Texture, Vector2 Size, bool ForceInvalidate = false);
 
 }

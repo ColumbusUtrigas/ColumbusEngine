@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Reflection.h"
+#include "Core/Blob.h"
 #include "Core/Guid.h"
 #include "System/File.h"
 using namespace Columbus;
@@ -26,6 +27,9 @@ static void Reflection_SerialiseFieldJson(char* Object, const Reflection::Field&
 		break;
 	case Reflection::FieldType::String:
 		json[Field.Name] = *(std::string*)FieldData;
+		break;
+	case Reflection::FieldType::Blob:
+		COLUMBUS_ASSERT(false && "Blob fields are not supported by JSON serialisation");
 		break;
 	case Reflection::FieldType::Enum:
 		json[Field.Name] = *(int*)FieldData;
@@ -124,6 +128,11 @@ static void Reflection_DeserialiseFieldInternalJson(char* FieldData, const Refle
 	case Reflection::FieldType::String:
 		*(std::string*)FieldData = json;
 		break;
+	case Reflection::FieldType::Blob:
+	{
+		COLUMBUS_ASSERT(false && "Blob fields are not supported by JSON serialisation");
+		break;
+	}
 	case Reflection::FieldType::Enum:
 		*(int*)FieldData = json;
 		break;
@@ -291,6 +300,7 @@ static T* Reflection_DeserialiseStructJson_NewInstance(nlohmann::json& json)
 // - native reflected structs: raw struct bytes
 // - non-native reflected structs: nested object stream
 // - strings: length + bytes
+// - blobs: byte count + raw bytes
 // - arrays of native elements: count + contiguous raw blob
 // - arrays of non-native elements: count + per-element payloads
 // - asset refs / thing refs: small tagged payloads using existing reflected info

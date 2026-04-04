@@ -90,12 +90,12 @@ namespace Columbus::Assets
 				Image CompressImage;
 				ImageCompression::CompressionParams Params
 				{
-					.Format = TextureFormat::DXT1
+					.Format = TextureFormat::BC1
 				};
 
 				if (IsNormalMapImage(Element.first))
 				{
-					Params.Format = TextureFormat::BC7;
+					Params.Format = TextureFormat::BC5;
 				}
 
 				TextureFormatInfo FormatInfo = TextureFormatGetInfo(Params.Format);

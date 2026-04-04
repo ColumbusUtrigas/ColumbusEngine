@@ -3,6 +3,7 @@
 #include <Common/Image/Image.h>
 #include <memory>
 
+#include <Core/Blob.h>
 #include <Core/Reflection.h>
 
 namespace Columbus
@@ -20,6 +21,29 @@ namespace Columbus
 		MirroredRepeat,
 		ClampToEdge,
 		// ClampToBorder,
+	};
+
+	enum class ColourSpaceMode
+	{
+		Linear,
+		SRGB,
+	};
+
+	enum class CompressionMode
+	{
+		None,
+		BC1,
+		BC3,
+		BC5,
+		BC6H,
+		BC7,
+	};
+
+	enum class MipGenMode
+	{
+		None,
+		Default,
+		NormalMap,
 	};
 
 	// TODO: REMOVE
@@ -137,17 +161,53 @@ namespace Columbus
 		size_t operator()(const TextureDesc2&) const;
 	};
 
+	struct TextureImportSettings
+	{
+		ColourSpaceMode ColourSpace = ColourSpaceMode::SRGB;
+		CompressionMode Compression = CompressionMode::None;
+		MipGenMode MipGen = MipGenMode::Default;
+		TextureAddressMode AddressMode = TextureAddressMode::Repeat;
+		int MaxSize = 0;
+	};
+
+	struct TextureStoredPixels
+	{
+		int Width = 0;
+		int Height = 0;
+		int Depth = 1;
+		int Mips = 1;
+		std::string Format;
+		std::string Type;
+		Blob Pixels;
+	};
+
 	class Texture2
 	{
 	private:
-		TextureDesc2 _Desc;
+		TextureDesc2 _Desc{};
 	protected:
 		Texture2(const TextureDesc2& Desc) : _Desc(Desc) {}
 
 		u64 Size = 0;
 	public:
+		Texture2() = default;
+
+		std::string SourcePath;
+		TextureImportSettings ImportSettings;
+		TextureStoredPixels Source;
+		TextureStoredPixels Cooked;
+
 		const TextureDesc2& GetDesc() const { return _Desc; }
 		u64 GetSize() const { return Size; }
+		void SetDesc(const TextureDesc2& Desc) { _Desc = Desc; }
+
+		void CopyAssetFieldsFrom(const Texture2& Other)
+		{
+			SourcePath = Other.SourcePath;
+			ImportSettings = Other.ImportSettings;
+			Source = Other.Source;
+			Cooked = Other.Cooked;
+		}
 
 		virtual ~Texture2() = default;
 	};
@@ -285,4 +345,10 @@ namespace Columbus
 
 }
 
-CREFLECT_DECLARE_STRUCT(Columbus::Texture2, 1, "1B4AF05B-674A-4B68-8C72-1B46644DA0EC");
+CREFLECT_DECLARE_ENUM(Columbus::ColourSpaceMode, "447C6FA6-6137-4E4C-BF10-4BAA90B60F7D");
+CREFLECT_DECLARE_ENUM(Columbus::CompressionMode, "6D0EBE89-2F60-4AA6-9DB5-A16B71B0E1B7");
+CREFLECT_DECLARE_ENUM(Columbus::MipGenMode, "0E59FBDB-98FE-4268-A08B-9F6B0C8A3B65");
+CREFLECT_DECLARE_ENUM(Columbus::TextureAddressMode, "239A1AF8-0D8A-47F2-8BA1-B30DD073181D");
+CREFLECT_DECLARE_STRUCT(Columbus::TextureImportSettings, 1, "D34242E8-A478-45C5-AF28-0D66C46D9C32");
+CREFLECT_DECLARE_STRUCT(Columbus::TextureStoredPixels, 1, "8E3522BF-4A46-4D60-B8D6-9376801B8C11");
+CREFLECT_DECLARE_STRUCT(Columbus::Texture2, 3, "1B4AF05B-674A-4B68-8C72-1B46644DA0EC");

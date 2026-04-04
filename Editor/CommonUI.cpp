@@ -2,6 +2,7 @@
 #include <Editor/Icons.h>
 #include <Core/Reflection.h>
 #include <Core/Filesystem.h>
+#include <Core/Util.h>
 #include <Math/InterpolationCurve.h>
 #include <Math/Quaternion.h>
 #include <Math/Vector2.h>
@@ -31,6 +32,7 @@ namespace Columbus::Editor
 	struct FieldUIMetadata
 	{
 		bool NoEdit = false;
+		bool CommitOnEnter = false;
 		bool HasSliderLimits = false;
 		float SliderMin = 0.0f;
 		float SliderMax = 0.0f;
@@ -67,6 +69,7 @@ namespace Columbus::Editor
 
 		// Parse flags
 		Result.NoEdit = strstr(Meta, "Noedit") != nullptr;
+		Result.CommitOnEnter = strstr(Meta, "EnterCommits") != nullptr;
 		Result.IsPicker = strstr(Meta, "Picker") != nullptr;
 		Result.IsColor = strstr(Meta, "Colour") != nullptr;
 		Result.IsHDR = strstr(Meta, "HDR") != nullptr;
@@ -1225,9 +1228,24 @@ namespace Columbus::Editor
 		switch (Field.Type)
 		{
 		case Reflection::FieldType::Bool:
+			if (Metadata.NoEdit)
+			{
+				ImGui::LabelText(Field.Name, "%s", *(bool*)FieldData ? "true" : "false");
+				return false;
+			}
 			return ImGui::Checkbox(Field.Name, (bool*)FieldData);
 			break;
 		case Reflection::FieldType::Int:
+			if (Metadata.NoEdit)
+			{
+				ImGui::LabelText(Field.Name, "%i", *(int*)FieldData);
+				return false;
+			}
+			if (Metadata.CommitOnEnter)
+			{
+				ImGui::InputInt(Field.Name, (int*)FieldData, 1, 100, ImGuiInputTextFlags_EnterReturnsTrue);
+				return ImGui::IsItemDeactivatedAfterEdit();
+			}
 			return ImGui::InputInt(Field.Name, (int*)FieldData);
 			break;
 		case Reflection::FieldType::Float:
@@ -1273,6 +1291,16 @@ namespace Columbus::Editor
 			{
 				return ImGui::InputText(Field.Name, (std::string*)FieldData);
 			}
+		}
+		break;
+
+		case Reflection::FieldType::Blob:
+		{
+			Blob* DataBlob = reinterpret_cast<Blob*>(FieldData);
+			double HumanisedSize = 0.0;
+			const char* Units = HumanizeBytes(DataBlob->Size(), HumanisedSize);
+			ImGui::LabelText(Field.Name, "%.2f %s (%llu bytes)", HumanisedSize, Units, (unsigned long long)DataBlob->Size());
+			return false;
 		}
 		break;
 

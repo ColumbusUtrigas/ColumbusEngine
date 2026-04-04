@@ -24,6 +24,8 @@ namespace Columbus::DebugUI
 	struct RetiredImguiTexture
 	{
 		VkDescriptorSet Set = VK_NULL_HANDLE;
+		VkImageView PreviewView = VK_NULL_HANDLE;
+		VkSampler PreviewSampler = VK_NULL_HANDLE;
 		int FramesLeft = MaxFramesInFlight;
 	};
 
@@ -33,17 +35,47 @@ namespace Columbus::DebugUI
 		VkImageView View = VK_NULL_HANDLE;
 		VkSampler Sampler = VK_NULL_HANDLE;
 		VkImageLayout Layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		VkImageView PreviewView = VK_NULL_HANDLE;
+		VkSampler PreviewSampler = VK_NULL_HANDLE;
+		TextureWidgetSettings Settings;
 	};
 
 	static std::vector<RetiredImguiTexture> GRetiredImguiTextures;
 	static std::unordered_map<Texture2*, ImguiTextureBinding> GImguiTexturesMap;
 	static VkDescriptorSet GLightmapPreviewImage = VK_NULL_HANDLE;
+	static SPtr<DeviceVulkan> GDebugUIDevice;
 
-	static void RetireImguiTexture(VkDescriptorSet Set)
+	static bool operator==(const TextureWidgetSettings& A, const TextureWidgetSettings& B)
+	{
+		return A.ShowRed == B.ShowRed
+			&& A.ShowGreen == B.ShowGreen
+			&& A.ShowBlue == B.ShowBlue
+			&& A.ShowAlpha == B.ShowAlpha
+			&& A.ShowCheckerboard == B.ShowCheckerboard
+			&& A.MipLevel == B.MipLevel
+			&& A.Zoom == B.Zoom;
+	}
+
+	static void DestroyRetiredPreviewResources(const RetiredImguiTexture& Retired)
+	{
+		if (!GDebugUIDevice)
+			return;
+
+		if (Retired.PreviewView != VK_NULL_HANDLE)
+		{
+			vkDestroyImageView(GDebugUIDevice->_Device, Retired.PreviewView, nullptr);
+		}
+		if (Retired.PreviewSampler != VK_NULL_HANDLE)
+		{
+			vkDestroySampler(GDebugUIDevice->_Device, Retired.PreviewSampler, nullptr);
+		}
+	}
+
+	static void RetireImguiTexture(VkDescriptorSet Set, VkImageView PreviewView = VK_NULL_HANDLE, VkSampler PreviewSampler = VK_NULL_HANDLE)
 	{
 		if (Set != VK_NULL_HANDLE)
 		{
-			GRetiredImguiTextures.push_back({ Set, MaxFramesInFlight });
+			GRetiredImguiTextures.push_back({ Set, PreviewView, PreviewSampler, MaxFramesInFlight });
 		}
 	}
 
@@ -57,6 +89,7 @@ namespace Columbus::DebugUI
 			if (Retired.FramesLeft <= 0)
 			{
 				ImGui_ImplVulkan_RemoveTexture(Retired.Set);
+				DestroyRetiredPreviewResources(Retired);
 				GRetiredImguiTextures.erase(GRetiredImguiTextures.begin() + Index);
 			}
 			else
@@ -75,6 +108,14 @@ namespace Columbus::DebugUI
 			{
 				ImGui_ImplVulkan_RemoveTexture(Binding.Set);
 			}
+			if (Binding.PreviewView != VK_NULL_HANDLE && Binding.PreviewView != Binding.View)
+			{
+				vkDestroyImageView(GDebugUIDevice->_Device, Binding.PreviewView, nullptr);
+			}
+			if (Binding.PreviewSampler != VK_NULL_HANDLE && Binding.PreviewSampler != Binding.Sampler)
+			{
+				vkDestroySampler(GDebugUIDevice->_Device, Binding.PreviewSampler, nullptr);
+			}
 		}
 		GImguiTexturesMap.clear();
 
@@ -90,6 +131,7 @@ namespace Columbus::DebugUI
 			{
 				ImGui_ImplVulkan_RemoveTexture(Retired.Set);
 			}
+			DestroyRetiredPreviewResources(Retired);
 		}
 		GRetiredImguiTextures.clear();
 	}
@@ -193,6 +235,7 @@ namespace Columbus::DebugUI
 		Context* Ctx = new Context();
 		Ctx->Window = Window;
 		Ctx->Graph = new RenderGraph(Window->Device, nullptr);
+		GDebugUIDevice = Window->Device;
 
 		ImGui::CreateContext();
 		ImPlotContext* PlotCtx = ImPlot::CreateContext();
@@ -339,6 +382,7 @@ namespace Columbus::DebugUI
 
 		Ctx->Window->Device->QueueWaitIdle();
 		ClearImguiTextureBindings();
+		GDebugUIDevice.reset();
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplSDL2_Shutdown();
 
@@ -808,7 +852,102 @@ namespace Columbus::DebugUI
 		ImGui::End();
 	}
 
-	void TextureWidget(Texture2* Texture, Vector2 Size, bool ForceInvalidate)
+	static VkComponentSwizzle ToChannelSwizzle(bool bEnabled, VkComponentSwizzle Channel)
+	{
+		return bEnabled ? Channel : VK_COMPONENT_SWIZZLE_ZERO;
+	}
+
+	static void BuildPreviewBinding(TextureVulkan* vktex, ImguiTextureBinding& Binding, const TextureWidgetSettings& Settings)
+	{
+		Binding.PreviewView = VK_NULL_HANDLE;
+		Binding.PreviewSampler = VK_NULL_HANDLE;
+
+		const TextureDesc2& Desc = vktex->GetDesc();
+		const int ClampedMipLevel = std::clamp(Settings.MipLevel, 0, (int)Desc.Mips - 1);
+		const bool bIdentityPreview =
+			ClampedMipLevel == 0 &&
+			Settings.ShowRed &&
+			Settings.ShowGreen &&
+			Settings.ShowBlue &&
+			Settings.ShowAlpha;
+
+		if (bIdentityPreview)
+		{
+			Binding.PreviewView = vktex->_View;
+			Binding.PreviewSampler = vktex->_Sampler;
+			return;
+		}
+
+		VkImageViewCreateInfo ViewInfo{};
+		ViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		ViewInfo.image = vktex->_Image;
+		ViewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
+		ViewInfo.format = TextureFormatToVK(Desc.Format);
+
+		const bool bAlphaOnly = Settings.ShowAlpha && !Settings.ShowRed && !Settings.ShowGreen && !Settings.ShowBlue;
+		if (bAlphaOnly)
+		{
+			ViewInfo.components.r = VK_COMPONENT_SWIZZLE_A;
+			ViewInfo.components.g = VK_COMPONENT_SWIZZLE_A;
+			ViewInfo.components.b = VK_COMPONENT_SWIZZLE_A;
+			ViewInfo.components.a = VK_COMPONENT_SWIZZLE_ONE;
+		}
+		else
+		{
+			ViewInfo.components.r = ToChannelSwizzle(Settings.ShowRed, VK_COMPONENT_SWIZZLE_R);
+			ViewInfo.components.g = ToChannelSwizzle(Settings.ShowGreen, VK_COMPONENT_SWIZZLE_G);
+			ViewInfo.components.b = ToChannelSwizzle(Settings.ShowBlue, VK_COMPONENT_SWIZZLE_B);
+			ViewInfo.components.a = Settings.ShowAlpha ? VK_COMPONENT_SWIZZLE_A : VK_COMPONENT_SWIZZLE_ONE;
+		}
+
+		ViewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Desc.Format);
+		ViewInfo.subresourceRange.baseMipLevel = ClampedMipLevel;
+		ViewInfo.subresourceRange.levelCount = 1;
+		ViewInfo.subresourceRange.baseArrayLayer = 0;
+		ViewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+		VK_CHECK(vkCreateImageView(GDebugUIDevice->_Device, &ViewInfo, nullptr, &Binding.PreviewView));
+
+		VkSamplerCreateInfo SamplerInfo{};
+		SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		SamplerInfo.magFilter = TextureFilterToVk(Desc.MagFilter);
+		SamplerInfo.minFilter = TextureFilterToVk(Desc.MinFilter);
+		SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		SamplerInfo.addressModeU = TextureAddressModeToVk(Desc.AddressU);
+		SamplerInfo.addressModeV = TextureAddressModeToVk(Desc.AddressV);
+		SamplerInfo.addressModeW = TextureAddressModeToVk(Desc.AddressW);
+		SamplerInfo.mipLodBias = 0.0f;
+		SamplerInfo.anisotropyEnable = VK_FALSE;
+		SamplerInfo.maxAnisotropy = 1.0f;
+		SamplerInfo.compareEnable = VK_FALSE;
+		SamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+		SamplerInfo.minLod = (float)ClampedMipLevel;
+		SamplerInfo.maxLod = (float)ClampedMipLevel;
+		SamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		SamplerInfo.unnormalizedCoordinates = VK_FALSE;
+		VK_CHECK(vkCreateSampler(GDebugUIDevice->_Device, &SamplerInfo, nullptr, &Binding.PreviewSampler));
+	}
+
+	void ReleaseTextureWidget(Texture2* Texture)
+	{
+		if (Texture == nullptr)
+			return;
+
+		auto It = GImguiTexturesMap.find(Texture);
+		if (It == GImguiTexturesMap.end())
+			return;
+
+		ImguiTextureBinding& Binding = It->second;
+		if (Binding.Set != VK_NULL_HANDLE)
+		{
+			const VkImageView RetiredView = (Binding.PreviewView != Binding.View) ? Binding.PreviewView : VK_NULL_HANDLE;
+			const VkSampler RetiredSampler = (Binding.PreviewSampler != Binding.Sampler) ? Binding.PreviewSampler : VK_NULL_HANDLE;
+			RetireImguiTexture(Binding.Set, RetiredView, RetiredSampler);
+		}
+
+		GImguiTexturesMap.erase(It);
+	}
+
+	void TextureWidget(Texture2* Texture, Vector2 Size, const TextureWidgetSettings& Settings, bool ForceInvalidate)
 	{
 		if (Texture == nullptr)
 		{
@@ -823,23 +962,85 @@ namespace Columbus::DebugUI
 			Binding.Set == VK_NULL_HANDLE ||
 			Binding.View != vktex->_View ||
 			Binding.Sampler != vktex->_Sampler ||
-			Binding.Layout != vktex->_Layout;
+			Binding.Layout != vktex->_Layout ||
+			!(Binding.Settings == Settings);
 
-		// TODO: find a way to hook imgui to rendering properly
 		if (ForceInvalidate || bDescriptorChanged)
 		{
 			if (Binding.Set != VK_NULL_HANDLE)
 			{
-				RetireImguiTexture(Binding.Set);
+				const VkImageView RetiredView = (Binding.PreviewView != Binding.View) ? Binding.PreviewView : VK_NULL_HANDLE;
+				const VkSampler RetiredSampler = (Binding.PreviewSampler != Binding.Sampler) ? Binding.PreviewSampler : VK_NULL_HANDLE;
+				RetireImguiTexture(Binding.Set, RetiredView, RetiredSampler);
 			}
 
-			Binding.Set = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
+			BuildPreviewBinding(vktex, Binding, Settings);
+
+			Binding.Set = ImGui_ImplVulkan_AddTexture(
+				Binding.PreviewSampler != VK_NULL_HANDLE ? Binding.PreviewSampler : vktex->_Sampler,
+				Binding.PreviewView != VK_NULL_HANDLE ? Binding.PreviewView : vktex->_View,
+				vktex->_Layout);
 			Binding.View = vktex->_View;
 			Binding.Sampler = vktex->_Sampler;
 			Binding.Layout = vktex->_Layout;
+			Binding.Settings = Settings;
 		}
 
-		ImGui::Image(Binding.Set, ImVec2(Size.X, Size.Y));
+		const int MipLevel = std::clamp(Settings.MipLevel, 0, (int)Texture->GetDesc().Mips - 1);
+		const float Zoom = std::max(0.0625f, Settings.Zoom);
+		const ImVec2 ImageSize(
+			(float)Math::Max(1u, Texture->GetDesc().Width >> MipLevel) * Zoom,
+			(float)Math::Max(1u, Texture->GetDesc().Height >> MipLevel) * Zoom);
+
+		if (Settings.ShowCheckerboard)
+		{
+			const ImVec2 Start = ImGui::GetCursorScreenPos();
+			const ImVec2 End(Start.x + ImageSize.x, Start.y + ImageSize.y);
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+			const int CellSize = 12;
+			const ImVec2 ClipMin = ImGui::GetWindowPos();
+			const ImVec2 ClipMax(ClipMin.x + ImGui::GetWindowSize().x, ClipMin.y + ImGui::GetWindowSize().y);
+			const float VisibleMinX = std::max(Start.x, ClipMin.x);
+			const float VisibleMaxX = std::min(End.x, ClipMax.x);
+			const float VisibleMinY = std::max(Start.y, ClipMin.y);
+			const float VisibleMaxY = std::min(End.y, ClipMax.y);
+
+			if (VisibleMinX < VisibleMaxX && VisibleMinY < VisibleMaxY)
+			{
+				const int StartXi = (int)floorf(Start.x);
+				const int StartYi = (int)floorf(Start.y);
+				const int VisibleMinXi = (int)floorf(VisibleMinX);
+				const int VisibleMaxXi = (int)ceilf(VisibleMaxX);
+				const int VisibleMinYi = (int)floorf(VisibleMinY);
+				const int VisibleMaxYi = (int)ceilf(VisibleMaxY);
+				const int FirstCellX = StartXi + ((VisibleMinXi - StartXi) / CellSize) * CellSize;
+				const int FirstCellY = StartYi + ((VisibleMinYi - StartYi) / CellSize) * CellSize;
+
+				DrawList->PushClipRect(ImVec2(VisibleMinX, VisibleMinY), ImVec2(VisibleMaxX, VisibleMaxY), true);
+				for (int Y = FirstCellY; Y < VisibleMaxYi; Y += CellSize)
+				{
+					for (int X = FirstCellX; X < VisibleMaxXi; X += CellSize)
+					{
+						const int Cell = (((X - StartXi) / CellSize) + ((Y - StartYi) / CellSize)) & 1;
+						const ImU32 Color = Cell ? IM_COL32(74, 74, 74, 255) : IM_COL32(110, 110, 110, 255);
+						const int X1 = X;
+						const int Y1 = Y;
+						const int X2 = std::min(X + CellSize, VisibleMaxXi);
+						const int Y2 = std::min(Y + CellSize, VisibleMaxYi);
+						DrawList->AddRectFilled(ImVec2((float)X1, (float)Y1), ImVec2((float)X2, (float)Y2), Color);
+					}
+				}
+				DrawList->PopClipRect();
+			}
+		}
+
+		ImGui::Image(Binding.Set, ImageSize);
+	}
+
+	void TextureWidget(Texture2* Texture, Vector2 Size, bool ForceInvalidate)
+	{
+		TextureWidgetSettings Settings;
+		TextureWidget(Texture, Size, Settings, ForceInvalidate);
 	}
 
 }

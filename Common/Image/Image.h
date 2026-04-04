@@ -71,11 +71,14 @@ namespace Columbus
 
 		R11G11B10F,
 
-		DXT1,
-		DXT3,
-		DXT5,
+		BC1,
+		BC1SRGB,
+		BC3,
+		BC3SRGB,
+		BC5,
 		BC6H,
 		BC7,
+		BC7SRGB,
 
 		Depth16,
 		Depth24,
@@ -111,6 +114,13 @@ namespace Columbus
 	};
 
 	const TextureFormatInfo& TextureFormatGetInfo(TextureFormat Format);
+	bool TextureFormatIsLikelySrgbSource(TextureFormat Format);
+	bool TextureFormatIsHdr(TextureFormat Format);
+	TextureFormat TextureFormatRemoveSrgb(TextureFormat Format);
+	TextureFormat TextureFormatApplySrgb(TextureFormat Format, bool bSrgb);
+	TextureFormat TextureFormatFromFriendlyName(std::string_view FriendlyName);
+	const char* ImageTypeToString(ImageType Type);
+	ImageType ImageTypeFromString(std::string_view Type);
 
 	namespace ImageUtils
 	{
@@ -158,6 +168,9 @@ namespace Columbus
 		bool ImageFlipX (u8* Data, u32 Width, u32 Height, u32 BPP);
 		bool ImageFlipY (u8* Data, u32 Width, u32 Height, u32 BPP);
 		bool ImageFlipXY(u8* Data, u32 Width, u32 Height, u32 BPP);
+
+		bool CanInspectAlphaPrecisely(TextureFormat Format);
+		bool HasMeaningfulAlpha(const Image& ImageData);
 	}
 
 	struct ImageMip

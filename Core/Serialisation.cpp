@@ -99,6 +99,17 @@ namespace
 			return Stream.Write(*(int*)FieldData);
 		case Reflection::FieldType::String:
 			return ReflectionBinary_WriteString(Stream, *(std::string*)FieldData);
+		case Reflection::FieldType::Blob:
+		{
+			Columbus::Blob& Blob = *(Columbus::Blob*)FieldData;
+			unsigned int ByteCount = (unsigned int)Blob.Size();
+			assert(Stream.Write(ByteCount));
+			if (ByteCount > 0)
+			{
+				assert(Stream.WriteBytes(Blob.Data(), ByteCount));
+			}
+			return true;
+		}
 		case Reflection::FieldType::Struct:
 		{
 			if (Field.Struct && Field.Struct->IsNativeBinary)
@@ -182,6 +193,18 @@ namespace
 			return Stream.Read(*(int*)FieldData);
 		case Reflection::FieldType::String:
 			return ReflectionBinary_ReadString(Stream, *(std::string*)FieldData);
+		case Reflection::FieldType::Blob:
+		{
+			Columbus::Blob& Blob = *(Columbus::Blob*)FieldData;
+			unsigned int ByteCount = 0;
+			assert(Stream.Read(ByteCount));
+			Blob.Bytes.resize(ByteCount);
+			if (ByteCount > 0)
+			{
+				assert(Stream.ReadBytes(Blob.Data(), ByteCount));
+			}
+			return true;
+		}
 		case Reflection::FieldType::Struct:
 			if (Field.Struct && Field.Struct->IsNativeBinary)
 			{

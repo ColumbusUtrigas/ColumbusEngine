@@ -115,13 +115,16 @@ namespace Columbus
 
 			case TextureFormat::R11G11B10F: return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
 
-			case TextureFormat::Depth24:  return VK_FORMAT_D24_UNORM_S8_UINT;
-			case TextureFormat::Depth32F: return VK_FORMAT_D32_SFLOAT;
-			case TextureFormat::DXT1: return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
-			case TextureFormat::DXT3: return VK_FORMAT_BC3_UNORM_BLOCK;
-			case TextureFormat::DXT5: return VK_FORMAT_BC5_UNORM_BLOCK;
-			case TextureFormat::BC6H: return VK_FORMAT_BC6H_SFLOAT_BLOCK;
-			case TextureFormat::BC7:  return VK_FORMAT_BC7_UNORM_BLOCK;
+			case TextureFormat::Depth24:   return VK_FORMAT_D24_UNORM_S8_UINT;
+			case TextureFormat::Depth32F:  return VK_FORMAT_D32_SFLOAT;
+			case TextureFormat::BC1:       return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+			case TextureFormat::BC1SRGB:   return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+			case TextureFormat::BC3:       return VK_FORMAT_BC3_UNORM_BLOCK;
+			case TextureFormat::BC3SRGB:   return VK_FORMAT_BC3_SRGB_BLOCK;
+			case TextureFormat::BC5:       return VK_FORMAT_BC5_UNORM_BLOCK;
+			case TextureFormat::BC6H:      return VK_FORMAT_BC6H_SFLOAT_BLOCK;
+			case TextureFormat::BC7:       return VK_FORMAT_BC7_UNORM_BLOCK;
+			case TextureFormat::BC7SRGB:   return VK_FORMAT_BC7_SRGB_BLOCK;
 			default: COLUMBUS_ASSERT(false);
 		}
 	}

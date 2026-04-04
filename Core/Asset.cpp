@@ -158,12 +158,45 @@ namespace Columbus
 
 	void AssetSystem::ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object)
 	{
+		if (Struct == nullptr || Object == nullptr)
+			return;
+
 		for (const auto& Field : Struct->Fields)
 		{
+			char* FieldData = (char*)Object + Field.Offset;
+
 			if (Field.Type == Reflection::FieldType::AssetRef)
 			{
-				AssetRef<void>* Ref = (AssetRef<void>*)((char*)Object + Field.Offset);
+				AssetRef<void>* Ref = (AssetRef<void>*)FieldData;
 				ResolveRef(*Ref, Reflection::FindStructByGuid(Field.Typeguid));
+			}
+			else if (Field.Type == Reflection::FieldType::Struct && Field.Struct != nullptr && !Field.Struct->IsNativeBinary)
+			{
+				ResolveStructAssetReferences(Field.Struct, FieldData);
+			}
+			else if (Field.Type == Reflection::FieldType::Array && Field.Array != nullptr)
+			{
+				std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+				const int ElementSize = Field.Array->ElementField.Size;
+				if (ElementSize <= 0)
+					continue;
+
+				const size_t ElementCount = ArrayData->size() / ElementSize;
+				for (size_t ElementIndex = 0; ElementIndex < ElementCount; ElementIndex++)
+				{
+					char* ElementData = ArrayData->data() + ElementIndex * ElementSize;
+					const Reflection::Field& ElementField = Field.Array->ElementField;
+
+					if (ElementField.Type == Reflection::FieldType::AssetRef)
+					{
+						AssetRef<void>* Ref = (AssetRef<void>*)ElementData;
+						ResolveRef(*Ref, Reflection::FindStructByGuid(ElementField.Typeguid));
+					}
+					else if (ElementField.Type == Reflection::FieldType::Struct && ElementField.Struct != nullptr && !ElementField.Struct->IsNativeBinary)
+					{
+						ResolveStructAssetReferences(ElementField.Struct, ElementData);
+					}
+				}
 			}
 		}
 	}

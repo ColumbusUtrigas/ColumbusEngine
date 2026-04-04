@@ -17,6 +17,20 @@ namespace Columbus
 			return Graph.Scene->Materials.GetDenseIndex(Handle);
 		};
 
+		const auto GetMaterialFlags = [&Graph](const Material& Mat) -> int
+		{
+			Texture2** ppNormalTexture = Graph.Scene->Textures.Get(Mat.NormalId);
+			if (ppNormalTexture != nullptr && *ppNormalTexture != nullptr)
+			{
+				if ((*ppNormalTexture)->GetDesc().Format == TextureFormat::BC5)
+				{
+					return GPUMATERIAL_FLAG_NORMAL_RG;
+				}
+			}
+
+			return 0;
+		};
+
 		// Scene
 		{
 			GPUSceneCompact Compact = Graph.Scene->CreateCompact(View);
@@ -81,6 +95,7 @@ namespace Columbus
 					.EmissiveId = GetTextureDenseIndex(Mat.EmissiveId),
 					.Roughness = Mat.Roughness,
 					.Metallic = Mat.Metallic,
+					.Flags = GetMaterialFlags(Mat),
 				};
 				((GPUMaterialCompact*)Ptr)[i] = Compact;
 			}

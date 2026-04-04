@@ -128,8 +128,11 @@ namespace Columbus
 		float Roughness;
 		float Metallic;
 
-		int _pad[2];
+		int Flags;
+		int _pad;
 	};
+
+	static constexpr int GPUMATERIAL_FLAG_NORMAL_RG = 1 << 0;
 
 	struct GPUViewCamera
 	{

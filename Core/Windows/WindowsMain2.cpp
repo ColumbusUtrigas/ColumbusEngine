@@ -586,7 +586,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -601,7 +601,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT5,
+				.Format = TextureFormat::BC3,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -631,7 +631,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -646,7 +646,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT5,
+				.Format = TextureFormat::BC3,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -676,7 +676,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -691,7 +691,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -721,7 +721,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -736,7 +736,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -751,7 +751,7 @@ int main(int argc, char** argv)
 			Image CompressedImage;
 
 			ImageCompression::CompressionParams Params{
-				.Format = TextureFormat::DXT1,
+				.Format = TextureFormat::BC1,
 			};
 
 			ImageCompression::CompressImage(Img, CompressedImage, Params);
@@ -808,7 +808,7 @@ int main(int argc, char** argv)
 
 			ImageMips::GenerateImageMips(Img, DstImg, {});
 			ImageCompression::CompressImage(DstImg, Img, ImageCompression::CompressionParams{
-				.Format = TextureFormat::DXT1
+				.Format = TextureFormat::BC1
 			});
 
 			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/mip_test/rgba_mipgen.dds", "wb");
@@ -822,7 +822,7 @@ int main(int argc, char** argv)
 
 			ImageMips::GenerateImageMips(Img, DstImg, {});
 			ImageCompression::CompressImage(DstImg, Img, ImageCompression::CompressionParams{
-				.Format = TextureFormat::DXT1
+				.Format = TextureFormat::BC1
 			});
 
 			DataStream Stream = DataStream::CreateFromFile("C:/Users/Columbus/Downloads/tmp/mip_test/volume_mipgen.dds", "wb");

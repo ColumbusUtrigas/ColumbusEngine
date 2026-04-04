@@ -146,6 +146,7 @@ namespace Reflection
 		Int,
 		Float,
 		Array,
+		Blob,
 		String,
 
 		Enum,

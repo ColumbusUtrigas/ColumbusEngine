@@ -119,8 +119,11 @@ struct GPUSceneMaterialCompact
 	float Roughness; // 52
 	float Metallic;  // 56
 
-	int _pad, _pad2; // 64
+	int Flags;
+	int _pad; // 64
 };
+
+#define GPUMATERIAL_FLAG_NORMAL_RG 1
 
 struct GPUMaterialSampledData
 {
@@ -255,10 +258,20 @@ namespace GPUScene
             GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
 
             Result.Albedo = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1)).rgb * Material.AlbedoFactor.rgb;
-            Result.Normal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0)).rgb;
-			
-            Result.Normal = normalize(Result.Normal * 2.0f - 1.0f);
-            Result.Normal.y *= -1.0f; // OpenGL to DX convention
+
+            float4 EncodedNormal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0));
+            if ((Material.Flags & GPUMATERIAL_FLAG_NORMAL_RG) != 0)
+            {
+                float2 NormalXY = EncodedNormal.rg * 2.0f - 1.0f;
+                NormalXY.y *= -1.0f; // OpenGL to DX convention
+                float NormalZ = sqrt(saturate(1.0f - dot(NormalXY, NormalXY)));
+                Result.Normal = normalize(float3(NormalXY, NormalZ));
+            }
+            else
+            {
+                Result.Normal = normalize(EncodedNormal.rgb * 2.0f - 1.0f);
+                Result.Normal.y *= -1.0f; // OpenGL to DX convention
+            }
 
             float3 ORM = SampleTextureWithDefault(Material.OrmId, UV, float4(1, Material.Roughness, Material.Metallic, 1)).rgb;
 

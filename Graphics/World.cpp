@@ -3,6 +3,7 @@
 #include <Math/Quaternion.h>
 #include <Core/Serialisation.h>
 #include <Scene/Project.h>
+#include <Scene/TextureAsset.h>
 
 #include <limits.h>
 #include <float.h>
@@ -64,13 +65,9 @@ namespace Columbus
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<Texture2>()] = [this](const char* Path) -> void*
 			{
-				Image Img;
-				if (!Img.LoadFromFile(Path))
-				{
+				Texture2* tex = LoadTextureAssetForRuntime(Device, Path);
+				if (!tex)
 					return nullptr;
-				}
-
-				Texture2* tex = Device->CreateTexture(Img);
 				AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
 				return tex;
 			};
@@ -84,7 +81,7 @@ namespace Columbus
 				Device->DestroyTextureDeferred(Texture);
 			};
 
-			Assets.AssetExtensions[Reflection::FindStruct<Texture2>()] = "dds,png,jpg,jpeg,exr,hdr,tiff,tga,bmp";
+			Assets.AssetExtensions[Reflection::FindStruct<Texture2>()] = "cas,dds,png,jpg,jpeg,exr,hdr,tiff,tga,bmp";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<Material>()] = [this](const char* Path) -> void*
 			{
@@ -289,12 +286,26 @@ namespace Columbus
 				Log::Warning("[Level Loading] Uncompressed texture %s", image.name.c_str());
 			}
 
-			// TODO: proper mechanism
-			if (format == TextureFormat::RGBA8 && srgb)
-				format = TextureFormat::RGBA8SRGB;
+			// Legacy cooked GLTF assets often use DDS/BC without explicit sRGB metadata,
+			// so preserve the intended colour space from the material slot usage here.
+			if (srgb)
+			{
+				switch (format)
+				{
+				case TextureFormat::R8:    format = TextureFormat::R8SRGB; break;
+				case TextureFormat::RG8:   format = TextureFormat::RG8SRGB; break;
+				case TextureFormat::RGB8:  format = TextureFormat::RGB8SRGB; break;
+				case TextureFormat::RGBA8: format = TextureFormat::RGBA8SRGB; break;
+				case TextureFormat::BGRA8: format = TextureFormat::BGRA8SRGB; break;
+				case TextureFormat::BC1:   format = TextureFormat::BC1SRGB; break;
+				case TextureFormat::BC3:   format = TextureFormat::BC3SRGB; break;
+				case TextureFormat::BC7:   format = TextureFormat::BC7SRGB; break;
+				default: break;
+				}
+			}
 
-			// GPUs don't support RGB, so convert to RGBA instead
-			if (format == TextureFormat::RGB8)
+			// GPUs don't support RGB, so convert to RGBA instead.
+			if (format == TextureFormat::RGB8 || format == TextureFormat::RGB8SRGB)
 			{
 				Log::Warning("Applying RGB8->RGBA8 convertion to texture %s", image.name.c_str());
 
@@ -311,7 +322,7 @@ namespace Columbus
 
 				TextureData = ConvertedData.get();
 
-				format = srgb ? TextureFormat::RGBA8SRGB : TextureFormat::RGBA8;
+				format = (format == TextureFormat::RGB8SRGB) ? TextureFormat::RGBA8SRGB : TextureFormat::RGBA8;
 			}
 
 			Image img;
@@ -408,7 +419,7 @@ namespace Columbus
 				int EmissiveId = Mat.emissiveTexture.index;
 				if (EmissiveId != -1)
 				{
-					TexturePair Pair = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), false);
+					TexturePair Pair = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), true);
 					Result->Emissive = Pair.Ref;
 					Result->EmissiveId = Pair.Id;
 				}
@@ -1677,7 +1688,55 @@ namespace Columbus
 // reflection stuff
 using namespace Columbus;
 
-CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Texture2, []() -> void* { return nullptr; }, "")
+CREFLECT_ENUM_BEGIN(ColourSpaceMode, "")
+	CREFLECT_ENUM_FIELD(ColourSpaceMode::Linear, 0)
+	CREFLECT_ENUM_FIELD(ColourSpaceMode::SRGB, 1)
+CREFLECT_ENUM_END()
+
+CREFLECT_ENUM_BEGIN(CompressionMode, "")
+	CREFLECT_ENUM_FIELD(CompressionMode::None, 0)
+	CREFLECT_ENUM_FIELD(CompressionMode::BC1, 1)
+	CREFLECT_ENUM_FIELD(CompressionMode::BC3, 2)
+	CREFLECT_ENUM_FIELD(CompressionMode::BC5, 3)
+	CREFLECT_ENUM_FIELD(CompressionMode::BC6H, 4)
+	CREFLECT_ENUM_FIELD(CompressionMode::BC7, 5)
+CREFLECT_ENUM_END()
+
+CREFLECT_ENUM_BEGIN(MipGenMode, "")
+	CREFLECT_ENUM_FIELD(MipGenMode::None, 0)
+	CREFLECT_ENUM_FIELD(MipGenMode::Default, 1)
+	CREFLECT_ENUM_FIELD(MipGenMode::NormalMap, 2)
+CREFLECT_ENUM_END()
+
+CREFLECT_ENUM_BEGIN(TextureAddressMode, "")
+	CREFLECT_ENUM_FIELD(TextureAddressMode::Repeat, 0)
+	CREFLECT_ENUM_FIELD(TextureAddressMode::MirroredRepeat, 1)
+	CREFLECT_ENUM_FIELD(TextureAddressMode::ClampToEdge, 2)
+CREFLECT_ENUM_END()
+
+CREFLECT_STRUCT_BEGIN(Texture2, "")
+	CREFLECT_STRUCT_FIELD(std::string, SourcePath, "Noedit")
+	CREFLECT_STRUCT_FIELD(TextureImportSettings, ImportSettings, "")
+	CREFLECT_STRUCT_FIELD(TextureStoredPixels, Source, "")
+	CREFLECT_STRUCT_FIELD(TextureStoredPixels, Cooked, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(TextureImportSettings, "")
+	CREFLECT_STRUCT_FIELD(ColourSpaceMode, ColourSpace, "")
+	CREFLECT_STRUCT_FIELD(CompressionMode, Compression, "")
+	CREFLECT_STRUCT_FIELD(MipGenMode, MipGen, "")
+	CREFLECT_STRUCT_FIELD(TextureAddressMode, AddressMode, "")
+	CREFLECT_STRUCT_FIELD(int, MaxSize, "EnterCommits")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(TextureStoredPixels, "")
+	CREFLECT_STRUCT_FIELD(int, Width, "Noedit")
+	CREFLECT_STRUCT_FIELD(int, Height, "Noedit")
+	CREFLECT_STRUCT_FIELD(int, Depth, "Noedit")
+	CREFLECT_STRUCT_FIELD(int, Mips, "Noedit")
+	CREFLECT_STRUCT_FIELD(std::string, Format, "Noedit")
+	CREFLECT_STRUCT_FIELD(std::string, Type, "Noedit")
+	CREFLECT_STRUCT_FIELD(Blob, Pixels, "Noedit")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Mesh2, []() -> void* { return nullptr; }, "")
