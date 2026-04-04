@@ -214,6 +214,7 @@ namespace Columbus
 			VkDescriptorSet TextureSet = VK_NULL_HANDLE;
 			VkDescriptorSet TextureSetNonCombined = VK_NULL_HANDLE;
 			VkDescriptorSet SceneSet = VK_NULL_HANDLE;
+			u32 TextureSetCapacity = 0;
 		} GPUSceneData;
 
 		int CurrentPerFrameData = 0;

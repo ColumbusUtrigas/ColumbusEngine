@@ -282,9 +282,6 @@ namespace Columbus
 			.Format = TextureFormat::R8,
 		};
 
-		// TODO:
-		static VkDescriptorSet RayDescriptorSets[MaxFramesInFlight][64]{NULL};
-
 		for (int i = 0; i < Graph.Scene->Lights.Size(); i++)
 		{
 			const GPULight& Light = Graph.Scene->Lights.Data()[i];
@@ -321,12 +318,7 @@ namespace Columbus
 				Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 				Context.Scene->MainCamera = UpdatedCamera;
 
-				if (RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] == NULL)
-				{
-					RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i] = Context.Device->CreateDescriptorSet(Pipeline, 2);
-				}
-
-				auto ShadowsBufferSet = RayDescriptorSets[Context.RenderData.CurrentPerFrameData][i];
+				auto ShadowsBufferSet = Context.GetDescriptorSet(Pipeline, 2);
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);

@@ -604,6 +604,15 @@ namespace Columbus
 		return _CreateDescriptorSet(vkpipe->SetLayouts, Index);
 	}
 
+	void DeviceVulkan::FreeDescriptorSet(VkDescriptorSet Set)
+	{
+		if (Set == VK_NULL_HANDLE)
+			return;
+
+		VK_CHECK(vkFreeDescriptorSets(_Device, _DescriptorPool, 1, &Set));
+		RemoveProfilingCount(CountingCounter_Vulkan_DescriptorSets, 1);
+	}
+
 	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer)
 	{
 		VkDescriptorBufferInfo bufferInfo;
@@ -694,7 +703,8 @@ namespace Columbus
 		// The specialized acceleration structure descriptor has to be chained
 		write.pNext = &ASinfo;
 		write.dstSet = Set;
-		write.dstBinding = 0;
+		write.dstBinding = BindingId;
+		write.dstArrayElement = ArrayId;
 		write.descriptorCount = 1;
 		write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 

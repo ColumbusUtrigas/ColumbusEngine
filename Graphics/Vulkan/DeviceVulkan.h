@@ -259,6 +259,7 @@ namespace Columbus
 		VkDescriptorSet CreateDescriptorSet(const ComputePipeline* Pipeline, int Index);
 		VkDescriptorSet CreateDescriptorSet(const GraphicsPipeline* Pipeline, int Index);
 		VkDescriptorSet CreateDescriptorSet(const RayTracingPipeline* Pipeline, int Index);
+		void FreeDescriptorSet(VkDescriptorSet Set);
 
 		// TODO: refactor binding system
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer);

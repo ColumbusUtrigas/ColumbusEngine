@@ -57,6 +57,42 @@ size_t Columbus::HashRenderPassParameters::operator()(const Columbus::RenderPass
 
 namespace Columbus
 {
+	static u32 ComputeGPUSceneTextureSetCapacity(const SPtr<GPUScene>& Scene)
+	{
+		if (!Scene)
+			return 0;
+
+		const u32 TextureCount = std::max<u32>(1, (u32)Scene->Textures.Size());
+		u32 Capacity = 16;
+		while (Capacity < TextureCount)
+		{
+			Capacity *= 2;
+		}
+		return Capacity;
+	}
+
+	static void EnsureGPUSceneTextureDescriptorSets(RenderGraphData& RenderData, const SPtr<DeviceVulkan>& Device, const SPtr<GPUScene>& Scene)
+	{
+		if (!Scene)
+			return;
+
+		const u32 RequiredCapacity = ComputeGPUSceneTextureSetCapacity(Scene);
+		if (RequiredCapacity <= RenderData.GPUSceneData.TextureSetCapacity &&
+			RenderData.GPUSceneData.TextureSet != VK_NULL_HANDLE &&
+			RenderData.GPUSceneData.TextureSetNonCombined != VK_NULL_HANDLE)
+		{
+			return;
+		}
+
+		Device->FreeDescriptorSet(RenderData.GPUSceneData.TextureSet);
+		RenderData.GPUSceneData.TextureSet = VK_NULL_HANDLE;
+		Device->FreeDescriptorSet(RenderData.GPUSceneData.TextureSetNonCombined);
+		RenderData.GPUSceneData.TextureSetNonCombined = VK_NULL_HANDLE;
+
+		RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, RequiredCapacity);
+		RenderData.GPUSceneData.TextureSetNonCombined = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayoutNonCombined, RequiredCapacity);
+		RenderData.GPUSceneData.TextureSetCapacity = RequiredCapacity;
+	}
 
 	void RenderGraphContext::DispatchComputePixels(const ComputePipeline* Pipeline, iVector3 GroupSize, iVector3 Pixels)
 	{
@@ -263,8 +299,7 @@ namespace Columbus
 
 			RenderData.GPUSceneLayout.TextureLayoutNonCombined = CreateLayout(0, TextureTypesNonCombined, 2000);
 
-			RenderData.GPUSceneData.TextureSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayout, 2000);
-			RenderData.GPUSceneData.TextureSetNonCombined = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.TextureLayoutNonCombined, 2000);
+			EnsureGPUSceneTextureDescriptorSets(RenderData, Device, Scene);
 			RenderData.GPUSceneData.SceneSet = Device->CreateDescriptorSetUnbounded(RenderData.GPUSceneLayout.SceneLayout, 0);
 
 
@@ -278,6 +313,30 @@ namespace Columbus
 
 	RenderGraph::~RenderGraph()
 	{
+		for (int FrameIndex = 0; FrameIndex < MaxFramesInFlight; FrameIndex++)
+		{
+			for (auto& PipelineEntry : RenderData.DescriptorSets[FrameIndex])
+			{
+				for (auto& DescriptorSetArray : PipelineEntry.second.DescriptorSets)
+				{
+					for (VkDescriptorSet DescriptorSet : DescriptorSetArray)
+					{
+						Device->FreeDescriptorSet(DescriptorSet);
+					}
+					DescriptorSetArray.clear();
+				}
+			}
+			RenderData.DescriptorSets[FrameIndex].clear();
+		}
+
+		Device->FreeDescriptorSet(RenderData.GPUSceneData.TextureSet);
+		RenderData.GPUSceneData.TextureSet = VK_NULL_HANDLE;
+		Device->FreeDescriptorSet(RenderData.GPUSceneData.TextureSetNonCombined);
+		RenderData.GPUSceneData.TextureSetNonCombined = VK_NULL_HANDLE;
+		Device->FreeDescriptorSet(RenderData.GPUSceneData.SceneSet);
+		RenderData.GPUSceneData.SceneSet = VK_NULL_HANDLE;
+		RenderData.GPUSceneData.TextureSetCapacity = 0;
+
 		for (auto& ParamsFramebufferPair : VulkanFramebuffers)
 		{
 			vkDestroyFramebuffer(Device->_Device, ParamsFramebufferPair.second, nullptr);
@@ -320,9 +379,6 @@ namespace Columbus
 		}
 		BufferResourcePool.clear();
 
-		// TODO: move to GPUScene
-		//vkFreeDescriptorSets(Device->_Device, Device->_DescriptorPool, 1, &RenderData.GPUSceneData.TextureSet);
-		//vkFreeDescriptorSets(Device->_Device, Device->_DescriptorPool, 1, &RenderData.GPUSceneData.SceneSet);
 		if (RenderData.GPUSceneLayout.TextureLayout != VK_NULL_HANDLE)
 		{
 			vkDestroyDescriptorSetLayout(Device->_Device, RenderData.GPUSceneLayout.TextureLayout, nullptr);
@@ -946,6 +1002,7 @@ namespace Columbus
 	RenderGraphExecuteResults RenderGraph::Execute(const RenderGraphExecuteParameters& Parameters)
 	{
 		RenderData.CurrentPerFrameData = (RenderData.CurrentPerFrameData + 1) % MaxFramesInFlight;
+		RenderData.ClearDescriptorData();
 		auto& PerFrameData = RenderData.PerFrameData[RenderData.CurrentPerFrameData];
 		PerFrameData.CurrentCmdBuffer = -1;
 
@@ -958,6 +1015,7 @@ namespace Columbus
 		// TODO: move to GPUScene
 		if (Scene)
 		{
+			EnsureGPUSceneTextureDescriptorSets(RenderData, Device, Scene);
 			for (int i = 0; i < Scene->Textures.Size(); i++)
 			{
 				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
