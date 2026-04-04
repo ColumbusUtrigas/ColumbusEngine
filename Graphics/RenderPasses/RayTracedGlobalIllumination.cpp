@@ -701,23 +701,10 @@ namespace Columbus
 	// diffuse GI, one sample
 	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
-		static bool UseDenoiser = true;
-		static bool UseRadianceCache = false;
-		static float DiffuseBoost = 1.0f;
-		static int DownsampleFactor = 2;
-
-		// debug ui
-		if (ImGui::GetCurrentContext())
-		{
-			if (ImGui::Begin("RTGI"))
-			{
-				ImGui::Checkbox("Denoise", &UseDenoiser);
-				ImGui::Checkbox("Radiance Cache", &UseRadianceCache);
-				ImGui::SliderFloat("Diffuse Boost", &DiffuseBoost, 1.0f, 5.0f);
-				ImGui::SliderInt("Downsample Factor", &DownsampleFactor, 1, 4);
-			}
-			ImGui::End();
-		}
+		const bool UseDenoiser = View.DeferredSettings.RTGIUseDenoiser;
+		const bool UseRadianceCache = View.DeferredSettings.RTGIUseRadianceCache;
+		const float DiffuseBoost = View.DeferredSettings.RTGIDiffuseBoost;
+		const int DownsampleFactor = View.DeferredSettings.RTGIDownsampleFactor;
 
 		DownsampledTextures DownsampledGBuffer = DownsampleGBuffer(Graph, Textures, DownsampleFactor);
 
@@ -744,7 +731,7 @@ namespace Columbus
 		Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Write(RTGI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-		Graph.AddPass("RayTraceGI", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Textures, View, GIResolution, DownsampledGBuffer](RenderGraphContext& Context)
+		Graph.AddPass("RayTraceGI", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Textures, View, GIResolution, DownsampledGBuffer, DiffuseBoost, UseRadianceCache, DownsampleFactor](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGI, Context);
 

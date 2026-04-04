@@ -1390,6 +1390,8 @@ namespace Columbus::Editor
 			AssetRefBase* AssetRef = reinterpret_cast<AssetRefBase*>(FieldData);
 			char ButtonBuf[512]{};
 			snprintf(ButtonBuf, 512, "...##%s", Field.Name);
+			char ClearButtonBuf[512]{};
+			snprintf(ClearButtonBuf, 512, "X##clear_%s", Field.Name);
 
 			ImGui::LabelText(Field.Name, "%s", AssetRef->Path.c_str());
 			ImGui::SameLine();
@@ -1424,6 +1426,25 @@ namespace Columbus::Editor
 				}
 
 				return false;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(ClearButtonBuf))
+			{
+				struct AssetRefMutableBase
+				{
+					std::string Path;
+					void* Asset = nullptr;
+					void Unload()
+					{
+						AssetSystem::Get().UnloadAssetRaw(Asset);
+						Asset = nullptr;
+					}
+				};
+
+				AssetRefMutableBase* MutableRef = reinterpret_cast<AssetRefMutableBase*>(FieldData);
+				MutableRef->Unload();
+				MutableRef->Path.clear();
+				return true;
 			}
 
 			const Reflection::Struct* AssetType = Reflection::FindStructByGuid(Field.Typeguid);

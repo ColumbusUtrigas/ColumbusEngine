@@ -318,6 +318,7 @@ namespace Columbus
 		ALevelThing* LoadLevelGLTF(const char* Path);
 		HLevel* LoadLevelGLTF2(const char* Path);
 		HLevel* LoadLevelCLVL(const char* Path);
+		void RefreshMaterial(Material* MaterialAsset);
 
 		void ClearWorld();
 		void SaveWorldLevel(const char* Path);

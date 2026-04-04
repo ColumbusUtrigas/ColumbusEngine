@@ -132,6 +132,54 @@ namespace Columbus
 		void BlendWith(const HEffectsSettings& Other, float Weight);
 	};
 
+	enum class EDeferredRenderVisualisationMode
+	{
+		Final,
+		GBufferOverview,
+		GBufferAlbedo,
+		GBufferNormal,
+		GBufferRoughness,
+		GBufferMetallic,
+		GBufferDepth,
+		Velocity,
+		LightingOnly,
+		Shadows,
+		Reflections,
+		RTGI,
+		RadianceCache,
+		VolumetricFog,
+	};
+
+	enum class EDeferredGlobalIlluminationMode
+	{
+		None,
+		RTGI,
+		DDGI,
+		IV,
+	};
+
+	struct HDeferredRenderSettings
+	{
+		bool ApplyTAA = true;
+		bool ApplyFSR1 = false;
+		bool ApplyFSR1Sharpening = false;
+		float FSR1Sharpening = 0.0f;
+		float RenderResolution = 1.0f;
+
+		EDeferredGlobalIlluminationMode GlobalIlluminationMode = EDeferredGlobalIlluminationMode::RTGI;
+		EDeferredRenderVisualisationMode VisualisationMode = EDeferredRenderVisualisationMode::Final;
+
+		bool RTReflectionsResolve = true;
+		bool RTReflectionsTemporal = true;
+		bool RTReflectionsUseRadianceCache = false;
+		int RTReflectionsTemporalMaxSamples = 16;
+
+		bool RTGIUseDenoiser = true;
+		bool RTGIUseRadianceCache = false;
+		float RTGIDiffuseBoost = 1.0f;
+		int RTGIDownsampleFactor = 2;
+	};
+
 
 	struct RenderView
 	{
@@ -143,6 +191,7 @@ namespace Columbus
 		UISystem* UI = nullptr;
 
 		HEffectsSettings EffectsSettings;
+		HDeferredRenderSettings DeferredSettings;
 
 		bool ScreenshotHDR = false; // if true, screenshot is done before tonemapping
 		char* ScreenshotPath = nullptr; // when is not nullptr, saves a screenshot on disk

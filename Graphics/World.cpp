@@ -31,6 +31,18 @@ namespace Columbus
 		device->DestroyBufferDeferred(buf);
 	}
 
+	static HStableTextureId GetOrAddSceneTexture(GPUScene* Scene, Texture2* Texture)
+	{
+		if (Scene == nullptr || Texture == nullptr)
+			return {};
+
+		HStableTextureId Handle = Scene->Textures.Find(Texture);
+		if (Scene->Textures.IsValid(Handle))
+			return Handle;
+
+		return Scene->Textures.Add(Texture);
+	}
+
 	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice), Assets(AssetSystem::Get())
 	{
 		Physics.SetGravity(Vector3(0, -9.81f, 0));
@@ -74,12 +86,40 @@ namespace Columbus
 
 			Assets.AssetExtensions[Reflection::FindStruct<Texture2>()] = "dds,png,jpg,jpeg,exr,hdr,tiff,tga,bmp";
 
+			Assets.AssetLoaderFunctions[Reflection::FindStruct<Material>()] = [this](const char* Path) -> void*
+			{
+				std::ifstream fs(Path);
+				if (!fs.is_open())
+				{
+					Log::Error("Couldn't load material asset %s", Path);
+					return nullptr;
+				}
+
+				nlohmann::json json;
+				fs >> json;
+				fs.close();
+
+				const Reflection::Struct* MaterialType = Reflection::FindStruct<Material>();
+				std::string Guid = json["0_type_guid"];
+				if (Guid != MaterialType->Guid)
+				{
+					Log::Error("Material asset type mismatch for %s: expected %s, got %s", Path, MaterialType->Guid, Guid.c_str());
+					return nullptr;
+				}
+
+				Material* Mat = new Material();
+				Reflection_DeserialiseStructJson((char*)Mat, MaterialType, json);
+				Assets.ResolveStructAssetReferences(MaterialType, Mat);
+				RefreshMaterial(Mat);
+				return Mat;
+			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Material>()] = [this](void* Asset)
 			{
 				Material* Mat = static_cast<Material*>(Asset);
 				SceneGPU->Materials.Remove(Mat->StableId);
 				delete Mat;
 			};
+			Assets.AssetExtensions[Reflection::FindStruct<Material>()] = "mat";
 
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Mesh2>()] = [this](void* Asset)
 			{
@@ -864,6 +904,29 @@ namespace Columbus
 		return LoadMesh(model, InternalPath);
 	}
 
+	void EngineWorld::RefreshMaterial(Material* MaterialAsset)
+	{
+		if (MaterialAsset == nullptr || SceneGPU == nullptr)
+			return;
+
+		MaterialAsset->AlbedoId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Albedo.Asset);
+		MaterialAsset->NormalId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Normal.Asset);
+		MaterialAsset->OrmId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Orm.Asset);
+		MaterialAsset->EmissiveId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Emissive.Asset);
+
+		if (!SceneGPU->Materials.IsValid(MaterialAsset->StableId))
+		{
+			MaterialAsset->StableId = SceneGPU->Materials.Add(*MaterialAsset);
+		}
+
+		Material* SceneMaterial = SceneGPU->Materials.Get(MaterialAsset->StableId);
+		if (SceneMaterial)
+		{
+			*SceneMaterial = *MaterialAsset;
+			SceneMaterial->StableId = MaterialAsset->StableId;
+		}
+	}
+
 	HWorldIntersectionResult EngineWorld::CastRayClosestHit(const Geometry::Ray& Ray, float Distance, int CollisionMask)
 	{
 		return CastRayClosestHit(Ray.Origin, Ray.Origin + Ray.Direction*Distance, CollisionMask);
@@ -1621,6 +1684,14 @@ CREFLECT_STRUCT_BEGIN_CONSTRUCTOR(Mesh2, []() -> void* { return nullptr; }, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(Material, "")
+	CREFLECT_STRUCT_FIELD(Vector4, AlbedoFactor, "Colour")
+	CREFLECT_STRUCT_FIELD(Vector4, EmissiveFactor, "Colour HDR")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Albedo, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Normal, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Orm, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Texture2, Emissive, "")
+	CREFLECT_STRUCT_FIELD(float, Roughness, "SliderMin(0.0) SliderMax(1.0)")
+	CREFLECT_STRUCT_FIELD(float, Metallic, "SliderMin(0.0) SliderMax(1.0)")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(Sound, "")

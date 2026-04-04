@@ -17,25 +17,8 @@ namespace Columbus
 	// Common
 	//
 
-	enum class EDeferredRenderVisualisationMode
-	{
-		Final,
-		GBufferOverview,
-		GBufferAlbedo,
-		GBufferNormal,
-		GBufferRoughness,
-		GBufferMetallic,
-		GBufferDepth,
-		Velocity,
-		LightingOnly,
-		Shadows,
-		Reflections,
-		RTGI,
-		RadianceCache,
-		VolumetricFog,
-	};
-
 	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View);
+	void PrepareDeferredView(RenderView& View);
 
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
 

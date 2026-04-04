@@ -57,22 +57,10 @@ namespace Columbus
 		TextureDesc2 SingleChannelDesc = Desc;
 		SingleChannelDesc.Format = TextureFormat::R16F;
 
-		static bool Resolve = true;
-		static bool Temporal = true;
-		static bool UseRadianceCache = false;
-		static int TemporalMaxSamples = 16;
-
-		if (ImGui::GetCurrentContext())
-		{
-			if (ImGui::Begin("RT Reflections Debug"))
-			{
-				ImGui::Checkbox("Resolve", &Resolve);
-				ImGui::Checkbox("Temporal", &Temporal);
-				ImGui::SliderInt("Temporal Max Samples", &TemporalMaxSamples, 1, 64);
-				ImGui::Checkbox("Radiance cache", &UseRadianceCache);
-			}
-			ImGui::End();
-		}
+		const bool Resolve = View.DeferredSettings.RTReflectionsResolve;
+		const bool Temporal = View.DeferredSettings.RTReflectionsTemporal;
+		const bool UseRadianceCache = View.DeferredSettings.RTReflectionsUseRadianceCache;
+		const int TemporalMaxSamples = View.DeferredSettings.RTReflectionsTemporalMaxSamples;
 
 		RenderGraphTextureRef RTReflectionRadiance = Graph.CreateTexture(Desc, "RTReflRadiance");
 		RenderGraphTextureRef RTReflectionRays = Graph.CreateTexture(Desc, "RTReflRays");
@@ -92,7 +80,7 @@ namespace Columbus
 			Dependencies.Write(RTReflectionRays, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRayPdf, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, Textures, View](RenderGraphContext& Context)
+			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, Textures, View, UseRadianceCache](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflections, Context);
 
@@ -217,7 +205,7 @@ namespace Columbus
 			Matrix ProjectionInv = View.CameraCur.GetProjectionMatrix().GetInverted();
 			Matrix PrevViewProjection = View.CameraPrev.GetViewProjection();
 
-			Graph.AddPass("RTReflTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [ReflectionsResult, RTTemporalResult, RTTemporalSampleCount, ReflectionHistory, ReflectionSampleCountHistory, Textures, TraceSize, ProjectionInv, InvViewProjection, PrevViewProjection](RenderGraphContext& Context)
+			Graph.AddPass("RTReflTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [ReflectionsResult, RTTemporalResult, RTTemporalSampleCount, ReflectionHistory, ReflectionSampleCountHistory, Textures, TraceSize, ProjectionInv, InvViewProjection, PrevViewProjection, TemporalMaxSamples](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 

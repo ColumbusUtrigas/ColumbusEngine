@@ -969,11 +969,11 @@ int main(int argc, char** argv)
 			{
 				PROFILE_CPU(CpuCounter_RenderGraphCreate);
 
-				World.MainView.RenderSize = World.MainView.OutputSize; // TODO: think of this logic
-				UploadGPUSceneRG(renderGraph, World.MainView);
-
 				if (render_cvar.GetValue() == 0)
 				{
+					PrepareDeferredView(World.MainView);
+					UploadGPUSceneRG(renderGraph, World.MainView);
+
 					if (World.Lightmaps.BakingRequested)
 					{
 						PrepareAtlasForLightmapBaking(renderGraph, World.Lightmaps);
@@ -990,6 +990,8 @@ int main(int argc, char** argv)
 				}
 				else
 				{
+					World.MainView.RenderSize = World.MainView.OutputSize;
+					UploadGPUSceneRG(renderGraph, World.MainView);
 					FinalTexture = RenderPathTraced(renderGraph, World.MainView);
 				}
 			}

@@ -339,76 +339,26 @@ namespace Columbus
 		});
 	}
 
-	enum class GIMode
+	void PrepareDeferredView(RenderView& View)
 	{
-		None,
-		RTGI,
-		DDGI,
-		IV,
-	};
-
-	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
-	{
-		static bool ApplyTAA = true;
-		static bool ApplyFSR = false;
-		static bool ApplyFSR1Sharpening = false;
-		static float FSR1Sharpening = 0.0f;
-		static GIMode GiMode = GIMode::RTGI;
-
-		static float RenderResolution = 1.0f;
-
-		if (ImGui::GetCurrentContext())
+		if (View.DeferredSettings.ApplyFSR1)
 		{
-			if (ImGui::Begin("Deferred Debug"))
-			{
-				static const char* GiModes[] =
-				{
-					"None", "RTGI", "DDGI", "IV"
-				};
-				ImGui::Combo("GI Mode", (int*)&GiMode, GiModes, sizeof(GiModes) / sizeof(GiModes[0]));
-
-				ImGui::Checkbox("TAA", &ApplyTAA);
-				ImGui::Checkbox("FSR1", &ApplyFSR);
-				ImGui::Checkbox("Use sharpening", &ApplyFSR1Sharpening);
-				ImGui::SliderFloat("Sharpening", &FSR1Sharpening, 0.0f, 2.0f);
-				ImGui::SliderFloat("Scaling", &RenderResolution, 0.25f, 1.0f);
-
-				static const char* Combos[] =
-				{
-					"Final",
-					"GBufferOverview",
-					"GBufferAlbedo",
-					"GBufferNormal",
-					"GBufferRoughness",
-					"GBufferMetallic",
-					"GBufferDepth",
-					"Velocity",
-					"LightingOnly",
-					"Shadows",
-					"Reflections",
-					"RTGI",
-					"RadianceCache",
-					"VolumetricFog",
-				};
-
-				ImGui::Combo("Visualisation mode", (int*)&DeferredContext.VisualisationMode, Combos, sizeof(Combos) / sizeof(Combos[0]));
-			}
-			ImGui::End();
-		}
-
-		if (ApplyFSR)
-		{
-			View.RenderSize = iVector2((int)(View.OutputSize.X * RenderResolution), (int)(View.OutputSize.Y * RenderResolution));
+			View.RenderSize = iVector2((int)(View.OutputSize.X * View.DeferredSettings.RenderResolution), (int)(View.OutputSize.Y * View.DeferredSettings.RenderResolution));
 		}
 		else
 		{
 			View.RenderSize = View.OutputSize;
 		}
 
-		if (ApplyTAA)
+		if (View.DeferredSettings.ApplyTAA)
 		{
-			//Antialiasing::ApplyJitter(View);
+			Antialiasing::ApplyJitter(View);
 		}
+	}
+
+	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
+	{
+		DeferredContext.VisualisationMode = View.DeferredSettings.VisualisationMode;
 
 		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);
 
@@ -425,21 +375,21 @@ namespace Columbus
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
 		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
 
-		switch (GiMode)
+		switch (View.DeferredSettings.GlobalIlluminationMode)
 		{
-		case GIMode::RTGI:
+		case EDeferredGlobalIlluminationMode::RTGI:
 			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
 			break;
 
-		case GIMode::DDGI:
+		case EDeferredGlobalIlluminationMode::DDGI:
 			RenderIndirectLightingDDGI(Graph, View, Textures, DeferredContext);
 			break;
 
-		case GIMode::IV:
+		case EDeferredGlobalIlluminationMode::IV:
 			// TODO: no hardcode for the volumes
 			RenderApplyIrradianceProbes(Graph, View, Textures, Graph.Scene->IrradianceVolumes[0]);
 			break;
-		case GIMode::None:
+		case EDeferredGlobalIlluminationMode::None:
 		{
 			TextureDesc2 Desc{
 				.Usage = TextureUsage::Storage | TextureUsage::Sampled,
@@ -461,7 +411,7 @@ namespace Columbus
 		// TODO: find a way to apply DoF after TAA
 		Textures.FinalBeforeTonemap = FFX::DispatchDepthOfFieldRG(Graph, View, Textures, DeferredContext.FFX);
 
-		if (ApplyTAA)
+		if (View.DeferredSettings.ApplyTAA)
 		{
 			Textures.FinalBeforeTonemap = Antialiasing::RenderTAA(Graph, View, Textures);
 		}
@@ -485,7 +435,7 @@ namespace Columbus
 			}
 		}
 
-		if (ApplyFSR)
+		if (View.DeferredSettings.ApplyFSR1)
 		{
 			TextureDesc2 FsrUpscaleDesc = Graph.GetTextureDesc(TonemappedImage);
 			//FsrUpscaleDesc.Usage = TextureUsage::StorageSampled;
@@ -493,10 +443,10 @@ namespace Columbus
 			FsrUpscaleDesc.Height = View.OutputSize.Y;
 
 			const iVector2 UpscaleTo = View.OutputSize;
-			const float UpscaleFactor = 1.0f / RenderResolution;
+			const float UpscaleFactor = 1.0f / View.DeferredSettings.RenderResolution;
 			const bool IsHdr = true;
 
-			TonemappedImage = ApplyFSR1(Graph, TonemappedImage, FsrUpscaleDesc, UpscaleTo, IsHdr, ApplyFSR1Sharpening, FSR1Sharpening);
+			TonemappedImage = ApplyFSR1(Graph, TonemappedImage, FsrUpscaleDesc, UpscaleTo, IsHdr, View.DeferredSettings.ApplyFSR1Sharpening, View.DeferredSettings.FSR1Sharpening);
 		}
 
 		RenderUIPass(Graph, View, TonemappedImage);
