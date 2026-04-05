@@ -219,6 +219,8 @@ float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 			Origin = HitPoint + BRDF.N * 0.001;
 #endif
 
+			PathRadiance += SanitizeRadiance(payload.Emissive * PathAttenuation);
+
 			// NEE
 			PathRadiance += SanitizeRadiance(RayTraceEvaluateDirectLighting(AS, Origin, RngState, BRDF) * PathAttenuation);
 

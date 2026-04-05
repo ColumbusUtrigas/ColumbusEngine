@@ -1,6 +1,7 @@
 struct RayPayload
 {
 	float3 Colour;
+	float3 Emissive;
 	float  HitDistance;
 	float3 Normal;
 	uint   ObjectId;
@@ -76,6 +77,7 @@ struct RayPayload
 void Miss(inout RayPayload payload)
 {
     payload.Colour = float3(0,0,0);
+    payload.Emissive = float3(0,0,0);
 	payload.HitDistance = -1.0;
 }
 

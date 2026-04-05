@@ -8,17 +8,18 @@
 [[vk::binding(1, 0)]] Texture2D GBufferNormal;
 [[vk::binding(2, 0)]] Texture2D GBufferWorldPosition;
 [[vk::binding(3, 0)]] Texture2D GBufferRoughnessMetallic;
-[[vk::binding(4, 0)]] Texture2D GBufferLightmap; // TODO: unify with GI?
-[[vk::binding(5, 0)]] Texture2D GBufferReflections;
-[[vk::binding(6, 0)]] Texture2D GBufferGI;
-[[vk::binding(7, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> LightingOutput;
+[[vk::binding(4, 0)]] Texture2D GBufferEmissive;
+[[vk::binding(5, 0)]] Texture2D GBufferLightmap; // TODO: unify with GI?
+[[vk::binding(6, 0)]] Texture2D GBufferReflections;
+[[vk::binding(7, 0)]] Texture2D GBufferGI;
+[[vk::binding(8, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> LightingOutput;
 
-[[vk::binding(8, 0)]] StructuredBuffer<GPULight> GPUSceneLights;
-[[vk::binding(9, 0)]] StructuredBuffer<GPUSceneStruct> GPUSceneScene;
+[[vk::binding(9, 0)]] StructuredBuffer<GPULight> GPUSceneLights;
+[[vk::binding(10, 0)]] StructuredBuffer<GPUSceneStruct> GPUSceneScene;
 
-[[vk::binding(10, 0)]] Texture2D LTC_1;
-[[vk::binding(11, 0)]] Texture2D LTC_2;
-[[vk::binding(12, 0)]] SamplerState LTC_Sampler;
+[[vk::binding(11, 0)]] Texture2D LTC_1;
+[[vk::binding(12, 0)]] Texture2D LTC_2;
+[[vk::binding(13, 0)]] SamplerState LTC_Sampler;
 
 [[vk::binding(0, 1)]] RWTexture2D<float> ShadowTextures[1000];
 
@@ -339,6 +340,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 	const float3 WP = GBufferWorldPosition[Pixel].rgb;
 	const float2 RM = GBufferRoughnessMetallic[Pixel].rg;
+	const float3 Emissive = GBufferEmissive[Pixel].rgb;
 
 	BRDFData BRDF;
 	BRDF.N         = GBufferNormal[Pixel].rgb;
@@ -485,6 +487,8 @@ void main(uint3 dtid : SV_DispatchThreadID)
 	
 	// TEST
 	//LightingSum = GBufferLightmap[Pixel].rgb;
+
+	LightingSum += Emissive;
 	
 	LightingOutput[Pixel] = float4(LightingSum, 1);
 }

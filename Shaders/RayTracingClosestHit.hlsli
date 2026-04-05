@@ -64,6 +64,7 @@ void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes 
     }
 
     payload.Colour = Material.Albedo;
+    payload.Emissive = Material.Emissive;
     payload.HitDistance = RayTCurrent();
     payload.Normal = shadingNormal;
 #ifdef PAYLOAD_HAS_GEOMETRIC_NORMAL

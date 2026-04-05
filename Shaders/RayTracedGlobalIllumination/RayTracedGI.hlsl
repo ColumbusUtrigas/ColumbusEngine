@@ -1,6 +1,7 @@
 struct RayPayload
 {
 	float3 Colour;
+	float3 Emissive;
 	float  HitDistance;
 	float3 Normal;
 	uint   ObjectId;
@@ -91,7 +92,7 @@ void RayGen()
 		//BRDF.Metallic = payload.RoughnessMetallic.y;
 
 		float3 HitPoint = WP + Direction * payload.HitDistance;
-		Radiance = RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF);
+		Radiance = payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF);
 	}
 
 	// final compute, write results
@@ -114,6 +115,7 @@ void Miss(inout RayPayload payload)
 	float3 Sun = normalize(GPUScene::GPUSceneScene[0].SunDirection.xyz);
 	
 	payload.Colour = Sky::Atmosphere(WorldRayOrigin(), WorldRayDirection(), Sun, GPUScene::GPUSceneScene[0].Sky);
+	payload.Emissive = 0.0.xxx;
 	payload.HitDistance = -1.0;
 }
 

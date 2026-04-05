@@ -128,6 +128,7 @@ struct GPUSceneMaterialCompact
 struct GPUMaterialSampledData
 {
     float3 Albedo;
+    float3 Emissive;
     float3 Normal; // -1 to 1, tangent space
     float  Occlusion;
     float  Roughness;
@@ -258,6 +259,7 @@ namespace GPUScene
             GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
 
             Result.Albedo = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1)).rgb * Material.AlbedoFactor.rgb;
+            Result.Emissive = SampleTextureWithDefault(Material.EmissiveId, UV, float4(1,1,1,1)).rgb * Material.EmissiveFactor.rgb;
 
             float4 EncodedNormal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0));
             if ((Material.Flags & GPUMATERIAL_FLAG_NORMAL_RG) != 0)
@@ -282,6 +284,7 @@ namespace GPUScene
         else
         {
             Result.Albedo = float3(1,1,1);
+            Result.Emissive = float3(0,0,0);
             Result.Normal = float3(0, 0, 1);
             Result.Occlusion = 1;
             Result.Roughness = 1;

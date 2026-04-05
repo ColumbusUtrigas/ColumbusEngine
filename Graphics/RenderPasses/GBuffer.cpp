@@ -51,6 +51,7 @@ namespace Columbus
 		TextureDesc2 NormalDesc = CommonDesc;
 		TextureDesc2 WPDesc = CommonDesc;
 		TextureDesc2 RMDesc = CommonDesc;
+		TextureDesc2 EmissiveDesc = CommonDesc;
 		TextureDesc2 DSDesc = CommonDesc;
 		TextureDesc2 VelocityDesc = CommonDesc;
 		TextureDesc2 LightmapDesc = CommonDesc;
@@ -58,6 +59,7 @@ namespace Columbus
 		NormalDesc.Format = TextureFormat::RGBA16F;
 		WPDesc.Format = TextureFormat::RGBA32F;
 		RMDesc.Format = TextureFormat::RG8;
+		EmissiveDesc.Format = TextureFormat::R11G11B10F;
 		DSDesc.Format = TextureFormat::Depth32F;
 		DSDesc.Usage = TextureUsage::RenderTargetDepth;
 		VelocityDesc.Format = TextureFormat::RG16F;
@@ -68,6 +70,7 @@ namespace Columbus
 		Result.GBufferNormal = Graph.CreateTexture(NormalDesc, "GBufferNormal");
 		Result.GBufferWP = Graph.CreateTexture(WPDesc, "GBufferWP");
 		Result.GBufferRM = Graph.CreateTexture(RMDesc, "GBufferRM");
+		Result.GBufferEmissive = Graph.CreateTexture(EmissiveDesc, "GBufferEmissive");
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
 		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
 		Result.Lightmap = Graph.CreateTexture(LightmapDesc, "Lightmap");
@@ -114,8 +117,9 @@ namespace Columbus
 		Parameters.ColorAttachments[1] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferNormal };
 		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP };
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
-		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
-		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
+		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferEmissive };
+		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
+		Parameters.ColorAttachments[6] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 		Parameters.ViewportSize = View.RenderSize;
 
@@ -133,6 +137,7 @@ namespace Columbus
 				Desc.Name = "GBufferPass";
 				Desc.rasterizerState.Cull = CullMode::No;
 				Desc.blendState.RenderTargets = {
+					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
@@ -248,6 +253,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.GBufferEmissive, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.RTReflections, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
 		Dependencies.Read(Textures.RTGI, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
@@ -278,15 +284,16 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTGI).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(LightingTexture).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.Scene->LightsBuffer);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.Scene->SceneBuffer);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 10, 0, Context.Scene->LTC_1, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 11, 0, Context.Scene->LTC_2, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 12, 0, Context.Device->GetStaticSampler());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferEmissive).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.RTGI).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(LightingTexture).get());
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.Scene->LightsBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 10, 0, Context.Scene->SceneBuffer);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 11, 0, Context.Scene->LTC_1, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 12, 0, Context.Scene->LTC_2, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 13, 0, Context.Device->GetStaticSampler());
 
 			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
 			// TODO: support lights not having shadows

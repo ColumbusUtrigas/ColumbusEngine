@@ -1,6 +1,7 @@
 struct RayPayload
 {
 	float3 Colour;
+	float3 Emissive;
 	float  HitDistance;
 	float3 Normal;
 	uint   ObjectId;
@@ -172,7 +173,7 @@ void RGS()
 	float maxAlbedo = 0.9f;
 
 	// Store the final ray radiance and hit distance
-	float3 radiance = diffuse + ((min(payload.Colour, float3(maxAlbedo, maxAlbedo, maxAlbedo)) / PI) * irradiance);
+	float3 radiance = payload.Emissive + diffuse + ((min(payload.Colour, float3(maxAlbedo, maxAlbedo, maxAlbedo)) / PI) * irradiance);
 	DDGIStoreProbeRayFrontfaceHit(RayData, outputCoords, volume, saturate(radiance), payload.HitDistance);
 
 }
@@ -185,6 +186,7 @@ void Miss(inout RayPayload payload)
 	float3 Sun = normalize(float3(1, 1, 1)); // TODO: put sun direction into scene description
 	
 	payload.Colour = Sky::Atmosphere(WorldRayOrigin(), WorldRayDirection(), Sun, GPUScene::GPUSceneScene[0].Sky);
+	payload.Emissive = 0.0.xxx;
 	payload.HitDistance = -1.0;
 }
 #endif

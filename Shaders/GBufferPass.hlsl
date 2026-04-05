@@ -29,8 +29,9 @@ struct PS_Out
     float3 Normal   : SV_Target1;
     float3 WP       : SV_Target2;
     float2 RM       : SV_Target3;
-    float2 Velocity : SV_Target4;
-    float3 Lightmap : SV_Target5;
+    float3 Emissive : SV_Target4;
+    float2 Velocity : SV_Target5;
+    float3 Lightmap : SV_Target6;
 };
 
 VS_TO_PS VSMain(uint VertexId : SV_VertexID)
@@ -105,6 +106,7 @@ PS_Out PSMain(VS_TO_PS In)
     Out.Normal = normalize(mul(Material.Normal, TBN));
     Out.WP = In.WorldPos; // TODO: remove? reconstruct from screenpos and linear depth
     Out.RM = float2(Material.Roughness, Material.Metallic);
+    Out.Emissive = Material.Emissive;
     Out.Velocity = Velocity;
     Out.Lightmap = LightmapColor;
     
