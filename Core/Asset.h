@@ -7,6 +7,8 @@
 #include <string_view>
 #include <unordered_map>
 #include <functional>
+#include <memory>
+#include <vector>
 
 // system description:
 // 
@@ -22,11 +24,29 @@ namespace Columbus
 
 	struct AssetSystem;
 
+	struct AssetSubscriber
+	{
+		void* Owner = nullptr;
+		std::function<void(void* Asset)> Callback;
+	};
+
+	struct AssetRecord
+	{
+		std::string Path;
+		const Reflection::Struct* Type = nullptr;
+		void* Asset = nullptr;
+		int RefCount = 0;
+
+		std::vector<AssetRecord*> Dependencies;
+		std::vector<AssetRecord*> Dependents;
+		std::vector<AssetSubscriber> Subscribers;
+	};
+
 	template <typename T>
 	struct AssetRef
 	{
 		std::string Path;
-		T* Asset = nullptr;
+		AssetRecord* Record = nullptr;
 
 		AssetRef()
 		{
@@ -41,25 +61,69 @@ namespace Columbus
 			*this = Other;
 		}
 
+		AssetRef(AssetRef<T>&& Other) noexcept
+		{
+			Path = std::move(Other.Path);
+			Record = Other.Record;
+
+			Other.Record = nullptr;
+			Other.Path.clear();
+		}
+
 		AssetRef<T>& operator=(const AssetRef<T>& Other)
 		{
-			if (Other.Asset)
+			if (this == &Other)
 			{
-				Path = Other.Path;
-				Resolve(); // increase refcount
+				return *this;
 			}
-			else
+
+			Unload();
+			Path = Other.Path;
+
+			if (Other.Record != nullptr)
 			{
-				Unload(); // decrease refcount
-				Path = Other.Path;
+				Resolve(); // increase refcount
 			}
 
 			return *this;
 		}
 
+		AssetRef<T>& operator=(AssetRef<T>&& Other) noexcept
+		{
+			if (this == &Other)
+			{
+				return *this;
+			}
+
+			Unload();
+
+			Path = std::move(Other.Path);
+			Record = Other.Record;
+
+			Other.Record = nullptr;
+			Other.Path.clear();
+
+			return *this;
+		}
+
+		T* Get()
+		{
+			return Record != nullptr ? static_cast<T*>(Record->Asset) : nullptr;
+		}
+
+		const T* Get() const
+		{
+			return Record != nullptr ? static_cast<const T*>(Record->Asset) : nullptr;
+		}
+
 		T* operator->()
 		{
-			return Asset;
+			return Get();
+		}
+
+		const T* operator->() const
+		{
+			return Get();
 		}
 
 		operator bool() const
@@ -69,7 +133,7 @@ namespace Columbus
 
 		bool IsValid() const
 		{
-			return Asset != nullptr;
+			return Get() != nullptr;
 		}
 
 		~AssetRef()
@@ -85,6 +149,19 @@ namespace Columbus
 		void Unload()
 		{
 			AssetSystem::Get().UnloadRef(*this);
+		}
+
+		void Subscribe(void* Owner, std::function<void(T* Asset)> Callback)
+		{
+			AssetSystem::Get().Subscribe(*this, Owner, [Callback = std::move(Callback)](void* Asset)
+			{
+				Callback(static_cast<T*>(Asset));
+			});
+		}
+
+		void Unsubscribe(void* Owner)
+		{
+			AssetSystem::Get().Unsubscribe(*this, Owner);
 		}
 
 		const char* GetTypeGuid() const
@@ -138,13 +215,13 @@ namespace Columbus
 				return {};
 			}
 
-			AssetData& Data = LoadedAssets[Path];
-			if (Data.Type != Reflection::FindStruct<T>())
+			AssetRecord* Data = LoadedAssets[Path].get();
+			if (Data->Type != Reflection::FindStruct<T>())
 			{
 				Log::Error("Trying to GetRefByPath using the wrong type %s for an asset with path %s and type %s",
 					Reflection::FindStruct<T>()->Name,
 					Path.c_str(),
-					Data.Type->Name);
+					Data->Type->Name);
 				return {};
 			}
 
@@ -156,8 +233,17 @@ namespace Columbus
 		template <typename T>
 		void UnloadRef(Columbus::AssetRef<T>& Ref)
 		{
-			UnloadAssetRaw(Ref.Asset);
-			Ref.Asset = nullptr;
+			UnloadRef(reinterpret_cast<AssetRef<void>&>(Ref));
+		}
+
+		void UnloadRef(AssetRef<void>& Ref)
+		{
+			if (Ref.Record != nullptr)
+			{
+				UnloadAssetRaw(Ref.Record->Asset);
+			}
+
+			Ref.Record = nullptr;
 		}
 
 		template <typename T>
@@ -169,7 +255,31 @@ namespace Columbus
 		void* LoadAssetRaw(const std::string& Path, const Reflection::Struct* Type);
 		void UnloadAssetRaw(void* Asset);
 
-		void ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object);
+		bool ReloadAsset(const std::string& Path);
+
+		void ResolveStructAssetReferences(const Reflection::Struct* Struct, void* Object, AssetRecord* OwnerRecord = nullptr);
+
+		template <typename T>
+		void Subscribe(AssetRef<T>& Ref, void* Owner, std::function<void(void* Asset)> Callback)
+		{
+			if (Ref.Record == nullptr && !Ref.Path.empty())
+			{
+				ResolveRef(Ref);
+			}
+
+			Subscribe(reinterpret_cast<AssetRef<void>&>(Ref), Owner, std::move(Callback));
+		}
+
+		void Subscribe(AssetRef<void>& Ref, void* Owner, std::function<void(void* Asset)> Callback);
+
+		template <typename T>
+		void Unsubscribe(AssetRef<T>& Ref, void* Owner)
+		{
+			Unsubscribe(reinterpret_cast<AssetRef<void>&>(Ref), Owner);
+		}
+
+		void Unsubscribe(AssetRef<void>& Ref, void* Owner);
+		void UnsubscribeAllOwnedBy(void* Owner);
 
 		// register ref from raw data
 		template <typename T>
@@ -183,11 +293,19 @@ namespace Columbus
 			}
 
 			// register
-			LoadedAssets[Path] = AssetData{ Asset, Reflection::FindStruct<T>(), 1 };
-			PathByAsset[Asset] = Path;
+			std::unique_ptr<AssetRecord> Record = std::make_unique<AssetRecord>();
+			Record->Path = Path;
+			Record->Type = Reflection::FindStruct<T>();
+			Record->Asset = Asset;
+			Record->RefCount = 1;
+			AssetRecord* RecordPtr = Record.get();
+
+			LoadedAssets[Path] = std::move(Record);
+			RecordByAsset[Asset] = RecordPtr;
+			ResolveStructAssetReferences(RecordPtr->Type, Asset, RecordPtr);
 
 			AssetRef<T> Ref;
-			Ref.Asset = Asset;
+			Ref.Record = RecordPtr;
 			Ref.Path = Path;
 
 			return Ref;
@@ -206,15 +324,8 @@ namespace Columbus
 
 	public:
 		// DATA
-		struct AssetData
-		{
-			void* Asset = nullptr;
-			const Reflection::Struct* Type = nullptr;
-			int RefCount = 0;
-		};
-
-		std::unordered_map<std::string, AssetData> LoadedAssets;
-		std::unordered_map<void*, std::string> PathByAsset; // reverse lookup for asset path by pointer
+		std::unordered_map<std::string, std::unique_ptr<AssetRecord>> LoadedAssets;
+		std::unordered_map<void*, AssetRecord*> RecordByAsset; // reverse lookup for asset record by pointer
 	};
 
 

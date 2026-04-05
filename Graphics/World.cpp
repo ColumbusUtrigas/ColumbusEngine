@@ -972,10 +972,10 @@ namespace Columbus
 		if (MaterialAsset == nullptr || SceneGPU == nullptr)
 			return;
 
-		MaterialAsset->AlbedoId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Albedo.Asset);
-		MaterialAsset->NormalId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Normal.Asset);
-		MaterialAsset->OrmId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Orm.Asset);
-		MaterialAsset->EmissiveId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Emissive.Asset);
+		MaterialAsset->AlbedoId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Albedo.Get());
+		MaterialAsset->NormalId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Normal.Get());
+		MaterialAsset->OrmId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Orm.Get());
+		MaterialAsset->EmissiveId = GetOrAddSceneTexture(SceneGPU.get(), MaterialAsset->Emissive.Get());
 
 		if (!SceneGPU->Materials.IsValid(MaterialAsset->StableId))
 		{
@@ -1335,6 +1335,11 @@ namespace Columbus
 	{
 		Super::OnCreate();
 
+		Texture.Subscribe(this, [this](Texture2*)
+		{
+			bRenderStateDirty = true;
+		});
+
 		DecalHandle = World->SceneGPU->Decals.Add(GPUDecal());
 	}
 	void ADecal::OnDestroy()
@@ -1349,7 +1354,7 @@ namespace Columbus
 
 		World->SceneGPU->Decals.Get(DecalHandle)->Model = TransGlobal.GetMatrix();
 		World->SceneGPU->Decals.Get(DecalHandle)->ModelInverse = TransGlobal.GetMatrix().GetInverted();
-		World->SceneGPU->Decals.Get(DecalHandle)->Texture = Texture.Asset;
+		World->SceneGPU->Decals.Get(DecalHandle)->Texture = Texture.Get();
 	}
 
 	void ALight::OnCreate()
@@ -1424,10 +1429,10 @@ namespace Columbus
 		}
 
 		HCollisionSettings EffectiveCollisionSettings = CollisionSettings;
-		if (Mesh.Asset != nullptr && EffectiveCollisionSettings.Shape.Type == ECollisionShape::None)
-			EffectiveCollisionSettings = Mesh.Asset->DefaultCollisionSettings;
+		if (Mesh.Get() != nullptr && EffectiveCollisionSettings.Shape.Type == ECollisionShape::None)
+			EffectiveCollisionSettings = Mesh->DefaultCollisionSettings;
 
-		btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EffectiveCollisionSettings.Shape, Mesh.Asset);
+		btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EffectiveCollisionSettings.Shape, Mesh.Get());
 
 		bNeedsPostPhysicsTicking = false;
 
@@ -1471,6 +1476,45 @@ namespace Columbus
 		assert(World != nullptr);
 		assert(Mesh.IsValid());
 
+		Mesh.Subscribe(this, [this](Mesh2*)
+		{
+			if (Mesh.Get() != nullptr)
+			{
+				for (MeshPrimitive& Prim : Mesh->Primitives)
+				{
+					if (Prim.DefaultMaterial.IsValid())
+					{
+						World->RefreshMaterial(Prim.DefaultMaterial.Get());
+					}
+				}
+			}
+
+			for (AssetRef<Material>& MaterialRef : Materials)
+			{
+				if (MaterialRef.IsValid())
+				{
+					World->RefreshMaterial(MaterialRef.Get());
+				}
+			}
+
+			OnDestroy();
+			OnCreate();
+		});
+
+		for (AssetRef<Material>& MaterialRef : Materials)
+		{
+			MaterialRef.Subscribe(this, [this](Material* MaterialAsset)
+			{
+				if (MaterialAsset != nullptr)
+				{
+					World->RefreshMaterial(MaterialAsset);
+				}
+
+				OnDestroy();
+				OnCreate();
+			});
+		}
+
 		int i = 0;
 		for (MeshPrimitive& Prim : Mesh->Primitives)
 		{
@@ -1512,7 +1556,7 @@ namespace Columbus
 			HCollisionShapeDesc EditorCollisionShape;
 			EditorCollisionShape.Type = ECollisionShape::TriMesh;
 
-			btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EditorCollisionShape, Mesh.Asset);
+			btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EditorCollisionShape, Mesh.Get());
 
 			EditorRigidbody = new Rigidbody(Shape);
 			EditorRigidbody->SetTransform(GetWorldTransform());
@@ -1579,7 +1623,7 @@ namespace Columbus
 	{
 		Super::OnCreate();
 
-		if (LevelAsset.Asset == nullptr)
+		if (LevelAsset.Get() == nullptr)
 		{
 			Log::Error("Level is null");
 			return;
@@ -1594,7 +1638,7 @@ namespace Columbus
 
 		std::unordered_map<AThing*, AThing*> HierarchyRewireMap;
 
-		for (AThing* Thing : LevelAsset.Asset->Things)
+		for (AThing* Thing : LevelAsset->Things)
 		{
 			// deep copy of a thing
 			const Reflection::Struct* Type = Thing->GetTypeVirtual();
@@ -1608,7 +1652,7 @@ namespace Columbus
 		}
 
 		// parent-child relationship rewire
-		for (AThing* Thing : LevelAsset.Asset->Things)
+		for (AThing* Thing : LevelAsset->Things)
 		{
 			if (Thing->Parent)
 			{
@@ -1654,7 +1698,7 @@ namespace Columbus
 
 	void ALevelThing::OnDestroy()
 	{
-		if (LevelAsset.Asset == nullptr)
+		if (LevelAsset.Get() == nullptr)
 		{
 			Log::Error("Level is null");
 			return;

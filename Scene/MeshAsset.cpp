@@ -201,6 +201,24 @@ namespace Columbus
 		return ImportMeshAssetFromSource(Path);
 	}
 
+	Mesh2* CreateMeshAssetFromPrimitives(std::span<const CPUMeshResource> MeshPrimitives, const char* SourcePath)
+	{
+		Mesh2* Result = new Mesh2();
+		Result->SourcePath = MakeMeshSourcePathForAsset(SourcePath);
+		Result->DefaultCollisionSettings.Shape.Type = ECollisionShape::TriMesh;
+		Result->Primitives.reserve(MeshPrimitives.size());
+
+		for (size_t PrimitiveIndex = 0; PrimitiveIndex < MeshPrimitives.size(); PrimitiveIndex++)
+		{
+			MeshPrimitive& Primitive = Result->Primitives.emplace_back();
+			Primitive.Name = "Primitive " + std::to_string(PrimitiveIndex);
+			Primitive.CPU = MeshPrimitives[PrimitiveIndex];
+		}
+
+		PostProcessMeshAsset(*Result);
+		return Result;
+	}
+
 	Mesh2* ImportMeshAssetFromSource(const char* SourcePath)
 	{
 		Model MeshModel;

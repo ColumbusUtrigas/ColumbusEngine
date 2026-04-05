@@ -432,20 +432,35 @@ namespace Columbus
 		return LoadLegacyTextureAssetInternal(Device, Path);
 	}
 
+	Texture2* ImportTextureAssetFromImage(const Image& SourceImage, const char* SourcePath)
+	{
+		Texture2* TextureData = new Texture2();
+		if (!PopulateTextureSourceData(*TextureData, SourceImage, SourcePath))
+		{
+			delete TextureData;
+			return nullptr;
+		}
+
+		if (!RecookTextureAssetData(*TextureData))
+		{
+			delete TextureData;
+			return nullptr;
+		}
+
+		return TextureData;
+	}
+
 	Texture2* ImportTextureAssetFromSource(SPtr<DeviceVulkan> Device, const char* SourcePath)
 	{
 		Image SourceImage;
 		if (!SourceImage.LoadFromFile(SourcePath))
 			return nullptr;
 
-		Texture2 TextureData;
-		if (!PopulateTextureSourceData(TextureData, SourceImage, SourcePath))
+		UPtr<Texture2> TextureData(ImportTextureAssetFromImage(SourceImage, SourcePath));
+		if (!TextureData)
 			return nullptr;
 
-		if (!RecookTextureAssetData(TextureData))
-			return nullptr;
-
-		Texture2* RuntimeTexture = CreateRuntimeTextureFromCookedData(Device, TextureData);
+		Texture2* RuntimeTexture = CreateRuntimeTextureFromCookedData(Device, *TextureData);
 		if (RuntimeTexture)
 		{
 			Device->SetDebugName(RuntimeTexture, std::filesystem::path(SourcePath).filename().string().c_str());
@@ -468,6 +483,11 @@ namespace Columbus
 			Device->SetDebugName(RuntimeTexture, Name.c_str());
 		}
 		return RuntimeTexture;
+	}
+
+	bool RecookTextureAsset(Texture2& Texture)
+	{
+		return RecookTextureAssetData(Texture);
 	}
 
 	bool SaveTextureAssetToFile(const Texture2& Texture, const char* Path)

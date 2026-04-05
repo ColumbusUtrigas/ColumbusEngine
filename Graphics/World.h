@@ -70,7 +70,7 @@ namespace Columbus
 		virtual void OnLoad();
 
 		virtual void OnCreate() { Trans.Update(); }
-		virtual void OnDestroy() {}
+		virtual void OnDestroy() { AssetSystem::Get().UnsubscribeAllOwnedBy(this); }
 
 		virtual void OnTick(float DeltaTime) {}
 		virtual void OnPostPhysics() {}

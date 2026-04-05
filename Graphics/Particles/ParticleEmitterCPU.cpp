@@ -36,12 +36,13 @@ namespace Columbus
 
 	void HParticleEmitterInstanceCPU::Update(float TimeTick)
 	{
-		if (!Settings.IsValid())
+		HParticleEmitterSettings* ActiveSettings = GetSettings();
+		if (ActiveSettings == nullptr)
 			return;
 
 		PROFILE_CPU(Counter_Particles_UpdateTime);
 
-		Particles.Allocate(Settings->MaxParticles);
+		Particles.Allocate(ActiveSettings->MaxParticles);
 
 		RemoveOldParticles();
 		SpawnParticles(TimeTick);
@@ -54,33 +55,41 @@ namespace Columbus
 
 	void HParticleEmitterInstanceCPU::SpawnParticles(float TimeTick)
 	{
-		if (Settings->bEmit)
+		HParticleEmitterSettings* ActiveSettings = GetSettings();
+		if (ActiveSettings == nullptr)
+			return;
+
+		if (ActiveSettings->bEmit)
 		{
 			SimulationTime += TimeTick;
-			float FireTime = 1.0f / Settings->EmitRate;
+			float FireTime = 1.0f / ActiveSettings->EmitRate;
 
 			size_t NeedToSpawn = 0;
 
-			while (SimulationTime >= FireTime && Particles.Count < Settings->MaxParticles)
+			while (SimulationTime >= FireTime && Particles.Count < ActiveSettings->MaxParticles)
 			{
 				SimulationTime -= FireTime;
 				Particles.Ages[Particles.Count + NeedToSpawn] = 0.0f;
-				NeedToSpawn += Particles.Count + NeedToSpawn < Settings->MaxParticles ? 1 : 0;
+				NeedToSpawn += Particles.Count + NeedToSpawn < ActiveSettings->MaxParticles ? 1 : 0;
 			}
 
-			Settings->Lifetime.Spawn(Particles, NeedToSpawn);
-			Settings->Location.Spawn(Particles, NeedToSpawn, CurrentPosition);
-			Settings->Velocity.Spawn(Particles, NeedToSpawn);
-			Settings->Rotation.Spawn(Particles, NeedToSpawn);
-			Settings->Color.Spawn(Particles, NeedToSpawn);
-			Settings->Size.Spawn(Particles, NeedToSpawn);
-			Settings->SubUV.Spawn(Particles, NeedToSpawn);
+			ActiveSettings->Lifetime.Spawn(Particles, NeedToSpawn);
+			ActiveSettings->Location.Spawn(Particles, NeedToSpawn, CurrentPosition);
+			ActiveSettings->Velocity.Spawn(Particles, NeedToSpawn);
+			ActiveSettings->Rotation.Spawn(Particles, NeedToSpawn);
+			ActiveSettings->Color.Spawn(Particles, NeedToSpawn);
+			ActiveSettings->Size.Spawn(Particles, NeedToSpawn);
+			ActiveSettings->SubUV.Spawn(Particles, NeedToSpawn);
 			Particles.Count += NeedToSpawn;
 		}
 	}
 
 	void HParticleEmitterInstanceCPU::UpdateParticles(float TimeTick)
 	{
+		HParticleEmitterSettings* ActiveSettings = GetSettings();
+		if (ActiveSettings == nullptr)
+			return;
+
 		// Iterate over active particles and update them
 
 		#if USE_SIMD_EXTENSIONS
@@ -111,10 +120,10 @@ namespace Columbus
 			}
 		#endif
 
-		Settings->Rotation.Update(Particles, TimeTick);
-		Settings->Color.Update(Particles);
-		Settings->Size.Update(Particles);
-		Settings->SubUV.Update(Particles);
+		ActiveSettings->Rotation.Update(Particles, TimeTick);
+		ActiveSettings->Color.Update(Particles);
+		ActiveSettings->Size.Update(Particles);
+		ActiveSettings->SubUV.Update(Particles);
 		//Settings->Noise.Update(Particles, TimeTick);
 	}
 
@@ -132,7 +141,11 @@ namespace Columbus
 
 	void HParticleEmitterInstanceCPU::SortParticles()
 	{
-		if (Settings->Sort != EParticleSortMode::None)
+		HParticleEmitterSettings* ActiveSettings = GetSettings();
+		if (ActiveSettings == nullptr)
+			return;
+
+		if (ActiveSettings->Sort != EParticleSortMode::None)
 		{
 			bool(*Predicates[4])(const ParticleContainer&, size_t, size_t);
 			//Predicates[(u32)EParticleSortMode::None];
@@ -140,7 +153,7 @@ namespace Columbus
 			Predicates[(u32)EParticleSortMode::OldFirst]     = SortOldFirstPredicate;
 			Predicates[(u32)EParticleSortMode::NearestFirst] = SortNearestFirstPredicate;
 
-			const auto Predicate = Predicates[(u32)Settings->Sort];
+			const auto Predicate = Predicates[(u32)ActiveSettings->Sort];
 
 			bool Sorted = false;
 			for (size_t i = 0; i < Particles.Count && !Sorted; i++)

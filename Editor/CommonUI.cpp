@@ -26,6 +26,8 @@
 namespace Columbus::Editor
 {
 	_CommonUISettings CommonUISettings;
+	std::function<void(const std::string& Path, const Reflection::Struct* Type)> OnOpenAssetRequested;
+	std::function<void(const std::string& Path)> OnRevealAssetRequested;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Helper for UI property metadata
@@ -1243,6 +1245,18 @@ namespace Columbus::Editor
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Editing of reflected objects
 
+	static bool DrawSquareIconButton(const char* Id, const char* Icon, const char* Tooltip, float Size)
+	{
+		bool Pressed = ImGui::Button(Id, ImVec2(Size, 0.0f));
+		ImRect Rect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+		ImGui::RenderTextClipped(Rect.Min, Rect.Max, Icon, nullptr, nullptr, ImVec2(0.5f, 0.5f));
+		if (Tooltip && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+		{
+			ImGui::SetTooltip("%s", Tooltip);
+		}
+		return Pressed;
+	}
+
 	bool Reflection_EditObjectField(char* Object, const Reflection::Field& Field, int Depth)
 	{
 		char* FieldData = Object + Field.Offset;
@@ -1492,24 +1506,50 @@ namespace Columbus::Editor
 			struct AssetRefBase
 			{
 				std::string Path;
-				void* Asset = nullptr;
+				AssetRecord* Record = nullptr;
 			};
 
 			AssetRefBase* AssetRef = reinterpret_cast<AssetRefBase*>(FieldData);
 			char ButtonBuf[512]{};
-			snprintf(ButtonBuf, 512, "...##%s", Field.Name);
+			snprintf(ButtonBuf, 512, "##select_%s", Field.Name);
 			char ClearButtonBuf[512]{};
-			snprintf(ClearButtonBuf, 512, "X##clear_%s", Field.Name);
+			snprintf(ClearButtonBuf, 512, "##clear_%s", Field.Name);
+			char OpenButtonBuf[512]{};
+			snprintf(OpenButtonBuf, 512, "##open_%s", Field.Name);
+			char RevealButtonBuf[512]{};
+			snprintf(RevealButtonBuf, 512, "##reveal_%s", Field.Name);
+			const Reflection::Struct* AssetType = Reflection::FindStructByGuid(Field.Typeguid);
+			const bool bCanOpen = !AssetRef->Path.empty() && OnOpenAssetRequested;
+			const bool bCanReveal = !AssetRef->Path.empty() && OnRevealAssetRequested;
+			bool bChanged = false;
 
-			ImGui::LabelText(Field.Name, "%s", AssetRef->Path.c_str());
-			ImGui::SameLine();
-			if (ImGui::Button(ButtonBuf))
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			const ImGuiStyle& Style = ImGui::GetStyle();
+			const float Spacing = Style.ItemSpacing.x;
+			const float LabelWidth = std::clamp(ImGui::CalcTextSize(Field.Name).x + Style.FramePadding.x * 2.0f, 70.0f, 120.0f);
+			const float SquareButtonSize = ImGui::GetFrameHeight();
+			const float ButtonsWidth = SquareButtonSize * 4.0f + Spacing * 3.0f;
+			const ImVec2 RowMin = ImGui::GetCursorScreenPos();
+			ImGui::Dummy(ImVec2(1.0f, SquareButtonSize));
+			const float LabelRowY = RowMin.y;
+			const float ButtonX = window->WorkRect.Max.x - ButtonsWidth;
+			const float InputX = RowMin.x + LabelWidth + Spacing;
+			const float InputWidth = std::max(80.0f, ButtonX - InputX - Spacing);
+			ImGui::SetCursorScreenPos(RowMin);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(Field.Name);
+			std::string DisplayPath = AssetRef->Path;
+			ImGui::SetCursorScreenPos(ImVec2(InputX, LabelRowY));
+			ImGui::PushItemWidth(InputWidth);
+			ImGui::InputText((std::string("##path_") + Field.Name).c_str(), &DisplayPath, ImGuiInputTextFlags_ReadOnly);
+			ImGui::PopItemWidth();
+			ImGui::SetCursorScreenPos(ImVec2(ButtonX, LabelRowY));
+
+			if (DrawSquareIconButton(ButtonBuf, ICON_FA_ELLIPSIS_H, "Select asset", SquareButtonSize))
 			{
 				char* path = nullptr;
 
 				const char* AssetExts = "";
-				const Reflection::Struct* AssetType = Reflection::FindStructByGuid(Field.Typeguid);
-
 				if (AssetSystem::Get().AssetExtensions.contains(AssetType))
 				{
 					AssetExts = AssetSystem::Get().AssetExtensions[AssetType];
@@ -1526,45 +1566,58 @@ namespace Columbus::Editor
 
 						Editor::ShowMessageBox("Asset Reference Error", ErrorBuf, {});
 						Log::Error(ErrorBuf);
-						return false;
 					}
-
-					AssetRef->Path = AssetSystem::Get().MakePathRelativeToBakedFolder(path);
-					return true;
+					else
+					{
+						AssetRef->Path = AssetSystem::Get().MakePathRelativeToBakedFolder(path);
+						bChanged = true;
+					}
 				}
-
-				return false;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(ClearButtonBuf))
+			if (DrawSquareIconButton(ClearButtonBuf, ICON_FA_TIMES, "Clear reference", SquareButtonSize))
 			{
 				struct AssetRefMutableBase
 				{
 					std::string Path;
-					void* Asset = nullptr;
+					AssetRecord* Record = nullptr;
 					void Unload()
 					{
-						AssetSystem::Get().UnloadAssetRaw(Asset);
-						Asset = nullptr;
+						AssetSystem::Get().UnloadAssetRaw(Record ? Record->Asset : nullptr);
+						Record = nullptr;
 					}
 				};
 
 				AssetRefMutableBase* MutableRef = reinterpret_cast<AssetRefMutableBase*>(FieldData);
 				MutableRef->Unload();
 				MutableRef->Path.clear();
-				return true;
+				bChanged = true;
 			}
+			ImGui::SameLine();
+			ImGui::BeginDisabled(!bCanReveal);
+			if (DrawSquareIconButton(RevealButtonBuf, ICON_FA_SEARCH, "Reveal in asset browser", SquareButtonSize))
+			{
+				OnRevealAssetRequested(AssetRef->Path);
+			}
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::BeginDisabled(!bCanOpen);
+			if (DrawSquareIconButton(OpenButtonBuf, ICON_FA_EXTERNAL_LINK_ALT, "Open in editor tab", SquareButtonSize))
+			{
+				OnOpenAssetRequested(AssetRef->Path, AssetType);
+			}
+			ImGui::EndDisabled();
+			ImGui::SetCursorScreenPos(ImVec2(RowMin.x, RowMin.y + SquareButtonSize + Style.ItemSpacing.y));
 
-			const Reflection::Struct* AssetType = Reflection::FindStructByGuid(Field.Typeguid);
 			if (AssetType == Reflection::FindStruct<Texture2>())
 			{
 				Columbus::AssetRef<Texture2> PreviewRef;
-				Texture2* PreviewTexture = static_cast<Texture2*>(AssetRef->Asset);
+				Texture2* PreviewTexture = AssetRef->Record ? static_cast<Texture2*>(AssetRef->Record->Asset) : nullptr;
 
 				if (!PreviewTexture && !AssetRef->Path.empty() && AssetSystem::Get().HasPath(AssetRef->Path))
 				{
 					PreviewRef = AssetSystem::Get().GetRefByPath<Texture2>(AssetRef->Path);
-					PreviewTexture = PreviewRef.Asset;
+					PreviewTexture = PreviewRef.Get();
 				}
 
 				if (PreviewTexture)
@@ -1590,7 +1643,7 @@ namespace Columbus::Editor
 					ImGui::EndChild();
 				}
 			}
-			break;
+			return bChanged;
 		}
 
 		case Reflection::FieldType::ThingRef:

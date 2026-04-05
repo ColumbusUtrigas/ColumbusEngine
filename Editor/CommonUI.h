@@ -15,6 +15,8 @@ namespace Columbus::Editor
 		ImVec2 TreeNodeSize = { -30, 20 };
 	};
 	extern _CommonUISettings CommonUISettings;
+	extern std::function<void(const std::string& Path, const Reflection::Struct* Type)> OnOpenAssetRequested;
+	extern std::function<void(const std::string& Path)> OnRevealAssetRequested;
 
 	void ApplyDarkTheme();
 	void FlagButton(const char* name, bool& enabled, const char* tooltip = NULL);

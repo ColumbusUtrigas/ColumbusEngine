@@ -105,8 +105,8 @@ namespace Columbus
 				Params.SubImages = iVector2(ParticleSystem.ParticleInstance->Settings->SubUV.Horizontal, ParticleSystem.ParticleInstance->Settings->SubUV.Vertical);
 				Params.SubImagesSpeed = ParticleSystem.ParticleInstance->Settings->SubUV.Cycles;
 
-				Texture2* ParticleTexture = ParticleSystem.ParticleInstance->Settings->Texture.Asset;
-				Texture2* MotionVectorsTexture = ParticleSystem.ParticleInstance->Settings->MotionVectors.Asset;
+				Texture2* ParticleTexture = ParticleSystem.ParticleInstance->Settings->Texture.Get();
+				Texture2* MotionVectorsTexture = ParticleSystem.ParticleInstance->Settings->MotionVectors.Get();
 
 				Params.MotionVectorStrength = MotionVectorsTexture ? ParticleSystem.ParticleInstance->Settings->MotionVectorStrength : -1.0f;
 

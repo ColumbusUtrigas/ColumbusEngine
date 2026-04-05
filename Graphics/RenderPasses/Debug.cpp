@@ -610,9 +610,9 @@ namespace Columbus
 			struct AssetEntry
 			{
 				std::string_view Path;
-				AssetSystem::AssetData Data;
+				const AssetRecord* Data = nullptr;
 				
-				AssetEntry(std::string_view path, const AssetSystem::AssetData& data)
+				AssetEntry(std::string_view path, const AssetRecord* data)
 					: Path(path), Data(data) {}
 			};
 			
@@ -622,7 +622,7 @@ namespace Columbus
 			// fill vector with assets
 			for (const auto& [path, data] : assets.LoadedAssets)
 			{
-				sortedAssets.emplace_back(path, data);
+				sortedAssets.emplace_back(path, data.get());
 			}
 
 			if (ImGui::BeginTable("AssetsTable", 3, 
@@ -651,10 +651,10 @@ namespace Columbus
 									delta = a.Path.compare(b.Path);
 									break;
 								case 1: // Type
-									delta = strcmp(a.Data.Type->Name, b.Data.Type->Name);
+									delta = strcmp(a.Data->Type->Name, b.Data->Type->Name);
 									break;
 								case 2: // RefCount
-									delta = a.Data.RefCount - b.Data.RefCount;
+									delta = a.Data->RefCount - b.Data->RefCount;
 									break;
 							}
 							if (delta > 0)
@@ -671,8 +671,8 @@ namespace Columbus
 				{
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Path.data());
-					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Data.Type ? entry.Data.Type->Name : "Unknown");
-					ImGui::TableNextColumn(); ImGui::Text("%d", entry.Data.RefCount);
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Data && entry.Data->Type ? entry.Data->Type->Name : "Unknown");
+					ImGui::TableNextColumn(); ImGui::Text("%d", entry.Data ? entry.Data->RefCount : 0);
 				}
 				ImGui::EndTable();
 			}

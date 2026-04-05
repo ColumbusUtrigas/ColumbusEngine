@@ -86,6 +86,16 @@ namespace Columbus
 		Vector3 CameraPosition;
 
 	public:
+		HParticleEmitterSettings* GetSettings() const
+		{
+			return const_cast<HParticleEmitterSettings*>(Settings.Get());
+		}
+
+		const HParticleEmitterSettings* GetSettingsConst() const
+		{
+			return Settings.Get();
+		}
+
 		void Update(float TimeTick);
 
 	private:
