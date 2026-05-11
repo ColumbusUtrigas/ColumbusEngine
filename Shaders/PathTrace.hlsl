@@ -40,9 +40,9 @@ struct _Params
 void RayGen()
 {
 	const int2 pixel = DispatchRaysIndex().xy;
-	const float2 ndc = (float2(pixel) / float2(DispatchRaysDimensions().xy) * 2 - 1) * float2(1, -1);
-
 	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.RandomNumber)); // Initial seed
+	const float2 PixelJitter = Random::UniformDistrubition2d(RngState);
+	const float2 ndc = ((float2(pixel) + PixelJitter) / float2(DispatchRaysDimensions().xy) * 2 - 1) * float2(1, -1);
 
 	float4 DirectionCameraSpace = float4(ndc, -1, 1);
 	float4 DirectionWorldSpace = mul(DirectionCameraSpace, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);

@@ -395,18 +395,18 @@ void main(uint3 dtid : SV_DispatchThreadID)
 		case GPULIGHT_DIRECTIONAL:
 			Attenuation = 1; // directional light doesn't attenuate
 			
-			LightValue = max(dot(BRDF.N, LightDir), 0) * Shadow * Attenuation * Light.Color.rgb;
+			LightValue = Shadow * Attenuation * Light.Color.rgb;
 			BRDF.L = LightDir;
-			LightingSum += EvaluateBRDF(BRDF, LightValue);
+			LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
 			break;
 		case GPULIGHT_POINT:
 			Attenuation  = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0);
 			Attenuation *= Attenuation;
 			LightDir     = -normalize(WP - Light.Position.xyz);
 			
-			LightValue = max(dot(BRDF.N, LightDir), 0) * Shadow * Attenuation * Light.Color.rgb;
+			LightValue = Shadow * Attenuation * Light.Color.rgb;
 			BRDF.L = LightDir;
-			LightingSum += EvaluateBRDF(BRDF, LightValue);
+			LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
 			break;
 		case GPULIGHT_SPOT:
 		{
@@ -419,9 +419,9 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 			Attenuation *= smoothstep(angles.y, angles.x, angle);
 
-			LightValue = max(dot(BRDF.N, LightDir), 0) * Shadow * Attenuation * Light.Color.rgb;
+			LightValue = Shadow * Attenuation * Light.Color.rgb;
 			BRDF.L = LightDir;
-			LightingSum += EvaluateBRDF(BRDF, LightValue);
+			LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
 		}
 		break;
 		case GPULIGHT_RECTANGLE:

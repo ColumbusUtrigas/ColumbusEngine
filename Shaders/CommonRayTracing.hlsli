@@ -32,53 +32,6 @@ float Luminance(float3 Value)
 	return dot(Value, float3(0.2126, 0.7152, 0.0722));
 }
 
-float3 PathF0(BRDFData Data)
-{
-	return lerp(float3(0.04, 0.04, 0.04), Data.Albedo, Data.Metallic);
-}
-
-float3 FresnelSchlickPath(float CosTheta, float3 F0)
-{
-	return F0 + (1.0.xxx - F0) * pow(1.0 - saturate(CosTheta), 5.0);
-}
-
-float3 EvaluatePathBSDF(BRDFData Data)
-{
-	float3 N = Data.N;
-	float3 V = Data.V;
-	float3 L = Data.L;
-	float3 H = normalize(V + L);
-
-	float NdotV = saturate(dot(N, V));
-	float NdotL = saturate(dot(N, L));
-	float VdotH = saturate(dot(V, H));
-
-	if (NdotV <= 0.0 || NdotL <= 0.0)
-		return 0.0.xxx;
-
-	float Roughness = max(Data.Roughness, 0.02);
-	float3 F0 = PathF0(Data);
-	float3 F = FresnelSchlickPath(VdotH, F0);
-	float3 Kd = (1.0.xxx - F) * (1.0 - Data.Metallic);
-
-	float3 Diffuse = Kd * LambertDiffuseBRDF(Data.Albedo);
-	float D = DistributionGGX(N, H, Roughness);
-	float Vis = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
-	float3 Specular = D * F * Vis;
-
-	return Diffuse + Specular;
-}
-
-float3 EvaluatePathBSDFCos(BRDFData Data)
-{
-	return EvaluatePathBSDF(Data) * saturate(dot(Data.N, Data.L));
-}
-
-float DiffusePDF(BRDFData Data, float3 L)
-{
-	return saturate(dot(Data.N, L)) * ONE_OVER_PI;
-}
-
 float3 SampleConeRay(float3 Direction, float BaseRadius, float2 Random)
 {
 	// generate points in circle
@@ -177,7 +130,7 @@ float3 RayTraceEvaluateDirectLighting(const in RaytracingAccelerationStructure A
 			// TODO: area lights
         }
 
-        Result += SanitizeRadiance(EvaluatePathBSDFCos(BRDF) * LightSample);
+        Result += SanitizeRadiance(EvaluateBRDFCos(BRDF) * LightSample);
     }
 	
 	return SanitizeRadiance(Result);
@@ -226,7 +179,7 @@ float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 
 			// generate new ray and apply BRDF to the segment
 			{
-				float3 F0 = PathF0(BRDF);
+				float3 F0 = BRDFF0(BRDF);
 				float SpecularWeight = max(Luminance(F0), 0.05f);
 				float DiffuseWeight = max((1.0 - BRDF.Metallic) * Luminance(BRDF.Albedo), 0.05f);
 				float WeightSum = SpecularWeight + DiffuseWeight;
@@ -237,7 +190,7 @@ float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 				float Selector = Random::StepAndOutputRNGFloat(RngState);
 				if (Selector < DiffuseProb)
 				{
-					Sample = SampleBRDF_Lambert(BRDF.N, Random::UniformDistrubition2d(RngState));
+					Sample = SampleDiffuseBRDF(BRDF, Random::UniformDistrubition2d(RngState));
 				}
 				else
 				{
@@ -255,7 +208,7 @@ float3 RayTraceAccumulate(const in RaytracingAccelerationStructure AS,
 				if (!isfinite(TotalPdf) || TotalPdf <= 1e-5)
 					break;
 
-				float3 Weight = EvaluatePathBSDFCos(BRDF) / TotalPdf;
+				float3 Weight = EvaluateBRDFCos(BRDF) / TotalPdf;
 				PathAttenuation *= ClampPathWeight(Weight, 8.0);
 				PathAttenuation = ClampPathWeight(PathAttenuation, 16.0);
             }
