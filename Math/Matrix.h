@@ -288,12 +288,29 @@ namespace Columbus
 		{
 			Matrix Tmp = *this;
 
-			// scale is a length of basis vectors
-			OutScale.X = Tmp.GetColumn(0).XYZ().Length();
-			OutScale.Y = Tmp.GetColumn(1).XYZ().Length();
-			OutScale.Z = Tmp.GetColumn(2).XYZ().Length();
+			// Transform::Update builds basis as Scale * Rotation, so scale lives in row lengths.
+			OutScale.X = Tmp.GetRow(0).XYZ().Length();
+			OutScale.Y = Tmp.GetRow(1).XYZ().Length();
+			OutScale.Z = Tmp.GetRow(2).XYZ().Length();
 
-			Tmp.OrthoNormalise();
+			if (OutScale.X > 0.000001f)
+			{
+				Tmp.M[0][0] /= OutScale.X;
+				Tmp.M[0][1] /= OutScale.X;
+				Tmp.M[0][2] /= OutScale.X;
+			}
+			if (OutScale.Y > 0.000001f)
+			{
+				Tmp.M[1][0] /= OutScale.Y;
+				Tmp.M[1][1] /= OutScale.Y;
+				Tmp.M[1][2] /= OutScale.Y;
+			}
+			if (OutScale.Z > 0.000001f)
+			{
+				Tmp.M[2][0] /= OutScale.Z;
+				Tmp.M[2][1] /= OutScale.Z;
+				Tmp.M[2][2] /= OutScale.Z;
+			}
 
 			OutEulerRotationDegrees.X = Math::Degrees(atan2f(Tmp.M[1][2], Tmp.M[2][2]));
 			OutEulerRotationDegrees.Y = Math::Degrees(atan2f(-Tmp.M[0][2], sqrtf(Tmp.M[1][2] * Tmp.M[1][2] + Tmp.M[2][2] * Tmp.M[2][2])));

@@ -1234,6 +1234,8 @@ namespace Columbus
 			TransGlobal.Update();
 		}
 
+		bTransformDirty = false;
+
 		for (auto& Child : Children)
 		{
 			Child->OnUpdateRenderState();
@@ -1250,10 +1252,27 @@ namespace Columbus
 	{
 		if (Parent)
 		{
-			// Convert world transform to local space
-			Matrix parentWorldToLocal = Parent->TransGlobal.GetWorldToLocalMatrix();
-			Matrix localMatrix = WorldTransform.GetMatrix() * parentWorldToLocal;
-			Trans.SetFromMatrix(localMatrix);
+			const Transform& ParentWorldTransform = Parent->GetWorldTransform();
+			constexpr float Epsilon = 0.000001f;
+
+			Trans.Scale = Vector3(
+				fabsf(ParentWorldTransform.Scale.X) > Epsilon ? WorldTransform.Scale.X / ParentWorldTransform.Scale.X : WorldTransform.Scale.X,
+				fabsf(ParentWorldTransform.Scale.Y) > Epsilon ? WorldTransform.Scale.Y / ParentWorldTransform.Scale.Y : WorldTransform.Scale.Y,
+				fabsf(ParentWorldTransform.Scale.Z) > Epsilon ? WorldTransform.Scale.Z / ParentWorldTransform.Scale.Z : WorldTransform.Scale.Z);
+
+			Quaternion ParentRotation = ParentWorldTransform.Rotation.Normalized();
+			Trans.Rotation = (-ParentRotation) * WorldTransform.Rotation;
+
+			Vector3 WorldOffset = WorldTransform.Position - ParentWorldTransform.Position;
+			Quaternion p{ WorldOffset.X, WorldOffset.Y, WorldOffset.Z, 0.0f };
+			Quaternion Unrotated = ParentRotation * p * (-ParentRotation);
+			Vector3 LocalScaledOffset(Unrotated.X, Unrotated.Y, Unrotated.Z);
+			Trans.Position = Vector3(
+				fabsf(ParentWorldTransform.Scale.X) > Epsilon ? LocalScaledOffset.X / ParentWorldTransform.Scale.X : LocalScaledOffset.X,
+				fabsf(ParentWorldTransform.Scale.Y) > Epsilon ? LocalScaledOffset.Y / ParentWorldTransform.Scale.Y : LocalScaledOffset.Y,
+				fabsf(ParentWorldTransform.Scale.Z) > Epsilon ? LocalScaledOffset.Z / ParentWorldTransform.Scale.Z : LocalScaledOffset.Z);
+
+			Trans.Update();
 		}
 		else
 		{
@@ -1287,10 +1306,21 @@ namespace Columbus
 		{
 			if (Parent)
 			{
-				// Get parent's world transform and combine with local
 				const Transform& parentWorld = Parent->GetWorldTransform();
-				Matrix worldMatrix = Trans.GetMatrix() * parentWorld.GetMatrix();
-				TransGlobal.SetFromMatrix(worldMatrix);
+				TransGlobal = Trans;
+				TransGlobal.Scale = parentWorld.Scale * Trans.Scale;
+				TransGlobal.Rotation = parentWorld.Rotation * Trans.Rotation;
+
+				Vector3 ScaledOffset = parentWorld.Scale * Trans.Position;
+
+				Quaternion p{ ScaledOffset.X, ScaledOffset.Y, ScaledOffset.Z, 0.0f };
+				Quaternion rot = parentWorld.Rotation.Normalized();
+				Quaternion res = (-rot) * p * rot;
+
+				Vector3 RotatedOffset = Vector3(res.X, res.Y, res.Z);
+				TransGlobal.Position = parentWorld.Position + RotatedOffset;
+
+				TransGlobal.Update();
 			}
 			else
 			{
