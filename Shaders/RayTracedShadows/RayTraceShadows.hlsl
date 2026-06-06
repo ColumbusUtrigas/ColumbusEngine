@@ -1,11 +1,19 @@
 struct Payload
 {
-	float HitT;
+	float HitDistance;
+	float Alpha;
+	int ShadingMode;
+	float AlphaCutoff;
 };
 
-#ifdef RAYGEN_SHADER
+#define PAYLOAD_TYPE Payload
+#define PAYLOAD_HAS_ALPHA_MASK 1
+
 #include "../GPUScene.hlsli"
+
+#ifdef RAYGEN_SHADER
 #include "../Common.hlsli"
+#include "../RayTracingAlphaMask.hlsli"
 
 #define SET 2
 
@@ -104,38 +112,25 @@ void RayGen()
 	default: break;
 	}
 
-	Payload payload;
-	
-	// ray trace
-	{
-		float3 dir = normalize(RayDirection);
-
-		RayDesc Ray;
-		Ray.Origin = origin + dir * 0.001;
-		Ray.TMin = 0.0;
-		Ray.Direction = dir;
-		Ray.TMax = MaxDistance;
-		
-		TraceRay(AccelerationStructure, RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
-			~0, 0, 0, 0, Ray, payload);
-	}
-
-	// write results
-	{
-		float Result = payload.HitT > 0 ? 0.0 : 1.0;
-		OutputShadow[pixel] = Result;
-	}
+	float3 dir = normalize(RayDirection);
+	OutputShadow[pixel] = TraceShadowRayWithAlphaMask(AccelerationStructure, origin + dir * 0.001f, dir, MaxDistance, RAY_FLAG_FORCE_OPAQUE, true);
 }
 #endif
 
 [shader("miss")]
 void Miss(inout Payload payload)
 {
-	payload.HitT = -1.0;
+	payload.HitDistance = -1.0;
 }
 
 [shader("closesthit")]
 void ClosestHit(inout Payload payload, BuiltInTriangleIntersectionAttributes attrib)
 {
-	payload.HitT = RayTCurrent();
+	payload.HitDistance = RayTCurrent();
+	payload.Alpha = 1.0f;
+	payload.ShadingMode = MATERIAL_SHADING_OPAQUE;
+	payload.AlphaCutoff = 0.5f;
+
+	float3 barycentrics = float3(1.0f - attrib.barycentrics.x - attrib.barycentrics.y, attrib.barycentrics.x, attrib.barycentrics.y);
+	GPUScene::SampleAlphaMaskHit(InstanceID(), PrimitiveIndex(), barycentrics, payload.Alpha, payload.ShadingMode, payload.AlphaCutoff);
 }

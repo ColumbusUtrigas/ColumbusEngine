@@ -7,9 +7,13 @@ struct RayPayload
 	float3 GeometricNormal;
 	uint   ObjectId;
 	float2 RoughnessMetallic;
+	float  Alpha;
+	int    ShadingMode;
+	float  AlphaCutoff;
 };
 
 #define PAYLOAD_HAS_GEOMETRIC_NORMAL 1
+#define PAYLOAD_HAS_ALPHA_MASK 1
 
 #include "GPUScene.hlsli"
 #include "Common.hlsli"
@@ -49,8 +53,8 @@ void RayGen()
 	DirectionWorldSpace /= DirectionWorldSpace.w; // perspective divide
 	float3 Direction = normalize(DirectionWorldSpace.xyz - GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz);
 
-	float3 Sample = RayTraceAccumulate(AccelerationStructure, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz,
-		Direction, Params.Bounces, RngState);
+	float3 Sample = RayTraceAccumulateWithAlphaMask(AccelerationStructure, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz,
+		Direction, Params.Bounces, RngState, true);
 	if (any(isnan(Sample)) || any(isinf(Sample)))
 	{
 		Sample = float3(0, 0, 0);

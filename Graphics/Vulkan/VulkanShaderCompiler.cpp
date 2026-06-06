@@ -113,6 +113,11 @@ namespace Columbus
 				options.AddMacroDefinition("MISS_SHADER");
 				break;
 
+			case ShaderType::Anyhit:
+				kind = shaderc_anyhit_shader;
+				options.AddMacroDefinition("ANYHIT_SHADER");
+				break;
+
 			case ShaderType::ClosestHit:
 				kind = shaderc_closesthit_shader;
 				options.AddMacroDefinition("CLOSEST_HIT_SHADER");

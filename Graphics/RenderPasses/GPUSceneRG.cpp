@@ -96,6 +96,8 @@ namespace Columbus
 					.Roughness = Mat.Roughness,
 					.Metallic = Mat.Metallic,
 					.Flags = GetMaterialFlags(Mat),
+					.ShadingMode = (int)Mat.ShadingMode,
+					.AlphaCutoff = Mat.AlphaCutoff,
 				};
 				((GPUMaterialCompact*)Ptr)[i] = Compact;
 			}
@@ -146,9 +148,11 @@ namespace Columbus
 
 				for (int i = 0; i < (int)Context.Scene->Meshes.Size(); i++)
 				{
+					const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
+
 					AccelerationStructureInstance& Instance = Desc.Instances.emplace_back();
-					Instance.Blas = Context.Scene->Meshes.Data()[i].MeshResource->BLAS;
-					Instance.Transform = Context.Scene->Meshes.Data()[i].Transform;
+					Instance.Blas = Mesh.MeshResource->BLAS;
+					Instance.Transform = Mesh.Transform;
 				}
 
 				Context.Device->UpdateAccelerationStructureBuffer(Context.Scene->TLAS, Context.CommandBuffer, (u32)Context.Scene->Meshes.Size());

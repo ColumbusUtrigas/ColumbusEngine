@@ -72,6 +72,11 @@ void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes 
 #endif
     payload.ObjectId = ObjectId;
     payload.RoughnessMetallic = float2(Material.Roughness, Material.Metallic);
+#ifdef PAYLOAD_HAS_ALPHA_MASK
+    payload.Alpha = Material.Alpha;
+    payload.ShadingMode = Material.ShadingMode;
+    payload.AlphaCutoff = Material.AlphaCutoff;
+#endif
     
 #ifdef CLOSEST_HIT_REPORT_FACE
     payload.IsFrontFace = HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE;

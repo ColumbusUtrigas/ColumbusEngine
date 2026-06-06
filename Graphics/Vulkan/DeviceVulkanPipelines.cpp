@@ -306,7 +306,23 @@ namespace Columbus
 			Stages.push_back(_BuildShaderStageFromBytecode(_Device, Bytecode));
 		}
 
-		COLUMBUS_ASSERT_MESSAGE(Stages.size() == 3, "RayTracing support is too basic for this!");
+		int RayGenStage = -1;
+		int MissStage = -1;
+		int AnyHitStage = -1;
+		int ClosestHitStage = -1;
+		for (int i = 0; i < (int)Desc.Bytecode.Bytecodes.size(); i++)
+		{
+			switch (Desc.Bytecode.Bytecodes[i].Stage)
+			{
+			case ShaderType::Raygen:     RayGenStage = i; break;
+			case ShaderType::Miss:       MissStage = i; break;
+			case ShaderType::Anyhit:     AnyHitStage = i; break;
+			case ShaderType::ClosestHit: ClosestHitStage = i; break;
+			default: break;
+			}
+		}
+
+		COLUMBUS_ASSERT_MESSAGE(RayGenStage != -1 && MissStage != -1 && ClosestHitStage != -1, "RayTracing pipeline requires raygen, miss and closest-hit stages");
 
 		// TODO: that's something that you want to define on a higher level
 		{
@@ -314,7 +330,7 @@ namespace Columbus
 			group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 			group.pNext = nullptr;
 			group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-			group.generalShader = 0;
+			group.generalShader = RayGenStage;
 			group.closestHitShader = VK_SHADER_UNUSED_KHR;
 			group.anyHitShader = VK_SHADER_UNUSED_KHR;
 			group.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -327,7 +343,7 @@ namespace Columbus
 			group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 			group.pNext = nullptr;
 			group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-			group.generalShader = 1;
+			group.generalShader = MissStage;
 			group.closestHitShader = VK_SHADER_UNUSED_KHR;
 			group.anyHitShader = VK_SHADER_UNUSED_KHR;
 			group.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -341,8 +357,8 @@ namespace Columbus
 			group.pNext = nullptr;
 			group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
 			group.generalShader = VK_SHADER_UNUSED_KHR;
-			group.closestHitShader = 2;
-			group.anyHitShader = VK_SHADER_UNUSED_KHR;
+			group.closestHitShader = ClosestHitStage;
+			group.anyHitShader = AnyHitStage != -1 ? AnyHitStage : VK_SHADER_UNUSED_KHR;
 			group.intersectionShader = VK_SHADER_UNUSED_KHR;
 			group.pShaderGroupCaptureReplayHandle = nullptr;
 			Groups.push_back(group);
@@ -383,22 +399,26 @@ namespace Columbus
 		const uint32_t handleSizeAligned = alignedSize(_RayTracingProperties.shaderGroupHandleSize, _RayTracingProperties.shaderGroupHandleAlignment);
 		const uint32_t sbtSize = Groups.size() * handleSizeAligned;
 		const uint32_t baseAlign = _RayTracingProperties.shaderGroupBaseAlignment;
+		const uint32_t hitGroupCount = (uint32_t)Groups.size() - 2;
+		const uint32_t hitSbtSize = hitGroupCount * handleSizeAligned;
 
 		// TODO: is it correct?
 
 		std::vector<uint8_t> shaderHandleStorage(sbtSize);
 		VK_CHECK(VkFunctions.vkGetRayTracingShaderGroupHandles(_Device, Pipeline->pipeline, 0, Groups.size(), sbtSize, shaderHandleStorage.data()));
 
-		BufferDesc SbtDesc(handleSize, BufferType::ShaderBindingTable, true);
+		BufferDesc SbtDesc(handleSizeAligned, BufferType::ShaderBindingTable, true);
 		SbtDesc.Alignment = baseAlign;
 
 		Pipeline->RayGenSBT = CreateBuffer(SbtDesc, shaderHandleStorage.data());
 		Pipeline->MissSBT   = CreateBuffer(SbtDesc, shaderHandleStorage.data() + handleSizeAligned);
-		Pipeline->HitSBT    = CreateBuffer(SbtDesc, shaderHandleStorage.data() + handleSizeAligned * 2);
+		BufferDesc HitSbtDesc(hitSbtSize, BufferType::ShaderBindingTable, true);
+		HitSbtDesc.Alignment = baseAlign;
+		Pipeline->HitSBT = CreateBuffer(HitSbtDesc, shaderHandleStorage.data() + handleSizeAligned * 2);
 
 		Pipeline->RayGenRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->RayGenSBT), handleSizeAligned, handleSizeAligned);
 		Pipeline->MissRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->MissSBT), handleSizeAligned, handleSizeAligned);
-		Pipeline->HitRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->HitSBT), handleSizeAligned, handleSizeAligned);
+		Pipeline->HitRegionSBT = vk::StridedDeviceAddressRegionKHR(GetBufferDeviceAddress(Pipeline->HitSBT), handleSizeAligned, hitSbtSize);
 		Pipeline->CallableRegionSBT = {};
 
 		if (!Desc.Name.empty())

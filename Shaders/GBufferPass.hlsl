@@ -83,6 +83,10 @@ PS_Out PSMain(VS_TO_PS In)
     // }
 
     GPUMaterialSampledData Material = GPUScene::SampleMaterial(In.MaterialId, In.Uv1);
+    if (Material.ShadingMode == MATERIAL_SHADING_MASKED)
+    {
+        clip(Material.Alpha - Material.AlphaCutoff);
+    }
 
     float2 Velocity;
 	{

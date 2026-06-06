@@ -28,6 +28,12 @@ namespace Columbus
 		u32 ObjectId;
 	};
 
+	static bool IsTransparentMesh(const SPtr<GPUScene>& Scene, const GPUSceneMesh& Mesh)
+	{
+		const Material* Mat = Scene->Materials.Get(Mesh.MaterialId);
+		return Mat != nullptr && (Mat->ShadingMode == MaterialShadingMode::Transparent || Mat->ShadingMode == MaterialShadingMode::Refractive);
+	}
+
 	struct PerDecalParameters
 	{
 		Matrix Model, ModelInverse;
@@ -156,6 +162,9 @@ namespace Columbus
 			for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
 			{
 				const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
+				if (IsTransparentMesh(Context.Scene, Mesh))
+					continue;
+
 				PerObjectParameters Parameters;
 				Parameters.ObjectId = i;
 

@@ -54,6 +54,8 @@ compile_shader_hlsl(IrradianceVolume/IrradianceVolumeApply.hlsl main:cs SHADER_B
 
 compile_shader_hlsl(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
+compile_shader_hlsl(ForwardTransparent.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
+compile_shader_hlsl(RefractionBlur.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(Particles.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Sky.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(SkyLut.hlsl main:cs SHADER_BINARIES)

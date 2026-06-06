@@ -120,10 +120,16 @@ struct GPUSceneMaterialCompact
 	float Metallic;  // 56
 
 	int Flags;
-	int _pad; // 64
+	int ShadingMode; // 64
+    float AlphaCutoff; // 68
+    int3 _pad; // 80
 };
 
 #define GPUMATERIAL_FLAG_NORMAL_RG 1
+#define MATERIAL_SHADING_OPAQUE 0
+#define MATERIAL_SHADING_TRANSPARENT 1
+#define MATERIAL_SHADING_REFRACTIVE 2
+#define MATERIAL_SHADING_MASKED 3
 
 struct GPUMaterialSampledData
 {
@@ -133,6 +139,9 @@ struct GPUMaterialSampledData
     float  Occlusion;
     float  Roughness;
     float  Metallic;
+    float  Alpha;
+    int    ShadingMode;
+    float  AlphaCutoff;
 };
 
 namespace GPUScene
@@ -237,7 +246,7 @@ namespace GPUScene
     {
         if (TextureId != -1)
         {
-#if defined(MISS_SHADER) || defined(CLOSEST_HIT_SHADER) || defined(RAYGEN_SHADER)
+#if defined(MISS_SHADER) || defined(ANYHIT_SHADER) || defined(CLOSEST_HIT_SHADER) || defined(RAYGEN_SHADER)
 			return Textures[NonUniformResourceIndex(TextureId)].SampleLevel(GPUSceneSampler, UV, 0);
 #else
             return Textures[NonUniformResourceIndex(TextureId)].Sample(GPUSceneSampler, UV);
@@ -258,7 +267,9 @@ namespace GPUScene
         {
             GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
 
-            Result.Albedo = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1)).rgb * Material.AlbedoFactor.rgb;
+            float4 AlbedoSample = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1));
+            Result.Albedo = AlbedoSample.rgb * Material.AlbedoFactor.rgb;
+            Result.Alpha = AlbedoSample.a * Material.AlbedoFactor.a;
             Result.Emissive = SampleTextureWithDefault(Material.EmissiveId, UV, float4(1,1,1,1)).rgb * Material.EmissiveFactor.rgb;
 
             float4 EncodedNormal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0));
@@ -280,6 +291,8 @@ namespace GPUScene
             Result.Occlusion = ORM.r;
             Result.Roughness = ORM.g;
             Result.Metallic = ORM.b;
+            Result.ShadingMode = Material.ShadingMode;
+            Result.AlphaCutoff = Material.AlphaCutoff;
         }
         else
         {
@@ -289,9 +302,56 @@ namespace GPUScene
             Result.Occlusion = 1;
             Result.Roughness = 1;
             Result.Metallic = 0;
+            Result.Alpha = 1;
+            Result.ShadingMode = MATERIAL_SHADING_OPAQUE;
+            Result.AlphaCutoff = 0.5;
         }
 
         return Result;
+    }
+
+    float SampleMaterialAlpha(GPUSceneMaterialCompact Material, float2 UV)
+    {
+        return SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1)).a * Material.AlbedoFactor.a;
+    }
+
+    bool SampleAlphaMaskHit(uint ObjectId, uint PrimitiveIndexValue, float3 Barycentrics, out float Alpha, out int ShadingMode, out float AlphaCutoff)
+    {
+        Alpha = 1.0f;
+        ShadingMode = MATERIAL_SHADING_OPAQUE;
+        AlphaCutoff = 0.5f;
+
+        GPUSceneMeshCompact Mesh = GPUSceneMeshes[NonUniformResourceIndex(ObjectId)];
+        if (Mesh.MaterialId == -1)
+        {
+            return false;
+        }
+
+        GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(Mesh.MaterialId)];
+        ShadingMode = Material.ShadingMode;
+        AlphaCutoff = Material.AlphaCutoff;
+
+        if (Material.ShadingMode != MATERIAL_SHADING_MASKED)
+        {
+            return false;
+        }
+
+        Vertex Vert1 = FetchVertex(NonUniformResourceIndex(ObjectId), NonUniformResourceIndex(PrimitiveIndexValue * 3 + 0));
+        Vertex Vert2 = FetchVertex(NonUniformResourceIndex(ObjectId), NonUniformResourceIndex(PrimitiveIndexValue * 3 + 1));
+        Vertex Vert3 = FetchVertex(NonUniformResourceIndex(ObjectId), NonUniformResourceIndex(PrimitiveIndexValue * 3 + 2));
+
+        float2 UV = Vert1.UV * Barycentrics.x + Vert2.UV * Barycentrics.y + Vert3.UV * Barycentrics.z;
+        Alpha = SampleMaterialAlpha(Material, UV);
+        return true;
+    }
+
+    bool ShouldIgnoreAlphaMaskedHit(uint ObjectId, uint PrimitiveIndexValue, float3 Barycentrics)
+    {
+        float Alpha;
+        int ShadingMode;
+        float AlphaCutoff;
+        SampleAlphaMaskHit(ObjectId, PrimitiveIndexValue, Barycentrics, Alpha, ShadingMode, AlphaCutoff);
+        return ShadingMode == MATERIAL_SHADING_MASKED && Alpha < AlphaCutoff;
     }
 #endif // GPU_SCENE_NO_BINDINGS
 

@@ -129,7 +129,9 @@ namespace Columbus
 		float Metallic;
 
 		int Flags;
-		int _pad;
+		int ShadingMode;
+		float AlphaCutoff;
+		int _pad[3];
 	};
 
 	static constexpr int GPUMATERIAL_FLAG_NORMAL_RG = 1 << 0;
