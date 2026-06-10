@@ -1,4 +1,5 @@
 #include "RenderPasses.h"
+#include "RayTracingIrradianceVolumes.h"
 #include "Core/CVar.h"
 
 #include <Lib/imgui/imgui.h>
@@ -13,6 +14,7 @@ namespace Columbus
 	IMPLEMENT_GPU_PROFILING_COUNTER("Raytraced Reflections Denoise", "RenderGraphGPU", GpuCounterRayTracedReflectionsDenoise);
 
 	ConsoleVariable<float> CVar_MaxRoughness("r.RTReflection.MaxRoughness", "Max roughness to trace, default - 0.5", 0.5f);
+	ConsoleVariable<bool> CVar_RayTracingIrradianceVolumes("r.RayTracing.IrradianceVolumes", "Sample baked irradiance volumes from ray traced GI/reflections", true);
 
 	struct RayTracedReflectionPassParameters
 	{
@@ -76,11 +78,12 @@ namespace Columbus
 			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Dependencies, CVar_RayTracingIrradianceVolumes.GetValue(), VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRadiance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRays, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 			Dependencies.Write(RTReflectionRayPdf, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, Textures, View, UseRadianceCache](RenderGraphContext& Context)
+			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, Textures, View, UseRadianceCache, IrradianceVolumes](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflections, Context);
 
@@ -106,6 +109,7 @@ namespace Columbus
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				//Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
+				RayTracingIrradianceVolumes::Bind(Context, DescriptorSet, IrradianceVolumes, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 
 				RayTracedReflectionPassParameters Params{
 					.CameraPosition = Vector4(View.CameraCur.Pos, 1),

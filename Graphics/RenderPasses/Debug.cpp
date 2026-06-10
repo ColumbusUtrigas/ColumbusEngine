@@ -15,6 +15,7 @@
 
 ConsoleVariable<bool> CVar_DebugOverlay("r.DebugOverlay", "Enable using debug overlay", true);
 ConsoleVariable<bool> CVar_DebugOverlayIrradiance("r.DebugOverlay.Irradiance", "Enable irradiance volume visualisation", true);
+ConsoleVariable<float> CVar_DebugOverlayIrradianceSize("r.DebugOverlay.IrradianceSize", "Irradiance probe visualisation size multiplier", 1.0f);
 
 namespace Columbus
 {
@@ -57,8 +58,23 @@ namespace Columbus
 		Parameters.ViewportSize = Graph.GetTextureSize2D(OverlayTexture);
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
+		std::vector<RenderGraphBufferRef> IrradianceProbeBuffers;
+		if (CVar_DebugOverlayIrradiance.GetValue())
+		{
+			for (IrradianceVolume& Volume : Graph.Scene->IrradianceVolumes)
+			{
+				if (Volume.ProbesBuffer == nullptr || !Volume.bVisualiseProbes)
+				{
+					continue;
+				}
 
-		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
+				RenderGraphBufferRef ProbeBuffer = Graph.RegisterExternalBuffer(Volume.ProbesBuffer, "IrradianceProbes");
+				IrradianceProbeBuffers.push_back(ProbeBuffer);
+				Dependencies.ReadBuffer(ProbeBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+			}
+		}
+
+		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View, IrradianceProbeBuffers](RenderGraphContext& Context)
 		{
 			// TODO: normal shader system please
 			static GraphicsPipeline* PipelineSolid = nullptr;
@@ -105,13 +121,8 @@ namespace Columbus
 					Desc.depthStencilState.DepthEnable = true;
 					Desc.depthStencilState.DepthWriteMask = true;
 
-					// TODO:
-					Log::Warning("TODO: Skipping Irradiance Volume Visualisation shader - TBD");
-
-#if 0
 					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeVisualise.csd");
 					IrradianceVolumePipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-#endif
 				}
 			}
 
@@ -196,9 +207,10 @@ namespace Columbus
 
 			if (CVar_DebugOverlayIrradiance.GetValue())
 			{
+				int IrradianceProbeBufferIndex = 0;
 				for (IrradianceVolume& Volume : Context.Scene->IrradianceVolumes)
 				{
-					if (Volume.ProbesBuffer == nullptr)
+					if (Volume.ProbesBuffer == nullptr || !Volume.bVisualiseProbes || IrradianceVolumePipeline == nullptr)
 						continue;
 
 					Context.CommandBuffer->BindGraphicsPipeline(IrradianceVolumePipeline);
@@ -206,19 +218,19 @@ namespace Columbus
 					DebugIrradianceProbesParameters Parameters {
 						.View = View.CameraCurUnjittered.GetViewMatrix(),
 						.Projection = View.CameraCurUnjittered.GetProjectionMatrix(),
-						.Position = Vector4(Volume.Position, 0),
+						.Position = Vector4(View.CameraCurUnjittered.Right(), 0),
 						.Extent = Vector4(Volume.Extent, 0),
 						.ProbesCount = iVector4(Volume.ProbesCount, 0),
 						.ProbeIndex = iVector4(0, 0, 0, 0),
-						.TestPoint = Vector4(Volume.TestPoint, 0),
+						.TestPoint = Vector4(-View.CameraCurUnjittered.Direction(), CVar_DebugOverlayIrradianceSize.GetValue()),
 					};
 
 					auto Set = Context.GetDescriptorSet(IrradianceVolumePipeline, 0);
-					Context.Device->UpdateDescriptorSet(Set, 0, 0, Volume.ProbesBuffer);
+					Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphBuffer(IrradianceProbeBuffers[IrradianceProbeBufferIndex++]).get());
 
 					Context.CommandBuffer->BindDescriptorSetsGraphics(IrradianceVolumePipeline, 0, 1, &Set);
-					Context.CommandBuffer->PushConstantsGraphics(IrradianceVolumePipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
-					Context.CommandBuffer->Draw(6 * (Volume.GetTotalProbes()+4), 1, 0, 0);
+					Context.CommandBuffer->PushConstantsGraphics(IrradianceVolumePipeline, ShaderType::Vertex, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->Draw(6 * Volume.GetTotalProbes(), 1, 0, 0);
 
 					for (int i = 0; i < Volume.ProbesCount.X; i++)
 					{

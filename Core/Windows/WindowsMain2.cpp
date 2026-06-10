@@ -30,6 +30,7 @@
 #include <Core/CVar.h>
 #include <Core/Reflection.h>
 #include "Scene/Project.h"
+#include "Scene/LevelLightingAsset.h"
 #include <Graphics/RenderGraph.h>
 #include <Graphics/RenderPasses/RenderPasses.h>
 #include <Graphics/Lightmaps.h>
@@ -174,7 +175,6 @@ void Player::PostPhysics()
 	}
 }
 
-// TODO: move to appropriate place
 static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, Matrix ViewMatrix, Matrix ProjectionMatrix, iVector2& InOutViewSize, bool& OutWindowHover, bool& OutViewportFocus, Vector2& OutRelativeMousePosition)
 {
 	OutWindowHover = false;
@@ -188,7 +188,20 @@ static void DrawGameViewportWindow(Texture2* FinalTexture, EngineWorld& World, M
 		OutViewportFocus = ImGui::IsWindowFocused();
 
 		float BarHeight = 20;
-		ImGui::Button("Bake GI", ImVec2(0, BarHeight)); ImGui::SameLine();
+		if (ImGui::Button("Bake GI", ImVec2(0, BarHeight)))
+		{
+			for (AThing* Thing : World.AllThings)
+			{
+				if (Thing->IsOwnedByNestedLevel())
+					continue;
+
+				if (AIrradianceVolume* VolumeThing = Reflection::Cast<AIrradianceVolume>(Thing))
+				{
+					VolumeThing->RequestBake();
+				}
+			}
+		}
+		ImGui::SameLine();
 		ImGui::RadioButton("T", (int*)& OperationMode, ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
 		ImGui::RadioButton("R", (int*)&OperationMode, ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
 		ImGui::RadioButton("S", (int*)&OperationMode, ImGuizmo::OPERATION::SCALE);
@@ -874,13 +887,6 @@ int main(int argc, char** argv)
 
 	DebugUI::Context* UiContext = DebugUI::Create(&Window);
 
-	IrradianceVolume Volume;
-	Volume.ProbesCount = {8,8,8};
-	Volume.Extent = {3,3,3};
-	World.SceneGPU->IrradianceVolumes.push_back(Volume);
-
-	bool ComputeIrradianceVolume = false;
-
 	bool running = true;
 	while (running)
 	{
@@ -980,10 +986,20 @@ int main(int argc, char** argv)
 						BakeLightmapPathTraced(renderGraph, World.Lightmaps);
 					}
 
-					if (ComputeIrradianceVolume)
+					for (AThing* Thing : World.AllThings)
 					{
-						RenderIrradianceProbes(renderGraph, World.MainView, World.SceneGPU->IrradianceVolumes[0]);
-						ComputeIrradianceVolume = false;
+						if (Thing->IsOwnedByNestedLevel())
+							continue;
+
+						if (AIrradianceVolume* VolumeThing = Reflection::Cast<AIrradianceVolume>(Thing))
+						{
+							VolumeThing->OnUpdateRenderState();
+							if (VolumeThing->ConsumeBakeRequest())
+							{
+								RenderIrradianceProbes(renderGraph, World.MainView, VolumeThing->EnsureRuntimeVolume(), VolumeThing->RaysPerProbe, VolumeThing->Bounces);
+								World.QueueIrradianceVolumeBakeReadback((u64)VolumeThing->Guid);
+							}
+						}
 					}
 
 					FinalTexture = RenderDeferred(renderGraph, World.MainView, DeferredContext);
@@ -1010,6 +1026,16 @@ int main(int argc, char** argv)
 					RGParameters.WaitSemaphore = WaitSemaphore;
 					RenderGraphExecuteResults RGResults = renderGraph.Execute(RGParameters);
 					WaitSemaphore = RGResults.FinishSemaphore;
+					if (!GCurrentLevelPath.empty())
+					{
+						HLevel* LevelDocument = EnsureCurrentLevelDocument();
+						LevelDocument->LightingData = EnsureLevelLightingDataAsset(AssetSystem::Get(), GCurrentLevelPath.c_str(), LevelDocument->LightingData);
+						World.FlushPendingIrradianceVolumeBakeReadbacks(LevelDocument->LightingData);
+					}
+					else
+					{
+						World.FlushPendingIrradianceVolumeBakeReadbacks({});
+					}
 
 					// UI
 					{
@@ -1087,7 +1113,16 @@ int main(int argc, char** argv)
 						{
 							if (ImGui::Button("Compute"))
 							{
-								ComputeIrradianceVolume = true;
+								for (AThing* Thing : World.AllThings)
+								{
+									if (Thing->IsOwnedByNestedLevel())
+										continue;
+
+									if (AIrradianceVolume* VolumeThing = Reflection::Cast<AIrradianceVolume>(Thing))
+									{
+										VolumeThing->RequestBake();
+									}
+								}
 							}
 						}
 						ImGui::End();

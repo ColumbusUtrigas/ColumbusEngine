@@ -76,7 +76,7 @@ namespace Columbus
 		std::vector<VkAccelerationStructureInstanceKHR> instances = FillInstancesTLAS(Desc);
 
 		BufferDesc InstancesDesc(instances.size() * sizeof(VkAccelerationStructureInstanceKHR), BufferType::AccelerationStructureInput);
-		//InstancesDesc.Alignment = TransformAlignment;
+		InstancesDesc.Alignment = TransformAlignment;
 		InstancesBuffer = Device->CreateBuffer(InstancesDesc, instances.data());
 
 		VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};

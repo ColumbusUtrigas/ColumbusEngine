@@ -1,4 +1,6 @@
 #include "RenderPasses.h"
+#include "RayTracingIrradianceVolumes.h"
+#include "Core/CVar.h"
 
 #include <imgui.h>
 
@@ -10,6 +12,8 @@ namespace Columbus
 
 	IMPLEMENT_GPU_PROFILING_COUNTER("RTGI", "RenderGraphGPU", GpuCounterRayTracedGI);
 	IMPLEMENT_GPU_PROFILING_COUNTER("RTGI Denoise", "RenderGraphGPU", GpuCounterRayTracedGIDenoise);
+
+	extern ConsoleVariable<bool> CVar_RayTracingIrradianceVolumes;
 
 	// https://github.com/GPUOpen-Effects/FidelityFX-SSSR/blob/master/sample/src/VK/Sources/SSSR.h
 	struct ReflectionDenoiserConstants
@@ -729,9 +733,10 @@ namespace Columbus
 		Dependencies.Read(DownsampledGBuffer.Depth, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(DownsampledGBuffer.Normal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Dependencies, CVar_RayTracingIrradianceVolumes.GetValue(), VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Write(RTGI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 
-		Graph.AddPass("RayTraceGI", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Textures, View, GIResolution, DownsampledGBuffer, DiffuseBoost, UseRadianceCache, DownsampleFactor](RenderGraphContext& Context)
+		Graph.AddPass("RayTraceGI", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Textures, View, GIResolution, DownsampledGBuffer, DiffuseBoost, UseRadianceCache, DownsampleFactor, IrradianceVolumes](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGI, Context);
 
@@ -753,6 +758,7 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.WorldPos).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			//Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
+			RayTracingIrradianceVolumes::Bind(Context, DescriptorSet, IrradianceVolumes, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 
 			RTGI_Parameters Params{
 				.CameraPosition = View.CameraCur.Pos,

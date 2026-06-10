@@ -513,8 +513,8 @@ namespace Columbus::DebugUI
 					ImGui::Spacing();
 					if (ImGui::MenuItem("New Level"))
 					{
-						GCurrentLevelPath = "";
 						GCurrentProject->World->ClearWorld();
+						CloseCurrentLevelDocument();
 					}
 
 					ImGui::Spacing();
@@ -523,8 +523,14 @@ namespace Columbus::DebugUI
 						char* path = nullptr;
 						if (NFD_OpenDialog("clvl", NULL, &path) == NFD_OKAY)
 						{
+							GCurrentProject->World->ClearWorld();
+							CloseCurrentLevelDocument();
 							HLevel* level = GCurrentProject->World->LoadLevelCLVL(path);
-							GCurrentProject->World->AddLevel(level);
+							if (level != nullptr)
+							{
+								SetCurrentLevelDocument(level, path);
+								GCurrentProject->World->AddLevel(level);
+							}
 						}
 					}
 
@@ -553,12 +559,14 @@ namespace Columbus::DebugUI
 									}
 
 									GCurrentLevelPath = PathStr;
-									GCurrentProject->World->SaveWorldLevel(PathStr.c_str());
+									HLevel* LevelDocument = EnsureCurrentLevelDocument();
+									GCurrentProject->World->SaveWorldLevel(PathStr.c_str(), LevelDocument->LightingData);
 								}
 							}
 							else
 							{
-								GCurrentProject->World->SaveWorldLevel(GCurrentLevelPath.c_str());
+								HLevel* LevelDocument = EnsureCurrentLevelDocument();
+								GCurrentProject->World->SaveWorldLevel(GCurrentLevelPath.c_str(), LevelDocument->LightingData);
 							}
 						}
 					}
@@ -733,6 +741,20 @@ namespace Columbus::DebugUI
 	{
 		if (ImGui::Begin("Irradiance Volume"))
 		{
+			if (ImGui::Button("Bake All"))
+			{
+				for (AThing* Thing : World.AllThings)
+				{
+					if (Thing->IsOwnedByNestedLevel())
+						continue;
+
+					if (AIrradianceVolume* VolumeThing = Reflection::Cast<AIrradianceVolume>(Thing))
+					{
+						VolumeThing->RequestBake();
+					}
+				}
+			}
+
 			for (int i = 0; i < (int)World.SceneGPU->IrradianceVolumes.size(); i++)
 			{
 				IrradianceVolume& Volume = World.SceneGPU->IrradianceVolumes[i];

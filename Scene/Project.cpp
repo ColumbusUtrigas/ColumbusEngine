@@ -1,9 +1,11 @@
 #include "Project.h"
 #include "Core/Core.h"
+#include "Graphics/World.h"
 
 #include <iomanip>
 #include <fstream>
 #include <filesystem>
+#include <utility>
 #include "Lib/json/single_include/nlohmann/json.hpp"
 
 namespace Columbus
@@ -11,6 +13,29 @@ namespace Columbus
 
 	EngineProject* GCurrentProject = nullptr;
 	std::string    GCurrentLevelPath = "";
+	HLevel*        GCurrentLevelDocument = nullptr;
+
+	void CloseCurrentLevelDocument()
+	{
+		delete GCurrentLevelDocument;
+		GCurrentLevelDocument = nullptr;
+		GCurrentLevelPath.clear();
+	}
+
+	void SetCurrentLevelDocument(HLevel* Level, std::string Path)
+	{
+		CloseCurrentLevelDocument();
+		GCurrentLevelDocument = Level;
+		GCurrentLevelPath = std::move(Path);
+	}
+
+	HLevel* EnsureCurrentLevelDocument()
+	{
+		if (!GCurrentLevelDocument)
+			GCurrentLevelDocument = new HLevel();
+
+		return GCurrentLevelDocument;
+	}
 
 	EngineProject* EngineProject::CreateProject(std::string Name, std::string Path)
 	{

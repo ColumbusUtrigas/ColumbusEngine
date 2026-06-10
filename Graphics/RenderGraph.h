@@ -366,6 +366,7 @@ namespace Columbus
 		BufferDesc Desc;
 
 		size_t AllocatedSize = 0;
+		bool bExternal = false; // external resource is not managed by the render graph but can be used by it
 
 		std::string DebugName; // TODO: more efficient data storage
 		RenderGraphBufferId Id;
@@ -558,6 +559,7 @@ namespace Columbus
 		RenderGraphBufferRef  CreateBuffer(const BufferDesc& Desc, const char* Name);
 
 		RenderGraphTextureRef RegisterExternalTexture(SPtr<Texture2> Tex, const char* Name);
+		RenderGraphBufferRef  RegisterExternalBuffer(Buffer* Buf, const char* Name);
 
 		TextureDesc2 GetTextureDesc(RenderGraphTextureRef Texture) const;
 		BufferDesc   GetBufferDesc(RenderGraphBufferRef Buffer) const;

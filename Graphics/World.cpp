@@ -5,6 +5,7 @@
 #include <Scene/Project.h>
 #include <Scene/TextureAsset.h>
 #include <Scene/MeshAsset.h>
+#include <Scene/LevelLightingAsset.h>
 
 #include <limits.h>
 #include <float.h>
@@ -18,11 +19,37 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Textures", "SceneMemory", MemoryCounter_Scen
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Meshes", "SceneMemory", MemoryCounter_SceneMeshes);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("BLAS", "SceneMemory", MemoryCounter_SceneBLAS);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("TLAS", "SceneMemory", MemoryCounter_SceneTLAS);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Irradiance probes", "SceneMemory", MemoryCounter_SceneIrradianceProbes);
 
 IMPLEMENT_CPU_PROFILING_COUNTER("Transforms Update", "SceneCPU", CpuCounter_SceneTransformUpdate);
 
 namespace Columbus
 {
+
+	static HIrradianceVolumeBakeBuffer* FindIrradianceVolumeBake(HLevelLightingData& LightingData, u64 OwnerGuid)
+	{
+		for (HIrradianceVolumeBakeBuffer& Entry : LightingData.IrradianceVolumes)
+		{
+			if (Entry.Owner.Guid == OwnerGuid)
+				return &Entry;
+		}
+
+		return nullptr;
+	}
+
+	static IrradianceVolume* FindRuntimeIrradianceVolume(GPUScene* Scene, u64 OwnerGuid)
+	{
+		if (Scene == nullptr)
+			return nullptr;
+
+		for (IrradianceVolume& Volume : Scene->IrradianceVolumes)
+		{
+			if (Volume.OwnerGuid == OwnerGuid)
+				return &Volume;
+		}
+
+		return nullptr;
+	}
 
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
@@ -148,6 +175,16 @@ namespace Columbus
 			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevel>()] = [this](void* Asset) { RemoveLevel((HLevel*)Asset); };
 			Assets.AssetExtensions[Reflection::FindStruct<HLevel>()] = "gltf,clvl";
+
+			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevelLightingData>()] = [](const char* Path) -> void*
+			{
+				return LoadLevelLightingDataAssetFromFile(Path);
+			};
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevelLightingData>()] = [](void* Asset)
+			{
+				delete static_cast<HLevelLightingData*>(Asset);
+			};
+			Assets.AssetExtensions[Reflection::FindStruct<HLevelLightingData>()] = "clight";
 		}
 
 		SceneGPU = SPtr<GPUScene>(GPUScene::CreateGPUScene(Device), [this](GPUScene* Scene)
@@ -700,6 +737,16 @@ namespace Columbus
 		HLevel* Level = new HLevel{};
 		Level->World = this;
 		Reflection_DeserialiseStructJson(*Level, json);
+		if (Level->LightingData.Path.empty())
+		{
+			const std::string DefaultLightingPath = MakeDefaultLevelLightingDataPath(Assets, LevelPath);
+			if (std::filesystem::exists(std::filesystem::path(Assets.DataPath) / DefaultLightingPath))
+			{
+				Level->LightingData = AssetRef<HLevelLightingData>(DefaultLightingPath);
+			}
+		}
+		Assets.ResolveStructAssetReferences(Reflection::FindStruct<HLevel>(), Level);
+
 		for (auto& thing : json["things"])
 		{
 			AThing* NewThing = Reflection_DeserialiseStructJson_NewInstance<AThing>(thing);
@@ -717,7 +764,6 @@ namespace Columbus
 			Level->Things.push_back(NewThing);
 		}
 
-
 		return Level;
 	}
 
@@ -731,11 +777,12 @@ namespace Columbus
 		LevelEffectsSettings = {};
 	}
 
-	void EngineWorld::SaveWorldLevel(const char* Path)
+	void EngineWorld::SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData)
 	{
 		nlohmann::json json;
 		HLevel LevelMetadata;
 		LevelMetadata.EffectsSettings = LevelEffectsSettings;
+		LevelMetadata.LightingData = LightingData;
 		Reflection_SerialiseStructJson(LevelMetadata, json);
 		json["things"].array();
 
@@ -756,6 +803,12 @@ namespace Columbus
 		std::ofstream fs(Path);
 		fs << std::setw(4) << json;
 
+		if (LightingData.IsValid())
+		{
+			const std::string LightingPath = (std::filesystem::path(Assets.DataPath) / LightingData.Path).string();
+			SaveLevelLightingDataAssetToFile(*LightingData.Get(), LightingPath.c_str());
+		}
+
 		Log::Message("Saved level to %s", Path);
 	}
 
@@ -768,6 +821,105 @@ namespace Columbus
 			Thing->World = this;
 			AddThing(Thing);
 		}
+
+		ApplyLevelLightingData(Level->LightingData);
+	}
+
+	void EngineWorld::ApplyLevelLightingData(AssetRef<HLevelLightingData> LightingData)
+	{
+		if (!LightingData.IsValid() || SceneGPU == nullptr)
+			return;
+
+		for (const HIrradianceVolumeBakeBuffer& Entry : LightingData->IrradianceVolumes)
+		{
+			if (Entry.FormatVersion != IrradianceVolumeBakeFormatVersion || Entry.ProbeStride != sizeof(GPUIrradianceProbe))
+				continue;
+
+			IrradianceVolume* Volume = FindRuntimeIrradianceVolume(SceneGPU.get(), (u64)Entry.Owner.Guid);
+			if (Volume == nullptr)
+				continue;
+
+			const int ExpectedProbeCount = Volume->GetTotalProbes();
+			const u64 ExpectedSize = (u64)ExpectedProbeCount * sizeof(GPUIrradianceProbe);
+			if (Entry.ProbeCount != ExpectedProbeCount || Entry.ProbeData.Size() != ExpectedSize)
+				continue;
+
+			if (Volume->ProbesBuffer != nullptr)
+			{
+				RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume->ProbesBufferBytes);
+				Volume->ProbesBufferBytes = 0;
+				Device->DestroyBufferDeferred(Volume->ProbesBuffer);
+				Volume->ProbesBuffer = nullptr;
+			}
+
+			BufferDesc ProbeBufferDesc;
+			ProbeBufferDesc.BindFlags = BufferType::UAV;
+			ProbeBufferDesc.Size = ExpectedSize;
+			Volume->ProbesBuffer = Device->CreateBuffer(ProbeBufferDesc, Entry.ProbeData.Data());
+			Volume->ProbesBufferBytes = Volume->ProbesBuffer->GetSize();
+			AddProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume->ProbesBufferBytes);
+		}
+	}
+
+	void EngineWorld::QueueIrradianceVolumeBakeReadback(u64 OwnerGuid)
+	{
+		if (OwnerGuid == 0)
+			return;
+
+		if (std::find(PendingIrradianceVolumeBakeReadbacks.begin(), PendingIrradianceVolumeBakeReadbacks.end(), OwnerGuid) == PendingIrradianceVolumeBakeReadbacks.end())
+		{
+			PendingIrradianceVolumeBakeReadbacks.push_back(OwnerGuid);
+		}
+	}
+
+	void EngineWorld::FlushPendingIrradianceVolumeBakeReadbacks(AssetRef<HLevelLightingData> LightingData)
+	{
+		if (PendingIrradianceVolumeBakeReadbacks.empty())
+			return;
+
+		if (!LightingData.IsValid())
+		{
+			PendingIrradianceVolumeBakeReadbacks.clear();
+			return;
+		}
+
+		u64 TotalBytesWritten = 0;
+		int VolumesWritten = 0;
+		for (u64 OwnerGuid : PendingIrradianceVolumeBakeReadbacks)
+		{
+			IrradianceVolume* Volume = FindRuntimeIrradianceVolume(SceneGPU.get(), OwnerGuid);
+			if (Volume == nullptr || Volume->ProbesBuffer == nullptr)
+				continue;
+
+			const int ProbeCount = Volume->GetTotalProbes();
+			const u64 ProbeDataSize = (u64)ProbeCount * sizeof(GPUIrradianceProbe);
+			if (ProbeCount <= 0 || ProbeDataSize == 0)
+				continue;
+
+			HIrradianceVolumeBakeBuffer* Entry = FindIrradianceVolumeBake(*LightingData.Get(), OwnerGuid);
+			if (Entry == nullptr)
+			{
+				Entry = &LightingData->IrradianceVolumes.emplace_back();
+			}
+
+			Entry->Owner.Guid = OwnerGuid;
+			Entry->FormatVersion = IrradianceVolumeBakeFormatVersion;
+			Entry->ProbeStride = sizeof(GPUIrradianceProbe);
+			Entry->ProbeCount = ProbeCount;
+			Entry->ProbeData.Bytes.resize((size_t)ProbeDataSize);
+			Device->ReadBuffer(Volume->ProbesBuffer, Entry->ProbeData.Data(), ProbeDataSize);
+			TotalBytesWritten += ProbeDataSize;
+			VolumesWritten++;
+		}
+
+		if (!LightingData.Path.empty())
+		{
+			const std::string LightingPath = (std::filesystem::path(Assets.DataPath) / LightingData.Path).string();
+			SaveLevelLightingDataAssetToFile(*LightingData.Get(), LightingPath.c_str());
+			Log::Message("Saved irradiance volume bake data: %i volume(s), %llu bytes, %s", VolumesWritten, TotalBytesWritten, LightingPath.c_str());
+		}
+
+		PendingIrradianceVolumeBakeReadbacks.clear();
 	}
 
 	void EngineWorld::RemoveLevel(HLevel* Level)
@@ -1207,6 +1359,17 @@ namespace Columbus
 namespace Columbus
 {
 
+	bool AThing::IsOwnedByNestedLevel() const
+	{
+		for (const AThing* ParentThing = Parent; ParentThing != nullptr; ParentThing = ParentThing->Parent)
+		{
+			if (Reflection::Cast<ALevelThing>(const_cast<AThing*>(ParentThing)))
+				return true;
+		}
+
+		return false;
+	}
+
 	void AThing::OnLoad()
 	{
 		World->Assets.ResolveStructAssetReferences(GetTypeVirtual(), this);
@@ -1359,6 +1522,130 @@ namespace Columbus
 		if (Distance >= SafeRadius)
 			return 0.0f;
 		return 1.0f - (Distance / SafeRadius);
+	}
+
+	AIrradianceVolume::AIrradianceVolume()
+	{
+		DebugColour = Vector4(0.15f, 0.65f, 1.0f, 0.25f);
+	}
+
+	IrradianceVolume* AIrradianceVolume::FindRuntimeVolume()
+	{
+		if (World == nullptr || World->SceneGPU == nullptr)
+		{
+			return nullptr;
+		}
+
+		u64 Owner = (u64)Guid;
+		for (IrradianceVolume& Volume : World->SceneGPU->IrradianceVolumes)
+		{
+			if (Volume.OwnerGuid == Owner)
+			{
+				return &Volume;
+			}
+		}
+
+		return nullptr;
+	}
+
+	IrradianceVolume& AIrradianceVolume::EnsureRuntimeVolume()
+	{
+		if (IrradianceVolume* Existing = FindRuntimeVolume())
+		{
+			return *Existing;
+		}
+
+		IrradianceVolume Volume{};
+		Volume.OwnerGuid = (u64)Guid;
+		World->SceneGPU->IrradianceVolumes.push_back(Volume);
+		return World->SceneGPU->IrradianceVolumes.back();
+	}
+
+	void AIrradianceVolume::RequestBake()
+	{
+		bBakeRequested = true;
+	}
+
+	bool AIrradianceVolume::ConsumeBakeRequest()
+	{
+		bool Result = bBakeRequested;
+		bBakeRequested = false;
+		return Result;
+	}
+
+	void AIrradianceVolume::OnCreate()
+	{
+		Super::OnCreate();
+		OnUpdateRenderState();
+	}
+
+	void AIrradianceVolume::OnDestroy()
+	{
+		if (World != nullptr && World->SceneGPU != nullptr)
+		{
+			u64 Owner = (u64)Guid;
+			auto& Volumes = World->SceneGPU->IrradianceVolumes;
+			for (int i = 0; i < (int)Volumes.size(); i++)
+			{
+				if (Volumes[i].OwnerGuid == Owner)
+				{
+					if (Volumes[i].ProbesBuffer != nullptr)
+					{
+						RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volumes[i].ProbesBufferBytes);
+						Volumes[i].ProbesBufferBytes = 0;
+						World->Device->DestroyBufferDeferred(Volumes[i].ProbesBuffer);
+					}
+					Volumes.erase(Volumes.begin() + i);
+					break;
+				}
+			}
+		}
+
+		Super::OnDestroy();
+	}
+
+	void AIrradianceVolume::OnUpdateRenderState()
+	{
+		Super::OnUpdateRenderState();
+
+		ProbeCountX = ProbeCountX < 1 ? 1 : ProbeCountX;
+		ProbeCountY = ProbeCountY < 1 ? 1 : ProbeCountY;
+		ProbeCountZ = ProbeCountZ < 1 ? 1 : ProbeCountZ;
+		RaysPerProbe = RaysPerProbe < 1 ? 1 : RaysPerProbe;
+		Bounces = Bounces < 1 ? 1 : Bounces;
+		NormalBias = NormalBias < 0.0f ? 0.0f : NormalBias;
+		BlendDistance = BlendDistance < 0.0f ? 0.0f : BlendDistance;
+		Priority = Priority < 0.0f ? 0.0f : Priority;
+
+		IrradianceVolume& Volume = EnsureRuntimeVolume();
+		iVector3 NewProbesCount(ProbeCountX, ProbeCountY, ProbeCountZ);
+		const bool bProbeLayoutChanged =
+			Volume.ProbesCount.X != NewProbesCount.X ||
+			Volume.ProbesCount.Y != NewProbesCount.Y ||
+			Volume.ProbesCount.Z != NewProbesCount.Z;
+
+		Volume.Position = TransGlobal.Position;
+		Volume.Extent = TransGlobal.Scale;
+		Volume.ProbesCount = NewProbesCount;
+		Volume.Intensity = Intensity;
+		Volume.NormalBias = NormalBias;
+		Volume.BlendDistance = BlendDistance;
+		Volume.Priority = Priority;
+		Volume.bVisualiseProbes = bVisualiseProbes;
+
+		if (bProbeLayoutChanged && Volume.ProbesBuffer != nullptr)
+		{
+			RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.ProbesBufferBytes);
+			Volume.ProbesBufferBytes = 0;
+			World->Device->DestroyBufferDeferred(Volume.ProbesBuffer);
+			Volume.ProbesBuffer = nullptr;
+		}
+	}
+
+	void AIrradianceVolume::OnUiPropertyChange()
+	{
+		Super::OnUiPropertyChange();
+		OnUpdateRenderState();
 	}
 
 	void ADecal::OnCreate()
@@ -1954,6 +2241,19 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HLevel, "")
 	CREFLECT_STRUCT_FIELD(HEffectsSettings, EffectsSettings, "")
+	CREFLECT_STRUCT_FIELD_ASSETREF(HLevelLightingData, LightingData, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(HIrradianceVolumeBakeBuffer, "")
+	CREFLECT_STRUCT_FIELD_THINGREF(AIrradianceVolume, Owner, "")
+	CREFLECT_STRUCT_FIELD(int, FormatVersion, "")
+	CREFLECT_STRUCT_FIELD(int, ProbeStride, "")
+	CREFLECT_STRUCT_FIELD(int, ProbeCount, "")
+	CREFLECT_STRUCT_FIELD(Blob, ProbeData, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(HLevelLightingData, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(HIrradianceVolumeBakeBuffer, IrradianceVolumes, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HLevelThingMeshOverride, "")
@@ -1991,6 +2291,21 @@ CREFLECT_STRUCT_BEGIN(AEffectVolume)
 	CREFLECT_STRUCT_FIELD(float, BlendWeight, "")
 	CREFLECT_STRUCT_FIELD(float, BlendRadius, "")
 	CREFLECT_STRUCT_FIELD(HEffectsSettings, EffectsSettings, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_DEFINE_VIRTUAL(AIrradianceVolume);
+CREFLECT_STRUCT_BEGIN(AIrradianceVolume, "")
+	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
+	CREFLECT_STRUCT_FIELD(int, ProbeCountX, "")
+	CREFLECT_STRUCT_FIELD(int, ProbeCountY, "")
+	CREFLECT_STRUCT_FIELD(int, ProbeCountZ, "")
+	CREFLECT_STRUCT_FIELD(int, RaysPerProbe, "")
+	CREFLECT_STRUCT_FIELD(int, Bounces, "")
+	CREFLECT_STRUCT_FIELD(float, Intensity, "")
+	CREFLECT_STRUCT_FIELD(float, NormalBias, "")
+	CREFLECT_STRUCT_FIELD(float, BlendDistance, "")
+	CREFLECT_STRUCT_FIELD(float, Priority, "")
+	CREFLECT_STRUCT_FIELD(bool, bVisualiseProbes, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(ALight);

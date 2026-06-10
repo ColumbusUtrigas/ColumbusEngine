@@ -437,6 +437,25 @@ namespace Columbus
 		return Id;
 	}
 
+	RenderGraphBufferRef RenderGraph::RegisterExternalBuffer(Buffer* Buf, const char* Name)
+	{
+		for (const RenderGraphBuffer& ExistingBuffer : Buffers)
+		{
+			if (ExistingBuffer.bExternal && ExistingBuffer.Buffer.get() == Buf)
+			{
+				return ExistingBuffer.Id;
+			}
+		}
+
+		int Id = static_cast<int>(Buffers.size());
+		auto RGBuf = RenderGraphBuffer(Buf->GetDesc(), Name, Id, Allocator);
+		RGBuf.Buffer = SPtr<Buffer>(Buf, [](Buffer*) {});
+		RGBuf.AllocatedSize = Buf->GetSize();
+		RGBuf.bExternal = true;
+		Buffers.push_back(RGBuf);
+		return Id;
+	}
+
 	TextureDesc2 RenderGraph::GetTextureDesc(RenderGraphTextureRef Texture) const
 	{
 		return Textures[Texture].Desc;
@@ -521,6 +540,9 @@ namespace Columbus
 	// TODO: unify allocation logic for textures and buffers?
 	void RenderGraph::AllocateBuffer(RenderGraphBuffer& Buffer)
 	{
+		if (Buffer.bExternal)
+			return; // don't do anything with the external resource
+
 		const auto ApplyBufferFromPool = [&Buffer, this](RenderGraphPooledBuffer& PooledBuffer) {
 			Buffer.Buffer = PooledBuffer.Buffer;
 			Buffer.AllocatedSize = PooledBuffer.Buffer->GetSize();
@@ -849,7 +871,7 @@ namespace Columbus
 		for (auto& Texture : Textures)
 		{
 			// it is illegal to read from a resource that hasn't been written before
-			if (Texture.Readers.size() > 0 && Texture.Writer == -1)
+			if (Texture.Readers.size() > 0 && Texture.Writer == -1 && !Texture.bExternal)
 			{
 				Log::Error("RenderGraph Validation: Texture %s is being read but no passes have ever written to it", Texture.DebugName.c_str());
 			}
@@ -858,7 +880,7 @@ namespace Columbus
 		for (auto& Buffer : Buffers)
 		{
 			// it is illegal to read from a resource that hasn't been written before
-			if (Buffer.Readers.size() > 0 && Buffer.Writer == -1)
+			if (Buffer.Readers.size() > 0 && Buffer.Writer == -1 && !Buffer.bExternal)
 			{
 				Log::Error("RenderGraph Validation: Buffer %s is being read but no passes have ever written to it", Buffer.DebugName.c_str());
 			}
@@ -871,6 +893,11 @@ namespace Columbus
 			for (const auto& Read : Pass.Dependencies.TextureReadResources)
 			{
 				const auto& GraphTexture = Textures[Read.Texture];
+				if (GraphTexture.Writer == -1)
+				{
+					continue;
+				}
+
 				const auto& WriterPass = Passes[GraphTexture.Writer];
 
 				// search for the writing dependency, TODO: better solution?
@@ -885,7 +912,12 @@ namespace Columbus
 
 			for (const auto& Read : Pass.Dependencies.BufferReadResources)
 			{
-				const auto& GraphBuffer = Textures[Read.Buffer];
+				const auto& GraphBuffer = Buffers[Read.Buffer];
+				if (GraphBuffer.Writer == -1)
+				{
+					continue;
+				}
+
 				const auto& WriterPass = Passes[GraphBuffer.Writer];
 
 				// search for the writing dependency, TODO: better solution?

@@ -405,8 +405,7 @@ namespace Columbus
 			break;
 
 		case EDeferredGlobalIlluminationMode::IV:
-			// TODO: no hardcode for the volumes
-			RenderApplyIrradianceProbes(Graph, View, Textures, Graph.Scene->IrradianceVolumes[0]);
+			RenderApplyIrradianceProbes(Graph, View, Textures);
 			break;
 		case EDeferredGlobalIlluminationMode::None:
 		{

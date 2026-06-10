@@ -791,7 +791,7 @@ namespace Columbus
 		else
 		{
 			// TODO
-			bufferInfo.usage = BufferTypeToVK(Desc.BindFlags) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+			bufferInfo.usage = BufferTypeToVK(Desc.BindFlags) | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 		}
 
 		if (Desc.BindFlags == BufferType::Constant)
@@ -821,7 +821,9 @@ namespace Columbus
 		if (Desc.HostVisible)
 		{
 			vmaallocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-			vmaallocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+			vmaallocInfo.flags = Desc.CpuAccess == BufferCpuAccess::Read
+				? VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
+				: VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 			vmaallocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 		}
 		else
@@ -922,6 +924,48 @@ namespace Columbus
 
 		const BufferVulkan* vkbuf = static_cast<const BufferVulkan*>(Buf);
 		vmaUnmapMemory(_Allocator, vkbuf->_Allocation);
+	}
+
+	bool DeviceVulkan::ReadBuffer(const Buffer* Src, void* Dst, u64 Size)
+	{
+		if (Src == nullptr || Dst == nullptr || Size == 0)
+			return false;
+
+		BufferDesc ReadbackDesc(Size, BufferType::Array);
+		ReadbackDesc.HostVisible = true;
+		ReadbackDesc.CpuAccess = BufferCpuAccess::Read;
+		Buffer* ReadbackBuffer = CreateBuffer(ReadbackDesc, nullptr);
+
+		auto CmdBuf = CreateCommandBufferShared();
+		CmdBuf->Begin();
+
+		const BufferVulkan* SrcVk = static_cast<const BufferVulkan*>(Src);
+		const BufferVulkan* DstVk = static_cast<const BufferVulkan*>(ReadbackBuffer);
+
+		VkBufferMemoryBarrier Barrier{};
+		Barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		Barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+		Barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		Barrier.buffer = SrcVk->_Buffer;
+		Barrier.offset = 0;
+		Barrier.size = Size;
+		vkCmdPipelineBarrier(CmdBuf->_CmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &Barrier, 0, nullptr);
+
+		VkBufferCopy Copy{};
+		Copy.size = Size;
+		vkCmdCopyBuffer(CmdBuf->_CmdBuf, SrcVk->_Buffer, DstVk->_Buffer, 1, &Copy);
+
+		CmdBuf->End();
+		Submit(CmdBuf.get());
+		QueueWaitIdle();
+
+		void* Data = MapBuffer(ReadbackBuffer);
+		memcpy(Dst, Data, Size);
+		UnmapBuffer(ReadbackBuffer);
+		DestroyBuffer(ReadbackBuffer);
+		return true;
 	}
 
 	constexpr size_t Align(size_t value, size_t alignment)

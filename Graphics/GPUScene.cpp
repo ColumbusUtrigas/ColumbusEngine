@@ -202,6 +202,15 @@ namespace Columbus
 			}
 		}
 
+		for (const IrradianceVolume& Volume : Scene->IrradianceVolumes)
+		{
+			if (Volume.ProbesBuffer)
+			{
+				RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.ProbesBufferBytes);
+				Device->DestroyBuffer(Volume.ProbesBuffer);
+			}
+		}
+
 		DestroyGPUSceneBuffers(Device, Scene->SceneBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->LightsBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->MeshesBuffer);

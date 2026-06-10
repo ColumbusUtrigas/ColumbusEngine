@@ -18,6 +18,8 @@ struct RayPayload
 
 #define SET 2
 
+#include "../RayTracingIrradianceVolumes.hlsli"
+
 [[vk::push_constant]]
 struct _Params
 {
@@ -92,7 +94,8 @@ void RayGen()
 		//BRDF.Metallic = payload.RoughnessMetallic.y;
 
 		float3 HitPoint = WP + Direction * payload.HitDistance;
-		Radiance = payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF);
+		float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * LambertDiffuseBRDF(float3(1,1,1));
+		Radiance = payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse;
 	}
 
 	// final compute, write results

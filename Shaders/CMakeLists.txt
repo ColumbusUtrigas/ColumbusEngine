@@ -50,7 +50,9 @@ compile_shader_glsl(LightmapRasterisation.glsl main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(LightmapPathTracing.hlsl   RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeTrace.hlsl RGS:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl(IrradianceVolume/IrradianceVolumeRelocateClassify.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeApply.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(IrradianceVolume/IrradianceVolumeVisualise.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
 compile_shader_hlsl(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)

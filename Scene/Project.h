@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Graphics/World.h"
-
 #include <string>
 #include <vector>
 
 namespace Columbus
 {
+	struct EngineWorld;
+	struct HLevel;
 
 	struct EngineProjectLevelEntry
 	{
@@ -42,5 +42,10 @@ namespace Columbus
 
 	extern EngineProject* GCurrentProject;
 	extern std::string    GCurrentLevelPath;
+	extern HLevel*        GCurrentLevelDocument;
+
+	void CloseCurrentLevelDocument();
+	void SetCurrentLevelDocument(HLevel* Level, std::string Path);
+	HLevel* EnsureCurrentLevelDocument();
 
 }

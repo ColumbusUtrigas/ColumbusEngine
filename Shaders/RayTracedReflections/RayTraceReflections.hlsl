@@ -18,6 +18,8 @@ struct RayPayload
 
 #define SET 2
 
+#include "../RayTracingIrradianceVolumes.hlsli"
+
 [[vk::binding(0, SET)]] RaytracingAccelerationStructure                     AccelerationStructure;
 [[vk::binding(1, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
 [[vk::binding(2, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> ResultDirectionDistance;
@@ -123,7 +125,8 @@ void RayGen()
 
 			float3 HitPoint = WP + Direction * payload.HitDistance;
 			HitPoint += BRDF.N * 0.01;
-			ColourResult = (payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF)) * RayAttenuation;
+			float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * LambertDiffuseBRDF(float3(1,1,1));
+			ColourResult = (payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse) * RayAttenuation;
 		}
 	}
 

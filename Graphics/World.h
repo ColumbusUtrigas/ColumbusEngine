@@ -14,6 +14,7 @@
 #include "Profiling/Profiling.h"
 #include "UI/UISystem.h"
 #include "Core/Asset.h"
+#include "Core/ThingRef.h"
 
 #include "Common/Model/Model.h"
 #include <Core/Guid.h>
@@ -66,6 +67,7 @@ namespace Columbus
 
 		void SetWorldTransform(const Transform& WorldTransform);
 		const Transform& GetWorldTransform();
+		bool IsOwnedByNestedLevel() const;
 
 		virtual void OnLoad();
 
@@ -83,22 +85,6 @@ namespace Columbus
 		void MarkTransformDirty();
 		void UpdateWorldTransform();
 	};
-
-	template <typename T>
-	struct ThingRef
-	{
-		HGuid Guid;
-		T* Thing = nullptr;
-
-		ThingRef()
-		{
-			Guid = 0;
-		}
-
-		operator bool() const { return Thing != nullptr; }
-		T* operator->() { return Thing; }
-	};
-
 
 	struct AVolume : public AThing
 	{
@@ -130,6 +116,38 @@ namespace Columbus
 		}
 
 		float ComputeBlendFactor(const Vector3& Point) const;
+	};
+
+	struct AIrradianceVolume : public AVolume
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AIrradianceVolume);
+		using Super = AVolume;
+
+		int ProbeCountX = 4;
+		int ProbeCountY = 4;
+		int ProbeCountZ = 4;
+		int RaysPerProbe = 256;
+		int Bounces = 3;
+		float Intensity = 1.0f;
+		float NormalBias = 0.2f;
+		float BlendDistance = 0.0f;
+		float Priority = 0.0f;
+		bool bVisualiseProbes = true;
+
+		bool bBakeRequested = false;
+
+	public:
+		AIrradianceVolume();
+
+		IrradianceVolume* FindRuntimeVolume();
+		IrradianceVolume& EnsureRuntimeVolume();
+		void RequestBake();
+		bool ConsumeBakeRequest();
+
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+		virtual void OnUpdateRenderState() override;
+		virtual void OnUiPropertyChange() override;
 	};
 
 	struct ALight : public AThing
@@ -236,6 +254,7 @@ namespace Columbus
 		EngineWorld* World = nullptr;
 
 		HEffectsSettings EffectsSettings;
+		AssetRef<HLevelLightingData> LightingData;
 		std::vector<AThing*> Things;
 	};
 
@@ -323,7 +342,10 @@ namespace Columbus
 		void DestroyMeshRuntimeResources(Mesh2* MeshAsset);
 
 		void ClearWorld();
-		void SaveWorldLevel(const char* Path);
+		void SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData = {});
+		void QueueIrradianceVolumeBakeReadback(u64 OwnerGuid);
+		void FlushPendingIrradianceVolumeBakeReadbacks(AssetRef<HLevelLightingData> LightingData);
+		void ApplyLevelLightingData(AssetRef<HLevelLightingData> LightingData);
 
 		void AddLevel(HLevel* Level);
 		void RemoveLevel(HLevel* Level);
@@ -368,16 +390,18 @@ namespace Columbus
 
 	private:
 		float GlobalTime = 0.0f;
+		std::vector<u64> PendingIrradianceVolumeBakeReadbacks;
 	};
 
 }
 
-CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 1, "4112562B-4C50-47FD-B6F4-BAAC28FC4CE7");
+CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 2, "4112562B-4C50-47FD-B6F4-BAAC28FC4CE7");
 CREFLECT_DECLARE_STRUCT(Columbus::HLevelThingMeshOverride, 1, "461D2533-8AB5-4681-8109-10345C5D9129");
 
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AVolume, Columbus::AThing, 1, "EA5F80A9-684B-4F60-95A9-DBE4949B6268");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AEffectVolume, Columbus::AVolume, 1, "1204F071-0B6D-451C-8497-57D78CCD1EF5");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AIrradianceVolume, Columbus::AVolume, 1, "09B487F0-89E2-4A75-9B1D-B3F5BC05B2DB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");

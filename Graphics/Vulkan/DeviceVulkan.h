@@ -273,6 +273,7 @@ namespace Columbus
 		void    DestroyBufferDeferred(Buffer* Buf);
 		void*   MapBuffer(const Buffer* Buf);
 		void    UnmapBuffer(const Buffer* Buf);
+		bool    ReadBuffer(const Buffer* Src, void* Dst, u64 Size);
 
 		// will return a managed filled constant buffer
 		Buffer* GetConstantBufferPrepared(u32 Size, void* Data);
