@@ -8,9 +8,11 @@ namespace Columbus
 {
 
 	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedGI);
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedGIPrepare);
 	DECLARE_GPU_PROFILING_COUNTER(GpuCounterRayTracedGIDenoise);
 
 	IMPLEMENT_GPU_PROFILING_COUNTER("RTGI", "RenderGraphGPU", GpuCounterRayTracedGI);
+	IMPLEMENT_GPU_PROFILING_COUNTER("RTGI Prepare", "RenderGraphGPU", GpuCounterRayTracedGIPrepare);
 	IMPLEMENT_GPU_PROFILING_COUNTER("RTGI Denoise", "RenderGraphGPU", GpuCounterRayTracedGIDenoise);
 
 	extern ConsoleVariable<bool> CVar_RayTracingIrradianceVolumes;
@@ -463,6 +465,8 @@ namespace Columbus
 
 		Graph.AddPass("Downsample GBuffer", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Result, Size, DownsampleFactor](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIPrepare, Context);
+
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{
@@ -659,6 +663,8 @@ namespace Columbus
 
 		Graph.AddPass("Upsample", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Size, Result, DownsampleFactor, Textures, DownTextures](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIDenoise, Context);
+
 			// TODO: shader system
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)

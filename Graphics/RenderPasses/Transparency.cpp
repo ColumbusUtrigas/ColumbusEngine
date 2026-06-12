@@ -6,8 +6,10 @@
 #include <vector>
 
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTransparency);
+DECLARE_GPU_PROFILING_COUNTER(GpuCounterTransparencyRefraction);
 
 IMPLEMENT_GPU_PROFILING_COUNTER("Transparency", "RenderGraphGPU", GpuCounterTransparency);
+IMPLEMENT_GPU_PROFILING_COUNTER("Transparency Refraction", "RenderGraphGPU", GpuCounterTransparencyRefraction);
 
 namespace Columbus
 {
@@ -68,6 +70,8 @@ namespace Columbus
 
 		Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [Source, Target, Size, Radius](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTransparencyRefraction, Context);
+
 			static ComputePipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{

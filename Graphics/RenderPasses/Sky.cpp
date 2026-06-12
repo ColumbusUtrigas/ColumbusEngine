@@ -2,6 +2,8 @@
 
 namespace Columbus
 {
+DECLARE_GPU_PROFILING_COUNTER(GpuCounterSky);
+IMPLEMENT_GPU_PROFILING_COUNTER("Sky", "RenderGraphGPU", GpuCounterSky);
 
 void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context)
 {
@@ -12,6 +14,8 @@ void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Te
 
 	Graph.AddPass("SkyLut", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
 	{
+		RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterSky, Context);
+
 		static ComputePipeline* Pipeline = nullptr;
 		if (Pipeline == nullptr)
 		{
@@ -41,6 +45,8 @@ void RenderDeferredSky(RenderGraph& Graph, RenderView& View, SceneTextures& Text
 
 	Graph.AddPass("Sky", RenderGraphPassType::Raster, Parameters, Dependencies, [View, OverTexture, Textures, &DeferredContext](RenderGraphContext& Context)
 	{
+		RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterSky, Context);
+
 		static GraphicsPipeline* Pipeline = nullptr;
 		if (Pipeline == nullptr)
 		{

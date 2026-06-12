@@ -2,6 +2,8 @@
 
 namespace Columbus
 {
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterBuildTLAS);
+	IMPLEMENT_GPU_PROFILING_COUNTER("Build TLAS", "RenderGraphGPU", GpuCounterBuildTLAS);
 
 	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View)
 	{
@@ -141,6 +143,8 @@ namespace Columbus
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Graph.AddPass("Build TLAS", RenderGraphPassType::Compute, Parameters, Dependencies, [View](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterBuildTLAS, Context);
+
 			// TLAS
 			{
 				AccelerationStructureDesc& Desc = Context.Scene->TLAS->GetDescMut();

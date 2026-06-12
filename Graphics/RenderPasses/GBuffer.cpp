@@ -18,9 +18,11 @@ namespace Columbus
 {
 
 	DECLARE_GPU_PROFILING_COUNTER(GpuCounterGBufferPass);
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterGBufferDecals);
 	DECLARE_GPU_PROFILING_COUNTER(GpuCounterLightingPass);
 
 	IMPLEMENT_GPU_PROFILING_COUNTER("GBuffer", "RenderGraphGPU", GpuCounterGBufferPass);
+	IMPLEMENT_GPU_PROFILING_COUNTER("GBuffer Decals", "RenderGraphGPU", GpuCounterGBufferDecals);
 	IMPLEMENT_GPU_PROFILING_COUNTER("Lighting pass", "RenderGraphGPU", GpuCounterLightingPass);
 
 	struct PerObjectParameters
@@ -186,6 +188,8 @@ namespace Columbus
 
 		Graph.AddPass("GBufferDecals", RenderGraphPassType::Raster, Parameters, Dependencies, [View, Textures](RenderGraphContext& Context)
 		{
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterGBufferDecals, Context);
+
 			static GraphicsPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
 			{

@@ -47,9 +47,8 @@ namespace Columbus
 			for (int i = 0; i < CurrentMeasurement[LastFrame]; i++)
 			{
 				Measurement& Sample = Measurements[LastFrame][i];
-				u64 diffNs = Data[Sample.EndTimestampId] - Data[Sample.StartTimestampId];
-				u64 diffUs = diffNs / 1000;
-				double diffMs = diffUs / 1000.0;
+				const double diffNs = double(Data[Sample.EndTimestampId] - Data[Sample.StartTimestampId]) * Device->_DeviceProperties.properties.limits.timestampPeriod;
+				const double diffMs = diffNs / 1000000.0;
 
 				Sample.Counter->Time += diffMs;
 			}
