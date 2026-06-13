@@ -42,7 +42,13 @@ namespace Columbus
 		// Lights
 		if (Graph.Scene->Lights.Size() > 0)
 		{
-			Graph.Device->UploadRing.UploadBuffer(Graph.Scene->Lights.Data(), Graph.Scene->Lights.Size() * sizeof(GPULight), 0, Graph.Scene->LightsBuffer);
+			u32 NumLights = (u32)Graph.Scene->Lights.Size();
+			void* Ptr = Graph.Device->UploadRing.UploadBufferMap(NumLights * sizeof(GPULightCompact), 0, Graph.Scene->LightsBuffer);
+
+			for (u32 i = 0; i < NumLights; i++)
+			{
+				((GPULightCompact*)Ptr)[i] = CreateCompact(Graph.Scene->Lights[i]);
+			}
 		}
 
 		// Meshes

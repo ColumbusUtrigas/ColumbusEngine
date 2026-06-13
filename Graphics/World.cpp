@@ -1718,19 +1718,19 @@ namespace Columbus
 			break;
 		}
 
-		if (GPULight* LightProxy = World->SceneGPU->Lights.Get(LightHandle))
+		if (World->SceneGPU->Lights.IsValid(LightHandle))
 		{
-			*LightProxy = GL;
+			World->SceneGPU->UpdateLight(LightHandle, GL);
 		}
 		else
 		{
-			LightHandle = World->SceneGPU->Lights.Add(GL);
+			LightHandle = World->SceneGPU->AddLight(GL);
 		}
 	}
 
 	void ALight::OnDestroy()
 	{
-		World->SceneGPU->Lights.Remove(LightHandle);
+		World->SceneGPU->RemoveLight(LightHandle);
 
 		Super::OnDestroy();
 	}

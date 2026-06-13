@@ -70,22 +70,28 @@ float FFX_DNSR_Shadows_GetDepthSimilaritySigma()
 
 float FFX_DNSR_Shadows_ReadDepth(uint2 did)
 {
+	did = min(did, FFX_DNSR_Shadows_GetBufferDimensions() - 1);
 	return Depth[did];
 }
 
 float16_t3 FFX_DNSR_Shadows_ReadNormals(uint2 did)
 {
+	did = min(did, FFX_DNSR_Shadows_GetBufferDimensions() - 1);
 	return normalize((float16_t3)Normals[did]);
 }
 
 bool FFX_DNSR_Shadows_IsShadowReciever(uint2 did)
 {
+	if (any(did >= FFX_DNSR_Shadows_GetBufferDimensions()))
+		return false;
+
 	float depth = FFX_DNSR_Shadows_ReadDepth(did);
 	return (depth > 0.0f) && (depth < 1.0f);
 }
 
 float16_t2 FFX_DNSR_Shadows_ReadInput(int2 p)
 {
+	p = clamp(p, int2(0, 0), int2(FFX_DNSR_Shadows_GetBufferDimensions()) - 1);
 	return (float16_t2)Input[p].xy;
 }
 
@@ -260,7 +266,7 @@ void FFX_DNSR_Shadows_DenoiseFromGroupSharedMemory(uint2 did, uint2 gtid, inout 
 		for (int x = -k; x <= k; ++x)
 		{
 			// Should we process this sample?
-			const int2 step = int2(x, y) * stepsize;
+			const int2 step = int2(x, y) * int2(stepsize, stepsize); // signed: avoid uint promotion of -1 offsets
 			const int2 gtid_idx = gtid + step;
 			const int2 did_idx = did + step;
 
@@ -366,7 +372,7 @@ void main(uint3 gid : SV_GroupID, uint2 gtid : SV_GroupThreadID, uint2 did : SV_
 		const float shadow_remap = max(1.2f - results.y, 1.0f);
 		const float mean = saturate(pow(abs(results.x), shadow_remap));
 
-		if (bWriteOutput)
+		if (bWriteOutput && all(did < FFX_DNSR_Shadows_GetBufferDimensions()))
 		{
 			Output[did] = mean;
 		}

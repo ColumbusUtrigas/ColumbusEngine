@@ -41,6 +41,42 @@ namespace Columbus
 		};
 	}
 
+	void RTShadowDenoiserHistory::Destroy(SPtr<DeviceVulkan> Device)
+	{
+		Device->DestroyTextureDeferred(Shadow);
+		Device->DestroyTextureDeferred(Moments);
+
+		Shadow = nullptr;
+		Moments = nullptr;
+	}
+
+	bool GPULight::NeedsRTShadowDenoiser() const
+	{
+		if ((Flags & ELightFlags::Shadow) == (ELightFlags)0)
+		{
+			return false;
+		}
+
+		return SourceRadius > 0.0001f ||
+			(Type == LightType::Rectangle && (SizeOrSpotAngles.X > 0.0001f || SizeOrSpotAngles.Y > 0.0001f));
+	}
+
+	GPULightCompact CreateCompact(const GPULight& Light)
+	{
+		return GPULightCompact
+		{
+			.Position = Light.Position,
+			.Direction = Light.Direction,
+			.Color = Light.Color,
+			.Type = Light.Type,
+			.Range = Light.Range,
+			.SourceRadius = Light.SourceRadius,
+			.VolumetricIntensity = Light.VolumetricIntensity,
+			.Flags = Light.Flags,
+			.SizeOrSpotAngles = Light.SizeOrSpotAngles,
+		};
+	}
+
 	void GPUScene::Update()
 	{
 		for (int i = 0; i < (int)Lights.Size(); i++)
@@ -53,6 +89,42 @@ namespace Columbus
 				SunDirection = Vector4(SceneLight.Direction.XYZ().Normalized(), 0);
 			}
 		}
+	}
+
+	HStableLightId GPUScene::AddLight(const GPULight& Light)
+	{
+		return Lights.Add(Light);
+	}
+
+	void GPUScene::UpdateLight(HStableLightId Id, const GPULight& Light)
+	{
+		GPULight* Existing = Lights.Get(Id);
+		if (Existing == nullptr)
+		{
+			return;
+		}
+
+		RTShadowDenoiserHistory ShadowHistory = Existing->RTShadow;
+		const bool bHadDenoiser = Existing->NeedsRTShadowDenoiser();
+		const bool bHasDenoiser = Light.NeedsRTShadowDenoiser();
+
+		*Existing = Light;
+		Existing->RTShadow = ShadowHistory;
+
+		if (bHadDenoiser && !bHasDenoiser)
+		{
+			Existing->RTShadow.Destroy(Device);
+		}
+	}
+
+	void GPUScene::RemoveLight(HStableLightId Id)
+	{
+		if (GPULight* Existing = Lights.Get(Id))
+		{
+			Existing->RTShadow.Destroy(Device);
+		}
+
+		Lights.Remove(Id);
 	}
 
 	HStableParticlesId GPUScene::AddParticleSystem(HParticleEmitterInstanceCPU* Emitter)
@@ -152,7 +224,7 @@ namespace Columbus
 		Scene->Device = Device;
 
 		CreateGPUSceneBuffers(Device, sizeof(GPUSceneCompact), "GPUScene.Scene", Scene->SceneBuffer);
-		CreateGPUSceneBuffers(Device, GPUScene::MaxGPULights * sizeof(GPULight), "GPUScene.Lights", Scene->LightsBuffer);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxGPULights * sizeof(GPULightCompact), "GPUScene.Lights", Scene->LightsBuffer);
 		CreateGPUSceneBuffers(Device, GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact), "GPUScene.Meshes", Scene->MeshesBuffer);
 		CreateGPUSceneBuffers(Device, GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), "GPUScene.Materials", Scene->MaterialsBuffer);
 		CreateGPUSceneBuffers(Device, GPUScene::MaxDecals * sizeof(GPUDecal), "GPUScene.Decals", Scene->DecalsBuffers);
@@ -209,6 +281,11 @@ namespace Columbus
 				RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.ProbesBufferBytes);
 				Device->DestroyBuffer(Volume.ProbesBuffer);
 			}
+		}
+
+		for (auto& Light : Scene->Lights)
+		{
+			Light.RTShadow.Destroy(Device);
 		}
 
 		DestroyGPUSceneBuffers(Device, Scene->SceneBuffer);

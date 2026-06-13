@@ -57,13 +57,16 @@ uint2 FFX_DNSR_Shadows_GetBufferDimensions()
 
 bool FFX_DNSR_Shadows_HitsLight(uint2 did, uint2 gtid, uint2 gid)
 {
+	if (any(did >= FFX_DNSR_Shadows_GetBufferDimensions()))
+		return true;
+
 	return InputBuffer[did] > 0.01;
 }
 
 void FFX_DNSR_Shadows_WriteMask(uint linear_tile_index, uint mask)
 {
 	uint width = Params.PackedBufferDimensions.x;
-	uint2 coords = uint2(linear_tile_index % width, (linear_tile_index + width - 1) / width);
+	uint2 coords = uint2(linear_tile_index % width, linear_tile_index / width);
 	PackedOutputBuffer[coords] = mask;
 }
 

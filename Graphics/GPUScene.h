@@ -81,7 +81,15 @@ namespace Columbus
 
 	static_assert(sizeof(GPUSceneMeshCompact) == 256, "GPUSceneMeshCompact must be 256 bytes");
 
-	struct GPULight
+	struct RTShadowDenoiserHistory
+	{
+		Texture2* Shadow = nullptr;
+		Texture2* Moments = nullptr;
+
+		void Destroy(SPtr<DeviceVulkan> Device);
+	};
+
+	struct GPULightCompact
 	{
 		Vector4 Position;
 		Vector4 Direction;
@@ -95,6 +103,19 @@ namespace Columbus
 
 		u32 _pad[13]; // 128
 	};
+
+	static_assert(sizeof(GPULightCompact) == 128, "GPULightCompact must match shader layout");
+
+	struct GPULight : GPULightCompact
+	{
+		// all GPULightCompact fields plus some state
+
+		RTShadowDenoiserHistory RTShadow;
+
+		bool NeedsRTShadowDenoiser() const;
+	};
+
+	GPULightCompact CreateCompact(const GPULight& Light);
 
 	struct GPUVolumetricFogSettings
 	{
@@ -249,6 +270,10 @@ namespace Columbus
 
 	public:
 		void Update();
+
+		HStableLightId AddLight(const GPULight& Light);
+		void UpdateLight(HStableLightId Id, const GPULight& Light);
+		void RemoveLight(HStableLightId Id);
 
 		HStableParticlesId AddParticleSystem(HParticleEmitterInstanceCPU* Emitter);
 		void DeleteParticleSystem(HStableParticlesId Id);

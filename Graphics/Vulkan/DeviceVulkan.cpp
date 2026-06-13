@@ -135,7 +135,25 @@ namespace Columbus
 #endif
 		};
 
-		if (IsVulkanDebugEnabled())
+		auto IsDeviceExtensionSupported = [PhysicalDevice](const char* ExtensionName)
+		{
+			u32 ExtensionCount = 0;
+			vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, nullptr);
+			std::vector<VkExtensionProperties> ExtensionProperties(ExtensionCount);
+			vkEnumerateDeviceExtensionProperties(PhysicalDevice, nullptr, &ExtensionCount, ExtensionProperties.data());
+
+			for (const VkExtensionProperties& Extension : ExtensionProperties)
+			{
+				if (strcmp(Extension.extensionName, ExtensionName) == 0)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		};
+
+		if (IsVulkanDebugEnabled() && IsDeviceExtensionSupported(VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME))
 		{
 			extensions.push_back(VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME);
 		}

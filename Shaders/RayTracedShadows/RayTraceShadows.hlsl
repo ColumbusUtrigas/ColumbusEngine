@@ -104,7 +104,7 @@ void RayGen()
 		float3 ey = LTC_Axis[1] * halfSize.y;
 
 		float2 rndSample =  (Random::UniformDistrubition2d(RngState) - 0.5f) * 2; // -1..1 xy range
-		float3 samplePoint = Light.Position.xyz + rndSample.x * ex + rndSample.y + ey;
+		float3 samplePoint = Light.Position.xyz + rndSample.x * ex + rndSample.y * ey;
 
 		RayDirection = normalize(samplePoint - origin);
 	}
