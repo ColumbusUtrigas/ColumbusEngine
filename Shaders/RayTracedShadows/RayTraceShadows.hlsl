@@ -13,6 +13,7 @@ struct Payload
 
 #ifdef RAYGEN_SHADER
 #include "../Common.hlsli"
+#include "../RayTracingLightSampling.hlsli"
 #include "../RayTracingAlphaMask.hlsli"
 
 #define SET 2
@@ -57,63 +58,16 @@ void RayGen()
 
 	float3 origin = InputWorldPosition[pixel];
 
-	float3 LightDirection = normalize(Light.Direction.xyz);
-	float MaxDistance = 5000;
-	float LightRadius = Light.SourceRadius;
-
 	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
-	float3 RayDirection = float3(0,0,0);
-
-	switch (Light.Type)
+	RayTracedLightSample LightSample = SampleRayTracedLight(Light, origin, Random::UniformDistrubition2d(RngState));
+	if (!LightSample.Valid)
 	{
-	case GPULIGHT_DIRECTIONAL:
-		RayDirection = Random::RandomDirectionCone(LightDirection, LightRadius, Random::UniformDistrubition2d(RngState));
-		break;
-	case GPULIGHT_POINT:
-	case GPULIGHT_SPOT:
-		LightDirection = normalize(Light.Position.xyz - origin);
-		MaxDistance = distance(Light.Position.xyz, origin);
-		LightRadius = Light.SourceRadius / MaxDistance;
-
-		// TODO: spotlight early reject
-
-		if (MaxDistance > Light.Range)
-		{
-			OutputShadow[pixel] = 0.0;
-			return;
-		}
-
-		RayDirection = Random::RandomDirectionCone(LightDirection, LightRadius, Random::UniformDistrubition2d(RngState));
-
-		break;
-	case GPULIGHT_RECTANGLE:
-	{
-		LightDirection = normalize(Light.Position.xyz - origin);
-		MaxDistance = distance(Light.Position.xyz, origin);
-
-		bool twoSided = (Light.Flags & GPULIGHT_FLAG_TWOSIDED) != 0;
-		// TODO: single-sided rect light early reject
-		// TODO: rect light distance early reject
-
-		// TODO: make it more stable
-		float3x3 LTC_Axis = ComputeTangentsFromVector(Light.Direction.xyz);
-
-		float2 halfSize = Light.SizeOrSpotAngles;
-		// rect light tangent vectors adjusted by size
-		float3 ex = LTC_Axis[0] * halfSize.x;
-		float3 ey = LTC_Axis[1] * halfSize.y;
-
-		float2 rndSample =  (Random::UniformDistrubition2d(RngState) - 0.5f) * 2; // -1..1 xy range
-		float3 samplePoint = Light.Position.xyz + rndSample.x * ex + rndSample.y * ey;
-
-		RayDirection = normalize(samplePoint - origin);
-	}
-		break;
-	default: break;
+		OutputShadow[pixel] = 0.0;
+		return;
 	}
 
-	float3 dir = normalize(RayDirection);
-	OutputShadow[pixel] = TraceShadowRayWithAlphaMask(AccelerationStructure, origin + dir * 0.001f, dir, MaxDistance, RAY_FLAG_FORCE_OPAQUE, true);
+	float3 dir = normalize(LightSample.Direction);
+	OutputShadow[pixel] = TraceShadowRayWithAlphaMask(AccelerationStructure, origin + dir * 0.001f, dir, LightSample.Distance, RAY_FLAG_FORCE_OPAQUE, true);
 }
 #endif
 

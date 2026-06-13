@@ -7,6 +7,7 @@
 #include "BRDF.hlsli"
 #include "Common.hlsli"
 #include "GPUScene.hlsli"
+#include "RayTracingLightSampling.hlsli"
 
 #ifdef PAYLOAD_HAS_ALPHA_MASK
 #include "RayTracingAlphaMask.hlsli"
@@ -72,36 +73,15 @@ float TraceShadowRay(const in RaytracingAccelerationStructure AS, float3 Origin,
 	return TraceShadowRayWithFlags(AS, Origin, Direction, MaxDist, RAY_FLAG_FORCE_OPAQUE);
 }
 
-float3 SampleDirectionalLightWithFlags(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random, uint ShadowRayFlags)
+float3 EvaluateRayTracedLightSample(BRDFData BRDF, RayTracedLightSample LightSample, float Visibility)
 {
-	float3 direction = normalize(Light.Direction.xyz);
-	float occlusion = TraceShadowRayWithFlags(AS, origin, direction, 5000.0f, ShadowRayFlags);
-	return Light.Color.rgb * occlusion;
-}
+	if (!LightSample.Valid || Visibility <= 0.0f)
+	{
+		return float3(0, 0, 0);
+	}
 
-float3 SampleDirectionalLight(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
-{
-	return SampleDirectionalLightWithFlags(AS, Light, origin, normal, Random, RAY_FLAG_FORCE_OPAQUE);
-}
-
-float3 SamplePointLightWithFlags(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random, uint ShadowRayFlags)
-{
-	float3 direction = normalize(Light.Position.xyz - origin);
-	float dist = distance(Light.Position.xyz, origin);
-
-	// float attenuation = 1.0 / (1.0 + dist);
-	float attenuation = clamp(1.0 - dist * dist / (Light.Range * Light.Range), 0.0, 1.0);
-	attenuation *= attenuation;
-	
-	// sample shadow
-	float occlusion = TraceShadowRayWithFlags(AS, origin, direction, dist, ShadowRayFlags);
-
-	return attenuation * Light.Color.rgb * occlusion;
-}
-
-float3 SamplePointLight(const in RaytracingAccelerationStructure AS, GPULight Light, float3 origin, float3 normal, float2 Random)
-{
-	return SamplePointLightWithFlags(AS, Light, origin, normal, Random, RAY_FLAG_FORCE_OPAQUE);
+	BRDF.L = LightSample.Direction;
+	return SanitizeRadiance(EvaluateBRDFCos(BRDF) * LightSample.Radiance * Visibility);
 }
 
 float3 RayTraceEvaluateDirectLightingWithFlags(const in RaytracingAccelerationStructure AS, float3 Origin, uint RngState, BRDFData BRDF, uint ShadowRayFlags)
@@ -111,45 +91,16 @@ float3 RayTraceEvaluateDirectLightingWithFlags(const in RaytracingAccelerationSt
 	// TODO: sample from a grid
 	for (uint l = 0; l < GPUScene::GetLightsCount(); l++)
 	{
-		float3 LightSample = float3(0, 0, 0);
-
-		// TODO: get it from sample functions
-		BRDF.L = float3(0, 0, 0); // light direction
-
 		float2 Xi = Random::UniformDistrubition2d(RngState);
-		// TODO: light PDF, as every time we do a random decision, we need to weight it by it's probability
-		
         GPULight Light = GPUScene::GPUSceneLights[l];
-		
-        float Distance = distance(Light.Position.xyz, Origin);
-		
-		// TODO: unify it with code path in GBufferLightingPass.hlsl
-
-		switch (Light.Type)
+		RayTracedLightSample LightSample = SampleRayTracedLight(Light, Origin, Xi);
+		if (!LightSample.Valid)
 		{
-		case GPULIGHT_DIRECTIONAL:
-			LightSample = SampleDirectionalLightWithFlags(AS, Light, Origin, BRDF.N, Xi, ShadowRayFlags);
-			BRDF.L = Light.Direction.xyz;
-			break;
-		case GPULIGHT_POINT:
-			LightSample = SamplePointLightWithFlags(AS, Light, Origin, BRDF.N, Xi, ShadowRayFlags);
-			// TODO: account for sphere light
-			BRDF.L = normalize(Light.Position.xyz - Origin);
-			break;
-		case GPULIGHT_SPOT:
-            LightSample = SamplePointLightWithFlags(AS, Light, Origin, BRDF.N, Xi, ShadowRayFlags);
-            BRDF.L = normalize(Light.Position.xyz - Origin);
+			continue;
+		}
 
-            float angle = saturate(dot(BRDF.L, Light.Direction.xyz));
-            float2 angles = Light.SizeOrSpotAngles;
-
-            LightSample *= smoothstep(angles.y, angles.x, angle);
-            break;
-			
-			// TODO: area lights
-        }
-
-        Result += SanitizeRadiance(EvaluateBRDFCos(BRDF) * LightSample);
+		float Occlusion = TraceShadowRayWithFlags(AS, Origin, LightSample.Direction, LightSample.Distance, ShadowRayFlags);
+        Result += EvaluateRayTracedLightSample(BRDF, LightSample, Occlusion);
     }
 	
 	return SanitizeRadiance(Result);
@@ -167,38 +118,16 @@ float3 RayTraceEvaluateDirectLightingWithAlphaMask(const in RaytracingAccelerati
 
 	for (uint l = 0; l < GPUScene::GetLightsCount(); l++)
 	{
-		float3 LightSample = float3(0, 0, 0);
-		BRDF.L = float3(0, 0, 0);
-
 		float2 Xi = Random::UniformDistrubition2d(RngState);
 		GPULight Light = GPUScene::GPUSceneLights[l];
-
-		switch (Light.Type)
+		RayTracedLightSample LightSample = SampleRayTracedLight(Light, Origin, Xi);
+		if (!LightSample.Valid)
 		{
-		case GPULIGHT_DIRECTIONAL:
-			BRDF.L = Light.Direction.xyz;
-			LightSample = Light.Color.rgb * TraceShadowRayWithAlphaMask(AS, Origin, normalize(Light.Direction.xyz), 5000.0f, RAY_FLAG_FORCE_OPAQUE, UseAlphaMask);
-			break;
-		case GPULIGHT_POINT:
-		case GPULIGHT_SPOT:
-		{
-			float3 Direction = normalize(Light.Position.xyz - Origin);
-			float Dist = distance(Light.Position.xyz, Origin);
-			float Attenuation = clamp(1.0 - Dist * Dist / (Light.Range * Light.Range), 0.0, 1.0);
-			Attenuation *= Attenuation;
-			BRDF.L = Direction;
-			LightSample = Attenuation * Light.Color.rgb * TraceShadowRayWithAlphaMask(AS, Origin, Direction, Dist, RAY_FLAG_FORCE_OPAQUE, UseAlphaMask);
-
-			if (Light.Type == GPULIGHT_SPOT)
-			{
-				float Angle = saturate(dot(BRDF.L, Light.Direction.xyz));
-				LightSample *= smoothstep(Light.SizeOrSpotAngles.y, Light.SizeOrSpotAngles.x, Angle);
-			}
-			break;
-		}
+			continue;
 		}
 
-		Result += SanitizeRadiance(EvaluateBRDFCos(BRDF) * LightSample);
+		float Occlusion = TraceShadowRayWithAlphaMask(AS, Origin, LightSample.Direction, LightSample.Distance, RAY_FLAG_FORCE_OPAQUE, UseAlphaMask);
+		Result += EvaluateRayTracedLightSample(BRDF, LightSample, Occlusion);
 	}
 
 	return SanitizeRadiance(Result);
