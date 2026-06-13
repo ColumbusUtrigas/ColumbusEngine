@@ -28,12 +28,15 @@
 min16float3 FFX_DNSR_Reflections_SampleAverageRadiance(float2 uv) { return (min16float3)g_average_radiance.SampleLevel(g_linear_sampler, uv, 0.0f).xyz; }
 min16float3 FFX_DNSR_Reflections_LoadRadiance(int2 pixel_coordinate) { return (min16float3)g_in_radiance.Load(int3(pixel_coordinate, 0)).xyz; }
 min16float3 FFX_DNSR_Reflections_LoadRadianceReprojected(int2 pixel_coordinate) { return (min16float3)g_in_reprojected_radiance.Load(int3(pixel_coordinate, 0)).xyz; }
-min16float FFX_DNSR_Reflections_LoadRoughness(int2 pixel_coordinate) { return (min16float)g_roughness.Load(int3(pixel_coordinate, 0)); }
+min16float FFX_DNSR_Reflections_LoadRoughness(int2 pixel_coordinate) {
+    return FFX_DNSR_Reflections_PerceptualRoughnessToDenoiserRoughness((min16float)g_roughness.Load(int3(pixel_coordinate, 0)));
+}
 min16float FFX_DNSR_Reflections_LoadVariance(int2 pixel_coordinate) { return (min16float)g_in_variance.Load(int3(pixel_coordinate, 0)).x; }
 min16float FFX_DNSR_Reflections_LoadNumSamples(int2 pixel_coordinate) { return (min16float)g_in_sample_count.Load(int3(pixel_coordinate, 0)).x; }
 void FFX_DNSR_Reflections_StoreTemporalAccumulation(int2 pixel_coordinate, min16float3 radiance, min16float variance) {
     g_out_radiance[pixel_coordinate] = radiance.xyzz;
     g_out_variance[pixel_coordinate] = variance.x;
+    g_out_sample_count[pixel_coordinate] = g_in_sample_count[pixel_coordinate];
 }
 
 #include "ffx_denoiser_reflections_resolve_temporal.h"

@@ -39,6 +39,22 @@ struct _Params
 	uint   UseRadianceCache;
 } Params;
 
+float RadicalInverseVdC(uint bits)
+{
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10;
+}
+
+float2 ReflectionSampleSequence(uint2 pixel, uint frameIndex)
+{
+	uint pixelSeed = Random::Hash(pixel.x ^ Random::Hash(pixel.y));
+	float2 sequence = float2(frac((frameIndex & 1023u) / 1024.0 + Random::FloatConstruct(pixelSeed)), RadicalInverseVdC(frameIndex ^ pixelSeed));
+	return clamp(sequence, 1e-4, 0.9999);
+}
 
 [shader("raygeneration")]
 void RayGen()
@@ -50,7 +66,7 @@ void RayGen()
 	// do not trace from sky, early exit
 	if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
 	{
-		Output[pixel] = float4(0,0,0,0);
+		Output[pixel] = float4(0,0,0,-1);
 		ResultDirectionDistance[pixel] = float4(0,0,0,-1);
 		ResultRayPdf[pixel] = 0;
 		return;
@@ -61,7 +77,7 @@ void RayGen()
 	// roughness cut, early exit
 	if (RM.x > Params.MaxRoughness)
 	{
-		Output[pixel] = float4(0,0,0,0);
+		Output[pixel] = float4(0,0,0,-1);
 		ResultDirectionDistance[pixel] = float4(0,0,0,-1);
 		ResultRayPdf[pixel] = 0;
 		return;
@@ -80,9 +96,8 @@ void RayGen()
 	BRDF.Roughness = max(RM.r, 0.001);
 	BRDF.Metallic  = RM.g;
 
-	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
-
-	BRDFSample Sample = SampleBRDF_GGX(BRDF, Random::UniformDistrubition2d(RngState));
+	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + Params.Random);
+	BRDFSample Sample = SampleBRDF_GGX(BRDF, ReflectionSampleSequence(pixel, Params.Random));
 	Direction = Sample.Dir;
 	BRDF.L = Direction;
 	float RayPdf = max(Sample.Pdf, 1e-6);
@@ -125,14 +140,15 @@ void RayGen()
 
 			float3 HitPoint = WP + Direction * payload.HitDistance;
 			HitPoint += BRDF.N * 0.01;
-			float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * LambertDiffuseBRDF(float3(1,1,1));
+			float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * BRDF.Albedo;
 			ColourResult = (payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse) * RayAttenuation;
 		}
 	}
 
 	// write results
 	{
-		Output[pixel]                  = float4(ColourResult, 1);
+		float denoiserRayLength        = max(payload.HitDistance, 0.0);
+		Output[pixel]                  = float4(ColourResult, denoiserRayLength);
 		ResultDirectionDistance[pixel] = float4(Direction, payload.HitDistance);
 		ResultRayPdf[pixel]            = RayPdf;
 	}

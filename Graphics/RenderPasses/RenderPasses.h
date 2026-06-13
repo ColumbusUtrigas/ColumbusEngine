@@ -67,6 +67,8 @@ namespace Columbus
 
 		Texture2* TAAHistory = nullptr;
 		Texture2* RTReflectionsRadiance = nullptr;
+		Texture2* RTReflectionsAverageRadiance = nullptr;
+		Texture2* RTReflectionsVariance = nullptr;
 		Texture2* RTReflectionsSampleCount = nullptr;
 
 		RTGIDenoiserHistory RTGI_History;

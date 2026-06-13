@@ -31,7 +31,7 @@ min16float3 FFX_DNSR_Reflections_SampleAverageRadiance(float2 uv) {
 }
 
 min16float FFX_DNSR_Reflections_LoadRoughness(int2 pixel_coordinate) {
-    return (min16float)g_roughness.Load(int3(pixel_coordinate, 0));
+    return FFX_DNSR_Reflections_PerceptualRoughnessToDenoiserRoughness((min16float)g_roughness.Load(int3(pixel_coordinate, 0)));
 }
 
 void FFX_DNSR_Reflections_LoadNeighborhood(
@@ -45,7 +45,7 @@ void FFX_DNSR_Reflections_LoadNeighborhood(
     radiance = (min16float3)g_in_radiance.Load(int3(pixel_coordinate, 0)).xyz;
     variance = (min16float)g_in_variance.Load(int3(pixel_coordinate, 0)).x;
 
-    normal = normalize(2.0 * (min16float3)g_normal.Load(int3(pixel_coordinate, 0)) - 1.0);
+    normal = normalize((min16float3)g_normal.Load(int3(pixel_coordinate, 0)));
 
     float2 uv = (pixel_coordinate.xy + (0.5f).xx) / float2(screen_size.xy);
     depth = FFX_DNSR_Reflections_GetLinearDepth(uv, g_depth_buffer.Load(int3(pixel_coordinate, 0)));
@@ -54,6 +54,7 @@ void FFX_DNSR_Reflections_LoadNeighborhood(
 void FFX_DNSR_Reflections_StorePrefilteredReflections(int2 pixel_coordinate, min16float3 radiance, min16float variance) {
     g_out_radiance[pixel_coordinate] = radiance.xyzz;
     g_out_variance[pixel_coordinate] = variance.x;
+    g_out_sample_count[pixel_coordinate] = g_in_sample_count[pixel_coordinate];
 }
 
 #include "ffx_denoiser_reflections_prefilter.h"

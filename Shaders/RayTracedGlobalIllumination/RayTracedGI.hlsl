@@ -94,7 +94,7 @@ void RayGen()
 		//BRDF.Metallic = payload.RoughnessMetallic.y;
 
 		float3 HitPoint = WP + Direction * payload.HitDistance;
-		float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * LambertDiffuseBRDF(float3(1,1,1));
+		float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * BRDF.Albedo;
 		Radiance = payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse;
 	}
 

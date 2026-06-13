@@ -107,6 +107,8 @@ namespace Columbus
 		Device->DestroyTexture(VolumetricFogFroxels);
 		Device->DestroyTexture(TAAHistory);
 		Device->DestroyTexture(RTReflectionsRadiance);
+		Device->DestroyTexture(RTReflectionsAverageRadiance);
+		Device->DestroyTexture(RTReflectionsVariance);
 		Device->DestroyTexture(RTReflectionsSampleCount);
 		RTGI_History.Destroy(Device);
 		Depth = nullptr;
@@ -115,6 +117,8 @@ namespace Columbus
 		VolumetricFogFroxels = nullptr;
 		TAAHistory = nullptr;
 		RTReflectionsRadiance = nullptr;
+		RTReflectionsAverageRadiance = nullptr;
+		RTReflectionsVariance = nullptr;
 		RTReflectionsSampleCount = nullptr;
 	}
 

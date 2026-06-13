@@ -56,6 +56,10 @@ bool FFX_DNSR_Reflections_IsGlossyReflection(float roughness) {
     return roughness <= g_roughness_threshold;
 }
 
+min16float FFX_DNSR_Reflections_PerceptualRoughnessToDenoiserRoughness(min16float roughness) {
+    return roughness * roughness;
+}
+
 bool FFX_DNSR_Reflections_IsMirrorReflection(float roughness) {
     return roughness <= 0.01;
 }
