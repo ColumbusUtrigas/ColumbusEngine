@@ -1,8 +1,9 @@
 #define SET 0
+#include "../Common.hlsli"
 
 // Inputs
 [[vk::binding( 0, SET)]] Texture2D<float>  g_depth_buffer : register(t0);
-[[vk::binding( 1, SET)]] Texture2D<float3> g_normals      : register(t1);
+[[vk::binding( 1, SET)]] Texture2D<float2> g_normals      : register(t1);
 [[vk::binding( 2, SET)]] Texture2D<float>  g_sample_count : register(t2);
 [[vk::binding( 3, SET)]] Texture2D<float4> g_input        : register(t3);
 
@@ -43,9 +44,9 @@ void main(int2 dtid : SV_DispatchThreadID)
     float TotalWeight = 0;
 
     float CenterDepth = g_depth_buffer[dtid];
-    float3 CenterNormal = g_normals[dtid];
+    float3 CenterNormal = NormalDecode(g_normals[dtid]);
 
-    if (CenterDepth <= 0.0001 || CenterDepth >= 0.9999)
+    if (IsSkyDepth(CenterDepth))
     {
         // sky
         g_output[dtid] = float4(0,0,0,1);
@@ -71,10 +72,10 @@ void main(int2 dtid : SV_DispatchThreadID)
             float Depth = g_depth_buffer[Coords];
             Weight *= GetEdgeStoppingDepthWeight(CenterDepth, Depth);
 
-            float3 Normal = g_normals[Coords];
+            float3 Normal = NormalDecode(g_normals[Coords]);
             Weight *= GetEdgeStoppingNormalWeight(CenterNormal, Normal);
 
-            float SkyWeight = (Depth >= 0.9999 || Depth <= 0.0001) ? 0 : 1;
+            float SkyWeight = IsSkyDepth(Depth) ? 0 : 1;
             Weight *= SkyWeight;
 
             Result += g_input[Coords].xyz * Weight;

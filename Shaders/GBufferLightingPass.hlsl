@@ -6,7 +6,7 @@
 
 [[vk::binding(0, 0)]] Texture2D GBufferAlbedo;
 [[vk::binding(1, 0)]] Texture2D GBufferNormal;
-[[vk::binding(2, 0)]] Texture2D GBufferWorldPosition;
+[[vk::binding(2, 0)]] Texture2D<float> GBufferDepth;
 [[vk::binding(3, 0)]] Texture2D GBufferRoughnessMetallic;
 [[vk::binding(4, 0)]] Texture2D GBufferEmissive;
 [[vk::binding(5, 0)]] Texture2D GBufferLightmap; // TODO: unify with GI?
@@ -338,12 +338,19 @@ void main(uint3 dtid : SV_DispatchThreadID)
 	if (any(Pixel >= GPUSceneScene[0].RenderSize))
 		return;
 
-	const float3 WP = GBufferWorldPosition[Pixel].rgb;
-	const float2 RM = GBufferRoughnessMetallic[Pixel].rg;
+	const float depth = GBufferDepth[Pixel];
 	const float3 Emissive = GBufferEmissive[Pixel].rgb;
+	if (IsSkyDepth(depth))
+	{
+		LightingOutput[Pixel] = float4(Emissive, 1);
+		return;
+	}
+
+	const float3 WP = ReconstructWorldPositionFromDepth(Pixel, depth, GPUSceneScene[0].RenderSize, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+	const float2 RM = GBufferRoughnessMetallic[Pixel].rg;
 
 	BRDFData BRDF;
-	BRDF.N         = GBufferNormal[Pixel].rgb;
+	BRDF.N         = NormalDecode(GBufferNormal[Pixel].rg);
 	BRDF.V         = -normalize(WP - GPUSceneScene[0].CameraCur.CameraPosition.xyz);
 	BRDF.Albedo    = GBufferAlbedo[Pixel].rgb;
 	BRDF.Roughness = RM.x;

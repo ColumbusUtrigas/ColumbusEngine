@@ -1,3 +1,5 @@
+#pragma pack_matrix(row_major)
+
 float2 BaryLerp(float2 a, float2 b, float2 c, float3 barycentrics)
 {
     return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
@@ -27,16 +29,18 @@ void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes 
     GPUScene::Vertex vert3 = GPUScene::FetchVertex(NonUniformResourceIndex(ObjectId), NonUniformResourceIndex(PrimitiveIndex() * 3 + 2));
 
     float2 uv = BaryLerp(vert1.UV, vert2.UV, vert3.UV, barycentrics);
-    float3 position1 = mul(float4(vert1.Position, 1), Mesh.Transform).xyz;
-    float3 position2 = mul(float4(vert2.Position, 1), Mesh.Transform).xyz;
-    float3 position3 = mul(float4(vert3.Position, 1), Mesh.Transform).xyz;
+    float3 position1 = mul(Mesh.Transform, float4(vert1.Position, 1)).xyz;
+    float3 position2 = mul(Mesh.Transform, float4(vert2.Position, 1)).xyz;
+    float3 position3 = mul(Mesh.Transform, float4(vert3.Position, 1)).xyz;
 
     float3 geometricNormal = normalize(cross(position2 - position1, position3 - position1));
 
     float3x3 normalMatrix = (float3x3)0;
+    // filling the matrix by rows
     normalMatrix[0] = Mesh.NormalMatrix[0].xyz;
     normalMatrix[1] = Mesh.NormalMatrix[1].xyz;
     normalMatrix[2] = Mesh.NormalMatrix[2].xyz;
+    normalMatrix = transpose(normalMatrix);
 
     float3 normal = normalize(mul(BaryLerp(vert1.Normal, vert2.Normal, vert3.Normal, barycentrics), normalMatrix));
     float4 tangentAndSign = BaryLerp(vert1.TangentAndSign, vert2.TangentAndSign, vert3.TangentAndSign, barycentrics);

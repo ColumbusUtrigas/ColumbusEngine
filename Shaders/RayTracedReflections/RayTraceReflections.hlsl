@@ -25,10 +25,9 @@ struct RayPayload
 [[vk::binding(2, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> ResultDirectionDistance;
 [[vk::binding(3, SET)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  ResultRayPdf;
 [[vk::binding(4, SET)]] Texture2D<float3>   GBufferAlbedo;
-[[vk::binding(5, SET)]] Texture2D<float3>   GBufferNormals;
-[[vk::binding(6, SET)]] Texture2D<float3>   GBufferWorldPosition;
-[[vk::binding(7, SET)]] Texture2D<float4>   GBufferRoughnessMetallic;
-[[vk::binding(8, SET)]] Texture2D<float>    GBufferDepth;
+[[vk::binding(5, SET)]] Texture2D<float2>   GBufferNormals;
+[[vk::binding(6, SET)]] Texture2D<float4>   GBufferRoughnessMetallic;
+[[vk::binding(7, SET)]] Texture2D<float>    GBufferDepth;
 
 [[vk::push_constant]]
 struct _Params
@@ -59,12 +58,12 @@ float2 ReflectionSampleSequence(uint2 pixel, uint frameIndex)
 [shader("raygeneration")]
 void RayGen()
 {
-	const int2 pixel = DispatchRaysIndex().xy;
+	const uint2 pixel = DispatchRaysIndex().xy;
 	const uint2 launchDim = DispatchRaysDimensions().xy;
 
 	float depth = GBufferDepth[pixel].x;
 	// do not trace from sky, early exit
-	if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+	if (IsSkyDepth(depth))
 	{
 		Output[pixel] = float4(0,0,0,-1);
 		ResultDirectionDistance[pixel] = float4(0,0,0,-1);
@@ -84,8 +83,8 @@ void RayGen()
 	}
 
 	float3 Albedo = GBufferAlbedo[pixel].rgb;
-	float3 Normal = GBufferNormals[pixel].xyz;
-	float3 WP     = GBufferWorldPosition[pixel].xyz;
+	float3 Normal = NormalDecode(GBufferNormals[pixel]);
+	float3 WP     = ReconstructWorldPositionFromDepth(pixel, depth, launchDim, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
 
 	float3 Direction = normalize(WP - GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz);
 

@@ -71,7 +71,7 @@ namespace Columbus::RadianceCache
 		Vector3 CameraPosition;
 	};
 
-	RenderGraphTextureRef VisualiseRadianceCache(RenderGraph& Graph, RenderView& View, RadianceCacheData& RadianceCache, RenderGraphTextureRef GBufferWP)
+	RenderGraphTextureRef VisualiseRadianceCache(RenderGraph& Graph, RenderView& View, RadianceCacheData& RadianceCache, RenderGraphTextureRef GBufferDepth)
 	{
 		iVector2 Size = View.RenderSize;
 
@@ -89,11 +89,11 @@ namespace Columbus::RadianceCache
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.ReadBuffer(RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-		Dependencies.Read(GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		Dependencies.Read(GBufferDepth, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 		Vector3 CameraPos = View.CameraCur.Pos;
 
-		Graph.AddPass("Radiance Cache Visualisation", RenderGraphPassType::Raster, Parameters, Dependencies, [CameraPos, Size, GBufferWP, RadianceCache](RenderGraphContext& Context)
+		Graph.AddPass("Radiance Cache Visualisation", RenderGraphPassType::Raster, Parameters, Dependencies, [CameraPos, Size, GBufferDepth, RadianceCache](RenderGraphContext& Context)
 		{
 			static GraphicsPipeline* Pipeline = nullptr;
 			if (Pipeline == nullptr)
@@ -119,7 +119,8 @@ namespace Columbus::RadianceCache
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphBuffer(RadianceCache.DataBuffer).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(GBufferDepth).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.Scene->SceneBuffer);
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);

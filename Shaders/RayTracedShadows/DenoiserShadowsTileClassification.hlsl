@@ -26,6 +26,7 @@ THE SOFTWARE.
 #pragma pack_matrix(row_major)
 
 #include "DenoiserShadowsUtil.hlsli"
+#include "../Common.hlsli"
 
 // begin user code
 
@@ -42,7 +43,7 @@ struct _Params {
 
 RWTexture2D<uint> PackedTilesBuffer : register(u0);
 
-Texture2D<float3> Normals : register(t1);
+Texture2D<float2> Normals : register(t1);
 Texture2D<float> Depth : register(t2);
 Texture2D<float> DepthHistory : register(t3);
 Texture2D<float2> Velocity : register(t4);
@@ -105,7 +106,7 @@ float FFX_DNSR_Shadows_ReadPreviousDepth(int2 idx)
 float3 FFX_DNSR_Shadows_ReadNormals(uint2 did)
 {
 	did = min(did, FFX_DNSR_Shadows_GetBufferDimensions() - 1);
-	return Normals[did];
+	return NormalDecode(Normals[did]);
 }
 
 float2 FFX_DNSR_Shadows_ReadVelocity(uint2 did)
@@ -225,7 +226,7 @@ void FFX_DNSR_Shadows_SearchSpatialRegion(uint2 gid, out bool all_in_light, out 
 float FFX_DNSR_Shadows_GetLinearDepth(uint2 did, float depth)
 {
 	const float2 uv = (did + 0.5f) * FFX_DNSR_Shadows_GetInvBufferDimensions();
-	const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
+	const float2 ndc = ScreenUVToNDC(uv);
    
 	float4 projected = mul(FFX_DNSR_Shadows_GetProjectionInverse(), float4(ndc, depth, 1));
 	return abs(projected.z / projected.w);
@@ -299,7 +300,7 @@ FFX_DNSR_Shadows_DisocclusionResult FFX_DNSR_Shadows_IsDisoccludedEx(uint2 did, 
 	const int2 dims = FFX_DNSR_Shadows_GetBufferDimensions();
 	const float2 texel_size = FFX_DNSR_Shadows_GetInvBufferDimensions();
 	const float2 uv = (did + 0.5f) * texel_size;
-	const float2 ndc = (2.0f * uv - 1.0f) * float2(1.0f, -1.0f);
+	const float2 ndc = ScreenUVToNDC(uv);
 #if VELOCITY_CONVENTION == 0 || VELOCITY_CONVENTION == 2
 	const float2 previous_uv = uv - velocity;
 #elif VELOCITY_CONVENTION == 1

@@ -26,13 +26,14 @@ THE SOFTWARE.
 #pragma pack_matrix(row_major)
 
 #include "DenoiserShadowsUtil.hlsli"
+#include "../Common.hlsli"
 
 // begin user code
 #define float16_t2 min16float2
 #define float16_t3 min16float3
 #define GROUPSIZE 8
 
-Texture2D<float3> Normals : register(t0);
+Texture2D<float2> Normals : register(t0);
 Texture2D<float> Depth : register(t1);
 
 [[vk::image_format("rg16f")]] RWTexture2D<float2> Input : register(u2);
@@ -77,7 +78,7 @@ float FFX_DNSR_Shadows_ReadDepth(uint2 did)
 float16_t3 FFX_DNSR_Shadows_ReadNormals(uint2 did)
 {
 	did = min(did, FFX_DNSR_Shadows_GetBufferDimensions() - 1);
-	return normalize((float16_t3)Normals[did]);
+	return (float16_t3)NormalDecode(Normals[did]);
 }
 
 bool FFX_DNSR_Shadows_IsShadowReciever(uint2 did)
@@ -218,7 +219,7 @@ float FFX_DNSR_Shadows_GetNormalSimilarity(float3 x1, float3 x2)
 float FFX_DNSR_Shadows_GetLinearDepth(uint2 did, float depth)
 {
 	const float2 uv = (did + 0.5f) * FFX_DNSR_Shadows_GetInvBufferDimensions();
-	const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
+	const float2 ndc = ScreenUVToNDC(uv);
 
 	float4 projected = mul(FFX_DNSR_Shadows_GetProjectionInverse(), float4(ndc, depth, 1));
 	return abs(projected.z / projected.w);
@@ -274,7 +275,7 @@ void FFX_DNSR_Shadows_DenoiseFromGroupSharedMemory(uint2 did, uint2 gtid, inout 
 			float3 normal_neigh = FFX_DNSR_Shadows_LoadNormalsFromGroupSharedMemory(gtid_idx);
 			float2 shadow_neigh = FFX_DNSR_Shadows_LoadInputFromGroupSharedMemory(gtid_idx);
 
-			float sky_pixel_multiplier = ((x == 0 && y == 0) || depth_neigh >= 1.0f || depth_neigh <= 0.0f) ? 0 : 1; // Zero weight for sky pixels
+			float sky_pixel_multiplier = ((x == 0 && y == 0) || IsSkyDepth(depth_neigh)) ? 0 : 1; // Zero weight for sky pixels
 
 			// Fetch our filtering values
 			depth_neigh = FFX_DNSR_Shadows_GetLinearDepth(did_idx, depth_neigh);

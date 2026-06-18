@@ -324,7 +324,7 @@ namespace Columbus
 	{
 		bool DepthEnable = true;
 		bool DepthWriteMask = true;
-		ComparisonFunc DepthFunc = ComparisonFunc::Less;
+		ComparisonFunc DepthFunc = ComparisonFunc::GEqual;
 
 		bool StencilEnable = false;
 		uint8 StencilReadMask = 0xFF;

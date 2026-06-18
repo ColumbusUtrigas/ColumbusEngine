@@ -20,12 +20,10 @@ struct Payload
 
 // INPUTS
 [[vk::binding(0, SET)]] RaytracingAccelerationStructure AccelerationStructure;
-[[vk::binding(1, SET)]] Texture2D<float3> InputNormals;
-[[vk::binding(2, SET)]] Texture2D<float3> InputWorldPosition;
-[[vk::binding(3, SET)]] Texture2D<float>  InputDepth;
+[[vk::binding(1, SET)]] Texture2D<float>  InputDepth;
 
 // OUTPUTS
-[[vk::binding(4, SET)]] [[vk::image_format("r8")]] RWTexture2D<float> OutputShadow;
+[[vk::binding(2, SET)]] [[vk::image_format("r8")]] RWTexture2D<float> OutputShadow;
 
 [[vk::push_constant]]
 struct _Params
@@ -37,11 +35,11 @@ struct _Params
 [shader("raygeneration")]
 void RayGen()
 {
-	const int2 pixel = DispatchRaysIndex().xy;
+	const uint2 pixel = DispatchRaysIndex().xy;
 
 	float depth = InputDepth[pixel].x;
 	// do not trace from sky, early exit
-	if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+	if (IsSkyDepth(depth))
 	{
 		OutputShadow[pixel] = 0.0;
 		return;
@@ -56,7 +54,7 @@ void RayGen()
 		return;
 	}
 
-	float3 origin = InputWorldPosition[pixel];
+	float3 origin = ReconstructWorldPositionFromDepth(pixel, depth, DispatchRaysDimensions().xy, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
 
 	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
 	RayTracedLightSample LightSample = SampleRayTracedLight(Light, origin, Random::UniformDistrubition2d(RngState));
@@ -67,7 +65,8 @@ void RayGen()
 	}
 
 	float3 dir = normalize(LightSample.Direction);
-	OutputShadow[pixel] = TraceShadowRayWithAlphaMask(AccelerationStructure, origin + dir * 0.001f, dir, LightSample.Distance, RAY_FLAG_FORCE_OPAQUE, true);
+	float RayBias = max(0.02, 0.0002 * distance(origin, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz));
+	OutputShadow[pixel] = TraceShadowRayWithAlphaMask(AccelerationStructure, origin + dir * RayBias, dir, LightSample.Distance, RAY_FLAG_FORCE_OPAQUE, true);
 }
 #endif
 

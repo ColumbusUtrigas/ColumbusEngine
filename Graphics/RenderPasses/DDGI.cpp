@@ -17,8 +17,8 @@ namespace Columbus
 
 struct DDGIApplyParameters
 {
-	Vector4  CameraPos;
 	iVector2 Resolution;
+	iVector2 _Padding;
 };
 
 void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
@@ -45,8 +45,6 @@ void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View, Scen
 
 	{
 		iVector2 RenderSize = View.RenderSize;
-		Vector3 CameraPos = View.CameraCur.Pos;
-
 		TextureDesc2 Desc{
 			.Usage = TextureUsage::Storage | TextureUsage::Sampled,
 			.Width = (u32)RenderSize.X,
@@ -59,11 +57,11 @@ void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View, Scen
 
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(GI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-		Graph.AddPass("DDGI", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, RenderSize, CameraPos, GI_Tex](RenderGraphContext& Context)
+		Graph.AddPass("DDGI", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, RenderSize, GI_Tex](RenderGraphContext& Context)
 		{
 			// TODO: separate volume creation
 			if (sdkVolume == nullptr)
@@ -274,18 +272,19 @@ void RenderIndirectLightingDDGI(RenderGraph& Graph, const RenderView& View, Scen
 				}
 
 				auto Set = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, VolumeConstants);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, &ProbeData, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 4, 0, &ProbeIrradiance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 5, 0, &ProbeDistance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.Device->GetStaticSampler());
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.GetRenderGraphTexture(GI_Tex).get());
+				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.Scene->SceneBuffer);
+				Context.Device->UpdateDescriptorSet(Set, 3, 0, VolumeConstants);
+				Context.Device->UpdateDescriptorSet(Set, 4, 0, &ProbeData, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 5, 0, &ProbeIrradiance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 6, 0, &ProbeDistance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.Device->GetStaticSampler());
+				Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(GI_Tex).get());
 
 				DDGIApplyParameters Params{
-					.CameraPos = Vector4(CameraPos, 0),
 					.Resolution = RenderSize,
+					._Padding = iVector2(0, 0),
 				};
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);

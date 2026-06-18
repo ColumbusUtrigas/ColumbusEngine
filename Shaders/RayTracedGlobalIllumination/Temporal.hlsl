@@ -1,5 +1,7 @@
 #pragma pack_matrix(row_major)
 
+#include "../Common.hlsli"
+
 #define SET 0
 
 // Inputs
@@ -31,7 +33,7 @@ struct _Params {
 float GetLinearDepth(int2 dtid, float depth)
 {
     const float2 uv = (dtid + 0.5f) / float2(Params.Size);
-	const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
+	const float2 ndc = ScreenUVToNDC(uv);
 
     float4 Projected = mul(Params.ProjectionInv, float4(ndc, depth, 1));
     return abs(Projected.z / Projected.w);
@@ -64,7 +66,7 @@ void main(int2 dtid : SV_DispatchThreadID)
     } else
     {
         const float2 uv = (dtid + 0.5f) / float2(Params.Size);
-	    const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
+	    const float2 ndc = ScreenUVToNDC(uv);
 
         float Depth = g_depth[dtid];
 
@@ -74,8 +76,7 @@ void main(int2 dtid : SV_DispatchThreadID)
         PrevNdc /= PrevNdc.w;
 
         #if 0
-        float2 PrevUv = (PrevNdc.xy+1)/2;
-        PrevUv.y = 1 - PrevUv.y;
+        float2 PrevUv = NDCToScreenUV(PrevNdc.xy);
         int2 ReprojectedCoords = CLAMP_SCREEN_COORDS(PrevUv * Params.Size);
         PrevCoordsClamped = ReprojectedCoords;
         PrevCoords = ReprojectedCoords;

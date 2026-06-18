@@ -398,12 +398,14 @@ namespace Columbus
 	struct DownsampleGBufferParameters
 	{
 		iVector2 Size;
+		iVector2 SourceSize;
 		int DownsampleFactor;
 	};
 
 	struct UpsampleRTGIParameters
 	{
 		iVector2 Size;
+		iVector2 InputSize;
 		int DownsampleFactor;
 	};
 
@@ -411,14 +413,15 @@ namespace Columbus
 	{
 		RenderGraphTextureRef Depth;
 		RenderGraphTextureRef Normal;
-		RenderGraphTextureRef WorldPos;
 		RenderGraphTextureRef DepthHistory;
 		RenderGraphTextureRef Velocity;
+		RenderGraphTextureRef SourcePixel;
 	};
 
 	static DownsampledTextures DownsampleGBuffer(RenderGraph& Graph, SceneTextures& Textures, int DownsampleFactor)
 	{
-		const iVector2 Size = Graph.GetTextureSize2D(Textures.GBufferNormal) / DownsampleFactor;
+		const iVector2 SourceSize = Graph.GetTextureSize2D(Textures.GBufferNormal);
+		const iVector2 Size = (SourceSize + DownsampleFactor - 1) / DownsampleFactor;
 
 		DownsampledTextures Result;
 
@@ -434,36 +437,35 @@ namespace Columbus
 
 		TextureDesc2 DepthDesc     = CommonDesc;
 		TextureDesc2 NormalDesc    = CommonDesc;
-		TextureDesc2 WorldPosDesc  = CommonDesc;
 		TextureDesc2 DepthHistDesc = CommonDesc;
 		TextureDesc2 VelocityDesc  = CommonDesc;
+		TextureDesc2 SourcePixelDesc = CommonDesc;
 
-		DepthDesc.Format     = TextureFormat::R16;
+		DepthDesc.Format     = TextureFormat::R32F;
 		NormalDesc.Format    = Graph.GetTextureDesc(Textures.GBufferNormal).Format;
-		WorldPosDesc.Format  = Graph.GetTextureDesc(Textures.GBufferWP).Format;
-		DepthHistDesc.Format = TextureFormat::R16;
+		DepthHistDesc.Format = TextureFormat::R32F;
 		VelocityDesc.Format  = Graph.GetTextureDesc(Textures.Velocity).Format;
+		SourcePixelDesc.Format = TextureFormat::RGBA32F;
 
 		Result.Depth        = Graph.CreateTexture(DepthDesc,    "Downsampled Depth");
 		Result.Normal       = Graph.CreateTexture(NormalDesc,   "Downsampled Normals");
-		Result.WorldPos     = Graph.CreateTexture(WorldPosDesc, "Downsampled WorldPos");
 		Result.DepthHistory = Graph.CreateTexture(DepthHistDesc, "Downsampled DepthHistory");
 		Result.Velocity     = Graph.CreateTexture(VelocityDesc, "Downsampled Velocity");
+		Result.SourcePixel  = Graph.CreateTexture(SourcePixelDesc, "Downsampled SourcePixel");
 
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(Textures.Velocity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
 		Dependencies.Write(Result.Depth, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(Result.Normal, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Write(Result.WorldPos, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(Result.DepthHistory, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(Result.Velocity, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Write(Result.SourcePixel, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-		Graph.AddPass("Downsample GBuffer", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Result, Size, DownsampleFactor](RenderGraphContext& Context)
+		Graph.AddPass("Downsample GBuffer", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, Result, Size, SourceSize, DownsampleFactor](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIPrepare, Context);
 
@@ -479,18 +481,18 @@ namespace Columbus
 			auto Set = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 3, 0, Textures.History.Depth, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 2, 0, Textures.History.Depth, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-			Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(Result.Depth).get());
-			Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(Result.Normal).get());
-			Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.GetRenderGraphTexture(Result.WorldPos).get());
-			Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(Result.DepthHistory).get());
-			Context.Device->UpdateDescriptorSet(Set, 9, 0, Context.GetRenderGraphTexture(Result.Velocity).get());
+			Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Result.Depth).get());
+			Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(Result.Normal).get());
+			Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(Result.DepthHistory).get());
+			Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.GetRenderGraphTexture(Result.Velocity).get());
+			Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(Result.SourcePixel).get());
 
 			DownsampleGBufferParameters Params{
 				.Size = Size,
+				.SourceSize = SourceSize,
 				.DownsampleFactor = DownsampleFactor,
 			};
 
@@ -644,6 +646,7 @@ namespace Columbus
 	static RenderGraphTextureRef UpsampleRTGI(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DownsampledTextures DownTextures, RenderGraphTextureRef RTGI_Tex, int DownsampleFactor)
 	{
 		const iVector2 Size = View.RenderSize;
+		const iVector2 InputSize = Graph.GetTextureSize2D(RTGI_Tex);
 
 		TextureDesc2 Desc;
 		Desc.Width = (u32)Size.X;
@@ -661,7 +664,7 @@ namespace Columbus
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(Result, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-		Graph.AddPass("Upsample", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Size, Result, DownsampleFactor, Textures, DownTextures](RenderGraphContext& Context)
+		Graph.AddPass("Upsample", RenderGraphPassType::Compute, Parameters, Dependencies, [RTGI_Tex, Size, InputSize, Result, DownsampleFactor, Textures, DownTextures](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedGIDenoise, Context);
 
@@ -684,6 +687,7 @@ namespace Columbus
 
 			UpsampleRTGIParameters Params{
 				.Size = Size,
+				.InputSize = InputSize,
 				.DownsampleFactor = DownsampleFactor,
 			};
 
@@ -718,7 +722,7 @@ namespace Columbus
 
 		DownsampledTextures DownsampledGBuffer = DownsampleGBuffer(Graph, Textures, DownsampleFactor);
 
-		const iVector2 GIResolution = View.RenderSize / DownsampleFactor;
+		const iVector2 GIResolution = Graph.GetTextureSize2D(DownsampledGBuffer.Depth);
 
 		TextureDesc2 Desc{
 			.Usage = TextureUsage::Storage | TextureUsage::Sampled,
@@ -732,12 +736,10 @@ namespace Columbus
 
 		RenderPassParameters Parameters;
 
-		// TODO: Get rid of WP
-
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(DownsampledGBuffer.WorldPos, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(DownsampledGBuffer.Depth, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Read(DownsampledGBuffer.Normal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		Dependencies.Read(DownsampledGBuffer.SourcePixel, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Dependencies, CVar_RayTracingIrradianceVolumes.GetValue(), VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
 		Dependencies.Write(RTGI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
@@ -761,8 +763,8 @@ namespace Columbus
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.Scene->TLAS);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTGI_Tex).get());
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Normal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.WorldPos).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.Depth).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(DownsampledGBuffer.SourcePixel).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			//Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 			RayTracingIrradianceVolumes::Bind(Context, DescriptorSet, IrradianceVolumes, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
 

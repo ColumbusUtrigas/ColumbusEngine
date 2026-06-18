@@ -11,9 +11,6 @@
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 
-// TODO: remove
-#include <Lib/imgui/imgui.h>
-
 namespace Columbus
 {
 
@@ -57,26 +54,23 @@ namespace Columbus
 
 		TextureDesc2 AlbedoDesc = CommonDesc;
 		TextureDesc2 NormalDesc = CommonDesc;
-		TextureDesc2 WPDesc = CommonDesc;
 		TextureDesc2 RMDesc = CommonDesc;
 		TextureDesc2 EmissiveDesc = CommonDesc;
 		TextureDesc2 DSDesc = CommonDesc;
 		TextureDesc2 VelocityDesc = CommonDesc;
 		TextureDesc2 LightmapDesc = CommonDesc;
 		AlbedoDesc.Format = TextureFormat::RGBA8;
-		NormalDesc.Format = TextureFormat::RGBA16F;
-		WPDesc.Format = TextureFormat::RGBA32F;
+		NormalDesc.Format = TextureFormat::RG16F;
 		RMDesc.Format = TextureFormat::RG8;
 		EmissiveDesc.Format = TextureFormat::R11G11B10F;
 		DSDesc.Format = TextureFormat::Depth32F;
 		DSDesc.Usage = TextureUsage::RenderTargetDepth;
 		VelocityDesc.Format = TextureFormat::RG16F;
-		LightmapDesc.Format = TextureFormat::RGBA16F;
+		LightmapDesc.Format = TextureFormat::R11G11B10F;
 		
 		SceneTextures Result { .History = History };
 		Result.GBufferAlbedo = Graph.CreateTexture(AlbedoDesc, "GBufferAlbedo");
 		Result.GBufferNormal = Graph.CreateTexture(NormalDesc, "GBufferNormal");
-		Result.GBufferWP = Graph.CreateTexture(WPDesc, "GBufferWP");
 		Result.GBufferRM = Graph.CreateTexture(RMDesc, "GBufferRM");
 		Result.GBufferEmissive = Graph.CreateTexture(EmissiveDesc, "GBufferEmissive");
 		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
@@ -127,12 +121,11 @@ namespace Columbus
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferAlbedo };
 		Parameters.ColorAttachments[1] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferNormal };
-		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferWP };
-		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
-		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferEmissive };
-		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
-		Parameters.ColorAttachments[6] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.ColorAttachments[2] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferRM };
+		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferEmissive };
+		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
+		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 0.0f, 0 } };
 		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
@@ -147,9 +140,8 @@ namespace Columbus
 			{
 				GraphicsPipelineDesc Desc;
 				Desc.Name = "GBufferPass";
-				Desc.rasterizerState.Cull = CullMode::No;
+				Desc.rasterizerState.Cull = CullMode::Front;
 				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
 					RenderTargetBlendDesc(),
@@ -184,11 +176,10 @@ namespace Columbus
 	{
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferAlbedo };
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
 		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		Graph.AddPass("GBufferDecals", RenderGraphPassType::Raster, Parameters, Dependencies, [View, Textures](RenderGraphContext& Context)
 		{
@@ -216,7 +207,8 @@ namespace Columbus
 			}
 
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.Scene->SceneBuffer);
 
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
 			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
@@ -268,7 +260,7 @@ namespace Columbus
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.GBufferEmissive, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -299,7 +291,7 @@ namespace Columbus
 			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferEmissive).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
@@ -453,7 +445,7 @@ namespace Columbus
 		{
 			if (DeferredContext.VisualisationMode == EDeferredRenderVisualisationMode::RadianceCache)
 			{
-				TonemappedImage = RadianceCache::VisualiseRadianceCache(Graph, View, Textures.RadianceCache, Textures.GBufferWP);
+				TonemappedImage = RadianceCache::VisualiseRadianceCache(Graph, View, Textures.RadianceCache, Textures.GBufferDS);
 			}
 			else
 			{

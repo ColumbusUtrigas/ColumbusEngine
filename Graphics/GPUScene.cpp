@@ -57,6 +57,10 @@ namespace Columbus
 			return false;
 		}
 
+		// if very dim it doesn't affect lighting too much
+		if (Color.XYZ().Length() < 0.001f)
+			return false;
+
 		return SourceRadius > 0.0001f ||
 			(Type == LightType::Rectangle && (SizeOrSpotAngles.X > 0.0001f || SizeOrSpotAngles.Y > 0.0001f));
 	}

@@ -32,25 +32,26 @@ struct _Params
 
 [[vk::binding(0, SET)]] RaytracingAccelerationStructure                     AccelerationStructure;
 [[vk::binding(1, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
-[[vk::binding(2, SET)]] Texture2D<float3>                                      GBufferNormals;
-[[vk::binding(3, SET)]] Texture2D<float3>                                      GBufferWorldPosition;
-[[vk::binding(4, SET)]] Texture2D<float>                                       GBufferDepth;
+[[vk::binding(2, SET)]] Texture2D<float2>                                      GBufferNormals;
+[[vk::binding(3, SET)]] Texture2D<float>                                       GBufferDepth;
+[[vk::binding(4, SET)]] Texture2D<float4>                                      GBufferSourcePixel;
 
 [shader("raygeneration")]
 void RayGen()
 {
-	const int2 pixel = DispatchRaysIndex().xy;
+	const uint2 pixel = DispatchRaysIndex().xy;
 
 	float depth = GBufferDepth[pixel].x;
 	// do not trace from sky, early exit
-	if (abs(depth) < EPSILON || abs(depth - 1) < EPSILON)
+	if (IsSkyDepth(depth))
 	{
 		Output[pixel] = float4(0,0,0,0);
 		return;
 	}
 
-	float3 Normal = GBufferNormals[pixel].xyz;
-	float3 WP     = GBufferWorldPosition[pixel].xyz;
+	float3 Normal = NormalDecode(GBufferNormals[pixel]);
+	int2 sourcePixel = clamp(int2(round(GBufferSourcePixel[pixel].xy)), int2(0, 0), GPUScene::GPUSceneScene[0].RenderSize - 1);
+	float3 WP = ReconstructWorldPositionFromDepth((uint2)sourcePixel, depth, (uint2)GPUScene::GPUSceneScene[0].RenderSize, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
 
 	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
 
@@ -64,8 +65,9 @@ void RayGen()
 	// ray trace
 	{
 		RayDesc Ray;
-		Ray.Origin = WP + Direction * 0.001;
-		Ray.TMin = 0.0;
+		float RayBias = max(0.002, 0.00002 * distance(WP, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz));
+		Ray.Origin = WP + Normal * RayBias;
+		Ray.TMin = RayBias;
 		Ray.Direction = Direction;
 		Ray.TMax = MaxDistance;
 

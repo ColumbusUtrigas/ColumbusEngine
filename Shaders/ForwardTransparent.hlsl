@@ -1,3 +1,5 @@
+#pragma pack_matrix(row_major)
+
 #include "BRDF.hlsli"
 #include "GPUScene.hlsli"
 
@@ -37,13 +39,13 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     NormalMatrix[1] = Mesh.NormalMatrix[1].xyz;
     NormalMatrix[2] = Mesh.NormalMatrix[2].xyz;
 
-    Out.Normal = normalize(mul(Vertex.Normal, NormalMatrix));
-    Out.Tangent = normalize(mul(Vertex.TangentAndSign.xyz, NormalMatrix));
+    Out.Normal = normalize(mul(NormalMatrix, Vertex.Normal));
+    Out.Tangent = normalize(mul(NormalMatrix, Vertex.TangentAndSign.xyz));
     Out.Bitangent = cross(Out.Normal, Out.Tangent) * Vertex.TangentAndSign.w;
 
-    float4 TransformedPos = mul(float4(Vertex.Position, 1), Mesh.Transform);
+    float4 TransformedPos = mul(Mesh.Transform, float4(Vertex.Position, 1));
     Out.WorldPos = TransformedPos.xyz;
-    Out.Pos = mul(TransformedPos, GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix) * float4(1, -1, 1, 1);
+    Out.Pos = mul(GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix, TransformedPos) * float4(1, -1, 1, 1);
     Out.Uv = Vertex.UV;
     Out.MaterialId = Mesh.MaterialId;
 

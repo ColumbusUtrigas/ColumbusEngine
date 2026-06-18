@@ -20,6 +20,8 @@ VS_TO_PS Vertex(uint VertexID : SV_VertexID)
 #endif
 
 #ifdef PIXEL_SHADER
+#include "Common.hlsli"
+
 [[vk::push_constant]]
 struct _Params
 {
@@ -51,7 +53,7 @@ float4 Pixel(VS_TO_PS In, float4 Coord : SV_Position) : SV_TARGET
 	}
 	else if (Params.Flags == FLAG_NORMAL)
 	{
-		return float4((SourceColour.rgb + 1) * 0.5, 1);
+		return float4(NormalDecode(SourceColour.rg) * 0.5 + 0.5, 1);
 	}
 	else if (Params.Flags == FLAG_DEPTH)
 	{

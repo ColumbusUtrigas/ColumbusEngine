@@ -115,7 +115,6 @@ namespace Columbus
 	{
 		RenderGraphTextureRef GBufferAlbedo;
 		RenderGraphTextureRef GBufferNormal;
-		RenderGraphTextureRef GBufferWP; // World Position
 		RenderGraphTextureRef GBufferRM; // Roughness Metallic
 		RenderGraphTextureRef GBufferEmissive;
 		RenderGraphTextureRef GBufferDS; // Depth Stencil

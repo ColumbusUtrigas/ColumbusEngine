@@ -50,7 +50,7 @@ struct RayPayload
 	void RayGen()
 	{
 		const int2 pixel = DispatchRaysIndex().xy;
-		const float2 ndc = (float2(pixel) / float2(DispatchRaysDimensions().xy) * 2 - 1) * float2(1, -1);
+		const float2 ndc = ScreenUVToNDC(float2(pixel) / float2(DispatchRaysDimensions().xy));
 
 		uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
 

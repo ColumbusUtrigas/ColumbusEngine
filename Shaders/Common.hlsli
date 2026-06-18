@@ -1,10 +1,24 @@
 #pragma once
+#pragma pack_matrix(row_major)
 
 #define GOLDEN_RATIO 1.618033988749894
 #define PI 3.14159265359
 #define TWO_PI 6.28318530718
 #define ONE_OVER_PI 0.318310
 #define EPSILON 0.0001
+#define DEVICE_DEPTH_FAR 0.0
+#define DEVICE_DEPTH_NEAR 1.0
+#define DEVICE_DEPTH_SKY_EPSILON 0.0000001
+
+bool IsSkyDepth(float depth)
+{
+	return depth <= DEVICE_DEPTH_SKY_EPSILON;
+}
+
+bool IsSceneDepth(float depth)
+{
+	return !IsSkyDepth(depth);
+}
 
 ///////////////////////////////////////////////////////////////////
 // Math
@@ -22,7 +36,99 @@ float3x3 ComputeTangentsFromVector(float3 normal)
 	return float3x3(xAxis, yAxis, zAxis);
 }
 
+float2 ScreenUVToNDC(float2 uv)
+{
+	return (uv * 2.0 - 1.0) * float2(1.0, -1.0);
+}
+
+float2 NDCToScreenUV(float2 ndc)
+{
+	return ndc * float2(0.5, -0.5) + 0.5;
+}
+
+float2 ClipToScreenUV(float4 clip)
+{
+	return NDCToScreenUV(clip.xy / clip.w);
+}
+
+float2 PixelToScreenUV(float2 pixel, float2 size)
+{
+	return (pixel + 0.5) / size;
+}
+
+float2 PixelToNDC(float2 pixel, float2 size)
+{
+	return ScreenUVToNDC(PixelToScreenUV(pixel, size));
+}
+
+float3 ReconstructViewPositionFromDepthNDC(float2 ndc, float depth, float4x4 inverseProjection)
+{
+    float4 position = mul(inverseProjection, float4(ndc, depth, 1.0));
+	return position.xyz / position.w;
+}
+
+float3 ReconstructViewPositionFromDepth(float2 uv, float depth, float4x4 inverseProjection)
+{
+	return ReconstructViewPositionFromDepthNDC(ScreenUVToNDC(uv), depth, inverseProjection);
+}
+
+float3 ReconstructViewPositionFromDepth(uint2 pixel, float depth, uint2 size, float4x4 inverseProjection)
+{
+	return ReconstructViewPositionFromDepthNDC(PixelToNDC((float2)pixel, (float2)size), depth, inverseProjection);
+}
+
+float3 ReconstructWorldPositionFromDepthNDC(float2 ndc, float depth, float4x4 inverseViewProjection)
+{
+    float4 position = mul(inverseViewProjection, float4(ndc, depth, 1.0));
+	return position.xyz / position.w;
+}
+
+float3 ReconstructWorldPositionFromDepth(float2 uv, float depth, float4x4 inverseViewProjection)
+{
+	return ReconstructWorldPositionFromDepthNDC(ScreenUVToNDC(uv), depth, inverseViewProjection);
+}
+
+float3 ReconstructWorldPositionFromDepth(uint2 pixel, float depth, uint2 size, float4x4 inverseViewProjection)
+{
+	return ReconstructWorldPositionFromDepthNDC(PixelToNDC((float2)pixel, (float2)size), depth, inverseViewProjection);
+}
+
 // Math
+///////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////
+// Normals
+
+// Octahedron normals encoding
+// https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
+
+float2 NormalOctWrap(float2 v)
+{
+	float2 wrappedSign = float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0);
+	return (1.0 - abs(v.yx)) * wrappedSign;
+}
+
+float2 NormalEncode(float3 n)
+{
+	n /= (abs(n.x) + abs(n.y) + abs(n.z));
+	n.xy = n.z >= 0.0 ? n.xy : NormalOctWrap(n.xy);
+	n.xy = n.xy * 0.5 + 0.5;
+	return n.xy;
+}
+
+float3 NormalDecode(float2 f)
+{
+	f = f * 2.0 - 1.0;
+	
+	// https://twitter.com/Stubbesaurus/status/937994790553227264
+	float3 n = float3(f.x, f.y, 1.0 - abs(f.x) - abs(f.y));
+	float t = saturate(-n.z);
+	n.xy += float2(n.x >= 0.0 ? -t : t, n.y >= 0.0 ? -t : t);
+	return normalize(n);
+}
+
+// Normals
 ///////////////////////////////////////////////////////////////////
 
 
@@ -112,8 +218,8 @@ namespace Random
 	float3 RandomDirectionHemisphereCosine(float2 u, float3 normal, out float pdf)
 	{
 		float3 localdir = RandomDirectionHemisphereCosineLocal(u, pdf);
-        return mul(localdir, ComputeTangentsFromVector(normal));
-    }
+		return mul(localdir, ComputeTangentsFromVector(normal));
+	}
 
 	float3 RandomDirectionSphere(float2 xi)
 	{

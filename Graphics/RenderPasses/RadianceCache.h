@@ -13,6 +13,6 @@ namespace Columbus::RadianceCache
 	};
 
 	void TraceRadianceCache(RenderGraph& Graph, RenderView& View, RadianceCacheData& RadianceCache);
-	RenderGraphTextureRef VisualiseRadianceCache(RenderGraph& Graph, RenderView& View, RadianceCacheData& RadianceCache, RenderGraphTextureRef GBufferWP);
+	RenderGraphTextureRef VisualiseRadianceCache(RenderGraph& Graph, RenderView& View, RadianceCacheData& RadianceCache, RenderGraphTextureRef GBufferDepth);
 
 }

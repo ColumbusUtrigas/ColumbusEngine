@@ -99,7 +99,7 @@ VS_TO_PS Vertex(uint VertexID : SV_VertexID)
 	float4 VertexPosition = float4(float3(Coord[VertexIndex], 0) * Particle.Size_Age.xyz, 1);
     float4 WorldPosition = float4(Particle.Position_Rotation.xyz, 0);
 	
-    Out.Pos = mul(mul(Params.BillboardMatrix, mul(VertexPosition, Rotation)) + WorldPosition, Params.ViewProjection) * float4(1, -1, 1, 1);
+    Out.Pos = mul(Params.ViewProjection, mul(mul(VertexPosition, Rotation), Params.BillboardMatrix) + WorldPosition) * float4(1, -1, 1, 1);
 	Out.UV = UV[VertexIndex];
 	Out.Colour = Particle.Colour;
     Out.Age = Particle.Size_Age.w;

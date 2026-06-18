@@ -1,4 +1,7 @@
+#pragma pack_matrix(row_major)
+
 #include "GPUScene.hlsli"
+#include "Common.hlsli"
 #include "SH.hlsli"
 
 [[vk::push_constant]]
@@ -13,9 +16,8 @@ struct VS_TO_PS
     float3 Normal           : NORMAL0;
     float2 Uv1              : TEXCOORD0;
     float2 Uv2              : TEXCOORD1;
-    float3 WorldPos         : POSITION0;
-    float4 ClipspacePos     : POSITION1;
-    float4 ClipspacePosPrev : POSITION2;
+    float4 ClipspacePos     : POSITION0;
+    float4 ClipspacePosPrev : POSITION1;
     float3 Tangent          : NORMAL1;
     float3 Bitangent        : NORMAL2;
     
@@ -26,12 +28,11 @@ struct VS_TO_PS
 struct PS_Out
 {
     float3 Albedo   : SV_Target0;
-    float3 Normal   : SV_Target1;
-    float3 WP       : SV_Target2;
-    float2 RM       : SV_Target3;
-    float3 Emissive : SV_Target4;
-    float2 Velocity : SV_Target5;
-    float3 Lightmap : SV_Target6;
+    float2 Normal   : SV_Target1;
+    float2 RM       : SV_Target2;
+    float3 Emissive : SV_Target3;
+    float2 Velocity : SV_Target4;
+    float3 Lightmap : SV_Target5;
 };
 
 VS_TO_PS VSMain(uint VertexId : SV_VertexID)
@@ -48,17 +49,15 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     NormalMatrix[1] = Mesh.NormalMatrix[1].xyz;
     NormalMatrix[2] = Mesh.NormalMatrix[2].xyz;
     
-    Out.Normal = normalize(mul(Vertex.Normal, NormalMatrix));
-    Out.Tangent = normalize(mul(Vertex.TangentAndSign.xyz, NormalMatrix));
+    Out.Normal = normalize(mul(NormalMatrix, Vertex.Normal));
+    Out.Tangent = normalize(mul(NormalMatrix, Vertex.TangentAndSign.xyz));
     Out.Bitangent = cross(Out.Normal, Out.Tangent) * Vertex.TangentAndSign.w;
 
-	// TODO: fucked up row/column major?
-    float4 TransformedPos = mul(float4(Vertex.Position, 1), Mesh.Transform);
-    float4 TransformedPosPrev = mul(float4(Vertex.Position, 1), Mesh.PrevTransform);
-    Out.WorldPos = TransformedPos.xyz;
-		
-    float4 ClipspacePos     = mul(TransformedPos, GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix)  * float4(1, -1, 1, 1);
-    float4 ClipspacePosPrev = mul(TransformedPosPrev, GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix) * float4(1, -1, 1, 1);
+    float4 TransformedPos = mul(Mesh.Transform, float4(Vertex.Position, 1));
+    float4 TransformedPosPrev = mul(Mesh.PrevTransform, float4(Vertex.Position, 1));
+
+    float4 ClipspacePos = mul(GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix, TransformedPos) * float4(1, -1, 1, 1);
+    float4 ClipspacePosPrev = mul(GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix, TransformedPosPrev) * float4(1, -1, 1, 1);
     Out.ClipspacePos     = ClipspacePos;
     Out.ClipspacePosPrev = ClipspacePosPrev;
 
@@ -98,7 +97,6 @@ PS_Out PSMain(VS_TO_PS In)
         NdcPrev    -= GPUScene::GPUSceneScene[0].CameraPrev.Jittering * float2(1, -1);
 
         Velocity = NdcCurrent - NdcPrev;
-		//Velocity = NdcToUv(NdcCurrent) - NdcToUv(NdcPrev);
     }
     
     // TEST
@@ -107,8 +105,7 @@ PS_Out PSMain(VS_TO_PS In)
     float3x3 TBN = float3x3(normalize(In.Tangent), normalize(In.Bitangent), normalize(In.Normal));
 
     Out.Albedo = Material.Albedo;
-    Out.Normal = normalize(mul(Material.Normal, TBN));
-    Out.WP = In.WorldPos; // TODO: remove? reconstruct from screenpos and linear depth
+    Out.Normal = NormalEncode(normalize(mul(Material.Normal, TBN)));
     Out.RM = float2(Material.Roughness, Material.Metallic);
     Out.Emissive = Material.Emissive;
     Out.Velocity = Velocity;

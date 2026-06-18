@@ -6,11 +6,12 @@
 #pragma pack_matrix(row_major)
 
 #include "Common.hlsli"
+#include "../Common.hlsli"
 
 // Inputs
 [[vk::binding( 0, SET)]] Texture2D<float>  g_depth_buffer       : register(t0);
 [[vk::binding( 1, SET)]] Texture2D<float>  g_roughness          : register(t1);
-[[vk::binding( 2, SET)]] Texture2D<float3> g_normal             : register(t2);
+[[vk::binding( 2, SET)]] Texture2D<float2> g_normal             : register(t2);
 [[vk::binding( 3, SET)]] Texture2D<float3> g_average_radiance   : register(t3);
 [[vk::binding( 4, SET)]] Texture2D<float4> g_in_radiance        : register(t4);
 [[vk::binding( 5, SET)]] Texture2D<float>  g_in_variance        : register(t5);
@@ -45,7 +46,7 @@ void FFX_DNSR_Reflections_LoadNeighborhood(
     radiance = (min16float3)g_in_radiance.Load(int3(pixel_coordinate, 0)).xyz;
     variance = (min16float)g_in_variance.Load(int3(pixel_coordinate, 0)).x;
 
-    normal = normalize((min16float3)g_normal.Load(int3(pixel_coordinate, 0)));
+    normal = (min16float3)NormalDecode(g_normal.Load(int3(pixel_coordinate, 0)));
 
     float2 uv = (pixel_coordinate.xy + (0.5f).xx) / float2(screen_size.xy);
     depth = FFX_DNSR_Reflections_GetLinearDepth(uv, g_depth_buffer.Load(int3(pixel_coordinate, 0)));

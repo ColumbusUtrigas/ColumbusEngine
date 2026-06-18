@@ -123,7 +123,7 @@ namespace Columbus
 
 	Vector3 Camera::CalcRayByNdc(const Vector2& NDC) const
 	{
-		Vector4 MouseVector(NDC, -1, 1);
+		Vector4 MouseVector(NDC, 0.0f, 1);
 		Matrix InvVP = ViewProjection.GetInverted();
 		Vector4 WorldSpace = InvVP * MouseVector;
 		WorldSpace /= WorldSpace.W;

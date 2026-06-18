@@ -2,7 +2,7 @@
 
 [[vk::binding(0, SET)]] Texture2D<float4> g_input        : register(t0);
 [[vk::binding(1, SET)]] Texture2D<float>  g_depth        : register(t1);
-[[vk::binding(2, SET)]] Texture2D<float3> g_normals      : register(t2);
+[[vk::binding(2, SET)]] Texture2D<float2> g_normals      : register(t2);
 [[vk::binding(3, SET)]] Texture2D<float>  g_depth_lowres : register(t3);
 
 
@@ -12,12 +12,14 @@
 [[vk::push_constant]]
 struct _Params {
     int2 OutputSize;
+    int2 InputSize;
     int DownsampleFactor;
 } Params;
 
 #define NORMAL_SIGMA 32.0
 #define DEPTH_SIGMA 4096.0
 #define MIN_WEIGHT 0.001
+#define CLAMP_LOWRES(a) clamp(a, int2(0, 0), Params.InputSize - 1)
 
 float GetEdgeStoppingDepthWeight(float center_depth, float neighbor_depth)
 {
@@ -35,8 +37,7 @@ void main(int2 dtid : SV_DispatchThreadID)
     if (any(dtid >= Params.OutputSize))
         return;
 
-    // closest lowres pixel
-    int2 InputPixel = int2(round(float2(dtid) / float(Params.DownsampleFactor)));
+    int2 InputPixel = CLAMP_LOWRES(dtid / Params.DownsampleFactor);
 
 #if 1
     float3 Result = float3(0, 0, 0);
@@ -52,7 +53,7 @@ void main(int2 dtid : SV_DispatchThreadID)
     {
         for (int j = -Samples; j <= Samples; j++)
         {
-            int2 Pos = InputPixel + int2(i, j);
+            int2 Pos = CLAMP_LOWRES(InputPixel + int2(i, j));
 
             float3 Sample = g_input[Pos].rgb;
             float  SampleLowresDepth = g_depth_lowres[Pos].x;

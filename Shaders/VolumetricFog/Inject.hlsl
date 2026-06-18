@@ -108,10 +108,9 @@ void RayGen()
 	float2 uvJitter = (Random::UniformDistrubition2d(rngState) - 0.5) * froxelJitter / max(float2(froxelDimensions.xy), 1.0);
 	uv = saturate(uv + uvJitter);
 
-	float4 ndc = float4(uv * 2.0 - 1.0, 1.0, 1.0);
-	ndc.y *= -1.0;
+	float4 ndc = float4(ScreenUVToNDC(uv), DEVICE_DEPTH_FAR, 1.0);
 
-	float4 worldFar = mul(ndc, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+	float4 worldFar = mul(GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix, ndc);
 	worldFar /= worldFar.w;
 
 	float3 cameraPos = GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz;
@@ -202,11 +201,11 @@ void RayGen()
 	const bool hasHistory = (Params.Flags & 1u) != 0u;
 	if (hasHistory)
 	{
-		float4 prevClip = mul(float4(samplePos, 1.0), GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix);
+		float4 prevClip = mul(GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix, float4(samplePos, 1.0));
 		if (abs(prevClip.w) > EPSILON)
 		{
 			float2 prevNdc = prevClip.xy / prevClip.w;
-			float2 prevUv = prevNdc * float2(0.5, -0.5) + 0.5;
+			float2 prevUv = NDCToScreenUV(prevNdc);
 			if (all(prevUv >= 0.0) && all(prevUv <= 1.0))
 			{
 				float3 prevCameraPos = GPUScene::GPUSceneScene[0].CameraPrev.CameraPosition.xyz;

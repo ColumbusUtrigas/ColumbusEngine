@@ -190,7 +190,7 @@ namespace Columbus
 		depthStencilState.flags = 0;
 		depthStencilState.depthTestEnable = Desc.depthStencilState.DepthEnable;
 		depthStencilState.depthWriteEnable = Desc.depthStencilState.DepthWriteMask;
-		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS; // TODO
+		depthStencilState.depthCompareOp = ComparisonFuncToVk(Desc.depthStencilState.DepthFunc);
 		depthStencilState.depthBoundsTestEnable = false; // TODO
 		depthStencilState.stencilTestEnable = false; // TODO
 		depthStencilState.front = {}; // TODO

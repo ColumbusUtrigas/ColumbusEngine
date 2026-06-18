@@ -114,7 +114,7 @@ namespace Columbus
 
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.FinalBeforeTonemap };
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 0.0f, 0 } };
 		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
@@ -159,7 +159,7 @@ namespace Columbus
 
 					Desc.depthStencilState.DepthEnable = true;
 					Desc.depthStencilState.DepthWriteMask = false;
-					Desc.depthStencilState.DepthFunc = ComparisonFunc::LEqual;
+					Desc.depthStencilState.DepthFunc = ComparisonFunc::GEqual;
 					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Particles.csd");
 
 					Pipelines[i] = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
@@ -180,7 +180,7 @@ namespace Columbus
 				};
 				Desc.depthStencilState.DepthEnable = true;
 				Desc.depthStencilState.DepthWriteMask = false;
-				Desc.depthStencilState.DepthFunc = ComparisonFunc::LEqual;
+				Desc.depthStencilState.DepthFunc = ComparisonFunc::GEqual;
 				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/ForwardTransparent.csd");
 
 				TransparentMeshPipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);

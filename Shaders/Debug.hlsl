@@ -1,4 +1,6 @@
-﻿struct VS_TO_PS
+﻿#pragma pack_matrix(row_major)
+
+struct VS_TO_PS
 {
 	float4 Pos : SV_POSITION;
 };
@@ -449,8 +451,8 @@ VS_TO_PS Vertex(uint VertexID : SV_VertexID)
 	}
 
 	VS_TO_PS Out;
-	float4 World = mul(vertex, Params.Model);
-	Out.Pos = mul(World, Params.VP) * float4(1, -1, 1, 1);
+    float4 World = mul(Params.Model, vertex);
+    Out.Pos = mul(Params.VP, World) * float4(1, -1, 1, 1);
 	return Out;
 }
 

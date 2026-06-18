@@ -1,5 +1,9 @@
 #pragma pack_matrix(row_major)
 
+#include "../Common.hlsli"
+#define GPU_SCENE_NO_BINDINGS
+#include "../GPUScene.hlsli"
+
 [[vk::binding(0, 0)]]   Texture2D<float4> InCurrent;
 [[vk::binding(1, 0)]]   Texture2D<float4> InHistory;
 [[vk::binding(2, 0)]]   Texture2D<float2> InVelocity;
@@ -8,34 +12,24 @@
 [[vk::binding(5, 0)]]   Texture2D<float>  InHistorySampleCount;
 [[vk::binding(6, 0)]]   Texture2D<float4> InRays;
 [[vk::binding(7, 0)]]   Texture2D<float>  InResolvedHitDistance;
-[[vk::binding(8, 0)]]   Texture2D<float4> InWorldPosition;
-[[vk::binding(9, 0)]]   Texture2D<float4> InNormal;
-[[vk::binding(10, 0)]]  Texture2D<float2> InRoughnessMetallic;
-[[vk::binding(11, 0)]]  Texture2D<float4> InNormalHistory;
-[[vk::binding(12, 0)]]  Texture2D<float2> InRoughnessMetallicHistory;
-[[vk::binding(13, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutRadiance;
-[[vk::binding(14, 0)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  OutSampleCount;
-[[vk::binding(15, 0)]]  SamplerState      LinearSampler;
-
-#include "../Common.hlsli"
+[[vk::binding(8, 0)]]   Texture2D<float2> InNormal;
+[[vk::binding(9, 0)]]   Texture2D<float2> InRoughnessMetallic;
+[[vk::binding(10, 0)]]  Texture2D<float2> InNormalHistory;
+[[vk::binding(11, 0)]]  Texture2D<float2> InRoughnessMetallicHistory;
+[[vk::binding(12, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutRadiance;
+[[vk::binding(13, 0)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  OutSampleCount;
+[[vk::binding(14, 0)]]  SamplerState      LinearSampler;
+[[vk::binding(15, 0)]]  StructuredBuffer<GPUSceneStruct> GPUSceneScene;
 
 [[vk::push_constant]]
 struct _Params
 {
-    float4x4 ProjectionInv;
-    float4x4 ViewProjectionInv;
-    float4x4 PrevViewProjection;
     int2 Size;
     int MaxSamples;
     int _Padding;
 } Params;
 
 #define CLAMP_SCREEN_COORDS(a) clamp(a, int2(0, 0), Params.Size - 1)
-
-bool IsSkyDepth(float depth)
-{
-    return abs(depth) < EPSILON || abs(depth - 1.0) < EPSILON;
-}
 
 float3 RGBToYCoCg(float3 c)
 {
@@ -56,16 +50,10 @@ float3 YCoCgToRGB(float3 c)
 float GetLinearDepth(int2 pixel, float depth)
 {
     const float2 uv = (pixel + 0.5f) / float2(Params.Size);
-    const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
+    const float2 ndc = ScreenUVToNDC(uv);
 
-    float4 projected = mul(Params.ProjectionInv, float4(ndc, depth, 1));
+    float4 projected = mul(GPUSceneScene[0].CameraCur.InverseProjectionMatrix, float4(ndc, depth, 1));
     return abs(projected.z / projected.w);
-}
-
-float2 ClipToUv(float4 clip)
-{
-    float2 ndc = clip.xy / clip.w;
-    return ndc * float2(0.5, -0.5) + 0.5;
 }
 
 bool ValidatePreviousSurface(float2 uvReprojected, int2 prevCoordsClamped, float reprojectedDepth, float3 currentNormal, float currentRoughness, bool validateMaterial)
@@ -86,7 +74,7 @@ bool ValidatePreviousSurface(float2 uvReprojected, int2 prevCoordsClamped, float
     if (!validateMaterial)
         return true;
 
-    float3 prevNormal = normalize(InNormalHistory.SampleLevel(LinearSampler, uvReprojected, 0).xyz);
+    float3 prevNormal = NormalDecode(InNormalHistory.SampleLevel(LinearSampler, uvReprojected, 0).xy);
     float prevRoughness = InRoughnessMetallicHistory.SampleLevel(LinearSampler, uvReprojected, 0).x;
     float normalThreshold = lerp(0.995, 0.90, saturate(currentRoughness));
     if (dot(currentNormal, prevNormal) < normalThreshold)
@@ -101,11 +89,11 @@ bool ValidatePreviousSurface(float2 uvReprojected, int2 prevCoordsClamped, float
 
 bool ValidatePreviousHit(float3 hitPosition, float3 currentNormal, float currentRoughness)
 {
-    float4 prevHitClip = mul(Params.PrevViewProjection, float4(hitPosition, 1.0));
+    float4 prevHitClip = mul(GPUSceneScene[0].CameraPrev.ViewProjectionMatrix, float4(hitPosition, 1.0));
     if (prevHitClip.w <= 1e-5)
         return false;
 
-    float2 hitUv = ClipToUv(prevHitClip);
+    float2 hitUv = ClipToScreenUV(prevHitClip);
     int2 hitPrevCoords = CLAMP_SCREEN_COORDS(int2(hitUv * float2(Params.Size)));
     return ValidatePreviousSurface(hitUv, hitPrevCoords, prevHitClip.z / prevHitClip.w, currentNormal, currentRoughness, false);
 }
@@ -126,7 +114,7 @@ void main(int2 dtid : SV_DispatchThreadID)
         return;
     }
 
-    const float3 currentNormal = normalize(InNormal[dtid].xyz);
+    const float3 currentNormal = NormalDecode(InNormal[dtid]);
     const float currentRoughness = saturate(InRoughnessMetallic[dtid].x);
     const float2 velocity = InVelocity[dtid] * 0.5f;
     const float2 uv = (dtid + 0.5f) / float2(Params.Size);
@@ -141,11 +129,11 @@ void main(int2 dtid : SV_DispatchThreadID)
 
     if (all(surfacePrevCoords >= 0) && all(surfacePrevCoords < Params.Size))
     {
-        const float2 ndc = 2.0f * float2(uv.x, 1.0f - uv.y) - 1.0f;
-        float4 worldSpace = mul(Params.ViewProjectionInv, float4(ndc, depth, 1.0f));
+        const float2 ndc = ScreenUVToNDC(uv);
+        float4 worldSpace = mul(GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix, float4(ndc, depth, 1.0f));
         worldSpace /= worldSpace.w;
 
-        float4 prevNdc = mul(Params.PrevViewProjection, worldSpace);
+        float4 prevNdc = mul(GPUSceneScene[0].CameraPrev.ViewProjectionMatrix, worldSpace);
         prevNdc /= prevNdc.w;
 
         historyValid = ValidatePreviousSurface(surfaceUvReprojected, surfacePrevCoordsClamped, prevNdc.z, currentNormal, currentRoughness, true);
@@ -155,7 +143,8 @@ void main(int2 dtid : SV_DispatchThreadID)
             float4 rayPacked = InRays[dtid];
             if (hitDistance > 0.0 && rayPacked.w != 0.0 && dot(rayPacked.xyz, rayPacked.xyz) > 1e-6)
             {
-                float3 hitPosition = InWorldPosition[dtid].xyz + normalize(rayPacked.xyz) * hitDistance;
+                float3 worldPosition = ReconstructWorldPositionFromDepth(uint2(dtid), depth, GPUSceneScene[0].RenderSize, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+                float3 hitPosition = worldPosition + normalize(rayPacked.xyz) * hitDistance;
                 historyValid = ValidatePreviousHit(hitPosition, currentNormal, currentRoughness);
             }
         }

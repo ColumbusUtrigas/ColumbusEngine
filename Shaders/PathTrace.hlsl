@@ -1,3 +1,5 @@
+#pragma pack_matrix(row_major)
+
 struct RayPayload
 {
 	float3 Colour;
@@ -46,10 +48,11 @@ void RayGen()
 	const int2 pixel = DispatchRaysIndex().xy;
 	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.RandomNumber)); // Initial seed
 	const float2 PixelJitter = Random::UniformDistrubition2d(RngState);
-	const float2 ndc = ((float2(pixel) + PixelJitter) / float2(DispatchRaysDimensions().xy) * 2 - 1) * float2(1, -1);
+	const float2 uv = (float2(pixel) + PixelJitter) / float2(DispatchRaysDimensions().xy);
+	const float2 ndc = ScreenUVToNDC(uv);
 
-	float4 DirectionCameraSpace = float4(ndc, -1, 1);
-	float4 DirectionWorldSpace = mul(DirectionCameraSpace, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+	float4 DirectionCameraSpace = float4(ndc, DEVICE_DEPTH_FAR, 1);
+	float4 DirectionWorldSpace = mul(GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix, DirectionCameraSpace);
 	DirectionWorldSpace /= DirectionWorldSpace.w; // perspective divide
 	float3 Direction = normalize(DirectionWorldSpace.xyz - GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz);
 

@@ -6,6 +6,16 @@
 #include <cstring>
 #include <cstdio>
 
+// Math and spaces conventions of the engine:
+//    * Matrices are row-major
+//    * Vectors are column vectors
+//    * Algebra convention is Matrix * Vector and mul(matrix, vector)
+//    * Right-to-left matrix algebra: Projection * View * Model * float4(local, 1)
+//    * Y up, X right, Z backwards, right handed
+// 
+//    * Depth is inverted and [0,1], near is 1, sky is 0, GEqual depth test
+//    * Screen UVs are [0,1], with zero in top-left corner
+
 namespace Columbus
 {
 
@@ -422,8 +432,8 @@ namespace Columbus
 			float height = xymax - ymin;
 
 			float depth = Far - Near;
-			float q = -(Far + Near) / depth;
-			float qn = -2 * (Far * Near) / depth;
+			float q = Near / depth;
+			float qn = (Far * Near) / depth;
 
 			float w = 2 * Near / width;
 			w = w / Aspect;

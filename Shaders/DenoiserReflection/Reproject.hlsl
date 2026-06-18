@@ -6,14 +6,15 @@
 #pragma pack_matrix(row_major)
 
 #include "Common.hlsli"
+#include "../Common.hlsli"
 
 // Inputs
 [[vk::binding( 0, SET)]] Texture2D<float>  g_depth_buffer               : register(t0);
 [[vk::binding( 1, SET)]] Texture2D<float2> g_roughness                  : register(t1);
-[[vk::binding( 2, SET)]] Texture2D<float3> g_normal                     : register(t2);
+[[vk::binding( 2, SET)]] Texture2D<float2> g_normal                     : register(t2);
 [[vk::binding( 3, SET)]] Texture2D<float>  g_depth_buffer_history       : register(t3);
 [[vk::binding( 4, SET)]] Texture2D<float2> g_roughness_history          : register(t4);
-[[vk::binding( 5, SET)]] Texture2D<float3> g_normal_history             : register(t5);
+[[vk::binding( 5, SET)]] Texture2D<float2> g_normal_history             : register(t5);
 
 [[vk::binding( 6, SET)]] Texture2D<float4> g_in_radiance                : register(t6);
 [[vk::binding( 7, SET)]] Texture2D<float4> g_radiance_history           : register(t7);
@@ -44,19 +45,13 @@ min16float3 FFX_DNSR_Reflections_LoadRadianceHistory(int2 pixel_coordinate) { re
 min16float3 FFX_DNSR_Reflections_SampleRadianceHistory(float2 uv) { return (min16float3)g_radiance_history.SampleLevel(g_linear_sampler, uv, 0.0f).xyz; }
 min16float  FFX_DNSR_Reflections_SampleNumSamplesHistory(float2 uv) { return (min16float)g_sample_count_history.SampleLevel(g_linear_sampler, uv, 0.0f).x; }
 
-#if 0
-min16float3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(int2 pixel_coordinate) { return normalize(2.0 * (min16float3)g_normal.Load(int3(pixel_coordinate, 0)) - 1.0); }
-min16float3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(int2 pixel_coordinate) { return normalize(2.0 * (min16float3)g_normal_history.Load(int3(pixel_coordinate, 0)) - 1.0); }
-min16float3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(float2 uv) { return normalize(2.0 * (min16float3)g_normal_history.SampleLevel(g_linear_sampler, uv, 0.0f) - 1.0); }
-#else
-min16float3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(int2 pixel_coordinate) { return normalize((min16float3)g_normal.Load(int3(pixel_coordinate, 0))); }
-min16float3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(int2 pixel_coordinate) { return normalize((min16float3)g_normal_history.Load(int3(pixel_coordinate, 0))); }
-min16float3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(float2 uv) { return normalize((min16float3)g_normal_history.SampleLevel(g_linear_sampler, uv, 0.0f)); }
-#endif
+min16float3 FFX_DNSR_Reflections_LoadWorldSpaceNormal(int2 pixel_coordinate) { return (min16float3)NormalDecode(g_normal.Load(int3(pixel_coordinate, 0))); }
+min16float3 FFX_DNSR_Reflections_LoadWorldSpaceNormalHistory(int2 pixel_coordinate) { return (min16float3)NormalDecode(g_normal_history.Load(int3(pixel_coordinate, 0))); }
+min16float3 FFX_DNSR_Reflections_SampleWorldSpaceNormalHistory(float2 uv) { return (min16float3)NormalDecode(g_normal_history.SampleLevel(g_linear_sampler, uv, 0.0f)); }
 
 min16float  FFX_DNSR_Reflections_LoadRoughness(int2 pixel_coordinate) {
     float depth = g_depth_buffer.Load(int3(pixel_coordinate, 0));
-    if (depth <= 0.0 || depth >= 1.0)
+    if (IsSkyDepth(depth))
         return (min16float)(g_roughness_threshold + 1.0);
 
     return FFX_DNSR_Reflections_PerceptualRoughnessToDenoiserRoughness((min16float)g_roughness.Load(int3(pixel_coordinate, 0)).r);

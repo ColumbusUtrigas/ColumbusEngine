@@ -1,3 +1,4 @@
+#include "Common.hlsli"
 #include "SkyCommon.hlsli"
 
 #define GPU_SCENE_NO_BINDINGS
@@ -20,16 +21,15 @@ static const float2 pos[3] = {
 VS_TO_PS Vertex(uint VertexID : SV_VertexID)
 {
     VS_TO_PS Out;
-    Out.Pos = float4(pos[VertexID], 0.9999, 1);
+    Out.Pos = float4(pos[VertexID], DEVICE_DEPTH_FAR, 1);
     Out.Pos2d = Out.Pos.xy;
     return Out;
 }
 
 float4 Pixel(VS_TO_PS In) : SV_TARGET
 {   
-    // z=-1 for "forward" direction, -1-1 NDC xy position on a far plane
-    float4 ViewDirectionCameraSpace = float4(In.Pos2d.xy * float2(1, -1), -1, 1);
-    float4 ViewDirectionWorldSpace = mul(ViewDirectionCameraSpace, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+    float4 ViewDirectionCameraSpace = float4(ScreenUVToNDC(In.Pos2d.xy * 0.5 + 0.5), DEVICE_DEPTH_FAR, 1);
+    float4 ViewDirectionWorldSpace = mul(GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix, ViewDirectionCameraSpace);
     ViewDirectionWorldSpace /= ViewDirectionWorldSpace.w; // perspective divide
 
     float3 CameraPosition = GPUSceneScene[0].CameraCur.CameraPosition;

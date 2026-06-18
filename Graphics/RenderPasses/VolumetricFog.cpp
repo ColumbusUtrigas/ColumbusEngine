@@ -172,7 +172,6 @@ namespace Columbus
 			RenderPassDependencies Dependencies(Graph.Allocator);
 			Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Read(FroxelScattering, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Write(FoggedScene, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			Dependencies.Write(Textures.VolumetricFog, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -193,12 +192,11 @@ namespace Columbus
 				auto Set = Context.GetDescriptorSet(Pipeline, 0);
 				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(SceneTexture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(FroxelScattering).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(FoggedScene).get());
-				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(Textures.VolumetricFog).get());
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.Scene->SceneBuffer);
+				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(FroxelScattering).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(FoggedScene).get());
+				Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Textures.VolumetricFog).get());
+				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
+				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.Scene->SceneBuffer);
 
 				VolumetricFogCompositeParameters Params{
 					.RenderSize = View.RenderSize,

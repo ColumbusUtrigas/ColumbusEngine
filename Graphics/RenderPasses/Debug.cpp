@@ -14,7 +14,7 @@
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 
 ConsoleVariable<bool> CVar_DebugOverlay("r.DebugOverlay", "Enable using debug overlay", true);
-ConsoleVariable<bool> CVar_DebugOverlayIrradiance("r.DebugOverlay.Irradiance", "Enable irradiance volume visualisation", true);
+ConsoleVariable<bool> CVar_DebugOverlayIrradiance("r.DebugOverlay.Irradiance", "Enable irradiance volume visualisation", false);
 ConsoleVariable<float> CVar_DebugOverlayIrradianceSize("r.DebugOverlay.IrradianceSize", "Irradiance probe visualisation size multiplier", 1.0f);
 
 namespace Columbus
@@ -54,7 +54,7 @@ namespace Columbus
 
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, OverlayTexture, {} };
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 1.0f, 0 } };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.GBufferDS, AttachmentClearValue{ {}, 0.0f, 0 } };
 		Parameters.ViewportSize = Graph.GetTextureSize2D(OverlayTexture);
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
@@ -103,8 +103,8 @@ namespace Columbus
 					GraphicsPipelineDesc WireframeDesc = Desc;
 					WireframeDesc.rasterizerState.Fill = FillMode::Wireframe;
 					WireframeDesc.rasterizerState.LineWidth = 2.0f;
-					WireframeDesc.rasterizerState.DepthBias = -1;
-					WireframeDesc.rasterizerState.SlopeScaledDepthBias = -1.0f;
+					WireframeDesc.rasterizerState.DepthBias = 1;
+					WireframeDesc.rasterizerState.SlopeScaledDepthBias = 1.0f;
 
 					PipelineSolid = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
 					PipelineWireframe = Context.Device->CreateGraphicsPipeline(WireframeDesc, Context.VulkanRenderPass);

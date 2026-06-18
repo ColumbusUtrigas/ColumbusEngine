@@ -1,3 +1,5 @@
+#pragma pack_matrix(row_major)
+
 #define IRRADIANCE_PROBES_SET 0
 #include "IrradianceVolumeCommon.hlsli"
 
@@ -49,8 +51,8 @@ VS_TO_PS Vertex(uint VertexID : SV_VertexID)
     float3 WorldPosition = Probe.PositionState.xyz + Right * Offset.x + Up * Offset.y;
 
     VS_TO_PS Out;
-    float4 ViewPosition = mul(float4(WorldPosition, 1.0), Params.View);
-    Out.Pos = mul(ViewPosition, Params.Projection) * float4(1, -1, 1, 1);
+    float4 ViewPosition = mul(Params.View, float4(WorldPosition, 1.0));
+    Out.Pos = mul(Params.Projection, ViewPosition) * float4(1, -1, 1, 1);
     Out.Uv = Quad[CornerId];
     Out.ProbeId = ProbeId;
     Out.Right = Right;

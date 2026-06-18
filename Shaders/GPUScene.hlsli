@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma pack_matrix(row_major)
+
 #include "SkyCommon.hlsli"
 
 struct GPUViewCamera

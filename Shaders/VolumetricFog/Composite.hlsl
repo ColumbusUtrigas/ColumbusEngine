@@ -5,12 +5,11 @@
 
 [[vk::binding(0, 0)]] Texture2D<float4> SceneColor;
 [[vk::binding(1, 0)]] Texture2D<float> SceneDepth;
-[[vk::binding(2, 0)]] Texture2D<float4> SceneWorldPosition;
-[[vk::binding(3, 0)]] Texture3D<float4> FroxelScattering;
-[[vk::binding(4, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputColor;
-[[vk::binding(5, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputFog;
-[[vk::binding(6, 0)]] SamplerState LinearSampler;
-[[vk::binding(7, 0)]] StructuredBuffer<GPUSceneStruct> GPUSceneScene;
+[[vk::binding(2, 0)]] Texture3D<float4> FroxelScattering;
+[[vk::binding(3, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputColor;
+[[vk::binding(4, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputFog;
+[[vk::binding(5, 0)]] SamplerState LinearSampler;
+[[vk::binding(6, 0)]] StructuredBuffer<GPUSceneStruct> GPUSceneScene;
 
 [[vk::push_constant]]
 struct _Params
@@ -148,10 +147,10 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 	float surfaceDistance = maxFogDistance;
 	float sceneDepth = SceneDepth[pixel];
-	bool isSkyPixel = sceneDepth <= EPSILON || sceneDepth >= (1.0 - EPSILON);
-	if (sceneDepth > EPSILON && sceneDepth < (1.0 - EPSILON))
+	bool isSkyPixel = IsSkyDepth(sceneDepth);
+	if (IsSceneDepth(sceneDepth))
 	{
-		float3 worldPos = SceneWorldPosition[pixel].xyz;
+		float3 worldPos = ReconstructWorldPositionFromDepth(pixel, sceneDepth, GPUSceneScene[0].RenderSize, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
 		surfaceDistance = min(distance(worldPos, cameraPos), maxFogDistance);
 	}
 

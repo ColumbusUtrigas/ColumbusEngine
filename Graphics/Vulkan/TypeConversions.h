@@ -102,6 +102,7 @@ namespace Columbus
 			case TextureFormat::RGB16F: return VK_FORMAT_R16G16B16_SFLOAT;
 			case TextureFormat::RGBA16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
 
+			case TextureFormat::R32F: return VK_FORMAT_R32_SFLOAT;
 			case TextureFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
 
 			case TextureFormat::R8UInt:  return VK_FORMAT_R8_UINT;
@@ -213,6 +214,24 @@ namespace Columbus
 			case 64: return VK_SAMPLE_COUNT_64_BIT;
 			default: COLUMBUS_ASSERT(false);
 		}
+	}
+
+	static VkCompareOp ComparisonFuncToVk(ComparisonFunc func)
+	{
+		switch (func)
+		{
+			case ComparisonFunc::Less:     return VK_COMPARE_OP_LESS;
+			case ComparisonFunc::Greater:  return VK_COMPARE_OP_GREATER;
+			case ComparisonFunc::LEqual:   return VK_COMPARE_OP_LESS_OR_EQUAL;
+			case ComparisonFunc::GEqual:   return VK_COMPARE_OP_GREATER_OR_EQUAL;
+			case ComparisonFunc::Equal:    return VK_COMPARE_OP_EQUAL;
+			case ComparisonFunc::NotEqual: return VK_COMPARE_OP_NOT_EQUAL;
+			case ComparisonFunc::Never:    return VK_COMPARE_OP_NEVER;
+			case ComparisonFunc::Always:   return VK_COMPARE_OP_ALWAYS;
+			default: COLUMBUS_ASSERT(false);
+		}
+
+		return VK_COMPARE_OP_ALWAYS;
 	}
 
 	static VkBufferUsageFlags BufferTypeToVK(BufferType type)

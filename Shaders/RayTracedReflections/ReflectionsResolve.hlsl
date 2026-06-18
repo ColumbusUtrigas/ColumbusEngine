@@ -1,29 +1,25 @@
+#include "../Common.hlsli"
+#define GPU_SCENE_NO_BINDINGS
+#include "../GPUScene.hlsli"
+#include "../BRDF.hlsli"
+
 [[vk::binding(0, 0)]]   Texture2D<float4> InRadiance;
 [[vk::binding(1, 0)]]   Texture2D<float4> InRays;
 [[vk::binding(2, 0)]]   Texture2D<float>  InRayPdf;
 [[vk::binding(3, 0)]]   Texture2D<float4> GBufferAlbedo;
-[[vk::binding(4, 0)]]   Texture2D<float4> GBufferWP;
-[[vk::binding(5, 0)]]   Texture2D<float4> GBufferNormal;
-[[vk::binding(6, 0)]]   Texture2D<float2> GBufferRM;
-[[vk::binding(7, 0)]]   Texture2D<float>  GBufferDepth;
-[[vk::binding(8, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
-[[vk::binding(9, 0)]] [[vk::image_format("r16f")]] RWTexture2D<float> OutputHitDistance;
-
-#include "../Common.hlsli"
-#include "../BRDF.hlsli"
+[[vk::binding(4, 0)]]   Texture2D<float2> GBufferNormal;
+[[vk::binding(5, 0)]]   Texture2D<float2> GBufferRM;
+[[vk::binding(6, 0)]]   Texture2D<float>  GBufferDepth;
+[[vk::binding(7, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
+[[vk::binding(8, 0)]] [[vk::image_format("r16f")]] RWTexture2D<float> OutputHitDistance;
+[[vk::binding(9, 0)]]   StructuredBuffer<GPUSceneStruct> GPUSceneScene;
 
 [[vk::push_constant]]
 struct _Params
 {
-    float4 CameraPosition;
     int2 ImageSize;
     int2 _Padding;
 } Params;
-
-bool IsSkyDepth(float depth)
-{
-    return abs(depth) < EPSILON || abs(depth - 1.0) < EPSILON;
-}
 
 bool IsInvalidRay(float4 rayDirectionDistance, float rayPdf)
 {
@@ -93,10 +89,10 @@ void main(uint3 dtid : SV_DispatchThreadID)
     float centerRoughness = saturate(centerRM.x);
     float centerMetallic = saturate(centerRM.y);
 
-    float3 centerNormal = normalize(GBufferNormal[pixel].xyz);
+    float3 centerNormal = NormalDecode(GBufferNormal[pixel]);
     float3 centerAlbedo = GBufferAlbedo[pixel].rgb;
-    float3 centerWP = GBufferWP[pixel].xyz;
-    float3 centerV = normalize(Params.CameraPosition.xyz - centerWP);
+    float3 centerWP = ReconstructWorldPositionFromDepth(uint2(pixel), centerDepth, GPUSceneScene[0].RenderSize, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+    float3 centerV = normalize(GPUSceneScene[0].CameraCur.CameraPosition.xyz - centerWP);
     float3 centerRayDir = normalize(centerRayPacked.xyz);
     bool centerHasHit = centerRayPacked.w > 0.0;
 
@@ -155,12 +151,12 @@ void main(uint3 dtid : SV_DispatchThreadID)
         if (roughnessDiff > maxRoughnessDiff)
             continue;
 
-        float3 sampleNormal = normalize(GBufferNormal[samplePixel].xyz);
+        float3 sampleNormal = NormalDecode(GBufferNormal[samplePixel]);
         float normalDot = saturate(dot(centerNormal, sampleNormal));
         if (normalDot < minNormalDot)
             continue;
 
-        float3 sampleWP = GBufferWP[samplePixel].xyz;
+        float3 sampleWP = ReconstructWorldPositionFromDepth(uint2(samplePixel), sampleDepth, GPUSceneScene[0].RenderSize, GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
         float planeDistance = abs(dot(sampleWP - centerWP, centerNormal));
         if (planeDistance > maxPlaneDistance)
             continue;

@@ -376,7 +376,7 @@ namespace Columbus
 			return;
 		}
 
-		Dependencies.Read(Textures.GBufferWP, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 		Dependencies.Write(GI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
@@ -395,9 +395,10 @@ namespace Columbus
 			RayTracingIrradianceVolumes::Bind(Context, Set, IrradianceVolumes, Context.Scene->SceneBuffer);
 
 			auto Set2 = Context.GetDescriptorSet(Pipeline, 1);
-			Context.Device->UpdateDescriptorSet(Set2, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferWP).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+			Context.Device->UpdateDescriptorSet(Set2, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 			Context.Device->UpdateDescriptorSet(Set2, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set2, 2, 0, Context.GetRenderGraphTexture(GI_Tex).get());
+			Context.Device->UpdateDescriptorSet(Set2, 2, 0, Context.Scene->SceneBuffer);
+			Context.Device->UpdateDescriptorSet(Set2, 3, 0, Context.GetRenderGraphTexture(GI_Tex).get());
 
 			struct
 			{
