@@ -31,6 +31,7 @@ namespace Columbus
 {
 
 	struct AThing;
+	struct ALevelThing;
 	using HStableThingId = TStableSparseArray<AThing*>::Handle;
 
 	struct EngineWorld;
@@ -255,7 +256,10 @@ namespace Columbus
 
 		HEffectsSettings EffectsSettings;
 		AssetRef<HLevelLightingData> LightingData;
+		ALevelThing* InstanceTemplate = nullptr;
 		std::vector<AThing*> Things;
+
+		~HLevel();
 	};
 
 	// We use property overrides for meshes that have been loaded from GLTF
@@ -337,12 +341,13 @@ namespace Columbus
 		ALevelThing* LoadLevelGLTF(const char* Path);
 		HLevel* LoadLevelGLTF2(const char* Path);
 		HLevel* LoadLevelCLVL(const char* Path);
+		ALevelThing* AddLevelInstance(AssetRef<HLevel> LevelAsset);
 		void RefreshMaterial(Material* MaterialAsset);
 		void BuildMeshRuntimeResources(Mesh2* MeshAsset, const std::string& AssetDebugName = {});
 		void DestroyMeshRuntimeResources(Mesh2* MeshAsset);
 
 		void ClearWorld();
-		void SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData = {});
+		void SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData = {}, const HLevel* SourceMetadata = nullptr);
 		void QueueIrradianceVolumeBakeReadback(u64 OwnerGuid);
 		void FlushPendingIrradianceVolumeBakeReadbacks(AssetRef<HLevelLightingData> LightingData);
 		void ApplyLevelLightingData(AssetRef<HLevelLightingData> LightingData);
@@ -356,7 +361,7 @@ namespace Columbus
 		AssetRef<Mesh2> LoadMesh(std::span<CPUMeshResource> MeshPrimitives, const std::string& AssetName);
 		AssetRef<Mesh2> LoadMesh(const char* AssetPath);
 
-		HStableThingId AddThing(AThing* Thing);
+		HStableThingId AddThing(AThing* Thing, bool bResolveReferences = true, bool bCreate = true);
 		void DeleteThing(HStableThingId ThingId);
 
 		// give the first found Thing of the type or nullptr if not found

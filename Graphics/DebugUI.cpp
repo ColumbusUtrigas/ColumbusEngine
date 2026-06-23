@@ -560,13 +560,13 @@ namespace Columbus::DebugUI
 
 									GCurrentLevelPath = PathStr;
 									HLevel* LevelDocument = EnsureCurrentLevelDocument();
-									GCurrentProject->World->SaveWorldLevel(PathStr.c_str(), LevelDocument->LightingData);
+									GCurrentProject->World->SaveWorldLevel(PathStr.c_str(), LevelDocument->LightingData, LevelDocument);
 								}
 							}
 							else
 							{
 								HLevel* LevelDocument = EnsureCurrentLevelDocument();
-								GCurrentProject->World->SaveWorldLevel(GCurrentLevelPath.c_str(), LevelDocument->LightingData);
+								GCurrentProject->World->SaveWorldLevel(GCurrentLevelPath.c_str(), LevelDocument->LightingData, LevelDocument);
 							}
 						}
 					}

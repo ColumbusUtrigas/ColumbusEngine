@@ -501,7 +501,7 @@ namespace Columbus::Assets
 				break;
 			case EGltfTextureUsage::Orm:
 				TextureAsset.ImportSettings.ColourSpace = ColourSpaceMode::Linear;
-				TextureAsset.ImportSettings.Compression = bHasMeaningfulAlpha ? CompressionMode::BC7 : CompressionMode::BC1;
+				TextureAsset.ImportSettings.Compression = CompressionMode::BC7;
 				TextureAsset.ImportSettings.MipGen = MipGenMode::Default;
 				break;
 			case EGltfTextureUsage::Emissive:

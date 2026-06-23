@@ -173,7 +173,11 @@ namespace Columbus
 				}
 				return LoadLevelGLTF2(Path);
 			};
-			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevel>()] = [this](void* Asset) { RemoveLevel((HLevel*)Asset); };
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevel>()] = [this](void* Asset)
+			{
+				RemoveLevel((HLevel*)Asset);
+				delete (HLevel*)Asset;
+			};
 			Assets.AssetExtensions[Reflection::FindStruct<HLevel>()] = "gltf,clvl";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevelLightingData>()] = [](const char* Path) -> void*
@@ -211,18 +215,132 @@ namespace Columbus
 	// TODO: remove
 	ALevelThing* EngineWorld::LoadLevelGLTF(const char* Path)
 	{
-		ALevelThing* LevelThing = new ALevelThing();
-		LevelThing->World = this;
-		LevelThing->Name = std::string("ALevelThing ") + std::to_string(AllThings.Size());
-
 		std::string RelPath = Assets.MakePathRelativeToBakedFolder(Path);
-		LevelThing->LevelAsset = AssetRef<HLevel>(RelPath);
+		return AddLevelInstance(AssetRef<HLevel>(RelPath));
+	}
 
-		AddThing(LevelThing);
-		LevelThing->OnLoad();
-		LevelThing->OnCreate();
+	static ALevelThing* CreateLevelInstanceRootFromTemplate(EngineWorld* World, AssetRef<HLevel> LevelAsset, bool bFallbackToGeneric)
+	{
+		LevelAsset.Resolve();
 
-		return LevelThing;
+		HLevel* SourceLevel = LevelAsset.Get();
+		if (SourceLevel == nullptr)
+		{
+			Log::Error("Couldn't create level instance for %s", LevelAsset.Path.c_str());
+			return nullptr;
+		}
+
+		const ALevelThing* Template = SourceLevel->InstanceTemplate;
+		ALevelThing* LevelInstance = nullptr;
+
+		if (Template != nullptr)
+		{
+			const Reflection::Struct* TemplateType = Template->GetTypeVirtual();
+			if (TemplateType != nullptr && Reflection::HasParentType(TemplateType, Reflection::FindStruct<ALevelThing>()))
+			{
+				if (TemplateType->Instantiate)
+				{
+					LevelInstance = (ALevelThing*)TemplateType->Instantiate((void*)Template);
+				}
+
+				if (LevelInstance == nullptr && TemplateType->Constructor)
+				{
+					Log::Warning("[TypedPrefab] Template type %s cannot instantiate by copy; using default constructor", TemplateType->Name);
+					LevelInstance = (ALevelThing*)TemplateType->Constructor();
+				}
+			}
+			else
+			{
+				Log::Error("[TypedPrefab] Invalid InstanceTemplate type for %s", LevelAsset.Path.c_str());
+			}
+		}
+
+		if (LevelInstance == nullptr && bFallbackToGeneric)
+		{
+			LevelInstance = new ALevelThing();
+		}
+		else if (LevelInstance == nullptr)
+		{
+			return nullptr;
+		}
+
+		LevelInstance->World = World;
+		LevelInstance->Parent = nullptr;
+		LevelInstance->Children.clear();
+		LevelInstance->LevelCopy = nullptr;
+		LevelInstance->PreviousAssetPath.clear();
+		LevelInstance->StableId = {};
+		LevelInstance->Guid = HGuid();
+		LevelInstance->bTransientThing = false;
+		LevelInstance->bRenderStateDirty = true;
+		LevelInstance->bTransformDirty = true;
+		LevelInstance->LevelAsset = LevelAsset;
+
+		return LevelInstance;
+	}
+
+	static void CopyLevelInstancePlacementState(ALevelThing* Dst, const ALevelThing* Src)
+	{
+		Dst->Guid = Src->Guid;
+		Dst->Name = Src->Name;
+		Dst->Trans = Src->Trans;
+		Dst->LevelAsset = Src->LevelAsset;
+		Dst->MeshOverrides = Src->MeshOverrides;
+		Dst->Parent = Src->Parent;
+		Dst->Children = Src->Children;
+		Dst->bTransientThing = Src->bTransientThing;
+		Dst->bTransformDirty = true;
+		Dst->bRenderStateDirty = true;
+
+		if (Dst->Parent != nullptr)
+		{
+			for (AThing*& Child : Dst->Parent->Children)
+			{
+				if (Child == Src)
+					Child = Dst;
+			}
+		}
+
+		for (AThing* Child : Dst->Children)
+		{
+			if (Child != nullptr && Child->Parent == Src)
+				Child->Parent = Dst;
+		}
+	}
+
+	static AThing* PromoteLoadedLevelInstanceIfNeeded(EngineWorld* World, AThing* Thing)
+	{
+		if (Thing == nullptr || Thing->GetTypeVirtual() != Reflection::FindStruct<ALevelThing>())
+			return Thing;
+
+		ALevelThing* GenericInstance = static_cast<ALevelThing*>(Thing);
+		AssetRef<HLevel> LevelAsset = GenericInstance->LevelAsset;
+		LevelAsset.Resolve();
+
+		HLevel* SourceLevel = LevelAsset.Get();
+		const ALevelThing* Template = SourceLevel ? SourceLevel->InstanceTemplate : nullptr;
+		if (Template == nullptr || Template->GetTypeVirtual() == Reflection::FindStruct<ALevelThing>())
+			return Thing;
+
+		ALevelThing* PromotedInstance = CreateLevelInstanceRootFromTemplate(World, GenericInstance->LevelAsset, false);
+		if (PromotedInstance == nullptr)
+			return Thing;
+
+		CopyLevelInstancePlacementState(PromotedInstance, GenericInstance);
+		delete GenericInstance;
+		return PromotedInstance;
+	}
+
+	ALevelThing* EngineWorld::AddLevelInstance(AssetRef<HLevel> LevelAsset)
+	{
+		ALevelThing* LevelInstance = CreateLevelInstanceRootFromTemplate(this, LevelAsset, true);
+		if (LevelInstance == nullptr)
+			return nullptr;
+
+		LevelInstance->OnLoad();
+		AddThing(LevelInstance, false, true);
+
+		return LevelInstance;
 	}
 
 	// TODO: move to proper place
@@ -714,6 +832,55 @@ namespace Columbus
 		return Level;
 	}
 
+	static ALevelThing* DeserialiseLevelInstanceTemplate(EngineWorld* World, nlohmann::json& Json)
+	{
+		if (!Json.contains("InstanceTemplate") || Json["InstanceTemplate"].is_null())
+			return nullptr;
+
+		nlohmann::json& TemplateJson = Json["InstanceTemplate"];
+		if (!TemplateJson.contains("0_type_guid"))
+		{
+			Log::Error("Level InstanceTemplate is missing 0_type_guid");
+			return nullptr;
+		}
+
+		std::string Guid = TemplateJson["0_type_guid"];
+		const Reflection::Struct* Type = Reflection::FindStructByGuid(Guid.c_str());
+		if (Type == nullptr)
+		{
+			Log::Error("Level InstanceTemplate type GUID is unknown: %s", Guid.c_str());
+			return nullptr;
+		}
+
+		if (!Reflection::HasParentType(Type, Reflection::FindStruct<ALevelThing>()))
+		{
+			Log::Error("Level InstanceTemplate type %s is not an ALevelThing", Type->Name);
+			return nullptr;
+		}
+
+		ALevelThing* Template = (ALevelThing*)Type->Constructor();
+		Reflection_DeserialiseStructJson((char*)Template, Type, TemplateJson);
+		Template->World = World;
+		World->Assets.ResolveStructAssetReferences(Type, Template);
+		return Template;
+	}
+
+	static void SerialiseLevelInstanceTemplate(const HLevel& Level, nlohmann::json& Json)
+	{
+		if (Level.InstanceTemplate == nullptr)
+			return;
+
+		nlohmann::json TemplateJson;
+		Reflection_SerialiseStructJson<ALevelThing>(*Level.InstanceTemplate, TemplateJson);
+		Json["InstanceTemplate"] = TemplateJson;
+	}
+
+	HLevel::~HLevel()
+	{
+		delete InstanceTemplate;
+		InstanceTemplate = nullptr;
+	}
+
 	HLevel* EngineWorld::LoadLevelCLVL(const char* Path)
 	{
 		std::filesystem::path LevelPath = Path;
@@ -737,6 +904,7 @@ namespace Columbus
 		HLevel* Level = new HLevel{};
 		Level->World = this;
 		Reflection_DeserialiseStructJson(*Level, json);
+		Level->InstanceTemplate = DeserialiseLevelInstanceTemplate(this, json);
 		if (Level->LightingData.Path.empty())
 		{
 			const std::string DefaultLightingPath = MakeDefaultLevelLightingDataPath(Assets, LevelPath);
@@ -760,6 +928,8 @@ namespace Columbus
 			}
 
 			NewThing->World = this;
+			NewThing = PromoteLoadedLevelInstanceIfNeeded(this, NewThing);
+			NewThing->World = this;
 			NewThing->OnLoad();
 			Level->Things.push_back(NewThing);
 		}
@@ -777,13 +947,16 @@ namespace Columbus
 		LevelEffectsSettings = {};
 	}
 
-	void EngineWorld::SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData)
+	void EngineWorld::SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData, const HLevel* SourceMetadata)
 	{
 		nlohmann::json json;
 		HLevel LevelMetadata;
 		LevelMetadata.EffectsSettings = LevelEffectsSettings;
 		LevelMetadata.LightingData = LightingData;
+		LevelMetadata.InstanceTemplate = SourceMetadata != nullptr ? SourceMetadata->InstanceTemplate : nullptr;
 		Reflection_SerialiseStructJson(LevelMetadata, json);
+		SerialiseLevelInstanceTemplate(LevelMetadata, json);
+		LevelMetadata.InstanceTemplate = nullptr;
 		json["things"].array();
 
 		for (int i = 0; i < AllThings.Size(); i++)
@@ -819,7 +992,26 @@ namespace Columbus
 		for (AThing* Thing : Level->Things)
 		{
 			Thing->World = this;
-			AddThing(Thing);
+			AddThing(Thing, false, false);
+		}
+
+		for (AThing* Thing : Level->Things)
+		{
+			if (!Reflection::HasParentType(Thing->GetTypeVirtual(), Reflection::FindStruct<ALevelThing>()))
+			{
+				ResolveThingThingReferences(Thing);
+			}
+		}
+
+		for (AThing* Thing : Level->Things)
+		{
+			Thing->OnCreate();
+			Thing->OnUpdateRenderState();
+
+			if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
+			{
+				EffectVolumes.push_back(Volume);
+			}
 		}
 
 		ApplyLevelLightingData(Level->LightingData);
@@ -931,30 +1123,172 @@ namespace Columbus
 		Level->Things.clear();
 	}
 
+	struct HRuntimeThingRef
+	{
+		HGuid Guid;
+		AThing* Thing = nullptr;
+	};
+
+	static const ALevelThing* FindOwningLevelThing(const AThing* Thing)
+	{
+		for (const AThing* Parent = Thing; Parent != nullptr; Parent = Parent->Parent)
+		{
+			if (Reflection::HasParentType(Parent->GetTypeVirtual(), Reflection::FindStruct<ALevelThing>()))
+				return static_cast<const ALevelThing*>(Parent);
+		}
+
+		return nullptr;
+	}
+
+	static bool IsAllowedToReferenceTransientThing(const AThing* OwnerThing, const AThing* TargetThing)
+	{
+		if (TargetThing == nullptr || !TargetThing->bTransientThing)
+			return true;
+
+		const ALevelThing* OwnerLevelThing = FindOwningLevelThing(OwnerThing);
+		const ALevelThing* TargetLevelThing = FindOwningLevelThing(TargetThing);
+		return OwnerLevelThing != nullptr && OwnerLevelThing == TargetLevelThing;
+	}
+
+	static void ResolveThingThingReferenceField(EngineWorld* World, AThing* OwnerThing, HRuntimeThingRef* Ref, const Reflection::Field& Field, const std::string& FieldPath)
+	{
+		AThing* TargetThing = Ref->Thing;
+		if (TargetThing == nullptr)
+		{
+			if (!Ref->Guid.IsValid())
+				return;
+
+			auto It = World->ThingGuidToId.find(Ref->Guid);
+			if (It == World->ThingGuidToId.end() || !World->AllThings.IsValid(It->second))
+			{
+				Log::Error("Thing %s field %s has a reference to a non-existing thing with Guid %llu", OwnerThing->Name.c_str(), FieldPath.c_str(), (u64)Ref->Guid);
+				return;
+			}
+
+			AThing** ppThing = World->AllThings.Get(It->second);
+			TargetThing = ppThing ? *ppThing : nullptr;
+		}
+
+		if (TargetThing == nullptr)
+		{
+			Log::Error("Thing %s field %s has a reference to a null thing with Guid %llu", OwnerThing->Name.c_str(), FieldPath.c_str(), (u64)Ref->Guid);
+			return;
+		}
+
+		const Reflection::Struct* ExpectedType = Reflection::FindStructByGuid(Field.Typeguid);
+		if (ExpectedType == nullptr)
+		{
+			Log::Error("Thing %s field %s has an unknown ThingRef type GUID %s", OwnerThing->Name.c_str(), FieldPath.c_str(), Field.Typeguid ? Field.Typeguid : "<null>");
+			return;
+		}
+
+		const Reflection::Struct* ActualType = TargetThing->GetTypeVirtual();
+		if (!Reflection::HasParentType(ActualType, ExpectedType))
+		{
+			Log::Error("Thing %s field %s has a reference to %s with wrong type %s, expected %s", OwnerThing->Name.c_str(),
+				FieldPath.c_str(), TargetThing->Name.c_str(), ActualType ? ActualType->Name : "<null>", ExpectedType->Name);
+			Ref->Thing = nullptr;
+			return;
+		}
+
+		if (!IsAllowedToReferenceTransientThing(OwnerThing, TargetThing))
+		{
+			Log::Error("Thing %s field %s cannot reference transient prefab child %s directly", OwnerThing->Name.c_str(),
+				FieldPath.c_str(), TargetThing->Name.c_str());
+			Ref->Thing = nullptr;
+			return;
+		}
+
+		Ref->Thing = TargetThing;
+	}
+
+	static void ResolveThingThingReferencesInField(EngineWorld* World, AThing* OwnerThing, char* FieldData, const Reflection::Field& Field, const std::string& FieldPath)
+	{
+		if (Field.Type == Reflection::FieldType::ThingRef)
+		{
+			ResolveThingThingReferenceField(World, OwnerThing, (HRuntimeThingRef*)FieldData, Field, FieldPath);
+			return;
+		}
+
+		if (Field.Type == Reflection::FieldType::Struct && Field.Struct != nullptr && !Field.Struct->IsNativeBinary)
+		{
+			for (const Reflection::Field& StructField : Field.Struct->Fields)
+			{
+				ResolveThingThingReferencesInField(World, OwnerThing, FieldData + StructField.Offset, StructField, FieldPath + "." + StructField.Name);
+			}
+			return;
+		}
+
+		if (Field.Type == Reflection::FieldType::Array && Field.Array != nullptr)
+		{
+			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+			const Reflection::Field& ElementField = Field.Array->ElementField;
+			const int ElementSize = ElementField.Size;
+			if (ElementSize <= 0)
+				return;
+
+			const size_t ElementCount = ArrayData->size() / ElementSize;
+			for (size_t ElementIndex = 0; ElementIndex < ElementCount; ElementIndex++)
+			{
+				char* ElementData = ArrayData->data() + ElementIndex * ElementSize;
+				ResolveThingThingReferencesInField(World, OwnerThing, ElementData + ElementField.Offset, ElementField,
+					FieldPath + "[" + std::to_string(ElementIndex) + "]");
+			}
+		}
+	}
+
 	void EngineWorld::ResolveThingThingReferences(AThing* Thing)
 	{
 		for (const Reflection::Field& Field : Thing->GetTypeVirtual()->Fields)
 		{
-			if (Field.Type == Reflection::FieldType::ThingRef)
+			ResolveThingThingReferencesInField(this, Thing, (char*)Thing + Field.Offset, Field, Field.Name);
+		}
+	}
+
+	static void RemapPrefabThingReferencesInField(char* FieldData, const Reflection::Field& Field, const std::unordered_map<u64, AThing*>& GuidRemap)
+	{
+		if (Field.Type == Reflection::FieldType::ThingRef)
+		{
+			HRuntimeThingRef* Ref = (HRuntimeThingRef*)FieldData;
+			auto It = GuidRemap.find((u64)Ref->Guid);
+			if (It != GuidRemap.end())
 			{
-				ThingRef<AThing>* Ref = (ThingRef<AThing>*)((char*)Thing + Field.Offset);
-				
-				HStableThingId Id = ThingGuidToId[Ref->Guid];
-				AThing** ppThing = AllThings.Get(Id);
-				Ref->Thing = ppThing ? *ppThing : nullptr;
-
-				if (!AllThings.IsValid(Id))
-				{
-					Log::Error("Thing %s has a reference to a non-existing thing with Guid %llu", Thing->Name.c_str(), Ref->Guid);
-				}
-
-				// TODO: type check should consider inheritnance
-				/*if (AllThings.IsValid(Id) && Ref->Thing->GetTypeVirtual() != Reflection::FindStructByGuid(Field.Typeguid))
-				{
-					Log::Error("Thing %s has a reference to a thing with wrong type %s, expected %s", Thing->Name.c_str(),
-						Ref->Thing->GetTypeVirtual()->Name, Reflection::FindStructByGuid(Field.Typeguid)->Name);
-				}*/
+				Ref->Thing = It->second;
 			}
+			return;
+		}
+
+		if (Field.Type == Reflection::FieldType::Struct && Field.Struct != nullptr && !Field.Struct->IsNativeBinary)
+		{
+			for (const Reflection::Field& StructField : Field.Struct->Fields)
+			{
+				RemapPrefabThingReferencesInField(FieldData + StructField.Offset, StructField, GuidRemap);
+			}
+			return;
+		}
+
+		if (Field.Type == Reflection::FieldType::Array && Field.Array != nullptr)
+		{
+			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
+			const Reflection::Field& ElementField = Field.Array->ElementField;
+			const int ElementSize = ElementField.Size;
+			if (ElementSize <= 0)
+				return;
+
+			const size_t ElementCount = ArrayData->size() / ElementSize;
+			for (size_t ElementIndex = 0; ElementIndex < ElementCount; ElementIndex++)
+			{
+				char* ElementData = ArrayData->data() + ElementIndex * ElementSize;
+				RemapPrefabThingReferencesInField(ElementData + ElementField.Offset, ElementField, GuidRemap);
+			}
+		}
+	}
+
+	static void RemapPrefabThingReferences(AThing* Thing, const std::unordered_map<u64, AThing*>& GuidRemap)
+	{
+		for (const Reflection::Field& Field : Thing->GetTypeVirtual()->Fields)
+		{
+			RemapPrefabThingReferencesInField((char*)Thing + Field.Offset, Field, GuidRemap);
 		}
 	}
 
@@ -1181,7 +1515,7 @@ namespace Columbus
 		return CastRayClosestHit(CameraRay, MaxDistance, CollisionMask);
 	}
 
-	HStableThingId EngineWorld::AddThing(AThing* Thing)
+	HStableThingId EngineWorld::AddThing(AThing* Thing, bool bResolveReferences, bool bCreate)
 	{
 		HStableThingId Id = AllThings.Add(Thing);
 		ThingGuidToId[Thing->Guid] = Id;
@@ -1195,14 +1529,20 @@ namespace Columbus
 		}
 
 		// resolve thing references
-		ResolveThingThingReferences(Thing);
-
-		Thing->OnCreate();
-		Thing->OnUpdateRenderState();
-
-		if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
+		if (bResolveReferences)
 		{
-			EffectVolumes.push_back(Volume);
+			ResolveThingThingReferences(Thing);
+		}
+
+		if (bCreate)
+		{
+			Thing->OnCreate();
+			Thing->OnUpdateRenderState();
+
+			if (AEffectVolume* Volume = Reflection::Cast<AEffectVolume>(Thing))
+			{
+				EffectVolumes.push_back(Volume);
+			}
 		}
 
 		return Id;
@@ -1954,6 +2294,12 @@ namespace Columbus
 		LevelCopy = new HLevel();
 
 		std::unordered_map<AThing*, AThing*> HierarchyRewireMap;
+		std::unordered_map<u64, AThing*> GuidRemap;
+
+		if (LevelAsset->InstanceTemplate != nullptr && LevelAsset->InstanceTemplate->Guid.IsValid())
+		{
+			GuidRemap[(u64)LevelAsset->InstanceTemplate->Guid] = this;
+		}
 
 		for (AThing* Thing : LevelAsset->Things)
 		{
@@ -1962,27 +2308,40 @@ namespace Columbus
 			AThing* NewThing = (AThing*)Type->Instantiate(Thing);
 			assert(NewThing != nullptr); // things must be able to instantiate
 
+			const HGuid SourceGuid = Thing->Guid;
 			LevelCopy->Things.push_back(NewThing);
 			NewThing->Guid = HGuid();
 
 			HierarchyRewireMap[Thing] = NewThing;
+			if (SourceGuid.IsValid())
+			{
+				GuidRemap[(u64)SourceGuid] = NewThing;
+			}
 		}
 
 		// parent-child relationship rewire
-		for (AThing* Thing : LevelAsset->Things)
+		for (AThing* Thing : LevelCopy->Things)
 		{
 			if (Thing->Parent)
 			{
-				Thing->Parent = HierarchyRewireMap[Thing->Parent];
+				auto ParentIt = HierarchyRewireMap.find(Thing->Parent);
+				Thing->Parent = ParentIt != HierarchyRewireMap.end() ? ParentIt->second : nullptr;
 			}
 
 			for (AThing*& Child : Thing->Children)
 			{
-				Child = HierarchyRewireMap[Child];
+				auto ChildIt = HierarchyRewireMap.find(Child);
+				Child = ChildIt != HierarchyRewireMap.end() ? ChildIt->second : nullptr;
 			}
+
+			Thing->Children.erase(std::remove(Thing->Children.begin(), Thing->Children.end(), nullptr), Thing->Children.end());
 		}
 
-		// TODO: generate stable Guids
+		RemapPrefabThingReferences(this, GuidRemap);
+		for (AThing* Thing : LevelCopy->Things)
+		{
+			RemapPrefabThingReferences(Thing, GuidRemap);
+		}
 
 		// apply overrides
 		for (const HLevelThingMeshOverride& Override : MeshOverrides)
@@ -2011,6 +2370,14 @@ namespace Columbus
 		}
 
 		World->AddLevel(LevelCopy);
+
+		// AddLevel registers every copied thing before resolving references, so this
+		// second pass settles root refs and any child refs that pointed forward.
+		World->ResolveThingThingReferences(this);
+		for (AThing* Thing : LevelCopy->Things)
+		{
+			World->ResolveThingThingReferences(Thing);
+		}
 	}
 
 	void ALevelThing::OnDestroy()
