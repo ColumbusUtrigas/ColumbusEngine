@@ -1,7 +1,6 @@
 #include <Editor/CommonUI.h>
 #include <Editor/Icons.h>
 #include <Core/Reflection.h>
-#include <Core/Filesystem.h>
 #include <Core/Util.h>
 #include <Math/InterpolationCurve.h>
 #include <Math/Quaternion.h>
@@ -1134,7 +1133,7 @@ namespace Columbus::Editor
 	{
 		std::string e = str_tolower(ext);
 
-		if (Filesystem::IsImage(ext)) return ICON_FA_FILE_IMAGE;
+		if (e == "bmp" || e == "jpg" || e == "jpeg" || e == "png" || e == "tga" || e == "tif" || e == "tiff") return ICON_FA_FILE_IMAGE;
 		if (e == "wav" || e == "mp3" || e == "ogg") return ICON_FA_MUSIC;
 		if (e == "json" || e == "glsl" || e == "hlsl" || e == "csl") return ICON_FA_CODE;
 		if (e == "hdr" || e == "exr") return ICON_FA_FILE_IMAGE;
@@ -1312,7 +1311,7 @@ namespace Columbus::Editor
 				if (ImGui::Button("..."))
 				{
 					char* path = nullptr;
-					if (NFD_OpenDialog("gltf,clvl", nullptr, &path) == NFD_OKAY)
+					if (NFD_OpenDialog("clvl", nullptr, &path) == NFD_OKAY)
 					{
 						((std::string*)FieldData)->assign(path);
 						return true;
@@ -1803,20 +1802,4 @@ namespace ImGui
 		return result;
 	}
 
-	/*void Image(Columbus::Texture* texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col)
-	{
-		switch (Columbus::gDevice->GetCurrentAPI())
-		{
-			case Columbus::GraphicsAPI::None: break;
-			case Columbus::GraphicsAPI::OpenGL:
-			{
-				ImTextureID id = nullptr;
-				if (texture)
-					id = (ImTextureID)static_cast<Columbus::TextureOpenGL*>(texture)->GetID();
-
-				Image(id, size, uv0, uv1, tint_col, border_col);
-				break;
-			}
-		}
-	}*/
 }

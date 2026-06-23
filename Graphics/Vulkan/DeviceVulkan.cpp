@@ -172,8 +172,7 @@ namespace Columbus
 
 		VK_CHECK(vkCreateDevice(PhysicalDevice, &info, nullptr, &_Device));
 
-		_ComputeQueue = SmartPointer<VkQueue>(new VkQueue);
-		vkGetDeviceQueue(_Device, _FamilyIndex, 0, _ComputeQueue.Get());
+		vkGetDeviceQueue(_Device, _FamilyIndex, 0, &_ComputeQueue);
 
 		// create buffer pool
 		VkCommandPoolCreateInfo commandPoolInfo;
@@ -1484,11 +1483,11 @@ namespace Columbus
 
 		if (fence)
 		{
-			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, fence->_Fence));
+			VK_CHECK(vkQueueSubmit(_ComputeQueue, 1, &submit_info, fence->_Fence));
 		}
 		else
 		{
-			VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, VK_NULL_HANDLE));
+			VK_CHECK(vkQueueSubmit(_ComputeQueue, 1, &submit_info, VK_NULL_HANDLE));
 		}
 	}
 
@@ -1507,14 +1506,14 @@ namespace Columbus
 		submit_info.signalSemaphoreCount = 0;
 		submit_info.pSignalSemaphores = nullptr;
 
-		VK_CHECK(vkQueueSubmit(*_ComputeQueue, 1, &submit_info, NULL));
+		VK_CHECK(vkQueueSubmit(_ComputeQueue, 1, &submit_info, NULL));
 	}
 
 	void DeviceVulkan::QueueWaitIdle()
 	{
 		PROFILE_CPU(CpuCounter_Vulkan_QueueWaitIdleTime);
 
-		VK_CHECK(vkQueueWaitIdle(*_ComputeQueue));
+		VK_CHECK(vkQueueWaitIdle(_ComputeQueue));
 	}
 
 	void DeviceVulkan::Present(SwapchainVulkan* swapchain, uint32_t imageIndex, VkSemaphore waitSemaphore)
@@ -1533,7 +1532,7 @@ namespace Columbus
 
 		presentInfo.pImageIndices = &imageIndex;
 
-		if (vkQueuePresentKHR(*_ComputeQueue, &presentInfo) != VK_SUCCESS)
+		if (vkQueuePresentKHR(_ComputeQueue, &presentInfo) != VK_SUCCESS)
 		{
 			swapchain->IsOutdated = true;
 		}

@@ -10,7 +10,6 @@
 
 #include "CommandLine.h"
 #include "Platform.h"
-#include "Filesystem.h"
 #include "Stacktrace.h"
 
 #include "System/Log.h"

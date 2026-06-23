@@ -198,7 +198,7 @@ namespace Columbus
 		VkPhysicalDeviceMemoryProperties _MemoryProperties;
 
 		uint32 _FamilyIndex; // TODO: multiple families, now supports only graphics
-		SmartPointer<VkQueue> _ComputeQueue; // TODO: multiple queues
+		VkQueue _ComputeQueue = VK_NULL_HANDLE; // TODO: multiple queues
 
 		VkCommandPool _CmdPool;
 		VkDescriptorPool _DescriptorPool;

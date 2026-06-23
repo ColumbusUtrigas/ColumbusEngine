@@ -65,14 +65,6 @@ namespace Columbus::DebugUI
 	// mutates View
 	void ShowScreenshotSaveWindow(RenderView& View);
 
-	// TODO: unify as a scene graph window
-	void ShowMeshesWindow(EngineWorld& World);
-	void ShowDecalsWindow(EngineWorld& World);
-	void ShowLightsWindow(EngineWorld& World);
-	void ShowMaterialsWindow(EngineWorld& World);
-	void ShowIrradianceWindow(EngineWorld& World);
-	void ShowLightmapWindow(EngineWorld& World);
-
 	// TODO: find a way without external force invalidation
 	void ReleaseTextureWidget(Texture2* Texture);
 	void TextureWidget(Texture2* Texture, Vector2 Size, const TextureWidgetSettings& Settings, bool ForceInvalidate = false);

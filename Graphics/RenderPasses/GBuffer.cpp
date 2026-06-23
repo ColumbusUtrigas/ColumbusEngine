@@ -400,10 +400,6 @@ namespace Columbus
 			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
 			break;
 
-		case EDeferredGlobalIlluminationMode::DDGI:
-			RenderIndirectLightingDDGI(Graph, View, Textures, DeferredContext);
-			break;
-
 		case EDeferredGlobalIlluminationMode::IV:
 			RenderApplyIrradianceProbes(Graph, View, Textures);
 			break;

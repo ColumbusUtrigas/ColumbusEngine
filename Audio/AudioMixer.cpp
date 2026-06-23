@@ -64,8 +64,7 @@ namespace Columbus
 
 	void AudioMixer::Update(Sound::Frame* Frames, uint32 Count)
 	{
-		//TODO
-		//PROFILE_CPU(ProfileModule::Audio);
+		//TODO: add profiling markers
 
 		std::lock_guard lg(ThreadAccessMt);
 

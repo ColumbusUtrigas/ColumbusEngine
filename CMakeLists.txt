@@ -32,28 +32,6 @@ message("CMAKE_ARCHIVE_OUTPUT_DIRECTORY = ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 
 include(EngineLib.cmake)
 
-########## TEST APP ############
-add_executable(TestApp Core/Windows/WindowsMain2.cpp)
-target_link_libraries(TestApp ColumbusEngine)
-target_include_engine_directories(TestApp)
-
-set_target_properties(TestApp PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
-)
-
-# target_compile_options(TestApp PRIVATE -fsanitize=address)
-# target_link_options(TestApp PRIVATE -fsanitize=address)
-
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT TestApp)
-set_target_properties(TestApp PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:TestApp>"
-                                         VS_DEBUGGER_COMMAND           "$<TARGET_FILE:TestApp>")
-################################
-
-ADD_CUSTOM_TARGET(do_always1 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Data" "${BINARIES_DIR}/$<CONFIG>/Data")
-ADD_CUSTOM_TARGET(do_always2 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" "${BINARIES_DIR}/$<CONFIG>/Data/Shaders")
-
 if (WIN32)
 	# copy required DLLs to build
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

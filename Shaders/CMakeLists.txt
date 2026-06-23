@@ -7,17 +7,6 @@ set_source_files_properties(SOURCE ${SHADER_SOURCES} PROPERTIES VS_SETTINGS "Exc
 compile_shader_hlsl(Tonemap.hlsl     main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(ComputeColourGradingLUT.hlsl main:cs SHADER_BINARIES)
 
-compile_shader_hlsl(DDGI/ProbeUpdate.hlsl RGS:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeBlendingRadiance.hlsl DDGIProbeBlendingCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeBlendingDistance.hlsl DDGIProbeBlendingCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeRelocation.hlsl DDGIProbeRelocationCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeRelocationReset.hlsl DDGIProbeRelocationResetCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeClassification.hlsl DDGIProbeClassificationCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeClassificationReset.hlsl DDGIProbeClassificationResetCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeVariabilityReduction.hlsl DDGIReductionCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/ProbeVariabilityExtraReduction.hlsl DDGIExtraReductionCS:cs SHADER_BINARIES)
-compile_shader_hlsl(DDGI/Apply.hlsl main:cs SHADER_BINARIES)
-
 compile_shader_hlsl(RadianceCache/RadianceCacheTrace.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(RadianceCache/RadianceCacheVisualise.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 

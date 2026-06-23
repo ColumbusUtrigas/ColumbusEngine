@@ -254,22 +254,11 @@ namespace Columbus
 	{
 		EngineWorld* World = nullptr;
 
-		HEffectsSettings EffectsSettings;
 		AssetRef<HLevelLightingData> LightingData;
 		ALevelThing* InstanceTemplate = nullptr;
 		std::vector<AThing*> Things;
 
 		~HLevel();
-	};
-
-	// We use property overrides for meshes that have been loaded from GLTF
-	// that's because we don't want to directly write meta stuff into the source asset.
-	// It is mesh-specific since having generic property overrides is an overkill right now.
-	struct HLevelThingMeshOverride
-	{
-		std::string TargetName; // name of the thing within level instance
-
-		HCollisionSettings CollisionSettings;
 	};
 
 	struct ALevelThing : public AThing
@@ -281,9 +270,8 @@ namespace Columbus
 		AssetRef<HLevel> LevelAsset;
 		HLevel* LevelCopy = nullptr;
 
+		// Last level asset path instantiated into LevelCopy; used to detect editor asset-reference changes.
 		std::string PreviousAssetPath;
-
-		std::vector<HLevelThingMeshOverride> MeshOverrides;
 
 	public:
 		virtual void OnLoad() override;
@@ -327,7 +315,6 @@ namespace Columbus
 		SPtr<DeviceVulkan> Device;
 		SPtr<GPUScene> SceneGPU;
 		RenderView MainView;
-		HEffectsSettings LevelEffectsSettings;
 
 		EWorldType WorldType = EWorldType::Editor;
 
@@ -338,8 +325,6 @@ namespace Columbus
 		EngineWorld(SPtr<DeviceVulkan> Device);
 	public:
 		// functions
-		ALevelThing* LoadLevelGLTF(const char* Path);
-		HLevel* LoadLevelGLTF2(const char* Path);
 		HLevel* LoadLevelCLVL(const char* Path);
 		ALevelThing* AddLevelInstance(AssetRef<HLevel> LevelAsset);
 		void RefreshMaterial(Material* MaterialAsset);
@@ -359,7 +344,6 @@ namespace Columbus
 
 		AssetRef<Mesh2> LoadMesh(const Model& MeshModel, const std::string& AssetName);
 		AssetRef<Mesh2> LoadMesh(std::span<CPUMeshResource> MeshPrimitives, const std::string& AssetName);
-		AssetRef<Mesh2> LoadMesh(const char* AssetPath);
 
 		HStableThingId AddThing(AThing* Thing, bool bResolveReferences = true, bool bCreate = true);
 		void DeleteThing(HStableThingId ThingId);
@@ -401,7 +385,6 @@ namespace Columbus
 }
 
 CREFLECT_DECLARE_STRUCT(Columbus::HLevel, 2, "4112562B-4C50-47FD-B6F4-BAAC28FC4CE7");
-CREFLECT_DECLARE_STRUCT(Columbus::HLevelThingMeshOverride, 1, "461D2533-8AB5-4681-8109-10345C5D9129");
 
 CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63C77BFF8A85");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AVolume, Columbus::AThing, 1, "EA5F80A9-684B-4F60-95A9-DBE4949B6268");

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common/Image/Image.h"
-#include <Core/DataBlob.h>
 #include <Core/Types.h>
 #include <Core/fixed_vector.h>
 #include <Math/Vector4.h>
@@ -16,8 +15,7 @@ namespace Columbus
 	enum class GraphicsAPI
 	{
 		None,
-		OpenGL,
-		DX12,
+		//DX12,
 		Vulkan,
 		//Metal
 	};
@@ -84,21 +82,6 @@ namespace Columbus
 		CSL,
 		HLSL,
 		GLSL
-	};
-
-	// TODO: remove
-	struct ShaderStage
-	{
-		std::string Source;
-		std::string EntryPoint;
-		ShaderType Type;
-		ShaderLanguage Language;
-
-		//ShaderStageBytecode Bytecode;
-
-		ShaderStage() {}
-		ShaderStage(std::string_view source, std::string_view entry, ShaderType type, ShaderLanguage language) :
-			Source(source), EntryPoint(entry), Type(type), Language(language) {}
 	};
 
 	struct ShaderStageDesc

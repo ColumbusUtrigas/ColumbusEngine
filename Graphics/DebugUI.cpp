@@ -208,7 +208,7 @@ namespace Columbus::DebugUI
 		imguiVk.PhysicalDevice = Device->_PhysicalDevice;
 		imguiVk.Device = Device->_Device;
 		imguiVk.QueueFamily = Device->_FamilyIndex;
-		imguiVk.Queue = *Device->_ComputeQueue;
+		imguiVk.Queue = Device->_ComputeQueue;
 		imguiVk.DescriptorPool = Device->_DescriptorPool;
 		imguiVk.MinImageCount = Swapchain->minImageCount;
 		imguiVk.ImageCount = Swapchain->imageCount;
@@ -253,8 +253,10 @@ namespace Columbus::DebugUI
 
 		const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
+		// TODO: remove hard dependencies
 		std::string fontAwesomePath = GCurrentProject->DataPath + "/FontAwesome5.ttf";
 
+		// TODO: remove hard dependencies
 		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 14.0f, &lat);
 		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/arial.ttf", 14.0f, &cyr, io.Fonts->GetGlyphRangesCyrillic());
 		io.Fonts->AddFontFromFileTTF(fontAwesomePath.c_str(), 12.0f, &icons, icons_ranges);
@@ -662,220 +664,6 @@ namespace Columbus::DebugUI
 			}
 
 			ImGui::Checkbox("HDR", &HDR);
-		}
-		ImGui::End();
-	}
-
-	void ShowMeshesWindow(EngineWorld& World)
-	{
-	}
-
-	void ShowDecalsWindow(EngineWorld& World)
-	{
-		if (ImGui::Begin("Decal"))
-		{
-			for (int i = 0; i < (int)World.SceneGPU->Decals.Size(); i++)
-			{
-				ImGui::PushID(i);
-				char Label[256]{ 0 };
-				snprintf(Label, 256, "%i", i);
-
-				if (ImGui::CollapsingHeader(Label))
-				{
-					GPUDecal Decal = World.SceneGPU->Decals.Data()[i];
-
-					Vector3 Position = Decal.Model.GetColumn(3).XYZ();
-					Vector3 Scale = Vector3(Decal.Model.M[0][0], Decal.Model.M[1][1], Decal.Model.M[2][2]);
-
-					ImGui::SliderFloat3("Position", (float*)&Position, -500, +500);
-					ImGui::SliderFloat3("Scale", (float*)&Scale, 1, 500);
-
-					Matrix Model;
-					Model.Scale(Scale);
-					Model.Translate(Position);
-
-					Decal.Model = Model;
-					Decal.ModelInverse = Model.GetInverted();
-
-					World.MainView.DebugRender.AddBox(Model, Vector4(1, 1, 1, 0.1f));
-				}
-
-				ImGui::PopID();
-			}
-		}
-		ImGui::End();
-	}
-
-	void ShowLightsWindow(EngineWorld& World)
-	{
-	}
-
-	void ShowMaterialsWindow(EngineWorld& World)
-	{
-		if (ImGui::Begin("Material"))
-		{
-			for (int i = 0; i < (int)World.SceneGPU->Materials.Size(); i++)
-			{
-				ImGui::PushID(i);
-				char Label[256]{ 0 };
-				snprintf(Label, 256, "%i", i);
-
-				if (ImGui::CollapsingHeader(Label))
-				{
-					Material& Mat = World.SceneGPU->Materials[i];
-
-					ImGui::InputFloat4("Albedo Factor", (float*)&Mat.AlbedoFactor);
-					ImGui::InputFloat4("Emissive Factor", (float*)&Mat.EmissiveFactor);
-
-					/*ImGui::InputInt("Albedo", &Mat.AlbedoId);
-					ImGui::InputInt("Normal", &Mat.NormalId);
-					ImGui::InputInt("ORM", &Mat.OrmId);
-					ImGui::InputInt("Emissive", &Mat.EmissiveId);*/
-
-					ImGui::SliderFloat("Roughness", &Mat.Roughness, 0, 1);
-					ImGui::SliderFloat("Metallic", &Mat.Metallic, 0, 1);
-				}
-
-				ImGui::PopID();
-			}
-		}
-		ImGui::End();
-	}
-
-	void ShowIrradianceWindow(EngineWorld& World)
-	{
-		if (ImGui::Begin("Irradiance Volume"))
-		{
-			if (ImGui::Button("Bake All"))
-			{
-				for (AThing* Thing : World.AllThings)
-				{
-					if (Thing->IsOwnedByNestedLevel())
-						continue;
-
-					if (AIrradianceVolume* VolumeThing = Reflection::Cast<AIrradianceVolume>(Thing))
-					{
-						VolumeThing->RequestBake();
-					}
-				}
-			}
-
-			for (int i = 0; i < (int)World.SceneGPU->IrradianceVolumes.size(); i++)
-			{
-				IrradianceVolume& Volume = World.SceneGPU->IrradianceVolumes[i];
-
-				ImGui::PushID(i);
-				char Label[256]{ 0 };
-				snprintf(Label, 256, "%i", i);
-
-				if (ImGui::CollapsingHeader(Label))
-				{
-					ImGui::SliderFloat3("Position", (float*)&Volume.Position, -10, 10);
-					ImGui::SliderFloat3("Extent", (float*)&Volume.Extent, -10, 10);
-					ImGui::SliderInt3("Count", (int*)&Volume.ProbesCount, 2, 8);
-					ImGui::SliderFloat3("TestPoint", (float*)&Volume.TestPoint, -5, 5);
-
-					if (ImGui::Button("To World Bounds"))
-					{
-						Vector3 Min(999999);
-						Vector3 Max(-999999);
-
-						assert(false);
-
-						/*for (auto& GO : World.GameObjects)
-						{
-							Min = Vector3::Min(Min, World.Meshes[GO.MeshId]->BoundingBox.Min);
-							Max = Vector3::Max(Max, World.Meshes[GO.MeshId]->BoundingBox.Max);
-						}*/
-
-						Volume.Position = (Min + Max) / 2;
-						Volume.Extent = (Max - Min);
-					}
-
-					Matrix ViewMat = World.MainView.CameraCur.GetViewMatrix().GetTransposed();
-					Matrix ProjMat = World.MainView.CameraCur.GetProjectionMatrix().GetTransposed();
-
-					Matrix Mat;
-					Mat.Scale(Volume.Extent);
-					Mat.Translate(Volume.Position);
-					Mat.Transpose();
-
-					Vector3 Bounds[2]{
-						-Vector3(0.5f),
-						+Vector3(0.5f),
-					};
-
-					// view projection
-					ImGuizmo::Manipulate(&ViewMat.M[0][0], &ProjMat.M[0][0], ImGuizmo::OPERATION::BOUNDS, ImGuizmo::MODE::LOCAL, &Mat.M[0][0],
-						nullptr, nullptr, (float*)&Bounds, nullptr);
-
-					//Volume.Extent = (Bounds[1] - Bounds[0]);
-
-					Vector3 Position, Euler, Scale;
-					Mat.Transpose();
-					Mat.DecomposeTransform(Position, Euler, Scale);
-
-					if (Scale != Vector3(1))
-					{
-						int asd = 123;
-					}
-
-					Volume.Position = Position;
-					Volume.Extent = Scale;
-
-					// bounding
-					if (0)
-					{
-						Matrix Transform;
-						Transform.Scale(World.SceneGPU->IrradianceVolumes[i].Extent);
-						Transform.Translate(World.SceneGPU->IrradianceVolumes[i].Position);
-						World.MainView.DebugRender.AddBox(Transform, Vector4(1, 1, 1, 0.1f));
-					}
-				}
-
-				ImGui::PopID();
-			}
-		}
-		ImGui::End();
-	}
-
-	void ShowLightmapWindow(EngineWorld& World)
-	{
-		if (ImGui::Begin("Lightmap"))
-		{
-			ImGui::InputInt("Samples", &World.Lightmaps.BakingSettings.RequestedSamples);
-			ImGui::InputInt("Bounces", &World.Lightmaps.BakingSettings.Bounces);
-			ImGui::InputInt("Samples per frame", &World.Lightmaps.BakingSettings.SamplesPerFrame);
-
-			if (ImGui::Button("Generate UV2"))
-			{
-				GenerateAndPackLightmaps(World);
-				UploadLightmapMeshesToGPU(World);
-
-				// TODO: make imgui image preview work normally
-				TextureVulkan* vktex = static_cast<TextureVulkan*>(World.Lightmaps.Atlas.Lightmap);
-				if (GLightmapPreviewImage != VK_NULL_HANDLE)
-				{
-					ImGui_ImplVulkan_RemoveTexture(GLightmapPreviewImage);
-				}
-				GLightmapPreviewImage = ImGui_ImplVulkan_AddTexture(vktex->_Sampler, vktex->_View, vktex->_Layout);
-			}
-
-			if (ImGui::Button("Bake"))
-			{
-				World.Lightmaps.BakingRequested = true;
-				World.Lightmaps.BakingData.AccumulatedSamples = 0;
-			}
-
-			if (World.Lightmaps.BakingRequested)
-			{
-				ImGui::ProgressBar((float)World.Lightmaps.BakingData.AccumulatedSamples / World.Lightmaps.BakingSettings.RequestedSamples);
-			}
-
-			if (World.Lightmaps.Atlas.Lightmap != nullptr)
-			{
-				ImGui::Image(GLightmapPreviewImage, ImVec2(200, 200));
-			}
 		}
 		ImGui::End();
 	}

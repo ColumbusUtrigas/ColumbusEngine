@@ -13,7 +13,6 @@
 #include <filesystem>
 #include <iomanip>
 #include <fstream>
-#include <Lib/tinygltf/tiny_gltf.h>
 
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Textures", "SceneMemory", MemoryCounter_SceneTextures);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Meshes", "SceneMemory", MemoryCounter_SceneMeshes);
@@ -166,19 +165,14 @@ namespace Columbus
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevel>()] = [this](const char* Path) -> void*
 			{
-				HLevel* Level = nullptr;
-				if (std::string(Path).ends_with(".clvl"))
-				{
-					return LoadLevelCLVL(Path);
-				}
-				return LoadLevelGLTF2(Path);
+				return LoadLevelCLVL(Path);
 			};
 			Assets.AssetUnloaderFunctions[Reflection::FindStruct<HLevel>()] = [this](void* Asset)
 			{
 				RemoveLevel((HLevel*)Asset);
 				delete (HLevel*)Asset;
 			};
-			Assets.AssetExtensions[Reflection::FindStruct<HLevel>()] = "gltf,clvl";
+			Assets.AssetExtensions[Reflection::FindStruct<HLevel>()] = "clvl";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<HLevelLightingData>()] = [](const char* Path) -> void*
 			{
@@ -210,13 +204,6 @@ namespace Columbus
 		{
 			AddProfilingMemory(MemoryCounter_SceneTLAS, SceneGPU->TLAS->GetSize());
 		}
-	}
-
-	// TODO: remove
-	ALevelThing* EngineWorld::LoadLevelGLTF(const char* Path)
-	{
-		std::string RelPath = Assets.MakePathRelativeToBakedFolder(Path);
-		return AddLevelInstance(AssetRef<HLevel>(RelPath));
 	}
 
 	static ALevelThing* CreateLevelInstanceRootFromTemplate(EngineWorld* World, AssetRef<HLevel> LevelAsset, bool bFallbackToGeneric)
@@ -285,7 +272,6 @@ namespace Columbus
 		Dst->Name = Src->Name;
 		Dst->Trans = Src->Trans;
 		Dst->LevelAsset = Src->LevelAsset;
-		Dst->MeshOverrides = Src->MeshOverrides;
 		Dst->Parent = Src->Parent;
 		Dst->Children = Src->Children;
 		Dst->bTransientThing = Src->bTransientThing;
@@ -308,29 +294,28 @@ namespace Columbus
 		}
 	}
 
-	static AThing* PromoteLoadedLevelInstanceIfNeeded(EngineWorld* World, AThing* Thing)
+	static AThing* RecreateLevelInstanceFromTemplate(EngineWorld* World, AThing* Thing)
 	{
-		if (Thing == nullptr || Thing->GetTypeVirtual() != Reflection::FindStruct<ALevelThing>())
+		ALevelThing* LoadedInstance = Reflection::Cast<ALevelThing>(Thing);
+		if (LoadedInstance == nullptr)
 			return Thing;
 
-		ALevelThing* GenericInstance = static_cast<ALevelThing*>(Thing);
-		AssetRef<HLevel> LevelAsset = GenericInstance->LevelAsset;
-		LevelAsset.Resolve();
-
-		HLevel* SourceLevel = LevelAsset.Get();
-		const ALevelThing* Template = SourceLevel ? SourceLevel->InstanceTemplate : nullptr;
-		if (Template == nullptr || Template->GetTypeVirtual() == Reflection::FindStruct<ALevelThing>())
+		// This can load the referenced prefab level asset.
+		LoadedInstance->LevelAsset.Resolve();
+		HLevel* SourceLevel = LoadedInstance->LevelAsset.Get();
+		if (SourceLevel == nullptr || SourceLevel->InstanceTemplate == nullptr)
 			return Thing;
 
-		ALevelThing* PromotedInstance = CreateLevelInstanceRootFromTemplate(World, GenericInstance->LevelAsset, false);
-		if (PromotedInstance == nullptr)
-			return Thing;
+		ALevelThing* TemplateInstance = CreateLevelInstanceRootFromTemplate(World, LoadedInstance->LevelAsset, true);
+		assert(TemplateInstance != nullptr);
 
-		CopyLevelInstancePlacementState(PromotedInstance, GenericInstance);
-		delete GenericInstance;
-		return PromotedInstance;
+		CopyLevelInstancePlacementState(TemplateInstance, LoadedInstance);
+		delete LoadedInstance;
+		return TemplateInstance;
 	}
 
+	// Explicit prefab placement path: creates a level-instance root from the asset template,
+	// then ALevelThing::OnCreate instantiates the asset's child things.
 	ALevelThing* EngineWorld::AddLevelInstance(AssetRef<HLevel> LevelAsset)
 	{
 		ALevelThing* LevelInstance = CreateLevelInstanceRootFromTemplate(this, LevelAsset, true);
@@ -341,495 +326,6 @@ namespace Columbus
 		AddThing(LevelInstance, false, true);
 
 		return LevelInstance;
-	}
-
-	// TODO: move to proper place
-	struct SkeletonBone
-	{
-		std::string Name;
-		Matrix InverseBindMatrix;
-		int ParentIndex = -1;
-	};
-
-	// TODO: move to proper place
-	struct Skeleton
-	{
-		std::vector<SkeletonBone> Bones;
-	};
-
-	HLevel* EngineWorld::LoadLevelGLTF2(const char* Path)
-	{
-		const tinygltf::LoadImageDataFunction LoadImageFn = [](tinygltf::Image* Img, const int ImgId, std::string* err, std::string* warn,
-			int req_width, int req_height, const unsigned char* bytes, int size, void* user_data) -> bool
-			{
-				u32 W, H, D, Mips;
-				TextureFormat Format;
-				ImageType Type;
-
-				DataStream Stream = DataStream::CreateFromMemory((u8*)bytes, size);
-
-				u8* Data = nullptr;
-				if (!ImageUtils::ImageLoadFromStream(Stream, W, H, D, Mips, Format, Type, Data))
-				{
-					delete[] Data;
-					return false;
-				}
-
-				TextureFormatInfo FormatInfo = TextureFormatGetInfo(Format);
-
-				u64 Size = size_t(W * H) * size_t(FormatInfo.BitsPerPixel) / 8;
-
-				Img->width = W;
-				Img->height = H;
-				Img->component = FormatInfo.NumChannels;
-				Img->bits = FormatInfo.BitsPerPixel;
-				Img->pixel_type = (int)Format; // our small hack here
-				Img->image.resize(Size);
-				memcpy(Img->image.data(), Data, Size);
-				delete[] Data;
-				return true;
-			};
-
-		tinygltf::Model model;
-		tinygltf::TinyGLTF loader;
-		std::string err, warn;
-
-		loader.SetImageLoader(LoadImageFn, nullptr);
-
-		Timer GltfTimer;
-		if (!loader.LoadASCIIFromFile(&model, &err, &warn, Path))
-		{
-			Log::Fatal("Couldn't load scene, %s", Path);
-			return nullptr;
-		}
-		Log::Message("GLTF loaded, time: %0.2f s", GltfTimer.Elapsed());
-
-		HLevel* Level = new HLevel{};
-		Level->World = this;
-
-		const std::string RelativePath = Assets.MakePathRelativeToBakedFolder(Path);
-
-		struct TexturePair
-		{
-			AssetRef<Texture2> Ref;
-			HStableTextureId Id;
-		};
-
-		std::unordered_map<int, TexturePair> LoadedTextures;
-		std::unordered_map<int, AssetRef<Mesh2>> LoadedMeshes;
-		std::unordered_map<int, AssetRef<Material>> LoadedMaterials;
-
-		auto CreateTexture = [this, &Path, &model, &LoadedTextures](int textureId, const char* name, bool srgb) -> TexturePair
-		{
-			if (LoadedTextures.contains(textureId))
-			{
-				return LoadedTextures[textureId];
-			}
-
-			auto& image = model.images[textureId];
-			TextureFormat format = (TextureFormat)image.pixel_type;
-
-			u64 TextureDataSize = image.image.size();
-			u8* TextureData = image.image.data();
-			UPtr<u8> ConvertedData;
-
-			TextureFormatInfo formatInfo = TextureFormatGetInfo(format);
-
-			if (!formatInfo.HasCompression)
-			{
-				Log::Warning("[Level Loading] Uncompressed texture %s", image.name.c_str());
-			}
-
-			// Legacy cooked GLTF assets often use DDS/BC without explicit sRGB metadata,
-			// so preserve the intended colour space from the material slot usage here.
-			if (srgb)
-			{
-				switch (format)
-				{
-				case TextureFormat::R8:    format = TextureFormat::R8SRGB; break;
-				case TextureFormat::RG8:   format = TextureFormat::RG8SRGB; break;
-				case TextureFormat::RGB8:  format = TextureFormat::RGB8SRGB; break;
-				case TextureFormat::RGBA8: format = TextureFormat::RGBA8SRGB; break;
-				case TextureFormat::BGRA8: format = TextureFormat::BGRA8SRGB; break;
-				case TextureFormat::BC1:   format = TextureFormat::BC1SRGB; break;
-				case TextureFormat::BC3:   format = TextureFormat::BC3SRGB; break;
-				case TextureFormat::BC7:   format = TextureFormat::BC7SRGB; break;
-				default: break;
-				}
-			}
-
-			// GPUs don't support RGB, so convert to RGBA instead.
-			if (format == TextureFormat::RGB8 || format == TextureFormat::RGB8SRGB)
-			{
-				Log::Warning("Applying RGB8->RGBA8 convertion to texture %s", image.name.c_str());
-
-				TextureDataSize = image.width * image.height * 4;
-				ConvertedData = UPtr<u8>(new u8[TextureDataSize]); // TODO: how to manage allocations in the loading system properly?
-
-				for (u64 pixel = 0; pixel < image.width * image.height; pixel++)
-				{
-					ConvertedData.get()[pixel * 4 + 0] = TextureData[pixel * 3 + 0];
-					ConvertedData.get()[pixel * 4 + 1] = TextureData[pixel * 3 + 1];
-					ConvertedData.get()[pixel * 4 + 2] = TextureData[pixel * 3 + 2];
-					ConvertedData.get()[pixel * 4 + 3] = 255; // alpha to 1
-				}
-
-				TextureData = ConvertedData.get();
-
-				format = (format == TextureFormat::RGB8SRGB) ? TextureFormat::RGBA8SRGB : TextureFormat::RGBA8;
-			}
-
-			Image img;
-			img.Format = format;
-			img.Width = image.width;
-			img.Height = image.height;
-			img.Size = TextureDataSize;
-			img.Data = TextureData;
-			img.MipMaps = 1; // TODO: load all mip maps
-
-			Texture2* tex = Device->CreateTexture(img);
-			Device->SetDebugName(tex, image.name.c_str());
-			AddProfilingMemory(MemoryCounter_SceneTextures, tex->GetSize());
-
-			img.Data = nullptr; // so it doesn't get deleted here
-
-			// relative path
-			std::string TexPath = (std::filesystem::path(Path) / std::filesystem::path(image.uri)).string();
-			TexPath = Assets.MakePathRelativeToBakedFolder(TexPath);
-
-			TexturePair Pair;
-			Pair.Ref = AssetSystem::Get().RegisterAssetRef<Texture2>(tex, TexPath);
-			Pair.Id = SceneGPU->Textures.Add(tex);
-			LoadedTextures[textureId] = Pair;
-			return Pair;
-		};
-
-		// skeletons
-		{
-			for (int i = 0; i < model.skins.size(); i++)
-			{
-				tinygltf::Skin& skin = model.skins[i];
-				Skeleton skeleton;
-				// skeleton.rootNodeIndex = skin.skeleton; // -1 if not present
-
-				const tinygltf::Accessor& ibmAccessor = model.accessors[skin.inverseBindMatrices];
-				const tinygltf::BufferView& ibmView = model.bufferViews[ibmAccessor.bufferView];
-				const tinygltf::Buffer& buffer = model.buffers[ibmView.buffer];
-
-				const size_t jointCount = skin.joints.size();
-				skeleton.Bones.resize(jointCount);
-
-				for (size_t i = 0; i < jointCount; ++i)
-				{
-					SkeletonBone& bone = skeleton.Bones[i];
-					int nodeIndex = skin.joints[i];
-					bone.Name = model.nodes[nodeIndex].name;
-
-					// Read matrix from the buffer
-					size_t offset = ibmAccessor.byteOffset + ibmView.byteOffset + i * sizeof(Matrix);
-					const float* matrixData = reinterpret_cast<const float*>(&buffer.data[offset]);
-					const Matrix* matrix = reinterpret_cast<const Matrix*>(matrixData);
-
-					bone.InverseBindMatrix = *matrix;
-				}
-
-				int asd = 123;
-			}
-		}
-
-		// materials
-		{
-			for (int i = 0; i < model.materials.size(); i++)
-			{
-				tinygltf::Material& Mat = model.materials[i];
-
-				Material* Result = new Material();
-
-				int AlbedoId = Mat.pbrMetallicRoughness.baseColorTexture.index;
-				if (AlbedoId != -1)
-				{
-					TexturePair Pair = CreateTexture(model.textures[AlbedoId].source, model.textures[AlbedoId].name.c_str(), true);
-					Result->Albedo = Pair.Ref;
-					Result->AlbedoId = Pair.Id;
-				}
-
-				int NormalId = Mat.normalTexture.index;
-				if (NormalId != -1)
-				{
-					TexturePair Pair = CreateTexture(model.textures[NormalId].source, model.textures[NormalId].name.c_str(), false);
-					Result->Normal = Pair.Ref;
-					Result->NormalId = Pair.Id;
-				}
-
-				int RoughnessMetallicId = Mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
-				if (RoughnessMetallicId != -1)
-				{
-					// TODO: convert separate Occlusion texture into ORM
-					TexturePair Pair = CreateTexture(model.textures[RoughnessMetallicId].source, model.textures[RoughnessMetallicId].name.c_str(), false);
-					Result->Orm = Pair.Ref;
-					Result->OrmId = Pair.Id;
-				}
-
-				int EmissiveId = Mat.emissiveTexture.index;
-				if (EmissiveId != -1)
-				{
-					TexturePair Pair = CreateTexture(model.textures[EmissiveId].source, model.textures[EmissiveId].name.c_str(), true);
-					Result->Emissive = Pair.Ref;
-					Result->EmissiveId = Pair.Id;
-				}
-
-				Result->AlbedoFactor = Vector4(Mat.pbrMetallicRoughness.baseColorFactor[0], Mat.pbrMetallicRoughness.baseColorFactor[1], Mat.pbrMetallicRoughness.baseColorFactor[2], Mat.pbrMetallicRoughness.baseColorFactor[3]);
-				Result->EmissiveFactor = Vector4(Mat.emissiveFactor[0], Mat.emissiveFactor[1], Mat.emissiveFactor[2], 1);
-
-				Result->Roughness = Mat.pbrMetallicRoughness.roughnessFactor;
-				Result->Metallic = Mat.pbrMetallicRoughness.metallicFactor;
-
-				HStableMaterialId Id = SceneGPU->Materials.Add(*Result);
-				SceneGPU->Materials.Get(Id)->StableId = Id;
-				Result->StableId = Id;
-
-				std::string MaterialName = "Material." + RelativePath + "#" + Mat.name;
-
-				LoadedMaterials[i] = AssetSystem::Get().RegisterAssetRef(Result, MaterialName);
-			}
-		}
-
-		// meshes
-		for (int i = 0; i < (int)model.meshes.size(); i++)
-		{
-			tinygltf::Mesh& mesh = model.meshes[i];
-
-			std::vector<CPUMeshResource> Primitives;
-
-			for (auto& primitive : mesh.primitives)
-			{
-				CPUMeshResource& CPUMesh = Primitives.emplace_back();
-
-				u32 indicesCount;
-				u32 verticesCount;
-
-				// Indices
-				{
-					const auto& accessor = model.accessors[primitive.indices];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					std::vector<uint32_t> indices(accessor.count);
-					indicesCount = accessor.count;
-
-					switch (accessor.componentType)
-					{
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-						for (int i = 0; i < accessor.count; i++)
-						{
-							indices[i] = static_cast<const u8*>(data)[i];
-						}
-						break;
-
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-						for (int i = 0; i < accessor.count; i++)
-						{
-							indices[i] = static_cast<const u16*>(data)[i];
-						}
-						break;
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-						for (int i = 0; i < accessor.count; i++)
-						{
-							indices[i] = static_cast<const u32*>(data)[i];
-						}
-						break;
-					default: COLUMBUS_ASSERT(false);
-					}
-
-					CPUMesh.Indices = indices;
-				}
-
-				// Vertices
-				{
-					const auto& accessor = model.accessors[primitive.attributes["POSITION"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					verticesCount = accessor.count;
-
-					CPUMesh.Vertices = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
-				}
-
-				// UV1
-				if (primitive.attributes.contains("TEXCOORD_0"))
-				{
-					const auto& accessor = model.accessors[primitive.attributes["TEXCOORD_0"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					verticesCount = accessor.count;
-
-					CPUMesh.UV1 = std::vector<Vector2>((Vector2*)(data), (Vector2*)(data)+verticesCount);
-				}
-				else
-				{
-					Log::Warning("Mesh %s doesn't have UV1", mesh.name.c_str());
-
-					verticesCount = CPUMesh.Vertices.size();
-					CPUMesh.UV1 = std::vector<Vector2>(CPUMesh.Vertices.size(), Vector2());
-				}
-
-				// Normals
-				{
-					const auto& accessor = model.accessors[primitive.attributes["NORMAL"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-					verticesCount = accessor.count;
-
-					CPUMesh.Normals = std::vector<Vector3>((Vector3*)(data), (Vector3*)(data)+verticesCount);
-				}
-
-				// Tangents
-				{
-					CPUMesh.CalculateTangents();
-				}
-
-				// Bone weights
-				if (primitive.attributes.contains("WEIGHTS_0"))
-				{
-					const auto& accessor = model.accessors[primitive.attributes["WEIGHTS_0"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-
-					CPUMesh.BoneWeights = std::vector<Vector4>((Vector4*)(data), (Vector4*)(data)+verticesCount);
-				}
-
-				// Bone indices
-				if (primitive.attributes.contains("JOINTS_0"))
-				{
-					const auto& accessor = model.accessors[primitive.attributes["JOINTS_0"]];
-					const auto& view = model.bufferViews[accessor.bufferView];
-					const auto& buffer = model.buffers[view.buffer];
-					const auto& offset = accessor.byteOffset + view.byteOffset;
-					const void* data = buffer.data.data() + offset;
-
-					CPUMesh.BoneIndices = std::vector<iVector4>((iVector4*)(data), (iVector4*)(data)+verticesCount);
-				}
-			}
-
-			LoadedMeshes[i] = LoadMesh(Primitives, "Mesh." + RelativePath + std::string("#") + mesh.name);
-		}
-
-		// scene graph
-		{
-			// get nodes and transforms
-			for (int i = 0; i < model.nodes.size(); i++)
-			{
-				tinygltf::Node& Node = model.nodes[i];
-				Transform Trans;
-
-				if (Node.matrix.size() > 0)
-				{
-					Matrix LocalTransform(1);
-					// GLTF matrices are column-major
-					double* GltfMatrix = Node.matrix.data();
-					for (int i = 0; i < 4; i++)
-					{
-						Vector4 Column((float)GltfMatrix[i * 4 + 0], (float)GltfMatrix[i * 4 + 1], (float)GltfMatrix[i * 4 + 2], (float)GltfMatrix[i * 4 + 3]);
-						LocalTransform.SetColumn(i, Column);
-					}
-
-					Vector3 T, R, S;
-					LocalTransform.DecomposeTransform(T, R, S);
-
-					Trans.Position = T;
-					Trans.Rotation = Quaternion(R);
-					Trans.Scale = S;
-				}
-				else
-				{
-					if (Node.scale.size() > 0)
-					{
-						Trans.Scale = Vector3(Node.scale[0], Node.scale[1], Node.scale[2]);
-					}
-
-					if (Node.rotation.size() > 0)
-					{
-						// negate imaginary components to rotate it into a proper basis
-						Quaternion Quat(-Node.rotation[0], -Node.rotation[1], -Node.rotation[2], Node.rotation[3]);
-						//Quaternion Quat(Node.rotation[0], Node.rotation[1], Node.rotation[2], Node.rotation[3]);
-
-						Trans.Rotation = Quat;
-					}
-
-					if (Node.translation.size() > 0)
-					{
-						Trans.Position = Vector3(Node.translation[0], Node.translation[1], Node.translation[2]);
-					}
-				}
-
-				Trans.Update();
-
-				if (Node.extensions.contains("KHR_lights_punctual"))
-				{
-					int light = Node.extensions["KHR_lights_punctual"].Get("light").GetNumberAsInt();
-					const auto& gltfLight = model.lights[light];
-
-					ALight* LightThing = new ALight();
-					LightThing->World = this;
-					LightThing->Trans = Trans;
-					LightThing->Name = Node.name;
-
-					if (gltfLight.type == "point")
-						LightThing->Type = LightType::Point;
-					if (gltfLight.type == "directional")
-						LightThing->Type = LightType::Directional;
-
-					LightThing->Colour.X = gltfLight.color[0];
-					LightThing->Colour.Y = gltfLight.color[1];
-					LightThing->Colour.Z = gltfLight.color[2];
-					LightThing->Range = gltfLight.range;
-					LightThing->Energy = 10.0f;
-					LightThing->Shadows = true;
-
-					if (LightThing->Range < 0.01f)
-						LightThing->Range = 10.0f;
-
-					Level->Things.push_back(LightThing);
-
-					continue;
-				}
-
-				if (Node.mesh == -1) continue;
-
-				{
-					AMeshInstance* MeshThing = new AMeshInstance();
-					MeshThing->World = this;
-					MeshThing->Trans = Trans;
-					MeshThing->Name = Node.name;
-					MeshThing->Mesh = LoadedMeshes[Node.mesh];
-
-					for (int prim = 0; prim < (int)model.meshes[Node.mesh].primitives.size(); prim++)
-					{
-						auto& primitive = model.meshes[Node.mesh].primitives[prim];
-						AssetRef<Material> MaterialId;
-						if (primitive.material > -1)
-							MaterialId = LoadedMaterials[primitive.material];
-
-						MeshThing->Materials.push_back(MaterialId);
-					}
-
-					Level->Things.push_back(MeshThing);
-
-					continue;
-				}
-			}
-
-		}
-
-		return Level;
 	}
 
 	static ALevelThing* DeserialiseLevelInstanceTemplate(EngineWorld* World, nlohmann::json& Json)
@@ -904,7 +400,9 @@ namespace Columbus
 		HLevel* Level = new HLevel{};
 		Level->World = this;
 		Reflection_DeserialiseStructJson(*Level, json);
+
 		Level->InstanceTemplate = DeserialiseLevelInstanceTemplate(this, json);
+
 		if (Level->LightingData.Path.empty())
 		{
 			const std::string DefaultLightingPath = MakeDefaultLevelLightingDataPath(Assets, LevelPath);
@@ -915,6 +413,7 @@ namespace Columbus
 		}
 		Assets.ResolveStructAssetReferences(Reflection::FindStruct<HLevel>(), Level);
 
+		// Actual .clvl load path: deserialize saved things, then rebase level instances from their prefab asset templates.
 		for (auto& thing : json["things"])
 		{
 			AThing* NewThing = Reflection_DeserialiseStructJson_NewInstance<AThing>(thing);
@@ -928,7 +427,7 @@ namespace Columbus
 			}
 
 			NewThing->World = this;
-			NewThing = PromoteLoadedLevelInstanceIfNeeded(this, NewThing);
+			NewThing = RecreateLevelInstanceFromTemplate(this, NewThing);
 			NewThing->World = this;
 			NewThing->OnLoad();
 			Level->Things.push_back(NewThing);
@@ -944,14 +443,12 @@ namespace Columbus
 			DeleteThing(AllThings[0]->StableId);
 		}
 
-		LevelEffectsSettings = {};
 	}
 
 	void EngineWorld::SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData, const HLevel* SourceMetadata)
 	{
 		nlohmann::json json;
 		HLevel LevelMetadata;
-		LevelMetadata.EffectsSettings = LevelEffectsSettings;
 		LevelMetadata.LightingData = LightingData;
 		LevelMetadata.InstanceTemplate = SourceMetadata != nullptr ? SourceMetadata->InstanceTemplate : nullptr;
 		Reflection_SerialiseStructJson(LevelMetadata, json);
@@ -968,7 +465,14 @@ namespace Columbus
 			}
 
 			auto thing = nlohmann::json();
-			Reflection_SerialiseStructJson<AThing>(*Thing, thing);
+			if (ALevelThing* LevelThing = Reflection::Cast<ALevelThing>(Thing))
+			{
+				Reflection_SerialiseStructJson((char*)LevelThing, Reflection::FindStruct<ALevelThing>(), thing);
+			}
+			else
+			{
+				Reflection_SerialiseStructJson<AThing>(*Thing, thing);
+			}
 			thing["1_Guid"] = (u64)Thing->Guid;
 			json["things"].push_back(thing);
 		}
@@ -987,8 +491,6 @@ namespace Columbus
 
 	void EngineWorld::AddLevel(HLevel* Level)
 	{
-		LevelEffectsSettings = Level->EffectsSettings;
-
 		for (AThing* Thing : Level->Things)
 		{
 			Thing->World = this;
@@ -1435,24 +937,6 @@ namespace Columbus
 			MeshAsset->BoundingBox = Box(Vector3(0.0f), Vector3(0.0f));
 	}
 
-	AssetRef<Mesh2> EngineWorld::LoadMesh(const char* AssetPath)
-	{
-		std::string InternalPath = std::string("Mesh.") + AssetPath;
-
-		if (AssetSystem::Get().HasPath(InternalPath))
-		{
-			return AssetSystem::Get().GetRefByPath<Mesh2>(InternalPath);
-		}
-
-		// TODO: wtf is this
-		Model* asd = new Model();
-		Model& model = *asd;
-		model.Load(AssetPath);
-		//model.RecalculateTangents();
-
-		return LoadMesh(model, InternalPath);
-	}
-
 	void EngineWorld::RefreshMaterial(Material* MaterialAsset)
 	{
 		if (MaterialAsset == nullptr || SceneGPU == nullptr)
@@ -1621,7 +1105,7 @@ namespace Columbus
 		UpdateTransforms();
 
 		// update effects volumes
-		HEffectsSettings EffectsSettings = LevelEffectsSettings;
+		HEffectsSettings EffectsSettings = {};
 		{
 			// sort effect volumes by priority
 			std::sort(EffectVolumes.begin(), EffectVolumes.end(), [](const AEffectVolume* A, const AEffectVolume* B) {
@@ -2306,20 +1790,6 @@ namespace Columbus
 			RemapPrefabThingReferences(Thing, GuidRemap);
 		}
 
-		// apply overrides
-		for (const HLevelThingMeshOverride& Override : MeshOverrides)
-		{
-			auto Thing = std::find_if(LevelCopy->Things.begin(), LevelCopy->Things.end(), [&Override](AThing* Thing)
-			{
-				return Thing->Name == Override.TargetName && Thing->GetTypeVirtual() == AMeshInstance::GetTypeStatic();
-			});
-
-			if (Thing != LevelCopy->Things.end())
-			{
-				Reflection::Cast<AMeshInstance>(*Thing)->CollisionSettings = Override.CollisionSettings;
-			}
-		}
-
 		// find all root nodes in the level, parent them to the thing
 		for (AThing* Thing : LevelCopy->Things)
 		{
@@ -2570,7 +2040,6 @@ CREFLECT_STRUCT_BEGIN(Sound, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HLevel, "")
-	CREFLECT_STRUCT_FIELD(HEffectsSettings, EffectsSettings, "")
 	CREFLECT_STRUCT_FIELD_ASSETREF(HLevelLightingData, LightingData, "")
 CREFLECT_STRUCT_END()
 
@@ -2584,11 +2053,6 @@ CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HLevelLightingData, "")
 	CREFLECT_STRUCT_FIELD_ARRAY(HIrradianceVolumeBakeBuffer, IrradianceVolumes, "")
-CREFLECT_STRUCT_END()
-
-CREFLECT_STRUCT_BEGIN(HLevelThingMeshOverride, "")
-	CREFLECT_STRUCT_FIELD(std::string, TargetName, "")
-	CREFLECT_STRUCT_FIELD(HCollisionSettings, CollisionSettings, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_ENUM_BEGIN(LightType, "")
@@ -2677,7 +2141,6 @@ CREFLECT_DEFINE_VIRTUAL(ALevelThing);
 CREFLECT_STRUCT_BEGIN(ALevelThing, "")
 	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
 	CREFLECT_STRUCT_FIELD_ASSETREF(HLevel, LevelAsset, "")
-	CREFLECT_STRUCT_FIELD_ARRAY(HLevelThingMeshOverride, MeshOverrides, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_DEFINE_VIRTUAL(AParticleSystem)

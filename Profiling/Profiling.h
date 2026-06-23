@@ -7,40 +7,6 @@
 namespace Columbus
 {
 
-	// TODO: legacy
-	enum class ProfileModule
-	{
-		CPU,
-		Audio,
-		Physics,
-		Particles,
-		Culling,
-		Update,
-		Count
-	};
-
-	// TODO: legacy
-	enum class ProfileModuleGPU
-	{
-		GPU,
-		OpaqueStage,
-		SkyStage,
-		TransparentStage,
-		BloomStage,
-		FinalStage,
-		Count
-	};
-
-	// TODO: legacy
-	struct ProfileMarker
-	{
-		ProfileModule Module;
-		Timer Prof;
-
-		ProfileMarker(ProfileModule Module);
-		~ProfileMarker();
-	};
-
 	// to be used with a macro, should be statically initialised
 	struct ProfileCounterCPU
 	{
@@ -99,10 +65,6 @@ namespace Columbus
 		ProfileMarkerScopedCPU(ProfileCounterCPU& Marker);
 		~ProfileMarkerScopedCPU();
 	};
-
-	// TODO: legacy
-	//#define PROFILE_CPU(module) Columbus::ProfileMarker MarkerCPU(module);
- 	// #define PROFILE_GPU(module) Columbus::ProfileMarkerGPU MarkerGPU(module);
  
 	#define DECLARE_CPU_PROFILING_COUNTER(counter) extern Columbus::ProfileCounterCPU counter;
 	#define IMPLEMENT_CPU_PROFILING_COUNTER(text, category, counter) Columbus::ProfileCounterCPU counter (text, category);
@@ -129,10 +91,6 @@ namespace Columbus
 
 	// call it once per frame
  	void ResetProfiling();
-
-	// TODO: legacy
- 	double GetProfileTime(ProfileModule Module);
- 	double GetProfileTimeGPU(ProfileModuleGPU Module);
  
 	std::span<const char*>        GetProfilerCategoryListCPU();
 	std::span<ProfileCounterCPU*> GetProfilerCategoryCPU(const char* Category);
@@ -145,10 +103,5 @@ namespace Columbus
 
 	std::span<const char*>             GetProfilerCategoryListCounting();
 	std::span<ProfileCounterCounting*> GetProfilerCategoryCounting(const char* Category);
-
-	// TODO: legacy
-	void ResetProfiling();	
-	double GetProfileTime(ProfileModule Module);
-	double GetProfileTimeGPU(ProfileModuleGPU Module);
 
 }

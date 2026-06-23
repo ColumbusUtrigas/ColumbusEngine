@@ -393,7 +393,6 @@ namespace Columbus::Assets
 		{
 			nlohmann::json Json;
 			HLevel LevelMetadata;
-			LevelMetadata.EffectsSettings = LevelAsset.EffectsSettings;
 			Reflection_SerialiseStructJson(LevelMetadata, Json);
 			Json["things"] = nlohmann::json::array();
 

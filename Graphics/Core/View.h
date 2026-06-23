@@ -154,7 +154,6 @@ namespace Columbus
 	{
 		None,
 		RTGI,
-		DDGI,
 		IV,
 	};
 

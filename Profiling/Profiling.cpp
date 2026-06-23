@@ -49,10 +49,6 @@ namespace Columbus
 		return Map[Category];
 	}
 
-
-	// double CPU[int(ProfileModule::Count)];
-	double GPU[int(ProfileModuleGPU::Count)];
-
 	ProfileCounterCPU::ProfileCounterCPU(const char* Text, const char* Category) : Text(Text), Category(Category)
 	{
 		Time = 0;
@@ -102,18 +98,6 @@ namespace Columbus
 		Marker.Time += Prof.Elapsed() * 1000;
 	}
 
-
-	ProfileMarker::ProfileMarker(ProfileModule Module) : Module(Module)
-	{
-		Prof.Reset();
-	}
-
-	ProfileMarker::~ProfileMarker()
-	{
-		// double Time = Prof.Elapsed() * 1000;
-		// CPU[int(Module)] += Time;
-	}
-
 	void ResetProfiling()
 	{
 		for (ProfileCounterCPU* Counter : GetCounterList<ProfileCounterCPU>())
@@ -135,8 +119,6 @@ namespace Columbus
 				Counter->Count = 0;
 			}
 		}
-		// memset(CPU, 0, sizeof(CPU));
-		// memset(GPU, 0, sizeof(GPU));
 	}
 
 	void AddProfilingMemory(ProfileCounterMemory& Counter, u64 Bytes)
@@ -167,17 +149,6 @@ namespace Columbus
 	void SetProfilingCount(ProfileCounterCounting& Counter, u64 Count)
 	{
 		Counter.Count = Count;
-	}
-
-	double GetProfileTime(ProfileModule Module)
-	{
-		return 0.0;
-		// return CPU[int(Module)];
-	}
-
-	double GetProfileTimeGPU(ProfileModuleGPU Module)
-	{
-		return GPU[int(Module)];
 	}
 
 	std::span<const char*> GetProfilerCategoryListCPU()
