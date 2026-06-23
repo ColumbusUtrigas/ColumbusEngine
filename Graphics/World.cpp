@@ -1717,24 +1717,17 @@ namespace Columbus
 
 	void AThing::OnUpdateRenderState()
 	{
-		TransGlobal = Trans;
+		Trans.Update();
 
 		// hierarchy
 		if (Parent)
 		{
-			TransGlobal.Scale = Parent->TransGlobal.Scale * Trans.Scale;
-			TransGlobal.Rotation = Parent->TransGlobal.Rotation * Trans.Rotation;
-
-			Vector3 ScaledOffset = Parent->TransGlobal.Scale * Trans.Position;
-
-			Quaternion p{ ScaledOffset.X, ScaledOffset.Y, ScaledOffset.Z, 0.0f};
-			Quaternion rot = Parent->TransGlobal.Rotation.Normalized();
-			Quaternion res = (-rot) * p * rot;
-
-			Vector3 RotatedOffset = Vector3(res.X, res.Y, res.Z);
-			TransGlobal.Position = Parent->TransGlobal.Position + RotatedOffset;
-
-			TransGlobal.Update();
+			const Transform& ParentWorld = Parent->GetWorldTransform();
+			TransGlobal.SetFromMatrix(ParentWorld.GetMatrix() * Trans.GetMatrix());
+		}
+		else
+		{
+			TransGlobal = Trans;
 		}
 
 		bTransformDirty = false;
@@ -1756,26 +1749,7 @@ namespace Columbus
 		if (Parent)
 		{
 			const Transform& ParentWorldTransform = Parent->GetWorldTransform();
-			constexpr float Epsilon = 0.000001f;
-
-			Trans.Scale = Vector3(
-				fabsf(ParentWorldTransform.Scale.X) > Epsilon ? WorldTransform.Scale.X / ParentWorldTransform.Scale.X : WorldTransform.Scale.X,
-				fabsf(ParentWorldTransform.Scale.Y) > Epsilon ? WorldTransform.Scale.Y / ParentWorldTransform.Scale.Y : WorldTransform.Scale.Y,
-				fabsf(ParentWorldTransform.Scale.Z) > Epsilon ? WorldTransform.Scale.Z / ParentWorldTransform.Scale.Z : WorldTransform.Scale.Z);
-
-			Quaternion ParentRotation = ParentWorldTransform.Rotation.Normalized();
-			Trans.Rotation = (-ParentRotation) * WorldTransform.Rotation;
-
-			Vector3 WorldOffset = WorldTransform.Position - ParentWorldTransform.Position;
-			Quaternion p{ WorldOffset.X, WorldOffset.Y, WorldOffset.Z, 0.0f };
-			Quaternion Unrotated = ParentRotation * p * (-ParentRotation);
-			Vector3 LocalScaledOffset(Unrotated.X, Unrotated.Y, Unrotated.Z);
-			Trans.Position = Vector3(
-				fabsf(ParentWorldTransform.Scale.X) > Epsilon ? LocalScaledOffset.X / ParentWorldTransform.Scale.X : LocalScaledOffset.X,
-				fabsf(ParentWorldTransform.Scale.Y) > Epsilon ? LocalScaledOffset.Y / ParentWorldTransform.Scale.Y : LocalScaledOffset.Y,
-				fabsf(ParentWorldTransform.Scale.Z) > Epsilon ? LocalScaledOffset.Z / ParentWorldTransform.Scale.Z : LocalScaledOffset.Z);
-
-			Trans.Update();
+			Trans.SetFromMatrix(ParentWorldTransform.GetWorldToLocalMatrix() * WorldTransform.GetMatrix());
 		}
 		else
 		{
@@ -1807,23 +1781,12 @@ namespace Columbus
 	{
 		if (bTransformDirty)
 		{
+			Trans.Update();
+
 			if (Parent)
 			{
 				const Transform& parentWorld = Parent->GetWorldTransform();
-				TransGlobal = Trans;
-				TransGlobal.Scale = parentWorld.Scale * Trans.Scale;
-				TransGlobal.Rotation = parentWorld.Rotation * Trans.Rotation;
-
-				Vector3 ScaledOffset = parentWorld.Scale * Trans.Position;
-
-				Quaternion p{ ScaledOffset.X, ScaledOffset.Y, ScaledOffset.Z, 0.0f };
-				Quaternion rot = parentWorld.Rotation.Normalized();
-				Quaternion res = (-rot) * p * rot;
-
-				Vector3 RotatedOffset = Vector3(res.X, res.Y, res.Z);
-				TransGlobal.Position = parentWorld.Position + RotatedOffset;
-
-				TransGlobal.Update();
+				TransGlobal.SetFromMatrix(parentWorld.GetMatrix() * Trans.GetMatrix());
 			}
 			else
 			{
@@ -1836,9 +1799,9 @@ namespace Columbus
 
 	bool AVolume::ContainsPoint(const Vector3& Point) const
 	{
-		Vector3 LocalPoint = Point - TransGlobal.Position;
-		Vector3 HalfSize = TransGlobal.Scale * 0.5f;
-		return abs(LocalPoint.X) <= HalfSize.X && abs(LocalPoint.Y) <= HalfSize.Y && abs(LocalPoint.Z) <= HalfSize.Z;
+		const Transform& WorldTransform = const_cast<AVolume*>(this)->GetWorldTransform();
+		const Vector3 LocalPoint = (WorldTransform.GetWorldToLocalMatrix() * Vector4(Point, 1.0f)).XYZ();
+		return fabsf(LocalPoint.X) <= 0.5f && fabsf(LocalPoint.Y) <= 0.5f && fabsf(LocalPoint.Z) <= 0.5f;
 	}
 
 	float AEffectVolume::ComputeBlendFactor(const Vector3& Point) const

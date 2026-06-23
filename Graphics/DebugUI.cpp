@@ -530,6 +530,11 @@ namespace Columbus::DebugUI
 							{
 								SetCurrentLevelDocument(level, path);
 								GCurrentProject->World->AddLevel(level);
+								if (level->InstanceTemplate != nullptr)
+								{
+									level->InstanceTemplate->World = GCurrentProject->World;
+									GCurrentProject->World->ResolveThingThingReferences(level->InstanceTemplate);
+								}
 							}
 						}
 					}

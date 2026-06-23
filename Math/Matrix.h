@@ -298,27 +298,27 @@ namespace Columbus
 		{
 			Matrix Tmp = *this;
 
-			// Transform::Update builds basis as Scale * Rotation, so scale lives in row lengths.
-			OutScale.X = Tmp.GetRow(0).XYZ().Length();
-			OutScale.Y = Tmp.GetRow(1).XYZ().Length();
-			OutScale.Z = Tmp.GetRow(2).XYZ().Length();
+			// Transform::Update builds basis as Rotation * Scale, so scale lives in column lengths.
+			OutScale.X = Tmp.GetColumn(0).XYZ().Length();
+			OutScale.Y = Tmp.GetColumn(1).XYZ().Length();
+			OutScale.Z = Tmp.GetColumn(2).XYZ().Length();
 
 			if (OutScale.X > 0.000001f)
 			{
 				Tmp.M[0][0] /= OutScale.X;
-				Tmp.M[0][1] /= OutScale.X;
-				Tmp.M[0][2] /= OutScale.X;
+				Tmp.M[1][0] /= OutScale.X;
+				Tmp.M[2][0] /= OutScale.X;
 			}
 			if (OutScale.Y > 0.000001f)
 			{
-				Tmp.M[1][0] /= OutScale.Y;
+				Tmp.M[0][1] /= OutScale.Y;
 				Tmp.M[1][1] /= OutScale.Y;
-				Tmp.M[1][2] /= OutScale.Y;
+				Tmp.M[2][1] /= OutScale.Y;
 			}
 			if (OutScale.Z > 0.000001f)
 			{
-				Tmp.M[2][0] /= OutScale.Z;
-				Tmp.M[2][1] /= OutScale.Z;
+				Tmp.M[0][2] /= OutScale.Z;
+				Tmp.M[1][2] /= OutScale.Z;
 				Tmp.M[2][2] /= OutScale.Z;
 			}
 

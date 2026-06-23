@@ -64,7 +64,7 @@ namespace Columbus
 			Matrix Transform;
 			Transform.Translate(Position);
 			Transform.Scale(Size);
-			AddBox(Transform, Colour, ZTest);
+			AddBox(Transform, Colour, Wireframe, ZTest);
 		}
 
 		void AddBoxWithOutline(const Matrix& Transform, Vector4 Colour, Vector4 OutlineColour, bool Wireframe = false, bool ZTest = true)
@@ -97,7 +97,7 @@ namespace Columbus
 			Transform = Rot * Transform;
 			Transform.Translate(Center);
 
-			AddBox(Transform, Colour, ZTest);
+			AddBox(Transform, Colour, Wireframe, ZTest);
 		}
 
 		void AddTri(const Vector3& A, const Vector3& B, const Vector3& C, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
