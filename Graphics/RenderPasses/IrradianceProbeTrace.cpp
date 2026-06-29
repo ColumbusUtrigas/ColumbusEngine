@@ -3,14 +3,19 @@
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
+#include "Profiling/Profiling.h"
 #include "RayTracingIrradianceVolumes.h"
 #include "RenderPasses.h"
 #include "imgui.h"
+#include "Graphics/ShaderCache.h"
 
 #include <algorithm>
 
 namespace Columbus
 {
+	DECLARE_GPU_PROFILING_COUNTER(GpuCounterIrradianceProbesApply);
+
+	IMPLEMENT_GPU_PROFILING_COUNTER("Irradiance Probes Apply", "RenderGraphGPU", GpuCounterIrradianceProbesApply);
 
 	// Roadmap:
 	// - Resources definition and tooling/workflow preparation goes first
@@ -46,6 +51,123 @@ namespace Columbus
 		int Mode;
 		int RayDataStride;
 		int VisibilityRayCount;
+	};
+
+	struct IrradianceProbesApplyParameters
+	{
+		iVector2 Resolution{};
+		iVector2 Padding{};
+	};
+
+	struct IrradianceVolumeTraceShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/IrradianceVolume/IrradianceVolumeTrace.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct PipelinePermutation
+		{
+			u32 MaxRecursionDepth = 1;
+		};
+
+		static RayTracingPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			RayTracingPipelineDesc Desc;
+			Desc.Name = "IrradianceProbesTrace";
+			Desc.MaxRecursionDepth = Permutation.MaxRecursionDepth;
+			return Desc;
+		}
+
+		struct TraceParameters
+		{
+			ShaderGPUScene Scene;
+			ShaderAccelerationStructure AccelerationStructure;
+			ShaderReadBuffer IrradianceProbes;
+			ShaderWriteBuffer IrradianceFixedRayDataBuffer;
+			ShaderPushConstants<IrradianceProbesTraceParameters> Constants { {}, ShaderType::Raygen };
+		};
+
+		static void Bind(ShaderBinder& Binder, const TraceParameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+			Binder.Bind(Params.AccelerationStructure, 2, 0);
+			Binder.Bind(Params.IrradianceProbes, 3, 0);
+			Binder.Bind(Params.IrradianceFixedRayDataBuffer, 3, 1);
+			Binder.Bind(Params.Constants);
+		}
+
+		struct AmbientParameters
+		{
+			ShaderGPUScene Scene;
+			ShaderAccelerationStructure AccelerationStructure;
+			ShaderWriteBuffer IrradianceProbes;
+			ShaderReadBuffer IrradianceFixedRayDataBuffer;
+			ShaderPushConstants<IrradianceProbesTraceParameters> Constants { {}, ShaderType::Raygen };
+		};
+
+		static void Bind(ShaderBinder& Binder, const AmbientParameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+			Binder.Bind(Params.AccelerationStructure, 2, 0);
+			Binder.Bind(Params.IrradianceProbes, 3, 0);
+			Binder.Bind(Params.IrradianceFixedRayDataBuffer, 3, 1);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct IrradianceVolumeRelocateClassifyShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/IrradianceVolume/IrradianceVolumeRelocateClassify.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderWriteBuffer IrradianceProbes;
+			ShaderReadBuffer IrradianceFixedRayDataBuffer;
+			ShaderPushConstants<IrradianceProbesRelocateClassifyParameters> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.IrradianceProbes, 0, 0);
+			Binder.Bind(Params.IrradianceFixedRayDataBuffer, 0, 1);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct IrradianceProbesApplyShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/IrradianceVolume/IrradianceVolumeApply.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderConstants<RayTracingIrradianceVolumes::Constants> IrradianceVolumeConstants;
+			std::array<ShaderReadBuffer, RayTracingIrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
+			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture GBufferNormal;
+			ShaderReadBuffer SceneBuffer;
+			ShaderStorageTexture Output;
+			ShaderPushConstants<IrradianceProbesApplyParameters> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.IrradianceVolumeConstants, 0, 9);
+			ShaderArray<ShaderReadBuffer> IrradianceProbeBuffers;
+			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), RayTracingIrradianceVolumes::MaxVolumes);
+			Binder.Bind(IrradianceProbeBuffers, 0, 10);
+			Binder.Bind(Params.GBufferDepth, 1, 0);
+			Binder.Bind(Params.GBufferNormal, 1, 1);
+			Binder.Bind(Params.SceneBuffer, 1, 2);
+			Binder.Bind(Params.Output, 1, 3);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	ConsoleVariable<int> CVar_IrradianceVolumeBakeProbeChunk("r.IrradianceVolume.BakeProbeChunk", "Maximum probes processed by one irradiance volume bake dispatch", 512);
@@ -107,38 +229,14 @@ namespace Columbus
 
 		auto AddFixedRayTracePass = [&](const char* Name, int ProbeOffset, int ProbeCount)
 		{
-			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.ReadBuffer(ProbesBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.WriteBuffer(FixedRayBuffer, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-
-			Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [ProbesBuffer, FixedRayBuffer, Bounces, ProbeOffset, ProbeCount](RenderGraphContext& Context)
-			{
-			static RayTracingPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				RayTracingPipelineDesc Desc{};
-				Desc.Name = "IrradianceProbesTrace";
-				Desc.MaxRecursionDepth = 1;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeTrace.csd");
-				Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-			}
-
-			auto TlasSet = Context.GetDescriptorSet(Pipeline, 2);
-			auto ProbesSet = Context.GetDescriptorSet(Pipeline, 3);
-
-			Context.Device->UpdateDescriptorSet(TlasSet, 0, 0, Context.Scene->TLAS);
-			Context.Device->UpdateDescriptorSet(ProbesSet, 0, 0, Context.GetRenderGraphBuffer(ProbesBuffer).get());
-			Context.Device->UpdateDescriptorSet(ProbesSet, 1, 0, Context.GetRenderGraphBuffer(FixedRayBuffer).get());
-
-			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &TlasSet);
-			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 3, 1, &ProbesSet);
-			Context.BindGPUScene(Pipeline, false);
-
-			IrradianceProbesTraceParameters Parameters {
+			IrradianceVolumeTraceShader::TraceParameters TraceParams;
+			TraceParams.Scene.UseCombinedSampler = false;
+			TraceParams.IrradianceProbes = ProbesBuffer;
+			TraceParams.IrradianceFixedRayDataBuffer = FixedRayBuffer;
+			TraceParams.Constants.Value = {
 				.SamplesPerProbe = 1,
 				.Bounces = Bounces,
-				.Random = rand(),
+				.Random = 0,
 				.Mode = 0,
 				.RayDataStride = VisibilityRayCount,
 				.ProbeOffset = ProbeOffset,
@@ -147,48 +245,47 @@ namespace Columbus
 				.TotalSamplesPerProbe = 1,
 			};
 
-			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);
-			Context.CommandBuffer->TraceRays(Pipeline, 32, ProbeCount, 1);
+			RenderPassDependencies Dependencies(Graph.Allocator);
+			Dependencies.Bind<IrradianceVolumeTraceShader>(TraceParams);
+
+			Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [TraceParams, ProbeCount](RenderGraphContext& Context)
+			{
+				IrradianceVolumeTraceShader::TraceParameters Parameters = TraceParams;
+				Parameters.AccelerationStructure = Context.Scene->TLAS;
+				Parameters.Constants.Value.Random = rand();
+
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<IrradianceVolumeTraceShader>(Context, IrradianceVolumeTraceShader::Permutation {}, IrradianceVolumeTraceShader::PipelinePermutation {});
+				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
+				Context.BindRayTracingParameters<IrradianceVolumeTraceShader>(Pipeline, Parameters);
+				Context.CommandBuffer->TraceRays(Pipeline, 32, ProbeCount, 1);
 			});
 		};
 
 		auto AddRelocateClassifyPass = [&](const char* Name, int Iteration)
 		{
+			IrradianceVolumeRelocateClassifyShader::Parameters RelocateParams;
+			RelocateParams.IrradianceProbes = ProbesBuffer;
+			RelocateParams.IrradianceFixedRayDataBuffer = FixedRayBuffer;
+			RelocateParams.Constants.Value = {
+				.Position = Vector4(Volume.Position, 0),
+				.Extent = Vector4(Volume.Extent, 0),
+				.ProbesCount = iVector4(Volume.ProbesCount, 0),
+				.TotalProbes = TotalProbes,
+				.FixedRayCount = FixedRayCount,
+				.Iteration = Iteration,
+				.Mode = 0,
+				.RayDataStride = VisibilityRayCount,
+				.VisibilityRayCount = VisibilityRayCount,
+			};
+
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.ReadBuffer(FixedRayBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.ReadBuffer(ProbesBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.WriteBuffer(ProbesBuffer, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<IrradianceVolumeRelocateClassifyShader>(RelocateParams);
 
-			Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [ProbesBuffer, FixedRayBuffer, Volume, TotalProbes, FixedRayCount, Iteration](RenderGraphContext& Context)
+			Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [RelocateParams, TotalProbes](RenderGraphContext& Context)
 			{
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "IV_RelocateClassify";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeRelocateClassify.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				auto Set = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphBuffer(ProbesBuffer).get());
-				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphBuffer(FixedRayBuffer).get());
-
-				IrradianceProbesRelocateClassifyParameters Params{
-					.Position = Vector4(Volume.Position, 0),
-					.Extent = Vector4(Volume.Extent, 0),
-					.ProbesCount = iVector4(Volume.ProbesCount, 0),
-					.TotalProbes = TotalProbes,
-					.FixedRayCount = FixedRayCount,
-					.Iteration = Iteration,
-					.Mode = 0,
-					.RayDataStride = VisibilityRayCount,
-					.VisibilityRayCount = VisibilityRayCount,
-				};
-
+				ComputePipeline* Pipeline = GetComputePipeline<IrradianceVolumeRelocateClassifyShader>(Context, IrradianceVolumeRelocateClassifyShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<IrradianceVolumeRelocateClassifyShader>(Pipeline, RelocateParams);
 				Context.CommandBuffer->Dispatch((TotalProbes + 63) / 64, 1, 1);
 			});
 		};
@@ -204,47 +301,34 @@ namespace Columbus
 
 		auto AddVisibilityTracePass = [&](int ProbeOffset, int ProbeCount)
 		{
+			IrradianceVolumeTraceShader::TraceParameters TraceParams;
+			TraceParams.Scene.UseCombinedSampler = false;
+			TraceParams.IrradianceProbes = ProbesBuffer;
+			TraceParams.IrradianceFixedRayDataBuffer = FixedRayBuffer;
+			TraceParams.Constants.Value = {
+				.SamplesPerProbe = VisibilityRayCount,
+				.Bounces = Bounces,
+				.Random = 0,
+				.Mode = 2,
+				.RayDataStride = VisibilityRayCount,
+				.ProbeOffset = ProbeOffset,
+				.ProbeCount = ProbeCount,
+				.SampleOffset = 0,
+				.TotalSamplesPerProbe = VisibilityRayCount,
+			};
+
 			RenderPassDependencies VisibilityTraceDependencies(Graph.Allocator);
-			VisibilityTraceDependencies.ReadBuffer(ProbesBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			VisibilityTraceDependencies.WriteBuffer(FixedRayBuffer, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			VisibilityTraceDependencies.Bind<IrradianceVolumeTraceShader>(TraceParams);
 
-			Graph.AddPass("IrradianceProbesTraceVisibility", RenderGraphPassType::Compute, Parameters, VisibilityTraceDependencies, [ProbesBuffer, FixedRayBuffer, Bounces, VisibilityRayCount, ProbeOffset, ProbeCount](RenderGraphContext& Context)
+			Graph.AddPass("IrradianceProbesTraceVisibility", RenderGraphPassType::Compute, Parameters, VisibilityTraceDependencies, [TraceParams, VisibilityRayCount, ProbeCount](RenderGraphContext& Context)
 			{
-				static RayTracingPipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					RayTracingPipelineDesc Desc{};
-					Desc.Name = "IrradianceProbesTrace";
-					Desc.MaxRecursionDepth = 1;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeTrace.csd");
-					Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-				}
+				IrradianceVolumeTraceShader::TraceParameters Parameters = TraceParams;
+				Parameters.AccelerationStructure = Context.Scene->TLAS;
+				Parameters.Constants.Value.Random = rand();
 
-				auto TlasSet = Context.GetDescriptorSet(Pipeline, 2);
-				auto ProbesSet = Context.GetDescriptorSet(Pipeline, 3);
-
-				Context.Device->UpdateDescriptorSet(TlasSet, 0, 0, Context.Scene->TLAS);
-				Context.Device->UpdateDescriptorSet(ProbesSet, 0, 0, Context.GetRenderGraphBuffer(ProbesBuffer).get());
-				Context.Device->UpdateDescriptorSet(ProbesSet, 1, 0, Context.GetRenderGraphBuffer(FixedRayBuffer).get());
-
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<IrradianceVolumeTraceShader>(Context, IrradianceVolumeTraceShader::Permutation {}, IrradianceVolumeTraceShader::PipelinePermutation {});
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &TlasSet);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 3, 1, &ProbesSet);
-				Context.BindGPUScene(Pipeline, false);
-
-				IrradianceProbesTraceParameters Parameters {
-					.SamplesPerProbe = VisibilityRayCount,
-					.Bounces = Bounces,
-					.Random = rand(),
-					.Mode = 2,
-					.RayDataStride = VisibilityRayCount,
-					.ProbeOffset = ProbeOffset,
-					.ProbeCount = ProbeCount,
-					.SampleOffset = 0,
-					.TotalSamplesPerProbe = VisibilityRayCount,
-				};
-
-				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);
+				Context.BindRayTracingParameters<IrradianceVolumeTraceShader>(Pipeline, Parameters);
 				Context.CommandBuffer->TraceRays(Pipeline, VisibilityRayCount, ProbeCount, 1);
 			});
 		};
@@ -254,88 +338,62 @@ namespace Columbus
 			AddVisibilityTracePass(ProbeOffset, std::min(ProbeChunkSize, TotalProbes - ProbeOffset));
 		}
 
+		IrradianceVolumeRelocateClassifyShader::Parameters VisibilityBlendParams;
+		VisibilityBlendParams.IrradianceProbes = ProbesBuffer;
+		VisibilityBlendParams.IrradianceFixedRayDataBuffer = FixedRayBuffer;
+		VisibilityBlendParams.Constants.Value = {
+			.Position = Vector4(Volume.Position, 0),
+			.Extent = Vector4(Volume.Extent, 0),
+			.ProbesCount = iVector4(Volume.ProbesCount, 0),
+			.TotalProbes = TotalProbes,
+			.FixedRayCount = FixedRayCount,
+			.Iteration = 0,
+			.Mode = 1,
+			.RayDataStride = VisibilityRayCount,
+			.VisibilityRayCount = VisibilityRayCount,
+		};
+
 		RenderPassDependencies VisibilityBlendDependencies(Graph.Allocator);
-		VisibilityBlendDependencies.ReadBuffer(FixedRayBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		VisibilityBlendDependencies.ReadBuffer(ProbesBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		VisibilityBlendDependencies.WriteBuffer(ProbesBuffer, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		VisibilityBlendDependencies.Bind<IrradianceVolumeRelocateClassifyShader>(VisibilityBlendParams);
 
-		Graph.AddPass("IrradianceProbesBlendVisibility", RenderGraphPassType::Compute, Parameters, VisibilityBlendDependencies, [ProbesBuffer, FixedRayBuffer, Volume, TotalProbes, FixedRayCount, VisibilityRayCount](RenderGraphContext& Context)
+		Graph.AddPass("IrradianceProbesBlendVisibility", RenderGraphPassType::Compute, Parameters, VisibilityBlendDependencies, [VisibilityBlendParams, TotalProbes](RenderGraphContext& Context)
 		{
-			static ComputePipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				ComputePipelineDesc Desc;
-				Desc.Name = "IV_RelocateClassify";
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeRelocateClassify.csd");
-				Pipeline = Context.Device->CreateComputePipeline(Desc);
-			}
-
-			auto Set = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphBuffer(ProbesBuffer).get());
-			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphBuffer(FixedRayBuffer).get());
-
-			IrradianceProbesRelocateClassifyParameters Params{
-				.Position = Vector4(Volume.Position, 0),
-				.Extent = Vector4(Volume.Extent, 0),
-				.ProbesCount = iVector4(Volume.ProbesCount, 0),
-				.TotalProbes = TotalProbes,
-				.FixedRayCount = FixedRayCount,
-				.Iteration = 0,
-				.Mode = 1,
-				.RayDataStride = VisibilityRayCount,
-				.VisibilityRayCount = VisibilityRayCount,
-			};
-
+			ComputePipeline* Pipeline = GetComputePipeline<IrradianceVolumeRelocateClassifyShader>(Context, IrradianceVolumeRelocateClassifyShader::Permutation {});
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
-			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<IrradianceVolumeRelocateClassifyShader>(Pipeline, VisibilityBlendParams);
 			Context.CommandBuffer->Dispatch((TotalProbes * 64 + 63) / 64, 1, 1);
 		});
 
 		auto AddAmbientTracePass = [&](int ProbeOffset, int ProbeCount, int SampleOffset, int SamplesThisPass)
 		{
+			IrradianceVolumeTraceShader::AmbientParameters AmbientParams;
+			AmbientParams.Scene.UseCombinedSampler = false;
+			AmbientParams.IrradianceProbes = ProbesBuffer;
+			AmbientParams.IrradianceFixedRayDataBuffer = FixedRayBuffer;
+			AmbientParams.Constants.Value = {
+				.SamplesPerProbe = SamplesThisPass,
+				.Bounces = Bounces,
+				.Random = 0,
+				.Mode = 1,
+				.RayDataStride = VisibilityRayCount,
+				.ProbeOffset = ProbeOffset,
+				.ProbeCount = ProbeCount,
+				.SampleOffset = SampleOffset,
+				.TotalSamplesPerProbe = RaysPerProbe,
+			};
+
 			RenderPassDependencies AmbientDependencies(Graph.Allocator);
-			AmbientDependencies.ReadBuffer(ProbesBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			AmbientDependencies.WriteBuffer(ProbesBuffer, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			AmbientDependencies.ReadBuffer(FixedRayBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			AmbientDependencies.Bind<IrradianceVolumeTraceShader>(AmbientParams);
 
-			Graph.AddPass("IrradianceProbesTraceAmbientCube", RenderGraphPassType::Compute, Parameters, AmbientDependencies, [ProbesBuffer, FixedRayBuffer, RaysPerProbe, Bounces, ProbeOffset, ProbeCount, SampleOffset, SamplesThisPass](RenderGraphContext& Context)
+			Graph.AddPass("IrradianceProbesTraceAmbientCube", RenderGraphPassType::Compute, Parameters, AmbientDependencies, [AmbientParams, ProbeCount](RenderGraphContext& Context)
 			{
-				static RayTracingPipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					RayTracingPipelineDesc Desc{};
-					Desc.Name = "IrradianceProbesTrace";
-					Desc.MaxRecursionDepth = 1;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeTrace.csd");
-					Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-				}
+				IrradianceVolumeTraceShader::AmbientParameters Parameters = AmbientParams;
+				Parameters.AccelerationStructure = Context.Scene->TLAS;
+				Parameters.Constants.Value.Random = rand();
 
-				auto TlasSet = Context.GetDescriptorSet(Pipeline, 2);
-				auto ProbesSet = Context.GetDescriptorSet(Pipeline, 3);
-
-				Context.Device->UpdateDescriptorSet(TlasSet, 0, 0, Context.Scene->TLAS);
-				Context.Device->UpdateDescriptorSet(ProbesSet, 0, 0, Context.GetRenderGraphBuffer(ProbesBuffer).get());
-				Context.Device->UpdateDescriptorSet(ProbesSet, 1, 0, Context.GetRenderGraphBuffer(FixedRayBuffer).get());
-
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<IrradianceVolumeTraceShader>(Context, IrradianceVolumeTraceShader::Permutation {}, IrradianceVolumeTraceShader::PipelinePermutation {});
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &TlasSet);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 3, 1, &ProbesSet);
-				Context.BindGPUScene(Pipeline, false);
-
-				IrradianceProbesTraceParameters Parameters {
-					.SamplesPerProbe = SamplesThisPass,
-					.Bounces = Bounces,
-					.Random = rand(),
-					.Mode = 1,
-					.RayDataStride = VisibilityRayCount,
-					.ProbeOffset = ProbeOffset,
-					.ProbeCount = ProbeCount,
-					.SampleOffset = SampleOffset,
-					.TotalSamplesPerProbe = RaysPerProbe,
-				};
-
-				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);
+				Context.BindRayTracingParameters<IrradianceVolumeTraceShader>(Pipeline, Parameters);
 				Context.CommandBuffer->TraceRays(Pipeline, ProbeCount, 1, 1);
 			});
 		};
@@ -350,7 +408,7 @@ namespace Columbus
 		}
 	}
 
-	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures)
+	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes)
 	{
 		iVector2 Size = View.RenderSize;
 
@@ -369,50 +427,34 @@ namespace Columbus
 
 		Textures.RTGI = GI_Tex;
 
-		RenderPassDependencies Dependencies(Graph.Allocator);
-		RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Dependencies, true, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		if (IrradianceVolumes.ProbeBuffers.empty())
+		if (IrradianceVolumes.Constants.Value.CountAndFlags.X == 0)
 		{
 			return;
 		}
 
-		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Write(GI_Tex, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		IrradianceProbesApplyShader::Parameters ApplyParams;
+		ApplyParams.IrradianceVolumeConstants = IrradianceVolumes.Constants;
+		ApplyParams.IrradianceProbeBuffers = IrradianceVolumes.ProbeBuffers;
+		ApplyParams.GBufferDepth = Textures.GBufferDS;
+		ApplyParams.GBufferNormal = Textures.GBufferNormal;
+		ApplyParams.SceneBuffer = Graph.Scene->SceneBuffer;
+		ApplyParams.Output = GI_Tex;
+		ApplyParams.Constants.Value = {
+			.Resolution = Size,
+			.Padding = iVector2(0, 0),
+		};
 
-		Graph.AddPass("IrradianceProbesApply", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, GI_Tex, Size, IrradianceVolumes](RenderGraphContext& Context)
+		RenderPassDependencies Dependencies(Graph.Allocator);
+		Dependencies.Bind<IrradianceProbesApplyShader>(ApplyParams);
+
+		// TODO: convert to optimised raster
+		Graph.AddPass("IrradianceProbesApply", RenderGraphPassType::Compute, Parameters, Dependencies, [ApplyParams, Size](RenderGraphContext& Context)
 		{
-			static ComputePipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				ComputePipelineDesc Desc;
-				Desc.Name = "IV_Apply";
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeApply.csd");
-				Pipeline = Context.Device->CreateComputePipeline(Desc);
-			}
+			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterIrradianceProbesApply, Context);
 
-			auto Set = Context.GetDescriptorSet(Pipeline, 0);
-			RayTracingIrradianceVolumes::Bind(Context, Set, IrradianceVolumes, Context.Scene->SceneBuffer);
-
-			auto Set2 = Context.GetDescriptorSet(Pipeline, 1);
-			Context.Device->UpdateDescriptorSet(Set2, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set2, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set2, 2, 0, Context.Scene->SceneBuffer);
-			Context.Device->UpdateDescriptorSet(Set2, 3, 0, Context.GetRenderGraphTexture(GI_Tex).get());
-
-			struct
-			{
-				iVector2 Resolution;
-				iVector2 Padding;
-			} Params;
-
-			Params.Resolution = Size;
-			Params.Padding = iVector2(0, 0);
-
+			ComputePipeline* Pipeline = GetComputePipeline<IrradianceProbesApplyShader>(Context, IrradianceProbesApplyShader::Permutation {});
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &Set2);
-			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<IrradianceProbesApplyShader>(Pipeline, ApplyParams);
 			Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { Size, 1 });
 		});
 	}

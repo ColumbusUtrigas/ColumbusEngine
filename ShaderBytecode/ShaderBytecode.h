@@ -34,15 +34,30 @@ struct CompiledShaderBytecode
 	std::vector<uint8_t> Bytecode;
 };
 
+struct CompiledShaderPermutationAxis
+{
+	std::string Name;
+	int32_t MinValue = 0;
+	int32_t MaxValue = 0;
+};
+
+struct CompiledShaderPermutation
+{
+	std::string Name;
+	std::vector<std::string> Defines;
+	std::vector<int32_t> AxisValues;
+	std::vector<CompiledShaderBytecode> Bytecodes;
+
+	SPtr<CompiledShaderBytecodeReflection> Reflection;
+};
+
 struct CompiledShaderData
 {
 	uint32_t Flags;
 	std::string Name;
 
-	std::vector<CompiledShaderBytecode> Bytecodes;
-	// TODO: permutations
-
-	SPtr<CompiledShaderBytecodeReflection> Reflection;
+	std::vector<CompiledShaderPermutationAxis> PermutationAxes;
+	std::vector<CompiledShaderPermutation> Permutations;
 };
 
 CompiledShaderData LoadCompiledShaderData(const std::string& Path);

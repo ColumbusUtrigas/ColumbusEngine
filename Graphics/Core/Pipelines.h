@@ -11,7 +11,7 @@ namespace Columbus
 	struct ComputePipelineDesc
 	{
 		std::string Name; // Debug name
-		CompiledShaderData Bytecode;
+		CompiledShaderPermutation Shader;
 	};
 
 	struct GraphicsPipelineDesc
@@ -23,7 +23,7 @@ namespace Columbus
 		PrimitiveTopology topology = PrimitiveTopology::TriangleList;
 
 		std::string Name;
-		CompiledShaderData Bytecode;
+		CompiledShaderPermutation Shader;
 	};
 
 	struct RayTracingPipelineDesc
@@ -33,7 +33,7 @@ namespace Columbus
 		uint32_t MaxRecursionDepth;
 
 		std::string Name;
-		CompiledShaderData Bytecode;
+		CompiledShaderPermutation Shader;
 	};
 
 	class ComputePipeline

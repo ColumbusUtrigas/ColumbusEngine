@@ -4,7 +4,7 @@ group_files_by_directory(SRCS ${SHADER_SOURCES})
 # disable visual studio's default shader compilation that fails my thing
 set_source_files_properties(SOURCE ${SHADER_SOURCES} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
 
-compile_shader_hlsl(Tonemap.hlsl     main:vs,main:ps SHADER_BINARIES)
+compile_shader_hlsl(Tonemap.hlsl main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(ComputeColourGradingLUT.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_hlsl(RadianceCache/RadianceCacheTrace.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)

@@ -1,13 +1,16 @@
 #include "Common/Image/Image.h"
 #include "Core/Core.h"
+#include "Core/CVar.h"
 #include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Texture.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/Core/View.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
+#include "Graphics/ShaderCache.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Profiling/Profiling.h"
+#include "RayTracingIrradianceVolumes.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
 
@@ -21,6 +24,8 @@ namespace Columbus
 	IMPLEMENT_GPU_PROFILING_COUNTER("GBuffer", "RenderGraphGPU", GpuCounterGBufferPass);
 	IMPLEMENT_GPU_PROFILING_COUNTER("GBuffer Decals", "RenderGraphGPU", GpuCounterGBufferDecals);
 	IMPLEMENT_GPU_PROFILING_COUNTER("Lighting pass", "RenderGraphGPU", GpuCounterLightingPass);
+
+	extern ConsoleVariable<bool> CVar_RayTracingIrradianceVolumes;
 
 	struct PerObjectParameters
 	{
@@ -39,44 +44,197 @@ namespace Columbus
 		Matrix VP;
 	};
 
+	struct GBufferBasePassShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/GBufferPass.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "GBufferPass";
+			Desc.rasterizerState.Cull = CullMode::Front;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+			};
+			return Desc;
+		}
+
+		struct Parameters
+		{
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+		}
+	}; // GBufferBasePassShader
+
+	struct DecalShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/Decals.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "Decals";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc {
+					.BlendEnable = true,
+					.SrcBlend = Blend::SrcAlpha,
+					.DestBlend = Blend::InvSrcAlpha,
+				},
+			};
+			Desc.depthStencilState.DepthEnable = false;
+			Desc.depthStencilState.DepthWriteMask = false;
+			return Desc;
+		}
+
+		struct PassParameters
+		{
+			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
+			ShaderReadBuffer SceneBuffer;
+		};
+
+		struct DrawParameters
+		{
+			ShaderSampledTexture DecalTexture;
+			ShaderStaticSampler DecalSampler;
+		};
+
+		static void Bind(ShaderBinder& Binder, const PassParameters& Params)
+		{
+			Binder.Bind(Params.GBufferDepth, 0, 0);
+			Binder.Bind(Params.SceneBuffer, 0, 1);
+		}
+
+		static void Bind(ShaderBinder& Binder, const DrawParameters& Params)
+		{
+			Binder.Bind(Params.DecalTexture, 1, 0);
+			Binder.Bind(Params.DecalSampler, 1, 1);
+		}
+	}; // DecalShader
+
+	struct DeferredLightingShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/GBufferLightingPass.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture GBufferAlbedo;
+			ShaderSampledTexture GBufferNormal;
+			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture GBufferRoughnessMetallic;
+			ShaderSampledTexture GBufferEmissive;
+			ShaderSampledTexture GBufferLightmap;
+			ShaderSampledTexture GBufferReflections;
+			ShaderSampledTexture GBufferGI;
+			ShaderStorageTexture LightingOutput;
+
+			ShaderReadBuffer LightsBuffer;
+			ShaderReadBuffer SceneBuffer;
+
+			ShaderSampledTexture LTC1;
+			ShaderSampledTexture LTC2;
+			ShaderStaticSampler LTCSampler;
+
+			ShaderArray<ShaderStorageTexture> ShadowTextures;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.GBufferAlbedo, 0, 0);
+			Binder.Bind(Params.GBufferNormal, 0, 1);
+			Binder.Bind(Params.GBufferDepth, 0, 2);
+			Binder.Bind(Params.GBufferRoughnessMetallic, 0, 3);
+			Binder.Bind(Params.GBufferEmissive, 0, 4);
+			Binder.Bind(Params.GBufferLightmap, 0, 5);
+			Binder.Bind(Params.GBufferReflections, 0, 6);
+			Binder.Bind(Params.GBufferGI, 0, 7);
+			Binder.Bind(Params.LightingOutput, 0, 8);
+			Binder.Bind(Params.LightsBuffer, 0, 9);
+			Binder.Bind(Params.SceneBuffer, 0, 10);
+			Binder.Bind(Params.LTC1, 0, 11);
+			Binder.Bind(Params.LTC2, 0, 12);
+			Binder.Bind(Params.LTCSampler, 0, 13);
+			Binder.Bind(Params.ShadowTextures, 1, 0);
+		}
+	}; // DeferredLightingShader
+
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History)
 	{
 		TextureDesc2 CommonDesc;
-		CommonDesc.Usage = TextureUsage::RenderTargetColor;
-		CommonDesc.Width = View.RenderSize.X;
-		CommonDesc.Height = View.RenderSize.Y;
-		CommonDesc.AddressU = TextureAddressMode::ClampToEdge;
-		CommonDesc.AddressV = TextureAddressMode::ClampToEdge;
-		CommonDesc.AddressW = TextureAddressMode::ClampToEdge;
+		CommonDesc.Usage     = TextureUsage::RenderTargetColor;
+		CommonDesc.Width     = View.RenderSize.X;
+		CommonDesc.Height    = View.RenderSize.Y;
+		CommonDesc.AddressU  = TextureAddressMode::ClampToEdge;
+		CommonDesc.AddressV  = TextureAddressMode::ClampToEdge;
+		CommonDesc.AddressW  = TextureAddressMode::ClampToEdge;
 		CommonDesc.MagFilter = TextureFilter2::Nearest;
 		CommonDesc.MinFilter = TextureFilter2::Nearest;
 		CommonDesc.MipFilter = TextureFilter2::Nearest;
 
-		TextureDesc2 AlbedoDesc = CommonDesc;
-		TextureDesc2 NormalDesc = CommonDesc;
-		TextureDesc2 RMDesc = CommonDesc;
+		TextureDesc2 AlbedoDesc   = CommonDesc;
+		TextureDesc2 NormalDesc   = CommonDesc;
+		TextureDesc2 RMDesc       = CommonDesc;
 		TextureDesc2 EmissiveDesc = CommonDesc;
-		TextureDesc2 DSDesc = CommonDesc;
+		TextureDesc2 DSDesc       = CommonDesc;
 		TextureDesc2 VelocityDesc = CommonDesc;
 		TextureDesc2 LightmapDesc = CommonDesc;
-		AlbedoDesc.Format = TextureFormat::RGBA8;
-		NormalDesc.Format = TextureFormat::RG16F;
-		RMDesc.Format = TextureFormat::RG8;
+		AlbedoDesc.Format   = TextureFormat::RGBA8;
+		NormalDesc.Format   = TextureFormat::RG16F;
+		RMDesc.Format       = TextureFormat::RG8;
 		EmissiveDesc.Format = TextureFormat::R11G11B10F;
-		DSDesc.Format = TextureFormat::Depth32F;
-		DSDesc.Usage = TextureUsage::RenderTargetDepth;
+		DSDesc.Format       = TextureFormat::Depth32F;
+		DSDesc.Usage        = TextureUsage::RenderTargetDepth;
 		VelocityDesc.Format = TextureFormat::RG16F;
 		LightmapDesc.Format = TextureFormat::R11G11B10F;
 		
 		SceneTextures Result { .History = History };
-		Result.GBufferAlbedo = Graph.CreateTexture(AlbedoDesc, "GBufferAlbedo");
-		Result.GBufferNormal = Graph.CreateTexture(NormalDesc, "GBufferNormal");
-		Result.GBufferRM = Graph.CreateTexture(RMDesc, "GBufferRM");
+		Result.GBufferAlbedo   = Graph.CreateTexture(AlbedoDesc, "GBufferAlbedo");
+		Result.GBufferNormal   = Graph.CreateTexture(NormalDesc, "GBufferNormal");
+		Result.GBufferRM       = Graph.CreateTexture(RMDesc, "GBufferRM");
 		Result.GBufferEmissive = Graph.CreateTexture(EmissiveDesc, "GBufferEmissive");
-		Result.GBufferDS = Graph.CreateTexture(DSDesc, "GBufferDS");
-		Result.Velocity = Graph.CreateTexture(VelocityDesc, "Velocity");
-		Result.Lightmap = Graph.CreateTexture(LightmapDesc, "Lightmap");
-		Result.VolumetricFog = Result.GBufferAlbedo;
+		Result.GBufferDS       = Graph.CreateTexture(DSDesc, "GBufferDS");
+		Result.Velocity        = Graph.CreateTexture(VelocityDesc, "Velocity");
+		Result.Lightmap        = Graph.CreateTexture(LightmapDesc, "Lightmap");
+		Result.VolumetricFog   = Result.GBufferAlbedo;
 
 		// history textures
 		Graph.CreateHistoryTexture(&Result.History.Depth, DSDesc, "GBufferDS History");
@@ -134,27 +292,10 @@ namespace Columbus
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterGBufferPass, Context);
 
-			// TODO: refactor, create a proper shader system
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "GBufferPass";
-				Desc.rasterizerState.Cull = CullMode::Front;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-				};
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/GBufferPass.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
+			GBufferBasePassShader::Parameters GBufferParams;
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<GBufferBasePassShader>(Context, GBufferBasePassShader::Permutation {}, GBufferBasePassShader::PipelinePermutation {});
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			Context.BindGraphicsParameters<GBufferBasePassShader>(Pipeline, GBufferParams);
 			Context.BindGPUScene(Pipeline, false);
 
 			for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
@@ -179,39 +320,19 @@ namespace Columbus
 		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		Graph.AddPass("GBufferDecals", RenderGraphPassType::Raster, Parameters, Dependencies, [View, Textures](RenderGraphContext& Context)
+		DecalShader::PassParameters DecalPassParams;
+		DecalPassParams.GBufferDepth = Textures.GBufferDS;
+		DecalPassParams.SceneBuffer = Graph.Scene->SceneBuffer;
+		Dependencies.Bind<DecalShader>(DecalPassParams);
+
+		Graph.AddPass("GBufferDecals", RenderGraphPassType::Raster, Parameters, Dependencies, [View, DecalPassParams](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterGBufferDecals, Context);
 
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "Decals";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc {
-						.BlendEnable = true,
-						.SrcBlend = Blend::SrcAlpha,
-						.DestBlend = Blend::InvSrcAlpha,
-					},
-				};
-
-				Desc.depthStencilState.DepthEnable = false;
-				Desc.depthStencilState.DepthWriteMask = false;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Decals.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
-			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.Scene->SceneBuffer);
-
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<DecalShader>(Context, DecalShader::Permutation {}, DecalShader::PipelinePermutation {});
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
+			Context.BindGraphicsParameters<DecalShader>(Pipeline, DecalPassParams);
 
 			PerDecalParameters Parameters;
 
@@ -225,17 +346,9 @@ namespace Columbus
 				if (!Decal.Texture)
 					continue;
 
-				auto& DecalDescriptorSet = Decal._DescriptorSets[Context.RenderData.CurrentPerFrameData];
-
-				if (DecalDescriptorSet == NULL)
-				{
-					DecalDescriptorSet = Context.Device->CreateDescriptorSet(Pipeline, 1);
-				}
-
-				Context.Device->UpdateDescriptorSet(DecalDescriptorSet, 0, 0, Decal.Texture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DecalDescriptorSet, 1, 0, Decal.Texture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLER);
-
-				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 1, 1, &DecalDescriptorSet);
+				DecalShader::DrawParameters DecalParams;
+				DecalParams.DecalTexture = Decal.Texture;
+				Context.BindGraphicsParameters<DecalShader>(Pipeline, DecalParams);
 				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
 				Context.CommandBuffer->Draw(36, 1, 0, 0);
 			}
@@ -258,63 +371,43 @@ namespace Columbus
 		RenderPassParameters Parameters;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.GBufferEmissive, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.Lightmap, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-		Dependencies.Read(Textures.RTReflections, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
-		Dependencies.Read(Textures.RTGI, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT); // TODO: optional
+
+		DeferredLightingShader::Parameters LightingParams;
+		LightingParams.GBufferAlbedo            = Textures.GBufferAlbedo;
+		LightingParams.GBufferNormal            = Textures.GBufferNormal;
+		LightingParams.GBufferDepth             = Textures.GBufferDS;
+		LightingParams.GBufferRoughnessMetallic = Textures.GBufferRM;
+		LightingParams.GBufferEmissive          = Textures.GBufferEmissive;
+		LightingParams.GBufferLightmap          = Textures.Lightmap;
+		LightingParams.GBufferReflections       = Textures.RTReflections;
+		LightingParams.GBufferGI                = Textures.RTGI;
+		LightingParams.LightingOutput           = LightingTexture;
+		LightingParams.LightsBuffer             = Graph.Scene->LightsBuffer;
+		LightingParams.SceneBuffer              = Graph.Scene->SceneBuffer;
+		LightingParams.LTC1                     = Graph.Scene->LTC_1;
+		LightingParams.LTC2                     = Graph.Scene->LTC_2;
+		std::vector<ShaderStorageTexture> ShadowTextures;
+		ShadowTextures.reserve(DeferredContext.LightRenderInfos.size());
+
 		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
 		{
-			Dependencies.Read(LightInfo.RTShadow, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+			ShaderStorageTexture ShadowTexture;
+			ShadowTexture = LightInfo.RTShadow;
+			ShadowTextures.push_back(ShadowTexture);
 		}
-		Dependencies.Write(LightingTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
+		LightingParams.ShadowTextures.Set(ShadowTextures.data(), (uint32_t)ShadowTextures.size());
 
-		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingTexture, Textures, &DeferredContext](RenderGraphContext& Context)
+		Dependencies.Bind<DeferredLightingShader>(LightingParams);
+
+		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingParams, ShadowTextures](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterLightingPass, Context);
 
-			// TODO: shader system
-			static ComputePipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				ComputePipelineDesc Desc;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/GBufferLightingPass.csd");
-				Desc.Name = "DeferredLightingShader";
-				ReflectCompiledShaderData(Desc.Bytecode);
-
-				Pipeline = Context.Device->CreateComputePipeline(Desc);
-			}
-
-			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferEmissive).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.Lightmap).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.RTReflections).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.RTGI).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(LightingTexture).get());
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.Scene->LightsBuffer);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 10, 0, Context.Scene->SceneBuffer);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 11, 0, Context.Scene->LTC_1, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 12, 0, Context.Scene->LTC_2, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 13, 0, Context.Device->GetStaticSampler());
-
-			auto ShadowsSet = Context.GetDescriptorSet(Pipeline, 1);
-			// TODO: support lights not having shadows
-			// TODO: support shadowmaps/hybrid shadows
-			for (int i = 0; i < DeferredContext.LightRenderInfos.size(); i++)
-			{
-				Context.Device->UpdateDescriptorSet(ShadowsSet, 0, i, Context.GetRenderGraphTexture(DeferredContext.LightRenderInfos[i].RTShadow).get());
-			}
-
+			ComputePipeline* Pipeline = GetComputePipeline<DeferredLightingShader>(Context, DeferredLightingShader::Permutation {});
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &ShadowsSet);
+			DeferredLightingShader::Parameters RuntimeParams = LightingParams;
+			RuntimeParams.ShadowTextures.Set(ShadowTextures.data(), (uint32_t)ShadowTextures.size());
+			Context.BindComputeParameters<DeferredLightingShader>(Pipeline, RuntimeParams);
 
 			const iVector2 GroupCount = (View.RenderSize + (GroupSize - 1)) / GroupSize;
 			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
@@ -391,17 +484,20 @@ namespace Columbus
 		// TODO: only if it's needed
 		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
 
+		// TODO: use dummy structured buffer instead
+		RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Textures.RadianceCache.DataBuffer, CVar_RayTracingIrradianceVolumes.GetValue());
+
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
-		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
+		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext, IrradianceVolumes);
 
 		switch (View.DeferredSettings.GlobalIlluminationMode)
 		{
 		case EDeferredGlobalIlluminationMode::RTGI:
-			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
+			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext, IrradianceVolumes);
 			break;
 
 		case EDeferredGlobalIlluminationMode::IV:
-			RenderApplyIrradianceProbes(Graph, View, Textures);
+			RenderApplyIrradianceProbes(Graph, View, Textures, IrradianceVolumes);
 			break;
 		case EDeferredGlobalIlluminationMode::None:
 		{
@@ -412,7 +508,7 @@ namespace Columbus
 				.Format = TextureFormat::RGBA16F,
 			};
 
-			Textures.RTGI = Graph.CreateTexture(Desc, "RayTracedGI");
+			Textures.RTGI = Graph.CreateTexture(Desc, "EmptyGI");
 			ShaderMemsetTexture(Graph, Textures.RTGI, {});
 		}
 		}

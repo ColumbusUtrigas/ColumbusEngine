@@ -1,4 +1,5 @@
 #include "RenderPasses.h"
+#include "Graphics/ShaderCache.h"
 
 namespace Columbus::Antialiasing
 {
@@ -6,6 +7,44 @@ namespace Columbus::Antialiasing
 	DECLARE_GPU_PROFILING_COUNTER(GpuCounterTAA);
 
 	IMPLEMENT_GPU_PROFILING_COUNTER("TAA", "RenderGraphGPU", GpuCounterTAA);
+
+	struct TAAConstants
+	{
+		iVector2 Resolution;
+	};
+
+	struct TAAShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/TAA.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Image;
+			ShaderSampledTexture History;
+			ShaderSampledTexture VelocityImage;
+			ShaderStorageTexture Output;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderConstants<TAAConstants> Constants;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Image,         0, 0);
+			Binder.Bind(Params.History,       0, 1);
+			Binder.Bind(Params.VelocityImage, 0, 2);
+			Binder.Bind(Params.Output,        0, 3);
+			Binder.Bind(Params.LinearSampler, 0, 4);
+			Binder.Bind(Params.Constants,     0, 5);
+		}
+	};
 
 	static float Halton(int32_t index, int32_t base)
 	{
@@ -38,48 +77,28 @@ namespace Columbus::Antialiasing
 		Desc.Usage = TextureUsage::StorageSampled;
 		Graph.CreateHistoryTexture(&Textures.History.TAAHistory, Desc, "FinalHistory");
 
-		Texture2* HistoryTexture = Textures.History.TAAHistory;
-		RenderGraphTextureRef InputTexture = Textures.FinalBeforeTonemap;
-		RenderGraphTextureRef VelocityTexture = Textures.Velocity;
+		iVector2 Size = View.RenderSize;
+
 		RenderGraphTextureRef OutputTexture = Graph.CreateTexture(Desc, "FinalTAA");
+
+		TAAShader::Parameters TAAParams;
+		TAAParams.Image         = Textures.FinalBeforeTonemap;
+		TAAParams.History       = Textures.History.TAAHistory;
+		TAAParams.VelocityImage = Textures.Velocity;
+		TAAParams.Output        = OutputTexture;
+		TAAParams.Constants.Value.Resolution = Size;
 
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(InputTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Read(VelocityTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		Dependencies.Write(OutputTexture, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Bind<TAAShader>(TAAParams);
 
-		iVector2 Size = View.RenderSize;
-
-		Graph.AddPass("TAA", RenderGraphPassType::Compute, Parameters, Dependencies, [Size, InputTexture, VelocityTexture, OutputTexture, HistoryTexture](RenderGraphContext& Context)
+		Graph.AddPass("TAA", RenderGraphPassType::Compute, Parameters, Dependencies, [Size, TAAParams](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTAA, Context);
 
-			static ComputePipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				ComputePipelineDesc Desc;
-				Desc.Name = "TAA";
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/TAA.csd");
-				Pipeline = Context.Device->CreateComputePipeline(Desc);
-			}
-
-			auto Set = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(InputTexture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 1, 0, HistoryTexture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(VelocityTexture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(OutputTexture).get());
-			Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-
-			struct
-			{
-				iVector2 Resolution;
-			} Params;
-			Params.Resolution = Size;
-
+			ComputePipeline* Pipeline = GetComputePipeline<TAAShader>(Context, TAAShader::Permutation {});
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
-			Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<TAAShader>(Pipeline, TAAParams);
 			Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { Size, 1 });
 		});
 

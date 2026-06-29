@@ -40,8 +40,8 @@ struct HColourCorrectionSettings
 [[vk::binding(0, 0)]] Texture2D<float4> SceneTexture;
 [[vk::binding(1, 0)]] ConstantBuffer<HColourCorrectionSettings> ColourCorrectionSettings;
 
-[[vk::push_constant]]
-struct _Params {
+struct HTonemapParameters
+{
 	uint FilmCurve;
 	uint OutputTransform;
 	uint2 Resolution;
@@ -50,7 +50,9 @@ struct _Params {
 	float GrainScale;
 	float GrainAmount;
 	uint  GrainSeed;
-} Params;
+};
+
+[[vk::binding(2, 0)]] ConstantBuffer<HTonemapParameters> Params;
 
 #define FILMCURVE_ACES 0
 #define FILMCURVE_AGX  1

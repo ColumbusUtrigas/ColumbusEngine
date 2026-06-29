@@ -1,4 +1,5 @@
 #include "RenderPasses.h"
+#include "Graphics/ShaderCache.h"
 
 namespace Columbus
 {
@@ -11,6 +12,75 @@ namespace Columbus
 		float Sharpening;
 		int IsSharpeningPass;
 		int IsHdr;
+	};
+
+	struct FSR1PSShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/FSR1/FSR1PS.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "FSR1 (VS/PS)";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = { RenderTargetBlendDesc() };
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Input;
+			ShaderStaticSampler InputSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderPushConstants<FSR1Parameters> Constants { {}, ShaderType::Vertex | ShaderType::Pixel };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Input, 0, 0);
+			Binder.Bind(Params.InputSampler, 0, 1);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct FSR1CSShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/FSR1/FSR1CS.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Input;
+			ShaderStaticSampler InputSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderStorageTexture Output;
+			ShaderPushConstants<FSR1Parameters> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Input, 0, 0);
+			Binder.Bind(Params.InputSampler, 0, 1);
+			Binder.Bind(Params.Output, 0, 2);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	// TODO: support HDR input (apply tonemapping and inverse tonemapping)
@@ -55,31 +125,21 @@ namespace Columbus
 			Parameters.ViewportSize = UpscaleSize;
 
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Texture, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 			char PassName[256]{ 0 };
 			snprintf(PassName, 256, "FSR1 (PS) %ix%i->%ix%i", Size.X, Size.Y, UpscaleSize.X, UpscaleSize.Y);
 
-			Graph.AddPass(PassName, RenderGraphPassType::Raster, Parameters, Dependencies, [Texture, FsrParameters](RenderGraphContext& Context)
-			{
-				// TODO: shader system
-				static GraphicsPipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					GraphicsPipelineDesc Desc;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/FSR1/FSR1PS.csd");
-					Desc.Name = "FSR1 (VS/PS)";
-					Desc.rasterizerState.Cull = CullMode::No;
-					Desc.blendState.RenderTargets = { RenderTargetBlendDesc() };
-					Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-				}
+			FSR1PSShader::Parameters ShaderParams;
+			ShaderParams.Input = Texture;
+			ShaderParams.Constants.Value = FsrParameters;
+			Dependencies.Bind<FSR1PSShader>(ShaderParams);
 
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0); // TODO:
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Texture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+			Graph.AddPass(PassName, RenderGraphPassType::Raster, Parameters, Dependencies, [ShaderParams](RenderGraphContext& Context)
+			{
+				GraphicsPipeline* Pipeline = GetGraphicsPipeline<FSR1PSShader>(Context, FSR1PSShader::Permutation {}, FSR1PSShader::PipelinePermutation {});
 
 				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(FsrParameters), &FsrParameters);
+				Context.BindGraphicsParameters<FSR1PSShader>(Pipeline, ShaderParams);
 				Context.CommandBuffer->Draw(3, 1, 0, 0);
 			});
 		}
@@ -87,35 +147,25 @@ namespace Columbus
 		{
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Texture, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
-			Dependencies.Write(Result, VK_ACCESS_SHADER_WRITE_BIT, VK_SHADER_STAGE_COMPUTE_BIT);
 
 			char PassName[256]{ 0 };
 			snprintf(PassName, 256, "FSR1 (CS) %ix%i->%ix%i", Size.X, Size.Y, UpscaleSize.X, UpscaleSize.Y);
 
-			Graph.AddPass(PassName, RenderGraphPassType::Compute, Parameters, Dependencies, [Texture, Result, UpscaleSize, FsrParameters](RenderGraphContext& Context)
+			FSR1CSShader::Parameters ShaderParams;
+			ShaderParams.Input = Texture;
+			ShaderParams.Output = Result;
+			ShaderParams.Constants.Value = FsrParameters;
+			Dependencies.Bind<FSR1CSShader>(ShaderParams);
+
+			Graph.AddPass(PassName, RenderGraphPassType::Compute, Parameters, Dependencies, [UpscaleSize, ShaderParams](RenderGraphContext& Context)
 			{
-				// TODO: shader system
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/FSR1/FSR1CS.csd");
-					Desc.Name = "FSR1 (CS)";
-
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0); // TODO:
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Texture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Result).get());
+				ComputePipeline* Pipeline = GetComputePipeline<FSR1CSShader>(Context, FSR1CSShader::Permutation {});
 
 				const int GroupSize = 16; // actual group size is 64x1, which is 8x8, but FSR works in 2x2 blocks
 				const iVector2 GroupCount = (UpscaleSize + (GroupSize - 1)) / GroupSize;
 
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(FsrParameters), &FsrParameters);
+			Context.BindComputeParameters<FSR1CSShader>(Pipeline, ShaderParams);
 				Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
 			});
 		}
@@ -134,31 +184,21 @@ namespace Columbus
 				Parameters.ViewportSize = DstSize;
 
 				RenderPassDependencies Dependencies(Graph.Allocator);
-				Dependencies.Read(Result, VK_ACCESS_SHADER_READ_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 				char PassName[256]{ 0 };
 				snprintf(PassName, 256, "FSR1 (PS) sharpening (%.2f)", Sharpening);
 
-				Graph.AddPass(PassName, RenderGraphPassType::Raster, Parameters, Dependencies, [Result, FsrParameters](RenderGraphContext& Context)
-				{
-					// TODO: shader system
-					static GraphicsPipeline* Pipeline = nullptr;
-					if (Pipeline == nullptr)
-					{
-						GraphicsPipelineDesc Desc;
-						Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/FSR1/FSR1PS.csd");
-						Desc.Name = "FSR1 (VS/PS)";
-						Desc.rasterizerState.Cull = CullMode::No;
-						Desc.blendState.RenderTargets = { RenderTargetBlendDesc() };
-						Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-					}
+				FSR1PSShader::Parameters ShaderParams;
+				ShaderParams.Input = Result;
+				ShaderParams.Constants.Value = FsrParameters;
+				Dependencies.Bind<FSR1PSShader>(ShaderParams);
 
-					auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0); // TODO:
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Result).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+				Graph.AddPass(PassName, RenderGraphPassType::Raster, Parameters, Dependencies, [ShaderParams](RenderGraphContext& Context)
+				{
+					GraphicsPipeline* Pipeline = GetGraphicsPipeline<FSR1PSShader>(Context, FSR1PSShader::Permutation {}, FSR1PSShader::PipelinePermutation {});
 
 					Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-					Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(FsrParameters), &FsrParameters);
+					Context.BindGraphicsParameters<FSR1PSShader>(Pipeline, ShaderParams);
 					Context.CommandBuffer->Draw(3, 1, 0, 0);
 				});
 			}

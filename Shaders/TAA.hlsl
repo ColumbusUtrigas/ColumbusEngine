@@ -1,16 +1,17 @@
+struct TAAConstants
+{
+	uint2 Resolution;
+};
+
 [[vk::binding(0, 0)]]   Texture2D<float4> Image;
 [[vk::binding(1, 0)]]   Texture2D<float4> History;
 [[vk::binding(2, 0)]]   Texture2D<float2> VelocityImage;
 [[vk::binding(3, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
 [[vk::binding(4, 0)]]   SamplerState      LinearSampler;
+[[vk::binding(5, 0)]]   ConstantBuffer<TAAConstants> Constants;
 
 // references:
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
-
-[[vk::push_constant]]
-struct _Params {
-	uint2 Resolution;
-} Params;
 
 float3 TonemapReinhard(float3 x)
 {
@@ -71,16 +72,16 @@ float4 sample_catmull_rom(Texture2D tex_history, float2 uv, float2 texture_size)
 [numthreads(8, 8, 1)]
 void main(uint3 dtid : SV_DispatchThreadID)
 {
-	if (any(dtid.xy >= Params.Resolution))
+	if (any(dtid.xy >= Constants.Resolution))
 		return;
 
     float2 Velocity = VelocityImage[dtid.xy] / 2;
 
-	float2 Uv = float2(dtid.xy + 0.5f) / Params.Resolution;
+	float2 Uv = float2(dtid.xy + 0.5f) / Constants.Resolution;
     float2 UvReprojected = Uv - Velocity;
 
 	float3 Current = Image.Load(int3(dtid.xy, 0)).rgb;
-    float3 Previous = sample_catmull_rom(History, UvReprojected, Params.Resolution).rgb;
+    float3 Previous = sample_catmull_rom(History, UvReprojected, Constants.Resolution).rgb;
 
 	// colour clamping
 	{
@@ -110,6 +111,6 @@ void main(uint3 dtid : SV_DispatchThreadID)
 		Current = TonemapReinhard(Current);
 		Previous = TonemapReinhard(Previous);
 
-		Output[dtid.xy] = float4(TonemapInverseReinhard(lerp(Previous, Current, BlendFactor)), 1);
-	}
+        Output[dtid.xy] = float4(TonemapInverseReinhard(lerp(Previous, Current, BlendFactor)), 1);
+    }
 }

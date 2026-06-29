@@ -2,13 +2,14 @@
 [[vk::binding(1, 0)]] SamplerState SourceSampler;
 [[vk::binding(2, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
 
-[[vk::push_constant]]
-struct _Params
+struct RefractionBlurParameters
 {
     int2 OutputSize;
     int Radius;
     float _pad;
-} Params;
+};
+
+[[vk::binding(3, 0)]] ConstantBuffer<RefractionBlurParameters> Params;
 
 float GaussianWeight(float2 Offset, float Sigma)
 {

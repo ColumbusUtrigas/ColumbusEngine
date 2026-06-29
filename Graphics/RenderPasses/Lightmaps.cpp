@@ -1,4 +1,5 @@
 #include "Graphics/Lightmaps.h"
+#include "Graphics/ShaderCache.h"
 #include "RenderPasses.h"
 
 namespace Columbus
@@ -18,6 +19,104 @@ namespace Columbus
 		int AccumulatedSamples;
 		int RequestedSamples;
 		int SamplesPerFrame;
+	};
+
+	struct LightmapRasterisationShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/LightmapRasterisation.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "LightmapRasterisation";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+				RenderTargetBlendDesc(),
+			};
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderGPUScene Scene;
+		};
+
+		struct DrawParameters
+		{
+			ShaderPushConstants<LightmapRasterisationParameters> Constants { {}, ShaderType::Vertex | ShaderType::Pixel };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+		}
+
+		static void Bind(ShaderBinder& Binder, const DrawParameters& Params)
+		{
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct LightmapPathTracingShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/LightmapPathTracing.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+			u32 MaxRecursionDepth = 1;
+		};
+
+		static RayTracingPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			RayTracingPipelineDesc Desc {};
+			Desc.Name = "LightmapPathTracing";
+			Desc.MaxRecursionDepth = Permutation.MaxRecursionDepth;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderGPUScene Scene;
+			ShaderAccelerationStructure AccelerationStructure;
+			ShaderSampledTexture PositionsImage;
+			ShaderSampledTexture NormalsImage;
+			ShaderSampledTexture ValidityImage;
+			ShaderStorageTexture LightmapOutput;
+			ShaderPushConstants<LightmapPathTracingParameters> Constants { {}, ShaderType::Raygen };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+			Binder.Bind(Params.AccelerationStructure, 2, 0);
+			Binder.Bind(Params.PositionsImage, 2, 1);
+			Binder.Bind(Params.NormalsImage, 2, 2);
+			Binder.Bind(Params.ValidityImage, 2, 3);
+			Binder.Bind(Params.LightmapOutput, 2, 4);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	// see note in the declaration
@@ -60,38 +159,25 @@ namespace Columbus
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
-		Graph.AddPass("PrepareMeshForLightmapBaking", RenderGraphPassType::Raster, Parameters, Dependencies, [&System, ViewportSize](RenderGraphContext& Context)
+		LightmapRasterisationShader::Parameters RasterParams;
+		Graph.AddPass("PrepareMeshForLightmapBaking", RenderGraphPassType::Raster, Parameters, Dependencies, [&System, ViewportSize, RasterParams](RenderGraphContext& Context)
 		{
-			// TODO: normal shader system damn it
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "LightmapRasterisation";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-					RenderTargetBlendDesc(),
-				};
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/LightmapRasterisation.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<LightmapRasterisationShader>(Context, LightmapRasterisationShader::Permutation {}, LightmapRasterisationShader::PipelinePermutation {});
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.BindGPUScene(Pipeline);
+			Context.BindGraphicsParameters<LightmapRasterisationShader>(Pipeline, RasterParams);
 
 			for (u32 i = 0; i < System.Meshes.size(); i++)
 			{
-				LightmapRasterisationParameters Parameters {
+				const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
+
+				LightmapRasterisationShader::DrawParameters DrawParams;
+				DrawParams.Constants.Value = {
 					.VertexBuffer = System.Meshes[i].VertexBuffer->GetDeviceAddress(),
 					.IndexBuffer = System.Meshes[i].IndexBuffer->GetDeviceAddress(),
 					.ObjectId = i,
 				};
 
-				const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+				Context.BindGraphicsParameters<LightmapRasterisationShader>(Pipeline, DrawParams);
 				Context.CommandBuffer->Draw(Mesh.MeshResource->IndicesCount, 1, 0, 0);
 			}
 		});
@@ -110,39 +196,28 @@ namespace Columbus
 
 		RenderPassParameters Parameters;
 
+		LightmapPathTracingShader::Parameters TraceParams;
+		TraceParams.Scene.UseCombinedSampler = false;
+		TraceParams.PositionsImage = Data.Position;
+		TraceParams.NormalsImage = Data.Normal;
+		TraceParams.ValidityImage = Data.Validity;
+		TraceParams.LightmapOutput = System.Atlas.Lightmap;
+
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Data.Position, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-		Dependencies.Read(Data.Normal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-		Dependencies.Read(Data.Validity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+		Dependencies.Bind<LightmapPathTracingShader>(TraceParams);
 
 		int TraceSamples = Math::Min(Settings.SamplesPerFrame, Settings.RequestedSamples - Data.AccumulatedSamples);
 
-		Texture2* Lightmap = System.Atlas.Lightmap;
 		u32 Width = System.Atlas.Width;
 		u32 Height = System.Atlas.Height;
 
-		Graph.AddPass("LightmapPathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [Data, Settings, TraceSamples, Lightmap, Width, Height](RenderGraphContext& Context)
+		Graph.AddPass("LightmapPathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [TraceParams, Data, Settings, TraceSamples, Width, Height](RenderGraphContext& Context)
 		{
-			static RayTracingPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				RayTracingPipelineDesc Desc{};
-				Desc.Name = "LightmapPathTracing";
-				Desc.MaxRecursionDepth = 1;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/LightmapPathTracing.csd");
-				Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-			}
+			RayTracingPipeline* Pipeline = GetRayTracingPipeline<LightmapPathTracingShader>(Context, LightmapPathTracingShader::Permutation {}, LightmapPathTracingShader::PipelinePermutation {});
 
-			Context.CommandBuffer->TransitionImageLayout(Lightmap, VK_IMAGE_LAYOUT_GENERAL);
-
-			auto Set = Context.GetDescriptorSet(Pipeline, 2);
-			Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->TLAS); // TODO: move to unified scene set
-			Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Data.Position).get());
-			Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Data.Normal).get());
-			Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(Data.Validity).get());
-			Context.Device->UpdateDescriptorSet(Set, 4, 0, Lightmap);
-
-			LightmapPathTracingParameters Parameters {
+			LightmapPathTracingShader::Parameters Parameters = TraceParams;
+			Parameters.AccelerationStructure = Context.Scene->TLAS;
+			Parameters.Constants.Value = {
 				.Random = rand(),
 				.Bounces = Settings.Bounces,
 				.AccumulatedSamples = Data.AccumulatedSamples,
@@ -151,10 +226,7 @@ namespace Columbus
 			};
 
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &Set);
-			Context.BindGPUScene(Pipeline);
-
-			Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Parameters), &Parameters);
+			Context.BindRayTracingParameters<LightmapPathTracingShader>(Pipeline, Parameters);
 			Context.CommandBuffer->TraceRays(Pipeline, Width, Height, 1);
 		});
 

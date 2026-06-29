@@ -17,6 +17,9 @@
 #include "TextureVulkan.h"
 #include "QueryPoolVulkan.h"
 
+#include <Graphics/ShaderCache.h>
+#include <Graphics/ShaderHotReload.h>
+
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -61,6 +64,9 @@ namespace Columbus
 	DeviceVulkan::DeviceVulkan(VkPhysicalDevice PhysicalDevice, VkInstance Instance) :
 		_PhysicalDevice(PhysicalDevice), _Instance(Instance)
 	{
+		ShaderCache = std::make_unique<Columbus::ShaderCache>();
+		ShaderHotReload = std::make_unique<Columbus::ShaderHotReload>();
+
 		VkFunctions.LoadFunctions(Instance);
 
 		_AccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
@@ -1538,12 +1544,12 @@ namespace Columbus
 		}
 	}
 
-	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts)
+	VkPipelineLayout DeviceVulkan::_CreatePipelineLayout(CompiledShaderBytecodeReflection& Reflection, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts)
 	{
 		// TODO: Caching scheme
-		for (int i = 0; i < Bytecode.Reflection->DescriptorSets.size(); i++)
+		for (int i = 0; i < Reflection.DescriptorSets.size(); i++)
 		{
-			auto& setInfo = Bytecode.Reflection->DescriptorSets[i];
+			auto& setInfo = Reflection.DescriptorSets[i];
 
 			VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
 			bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
@@ -1574,10 +1580,10 @@ namespace Columbus
 		layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		layoutInfo.pNext = nullptr;
 		layoutInfo.flags = 0;
-		layoutInfo.setLayoutCount = Bytecode.Reflection->DescriptorSets.size();
+		layoutInfo.setLayoutCount = Reflection.DescriptorSets.size();
 		layoutInfo.pSetLayouts = OutSetLayouts.Layouts;
-		layoutInfo.pushConstantRangeCount = Bytecode.Reflection->PushConstants.size();
-		layoutInfo.pPushConstantRanges = Bytecode.Reflection->PushConstants.data();
+		layoutInfo.pushConstantRangeCount = Reflection.PushConstants.size();
+		layoutInfo.pPushConstantRanges = Reflection.PushConstants.data();
 
 		VkPipelineLayout Layout;
 		VK_CHECK(vkCreatePipelineLayout(_Device, &layoutInfo, nullptr, &Layout));

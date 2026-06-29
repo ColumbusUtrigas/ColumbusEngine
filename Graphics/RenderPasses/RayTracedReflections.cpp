@@ -2,8 +2,7 @@
 #include "RayTracingIrradianceVolumes.h"
 #include "Core/Core.h"
 #include "Core/CVar.h"
-
-#include <Lib/imgui/imgui.h>
+#include "Graphics/ShaderCache.h"
 
 namespace Columbus
 {
@@ -20,23 +19,23 @@ namespace Columbus
 
 	struct RayTracedReflectionPassParameters
 	{
-		Vector4 CameraPosition;
-		float MaxRoughness;
-		u32 Random;
-		u32 UseRadianceCache;
+		Vector4 CameraPosition{};
+		float MaxRoughness = 0.5f;
+		u32 Random = 0;
+		u32 UseRadianceCache = 0;
 	};
 
 	struct RayTracedReflectionsResolveParameters
 	{
-		iVector2 ImageSize;
-		iVector2 _Padding;
+		iVector2 ImageSize{};
+		iVector2 _Padding{};
 	};
 
 	struct RayTracedReflectionsTemporalParameters
 	{
-		iVector2 Size;
-		int MaxSamples;
-		int _Padding;
+		iVector2 Size{};
+		int MaxSamples = 0;
+		int _Padding = 0;
 	};
 
 	struct RTReflectionDenoiserConstants
@@ -59,6 +58,279 @@ namespace Columbus
 		u32 MostDetailedMip;
 		u32 SamplesPerQuad;
 		u32 TemporalVarianceGuidedTracingEnabled;
+	};
+
+	struct ReflectionDenoiserReprojectShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/DenoiserReflection/Reproject.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderReadBuffer Constants;
+			ShaderSampledTexture Depth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture Roughness;
+			ShaderSampledTexture Normal;
+			ShaderSampledTexture DepthHistory { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture RoughnessHistory;
+			ShaderSampledTexture NormalHistory;
+			ShaderSampledTexture InputRadiance;
+			ShaderSampledTexture RadianceHistory;
+			ShaderSampledTexture Velocity;
+			ShaderSampledTexture AverageRadianceHistory;
+			ShaderSampledTexture VarianceHistory;
+			ShaderSampledTexture SampleCountHistory;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderStorageTexture ReprojectedRadiance;
+			ShaderStorageTexture AverageRadiance;
+			ShaderStorageTexture Variance;
+			ShaderStorageTexture SampleCount;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Constants, 0, 0);
+			Binder.Bind(Params.Depth, 1, 0);
+			Binder.Bind(Params.Roughness, 1, 1);
+			Binder.Bind(Params.Normal, 1, 2);
+			Binder.Bind(Params.DepthHistory, 1, 3);
+			Binder.Bind(Params.RoughnessHistory, 1, 4);
+			Binder.Bind(Params.NormalHistory, 1, 5);
+			Binder.Bind(Params.InputRadiance, 1, 6);
+			Binder.Bind(Params.RadianceHistory, 1, 7);
+			Binder.Bind(Params.Velocity, 1, 8);
+			Binder.Bind(Params.AverageRadianceHistory, 1, 9);
+			Binder.Bind(Params.VarianceHistory, 1, 10);
+			Binder.Bind(Params.SampleCountHistory, 1, 11);
+			Binder.Bind(Params.LinearSampler, 1, 12);
+			Binder.Bind(Params.ReprojectedRadiance, 1, 13);
+			Binder.Bind(Params.AverageRadiance, 1, 14);
+			Binder.Bind(Params.Variance, 1, 15);
+			Binder.Bind(Params.SampleCount, 1, 16);
+		}
+	};
+
+	struct ReflectionDenoiserPrefilterShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/DenoiserReflection/Prefilter.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderReadBuffer Constants;
+			ShaderSampledTexture Depth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture Roughness;
+			ShaderSampledTexture Normal;
+			ShaderSampledTexture AverageRadiance;
+			ShaderSampledTexture InputRadiance;
+			ShaderSampledTexture Variance;
+			ShaderSampledTexture SampleCount;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderStorageTexture OutputRadiance;
+			ShaderStorageTexture OutputVariance;
+			ShaderStorageTexture OutputSampleCount;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Constants, 0, 0);
+			Binder.Bind(Params.Depth, 1, 0);
+			Binder.Bind(Params.Roughness, 1, 1);
+			Binder.Bind(Params.Normal, 1, 2);
+			Binder.Bind(Params.AverageRadiance, 1, 3);
+			Binder.Bind(Params.InputRadiance, 1, 4);
+			Binder.Bind(Params.Variance, 1, 5);
+			Binder.Bind(Params.SampleCount, 1, 6);
+			Binder.Bind(Params.LinearSampler, 1, 7);
+			Binder.Bind(Params.OutputRadiance, 1, 8);
+			Binder.Bind(Params.OutputVariance, 1, 9);
+			Binder.Bind(Params.OutputSampleCount, 1, 10);
+		}
+	};
+
+	struct ReflectionDenoiserResolveTemporalShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/DenoiserReflection/ResolveTemporal.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderReadBuffer Constants;
+			ShaderSampledTexture Roughness;
+			ShaderSampledTexture AverageRadiance;
+			ShaderSampledTexture InputRadiance;
+			ShaderSampledTexture ReprojectedRadiance;
+			ShaderSampledTexture Variance;
+			ShaderSampledTexture SampleCount;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderStorageTexture OutputRadiance;
+			ShaderStorageTexture OutputVariance;
+			ShaderStorageTexture OutputSampleCount;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Constants, 0, 0);
+			Binder.Bind(Params.Roughness, 1, 0);
+			Binder.Bind(Params.AverageRadiance, 1, 1);
+			Binder.Bind(Params.InputRadiance, 1, 2);
+			Binder.Bind(Params.ReprojectedRadiance, 1, 3);
+			Binder.Bind(Params.Variance, 1, 4);
+			Binder.Bind(Params.SampleCount, 1, 5);
+			Binder.Bind(Params.LinearSampler, 1, 6);
+			Binder.Bind(Params.OutputRadiance, 1, 7);
+			Binder.Bind(Params.OutputVariance, 1, 8);
+			Binder.Bind(Params.OutputSampleCount, 1, 9);
+		}
+	};
+
+	struct RayTracedReflectionsShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedReflections/RayTraceReflections.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct PipelinePermutation
+		{
+			u32 MaxRecursionDepth = 1;
+		};
+
+		static RayTracingPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			RayTracingPipelineDesc Desc {};
+			Desc.Name = "RayTracedReflectionsPass";
+			Desc.MaxRecursionDepth = Permutation.MaxRecursionDepth;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderGPUScene Scene;
+			ShaderAccelerationStructure AccelerationStructure;
+			ShaderStorageTexture Output;
+			ShaderStorageTexture ResultDirectionDistance;
+			ShaderStorageTexture ResultRayPdf;
+			ShaderSampledTexture GBufferAlbedo;
+			ShaderSampledTexture GBufferNormals;
+			ShaderSampledTexture GBufferRoughnessMetallic;
+			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
+			ShaderConstants<RayTracingIrradianceVolumes::Constants> IrradianceVolumeConstants;
+			std::array<ShaderReadBuffer, RayTracingIrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
+			ShaderPushConstants<RayTracedReflectionPassParameters> Constants { {}, ShaderType::Raygen };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+			Binder.Bind(Params.AccelerationStructure, 2, 0);
+			Binder.Bind(Params.Output, 2, 1);
+			Binder.Bind(Params.ResultDirectionDistance, 2, 2);
+			Binder.Bind(Params.ResultRayPdf, 2, 3);
+			Binder.Bind(Params.GBufferAlbedo, 2, 4);
+			Binder.Bind(Params.GBufferNormals, 2, 5);
+			Binder.Bind(Params.GBufferRoughnessMetallic, 2, 6);
+			Binder.Bind(Params.GBufferDepth, 2, 7);
+			Binder.Bind(Params.IrradianceVolumeConstants, 2, 9);
+			ShaderArray<ShaderReadBuffer> IrradianceProbeBuffers;
+			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), RayTracingIrradianceVolumes::MaxVolumes);
+			Binder.Bind(IrradianceProbeBuffers, 2, 10);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct ReflectionsResolveShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedReflections/ReflectionsResolve.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Radiance;
+			ShaderSampledTexture Rays;
+			ShaderSampledTexture RayPdf;
+			ShaderSampledTexture GBufferAlbedo;
+			ShaderSampledTexture GBufferNormal;
+			ShaderSampledTexture GBufferRM;
+			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
+			ShaderStorageTexture Output;
+			ShaderStorageTexture OutputHitDistance;
+			ShaderReadBuffer GPUSceneScene;
+			ShaderPushConstants<RayTracedReflectionsResolveParameters> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Radiance, 0, 0);
+			Binder.Bind(Params.Rays, 0, 1);
+			Binder.Bind(Params.RayPdf, 0, 2);
+			Binder.Bind(Params.GBufferAlbedo, 0, 3);
+			Binder.Bind(Params.GBufferNormal, 0, 4);
+			Binder.Bind(Params.GBufferRM, 0, 5);
+			Binder.Bind(Params.GBufferDepth, 0, 6);
+			Binder.Bind(Params.Output, 0, 7);
+			Binder.Bind(Params.OutputHitDistance, 0, 8);
+			Binder.Bind(Params.GPUSceneScene, 0, 9);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct ReflectionsTemporalShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedReflections/ReflectionsTemporal.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Current;
+			ShaderSampledTexture History;
+			ShaderSampledTexture Velocity;
+			ShaderSampledTexture Depth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture DepthHistory { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture HistorySampleCount;
+			ShaderSampledTexture Rays;
+			ShaderSampledTexture ResolvedHitDistance;
+			ShaderSampledTexture Normal;
+			ShaderSampledTexture RoughnessMetallic;
+			ShaderSampledTexture NormalHistory;
+			ShaderSampledTexture RoughnessMetallicHistory;
+			ShaderStorageTexture OutputRadiance;
+			ShaderStorageTexture OutputSampleCount;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderReadBuffer GPUSceneScene;
+			ShaderPushConstants<RayTracedReflectionsTemporalParameters> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Current, 0, 0);
+			Binder.Bind(Params.History, 0, 1);
+			Binder.Bind(Params.Velocity, 0, 2);
+			Binder.Bind(Params.Depth, 0, 3);
+			Binder.Bind(Params.DepthHistory, 0, 4);
+			Binder.Bind(Params.HistorySampleCount, 0, 5);
+			Binder.Bind(Params.Rays, 0, 6);
+			Binder.Bind(Params.ResolvedHitDistance, 0, 7);
+			Binder.Bind(Params.Normal, 0, 8);
+			Binder.Bind(Params.RoughnessMetallic, 0, 9);
+			Binder.Bind(Params.NormalHistory, 0, 10);
+			Binder.Bind(Params.RoughnessMetallicHistory, 0, 11);
+			Binder.Bind(Params.OutputRadiance, 0, 12);
+			Binder.Bind(Params.OutputSampleCount, 0, 13);
+			Binder.Bind(Params.LinearSampler, 0, 14);
+			Binder.Bind(Params.GPUSceneScene, 0, 15);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	static Buffer*& ReflectionDenoiserConstantBuffer()
@@ -162,156 +434,95 @@ namespace Columbus
 
 		// Reproject history and estimate variance / average radiance.
 		{
+			ReflectionDenoiserReprojectShader::Parameters ReprojectParams;
+			ReprojectParams.Constants = ConstantsBuffer;
+			ReprojectParams.Depth = Textures.GBufferDS;
+			ReprojectParams.Roughness = Textures.GBufferRM;
+			ReprojectParams.Normal = Textures.GBufferNormal;
+			ReprojectParams.DepthHistory = Textures.History.Depth;
+			ReprojectParams.RoughnessHistory = Textures.History.RoughnessMetallic;
+			ReprojectParams.NormalHistory = Textures.History.Normals;
+			ReprojectParams.InputRadiance = InputRadiance;
+			ReprojectParams.RadianceHistory = Textures.History.RTReflectionsRadiance;
+			ReprojectParams.Velocity = Textures.Velocity;
+			ReprojectParams.AverageRadianceHistory = Textures.History.RTReflectionsAverageRadiance;
+			ReprojectParams.VarianceHistory = Textures.History.RTReflectionsVariance;
+			ReprojectParams.SampleCountHistory = Textures.History.RTReflectionsSampleCount;
+			ReprojectParams.ReprojectedRadiance = ReprojectedRadiance;
+			ReprojectParams.AverageRadiance = AverageRadiance;
+			ReprojectParams.Variance = Variance1;
+			ReprojectParams.SampleCount = SampleCount1;
+
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(InputRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.Velocity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(ReprojectedRadiance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(AverageRadiance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Variance1, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(SampleCount1, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<ReflectionDenoiserReprojectShader>(ReprojectParams);
 
-			Graph.AddPass("RTRefl FFX Reproject", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, InputRadiance, ReprojectedRadiance, AverageRadiance, Variance1, SampleCount1, ConstantsBuffer, Size](RenderGraphContext& Context)
+			Graph.AddPass("RTRefl FFX Reproject", RenderGraphPassType::Compute, Parameters, Dependencies, [ReprojectParams, Size](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "RTRefl_FFX_Reproject";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/DenoiserReflection/Reproject.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				auto CBSet = Context.GetDescriptorSet(Pipeline, 0);
-				auto Set = Context.GetDescriptorSet(Pipeline, 1);
-				Context.Device->UpdateDescriptorSet(CBSet, 0, 0, ConstantsBuffer);
-
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, Textures.History.Depth, TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 4, 0, Textures.History.RoughnessMetallic, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 5, 0, Textures.History.Normals, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(InputRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Textures.History.RTReflectionsRadiance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 9, 0, Textures.History.RTReflectionsAverageRadiance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 10, 0, Textures.History.RTReflectionsVariance, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 11, 0, Textures.History.RTReflectionsSampleCount, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 12, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				Context.Device->UpdateDescriptorSet(Set, 13, 0, Context.GetRenderGraphTexture(ReprojectedRadiance).get());
-				Context.Device->UpdateDescriptorSet(Set, 14, 0, Context.GetRenderGraphTexture(AverageRadiance).get());
-				Context.Device->UpdateDescriptorSet(Set, 15, 0, Context.GetRenderGraphTexture(Variance1).get());
-				Context.Device->UpdateDescriptorSet(Set, 16, 0, Context.GetRenderGraphTexture(SampleCount1).get());
-
+				ComputePipeline* Pipeline = GetComputePipeline<ReflectionDenoiserReprojectShader>(Context, ReflectionDenoiserReprojectShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &CBSet);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &Set);
+			Context.BindComputeParameters<ReflectionDenoiserReprojectShader>(Pipeline, ReprojectParams);
 				Context.DispatchComputePixels(Pipeline, { 8, 8, 1 }, { Size, 1 });
 			});
 		}
 
 		// Variance-guided spatial prefilter.
 		{
+			ReflectionDenoiserPrefilterShader::Parameters PrefilterParams;
+			PrefilterParams.Constants = ConstantsBuffer;
+			PrefilterParams.Depth = Textures.GBufferDS;
+			PrefilterParams.Roughness = Textures.GBufferRM;
+			PrefilterParams.Normal = Textures.GBufferNormal;
+			PrefilterParams.AverageRadiance = AverageRadiance;
+			PrefilterParams.InputRadiance = InputRadiance;
+			PrefilterParams.Variance = Variance1;
+			PrefilterParams.SampleCount = SampleCount1;
+			PrefilterParams.OutputRadiance = Radiance1;
+			PrefilterParams.OutputVariance = Variance2;
+			PrefilterParams.OutputSampleCount = SampleCount2;
+
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(AverageRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(InputRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Variance1, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(SampleCount1, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Radiance1, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Variance2, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(SampleCount2, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<ReflectionDenoiserPrefilterShader>(PrefilterParams);
 
-			Graph.AddPass("RTRefl FFX Prefilter", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, InputRadiance, AverageRadiance, Variance1, SampleCount1, Radiance1, Variance2, SampleCount2, ConstantsBuffer, Size](RenderGraphContext& Context)
+			Graph.AddPass("RTRefl FFX Prefilter", RenderGraphPassType::Compute, Parameters, Dependencies, [PrefilterParams, Size](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "RTRefl_FFX_Prefilter";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/DenoiserReflection/Prefilter.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				auto CBSet = Context.GetDescriptorSet(Pipeline, 0);
-				auto Set = Context.GetDescriptorSet(Pipeline, 1);
-				Context.Device->UpdateDescriptorSet(CBSet, 0, 0, ConstantsBuffer);
-
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(AverageRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(InputRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(Variance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.GetRenderGraphTexture(SampleCount1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(Radiance1).get());
-				Context.Device->UpdateDescriptorSet(Set, 9, 0, Context.GetRenderGraphTexture(Variance2).get());
-				Context.Device->UpdateDescriptorSet(Set, 10, 0, Context.GetRenderGraphTexture(SampleCount2).get());
-
+				ComputePipeline* Pipeline = GetComputePipeline<ReflectionDenoiserPrefilterShader>(Context, ReflectionDenoiserPrefilterShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &CBSet);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &Set);
+			Context.BindComputeParameters<ReflectionDenoiserPrefilterShader>(Pipeline, PrefilterParams);
 				Context.DispatchComputePixels(Pipeline, { 8, 8, 1 }, { Size, 1 });
 			});
 		}
 
 		// Temporal resolve and history output.
 		{
+			ReflectionDenoiserResolveTemporalShader::Parameters ResolveParams;
+			ResolveParams.Constants = ConstantsBuffer;
+			ResolveParams.Roughness = Textures.GBufferRM;
+			ResolveParams.AverageRadiance = AverageRadiance;
+			ResolveParams.InputRadiance = Radiance1;
+			ResolveParams.ReprojectedRadiance = ReprojectedRadiance;
+			ResolveParams.Variance = Variance2;
+			ResolveParams.SampleCount = SampleCount2;
+			ResolveParams.OutputRadiance = Radiance2;
+			ResolveParams.OutputVariance = Variance1;
+			ResolveParams.OutputSampleCount = SampleCount1;
+
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(AverageRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Radiance1, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(ReprojectedRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Variance2, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(SampleCount2, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Radiance2, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Variance1, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(SampleCount1, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<ReflectionDenoiserResolveTemporalShader>(ResolveParams);
 
-			Graph.AddPass("RTRefl FFX ResolveTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [Textures, AverageRadiance, Radiance1, ReprojectedRadiance, Variance2, SampleCount2, Radiance2, Variance1, SampleCount1, ConstantsBuffer, Size](RenderGraphContext& Context)
+			Graph.AddPass("RTRefl FFX ResolveTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [ResolveParams, Size](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "RTRefl_FFX_ResolveTemporal";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/DenoiserReflection/ResolveTemporal.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				auto CBSet = Context.GetDescriptorSet(Pipeline, 0);
-				auto Set = Context.GetDescriptorSet(Pipeline, 1);
-				Context.Device->UpdateDescriptorSet(CBSet, 0, 0, ConstantsBuffer);
-
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(AverageRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(Radiance1).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(ReprojectedRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Variance2).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.GetRenderGraphTexture(SampleCount2).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				Context.Device->UpdateDescriptorSet(Set, 7, 0, Context.GetRenderGraphTexture(Radiance2).get());
-				Context.Device->UpdateDescriptorSet(Set, 8, 0, Context.GetRenderGraphTexture(Variance1).get());
-				Context.Device->UpdateDescriptorSet(Set, 9, 0, Context.GetRenderGraphTexture(SampleCount1).get());
-
+				ComputePipeline* Pipeline = GetComputePipeline<ReflectionDenoiserResolveTemporalShader>(Context, ReflectionDenoiserResolveTemporalShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &CBSet);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 1, 1, &Set);
+			Context.BindComputeParameters<ReflectionDenoiserResolveTemporalShader>(Pipeline, ResolveParams);
 				Context.DispatchComputePixels(Pipeline, { 8, 8, 1 }, { Size, 1 });
 			});
 		}
@@ -326,7 +537,7 @@ namespace Columbus
 
 	// TODO: downscale reflections resolution and then upscale (FSR1?)
 	// TODO: sample lighting in reflection (requires volumetric GI)
-	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
+	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes)
 	{
 		RENDER_GRAPH_SCOPED_MARKER(Graph, "RayTracedReflections");
 
@@ -354,55 +565,37 @@ namespace Columbus
 		{
 			RenderPassParameters Parameters;
 
-			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.ReadBuffer(Textures.RadianceCache.DataBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Dependencies, CVar_RayTracingIrradianceVolumes.GetValue(), VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Write(RTReflectionRadiance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Write(RTReflectionRays, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Write(RTReflectionRayPdf, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			RayTracedReflectionsShader::Parameters TraceParams;
+			TraceParams.Scene.UseCombinedSampler = false;
+			TraceParams.Output = RTReflectionRadiance;
+			TraceParams.ResultDirectionDistance = RTReflectionRays;
+			TraceParams.ResultRayPdf = RTReflectionRayPdf;
+			TraceParams.GBufferAlbedo = Textures.GBufferAlbedo;
+			TraceParams.GBufferNormals = Textures.GBufferNormal;
+			TraceParams.GBufferRoughnessMetallic = Textures.GBufferRM;
+			TraceParams.GBufferDepth = Textures.GBufferDS;
+			TraceParams.IrradianceVolumeConstants = IrradianceVolumes.Constants;
+			TraceParams.IrradianceProbeBuffers = IrradianceVolumes.ProbeBuffers;
+			TraceParams.Constants.Value = {
+				.CameraPosition = Vector4(View.CameraCur.Pos, 1),
+				.MaxRoughness = CVar_MaxRoughness.GetValue(),
+				.Random = (u32)GFrameNumber,
+				.UseRadianceCache = (u32)UseRadianceCache,
+			};
 
-			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, Textures, View, UseRadianceCache, IrradianceVolumes](RenderGraphContext& Context)
+			RenderPassDependencies Dependencies(Graph.Allocator);
+			Dependencies.Bind<RayTracedReflectionsShader>(TraceParams);
+
+			Graph.AddPass("RayTraceReflections", RenderGraphPassType::Compute, Parameters, Dependencies, [TraceParams, View](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflections, Context);
 
-				static RayTracingPipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					RayTracingPipelineDesc Desc;
-					Desc.Name = "RayTracedReflectionsPass";
-					Desc.MaxRecursionDepth = 1;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedReflections/RayTraceReflections.csd");
+				RayTracedReflectionsShader::Parameters Parameters = TraceParams;
+				Parameters.AccelerationStructure = Context.Scene->TLAS;
 
-					Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-				}
-
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 2);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.Scene->TLAS);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTReflectionRadiance).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(RTReflectionRays).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(RTReflectionRayPdf).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				//Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
-				RayTracingIrradianceVolumes::Bind(Context, DescriptorSet, IrradianceVolumes, Context.GetRenderGraphBuffer(Textures.RadianceCache.DataBuffer).get());
-
-				RayTracedReflectionPassParameters Params{
-					.CameraPosition = Vector4(View.CameraCur.Pos, 1),
-					.MaxRoughness = CVar_MaxRoughness.GetValue(),
-					.Random = (u32)GFrameNumber,
-					.UseRadianceCache = (u32)UseRadianceCache,
-				};
-
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<RayTracedReflectionsShader>(Context, RayTracedReflectionsShader::Permutation {}, RayTracedReflectionsShader::PipelinePermutation {});
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-				Context.BindGPUScene(Pipeline, false);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
+				Context.BindRayTracingParameters<RayTracedReflectionsShader>(Pipeline, Parameters);
 				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 			});
 		}
@@ -422,52 +615,36 @@ namespace Columbus
 			RenderGraphTextureRef RTResolveResult = Graph.CreateTexture(Desc, "RTReflResolved");
 			RenderGraphTextureRef RTResolveHitDistance = Graph.CreateTexture(SingleChannelDesc, "RTReflResolvedHitDistance");
 
+			ReflectionsResolveShader::Parameters ResolveParams;
+			ResolveParams.Radiance = RTReflectionRadiance;
+			ResolveParams.Rays = RTReflectionRays;
+			ResolveParams.RayPdf = RTReflectionRayPdf;
+			ResolveParams.GBufferAlbedo = Textures.GBufferAlbedo;
+			ResolveParams.GBufferNormal = Textures.GBufferNormal;
+			ResolveParams.GBufferRM = Textures.GBufferRM;
+			ResolveParams.GBufferDepth = Textures.GBufferDS;
+			ResolveParams.Output = RTResolveResult;
+			ResolveParams.OutputHitDistance = RTResolveHitDistance;
+			ResolveParams.Constants.Value = {
+				.ImageSize = TraceSize,
+				._Padding = iVector2(0, 0),
+			};
+
 			RenderPassParameters Parameters;
 
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferAlbedo, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(RTReflectionRadiance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(RTReflectionRays, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(RTReflectionRayPdf, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(RTResolveResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(RTResolveHitDistance, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<ReflectionsResolveShader>(ResolveParams);
 
-			Graph.AddPass("RTReflResolve", RenderGraphPassType::Compute, Parameters, Dependencies, [RTReflectionRadiance, RTReflectionRays, RTReflectionRayPdf, RTResolveResult, RTResolveHitDistance, Textures, TraceSize](RenderGraphContext& Context)
+			Graph.AddPass("RTReflResolve", RenderGraphPassType::Compute, Parameters, Dependencies, [ResolveParams, TraceSize](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "ReflectionsResolve";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedReflections/ReflectionsResolve.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
+				ReflectionsResolveShader::Parameters Parameters = ResolveParams;
+				Parameters.GPUSceneScene = Context.Scene->SceneBuffer;
 
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(RTReflectionRadiance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTReflectionRays).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(RTReflectionRayPdf).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferAlbedo).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(RTResolveResult).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(RTResolveHitDistance).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.Scene->SceneBuffer);
-
-				RayTracedReflectionsResolveParameters Params{
-					.ImageSize = TraceSize,
-					._Padding = iVector2(0, 0),
-				};
-
+				ComputePipeline* Pipeline = GetComputePipeline<ReflectionsResolveShader>(Context, ReflectionsResolveShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<ReflectionsResolveShader>(Pipeline, Parameters);
 				Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { TraceSize, 1 });
 			});
 
@@ -490,61 +667,41 @@ namespace Columbus
 			Texture2* ReflectionHistory = Textures.History.RTReflectionsRadiance;
 			Texture2* ReflectionSampleCountHistory = Textures.History.RTReflectionsSampleCount;
 
+			ReflectionsTemporalShader::Parameters TemporalParams;
+			TemporalParams.Current = ReflectionsResult;
+			TemporalParams.History = ReflectionHistory;
+			TemporalParams.Velocity = Textures.Velocity;
+			TemporalParams.Depth = Textures.GBufferDS;
+			TemporalParams.DepthHistory = Textures.History.Depth;
+			TemporalParams.HistorySampleCount = ReflectionSampleCountHistory;
+			TemporalParams.Rays = RTReflectionRays;
+			TemporalParams.ResolvedHitDistance = ReflectionsHitDistance;
+			TemporalParams.Normal = Textures.GBufferNormal;
+			TemporalParams.RoughnessMetallic = Textures.GBufferRM;
+			TemporalParams.NormalHistory = Textures.History.Normals;
+			TemporalParams.RoughnessMetallicHistory = Textures.History.RoughnessMetallic;
+			TemporalParams.OutputRadiance = RTTemporalResult;
+			TemporalParams.OutputSampleCount = RTTemporalSampleCount;
+			TemporalParams.Constants.Value = {
+				.Size = TraceSize,
+				.MaxSamples = TemporalMaxSamples,
+				._Padding = 0,
+			};
+
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(ReflectionsResult, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			if (ReflectionsHitDistance >= 0)
-			{
-				Dependencies.Read(ReflectionsHitDistance, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			}
-			Dependencies.Read(RTReflectionRays, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferRM, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.Velocity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(RTTemporalResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(RTTemporalSampleCount, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<ReflectionsTemporalShader>(TemporalParams);
 
-			Graph.AddPass("RTReflTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [ReflectionsResult, ReflectionsHitDistance, RTReflectionRays, RTTemporalResult, RTTemporalSampleCount, ReflectionHistory, ReflectionSampleCountHistory, Textures, TraceSize, TemporalMaxSamples](RenderGraphContext& Context)
+			Graph.AddPass("RTReflTemporal", RenderGraphPassType::Compute, Parameters, Dependencies, [TemporalParams, TraceSize](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedReflectionsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "ReflectionsTemporal";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedReflections/ReflectionsTemporal.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
+				ReflectionsTemporalShader::Parameters Parameters = TemporalParams;
+				Parameters.GPUSceneScene = Context.Scene->SceneBuffer;
 
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(ReflectionsResult).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, ReflectionHistory, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Textures.History.Depth, TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, ReflectionSampleCountHistory, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(RTReflectionRays).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, Context.GetRenderGraphTexture(ReflectionsHitDistance).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, Context.GetRenderGraphTexture(Textures.GBufferRM).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 10, 0, Textures.History.Normals, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 11, 0, Textures.History.RoughnessMetallic, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 12, 0, Context.GetRenderGraphTexture(RTTemporalResult).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 13, 0, Context.GetRenderGraphTexture(RTTemporalSampleCount).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 14, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 15, 0, Context.Scene->SceneBuffer);
-
-				RayTracedReflectionsTemporalParameters Params{
-					.Size = TraceSize,
-					.MaxSamples = TemporalMaxSamples,
-					._Padding = 0,
-				};
-
+				ComputePipeline* Pipeline = GetComputePipeline<ReflectionsTemporalShader>(Context, ReflectionsTemporalShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<ReflectionsTemporalShader>(Pipeline, Parameters);
 				Context.DispatchComputePixels(Pipeline, { 8,8,1 }, { TraceSize, 1 });
 			});
 

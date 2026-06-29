@@ -1,13 +1,62 @@
-#include "Graphics/RenderGraph.h"
+#include "RenderPasses.h"
+#include "Graphics/ShaderCache.h"
 
 namespace Columbus
 {
 
 	struct UIPerDrawcallParams
 	{
-		Vector4 Colour;
-		Vector2 Position;
-		Vector2 Size;
+		Vector4 Colour{};
+		Vector2 Position{};
+		Vector2 Size{};
+	};
+
+	struct UIShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/UI.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "UI";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc {
+					.BlendEnable = true,
+					.SrcBlend = Blend::SrcAlpha,
+					.DestBlend = Blend::InvSrcAlpha,
+				}
+			};
+			Desc.depthStencilState.DepthEnable = false;
+			Desc.depthStencilState.DepthWriteMask = false;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Texture;
+			ShaderStaticSampler Sampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderPushConstants<UIPerDrawcallParams> Constants { {}, ShaderType::Vertex | ShaderType::Pixel };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Texture,   0, 0);
+			Binder.Bind(Params.Sampler,   0, 1);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	void RenderUIPass(RenderGraph& Graph, RenderView& View, RenderGraphTextureRef TextureToDrawTo)
@@ -20,45 +69,27 @@ namespace Columbus
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, TextureToDrawTo, {} };
 
+		for (const UIImage* Img : View.UI->Images)
+		{
+			UIShader::Parameters DrawParams;
+			DrawParams.Texture = Img->Img;
+			Dependencies.Bind<UIShader>(DrawParams);
+		}
+
 		Graph.AddPass("UI", RenderGraphPassType::Raster, Parameters, Dependencies, [View, TextureToDrawTo](RenderGraphContext& Context)
 		{
-			// TODO: shader system
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "UI";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc {
-						.BlendEnable = true,
-						.SrcBlend = Blend::SrcAlpha,
-						.DestBlend = Blend::InvSrcAlpha,
-					}
-				};
-
-				Desc.depthStencilState.DepthEnable = false;
-				Desc.depthStencilState.DepthWriteMask = false;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/UI.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
-			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<UIShader>(Context, UIShader::Permutation {}, UIShader::PipelinePermutation {});
 
 			for (const UIImage* Img : View.UI->Images)
 			{
-				UIPerDrawcallParams Params;
-				Params.Colour = Img->Colour;
-				Params.Position = Img->Position;
-				Params.Size = Img->GetActualRenderSize(View.CameraCur.GetAspect());
+				UIShader::Parameters DrawParams;
+				DrawParams.Texture = Img->Img;
+				DrawParams.Constants.Value.Colour = Img->Colour;
+				DrawParams.Constants.Value.Position = Img->Position;
+				DrawParams.Constants.Value.Size = Img->GetActualRenderSize(View.CameraCur.GetAspect());
 
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Img->Img, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.Device->GetStaticSampler());
-
-				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Params), &Params);
+				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+				Context.BindGraphicsParameters<UIShader>(Pipeline, DrawParams);
 				Context.CommandBuffer->Draw(6, 1, 0, 0);
 			}
 		});

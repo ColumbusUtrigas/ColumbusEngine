@@ -1,11 +1,8 @@
 #include "Common/Image/Image.h"
 #include "Core/CVar.h"
-#include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Types.h"
-#include "Graphics/RenderGraph.h"
-#include "Graphics/Vulkan/DeviceVulkan.h"
+#include "Graphics/ShaderCache.h"
 #include "RenderPasses.h"
-#include "imgui.h"
 
 namespace Columbus
 {
@@ -20,34 +17,165 @@ namespace Columbus
 
 	struct RTShadowParams
 	{
-		u32 Random;
-		u32 LightId;
+		u32 Random = 0;
+		u32 LightId = 0;
 	};
 
 	struct RTShadowDenoiserPrepareParams
 	{
-		iVector2 BufferDimensions;
-		iVector2 PackedBufferDimensions;
+		iVector2 BufferDimensions{};
+		iVector2 PackedBufferDimensions{};
 	};
 
 	struct RTShadowDenoiserTileClassificationParams
 	{
-		Matrix InvViewProjectionMatrix;
-		Matrix InvProjectionMatrix;
-		Matrix ViewToPrevViewMatrix; // camera-relative current-view -> previous-view (precision-safe)
-		Vector3 CameraPosition;
-		float _pad;
-		iVector2 BufferDimensions;
-		iVector2 PackedBufferDimensions;
-		int FirstFrame;
+		Matrix InvViewProjectionMatrix = Matrix(1.0f);
+		Matrix InvProjectionMatrix = Matrix(1.0f);
+		Matrix ViewToPrevViewMatrix = Matrix(1.0f); // camera-relative current-view -> previous-view (precision-safe)
+		Vector3 CameraPosition{};
+		float _pad = 0.0f;
+		iVector2 BufferDimensions{};
+		iVector2 PackedBufferDimensions{};
+		int FirstFrame = 0;
 	};
 
 	struct RTShadowDenoiserFilterParams
 	{
-		Matrix InvProjectionMatrix;
-		iVector2 BufferDimensions;
-		u32 PassIndex;
-		u32 StepSize;
+		Matrix InvProjectionMatrix = Matrix(1.0f);
+		iVector2 BufferDimensions{};
+		u32 PassIndex = 0;
+		u32 StepSize = 1;
+	};
+
+	struct RTShadowTraceShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedShadows/RayTraceShadows.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct PipelinePermutation
+		{
+			u32 MaxRecursionDepth = 1;
+		};
+
+		static RayTracingPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			RayTracingPipelineDesc Desc {};
+			Desc.Name = "RayTracedShadowsPass";
+			Desc.MaxRecursionDepth = Permutation.MaxRecursionDepth;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderGPUScene Scene;
+			ShaderAccelerationStructure AccelerationStructure;
+			ShaderSampledTexture InputDepth { TextureBindingFlags::AspectDepth };
+			ShaderStorageTexture OutputShadow;
+			ShaderPushConstants<RTShadowParams> Constants { {}, ShaderType::Raygen };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+			Binder.Bind(Params.AccelerationStructure, 2, 0);
+			Binder.Bind(Params.InputDepth, 2, 1);
+			Binder.Bind(Params.OutputShadow, 2, 2);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct RTShadowDenoiserPrepareShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedShadows/DenoiserShadowsPrepare.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderReadStorageTexture InputBuffer;
+			ShaderStorageTexture PackedOutputBuffer;
+			ShaderPushConstants<RTShadowDenoiserPrepareParams> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.InputBuffer, 0, 0);
+			Binder.Bind(Params.PackedOutputBuffer, 0, 1);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct RTShadowDenoiserTileClassificationShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedShadows/DenoiserShadowsTileClassification.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderReadStorageTexture PackedTilesBuffer;
+			ShaderSampledTexture Normals;
+			ShaderSampledTexture Depth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture DepthHistory { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture Velocity;
+			ShaderStorageTexture ReprojectionResult;
+			ShaderStorageTexture Moments;
+			ShaderReadStorageTexture MomentsHistory;
+			ShaderStorageTexture Metadata;
+			ShaderSampledTexture History;
+			ShaderStaticSampler HistorySampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderPushConstants<RTShadowDenoiserTileClassificationParams> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.PackedTilesBuffer, 0, 0);
+			Binder.Bind(Params.Normals, 0, 1);
+			Binder.Bind(Params.Depth, 0, 2);
+			Binder.Bind(Params.DepthHistory, 0, 3);
+			Binder.Bind(Params.Velocity, 0, 4);
+			Binder.Bind(Params.ReprojectionResult, 0, 5);
+			Binder.Bind(Params.Moments, 0, 6);
+			Binder.Bind(Params.MomentsHistory, 0, 7);
+			Binder.Bind(Params.Metadata, 0, 8);
+			Binder.Bind(Params.History, 0, 9);
+			Binder.Bind(Params.HistorySampler, 0, 10);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct RTShadowDenoiserFilterShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/RayTracedShadows/DenoiserShadowsFilter.csd";
+
+		struct Permutation {};
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Normals;
+			ShaderSampledTexture Depth { TextureBindingFlags::AspectDepth };
+			ShaderReadStorageTexture Input;
+			ShaderReadStorageTexture Metadata;
+			ShaderStorageTexture Output;
+			ShaderStorageTexture History;
+			ShaderPushConstants<RTShadowDenoiserFilterParams> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Normals, 0, 0);
+			Binder.Bind(Params.Depth, 0, 1);
+			Binder.Bind(Params.Input, 0, 2);
+			Binder.Bind(Params.Metadata, 0, 3);
+			Binder.Bind(Params.Output, 0, 4);
+			Binder.Bind(Params.History, 0, 5);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	// implements AMD FidelityFX Shadow Denoiser
@@ -84,40 +212,28 @@ namespace Columbus
 			};
 			RTShadowTiles = Graph.CreateTexture(Desc, "RayTracedShadowTiles (8x4)");
 
+			RTShadowDenoiserPrepareShader::Parameters PrepareParams;
+			PrepareParams.InputBuffer = Shadow;
+			PrepareParams.PackedOutputBuffer = RTShadowTiles;
+			PrepareParams.Constants.Value = {
+				.BufferDimensions = ShadowSize,
+				.PackedBufferDimensions = TilesSize,
+			};
+
 			RenderPassParameters Parameters;
 
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Shadow, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(RTShadowTiles, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<RTShadowDenoiserPrepareShader>(PrepareParams);
 
-			Graph.AddPass("ShadowDenoisePrepare", RenderGraphPassType::Compute, Parameters, Dependencies, [TilesSize, Shadow, RTShadowTiles, ShadowSize](RenderGraphContext& Context)
+			Graph.AddPass("ShadowDenoisePrepare", RenderGraphPassType::Compute, Parameters, Dependencies, [TilesSize, PrepareParams](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadowsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "DenoiserShadowsPrepare";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/DenoiserShadowsPrepare.csd");
-
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				RTShadowDenoiserPrepareParams Params {
-					.BufferDimensions = ShadowSize,
-					.PackedBufferDimensions = TilesSize,
-				};
-
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Shadow).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(RTShadowTiles).get());
-
 				iVector2 GroupCount = (TilesSize + 3) / 4; // prepare shader iterates over 4x4 tiles
 
+				ComputePipeline* Pipeline = GetComputePipeline<RTShadowDenoiserPrepareShader>(Context, RTShadowDenoiserPrepareShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+				Context.BindComputeParameters<RTShadowDenoiserPrepareShader>(Pipeline, PrepareParams);
 				Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
 			});
 		}
@@ -132,87 +248,74 @@ namespace Columbus
 			Metadata = Graph.CreateTexture(MetadataDesc, "RayTracedShadowsMetadata");
 			ReprojectionResult = Graph.CreateTexture(ReprojectionResultDesc, "RayTracedShadowsReprojectionResult");
 
+			Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
+			Matrix InvProjection = View.CameraCur.GetProjectionMatrix().GetInverted();
+
+			// Camera-relative current-view -> previous-view transform.
+			// M = R_prev * T(delta) * R_cur^-1, with delta = curPos - prevPos.
+			// Jitter only affects the projection matrix (not view/pos), so CameraCur/Prev are safe here.
+			// Keeping it camera-relative avoids the float32 precision loss of PrevVP*InvCurVP when the
+			// camera is far from the world origin (the "fly around the level -> rejection" bug).
+			Matrix Rcur = View.CameraCur.GetViewMatrix();
+			Rcur.M[0][3] = Rcur.M[1][3] = Rcur.M[2][3] = 0.0f;
+			Matrix Rprev = View.CameraPrev.GetViewMatrix();
+			Rprev.M[0][3] = Rprev.M[1][3] = Rprev.M[2][3] = 0.0f;
+			Matrix InvRcur = Rcur.GetInverted();
+
+			Vector3 camDelta = View.CameraCur.Pos - View.CameraPrev.Pos;
+			Matrix Tdelta; // identity
+			Tdelta.M[0][3] = camDelta.X;
+			Tdelta.M[1][3] = camDelta.Y;
+			Tdelta.M[2][3] = camDelta.Z;
+
+			Matrix ViewToPrevView = Rprev * Tdelta * InvRcur;
+
+			RTShadowDenoiserTileClassificationShader::Parameters TileParams;
+			TileParams.PackedTilesBuffer = RTShadowTiles;
+			TileParams.Normals = Textures.GBufferNormal;
+			TileParams.Depth = Textures.GBufferDS;
+			if (Textures.History.Depth)
+			{
+				TileParams.DepthHistory = Textures.History.Depth;
+			}
+			else
+			{
+				TileParams.DepthHistory = Textures.GBufferDS;
+			}
+			TileParams.Velocity = Textures.Velocity;
+			TileParams.ReprojectionResult = ReprojectionResult;
+			TileParams.Moments = Moments;
+			TileParams.MomentsHistory = History.Moments;
+			TileParams.Metadata = Metadata;
+			TileParams.History = History.Shadow;
+			TileParams.Constants.Value = {
+				.InvViewProjectionMatrix = InvViewProjection,
+				.InvProjectionMatrix = InvProjection,
+				.ViewToPrevViewMatrix = ViewToPrevView,
+				.CameraPosition = View.CameraCur.Pos,
+				.BufferDimensions = ShadowSize,
+				.PackedBufferDimensions = FilterTilesSize,
+				.FirstFrame = bFirstFrame,
+			};
+
 			RenderPassParameters Parameters;
 
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(RTShadowTiles, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.Velocity, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
-			Dependencies.Write(Moments, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Metadata, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(ReprojectionResult, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<RTShadowDenoiserTileClassificationShader>(TileParams);
 
 			Graph.AddPass("ShadowDenoiseTileClassification", RenderGraphPassType::Compute, Parameters, Dependencies,
-			[RTShadowTiles, Textures, ShadowSize, FilterTilesSize, View, Moments, Metadata, ReprojectionResult, &History, bFirstFrame](RenderGraphContext& Context)
+			[TileParams, Textures, FilterTilesSize](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadowsDenoise, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "DenoiserShadowsTileClassification";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/DenoiserShadowsTileClassification.csd");
-
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
-
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(RTShadowTiles).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				if (Textures.History.Depth)
 				{
 					Context.CommandBuffer->TransitionImageLayout(Textures.History.Depth, VK_IMAGE_LAYOUT_GENERAL);
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Textures.History.Depth, TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 				}
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(Textures.Velocity).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(ReprojectionResult).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 6, 0, Context.GetRenderGraphTexture(Moments).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 7, 0, History.Moments);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 8, 0, Context.GetRenderGraphTexture(Metadata).get());
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, History.Shadow, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 10, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				
-
-				Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
-				Matrix InvProjection = View.CameraCur.GetProjectionMatrix().GetInverted();
-
-				// Camera-relative current-view -> previous-view transform.
-				// M = R_prev * T(delta) * R_cur^-1, with delta = curPos - prevPos.
-				// Jitter only affects the projection matrix (not view/pos), so CameraCur/Prev are safe here.
-				// Keeping it camera-relative avoids the float32 precision loss of PrevVP*InvCurVP when the
-				// camera is far from the world origin (the "fly around the level -> rejection" bug).
-				Matrix Rcur = View.CameraCur.GetViewMatrix();
-				Rcur.M[0][3] = Rcur.M[1][3] = Rcur.M[2][3] = 0.0f;
-				Matrix Rprev = View.CameraPrev.GetViewMatrix();
-				Rprev.M[0][3] = Rprev.M[1][3] = Rprev.M[2][3] = 0.0f;
-				Matrix InvRcur = Rcur.GetInverted();
-
-				Vector3 camDelta = View.CameraCur.Pos - View.CameraPrev.Pos;
-				Matrix Tdelta; // identity
-				Tdelta.M[0][3] = camDelta.X;
-				Tdelta.M[1][3] = camDelta.Y;
-				Tdelta.M[2][3] = camDelta.Z;
-
-				Matrix ViewToPrevView = Rprev * Tdelta * InvRcur;
-
-				RTShadowDenoiserTileClassificationParams Params {
-					.InvViewProjectionMatrix = InvViewProjection,
-					.InvProjectionMatrix = InvProjection,
-					.ViewToPrevViewMatrix = ViewToPrevView,
-					.CameraPosition = View.CameraCur.Pos,
-					.BufferDimensions = ShadowSize,
-					.PackedBufferDimensions = FilterTilesSize,
-					.FirstFrame = bFirstFrame,
-				};
-
+				ComputePipeline* Pipeline = GetComputePipeline<RTShadowDenoiserTileClassificationShader>(Context, RTShadowDenoiserTileClassificationShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+				Context.BindComputeParameters<RTShadowDenoiserTileClassificationShader>(Pipeline, TileParams);
 				Context.CommandBuffer->Dispatch((u32)FilterTilesSize.X, (u32)FilterTilesSize.Y, 1);
 			});			
 		}
@@ -243,51 +346,36 @@ namespace Columbus
 				const RenderGraphTextureRef FilterOutput = (i == 0) ? TmpHistory0 : (i == 1) ? TmpHistory1 : DenoisedResult;
 				const RenderGraphTextureRef FinalOutputBinding = bFinalPass ? DenoisedResult : UnusedFinalOutput;
 				const RenderGraphTextureRef HistoryOutputBinding = bFinalPass ? UnusedHistoryOutput : FilterOutput;
+
+				const u32 StepSizes[] = { 1, 2, 4 };
+
+				RTShadowDenoiserFilterShader::Parameters FilterParams;
+				FilterParams.Normals = Textures.GBufferNormal;
+				FilterParams.Depth = Textures.GBufferDS;
+				FilterParams.Input = CurrentFilterInput;
+				FilterParams.Metadata = Metadata;
+				FilterParams.Output = FinalOutputBinding;
+				FilterParams.History = HistoryOutputBinding;
+				FilterParams.Constants.Value = {
+					.InvProjectionMatrix = View.CameraCur.GetProjectionMatrix().GetInverted(),
+					.BufferDimensions = ShadowSize,
+					.PassIndex = (u32)i,
+					.StepSize = StepSizes[i],
+				};
+
 				RenderPassParameters Parameters;
 
 				RenderPassDependencies Dependencies(Graph.Allocator);
-				Dependencies.Read(Textures.GBufferNormal, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				Dependencies.Read(CurrentFilterInput, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				Dependencies.Read(Metadata, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				Dependencies.Write(FinalOutputBinding, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				Dependencies.Write(HistoryOutputBinding, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+				Dependencies.Bind<RTShadowDenoiserFilterShader>(FilterParams);
 
 				Graph.AddPass("ShadowDenoiseFilter", RenderGraphPassType::Compute, Parameters, Dependencies,
-				[i, View, Textures, CurrentFilterInput, FinalOutputBinding, HistoryOutputBinding, Metadata, ShadowSize, FilterTilesSize](RenderGraphContext& Context)
+				[FilterParams, FilterTilesSize](RenderGraphContext& Context)
 				{
 					RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadowsDenoise, Context);
 
-					static ComputePipeline* Pipelines[NumPasses] {nullptr};
-					if (Pipelines[i] == nullptr)
-					{
-						ComputePipelineDesc Desc;
-						Desc.Name = "DenoiserShadowsFilter";
-						Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/DenoiserShadowsFilter.csd");
-
-						Pipelines[i] = Context.Device->CreateComputePipeline(Desc);
-					}
-
-					const u32 StepSizes[] = { 1, 2, 4 };
-
-					RTShadowDenoiserFilterParams Params {
-						.InvProjectionMatrix = View.CameraCur.GetProjectionMatrix().GetInverted(),
-						.BufferDimensions = ShadowSize,
-						.PassIndex = (u32)i,
-						.StepSize = StepSizes[i],
-					};
-
-					auto DescriptorSet = Context.GetDescriptorSet(Pipelines[i], 0);
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.GBufferNormal).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 2, 0, Context.GetRenderGraphTexture(CurrentFilterInput).get());
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 3, 0, Context.GetRenderGraphTexture(Metadata).get());
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 4, 0, Context.GetRenderGraphTexture(FinalOutputBinding).get());
-					Context.Device->UpdateDescriptorSet(DescriptorSet, 5, 0, Context.GetRenderGraphTexture(HistoryOutputBinding).get());
-
-					Context.CommandBuffer->BindComputePipeline(Pipelines[i]);
-					Context.CommandBuffer->PushConstantsCompute(Pipelines[i], ShaderType::Compute, 0, sizeof(Params), &Params);
-					Context.CommandBuffer->BindDescriptorSetsCompute(Pipelines[i], 0, 1, &DescriptorSet);
+					ComputePipeline* Pipeline = GetComputePipeline<RTShadowDenoiserFilterShader>(Context, RTShadowDenoiserFilterShader::Permutation {});
+					Context.CommandBuffer->BindComputePipeline(Pipeline);
+					Context.BindComputeParameters<RTShadowDenoiserFilterShader>(Pipeline, FilterParams);
 					Context.CommandBuffer->Dispatch((u32)FilterTilesSize.X, (u32)FilterTilesSize.Y, 1);
 				});
 
@@ -322,44 +410,33 @@ namespace Columbus
 
 			RenderPassParameters Parameters;
 
-			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
-			Dependencies.Write(RTShadow, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			RTShadowTraceShader::Parameters TraceParams;
+			TraceParams.Scene.UseCombinedSampler = false;
+			TraceParams.InputDepth = Textures.GBufferDS;
+			TraceParams.OutputShadow = RTShadow;
+			TraceParams.Constants.Value = {
+				.Random = 0,
+				.LightId = (u32)i,
+			};
 
-			Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [RTShadow, Textures, View, i](RenderGraphContext& Context)
+			RenderPassDependencies Dependencies(Graph.Allocator);
+			Dependencies.Bind<RTShadowTraceShader>(TraceParams);
+
+			Graph.AddPass("RayTraceShadow", RenderGraphPassType::Compute, Parameters, Dependencies, [TraceParams, View](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterRayTracedShadows, Context);
-
-				static RayTracingPipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					RayTracingPipelineDesc Desc;
-					Desc.Name = "RayTracedShadowsPass";
-					Desc.MaxRecursionDepth = 1;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/RayTracedShadows/RayTraceShadows.csd");
-
-					Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-				}
 
 				GPUCamera UpdatedCamera = GPUCamera(View.CameraCur);
 				Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
 				Context.Scene->MainCamera = UpdatedCamera;
 
-				auto ShadowsBufferSet = Context.GetDescriptorSet(Pipeline, 2);
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 0, 0, Context.Scene->TLAS);
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(ShadowsBufferSet, 2, 0, Context.GetRenderGraphTexture(RTShadow).get());
+				RTShadowTraceShader::Parameters Parameters = TraceParams;
+				Parameters.AccelerationStructure = Context.Scene->TLAS;
+				Parameters.Constants.Value.Random = (u32)(rand() % 2000);
 
-				RTShadowParams Params {
-					.Random = (u32)(rand() % 2000),
-					.LightId = (u32)i
-				};
-
-				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<RTShadowTraceShader>(Context, RTShadowTraceShader::Permutation {}, RTShadowTraceShader::PipelinePermutation {});
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-				Context.BindGPUScene(Pipeline, false);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &ShadowsBufferSet);
-
+				Context.BindRayTracingParameters<RTShadowTraceShader>(Pipeline, Parameters);
 				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 			});
 

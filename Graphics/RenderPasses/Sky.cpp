@@ -1,9 +1,75 @@
 #include "RenderPasses.h"
+#include "Graphics/ShaderCache.h"
 
 namespace Columbus
 {
+
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterSky);
 IMPLEMENT_GPU_PROFILING_COUNTER("Sky", "RenderGraphGPU", GpuCounterSky);
+
+struct SkyLutShader
+{
+	static constexpr const char* Path = "./PrecompiledShaders/SkyLut.csd";
+
+	struct Permutation
+	{
+	};
+
+	static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+	{
+	}
+
+	struct Parameters
+	{
+		ShaderWriteBuffer SceneBuffer;
+	};
+
+	static void Bind(ShaderBinder& Binder, const Parameters& Params)
+	{
+		Binder.Bind(Params.SceneBuffer, 0, 0);
+	}
+};
+
+struct SkyShader
+{
+	static constexpr const char* Path = "./PrecompiledShaders/Sky.csd";
+
+	struct Permutation
+	{
+	};
+
+	static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+	{
+	}
+
+	struct PipelinePermutation
+	{
+	};
+
+	static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+	{
+		GraphicsPipelineDesc Desc;
+		Desc.Name = "Sky";
+		Desc.rasterizerState.Cull = CullMode::No;
+		Desc.blendState.RenderTargets = {
+			RenderTargetBlendDesc(),
+		};
+		Desc.depthStencilState.DepthEnable = true;
+		Desc.depthStencilState.DepthWriteMask = false;
+		Desc.depthStencilState.DepthFunc = ComparisonFunc::GEqual;
+		return Desc;
+	}
+
+	struct Parameters
+	{
+		ShaderReadBuffer SceneBuffer;
+	};
+
+	static void Bind(ShaderBinder& Binder, const Parameters& Params)
+	{
+		Binder.Bind(Params.SceneBuffer, 0, 0);
+	}
+};
 
 void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context)
 {
@@ -12,24 +78,17 @@ void RenderPrepareSkyLut(RenderGraph& Graph, RenderView& View, SceneTextures& Te
 	RenderPassParameters Parameters;
 	RenderPassDependencies Dependencies(Graph.Allocator);
 
-	Graph.AddPass("SkyLut", RenderGraphPassType::Compute, Parameters, Dependencies, [](RenderGraphContext& Context)
+	SkyLutShader::Parameters SkyParams;
+	SkyParams.SceneBuffer = Graph.Scene->SceneBuffer;
+	Dependencies.Bind<SkyLutShader>(SkyParams);
+
+	Graph.AddPass("SkyLut", RenderGraphPassType::Compute, Parameters, Dependencies, [SkyParams](RenderGraphContext& Context)
 	{
 		RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterSky, Context);
 
-		static ComputePipeline* Pipeline = nullptr;
-		if (Pipeline == nullptr)
-		{
-			ComputePipelineDesc Desc;
-			Desc.Name = "TAA";
-			Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/SkyLut.csd");
-			Pipeline = Context.Device->CreateComputePipeline(Desc);
-		}
-
-		auto Set = Context.GetDescriptorSet(Pipeline, 0);
-		Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->SceneBuffer);
-
+		ComputePipeline* Pipeline = GetComputePipeline<SkyLutShader>(Context, SkyLutShader::Permutation {});
 		Context.CommandBuffer->BindComputePipeline(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
+		Context.BindComputeParameters<SkyLutShader>(Pipeline, SkyParams);
 		Context.CommandBuffer->Dispatch(1, 1, 1);
 	});
 }
@@ -43,33 +102,17 @@ void RenderDeferredSky(RenderGraph& Graph, RenderView& View, SceneTextures& Text
 
 	RenderPassDependencies Dependencies(Graph.Allocator);
 
-	Graph.AddPass("Sky", RenderGraphPassType::Raster, Parameters, Dependencies, [View, OverTexture, Textures, &DeferredContext](RenderGraphContext& Context)
+	SkyShader::Parameters SkyParams;
+	SkyParams.SceneBuffer = Graph.Scene->SceneBuffer;
+	Dependencies.Bind<SkyShader>(SkyParams);
+
+	Graph.AddPass("Sky", RenderGraphPassType::Raster, Parameters, Dependencies, [SkyParams](RenderGraphContext& Context)
 	{
 		RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterSky, Context);
 
-		static GraphicsPipeline* Pipeline = nullptr;
-		if (Pipeline == nullptr)
-		{
-			GraphicsPipelineDesc Desc;
-			Desc.Name = "Sky";
-			Desc.rasterizerState.Cull = CullMode::No;
-			Desc.blendState.RenderTargets = {
-				RenderTargetBlendDesc(),
-			};
-
-			Desc.depthStencilState.DepthEnable = true;
-			Desc.depthStencilState.DepthWriteMask = false;
-			Desc.depthStencilState.DepthFunc = ComparisonFunc::GEqual;
-			Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Sky.csd");
-
-			Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-		}
-
-		auto Set = Context.GetDescriptorSet(Pipeline, 0);
-		Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->SceneBuffer);
-
+		GraphicsPipeline* Pipeline = GetGraphicsPipeline<SkyShader>(Context, SkyShader::Permutation {}, SkyShader::PipelinePermutation {});
 		Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-		Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &Set);
+		Context.BindGraphicsParameters<SkyShader>(Pipeline, SkyParams);
 		Context.CommandBuffer->Draw(3, 1, 0, 0);
 	});
 }

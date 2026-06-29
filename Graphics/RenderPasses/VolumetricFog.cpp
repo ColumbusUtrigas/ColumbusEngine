@@ -1,9 +1,7 @@
 #include "Core/Core.h"
-#include "Graphics/Core/Pipelines.h"
 #include "Graphics/Core/Texture.h"
-#include "Graphics/RenderGraph.h"
+#include "Graphics/ShaderCache.h"
 #include "RenderPasses.h"
-#include "ShaderBytecode/ShaderBytecode.h"
 #include "Profiling/Profiling.h"
 
 namespace Columbus
@@ -16,24 +14,107 @@ namespace Columbus
 
 	struct VolumetricFogInjectParameters
 	{
-		u32 FrameIndex;
-		u32 MaxLights;
-		u32 ShadowSamples;
-		u32 Flags;
-		float ShadowJitter;
-		float FroxelJitter;
-		float TemporalBlendFactor;
-		float HistoryClip;
+		u32 FrameIndex = 0;
+		u32 MaxLights = 0;
+		u32 ShadowSamples = 0;
+		u32 Flags = 0;
+		float ShadowJitter = 0.0f;
+		float FroxelJitter = 0.0f;
+		float TemporalBlendFactor = 0.0f;
+		float HistoryClip = 0.0f;
 	};
 
 	struct VolumetricFogCompositeParameters
 	{
-		iVector2 RenderSize;
-		u32 FrameIndex;
-		u32 SampleFilter;
-		float SkyTransmittance;
-		float FroxelJitter;
-		float _pad[2];
+		iVector2 RenderSize{};
+		u32 FrameIndex = 0;
+		u32 SampleFilter = 0;
+		float SkyTransmittance = 1.0f;
+		float FroxelJitter = 0.0f;
+		float _pad[2]{};
+	};
+
+	struct VolumetricFogInjectShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/VolumetricFog/Inject.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+			u32 MaxRecursionDepth = 1;
+		};
+
+		static RayTracingPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			RayTracingPipelineDesc Desc {};
+			Desc.Name = "VolumetricFogInject";
+			Desc.MaxRecursionDepth = Permutation.MaxRecursionDepth;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderGPUScene Scene;
+			ShaderAccelerationStructure AccelerationStructure;
+			ShaderStorageTexture OutputFroxels;
+			ShaderSampledTexture HistoryFroxels;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderPushConstants<VolumetricFogInjectParameters> Constants { {}, ShaderType::Raygen };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Scene);
+			Binder.Bind(Params.AccelerationStructure, 2, 0);
+			Binder.Bind(Params.OutputFroxels, 2, 1);
+			Binder.Bind(Params.HistoryFroxels, 2, 2);
+			Binder.Bind(Params.LinearSampler, 2, 3);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct VolumetricFogCompositeShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/VolumetricFog/Composite.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture SceneColor;
+			ShaderSampledTexture SceneDepth { TextureBindingFlags::AspectDepth };
+			ShaderSampledTexture FroxelScattering;
+			ShaderStorageTexture OutputColor;
+			ShaderStorageTexture OutputFog;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderReadBuffer GPUSceneScene;
+			ShaderPushConstants<VolumetricFogCompositeParameters> Constants { {}, ShaderType::Compute };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.SceneColor, 0, 0);
+			Binder.Bind(Params.SceneDepth, 0, 1);
+			Binder.Bind(Params.FroxelScattering, 0, 2);
+			Binder.Bind(Params.OutputColor, 0, 3);
+			Binder.Bind(Params.OutputFog, 0, 4);
+			Binder.Bind(Params.LinearSampler, 0, 5);
+			Binder.Bind(Params.GPUSceneScene, 0, 6);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	RenderGraphTextureRef RenderVolumetricFog(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef SceneTexture)
@@ -115,51 +196,35 @@ namespace Columbus
 		RenderGraphTextureRef FroxelScattering = Graph.CreateTexture(FroxelDesc, "VolumetricFogFroxels");
 
 		{
+			VolumetricFogInjectShader::Parameters InjectParams;
+			InjectParams.Scene.UseCombinedSampler = false;
+			InjectParams.OutputFroxels = FroxelScattering;
+			InjectParams.HistoryFroxels = FroxelHistoryTexture;
+			InjectParams.Constants.Value = {
+				.FrameIndex = (u32)GFrameNumber,
+				.MaxLights = (u32)MaxLights,
+				.ShadowSamples = (u32)ShadowSamples,
+				.Flags = bHasFroxelHistory ? 1u : 0u,
+				.ShadowJitter = ShadowJitter,
+				.FroxelJitter = FroxelJitter,
+				.TemporalBlendFactor = TemporalBlend,
+				.HistoryClip = HistoryClip,
+			};
+
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Write(FroxelScattering, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
+			Dependencies.Bind<VolumetricFogInjectShader>(InjectParams);
 
-			Graph.AddPass("VolumetricFogInject", RenderGraphPassType::Compute, Parameters, Dependencies, [FroxelScattering, FroxelHistoryTexture, FroxelResolution, MaxLights, ShadowSamples, ShadowJitter, FroxelJitter, bHasFroxelHistory, TemporalBlend, HistoryClip](RenderGraphContext& Context)
+			Graph.AddPass("VolumetricFogInject", RenderGraphPassType::Compute, Parameters, Dependencies, [InjectParams, FroxelResolution](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterVolumetricFogInject, Context);
 
-				static RayTracingPipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					RayTracingPipelineDesc Desc;
-					Desc.Name = "VolumetricFogInject";
-					Desc.MaxRecursionDepth = 1;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/VolumetricFog/Inject.csd");
-					Pipeline = Context.Device->CreateRayTracingPipeline(Desc);
-				}
+				VolumetricFogInjectShader::Parameters Parameters = InjectParams;
+				Parameters.AccelerationStructure = Context.Scene->TLAS;
 
-				static VkDescriptorSet DescriptorSets[MaxFramesInFlight]{ NULL };
-				if (DescriptorSets[Context.RenderData.CurrentPerFrameData] == NULL)
-				{
-					DescriptorSets[Context.RenderData.CurrentPerFrameData] = Context.Device->CreateDescriptorSet(Pipeline, 2);
-				}
-
-				auto Set = DescriptorSets[Context.RenderData.CurrentPerFrameData];
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.Scene->TLAS);
-				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(FroxelScattering).get());
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, FroxelHistoryTexture, TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-
-				VolumetricFogInjectParameters Params{
-					.FrameIndex = (u32)GFrameNumber,
-					.MaxLights = (u32)MaxLights,
-					.ShadowSamples = (u32)ShadowSamples,
-					.Flags = bHasFroxelHistory ? 1u : 0u,
-					.ShadowJitter = ShadowJitter,
-					.FroxelJitter = FroxelJitter,
-					.TemporalBlendFactor = TemporalBlend,
-					.HistoryClip = HistoryClip,
-				};
-
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<VolumetricFogInjectShader>(Context, VolumetricFogInjectShader::Permutation {}, VolumetricFogInjectShader::PipelinePermutation {});
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
-				Context.BindGPUScene(Pipeline, false);
-				Context.CommandBuffer->BindDescriptorSetsRayTracing(Pipeline, 2, 1, &Set);
-				Context.CommandBuffer->PushConstantsRayTracing(Pipeline, ShaderType::Raygen, 0, sizeof(Params), &Params);
+				Context.BindRayTracingParameters<VolumetricFogInjectShader>(Pipeline, Parameters);
 				Context.CommandBuffer->TraceRays(Pipeline, FroxelResolution.X, FroxelResolution.Y, FroxelResolution.Z);
 			});
 		}
@@ -168,48 +233,35 @@ namespace Columbus
 		Textures.VolumetricFog = Graph.CreateTexture(FogOnlyDesc, "VolumetricFog");
 
 		{
+			VolumetricFogCompositeShader::Parameters CompositeParams;
+			CompositeParams.SceneColor = SceneTexture;
+			CompositeParams.SceneDepth = Textures.GBufferDS;
+			CompositeParams.FroxelScattering = FroxelScattering;
+			CompositeParams.OutputColor = FoggedScene;
+			CompositeParams.OutputFog = Textures.VolumetricFog;
+			CompositeParams.Constants.Value = {
+				.RenderSize = View.RenderSize,
+				.FrameIndex = (u32)GFrameNumber,
+				.SampleFilter = (u32)SampleFilter,
+				.SkyTransmittance = SkyTransmittance,
+				.FroxelJitter = FroxelJitter,
+				._pad = { 0.0f, 0.0f },
+			};
+
 			RenderPassParameters Parameters;
 			RenderPassDependencies Dependencies(Graph.Allocator);
-			Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(Textures.GBufferDS, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Read(FroxelScattering, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(FoggedScene, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			Dependencies.Write(Textures.VolumetricFog, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			Dependencies.Bind<VolumetricFogCompositeShader>(CompositeParams);
 
-			Graph.AddPass("VolumetricFogComposite", RenderGraphPassType::Compute, Parameters, Dependencies, [SceneTexture, FoggedScene, FroxelScattering, Textures, View, SampleFilter, SkyTransmittance, FroxelJitter](RenderGraphContext& Context)
+			Graph.AddPass("VolumetricFogComposite", RenderGraphPassType::Compute, Parameters, Dependencies, [CompositeParams, View](RenderGraphContext& Context)
 			{
 				RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterVolumetricFogComposite, Context);
 
-				static ComputePipeline* Pipeline = nullptr;
-				if (Pipeline == nullptr)
-				{
-					ComputePipelineDesc Desc;
-					Desc.Name = "VolumetricFogComposite";
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/VolumetricFog/Composite.csd");
-					Pipeline = Context.Device->CreateComputePipeline(Desc);
-				}
+				VolumetricFogCompositeShader::Parameters Parameters = CompositeParams;
+				Parameters.GPUSceneScene = Context.Scene->SceneBuffer;
 
-				auto Set = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphTexture(SceneTexture).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 1, 0, Context.GetRenderGraphTexture(Textures.GBufferDS).get(), TextureBindingFlags::AspectDepth, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 2, 0, Context.GetRenderGraphTexture(FroxelScattering).get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(Set, 3, 0, Context.GetRenderGraphTexture(FoggedScene).get());
-				Context.Device->UpdateDescriptorSet(Set, 4, 0, Context.GetRenderGraphTexture(Textures.VolumetricFog).get());
-				Context.Device->UpdateDescriptorSet(Set, 5, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
-				Context.Device->UpdateDescriptorSet(Set, 6, 0, Context.Scene->SceneBuffer);
-
-				VolumetricFogCompositeParameters Params{
-					.RenderSize = View.RenderSize,
-					.FrameIndex = (u32)GFrameNumber,
-					.SampleFilter = (u32)SampleFilter,
-					.SkyTransmittance = SkyTransmittance,
-					.FroxelJitter = FroxelJitter,
-					._pad = { 0.0f, 0.0f },
-				};
-
+				ComputePipeline* Pipeline = GetComputePipeline<VolumetricFogCompositeShader>(Context, VolumetricFogCompositeShader::Permutation {});
 				Context.CommandBuffer->BindComputePipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &Set);
-				Context.CommandBuffer->PushConstantsCompute(Pipeline, ShaderType::Compute, 0, sizeof(Params), &Params);
+			Context.BindComputeParameters<VolumetricFogCompositeShader>(Pipeline, Parameters);
 				Context.DispatchComputePixels(Pipeline, { 8, 8, 1 }, { View.RenderSize, 1 });
 			});
 		}

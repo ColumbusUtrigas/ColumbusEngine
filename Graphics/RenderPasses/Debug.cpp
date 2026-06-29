@@ -4,6 +4,7 @@
 #include "Graphics/Core/Types.h"
 #include "Graphics/IrradianceVolume.h"
 #include "Graphics/RenderGraph.h"
+#include "Graphics/ShaderCache.h"
 #include "RenderPasses.h"
 #include <algorithm>
 
@@ -23,10 +24,10 @@ namespace Columbus
 
 	struct DebugObjectParameters
 	{
-		Matrix Model;
-		Matrix VP;
+		Matrix Model = Matrix(1.0f);
+		Matrix VP = Matrix(1.0f);
 		Vector4 Colour;
-		Vector4 Vertices[3];
+		Vector4 Vertices[3]{};
 
 		u64 VertexBuffer = 0;
 		u64 IndexBuffer = 0;
@@ -36,13 +37,154 @@ namespace Columbus
 
 	struct DebugIrradianceProbesParameters
 	{
-		Matrix View, Projection;
+		Matrix View = Matrix(1.0f), Projection = Matrix(1.0f);
 
 		Vector4 Position;
 		Vector4 Extent;
 		iVector4 ProbesCount;
 		iVector4 ProbeIndex;
 		Vector4 TestPoint;
+	};
+
+	struct DebugOverlayShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/Debug.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+			bool Wireframe = false;
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "Debug";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.rasterizerState.Fill = Permutation.Wireframe ? FillMode::Wireframe : FillMode::Solid;
+			Desc.rasterizerState.LineWidth = Permutation.Wireframe ? 2.0f : 1.0f;
+			Desc.rasterizerState.DepthBias = Permutation.Wireframe ? 1 : 0;
+			Desc.rasterizerState.SlopeScaledDepthBias = Permutation.Wireframe ? 1.0f : 0.0f;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc {
+					.BlendEnable = true,
+					.SrcBlend = Blend::SrcAlpha,
+					.DestBlend = Blend::InvSrcAlpha,
+				},
+			};
+			Desc.depthStencilState.DepthEnable = true;
+			Desc.depthStencilState.DepthWriteMask = false;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderPushConstants<DebugObjectParameters> Constants { {}, ShaderType::Vertex | ShaderType::Pixel };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct IrradianceVolumeVisualiseShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/IrradianceVolume/IrradianceVolumeVisualise.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "IrradianceProbesVisualise";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc {},
+			};
+			Desc.depthStencilState.DepthEnable = true;
+			Desc.depthStencilState.DepthWriteMask = true;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderReadBuffer IrradianceProbes;
+			ShaderPushConstants<DebugIrradianceProbesParameters> Constants { {}, ShaderType::Vertex };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.IrradianceProbes, 0, 0);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
+	struct DebugVisualisationConstants
+	{
+		iVector2 ViewportSize;
+		u32 Flags;
+	};
+
+	struct DebugVisualisationShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/Visualisation.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "DebugVisualisation";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc(),
+			};
+			Desc.depthStencilState.DepthEnable = false;
+			Desc.depthStencilState.DepthWriteMask = false;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture Texture;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderPushConstants<DebugVisualisationConstants> Constants { {}, ShaderType::Pixel };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.Texture, 0, 0);
+			Binder.Bind(Params.LinearSampler, 0, 1);
+			Binder.Bind(Params.Constants);
+		}
 	};
 
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture)
@@ -58,7 +200,13 @@ namespace Columbus
 		Parameters.ViewportSize = Graph.GetTextureSize2D(OverlayTexture);
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		std::vector<RenderGraphBufferRef> IrradianceProbeBuffers;
+		struct IrradianceVolumeDraw
+		{
+			IrradianceVolumeVisualiseShader::Parameters Parameters;
+			u32 VertexCount = 0;
+		};
+
+		std::vector<IrradianceVolumeDraw> IrradianceVolumeDraws;
 		if (CVar_DebugOverlayIrradiance.GetValue())
 		{
 			for (IrradianceVolume& Volume : Graph.Scene->IrradianceVolumes)
@@ -69,88 +217,60 @@ namespace Columbus
 				}
 
 				RenderGraphBufferRef ProbeBuffer = Graph.RegisterExternalBuffer(Volume.ProbesBuffer, "IrradianceProbes");
-				IrradianceProbeBuffers.push_back(ProbeBuffer);
-				Dependencies.ReadBuffer(ProbeBuffer, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+				IrradianceVolumeDraw Draw;
+				Draw.Parameters.IrradianceProbes = ProbeBuffer;
+				Draw.Parameters.Constants.Value = {
+					.View = View.CameraCurUnjittered.GetViewMatrix(),
+					.Projection = View.CameraCurUnjittered.GetProjectionMatrix(),
+					.Position = Vector4(View.CameraCurUnjittered.Right(), 0),
+					.Extent = Vector4(Volume.Extent, 0),
+					.ProbesCount = iVector4(Volume.ProbesCount, 0),
+					.ProbeIndex = iVector4(0, 0, 0, 0),
+					.TestPoint = Vector4(-View.CameraCurUnjittered.Direction(), CVar_DebugOverlayIrradianceSize.GetValue()),
+				};
+				Draw.VertexCount = 6 * Volume.GetTotalProbes();
+				IrradianceVolumeDraws.push_back(Draw);
 			}
 		}
 
-		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View, IrradianceProbeBuffers](RenderGraphContext& Context)
+		for (const IrradianceVolumeDraw& Draw : IrradianceVolumeDraws)
 		{
-			// TODO: normal shader system please
-			static GraphicsPipeline* PipelineSolid = nullptr;
-			static GraphicsPipeline* PipelineWireframe = nullptr;
-			static GraphicsPipeline* IrradianceVolumePipeline = nullptr;
-			if (PipelineSolid == nullptr)
-			{
-				{
-					GraphicsPipelineDesc Desc;
-					Desc.Name = "Debug";
-					Desc.rasterizerState.Cull = CullMode::No;
-					Desc.rasterizerState.Fill = FillMode::Solid;
-					Desc.blendState.RenderTargets = {
-						RenderTargetBlendDesc {
-							.BlendEnable = true,
-							.SrcBlend = Blend::SrcAlpha,
-							.DestBlend = Blend::InvSrcAlpha,
-						},
-					};
-					// 
+			Dependencies.Bind<IrradianceVolumeVisualiseShader>(Draw.Parameters);
+		}
 
-					Desc.depthStencilState.DepthEnable = true; // TODO: use flag, so generate two permutations
-					Desc.depthStencilState.DepthWriteMask = false;
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Debug.csd");
-
-					GraphicsPipelineDesc WireframeDesc = Desc;
-					WireframeDesc.rasterizerState.Fill = FillMode::Wireframe;
-					WireframeDesc.rasterizerState.LineWidth = 2.0f;
-					WireframeDesc.rasterizerState.DepthBias = 1;
-					WireframeDesc.rasterizerState.SlopeScaledDepthBias = 1.0f;
-
-					PipelineSolid = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-					PipelineWireframe = Context.Device->CreateGraphicsPipeline(WireframeDesc, Context.VulkanRenderPass);
-				}
-
-				{
-					GraphicsPipelineDesc Desc;
-					Desc.Name = "IrradianceProbesVisualise";
-					Desc.rasterizerState.Cull = CullMode::No;
-					Desc.blendState.RenderTargets = {
-						RenderTargetBlendDesc {},
-					};
-
-					Desc.depthStencilState.DepthEnable = true;
-					Desc.depthStencilState.DepthWriteMask = true;
-
-					Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/IrradianceVolume/IrradianceVolumeVisualise.csd");
-					IrradianceVolumePipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-				}
-			}
+		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View, IrradianceVolumeDraws](RenderGraphContext& Context)
+		{
+			GraphicsPipeline* DebugPipeline = nullptr;
 
 			for (const DebugRenderObject& Object : View.DebugRender.Objects)
 			{
 				const Camera& DebugCamera = Object.UseUnjitteredCamera ? View.CameraCurUnjittered : View.CameraCur;
-				DebugObjectParameters Parameters {
+				DebugOverlayShader::Parameters DrawParams;
+				DrawParams.Constants.Value = {
 					.Model = Object.Transform,
 					.VP = DebugCamera.GetViewProjection(),
 					.Colour = Object.Colour,
 					.Type = (u32)Object.Type,
 				};
 
-				GraphicsPipeline* Pipeline = Object.Wireframe ? PipelineWireframe : PipelineSolid;
-				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+				DebugOverlayShader::PipelinePermutation PipelinePermutation;
+				PipelinePermutation.Wireframe = Object.Wireframe;
+				DebugPipeline = GetGraphicsPipeline<DebugOverlayShader>(Context, DebugOverlayShader::Permutation {}, PipelinePermutation);
 
 				if (Object.Type == DebugRenderObjectType::Box)
 				{
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(36, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Tri)
 				{
-					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
-					Parameters.Vertices[1] = Vector4(Object.Vertices[1], 1);
-					Parameters.Vertices[2] = Vector4(Object.Vertices[2], 1);
+					DrawParams.Constants.Value.Vertices[0] = Vector4(Object.Vertices[0], 1);
+					DrawParams.Constants.Value.Vertices[1] = Vector4(Object.Vertices[1], 1);
+					DrawParams.Constants.Value.Vertices[2] = Vector4(Object.Vertices[2], 1);
 
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(3, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Sphere)
@@ -158,30 +278,33 @@ namespace Columbus
 					static const uint SPHERE_SLICES = 32;  // around Y
 					static const uint SPHERE_STACKS = 16;  // bottom->top
 
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(SPHERE_SLICES * SPHERE_STACKS * 6, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Cone)
 				{
-					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+					DrawParams.Constants.Value.Vertices[0] = Vector4(Object.Vertices[0], 1);
 
 					static const uint CONE_SLICES = 32;
 
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(CONE_SLICES * 6, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Cylinder)
 				{
-					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+					DrawParams.Constants.Value.Vertices[0] = Vector4(Object.Vertices[0], 1);
 
 					static const uint CYL_SLICES = 32;
 
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(CYL_SLICES * 2 * 6, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Capsule)
 				{
-					Parameters.Vertices[0] = Vector4(Object.Vertices[0], 1);
+					DrawParams.Constants.Value.Vertices[0] = Vector4(Object.Vertices[0], 1);
 
 					static const uint CAP_SLICES = 32;
 					static const uint CAP_HEMI_STACKS = 8; // per hemisphere
@@ -192,56 +315,29 @@ namespace Columbus
 					uint capCylVerts  = CAP_SLICES * 1 * 6;
 					uint capsuleVerts = capHemiVerts * 2 + capCylVerts;
 
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(capsuleVerts, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Mesh)
 				{
-					Parameters.VertexBuffer = Object.VertexBuffer->GetDeviceAddress();
-					Parameters.IndexBuffer = Object.IndexBuffer->GetDeviceAddress();
+					DrawParams.Constants.Value.VertexBuffer = Object.VertexBuffer->GetDeviceAddress();
+					DrawParams.Constants.Value.IndexBuffer = Object.IndexBuffer->GetDeviceAddress();
 
-					Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex | ShaderType::Pixel, 0, sizeof(Parameters), &Parameters);
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(Object.MeshNumIndices, 1, 0, 0);
 				}
 			}
 
-			if (CVar_DebugOverlayIrradiance.GetValue())
+			if (!IrradianceVolumeDraws.empty())
 			{
-				int IrradianceProbeBufferIndex = 0;
-				for (IrradianceVolume& Volume : Context.Scene->IrradianceVolumes)
+				GraphicsPipeline* IrradiancePipeline = GetGraphicsPipeline<IrradianceVolumeVisualiseShader>(Context, IrradianceVolumeVisualiseShader::Permutation {}, IrradianceVolumeVisualiseShader::PipelinePermutation {});
+				for (const IrradianceVolumeDraw& Draw : IrradianceVolumeDraws)
 				{
-					if (Volume.ProbesBuffer == nullptr || !Volume.bVisualiseProbes || IrradianceVolumePipeline == nullptr)
-						continue;
-
-					Context.CommandBuffer->BindGraphicsPipeline(IrradianceVolumePipeline);
-
-					DebugIrradianceProbesParameters Parameters {
-						.View = View.CameraCurUnjittered.GetViewMatrix(),
-						.Projection = View.CameraCurUnjittered.GetProjectionMatrix(),
-						.Position = Vector4(View.CameraCurUnjittered.Right(), 0),
-						.Extent = Vector4(Volume.Extent, 0),
-						.ProbesCount = iVector4(Volume.ProbesCount, 0),
-						.ProbeIndex = iVector4(0, 0, 0, 0),
-						.TestPoint = Vector4(-View.CameraCurUnjittered.Direction(), CVar_DebugOverlayIrradianceSize.GetValue()),
-					};
-
-					auto Set = Context.GetDescriptorSet(IrradianceVolumePipeline, 0);
-					Context.Device->UpdateDescriptorSet(Set, 0, 0, Context.GetRenderGraphBuffer(IrradianceProbeBuffers[IrradianceProbeBufferIndex++]).get());
-
-					Context.CommandBuffer->BindDescriptorSetsGraphics(IrradianceVolumePipeline, 0, 1, &Set);
-					Context.CommandBuffer->PushConstantsGraphics(IrradianceVolumePipeline, ShaderType::Vertex, 0, sizeof(Parameters), &Parameters);
-					Context.CommandBuffer->Draw(6 * Volume.GetTotalProbes(), 1, 0, 0);
-
-					for (int i = 0; i < Volume.ProbesCount.X; i++)
-					{
-						for (int j = 0; j < Volume.ProbesCount.Y; j++)
-						{
-							for (int k = 0; k < Volume.ProbesCount.Z; k++)
-							{
-								
-							}
-						}
-					}
+					Context.CommandBuffer->BindGraphicsPipeline(IrradiancePipeline);
+					Context.BindGraphicsParameters<IrradianceVolumeVisualiseShader>(IrradiancePipeline, Draw.Parameters);
+					Context.CommandBuffer->Draw(Draw.VertexCount, 1, 0, 0);
 				}
 			}
 		});
@@ -280,116 +376,102 @@ namespace Columbus
 			u32 Flags;
 		};
 
-		struct VisualisationImageParameters
-		{
-			RenderGraphTextureRef TextureToVisualise;
-			TextureBindingFlags BindingFlags;
-			ShaderParameters ShaderParams;
-		};
-
-		VisualisationImageParameters ImagesParams[6]{};
-		int ImagesParamsCount = 1;
-
-		ImagesParams[0].BindingFlags = TextureBindingFlags::AspectColour;
-		ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_NONE;
+		std::vector<DebugVisualisationShader::Parameters> ImagesParams;
+		ImagesParams.reserve(6);
 
 		switch (DeferredContext.VisualisationMode)
 		{
 		case EDeferredRenderVisualisationMode::GBufferOverview:
-			ImagesParamsCount = 6;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
 
-			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
-			ImagesParams[1].TextureToVisualise = Textures.GBufferNormal;
-			ImagesParams[2].TextureToVisualise = Textures.GBufferDS;
-			ImagesParams[3].TextureToVisualise = Textures.GBufferRM;
-			ImagesParams[4].TextureToVisualise = Textures.GBufferRM;
-			ImagesParams[5].TextureToVisualise = Textures.FinalAfterTonemap;
+			ImagesParams[0].Texture = Textures.GBufferAlbedo;
+			ImagesParams[1].Texture = Textures.GBufferNormal;
+			ImagesParams[2].Texture = Textures.GBufferDS;
+			ImagesParams[3].Texture = Textures.GBufferRM;
+			ImagesParams[4].Texture = Textures.GBufferRM;
+			ImagesParams[5].Texture = Textures.FinalAfterTonemap;
 
-			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_NONE;
-			ImagesParams[1].ShaderParams.Flags = ShaderParameters::FLAG_NORMAL;
-			ImagesParams[2].ShaderParams.Flags = ShaderParameters::FLAG_DEPTH;
-			ImagesParams[3].ShaderParams.Flags = ShaderParameters::FLAG_R_ONLY;
-			ImagesParams[4].ShaderParams.Flags = ShaderParameters::FLAG_G_ONLY;
-			ImagesParams[5].ShaderParams.Flags = ShaderParameters::FLAG_NONE;
+			ImagesParams[0].Constants.Value.Flags = ShaderParameters::FLAG_NONE;
+			ImagesParams[1].Constants.Value.Flags = ShaderParameters::FLAG_NORMAL;
+			ImagesParams[2].Constants.Value.Flags = ShaderParameters::FLAG_DEPTH;
+			ImagesParams[3].Constants.Value.Flags = ShaderParameters::FLAG_R_ONLY;
+			ImagesParams[4].Constants.Value.Flags = ShaderParameters::FLAG_G_ONLY;
+			ImagesParams[5].Constants.Value.Flags = ShaderParameters::FLAG_NONE;
 
-			ImagesParams[0].BindingFlags = TextureBindingFlags::AspectColour;
-			ImagesParams[1].BindingFlags = TextureBindingFlags::AspectColour;
-			ImagesParams[2].BindingFlags = TextureBindingFlags::AspectDepth;
-			ImagesParams[3].BindingFlags = TextureBindingFlags::AspectColour;
-			ImagesParams[4].BindingFlags = TextureBindingFlags::AspectColour;
-			ImagesParams[5].BindingFlags = TextureBindingFlags::AspectColour;
+			ImagesParams[0].Texture.Aspect = TextureBindingFlags::AspectColour;
+			ImagesParams[1].Texture.Aspect = TextureBindingFlags::AspectColour;
+			ImagesParams[2].Texture.Aspect = TextureBindingFlags::AspectDepth;
+			ImagesParams[3].Texture.Aspect = TextureBindingFlags::AspectColour;
+			ImagesParams[4].Texture.Aspect = TextureBindingFlags::AspectColour;
+			ImagesParams[5].Texture.Aspect = TextureBindingFlags::AspectColour;
 			break;
 		case EDeferredRenderVisualisationMode::GBufferAlbedo:
-			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.GBufferAlbedo;
 			break;
 		case EDeferredRenderVisualisationMode::GBufferNormal:
-			ImagesParams[0].TextureToVisualise = Textures.GBufferNormal;
-			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_NORMAL;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.GBufferNormal;
+			ImagesParams[0].Constants.Value.Flags = ShaderParameters::FLAG_NORMAL;
 			break;
 		case EDeferredRenderVisualisationMode::GBufferRoughness:
-			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_R_ONLY;
-			ImagesParams[0].TextureToVisualise = Textures.GBufferRM;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Constants.Value.Flags = ShaderParameters::FLAG_R_ONLY;
+			ImagesParams[0].Texture = Textures.GBufferRM;
 			break;
 		case EDeferredRenderVisualisationMode::GBufferMetallic:
-			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_G_ONLY;
-			ImagesParams[0].TextureToVisualise = Textures.GBufferRM;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Constants.Value.Flags = ShaderParameters::FLAG_G_ONLY;
+			ImagesParams[0].Texture = Textures.GBufferRM;
 			break;
 		case EDeferredRenderVisualisationMode::GBufferDepth:
-			ImagesParams[0].ShaderParams.Flags = ShaderParameters::FLAG_DEPTH;
-			ImagesParams[0].TextureToVisualise = Textures.GBufferDS;
-			ImagesParams[0].BindingFlags = TextureBindingFlags::AspectDepth;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Constants.Value.Flags = ShaderParameters::FLAG_DEPTH;
+			ImagesParams[0].Texture = Textures.GBufferDS;
+			ImagesParams[0].Texture.Aspect = TextureBindingFlags::AspectDepth;
 			break;
 		case EDeferredRenderVisualisationMode::Velocity:
-			ImagesParams[0].TextureToVisualise = Textures.Velocity;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.Velocity;
 			break;
 		case EDeferredRenderVisualisationMode::Reflections:
-			ImagesParams[0].TextureToVisualise = Textures.RTReflections;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.RTReflections;
 			break;
 		case EDeferredRenderVisualisationMode::RTGI:
-			ImagesParams[0].TextureToVisualise = Textures.RTGI;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.RTGI;
 			break;
 		case EDeferredRenderVisualisationMode::VolumetricFog:
-			ImagesParams[0].TextureToVisualise = Textures.VolumetricFog;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.VolumetricFog;
 			break;
 		default:
-			ImagesParams[0].TextureToVisualise = Textures.GBufferAlbedo;
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].Texture = Textures.GBufferAlbedo;
 			break;
 		}
 
-		for (int i = 0; i < ImagesParamsCount; i++)
+		for (DebugVisualisationShader::Parameters& Params : ImagesParams)
 		{
-			Dependencies.Read(ImagesParams[i].TextureToVisualise, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+			Params.Constants.Value.ViewportSize = Size;
+			Dependencies.Bind<DebugVisualisationShader>(Params);
 		}
 
-		Graph.AddPass("Debug Visualisation", RenderGraphPassType::Raster, Parameters, Dependencies, [ImagesParams, ImagesParamsCount, Size](RenderGraphContext& Context)
+		Graph.AddPass("Debug Visualisation", RenderGraphPassType::Raster, Parameters, Dependencies, [ImagesParams, Size](RenderGraphContext& Context)
 		{
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<DebugVisualisationShader>(Context, DebugVisualisationShader::Permutation {}, DebugVisualisationShader::PipelinePermutation {});
+
+			Vector2 ViewportSize = ImagesParams.size() == 1 ? Size : Size / Vector2(3, 2);
+
+			for (int i = 0; i < (int)ImagesParams.size(); i++)
 			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "DebugVisualisation";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = {
-					RenderTargetBlendDesc(),
-				};
-
-				Desc.depthStencilState.DepthEnable = false;
-				Desc.depthStencilState.DepthWriteMask = false;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Visualisation.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
-			Vector2 ViewportSize = ImagesParamsCount == 1 ? Size : Size / Vector2(3, 2);
-
-			for (int i = 0; i < ImagesParamsCount; i++)
-			{
-				VisualisationImageParameters Params = ImagesParams[i];
-				Params.ShaderParams.ViewportSize = Size;
-
-				auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Params.TextureToVisualise).get(), Params.BindingFlags, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, Context.Device->GetStaticSampler<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>());
+				DebugVisualisationShader::Parameters Params = ImagesParams[i];
 
 				Vector2 CurrentPos;
 				CurrentPos.X = (i % 3) * ViewportSize.X;
@@ -399,8 +481,7 @@ namespace Columbus
 				Context.CommandBuffer->SetScissor((i32)CurrentPos.X, (i32)CurrentPos.Y, (i32)ViewportSize.X, (i32)ViewportSize.Y);
 
 				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-				Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-				Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(Params.ShaderParams), &Params.ShaderParams);
+				Context.BindGraphicsParameters<DebugVisualisationShader>(Pipeline, Params);
 				Context.CommandBuffer->Draw(3, 1, 0, 0);
 			}
 		});

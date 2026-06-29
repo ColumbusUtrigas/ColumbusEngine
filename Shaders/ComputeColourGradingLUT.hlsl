@@ -1,4 +1,4 @@
-[[vk::image_format("rgba16f")]] RWTexture3D<float4> LUT;
+[[vk::binding(0, 0)]] [[vk::image_format("rgba16f")]] RWTexture3D<float4> LUT;
 
 [numthreads(8,8,8)]
 void main(uint3 dispatchThreadId : SV_DispatchThreadID)

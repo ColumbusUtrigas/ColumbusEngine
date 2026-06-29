@@ -2,6 +2,7 @@
 
 #include <Core/Core.h>
 #include <Graphics/Core/GraphicsCore.h>
+#include <Graphics/Core/ShaderBinding.h>
 #include <Graphics/Vulkan/DeviceVulkan.h>
 #include <Profiling/Profiling.h>
 #include "GPUScene.h"
@@ -242,6 +243,24 @@ namespace Columbus
 		void BindGPUScene(const GraphicsPipeline* Pipeline, bool UseCombinedSampler = true);
 		void BindGPUScene(const RayTracingPipeline* Pipeline, bool UseCombinedSampler = true);
 
+		template <typename TShader, typename TParameters>
+		void BindComputePipeline(const ComputePipeline* Pipeline, const TParameters& Parameters);
+
+		template <typename TShader, typename TParameters>
+		void BindGraphicsPipeline(const GraphicsPipeline* Pipeline, const TParameters& Parameters);
+
+		template <typename TShader, typename TParameters>
+		void BindComputeParameters(const ComputePipeline* Pipeline, const TParameters& Parameters);
+
+		template <typename TShader, typename TParameters>
+		void BindGraphicsParameters(const GraphicsPipeline* Pipeline, const TParameters& Parameters);
+
+		template <typename TShader, typename TParameters>
+		void BindRayTracingParameters(const RayTracingPipeline* Pipeline, const TParameters& Parameters);
+
+		template <typename TShader, typename TParameters>
+		void BindRayTracingPipeline(const RayTracingPipeline* Pipeline, const TParameters& Parameters);
+
 		SPtr<Texture2> GetRenderGraphTexture(RenderGraphTextureRef Ref);
 		SPtr<Buffer> GetRenderGraphBuffer(RenderGraphBufferRef Ref);
 
@@ -434,6 +453,13 @@ namespace Columbus
 		void ReadBuffer(RenderGraphBufferId Buffer, VkAccessFlags Access, VkPipelineStageFlags Stage)
 		{
 			BufferReadResources.push_back(RenderPassBufferDependency { Buffer, -1, Access, Stage });
+		}
+
+		template <typename TShader, typename TParameters>
+		void Bind(const TParameters& Parameters)
+		{
+			ShaderBinder Binder(*this);
+			TShader::Bind(Binder, Parameters);
 		}
 	private:
 		RenderGraphDynamicArray<RenderPassTextureDependency> TextureWriteResources;

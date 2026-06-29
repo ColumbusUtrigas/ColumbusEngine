@@ -42,9 +42,9 @@ namespace Columbus
 	{
 		auto result = new ComputePipelineVulkan(Desc);
 
-		result->layout = _CreatePipelineLayout(Desc.Bytecode, result->SetLayouts);
+		result->layout = _CreatePipelineLayout(*Desc.Shader.Reflection, result->SetLayouts);
 
-		VkPipelineShaderStageCreateInfo CS = _BuildShaderStageFromBytecode(_Device, Desc.Bytecode.Bytecodes[0]);
+		VkPipelineShaderStageCreateInfo CS = _BuildShaderStageFromBytecode(_Device, Desc.Shader.Bytecodes[0]);
 
 		// The actual pipeline creation
 		VkComputePipelineCreateInfo pipelineInfo;
@@ -241,10 +241,10 @@ namespace Columbus
 		dynamicState.dynamicStateCount = sizeofarray(DynamicStates);
 		dynamicState.pDynamicStates = DynamicStates;
 
-		pipeline->layout = _CreatePipelineLayout(Desc.Bytecode, pipeline->SetLayouts);
+		pipeline->layout = _CreatePipelineLayout(*Desc.Shader.Reflection, pipeline->SetLayouts);
 
 		std::vector<VkPipelineShaderStageCreateInfo> Stages;
-		for (const CompiledShaderBytecode& Bytecode : Desc.Bytecode.Bytecodes)
+		for (const CompiledShaderBytecode& Bytecode : Desc.Shader.Bytecodes)
 		{
 			Stages.push_back(_BuildShaderStageFromBytecode(_Device, Bytecode));
 		}
@@ -292,7 +292,7 @@ namespace Columbus
 	{
 		auto Pipeline = new RayTracingPipelineVulkan(Desc);
 
-		Pipeline->layout = _CreatePipelineLayout(Desc.Bytecode, Pipeline->SetLayouts);
+		Pipeline->layout = _CreatePipelineLayout(*Desc.Shader.Reflection, Pipeline->SetLayouts);
 
 		std::vector<VkPipelineShaderStageCreateInfo> Stages;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> Groups;
@@ -301,7 +301,7 @@ namespace Columbus
 		// TODO: support for intersection shaders
 		// TODO: support for callable shaders
 
-		for (const CompiledShaderBytecode& Bytecode : Desc.Bytecode.Bytecodes)
+		for (const CompiledShaderBytecode& Bytecode : Desc.Shader.Bytecodes)
 		{
 			Stages.push_back(_BuildShaderStageFromBytecode(_Device, Bytecode));
 		}
@@ -310,9 +310,9 @@ namespace Columbus
 		int MissStage = -1;
 		int AnyHitStage = -1;
 		int ClosestHitStage = -1;
-		for (int i = 0; i < (int)Desc.Bytecode.Bytecodes.size(); i++)
+		for (int i = 0; i < (int)Desc.Shader.Bytecodes.size(); i++)
 		{
-			switch (Desc.Bytecode.Bytecodes[i].Stage)
+			switch (Desc.Shader.Bytecodes[i].Stage)
 			{
 			case ShaderType::Raygen:     RayGenStage = i; break;
 			case ShaderType::Miss:       MissStage = i; break;

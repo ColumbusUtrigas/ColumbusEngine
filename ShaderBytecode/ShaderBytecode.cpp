@@ -14,7 +14,7 @@ struct CompiledShaderDataHeader
 	uint32_t MagicNumber; // CCSD = 0x44534343 LE
 	uint32_t Version;
 	uint32_t Flags;
-	uint32_t NumBytecodes;
+	uint32_t Count;
 };
 
 struct CompiledShaderBytecodeHeader
@@ -29,6 +29,11 @@ static std::vector<T> ReadStdVector(FILE* f)
 	uint32_t Size = 0;
 
 	fread(&Size, sizeof(Size), 1, f);
+
+	if (Size == 0)
+	{
+		return {};
+	}
 
 	T* Data = (T*)malloc(Size * sizeof(T));
 	fread(Data, sizeof(T), Size, f);
@@ -52,6 +57,42 @@ static std::string ReadString(FILE* f)
 	return std::string(StringBuf);
 }
 
+static std::vector<std::string> ReadStringVector(FILE* f)
+{
+	uint32_t Size = 0;
+	fread(&Size, sizeof(Size), 1, f);
+
+	std::vector<std::string> Result;
+	Result.reserve(Size);
+
+	for (uint32_t i = 0; i < Size; i++)
+	{
+		Result.push_back(ReadString(f));
+	}
+
+	return Result;
+}
+
+static std::vector<CompiledShaderPermutationAxis> ReadPermutationAxes(FILE* f)
+{
+	uint32_t Size = 0;
+	fread(&Size, sizeof(Size), 1, f);
+
+	std::vector<CompiledShaderPermutationAxis> Result;
+	Result.reserve(Size);
+
+	for (uint32_t i = 0; i < Size; i++)
+	{
+		CompiledShaderPermutationAxis Axis;
+		Axis.Name = ReadString(f);
+		fread(&Axis.MinValue, sizeof(Axis.MinValue), 1, f);
+		fread(&Axis.MaxValue, sizeof(Axis.MaxValue), 1, f);
+		Result.push_back(Axis);
+	}
+
+	return Result;
+}
+
 template <typename T>
 static void WriteStdVector(const std::vector<T>& Vector, FILE* f)
 {
@@ -69,6 +110,57 @@ static void WriteString(const std::string& String, FILE* f)
 	fwrite(String.c_str(), sizeof(char), String.size(), f); // write string, not null-terminated
 }
 
+static void WriteStringVector(const std::vector<std::string>& Vector, FILE* f)
+{
+	uint32_t Size = (uint32_t)Vector.size();
+	fwrite(&Size, sizeof(Size), 1, f);
+
+	for (const std::string& String : Vector)
+	{
+		WriteString(String, f);
+	}
+}
+
+static void WritePermutationAxes(const std::vector<CompiledShaderPermutationAxis>& Axes, FILE* f)
+{
+	uint32_t Size = (uint32_t)Axes.size();
+	fwrite(&Size, sizeof(Size), 1, f);
+
+	for (const CompiledShaderPermutationAxis& Axis : Axes)
+	{
+		WriteString(Axis.Name, f);
+		fwrite(&Axis.MinValue, sizeof(Axis.MinValue), 1, f);
+		fwrite(&Axis.MaxValue, sizeof(Axis.MaxValue), 1, f);
+	}
+}
+
+static CompiledShaderBytecode ReadBytecode(FILE* f)
+{
+	CompiledShaderBytecode Bytecode;
+	CompiledShaderBytecodeHeader BytecodeHeader;
+
+	fread(&BytecodeHeader, sizeof(BytecodeHeader), 1, f);
+	Bytecode.Stage = (Columbus::ShaderType)BytecodeHeader.Stage;
+	Bytecode.Flags = BytecodeHeader.Flags;
+
+	Bytecode.EntryPoint = ReadString(f);
+	Bytecode.Bytecode = ReadStdVector<uint8_t>(f);
+
+	return Bytecode;
+}
+
+static void WriteBytecode(const CompiledShaderBytecode& Bytecode, FILE* f)
+{
+	CompiledShaderBytecodeHeader BytecodeHeader{
+		.Stage = (uint32_t)Bytecode.Stage,
+		.Flags = Bytecode.Flags
+	};
+
+	fwrite(&BytecodeHeader, sizeof(BytecodeHeader), 1, f);
+	WriteString(Bytecode.EntryPoint, f);
+	WriteStdVector<uint8_t>(Bytecode.Bytecode, f);
+}
+
 CompiledShaderData LoadCompiledShaderData(const std::string& Path)
 {
 	CompiledShaderData Result;
@@ -83,19 +175,59 @@ CompiledShaderData LoadCompiledShaderData(const std::string& Path)
 
 	// TODO: error handling
 
-	for (uint32_t i = 0; i < DataHeader.NumBytecodes; i++)
+	if (DataHeader.Version == 1)
 	{
-		CompiledShaderBytecode Bytecode;
-		CompiledShaderBytecodeHeader BytecodeHeader;
+		CompiledShaderPermutation DefaultPermutation;
+		DefaultPermutation.Name = "Default";
+		for (uint32_t i = 0; i < DataHeader.Count; i++)
+		{
+			DefaultPermutation.Bytecodes.push_back(ReadBytecode(f));
+		}
 
-		fread(&BytecodeHeader, sizeof(BytecodeHeader), 1, f);
-		Bytecode.Stage = (Columbus::ShaderType)BytecodeHeader.Stage;
-		Bytecode.Flags = BytecodeHeader.Flags;
+		Result.Permutations.push_back(DefaultPermutation);
+	}
+	else if (DataHeader.Version == 2)
+	{
+		for (uint32_t i = 0; i < DataHeader.Count; i++)
+		{
+			CompiledShaderPermutation Permutation;
+			Permutation.Name = ReadString(f);
+			Permutation.Defines = ReadStringVector(f);
 
-		Bytecode.EntryPoint = ReadString(f);
-		Bytecode.Bytecode = ReadStdVector<uint8_t>(f);
+			uint32_t NumBytecodes = 0;
+			fread(&NumBytecodes, sizeof(NumBytecodes), 1, f);
+			for (uint32_t BytecodeIndex = 0; BytecodeIndex < NumBytecodes; BytecodeIndex++)
+			{
+				Permutation.Bytecodes.push_back(ReadBytecode(f));
+			}
 
-		Result.Bytecodes.push_back(Bytecode);
+			Result.Permutations.push_back(Permutation);
+		}
+	}
+	else if (DataHeader.Version == 3)
+	{
+		Result.PermutationAxes = ReadPermutationAxes(f);
+
+		for (uint32_t i = 0; i < DataHeader.Count; i++)
+		{
+			CompiledShaderPermutation Permutation;
+			Permutation.Name = ReadString(f);
+			Permutation.Defines = ReadStringVector(f);
+			Permutation.AxisValues = ReadStdVector<int32_t>(f);
+
+			uint32_t NumBytecodes = 0;
+			fread(&NumBytecodes, sizeof(NumBytecodes), 1, f);
+			for (uint32_t BytecodeIndex = 0; BytecodeIndex < NumBytecodes; BytecodeIndex++)
+			{
+				Permutation.Bytecodes.push_back(ReadBytecode(f));
+			}
+
+			Result.Permutations.push_back(Permutation);
+		}
+	}
+	else
+	{
+		assert(false && "Unsupported compiled shader data version");
 	}
 
 	fclose(f);
@@ -109,26 +241,31 @@ void SaveCompiledShaderData(const CompiledShaderData& Data, const std::string& P
 {
 	CompiledShaderDataHeader DataHeader {
 		.MagicNumber  = 0x44534343,
-		.Version      = 1,
+		.Version      = 3,
 		.Flags        = Data.Flags,
-		.NumBytecodes = (uint32_t)Data.Bytecodes.size(),
+		.Count        = (uint32_t)Data.Permutations.size(),
 	};
 
 	FILE* f = fopen(Path.c_str(), "wb");
 
+	assert(!Data.Permutations.empty());
+
 	fwrite(&DataHeader, sizeof(DataHeader), 1, f);
 	WriteString(Data.Name, f);
+	WritePermutationAxes(Data.PermutationAxes, f);
 
-	for (const auto& Bytecode : Data.Bytecodes)
+	for (const CompiledShaderPermutation& Permutation : Data.Permutations)
 	{
-		CompiledShaderBytecodeHeader BytecodeHeader{
-			.Stage = (uint32_t)Bytecode.Stage,
-			.Flags = Bytecode.Flags
-		};
+		WriteString(Permutation.Name, f);
+		WriteStringVector(Permutation.Defines, f);
+		WriteStdVector<int32_t>(Permutation.AxisValues, f);
 
-		fwrite(&BytecodeHeader, sizeof(BytecodeHeader), 1, f);
-		WriteString(Bytecode.EntryPoint, f);
-		WriteStdVector<uint8_t>(Bytecode.Bytecode, f);
+		uint32_t NumBytecodes = (uint32_t)Permutation.Bytecodes.size();
+		fwrite(&NumBytecodes, sizeof(NumBytecodes), 1, f);
+		for (const auto& Bytecode : Permutation.Bytecodes)
+		{
+			WriteBytecode(Bytecode, f);
+		}
 	}
 
 	fclose(f);
@@ -272,13 +409,25 @@ static void ReflectCompiledShaderBytecode(CompiledShaderBytecode& Bytecode, SPtr
 	spvReflectDestroyShaderModule(&spv_module);
 }
 
-void ReflectCompiledShaderData(CompiledShaderData& Data)
+static SPtr<CompiledShaderBytecodeReflection> ReflectCompiledShaderBytecodes(std::vector<CompiledShaderBytecode>& Bytecodes)
 {
 	// TODO: link reflection data from multiple stages for a pipeline
-	Data.Reflection = SPtr<CompiledShaderBytecodeReflection>(new CompiledShaderBytecodeReflection());
+	SPtr<CompiledShaderBytecodeReflection> Reflection = SPtr<CompiledShaderBytecodeReflection>(new CompiledShaderBytecodeReflection());
 
-	for (CompiledShaderBytecode& Bytecode : Data.Bytecodes)
+	for (CompiledShaderBytecode& Bytecode : Bytecodes)
 	{
-		ReflectCompiledShaderBytecode(Bytecode, Data.Reflection);
+		ReflectCompiledShaderBytecode(Bytecode, Reflection);
+	}
+
+	return Reflection;
+}
+
+void ReflectCompiledShaderData(CompiledShaderData& Data)
+{
+	assert(!Data.Permutations.empty());
+
+	for (CompiledShaderPermutation& Permutation : Data.Permutations)
+	{
+		Permutation.Reflection = ReflectCompiledShaderBytecodes(Permutation.Bytecodes);
 	}
 }

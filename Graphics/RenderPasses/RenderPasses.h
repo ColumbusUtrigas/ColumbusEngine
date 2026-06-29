@@ -12,6 +12,10 @@
 
 namespace Columbus
 {
+	namespace RayTracingIrradianceVolumes
+	{
+		struct Prepared;
+	}
 
 	// **********************************
 	// Common
@@ -198,8 +202,8 @@ namespace Columbus
 	// Real-time raytracing
 	//
 	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
-	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
-	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
+	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes);
+	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes);
 
 	// Lightmap baking
 	//
@@ -211,7 +215,7 @@ namespace Columbus
 	// Global illumination
 	//
 	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume, int RaysPerProbe = 256, int Bounces = 3);
-	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
+	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes);
 
 	// **********************************
 	// Path-Tracing

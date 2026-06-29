@@ -1,87 +1,76 @@
 #pragma once
 
-#include "Graphics/RenderGraph.h"
+#include "Graphics/ShaderBinder.h"
 
-#include <vector>
+#include <array>
 
-namespace Columbus
+namespace Columbus::RayTracingIrradianceVolumes
 {
-	namespace RayTracingIrradianceVolumes
+
+	static constexpr int MaxVolumes = 16;
+
+	struct VolumeDesc
 	{
-		static constexpr int MaxVolumes = 16;
+		Vector4 PositionIntensity;
+		Vector4 ExtentNormalBias;
+		Vector4 BlendPriority;
+		iVector4 ProbesCountAndBufferIndex;
+	};
 
-		struct VolumeDesc
+	struct Constants
+	{
+		iVector4 CountAndFlags;
+		VolumeDesc Volumes[MaxVolumes]{};
+	};
+
+	struct Prepared
+	{
+		ShaderConstants<Constants> Constants;
+		std::array<ShaderReadBuffer, MaxVolumes> ProbeBuffers;
+	};
+
+	inline Prepared Prepare(RenderGraph& Graph, RenderGraphBufferRef FallbackBuffer, bool bEnabled)
+	{
+		Prepared Result{};
+		Result.Constants.Value.CountAndFlags = iVector4(0, bEnabled ? 1 : 0, 0, 0);
+
+		for (int i = 0; i < MaxVolumes; i++)
 		{
-			Vector4 PositionIntensity;
-			Vector4 ExtentNormalBias;
-			Vector4 BlendPriority;
-			iVector4 ProbesCountAndBufferIndex;
-		};
+			Result.ProbeBuffers[i] = FallbackBuffer;
+		}
 
-		struct Constants
+		if (!bEnabled || Graph.Scene == nullptr)
 		{
-			iVector4 CountAndFlags;
-			VolumeDesc Volumes[MaxVolumes]{};
-		};
-
-		struct Prepared
-		{
-			Constants Data{};
-			std::vector<RenderGraphBufferRef> ProbeBuffers;
-		};
-
-		inline Prepared Prepare(RenderGraph& Graph, RenderPassDependencies& Dependencies, bool bEnabled, VkPipelineStageFlags Stage)
-		{
-			Prepared Result{};
-			Result.Data.CountAndFlags = iVector4(0, bEnabled ? 1 : 0, 0, 0);
-
-			if (!bEnabled || Graph.Scene == nullptr)
-			{
-				return Result;
-			}
-
-			for (const IrradianceVolume& Volume : Graph.Scene->IrradianceVolumes)
-			{
-				if (Volume.ProbesBuffer == nullptr || Result.ProbeBuffers.size() >= MaxVolumes)
-				{
-					continue;
-				}
-
-				const int BufferIndex = (int)Result.ProbeBuffers.size();
-				RenderGraphBufferRef ProbeBuffer = Graph.RegisterExternalBuffer(Volume.ProbesBuffer, "IrradianceProbes");
-				Dependencies.ReadBuffer(ProbeBuffer, VK_ACCESS_SHADER_READ_BIT, Stage);
-				Result.ProbeBuffers.push_back(ProbeBuffer);
-
-				Result.Data.Volumes[BufferIndex] = VolumeDesc{
-					.PositionIntensity = Vector4(Volume.Position, Volume.Intensity),
-					.ExtentNormalBias = Vector4(Volume.Extent, Volume.NormalBias),
-					.BlendPriority = Vector4(Volume.BlendDistance, Volume.Priority, 0.0f, 0.0f),
-					.ProbesCountAndBufferIndex = iVector4(Volume.ProbesCount, BufferIndex),
-				};
-			}
-
-			Result.Data.CountAndFlags.X = (int)Result.ProbeBuffers.size();
-			if (Result.ProbeBuffers.empty())
-			{
-				Result.Data.CountAndFlags.Y = 0;
-			}
-
 			return Result;
 		}
 
-		inline void Bind(RenderGraphContext& Context, VkDescriptorSet DescriptorSet, const Prepared& PreparedData, Buffer* FallbackBuffer)
+		int VolumeIndex = 0;
+		for (const IrradianceVolume& Volume : Graph.Scene->IrradianceVolumes)
 		{
-			Constants Data = PreparedData.Data;
-			Buffer* ConstantsBuffer = Context.Device->GetConstantBufferPrepared((u32)sizeof(Constants), &Data);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 9, 0, ConstantsBuffer);
-
-			for (int i = 0; i < MaxVolumes; i++)
+			if (Volume.ProbesBuffer == nullptr || VolumeIndex >= MaxVolumes)
 			{
-				Buffer* ProbeBuffer = i < (int)PreparedData.ProbeBuffers.size()
-					? Context.GetRenderGraphBuffer(PreparedData.ProbeBuffers[i]).get()
-					: FallbackBuffer;
-				Context.Device->UpdateDescriptorSet(DescriptorSet, 10, i, ProbeBuffer);
+				continue;
 			}
+
+			RenderGraphBufferRef ProbeBuffer = Graph.RegisterExternalBuffer(Volume.ProbesBuffer, "IrradianceProbes");
+			Result.ProbeBuffers[VolumeIndex] = ProbeBuffer;
+			Result.Constants.Value.Volumes[VolumeIndex] = VolumeDesc{
+				.PositionIntensity = Vector4(Volume.Position, Volume.Intensity),
+				.ExtentNormalBias = Vector4(Volume.Extent, Volume.NormalBias),
+				.BlendPriority = Vector4(Volume.BlendDistance, Volume.Priority, 0.0f, 0.0f),
+				.ProbesCountAndBufferIndex = iVector4(Volume.ProbesCount, VolumeIndex),
+			};
+
+			VolumeIndex++;
 		}
+
+		Result.Constants.Value.CountAndFlags.X = VolumeIndex;
+		if (VolumeIndex == 0)
+		{
+			Result.Constants.Value.CountAndFlags.Y = 0;
+		}
+
+		return Result;
 	}
+
 }

@@ -108,8 +108,28 @@ namespace Columbus
 		TextureFilter2 MagFilter = TextureFilter2::Linear;
 		TextureFilter2 MipFilter = TextureFilter2::Linear;
 
+		static SamplerDesc Create(TextureFilter2 Filter = TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge);
+
+		template <TextureFilter2 Filter = TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge>
+		static SamplerDesc Create()
+		{
+			return Create(Filter, Address);
+		}
+
 		bool operator==(const SamplerDesc&) const = default;
 	};
+
+	inline SamplerDesc SamplerDesc::Create(TextureFilter2 Filter, TextureAddressMode Address)
+	{
+		SamplerDesc Desc;
+		Desc.AddressU = Address;
+		Desc.AddressV = Address;
+		Desc.AddressW = Address;
+		Desc.MagFilter = Filter;
+		Desc.MinFilter = Filter;
+		Desc.MipFilter = Filter;
+		return Desc;
+	}
 
 	struct HashSamplerDesc
 	{

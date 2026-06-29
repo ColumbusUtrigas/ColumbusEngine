@@ -1,7 +1,8 @@
-layout(binding = 0, set = 0) uniform sampler2D Input;
+layout(binding = 0, set = 0) uniform texture2D InputTexture;
+layout(binding = 1, set = 0) uniform sampler InputSampler;
 
 #ifdef COMPUTE_SHADER
-layout(binding = 1, set = 0, rgba32f) uniform image2D OutputTexture;
+layout(binding = 2, set = 0, rgba32f) uniform image2D OutputTexture;
 #endif
 
 #define A_GPU 1
@@ -34,11 +35,11 @@ AH4 SampleInputTexture(AH4 c)
 }
 
 //declare input callbacks
-AH4 FsrEasuRH(AF2 p){return SampleInputTexture(AH4(textureGather(Input,p,0)));}
-AH4 FsrEasuGH(AF2 p){return SampleInputTexture(AH4(textureGather(Input,p,1)));}
-AH4 FsrEasuBH(AF2 p){return SampleInputTexture(AH4(textureGather(Input,p,2)));}
+AH4 FsrEasuRH(AF2 p){return SampleInputTexture(AH4(textureGather(sampler2D(InputTexture, InputSampler),p,0)));}
+AH4 FsrEasuGH(AF2 p){return SampleInputTexture(AH4(textureGather(sampler2D(InputTexture, InputSampler),p,1)));}
+AH4 FsrEasuBH(AF2 p){return SampleInputTexture(AH4(textureGather(sampler2D(InputTexture, InputSampler),p,2)));}
 
-AH4 FsrRcasLoadH(ASW2 p) { return SampleInputTexture(AH4(texelFetch(Input, ASU2(p), 0))); }
+AH4 FsrRcasLoadH(ASW2 p) { return SampleInputTexture(AH4(texelFetch(sampler2D(InputTexture, InputSampler), ASU2(p), 0))); }
 void FsrRcasInputH(inout AH1 r,inout AH1 g,inout AH1 b){}
 
 #define SAMPLE_BILINEAR 0

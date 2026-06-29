@@ -53,9 +53,3 @@ void InitializeEngine(int argc, char** argv)
 		DEBUGBREAK();
 	}
 }
-
-std::string LoadShaderFile(const std::string& Name)
-{
-	auto Path = "./Data/Shaders/" + Name;
-	return File::ReadAllText(Path.c_str());
-}

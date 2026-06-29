@@ -25,6 +25,12 @@ set_target_properties(${TARGET} PROPERTIES
 )
 set_target_properties(ColumbusEngine PROPERTIES FOLDER "Engine")
 
+target_compile_definitions(${TARGET} PUBLIC
+	COLUMBUS_CMAKE_COMMAND="${CMAKE_COMMAND}"
+	COLUMBUS_CMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
+	COLUMBUS_CMAKE_BUILD_CONFIG="$<CONFIG>"
+)
+
 function(target_include_engine_directories TO_TARGET)
     target_include_directories(${TO_TARGET} PUBLIC ./)
     target_include_directories(${TO_TARGET} PUBLIC ./Lib/)
@@ -77,7 +83,7 @@ if (LINUX)
 	# target_link_libraries(${TARGET} asan)
 
 	target_link_libraries(${TARGET} SDL2 SDL2main GL GLEW png tiff jpeg
-		${BULLET_LIB} pthread zstd vulkan shaderc_shared)
+		${BULLET_LIB} pthread zstd vulkan)
 	target_link_libraries(${TARGET} unwind dw)
 elseif(WIN32)
 	target_link_directories(${TARGET} PUBLIC
@@ -89,7 +95,7 @@ elseif(WIN32)
 		$ENV{VULKAN_SDK}/Lib
 	)
 	target_link_libraries(${TARGET} opengl32 SDL2 glew32 zstd tiff bullet WinPixEventRuntime)
-	target_link_libraries(${TARGET} vulkan-1 shaderc_shared)
+	target_link_libraries(${TARGET} vulkan-1)
 endif()
 
 target_link_libraries(${TARGET} bc7enc)

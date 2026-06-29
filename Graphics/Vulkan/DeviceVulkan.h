@@ -8,7 +8,6 @@
 #include "Graphics/Vulkan/FenceVulkan.h"
 #include "Graphics/Vulkan/PipelineDescriptorSetLayoutVulkan.h"
 #include "Graphics/Vulkan/TypeConversions.h"
-#include "Graphics/Vulkan/VulkanShaderCompiler.h"
 #include "Graphics/Vulkan/DescriptorCache.h"
 #include "Lib/VulkanMemoryAllocator/include/vk_mem_alloc.h"
 #include "Profiling/Profiling.h"
@@ -28,6 +27,7 @@
 #include <unordered_map>
 #include <atomic>
 #include <cassert>
+#include <memory>
 
 #include <Common/Image/Image.h>
 
@@ -40,6 +40,8 @@ namespace Columbus
 {
 
 	class DeviceVulkan;
+	class ShaderCache;
+	struct ShaderHotReload;
 	class ComputePipelineVulkan;
 	class GraphicsPipelineVulkan;
 	class RayTracingPipelineVulkan;
@@ -212,6 +214,8 @@ namespace Columbus
 
 		GPUProfilerVulkan _Profiler;
 		CBufferPoolVulkan _CBufPool;
+		std::unique_ptr<Columbus::ShaderCache> ShaderCache;
+		std::unique_ptr<Columbus::ShaderHotReload> ShaderHotReload;
 
 		std::unordered_map<SamplerDesc, Sampler*, HashSamplerDesc> StaticSamplers;
 		std::vector<ComputePipelineVulkan*> CreatedComputePipelines;
@@ -224,7 +228,7 @@ namespace Columbus
 		std::vector<ResourceDeferredDestroyVulkan<VkFramebuffer>> FramebufferDeferredDestroys;
 	private:
 		void _DestroyPipelineSetLayouts(const PipelineDescriptorSetLayoutsVulkan& SetLayouts);
-		VkPipelineLayout _CreatePipelineLayout(const CompiledShaderData& Bytecode, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
+		VkPipelineLayout _CreatePipelineLayout(CompiledShaderBytecodeReflection& Reflection, PipelineDescriptorSetLayoutsVulkan& OutSetLayouts);
 		VkDescriptorSet _CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index);
 		void _SetDebugName(uint64_t ObjectHandle, VkObjectType Type, const char* Name);
 
@@ -293,19 +297,10 @@ namespace Columbus
 		Sampler* GetStaticSampler(const SamplerDesc& Desc);
 
 		// helper to create a static sampler with template args
-		template <
-			TextureFilter2 Filter=TextureFilter2::Linear,
-			TextureAddressMode Address = TextureAddressMode::ClampToEdge>
+		template <TextureFilter2 Filter=TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge>
 		Sampler* GetStaticSampler()
 		{
-			SamplerDesc Desc;
-			Desc.AddressU  = Address;
-			Desc.AddressV  = Address;
-			Desc.AddressW  = Address;
-			Desc.MagFilter = Filter;
-			Desc.MinFilter = Filter;
-			Desc.MipFilter = Filter;
-			return GetStaticSampler(Desc);
+			return GetStaticSampler(SamplerDesc::Create<Filter, Address>());
 		}
 
 		// TODO: data sync, bariers, implement in command buffer

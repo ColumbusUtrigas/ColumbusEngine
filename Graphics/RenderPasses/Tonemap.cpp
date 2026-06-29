@@ -2,9 +2,8 @@
 #include "Core/CVar.h"
 #include "Graphics/Core/Types.h"
 #include "Graphics/RenderGraph.h"
-#include "Graphics/Vulkan/VulkanShaderCompiler.h"
+#include "Graphics/ShaderCache.h"
 #include "RenderPasses.h"
-#include "ShaderBytecode/ShaderBytecode.h"
 
 ConsoleVariable<int> CVar_FilmCurve("r.Tonemap.FilmCurve", "0 - ACES, 1 - AgX, 2 - Flim", 1);
 ConsoleVariable<int> CVar_OutputTransform("r.Tonemap.OutputTransform", "0 - None, 1 - Rec.709, 2 - Rec.2020", 1);
@@ -51,6 +50,70 @@ namespace Columbus
 		RenderGraphTextureRef TonemappedImage;
 	};
 
+	struct TonemapShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/Tonemap.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+			CullMode Cull = CullMode::No;
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "Tonemap";
+			Desc.rasterizerState.Cull = Permutation.Cull;
+			Desc.blendState.RenderTargets = { RenderTargetBlendDesc() };
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderSampledTexture SceneTexture;
+			ShaderConstants<HColourCorrectionSettings> ColourCorrection;
+			ShaderConstants<TonemapParameters> Constants;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.SceneTexture,     0, 0);
+			Binder.Bind(Params.ColourCorrection, 0, 1);
+			Binder.Bind(Params.Constants,        0, 2);
+		}
+	};
+
+	struct ColourGradingLUTShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/ComputeColourGradingLUT.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct Parameters
+		{
+			ShaderStorageTexture ColourGradingLUT;
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.ColourGradingLUT, 0, 0);
+		}
+	};
+
 	void ComputeColourGradingLUT(RenderGraph& Graph, TonemapTextures& Textures)
 	{
 		// TODO: external LUTs
@@ -68,28 +131,18 @@ namespace Columbus
 			Textures.ColourGradingLUT = Graph.CreateTexture(Desc, "ColourGradingLUT");
 		}
 
+		ColourGradingLUTShader::Parameters LUTParams;
+		LUTParams.ColourGradingLUT = Textures.ColourGradingLUT;
+
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Write(Textures.ColourGradingLUT, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		Dependencies.Bind<ColourGradingLUTShader>(LUTParams);
 
-		Graph.AddPass("ComputeColourGradingLUT", RenderGraphPassType::Compute, {}, Dependencies, [Textures](RenderGraphContext& Context)
+		Graph.AddPass("ComputeColourGradingLUT", RenderGraphPassType::Compute, {}, Dependencies, [LUTParams](RenderGraphContext& Context)
 		{
-			static ComputePipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				ComputePipelineDesc Desc;
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/ComputeColourGradingLUT.csd");
-				Desc.Name = "ComputeColourGradingLUT";
-				Pipeline = Context.Device->CreateComputePipeline(Desc);
-			}
-
-			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Context.GetRenderGraphTexture(Textures.ColourGradingLUT).get());
-
-			const iVector3 GroupCount = LutResolution / GroupSize;;
-
+			ComputePipeline* Pipeline = GetComputePipeline<ColourGradingLUTShader>(Context, ColourGradingLUTShader::Permutation {});
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsCompute(Pipeline, 0, 1, &DescriptorSet);
-			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, (u32)GroupCount.Z);
+			Context.BindComputeParameters<ColourGradingLUTShader>(Pipeline, LUTParams);
+			Context.DispatchComputePixels(Pipeline, GroupSize, LutResolution);
 		});
 	}
 
@@ -117,50 +170,35 @@ namespace Columbus
 		Parameters.ViewportSize = Size;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		Dependencies.Read(Textures.ColourGradingLUT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-		Dependencies.Read(SceneTexture, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		TonemapShader::Permutation Permutation;
+		TonemapShader::PipelinePermutation PipelinePermutation;
 
-		Buffer* ColourCbuf = Graph.Device->GetConstantBufferPrepared(sizeof(View.EffectsSettings.ColourCorrection), (void*)&View.EffectsSettings.ColourCorrection);
+		const int FilmCurve = Math::Clamp(CVar_FilmCurve.GetValue(), 0, 2);
+		const int OutputTransform = Math::Clamp(CVar_OutputTransform.GetValue(), 0, 1);
+		const bool AllowFilmGrain = CVar_FilmGrain.GetValue() != 0 && View.EffectsSettings.FilmGrain.EnableGrain;
 
-		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [SceneTexture, View, Size, ColourCbuf](RenderGraphContext& Context)
+		TonemapShader::Parameters TonemapParams;
+		TonemapParams.SceneTexture = SceneTexture;
+		TonemapParams.ColourCorrection.Value = View.EffectsSettings.ColourCorrection;
+		TonemapParams.Constants.Value = TonemapParameters {
+			.FilmCurve       = (TonemapFilmCurve)FilmCurve,
+			.OutputTransform = (TonemapOutputTransform)OutputTransform,
+			.Resolution      = Size,
+			.Vignette        = View.EffectsSettings.Vignette.Vignette * View.EffectsSettings.Vignette.EnableVignette,
+			.GrainScale      = Math::Max(0.001f, View.EffectsSettings.FilmGrain.GrainScale),
+			.GrainAmount     = View.EffectsSettings.FilmGrain.GrainAmount * AllowFilmGrain,
+			.GrainSeed       = (u32)rand(),
+		};
+
+		Dependencies.Bind<TonemapShader>(TonemapParams);
+
+		Graph.AddPass("Tonemap", RenderGraphPassType::Raster, Parameters, Dependencies, [TonemapParams, Permutation, PipelinePermutation](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTonemap, Context);
-			// TODO: shader system
-			// Context.GetGraphicsPipelineFromFile("Tonemap", Tonemap.glsl", "main", "main", ShaderLanguage::GLSL);
 
-			static GraphicsPipeline* Pipeline = nullptr;
-			if (Pipeline == nullptr)
-			{
-				GraphicsPipelineDesc Desc;
-				Desc.Name = "Tonemap";
-				Desc.rasterizerState.Cull = CullMode::No;
-				Desc.blendState.RenderTargets = { RenderTargetBlendDesc() };
-				Desc.Bytecode = LoadCompiledShaderData("./PrecompiledShaders/Tonemap.csd");
-
-				Pipeline = Context.Device->CreateGraphicsPipeline(Desc, Context.VulkanRenderPass);
-			}
-
-			SPtr<Texture2> Texture = Context.GetRenderGraphTexture(SceneTexture);
-
-			bool AllowFilmGrain = CVar_FilmGrain.GetValue() && View.EffectsSettings.FilmGrain.EnableGrain;
-
-			TonemapParameters PushConstants {
-				.FilmCurve       = (TonemapFilmCurve)CVar_FilmCurve.GetValue(),
-				.OutputTransform = (TonemapOutputTransform)CVar_OutputTransform.GetValue(),
-				.Resolution      = iVector2(Texture->GetDesc().Width, Texture->GetDesc().Height),
-				.Vignette        = View.EffectsSettings.Vignette.Vignette * View.EffectsSettings.Vignette.EnableVignette,
-				.GrainScale      = Math::Max(0.001f, View.EffectsSettings.FilmGrain.GrainScale),
-				.GrainAmount     = View.EffectsSettings.FilmGrain.GrainAmount * AllowFilmGrain,
-				.GrainSeed       = (u32)rand(),
-			};
-
-			auto DescriptorSet = Context.GetDescriptorSet(Pipeline, 0);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 0, 0, Texture.get(), TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-			Context.Device->UpdateDescriptorSet(DescriptorSet, 1, 0, ColourCbuf);
-
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<TonemapShader>(Context, Permutation, PipelinePermutation);
 			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.CommandBuffer->BindDescriptorSetsGraphics(Pipeline, 0, 1, &DescriptorSet);
-			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Pixel, 0, sizeof(PushConstants), &PushConstants);
+			Context.BindGraphicsParameters<TonemapShader>(Pipeline, TonemapParams);
 			Context.CommandBuffer->Draw(3, 1, 0, 0);
 		});
 
