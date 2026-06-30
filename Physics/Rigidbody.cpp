@@ -18,7 +18,7 @@ namespace Columbus
 		SetLinearTreshold(LinearTreshold);
 
 		mRigidbody->setCollisionShape(InShape);
-		SetStatic(Static);
+		SetMotionType(MotionType);
 	}
 
 	void Rigidbody::SetCollisionSettings(const HCollisionSettings& Settings)
@@ -33,7 +33,7 @@ namespace Columbus
 		SetLinearTreshold(Settings.LinearTreshold);
 		SetLinearDamping(Settings.LinearDamping);
 		SetLinearFactor(Settings.LinearFactor);
-		SetStatic(Settings.Static);
+		SetMotionType(Settings.MotionType);
 	}
 
 	void Rigidbody::Activate()
@@ -98,22 +98,40 @@ namespace Columbus
 		}
 	}
 
-	void Rigidbody::SetStatic(bool InStatic)
+	void Rigidbody::SetMotionType(ECollisionMotionType InMotionType)
 	{
 		if (mRigidbody != nullptr)
 		{
-			Static = InStatic;
+			MotionType = InMotionType;
 
-			if (InStatic == true)
+			int Flags = mRigidbody->getCollisionFlags();
+			Flags &= ~btCollisionObject::CF_STATIC_OBJECT;
+			Flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
+
+			if (MotionType == ECollisionMotionType::Static)
 			{
 				mRigidbody->setMassProps(0, btVector3(0, 0, 0));
-				mRigidbody->setCollisionFlags(mRigidbody->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
-			} else
-			{
-				SetMass(Mass);
+				mRigidbody->setCollisionFlags(Flags | btCollisionObject::CF_STATIC_OBJECT);
 				SetAngularVelocity(Vector3(0, 0, 0));
 				SetLinearVelocity(Vector3(0, 0, 0));
 			}
+			else if (MotionType == ECollisionMotionType::Kinematic)
+			{
+				mRigidbody->setMassProps(0, btVector3(0, 0, 0));
+				mRigidbody->setCollisionFlags(Flags | btCollisionObject::CF_KINEMATIC_OBJECT);
+				mRigidbody->setActivationState(DISABLE_DEACTIVATION);
+				SetAngularVelocity(Vector3(0, 0, 0));
+				SetLinearVelocity(Vector3(0, 0, 0));
+			}
+			else
+			{
+				mRigidbody->setCollisionFlags(Flags);
+				SetMass(Mass);
+				mRigidbody->setActivationState(ACTIVE_TAG);
+				mRigidbody->activate();
+			}
+
+			mRigidbody->updateInertiaTensor();
 		}
 	}
 
@@ -133,6 +151,10 @@ namespace Columbus
 
 			//if (mRigidbody->isKinematicObject())
 			mRigidbody->setWorldTransform(bTrans);
+			if (mRigidbody->getMotionState() != nullptr)
+			{
+				mRigidbody->getMotionState()->setWorldTransform(bTrans);
+			}
 			mRigidbody->proceedToTransform(bTrans);
 
 			mRigidbody->getCollisionShape()->setLocalScaling(scale);
@@ -147,11 +169,12 @@ namespace Columbus
 		{
 			Mass = InMass;
 			
-			if (!Static)
+			if (MotionType == ECollisionMotionType::Dynamic)
 			{
 				btVector3 Inertia;
 				mRigidbody->getCollisionShape()->calculateLocalInertia(InMass, Inertia);
 				mRigidbody->setMassProps(InMass, Inertia);
+				mRigidbody->updateInertiaTensor();
 			}
 		}
 	}
@@ -266,7 +289,22 @@ namespace Columbus
 
 	bool Rigidbody::IsStatic() const
 	{
-		return this->Static;
+		return MotionType == ECollisionMotionType::Static;
+	}
+
+	bool Rigidbody::IsKinematic() const
+	{
+		return MotionType == ECollisionMotionType::Kinematic;
+	}
+
+	bool Rigidbody::IsDynamic() const
+	{
+		return MotionType == ECollisionMotionType::Dynamic;
+	}
+
+	ECollisionMotionType Rigidbody::GetMotionType() const
+	{
+		return MotionType;
 	}
 
 	Transform Rigidbody::GetTransform() const
@@ -408,7 +446,7 @@ namespace Columbus::Physics
 			btTransform Result;
 			Result.setIdentity();
 			Result.setOrigin(btVector3(InTransform.Position.X, InTransform.Position.Y, InTransform.Position.Z));
-			Result.setRotation(btQuaternion(InTransform.Rotation.X, InTransform.Rotation.Y, InTransform.Rotation.Z, InTransform.Rotation.W));
+			Result.setRotation(btQuaternion(-InTransform.Rotation.X, -InTransform.Rotation.Y, -InTransform.Rotation.Z, InTransform.Rotation.W));
 			return Result;
 		};
 
@@ -439,7 +477,7 @@ namespace Columbus::Physics
 				Shape = new btConeShape(InDesc.Radius, InDesc.Height);
 				break;
 			case ECollisionShape::Cylinder:
-				Shape = new btCylinderShape(btVector3(InDesc.Size.X * 0.5f, InDesc.Size.Y * 0.5f, InDesc.Size.Z * 0.5f));
+				Shape = new btCylinderShape(btVector3(InDesc.Radius, InDesc.Height * 0.5f, InDesc.Radius));
 				break;
 			case ECollisionShape::ConvexHull:
 			{
@@ -517,7 +555,10 @@ namespace Columbus::Physics
 					fabsf(InDesc.LocalTransform.Rotation.X) >= 0.0001f ||
 					fabsf(InDesc.LocalTransform.Rotation.Y) >= 0.0001f ||
 					fabsf(InDesc.LocalTransform.Rotation.Z) >= 0.0001f ||
-					fabsf(InDesc.LocalTransform.Rotation.W - 1.0f) >= 0.0001f;
+					fabsf(InDesc.LocalTransform.Rotation.W - 1.0f) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Scale.X - 1.0f) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Scale.Y - 1.0f) >= 0.0001f ||
+					fabsf(InDesc.LocalTransform.Scale.Z - 1.0f) >= 0.0001f;
 
 				if (bHasPlacement)
 				{
@@ -552,6 +593,12 @@ CREFLECT_ENUM_BEGIN(ECollisionShape, "")
 	CREFLECT_ENUM_FIELD(ECollisionShape::Compound,   8)
 CREFLECT_ENUM_END()
 
+CREFLECT_ENUM_BEGIN(ECollisionMotionType, "")
+	CREFLECT_ENUM_FIELD(ECollisionMotionType::Static,    0)
+	CREFLECT_ENUM_FIELD(ECollisionMotionType::Kinematic, 1)
+	CREFLECT_ENUM_FIELD(ECollisionMotionType::Dynamic,   2)
+CREFLECT_ENUM_END()
+
 CREFLECT_STRUCT_BEGIN(HCollisionShapeDesc, "")
 	CREFLECT_STRUCT_FIELD(ECollisionShape, Type, "")
 	CREFLECT_STRUCT_FIELD(Transform, LocalTransform, "")
@@ -562,7 +609,7 @@ CREFLECT_STRUCT_BEGIN(HCollisionShapeDesc, "")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(HCollisionSettings, "")
-	CREFLECT_STRUCT_FIELD(bool,    Static, "")
+	CREFLECT_STRUCT_FIELD(ECollisionMotionType, MotionType, "")
 	CREFLECT_STRUCT_FIELD(float,   Mass, "")
 	CREFLECT_STRUCT_FIELD(float,   Restitution, "SliderMin(0) SliderMax(2)")
 	CREFLECT_STRUCT_FIELD(float,   Friction,    "SliderMin(0) SliderMax(2)")

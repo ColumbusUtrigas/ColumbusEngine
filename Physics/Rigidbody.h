@@ -14,17 +14,17 @@ namespace Columbus
 	class Rigidbody
 	{
 	protected:
-		bool Static;
-		float Mass;
-		float Restitution;
-		float Friction;
-		float RollingFriction;
-		float AngularDamping;
-		float AngularTreshold;
-		Vector3 AngularFactor;
-		float LinearTreshold;
-		float LinearDamping;
-		Vector3 LinearFactor;
+		ECollisionMotionType MotionType = ECollisionMotionType::Static;
+		float Mass = 1.0f;
+		float Restitution = 0.0f;
+		float Friction = 0.5f;
+		float RollingFriction = 0.0f;
+		float AngularDamping = 0.2f;
+		float AngularTreshold = 0.25f;
+		Vector3 AngularFactor = Vector3(1, 1, 1);
+		float LinearTreshold = 0.2f;
+		float LinearDamping = 0.2f;
+		Vector3 LinearFactor = Vector3(1, 1, 1);
 
 		Transform Trans;
 	public:
@@ -42,7 +42,7 @@ namespace Columbus
 		virtual void ApplyTorque(Vector3 Torque);
 		virtual void ApplyTorqueImpulse(Vector3 Torque);
 
-		virtual void SetStatic(bool InStatic);
+		virtual void SetMotionType(ECollisionMotionType InMotionType);
 		virtual void SetTransform(Transform InTransform);
 		virtual void SetMass(float InMass);
 		virtual void SetRestitution(float InRestitution);
@@ -59,6 +59,9 @@ namespace Columbus
 		virtual void SetGravity(Vector3 Gravity);
 
 		virtual bool IsStatic() const;
+		virtual bool IsKinematic() const;
+		virtual bool IsDynamic() const;
+		virtual ECollisionMotionType GetMotionType() const;
 		virtual Transform GetTransform() const;
 		virtual float GetMass() const;
 		virtual float GetRestitution() const;

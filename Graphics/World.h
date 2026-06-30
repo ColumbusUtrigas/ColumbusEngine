@@ -213,7 +213,6 @@ namespace Columbus
 
 	public:
 
-		HCollisionSettings CollisionSettings;
 		Rigidbody* PhysicsBody = nullptr;
 
 		AssetRef<Mesh2> Mesh;

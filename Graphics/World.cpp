@@ -1532,9 +1532,10 @@ namespace Columbus
 			// TODO: delete shapes
 		}
 
-		HCollisionSettings EffectiveCollisionSettings = CollisionSettings;
-		if (Mesh.Get() != nullptr && EffectiveCollisionSettings.Shape.Type == ECollisionShape::None)
-			EffectiveCollisionSettings = Mesh->DefaultCollisionSettings;
+		if (Mesh.Get() == nullptr)
+			return;
+
+		const HCollisionSettings& EffectiveCollisionSettings = Mesh->DefaultCollisionSettings;
 
 		btCollisionShape* Shape = Physics::CreatePhysicsShapeFromDesc(EffectiveCollisionSettings.Shape, Mesh.Get());
 
@@ -1552,7 +1553,7 @@ namespace Columbus
 
 			World->Physics.AddRigidbody(PhysicsBody);
 
-			if (!EffectiveCollisionSettings.Static)
+			if (EffectiveCollisionSettings.MotionType == ECollisionMotionType::Dynamic)
 			{
 				bNeedsPostPhysicsTicking = true;
 				PhysicsBody->Activate();
@@ -1566,7 +1567,7 @@ namespace Columbus
 	{
 		Super::OnPostPhysics();
 
-		if (PhysicsBody)
+		if (PhysicsBody && PhysicsBody->IsDynamic())
 		{
 			Transform PhysicsTransform = PhysicsBody->GetTransform();
 			SetWorldTransform(PhysicsTransform);
@@ -1664,7 +1665,7 @@ namespace Columbus
 
 			EditorRigidbody = new Rigidbody(Shape);
 			EditorRigidbody->SetTransform(GetWorldTransform());
-			EditorRigidbody->SetStatic(true);
+			EditorRigidbody->SetMotionType(ECollisionMotionType::Static);
 			EditorRigidbody->mRigidbody->setUserPointer(this);
 
 			World->Physics.AddRigidbody(EditorRigidbody);
@@ -1688,6 +1689,11 @@ namespace Columbus
 		if (EditorRigidbody)
 		{
 			EditorRigidbody->SetTransform(GetWorldTransform());
+		}
+
+		if (PhysicsBody && PhysicsBody->IsKinematic())
+		{
+			PhysicsBody->SetTransform(GetWorldTransform());
 		}
 	}
 
@@ -2133,7 +2139,6 @@ CREFLECT_STRUCT_END()
 CREFLECT_DEFINE_VIRTUAL(AMeshInstance);
 CREFLECT_STRUCT_BEGIN(AMeshInstance, "")
 	CREFLECT_STRUCT_DEFINE_INSTANTIATE()
-	CREFLECT_STRUCT_FIELD(HCollisionSettings, CollisionSettings, "");
 	CREFLECT_STRUCT_FIELD_ASSETREF(Mesh2, Mesh, "");
 CREFLECT_STRUCT_END()
 
