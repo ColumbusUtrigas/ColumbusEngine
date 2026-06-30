@@ -1100,7 +1100,7 @@ namespace Columbus
 			}
 		}
 
-		Physics.Step(DeltaTime, 0);
+		Physics.Step(DeltaTime, 48);
 
 		UpdateTransforms();
 

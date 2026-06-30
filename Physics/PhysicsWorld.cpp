@@ -68,7 +68,11 @@ namespace Columbus
 	{
 		PROFILE_CPU(CPUCounter_PhysicsStep);
 
-		mWorld->stepSimulation(aDeltaTime, aSubSteps);
+		float fixedDelta = 1.0f / 600.f;
+		float maxDt = aSubSteps * fixedDelta;
+		float dt = Math::Min(maxDt, aDeltaTime);
+
+		mWorld->stepSimulation(dt, aSubSteps, fixedDelta);
 	}
 
 	void PhysicsWorld::ClearForces()

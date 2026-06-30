@@ -25,6 +25,9 @@ namespace Columbus
 		float LinearTreshold = 0.2f;
 		float LinearDamping = 0.2f;
 		Vector3 LinearFactor = Vector3(1, 1, 1);
+		bool bEnableCCD = false;
+		float CCDMotionThreshold = 0.05f;
+		float CCDSweptSphereRadius = 0.02f;
 
 		Transform Trans;
 	public:
@@ -56,6 +59,7 @@ namespace Columbus
 		virtual void SetLinearTreshold(float InTreshold);
 		virtual void SetLinearFactor(Vector3 InFactor);
 		virtual void SetLinearVelocity(Vector3 Velocity);
+		virtual void SetCCD(bool bInEnableCCD, float InMotionThreshold, float InSweptSphereRadius);
 		virtual void SetGravity(Vector3 Gravity);
 
 		virtual bool IsStatic() const;

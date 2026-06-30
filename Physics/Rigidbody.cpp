@@ -1,10 +1,27 @@
 #include <Physics/Rigidbody.h>
 #include <Graphics/Mesh.h>
+#include <System/Log.h>
 
 #include <BulletCollision/CollisionShapes/btShapeHull.h>
 
 namespace Columbus
 {
+	static const char* GetBulletShapeTypeName(int ShapeType)
+	{
+		switch (ShapeType)
+		{
+		case BOX_SHAPE_PROXYTYPE: return "Box";
+		case SPHERE_SHAPE_PROXYTYPE: return "Sphere";
+		case CAPSULE_SHAPE_PROXYTYPE: return "Capsule";
+		case CONE_SHAPE_PROXYTYPE: return "Cone";
+		case CYLINDER_SHAPE_PROXYTYPE: return "Cylinder";
+		case CONVEX_HULL_SHAPE_PROXYTYPE: return "ConvexHull";
+		case TRIANGLE_MESH_SHAPE_PROXYTYPE: return "TriangleMesh";
+		case SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE: return "ScaledTriangleMesh";
+		case COMPOUND_SHAPE_PROXYTYPE: return "Compound";
+		default: return "Unknown";
+		}
+	}
 
 	Rigidbody::Rigidbody(btCollisionShape* InShape)
 	{
@@ -33,6 +50,7 @@ namespace Columbus
 		SetLinearTreshold(Settings.LinearTreshold);
 		SetLinearDamping(Settings.LinearDamping);
 		SetLinearFactor(Settings.LinearFactor);
+		SetCCD(Settings.bEnableCCD, Settings.CCDMotionThreshold, Settings.CCDSweptSphereRadius);
 		SetMotionType(Settings.MotionType);
 	}
 
@@ -275,6 +293,34 @@ namespace Columbus
 		{
 			mRigidbody->activate();
 			mRigidbody->setLinearVelocity(btVector3(Velocity.X, Velocity.Y, Velocity.Z));
+		}
+	}
+
+	void Rigidbody::SetCCD(bool bInEnableCCD, float InMotionThreshold, float InSweptSphereRadius)
+	{
+		if (mRigidbody != nullptr)
+		{
+			bEnableCCD = bInEnableCCD;
+			CCDMotionThreshold = InMotionThreshold;
+			CCDSweptSphereRadius = InSweptSphereRadius;
+
+			if (bEnableCCD)
+			{
+				btCollisionShape* Shape = mRigidbody->getCollisionShape();
+				if (Shape != nullptr && !Shape->isConvex())
+				{
+					Log::Error("[Physics] CCD is enabled on a non-convex Bullet shape (%s, type %i). Bullet CCD motion clamping will not run for this body.",
+						GetBulletShapeTypeName(Shape->getShapeType()), Shape->getShapeType());
+				}
+
+				mRigidbody->setCcdMotionThreshold(CCDMotionThreshold);
+				mRigidbody->setCcdSweptSphereRadius(CCDSweptSphereRadius);
+			}
+			else
+			{
+				mRigidbody->setCcdMotionThreshold(0.0f);
+				mRigidbody->setCcdSweptSphereRadius(0.0f);
+			}
 		}
 	}
 
@@ -543,6 +589,7 @@ namespace Columbus::Physics
 
 			if (Shape != nullptr)
 			{
+				Shape->setMargin(InDesc.Margin);
 				Shape->setLocalScaling(ToBulletScale(InDesc.LocalTransform));
 			}
 
@@ -604,6 +651,7 @@ CREFLECT_STRUCT_BEGIN(HCollisionShapeDesc, "")
 	CREFLECT_STRUCT_FIELD(Transform, LocalTransform, "")
 	CREFLECT_STRUCT_FIELD(float, Radius, "")
 	CREFLECT_STRUCT_FIELD(float, Height, "")
+	CREFLECT_STRUCT_FIELD(float, Margin, "SliderMin(0) SliderMax(0.1)")
 	CREFLECT_STRUCT_FIELD(Vector3, Size, "ColourChannels")
 	CREFLECT_STRUCT_FIELD_ARRAY(HCollisionShapeDesc, ChildShapes, "")
 CREFLECT_STRUCT_END()
@@ -620,5 +668,8 @@ CREFLECT_STRUCT_BEGIN(HCollisionSettings, "")
 	CREFLECT_STRUCT_FIELD(float,   LinearTreshold, "SliderMin(0) SliderMax(5)")
 	CREFLECT_STRUCT_FIELD(float,   LinearDamping,  "SliderMin(0) SliderMax(1)")
 	CREFLECT_STRUCT_FIELD(Vector3, LinearFactor, "ColourChannels")
+	CREFLECT_STRUCT_FIELD(bool,    bEnableCCD, "")
+	CREFLECT_STRUCT_FIELD(float,   CCDMotionThreshold, "SliderMin(0) SliderMax(1)")
+	CREFLECT_STRUCT_FIELD(float,   CCDSweptSphereRadius, "SliderMin(0) SliderMax(0.5)")
 	CREFLECT_STRUCT_FIELD(HCollisionShapeDesc, Shape, "")
 CREFLECT_STRUCT_END()

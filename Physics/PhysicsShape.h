@@ -37,6 +37,7 @@ namespace Columbus
 
 		float Radius = 0.5f; // Radius is used for Sphere, Cone, Capsule, Cylinder
 		float Height = 1.5f; // Height is used for Cone, Capsule, Cylinder
+		float Margin = 0.01f; // Collision skin in meters for Bullet convex shapes
 
 		Vector3 Size = Vector3(1, 1, 1); // Size is used for Box
 
@@ -57,6 +58,9 @@ namespace Columbus
 		float   LinearTreshold  = 0.2f;
 		float   LinearDamping   = 0.2f;
 		Vector3 LinearFactor    = Vector3(1, 1, 1);
+		bool    bEnableCCD      = false;
+		float   CCDMotionThreshold = 0.05f;
+		float   CCDSweptSphereRadius = 0.02f;
 
 		HCollisionShapeDesc Shape;
 	};
@@ -76,5 +80,5 @@ namespace Columbus
 // reflection declarations
 CREFLECT_DECLARE_ENUM  (Columbus::ECollisionShape, "24B03462-DAA7-40E9-B2C2-0858CA66566F");
 CREFLECT_DECLARE_ENUM  (Columbus::ECollisionMotionType, "8B65DF4E-3828-4D8C-B4B8-9EEA34734EE5");
-CREFLECT_DECLARE_STRUCT(Columbus::HCollisionShapeDesc, 1, "53FBBA2B-82CD-42A0-AE4F-E1B6C2A53409");
-CREFLECT_DECLARE_STRUCT(Columbus::HCollisionSettings,  2, "D64028D3-5872-476F-AB40-F74A0A835B53");
+CREFLECT_DECLARE_STRUCT(Columbus::HCollisionShapeDesc, 2, "53FBBA2B-82CD-42A0-AE4F-E1B6C2A53409");
+CREFLECT_DECLARE_STRUCT(Columbus::HCollisionSettings,  3, "D64028D3-5872-476F-AB40-F74A0A835B53");
