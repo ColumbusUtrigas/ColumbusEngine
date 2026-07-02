@@ -28,6 +28,7 @@ struct _Params {
 #define TYPE_CYLINDER 4
 #define TYPE_CAPSULE 5
 #define TYPE_MESH 6
+#define TYPE_ARC 7
 
 static const float3 pos[8] = {
 	float3(-1, -1, -1),
@@ -86,6 +87,10 @@ static const uint CAP_CYL_STACKS = 1; // just a band
 // cylinder: CAP_SLICES * CAP_CYL_STACKS * 6
 // total: 2*hemi + cyl
 static const float CAP_HALF_HEIGHT = 1.0f; // cylinder from -1 to +1, hemispheres on ends
+
+// arc tessellation
+static const uint ARC_SEGMENTS = 64;
+// total verts = ARC_SEGMENTS * 6
 
 
 VS_TO_PS Vertex(uint VertexID : SV_VertexID)
@@ -439,6 +444,47 @@ VS_TO_PS Vertex(uint VertexID : SV_VertexID)
         vertex.y *= radius; // scale sphere shape
         vertex.y += sign(vertex.y) * halfHeight; // offset top/bottom hemispheres
     }
+	else if (Params.Type == TYPE_ARC)
+	{
+		// Params.Vertices[0] = radius, thickness, start radians, end radians.
+		// Local XY is the arc plane, local +Z is the normal, local +X is zero angle.
+		const float radius = max(0.0f, Params.Vertices[0].x);
+		const float thickness = max(0.0f, Params.Vertices[0].y);
+		const float startAngle = Params.Vertices[0].z;
+		const float endAngle = Params.Vertices[0].w;
+
+		const float innerRadius = max(0.0f, radius - thickness * 0.5f);
+		const float outerRadius = radius + thickness * 0.5f;
+
+		uint cell = VertexID / 6;
+		uint vInCell = VertexID % 6;
+
+		float t0 = (float)cell / ARC_SEGMENTS;
+		float t1 = (float)(cell + 1) / ARC_SEGMENTS;
+		float angle0 = lerp(startAngle, endAngle, t0);
+		float angle1 = lerp(startAngle, endAngle, t1);
+
+		float2 outer0 = float2(cos(angle0), sin(angle0)) * outerRadius;
+		float2 inner0 = float2(cos(angle0), sin(angle0)) * innerRadius;
+		float2 outer1 = float2(cos(angle1), sin(angle1)) * outerRadius;
+		float2 inner1 = float2(cos(angle1), sin(angle1)) * innerRadius;
+
+		float2 p;
+		if (vInCell == 0)
+			p = outer0;
+		else if (vInCell == 1)
+			p = inner0;
+		else if (vInCell == 2)
+			p = outer1;
+		else if (vInCell == 3)
+			p = outer1;
+		else if (vInCell == 4)
+			p = inner0;
+		else
+			p = inner1;
+
+		vertex = float4(p.x, p.y, 0.0f, 1.0f);
+	}
     else if (Params.Type == TYPE_MESH)
     {
         uint index = vk::RawBufferLoad(Params.IndexBuffer + VertexID * 4);

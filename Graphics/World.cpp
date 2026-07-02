@@ -6,6 +6,7 @@
 #include <Scene/TextureAsset.h>
 #include <Scene/MeshAsset.h>
 #include <Scene/LevelLightingAsset.h>
+#include <Scene/ThingsPhysics.h>
 
 #include <limits.h>
 #include <float.h>
@@ -71,8 +72,22 @@ namespace Columbus
 		return Scene->Textures.Add(Texture);
 	}
 
+	// TODO: figure out a better way
+	static void EnforcePhysicsThingTypesLinkage()
+	{
+		Reflection::EnforceTypeLinkage<AInvisibleWall>();
+		Reflection::EnforceTypeLinkage<AConstraint>();
+		Reflection::EnforceTypeLinkage<AFixedConstraint>();
+		Reflection::EnforceTypeLinkage<APointConstraint>();
+		Reflection::EnforceTypeLinkage<ASliderConstraint>();
+		Reflection::EnforceTypeLinkage<AHingeConstraint>();
+		Reflection::EnforceTypeLinkage<AConeTwistConstraint>();
+	}
+
 	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice), Assets(AssetSystem::Get())
 	{
+		EnforcePhysicsThingTypesLinkage();
+
 		Physics.SetGravity(Vector3(0, -9.81f, 0));
 
 		// asset handling callbacks

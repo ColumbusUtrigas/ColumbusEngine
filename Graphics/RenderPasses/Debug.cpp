@@ -61,6 +61,7 @@ namespace Columbus
 		struct PipelinePermutation
 		{
 			bool Wireframe = false;
+			bool UseZTest = true;
 		};
 
 		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
@@ -79,7 +80,7 @@ namespace Columbus
 					.DestBlend = Blend::InvSrcAlpha,
 				},
 			};
-			Desc.depthStencilState.DepthEnable = true;
+			Desc.depthStencilState.DepthEnable = Permutation.UseZTest;
 			Desc.depthStencilState.DepthWriteMask = false;
 			return Desc;
 		}
@@ -255,6 +256,7 @@ namespace Columbus
 
 				DebugOverlayShader::PipelinePermutation PipelinePermutation;
 				PipelinePermutation.Wireframe = Object.Wireframe;
+				PipelinePermutation.UseZTest = Object.UseZTest;
 				DebugPipeline = GetGraphicsPipeline<DebugOverlayShader>(Context, DebugOverlayShader::Permutation {}, PipelinePermutation);
 
 				if (Object.Type == DebugRenderObjectType::Box)
@@ -318,6 +320,16 @@ namespace Columbus
 					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
 					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
 					Context.CommandBuffer->Draw(capsuleVerts, 1, 0, 0);
+				}
+				else if (Object.Type == DebugRenderObjectType::Arc)
+				{
+					DrawParams.Constants.Value.Vertices[0] = Vector4(Object.Vertices[0], Object.Vertices[1].X);
+
+					static const uint ARC_SEGMENTS = 64;
+
+					Context.CommandBuffer->BindGraphicsPipeline(DebugPipeline);
+					Context.BindGraphicsParameters<DebugOverlayShader>(DebugPipeline, DrawParams);
+					Context.CommandBuffer->Draw(ARC_SEGMENTS * 6, 1, 0, 0);
 				}
 				else if (Object.Type == DebugRenderObjectType::Mesh)
 				{

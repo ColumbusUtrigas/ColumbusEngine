@@ -17,6 +17,7 @@ namespace Columbus
 		Cylinder,
 		Capsule,
 		Mesh,
+		Arc,
 	};
 
 	struct DebugRenderObject
@@ -32,7 +33,7 @@ namespace Columbus
 		bool Wireframe = false;
 		bool UseUnjitteredCamera = true;
 
-		Vector3 Vertices[3]; // for triangle
+		Vector3 Vertices[3]; // for triangle and primitive parameters
 
 		// for mesh
 		Buffer* VertexBuffer = nullptr;
@@ -204,6 +205,20 @@ namespace Columbus
 				.UseZTest = ZTest,
 				.Wireframe = Wireframe,
 				.Vertices = { Packed, {}, {} }
+			};
+			Objects.push_back(Object);
+		}
+
+		void AddArc(const Matrix& Transform, float Radius, float Thickness, float StartRadians, float EndRadians, const Vector4& Colour, bool Wireframe = false, bool ZTest = true)
+		{
+			DebugRenderObject Object{
+				.Type = DebugRenderObjectType::Arc,
+				.Transform = Transform,
+				.Colour = Colour,
+				.DrawOutline = false,
+				.UseZTest = ZTest,
+				.Wireframe = Wireframe,
+				.Vertices = { Vector3(Radius, Thickness, StartRadians), Vector3(EndRadians, 0, 0), {} }
 			};
 			Objects.push_back(Object);
 		}
