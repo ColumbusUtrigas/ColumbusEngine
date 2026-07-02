@@ -26,9 +26,22 @@ static void GetStackFileName(char* out, size_t max, const void* ip)
 
 	Dwfl* dwfl = dwfl_begin(&callbacks);
 	assert(dwfl != NULL);
+	if (dwfl == NULL)
+	{
+		snprintf(out, max, "%p", ip);
+		return;
+	}
 
-	assert(dwfl_linux_proc_report(dwfl, getpid()) == 0);
-	assert(dwfl_report_end(dwfl, NULL, NULL) == 0);
+	const bool bReportOk = dwfl_linux_proc_report(dwfl, getpid()) == 0;
+	assert(bReportOk);
+	const bool bReportEndOk = bReportOk && dwfl_report_end(dwfl, NULL, NULL) == 0;
+	assert(bReportEndOk);
+	if (!bReportEndOk)
+	{
+		dwfl_end(dwfl);
+		snprintf(out, max, "%p", ip);
+		return;
+	}
 
 	Dwarf_Addr addr = (uintptr_t)ip;
 
@@ -51,6 +64,8 @@ static void GetStackFileName(char* out, size_t max, const void* ip)
 		snprintf(out, max, "%s", module_name);
 		// snprintf(out, max, "%p", ip);
 	}
+
+	dwfl_end(dwfl);
 }
 
 void WriteStacktraceToLog()

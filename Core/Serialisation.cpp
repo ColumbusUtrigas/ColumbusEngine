@@ -30,13 +30,22 @@ namespace
 		return Result;
 	}
 
+#define REFLECTION_BINARY_ENSURE(Expression) \
+	do \
+	{ \
+		const bool bReflectionBinaryOk = !!(Expression); \
+		assert(bReflectionBinaryOk); \
+		if (!bReflectionBinaryOk) return false; \
+	} while (false)
+
 	static bool ReflectionBinary_WriteString(Columbus::DataStream& Stream, const std::string& Value)
 	{
 		unsigned int Length = (unsigned int)Value.size();
-		assert(Stream.Write(Length));
+		REFLECTION_BINARY_ENSURE(Stream.Write(Length));
+
 		if (Length > 0)
 		{
-			assert(Stream.WriteBytes(Value.data(), Length));
+			REFLECTION_BINARY_ENSURE(Stream.WriteBytes(Value.data(), Length));
 		}
 		return true;
 	}
@@ -44,12 +53,12 @@ namespace
 	static bool ReflectionBinary_ReadString(Columbus::DataStream& Stream, std::string& OutValue)
 	{
 		unsigned int Length = 0;
-		assert(Stream.Read(Length));
+		REFLECTION_BINARY_ENSURE(Stream.Read(Length));
 
 		OutValue.resize(Length);
 		if (Length > 0)
 		{
-			assert(Stream.ReadBytes(OutValue.data(), Length));
+			REFLECTION_BINARY_ENSURE(Stream.ReadBytes(OutValue.data(), Length));
 		}
 
 		return true;
@@ -90,23 +99,28 @@ namespace
 		switch (Field.Type)
 		{
 		case Reflection::FieldType::Bool:
-			return Stream.Write(*(bool*)FieldData);
+			REFLECTION_BINARY_ENSURE(Stream.Write(*(bool*)FieldData));
+			return true;
 		case Reflection::FieldType::Int:
-			return Stream.Write(*(int*)FieldData);
+			REFLECTION_BINARY_ENSURE(Stream.Write(*(int*)FieldData));
+			return true;
 		case Reflection::FieldType::Float:
-			return Stream.Write(*(float*)FieldData);
+			REFLECTION_BINARY_ENSURE(Stream.Write(*(float*)FieldData));
+			return true;
 		case Reflection::FieldType::Enum:
-			return Stream.Write(*(int*)FieldData);
+			REFLECTION_BINARY_ENSURE(Stream.Write(*(int*)FieldData));
+			return true;
 		case Reflection::FieldType::String:
 			return ReflectionBinary_WriteString(Stream, *(std::string*)FieldData);
 		case Reflection::FieldType::Blob:
 		{
 			Columbus::Blob& Blob = *(Columbus::Blob*)FieldData;
 			unsigned int ByteCount = (unsigned int)Blob.Size();
-			assert(Stream.Write(ByteCount));
+			REFLECTION_BINARY_ENSURE(Stream.Write(ByteCount));
+
 			if (ByteCount > 0)
 			{
-				assert(Stream.WriteBytes(Blob.Data(), ByteCount));
+				REFLECTION_BINARY_ENSURE(Stream.WriteBytes(Blob.Data(), ByteCount));
 			}
 			return true;
 		}
@@ -114,7 +128,7 @@ namespace
 		{
 			if (Field.Struct && Field.Struct->IsNativeBinary)
 			{
-				assert(Stream.WriteBytes(FieldData, (unsigned int)Field.Size));
+				REFLECTION_BINARY_ENSURE(Stream.WriteBytes(FieldData, (unsigned int)Field.Size));
 				return true;
 			}
 			return Reflection_SerialiseStructBinary(Stream, FieldData, Field.Struct);
@@ -124,11 +138,11 @@ namespace
 			std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
 			unsigned int ElementSize = (unsigned int)Field.Array->ElementField.Size;
 			unsigned int ElementCount = ElementSize == 0 ? 0 : (unsigned int)(ArrayData->size() / ElementSize);
-			assert(Stream.Write(ElementCount));
+			REFLECTION_BINARY_ENSURE(Stream.Write(ElementCount));
 
 			if (ElementCount > 0 && ReflectionBinary_IsFieldNativeBinary(Field.Array->ElementField))
 			{
-				assert(Stream.WriteBytes(ArrayData->data(), ElementCount * ElementSize));
+				REFLECTION_BINARY_ENSURE(Stream.WriteBytes(ArrayData->data(), ElementCount * ElementSize));
 				return true;
 			}
 
@@ -137,13 +151,15 @@ namespace
 				char* ElementPtr = ArrayData->data() + i * ElementSize;
 				u64 PayloadHeaderOffset = Stream.Tell();
 				unsigned int ElementPayloadSize = 0;
-				assert(Stream.Write(ElementPayloadSize));
+				REFLECTION_BINARY_ENSURE(Stream.Write(ElementPayloadSize));
 
 				u64 PayloadBegin = Stream.Tell();
-				Reflection_SerialiseFieldBinaryPayload(Stream, ElementPtr, Field.Array->ElementField);
+				if (!Reflection_SerialiseFieldBinaryPayload(Stream, ElementPtr, Field.Array->ElementField))
+					return false;
 
 				ElementPayloadSize = (unsigned int)(Stream.Tell() - PayloadBegin);
-				StreamPatchPod(Stream, PayloadHeaderOffset, ElementPayloadSize);
+				if (!StreamPatchPod(Stream, PayloadHeaderOffset, ElementPayloadSize))
+					return false;
 			}
 			return true;
 		}
@@ -165,7 +181,10 @@ namespace
 			};
 
 			ThingRefBase* Ref = (ThingRefBase*)FieldData;
-			return ReflectionBinary_WriteString(Stream, Field.Typeguid ? Field.Typeguid : "") && Stream.Write((u64)Ref->Guid);
+			if (!ReflectionBinary_WriteString(Stream, Field.Typeguid ? Field.Typeguid : ""))
+				return false;
+			REFLECTION_BINARY_ENSURE(Stream.Write((u64)Ref->Guid));
+			return true;
 		}
 		}
 
@@ -180,36 +199,41 @@ namespace
 		switch (Field.Type)
 		{
 		case Reflection::FieldType::Bool:
-			assert(PayloadSize == sizeof(bool));
-			return Stream.Read(*(bool*)FieldData);
+			REFLECTION_BINARY_ENSURE(PayloadSize == sizeof(bool));
+			REFLECTION_BINARY_ENSURE(Stream.Read(*(bool*)FieldData));
+			return true;
 		case Reflection::FieldType::Int:
-			assert(PayloadSize == sizeof(int));
-			return Stream.Read(*(int*)FieldData);
+			REFLECTION_BINARY_ENSURE(PayloadSize == sizeof(int));
+			REFLECTION_BINARY_ENSURE(Stream.Read(*(int*)FieldData));
+			return true;
 		case Reflection::FieldType::Float:
-			assert(PayloadSize == sizeof(float));
-			return Stream.Read(*(float*)FieldData);
+			REFLECTION_BINARY_ENSURE(PayloadSize == sizeof(float));
+			REFLECTION_BINARY_ENSURE(Stream.Read(*(float*)FieldData));
+			return true;
 		case Reflection::FieldType::Enum:
-			assert(PayloadSize == sizeof(int));
-			return Stream.Read(*(int*)FieldData);
+			REFLECTION_BINARY_ENSURE(PayloadSize == sizeof(int));
+			REFLECTION_BINARY_ENSURE(Stream.Read(*(int*)FieldData));
+			return true;
 		case Reflection::FieldType::String:
 			return ReflectionBinary_ReadString(Stream, *(std::string*)FieldData);
 		case Reflection::FieldType::Blob:
 		{
 			Columbus::Blob& Blob = *(Columbus::Blob*)FieldData;
 			unsigned int ByteCount = 0;
-			assert(Stream.Read(ByteCount));
+			REFLECTION_BINARY_ENSURE(Stream.Read(ByteCount));
+
 			Blob.Bytes.resize(ByteCount);
 			if (ByteCount > 0)
 			{
-				assert(Stream.ReadBytes(Blob.Data(), ByteCount));
+				REFLECTION_BINARY_ENSURE(Stream.ReadBytes(Blob.Data(), ByteCount));
 			}
 			return true;
 		}
 		case Reflection::FieldType::Struct:
 			if (Field.Struct && Field.Struct->IsNativeBinary)
 			{
-				assert(PayloadSize == (unsigned int)Field.Size);
-				assert(Stream.ReadBytes(FieldData, PayloadSize));
+				REFLECTION_BINARY_ENSURE(PayloadSize == (unsigned int)Field.Size);
+				REFLECTION_BINARY_ENSURE(Stream.ReadBytes(FieldData, PayloadSize));
 				return true;
 			}
 			return Reflection_DeserialiseStructBinaryPayload(Stream, FieldData, Field.Struct, PayloadSize);
@@ -218,27 +242,28 @@ namespace
 			Field.Array->Clear(FieldData);
 
 			unsigned int ElementCount = 0;
-			assert(Stream.Read(ElementCount));
+			REFLECTION_BINARY_ENSURE(Stream.Read(ElementCount));
 
 			unsigned int ElementSize = (unsigned int)Field.Array->ElementField.Size;
 			if (ElementCount > 0 && ReflectionBinary_IsFieldNativeBinary(Field.Array->ElementField))
 			{
 				std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
 				ArrayData->resize(ElementCount * ElementSize);
-				assert(Stream.ReadBytes(ArrayData->data(), ElementCount * ElementSize));
+				REFLECTION_BINARY_ENSURE(Stream.ReadBytes(ArrayData->data(), ElementCount * ElementSize));
 			}
 			else
 			{
 				for (unsigned int i = 0; i < ElementCount; ++i)
 				{
 					unsigned int ElementPayloadSize = 0;
-					assert(Stream.Read(ElementPayloadSize));
+					REFLECTION_BINARY_ENSURE(Stream.Read(ElementPayloadSize));
 
 					Field.Array->NewElement(FieldData);
 					std::vector<char>* ArrayData = (std::vector<char>*)FieldData;
 					char* ElementPtr = ArrayData->data() + i * ElementSize;
 
-					Reflection_DeserialiseFieldBinaryPayload(Stream, ElementPtr, Field.Array->ElementField, ElementPayloadSize);
+					if (!Reflection_DeserialiseFieldBinaryPayload(Stream, ElementPtr, Field.Array->ElementField, ElementPayloadSize))
+						return false;
 				}
 			}
 			break;
@@ -251,8 +276,9 @@ namespace
 			};
 
 			std::string TypeGuid;
-			ReflectionBinary_ReadString(Stream, TypeGuid);
-			assert(Field.Typeguid == nullptr || TypeGuid == Field.Typeguid);
+			if (!ReflectionBinary_ReadString(Stream, TypeGuid))
+				return false;
+			REFLECTION_BINARY_ENSURE(Field.Typeguid == nullptr || TypeGuid == Field.Typeguid);
 
 			return ReflectionBinary_ReadString(Stream, ((AssetRefBase*)FieldData)->Path);
 		}
@@ -264,18 +290,19 @@ namespace
 			};
 
 			std::string TypeGuid;
-			ReflectionBinary_ReadString(Stream, TypeGuid);
-			assert(Field.Typeguid == nullptr || TypeGuid == Field.Typeguid);
+			if (!ReflectionBinary_ReadString(Stream, TypeGuid))
+				return false;
+			REFLECTION_BINARY_ENSURE(Field.Typeguid == nullptr || TypeGuid == Field.Typeguid);
 
 			u64 Value = 0;
-			assert(Stream.Read(Value));
+			REFLECTION_BINARY_ENSURE(Stream.Read(Value));
 
 			((ThingRefBase*)FieldData)->Guid = (HGuid)Value;
 			break;
 		}
 		}
 
-		assert(Stream.Tell() - PayloadBegin == PayloadSize);
+		REFLECTION_BINARY_ENSURE(Stream.Tell() - PayloadBegin == PayloadSize);
 		return true;
 	}
 
@@ -284,39 +311,41 @@ namespace
 		u64 PayloadBegin = Stream.Tell();
 
 		ReflectionBinaryObjectHeader Header;
-		assert(Stream.Read(Header));
-		assert(Header.Magic == 'ROBJ');
-		assert(Header.FormatVersion == 1);
+		REFLECTION_BINARY_ENSURE(Stream.Read(Header));
+		REFLECTION_BINARY_ENSURE(Header.Magic == 'ROBJ');
+		REFLECTION_BINARY_ENSURE(Header.FormatVersion == 1);
 
 		std::string StoredStructGuid;
-		ReflectionBinary_ReadString(Stream, StoredStructGuid);
-		assert(Struct->Guid == nullptr || StoredStructGuid == Struct->Guid);
+		if (!ReflectionBinary_ReadString(Stream, StoredStructGuid))
+			return false;
+		REFLECTION_BINARY_ENSURE(Struct->Guid == nullptr || StoredStructGuid == Struct->Guid);
 
 		for (unsigned int i = 0; i < Header.FieldCount; ++i)
 		{
 			ReflectionBinaryFieldHeader StoredField;
-			assert(Stream.Read(StoredField));
+			REFLECTION_BINARY_ENSURE(Stream.Read(StoredField));
 
 			std::string StoredFieldName;
 			StoredFieldName.resize(StoredField.FieldNameLength);
 			if (StoredField.FieldNameLength > 0)
 			{
-				assert(Stream.ReadBytes(StoredFieldName.data(), StoredField.FieldNameLength));
+				REFLECTION_BINARY_ENSURE(Stream.ReadBytes(StoredFieldName.data(), StoredField.FieldNameLength));
 			}
 
 			const Reflection::Field* Field = ReflectionBinary_FindFieldByName(Struct, StoredFieldName);
 			if (Field == nullptr)
 			{
-				assert(StoredField.PayloadSize <= INT_MAX);
+				REFLECTION_BINARY_ENSURE(StoredField.PayloadSize <= INT_MAX);
 				Stream.SeekCur((i32)StoredField.PayloadSize);
 				continue;
 			}
 
-			assert(StoredField.FieldType == (unsigned int)Field->Type);
-			Reflection_DeserialiseFieldBinaryPayload(Stream, Object + Field->Offset, *Field, StoredField.PayloadSize);
+			REFLECTION_BINARY_ENSURE(StoredField.FieldType == (unsigned int)Field->Type);
+			if (!Reflection_DeserialiseFieldBinaryPayload(Stream, Object + Field->Offset, *Field, StoredField.PayloadSize))
+				return false;
 		}
 
-		assert(Stream.Tell() - PayloadBegin == PayloadSize);
+		REFLECTION_BINARY_ENSURE(Stream.Tell() - PayloadBegin == PayloadSize);
 		return true;
 	}
 }
@@ -326,15 +355,16 @@ bool Reflection_SerialiseStructBinary(DataStream& Stream, char* Object, const Re
 	if (!Stream.IsValid())
 		return false;
 
-	assert(Struct != nullptr);
+	REFLECTION_BINARY_ENSURE(Struct != nullptr);
 
 	ReflectionBinaryObjectHeader Header;
 	Header.TypeVersion = (unsigned int)Struct->Version;
 	u64 HeaderOffset = Stream.Tell();
-	assert(Stream.Write(Header));
+	REFLECTION_BINARY_ENSURE(Stream.Write(Header));
 	unsigned int FieldCount = 0;
 
-	ReflectionBinary_WriteString(Stream, Struct->Guid ? Struct->Guid : "");
+	if (!ReflectionBinary_WriteString(Stream, Struct->Guid ? Struct->Guid : ""))
+		return false;
 
 	for (const Reflection::Field& Field : Struct->Fields)
 	{
@@ -342,24 +372,25 @@ bool Reflection_SerialiseStructBinary(DataStream& Stream, char* Object, const Re
 		HeaderField.FieldNameLength = (unsigned int)strlen(Field.Name);
 		HeaderField.FieldType = (unsigned int)Field.Type;
 		u64 FieldHeaderOffset = Stream.Tell();
-		assert(Stream.Write(HeaderField));
+		REFLECTION_BINARY_ENSURE(Stream.Write(HeaderField));
 		if (HeaderField.FieldNameLength > 0)
 		{
-			assert(Stream.WriteBytes(Field.Name, HeaderField.FieldNameLength));
+			REFLECTION_BINARY_ENSURE(Stream.WriteBytes(Field.Name, HeaderField.FieldNameLength));
 		}
 
 		u64 PayloadBegin = Stream.Tell();
-		Reflection_SerialiseFieldBinaryPayload(Stream, Object + Field.Offset, Field);
+		if (!Reflection_SerialiseFieldBinaryPayload(Stream, Object + Field.Offset, Field))
+			return false;
 
 		HeaderField.PayloadSize = (unsigned int)(Stream.Tell() - PayloadBegin);
-		StreamPatchPod(Stream, FieldHeaderOffset, HeaderField);
+		if (!StreamPatchPod(Stream, FieldHeaderOffset, HeaderField))
+			return false;
 
 		++FieldCount;
 	}
 
 	Header.FieldCount = FieldCount;
-	StreamPatchPod(Stream, HeaderOffset, Header);
-	return true;
+	return StreamPatchPod(Stream, HeaderOffset, Header);
 }
 
 bool Reflection_DeserialiseStructBinary(DataStream& Stream, char* Object, const Reflection::Struct* Struct)
@@ -367,6 +398,8 @@ bool Reflection_DeserialiseStructBinary(DataStream& Stream, char* Object, const 
 	if (!Stream.IsValid())
 		return false;
 
-	assert(Struct != nullptr);
+	REFLECTION_BINARY_ENSURE(Struct != nullptr);
 	return Reflection_DeserialiseStructBinaryPayload(Stream, Object, Struct, (unsigned int)(Stream.GetSize() - Stream.Tell()));
 }
+
+#undef REFLECTION_BINARY_ENSURE

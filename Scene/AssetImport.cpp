@@ -590,7 +590,11 @@ namespace Columbus::Assets
 				return {};
 
 			ApplyGltfTextureUsageSettings(*TextureAsset, SourceImage, Usage);
-			COLUMBUS_ASSERT(RecookTextureAsset(*TextureAsset));
+			if (!RecookTextureAsset(*TextureAsset))
+			{
+				Log::Error("[ImportLevel] Failed to cook texture %s", ImageSourcePath.c_str());
+				return {};
+			}
 
 			const std::string TextureBaseName = !GltfTexture.name.empty()
 				? GltfTexture.name
@@ -601,7 +605,11 @@ namespace Columbus::Assets
 				".cas",
 				UsedOutputPaths);
 
-			COLUMBUS_ASSERT(SaveTextureAssetToFile(*TextureAsset, TexturePath.string().c_str()));
+			if (!SaveTextureAssetToFile(*TextureAsset, TexturePath.string().c_str()))
+			{
+				Log::Error("[ImportLevel] Failed to save texture asset %s", TexturePath.string().c_str());
+				return {};
+			}
 
 			AssetRef<Texture2> Ref;
 			Ref.Path = MakeRelativeAssetPath(TexturePath);
@@ -645,7 +653,11 @@ namespace Columbus::Assets
 				".mat",
 				UsedOutputPaths);
 
-			COLUMBUS_ASSERT(SaveMaterialAssetToFile(MaterialAsset, MaterialPath));
+			if (!SaveMaterialAssetToFile(MaterialAsset, MaterialPath))
+			{
+				Log::Error("[ImportLevel] Failed to save material asset %s", MaterialPath.string().c_str());
+				continue;
+			}
 
 			AssetRef<Material> MaterialRef;
 			MaterialRef.Path = MakeRelativeAssetPath(MaterialPath);
@@ -695,7 +707,11 @@ namespace Columbus::Assets
 				".cas",
 				UsedOutputPaths);
 
-			COLUMBUS_ASSERT(SaveMeshAssetToFile(*MeshAsset, MeshPath.string().c_str()));
+			if (!SaveMeshAssetToFile(*MeshAsset, MeshPath.string().c_str()))
+			{
+				Log::Error("[ImportLevel] Failed to save mesh asset %s", MeshPath.string().c_str());
+				continue;
+			}
 
 			AssetRef<Mesh2> MeshRef;
 			MeshRef.Path = MakeRelativeAssetPath(MeshPath);
@@ -785,7 +801,13 @@ namespace Columbus::Assets
 			}
 		}
 
-		COLUMBUS_ASSERT(SaveLevelAssetToFile(LevelAsset, OutputPaths.LevelPath));
+		if (!SaveLevelAssetToFile(LevelAsset, OutputPaths.LevelPath))
+		{
+			Log::Error("[ImportLevel] Failed to save level asset %s", OutputPaths.LevelPath.string().c_str());
+			for (AThing* Thing : LevelAsset.Things)
+				delete Thing;
+			return;
+		}
 
 		for (AThing* Thing : LevelAsset.Things)
 			delete Thing;

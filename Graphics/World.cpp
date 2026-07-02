@@ -87,7 +87,12 @@ namespace Columbus
 				}
 				return Snd;
 			};
-			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Sound>()] = [this](void* Snd) { delete ((Sound*)Snd); };
+			Assets.AssetUnloaderFunctions[Reflection::FindStruct<Sound>()] = [this](void* Snd)
+			{
+				Sound* SoundAsset = static_cast<Sound*>(Snd);
+				Audio.MasterMixer.RemoveSourcesUsingSound(SoundAsset);
+				delete SoundAsset;
+			};
 			Assets.AssetExtensions[Reflection::FindStruct<Sound>()] = "wav,ogg,mp3";
 
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<Texture2>()] = [this](const char* Path) -> void*
@@ -438,6 +443,8 @@ namespace Columbus
 
 	void EngineWorld::ClearWorld()
 	{
+		Audio.Clear();
+
 		while (AllThings.Size() > 0)
 		{
 			DeleteThing(AllThings[0]->StableId);

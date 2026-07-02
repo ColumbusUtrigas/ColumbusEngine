@@ -37,6 +37,7 @@ namespace Columbus
 
 		void Clear()
 		{
+			std::lock_guard lg(ThreadAccessMt);
 			Sources.clear();
 		}
 
@@ -56,7 +57,16 @@ namespace Columbus
 		void RemoveSource(std::shared_ptr<AudioSource> Source)
 		{
 			std::lock_guard lg(ThreadAccessMt);
-			Sources.erase(std::remove(Sources.begin(), Sources.end(), Source));
+			Sources.erase(std::remove(Sources.begin(), Sources.end(), Source), Sources.end());
+		}
+
+		void RemoveSourcesUsingSound(Sound* Clip)
+		{
+			std::lock_guard lg(ThreadAccessMt);
+			Sources.erase(std::remove_if(Sources.begin(), Sources.end(), [Clip](const std::shared_ptr<AudioSource>& Source)
+			{
+				return Source && Source->GetSound() == Clip;
+			}), Sources.end());
 		}
 
 		void SetListener(AudioListener InListener)
