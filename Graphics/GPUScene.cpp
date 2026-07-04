@@ -2,11 +2,15 @@
 
 #include "LTC.h"
 
+#include <filesystem>
 #include <stdio.h>
+
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
+DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneBLAS);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Animation/deform", "SceneMemory", MemoryCounter_SceneAnimationDeform);
 
 namespace Columbus
 {
-
 	static void CreateGPUSceneBuffers(SPtr<DeviceVulkan> Device, u64 Size, const char* Name, Buffer*& Buf)
 	{
 		BufferDesc Desc;
@@ -19,6 +23,113 @@ namespace Columbus
 	static void DestroyGPUSceneBuffers(SPtr<DeviceVulkan> Device, Buffer* Buf)
 	{
 		Device->DestroyBuffer(Buf);
+	}
+
+	static Buffer* CreateSceneMeshBuffer(SPtr<DeviceVulkan> Device, size_t Size, bool bUsedInAS, const void* Data)
+	{
+		BufferDesc Desc;
+		Desc.BindFlags = BufferType::UAV;
+		Desc.Size = Size;
+		Desc.UsedInAccelerationStructure = bUsedInAS;
+		Buffer* Result = Device->CreateBuffer(Desc, Data);
+		AddProfilingMemory(MemoryCounter_SceneMeshes, Result->GetSize());
+		AddProfilingMemory(MemoryCounter_SceneAnimationDeform, Result->GetSize());
+		return Result;
+	}
+
+	static void DestroySceneMeshBuffer(SPtr<DeviceVulkan> Device, Buffer* Buffer)
+	{
+		if (Buffer)
+		{
+			RemoveProfilingMemory(MemoryCounter_SceneMeshes, Buffer->GetSize());
+			RemoveProfilingMemory(MemoryCounter_SceneAnimationDeform, Buffer->GetSize());
+		}
+		Device->DestroyBufferDeferred(Buffer);
+	}
+
+	static void DestroySceneMeshDeform(SPtr<DeviceVulkan> Device, GPUMeshDeform* Deform)
+	{
+		if (Deform == nullptr)
+			return;
+
+		DestroySceneMeshBuffer(Device, Deform->Vertices);
+		DestroySceneMeshBuffer(Device, Deform->PrevVertices);
+		DestroySceneMeshBuffer(Device, Deform->Normals);
+		DestroySceneMeshBuffer(Device, Deform->Tangents);
+
+		if (Deform->BLAS)
+		{
+			RemoveProfilingMemory(MemoryCounter_SceneBLAS, Deform->BLAS->GetSize());
+			RemoveProfilingMemory(MemoryCounter_SceneAnimationDeform, Deform->BLAS->GetSize());
+		}
+		Device->DestroyAccelerationStructure(Deform->BLAS);
+
+		*Deform = {};
+	}
+
+	static GPUMeshDeform* CreateSceneMeshDeform(SPtr<DeviceVulkan> Device, const Mesh2* MeshAsset, const MeshPrimitive& Primitive, const std::string& DebugName)
+	{
+		if (Device == nullptr || MeshAsset == nullptr)
+			return nullptr;
+
+		const CPUMeshResource& CPU = Primitive.CPU;
+		const GPUMeshResource& GPU = Primitive.GPU;
+		const bool bHasSkinningInput =
+			CPU.BoneIndices.size() == CPU.Vertices.size() &&
+			CPU.BoneWeights.size() == CPU.Vertices.size() &&
+			GPU.BoneIndices != nullptr &&
+			GPU.BoneWeights != nullptr;
+		const bool bHasMorphInput =
+			!CPU.MorphTargets.empty() &&
+			GPU.MorphDeltas != nullptr &&
+			GPU.MorphTargetCount > 0;
+
+		if (CPU.Vertices.empty() ||
+			CPU.Normals.size() != CPU.Vertices.size() ||
+			CPU.Tangents.size() != CPU.Vertices.size() ||
+			GPU.Indices == nullptr ||
+			(!bHasSkinningInput && !bHasMorphInput))
+		{
+			return nullptr;
+		}
+
+		GPUMeshDeform* Deform = new GPUMeshDeform();
+		Deform->VertexCount = (u32)CPU.Vertices.size();
+		Deform->Vertices = CreateSceneMeshBuffer(Device, sizeof(Vector3) * CPU.Vertices.size(), true, CPU.Vertices.data());
+		Deform->PrevVertices = CreateSceneMeshBuffer(Device, sizeof(Vector3) * CPU.Vertices.size(), false, CPU.Vertices.data());
+		Deform->Normals = CreateSceneMeshBuffer(Device, sizeof(Vector3) * CPU.Normals.size(), false, CPU.Normals.data());
+		Deform->Tangents = CreateSceneMeshBuffer(Device, sizeof(Vector4) * CPU.Tangents.size(), false, CPU.Tangents.data());
+
+		if (!DebugName.empty())
+		{
+			Device->SetDebugName(Deform->Vertices, (DebugName + " Deform Vertices").c_str());
+			Device->SetDebugName(Deform->PrevVertices, (DebugName + " Deform PrevVertices").c_str());
+			Device->SetDebugName(Deform->Normals, (DebugName + " Deform Normals").c_str());
+			Device->SetDebugName(Deform->Tangents, (DebugName + " Deform Tangents").c_str());
+		}
+
+		if (MeshAsset->ImportSettings.BuildBLAS)
+		{
+			AccelerationStructureDesc BlasDesc;
+			BlasDesc.Type = AccelerationStructureType::BLAS;
+			BlasDesc.Vertices = Deform->Vertices;
+			BlasDesc.Indices = GPU.Indices;
+			BlasDesc.VerticesCount = (int)GPU.VertexCount;
+			BlasDesc.IndicesCount = (int)GPU.IndicesCount;
+			BlasDesc.AllowUpdate = true;
+			BlasDesc.PreferFastBuild = true;
+			Deform->BLAS = Device->CreateAccelerationStructure(BlasDesc);
+
+			if (Deform->BLAS)
+			{
+				if (!DebugName.empty())
+					Device->SetDebugName(Deform->BLAS, (DebugName + " Deform BLAS").c_str());
+				AddProfilingMemory(MemoryCounter_SceneBLAS, Deform->BLAS->GetSize());
+				AddProfilingMemory(MemoryCounter_SceneAnimationDeform, Deform->BLAS->GetSize());
+			}
+		}
+
+		return Deform;
 	}
 
 	static GPUViewCamera CreateCameraCompact(const Camera& Camera)
@@ -93,6 +204,94 @@ namespace Columbus
 				SunDirection = Vector4(SceneLight.Direction.XYZ().Normalized(), 0);
 			}
 		}
+	}
+
+	bool GPUScene::IsMeshInstanceValid(HStableMeshInstanceId Id) const
+	{
+		return MeshInstances.IsValid(Id);
+	}
+
+	HStableMeshInstanceId GPUScene::AddMeshInstance(Mesh2& MeshAsset, const GPUSceneMeshInstanceState& State)
+	{
+		assert(State.Materials.size() == MeshAsset.Primitives.size());
+		assert(State.MorphWeights.size() == MeshAsset.Morphs.size());
+
+		GPUSceneMeshInstance Instance;
+		Instance.Primitives.reserve(MeshAsset.Primitives.size());
+		Instance.SkinMatrices.assign(State.SkinMatrices.begin(), State.SkinMatrices.end());
+		Instance.MorphWeights.assign(State.MorphWeights.begin(), State.MorphWeights.end());
+
+		const HStableMeshInstanceId InstanceId = MeshInstances.Add(Instance);
+		GPUSceneMeshInstance* StoredInstance = MeshInstances.Get(InstanceId);
+		assert(StoredInstance != nullptr);
+
+		for (size_t PrimitiveIndex = 0; PrimitiveIndex < MeshAsset.Primitives.size(); PrimitiveIndex++)
+		{
+			MeshPrimitive& Primitive = MeshAsset.Primitives[PrimitiveIndex];
+			assert(Primitive.CPU.MorphTargets.size() == MeshAsset.Morphs.size());
+
+			GPUSceneMesh Mesh;
+			Mesh.MeshResource = &Primitive.GPU;
+			Mesh.Instance = InstanceId;
+			Mesh.Transform = State.Transform;
+			Mesh.PrevTransform = State.Transform;
+			Mesh.MaterialId = State.Materials[PrimitiveIndex];
+
+			std::string DebugName;
+			if (!MeshAsset.SourcePath.empty())
+				DebugName = std::filesystem::path(MeshAsset.SourcePath).filename().string();
+			if (!Primitive.Name.empty())
+				DebugName += DebugName.empty() ? Primitive.Name : (" " + Primitive.Name);
+
+			Mesh.Deform = CreateSceneMeshDeform(Device, &MeshAsset, Primitive, DebugName);
+			StoredInstance->Primitives.push_back(Meshes.Add(Mesh));
+		}
+
+		return InstanceId;
+	}
+
+	void GPUScene::RemoveMeshInstance(HStableMeshInstanceId Id)
+	{
+		GPUSceneMeshInstance* Instance = MeshInstances.Get(Id);
+		assert(Instance != nullptr);
+
+		for (HStableMeshId PrimitiveId : Instance->Primitives)
+		{
+			GPUSceneMesh* Mesh = Meshes.Get(PrimitiveId);
+			assert(Mesh != nullptr);
+			DestroySceneMeshDeform(Device, Mesh->Deform);
+			delete Mesh->Deform;
+			Mesh->Deform = nullptr;
+			Meshes.Remove(PrimitiveId);
+		}
+
+		MeshInstances.Remove(Id);
+	}
+
+	void GPUScene::UpdateMeshInstance(HStableMeshInstanceId Id, const GPUSceneMeshInstanceState& State)
+	{
+		GPUSceneMeshInstance* Instance = MeshInstances.Get(Id);
+		assert(Instance != nullptr);
+		assert(State.Materials.size() == Instance->Primitives.size());
+		assert(State.SkinMatrices.size() == Instance->SkinMatrices.size());
+		assert(State.MorphWeights.size() == Instance->MorphWeights.size());
+
+		Instance->SkinMatrices.assign(State.SkinMatrices.begin(), State.SkinMatrices.end());
+		Instance->MorphWeights.assign(State.MorphWeights.begin(), State.MorphWeights.end());
+
+		for (size_t PrimitiveIndex = 0; PrimitiveIndex < Instance->Primitives.size(); PrimitiveIndex++)
+		{
+			GPUSceneMesh* Mesh = Meshes.Get(Instance->Primitives[PrimitiveIndex]);
+			assert(Mesh != nullptr);
+			Mesh->Transform = State.Transform;
+			Mesh->MaterialId = State.Materials[PrimitiveIndex];
+		}
+	}
+
+	void GPUScene::SavePreviousMeshTransforms()
+	{
+		for (u32 i = 0; i < (u32)Meshes.Size(); i++)
+			Meshes[i].PrevTransform = Meshes[i].Transform;
 	}
 
 	HStableLightId GPUScene::AddLight(const GPULight& Light)
@@ -232,6 +431,10 @@ namespace Columbus
 		CreateGPUSceneBuffers(Device, GPUScene::MaxMeshes * sizeof(GPUSceneMeshCompact), "GPUScene.Meshes", Scene->MeshesBuffer);
 		CreateGPUSceneBuffers(Device, GPUScene::MaxMaterials * sizeof(GPUMaterialCompact), "GPUScene.Materials", Scene->MaterialsBuffer);
 		CreateGPUSceneBuffers(Device, GPUScene::MaxDecals * sizeof(GPUDecal), "GPUScene.Decals", Scene->DecalsBuffers);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxSkinMatrices * sizeof(Matrix), "GPUScene.SkinMatrices", Scene->SkinMatricesBuffer);
+		CreateGPUSceneBuffers(Device, GPUScene::MaxMorphWeights * sizeof(float), "GPUScene.MorphWeights", Scene->MorphWeightsBuffer);
+		AddProfilingMemory(MemoryCounter_SceneAnimationDeform, Scene->SkinMatricesBuffer->GetSize());
+		AddProfilingMemory(MemoryCounter_SceneAnimationDeform, Scene->MorphWeightsBuffer->GetSize());
 
 		// populate LTC look up tables
 		{
@@ -270,6 +473,13 @@ namespace Columbus
 
 	void GPUScene::DestroyGPUScene(GPUScene* Scene, SPtr<DeviceVulkan> Device)
 	{
+		for (GPUSceneMesh& Mesh : Scene->Meshes)
+		{
+			DestroySceneMeshDeform(Device, Mesh.Deform);
+			delete Mesh.Deform;
+			Mesh.Deform = nullptr;
+		}
+
 		for (const auto& ParticleEntry : Scene->Particles)
 		{
 			if (ParticleEntry.DataBuffer)
@@ -297,6 +507,10 @@ namespace Columbus
 		DestroyGPUSceneBuffers(Device, Scene->MeshesBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->MaterialsBuffer);
 		DestroyGPUSceneBuffers(Device, Scene->DecalsBuffers);
+		RemoveProfilingMemory(MemoryCounter_SceneAnimationDeform, Scene->SkinMatricesBuffer->GetSize());
+		RemoveProfilingMemory(MemoryCounter_SceneAnimationDeform, Scene->MorphWeightsBuffer->GetSize());
+		DestroyGPUSceneBuffers(Device, Scene->SkinMatricesBuffer);
+		DestroyGPUSceneBuffers(Device, Scene->MorphWeightsBuffer);
 
 		Device->DestroyTexture(Scene->LTC_1);
 		Device->DestroyTexture(Scene->LTC_2);

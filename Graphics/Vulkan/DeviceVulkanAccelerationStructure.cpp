@@ -4,6 +4,8 @@
 #include "Graphics/Core/AccelerationStructure.h"
 #include "Profiling/Profiling.h"
 
+#include <algorithm>
+
 IMPLEMENT_COUNTING_PROFILING_COUNTER("BLAS count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_BLASes, false);
 IMPLEMENT_COUNTING_PROFILING_COUNTER("TLAS count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_TLASes, false);
 
@@ -12,6 +14,17 @@ static constexpr uint64_t ScratchAlignment   = 256;
 
 namespace Columbus
 {
+	static VkBuildAccelerationStructureFlagsKHR GetBuildFlags(const AccelerationStructureDesc& Desc)
+	{
+		VkBuildAccelerationStructureFlagsKHR Flags = Desc.PreferFastBuild
+			? VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR
+			: VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+
+		if (Desc.AllowUpdate)
+			Flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+
+		return Flags;
+	}
 
 	static VkAccelerationStructureGeometryTrianglesDataKHR PrepareTrianglesBLAS(const AccelerationStructureDesc& Desc, DeviceVulkan* Device, Buffer*& TransformBuffer)
 	{
@@ -138,7 +151,7 @@ namespace Columbus
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{};
 		accelerationStructureBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildGeometryInfo.type = type;
-		accelerationStructureBuildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildGeometryInfo.flags = GetBuildFlags(Desc);
 		accelerationStructureBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 		accelerationStructureBuildGeometryInfo.geometryCount = 1;
 		accelerationStructureBuildGeometryInfo.pGeometries = &accelerationStructureGeometry;
@@ -167,6 +180,8 @@ namespace Columbus
 
 		// Create a small scratch buffer used during build of the acceleration structure
 		u64 scratchSize = accelerationStructureBuildSizesInfo.buildScratchSize;
+		if (Desc.AllowUpdate)
+			scratchSize = std::max<u64>(scratchSize, accelerationStructureBuildSizesInfo.updateScratchSize);
 		BufferDesc ScratchDesc(scratchSize, BufferType::UAV, true);
 		ScratchDesc.Alignment = ScratchAlignment;
 		result->_ScratchBuffer = CreateBuffer(ScratchDesc, nullptr);
@@ -250,34 +265,71 @@ namespace Columbus
 		}
 	}
 
-	void CommandBufferVulkan::BuildAccelerationStructure(AccelerationStructure* AS, u32 NumPrimitives)
+	void CommandBufferVulkan::BuildAccelerationStructure(AccelerationStructure* AS, u32 NumPrimitives, AccelerationStructureBuildMode Mode)
 	{
 		auto vkas = static_cast<AccelerationStructureVulkan*>(AS);
+		const AccelerationStructureDesc& Desc = AS->GetDesc();
+		const bool bUpdate = Mode == AccelerationStructureBuildMode::Update && Desc.AllowUpdate;
 
-		assert(AS->GetDesc().Type == AccelerationStructureType::TLAS);
-
-		VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
-		instanceDataDeviceAddress.deviceAddress = vkas->_TransformOrInstancesBuffer->GetDeviceAddress();
-
-		VkAccelerationStructureGeometryInstancesDataKHR instances;
-		instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-		instances.pNext = nullptr;
-		instances.arrayOfPointers = VK_FALSE;
-		instances.data = instanceDataDeviceAddress;
+		COLUMBUS_ASSERT(Mode == AccelerationStructureBuildMode::Build || Desc.AllowUpdate);
 
 		VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
 		accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-		accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		accelerationStructureGeometry.geometry.instances = instances;
+
+		VkAccelerationStructureTypeKHR Type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		if (Desc.Type == AccelerationStructureType::BLAS)
+		{
+			VkDeviceOrHostAddressConstKHR vertexBufferDeviceAddress{};
+			vertexBufferDeviceAddress.deviceAddress = Desc.Vertices->GetDeviceAddress();
+
+			VkDeviceOrHostAddressConstKHR indexBufferDeviceAddress{};
+			indexBufferDeviceAddress.deviceAddress = Desc.Indices->GetDeviceAddress();
+
+			VkDeviceOrHostAddressConstKHR transformBufferDeviceAddress{};
+			transformBufferDeviceAddress.deviceAddress = vkas->_TransformOrInstancesBuffer->GetDeviceAddress();
+
+			VkAccelerationStructureGeometryTrianglesDataKHR triangles;
+			triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+			triangles.pNext = nullptr;
+			triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+			triangles.vertexData = vertexBufferDeviceAddress;
+			triangles.vertexStride = sizeof(Columbus::Vector3);
+			triangles.maxVertex = Desc.VerticesCount;
+			triangles.indexType = VK_INDEX_TYPE_UINT32;
+			triangles.indexData = indexBufferDeviceAddress;
+			triangles.transformData = transformBufferDeviceAddress;
+
+			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+			accelerationStructureGeometry.geometry.triangles = triangles;
+			Type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		}
+		else
+		{
+			VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress{};
+			instanceDataDeviceAddress.deviceAddress = vkas->_TransformOrInstancesBuffer->GetDeviceAddress();
+
+			VkAccelerationStructureGeometryInstancesDataKHR instances;
+			instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+			instances.pNext = nullptr;
+			instances.arrayOfPointers = VK_FALSE;
+			instances.data = instanceDataDeviceAddress;
+
+			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+			accelerationStructureGeometry.geometry.instances = instances;
+			Type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		}
 
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{};
 		accelerationStructureBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		accelerationStructureBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		accelerationStructureBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+		accelerationStructureBuildGeometryInfo.type = Type;
+		accelerationStructureBuildGeometryInfo.flags = GetBuildFlags(Desc);
+		accelerationStructureBuildGeometryInfo.mode = bUpdate
+			? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
+			: VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 		accelerationStructureBuildGeometryInfo.geometryCount = 1;
 		accelerationStructureBuildGeometryInfo.pGeometries = &accelerationStructureGeometry;
+		accelerationStructureBuildGeometryInfo.srcAccelerationStructure = bUpdate ? vkas->_Handle : VK_NULL_HANDLE;
 		accelerationStructureBuildGeometryInfo.dstAccelerationStructure = vkas->_Handle;
 		accelerationStructureBuildGeometryInfo.scratchData.deviceAddress = vkas->_ScratchBuffer->GetDeviceAddress();
 

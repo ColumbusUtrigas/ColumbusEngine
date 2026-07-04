@@ -13,6 +13,8 @@
 #include "Profiling/Profiling.h"
 #include "IrradianceVolume.h"
 #include <Core/Core.h>
+#include <span>
+#include <string>
 #include <vector>
 
 namespace Columbus
@@ -24,16 +26,90 @@ namespace Columbus
 	// after update/upload of a GPU scene, it can be used during rendering in render graph
 	// Similar concept as Unreal's RenderProxy, but simple
 
-	// instance of a mesh
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// everything for an instance of a mesh
+
+	struct GPUSceneMesh;
+	struct GPUSceneMeshInstance;
+
+	using HStableMaterialId       = TStableSparseArray<Material>::Handle;
+	using HStableMeshId           = TStableSparseArray<GPUSceneMesh>::Handle;
+	using HStableMeshInstanceId   = TStableSparseArray<GPUSceneMeshInstance>::Handle;
+
+	// Render-side state shared by all primitive proxies belonging to one mesh instance.
+	struct GPUSceneMeshInstance
+	{
+		std::vector<HStableMeshId> Primitives;
+		std::vector<Matrix> SkinMatrices;
+		std::vector<float> MorphWeights;
+
+		u64 SkinMatricesAddress = 0;
+		u32 SkinMatrixCount = 0;
+
+		u64 MorphWeightsAddress = 0;
+		u32 MorphWeightCount = 0;
+	};
+
+	// Per-primitive dynamic deformation resources owned by a GPU scene primitive proxy.
+	struct GPUMeshDeform
+	{
+		Buffer* Vertices     = nullptr;
+		Buffer* PrevVertices = nullptr;
+		Buffer* Normals      = nullptr;
+		Buffer* Tangents     = nullptr;
+		AccelerationStructure* BLAS = nullptr;
+
+		u32 VertexCount = 0;
+		u32 FramesSinceFullBLASBuild = 0;
+	};
+
+	// Primitive render proxy consumed by mesh upload, drawing, and TLAS construction.
 	struct GPUSceneMesh
 	{
-		GPUMeshResource* MeshResource;
+		GPUMeshResource* MeshResource = nullptr;
+		GPUMeshDeform* Deform = nullptr;
+		HStableMeshInstanceId Instance{};
 
 		Matrix Transform;
 		Matrix PrevTransform = Matrix(1);
-		TStableSparseArray<Material>::Handle MaterialId{};
+		HStableMaterialId MaterialId{};
 		int LightmapId = -1;
 	};
+
+	// Spans passed from game/editor code when creating or updating a mesh instance.
+	struct GPUSceneMeshInstanceState
+	{
+		Matrix Transform = Matrix(1);
+		std::span<const HStableMaterialId> Materials;
+		std::span<const Matrix> SkinMatrices;
+		std::span<const float> MorphWeights;
+	};
+
+	// Shader-visible packed primitive record uploaded into GPUScene.MeshesBuffer.
+	struct GPUSceneMeshCompact
+	{
+		Matrix Transform;
+		Matrix PrevTransform;
+		Matrix NormalMatrix;
+
+		u64 VertexBufferAddress;
+		u64 IndexBufferAddress;
+		u64 Uv1BufferAddress;
+		u64 Uv2BufferAddress;
+		u64 NormalsBufferAddress;
+		u64 TangentsBufferAddress;
+
+		u32 VertexCount;
+		u32 IndexCount;
+
+		int MaterialId;
+		int LightmapId;
+
+		u64 PrevVertexBufferAddress;
+		u32 _pad0[2];
+	};
+
+	static_assert(sizeof(GPUSceneMeshCompact) == 272, "GPUSceneMeshCompact must match shader layout");
 
 	struct GPUCamera
 	{
@@ -55,31 +131,6 @@ namespace Columbus
 		bool operator==(const GPUCamera&) const = default;
 		bool operator!=(const GPUCamera&) const = default;
 	};
-
-	// to be uploaded into the GPU
-	struct GPUSceneMeshCompact
-	{
-		Matrix Transform;
-		Matrix PrevTransform;
-		Matrix NormalMatrix;
-
-		u64 VertexBufferAddress;
-		u64 IndexBufferAddress;
-		u64 Uv1BufferAddress;
-		u64 Uv2BufferAddress;
-		u64 NormalsBufferAddress;
-		u64 TangentsBufferAddress;
-
-		u32 VertexCount;
-		u32 IndexCount;
-
-		int MaterialId;
-		int LightmapId;
-
-		// 256
-	};
-
-	static_assert(sizeof(GPUSceneMeshCompact) == 256, "GPUSceneMeshCompact must be 256 bytes");
 
 	struct RTShadowDenoiserHistory
 	{
@@ -222,11 +273,8 @@ namespace Columbus
 
 	using HStableLightId     = TStableSparseArray<GPULight>::Handle;
 	using HStableTextureId   = TStableSparseArray<Texture2*>::Handle;
-	using HStableMaterialId  = TStableSparseArray<Material>::Handle;
-	using HStableMeshId      = TStableSparseArray<GPUSceneMesh>::Handle;
 	using HStableDecalId     = TStableSparseArray<GPUDecal>::Handle;
 	using HStableParticlesId = TStableSparseArray<GPUSceneParticles>::Handle;
-
 
 	struct GPUScene
 	{
@@ -234,9 +282,12 @@ namespace Columbus
 		static constexpr int MaxMaterials = 8192;
 		static constexpr int MaxGPULights = 8192;
 		static constexpr int MaxDecals    = 8192;
+		static constexpr int MaxSkinMatrices = 65536;
+		static constexpr int MaxMorphWeights = 65536;
 
 		AccelerationStructure* TLAS = nullptr;
 
+		TStableSparseArray<GPUSceneMeshInstance> MeshInstances;
 		TStableSparseArray<GPUSceneMesh> Meshes;
 		TStableSparseArray<Material>     Materials;
 		TStableSparseArray<Texture2*>    Textures;
@@ -263,6 +314,8 @@ namespace Columbus
 		Buffer* MeshesBuffer = nullptr;
 		Buffer* MaterialsBuffer = nullptr;
 		Buffer* DecalsBuffers = nullptr;
+		Buffer* SkinMatricesBuffer = nullptr;
+		Buffer* MorphWeightsBuffer = nullptr;
 
 		// Linearly Transformed Cosines (LTC)
 		Texture2* LTC_1 = nullptr;
@@ -270,6 +323,12 @@ namespace Columbus
 
 	public:
 		void Update();
+		void SavePreviousMeshTransforms();
+
+		bool IsMeshInstanceValid(HStableMeshInstanceId Id) const;
+		HStableMeshInstanceId AddMeshInstance(Mesh2& MeshAsset, const GPUSceneMeshInstanceState& State);
+		void RemoveMeshInstance(HStableMeshInstanceId Id);
+		void UpdateMeshInstance(HStableMeshInstanceId Id, const GPUSceneMeshInstanceState& State);
 
 		HStableLightId AddLight(const GPULight& Light);
 		void UpdateLight(HStableLightId Id, const GPULight& Light);

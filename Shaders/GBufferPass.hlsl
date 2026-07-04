@@ -54,7 +54,7 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     Out.Bitangent = cross(Out.Normal, Out.Tangent) * Vertex.TangentAndSign.w;
 
     float4 TransformedPos = mul(Mesh.Transform, float4(Vertex.Position, 1));
-    float4 TransformedPosPrev = mul(Mesh.PrevTransform, float4(Vertex.Position, 1));
+    float4 TransformedPosPrev = mul(Mesh.PrevTransform, float4(Vertex.PrevPosition, 1));
 
     float4 ClipspacePos = mul(GPUScene::GPUSceneScene[0].CameraCur.ViewProjectionMatrix, TransformedPos) * float4(1, -1, 1, 1);
     float4 ClipspacePosPrev = mul(GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix, TransformedPosPrev) * float4(1, -1, 1, 1);

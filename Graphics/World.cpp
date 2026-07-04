@@ -1,6 +1,8 @@
 #include "World.h"
 
 #include <Math/Quaternion.h>
+#include <Animation/AnimationAsset.h>
+#include <Animation/AnimPreview.h>
 #include <Core/Serialisation.h>
 #include <Scene/Project.h>
 #include <Scene/TextureAsset.h>
@@ -11,6 +13,7 @@
 #include <limits.h>
 #include <float.h>
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <iomanip>
 #include <fstream>
@@ -53,6 +56,15 @@ namespace Columbus
 
 
 	Buffer* CreateMeshBuffer(SPtr<DeviceVulkan> device, size_t size, bool usedInAS, const void* data);
+	struct HMeshMorphVertexDelta
+	{
+		Vector3 Position;
+		Vector3 Normal;
+		Vector3 Tangent;
+	};
+
+	static_assert(sizeof(HMeshMorphVertexDelta) == sizeof(Vector3) * 3);
+
 	static void DestroyMeshBuffer(SPtr<DeviceVulkan> device, Buffer* buf)
 	{
 		if (buf)
@@ -84,14 +96,22 @@ namespace Columbus
 		Reflection::EnforceTypeLinkage<AConeTwistConstraint>();
 	}
 
+	static void EnforceAnimationThingTypesLinkage()
+	{
+		Reflection::EnforceTypeLinkage<AAnimPreview>();
+	}
+
 	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice), Assets(AssetSystem::Get())
 	{
 		EnforcePhysicsThingTypesLinkage();
+		EnforceAnimationThingTypesLinkage();
 
 		Physics.SetGravity(Vector3(0, -9.81f, 0));
 
 		// asset handling callbacks
 		{
+			RegisterAnimationAssetLoaders(Assets);
+
 			Assets.AssetLoaderFunctions[Reflection::FindStruct<Sound>()] = [this](const char* Path) -> void*
 			{
 				Sound* Snd = new Sound();
@@ -874,6 +894,7 @@ namespace Columbus
 			DestroyMeshBuffer(Device, Primitive.GPU.Tangents);
 			DestroyMeshBuffer(Device, Primitive.GPU.BoneIndices);
 			DestroyMeshBuffer(Device, Primitive.GPU.BoneWeights);
+			DestroyMeshBuffer(Device, Primitive.GPU.MorphDeltas);
 			if (Primitive.GPU.BLAS)
 				RemoveProfilingMemory(MemoryCounter_SceneBLAS, Primitive.GPU.BLAS->GetSize());
 			Device->DestroyAccelerationStructure(Primitive.GPU.BLAS);
@@ -923,12 +944,52 @@ namespace Columbus
 			if (!CPUMesh.BoneWeights.empty())
 				GPUMesh.BoneWeights = CreateMeshBuffer(Device, sizeof(Vector4) * CPUMesh.BoneWeights.size(), true, CPUMesh.BoneWeights.data());
 
+			if (!CPUMesh.MorphTargets.empty())
+			{
+				std::vector<HMeshMorphVertexDelta> MorphDeltas;
+				MorphDeltas.reserve(CPUMesh.MorphTargets.size() * CPUMesh.Vertices.size());
+
+				for (const MeshMorphTarget& Target : CPUMesh.MorphTargets)
+				{
+					assert(Target.PositionDeltas.size() == CPUMesh.Vertices.size());
+					assert(Target.NormalDeltas.size() == CPUMesh.Vertices.size());
+					assert(Target.TangentDeltas.size() == CPUMesh.Vertices.size());
+
+					for (size_t VertexIndex = 0; VertexIndex < CPUMesh.Vertices.size(); VertexIndex++)
+					{
+						MorphDeltas.push_back(HMeshMorphVertexDelta{
+							.Position = Target.PositionDeltas[VertexIndex],
+							.Normal = Target.NormalDeltas[VertexIndex],
+							.Tangent = Target.TangentDeltas[VertexIndex],
+						});
+					}
+				}
+
+				if (!MorphDeltas.empty())
+				{
+					GPUMesh.MorphTargetCount = (u32)(MorphDeltas.size() / CPUMesh.Vertices.size());
+					GPUMesh.MorphDeltas = CreateMeshBuffer(Device, sizeof(HMeshMorphVertexDelta) * MorphDeltas.size(), false, MorphDeltas.data());
+				}
+			}
+
 			Vector3 MinVertex(FLT_MAX);
 			Vector3 MaxVertex(-FLT_MAX);
 			for (const Vector3& Vertex : CPUMesh.Vertices)
 			{
 				MinVertex = Vector3::Min(Vertex, MinVertex);
 				MaxVertex = Vector3::Max(Vertex, MaxVertex);
+			}
+
+			for (const MeshMorphTarget& Target : CPUMesh.MorphTargets)
+			{
+				assert(Target.PositionDeltas.size() == CPUMesh.Vertices.size());
+
+				for (size_t VertexIndex = 0; VertexIndex < CPUMesh.Vertices.size(); VertexIndex++)
+				{
+					const Vector3 MorphedVertex = CPUMesh.Vertices[VertexIndex] + Target.PositionDeltas[VertexIndex];
+					MinVertex = Vector3::Min(MorphedVertex, MinVertex);
+					MaxVertex = Vector3::Max(MorphedVertex, MaxVertex);
+				}
 			}
 
 			Primitive.BoundingBox = CPUMesh.Vertices.empty() ? Box(Vector3(0.0f), Vector3(0.0f)) : Box(MinVertex, MaxVertex);
@@ -1101,10 +1162,8 @@ namespace Columbus
 
 		MainView.CameraPrev = MainView.CameraCur;
 
-		for (u32 i = 0; SceneGPU && i < (u32)SceneGPU->Meshes.Size(); i++)
-		{
-			SceneGPU->Meshes[i].PrevTransform = SceneGPU->Meshes[i].Transform;
-		}
+		if (SceneGPU)
+			SceneGPU->SavePreviousMeshTransforms();
 
 		MainView.DebugRender.Clear();
 	}
@@ -1585,6 +1644,35 @@ namespace Columbus
 		}
 	}
 
+	void AMeshInstance::SetPose(const SkeletonPose& Pose)
+	{
+		const Skeleton* SkeletonAsset = Mesh->Skeleton.Get();
+		assert(SkeletonAsset != nullptr);
+		assert(Pose.Model.size() == SkeletonAsset->Joints.size());
+		assert(Pose.Model.size() == SkinMatrices.size());
+
+		for (size_t JointIndex = 0; JointIndex < Pose.Model.size(); JointIndex++)
+		{
+			SkinMatrices[JointIndex] = Pose.Model[JointIndex] * SkeletonAsset->Joints[JointIndex].InverseBind;
+		}
+
+		bRenderStateDirty = true;
+	}
+
+	void AMeshInstance::SetMorphs(std::span<const float> Weights)
+	{
+		assert(Weights.size() == MorphWeights.size());
+		MorphWeights.assign(Weights.begin(), Weights.end());
+		bRenderStateDirty = true;
+	}
+
+	void AMeshInstance::SetMorphWeight(int MorphIndex, float Weight)
+	{
+		assert(MorphIndex >= 0 && (size_t)MorphIndex < MorphWeights.size());
+		MorphWeights[MorphIndex] = Weight;
+		bRenderStateDirty = true;
+	}
+
 	void AMeshInstance::OnPostPhysics()
 	{
 		Super::OnPostPhysics();
@@ -1602,6 +1690,35 @@ namespace Columbus
 		Super::OnCreate();
 		assert(World != nullptr);
 		assert(Mesh.IsValid());
+
+		MaterialIds.clear();
+		for (const MeshPrimitive& Primitive : Mesh->Primitives)
+			assert(Primitive.CPU.MorphTargets.size() == Mesh->Morphs.size());
+
+		// skinning
+		SkinMatrices.clear();
+		if (const Skeleton* SkeletonAsset = Mesh->Skeleton.Get())
+			SkinMatrices.resize(SkeletonAsset->Joints.size(), Matrix(1.0f));
+
+		// morphs
+		MorphWeights.clear();
+		MorphWeights.resize(Mesh->Morphs.size());
+		for (size_t MorphIndex = 0; MorphIndex < Mesh->Morphs.size(); MorphIndex++)
+			MorphWeights[MorphIndex] = Mesh->Morphs[MorphIndex].DefaultWeight;
+
+		// materials
+		if (Materials.empty())
+		{
+			Materials.reserve(Mesh->Primitives.size());
+			for (const MeshPrimitive& Primitive : Mesh->Primitives)
+				Materials.push_back(Primitive.DefaultMaterial);
+		}
+		assert(Materials.size() == Mesh->Primitives.size());
+		for (AssetRef<Material>& MaterialRef : Materials)
+			assert(MaterialRef.IsValid());
+		MaterialIds.reserve(Materials.size());
+		for (AssetRef<Material>& MaterialRef : Materials)
+			MaterialIds.push_back(MaterialRef->StableId);
 
 		Mesh.Subscribe(this, [this](Mesh2*)
 		{
@@ -1642,27 +1759,12 @@ namespace Columbus
 			});
 		}
 
-		int i = 0;
-		for (MeshPrimitive& Prim : Mesh->Primitives)
-		{
-			GPUSceneMesh GPUMesh;
-			GPUMesh.MeshResource = &Prim.GPU;
-			GPUMesh.Transform = TransGlobal.GetMatrix();
-			GPUMesh.PrevTransform = GPUMesh.Transform;
-
-			if (Materials.size() > i && Materials[i].IsValid())
-			{
-				GPUMesh.MaterialId = Materials[i]->StableId;
-			}
-			else if (Prim.DefaultMaterial.IsValid())
-			{
-				GPUMesh.MaterialId = Prim.DefaultMaterial->StableId;
-			}
-
-			i++;
-
-			MeshPrimitives.push_back(World->SceneGPU->Meshes.Add(GPUMesh));
-		}
+		MeshInstance = World->SceneGPU->AddMeshInstance(*Mesh.Get(), GPUSceneMeshInstanceState{
+			.Transform = TransGlobal.GetMatrix(),
+			.Materials = MaterialIds,
+			.SkinMatrices = SkinMatrices,
+			.MorphWeights = MorphWeights,
+		});
 
 		// collision proxy setup
 		if (World->WorldType == EWorldType::Game)
@@ -1693,20 +1795,26 @@ namespace Columbus
 			World->Physics.AddRigidbody(EditorRigidbody);
 		}
 
+		OnUpdateRenderState();
 	}
 
 	void AMeshInstance::OnUpdateRenderState()
 	{
 		Super::OnUpdateRenderState();
 
-		for (HStableMeshId Mesh : MeshPrimitives)
-		{
-			GPUSceneMesh* Proxy = World->SceneGPU->Meshes.Get(Mesh);
-			if (Proxy)
-			{
-				Proxy->Transform = GetWorldTransform().GetMatrix();
-			}
-		}
+		assert(Materials.size() == Mesh->Primitives.size());
+		assert(MaterialIds.size() == Materials.size());
+
+		const Matrix MeshTransform = GetWorldTransform().GetMatrix();
+		for (size_t PrimitiveIndex = 0; PrimitiveIndex < Materials.size(); PrimitiveIndex++)
+			MaterialIds[PrimitiveIndex] = Materials[PrimitiveIndex]->StableId;
+
+		World->SceneGPU->UpdateMeshInstance(MeshInstance, GPUSceneMeshInstanceState{
+			.Transform = MeshTransform,
+			.Materials = MaterialIds,
+			.SkinMatrices = SkinMatrices,
+			.MorphWeights = MorphWeights,
+		});
 
 		if (EditorRigidbody)
 		{
@@ -1721,11 +1829,9 @@ namespace Columbus
 
 	void AMeshInstance::OnDestroy()
 	{
-		for (HStableMeshId Mesh : MeshPrimitives)
-		{
-			World->SceneGPU->Meshes.Remove(Mesh);
-		}
-		MeshPrimitives.clear();
+		World->SceneGPU->RemoveMeshInstance(MeshInstance);
+		MeshInstance = {};
+		MaterialIds.clear();
 
 		if (PhysicsBody)
 		{
@@ -1994,6 +2100,26 @@ CREFLECT_STRUCT_BEGIN(MeshImportSettings, "")
 	CREFLECT_STRUCT_FIELD(bool, BuildBLAS, "")
 CREFLECT_STRUCT_END()
 
+CREFLECT_STRUCT_BEGIN(MeshMorph, "")
+	CREFLECT_STRUCT_FIELD(std::string, Name, "")
+	CREFLECT_STRUCT_FIELD(float, DefaultWeight, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(MeshMorphTarget, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, PositionDeltas, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, NormalDeltas, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, TangentDeltas, "Noedit")
+CREFLECT_STRUCT_END()
+
+static std::string GetMeshMorphArrayLabel(const void* Object, int Index)
+{
+	const MeshMorph* Morph = reinterpret_cast<const MeshMorph*>(Object);
+	if (Morph && !Morph->Name.empty())
+		return Morph->Name;
+	return "Morph " + std::to_string(Index);
+}
+CREFLECT_STRUCT_ARRAY_LABEL(MeshMorph, GetMeshMorphArrayLabel)
+
 CREFLECT_STRUCT_BEGIN(CPUMeshResource, "")
 	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, Vertices, "Noedit")
 	CREFLECT_STRUCT_FIELD_ARRAY(Vector3, Normals, "Noedit")
@@ -2003,6 +2129,7 @@ CREFLECT_STRUCT_BEGIN(CPUMeshResource, "")
 	CREFLECT_STRUCT_FIELD_ARRAY(iVector4, BoneIndices, "Noedit")
 	CREFLECT_STRUCT_FIELD_ARRAY(Vector4, BoneWeights, "Noedit")
 	CREFLECT_STRUCT_FIELD_ARRAY(u32, Indices, "Noedit")
+	CREFLECT_STRUCT_FIELD_ARRAY(MeshMorphTarget, MorphTargets, "Noedit")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(MeshPrimitive, "")
@@ -2037,10 +2164,12 @@ CREFLECT_STRUCT_ARRAY_LABEL(MeshSocket, GetMeshSocketArrayLabel)
 
 CREFLECT_STRUCT_BEGIN(Mesh2, "")
 	CREFLECT_STRUCT_FIELD(std::string, SourcePath, "Noedit")
+	CREFLECT_STRUCT_FIELD_ASSETREF(Skeleton, Skeleton, "")
 	CREFLECT_STRUCT_FIELD(MeshImportSettings, ImportSettings, "")
 	CREFLECT_STRUCT_FIELD(HCollisionSettings, DefaultCollisionSettings, "")
 	CREFLECT_STRUCT_FIELD(Box, BoundingBox, "Hidden")
 	CREFLECT_STRUCT_FIELD_ARRAY(MeshSocket, Sockets, "")
+	CREFLECT_STRUCT_FIELD_ARRAY(MeshMorph, Morphs, "Noedit")
 	CREFLECT_STRUCT_FIELD_ARRAY(MeshPrimitive, Primitives, "Hidden NoArrayResize")
 CREFLECT_STRUCT_END()
 

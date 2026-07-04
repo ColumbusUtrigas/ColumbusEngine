@@ -1,4 +1,5 @@
 #include "Geometry.h"
+#include "Matrix.h"
 
 namespace Columbus::Geometry
 {
@@ -218,6 +219,13 @@ CREFLECT_STRUCT_BEGIN(iVector4, "")
 	CREFLECT_STRUCT_FIELD(int, Y, "")
 	CREFLECT_STRUCT_FIELD(int, Z, "")
 	CREFLECT_STRUCT_FIELD(int, W, "")
+CREFLECT_STRUCT_END()
+
+CREFLECT_STRUCT_BEGIN(Matrix, "")
+	CREFLECT_STRUCT_FIELD(Vector4, Row0, "Noedit")
+	CREFLECT_STRUCT_FIELD(Vector4, Row1, "Noedit")
+	CREFLECT_STRUCT_FIELD(Vector4, Row2, "Noedit")
+	CREFLECT_STRUCT_FIELD(Vector4, Row3, "Noedit")
 CREFLECT_STRUCT_END()
 
 CREFLECT_STRUCT_BEGIN(Box, "")

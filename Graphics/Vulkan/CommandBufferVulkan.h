@@ -56,7 +56,7 @@ namespace Columbus
 		void DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
 		void TraceRays(const RayTracingPipeline* pipeline, uint32_t x, uint32_t y, uint32_t depth);
 
-		void BuildAccelerationStructure(AccelerationStructure* AS, u32 NumPrimitives);
+		void BuildAccelerationStructure(AccelerationStructure* AS, u32 NumPrimitives, AccelerationStructureBuildMode Mode = AccelerationStructureBuildMode::Build);
 
 		// TODO: layout api
 		void TransitionImageLayout(Texture2* Texture, VkImageLayout NewLayout);

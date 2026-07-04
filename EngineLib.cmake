@@ -54,6 +54,7 @@ endfunction()
 
 target_include_engine_directories(${TARGET})
 add_dir_to_target(${TARGET} Audio)
+add_dir_to_target(${TARGET} Animation)
 add_dir_to_target_recurse(${TARGET} Common)
 add_dir_to_target(${TARGET} Core)
 if(LINUX)

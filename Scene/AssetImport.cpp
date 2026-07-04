@@ -1,5 +1,8 @@
 #include "AssetImport.h"
 
+#include "Animation/AnimationAsset.h"
+#include "Animation/AnimClip.h"
+#include "Animation/Skeleton.h"
 #include "Core/Asset.h"
 #include "Core/Core.h"
 #include "Core/Serialisation.h"
@@ -38,6 +41,8 @@ namespace Columbus::Assets
 			std::filesystem::path TexturesDirectory;
 			std::filesystem::path MaterialsDirectory;
 			std::filesystem::path MeshesDirectory;
+			std::filesystem::path SkeletonsDirectory;
+			std::filesystem::path AnimationsDirectory;
 			std::filesystem::path LevelPath;
 			std::string LevelBaseName;
 		};
@@ -123,6 +128,8 @@ namespace Columbus::Assets
 			Result.TexturesDirectory = Result.OutputDirectory / "Textures";
 			Result.MaterialsDirectory = Result.OutputDirectory / "Materials";
 			Result.MeshesDirectory = Result.OutputDirectory / "Meshes";
+			Result.SkeletonsDirectory = Result.OutputDirectory / "Skeletons";
+			Result.AnimationsDirectory = Result.OutputDirectory / "Animations";
 			Result.LevelPath = Result.OutputDirectory / (Result.LevelBaseName + ".clvl");
 			return Result;
 		}
@@ -193,6 +200,29 @@ namespace Columbus::Assets
 			return true;
 		}
 
+		static bool ReadFloatAccessor(const tinygltf::Model& Model, int AccessorIndex, std::vector<float>& OutValues)
+		{
+			if (AccessorIndex < 0)
+				return false;
+
+			const tinygltf::Accessor& Accessor = Model.accessors[AccessorIndex];
+			if (Accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || Accessor.type != TINYGLTF_TYPE_SCALAR)
+				return false;
+
+			const unsigned char* Data = GetAccessorData(Model, Accessor);
+			const int Stride = GetAccessorStride(Model, Accessor);
+			const int ElementStride = Stride > 0 ? Stride : (int)sizeof(float);
+
+			OutValues.resize(Accessor.count);
+			for (size_t Index = 0; Index < Accessor.count; Index++)
+			{
+				const float* Element = (const float*)(Data + Index * ElementStride);
+				OutValues[Index] = Element[0];
+			}
+
+			return true;
+		}
+
 		static bool ReadVector2Accessor(const tinygltf::Model& Model, int AccessorIndex, std::vector<Vector2>& OutValues)
 		{
 			if (AccessorIndex < 0)
@@ -216,6 +246,38 @@ namespace Columbus::Assets
 			return true;
 		}
 
+		static bool ReadMatrixAccessor(const tinygltf::Model& Model, int AccessorIndex, std::vector<Matrix>& OutValues)
+		{
+			if (AccessorIndex < 0)
+				return false;
+
+			const tinygltf::Accessor& Accessor = Model.accessors[AccessorIndex];
+			if (Accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || Accessor.type != TINYGLTF_TYPE_MAT4)
+				return false;
+
+			const unsigned char* Data = GetAccessorData(Model, Accessor);
+			const int Stride = GetAccessorStride(Model, Accessor);
+			const int ElementStride = Stride > 0 ? Stride : (int)sizeof(float) * 16;
+
+			OutValues.resize(Accessor.count);
+			for (size_t Index = 0; Index < Accessor.count; Index++)
+			{
+				const float* Element = (const float*)(Data + Index * ElementStride);
+				Matrix Value(1.0f);
+				for (int Column = 0; Column < 4; Column++)
+				{
+					Value.SetColumn(Column, Vector4(
+						Element[Column * 4 + 0],
+						Element[Column * 4 + 1],
+						Element[Column * 4 + 2],
+						Element[Column * 4 + 3]));
+				}
+				OutValues[Index] = Value;
+			}
+
+			return true;
+		}
+
 		static bool ReadVector3Accessor(const tinygltf::Model& Model, int AccessorIndex, std::vector<Vector3>& OutValues)
 		{
 			if (AccessorIndex < 0)
@@ -225,15 +287,61 @@ namespace Columbus::Assets
 			if (Accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || Accessor.type != TINYGLTF_TYPE_VEC3)
 				return false;
 
-			const unsigned char* Data = GetAccessorData(Model, Accessor);
-			const int Stride = GetAccessorStride(Model, Accessor);
-			const int ElementStride = Stride > 0 ? Stride : (int)sizeof(float) * 3;
+			OutValues.assign(Accessor.count, Vector3(0.0f));
 
-			OutValues.resize(Accessor.count);
-			for (size_t Index = 0; Index < Accessor.count; Index++)
+			if (Accessor.bufferView >= 0)
 			{
-				const float* Element = (const float*)(Data + Index * ElementStride);
-				OutValues[Index] = Vector3(Element[0], Element[1], Element[2]);
+				const unsigned char* Data = GetAccessorData(Model, Accessor);
+				const int Stride = GetAccessorStride(Model, Accessor);
+				const int ElementStride = Stride > 0 ? Stride : (int)sizeof(float) * 3;
+
+				for (size_t Index = 0; Index < Accessor.count; Index++)
+				{
+					const float* Element = (const float*)(Data + Index * ElementStride);
+					OutValues[Index] = Vector3(Element[0], Element[1], Element[2]);
+				}
+			}
+			else if (!Accessor.sparse.isSparse)
+			{
+				return false;
+			}
+
+			if (Accessor.sparse.isSparse)
+			{
+				if (Accessor.sparse.indices.bufferView < 0 || Accessor.sparse.indices.bufferView >= (int)Model.bufferViews.size() ||
+					Accessor.sparse.values.bufferView < 0 || Accessor.sparse.values.bufferView >= (int)Model.bufferViews.size())
+				{
+					return false;
+				}
+
+				const tinygltf::BufferView& IndicesView = Model.bufferViews[Accessor.sparse.indices.bufferView];
+				const tinygltf::BufferView& ValuesView = Model.bufferViews[Accessor.sparse.values.bufferView];
+				const tinygltf::Buffer& IndicesBuffer = Model.buffers[IndicesView.buffer];
+				const tinygltf::Buffer& ValuesBuffer = Model.buffers[ValuesView.buffer];
+				const unsigned char* IndicesData = IndicesBuffer.data.data() + IndicesView.byteOffset + Accessor.sparse.indices.byteOffset;
+				const unsigned char* ValuesData = ValuesBuffer.data.data() + ValuesView.byteOffset + Accessor.sparse.values.byteOffset;
+				const int IndexComponentSize = (int)tinygltf::GetComponentSizeInBytes(Accessor.sparse.indices.componentType);
+				if (IndexComponentSize <= 0)
+					return false;
+
+				for (int SparseIndex = 0; SparseIndex < Accessor.sparse.count; SparseIndex++)
+				{
+					const unsigned char* IndexPtr = IndicesData + SparseIndex * IndexComponentSize;
+					size_t ValueIndex = 0;
+					switch (Accessor.sparse.indices.componentType)
+					{
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:  ValueIndex = *(const u8*)IndexPtr; break;
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: ValueIndex = *(const u16*)IndexPtr; break;
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:   ValueIndex = *(const u32*)IndexPtr; break;
+					default: return false;
+					}
+
+					if (ValueIndex >= OutValues.size())
+						continue;
+
+					const float* Element = (const float*)(ValuesData + SparseIndex * sizeof(float) * 3);
+					OutValues[ValueIndex] = Vector3(Element[0], Element[1], Element[2]);
+				}
 			}
 
 			return true;
@@ -257,6 +365,62 @@ namespace Columbus::Assets
 			{
 				const float* Element = (const float*)(Data + Index * ElementStride);
 				OutValues[Index] = Vector4(Element[0], Element[1], Element[2], Element[3]);
+			}
+
+			return true;
+		}
+
+		static bool ReadWeightsAccessor(const tinygltf::Model& Model, int AccessorIndex, std::vector<Vector4>& OutValues)
+		{
+			if (AccessorIndex < 0)
+				return false;
+
+			const tinygltf::Accessor& Accessor = Model.accessors[AccessorIndex];
+			if (Accessor.type != TINYGLTF_TYPE_VEC4)
+				return false;
+
+			if (Accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
+				return ReadVector4Accessor(Model, AccessorIndex, OutValues);
+
+			const unsigned char* Data = GetAccessorData(Model, Accessor);
+			const int Stride = GetAccessorStride(Model, Accessor);
+			const int ComponentSize = (int)tinygltf::GetComponentSizeInBytes(Accessor.componentType);
+			const int ElementStride = Stride > 0 ? Stride : ComponentSize * 4;
+
+			float Denominator = 1.0f;
+			switch (Accessor.componentType)
+			{
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+				Denominator = 255.0f;
+				break;
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+				Denominator = 65535.0f;
+				break;
+			default:
+				return false;
+			}
+
+			OutValues.resize(Accessor.count);
+			for (size_t Index = 0; Index < Accessor.count; Index++)
+			{
+				const unsigned char* Element = Data + Index * ElementStride;
+				float Components[4] = {};
+
+				for (int Component = 0; Component < 4; Component++)
+				{
+					const unsigned char* ComponentPtr = Element + Component * ComponentSize;
+					switch (Accessor.componentType)
+					{
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+						Components[Component] = (float)(*(const u8*)ComponentPtr) / Denominator;
+						break;
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+						Components[Component] = (float)(*(const u16*)ComponentPtr) / Denominator;
+						break;
+					}
+				}
+
+				OutValues[Index] = Vector4(Components[0], Components[1], Components[2], Components[3]);
 			}
 
 			return true;
@@ -347,6 +511,136 @@ namespace Columbus::Assets
 			return Result;
 		}
 
+		static std::string MakeNodeName(const tinygltf::Model& Model, int NodeIndex, const char* Prefix)
+		{
+			if (NodeIndex >= 0 && NodeIndex < (int)Model.nodes.size() && !Model.nodes[NodeIndex].name.empty())
+				return Model.nodes[NodeIndex].name;
+
+			return std::string(Prefix) + "_" + std::to_string(NodeIndex);
+		}
+
+		static std::vector<std::string> ReadMorphTargetNames(const tinygltf::Mesh& Mesh)
+		{
+			std::vector<std::string> Result;
+			if (!Mesh.extras.IsObject() || !Mesh.extras.Has("targetNames"))
+				return Result;
+
+			const tinygltf::Value& TargetNames = Mesh.extras.Get("targetNames");
+			if (!TargetNames.IsArray())
+				return Result;
+
+			Result.reserve(TargetNames.ArrayLen());
+			for (size_t Index = 0; Index < TargetNames.ArrayLen(); Index++)
+			{
+				const tinygltf::Value& NameValue = TargetNames.Get((int)Index);
+				Result.push_back(NameValue.IsString() ? NameValue.Get<std::string>() : ("Morph_" + std::to_string(Index)));
+			}
+
+			return Result;
+		}
+
+		static std::vector<float> ReadMorphDefaultWeights(const tinygltf::Mesh& Mesh)
+		{
+			std::vector<float> Result;
+			Result.reserve(Mesh.weights.size());
+			for (double Weight : Mesh.weights)
+				Result.push_back((float)Weight);
+			return Result;
+		}
+
+		static std::vector<MeshMorph> BuildMeshMorphs(const tinygltf::Mesh& Mesh)
+		{
+			const std::vector<std::string> Names = ReadMorphTargetNames(Mesh);
+			const std::vector<float> Weights = ReadMorphDefaultWeights(Mesh);
+
+			size_t MorphCount = std::max(Names.size(), Weights.size());
+			for (const tinygltf::Primitive& Primitive : Mesh.primitives)
+				MorphCount = std::max(MorphCount, Primitive.targets.size());
+
+			for (const tinygltf::Primitive& Primitive : Mesh.primitives)
+				assert(Primitive.targets.size() == MorphCount);
+
+			std::vector<MeshMorph> Result;
+			Result.reserve(MorphCount);
+			for (size_t MorphIndex = 0; MorphIndex < MorphCount; MorphIndex++)
+			{
+				Result.push_back(MeshMorph
+				{
+					.Name = MorphIndex < Names.size() && !Names[MorphIndex].empty()
+						? Names[MorphIndex]
+						: ("Morph_" + std::to_string(MorphIndex)),
+					.DefaultWeight = MorphIndex < Weights.size() ? Weights[MorphIndex] : 0.0f,
+				});
+			}
+
+			return Result;
+		}
+
+		static Quaternion GltfQuaternionToEngine(const Vector4& Value)
+		{
+			Quaternion Result(-Value.X, -Value.Y, -Value.Z, Value.W);
+			if (Result.LengthSqr() > 0.000001f)
+				Result.Normalize();
+			return Result;
+		}
+
+		static Quaternion GltfQuaternionTangentToEngine(const Vector4& Value)
+		{
+			return Quaternion(-Value.X, -Value.Y, -Value.Z, Value.W);
+		}
+
+		static EAnimInterpolation GetGltfAnimInterpolation(const std::string& Interpolation)
+		{
+			if (Interpolation == "CUBICSPLINE")
+				return EAnimInterpolation::CubicSpline;
+			if (Interpolation == "STEP")
+				return EAnimInterpolation::Step;
+
+			return EAnimInterpolation::Linear;
+		}
+
+		static AnimJointTrack& FindOrAddJointTrack(AnimClip& Clip, int JointIndex, const std::string& JointName)
+		{
+			for (AnimJointTrack& Track : Clip.JointTracks)
+			{
+				if (Track.JointIndex == JointIndex)
+					return Track;
+			}
+
+			AnimJointTrack& Track = Clip.JointTracks.emplace_back();
+			Track.JointIndex = JointIndex;
+			Track.JointName = JointName;
+			return Track;
+		}
+
+		static AnimMorphTrack& FindOrAddMorphTrack(AnimClip& Clip, int MorphIndex, const std::string& MorphName)
+		{
+			for (AnimMorphTrack& Track : Clip.MorphTracks)
+			{
+				if (Track.MorphIndex == MorphIndex)
+					return Track;
+			}
+
+			AnimMorphTrack& Track = Clip.MorphTracks.emplace_back();
+			Track.MorphIndex = MorphIndex;
+			Track.MorphName = MorphName;
+			return Track;
+		}
+
+		static bool MorphLayoutsMatch(std::span<const MeshMorph> A, std::span<const MeshMorph> B)
+		{
+			if (A.size() != B.size())
+				return false;
+
+			for (size_t Index = 0; Index < A.size(); Index++)
+			{
+				if (A[Index].Name != B[Index].Name)
+					return false;
+			}
+
+			return true;
+		}
+
 		static void ComputeNodeWorldTransformRecursive(
 			int NodeIndex,
 			const std::vector<int>& ParentIndices,
@@ -408,6 +702,14 @@ namespace Columbus::Assets
 			return true;
 		}
 
+		static void ReloadImportedAssetIfLoaded(const std::filesystem::path& AbsolutePath)
+		{
+			AssetSystem& Assets = AssetSystem::Get();
+			const std::string RelativePath = Assets.MakePathRelativeToBakedFolder(NormalisePathSeparators(std::filesystem::absolute(AbsolutePath).string()));
+			if (Assets.HasPath(RelativePath))
+				Assets.ReloadAsset(RelativePath);
+		}
+
 		static bool LoadGltfWithDecodedImages(const char* SourcePath, tinygltf::Model& OutModel, std::unordered_map<int, Image>& OutImages)
 		{
 			const tinygltf::LoadImageDataFunction LoadImageFn =
@@ -450,7 +752,11 @@ namespace Columbus::Assets
 			return true;
 		}
 
-		static bool ReadMeshPrimitive(const tinygltf::Model& Model, const tinygltf::Primitive& Primitive, CPUMeshResource& OutMesh)
+		static bool ReadMeshPrimitive(
+			const tinygltf::Model& Model,
+			const tinygltf::Primitive& Primitive,
+			size_t MorphCount,
+			CPUMeshResource& OutMesh)
 		{
 			if (Primitive.mode != TINYGLTF_MODE_TRIANGLES && Primitive.mode != -1)
 			{
@@ -458,13 +764,23 @@ namespace Columbus::Assets
 				return false;
 			}
 
-			if (!Primitive.attributes.contains("POSITION") || Primitive.indices < 0)
+			if (!Primitive.attributes.contains("POSITION"))
 				return false;
 
-			if (!ReadIndicesAccessor(Model, Primitive.indices, OutMesh.Indices))
-				return false;
 			if (!ReadVector3Accessor(Model, Primitive.attributes.at("POSITION"), OutMesh.Vertices))
 				return false;
+
+			if (Primitive.indices >= 0)
+			{
+				if (!ReadIndicesAccessor(Model, Primitive.indices, OutMesh.Indices))
+					return false;
+			}
+			else
+			{
+				OutMesh.Indices.resize(OutMesh.Vertices.size());
+				for (size_t Index = 0; Index < OutMesh.Indices.size(); Index++)
+					OutMesh.Indices[Index] = (u32)Index;
+			}
 
 			if (Primitive.attributes.contains("NORMAL"))
 				ReadVector3Accessor(Model, Primitive.attributes.at("NORMAL"), OutMesh.Normals);
@@ -475,9 +791,28 @@ namespace Columbus::Assets
 			if (Primitive.attributes.contains("TEXCOORD_1"))
 				ReadVector2Accessor(Model, Primitive.attributes.at("TEXCOORD_1"), OutMesh.UV2);
 			if (Primitive.attributes.contains("WEIGHTS_0"))
-				ReadVector4Accessor(Model, Primitive.attributes.at("WEIGHTS_0"), OutMesh.BoneWeights);
+				ReadWeightsAccessor(Model, Primitive.attributes.at("WEIGHTS_0"), OutMesh.BoneWeights);
 			if (Primitive.attributes.contains("JOINTS_0"))
 				ReadIVector4Accessor(Model, Primitive.attributes.at("JOINTS_0"), OutMesh.BoneIndices);
+
+			assert(Primitive.targets.size() == MorphCount);
+			for (size_t TargetIndex = 0; TargetIndex < Primitive.targets.size(); TargetIndex++)
+			{
+				const std::map<std::string, int>& GltfTarget = Primitive.targets[TargetIndex];
+				MeshMorphTarget& Target = OutMesh.MorphTargets.emplace_back();
+
+				auto PositionIt = GltfTarget.find("POSITION");
+				if (PositionIt != GltfTarget.end())
+					ReadVector3Accessor(Model, PositionIt->second, Target.PositionDeltas);
+
+				auto NormalIt = GltfTarget.find("NORMAL");
+				if (NormalIt != GltfTarget.end())
+					ReadVector3Accessor(Model, NormalIt->second, Target.NormalDeltas);
+
+				auto TangentIt = GltfTarget.find("TANGENT");
+				if (TangentIt != GltfTarget.end())
+					ReadVector3Accessor(Model, TangentIt->second, Target.TangentDeltas);
+			}
 
 			return true;
 		}
@@ -551,6 +886,8 @@ namespace Columbus::Assets
 		std::filesystem::create_directories(OutputPaths.TexturesDirectory);
 		std::filesystem::create_directories(OutputPaths.MaterialsDirectory);
 		std::filesystem::create_directories(OutputPaths.MeshesDirectory);
+		std::filesystem::create_directories(OutputPaths.SkeletonsDirectory);
+		std::filesystem::create_directories(OutputPaths.AnimationsDirectory);
 
 		tinygltf::Model Model;
 		std::unordered_map<int, Image> DecodedImages;
@@ -561,12 +898,392 @@ namespace Columbus::Assets
 
 		std::unordered_map<HGltfTextureKey, AssetRef<Texture2>, HGltfTextureKeyHash> ImportedTextures;
 		std::unordered_map<int, AssetRef<Material>> ImportedMaterials;
+		std::unordered_map<int, AssetRef<Skeleton>> ImportedSkeletons;
+		std::unordered_map<int, Skeleton> ImportedSkeletonData;
 		std::unordered_map<int, AssetRef<Mesh2>> ImportedMeshes;
+		std::unordered_map<int, std::unordered_map<int, int>> SkinJointIndexByNode;
+		std::unordered_map<int, int> MeshDefaultSkin;
 
 		auto MakeRelativeAssetPath = [](const std::filesystem::path& AbsolutePath) -> std::string
 		{
 			return AssetSystem::Get().MakePathRelativeToBakedFolder(NormalisePathSeparators(std::filesystem::absolute(AbsolutePath).string()));
 		};
+
+		std::vector<int> ParentIndices(Model.nodes.size(), -1);
+		for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
+		{
+			for (int ChildIndex : Model.nodes[NodeIndex].children)
+			{
+				if (ChildIndex >= 0 && ChildIndex < (int)ParentIndices.size())
+					ParentIndices[ChildIndex] = NodeIndex;
+			}
+		}
+
+		std::vector<Transform> WorldTransforms(Model.nodes.size());
+		std::vector<bool> WorldTransformVisited(Model.nodes.size(), false);
+
+		std::vector<int> RootNodes;
+		if (Model.defaultScene >= 0 && Model.defaultScene < (int)Model.scenes.size())
+		{
+			RootNodes = Model.scenes[Model.defaultScene].nodes;
+		}
+		else
+		{
+			for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
+			{
+				if (ParentIndices[NodeIndex] < 0)
+					RootNodes.push_back(NodeIndex);
+			}
+		}
+
+		for (int RootNode : RootNodes)
+		{
+			if (RootNode >= 0 && RootNode < (int)Model.nodes.size())
+				ComputeNodeWorldTransformRecursive(RootNode, ParentIndices, Model, WorldTransforms, WorldTransformVisited);
+		}
+
+		for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
+		{
+			if (!WorldTransformVisited[NodeIndex])
+				ComputeNodeWorldTransformRecursive(NodeIndex, ParentIndices, Model, WorldTransforms, WorldTransformVisited);
+		}
+
+		for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
+		{
+			const tinygltf::Node& Node = Model.nodes[NodeIndex];
+			if (Node.mesh < 0 || Node.skin < 0)
+				continue;
+
+			if (!MeshDefaultSkin.contains(Node.mesh))
+			{
+				MeshDefaultSkin[Node.mesh] = Node.skin;
+			}
+			else if (MeshDefaultSkin[Node.mesh] != Node.skin)
+			{
+				Log::Warning("[ImportLevel] Mesh %d is used with multiple skins; keeping first skin as default skeleton", Node.mesh);
+			}
+		}
+
+		for (int SkinIndex = 0; SkinIndex < (int)Model.skins.size(); SkinIndex++)
+		{
+			const tinygltf::Skin& GltfSkin = Model.skins[SkinIndex];
+			if (GltfSkin.joints.empty())
+				continue;
+
+			std::unordered_map<int, int> JointIndexByNode;
+			for (int JointIndex = 0; JointIndex < (int)GltfSkin.joints.size(); JointIndex++)
+			{
+				JointIndexByNode[GltfSkin.joints[JointIndex]] = JointIndex;
+			}
+
+			std::vector<Matrix> InverseBindMatrices;
+			if (GltfSkin.inverseBindMatrices >= 0)
+				ReadMatrixAccessor(Model, GltfSkin.inverseBindMatrices, InverseBindMatrices);
+
+			Skeleton SkeletonAsset;
+			SkeletonAsset.SourcePath = NormalisePathSeparators(SourceAssetPath.string()) + "#skin:" + std::to_string(SkinIndex);
+			SkeletonAsset.Joints.reserve(GltfSkin.joints.size());
+
+			for (int JointIndex = 0; JointIndex < (int)GltfSkin.joints.size(); JointIndex++)
+			{
+				const int NodeIndex = GltfSkin.joints[JointIndex];
+				SkeletonJoint& Joint = SkeletonAsset.Joints.emplace_back();
+
+				if (NodeIndex < 0 || NodeIndex >= (int)Model.nodes.size())
+				{
+					Joint.Name = "Joint_" + std::to_string(JointIndex);
+					Joint.Parent = -1;
+					continue;
+				}
+
+				Joint.Name = MakeNodeName(Model, NodeIndex, "Joint");
+
+				const int ParentNode = ParentIndices[NodeIndex];
+				if (JointIndexByNode.contains(ParentNode))
+				{
+					Joint.Parent = JointIndexByNode[ParentNode];
+					Joint.RestLocal = BuildNodeLocalTransform(Model.nodes[NodeIndex]);
+				}
+				else
+				{
+					Joint.Parent = -1;
+					Joint.RestLocal = WorldTransforms[NodeIndex];
+				}
+
+				if (JointIndex < (int)InverseBindMatrices.size())
+					Joint.InverseBind = InverseBindMatrices[JointIndex];
+			}
+
+			const std::string SkeletonBaseName = !GltfSkin.name.empty()
+				? GltfSkin.name
+				: (GltfSkin.skeleton >= 0 ? MakeNodeName(Model, GltfSkin.skeleton, "Skeleton") : ("Skeleton_" + std::to_string(SkinIndex)));
+			const std::filesystem::path SkeletonPath = MakeUniqueFilePath(
+				OutputPaths.SkeletonsDirectory,
+				OutputPaths.LevelBaseName + "_" + SkeletonBaseName,
+				".cskel",
+				UsedOutputPaths);
+
+			if (!SaveSkeletonAssetToFile(SkeletonAsset, SkeletonPath.string().c_str()))
+			{
+				Log::Error("[ImportLevel] Failed to save skeleton asset %s", SkeletonPath.string().c_str());
+				continue;
+			}
+
+			AssetRef<Skeleton> SkeletonRef;
+			SkeletonRef.Path = MakeRelativeAssetPath(SkeletonPath);
+			ReloadImportedAssetIfLoaded(SkeletonPath);
+			ImportedSkeletons[SkinIndex] = SkeletonRef;
+			ImportedSkeletonData[SkinIndex] = SkeletonAsset;
+			SkinJointIndexByNode[SkinIndex] = std::move(JointIndexByNode);
+		}
+
+		for (int AnimIndex = 0; AnimIndex < (int)Model.animations.size(); AnimIndex++)
+		{
+			const tinygltf::Animation& GltfAnim = Model.animations[AnimIndex];
+
+			int TargetSkin = -1;
+			for (const tinygltf::AnimationChannel& Channel : GltfAnim.channels)
+			{
+				if (Channel.target_path == "weights")
+					continue;
+
+				if (Channel.target_node < 0)
+					continue;
+
+				for (int SkinIndex = 0; SkinIndex < (int)Model.skins.size(); SkinIndex++)
+				{
+					if (SkinJointIndexByNode.contains(SkinIndex) && SkinJointIndexByNode[SkinIndex].contains(Channel.target_node))
+					{
+						TargetSkin = SkinIndex;
+						break;
+					}
+				}
+
+				if (TargetSkin >= 0)
+					break;
+			}
+
+			const Skeleton* TargetSkeleton = nullptr;
+			if (TargetSkin >= 0)
+			{
+				if (!ImportedSkeletons.contains(TargetSkin) || !ImportedSkeletonData.contains(TargetSkin))
+				{
+					Log::Warning("[ImportLevel] Animation %d couldn't find target skeleton data; joint tracks will be skipped", AnimIndex);
+					TargetSkin = -1;
+				}
+				else
+				{
+					TargetSkeleton = &ImportedSkeletonData[TargetSkin];
+				}
+			}
+
+			AnimClip ClipAsset;
+			ClipAsset.SourcePath = NormalisePathSeparators(SourceAssetPath.string()) + "#animation:" + std::to_string(AnimIndex);
+			if (TargetSkin >= 0)
+				ClipAsset.Skeleton = ImportedSkeletons[TargetSkin];
+
+			std::vector<MeshMorph> MorphLayout;
+			int MorphTargetNode = -1;
+
+			for (const tinygltf::AnimationChannel& Channel : GltfAnim.channels)
+			{
+				if (Channel.sampler < 0 || Channel.sampler >= (int)GltfAnim.samplers.size())
+					continue;
+				if (Channel.target_path != "translation" && Channel.target_path != "rotation" && Channel.target_path != "scale")
+				{
+					if (Channel.target_path != "weights")
+					{
+						Log::Warning("[ImportLevel] Unsupported animation target '%s' in animation %d is skipped", Channel.target_path.c_str(), AnimIndex);
+						continue;
+					}
+				}
+
+				const tinygltf::AnimationSampler& Sampler = GltfAnim.samplers[Channel.sampler];
+				std::vector<float> Times;
+				if (!ReadFloatAccessor(Model, Sampler.input, Times) || Times.empty())
+					continue;
+
+				const EAnimInterpolation Interpolation = GetGltfAnimInterpolation(Sampler.interpolation);
+				const bool bIsCubic = Interpolation == EAnimInterpolation::CubicSpline;
+
+				if (Channel.target_path == "weights")
+				{
+					if (Channel.target_node < 0 || Channel.target_node >= (int)Model.nodes.size())
+						continue;
+
+					const tinygltf::Node& TargetNode = Model.nodes[Channel.target_node];
+					if (TargetNode.mesh < 0 || TargetNode.mesh >= (int)Model.meshes.size())
+						continue;
+
+					const std::vector<MeshMorph> Morphs = BuildMeshMorphs(Model.meshes[TargetNode.mesh]);
+					if (Morphs.empty())
+						continue;
+
+					if (MorphTargetNode >= 0 && MorphTargetNode != Channel.target_node)
+					{
+						Log::Warning(
+							"[ImportLevel] Animation %d has morph weight tracks for both node %s and node %s. AnimClip stores one morph weight stream, so node %s is skipped.",
+							AnimIndex,
+							MakeNodeName(Model, MorphTargetNode, "Node").c_str(),
+							MakeNodeName(Model, Channel.target_node, "Node").c_str(),
+							MakeNodeName(Model, Channel.target_node, "Node").c_str());
+						continue;
+					}
+
+					if (!MorphLayout.empty() && !MorphLayoutsMatch(MorphLayout, Morphs))
+					{
+						Log::Warning(
+							"[ImportLevel] Animation %d has incompatible morph weight layouts. AnimClip stores one morph weight stream, so node %s is skipped.",
+							AnimIndex,
+							MakeNodeName(Model, Channel.target_node, "Node").c_str());
+						continue;
+					}
+
+					if (MorphLayout.empty())
+					{
+						MorphLayout = Morphs;
+						MorphTargetNode = Channel.target_node;
+					}
+
+					std::vector<float> RawWeights;
+					if (!ReadFloatAccessor(Model, Sampler.output, RawWeights))
+						continue;
+
+					const size_t ValuesPerKey = Morphs.size();
+					const size_t KeyStride = bIsCubic ? ValuesPerKey * 3 : ValuesPerKey;
+					const size_t KeyValueOffset = bIsCubic ? ValuesPerKey : 0;
+					ClipAsset.Duration = std::max(ClipAsset.Duration, Times.back());
+
+					for (size_t MorphIndex = 0; MorphIndex < Morphs.size(); MorphIndex++)
+					{
+						AnimMorphTrack& Track = FindOrAddMorphTrack(ClipAsset, (int)MorphIndex, Morphs[MorphIndex].Name);
+						Track.Interpolation = Interpolation;
+						Track.Weights.clear();
+						Track.Weights.reserve(Times.size());
+
+						for (size_t KeyIndex = 0; KeyIndex < Times.size(); KeyIndex++)
+						{
+							const size_t ValueIndex = KeyIndex * KeyStride + KeyValueOffset + MorphIndex;
+							if (ValueIndex >= RawWeights.size())
+								break;
+
+							AnimKeyFloat Key;
+							Key.Time = Times[KeyIndex];
+							Key.Value = RawWeights[ValueIndex];
+							if (bIsCubic)
+							{
+								const size_t InTangentIndex = KeyIndex * KeyStride + MorphIndex;
+								const size_t OutTangentIndex = KeyIndex * KeyStride + ValuesPerKey * 2 + MorphIndex;
+								assert(InTangentIndex < RawWeights.size());
+								assert(OutTangentIndex < RawWeights.size());
+								Key.InTangent = RawWeights[InTangentIndex];
+								Key.OutTangent = RawWeights[OutTangentIndex];
+							}
+
+							Track.Weights.push_back(Key);
+						}
+					}
+
+					continue;
+				}
+
+				if (Channel.target_node < 0 || TargetSkin < 0 || TargetSkeleton == nullptr || !SkinJointIndexByNode[TargetSkin].contains(Channel.target_node))
+					continue;
+
+				const int JointIndex = SkinJointIndexByNode[TargetSkin][Channel.target_node];
+				if (JointIndex < 0 || JointIndex >= (int)TargetSkeleton->Joints.size())
+					continue;
+
+				AnimJointTrack& Track = FindOrAddJointTrack(ClipAsset, JointIndex, TargetSkeleton->Joints[JointIndex].Name);
+				ClipAsset.Duration = std::max(ClipAsset.Duration, Times.back());
+
+				if (Channel.target_path == "translation" || Channel.target_path == "scale")
+				{
+					std::vector<Vector3> RawValues;
+					if (!ReadVector3Accessor(Model, Sampler.output, RawValues))
+						continue;
+
+					std::vector<AnimKeyVec3>& Keys = Channel.target_path == "translation" ? Track.Translations : Track.Scales;
+					EAnimInterpolation& TrackInterpolation = Channel.target_path == "translation" ? Track.TranslationInterpolation : Track.ScaleInterpolation;
+					TrackInterpolation = Interpolation;
+					Keys.clear();
+					Keys.reserve(Times.size());
+
+					for (size_t KeyIndex = 0; KeyIndex < Times.size(); KeyIndex++)
+					{
+						const size_t ValueIndex = bIsCubic ? KeyIndex * 3 + 1 : KeyIndex;
+						if (ValueIndex >= RawValues.size())
+							break;
+
+						AnimKeyVec3 Key;
+						Key.Time = Times[KeyIndex];
+						Key.Value = RawValues[ValueIndex];
+						if (bIsCubic)
+						{
+							const size_t InTangentIndex = KeyIndex * 3;
+							const size_t OutTangentIndex = KeyIndex * 3 + 2;
+							assert(InTangentIndex < RawValues.size());
+							assert(OutTangentIndex < RawValues.size());
+							Key.InTangent = RawValues[InTangentIndex];
+							Key.OutTangent = RawValues[OutTangentIndex];
+						}
+
+						Keys.push_back(Key);
+					}
+				}
+				else if (Channel.target_path == "rotation")
+				{
+					std::vector<Vector4> RawValues;
+					if (!ReadVector4Accessor(Model, Sampler.output, RawValues))
+						continue;
+
+					Track.RotationInterpolation = Interpolation;
+					Track.Rotations.clear();
+					Track.Rotations.reserve(Times.size());
+
+					for (size_t KeyIndex = 0; KeyIndex < Times.size(); KeyIndex++)
+					{
+						const size_t ValueIndex = bIsCubic ? KeyIndex * 3 + 1 : KeyIndex;
+						if (ValueIndex >= RawValues.size())
+							break;
+
+						AnimKeyQuat Key;
+						Key.Time = Times[KeyIndex];
+						Key.Value = GltfQuaternionToEngine(RawValues[ValueIndex]);
+						if (bIsCubic)
+						{
+							const size_t InTangentIndex = KeyIndex * 3;
+							const size_t OutTangentIndex = KeyIndex * 3 + 2;
+							assert(InTangentIndex < RawValues.size());
+							assert(OutTangentIndex < RawValues.size());
+							Key.InTangent = GltfQuaternionTangentToEngine(RawValues[InTangentIndex]);
+							Key.OutTangent = GltfQuaternionTangentToEngine(RawValues[OutTangentIndex]);
+						}
+
+						Track.Rotations.push_back(Key);
+					}
+				}
+			}
+
+			if (ClipAsset.JointTracks.empty() && ClipAsset.MorphTracks.empty())
+				continue;
+
+			const std::string AnimBaseName = !GltfAnim.name.empty()
+				? GltfAnim.name
+				: ("Anim_" + std::to_string(AnimIndex));
+			const std::filesystem::path AnimPath = MakeUniqueFilePath(
+				OutputPaths.AnimationsDirectory,
+				OutputPaths.LevelBaseName + "_" + AnimBaseName,
+				".canim",
+				UsedOutputPaths);
+
+			if (!SaveAnimClipAssetToFile(ClipAsset, AnimPath.string().c_str()))
+			{
+				Log::Error("[ImportLevel] Failed to save animation asset %s", AnimPath.string().c_str());
+				continue;
+			}
+			ReloadImportedAssetIfLoaded(AnimPath);
+		}
 
 		const auto ImportTextureRef = [&](int TextureIndex, EGltfTextureUsage Usage) -> AssetRef<Texture2>
 		{
@@ -667,19 +1384,27 @@ namespace Columbus::Assets
 		for (int MeshIndex = 0; MeshIndex < (int)Model.meshes.size(); MeshIndex++)
 		{
 			const tinygltf::Mesh& GltfMesh = Model.meshes[MeshIndex];
+			const std::vector<MeshMorph> Morphs = BuildMeshMorphs(GltfMesh);
 			std::vector<CPUMeshResource> MeshPrimitives;
 			MeshPrimitives.reserve(GltfMesh.primitives.size());
 
 			for (const tinygltf::Primitive& Primitive : GltfMesh.primitives)
 			{
 				CPUMeshResource CpuMesh;
-				if (ReadMeshPrimitive(Model, Primitive, CpuMesh))
+				if (ReadMeshPrimitive(Model, Primitive, Morphs.size(), CpuMesh))
 					MeshPrimitives.push_back(std::move(CpuMesh));
 			}
 
-			UPtr<Mesh2> MeshAsset(CreateMeshAssetFromPrimitives(MeshPrimitives, SourcePath));
+			UPtr<Mesh2> MeshAsset(CreateMeshAssetFromPrimitives(MeshPrimitives, Morphs, SourcePath));
 			if (!MeshAsset)
 				continue;
+
+			if (MeshDefaultSkin.contains(MeshIndex))
+			{
+				const int SkinIndex = MeshDefaultSkin[MeshIndex];
+				if (ImportedSkeletons.contains(SkinIndex))
+					MeshAsset->Skeleton = ImportedSkeletons[SkinIndex];
+			}
 
 			for (size_t PrimitiveIndex = 0; PrimitiveIndex < MeshAsset->Primitives.size() && PrimitiveIndex < GltfMesh.primitives.size(); PrimitiveIndex++)
 			{
@@ -716,45 +1441,6 @@ namespace Columbus::Assets
 			AssetRef<Mesh2> MeshRef;
 			MeshRef.Path = MakeRelativeAssetPath(MeshPath);
 			ImportedMeshes[MeshIndex] = MeshRef;
-		}
-
-		std::vector<int> ParentIndices(Model.nodes.size(), -1);
-		for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
-		{
-			for (int ChildIndex : Model.nodes[NodeIndex].children)
-			{
-				if (ChildIndex >= 0 && ChildIndex < (int)ParentIndices.size())
-					ParentIndices[ChildIndex] = NodeIndex;
-			}
-		}
-
-		std::vector<Transform> WorldTransforms(Model.nodes.size());
-		std::vector<bool> WorldTransformVisited(Model.nodes.size(), false);
-
-		std::vector<int> RootNodes;
-		if (Model.defaultScene >= 0 && Model.defaultScene < (int)Model.scenes.size())
-		{
-			RootNodes = Model.scenes[Model.defaultScene].nodes;
-		}
-		else
-		{
-			for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
-			{
-				if (ParentIndices[NodeIndex] < 0)
-					RootNodes.push_back(NodeIndex);
-			}
-		}
-
-		for (int RootNode : RootNodes)
-		{
-			if (RootNode >= 0 && RootNode < (int)Model.nodes.size())
-				ComputeNodeWorldTransformRecursive(RootNode, ParentIndices, Model, WorldTransforms, WorldTransformVisited);
-		}
-
-		for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
-		{
-			if (!WorldTransformVisited[NodeIndex])
-				ComputeNodeWorldTransformRecursive(NodeIndex, ParentIndices, Model, WorldTransforms, WorldTransformVisited);
 		}
 
 		HLevel LevelAsset;

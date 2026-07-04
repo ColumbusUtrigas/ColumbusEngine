@@ -13,6 +13,12 @@ namespace Columbus
 		TLAS, // Top-level
 	};
 
+	enum class AccelerationStructureBuildMode
+	{
+		Build,
+		Update,
+	};
+
 	class AccelerationStructure;
 
 	struct AccelerationStructureInstance
@@ -30,6 +36,8 @@ namespace Columbus
 		Buffer* Indices;
 		int VerticesCount;
 		int IndicesCount;
+		bool AllowUpdate = false;
+		bool PreferFastBuild = false;
 
 		// TLAS-only
 		std::vector<AccelerationStructureInstance> Instances;

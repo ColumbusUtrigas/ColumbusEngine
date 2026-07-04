@@ -3,6 +3,7 @@
 #include "GPUScene.h"
 #include "Mesh.h"
 #include "Lightmaps.h"
+#include "Animation/AnimationRuntime.h"
 #include "Audio/AudioSystem.h"
 #include "Graphics/Core/View.h"
 #include "Graphics/Particles/ParticleEmitterCPU.h"
@@ -18,6 +19,7 @@
 
 #include "Common/Model/Model.h"
 #include <Core/Guid.h>
+#include <span>
 
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneTextures);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
@@ -207,7 +209,10 @@ namespace Columbus
 		using Super = AThing;
 
 	protected:
-		std::vector<HStableMeshId> MeshPrimitives;
+		HStableMeshInstanceId MeshInstance;
+		std::vector<HStableMaterialId> MaterialIds;
+		std::vector<Matrix> SkinMatrices;
+		std::vector<float> MorphWeights;
 
 		Rigidbody* EditorRigidbody; // used for picking objects
 
@@ -220,6 +225,9 @@ namespace Columbus
 
 	public:
 		void CreatePhysicsState();
+		void SetPose(const SkeletonPose& Pose);
+		void SetMorphs(std::span<const float> Weights);
+		void SetMorphWeight(int MorphIndex, float Weight);
 
 		virtual void OnPostPhysics() override;
 

@@ -53,9 +53,20 @@ namespace Columbus
 			float M[4][4];
 			float M16[16];
 			Vector4 Rows[4]; // row-major order
+			struct
+			{
+				Vector4 Row0;
+				Vector4 Row1;
+				Vector4 Row2;
+				Vector4 Row3;
+			};
 		};
 	public:
-		explicit Matrix(float Diag = 1.0f)
+		Matrix() : Matrix(1.0f)
+		{
+		}
+
+		explicit Matrix(float Diag)
 		{
 			M[0][0] = Diag; M[0][1] = 0.0f; M[0][2] = 0.0f; M[0][3] = 0.0f;
 			M[1][0] = 0.0f; M[1][1] = Diag; M[1][2] = 0.0f; M[1][3] = 0.0f;
@@ -615,5 +626,7 @@ namespace Columbus
 	};
 
 }
+
+CREFLECT_DECLARE_STRUCT_NATIVE(Columbus::Matrix, 1, "0B30A12D-A693-4AB6-AE4F-C98332988919");
 
 

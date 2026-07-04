@@ -73,10 +73,41 @@ namespace Columbus
 			}
 		}
 
-		static void NormaliseMeshResource(CPUMeshResource& Mesh, const MeshImportSettings& Settings)
+		static void NormaliseMorphTargets(CPUMeshResource& Mesh, size_t MorphCount)
+		{
+			const size_t VertexCount = Mesh.Vertices.size();
+			assert(Mesh.MorphTargets.size() == MorphCount);
+
+			for (MeshMorphTarget& Target : Mesh.MorphTargets)
+			{
+				const bool bHasPosition = !Target.PositionDeltas.empty();
+				const bool bHasNormal = !Target.NormalDeltas.empty();
+				const bool bHasTangent = !Target.TangentDeltas.empty();
+
+				assert(bHasPosition || bHasNormal || bHasTangent);
+				assert(!bHasPosition || Target.PositionDeltas.size() == VertexCount);
+				assert(!bHasNormal || Target.NormalDeltas.size() == VertexCount);
+				assert(!bHasTangent || Target.TangentDeltas.size() == VertexCount);
+
+				if (!bHasPosition)
+					Target.PositionDeltas.assign(VertexCount, Vector3(0.0f));
+				if (!bHasNormal)
+					Target.NormalDeltas.assign(VertexCount, Vector3(0.0f));
+				if (!bHasTangent)
+					Target.TangentDeltas.assign(VertexCount, Vector3(0.0f));
+			}
+		}
+
+		static void NormaliseMeshResource(CPUMeshResource& Mesh, const MeshImportSettings& Settings, size_t MorphCount)
 		{
 			if (Mesh.UV1.size() != Mesh.Vertices.size())
 				Mesh.UV1.assign(Mesh.Vertices.size(), Vector2(0.0f, 0.0f));
+
+			const bool bHasBoneIndices = !Mesh.BoneIndices.empty();
+			const bool bHasBoneWeights = !Mesh.BoneWeights.empty();
+			assert(bHasBoneIndices == bHasBoneWeights);
+			assert(!bHasBoneIndices || Mesh.BoneIndices.size() == Mesh.Vertices.size());
+			assert(!bHasBoneWeights || Mesh.BoneWeights.size() == Mesh.Vertices.size());
 
 			if (Mesh.Normals.size() != Mesh.Vertices.size())
 				Mesh.CalculateNormals();
@@ -85,6 +116,8 @@ namespace Columbus
 				Mesh.CalculateTangents();
 			else
 				GenerateFallbackTangents(Mesh);
+
+			NormaliseMorphTargets(Mesh, MorphCount);
 		}
 
 		static void ApplyImportScale(CPUMeshResource& Mesh, float Scale)
@@ -94,6 +127,12 @@ namespace Columbus
 
 			for (Vector3& Vertex : Mesh.Vertices)
 				Vertex *= Scale;
+
+			for (MeshMorphTarget& Target : Mesh.MorphTargets)
+			{
+				for (Vector3& Delta : Target.PositionDeltas)
+					Delta *= Scale;
+			}
 		}
 
 		static Box CalculateMeshBounds(const CPUMeshResource& Mesh)
@@ -105,6 +144,18 @@ namespace Columbus
 			{
 				MinVertex = Vector3::Min(Vertex, MinVertex);
 				MaxVertex = Vector3::Max(Vertex, MaxVertex);
+			}
+
+			for (const MeshMorphTarget& Target : Mesh.MorphTargets)
+			{
+				assert(Target.PositionDeltas.size() == Mesh.Vertices.size());
+
+				for (size_t VertexIndex = 0; VertexIndex < Mesh.Vertices.size(); VertexIndex++)
+				{
+					const Vector3 MorphedVertex = Mesh.Vertices[VertexIndex] + Target.PositionDeltas[VertexIndex];
+					MinVertex = Vector3::Min(MorphedVertex, MinVertex);
+					MaxVertex = Vector3::Max(MorphedVertex, MaxVertex);
+				}
 			}
 
 			if (Mesh.Vertices.empty())
@@ -119,7 +170,7 @@ namespace Columbus
 
 			for (MeshPrimitive& Primitive : Mesh.Primitives)
 			{
-				NormaliseMeshResource(Primitive.CPU, Mesh.ImportSettings);
+				NormaliseMeshResource(Primitive.CPU, Mesh.ImportSettings, Mesh.Morphs.size());
 				Primitive.BoundingBox = CalculateMeshBounds(Primitive.CPU);
 				Mesh.BoundingBox.Min = Vector3::Min(Mesh.BoundingBox.Min, Primitive.BoundingBox.Min);
 				Mesh.BoundingBox.Max = Vector3::Max(Mesh.BoundingBox.Max, Primitive.BoundingBox.Max);
@@ -201,11 +252,12 @@ namespace Columbus
 		return ImportMeshAssetFromSource(Path);
 	}
 
-	Mesh2* CreateMeshAssetFromPrimitives(std::span<const CPUMeshResource> MeshPrimitives, const char* SourcePath)
+	Mesh2* CreateMeshAssetFromPrimitives(std::span<const CPUMeshResource> MeshPrimitives, std::span<const MeshMorph> Morphs, const char* SourcePath)
 	{
 		Mesh2* Result = new Mesh2();
 		Result->SourcePath = MakeMeshSourcePathForAsset(SourcePath);
 		Result->DefaultCollisionSettings.Shape.Type = ECollisionShape::TriMesh;
+		Result->Morphs.assign(Morphs.begin(), Morphs.end());
 		Result->Primitives.reserve(MeshPrimitives.size());
 
 		for (size_t PrimitiveIndex = 0; PrimitiveIndex < MeshPrimitives.size(); PrimitiveIndex++)
@@ -237,6 +289,7 @@ namespace Columbus
 			{
 				ReimportedMesh->ImportSettings = SourceAsset.ImportSettings;
 				ReimportedMesh->DefaultCollisionSettings = SourceAsset.DefaultCollisionSettings;
+				ReimportedMesh->Skeleton = SourceAsset.Skeleton;
 				ReimportedMesh->Sockets = SourceAsset.Sockets;
 				for (size_t PrimitiveIndex = 0; PrimitiveIndex < ReimportedMesh->Primitives.size(); PrimitiveIndex++)
 				{
@@ -254,9 +307,11 @@ namespace Columbus
 
 		Mesh2* Mesh = new Mesh2();
 		Mesh->SourcePath = SourceAsset.SourcePath;
+		Mesh->Skeleton = SourceAsset.Skeleton;
 		Mesh->ImportSettings = SourceAsset.ImportSettings;
 		Mesh->DefaultCollisionSettings = SourceAsset.DefaultCollisionSettings;
 		Mesh->Sockets = SourceAsset.Sockets;
+		Mesh->Morphs = SourceAsset.Morphs;
 		Mesh->Primitives.reserve(SourceAsset.Primitives.size());
 
 		for (const MeshPrimitive& SourcePrimitive : SourceAsset.Primitives)

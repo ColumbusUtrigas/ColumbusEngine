@@ -93,18 +93,21 @@ struct GPUSceneMeshCompact
 	float4x4 PrevTransform; // 128
     float4x4 NormalMatrix; // 192
 
-	uint64_t VertexBuffer;   // 200
-	uint64_t IndexBuffer;    // 208
-	uint64_t Uv1Buffer;      // 216
-	uint64_t Uv2Buffer;      // 224
-	uint64_t NormalsBuffer;  // 232
-	uint64_t TangentsBuffer; // 240
+	uint64_t VertexBuffer;   // 192
+	uint64_t IndexBuffer;    // 200
+	uint64_t Uv1Buffer;      // 208
+	uint64_t Uv2Buffer;      // 216
+	uint64_t NormalsBuffer;  // 224
+	uint64_t TangentsBuffer; // 232
 
-	uint VertexCount; // 244
-	uint IndexCount;  // 248
+	uint VertexCount; // 240
+	uint IndexCount;  // 244
 
-	int MaterialId; // 252
-	int LightmapId; // 256
+	int MaterialId; // 248
+	int LightmapId; // 252
+
+	uint64_t PrevVertexBuffer; // 256
+	uint2 _pad0; // 272
 };
 
 struct GPUSceneMaterialCompact
@@ -168,6 +171,7 @@ namespace GPUScene
 	struct Vertex
 	{
 		float3 Position;
+		float3 PrevPosition;
 		float3 Normal;
 		float4 TangentAndSign;
 		float2 UV;
@@ -185,6 +189,15 @@ namespace GPUScene
 	{
 		// 12 is sizeof(float3)
         return vk::RawBufferLoad<float3>(Mesh.VertexBuffer + Index*12);
+	}
+
+	float3 FetchVertexPrevPositionFromMesh(GPUSceneMeshCompact Mesh, uint Index, float3 Fallback)
+	{
+        if (Mesh.PrevVertexBuffer == 0)
+            return Fallback;
+
+		// 12 is sizeof(float3)
+        return vk::RawBufferLoad<float3>(Mesh.PrevVertexBuffer + Index*12);
 	}
 	
     float3 FetchVertexNormalFromMesh(GPUSceneMeshCompact Mesh, uint Index)
@@ -229,6 +242,7 @@ namespace GPUScene
 
         Vertex vertex;
         vertex.Position       = FetchVertexPositionFromMesh(mesh, Index);
+        vertex.PrevPosition   = FetchVertexPrevPositionFromMesh(mesh, Index, vertex.Position);
         vertex.Normal         = FetchVertexNormalFromMesh(mesh, Index);
         vertex.TangentAndSign = FetchVertexTangentFromMesh(mesh, Index);
         vertex.UV             = FetchVertexUVFromMesh(mesh, Index);

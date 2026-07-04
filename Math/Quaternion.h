@@ -71,7 +71,7 @@ namespace Columbus
 		}
 
 		/*
-		* Negative quaternion, this also named "quaternion conjugation"
+		* Quaternion conjugate. This is not the same as flipping all four signs.
 		*/
 		Quaternion operator-() const
 		{
@@ -226,7 +226,7 @@ namespace Columbus
 			if (dot < 0.0f)
 			{
 				dot = -dot;
-				b = -b;
+				b = b * -1.0f;
 			}
 
 			const float DOT_THRESHOLD = 0.9995f;

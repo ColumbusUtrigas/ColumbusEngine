@@ -31,6 +31,7 @@ compile_shader_hlsl(RayTracedGlobalIllumination/Temporal.hlsl main:cs SHADER_BIN
 
 compile_shader_hlsl(TiledLightsPrepare.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(MemsetTexture.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(DeformMesh.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_glsl(FSR1/FSR1CS.glsl main:cs SHADER_BINARIES)
 compile_shader_glsl(FSR1/FSR1PS.glsl main:vs,main:ps SHADER_BINARIES)

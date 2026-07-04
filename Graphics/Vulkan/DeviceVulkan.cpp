@@ -1392,7 +1392,15 @@ namespace Columbus
 	{
 		const QueryPoolVulkan* vkPool = static_cast<const QueryPoolVulkan*>(Pool);
 
-		VK_CHECK(vkGetQueryPoolResults(_Device, vkPool->_Pool, FirstQuery, QueryCount, DataSize, Data, sizeof(u64), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
+		VkResult Result = vkGetQueryPoolResults(_Device, vkPool->_Pool, FirstQuery, QueryCount, DataSize, Data, sizeof(u64), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+
+		if (Result == VK_NOT_READY)
+		{
+			Log::Warning("[Vulkan] Query pool results not ready");
+			return;
+		}
+
+		VK_CHECK(Result);
 	}
 
 	template <typename T>
