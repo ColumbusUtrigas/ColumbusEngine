@@ -1102,7 +1102,7 @@ namespace Columbus
 				result->_Image, result->_Layout, newLayout,
 			0, 0,
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			1, Desc.Format
+			TextureUtils::TextureLayerCount(Desc), Desc.Format, Desc.Mips
 		);
 
 		result->_Layout = newLayout;
@@ -1117,15 +1117,8 @@ namespace Columbus
 	Texture2* DeviceVulkan::CreateTexture(const Image& Image)
 	{
 		TextureDesc2 desc;
-		desc.Type = TextureType::Texture2D;
 		desc.Usage = TextureUsage::Sampled;
-		desc.Width = Math::Max(1u, Image.GetWidth());
-		desc.Height = Math::Max(1u, Image.GetHeight());
-		// desc.Depth = Image.GetDepth();
-		desc.Depth = 1;
-		desc.Mips = Math::Max(1u, Image.GetMipmapsCount());
-		desc.Samples = 1;
-		desc.Format = Image.GetFormat();
+		TextureUtils::SetTextureDescImageFields(desc, Image);
 		auto result = _CreateTexture(desc);
 
 		UploadTextureMipData(result, 0, 0, Image.GetData());
@@ -1136,14 +1129,8 @@ namespace Columbus
 	Texture2* DeviceVulkan::CreateTexture(const Image& Image, const TextureDesc2& Desc)
 	{
 		TextureDesc2 UploadDesc = Desc;
-		UploadDesc.Type = TextureType::Texture2D;
 		UploadDesc.Usage = TextureUsage::Sampled;
-		UploadDesc.Width = Math::Max(1u, Image.GetWidth());
-		UploadDesc.Height = Math::Max(1u, Image.GetHeight());
-		UploadDesc.Depth = 1;
-		UploadDesc.Mips = Math::Max(1u, Image.GetMipmapsCount());
-		UploadDesc.Samples = 1;
-		UploadDesc.Format = Image.GetFormat();
+		TextureUtils::SetTextureDescImageFields(UploadDesc, Image, Desc.ArrayLayers);
 
 		auto result = _CreateTexture(UploadDesc);
 		UploadTextureMipData(result, 0, 0, Image.GetData());
@@ -1157,20 +1144,32 @@ namespace Columbus
 
 		// TODO: support async transfer
 
-		assert(Layer == 0);
-		assert(Mip == 0);
-
 		Image Img; // dummy image for size calculations
 		Img.Width = Desc.Width;
 		Img.Height = Desc.Height;
 		Img.Depth = Desc.Depth;
 		Img.Format = Desc.Format;
 		Img.MipMaps = Desc.Mips;
+		Img.Type = TextureUtils::ImageTypeFromTextureType(Desc.Type);
 
-		int size = 1; // number of layers, TODO: fix this
+		const bool bUploadWholeTexture = Mip == 0 && Layer == 0;
+		const u32 FirstMip = bUploadWholeTexture ? 0u : (u32)Mip;
+		const u32 MipCount = bUploadWholeTexture ? Desc.Mips : 1u;
+		const u32 FirstLayer = bUploadWholeTexture ? 0u : (u32)Layer;
+		const u32 LayerCount = bUploadWholeTexture ? TextureUtils::TextureLayerCount(Desc) : 1u;
+
+		u64 UploadBytes = 0;
+		if (bUploadWholeTexture)
+		{
+			UploadBytes = Img.GetFullSize();
+		}
+		else
+		{
+			UploadBytes = Img.GetSize((u32)Mip);
+		}
 
 		StagingBufferVulkan staging;
-		staging = CreateStagingBufferVulkanInternal(_Allocator, Img.GetFullSize() * size, 0, Data);
+		staging = CreateStagingBufferVulkanInternal(_Allocator, UploadBytes, 0, Data);
 
 		auto copyCmdBuf = CreateCommandBufferShared();
 		copyCmdBuf->Reset();
@@ -1178,30 +1177,36 @@ namespace Columbus
 
 		TransitionImageLayout(copyCmdBuf->_CmdBuf,
 			vktex->_Image,
-			VK_IMAGE_LAYOUT_UNDEFINED,
+			vktex->_Layout,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			size, Desc.Format, Desc.Mips
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+			TextureUtils::TextureLayerCount(Desc), Desc.Format, Desc.Mips
 		);
 
 		std::vector<VkBufferImageCopy> regions;
-		regions.reserve(Desc.Mips * size);
+		regions.reserve(MipCount * LayerCount);
 
-		for (int i = 0; i < size; i++)
+		for (u32 CurrentLayer = 0; CurrentLayer < LayerCount; CurrentLayer++)
 		{
-			for (u32 CurrentMip = 0; CurrentMip < Desc.Mips; CurrentMip++)
+			for (u32 MipIndex = 0; MipIndex < MipCount; MipIndex++)
 			{
+				const u32 CurrentMip = FirstMip + MipIndex;
+				const u32 ImageLayer = FirstLayer + CurrentLayer;
 				VkBufferImageCopy Region{};
-				Region.bufferOffset = Img.GetOffset(i, CurrentMip);
+				Region.bufferOffset = bUploadWholeTexture ? Img.GetOffset(ImageLayer, CurrentMip) : 0;
 				Region.bufferRowLength = 0;
 				Region.bufferImageHeight = 0;
-				Region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				Region.imageSubresource.aspectMask = TextureFormatToAspectMaskVk(Desc.Format);
 				Region.imageSubresource.mipLevel = CurrentMip;
-				Region.imageSubresource.baseArrayLayer = i;
+				Region.imageSubresource.baseArrayLayer = ImageLayer;
 				Region.imageSubresource.layerCount = 1;
 				Region.imageOffset = { 0, 0, 0 };
-				Region.imageExtent = { Math::Max(1u, Img.GetWidth() >> CurrentMip), Math::Max(1u, Img.GetHeight() >> CurrentMip), 1 };
+				Region.imageExtent = {
+					Math::Max(1u, Img.GetWidth() >> CurrentMip),
+					Math::Max(1u, Img.GetHeight() >> CurrentMip),
+					Desc.Type == TextureType::Texture3D ? Math::Max(1u, Img.GetDepth() >> CurrentMip) : 1u
+				};
 				regions.push_back(Region);
 			}
 		}
@@ -1220,7 +1225,7 @@ namespace Columbus
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-			size, Desc.Format, Desc.Mips
+			TextureUtils::TextureLayerCount(Desc), Desc.Format, Desc.Mips
 		);
 		vktex->_Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -1235,6 +1240,62 @@ namespace Columbus
 	{
 	}
 
+	Texture2* DeviceVulkan::CreateTextureView(Texture2* Source, const TextureViewDesc& ViewDesc)
+	{
+		COLUMBUS_ASSERT(Source != nullptr);
+
+		TextureVulkan* SourceVk = static_cast<TextureVulkan*>(Source);
+		const TextureDesc2& SourceDesc = Source->GetDesc();
+
+		const u32 SourceMips = std::max(1u, SourceDesc.Mips);
+		const u32 SourceLayers = TextureUtils::TextureLayerCount(SourceDesc);
+
+		COLUMBUS_ASSERT(ViewDesc.BaseMip < SourceMips);
+		COLUMBUS_ASSERT(ViewDesc.BaseLayer < SourceLayers);
+
+		const u32 MipCount = ViewDesc.MipCount == 0 ? (SourceMips - ViewDesc.BaseMip) : ViewDesc.MipCount;
+		const u32 LayerCount = ViewDesc.LayerCount == 0 ? (SourceLayers - ViewDesc.BaseLayer) : ViewDesc.LayerCount;
+
+		COLUMBUS_ASSERT(ViewDesc.BaseMip + MipCount <= SourceMips);
+		COLUMBUS_ASSERT(ViewDesc.BaseLayer + LayerCount <= SourceLayers);
+
+		TextureDesc2 Desc = SourceDesc;
+		Desc.Type = ViewDesc.ViewType;
+		Desc.Width = std::max(1u, SourceDesc.Width >> ViewDesc.BaseMip);
+		Desc.Height = std::max(1u, SourceDesc.Height >> ViewDesc.BaseMip);
+		Desc.Depth = SourceDesc.Type == TextureType::Texture3D ? std::max(1u, SourceDesc.Depth >> ViewDesc.BaseMip) : 1u;
+		Desc.Mips = MipCount;
+		Desc.ArrayLayers = LayerCount;
+
+		TextureVulkan* Result = new TextureVulkan(TextureUtils::NormalizeTextureDesc(Desc));
+		Result->_Image = SourceVk->_Image;
+		// descriptor writes read the view's layout snapshot; the render graph keeps images in
+		// GENERAL (see RenderGraph barrier handling), which is where views are consumed
+		Result->_Layout = VK_IMAGE_LAYOUT_GENERAL;
+		Result->_IsView = true;
+		Result->SetSize(0);
+
+		VkImageViewCreateInfo viewInfo{};
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.pNext = nullptr;
+		viewInfo.flags = 0;
+		viewInfo.image = SourceVk->_Image;
+		viewInfo.viewType = TextureTypeToViewTypeVk(ViewDesc.ViewType);
+		viewInfo.format = TextureFormatToVK(SourceDesc.Format);
+		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(SourceDesc.Format);
+		viewInfo.subresourceRange.baseMipLevel = ViewDesc.BaseMip;
+		viewInfo.subresourceRange.levelCount = MipCount;
+		viewInfo.subresourceRange.baseArrayLayer = ViewDesc.BaseLayer;
+		viewInfo.subresourceRange.layerCount = LayerCount;
+		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &Result->_View));
+
+		return Result;
+	}
+
 	void DeviceVulkan::DestroyTexture(Texture2* Tex)
 	{
 		if (Tex == nullptr)
@@ -1242,6 +1303,13 @@ namespace Columbus
 
 		auto vktex = static_cast<TextureVulkan*>(Tex);
 		COLUMBUS_ASSERT(vktex);
+
+		if (vktex->_IsView)
+		{
+			// views share the image with their source and own only the image view
+			vkDestroyImageView(_Device, vktex->_View, nullptr);
+			return;
+		}
 
 		RemoveProfilingMemory(MemoryCounter_Vulkan_AllocatedImages, Tex->GetSize());
 		RemoveProfilingCount(CountingCounter_Vulkan_Images, 1);
@@ -1645,22 +1713,23 @@ namespace Columbus
 
 	TextureVulkan* DeviceVulkan::_CreateTexture(const TextureDesc2& Desc)
 	{
-		auto result = new TextureVulkan(Desc);
+		const TextureDesc2 NormalizedDesc = TextureUtils::NormalizeTextureDesc(Desc);
+		auto result = new TextureVulkan(NormalizedDesc);
 
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.pNext = NULL;
-		imageInfo.flags = TextureTypeToImageFlagsVk(Desc.Type);
-		imageInfo.imageType = TextureTypeToImageTypeVk(Desc.Type);
-		imageInfo.format = TextureFormatToVK(Desc.Format);
-		imageInfo.extent.width = Desc.Width;
-		imageInfo.extent.height = Desc.Height;
-		imageInfo.extent.depth = Desc.Depth;
-		imageInfo.mipLevels = Desc.Mips;
-		imageInfo.arrayLayers = Desc.ArrayLayers;
-		imageInfo.samples = SampleCountToVk(Desc.Samples);
+		imageInfo.flags = TextureTypeToImageFlagsVk(NormalizedDesc.Type);
+		imageInfo.imageType = TextureTypeToImageTypeVk(NormalizedDesc.Type);
+		imageInfo.format = TextureFormatToVK(NormalizedDesc.Format);
+		imageInfo.extent.width = NormalizedDesc.Width;
+		imageInfo.extent.height = NormalizedDesc.Height;
+		imageInfo.extent.depth = NormalizedDesc.Depth;
+		imageInfo.mipLevels = NormalizedDesc.Mips;
+		imageInfo.arrayLayers = NormalizedDesc.ArrayLayers;
+		imageInfo.samples = SampleCountToVk(NormalizedDesc.Samples);
 		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.usage = TextureUsageToImageUsageVk(Desc.Usage) | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // TODO
+		imageInfo.usage = TextureUsageToImageUsageVk(NormalizedDesc.Usage) | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // TODO
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		imageInfo.queueFamilyIndexCount = 1;
 		imageInfo.pQueueFamilyIndices = &_FamilyIndex;
@@ -1686,21 +1755,21 @@ namespace Columbus
 			viewInfo.pNext = nullptr;
 			viewInfo.flags = 0;
 			viewInfo.image = result->_Image;
-			viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
-			viewInfo.format = TextureFormatToVK(Desc.Format);
+			viewInfo.viewType = TextureTypeToViewTypeVk(NormalizedDesc.Type);
+			viewInfo.format = TextureFormatToVK(NormalizedDesc.Format);
 			viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 			viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 			viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 			viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-			viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(Desc.Format); // colour or depth-stencil
+			viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(NormalizedDesc.Format); // colour or depth-stencil
 			viewInfo.subresourceRange.baseMipLevel = 0;
-			viewInfo.subresourceRange.levelCount = Desc.Mips;
+			viewInfo.subresourceRange.levelCount = NormalizedDesc.Mips;
 			viewInfo.subresourceRange.baseArrayLayer = 0;
-			viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+			viewInfo.subresourceRange.layerCount = NormalizedDesc.ArrayLayers;
 			VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_View));
 		}
 
-		TextureFormatInfo FormatInfo = TextureFormatGetInfo(Desc.Format);
+		TextureFormatInfo FormatInfo = TextureFormatGetInfo(NormalizedDesc.Format);
 
 		if (FormatInfo.HasDepth)
 		{
@@ -1711,17 +1780,17 @@ namespace Columbus
 				viewInfo.pNext = nullptr;
 				viewInfo.flags = 0;
 				viewInfo.image = result->_Image;
-				viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
-				viewInfo.format = TextureFormatToVK(Desc.Format);
+				viewInfo.viewType = TextureTypeToViewTypeVk(NormalizedDesc.Type);
+				viewInfo.format = TextureFormatToVK(NormalizedDesc.Format);
 				viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 				viewInfo.subresourceRange.baseMipLevel = 0;
-				viewInfo.subresourceRange.levelCount = Desc.Mips;
+				viewInfo.subresourceRange.levelCount = NormalizedDesc.Mips;
 				viewInfo.subresourceRange.baseArrayLayer = 0;
-				viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+				viewInfo.subresourceRange.layerCount = NormalizedDesc.ArrayLayers;
 				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_DepthView));
 			}
 
@@ -1733,17 +1802,17 @@ namespace Columbus
 				viewInfo.pNext = nullptr;
 				viewInfo.flags = 0;
 				viewInfo.image = result->_Image;
-				viewInfo.viewType = TextureTypeToViewTypeVk(Desc.Type);
-				viewInfo.format = TextureFormatToVK(Desc.Format);
+				viewInfo.viewType = TextureTypeToViewTypeVk(NormalizedDesc.Type);
+				viewInfo.format = TextureFormatToVK(NormalizedDesc.Format);
 				viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
 				viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
 				viewInfo.subresourceRange.baseMipLevel = 0;
-				viewInfo.subresourceRange.levelCount = Desc.Mips;
+				viewInfo.subresourceRange.levelCount = NormalizedDesc.Mips;
 				viewInfo.subresourceRange.baseArrayLayer = 0;
-				viewInfo.subresourceRange.layerCount = Desc.ArrayLayers;
+				viewInfo.subresourceRange.layerCount = NormalizedDesc.ArrayLayers;
 				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_StencilView));
 			}
 		}
@@ -1752,19 +1821,19 @@ namespace Columbus
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerInfo.pNext = nullptr;
 		samplerInfo.flags = 0;
-		samplerInfo.magFilter = TextureFilterToVk(Desc.MagFilter);
-		samplerInfo.minFilter = TextureFilterToVk(Desc.MinFilter);
-		samplerInfo.mipmapMode = TextureFilterMipToVk(Desc.MipFilter);
-		samplerInfo.addressModeU = TextureAddressModeToVk(Desc.AddressU);
-		samplerInfo.addressModeV = TextureAddressModeToVk(Desc.AddressV);
-		samplerInfo.addressModeW = TextureAddressModeToVk(Desc.AddressW);
+		samplerInfo.magFilter = TextureFilterToVk(NormalizedDesc.MagFilter);
+		samplerInfo.minFilter = TextureFilterToVk(NormalizedDesc.MinFilter);
+		samplerInfo.mipmapMode = TextureFilterMipToVk(NormalizedDesc.MipFilter);
+		samplerInfo.addressModeU = TextureAddressModeToVk(NormalizedDesc.AddressU);
+		samplerInfo.addressModeV = TextureAddressModeToVk(NormalizedDesc.AddressV);
+		samplerInfo.addressModeW = TextureAddressModeToVk(NormalizedDesc.AddressW);
 		samplerInfo.mipLodBias = 0;
-		samplerInfo.anisotropyEnable = Desc.Anisotropy > 1;
-		samplerInfo.maxAnisotropy = Desc.Anisotropy;
+		samplerInfo.anisotropyEnable = NormalizedDesc.Anisotropy > 1;
+		samplerInfo.maxAnisotropy = NormalizedDesc.Anisotropy;
 		samplerInfo.compareEnable = false; // TODO
 		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS; // TODO
-		samplerInfo.minLod = Desc.MinLOD;
-		samplerInfo.maxLod = Desc.MaxLOD;
+		samplerInfo.minLod = NormalizedDesc.MinLOD;
+		samplerInfo.maxLod = NormalizedDesc.MaxLOD;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 		samplerInfo.unnormalizedCoordinates = false;
 		VK_CHECK(vkCreateSampler(_Device, &samplerInfo, nullptr, &result->_Sampler));

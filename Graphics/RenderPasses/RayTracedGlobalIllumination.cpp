@@ -1,5 +1,4 @@
 #include "RenderPasses.h"
-#include "RayTracingIrradianceVolumes.h"
 #include "Core/CVar.h"
 #include "Graphics/ShaderCache.h"
 
@@ -229,8 +228,8 @@ namespace Columbus
 			ShaderSampledTexture GBufferNormals;
 			ShaderSampledTexture GBufferDepth;
 			ShaderSampledTexture GBufferSourcePixel;
-			ShaderConstants<RayTracingIrradianceVolumes::Constants> IrradianceVolumeConstants;
-			std::array<ShaderReadBuffer, RayTracingIrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
+			ShaderConstants<IrradianceVolumes::Constants> IrradianceVolumeConstants;
+			std::array<ShaderReadBuffer, IrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
 			ShaderPushConstants<RTGI_Parameters> Constants { {}, ShaderType::Raygen };
 		};
 
@@ -244,7 +243,7 @@ namespace Columbus
 			Binder.Bind(Params.GBufferSourcePixel, 2, 4);
 			Binder.Bind(Params.IrradianceVolumeConstants, 2, 9);
 			ShaderArray<ShaderReadBuffer> IrradianceProbeBuffers;
-			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), RayTracingIrradianceVolumes::MaxVolumes);
+			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), IrradianceVolumes::MaxVolumes);
 			Binder.Bind(IrradianceProbeBuffers, 2, 10);
 			Binder.Bind(Params.Constants);
 		}
@@ -460,7 +459,7 @@ namespace Columbus
 	}
 
 	// diffuse GI, one sample
-	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes)
+	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		const bool UseDenoiser = View.DeferredSettings.RTGIUseDenoiser;
 		const bool UseRadianceCache = View.DeferredSettings.RTGIUseRadianceCache;
@@ -489,8 +488,8 @@ namespace Columbus
 		TraceParams.GBufferNormals = DownsampledGBuffer.Normal;
 		TraceParams.GBufferDepth = DownsampledGBuffer.Depth;
 		TraceParams.GBufferSourcePixel = DownsampledGBuffer.SourcePixel;
-		TraceParams.IrradianceVolumeConstants = IrradianceVolumes.Constants;
-		TraceParams.IrradianceProbeBuffers = IrradianceVolumes.ProbeBuffers;
+		TraceParams.IrradianceVolumeConstants = DeferredContext.BakedLighting.IrradianceVolumes.Constants;
+		TraceParams.IrradianceProbeBuffers = DeferredContext.BakedLighting.IrradianceVolumes.ProbeBuffers;
 		TraceParams.Constants.Value = {
 			.CameraPosition = View.CameraCur.Pos,
 			.Random = 0,

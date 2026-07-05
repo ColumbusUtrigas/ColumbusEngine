@@ -4,7 +4,6 @@
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "Profiling/Profiling.h"
-#include "RayTracingIrradianceVolumes.h"
 #include "RenderPasses.h"
 #include "imgui.h"
 #include "Graphics/ShaderCache.h"
@@ -147,8 +146,8 @@ namespace Columbus
 
 		struct Parameters
 		{
-			ShaderConstants<RayTracingIrradianceVolumes::Constants> IrradianceVolumeConstants;
-			std::array<ShaderReadBuffer, RayTracingIrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
+			ShaderConstants<IrradianceVolumes::Constants> IrradianceVolumeConstants;
+			std::array<ShaderReadBuffer, IrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
 			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
 			ShaderSampledTexture GBufferNormal;
 			ShaderReadBuffer SceneBuffer;
@@ -160,7 +159,7 @@ namespace Columbus
 		{
 			Binder.Bind(Params.IrradianceVolumeConstants, 0, 9);
 			ShaderArray<ShaderReadBuffer> IrradianceProbeBuffers;
-			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), RayTracingIrradianceVolumes::MaxVolumes);
+			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), IrradianceVolumes::MaxVolumes);
 			Binder.Bind(IrradianceProbeBuffers, 0, 10);
 			Binder.Bind(Params.GBufferDepth, 1, 0);
 			Binder.Bind(Params.GBufferNormal, 1, 1);
@@ -173,23 +172,28 @@ namespace Columbus
 	ConsoleVariable<int> CVar_IrradianceVolumeBakeProbeChunk("r.IrradianceVolume.BakeProbeChunk", "Maximum probes processed by one irradiance volume bake dispatch", 512);
 	ConsoleVariable<int> CVar_IrradianceVolumeBakeSampleChunk("r.IrradianceVolume.BakeSampleChunk", "Maximum rays per probe lobe accumulated by one irradiance volume ambient bake dispatch", 32768);
 
-	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume, int RaysPerProbe, int Bounces)
+	void RenderBakeIrradianceVolume(RenderGraph& Graph, const RenderView& View, GPUIrradianceVolume& Volume, int Spp, int Bounces)
 	{
 		if (!Graph.Device->SupportsRayTracing())
 		{
 			return;
 		}
 
-		// TODO: invent something better than this
-		std::vector<GPUIrradianceProbe> IrradianceProbes;
+		const int RaysPerProbe = Spp;
+		const iVector3 ProbesCount = Volume.GetProbesCount();
+		const int TotalProbes = Volume.GetTotalProbes();
 
-		for (int i = 0; i < Volume.ProbesCount.X; i++)
+		// initial probe grid positions; relocation moves them during the bake
+		std::vector<GPUIrradianceProbe> IrradianceProbes;
+		IrradianceProbes.reserve((size_t)TotalProbes);
+
+		for (int i = 0; i < ProbesCount.X; i++)
 		{
-			for (int j = 0; j < Volume.ProbesCount.Y; j++)
+			for (int j = 0; j < ProbesCount.Y; j++)
 			{
-				for (int k = 0; k < Volume.ProbesCount.Z; k++)
+				for (int k = 0; k < ProbesCount.Z; k++)
 				{
-					Vector3 CellSize = Volume.Extent / Vector3(Volume.ProbesCount);
+					Vector3 CellSize = Volume.Extent / Vector3(ProbesCount);
 					Vector3 ProbePosition = Vector3((float)i, (float)j, (float)k) * CellSize + CellSize/2 - Volume.Extent/2 + Volume.Position;
 					GPUIrradianceProbe Probe{};
 					Probe.PositionState = Vector4(ProbePosition, 1.0f);
@@ -198,29 +202,15 @@ namespace Columbus
 			}
 		}
 
-		if (Volume.ProbesBuffer != nullptr)
-		{
-			RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.ProbesBufferBytes);
-			Volume.ProbesBufferBytes = 0;
-			Graph.Device->DestroyBufferDeferred(Volume.ProbesBuffer);
-			Volume.ProbesBuffer = nullptr;
-		}
-
-		BufferDesc ProbeBufferDesc;
-		ProbeBufferDesc.BindFlags = BufferType::UAV;
-		ProbeBufferDesc.Size = Volume.GetTotalProbes() * sizeof(GPUIrradianceProbe);
-		Volume.ProbesBuffer = Graph.Device->CreateBuffer(ProbeBufferDesc, IrradianceProbes.data());
-		Volume.ProbesBufferBytes = Volume.ProbesBuffer->GetSize();
-		AddProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.ProbesBufferBytes);
+		Graph.Scene->SetIrradianceProbes(Volume, IrradianceProbes.data(), (u64)TotalProbes * sizeof(GPUIrradianceProbe));
 
 		RenderPassParameters Parameters;
-		const int TotalProbes = Volume.GetTotalProbes();
 		const int FixedRayCount = 32;
 		const int VisibilityRayCount = 128;
 		const int RelocationIterations = 5;
 		const int ProbeChunkSize = std::max(1, CVar_IrradianceVolumeBakeProbeChunk.GetValue());
 		const int SampleChunkSize = std::max(1, CVar_IrradianceVolumeBakeSampleChunk.GetValue());
-		RenderGraphBufferRef ProbesBuffer = Graph.RegisterExternalBuffer(Volume.ProbesBuffer, "IrradianceProbes");
+		RenderGraphBufferRef ProbesBuffer = Graph.RegisterExternalBuffer(Volume.Probes, "IrradianceProbes");
 
 		BufferDesc FixedRayBufferDesc;
 		FixedRayBufferDesc.BindFlags = BufferType::UAV;
@@ -269,7 +259,7 @@ namespace Columbus
 			RelocateParams.Constants.Value = {
 				.Position = Vector4(Volume.Position, 0),
 				.Extent = Vector4(Volume.Extent, 0),
-				.ProbesCount = iVector4(Volume.ProbesCount, 0),
+				.ProbesCount = iVector4(ProbesCount, 0),
 				.TotalProbes = TotalProbes,
 				.FixedRayCount = FixedRayCount,
 				.Iteration = Iteration,
@@ -344,7 +334,7 @@ namespace Columbus
 		VisibilityBlendParams.Constants.Value = {
 			.Position = Vector4(Volume.Position, 0),
 			.Extent = Vector4(Volume.Extent, 0),
-			.ProbesCount = iVector4(Volume.ProbesCount, 0),
+			.ProbesCount = iVector4(ProbesCount, 0),
 			.TotalProbes = TotalProbes,
 			.FixedRayCount = FixedRayCount,
 			.Iteration = 0,
@@ -408,8 +398,10 @@ namespace Columbus
 		}
 	}
 
-	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes)
+	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
+		const IrradianceVolumes::Prepared& PreparedVolumes = DeferredContext.BakedLighting.IrradianceVolumes;
+
 		iVector2 Size = View.RenderSize;
 
 		TextureDesc2 Desc{
@@ -427,14 +419,14 @@ namespace Columbus
 
 		Textures.RTGI = GI_Tex;
 
-		if (IrradianceVolumes.Constants.Value.CountAndFlags.X == 0)
+		if (PreparedVolumes.Constants.Value.CountAndFlags.X == 0)
 		{
 			return;
 		}
 
 		IrradianceProbesApplyShader::Parameters ApplyParams;
-		ApplyParams.IrradianceVolumeConstants = IrradianceVolumes.Constants;
-		ApplyParams.IrradianceProbeBuffers = IrradianceVolumes.ProbeBuffers;
+		ApplyParams.IrradianceVolumeConstants = PreparedVolumes.Constants;
+		ApplyParams.IrradianceProbeBuffers = PreparedVolumes.ProbeBuffers;
 		ApplyParams.GBufferDepth = Textures.GBufferDS;
 		ApplyParams.GBufferNormal = Textures.GBufferNormal;
 		ApplyParams.SceneBuffer = Graph.Scene->SceneBuffer;

@@ -4,7 +4,6 @@
 #include "Math/Quaternion.h"
 #include <algorithm>
 #include <array>
-#include <vector>
 
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTransparency);
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTransparencyRefraction);
@@ -113,6 +112,7 @@ namespace Columbus
 			ShaderSampledTexture RefractionLevel2;
 			ShaderSampledTexture RefractionLevel3;
 			ShaderStaticSampler RefractionSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ReflectionCaptures::ShaderResources ReflectionCaptures;
 		};
 
 		struct DrawParameters
@@ -128,6 +128,7 @@ namespace Columbus
 			Binder.Bind(Params.RefractionLevel2, 2, 2);
 			Binder.Bind(Params.RefractionLevel3, 2, 3);
 			Binder.Bind(Params.RefractionSampler, 2, 4);
+			ReflectionCaptures::BindReflectionCaptureResources(Binder, Params.ReflectionCaptures, 3);
 		}
 
 		static void Bind(ShaderBinder& Binder, const DrawParameters& Params)
@@ -247,7 +248,7 @@ namespace Columbus
 
 	static void RenderTransparentMeshes(RenderGraphContext& Context, const RenderView& View, const ForwardTransparentShader::PassParameters& PassParams)
 	{
-		std::vector<TransparentMeshDrawItem> TransparentMeshes;
+		RenderGraphDynamicArray<TransparentMeshDrawItem> TransparentMeshes(Context.Graph.Allocator);
 		TransparentMeshes.reserve(Context.Scene->Meshes.Size());
 
 		for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
@@ -359,18 +360,27 @@ namespace Columbus
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
-		ForwardTransparentShader::PassParameters MeshPassParams;
-		MeshPassParams.Scene.UseCombinedSampler = false;
-		MeshPassParams.RefractionLevel0 = RefractionLevels[0];
-		MeshPassParams.RefractionLevel1 = RefractionLevels[1];
-		MeshPassParams.RefractionLevel2 = RefractionLevels[2];
-		MeshPassParams.RefractionLevel3 = RefractionLevels[3];
-		Dependencies.Bind<ForwardTransparentShader>(MeshPassParams);
+		struct TransparencyPassData
+		{
+			ReflectionCaptures::Prepared ReflectionCaptures;
+			ForwardTransparentShader::PassParameters MeshPassParams;
+		};
 
-		Graph.AddPass("Transparency", RenderGraphPassType::Raster, Parameters, Dependencies, [View, MeshPassParams](RenderGraphContext& Context)
+		TransparencyPassData PassData;
+		PassData.ReflectionCaptures = Context.BakedLighting.ReflectionCaptures;
+		PassData.MeshPassParams.Scene.UseCombinedSampler = false;
+		PassData.MeshPassParams.RefractionLevel0 = RefractionLevels[0];
+		PassData.MeshPassParams.RefractionLevel1 = RefractionLevels[1];
+		PassData.MeshPassParams.RefractionLevel2 = RefractionLevels[2];
+		PassData.MeshPassParams.RefractionLevel3 = RefractionLevels[3];
+		ReflectionCaptures::SetShaderResources(PassData.MeshPassParams.ReflectionCaptures, PassData.ReflectionCaptures, Graph.Scene->BRDF_LUT);
+		Dependencies.Bind<ForwardTransparentShader>(PassData.MeshPassParams);
+
+		Graph.AddPass("Transparency", RenderGraphPassType::Raster, Parameters, Dependencies, [View, PassData](RenderGraphContext& Context) mutable
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTransparency, Context);
-			RenderTransparentMeshes(Context, View, MeshPassParams);
+			ReflectionCaptures::SetShaderResources(PassData.MeshPassParams.ReflectionCaptures, PassData.ReflectionCaptures, Context.Scene->BRDF_LUT);
+			RenderTransparentMeshes(Context, View, PassData.MeshPassParams);
 			RenderParticles(Context, View);
 		});
 	}

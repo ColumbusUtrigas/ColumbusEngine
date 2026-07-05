@@ -286,6 +286,9 @@ namespace Columbus
 		Texture2* CreateTexture(const TextureDesc2& Desc);
 		Texture2* CreateTexture(const Image& Image);
 		Texture2* CreateTexture(const Image& Image, const TextureDesc2& Desc);
+		// creates a non-owning view of a texture subresource range; the source must outlive
+		// the view. destroy with DestroyTexture/DestroyTextureDeferred like any texture.
+		Texture2* CreateTextureView(Texture2* Source, const TextureViewDesc& ViewDesc);
 		void      UploadTextureMipData(Texture2* Tex, int Mip, int Layer, const void* Data);
 		void      DestroyTexture(Texture2* Tex);
 		void      DestroyTextureDeferred(Texture2* Tex);

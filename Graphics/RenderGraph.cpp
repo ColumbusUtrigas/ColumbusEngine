@@ -812,7 +812,7 @@ namespace Columbus
 				UpdateTextureLifetime(GraphTexture, Pass.Id);
 
 				// update resource consumers
-				GraphTexture.Readers.push_back(GraphTexture.Id);
+				GraphTexture.Readers.push_back(Pass.Id);
 			}
 
 			for (const auto& Read : Pass.Dependencies.BufferReadResources)
@@ -823,7 +823,7 @@ namespace Columbus
 				UpdateBufferLifetime(GraphBuffer, Pass.Id);
 
 				// update resource consumers
-				GraphBuffer.Readers.push_back(GraphBuffer.Id);
+				GraphBuffer.Readers.push_back(Pass.Id);
 			}
 
 			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
@@ -886,46 +886,65 @@ namespace Columbus
 			}
 		}
 
-		// knowing resource adjacent passes (writer and readers), setup barriers for a pass
-		// needed only for reading passes
+		// Knowing resource adjacent passes, setup barriers for each read.
+		// Resources can be overwritten multiple times; barriers must target the writer
+		// of the exact version that this pass reads.
 		for (auto& Pass : Passes)
 		{
 			for (const auto& Read : Pass.Dependencies.TextureReadResources)
 			{
-				const auto& GraphTexture = Textures[Read.Texture];
-				if (GraphTexture.Writer == -1)
+				if (Read.Version < 0)
 				{
 					continue;
 				}
 
-				const auto& WriterPass = Passes[GraphTexture.Writer];
-
-				// search for the writing dependency, TODO: better solution?
-				for (const auto& WriterPassWrite : WriterPass.Dependencies.TextureWriteResources)
+				for (int WriterPassId = Pass.Id - 1; WriterPassId >= 0; WriterPassId--)
 				{
-					if (WriterPassWrite.Texture == Read.Texture)
+					const auto& WriterPass = Passes[WriterPassId];
+					bool bFoundWriter = false;
+
+					for (const auto& WriterPassWrite : WriterPass.Dependencies.TextureWriteResources)
 					{
-						Pass.TextureBarriers.push_back(RenderGraphTextureBarrier { GraphTexture.Id, WriterPassWrite, Read });
+						if (WriterPassWrite.Texture == Read.Texture && WriterPassWrite.Version == Read.Version)
+						{
+							Pass.TextureBarriers.push_back(RenderGraphTextureBarrier { Read.Texture, WriterPassWrite, Read });
+							bFoundWriter = true;
+							break;
+						}
+					}
+
+					if (bFoundWriter)
+					{
+						break;
 					}
 				}
 			}
 
 			for (const auto& Read : Pass.Dependencies.BufferReadResources)
 			{
-				const auto& GraphBuffer = Buffers[Read.Buffer];
-				if (GraphBuffer.Writer == -1)
+				if (Read.Version < 0)
 				{
 					continue;
 				}
 
-				const auto& WriterPass = Passes[GraphBuffer.Writer];
-
-				// search for the writing dependency, TODO: better solution?
-				for (const auto& WriterPassWrite : WriterPass.Dependencies.BufferWriteResources)
+				for (int WriterPassId = Pass.Id - 1; WriterPassId >= 0; WriterPassId--)
 				{
-					if (WriterPassWrite.Buffer == Read.Buffer)
+					const auto& WriterPass = Passes[WriterPassId];
+					bool bFoundWriter = false;
+
+					for (const auto& WriterPassWrite : WriterPass.Dependencies.BufferWriteResources)
 					{
-						Pass.BufferBarriers.push_back(RenderGraphBufferBarrier { GraphBuffer.Id, WriterPassWrite, Read });
+						if (WriterPassWrite.Buffer == Read.Buffer && WriterPassWrite.Version == Read.Version)
+						{
+							Pass.BufferBarriers.push_back(RenderGraphBufferBarrier { Read.Buffer, WriterPassWrite, Read });
+							bFoundWriter = true;
+							break;
+						}
+					}
+
+					if (bFoundWriter)
+					{
+						break;
 					}
 				}
 			}
@@ -1164,9 +1183,9 @@ namespace Columbus
 				VkBarrier.image = Texture->_Image;
 				VkBarrier.subresourceRange.aspectMask = AspectFlags;
 				VkBarrier.subresourceRange.baseMipLevel = 0;
-				VkBarrier.subresourceRange.levelCount = 1;
+				VkBarrier.subresourceRange.levelCount = Texture->GetDesc().Mips;
 				VkBarrier.subresourceRange.baseArrayLayer = 0;
-				VkBarrier.subresourceRange.layerCount = 1;
+				VkBarrier.subresourceRange.layerCount = TextureUtils::TextureLayerCount(Texture->GetDesc());
 
 				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, Barrier.Writer.Stage, Barrier.Reader.Stage, 0,
 					0, 0, // memory barrier

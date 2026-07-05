@@ -11,7 +11,6 @@
 #include "Graphics/Material.h"
 #include "Graphics/Vulkan/DeviceVulkan.h"
 #include "Profiling/Profiling.h"
-#include "IrradianceVolume.h"
 #include <Core/Core.h>
 #include <span>
 #include <string>
@@ -228,6 +227,57 @@ namespace Columbus
 		int _pad[14]; // 512
 	};
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Baked lighting
+
+	// layout must match Shaders/IrradianceVolume/IrradianceVolumeCommon.hlsli
+	struct GPUIrradianceProbe
+	{
+		alignas(16) Vector4 PositionState;
+		alignas(16) Vector4 Irradiance[6];
+		Vector2 Distance[64];
+	};
+
+	struct GPUIrradianceVolume
+	{
+		int ProbeCountX = 0;
+		int ProbeCountY = 0;
+		int ProbeCountZ = 0;
+		int ProbeStride = 0;
+
+		float Intensity = 1.0f;
+		float NormalBias = 0.2f;
+		float BlendDistance = 0.0f;
+		float Priority = 0.0f;
+
+		Vector3 Position;
+		Vector3 Extent;
+
+		Buffer* Probes = nullptr; // owned by GPUScene
+
+		iVector3 GetProbesCount() const { return iVector3(ProbeCountX, ProbeCountY, ProbeCountZ); }
+		int GetTotalProbes() const { return ProbeCountX * ProbeCountY * ProbeCountZ; }
+	};
+
+	struct GPUReflectionCapture
+	{
+		int Resolution = 0;
+		int MipCount = 0;
+
+		float Intensity = 1.0f;
+		float BlendDistance = 0.0f;
+		float Priority = 0.0f;
+
+		Vector3 Position;
+		Vector3 Extent;
+
+		// prefiltered radiance cubemap, owned by GPUScene.
+		// RGBA32F while a bake is in flight, BC6H once baked data is applied.
+		Texture2* Radiance = nullptr;
+	};
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 	// per-particle data
 	struct GPUParticleCompact
 	{
@@ -275,6 +325,8 @@ namespace Columbus
 	using HStableTextureId   = TStableSparseArray<Texture2*>::Handle;
 	using HStableDecalId     = TStableSparseArray<GPUDecal>::Handle;
 	using HStableParticlesId = TStableSparseArray<GPUSceneParticles>::Handle;
+	using HStableIrradianceVolumeId  = TStableSparseArray<GPUIrradianceVolume>::Handle;
+	using HStableReflectionCaptureId = TStableSparseArray<GPUReflectionCapture>::Handle;
 
 	struct GPUScene
 	{
@@ -295,7 +347,9 @@ namespace Columbus
 		TStableSparseArray<GPUDecal>     Decals;
 		TStableSparseArray<GPUSceneParticles> Particles;
 
-		std::vector<IrradianceVolume> IrradianceVolumes;
+		// static GI
+		TStableSparseArray<GPUIrradianceVolume>  IrradianceVolumes;
+		TStableSparseArray<GPUReflectionCapture> ReflectionCaptures;
 
 		SPtr<DeviceVulkan> Device;
 
@@ -321,6 +375,9 @@ namespace Columbus
 		Texture2* LTC_1 = nullptr;
 		Texture2* LTC_2 = nullptr;
 
+		// split sum approximation stuff
+		Texture2* BRDF_LUT = nullptr;
+
 	public:
 		void Update();
 		void SavePreviousMeshTransforms();
@@ -336,6 +393,22 @@ namespace Columbus
 
 		HStableParticlesId AddParticleSystem(HParticleEmitterInstanceCPU* Emitter);
 		void DeleteParticleSystem(HStableParticlesId Id);
+
+		// Baked lighting. Parameter fields on GPU* entries are written directly by the owning
+		// things; GPU resources (probe buffers, radiance cubemaps) are created/destroyed only
+		// through these functions so destruction and memory tracking stay in one place.
+		HStableIrradianceVolumeId AddIrradianceVolume();
+		void RemoveIrradianceVolume(HStableIrradianceVolumeId Id);
+		void SetIrradianceProbes(GPUIrradianceVolume& Volume, const void* Data, u64 Size);
+		void ReleaseIrradianceProbes(GPUIrradianceVolume& Volume, bool bDeferred = true);
+
+		HStableReflectionCaptureId AddReflectionCapture();
+		void RemoveReflectionCapture(HStableReflectionCaptureId Id);
+		// (re)creates the RGBA32F full-mip-chain bake target if missing or mismatched, updates MipCount
+		Texture2* EnsureReflectionBakeCubemap(GPUReflectionCapture& Capture);
+		// replaces the radiance cubemap with a texture created from a (BC6H) cube image
+		bool SetReflectionRadiance(GPUReflectionCapture& Capture, const Image& CubeImage);
+		void ReleaseReflectionRadiance(GPUReflectionCapture& Capture, bool bDeferred = true);
 
 		GPUSceneCompact CreateCompact(const RenderView& View) const;
 

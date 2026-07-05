@@ -62,6 +62,9 @@ namespace Columbus
 		void TransitionImageLayout(Texture2* Texture, VkImageLayout NewLayout);
 		void CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size);
 		void CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset);
+		// copies every mip of every layer/face, tightly packed and layer-major
+		// (all mips of layer 0, then layer 1, ...), matching the engine Image memory layout
+		void CopyImageToBufferAllSubresources(const Texture2* Src, const Buffer* Dst);
 		void CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size);
 
 		void MemsetBuffer(const Buffer* Buf, u64 Offset, u64 Size, u32 Data32);

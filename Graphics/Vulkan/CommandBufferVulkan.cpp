@@ -7,13 +7,15 @@
 #include "QueryPoolVulkan.h"
 #include "TypeConversions.h"
 
+#include <algorithm>
+#include <vector>
+
 #include <vulkan/vulkan.h>
 
 IMPLEMENT_COUNTING_PROFILING_COUNTER("Command buffers count", PROFILING_CATEGORY_VULKAN_LOW_LEVEL, CountingCounter_Vulkan_CommandBuffers, false);
 
 namespace Columbus
 {
-
 	CommandBufferVulkan::CommandBufferVulkan(VkDevice Device, VkCommandPool Pool, VkCommandBuffer CmdBuf, VulkanFunctions& Functions) :
 			_Device(Device), _Pool(Pool), _CmdBuf(CmdBuf), _Functions(Functions)
 	{
@@ -239,7 +241,7 @@ namespace Columbus
 		Barrier.subresourceRange.baseArrayLayer = 0; // TODO:
 		Barrier.subresourceRange.levelCount = Texture->GetDesc().Mips;
 		Barrier.subresourceRange.baseMipLevel = 0; // TODO:
-		Barrier.subresourceRange.layerCount = 1; // TODO:
+		Barrier.subresourceRange.layerCount = TextureUtils::TextureLayerCount(Texture->GetDesc());
 
 		vkCmdPipelineBarrier(_CmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 			0, 0, // memory barrier
@@ -254,25 +256,59 @@ namespace Columbus
 		auto srcvk = static_cast<const TextureVulkan*>(Src);
 		auto dstvk = static_cast<const TextureVulkan*>(Dst);
 
-		VkImageCopy Region {
-			.srcSubresource = VkImageSubresourceLayers{
-				.aspectMask = TextureFormatToAspectMaskVk(Src->GetDesc().Format),
-				.mipLevel = 0, // TODO:
-				.baseArrayLayer = 0, // TODO:
-				.layerCount = 1, // TODO:
-			},
-			.srcOffset = VkOffset3D{SrcOffset.X, SrcOffset.Y, SrcOffset.Z},
-			.dstSubresource = VkImageSubresourceLayers{
-				.aspectMask = TextureFormatToAspectMaskVk(Dst->GetDesc().Format),
-				.mipLevel = 0, // TODO:
-				.baseArrayLayer = 0, // TODO:
-				.layerCount = 1, // TODO:
-			},
-			.dstOffset = VkOffset3D{DstOffset.X, DstOffset.Y, DstOffset.Z},
-			.extent = VkExtent3D{(u32)Size.X, (u32)Size.Y, (u32)Size.Z}
+		const TextureDesc2& SrcDesc = Src->GetDesc();
+		const TextureDesc2& DstDesc = Dst->GetDesc();
+		const u32 MipCount = std::min(SrcDesc.Mips, DstDesc.Mips);
+		const u32 LayerCount = std::min(TextureUtils::TextureLayerCount(SrcDesc), TextureUtils::TextureLayerCount(DstDesc));
+
+		// fixed-size stack batch; supports arbitrary mip/layer counts without heap allocation
+		constexpr u32 BatchCapacity = 64;
+		VkImageCopy Regions[BatchCapacity];
+		u32 RegionCount = 0;
+
+		auto FlushBatch = [&]()
+		{
+			if (RegionCount > 0)
+			{
+				vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Image, dstvk->_Layout, RegionCount, Regions);
+				RegionCount = 0;
+			}
 		};
 
-		vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Image, dstvk->_Layout, 1, &Region);
+		for (u32 Layer = 0; Layer < LayerCount; Layer++)
+		{
+			for (u32 Mip = 0; Mip < MipCount; Mip++)
+			{
+				Regions[RegionCount++] = VkImageCopy {
+					.srcSubresource = VkImageSubresourceLayers{
+						.aspectMask = TextureFormatToAspectMaskVk(SrcDesc.Format),
+						.mipLevel = Mip,
+						.baseArrayLayer = Layer,
+						.layerCount = 1,
+					},
+					.srcOffset = VkOffset3D{SrcOffset.X, SrcOffset.Y, SrcOffset.Z},
+					.dstSubresource = VkImageSubresourceLayers{
+						.aspectMask = TextureFormatToAspectMaskVk(DstDesc.Format),
+						.mipLevel = Mip,
+						.baseArrayLayer = Layer,
+						.layerCount = 1,
+					},
+					.dstOffset = VkOffset3D{DstOffset.X, DstOffset.Y, DstOffset.Z},
+					.extent = VkExtent3D{
+						std::max(1u, (u32)Size.X >> Mip),
+						std::max(1u, (u32)Size.Y >> Mip),
+						SrcDesc.Type == TextureType::Texture3D ? std::max(1u, (u32)Size.Z >> Mip) : 1u
+					}
+				};
+
+				if (RegionCount == BatchCapacity)
+				{
+					FlushBatch();
+				}
+			}
+		}
+
+		FlushBatch();
 	}
 
 	void CommandBufferVulkan::CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset)
@@ -297,6 +333,71 @@ namespace Columbus
 		};
 
 		vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Buffer, 1, &Copy);
+	}
+
+	void CommandBufferVulkan::CopyImageToBufferAllSubresources(const Texture2* Src, const Buffer* Dst)
+	{
+		auto srcvk = static_cast<const TextureVulkan*>(Src);
+		auto dstvk = static_cast<const BufferVulkan*>(Dst);
+
+		const TextureDesc2& Desc = Src->GetDesc();
+		const u32 MipCount = std::max(1u, Desc.Mips);
+		const u32 LayerCount = TextureUtils::TextureLayerCount(Desc);
+		const u32 Depth = std::max(1u, Desc.Depth);
+		const VkImageAspectFlags Aspect = TextureFormatToAspectMaskVk(Desc.Format);
+
+		u64 LayerBytes = 0;
+		for (u32 Mip = 0; Mip < MipCount; Mip++)
+		{
+			LayerBytes += ImageUtils::ImageCalcByteSizeForMip(Desc.Width, Desc.Height, Depth, Mip, Desc.Format);
+		}
+
+		constexpr u32 BatchCapacity = 64;
+		VkBufferImageCopy Regions[BatchCapacity];
+		u32 RegionCount = 0;
+
+		auto FlushBatch = [&]()
+		{
+			if (RegionCount > 0)
+			{
+				vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Buffer, RegionCount, Regions);
+				RegionCount = 0;
+			}
+		};
+
+		for (u32 Layer = 0; Layer < LayerCount; Layer++)
+		{
+			u64 BufferOffset = (u64)Layer * LayerBytes;
+			for (u32 Mip = 0; Mip < MipCount; Mip++)
+			{
+				Regions[RegionCount++] = VkBufferImageCopy {
+					.bufferOffset = BufferOffset,
+					.bufferRowLength = 0,
+					.bufferImageHeight = 0,
+					.imageSubresource = VkImageSubresourceLayers{
+						.aspectMask = Aspect,
+						.mipLevel = Mip,
+						.baseArrayLayer = Layer,
+						.layerCount = 1,
+					},
+					.imageOffset = VkOffset3D{ 0, 0, 0 },
+					.imageExtent = VkExtent3D{
+						std::max(1u, Desc.Width >> Mip),
+						std::max(1u, Desc.Height >> Mip),
+						Desc.Type == TextureType::Texture3D ? std::max(1u, Depth >> Mip) : 1u,
+					},
+				};
+
+				if (RegionCount == BatchCapacity)
+				{
+					FlushBatch();
+				}
+
+				BufferOffset += ImageUtils::ImageCalcByteSizeForMip(Desc.Width, Desc.Height, Depth, Mip, Desc.Format);
+			}
+		}
+
+		FlushBatch();
 	}
 
 	void CommandBufferVulkan::CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size)
@@ -326,9 +427,9 @@ namespace Columbus
 		VkImageSubresourceRange Range;
 		Range.aspectMask = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
 		Range.baseMipLevel = 0; // TODO:
-		Range.levelCount = 1; // TODO:
+		Range.levelCount = Texture->GetDesc().Mips;
 		Range.baseArrayLayer = 0; // TODO:
-		Range.layerCount = 1; // TODO:
+		Range.layerCount = TextureUtils::TextureLayerCount(Texture->GetDesc());
 
 		const TextureFormatInfo& Info = TextureFormatGetInfo(Texture->GetDesc().Format);
 

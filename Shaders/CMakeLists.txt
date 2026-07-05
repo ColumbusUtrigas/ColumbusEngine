@@ -22,6 +22,9 @@ compile_shader_hlsl(DenoiserReflection/ResolveTemporal.hlsl main:cs SHADER_BINAR
 compile_shader_hlsl(RayTracedReflections/RayTraceReflections.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(RayTracedReflections/ReflectionsResolve.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedReflections/ReflectionsTemporal.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(ReflectionCaptures/ReflectionCaptureBake.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl(ReflectionCaptures/ReflectionCaptureConvolve.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl(ReflectionCaptures/ReflectionCaptureBall.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
 compile_shader_hlsl(RayTracedGlobalIllumination/RayTracedGI.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Downsample.hlsl main:cs SHADER_BINARIES)

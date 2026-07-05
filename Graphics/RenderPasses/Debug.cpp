@@ -2,7 +2,7 @@
 #include "Core/Util.h"
 #include "Core/Asset.h"
 #include "Graphics/Core/Types.h"
-#include "Graphics/IrradianceVolume.h"
+#include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "Graphics/ShaderCache.h"
 #include "RenderPasses.h"
@@ -14,9 +14,13 @@
 
 #include "Lib/imgui/backends/imgui_impl_vulkan.h"
 
+#include <array>
+
 ConsoleVariable<bool> CVar_DebugOverlay("r.DebugOverlay", "Enable using debug overlay", true);
 ConsoleVariable<bool> CVar_DebugOverlayIrradiance("r.DebugOverlay.Irradiance", "Enable irradiance volume visualisation", false);
 ConsoleVariable<float> CVar_DebugOverlayIrradianceSize("r.DebugOverlay.IrradianceSize", "Irradiance probe visualisation size multiplier", 1.0f);
+ConsoleVariable<bool> CVar_DebugOverlayReflectionCaptures("r.DebugOverlay.ReflectionCaptures", "Enable reflection capture ball visualisation", false);
+ConsoleVariable<float> CVar_DebugReflectionCaptureBallRoughness("r.Debug.ReflectionCaptureBallRoughness", "Roughness used by reflection capture ball visualisation", 0.0f);
 
 namespace Columbus
 {
@@ -188,6 +192,61 @@ namespace Columbus
 		}
 	};
 
+	struct DebugReflectionCaptureBallConstants
+	{
+		Matrix ViewProjection = Matrix(1.0f);
+		Vector4 CapturePositionAndRadius;
+		Vector4 CameraPositionAndRoughness;
+		Vector4 CaptureIntensity;
+		iVector4 CaptureIndexAndCount;
+	};
+
+	struct DebugReflectionCaptureBallShader
+	{
+		static constexpr const char* Path = "./PrecompiledShaders/ReflectionCaptures/ReflectionCaptureBall.csd";
+
+		struct Permutation
+		{
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+		}
+
+		struct PipelinePermutation
+		{
+		};
+
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		{
+			GraphicsPipelineDesc Desc;
+			Desc.Name = "DebugReflectionCaptureBall";
+			Desc.rasterizerState.Cull = CullMode::No;
+			Desc.blendState.RenderTargets = {
+				RenderTargetBlendDesc(),
+			};
+			Desc.depthStencilState.DepthEnable = true;
+			Desc.depthStencilState.DepthWriteMask = true;
+			return Desc;
+		}
+
+		struct Parameters
+		{
+			ShaderArray<ShaderSampledTexture> RadianceTextures;
+			ShaderSampledTexture BRDFLUT;
+			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
+			ShaderPushConstants<DebugReflectionCaptureBallConstants> Constants { {}, ShaderType::Vertex | ShaderType::Pixel };
+		};
+
+		static void Bind(ShaderBinder& Binder, const Parameters& Params)
+		{
+			Binder.Bind(Params.LinearSampler, 0, 0);
+			Binder.Bind(Params.BRDFLUT, 0, 1);
+			Binder.Bind(Params.RadianceTextures, 0, 2);
+			Binder.Bind(Params.Constants);
+		}
+	};
+
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture)
 	{
 		if (!CVar_DebugOverlay.GetValue())
@@ -210,14 +269,14 @@ namespace Columbus
 		std::vector<IrradianceVolumeDraw> IrradianceVolumeDraws;
 		if (CVar_DebugOverlayIrradiance.GetValue())
 		{
-			for (IrradianceVolume& Volume : Graph.Scene->IrradianceVolumes)
+			for (const GPUIrradianceVolume& Volume : Graph.Scene->IrradianceVolumes)
 			{
-				if (Volume.ProbesBuffer == nullptr || !Volume.bVisualiseProbes)
+				if (Volume.Probes == nullptr)
 				{
 					continue;
 				}
 
-				RenderGraphBufferRef ProbeBuffer = Graph.RegisterExternalBuffer(Volume.ProbesBuffer, "IrradianceProbes");
+				RenderGraphBufferRef ProbeBuffer = Graph.RegisterExternalBuffer(Volume.Probes, "IrradianceProbes");
 				IrradianceVolumeDraw Draw;
 				Draw.Parameters.IrradianceProbes = ProbeBuffer;
 				Draw.Parameters.Constants.Value = {
@@ -225,7 +284,7 @@ namespace Columbus
 					.Projection = View.CameraCurUnjittered.GetProjectionMatrix(),
 					.Position = Vector4(View.CameraCurUnjittered.Right(), 0),
 					.Extent = Vector4(Volume.Extent, 0),
-					.ProbesCount = iVector4(Volume.ProbesCount, 0),
+					.ProbesCount = iVector4(Volume.GetProbesCount(), 0),
 					.ProbeIndex = iVector4(0, 0, 0, 0),
 					.TestPoint = Vector4(-View.CameraCurUnjittered.Direction(), CVar_DebugOverlayIrradianceSize.GetValue()),
 				};
@@ -237,6 +296,66 @@ namespace Columbus
 		for (const IrradianceVolumeDraw& Draw : IrradianceVolumeDraws)
 		{
 			Dependencies.Bind<IrradianceVolumeVisualiseShader>(Draw.Parameters);
+		}
+
+		static constexpr int MaxDebugReflectionCaptureBalls = 32;
+		struct ReflectionCaptureBallPassData
+		{
+			std::array<ShaderSampledTexture, MaxDebugReflectionCaptureBalls> Textures;
+			std::array<DebugReflectionCaptureBallConstants, MaxDebugReflectionCaptureBalls> Constants;
+			DebugReflectionCaptureBallShader::Parameters Parameters;
+			int Count = 0;
+		};
+
+		ReflectionCaptureBallPassData ReflectionBallPassData;
+		if (CVar_DebugOverlayReflectionCaptures.GetValue() && Graph.Scene != nullptr)
+		{
+			static constexpr float ReflectionBallRadius = 0.35f;
+
+			for (const GPUReflectionCapture& Capture : Graph.Scene->ReflectionCaptures)
+			{
+				if (ReflectionBallPassData.Count >= (int)ReflectionBallPassData.Textures.size())
+					break;
+
+				if (Capture.Radiance == nullptr)
+					continue;
+
+				const int CaptureIndex = ReflectionBallPassData.Count;
+
+				ReflectionBallPassData.Textures[CaptureIndex] = Capture.Radiance;
+				ReflectionBallPassData.Constants[CaptureIndex] = {
+					.ViewProjection = View.CameraCurUnjittered.GetViewProjection(),
+					.CapturePositionAndRadius = Vector4(Capture.Position, ReflectionBallRadius),
+					.CameraPositionAndRoughness = Vector4(View.CameraCurUnjittered.Pos, CVar_DebugReflectionCaptureBallRoughness.GetValue()),
+					.CaptureIntensity = Vector4(Capture.Intensity, 0.0f, 0.0f, 0.0f),
+					.CaptureIndexAndCount = iVector4(CaptureIndex, ReflectionBallPassData.Count + 1, Capture.MipCount, 0),
+				};
+				ReflectionBallPassData.Count++;
+			}
+		}
+
+		if (ReflectionBallPassData.Count > 0)
+		{
+			ReflectionBallPassData.Parameters.RadianceTextures.Set(ReflectionBallPassData.Textures.data(), (u32)ReflectionBallPassData.Count);
+			ReflectionBallPassData.Parameters.BRDFLUT = Graph.Scene->BRDF_LUT;
+			RenderPassDependencies ReflectionBallDependencies(Graph.Allocator);
+			ReflectionBallDependencies.Bind<DebugReflectionCaptureBallShader>(ReflectionBallPassData.Parameters);
+
+			Graph.AddPass("Debug Reflection Capture Balls", RenderGraphPassType::Raster, Parameters, ReflectionBallDependencies, [ReflectionBallPassData](RenderGraphContext& Context) mutable
+			{
+				static constexpr u32 SphereVertexCount = 32 * 16 * 6;
+
+				ReflectionBallPassData.Parameters.RadianceTextures.Set(ReflectionBallPassData.Textures.data(), (u32)ReflectionBallPassData.Count);
+				GraphicsPipeline* Pipeline = GetGraphicsPipeline<DebugReflectionCaptureBallShader>(Context, DebugReflectionCaptureBallShader::Permutation {}, DebugReflectionCaptureBallShader::PipelinePermutation {});
+
+				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+				for (int i = 0; i < ReflectionBallPassData.Count; i++)
+				{
+					ReflectionBallPassData.Parameters.Constants.Value = ReflectionBallPassData.Constants[i];
+					Context.BindGraphicsParameters<DebugReflectionCaptureBallShader>(Pipeline, ReflectionBallPassData.Parameters);
+					Context.CommandBuffer->Draw(SphereVertexCount, 1, 0, 0);
+				}
+			});
 		}
 
 		Graph.AddPass("DebugOverlay", RenderGraphPassType::Raster, Parameters, Dependencies, [View, IrradianceVolumeDraws](RenderGraphContext& Context)

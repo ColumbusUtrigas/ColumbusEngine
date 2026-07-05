@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Asset.h"
-#include "Graphics/IrradianceVolume.h"
+#include "Graphics/BakedLighting.h"
 
 #include <filesystem>
 #include <string>

@@ -253,6 +253,29 @@ namespace Columbus
 		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, Buffer);
 	}
 
+	void ShaderBinder::BindReadWriteBufferImpl(const ShaderReadWriteBuffer& Resource, int Set, int Binding, int ArrayIndex)
+	{
+		if (IsCollectingDependencies())
+		{
+			if (Resource.Ref != -1)
+			{
+				Dependencies->ReadBuffer(Resource.Ref, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				Dependencies->WriteBuffer(Resource.Ref, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+			}
+			return;
+		}
+
+		SPtr<Buffer> GraphBuffer;
+		const Buffer* Buffer = Resource.External;
+		if (Buffer == nullptr)
+		{
+			GraphBuffer = Context->GetRenderGraphBuffer(Resource.Ref);
+			Buffer = GraphBuffer.get();
+		}
+
+		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, Buffer);
+	}
+
 	void ShaderBinder::BindStaticSamplerImpl(const ShaderStaticSampler& Sampler, int Set, int Binding, int ArrayIndex)
 	{
 		if (IsBindingRuntime())

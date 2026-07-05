@@ -10,9 +10,11 @@
 #include "Graphics/ShaderCache.h"
 #include "Graphics/Vulkan/TypeConversions.h"
 #include "Profiling/Profiling.h"
-#include "RayTracingIrradianceVolumes.h"
 #include "RenderPasses.h"
 #include "ShaderBytecode/ShaderBytecode.h"
+
+#include <algorithm>
+#include <utility>
 
 namespace Columbus
 {
@@ -174,6 +176,8 @@ namespace Columbus
 			ShaderSampledTexture LTC2;
 			ShaderStaticSampler LTCSampler;
 
+			ReflectionCaptures::ShaderResources ReflectionCaptures;
+
 			ShaderArray<ShaderStorageTexture> ShadowTextures;
 		};
 
@@ -194,6 +198,7 @@ namespace Columbus
 			Binder.Bind(Params.LTC2, 0, 12);
 			Binder.Bind(Params.LTCSampler, 0, 13);
 			Binder.Bind(Params.ShadowTextures, 1, 0);
+			ReflectionCaptures::BindReflectionCaptureResources(Binder, Params.ReflectionCaptures, 2);
 		}
 	}; // DeferredLightingShader
 
@@ -357,6 +362,8 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
+		static constexpr uint32_t MaxShadowTextures = 1000;
+
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::StorageSampled | TextureUsage::RenderTargetColor,
 			.Width = (uint32)View.RenderSize.X,
@@ -372,42 +379,62 @@ namespace Columbus
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
-		DeferredLightingShader::Parameters LightingParams;
-		LightingParams.GBufferAlbedo            = Textures.GBufferAlbedo;
-		LightingParams.GBufferNormal            = Textures.GBufferNormal;
-		LightingParams.GBufferDepth             = Textures.GBufferDS;
-		LightingParams.GBufferRoughnessMetallic = Textures.GBufferRM;
-		LightingParams.GBufferEmissive          = Textures.GBufferEmissive;
-		LightingParams.GBufferLightmap          = Textures.Lightmap;
-		LightingParams.GBufferReflections       = Textures.RTReflections;
-		LightingParams.GBufferGI                = Textures.RTGI;
-		LightingParams.LightingOutput           = LightingTexture;
-		LightingParams.LightsBuffer             = Graph.Scene->LightsBuffer;
-		LightingParams.SceneBuffer              = Graph.Scene->SceneBuffer;
-		LightingParams.LTC1                     = Graph.Scene->LTC_1;
-		LightingParams.LTC2                     = Graph.Scene->LTC_2;
-		std::vector<ShaderStorageTexture> ShadowTextures;
-		ShadowTextures.reserve(DeferredContext.LightRenderInfos.size());
+		struct DeferredLightingPassData
+		{
+			DeferredLightingPassData(RenderGraphAllocator& Allocator) :
+				ShadowTextures(Allocator) {}
 
-		for (GPULightRenderInfo& LightInfo : DeferredContext.LightRenderInfos)
+			DeferredLightingShader::Parameters Params;
+			ReflectionCaptures::Prepared ReflectionCaptures;
+			RenderGraphDynamicArray<ShaderStorageTexture> ShadowTextures;
+			uint32_t ShadowTextureCount = 0;
+		};
+
+		DeferredLightingPassData PassData(Graph.Allocator);
+		PassData.ReflectionCaptures = DeferredContext.BakedLighting.ReflectionCaptures;
+		PassData.Params.GBufferAlbedo            = Textures.GBufferAlbedo;
+		PassData.Params.GBufferNormal            = Textures.GBufferNormal;
+		PassData.Params.GBufferDepth             = Textures.GBufferDS;
+		PassData.Params.GBufferRoughnessMetallic = Textures.GBufferRM;
+		PassData.Params.GBufferEmissive          = Textures.GBufferEmissive;
+		PassData.Params.GBufferLightmap          = Textures.Lightmap;
+		PassData.Params.GBufferReflections       = Textures.RTReflections;
+		PassData.Params.GBufferGI                = Textures.RTGI;
+		PassData.Params.LightingOutput           = LightingTexture;
+		PassData.Params.LightsBuffer             = Graph.Scene->LightsBuffer;
+		PassData.Params.SceneBuffer              = Graph.Scene->SceneBuffer;
+		PassData.Params.LTC1                     = Graph.Scene->LTC_1;
+		PassData.Params.LTC2                     = Graph.Scene->LTC_2;
+		ReflectionCaptures::SetShaderResources(PassData.Params.ReflectionCaptures, PassData.ReflectionCaptures, Graph.Scene->BRDF_LUT);
+
+		const size_t ShadowTextureCount = std::min<size_t>(DeferredContext.LightRenderInfos.size(), MaxShadowTextures);
+		if (DeferredContext.LightRenderInfos.size() > MaxShadowTextures)
+		{
+			Log::Warning("Deferred lighting supports at most %u shadow textures; %llu were provided",
+				MaxShadowTextures, (u64)DeferredContext.LightRenderInfos.size());
+		}
+
+		PassData.ShadowTextures.reserve(ShadowTextureCount);
+		for (size_t i = 0; i < ShadowTextureCount; i++)
 		{
 			ShaderStorageTexture ShadowTexture;
-			ShadowTexture = LightInfo.RTShadow;
-			ShadowTextures.push_back(ShadowTexture);
+			ShadowTexture = DeferredContext.LightRenderInfos[i].RTShadow;
+			PassData.ShadowTextures.push_back(ShadowTexture);
 		}
-		LightingParams.ShadowTextures.Set(ShadowTextures.data(), (uint32_t)ShadowTextures.size());
+		PassData.ShadowTextureCount = (uint32_t)ShadowTextureCount;
+		PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), PassData.ShadowTextureCount);
 
-		Dependencies.Bind<DeferredLightingShader>(LightingParams);
+		Dependencies.Bind<DeferredLightingShader>(PassData.Params);
 
-		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, LightingParams, ShadowTextures](RenderGraphContext& Context)
+		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, PassData = std::move(PassData)](RenderGraphContext& Context) mutable
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterLightingPass, Context);
 
 			ComputePipeline* Pipeline = GetComputePipeline<DeferredLightingShader>(Context, DeferredLightingShader::Permutation {});
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
-			DeferredLightingShader::Parameters RuntimeParams = LightingParams;
-			RuntimeParams.ShadowTextures.Set(ShadowTextures.data(), (uint32_t)ShadowTextures.size());
-			Context.BindComputeParameters<DeferredLightingShader>(Pipeline, RuntimeParams);
+			ReflectionCaptures::SetShaderResources(PassData.Params.ReflectionCaptures, PassData.ReflectionCaptures, Context.Scene->BRDF_LUT);
+			PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), PassData.ShadowTextureCount);
+			Context.BindComputeParameters<DeferredLightingShader>(Pipeline, PassData.Params);
 
 			const iVector2 GroupCount = (View.RenderSize + (GroupSize - 1)) / GroupSize;
 			Context.CommandBuffer->Dispatch((u32)GroupCount.X, (u32)GroupCount.Y, 1);
@@ -485,19 +512,36 @@ namespace Columbus
 		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
 
 		// TODO: use dummy structured buffer instead
-		RayTracingIrradianceVolumes::Prepared IrradianceVolumes = RayTracingIrradianceVolumes::Prepare(Graph, Textures.RadianceCache.DataBuffer, CVar_RayTracingIrradianceVolumes.GetValue());
+		const bool bRTReflectionsAvailable = Graph.Device->SupportsRayTracing();
+		DeferredContext.BakedLighting.IrradianceVolumes = IrradianceVolumes::Prepare(Graph, Textures.RadianceCache.DataBuffer, CVar_RayTracingIrradianceVolumes.GetValue());
+		DeferredContext.BakedLighting.ReflectionCaptures = ReflectionCaptures::Prepare(Graph, View, true, bRTReflectionsAvailable);
 
 		RayTracedShadowsPass(Graph, View, Textures, DeferredContext);
-		RayTracedReflectionsPass(Graph, View, Textures, DeferredContext, IrradianceVolumes);
+		if (bRTReflectionsAvailable)
+		{
+			RayTracedReflectionsPass(Graph, View, Textures, DeferredContext);
+		}
+		else
+		{
+			TextureDesc2 Desc{
+				.Usage = TextureUsage::Storage | TextureUsage::Sampled,
+				.Width = (u32)View.RenderSize.X,
+				.Height = (u32)View.RenderSize.Y,
+				.Format = TextureFormat::RGBA16F,
+			};
+
+			Textures.RTReflections = Graph.CreateTexture(Desc, "EmptyReflections");
+			ShaderMemsetTexture(Graph, Textures.RTReflections, {});
+		}
 
 		switch (View.DeferredSettings.GlobalIlluminationMode)
 		{
 		case EDeferredGlobalIlluminationMode::RTGI:
-			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext, IrradianceVolumes);
+			RayTracedGlobalIlluminationPass(Graph, View, Textures, DeferredContext);
 			break;
 
 		case EDeferredGlobalIlluminationMode::IV:
-			RenderApplyIrradianceProbes(Graph, View, Textures, IrradianceVolumes);
+			RenderApplyIrradianceProbes(Graph, View, Textures, DeferredContext);
 			break;
 		case EDeferredGlobalIlluminationMode::None:
 		{

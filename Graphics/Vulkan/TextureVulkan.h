@@ -17,6 +17,7 @@ namespace Columbus
 		VkImageView _StencilView = VK_NULL_HANDLE; // TODO?
 		VkSampler _Sampler = VK_NULL_HANDLE;
 		VmaAllocation _Allocation = nullptr;
+		bool _IsView = false; // views share _Image with their source and own only _View
 	public:
 		TextureVulkan(const TextureDesc2& Desc) : Texture2(Desc) {}
 

@@ -4,6 +4,9 @@
 #define GPU_SCENE_NO_BINDINGS
 #include "GPUScene.hlsli"
 
+#define REFLECTION_CAPTURES_SET 2
+#include "ReflectionCaptures/ReflectionCapturesCommon.hlsli"
+
 [[vk::binding(0, 0)]] Texture2D GBufferAlbedo;
 [[vk::binding(1, 0)]] Texture2D GBufferNormal;
 [[vk::binding(2, 0)]] Texture2D<float> GBufferDepth;
@@ -488,7 +491,14 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 	// apply indirect
 	{
-		LightingSum += GBufferReflections[Pixel].rgb;
+		LightingSum += ApplyReflectionCaptures(
+			GBufferReflections[Pixel].rgb,
+			WP,
+			BRDF.N,
+			BRDF.V,
+			BRDFF0(BRDF),
+			BRDF.Roughness,
+			ReflectionCapturesRuntimeRTAvailable());
 		LightingSum += BRDF.Albedo * GBufferGI[Pixel].rgb * MetalFactor;
 	}
 	

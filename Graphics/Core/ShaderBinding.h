@@ -39,6 +39,7 @@ namespace Columbus
 
 	struct ShaderReadBuffer;
 	struct ShaderWriteBuffer;
+	struct ShaderReadWriteBuffer;
 
 	struct ShaderAccelerationStructure;
 
@@ -139,6 +140,15 @@ namespace Columbus
 
 		ShaderWriteBuffer& operator=(RenderGraphBufferRef InRef);
 		ShaderWriteBuffer& operator=(Buffer* InBuffer);
+	};
+
+	struct ShaderReadWriteBuffer
+	{
+		RenderGraphBufferRef Ref = -1;
+		Buffer* External = nullptr;
+
+		ShaderReadWriteBuffer& operator=(RenderGraphBufferRef InRef);
+		ShaderReadWriteBuffer& operator=(Buffer* InBuffer);
 	};
 
 	struct ShaderAccelerationStructure
@@ -253,6 +263,20 @@ namespace Columbus
 		return *this;
 	}
 
+	inline ShaderReadWriteBuffer& ShaderReadWriteBuffer::operator=(RenderGraphBufferRef InRef)
+	{
+		Ref = InRef;
+		External = nullptr;
+		return *this;
+	}
+
+	inline ShaderReadWriteBuffer& ShaderReadWriteBuffer::operator=(Buffer* InBuffer)
+	{
+		Ref = -1;
+		External = InBuffer;
+		return *this;
+	}
+
 	inline ShaderAccelerationStructure& ShaderAccelerationStructure::operator=(const AccelerationStructure* InValue)
 	{
 		Value = InValue;
@@ -307,6 +331,11 @@ namespace Columbus
 			BindWriteBufferImpl(Resource, Set, Binding, ArrayIndex);
 		}
 
+		void Bind(const ShaderReadWriteBuffer& Resource, int Set, int Binding, int ArrayIndex = 0)
+		{
+			BindReadWriteBufferImpl(Resource, Set, Binding, ArrayIndex);
+		}
+
 		template <typename T>
 		void Bind(const ShaderArray<T>& Resources, int Set, int Binding);
 
@@ -358,6 +387,7 @@ namespace Columbus
 		void BindReadStorageTextureImpl(const ShaderReadStorageTexture& Resource, int Set, int Binding, int ArrayIndex);
 		void BindReadBufferImpl(const ShaderReadBuffer& Resource, int Set, int Binding, int ArrayIndex);
 		void BindWriteBufferImpl(const ShaderWriteBuffer& Resource, int Set, int Binding, int ArrayIndex);
+		void BindReadWriteBufferImpl(const ShaderReadWriteBuffer& Resource, int Set, int Binding, int ArrayIndex);
 		void BindStaticSamplerImpl(const ShaderStaticSampler& Sampler, int Set, int Binding, int ArrayIndex);
 		void BindSamplerImpl(const ShaderSampler& Sampler, int Set, int Binding, int ArrayIndex);
 		void BindAccelerationStructureImpl(const ShaderAccelerationStructure& Resource, int Set, int Binding, int ArrayIndex);

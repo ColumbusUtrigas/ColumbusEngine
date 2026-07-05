@@ -1,4 +1,4 @@
-// Baked probe volume, prototype format:
+// Baked irradiance probe volume layout:
 // each probe stores an HL2-style ambient cube in six directional lobes.
 
 struct IrradianceProbe

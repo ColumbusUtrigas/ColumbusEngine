@@ -3,7 +3,7 @@
 #include "Common/Image/Image.h"
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Core/View.h"
-#include "Graphics/IrradianceVolume.h"
+#include "BakedLightingRuntime.h"
 #include "RadianceCache.h"
 #include <Graphics/Lightmaps.h>
 #include <Graphics/RenderGraph.h>
@@ -12,10 +12,6 @@
 
 namespace Columbus
 {
-	namespace RayTracingIrradianceVolumes
-	{
-		struct Prepared;
-	}
 
 	// **********************************
 	// Common
@@ -98,6 +94,9 @@ namespace Columbus
 		SPtr<DeviceVulkan> Device;
 
 		std::vector<GPULightRenderInfo> LightRenderInfos;
+
+		// prepared once per view per frame, read by render passes
+		BakedLightingPrepared BakedLighting;
 
 		EDeferredRenderVisualisationMode VisualisationMode = EDeferredRenderVisualisationMode::Final;
 		HistorySceneTextures History;
@@ -188,7 +187,7 @@ namespace Columbus
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures);
 	void PrepareTiledLights(RenderGraph& Graph, const RenderView& View);
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
-	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
+	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture); // only for DebugRender objects
 	RenderGraphTextureRef DebugVisualisationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& HistoryTextures);
 	void RenderUIPass(RenderGraph& Graph, RenderView& View, RenderGraphTextureRef TextureToDrawTo);
@@ -202,20 +201,22 @@ namespace Columbus
 	// Real-time raytracing
 	//
 	void RayTracedShadowsPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
-	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes);
-	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes);
+	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
+	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 
-	// Lightmap baking
+	// Light baking
 	//
 	// this pass renders a meshes in lightmap UV space which gives lightmap_texel-vertex correspondance
 	// which is then used as sampling points for path tracing
 	void PrepareAtlasForLightmapBaking(RenderGraph& Graph, LightmapSystem& System);
 	void BakeLightmapPathTraced(RenderGraph& Graph, LightmapSystem& System);
 
-	// Global illumination
+	void RenderBakeIrradianceVolume(RenderGraph& Graph, const RenderView& View, GPUIrradianceVolume& Volume, int Spp, int Bounces);
+	void RenderBakeReflectionCapture(RenderGraph& Graph, const RenderView& View, GPUReflectionCapture& Capture, int Spp, int Bounces);
+
+	// Baked GI runtime
 	//
-	void RenderIrradianceProbes(RenderGraph& Graph, const RenderView& View, IrradianceVolume& Volume, int RaysPerProbe = 256, int Bounces = 3);
-	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes);
+	void RenderApplyIrradianceProbes(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 
 	// **********************************
 	// Path-Tracing

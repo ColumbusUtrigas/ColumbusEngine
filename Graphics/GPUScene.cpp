@@ -1,5 +1,6 @@
 #include "GPUScene.h"
 
+#include "BRDFLUT.h"
 #include "LTC.h"
 
 #include <filesystem>
@@ -8,6 +9,8 @@
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneMeshes);
 DECLARE_MEMORY_PROFILING_COUNTER(MemoryCounter_SceneBLAS);
 IMPLEMENT_MEMORY_PROFILING_COUNTER("Animation/deform", "SceneMemory", MemoryCounter_SceneAnimationDeform);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Irradiance probes", "SceneMemory", MemoryCounter_SceneIrradianceProbes);
+IMPLEMENT_MEMORY_PROFILING_COUNTER("Reflection captures", "SceneMemory", MemoryCounter_SceneReflectionCaptures);
 
 namespace Columbus
 {
@@ -356,6 +359,145 @@ namespace Columbus
 		Particles.Remove(Id);
 	}
 
+	HStableIrradianceVolumeId GPUScene::AddIrradianceVolume()
+	{
+		return IrradianceVolumes.Add(GPUIrradianceVolume{});
+	}
+
+	void GPUScene::RemoveIrradianceVolume(HStableIrradianceVolumeId Id)
+	{
+		if (GPUIrradianceVolume* Volume = IrradianceVolumes.Get(Id))
+		{
+			ReleaseIrradianceProbes(*Volume, true);
+		}
+
+		IrradianceVolumes.Remove(Id);
+	}
+
+	void GPUScene::SetIrradianceProbes(GPUIrradianceVolume& Volume, const void* Data, u64 Size)
+	{
+		ReleaseIrradianceProbes(Volume, true);
+
+		if (Data == nullptr || Size == 0)
+			return;
+
+		BufferDesc Desc;
+		Desc.BindFlags = BufferType::UAV;
+		Desc.Size = Size;
+		Volume.Probes = Device->CreateBuffer(Desc, Data);
+		Volume.ProbeStride = sizeof(GPUIrradianceProbe);
+		Device->SetDebugName(Volume.Probes, "GPUScene.IrradianceProbes");
+		AddProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.Probes->GetSize());
+	}
+
+	void GPUScene::ReleaseIrradianceProbes(GPUIrradianceVolume& Volume, bool bDeferred)
+	{
+		if (Volume.Probes == nullptr)
+			return;
+
+		RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.Probes->GetSize());
+		if (bDeferred)
+			Device->DestroyBufferDeferred(Volume.Probes);
+		else
+			Device->DestroyBuffer(Volume.Probes);
+		Volume.Probes = nullptr;
+	}
+
+	HStableReflectionCaptureId GPUScene::AddReflectionCapture()
+	{
+		return ReflectionCaptures.Add(GPUReflectionCapture{});
+	}
+
+	void GPUScene::RemoveReflectionCapture(HStableReflectionCaptureId Id)
+	{
+		if (GPUReflectionCapture* Capture = ReflectionCaptures.Get(Id))
+		{
+			ReleaseReflectionRadiance(*Capture, true);
+		}
+
+		ReflectionCaptures.Remove(Id);
+	}
+
+	Texture2* GPUScene::EnsureReflectionBakeCubemap(GPUReflectionCapture& Capture)
+	{
+		if (Capture.Resolution <= 0)
+			return nullptr;
+
+		const int MipCount = (int)ImageUtils::ImageFullMipCount((u32)Capture.Resolution, (u32)Capture.Resolution, 1);
+
+		TextureDesc2 Desc;
+		Desc.Type = TextureType::TextureCube;
+		Desc.Usage = TextureUsage::StorageSampled;
+		Desc.Width = (u32)Capture.Resolution;
+		Desc.Height = (u32)Capture.Resolution;
+		Desc.Mips = (u32)MipCount;
+		Desc.Format = TextureFormat::RGBA32F;
+		Desc.AddressU = TextureAddressMode::ClampToEdge;
+		Desc.AddressV = TextureAddressMode::ClampToEdge;
+		Desc.AddressW = TextureAddressMode::ClampToEdge;
+		Desc.MinFilter = TextureFilter2::Linear;
+		Desc.MagFilter = TextureFilter2::Linear;
+		Desc.MipFilter = TextureFilter2::Linear;
+		Desc.MaxLOD = (float)(MipCount - 1);
+
+		if (Capture.Radiance != nullptr && Capture.Radiance->GetDesc() == TextureUtils::NormalizeTextureDesc(Desc))
+		{
+			Capture.MipCount = MipCount;
+			return Capture.Radiance;
+		}
+
+		ReleaseReflectionRadiance(Capture, true);
+
+		Capture.Radiance = Device->CreateTexture(Desc);
+		Capture.MipCount = MipCount;
+		if (Capture.Radiance != nullptr)
+		{
+			Device->SetDebugName(Capture.Radiance, "GPUScene.ReflectionCaptureRadiance");
+			AddProfilingMemory(MemoryCounter_SceneReflectionCaptures, Capture.Radiance->GetSize());
+		}
+
+		return Capture.Radiance;
+	}
+
+	bool GPUScene::SetReflectionRadiance(GPUReflectionCapture& Capture, const Image& CubeImage)
+	{
+		TextureDesc2 Desc;
+		Desc.Usage = TextureUsage::Sampled;
+		TextureUtils::SetTextureDescImageFields(Desc, CubeImage);
+		Desc.AddressU = TextureAddressMode::ClampToEdge;
+		Desc.AddressV = TextureAddressMode::ClampToEdge;
+		Desc.AddressW = TextureAddressMode::ClampToEdge;
+		Desc.MinFilter = TextureFilter2::Linear;
+		Desc.MagFilter = TextureFilter2::Linear;
+		Desc.MipFilter = TextureFilter2::Linear;
+		Desc.MaxLOD = (float)Math::Max(0u, Desc.Mips - 1);
+
+		Texture2* NewRadiance = Device->CreateTexture(CubeImage, Desc);
+		if (NewRadiance == nullptr)
+			return false;
+
+		ReleaseReflectionRadiance(Capture, true);
+
+		Capture.Radiance = NewRadiance;
+		Capture.MipCount = (int)Math::Max(1u, (u32)CubeImage.MipMaps);
+		Device->SetDebugName(Capture.Radiance, "GPUScene.ReflectionCaptureRadiance");
+		AddProfilingMemory(MemoryCounter_SceneReflectionCaptures, Capture.Radiance->GetSize());
+		return true;
+	}
+
+	void GPUScene::ReleaseReflectionRadiance(GPUReflectionCapture& Capture, bool bDeferred)
+	{
+		if (Capture.Radiance == nullptr)
+			return;
+
+		RemoveProfilingMemory(MemoryCounter_SceneReflectionCaptures, Capture.Radiance->GetSize());
+		if (bDeferred)
+			Device->DestroyTextureDeferred(Capture.Radiance);
+		else
+			Device->DestroyTexture(Capture.Radiance);
+		Capture.Radiance = nullptr;
+	}
+
 	GPUSceneCompact GPUScene::CreateCompact(const RenderView& View) const
 	{
 		Vector4 SHR(1, 0, 0, 0);
@@ -453,6 +595,21 @@ namespace Columbus
 			Device->UploadTextureMipData(Scene->LTC_1, 0, 0, LTC::LTC_1);
 			Device->UploadTextureMipData(Scene->LTC_2, 0, 0, LTC::LTC_2);
 		}
+
+		// populate split-sum environment BRDF look up table
+		{
+			TextureDesc2 BRDFDesc;
+			BRDFDesc.Width = BRDFLUT::BRDF_LUT_SIZE;
+			BRDFDesc.Height = BRDFLUT::BRDF_LUT_SIZE;
+			BRDFDesc.Format = TextureFormat::RG16F;
+			BRDFDesc.MinFilter = TextureFilter2::Linear;
+			BRDFDesc.MagFilter = TextureFilter2::Linear;
+			BRDFDesc.AddressU = TextureAddressMode::ClampToEdge;
+			BRDFDesc.AddressV = TextureAddressMode::ClampToEdge;
+
+			Scene->BRDF_LUT = Device->CreateTexture(BRDFDesc);
+			Device->UploadTextureMipData(Scene->BRDF_LUT, 0, 0, BRDFLUT::BRDF_LUT_RG16F);
+		}
 		
 		// allocate empty TLAS
 		{
@@ -488,13 +645,14 @@ namespace Columbus
 			}
 		}
 
-		for (const IrradianceVolume& Volume : Scene->IrradianceVolumes)
+		for (GPUIrradianceVolume& Volume : Scene->IrradianceVolumes)
 		{
-			if (Volume.ProbesBuffer)
-			{
-				RemoveProfilingMemory(MemoryCounter_SceneIrradianceProbes, Volume.ProbesBufferBytes);
-				Device->DestroyBuffer(Volume.ProbesBuffer);
-			}
+			Scene->ReleaseIrradianceProbes(Volume, false);
+		}
+
+		for (GPUReflectionCapture& Capture : Scene->ReflectionCaptures)
+		{
+			Scene->ReleaseReflectionRadiance(Capture, false);
 		}
 
 		for (auto& Light : Scene->Lights)
@@ -514,6 +672,7 @@ namespace Columbus
 
 		Device->DestroyTexture(Scene->LTC_1);
 		Device->DestroyTexture(Scene->LTC_2);
+		Device->DestroyTexture(Scene->BRDF_LUT);
 
 		Device->DestroyAccelerationStructure(Scene->TLAS);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BakedLighting.h"
 #include "GPUScene.h"
 #include "Mesh.h"
 #include "Lightmaps.h"
@@ -126,26 +127,43 @@ namespace Columbus
 		CREFLECT_BODY_STRUCT_VIRTUAL(AIrradianceVolume);
 		using Super = AVolume;
 
-		int ProbeCountX = 4;
-		int ProbeCountY = 4;
-		int ProbeCountZ = 4;
-		int RaysPerProbe = 256;
-		int Bounces = 3;
+		int ProbeCountX = 16;
+		int ProbeCountY = 16;
+		int ProbeCountZ = 16;
+		int RaysPerProbe = 2048;
+		int Bounces = 5;
 		float Intensity = 1.0f;
 		float NormalBias = 0.2f;
 		float BlendDistance = 0.0f;
 		float Priority = 0.0f;
-		bool bVisualiseProbes = true;
 
-		bool bBakeRequested = false;
+		HStableIrradianceVolumeId IrradianceVolumeHandle;
 
 	public:
 		AIrradianceVolume();
 
-		IrradianceVolume* FindRuntimeVolume();
-		IrradianceVolume& EnsureRuntimeVolume();
-		void RequestBake();
-		bool ConsumeBakeRequest();
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+		virtual void OnUpdateRenderState() override;
+		virtual void OnUiPropertyChange() override;
+	};
+
+	struct AReflectionCaptureBox : public AVolume
+	{
+		CREFLECT_BODY_STRUCT_VIRTUAL(AReflectionCaptureBox);
+		using Super = AVolume;
+
+		int Resolution = 128;
+		int SamplesPerTexel = 2048;
+		int Bounces = 5;
+		float Intensity = 1.0f;
+		float BlendDistance = 0.0f;
+		float Priority = 0.0f;
+
+		HStableReflectionCaptureId ReflectionCaptureHandle;
+
+	public:
+		AReflectionCaptureBox();
 
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
@@ -334,20 +352,27 @@ namespace Columbus
 		// functions
 		HLevel* LoadLevelCLVL(const char* Path);
 		ALevelThing* AddLevelInstance(AssetRef<HLevel> LevelAsset);
+
+		// TODO: rething these three
 		void RefreshMaterial(Material* MaterialAsset);
 		void BuildMeshRuntimeResources(Mesh2* MeshAsset, const std::string& AssetDebugName = {});
 		void DestroyMeshRuntimeResources(Mesh2* MeshAsset);
 
 		void ClearWorld();
 		void SaveWorldLevel(const char* Path, AssetRef<HLevelLightingData> LightingData = {}, const HLevel* SourceMetadata = nullptr);
-		void QueueIrradianceVolumeBakeReadback(u64 OwnerGuid);
-		void FlushPendingIrradianceVolumeBakeReadbacks(AssetRef<HLevelLightingData> LightingData);
-		void ApplyLevelLightingData(AssetRef<HLevelLightingData> LightingData);
 
 		void AddLevel(HLevel* Level);
 		void RemoveLevel(HLevel* Level);
 
 		void ResolveThingThingReferences(AThing* Thing);
+
+		// Lighting
+		void ApplyLevelLightingData(AssetRef<HLevelLightingData> LightingData);
+
+		// synchronous brute-force bake of all irradiance volumes and reflection captures.
+		// fills LightingData with fresh bakes, saves it if it has a path, then applies it
+		// back to runtime resources. an invalid ref bakes and applies without saving.
+		void BakeLighting(AssetRef<HLevelLightingData> LightingData);
 
 		AssetRef<Mesh2> LoadMesh(const Model& MeshModel, const std::string& AssetName);
 		AssetRef<Mesh2> LoadMesh(std::span<CPUMeshResource> MeshPrimitives, const std::string& AssetName);
@@ -386,7 +411,6 @@ namespace Columbus
 
 	private:
 		float GlobalTime = 0.0f;
-		std::vector<u64> PendingIrradianceVolumeBakeReadbacks;
 	};
 
 }
@@ -397,6 +421,7 @@ CREFLECT_DECLARE_STRUCT_VIRTUAL(Columbus::AThing, 1, "1DE6D316-4F7F-4392-825A-63
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AVolume, Columbus::AThing, 1, "EA5F80A9-684B-4F60-95A9-DBE4949B6268");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AEffectVolume, Columbus::AVolume, 1, "1204F071-0B6D-451C-8497-57D78CCD1EF5");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AIrradianceVolume, Columbus::AVolume, 1, "09B487F0-89E2-4A75-9B1D-B3F5BC05B2DB");
+CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AReflectionCaptureBox, Columbus::AVolume, 1, "703A6FA3-BB8C-4EAE-A6F9-A6F20C3B445F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ALight, Columbus::AThing, 1, "51A293E0-F98F-47E0-948F-A1D839611B6F");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::ADecal, Columbus::AThing, 1, "A809BEA6-6318-4C85-95EE-34414AB36EBB");
 CREFLECT_DECLARE_STRUCT_WITH_PARENT_VIRTUAL(Columbus::AMeshInstance, Columbus::AThing, 1, "ACE7499F-2693-4178-96EB-5D050B7BBD24");

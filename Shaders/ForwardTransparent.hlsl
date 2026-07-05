@@ -3,6 +3,9 @@
 #include "BRDF.hlsli"
 #include "GPUScene.hlsli"
 
+#define REFLECTION_CAPTURES_SET 3
+#include "ReflectionCaptures/ReflectionCapturesCommon.hlsli"
+
 [[vk::push_constant]]
 struct _Params
 {
@@ -204,6 +207,14 @@ float4 PSMain(VS_TO_PS In) : SV_Target
     BRDF.Metallic = Material.Metallic;
 
     float3 Lighting = EvaluateUnshadowedDirectLighting(BRDF, In.WorldPos);
+    Lighting += ApplyReflectionCaptures(
+        0.0.xxx,
+        In.WorldPos,
+        BRDF.N,
+        BRDF.V,
+        BRDFF0(BRDF),
+        BRDF.Roughness,
+        false);
     Lighting += Material.Emissive;
 
     if (Material.ShadingMode == MATERIAL_SHADING_REFRACTIVE)

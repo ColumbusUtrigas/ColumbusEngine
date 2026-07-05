@@ -219,6 +219,23 @@ namespace Columbus
 
 	namespace ImageUtils
 	{
+		u32 ImageLayerCount(ImageType Type)
+		{
+			return Type == ImageType::ImageCube ? 6u : 1u;
+		}
+
+		u32 ImageFullMipCount(u32 Width, u32 Height, u32 Depth)
+		{
+			u32 Size = Math::Max(1u, Math::Max(Width, Math::Max(Height, Depth)));
+			u32 MipCount = 1;
+			while (Size > 1)
+			{
+				Size >>= 1;
+				MipCount++;
+			}
+			return MipCount;
+		}
+
 		bool CanInspectAlphaPrecisely(TextureFormat Format)
 		{
 			switch (Format)
@@ -332,7 +349,7 @@ namespace Columbus
 
 		u64 ImageCalcByteSize(u32 Width, u32 Height, u32 Depth, u32 Mips, TextureFormat Format, ImageType Type)
 		{
-			return ImageCalcByteSize(Width, Height, Depth, Mips, Type == ImageType::ImageCube ? 6 : 1, Format);
+			return ImageCalcByteSize(Width, Height, Depth, Mips, ImageLayerCount(Type), Format);
 		}
 
 		u64 ImageCalcByteSizeForMip(u32 Width, u32 Height, u32 Depth, u32 Mip, TextureFormat Format)
@@ -867,12 +884,12 @@ namespace Columbus
 				return;
 			}
 
-			u32 NumMips = (u32)log2(Math::Max(Img.Height, Img.Width)) + 1;
+			u32 NumMips = ImageUtils::ImageFullMipCount(Img.Width, Img.Height, Img.Depth);
 
 			DstImage.AllocImage(Img.Width, Img.Height, Img.Depth, NumMips, Img.Format, Img.Type);
 
 			u64 FirstMipSize = ImageUtils::ImageCalcByteSizeForMip(Img.Width, Img.Height, Img.Depth, 0, Img.Format);
-			u32 NumLayers = Img.Type == ImageType::ImageCube ? 6 : 1;
+			u32 NumLayers = ImageUtils::ImageLayerCount(Img.Type);
 
 			for (u32 layer = 0; layer < NumLayers; layer++)
 			{
@@ -1188,7 +1205,7 @@ namespace Columbus
 			DstImage.Depth = Math::Max(1u, Img.Depth);
 			DstImage.MipMaps = Img.MipMaps;
 
-			u32 LayerCount = Img.Type == ImageType::ImageCube ? 6 : 1;
+			u32 LayerCount = ImageUtils::ImageLayerCount(Img.Type);
 
 			u64 SrcDataSize = ImageUtils::ImageCalcByteSize(Img.Width, Img.Height, Img.Depth, Img.MipMaps, Img.Format) * LayerCount;
 			u64 DstDataSize = ImageUtils::ImageCalcByteSize(DstImage.Width, DstImage.Height, DstImage.Depth, DstImage.MipMaps, DstImage.Format) * LayerCount;

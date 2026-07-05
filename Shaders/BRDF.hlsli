@@ -27,6 +27,13 @@ struct BRDFSample
 	float  Pdf;
 };
 
+static const float GGX_MIN_ROUGHNESS = 0.02f;
+
+float ClampGGXRoughness(float Roughness)
+{
+	return max(saturate(Roughness), GGX_MIN_ROUGHNESS);
+}
+
 float3 LambertDiffuseBRDF(float3 Albedo)
 {
 	return Albedo * ONE_OVER_PI;
@@ -352,6 +359,7 @@ float3 EvaluateDiffuseBRDF(BRDFData Data)
 // https://boksajak.github.io/files/CrashCourseBRDF.pdf
 float DistributionGGX(float3 N, float3 H, float roughness)
 {
+	roughness = ClampGGXRoughness(roughness);
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float NdotH = max(dot(N, H), 0.0);
@@ -395,7 +403,7 @@ float3 EvaluateSpecularBRDF(BRDFData Data)
 	if (NdotV <= 0.0 || NdotL <= 0.0)
 		return 0.0.xxx;
 
-	float Roughness = max(Data.Roughness, 0.02);
+	float Roughness = ClampGGXRoughness(Data.Roughness);
 	float3 F = FresnelSchlick(VdotH, BRDFF0(Data));
 	float D = DistributionGGX(Data.N, H, Roughness);
 	float Vis = GeometryGGX(Roughness * Roughness, NdotL, NdotV);
@@ -498,6 +506,7 @@ float3 ComputeLocalDirectionGGX(float a, float2 xi)
 BRDFSample SampleBRDF_GGX(BRDFData Data, float2 Xi)
 {
 	float3x3 LocalTransform = ComputeTangentsFromVector(Data.N);
+	float Roughness = ClampGGXRoughness(Data.Roughness);
 
 	float3 Hlocal; // microfacet normal (H) in local space
     float3 Vlocal = mul(LocalTransform, Data.V); // world to local
@@ -511,9 +520,9 @@ BRDFSample SampleBRDF_GGX(BRDFData Data, float2 Xi)
 	else
 	{
 #if USE_VNDF_GGX
-		Hlocal = VDNF_GGX(Vlocal, Data.Roughness, Xi);
+		Hlocal = VDNF_GGX(Vlocal, Roughness, Xi);
 #else
-		Hlocal = ComputeLocalDirectionGGX(Data.Roughness * Data.Roughness, Xi);
+		Hlocal = ComputeLocalDirectionGGX(Roughness * Roughness, Xi);
 #endif
 	}
 
@@ -523,14 +532,14 @@ BRDFSample SampleBRDF_GGX(BRDFData Data, float2 Xi)
 #if USE_VNDF_GGX
 	// PDF is 'G1(NdotV) * D'
 	float3 Nlocal = Data.N * LocalTransform;
-	float Pdf = VDNF_GGX_PDF(Data.Roughness, Vlocal, Nlocal, Hlocal, Llocal);
+	float Pdf = VDNF_GGX_PDF(Roughness, Vlocal, Nlocal, Hlocal, Llocal);
 	// float Pdf = DistributionGGX(Nlocal, Hlocal, Data.Roughness);
 #else
 	// Pdf = D * NoH / (4 * VoH);
     float3 Nlocal = mul(LocalTransform, Data.N);
 	float NdotH   = max(0.01, dot(Nlocal, Hlocal));
 	float VdotH   = max(0.01, dot(Vlocal, Hlocal));
-	float Pdf     = DistributionGGX(Nlocal, Hlocal, Data.Roughness) * NdotH / (4 * VdotH);
+	float Pdf     = DistributionGGX(Nlocal, Hlocal, Roughness) * NdotH / (4 * VdotH);
 #endif
 
 	BRDFSample Sample;
@@ -549,7 +558,7 @@ float3 EvaluateReflectionBRDF(BRDFData Data)
     float3 N = Data.N;
     float3 V = Data.V;
     float3 L = Data.L;
-    float Roughness = Data.Roughness;
+    float Roughness = ClampGGXRoughness(Data.Roughness);
 
     float NdotL = saturate(dot(N, L));
     float NdotV = saturate(dot(N, V));
@@ -584,10 +593,10 @@ float BRDFCalcPDF(BRDFData Data)
 	float3 V = Data.V;
 	float3 L = Data.L;
 	float3 H = normalize(V + L);
-	float Roughness = Data.Roughness;
+	float Roughness = ClampGGXRoughness(Data.Roughness);
 
 	float NdotH = max(dot(N, H), 0.0);
-	float VdotH = max(dot(V, H), 0.0);
+	float VdotH = max(dot(V, H), 0.0001);
 
 	float D = DistributionGGX(N, H, Roughness);
 

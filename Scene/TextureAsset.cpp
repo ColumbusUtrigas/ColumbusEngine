@@ -57,34 +57,6 @@ namespace Columbus
 			return Result;
 		}
 
-		static u32 GetLayerCount(ImageType Type)
-		{
-			return Type == ImageType::ImageCube ? 6u : 1u;
-		}
-
-		static void SetImageView(Image& Img, u32 Width, u32 Height, u32 Depth, u32 Mips, TextureFormat Format, ImageType Type, const Blob& Pixels)
-		{
-			Img.Width = Width;
-			Img.Height = Height;
-			Img.Depth = Depth;
-			Img.MipMaps = Mips;
-			Img.Format = Format;
-			Img.Type = Type;
-			Img.Exist = !Pixels.Empty();
-			Img.Size = Pixels.Size();
-			Img.Data = const_cast<u8*>(Pixels.Data());
-		}
-
-		static void CopyImageToBlob(const Image& Img, Blob& OutPixels)
-		{
-			const u64 ByteCount = Img.GetFullSize();
-			OutPixels.Bytes.resize((size_t)ByteCount);
-			if (ByteCount > 0)
-			{
-				memcpy(OutPixels.Bytes.data(), Img.GetData(), (size_t)ByteCount);
-			}
-		}
-
 		static void NormaliseUploadImage(Image& Img);
 
 		static void ExtractMipRange(const Image& SourceImage, u32 FirstMip, u32 MipCount, Image& OutImage)
@@ -94,7 +66,7 @@ namespace Columbus
 			const u32 NewDepth = std::max(1u, SourceImage.Depth >> FirstMip);
 			OutImage.AllocImage(NewWidth, NewHeight, NewDepth, MipCount, SourceImage.Format, SourceImage.Type);
 
-			const u32 LayerCount = GetLayerCount(SourceImage.Type);
+			const u32 LayerCount = ImageUtils::ImageLayerCount(SourceImage.Type);
 			for (u32 Layer = 0; Layer < LayerCount; Layer++)
 			{
 				for (u32 Mip = 0; Mip < MipCount; Mip++)
@@ -245,7 +217,7 @@ namespace Columbus
 				Image Converted;
 				Converted.AllocImage(Img.Width, Img.Height, Img.Depth, Img.MipMaps, TextureFormat::RGBA8, Img.Type);
 
-				for (u32 Layer = 0; Layer < (Img.Type == ImageType::ImageCube ? 6u : 1u); Layer++)
+				for (u32 Layer = 0; Layer < ImageUtils::ImageLayerCount(Img.Type); Layer++)
 				{
 					for (u32 Mip = 0; Mip < Img.MipMaps; Mip++)
 					{
@@ -279,13 +251,7 @@ namespace Columbus
 				return false;
 
 			Texture.SourcePath = MakeTextureSourcePathForAsset(SourcePath);
-			Texture.Source.Width = DecodedSource.Width;
-			Texture.Source.Height = DecodedSource.Height;
-			Texture.Source.Depth = DecodedSource.Depth;
-			Texture.Source.Mips = DecodedSource.MipMaps;
-			Texture.Source.Format = TextureFormatGetInfo(DecodedSource.Format).FriendlyName;
-			Texture.Source.Type = ImageTypeToString(DecodedSource.Type);
-			CopyImageToBlob(DecodedSource, Texture.Source.Pixels);
+			TextureUtils::StoreImagePixels(Texture.Source, DecodedSource);
 
 			if (!Texture.Source.Pixels.Empty())
 			{
@@ -301,15 +267,7 @@ namespace Columbus
 				return false;
 
 			Image SourceImage;
-			SetImageView(
-				SourceImage,
-				Texture.Source.Width,
-				Texture.Source.Height,
-				Texture.Source.Depth,
-				Texture.Source.Mips,
-				TextureFormatFromFriendlyName(Texture.Source.Format),
-				ImageTypeFromString(Texture.Source.Type),
-				Texture.Source.Pixels);
+			TextureUtils::SetBorrowedImageViewFromStoredPixels(SourceImage, Texture.Source);
 
 			Image CookedImage = BuildTextureCookBase(SourceImage, Texture.ImportSettings);
 
@@ -332,13 +290,7 @@ namespace Columbus
 
 			CookedImage.Format = TextureFormatApplySrgb(CookedImage.Format, Texture.ImportSettings.ColourSpace == ColourSpaceMode::SRGB);
 
-			Texture.Cooked.Width = CookedImage.Width;
-			Texture.Cooked.Height = CookedImage.Height;
-			Texture.Cooked.Depth = CookedImage.Depth;
-			Texture.Cooked.Mips = CookedImage.MipMaps;
-			Texture.Cooked.Format = TextureFormatGetInfo(CookedImage.Format).FriendlyName;
-			Texture.Cooked.Type = ImageTypeToString(CookedImage.Type);
-			CopyImageToBlob(CookedImage, Texture.Cooked.Pixels);
+			TextureUtils::StoreImagePixels(Texture.Cooked, CookedImage);
 
 			SourceImage.Data = nullptr;
 			return true;
@@ -350,15 +302,7 @@ namespace Columbus
 				return nullptr;
 
 			Image CookedImage;
-			SetImageView(
-				CookedImage,
-				TextureData.Cooked.Width,
-				TextureData.Cooked.Height,
-				TextureData.Cooked.Depth,
-				TextureData.Cooked.Mips,
-				TextureFormatFromFriendlyName(TextureData.Cooked.Format),
-				ImageTypeFromString(TextureData.Cooked.Type),
-				TextureData.Cooked.Pixels);
+			TextureUtils::SetBorrowedImageViewFromStoredPixels(CookedImage, TextureData.Cooked);
 
 			TextureDesc2 RuntimeDesc;
 			RuntimeDesc.AddressU = TextureData.ImportSettings.AddressMode;

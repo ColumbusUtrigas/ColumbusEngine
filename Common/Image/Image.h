@@ -124,6 +124,9 @@ namespace Columbus
 
 	namespace ImageUtils
 	{
+		u32 ImageLayerCount(ImageType Type);
+		u32 ImageFullMipCount(u32 Width, u32 Height = 1, u32 Depth = 1);
+
 		u64 ImageCalcByteSizeForMip(u32 Width, u32 Height, u32 Depth, u32 Mip, TextureFormat Format);
 
 		u64 ImageCalcByteSize(u32 Width, u32 Height, u32 Depth, u32 Mips, TextureFormat Format);

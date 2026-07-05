@@ -1,5 +1,4 @@
 #include "RenderPasses.h"
-#include "RayTracingIrradianceVolumes.h"
 #include "Core/Core.h"
 #include "Core/CVar.h"
 #include "Graphics/ShaderCache.h"
@@ -221,8 +220,8 @@ namespace Columbus
 			ShaderSampledTexture GBufferNormals;
 			ShaderSampledTexture GBufferRoughnessMetallic;
 			ShaderSampledTexture GBufferDepth { TextureBindingFlags::AspectDepth };
-			ShaderConstants<RayTracingIrradianceVolumes::Constants> IrradianceVolumeConstants;
-			std::array<ShaderReadBuffer, RayTracingIrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
+			ShaderConstants<IrradianceVolumes::Constants> IrradianceVolumeConstants;
+			std::array<ShaderReadBuffer, IrradianceVolumes::MaxVolumes> IrradianceProbeBuffers;
 			ShaderPushConstants<RayTracedReflectionPassParameters> Constants { {}, ShaderType::Raygen };
 		};
 
@@ -239,7 +238,7 @@ namespace Columbus
 			Binder.Bind(Params.GBufferDepth, 2, 7);
 			Binder.Bind(Params.IrradianceVolumeConstants, 2, 9);
 			ShaderArray<ShaderReadBuffer> IrradianceProbeBuffers;
-			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), RayTracingIrradianceVolumes::MaxVolumes);
+			IrradianceProbeBuffers.Set(Params.IrradianceProbeBuffers.data(), IrradianceVolumes::MaxVolumes);
 			Binder.Bind(IrradianceProbeBuffers, 2, 10);
 			Binder.Bind(Params.Constants);
 		}
@@ -537,7 +536,7 @@ namespace Columbus
 
 	// TODO: downscale reflections resolution and then upscale (FSR1?)
 	// TODO: sample lighting in reflection (requires volumetric GI)
-	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext, const RayTracingIrradianceVolumes::Prepared& IrradianceVolumes)
+	void RayTracedReflectionsPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		RENDER_GRAPH_SCOPED_MARKER(Graph, "RayTracedReflections");
 
@@ -574,8 +573,8 @@ namespace Columbus
 			TraceParams.GBufferNormals = Textures.GBufferNormal;
 			TraceParams.GBufferRoughnessMetallic = Textures.GBufferRM;
 			TraceParams.GBufferDepth = Textures.GBufferDS;
-			TraceParams.IrradianceVolumeConstants = IrradianceVolumes.Constants;
-			TraceParams.IrradianceProbeBuffers = IrradianceVolumes.ProbeBuffers;
+			TraceParams.IrradianceVolumeConstants = DeferredContext.BakedLighting.IrradianceVolumes.Constants;
+			TraceParams.IrradianceProbeBuffers = DeferredContext.BakedLighting.IrradianceVolumes.ProbeBuffers;
 			TraceParams.Constants.Value = {
 				.CameraPosition = Vector4(View.CameraCur.Pos, 1),
 				.MaxRoughness = CVar_MaxRoughness.GetValue(),

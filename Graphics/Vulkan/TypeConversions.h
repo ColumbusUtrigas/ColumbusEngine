@@ -123,7 +123,7 @@ namespace Columbus
 			case TextureFormat::BC3:       return VK_FORMAT_BC3_UNORM_BLOCK;
 			case TextureFormat::BC3SRGB:   return VK_FORMAT_BC3_SRGB_BLOCK;
 			case TextureFormat::BC5:       return VK_FORMAT_BC5_UNORM_BLOCK;
-			case TextureFormat::BC6H:      return VK_FORMAT_BC6H_SFLOAT_BLOCK;
+			case TextureFormat::BC6H:      return VK_FORMAT_BC6H_UFLOAT_BLOCK;
 			case TextureFormat::BC7:       return VK_FORMAT_BC7_UNORM_BLOCK;
 			case TextureFormat::BC7SRGB:   return VK_FORMAT_BC7_SRGB_BLOCK;
 			default: COLUMBUS_ASSERT(false);
