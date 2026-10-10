@@ -20,7 +20,7 @@ namespace Columbus
 	public:
 		AudioMixer MasterMixer;
 	public:
-		AudioSystem();
+		explicit AudioSystem(bool EnablePlayback = true);
 
 		void Clear();
 

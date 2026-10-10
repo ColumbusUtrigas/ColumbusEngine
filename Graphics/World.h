@@ -347,7 +347,7 @@ namespace Columbus
 		std::vector<AEffectVolume*> EffectVolumes;
 
 	public:
-		EngineWorld(SPtr<DeviceVulkan> Device);
+		EngineWorld(SPtr<DeviceVulkan> Device, bool EnableAudioPlayback = true);
 	public:
 		// functions
 		HLevel* LoadLevelCLVL(const char* Path);
@@ -395,6 +395,8 @@ namespace Columbus
 
 		void BeginFrame();
 		void Update(float DeltaTime);
+		// Refresh camera-dependent effects without ticking things or stepping physics.
+		void UpdateViewEffects();
 		void UpdateTransforms();
 		void PostUpdate();
 		void EndFrame();

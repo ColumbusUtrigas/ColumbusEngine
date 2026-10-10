@@ -461,6 +461,11 @@ namespace Columbus
 			ShaderBinder Binder(*this);
 			TShader::Bind(Binder, Parameters);
 		}
+		std::span<const RenderPassTextureDependency> GetTextureReads() const { return {TextureReadResources.data(), TextureReadResources.size()}; }
+		std::span<const RenderPassTextureDependency> GetTextureWrites() const { return {TextureWriteResources.data(), TextureWriteResources.size()}; }
+		std::span<const RenderPassBufferDependency> GetBufferReads() const { return {BufferReadResources.data(), BufferReadResources.size()}; }
+		std::span<const RenderPassBufferDependency> GetBufferWrites() const { return {BufferWriteResources.data(), BufferWriteResources.size()}; }
+
 	private:
 		RenderGraphDynamicArray<RenderPassTextureDependency> TextureWriteResources;
 		RenderGraphDynamicArray<RenderPassTextureDependency> TextureReadResources;
@@ -561,7 +566,7 @@ namespace Columbus
 	struct RenderGraphExecuteParameters
 	{
 		iVector2 DefaultViewportSize;  // when renderpasses don't explicitly provide viewport size, this will be used
-		VkSemaphore WaitSemaphore;     // RG will start first submit after this one is signaled
+		VkSemaphore WaitSemaphore = VK_NULL_HANDLE; // RG will start first submit after this one is signaled
 		SPtr<FenceVulkan> SignalFence; // optional fence that will be signaled after RG work is finished
 	};
 

@@ -574,8 +574,6 @@ namespace Columbus
 		Textures.FinalAfterTonemap = TonemappedImage;
 		ScreenshotPass(Graph, View, View.ScreenshotHDR ? Textures.FinalBeforeTonemap : TonemappedImage);
 
-		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
-
 		// debug visualisation modes
 		if (DeferredContext.VisualisationMode != EDeferredRenderVisualisationMode::Final)
 		{
@@ -588,6 +586,8 @@ namespace Columbus
 				TonemappedImage = DebugVisualisationPass(Graph, View, Textures, DeferredContext);
 			}
 		}
+
+		DebugOverlayPass(Graph, View, Textures, TonemappedImage);
 
 		if (View.DeferredSettings.ApplyFSR1)
 		{

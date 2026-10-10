@@ -77,7 +77,7 @@ namespace Columbus
 		Reflection::EnforceTypeLinkage<AAnimPreview>();
 	}
 
-	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice) : Device(InDevice), Assets(AssetSystem::Get())
+	EngineWorld::EngineWorld(SPtr<DeviceVulkan> InDevice, bool EnableAudioPlayback) : Assets(AssetSystem::Get()), Audio(EnableAudioPlayback), Device(InDevice)
 	{
 		EnforcePhysicsThingTypesLinkage();
 		EnforceAnimationThingTypesLinkage();
@@ -1208,6 +1208,11 @@ namespace Columbus
 
 		UpdateTransforms();
 
+		UpdateViewEffects();
+	}
+
+	void EngineWorld::UpdateViewEffects()
+	{
 		// update effects volumes
 		HEffectsSettings EffectsSettings = {};
 		{

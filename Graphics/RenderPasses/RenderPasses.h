@@ -223,6 +223,20 @@ namespace Columbus
 	// **********************************
 	// Path-Tracing
 	//
-	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View);
+	struct PathTracingRenderContext
+	{
+		SPtr<DeviceVulkan> Device;
+		Texture2* History = nullptr;
+		u32 Frame = 0;
+		Camera PreviousCamera;
+		bool HasPreviousCamera = false;
+
+		explicit PathTracingRenderContext(SPtr<DeviceVulkan> InDevice) : Device(InDevice) {}
+		~PathTracingRenderContext();
+		PathTracingRenderContext(const PathTracingRenderContext&) = delete;
+		PathTracingRenderContext& operator=(const PathTracingRenderContext&) = delete;
+	};
+
+	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View, PathTracingRenderContext& Context);
 
 }

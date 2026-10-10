@@ -311,13 +311,13 @@ namespace Columbus
 		FlushBatch();
 	}
 
-	void CommandBufferVulkan::CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset)
+	void CommandBufferVulkan::CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset, VkImageAspectFlags Aspect)
 	{
 		auto srcvk = static_cast<const TextureVulkan*>(Src);
 		auto dstvk = static_cast<const BufferVulkan*>(Dst);
 
 		VkImageSubresourceLayers Subresource{
-			.aspectMask = TextureFormatToAspectMaskVk(Src->GetDesc().Format),
+			.aspectMask = Aspect ? Aspect : TextureFormatToAspectMaskVk(Src->GetDesc().Format),
 			.mipLevel = 0, // TODO:
 			.baseArrayLayer = 0, // TODO:
 			.layerCount = 1, // TODO:

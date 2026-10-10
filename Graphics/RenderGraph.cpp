@@ -693,6 +693,7 @@ namespace Columbus
 	{
 		PROFILE_CPU(Counter_RenderGraphClear);
 
+		ExecutionHasFinished = false;
 		Passes.clear();
 		Textures.clear();
 		Buffers.clear();
@@ -1132,7 +1133,7 @@ namespace Columbus
 			{
 				CommandBuffer->End();
 
-				Device->Submit(CommandBuffer, nullptr, 1, &WaitSemaphore, 1, &SignalSemaphore);
+				Device->Submit(CommandBuffer, nullptr, WaitSemaphore ? 1 : 0, WaitSemaphore ? &WaitSemaphore : nullptr, 1, &SignalSemaphore);
 
 				CommandBuffer = PerFrameData.GetNextCommandBuffer(Device);
 				WaitSemaphore = PerFrameData.GetPreviousSemaphore(Device, CmdBufferSubmissions);
@@ -1330,7 +1331,7 @@ namespace Columbus
 
 		Context.Device->_Profiler.EndProfileConter(GpuTimeMarker, CommandBuffer);
 		CommandBuffer->End();
-		Device->Submit(CommandBuffer, Parameters.SignalFence, 1, &WaitSemaphore, 1, &SignalSemaphore);
+		Device->Submit(CommandBuffer, Parameters.SignalFence, WaitSemaphore ? 1 : 0, WaitSemaphore ? &WaitSemaphore : nullptr, 1, &SignalSemaphore);
 
 		RenderGraphExecuteResults Result;
 		Result.FinishSemaphore = SignalSemaphore;

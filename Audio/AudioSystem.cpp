@@ -3,9 +3,9 @@
 namespace Columbus
 {
 
-	AudioSystem::AudioSystem()
+	AudioSystem::AudioSystem(bool EnablePlayback)
 	{
-		Player = std::make_unique<AudioPlayer>(2, 44100, &MasterMixer);
+		if (EnablePlayback) Player = std::make_unique<AudioPlayer>(2, 44100, &MasterMixer);
 	}
 
 	void AudioSystem::Clear()
@@ -15,12 +15,12 @@ namespace Columbus
 
 	void AudioSystem::Play()
 	{
-		Player->Play();
+		if (Player) Player->Play();
 	}
 
 	void AudioSystem::Stop()
 	{
-		Player->Stop();
+		if (Player) Player->Stop();
 	}
 
 	AudioSystem::~AudioSystem()

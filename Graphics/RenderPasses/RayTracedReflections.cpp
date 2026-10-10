@@ -332,29 +332,9 @@ namespace Columbus
 		}
 	};
 
-	static Buffer*& ReflectionDenoiserConstantBuffer()
+	static Buffer* GetReflectionDenoiserConstantsBuffer(RenderGraph& Graph, const RenderView& View)
 	{
-		static Buffer* CB = nullptr;
-		return CB;
-	}
-
-	static void UploadReflectionDenoiserConstants(RenderGraph& Graph, const RenderView& View)
-	{
-		Buffer*& CB = ReflectionDenoiserConstantBuffer();
-		static Buffer* UploadBuffers[MaxFramesInFlight]{ nullptr };
-
-		if (CB == nullptr)
-		{
-			CB = Graph.Device->CreateBuffer(BufferDesc(sizeof(RTReflectionDenoiserConstants), BufferType::Constant), nullptr);
-			for (int i = 0; i < MaxFramesInFlight; i++)
-			{
-				BufferDesc UploadDesc(sizeof(RTReflectionDenoiserConstants), BufferType::Constant);
-				UploadDesc.HostVisible = true;
-				UploadBuffers[i] = Graph.Device->CreateBuffer(UploadDesc, nullptr);
-			}
-		}
-
-		RTReflectionDenoiserConstants Constants;
+		RTReflectionDenoiserConstants Constants{};
 		Constants.InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
 		Constants.Projection = View.CameraCur.GetProjectionMatrix();
 		Constants.InvProjection = View.CameraCur.GetProjectionMatrix().GetInverted();
@@ -377,23 +357,9 @@ namespace Columbus
 		Constants.SamplesPerQuad = 1;
 		Constants.TemporalVarianceGuidedTracingEnabled = 1;
 
-		const u32 BufferId = (u32)(GFrameNumber % MaxFramesInFlight);
-		void* Map = Graph.Device->MapBuffer(UploadBuffers[BufferId]);
-		memcpy(Map, &Constants, sizeof(Constants));
-		Graph.Device->UnmapBuffer(UploadBuffers[BufferId]);
 
-		RenderPassParameters Parameters;
-		RenderPassDependencies Dependencies(Graph.Allocator);
-		Graph.AddPass("RTReflDenoiserUploadConstants", RenderGraphPassType::Compute, Parameters, Dependencies, [BufferId, CB](RenderGraphContext& Context)
-		{
-			Context.CommandBuffer->CopyBuffer(UploadBuffers[BufferId], CB, 0, 0, sizeof(RTReflectionDenoiserConstants));
-		});
-	}
-
-	static Buffer* GetReflectionDenoiserConstantsBuffer(RenderGraph& Graph, const RenderView& View)
-	{
-		UploadReflectionDenoiserConstants(Graph, View);
-		return ReflectionDenoiserConstantBuffer();
+		// Use the device-owned per-frame pool so CLI teardown and multiple worlds are safe.
+		return Graph.Device->GetConstantBufferPrepared(sizeof(Constants), &Constants);
 	}
 
 	static RenderGraphTextureRef DenoiseReflectionsFFX(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef InputRadiance)

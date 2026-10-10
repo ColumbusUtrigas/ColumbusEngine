@@ -84,7 +84,12 @@ namespace Columbus
 		});
 	}
 
-	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View)
+	PathTracingRenderContext::~PathTracingRenderContext()
+	{
+		Device->DestroyTexture(History);
+	}
+
+	RenderGraphTextureRef RenderPathTraced(RenderGraph& Graph, const RenderView& View, PathTracingRenderContext& PathContext)
 	{
 		TextureDesc2 PTTextureDesc {
 			.Usage = TextureUsage::StorageSampled,
@@ -93,10 +98,9 @@ namespace Columbus
 		};
 		RenderGraphTextureRef RTImage = Graph.CreateTexture(PTTextureDesc, "PathTraceTexture");
 
-		// TODO: move to RenderView/PathTracingContext?
-		static Texture2* HistoryTexture = nullptr;
-
-		Graph.CreateHistoryTexture(&HistoryTexture, PTTextureDesc, "PathTraceTexture History");
+		Texture2*& HistoryTexture = PathContext.History;
+		if (Graph.CreateHistoryTexture(&HistoryTexture, PTTextureDesc, "PathTraceTexture History"))
+			PathContext.Frame = 0;
 
 		RenderPassParameters Parameters;
 
@@ -108,22 +112,21 @@ namespace Columbus
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Bind<PathTraceShader>(TraceParams);
 
-		Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [TraceParams, View](RenderGraphContext& Context)
+		Graph.AddPass("PathTrace", RenderGraphPassType::Compute, Parameters, Dependencies, [TraceParams, View, &PathContext](RenderGraphContext& Context)
 		{
 			GPUCamera UpdatedCamera = GPUCamera(View.CameraCur);
-			Context.Scene->Dirty = Context.Scene->MainCamera != UpdatedCamera; // TODO: move to the main rendering system
+			const bool CameraChanged = !PathContext.HasPreviousCamera || GPUCamera(PathContext.PreviousCamera) != UpdatedCamera;
+			const bool reset = Context.Scene->Dirty || CameraChanged || PathContext.Frame == 0;
+			if (reset) PathContext.Frame = 0;
+			PathContext.PreviousCamera = View.CameraCur;
+			PathContext.HasPreviousCamera = true;
 			Context.Scene->MainCamera = UpdatedCamera;
-
-			bool reset = Context.Scene->Dirty;
-
-			// TODO: move to RenderView/PathTracingContext?
-			static int frame = 1;
-			if (reset) frame = 1;
+			Context.Scene->Dirty = false;
 
 			PathTraceShader::Parameters Parameters = TraceParams;
 			Parameters.AccelerationStructure = Context.Scene->TLAS;
 			Parameters.Constants.Value.randomNumber = (int)rand() % 20000;
-			Parameters.Constants.Value.frameNumber = (int)frame++;
+			Parameters.Constants.Value.frameNumber = (int)++PathContext.Frame;
 			Parameters.Constants.Value.reset = (int)reset;
 			Parameters.Constants.Value.bounces = CVar_Bounces.GetValue();
 
@@ -135,7 +138,6 @@ namespace Columbus
 		Graph.ExtractTexture(RTImage, &HistoryTexture);
 
 		RenderGraphTextureRef TonemappedImage = TonemapPass(Graph, View, RTImage);
-		//DebugUIPass(Graph, View, TonemappedImage);
 		TransitionImagePass(Graph, TonemappedImage);
 		
 		return TonemappedImage;
