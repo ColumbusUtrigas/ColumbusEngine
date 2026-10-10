@@ -23,9 +23,11 @@ namespace Columbus
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
 
 	// TODO: move to a more appropriate place
-	void ShowDebugConsole();
+	void ShowDebugStats(bool* Open = nullptr);
+	void ShowLoadedAssets(bool* Open = nullptr);
+	void ShowDebugConsole(bool bShowAuxiliaryWindows = true);
 	bool IsDebugConsoleFocused();
-	void ShowRenderGraphVisualiser(RenderGraph& Graph);
+	void ShowRenderGraphVisualiser(RenderGraph& Graph, bool* Open = nullptr);
 
 	void ScreenshotPass(RenderGraph& Graph, RenderView& View, RenderGraphTextureRef Texture);
 

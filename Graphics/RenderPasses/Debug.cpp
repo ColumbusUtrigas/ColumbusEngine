@@ -620,12 +620,8 @@ namespace Columbus
 		return Result;
 	}
 
-	void ShowDebugConsole()
+	void ShowDebugStats(bool* Open)
 	{
-		static char buf[1024]{ 0 };
-		static std::vector<UPtr<char>> CommandHistory;
-		static std::vector<UPtr<char>> History;
-
 		const auto RightAlignText = [](const char* Text)
 		{
 			float region_width = ImGui::GetContentRegionAvail().x;
@@ -635,7 +631,7 @@ namespace Columbus
 		};
 
 		// TODO: move to a proper place
-		if (ImGui::Begin("Stats"))
+		if (ImGui::Begin("Stats", Open))
 		{
 			ImGuiTableFlags flags = ImGuiTableFlags_Borders;
 
@@ -716,6 +712,96 @@ namespace Columbus
 
 		}
 		ImGui::End();
+	}
+
+	void ShowLoadedAssets(bool* Open)
+	{
+		if (ImGui::Begin("Loaded Assets", Open))
+		{
+			auto& assets = AssetSystem::Get();
+
+			// Create temporary vector for sorting
+			struct AssetEntry
+			{
+				std::string_view Path;
+				const AssetRecord* Data = nullptr;
+
+				AssetEntry(std::string_view path, const AssetRecord* data)
+					: Path(path), Data(data) {}
+			};
+
+			std::vector<AssetEntry> sortedAssets;
+			sortedAssets.reserve(assets.LoadedAssets.size());
+
+			// fill vector with assets
+			for (const auto& [path, data] : assets.LoadedAssets)
+			{
+				sortedAssets.emplace_back(path, data.get());
+			}
+
+			if (ImGui::BeginTable("AssetsTable", 3,
+				ImGuiTableFlags_RowBg |
+				ImGuiTableFlags_Borders |
+				ImGuiTableFlags_Sortable |
+				ImGuiTableFlags_SortMulti))
+			{
+				ImGui::TableSetupColumn("Path", ImGuiTableColumnFlags_DefaultSort);
+				ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_DefaultSort);
+				ImGui::TableSetupColumn("RefCount", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortDescending);
+				ImGui::TableHeadersRow();
+
+				// Get sort specs
+				if (ImGuiTableSortSpecs* sorts_specs = ImGui::TableGetSortSpecs())
+				{
+					std::sort(sortedAssets.begin(), sortedAssets.end(), [sorts_specs](const AssetEntry& a, const AssetEntry& b)
+					{
+						for (int n = 0; n < sorts_specs->SpecsCount; n++)
+						{
+							const ImGuiTableColumnSortSpecs* sort_spec = &sorts_specs->Specs[n];
+							int delta = 0;
+							switch (sort_spec->ColumnIndex)
+							{
+								case 0: // Path
+									delta = a.Path.compare(b.Path);
+									break;
+								case 1: // Type
+									delta = strcmp(a.Data->Type->Name, b.Data->Type->Name);
+									break;
+								case 2: // RefCount
+									delta = a.Data->RefCount - b.Data->RefCount;
+									break;
+							}
+							if (delta > 0)
+								return sort_spec->SortDirection == ImGuiSortDirection_Ascending ? false : true;
+							if (delta < 0)
+								return sort_spec->SortDirection == ImGuiSortDirection_Ascending ? true : false;
+						}
+						return false;
+					});
+				}
+
+				// Display sorted data
+				for (const auto& entry : sortedAssets)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Path.data());
+					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Data && entry.Data->Type ? entry.Data->Type->Name : "Unknown");
+					ImGui::TableNextColumn(); ImGui::Text("%d", entry.Data ? entry.Data->RefCount : 0);
+				}
+				ImGui::EndTable();
+			}
+		}
+		ImGui::End();
+	}
+
+	void ShowDebugConsole(bool bShowAuxiliaryWindows)
+	{
+		static char buf[1024]{ 0 };
+		static std::vector<UPtr<char>> CommandHistory;
+		static std::vector<UPtr<char>> History;
+
+		if (bShowAuxiliaryWindows)
+			ShowDebugStats();
 
 		static bool isPopupVisible = false;
 		static bool isHistoryPopup = true;
@@ -826,82 +912,8 @@ namespace Columbus
 		}
 		ImGui::End();
 
-		if (ImGui::Begin("Loaded Assets"))
-		{
-			auto& assets = AssetSystem::Get();
-			
-			// Create temporary vector for sorting
-			struct AssetEntry
-			{
-				std::string_view Path;
-				const AssetRecord* Data = nullptr;
-				
-				AssetEntry(std::string_view path, const AssetRecord* data)
-					: Path(path), Data(data) {}
-			};
-			
-			std::vector<AssetEntry> sortedAssets;
-			sortedAssets.reserve(assets.LoadedAssets.size());
-			
-			// fill vector with assets
-			for (const auto& [path, data] : assets.LoadedAssets)
-			{
-				sortedAssets.emplace_back(path, data.get());
-			}
-
-			if (ImGui::BeginTable("AssetsTable", 3, 
-				ImGuiTableFlags_RowBg | 
-				ImGuiTableFlags_Borders | 
-				ImGuiTableFlags_Sortable | 
-				ImGuiTableFlags_SortMulti))
-			{
-				ImGui::TableSetupColumn("Path", ImGuiTableColumnFlags_DefaultSort);
-				ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_DefaultSort);
-				ImGui::TableSetupColumn("RefCount", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortDescending);
-				ImGui::TableHeadersRow();
-
-				// Get sort specs
-				if (ImGuiTableSortSpecs* sorts_specs = ImGui::TableGetSortSpecs())
-				{
-					std::sort(sortedAssets.begin(), sortedAssets.end(), [sorts_specs](const AssetEntry& a, const AssetEntry& b)
-					{
-						for (int n = 0; n < sorts_specs->SpecsCount; n++)
-						{
-							const ImGuiTableColumnSortSpecs* sort_spec = &sorts_specs->Specs[n];
-							int delta = 0;
-							switch (sort_spec->ColumnIndex)
-							{
-								case 0: // Path
-									delta = a.Path.compare(b.Path);
-									break;
-								case 1: // Type
-									delta = strcmp(a.Data->Type->Name, b.Data->Type->Name);
-									break;
-								case 2: // RefCount
-									delta = a.Data->RefCount - b.Data->RefCount;
-									break;
-							}
-							if (delta > 0)
-								return sort_spec->SortDirection == ImGuiSortDirection_Ascending ? false : true;
-							if (delta < 0)
-								return sort_spec->SortDirection == ImGuiSortDirection_Ascending ? true : false;
-						}
-						return false;
-					});
-				}
-
-				// Display sorted data
-				for (const auto& entry : sortedAssets)
-				{
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Path.data());
-					ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.Data && entry.Data->Type ? entry.Data->Type->Name : "Unknown");
-					ImGui::TableNextColumn(); ImGui::Text("%d", entry.Data ? entry.Data->RefCount : 0);
-				}
-				ImGui::EndTable();
-			}
-		}
-		ImGui::End();
+		if (bShowAuxiliaryWindows)
+			ShowLoadedAssets();
 
 		if (isPopupVisible)
 		{
@@ -959,15 +971,22 @@ namespace Columbus
 		return DebugConsoleFocus;
 	}
 
-	void ShowRenderGraphVisualiser(RenderGraph& Graph)
+	void ShowRenderGraphVisualiser(RenderGraph& Graph, bool* Open)
 	{
 		RenderGraphDebugInformation Info;
 		Graph.GetDebugInformation(Info);
 
 		// TODO: show how resource are used in passes
 		// TODO: barriers/transitions
-		if (ImGui::Begin("RenderGraph Viz"))
+		if (ImGui::Begin("RenderGraph Viz", Open))
 		{
+			if (Info.Passes.empty())
+			{
+				ImGui::TextDisabled("No render passes to display.");
+				ImGui::End();
+				return;
+			}
+
 			const float margin = 5;
 			const float vertical_size = 50;
 			int num = (int)Info.Passes.size();

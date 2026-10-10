@@ -59,6 +59,13 @@ namespace Reflection
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// Type search
 
+	const Enum* FindEnumByGuid(const char* Guid)
+	{
+		const auto& Enums = ReflectionData::Instance().GuidToEnums;
+		const auto Found = Enums.find(Guid);
+		return Found != Enums.end() ? Found->second : nullptr;
+	}
+
 	const Enum* FindEnumByName(const char* Name)
 	{
 		if (ReflectionData::Instance().NameToEnums.contains(Name))
@@ -121,6 +128,7 @@ namespace Reflection
 	{
 		Enum* eenum = new Enum();
 		eenum->Name = Name;
+		eenum->Guid = Guid;
 
 		ReflectionData::Instance().AllEnums.push_back(eenum);
 		ReflectionData::Instance().NameToEnums[Name] = eenum;
