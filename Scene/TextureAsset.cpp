@@ -270,6 +270,8 @@ namespace Columbus
 			TextureUtils::SetBorrowedImageViewFromStoredPixels(SourceImage, Texture.Source);
 
 			Image CookedImage = BuildTextureCookBase(SourceImage, Texture.ImportSettings);
+			// The cook base owns its copy; release the borrowed view before compression can fail.
+			SourceImage.Data = nullptr;
 
 			if (Texture.ImportSettings.Compression != CompressionMode::None)
 			{
@@ -291,8 +293,6 @@ namespace Columbus
 			CookedImage.Format = TextureFormatApplySrgb(CookedImage.Format, Texture.ImportSettings.ColourSpace == ColourSpaceMode::SRGB);
 
 			TextureUtils::StoreImagePixels(Texture.Cooked, CookedImage);
-
-			SourceImage.Data = nullptr;
 			return true;
 		}
 

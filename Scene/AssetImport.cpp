@@ -13,6 +13,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -668,19 +670,45 @@ namespace Columbus::Assets
 			Visited[NodeIndex] = true;
 		}
 
-		static void SaveJsonToFile(const nlohmann::json& Json, const std::filesystem::path& Path)
+		template <typename T>
+		static bool SaveImportedBinaryAsset(const T& Asset, const std::filesystem::path& Path)
+		{
+			auto Stream = DataStream::CreateFromFile(Path.string().c_str(), "wb");
+			if (!Stream.IsValid()) return false;
+			const bool Saved = Reflection_SerialiseStructBinary(Stream, const_cast<T&>(Asset)) && Stream.F.Flush();
+			const bool Closed = Stream.F.Close();
+			return Saved && Closed;
+		}
+
+		static void ImportProgress(const char* Stage)
+		{
+			Log::Message("[ImportLevel] %s", Stage);
+			std::fflush(stdout);
+		}
+
+		static void RecordImportedFile(HGltfImportResult& Result, const std::filesystem::path& Path)
+		{
+			Result.Files.push_back(Path.generic_string());
+			Log::Message("[ImportLevel] Saved %s", Path.string().c_str());
+			std::fflush(stdout);
+		}
+
+		static bool SaveJsonToFile(const nlohmann::json& Json, const std::filesystem::path& Path)
 		{
 			std::filesystem::create_directories(Path.parent_path());
 			std::ofstream Stream(Path);
+			if (!Stream) return false;
 			Stream << std::setw(4) << Json;
+			Stream.flush();
+			Stream.close();
+			return !Stream.fail();
 		}
 
 		static bool SaveMaterialAssetToFile(const Material& MaterialAsset, const std::filesystem::path& Path)
 		{
 			nlohmann::json Json;
 			Reflection_SerialiseStructJson(const_cast<Material&>(MaterialAsset), Json);
-			SaveJsonToFile(Json, Path);
-			return true;
+			return SaveJsonToFile(Json, Path);
 		}
 
 		static bool SaveLevelAssetToFile(const HLevel& LevelAsset, const std::filesystem::path& Path)
@@ -698,8 +726,7 @@ namespace Columbus::Assets
 				Json["things"].push_back(ThingJson);
 			}
 
-			SaveJsonToFile(Json, Path);
-			return true;
+			return SaveJsonToFile(Json, Path);
 		}
 
 		static void ReloadImportedAssetIfLoaded(const std::filesystem::path& AbsolutePath)
@@ -878,7 +905,7 @@ namespace Columbus::Assets
 		};
 	}
 
-	void ImportLevel(const char* SourcePath, const char* ImportPath)
+	static void ImportLevelInternal(const char* SourcePath, const char* ImportPath, HGltfImportResult& Result)
 	{
 		const std::filesystem::path SourceAssetPath = std::filesystem::absolute(SourcePath);
 		const HGltfImportPaths OutputPaths = BuildImportPaths(SourcePath, ImportPath);
@@ -889,10 +916,17 @@ namespace Columbus::Assets
 		std::filesystem::create_directories(OutputPaths.SkeletonsDirectory);
 		std::filesystem::create_directories(OutputPaths.AnimationsDirectory);
 
+		ImportProgress("Loading glTF and decoding images...");
 		tinygltf::Model Model;
 		std::unordered_map<int, Image> DecodedImages;
 		if (!LoadGltfWithDecodedImages(SourcePath, Model, DecodedImages))
 			return;
+
+		for (const std::string& Extension : Model.extensionsUsed)
+		{
+			if (Extension != "KHR_lights_punctual" && Extension != "KHR_materials_emissive_strength")
+				Log::Warning("[ImportLevel] Extension %s is not handled by this importer", Extension.c_str());
+		}
 
 		std::unordered_set<std::string> UsedOutputPaths;
 
@@ -964,6 +998,7 @@ namespace Columbus::Assets
 			}
 		}
 
+		ImportProgress("Importing skeletons...");
 		for (int SkinIndex = 0; SkinIndex < (int)Model.skins.size(); SkinIndex++)
 		{
 			const tinygltf::Skin& GltfSkin = Model.skins[SkinIndex];
@@ -1023,11 +1058,12 @@ namespace Columbus::Assets
 				".cskel",
 				UsedOutputPaths);
 
-			if (!SaveSkeletonAssetToFile(SkeletonAsset, SkeletonPath.string().c_str()))
+			if (!SaveImportedBinaryAsset(SkeletonAsset, SkeletonPath))
 			{
 				Log::Error("[ImportLevel] Failed to save skeleton asset %s", SkeletonPath.string().c_str());
-				continue;
+				return;
 			}
+			RecordImportedFile(Result, SkeletonPath);
 
 			AssetRef<Skeleton> SkeletonRef;
 			SkeletonRef.Path = MakeRelativeAssetPath(SkeletonPath);
@@ -1037,6 +1073,7 @@ namespace Columbus::Assets
 			SkinJointIndexByNode[SkinIndex] = std::move(JointIndexByNode);
 		}
 
+		ImportProgress("Importing animations...");
 		for (int AnimIndex = 0; AnimIndex < (int)Model.animations.size(); AnimIndex++)
 		{
 			const tinygltf::Animation& GltfAnim = Model.animations[AnimIndex];
@@ -1277,18 +1314,22 @@ namespace Columbus::Assets
 				".canim",
 				UsedOutputPaths);
 
-			if (!SaveAnimClipAssetToFile(ClipAsset, AnimPath.string().c_str()))
+			if (!SaveImportedBinaryAsset(ClipAsset, AnimPath))
 			{
 				Log::Error("[ImportLevel] Failed to save animation asset %s", AnimPath.string().c_str());
-				continue;
+				return;
 			}
+			RecordImportedFile(Result, AnimPath);
 			ReloadImportedAssetIfLoaded(AnimPath);
 		}
 
 		const auto ImportTextureRef = [&](int TextureIndex, EGltfTextureUsage Usage) -> AssetRef<Texture2>
 		{
 			if (TextureIndex < 0 || TextureIndex >= (int)Model.textures.size())
+			{
+				Log::Error("[ImportLevel] Invalid material texture index %d", TextureIndex);
 				return {};
+			}
 
 			HGltfTextureKey CacheKey{ TextureIndex, Usage };
 			if (ImportedTextures.contains(CacheKey))
@@ -1296,15 +1337,23 @@ namespace Columbus::Assets
 
 			const tinygltf::Texture& GltfTexture = Model.textures[TextureIndex];
 			if (GltfTexture.source < 0 || !DecodedImages.contains(GltfTexture.source))
+			{
+				Log::Error("[ImportLevel] Texture %d has no decoded source image", TextureIndex);
 				return {};
+			}
 
 			const tinygltf::Image& GltfImage = Model.images[GltfTexture.source];
 			const Image& SourceImage = DecodedImages[GltfTexture.source];
 			const std::string ImageSourcePath = MakeExternalImageSourcePath(SourceAssetPath, GltfImage, GltfTexture.source);
+			Log::Message("[ImportLevel] Cooking texture %s (%s)...", ImageSourcePath.c_str(), GetUsageSuffix(Usage));
+			std::fflush(stdout);
 
 			UPtr<Texture2> TextureAsset(ImportTextureAssetFromImage(SourceImage, ImageSourcePath.c_str()));
 			if (!TextureAsset)
+			{
+				Log::Error("[ImportLevel] Failed to import texture %s", ImageSourcePath.c_str());
 				return {};
+			}
 
 			ApplyGltfTextureUsageSettings(*TextureAsset, SourceImage, Usage);
 			if (!RecookTextureAsset(*TextureAsset))
@@ -1322,11 +1371,12 @@ namespace Columbus::Assets
 				".cas",
 				UsedOutputPaths);
 
-			if (!SaveTextureAssetToFile(*TextureAsset, TexturePath.string().c_str()))
+			if (!SaveImportedBinaryAsset(*TextureAsset, TexturePath))
 			{
 				Log::Error("[ImportLevel] Failed to save texture asset %s", TexturePath.string().c_str());
 				return {};
 			}
+			RecordImportedFile(Result, TexturePath);
 
 			AssetRef<Texture2> Ref;
 			Ref.Path = MakeRelativeAssetPath(TexturePath);
@@ -1334,10 +1384,17 @@ namespace Columbus::Assets
 			return Ref;
 		};
 
+		ImportProgress("Importing materials and textures...");
 		for (int MaterialIndex = 0; MaterialIndex < (int)Model.materials.size(); MaterialIndex++)
 		{
 			const tinygltf::Material& GltfMaterial = Model.materials[MaterialIndex];
 			Material MaterialAsset;
+			if (GltfMaterial.doubleSided)
+				Log::Warning("[ImportLevel] Material %s requests doubleSided, which is not represented by the engine material", GltfMaterial.name.c_str());
+			if (GltfMaterial.alphaMode != "OPAQUE")
+				Log::Warning("[ImportLevel] Material %s alphaMode %s is not mapped; the material remains opaque", GltfMaterial.name.c_str(), GltfMaterial.alphaMode.c_str());
+			if (GltfMaterial.occlusionTexture.index >= 0 && GltfMaterial.occlusionTexture.index != GltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index)
+				Log::Warning("[ImportLevel] Material %s has a separate occlusion texture, which is not imported", GltfMaterial.name.c_str());
 
 			if (GltfMaterial.pbrMetallicRoughness.baseColorTexture.index >= 0)
 				MaterialAsset.Albedo = ImportTextureRef(GltfMaterial.pbrMetallicRoughness.baseColorTexture.index, EGltfTextureUsage::BaseColor);
@@ -1347,6 +1404,26 @@ namespace Columbus::Assets
 				MaterialAsset.Orm = ImportTextureRef(GltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index, EGltfTextureUsage::Orm);
 			if (GltfMaterial.emissiveTexture.index >= 0)
 				MaterialAsset.Emissive = ImportTextureRef(GltfMaterial.emissiveTexture.index, EGltfTextureUsage::Emissive);
+			if ((GltfMaterial.pbrMetallicRoughness.baseColorTexture.index >= 0 && MaterialAsset.Albedo.Path.empty()) ||
+				(GltfMaterial.normalTexture.index >= 0 && MaterialAsset.Normal.Path.empty()) ||
+				(GltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 && MaterialAsset.Orm.Path.empty()) ||
+				(GltfMaterial.emissiveTexture.index >= 0 && MaterialAsset.Emissive.Path.empty()))
+				return;
+
+			double EmissiveStrength = 1.0;
+			if (const auto Extension = GltfMaterial.extensions.find("KHR_materials_emissive_strength"); Extension != GltfMaterial.extensions.end())
+			{
+				if (Extension->second.Has("emissiveStrength"))
+				{
+					const auto& Value = Extension->second.Get("emissiveStrength");
+					if (!Value.IsNumber() || !std::isfinite(Value.GetNumberAsDouble()) || Value.GetNumberAsDouble() < 0.0)
+					{
+						Log::Error("[ImportLevel] Invalid emissiveStrength in material %s", GltfMaterial.name.c_str());
+						return;
+					}
+					EmissiveStrength = Value.GetNumberAsDouble();
+				}
+			}
 
 			MaterialAsset.AlbedoFactor = Vector4(
 				(float)GltfMaterial.pbrMetallicRoughness.baseColorFactor[0],
@@ -1354,9 +1431,9 @@ namespace Columbus::Assets
 				(float)GltfMaterial.pbrMetallicRoughness.baseColorFactor[2],
 				(float)GltfMaterial.pbrMetallicRoughness.baseColorFactor[3]);
 			MaterialAsset.EmissiveFactor = Vector4(
-				(float)GltfMaterial.emissiveFactor[0],
-				(float)GltfMaterial.emissiveFactor[1],
-				(float)GltfMaterial.emissiveFactor[2],
+				(float)(GltfMaterial.emissiveFactor[0] * EmissiveStrength),
+				(float)(GltfMaterial.emissiveFactor[1] * EmissiveStrength),
+				(float)(GltfMaterial.emissiveFactor[2] * EmissiveStrength),
 				1.0f);
 			MaterialAsset.Roughness = (float)GltfMaterial.pbrMetallicRoughness.roughnessFactor;
 			MaterialAsset.Metallic = (float)GltfMaterial.pbrMetallicRoughness.metallicFactor;
@@ -1373,14 +1450,16 @@ namespace Columbus::Assets
 			if (!SaveMaterialAssetToFile(MaterialAsset, MaterialPath))
 			{
 				Log::Error("[ImportLevel] Failed to save material asset %s", MaterialPath.string().c_str());
-				continue;
+				return;
 			}
+			RecordImportedFile(Result, MaterialPath);
 
 			AssetRef<Material> MaterialRef;
 			MaterialRef.Path = MakeRelativeAssetPath(MaterialPath);
 			ImportedMaterials[MaterialIndex] = MaterialRef;
 		}
 
+		ImportProgress("Importing meshes...");
 		for (int MeshIndex = 0; MeshIndex < (int)Model.meshes.size(); MeshIndex++)
 		{
 			const tinygltf::Mesh& GltfMesh = Model.meshes[MeshIndex];
@@ -1393,11 +1472,19 @@ namespace Columbus::Assets
 				CPUMeshResource CpuMesh;
 				if (ReadMeshPrimitive(Model, Primitive, Morphs.size(), CpuMesh))
 					MeshPrimitives.push_back(std::move(CpuMesh));
+				else
+				{
+					Log::Error("[ImportLevel] Failed to read a primitive of mesh %d", MeshIndex);
+					return;
+				}
 			}
 
 			UPtr<Mesh2> MeshAsset(CreateMeshAssetFromPrimitives(MeshPrimitives, Morphs, SourcePath));
-			if (!MeshAsset)
-				continue;
+			if (!MeshAsset || MeshAsset->Primitives.empty())
+			{
+				Log::Error("[ImportLevel] Mesh %d contains no imported geometry", MeshIndex);
+				return;
+			}
 
 			if (MeshDefaultSkin.contains(MeshIndex))
 			{
@@ -1432,18 +1519,21 @@ namespace Columbus::Assets
 				".cas",
 				UsedOutputPaths);
 
-			if (!SaveMeshAssetToFile(*MeshAsset, MeshPath.string().c_str()))
+			if (!SaveImportedBinaryAsset(*MeshAsset, MeshPath))
 			{
 				Log::Error("[ImportLevel] Failed to save mesh asset %s", MeshPath.string().c_str());
-				continue;
+				return;
 			}
+			RecordImportedFile(Result, MeshPath);
 
 			AssetRef<Mesh2> MeshRef;
 			MeshRef.Path = MakeRelativeAssetPath(MeshPath);
 			ImportedMeshes[MeshIndex] = MeshRef;
 		}
 
+		ImportProgress("Building and saving the level...");
 		HLevel LevelAsset;
+		std::vector<std::unique_ptr<AThing>> OwnedThings;
 		for (int NodeIndex = 0; NodeIndex < (int)Model.nodes.size(); NodeIndex++)
 		{
 			const tinygltf::Node& Node = Model.nodes[NodeIndex];
@@ -1457,6 +1547,7 @@ namespace Columbus::Assets
 				{
 					const tinygltf::Light& GltfLight = Model.lights[LightIndex];
 					ALight* LightThing = new ALight();
+					OwnedThings.emplace_back(LightThing);
 					LightThing->Name = !Node.name.empty() ? Node.name : (!GltfLight.name.empty() ? GltfLight.name : ("Light_" + std::to_string(LightIndex)));
 					LightThing->Trans = NodeTransform;
 					LightThing->Type = GltfLight.type == "directional" ? LightType::Directional : LightType::Point;
@@ -1480,6 +1571,7 @@ namespace Columbus::Assets
 			if (Node.mesh >= 0 && ImportedMeshes.contains(Node.mesh))
 			{
 				AMeshInstance* MeshThing = new AMeshInstance();
+				OwnedThings.emplace_back(MeshThing);
 				MeshThing->Name = !Node.name.empty() ? Node.name : (!Model.meshes[Node.mesh].name.empty() ? Model.meshes[Node.mesh].name : ("Mesh_" + std::to_string(Node.mesh)));
 				MeshThing->Trans = NodeTransform;
 				MeshThing->Mesh = ImportedMeshes[Node.mesh];
@@ -1490,15 +1582,33 @@ namespace Columbus::Assets
 		if (!SaveLevelAssetToFile(LevelAsset, OutputPaths.LevelPath))
 		{
 			Log::Error("[ImportLevel] Failed to save level asset %s", OutputPaths.LevelPath.string().c_str());
-			for (AThing* Thing : LevelAsset.Things)
-				delete Thing;
 			return;
 		}
+		RecordImportedFile(Result, OutputPaths.LevelPath);
+		Result.LevelPath = OutputPaths.LevelPath.generic_string();
+	}
 
-		for (AThing* Thing : LevelAsset.Things)
-			delete Thing;
-
-		Log::Message("[ImportLevel] Imported %s to %s", SourcePath, OutputPaths.LevelPath.string().c_str());
+	HGltfImportResult ImportLevel(const char* SourcePath, const char* ImportPath)
+	{
+		HGltfImportResult Result;
+		const size_t FirstMessage = Log::GetData().size();
+		try { ImportLevelInternal(SourcePath, ImportPath, Result); }
+		catch (const std::exception& Error) { Log::Error("[ImportLevel] %s", Error.what()); }
+		const auto& Messages = Log::GetData();
+		for (size_t Index = FirstMessage; Index < Messages.size(); ++Index)
+		{
+			const auto& Message = Messages[Index];
+			// The log buffer includes the C string terminator in its string length.
+			const std::string Text = Message.text.substr(0, Message.text.find('\0'));
+			if (Message.type == Log::Type_Warning) Result.Warnings.push_back(Text);
+			if (Message.type == Log::Type_Error || Message.type == Log::Type_Fatal) Result.Errors.push_back(Text);
+		}
+		if (Result.LevelPath.empty() && Result.Errors.empty()) Result.Errors.push_back("Import produced no level asset.");
+		Result.Success = !Result.LevelPath.empty() && Result.Errors.empty();
+		if (Result.Success) Log::Message("[ImportLevel] Imported %s to %s", SourcePath, Result.LevelPath.c_str());
+		else Log::Error("[ImportLevel] Import failed; any files already written are partial output");
+		std::fflush(stdout);
+		return Result;
 	}
 
 }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 namespace Columbus::Assets
 {
 
@@ -47,7 +50,18 @@ namespace Columbus::Assets
 		char ImportedRelativePath[512]; // relative to what? to project source folder? we don't have "projects"
 	};
 
-	void ImportLevel(const char* SourcePath, const char* ImportPath);
+	struct HGltfImportResult
+	{
+		bool Success = false;
+		std::string LevelPath;
+		std::vector<std::string> Files;
+		std::vector<std::string> Warnings;
+		std::vector<std::string> Errors;
+	};
+
+	// Paths in the result are absolute. Failed imports can leave partial output;
+	// Files lists assets successfully written before the failure.
+	HGltfImportResult ImportLevel(const char* SourcePath, const char* ImportPath);
 
 	// TODO:
 	// import materials: repack textures, compress textures, store
