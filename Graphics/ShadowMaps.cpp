@@ -832,17 +832,18 @@ namespace Columbus
 		u32    ObjectId;
 	};
 
-	template <bool AlphaMasked>
 	struct ShadowDepthShader
 	{
-		static constexpr const char* Path = AlphaMasked ? "./PrecompiledShaders/ShadowDepth_Masked.csd" : "./PrecompiledShaders/ShadowDepth_Opaque.csd";
+		static constexpr const char* Path = "./PrecompiledShaders/ShadowDepth.csd";
 
 		struct Permutation
 		{
+			int AlphaMasked = 0;
 		};
 
-		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>&)
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
 		{
+			Builder.Axis("ALPHA_MASKED", &Permutation::AlphaMasked);
 		}
 
 		struct PipelinePermutation
@@ -853,7 +854,7 @@ namespace Columbus
 		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
 		{
 			GraphicsPipelineDesc Desc;
-			Desc.Name = AlphaMasked ? "ShadowDepthMasked" : "ShadowDepthOpaque";
+			Desc.Name = "ShadowDepth";
 
 			Desc.rasterizerState.Cull                 = CullMode::No; // Thin and mirrored casters remain valid.
 			Desc.rasterizerState.SlopeScaledDepthBias = -Permutation.SlopeBias;
@@ -873,7 +874,7 @@ namespace Columbus
 		}
 	};
 
-	static void RenderShadowView(RenderGraphContext& Context, const ShadowDrawView& View, const ShadowDepthShader<false>::Parameters& ShaderParams)
+	static void RenderShadowView(RenderGraphContext& Context, const ShadowDrawView& View, const ShadowDepthShader::Parameters& ShaderParams)
 	{
 		GraphicsPipeline* Pipelines[2]  = {};
 		GraphicsPipeline* BoundPipeline = nullptr;
@@ -893,14 +894,14 @@ namespace Columbus
 
 			if (!Pipeline)
 			{
-				Pipeline = Masked ? GetGraphicsPipeline<ShadowDepthShader<true>>(Context, {}, { View.SlopeBias }) : GetGraphicsPipeline<ShadowDepthShader<false>>(Context, {}, { View.SlopeBias });
+				Pipeline = GetGraphicsPipeline<ShadowDepthShader>(Context, { Masked ? 1 : 0 }, { View.SlopeBias });
 			}
 
 			// Keep the prepared caster order; sorting is a separate change.
 			if (Pipeline != BoundPipeline)
 			{
 				Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-				Context.BindGraphicsParameters<ShadowDepthShader<false>>(Pipeline, ShaderParams);
+				Context.BindGraphicsParameters<ShadowDepthShader>(Pipeline, ShaderParams);
 				BoundPipeline = Pipeline;
 			}
 
@@ -917,9 +918,9 @@ namespace Columbus
 		Parameters.ViewportSize           = Graph.GetTextureSize2D(Atlas);
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
-		ShadowDepthShader<false>::Parameters ShaderParams;
+		ShadowDepthShader::Parameters ShaderParams;
 		ShaderParams.Scene.UseCombinedSampler = false;
-		Dependencies.Bind<ShadowDepthShader<false>>(ShaderParams);
+		Dependencies.Bind<ShadowDepthShader>(ShaderParams);
 
 		char Name[64];
 		snprintf(Name, sizeof(Name), "ShadowMap Atlas %u", AtlasIndex);

@@ -115,6 +115,8 @@ function(compile_shader_glsl_permutation shaderName stages permutationName binar
 	set(${binaryLocation} "${TMP_LIST}" PARENT_SCOPE)
 endfunction(compile_shader_glsl_permutation)
 
+# Stage entries use ENTRY:STAGE[:AXIS=VALUE], e.g. VSMain:vs,PSMain:ps:ALPHA_MASKED=1.
+# The optional condition includes that stage only for the matching permutation axis value.
 function(compile_shader_permutation_ranges_impl shaderName stages binaryLocation)
 	set(AXES ${ARGN})
 	list(LENGTH AXES AXES_LENGTH)

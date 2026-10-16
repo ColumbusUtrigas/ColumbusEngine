@@ -67,24 +67,45 @@ static void TestRasterCoverageShaders(const std::filesystem::path& shaderDirecto
 		Require(std::filesystem::exists(path), "Missing deployed raster coverage shader; build Shaders first");
 		return LoadCompiledShaderData(path.string());
 	};
-	const auto opaque = load("ShadowDepth_Opaque.csd");
-	Require(opaque.Permutations.size() == 1 && opaque.Permutations[0].Bytecodes.size() == 1 &&
-	            opaque.Permutations[0].Bytecodes[0].Stage == ShaderType::Vertex,
-	    "Opaque shadows must contain only a vertex stage");
-	const auto masked = load("ShadowDepth_Masked.csd");
-	Require(masked.Permutations.size() == 1 && masked.Permutations[0].Bytecodes.size() == 2,
-	    "Masked shadows require vertex and pixel stages");
-	bool maskedDiscards = false;
+	const auto ShadowDepth = load("ShadowDepth.csd");
+	const bool HasCoverageAxis = ShadowDepth.PermutationAxes.size() == 1 && ShadowDepth.PermutationAxes[0].Name == "ALPHA_MASKED" &&
+	                             ShadowDepth.PermutationAxes[0].MinValue == 0 && ShadowDepth.PermutationAxes[0].MaxValue == 1;
+	Require(HasCoverageAxis && ShadowDepth.Permutations.size() == 2, "Shadow depth requires opaque and masked permutations in one CSD");
 
-	for (const auto& shader : masked.Permutations[0].Bytecodes)
+	bool FoundOpaque = false;
+	bool FoundMasked = false;
+
+	for (const auto& Permutation : ShadowDepth.Permutations)
 	{
-		if (shader.Stage == ShaderType::Pixel)
+		Require(Permutation.AxisValues.size() == 1, "Missing shadow coverage permutation value");
+		const bool Masked = Permutation.AxisValues[0] == 1;
+		Require(Permutation.AxisValues[0] == 0 || Masked, "Invalid shadow coverage permutation value");
+
+		bool& FoundPermutation = Masked ? FoundMasked : FoundOpaque;
+		Require(!FoundPermutation, "Duplicate shadow coverage permutation value");
+		FoundPermutation = true;
+
+		Require(Permutation.Bytecodes.size() == (Masked ? 2 : 1), "Only masked shadows may contain a pixel stage");
+		bool FoundVertex = false;
+		bool FoundPixel  = false;
+
+		for (const auto& Shader : Permutation.Bytecodes)
 		{
-			maskedDiscards = HasDiscard(shader);
+			if (Shader.Stage == ShaderType::Vertex)
+			{
+				FoundVertex = true;
+			}
+			else if (Shader.Stage == ShaderType::Pixel)
+			{
+				FoundPixel = true;
+				Require(HasDiscard(Shader), "Masked shadow coverage must discard fragments below the cutoff");
+			}
 		}
+
+		Require(FoundVertex && (FoundPixel == Masked), "Opaque shadows must be vertex-only; masked shadows require vertex and pixel stages");
 	}
 
-	Require(maskedDiscards, "Masked shadow coverage must discard fragments below the cutoff");
+	Require(FoundOpaque && FoundMasked, "Missing opaque or masked shadow permutation");
 
 	const auto gbuffer = load("GBufferPass.csd");
 	Require(gbuffer.PermutationAxes.size() == 1 && gbuffer.PermutationAxes[0].Name == "ALPHA_MASKED" &&

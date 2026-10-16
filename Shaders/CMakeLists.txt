@@ -49,8 +49,7 @@ compile_shader_hlsl(IrradianceVolume/IrradianceVolumeApply.hlsl main:cs SHADER_B
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeVisualise.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
 # Opaque depth draws have no fragment stage; both variants share vertex/coverage code.
-compile_shader_hlsl_permutation(ShadowDepth.hlsl VSMain:vs Opaque SHADER_BINARIES ALPHA_MASKED=0)
-compile_shader_hlsl_permutation(ShadowDepth.hlsl VSMain:vs,PSMain:ps Masked SHADER_BINARIES ALPHA_MASKED=1)
+compile_shader_hlsl_permutation_ranges(ShadowDepth.hlsl VSMain:vs,PSMain:ps:ALPHA_MASKED=1 SHADER_BINARIES ALPHA_MASKED 0 1)
 compile_shader_hlsl_permutation_ranges(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES ALPHA_MASKED 0 1)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(ForwardTransparent.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)

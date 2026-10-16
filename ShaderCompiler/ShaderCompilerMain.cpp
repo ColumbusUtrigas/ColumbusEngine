@@ -1,3 +1,4 @@
+#include <charconv>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -217,6 +218,48 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 	return {};
 }
 
+// A stage may be restricted to one value of a declared permutation axis.
+static bool IsStageEnabled(const std::string& Condition, const std::vector<CompiledShaderPermutationAxis>& Axes, const std::vector<int32_t>& AxisValues)
+{
+	const auto Parts = DivideStringBy(Condition, "=");
+
+	if (Parts.size() != 2 || Parts[0].empty() || Parts[1].empty())
+	{
+		printf("Invalid stage condition: %s, required format: AXIS=VALUE\n", Condition.c_str());
+		exit(1);
+	}
+
+	int32_t Value = 0;
+	const auto [End, Error] = std::from_chars(Parts[1].data(), Parts[1].data() + Parts[1].size(), Value);
+
+	if (Error != std::errc{} || End != Parts[1].data() + Parts[1].size())
+	{
+		printf("Invalid stage condition value: %s\n", Condition.c_str());
+		exit(1);
+	}
+
+	for (size_t AxisIndex = 0; AxisIndex < Axes.size(); ++AxisIndex)
+	{
+		const auto& Axis = Axes[AxisIndex];
+
+		if (Axis.Name != Parts[0])
+		{
+			continue;
+		}
+
+		if (Value < Axis.MinValue || Value > Axis.MaxValue)
+		{
+			printf("Stage condition %s is outside the compiled range %i..%i\n", Condition.c_str(), Axis.MinValue, Axis.MaxValue);
+			exit(1);
+		}
+
+		return AxisValues[AxisIndex] == Value;
+	}
+
+	printf("Stage condition %s references an undeclared permutation axis\n", Condition.c_str());
+	exit(1);
+}
+
 CompiledShaderPermutation CompilePermutation(
 	const std::string& Name,
 	const std::vector<std::string>& GlobalDefines,
@@ -233,9 +276,12 @@ CompiledShaderPermutation CompilePermutation(
 	for (const auto& StageStringFormatted : StagesDivided)
 	{
 		std::vector<std::string> EntryStageDivided = DivideStringBy(StageStringFormatted, ":");
-		if (EntryStageDivided.size() != 2)
+		const bool HasValidPartCount = EntryStageDivided.size() == 2 || EntryStageDivided.size() == 3;
+		const bool HasEntryAndStage  = HasValidPartCount && !EntryStageDivided[0].empty() && !EntryStageDivided[1].empty();
+
+		if (!HasEntryAndStage)
 		{
-			printf("Invalid stage syntax: %s\n, required format: [ENTRY]:[STAGE]", StageStringFormatted.c_str());
+			printf("Invalid stage syntax: %s, required format: ENTRY:STAGE[:AXIS=VALUE]\n", StageStringFormatted.c_str());
 			exit(1);
 		}
 
@@ -244,11 +290,22 @@ CompiledShaderPermutation CompilePermutation(
 
 		ShaderType Stage = StringToShaderType(StageString);
 
+		if (EntryStageDivided.size() == 3 && !IsStageEnabled(EntryStageDivided[2], Axes, Permutation.AxisValues))
+		{
+			continue;
+		}
+
 		std::vector<std::string> Defines;
 		Defines.push_back(DefineForShaderStage(Stage));
 		Defines.insert(Defines.end(), GlobalDefines.begin(), GlobalDefines.end());
 
 		Permutation.Bytecodes.push_back(CompileStage(InputPath.string(), OutputPath + "." + Name + ".tmp", EntryPoint, Defines, Stage));
+	}
+
+	if (Permutation.Bytecodes.empty())
+	{
+		printf("Permutation %s has no enabled shader stages\n", Name.c_str());
+		exit(1);
 	}
 
 	return Permutation;
@@ -259,7 +316,7 @@ int main(int argc, char** argv)
 	if (argc < 4)
 	{
 		printf("Usage: ShaderCompiler [output] [input] [stages, comma-separated, with entrypoints] [defines...]\n");
-		printf("Stage syntax: entry1:stage1,entry2:stage2\n");
+		printf("Stage syntax: ENTRY:STAGE[:AXIS=VALUE],... (condition restricts the stage to a permutation axis value)\n");
 		printf("Supported stages: vs, ps, gs, hs, ds, cs, rgen, rint, rahit, rchit, rmiss\n");
 		printf("Define syntax: NAME or NAME=value\n");
 		printf("Permutation axis syntax: --permutation-axis NAME MIN MAX\n");
