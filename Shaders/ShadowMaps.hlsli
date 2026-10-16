@@ -39,6 +39,11 @@ uint ShadowPointFace(float3 FromLight)
 
 float SampleShadowView(GPULight Light, GPUShadowView View, float3 WorldPosition, float3 Normal)
 {
+	if (View.AtlasIndex == 0xffffffffu)
+	{
+		return 1;
+	}
+
 	float4 ClipPosition = mul(View.WorldToClip, float4(WorldPosition + Normal * Light.ShadowNormalBias, 1));
 
 	if (ClipPosition.w <= 0)

@@ -190,6 +190,18 @@ static void TestShadowCulling()
 	    "Reverse-Z near-plane rejection failed");
 	Require(!frustum.Intersects(Box(Vector3(-1, -1, -12), Vector3(1, 1, -11))), "Reverse-Z far-plane rejection failed");
 	Require(frustum.Intersects(Box(Vector3(-1, -1, -1), Vector3(1, 1, 1))), "Caster crossing near plane rejected");
+	Require(frustum.Intersects(Sphere{ Vector3(0, 0, -2), 0.5f }), "Visible light sphere rejected");
+	Require(!frustum.Intersects(Sphere{ Vector3(0, 0, 2), 0.5f }), "Light sphere behind camera accepted");
+	Require(frustum.Intersects(Sphere{ Vector3(0), 2 }), "Camera inside light sphere rejected");
+	Require(!frustum.Intersects(Sphere{ Vector3(0, 0, -12), 1 }), "Light sphere beyond far plane accepted");
+	Require(frustum.Intersects(Sphere{ Vector3(0), -1 }), "Unknown light sphere must remain visible");
+
+	const std::array<Vector3, 4> Outside = { Vector3(3, -1, -1), Vector3(3, 1, -1), Vector3(3, -1, -2), Vector3(3, 1, -2) };
+	Require(!frustum.Intersects(Outside), "Convex bounds outside frustum accepted");
+	Require(frustum.Intersects(Outside, 2), "World-space receiver bias margin was ignored");
+	const std::array<Vector3, 2> Crossing = { Vector3(-10, 0, -2), Vector3(10, 0, -2) };
+	Require(frustum.Intersects(Crossing), "Crossing convex bounds with no inside vertices rejected");
+
 	Matrix guard(1);
 	guard.M[0][0] = guard.M[1][1] = 504.0f / 512;
 	const Box seam(Vector3(1.01f, 0, -1), Vector3(1.01f, 0, -1));

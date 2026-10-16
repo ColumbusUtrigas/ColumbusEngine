@@ -18,7 +18,7 @@ namespace Columbus
 		Vector4 AtlasScaleBias;
 		Vector4 SampleBounds;
 		Vector4 Cascade; // start, end, blend start (positive camera-view depth), unused
-		u32 AtlasIndex = 0;
+		u32 AtlasIndex = ~0u; // Invalid means fully lit; no atlas sampling for skipped views.
 		u32 _pad[3]{};
 	};
 	static_assert(sizeof(GPUShadowView) == 128);

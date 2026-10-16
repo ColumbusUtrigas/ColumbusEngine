@@ -135,6 +135,7 @@ namespace Columbus
 	{
 		Texture2* Shadow = nullptr;
 		Texture2* Moments = nullptr;
+		bool Valid = false; // Resources survive skipped frames; temporal contents do not.
 
 		void Destroy(SPtr<DeviceVulkan> Device);
 	};

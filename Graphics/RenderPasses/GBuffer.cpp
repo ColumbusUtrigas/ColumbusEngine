@@ -465,13 +465,16 @@ namespace Columbus
 		PassData.ShadowTextureCount = (uint32_t)ShadowTextureCount;
 		PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), PassData.ShadowTextureCount);
 
+		// Keep the fallback reserved when RT masks are present too. Culling the last
+		// visible RT light must not introduce a fresh GPU allocation.
+		TextureDesc2 FallbackDesc;
+		FallbackDesc.Width = FallbackDesc.Height = 1;
+		FallbackDesc.Format = TextureFormat::R8;
+		FallbackDesc.Usage  = TextureUsage::Storage;
+		const auto Fallback = Graph.CreateTexture(FallbackDesc, "FullyLitShadow");
+
 		if (PassData.ShadowTextures.empty())
 		{
-			TextureDesc2 FallbackDesc;
-			FallbackDesc.Width = FallbackDesc.Height = 1;
-			FallbackDesc.Format = TextureFormat::R8;
-			FallbackDesc.Usage  = TextureUsage::Storage;
-			const auto Fallback = Graph.CreateTexture(FallbackDesc, "FullyLitShadow");
 			ShaderMemsetTexture(Graph, Fallback, Vector4(1));
 			ShaderReadStorageTexture Texture;
 			Texture = Fallback;

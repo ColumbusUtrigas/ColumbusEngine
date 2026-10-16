@@ -20,6 +20,9 @@ namespace Columbus
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow caster range rejects", "Shadows", CountShadowRangeRejects, true);
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow caster frustum rejects", "Shadows", CountShadowFrustumRejects, true);
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow caster draws", "Shadows", CountShadowDraws, true);
+	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow lights outside view", "Shadows", CountShadowLightsOutsideView, true);
+	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow views outside view", "Shadows", CountShadowViewsOutsideView, true);
+	IMPLEMENT_COUNTING_PROFILING_COUNTER("Empty shadow views", "Shadows", CountEmptyShadowViews, true);
 	IMPLEMENT_GPU_PROFILING_COUNTER("Shadow maps", "RenderGraphGPU", GpuCounterShadowMaps);
 	IMPLEMENT_MEMORY_PROFILING_COUNTER("Shadow atlas set", "Shadows", MemoryCounterShadowAtlases);
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow atlas pages", "Shadows", CountShadowAtlasPages, false);
@@ -34,6 +37,12 @@ namespace Columbus
 	ConsoleVariable<bool> CVar_ShadowCasterCulling(
 		"r.Shadows.CasterCulling",
 		"Cull shadow casters against light ranges and padded shadow-view frustums",
+		true
+	);
+
+	ConsoleVariable<bool> CVar_ShadowViewCulling(
+		"r.Shadows.ViewCulling",
+		"Skip shadow rendering outside the camera frustum and empty shadowmap views; retain shadow resources",
 		true
 	);
 
@@ -213,6 +222,74 @@ namespace Columbus
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Shadow view preparation
+
+	static bool CalculateFrustumCorners(const Matrix& WorldToClip, std::array<Vector3, 8>& Corners)
+	{
+		const Matrix ClipToWorld = WorldToClip.GetInverted();
+		u32 Index = 0;
+
+		for (float Z : { 0.0f, 1.0f })
+		{
+			for (float Y : { -1.0f, 1.0f })
+			{
+				for (float X : { -1.0f, 1.0f })
+				{
+					const Vector4 Point = ClipToWorld * Vector4(X, Y, Z, 1);
+
+					if (!std::isfinite(Point.W) || fabsf(Point.W) < 1e-8f)
+					{
+						return false;
+					}
+
+					const Vector3 Corner = Point.XYZ() / Point.W;
+
+					if (!std::isfinite(Corner.X) || !std::isfinite(Corner.Y) || !std::isfinite(Corner.Z))
+					{
+						return false;
+					}
+
+					Corners[Index++] = Corner;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	struct ShadowVisibility
+	{
+		Frustum CameraFrustum;
+		std::array<Vector3, 8> CameraCorners;
+		bool HasFiniteCorners;
+
+		explicit ShadowVisibility(const RenderView& View)
+		{
+			// Cover the current jittered image plus a pixel at each edge.
+			Matrix Guard(1);
+			Guard.M[0][0] = float(View.RenderSize.X) / (View.RenderSize.X + 2);
+			Guard.M[1][1] = float(View.RenderSize.Y) / (View.RenderSize.Y + 2);
+
+			const Matrix WorldToClip = Guard * View.CameraCur.GetViewProjection();
+			CameraFrustum.SetProjection(WorldToClip, Frustum::DepthRange::ZeroToOne);
+			HasFiniteCorners = CalculateFrustumCorners(WorldToClip, CameraCorners);
+		}
+
+		bool IntersectsShadowInfluence(const GPULightCompact& Light) const;
+
+		bool ContainsView(const Matrix& WorldToClip, float NormalBias) const
+		{
+			const float Margin = fabsf(NormalBias);
+			const Frustum ShadowFrustum(WorldToClip, Frustum::DepthRange::ZeroToOne);
+
+			if (HasFiniteCorners && !ShadowFrustum.Intersects(CameraCorners, Margin))
+			{
+				return false;
+			}
+
+			std::array<Vector3, 8> Corners;
+			return !CalculateFrustumCorners(WorldToClip, Corners) || CameraFrustum.Intersects(Corners, Margin);
+		}
+	};
 
 	static Vector3 StableUp(const Vector3& Direction)
 	{
@@ -413,6 +490,52 @@ namespace Columbus
 		return PerspectiveView(Light.Position.XYZ(), Direction, Up, Fov, Aspect, NearPlane, FarPlane);
 	}
 
+	bool ShadowVisibility::IntersectsShadowInfluence(const GPULightCompact& Light) const
+	{
+		if (Light.Type == LightType::Directional)
+		{
+			return true;
+		}
+
+		const bool IsArea = Light.Type == LightType::Rectangle || Light.Type == LightType::Disc;
+		const bool IsRT   = (Light.Flags & ELightFlags::RayTracedShadow) != 0;
+
+		if (IsArea && IsRT)
+		{
+			// Area lighting has no range cutoff. Only reject the non-emitting half-space.
+			if ((Light.Flags & ELightFlags::TwoSided) != 0 || !HasFiniteCorners)
+			{
+				return true;
+			}
+
+			for (const Vector3& Corner : CameraCorners)
+			{
+				if (Vector3::Dot(Light.Direction.XYZ(), Corner - Light.Position.XYZ()) >= -0.001f)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		const float Radius = std::max(0.0f, IsArea ? Light.ShadowDistance : Light.Range) + fabsf(Light.ShadowNormalBias);
+
+		if (!CameraFrustum.Intersects(Geometry::Sphere{ Light.Position.XYZ(), Radius }))
+		{
+			return false;
+		}
+
+		// Spot shadows share the authored cone in both paths. Very wide cones
+		// retain the sphere test because the raster projection clamps at 175 degrees.
+		if (Light.Type == LightType::Spot && Light.SizeOrSpotAngles.Y > 0.05f)
+		{
+			return ContainsView(BuildLocalLightView(Light, 0, 0.001f), fabsf(Light.ShadowNormalBias) + 0.002f);
+		}
+
+		return true;
+	}
+
 	static void BuildLightViews(RenderGraph& Graph, const RenderView& View, ShadowRenderState& State, u32 LightIndex)
 	{
 		auto& Frame = State.Frame;
@@ -538,11 +661,20 @@ namespace Columbus
 		}
 	}
 
-	static void CullShadowView(ShadowDrawView& View, const std::vector<ShadowCaster>& Casters, const std::vector<size_t>& Candidates, bool Cull)
+	static void CullShadowView(ShadowDrawView& View, const std::vector<ShadowCaster>& Casters, const std::vector<size_t>& Candidates, bool Cull, const ShadowVisibility& Visibility, const GPULightCompact& Light)
 	{
 		Matrix GuardScale(1);
 		GuardScale.M[0][0] = GuardScale.M[1][1] = float(View.Tile.Block.Size - 2 * ShadowTilePadding) / View.Tile.Block.Size;
 		View.RasterWorldToClip = GuardScale * View.GPU.WorldToClip;
+
+		const bool ViewVisible = View.GPU.AtlasIndex != ~0u && Visibility.ContainsView(View.RasterWorldToClip, Light.ShadowNormalBias);
+
+		if (CVar_ShadowViewCulling.GetValue() && !ViewVisible)
+		{
+			View.GPU.AtlasIndex = ~0u;
+			AddProfilingCount(CountShadowViewsOutsideView, 1);
+			return;
+		}
 
 		const Frustum ViewFrustum(View.RasterWorldToClip, Frustum::DepthRange::ZeroToOne);
 		View.Casters.reserve(Candidates.size());
@@ -558,7 +690,7 @@ namespace Columbus
 		}
 	}
 
-	static void PrepareShadowCasters(GPUScene& Scene, ShadowFrameData& Frame)
+	static void PrepareShadowCasters(GPUScene& Scene, ShadowFrameData& Frame, const ShadowVisibility& Visibility)
 	{
 		PROFILE_CPU(CpuCounterShadowCulling);
 
@@ -592,7 +724,18 @@ namespace Columbus
 			for (u32 i = 0; i < Light.ShadowViewCount; ++i)
 			{
 				auto& View = Frame.Views[Light.FirstShadowView + i];
-				CullShadowView(View, Casters, Candidates, Cull);
+				CullShadowView(View, Casters, Candidates, Cull, Visibility, Light);
+
+				if (View.GPU.AtlasIndex != ~0u && View.Casters.empty() && CVar_ShadowViewCulling.GetValue())
+				{
+					View.GPU.AtlasIndex = ~0u;
+					AddProfilingCount(CountEmptyShadowViews, 1);
+				}
+
+				if (View.GPU.AtlasIndex != ~0u)
+				{
+					AddProfilingCount(CountShadowViews, 1);
+				}
 
 				FrustumRejects += Candidates.size() - View.Casters.size();
 				Draws          += View.Casters.size();
@@ -633,7 +776,7 @@ namespace Columbus
 
 		Light.FirstShadowView   = 0;
 		Light.ShadowViewCount   = 0;
-		Light.RTShadowMaskIndex = 0;
+		Light.RTShadowMaskIndex = ~0u;
 
 		const bool CastsShadow = (Light.Flags & ELightFlags::Shadow) != 0;
 
@@ -657,15 +800,6 @@ namespace Columbus
 
 		if (WantsRT && SupportsRT)
 		{
-			if (State.Frame.RTLightCount >= RTShadowMaskDescriptorCount)
-			{
-				Log::Error("Ray-traced shadow mask descriptor capacity exceeded");
-				COLUMBUS_ASSERT_MESSAGE(false, "Ray-traced shadow mask descriptor capacity exceeded");
-				Light.Flags = ELightFlags(u32(Light.Flags) & ~u32(ELightFlags::Shadow));
-				return Light;
-			}
-
-			Light.RTShadowMaskIndex = State.Frame.RTLightCount++;
 			return Light;
 		}
 
@@ -743,6 +877,45 @@ namespace Columbus
 		ReleaseObsoleteRTHistories(Graph, State, RTKeys);
 	}
 
+	static void CullFrameLights(ShadowFrameData& Frame, const ShadowVisibility& Visibility)
+	{
+		Frame.RTLightCount = 0;
+
+		for (auto& Light : Frame.Lights)
+		{
+			if ((Light.Flags & ELightFlags::Shadow) == ELightFlags(0))
+			{
+				continue;
+			}
+
+			if (CVar_ShadowViewCulling.GetValue() && !Visibility.IntersectsShadowInfluence(Light))
+			{
+				// Keep authored shadow flags for other consumers such as volumetric fog.
+				// Deferred lighting uses the invalid mask/view indices to return fully lit.
+				for (u32 i = 0; i < Light.ShadowViewCount; ++i)
+				{
+					Frame.Views[Light.FirstShadowView + i].GPU.AtlasIndex = ~0u;
+				}
+
+				AddProfilingCount(CountShadowLightsOutsideView, 1);
+				continue;
+			}
+
+			if ((Light.Flags & ELightFlags::RayTracedShadow) != 0)
+			{
+				if (Frame.RTLightCount >= RTShadowMaskDescriptorCount)
+				{
+					Log::Error("Ray-traced shadow mask descriptor capacity exceeded");
+					COLUMBUS_ASSERT_MESSAGE(false, "Ray-traced shadow mask descriptor capacity exceeded");
+					Light.Flags = ELightFlags(u32(Light.Flags) & ~u32(ELightFlags::Shadow));
+					continue;
+				}
+
+				Light.RTShadowMaskIndex = Frame.RTLightCount++;
+			}
+		}
+	}
+
 	static void RegisterShadowAtlases(RenderGraph& Graph, ShadowRenderState& State)
 	{
 		auto& Frame = State.Frame;
@@ -816,8 +989,9 @@ namespace Columbus
 			}
 		}
 
-		PrepareShadowCasters(*Graph.Scene, State.Frame);
-		AddProfilingCount(CountShadowViews, State.Frame.Views.size());
+		const ShadowVisibility Visibility(View);
+		CullFrameLights(State.Frame, Visibility);
+		PrepareShadowCasters(*Graph.Scene, State.Frame, Visibility);
 
 		RegisterShadowAtlases(Graph, State);
 		UploadShadowViews(Graph, State.Frame);
@@ -948,7 +1122,7 @@ namespace Columbus
 
 			for (const auto& View : Frame.Views)
 			{
-				if (View.Tile.AtlasIndex == Atlas)
+				if (View.Tile.AtlasIndex == Atlas && View.GPU.AtlasIndex != ~0u)
 				{
 					Views.push_back(View);
 				}

@@ -179,7 +179,7 @@ namespace Columbus
 	};
 
 	// implements AMD FidelityFX Shadow Denoiser
-	RenderGraphTextureRef DenoiseRayTracedShadow(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, RenderGraphTextureRef Shadow, RTShadowDenoiserHistory& History)
+	RenderGraphTextureRef DenoiseRayTracedShadow(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, RenderGraphTextureRef Shadow, RTShadowDenoiserHistory& History, bool Render)
 	{
 		RENDER_GRAPH_SCOPED_MARKER(Graph, "Raytraced Shadows Denoise");
 
@@ -190,28 +190,39 @@ namespace Columbus
 		// 8x8 tiles
 		iVector2 FilterTilesSize = iVector2((ShadowSize.X + 7) / 8, (ShadowSize.Y + 7) / 8);
 
-		RenderGraphTextureRef RTShadowTiles;
-		RenderGraphTextureRef Moments;
-		RenderGraphTextureRef Metadata;
-		RenderGraphTextureRef ReprojectionResult;
-		RenderGraphTextureRef DenoisedResult;
 		TextureDesc2 HistoryMomentsDesc { .Usage = TextureUsage::StorageSampled, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R11G11B10F, };
-		// Shadow history = filter PASS 0 output (mean, variance) in rg16f, matching FFX (SCRATCH1).
 		TextureDesc2 HistoryShadowDesc { .Usage = TextureUsage::StorageSampled, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
 		const bool bMomentsHistoryInvalidated = Graph.CreateHistoryTexture(&History.Moments, HistoryMomentsDesc, "RayTracedShadows Moments History");
 		const bool bShadowHistoryInvalidated = Graph.CreateHistoryTexture(&History.Shadow, HistoryShadowDesc, "RayTracedShadows Shadow History");
-		const bool bFirstFrame = bMomentsHistoryInvalidated || bShadowHistoryInvalidated;
+		const bool bFirstFrame = !History.Valid || bMomentsHistoryInvalidated || bShadowHistoryInvalidated;
+
+		TextureDesc2 TilesDesc { .Usage = TextureUsage::Storage, .Width = (u32)TilesSize.X, .Height = (u32)TilesSize.Y, .Format = TextureFormat::R32UInt, };
+		TextureDesc2 MetadataDesc { .Usage = TextureUsage::Storage, .Width = (u32)FilterTilesSize.X, .Height = (u32)FilterTilesSize.Y, .Format = TextureFormat::R8UInt, };
+		TextureDesc2 ReprojectionDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
+		TextureDesc2 ResultDesc { .Usage = TextureUsage::StorageSampled, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R8, };
+
+		// Declare the workspace even for skipped lights. The graph reserves these pooled
+		// textures without GPU work, so camera motion cannot evict and reallocate them.
+		const auto RTShadowTiles      = Graph.CreateTexture(TilesDesc, "RayTracedShadowTiles (8x4)");
+		const auto Moments            = Graph.CreateTexture(HistoryMomentsDesc, "RayTracedShadowsMoments");
+		const auto Metadata           = Graph.CreateTexture(MetadataDesc, "RayTracedShadowsMetadata");
+		const auto ReprojectionResult = Graph.CreateTexture(ReprojectionDesc, "RayTracedShadowsReprojectionResult");
+
+		const auto DenoisedResult      = Graph.CreateTexture(ResultDesc, "ShadowDenoised");
+		const auto TmpHistory0         = Graph.CreateTexture(HistoryShadowDesc, "ShadowDenoiserFilterTmpHistory0");
+		const auto TmpHistory1         = Graph.CreateTexture(HistoryShadowDesc, "ShadowDenoiserFilterTmpHistory1");
+		const auto UnusedFinalOutput   = Graph.CreateTexture(ResultDesc, "ShadowDenoiserUnusedFinalOutput");
+		const auto UnusedHistoryOutput = Graph.CreateTexture(HistoryShadowDesc, "ShadowDenoiserUnusedHistoryOutput");
+
+		History.Valid = Render;
+
+		if (!Render)
+		{
+			return Shadow;
+		}
 
 		// Prepare
 		{
-			TextureDesc2 Desc {
-				.Usage = TextureUsage::Storage,
-				.Width = (u32)TilesSize.X,
-				.Height = (u32)TilesSize.Y,
-				.Format = TextureFormat::R32UInt,
-			};
-			RTShadowTiles = Graph.CreateTexture(Desc, "RayTracedShadowTiles (8x4)");
-
 			RTShadowDenoiserPrepareShader::Parameters PrepareParams;
 			PrepareParams.InputBuffer = Shadow;
 			PrepareParams.PackedOutputBuffer = RTShadowTiles;
@@ -240,14 +251,6 @@ namespace Columbus
 
 		// Tile classification
 		{
-			TextureDesc2 MomentsDesc { .Usage = TextureUsage::StorageSampled, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R11G11B10F, };
-			TextureDesc2 MetadataDesc { .Usage = TextureUsage::Storage, .Width = (u32)FilterTilesSize.X, .Height = (u32)FilterTilesSize.Y, .Format = TextureFormat::R8UInt, };
-			TextureDesc2 ReprojectionResultDesc { .Usage = TextureUsage::Storage, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
-
-			Moments = Graph.CreateTexture(MomentsDesc, "RayTracedShadowsMoments");
-			Metadata = Graph.CreateTexture(MetadataDesc, "RayTracedShadowsMetadata");
-			ReprojectionResult = Graph.CreateTexture(ReprojectionResultDesc, "RayTracedShadowsReprojectionResult");
-
 			Matrix InvViewProjection = View.CameraCur.GetViewProjection().GetInverted();
 			Matrix InvProjection = View.CameraCur.GetProjectionMatrix().GetInverted();
 
@@ -321,21 +324,9 @@ namespace Columbus
 		}
 
 		// Filter
-		RenderGraphTextureRef ShadowHistoryFeedback; // filter pass 0 output -> next frame's history (FFX SCRATCH1)
+		const auto ShadowHistoryFeedback = TmpHistory0; // filter pass 0 output -> next frame's history (FFX SCRATCH1)
 		{
 			RENDER_GRAPH_SCOPED_MARKER(Graph, "Raytraced Shadows Denoise Filter");
-
-			TextureDesc2 ResultDesc { .Usage = TextureUsage::StorageSampled, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::R8, };
-			DenoisedResult = Graph.CreateTexture(ResultDesc, "ShadowDenoised");
-
-			TextureDesc2 TmpHistoryDesc { .Usage = TextureUsage::StorageSampled, .Width = (u32)ShadowSize.X, .Height = (u32)ShadowSize.Y, .Format = TextureFormat::RG16F, };
-			RenderGraphTextureRef TmpHistory0 = Graph.CreateTexture(TmpHistoryDesc, "ShadowDenoiserFilterTmpHistory0");
-			RenderGraphTextureRef TmpHistory1 = Graph.CreateTexture(TmpHistoryDesc, "ShadowDenoiserFilterTmpHistory1");
-			RenderGraphTextureRef UnusedFinalOutput = Graph.CreateTexture(ResultDesc, "ShadowDenoiserUnusedFinalOutput");
-			RenderGraphTextureRef UnusedHistoryOutput = Graph.CreateTexture(TmpHistoryDesc, "ShadowDenoiserUnusedHistoryOutput");
-
-			// FFX feeds back filter PASS 0's output as the temporal history (not the final pass-2 result).
-			ShadowHistoryFeedback = TmpHistory0;
 
 			RenderGraphTextureRef CurrentFilterInput = ReprojectionResult;
 			const int NumPasses = 3;
@@ -406,12 +397,26 @@ namespace Columbus
 		{
 			GPULight&   Light         = Graph.Scene->Lights[i];
 			const auto& PreparedLight = DeferredContext.Shadows.Frame.Lights[i];
-			if ((PreparedLight.Flags & ELightFlags::Shadow) == ELightFlags(0) ||
-			    (PreparedLight.Flags & ELightFlags::RayTracedShadow) == ELightFlags(0))
+			const bool UsesRT  = (Light.Flags & ELightFlags::Shadow) != 0 && (PreparedLight.Flags & ELightFlags::RayTracedShadow) != 0;
+			const bool Render  = PreparedLight.RTShadowMaskIndex != ~0u;
+			const bool Denoise = Cvar_Denoiser.GetValue() && Light.NeedsRTShadowDenoiser();
+
+			if (!UsesRT)
 			{
 				continue;
 			}
+
 			RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
+
+			if (!Render)
+			{
+				if (Denoise)
+				{
+					DenoiseRayTracedShadow(Graph, View, Textures, RTShadow, DeferredContext.Shadows.RTHistories[ShadowLightKey(*Graph.Scene, i)], false);
+				}
+
+				continue;
+			}
 
 			RenderPassParameters Parameters;
 
@@ -445,9 +450,9 @@ namespace Columbus
 				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);
 			});
 
-			if (Cvar_Denoiser.GetValue() && Light.NeedsRTShadowDenoiser())
+			if (Denoise)
 			{
-				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow, DeferredContext.Shadows.RTHistories[ShadowLightKey(*Graph.Scene, i)]);
+				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow, DeferredContext.Shadows.RTHistories[ShadowLightKey(*Graph.Scene, i)], true);
 			}
 
 			// TODO: improve that mechanism

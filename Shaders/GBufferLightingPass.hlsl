@@ -435,7 +435,10 @@ void main(uint3 dtid : SV_DispatchThreadID)
 			{
 				if ((Light.Flags & GPULIGHT_FLAG_RAYTRACED_SHADOW) != 0)
 				{
-					Shadow = ShadowTextures[NonUniformResourceIndex(Light.RTShadowMaskIndex)][Pixel].r;
+					if (Light.RTShadowMaskIndex != 0xffffffffu)
+					{
+						Shadow = ShadowTextures[NonUniformResourceIndex(Light.RTShadowMaskIndex)][Pixel].r;
+					}
 				}
 				else
 				{

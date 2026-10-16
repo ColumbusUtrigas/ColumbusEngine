@@ -163,6 +163,7 @@ namespace Columbus
 
 		Shadow = nullptr;
 		Moments = nullptr;
+		Valid = false;
 	}
 
 	bool GPULight::NeedsRTShadowDenoiser() const

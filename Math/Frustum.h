@@ -5,6 +5,8 @@
 #include <Math/Box.h>
 #include <algorithm>
 #include <cmath>
+#include <span>
+#include "Geometry.h"
 
 namespace Columbus
 {
@@ -71,6 +73,62 @@ namespace Columbus
 				const float Radius   = fabsf(Plane.X) * Extent.X + fabsf(Plane.Y) * Extent.Y + fabsf(Plane.Z) * Extent.Z;
 
 				if (Distance + Radius < -Tolerance)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool Intersects(const Geometry::Sphere& Bounds) const
+		{
+			const Vector3 Center = Bounds.Center;
+			const float Radius = Bounds.Radius;
+
+			if (!std::isfinite(Center.X) || !std::isfinite(Center.Y) || !std::isfinite(Center.Z) || !std::isfinite(Radius) || Radius < 0)
+			{
+				return true;
+			}
+
+			const float Tolerance = 0.0001f * std::max({ 1.0f, fabsf(Center.X), fabsf(Center.Y), fabsf(Center.Z), Radius });
+
+			for (const Vector4& Plane : Planes)
+			{
+				if (Vector3::Dot(Plane.XYZ(), Center) + Plane.W + Radius < -Tolerance)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		// Conservative convex-hull test. Margin expands each plane in world units.
+		bool Intersects(std::span<const Vector3> Points, float Margin = 0) const
+		{
+			if (Points.empty())
+			{
+				return true;
+			}
+
+			for (const Vector4& Plane : Planes)
+			{
+				bool AllOutside = true;
+
+				for (const Vector3& Point : Points)
+				{
+					const float Tolerance = 0.0001f * std::max({ 1.0f, fabsf(Point.X), fabsf(Point.Y), fabsf(Point.Z) });
+					const float Distance = Vector3::Dot(Plane.XYZ(), Point) + Plane.W;
+
+					if (!std::isfinite(Distance) || Distance >= -Margin - Tolerance)
+					{
+						AllOutside = false;
+						break;
+					}
+				}
+
+				if (AllOutside)
 				{
 					return false;
 				}
