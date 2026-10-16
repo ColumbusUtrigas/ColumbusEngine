@@ -1,4 +1,5 @@
 #include "Graphics/Core/ShadowAtlasAllocator.h"
+#include "Graphics/Core/ShaderDebugText.h"
 #include "Math/Matrix.h"
 #include "Math/Frustum.h"
 #include "Math/Geometry.h"
@@ -24,6 +25,35 @@ static void Require(bool value, const char* message)
 		std::fprintf(stderr, "%s\n", message);
 		std::abort();
 	}
+}
+
+static void TestShaderDebugStrings()
+{
+	using namespace Columbus;
+	const std::string_view Source = "Lights: 42\n\tHello, shaders!";
+	const auto Text = ShaderDebugText::MakeString(Source);
+	Require(Text.Length == Source.size(), "Shader debug string length mismatch");
+
+	for (u32 i = 0; i < Text.Length; ++i)
+	{
+		const u32 Character = (Text.Characters[i / 4] >> ((i % 4) * 8)) & 255;
+		Require(Character == u8(Source[i]), "Shader debug ASCII packing crossed a word boundary incorrectly");
+	}
+
+	std::array<char, 64> Full;
+	Full.fill('W');
+	const auto Maximum = ShaderDebugText::MakeString(std::string_view(Full.data(), Full.size()));
+	Require(Maximum.Length == 64 && Maximum.Characters[15] == 0x57575757, "Shader debug strings must preserve all 64 characters");
+
+	const auto Empty = ShaderDebugText::MakeString("");
+	Require(Empty.Length == 0, "Empty shader debug strings must have zero length");
+
+	for (u32 Word : Empty.Characters)
+	{
+		Require(Word == 0, "Empty shader debug strings must initialize packed words");
+	}
+
+	std::puts("PASS shader debug ASCII packing, controls, empty strings and maximum capacity");
 }
 
 // Check the deployed bytecode: a runtime branch around clip still carries a
@@ -236,6 +266,7 @@ static void TestShadowCulling()
 int main(int, char** argv)
 {
 	using namespace Columbus;
+	TestShaderDebugStrings();
 	TestRasterCoverageShaders(std::filesystem::absolute(argv[0]).parent_path() / "PrecompiledShaders");
 	TestShadowCulling();
 	ShadowAtlasAllocator                          allocator(4096);

@@ -2,6 +2,7 @@
 
 #include "BRDFLUT.h"
 #include "LTC.h"
+#include "Graphics/Core/ShaderDebugText.h"
 
 #include <filesystem>
 #include <stdio.h>
@@ -608,6 +609,8 @@ namespace Columbus
 			Device->UploadTextureMipData(Scene->BRDF_LUT, 0, 0, BRDFLUT::BRDF_LUT_RG16F);
 		}
 		
+		Scene->DebugFontAtlas = ShaderDebugText::CreateFontAtlas(Device);
+
 		// allocate empty TLAS
 		{
 			AccelerationStructureDesc TlasDesc{};
@@ -665,6 +668,7 @@ namespace Columbus
 		Device->DestroyTexture(Scene->LTC_1);
 		Device->DestroyTexture(Scene->LTC_2);
 		Device->DestroyTexture(Scene->BRDF_LUT);
+		ShaderDebugText::DestroyFontAtlas(Device, Scene->DebugFontAtlas);
 
 		Device->DestroyAccelerationStructure(Scene->TLAS);
 

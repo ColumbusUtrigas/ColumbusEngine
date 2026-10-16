@@ -148,6 +148,7 @@ namespace Columbus
 		RTGI,
 		RadianceCache,
 		VolumetricFog,
+		TiledLights,
 	};
 
 	enum class EDeferredGlobalIlluminationMode

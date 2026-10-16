@@ -2,6 +2,8 @@
 #include "Core/Util.h"
 #include "Core/Asset.h"
 #include "Graphics/Core/Types.h"
+#include "Core/Assert.h"
+#include "System/Log.h"
 #include "Graphics/GPUScene.h"
 #include "Graphics/RenderGraph.h"
 #include "Graphics/ShaderCache.h"
@@ -154,10 +156,12 @@ namespace Columbus
 
 		struct Permutation
 		{
+			int TiledLights = 0;
 		};
 
 		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
 		{
+			Builder.Axis("TILED_LIGHTS", &Permutation::TiledLights);
 		}
 
 		struct PipelinePermutation
@@ -180,14 +184,26 @@ namespace Columbus
 		struct Parameters
 		{
 			ShaderSampledTexture Texture;
+			ShaderReadBuffer     LightTiles;
+			ShaderReadBuffer     Scene;
+			ShaderSampledTexture FontAtlas;
 			ShaderStaticSampler LinearSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
 			ShaderPushConstants<DebugVisualisationConstants> Constants { {}, ShaderType::Pixel };
 		};
 
 		static void Bind(ShaderBinder& Binder, const Parameters& Params)
 		{
-			Binder.Bind(Params.Texture, 0, 0);
-			Binder.Bind(Params.LinearSampler, 0, 1);
+			if (Params.LightTiles.Ref != -1)
+			{
+				Binder.Bind(Params.LightTiles, 0, 2);
+				Binder.Bind(Params.Scene, 0, 3);
+				Binder.Bind(Params.FontAtlas, 1, 0);
+			}
+			else
+			{
+				Binder.Bind(Params.Texture, 0, 0);
+				Binder.Bind(Params.LinearSampler, 0, 1);
+			}
 			Binder.Bind(Params.Constants);
 		}
 	};
@@ -476,6 +492,14 @@ namespace Columbus
 
 	RenderGraphTextureRef DebugVisualisationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
+		const bool VisualiseTiledLights = DeferredContext.VisualisationMode == EDeferredRenderVisualisationMode::TiledLights;
+
+		if (VisualiseTiledLights && DeferredContext.LightTiles == -1)
+		{
+			Log::Error("Tiled light visualisation is unavailable while r.TiledLights is disabled");
+			return Textures.FinalAfterTonemap;
+		}
+
 		iVector2 Size = View.RenderSize;
 
 		TextureDesc2 ResultDesc;
@@ -582,6 +606,18 @@ namespace Columbus
 			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
 			ImagesParams[0].Texture = Textures.VolumetricFog;
 			break;
+		case EDeferredRenderVisualisationMode::TiledLights:
+			if (DeferredContext.LightTiles == -1 || Graph.Scene->DebugFontAtlas == nullptr)
+			{
+				Log::Error("Tiled light visualisation requires the prepared tile buffer and debug font atlas");
+				COLUMBUS_ASSERT_MESSAGE(false, "Missing tiled light visualisation resources");
+				return Textures.FinalAfterTonemap;
+			}
+			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
+			ImagesParams[0].LightTiles     = DeferredContext.LightTiles;
+			ImagesParams[0].Scene          = Graph.Scene->SceneBuffer;
+			ImagesParams[0].FontAtlas      = Graph.RegisterExternalTexture(SPtr<Texture2>(Graph.Scene->DebugFontAtlas, [](Texture2*) {}), "ShaderDebugFontAtlas");
+			break;
 		default:
 			ImagesParams.push_back(DebugVisualisationShader::Parameters {});
 			ImagesParams[0].Texture = Textures.GBufferAlbedo;
@@ -596,7 +632,7 @@ namespace Columbus
 
 		Graph.AddPass("Debug Visualisation", RenderGraphPassType::Raster, Parameters, Dependencies, [ImagesParams, Size](RenderGraphContext& Context)
 		{
-			GraphicsPipeline* Pipeline = GetGraphicsPipeline<DebugVisualisationShader>(Context, DebugVisualisationShader::Permutation {}, DebugVisualisationShader::PipelinePermutation {});
+			GraphicsPipeline* Pipeline = GetGraphicsPipeline<DebugVisualisationShader>(Context, { ImagesParams[0].LightTiles.Ref != -1 ? 1 : 0 }, {});
 
 			Vector2 ViewportSize = ImagesParams.size() == 1 ? Size : Size / Vector2(3, 2);
 

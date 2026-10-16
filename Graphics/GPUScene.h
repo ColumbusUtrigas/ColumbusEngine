@@ -390,6 +390,9 @@ namespace Columbus
 		// split sum approximation stuff
 		Texture2* BRDF_LUT = nullptr;
 
+		// Shared by shader-side diagnostics; independent of the editor UI font.
+		Texture2* DebugFontAtlas = nullptr;
+
 	public:
 		void Update();
 		void SavePreviousMeshTransforms();

@@ -62,7 +62,7 @@ compile_shader_hlsl(VolumetricFog/Composite.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(TAA.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(Debug.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(UI.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
-compile_shader_hlsl(Visualisation.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
+compile_shader_hlsl_permutation_ranges(Visualisation.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES TILED_LIGHTS 0 1)
 compile_shader_hlsl_permutation_ranges(GBufferLightingPass.hlsl main:cs SHADER_BINARIES USE_TILED_LIGHTS 0 1)
 compile_shader_hlsl(PathTrace.hlsl   RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 
