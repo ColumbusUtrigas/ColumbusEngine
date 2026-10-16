@@ -3,6 +3,8 @@
 #include <Math/Matrix.h>
 #include <Math/Vector4.h>
 #include <Math/Box.h>
+#include <algorithm>
+#include <cmath>
 
 namespace Columbus
 {
@@ -12,6 +14,71 @@ namespace Columbus
 	private:
 		Vector4 Planes[6];
 	public:
+		enum class DepthRange
+		{
+			MinusOneToOne,
+			ZeroToOne
+		};
+
+		Frustum(const Matrix& ViewProjection, DepthRange ClipDepthRange)
+		{
+			SetProjection(ViewProjection, ClipDepthRange);
+		}
+
+		void SetProjection(const Matrix& ViewProjection, DepthRange ClipDepthRange)
+		{
+			const Vector4 X = ViewProjection.GetRow(0);
+			const Vector4 Y = ViewProjection.GetRow(1);
+			const Vector4 Z = ViewProjection.GetRow(2);
+			const Vector4 W = ViewProjection.GetRow(3);
+
+			// Column vectors and row-major matrices. Zero-to-one also covers reverse Z.
+			Planes[0] = W + X;
+			Planes[1] = W - X;
+			Planes[2] = W + Y;
+			Planes[3] = W - Y;
+			Planes[4] = ClipDepthRange == DepthRange::ZeroToOne ? Z : W + Z;
+			Planes[5] = W - Z;
+
+			for (Vector4& Plane : Planes)
+			{
+				const float Length = Plane.XYZ().Length();
+				Plane              = Length > 1e-8f ? Plane / Length : Vector4(0);
+			}
+		}
+
+		// Conservative AABB test with scale-aware tolerance. Unknown bounds remain visible.
+		bool Intersects(const Box& Bounds) const
+		{
+			if (!Bounds.IsValid())
+			{
+				return true;
+			}
+
+			const Vector3 Center = Bounds.CalcCenter();
+			const Vector3 Extent = Bounds.CalcSize() * 0.5f;
+
+			const float Tolerance = 0.0001f * std::max({
+				1.0f,
+				fabsf(Center.X) + Extent.X,
+				fabsf(Center.Y) + Extent.Y,
+				fabsf(Center.Z) + Extent.Z
+			});
+
+			for (const Vector4& Plane : Planes)
+			{
+				const float Distance = Vector3::Dot(Plane.XYZ(), Center) + Plane.W;
+				const float Radius   = fabsf(Plane.X) * Extent.X + fabsf(Plane.Y) * Extent.Y + fabsf(Plane.Z) * Extent.Z;
+
+				if (Distance + Radius < -Tolerance)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
 		Frustum() {}
 		Frustum(const Matrix& ViewProjection) { SetProjection(ViewProjection); }
 

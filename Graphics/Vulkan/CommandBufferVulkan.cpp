@@ -413,6 +413,21 @@ namespace Columbus
 		vkCmdCopyBuffer(_CmdBuf, srcvk->_Buffer, dstvk->_Buffer, 1, &Region);
 	}
 
+
+	void CommandBufferVulkan::UpdateBuffer(const Buffer* Dst, const void* Data, u64 Size, u64 Offset)
+	{
+		COLUMBUS_ASSERT(Size % 4 == 0 && Offset % 4 == 0 && Offset + Size <= Dst->GetDesc().Size);
+		const auto* Buffer = static_cast<const BufferVulkan*>(Dst);
+		const auto* Bytes  = static_cast<const u8*>(Data);
+		while (Size)
+		{
+			const u64 Batch = std::min<u64>(Size, 65536);
+			vkCmdUpdateBuffer(_CmdBuf, Buffer->_Buffer, Offset, Batch, Bytes);
+			Offset += Batch;
+			Bytes += Batch;
+			Size -= Batch;
+		}
+	}
 	void CommandBufferVulkan::MemsetBuffer(const Buffer* Buf, u64 Offset, u64 Size, u32 Data32)
 	{
 		auto vkbuf = static_cast<const BufferVulkan*>(Buf);

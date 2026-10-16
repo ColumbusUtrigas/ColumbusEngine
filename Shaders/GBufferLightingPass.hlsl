@@ -3,6 +3,7 @@
 // we need only definitions from GPUScene
 #define GPU_SCENE_NO_BINDINGS
 #include "GPUScene.hlsli"
+#include "ShadowMaps.hlsli"
 
 #define REFLECTION_CAPTURES_SET 2
 #include "ReflectionCaptures/ReflectionCapturesCommon.hlsli"
@@ -235,8 +236,10 @@ float3 LTC_Evaluate_Disc(float3 N, float3 V, float3 P, float3x3 Minv, float3 poi
     V1 = mul(Minv, V1);
     V2 = mul(Minv, V2);
 
-    if(!twoSided && dot(cross(V1, V2), C) < 0.0)
-        return float3(0,0,0);
+	if (!twoSided && dot(cross(V1, V2), C) > 0.0)
+	{
+		return float3(0, 0, 0);
+	}
 
     // compute eigenvectors of ellipse
     float a, b;
@@ -389,8 +392,36 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 		float Shadow = 1.0f;
 
+		// Reject noncontributing local lights before performing PCF or loading an RT mask.
+		if ((Light.Type == GPULIGHT_POINT || Light.Type == GPULIGHT_SPOT) &&
+		    distance(WP, Light.Position.xyz) >= Light.Range)
+		{
+			continue;
+		}
+
+		if (Light.Type == GPULIGHT_SPOT &&
+		    dot(normalize(Light.Position.xyz - WP), Light.Direction.xyz) <= Light.SizeOrSpotAngles.y)
+		{
+			continue;
+		}
+
+		if ((Light.Type == GPULIGHT_DIRECTIONAL || Light.Type == GPULIGHT_POINT || Light.Type == GPULIGHT_SPOT) &&
+		    dot(BRDF.N, Light.Type == GPULIGHT_DIRECTIONAL ? Light.Direction.xyz : normalize(Light.Position.xyz - WP)) <= 0)
+		{
+			continue;
+		}
 		if ((Light.Flags & GPULIGHT_FLAG_SHADOW) != 0)
-			Shadow = ShadowTextures[i][Pixel].r;
+		{
+			if ((Light.Flags & GPULIGHT_FLAG_RAYTRACED_SHADOW) != 0)
+			{
+				Shadow = ShadowTextures[NonUniformResourceIndex(Light.RTShadowMaskIndex)][Pixel].r;
+			}
+			else
+			{
+				float CameraDepth = -mul(GPUSceneScene[0].CameraCur.ViewMatrix, float4(WP, 1)).z;
+				Shadow            = EvaluateRasterShadow(Light, WP, BRDF.N, CameraDepth);
+			}
+		}
 
 		float3 LightDir = Light.Direction.xyz;
 
@@ -437,7 +468,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 		case GPULIGHT_RECTANGLE:
 			{
 				// TODO: make it more stable
-				float3x3 LTC_Axis = ComputeTangentsFromVector(Light.Direction.xyz);
+				float3x3 LTC_Axis = AreaLightBasis(Light);
 
 				float3 points[4];
 				float2 halfSize = Light.SizeOrSpotAngles;
@@ -462,7 +493,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 
 		case GPULIGHT_DISC:
 			{
-				float3x3 LTC_Axis = ComputeTangentsFromVector(Light.Direction.xyz);
+				float3x3 LTC_Axis = AreaLightBasis(Light);
 
 				float3 points[4];
 				float2 halfSize = Light.SizeOrSpotAngles;
@@ -481,7 +512,7 @@ void main(uint3 dtid : SV_DispatchThreadID)
 				float3 specularColor = float3(0.4, 0.4, 0.4);
 				// specular *= specularColor*t2.x + (1.0 - specularColor)*t2.y;
 
-				LightingSum += (diffuse) * Light.Color.rgb/* * Shadow*/;
+				LightingSum += (diffuse) * Light.Color.rgb * Shadow;
 			}
 			break;
 		default:

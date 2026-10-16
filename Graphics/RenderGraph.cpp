@@ -603,7 +603,7 @@ namespace Columbus
 
 		if (Parameters.DepthStencilAttachment)
 		{
-			Pass.Dependencies.Write(Parameters.DepthStencilAttachment->Texture, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+			Pass.Dependencies.Write(Parameters.DepthStencilAttachment->Texture, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
 		}
 
 		// TODO: validate for duplicates
@@ -1263,7 +1263,7 @@ namespace Columbus
 							TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Attachment->Texture].Texture.get());
 							if (Texture != nullptr)
 							{
-								Texture->_Layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+								Texture->_Layout = VK_IMAGE_LAYOUT_GENERAL;
 							}
 						}
 					}
@@ -1273,7 +1273,7 @@ namespace Columbus
 						TextureVulkan* Texture = static_cast<TextureVulkan*>(Textures[Pass.Parameters.DepthStencilAttachment->Texture].Texture.get());
 						if (Texture != nullptr)
 						{
-							Texture->_Layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+							Texture->_Layout = VK_IMAGE_LAYOUT_GENERAL;
 						}
 					}
 				}

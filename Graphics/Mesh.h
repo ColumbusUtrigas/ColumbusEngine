@@ -4,6 +4,7 @@
 #include <Graphics/Core/GraphicsCore.h>
 #include <Animation/Skeleton.h>
 #include <Core/Asset.h>
+#include <Graphics/Material.h>
 #include <Core/Reflection.h>
 #include <Physics/PhysicsShape.h>
 #include <Scene/Transform.h>
@@ -11,8 +12,6 @@
 
 namespace Columbus
 {
-	struct Material;
-
 	struct MeshImportSettings
 	{
 		bool GenerateTangents = true;
@@ -67,6 +66,11 @@ namespace Columbus
 		u32 VertexCount;
 		u32 IndicesCount;
 		u32 MorphTargetCount = 0;
+
+		// Derived geometry metadata shared by instance shadow-caster bounds.
+		Box              Bounds;
+		std::vector<Box> MorphPositionBounds;
+		bool             HasBounds = false;
 	};
 
 	struct MeshPrimitive

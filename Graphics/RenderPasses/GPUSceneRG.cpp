@@ -264,9 +264,13 @@ namespace Columbus
 		});
 	}
 
-	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View)
+	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View, DeferredRenderContext* DeferredContext)
 	{
 		Graph.Scene->Update();
+		if (DeferredContext)
+		{
+			PrepareShadows(Graph, View, DeferredContext->Shadows);
+		}
 
 		const auto GetTextureDenseIndex = [&Graph](TStableSparseArray<Texture2*>::Handle Handle) -> int
 		{
@@ -306,7 +310,7 @@ namespace Columbus
 
 			for (u32 i = 0; i < NumLights; i++)
 			{
-				((GPULightCompact*)Ptr)[i] = CreateCompact(Graph.Scene->Lights[i]);
+				((GPULightCompact*)Ptr)[i] = DeferredContext ? DeferredContext->Shadows.Frame.Lights[i] : CreateCompact(Graph.Scene->Lights[i]);
 			}
 		}
 

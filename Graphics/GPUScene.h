@@ -142,7 +142,7 @@ namespace Columbus
 	struct GPULightCompact
 	{
 		Vector4 Position;
-		Vector4 Direction;
+		Vector4 Direction; // xyz: toward light for punctual/directional, emitting normal for planar area; w: emitter roll.
 		Vector4 Color;
 		LightType Type;
 		float Range;
@@ -151,7 +151,19 @@ namespace Columbus
 		ELightFlags Flags; // 64
 		Vector2 SizeOrSpotAngles; // 76
 
-		u32 _pad[13]; // 128
+		u32   ShadowResolution  = 1024;
+		u32   FirstShadowView   = 0;
+		u32   ShadowViewCount   = 0;
+		u32   RTShadowMaskIndex = 0;
+		float ShadowDepthBias   = 0.0001f; // Reverse-Z receiver comparison bias.
+		float ShadowNormalBias  = 0.01f;   // World units.
+		float ShadowSlopeBias   = 2.0f;    // Raster slope-scaled depth bias.
+		float ShadowFilterRadius = 1.0f;    // Fixed 3x3 PCF sample spacing in texels (0 = one hardware-PCF sample).
+		float ShadowDistance     = 100.0f;
+		u32   ShadowCascadeCount = 4;
+		float ShadowSplitLambda  = 0.6f;
+		float ShadowCascadeBlend = 0.1f;
+		float ShadowConeAngle    = 150.0f;
 	};
 
 	static_assert(sizeof(GPULightCompact) == 128, "GPULightCompact must match shader layout");
@@ -160,7 +172,7 @@ namespace Columbus
 	{
 		// all GPULightCompact fields plus some state
 
-		RTShadowDenoiserHistory RTShadow;
+		float ShadowNearPlane = 0.02f;
 
 		bool NeedsRTShadowDenoiser() const;
 	};

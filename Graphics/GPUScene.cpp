@@ -176,22 +176,34 @@ namespace Columbus
 			return false;
 
 		return SourceRadius > 0.0001f ||
-			(Type == LightType::Rectangle && (SizeOrSpotAngles.X > 0.0001f || SizeOrSpotAngles.Y > 0.0001f));
+			((Type == LightType::Rectangle || Type == LightType::Disc) && (SizeOrSpotAngles.X > 0.0001f || SizeOrSpotAngles.Y > 0.0001f));
 	}
 
 	GPULightCompact CreateCompact(const GPULight& Light)
 	{
-		return GPULightCompact
-		{
-			.Position = Light.Position,
-			.Direction = Light.Direction,
-			.Color = Light.Color,
-			.Type = Light.Type,
-			.Range = Light.Range,
-			.SourceRadius = Light.SourceRadius,
+		return GPULightCompact{
+			.Position            = Light.Position,
+			.Direction           = Light.Direction,
+			.Color               = Light.Color,
+			.Type                = Light.Type,
+			.Range               = Light.Range,
+			.SourceRadius        = Light.SourceRadius,
 			.VolumetricIntensity = Light.VolumetricIntensity,
-			.Flags = Light.Flags,
-			.SizeOrSpotAngles = Light.SizeOrSpotAngles,
+			.Flags               = Light.Flags,
+			.SizeOrSpotAngles    = Light.SizeOrSpotAngles,
+			.ShadowResolution    = Light.ShadowResolution,
+			.FirstShadowView     = Light.FirstShadowView,
+			.ShadowViewCount     = Light.ShadowViewCount,
+			.RTShadowMaskIndex   = Light.RTShadowMaskIndex,
+			.ShadowDepthBias     = Light.ShadowDepthBias,
+			.ShadowNormalBias    = Light.ShadowNormalBias,
+			.ShadowSlopeBias     = Light.ShadowSlopeBias,
+			.ShadowFilterRadius  = Light.ShadowFilterRadius,
+			.ShadowDistance      = Light.ShadowDistance,
+			.ShadowCascadeCount  = Light.ShadowCascadeCount,
+			.ShadowSplitLambda   = Light.ShadowSplitLambda,
+			.ShadowCascadeBlend  = Light.ShadowCascadeBlend,
+			.ShadowConeAngle     = Light.ShadowConeAngle,
 		};
 	}
 
@@ -310,26 +322,11 @@ namespace Columbus
 			return;
 		}
 
-		RTShadowDenoiserHistory ShadowHistory = Existing->RTShadow;
-		const bool bHadDenoiser = Existing->NeedsRTShadowDenoiser();
-		const bool bHasDenoiser = Light.NeedsRTShadowDenoiser();
-
 		*Existing = Light;
-		Existing->RTShadow = ShadowHistory;
-
-		if (bHadDenoiser && !bHasDenoiser)
-		{
-			Existing->RTShadow.Destroy(Device);
-		}
 	}
 
 	void GPUScene::RemoveLight(HStableLightId Id)
 	{
-		if (GPULight* Existing = Lights.Get(Id))
-		{
-			Existing->RTShadow.Destroy(Device);
-		}
-
 		Lights.Remove(Id);
 	}
 
@@ -653,11 +650,6 @@ namespace Columbus
 		for (GPUReflectionCapture& Capture : Scene->ReflectionCaptures)
 		{
 			Scene->ReleaseReflectionRadiance(Capture, false);
-		}
-
-		for (auto& Light : Scene->Lights)
-		{
-			Light.RTShadow.Destroy(Device);
 		}
 
 		DestroyGPUSceneBuffers(Device, Scene->SceneBuffer);

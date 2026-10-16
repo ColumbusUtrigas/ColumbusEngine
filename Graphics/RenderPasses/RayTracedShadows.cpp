@@ -404,8 +404,13 @@ namespace Columbus
 
 		for (int i = 0; i < Graph.Scene->Lights.Size(); i++)
 		{
-			GPULight& Light = Graph.Scene->Lights[i];
-
+			GPULight&   Light         = Graph.Scene->Lights[i];
+			const auto& PreparedLight = DeferredContext.Shadows.Frame.Lights[i];
+			if ((PreparedLight.Flags & ELightFlags::Shadow) == ELightFlags(0) ||
+			    (PreparedLight.Flags & ELightFlags::RayTracedShadow) == ELightFlags(0))
+			{
+				continue;
+			}
 			RenderGraphTextureRef RTShadow = Graph.CreateTexture(Desc, "RayTracedShadow");
 
 			RenderPassParameters Parameters;
@@ -442,7 +447,7 @@ namespace Columbus
 
 			if (Cvar_Denoiser.GetValue() && Light.NeedsRTShadowDenoiser())
 			{
-				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow, Light.RTShadow);
+				RTShadow = DenoiseRayTracedShadow(Graph, View, Textures, RTShadow, DeferredContext.Shadows.RTHistories[ShadowLightKey(*Graph.Scene, i)]);
 			}
 
 			// TODO: improve that mechanism

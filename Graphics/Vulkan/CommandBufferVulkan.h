@@ -67,6 +67,8 @@ namespace Columbus
 		void CopyImageToBufferAllSubresources(const Texture2* Src, const Buffer* Dst);
 		void CopyBuffer(const Buffer* Src, const Buffer* Dst, u64 SrcOffset, u64 DstOffset, u64 Size);
 
+		void UpdateBuffer(const Buffer* Dst, const void* Data, u64 Size, u64 Offset = 0);
+
 		void MemsetBuffer(const Buffer* Buf, u64 Offset, u64 Size, u32 Data32);
 		void MemsetTexture(const Texture2* Texture, Vector4 Value);
 

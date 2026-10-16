@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <Core/Blob.h>
+#include <Graphics/Core/Types.h>
 #include <Core/Reflection.h>
 
 namespace Columbus
@@ -103,6 +104,10 @@ namespace Columbus
 		u32 Anisotropy = 1;
 		float MinLOD = 0.0f, MaxLOD = 1000.0f;
 		float LodBias = 0.0f;
+
+		bool           CompareEnable = false;
+		ComparisonFunc CompareOp     = ComparisonFunc::GEqual;
+
 		TextureAddressMode AddressU = TextureAddressMode::Repeat;
 		TextureAddressMode AddressV = TextureAddressMode::Repeat;
 		TextureAddressMode AddressW = TextureAddressMode::Repeat;

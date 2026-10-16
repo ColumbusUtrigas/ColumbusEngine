@@ -463,8 +463,17 @@ namespace Columbus
 			return *this;
 		}
 		
-		Matrix& Ortho()
+		// Right-handed view space (-Z forward), Vulkan [0,1] reverse Z.
+		Matrix& Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far)
 		{
+			COLUMBUS_ASSERT(Right > Left && Top > Bottom && Far > Near);
+			*this   = Matrix(1.0f);
+			M[0][0] = 2.0f / (Right - Left);
+			M[1][1] = 2.0f / (Top - Bottom);
+			M[2][2] = 1.0f / (Far - Near);
+			M[0][3] = -(Right + Left) / (Right - Left);
+			M[1][3] = -(Top + Bottom) / (Top - Bottom);
+			M[2][3] = Far / (Far - Near);
 			return *this;
 		}
 		

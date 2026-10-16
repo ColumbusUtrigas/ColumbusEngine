@@ -201,6 +201,7 @@ namespace Columbus
 		}
 
 		pContext->History.Destroy(Device);
+		pContext->Shadows.Destroy(Device);
 	}
 
 	// implementation of public functions

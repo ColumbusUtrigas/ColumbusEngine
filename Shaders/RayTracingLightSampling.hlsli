@@ -94,7 +94,7 @@ RayTracedLightSample SampleRayTracedLight(GPULight Light, float3 Origin, float2 
 	}
 	case GPULIGHT_RECTANGLE:
 	{
-		float3x3 LightAxis = ComputeTangentsFromVector(Light.Direction.xyz);
+		float3x3 LightAxis = AreaLightBasis(Light);
 		float2 HalfSize = Light.SizeOrSpotAngles;
 		float3 Ex = LightAxis[0] * HalfSize.x;
 		float3 Ey = LightAxis[1] * HalfSize.y;
@@ -105,7 +105,7 @@ RayTracedLightSample SampleRayTracedLight(GPULight Light, float3 Origin, float2 
 	}
 	case GPULIGHT_DISC:
 	{
-		float3x3 LightAxis = ComputeTangentsFromVector(Light.Direction.xyz);
+		float3x3 LightAxis = AreaLightBasis(Light);
 		float Radius = sqrt(Xi.x);
 		float Phi = TWO_PI * Xi.y;
 		float2 Disk = float2(cos(Phi), sin(Phi)) * Radius;

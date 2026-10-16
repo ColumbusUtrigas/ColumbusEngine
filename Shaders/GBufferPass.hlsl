@@ -81,11 +81,14 @@ PS_Out PSMain(VS_TO_PS In)
     //     //LightmapColor = textureLod(Textures[InLightmapId], InUV2, 0.0f).rgb;
     // }
 
+#if ALPHA_MASKED
+    GPUSceneMaterialCompact SourceMaterial = GPUScene::GPUSceneMaterials[In.MaterialId];
+    float4                  AlbedoSample   = GPUScene::SampleTextureWithDefault(SourceMaterial.AlbedoId, In.Uv1, float4(1, 1, 1, 1));
+    clip(AlbedoSample.a * SourceMaterial.AlbedoFactor.a - SourceMaterial.AlphaCutoff);
+    GPUMaterialSampledData Material = GPUScene::SampleMaterial(SourceMaterial, In.Uv1, AlbedoSample);
+#else
     GPUMaterialSampledData Material = GPUScene::SampleMaterial(In.MaterialId, In.Uv1);
-    if (Material.ShadingMode == MATERIAL_SHADING_MASKED)
-    {
-        clip(Material.Alpha - Material.AlphaCutoff);
-    }
+#endif
 
     float2 Velocity;
 	{

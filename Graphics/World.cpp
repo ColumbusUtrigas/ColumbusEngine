@@ -974,6 +974,14 @@ namespace Columbus
 
 				for (const MeshMorphTarget& Target : CPUMesh.MorphTargets)
 				{
+					Box DeltaBounds; // Include zero for conservative inactive-vertex coverage.
+					for (const Vector3& Delta : Target.PositionDeltas)
+					{
+						DeltaBounds.Min = Vector3::Min(DeltaBounds.Min, Delta);
+						DeltaBounds.Max = Vector3::Max(DeltaBounds.Max, Delta);
+					}
+					GPUMesh.MorphPositionBounds.push_back(DeltaBounds);
+
 					assert(Target.PositionDeltas.size() == CPUMesh.Vertices.size());
 					assert(Target.NormalDeltas.size() == CPUMesh.Vertices.size());
 					assert(Target.TangentDeltas.size() == CPUMesh.Vertices.size());
@@ -1003,6 +1011,8 @@ namespace Columbus
 				MaxVertex = Vector3::Max(Vertex, MaxVertex);
 			}
 
+			GPUMesh.Bounds    = Box(MinVertex, MaxVertex);
+			GPUMesh.HasBounds = true;
 			for (const MeshMorphTarget& Target : CPUMesh.MorphTargets)
 			{
 				assert(Target.PositionDeltas.size() == CPUMesh.Vertices.size());
@@ -1589,15 +1599,39 @@ namespace Columbus
 		GPULight GL{};
 		GL.Color = Vector4(Colour * Energy, 1);
 		GL.Position = Vector4(TransGlobal.Position, 1);
-		GL.Direction = (Vector4(1, 0, 0, 1) * RotMat).Normalized();
+
+		const Vector3 Direction = (Vector4(1, 0, 0, 0) * RotMat).XYZ().Normalized();
+		const Vector3 Up        = fabsf(Direction.Y) < 0.999f ? Vector3(0, 1, 0) : Vector3(1, 0, 0);
+		const Vector3 AxisX     = Vector3::Cross(Up, Direction).Normalized();
+		const Vector3 AxisY     = Vector3::Cross(Direction, AxisX);
+		const Vector3 EmitterX  = (Vector4(0, 1, 0, 0) * RotMat).XYZ().Normalized();
+
+		GL.Direction = Vector4(Direction, atan2f(Vector3::Dot(EmitterX, AxisY), Vector3::Dot(EmitterX, AxisX)));
 		GL.Range = Range;
 		GL.SourceRadius = SourceRadius;
 		GL.VolumetricIntensity = AffectVolumetricFog ? VolumetricIntensity : 0.0f;
 		GL.Type = Type;
 
 		if (Shadows)
+		{
 			GL.Flags = GL.Flags | ELightFlags::Shadow;
-		
+		}
+		if (RayTracedShadows)
+		{
+			GL.Flags = GL.Flags | ELightFlags::RayTracedShadow;
+		}
+		GL.ShadowResolution   = (u32)Math::Clamp(ShadowResolution, 32, 4096);
+		GL.ShadowDepthBias    = Math::Clamp(ShadowDepthBias, 0.0f, 0.1f);
+		GL.ShadowNormalBias   = Math::Clamp(ShadowNormalBias, 0.0f, 10.0f);
+		GL.ShadowSlopeBias    = Math::Clamp(ShadowSlopeBias, 0.0f, 16.0f);
+		GL.ShadowFilterRadius = Math::Clamp(ShadowFilterRadius, 0.0f, 3.0f);
+		GL.ShadowNearPlane    = Math::Clamp(ShadowNearPlane, 0.001f, 10.0f);
+		GL.ShadowDistance     = Math::Clamp(ShadowDistance, 0.1f, 10000.0f);
+		GL.ShadowCascadeCount = (u32)Math::Clamp(ShadowCascadeCount, 1, 4);
+		GL.ShadowSplitLambda  = Math::Clamp(ShadowSplitLambda, 0.0f, 1.0f);
+		GL.ShadowCascadeBlend = Math::Clamp(ShadowCascadeBlend, 0.0f, 0.5f);
+		GL.ShadowConeAngle    = Math::Clamp(ShadowConeAngle, 1.0f, 175.0f);
+
 		switch (Type)
 		{
 		case LightType::Spot:
@@ -1609,6 +1643,7 @@ namespace Columbus
 		}
 			break;
 		case LightType::Rectangle:
+		case LightType::Disc:
 			GL.SizeOrSpotAngles = Size * 0.5f;
 			if (TwoSided)
 				GL.Flags = GL.Flags | ELightFlags::TwoSided;
@@ -2299,6 +2334,20 @@ CREFLECT_STRUCT_BEGIN(ALight, "")
 	CREFLECT_STRUCT_FIELD(float, Range, "")
 	CREFLECT_STRUCT_FIELD(float, SourceRadius, "")
 	CREFLECT_STRUCT_FIELD(bool, Shadows, "")
+
+	CREFLECT_STRUCT_FIELD(bool,  RayTracedShadows,   "")
+	CREFLECT_STRUCT_FIELD(int,   ShadowResolution,   "")
+	CREFLECT_STRUCT_FIELD(float, ShadowDepthBias,    "")
+	CREFLECT_STRUCT_FIELD(float, ShadowNormalBias,   "")
+	CREFLECT_STRUCT_FIELD(float, ShadowSlopeBias,    "")
+	CREFLECT_STRUCT_FIELD(float, ShadowFilterRadius, "")
+	CREFLECT_STRUCT_FIELD(float, ShadowNearPlane,    "")
+	CREFLECT_STRUCT_FIELD(float, ShadowDistance,     "")
+	CREFLECT_STRUCT_FIELD(int,   ShadowCascadeCount, "")
+	CREFLECT_STRUCT_FIELD(float, ShadowSplitLambda,  "")
+	CREFLECT_STRUCT_FIELD(float, ShadowCascadeBlend, "")
+	CREFLECT_STRUCT_FIELD(float, ShadowConeAngle,    "")
+
 	CREFLECT_STRUCT_FIELD(bool, AffectVolumetricFog, "")
 	CREFLECT_STRUCT_FIELD(float, VolumetricIntensity, "")
 

@@ -3,6 +3,7 @@
 #pragma pack_matrix(row_major)
 
 #include "SkyCommon.hlsli"
+#include "Common.hlsli"
 
 struct GPUViewCamera
 {
@@ -71,14 +72,36 @@ struct GPULight
 	float  Range;
 	float  SourceRadius;
 	float  VolumetricIntensity;
-	uint Flags; // 64
-    float2 SizeOrSpotAngles; // 76
-	
-    int _pad[13]; // 128
+	uint   Flags;            // 64
+	float2 SizeOrSpotAngles; // 76
+
+	uint  ShadowResolution;
+	uint  FirstShadowView;
+	uint  ShadowViewCount;
+	uint  RTShadowMaskIndex;
+	float ShadowDepthBias;    // Reverse-Z receiver comparison bias.
+	float ShadowNormalBias;   // World units.
+	float ShadowSlopeBias;    // Raster slope-scaled depth bias.
+	float ShadowFilterRadius; // Fixed PCF spacing in texels.
+	float ShadowDistance;
+	uint  ShadowCascadeCount;
+	float ShadowSplitLambda;
+	float ShadowCascadeBlend;
+	float ShadowConeAngle;
 };
 
-#define GPULIGHT_FLAG_TWOSIDED 1
-#define GPULIGHT_FLAG_SHADOW   2
+#define GPULIGHT_FLAG_TWOSIDED         1
+#define GPULIGHT_FLAG_SHADOW           2
+#define GPULIGHT_FLAG_RAYTRACED_SHADOW 4
+
+float3x3 AreaLightBasis(GPULight Light)
+{
+	float3x3 Basis = ComputeTangentsFromVector(normalize(Light.Direction.xyz));
+	float    SinRoll;
+	float    CosRoll;
+	sincos(Light.Direction.w, SinRoll, CosRoll);
+	return float3x3(CosRoll * Basis[0] + SinRoll * Basis[1], -SinRoll * Basis[0] + CosRoll * Basis[1], Basis[2]);
+}
 
 #define GPULIGHT_DIRECTIONAL 0
 #define GPULIGHT_POINT 1
@@ -275,53 +298,60 @@ namespace GPUScene
         }
     }
 	
-    GPUMaterialSampledData SampleMaterial(uint MaterialId, float2 UV)
+    // Reuse an albedo sample when a raster pass has already tested its alpha.
+    GPUMaterialSampledData SampleMaterial(GPUSceneMaterialCompact Material, float2 UV, float4 AlbedoSample)
     {
         GPUMaterialSampledData Result;
+        Result.Albedo   = AlbedoSample.rgb * Material.AlbedoFactor.rgb;
+        Result.Alpha    = AlbedoSample.a * Material.AlbedoFactor.a;
+        Result.Emissive = SampleTextureWithDefault(Material.EmissiveId, UV, float4(1, 1, 1, 1)).rgb * Material.EmissiveFactor.rgb;
 
-        if (MaterialId != -1)
+        float4 EncodedNormal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0));
+
+        if ((Material.Flags & GPUMATERIAL_FLAG_NORMAL_RG) != 0)
         {
-            GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
-
-            float4 AlbedoSample = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1,1,1,1));
-            Result.Albedo = AlbedoSample.rgb * Material.AlbedoFactor.rgb;
-            Result.Alpha = AlbedoSample.a * Material.AlbedoFactor.a;
-            Result.Emissive = SampleTextureWithDefault(Material.EmissiveId, UV, float4(1,1,1,1)).rgb * Material.EmissiveFactor.rgb;
-
-            float4 EncodedNormal = SampleTextureWithDefault(Material.NormalId, UV, float4(0.5, 0.5, 1, 0));
-            if ((Material.Flags & GPUMATERIAL_FLAG_NORMAL_RG) != 0)
-            {
-                float2 NormalXY = EncodedNormal.rg * 2.0f - 1.0f;
-                NormalXY.y *= -1.0f; // OpenGL to DX convention
-                float NormalZ = sqrt(saturate(1.0f - dot(NormalXY, NormalXY)));
-                Result.Normal = normalize(float3(NormalXY, NormalZ));
-            }
-            else
-            {
-                Result.Normal = normalize(EncodedNormal.rgb * 2.0f - 1.0f);
-                Result.Normal.y *= -1.0f; // OpenGL to DX convention
-            }
-
-            float3 ORM = SampleTextureWithDefault(Material.OrmId, UV, float4(1, Material.Roughness, Material.Metallic, 1)).rgb;
-
-            Result.Occlusion = ORM.r;
-            Result.Roughness = ORM.g;
-            Result.Metallic = ORM.b;
-            Result.ShadingMode = Material.ShadingMode;
-            Result.AlphaCutoff = Material.AlphaCutoff;
+            float2 NormalXY = EncodedNormal.rg * 2.0f - 1.0f;
+            NormalXY.y *= -1.0f; // OpenGL to DX convention
+            float NormalZ = sqrt(saturate(1.0f - dot(NormalXY, NormalXY)));
+            Result.Normal = normalize(float3(NormalXY, NormalZ));
         }
         else
         {
-            Result.Albedo = float3(1,1,1);
-            Result.Emissive = float3(0,0,0);
-            Result.Normal = float3(0, 0, 1);
-            Result.Occlusion = 1;
-            Result.Roughness = 1;
-            Result.Metallic = 0;
-            Result.Alpha = 1;
-            Result.ShadingMode = MATERIAL_SHADING_OPAQUE;
-            Result.AlphaCutoff = 0.5;
+            Result.Normal = normalize(EncodedNormal.rgb * 2.0f - 1.0f);
+            Result.Normal.y *= -1.0f; // OpenGL to DX convention
         }
+
+        float3 ORM = SampleTextureWithDefault(Material.OrmId, UV, float4(1, Material.Roughness, Material.Metallic, 1)).rgb;
+
+        Result.Occlusion   = ORM.r;
+        Result.Roughness   = ORM.g;
+        Result.Metallic    = ORM.b;
+        Result.ShadingMode = Material.ShadingMode;
+        Result.AlphaCutoff = Material.AlphaCutoff;
+
+        return Result;
+    }
+
+    GPUMaterialSampledData SampleMaterial(uint MaterialId, float2 UV)
+    {
+        if (MaterialId != -1)
+        {
+            GPUSceneMaterialCompact Material     = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
+            float4                  AlbedoSample = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1, 1, 1, 1));
+
+            return SampleMaterial(Material, UV, AlbedoSample);
+        }
+
+        GPUMaterialSampledData Result;
+        Result.Albedo      = float3(1, 1, 1);
+        Result.Emissive    = float3(0, 0, 0);
+        Result.Normal      = float3(0, 0, 1);
+        Result.Occlusion   = 1;
+        Result.Roughness   = 1;
+        Result.Metallic    = 0;
+        Result.Alpha       = 1;
+        Result.ShadingMode = MATERIAL_SHADING_OPAQUE;
+        Result.AlphaCutoff = 0.5;
 
         return Result;
     }

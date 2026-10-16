@@ -118,3 +118,11 @@ add_subdirectory(ShaderCompiler)
 
 add_subdirectory(Shaders)
 add_dependencies(Shaders ShaderCompiler)
+# Deploy shaders for the active configuration whenever an engine consumer is built.
+add_dependencies(ColumbusEngine Shaders)
+
+# Focused CPU checks for persistent shadow allocation and projection conventions.
+add_executable(ShadowMapTests EXCLUDE_FROM_ALL Tests/ShadowAtlasAllocatorTests.cpp)
+target_link_libraries(ShadowMapTests PRIVATE ColumbusEngine)
+target_include_engine_directories(ShadowMapTests)
+set_target_properties(ShadowMapTests PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED YES FOLDER "Engine/Tests")

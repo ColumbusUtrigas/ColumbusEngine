@@ -187,6 +187,21 @@ namespace Columbus
 		float Range = 10.0f;
 		float SourceRadius = 0.0f;
 		bool  Shadows = false;
+
+		// Shadows defaults preserve existing levels' ray-traced rendering.
+		bool  RayTracedShadows   = true;
+		int   ShadowResolution   = 1024;
+		float ShadowDepthBias    = 0.0001f;
+		float ShadowNormalBias   = 0.01f;
+		float ShadowSlopeBias    = 2.0f;
+		float ShadowFilterRadius = 1.0f;
+		float ShadowNearPlane    = 0.02f;
+		float ShadowDistance     = 100.0f;
+		int   ShadowCascadeCount = 4;
+		float ShadowSplitLambda  = 0.6f;
+		float ShadowCascadeBlend = 0.1f;
+		float ShadowConeAngle    = 150.0f;
+
 		bool  AffectVolumetricFog = true;
 		float VolumetricIntensity = 1.0f;
 

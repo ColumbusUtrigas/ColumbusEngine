@@ -8,6 +8,9 @@ namespace Columbus
 	{
 		size_t Hash = 0;
 
+		hash_combine(Hash, X.LodBias);
+		hash_combine(Hash, X.CompareEnable);
+		hash_combine(Hash, X.CompareOp);
 		hash_combine(Hash, X.Anisotropy);
 		hash_combine(Hash, X.MinLOD);
 		hash_combine(Hash, X.MaxLOD);

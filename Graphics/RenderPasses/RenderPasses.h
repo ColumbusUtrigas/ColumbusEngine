@@ -4,6 +4,7 @@
 #include "Graphics/Core/GraphicsCore.h"
 #include "Graphics/Core/View.h"
 #include "BakedLightingRuntime.h"
+#include "Graphics/ShadowMaps.h"
 #include "RadianceCache.h"
 #include <Graphics/Lightmaps.h>
 #include <Graphics/RenderGraph.h>
@@ -17,7 +18,8 @@ namespace Columbus
 	// Common
 	//
 
-	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View);
+	struct DeferredRenderContext;
+	void UploadGPUSceneRG(RenderGraph& Graph, const RenderView& View, DeferredRenderContext* DeferredContext = nullptr);
 	void PrepareDeferredView(RenderView& View);
 
 	RenderGraphTextureRef TonemapPass(RenderGraph& Graph, const RenderView& View, RenderGraphTextureRef SceneTexture);
@@ -57,7 +59,7 @@ namespace Columbus
 	struct GPULightRenderInfo
 	{
 		RenderGraphTextureRef RTShadow;
-		// TODO: denoising history textures should go here as well, think about persisting and clearing them
+		// RT histories are owned by DeferredRenderContext::Shadows and keyed by stable light identity.
 	};
 
 	struct HistorySceneTextures
@@ -95,7 +97,8 @@ namespace Columbus
 	{
 		SPtr<DeviceVulkan> Device;
 
-		std::vector<GPULightRenderInfo> LightRenderInfos;
+		std::vector<GPULightRenderInfo> LightRenderInfos; // Compact RT mask list, not indexed by scene light.
+		ShadowRenderState               Shadows;
 
 		// prepared once per view per frame, read by render passes
 		BakedLightingPrepared BakedLighting;

@@ -3,6 +3,7 @@
 #include <Math/Vector3.h>
 #include <Math/Matrix.h>
 #include <utility>
+#include <span>
 
 namespace Columbus
 {
@@ -20,8 +21,14 @@ namespace Columbus
 		Vector3 CalcCenter() const { return (Min + Max) / 2; }
 		Vector3 CalcSize() const { return (Max - Min); }
 
-		// calculates AABB of a transformed box
+		// Finite, ordered bounds. Invalid bounds are retained by conservative culling.
+		bool IsValid() const;
+
+		// Affine center/extents transform supports negative scale and shear.
 		Box CalcTransformedBox(const Matrix& Transformation) const;
+
+		// Signed morph deltas followed by normalized skinning influences; retains the unweighted fallback.
+		Box CalcDeformedBox(std::span<const Box> MorphBounds, std::span<const float> MorphWeights, std::span<const Matrix> SkinMatrices) const;
 
 		Box operator+(const Vector3& Other) const
 		{

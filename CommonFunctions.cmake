@@ -89,7 +89,7 @@ function(compile_shader_impl shaderName stages outputStem binaryLocation)
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "${BINARIES_DIR}/$<CONFIG>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} ${DEFINES}
-		DEPENDS ${shaderName} ShaderCompiler
+		DEPENDS ${shaderName} ${SHADER_HEADERS} ShaderCompiler
 	)
 
 	# just a weird way to append a value to a list in the parent scope
@@ -181,7 +181,7 @@ function(compile_shader_permutation_ranges_impl shaderName stages binaryLocation
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "${BINARIES_DIR}/$<CONFIG>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} ${PERMUTATION_AXIS_ARGS} ${PERMUTATION_ARGS}
-		DEPENDS ${shaderName} ShaderCompiler
+		DEPENDS ${shaderName} ${SHADER_HEADERS} ShaderCompiler
 	)
 
 	set(TMP_LIST ${${binaryLocation}})

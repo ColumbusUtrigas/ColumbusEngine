@@ -48,6 +48,9 @@ namespace Columbus::Geometry
 		}
 	};
 
+	// Conservative intersection: invalid bounds are retained.
+	bool BoxSphereIntersection(const Box& Bounds, const Sphere& SphereBounds, float Tolerance = 0.0f);
+
 	HitPoint RayPlaneIntersection(const Ray& R, const Plane& P);
 	HitPoint RayTriangleIntersection(const Ray& R, const Triangle& Tri);
 	HitPoint RaySphereIntersection(const Ray& R, const Sphere& S);

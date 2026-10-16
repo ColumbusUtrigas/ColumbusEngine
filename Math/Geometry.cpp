@@ -1,8 +1,22 @@
 #include "Geometry.h"
-#include "Matrix.h"
+#include <algorithm>
+#include <cmath>
 
 namespace Columbus::Geometry
 {
+
+	bool BoxSphereIntersection(const Box& Bounds, const Sphere& SphereBounds, float Tolerance)
+	{
+		if (!Bounds.IsValid() || !std::isfinite(SphereBounds.Radius))
+		{
+			return true;
+		}
+
+		const Vector3 Closest = SphereBounds.Center.Clamped(Bounds.Min, Bounds.Max);
+		const Vector3 Delta   = Closest - SphereBounds.Center;
+		const float   Radius  = std::max(SphereBounds.Radius, 0.0f) + Tolerance;
+		return Vector3::Dot(Delta, Delta) <= Radius * Radius;
+	}
 
 	// *************************************
 	// Triangle functions

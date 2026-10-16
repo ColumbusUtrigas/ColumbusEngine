@@ -1,8 +1,5 @@
 #include <Graphics/Camera.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 namespace Columbus
 {
@@ -62,12 +59,8 @@ namespace Columbus
 
 	void Camera::Ortho(float Left, float Right, float Bottom, float Top, float Near, float Far)
 	{
-		// NOT IMPLEMENTED PROPERLY
-		DEBUGBREAK();
-
-		// transpose because GLM uses column major and the engine uses row major layout
-		auto mat = glm::transpose(glm::ortho(Left, Right, Bottom, Top, Near, Far));
-		memcpy(&ProjectionMatrix.M[0][0], glm::value_ptr(mat), 64);
+		ProjectionMatrix.Ortho(Left, Right, Bottom, Top, Near, Far);
+		ViewProjection = ProjectionMatrix * ViewMatrix;
 	}
 
 	float Camera::GetFovX() const

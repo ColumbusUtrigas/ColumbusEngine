@@ -84,6 +84,13 @@ namespace Columbus
 			return &dense[sparse[handle.index].dense_index];
 		}
 
+
+		Handle GetHandleAtDenseIndex(size_t index) const
+		{
+			const u32 sparseIndex = dense_to_sparse.at(index);
+			return { sparseIndex, sparse[sparseIndex].generation };
+		}
+
 		int GetDenseIndex(Handle handle) const
 		{
 			if (!IsValid(handle))

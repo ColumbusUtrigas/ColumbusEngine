@@ -52,10 +52,12 @@ namespace Columbus
 
 		struct Permutation
 		{
+			int AlphaMasked = 0;
 		};
 
 		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
 		{
+			Builder.Axis("ALPHA_MASKED", &Permutation::AlphaMasked);
 		}
 
 		struct PipelinePermutation
@@ -178,7 +180,10 @@ namespace Columbus
 
 			ReflectionCaptures::ShaderResources ReflectionCaptures;
 
-			ShaderArray<ShaderStorageTexture> ShadowTextures;
+			ShaderArray<ShaderReadStorageTexture> ShadowTextures;
+			ShaderReadBuffer                      ShadowViews;
+			ShaderStaticSampler                   ShadowSampler;
+			ShaderArray<ShaderSampledTexture>     ShadowAtlases;
 		};
 
 		static void Bind(ShaderBinder& Binder, const Parameters& Params)
@@ -197,7 +202,11 @@ namespace Columbus
 			Binder.Bind(Params.LTC1, 0, 11);
 			Binder.Bind(Params.LTC2, 0, 12);
 			Binder.Bind(Params.LTCSampler, 0, 13);
+
 			Binder.Bind(Params.ShadowTextures, 1, 0);
+			Binder.Bind(Params.ShadowViews, 3, 0);
+			Binder.Bind(Params.ShadowSampler, 3, 1);
+			Binder.Bind(Params.ShadowAtlases, 3, 2);
 			ReflectionCaptures::BindReflectionCaptureResources(Binder, Params.ReflectionCaptures, 2);
 		}
 	}; // DeferredLightingShader
@@ -298,16 +307,35 @@ namespace Columbus
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterGBufferPass, Context);
 
 			GBufferBasePassShader::Parameters GBufferParams;
-			GraphicsPipeline* Pipeline = GetGraphicsPipeline<GBufferBasePassShader>(Context, GBufferBasePassShader::Permutation {}, GBufferBasePassShader::PipelinePermutation {});
-			Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
-			Context.BindGraphicsParameters<GBufferBasePassShader>(Pipeline, GBufferParams);
-			Context.BindGPUScene(Pipeline, false);
+
+			GraphicsPipeline* Pipelines[2]  = {};
+			GraphicsPipeline* BoundPipeline = nullptr;
 
 			for (int i = 0; i < Context.Scene->Meshes.Size(); i++)
 			{
 				const GPUSceneMesh& Mesh = Context.Scene->Meshes.Data()[i];
-				if (IsTransparentMesh(Context.Scene, Mesh))
+				const Material*     Mat  = Context.Scene->Materials.Get(Mesh.MaterialId);
+
+				if (Mat && (Mat->ShadingMode == MaterialShadingMode::Transparent ||
+				            Mat->ShadingMode == MaterialShadingMode::Refractive))
+				{
 					continue;
+				}
+
+				const int          AlphaMasked = Mat && Mat->ShadingMode == MaterialShadingMode::Masked ? 1 : 0;
+				GraphicsPipeline*& Pipeline    = Pipelines[AlphaMasked];
+				if (!Pipeline)
+				{
+					Pipeline = GetGraphicsPipeline<GBufferBasePassShader>(Context, { AlphaMasked }, {});
+				}
+				// Preserve scene order; only change the shader when coverage changes.
+				if (Pipeline != BoundPipeline)
+				{
+					Context.CommandBuffer->BindGraphicsPipeline(Pipeline);
+					Context.BindGraphicsParameters<GBufferBasePassShader>(Pipeline, GBufferParams);
+					Context.BindGPUScene(Pipeline, false);
+					BoundPipeline = Pipeline;
+				}
 
 				PerObjectParameters Parameters;
 				Parameters.ObjectId = i;
@@ -362,7 +390,7 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
-		static constexpr uint32_t MaxShadowTextures = 1000;
+		static constexpr uint32_t MaxShadowTextures = RTShadowMaskDescriptorCount;
 
 		TextureDesc2 Desc {
 			.Usage = TextureUsage::StorageSampled | TextureUsage::RenderTargetColor,
@@ -381,12 +409,16 @@ namespace Columbus
 
 		struct DeferredLightingPassData
 		{
-			DeferredLightingPassData(RenderGraphAllocator& Allocator) :
-				ShadowTextures(Allocator) {}
+			DeferredLightingPassData(RenderGraphAllocator& Allocator) : ShadowTextures(Allocator), ShadowAtlases(Allocator)
+			{
+			}
 
 			DeferredLightingShader::Parameters Params;
-			ReflectionCaptures::Prepared ReflectionCaptures;
-			RenderGraphDynamicArray<ShaderStorageTexture> ShadowTextures;
+			ReflectionCaptures::Prepared       ReflectionCaptures;
+
+			RenderGraphDynamicArray<ShaderReadStorageTexture> ShadowTextures;
+			RenderGraphDynamicArray<ShaderSampledTexture>     ShadowAtlases;
+
 			uint32_t ShadowTextureCount = 0;
 		};
 
@@ -417,13 +449,47 @@ namespace Columbus
 		PassData.ShadowTextures.reserve(ShadowTextureCount);
 		for (size_t i = 0; i < ShadowTextureCount; i++)
 		{
-			ShaderStorageTexture ShadowTexture;
+			ShaderReadStorageTexture ShadowTexture;
 			ShadowTexture = DeferredContext.LightRenderInfos[i].RTShadow;
 			PassData.ShadowTextures.push_back(ShadowTexture);
 		}
 		PassData.ShadowTextureCount = (uint32_t)ShadowTextureCount;
 		PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), PassData.ShadowTextureCount);
 
+		if (PassData.ShadowTextures.empty())
+		{
+			TextureDesc2 FallbackDesc;
+			FallbackDesc.Width = FallbackDesc.Height = 1;
+			FallbackDesc.Format = TextureFormat::R8;
+			FallbackDesc.Usage  = TextureUsage::Storage;
+			const auto Fallback = Graph.CreateTexture(FallbackDesc, "FullyLitShadow");
+			ShaderMemsetTexture(Graph, Fallback, Vector4(1));
+			ShaderReadStorageTexture Texture;
+			Texture = Fallback;
+			PassData.ShadowTextures.push_back(Texture);
+			PassData.ShadowTextureCount = 1;
+			PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), 1);
+		}
+		PassData.Params.ShadowViews                      = DeferredContext.Shadows.Frame.ViewBuffer;
+		PassData.Params.ShadowSampler.Desc               = SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>();
+		PassData.Params.ShadowSampler.Desc.CompareEnable = true;
+		PassData.Params.ShadowSampler.Desc.CompareOp     = ComparisonFunc::GEqual;
+
+		for (const auto Atlas : DeferredContext.Shadows.Frame.Atlases)
+		{
+			ShaderSampledTexture Texture{ TextureBindingFlags::AspectDepth };
+			Texture = Atlas;
+			PassData.ShadowAtlases.push_back(Texture);
+		}
+
+		// Allocate the descriptor set even when the current scene has no raster shadows.
+		if (PassData.ShadowAtlases.empty())
+		{
+			ShaderSampledTexture Fallback{ TextureBindingFlags::AspectDepth };
+			Fallback = Textures.GBufferDS;
+			PassData.ShadowAtlases.push_back(Fallback);
+		}
+		PassData.Params.ShadowAtlases.Set(PassData.ShadowAtlases.data(), (u32)PassData.ShadowAtlases.size());
 		Dependencies.Bind<DeferredLightingShader>(PassData.Params);
 
 		Graph.AddPass("DeferredLightingPass", RenderGraphPassType::Compute, Parameters, Dependencies, [View, PassData = std::move(PassData)](RenderGraphContext& Context) mutable
@@ -434,6 +500,7 @@ namespace Columbus
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			ReflectionCaptures::SetShaderResources(PassData.Params.ReflectionCaptures, PassData.ReflectionCaptures, Context.Scene->BRDF_LUT);
 			PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), PassData.ShadowTextureCount);
+			PassData.Params.ShadowAtlases.Set(PassData.ShadowAtlases.data(), (u32)PassData.ShadowAtlases.size());
 			Context.BindComputeParameters<DeferredLightingShader>(Pipeline, PassData.Params);
 
 			const iVector2 GroupCount = (View.RenderSize + (GroupSize - 1)) / GroupSize;
@@ -505,6 +572,7 @@ namespace Columbus
 
 		RenderPrepareSkyLut(Graph, View, Textures, DeferredContext);
 		PrepareTiledLights(Graph, View);
+		RenderShadowMaps(Graph, DeferredContext.Shadows.Frame);
 		RenderGBufferPass(Graph, View, Textures);
 		RenderGBufferDecals(Graph, View, Textures);
 

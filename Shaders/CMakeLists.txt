@@ -1,4 +1,5 @@
 file(GLOB_RECURSE SHADER_SOURCES *.hlsl *.glsl *.hlsli)
+file(GLOB_RECURSE SHADER_HEADERS CONFIGURE_DEPENDS *.hlsli)
 group_files_by_directory(SRCS ${SHADER_SOURCES})
 
 # disable visual studio's default shader compilation that fails my thing
@@ -47,7 +48,10 @@ compile_shader_hlsl(IrradianceVolume/IrradianceVolumeRelocateClassify.hlsl main:
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeApply.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(IrradianceVolume/IrradianceVolumeVisualise.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
-compile_shader_hlsl(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
+# Opaque depth draws have no fragment stage; both variants share vertex/coverage code.
+compile_shader_hlsl_permutation(ShadowDepth.hlsl VSMain:vs Opaque SHADER_BINARIES ALPHA_MASKED=0)
+compile_shader_hlsl_permutation(ShadowDepth.hlsl VSMain:vs,PSMain:ps Masked SHADER_BINARIES ALPHA_MASKED=1)
+compile_shader_hlsl_permutation_ranges(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES ALPHA_MASKED 0 1)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(ForwardTransparent.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
 compile_shader_hlsl(RefractionBlur.hlsl main:cs SHADER_BINARIES)

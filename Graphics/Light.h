@@ -20,8 +20,8 @@ namespace Columbus
 
 	enum class ELightFlags : u32
 	{
-		TwoSided = 1 << 0,
-		Shadow   = 1 << 1,
+		TwoSided = 1 << 0, Shadow = 1 << 1,
+		RayTracedShadow = 1 << 2, // Shadow enabled without this bit selects raster maps.
 	};
 	IMPLEMENT_ENUM_CLASS_BITOPS(ELightFlags);
 

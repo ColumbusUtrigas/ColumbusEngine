@@ -8,6 +8,7 @@
 #include "Graphics/Vulkan/AccelerationStructureVulkan.h"
 #include "Graphics/Vulkan/Common.h"
 #include "Profiling/Profiling.h"
+#include "System/Log.h"
 #include "TypeConversions.h"
 #include "DeviceVulkan.h"
 
@@ -452,7 +453,6 @@ namespace Columbus
 		VkAttachmentReference VkDepthStencilAttachmentRef;
 		VkAttachmentReference* pVkDepthStencilAttachmentRef = nullptr;
 
-		VkPipelineStageFlags SrcStageMask = 0;
 		VkPipelineStageFlags DstStageMask = 0;
 		VkAccessFlags DstAccessMask = 0;
 
@@ -475,7 +475,7 @@ namespace Columbus
 			{
 				Attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // TODO
 			}
-			Attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // TODO
+			Attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 			VkAttachmentReference Reference{};
 			Reference.attachment = i;
@@ -483,16 +483,14 @@ namespace Columbus
 			switch (Attachments[i].Type)
 			{
 			case AttachmentType::Color:
-				SrcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 				DstStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				DstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				DstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 				Reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 				VkColorAttachmentRefs.push_back(Reference);
 				break;
 			case AttachmentType::DepthStencil:
-				SrcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-				DstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-				DstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				DstStageMask |= (VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+				DstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 				Reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 				VkDepthStencilAttachmentRef = Reference;
 				pVkDepthStencilAttachmentRef = &VkDepthStencilAttachmentRef;
@@ -511,8 +509,8 @@ namespace Columbus
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependency.dstSubpass = 0;
-		dependency.srcStageMask = SrcStageMask;
-		dependency.srcAccessMask = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		dependency.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 		dependency.dstStageMask = DstStageMask;
 		dependency.dstAccessMask = DstAccessMask;
 
@@ -1346,8 +1344,8 @@ namespace Columbus
 		samplerInfo.mipLodBias = Desc.LodBias;
 		samplerInfo.anisotropyEnable = Desc.Anisotropy > 1;
 		samplerInfo.maxAnisotropy = Desc.Anisotropy;
-		samplerInfo.compareEnable = false; // TODO
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS; // TODO
+		samplerInfo.compareEnable = Desc.CompareEnable;
+		samplerInfo.compareOp = ComparisonFuncToVk(Desc.CompareOp);
 		samplerInfo.minLod = Desc.MinLOD;
 		samplerInfo.maxLod = Desc.MaxLOD;
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
@@ -1669,6 +1667,16 @@ namespace Columbus
 
 	VkDescriptorSet DeviceVulkan::_CreateDescriptorSet(const PipelineDescriptorSetLayoutsVulkan& SetLayouts, int Index)
 	{
+		const bool ValidIndex = Index >= 0 && Index < int(SetLayouts.UsedLayouts);
+		const bool HasLayout  = ValidIndex && SetLayouts.Layouts[Index] != VK_NULL_HANDLE;
+
+		if (!HasLayout)
+		{
+			Log::Error("Descriptor set %d is absent from the pipeline layout. Rebuild shaders for the active configuration.", Index);
+			COLUMBUS_ASSERT_MESSAGE(false, "Descriptor set is absent from the pipeline layout. Rebuild shaders for the active configuration.");
+			return VK_NULL_HANDLE;
+		}
+
 		// only for variable descriptor counts
 		VkDescriptorSetVariableDescriptorCountAllocateInfo descriptorSetCounts;
 		descriptorSetCounts.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO;
