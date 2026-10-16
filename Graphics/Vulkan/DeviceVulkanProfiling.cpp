@@ -38,21 +38,25 @@ namespace Columbus
 		CurrentFrame++;
 		CurrentFrame %= MaxFramesInFlight;
 
-		if (CurrentTimestampQuery[LastFrame] > 0)
+		for (const auto& Sample : ReadFrameTimings(LastFrame))
+			Sample.Counter->Time += Sample.Milliseconds;
+	}
+
+	std::vector<GPUProfilerVulkan::CounterTiming> GPUProfilerVulkan::ReadFrameTimings(int FrameIndex) const
+	{
+		COLUMBUS_ASSERT(FrameIndex >= 0 && FrameIndex < MaxFramesInFlight);
+		std::vector<CounterTiming> Result;
+		const int QueryCount = CurrentTimestampQuery[FrameIndex].load();
+		if (QueryCount == 0) return Result;
+		u64 Data[TimestampQueryCount];
+		Device->ReadQueryPoolTimestamps(Pools[FrameIndex], 0, QueryCount, Data, sizeof(Data));
+		for (int i = 0; i < CurrentMeasurement[FrameIndex]; ++i)
 		{
-			u64 Data[TimestampQueryCount];
-			Device->ReadQueryPoolTimestamps(Pools[LastFrame], 0, CurrentTimestampQuery[LastFrame], Data, TimestampQueryCount * sizeof(u64));
-
-			// update counters
-			for (int i = 0; i < CurrentMeasurement[LastFrame]; i++)
-			{
-				Measurement& Sample = Measurements[LastFrame][i];
-				const double diffNs = double(Data[Sample.EndTimestampId] - Data[Sample.StartTimestampId]) * Device->_DeviceProperties.properties.limits.timestampPeriod;
-				const double diffMs = diffNs / 1000000.0;
-
-				Sample.Counter->Time += diffMs;
-			}
+			const Measurement& Sample = Measurements[FrameIndex][i];
+			const double Nanoseconds = double(Data[Sample.EndTimestampId] - Data[Sample.StartTimestampId]) * Device->_DeviceProperties.properties.limits.timestampPeriod;
+			Result.push_back({Sample.Counter, Nanoseconds / 1000000.0});
 		}
+		return Result;
 	}
 
 	void GPUProfilerVulkan::Reset(CommandBufferVulkan* CommandBuffer)

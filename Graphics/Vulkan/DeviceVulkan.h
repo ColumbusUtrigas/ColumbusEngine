@@ -78,6 +78,14 @@ namespace Columbus
 		void BeginFrame();
 		void EndFrame();
 
+		struct CounterTiming
+		{
+			ProfileCounterGPU* Counter;
+			double Milliseconds;
+		};
+		// Read a completed frame slot without changing counters; caller must wait for its GPU work.
+		std::vector<CounterTiming> ReadFrameTimings(int FrameIndex) const;
+
 		void Reset(CommandBufferVulkan* CommandBuffer);
 		void BeginProfileCounter(ProfileMarkerGPU& Scoped, CommandBufferVulkan* CommandBuffer);
 		void EndProfileConter(ProfileMarkerGPU& Scoped, CommandBufferVulkan* CommandBuffer);
