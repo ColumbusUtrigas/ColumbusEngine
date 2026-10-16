@@ -153,10 +153,12 @@ namespace Columbus
 
 		struct Permutation
 		{
+			int UseTiledLights = 1;
 		};
 
 		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
 		{
+			Builder.Axis("USE_TILED_LIGHTS", &Permutation::UseTiledLights);
 		}
 
 		struct Parameters
@@ -173,6 +175,7 @@ namespace Columbus
 
 			ShaderReadBuffer LightsBuffer;
 			ShaderReadBuffer SceneBuffer;
+			ShaderReadBuffer LightTiles;
 
 			ShaderSampledTexture LTC1;
 			ShaderSampledTexture LTC2;
@@ -202,6 +205,11 @@ namespace Columbus
 			Binder.Bind(Params.LTC1, 0, 11);
 			Binder.Bind(Params.LTC2, 0, 12);
 			Binder.Bind(Params.LTCSampler, 0, 13);
+
+			if (Params.LightTiles.Ref != -1)
+			{
+				Binder.Bind(Params.LightTiles, 0, 14);
+			}
 
 			Binder.Bind(Params.ShadowTextures, 1, 0);
 			Binder.Bind(Params.ShadowViews, 3, 0);
@@ -435,6 +443,7 @@ namespace Columbus
 		PassData.Params.LightingOutput           = LightingTexture;
 		PassData.Params.LightsBuffer             = Graph.Scene->LightsBuffer;
 		PassData.Params.SceneBuffer              = Graph.Scene->SceneBuffer;
+		PassData.Params.LightTiles               = DeferredContext.LightTiles;
 		PassData.Params.LTC1                     = Graph.Scene->LTC_1;
 		PassData.Params.LTC2                     = Graph.Scene->LTC_2;
 		ReflectionCaptures::SetShaderResources(PassData.Params.ReflectionCaptures, PassData.ReflectionCaptures, Graph.Scene->BRDF_LUT);
@@ -496,7 +505,7 @@ namespace Columbus
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterLightingPass, Context);
 
-			ComputePipeline* Pipeline = GetComputePipeline<DeferredLightingShader>(Context, DeferredLightingShader::Permutation {});
+			ComputePipeline* Pipeline = GetComputePipeline<DeferredLightingShader>(Context, { PassData.Params.LightTiles.Ref != -1 ? 1 : 0 });
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			ReflectionCaptures::SetShaderResources(PassData.Params.ReflectionCaptures, PassData.ReflectionCaptures, Context.Scene->BRDF_LUT);
 			PassData.Params.ShadowTextures.Set(PassData.ShadowTextures.data(), PassData.ShadowTextureCount);
@@ -571,10 +580,10 @@ namespace Columbus
 		DeferredContext.LightRenderInfos.clear();
 
 		RenderPrepareSkyLut(Graph, View, Textures, DeferredContext);
-		PrepareTiledLights(Graph, View);
 		RenderShadowMaps(Graph, DeferredContext.Shadows.Frame);
 		RenderGBufferPass(Graph, View, Textures);
 		RenderGBufferDecals(Graph, View, Textures);
+		PrepareTiledLights(Graph, View, Textures, DeferredContext);
 
 		// TODO: only if it's needed
 		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);

@@ -4,6 +4,7 @@
 #define GPU_SCENE_NO_BINDINGS
 #include "GPUScene.hlsli"
 #include "ShadowMaps.hlsli"
+#include "TiledLightsCommon.hlsli"
 
 #define REFLECTION_CAPTURES_SET 2
 #include "ReflectionCaptures/ReflectionCapturesCommon.hlsli"
@@ -24,6 +25,10 @@
 [[vk::binding(11, 0)]] Texture2D LTC_1;
 [[vk::binding(12, 0)]] Texture2D LTC_2;
 [[vk::binding(13, 0)]] SamplerState LTC_Sampler;
+
+#if USE_TILED_LIGHTS
+[[vk::binding(14, 0)]] StructuredBuffer<uint> LightTiles;
+#endif
 
 [[vk::binding(0, 1)]] RWTexture2D<float> ShadowTextures[1000];
 
@@ -385,138 +390,155 @@ void main(uint3 dtid : SV_DispatchThreadID)
 	//float3 LightingSum = Lightmap * Albedo;
 	float3 LightingSum = float3(0, 0, 0);
 
-	// TODO: move lighting functions to a common header
-	for (uint i = 0; i < GPUSceneScene[0].LightsCount; i++)
+	const uint  LightsCount = GPUSceneScene[0].LightsCount;
+	const uint  WordCount   = GetLightTileWordCount(LightsCount);
+	const uint2 Tile        = Pixel / LightTileSize;
+	const uint  TileOffset  = (Tile.x + Tile.y * GetLightTileCount(GPUSceneScene[0].RenderSize).x) * WordCount;
+
+	// Enumerate set bits in light-index order, preserving the original accumulation order.
+	for (uint WordIndex = 0; WordIndex < WordCount; ++WordIndex)
 	{
-		GPULight Light = GPUSceneLights[i];
+#if USE_TILED_LIGHTS
+		uint LightMask = LightTiles[TileOffset + WordIndex];
+#else
+		const uint ValidBits = min(LightTileBits, LightsCount - WordIndex * LightTileBits);
+		uint LightMask = ValidBits == LightTileBits ? 0xffffffffu : (1u << ValidBits) - 1;
+#endif
 
-		float Shadow = 1.0f;
+		while (LightMask != 0)
+		{
+			const uint i = WordIndex * LightTileBits + firstbitlow(LightMask);
+			LightMask &= LightMask - 1;
+			GPULight Light = GPUSceneLights[i];
 
-		// Reject noncontributing local lights before performing PCF or loading an RT mask.
-		if ((Light.Type == GPULIGHT_POINT || Light.Type == GPULIGHT_SPOT) &&
-		    distance(WP, Light.Position.xyz) >= Light.Range)
-		{
-			continue;
-		}
+			float Shadow = 1.0f;
 
-		if (Light.Type == GPULIGHT_SPOT &&
-		    dot(normalize(Light.Position.xyz - WP), Light.Direction.xyz) <= Light.SizeOrSpotAngles.y)
-		{
-			continue;
-		}
-
-		if ((Light.Type == GPULIGHT_DIRECTIONAL || Light.Type == GPULIGHT_POINT || Light.Type == GPULIGHT_SPOT) &&
-		    dot(BRDF.N, Light.Type == GPULIGHT_DIRECTIONAL ? Light.Direction.xyz : normalize(Light.Position.xyz - WP)) <= 0)
-		{
-			continue;
-		}
-		if ((Light.Flags & GPULIGHT_FLAG_SHADOW) != 0)
-		{
-			if ((Light.Flags & GPULIGHT_FLAG_RAYTRACED_SHADOW) != 0)
+			// Reject noncontributing local lights before performing PCF or loading an RT mask.
+			if ((Light.Type == GPULIGHT_POINT || Light.Type == GPULIGHT_SPOT) &&
+			    distance(WP, Light.Position.xyz) >= Light.Range)
 			{
-				Shadow = ShadowTextures[NonUniformResourceIndex(Light.RTShadowMaskIndex)][Pixel].r;
+				continue;
 			}
-			else
+
+			if (Light.Type == GPULIGHT_SPOT &&
+			    dot(normalize(Light.Position.xyz - WP), Light.Direction.xyz) <= Light.SizeOrSpotAngles.y)
 			{
-				float CameraDepth = -mul(GPUSceneScene[0].CameraCur.ViewMatrix, float4(WP, 1)).z;
-				Shadow            = EvaluateRasterShadow(Light, WP, BRDF.N, CameraDepth);
+				continue;
 			}
-		}
 
-		float3 LightDir = Light.Direction.xyz;
-
-		float Attenuation = 0;
-		float Distance    = distance(WP, Light.Position.xyz);
-		float LightRange  = Light.Range;
-		
-		float3 LightValue = float3(0, 0, 0);
-
-		switch (Light.Type)
-		{
-		case GPULIGHT_DIRECTIONAL:
-			Attenuation = 1; // directional light doesn't attenuate
-			
-			LightValue = Shadow * Attenuation * Light.Color.rgb;
-			BRDF.L = LightDir;
-			LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
-			break;
-		case GPULIGHT_POINT:
-			Attenuation  = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0);
-			Attenuation *= Attenuation;
-			LightDir     = -normalize(WP - Light.Position.xyz);
-			
-			LightValue = Shadow * Attenuation * Light.Color.rgb;
-			BRDF.L = LightDir;
-			LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
-			break;
-		case GPULIGHT_SPOT:
-		{
-			Attenuation  = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0);
-			Attenuation *= Attenuation;
-			LightDir     = -normalize(WP - Light.Position.xyz);
-
-			float angle = saturate(dot(LightDir, Light.Direction.xyz));
-			float2 angles = Light.SizeOrSpotAngles;
-
-			Attenuation *= smoothstep(angles.y, angles.x, angle);
-
-			LightValue = Shadow * Attenuation * Light.Color.rgb;
-			BRDF.L = LightDir;
-			LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
-		}
-		break;
-		case GPULIGHT_RECTANGLE:
+			if ((Light.Type == GPULIGHT_DIRECTIONAL || Light.Type == GPULIGHT_POINT || Light.Type == GPULIGHT_SPOT) &&
+			    dot(BRDF.N, Light.Type == GPULIGHT_DIRECTIONAL ? Light.Direction.xyz : normalize(Light.Position.xyz - WP)) <= 0)
 			{
-				// TODO: make it more stable
-				float3x3 LTC_Axis = AreaLightBasis(Light);
-
-				float3 points[4];
-				float2 halfSize = Light.SizeOrSpotAngles;
-				float3 ex = LTC_Axis[0] * halfSize.x;
-				float3 ey = LTC_Axis[1] * halfSize.y;
-
-				points[0] = Light.Position.xyz - ex - ey;
-				points[1] = Light.Position.xyz + ex - ey;
-				points[2] = Light.Position.xyz + ex + ey;
-				points[3] = Light.Position.xyz - ex + ey;
-
-				bool twoSided = (Light.Flags & GPULIGHT_FLAG_TWOSIDED) != 0;
-				
-				float3 diffuse = LTC_Evaluate_Rect(BRDF.N, BRDF.V, WP, LTC_identity, points, twoSided) * BRDF.Albedo * MetalFactor;
-                float3 specular = LTC_Evaluate_Rect(BRDF.N, BRDF.V, WP, Minv, points, twoSided);
-				float3 specularColor = float3(0.4, 0.4, 0.4);
-				specular *= specularColor*t2.x + (1.0 - specularColor)*t2.y;
-
-				LightingSum += (diffuse + specular) * Light.Color.rgb * Shadow;
-            }
-			break;
-
-		case GPULIGHT_DISC:
+				continue;
+			}
+			if ((Light.Flags & GPULIGHT_FLAG_SHADOW) != 0)
 			{
-				float3x3 LTC_Axis = AreaLightBasis(Light);
+				if ((Light.Flags & GPULIGHT_FLAG_RAYTRACED_SHADOW) != 0)
+				{
+					Shadow = ShadowTextures[NonUniformResourceIndex(Light.RTShadowMaskIndex)][Pixel].r;
+				}
+				else
+				{
+					float CameraDepth = -mul(GPUSceneScene[0].CameraCur.ViewMatrix, float4(WP, 1)).z;
+					Shadow            = EvaluateRasterShadow(Light, WP, BRDF.N, CameraDepth);
+				}
+			}
 
-				float3 points[4];
-				float2 halfSize = Light.SizeOrSpotAngles;
-				float3 ex = LTC_Axis[0] * halfSize.x;
-				float3 ey = LTC_Axis[1] * halfSize.y;
+			float3 LightDir = Light.Direction.xyz;
 
-				points[0] = Light.Position.xyz - ex - ey;
-				points[1] = Light.Position.xyz + ex - ey;
-				points[2] = Light.Position.xyz + ex + ey;
-				points[3] = Light.Position.xyz - ex + ey;
+			float Attenuation = 0;
+			float Distance    = distance(WP, Light.Position.xyz);
+			float LightRange  = Light.Range;
 
-				bool twoSided = (Light.Flags & 1) != 0;
+			float3 LightValue = float3(0, 0, 0);
 
-				float3 diffuse = LTC_Evaluate_Disc(BRDF.N, BRDF.V, WP, LTC_identity, points, twoSided) * BRDF.Albedo * MetalFactor;
-                //float3 specular = LTC_Evaluate_Disc(BRDF.N, BRDF.V, WP, Minv, points, twoSided);
-				float3 specularColor = float3(0.4, 0.4, 0.4);
-				// specular *= specularColor*t2.x + (1.0 - specularColor)*t2.y;
+			switch (Light.Type)
+			{
+			case GPULIGHT_DIRECTIONAL:
+				Attenuation = 1; // directional light doesn't attenuate
 
-				LightingSum += (diffuse) * Light.Color.rgb * Shadow;
+				LightValue = Shadow * Attenuation * Light.Color.rgb;
+				BRDF.L = LightDir;
+				LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
+				break;
+			case GPULIGHT_POINT:
+				Attenuation  = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0);
+				Attenuation *= Attenuation;
+				LightDir     = -normalize(WP - Light.Position.xyz);
+
+				LightValue = Shadow * Attenuation * Light.Color.rgb;
+				BRDF.L = LightDir;
+				LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
+				break;
+			case GPULIGHT_SPOT:
+			{
+				Attenuation  = clamp(1.0 - Distance * Distance / (LightRange * LightRange), 0.0, 1.0);
+				Attenuation *= Attenuation;
+				LightDir     = -normalize(WP - Light.Position.xyz);
+
+				float angle = saturate(dot(LightDir, Light.Direction.xyz));
+				float2 angles = Light.SizeOrSpotAngles;
+
+				Attenuation *= smoothstep(angles.y, angles.x, angle);
+
+				LightValue = Shadow * Attenuation * Light.Color.rgb;
+				BRDF.L = LightDir;
+				LightingSum += EvaluateBRDFCos(BRDF) * LightValue;
 			}
 			break;
-		default:
-			break;
+			case GPULIGHT_RECTANGLE:
+				{
+					// TODO: make it more stable
+					float3x3 LTC_Axis = AreaLightBasis(Light);
+
+					float3 points[4];
+					float2 halfSize = Light.SizeOrSpotAngles;
+					float3 ex = LTC_Axis[0] * halfSize.x;
+					float3 ey = LTC_Axis[1] * halfSize.y;
+
+					points[0] = Light.Position.xyz - ex - ey;
+					points[1] = Light.Position.xyz + ex - ey;
+					points[2] = Light.Position.xyz + ex + ey;
+					points[3] = Light.Position.xyz - ex + ey;
+
+					bool twoSided = (Light.Flags & GPULIGHT_FLAG_TWOSIDED) != 0;
+
+					float3 diffuse = LTC_Evaluate_Rect(BRDF.N, BRDF.V, WP, LTC_identity, points, twoSided) * BRDF.Albedo * MetalFactor;
+					float3 specular = LTC_Evaluate_Rect(BRDF.N, BRDF.V, WP, Minv, points, twoSided);
+					float3 specularColor = float3(0.4, 0.4, 0.4);
+					specular *= specularColor*t2.x + (1.0 - specularColor)*t2.y;
+
+					LightingSum += (diffuse + specular) * Light.Color.rgb * Shadow;
+				}
+				break;
+
+			case GPULIGHT_DISC:
+				{
+					float3x3 LTC_Axis = AreaLightBasis(Light);
+
+					float3 points[4];
+					float2 halfSize = Light.SizeOrSpotAngles;
+					float3 ex = LTC_Axis[0] * halfSize.x;
+					float3 ey = LTC_Axis[1] * halfSize.y;
+
+					points[0] = Light.Position.xyz - ex - ey;
+					points[1] = Light.Position.xyz + ex - ey;
+					points[2] = Light.Position.xyz + ex + ey;
+					points[3] = Light.Position.xyz - ex + ey;
+
+					bool twoSided = (Light.Flags & 1) != 0;
+
+					float3 diffuse = LTC_Evaluate_Disc(BRDF.N, BRDF.V, WP, LTC_identity, points, twoSided) * BRDF.Albedo * MetalFactor;
+					//float3 specular = LTC_Evaluate_Disc(BRDF.N, BRDF.V, WP, Minv, points, twoSided);
+					float3 specularColor = float3(0.4, 0.4, 0.4);
+					// specular *= specularColor*t2.x + (1.0 - specularColor)*t2.y;
+
+					LightingSum += (diffuse) * Light.Color.rgb * Shadow;
+				}
+				break;
+			default:
+				break;
+			}
 		}
 	}
 

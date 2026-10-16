@@ -100,6 +100,9 @@ namespace Columbus
 		std::vector<GPULightRenderInfo> LightRenderInfos; // Compact RT mask list, not indexed by scene light.
 		ShadowRenderState               Shadows;
 
+		// Rebuilt for the current view/frame; the render graph owns the pooled buffer.
+		RenderGraphBufferRef LightTiles = -1;
+
 		// prepared once per view per frame, read by render passes
 		BakedLightingPrepared BakedLighting;
 
@@ -190,7 +193,7 @@ namespace Columbus
 
 	SceneTextures CreateSceneTextures(RenderGraph& Graph, const RenderView& View, HistorySceneTextures& History);
 	void ExtractHistorySceneTextures(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, HistorySceneTextures& HistoryTextures);
-	void PrepareTiledLights(RenderGraph& Graph, const RenderView& View);
+	void PrepareTiledLights(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 	void RenderGBufferPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures);
 	RenderGraphTextureRef RenderDeferredLightingPass(RenderGraph& Graph, const RenderView& View, const SceneTextures& Textures, DeferredRenderContext& DeferredContext);
 	void DebugOverlayPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, RenderGraphTextureRef OverlayTexture); // only for DebugRender objects
