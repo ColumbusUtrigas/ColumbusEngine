@@ -70,6 +70,14 @@ endfunction()
 ########### SHADER FUNCTIONS ###########
 function(compile_shader_impl shaderName stages outputStem binaryLocation)
 	set(DEFINES ${ARGN})
+	get_source_file_property(NATIVE_16BIT ${shaderName} NATIVE_16BIT_TYPES)
+	get_source_file_property(NATIVE_16BIT_CONDITION ${shaderName} NATIVE_16BIT_TYPES_CONDITION)
+	set(COMPILER_OPTIONS)
+	if (NATIVE_16BIT_CONDITION)
+		list(APPEND COMPILER_OPTIONS --native-16bit-if ${NATIVE_16BIT_CONDITION})
+	elseif (NATIVE_16BIT)
+		list(APPEND COMPILER_OPTIONS --native-16bit)
+	endif()
 	get_filename_component(STEM ${shaderName} NAME_WLE)
 	get_filename_component(SHADER_PATH ${shaderName} ABSOLUTE)
 	get_filename_component(DIR ${shaderName} DIRECTORY)
@@ -88,7 +96,7 @@ function(compile_shader_impl shaderName stages outputStem binaryLocation)
 		OUTPUT ${SPIRV}
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
-		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "${BINARIES_DIR}/$<CONFIG>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} ${DEFINES}
+		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "${BINARIES_DIR}/$<CONFIG>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} ${COMPILER_OPTIONS} ${DEFINES}
 		DEPENDS ${shaderName} ${SHADER_HEADERS} ShaderCompiler
 	)
 
@@ -126,6 +134,14 @@ function(compile_shader_permutation_ranges_impl shaderName stages binaryLocation
 		message(FATAL_ERROR "Shader permutation ranges must be specified as triples: MACRO MIN MAX")
 	endif()
 
+	get_source_file_property(NATIVE_16BIT ${shaderName} NATIVE_16BIT_TYPES)
+	get_source_file_property(NATIVE_16BIT_CONDITION ${shaderName} NATIVE_16BIT_TYPES_CONDITION)
+	set(COMPILER_OPTIONS)
+	if (NATIVE_16BIT_CONDITION)
+		list(APPEND COMPILER_OPTIONS --native-16bit-if ${NATIVE_16BIT_CONDITION})
+	elseif (NATIVE_16BIT)
+		list(APPEND COMPILER_OPTIONS --native-16bit)
+	endif()
 	get_filename_component(STEM ${shaderName} NAME_WLE)
 	get_filename_component(SHADER_PATH ${shaderName} ABSOLUTE)
 	get_filename_component(DIR ${shaderName} DIRECTORY)
@@ -182,7 +198,7 @@ function(compile_shader_permutation_ranges_impl shaderName stages binaryLocation
 		OUTPUT ${SPIRV}
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_OUTPUT_DIR}"
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${SPIRV_DIR}"
-		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "${BINARIES_DIR}/$<CONFIG>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} ${PERMUTATION_AXIS_ARGS} ${PERMUTATION_ARGS}
+		COMMAND ${CMAKE_COMMAND} -E env DXC_PATH=${DXC_PATH} "${BINARIES_DIR}/$<CONFIG>/ShaderCompiler" ${SPIRV} ${SHADER_PATH} ${stages} ${COMPILER_OPTIONS} ${PERMUTATION_AXIS_ARGS} ${PERMUTATION_ARGS}
 		DEPENDS ${shaderName} ${SHADER_HEADERS} ShaderCompiler
 	)
 

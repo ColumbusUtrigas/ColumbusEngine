@@ -172,6 +172,13 @@ struct GPUMaterialSampledData
     float  AlphaCutoff;
 };
 
+// Cached diffuse lighting needs no normal map or ORM texture sample.
+struct GPUMaterialDiffuseData
+{
+    float3 Albedo;
+    float3 Emissive;
+};
+
 namespace GPUScene
 {
 #ifndef GPU_SCENE_NO_BINDINGS
@@ -298,6 +305,26 @@ namespace GPUScene
         }
     }
 	
+    GPUMaterialDiffuseData SampleDiffuseMaterial(uint MaterialId, float2 UV)
+    {
+        GPUMaterialDiffuseData Result;
+        Result.Albedo   = float3(1, 1, 1);
+        Result.Emissive = float3(0, 0, 0);
+
+        if (MaterialId != -1)
+        {
+            const GPUSceneMaterialCompact Material = GPUSceneMaterials[NonUniformResourceIndex(MaterialId)];
+            Result.Albedo = SampleTextureWithDefault(Material.AlbedoId, UV, float4(1, 1, 1, 1)).rgb * Material.AlbedoFactor.rgb;
+
+            if (any(Material.EmissiveFactor.rgb != 0))
+            {
+                Result.Emissive = SampleTextureWithDefault(Material.EmissiveId, UV, float4(1, 1, 1, 1)).rgb * Material.EmissiveFactor.rgb;
+            }
+        }
+
+        return Result;
+    }
+
     // Reuse an albedo sample when a raster pass has already tested its alpha.
     GPUMaterialSampledData SampleMaterial(GPUSceneMaterialCompact Material, float2 UV, float4 AlbedoSample)
     {

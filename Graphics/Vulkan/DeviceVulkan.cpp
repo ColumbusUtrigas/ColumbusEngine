@@ -80,9 +80,17 @@ namespace Columbus
 		_Vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 		_Vulkan12Features.pNext = ENABLE_RAY_TRACING ? &_RayTracingFeatures : nullptr;
 		_DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		_DeviceFeatures.pNext = &_Vulkan12Features;
+		_Vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		_Vulkan11Features.pNext = &_Vulkan12Features;
+		_DeviceFeatures.pNext = &_Vulkan11Features;
 
 		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &_DeviceFeatures);
+
+		// Only enable the Vulkan 1.1 feature required by native SHaRC buffer storage.
+		const VkBool32 StorageBuffer16BitAccess = _Vulkan11Features.storageBuffer16BitAccess;
+		_Vulkan11Features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+		_Vulkan11Features.pNext = &_Vulkan12Features;
+		_Vulkan11Features.storageBuffer16BitAccess = StorageBuffer16BitAccess;
 
 		_RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 		_RayTracingProperties.pNext = nullptr;
@@ -404,6 +412,12 @@ namespace Columbus
 				RemoveProfilingCount(CountingCounter_Vulkan_PipelineLayouts, 1);
 			}
 		}
+	}
+
+	bool DeviceVulkan::SupportsRadianceCache() const
+	{
+		return SupportsRayTracing() && _DeviceFeatures.features.shaderInt64 && _Vulkan12Features.shaderFloat16 &&
+		       _Vulkan12Features.shaderBufferInt64Atomics && _Vulkan11Features.storageBuffer16BitAccess;
 	}
 
 	bool DeviceVulkan::SupportsRayTracing() const

@@ -99,6 +99,7 @@ namespace Columbus
 
 		std::vector<GPULightRenderInfo> LightRenderInfos; // Compact RT mask list, not indexed by scene light.
 		ShadowRenderState               Shadows;
+		RadianceCache::State            RadianceCache;
 
 		// Rebuilt for the current view/frame; the render graph owns the pooled buffer.
 		RenderGraphBufferRef LightTiles = -1;

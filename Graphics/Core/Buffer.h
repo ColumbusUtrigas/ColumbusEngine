@@ -44,8 +44,8 @@ namespace Columbus
 		BufferUsage Usage = BufferUsage::Static;
 		BufferType BindFlags = BufferType::Array;
 		BufferCpuAccess CpuAccess = BufferCpuAccess::Write;
-		uint32 MiscFlags;
-		uint32 StructureByteStride;
+		uint32 MiscFlags = 0;
+		uint32 StructureByteStride = 0;
 		bool UsedInAccelerationStructure = false;
 		bool HostVisible = false; // TODO: should this be separated into a buffer type?
 

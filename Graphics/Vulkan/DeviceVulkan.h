@@ -195,6 +195,7 @@ namespace Columbus
 
 		VkPhysicalDeviceVulkan12Properties _Vulkan12Properties;
 		VkPhysicalDeviceVulkan12Features _Vulkan12Features;
+		VkPhysicalDeviceVulkan11Features _Vulkan11Features{};
 
 		VkPhysicalDeviceAccelerationStructurePropertiesKHR _AccelerationStructureProperties;
 		VkPhysicalDeviceAccelerationStructureFeaturesKHR _AccelerationStructureFeatures;
@@ -247,6 +248,7 @@ namespace Columbus
 
 		// Features
 		bool SupportsRayTracing() const;
+		bool SupportsRadianceCache() const;
 		bool SupportsRayQuery() const;
 		u64 GetUsedDeviceLocalMemoryBytes() const;
 

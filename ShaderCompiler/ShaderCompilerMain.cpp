@@ -1,4 +1,5 @@
 #include <charconv>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -153,7 +154,7 @@ std::vector<int32_t> GetPermutationAxisValues(const std::vector<CompiledShaderPe
 	return Values;
 }
 
-CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& TmpOutput, const std::string& EntryPoint, const std::vector<std::string>& Defines, ShaderType Stage)
+CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& TmpOutput, const std::string& EntryPoint, const std::vector<std::string>& Defines, ShaderType Stage, bool Native16Bit)
 {
 	std::string DefinesParameters;
 	for (const auto& Define : Defines)
@@ -187,8 +188,19 @@ CompiledShaderBytecode CompileStage(const std::string& Path, const std::string& 
 
 		// ${DXC} -E main -DPIXEL_SHADER -spirv -T ps_6_3 -fspv-reflect -fspv-target-env=vulkan1.2 -Zi Tonemap.hlsl
 
+		if (Native16Bit)
+		{
+			SpvExtensions += "-enable-16bit-types -fspv-extension=SPV_KHR_16bit_storage ";
+		}
+
+		std::string Profile = ShaderStageToDxcStage(Stage);
+		if (Native16Bit)
+		{
+			Profile.replace(Profile.find("_6_"), 4, "_6_6");
+		}
+
 		// -Zpr will force row-major layout
-		CommandLine = std::format("{} {} -E {} -T {} {} -fspv-preserve-bindings -fspv-target-env=vulkan1.2 -spirv -Zi -Vd -Zpr {} -Fo {}", DxcPath, DefinesParameters, EntryPoint, ShaderStageToDxcStage(Stage), SpvExtensions, Path, TmpOutput);
+		CommandLine = std::format("{} {} -E {} -T {} {} -fspv-preserve-bindings -fspv-target-env=vulkan1.2 -spirv -Zi -Vd -Zpr {} -Fo {}", DxcPath, DefinesParameters, EntryPoint, Profile, SpvExtensions, Path, TmpOutput);
 	} else
 	{
 		printf("Compiling as GLSL\n");
@@ -266,11 +278,14 @@ CompiledShaderPermutation CompilePermutation(
 	const std::vector<CompiledShaderPermutationAxis>& Axes,
 	const std::filesystem::path& InputPath,
 	const std::string& OutputPath,
-	const std::vector<std::string>& StagesDivided)
+	const std::vector<std::string>& StagesDivided, bool Native16Bit, const std::string& Native16BitCondition)
 {
 	CompiledShaderPermutation Permutation;
 	Permutation.Name = Name;
 	Permutation.Defines = GlobalDefines;
+	const bool ConditionalNative16Bit = !Native16BitCondition.empty() &&
+		(std::find(GlobalDefines.begin(), GlobalDefines.end(), Native16BitCondition) != GlobalDefines.end() ||
+		 std::find(GlobalDefines.begin(), GlobalDefines.end(), Native16BitCondition + "=1") != GlobalDefines.end());
 	Permutation.AxisValues = GetPermutationAxisValues(Axes, GlobalDefines);
 
 	for (const auto& StageStringFormatted : StagesDivided)
@@ -299,7 +314,7 @@ CompiledShaderPermutation CompilePermutation(
 		Defines.push_back(DefineForShaderStage(Stage));
 		Defines.insert(Defines.end(), GlobalDefines.begin(), GlobalDefines.end());
 
-		Permutation.Bytecodes.push_back(CompileStage(InputPath.string(), OutputPath + "." + Name + ".tmp", EntryPoint, Defines, Stage));
+		Permutation.Bytecodes.push_back(CompileStage(InputPath.string(), OutputPath + "." + Name + ".tmp", EntryPoint, Defines, Stage, Native16Bit || ConditionalNative16Bit));
 	}
 
 	if (Permutation.Bytecodes.empty())
@@ -318,6 +333,7 @@ int main(int argc, char** argv)
 		printf("Usage: ShaderCompiler [output] [input] [stages, comma-separated, with entrypoints] [defines...]\n");
 		printf("Stage syntax: ENTRY:STAGE[:AXIS=VALUE],... (condition restricts the stage to a permutation axis value)\n");
 		printf("Supported stages: vs, ps, gs, hs, ds, cs, rgen, rint, rahit, rchit, rmiss\n");
+		printf("Optional compiler flag before defines/permutations: --native-16bit or --native-16bit-if DEFINE\n");
 		printf("Define syntax: NAME or NAME=value\n");
 		printf("Permutation axis syntax: --permutation-axis NAME MIN MAX\n");
 		printf("Permutation syntax: --permutation NAME DEFINE...\n");
@@ -337,9 +353,28 @@ int main(int argc, char** argv)
 
 	printf("I am a shader compiler, generating %s, from %s with stages %s\n", argv[1], argv[2], argv[3]);
 
-	if (argc > 4 && std::string(argv[4]).starts_with("--"))
+	int FirstArgument = 4;
+	const bool Native16Bit = argc > FirstArgument && std::string(argv[FirstArgument]) == "--native-16bit";
+	std::string Native16BitCondition;
+	if (Native16Bit)
 	{
-		int ArgIndex = 4;
+		++FirstArgument;
+	}
+	else if (argc > FirstArgument && std::string(argv[FirstArgument]) == "--native-16bit-if")
+	{
+		if (argc <= FirstArgument + 1)
+		{
+			std::fprintf(stderr, "--native-16bit-if requires a boolean define name\n");
+			return 1;
+		}
+
+		Native16BitCondition = argv[FirstArgument + 1];
+		FirstArgument += 2;
+	}
+
+	if (argc > FirstArgument && std::string(argv[FirstArgument]).starts_with("--"))
+	{
+		int ArgIndex = FirstArgument;
 		while (ArgIndex < argc)
 		{
 			std::string Argument = argv[ArgIndex];
@@ -381,18 +416,18 @@ int main(int argc, char** argv)
 				PermutationDefines.push_back(argv[ArgIndex++]);
 			}
 
-			Data.Permutations.push_back(CompilePermutation(PermutationName, PermutationDefines, Data.PermutationAxes, InputPath, OutputPath, StagesDivided));
+			Data.Permutations.push_back(CompilePermutation(PermutationName, PermutationDefines, Data.PermutationAxes, InputPath, OutputPath, StagesDivided, Native16Bit, Native16BitCondition));
 		}
 	}
 	else
 	{
 		std::vector<std::string> GlobalDefines;
-		for (int i = 4; i < argc; i++)
+		for (int i = FirstArgument; i < argc; i++)
 		{
 			GlobalDefines.push_back(argv[i]);
 		}
 
-		Data.Permutations.push_back(CompilePermutation("Default", GlobalDefines, Data.PermutationAxes, InputPath, OutputPath, StagesDivided));
+		Data.Permutations.push_back(CompilePermutation("Default", GlobalDefines, Data.PermutationAxes, InputPath, OutputPath, StagesDivided, Native16Bit, Native16BitCondition));
 	}
 
 	printf("Compiled shader %s, it contains %i permutations\n", InputFilename.string().c_str(), (int)Data.Permutations.size());

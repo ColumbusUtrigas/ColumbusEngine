@@ -193,8 +193,15 @@ namespace Columbus
 	{
 		static constexpr const char* Path = "./PrecompiledShaders/RayTracedReflections/RayTraceReflections.csd";
 
-		struct Permutation {};
-		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+		struct Permutation
+		{
+			int UseSharc = 0;
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+			Builder.Axis("USE_SHARC", &Permutation::UseSharc);
+		}
 
 		struct PipelinePermutation
 		{
@@ -212,6 +219,7 @@ namespace Columbus
 		struct Parameters
 		{
 			ShaderGPUScene Scene;
+			RadianceCache::QueryParameters Cache;
 			ShaderAccelerationStructure AccelerationStructure;
 			ShaderStorageTexture Output;
 			ShaderStorageTexture ResultDirectionDistance;
@@ -228,6 +236,7 @@ namespace Columbus
 		static void Bind(ShaderBinder& Binder, const Parameters& Params)
 		{
 			Binder.Bind(Params.Scene);
+			Params.Cache.Bind(Binder);
 			Binder.Bind(Params.AccelerationStructure, 2, 0);
 			Binder.Bind(Params.Output, 2, 1);
 			Binder.Bind(Params.ResultDirectionDistance, 2, 2);
@@ -520,7 +529,7 @@ namespace Columbus
 
 		const bool Resolve = View.DeferredSettings.RTReflectionsResolve;
 		const bool Temporal = View.DeferredSettings.RTReflectionsTemporal;
-		const bool UseRadianceCache = View.DeferredSettings.RTReflectionsUseRadianceCache;
+		const bool UseRadianceCache = RadianceCache::IsReflectionCacheRequested(View) && Textures.RadianceCache.Query.Enabled;
 		const int TemporalMaxSamples = View.DeferredSettings.RTReflectionsTemporalMaxSamples;
 
 		RenderGraphTextureRef RTReflectionRadiance = Graph.CreateTexture(Desc, "RTReflRadiance");
@@ -532,6 +541,8 @@ namespace Columbus
 
 			RayTracedReflectionsShader::Parameters TraceParams;
 			TraceParams.Scene.UseCombinedSampler = false;
+			TraceParams.Cache = Textures.RadianceCache.Query;
+			TraceParams.Cache.Enabled = UseRadianceCache;
 			TraceParams.Output = RTReflectionRadiance;
 			TraceParams.ResultDirectionDistance = RTReflectionRays;
 			TraceParams.ResultRayPdf = RTReflectionRayPdf;
@@ -558,7 +569,7 @@ namespace Columbus
 				RayTracedReflectionsShader::Parameters Parameters = TraceParams;
 				Parameters.AccelerationStructure = Context.Scene->TLAS;
 
-				RayTracingPipeline* Pipeline = GetRayTracingPipeline<RayTracedReflectionsShader>(Context, RayTracedReflectionsShader::Permutation {}, RayTracedReflectionsShader::PipelinePermutation {});
+				RayTracingPipeline* Pipeline = GetRayTracingPipeline<RayTracedReflectionsShader>(Context, { TraceParams.Cache.Enabled ? 1 : 0 }, RayTracedReflectionsShader::PipelinePermutation {});
 				Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
 				Context.BindRayTracingParameters<RayTracedReflectionsShader>(Pipeline, Parameters);
 				Context.CommandBuffer->TraceRays(Pipeline, View.RenderSize.X, View.RenderSize.Y, 1);

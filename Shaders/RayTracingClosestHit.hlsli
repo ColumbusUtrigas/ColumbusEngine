@@ -20,7 +20,7 @@ float4 BaryLerp(float4 a, float4 b, float4 c, float3 barycentrics)
 [shader("closesthit")]
 void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes attrib)
 {
-#if LIGHTWEIGHT_SHADOW_HITS
+#if LIGHTWEIGHT_SHADOW_HITS || USE_SHARC
 	if (IsOpaqueShadowRay())
 	{
 		payload.HitDistance = RayTCurrent();
@@ -44,6 +44,30 @@ void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes 
     float3 position3 = mul(Mesh.Transform, float4(vert3.Position, 1)).xyz;
 
     float3 geometricNormal = normalize(cross(position2 - position1, position3 - position1));
+
+#if USE_SHARC || defined(CACHE_DIFFUSE_MATERIAL_HIT)
+    const float3 Normal = dot(geometricNormal, -WorldRayDirection()) < 0 ? -geometricNormal : geometricNormal;
+    const GPUMaterialDiffuseData Material = GPUScene::SampleDiffuseMaterial(Mesh.MaterialId, uv);
+    payload.Colour = Material.Albedo;
+
+#if USE_SHARC
+    const float3 Position = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
+    float3 Lighting;
+    QueryCachedDiffuseLighting(Position, Normal, Lighting);
+    payload.Colour *= Lighting; // Missing lighting stays black; never invoke hit lighting.
+#endif
+
+    payload.Emissive          = Material.Emissive;
+    payload.HitDistance       = RayTCurrent();
+    payload.Normal            = Normal;
+    payload.ObjectId          = ObjectId;
+    payload.RoughnessMetallic = float2(1, 0);
+
+#ifdef PAYLOAD_HAS_GEOMETRIC_NORMAL
+    payload.GeometricNormal = Normal;
+#endif
+    return;
+#else
 
     float3x3 normalMatrix = (float3x3)0;
     // filling the matrix by rows
@@ -94,5 +118,6 @@ void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes 
     
 #ifdef CLOSEST_HIT_REPORT_FACE
     payload.IsFrontFace = HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE;
+#endif
 #endif
 }

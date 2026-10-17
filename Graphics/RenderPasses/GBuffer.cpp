@@ -588,8 +588,7 @@ namespace Columbus
 		RenderGBufferDecals(Graph, View, Textures);
 		PrepareTiledLights(Graph, View, Textures, DeferredContext);
 
-		// TODO: only if it's needed
-		RadianceCache::TraceRadianceCache(Graph, View, Textures.RadianceCache);
+		RadianceCache::Prepare(Graph, View, Textures, DeferredContext);
 
 		// TODO: use dummy structured buffer instead
 		const bool bRTReflectionsAvailable = Graph.Device->SupportsRayTracing();
@@ -659,7 +658,7 @@ namespace Columbus
 		{
 			if (DeferredContext.VisualisationMode == EDeferredRenderVisualisationMode::RadianceCache)
 			{
-				TonemappedImage = RadianceCache::VisualiseRadianceCache(Graph, View, Textures.RadianceCache, Textures.GBufferDS);
+				TonemappedImage = RadianceCache::VisualiseRadianceCache(Graph, View, Textures);
 			}
 			else
 			{

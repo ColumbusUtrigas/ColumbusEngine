@@ -204,8 +204,15 @@ namespace Columbus
 	{
 		static constexpr const char* Path = "./PrecompiledShaders/RayTracedGlobalIllumination/RayTracedGI.csd";
 
-		struct Permutation {};
-		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder) {}
+		struct Permutation
+		{
+			int UseSharc = 0;
+		};
+
+		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
+		{
+			Builder.Axis("USE_SHARC", &Permutation::UseSharc);
+		}
 
 		struct PipelinePermutation
 		{
@@ -223,6 +230,7 @@ namespace Columbus
 		struct Parameters
 		{
 			ShaderGPUScene Scene;
+			RadianceCache::QueryParameters Cache;
 			ShaderAccelerationStructure AccelerationStructure;
 			ShaderStorageTexture Output;
 			ShaderSampledTexture GBufferNormals;
@@ -236,6 +244,7 @@ namespace Columbus
 		static void Bind(ShaderBinder& Binder, const Parameters& Params)
 		{
 			Binder.Bind(Params.Scene);
+			Params.Cache.Bind(Binder);
 			Binder.Bind(Params.AccelerationStructure, 2, 0);
 			Binder.Bind(Params.Output, 2, 1);
 			Binder.Bind(Params.GBufferNormals, 2, 2);
@@ -462,7 +471,7 @@ namespace Columbus
 	void RayTracedGlobalIlluminationPass(RenderGraph& Graph, const RenderView& View, SceneTextures& Textures, DeferredRenderContext& DeferredContext)
 	{
 		const bool UseDenoiser = View.DeferredSettings.RTGIUseDenoiser;
-		const bool UseRadianceCache = View.DeferredSettings.RTGIUseRadianceCache;
+		const bool UseRadianceCache = View.DeferredSettings.RTGIUseRadianceCache && Textures.RadianceCache.Query.Enabled;
 		const float DiffuseBoost = View.DeferredSettings.RTGIDiffuseBoost;
 		const int DownsampleFactor = View.DeferredSettings.RTGIDownsampleFactor;
 
@@ -484,6 +493,8 @@ namespace Columbus
 
 		RayTracedGIShader::Parameters TraceParams;
 		TraceParams.Scene.UseCombinedSampler = false;
+		TraceParams.Cache = Textures.RadianceCache.Query;
+		TraceParams.Cache.Enabled = UseRadianceCache;
 		TraceParams.Output = RTGI_Tex;
 		TraceParams.GBufferNormals = DownsampledGBuffer.Normal;
 		TraceParams.GBufferDepth = DownsampledGBuffer.Depth;
@@ -509,7 +520,7 @@ namespace Columbus
 			Parameters.AccelerationStructure = Context.Scene->TLAS;
 			Parameters.Constants.Value.Random = (u32)rand() % 2000;
 
-			RayTracingPipeline* Pipeline = GetRayTracingPipeline<RayTracedGIShader>(Context, RayTracedGIShader::Permutation {}, RayTracedGIShader::PipelinePermutation {});
+			RayTracingPipeline* Pipeline = GetRayTracingPipeline<RayTracedGIShader>(Context, { TraceParams.Cache.Enabled ? 1 : 0 }, RayTracedGIShader::PipelinePermutation {});
 			Context.CommandBuffer->BindRayTracingPipeline(Pipeline);
 			Context.BindRayTracingParameters<RayTracedGIShader>(Pipeline, Parameters);
 			Context.CommandBuffer->TraceRays(Pipeline, GIResolution.X, GIResolution.Y, 1);

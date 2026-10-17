@@ -1,5 +1,16 @@
 file(GLOB_RECURSE SHADER_SOURCES *.hlsl *.glsl *.hlsli)
-file(GLOB_RECURSE SHADER_HEADERS CONFIGURE_DEPENDS *.hlsli)
+file(GLOB_RECURSE SHADER_HEADERS CONFIGURE_DEPENDS *.hlsli ../Lib/SHARC/include/*.h)
+set_source_files_properties(
+    RadianceCache/RadianceCacheTrace.hlsl
+    RadianceCache/RadianceCacheResolve.hlsl
+    RadianceCache/RadianceCacheVisualise.hlsl
+    PROPERTIES NATIVE_16BIT_TYPES ON
+)
+set_source_files_properties(
+    RayTracedReflections/RayTraceReflections.hlsl
+    RayTracedGlobalIllumination/RayTracedGI.hlsl
+    PROPERTIES NATIVE_16BIT_TYPES_CONDITION USE_SHARC
+)
 group_files_by_directory(SRCS ${SHADER_SOURCES})
 
 # disable visual studio's default shader compilation that fails my thing
@@ -9,6 +20,7 @@ compile_shader_hlsl(Tonemap.hlsl main:vs,main:ps SHADER_BINARIES)
 compile_shader_hlsl(ComputeColourGradingLUT.hlsl main:cs SHADER_BINARIES)
 
 compile_shader_hlsl(RadianceCache/RadianceCacheTrace.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl(RadianceCache/RadianceCacheResolve.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RadianceCache/RadianceCacheVisualise.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
 compile_shader_hlsl(RayTracedShadows/DenoiserShadowsPrepare.hlsl main:cs SHADER_BINARIES)
@@ -20,14 +32,14 @@ compile_shader_hlsl(DenoiserReflection/Reproject.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(DenoiserReflection/Prefilter.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(DenoiserReflection/ResolveTemporal.hlsl main:cs SHADER_BINARIES)
 
-compile_shader_hlsl(RayTracedReflections/RayTraceReflections.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl_permutation_ranges(RayTracedReflections/RayTraceReflections.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES USE_SHARC 0 1)
 compile_shader_hlsl(RayTracedReflections/ReflectionsResolve.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedReflections/ReflectionsTemporal.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(ReflectionCaptures/ReflectionCaptureBake.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
 compile_shader_hlsl(ReflectionCaptures/ReflectionCaptureConvolve.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(ReflectionCaptures/ReflectionCaptureBall.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 
-compile_shader_hlsl(RayTracedGlobalIllumination/RayTracedGI.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES)
+compile_shader_hlsl_permutation_ranges(RayTracedGlobalIllumination/RayTracedGI.hlsl RayGen:rgen,Miss:rmiss,ClosestHit:rchit SHADER_BINARIES USE_SHARC 0 1)
 compile_shader_hlsl(RayTracedGlobalIllumination/Downsample.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Upsample.hlsl main:cs SHADER_BINARIES)
 compile_shader_hlsl(RayTracedGlobalIllumination/Spatial.hlsl main:cs SHADER_BINARIES)

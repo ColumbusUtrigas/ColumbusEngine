@@ -8,8 +8,14 @@ struct RayPayload
 	float2 RoughnessMetallic;
 };
 
+#if USE_SHARC
+#define SHARC_UPDATE 0
+#define SHARC_QUERY 1
+#include "../RadianceCache/RadianceCache.hlsli"
+#endif
+
 #include "../GPUScene.hlsli"
-// GI uses the miss fast path only; the hit fast path regressed throughput and visibility parity.
+// GI hit lighting retains the miss fast path; cached GI casts no visibility rays.
 #include "../RayTracingShadowVisibility.hlsli"
 #include "../Common.hlsli"
 #include "../SkyCommon.hlsli"
@@ -64,11 +70,13 @@ void RayGen()
 
 	RayPayload payload;
 
+	const float3 RayOrigin = WP + Normal * max(0.002f, 0.00002f * distance(WP, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz));
+
 	// ray trace
 	{
 		RayDesc Ray;
 		float RayBias = max(0.002, 0.00002 * distance(WP, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz));
-		Ray.Origin = WP + Normal * RayBias;
+		Ray.Origin = RayOrigin;
 		Ray.TMin = RayBias;
 		Ray.Direction = Direction;
 		Ray.TMax = MaxDistance;
@@ -85,21 +93,22 @@ void RayGen()
 		Radiance += payload.Colour;
 	}
 
-	// evaluate lighting
 	if (payload.HitDistance > 0)
 	{
+#if USE_SHARC
+		Radiance = payload.Emissive + payload.Colour;
+#else
 		BRDFData BRDF;
-		BRDF.Albedo = payload.Colour;
-		BRDF.N = payload.Normal;
-		BRDF.V = -Direction;
-		BRDF.Roughness = 1.0;
-		BRDF.Metallic = 0.0;
-		//BRDF.Roughness = payload.RoughnessMetallic.x;
-		//BRDF.Metallic = payload.RoughnessMetallic.y;
+		BRDF.Albedo    = payload.Colour;
+		BRDF.N         = payload.Normal;
+		BRDF.V         = -Direction;
+		BRDF.Roughness = payload.RoughnessMetallic.x;
+		BRDF.Metallic  = payload.RoughnessMetallic.y;
 
-		float3 HitPoint = WP + Direction * payload.HitDistance;
-		float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * BRDF.Albedo;
+		const float3 HitPoint = RayOrigin + Direction * payload.HitDistance;
+		const float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * BRDF.Albedo;
 		Radiance = payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse;
+#endif
 	}
 
 	// final compute, write results

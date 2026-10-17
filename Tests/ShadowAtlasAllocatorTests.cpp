@@ -1,5 +1,6 @@
 #include "Graphics/Core/ShadowAtlasAllocator.h"
 #include "Graphics/Core/ShaderDebugText.h"
+#include "Graphics/RenderPasses/RadianceCache.h"
 #include "Math/Matrix.h"
 #include "Math/Frustum.h"
 #include "Math/Geometry.h"
@@ -17,6 +18,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <random>
+#include <new>
 #include <vector>
 
 static void Require(bool value, const char* message)
@@ -26,6 +28,76 @@ static void Require(bool value, const char* message)
 		std::fprintf(stderr, "%s\n", message);
 		std::abort();
 	}
+}
+
+static void TestBufferDescriptors()
+{
+	using namespace Columbus;
+	alignas(BufferDesc) std::array<u8, sizeof(BufferDesc)> StorageA;
+	alignas(BufferDesc) std::array<u8, sizeof(BufferDesc)> StorageB;
+
+	// Pool identity must not depend on the previous contents of stack memory.
+	for (int i = 0; i < 3; ++i)
+	{
+		StorageA.fill(0x55);
+		StorageB.fill(0xaa);
+		BufferDesc* A;
+		BufferDesc* B;
+
+		if (i == 0)
+		{
+			A = new (StorageA.data()) BufferDesc;
+			B = new (StorageB.data()) BufferDesc;
+		}
+		else if (i == 1)
+		{
+			A = new (StorageA.data()) BufferDesc(28800, BufferType::UAV);
+			B = new (StorageB.data()) BufferDesc(28800, BufferType::UAV);
+		}
+		else
+		{
+			A = new (StorageA.data()) BufferDesc(28800, BufferType::UAV, BufferUsage::Static, BufferCpuAccess::Write);
+			B = new (StorageB.data()) BufferDesc(28800, BufferType::UAV, BufferUsage::Static, BufferCpuAccess::Write);
+		}
+
+		Require(*A == *B, "Equivalent buffer descriptors must match regardless of stack contents");
+		Require(HashBufferDesc{}(*A) == HashBufferDesc{}(*B), "Equivalent buffer descriptors must hash equally");
+		A->~BufferDesc();
+		B->~BufferDesc();
+	}
+	std::puts("PASS deterministic buffer descriptor pool identity");
+}
+
+static void TestRadianceCacheUpdateGrid()
+{
+	using namespace Columbus;
+	const iVector2 Sizes[]   = { { 1, 1 }, { 7, 9 }, { 321, 241 }, { 1920, 1080 }, { 3440, 1440 }, { 7680, 4320 }, { 8192, 1 }, { 1, 8192 }, { 9, 8192 } };
+	const u32      Budgets[] = { 1, 2, 3, 64, 1000, 20000, 1048576 };
+
+	for (iVector2 Size : Sizes)
+	{
+		const iVector2 Maximum = (Size - 1) / 8 + 1;
+
+		for (u32 Budget : Budgets)
+		{
+			const iVector2 Grid = RadianceCache::CalculateUpdateGrid(Size, Budget);
+			Require(Grid.X > 0 && Grid.Y > 0, "Valid SHaRC update views must dispatch at least one path");
+			Require(Grid.X <= Maximum.X && Grid.Y <= Maximum.Y, "Small views must retain sparse SHaRC sampling");
+			Require(u64(Grid.X) * u64(Grid.Y) <= Budget, "SHaRC update grid exceeded the path budget");
+
+			if (u64(Maximum.X) * u64(Maximum.Y) <= Budget)
+			{
+				Require(Grid == Maximum, "An unsaturated SHaRC budget must preserve the small-view grid");
+			}
+		}
+	}
+
+	const auto FullHD = RadianceCache::CalculateUpdateGrid({ 1920, 1080 }, 20000);
+	const auto UltraWide = RadianceCache::CalculateUpdateGrid({ 3440, 1440 }, 20000);
+	Require(FullHD.X * FullHD.Y >= 19000 && UltraWide.X * UltraWide.Y >= 19000, "Large SHaRC views must use approximately the requested budget");
+	Require(RadianceCache::CalculateUpdateGrid({ 0, 1080 }, 20000) == iVector2(0), "Empty SHaRC views must not dispatch");
+	Require(RadianceCache::CalculateUpdateGrid({ 1920, 1080 }, 0) == iVector2(0), "A zero SHaRC budget must not dispatch");
+	std::puts("PASS SHaRC path-budget limits, small views, extreme aspect ratios and resolution-independent workload");
 }
 
 static void TestShaderDebugStrings()
@@ -165,6 +237,25 @@ static void TestRasterCoverageShaders(const std::filesystem::path& shaderDirecto
 	std::puts("PASS deployed opaque/masked shadow stages and GBuffer discard separation");
 }
 
+static Columbus::u32 CountSpirvInstructions(const std::vector<Columbus::u8>& Bytecode, SpvOp Opcode)
+{
+	using namespace Columbus;
+	Require(Bytecode.size() >= 5 * sizeof(u32) && Bytecode.size() % sizeof(u32) == 0, "Invalid SPIR-V bytecode");
+	u32 Count = 0;
+
+	for (size_t Offset = 5 * sizeof(u32); Offset < Bytecode.size();)
+	{
+		u32 Instruction;
+		std::memcpy(&Instruction, Bytecode.data() + Offset, sizeof(Instruction));
+		const u32 Words = Instruction >> 16;
+		Require(Words > 0 && Offset + size_t(Words) * sizeof(u32) <= Bytecode.size(), "Invalid SPIR-V instruction length");
+		Count += (Instruction & 0xffffu) == u32(Opcode);
+		Offset += size_t(Words) * sizeof(u32);
+	}
+
+	return Count;
+}
+
 static void TestSecondaryShadowShaders(const std::filesystem::path& ShaderDirectory)
 {
 	using namespace Columbus;
@@ -173,43 +264,63 @@ static void TestSecondaryShadowShaders(const std::filesystem::path& ShaderDirect
 	for (const char* Path : Paths)
 	{
 		const auto Data = LoadCompiledShaderData((ShaderDirectory / Path).string());
-		Require(Data.PermutationAxes.empty() && Data.Permutations.size() == 1, "Secondary-shadow shaders must not retain A/B permutations");
-		Require(Data.Permutations[0].AxisValues.empty(), "Unexpected secondary-shadow permutation values");
+		Require(Data.PermutationAxes.size() == 1 && Data.PermutationAxes[0].Name == "USE_SHARC" && Data.Permutations.size() == 2, "Missing SHaRC and unsupported/disabled fallback shaders");
 
-		bool FoundMiss       = false;
-		bool FoundClosestHit = false;
-
-		for (const auto& Shader : Data.Permutations[0].Bytecodes)
+		for (const auto& Permutation : Data.Permutations)
 		{
-			if (Shader.Stage != ShaderType::Miss && Shader.Stage != ShaderType::ClosestHit)
+			Require(Permutation.AxisValues.size() == 1, "Invalid SHaRC permutation");
+			const bool UsesSharc = Permutation.AxisValues[0] == 1;
+			bool FoundMiss       = false;
+			bool FoundClosestHit = false;
+
+			for (const auto& Shader : Permutation.Bytecodes)
 			{
-				continue;
+				if (Shader.Stage == ShaderType::Raygen)
+				{
+					const u32 Traces = CountSpirvInstructions(Shader.Bytecode, SpvOpTraceRayKHR);
+					Require(UsesSharc ? Traces == 1 : Traces >= 2, "Cached lighting must trace geometry only; hit lighting must retain visibility rays");
+				}
+
+				if (Shader.Stage == ShaderType::ClosestHit)
+				{
+					const u32 Samples = CountSpirvInstructions(Shader.Bytecode, SpvOpImageSampleExplicitLod);
+					Require(UsesSharc ? Samples <= 2 : Samples >= 4, "Cached material hits must sample only albedo/emission; full hits must retain normal and ORM maps");
+				}
+
+				if (Shader.Stage != ShaderType::Miss && Shader.Stage != ShaderType::ClosestHit)
+				{
+					continue;
+				}
+
+				FoundMiss       |= Shader.Stage == ShaderType::Miss;
+				FoundClosestHit |= Shader.Stage == ShaderType::ClosestHit;
+
+				SpvReflectShaderModule Module{};
+				Require(spvReflectCreateShaderModule(Shader.Bytecode.size(), Shader.Bytecode.data(), &Module) == SPV_REFLECT_RESULT_SUCCESS, "Cannot reflect secondary-shadow shader");
+				const auto* Entry = spvReflectGetEntryPoint(&Module, Shader.EntryPoint.c_str());
+				Require(Entry != nullptr, "Missing secondary-shadow shader entry point");
+				bool ReadsRayFlags = false;
+
+				for (u32 i = 0; i < Entry->input_variable_count; ++i)
+				{
+					ReadsRayFlags |= Entry->input_variables[i]->built_in == SpvBuiltInIncomingRayFlagsKHR;
+				}
+
+				const bool HasHitFastPath  = std::strcmp(Path, "RayTracedReflections/RayTraceReflections.csd") == 0;
+				const bool ExpectsRayFlags = Shader.Stage == ShaderType::Miss || HasHitFastPath || UsesSharc;
+				Require(ReadsRayFlags == ExpectsRayFlags, "Secondary-shadow fast paths must remain enabled with and without SHaRC");
+
+				const auto* Resolved = spvReflectGetDescriptorBinding(&Module, 2, 3, nullptr);
+				Require((Resolved != nullptr) == UsesSharc, "SHaRC bindings must be absent from the unsupported fallback");
+
+				spvReflectDestroyShaderModule(&Module);
 			}
 
-			FoundMiss       |= Shader.Stage == ShaderType::Miss;
-			FoundClosestHit |= Shader.Stage == ShaderType::ClosestHit;
-
-			SpvReflectShaderModule Module{};
-			Require(spvReflectCreateShaderModule(Shader.Bytecode.size(), Shader.Bytecode.data(), &Module) == SPV_REFLECT_RESULT_SUCCESS, "Cannot reflect secondary-shadow shader");
-			const auto* Entry = spvReflectGetEntryPoint(&Module, Shader.EntryPoint.c_str());
-			Require(Entry != nullptr, "Missing secondary-shadow shader entry point");
-			bool ReadsRayFlags = false;
-
-			for (u32 i = 0; i < Entry->input_variable_count; ++i)
-			{
-				ReadsRayFlags |= Entry->input_variables[i]->built_in == SpvBuiltInIncomingRayFlagsKHR;
-			}
-
-			const bool HasHitFastPath  = std::strcmp(Path, "RayTracedReflections/RayTraceReflections.csd") == 0;
-			const bool ExpectsRayFlags = Shader.Stage == ShaderType::Miss || HasHitFastPath;
-			Require(ReadsRayFlags == ExpectsRayFlags, "Secondary-shadow miss fast paths and reflection-only hit fast path must remain enabled");
-			spvReflectDestroyShaderModule(&Module);
+			Require(FoundMiss && FoundClosestHit, "Missing secondary-shadow hit/miss stages");
 		}
-
-		Require(FoundMiss && FoundClosestHit, "Missing secondary-shadow hit/miss stages");
 	}
 
-	std::puts("PASS permanent secondary-shadow miss fast paths and reflection-only hit fast path");
+	std::puts("PASS cached geometry-only tracing, cheap albedo/emission hits, full hit lighting and SHaRC bindings");
 }
 
 static bool Overlap(
@@ -325,6 +436,8 @@ static void TestShadowCulling()
 
 int main(int, char** argv)
 {
+	TestBufferDescriptors();
+	TestRadianceCacheUpdateGrid();
 	using namespace Columbus;
 	TestShaderDebugStrings();
 	TestRasterCoverageShaders(std::filesystem::absolute(argv[0]).parent_path() / "PrecompiledShaders");

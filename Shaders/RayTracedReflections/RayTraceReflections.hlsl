@@ -8,6 +8,12 @@ struct RayPayload
 	float2 RoughnessMetallic;
 };
 
+#if USE_SHARC
+#define SHARC_UPDATE 0
+#define SHARC_QUERY 1
+#include "../RadianceCache/RadianceCache.hlsli"
+#endif
+
 #include "../GPUScene.hlsli"
 #define LIGHTWEIGHT_SHADOW_HITS 1
 #include "../RayTracingShadowVisibility.hlsli"
@@ -109,10 +115,12 @@ void RayGen()
 
 	RayPayload payload;
 	
+	const float3 RayOrigin = WP + Normal * 0.03f;
+
 	// ray trace
 	{
 		RayDesc Ray;
-		Ray.Origin = WP + Normal * 0.03;
+		Ray.Origin = RayOrigin;
 		Ray.TMin = 0.0;
 		Ray.Direction = Direction;
 		Ray.TMax = MaxDistance;
@@ -129,21 +137,23 @@ void RayGen()
 		ColourResult = payload.Colour * RayAttenuation;
 	}
 
-	// hit point lighting
+	// Geometry and material are evaluated in both modes.
+	if (payload.HitDistance > 0)
 	{
-		if (payload.HitDistance > 0)
-		{
-			BRDF.Albedo = payload.Colour;
-			BRDF.N = payload.Normal;
-			BRDF.V = -Direction;
-			BRDF.Roughness = payload.RoughnessMetallic.x;
-			BRDF.Metallic = payload.RoughnessMetallic.y;
+#if USE_SHARC
+		ColourResult = (payload.Emissive + payload.Colour) * RayAttenuation;
+#else
+		BRDF.Albedo    = payload.Colour;
+		BRDF.N         = payload.Normal;
+		BRDF.V         = -Direction;
+		BRDF.Roughness = payload.RoughnessMetallic.x;
+		BRDF.Metallic  = payload.RoughnessMetallic.y;
 
-			float3 HitPoint = WP + Direction * payload.HitDistance;
-			HitPoint += BRDF.N * 0.01;
-			float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * BRDF.Albedo;
-			ColourResult = (payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse) * RayAttenuation;
-		}
+		float3 HitPoint = RayOrigin + Direction * payload.HitDistance;
+		HitPoint += BRDF.N * 0.01;
+		const float3 IndirectDiffuse = SampleRuntimeIrradianceVolumes(HitPoint, BRDF.N) * BRDF.Albedo;
+		ColourResult = (payload.Emissive + RayTraceEvaluateDirectLighting(AccelerationStructure, HitPoint, RngState, BRDF) + IndirectDiffuse) * RayAttenuation;
+#endif
 	}
 
 	// write results

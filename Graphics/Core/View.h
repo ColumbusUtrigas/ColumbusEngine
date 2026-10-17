@@ -171,13 +171,13 @@ namespace Columbus
 
 		bool RTReflectionsResolve = true;
 		bool RTReflectionsTemporal = true;
-		bool RTReflectionsUseRadianceCache = false;
+		bool RTReflectionsUseRadianceCache = true;
 		int RTReflectionsTemporalMaxSamples = 16;
 
 		bool RTGIUseDenoiser = true;
-		bool RTGIUseRadianceCache = false;
+		bool RTGIUseRadianceCache = true;
 		float RTGIDiffuseBoost = 1.0f;
-		int RTGIDownsampleFactor = 2;
+		int RTGIDownsampleFactor = 4;
 	};
 
 
