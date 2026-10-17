@@ -1,5 +1,7 @@
 #pragma pack_matrix(row_major)
 
+#include "RayTracingShadowVisibility.hlsli"
+
 float2 BaryLerp(float2 a, float2 b, float2 c, float3 barycentrics)
 {
     return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
@@ -18,6 +20,14 @@ float4 BaryLerp(float4 a, float4 b, float4 c, float3 barycentrics)
 [shader("closesthit")]
 void ClosestHit(inout RayPayload payload, BuiltInTriangleIntersectionAttributes attrib)
 {
+#if LIGHTWEIGHT_SHADOW_HITS
+	if (IsOpaqueShadowRay())
+	{
+		payload.HitDistance = RayTCurrent();
+		return;
+	}
+#endif
+
     float3 barycentrics = float3(1.0f - attrib.barycentrics.x - attrib.barycentrics.y, attrib.barycentrics.x, attrib.barycentrics.y);
 	
     uint ObjectId = InstanceID();

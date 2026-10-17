@@ -9,6 +9,7 @@ struct RayPayload
 };
 
 #include "../GPUScene.hlsli"
+#include "../RayTracingShadowVisibility.hlsli"
 #include "../Common.hlsli"
 #include "../SkyCommon.hlsli"
 
@@ -76,6 +77,12 @@ struct RayPayload
 [shader("miss")]
 void Miss(inout RayPayload payload)
 {
+	if (IsOpaqueShadowRay())
+	{
+		payload.HitDistance = -1.0f;
+		return;
+	}
+
     payload.Colour = float3(0,0,0);
     payload.Emissive = float3(0,0,0);
 	payload.HitDistance = -1.0;

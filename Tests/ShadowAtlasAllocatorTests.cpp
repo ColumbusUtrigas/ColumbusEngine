@@ -8,6 +8,7 @@
 #include <cstring>
 #include <filesystem>
 #include "ShaderBytecode/ShaderBytecode.h"
+#include "Lib/SPIRV-Reflect/spirv_reflect.h"
 #include "Lib/SPIRV-Reflect/include/spirv/unified1/spirv.h"
 #include "Graphics/World.h"
 #include "Core/Serialisation.h"
@@ -164,6 +165,53 @@ static void TestRasterCoverageShaders(const std::filesystem::path& shaderDirecto
 	std::puts("PASS deployed opaque/masked shadow stages and GBuffer discard separation");
 }
 
+static void TestSecondaryShadowShaders(const std::filesystem::path& ShaderDirectory)
+{
+	using namespace Columbus;
+	const char* Paths[] = { "RayTracedReflections/RayTraceReflections.csd", "RayTracedGlobalIllumination/RayTracedGI.csd" };
+
+	for (const char* Path : Paths)
+	{
+		const auto Data = LoadCompiledShaderData((ShaderDirectory / Path).string());
+		Require(Data.PermutationAxes.empty() && Data.Permutations.size() == 1, "Secondary-shadow shaders must not retain A/B permutations");
+		Require(Data.Permutations[0].AxisValues.empty(), "Unexpected secondary-shadow permutation values");
+
+		bool FoundMiss       = false;
+		bool FoundClosestHit = false;
+
+		for (const auto& Shader : Data.Permutations[0].Bytecodes)
+		{
+			if (Shader.Stage != ShaderType::Miss && Shader.Stage != ShaderType::ClosestHit)
+			{
+				continue;
+			}
+
+			FoundMiss       |= Shader.Stage == ShaderType::Miss;
+			FoundClosestHit |= Shader.Stage == ShaderType::ClosestHit;
+
+			SpvReflectShaderModule Module{};
+			Require(spvReflectCreateShaderModule(Shader.Bytecode.size(), Shader.Bytecode.data(), &Module) == SPV_REFLECT_RESULT_SUCCESS, "Cannot reflect secondary-shadow shader");
+			const auto* Entry = spvReflectGetEntryPoint(&Module, Shader.EntryPoint.c_str());
+			Require(Entry != nullptr, "Missing secondary-shadow shader entry point");
+			bool ReadsRayFlags = false;
+
+			for (u32 i = 0; i < Entry->input_variable_count; ++i)
+			{
+				ReadsRayFlags |= Entry->input_variables[i]->built_in == SpvBuiltInIncomingRayFlagsKHR;
+			}
+
+			const bool HasHitFastPath  = std::strcmp(Path, "RayTracedReflections/RayTraceReflections.csd") == 0;
+			const bool ExpectsRayFlags = Shader.Stage == ShaderType::Miss || HasHitFastPath;
+			Require(ReadsRayFlags == ExpectsRayFlags, "Secondary-shadow miss fast paths and reflection-only hit fast path must remain enabled");
+			spvReflectDestroyShaderModule(&Module);
+		}
+
+		Require(FoundMiss && FoundClosestHit, "Missing secondary-shadow hit/miss stages");
+	}
+
+	std::puts("PASS permanent secondary-shadow miss fast paths and reflection-only hit fast path");
+}
+
 static bool Overlap(
     const Columbus::ShadowAtlasAllocator::Allocation& a, const Columbus::ShadowAtlasAllocator::Allocation& b)
 {
@@ -280,6 +328,7 @@ int main(int, char** argv)
 	using namespace Columbus;
 	TestShaderDebugStrings();
 	TestRasterCoverageShaders(std::filesystem::absolute(argv[0]).parent_path() / "PrecompiledShaders");
+	TestSecondaryShadowShaders(std::filesystem::absolute(argv[0]).parent_path() / "PrecompiledShaders");
 	TestShadowCulling();
 	ShadowAtlasAllocator                          allocator(4096);
 	std::vector<ShadowAtlasAllocator::Allocation> blocks;

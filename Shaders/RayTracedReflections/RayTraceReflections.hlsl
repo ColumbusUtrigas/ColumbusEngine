@@ -9,6 +9,8 @@ struct RayPayload
 };
 
 #include "../GPUScene.hlsli"
+#define LIGHTWEIGHT_SHADOW_HITS 1
+#include "../RayTracingShadowVisibility.hlsli"
 #include "../Common.hlsli"
 #include "../SkyCommon.hlsli"
 
@@ -158,6 +160,12 @@ void RayGen()
 [shader("miss")]
 void Miss(inout RayPayload payload)
 {
+	if (IsOpaqueShadowRay())
+	{
+		payload.HitDistance = -1.0f;
+		return;
+	}
+
 	float3 Sun = normalize(GPUScene::GPUSceneScene[0].SunDirection.xyz);
 	
 	payload.Colour = Sky::Atmosphere(WorldRayOrigin(), WorldRayDirection(), Sun, GPUScene::GPUSceneScene[0].Sky);
