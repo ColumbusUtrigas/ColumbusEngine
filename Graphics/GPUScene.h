@@ -73,6 +73,8 @@ namespace Columbus
 		Matrix PrevTransform = Matrix(1);
 		HStableMaterialId MaterialId{};
 		int LightmapId = -1;
+		bool MotionHistoryValid = false;
+		bool UploadedThisFrame  = false;
 	};
 
 	// Spans passed from game/editor code when creating or updating a mesh instance.
@@ -105,7 +107,8 @@ namespace Columbus
 		int LightmapId;
 
 		u64 PrevVertexBufferAddress;
-		u32 _pad0[2];
+		u32 MotionHistoryValid;
+		u32 _pad0;
 	};
 
 	static_assert(sizeof(GPUSceneMeshCompact) == 272, "GPUSceneMeshCompact must match shader layout");
@@ -368,6 +371,9 @@ namespace Columbus
 
 		GPUCamera MainCamera;
 		bool Dirty = false;
+
+		// ClearWorld requests a reset; the scene's deferred view consumes it on its next render.
+		bool ResetHistory = false;
 
 		// copied over from World
 		HSkySettings Sky;

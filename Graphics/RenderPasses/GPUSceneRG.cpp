@@ -437,9 +437,11 @@ namespace Columbus
 					.MaterialId = GetMaterialDenseIndex(Mesh.MaterialId),
 					.LightmapId = Mesh.LightmapId,
 					.PrevVertexBufferAddress = bUseDeform ? Deform->PrevVertices->GetDeviceAddress() : 0,
+					.MotionHistoryValid = (u32)Mesh.MotionHistoryValid,
 				};
 
 				((GPUSceneMeshCompact*)Ptr)[i] = Compact;
+				Mesh.UploadedThisFrame = true;
 			}
 		}
 

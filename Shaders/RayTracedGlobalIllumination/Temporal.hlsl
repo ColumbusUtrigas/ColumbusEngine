@@ -1,132 +1,176 @@
-#pragma pack_matrix(row_major)
+#include "Geometry.hlsli"
+#include "Lighting.hlsli"
 
-#include "../Common.hlsli"
+[[vk::binding(0, 0)]] Texture2D<float4> Input;
+[[vk::binding(1, 0)]] Texture2D<float4> InputDirection;
+[[vk::binding(2, 0)]] Texture2D<float4> HistorySH;
+[[vk::binding(3, 0)]] Texture2D<float> Depth;
+[[vk::binding(4, 0)]] Texture2D<float4> Normals;
+[[vk::binding(5, 0)]] Texture2D<float4> SurfaceData;
+[[vk::binding(6, 0)]] Texture2D<float> PreviousDepth;
+[[vk::binding(7, 0)]] Texture2D<float4> PreviousNormals;
+[[vk::binding(8, 0)]] Texture2D<float4> PreviousSurfaceData;
+[[vk::binding(9, 0)]] Texture2D<float> SampleCountHistory;
+[[vk::binding(10, 0)]] Texture2D<float4> Velocity;
+[[vk::binding(11, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputSH;
+[[vk::binding(12, 0)]] [[vk::image_format("r16f")]] RWTexture2D<float> SampleCount;
 
-#define SET 0
-
-// Inputs
-[[vk::binding(0, SET)]] Texture2D<float2> g_velocity      : register(t0);
-[[vk::binding(1, SET)]] Texture2D<float3> g_input         : register(t1);
-[[vk::binding(2, SET)]] Texture2D<float3> g_history       : register(t2);
-[[vk::binding(3, SET)]] Texture2D<float>  g_depth         : register(t3);
-[[vk::binding(4, SET)]] Texture2D<float>  g_depth_history : register(t4);
-
-// RW
-[[vk::binding(5, SET)]] [[vk::image_format("r16f")]]    RWTexture2D<float>  g_sample_count : register(u0);
-
-// Outputs
-[[vk::binding(6, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> g_output       : register(u1);
-
-// Misc
-[[vk::binding(7, SET)]] SamplerState g_sampler            : register(s7);
-
-[[vk::push_constant]]
-struct _Params {
-    float4x4 ProjectionInv;
-    // float4x4 ReprojectionMatrix;
-    float4x4 ViewProjectionInv;
-    float4x4 PrevViewProjection;
-	int2 Size;
-    int MaxSamples;
-} Params;
-
-float GetLinearDepth(int2 dtid, float depth)
+// Suppress isolated bright rays before they enter either temporal history or
+// spatial feedback. Only compatible current-frame surfaces establish the bound;
+// accumulated history is never clamped to a noisy current neighbourhood.
+float3 SuppressBrightSample(RTGISurface Surface, int2 Pixel, float3 Radiance)
 {
-    const float2 uv = (dtid + 0.5f) / float2(Params.Size);
-	const float2 ndc = ScreenUVToNDC(uv);
+    float Sum        = 0;
+    float SumSquared = 0;
+    int   Neighbours = 0;
 
-    float4 Projected = mul(Params.ProjectionInv, float4(ndc, depth, 1));
-    return abs(Projected.z / Projected.w);
+    [unroll]
+    for (int y = -1; y <= 1; ++y)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; ++x)
+        {
+            const int2 Candidate = Pixel + int2(x, y);
+
+            if ((x == 0 && y == 0) || !RTGIValidTile(Candidate))
+            {
+                continue;
+            }
+
+            if (IsSkyDepth(Depth[Candidate]))
+            {
+                continue;
+            }
+
+            RTGISurface Other = RTGIGetSample(SurfaceData[Candidate], Normals[Candidate]);
+
+            if (RTGISurfaceWeight(Surface, Other) <= 0.01)
+            {
+                continue;
+            }
+
+            const float Value = RTGILuminance(RTGIFiniteRadiance(Input[Candidate].rgb));
+            Sum        += Value;
+            SumSquared += Value * Value;
+            ++Neighbours;
+        }
+    }
+
+    const float Mean       = Sum / max(Neighbours, 1);
+    const float Deviation  = sqrt(max(0, SumSquared / max(Neighbours, 1) - Mean * Mean));
+    // Sparse hits on an ordinary emissive surface are legitimate lighting.
+    // Reserve clipping for strong outliers; spatial repair handles their noise.
+    const float UpperBound = max(4.0, Mean + 2.5 * Deviation + 0.05);
+    const float Luminance  = RTGILuminance(Radiance);
+
+    if (Neighbours >= 4 && Luminance > UpperBound)
+    {
+        Radiance *= UpperBound / Luminance;
+    }
+
+    return Radiance;
 }
 
-#define CLAMP_SCREEN_COORDS(a) clamp(a, int2(0,0), Params.Size - 1)
-
-[numthreads(8, 8, 1)]
-void main(int2 dtid : SV_DispatchThreadID)
+bool ReprojectProbe(RTGISurface Surface, float CurrentDepth, out RTGIProbeSH Result, out float Count)
 {
-    if (any(dtid >= Params.Size))
-        return;
+    Result = (RTGIProbeSH)0;
+    Count = 0;
 
-    const float2 VelocityRaw = g_velocity[dtid] / 2;
-    const float2 Uv = (dtid + 0.5f) / float2(Params.Size);
-    const float2 UvReprojected = Uv - VelocityRaw;
-
-    float2 Velocity = floor(g_velocity[dtid] / 2 * Params.Size + 0.5);
-    int2 PrevCoords = int2(dtid - Velocity);
-    int2 PrevCoordsClamped = CLAMP_SCREEN_COORDS(PrevCoords);
-
-    float SampleCount = g_sample_count[PrevCoordsClamped];
-
-    float3 Debug = float3(0,0,0);
-
-    // disocclusion
-    if (any(PrevCoords < 0) || any(PrevCoords > Params.Size - 1))
+    if (Geometry.Config.z == 0)
     {
-        SampleCount = 0;
-    } else
-    {
-        const float2 uv = (dtid + 0.5f) / float2(Params.Size);
-	    const float2 ndc = ScreenUVToNDC(uv);
-
-        float Depth = g_depth[dtid];
-
-        float4 WorldSpace = mul(Params.ViewProjectionInv, float4(ndc, Depth, 1.0f));
-        WorldSpace /= WorldSpace.w;
-        float4 PrevNdc = mul(Params.PrevViewProjection, WorldSpace);
-        PrevNdc /= PrevNdc.w;
-
-        #if 0
-        float2 PrevUv = NDCToScreenUV(PrevNdc.xy);
-        int2 ReprojectedCoords = CLAMP_SCREEN_COORDS(PrevUv * Params.Size);
-        PrevCoordsClamped = ReprojectedCoords;
-        PrevCoords = ReprojectedCoords;
-        Debug = PrevNdc.xyz;
-        #endif
-
-        float ReprojectedLinearDepth = GetLinearDepth(dtid, PrevNdc.z);
-        float PrevLinearDepth = GetLinearDepth(PrevCoords, g_depth_history[PrevCoords]);
-        
-        // distance-aware depth rejection
-        const float DepthDifference = abs(PrevLinearDepth - ReprojectedLinearDepth) / ReprojectedLinearDepth;
-        const float DepthThreshold = max(1e-2f, 0.05f * ReprojectedLinearDepth);
-
-        if (DepthDifference >= DepthThreshold)
-        {
-            SampleCount = 0;
-        }
-        else
-        {
-            SampleCount += 1;
-        }
+        return false;
     }
 
-    SampleCount = clamp(SampleCount, 0, Params.MaxSamples);
+    RTGISurface Expected;
 
-    //float3 HistoryValue = g_history[PrevCoordsClamped];
-    float3 HistoryValue = g_history.SampleLevel(g_sampler, UvReprojected, 0);
-
-    // neighbourhood clamp
-    if (false)
+    if (!RTGIReprojectSurface(Surface, CurrentDepth, Velocity[int2(Surface.Pixel)], Expected))
     {
-        float3 MinValue = float3(9999, 9999, 9999);
-        float3 MaxValue = float3(-9999, -9999, -9999);
+        return false;
+    }
 
-        for (int i = -1; i <= 1; i++)
+    if (any(Expected.Pixel < -Geometry.Config.x) || any(Expected.Pixel >= Geometry.Sizes.xy + Geometry.Config.x))
+    {
+        return false;
+    }
+
+    const int2 Base = int2(floor(Expected.Pixel / Geometry.Config.x));
+    float WeightSum = 0;
+
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
         {
-            for (int j = -1; j <= 1; j++)
+            const int2 Candidate = Base + int2(x, y);
+
+            if (!RTGIValidTile(Candidate))
             {
-                float3 Value = g_input[CLAMP_SCREEN_COORDS(dtid + int2(i,j))];
-                MinValue = min(MinValue, Value);
-                MaxValue = max(MaxValue, Value);
+                continue;
+            }
+
+            if (IsSkyDepth(PreviousDepth[Candidate]))
+            {
+                continue;
+            }
+
+            RTGISurface Other = RTGIGetSample(PreviousSurfaceData[Candidate], PreviousNormals[Candidate]);
+            const float2 Tent = saturate(1 - abs(Other.Pixel - Expected.Pixel) / Geometry.Config.x);
+            const float Weight = RTGISurfaceWeight(Expected, Other) * Tent.x * Tent.y;
+
+            if (Weight > 1e-6)
+            {
+                RTGIAddProbe(Result, RTGIReadProbe(HistorySH, Candidate, Geometry.Sizes.w), Weight);
+                Count += SampleCountHistory[Candidate] * Weight;
+                WeightSum += Weight;
             }
         }
-
-        HistoryValue = clamp(HistoryValue, MinValue, MaxValue);
     }
 
-    float HistoryWeight = 1 / (SampleCount + 1);
-    float3 Result = lerp(HistoryValue, g_input[dtid], HistoryWeight);
-    g_output[dtid] = float4(Result, 1);
-    // g_output[dtid] = float4(Debug, 1);
-    g_sample_count[dtid] = SampleCount;
+    if (WeightSum <= 1e-6)
+    {
+        return false;
+    }
+
+    Result = RTGIScaleProbe(Result, 1 / WeightSum);
+    Count /= WeightSum;
+    return true;
+}
+
+[numthreads(8, 8, 1)]
+void main(int2 Pixel : SV_DispatchThreadID)
+{
+    if (!RTGIValidTile(Pixel))
+    {
+        return;
+    }
+
+    if (IsSkyDepth(Depth[Pixel]))
+    {
+        RTGIWriteProbe(OutputSH, Pixel, Geometry.Sizes.w, (RTGIProbeSH)0);
+        SampleCount[Pixel] = 0;
+        return;
+    }
+
+    RTGISurface Surface = RTGIGetSample(SurfaceData[Pixel], Normals[Pixel]);
+    RTGIProbeSH History;
+    float HistoryCount;
+    const bool HasHistory = ReprojectProbe(Surface, Depth[Pixel], History, HistoryCount);
+    const float Count = HasHistory ? min(HistoryCount + 1, 64) : 1;
+    const float4 Ray = Input[Pixel];
+    float3 Radiance = RTGIFiniteRadiance(Ray.rgb);
+
+    // Bootstrap has too few samples to represent rare bright directions safely.
+    // Fade suppression out with real history age; mature probes retain the full
+    // incoming signal instead of permanently biasing small emissive sources dark.
+    if (Count < 16)
+    {
+        const float Strength = saturate((16 - Count) / 15);
+        Radiance = lerp(Radiance, SuppressBrightSample(Surface, Pixel, Radiance), Strength);
+    }
+
+    RTGIProbeSH Current = RTGIProjectProbe(Radiance, InputDirection[Pixel].xyz, Ray.a < 0 ? 5000 : Ray.a);
+    RTGIProbeSH Result = RTGIScaleProbe(Current, 1 / Count);
+    RTGIAddProbe(Result, History, 1 - 1 / Count);
+
+    RTGIWriteProbe(OutputSH, Pixel, Geometry.Sizes.w, Result);
+    SampleCount[Pixel] = Count;
 }

@@ -52,16 +52,19 @@ namespace Columbus
 
 		struct Permutation
 		{
-			int AlphaMasked = 0;
+			int AlphaMasked      = 0;
+			int GeometricNormals = 0;
 		};
 
 		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
 		{
 			Builder.Axis("ALPHA_MASKED", &Permutation::AlphaMasked);
+			Builder.Axis("GEOMETRIC_NORMALS", &Permutation::GeometricNormals);
 		}
 
 		struct PipelinePermutation
 		{
+			int GeometricNormals = 0;
 		};
 
 		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
@@ -77,6 +80,12 @@ namespace Columbus
 				RenderTargetBlendDesc(),
 				RenderTargetBlendDesc(),
 			};
+
+			if (Permutation.GeometricNormals != 0)
+			{
+				Desc.blendState.RenderTargets.push_back(RenderTargetBlendDesc());
+			}
+
 			return Desc;
 		}
 
@@ -105,7 +114,7 @@ namespace Columbus
 		{
 		};
 
-		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation& Permutation)
+		static GraphicsPipelineDesc BuildPipelineDesc(const PipelinePermutation&)
 		{
 			GraphicsPipelineDesc Desc;
 			Desc.Name = "Decals";
@@ -245,7 +254,7 @@ namespace Columbus
 		EmissiveDesc.Format = TextureFormat::R11G11B10F;
 		DSDesc.Format       = TextureFormat::Depth32F;
 		DSDesc.Usage        = TextureUsage::RenderTargetDepth;
-		VelocityDesc.Format = TextureFormat::RG16F;
+		VelocityDesc.Format = TextureFormat::RGBA16F;
 		LightmapDesc.Format = TextureFormat::R11G11B10F;
 		
 		SceneTextures Result { .History = History };
@@ -257,6 +266,11 @@ namespace Columbus
 		Result.Velocity        = Graph.CreateTexture(VelocityDesc, "Velocity");
 		Result.Lightmap        = Graph.CreateTexture(LightmapDesc, "Lightmap");
 		Result.VolumetricFog   = Result.GBufferAlbedo;
+
+		if (View.DeferredSettings.GlobalIlluminationMode == EDeferredGlobalIlluminationMode::RTGI)
+		{
+			Result.GBufferGeometricNormal = History.RTGI_History.PrepareGeometryTarget(Graph, View.RenderSize, View.DeferredSettings.RTGIUseDenoiser);
+		}
 
 		// history textures
 		Graph.CreateHistoryTexture(&Result.History.Depth, DSDesc, "GBufferDS History");
@@ -305,12 +319,21 @@ namespace Columbus
 		Parameters.ColorAttachments[3] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferEmissive };
 		Parameters.ColorAttachments[4] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Velocity };
 		Parameters.ColorAttachments[5] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.Lightmap };
+
+		const int GeometricNormals = Textures.GBufferGeometricNormal >= 0 ? 1 : 0;
+
+		if (GeometricNormals != 0)
+		{
+			Parameters.ColorAttachments[6] = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferGeometricNormal };
+		}
+
+
 		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Textures.GBufferDS, AttachmentClearValue{ {}, 0.0f, 0 } };
 		Parameters.ViewportSize = View.RenderSize;
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
 
-		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, Dependencies, [View](RenderGraphContext& Context)
+		Graph.AddPass("GBufferBasePass", RenderGraphPassType::Raster, Parameters, Dependencies, [View, GeometricNormals](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterGBufferPass, Context);
 
@@ -334,7 +357,7 @@ namespace Columbus
 				GraphicsPipeline*& Pipeline    = Pipelines[AlphaMasked];
 				if (!Pipeline)
 				{
-					Pipeline = GetGraphicsPipeline<GBufferBasePassShader>(Context, { AlphaMasked }, {});
+					Pipeline = GetGraphicsPipeline<GBufferBasePassShader>(Context, { AlphaMasked, GeometricNormals }, { GeometricNormals });
 				}
 				// Preserve scene order; only change the shader when coverage changes.
 				if (Pipeline != BoundPipeline)
@@ -576,6 +599,14 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderDeferred(RenderGraph& Graph, RenderView& View, DeferredRenderContext& DeferredContext)
 	{
+		if (Graph.Scene->ResetHistory)
+		{
+			DeferredContext.History.RTGI_History.Valid    = false;
+			DeferredContext.RadianceCache.ActiveLastFrame = false;
+
+			Graph.Scene->ResetHistory = false;
+		}
+
 		DeferredContext.VisualisationMode = View.DeferredSettings.VisualisationMode;
 
 		SceneTextures Textures = CreateSceneTextures(Graph, View, DeferredContext.History);
@@ -611,6 +642,11 @@ namespace Columbus
 
 			Textures.RTReflections = Graph.CreateTexture(Desc, "EmptyReflections");
 			ShaderMemsetTexture(Graph, Textures.RTReflections, {});
+		}
+
+		if (View.DeferredSettings.GlobalIlluminationMode != EDeferredGlobalIlluminationMode::RTGI)
+		{
+			Textures.History.RTGI_History.Valid = false;
 		}
 
 		switch (View.DeferredSettings.GlobalIlluminationMode)

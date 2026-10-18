@@ -454,6 +454,11 @@ namespace Columbus
 
 	void EngineWorld::ClearWorld()
 	{
+		if (SceneGPU != nullptr)
+		{
+			SceneGPU->ResetHistory = true;
+		}
+
 		Audio.Clear();
 
 		while (AllThings.Size() > 0)

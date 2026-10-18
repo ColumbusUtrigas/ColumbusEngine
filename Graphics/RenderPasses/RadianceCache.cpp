@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
-#include <span>
 
 namespace Columbus::RadianceCache
 {
@@ -77,7 +76,6 @@ namespace Columbus::RadianceCache
 		}
 
 		EntryCount = 0;
-		SceneIdentity = nullptr;
 		ActiveLastFrame = false;
 	}
 
@@ -102,47 +100,6 @@ namespace Columbus::RadianceCache
 		Cache.EntryCount = EntryCount;
 		Cache.FrameIndex = 0;
 		return true;
-	}
-
-	// Structural/material changes invalidate cached surfaces. Runtime light/sky changes
-	// converge through temporal updates; hashing them here would flush every frame for
-	// a moving flashlight, flickering light, or camera-dependent effects-volume blend.
-	static u64 ContentSignature(const GPUScene& Scene)
-	{
-		u64 Signature = 14695981039346656037ull;
-		auto Add = [&](const void* Data, size_t Size)
-		{
-			const auto* Bytes = static_cast<const u8*>(Data);
-
-			for (size_t i = 0; i < Size; ++i)
-			{
-				Signature = (Signature ^ Bytes[i]) * 1099511628211ull;
-			}
-		};
-
-		for (const Material& Material : std::span(Scene.Materials.Data(), Scene.Materials.Size()))
-		{
-			Add(&Material.AlbedoFactor, sizeof(Material.AlbedoFactor));
-			Add(&Material.EmissiveFactor, sizeof(Material.EmissiveFactor));
-			Add(&Material.Roughness, sizeof(Material.Roughness));
-			Add(&Material.Metallic, sizeof(Material.Metallic));
-			Add(&Material.AlbedoId, sizeof(Material.AlbedoId));
-			Add(&Material.OrmId, sizeof(Material.OrmId));
-			Add(&Material.NormalId, sizeof(Material.NormalId));
-			Add(&Material.ShadingMode, sizeof(Material.ShadingMode));
-			Add(&Material.AlphaCutoff, sizeof(Material.AlphaCutoff));
-			Add(&Material.EmissiveId, sizeof(Material.EmissiveId));
-		}
-
-		for (u32 i = 0; i < Scene.Meshes.Size(); ++i)
-		{
-			const auto Handle = Scene.Meshes.GetHandleAtDenseIndex(i);
-			const GPUSceneMesh& Mesh = Scene.Meshes.Data()[i];
-			Add(&Handle, sizeof(Handle));
-			Add(&Mesh.MeshResource, sizeof(Mesh.MeshResource));
-			Add(&Mesh.MaterialId, sizeof(Mesh.MaterialId));
-		}
-		return Signature;
 	}
 
 	static void BeginFrame(RenderGraph& Graph, const std::array<RenderGraphBufferRef, 4>& Buffers, bool Clear)
@@ -299,12 +256,10 @@ namespace Columbus::RadianceCache
 		const bool Reallocated = EnsureResources(Graph, Cache, EntryCount);
 		AddProfilingCount(CountRadianceCacheAllocations, Reallocated ? 1 : 0);
 		const float SceneScale = std::clamp(CVar_SceneScale.GetValue(), 1.0f, 256.0f);
-		const u64 Signature = ContentSignature(*Graph.Scene);
 		const u32 ResetGeneration = u32(CVar_Reset.GetValue());
 		const bool CameraCut = (View.CameraCur.Pos - Cache.PreviousCameraPosition).Length() > 20.0f;
-		const bool SceneChanged = Cache.SceneIdentity != Graph.Scene.get() || Cache.ContentSignature != Signature;
 		const bool SettingsChanged = Cache.ResetGeneration != ResetGeneration || Cache.SceneScale != SceneScale;
-		const bool Clear = Reallocated || !Cache.ActiveLastFrame || SceneChanged || SettingsChanged || CameraCut;
+		const bool Clear = Reallocated || !Cache.ActiveLastFrame || SettingsChanged || CameraCut;
 		AddProfilingCount(CountRadianceCacheResets, Clear ? 1 : 0);
 
 		std::array<RenderGraphBufferRef, 4> Buffers;
@@ -376,8 +331,6 @@ namespace Columbus::RadianceCache
 			Context.CommandBuffer->Dispatch((EntryCount + 255) / 256, 1, 1);
 		});
 
-		Cache.SceneIdentity = Graph.Scene.get();
-		Cache.ContentSignature = Signature;
 		Cache.ResetGeneration = ResetGeneration;
 		Cache.SceneScale = SceneScale;
 		Cache.PreviousCameraPosition = View.CameraCur.Pos;

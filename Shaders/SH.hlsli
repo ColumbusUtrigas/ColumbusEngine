@@ -207,4 +207,41 @@ sh2 shDiffuseConvolution(sh2 sh)
     return result;
 }
 
+// Three-band real SH in the same Sloan basis/order as shEvaluate.
+struct sh3
+{
+    sh2 Low;
+    float4 Quadratic;
+    float Last;
+};
+
+sh3 shEvaluate3(float3 Direction)
+{
+    sh3 Result;
+    Result.Low = shEvaluate(Direction);
+    Result.Quadratic = float4(
+        1.0925484306 * Direction.x * Direction.y,
+        -1.0925484306 * Direction.y * Direction.z,
+        0.3153915653 * (3 * Direction.z * Direction.z - 1),
+        -1.0925484306 * Direction.x * Direction.z
+    );
+    Result.Last = 0.5462742153 * (Direction.x * Direction.x - Direction.y * Direction.y);
+    return Result;
+}
+
+// Cosine convolution, including 1/pi for diffuse irradiance / pi.
+sh3 shEvaluateDiffuse3(float3 Direction)
+{
+    sh3 Result = shEvaluate3(Direction);
+    Result.Low.yzw *= 2.0 / 3.0;
+    Result.Quadratic *= 0.25;
+    Result.Last *= 0.25;
+    return Result;
+}
+
+float shDot3(sh3 A, sh3 B)
+{
+    return dot(A.Low, B.Low) + dot(A.Quadratic, B.Quadratic) + A.Last * B.Last;
+}
+
 #endif // SPHERICAL_HARMONICS_HLSL

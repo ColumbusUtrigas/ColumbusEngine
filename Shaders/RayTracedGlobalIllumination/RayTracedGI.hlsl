@@ -19,6 +19,7 @@ struct RayPayload
 #include "../RayTracingShadowVisibility.hlsli"
 #include "../Common.hlsli"
 #include "../SkyCommon.hlsli"
+#include "Lighting.hlsli"
 
 #ifdef RAYGEN_SHADER
 
@@ -35,14 +36,37 @@ struct _Params
 	uint Random;
 	float DiffuseBoost;
 	uint  UseRadianceCache;
-	float UpscaleFactor;
+	float MaxRayIntensity;
 } Params;
 
 [[vk::binding(0, SET)]] RaytracingAccelerationStructure                     AccelerationStructure;
 [[vk::binding(1, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> Output;
-[[vk::binding(2, SET)]] Texture2D<float2>                                      GBufferNormals;
+[[vk::binding(2, SET)]] Texture2D<float4>                                      SampleNormals;
 [[vk::binding(3, SET)]] Texture2D<float>                                       GBufferDepth;
-[[vk::binding(4, SET)]] Texture2D<float4>                                      GBufferSourcePixel;
+[[vk::binding(4, SET)]] Texture2D<float4>                                      GBufferSurfaceData;
+
+[[vk::binding(5, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputDirection;
+
+// Digitally shifted 2D Sobol samples cover the hemisphere over time
+// without repeatedly drawing independent directions from the same small region.
+float2 SampleGIDirection(uint2 Pixel, uint Frame)
+{
+    const uint Seed = Random::Hash(Pixel.x ^ Random::Hash(Pixel.y));
+    uint2 Sample = uint2(reversebits(Frame) ^ Seed, Random::Hash(Seed));
+    uint Direction = 0x80000000u;
+
+    for (uint Bits = Frame; Bits != 0; Bits >>= 1)
+    {
+        if ((Bits & 1u) != 0)
+        {
+            Sample.y ^= Direction;
+        }
+
+        Direction ^= Direction >> 1;
+    }
+
+    return clamp(float2(Sample) * 2.3283064365386963e-10, 1e-5, 1 - 1e-5);
+}
 
 [shader("raygeneration")]
 void RayGen()
@@ -53,19 +77,20 @@ void RayGen()
 	// do not trace from sky, early exit
 	if (IsSkyDepth(depth))
 	{
-		Output[pixel] = float4(0,0,0,0);
+		Output[pixel]          = float4(0,0,0,0);
+		OutputDirection[pixel] = 0;
 		return;
 	}
 
-	float3 Normal = NormalDecode(GBufferNormals[pixel]);
-	int2 sourcePixel = clamp(int2(round(GBufferSourcePixel[pixel].xy)), int2(0, 0), GPUScene::GPUSceneScene[0].RenderSize - 1);
-	float3 WP = ReconstructWorldPositionFromDepth((uint2)sourcePixel, depth, (uint2)GPUScene::GPUSceneScene[0].RenderSize, GPUScene::GPUSceneScene[0].CameraCur.InverseViewProjectionMatrix);
+	const float4 Surface = GBufferSurfaceData[pixel];
+    const uint PackedPixel = asuint(Surface.w) - 0x00800000u;
+    const uint2 sourcePixel = uint2(PackedPixel & 0x7fffu, PackedPixel >> 15);
+    const float3 WP = Surface.xyz;
+    const float3 Normal = normalize(SampleNormals[pixel].xyz);
 
-	uint RngState = Random::Hash(Random::Hash(pixel.x) + Random::Hash(pixel.y) + (Params.Random)); // Initial seed
+	uint RngState = Random::Hash(uint(sourcePixel.x + sourcePixel.y * GPUScene::GPUSceneScene[0].RenderSize.x) + Random::Hash(Params.Random)); // Initial seed
 
-	BRDFSample Sample = SampleBRDF_Lambert(Normal, Random::UniformDistrubition2d(RngState));
-
-	const float3 Direction = Sample.Dir;
+	const float3 Direction = RTGISampleHemisphere(Normal, SampleGIDirection(sourcePixel, Params.Random));
 	const float MaxDistance = 5000.0f;
 
 	RayPayload payload;
@@ -111,16 +136,19 @@ void RayGen()
 #endif
 	}
 
-	// final compute, write results
-	{
-		float NdotL = saturate(dot(Normal, Sample.Dir));
-		float3 Irradiance = Radiance * LambertDiffuseBRDF(float3(1,1,1)) * NdotL / Sample.Pdf;
+    Radiance = SanitizeRadiance(Radiance * Params.DiffuseBoost);
+    const float Peak = max(Radiance.r, max(Radiance.g, Radiance.b));
 
-		// not physically correct but I've thought it's nice to have
-		Irradiance *= Params.DiffuseBoost;
+    if (Params.MaxRayIntensity > 0 && Peak > Params.MaxRayIntensity)
+    {
+        Radiance *= Params.MaxRayIntensity / Peak;
+    }
 
-		Output[pixel] = float4(Irradiance, payload.HitDistance);
-	}
+    // Keep raw incoming radiance and its world direction until probe projection.
+    // Bound SH projection as well as the raw FP16 output when the limit is off.
+    Radiance = min(Radiance, 8192.0);
+    Output[pixel]          = float4(Radiance, payload.HitDistance);
+    OutputDirection[pixel] = float4(Direction, 0);
 }
 
 #endif

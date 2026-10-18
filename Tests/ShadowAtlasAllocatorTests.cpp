@@ -211,14 +211,16 @@ static void TestRasterCoverageShaders(const std::filesystem::path& shaderDirecto
 	Require(FoundOpaque && FoundMasked, "Missing opaque or masked shadow permutation");
 
 	const auto gbuffer = load("GBufferPass.csd");
-	Require(gbuffer.PermutationAxes.size() == 1 && gbuffer.PermutationAxes[0].Name == "ALPHA_MASKED" &&
+	Require(gbuffer.PermutationAxes.size() == 2 && gbuffer.PermutationAxes[0].Name == "ALPHA_MASKED" &&
 	            gbuffer.PermutationAxes[0].MinValue == 0 && gbuffer.PermutationAxes[0].MaxValue == 1 &&
-	            gbuffer.Permutations.size() == 2,
-	    "GBuffer requires opaque and masked permutations");
+	            gbuffer.PermutationAxes[1].Name == "GEOMETRIC_NORMALS" && gbuffer.PermutationAxes[1].MinValue == 0 && gbuffer.PermutationAxes[1].MaxValue == 1 &&
+	            gbuffer.Permutations.size() == 4,
+	    "GBuffer requires opaque/masked variants with optional geometric normals");
 
 	for (const auto& permutation : gbuffer.Permutations)
 	{
-		Require(permutation.AxisValues.size() == 1, "Missing GBuffer coverage permutation value");
+		Require(permutation.AxisValues.size() == 2, "Missing GBuffer coverage or geometric-normal permutation value");
+		const bool GeometricNormals = permutation.AxisValues[1] != 0;
 		bool foundPixel = false;
 
 		for (const auto& shader : permutation.Bytecodes)
@@ -228,6 +230,31 @@ static void TestRasterCoverageShaders(const std::filesystem::path& shaderDirecto
 				foundPixel = true;
 				Require(HasDiscard(shader) == (permutation.AxisValues[0] != 0),
 				    "Only the masked GBuffer shader may discard fragments");
+
+				SpvReflectShaderModule Module{};
+				Require(spvReflectCreateShaderModule(shader.Bytecode.size(), shader.Bytecode.data(), &Module) == SPV_REFLECT_RESULT_SUCCESS, "Cannot reflect GBuffer outputs");
+
+				bool FoundGeometricNormal = false;
+
+				for (u32 i = 0; i < Module.output_variable_count; ++i)
+				{
+					const auto* Output = Module.output_variables[i];
+					Require(Output->location < (GeometricNormals ? 7u : 6u) || (Output->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) != 0, "Unexpected GBuffer render target");
+
+					if (Output->location == 6)
+					{
+						FoundGeometricNormal = true;
+						Require(Output->numeric.vector.component_count == 2, "Geometric normals require an octahedral float2 output");
+					}
+
+					if (Output->location == 4)
+					{
+						Require(Output->numeric.vector.component_count == 4, "Motion must export XY velocity, linear depth motion and unused W");
+					}
+				}
+
+				Require(FoundGeometricNormal == GeometricNormals, "Geometric-normal output must match the shader permutation");
+				spvReflectDestroyShaderModule(&Module);
 			}
 		}
 

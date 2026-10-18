@@ -46,13 +46,33 @@ namespace Columbus
 	// Real-time
 	//
 
+	struct RTGIFrameHistory
+	{
+		Texture2* ProbeRadianceSH = nullptr;
+		Texture2* SampleCount     = nullptr;
+
+		Texture2* Depth       = nullptr;
+		Texture2* Normals     = nullptr;
+		Texture2* SurfaceData = nullptr;
+
+		Texture2* UpsampledRadiance = nullptr;
+		Texture2* UpsampledNormals  = nullptr;
+	};
+
 	struct RTGIDenoiserHistory
 	{
-		Texture2* Radiance = nullptr;
-		Texture2* AverageRadiance = nullptr;
-		Texture2* Variance = nullptr;
-		Texture2* SampleCount = nullptr;
+		// Producers write the current set directly while reconstruction reads the previous set.
+		RTGIFrameHistory Frames[2];
 
+		Matrix InverseViewProjection = Matrix(1.0f);
+		Matrix ViewProjection        = Matrix(1.0f);
+		u32    FrameIndex            = 0;
+		int    DownsampleFactor      = 0;
+		bool   Valid                 = false;
+		bool   UseRadianceCache      = false;
+		float  DiffuseBoost          = 1;
+
+		RenderGraphTextureRef PrepareGeometryTarget(RenderGraph& Graph, iVector2 Size, bool UseDenoiser);
 		void Destroy(SPtr<DeviceVulkan> Device);
 	};
 
@@ -127,6 +147,7 @@ namespace Columbus
 	{
 		RenderGraphTextureRef GBufferAlbedo;
 		RenderGraphTextureRef GBufferNormal;
+		RenderGraphTextureRef GBufferGeometricNormal = -1;
 		RenderGraphTextureRef GBufferRM; // Roughness Metallic
 		RenderGraphTextureRef GBufferEmissive;
 		RenderGraphTextureRef GBufferDS; // Depth Stencil

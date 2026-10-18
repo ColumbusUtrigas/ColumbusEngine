@@ -18,10 +18,15 @@ struct VS_TO_PS
     float2 Uv2              : TEXCOORD1;
     float4 ClipspacePos     : POSITION0;
     float4 ClipspacePosPrev : POSITION1;
+    float  ViewDepthMotion  : TEXCOORD2;
+#if GEOMETRIC_NORMALS
+    float3 WorldPosition    : TEXCOORD3;
+#endif
     float3 Tangent          : NORMAL1;
     float3 Bitangent        : NORMAL2;
     
     nointerpolation uint MaterialId : COLOR0;
+    nointerpolation uint MotionHistoryValid : COLOR1;
     // nointerpolation uint LightmapId : COLOR1;
 };
 
@@ -31,8 +36,11 @@ struct PS_Out
     float2 Normal   : SV_Target1;
     float2 RM       : SV_Target2;
     float3 Emissive : SV_Target3;
-    float2 Velocity : SV_Target4;
+    float4 Velocity : SV_Target4;
     float3 Lightmap : SV_Target5;
+#if GEOMETRIC_NORMALS
+    float2 GeometricNormal : SV_Target6;
+#endif
 };
 
 VS_TO_PS VSMain(uint VertexId : SV_VertexID)
@@ -60,11 +68,21 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
     float4 ClipspacePosPrev = mul(GPUScene::GPUSceneScene[0].CameraPrev.ViewProjectionMatrix, TransformedPosPrev) * float4(1, -1, 1, 1);
     Out.ClipspacePos     = ClipspacePos;
     Out.ClipspacePosPrev = ClipspacePosPrev;
+#if GEOMETRIC_NORMALS
+    Out.WorldPosition = TransformedPos.xyz;
+#endif
+
+    // Compute the difference before interpolation: equal positions produce an
+    // exact zero even on thin triangles where raster/interpolated depth differs.
+    const float CurrentViewZ  = -mul(GPUScene::GPUSceneScene[0].CameraCur.ViewMatrix, TransformedPos).z;
+    const float PreviousViewZ = -mul(GPUScene::GPUSceneScene[0].CameraPrev.ViewMatrix, TransformedPosPrev).z;
+    Out.ViewDepthMotion = PreviousViewZ - CurrentViewZ;
 
     Out.Pos    = ClipspacePos;
     Out.Uv1 = Vertex.UV;
     Out.Uv2 = Vertex.UV2;
     Out.MaterialId = Mesh.MaterialId;
+    Out.MotionHistoryValid = Mesh.MotionHistoryValid;
     // Out.LightmapId = Mesh.LightmapId;
 
     return Out;
@@ -73,6 +91,19 @@ VS_TO_PS VSMain(uint VertexId : SV_VertexID)
 PS_Out PSMain(VS_TO_PS In)
 {
     PS_Out Out;
+
+#if GEOMETRIC_NORMALS
+    float3 GeometricNormal = cross(ddy(In.WorldPosition), ddx(In.WorldPosition));
+    const float NormalLengthSquared = dot(GeometricNormal, GeometricNormal);
+    GeometricNormal = NormalLengthSquared > 1e-20 ? GeometricNormal * rsqrt(NormalLengthSquared) : normalize(In.Normal);
+
+    if (dot(GeometricNormal, GPUScene::GPUSceneScene[0].CameraCur.CameraPosition.xyz - In.WorldPosition) < 0)
+    {
+        GeometricNormal = -GeometricNormal;
+    }
+
+    Out.GeometricNormal = NormalEncode(GeometricNormal);
+#endif
     
     float3 LightmapColor = float3(0,0,0);
     // if (In.LightmapId != -1)
@@ -90,8 +121,11 @@ PS_Out PSMain(VS_TO_PS In)
     GPUMaterialSampledData Material = GPUScene::SampleMaterial(In.MaterialId, In.Uv1);
 #endif
 
-    float2 Velocity;
-	{
+    const bool PreviousValid = In.MotionHistoryValid != 0 && In.ClipspacePosPrev.w > 0;
+    float2 Velocity = 0;
+
+    if (PreviousValid)
+    {
         float2 NdcCurrent = In.ClipspacePos.xy / In.ClipspacePos.w;
         float2 NdcPrev    = In.ClipspacePosPrev.xy / In.ClipspacePosPrev.w;
 
@@ -107,11 +141,16 @@ PS_Out PSMain(VS_TO_PS In)
     
     float3x3 TBN = float3x3(normalize(In.Tangent), normalize(In.Bitangent), normalize(In.Normal));
 
+
     Out.Albedo = Material.Albedo;
     Out.Normal = NormalEncode(normalize(mul(Material.Normal, TBN)));
     Out.RM = float2(Material.Roughness, Material.Metallic);
     Out.Emissive = Material.Emissive;
-    Out.Velocity = Velocity;
+
+    // XY is unjittered NDC motion; Z is previous minus current linear view
+    // depth. Invalid previous geometry has a finite FP16 sentinel. W is unused.
+    const float DepthMotion = PreviousValid && abs(In.ViewDepthMotion) < MOTION_DEPTH_INVALID ? In.ViewDepthMotion : MOTION_DEPTH_INVALID;
+    Out.Velocity = float4(Velocity, DepthMotion, 0);
     Out.Lightmap = LightmapColor;
     
     return Out;

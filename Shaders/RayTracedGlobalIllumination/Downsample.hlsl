@@ -1,61 +1,54 @@
-#define SET 0
-#include "../Common.hlsli"
+#include "Geometry.hlsli"
 
-// Inputs
-[[vk::binding(0, SET)]] Texture2D<float>  g_depth_buffer  : register(t0);
-[[vk::binding(1, SET)]] Texture2D<float2> g_normals       : register(t1);
-[[vk::binding(2, SET)]] Texture2D<float>  g_depth_history : register(t2);
-[[vk::binding(3, SET)]] Texture2D<float2> g_velocity      : register(t3);
-
-// Outputs
-[[vk::binding(4, SET)]] [[vk::image_format("r32f")]]  RWTexture2D<float>       g_output_depth         : register(u0);
-[[vk::binding(5, SET)]] [[vk::image_format("rg16f")]] RWTexture2D<float2>      g_output_normals       : register(u1);
-[[vk::binding(6, SET)]] [[vk::image_format("r32f")]]  RWTexture2D<float>       g_output_depth_history : register(u2);
-[[vk::binding(7, SET)]] [[vk::image_format("rg16f")]] RWTexture2D<float2>      g_output_velocity      : register(u3);
-[[vk::binding(8, SET)]] [[vk::image_format("rgba32f")]] RWTexture2D<float4>    g_output_source_pixel  : register(u4);
-
-[[vk::push_constant]]
-struct _Params {
-    int2 Size;
-    int2 SourceSize;
-    int DownsampleFactor;
-} Params;
+[[vk::binding(0, 0)]] Texture2D<float> Depth;
+[[vk::binding(1, 0)]] Texture2D<float2> Normals;
+[[vk::binding(2, 0)]] [[vk::image_format("r32f")]] RWTexture2D<float> OutputDepth;
+[[vk::binding(3, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputNormals;
+[[vk::binding(4, 0)]] [[vk::image_format("rgba32f")]] RWTexture2D<float4> OutputSurfaceData;
 
 [numthreads(8, 8, 1)]
-void main(int2 dtid : SV_DispatchThreadID)
+void main(int2 Tile : SV_DispatchThreadID)
 {
-    if (any(dtid >= Params.Size))
-        return;
-
-    float  ResultDepth = DEVICE_DEPTH_FAR;
-    float  DepthHistory = DEVICE_DEPTH_FAR;
-    float2 ResultNormal = float2(0.5, 0.5);
-    float2 ResultVelocity = float2(0,0);
-
-    const int2 SourcePosStart = dtid * Params.DownsampleFactor;
-    float2 ResultSourcePixel = min(SourcePosStart, Params.SourceSize - 1);
-
-    for (int i = 0; i < Params.DownsampleFactor; i++)
+    if (!RTGIValidTile(Tile))
     {
-        for (int j = 0; j < Params.DownsampleFactor; j++)
-        {
-            const int2 SourcePos = min(SourcePosStart + int2(i, j), Params.SourceSize - 1);
-            const float CandidateDepth = g_depth_buffer[SourcePos].x;
+        return;
+    }
 
-            if (CandidateDepth > ResultDepth)
+    // Stable stratification avoids choosing the foreground in every tile of a
+    // dense fence/leaf pattern. One source pixel still produces exactly one ray;
+    // the point does not move between frames or need an adaptive allocation.
+    const uint Seed       = Random::Hash(uint(Tile.x) ^ Random::Hash(uint(Tile.y)));
+    const int2 TileOrigin = Tile * Geometry.Config.x;
+    const int2 TileExtent = min(Geometry.Config.x, Geometry.Sizes.xy - TileOrigin);
+    const int2 Offset     = int2(Seed % uint(TileExtent.x), (Seed >> 16) % uint(TileExtent.y));
+    int2  SelectedPixel = TileOrigin + Offset;
+    float SelectedDepth = Depth[SelectedPixel];
+
+    // A tile straddling the sky still gets a probe if any visible surface exists.
+    if (IsSkyDepth(SelectedDepth))
+    {
+        for (int y = 0; y < TileExtent.y; ++y)
+        {
+            for (int x = 0; x < TileExtent.x; ++x)
             {
-                ResultDepth = CandidateDepth;
-                DepthHistory = g_depth_history[SourcePos].x;
-                ResultNormal = g_normals[SourcePos].xy;
-                ResultVelocity = g_velocity[SourcePos].xy;
-                ResultSourcePixel = SourcePos;
+                const int2 Pixel = TileOrigin + int2(x, y);
+                const float CandidateDepth = Depth[Pixel];
+
+                if (CandidateDepth > SelectedDepth)
+                {
+                    SelectedDepth = CandidateDepth;
+                    SelectedPixel = Pixel;
+                }
             }
         }
     }
 
-    g_output_depth[dtid] = ResultDepth;
-    g_output_normals[dtid] = ResultNormal;
-    g_output_depth_history[dtid] = DepthHistory;
-    g_output_velocity[dtid] = ResultVelocity;
-    g_output_source_pixel[dtid] = float4(ResultSourcePixel, 0.0, 0.0);
+    const float2 EncodedNormal = Normals[SelectedPixel];
+    const bool Valid = !IsSkyDepth(SelectedDepth);
+    const float3 GeometricNormal = Valid ? NormalDecode(EncodedNormal) : float3(0, 1, 0);
+    const float3 Position = Valid ? RTGIGetSurface(SelectedPixel, SelectedDepth, EncodedNormal).Position : 0;
+
+    OutputDepth[Tile]       = SelectedDepth;
+    OutputNormals[Tile]     = float4(GeometricNormal, Valid ? max(0.0005, distance(Position, Geometry.CameraPositionPixelSize.xyz) * Geometry.CameraPositionPixelSize.w) : 0);
+    OutputSurfaceData[Tile] = float4(Position, RTGIPackPixel(SelectedPixel));
 }

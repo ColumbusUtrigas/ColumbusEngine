@@ -1,90 +1,127 @@
-#define SET 0
-#include "../Common.hlsli"
+#include "Geometry.hlsli"
+#include "Lighting.hlsli"
 
-// Inputs
-[[vk::binding( 0, SET)]] Texture2D<float>  g_depth_buffer : register(t0);
-[[vk::binding( 1, SET)]] Texture2D<float2> g_normals      : register(t1);
-[[vk::binding( 2, SET)]] Texture2D<float>  g_sample_count : register(t2);
-[[vk::binding( 3, SET)]] Texture2D<float4> g_input        : register(t3);
-
-// Outputs
-[[vk::binding(4, SET)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> g_output : register(u0);
+[[vk::binding(0, 0)]] Texture2D<float4> InputSH;
+[[vk::binding(1, 0)]] Texture2D<float> Depth;
+[[vk::binding(2, 0)]] Texture2D<float4> Normals;
+[[vk::binding(3, 0)]] Texture2D<float4> SurfaceData;
+[[vk::binding(4, 0)]] [[vk::image_format("rgba16f")]] RWTexture2D<float4> OutputSH;
+[[vk::binding(5, 0)]] Texture2D<float> SampleCount;
 
 [[vk::push_constant]]
-struct _Params {
-	int2 Size;
+struct _Params
+{
     int StepSize;
-    int MaxSamples;
-    int DominationNumber;
 } Params;
 
-#define NORMAL_SIGMA 32.0
-#define DEPTH_SIGMA 1024.0
-
-float GetEdgeStoppingDepthWeight(float center_depth, float neighbor_depth)
+void GatherNeighbour(int2 Candidate, RTGISurface Surface, RTGIProbeSH Center, float CenterCount, float ViewDepth, float KernelWeight, inout RTGIProbeSH Result, inout float WeightSum)
 {
-    return exp(-abs(center_depth - neighbor_depth) * center_depth * DEPTH_SIGMA);
-}
-
-float GetEdgeStoppingNormalWeight(float3 normal_p, float3 normal_q)
-{
-    return pow(saturate(dot(normal_p, normal_q)), NORMAL_SIGMA);
-}
-
-static const float GaussKernel9[9] = { 0.0002, 0.0060, 0.0606, 0.2417, 0.3829, 0.2417, 0.0606, 0.0060, 0.0002 };
-static const float GaussKernel5[5] = { 0.0614, 0.2448, 0.3877, 0.2448, 0.0614 };
-
-[numthreads(8, 8, 1)]
-void main(int2 dtid : SV_DispatchThreadID)
-{
-    if (any(dtid >= Params.Size))
-        return;
-
-    float3 Result = float3(0,0,0);
-    float TotalWeight = 0;
-
-    float CenterDepth = g_depth_buffer[dtid];
-    float3 CenterNormal = NormalDecode(g_normals[dtid]);
-
-    if (IsSkyDepth(CenterDepth))
+    if (!RTGIValidTile(Candidate))
     {
-        // sky
-        g_output[dtid] = float4(0,0,0,1);
         return;
     }
 
-    float SampleCount = g_sample_count[dtid];
-    float DominationCoefficient = clamp(float(Params.DominationNumber) / (SampleCount + 1), 0, 1);
-    float3 CenterValue = g_input[dtid].xyz;
-
-    int KernelRange = 2; // 5x5
-    // int KernelRange = 4; // 9x9
-
-    for (int i = -KernelRange; i <= KernelRange; i++)
+    if (IsSkyDepth(Depth[Candidate]))
     {
-        for (int j = -KernelRange; j <= KernelRange; j++)
+        return;
+    }
+
+    RTGISurface Other = RTGIGetSample(SurfaceData[Candidate], Normals[Candidate]);
+    const float3 Delta = Other.Position - Surface.Position;
+    const float NormalWeight = saturate(dot(Surface.GeometricNormal, Other.GeometricNormal));
+    const float PlaneDistance = max(abs(dot(Delta, Surface.GeometricNormal)), abs(dot(Delta, Other.GeometricNormal)));
+    const float PlaneWeight = exp2(-1000 * PlaneDistance / max(ViewDepth, 0.01));
+    float Weight = NormalWeight * PlaneWeight * KernelWeight;
+
+    if (Weight < 1e-4)
+    {
+        return;
+    }
+
+    const float OtherCount = SampleCount[Candidate];
+    Weight *= RTGIProbeConfidence(OtherCount);
+    RTGIProbeSH Sample = RTGIReadProbe(InputSH, Candidate, Geometry.Sizes.w);
+
+    // A single short ray is not a reliable visibility bound for an entire probe.
+    // Fade the existing mean-distance restriction in only after both estimates
+    // have accumulated support. Surface/normal rejection remains active throughout.
+    const float HitConfidence = saturate((min(CenterCount, OtherCount) - 4) / 12);
+    const float HitDistance = max(min(Center.Last.w, Sample.Last.w), Surface.PixelSize * Geometry.Config.x);
+    const float HitWeight = saturate(1 - length(Delta) / max(HitDistance, 0.001));
+    Weight *= lerp(1.0, HitWeight, HitConfidence);
+
+    RTGIAddProbe(Result, Sample, Weight);
+    WeightSum += Weight;
+}
+
+[numthreads(8, 8, 1)]
+void main(int2 Pixel : SV_DispatchThreadID)
+{
+    if (!RTGIValidTile(Pixel))
+    {
+        return;
+    }
+
+    if (IsSkyDepth(Depth[Pixel]))
+    {
+        RTGIWriteProbe(OutputSH, Pixel, Geometry.Sizes.w, (RTGIProbeSH)0);
+        return;
+    }
+
+    RTGISurface Surface = RTGIGetSample(SurfaceData[Pixel], Normals[Pixel]);
+    RTGIProbeSH Center = RTGIReadProbe(InputSH, Pixel, Geometry.Sizes.w);
+    const float Count      = SampleCount[Pixel];
+    const float Confidence = RTGIProbeConfidence(Count);
+    const float Expansion  = 1 - saturate((Count - 1) / 31);
+
+    RTGIProbeSH Result = RTGIScaleProbe(Center, Confidence);
+    float WeightSum = Confidence;
+    const float ViewDepth = Geometry.DepthProjection.y / (Depth[Pixel] + Geometry.DepthProjection.x);
+
+    [unroll]
+    for (int y = -1; y <= 1; ++y)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; ++x)
         {
-            int2 Step = int2(i, j) * Params.StepSize;
-            int2 Coords = clamp(dtid + Step, int2(0,0), Params.Size - 1);
+            if (x == 0 && y == 0)
+            {
+                continue;
+            }
 
-            float Weight = GaussKernel5[i+KernelRange] * GaussKernel5[j+KernelRange];
+            const float NarrowKernel = (x == 0 || y == 0) ? 0.5 : 0.25;
+            const float2 Tent = 1 - abs(float2(x, y)) / 3;
+            const float Kernel = lerp(NarrowKernel, Tent.x * Tent.y, Expansion);
 
-            float Depth = g_depth_buffer[Coords];
-            Weight *= GetEdgeStoppingDepthWeight(CenterDepth, Depth);
-
-            float3 Normal = NormalDecode(g_normals[Coords]);
-            Weight *= GetEdgeStoppingNormalWeight(CenterNormal, Normal);
-
-            float SkyWeight = IsSkyDepth(Depth) ? 0 : 1;
-            Weight *= SkyWeight;
-
-            Result += g_input[Coords].xyz * Weight;
-            TotalWeight += Weight;
+            GatherNeighbour(Pixel + int2(x, y) * Params.StepSize, Surface, Center, Count, ViewDepth, Kernel, Result, WeightSum);
         }
     }
 
-    Result /= TotalWeight;
+    // Fresh receivers prefer blur to Monte Carlo patches. Use a dense wider
+    // final kernel instead of another sparse a-trous pass, without another image.
+    // Only the first, narrow pass is retained for the next frame.
+    if (Expansion > 0)
+    {
+        const int Radius = Params.StepSize == 4 ? 6 : 2;
 
-    g_output[dtid] = float4(lerp(CenterValue, Result, DominationCoefficient), 1);
-    // g_output[dtid] = float4(1-TotalWeight, 0, 0, 1);
+        for (int y = -Radius; y <= Radius; ++y)
+        {
+            for (int x = -Radius; x <= Radius; ++x)
+            {
+                if (abs(x) <= 1 && abs(y) <= 1)
+                {
+                    continue;
+                }
+
+                const float2 Tent = 1 - abs(float2(x, y)) / float(Radius + 1);
+                const float Kernel = Tent.x * Tent.y * Expansion;
+                GatherNeighbour(Pixel + int2(x, y) * Params.StepSize, Surface, Center, Count, ViewDepth, Kernel, Result, WeightSum);
+            }
+        }
+    }
+
+    // The distance is a visibility guide for this probe, not borrowed lighting.
+    Result = RTGIScaleProbe(Result, 1 / WeightSum);
+    Result.Last.w = Center.Last.w;
+    RTGIWriteProbe(OutputSH, Pixel, Geometry.Sizes.w, Result);
 }

@@ -9,6 +9,7 @@
 #define DEVICE_DEPTH_FAR 0.0
 #define DEVICE_DEPTH_NEAR 1.0
 #define DEVICE_DEPTH_SKY_EPSILON 0.0000001
+#define MOTION_DEPTH_INVALID 65504.0
 
 bool IsSkyDepth(float depth)
 {

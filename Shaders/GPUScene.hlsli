@@ -130,7 +130,8 @@ struct GPUSceneMeshCompact
 	int LightmapId; // 252
 
 	uint64_t PrevVertexBuffer; // 256
-	uint2 _pad0; // 272
+	uint MotionHistoryValid;
+	uint _pad0; // 272
 };
 
 struct GPUSceneMaterialCompact

@@ -308,7 +308,11 @@ namespace Columbus
 	void GPUScene::SavePreviousMeshTransforms()
 	{
 		for (u32 i = 0; i < (u32)Meshes.Size(); i++)
-			Meshes[i].PrevTransform = Meshes[i].Transform;
+		{
+			Meshes[i].PrevTransform      = Meshes[i].Transform;
+			Meshes[i].MotionHistoryValid = Meshes[i].UploadedThisFrame;
+			Meshes[i].UploadedThisFrame  = false;
+		}
 	}
 
 	HStableLightId GPUScene::AddLight(const GPULight& Light)

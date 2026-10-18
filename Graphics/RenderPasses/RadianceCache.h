@@ -52,8 +52,6 @@ namespace Columbus::RadianceCache
 		u32 FrameIndex      = 0;
 		u32 ResetGeneration = 0;
 
-		u64 ContentSignature  = 0;
-		const GPUScene* SceneIdentity = nullptr;
 		Vector3 PreviousCameraPosition{};
 		float SceneScale = 0;
 		bool ActiveLastFrame = false;
