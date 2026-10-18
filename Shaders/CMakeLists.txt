@@ -65,7 +65,7 @@ compile_shader_hlsl_permutation_ranges(ShadowDepth.hlsl VSMain:vs,PSMain:ps:ALPH
 compile_shader_hlsl_permutation_ranges(GBufferPass.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES ALPHA_MASKED 0 1 GEOMETRIC_NORMALS 0 1)
 compile_shader_hlsl(Decals.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(ForwardTransparent.hlsl VSMain:vs,PSMain:ps SHADER_BINARIES)
-compile_shader_hlsl(RefractionBlur.hlsl main:cs SHADER_BINARIES)
+compile_shader_hlsl_permutation_ranges(RefractionBlur.hlsl main:cs SHADER_BINARIES BLUR_KERNEL 0 3)
 compile_shader_hlsl(Particles.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(Sky.hlsl Vertex:vs,Pixel:ps SHADER_BINARIES)
 compile_shader_hlsl(SkyLut.hlsl main:cs SHADER_BINARIES)

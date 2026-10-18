@@ -37,9 +37,8 @@ namespace Columbus
 	struct RefractionBlurParameters
 	{
 		iVector2 OutputSize;
-		int Radius;
-		float _pad;
 	};
+	static_assert(sizeof(RefractionBlurParameters) == 8);
 
 	struct RefractionBlurShader
 	{
@@ -47,10 +46,12 @@ namespace Columbus
 
 		struct Permutation
 		{
+			int Kernel = 0; // Copy, radius 2, radius 4, radius 8.
 		};
 
 		static void BuildPermutationLayout(ShaderPermutationLayoutBuilder<Permutation>& Builder)
 		{
+			Builder.Axis("BLUR_KERNEL", &Permutation::Kernel);
 		}
 
 		struct Parameters
@@ -213,7 +214,7 @@ namespace Columbus
 		return D.X * D.X + D.Y * D.Y + D.Z * D.Z;
 	}
 
-	static RenderGraphTextureRef AddRefractionBlurPass(RenderGraph& Graph, RenderGraphTextureRef Source, const char* Name, int Radius, int Downsample)
+	static RenderGraphTextureRef AddRefractionBlurPass(RenderGraph& Graph, RenderGraphTextureRef Source, const char* Name, int Kernel, int Downsample)
 	{
 		TextureDesc2 Desc = Graph.GetTextureDesc(Source);
 		Desc.Format = TextureFormat::RGBA16F;
@@ -227,20 +228,22 @@ namespace Columbus
 		BlurParams.Source = Source;
 		BlurParams.Output = Target;
 		BlurParams.Constants.Value.OutputSize = Size;
-		BlurParams.Constants.Value.Radius = Radius;
 
 		RenderPassParameters Parameters;
 		RenderPassDependencies Dependencies(Graph.Allocator);
 		Dependencies.Bind<RefractionBlurShader>(BlurParams);
 
-		Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [Size, BlurParams](RenderGraphContext& Context)
+		Graph.AddPass(Name, RenderGraphPassType::Compute, Parameters, Dependencies, [Size, Kernel, BlurParams](RenderGraphContext& Context)
 		{
 			RENDER_GRAPH_PROFILE_GPU_SCOPED(GpuCounterTransparencyRefraction, Context);
 
-			ComputePipeline* Pipeline = GetComputePipeline<RefractionBlurShader>(Context, RefractionBlurShader::Permutation {});
+			ComputePipeline* Pipeline = GetComputePipeline<RefractionBlurShader>(Context, { Kernel });
 			Context.CommandBuffer->BindComputePipeline(Pipeline);
 			Context.BindComputeParameters<RefractionBlurShader>(Pipeline, BlurParams);
-			Context.DispatchComputePixels(Pipeline, { 8, 8, 1 }, { Size, 1 });
+
+			// Blur groups produce an 8x32 tile with 8x8 threads; the sharp copy produces 8x8.
+			const iVector3 TileSize = Kernel == 0 ? iVector3(8, 8, 1) : iVector3(8, 32, 1);
+			Context.DispatchComputePixels(Pipeline, TileSize, { Size, 1 });
 		});
 
 		return Target;
@@ -349,9 +352,9 @@ namespace Columbus
 	{
 		std::array<RenderGraphTextureRef, 4> RefractionLevels;
 		RefractionLevels[0] = AddRefractionBlurPass(Graph, Textures.FinalBeforeTonemap, "Refraction Level 0", 0, 1);
-		RefractionLevels[1] = AddRefractionBlurPass(Graph, RefractionLevels[0], "Refraction Level 1", 2, 2);
-		RefractionLevels[2] = AddRefractionBlurPass(Graph, RefractionLevels[1], "Refraction Level 2", 4, 2);
-		RefractionLevels[3] = AddRefractionBlurPass(Graph, RefractionLevels[2], "Refraction Level 3", 8, 2);
+		RefractionLevels[1] = AddRefractionBlurPass(Graph, RefractionLevels[0], "Refraction Level 1", 1, 2);
+		RefractionLevels[2] = AddRefractionBlurPass(Graph, RefractionLevels[1], "Refraction Level 2", 2, 2);
+		RefractionLevels[3] = AddRefractionBlurPass(Graph, RefractionLevels[2], "Refraction Level 3", 3, 2);
 
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.FinalBeforeTonemap };
