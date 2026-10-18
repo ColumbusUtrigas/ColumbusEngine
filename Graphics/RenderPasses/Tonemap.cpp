@@ -159,9 +159,6 @@ namespace Columbus
 			.Usage = TextureUsage::RenderTargetColor,
 			.Width = (u32)Size.X, .Height = (u32)Size.Y,
 			.Format = TextureFormat::BGRA8SRGB,
-			.AddressU = TextureAddressMode::ClampToEdge,
-			.AddressV = TextureAddressMode::ClampToEdge,
-			.AddressW = TextureAddressMode::ClampToEdge,
 		};
 		Textures.TonemappedImage = Graph.CreateTexture(TonemapTextureDesc, "Tonemapped");
 

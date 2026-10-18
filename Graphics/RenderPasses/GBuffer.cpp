@@ -234,12 +234,6 @@ namespace Columbus
 		CommonDesc.Usage     = TextureUsage::RenderTargetColor;
 		CommonDesc.Width     = View.RenderSize.X;
 		CommonDesc.Height    = View.RenderSize.Y;
-		CommonDesc.AddressU  = TextureAddressMode::ClampToEdge;
-		CommonDesc.AddressV  = TextureAddressMode::ClampToEdge;
-		CommonDesc.AddressW  = TextureAddressMode::ClampToEdge;
-		CommonDesc.MagFilter = TextureFilter2::Nearest;
-		CommonDesc.MinFilter = TextureFilter2::Nearest;
-		CommonDesc.MipFilter = TextureFilter2::Nearest;
 
 		TextureDesc2 AlbedoDesc   = CommonDesc;
 		TextureDesc2 NormalDesc   = CommonDesc;

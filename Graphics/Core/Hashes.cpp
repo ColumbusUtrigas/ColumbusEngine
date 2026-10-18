@@ -38,16 +38,6 @@ namespace Columbus
 		hash_combine(Hash, X.Samples);
 		hash_combine(Hash, X.Format);
 
-		hash_combine(Hash, X.Anisotropy);
-		hash_combine(Hash, X.MinLOD);
-		hash_combine(Hash, X.MaxLOD);
-		hash_combine(Hash, X.AddressU);
-		hash_combine(Hash, X.AddressV);
-		hash_combine(Hash, X.AddressW);
-		hash_combine(Hash, X.MinFilter);
-		hash_combine(Hash, X.MagFilter);
-		hash_combine(Hash, X.MipFilter);
-
 		return Hash;
 	}
 

@@ -56,55 +56,53 @@ namespace Columbus
 		swapChainImageFormat = surfaceFormat.format;
 		swapChainExtent = extent;
 
-		CreateImageViews(device);
+		CreateTextures(device);
 	}
 
-	void SwapchainVulkan::CreateImageViews(VkDevice device)
+	void SwapchainVulkan::CreateTextures(VkDevice device)
 	{
-		swapChainImageViews.resize(swapChainImages.size());
+		TextureDesc2 Desc;
+		Desc.Usage  = TextureUsage::RenderTargetColor;
+		Desc.Width  = swapChainExtent.width;
+		Desc.Height = swapChainExtent.height;
 
-		for (size_t i = 0; i < swapChainImages.size(); i++)
+		switch (swapChainImageFormat)
 		{
-			VkImageViewCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = swapChainImages[i];
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = swapChainImageFormat;
-			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
+		case VK_FORMAT_B8G8R8A8_SRGB:  Desc.Format = TextureFormat::BGRA8SRGB; break;
+		case VK_FORMAT_B8G8R8A8_UNORM: Desc.Format = TextureFormat::BGRA8; break;
+		case VK_FORMAT_R8G8B8A8_SRGB:  Desc.Format = TextureFormat::RGBA8SRGB; break;
+		case VK_FORMAT_R8G8B8A8_UNORM: Desc.Format = TextureFormat::RGBA8; break;
+		default:
+			COLUMBUS_ASSERT_MESSAGE(false, "Unsupported swapchain texture format");
+			return;
+		}
 
-			if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+		for (VkImage Image : swapChainImages)
+		{
+			auto* Texture = new TextureVulkan(Desc);
+			Texture->_Image = Image;
+			Textures.push_back(Texture);
+		}
+	}
+
+	void SwapchainVulkan::DestroyTextures()
+	{
+		for (Texture2* Texture : Textures)
+		{
+			auto* TextureVk = static_cast<TextureVulkan*>(Texture);
+			for (TextureViewVulkan* View : TextureVk->_CachedViews)
 			{
-				COLUMBUS_ASSERT_MESSAGE(false, "Failed to create Vulkan Image Views")
+				vkDestroyImageView(Device, View->_View, nullptr);
+				delete View;
 			}
-
-			// Create Textures
-			auto TargetTexture = new TextureVulkan({});
-			TargetTexture->_Image = swapChainImages[i];
-			TargetTexture->_View = swapChainImageViews[i];
-			TargetTexture->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
-			Textures.push_back(TargetTexture);
+			delete TextureVk;
 		}
-	}
-
-	void SwapchainVulkan::DestroyImageViews()
-	{
-		for (size_t i = 0; i < swapChainImages.size(); i++)
-		{
-			vkDestroyImageView(Device, swapChainImageViews[i], nullptr);
-		}
+		Textures.clear();
 	}
 
 	SwapchainVulkan::~SwapchainVulkan()
 	{
-		DestroyImageViews();
+		DestroyTextures();
 		vkDestroySwapchainKHR(Device, swapChain, nullptr);
 	}
 
@@ -147,6 +145,8 @@ namespace Columbus
 
 	VkPresentModeKHR SwapchainVulkan::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 	{
+		return VK_PRESENT_MODE_IMMEDIATE_KHR;
+
 		for (const auto& availablePresentMode : availablePresentModes) {
 			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
 				return availablePresentMode;

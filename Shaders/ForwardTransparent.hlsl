@@ -12,11 +12,8 @@ struct _Params
     uint ObjectId;
 } Parameters;
 
-[[vk::binding(0, 2)]] Texture2D RefractionLevel0;
-[[vk::binding(1, 2)]] Texture2D RefractionLevel1;
-[[vk::binding(2, 2)]] Texture2D RefractionLevel2;
-[[vk::binding(3, 2)]] Texture2D RefractionLevel3;
-[[vk::binding(4, 2)]] SamplerState RefractionSampler;
+[[vk::binding(0, 2)]] Texture2D RefractionPyramid;
+[[vk::binding(1, 2)]] SamplerState RefractionSampler;
 
 struct VS_TO_PS
 {
@@ -133,11 +130,12 @@ float CubicWeight(float x)
     return 0.0;
 }
 
-float3 SampleBicubic(Texture2D Texture, float2 UV)
+float3 SampleBicubic(Texture2D Texture, float2 UV, uint Mip)
 {
     uint Width;
     uint Height;
-    Texture.GetDimensions(Width, Height);
+    uint MipCount;
+    Texture.GetDimensions(Mip, Width, Height, MipCount);
 
     float2 Size = float2(Width, Height);
     float2 InvSize = rcp(Size);
@@ -160,7 +158,7 @@ float3 SampleBicubic(Texture2D Texture, float2 UV)
             float Weight = WeightX * WeightY;
             float2 SampleUV = (Base + float2(x, y) + 0.5) * InvSize;
             SampleUV = clamp(SampleUV, 0.5 * InvSize, 1.0 - 0.5 * InvSize);
-            Sum += Texture.SampleLevel(RefractionSampler, SampleUV, 0) * Weight;
+            Sum += Texture.SampleLevel(RefractionSampler, SampleUV, Mip) * Weight;
             WeightSum += Weight;
         }
     }
@@ -168,28 +166,22 @@ float3 SampleBicubic(Texture2D Texture, float2 UV)
     return Sum.rgb / max(WeightSum, 0.0001);
 }
 
-float3 SampleRefractionLevel(int Level, float2 UV)
-{
-    switch (Level)
-    {
-    case 0: return SampleBicubic(RefractionLevel0, UV);
-    case 1: return SampleBicubic(RefractionLevel1, UV);
-    case 2: return SampleBicubic(RefractionLevel2, UV);
-    default: return SampleBicubic(RefractionLevel3, UV);
-    }
-}
-
 float3 SampleRoughRefraction(float2 ScreenUV, float3 TangentNormal, float Roughness, float Alpha)
 {
     float DistortionStrength = lerp(0.02, 0.10, 1.0 - saturate(Roughness));
     float2 RefractedUV = ScreenUV + TangentNormal.xy * DistortionStrength;
 
-    float Level = saturate(Roughness) * 3.0;
-    int Level0 = (int)floor(Level);
-    int Level1 = min(Level0 + 1, 3);
-    float T = frac(Level);
+    uint Width;
+    uint Height;
+    uint MipCount;
+    RefractionPyramid.GetDimensions(0, Width, Height, MipCount);
 
-    return lerp(SampleRefractionLevel(Level0, RefractedUV), SampleRefractionLevel(Level1, RefractedUV), T);
+    float Level  = saturate(Roughness) * 3.0;
+    uint  Level0 = min((uint)floor(Level), MipCount - 1);
+    uint  Level1 = min(Level0 + 1, MipCount - 1);
+    float T      = frac(Level);
+
+    return lerp(SampleBicubic(RefractionPyramid, RefractedUV, Level0), SampleBicubic(RefractionPyramid, RefractedUV, Level1), T);
 }
 
 float4 PSMain(VS_TO_PS In) : SV_Target
@@ -221,7 +213,7 @@ float4 PSMain(VS_TO_PS In) : SV_Target
     {
         uint Width;
         uint Height;
-        RefractionLevel0.GetDimensions(Width, Height);
+        RefractionPyramid.GetDimensions(Width, Height);
 
         float2 ScreenUV = In.Pos.xy / float2(Width, Height);
         float3 Refracted = SampleRoughRefraction(ScreenUV, Material.Normal, Material.Roughness, Material.Alpha);

@@ -673,7 +673,7 @@ namespace Columbus::DebugUI
 		return bEnabled ? Channel : VK_COMPONENT_SWIZZLE_ZERO;
 	}
 
-	static void BuildPreviewBinding(TextureVulkan* vktex, ImguiTextureBinding& Binding, const TextureWidgetSettings& Settings)
+	static void BuildPreviewBinding(TextureVulkan* vktex, TextureViewVulkan* View, SamplerVulkan* Sampler, ImguiTextureBinding& Binding, const TextureWidgetSettings& Settings)
 	{
 		Binding.PreviewView = VK_NULL_HANDLE;
 		Binding.PreviewSampler = VK_NULL_HANDLE;
@@ -690,8 +690,8 @@ namespace Columbus::DebugUI
 
 		if (bIdentityPreview)
 		{
-			Binding.PreviewView = vktex->_View;
-			Binding.PreviewSampler = vktex->_Sampler;
+			Binding.PreviewView = View->_View;
+			Binding.PreviewSampler = Sampler->_Sampler;
 			return;
 		}
 
@@ -726,12 +726,12 @@ namespace Columbus::DebugUI
 
 		VkSamplerCreateInfo SamplerInfo{};
 		SamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		SamplerInfo.magFilter = TextureFilterToVk(Desc.MagFilter);
-		SamplerInfo.minFilter = TextureFilterToVk(Desc.MinFilter);
+		SamplerInfo.magFilter = TextureFilterToVk(Sampler->GetDesc().MagFilter);
+		SamplerInfo.minFilter = TextureFilterToVk(Sampler->GetDesc().MinFilter);
 		SamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-		SamplerInfo.addressModeU = TextureAddressModeToVk(Desc.AddressU);
-		SamplerInfo.addressModeV = TextureAddressModeToVk(Desc.AddressV);
-		SamplerInfo.addressModeW = TextureAddressModeToVk(Desc.AddressW);
+		SamplerInfo.addressModeU = TextureAddressModeToVk(Sampler->GetDesc().AddressU);
+		SamplerInfo.addressModeV = TextureAddressModeToVk(Sampler->GetDesc().AddressV);
+		SamplerInfo.addressModeW = TextureAddressModeToVk(Sampler->GetDesc().AddressW);
 		SamplerInfo.mipLodBias = 0.0f;
 		SamplerInfo.anisotropyEnable = VK_FALSE;
 		SamplerInfo.maxAnisotropy = 1.0f;
@@ -775,11 +775,14 @@ namespace Columbus::DebugUI
 		TextureVulkan* vktex = static_cast<TextureVulkan*>(Texture);
 		ImguiTextureBinding& Binding = GImguiTexturesMap[Texture];
 
+		auto* View = static_cast<TextureViewVulkan*>(GDebugUIDevice->GetDefaultTextureView(Texture));
+		auto* Sampler = static_cast<SamplerVulkan*>(GDebugUIDevice->GetStaticSampler(SamplerDesc::Create(TextureFilter2::Linear, Texture->ImportSettings.AddressMode)));
+
 		const bool bDescriptorChanged =
 			Binding.Set == VK_NULL_HANDLE ||
-			Binding.View != vktex->_View ||
-			Binding.Sampler != vktex->_Sampler ||
-			Binding.Layout != vktex->_Layout ||
+			Binding.View != View->_View ||
+			Binding.Sampler != Sampler->_Sampler ||
+			Binding.Layout != vktex->GetLayout() ||
 			!(Binding.Settings == Settings);
 
 		if (ForceInvalidate || bDescriptorChanged)
@@ -791,15 +794,15 @@ namespace Columbus::DebugUI
 				RetireImguiTexture(Binding.Set, RetiredView, RetiredSampler);
 			}
 
-			BuildPreviewBinding(vktex, Binding, Settings);
+			BuildPreviewBinding(vktex, View, Sampler, Binding, Settings);
 
 			Binding.Set = ImGui_ImplVulkan_AddTexture(
-				Binding.PreviewSampler != VK_NULL_HANDLE ? Binding.PreviewSampler : vktex->_Sampler,
-				Binding.PreviewView != VK_NULL_HANDLE ? Binding.PreviewView : vktex->_View,
-				vktex->_Layout);
-			Binding.View = vktex->_View;
-			Binding.Sampler = vktex->_Sampler;
-			Binding.Layout = vktex->_Layout;
+				Binding.PreviewSampler != VK_NULL_HANDLE ? Binding.PreviewSampler : Sampler->_Sampler,
+				Binding.PreviewView != VK_NULL_HANDLE ? Binding.PreviewView : View->_View,
+				vktex->GetLayout());
+			Binding.View = View->_View;
+			Binding.Sampler = Sampler->_Sampler;
+			Binding.Layout = vktex->GetLayout();
 			Binding.Settings = Settings;
 		}
 

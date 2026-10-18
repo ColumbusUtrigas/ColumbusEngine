@@ -256,7 +256,7 @@ namespace Columbus
 
 		SwapchainVulkan* CreateSwapchain(VkSurfaceKHR surface, SwapchainVulkan* OldSwapchain);
 		VkRenderPass CreateRenderPass(std::span<AttachmentDesc> Attachments);
-		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, std::span<Texture2*> Textures);
+		VkFramebuffer CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, std::span<TextureView*> Views, u32 Layers = 1);
 
 		void DestroyRenderPassDeferred(VkRenderPass Renderpass);
 		void DestroyFramebufferDeferred(VkFramebuffer Framebuffer);
@@ -277,7 +277,7 @@ namespace Columbus
 
 		// TODO: refactor binding system
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Buffer* Buffer);
-		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture, TextureBindingFlags Flags = TextureBindingFlags::AspectColour, VkDescriptorType DescriptorType = VK_DESCRIPTOR_TYPE_MAX_ENUM);
+		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const TextureView* View, VkDescriptorType DescriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, const Sampler* Sampler = nullptr);
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const AccelerationStructure* TLAS);
 		void UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Sampler* Sam);
 
@@ -296,9 +296,9 @@ namespace Columbus
 		Texture2* CreateTexture(const TextureDesc2& Desc);
 		Texture2* CreateTexture(const Image& Image);
 		Texture2* CreateTexture(const Image& Image, const TextureDesc2& Desc);
-		// creates a non-owning view of a texture subresource range; the source must outlive
-		// the view. destroy with DestroyTexture/DestroyTextureDeferred like any texture.
-		Texture2* CreateTextureView(Texture2* Source, const TextureViewDesc& ViewDesc);
+		// Views are borrowed from the texture's cache and retired together with the image.
+		TextureView* GetOrCreateTextureView(Texture2* Source, const TextureViewDesc& Desc);
+		TextureView* GetDefaultTextureView(Texture2* Source, TextureBindingFlags Aspect = TextureBindingFlags::AspectColour);
 		void      UploadTextureMipData(Texture2* Tex, int Mip, int Layer, const void* Data);
 		void      DestroyTexture(Texture2* Tex);
 		void      DestroyTextureDeferred(Texture2* Tex);
@@ -328,6 +328,7 @@ namespace Columbus
 		void SetDebugName(const RayTracingPipeline* Pipeline, const char* Name);
 		void SetDebugName(const Buffer* Buffer, const char* Name);
 		void SetDebugName(const Texture2* Texture, const char* Name);
+		void SetDebugName(const TextureView* View, const char* Name);
 		void SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name);
 
 		QueryPool* CreateQueryPool(const QueryPoolDesc& Desc);

@@ -80,10 +80,6 @@ namespace Columbus::ShaderDebugText
 		Desc.Height    = AtlasHeight;
 		Desc.Format    = TextureFormat::R8;
 		Desc.Usage     = TextureUsage::Sampled;
-		Desc.MinFilter = TextureFilter2::Nearest;
-		Desc.MagFilter = TextureFilter2::Nearest;
-		Desc.AddressU  = TextureAddressMode::ClampToEdge;
-		Desc.AddressV  = TextureAddressMode::ClampToEdge;
 
 		Texture2* Atlas = Device->CreateTexture(Desc);
 		Device->SetDebugName(Atlas, "ShaderDebugFontAtlas");

@@ -528,14 +528,23 @@ namespace Columbus
 		dependency.dstStageMask = DstStageMask;
 		dependency.dstAccessMask = DstAccessMask;
 
+		// Include the implicit final-layout transition in synchronization with later graph accesses.
+		VkSubpassDependency Dependencies[2] = { dependency, {} };
+		Dependencies[1].srcSubpass    = 0;
+		Dependencies[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
+		Dependencies[1].srcStageMask  = DstStageMask;
+		Dependencies[1].dstStageMask  = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		Dependencies[1].srcAccessMask = DstAccessMask;
+		Dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = VkAttachmentDescs.size();
 		renderPassInfo.pAttachments = VkAttachmentDescs.data();
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
+		renderPassInfo.dependencyCount = 2;
+		renderPassInfo.pDependencies = Dependencies;
 
 		VkRenderPass renderPass;
 
@@ -546,12 +555,12 @@ namespace Columbus
 		return renderPass;
 	}
 
-	VkFramebuffer DeviceVulkan::CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, std::span<Texture2*> Textures)
+	VkFramebuffer DeviceVulkan::CreateFramebuffer(VkRenderPass Renderpass, const iVector2& Size, std::span<TextureView*> Views, u32 Layers)
 	{
 		fixed_vector<VkImageView, 16> AttachmentViews;
-		for (Texture2* Attachment : Textures)
+		for (TextureView* Attachment : Views)
 		{
-			AttachmentViews.push_back(static_cast<TextureVulkan*>(Attachment)->_View);
+			AttachmentViews.push_back(static_cast<TextureViewVulkan*>(Attachment)->_View);
 		}
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -561,7 +570,7 @@ namespace Columbus
 		framebufferInfo.pAttachments = AttachmentViews.data();
 		framebufferInfo.width = Size.X;
 		framebufferInfo.height = Size.Y;
-		framebufferInfo.layers = 1;
+		framebufferInfo.layers = Layers;
 
 		VkFramebuffer Result;
 
@@ -676,54 +685,35 @@ namespace Columbus
 		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
 	}
 
-	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const Texture2* Texture, TextureBindingFlags Flags, VkDescriptorType DescriptorType)
+	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const TextureView* View, VkDescriptorType DescriptorType, const Sampler* Sampler)
 	{
-		auto vktex = static_cast<const TextureVulkan*>(Texture);
-
-		VkDescriptorImageInfo imageInfo;
-		imageInfo.imageLayout = vktex->_Layout;
-		imageInfo.imageView = vktex->_View;
-		imageInfo.sampler = vktex->_Sampler;
-
-		if ((Flags & TextureBindingFlags::AspectColour) != 0)
+		const bool HasView    = View != nullptr;
+		const bool HasSampler = DescriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || Sampler != nullptr;
+		COLUMBUS_ASSERT_MESSAGE(HasView && HasSampler, "Texture binding requires a view and combined bindings require a sampler");
+		if (!HasView || !HasSampler)
 		{
-			imageInfo.imageView = vktex->_View;
-		}
-		else if ((Flags & TextureBindingFlags::AspectDepth) != 0 && (Flags & TextureBindingFlags::AspectStencil) != 0)
-		{
-			imageInfo.imageView = vktex->_View;
-		}
-		else if ((Flags & TextureBindingFlags::AspectDepth) != 0)
-		{
-			imageInfo.imageView = vktex->_DepthView;
-		}
-		else if ((Flags & TextureBindingFlags::AspectStencil) != 0)
-		{
-			imageInfo.imageView = vktex->_StencilView;
-		} else
-		{
-			COLUMBUS_ASSERT_MESSAGE(false, "Wrong aspects for texture binding");
+			Log::Error("Invalid texture descriptor binding");
+			return;
 		}
 
-		VkWriteDescriptorSet write;
-		write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		write.pNext = nullptr;
-		write.dstSet = Set;
-		write.dstBinding = BindingId;
-		write.dstArrayElement = ArrayId;
-		write.descriptorCount = 1;
+		const auto* TextureVk = static_cast<const TextureVulkan*>(View->GetTexture());
+		const auto* ViewVk    = static_cast<const TextureViewVulkan*>(View);
 
-		// TODO: refactor binding system
-		if (DescriptorType == VK_DESCRIPTOR_TYPE_MAX_ENUM)
-			write.descriptorType = TextureUsageToVkDescriptorType(Texture->GetDesc().Usage);
-		else
-			write.descriptorType = DescriptorType;
+		VkDescriptorImageInfo ImageInfo{};
+		ImageInfo.imageLayout = TextureVk->GetLayout();
+		ImageInfo.imageView   = ViewVk->_View;
+		ImageInfo.sampler     = Sampler ? static_cast<const SamplerVulkan*>(Sampler)->_Sampler : VK_NULL_HANDLE;
 
-		write.pImageInfo = &imageInfo;
-		write.pBufferInfo = nullptr;
-		write.pTexelBufferView = nullptr;
+		VkWriteDescriptorSet Write{};
+		Write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		Write.dstSet          = Set;
+		Write.dstBinding      = BindingId;
+		Write.dstArrayElement = ArrayId;
+		Write.descriptorCount = 1;
+		Write.descriptorType  = DescriptorType;
+		Write.pImageInfo      = &ImageInfo;
 
-		vkUpdateDescriptorSets(_Device, 1, &write, 0, nullptr);
+		vkUpdateDescriptorSets(_Device, 1, &Write, 0, nullptr);
 	}
 
 	void DeviceVulkan::UpdateDescriptorSet(VkDescriptorSet Set, int BindingId, int ArrayId, const AccelerationStructure* TLAS)
@@ -1252,85 +1242,69 @@ namespace Columbus
 	{
 	}
 
-	Texture2* DeviceVulkan::CreateTextureView(Texture2* Source, const TextureViewDesc& ViewDesc)
+	TextureView* DeviceVulkan::GetOrCreateTextureView(Texture2* Source, const TextureViewDesc& Desc)
+	{
+		TextureViewDesc Resolved = Desc;
+		const bool Valid = Source && TextureUtils::ResolveTextureViewDesc(Source->GetDesc(), Resolved);
+		COLUMBUS_ASSERT_MESSAGE(Valid, "Invalid texture view subresource range");
+		if (!Valid)
+		{
+			Log::Error("Invalid texture view subresource range");
+			return nullptr;
+		}
+
+		auto* Texture = static_cast<TextureVulkan*>(Source);
+		for (TextureViewVulkan* View : Texture->_CachedViews)
+		{
+			if (View->GetDesc() == Resolved)
+			{
+				return View;
+			}
+		}
+
+		auto* View = new TextureViewVulkan(Source, Resolved);
+		const VkImageAspectFlags Aspect = TextureViewAspectMaskVk(Source->GetDesc().Format, Resolved.Aspect);
+
+		VkImageViewCreateInfo ViewInfo{};
+		ViewInfo.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		ViewInfo.image    = Texture->_Image;
+		ViewInfo.viewType = TextureTypeToViewTypeVk(Resolved.ViewType);
+		ViewInfo.format   = TextureFormatToVK(Source->GetDesc().Format);
+		ViewInfo.subresourceRange = { Aspect, Resolved.BaseMip, Resolved.MipCount, Resolved.BaseLayer, Resolved.LayerCount };
+		VK_CHECK(vkCreateImageView(_Device, &ViewInfo, nullptr, &View->_View));
+
+		Texture->_CachedViews.push_back(View);
+		return View;
+	}
+
+	TextureView* DeviceVulkan::GetDefaultTextureView(Texture2* Source, TextureBindingFlags Aspect)
 	{
 		COLUMBUS_ASSERT(Source != nullptr);
-
-		TextureVulkan* SourceVk = static_cast<TextureVulkan*>(Source);
-		const TextureDesc2& SourceDesc = Source->GetDesc();
-
-		const u32 SourceMips = std::max(1u, SourceDesc.Mips);
-		const u32 SourceLayers = TextureUtils::TextureLayerCount(SourceDesc);
-
-		COLUMBUS_ASSERT(ViewDesc.BaseMip < SourceMips);
-		COLUMBUS_ASSERT(ViewDesc.BaseLayer < SourceLayers);
-
-		const u32 MipCount = ViewDesc.MipCount == 0 ? (SourceMips - ViewDesc.BaseMip) : ViewDesc.MipCount;
-		const u32 LayerCount = ViewDesc.LayerCount == 0 ? (SourceLayers - ViewDesc.BaseLayer) : ViewDesc.LayerCount;
-
-		COLUMBUS_ASSERT(ViewDesc.BaseMip + MipCount <= SourceMips);
-		COLUMBUS_ASSERT(ViewDesc.BaseLayer + LayerCount <= SourceLayers);
-
-		TextureDesc2 Desc = SourceDesc;
-		Desc.Type = ViewDesc.ViewType;
-		Desc.Width = std::max(1u, SourceDesc.Width >> ViewDesc.BaseMip);
-		Desc.Height = std::max(1u, SourceDesc.Height >> ViewDesc.BaseMip);
-		Desc.Depth = SourceDesc.Type == TextureType::Texture3D ? std::max(1u, SourceDesc.Depth >> ViewDesc.BaseMip) : 1u;
-		Desc.Mips = MipCount;
-		Desc.ArrayLayers = LayerCount;
-
-		TextureVulkan* Result = new TextureVulkan(TextureUtils::NormalizeTextureDesc(Desc));
-		Result->_Image = SourceVk->_Image;
-		// descriptor writes read the view's layout snapshot; the render graph keeps images in
-		// GENERAL (see RenderGraph barrier handling), which is where views are consumed
-		Result->_Layout = VK_IMAGE_LAYOUT_GENERAL;
-		Result->_IsView = true;
-		Result->SetSize(0);
-
-		VkImageViewCreateInfo viewInfo{};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.pNext = nullptr;
-		viewInfo.flags = 0;
-		viewInfo.image = SourceVk->_Image;
-		viewInfo.viewType = TextureTypeToViewTypeVk(ViewDesc.ViewType);
-		viewInfo.format = TextureFormatToVK(SourceDesc.Format);
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(SourceDesc.Format);
-		viewInfo.subresourceRange.baseMipLevel = ViewDesc.BaseMip;
-		viewInfo.subresourceRange.levelCount = MipCount;
-		viewInfo.subresourceRange.baseArrayLayer = ViewDesc.BaseLayer;
-		viewInfo.subresourceRange.layerCount = LayerCount;
-		VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &Result->_View));
-
-		return Result;
+		if (!Source)
+		{
+			return nullptr;
+		}
+		return GetOrCreateTextureView(Source, { .ViewType = Source->GetDesc().Type, .Aspect = Aspect });
 	}
 
 	void DeviceVulkan::DestroyTexture(Texture2* Tex)
 	{
-		if (Tex == nullptr)
-			return;
-
-		auto vktex = static_cast<TextureVulkan*>(Tex);
-		COLUMBUS_ASSERT(vktex);
-
-		if (vktex->_IsView)
+		if (!Tex)
 		{
-			// views share the image with their source and own only the image view
-			vkDestroyImageView(_Device, vktex->_View, nullptr);
 			return;
 		}
 
+		auto* Texture = static_cast<TextureVulkan*>(Tex);
+		for (TextureViewVulkan* View : Texture->_CachedViews)
+		{
+			vkDestroyImageView(_Device, View->_View, nullptr);
+			delete View;
+		}
+		Texture->_CachedViews.clear();
+
 		RemoveProfilingMemory(MemoryCounter_Vulkan_AllocatedImages, Tex->GetSize());
 		RemoveProfilingCount(CountingCounter_Vulkan_Images, 1);
-
-		vkDestroySampler(_Device, vktex->_Sampler, nullptr);
-		vkDestroyImageView(_Device, vktex->_View, nullptr);
-		if (vktex->_DepthView != NULL) vkDestroyImageView(_Device, vktex->_DepthView, nullptr);
-		if (vktex->_StencilView != NULL) vkDestroyImageView(_Device, vktex->_StencilView, nullptr);
-		vmaDestroyImage(_Allocator, vktex->_Image, vktex->_Allocation);
+		vmaDestroyImage(_Allocator, Texture->_Image, Texture->_Allocation);
 	}
 
 	void DeviceVulkan::DestroyTextureDeferred(Texture2* Tex)
@@ -1419,13 +1393,18 @@ namespace Columbus
 	{
 		auto vktex = static_cast<const TextureVulkan*>(Texture);
 		_SetDebugName((uint64_t)vktex->_Image, VK_OBJECT_TYPE_IMAGE, Name);
-		_SetDebugName((uint64_t)vktex->_View, VK_OBJECT_TYPE_IMAGE_VIEW, Name);
-		_SetDebugName((uint64_t)vktex->_Sampler, VK_OBJECT_TYPE_SAMPLER, Name);
 		if (vktex->_Allocation != nullptr)
 		{
 			vmaSetAllocationName(_Allocator, vktex->_Allocation, Name);
 		}
 	}
+
+	void DeviceVulkan::SetDebugName(const TextureView* View, const char* Name)
+	{
+		const auto* ViewVk = static_cast<const TextureViewVulkan*>(View);
+		_SetDebugName((uint64_t)ViewVk->_View, VK_OBJECT_TYPE_IMAGE_VIEW, Name);
+	}
+
 	void DeviceVulkan::SetDebugName(const AccelerationStructure* AccelerationStructure, const char* Name)
 	{
 		if (SupportsRayTracing())
@@ -1769,96 +1748,6 @@ namespace Columbus
 		AddProfilingCount(CountingCounter_Vulkan_Images, 1);
 
 		result->_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-		// colour or depth-stencil view
-		{
-			VkImageViewCreateInfo viewInfo;
-			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			viewInfo.pNext = nullptr;
-			viewInfo.flags = 0;
-			viewInfo.image = result->_Image;
-			viewInfo.viewType = TextureTypeToViewTypeVk(NormalizedDesc.Type);
-			viewInfo.format = TextureFormatToVK(NormalizedDesc.Format);
-			viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-			viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-			viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-			viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-			viewInfo.subresourceRange.aspectMask = TextureFormatToAspectMaskVk(NormalizedDesc.Format); // colour or depth-stencil
-			viewInfo.subresourceRange.baseMipLevel = 0;
-			viewInfo.subresourceRange.levelCount = NormalizedDesc.Mips;
-			viewInfo.subresourceRange.baseArrayLayer = 0;
-			viewInfo.subresourceRange.layerCount = NormalizedDesc.ArrayLayers;
-			VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_View));
-		}
-
-		TextureFormatInfo FormatInfo = TextureFormatGetInfo(NormalizedDesc.Format);
-
-		if (FormatInfo.HasDepth)
-		{
-			// depth-only view
-			{
-				VkImageViewCreateInfo viewInfo;
-				viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-				viewInfo.pNext = nullptr;
-				viewInfo.flags = 0;
-				viewInfo.image = result->_Image;
-				viewInfo.viewType = TextureTypeToViewTypeVk(NormalizedDesc.Type);
-				viewInfo.format = TextureFormatToVK(NormalizedDesc.Format);
-				viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-				viewInfo.subresourceRange.baseMipLevel = 0;
-				viewInfo.subresourceRange.levelCount = NormalizedDesc.Mips;
-				viewInfo.subresourceRange.baseArrayLayer = 0;
-				viewInfo.subresourceRange.layerCount = NormalizedDesc.ArrayLayers;
-				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_DepthView));
-			}
-
-			if (FormatInfo.HasStencil)
-			{
-				// stencil-only view
-				VkImageViewCreateInfo viewInfo;
-				viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-				viewInfo.pNext = nullptr;
-				viewInfo.flags = 0;
-				viewInfo.image = result->_Image;
-				viewInfo.viewType = TextureTypeToViewTypeVk(NormalizedDesc.Type);
-				viewInfo.format = TextureFormatToVK(NormalizedDesc.Format);
-				viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // TODO
-				viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-				viewInfo.subresourceRange.baseMipLevel = 0;
-				viewInfo.subresourceRange.levelCount = NormalizedDesc.Mips;
-				viewInfo.subresourceRange.baseArrayLayer = 0;
-				viewInfo.subresourceRange.layerCount = NormalizedDesc.ArrayLayers;
-				VK_CHECK(vkCreateImageView(_Device, &viewInfo, nullptr, &result->_StencilView));
-			}
-		}
-
-		VkSamplerCreateInfo samplerInfo;
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.pNext = nullptr;
-		samplerInfo.flags = 0;
-		samplerInfo.magFilter = TextureFilterToVk(NormalizedDesc.MagFilter);
-		samplerInfo.minFilter = TextureFilterToVk(NormalizedDesc.MinFilter);
-		samplerInfo.mipmapMode = TextureFilterMipToVk(NormalizedDesc.MipFilter);
-		samplerInfo.addressModeU = TextureAddressModeToVk(NormalizedDesc.AddressU);
-		samplerInfo.addressModeV = TextureAddressModeToVk(NormalizedDesc.AddressV);
-		samplerInfo.addressModeW = TextureAddressModeToVk(NormalizedDesc.AddressW);
-		samplerInfo.mipLodBias = 0;
-		samplerInfo.anisotropyEnable = NormalizedDesc.Anisotropy > 1;
-		samplerInfo.maxAnisotropy = NormalizedDesc.Anisotropy;
-		samplerInfo.compareEnable = false; // TODO
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS; // TODO
-		samplerInfo.minLod = NormalizedDesc.MinLOD;
-		samplerInfo.maxLod = NormalizedDesc.MaxLOD;
-		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-		samplerInfo.unnormalizedCoordinates = false;
-		VK_CHECK(vkCreateSampler(_Device, &samplerInfo, nullptr, &result->_Sampler));
 
 		return result;
 	}

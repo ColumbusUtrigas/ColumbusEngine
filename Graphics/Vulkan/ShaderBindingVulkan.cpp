@@ -28,6 +28,29 @@ namespace Columbus
 			VulkanState.UsedMask = 0;
 		}
 
+		template <typename T>
+		static TextureView* ResolveShaderTextureView(RenderGraphContext& Context, const T& Resource, bool Storage)
+		{
+			if (Resource.ExternalView)
+			{
+				return Resource.ExternalView;
+			}
+			if (Resource.External)
+			{
+				Texture2* Texture = Resource.External;
+				return Context.Device->GetOrCreateTextureView(Texture, { .ViewType = Texture->GetDesc().Type, .MipCount = Storage ? 1u : 0u, .Aspect = Resource.Aspect });
+			}
+			if (Resource.View.Index >= 0)
+			{
+				return Context.GetRenderGraphTextureView(Resource.View, Resource.Aspect).get();
+			}
+			if (Storage)
+			{
+				return Context.GetRenderGraphStorageView(Resource.Ref, Resource.Aspect).get();
+			}
+			return Context.Device->GetDefaultTextureView(Context.GetRenderGraphTexture(Resource.Ref).get(), Resource.Aspect);
+		}
+
 		static VkDescriptorSet GetOrCreateDescriptorSet(
 			ShaderBinderBackendState& Backend,
 			RenderGraphContext& Context,
@@ -149,20 +172,17 @@ namespace Columbus
 		{
 			if (Resource.Ref != -1)
 			{
-				Dependencies->Read(Resource.Ref, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				Dependencies->Read(Resource.Ref, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, { .Aspect = Resource.Aspect });
+			}
+			else if (Resource.View.Index >= 0)
+			{
+				Dependencies->Read(Resource.View, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, Resource.Aspect);
 			}
 			return;
 		}
 
-		SPtr<Texture2> GraphTexture;
-		const Texture2* Texture = Resource.External;
-		if (Texture == nullptr)
-		{
-			GraphTexture = Context->GetRenderGraphTexture(Resource.Ref);
-			Texture = GraphTexture.get();
-		}
-
-		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, Texture, Resource.Aspect, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+		TextureView* View = ResolveShaderTextureView(*Context, Resource, false);
+		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, View, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 	}
 
 	void ShaderBinder::BindStorageTextureImpl(const ShaderStorageTexture& Resource, int Set, int Binding, int ArrayIndex)
@@ -171,20 +191,18 @@ namespace Columbus
 		{
 			if (Resource.Ref != -1)
 			{
-				Dependencies->Write(Resource.Ref, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				Dependencies->Write(Resource.Ref, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, { .MipCount = 1, .Aspect = Resource.Aspect });
+			}
+			else if (Resource.View.Index >= 0)
+			{
+				Dependencies->Write(Resource.View, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, Resource.Aspect);
 			}
 			return;
 		}
 
-		SPtr<Texture2> GraphTexture;
-		const Texture2* Texture = Resource.External;
-		if (Texture == nullptr)
-		{
-			GraphTexture = Context->GetRenderGraphTexture(Resource.Ref);
-			Texture = GraphTexture.get();
-		}
-
-		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, Texture, Resource.Aspect, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+		TextureView* View = ResolveShaderTextureView(*Context, Resource, true);
+		COLUMBUS_ASSERT_MESSAGE(View && View->GetDesc().MipCount == 1, "Storage image views must select exactly one mip");
+		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, View, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 	}
 
 	void ShaderBinder::BindReadStorageTextureImpl(const ShaderReadStorageTexture& Resource, int Set, int Binding, int ArrayIndex)
@@ -193,20 +211,18 @@ namespace Columbus
 		{
 			if (Resource.Ref != -1)
 			{
-				Dependencies->Read(Resource.Ref, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+				Dependencies->Read(Resource.Ref, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, { .MipCount = 1, .Aspect = Resource.Aspect });
+			}
+			else if (Resource.View.Index >= 0)
+			{
+				Dependencies->Read(Resource.View, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, Resource.Aspect);
 			}
 			return;
 		}
 
-		SPtr<Texture2> GraphTexture;
-		const Texture2* Texture = Resource.External;
-		if (Texture == nullptr)
-		{
-			GraphTexture = Context->GetRenderGraphTexture(Resource.Ref);
-			Texture = GraphTexture.get();
-		}
-
-		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, Texture, Resource.Aspect, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+		TextureView* View = ResolveShaderTextureView(*Context, Resource, true);
+		COLUMBUS_ASSERT_MESSAGE(View && View->GetDesc().MipCount == 1, "Storage image views must select exactly one mip");
+		Context->Device->UpdateDescriptorSet(GetOrCreateDescriptorSet(*Backend, *Context, Compute, Graphics, RayTracing, Set), Binding, ArrayIndex, View, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 	}
 
 	void ShaderBinder::BindReadBufferImpl(const ShaderReadBuffer& Resource, int Set, int Binding, int ArrayIndex)

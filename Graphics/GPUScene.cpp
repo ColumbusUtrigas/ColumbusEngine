@@ -435,13 +435,6 @@ namespace Columbus
 		Desc.Height = (u32)Capture.Resolution;
 		Desc.Mips = (u32)MipCount;
 		Desc.Format = TextureFormat::RGBA32F;
-		Desc.AddressU = TextureAddressMode::ClampToEdge;
-		Desc.AddressV = TextureAddressMode::ClampToEdge;
-		Desc.AddressW = TextureAddressMode::ClampToEdge;
-		Desc.MinFilter = TextureFilter2::Linear;
-		Desc.MagFilter = TextureFilter2::Linear;
-		Desc.MipFilter = TextureFilter2::Linear;
-		Desc.MaxLOD = (float)(MipCount - 1);
 
 		if (Capture.Radiance != nullptr && Capture.Radiance->GetDesc() == TextureUtils::NormalizeTextureDesc(Desc))
 		{
@@ -467,13 +460,6 @@ namespace Columbus
 		TextureDesc2 Desc;
 		Desc.Usage = TextureUsage::Sampled;
 		TextureUtils::SetTextureDescImageFields(Desc, CubeImage);
-		Desc.AddressU = TextureAddressMode::ClampToEdge;
-		Desc.AddressV = TextureAddressMode::ClampToEdge;
-		Desc.AddressW = TextureAddressMode::ClampToEdge;
-		Desc.MinFilter = TextureFilter2::Linear;
-		Desc.MagFilter = TextureFilter2::Linear;
-		Desc.MipFilter = TextureFilter2::Linear;
-		Desc.MaxLOD = (float)Math::Max(0u, Desc.Mips - 1);
 
 		Texture2* NewRadiance = Device->CreateTexture(CubeImage, Desc);
 		if (NewRadiance == nullptr)
@@ -587,10 +573,6 @@ namespace Columbus
 			LTCDesc.Width = 64;
 			LTCDesc.Height = 64;
 			LTCDesc.Format = TextureFormat::RGBA32F;
-			LTCDesc.MinFilter = TextureFilter2::Nearest;
-			LTCDesc.MagFilter = TextureFilter2::Linear;
-			LTCDesc.AddressU = TextureAddressMode::ClampToEdge;
-			LTCDesc.AddressV = TextureAddressMode::ClampToEdge;
 
 			Scene->LTC_1 = Device->CreateTexture(LTCDesc);
 			Scene->LTC_2 = Device->CreateTexture(LTCDesc);
@@ -605,10 +587,6 @@ namespace Columbus
 			BRDFDesc.Width = BRDFLUT::BRDF_LUT_SIZE;
 			BRDFDesc.Height = BRDFLUT::BRDF_LUT_SIZE;
 			BRDFDesc.Format = TextureFormat::RG16F;
-			BRDFDesc.MinFilter = TextureFilter2::Linear;
-			BRDFDesc.MagFilter = TextureFilter2::Linear;
-			BRDFDesc.AddressU = TextureAddressMode::ClampToEdge;
-			BRDFDesc.AddressV = TextureAddressMode::ClampToEdge;
 
 			Scene->BRDF_LUT = Device->CreateTexture(BRDFDesc);
 			Device->UploadTextureMipData(Scene->BRDF_LUT, 0, 0, BRDFLUT::BRDF_LUT_RG16F);

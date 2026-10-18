@@ -262,6 +262,8 @@ namespace Columbus
 		void BindRayTracingPipeline(const RayTracingPipeline* Pipeline, const TParameters& Parameters);
 
 		SPtr<Texture2> GetRenderGraphTexture(RenderGraphTextureRef Ref);
+		SPtr<TextureView> GetRenderGraphTextureView(RenderGraphTextureViewRef View, TextureBindingFlags Aspect = TextureBindingFlags::AspectColour);
+		SPtr<TextureView> GetRenderGraphStorageView(RenderGraphTextureRef Ref, TextureBindingFlags Aspect = TextureBindingFlags::AspectColour);
 		SPtr<Buffer> GetRenderGraphBuffer(RenderGraphBufferRef Ref);
 
 		// automatically launch groups encapsulating pixels
@@ -271,8 +273,9 @@ namespace Columbus
 	struct RenderPassAttachment
 	{
 		AttachmentLoadOp LoadOp;
-		RenderGraphTextureRef Texture;
+		RenderGraphTextureRef Texture = -1;
 		AttachmentClearValue ClearValue;
+		RenderGraphTextureViewRef View;
 
 		bool operator==(const RenderPassAttachment&) const = default;
 	};
@@ -300,10 +303,10 @@ namespace Columbus
 		static constexpr int AttachmentsMax = RenderPassParameters::ColorAttachmentsCount + 1; // +1 because of DepthStencil attachment
 
 		AttachmentDesc AttachmentDescs[AttachmentsMax]{}; // will be used to create RHI render passes and framebuffers
-		Texture2* AttachmentTextures[AttachmentsMax]{ nullptr };
-		VkImageView AttachmentViews[AttachmentsMax]{ nullptr };
+		TextureView* AttachmentViews[AttachmentsMax]{ nullptr };
 		iVector2 Size;
 		int NumUsedAttachments = 0;
+		u32 Layers = 1;
 
 		bool EqualsDescs(const RenderGraphPassParametersRHI& Other) const
 		{
@@ -324,7 +327,7 @@ namespace Columbus
 			if (!EqualsDescs(Other))
 				return false;
 
-			if (Size != Other.Size)
+			if (Size != Other.Size || Layers != Other.Layers)
 				return false;
 
 			for (int i = 0; i < NumUsedAttachments; i++)
@@ -347,6 +350,12 @@ namespace Columbus
 		Raster,
 		Compute,
 		// TODO: AsyncCompute
+	};
+
+	struct RenderGraphTextureView
+	{
+		RenderGraphTextureRef Texture;
+		TextureViewDesc Desc;
 	};
 
 	// TODO: unify buffer and texture internally as a resource?
@@ -416,6 +425,8 @@ namespace Columbus
 		// TODO?
 		VkAccessFlags Access;
 		VkPipelineStageFlags Stage;
+		TextureViewDesc Range;
+		RenderGraphTextureViewRef View;
 	};
 
 	// TODO: unify buffer and texture dependencies internally?
@@ -435,14 +446,24 @@ namespace Columbus
 			TextureWriteResources(Allocator), TextureReadResources(RenderGraphAllocatorStd<RenderPassTextureDependency>(Allocator)),
 			BufferWriteResources(Allocator), BufferReadResources(RenderGraphAllocatorStd<RenderPassBufferDependency>(Allocator)) {}
 
-		void Write(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		void Write(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage, TextureViewDesc Range = {})
 		{
-			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage });
+			TextureWriteResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage, Range });
 		}
 
-		void Read(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		void Read(RenderGraphTextureId Texture, VkAccessFlags Access, VkPipelineStageFlags Stage, TextureViewDesc Range = {})
 		{
-			TextureReadResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage });
+			TextureReadResources.push_back(RenderPassTextureDependency { Texture, -1, Access, Stage, Range });
+		}
+
+		void Write(RenderGraphTextureViewRef View, VkAccessFlags Access, VkPipelineStageFlags Stage, TextureBindingFlags Aspect = TextureBindingFlags::AspectColour)
+		{
+			TextureWriteResources.push_back({ -1, -1, Access, Stage, { .Aspect = Aspect }, View });
+		}
+
+		void Read(RenderGraphTextureViewRef View, VkAccessFlags Access, VkPipelineStageFlags Stage, TextureBindingFlags Aspect = TextureBindingFlags::AspectColour)
+		{
+			TextureReadResources.push_back({ -1, -1, Access, Stage, { .Aspect = Aspect }, View });
 		}
 
 		void WriteBuffer(RenderGraphBufferId Buffer, VkAccessFlags Access, VkPipelineStageFlags Stage)
@@ -483,6 +504,7 @@ namespace Columbus
 		RenderGraphTextureId Texture;
 		RenderPassTextureDependency Writer; // (to extract vk flags from)
 		RenderPassTextureDependency Reader; // (to extract vk flags from)
+		TextureViewDesc Range;
 	};
 
 	// TODO: unify textures and buffers internally?
@@ -587,6 +609,11 @@ namespace Columbus
 		~RenderGraph();
 
 		RenderGraphTextureRef CreateTexture(const TextureDesc2& Desc, const char* Name);
+		// Views are graph-local descriptions of a parent image; native views are cached with that image.
+		RenderGraphTextureViewRef CreateTextureView(RenderGraphTextureRef Texture, const TextureViewDesc& Desc);
+		const RenderGraphTextureView& GetTextureView(RenderGraphTextureViewRef View) const;
+		TextureDesc2 GetTextureDesc(RenderGraphTextureViewRef View) const;
+		iVector2 GetTextureSize2D(RenderGraphTextureViewRef View) const;
 		RenderGraphBufferRef  CreateBuffer(const BufferDesc& Desc, const char* Name);
 
 		RenderGraphTextureRef RegisterExternalTexture(SPtr<Texture2> Tex, const char* Name);
@@ -630,6 +657,9 @@ namespace Columbus
 		void Build();
 
 		void AllocateTexture(RenderGraphTexture& Texture);
+		void ResolveTextureDependency(RenderPassTextureDependency& Dependency);
+		void BuildTextureBarriers();
+		TextureView* ResolveTextureView(RenderGraphTextureViewRef View, TextureBindingFlags Aspect = TextureBindingFlags::AspectColour);
 		void AllocateBuffer(RenderGraphBuffer& Buffer);
 
 		VkRenderPass GetOrCreateVulkanRenderPass(RenderGraphPassParametersRHI& AttachmentParams);
@@ -644,6 +674,7 @@ namespace Columbus
 	private:
 		std::vector<RenderPass> Passes;
 		std::vector<RenderGraphTexture> Textures; // textures that are used in the current graph
+		std::vector<RenderGraphTextureView> TextureViews;
 		std::vector<RenderGraphBuffer> Buffers;   // buffers that are used in the current graph
 		std::vector<RenderGraphTextureExtraction> Extractions;
 		std::queue<RenderGraphMarker> MarkersStack;

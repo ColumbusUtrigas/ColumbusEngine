@@ -152,12 +152,6 @@ namespace Columbus
 		TextureDesc2 FogOnlyDesc = SceneDesc;
 		FogOnlyDesc.Usage = TextureUsage::StorageSampled;
 		FogOnlyDesc.Format = TextureFormat::RGBA16F;
-		FogOnlyDesc.AddressU = TextureAddressMode::Repeat;
-		FogOnlyDesc.AddressV = TextureAddressMode::Repeat;
-		FogOnlyDesc.AddressW = TextureAddressMode::Repeat;
-		FogOnlyDesc.MinFilter = TextureFilter2::Linear;
-		FogOnlyDesc.MagFilter = TextureFilter2::Linear;
-		FogOnlyDesc.MipFilter = TextureFilter2::Linear;
 
 		if (!bFogEnabled)
 		{
@@ -182,12 +176,6 @@ namespace Columbus
 		FroxelDesc.Height = (u32)FroxelResolution.Y;
 		FroxelDesc.Depth = (u32)FroxelResolution.Z;
 		FroxelDesc.Format = TextureFormat::RGBA16F;
-		FroxelDesc.AddressU = TextureAddressMode::ClampToEdge;
-		FroxelDesc.AddressV = TextureAddressMode::ClampToEdge;
-		FroxelDesc.AddressW = TextureAddressMode::ClampToEdge;
-		FroxelDesc.MinFilter = TextureFilter2::Linear;
-		FroxelDesc.MagFilter = TextureFilter2::Linear;
-		FroxelDesc.MipFilter = TextureFilter2::Linear;
 
 		const bool bHistoryInvalidated = Graph.CreateHistoryTexture(&Textures.History.VolumetricFogFroxels, FroxelDesc, "VolumetricFog Froxels History");
 		Texture2* FroxelHistoryTexture = Textures.History.VolumetricFogFroxels;

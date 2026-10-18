@@ -131,12 +131,6 @@ namespace Columbus
 		CommonDesc.Height = System.Atlas.Height;
 		CommonDesc.Type = TextureType::Texture2D;
 		CommonDesc.Usage = TextureUsage::RenderTargetColor;
-		CommonDesc.AddressU = TextureAddressMode::ClampToEdge;
-		CommonDesc.AddressV = TextureAddressMode::ClampToEdge;
-		CommonDesc.AddressW = TextureAddressMode::ClampToEdge;
-		CommonDesc.MagFilter = TextureFilter2::Nearest;
-		CommonDesc.MinFilter = TextureFilter2::Nearest;
-		CommonDesc.MipFilter = TextureFilter2::Nearest;
 
 		TextureDesc2 NormalDesc = CommonDesc;
 		TextureDesc2 PositionDesc = CommonDesc;

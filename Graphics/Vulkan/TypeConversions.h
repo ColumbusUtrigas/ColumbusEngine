@@ -145,6 +145,15 @@ namespace Columbus
 		}
 	}
 
+	inline VkImageAspectFlags TextureViewAspectMaskVk(TextureFormat Format, TextureBindingFlags Aspect)
+	{
+		if (Aspect == TextureBindingFlags::AspectColour)
+		{
+			return TextureFormatToAspectMaskVk(Format);
+		}
+		return ((u32(Aspect) & 1) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | ((u32(Aspect) & 2) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+	}
+
 	static VkImageUsageFlags TextureUsageToImageUsageVk(TextureUsage usage)
 	{
 		VkImageUsageFlags Flags = 0;

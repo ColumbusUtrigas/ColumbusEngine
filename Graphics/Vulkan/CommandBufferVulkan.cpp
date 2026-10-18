@@ -230,8 +230,8 @@ namespace Columbus
 		VkImageMemoryBarrier Barrier;
 		Barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		Barrier.pNext = nullptr;
-		Barrier.srcAccessMask = VK_ACCESS_NONE;
-		Barrier.dstAccessMask = VK_ACCESS_NONE;
+		Barrier.srcAccessMask = vktex->_Layout == VK_IMAGE_LAYOUT_UNDEFINED ? 0 : VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+		Barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 		Barrier.oldLayout = vktex->_Layout;
 		Barrier.newLayout = NewLayout;
 		Barrier.srcQueueFamilyIndex = 0;
@@ -243,7 +243,7 @@ namespace Columbus
 		Barrier.subresourceRange.baseMipLevel = 0; // TODO:
 		Barrier.subresourceRange.layerCount = TextureUtils::TextureLayerCount(Texture->GetDesc());
 
-		vkCmdPipelineBarrier(_CmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		vkCmdPipelineBarrier(_CmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 			0, 0, // memory barrier
 			0, 0, // buffer memory barrier
 			0, 1, &Barrier);
@@ -251,15 +251,26 @@ namespace Columbus
 		vktex->_Layout = NewLayout;
 	}
 
-	void CommandBufferVulkan::CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size)
+	void CommandBufferVulkan::CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size, TextureViewDesc SrcRange, TextureViewDesc DstRange)
 	{
 		auto srcvk = static_cast<const TextureVulkan*>(Src);
 		auto dstvk = static_cast<const TextureVulkan*>(Dst);
 
 		const TextureDesc2& SrcDesc = Src->GetDesc();
 		const TextureDesc2& DstDesc = Dst->GetDesc();
-		const u32 MipCount = std::min(SrcDesc.Mips, DstDesc.Mips);
-		const u32 LayerCount = std::min(TextureUtils::TextureLayerCount(SrcDesc), TextureUtils::TextureLayerCount(DstDesc));
+		SrcRange.ViewType = SrcDesc.Type == TextureType::TextureCube || SrcDesc.Type == TextureType::TextureCubeArray ? TextureType::Texture2DArray : SrcDesc.Type;
+		DstRange.ViewType = DstDesc.Type == TextureType::TextureCube || DstDesc.Type == TextureType::TextureCubeArray ? TextureType::Texture2DArray : DstDesc.Type;
+
+		const bool SourceValid = TextureUtils::ResolveTextureViewDesc(SrcDesc, SrcRange);
+		const bool TargetValid = TextureUtils::ResolveTextureViewDesc(DstDesc, DstRange);
+		COLUMBUS_ASSERT_MESSAGE(SourceValid && TargetValid, "Invalid image copy subresource range");
+		if (!SourceValid || !TargetValid)
+		{
+			return;
+		}
+
+		const u32 MipCount = std::min(SrcRange.MipCount, DstRange.MipCount);
+		const u32 LayerCount = std::min(SrcRange.LayerCount, DstRange.LayerCount);
 
 		// fixed-size stack batch; supports arbitrary mip/layer counts without heap allocation
 		constexpr u32 BatchCapacity = 64;
@@ -270,7 +281,7 @@ namespace Columbus
 		{
 			if (RegionCount > 0)
 			{
-				vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Image, dstvk->_Layout, RegionCount, Regions);
+				vkCmdCopyImage(_CmdBuf, srcvk->_Image, srcvk->GetLayout(), dstvk->_Image, dstvk->GetLayout(), RegionCount, Regions);
 				RegionCount = 0;
 			}
 		};
@@ -281,16 +292,16 @@ namespace Columbus
 			{
 				Regions[RegionCount++] = VkImageCopy {
 					.srcSubresource = VkImageSubresourceLayers{
-						.aspectMask = TextureFormatToAspectMaskVk(SrcDesc.Format),
-						.mipLevel = Mip,
-						.baseArrayLayer = Layer,
+						.aspectMask = TextureViewAspectMaskVk(SrcDesc.Format, SrcRange.Aspect),
+						.mipLevel = SrcRange.BaseMip + Mip,
+						.baseArrayLayer = SrcRange.BaseLayer + Layer,
 						.layerCount = 1,
 					},
 					.srcOffset = VkOffset3D{SrcOffset.X, SrcOffset.Y, SrcOffset.Z},
 					.dstSubresource = VkImageSubresourceLayers{
-						.aspectMask = TextureFormatToAspectMaskVk(DstDesc.Format),
-						.mipLevel = Mip,
-						.baseArrayLayer = Layer,
+						.aspectMask = TextureViewAspectMaskVk(DstDesc.Format, DstRange.Aspect),
+						.mipLevel = DstRange.BaseMip + Mip,
+						.baseArrayLayer = DstRange.BaseLayer + Layer,
 						.layerCount = 1,
 					},
 					.dstOffset = VkOffset3D{DstOffset.X, DstOffset.Y, DstOffset.Z},
@@ -311,15 +322,28 @@ namespace Columbus
 		FlushBatch();
 	}
 
-	void CommandBufferVulkan::CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset, VkImageAspectFlags Aspect)
+	void CommandBufferVulkan::CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset, VkImageAspectFlags Aspect, TextureViewDesc Range)
 	{
 		auto srcvk = static_cast<const TextureVulkan*>(Src);
 		auto dstvk = static_cast<const BufferVulkan*>(Dst);
 
+		Range.ViewType = Src->GetDesc().Type;
+		if (Range.ViewType == TextureType::TextureCube || Range.ViewType == TextureType::TextureCubeArray)
+		{
+			Range.ViewType = TextureType::Texture2DArray;
+		}
+
+		const bool Valid = TextureUtils::ResolveTextureViewDesc(Src->GetDesc(), Range);
+		COLUMBUS_ASSERT_MESSAGE(Valid, "Invalid texture transfer subresource range");
+		if (!Valid)
+		{
+			return;
+		}
+
 		VkImageSubresourceLayers Subresource{
-			.aspectMask = Aspect ? Aspect : TextureFormatToAspectMaskVk(Src->GetDesc().Format),
-			.mipLevel = 0, // TODO:
-			.baseArrayLayer = 0, // TODO:
+			.aspectMask = Aspect ? Aspect : TextureViewAspectMaskVk(Src->GetDesc().Format, Range.Aspect),
+			.mipLevel = Range.BaseMip,
+			.baseArrayLayer = Range.BaseLayer,
 			.layerCount = 1, // TODO:
 		};
 
@@ -332,7 +356,7 @@ namespace Columbus
 			.imageExtent = VkExtent3D{(u32)Size.X, (u32)Size.Y, (u32)Size.Z},
 		};
 
-		vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Buffer, 1, &Copy);
+		vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->GetLayout(), dstvk->_Buffer, 1, &Copy);
 	}
 
 	void CommandBufferVulkan::CopyImageToBufferAllSubresources(const Texture2* Src, const Buffer* Dst)
@@ -360,7 +384,7 @@ namespace Columbus
 		{
 			if (RegionCount > 0)
 			{
-				vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->_Layout, dstvk->_Buffer, RegionCount, Regions);
+				vkCmdCopyImageToBuffer(_CmdBuf, srcvk->_Image, srcvk->GetLayout(), dstvk->_Buffer, RegionCount, Regions);
 				RegionCount = 0;
 			}
 		};
@@ -435,16 +459,29 @@ namespace Columbus
 		vkCmdFillBuffer(_CmdBuf, vkbuf->_Buffer, Offset, Size, Data32);
 	}
 
-	void CommandBufferVulkan::MemsetTexture(const Texture2* Texture, Vector4 Value)
+	void CommandBufferVulkan::MemsetTexture(const Texture2* Texture, Vector4 Value, TextureViewDesc ViewRange)
 	{
 		auto texvk = static_cast<const TextureVulkan*>(Texture);
 
+		ViewRange.ViewType = Texture->GetDesc().Type;
+		if (ViewRange.ViewType == TextureType::TextureCube || ViewRange.ViewType == TextureType::TextureCubeArray)
+		{
+			ViewRange.ViewType = TextureType::Texture2DArray;
+		}
+
+		const bool Valid = TextureUtils::ResolveTextureViewDesc(Texture->GetDesc(), ViewRange);
+		COLUMBUS_ASSERT_MESSAGE(Valid, "Invalid texture transfer subresource range");
+		if (!Valid)
+		{
+			return;
+		}
+
 		VkImageSubresourceRange Range;
-		Range.aspectMask = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
-		Range.baseMipLevel = 0; // TODO:
-		Range.levelCount = Texture->GetDesc().Mips;
-		Range.baseArrayLayer = 0; // TODO:
-		Range.layerCount = TextureUtils::TextureLayerCount(Texture->GetDesc());
+		Range.aspectMask = TextureViewAspectMaskVk(Texture->GetDesc().Format, ViewRange.Aspect);
+		Range.baseMipLevel = ViewRange.BaseMip;
+		Range.levelCount = ViewRange.MipCount;
+		Range.baseArrayLayer = ViewRange.BaseLayer;
+		Range.layerCount = ViewRange.LayerCount;
 
 		const TextureFormatInfo& Info = TextureFormatGetInfo(Texture->GetDesc().Format);
 
@@ -454,7 +491,7 @@ namespace Columbus
 			DSValue.depth = Value.X;
 			DSValue.stencil = 0;
 
-			vkCmdClearDepthStencilImage(_CmdBuf, texvk->_Image, texvk->_Layout, &DSValue, 1, &Range);
+			vkCmdClearDepthStencilImage(_CmdBuf, texvk->_Image, texvk->GetLayout(), &DSValue, 1, &Range);
 		}
 		else
 		{
@@ -464,7 +501,7 @@ namespace Columbus
 			Color.float32[2] = Value.Z;
 			Color.float32[3] = Value.W;
 
-			vkCmdClearColorImage(_CmdBuf, texvk->_Image, texvk->_Layout, &Color, 1, &Range);
+			vkCmdClearColorImage(_CmdBuf, texvk->_Image, texvk->GetLayout(), &Color, 1, &Range);
 		}
 	}
 

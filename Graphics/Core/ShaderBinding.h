@@ -17,6 +17,12 @@ namespace Columbus
 	using RenderGraphTextureRef = int;
 	using RenderGraphBufferRef = int;
 
+	struct RenderGraphTextureViewRef
+	{
+		int Index = -1;
+		bool operator==(const RenderGraphTextureViewRef&) const = default;
+	};
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Shader binding types definitions
 
@@ -87,41 +93,53 @@ namespace Columbus
 
 	struct ShaderSampledTexture
 	{
-		RenderGraphTextureRef Ref = -1;
-		Texture2* External = nullptr;
+		RenderGraphTextureRef     Ref          = -1;
+		Texture2*                External     = nullptr;
+		TextureView*             ExternalView = nullptr;
+		RenderGraphTextureViewRef View;
 		TextureBindingFlags Aspect = TextureBindingFlags::AspectColour;
 
 		ShaderSampledTexture();
 		explicit ShaderSampledTexture(TextureBindingFlags InAspect);
 
 		ShaderSampledTexture& operator=(RenderGraphTextureRef InRef);
+		ShaderSampledTexture& operator=(RenderGraphTextureViewRef InView);
 		ShaderSampledTexture& operator=(Texture2* InTexture);
+		ShaderSampledTexture& operator=(TextureView* InView);
 	};
 
 	struct ShaderStorageTexture
 	{
-		RenderGraphTextureRef Ref = -1;
-		Texture2* External = nullptr;
+		RenderGraphTextureRef     Ref          = -1;
+		Texture2*                External     = nullptr;
+		TextureView*             ExternalView = nullptr;
+		RenderGraphTextureViewRef View;
 		TextureBindingFlags Aspect = TextureBindingFlags::AspectColour;
 
 		ShaderStorageTexture();
 		explicit ShaderStorageTexture(TextureBindingFlags InAspect);
 
 		ShaderStorageTexture& operator=(RenderGraphTextureRef InRef);
+		ShaderStorageTexture& operator=(RenderGraphTextureViewRef InView);
 		ShaderStorageTexture& operator=(Texture2* InTexture);
+		ShaderStorageTexture& operator=(TextureView* InView);
 	};
 
 	struct ShaderReadStorageTexture
 	{
-		RenderGraphTextureRef Ref = -1;
-		Texture2* External = nullptr;
+		RenderGraphTextureRef     Ref          = -1;
+		Texture2*                External     = nullptr;
+		TextureView*             ExternalView = nullptr;
+		RenderGraphTextureViewRef View;
 		TextureBindingFlags Aspect = TextureBindingFlags::AspectColour;
 
 		ShaderReadStorageTexture();
 		explicit ShaderReadStorageTexture(TextureBindingFlags InAspect);
 
 		ShaderReadStorageTexture& operator=(RenderGraphTextureRef InRef);
+		ShaderReadStorageTexture& operator=(RenderGraphTextureViewRef InView);
 		ShaderReadStorageTexture& operator=(Texture2* InTexture);
+		ShaderReadStorageTexture& operator=(TextureView* InView);
 	};
 
 	struct ShaderReadBuffer
@@ -183,15 +201,37 @@ namespace Columbus
 
 	inline ShaderSampledTexture& ShaderSampledTexture::operator=(RenderGraphTextureRef InRef)
 	{
-		Ref = InRef;
-		External = nullptr;
+		Ref          = InRef;
+		External     = nullptr;
+		View         = {};
+		ExternalView = nullptr;
+		return *this;
+	}
+
+	inline ShaderSampledTexture& ShaderSampledTexture::operator=(RenderGraphTextureViewRef InView)
+	{
+		Ref          = -1;
+		External     = nullptr;
+		View         = InView;
+		ExternalView = nullptr;
 		return *this;
 	}
 
 	inline ShaderSampledTexture& ShaderSampledTexture::operator=(Texture2* InTexture)
 	{
-		Ref = -1;
-		External = InTexture;
+		Ref          = -1;
+		External     = InTexture;
+		View         = {};
+		ExternalView = nullptr;
+		return *this;
+	}
+
+	inline ShaderSampledTexture& ShaderSampledTexture::operator=(TextureView* InView)
+	{
+		Ref          = -1;
+		External     = nullptr;
+		ExternalView = InView;
+		View         = {};
 		return *this;
 	}
 
@@ -203,15 +243,37 @@ namespace Columbus
 
 	inline ShaderStorageTexture& ShaderStorageTexture::operator=(RenderGraphTextureRef InRef)
 	{
-		Ref = InRef;
-		External = nullptr;
+		Ref          = InRef;
+		External     = nullptr;
+		View         = {};
+		ExternalView = nullptr;
+		return *this;
+	}
+
+	inline ShaderStorageTexture& ShaderStorageTexture::operator=(RenderGraphTextureViewRef InView)
+	{
+		Ref          = -1;
+		External     = nullptr;
+		View         = InView;
+		ExternalView = nullptr;
 		return *this;
 	}
 
 	inline ShaderStorageTexture& ShaderStorageTexture::operator=(Texture2* InTexture)
 	{
-		Ref = -1;
-		External = InTexture;
+		Ref          = -1;
+		External     = InTexture;
+		View         = {};
+		ExternalView = nullptr;
+		return *this;
+	}
+
+	inline ShaderStorageTexture& ShaderStorageTexture::operator=(TextureView* InView)
+	{
+		Ref          = -1;
+		External     = nullptr;
+		ExternalView = InView;
+		View         = {};
 		return *this;
 	}
 
@@ -223,15 +285,37 @@ namespace Columbus
 
 	inline ShaderReadStorageTexture& ShaderReadStorageTexture::operator=(RenderGraphTextureRef InRef)
 	{
-		Ref = InRef;
-		External = nullptr;
+		Ref          = InRef;
+		External     = nullptr;
+		View         = {};
+		ExternalView = nullptr;
+		return *this;
+	}
+
+	inline ShaderReadStorageTexture& ShaderReadStorageTexture::operator=(RenderGraphTextureViewRef InView)
+	{
+		Ref          = -1;
+		External     = nullptr;
+		View         = InView;
+		ExternalView = nullptr;
 		return *this;
 	}
 
 	inline ShaderReadStorageTexture& ShaderReadStorageTexture::operator=(Texture2* InTexture)
 	{
-		Ref = -1;
-		External = InTexture;
+		Ref          = -1;
+		External     = InTexture;
+		View         = {};
+		ExternalView = nullptr;
+		return *this;
+	}
+
+	inline ShaderReadStorageTexture& ShaderReadStorageTexture::operator=(TextureView* InView)
+	{
+		Ref          = -1;
+		External     = nullptr;
+		ExternalView = InView;
+		View         = {};
 		return *this;
 	}
 

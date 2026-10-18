@@ -134,8 +134,8 @@ namespace Columbus
 		// GPUScene owns the texture and outlives the graph; the graph only borrows it
 		RenderGraphTextureRef Radiance = Graph.RegisterExternalTexture(SPtr<Texture2>(RadianceTexture, [](Texture2*) {}), "ReflectionCaptureRadiance");
 
-		// per-mip storage views over the cube faces; destroyed after the graph is done with them
-		std::vector<Texture2*> MipViews;
+		// Per-mip storage views over the cube faces; the source texture owns the native views.
+		std::vector<RenderGraphTextureViewRef> MipViews;
 		MipViews.reserve((size_t)MipCount);
 		for (u32 Mip = 0; Mip < (u32)MipCount; Mip++)
 		{
@@ -145,7 +145,7 @@ namespace Columbus
 			ViewDesc.MipCount = 1;
 			ViewDesc.BaseLayer = 0;
 			ViewDesc.LayerCount = 6;
-			MipViews.push_back(Graph.Device->CreateTextureView(RadianceTexture, ViewDesc));
+			MipViews.push_back(Graph.CreateTextureView(Radiance, ViewDesc));
 		}
 
 		const int SampleChunk = Math::Max(1, CVar_ReflectionCaptureBakeSampleChunk.GetValue());
@@ -236,10 +236,5 @@ namespace Columbus
 			}
 		}
 
-		// the graph borrows the views during execution; deferred destruction outlives it
-		for (Texture2* MipView : MipViews)
-		{
-			Graph.Device->DestroyTextureDeferred(MipView);
-		}
 	}
 }

@@ -3,7 +3,7 @@
 #include "ShaderBytecode/ShaderBytecode.h"
 #include "Math/Quaternion.h"
 #include <algorithm>
-#include <array>
+#include <cstdio>
 
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTransparency);
 DECLARE_GPU_PROFILING_COUNTER(GpuCounterTransparencyRefraction);
@@ -108,10 +108,7 @@ namespace Columbus
 		struct PassParameters
 		{
 			ShaderGPUScene Scene;
-			ShaderSampledTexture RefractionLevel0;
-			ShaderSampledTexture RefractionLevel1;
-			ShaderSampledTexture RefractionLevel2;
-			ShaderSampledTexture RefractionLevel3;
+			ShaderSampledTexture RefractionPyramid;
 			ShaderStaticSampler RefractionSampler { SamplerDesc::Create<TextureFilter2::Linear, TextureAddressMode::ClampToEdge>() };
 			ReflectionCaptures::ShaderResources ReflectionCaptures;
 		};
@@ -124,11 +121,8 @@ namespace Columbus
 		static void Bind(ShaderBinder& Binder, const PassParameters& Params)
 		{
 			Binder.Bind(Params.Scene);
-			Binder.Bind(Params.RefractionLevel0, 2, 0);
-			Binder.Bind(Params.RefractionLevel1, 2, 1);
-			Binder.Bind(Params.RefractionLevel2, 2, 2);
-			Binder.Bind(Params.RefractionLevel3, 2, 3);
-			Binder.Bind(Params.RefractionSampler, 2, 4);
+			Binder.Bind(Params.RefractionPyramid, 2, 0);
+			Binder.Bind(Params.RefractionSampler, 2, 1);
 			ReflectionCaptures::BindReflectionCaptureResources(Binder, Params.ReflectionCaptures, 3);
 		}
 
@@ -214,19 +208,13 @@ namespace Columbus
 		return D.X * D.X + D.Y * D.Y + D.Z * D.Z;
 	}
 
-	static RenderGraphTextureRef AddRefractionBlurPass(RenderGraph& Graph, RenderGraphTextureRef Source, const char* Name, int Kernel, int Downsample)
+	static void AddRefractionBlurPass(RenderGraph& Graph, RenderGraphTextureViewRef Source, RenderGraphTextureViewRef Output, const char* Name, int Kernel)
 	{
-		TextureDesc2 Desc = Graph.GetTextureDesc(Source);
-		Desc.Format = TextureFormat::RGBA16F;
-		Desc.Width = std::max(1u, Desc.Width / (u32)std::max(Downsample, 1));
-		Desc.Height = std::max(1u, Desc.Height / (u32)std::max(Downsample, 1));
-
-		RenderGraphTextureRef Target = Graph.CreateTexture(Desc, Name);
-		iVector2 Size = Graph.GetTextureSize2D(Target);
+		const iVector2 Size = Graph.GetTextureSize2D(Output);
 
 		RefractionBlurShader::Parameters BlurParams;
 		BlurParams.Source = Source;
-		BlurParams.Output = Target;
+		BlurParams.Output = Output;
 		BlurParams.Constants.Value.OutputSize = Size;
 
 		RenderPassParameters Parameters;
@@ -245,8 +233,6 @@ namespace Columbus
 			const iVector3 TileSize = Kernel == 0 ? iVector3(8, 8, 1) : iVector3(8, 32, 1);
 			Context.DispatchComputePixels(Pipeline, TileSize, { Size, 1 });
 		});
-
-		return Target;
 	}
 
 	static void RenderTransparentMeshes(RenderGraphContext& Context, const RenderView& View, const ForwardTransparentShader::PassParameters& PassParams)
@@ -350,11 +336,26 @@ namespace Columbus
 
 	void RenderDeferredTransparency(RenderGraph& Graph, RenderView& View, SceneTextures& Textures, DeferredRenderContext& Context)
 	{
-		std::array<RenderGraphTextureRef, 4> RefractionLevels;
-		RefractionLevels[0] = AddRefractionBlurPass(Graph, Textures.FinalBeforeTonemap, "Refraction Level 0", 0, 1);
-		RefractionLevels[1] = AddRefractionBlurPass(Graph, RefractionLevels[0], "Refraction Level 1", 1, 2);
-		RefractionLevels[2] = AddRefractionBlurPass(Graph, RefractionLevels[1], "Refraction Level 2", 2, 2);
-		RefractionLevels[3] = AddRefractionBlurPass(Graph, RefractionLevels[2], "Refraction Level 3", 3, 2);
+		TextureDesc2 PyramidDesc = Graph.GetTextureDesc(Textures.FinalBeforeTonemap);
+		PyramidDesc.Format = TextureFormat::RGBA16F;
+		PyramidDesc.Mips   = 1;
+
+		for (u32 Dimension = std::max(PyramidDesc.Width, PyramidDesc.Height); Dimension > 1 && PyramidDesc.Mips < 4; Dimension >>= 1)
+		{
+			++PyramidDesc.Mips;
+		}
+
+		const auto Pyramid = Graph.CreateTexture(PyramidDesc, "Refraction Pyramid");
+		auto Source = Graph.CreateTextureView(Textures.FinalBeforeTonemap, { .MipCount = 1 });
+
+		for (u32 Mip = 0; Mip < PyramidDesc.Mips; ++Mip)
+		{
+			const auto Output = Graph.CreateTextureView(Pyramid, { .BaseMip = Mip, .MipCount = 1 });
+			char Name[32];
+			snprintf(Name, sizeof(Name), "Refraction Level %u", Mip);
+			AddRefractionBlurPass(Graph, Source, Output, Name, int(Mip));
+			Source = Output;
+		}
 
 		RenderPassParameters Parameters;
 		Parameters.ColorAttachments[0] = RenderPassAttachment{ AttachmentLoadOp::Load, Textures.FinalBeforeTonemap };
@@ -372,10 +373,7 @@ namespace Columbus
 		TransparencyPassData PassData;
 		PassData.ReflectionCaptures = Context.BakedLighting.ReflectionCaptures;
 		PassData.MeshPassParams.Scene.UseCombinedSampler = false;
-		PassData.MeshPassParams.RefractionLevel0 = RefractionLevels[0];
-		PassData.MeshPassParams.RefractionLevel1 = RefractionLevels[1];
-		PassData.MeshPassParams.RefractionLevel2 = RefractionLevels[2];
-		PassData.MeshPassParams.RefractionLevel3 = RefractionLevels[3];
+		PassData.MeshPassParams.RefractionPyramid = Pyramid;
 		ReflectionCaptures::SetShaderResources(PassData.MeshPassParams.ReflectionCaptures, PassData.ReflectionCaptures, Graph.Scene->BRDF_LUT);
 		Dependencies.Bind<ForwardTransparentShader>(PassData.MeshPassParams);
 

@@ -1,9 +1,8 @@
 #pragma once
 
 #include <Common/Image/Image.h>
-#include <algorithm>
-#include <cstring>
-#include <memory>
+#include <cstddef>
+#include <string>
 
 #include <Core/Blob.h>
 #include <Graphics/Core/Types.h>
@@ -24,6 +23,50 @@ namespace Columbus
 		MirroredRepeat,
 		ClampToEdge,
 		// ClampToBorder,
+	};
+
+	struct SamplerDesc
+	{
+		u32 Anisotropy = 1;
+		float MinLOD = 0.0f, MaxLOD = 1000.0f;
+		float LodBias = 0.0f;
+
+		bool           CompareEnable = false;
+		ComparisonFunc CompareOp     = ComparisonFunc::GEqual;
+
+		TextureAddressMode AddressU = TextureAddressMode::Repeat;
+		TextureAddressMode AddressV = TextureAddressMode::Repeat;
+		TextureAddressMode AddressW = TextureAddressMode::Repeat;
+		TextureFilter2 MinFilter = TextureFilter2::Linear;
+		TextureFilter2 MagFilter = TextureFilter2::Linear;
+		TextureFilter2 MipFilter = TextureFilter2::Linear;
+
+		static SamplerDesc Create(TextureFilter2 Filter = TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge);
+
+		template <TextureFilter2 Filter = TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge>
+		static SamplerDesc Create()
+		{
+			return Create(Filter, Address);
+		}
+
+		bool operator==(const SamplerDesc&) const = default;
+	};
+
+	inline SamplerDesc SamplerDesc::Create(TextureFilter2 Filter, TextureAddressMode Address)
+	{
+		SamplerDesc Desc;
+		Desc.AddressU = Address;
+		Desc.AddressV = Address;
+		Desc.AddressW = Address;
+		Desc.MagFilter = Filter;
+		Desc.MinFilter = Filter;
+		Desc.MipFilter = Filter;
+		return Desc;
+	}
+
+	struct HashSamplerDesc
+	{
+		size_t operator()(const SamplerDesc&) const;
 	};
 
 	enum class ColourSpaceMode
@@ -99,50 +142,6 @@ namespace Columbus
 		}
 	}
 
-	struct SamplerDesc
-	{
-		u32 Anisotropy = 1;
-		float MinLOD = 0.0f, MaxLOD = 1000.0f;
-		float LodBias = 0.0f;
-
-		bool           CompareEnable = false;
-		ComparisonFunc CompareOp     = ComparisonFunc::GEqual;
-
-		TextureAddressMode AddressU = TextureAddressMode::Repeat;
-		TextureAddressMode AddressV = TextureAddressMode::Repeat;
-		TextureAddressMode AddressW = TextureAddressMode::Repeat;
-		TextureFilter2 MinFilter = TextureFilter2::Linear;
-		TextureFilter2 MagFilter = TextureFilter2::Linear;
-		TextureFilter2 MipFilter = TextureFilter2::Linear;
-
-		static SamplerDesc Create(TextureFilter2 Filter = TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge);
-
-		template <TextureFilter2 Filter = TextureFilter2::Linear, TextureAddressMode Address = TextureAddressMode::ClampToEdge>
-		static SamplerDesc Create()
-		{
-			return Create(Filter, Address);
-		}
-
-		bool operator==(const SamplerDesc&) const = default;
-	};
-
-	inline SamplerDesc SamplerDesc::Create(TextureFilter2 Filter, TextureAddressMode Address)
-	{
-		SamplerDesc Desc;
-		Desc.AddressU = Address;
-		Desc.AddressV = Address;
-		Desc.AddressW = Address;
-		Desc.MagFilter = Filter;
-		Desc.MinFilter = Filter;
-		Desc.MipFilter = Filter;
-		return Desc;
-	}
-
-	struct HashSamplerDesc
-	{
-		size_t operator()(const SamplerDesc&) const;
-	};
-
 	struct TextureDesc2
 	{
 		// Image description
@@ -153,32 +152,12 @@ namespace Columbus
 		uint32 Samples = 1; // MSAA samples count
 		TextureFormat Format {};
 
-		// Sampler description
-		uint32 Anisotropy = 1;
-		float MinLOD = 0.0f, MaxLOD = 1000.0f;
-		TextureAddressMode AddressU = TextureAddressMode::Repeat;
-		TextureAddressMode AddressV = TextureAddressMode::Repeat;
-		TextureAddressMode AddressW = TextureAddressMode::Repeat;
-		TextureFilter2 MinFilter = TextureFilter2::Linear;
-		TextureFilter2 MagFilter = TextureFilter2::Linear;
-		TextureFilter2 MipFilter = TextureFilter2::Linear;
-
 		bool operator==(const TextureDesc2&) const = default;
 	};
 
 	struct HashTextureDesc2
 	{
 		size_t operator()(const TextureDesc2&) const;
-	};
-
-	// describes a view of a texture subresource range (see DeviceVulkan::CreateTextureView)
-	struct TextureViewDesc
-	{
-		TextureType ViewType = TextureType::Texture2D;
-		u32 BaseMip = 0;
-		u32 MipCount = 0; // 0 = all remaining mips
-		u32 BaseLayer = 0;
-		u32 LayerCount = 0; // 0 = all remaining layers
 	};
 
 	struct TextureImportSettings
@@ -200,133 +179,6 @@ namespace Columbus
 		std::string Type;
 		Blob Pixels;
 	};
-
-	namespace TextureUtils
-	{
-		inline TextureType TextureTypeFromImageType(ImageType Type)
-		{
-			switch (Type)
-			{
-			case ImageType::Image3D:      return TextureType::Texture3D;
-			case ImageType::ImageCube:    return TextureType::TextureCube;
-			case ImageType::Image2DArray: return TextureType::Texture2DArray;
-			case ImageType::Image2D:
-			default:                      return TextureType::Texture2D;
-			}
-		}
-
-		inline ImageType ImageTypeFromTextureType(TextureType Type)
-		{
-			switch (Type)
-			{
-			case TextureType::Texture3D:        return ImageType::Image3D;
-			case TextureType::TextureCube:
-			case TextureType::TextureCubeArray: return ImageType::ImageCube;
-			case TextureType::Texture2DArray:   return ImageType::Image2DArray;
-			case TextureType::Texture1D:
-			case TextureType::Texture2D:
-			case TextureType::Texture1DArray:
-			default:                            return ImageType::Image2D;
-			}
-		}
-
-		inline u32 TextureLayerCount(TextureType Type, u32 ArrayLayers)
-		{
-			if (Type == TextureType::TextureCube)
-				return 6u;
-
-			if (Type == TextureType::TextureCubeArray ||
-				Type == TextureType::Texture1DArray ||
-				Type == TextureType::Texture2DArray)
-				return std::max(1u, ArrayLayers);
-
-			return 1u;
-		}
-
-		inline u32 TextureLayerCount(const TextureDesc2& Desc)
-		{
-			return TextureLayerCount(Desc.Type, Desc.ArrayLayers);
-		}
-
-		inline TextureDesc2 NormalizeTextureDesc(TextureDesc2 Desc)
-		{
-			Desc.Width = std::max(1u, Desc.Width);
-			Desc.Height = std::max(1u, Desc.Height);
-			Desc.Depth = Desc.Type == TextureType::Texture3D ? std::max(1u, Desc.Depth) : 1u;
-			Desc.Mips = std::max(1u, Desc.Mips);
-			Desc.ArrayLayers = TextureLayerCount(Desc);
-			Desc.Samples = std::max(1u, Desc.Samples);
-			return Desc;
-		}
-
-		inline u32 TextureArrayLayersForImage(const Image& ImageData, u32 FallbackArrayLayers = 1)
-		{
-			return ImageData.GetType() == ImageType::ImageCube ? ImageUtils::ImageLayerCount(ImageData.GetType()) : std::max(1u, FallbackArrayLayers);
-		}
-
-		inline void SetTextureDescImageFields(TextureDesc2& Desc, const Image& ImageData, u32 FallbackArrayLayers = 1)
-		{
-			Desc.Type = TextureTypeFromImageType(ImageData.GetType());
-			Desc.Width = std::max(1u, ImageData.GetWidth());
-			Desc.Height = std::max(1u, ImageData.GetHeight());
-			Desc.Depth = ImageData.GetType() == ImageType::Image3D ? std::max(1u, ImageData.GetDepth()) : 1u;
-			Desc.Mips = std::max(1u, ImageData.GetMipmapsCount());
-			Desc.ArrayLayers = TextureArrayLayersForImage(ImageData, FallbackArrayLayers);
-			Desc.Samples = 1;
-			Desc.Format = ImageData.GetFormat();
-		}
-
-		inline void SetBorrowedImageViewFromStoredPixels(Image& ImageView, const TextureStoredPixels& Stored)
-		{
-			ImageView.Width = (u32)Stored.Width;
-			ImageView.Height = (u32)Stored.Height;
-			ImageView.Depth = (u32)Stored.Depth;
-			ImageView.MipMaps = (u32)Stored.Mips;
-			ImageView.Format = TextureFormatFromFriendlyName(Stored.Format);
-			ImageView.Type = ImageTypeFromString(Stored.Type);
-			ImageView.Exist = !Stored.Pixels.Empty();
-			ImageView.Size = Stored.Pixels.Size();
-			ImageView.Data = const_cast<u8*>(Stored.Pixels.Data());
-		}
-
-		inline void StoreImagePixels(TextureStoredPixels& Stored, const Image& ImageData)
-		{
-			Stored.Width = (int)ImageData.Width;
-			Stored.Height = (int)ImageData.Height;
-			Stored.Depth = (int)std::max(1u, ImageData.Depth);
-			Stored.Mips = (int)std::max(1u, ImageData.MipMaps);
-			Stored.Format = TextureFormatGetInfo(ImageData.Format).FriendlyName;
-			Stored.Type = ImageTypeToString(ImageData.Type);
-			Stored.Pixels.Bytes.resize((size_t)ImageData.GetFullSize());
-			if (!Stored.Pixels.Bytes.empty())
-			{
-				memcpy(Stored.Pixels.Data(), ImageData.Data, Stored.Pixels.Size());
-			}
-		}
-
-		inline u64 ComputeStoredPixelByteSize(const TextureStoredPixels& Stored)
-		{
-			if (Stored.Width <= 0 || Stored.Height <= 0 || Stored.Depth <= 0 || Stored.Mips <= 0)
-				return 0;
-
-			const TextureFormat Format = TextureFormatFromFriendlyName(Stored.Format);
-			if (Format == TextureFormat::Unknown)
-				return 0;
-
-			const ImageType Type = ImageTypeFromString(Stored.Type);
-			return ImageUtils::ImageCalcByteSize((u32)Stored.Width, (u32)Stored.Height, (u32)Stored.Depth, (u32)Stored.Mips, Format, Type);
-		}
-
-		inline bool ValidateStoredPixelByteSize(const TextureStoredPixels& Stored, u64* OutExpectedBytes = nullptr)
-		{
-			const u64 ExpectedBytes = ComputeStoredPixelByteSize(Stored);
-			if (OutExpectedBytes != nullptr)
-			{
-				*OutExpectedBytes = ExpectedBytes;
-			}
-			return Stored.Pixels.Size() == ExpectedBytes;
-		}
-	}
 
 	class Texture2
 	{
@@ -368,6 +220,58 @@ namespace Columbus
 	public:
 		const SamplerDesc& GetDesc() const { return _Desc; }
 	};
+
+	// Describes a view of an existing image; no image memory is allocated.
+	struct TextureViewDesc
+	{
+		TextureType ViewType = TextureType::Texture2D;
+		u32 BaseMip = 0;
+		u32 MipCount = 0; // 0 = all remaining mips
+		u32 BaseLayer = 0;
+		u32 LayerCount = 0; // 0 = all remaining layers
+		TextureBindingFlags Aspect = TextureBindingFlags::AspectColour; // Default selects the format's aspects.
+
+		bool operator==(const TextureViewDesc&) const = default;
+	};
+
+	// Borrowed from the source texture's view cache. The texture must outlive its views.
+	class TextureView
+	{
+	private:
+		Texture2*       Texture;
+		TextureViewDesc Desc;
+
+	protected:
+		TextureView(Texture2* Texture, const TextureViewDesc& Desc) : Texture(Texture), Desc(Desc) {}
+
+	public:
+		Texture2* GetTexture() const { return Texture; }
+		const TextureViewDesc& GetDesc() const { return Desc; }
+		TextureDesc2 GetTextureDesc() const;
+
+		virtual ~TextureView() = default;
+	};
+
+	namespace TextureUtils
+	{
+		TextureType TextureTypeFromImageType(ImageType Type);
+		ImageType ImageTypeFromTextureType(TextureType Type);
+
+		u32 TextureLayerCount(TextureType Type, u32 ArrayLayers);
+		u32 TextureLayerCount(const TextureDesc2& Desc);
+		TextureDesc2 NormalizeTextureDesc(TextureDesc2 Desc);
+
+		u32 TextureArrayLayersForImage(const Image& ImageData, u32 FallbackArrayLayers = 1);
+		void SetTextureDescImageFields(TextureDesc2& Desc, const Image& ImageData, u32 FallbackArrayLayers = 1);
+
+		void SetBorrowedImageViewFromStoredPixels(Image& ImageView, const TextureStoredPixels& Stored);
+		void StoreImagePixels(TextureStoredPixels& Stored, const Image& ImageData);
+		u64 ComputeStoredPixelByteSize(const TextureStoredPixels& Stored);
+		bool ValidateStoredPixelByteSize(const TextureStoredPixels& Stored, u64* OutExpectedBytes = nullptr);
+
+		bool ResolveTextureViewDesc(const TextureDesc2& Texture, TextureViewDesc& View);
+		TextureDesc2 TextureViewTextureDesc(TextureDesc2 Texture, const TextureViewDesc& View);
+	}
 
 }
 

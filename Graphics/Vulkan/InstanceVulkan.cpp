@@ -4,6 +4,7 @@ bool GVulkanDebugEnabled = false;
 
 bool IsVulkanDebugEnabled()
 {
+	return false;
 	return GVulkanDebugEnabled;
 }
 
@@ -149,7 +150,7 @@ namespace Columbus
 					{
 						Log::Error("%s {%s} %s", prefix, messageId, message);
 						//WriteStacktraceToLog();
-						DEBUGBREAK();
+						//DEBUGBREAK();
 					}
 
 					return VK_FALSE;

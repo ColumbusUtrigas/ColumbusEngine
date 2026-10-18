@@ -60,8 +60,8 @@ namespace Columbus
 
 		// TODO: layout api
 		void TransitionImageLayout(Texture2* Texture, VkImageLayout NewLayout);
-		void CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size);
-		void CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset, VkImageAspectFlags Aspect = 0);
+		void CopyImage(const Texture2* Src, const Texture2* Dst, iVector3 SrcOffset, iVector3 DstOffset, iVector3 Size, TextureViewDesc SrcRange = {}, TextureViewDesc DstRange = {});
+		void CopyImageToBuffer(const Texture2* Src, const Buffer* Dst, iVector3 SrcOffset, iVector3 Size, u64 DstOffset, VkImageAspectFlags Aspect = 0, TextureViewDesc Range = {});
 		// copies every mip of every layer/face, tightly packed and layer-major
 		// (all mips of layer 0, then layer 1, ...), matching the engine Image memory layout
 		void CopyImageToBufferAllSubresources(const Texture2* Src, const Buffer* Dst);
@@ -70,7 +70,7 @@ namespace Columbus
 		void UpdateBuffer(const Buffer* Dst, const void* Data, u64 Size, u64 Offset = 0);
 
 		void MemsetBuffer(const Buffer* Buf, u64 Offset, u64 Size, u32 Data32);
-		void MemsetTexture(const Texture2* Texture, Vector4 Value);
+		void MemsetTexture(const Texture2* Texture, Vector4 Value, TextureViewDesc Range = {});
 
 		void ResetQueryPool(const QueryPool* Pool, u32 FirstQuery, u32 QueryCount);
 		void WriteTimestamp(const QueryPool* Pool, u32 Id);

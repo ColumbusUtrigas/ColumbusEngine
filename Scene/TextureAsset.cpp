@@ -305,9 +305,6 @@ namespace Columbus
 			TextureUtils::SetBorrowedImageViewFromStoredPixels(CookedImage, TextureData.Cooked);
 
 			TextureDesc2 RuntimeDesc;
-			RuntimeDesc.AddressU = TextureData.ImportSettings.AddressMode;
-			RuntimeDesc.AddressV = TextureData.ImportSettings.AddressMode;
-			RuntimeDesc.AddressW = TextureData.ImportSettings.AddressMode;
 
 			Texture2* RuntimeTexture = Device->CreateTexture(CookedImage, RuntimeDesc);
 			RuntimeTexture->CopyAssetFieldsFrom(TextureData);

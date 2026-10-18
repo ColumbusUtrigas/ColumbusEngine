@@ -122,12 +122,6 @@ namespace Columbus
 		Desc.Format    = TextureFormat::Depth32F;
 		Desc.Usage     = TextureUsage::RenderTargetDepth | TextureUsage::Sampled;
 
-		Desc.MinFilter = TextureFilter2::Nearest;
-		Desc.MagFilter = TextureFilter2::Nearest;
-		Desc.MipFilter = TextureFilter2::Nearest;
-		Desc.AddressU  = TextureAddressMode::ClampToEdge;
-		Desc.AddressV  = TextureAddressMode::ClampToEdge;
-
 		ShadowRenderState::AtlasPage Page(State.AtlasSize);
 		const auto Block = Page.Allocator.Allocate(Resolution);
 		COLUMBUS_ASSERT(Block.has_value());

@@ -166,7 +166,7 @@ namespace Columbus
 		// TODO: optimize or give option to turn off validation
 		for (const auto& Read : Graph.Passes[CurrentPass].Dependencies.TextureReadResources)
 		{
-			if (Read.Texture == Ref)
+			if (Read.Texture == Ref && Read.Range.BaseMip == 0 && Read.Range.MipCount == Graph.Textures[Ref].Desc.Mips && Read.Range.BaseLayer == 0 && Read.Range.LayerCount == TextureUtils::TextureLayerCount(Graph.Textures[Ref].Desc))
 			{
 				ValidUsage = true;
 				break;
@@ -175,7 +175,7 @@ namespace Columbus
 
 		for (const auto& Write : Graph.Passes[CurrentPass].Dependencies.TextureWriteResources)
 		{
-			if (Write.Texture == Ref)
+			if (Write.Texture == Ref && Write.Range.BaseMip == 0 && Write.Range.MipCount == Graph.Textures[Ref].Desc.Mips && Write.Range.BaseLayer == 0 && Write.Range.LayerCount == TextureUtils::TextureLayerCount(Graph.Textures[Ref].Desc))
 			{
 				ValidUsage = true;
 				break;
@@ -189,6 +189,53 @@ namespace Columbus
 		}
 
 		return Graph.Textures[Ref].Texture;
+	}
+
+	namespace
+	{
+		VkImageAspectFlags TextureRangeAspect(TextureFormat Format, TextureBindingFlags Aspect)
+		{
+			if (Aspect == TextureBindingFlags::AspectColour)
+			{
+				return TextureFormatToAspectMaskVk(Format);
+			}
+			return ((u32(Aspect) & 1) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | ((u32(Aspect) & 2) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+		}
+
+		bool ContainsTextureRange(const TextureViewDesc& Outer, const TextureViewDesc& Inner, TextureFormat Format)
+		{
+			return Outer.BaseMip <= Inner.BaseMip && Outer.BaseMip + Outer.MipCount >= Inner.BaseMip + Inner.MipCount &&
+				Outer.BaseLayer <= Inner.BaseLayer && Outer.BaseLayer + Outer.LayerCount >= Inner.BaseLayer + Inner.LayerCount &&
+				(TextureRangeAspect(Format, Outer.Aspect) & TextureRangeAspect(Format, Inner.Aspect)) == TextureRangeAspect(Format, Inner.Aspect);
+		}
+	}
+
+	SPtr<TextureView> RenderGraphContext::GetRenderGraphTextureView(RenderGraphTextureViewRef View, TextureBindingFlags Aspect)
+	{
+		const auto& Record = Graph.GetTextureView(View);
+		TextureViewDesc Range = Record.Desc;
+		if (Aspect != TextureBindingFlags::AspectColour)
+		{
+			Range.Aspect = Aspect;
+		}
+
+		const auto& Pass = Graph.Passes[CurrentPass];
+		const auto Declared = [&](const auto& Accesses)
+		{
+			return std::any_of(Accesses.begin(), Accesses.end(), [&](const auto& Access)
+			{
+				return Access.Texture == Record.Texture && ContainsTextureRange(Access.Range, Range, Graph.Textures[Record.Texture].Desc.Format);
+			});
+		};
+		COLUMBUS_ASSERT_MESSAGE(Declared(Pass.Dependencies.GetTextureReads()) || Declared(Pass.Dependencies.GetTextureWrites()), "Texture view is outside the pass's declared subresource range");
+		return SPtr<TextureView>(Graph.Textures[Record.Texture].Texture, Graph.ResolveTextureView(View, Aspect));
+	}
+
+	SPtr<TextureView> RenderGraphContext::GetRenderGraphStorageView(RenderGraphTextureRef Ref, TextureBindingFlags Aspect)
+	{
+		const auto& Desc = Graph.Textures[Ref].Desc;
+		const auto View = Graph.CreateTextureView(Ref, { .ViewType = Desc.Type, .MipCount = 1, .Aspect = Aspect });
+		return GetRenderGraphTextureView(View, Aspect);
 	}
 
 	SPtr<Buffer> RenderGraphContext::GetRenderGraphBuffer(RenderGraphBufferRef Ref)
@@ -420,6 +467,61 @@ namespace Columbus
 		return Id;
 	}
 
+	RenderGraphTextureViewRef RenderGraph::CreateTextureView(RenderGraphTextureRef Texture, const TextureViewDesc& Desc)
+	{
+		TextureViewDesc Resolved = Desc;
+		const bool Valid = Texture >= 0 && size_t(Texture) < Textures.size() && TextureUtils::ResolveTextureViewDesc(Textures[Texture].Desc, Resolved);
+		COLUMBUS_ASSERT_MESSAGE(Valid, "Invalid render graph texture view");
+		if (!Valid)
+		{
+			Log::Error("Invalid render graph texture view");
+			return {};
+		}
+
+		for (int i = 0; i < int(TextureViews.size()); ++i)
+		{
+			if (TextureViews[i].Texture == Texture && TextureViews[i].Desc == Resolved)
+			{
+				return { i };
+			}
+		}
+
+		const int Index = int(TextureViews.size());
+		TextureViews.push_back({ Texture, Resolved });
+		return { Index };
+	}
+
+	const RenderGraphTextureView& RenderGraph::GetTextureView(RenderGraphTextureViewRef View) const
+	{
+		COLUMBUS_ASSERT(View.Index >= 0 && size_t(View.Index) < TextureViews.size());
+		return TextureViews[View.Index];
+	}
+
+	TextureDesc2 RenderGraph::GetTextureDesc(RenderGraphTextureViewRef View) const
+	{
+		const auto& Record = GetTextureView(View);
+		return TextureUtils::TextureViewTextureDesc(Textures[Record.Texture].Desc, Record.Desc);
+	}
+
+	iVector2 RenderGraph::GetTextureSize2D(RenderGraphTextureViewRef View) const
+	{
+		const auto Desc = GetTextureDesc(View);
+		return { int(Desc.Width), int(Desc.Height) };
+	}
+
+	TextureView* RenderGraph::ResolveTextureView(RenderGraphTextureViewRef View, TextureBindingFlags Aspect)
+	{
+		const auto& Record = GetTextureView(View);
+		Texture2* Texture = Textures[Record.Texture].Texture.get();
+		TextureViewDesc Desc = Record.Desc;
+		if (Aspect != TextureBindingFlags::AspectColour)
+		{
+			Desc.Aspect = Aspect;
+		}
+
+		return Device->GetOrCreateTextureView(Texture, Desc);
+	}
+
 	RenderGraphBufferRef RenderGraph::CreateBuffer(const BufferDesc& Desc, const char* Name)
 	{
 		int Id = static_cast<int>(Buffers.size());
@@ -429,6 +531,14 @@ namespace Columbus
 
 	RenderGraphTextureRef RenderGraph::RegisterExternalTexture(SPtr<Texture2> Tex, const char* Name)
 	{
+		for (const auto& Existing : Textures)
+		{
+			if (Existing.bExternal && Existing.Texture.get() == Tex.get())
+			{
+				return Existing.Id;
+			}
+		}
+
 		int Id = static_cast<int>(Textures.size());
 		auto RGTex = RenderGraphTexture(Tex->GetDesc(), Name, Id, Allocator);
 		RGTex.Texture = Tex;
@@ -583,6 +693,27 @@ namespace Columbus
 		AddProfilingMemory(MemoryCounter_RenderGraphBuffers, Result.Buffer->GetSize());
 	}
 
+	void RenderGraph::ResolveTextureDependency(RenderPassTextureDependency& Dependency)
+	{
+		if (Dependency.View.Index >= 0)
+		{
+			const auto& View = GetTextureView(Dependency.View);
+			const auto Aspect = Dependency.Range.Aspect;
+			Dependency.Texture = View.Texture;
+			Dependency.Range   = View.Desc;
+			if (Aspect != TextureBindingFlags::AspectColour)
+			{
+				Dependency.Range.Aspect = Aspect;
+			}
+		}
+		if (Dependency.View.Index < 0 && Dependency.Texture >= 0 && size_t(Dependency.Texture) < Textures.size())
+		{
+			Dependency.Range.ViewType = Textures[Dependency.Texture].Desc.Type;
+		}
+		const bool Valid = Dependency.Texture >= 0 && size_t(Dependency.Texture) < Textures.size() && TextureUtils::ResolveTextureViewDesc(Textures[Dependency.Texture].Desc, Dependency.Range);
+		COLUMBUS_ASSERT_MESSAGE(Valid, "Invalid render graph texture dependency range");
+	}
+
 	void RenderGraph::AddPass(const char* Name, RenderGraphPassType Type, RenderPassParameters Parameters, RenderPassDependencies Dependencies, RenderGraphExecutionFunc ExecuteCallback)
 	{
 		int PassId = static_cast<int>(Passes.size());
@@ -592,18 +723,54 @@ namespace Columbus
 			RenderGraphDynamicArray<RenderGraphBufferBarrier>(Allocator),
 		};
 
-		// treat pass attachments as write dependencies
-		for (const auto& Attachment : Parameters.ColorAttachments)
+		const auto AddAttachment = [&](RenderPassAttachment& Attachment, VkAccessFlags Access, VkPipelineStageFlags Stage)
+		{
+			if (Attachment.View.Index < 0)
+			{
+				const auto& Desc = Textures[Attachment.Texture].Desc;
+				Attachment.View = CreateTextureView(Attachment.Texture, { .ViewType = Desc.Type, .MipCount = 1 });
+			}
+			Attachment.Texture = GetTextureView(Attachment.View).Texture;
+			COLUMBUS_ASSERT(GetTextureDesc(Attachment.View).Mips == 1);
+			Pass.Dependencies.Write(Attachment.View, Access, Stage);
+		};
+
+		for (auto& Attachment : Pass.Parameters.ColorAttachments)
 		{
 			if (Attachment)
 			{
-				Pass.Dependencies.Write(Attachment->Texture, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+				AddAttachment(*Attachment, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 			}
 		}
 
-		if (Parameters.DepthStencilAttachment)
+		if (Pass.Parameters.DepthStencilAttachment)
 		{
-			Pass.Dependencies.Write(Parameters.DepthStencilAttachment->Texture, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+			AddAttachment(*Pass.Parameters.DepthStencilAttachment, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+		}
+
+		for (auto& Read : Pass.Dependencies.TextureReadResources)
+		{
+			ResolveTextureDependency(Read);
+		}
+		for (auto& Write : Pass.Dependencies.TextureWriteResources)
+		{
+			ResolveTextureDependency(Write);
+		}
+
+		if (Pass.Parameters.ViewportSize == iVector2(-1))
+		{
+			for (const auto& Attachment : Pass.Parameters.ColorAttachments)
+			{
+				if (Attachment)
+				{
+					Pass.Parameters.ViewportSize = GetTextureSize2D(Attachment->View);
+					break;
+				}
+			}
+			if (Pass.Parameters.ViewportSize == iVector2(-1) && Pass.Parameters.DepthStencilAttachment)
+			{
+				Pass.Parameters.ViewportSize = GetTextureSize2D(Pass.Parameters.DepthStencilAttachment->View);
+			}
 		}
 
 		// TODO: validate for duplicates
@@ -621,12 +788,7 @@ namespace Columbus
 		
 		for (RenderPassTextureDependency& Write : Pass.Dependencies.TextureWriteResources)
 		{
-			// If there was a version of a texture before, we overwrite this texture and, therefore, depend on it
-			if (Textures[Write.Texture].Version >= 0)
-			{
-				Pass.Dependencies.Read(Write.Texture, Write.Access, Write.Stage);
-				Pass.Dependencies.TextureReadResources[Pass.Dependencies.TextureReadResources.size() - 1].Version = Textures[Write.Texture].Version;
-			}
+			// Texture hazards are compiled per subresource; this version is only a whole-image snapshot.
 
 			Textures[Write.Texture].Version++;
 			Write.Version = Textures[Write.Texture].Version;
@@ -696,6 +858,7 @@ namespace Columbus
 		ExecutionHasFinished = false;
 		Passes.clear();
 		Textures.clear();
+		TextureViews.clear();
 		Buffers.clear();
 		Extractions.clear();
 		TextureInvalidations.clear();
@@ -773,6 +936,159 @@ namespace Columbus
 
 		Allocator.Clear();
 		ExecutionHasFinished = false;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Texture subresource dependency compilation
+
+	namespace
+	{
+		struct SubresourceAccess
+		{
+			VkAccessFlags        WriterAccess = 0;
+			VkPipelineStageFlags WriterStage  = 0;
+
+			VkAccessFlags        ReaderAccess = 0;
+			VkPipelineStageFlags ReaderStages = 0;
+			bool                 Written      = false;
+		};
+
+		template <typename F>
+		void VisitTextureSubresources(const TextureDesc2& Desc, const TextureViewDesc& Range, std::span<SubresourceAccess> States, const F& Function)
+		{
+			const auto AllAspects = TextureFormatToAspectMaskVk(Desc.Format);
+			const auto Aspects    = TextureRangeAspect(Desc.Format, Range.Aspect);
+			const u32 Layers = TextureUtils::TextureLayerCount(Desc);
+			u32       Plane  = 0;
+
+			for (u32 Aspect = VK_IMAGE_ASPECT_COLOR_BIT; Aspect <= VK_IMAGE_ASPECT_STENCIL_BIT; Aspect <<= 1)
+			{
+				if (!(AllAspects & Aspect))
+				{
+					continue;
+				}
+
+				if (Aspects & Aspect)
+				{
+					for (u32 Layer = Range.BaseLayer; Layer < Range.BaseLayer + Range.LayerCount; ++Layer)
+					{
+						for (u32 Mip = Range.BaseMip; Mip < Range.BaseMip + Range.MipCount; ++Mip)
+						{
+							Function(States[(size_t(Plane) * Layers + Layer) * Desc.Mips + Mip]);
+						}
+					}
+				}
+				++Plane;
+			}
+		}
+
+		void AppendTextureBarrier(RenderPass& Pass, const RenderPassTextureDependency& Access, VkAccessFlags SourceAccess, VkPipelineStageFlags SourceStages)
+		{
+			if (SourceStages == 0)
+			{
+				return;
+			}
+
+			for (auto& Barrier : Pass.TextureBarriers)
+			{
+				if (Barrier.Texture == Access.Texture && Barrier.Range == Access.Range)
+				{
+					Barrier.Writer.Access |= SourceAccess;
+					Barrier.Writer.Stage  |= SourceStages;
+					Barrier.Reader.Access |= Access.Access;
+					Barrier.Reader.Stage  |= Access.Stage;
+					return;
+				}
+			}
+
+			RenderPassTextureDependency Source = Access;
+			Source.Access = SourceAccess;
+			Source.Stage  = SourceStages;
+			Pass.TextureBarriers.push_back({ Access.Texture, Source, Access, Access.Range });
+		}
+	}
+
+	void RenderGraph::BuildTextureBarriers()
+	{
+		RenderGraphDynamicArray<size_t> Offsets(Allocator);
+		Offsets.reserve(Textures.size() + 1);
+		size_t StateCount = 0;
+		for (const auto& Texture : Textures)
+		{
+			Offsets.push_back(StateCount);
+			const auto Format = TextureFormatGetInfo(Texture.Desc.Format);
+			const u32 Planes  = Format.HasDepth || Format.HasStencil ? u32(Format.HasDepth) + u32(Format.HasStencil) : 1u;
+			StateCount += size_t(Texture.Desc.Mips) * TextureUtils::TextureLayerCount(Texture.Desc) * Planes;
+		}
+		Offsets.push_back(StateCount);
+
+		RenderGraphDynamicArray<SubresourceAccess> States(Allocator);
+		States.resize(StateCount);
+
+		const auto Enumerate = [&](const RenderPassTextureDependency& Access, const auto& Function)
+		{
+			const size_t Offset = Offsets[Access.Texture];
+			VisitTextureSubresources(Textures[Access.Texture].Desc, Access.Range, { States.data() + Offset, Offsets[Access.Texture + 1] - Offset }, Function);
+		};
+
+		for (auto& Pass : Passes)
+		{
+			// Derive all barriers from the state before this pass, allowing reads and writes to disjoint mips in one pass.
+			const auto AddBarriers = [&](const RenderPassTextureDependency& Access, bool Write)
+			{
+				VkAccessFlags SourceAccess = 0;
+				VkPipelineStageFlags SourceStages = 0;
+				bool UndefinedRead = false;
+
+				Enumerate(Access, [&](const SubresourceAccess& State)
+				{
+					SourceAccess |= State.WriterAccess;
+					SourceStages |= State.WriterStage;
+					if (Write)
+					{
+						SourceAccess |= State.ReaderAccess;
+						SourceStages |= State.ReaderStages;
+					}
+					UndefinedRead |= !Write && !State.Written && !Textures[Access.Texture].bExternal;
+				});
+
+				if (UndefinedRead)
+				{
+					Log::Error("RenderGraph Validation: pass %s reads an unwritten subresource of %s", Pass.Name, Textures[Access.Texture].DebugName.c_str());
+				}
+
+				AppendTextureBarrier(Pass, Access, SourceAccess, SourceStages);
+			};
+
+			for (const auto& Read : Pass.Dependencies.TextureReadResources)
+			{
+				AddBarriers(Read, false);
+			}
+			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
+			{
+				AddBarriers(Write, true);
+			}
+
+			for (const auto& Read : Pass.Dependencies.TextureReadResources)
+			{
+				Enumerate(Read, [&](SubresourceAccess& State)
+				{
+					State.ReaderAccess |= Read.Access;
+					State.ReaderStages |= Read.Stage;
+				});
+			}
+			for (const auto& Write : Pass.Dependencies.TextureWriteResources)
+			{
+				Enumerate(Write, [&](SubresourceAccess& State)
+				{
+					State.WriterAccess = Write.Access;
+					State.WriterStage  = Write.Stage;
+					State.ReaderAccess = 0;
+					State.ReaderStages = 0;
+					State.Written      = true;
+				});
+			}
+		}
 	}
 
 	void RenderGraph::Build()
@@ -887,40 +1203,10 @@ namespace Columbus
 			}
 		}
 
-		// Knowing resource adjacent passes, setup barriers for each read.
-		// Resources can be overwritten multiple times; barriers must target the writer
-		// of the exact version that this pass reads.
+		BuildTextureBarriers();
+
 		for (auto& Pass : Passes)
 		{
-			for (const auto& Read : Pass.Dependencies.TextureReadResources)
-			{
-				if (Read.Version < 0)
-				{
-					continue;
-				}
-
-				for (int WriterPassId = Pass.Id - 1; WriterPassId >= 0; WriterPassId--)
-				{
-					const auto& WriterPass = Passes[WriterPassId];
-					bool bFoundWriter = false;
-
-					for (const auto& WriterPassWrite : WriterPass.Dependencies.TextureWriteResources)
-					{
-						if (WriterPassWrite.Texture == Read.Texture && WriterPassWrite.Version == Read.Version)
-						{
-							Pass.TextureBarriers.push_back(RenderGraphTextureBarrier { Read.Texture, WriterPassWrite, Read });
-							bFoundWriter = true;
-							break;
-						}
-					}
-
-					if (bFoundWriter)
-					{
-						break;
-					}
-				}
-			}
-
 			for (const auto& Read : Pass.Dependencies.BufferReadResources)
 			{
 				if (Read.Version < 0)
@@ -1008,13 +1294,11 @@ namespace Columbus
 					{
 						if (ColorAttachment)
 						{
-							Texture2* Texture = Textures[ColorAttachment->Texture].Texture.get();
-							TextureFormat Format = Texture->GetDesc().Format;
-							TextureVulkan* TextureVk = static_cast<TextureVulkan*>(Texture);
+							TextureView*  View   = ResolveTextureView(ColorAttachment->View);
+							TextureFormat Format = View->GetTexture()->GetDesc().Format;
 
 							RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::Color, ColorAttachment->LoadOp, Format);
-							RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
-							RHIParams.AttachmentViews[RHIParams.NumUsedAttachments] = TextureVk ? TextureVk->_View : nullptr;
+							RHIParams.AttachmentViews[RHIParams.NumUsedAttachments] = View;
 							RHIParams.NumUsedAttachments++;
 						}
 					}
@@ -1022,13 +1306,22 @@ namespace Columbus
 					if (Pass.Parameters.DepthStencilAttachment)
 					{
 						auto Attachment = Pass.Parameters.DepthStencilAttachment;
-						Texture2* Texture = Textures[Attachment->Texture].Texture.get();
-						TextureVulkan* TextureVk = static_cast<TextureVulkan*>(Texture);
+						TextureView* View = ResolveTextureView(Attachment->View);
 
-						RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::DepthStencil, Attachment->LoadOp, Texture->GetDesc().Format);
-						RHIParams.AttachmentTextures[RHIParams.NumUsedAttachments] = Texture;
-						RHIParams.AttachmentViews[RHIParams.NumUsedAttachments] = TextureVk ? TextureVk->_View : nullptr;
+						RHIParams.AttachmentDescs[RHIParams.NumUsedAttachments] = AttachmentDesc(AttachmentType::DepthStencil, Attachment->LoadOp, View->GetTexture()->GetDesc().Format);
+						RHIParams.AttachmentViews[RHIParams.NumUsedAttachments] = View;
 						RHIParams.NumUsedAttachments++;
+					}
+				}
+
+				if (RHIParams.NumUsedAttachments > 0)
+				{
+					RHIParams.Layers = TextureUtils::TextureLayerCount(RHIParams.AttachmentViews[0]->GetTextureDesc());
+					for (int i = 0; i < RHIParams.NumUsedAttachments; ++i)
+					{
+						const auto& Desc = RHIParams.AttachmentViews[i]->GetTextureDesc();
+						COLUMBUS_ASSERT_MESSAGE(Desc.Width >= u32(RHIParams.Size.X) && Desc.Height >= u32(RHIParams.Size.Y), "Attachment mip is smaller than the viewport");
+						RHIParams.Layers = std::min(RHIParams.Layers, TextureUtils::TextureLayerCount(Desc));
 					}
 				}
 
@@ -1041,6 +1334,7 @@ namespace Columbus
 		SetProfilingMemory(MemoryCounter_RenderGraphCPU, 0);
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Passes.size() * sizeof(RenderPass));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Textures.size() * sizeof(RenderGraphTexture));
+		AddProfilingMemory(MemoryCounter_RenderGraphCPU, TextureViews.size() * sizeof(RenderGraphTextureView));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Buffers.size() * sizeof(RenderGraphBuffer));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, Extractions.size() * sizeof(RenderGraphTextureExtraction));
 		AddProfilingMemory(MemoryCounter_RenderGraphCPU, TextureInvalidations.size() * sizeof(RenderGraphHistoryInvalidation));
@@ -1070,8 +1364,12 @@ namespace Columbus
 			EnsureGPUSceneTextureDescriptorSets(RenderData, Device, Scene);
 			for (int i = 0; i < Scene->Textures.Size(); i++)
 			{
-				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSetNonCombined, 0, i, Scene->Textures[i], TextureBindingFlags::AspectColour, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+				Texture2*    Texture = Scene->Textures[i];
+				TextureView* View    = Device->GetDefaultTextureView(Texture);
+				Sampler*     Sampler = Device->GetStaticSampler(SamplerDesc::Create(TextureFilter2::Linear, Texture->ImportSettings.AddressMode));
+
+				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSet, 0, i, View, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, Sampler);
+				Device->UpdateDescriptorSet(RenderData.GPUSceneData.TextureSetNonCombined, 0, i, View);
 			}
 		}
 
@@ -1115,14 +1413,38 @@ namespace Columbus
 			MarkersStack.pop();
 		};
 
+		// Join accesses from earlier submissions before reusing pooled images. Within this graph, barriers are range-aware.
+		VkMemoryBarrier PreviousFrame{};
+		PreviousFrame.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+		PreviousFrame.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+		PreviousFrame.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+		vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &PreviousFrame, 0, nullptr, 0, nullptr);
+
+		for (auto& Texture : Textures)
+		{
+			if (static_cast<TextureVulkan*>(Texture.Texture.get())->GetLayout() != VK_IMAGE_LAYOUT_GENERAL)
+			{
+				CommandBuffer->TransitionImageLayout(Texture.Texture.get(), VK_IMAGE_LAYOUT_GENERAL);
+			}
+		}
+
 		// history invalidations
 		if (TextureInvalidations.size() > 0)
 		{
 			CommandBuffer->BeginDebugMarker("History Invalidations");
 			for (RenderGraphHistoryInvalidation& Invalidation : TextureInvalidations)
 			{
+				if (static_cast<TextureVulkan*>(Invalidation.Dst)->GetLayout() != VK_IMAGE_LAYOUT_GENERAL)
+				{
+					CommandBuffer->TransitionImageLayout(Invalidation.Dst, VK_IMAGE_LAYOUT_GENERAL);
+				}
 				CommandBuffer->MemsetTexture(Invalidation.Dst, Vector4(0, 0, 0, 0));
 			}
+
+			// History initialization occurs outside the pass list; expose its transfer writes to the first consumers.
+			VkMemoryBarrier Initialized = PreviousFrame;
+			Initialized.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &Initialized, 0, nullptr, 0, nullptr);
 			CommandBuffer->EndDebugMarker();
 		}
 
@@ -1170,23 +1492,22 @@ namespace Columbus
 				const RenderGraphTexture& GraphTexture = Textures[Barrier.Texture];
 
 				TextureVulkan* Texture = static_cast<TextureVulkan*>(GraphTexture.Texture.get());
-				VkImageAspectFlags AspectFlags = TextureFormatToAspectMaskVk(Texture->GetDesc().Format);
 
 				VkImageMemoryBarrier VkBarrier;
 				VkBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 				VkBarrier.pNext = nullptr;
 				VkBarrier.srcAccessMask = Barrier.Writer.Access;
 				VkBarrier.dstAccessMask = Barrier.Reader.Access;
-				VkBarrier.oldLayout = Texture->_Layout;
+				VkBarrier.oldLayout = Texture->GetLayout();
 				VkBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-				VkBarrier.srcQueueFamilyIndex = 0;
-				VkBarrier.dstQueueFamilyIndex = 0;
+				VkBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				VkBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				VkBarrier.image = Texture->_Image;
-				VkBarrier.subresourceRange.aspectMask = AspectFlags;
-				VkBarrier.subresourceRange.baseMipLevel = 0;
-				VkBarrier.subresourceRange.levelCount = Texture->GetDesc().Mips;
-				VkBarrier.subresourceRange.baseArrayLayer = 0;
-				VkBarrier.subresourceRange.layerCount = TextureUtils::TextureLayerCount(Texture->GetDesc());
+				VkBarrier.subresourceRange.aspectMask = TextureRangeAspect(Texture->GetDesc().Format, Barrier.Range.Aspect);
+				VkBarrier.subresourceRange.baseMipLevel = Barrier.Range.BaseMip;
+				VkBarrier.subresourceRange.levelCount = Barrier.Range.MipCount;
+				VkBarrier.subresourceRange.baseArrayLayer = Barrier.Range.BaseLayer;
+				VkBarrier.subresourceRange.layerCount = Barrier.Range.LayerCount;
 
 				vkCmdPipelineBarrier(CommandBuffer->_CmdBuf, Barrier.Writer.Stage, Barrier.Reader.Stage, 0,
 					0, 0, // memory barrier
@@ -1207,8 +1528,8 @@ namespace Columbus
 				VkBarrier.pNext = nullptr;
 				VkBarrier.srcAccessMask = Barrier.Writer.Access;
 				VkBarrier.dstAccessMask = Barrier.Reader.Access;
-				VkBarrier.srcQueueFamilyIndex = 0;
-				VkBarrier.dstQueueFamilyIndex = 0;
+				VkBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				VkBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				VkBarrier.buffer = Buffer->_Buffer;
 				VkBarrier.offset = 0; // TODO?
 				VkBarrier.size = GraphBuffer.Desc.Size;
@@ -1314,8 +1635,8 @@ namespace Columbus
 
 				iVector3 Size = { (int)Textures[Extraction.Src].Desc.Width, (int)Textures[Extraction.Src].Desc.Height, (int)Textures[Extraction.Src].Desc.Depth };
 
-				auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->_Layout;
-				auto DstLayout = static_cast<TextureVulkan*>(*Extraction.Dst)->_Layout;
+				auto SrcLayout = static_cast<TextureVulkan*>(Textures[Extraction.Src].Texture.get())->GetLayout();
+				auto DstLayout = static_cast<TextureVulkan*>(*Extraction.Dst)->GetLayout();
 
 				// TODO: layout management
 				CommandBuffer->TransitionImageLayout(Textures[Extraction.Src].Texture.get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -1441,7 +1762,7 @@ namespace Columbus
 
 		std::pair<RenderGraphPassParametersRHI, VkFramebuffer> NewPair = {
 			AttachmentParams,
-			Device->CreateFramebuffer(RenderPassVulkan, AttachmentParams.Size, std::span<Texture2*>(AttachmentParams.AttachmentTextures, AttachmentParams.NumUsedAttachments))
+			Device->CreateFramebuffer(RenderPassVulkan, AttachmentParams.Size, std::span<TextureView*>(AttachmentParams.AttachmentViews, AttachmentParams.NumUsedAttachments), AttachmentParams.Layers)
 		};
 
 		VulkanFramebuffers.push_back(NewPair);
@@ -1458,7 +1779,7 @@ namespace Columbus
 
 			for (int j = 0; j < (int)ParamsFramebufferPair.first.NumUsedAttachments; j++)
 			{
-				if (ParamsFramebufferPair.first.AttachmentTextures[j] == TextureBeingDeleted)
+				if (ParamsFramebufferPair.first.AttachmentViews[j]->GetTexture() == TextureBeingDeleted)
 				{
 					Found = true;
 				}
@@ -1486,7 +1807,7 @@ namespace Columbus
 
 			for (int j = 0; j < (int)ParamsRenderPassPair.first.NumUsedAttachments; j++)
 			{
-				if (ParamsRenderPassPair.first.AttachmentTextures[j] == TextureBeingDeleted)
+				if (ParamsRenderPassPair.first.AttachmentViews[j]->GetTexture() == TextureBeingDeleted)
 				{
 					Found = true;
 				}

@@ -24,7 +24,6 @@ namespace Columbus
 		std::vector<VkImage> swapChainImages;
 		VkFormat swapChainImageFormat;
 		VkExtent2D swapChainExtent;
-		std::vector<VkImageView> swapChainImageViews;
 		std::vector<VkFramebuffer> swapChainFramebuffers;
 		std::vector<Texture2*> Textures;
 
@@ -44,8 +43,8 @@ namespace Columbus
 
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-		void CreateImageViews(VkDevice device);
-		void DestroyImageViews();
+		void CreateTextures(VkDevice device);
+		void DestroyTextures();
 	};
 
 }
