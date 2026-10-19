@@ -4,6 +4,7 @@
 #include <Math/Vector4.h>
 #include <Core/Assert.h>
 #include <cstring>
+#include <cmath>
 #include <cstdio>
 
 // Math and spaces conventions of the engine:
@@ -247,30 +248,25 @@ namespace Columbus
 
 		Matrix GetInverted() const
 		{
-			float det = GetDeterminant();
-
-			if (abs(det) < 0.0001f)
-			{
-				return Matrix(1);
-			}
+			const float Determinant = GetDeterminant();
+			COLUMBUS_ASSERT_MESSAGE(std::isfinite(Determinant) && Determinant != 0.0f, "Cannot invert a singular or non-finite matrix");
 
 			Matrix Result(0);
 
-			// Compute matrix of cofactors
-			for (int i = 0; i < 4; i++)
+			// Compute the cofactor matrix.
+			for (int i = 0; i < 4; ++i)
 			{
-				for (int j = 0; j < 4; j++)
+				for (int j = 0; j < 4; ++j)
 				{
-					float mul = powf(-1, (float)(i+j)); // "checkerboard" of signs for cofactors
-					float minor = GetMinor(j, i) * mul;
-					Result.M[i][j] = minor;
+					const float Sign = ((i + j) & 1) ? -1.0f : 1.0f;
+					Result.M[i][j] = GetMinor(j, i) * Sign;
 				}
 			}
 
-			// Convert it to an adjoint matrix
 			Result.Transpose();
+			Result = Result * (1.0f / Determinant);
 
-			return Result * (1.0f / det);
+			return Result;
 		}
 
 		Matrix& Invert()
