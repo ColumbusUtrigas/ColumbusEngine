@@ -195,9 +195,6 @@ namespace Columbus
 		Matrix Model;
 		Matrix ModelInverse;
 		Texture2* Texture;
-
-		// TODO: remove that, handle internally
-		VkDescriptorSet _DescriptorSets[MaxFramesInFlight]{NULL};
 	};
 
 	struct GPUMaterialCompact
