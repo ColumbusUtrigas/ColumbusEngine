@@ -80,7 +80,8 @@ namespace Columbus
 		std::unordered_map<u64, LightAllocation> Allocations;
 		std::unordered_map<u64, RTShadowDenoiserHistory> RTHistories;
 		ShadowFrameData Frame;
-		u32 AtlasSize = 0;
+		u32 AtlasSize          = 0;
+		u32 ViewBufferCapacity = 64; // GPUShadowView records; retain spare capacity between frames.
 		bool CasterCulling = true;
 		GPUScene* SceneIdentity = nullptr;
 

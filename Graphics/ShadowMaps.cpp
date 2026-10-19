@@ -97,9 +97,10 @@ namespace Columbus
 		}
 
 		RTHistories.clear();
-		Frame         = {};
-		AtlasSize     = 0;
-		SceneIdentity = nullptr;
+		Frame              = {};
+		AtlasSize          = 0;
+		ViewBufferCapacity = 64;
+		SceneIdentity      = nullptr;
 	}
 
 	static void ReleaseAllocation(ShadowRenderState& State, const ShadowRenderState::LightAllocation& Allocation)
@@ -977,8 +978,10 @@ namespace Columbus
 		}
 	}
 
-	static void UploadShadowViews(RenderGraph& Graph, ShadowFrameData& Frame)
+	static void UploadShadowViews(RenderGraph& Graph, ShadowRenderState& State)
 	{
+		auto& Frame = State.Frame;
+
 		// A valid one-record buffer also supports frames without any raster lights.
 		std::vector<GPUShadowView> GPUViews(std::max<size_t>(Frame.Views.size(), 1));
 
@@ -987,8 +990,13 @@ namespace Columbus
 			GPUViews[i] = Frame.Views[i].GPU;
 		}
 
+		if (GPUViews.size() > State.ViewBufferCapacity)
+		{
+			State.ViewBufferCapacity = (u32)Math::UpperPowerOf2(GPUViews.size());
+		}
+
 		BufferDesc ViewBufferDesc;
-		ViewBufferDesc.Size                = GPUViews.size() * sizeof(GPUShadowView);
+		ViewBufferDesc.Size                = u64(State.ViewBufferCapacity) * sizeof(GPUShadowView);
 		ViewBufferDesc.BindFlags           = BufferType::UAV;
 		ViewBufferDesc.MiscFlags           = 0;
 		ViewBufferDesc.StructureByteStride = sizeof(GPUShadowView);
@@ -1049,7 +1057,7 @@ namespace Columbus
 		PrepareShadowCasters(*Graph.Scene, State.Frame, Visibility);
 
 		RegisterShadowAtlases(Graph, State);
-		UploadShadowViews(Graph, State.Frame);
+		UploadShadowViews(Graph, State);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
