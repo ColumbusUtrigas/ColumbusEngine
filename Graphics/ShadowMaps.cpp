@@ -22,6 +22,7 @@ namespace Columbus
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow caster draws", "Shadows", CountShadowDraws, true);
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow lights outside view", "Shadows", CountShadowLightsOutsideView, true);
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Shadow views outside view", "Shadows", CountShadowViewsOutsideView, true);
+	IMPLEMENT_COUNTING_PROFILING_COUNTER("Cached shadow views", "Shadows", CountCachedShadowViews, true);
 	IMPLEMENT_COUNTING_PROFILING_COUNTER("Empty shadow views", "Shadows", CountEmptyShadowViews, true);
 	IMPLEMENT_GPU_PROFILING_COUNTER("Shadow maps", "RenderGraphGPU", GpuCounterShadowMaps);
 	IMPLEMENT_MEMORY_PROFILING_COUNTER("Shadow atlas set", "Shadows", MemoryCounterShadowAtlases);
@@ -33,6 +34,8 @@ namespace Columbus
 		"Shadow-enabled lights: 0=per-light default, 1=force raster, 2=force ray traced (raster fallback without RT support)",
 		0
 	);
+
+	ConsoleVariable<bool> CVar_ShadowCache("r.Shadows.Cache", "Reuse unchanged local shadowmaps and scene-owned caster interactions", true);
 
 	ConsoleVariable<bool> CVar_ShadowCasterCulling(
 		"r.Shadows.CasterCulling",
@@ -59,7 +62,17 @@ namespace Columbus
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
-	// Persistent atlas resources and allocations
+	// Persistent shadow resources and allocations
+
+	void RTShadowDenoiserHistory::Destroy(SPtr<DeviceVulkan> Device)
+	{
+		Device->DestroyTextureDeferred(Shadow);
+		Device->DestroyTextureDeferred(Moments);
+
+		Shadow = nullptr;
+		Moments = nullptr;
+		Valid = false;
+	}
 
 	void ShadowRenderState::Destroy(SPtr<DeviceVulkan> Device)
 	{
@@ -154,6 +167,7 @@ namespace Columbus
 
 		ShadowRenderState::LightAllocation Allocation{ Light.ShadowResolution, {} };
 		Allocation.Tiles.reserve(Light.ShadowViewCount);
+		Allocation.RenderedRevisions.resize(Light.ShadowViewCount);
 
 		for (u32 View = 0; View < Light.ShadowViewCount; ++View)
 		{
@@ -545,7 +559,7 @@ namespace Columbus
 
 		Light.FirstShadowView = (u32)Frame.Views.size();
 
-		const auto& Allocation = State.Allocations.find(Key)->second;
+		auto& Allocation = State.Allocations.find(Key)->second;
 
 		const float NearPlane = std::max(Graph.Scene->Lights[LightIndex].ShadowNearPlane, 0.001f);
 
@@ -554,6 +568,9 @@ namespace Columbus
 			ShadowDrawView Draw{};
 			Draw.Tile      = Allocation.Tiles[ViewIndex];
 			Draw.SlopeBias = Light.ShadowSlopeBias;
+			Draw.Revision         = Graph.Scene->Lights[LightIndex].ShadowRevision;
+			Draw.RenderedRevision = &Allocation.RenderedRevisions[ViewIndex];
+			Draw.Render           = !CVar_ShadowCache.GetValue() || Light.Type == LightType::Directional || *Draw.RenderedRevision != Draw.Revision;
 			SetAtlasPlacement(Draw, State.AtlasSize);
 
 			if (Light.Type != LightType::Directional)
@@ -572,35 +589,6 @@ namespace Columbus
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Shadow caster preparation
-
-	static Box CasterWorldBounds(GPUScene& Scene, const GPUSceneMesh& Mesh)
-	{
-		const auto& Resource = *Mesh.MeshResource;
-
-		if (!Resource.HasBounds)
-		{
-			return Box(Vector3(1), Vector3(-1));
-		}
-
-		Box Local = Resource.Bounds;
-
-		if (Mesh.Deform)
-		{
-			const auto* Instance = Scene.MeshInstances.Get(Mesh.Instance);
-
-			if (!Instance)
-			{
-				return Box(Vector3(1), Vector3(-1));
-			}
-
-			const std::span<const float> Weights = Resource.MorphDeltas ? std::span<const float>(Instance->MorphWeights) : std::span<const float>();
-			const std::span<const Matrix> Skins = Resource.BoneIndices && Resource.BoneWeights ? std::span<const Matrix>(Instance->SkinMatrices) : std::span<const Matrix>();
-
-			Local = Local.CalcDeformedBox(Resource.MorphPositionBounds, Weights, Skins);
-		}
-
-		return Local.CalcTransformedBox(Mesh.Transform);
-	}
 
 	struct ShadowCaster
 	{
@@ -627,46 +615,95 @@ namespace Columbus
 				continue;
 			}
 
-			Casters.push_back({ i, Cull ? CasterWorldBounds(Scene, Mesh) : Box() });
+			Casters.push_back({ i, Cull ? Scene.GetMeshBounds(Mesh) : Box() });
 		}
 
 		return Casters;
 	}
 
-	static void GatherLightCandidates(const GPULightCompact& Light, const std::vector<ShadowCaster>& Casters, bool Cull, std::vector<size_t>& Candidates)
+	static u32 RasterShadowViewCount(const GPULightCompact& Light)
 	{
-		Candidates.clear();
-
-		// A caster on a light-to-receiver segment cannot lie outside the local
-		// influence sphere. Account for the shader's receiver normal offset.
-		const bool UsesLightRange = Light.Type == LightType::Point || Light.Type == LightType::Spot;
-		const bool CullRange      = Cull && Light.Type != LightType::Directional;
-		const float Radius = (UsesLightRange ? Light.Range : Light.ShadowDistance) + Light.ShadowNormalBias;
-
-		const Geometry::Sphere Influence = { Light.Position.XYZ(), Radius };
-		const float RangeTolerance = 0.0001f * std::max(1.0f, std::max(Radius, 0.0f));
-
-		for (size_t i = 0; i < Casters.size(); ++i)
+		switch (Light.Type)
 		{
-			if (!CullRange || Geometry::BoxSphereIntersection(Casters[i].Bounds, Influence, RangeTolerance))
-			{
-				Candidates.push_back(i);
-			}
+		case LightType::Directional:
+			return std::clamp(Light.ShadowCascadeCount, 1u, 4u);
+		case LightType::Point:
+			return 6;
+		case LightType::Spot:
+			return 1;
+		case LightType::Rectangle:
+		case LightType::Disc:
+			return (Light.Flags & ELightFlags::TwoSided) != 0 ? 2 : 1;
+		default:
+			return 0;
 		}
 	}
 
-	static void CullShadowView(ShadowDrawView& View, const std::vector<ShadowCaster>& Casters, const std::vector<size_t>& Candidates, bool Cull, const ShadowVisibility& Visibility, const GPULightCompact& Light)
+	u32 ShadowCasterViewMask(const GPULight& Light, const Box& Bounds)
+	{
+		const u32 ViewCount = RasterShadowViewCount(Light);
+
+		if (!CVar_ShadowCasterCulling.GetValue())
+		{
+			return (1u << ViewCount) - 1;
+		}
+
+		const bool  UsesLightRange = Light.Type == LightType::Point || Light.Type == LightType::Spot;
+		const float Radius = (UsesLightRange ? Light.Range : Light.ShadowDistance) + Light.ShadowNormalBias;
+		const float Tolerance = 0.0001f * std::max(1.0f, std::max(Radius, 0.0f));
+
+		if (!Geometry::BoxSphereIntersection(Bounds, { Light.Position.XYZ(), Radius }, Tolerance))
+		{
+			return 0;
+		}
+
+		const u32 Resolution = (u32)Math::UpperPowerOf2(std::clamp(Light.ShadowResolution, 32u, 4096u));
+		Matrix Guard(1);
+		Guard.M[0][0] = Guard.M[1][1] = float(Resolution - 2 * ShadowTilePadding) / Resolution;
+
+		u32 Mask = 0;
+
+		for (u32 i = 0; i < ViewCount; ++i)
+		{
+			const Frustum ViewFrustum(Guard * BuildLocalLightView(Light, i, std::max(Light.ShadowNearPlane, 0.001f)), Frustum::DepthRange::ZeroToOne);
+
+			if (ViewFrustum.Intersects(Bounds))
+			{
+				Mask |= 1u << i;
+			}
+		}
+
+		return Mask;
+	}
+
+	static bool PrepareShadowViewVisibility(ShadowDrawView& View, const ShadowVisibility& Visibility, const GPULightCompact& Light)
 	{
 		Matrix GuardScale(1);
 		GuardScale.M[0][0] = GuardScale.M[1][1] = float(View.Tile.Block.Size - 2 * ShadowTilePadding) / View.Tile.Block.Size;
 		View.RasterWorldToClip = GuardScale * View.GPU.WorldToClip;
 
-		const bool ViewVisible = View.GPU.AtlasIndex != ~0u && Visibility.ContainsView(View.RasterWorldToClip, Light.ShadowNormalBias);
+		// Cascades are fitted to camera slices and cannot be outside the camera view.
+		if (Light.Type == LightType::Directional || !CVar_ShadowViewCulling.GetValue())
+		{
+			return true;
+		}
 
-		if (CVar_ShadowViewCulling.GetValue() && !ViewVisible)
+		const bool Visible = View.GPU.AtlasIndex != ~0u && Visibility.ContainsView(View.RasterWorldToClip, Light.ShadowNormalBias);
+
+		if (!Visible)
 		{
 			View.GPU.AtlasIndex = ~0u;
 			AddProfilingCount(CountShadowViewsOutsideView, 1);
+			return false;
+		}
+
+		return true;
+	}
+
+	static void CullShadowView(ShadowDrawView& View, const std::vector<ShadowCaster>& Casters, const std::vector<size_t>& Candidates, bool Cull, const ShadowVisibility& Visibility, const GPULightCompact& Light)
+	{
+		if (!PrepareShadowViewVisibility(View, Visibility, Light))
+		{
 			return;
 		}
 
@@ -688,39 +725,69 @@ namespace Columbus
 	{
 		PROFILE_CPU(CpuCounterShadowCulling);
 
-		if (Frame.Views.empty())
-		{
-			return;
-		}
-
-		const bool Cull = CVar_ShadowCasterCulling.GetValue();
-		const std::vector<ShadowCaster> Casters = GatherShadowCasters(Scene, Cull);
-
+		std::vector<ShadowCaster> Casters;
 		std::vector<size_t> Candidates;
-		Candidates.reserve(Casters.size());
+		const bool Cull = CVar_ShadowCasterCulling.GetValue();
 
-		u64 Possible       = 0;
-		u64 RangeRejects   = 0;
-		u64 FrustumRejects = 0;
-		u64 Draws          = 0;
-
-		for (const auto& Light : Frame.Lights)
+		for (u32 LightIndex = 0; LightIndex < Frame.Lights.size(); ++LightIndex)
 		{
+			const auto& Light  = Frame.Lights[LightIndex];
+			const auto& Source = Scene.Lights[LightIndex];
+
 			if (!Light.ShadowViewCount)
 			{
 				continue;
 			}
 
-			GatherLightCandidates(Light, Casters, Cull, Candidates);
-			Possible     += u64(Casters.size()) * Light.ShadowViewCount;
-			RangeRejects += u64(Casters.size() - Candidates.size()) * Light.ShadowViewCount;
+			// Directional projections follow the camera and retain per-frame culling.
+			if (Light.Type == LightType::Directional && Candidates.empty())
+			{
+				Casters = GatherShadowCasters(Scene, Cull);
+				Candidates.reserve(Casters.size());
+
+				for (size_t i = 0; i < Casters.size(); ++i)
+				{
+					Candidates.push_back(i);
+				}
+			}
 
 			for (u32 i = 0; i < Light.ShadowViewCount; ++i)
 			{
 				auto& View = Frame.Views[Light.FirstShadowView + i];
-				CullShadowView(View, Casters, Candidates, Cull, Visibility, Light);
+				bool Empty;
 
-				if (View.GPU.AtlasIndex != ~0u && View.Casters.empty() && CVar_ShadowViewCulling.GetValue())
+				if (Light.Type == LightType::Directional)
+				{
+					CullShadowView(View, Casters, Candidates, Cull, Visibility, Light);
+					Empty = View.Casters.empty();
+				}
+				else
+				{
+					if (!PrepareShadowViewVisibility(View, Visibility, Light))
+					{
+						continue;
+					}
+
+					Empty = Source.ShadowCasterCounts[i] == 0;
+
+					if (View.Render)
+					{
+						for (const auto& [Key, Mask] : Source.ShadowCasters)
+						{
+							if (Mask & (1u << i))
+							{
+								const int ObjectId = Scene.Meshes.GetDenseIndex({ u32(Key), u32(Key >> 32) });
+								COLUMBUS_ASSERT(ObjectId >= 0);
+								View.Casters.push_back(u32(ObjectId));
+							}
+						}
+
+						// Preserve the existing scene draw order when resolving stable interactions.
+						std::sort(View.Casters.begin(), View.Casters.end());
+					}
+				}
+
+				if (View.GPU.AtlasIndex != ~0u && Empty && CVar_ShadowViewCulling.GetValue())
 				{
 					View.GPU.AtlasIndex = ~0u;
 					AddProfilingCount(CountEmptyShadowViews, 1);
@@ -729,39 +796,23 @@ namespace Columbus
 				if (View.GPU.AtlasIndex != ~0u)
 				{
 					AddProfilingCount(CountShadowViews, 1);
+					AddProfilingCount(CountCachedShadowViews, View.Render ? 0 : 1);
 				}
 
-				FrustumRejects += Candidates.size() - View.Casters.size();
-				Draws          += View.Casters.size();
+				const u64 Possible = Light.Type == LightType::Directional ? Casters.size() : Scene.Meshes.Size();
+				const u64 InRange  = Light.Type == LightType::Directional ? Casters.size() : Source.ShadowCasters.size();
+				const u64 InView   = Light.Type == LightType::Directional ? View.Casters.size() : Source.ShadowCasterCounts[i];
+				AddProfilingCount(CountShadowDrawsPossible, Possible);
+				AddProfilingCount(CountShadowRangeRejects, Possible - InRange);
+				AddProfilingCount(CountShadowFrustumRejects, InRange - InView);
+				AddProfilingCount(CountShadowDraws, View.Casters.size());
 			}
 		}
-
-		AddProfilingCount(CountShadowDrawsPossible, Possible);
-		AddProfilingCount(CountShadowRangeRejects, RangeRejects);
-		AddProfilingCount(CountShadowFrustumRejects, FrustumRejects);
-		AddProfilingCount(CountShadowDraws, Draws);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Frame light preparation and GPU resources
 
-	static u32 RasterShadowViewCount(const GPULightCompact& Light)
-	{
-		switch (Light.Type)
-		{
-		case LightType::Directional:
-			return std::clamp(Light.ShadowCascadeCount, 1u, 4u);
-		case LightType::Point:
-			return 6;
-		case LightType::Spot:
-			return 1;
-		case LightType::Rectangle:
-		case LightType::Disc:
-			return (Light.Flags & ELightFlags::TwoSided) != 0 ? 2 : 1;
-		default:
-			return 0;
-		}
-	}
 
 	static GPULightCompact PrepareFrameLight(RenderGraph& Graph, ShadowRenderState& State, u32 LightIndex, int Mode)
 	{
@@ -973,6 +1024,16 @@ namespace Columbus
 		State.AtlasSize     = AtlasSize;
 		State.Frame         = {};
 
+		if (State.CasterCulling != CVar_ShadowCasterCulling.GetValue())
+		{
+			State.CasterCulling = CVar_ShadowCasterCulling.GetValue();
+
+			for (GPULight& Light : Graph.Scene->Lights)
+			{
+				Graph.Scene->RebuildShadowCasters(Light);
+			}
+		}
+
 		PrepareFrameLights(Graph, State);
 
 		for (u32 i = 0; i < State.Frame.Lights.size(); ++i)
@@ -1048,6 +1109,16 @@ namespace Columbus
 		GraphicsPipeline* BoundPipeline = nullptr;
 		const auto& Tile = View.Tile.Block;
 
+		VkClearAttachment Clear{};
+		Clear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		Clear.clearValue.depthStencil.depth = 0;
+
+		VkClearRect Rect{};
+		Rect.rect.offset = { int(Tile.X), int(Tile.Y) };
+		Rect.rect.extent = { Tile.Size, Tile.Size };
+		Rect.layerCount  = 1;
+		vkCmdClearAttachments(Context.CommandBuffer->_GetHandle(), 1, &Clear, 1, &Rect);
+
 		Context.CommandBuffer->SetViewport(float(Tile.X), float(Tile.Y), float(Tile.Size), float(Tile.Size), 0, 1);
 		// Rasterise the guard region too, with the same projection-to-texel mapping.
 		Context.CommandBuffer->SetScissor(Tile.X, Tile.Y, Tile.Size, Tile.Size);
@@ -1077,12 +1148,14 @@ namespace Columbus
 			Context.CommandBuffer->PushConstantsGraphics(Pipeline, ShaderType::Vertex, 0, sizeof(Constants), &Constants);
 			Context.CommandBuffer->Draw(Mesh.MeshResource->IndicesCount, 1, 0, 0);
 		}
+
+		*View.RenderedRevision = View.Revision;
 	}
 
 	static void AddShadowAtlasPass(RenderGraph& Graph, RenderGraphTextureRef Atlas, u32 AtlasIndex, std::vector<ShadowDrawView> Views)
 	{
 		RenderPassParameters Parameters;
-		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Clear, Atlas, AttachmentClearValue{ {}, 0, 0 } };
+		Parameters.DepthStencilAttachment = RenderPassAttachment{ AttachmentLoadOp::Load, Atlas, AttachmentClearValue{ {}, 0, 0 } };
 		Parameters.ViewportSize           = Graph.GetTextureSize2D(Atlas);
 
 		RenderPassDependencies Dependencies(Graph.Allocator);
@@ -1116,7 +1189,7 @@ namespace Columbus
 
 			for (const auto& View : Frame.Views)
 			{
-				if (View.Tile.AtlasIndex == Atlas && View.GPU.AtlasIndex != ~0u)
+				if (View.Render && View.Tile.AtlasIndex == Atlas && View.GPU.AtlasIndex != ~0u)
 				{
 					Views.push_back(View);
 				}

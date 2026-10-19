@@ -15,6 +15,8 @@
 #include <span>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <array>
 
 namespace Columbus
 {
@@ -134,15 +136,6 @@ namespace Columbus
 		bool operator!=(const GPUCamera&) const = default;
 	};
 
-	struct RTShadowDenoiserHistory
-	{
-		Texture2* Shadow = nullptr;
-		Texture2* Moments = nullptr;
-		bool Valid = false; // Resources survive skipped frames; temporal contents do not.
-
-		void Destroy(SPtr<DeviceVulkan> Device);
-	};
-
 	struct GPULightCompact
 	{
 		Vector4 Position;
@@ -177,6 +170,11 @@ namespace Columbus
 		// all GPULightCompact fields plus some state
 
 		float ShadowNearPlane = 0.02f;
+
+		// CPU-only local-light interactions. Keys contain primitive sparse index + generation.
+		std::unordered_map<u64, u32> ShadowCasters; // Primitive key -> shadow face mask.
+		u64 ShadowRevision   = 1;
+		std::array<u32, 6> ShadowCasterCounts{};
 
 		bool NeedsRTShadowDenoiser() const;
 	};
@@ -371,6 +369,7 @@ namespace Columbus
 
 		GPUCamera MainCamera;
 		bool Dirty = false;
+		size_t ShadowMaterialHash = 0;
 
 		// ClearWorld requests a reset; the scene's deferred view consumes it on its next render.
 		bool ResetHistory = false;
@@ -403,6 +402,9 @@ namespace Columbus
 	public:
 		void Update();
 		void SavePreviousMeshTransforms();
+		Box GetMeshBounds(const GPUSceneMesh& Mesh);
+		void UpdateShadowCaster(HStableMeshId Id, bool Removed = false);
+		void RebuildShadowCasters(GPULight& Light);
 
 		bool IsMeshInstanceValid(HStableMeshInstanceId Id) const;
 		HStableMeshInstanceId AddMeshInstance(Mesh2& MeshAsset, const GPUSceneMeshInstanceState& State);

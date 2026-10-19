@@ -1,4 +1,7 @@
 #include "GPUScene.h"
+#include "ShadowMaps.h"
+#include "Core/Hash.h"
+#include <cstring>
 
 #include "BRDFLUT.h"
 #include "LTC.h"
@@ -15,6 +18,7 @@ IMPLEMENT_MEMORY_PROFILING_COUNTER("Reflection captures", "SceneMemory", MemoryC
 
 namespace Columbus
 {
+	IMPLEMENT_CPU_PROFILING_COUNTER("Shadow interactions", "Render", CpuCounterShadowInteractions);
 	static void CreateGPUSceneBuffers(SPtr<DeviceVulkan> Device, u64 Size, const char* Name, Buffer*& Buf)
 	{
 		BufferDesc Desc;
@@ -156,16 +160,6 @@ namespace Columbus
 		};
 	}
 
-	void RTShadowDenoiserHistory::Destroy(SPtr<DeviceVulkan> Device)
-	{
-		Device->DestroyTextureDeferred(Shadow);
-		Device->DestroyTextureDeferred(Moments);
-
-		Shadow = nullptr;
-		Moments = nullptr;
-		Valid = false;
-	}
-
 	bool GPULight::NeedsRTShadowDenoiser() const
 	{
 		if ((Flags & ELightFlags::Shadow) == (ELightFlags)0)
@@ -211,6 +205,30 @@ namespace Columbus
 
 	void GPUScene::Update()
 	{
+		// Materials are also edited directly through the scene material table.
+		size_t MaterialHash = 0;
+
+		for (const Material& Material : Materials)
+		{
+			hash_combine(MaterialHash, Material.StableId.index);
+			hash_combine(MaterialHash, Material.StableId.generation);
+			hash_combine(MaterialHash, u32(Material.ShadingMode));
+			hash_combine(MaterialHash, Material.AlphaCutoff);
+			hash_combine(MaterialHash, Material.AlbedoFactor.W);
+			hash_combine(MaterialHash, Material.AlbedoId.index);
+			hash_combine(MaterialHash, Material.AlbedoId.generation);
+		}
+
+		if (MaterialHash != ShadowMaterialHash)
+		{
+			ShadowMaterialHash = MaterialHash;
+
+			for (GPULight& Light : Lights)
+			{
+				RebuildShadowCasters(Light);
+			}
+		}
+
 		for (int i = 0; i < (int)Lights.Size(); i++)
 		{
 			const GPULight& SceneLight = Lights.Data()[i];
@@ -219,6 +237,134 @@ namespace Columbus
 			if (SceneLight.Type == LightType::Directional)
 			{
 				SunDirection = Vector4(SceneLight.Direction.XYZ().Normalized(), 0);
+			}
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Persistent local-light shadow interactions
+
+	Box GPUScene::GetMeshBounds(const GPUSceneMesh& Mesh)
+	{
+		const auto& Resource = *Mesh.MeshResource;
+
+		if (!Resource.HasBounds)
+		{
+			return Box(Vector3(1), Vector3(-1));
+		}
+
+		Box Local = Resource.Bounds;
+
+		if (Mesh.Deform)
+		{
+			const auto* Instance = MeshInstances.Get(Mesh.Instance);
+			COLUMBUS_ASSERT(Instance != nullptr);
+
+			const std::span<const float> Weights = Resource.MorphDeltas ? std::span<const float>(Instance->MorphWeights) : std::span<const float>();
+			const std::span<const Matrix> Skins = Resource.BoneIndices && Resource.BoneWeights ? std::span<const Matrix>(Instance->SkinMatrices) : std::span<const Matrix>();
+			Local = Local.CalcDeformedBox(Resource.MorphPositionBounds, Weights, Skins);
+		}
+
+		return Local.CalcTransformedBox(Mesh.Transform);
+	}
+
+	static bool IsShadowCaster(GPUScene& Scene, const GPUSceneMesh* Mesh)
+	{
+		if (!Mesh || !Mesh->MeshResource || !Mesh->MeshResource->IndicesCount)
+		{
+			return false;
+		}
+
+		const Material* Material = Scene.Materials.Get(Mesh->MaterialId);
+		return !Material || (Material->ShadingMode != MaterialShadingMode::Transparent && Material->ShadingMode != MaterialShadingMode::Refractive);
+	}
+
+	static bool HasLocalShadow(const GPULight& Light)
+	{
+		const bool Local = Light.Type == LightType::Point || Light.Type == LightType::Spot || Light.Type == LightType::Rectangle || Light.Type == LightType::Disc;
+		return Local && (Light.Flags & ELightFlags::Shadow) != 0;
+	}
+
+	void GPUScene::UpdateShadowCaster(HStableMeshId Id, bool Removed)
+	{
+		PROFILE_CPU(CpuCounterShadowInteractions);
+
+		const u64 Key = (u64(Id.generation) << 32) | Id.index;
+		const auto* Mesh = Removed ? nullptr : Meshes.Get(Id);
+		const bool Caster = IsShadowCaster(*this, Mesh);
+		const Box Bounds = Caster ? GetMeshBounds(*Mesh) : Box();
+
+		for (GPULight& Light : Lights)
+		{
+			if (!HasLocalShadow(Light))
+			{
+				continue;
+			}
+
+			const auto Existing = Light.ShadowCasters.find(Key);
+			const u32 OldMask  = Existing == Light.ShadowCasters.end() ? 0 : Existing->second;
+			const u32 FaceMask = Caster ? ShadowCasterViewMask(Light, Bounds) : 0;
+
+			if (FaceMask)
+			{
+				Light.ShadowCasters[Key] = FaceMask;
+			}
+			else
+			{
+				Light.ShadowCasters.erase(Key);
+			}
+
+			if (OldMask || FaceMask)
+			{
+				++Light.ShadowRevision;
+
+				for (u32 i = 0; i < Light.ShadowCasterCounts.size(); ++i)
+				{
+					if (OldMask & (1u << i))
+					{
+						--Light.ShadowCasterCounts[i];
+					}
+
+					if (FaceMask & (1u << i))
+					{
+						++Light.ShadowCasterCounts[i];
+					}
+				}
+			}
+		}
+	}
+
+	void GPUScene::RebuildShadowCasters(GPULight& Light)
+	{
+		PROFILE_CPU(CpuCounterShadowInteractions);
+
+		Light.ShadowCasters.clear();
+		Light.ShadowCasterCounts.fill(0);
+		++Light.ShadowRevision;
+
+		if (!HasLocalShadow(Light))
+		{
+			return;
+		}
+
+		for (u32 i = 0; i < Meshes.Size(); ++i)
+		{
+			if (!IsShadowCaster(*this, &Meshes[i]))
+			{
+				continue;
+			}
+
+			const u32 Mask = ShadowCasterViewMask(Light, GetMeshBounds(Meshes[i]));
+
+			if (Mask)
+			{
+				const auto Id = Meshes.GetHandleAtDenseIndex(i);
+				Light.ShadowCasters.emplace((u64(Id.generation) << 32) | Id.index, Mask);
+
+				for (u32 Face = 0; Face < Light.ShadowCasterCounts.size(); ++Face)
+				{
+					Light.ShadowCasterCounts[Face] += (Mask >> Face) & 1u;
+				}
 			}
 		}
 	}
@@ -264,6 +410,11 @@ namespace Columbus
 			StoredInstance->Primitives.push_back(Meshes.Add(Mesh));
 		}
 
+		for (HStableMeshId Id : StoredInstance->Primitives)
+		{
+			UpdateShadowCaster(Id);
+		}
+
 		return InstanceId;
 	}
 
@@ -279,6 +430,7 @@ namespace Columbus
 			DestroySceneMeshDeform(Device, Mesh->Deform);
 			delete Mesh->Deform;
 			Mesh->Deform = nullptr;
+			UpdateShadowCaster(PrimitiveId, true);
 			Meshes.Remove(PrimitiveId);
 		}
 
@@ -293,6 +445,9 @@ namespace Columbus
 		assert(State.SkinMatrices.size() == Instance->SkinMatrices.size());
 		assert(State.MorphWeights.size() == Instance->MorphWeights.size());
 
+		const bool SkinChanged  = !State.SkinMatrices.empty() && memcmp(Instance->SkinMatrices.data(), State.SkinMatrices.data(), State.SkinMatrices.size_bytes()) != 0;
+		const bool MorphChanged = !State.MorphWeights.empty() && memcmp(Instance->MorphWeights.data(), State.MorphWeights.data(), State.MorphWeights.size_bytes()) != 0;
+
 		Instance->SkinMatrices.assign(State.SkinMatrices.begin(), State.SkinMatrices.end());
 		Instance->MorphWeights.assign(State.MorphWeights.begin(), State.MorphWeights.end());
 
@@ -300,8 +455,17 @@ namespace Columbus
 		{
 			GPUSceneMesh* Mesh = Meshes.Get(Instance->Primitives[PrimitiveIndex]);
 			assert(Mesh != nullptr);
-			Mesh->Transform = State.Transform;
-			Mesh->MaterialId = State.Materials[PrimitiveIndex];
+			const auto MaterialId = State.Materials[PrimitiveIndex];
+			const bool TransformChanged = memcmp(&Mesh->Transform, &State.Transform, sizeof(Matrix)) != 0;
+			const bool MaterialChanged  = Mesh->MaterialId.index != MaterialId.index || Mesh->MaterialId.generation != MaterialId.generation;
+
+			Mesh->Transform  = State.Transform;
+			Mesh->MaterialId = MaterialId;
+
+			if (TransformChanged || MaterialChanged || SkinChanged || MorphChanged)
+			{
+				UpdateShadowCaster(Instance->Primitives[PrimitiveIndex]);
+			}
 		}
 	}
 
@@ -317,7 +481,9 @@ namespace Columbus
 
 	HStableLightId GPUScene::AddLight(const GPULight& Light)
 	{
-		return Lights.Add(Light);
+		const auto Id = Lights.Add(Light);
+		RebuildShadowCasters(*Lights.Get(Id));
+		return Id;
 	}
 
 	void GPUScene::UpdateLight(HStableLightId Id, const GPULight& Light)
@@ -328,7 +494,24 @@ namespace Columbus
 			return;
 		}
 
+		const bool TransformChanged  = Existing->Position != Light.Position || Existing->Direction != Light.Direction;
+		const bool InfluenceChanged  = Existing->Type != Light.Type || Existing->Flags != Light.Flags || Existing->Range != Light.Range || Existing->SizeOrSpotAngles != Light.SizeOrSpotAngles;
+		const bool ProjectionChanged = Existing->ShadowNearPlane != Light.ShadowNearPlane || Existing->ShadowDistance != Light.ShadowDistance || Existing->ShadowConeAngle != Light.ShadowConeAngle;
+		const bool RasterChanged     = Existing->ShadowResolution != Light.ShadowResolution || Existing->ShadowNormalBias != Light.ShadowNormalBias || Existing->ShadowSlopeBias != Light.ShadowSlopeBias;
+
+		auto Casters = std::move(Existing->ShadowCasters);
+		const u64  Revision = Existing->ShadowRevision;
+		const auto Counts   = Existing->ShadowCasterCounts;
+
 		*Existing = Light;
+		Existing->ShadowCasters      = std::move(Casters);
+		Existing->ShadowRevision     = Revision;
+		Existing->ShadowCasterCounts = Counts;
+
+		if (TransformChanged || InfluenceChanged || ProjectionChanged || RasterChanged)
+		{
+			RebuildShadowCasters(*Existing);
+		}
 	}
 
 	void GPUScene::RemoveLight(HStableLightId Id)

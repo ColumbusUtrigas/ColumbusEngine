@@ -35,7 +35,10 @@ namespace Columbus
 		ShadowTile Tile;
 		float SlopeBias = 0;
 		Matrix RasterWorldToClip;
-		std::vector<u32> Casters; // Dense object IDs rebuilt for this frame.
+		std::vector<u32> Casters; // Dense object IDs resolved only for views being redrawn.
+		u64 Revision = 0;
+		u64* RenderedRevision = nullptr;
+		bool Render = true;
 	};
 
 	struct ShadowFrameData
@@ -47,7 +50,16 @@ namespace Columbus
 		u32 RTLightCount = 0;
 	};
 
-	// Owned by a deferred context. Placement survives frames; depth is redrawn every frame.
+	struct RTShadowDenoiserHistory
+	{
+		Texture2* Shadow = nullptr;
+		Texture2* Moments = nullptr;
+		bool Valid = false; // Resources survive skipped frames; temporal contents do not.
+
+		void Destroy(SPtr<DeviceVulkan> Device);
+	};
+
+	// Owned by a deferred context. Local shadow depth and placement survive frames.
 	// RT history and allocations are keyed by sparse light handle + generation, never dense index.
 	struct ShadowRenderState
 	{
@@ -61,6 +73,7 @@ namespace Columbus
 		{
 			u32 Resolution;
 			std::vector<ShadowTile> Tiles;
+			std::vector<u64> RenderedRevisions;
 		};
 
 		std::vector<AtlasPage> Pages;
@@ -68,11 +81,13 @@ namespace Columbus
 		std::unordered_map<u64, RTShadowDenoiserHistory> RTHistories;
 		ShadowFrameData Frame;
 		u32 AtlasSize = 0;
+		bool CasterCulling = true;
 		GPUScene* SceneIdentity = nullptr;
 
 		void Destroy(SPtr<DeviceVulkan> device);
 	};
 
+	u32 ShadowCasterViewMask(const GPULight& Light, const Box& Bounds);
 	u64 ShadowLightKey(const GPUScene& scene, u32 denseIndex);
 	void PrepareShadows(RenderGraph& graph, const RenderView& view, ShadowRenderState& state);
 	void RenderShadowMaps(RenderGraph& graph, const ShadowFrameData& frame);
